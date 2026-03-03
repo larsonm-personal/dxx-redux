@@ -62,3 +62,11 @@ d*x-rebirth
 /*/out/install
 
 build*/
+
+# Android #
+###########
+local.properties
+.gradle/
+*.apk
+*.aab
+.cxx*/
