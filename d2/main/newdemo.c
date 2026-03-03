@@ -3535,21 +3535,23 @@ int newdemo_prompt_filename(char* filename_buffer, unsigned int filename_buffer_
 	strcpy_s(filename_from_prompt, SDL_arraysize(filename_from_prompt), filename_buffer);
 
 	do {
-		newmenu_item m[2];
+		newmenu_item m[3];
 		int exit = 0;
 		Newmenu_allowed_chars = "azAZ09__";
 		if (!nd_record_v_no_space) {
 			m[0].type = NM_TYPE_INPUT;
 			m[0].text_len = SDL_arraysize(filename_from_prompt) - 1;
 			m[0].text = filename_from_prompt;
-			exit = newmenu_do(NULL, TXT_SAVE_DEMO_AS, 1, m, NULL, NULL);
+			m[1].type = NM_TYPE_MENU; m[1].text = TXT_OK;
+			exit = newmenu_do(NULL, TXT_SAVE_DEMO_AS, 2, m, NULL, NULL);
 		} else if (nd_record_v_no_space == 2) {
 			m[0].type = NM_TYPE_TEXT;
 			m[0].text = TXT_DEMO_SAVE_NOSPACE;
 			m[1].type = NM_TYPE_INPUT;
 			m[1].text_len = SDL_arraysize(filename_from_prompt) - 1;
 			m[1].text = filename_from_prompt;
-			exit = newmenu_do(NULL, NULL, 2, m, NULL, NULL);
+			m[2].type = NM_TYPE_MENU; m[2].text = TXT_OK;
+			exit = newmenu_do(NULL, NULL, 3, m, NULL, NULL);
 		}
 		Newmenu_allowed_chars = NULL;
 

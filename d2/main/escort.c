@@ -373,14 +373,15 @@ dega_ok: ;
 
 void change_guidebot_name()
 {
-	newmenu_item m;
+	newmenu_item m[2];
 	char text[GUIDEBOT_NAME_LEN+1]="";
 	int item;
 
 	strcpy(text,PlayerCfg.GuidebotName);
 
-	m.type=NM_TYPE_INPUT; m.text_len = GUIDEBOT_NAME_LEN; m.text = text;
-	item = newmenu_do( NULL, "Enter Guide-bot name:", 1, &m, NULL, NULL );
+	m[0].type=NM_TYPE_INPUT; m[0].text_len = GUIDEBOT_NAME_LEN; m[0].text = text;
+	m[1].type=NM_TYPE_MENU; m[1].text = TXT_OK;
+	item = newmenu_do( NULL, "Enter Guide-bot name:", 2, m, NULL, NULL );
 
 	if (item != -1) {
 		strcpy(PlayerCfg.GuidebotName,text);

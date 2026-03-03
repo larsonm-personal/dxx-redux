@@ -1197,7 +1197,7 @@ static int manual_join_game_handler(newmenu *menu, d_event *event, direct_join *
 void net_udp_manual_join_game()
 {
 	direct_join *dj;
-	newmenu_item m[7];
+	newmenu_item m[8];
 	int nitems = 0;
 
 	CALLOC(dj, direct_join, 1);
@@ -1227,6 +1227,7 @@ void net_udp_manual_join_game()
 	m[nitems].type = NM_TYPE_TEXT;  m[nitems].text="MY PORT:";	                    	nitems++;
 	m[nitems].type = NM_TYPE_INPUT; m[nitems].text=UDP_MyPort; m[nitems].text_len=5;	nitems++;
 	m[nitems].type = NM_TYPE_TEXT;  m[nitems].text=blank;								nitems++;	// for connecting_txt
+	m[nitems].type = NM_TYPE_MENU;  m[nitems].text=TXT_OK;							nitems++;
 
 	newmenu_do1( NULL, "ENTER GAME ADDRESS", nitems, m, (int (*)(newmenu *, d_event *, void *))manual_join_game_handler, dj, 0 );
 }
@@ -4510,12 +4511,13 @@ void save_preset()
 {
 	static char name[PATH_MAX - 4];
 	char filename[PATH_MAX];
-	newmenu_item m[1];
+	newmenu_item m[2];
 	int menu_ret;
 	int len;
 
 	m[0].type=NM_TYPE_INPUT; m[0].text_len = sizeof(name) - 1; m[0].text = name;
-	menu_ret = newmenu_do( NULL, "Save preset as", 1, m, NULL, NULL );
+	m[1].type=NM_TYPE_MENU; m[1].text = TXT_OK;
+	menu_ret = newmenu_do( NULL, "Save preset as", 2, m, NULL, NULL );
 	if (menu_ret == -1)
 		return;
 
