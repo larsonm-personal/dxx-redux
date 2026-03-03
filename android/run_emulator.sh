@@ -1,7 +1,9 @@
 #!/bin/bash
 # run_emulator.sh — Build the APK, launch the emulator, install and run the app.
-# Usage:  bash run_emulator.sh          (build + launch + install)
-#         bash run_emulator.sh --no-build   (skip build, just launch + install)
+# Usage:  bash run_emulator.sh              (build + launch + install + push data)
+#         bash run_emulator.sh --no-build   (skip build, just launch + install + push data)
+#         bash run_emulator.sh --no-data    (skip game data push)
+#         bash run_emulator.sh --no-build --no-data
 set -e
 
 AVD_NAME="Pixel_6_API_34"
@@ -10,6 +12,16 @@ ACTIVITY="com.dxxredux.app.MainActivity"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ANDROID_DIR="$SCRIPT_DIR"
+
+# Parse args
+NO_BUILD=0
+NO_DATA=0
+for arg in "$@"; do
+    case "$arg" in
+        --no-build) NO_BUILD=1 ;;
+        --no-data)  NO_DATA=1  ;;
+    esac
+done
 
 # Source environment
 source "$ANDROID_DIR/set_vars.sh"
@@ -29,7 +41,7 @@ if [ ! -f "$EMULATOR" ] && [ ! -f "$EMULATOR.exe" ]; then
 fi
 
 # ── 1. Build APK ────────────────────────────────────────────
-if [ "$1" != "--no-build" ]; then
+if [ "$NO_BUILD" -eq 0 ]; then
     echo "=== Building APK ==="
     cd "$ANDROID_DIR"
     ./gradlew assembleDebug
@@ -82,14 +94,25 @@ echo ""
 echo "=== Installing APK ==="
 "$ADB" install -r "$APK"
 
-# ── 5. Launch the app ───────────────────────────────────────
+# ── 5. Push game data (if available) ────────────────────────
+if [ "$NO_DATA" -eq 0 ] && [ -f "$SCRIPT_DIR/push_game_data.sh" ]; then
+    REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+    if [ -d "$REPO_ROOT/game_data" ] && [ -n "$(ls "$REPO_ROOT/game_data" 2>/dev/null)" ]; then
+        echo ""
+        bash "$SCRIPT_DIR/push_game_data.sh"
+    else
+        echo ""
+        echo "(No game_data/ directory found — skipping game data push)"
+    fi
+fi
+
+# ── 6. Launch the app ───────────────────────────────────────
 echo ""
 echo "=== Launching $PACKAGE ==="
+"$ADB" shell am force-stop "$PACKAGE" 2>/dev/null || true
 "$ADB" shell am start -n "$PACKAGE/$ACTIVITY"
 
 echo ""
-echo "=== App launched. Check logcat for native library output: ==="
-echo "  $ADB logcat -s DXX-Redux:V ActivityManager:I AndroidRuntime:E"
+echo "=== App launched. Tailing logcat (Ctrl+C to stop): ==="
 echo ""
-echo "Quick logcat (10 seconds):"
-timeout 10 "$ADB" logcat -s "DXX-Redux:V" "AndroidRuntime:E" "DEBUG:V" 2>/dev/null || true
+"$ADB" logcat -s "DXX-Redux:V" "DXX-Init:V" "DXX-Surface:V" "DXX-Msgbox:V" "AndroidRuntime:E" "DEBUG:V" 2>/dev/null || true

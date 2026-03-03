@@ -171,8 +171,12 @@ add_subdirectory("${D2_SRC}" "${CMAKE_CURRENT_BINARY_DIR}/d2")
 target_link_libraries(d2x-redux PRIVATE android log)
 target_sources(d2x-redux PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/jni_main.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/android_surface.c
     ${D2_SRC}/arch/android/messagebox.c
 )
+# android_surface.h lives in d2/arch/include (already on arch_sdl's include
+# path); make sure it's also visible when compiling android_surface.c itself.
+target_include_directories(d2x-redux PRIVATE ${D2_SRC}/arch/include)
 
 # TODO: Replace the above with the real d1/d2 build by including the game
 # CMakeLists.txt and adjusting dependencies for Android (OpenGL ES, SDL2, etc.)

@@ -6,6 +6,7 @@
  */
 
 #include <jni.h>
+#include <stdlib.h>
 #include <android/log.h>
 #include <physfs.h>
 
@@ -27,6 +28,11 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 {
     LOGI("Starting D2X-Redux game engine...");
+
+    /* Tell SDL 1.2 to use the dummy video/audio drivers.
+     * The dummy video driver's Available() only returns 1 when this is set. */
+    setenv("SDL_VIDEODRIVER", "dummy", 1);
+    setenv("SDL_AUDIODRIVER", "dummy", 1);
 
     /*
      * PhysFS on Android expects argv[0] to be a pointer to a

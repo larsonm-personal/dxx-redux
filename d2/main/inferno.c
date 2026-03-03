@@ -421,25 +421,32 @@ int main(int argc, char *argv[])
 	con_printf(CON_VERBOSE, "Going into graphics mode...\n");
 	CHECKPOINT("calling gr_set_mode");
 	gr_set_mode(Game_screen_mode);
+	CHECKPOINT("gr_set_mode done");
 
 	// Load the palette stuff. Returns non-zero if error.
 	con_printf(CON_DEBUG, "Initializing palette system...\n" );
 	gr_use_palette_table(D2_DEFAULT_PALETTE );
+	CHECKPOINT("palette loaded");
 
 	con_printf(CON_DEBUG, "Initializing font system...\n" );
 	gamefont_init();	// must load after palette data loaded.
+	CHECKPOINT("fonts loaded");
 
 	set_default_handler(standard_handler);
 
 	con_printf( CON_DEBUG, "Initializing movie libraries...\n" );
 	init_movies();		//init movie libraries
+	CHECKPOINT("movies init done");
 
 	show_titles();
+	CHECKPOINT("titles shown");
 
 	set_screen_mode(SCREEN_MENU);
+	CHECKPOINT("screen mode set to menu");
 
 	con_printf( CON_DEBUG, "\nDoing gamedata_init..." );
 	gamedata_init();
+	CHECKPOINT("gamedata_init done");
 
 	#ifdef EDITOR
 	if (GameArg.EdiSaveHoardData) {
@@ -506,7 +513,9 @@ int main(int argc, char *argv[])
 #endif
 	{
 		Game_mode = GM_GAME_OVER;
+		CHECKPOINT("entering DoMenu");
 		DoMenu();
+		CHECKPOINT("DoMenu returned");
 	}
 
 	setjmp(LeaveEvents);

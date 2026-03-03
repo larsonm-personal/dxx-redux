@@ -18,6 +18,9 @@
 #include "gamefont.h"
 #include "args.h"
 #include "config.h"
+#ifdef ANDROID
+#include "android_surface.h"
+#endif
 
 int sdl_video_flags = SDL_SWSURFACE | SDL_HWPALETTE | SDL_DOUBLEBUF;
 SDL_Surface *screen,*canvas;
@@ -33,6 +36,9 @@ void gr_flip()
 
 	SDL_BlitSurface(canvas, &src, screen, &dest);
 	SDL_Flip(screen);
+#ifdef ANDROID
+	android_surface_blit(canvas);
+#endif
 }
 
 // Set the buffer to draw to. 0 is front, 1 is back
