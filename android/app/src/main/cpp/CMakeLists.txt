@@ -172,6 +172,7 @@ target_link_libraries(d2x-redux PRIVATE android log)
 target_sources(d2x-redux PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/jni_main.c
     ${CMAKE_CURRENT_SOURCE_DIR}/android_surface.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/android_input.c
     ${D2_SRC}/arch/android/messagebox.c
 )
 # android_surface.h lives in d2/arch/include (already on arch_sdl's include
