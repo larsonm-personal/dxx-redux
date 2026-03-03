@@ -1,0 +1,48 @@
+#!/bin/bash
+# get_emulator.sh — Install the Android emulator and an x86_64 system image via sdkmanager.
+# Installs: emulator, system-images;android-34;google_apis;x86_64
+set -e
+
+INSTALL_DIR="/c/local"
+[ ! -d "$INSTALL_DIR" ] && INSTALL_DIR="/mnt/c/local"
+[ ! -d "$INSTALL_DIR" ] && INSTALL_DIR="C:/local"
+
+SDK_DIR="$INSTALL_DIR/android-sdk"
+SDKMANAGER="$SDK_DIR/cmdline-tools/latest/bin/sdkmanager"
+
+# On Windows we need .bat
+if [ -f "$SDKMANAGER.bat" ]; then
+    SDKMANAGER="$SDKMANAGER.bat"
+elif [ ! -x "$SDKMANAGER" ]; then
+    echo "ERROR: sdkmanager not found. Run get_sdk.sh first."
+    exit 1
+fi
+
+# Need JAVA_HOME for sdkmanager
+if [ -z "$JAVA_HOME" ]; then
+    SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+    if [ -f "$SCRIPT_DIR/set_vars.sh" ]; then
+        source "$SCRIPT_DIR/set_vars.sh"
+    fi
+fi
+
+# Check if emulator is already installed
+if [ -f "$SDK_DIR/emulator/emulator.exe" ] || [ -x "$SDK_DIR/emulator/emulator" ]; then
+    echo "Emulator already installed."
+else
+    echo "Installing Android emulator..."
+    "$SDKMANAGER" "emulator"
+fi
+
+# Install the x86_64 system image (API 34 with Google APIs for Play Store compat)
+IMAGE="system-images;android-34;google_apis;x86_64"
+IMAGE_DIR="$SDK_DIR/system-images/android-34/google_apis/x86_64"
+
+if [ -d "$IMAGE_DIR" ]; then
+    echo "System image already installed: $IMAGE"
+else
+    echo "Installing system image: $IMAGE (~1.5 GB)..."
+    "$SDKMANAGER" "$IMAGE"
+fi
+
+echo "Emulator and system image ready."
