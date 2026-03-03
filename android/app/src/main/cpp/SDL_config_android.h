@@ -74,6 +74,7 @@
 #define HAVE_SEM_TIMEDWAIT      1
 
 /* ── backend selection ──────────────────────────────────────── */
+#define SDL_AUDIO_DRIVER_ANDROID        1
 #define SDL_AUDIO_DRIVER_DUMMY          1
 #define SDL_CDROM_DISABLED              1
 #define SDL_JOYSTICK_DISABLED           1

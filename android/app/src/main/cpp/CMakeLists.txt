@@ -34,6 +34,29 @@ configure_file(
     COPYONLY
 )
 
+# Patch SDL sources to register our Android OpenSL ES audio driver.
+# Inject the bootstrap extern declaration into SDL_sysaudio.h
+file(READ "${sdl12_SOURCE_DIR}/src/audio/SDL_sysaudio.h" _sysaudio_h)
+string(FIND "${_sysaudio_h}" "SDL_AUDIO_DRIVER_ANDROID" _android_found)
+if(_android_found EQUAL -1)
+    string(REPLACE
+        "#if SDL_AUDIO_DRIVER_DUMMY\nextern AudioBootStrap DUMMYAUD_bootstrap;"
+        "#if SDL_AUDIO_DRIVER_ANDROID\nextern AudioBootStrap ANDROIDAUD_bootstrap;\n#endif\n#if SDL_AUDIO_DRIVER_DUMMY\nextern AudioBootStrap DUMMYAUD_bootstrap;"
+        _sysaudio_h "${_sysaudio_h}")
+    file(WRITE "${sdl12_SOURCE_DIR}/src/audio/SDL_sysaudio.h" "${_sysaudio_h}")
+endif()
+
+# Inject our bootstrap entry into SDL_audio.c's bootstrap[] array
+file(READ "${sdl12_SOURCE_DIR}/src/audio/SDL_audio.c" _audio_c)
+string(FIND "${_audio_c}" "SDL_AUDIO_DRIVER_ANDROID" _android_found2)
+if(_android_found2 EQUAL -1)
+    string(REPLACE
+        "#if SDL_AUDIO_DRIVER_DUMMY\n\t&DUMMYAUD_bootstrap,"
+        "#if SDL_AUDIO_DRIVER_ANDROID\n\t&ANDROIDAUD_bootstrap,\n#endif\n#if SDL_AUDIO_DRIVER_DUMMY\n\t&DUMMYAUD_bootstrap,"
+        _audio_c "${_audio_c}")
+    file(WRITE "${sdl12_SOURCE_DIR}/src/audio/SDL_audio.c" "${_audio_c}")
+endif()
+
 set(SDL12_DIR ${sdl12_SOURCE_DIR})
 add_library(SDL12 STATIC
     # --- core ---
@@ -47,6 +70,8 @@ add_library(SDL12 STATIC
     ${SDL12_DIR}/src/audio/SDL_mixer.c
     ${SDL12_DIR}/src/audio/SDL_wave.c
     ${SDL12_DIR}/src/audio/dummy/SDL_dummyaudio.c
+    # --- Android OpenSL ES audio driver ---
+    ${CMAKE_CURRENT_SOURCE_DIR}/SDL_androidaudio.c
     # --- cdrom ---
     ${SDL12_DIR}/src/cdrom/SDL_cdrom.c
     ${SDL12_DIR}/src/cdrom/dummy/SDL_syscdrom.c
@@ -118,9 +143,10 @@ target_include_directories(SDL12
             ${SDL12_DIR}/src/file
             ${SDL12_DIR}/src/loadso
             ${SDL12_DIR}/src/loadso/dlopen
+            ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(SDL12 PRIVATE dl)
+target_link_libraries(SDL12 PRIVATE dl OpenSLES)
 target_compile_options(SDL12 PRIVATE -w)   # suppress all warnings for third-party code
 
 # ──────────────────────────────────────────────────────────────
