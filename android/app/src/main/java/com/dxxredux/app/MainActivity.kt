@@ -21,5 +21,10 @@ class MainActivity : Activity() {
         tv.text = helloFromNative()
         tv.textSize = 24f
         setContentView(tv)
+
+        // Launch engine init on a background thread so we can observe logcat
+        Thread {
+            startGame()
+        }.start()
     }
 }

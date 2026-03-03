@@ -70,3 +70,6 @@ local.properties
 *.apk
 *.aab
 .cxx*/
+
+# original game data for testing
+game_data/

@@ -37,6 +37,13 @@ char copyright[] = "DESCENT II  COPYRIGHT (C) 1994-1996 PARALLAX SOFTWARE CORPOR
 #include <sys/types.h>
 #endif
 
+#ifdef ANDROID
+#include <android/log.h>
+#define CHECKPOINT(msg) __android_log_print(ANDROID_LOG_INFO, "DXX-Init", "CHECKPOINT: " msg)
+#else
+#define CHECKPOINT(msg) ((void)0)
+#endif
+
 #include "pstypes.h"
 #include "strutil.h"
 #include "console.h"
@@ -316,11 +323,16 @@ jmp_buf LeaveEvents;
 
 int main(int argc, char *argv[])
 {
+	CHECKPOINT("main() entered");
 	mem_init();
+	CHECKPOINT("mem_init done");
 	error_init(msgbox_error);
 	set_warn_func(msgbox_warning);
+	CHECKPOINT("error_init done");
 	PHYSFSX_init(argc, argv);
+	CHECKPOINT("PHYSFSX_init done");
 	con_init();  // Initialise the console
+	CHECKPOINT("con_init done");
 
 	setbuf(stdout, NULL); // unbuffered output via printf
 #ifdef _WIN32
@@ -340,6 +352,8 @@ int main(int argc, char *argv[])
 	
 	if (!PHYSFSX_checkSupportedArchiveTypes())
 		return(0);
+
+	CHECKPOINT("searching for hog files");
 
 	if (! PHYSFSX_contfile_init("descent2.hog", 1) &&
 		! PHYSFSX_contfile_init("d2demo.hog", 1)) {
@@ -379,6 +393,7 @@ int main(int argc, char *argv[])
 		Error(DXX_MISSING_HOGFILE_ERROR_TEXT, path);
 	}
 
+	CHECKPOINT("hog files loaded");
 	load_text();
 
 	//print out the banner title
@@ -391,16 +406,20 @@ int main(int argc, char *argv[])
 		con_printf(CON_VERBOSE,"%s%s", TXT_VERBOSE_1, "\n");
 	
 	ReadConfigFile();
+	CHECKPOINT("config read");
 
 	PHYSFSX_addArchiveContent();
 
+	CHECKPOINT("calling arch_init");
 	arch_init();
+	CHECKPOINT("arch_init done");
 
 	select_tmap(GameArg.DbgTexMap);
 
 	Lighting_on = 1;
 
 	con_printf(CON_VERBOSE, "Going into graphics mode...\n");
+	CHECKPOINT("calling gr_set_mode");
 	gr_set_mode(Game_screen_mode);
 
 	// Load the palette stuff. Returns non-zero if error.

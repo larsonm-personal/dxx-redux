@@ -39,6 +39,25 @@ void PHYSFSX_init(int argc, char *argv[])
 	
 	PHYSFS_init(argv[0]);
 	PHYSFS_permitSymbolicLinks(1);
+
+#ifdef ANDROID
+	/* Android: argv[0] was a PHYSFS_AndroidInit struct, not a string.
+	 * PhysFS already resolved the APK path and internal storage dir via JNI.
+	 * Set up search paths and write dir, then return — skip the unix/mac
+	 * logic below (which assumes argv[0] is a string and tries ~/.d2x-redux). */
+	{
+		const char *pref = PHYSFS_getPrefDir("com.dxxredux", "d2x-redux");
+		if (pref)
+		{
+			PHYSFS_setWriteDir(pref);
+			PHYSFS_addToSearchPath(pref, 1);
+		}
+		PHYSFS_addToSearchPath(PHYSFS_getBaseDir(), 1);
+		PHYSFSX_addRelToSearchPath("data", 1);
+	}
+	return;
+#endif
+
 	base_dir = strdup(PHYSFS_getBaseDir());
 	
 #ifdef __unix__
