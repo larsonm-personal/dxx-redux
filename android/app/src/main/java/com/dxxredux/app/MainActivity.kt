@@ -28,8 +28,6 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     external fun nativeKeyEvent(action: Int, androidKeyCode: Int, unicodeChar: Int)
 
     private var gameStarted = false
-    private var surfaceW = 1
-    private var surfaceH = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +40,12 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         sv.isFocusable = true
         sv.isFocusableInTouchMode = true
         sv.requestFocus()
+
+        // Handle touch on the SurfaceView so coordinates are view-relative
+        sv.setOnTouchListener { view, event ->
+            handleTouch(view, event)
+        }
+
         setContentView(sv)
     }
 
@@ -59,8 +63,6 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     }
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
-        surfaceW = width
-        surfaceH = height
         nativeSetSurface(holder.surface)
     }
 
@@ -69,39 +71,21 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     }
 
     // ── Touch → Mouse ───────────────────────────────────────
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        // Map touch coordinates from SurfaceView pixels to 640×480 canvas.
-        // Letterbox: fit 4:3 canvas inside the surface, centred.
-        val surfaceAspect = surfaceW.toFloat() / surfaceH.toFloat()
-        val gameAspect    = GAME_W.toFloat() / GAME_H.toFloat()
+    private fun handleTouch(view: android.view.View, event: MotionEvent): Boolean {
+        // The engine renders 640×480 into ANativeWindow which the compositor
+        // stretches to fill the entire SurfaceView.  Map proportionally.
+        val viewW = view.width.toFloat()
+        val viewH = view.height.toFloat()
+        if (viewW <= 0f || viewH <= 0f) return false
 
-        val drawW: Float
-        val drawH: Float
-        val offsetX: Float
-        val offsetY: Float
-
-        if (surfaceAspect > gameAspect) {
-            // Surface is wider than 4:3 → pillarbox
-            drawH = surfaceH.toFloat()
-            drawW = drawH * gameAspect
-            offsetX = (surfaceW - drawW) / 2f
-            offsetY = 0f
-        } else {
-            // Surface is taller than 4:3 → letterbox
-            drawW = surfaceW.toFloat()
-            drawH = drawW / gameAspect
-            offsetX = 0f
-            offsetY = (surfaceH - drawH) / 2f
-        }
-
-        val gameX = ((event.x - offsetX) / drawW * GAME_W).toInt().coerceIn(0, GAME_W - 1)
-        val gameY = ((event.y - offsetY) / drawH * GAME_H).toInt().coerceIn(0, GAME_H - 1)
+        val gameX = (event.x / viewW * GAME_W).toInt().coerceIn(0, GAME_W - 1)
+        val gameY = (event.y / viewH * GAME_H).toInt().coerceIn(0, GAME_H - 1)
 
         val action = when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> 0
             MotionEvent.ACTION_MOVE -> 1
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> 2
-            else -> return super.onTouchEvent(event)
+            else -> return false
         }
 
         nativeTouchEvent(action, gameX, gameY)
