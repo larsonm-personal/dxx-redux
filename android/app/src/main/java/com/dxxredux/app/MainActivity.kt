@@ -8,11 +8,12 @@ class MainActivity : Activity() {
 
     companion object {
         init {
-            System.loadLibrary("dxx-redux")
+            System.loadLibrary("d2x-redux")
         }
     }
 
     external fun helloFromNative(): String
+    external fun startGame()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

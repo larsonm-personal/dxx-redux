@@ -24,7 +24,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <assert.h>
 
 #ifdef __GNUC__
+#ifndef __noreturn
 #define __noreturn __attribute__ ((noreturn))
+#endif
 #define __attribute_gcc_format(X) __attribute__ ((format X))
 #else
 #define __noreturn

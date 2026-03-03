@@ -1,4 +1,4 @@
-add_executable (d2x-redux
+set(D2X_MAIN_SOURCES
     ai.c
     ai2.c
     aipath.c
@@ -69,7 +69,13 @@ add_executable (d2x-redux
     weapon.c
     )
 
-include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/arch/include)
+if(ANDROID)
+    add_library(d2x-redux SHARED ${D2X_MAIN_SOURCES})
+else()
+    add_executable(d2x-redux ${D2X_MAIN_SOURCES})
+endif()
+
+include_directories(../include ../arch/include)
 
 target_compile_definitions(d2x-redux PUBLIC
     DXX_VERSION_MAJORi=${PROJECT_VERSION_MAJOR}
