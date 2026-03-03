@@ -251,4 +251,53 @@ Java_com_dxxredux_app_MainActivity_nativeKeyEvent(JNIEnv *env, jobject thiz,
              action == 0 ? "DOWN" : "UP", androidKeyCode, sym, unicodeChar);
 }
 
+/* ── Lifecycle ──────────────────────────────────────────────
+ *
+ * Called when the Activity goes to background (onStop).
+ * Injects an Escape key press so the engine opens its pause/game menu —
+ * but ONLY when the game window is at the front (live gameplay).
+ *
+ * If a menu / dialog is already on top of the game window, injecting
+ * Escape would *close* it (toggle behaviour) and unpause the game,
+ * which is the opposite of what we want.  So we skip the injection
+ * in that case — the game is already effectively paused because a
+ * menu is modal over it.
+ */
+
+/* Engine symbols we read (but never modify) from the UI thread. */
+#include "game.h"            /* Game_wind */
+#include "window.h"          /* window_get_front() */
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeOnPause(JNIEnv *env, jobject thiz)
+{
+    /* Are we in live gameplay with no menu on top? */
+    if (!Game_wind || Game_wind != window_get_front()) {
+        LOGI("nativeOnPause — game not at front, skipping Escape injection");
+        return;
+    }
+
+    LOGI("nativeOnPause — injecting Escape key");
+
+    SDL_Event ev;
+    memset(&ev, 0, sizeof(ev));
+
+    /* Key-down */
+    ev.type            = SDL_KEYDOWN;
+    ev.key.state       = SDL_PRESSED;
+    ev.key.keysym.sym  = SDLK_ESCAPE;
+    ev.key.keysym.mod  = KMOD_NONE;
+    ev.key.keysym.unicode = 0;
+    SDL_PushEvent(&ev);
+
+    /* Key-up */
+    memset(&ev, 0, sizeof(ev));
+    ev.type            = SDL_KEYUP;
+    ev.key.state       = SDL_RELEASED;
+    ev.key.keysym.sym  = SDLK_ESCAPE;
+    ev.key.keysym.mod  = KMOD_NONE;
+    ev.key.keysym.unicode = 0;
+    SDL_PushEvent(&ev);
+}
+
 #endif /* ANDROID */

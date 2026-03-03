@@ -13,6 +13,7 @@
 - don't run builds until 100 errors (the msbuild default). stop around 10 (`/errorlimit:10`). later errors are often useless anyway
 
 ## automated testing
+- place automated test files (like .pngs) into either the system temp dir (like C:/temp) or "temp" within this repo
 - when testing with the android emulator, the game will initially load to the main menu. hitting enter opens the "new game" menu and hitting enter again goes to the briefing
 - the briefing screens can be skipped by hitting enter about 15 times. then the first level will load and the ship will be ready to move and show "score: 0" in the upper right. it's not possible to get stuck in the briefing screen after hitting enter enough times
 - at this point the in-game menu can be accessed with "back"/escape

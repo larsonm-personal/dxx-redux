@@ -13,6 +13,7 @@
 #include <android/native_window_jni.h>
 #include <android/log.h>
 #include <string.h>
+#include <pthread.h>
 #include <SDL.h>
 
 #define LOG_TAG "DXX-Surface"
@@ -22,6 +23,7 @@
 /* ── Global state ───────────────────────────────────────────── */
 static ANativeWindow *g_native_window = NULL;
 static int g_surface_ready = 0;
+static pthread_mutex_t g_surface_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Current palette in ARGB8888, rebuilt whenever SDL_SetColors is called
  * or gr_palette_load runs.  We rebuild it lazily from the canvas palette
@@ -36,6 +38,8 @@ static int g_palette_dirty = 1;
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetSurface(JNIEnv *env, jobject thiz, jobject surface)
 {
+    pthread_mutex_lock(&g_surface_mutex);
+
     if (g_native_window) {
         ANativeWindow_release(g_native_window);
         g_native_window = NULL;
@@ -56,6 +60,8 @@ Java_com_dxxredux_app_MainActivity_nativeSetSurface(JNIEnv *env, jobject thiz, j
         g_surface_ready = 0;
         LOGI("Surface destroyed");
     }
+
+    pthread_mutex_unlock(&g_surface_mutex);
 }
 
 /* ── Called from gr_flip() in arch/sdl/gr.c ─────────────────── */
@@ -64,8 +70,12 @@ static int g_blit_count = 0;
 
 void android_surface_blit(SDL_Surface *canvas)
 {
-    if (!g_surface_ready || !g_native_window || !canvas)
+    pthread_mutex_lock(&g_surface_mutex);
+
+    if (!g_surface_ready || !g_native_window || !canvas) {
+        pthread_mutex_unlock(&g_surface_mutex);
         return;
+    }
 
     /* Rebuild palette LUT from the SDL canvas palette */
     SDL_Palette *pal = canvas->format->palette;
@@ -87,6 +97,7 @@ void android_surface_blit(SDL_Surface *canvas)
 
     ANativeWindow_Buffer buf;
     if (ANativeWindow_lock(g_native_window, &buf, NULL) != 0) {
+        pthread_mutex_unlock(&g_surface_mutex);
         return;  /* lock failed — surface may be transitioning */
     }
 
@@ -113,17 +124,21 @@ void android_surface_blit(SDL_Surface *canvas)
              g_blit_count, src_w, src_h, buf.width, buf.height,
              g_palette_argb[1]);
     }
+
+    pthread_mutex_unlock(&g_surface_mutex);
 }
 
 /* ── Cleanup ────────────────────────────────────────────────── */
 
 void android_surface_cleanup(void)
 {
+    pthread_mutex_lock(&g_surface_mutex);
     if (g_native_window) {
         ANativeWindow_release(g_native_window);
         g_native_window = NULL;
     }
     g_surface_ready = 0;
+    pthread_mutex_unlock(&g_surface_mutex);
 }
 
 #endif /* ANDROID */

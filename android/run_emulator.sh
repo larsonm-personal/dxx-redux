@@ -115,4 +115,4 @@ echo "=== Launching $PACKAGE ==="
 echo ""
 echo "=== App launched. Tailing logcat (Ctrl+C to stop): ==="
 echo ""
-"$ADB" logcat -s "DXX-Redux:V" "DXX-Init:V" "DXX-Surface:V" "DXX-Msgbox:V" "AndroidRuntime:E" "DEBUG:V" 2>/dev/null || true
+"$ADB" logcat -s "DXX-Redux:V" "DXX-Init:V" "DXX-Surface:V" "DXX-Input:V" "DXX-Msgbox:V" "AndroidRuntime:E" "DEBUG:V" 2>/dev/null || true

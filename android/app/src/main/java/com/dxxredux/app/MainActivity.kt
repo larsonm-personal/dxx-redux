@@ -26,6 +26,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     external fun nativeSetSurface(surface: Surface?)
     external fun nativeTouchEvent(action: Int, gameX: Int, gameY: Int)
     external fun nativeKeyEvent(action: Int, androidKeyCode: Int, unicodeChar: Int)
+    external fun nativeOnPause()
 
     private var gameStarted = false
 
@@ -68,6 +69,16 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
         nativeSetSurface(null)
+    }
+
+    // ── Lifecycle ────────────────────────────────────────────
+    override fun onStop() {
+        super.onStop()
+        // Inject Escape so the engine opens its pause / game menu.
+        // This pauses a single-player game while the app is in the background.
+        if (gameStarted) {
+            nativeOnPause()
+        }
     }
 
     // ── Touch → Mouse ───────────────────────────────────────

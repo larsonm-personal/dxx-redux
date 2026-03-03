@@ -203,7 +203,12 @@ target_sources(d2x-redux PRIVATE
 )
 # android_surface.h lives in d2/arch/include (already on arch_sdl's include
 # path); make sure it's also visible when compiling android_surface.c itself.
-target_include_directories(d2x-redux PRIVATE ${D2_SRC}/arch/include)
+# game.h (for Game_wind) lives in d2/main and pulls in headers from d2/include.
+target_include_directories(d2x-redux PRIVATE
+    ${D2_SRC}/arch/include
+    ${D2_SRC}/main
+    ${D2_SRC}/include
+)
 
 # TODO: Replace the above with the real d1/d2 build by including the game
 # CMakeLists.txt and adjusting dependencies for Android (OpenGL ES, SDL2, etc.)
