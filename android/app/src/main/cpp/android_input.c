@@ -53,7 +53,9 @@ Java_com_dxxredux_app_MainActivity_nativeTouchEvent(JNIEnv *env, jobject thiz,
         g_last_touch_y = gameY;
         g_touch_active = 1;
 
-        /* Send a motion event to position the cursor first */
+        /* Send a motion event to position the cursor.
+         * On Android, mouse_motion_handler() uses absolute x/y when
+         * xrel==0 && yrel==0 (see mouse.c). */
         ev.type = SDL_MOUSEMOTION;
         ev.motion.x      = (Uint16)gameX;
         ev.motion.y      = (Uint16)gameY;
@@ -77,16 +79,16 @@ Java_com_dxxredux_app_MainActivity_nativeTouchEvent(JNIEnv *env, jobject thiz,
 
     case 1: /* ACTION_MOVE */ {
         if (!g_touch_active) break;
-        int dx = gameX - g_last_touch_x;
-        int dy = gameY - g_last_touch_y;
         g_last_touch_x = gameX;
         g_last_touch_y = gameY;
 
+        /* Send motion with xrel=0, yrel=0 so mouse_motion_handler uses
+         * absolute x/y positioning (Android path). */
         ev.type = SDL_MOUSEMOTION;
         ev.motion.x      = (Uint16)gameX;
         ev.motion.y      = (Uint16)gameY;
-        ev.motion.xrel    = (Sint16)dx;
-        ev.motion.yrel    = (Sint16)dy;
+        ev.motion.xrel    = 0;
+        ev.motion.yrel    = 0;
         ev.motion.state   = SDL_BUTTON(SDL_BUTTON_LEFT);
         SDL_PushEvent(&ev);
         break;
