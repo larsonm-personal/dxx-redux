@@ -1,11 +1,13 @@
 /*
- * android_input.c — Inject Android touch & key events into SDL 1.2's event queue.
+ * android_input.c — Inject Android touch, key & joystick events into SDL 1.2's event queue.
  *
  * Touch events are converted to SDL_MOUSEMOTION / SDL_MOUSEBUTTONDOWN / UP.
  * Key events are converted to SDL_KEYDOWN / SDL_KEYUP.
+ * Joystick events are converted to SDL_JOYAXISMOTION / SDL_JOYBUTTONDOWN / UP.
  *
  * All injection uses SDL_PushEvent() so the existing event_poll() → key_handler()
- * / mouse_button_handler() / mouse_motion_handler() pipeline works unchanged.
+ * / mouse_button_handler() / mouse_motion_handler() / joy_*_handler() pipeline
+ * works unchanged.
  */
 
 #ifdef ANDROID
@@ -342,6 +344,71 @@ Java_com_dxxredux_app_MainActivity_nativeTextInput(JNIEnv *env, jobject thiz,
     ev.key.keysym.mod      = KMOD_NONE;
     ev.key.keysym.unicode  = 0;
     SDL_PushEvent(&ev);
+}
+
+/* ── Joystick (Android gamepad) ─────────────────────────────
+ *
+ * The Kotlin side detects a gamepad via InputDevice.SOURCE_JOYSTICK and
+ * forwards axis / button events here.  We inject the matching SDL 1.2
+ * joystick events, which event_poll() dispatches to joy_axis_handler()
+ * and joy_button_handler() in arch/sdl/joy.c.
+ *
+ * joy_init() registers a virtual joystick (index 0) on Android so the
+ * axis_map / button_map lookups work correctly.
+ *
+ * Axis IDs (matches Android → virtual joystick registration order):
+ *   0 = left stick X   1 = left stick Y
+ *   2 = right stick X  3 = right stick Y
+ *   4 = L trigger       5 = R trigger
+ *
+ * Button IDs: 0=A 1=B 2=X 3=Y 4=L1 5=R1 6=Select 7=Start 8=L3 9=R3
+ */
+
+static int g_joy_axis_count = 0; /* debug counter */
+
+/*
+ * nativeJoystickAxis(axis, value)
+ *   axis:  axis index 0-5
+ *   value: -1.0 .. 1.0 (Android MotionEvent range)
+ */
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeJoystickAxis(JNIEnv *env, jobject thiz,
+                                                       jint axis, jfloat value)
+{
+    SDL_Event ev;
+    memset(&ev, 0, sizeof(ev));
+
+    ev.type        = SDL_JOYAXISMOTION;
+    ev.jaxis.which = 0;           /* virtual joystick 0 */
+    ev.jaxis.axis  = (Uint8)axis;
+    ev.jaxis.value = (Sint16)(value * 32767.0f);
+
+    SDL_PushEvent(&ev);
+
+    if (++g_joy_axis_count <= 5)
+        LOGI("joystick axis %d = %.3f (sdl %d)", axis, value, ev.jaxis.value);
+}
+
+/*
+ * nativeJoystickButton(button, pressed)
+ *   button:  button index 0-9
+ *   pressed: 1 = down, 0 = up
+ */
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeJoystickButton(JNIEnv *env, jobject thiz,
+                                                         jint button, jint pressed)
+{
+    SDL_Event ev;
+    memset(&ev, 0, sizeof(ev));
+
+    ev.type          = pressed ? SDL_JOYBUTTONDOWN : SDL_JOYBUTTONUP;
+    ev.jbutton.which = 0;
+    ev.jbutton.button = (Uint8)button;
+    ev.jbutton.state  = pressed ? SDL_PRESSED : SDL_RELEASED;
+
+    SDL_PushEvent(&ev);
+
+    LOGI("joystick button %d %s", button, pressed ? "DOWN" : "UP");
 }
 
 /* ── C→Java keyboard callbacks ──────────────────────────────

@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.util.Log
+import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.Surface
@@ -45,6 +46,8 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     external fun nativeGetGameState(): String
     external fun nativeRequestIntrospect()
     external fun nativeSetIntrospectPath(path: String)
+    external fun nativeJoystickAxis(axis: Int, value: Float)
+    external fun nativeJoystickButton(button: Int, pressed: Int)
 
     private var gameStarted = false
     private lateinit var gameSurfaceView: GameSurfaceView
@@ -205,7 +208,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         return true
     }
 
-    // ── Keyboard ────────────────────────────────────────────
+    // ── Keyboard & Gamepad buttons ────────────────────────────
 
     /** Open the setup screen (game pauses automatically via onStop). */
     private fun openSetupScreen() {
@@ -214,10 +217,32 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         startActivity(intent)
     }
 
+    /** Map Android gamepad KEYCODE_BUTTON_* to virtual joystick button index (0-9). */
+    private fun gamepadButtonIndex(keyCode: Int): Int = when (keyCode) {
+        KeyEvent.KEYCODE_BUTTON_A      -> 0
+        KeyEvent.KEYCODE_BUTTON_B      -> 1
+        KeyEvent.KEYCODE_BUTTON_X      -> 2
+        KeyEvent.KEYCODE_BUTTON_Y      -> 3
+        KeyEvent.KEYCODE_BUTTON_L1     -> 4
+        KeyEvent.KEYCODE_BUTTON_R1     -> 5
+        KeyEvent.KEYCODE_BUTTON_SELECT -> 6
+        KeyEvent.KEYCODE_BUTTON_START  -> 7
+        KeyEvent.KEYCODE_BUTTON_THUMBL -> 8
+        KeyEvent.KEYCODE_BUTTON_THUMBR -> 9
+        else -> -1
+    }
+
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         // Let the system handle volume keys
         if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
             return super.onKeyDown(keyCode, event)
+
+        // Gamepad face / shoulder buttons → joystick button events
+        val joyBtn = gamepadButtonIndex(keyCode)
+        if (joyBtn >= 0) {
+            nativeJoystickButton(joyBtn, 1)
+            return true
+        }
 
         nativeKeyEvent(0, keyCode, event.unicodeChar)
         return true
@@ -227,8 +252,30 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
             return super.onKeyUp(keyCode, event)
 
+        val joyBtn = gamepadButtonIndex(keyCode)
+        if (joyBtn >= 0) {
+            nativeJoystickButton(joyBtn, 0)
+            return true
+        }
+
         nativeKeyEvent(1, keyCode, 0)
         return true
+    }
+
+    // ── Gamepad analog axes ─────────────────────────────────
+    override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+        if (event.source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
+            && event.action == MotionEvent.ACTION_MOVE
+        ) {
+            nativeJoystickAxis(0, event.getAxisValue(MotionEvent.AXIS_X))
+            nativeJoystickAxis(1, event.getAxisValue(MotionEvent.AXIS_Y))
+            nativeJoystickAxis(2, event.getAxisValue(MotionEvent.AXIS_Z))
+            nativeJoystickAxis(3, event.getAxisValue(MotionEvent.AXIS_RZ))
+            nativeJoystickAxis(4, event.getAxisValue(MotionEvent.AXIS_LTRIGGER))
+            nativeJoystickAxis(5, event.getAxisValue(MotionEvent.AXIS_RTRIGGER))
+            return true
+        }
+        return super.onGenericMotionEvent(event)
     }
 
     // ── Soft keyboard show/hide (called from JNI) ───────────

@@ -287,12 +287,50 @@ void joy_init()
 		con_printf(CON_NORMAL, "sdl-joystick: %d buttons (total)\n", Joystick.n_buttons);
 	}
 
+
+#ifdef ANDROID
+	/* No physical joysticks found — register a virtual Android gamepad.
+	 * The Kotlin layer maps MotionEvent / KeyEvent → SDL joystick events
+	 * via SDL_PushEvent.  6 axes, 10 buttons, no hats (D-pad is keyboard). */
+	if (num_joysticks == 0) {
+		static const char *axis_names[] = {"LX","LY","RX","RY","LT","RT"};
+		static const char *btn_names[]  = {"A","B","X","Y","L1","R1","Sel","Sta","L3","R3"};
+
+		SDL_Joysticks[0].handle   = NULL;
+		SDL_Joysticks[0].n_axes   = 6;
+		SDL_Joysticks[0].n_buttons= 10;
+		SDL_Joysticks[0].n_hats   = 0;
+
+		for (j = 0; j < 6; j++) {
+			sprintf(temp, "J1 %s", axis_names[j]);
+			joyaxis_text[Joystick.n_axes] = d_strdup(temp);
+			SDL_Joysticks[0].axis_map[j] = Joystick.n_axes++;
+		}
+		for (j = 0; j < 10; j++) {
+			sprintf(temp, "J1 %s", btn_names[j]);
+			joybutton_text[Joystick.n_buttons] = d_strdup(temp);
+			SDL_Joysticks[0].button_map[j] = Joystick.n_buttons++;
+		}
+		for (j = 0; j < 6; j++) {
+			SDL_Joysticks[0].axis_button_map[j] = Joystick.n_buttons;
+			sprintf(temp, "J1 -%s", axis_names[j]);
+			joybutton_text[Joystick.n_buttons++] = d_strdup(temp);
+			sprintf(temp, "J1 +%s", axis_names[j]);
+			joybutton_text[Joystick.n_buttons++] = d_strdup(temp);
+		}
+
+		num_joysticks = 1;
+		con_printf(CON_NORMAL, "android-joystick: registered virtual gamepad (6 axes, 10+12 buttons)\n");
+	}
+#endif
+
 	joy_num_axes = Joystick.n_axes;
 }
 
 void joy_close()
 {
-	SDL_JoystickClose(SDL_Joysticks[num_joysticks].handle);
+	if (SDL_Joysticks[num_joysticks].handle)
+		SDL_JoystickClose(SDL_Joysticks[num_joysticks].handle);
 
 	while (Joystick.n_axes--)
 		d_free(joyaxis_text[Joystick.n_axes]);

@@ -7,6 +7,9 @@ import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.InputDevice
+import android.view.KeyEvent
+import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
@@ -14,6 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -58,6 +62,63 @@ class SetupActivity : ComponentActivity() {
 
     /** Active download progress visible to introspection. */
     internal val downloadStates = mutableMapOf<String, Int>()
+
+    // ── Controller live-state ───────────────────────────────────────────
+    /** Axis values observable by Compose (LX, LY, RX, RY, LT, RT). */
+    internal val controllerAxes = FloatArray(6)
+    /** Compose-observable axis update counter (increment triggers recompose). */
+    internal val axisGeneration = mutableIntStateOf(0)
+    /** Currently pressed gamepad buttons (name strings). */
+    internal val pressedButtons = mutableStateListOf<String>()
+
+    override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
+        if (event.source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
+            && event.action == MotionEvent.ACTION_MOVE
+        ) {
+            controllerAxes[0] = event.getAxisValue(MotionEvent.AXIS_X)
+            controllerAxes[1] = event.getAxisValue(MotionEvent.AXIS_Y)
+            controllerAxes[2] = event.getAxisValue(MotionEvent.AXIS_Z)
+            controllerAxes[3] = event.getAxisValue(MotionEvent.AXIS_RZ)
+            controllerAxes[4] = event.getAxisValue(MotionEvent.AXIS_LTRIGGER)
+            controllerAxes[5] = event.getAxisValue(MotionEvent.AXIS_RTRIGGER)
+            axisGeneration.intValue++
+            return true
+        }
+        return super.dispatchGenericMotionEvent(event)
+    }
+
+    private fun gamepadButtonName(keyCode: Int): String? = when (keyCode) {
+        KeyEvent.KEYCODE_BUTTON_A      -> "A"
+        KeyEvent.KEYCODE_BUTTON_B      -> "B"
+        KeyEvent.KEYCODE_BUTTON_X      -> "X"
+        KeyEvent.KEYCODE_BUTTON_Y      -> "Y"
+        KeyEvent.KEYCODE_BUTTON_L1     -> "L1"
+        KeyEvent.KEYCODE_BUTTON_R1     -> "R1"
+        KeyEvent.KEYCODE_BUTTON_L2     -> "L2"
+        KeyEvent.KEYCODE_BUTTON_R2     -> "R2"
+        KeyEvent.KEYCODE_BUTTON_SELECT -> "Select"
+        KeyEvent.KEYCODE_BUTTON_START  -> "Start"
+        KeyEvent.KEYCODE_BUTTON_THUMBL -> "L3"
+        KeyEvent.KEYCODE_BUTTON_THUMBR -> "R3"
+        KeyEvent.KEYCODE_DPAD_UP       -> "D-Up"
+        KeyEvent.KEYCODE_DPAD_DOWN     -> "D-Down"
+        KeyEvent.KEYCODE_DPAD_LEFT     -> "D-Left"
+        KeyEvent.KEYCODE_DPAD_RIGHT    -> "D-Right"
+        else -> null
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        val name = gamepadButtonName(event.keyCode)
+        if (name != null) {
+            if (event.action == KeyEvent.ACTION_DOWN) {
+                if (name !in pressedButtons) pressedButtons.add(name)
+            } else if (event.action == KeyEvent.ACTION_UP) {
+                pressedButtons.remove(name)
+            }
+            return true
+        }
+        return super.dispatchKeyEvent(event)
+    }
 
     private fun writeIntrospectJson() {
         try {
@@ -145,6 +206,9 @@ class SetupActivity : ComponentActivity() {
                 filesDir = filesDir,
                 gameRunning = gameRunning,
                 refreshTrigger = refreshTrigger.intValue,
+                controllerAxes = controllerAxes,
+                axisGeneration = axisGeneration.intValue,
+                pressedButtons = pressedButtons,
                 onLaunchGame = {
                     if (gameRunning) {
                         finish()   // return to the already-running game
@@ -260,6 +324,9 @@ private fun SetupScreen(
     filesDir: File,
     gameRunning: Boolean,
     refreshTrigger: Int,
+    controllerAxes: FloatArray,
+    axisGeneration: Int,
+    pressedButtons: SnapshotStateList<String>,
     onLaunchGame: () -> Unit,
     onRefresh: () -> Unit,
     onDownloadStateChanged: (String, Int) -> Unit = { _, _ -> }
@@ -376,6 +443,15 @@ private fun SetupScreen(
                         }
                     }
                     } // end if (d1Expanded)
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // ── Controller section ──────────────────
+                    ControllerSection(
+                        axes = controllerAxes,
+                        axisGeneration = axisGeneration,
+                        pressedButtons = pressedButtons
+                    )
                 }
 
                 // ── Launch / Return button ──────────────────
@@ -436,7 +512,7 @@ private fun GameSectionHeader(
             modifier = Modifier.height(28.dp)
         ) {
             Text(
-                text = if (expanded) "Collapse" else "Expand",
+                text = if (expanded) "Hide Files" else "Show Files",
                 fontSize = 12.sp
             )
         }
@@ -456,6 +532,114 @@ private fun SectionHeader(title: String) {
         color = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.padding(bottom = 4.dp, top = 2.dp)
     )
+}
+
+@Composable
+private fun ControllerSection(
+    axes: FloatArray,
+    axisGeneration: Int,
+    pressedButtons: SnapshotStateList<String>
+) {
+    // Detect connected gamepads
+    val gamepads = remember(axisGeneration) {
+        InputDevice.getDeviceIds().toList()
+            .mapNotNull { InputDevice.getDevice(it) }
+            .filter { d ->
+                val src = d.sources
+                src and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
+                src and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
+            }
+    }
+
+    val hasController = gamepads.isNotEmpty()
+    var expanded by remember { mutableStateOf(false) }
+
+    // ── Header ──
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Controller",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = if (hasController) "\u2713 ${gamepads.first().name}"
+                   else "\u2717 Not detected",
+            color = if (hasController) Color(0xFF4CAF50) else Color(0xFFF44336),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+        if (hasController) {
+            Spacer(modifier = Modifier.width(8.dp))
+            TextButton(
+                onClick = { expanded = !expanded },
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                modifier = Modifier.height(28.dp)
+            ) {
+                Text(
+                    text = if (expanded) "Hide" else "Test",
+                    fontSize = 12.sp
+                )
+            }
+        }
+    }
+    HorizontalDivider(
+        color = MaterialTheme.colorScheme.outlineVariant,
+        modifier = Modifier.padding(bottom = 4.dp)
+    )
+
+    if (expanded && hasController) {
+        // Read axes from the array (axisGeneration triggers recomposition)
+        @Suppress("UNUSED_EXPRESSION") axisGeneration
+        val lx = axes[0]; val ly = axes[1]
+        val rx = axes[2]; val ry = axes[3]
+        val lt = axes[4]; val rt = axes[5]
+
+        val axisColor = MaterialTheme.colorScheme.onSurfaceVariant
+        val labelColor = MaterialTheme.colorScheme.onSurface
+
+        Text("Analog Sticks", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+            color = labelColor, modifier = Modifier.padding(bottom = 2.dp))
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Left Stick", fontSize = 12.sp, color = labelColor)
+                Text("  X: ${"%.2f".format(lx)}", fontSize = 12.sp, color = axisColor)
+                Text("  Y: ${"%.2f".format(ly)}", fontSize = 12.sp, color = axisColor)
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Right Stick", fontSize = 12.sp, color = labelColor)
+                Text("  X: ${"%.2f".format(rx)}", fontSize = 12.sp, color = axisColor)
+                Text("  Y: ${"%.2f".format(ry)}", fontSize = 12.sp, color = axisColor)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+        Text("Triggers", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+            color = labelColor, modifier = Modifier.padding(bottom = 2.dp))
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Text("  L: ${"%.2f".format(lt)}", fontSize = 12.sp, color = axisColor,
+                modifier = Modifier.weight(1f))
+            Text("  R: ${"%.2f".format(rt)}", fontSize = 12.sp, color = axisColor,
+                modifier = Modifier.weight(1f))
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+        Text("Buttons", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+            color = labelColor, modifier = Modifier.padding(bottom = 2.dp))
+        Text(
+            text = if (pressedButtons.isEmpty()) "  (none pressed)"
+                   else "  " + pressedButtons.joinToString(", "),
+            fontSize = 12.sp,
+            color = if (pressedButtons.isEmpty()) axisColor else Color(0xFF4CAF50)
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+    }
 }
 
 @Composable
