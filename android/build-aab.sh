@@ -25,7 +25,9 @@ source "$SCRIPT_DIR/set_vars.sh"
 
 TASK="bundle$(echo "$VARIANT" | sed 's/.*/\u&/')"
 
+VERSION_CODE=$(git rev-list --count HEAD)
 echo ""
+echo "versionCode: $VERSION_CODE (git commits)"
 echo "Building AAB ($VARIANT) for armeabi-v7a, arm64-v8a, x86_64..."
 echo ""
 ./gradlew "$TASK"
@@ -43,7 +45,7 @@ OUT_DIR="build-outputs"
 mkdir -p "$OUT_DIR"
 
 TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
-OUT_NAME="dxx-redux-${VARIANT}-${TIMESTAMP}.aab"
+OUT_NAME="dxx-redux-${VARIANT}-${TIMESTAMP}-v${VERSION_CODE}.aab"
 OUT_PATH="$OUT_DIR/$OUT_NAME"
 
 cp "$AAB" "$OUT_PATH"

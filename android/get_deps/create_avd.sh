@@ -61,3 +61,8 @@ fi
 
 echo "AVD '$AVD_NAME' created."
 echo "Launch with: run_emulator.sh"
+if [ -z "$GET_ALL_RUNNING" ]; then
+    echo ""
+    echo "Press any key to exit..."
+    read -r -n1 -s
+fi

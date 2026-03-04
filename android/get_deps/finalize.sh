@@ -1,7 +1,10 @@
 #!/bin/bash
 # finalize.sh — Accept Android SDK licenses and install required platform packages.
-# Run get_sdk.sh first.
+# Reads versions from tool_versions.conf. Run get_sdk.sh first.
 set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/tool_versions.conf"
 
 INSTALL_DIR="/c/local"
 [ ! -d "$INSTALL_DIR" ] && INSTALL_DIR="/mnt/c/local"
@@ -30,6 +33,11 @@ echo "Accepting SDK licenses..."
 yes | "$SDKMANAGER" --licenses 2>/dev/null || true
 
 echo "Installing platform packages..."
-"$SDKMANAGER" "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+"$SDKMANAGER" "platforms;android-$COMPILE_SDK" "build-tools;$BUILD_TOOLS_VERSION" "platform-tools"
 
 echo "Done. SDK is ready."
+if [ -z "$GET_ALL_RUNNING" ]; then
+    echo ""
+    echo "Press any key to exit..."
+    read -r -n1 -s
+fi

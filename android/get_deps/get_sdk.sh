@@ -1,7 +1,11 @@
 #!/bin/bash
 # get_sdk.sh — Download and install Android SDK command-line tools to C:/local/android-sdk if not present.
+# Reads URL from tool_versions.conf.
 # After running this, run finalize.sh to accept licenses and install platform packages.
 set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/tool_versions.conf"
 
 INSTALL_DIR="/c/local"
 [ ! -d "$INSTALL_DIR" ] && INSTALL_DIR="/mnt/c/local"
@@ -14,8 +18,7 @@ if [ -x "$DEST/cmdline-tools/latest/bin/sdkmanager" ] || [ -f "$DEST/cmdline-too
     exit 0
 fi
 
-# Google's latest command-line tools (Windows)
-URL="https://dl.google.com/android/repository/commandlinetools-win-11076708_latest.zip"
+URL="$SDK_CMDLINE_TOOLS_URL"
 TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" sdk-XXXXXX.zip)"
 
 echo "Downloading Android SDK command-line tools..."
@@ -36,3 +39,8 @@ fi
 rm -f "$TMPFILE"
 echo "Android SDK command-line tools installed at $DEST"
 echo "Run finalize.sh next to accept licenses and install platform packages."
+if [ -z "$GET_ALL_RUNNING" ]; then
+    echo ""
+    echo "Press any key to exit..."
+    read -r -n1 -s
+fi

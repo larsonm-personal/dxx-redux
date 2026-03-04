@@ -2,7 +2,15 @@
 # get_all.sh — One-shot: download JDK, SDK, NDK, emulator, then finalize and create AVD.
 set -e
 
+wait_for_key() {
+    echo ""
+    echo "Press any key to exit..."
+    read -r -n1 -s
+}
+trap wait_for_key EXIT
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+export GET_ALL_RUNNING=1   # tell sub-scripts to skip their own wait-for-key
 
 echo "=== Step 1/6: JDK ==="
 bash "$SCRIPT_DIR/get_jdk.sh"

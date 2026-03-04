@@ -1,8 +1,16 @@
 pluginManagement {
+    // Load tool versions from central config
+    def toolVersions = new Properties()
+    toolVersions.load(new FileInputStream(new File(rootDir, "get_deps/tool_versions.conf")))
+
     repositories {
         google()
         mavenCentral()
         gradlePluginPortal()
+    }
+    plugins {
+        id 'com.android.application' version toolVersions['AGP_VERSION']
+        id 'org.jetbrains.kotlin.plugin.compose' version toolVersions['KOTLIN_VERSION']
     }
 }
 dependencyResolutionManagement {

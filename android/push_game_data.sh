@@ -60,3 +60,6 @@ echo "=== Files in app storage ==="
 "$ADB" shell "run-as $PACKAGE ls -la $DEST/" 2>&1
 echo ""
 echo "Done."
+echo ""
+echo "Press any key to exit..."
+read -r -n1 -s

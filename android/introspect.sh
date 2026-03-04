@@ -113,3 +113,6 @@ case "${1:-}" in
         pretty_print "$JSON"
         ;;
 esac
+echo ""
+echo "Press any key to exit..."
+read -r -n1 -s

@@ -1,7 +1,11 @@
 plugins {
     id 'com.android.application'
-    id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.plugin.compose'
 }
+
+// Load tool versions from central config
+def toolVersions = new Properties()
+toolVersions.load(new FileInputStream(rootProject.file("get_deps/tool_versions.conf")))
 
 // Load keystore.properties if it exists (for release signing)
 def keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -10,11 +14,28 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
+// Derive versionCode from git commit count
+def gitVersionCode = {
+    try {
+        def proc = ['git', 'rev-list', '--count', 'HEAD'].execute(null, rootProject.projectDir.parentFile)
+        proc.waitFor()
+        def result = proc.text.trim()
+        if (result && result.isInteger()) {
+            return result.toInteger()
+        }
+        logger.warn("git rev-list output was not an integer: '${result}', stderr: '${proc.err.text}'")
+        return 1
+    } catch (Exception e) {
+        logger.warn("Could not get git commit count (${e.message}), using versionCode=1")
+        return 1
+    }
+}()
+
 android {
     namespace 'com.dxxredux.app'
-    compileSdk 35
-    ndkVersion '27.3.13750724'
-    ndkPath System.getenv('ANDROID_NDK_ROOT') ?: 'C:/local/android-ndk-r27d'
+    compileSdk toolVersions['COMPILE_SDK'].toInteger()
+    ndkVersion toolVersions['NDK_FULL_VERSION']
+    ndkPath System.getenv('ANDROID_NDK_ROOT') ?: "C:/local/android-ndk-${toolVersions['NDK_VERSION']}"
 
     if (keystorePropertiesFile.exists()) {
         signingConfigs {
@@ -29,9 +50,9 @@ android {
 
     defaultConfig {
         applicationId "com.dxxredux.app"
-        minSdk 21
-        targetSdk 35
-        versionCode 1
+        minSdk toolVersions['MIN_SDK'].toInteger()
+        targetSdk toolVersions['TARGET_SDK'].toInteger()
+        versionCode gitVersionCode
         versionName "1.1"
 
         ndk {
@@ -65,24 +86,18 @@ android {
         compose true
         buildConfig true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion '1.5.10'
-    }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = '11'
-    }
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.12.0'
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.activity:activity-compose:1.8.2'
-    implementation platform('androidx.compose:compose-bom:2024.02.00')
+    implementation "androidx.core:core-ktx:${toolVersions['CORE_KTX_VERSION']}"
+    implementation "androidx.appcompat:appcompat:${toolVersions['APPCOMPAT_VERSION']}"
+    implementation "androidx.activity:activity-compose:${toolVersions['ACTIVITY_COMPOSE_VERSION']}"
+    implementation platform("androidx.compose:compose-bom:${toolVersions['COMPOSE_BOM_VERSION']}")
     implementation 'androidx.compose.material3:material3'
     implementation 'androidx.compose.ui:ui'
 }

@@ -30,7 +30,9 @@ try {
     }
     $task = "bundle$variant"
 
+    $versionCode = (git rev-list --count HEAD).Trim()
     Write-Host ""
+    Write-Host "versionCode: $versionCode (git commits)"
     Write-Host "Building AAB ($variant) for armeabi-v7a, arm64-v8a, x86_64..."
     Write-Host ""
     & .\gradlew.bat $task
@@ -47,7 +49,7 @@ try {
     if (-not (Test-Path $outDir)) { New-Item -ItemType Directory -Path $outDir | Out-Null }
 
     $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    $outName = "dxx-redux-$variantLower-$timestamp.aab"
+    $outName = "dxx-redux-$variantLower-$timestamp-v$versionCode.aab"
     $outPath = Join-Path $outDir $outName
 
     Copy-Item $aab.FullName $outPath

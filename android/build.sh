@@ -17,3 +17,6 @@ shift 2>/dev/null || true
 
 echo "Running: ./gradlew $TASK $*"
 ./gradlew "$TASK" "$@"
+echo ""
+echo "Press any key to exit..."
+read -r -n1 -s

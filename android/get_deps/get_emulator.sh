@@ -1,7 +1,10 @@
 #!/bin/bash
 # get_emulator.sh — Install the Android emulator and an x86_64 system image via sdkmanager.
-# Installs: emulator, system-images;android-34;google_apis;x86_64
+# Reads API level from tool_versions.conf.
 set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/tool_versions.conf"
 
 INSTALL_DIR="/c/local"
 [ ! -d "$INSTALL_DIR" ] && INSTALL_DIR="/mnt/c/local"
@@ -34,9 +37,9 @@ else
     "$SDKMANAGER" "emulator"
 fi
 
-# Install the x86_64 system image (API 34 with Google APIs for Play Store compat)
-IMAGE="system-images;android-34;google_apis;x86_64"
-IMAGE_DIR="$SDK_DIR/system-images/android-34/google_apis/x86_64"
+# Install the x86_64 system image
+IMAGE="system-images;android-$EMULATOR_API_LEVEL;google_apis;x86_64"
+IMAGE_DIR="$SDK_DIR/system-images/android-$EMULATOR_API_LEVEL/google_apis/x86_64"
 
 if [ -d "$IMAGE_DIR" ]; then
     echo "System image already installed: $IMAGE"
@@ -46,3 +49,8 @@ else
 fi
 
 echo "Emulator and system image ready."
+if [ -z "$GET_ALL_RUNNING" ]; then
+    echo ""
+    echo "Press any key to exit..."
+    read -r -n1 -s
+fi
