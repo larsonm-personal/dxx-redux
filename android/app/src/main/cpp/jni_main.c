@@ -77,6 +77,22 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 
     (*env)->DeleteGlobalRef(env, g_activity);
     g_activity = NULL;
+
+    /*
+     * Kill the process so the next launch starts with clean native state.
+     * SDL, PhysFS, and engine statics all assume a single init/deinit
+     * cycle per process; re-entering main() without a process restart
+     * causes "Audio device is already opened" / graphics init failures.
+     *
+     * The activity manager preserves the task stack, so SetupActivity
+     * will be recreated in a fresh process automatically.
+     */
+    LOGI("Killing process for clean restart...");
+    jclass processCls = (*env)->FindClass(env, "android/os/Process");
+    jmethodID myPid   = (*env)->GetStaticMethodID(env, processCls, "myPid", "()I");
+    jmethodID killProc = (*env)->GetStaticMethodID(env, processCls, "killProcess", "(I)V");
+    jint pid = (*env)->CallStaticIntMethod(env, processCls, myPid);
+    (*env)->CallStaticVoidMethod(env, processCls, killProc, pid);
 }
 
 JNIEXPORT void JNICALL
