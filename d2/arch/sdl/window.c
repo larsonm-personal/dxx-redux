@@ -220,3 +220,15 @@ int window_is_modal(window *wind)
 {
 	return wind->w_modal;
 }
+
+#ifdef INTROSPECT_ON
+void *window_get_data(window *wind)
+{
+	return wind->data;
+}
+
+int (*window_get_callback(window *wind))(window *, d_event *, void *)
+{
+	return wind->w_callback;
+}
+#endif

@@ -49,7 +49,8 @@ class SetupActivity : ComponentActivity() {
                         finish()   // return to the already-running game
                     } else {
                         startActivity(Intent(this, MainActivity::class.java))
-                        finish()
+                        // Don't finish() — stay in back stack so quitting
+                        // the game returns here instead of the launcher.
                     }
                 }
             )

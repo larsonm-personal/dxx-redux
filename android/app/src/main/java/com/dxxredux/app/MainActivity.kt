@@ -1,12 +1,15 @@
 package com.dxxredux.app
 
 import android.app.Activity
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
+import android.util.Log
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.Surface
@@ -38,6 +41,10 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     external fun nativeKeyEvent(action: Int, androidKeyCode: Int, unicodeChar: Int)
     external fun nativeTextInput(unicodeChar: Int)
     external fun nativeOnPause()
+    external fun nativeQuit()
+    external fun nativeGetGameState(): String
+    external fun nativeRequestIntrospect()
+    external fun nativeSetIntrospectPath(path: String)
 
     private var gameStarted = false
     private lateinit var gameSurfaceView: GameSurfaceView
@@ -105,6 +112,41 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         if (gameStarted) {
             nativeOnPause()
         }
+    }
+
+    // ── Introspection (debug builds only) ────────────────────
+    // Trigger a game state dump to a file readable via adb:
+    //   adb shell am broadcast -a com.dxxredux.INTROSPECT -n com.dxxredux.app/.MainActivity
+    //   adb shell run-as com.dxxredux.app cat files/introspect.json
+    private val introspectReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (!gameStarted) return
+            nativeRequestIntrospect()
+            Log.i("DXX-Introspect", "Introspection requested — will dump on next frame")
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (BuildConfig.DEBUG) {
+            // Set the file path for introspection dumps
+            nativeSetIntrospectPath(filesDir.absolutePath + "/introspect.json")
+
+            val filter = IntentFilter("com.dxxredux.INTROSPECT")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(introspectReceiver, filter, RECEIVER_EXPORTED)
+            } else {
+                @Suppress("UnspecifiedRegisterReceiverFlag")
+                registerReceiver(introspectReceiver, filter)
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        if (BuildConfig.DEBUG) {
+            try { unregisterReceiver(introspectReceiver) } catch (_: Exception) {}
+        }
+        super.onDestroy()
     }
 
     // ── Touch → Mouse ───────────────────────────────────────

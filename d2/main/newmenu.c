@@ -545,6 +545,18 @@ void newmenu_set_rval(newmenu *menu, int rval)
 	*menu->rval = rval;
 }
 
+#ifdef INTROSPECT_ON
+const char *newmenu_get_title(newmenu *menu)
+{
+	return menu->title;
+}
+
+const char *newmenu_get_subtitle(newmenu *menu)
+{
+	return menu->subtitle;
+}
+#endif
+
 void newmenu_scroll(newmenu *menu, int amount)
 {
 	int i = 0, first = 0, last = 0;
@@ -1749,6 +1761,13 @@ window *listbox_get_window(listbox *lb)
 {
 	return lb->wind;
 }
+
+#ifdef INTROSPECT_ON
+const char *listbox_get_title(listbox *lb)
+{
+	return lb->title;
+}
+#endif
 
 void listbox_delete_item(listbox *lb, int item)
 {

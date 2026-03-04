@@ -9,6 +9,10 @@
 #include <stdlib.h>
 #include <android/log.h>
 #include <physfs.h>
+#include <SDL.h>
+#ifdef INTROSPECT_ON
+#include "game_introspect.h"
+#endif
 
 #define LOG_TAG "DXX-Redux"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO,  LOG_TAG, __VA_ARGS__)
@@ -60,4 +64,57 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 
     char *argv[] = { (char *)&androidInit, NULL };
     main(1, argv);
+
+    /* Engine has exited (user quit or fatal error).
+     * Call Activity.finish() so the activity closes instead of freezing
+     * on the last rendered frame. */
+    LOGI("Game engine exited, finishing activity...");
+    jclass cls = (*env)->GetObjectClass(env, g_activity);
+    jmethodID mid = (*env)->GetMethodID(env, cls, "finish", "()V");
+    if (mid) {
+        (*env)->CallVoidMethod(env, g_activity, mid);
+    }
+
+    (*env)->DeleteGlobalRef(env, g_activity);
+    g_activity = NULL;
 }
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeQuit(JNIEnv *env, jobject thiz)
+{
+    LOGI("nativeQuit: pushing SDL_QUIT event");
+    SDL_Event ev;
+    ev.type = SDL_QUIT;
+    SDL_PushEvent(&ev);
+}
+
+#ifdef INTROSPECT_ON
+/* ── Introspection: return current game state as a JSON string ────── */
+JNIEXPORT jstring JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetGameState(JNIEnv *env, jobject thiz)
+{
+    char *json = game_introspect_get_state();
+    if (!json) {
+        return (*env)->NewStringUTF(env, "{\"error\": \"introspection not enabled\"}");
+    }
+    jstring result = (*env)->NewStringUTF(env, json);
+    free(json);
+    return result;
+}
+
+/* ── Introspection: request a dump to the pre-configured file path ── */
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeRequestIntrospect(JNIEnv *env, jobject thiz)
+{
+    game_introspect_request();
+}
+
+/* ── Introspection: set the file path for dumps ──────────────────── */
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetIntrospectPath(JNIEnv *env, jobject thiz, jstring jpath)
+{
+    const char *path = (*env)->GetStringUTFChars(env, jpath, NULL);
+    game_introspect_set_path(path);
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+}
+#endif /* INTROSPECT_ON */

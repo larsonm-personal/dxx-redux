@@ -112,6 +112,10 @@ int newmenu_get_nitems(newmenu *menu);
 int newmenu_get_citem(newmenu *menu);
 struct window *newmenu_get_window(newmenu *menu);
 void newmenu_set_rval(newmenu *menu, int rval);
+#ifdef INTROSPECT_ON
+const char *newmenu_get_title(newmenu *menu);
+const char *newmenu_get_subtitle(newmenu *menu);
+#endif
 void nm_draw_background(int x1, int y1, int x2, int y2);
 void nm_restore_background(int x, int y, int w, int h);
 
@@ -142,6 +146,9 @@ extern char **listbox_get_items(listbox *lb);
 extern int listbox_get_nitems(listbox *lb);
 extern int listbox_get_citem(listbox *lb);
 struct window *listbox_get_window(listbox *lb);
+#ifdef INTROSPECT_ON
+extern const char *listbox_get_title(listbox *lb);
+#endif
 extern void listbox_delete_item(listbox *lb, int item);
 
 extern listbox *newmenu_listbox(char *title, int nitems, char *items[], int allow_abort_flag, int (*listbox_callback)(listbox *lb, d_event *event, void *userdata), void *userdata);
@@ -156,18 +163,18 @@ extern void newmenu_free_background();
 
 #define NEWMENU_MOUSE
 
-// #define NORMAL_CHECK_BOX    "Å"
-// #define CHECKED_CHECK_BOX   "Ç"
+// #define NORMAL_CHECK_BOX    "ÔøΩ"
+// #define CHECKED_CHECK_BOX   "ÔøΩ"
 // 
 // #define NORMAL_RADIO_BOX    ""
-// #define CHECKED_RADIO_BOX   "Ä"
+// #define CHECKED_RADIO_BOX   "ÔøΩ"
 // #define CURSOR_STRING       "_"
-// #define SLIDER_LEFT         "É"  // 131
-// #define SLIDER_RIGHT        "Ñ"  // 132
-// #define SLIDER_MIDDLE       "Ö"  // 133
-// #define SLIDER_MARKER       "Ü"  // 134
-// #define UP_ARROW_MARKER     "á"  // 135
-// #define DOWN_ARROW_MARKER   "à"  // 136
+// #define SLIDER_LEFT         "ÔøΩ"  // 131
+// #define SLIDER_RIGHT        "ÔøΩ"  // 132
+// #define SLIDER_MIDDLE       "ÔøΩ"  // 133
+// #define SLIDER_MARKER       "ÔøΩ"  // 134
+// #define UP_ARROW_MARKER     "ÔøΩ"  // 135
+// #define DOWN_ARROW_MARKER   "ÔøΩ"  // 136
 #define NORMAL_CHECK_BOX    "\201"
 #define CHECKED_CHECK_BOX   "\202"
 

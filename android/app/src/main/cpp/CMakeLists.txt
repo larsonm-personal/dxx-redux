@@ -200,6 +200,7 @@ target_sources(d2x-redux PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/android_surface.c
     ${CMAKE_CURRENT_SOURCE_DIR}/android_input.c
     ${D2_SRC}/arch/android/messagebox.c
+    ${D2_SRC}/introspect/game_introspect.c
 )
 # android_surface.h lives in d2/arch/include (already on arch_sdl's include
 # path); make sure it's also visible when compiling android_surface.c itself.
@@ -208,7 +209,15 @@ target_include_directories(d2x-redux PRIVATE
     ${D2_SRC}/arch/include
     ${D2_SRC}/main
     ${D2_SRC}/include
+    ${D2_SRC}/introspect
 )
+
+# Enable introspection API (AI-assisted testing, debug Android builds only).
+# The Kotlin layer gates adb access behind BuildConfig.DEBUG.
+# Must also be set on arch_sdl since window.c and event.c live there.
+target_compile_definitions(d2x-redux PRIVATE INTROSPECT_ON)
+target_compile_definitions(arch_sdl PRIVATE INTROSPECT_ON)
+target_include_directories(arch_sdl PRIVATE ${D2_SRC}/introspect)
 
 # TODO: Replace the above with the real d1/d2 build by including the game
 # CMakeLists.txt and adjusting dependencies for Android (OpenGL ES, SDL2, etc.)

@@ -71,5 +71,7 @@ local.properties
 *.aab
 .cxx*/
 
+temp/
+
 # original game data for testing
 game_data/
