@@ -98,17 +98,24 @@ private fun checkFiles(dir: File, fileList: List<GameFileInfo>): List<FileStatus
 // ── File definitions ────────────────────────────────────────────────────────
 
 private val GAME_FILES = listOf(
-    // Required (registered OR demo)
-    GameFileInfo("descent2.hog", "Main game data (registered)",
+    // Required – core engine files (game won't start without these)
+    GameFileInfo("descent2.hog", "Main game data",
         required = true, alternatives = listOf("d2demo.hog")),
-    GameFileInfo("groupa.pig", "Textures (registered)",
-        required = true, alternatives = listOf("d2demo.pig")),
-    GameFileInfo("descent2.ham", "Models & objects (registered)",
+    GameFileInfo("descent2.ham", "Models & objects",
         required = true, alternatives = listOf("d2demo.ham")),
-
-    // Optional
+    GameFileInfo("groupa.pig", "Main textures",
+        required = true, alternatives = listOf("d2demo.pig")),
     GameFileInfo("descent2.s22", "Sound effects (22 kHz)",
-        required = false, alternatives = listOf("descent2.s11")),
+        required = true, alternatives = listOf("descent2.s11")),
+
+    // Required – level texture packs (levels crash without these)
+    GameFileInfo("alien1.pig", "Alien 1 level textures", required = true),
+    GameFileInfo("alien2.pig", "Alien 2 level textures", required = true),
+    GameFileInfo("fire.pig", "Fire level textures", required = true),
+    GameFileInfo("ice.pig", "Ice level textures", required = true),
+    GameFileInfo("water.pig", "Water level textures", required = true),
+
+    // Optional – movies & extras
     GameFileInfo("intro-h.mvl", "Intro movie",
         required = false, alternatives = listOf("intro-l.mvl")),
     GameFileInfo("other-h.mvl", "Cutscene movies",
@@ -116,8 +123,6 @@ private val GAME_FILES = listOf(
     GameFileInfo("robots-h.mvl", "Robot movies",
         required = false, alternatives = listOf("robots-l.mvl")),
     GameFileInfo("d2x.hog", "Vertigo expansion", required = false),
-    GameFileInfo("descent.hog", "Descent 1 levels", required = false),
-    GameFileInfo("descent.pig", "Descent 1 textures", required = false),
     GameFileInfo("hoard.ham", "Hoard multiplayer mode", required = false),
 )
 
@@ -146,11 +151,17 @@ private fun SetupScreen(
                 // ── Title ───────────────────────────────────
                 Text(
                     text = "DXX-Redux Setup",
-                    fontSize = 24.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
+
+                // ── Missing-files help (above the list) ─────
+                if (requiredMissing) {
+                    MissingFilesHelp()
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
 
                 // ── Scrollable file list ────────────────────
                 Column(
@@ -163,16 +174,11 @@ private fun SetupScreen(
                         FileStatusRow(it)
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     SectionHeader("Optional Files")
                     statuses.filter { !it.info.required }.forEach {
                         FileStatusRow(it)
-                    }
-
-                    if (requiredMissing) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        MissingFilesHelp()
                     }
                 }
 
@@ -205,10 +211,10 @@ private fun SetupScreen(
 private fun SectionHeader(title: String) {
     Text(
         text = title,
-        fontSize = 18.sp,
+        fontSize = 15.sp,
         fontWeight = FontWeight.SemiBold,
         color = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.padding(bottom = 8.dp)
+        modifier = Modifier.padding(bottom = 4.dp, top = 2.dp)
     )
 }
 
@@ -217,37 +223,31 @@ private fun FileStatusRow(status: FileStatus) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 1.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Status indicator
+        // Compact status indicator
         Text(
             text = if (status.found) "\u2713" else "\u2717",     // ✓ / ✗
             color = if (status.found) Color(0xFF4CAF50) else Color(0xFFF44336),
-            fontSize = 18.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.width(32.dp)
+            modifier = Modifier.width(20.dp)
         )
 
-        // File name + description
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = status.foundName ?: status.info.filename,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 15.sp
-            )
-            val desc = buildString {
-                append(status.info.description)
-                if (!status.found && status.info.alternatives.isNotEmpty()) {
-                    append(" (or ${status.info.alternatives.joinToString(", ")})")
-                }
-            }
-            Text(
-                text = desc,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 12.sp
-            )
-        }
+        // Single-line: filename — description
+        val name = status.foundName ?: status.info.filename
+        val altHint = if (!status.found && status.info.alternatives.isNotEmpty())
+            " (or ${status.info.alternatives.joinToString(", ")})"
+        else ""
+        Text(
+            text = "$name \u2014 ${status.info.description}$altHint",
+            color = if (status.found) MaterialTheme.colorScheme.onSurface
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 13.sp,
+            maxLines = 1,
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 
@@ -259,24 +259,21 @@ private fun MissingFilesHelp() {
             containerColor = MaterialTheme.colorScheme.errorContainer
         )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(12.dp)) {
             Text(
                 text = "Missing Required Files",
                 fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onErrorContainer
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "To play Descent 2, you need the game data files from " +
-                        "the original game (available on Steam or GOG).\n\n" +
-                        "Copy the required files to the app\u2019s data directory:\n\n" +
-                        "  adb push <file> /data/data/com.dxxredux.app/files/\n\n" +
-                        "You need either the registered version files " +
-                        "(descent2.hog, groupa.pig, descent2.ham) or the demo " +
-                        "files (d2demo.hog, d2demo.pig, d2demo.ham).\n\n" +
-                        "Note: file names are case-sensitive on Android.",
+                text = "Copy game data files (from Steam/GOG) to the app:\n" +
+                        "  adb push <file> /data/data/com.dxxredux.app/files/\n" +
+                        "File names must be lowercase on Android.",
                 color = MaterialTheme.colorScheme.onErrorContainer,
-                fontSize = 14.sp
+                fontSize = 12.sp,
+                lineHeight = 16.sp
             )
         }
     }
