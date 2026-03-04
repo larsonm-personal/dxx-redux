@@ -2,6 +2,9 @@ package com.dxxredux.app
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
+import android.graphics.Rect
+import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.view.KeyEvent
@@ -39,6 +42,11 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     private var gameStarted = false
     private lateinit var gameSurfaceView: GameSurfaceView
 
+    // ── Edge-swipe state (swipe from left edge → open setup screen) ─────
+    private var edgeSwipeTracking = false
+    private var edgeSwipeStartX = 0f
+    private var edgeSwipeStartY = 0f
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -57,6 +65,15 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         }
 
         setContentView(gameSurfaceView)
+
+        // Prevent the system back-gesture from consuming left-edge swipes;
+        // we use them to open the setup screen.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            gameSurfaceView.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
+                val edgePx = (20 * resources.displayMetrics.density).toInt()
+                v.systemGestureExclusionRects = listOf(Rect(0, 0, edgePx, v.height))
+            }
+        }
     }
 
     // ── SurfaceHolder.Callback ──────────────────────────────
@@ -92,6 +109,40 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
 
     // ── Touch → Mouse ───────────────────────────────────────
     private fun handleTouch(view: View, event: MotionEvent): Boolean {
+        val density = resources.displayMetrics.density
+        val edgeThresholdPx = 20 * density   // 20 dp from left edge
+        val swipeMinPx      = 80 * density   // minimum 80 dp horizontal drag
+
+        // ── Edge-swipe detection ────────────────────────────
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                if (event.x < edgeThresholdPx) {
+                    edgeSwipeTracking = true
+                    edgeSwipeStartX = event.x
+                    edgeSwipeStartY = event.y
+                    return true           // consume – don't forward to game
+                }
+                edgeSwipeTracking = false
+            }
+            MotionEvent.ACTION_MOVE -> {
+                if (edgeSwipeTracking) return true
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                if (edgeSwipeTracking) {
+                    edgeSwipeTracking = false
+                    if (event.actionMasked == MotionEvent.ACTION_UP) {
+                        val dx = event.x - edgeSwipeStartX
+                        val dy = kotlin.math.abs(event.y - edgeSwipeStartY)
+                        if (dx > swipeMinPx && dy < dx) {
+                            openSetupScreen()
+                        }
+                    }
+                    return true
+                }
+            }
+        }
+
+        // ── Normal game touch handling ──────────────────────
         // The engine renders 640×480 into ANativeWindow which the compositor
         // stretches to fill the entire SurfaceView.  Map proportionally.
         val viewW = view.width.toFloat()
@@ -113,6 +164,14 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     }
 
     // ── Keyboard ────────────────────────────────────────────
+
+    /** Open the setup screen (game pauses automatically via onStop). */
+    private fun openSetupScreen() {
+        val intent = Intent(this, SetupActivity::class.java)
+        intent.putExtra("gameRunning", true)
+        startActivity(intent)
+    }
+
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         // Let the system handle volume keys
         if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)

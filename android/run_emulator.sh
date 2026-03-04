@@ -8,7 +8,7 @@ set -e
 
 AVD_NAME="Pixel_6_API_34"
 PACKAGE="com.dxxredux.app"
-ACTIVITY="com.dxxredux.app.MainActivity"
+ACTIVITY="com.dxxredux.app.SetupActivity"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ANDROID_DIR="$SCRIPT_DIR"
@@ -93,6 +93,46 @@ echo "Device booted."
 echo ""
 echo "=== Installing APK ==="
 "$ADB" install -r "$APK"
+
+# ── 4b. Add home screen icon (emulator only) ────────────────
+# The Pixel Launcher on API 34 doesn't auto-pin new apps to the home screen.
+# Use root to insert an icon into the launcher's database.
+LAUNCHER_DIR="/data/data/com.google.android.apps.nexuslauncher/databases"
+ICON_INTENT="#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;launchFlags=0x10200000;component=${PACKAGE}/.SetupActivity;end"
+
+if "$ADB" root >/dev/null 2>&1; then
+    sleep 1
+    # Find the launcher database (name depends on grid size)
+    LAUNCHER_DB=$("$ADB" shell "ls ${LAUNCHER_DIR}/launcher*.db 2>/dev/null | head -1" | tr -d '\r\n')
+    if [ -n "$LAUNCHER_DB" ]; then
+        # Write SQL to a temp file to avoid shell quoting issues with parentheses
+        TMPSQL="/data/local/tmp/_launcher_icon.sql"
+        "$ADB" shell "echo \"SELECT COUNT(*) FROM favorites WHERE intent LIKE '%${PACKAGE}%';\" > $TMPSQL"
+        EXISTING=$("$ADB" shell "sqlite3 '$LAUNCHER_DB' < $TMPSQL" 2>/dev/null | tr -d '\r\n')
+
+        if [ "$EXISTING" = "0" ] || [ -z "$EXISTING" ]; then
+            "$ADB" shell "echo 'SELECT COALESCE(MAX(_id),0) FROM favorites;' > $TMPSQL"
+            MAX_ID=$("$ADB" shell "sqlite3 '$LAUNCHER_DB' < $TMPSQL" 2>/dev/null | tr -d '\r\n')
+            NEXT_ID=$(( MAX_ID + 1 ))
+
+            "$ADB" shell "echo \"INSERT INTO favorites (_id, title, intent, container, screen, cellX, cellY, spanX, spanY, itemType, profileId) VALUES ($NEXT_ID, 'DXX-Redux', '$ICON_INTENT', -100, 0, 0, 3, 1, 1, 0, 0);\" > $TMPSQL"
+            "$ADB" shell "sqlite3 '$LAUNCHER_DB' < $TMPSQL" 2>/dev/null
+            "$ADB" shell "rm -f $TMPSQL" 2>/dev/null
+
+            echo "Home screen icon added."
+            "$ADB" shell am force-stop com.google.android.apps.nexuslauncher 2>/dev/null || true
+            sleep 2
+        else
+            "$ADB" shell "rm -f $TMPSQL" 2>/dev/null
+            echo "Home screen icon already present."
+        fi
+    else
+        echo "(Launcher database not found — skipping home screen icon)"
+    fi
+    "$ADB" unroot >/dev/null 2>&1 && sleep 1
+else
+    echo "(Root not available — skipping home screen icon. App is in the app drawer.)"
+fi
 
 # ── 5. Push game data (if available) ────────────────────────
 if [ "$NO_DATA" -eq 0 ] && [ -f "$SCRIPT_DIR/push_game_data.sh" ]; then
