@@ -301,36 +301,52 @@ private fun SetupScreen(
                 }
 
                 // ── Scrollable file list ────────────────────
+                var d2Expanded by remember { mutableStateOf(false) }
+                var d1Expanded by remember { mutableStateOf(false) }
+
                 Column(
                     modifier = Modifier
                         .weight(1f)
                         .verticalScroll(rememberScrollState())
                 ) {
                     // ── Descent 2 section ───────────────────
-                    GameSectionHeader("Descent 2", d2RequiredOk)
+                    GameSectionHeader(
+                        title = "Descent 2",
+                        ready = d2RequiredOk,
+                        expanded = d2Expanded,
+                        onToggle = { d2Expanded = !d2Expanded }
+                    )
 
-                    SectionHeader("Required Files")
-                    d2Statuses.filter { it.info.required }.forEach {
-                        FileStatusRow(it)
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    SectionHeader("Optional Files")
-                    d2Statuses.filter { !it.info.required }.forEach {
-                        FileStatusRow(it)
+                    if (d2Expanded) {
+                        SectionHeader("Required Files")
+                        d2Statuses.filter { it.info.required }.forEach {
+                            FileStatusRow(it)
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        SectionHeader("Optional Files")
+                        d2Statuses.filter { !it.info.required }.forEach {
+                            FileStatusRow(it)
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // ── Descent 1 section ───────────────────
-                    GameSectionHeader("Descent 1", d1RequiredOk)
+                    GameSectionHeader(
+                        title = "Descent 1",
+                        ready = d1RequiredOk,
+                        expanded = d1Expanded,
+                        onToggle = { d1Expanded = !d1Expanded }
+                    )
 
-                    SectionHeader("Required Files")
-                    d1Statuses.filter { it.info.required }.forEach {
-                        FileStatusRow(it)
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    SectionHeader("Optional Files")
-                    d1Statuses.filter { !it.info.required }.forEach { status ->
+                    if (d1Expanded) {
+                        SectionHeader("Required Files")
+                        d1Statuses.filter { it.info.required }.forEach {
+                            FileStatusRow(it)
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        SectionHeader("Optional Files")
+                        d1Statuses.filter { !it.info.required }.forEach { status ->
                         if (!status.found && status.info.downloadUrl != null) {
                             DownloadableFileRow(
                                 status = status,
@@ -359,6 +375,7 @@ private fun SetupScreen(
                             FileStatusRow(status)
                         }
                     }
+                    } // end if (d1Expanded)
                 }
 
                 // ── Launch / Return button ──────────────────
@@ -387,7 +404,12 @@ private fun SetupScreen(
 }
 
 @Composable
-private fun GameSectionHeader(title: String, ready: Boolean) {
+private fun GameSectionHeader(
+    title: String,
+    ready: Boolean,
+    expanded: Boolean,
+    onToggle: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -407,6 +429,17 @@ private fun GameSectionHeader(title: String, ready: Boolean) {
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold
         )
+        Spacer(modifier = Modifier.width(8.dp))
+        TextButton(
+            onClick = onToggle,
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+            modifier = Modifier.height(28.dp)
+        ) {
+            Text(
+                text = if (expanded) "Collapse" else "Expand",
+                fontSize = 12.sp
+            )
+        }
     }
     HorizontalDivider(
         color = MaterialTheme.colorScheme.outlineVariant,
@@ -546,7 +579,7 @@ private fun MissingFilesHelp() {
             Text(
                 text = "Copy D2 files (from Steam/GOG) and/or D1 files to the app:\n" +
                         "  adb push <file> /data/data/com.dxxredux.app/files/\n" +
-                        "File names must be lowercase on Android.\n" +
+                        "Filenames are matched case-insensitively.\n" +
                         "Either Descent 2 or Descent 1 files are needed to launch.",
                 color = MaterialTheme.colorScheme.onErrorContainer,
                 fontSize = 12.sp,
