@@ -5088,10 +5088,11 @@ int
 net_udp_select_players(void)
 {
 	int i, j;
-	newmenu_item m[MAX_PLAYERS+4];
+	newmenu_item m[MAX_PLAYERS+4+1];
 	char text[MAX_PLAYERS+4][45];
 	char title[50];
 	int save_nplayers;              //how may people would like to join
+	int n_opts = MAX_PLAYERS+4;
 
 	net_udp_add_player( &UDP_Seq );
 		
@@ -5099,6 +5100,10 @@ net_udp_select_players(void)
 		sprintf( text[i], "%d.  %-20s", i+1, "" );
 		m[i].type = NM_TYPE_CHECK; m[i].text = text[i]; m[i].value = 0;
 	}
+
+	/* Android: add a tappable OK button since there is no hardware Enter key */
+	m[n_opts].type = NM_TYPE_MENU; m[n_opts].text = TXT_OK;
+	n_opts++;
 
 	m[0].value = 1;                         // Assume server will play...
 
@@ -5115,7 +5120,7 @@ GetPlayersAgain:
 		udp_tracker_register();
 #endif
 
-	j=newmenu_do1( NULL, title, MAX_PLAYERS+4, m, net_udp_start_poll, NULL, 1 );
+	j=newmenu_do1( NULL, title, n_opts, m, net_udp_start_poll, NULL, 1 );
 
 	save_nplayers = N_players;
 

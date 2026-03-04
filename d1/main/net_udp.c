@@ -4994,7 +4994,7 @@ int
 net_udp_select_players(void)
 {
         int i, j, opts, opt_msg;
-        newmenu_item m[MAX_PLAYERS+1];
+        newmenu_item m[MAX_PLAYERS+2];
 	char text[MAX_PLAYERS][45];
 	char title[50];
 	int save_nplayers;
@@ -5007,9 +5007,12 @@ net_udp_select_players(void)
 	}
 //added/edited on 11/7/98 by Victor Rachels in an attempt to get msgs going.
         opts=MAX_PLAYERS;
-        opt_msg = opts;
+        opt_msg = -2;  /* Send message feature disabled; use impossible index */
 //killed for now to not raise people's hopes - 11/10/98 - VR
-//        m[opts].type = NM_TYPE_MENU; m[opts].text = "Send message..."; opts++;
+//        m[opts].type = NM_TYPE_MENU; m[opts].text = "Send message..."; opt_msg = opts; opts++;
+
+	/* Android: add a tappable OK button since there is no hardware Enter key */
+	m[opts].type = NM_TYPE_MENU; m[opts].text = TXT_OK; opts++;
 
 	m[0].value = 1;                         // Assume server will play...
 
