@@ -73,6 +73,7 @@ keystore.properties
 *.apk
 *.aab
 .cxx*/
+.kotlin/
 
 temp/
 
