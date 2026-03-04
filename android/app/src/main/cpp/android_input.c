@@ -300,4 +300,100 @@ Java_com_dxxredux_app_MainActivity_nativeOnPause(JNIEnv *env, jobject thiz)
     SDL_PushEvent(&ev);
 }
 
+/* ── Soft-keyboard text input ───────────────────────────────
+ *
+ * Called by the Kotlin InputConnection when the soft keyboard commits text.
+ * Injects a key-down + key-up pair for each character, with the unicode
+ * value set so key_handler() buffers it for key_ascii() → newmenu text entry.
+ *
+ * SDL 1.2 SDLK values equal ASCII for the printable range, so we use the
+ * character value directly as the sym.  key_handler() buffers the unicode
+ * BEFORE checking key_properties, so even if the keycode lookup fails
+ * the character still reaches the text input system.
+ */
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeTextInput(JNIEnv *env, jobject thiz,
+                                                    jint unicodeChar)
+{
+    if (unicodeChar <= 0) return;
+
+    SDLKey sym;
+    if (unicodeChar >= 32 && unicodeChar < 127)
+        sym = (SDLKey)unicodeChar;
+    else
+        sym = SDLK_SPACE;   /* fallback; unicode carries the real char */
+
+    SDL_Event ev;
+
+    /* Key-down with unicode */
+    memset(&ev, 0, sizeof(ev));
+    ev.type                = SDL_KEYDOWN;
+    ev.key.state           = SDL_PRESSED;
+    ev.key.keysym.sym      = sym;
+    ev.key.keysym.mod      = KMOD_NONE;
+    ev.key.keysym.unicode  = (Uint16)(unicodeChar & 0xFFFF);
+    SDL_PushEvent(&ev);
+
+    /* Key-up */
+    memset(&ev, 0, sizeof(ev));
+    ev.type                = SDL_KEYUP;
+    ev.key.state           = SDL_RELEASED;
+    ev.key.keysym.sym      = sym;
+    ev.key.keysym.mod      = KMOD_NONE;
+    ev.key.keysym.unicode  = 0;
+    SDL_PushEvent(&ev);
+}
+
+/* ── C→Java keyboard callbacks ──────────────────────────────
+ *
+ * The engine calls these from the game thread when a menu with a text
+ * input field is activated or closed.  We call back to Java via JNI
+ * to show/hide the Android soft keyboard.
+ */
+extern JavaVM  *g_jvm;
+extern jobject  g_activity;
+
+void android_show_keyboard(int numeric)
+{
+    if (!g_jvm || !g_activity) return;
+
+    JNIEnv *env;
+    int attached = 0;
+    if ((*g_jvm)->GetEnv(g_jvm, (void**)&env, JNI_VERSION_1_6) != JNI_OK) {
+        (*g_jvm)->AttachCurrentThread(g_jvm, &env, NULL);
+        attached = 1;
+    }
+
+    jclass cls = (*env)->GetObjectClass(env, g_activity);
+    jmethodID mid = (*env)->GetMethodID(env, cls, "showKeyboard", "(I)V");
+    if (mid) {
+        /* Android InputType: TYPE_CLASS_TEXT=1, TYPE_CLASS_NUMBER=2 */
+        (*env)->CallVoidMethod(env, g_activity, mid, numeric ? 2 : 1);
+    }
+
+    if (attached) (*g_jvm)->DetachCurrentThread(g_jvm);
+    LOGI("android_show_keyboard(numeric=%d)", numeric);
+}
+
+void android_hide_keyboard(void)
+{
+    if (!g_jvm || !g_activity) return;
+
+    JNIEnv *env;
+    int attached = 0;
+    if ((*g_jvm)->GetEnv(g_jvm, (void**)&env, JNI_VERSION_1_6) != JNI_OK) {
+        (*g_jvm)->AttachCurrentThread(g_jvm, &env, NULL);
+        attached = 1;
+    }
+
+    jclass cls = (*env)->GetObjectClass(env, g_activity);
+    jmethodID mid = (*env)->GetMethodID(env, cls, "hideKeyboard", "()V");
+    if (mid) {
+        (*env)->CallVoidMethod(env, g_activity, mid);
+    }
+
+    if (attached) (*g_jvm)->DetachCurrentThread(g_jvm);
+    LOGI("android_hide_keyboard()");
+}
+
 #endif /* ANDROID */

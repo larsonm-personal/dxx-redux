@@ -14,6 +14,17 @@
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO,  LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
+/* ── Global JNI references (used by android_input.c for C→Java callbacks) ── */
+JavaVM  *g_jvm      = NULL;
+jobject  g_activity  = NULL;   /* Global ref to MainActivity */
+
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
+{
+    g_jvm = vm;
+    LOGI("JNI_OnLoad: JavaVM cached");
+    return JNI_VERSION_1_6;
+}
+
 /* The game's real entry point (d2/main/inferno.c) */
 extern int main(int argc, char *argv[]);
 
@@ -28,6 +39,9 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 {
     LOGI("Starting D2X-Redux game engine...");
+
+    /* Cache a global reference to the Activity for C→Java callbacks. */
+    g_activity = (*env)->NewGlobalRef(env, thiz);
 
     /* Tell SDL 1.2 to use the dummy video driver.
      * The dummy video driver's Available() only returns 1 when this is set.

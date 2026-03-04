@@ -821,7 +821,9 @@ int do_new_game_menu()
 
 			strcpy(num_text,"1");
 
+			Newmenu_allowed_chars = "09";
 			choice = newmenu_do( NULL, TXT_SELECT_START_LEV, n_items, m, NULL, NULL );
+			Newmenu_allowed_chars = NULL;
 
 			if (choice==-1 || m[1].text[0]==0)
 				return 0;

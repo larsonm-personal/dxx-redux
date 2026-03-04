@@ -1,13 +1,20 @@
 package com.dxxredux.app
 
 import android.app.Activity
+import android.content.Context
 import android.os.Bundle
+import android.text.InputType
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import android.view.View
 import android.view.WindowManager
+import android.view.inputmethod.BaseInputConnection
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputConnection
+import android.view.inputmethod.InputMethodManager
 
 class MainActivity : Activity(), SurfaceHolder.Callback {
 
@@ -26,9 +33,11 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     external fun nativeSetSurface(surface: Surface?)
     external fun nativeTouchEvent(action: Int, gameX: Int, gameY: Int)
     external fun nativeKeyEvent(action: Int, androidKeyCode: Int, unicodeChar: Int)
+    external fun nativeTextInput(unicodeChar: Int)
     external fun nativeOnPause()
 
     private var gameStarted = false
+    private lateinit var gameSurfaceView: GameSurfaceView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,18 +45,18 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         // Keep screen on while the game is running
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        val sv = SurfaceView(this)
-        sv.holder.addCallback(this)
-        sv.isFocusable = true
-        sv.isFocusableInTouchMode = true
-        sv.requestFocus()
+        gameSurfaceView = GameSurfaceView(this)
+        gameSurfaceView.holder.addCallback(this)
+        gameSurfaceView.isFocusable = true
+        gameSurfaceView.isFocusableInTouchMode = true
+        gameSurfaceView.requestFocus()
 
         // Handle touch on the SurfaceView so coordinates are view-relative
-        sv.setOnTouchListener { view, event ->
+        gameSurfaceView.setOnTouchListener { view, event ->
             handleTouch(view, event)
         }
 
-        setContentView(sv)
+        setContentView(gameSurfaceView)
     }
 
     // ── SurfaceHolder.Callback ──────────────────────────────
@@ -82,7 +91,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     }
 
     // ── Touch → Mouse ───────────────────────────────────────
-    private fun handleTouch(view: android.view.View, event: MotionEvent): Boolean {
+    private fun handleTouch(view: View, event: MotionEvent): Boolean {
         // The engine renders 640×480 into ANativeWindow which the compositor
         // stretches to fill the entire SurfaceView.  Map proportionally.
         val viewW = view.width.toFloat()
@@ -119,5 +128,77 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
 
         nativeKeyEvent(1, keyCode, 0)
         return true
+    }
+
+    // ── Soft keyboard show/hide (called from JNI) ───────────
+    @Suppress("unused")   // Called from native code
+    fun showKeyboard(inputType: Int) {
+        runOnUiThread {
+            gameSurfaceView.currentInputType = when (inputType) {
+                2    -> InputType.TYPE_CLASS_NUMBER
+                else -> InputType.TYPE_CLASS_TEXT
+            }
+            gameSurfaceView.keyboardActive = true
+            gameSurfaceView.requestFocus()
+            val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.restartInput(gameSurfaceView)
+            imm.showSoftInput(gameSurfaceView, InputMethodManager.SHOW_IMPLICIT)
+        }
+    }
+
+    @Suppress("unused")   // Called from native code
+    fun hideKeyboard() {
+        runOnUiThread {
+            gameSurfaceView.keyboardActive = false
+            val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(gameSurfaceView.windowToken, 0)
+        }
+    }
+
+    // ── GameSurfaceView with InputConnection for soft keyboard ──
+    private inner class GameSurfaceView(context: Context) : SurfaceView(context) {
+        var currentInputType = InputType.TYPE_CLASS_TEXT
+        var keyboardActive = false
+
+        override fun onCheckIsTextEditor(): Boolean = keyboardActive
+
+        override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
+            outAttrs.inputType = currentInputType
+            outAttrs.imeOptions = EditorInfo.IME_ACTION_DONE or
+                    EditorInfo.IME_FLAG_NO_EXTRACT_UI
+            return GameInputConnection(this)
+        }
+    }
+
+    /**
+     * Routes soft-keyboard text input into the engine via JNI.
+     * commitText → nativeTextInput (one SDL key pair per character)
+     * performEditorAction(DONE) → Enter key
+     * deleteSurroundingText → Backspace key(s)
+     */
+    private inner class GameInputConnection(view: View) : BaseInputConnection(view, false) {
+
+        override fun commitText(text: CharSequence, newCursorPosition: Int): Boolean {
+            for (c in text) {
+                nativeTextInput(c.code)
+            }
+            return true
+        }
+
+        override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
+            // Each "before" character = one Backspace press
+            repeat(beforeLength) {
+                nativeKeyEvent(0, KeyEvent.KEYCODE_DEL, 0)
+                nativeKeyEvent(1, KeyEvent.KEYCODE_DEL, 0)
+            }
+            return true
+        }
+
+        override fun performEditorAction(actionCode: Int): Boolean {
+            // "Done" / Enter on the soft keyboard → inject Enter key
+            nativeKeyEvent(0, KeyEvent.KEYCODE_ENTER, '\r'.code)
+            nativeKeyEvent(1, KeyEvent.KEYCODE_ENTER, 0)
+            return true
+        }
     }
 }

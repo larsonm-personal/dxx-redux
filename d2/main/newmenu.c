@@ -1514,6 +1514,20 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 			game_flush_inputs();
 			event_toggle_focus(0);
 			key_toggle_repeat(1);
+#ifdef ANDROID
+			{
+				int i;
+				for (i = 0; i < menu->nitems; i++) {
+					if (menu->items[i].type == NM_TYPE_INPUT || menu->items[i].type == NM_TYPE_INPUT_MENU) {
+						extern void android_show_keyboard(int numeric);
+						const char *p = Newmenu_allowed_chars;
+						int numeric = p && p[0] >= '0' && p[0] <= '9' && p[1] >= '0' && p[1] <= '9' && !p[2];
+						android_show_keyboard(numeric);
+						break;
+					}
+				}
+			}
+#endif
 			break;
 
 		case EVENT_WINDOW_DEACTIVATED:
@@ -1545,6 +1559,12 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 			break;
 
 		case EVENT_WINDOW_CLOSE:
+#ifdef ANDROID
+			{
+				extern void android_hide_keyboard(void);
+				android_hide_keyboard();
+			}
+#endif
 			d_free(menu);
 			break;
 
