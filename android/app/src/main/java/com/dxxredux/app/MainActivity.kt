@@ -66,12 +66,14 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         // Keep screen on while the game is running
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        // Immersive fullscreen: render behind (and hide) system bars
+        // Allow rendering into the display cutout (notch) area
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.attributes.layoutInDisplayCutoutMode =
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
+
+        // Draw behind system bars
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        val controller = WindowInsetsControllerCompat(window, window.decorView)
-        controller.hide(WindowInsetsCompat.Type.systemBars())
-        controller.systemBarsBehavior =
-            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 
         gameSurfaceView = GameSurfaceView(this)
         gameSurfaceView.holder.addCallback(this)
@@ -86,6 +88,9 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
 
         setContentView(gameSurfaceView)
 
+        // Hide system bars after content view is set
+        hideSystemBars()
+
         // Prevent the system back-gesture from consuming left-edge swipes;
         // we use them to open the setup screen.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -94,6 +99,19 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                 v.systemGestureExclusionRects = listOf(Rect(0, 0, edgePx, v.height))
             }
         }
+    }
+
+    // ── Immersive fullscreen helper ─────────────────────────
+    private fun hideSystemBars() {
+        val controller = WindowInsetsControllerCompat(window, window.decorView)
+        controller.hide(WindowInsetsCompat.Type.systemBars())
+        controller.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) hideSystemBars()
     }
 
     // ── SurfaceHolder.Callback ──────────────────────────────
