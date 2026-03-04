@@ -37,6 +37,7 @@ DEST="/data/data/$PACKAGE/files"
 
 echo "=== Pushing game data to emulator ==="
 for f in "$GAME_DATA_DIR"/*; do
+    [ ! -f "$f" ] && continue   # skip directories and non-files
     BASENAME=$(basename "$f")
     LOWER=$(echo "$BASENAME" | tr '[:upper:]' '[:lower:]')
     
@@ -58,6 +59,31 @@ done
 echo ""
 echo "=== Files in app storage ==="
 "$ADB" shell "run-as $PACKAGE ls -la $DEST/" 2>&1
+
+# Remove files from emulator that are no longer in game_data/
+echo ""
+echo "=== Cleaning removed files ==="
+REMOTE_FILES=$("$ADB" shell "run-as $PACKAGE ls $DEST/" 2>/dev/null | tr -d '\r')
+for REMOTE in $REMOTE_FILES; do
+    # Skip app-generated files (configs, saves, logs, etc.)
+    case "$REMOTE" in
+        *.cfg|*.txt|*.json|*.ngp|*.plr|*.plx|profileInstalled) continue ;;
+    esac
+    # Check if any local file (lowercased) matches this remote file
+    FOUND=false
+    for f in "$GAME_DATA_DIR"/*; do
+        [ ! -f "$f" ] && continue
+        LOCAL_LOWER=$(basename "$f" | tr '[:upper:]' '[:lower:]')
+        if [ "$LOCAL_LOWER" = "$REMOTE" ]; then
+            FOUND=true
+            break
+        fi
+    done
+    if [ "$FOUND" = "false" ]; then
+        echo "  No longer in game_data/, removing $REMOTE"
+        "$ADB" shell "run-as $PACKAGE rm -f $DEST/$REMOTE" 2>/dev/null || true
+    fi
+done
 echo ""
 echo "Done."
 echo ""

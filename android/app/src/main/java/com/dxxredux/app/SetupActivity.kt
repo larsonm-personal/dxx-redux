@@ -4,14 +4,18 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.DocumentsContract
 import android.util.Log
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -25,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.core.view.WindowCompat
 import java.io.File
 import java.io.FileOutputStream
 import java.io.FileWriter
@@ -190,6 +195,9 @@ class SetupActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Let the system draw behind bars but we'll add padding in Compose
+        WindowCompat.setDecorFitsSystemWindows(window, true)
+
         // Register introspection receiver
         val filter = IntentFilter("com.dxxredux.SETUP_INTROSPECT")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -317,6 +325,99 @@ private val D1_FILES = listOf(
         downloadUrl = "https://dxx-redux.com/dl/d1xr-hires.dxa"),
 )
 
+// ── SAF directory scanning ───────────────────────────────────────────────────
+
+/** All filenames we care about (D2 + D1), lowercase for matching. */
+private val ALL_GAME_FILENAMES: Set<String> by lazy {
+    (D2_FILES + D1_FILES).flatMap { info ->
+        listOf(info.filename) + info.alternatives
+    }.map { it.lowercase() }.toSet()
+}
+
+/** Result of scanning a user-chosen directory tree. */
+private data class FoundFile(
+    val name: String,        // original filename (preserving case)
+    val uri: Uri             // content:// URI to read from
+)
+
+/**
+ * Recursively walk a SAF document tree and return game files found.
+ * Uses DocumentsContract for efficiency (no MediaStore needed).
+ */
+private fun scanTreeForGameFiles(context: Context, treeUri: Uri): List<FoundFile> {
+    val results = mutableListOf<FoundFile>()
+    val docId = DocumentsContract.getTreeDocumentId(treeUri)
+    val queue = ArrayDeque<String>()
+    queue.add(docId)
+
+    while (queue.isNotEmpty()) {
+        val parentId = queue.removeFirst()
+        val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentId)
+        val cursor = context.contentResolver.query(
+            childrenUri,
+            arrayOf(
+                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                DocumentsContract.Document.COLUMN_MIME_TYPE
+            ),
+            null, null, null
+        ) ?: continue
+
+        cursor.use {
+            while (it.moveToNext()) {
+                val childId = it.getString(0)
+                val displayName = it.getString(1) ?: continue
+                val mimeType = it.getString(2) ?: ""
+
+                if (mimeType == DocumentsContract.Document.MIME_TYPE_DIR) {
+                    queue.add(childId)
+                } else if (displayName.lowercase() in ALL_GAME_FILENAMES) {
+                    val fileUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, childId)
+                    results.add(FoundFile(displayName, fileUri))
+                }
+            }
+        }
+    }
+    return results
+}
+
+/**
+ * Copy a SAF document to the app's files directory.
+ * Returns true on success.
+ */
+private fun importFile(context: Context, source: FoundFile, destDir: File): Boolean {
+    return try {
+        // Use lowercase canonical name so the engine finds it
+        val canonicalName = source.name.lowercase()
+        val destFile = File(destDir, canonicalName)
+        context.contentResolver.openInputStream(source.uri)?.use { input ->
+            FileOutputStream(destFile).use { output ->
+                input.copyTo(output, bufferSize = 8192)
+            }
+        }
+        Log.i("DXX-Setup", "Imported ${source.name} → $canonicalName (${destFile.length()} bytes)")
+        true
+    } catch (e: Exception) {
+        Log.e("DXX-Setup", "Failed to import ${source.name}", e)
+        false
+    }
+}
+
+/** Get the display name (filename) for a content:// URI. */
+private fun getDisplayName(context: Context, uri: Uri): String? {
+    return try {
+        context.contentResolver.query(
+            uri,
+            arrayOf(android.provider.OpenableColumns.DISPLAY_NAME),
+            null, null, null
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) cursor.getString(0) else null
+        }
+    } catch (e: Exception) {
+        null
+    }
+}
+
 // ── Composables ─────────────────────────────────────────────────────────────
 
 @Composable
@@ -338,9 +439,39 @@ private fun SetupScreen(
     val d1RequiredOk = d1Statuses.filter { it.info.required }.all { it.found }
     val canLaunch = d2RequiredOk || d1RequiredOk
 
+    // True when zero required files are found for either game
+    val noRequiredFiles = d2Statuses.filter { it.info.required }.none { it.found }
+            && d1Statuses.filter { it.info.required }.none { it.found }
+
     // Download state: filename → progress (0..100, -1 = error, -2 = complete)
     val downloadProgress = remember { mutableStateMapOf<String, Int>() }
     val scope = rememberCoroutineScope()
+
+    // ── SAF file-search state ───────────────────────────────
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var scanResults by remember { mutableStateOf<List<FoundFile>?>(null) }
+    var scanning by remember { mutableStateOf(false) }
+    var importStatus by remember { mutableStateOf("") }
+
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenMultipleDocuments()
+    ) { uris: List<Uri> ->
+        if (uris.isEmpty()) return@rememberLauncherForActivityResult
+        scanning = true
+        importStatus = ""
+        scope.launch(Dispatchers.IO) {
+            val found = uris.mapNotNull { uri ->
+                val name = getDisplayName(context, uri)
+                if (name != null && name.lowercase() in ALL_GAME_FILENAMES) {
+                    FoundFile(name, uri)
+                } else null
+            }
+            withContext(Dispatchers.Main) {
+                scanResults = found
+                scanning = false
+            }
+        }
+    }
 
     MaterialTheme(colorScheme = darkColorScheme()) {
         Surface(
@@ -365,6 +496,111 @@ private fun SetupScreen(
                 if (!canLaunch && !gameRunning) {
                     MissingFilesHelp()
                     Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                // ── Import files button (always available) ──
+                Button(
+                    onClick = { filePickerLauncher.launch(arrayOf("application/octet-stream", "*/*")) },
+                    enabled = !scanning,
+                    modifier = Modifier.fillMaxWidth().height(44.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary
+                    )
+                ) {
+                    Text(
+                        text = if (scanning) "Importing\u2026"
+                               else "\uD83D\uDCC2 Select Game Files to Import",
+                        fontSize = 14.sp
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Select .hog, .ham, .pig files from Downloads or any folder.",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // ── Scan results / import card ──────────────
+                if (scanResults != null) {
+                    val found = scanResults!!
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (found.isEmpty())
+                                MaterialTheme.colorScheme.errorContainer
+                            else MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            if (found.isEmpty()) {
+                                Text(
+                                    text = "No game files found in that folder.",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Text(
+                                    text = "Try selecting the folder that contains .hog, .ham, and .pig files.",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            } else {
+                                Text(
+                                    text = "Found ${found.size} game file(s):",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                found.forEach { f ->
+                                    Text(
+                                        text = "  \u2022 ${f.name}",
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Button(
+                                        onClick = {
+                                            scope.launch(Dispatchers.IO) {
+                                                var imported = 0
+                                                found.forEach { f ->
+                                                    if (importFile(context, f, filesDir)) imported++
+                                                }
+                                                withContext(Dispatchers.Main) {
+                                                    importStatus = "Imported $imported of ${found.size} files."
+                                                    scanResults = null
+                                                    onRefresh()
+                                                }
+                                            }
+                                        }
+                                    ) {
+                                        Text("Import All", fontSize = 13.sp)
+                                    }
+                                    OutlinedButton(
+                                        onClick = { scanResults = null }
+                                    ) {
+                                        Text("Dismiss", fontSize = 13.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                if (importStatus.isNotEmpty()) {
+                    Text(
+                        text = importStatus,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF4CAF50),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
                 }
 
                 // ── Scrollable file list ────────────────────
