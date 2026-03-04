@@ -66,6 +66,9 @@ build*/
 # Android #
 ###########
 local.properties
+keystore.properties
+*.keystore
+*.jks
 .gradle/
 *.apk
 *.aab
