@@ -115,6 +115,8 @@ void newmenu_set_rval(newmenu *menu, int rval);
 #ifdef INTROSPECT_ON
 const char *newmenu_get_title(newmenu *menu);
 const char *newmenu_get_subtitle(newmenu *menu);
+int newmenu_get_scroll_offset(newmenu *menu);
+int newmenu_get_is_scroll_box(newmenu *menu);
 #endif
 void nm_draw_background(int x1, int y1, int x2, int y2);
 void nm_restore_background(int x, int y, int w, int h);

@@ -146,6 +146,8 @@ static void serialize_newmenu(jbuf_t *j, void *data) {
     jb_cat(j, "\"subtitle\": "); jb_string(j, subtitle); jb_cat(j, ",");
     jb_printf(j, "\"selected_index\": %d,", citem);
     jb_printf(j, "\"num_items\": %d,", nitems);
+    jb_printf(j, "\"scroll_offset\": %d,", newmenu_get_scroll_offset(menu));
+    jb_printf(j, "\"is_scroll_box\": %s,", newmenu_get_is_scroll_box(menu) ? "true" : "false");
     jb_cat(j, "\"items\": [");
 
     for (int i = 0; i < nitems; i++) {

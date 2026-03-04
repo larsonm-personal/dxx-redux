@@ -88,6 +88,8 @@ struct newmenu
 	int				is_scroll_box;   // Is this a scrolling box? Set to false at init
 	int				max_on_menu;
 	int				mouse_state, dblclick_flag;
+	int				drag_start_y;	// Y coord at touch start for drag-to-scroll, -1 if inactive
+	int				drag_happened;	// Set when a drag-scroll actually occurred (suppresses tap activation)
 	int				*rval;			// Pointer to return value (for polling newmenus)
 	void			*userdata;		// For whatever - like with window system
 };
@@ -653,6 +655,9 @@ int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
 
 						switch( menu->items[menu->citem].type )	{
 							case NM_TYPE_CHECK:
+#ifdef ANDROID
+								if (menu->is_scroll_box) break; // defer toggle to BUTTON_UP
+#endif
 								if ( menu->items[menu->citem].value )
 									menu->items[menu->citem].value = 0;
 								else
@@ -663,6 +668,9 @@ int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
 								changed = 1;
 								break;
 							case NM_TYPE_RADIO:
+#ifdef ANDROID
+								if (menu->is_scroll_box) break; // defer toggle to BUTTON_UP
+#endif
 								for (i=0; i<menu->nitems; i++ )	{
 									if ((i!=menu->citem) && (menu->items[i].type==NM_TYPE_RADIO) && (menu->items[i].group==menu->items[menu->citem].group) && (menu->items[i].value) )	{
 										menu->items[i].value = 0;
@@ -781,7 +789,7 @@ int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
 				}
 			}
 
-			if ((event->type == EVENT_MOUSE_BUTTON_UP) && !menu->all_text && (menu->citem != -1) && (menu->items[menu->citem].type == NM_TYPE_MENU) )
+			if ((event->type == EVENT_MOUSE_BUTTON_UP) && !menu->all_text && !menu->drag_happened && (menu->citem != -1) && (menu->items[menu->citem].type == NM_TYPE_MENU) )
 			{
 				mouse_get_pos(&mx, &my, &mz);
 				for (i=menu->scroll_offset; i<menu->max_on_menu+menu->scroll_offset; i++ )	{
@@ -833,6 +841,37 @@ int newmenu_mouse(window *wind, d_event *event, newmenu *menu, int button)
 					strip_end_whitespace(menu->items[menu->citem].text);
 				}
 			}
+
+#ifdef ANDROID
+			// Deferred check/radio toggle on button-up for scroll boxes (prevents accidental toggle during drag)
+			if ((event->type == EVENT_MOUSE_BUTTON_UP) && menu->is_scroll_box && !menu->drag_happened && (menu->citem > -1))
+			{
+				mouse_get_pos(&mx, &my, &mz);
+				x1 = grd_curcanv->cv_bitmap.bm_x + menu->items[menu->citem].x-FSPACX(13);
+				x2 = x1 + menu->items[menu->citem].w+FSPACX(13);
+				y1 = grd_curcanv->cv_bitmap.bm_y + menu->items[menu->citem].y - (((int)LINE_SPACING)*menu->scroll_offset);
+				y2 = y1 + menu->items[menu->citem].h;
+				if (((mx > x1) && (mx < x2)) && ((my > y1) && (my < y2))) {
+					switch (menu->items[menu->citem].type) {
+						case NM_TYPE_CHECK:
+							menu->items[menu->citem].value = !menu->items[menu->citem].value;
+							if (menu->is_scroll_box)
+								menu->last_scroll_check=-1;
+							changed = 1;
+							break;
+						case NM_TYPE_RADIO:
+							for (i=0; i<menu->nitems; i++) {
+								if ((i!=menu->citem) && (menu->items[i].type==NM_TYPE_RADIO) && (menu->items[i].group==menu->items[menu->citem].group) && (menu->items[i].value)) {
+									menu->items[i].value = 0;
+									changed = 1;
+								}
+							}
+							menu->items[menu->citem].value = 1;
+							break;
+					}
+				}
+			}
+#endif
 
 			gr_set_current_canvas(save_canvas);
 
@@ -1520,12 +1559,79 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 		{
 			int button = event_mouse_get_button(event);
 			menu->mouse_state = event->type == EVENT_MOUSE_BUTTON_DOWN;
+#ifdef ANDROID
+			if (button == MBTN_LEFT) {
+				if (menu->mouse_state && menu->is_scroll_box) {
+					int mx, my, mz;
+					mouse_get_pos(&mx, &my, &mz);
+					menu->drag_start_y = my;
+					menu->drag_happened = 0;
+				} else {
+					menu->drag_start_y = -1;
+				}
+			}
+#endif
 			return newmenu_mouse(wind, event, menu, button);
 		}
 
 		case EVENT_KEY_COMMAND:
 			return newmenu_key_command(wind, event, menu);
 			break;
+
+#ifdef ANDROID
+		case EVENT_MOUSE_MOVED:
+			// Drag-to-scroll for scrollable menus
+			if (menu->mouse_state && menu->is_scroll_box && menu->drag_start_y >= 0) {
+				int mx, my, mz;
+				grs_canvas *menu_canvas = window_get_canvas(wind);
+				grs_canvas *save_canvas = grd_curcanv;
+				gr_set_current_canvas(menu_canvas);
+
+				mouse_get_pos(&mx, &my, &mz);
+				int ls = (int)LINE_SPACING;
+				if (ls > 0) {
+					int delta = my - menu->drag_start_y;
+					int lines = delta / ls;
+					if (lines != 0) {
+						int scroll_amount = -lines;
+						int new_offset = menu->scroll_offset + scroll_amount;
+						if (new_offset < 0)
+							new_offset = 0;
+						if (new_offset > menu->nitems - menu->max_on_menu)
+							new_offset = menu->nitems - menu->max_on_menu;
+
+						int actual = new_offset - menu->scroll_offset;
+						if (actual != 0) {
+							menu->scroll_offset = new_offset;
+							menu->last_scroll_check = -1;
+
+							if (!menu->all_text) {
+								int new_citem = menu->citem + actual;
+								if (new_citem < 0) new_citem = 0;
+								if (new_citem >= menu->nitems) new_citem = menu->nitems - 1;
+								if (actual > 0) {
+									while (new_citem < menu->nitems - 1 && menu->items[new_citem].type == NM_TYPE_TEXT)
+										new_citem++;
+								} else {
+									while (new_citem > 0 && menu->items[new_citem].type == NM_TYPE_TEXT)
+										new_citem--;
+								}
+								if (new_citem >= 0 && new_citem < menu->nitems && menu->items[new_citem].type != NM_TYPE_TEXT)
+									menu->citem = new_citem;
+							}
+
+							menu->drag_happened = 1;
+						}
+
+						menu->drag_start_y += lines * ls;
+					}
+				}
+
+				gr_set_current_canvas(save_canvas);
+				return 1;
+			}
+			break;
+#endif
 
 		case EVENT_IDLE:
 			timer_delay2(50);
@@ -1566,6 +1672,8 @@ newmenu *newmenu_do4( char * title, char * subtitle, int nitems, newmenu_item * 
 	menu->is_scroll_box = 0;
 	menu->max_on_menu = TinyMode?MAXDISPLAYABLEITEMSTINY:MAXDISPLAYABLEITEMS;
 	menu->dblclick_flag = 0;
+	menu->drag_start_y = -1;
+	menu->drag_happened = 0;
 	menu->title = title;
 	menu->subtitle = subtitle;
 	menu->nitems = nitems;
