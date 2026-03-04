@@ -1,6 +1,10 @@
 package com.dxxredux.app
 
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -19,12 +23,15 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.mutableIntStateOf
 import java.io.File
 import java.io.FileOutputStream
+import java.io.FileWriter
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 
 /**
  * Pre-game setup screen built with Jetpack Compose.
@@ -40,8 +47,95 @@ class SetupActivity : ComponentActivity() {
     /** Incremented in onResume so Compose re-checks file status. */
     private val refreshTrigger = mutableIntStateOf(0)
 
+    // ── Setup-screen introspection ──────────────────────────────────────
+    //   adb shell am broadcast -a com.dxxredux.SETUP_INTROSPECT
+    //   adb shell run-as com.dxxredux.app cat files/setup_introspect.json
+    private val introspectReceiver = object : BroadcastReceiver() {
+        override fun onReceive(ctx: Context?, intent: Intent?) {
+            writeIntrospectJson()
+        }
+    }
+
+    /** Active download progress visible to introspection. */
+    internal val downloadStates = mutableMapOf<String, Int>()
+
+    private fun writeIntrospectJson() {
+        try {
+            val dir = filesDir
+            val d2Statuses = checkFiles(dir, D2_FILES)
+            val d1Statuses = checkFiles(dir, D1_FILES)
+            val d2Ready = d2Statuses.filter { it.info.required }.all { it.found }
+            val d1Ready = d1Statuses.filter { it.info.required }.all { it.found }
+
+            val root = JSONObject()
+            root.put("screen", "setup")
+            root.put("can_launch", d2Ready || d1Ready)
+
+            // All files on disk
+            val allFiles = dir.listFiles()?.map { it.name }?.sorted() ?: emptyList()
+            root.put("files_on_disk", JSONArray(allFiles))
+
+            // D2 section
+            val d2 = JSONObject()
+            d2.put("ready", d2Ready)
+            d2.put("files", fileStatusArray(d2Statuses))
+            root.put("d2", d2)
+
+            // D1 section
+            val d1 = JSONObject()
+            d1.put("ready", d1Ready)
+            d1.put("files", fileStatusArray(d1Statuses))
+            root.put("d1", d1)
+
+            // Active downloads
+            if (downloadStates.isNotEmpty()) {
+                val dl = JSONObject()
+                for ((name, progress) in downloadStates) {
+                    dl.put(name, when (progress) {
+                        -2 -> "complete"
+                        -1 -> "error"
+                        else -> "${progress}%"
+                    })
+                }
+                root.put("downloads", dl)
+            }
+
+            val outFile = File(dir, "setup_introspect.json")
+            FileWriter(outFile).use { it.write(root.toString()) }
+            Log.i("DXX-Setup", "Introspect written: ${outFile.absolutePath}")
+        } catch (e: Exception) {
+            Log.e("DXX-Setup", "Failed to write introspect JSON", e)
+        }
+    }
+
+    private fun fileStatusArray(statuses: List<FileStatus>): JSONArray {
+        val arr = JSONArray()
+        for (s in statuses) {
+            val obj = JSONObject()
+            obj.put("filename", s.info.filename)
+            obj.put("required", s.info.required)
+            obj.put("found", s.found)
+            if (s.foundName != null) obj.put("found_as", s.foundName)
+            if (s.info.alternatives.isNotEmpty())
+                obj.put("alternatives", JSONArray(s.info.alternatives))
+            if (s.info.downloadUrl != null)
+                obj.put("download_url", s.info.downloadUrl)
+            obj.put("description", s.info.description)
+            arr.put(obj)
+        }
+        return arr
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Register introspection receiver
+        val filter = IntentFilter("com.dxxredux.SETUP_INTROSPECT")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(introspectReceiver, filter, RECEIVER_EXPORTED)
+        } else {
+            registerReceiver(introspectReceiver, filter)
+        }
 
         val gameRunning = intent.getBooleanExtra("gameRunning", false)
         val filesDir = filesDir
@@ -60,7 +154,11 @@ class SetupActivity : ComponentActivity() {
                         // the game returns here instead of the launcher.
                     }
                 },
-                onRefresh = { refreshTrigger.intValue++ }
+                onRefresh = { refreshTrigger.intValue++ },
+                onDownloadStateChanged = { name, progress ->
+                    if (progress == -2) downloadStates.remove(name)
+                    else downloadStates[name] = progress
+                }
             )
         }
     }
@@ -68,6 +166,11 @@ class SetupActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         refreshTrigger.intValue++
+    }
+
+    override fun onDestroy() {
+        try { unregisterReceiver(introspectReceiver) } catch (_: Exception) {}
+        super.onDestroy()
     }
 }
 
@@ -158,7 +261,8 @@ private fun SetupScreen(
     gameRunning: Boolean,
     refreshTrigger: Int,
     onLaunchGame: () -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onDownloadStateChanged: (String, Int) -> Unit = { _, _ -> }
 ) {
     val d2Statuses = remember(refreshTrigger) { checkFiles(filesDir, D2_FILES) }
     val d1Statuses = remember(refreshTrigger) { checkFiles(filesDir, D1_FILES) }
@@ -239,10 +343,12 @@ private fun SetupScreen(
                                             filename = status.info.filename,
                                             onProgress = { pct ->
                                                 downloadProgress[status.info.filename] = pct
+                                                onDownloadStateChanged(status.info.filename, pct)
                                             },
                                             onDone = { success ->
-                                                downloadProgress[status.info.filename] =
-                                                    if (success) -2 else -1
+                                                val code = if (success) -2 else -1
+                                                downloadProgress[status.info.filename] = code
+                                                onDownloadStateChanged(status.info.filename, code)
                                                 if (success) onRefresh()
                                             }
                                         )

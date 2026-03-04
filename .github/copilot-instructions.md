@@ -30,12 +30,35 @@ adb shell am broadcast -a com.dxxredux.INTROSPECT && sleep 1 && adb shell run-as
 
 Or use the helper script:
 ```bash
-./temp/introspect.sh          # dump + pretty-print (requires python3 or jq)
-./temp/introspect.sh raw      # dump without formatting
-./temp/introspect.sh menu     # show only the menu section
-./temp/introspect.sh player   # show only the player section
-./temp/introspect.sh position # show only the position section
+./android/introspect.sh          # dump + pretty-print (requires python3 or jq)
+./android/introspect.sh raw      # dump without formatting
+./android/introspect.sh menu     # show only the menu section
+./android/introspect.sh player   # show only the player section
+./android/introspect.sh position # show only the position section
+./android/introspect.sh setup    # dump SetupActivity state (files, readiness, downloads)
+./android/introspect.sh setup raw # raw SetupActivity JSON
 ```
+
+### setup-screen introspection
+The SetupActivity has its own introspection system for inspecting file readiness and download state **without screenshots**.
+
+```bash
+# one-liner
+adb shell am broadcast -a com.dxxredux.SETUP_INTROSPECT && sleep 1 && adb shell run-as com.dxxredux.app cat files/setup_introspect.json
+```
+
+#### JSON fields (setup_introspect.json)
+
+| Field | Description |
+|---|---|
+| `screen` | always `"setup"` |
+| `can_launch` | true if either D2 or D1 required files are present |
+| `files_on_disk` | sorted array of all filenames in the app's files dir |
+| `d2.ready` | true if all D2 required files are present |
+| `d2.files[]` | array of `{filename, required, found, found_as?, alternatives?, description}` |
+| `d1.ready` | true if all D1 required files are present |
+| `d1.files[]` | same format as d2.files, plus `download_url` for downloadable optional files |
+| `downloads` | object mapping filename → progress (`"42%"`, `"complete"`, `"error"`) — only present during active downloads |
 
 ### how it works
 1. **Broadcast** `com.dxxredux.INTROSPECT` — sets a volatile flag via JNI

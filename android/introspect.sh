@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# introspect.sh — grab game state from a running DXX-Redux Android emulator
+# introspect.sh — grab game/setup state from a running DXX-Redux Android emulator
 # Usage:
-#   ./temp/introspect.sh            # pretty-print full state
-#   ./temp/introspect.sh raw        # raw JSON (no formatting)
-#   ./temp/introspect.sh menu       # show only the menu section
-#   ./temp/introspect.sh player     # show only the player section
-#   ./temp/introspect.sh position   # show only the position section
+#   ./android/introspect.sh            # pretty-print full game state
+#   ./android/introspect.sh raw        # raw JSON (no formatting)
+#   ./android/introspect.sh menu       # show only the menu section
+#   ./android/introspect.sh player     # show only the player section
+#   ./android/introspect.sh position   # show only the position section
+#   ./android/introspect.sh setup      # dump SetupActivity state (files, readiness, downloads)
+#   ./android/introspect.sh setup raw  # raw JSON from SetupActivity
 
 set -euo pipefail
 
@@ -28,20 +30,23 @@ fi
 PACKAGE="com.dxxredux.app"
 ACTION="com.dxxredux.INTROSPECT"
 
-# Request a state dump
-"$ADB" shell am broadcast -a "$ACTION" > /dev/null 2>&1 || {
-    echo "ERROR: broadcast failed — is the emulator running?" >&2
-    exit 1
-}
+# For non-setup modes, request a game-state dump
+JSON=""
+if [[ "${1:-}" != "setup" ]]; then
+    "$ADB" shell am broadcast -a "$ACTION" > /dev/null 2>&1 || {
+        echo "ERROR: broadcast failed — is the emulator running?" >&2
+        exit 1
+    }
 
-# Wait for the game thread to write the file
-sleep 1
+    # Wait for the game thread to write the file
+    sleep 1
 
-# Read the JSON
-JSON=$("$ADB" shell run-as "$PACKAGE" cat files/introspect.json 2>/dev/null) || {
-    echo "ERROR: Could not read introspect.json. Is the game running?" >&2
-    exit 1
-}
+    # Read the JSON
+    JSON=$("$ADB" shell run-as "$PACKAGE" cat files/introspect.json 2>/dev/null) || {
+        echo "ERROR: Could not read introspect.json. Is the game running?" >&2
+        exit 1
+    }
+fi
 
 # Pick a formatter
 pretty_print() {
@@ -75,6 +80,23 @@ else:
 }
 
 case "${1:-}" in
+    setup)
+        # Setup-screen introspection — different broadcast & file
+        "$ADB" shell am broadcast -a com.dxxredux.SETUP_INTROSPECT > /dev/null 2>&1 || {
+            echo "ERROR: broadcast failed — is the emulator running?" >&2
+            exit 1
+        }
+        sleep 1
+        SJSON=$("$ADB" shell run-as "$PACKAGE" cat files/setup_introspect.json 2>/dev/null) || {
+            echo "ERROR: Could not read setup_introspect.json. Is SetupActivity visible?" >&2
+            exit 1
+        }
+        if [[ "${2:-}" == "raw" ]]; then
+            echo "$SJSON"
+        else
+            pretty_print "$SJSON"
+        fi
+        ;;
     raw)
         echo "$JSON"
         ;;
