@@ -163,7 +163,11 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         override fun onCheckIsTextEditor(): Boolean = keyboardActive
 
         override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
-            outAttrs.inputType = currentInputType
+            // Disable word prediction / autocorrect so each keystroke arrives
+            // immediately via commitText instead of being buffered in composition.
+            outAttrs.inputType = currentInputType or
+                    InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or
+                    InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
             outAttrs.imeOptions = EditorInfo.IME_ACTION_DONE or
                     EditorInfo.IME_FLAG_NO_EXTRACT_UI
             return GameInputConnection(this)
@@ -177,6 +181,14 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
      * deleteSurroundingText → Backspace key(s)
      */
     private inner class GameInputConnection(view: View) : BaseInputConnection(view, false) {
+
+        override fun setComposingText(text: CharSequence, newCursorPosition: Int): Boolean {
+            // Some IMEs still compose even with NO_SUGGESTIONS.
+            // Finish composition immediately and commit the text so each
+            // character appears in the game without waiting for a space.
+            finishComposingText()
+            return commitText(text, newCursorPosition)
+        }
 
         override fun commitText(text: CharSequence, newCursorPosition: Int): Boolean {
             for (c in text) {
