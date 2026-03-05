@@ -12,6 +12,10 @@
 #ifndef GAME_AUTOMATE_H
 #define GAME_AUTOMATE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef INTROSPECT_ON
 
 /*
@@ -43,5 +47,9 @@ static inline void game_automate_load_script(const char *p) { (void)p; }
 static inline void game_automate_tick(void) {}
 
 #endif /* INTROSPECT_ON */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GAME_AUTOMATE_H */

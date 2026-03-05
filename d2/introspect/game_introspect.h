@@ -12,6 +12,10 @@
 #ifndef GAME_INTROSPECT_H
 #define GAME_INTROSPECT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef INTROSPECT_ON
 
 /*
@@ -48,5 +52,9 @@ static inline void game_introspect_request(void) {}
 static inline void game_introspect_check_and_dump(void) {}
 
 #endif /* INTROSPECT_ON */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GAME_INTROSPECT_H */

@@ -150,7 +150,20 @@ target_link_libraries(SDL12 PRIVATE dl OpenSLES)
 target_compile_options(SDL12 PRIVATE -w)   # suppress all warnings for third-party code
 
 # ──────────────────────────────────────────────────────────────
-# 2. PhysFS  (has native cmake support)
+# 2. nlohmann/json  (header-only, debug/introspection builds only)
+# ──────────────────────────────────────────────────────────────
+FetchContent_Declare(nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG        v3.11.3
+    GIT_SHALLOW    TRUE
+)
+set(JSON_BuildTests    OFF CACHE BOOL "" FORCE)
+set(JSON_Install       OFF CACHE BOOL "" FORCE)
+set(JSON_MultipleHeaders OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(nlohmann_json)
+
+# ──────────────────────────────────────────────────────────────
+# 3. PhysFS  (has native cmake support)
 # ──────────────────────────────────────────────────────────────
 set(PHYSFS_BUILD_SHARED OFF CACHE BOOL "" FORCE)
 set(PHYSFS_BUILD_TEST   OFF CACHE BOOL "" FORCE)
@@ -163,7 +176,7 @@ FetchContent_Declare(physfs
 FetchContent_MakeAvailable(physfs)
 
 # ──────────────────────────────────────────────────────────────
-# 3. Pre-set variables so find_package(SDL) / find_package(PhysFS)
+# 4. Pre-set variables so find_package(SDL) / find_package(PhysFS)
 #    in the D2 cmake files succeed without a system search.
 # ──────────────────────────────────────────────────────────────
 set(SDL_FOUND       TRUE                         CACHE BOOL   "" FORCE)
@@ -176,7 +189,7 @@ set(PHYSFS_INCLUDE_DIR "${physfs_SOURCE_DIR}/src"  CACHE PATH   "" FORCE)
 set(PHYSFS_LIBRARY     physfs-static               CACHE STRING "" FORCE)
 
 # ──────────────────────────────────────────────────────────────
-# 4. D2 build options  (disable everything that needs extra deps)
+# 5. D2 build options  (disable everything that needs extra deps)
 # ──────────────────────────────────────────────────────────────
 set(OPENGL    OFF CACHE BOOL "" FORCE)
 set(SDLMIXER  OFF CACHE BOOL "" FORCE)
@@ -187,12 +200,12 @@ set(UDP       ON  CACHE BOOL "" FORCE)
 set(TRACKER   OFF CACHE BOOL "" FORCE)
 
 # ──────────────────────────────────────────────────────────────
-# 5. Add D2 source tree
+# 6. Add D2 source tree
 # ──────────────────────────────────────────────────────────────
 add_subdirectory("${D2_SRC}" "${CMAKE_CURRENT_BINARY_DIR}/d2")
 
 # ──────────────────────────────────────────────────────────────
-# 6. Android-specific fixups for d2x-redux target
+# 7. Android-specific fixups for d2x-redux target
 # ──────────────────────────────────────────────────────────────
 target_link_libraries(d2x-redux PRIVATE android log)
 target_sources(d2x-redux PRIVATE
@@ -200,8 +213,8 @@ target_sources(d2x-redux PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/android_surface.c
     ${CMAKE_CURRENT_SOURCE_DIR}/android_input.c
     ${D2_SRC}/arch/android/messagebox.c
-    ${D2_SRC}/introspect/game_introspect.c
-    ${D2_SRC}/introspect/game_automate.c
+    ${D2_SRC}/introspect/game_introspect.cpp
+    ${D2_SRC}/introspect/game_automate.cpp
 )
 # android_surface.h lives in d2/arch/include (already on arch_sdl's include
 # path); make sure it's also visible when compiling android_surface.c itself.
@@ -219,6 +232,9 @@ target_include_directories(d2x-redux PRIVATE
 target_compile_definitions(d2x-redux PRIVATE INTROSPECT_ON)
 target_compile_definitions(arch_sdl PRIVATE INTROSPECT_ON)
 target_include_directories(arch_sdl PRIVATE ${D2_SRC}/introspect)
+
+# nlohmann/json — used by the introspection/automation C++ files
+target_link_libraries(d2x-redux PRIVATE nlohmann_json::nlohmann_json)
 
 # TODO: Replace the above with the real d1/d2 build by including the game
 # CMakeLists.txt and adjusting dependencies for Android (OpenGL ES, SDL2, etc.)
