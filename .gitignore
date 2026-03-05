@@ -78,6 +78,9 @@ play-store-credentials.json
 
 temp/
 
+# generated at build time (dev defaults or release values from build-aab scripts)
+android/app/src/main/java/com/dxxredux/app/BuildInfo.kt
+
 # downloaded soundfont (fetched at build time)
 android/app/src/main/assets/gm.sf2
 
