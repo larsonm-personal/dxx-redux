@@ -36,6 +36,9 @@ class TouchOverlayView @JvmOverloads constructor(
     /** Called with (buttonIndex, pressed) when a fire button is touched/released. */
     var buttonCallback: ((Int, Boolean) -> Unit)? = null
 
+    /** Called when the MAP button is tapped (toggles automap). */
+    var mapButtonCallback: (() -> Unit)? = null
+
     /** Called with (heading, pitch, thrust) when automap gestures are detected.
      *  heading/pitch are fractions of screen dimension; thrust is fraction of screen width. */
     var automapInputCallback: ((Float, Float, Float) -> Unit)? = null
@@ -65,7 +68,10 @@ class TouchOverlayView @JvmOverloads constructor(
     private var btn1CenterX = 0f   // fire secondary
     private var btn1CenterY = 0f
     private var btnRadius   = 0f
-
+    // ── MAP button geometry ───────────────────────────────────────
+    private var mapBtnCenterX = 0f
+    private var mapBtnCenterY = 0f
+    private var mapBtnRadius  = 0f
     // ── Current stick state ─────────────────────────────────
     private var stickPointerId = -1    // active pointer ID, -1 = no touch
     private val stickPos = PointF()    // current stick position (in px, relative to center)
@@ -73,6 +79,7 @@ class TouchOverlayView @JvmOverloads constructor(
     // ── Button pointer tracking (one pointer per button) ────
     private var btn0PointerId = -1
     private var btn1PointerId = -1
+    private var mapBtnPointerId = -1
 
     // ── Automap gesture state (pointers not on stick/buttons) ──
     /** Set to true by the activity when the automap is displayed. */
@@ -129,6 +136,11 @@ class TouchOverlayView @JvmOverloads constructor(
         // Button 1 (fire secondary): 5% from right, 10% from bottom
         btn1CenterX = w - w * 0.05f - btnRadius
         btn1CenterY = h - w * 0.10f - btnRadius
+
+        // MAP button: smaller, top-right corner
+        mapBtnRadius = w * 0.035f
+        mapBtnCenterX = w - w * 0.05f - mapBtnRadius
+        mapBtnCenterY = w * 0.05f + mapBtnRadius
     }
 
     // ── Drawing ─────────────────────────────────────────────
@@ -149,11 +161,20 @@ class TouchOverlayView @JvmOverloads constructor(
         canvas.drawCircle(btn0CenterX, btn0CenterY, btnRadius, paintRing)
         canvas.drawText("A", btn0CenterX, btn0CenterY + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
 
-        // ── Fire button 1 (secondary) ───────────────────────
+        // ── Fire button 1 (secondary) ─────────────────────
         val fill1 = if (btn1PointerId >= 0) paintBtnPressed else paintBtnIdle
         canvas.drawCircle(btn1CenterX, btn1CenterY, btnRadius, fill1)
         canvas.drawCircle(btn1CenterX, btn1CenterY, btnRadius, paintRing)
         canvas.drawText("B", btn1CenterX, btn1CenterY + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+
+        // ── MAP button ───────────────────────────────────────
+        val fillMap = if (mapBtnPointerId >= 0) paintBtnPressed else paintBtnIdle
+        canvas.drawCircle(mapBtnCenterX, mapBtnCenterY, mapBtnRadius, fillMap)
+        canvas.drawCircle(mapBtnCenterX, mapBtnCenterY, mapBtnRadius, paintRing)
+        val savedSize = paintBtnLabel.textSize
+        paintBtnLabel.textSize = mapBtnRadius * 0.65f
+        canvas.drawText("MAP", mapBtnCenterX, mapBtnCenterY + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+        paintBtnLabel.textSize = savedSize
     }
 
     // ── Touch handling ──────────────────────────────────────
@@ -185,6 +206,10 @@ class TouchOverlayView @JvmOverloads constructor(
                         buttonCallback?.invoke(1, true)
                         invalidate()
                     }
+                    mapBtnPointerId < 0 && isInsideButton(px, py, mapBtnCenterX, mapBtnCenterY, mapBtnRadius) -> {
+                        mapBtnPointerId = pid
+                        invalidate()
+                    }
                     else -> {
                         // Touch not on any control — track for automap gestures
                         if (automapActive) {
@@ -213,6 +238,7 @@ class TouchOverlayView @JvmOverloads constructor(
                 if (stickPointerId >= 0) resetStick()
                 releaseButton0()
                 releaseButton1()
+                releaseMapButton(event.actionMasked == MotionEvent.ACTION_UP)
                 automapPointers.clear()
                 automapPinchDist = 0f
             }
@@ -223,6 +249,7 @@ class TouchOverlayView @JvmOverloads constructor(
                     stickPointerId -> resetStick()
                     btn0PointerId  -> releaseButton0()
                     btn1PointerId  -> releaseButton1()
+                    mapBtnPointerId -> releaseMapButton(true)
                     else -> {
                         // Automap pointer lifted
                         automapPointers.remove(pid)
@@ -243,8 +270,8 @@ class TouchOverlayView @JvmOverloads constructor(
         return hypot(px - stickCenterX, py - stickCenterY) <= stickRadius
     }
 
-    private fun isInsideButton(px: Float, py: Float, cx: Float, cy: Float): Boolean {
-        return hypot(px - cx, py - cy) <= btnRadius * 1.3f   // slightly generous hit area
+    private fun isInsideButton(px: Float, py: Float, cx: Float, cy: Float, radius: Float = btnRadius): Boolean {
+        return hypot(px - cx, py - cy) <= radius * 1.3f   // slightly generous hit area
     }
 
     private fun updateStickFromTouch(px: Float, py: Float) {
@@ -296,6 +323,15 @@ class TouchOverlayView @JvmOverloads constructor(
     private fun releaseAllButtons() {
         releaseButton0()
         releaseButton1()
+        releaseMapButton(false)
+    }
+
+    private fun releaseMapButton(fired: Boolean) {
+        if (mapBtnPointerId >= 0) {
+            mapBtnPointerId = -1
+            invalidate()
+            if (fired) mapButtonCallback?.invoke()
+        }
     }
 
     // ── Automap gesture helpers ─────────────────────────────

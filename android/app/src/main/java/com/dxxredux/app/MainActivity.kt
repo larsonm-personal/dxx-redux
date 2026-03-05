@@ -64,11 +64,10 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     private var overlayEnabled = false
     private val overlayPoller = android.os.Handler(android.os.Looper.getMainLooper())
 
-    // ── Edge-swipe state ────────────────────────────────────────────────
-    private var edgeSwipeTracking = false      // left-edge → setup screen
-    private var rightEdgeSwipeTracking = false  // right-edge → toggle automap
+    // ── Left-edge fling detection (→ setup screen) ────────────────────
+    private lateinit var edgeFlingDetector: android.view.GestureDetector
+    private var edgeSwipeTracking = false
     private var edgeSwipeStartX = 0f
-    private var edgeSwipeStartY = 0f
 
     // ── Automap gesture state (drag = pan/tilt, pinch = thrust) ─────────
     private val automapPointers = mutableMapOf<Int, PointF>()  // pointerId → last position
@@ -88,6 +87,28 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
 
         // Draw behind system bars
         WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        // Fling detector for left-edge swipe → open setup screen
+        edgeFlingDetector = android.view.GestureDetector(this,
+            object : android.view.GestureDetector.SimpleOnGestureListener() {
+                override fun onFling(
+                    e1: MotionEvent?, e2: MotionEvent,
+                    velocityX: Float, velocityY: Float
+                ): Boolean {
+                    if (e1 == null) return false
+                    val density = resources.displayMetrics.density
+                    val edgePx = 40 * density
+                    if (e1.x > edgePx) return false              // didn't start at left edge
+                    if (velocityX < 600) return false             // not fast enough rightward
+                    val dx = e2.x - e1.x
+                    val dy = kotlin.math.abs(e2.y - e1.y)
+                    if (dx > 30 * density && dy < dx * 1.5f) {    // roughly horizontal
+                        openSetupScreen()
+                        return true
+                    }
+                    return false
+                }
+            })
 
         gameSurfaceView = GameSurfaceView(this)
         gameSurfaceView.holder.addCallback(this)
@@ -109,6 +130,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         touchOverlay.automapInputCallback = { heading, pitch, thrust ->
             nativeAutomapInput(heading, pitch, thrust)
         }
+        touchOverlay.mapButtonCallback = { toggleAutomap() }
         touchOverlay.isActive = false
 
         // Layer surface + overlay in a FrameLayout
@@ -127,12 +149,16 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         // Hide system bars after content view is set
         hideSystemBars()
 
-        // Prevent the system back-gesture from consuming left-edge swipes;
-        // we use them to open the setup screen.
+        // Prevent the system back/nav gestures from consuming edge swipes.
+        // Left edge: we use it for the setup-screen swipe.
+        // Right edge: prevent system "back" from interfering with gameplay.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             gameSurfaceView.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
-                val edgePx = (20 * resources.displayMetrics.density).toInt()
-                v.systemGestureExclusionRects = listOf(Rect(0, 0, edgePx, v.height))
+                val edgePx = (40 * resources.displayMetrics.density).toInt()
+                v.systemGestureExclusionRects = listOf(
+                    Rect(0, 0, edgePx, v.height),                  // left edge
+                    Rect(v.width - edgePx, 0, v.width, v.height)   // right edge
+                )
             }
         }
     }
@@ -271,54 +297,31 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     // ── Touch → Mouse ───────────────────────────────────────
     private fun handleTouch(view: View, event: MotionEvent): Boolean {
         val density = resources.displayMetrics.density
-        val edgeThresholdPx = 20 * density   // 20 dp from left edge
-        val swipeMinPx      = 80 * density   // minimum 80 dp horizontal drag
+        val edgeThresholdPx = 40 * density   // 40 dp from left edge
 
-        // ── Edge-swipe detection ────────────────────────────
+        // ── Left-edge fling detection (→ setup screen) ──────
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                if (event.x < edgeThresholdPx) {
-                    edgeSwipeTracking = true
-                    edgeSwipeStartX = event.x
-                    edgeSwipeStartY = event.y
-                    return true           // consume – don't forward to game
-                }
-                if (event.x > view.width - edgeThresholdPx) {
-                    rightEdgeSwipeTracking = true
-                    edgeSwipeStartX = event.x
-                    edgeSwipeStartY = event.y
-                    return true
-                }
-                edgeSwipeTracking = false
-                rightEdgeSwipeTracking = false
+                edgeSwipeTracking = event.x < edgeThresholdPx
+                if (edgeSwipeTracking) edgeSwipeStartX = event.x
             }
             MotionEvent.ACTION_MOVE -> {
-                if (edgeSwipeTracking || rightEdgeSwipeTracking) return true
+                if (edgeSwipeTracking) {
+                    edgeFlingDetector.onTouchEvent(event)
+                    return true
+                }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 if (edgeSwipeTracking) {
+                    edgeFlingDetector.onTouchEvent(event)
                     edgeSwipeTracking = false
-                    if (event.actionMasked == MotionEvent.ACTION_UP) {
-                        val dx = event.x - edgeSwipeStartX
-                        val dy = kotlin.math.abs(event.y - edgeSwipeStartY)
-                        if (dx > swipeMinPx && dy < dx) {
-                            openSetupScreen()
-                        }
-                    }
-                    return true
-                }
-                if (rightEdgeSwipeTracking) {
-                    rightEdgeSwipeTracking = false
-                    if (event.actionMasked == MotionEvent.ACTION_UP) {
-                        val dx = edgeSwipeStartX - event.x   // positive = swiped left
-                        val dy = kotlin.math.abs(event.y - edgeSwipeStartY)
-                        if (dx > swipeMinPx && dy < dx) {
-                            toggleAutomap()
-                        }
-                    }
                     return true
                 }
             }
+        }
+        if (edgeSwipeTracking) {
+            edgeFlingDetector.onTouchEvent(event)
+            return true
         }
 
         // ── Automap gesture handling (when overlay is off) ────

@@ -253,6 +253,37 @@ Write-Host "Selected track: $selectedTrack"
 Write-Host ""
 
 # ═══════════════════════════════════════════════════════════════════
+#  Helper: commit an edit, handling changesNotSentForReview quirk
+#  Returns $null on success, or the error message string on failure.
+# ═══════════════════════════════════════════════════════════════════
+function TryCommitEdit {
+    param($baseUrl, $editId, $headers)
+    $commitUrl = "$baseUrl/edits/$editId" + ":commit"
+    try {
+        Invoke-RestMethod -Uri $commitUrl -Method POST -Headers $headers `
+            -ContentType "application/json" -Body "{}" -TimeoutSec 30 | Out-Null
+        return $null
+    } catch {
+        $err = $_.ErrorDetails.Message
+        if (-not $err) { try { $err = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
+        if ($err -match "changesNotSentForReview") {
+            Write-Host "Retrying commit with changesNotSentForReview..."
+            $url2 = "$baseUrl/edits/$editId" + ":commit?changesNotSentForReview=true"
+            try {
+                Invoke-RestMethod -Uri $url2 -Method POST -Headers $headers `
+                    -ContentType "application/json" -Body "{}" -TimeoutSec 30 | Out-Null
+                return $null
+            } catch {
+                $err2 = $_.ErrorDetails.Message
+                if (-not $err2) { try { $err2 = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
+                return $err2
+            }
+        }
+        return $err
+    }
+}
+
+# ═══════════════════════════════════════════════════════════════════
 #  Upload AAB
 # ═══════════════════════════════════════════════════════════════════
 
@@ -290,13 +321,14 @@ if (-not $alreadyUploaded) {
     # ═══════════════════════════════════════════════════════════════════
 
     Write-Host "Assigning versionCode $versionCode to track '$selectedTrack'..."
+    $releaseStatus = "completed"
     $trackBody = @{
         track    = $selectedTrack
         releases = @(
             @{
                 name         = "v$versionCode"
                 versionCodes = @( $versionCode )
-                status       = "completed"
+                status       = $releaseStatus
             }
         )
     } | ConvertTo-Json -Depth 5
@@ -314,25 +346,49 @@ if (-not $alreadyUploaded) {
     Write-Host ""
 
     # ═══════════════════════════════════════════════════════════════════
-    #  Commit the edit (changesNotSentForReview for pre-production apps)
+    #  Commit the edit
+    #  Handles: changesNotSentForReview quirk, draft-app status constraint
     # ═══════════════════════════════════════════════════════════════════
 
     Write-Host "Committing edit..."
-    $commitUrl = "$baseUrl/edits/$editId" + ":commit?changesNotSentForReview=true"
-    try {
-        $commitResult = Invoke-RestMethod -Uri $commitUrl `
-                        -Method POST -Headers $headers -ContentType "application/json" `
-                        -Body "{}" -TimeoutSec 30
-    } catch {
-        $errBody = $_.ErrorDetails.Message
-        if (-not $errBody) { try { $errBody = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
-        Write-Error "Commit failed: $errBody`n$_"
+    $commitError = TryCommitEdit $baseUrl $editId $headers
+
+    # Draft apps reject status=completed; fall back to status=draft
+    if ($commitError -and $commitError -match "draft app" -and $releaseStatus -ne "draft") {
+        Write-Host "App is in draft state. Re-assigning track with status=draft..."
+        $releaseStatus = "draft"
+        $trackBody = @{
+            track    = $selectedTrack
+            releases = @(
+                @{
+                    name         = "v$versionCode"
+                    versionCodes = @( $versionCode )
+                    status       = "draft"
+                }
+            )
+        } | ConvertTo-Json -Depth 5
+        try {
+            Invoke-RestMethod -Uri "$baseUrl/edits/$editId/tracks/$selectedTrack" `
+                -Method PUT -Headers $headers `
+                -ContentType "application/json" -Body $trackBody -TimeoutSec 30 | Out-Null
+            Write-Host "Track re-assigned with status=draft"
+        } catch {
+            $errBody = $_.ErrorDetails.Message
+            if (-not $errBody) { try { $errBody = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
+            Write-Error "Track re-assignment failed: $errBody`n$_"
+        }
+        $commitError = TryCommitEdit $baseUrl $editId $headers
     }
-    Write-Host "Edit committed."
+
+    if ($commitError) {
+        Write-Error "Commit failed: $commitError"
+    } else {
+        Write-Host "Edit committed."
+    }
     Write-Host ""
 } else {
     # Already uploaded -- promote existing version via new edit
-    Write-Host "Promoting existing versionCode $versionCode to completed..."
+    Write-Host "Promoting existing versionCode $versionCode..."
     try {
         Invoke-RestMethod -Uri "$baseUrl/edits/$editId" -Method DELETE -Headers $headers -TimeoutSec 10 | Out-Null
     } catch {}
@@ -341,13 +397,14 @@ if (-not $alreadyUploaded) {
              -ContentType "application/json" -Body "{}" -TimeoutSec 30
     $editId = $edit2.id
 
+    $releaseStatus = "completed"
     $trackBody = @{
         track    = $selectedTrack
         releases = @(
             @{
                 name         = "v$versionCode"
                 versionCodes = @( $versionCode )
-                status       = "completed"
+                status       = $releaseStatus
             }
         )
     } | ConvertTo-Json -Depth 5
@@ -363,16 +420,41 @@ if (-not $alreadyUploaded) {
         Write-Error "Track update failed: $errBody`n$_"
     }
 
-    $commitUrl = "$baseUrl/edits/$editId" + ":commit?changesNotSentForReview=true"
-    try {
-        Invoke-RestMethod -Uri $commitUrl -Method POST -Headers $headers `
-                          -ContentType "application/json" -Body "{}" -TimeoutSec 30 | Out-Null
-    } catch {
-        $errBody = $_.ErrorDetails.Message
-        if (-not $errBody) { try { $errBody = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
-        Write-Error "Commit failed: $errBody`n$_"
+    Write-Host "Committing edit..."
+    $commitError = TryCommitEdit $baseUrl $editId $headers
+
+    # Draft apps reject status=completed; fall back to status=draft
+    if ($commitError -and $commitError -match "draft app" -and $releaseStatus -ne "draft") {
+        Write-Host "App is in draft state. Re-assigning track with status=draft..."
+        $releaseStatus = "draft"
+        $trackBody = @{
+            track    = $selectedTrack
+            releases = @(
+                @{
+                    name         = "v$versionCode"
+                    versionCodes = @( $versionCode )
+                    status       = "draft"
+                }
+            )
+        } | ConvertTo-Json -Depth 5
+        try {
+            Invoke-RestMethod -Uri "$baseUrl/edits/$editId/tracks/$selectedTrack" `
+                -Method PUT -Headers $headers `
+                -ContentType "application/json" -Body $trackBody -TimeoutSec 30 | Out-Null
+            Write-Host "Track re-assigned with status=draft"
+        } catch {
+            $errBody = $_.ErrorDetails.Message
+            if (-not $errBody) { try { $errBody = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
+            Write-Error "Track re-assignment failed: $errBody`n$_"
+        }
+        $commitError = TryCommitEdit $baseUrl $editId $headers
     }
-    Write-Host "Edit committed."
+
+    if ($commitError) {
+        Write-Error "Commit failed: $commitError"
+    } else {
+        Write-Host "Edit committed."
+    }
     Write-Host ""
 }
 
@@ -381,5 +463,5 @@ Write-Host "=== Deployment successful ==="
 Write-Host "  Package:     $PACKAGE"
 Write-Host "  Track:       $selectedTrack"
 Write-Host "  VersionCode: $versionCode"
-Write-Host "  Status:      completed"
+Write-Host "  Status:      $releaseStatus"
 Write-Host ""
