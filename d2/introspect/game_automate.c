@@ -120,8 +120,17 @@ typedef enum {
     STEP_WAIT_MS,       /* wait N milliseconds */
     STEP_WAIT_FOR,      /* wait for a game state condition */
     STEP_INTROSPECT,    /* trigger introspection dump */
-    STEP_LOG            /* emit a logcat message */
+    STEP_LOG,           /* emit a logcat message */
+    STEP_ASSERT         /* check introspection values, fail if mismatch */
 } step_type;
+
+/* Key-value pair for STEP_ASSERT expectations */
+typedef struct {
+    char key[64];
+    char value[128];
+} assert_expect;
+
+#define MAX_EXPECTS 16
 
 typedef struct {
     step_type type;
@@ -131,6 +140,8 @@ typedef struct {
     char      value[64];        /* STEP_WAIT_FOR: expected value */
     int       timeout_ms;       /* STEP_WAIT_FOR: timeout (0 = infinite) */
     char      message[128];     /* STEP_LOG: message text */
+    assert_expect expects[MAX_EXPECTS]; /* STEP_ASSERT: expected values */
+    int       num_expects;              /* STEP_ASSERT: number of expectations */
 } auto_step;
 
 #define MAX_STEPS 256
@@ -141,6 +152,7 @@ static auto_step  g_steps[MAX_STEPS];
 static int        g_num_steps    = 0;
 static int        g_current_step = 0;
 static int        g_active       = 0;
+static int        g_failed       = 0;   /* set to 1 on assert/timeout failure */
 static Uint32     g_step_start   = 0;   /* SDL_GetTicks() when step began */
 static int        g_key_phase    = 0;   /* 0=not sent, 1=down sent, 2=done */
 
@@ -341,6 +353,7 @@ static int parse_script(const char *json) {
                     else if (strcmp(val, "wait_for") == 0) s->type = STEP_WAIT_FOR;
                     else if (strcmp(val, "introspect") == 0) s->type = STEP_INTROSPECT;
                     else if (strcmp(val, "log") == 0)    s->type = STEP_LOG;
+                    else if (strcmp(val, "assert") == 0) s->type = STEP_ASSERT;
                     else LOGE("Unknown action: %s", val);
                 }
                 else if (strcmp(key, "key") == 0) strncpy(s->key_name, val, sizeof(s->key_name)-1);
@@ -360,6 +373,57 @@ static int parse_script(const char *json) {
                 char val[16];
                 p = parse_bool(p, val, sizeof(val));
                 if (strcmp(key, "value") == 0) strncpy(s->value, val, sizeof(s->value)-1);
+            }
+            else if (*p == '{') {
+                /* Parse "expect": { "key1": "val1", "key2": val2, ... } */
+                if (strcmp(key, "expect") == 0) {
+                    p++; /* skip '{' */
+                    s->num_expects = 0;
+                    while (s->num_expects < MAX_EXPECTS) {
+                        p = skip_ws(p);
+                        if (*p == '}') { p++; break; }
+                        if (*p == ',') { p++; continue; }
+                        if (*p != '"') break;
+                        assert_expect *ae = &s->expects[s->num_expects];
+                        p = parse_string(p, ae->key, sizeof(ae->key));
+                        p = skip_ws(p);
+                        if (*p == ':') p++;
+                        p = skip_ws(p);
+                        if (*p == '"') {
+                            p = parse_string(p, ae->value, sizeof(ae->value));
+                        } else if (*p == 't' || *p == 'f') {
+                            p = parse_bool(p, ae->value, sizeof(ae->value));
+                        } else if ((*p >= '0' && *p <= '9') || *p == '-') {
+                            int iv;
+                            p = parse_int(p, &iv);
+                            snprintf(ae->value, sizeof(ae->value), "%d", iv);
+                        } else {
+                            /* skip unknown */
+                            while (*p && *p != ',' && *p != '}') p++;
+                            continue;
+                        }
+                        s->num_expects++;
+                    }
+                } else {
+                    /* Skip unknown object */
+                    int depth = 1;
+                    p++;
+                    while (*p && depth > 0) {
+                        if (*p == '{') depth++;
+                        else if (*p == '}') depth--;
+                        p++;
+                    }
+                }
+            }
+            else if (*p == '[') {
+                /* Skip unknown array */
+                int depth = 1;
+                p++;
+                while (*p && depth > 0) {
+                    if (*p == '[') depth++;
+                    else if (*p == ']') depth--;
+                    p++;
+                }
             }
             else {
                 /* Skip unknown value */
@@ -408,7 +472,86 @@ static int load_script_file(const char *path) {
     return result;
 }
 
+/* ── Assert: check introspection JSON values ───────────────────────── */
+
+/*
+ * Find "key": <value> in a JSON string and extract the raw value text.
+ * Returns 1 if found, 0 if not.  Writes the value (unquoted) into buf.
+ */
+static int json_find_value(const char *json, const char *key, char *buf, size_t buflen) {
+    char pattern[128];
+    snprintf(pattern, sizeof(pattern), "\"%s\"", key);
+    const char *pos = json;
+    while ((pos = strstr(pos, pattern)) != NULL) {
+        /* Make sure this is a real key (preceded by { or , or whitespace) */
+        pos += strlen(pattern);
+        /* skip whitespace and colon */
+        while (*pos && (*pos == ' ' || *pos == '\t' || *pos == ':')) pos++;
+        if (!*pos) return 0;
+
+        /* Extract the value */
+        if (*pos == '"') {
+            /* Quoted string value */
+            pos++;
+            size_t i = 0;
+            while (*pos && *pos != '"' && i < buflen - 1) {
+                buf[i++] = *pos++;
+            }
+            buf[i] = '\0';
+            return 1;
+        } else {
+            /* Unquoted: number, bool, null */
+            size_t i = 0;
+            while (*pos && *pos != ',' && *pos != '}' && *pos != ']' &&
+                   !isspace((unsigned char)*pos) && i < buflen - 1) {
+                buf[i++] = *pos++;
+            }
+            buf[i] = '\0';
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/*
+ * Run all assertions for a STEP_ASSERT.
+ * Returns 1 if all pass, 0 on first failure (logs the failure).
+ */
+static int run_assertions(auto_step *s) {
+    char *json = game_introspect_get_state();
+    if (!json) {
+        LOGE("ASSERT_FAIL: Could not get introspection state");
+        return 0;
+    }
+
+    for (int i = 0; i < s->num_expects; i++) {
+        char actual[128];
+        if (!json_find_value(json, s->expects[i].key, actual, sizeof(actual))) {
+            LOGE("ASSERT_FAIL: key \"%s\" not found in introspection JSON", s->expects[i].key);
+            LOGI("ASSERT_EXPECTED: \"%s\" = \"%s\"", s->expects[i].key, s->expects[i].value);
+            free(json);
+            return 0;
+        }
+        if (strcasecmp(actual, s->expects[i].value) != 0) {
+            LOGE("ASSERT_FAIL: \"%s\" expected \"%s\" but got \"%s\"",
+                 s->expects[i].key, s->expects[i].value, actual);
+            free(json);
+            return 0;
+        }
+        LOGI("ASSERT_PASS: \"%s\" == \"%s\"", s->expects[i].key, s->expects[i].value);
+    }
+
+    free(json);
+    return 1;
+}
+
 /* ── Advance to next step ───────────────────────────────────────────── */
+
+static void stop_script_fail(const char *reason) {
+    LOGE("SCRIPT_RESULT: FAIL at step %d/%d — %s", g_current_step + 1, g_num_steps, reason);
+    g_active = 0;
+    g_failed = 1;
+}
 
 static void advance_step(void) {
     g_current_step++;
@@ -416,8 +559,9 @@ static void advance_step(void) {
     g_key_phase = 0;
 
     if (g_current_step >= g_num_steps) {
-        LOGI("Automation script completed (%d steps)", g_num_steps);
+        LOGI("SCRIPT_RESULT: PASS (%d steps)", g_num_steps);
         g_active = 0;
+        g_failed = 0;
     } else {
         auto_step *s = &g_steps[g_current_step];
         LOGI("Step %d/%d: type=%d", g_current_step + 1, g_num_steps, (int)s->type);
@@ -454,6 +598,7 @@ void game_automate_tick(void) {
             g_step_start = SDL_GetTicks();
             g_key_phase = 0;
             g_active = 1;
+            g_failed = 0;
             LOGI("Script started: %d steps", g_num_steps);
 
             if (g_num_steps > 0) {
@@ -497,8 +642,10 @@ void game_automate_tick(void) {
             LOGI("Condition met: %s = %s (after %u ms)", s->field, s->value, elapsed);
             advance_step();
         } else if (s->timeout_ms > 0 && elapsed >= (Uint32)s->timeout_ms) {
-            LOGE("TIMEOUT waiting for %s = %s (after %d ms)", s->field, s->value, s->timeout_ms);
-            advance_step();
+            char reason[256];
+            snprintf(reason, sizeof(reason), "TIMEOUT waiting for %s = %s (after %d ms)",
+                     s->field, s->value, s->timeout_ms);
+            stop_script_fail(reason);
         }
         break;
 
@@ -511,6 +658,14 @@ void game_automate_tick(void) {
     case STEP_LOG:
         LOGI("SCRIPT: %s", s->message);
         advance_step();
+        break;
+
+    case STEP_ASSERT:
+        if (run_assertions(s)) {
+            advance_step();
+        } else {
+            stop_script_fail("assertion failed");
+        }
         break;
     }
 }

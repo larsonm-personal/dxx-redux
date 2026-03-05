@@ -1,72 +1,202 @@
 #!/usr/bin/env bash
 #
-# run_automation.sh — Push and execute an automation script on the Android device.
+# run_automation.sh — Push and execute automation test scripts on Android.
 #
 # Usage:
-#   ./android/run_automation.sh [script.json]           # push + run script
-#   ./android/run_automation.sh                         # run default automate_to_automap.json
-#   ./android/run_automation.sh --watch                 # run default + tail logcat
-#   ./android/run_automation.sh script.json --watch     # push + run + tail logcat
+#   ./android/run_automation.sh [script.json]           # run a single test
+#   ./android/run_automation.sh                         # run default test
+#   ./android/run_automation.sh --all                   # run all game_scripts/test_*.json
+#   ./android/run_automation.sh --watch script.json     # run + keep tailing logcat
 #
 # The script is pushed to the app's files directory, then a broadcast
 # triggers the native automation engine to load and execute it.
+#
+# The runner monitors logcat for SCRIPT_RESULT: PASS or SCRIPT_RESULT: FAIL.
+# Exit code 0 = all tests pass, 1 = at least one test failed.
 
 set -euo pipefail
 
 PACKAGE="com.dxxredux.app"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-DEFAULT_SCRIPT="$SCRIPT_DIR/automate_to_automap.json"
+GAME_SCRIPTS_DIR="$SCRIPT_DIR/game_scripts"
+DEFAULT_SCRIPT="$GAME_SCRIPTS_DIR/test_launch_to_automap.json"
+TIMEOUT_SEC=120   # max time to wait for a single test
 
 WATCH=false
-SCRIPT=""
+RUN_ALL=false
+SCRIPTS=()
 
 for arg in "$@"; do
     case "$arg" in
         --watch|-w) WATCH=true ;;
-        *)          SCRIPT="$arg" ;;
+        --all|-a)   RUN_ALL=true ;;
+        *)          SCRIPTS+=("$arg") ;;
     esac
 done
 
-if [ -z "$SCRIPT" ]; then
-    SCRIPT="$DEFAULT_SCRIPT"
+if $RUN_ALL; then
+    SCRIPTS=()
+    for f in "$GAME_SCRIPTS_DIR"/test_*.json; do
+        [ -f "$f" ] && SCRIPTS+=("$f")
+    done
+    if [ ${#SCRIPTS[@]} -eq 0 ]; then
+        echo "ERROR: No test_*.json files found in $GAME_SCRIPTS_DIR" >&2
+        exit 1
+    fi
+elif [ ${#SCRIPTS[@]} -eq 0 ]; then
+    SCRIPTS=("$DEFAULT_SCRIPT")
 fi
 
-if [ ! -f "$SCRIPT" ]; then
-    echo "ERROR: Script file not found: $SCRIPT" >&2
-    exit 1
-fi
+# ── Helpers ─────────────────────────────────────────────────────────────
 
-BASENAME="$(basename "$SCRIPT")"
-DEVICE_PATH="/data/local/tmp/$BASENAME"
+push_script() {
+    local script="$1"
+    local basename
+    basename="$(basename "$script")"
+    local device_tmp="/data/local/tmp/$basename"
 
-echo "=== DXX-Redux Automation ==="
-echo "Script:  $SCRIPT"
-echo "Device:  $DEVICE_PATH"
-echo ""
+    adb push "$script" "$device_tmp" > /dev/null 2>&1
+    adb shell "run-as $PACKAGE cp $device_tmp files/$basename" 2>/dev/null
+    adb shell "rm -f $device_tmp" 2>/dev/null
+    echo "$basename"
+}
 
-# Push the script to a temp location readable by adb
-echo "Pushing script to device..."
-adb push "$SCRIPT" "$DEVICE_PATH"
+run_single_test() {
+    local script="$1"
+    local test_name
+    test_name="$(basename "$script" .json)"
 
-# Copy into the app's files directory (requires run-as)
-echo "Copying to app files directory..."
-adb shell "run-as $PACKAGE cp $DEVICE_PATH files/$BASENAME"
+    if [ ! -f "$script" ]; then
+        echo "ERROR: Script not found: $script" >&2
+        return 1
+    fi
 
-# Clean up temp file
-adb shell "rm -f $DEVICE_PATH"
-
-# Send the broadcast to trigger automation
-# Note: The Kotlin receiver prepends filesDir (/data/.../files/) automatically,
-# so we only pass the bare filename, not "files/..."
-echo "Sending AUTOMATE broadcast..."
-adb shell "am broadcast -a com.dxxredux.AUTOMATE --es script $BASENAME"
-
-echo ""
-echo "Automation started! Script will execute on the game thread."
-echo ""
-
-if $WATCH; then
-    echo "Tailing logcat for automation output (Ctrl+C to stop)..."
     echo "────────────────────────────────────────"
-    adb logcat -s DXX-Automate:I DXX-Introspect:I DXX-Redux:I DXX-Automap:I
+    echo "TEST: $test_name"
+    echo "  Script: $script"
+
+    # Push the script
+    local basename
+    basename=$(push_script "$script")
+
+    # Clear logcat buffer to get clean output
+    adb logcat -c 2>/dev/null || true
+
+    # Send the broadcast
+    adb shell "am broadcast -a com.dxxredux.AUTOMATE --es script $basename" > /dev/null 2>&1
+
+    echo "  Running... (timeout: ${TIMEOUT_SEC}s)"
+
+    # Monitor logcat for SCRIPT_RESULT (PASS or FAIL)
+    local result=""
+    local fail_detail=""
+    local start_time=$SECONDS
+
+    # Create a temp file for logcat output
+    local logcat_tmp
+    logcat_tmp=$(mktemp)
+
+    # Start logcat in background, filtered for our tags
+    adb logcat -s "DXX-Automate:*" > "$logcat_tmp" 2>/dev/null &
+    local logcat_pid=$!
+
+    while [ $((SECONDS - start_time)) -lt $TIMEOUT_SEC ]; do
+        # Check for PASS
+        if grep -q "SCRIPT_RESULT: PASS" "$logcat_tmp" 2>/dev/null; then
+            result="PASS"
+            break
+        fi
+        # Check for FAIL
+        if grep -q "SCRIPT_RESULT: FAIL" "$logcat_tmp" 2>/dev/null; then
+            result="FAIL"
+            # Extract the failure detail
+            fail_detail=$(grep "SCRIPT_RESULT: FAIL" "$logcat_tmp" | head -1 | sed 's/.*SCRIPT_RESULT: FAIL/FAIL/')
+            # Also capture ASSERT_FAIL lines
+            local assert_lines
+            assert_lines=$(grep "ASSERT_FAIL\|ASSERT_EXPECTED" "$logcat_tmp" 2>/dev/null || true)
+            if [ -n "$assert_lines" ]; then
+                fail_detail="$fail_detail
+$assert_lines"
+            fi
+            break
+        fi
+        # Check if process died (crash)
+        if ! adb shell "pidof $PACKAGE" > /dev/null 2>&1; then
+            result="CRASH"
+            fail_detail="Game process died during test"
+            break
+        fi
+        sleep 1
+    done
+
+    # Kill the background logcat
+    kill "$logcat_pid" 2>/dev/null || true
+    wait "$logcat_pid" 2>/dev/null || true
+
+    if [ -z "$result" ]; then
+        result="TIMEOUT"
+        fail_detail="Test did not complete within ${TIMEOUT_SEC}s"
+    fi
+
+    # Print result
+    case "$result" in
+        PASS)
+            echo "  RESULT: PASS"
+            rm -f "$logcat_tmp"
+            return 0
+            ;;
+        FAIL)
+            echo "  RESULT: FAIL"
+            echo "$fail_detail" | sed 's/^/    /'
+            rm -f "$logcat_tmp"
+            return 1
+            ;;
+        CRASH)
+            echo "  RESULT: CRASH"
+            echo "    $fail_detail"
+            rm -f "$logcat_tmp"
+            return 1
+            ;;
+        TIMEOUT)
+            echo "  RESULT: TIMEOUT"
+            echo "    $fail_detail"
+            # Dump last logcat lines for debugging
+            echo "    Last automation log lines:"
+            tail -5 "$logcat_tmp" 2>/dev/null | sed 's/^/      /' || true
+            rm -f "$logcat_tmp"
+            return 1
+            ;;
+    esac
+}
+
+# ── Main ────────────────────────────────────────────────────────────────
+
+echo "=== DXX-Redux Test Runner ==="
+echo "Tests to run: ${#SCRIPTS[@]}"
+echo ""
+
+passed=0
+failed=0
+failed_names=()
+
+for script in "${SCRIPTS[@]}"; do
+    if run_single_test "$script"; then
+        ((passed++))
+    else
+        ((failed++))
+        failed_names+=("$(basename "$script" .json)")
+    fi
+    echo ""
+done
+
+echo "========================================"
+if [ $failed -eq 0 ]; then
+    echo "ALL TESTS PASS ($passed/$passed)"
+    exit 0
+else
+    echo "TESTS FAILED: $failed of $((passed + failed))"
+    for name in "${failed_names[@]}"; do
+        echo "  FAIL: $name"
+    done
+    exit 1
 fi

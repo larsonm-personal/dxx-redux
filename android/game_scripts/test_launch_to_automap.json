@@ -1,0 +1,55 @@
+[
+    {"action": "log", "message": "=== TEST: Launch to Automap ==="},
+
+    {"action": "log", "message": "Step 1: Wait for game to initialize..."},
+    {"action": "wait_ms", "ms": 2000},
+
+    {"action": "log", "message": "Step 2: Get past pilot select screen (press ENTER to select default pilot)..."},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 10000},
+    {"action": "key", "key": "enter", "delay_ms": 2000},
+
+    {"action": "log", "message": "Step 3: Assert we are at the main menu..."},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 10000},
+    {"action": "assert", "expect": {"screen_mode": "menu", "in_game": "false"}},
+
+    {"action": "log", "message": "Step 4: Press ENTER to open New Game..."},
+    {"action": "key", "key": "enter", "delay_ms": 1000},
+
+    {"action": "log", "message": "Step 5: Press ENTER to accept default difficulty..."},
+    {"action": "key", "key": "enter", "delay_ms": 1500},
+
+    {"action": "log", "message": "Step 6: Skip briefing screens (15x ENTER)..."},
+    {"action": "key", "key": "enter", "delay_ms": 400},
+    {"action": "key", "key": "enter", "delay_ms": 400},
+    {"action": "key", "key": "enter", "delay_ms": 400},
+    {"action": "key", "key": "enter", "delay_ms": 400},
+    {"action": "key", "key": "enter", "delay_ms": 400},
+    {"action": "key", "key": "enter", "delay_ms": 400},
+    {"action": "key", "key": "enter", "delay_ms": 400},
+    {"action": "key", "key": "enter", "delay_ms": 400},
+    {"action": "key", "key": "enter", "delay_ms": 400},
+    {"action": "key", "key": "enter", "delay_ms": 400},
+    {"action": "key", "key": "enter", "delay_ms": 400},
+    {"action": "key", "key": "enter", "delay_ms": 400},
+    {"action": "key", "key": "enter", "delay_ms": 400},
+    {"action": "key", "key": "enter", "delay_ms": 400},
+    {"action": "key", "key": "enter", "delay_ms": 400},
+
+    {"action": "log", "message": "Step 7: Wait for game to load..."},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000},
+
+    {"action": "log", "message": "Step 8: Assert we are in-game on level 1..."},
+    {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
+
+    {"action": "log", "message": "Step 9: Wait for game window to be front..."},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000},
+
+    {"action": "log", "message": "Step 10: Press TAB to open automap..."},
+    {"action": "key", "key": "tab", "delay_ms": 2000},
+
+    {"action": "log", "message": "Step 11: Assert automap is active..."},
+    {"action": "assert", "expect": {"automap_active": "true", "in_game": "true", "screen_mode": "game"}},
+
+    {"action": "log", "message": "=== TEST: Launch to Automap — COMPLETE ==="},
+    {"action": "introspect"}
+]
