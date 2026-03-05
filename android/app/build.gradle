@@ -31,6 +31,50 @@ def gitVersionCode = {
     }
 }()
 
+// ── Download GM soundfont if missing or hash mismatch ────────────────────────
+def soundfontFile = file('src/main/assets/gm.sf2')
+def soundfontUrl = toolVersions['SOUNDFONT_URL']
+def soundfontSha = toolVersions['SOUNDFONT_SHA256']
+
+tasks.register('downloadSoundfont') {
+    description = 'Download GM soundfont (TimGM6mb.sf2) into assets if missing or wrong hash'
+    outputs.file(soundfontFile)
+
+    doLast {
+        if (soundfontFile.exists()) {
+            def digest = java.security.MessageDigest.getInstance('SHA-256')
+            soundfontFile.withInputStream { is -> digest.update(is.bytes) }
+            def actual = digest.digest().collect { String.format('%02x', it) }.join()
+            if (actual == soundfontSha) {
+                logger.lifecycle("Soundfont up-to-date: ${soundfontFile}")
+                return
+            }
+            logger.lifecycle("Soundfont hash mismatch — re-downloading")
+            soundfontFile.delete()
+        }
+        soundfontFile.parentFile.mkdirs()
+        logger.lifecycle("Downloading TimGM6mb.sf2...")
+        new URL(soundfontUrl).withInputStream { is -> soundfontFile.withOutputStream { os -> os << is } }
+
+        // verify
+        def digest = java.security.MessageDigest.getInstance('SHA-256')
+        soundfontFile.withInputStream { is -> digest.update(is.bytes) }
+        def actual = digest.digest().collect { String.format('%02x', it) }.join()
+        if (actual != soundfontSha) {
+            soundfontFile.delete()
+            throw new GradleException("Soundfont SHA-256 mismatch!\n  Expected: ${soundfontSha}\n  Got:      ${actual}")
+        }
+        logger.lifecycle("Soundfont downloaded and verified.")
+    }
+}
+
+tasks.configureEach { task ->
+    if (task.name.startsWith('externalNativeBuild') || task.name.startsWith('configureCMake') ||
+        task.name.startsWith('buildCMake') || task.name == 'preBuild') {
+        task.dependsOn('downloadSoundfont')
+    }
+}
+
 android {
     namespace 'com.dxxredux.app'
     compileSdk toolVersions['COMPILE_SDK'].toInteger()

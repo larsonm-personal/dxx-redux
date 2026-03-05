@@ -101,6 +101,18 @@ function Get-LatestBuildToolsVersion {
     } catch { return $null }
 }
 
+function Get-LatestSoundfontVersion {
+    # Check the GitHub releases API for arbruijn/TimGM6mb
+    try {
+        $headers = @{ "Accept" = "application/vnd.github.v3+json" }
+        $url = "https://api.github.com/repos/arbruijn/TimGM6mb/releases/latest"
+        $json = (Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 10 -Headers $headers).Content |
+                ConvertFrom-Json
+        $tag = $json.tag_name -replace '^v', ''
+        return $tag
+    } catch { return $null }
+}
+
 # ── Fetch all versions ───────────────────────────────────────────────────────
 
 Write-Host ""
@@ -147,7 +159,11 @@ $deps = @(
 
     @{ Name = "Build Tools";           ConfKey = "BUILD_TOOLS_VERSION";
        Current = $conf["BUILD_TOOLS_VERSION"];
-       Latest = Get-LatestBuildToolsVersion }
+       Latest = Get-LatestBuildToolsVersion },
+
+    @{ Name = "GM Soundfont";          ConfKey = "SOUNDFONT_VERSION";
+       Current = $conf["SOUNDFONT_VERSION"];
+       Latest = Get-LatestSoundfontVersion }
 )
 
 # JDK: special — only show update for current major, and upgrade option for the other
@@ -330,6 +346,13 @@ foreach ($item in $selected) {
                 Update-Conf "JDK_VERSION" $new
                 Write-Host "    NOTE: Run get_jdk.sh to download the updated JDK"
             }
+        }
+        "GM Soundfont" {
+            Update-Conf "SOUNDFONT_VERSION" $new
+            $sfUrl = "https://github.com/arbruijn/TimGM6mb/releases/download/v$new/TimGM6mb.sf2"
+            Update-Conf "SOUNDFONT_URL" $sfUrl
+            Write-Host "    NOTE: Update SOUNDFONT_SHA256 in tool_versions.conf after downloading."
+            Write-Host "    Run: get_soundfont.sh (it will fail on hash mismatch until you update the hash)"
         }
     }
 }

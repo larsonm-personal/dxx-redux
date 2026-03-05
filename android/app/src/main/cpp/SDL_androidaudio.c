@@ -111,9 +111,8 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
     LOGI("OpenAudio: freq=%d fmt=0x%04X channels=%d samples=%d",
          spec->freq, spec->format, spec->channels, spec->samples);
 
-    h->mixlen  = spec->size;      /* bytes of U8 data per callback */
-    /* Each U8 sample expands to S16 (2 bytes) */
-    h->playlen = spec->samples * spec->channels * sizeof(Sint16);
+    h->mixlen  = spec->size;      /* bytes per callback (S16 stereo) */
+    h->playlen = spec->size;       /* OpenSL ES also uses S16 — same size */
 
     /* Allocate mix buffer (SDL fills this via the game's callback) */
     h->mixbuf = (Uint8 *)SDL_AllocAudioMem(h->mixlen);
@@ -164,7 +163,7 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
         SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, NUM_BUFFERS
     };
 
-    /* Use 16-bit PCM for the hardware — we convert from U8 ourselves */
+    /* 16-bit PCM — matches SDL mixer output format (AUDIO_S16) */
     SLDataFormat_PCM format_pcm = {
         SL_DATAFORMAT_PCM,
         (SLuint32)spec->channels,
@@ -227,21 +226,16 @@ static void ANDROIDAUD_PlayAudio(_THIS)
     struct SDL_PrivateAudioData *h = this->hidden;
     int buf_idx = h->next_buf;
 
-    /* Convert U8 → S16: (sample - 128) * 256 */
-    const Uint8 *src = h->mixbuf;
-    Sint16 *dst = h->playbuf[buf_idx];
-    Uint32 nsamples = h->mixlen;   /* one byte per sample for U8 */
-
-    for (Uint32 i = 0; i < nsamples; i++) {
-        dst[i] = (Sint16)(((int)src[i] - 128) << 8);
-    }
+    /* SDL mixer already outputs S16 stereo — same format OpenSL ES expects.
+     * Just copy directly, no format conversion needed. */
+    SDL_memcpy(h->playbuf[buf_idx], h->mixbuf, h->playlen);
 
     /* Wait for a free buffer slot before enqueueing */
     SDL_SemWait(h->sem);
 
     /* Enqueue the S16 buffer */
     SLresult r = (*h->playerBufferQueue)->Enqueue(
-        h->playerBufferQueue, dst, h->playlen);
+        h->playerBufferQueue, h->playbuf[buf_idx], h->playlen);
     if (r != SL_RESULT_SUCCESS) {
         /* If enqueue fails, post the semaphore so we don't deadlock */
         SDL_SemPost(h->sem);

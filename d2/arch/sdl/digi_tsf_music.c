@@ -54,6 +54,7 @@ static double g_playback_msec  = 0.0;   /* current playback time (ms)     */
 static int    g_playing        = 0;      /* 1 = music is actively playing  */
 static int    g_paused         = 0;      /* 1 = playback is paused         */
 static int    g_loop           = 0;      /* 1 = loop when reaching the end */
+static int    g_song_finished  = 0;      /* set by audio thread at end     */
 static float  g_volume         = 1.0f;   /* 0.0 – 1.0 volume scale        */
 
 static void (*g_finished_hook)(void) = NULL;  /* callback when song ends  */
@@ -190,22 +191,35 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 			tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, 44100, 0.0f);
 		} else {
 			g_playing = 0;
+			g_song_finished = 1;
 			tsf_reset(g_tsf);
 			tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, 44100, 0.0f);
-			if (g_finished_hook) {
-				g_finished_hook();
-			}
+			/* Don't call g_finished_hook here — we're on the audio thread
+			 * with SDL's mixer_lock held.  The hook is dispatched from
+			 * the game thread in mix_play_file / mix_free_music. */
 		}
 	}
 }
 
 /* ── Public API (implements digi_mixer_music.h) ──────────────────────── */
-
+/* Dispatch the finished-song callback on the game thread (safe context). */
+static void tsf_dispatch_finished(void)
+{
+	if (g_song_finished) {
+		g_song_finished = 0;
+		if (g_finished_hook) {
+			void (*hook)(void) = g_finished_hook;
+			g_finished_hook = NULL;
+			hook();
+		}
+	}
+}
 int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 {
 	unsigned int bufsize = 0;
 	char *fptr;
 
+	tsf_dispatch_finished();
 	mix_free_music();
 
 	fptr = strrchr(filename, '.');
@@ -275,6 +289,7 @@ void mix_free_music(void)
 	Mix_HookMusic(NULL, NULL);
 	g_playing = 0;
 	g_paused = 0;
+	g_song_finished = 0;
 	g_midi_cur = NULL;
 
 	if (g_midi) {

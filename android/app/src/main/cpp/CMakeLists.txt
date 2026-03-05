@@ -205,18 +205,10 @@ if(NOT EXISTS "${_TSF_DIR}/tml.h")
 endif()
 
 # ──────────────────────────────────────────────────────────────
-# 2b. GM Soundfont  (TimGM6mb.sf2 — same font the Linux build uses)
+# 2b. GM Soundfont — downloaded by Gradle (downloadSoundfont task)
+#     into app/src/main/assets/gm.sf2 before the native build.
+#     Version/hash defined in get_deps/tool_versions.conf.
 # ──────────────────────────────────────────────────────────────
-set(_ASSETS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../assets")
-file(MAKE_DIRECTORY "${_ASSETS_DIR}")
-if(NOT EXISTS "${_ASSETS_DIR}/gm.sf2")
-    message(STATUS "Downloading TimGM6mb.sf2 soundfont...")
-    file(DOWNLOAD
-        "https://github.com/arbruijn/TimGM6mb/releases/download/v20100822/TimGM6mb.sf2"
-        "${_ASSETS_DIR}/gm.sf2"
-        SHOW_PROGRESS
-    )
-endif()
 
 # ──────────────────────────────────────────────────────────────
 # 2c. nlohmann/json  (header-only, debug/introspection builds only)
