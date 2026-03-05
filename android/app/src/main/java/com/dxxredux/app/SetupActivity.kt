@@ -529,14 +529,45 @@ private fun SetupScreen(
                     .safeDrawingPadding()
                     .padding(16.dp)
             ) {
-                // ── Title ───────────────────────────────────
-                Text(
-                    text = "DXX-Redux Setup",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+                // ── Title + About ────────────────────────────
+                var showAbout by remember { mutableStateOf(false) }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "DXX-Redux Setup",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    TextButton(onClick = { showAbout = true }) {
+                        Text("About", fontSize = 12.sp)
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (showAbout) {
+                    AlertDialog(
+                        onDismissRequest = { showAbout = false },
+                        confirmButton = {
+                            TextButton(onClick = { showAbout = false }) { Text("OK") }
+                        },
+                        title = { Text("DXX-Redux") },
+                        text = {
+                            val arch = Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown"
+                            Text(
+                                "Build ${BuildInfo.GIT_COMMIT_COUNT}" +
+                                " (${BuildInfo.GIT_SHORT_HASH})" +
+                                " ${BuildInfo.BUILD_TYPE}\n" +
+                                "Date: ${BuildInfo.BUILD_DATE}" +
+                                " ${BuildInfo.BUILD_TIME}\n" +
+                                "Arch: $arch"
+                            )
+                        }
+                    )
+                }
 
                 // ── Missing-files help ──────────────────────
                 if (!canLaunch && !gameRunning) {
