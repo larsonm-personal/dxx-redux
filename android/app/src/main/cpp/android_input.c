@@ -302,6 +302,61 @@ Java_com_dxxredux_app_MainActivity_nativeOnPause(JNIEnv *env, jobject thiz)
     SDL_PushEvent(&ev);
 }
 
+/* ── In-game query ──────────────────────────────────────────
+ *
+ * Returns true when the game window is the front window and we're
+ * in SCREEN_GAME mode.  Used by the Kotlin overlay to decide whether
+ * to show the virtual stick.
+ */
+#include "screens.h"         /* SCREEN_GAME */
+#include "inferno.h"         /* Screen_mode */
+#include "playsave.h"        /* PlayerCfg */
+#include "kconfig.h"         /* CONTROL_USING_JOYSTICK */
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeIsInGame(JNIEnv *env, jobject thiz)
+{
+    return (Game_wind != NULL && Screen_mode == SCREEN_GAME
+            && Game_wind == window_get_front()) ? JNI_TRUE : JNI_FALSE;
+}
+
+/*
+ * Enable or disable the "Use Joystick" flag in the player config.
+ * Called from Kotlin when the touch overlay is activated/deactivated.
+ *
+ * When enabling, we also clear CONTROL_USING_MOUSE so that stray
+ * SDL_MOUSEBUTTONDOWN events (from touches that reached the surface
+ * before the overlay took ownership) don't trigger fire_primary.
+ * The original ControlType is saved and restored on disable.
+ */
+static ubyte g_saved_control_type = 0;
+static int   g_overlay_joystick  = 0;
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetJoystickEnabled(JNIEnv *env, jobject thiz,
+                                                             jboolean enabled)
+{
+    if (enabled && !g_overlay_joystick) {
+        g_saved_control_type = PlayerCfg.ControlType;
+        PlayerCfg.ControlType = CONTROL_USING_JOYSTICK; /* joystick only */
+        g_overlay_joystick = 1;
+
+        /* Release any stuck mouse-button state so fire stops immediately */
+        SDL_Event ev;
+        memset(&ev, 0, sizeof(ev));
+        ev.type         = SDL_MOUSEBUTTONUP;
+        ev.button.button = SDL_BUTTON_LEFT;
+        ev.button.state  = SDL_RELEASED;
+        SDL_PushEvent(&ev);
+    } else if (!enabled && g_overlay_joystick) {
+        PlayerCfg.ControlType = g_saved_control_type;
+        g_overlay_joystick = 0;
+    }
+    LOGI("joystick %s (ControlType=%d, saved=%d)",
+         enabled ? "ENABLED" : "DISABLED",
+         PlayerCfg.ControlType, g_saved_control_type);
+}
+
 /* ── Soft-keyboard text input ───────────────────────────────
  *
  * Called by the Kotlin InputConnection when the soft keyboard commits text.

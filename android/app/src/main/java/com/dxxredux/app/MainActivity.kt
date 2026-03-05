@@ -22,6 +22,7 @@ import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
+import android.widget.FrameLayout
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -51,9 +52,14 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     external fun nativeSetIntrospectPath(path: String)
     external fun nativeJoystickAxis(axis: Int, value: Float)
     external fun nativeJoystickButton(button: Int, pressed: Int)
+    external fun nativeIsInGame(): Boolean
+    external fun nativeSetJoystickEnabled(enabled: Boolean)
 
     private var gameStarted = false
     private lateinit var gameSurfaceView: GameSurfaceView
+    private lateinit var touchOverlay: TouchOverlayView
+    private var overlayEnabled = false
+    private val overlayPoller = android.os.Handler(android.os.Looper.getMainLooper())
 
     // ── Edge-swipe state (swipe from left edge → open setup screen) ─────
     private var edgeSwipeTracking = false
@@ -86,7 +92,26 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
             handleTouch(view, event)
         }
 
-        setContentView(gameSurfaceView)
+        // Touch overlay
+        touchOverlay = TouchOverlayView(this)
+        touchOverlay.axisCallback = { axis, value -> nativeJoystickAxis(axis, value) }
+        touchOverlay.buttonCallback = { button, pressed ->
+            nativeJoystickButton(button, if (pressed) 1 else 0)
+        }
+        touchOverlay.isActive = false
+
+        // Layer surface + overlay in a FrameLayout
+        val frame = FrameLayout(this)
+        frame.addView(gameSurfaceView, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        ))
+        frame.addView(touchOverlay, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        ))
+
+        setContentView(frame)
 
         // Hide system bars after content view is set
         hideSystemBars()
@@ -138,11 +163,58 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     // ── Lifecycle ────────────────────────────────────────────
     override fun onStop() {
         super.onStop()
+        overlayPoller.removeCallbacksAndMessages(null)
         // Inject Escape so the engine opens its pause / game menu.
         // This pauses a single-player game while the app is in the background.
         if (gameStarted) {
             nativeOnPause()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Re-read preference (user may have toggled in SetupActivity)
+        val prefs = getSharedPreferences("dxx_prefs", MODE_PRIVATE)
+        // Default to enabled when no physical controller is connected
+        val hasController = InputDevice.getDeviceIds().any { id ->
+            val dev = InputDevice.getDevice(id) ?: return@any false
+            val src = dev.sources
+            src and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
+            src and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
+        }
+        overlayEnabled = prefs.getBoolean("touch_overlay_enabled", !hasController)
+        // Start polling in-game state to show/hide overlay
+        startOverlayPolling()
+    }
+
+    private fun startOverlayPolling() {
+        overlayPoller.removeCallbacksAndMessages(null)
+        val pollRunnable = object : Runnable {
+            override fun run() {
+                if (gameStarted && overlayEnabled) {
+                    try {
+                        val inGame = nativeIsInGame()
+                        val wasActive = touchOverlay.isActive
+                        touchOverlay.isActive = inGame
+                        // Enable/disable joystick input when overlay state changes
+                        if (inGame && !wasActive) {
+                            nativeSetJoystickEnabled(true)
+                        } else if (!inGame && wasActive) {
+                            nativeSetJoystickEnabled(false)
+                        }
+                    } catch (_: Exception) {
+                        touchOverlay.isActive = false
+                    }
+                } else {
+                    if (touchOverlay.isActive) {
+                        nativeSetJoystickEnabled(false)
+                    }
+                    touchOverlay.isActive = false
+                }
+                overlayPoller.postDelayed(this, 500)
+            }
+        }
+        overlayPoller.post(pollRunnable)
     }
 
     // ── Introspection (debug builds only) ────────────────────

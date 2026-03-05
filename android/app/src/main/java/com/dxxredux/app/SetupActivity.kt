@@ -25,11 +25,13 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.core.view.WindowCompat
+import android.content.SharedPreferences
 import java.io.File
 import java.io.FileOutputStream
 import java.io.FileWriter
@@ -679,11 +681,42 @@ private fun SetupScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // ── Controller section ──────────────────
+                    val prefs = context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
                     ControllerSection(
                         axes = controllerAxes,
                         axisGeneration = axisGeneration,
-                        pressedButtons = pressedButtons
+                        pressedButtons = pressedButtons,
+                        prefs = prefs
                     )
+
+                    // ── Restart/Reset buttons ───────────────
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        Button(
+                            onClick = { android.os.Process.killProcess(android.os.Process.myPid()) },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                            modifier = Modifier.weight(1f).height(44.dp)
+                        ) {
+                            Text("Restart game", fontSize = 14.sp)
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Button(
+                            onClick = {
+                                val ctx = context
+                                val playersDir = java.io.File(ctx.filesDir, "Players")
+                                if (playersDir.exists()) {
+                                    playersDir.listFiles()
+                                        ?.filter { it.extension.equals("plr", ignoreCase = true) }
+                                        ?.forEach { it.delete() }
+                                }
+                                android.os.Process.killProcess(android.os.Process.myPid())
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                            modifier = Modifier.weight(1f).height(44.dp)
+                        ) {
+                            Text("Reset controls & restart", fontSize = 14.sp)
+                        }
+                    }
                 }
 
                 // ── Launch / Return button ──────────────────
@@ -770,7 +803,8 @@ private fun SectionHeader(title: String) {
 private fun ControllerSection(
     axes: FloatArray,
     axisGeneration: Int,
-    pressedButtons: SnapshotStateList<String>
+    pressedButtons: SnapshotStateList<String>,
+    prefs: SharedPreferences
 ) {
     // Detect connected gamepads
     val gamepads = remember(axisGeneration) {
@@ -825,6 +859,84 @@ private fun ControllerSection(
         color = MaterialTheme.colorScheme.outlineVariant,
         modifier = Modifier.padding(bottom = 4.dp)
     )
+
+    // ── Touch overlay toggle ──
+    val defaultOverlay = !hasController
+    var touchOverlay by remember {
+        mutableStateOf(prefs.getBoolean("touch_overlay_enabled", defaultOverlay))
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Checkbox(
+            checked = touchOverlay,
+            onCheckedChange = { checked ->
+                touchOverlay = checked
+                prefs.edit().putBoolean("touch_overlay_enabled", checked).apply()
+            },
+            modifier = Modifier.height(24.dp)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = "Touch controls overlay",
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+
+    // ── Reset in-game controls ──
+    val ctx = LocalContext.current
+    var showResetDialog by remember { mutableStateOf(false) }
+    var resetDone by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        OutlinedButton(
+            onClick = { showResetDialog = true },
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+            modifier = Modifier.height(32.dp)
+        ) {
+            Text("Reset in-game controls", fontSize = 12.sp)
+        }
+        if (resetDone) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "\u2713 Reset — restart game to apply",
+                fontSize = 12.sp,
+                color = Color(0xFF4CAF50)
+            )
+        }
+    }
+
+    if (showResetDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetDialog = false },
+            title = { Text("Reset Controls?") },
+            text = { Text("This deletes your saved player profile(s) so the game recreates them with default control mappings. You will need to re-enter your callsign.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val playersDir = java.io.File(ctx.filesDir, "Players")
+                    if (playersDir.exists()) {
+                        playersDir.listFiles()
+                            ?.filter { it.extension.equals("plr", ignoreCase = true) }
+                            ?.forEach { it.delete() }
+                    }
+                    resetDone = true
+                    showResetDialog = false
+                }) { Text("Reset") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
 
     if (expanded && hasController) {
         // Read axes from the array (axisGeneration triggers recomposition)
