@@ -195,8 +195,8 @@ class SetupActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Let the system draw behind bars but we'll add padding in Compose
-        WindowCompat.setDecorFitsSystemWindows(window, true)
+        // Edge-to-edge: draw behind system bars, Compose handles insets
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         // Register introspection receiver
         val filter = IntentFilter("com.dxxredux.SETUP_INTROSPECT")
@@ -481,6 +481,7 @@ private fun SetupScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .safeDrawingPadding()
                     .padding(16.dp)
             ) {
                 // ── Title ───────────────────────────────────
