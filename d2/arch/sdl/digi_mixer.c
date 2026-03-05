@@ -42,7 +42,13 @@
 #define MIX_OUTPUT_CHANNELS	2
 
 #define MAX_SOUND_SLOTS 64
+#ifdef ANDROID
+#define SOUND_BUFFER_SIZE 2048 // larger buffer absorbs Android scheduling jitter
+#define DIGI_MIXER_OUTPUT_RATE SAMPLE_RATE_48K // 48 kHz = native rate on most Android devices
+#else
 #define SOUND_BUFFER_SIZE 512 // sample frames, so 44100/512 = 86 updates/second
+#define DIGI_MIXER_OUTPUT_RATE SAMPLE_RATE_44K
+#endif
 #define MIN_VOLUME 10
 
 static int digi_initialised = 0;
@@ -80,7 +86,7 @@ int digi_mixer_init()
 	}
 	#endif
 
-	if (Mix_OpenAudio(SAMPLE_RATE_44K, MIX_OUTPUT_FORMAT, MIX_OUTPUT_CHANNELS, SOUND_BUFFER_SIZE))
+	if (Mix_OpenAudio(DIGI_MIXER_OUTPUT_RATE, MIX_OUTPUT_FORMAT, MIX_OUTPUT_CHANNELS, SOUND_BUFFER_SIZE))
 	{
 		//edited on 10/05/98 by Matt Mueller - should keep running, just with no sound.
 		MIXLOG("ERROR: Couldn't open audio: %s", SDL_GetError());
@@ -88,8 +94,12 @@ int digi_mixer_init()
 		GameArg.SndNoSound = 1;
 		return 1;
 	}
-	MIXLOG("Mix_OpenAudio ok: rate=%d SndDigiSampleRate=%d",
-		SAMPLE_RATE_44K, GameArg.SndDigiSampleRate);
+	{
+		int actual_freq; Uint16 actual_fmt; int actual_ch;
+		Mix_QuerySpec(&actual_freq, &actual_fmt, &actual_ch);
+		MIXLOG("Mix_OpenAudio ok: requested=%d actual=%d fmt=0x%04X ch=%d buf=%d",
+			DIGI_MIXER_OUTPUT_RATE, actual_freq, actual_fmt, actual_ch, SOUND_BUFFER_SIZE);
+	}
 
 	digi_max_channels = Mix_AllocateChannels(digi_max_channels);
 	memset(channels, 0, MAX_SOUND_SLOTS);

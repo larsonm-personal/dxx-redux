@@ -32,9 +32,12 @@ extern int Automap_active;
  * game thread in automap_apply_input().  Simple volatile is fine here:
  * both sides are single-writer and a lost frame of input is negligible.
  */
-volatile fix g_automap_heading = 0;
-volatile fix g_automap_pitch   = 0;
-volatile fix g_automap_thrust  = 0;
+volatile fix g_automap_heading  = 0;
+volatile fix g_automap_pitch    = 0;
+volatile fix g_automap_thrust   = 0;
+volatile fix g_automap_bank     = 0;
+volatile fix g_automap_vertical = 0;
+volatile fix g_automap_sideways = 0;
 
 /* ── Touch → Mouse ──────────────────────────────────────────
  *
@@ -284,9 +287,22 @@ Java_com_dxxredux_app_MainActivity_nativeKeyEvent(JNIEnv *env, jobject thiz,
 #include "game.h"            /* Game_wind */
 #include "window.h"          /* window_get_front() */
 
+/* Declared in digi_tsf_music.c — pause/resume MIDI when backgrounded */
+extern void mix_background_pause(void);
+extern void mix_background_resume(void);
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeOnResume(JNIEnv *env, jobject thiz)
+{
+    LOGI("nativeOnResume — resuming music");
+    mix_background_resume();
+}
+
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeOnPause(JNIEnv *env, jobject thiz)
 {
+    /* Pause music immediately — before the Escape injection logic */
+    mix_background_pause();
     /* Are we in live gameplay with no menu on top? */
     if (!Game_wind || Game_wind != window_get_front()) {
         LOGI("nativeOnPause — game not at front, skipping Escape injection");
@@ -494,15 +510,19 @@ Java_com_dxxredux_app_MainActivity_nativeIsAutomapActive(JNIEnv *env, jobject th
 
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeAutomapInput(JNIEnv *env, jobject thiz,
-                                                       jfloat heading, jfloat pitch, jfloat thrust)
+                                                       jfloat heading, jfloat pitch, jfloat thrust,
+                                                       jfloat bank, jfloat vertical, jfloat sideways)
 {
     /* Values are fractions of screen dimension.  Convert to fix-point
      * and accumulate so nothing is lost between game frames.
      * The scale factors are tuned so a full-screen drag ≈ 90° rotation
      * and a full-screen pinch gives rapid traversal. */
-    g_automap_heading += (fix)(heading * 80000.0f);
-    g_automap_pitch   += (fix)(pitch   * 80000.0f);
-    g_automap_thrust  += (fix)(thrust  * 600.0f);
+    g_automap_heading  += (fix)(heading  * 80000.0f);
+    g_automap_pitch    += (fix)(pitch    * 80000.0f);
+    g_automap_thrust   += (fix)(thrust   * 600.0f);
+    g_automap_bank     += (fix)(bank     * 80000.0f);
+    g_automap_vertical += (fix)(vertical * 80000.0f);
+    g_automap_sideways += (fix)(sideways * 80000.0f);
 }
 
 /* ── C→Java keyboard callbacks ──────────────────────────────

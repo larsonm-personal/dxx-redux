@@ -67,6 +67,26 @@ class SetupActivity : ComponentActivity() {
         }
     }
 
+    // ── Setup-screen command API ────────────────────────────────────────
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command launch
+    private var gameRunningFlag = false
+    private val commandReceiver = object : BroadcastReceiver() {
+        override fun onReceive(ctx: Context?, intent: Intent?) {
+            val cmd = intent?.getStringExtra("command") ?: return
+            when (cmd) {
+                "launch" -> {
+                    if (gameRunningFlag) {
+                        finish()
+                    } else {
+                        writeInitialGameConfig()
+                        startActivity(Intent(this@SetupActivity, MainActivity::class.java))
+                    }
+                }
+                else -> Log.w("DXX-Setup", "Unknown command: $cmd")
+            }
+        }
+    }
+
     /** Active download progress visible to introspection. */
     internal val downloadStates = mutableMapOf<String, Int>()
 
@@ -208,7 +228,16 @@ class SetupActivity : ComponentActivity() {
             registerReceiver(introspectReceiver, filter)
         }
 
+        // Register command receiver
+        val cmdFilter = IntentFilter("com.dxxredux.SETUP_COMMAND")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(commandReceiver, cmdFilter, RECEIVER_EXPORTED)
+        } else {
+            registerReceiver(commandReceiver, cmdFilter)
+        }
+
         val gameRunning = intent.getBooleanExtra("gameRunning", false)
+        gameRunningFlag = gameRunning
         val filesDir = filesDir
 
         setContent {
@@ -287,6 +316,7 @@ class SetupActivity : ComponentActivity() {
 
     override fun onDestroy() {
         try { unregisterReceiver(introspectReceiver) } catch (_: Exception) {}
+        try { unregisterReceiver(commandReceiver) } catch (_: Exception) {}
         super.onDestroy()
     }
 }

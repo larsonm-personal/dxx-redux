@@ -39,9 +39,10 @@ class TouchOverlayView @JvmOverloads constructor(
     /** Called when the MAP button is tapped (toggles automap). */
     var mapButtonCallback: (() -> Unit)? = null
 
-    /** Called with (heading, pitch, thrust) when automap gestures are detected.
-     *  heading/pitch are fractions of screen dimension; thrust is fraction of screen width. */
-    var automapInputCallback: ((Float, Float, Float) -> Unit)? = null
+    /** Called with (heading, pitch, thrust, bank, vertical, sideways) when automap gestures are detected.
+     *  heading/pitch/bank are fractions of screen dimension; thrust is fraction of screen width;
+     *  vertical/sideways are fractions of screen dimension. */
+    var automapInputCallback: ((Float, Float, Float, Float, Float, Float) -> Unit)? = null
 
     /** Whether the overlay should be visible and active. */
     var isActive: Boolean = false
@@ -86,6 +87,12 @@ class TouchOverlayView @JvmOverloads constructor(
     var automapActive = false
     private val automapPointers = mutableMapOf<Int, PointF>()
     private var automapPinchDist = 0f
+    private var automapPinchAngle = 0f
+
+    // Double-tap → translate mode
+    private var automapLastTapTime = 0L
+    private var automapLastTapPos = PointF()
+    private var automapTranslateMode = false
 
     // ── Paint objects ───────────────────────────────────────
     private val paintRing = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -214,8 +221,19 @@ class TouchOverlayView @JvmOverloads constructor(
                         // Touch not on any control — track for automap gestures
                         if (automapActive) {
                             automapPointers[pid] = PointF(px, py)
+                            // Check for double-tap on first automap finger
+                            if (automapPointers.size == 1) {
+                                val now = android.os.SystemClock.uptimeMillis()
+                                val dt = now - automapLastTapTime
+                                val dist = hypot(px - automapLastTapPos.x, py - automapLastTapPos.y)
+                                if (dt < 300L && dist < 80f) {
+                                    automapTranslateMode = true
+                                }
+                            }
                             if (automapPointers.size == 2) {
                                 automapPinchDist = automapFingerDist(event)
+                                automapPinchAngle = automapFingerAngle(event)
+                                automapTranslateMode = false
                             }
                         }
                     }
@@ -241,6 +259,8 @@ class TouchOverlayView @JvmOverloads constructor(
                 releaseMapButton(event.actionMasked == MotionEvent.ACTION_UP)
                 automapPointers.clear()
                 automapPinchDist = 0f
+                automapPinchAngle = 0f
+                automapTranslateMode = false
             }
             MotionEvent.ACTION_POINTER_UP -> {
                 val idx = event.actionIndex
@@ -252,8 +272,21 @@ class TouchOverlayView @JvmOverloads constructor(
                     mapBtnPointerId -> releaseMapButton(true)
                     else -> {
                         // Automap pointer lifted
+                        // Record tap time for double-tap detection if single automap finger lifts
+                        if (automapPointers.size == 1 && !automapTranslateMode) {
+                            automapLastTapTime = android.os.SystemClock.uptimeMillis()
+                            val i = event.findPointerIndex(pid)
+                            if (i >= 0) automapLastTapPos.set(event.getX(i), event.getY(i))
+                        }
                         automapPointers.remove(pid)
-                        automapPinchDist = if (automapPointers.size >= 2) automapFingerDist(event) else 0f
+                        if (automapPointers.size >= 2) {
+                            automapPinchDist = automapFingerDist(event)
+                            automapPinchAngle = automapFingerAngle(event)
+                        } else {
+                            automapPinchDist = 0f
+                            automapPinchAngle = 0f
+                        }
+                        if (automapPointers.isEmpty()) automapTranslateMode = false
                         // Refresh remaining pointer positions to avoid jump
                         for ((id, pt) in automapPointers) {
                             val i = event.findPointerIndex(id)
@@ -336,14 +369,13 @@ class TouchOverlayView @JvmOverloads constructor(
 
     // ── Automap gesture helpers ─────────────────────────────
 
-    /** Process MOVE events for automap pointers (drag → pan/tilt, pinch → thrust). */
+    /** Process MOVE events for automap pointers (drag → pan/tilt, pinch → thrust+rotate). */
     private fun handleAutomapMove(event: MotionEvent) {
         val w = width.toFloat()
         val h = height.toFloat()
         if (w <= 0f || h <= 0f) return
 
         if (automapPointers.size == 1) {
-            // Single finger → pan / tilt
             val pid = automapPointers.keys.first()
             val idx = event.findPointerIndex(pid)
             if (idx >= 0) {
@@ -352,24 +384,43 @@ class TouchOverlayView @JvmOverloads constructor(
                 val dy = event.getY(idx) - prev.y
                 prev.set(event.getX(idx), event.getY(idx))
                 if (dx != 0f || dy != 0f) {
-                    automapInputCallback?.invoke(dx / w, dy / h, 0f)
+                    if (automapTranslateMode) {
+                        // Double-tap drag → translate x/y
+                        val sideways = dx / w
+                        val vertical = -dy / h
+                        automapInputCallback?.invoke(0f, 0f, 0f, 0f, vertical, sideways)
+                    } else {
+                        // Single finger → pan / tilt
+                        automapInputCallback?.invoke(dx / w, dy / h, 0f, 0f, 0f, 0f)
+                    }
                 }
             }
         } else if (automapPointers.size >= 2) {
-            // Two+ fingers → pinch = thrust
+            // Two+ fingers → pinch = thrust + rotate = bank
             // Update all automap pointer positions first
             for ((pid, pt) in automapPointers) {
                 val idx = event.findPointerIndex(pid)
                 if (idx >= 0) pt.set(event.getX(idx), event.getY(idx))
             }
             val dist = automapFingerDist(event)
+            val angle = automapFingerAngle(event)
             if (automapPinchDist > 0f) {
                 val delta = dist - automapPinchDist
-                if (delta != 0f) {
-                    automapInputCallback?.invoke(0f, 0f, delta / w)
+                // 20× multiplier for usable zoom rate on touch screens
+                val thrust = delta / w * 20f
+
+                // Rotation: delta angle (radians) → bank
+                var dAngle = angle - automapPinchAngle
+                while (dAngle > Math.PI.toFloat())  dAngle -= (2 * Math.PI).toFloat()
+                while (dAngle < -Math.PI.toFloat()) dAngle += (2 * Math.PI).toFloat()
+                val bank = dAngle / Math.PI.toFloat()
+
+                if (thrust != 0f || bank != 0f) {
+                    automapInputCallback?.invoke(0f, 0f, thrust, bank, 0f, 0f)
                 }
             }
             automapPinchDist = dist
+            automapPinchAngle = angle
         }
     }
 
@@ -383,5 +434,17 @@ class TouchOverlayView @JvmOverloads constructor(
         val dx = event.getX(i0) - event.getX(i1)
         val dy = event.getY(i0) - event.getY(i1)
         return hypot(dx, dy)
+    }
+
+    /** Angle (radians) from the first automap pointer to the second. */
+    private fun automapFingerAngle(event: MotionEvent): Float {
+        val ids = automapPointers.keys.toList()
+        if (ids.size < 2) return 0f
+        val i0 = event.findPointerIndex(ids[0])
+        val i1 = event.findPointerIndex(ids[1])
+        if (i0 < 0 || i1 < 0) return 0f
+        val dx = event.getX(i1) - event.getX(i0)
+        val dy = event.getY(i1) - event.getY(i0)
+        return atan2(dy, dx)
     }
 }

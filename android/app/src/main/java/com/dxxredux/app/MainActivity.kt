@@ -37,6 +37,10 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         /** Game canvas resolution (must match gr_set_mode in the engine) */
         const val GAME_W = 640
         const val GAME_H = 480
+
+        /** Automap double-tap detection thresholds */
+        private const val DOUBLE_TAP_TIMEOUT_MS = 300L   // max ms between taps
+        private const val DOUBLE_TAP_SLOP_PX = 80f       // max distance between taps
     }
 
     // ── JNI declarations ────────────────────────────────────
@@ -47,6 +51,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     external fun nativeKeyEvent(action: Int, androidKeyCode: Int, unicodeChar: Int)
     external fun nativeTextInput(unicodeChar: Int)
     external fun nativeOnPause()
+    external fun nativeOnResume()
     external fun nativeQuit()
     external fun nativeGetGameState(): String
     external fun nativeRequestIntrospect()
@@ -58,7 +63,8 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     external fun nativeIsInGame(): Boolean
     external fun nativeSetJoystickEnabled(enabled: Boolean)
     external fun nativeIsAutomapActive(): Boolean
-    external fun nativeAutomapInput(heading: Float, pitch: Float, thrust: Float)
+    external fun nativeAutomapInput(heading: Float, pitch: Float, thrust: Float,
+                                     bank: Float = 0f, vertical: Float = 0f, sideways: Float = 0f)
 
     private var gameStarted = false
     private lateinit var gameSurfaceView: GameSurfaceView
@@ -71,9 +77,15 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     private var edgeSwipeTracking = false
     private var edgeSwipeStartX = 0f
 
-    // ── Automap gesture state (drag = pan/tilt, pinch = thrust) ─────────
+    // ── Automap gesture state (drag = pan/tilt, pinch = thrust/rotate) ──
     private val automapPointers = mutableMapOf<Int, PointF>()  // pointerId → last position
     private var automapPinchDist = 0f                          // last distance between two fingers
+    private var automapPinchAngle = 0f                         // last angle between two fingers (radians)
+
+    // ── Double-tap → translate mode ─────────────────────────
+    private var automapLastTapTime = 0L          // SystemClock.uptimeMillis of last single-finger up
+    private var automapLastTapPos = PointF()     // position of last tap
+    private var automapTranslateMode = false     // true while double-tap-drag is active
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -129,8 +141,8 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         touchOverlay.buttonCallback = { button, pressed ->
             nativeJoystickButton(button, if (pressed) 1 else 0)
         }
-        touchOverlay.automapInputCallback = { heading, pitch, thrust ->
-            nativeAutomapInput(heading, pitch, thrust)
+        touchOverlay.automapInputCallback = { heading, pitch, thrust, bank, vertical, sideways ->
+            nativeAutomapInput(heading, pitch, thrust, bank, vertical, sideways)
         }
         touchOverlay.mapButtonCallback = { toggleAutomap() }
         touchOverlay.isActive = false
@@ -213,6 +225,10 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
 
     override fun onResume() {
         super.onResume()
+        // Resume music that was paused when backgrounded
+        if (gameStarted) {
+            nativeOnResume()
+        }
         // Re-read preference (user may have toggled in SetupActivity)
         val prefs = getSharedPreferences("dxx_prefs", MODE_PRIVATE)
         // Default to enabled when no physical controller is connected
@@ -407,8 +423,9 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     }
 
     // ── Automap touch gestures ──────────────────────────────
-    //  1-finger drag  →  pan / tilt  (heading_time, pitch_time)
-    //  2-finger pinch →  forward / reverse thrust (uncapped)
+    //  1-finger drag         →  pan / tilt  (heading_time, pitch_time)
+    //  double-tap then drag  →  translate x/y (sideways_thrust, vertical_thrust)
+    //  2-finger pinch        →  zoom (forward_thrust) + rotate (bank_time)
     //
     // Called from handleTouch (overlay off) and from the overlay's
     // unmatched-touch callback (overlay on).
@@ -425,17 +442,31 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                 val idx = event.actionIndex
                 val pid = event.getPointerId(idx)
-                automapPointers[pid] = PointF(event.getX(idx), event.getY(idx))
+                val px = event.getX(idx)
+                val py = event.getY(idx)
+                automapPointers[pid] = PointF(px, py)
 
-                // When a second finger lands, initialise pinch distance
+                // Check for double-tap on first finger down
+                if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                    val now = android.os.SystemClock.uptimeMillis()
+                    val dt = now - automapLastTapTime
+                    val dist = kotlin.math.hypot(px - automapLastTapPos.x, py - automapLastTapPos.y)
+                    if (dt < DOUBLE_TAP_TIMEOUT_MS && dist < DOUBLE_TAP_SLOP_PX) {
+                        automapTranslateMode = true
+                    }
+                }
+
+                // When a second finger lands, initialise pinch distance + angle
                 if (automapPointers.size == 2) {
                     automapPinchDist = automapFingerDistance(event)
+                    automapPinchAngle = automapFingerAngle(event)
+                    // Two-finger gesture cancels translate mode
+                    automapTranslateMode = false
                 }
             }
 
             MotionEvent.ACTION_MOVE -> {
                 if (automapPointers.size == 1) {
-                    // ── Single-finger drag → pan / tilt ─────────
                     val pid = automapPointers.keys.first()
                     val idx = event.findPointerIndex(pid)
                     if (idx >= 0) {
@@ -444,25 +475,46 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                         val dy = event.getY(idx) - prev.y
                         prev.set(event.getX(idx), event.getY(idx))
 
-                        // Normalise to fraction of screen dimension
-                        val heading = dx / screenW
-                        val pitch   = dy / screenH
-                        if (heading != 0f || pitch != 0f) {
-                            nativeAutomapInput(heading, pitch, 0f)
+                        if (automapTranslateMode) {
+                            // ── Double-tap drag → translate x/y ─────
+                            val sideways = dx / screenW
+                            val vertical = -dy / screenH   // up on screen → positive vertical thrust
+                            if (sideways != 0f || vertical != 0f) {
+                                nativeAutomapInput(0f, 0f, 0f, 0f, vertical, sideways)
+                            }
+                        } else {
+                            // ── Single-finger drag → pan / tilt ─────
+                            val heading = dx / screenW
+                            val pitch   = dy / screenH
+                            if (heading != 0f || pitch != 0f) {
+                                nativeAutomapInput(heading, pitch, 0f)
+                            }
                         }
                     }
                 } else if (automapPointers.size >= 2) {
-                    // ── Pinch → forward / reverse thrust ────────
+                    // ── Pinch → zoom + rotate ───────────────────
                     val dist = automapFingerDistance(event)
+                    val angle = automapFingerAngle(event)
+
                     if (automapPinchDist > 0f) {
                         val delta = dist - automapPinchDist
-                        // Normalise to fraction of screen width; positive = expand = forward
-                        val thrust = delta / screenW
-                        if (thrust != 0f) {
-                            nativeAutomapInput(0f, 0f, thrust)
+                        // 20× multiplier for usable zoom rate on touch screens
+                        val thrust = delta / screenW * 20f
+
+                        // Rotation: delta angle (radians) → bank, normalised
+                        var dAngle = angle - automapPinchAngle
+                        // Wrap to [-π, π]
+                        while (dAngle > Math.PI.toFloat())  dAngle -= (2 * Math.PI).toFloat()
+                        while (dAngle < -Math.PI.toFloat()) dAngle += (2 * Math.PI).toFloat()
+                        // Scale: full rotation (2π) ≈ full-screen worth of bank
+                        val bank = dAngle / Math.PI.toFloat()
+
+                        if (thrust != 0f || bank != 0f) {
+                            nativeAutomapInput(0f, 0f, thrust, bank)
                         }
                     }
                     automapPinchDist = dist
+                    automapPinchAngle = angle
 
                     // Also update stored positions so a lift→single-finger
                     // transition doesn't jump.
@@ -480,8 +532,10 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                 // Recalculate pinch distance with remaining fingers
                 if (automapPointers.size >= 2) {
                     automapPinchDist = automapFingerDistance(event)
+                    automapPinchAngle = automapFingerAngle(event)
                 } else {
                     automapPinchDist = 0f
+                    automapPinchAngle = 0f
                     // Update the remaining pointer's position to avoid a jump
                     for ((id, pt) in automapPointers) {
                         val i = event.findPointerIndex(id)
@@ -491,8 +545,17 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                // Record tap time/position for double-tap detection
+                if (event.actionMasked == MotionEvent.ACTION_UP && automapPointers.size == 1) {
+                    if (!automapTranslateMode) {
+                        automapLastTapTime = android.os.SystemClock.uptimeMillis()
+                        automapLastTapPos.set(event.x, event.y)
+                    }
+                }
                 automapPointers.clear()
                 automapPinchDist = 0f
+                automapPinchAngle = 0f
+                automapTranslateMode = false
             }
         }
         return true
@@ -508,6 +571,18 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         val dx = event.getX(i0) - event.getX(i1)
         val dy = event.getY(i0) - event.getY(i1)
         return kotlin.math.hypot(dx, dy)
+    }
+
+    /** Angle (radians) from the first tracked finger to the second. */
+    private fun automapFingerAngle(event: MotionEvent): Float {
+        val ids = automapPointers.keys.toList()
+        if (ids.size < 2) return 0f
+        val i0 = event.findPointerIndex(ids[0])
+        val i1 = event.findPointerIndex(ids[1])
+        if (i0 < 0 || i1 < 0) return 0f
+        val dx = event.getX(i1) - event.getX(i0)
+        val dy = event.getY(i1) - event.getY(i0)
+        return kotlin.math.atan2(dy, dx)
     }
 
     /** Map Android gamepad KEYCODE_BUTTON_* to virtual joystick button index (0-9). */

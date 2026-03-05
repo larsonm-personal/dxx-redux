@@ -96,6 +96,7 @@ extern void digi_start_sound_queued( short soundnum, fix volume );
 #define SAMPLE_RATE_11K 11025
 #define SAMPLE_RATE_22K 22050
 #define SAMPLE_RATE_44K 44100
+#define SAMPLE_RATE_48K 48000
 
 #define SDLMIXER_SYSTEM 1
 #define SDLAUDIO_SYSTEM 2

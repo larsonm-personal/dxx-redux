@@ -38,6 +38,25 @@ extern "C" {
 #include "playsave.h"
 }
 
+/* ── Audio diagnostic accessors (defined in digi_tsf_music.c / SDL_androidaudio.c) ── */
+extern "C" {
+    int  tsf_music_get_output_rate(void);
+    int  tsf_music_get_playing(void);
+    int  tsf_music_get_paused(void);
+    int  tsf_music_get_cb_count(void);
+    long tsf_music_get_cb_max_ns(void);
+    long tsf_music_get_cb_total_ns(void);
+    int  tsf_music_get_cb_overrun_count(void);
+    int  androidaud_get_play_count(void);
+    int  androidaud_get_enqueue_fail(void);
+    int  androidaud_get_sem_zero_count(void);
+    long androidaud_get_play_max_wait_ns(void);
+    int  androidaud_get_audio_freq(void);
+    int  androidaud_get_audio_buf_frames(void);
+}
+
+#include <SDL_mixer.h>
+
 /* ── Helpers to identify front-window types ─────────────────────────── */
 
 /*
@@ -258,6 +277,34 @@ extern "C" char *game_introspect_get_state(void) {
         } else {
             j["automap"] = nullptr;
         }
+    }
+
+    /* ── Audio diagnostics ───────────────────────────────────────── */
+    {
+        int freq = 0; Uint16 fmt = 0; int ch = 0;
+        int mixer_open = Mix_QuerySpec(&freq, &fmt, &ch);
+        json audio = {
+            {"mixer_open", (bool)mixer_open},
+            {"mixer_freq", freq},
+            {"mixer_format", (int)fmt},
+            {"mixer_channels", ch},
+            {"tsf_output_rate", tsf_music_get_output_rate()},
+            {"tsf_playing", (bool)tsf_music_get_playing()},
+            {"tsf_paused", (bool)tsf_music_get_paused()},
+            {"tsf_cb_count", tsf_music_get_cb_count()},
+            {"tsf_cb_max_us", tsf_music_get_cb_max_ns() / 1000},
+            {"tsf_cb_overruns", tsf_music_get_cb_overrun_count()},
+            {"osl_play_count", androidaud_get_play_count()},
+            {"osl_enqueue_fail", androidaud_get_enqueue_fail()},
+            {"osl_sem_waits", androidaud_get_sem_zero_count()},
+            {"osl_max_wait_us", androidaud_get_play_max_wait_ns() / 1000},
+            {"osl_freq", androidaud_get_audio_freq()},
+            {"osl_buf_frames", androidaud_get_audio_buf_frames()}
+        };
+        if (tsf_music_get_cb_count() > 0) {
+            audio["tsf_cb_avg_us"] = (tsf_music_get_cb_total_ns() / tsf_music_get_cb_count()) / 1000;
+        }
+        j["audio"] = std::move(audio);
     }
 
     /* ── Player & position (only meaningful when a level is loaded) ── */
