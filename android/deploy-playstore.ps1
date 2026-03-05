@@ -235,9 +235,15 @@ for ($i = 0; $i -lt $trackNames.Count; $i++) {
     $num = $i + 1
     Write-Host "  ${num}) ${name}${info}"
 }
+# Default to "internal" if available, otherwise first track
+$defaultIdx = 0
+for ($j = 0; $j -lt $trackNames.Count; $j++) {
+    if ($trackNames[$j] -eq "internal") { $defaultIdx = $j; break }
+}
+$defaultNum = $defaultIdx + 1
 Write-Host ""
-$choice = Read-Host "Select track [1]"
-if (-not $choice) { $choice = "1" }
+$choice = Read-Host "Select track [$defaultNum]"
+if (-not $choice) { $choice = "$defaultNum" }
 $idx = [int]$choice - 1
 if ($idx -lt 0 -or $idx -ge $trackNames.Count) {
     Write-Error "Invalid selection: $choice"
@@ -256,52 +262,134 @@ $uploadUrl = "https://androidpublisher.googleapis.com/upload/androidpublisher/v3
 # Read the entire file into memory and upload via Invoke-WebRequest
 # (PS 5.1 doesn't have System.Net.Http.HttpClient loaded by default)
 $aabBytes = [System.IO.File]::ReadAllBytes($AabPath)
+$alreadyUploaded = $false
 try {
     $uploadResp = Invoke-WebRequest -Uri $uploadUrl -Method POST -Headers $headers `
                   -ContentType "application/octet-stream" -Body $aabBytes -TimeoutSec 600 `
                   -UseBasicParsing
     $uploadResult = $uploadResp.Content | ConvertFrom-Json
+    $versionCode = $uploadResult.versionCode
+    Write-Host "Upload complete. versionCode: $versionCode"
 } catch {
-    Write-Error "Upload failed: $_"
+    $errBody = $_.ErrorDetails.Message
+    if (-not $errBody) { try { $errBody = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
+    if ($errBody -match "already been used") {
+        # Extract the versionCode from the AAB filename or error message
+        if ($errBody -match "Version code (\d+)") { $versionCode = [int]$Matches[1] }
+        Write-Host "Version code $versionCode already uploaded -- skipping to promotion."
+        $alreadyUploaded = $true
+    } else {
+        Write-Error "Upload failed: $errBody`n$_"
+    }
 }
-
-$versionCode = $uploadResult.versionCode
-Write-Host "Upload complete. versionCode: $versionCode"
 Write-Host ""
 
-# ═══════════════════════════════════════════════════════════════════
-#  Update track with the new release
-# ═══════════════════════════════════════════════════════════════════
+if (-not $alreadyUploaded) {
+    # ═══════════════════════════════════════════════════════════════════
+    #  Update track with the new release (draft)
+    # ═══════════════════════════════════════════════════════════════════
 
-Write-Host "Assigning versionCode $versionCode to track '$selectedTrack'..."
-$trackBody = @{
+    Write-Host "Assigning versionCode $versionCode to track '$selectedTrack'..."
+    $trackBody = @{
+        track    = $selectedTrack
+        releases = @(
+            @{
+                name         = "v$versionCode"
+                versionCodes = @( $versionCode )
+                status       = "draft"    # use "completed" once the app has a production release
+            }
+        )
+    } | ConvertTo-Json -Depth 5
+
+    try {
+        $trackResult = Invoke-RestMethod -Uri "$baseUrl/edits/$editId/tracks/$selectedTrack" `
+                       -Method PUT -Headers $headers `
+                       -ContentType "application/json" -Body $trackBody -TimeoutSec 30
+        Write-Host "Track updated: $($trackResult.track)  status=$($trackResult.releases[0].status)"
+    } catch {
+        $errBody = $_.ErrorDetails.Message
+        if (-not $errBody) { try { $errBody = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
+        Write-Error "Track update failed: $errBody`n$_"
+    }
+    Write-Host ""
+
+    # ═══════════════════════════════════════════════════════════════════
+    #  Commit the draft edit
+    # ═══════════════════════════════════════════════════════════════════
+
+    Write-Host "Committing draft edit..."
+    $commitUrl = "$baseUrl/edits/$editId" + ":commit"
+    try {
+        $commitResult = Invoke-RestMethod -Uri $commitUrl `
+                        -Method POST -Headers $headers -ContentType "application/json" `
+                        -Body "{}" -TimeoutSec 30
+    } catch {
+        $errBody = $_.ErrorDetails.Message
+        if (-not $errBody) { try { $errBody = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
+        Write-Error "Commit failed: $errBody`n$_"
+    }
+    Write-Host "Draft release committed (edit $editId)."
+    Write-Host ""
+} else {
+    # Already uploaded -- discard the unused edit
+    try {
+        Invoke-RestMethod -Uri "$baseUrl/edits/$editId" -Method DELETE -Headers $headers -TimeoutSec 10 | Out-Null
+    } catch {}
+}
+
+# ═══════════════════════════════════════════════════════════════════
+#  Promote draft to completed (second edit cycle)
+# ═══════════════════════════════════════════════════════════════════
+# Google requires draft apps to first commit a draft release, then
+# promote it to "completed" in a separate edit.
+
+Write-Host "Promoting draft release to completed..."
+
+# Create a fresh edit
+$edit2 = Invoke-RestMethod -Uri "$baseUrl/edits" -Method POST -Headers $headers `
+         -ContentType "application/json" -Body "{}" -TimeoutSec 30
+$editId2 = $edit2.id
+Write-Host "  New edit: $editId2"
+
+# Update the track: same versionCode, status -> completed
+$promoteBody = @{
     track    = $selectedTrack
     releases = @(
         @{
+            name         = "v$versionCode"
             versionCodes = @( $versionCode )
             status       = "completed"
         }
     )
 } | ConvertTo-Json -Depth 5
 
-$trackResult = Invoke-RestMethod -Uri "$baseUrl/edits/$editId/tracks/$selectedTrack" `
-               -Method PUT -Headers $headers `
-               -ContentType "application/json" -Body $trackBody -TimeoutSec 30
-Write-Host "Track updated: $($trackResult.track)  status=$($trackResult.releases[0].status)"
-Write-Host ""
+try {
+    $promoteResult = Invoke-RestMethod -Uri "$baseUrl/edits/$editId2/tracks/$selectedTrack" `
+                     -Method PUT -Headers $headers `
+                     -ContentType "application/json" -Body $promoteBody -TimeoutSec 30
+    Write-Host "  Track updated: status=$($promoteResult.releases[0].status)"
+} catch {
+    $errBody = $_.ErrorDetails.Message
+    if (-not $errBody) { try { $errBody = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
+    Write-Error "Promote failed: $errBody`n$_"
+}
 
-# ═══════════════════════════════════════════════════════════════════
-#  Commit the edit
-# ═══════════════════════════════════════════════════════════════════
+# Commit the promotion edit
+$commitUrl2 = "$baseUrl/edits/$editId2" + ":commit"
+try {
+    Invoke-RestMethod -Uri $commitUrl2 -Method POST -Headers $headers `
+                      -ContentType "application/json" -Body "{}" -TimeoutSec 30 | Out-Null
+    Write-Host "  Promotion committed."
+} catch {
+    $errBody = $_.ErrorDetails.Message
+    if (-not $errBody) { try { $errBody = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
+    Write-Error "Promote commit failed: $errBody`n$_"
+}
 
-Write-Host "Committing edit..."
-$commitResult = Invoke-RestMethod -Uri "$baseUrl/edits/$editId`:commit" `
-                -Method POST -Headers $headers -ContentType "application/json" `
-                -Body "{}" -TimeoutSec 30
 Write-Host ""
 Write-Host "=== Deployment successful ==="
 Write-Host "  Package:     $PACKAGE"
 Write-Host "  Track:       $selectedTrack"
 Write-Host "  VersionCode: $versionCode"
-Write-Host "  Edit ID:     $editId"
+Write-Host "  Status:      completed"
 Write-Host ""
