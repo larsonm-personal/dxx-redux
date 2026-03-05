@@ -17,10 +17,24 @@
 #include <SDL.h>
 #include <string.h>
 #include <android/keycodes.h>
+#include "fix.h"
+
+/* Automap_active is defined in automap.c; we only need the extern. */
+extern int Automap_active;
 
 #define LOG_TAG "DXX-Input"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO,  LOG_TAG, __VA_ARGS__)
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+
+/* ── Automap touch input accumulator ────────────────────────
+ *
+ * Written from the UI thread (nativeAutomapInput), read + zeroed by the
+ * game thread in automap_apply_input().  Simple volatile is fine here:
+ * both sides are single-writer and a lost frame of input is negligible.
+ */
+volatile fix g_automap_heading = 0;
+volatile fix g_automap_pitch   = 0;
+volatile fix g_automap_thrust  = 0;
 
 /* ── Touch → Mouse ──────────────────────────────────────────
  *
@@ -464,6 +478,31 @@ Java_com_dxxredux_app_MainActivity_nativeJoystickButton(JNIEnv *env, jobject thi
     SDL_PushEvent(&ev);
 
     LOGI("joystick button %d %s", button, pressed ? "DOWN" : "UP");
+}
+
+/* ── Automap touch controls ─────────────────────────────────
+ *
+ * nativeIsAutomapActive() — returns true when the 3-D automap is displayed.
+ * nativeAutomapInput()    — accumulates heading/pitch/thrust deltas that
+ *                           automap_apply_input() reads each frame.
+ */
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeIsAutomapActive(JNIEnv *env, jobject thiz)
+{
+    return Automap_active ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeAutomapInput(JNIEnv *env, jobject thiz,
+                                                       jfloat heading, jfloat pitch, jfloat thrust)
+{
+    /* Values are fractions of screen dimension.  Convert to fix-point
+     * and accumulate so nothing is lost between game frames.
+     * The scale factors are tuned so a full-screen drag ≈ 90° rotation
+     * and a full-screen pinch gives rapid traversal. */
+    g_automap_heading += (fix)(heading * 80000.0f);
+    g_automap_pitch   += (fix)(pitch   * 80000.0f);
+    g_automap_thrust  += (fix)(thrust  * 600.0f);
 }
 
 /* ── C→Java keyboard callbacks ──────────────────────────────

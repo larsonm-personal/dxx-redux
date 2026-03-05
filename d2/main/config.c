@@ -88,6 +88,10 @@ static void android_apply_initial_defaults(void)
 	 * ControlType is stored in per-player .plr files (binary), so it
 	 * can't be set from the Kotlin layer. */
 	PlayerCfg.ControlType = CONTROL_USING_JOYSTICK;
+
+	/* Enable free-flight automap so that pinch-to-thrust on the touch
+	 * screen translates through the level instead of just zooming. */
+	PlayerCfg.AutomapFreeFlight = 1;
 }
 #endif
 

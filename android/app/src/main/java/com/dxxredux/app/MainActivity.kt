@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.PointF
 import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
@@ -54,6 +55,8 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     external fun nativeJoystickButton(button: Int, pressed: Int)
     external fun nativeIsInGame(): Boolean
     external fun nativeSetJoystickEnabled(enabled: Boolean)
+    external fun nativeIsAutomapActive(): Boolean
+    external fun nativeAutomapInput(heading: Float, pitch: Float, thrust: Float)
 
     private var gameStarted = false
     private lateinit var gameSurfaceView: GameSurfaceView
@@ -66,6 +69,10 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     private var rightEdgeSwipeTracking = false  // right-edge → toggle automap
     private var edgeSwipeStartX = 0f
     private var edgeSwipeStartY = 0f
+
+    // ── Automap gesture state (drag = pan/tilt, pinch = thrust) ─────────
+    private val automapPointers = mutableMapOf<Int, PointF>()  // pointerId → last position
+    private var automapPinchDist = 0f                          // last distance between two fingers
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -98,6 +105,9 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         touchOverlay.axisCallback = { axis, value -> nativeJoystickAxis(axis, value) }
         touchOverlay.buttonCallback = { button, pressed ->
             nativeJoystickButton(button, if (pressed) 1 else 0)
+        }
+        touchOverlay.automapInputCallback = { heading, pitch, thrust ->
+            nativeAutomapInput(heading, pitch, thrust)
         }
         touchOverlay.isActive = false
 
@@ -198,6 +208,8 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                         val inGame = nativeIsInGame()
                         val wasActive = touchOverlay.isActive
                         touchOverlay.isActive = inGame
+                        // Tell the overlay whether the automap is showing
+                        touchOverlay.automapActive = try { nativeIsAutomapActive() } catch (_: Exception) { false }
                         // Enable/disable joystick input when overlay state changes
                         if (inGame && !wasActive) {
                             nativeSetJoystickEnabled(true)
@@ -206,12 +218,14 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                         }
                     } catch (_: Exception) {
                         touchOverlay.isActive = false
+                        touchOverlay.automapActive = false
                     }
                 } else {
                     if (touchOverlay.isActive) {
                         nativeSetJoystickEnabled(false)
                     }
                     touchOverlay.isActive = false
+                    touchOverlay.automapActive = false
                 }
                 overlayPoller.postDelayed(this, 500)
             }
@@ -307,6 +321,17 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
             }
         }
 
+        // ── Automap gesture handling (when overlay is off) ────
+        // When the automap is showing, all non-edge touches become
+        // pan/tilt (drag) or forward/reverse (pinch).
+        if (gameStarted) {
+            try {
+                if (nativeIsAutomapActive()) {
+                    return handleAutomapTouch(event, view.width.toFloat(), view.height.toFloat())
+                }
+            } catch (_: Exception) { /* engine not ready */ }
+        }
+
         // ── Normal game touch handling ──────────────────────
         // The engine renders 640×480 into ANativeWindow which the compositor
         // stretches to fill the entire SurfaceView.  Map proportionally.
@@ -341,6 +366,110 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     private fun toggleAutomap() {
         nativeKeyEvent(0, KeyEvent.KEYCODE_TAB, '\t'.code)
         nativeKeyEvent(1, KeyEvent.KEYCODE_TAB, 0)
+    }
+
+    // ── Automap touch gestures ──────────────────────────────
+    //  1-finger drag  →  pan / tilt  (heading_time, pitch_time)
+    //  2-finger pinch →  forward / reverse thrust (uncapped)
+    //
+    // Called from handleTouch (overlay off) and from the overlay's
+    // unmatched-touch callback (overlay on).
+
+    /**
+     * Feed a raw MotionEvent into the automap gesture tracker.
+     * [screenW] / [screenH] are the view dimensions for normalisation.
+     * Returns true if the event was consumed.
+     */
+    fun handleAutomapTouch(event: MotionEvent, screenW: Float, screenH: Float): Boolean {
+        if (screenW <= 0f || screenH <= 0f) return false
+
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                val idx = event.actionIndex
+                val pid = event.getPointerId(idx)
+                automapPointers[pid] = PointF(event.getX(idx), event.getY(idx))
+
+                // When a second finger lands, initialise pinch distance
+                if (automapPointers.size == 2) {
+                    automapPinchDist = automapFingerDistance(event)
+                }
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                if (automapPointers.size == 1) {
+                    // ── Single-finger drag → pan / tilt ─────────
+                    val pid = automapPointers.keys.first()
+                    val idx = event.findPointerIndex(pid)
+                    if (idx >= 0) {
+                        val prev = automapPointers[pid]!!
+                        val dx = event.getX(idx) - prev.x
+                        val dy = event.getY(idx) - prev.y
+                        prev.set(event.getX(idx), event.getY(idx))
+
+                        // Normalise to fraction of screen dimension
+                        val heading = dx / screenW
+                        val pitch   = dy / screenH
+                        if (heading != 0f || pitch != 0f) {
+                            nativeAutomapInput(heading, pitch, 0f)
+                        }
+                    }
+                } else if (automapPointers.size >= 2) {
+                    // ── Pinch → forward / reverse thrust ────────
+                    val dist = automapFingerDistance(event)
+                    if (automapPinchDist > 0f) {
+                        val delta = dist - automapPinchDist
+                        // Normalise to fraction of screen width; positive = expand = forward
+                        val thrust = delta / screenW
+                        if (thrust != 0f) {
+                            nativeAutomapInput(0f, 0f, thrust)
+                        }
+                    }
+                    automapPinchDist = dist
+
+                    // Also update stored positions so a lift→single-finger
+                    // transition doesn't jump.
+                    for ((pid, pt) in automapPointers) {
+                        val idx = event.findPointerIndex(pid)
+                        if (idx >= 0) pt.set(event.getX(idx), event.getY(idx))
+                    }
+                }
+            }
+
+            MotionEvent.ACTION_POINTER_UP -> {
+                val idx = event.actionIndex
+                val pid = event.getPointerId(idx)
+                automapPointers.remove(pid)
+                // Recalculate pinch distance with remaining fingers
+                if (automapPointers.size >= 2) {
+                    automapPinchDist = automapFingerDistance(event)
+                } else {
+                    automapPinchDist = 0f
+                    // Update the remaining pointer's position to avoid a jump
+                    for ((id, pt) in automapPointers) {
+                        val i = event.findPointerIndex(id)
+                        if (i >= 0) pt.set(event.getX(i), event.getY(i))
+                    }
+                }
+            }
+
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                automapPointers.clear()
+                automapPinchDist = 0f
+            }
+        }
+        return true
+    }
+
+    /** Euclidean distance between the first two tracked automap fingers. */
+    private fun automapFingerDistance(event: MotionEvent): Float {
+        val ids = automapPointers.keys.toList()
+        if (ids.size < 2) return 0f
+        val i0 = event.findPointerIndex(ids[0])
+        val i1 = event.findPointerIndex(ids[1])
+        if (i0 < 0 || i1 < 0) return 0f
+        val dx = event.getX(i0) - event.getX(i1)
+        val dy = event.getY(i0) - event.getY(i1)
+        return kotlin.math.hypot(dx, dy)
     }
 
     /** Map Android gamepad KEYCODE_BUTTON_* to virtual joystick button index (0-9). */

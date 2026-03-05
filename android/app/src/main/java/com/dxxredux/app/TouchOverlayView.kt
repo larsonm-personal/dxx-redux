@@ -36,6 +36,10 @@ class TouchOverlayView @JvmOverloads constructor(
     /** Called with (buttonIndex, pressed) when a fire button is touched/released. */
     var buttonCallback: ((Int, Boolean) -> Unit)? = null
 
+    /** Called with (heading, pitch, thrust) when automap gestures are detected.
+     *  heading/pitch are fractions of screen dimension; thrust is fraction of screen width. */
+    var automapInputCallback: ((Float, Float, Float) -> Unit)? = null
+
     /** Whether the overlay should be visible and active. */
     var isActive: Boolean = false
         set(value) {
@@ -69,6 +73,12 @@ class TouchOverlayView @JvmOverloads constructor(
     // ── Button pointer tracking (one pointer per button) ────
     private var btn0PointerId = -1
     private var btn1PointerId = -1
+
+    // ── Automap gesture state (pointers not on stick/buttons) ──
+    /** Set to true by the activity when the automap is displayed. */
+    var automapActive = false
+    private val automapPointers = mutableMapOf<Int, PointF>()
+    private var automapPinchDist = 0f
 
     // ── Paint objects ───────────────────────────────────────
     private val paintRing = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -175,8 +185,15 @@ class TouchOverlayView @JvmOverloads constructor(
                         buttonCallback?.invoke(1, true)
                         invalidate()
                     }
-                    // Touch is not on any control — still consume it so
-                    // it does not reach the SurfaceView underneath.
+                    else -> {
+                        // Touch not on any control — track for automap gestures
+                        if (automapActive) {
+                            automapPointers[pid] = PointF(px, py)
+                            if (automapPointers.size == 2) {
+                                automapPinchDist = automapFingerDist(event)
+                            }
+                        }
+                    }
                 }
             }
             MotionEvent.ACTION_MOVE -> {
@@ -187,18 +204,35 @@ class TouchOverlayView @JvmOverloads constructor(
                         updateStickFromTouch(event.getX(idx), event.getY(idx))
                     }
                 }
+                // Update automap gestures for unmatched pointers
+                if (automapActive && automapPointers.isNotEmpty()) {
+                    handleAutomapMove(event)
+                }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 if (stickPointerId >= 0) resetStick()
                 releaseButton0()
                 releaseButton1()
+                automapPointers.clear()
+                automapPinchDist = 0f
             }
             MotionEvent.ACTION_POINTER_UP -> {
                 val idx = event.actionIndex
-                when (event.getPointerId(idx)) {
+                val pid = event.getPointerId(idx)
+                when (pid) {
                     stickPointerId -> resetStick()
                     btn0PointerId  -> releaseButton0()
                     btn1PointerId  -> releaseButton1()
+                    else -> {
+                        // Automap pointer lifted
+                        automapPointers.remove(pid)
+                        automapPinchDist = if (automapPointers.size >= 2) automapFingerDist(event) else 0f
+                        // Refresh remaining pointer positions to avoid jump
+                        for ((id, pt) in automapPointers) {
+                            val i = event.findPointerIndex(id)
+                            if (i >= 0) pt.set(event.getX(i), event.getY(i))
+                        }
+                    }
                 }
             }
         }
@@ -262,5 +296,56 @@ class TouchOverlayView @JvmOverloads constructor(
     private fun releaseAllButtons() {
         releaseButton0()
         releaseButton1()
+    }
+
+    // ── Automap gesture helpers ─────────────────────────────
+
+    /** Process MOVE events for automap pointers (drag → pan/tilt, pinch → thrust). */
+    private fun handleAutomapMove(event: MotionEvent) {
+        val w = width.toFloat()
+        val h = height.toFloat()
+        if (w <= 0f || h <= 0f) return
+
+        if (automapPointers.size == 1) {
+            // Single finger → pan / tilt
+            val pid = automapPointers.keys.first()
+            val idx = event.findPointerIndex(pid)
+            if (idx >= 0) {
+                val prev = automapPointers[pid]!!
+                val dx = event.getX(idx) - prev.x
+                val dy = event.getY(idx) - prev.y
+                prev.set(event.getX(idx), event.getY(idx))
+                if (dx != 0f || dy != 0f) {
+                    automapInputCallback?.invoke(dx / w, dy / h, 0f)
+                }
+            }
+        } else if (automapPointers.size >= 2) {
+            // Two+ fingers → pinch = thrust
+            // Update all automap pointer positions first
+            for ((pid, pt) in automapPointers) {
+                val idx = event.findPointerIndex(pid)
+                if (idx >= 0) pt.set(event.getX(idx), event.getY(idx))
+            }
+            val dist = automapFingerDist(event)
+            if (automapPinchDist > 0f) {
+                val delta = dist - automapPinchDist
+                if (delta != 0f) {
+                    automapInputCallback?.invoke(0f, 0f, delta / w)
+                }
+            }
+            automapPinchDist = dist
+        }
+    }
+
+    /** Euclidean distance between the first two automap pointers. */
+    private fun automapFingerDist(event: MotionEvent): Float {
+        val ids = automapPointers.keys.toList()
+        if (ids.size < 2) return 0f
+        val i0 = event.findPointerIndex(ids[0])
+        val i1 = event.findPointerIndex(ids[1])
+        if (i0 < 0 || i1 < 0) return 0f
+        val dx = event.getX(i0) - event.getX(i1)
+        val dy = event.getY(i0) - event.getY(i1)
+        return hypot(dx, dy)
     }
 }
