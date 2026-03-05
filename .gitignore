@@ -67,6 +67,7 @@ build*/
 ###########
 local.properties
 keystore.properties
+play-store-credentials.json
 *.keystore
 *.jks
 .gradle/
