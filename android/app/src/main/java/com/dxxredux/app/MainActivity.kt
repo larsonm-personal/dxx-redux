@@ -61,8 +61,9 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     private var overlayEnabled = false
     private val overlayPoller = android.os.Handler(android.os.Looper.getMainLooper())
 
-    // ── Edge-swipe state (swipe from left edge → open setup screen) ─────
-    private var edgeSwipeTracking = false
+    // ── Edge-swipe state ────────────────────────────────────────────────
+    private var edgeSwipeTracking = false      // left-edge → setup screen
+    private var rightEdgeSwipeTracking = false  // right-edge → toggle automap
     private var edgeSwipeStartX = 0f
     private var edgeSwipeStartY = 0f
 
@@ -268,10 +269,17 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                     edgeSwipeStartY = event.y
                     return true           // consume – don't forward to game
                 }
+                if (event.x > view.width - edgeThresholdPx) {
+                    rightEdgeSwipeTracking = true
+                    edgeSwipeStartX = event.x
+                    edgeSwipeStartY = event.y
+                    return true
+                }
                 edgeSwipeTracking = false
+                rightEdgeSwipeTracking = false
             }
             MotionEvent.ACTION_MOVE -> {
-                if (edgeSwipeTracking) return true
+                if (edgeSwipeTracking || rightEdgeSwipeTracking) return true
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 if (edgeSwipeTracking) {
@@ -281,6 +289,17 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                         val dy = kotlin.math.abs(event.y - edgeSwipeStartY)
                         if (dx > swipeMinPx && dy < dx) {
                             openSetupScreen()
+                        }
+                    }
+                    return true
+                }
+                if (rightEdgeSwipeTracking) {
+                    rightEdgeSwipeTracking = false
+                    if (event.actionMasked == MotionEvent.ACTION_UP) {
+                        val dx = edgeSwipeStartX - event.x   // positive = swiped left
+                        val dy = kotlin.math.abs(event.y - edgeSwipeStartY)
+                        if (dx > swipeMinPx && dy < dx) {
+                            toggleAutomap()
                         }
                     }
                     return true
@@ -316,6 +335,12 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         val intent = Intent(this, SetupActivity::class.java)
         intent.putExtra("gameRunning", true)
         startActivity(intent)
+    }
+
+    /** Toggle the automap by injecting a TAB key press/release. */
+    private fun toggleAutomap() {
+        nativeKeyEvent(0, KeyEvent.KEYCODE_TAB, '\t'.code)
+        nativeKeyEvent(1, KeyEvent.KEYCODE_TAB, 0)
     }
 
     /** Map Android gamepad KEYCODE_BUTTON_* to virtual joystick button index (0-9). */
