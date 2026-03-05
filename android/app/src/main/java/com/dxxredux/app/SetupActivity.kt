@@ -223,6 +223,7 @@ class SetupActivity : ComponentActivity() {
                     if (gameRunning) {
                         finish()   // return to the already-running game
                     } else {
+                        writeInitialGameConfig()
                         startActivity(Intent(this, MainActivity::class.java))
                         // Don't finish() — stay in back stack so quitting
                         // the game returns here instead of the launcher.
@@ -235,6 +236,48 @@ class SetupActivity : ComponentActivity() {
                 }
             )
         }
+    }
+
+    /**
+     * Write initial descent.cfg with Android-appropriate defaults if the file
+     * doesn't exist yet (first launch).  Once the user changes settings in-game,
+     * the engine overwrites this file and their preferences stick.
+     *
+     * Settings that live in binary .plr files (like ControlType) can't be
+     * handled here — those are set in config.c's android_apply_initial_defaults().
+     */
+    private fun writeInitialGameConfig() {
+        val cfgFile = File(filesDir, "descent.cfg")
+        if (cfgFile.exists()) return   // user already has a config — don't overwrite
+
+        // Determine the device's real screen dimensions (including system bars)
+        val (screenW, screenH) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val bounds = windowManager.currentWindowMetrics.bounds
+            Pair(bounds.width(), bounds.height())
+        } else {
+            @Suppress("DEPRECATION")
+            val size = android.graphics.Point()
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.getRealSize(size)
+            Pair(size.x, size.y)
+        }
+
+        // Ensure wider dimension is treated as width (game is landscape)
+        val w = maxOf(screenW, screenH)
+        val h = minOf(screenW, screenH)
+
+        // Reduce to simplest fraction via GCD
+        fun gcd(a: Int, b: Int): Int = if (b == 0) a else gcd(b, a % b)
+        val g = gcd(w, h)
+        val aspectY = w / g   // width component  (game naming: Y = wider)
+        val aspectX = h / g   // height component (game naming: X = narrower)
+
+        Log.i("DXX-Setup", "First launch: writing descent.cfg with aspect ${aspectY}x${aspectX} (from ${w}x${h})")
+
+        cfgFile.writeText(
+            "AspectX=$aspectX\n" +
+            "AspectY=$aspectY\n"
+        )
     }
 
     override fun onResume() {

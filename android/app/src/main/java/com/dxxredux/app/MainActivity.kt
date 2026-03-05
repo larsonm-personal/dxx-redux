@@ -146,6 +146,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         // Start the engine only once, after the surface is ready
         if (!gameStarted) {
             gameStarted = true
+
             Thread {
                 startGame()
             }.start()

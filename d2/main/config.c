@@ -33,6 +33,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "player.h"
 #include "mission.h"
 #include "physfsx.h"
+#ifdef ANDROID
+#include "playsave.h"
+#endif
 
 struct Cfg GameCfg;
 
@@ -67,6 +70,26 @@ static const char ClassicDepthStr[] ="ClassicDepth";
 static const char FPSIndicatorStr[] ="FPSIndicator";
 static const char GrabinputStr[] ="GrabInput";
 static const char BorderlessWindowStr[] ="BorderlessWindow";
+
+#ifdef ANDROID
+/*
+ * Apply initial settings for Android when the config file doesn't exist yet
+ * (first launch).  Settings that live in descent.cfg (like aspect ratio) are
+ * handled by SetupActivity before the engine starts.  This function handles
+ * settings stored elsewhere (binary .plr files, engine globals, etc.) that
+ * can't easily be written from the Kotlin layer.
+ *
+ * Add any future Android-specific first-run defaults here that require
+ * engine internals.
+ */
+static void android_apply_initial_defaults(void)
+{
+	/* Default to joystick control for the touch overlay.
+	 * ControlType is stored in per-player .plr files (binary), so it
+	 * can't be set from the Kotlin layer. */
+	PlayerCfg.ControlType = CONTROL_USING_JOYSTICK;
+}
+#endif
 
 int ReadConfigFile()
 {
@@ -123,6 +146,9 @@ int ReadConfigFile()
 	infile = PHYSFSX_openReadBuffered("descent.cfg");
 
 	if (infile == NULL) {
+#ifdef ANDROID
+		android_apply_initial_defaults();
+#endif
 		return 1;
 	}
 
