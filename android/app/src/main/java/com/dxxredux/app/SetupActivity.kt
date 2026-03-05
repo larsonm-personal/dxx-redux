@@ -532,7 +532,10 @@ private fun SetupScreen(
                             else MaterialTheme.colorScheme.secondaryContainer
                         )
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
+                        Column(modifier = Modifier
+                            .padding(12.dp)
+                            .verticalScroll(rememberScrollState())
+                        ) {
                             if (found.isEmpty()) {
                                 Text(
                                     text = "No game files found in that folder.",
@@ -547,19 +550,11 @@ private fun SetupScreen(
                                 )
                             } else {
                                 Text(
-                                    text = "Found ${found.size} game file(s):",
+                                    text = "Found ${found.size} game file(s): ${found.joinToString(", ") { it.name ?: "?" }}",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                found.forEach { f ->
-                                    Text(
-                                        text = "  \u2022 ${f.name}",
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                                    )
-                                }
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)

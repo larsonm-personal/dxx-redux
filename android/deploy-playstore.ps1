@@ -286,7 +286,7 @@ Write-Host ""
 
 if (-not $alreadyUploaded) {
     # ═══════════════════════════════════════════════════════════════════
-    #  Update track with the new release (draft)
+    #  Update track with the new release
     # ═══════════════════════════════════════════════════════════════════
 
     Write-Host "Assigning versionCode $versionCode to track '$selectedTrack'..."
@@ -296,7 +296,7 @@ if (-not $alreadyUploaded) {
             @{
                 name         = "v$versionCode"
                 versionCodes = @( $versionCode )
-                status       = "draft"    # use "completed" once the app has a production release
+                status       = "completed"
             }
         )
     } | ConvertTo-Json -Depth 5
@@ -314,11 +314,11 @@ if (-not $alreadyUploaded) {
     Write-Host ""
 
     # ═══════════════════════════════════════════════════════════════════
-    #  Commit the draft edit
+    #  Commit the edit (changesNotSentForReview for pre-production apps)
     # ═══════════════════════════════════════════════════════════════════
 
-    Write-Host "Committing draft edit..."
-    $commitUrl = "$baseUrl/edits/$editId" + ":commit"
+    Write-Host "Committing edit..."
+    $commitUrl = "$baseUrl/edits/$editId" + ":commit?changesNotSentForReview=true"
     try {
         $commitResult = Invoke-RestMethod -Uri $commitUrl `
                         -Method POST -Headers $headers -ContentType "application/json" `
@@ -328,62 +328,52 @@ if (-not $alreadyUploaded) {
         if (-not $errBody) { try { $errBody = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
         Write-Error "Commit failed: $errBody`n$_"
     }
-    Write-Host "Draft release committed (edit $editId)."
+    Write-Host "Edit committed."
     Write-Host ""
 } else {
-    # Already uploaded -- discard the unused edit
+    # Already uploaded -- promote existing version via new edit
+    Write-Host "Promoting existing versionCode $versionCode to completed..."
     try {
         Invoke-RestMethod -Uri "$baseUrl/edits/$editId" -Method DELETE -Headers $headers -TimeoutSec 10 | Out-Null
     } catch {}
-}
 
-# ═══════════════════════════════════════════════════════════════════
-#  Promote draft to completed (second edit cycle)
-# ═══════════════════════════════════════════════════════════════════
-# Google requires draft apps to first commit a draft release, then
-# promote it to "completed" in a separate edit.
+    $edit2 = Invoke-RestMethod -Uri "$baseUrl/edits" -Method POST -Headers $headers `
+             -ContentType "application/json" -Body "{}" -TimeoutSec 30
+    $editId = $edit2.id
 
-Write-Host "Promoting draft release to completed..."
+    $trackBody = @{
+        track    = $selectedTrack
+        releases = @(
+            @{
+                name         = "v$versionCode"
+                versionCodes = @( $versionCode )
+                status       = "completed"
+            }
+        )
+    } | ConvertTo-Json -Depth 5
 
-# Create a fresh edit
-$edit2 = Invoke-RestMethod -Uri "$baseUrl/edits" -Method POST -Headers $headers `
-         -ContentType "application/json" -Body "{}" -TimeoutSec 30
-$editId2 = $edit2.id
-Write-Host "  New edit: $editId2"
+    try {
+        $trackResult = Invoke-RestMethod -Uri "$baseUrl/edits/$editId/tracks/$selectedTrack" `
+                       -Method PUT -Headers $headers `
+                       -ContentType "application/json" -Body $trackBody -TimeoutSec 30
+        Write-Host "Track updated: status=$($trackResult.releases[0].status)"
+    } catch {
+        $errBody = $_.ErrorDetails.Message
+        if (-not $errBody) { try { $errBody = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
+        Write-Error "Track update failed: $errBody`n$_"
+    }
 
-# Update the track: same versionCode, status -> completed
-$promoteBody = @{
-    track    = $selectedTrack
-    releases = @(
-        @{
-            name         = "v$versionCode"
-            versionCodes = @( $versionCode )
-            status       = "completed"
-        }
-    )
-} | ConvertTo-Json -Depth 5
-
-try {
-    $promoteResult = Invoke-RestMethod -Uri "$baseUrl/edits/$editId2/tracks/$selectedTrack" `
-                     -Method PUT -Headers $headers `
-                     -ContentType "application/json" -Body $promoteBody -TimeoutSec 30
-    Write-Host "  Track updated: status=$($promoteResult.releases[0].status)"
-} catch {
-    $errBody = $_.ErrorDetails.Message
-    if (-not $errBody) { try { $errBody = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
-    Write-Error "Promote failed: $errBody`n$_"
-}
-
-# Commit the promotion edit
-$commitUrl2 = "$baseUrl/edits/$editId2" + ":commit"
-try {
-    Invoke-RestMethod -Uri $commitUrl2 -Method POST -Headers $headers `
-                      -ContentType "application/json" -Body "{}" -TimeoutSec 30 | Out-Null
-    Write-Host "  Promotion committed."
-} catch {
-    $errBody = $_.ErrorDetails.Message
-    if (-not $errBody) { try { $errBody = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
-    Write-Error "Promote commit failed: $errBody`n$_"
+    $commitUrl = "$baseUrl/edits/$editId" + ":commit?changesNotSentForReview=true"
+    try {
+        Invoke-RestMethod -Uri $commitUrl -Method POST -Headers $headers `
+                          -ContentType "application/json" -Body "{}" -TimeoutSec 30 | Out-Null
+    } catch {
+        $errBody = $_.ErrorDetails.Message
+        if (-not $errBody) { try { $errBody = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
+        Write-Error "Commit failed: $errBody`n$_"
+    }
+    Write-Host "Edit committed."
+    Write-Host ""
 }
 
 Write-Host ""

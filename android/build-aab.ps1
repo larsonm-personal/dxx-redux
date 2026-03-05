@@ -22,11 +22,11 @@ try {
     Write-Host "  1) Debug"
     Write-Host "  2) Release (signed, for Play Console)"
     Write-Host ""
-    $choice = Read-Host "Enter choice [1]"
-    if ($choice -eq '2') {
-        $variant = "Release"
-    } else {
+    $choice = Read-Host "Enter choice [2]"
+    if ($choice -eq '1') {
         $variant = "Debug"
+    } else {
+        $variant = "Release"
     }
     $task = "bundle$variant"
 
