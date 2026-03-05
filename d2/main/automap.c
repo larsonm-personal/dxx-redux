@@ -152,6 +152,22 @@ typedef struct automap
 #define K_GREEN_31              BM_XRGB(0, 31, 0)
 
 int Automap_active = 0;
+static automap *g_active_automap = NULL;
+
+#ifdef INTROSPECT_ON
+int automap_get_view_info(automap_view_info *out) {
+	if (!Automap_active || !g_active_automap || !out) return 0;
+	automap *am = g_active_automap;
+	out->view_pos  = am->view_position;
+	out->view_target = am->view_target;
+	out->view_matrix = am->viewMatrix;
+	out->viewDist  = am->viewDist;
+	out->zoom      = am->zoom;
+	out->tangles   = am->tangles;
+	out->freeflight = PlayerCfg.AutomapFreeFlight;
+	return 1;
+}
+#endif
 
 void init_automap_colors(automap *am)
 {
@@ -840,6 +856,7 @@ int automap_handler(window *wind, d_event *event, automap *am)
 			d_free(am->drawingListBright);
 			d_free(am);
 			window_set_visible(Game_wind, 1);
+			g_active_automap = NULL;
 			Automap_active = 0;
 			return 0;	// continue closing
 			break;
@@ -946,6 +963,7 @@ void do_automap()
 	gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23), (SHEIGHT/6), (SWIDTH/1.1), (SHEIGHT/1.45));
 
 	gr_palette_load( gr_palette );
+	g_active_automap = am;
 	Automap_active = 1;
 }
 

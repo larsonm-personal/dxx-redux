@@ -26,6 +26,8 @@
 #include "maths.h"
 #include "vecmat.h"
 #include "weapon.h"
+#include "automap.h"
+#include "playsave.h"
 
 /* ── Helpers to identify front-window types ─────────────────────────── */
 
@@ -309,6 +311,30 @@ char *game_introspect_get_state(void) {
             }
         } else if (!front) {
             jb_cat(&j, "\"menu\": null,");
+        }
+    }
+
+    /* ── Automap ──────────────────────────────────────────────── */
+    jb_printf(&j, "\"automap_active\": %s,", Automap_active ? "true" : "false");
+    {
+        automap_view_info avi;
+        if (automap_get_view_info(&avi)) {
+            jb_cat(&j, "\"automap\": {");
+            jb_printf(&j, "\"freeflight\": %s,", avi.freeflight ? "true" : "false");
+            jb_printf(&j, "\"view_x\": %.2f,", f2fl(avi.view_pos.x));
+            jb_printf(&j, "\"view_y\": %.2f,", f2fl(avi.view_pos.y));
+            jb_printf(&j, "\"view_z\": %.2f,", f2fl(avi.view_pos.z));
+            jb_printf(&j, "\"target_x\": %.2f,", f2fl(avi.view_target.x));
+            jb_printf(&j, "\"target_y\": %.2f,", f2fl(avi.view_target.y));
+            jb_printf(&j, "\"target_z\": %.2f,", f2fl(avi.view_target.z));
+            jb_printf(&j, "\"view_dist\": %.2f,", f2fl(avi.viewDist));
+            jb_printf(&j, "\"zoom\": %.2f,", f2fl(avi.zoom));
+            jb_printf(&j, "\"tangles_p\": %d,", avi.tangles.p);
+            jb_printf(&j, "\"tangles_h\": %d,", avi.tangles.h);
+            jb_printf(&j, "\"tangles_b\": %d", avi.tangles.b);
+            jb_cat(&j, "},");
+        } else {
+            jb_cat(&j, "\"automap\": null,");
         }
     }
 
