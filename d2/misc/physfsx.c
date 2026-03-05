@@ -55,6 +55,13 @@ void PHYSFSX_init(int argc, char *argv[])
 		PHYSFS_addToSearchPath(PHYSFS_getBaseDir(), 1);
 		PHYSFSX_addRelToSearchPath("data", 1);
 	}
+	/* Android has no real argv (argv[0] is a PhysFS struct, not a string),
+	 * and the full ReadCmdArgs() path changes several GameArg defaults in
+	 * ways that aren't yet fully compatible with the Android build.
+	 * Set the critical defaults that must be non-zero manually.
+	 * TODO: eventually call InitArgs(0,NULL) once all GameArg interactions
+	 * are verified on Android. */
+	GameArg.SndDigiSampleRate = 22050; /* SAMPLE_RATE_22K, avoid digi.h include */
 	return;
 #endif
 

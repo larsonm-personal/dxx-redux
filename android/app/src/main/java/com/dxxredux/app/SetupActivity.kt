@@ -754,6 +754,11 @@ private fun SetupScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // ── Music section ────────────────────────
+                    MusicInfoSection()
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     // ── Controller section ──────────────────
                     val prefs = context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
                     ControllerSection(
@@ -871,6 +876,29 @@ private fun SectionHeader(title: String) {
         color = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.padding(bottom = 4.dp, top = 2.dp)
     )
+}
+
+@Composable
+private fun MusicInfoSection() {
+    var expanded by remember { mutableStateOf(false) }
+    GameSectionHeader(
+        title = "Music",
+        ready = false,
+        expanded = expanded,
+        onToggle = { expanded = !expanded }
+    )
+    if (expanded) {
+        Text(
+            text = "MIDI music is not yet supported on Android. " +
+                   "The original HMP soundtrack files are inside descent2.hog, " +
+                   "so no additional data files are needed \u2014 only engine support.\n\n" +
+                   "Redbook (CD) audio is not applicable on Android.\n\n" +
+                   "Custom music (jukebox) will also require engine support.",
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 8.dp)
+        )
+    }
 }
 
 @Composable

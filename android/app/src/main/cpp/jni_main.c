@@ -8,6 +8,8 @@
 #include <jni.h>
 #include <stdlib.h>
 #include <android/log.h>
+#include <android/asset_manager.h>
+#include <android/asset_manager_jni.h>
 #include <physfs.h>
 #include <SDL.h>
 #ifdef INTROSPECT_ON
@@ -22,6 +24,9 @@
 /* ── Global JNI references (used by android_input.c for C→Java callbacks) ── */
 JavaVM  *g_jvm      = NULL;
 jobject  g_activity  = NULL;   /* Global ref to MainActivity */
+
+/* ── AAssetManager (used by digi_tsf_music.c to load the GM soundfont) ── */
+AAssetManager *g_asset_manager = NULL;
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
 {
@@ -47,6 +52,16 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 
     /* Cache a global reference to the Activity for C→Java callbacks. */
     g_activity = (*env)->NewGlobalRef(env, thiz);
+
+    /* Cache AAssetManager for native asset access (soundfont loading etc.) */
+    {
+        jclass actCls = (*env)->GetObjectClass(env, thiz);
+        jmethodID getAssets = (*env)->GetMethodID(env, actCls, "getAssets",
+                                "()Landroid/content/res/AssetManager;");
+        jobject jAssetMgr = (*env)->CallObjectMethod(env, thiz, getAssets);
+        g_asset_manager = AAssetManager_fromJava(env, jAssetMgr);
+        LOGI("AAssetManager cached for native asset access");
+    }
 
     /* Tell SDL 1.2 to use the dummy video driver.
      * The dummy video driver's Available() only returns 1 when this is set.

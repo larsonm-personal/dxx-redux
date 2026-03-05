@@ -32,6 +32,7 @@ static pthread_mutex_t g_surface_mutex = PTHREAD_MUTEX_INITIALIZER;
  * blit(). */
 static uint32_t g_palette_argb[256];
 static int g_palette_dirty = 1;
+static int g_last_geo_w = 0, g_last_geo_h = 0;
 
 /* ── JNI entry points called from Kotlin ────────────────────── */
 
@@ -49,6 +50,8 @@ Java_com_dxxredux_app_MainActivity_nativeSetSurface(JNIEnv *env, jobject thiz, j
         g_native_window = ANativeWindow_fromSurface(env, surface);
         if (g_native_window) {
             g_surface_ready = 1;
+            g_last_geo_w = 0;
+            g_last_geo_h = 0;
             LOGI("ANativeWindow acquired (%dx%d)",
                  ANativeWindow_getWidth(g_native_window),
                  ANativeWindow_getHeight(g_native_window));
@@ -91,12 +94,23 @@ void android_surface_blit(SDL_Surface *canvas)
     int src_w = canvas->w;
     int src_h = canvas->h;
 
-    /* Configure the native window buffer to match the canvas size */
-    ANativeWindow_setBuffersGeometry(g_native_window, src_w, src_h,
+    /* Only reconfigure geometry when dimensions change */
+    if (src_w != g_last_geo_w || src_h != g_last_geo_h) {
+        LOGI("setBuffersGeometry %dx%d", src_w, src_h);
+        int geo_ret = ANativeWindow_setBuffersGeometry(g_native_window, src_w, src_h,
                                      AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM);
+        if (geo_ret != 0) {
+            LOGE("setBuffersGeometry failed: %d", geo_ret);
+            pthread_mutex_unlock(&g_surface_mutex);
+            return;
+        }
+        g_last_geo_w = src_w;
+        g_last_geo_h = src_h;
+    }
 
     ANativeWindow_Buffer buf;
     if (ANativeWindow_lock(g_native_window, &buf, NULL) != 0) {
+        LOGE("ANativeWindow_lock failed");
         pthread_mutex_unlock(&g_surface_mutex);
         return;  /* lock failed — surface may be transitioning */
     }

@@ -150,7 +150,76 @@ target_link_libraries(SDL12 PRIVATE dl OpenSLES)
 target_compile_options(SDL12 PRIVATE -w)   # suppress all warnings for third-party code
 
 # ──────────────────────────────────────────────────────────────
-# 2. nlohmann/json  (header-only, debug/introspection builds only)
+# 1b. SDL_mixer 1.2  (SFX mixing only — MIDI handled by TSF)
+# ──────────────────────────────────────────────────────────────
+FetchContent_Declare(sdl_mixer12
+    GIT_REPOSITORY https://github.com/arbruijn/SDL_mixer-1.2-cmake
+    GIT_TAG        master
+    GIT_SHALLOW    TRUE
+)
+FetchContent_Populate(sdl_mixer12)
+
+set(SDLMIXER_DIR ${sdl_mixer12_SOURCE_DIR})
+add_library(SDL_mixer STATIC
+    # --- core mixer (SFX channels, effects, WAV loading) ---
+    ${SDLMIXER_DIR}/mixer.c
+    ${SDLMIXER_DIR}/music.c
+    ${SDLMIXER_DIR}/wavestream.c
+    ${SDLMIXER_DIR}/effect_position.c
+    ${SDLMIXER_DIR}/effect_stereoreverse.c
+    ${SDLMIXER_DIR}/effects_internal.c
+    ${SDLMIXER_DIR}/load_aiff.c
+    ${SDLMIXER_DIR}/load_voc.c
+    # Timidity removed — MIDI is handled by TinySoundFont via Mix_HookMusic
+)
+
+target_include_directories(SDL_mixer
+    PUBLIC  ${SDLMIXER_DIR}            # SDL_mixer.h
+            ${SDL12_DIR}/include       # SDL headers
+)
+
+# WAV only — no MIDI, OGG, FLAC, MP3, FluidSynth, native MIDI
+target_compile_definitions(SDL_mixer PRIVATE
+    WAV_MUSIC
+)
+
+target_link_libraries(SDL_mixer PRIVATE SDL12)
+target_compile_options(SDL_mixer PRIVATE -w)   # suppress warnings for third-party code
+
+# ──────────────────────────────────────────────────────────────
+# 2a. TinySoundFont  (tsf.h + tml.h — MIDI synth, header-only)
+# ──────────────────────────────────────────────────────────────
+set(_TSF_DIR "${CMAKE_CURRENT_BINARY_DIR}/tinysoundfont")
+file(MAKE_DIRECTORY "${_TSF_DIR}")
+if(NOT EXISTS "${_TSF_DIR}/tsf.h")
+    file(DOWNLOAD
+        "https://raw.githubusercontent.com/schellingb/TinySoundFont/main/tsf.h"
+        "${_TSF_DIR}/tsf.h"
+    )
+endif()
+if(NOT EXISTS "${_TSF_DIR}/tml.h")
+    file(DOWNLOAD
+        "https://raw.githubusercontent.com/schellingb/TinySoundFont/main/tml.h"
+        "${_TSF_DIR}/tml.h"
+    )
+endif()
+
+# ──────────────────────────────────────────────────────────────
+# 2b. GM Soundfont  (TimGM6mb.sf2 — same font the Linux build uses)
+# ──────────────────────────────────────────────────────────────
+set(_ASSETS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../assets")
+file(MAKE_DIRECTORY "${_ASSETS_DIR}")
+if(NOT EXISTS "${_ASSETS_DIR}/gm.sf2")
+    message(STATUS "Downloading TimGM6mb.sf2 soundfont...")
+    file(DOWNLOAD
+        "https://github.com/arbruijn/TimGM6mb/releases/download/v20100822/TimGM6mb.sf2"
+        "${_ASSETS_DIR}/gm.sf2"
+        SHOW_PROGRESS
+    )
+endif()
+
+# ──────────────────────────────────────────────────────────────
+# 2c. nlohmann/json  (header-only, debug/introspection builds only)
 # ──────────────────────────────────────────────────────────────
 FetchContent_Declare(nlohmann_json
     GIT_REPOSITORY https://github.com/nlohmann/json.git
@@ -188,11 +257,15 @@ set(PHYSFS_FOUND       TRUE                       CACHE BOOL   "" FORCE)
 set(PHYSFS_INCLUDE_DIR "${physfs_SOURCE_DIR}/src"  CACHE PATH   "" FORCE)
 set(PHYSFS_LIBRARY     physfs-static               CACHE STRING "" FORCE)
 
+set(SDL_MIXER_FOUND        TRUE                    CACHE BOOL   "" FORCE)
+set(SDL_MIXER_INCLUDE_DIRS "${SDLMIXER_DIR}"       CACHE PATH   "" FORCE)
+set(SDL_MIXER_LIBRARY      SDL_mixer                CACHE STRING "" FORCE)
+
 # ──────────────────────────────────────────────────────────────
-# 5. D2 build options  (disable everything that needs extra deps)
+# 5. D2 build options
 # ──────────────────────────────────────────────────────────────
 set(OPENGL    OFF CACHE BOOL "" FORCE)
-set(SDLMIXER  OFF CACHE BOOL "" FORCE)
+set(SDLMIXER  ON  CACHE BOOL "" FORCE)
 set(PNG       OFF CACHE BOOL "" FORCE)
 set(ASM       OFF CACHE BOOL "" FORCE)
 set(EDITOR    OFF CACHE BOOL "" FORCE)
@@ -233,8 +306,15 @@ target_compile_definitions(d2x-redux PRIVATE INTROSPECT_ON)
 target_compile_definitions(arch_sdl PRIVATE INTROSPECT_ON)
 target_include_directories(arch_sdl PRIVATE ${D2_SRC}/introspect)
 
+# Replace SDL_mixer's Timidity-based music with TinySoundFont MIDI synth.
+# digi_mixer_music.c is already compiled into arch_sdl by the D2 CMakeLists;
+# we remove it and add our TSF-based replacement instead.
+get_target_property(_arch_sdl_sources arch_sdl SOURCES)
+list(FILTER _arch_sdl_sources EXCLUDE REGEX "digi_mixer_music\\.c$")
+set_property(TARGET arch_sdl PROPERTY SOURCES ${_arch_sdl_sources})
+target_sources(arch_sdl PRIVATE ${D2_SRC}/arch/sdl/digi_tsf_music.c)
+target_include_directories(arch_sdl PRIVATE ${_TSF_DIR})
+target_compile_definitions(arch_sdl PRIVATE ANDROID)
+
 # nlohmann/json — used by the introspection/automation C++ files
 target_link_libraries(d2x-redux PRIVATE nlohmann_json::nlohmann_json)
-
-# TODO: Replace the above with the real d1/d2 build by including the game
-# CMakeLists.txt and adjusting dependencies for Android (OpenGL ES, SDL2, etc.)

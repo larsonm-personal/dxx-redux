@@ -16,6 +16,13 @@
 #include <SDL_audio.h>
 #include <SDL_mixer.h>
 
+#ifdef ANDROID
+#include <android/log.h>
+#define MIXLOG(...) __android_log_print(ANDROID_LOG_DEBUG, "digi_mixer", __VA_ARGS__)
+#else
+#define MIXLOG(...) do {} while(0)
+#endif
+
 #include "pstypes.h"
 #include "dxxerror.h"
 #include "sounds.h"
@@ -76,10 +83,13 @@ int digi_mixer_init()
 	if (Mix_OpenAudio(SAMPLE_RATE_44K, MIX_OUTPUT_FORMAT, MIX_OUTPUT_CHANNELS, SOUND_BUFFER_SIZE))
 	{
 		//edited on 10/05/98 by Matt Mueller - should keep running, just with no sound.
+		MIXLOG("ERROR: Couldn't open audio: %s", SDL_GetError());
 		con_printf(CON_URGENT,"\nError: Couldn't open audio: %s\n", SDL_GetError());
 		GameArg.SndNoSound = 1;
 		return 1;
 	}
+	MIXLOG("Mix_OpenAudio ok: rate=%d SndDigiSampleRate=%d",
+		SAMPLE_RATE_44K, GameArg.SndDigiSampleRate);
 
 	digi_max_channels = Mix_AllocateChannels(digi_max_channels);
 	memset(channels, 0, MAX_SOUND_SLOTS);
@@ -128,14 +138,17 @@ void mixdigi_convert_sound(int i)
 	Uint16 out_format;
 	int out_channels;
 
-	Mix_QuerySpec(&out_freq, &out_format, &out_channels); // get current output settings
+	int qret = Mix_QuerySpec(&out_freq, &out_format, &out_channels); // get current output settings
 
 	if (SoundChunks[i].abuf) return; //proceed only if not converted yet
 
 	if (data)
 	{
-		if (MIX_DIGI_DEBUG) con_printf(CON_DEBUG,"converting %d (%d)\n", i, dlen);
-		SDL_BuildAudioCVT(&cvt, AUDIO_U8, 1, GameArg.SndDigiSampleRate, out_format, out_channels, out_freq);
+		int cvt_ret;
+		int src_rate = GameArg.SndDigiSampleRate;
+		if (src_rate <= 0)
+			src_rate = SAMPLE_RATE_22K;
+		cvt_ret = SDL_BuildAudioCVT(&cvt, AUDIO_U8, 1, src_rate, out_format, out_channels, out_freq);
 
 		cvt.buf = malloc(dlen * cvt.len_mult);
 		cvt.len = dlen;

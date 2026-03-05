@@ -43,7 +43,10 @@ elseif(ASM)
 endif()
 if(SDLMIXER)
     add_definitions(/DUSE_SDLMIXER)
-    if (APPLE)
+    if (ANDROID)
+        # SDL_mixer is built by the Android CMakeLists.txt;
+        # SDL_MIXER_LIBRARY and SDL_MIXER_INCLUDE_DIRS are pre-set.
+    elseif (APPLE)
         include(FetchContent)
         FetchContent_Declare(
             SDL_mixer-1.2-cmake
