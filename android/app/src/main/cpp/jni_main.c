@@ -12,6 +12,7 @@
 #include <SDL.h>
 #ifdef INTROSPECT_ON
 #include "game_introspect.h"
+#include "game_automate.h"
 #endif
 
 #define LOG_TAG "DXX-Redux"
@@ -131,6 +132,23 @@ Java_com_dxxredux_app_MainActivity_nativeSetIntrospectPath(JNIEnv *env, jobject 
 {
     const char *path = (*env)->GetStringUTFChars(env, jpath, NULL);
     game_introspect_set_path(path);
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+}
+
+/* ── Automation: load and run a JSON script of input steps ────────── */
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeLoadAutomationScript(JNIEnv *env, jobject thiz, jstring jpath)
+{
+    const char *path = (*env)->GetStringUTFChars(env, jpath, NULL);
+    game_automate_load_script(path);
+    (*env)->ReleaseStringUTFChars(env, jpath, path);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetAutomationPath(JNIEnv *env, jobject thiz, jstring jpath)
+{
+    const char *path = (*env)->GetStringUTFChars(env, jpath, NULL);
+    game_automate_set_path(path);
     (*env)->ReleaseStringUTFChars(env, jpath, path);
 }
 #endif /* INTROSPECT_ON */

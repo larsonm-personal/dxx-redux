@@ -400,13 +400,17 @@ void calc_frame_time()
 	timer_value = timer_query();
 	FrameTime = timer_value - last_timer_value;
 
-	while (FrameTime < f1_0 / (GameCfg.VSync?MAXIMUM_FPS:PlayerCfg.maxFps))
 	{
-		if (GameArg.SysUseNiceFPS && !GameCfg.VSync)
-			timer_delay(f1_0 / PlayerCfg.maxFps - FrameTime);
-		timer_update();
-		timer_value = timer_query();
-		FrameTime = timer_value - last_timer_value;
+		int max_fps = GameCfg.VSync ? MAXIMUM_FPS : PlayerCfg.maxFps;
+		if (max_fps <= 0) max_fps = MAXIMUM_FPS;
+		while (FrameTime < f1_0 / max_fps)
+		{
+			if (GameArg.SysUseNiceFPS && !GameCfg.VSync)
+				timer_delay(f1_0 / max_fps - FrameTime);
+			timer_update();
+			timer_value = timer_query();
+			FrameTime = timer_value - last_timer_value;
+		}
 	}
 
 	if ( cheats.turbo )

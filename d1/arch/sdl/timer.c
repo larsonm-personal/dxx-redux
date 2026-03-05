@@ -45,14 +45,18 @@ void timer_delay2(int fps)
 	static u_int32_t FrameStart=0;
 	u_int32_t FrameLoop=0;
 
-	while (FrameLoop < 1000/(GameCfg.VSync?MAXIMUM_FPS:fps))
 	{
-		u_int32_t tv_now = SDL_GetTicks();
-		if (FrameStart > tv_now)
-			FrameStart = tv_now;
-		if (!GameCfg.VSync)
-			SDL_Delay(1);
-		FrameLoop=tv_now-FrameStart;
+		int safe_fps = GameCfg.VSync ? MAXIMUM_FPS : fps;
+		if (safe_fps <= 0) safe_fps = MAXIMUM_FPS;
+		while (FrameLoop < 1000/safe_fps)
+		{
+			u_int32_t tv_now = SDL_GetTicks();
+			if (FrameStart > tv_now)
+				FrameStart = tv_now;
+			if (!GameCfg.VSync)
+				SDL_Delay(1);
+			FrameLoop=tv_now-FrameStart;
+		}
 	}
 
 	FrameStart=SDL_GetTicks();

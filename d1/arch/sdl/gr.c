@@ -283,6 +283,12 @@ void gr_palette_load( ubyte *pal )
 	SDL_Color colors[256];
 	ubyte gamma[64];
 
+#ifdef ANDROID
+	// Invalidate gr_palette_step_up cache so the next step_up call
+	// will always apply, even if the step values haven't changed.
+	last_r = last_g = last_b = -1;
+#endif
+
 	if (memcmp(pal,gr_current_pal,768))
 		SDL_FillRect(canvas, NULL, SDL_MapRGB(canvas->format, 0, 0, 0));
 

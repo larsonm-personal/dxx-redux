@@ -96,6 +96,9 @@ struct newmenu
 
 grs_bitmap nm_background, nm_background1;
 grs_bitmap *nm_background_sub = NULL;
+#ifdef ANDROID
+static ubyte nm_background1_palette[768];  // saved palette from the background PCX
+#endif
 
 newmenu *newmenu_do4( char * title, char * subtitle, int nitems, newmenu_item * item, int (*subfunction)(newmenu *menu, d_event *event, void *userdata), void *userdata, int citem, char * filename, int TinyMode, int TabsFlag );
 
@@ -126,7 +129,17 @@ void nm_draw_background1(char * filename)
 			pcx_error = pcx_read_bitmap( filename, &nm_background1, BM_LINEAR, gr_palette );
 			Assert(pcx_error == PCX_ERROR_NONE);
 			(void)pcx_error;
+#ifdef ANDROID
+			// Save the PCX palette so we can restore it on cached draws.
+			memcpy(nm_background1_palette, gr_palette, sizeof(nm_background1_palette));
+#endif
 		}
+#ifdef ANDROID
+		else
+		{
+			memcpy(gr_palette, nm_background1_palette, sizeof(nm_background1_palette));
+		}
+#endif
 		gr_palette_load( gr_palette );
 		show_fullscr(&nm_background1);
 	}

@@ -51,6 +51,8 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     external fun nativeGetGameState(): String
     external fun nativeRequestIntrospect()
     external fun nativeSetIntrospectPath(path: String)
+    external fun nativeLoadAutomationScript(path: String)
+    external fun nativeSetAutomationPath(path: String)
     external fun nativeJoystickAxis(axis: Int, value: Float)
     external fun nativeJoystickButton(button: Int, pressed: Int)
     external fun nativeIsInGame(): Boolean
@@ -271,11 +273,35 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         }
     }
 
+    // ── Automation (debug builds only) ───────────────────────
+    // Load and run a JSON automation script:
+    //   adb push script.json /data/local/tmp/script.json
+    //   adb shell am broadcast -a com.dxxredux.AUTOMATE --es script /data/local/tmp/script.json
+    // Or use the files dir:
+    //   adb shell run-as com.dxxredux.app cp /data/local/tmp/script.json files/
+    //   adb shell am broadcast -a com.dxxredux.AUTOMATE --es script files/automate.json
+    private val automateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (!gameStarted) return
+            val scriptPath = intent.getStringExtra("script")
+            if (scriptPath.isNullOrEmpty()) {
+                Log.e("DXX-Automate", "No 'script' extra in AUTOMATE broadcast")
+                return
+            }
+            // If path is relative, resolve against filesDir
+            val resolvedPath = if (scriptPath.startsWith("/")) scriptPath
+                               else filesDir.absolutePath + "/" + scriptPath
+            Log.i("DXX-Automate", "Loading automation script: $resolvedPath")
+            nativeLoadAutomationScript(resolvedPath)
+        }
+    }
+
     override fun onStart() {
         super.onStart()
         if (BuildConfig.DEBUG) {
             // Set the file path for introspection dumps
             nativeSetIntrospectPath(filesDir.absolutePath + "/introspect.json")
+            nativeSetAutomationPath(filesDir.absolutePath)
 
             val filter = IntentFilter("com.dxxredux.INTROSPECT")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -284,12 +310,21 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                 @Suppress("UnspecifiedRegisterReceiverFlag")
                 registerReceiver(introspectReceiver, filter)
             }
+
+            val automateFilter = IntentFilter("com.dxxredux.AUTOMATE")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(automateReceiver, automateFilter, RECEIVER_EXPORTED)
+            } else {
+                @Suppress("UnspecifiedRegisterReceiverFlag")
+                registerReceiver(automateReceiver, automateFilter)
+            }
         }
     }
 
     override fun onDestroy() {
         if (BuildConfig.DEBUG) {
             try { unregisterReceiver(introspectReceiver) } catch (_: Exception) {}
+            try { unregisterReceiver(automateReceiver) } catch (_: Exception) {}
         }
         super.onDestroy()
     }

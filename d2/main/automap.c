@@ -73,6 +73,15 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "ogl_init.h"
 #endif
 
+#ifdef ANDROID
+#include <android/log.h>
+#define AUTOMAP_LOGI(...) __android_log_print(ANDROID_LOG_INFO,  "DXX-Automap", __VA_ARGS__)
+#define AUTOMAP_LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "DXX-Automap", __VA_ARGS__)
+#else
+#define AUTOMAP_LOGI(...)
+#define AUTOMAP_LOGE(...)
+#endif
+
 #define LEAVE_TIME 0x4000
 
 #define EF_USED     1   // This edge is used
@@ -556,12 +565,22 @@ void draw_automap(automap *am)
 	int color;
 	object * objp;
 	g3s_point sphere_point;
+	static int draw_call_count = 0;
+
+	if (draw_call_count < 3) {
+		AUTOMAP_LOGI("draw_automap() call #%d: bg=%dx%d data=%p",
+			draw_call_count,
+			am->automap_background.bm_w,
+			am->automap_background.bm_h,
+			(void*)am->automap_background.bm_data);
+	}
 
 	if ( am->leave_mode==0 && am->controls.automap_state && (timer_query()-am->entry_time)>LEAVE_TIME)
 		am->leave_mode = 1;
 
 	gr_set_current_canvas(NULL);
 	show_fullscr(&am->automap_background);
+	if (draw_call_count < 3) AUTOMAP_LOGI("draw_automap: show_fullscr done");
 	gr_set_curfont(HUGE_FONT);
 	gr_set_fontcolor(BM_XRGB(20, 20, 20), -1);
 	gr_string((SWIDTH/8), (SHEIGHT/16), TXT_AUTOMAP);
@@ -575,6 +594,7 @@ void draw_automap(automap *am)
 
 	gr_clear_canvas(BM_XRGB(0,0,0));
 
+	if (draw_call_count < 3) AUTOMAP_LOGI("draw_automap: calling g3_start_frame");
 	g3_start_frame();
 	render_start_frame();
 
@@ -583,6 +603,7 @@ void draw_automap(automap *am)
 
 	g3_set_view_matrix(&am->view_position,&am->viewMatrix,am->zoom);
 
+	if (draw_call_count < 3) AUTOMAP_LOGI("draw_automap: calling draw_all_edges");
 	draw_all_edges(am);
 
 	selected_player_rgb = player_rgb; 
@@ -660,12 +681,16 @@ void draw_automap(automap *am)
 		show_mousefs_indicator(am->controls.raw_mouse_axis[0], am->controls.raw_mouse_axis[1], am->controls.raw_mouse_axis[2], GWIDTH-(GHEIGHT/8), GHEIGHT-(GHEIGHT/8), GHEIGHT/5);
 
 	am->t2 = timer_query();
-	while (am->t2 - am->t1 < F1_0 / (GameCfg.VSync?MAXIMUM_FPS:GameArg.SysMaxFPS)) // ogl is fast enough that the automap can read the input too fast and you start to turn really slow.  So delay a bit (and free up some cpu :)
 	{
-		if (GameArg.SysUseNiceFPS && !GameCfg.VSync)
-			timer_delay(f1_0 / GameArg.SysMaxFPS - (am->t2 - am->t1));
-		timer_update();
-		am->t2 = timer_query();
+		int max_fps = GameCfg.VSync ? MAXIMUM_FPS : GameArg.SysMaxFPS;
+		if (max_fps <= 0) max_fps = MAXIMUM_FPS;
+		while (am->t2 - am->t1 < F1_0 / max_fps) // ogl is fast enough that the automap can read the input too fast and you start to turn really slow.  So delay a bit (and free up some cpu :)
+		{
+			if (GameArg.SysUseNiceFPS && !GameCfg.VSync)
+				timer_delay(f1_0 / max_fps - (am->t2 - am->t1));
+			timer_update();
+			am->t2 = timer_query();
+		}
 	}
 	if (am->pause_game)
 	{
@@ -673,6 +698,11 @@ void draw_automap(automap *am)
 		calc_d_tick();
 	}
 	am->t1 = am->t2;
+
+	if (draw_call_count < 3) {
+		AUTOMAP_LOGI("draw_automap() #%d completed successfully", draw_call_count);
+		draw_call_count++;
+	}
 }
 
 extern int set_segment_depths(int start_seg, ubyte *segbuf);
@@ -809,6 +839,7 @@ int automap_handler(window *wind, d_event *event, automap *am)
 	switch (event->type)
 	{
 		case EVENT_WINDOW_ACTIVATED:
+			AUTOMAP_LOGI("automap_handler: EVENT_WINDOW_ACTIVATED");
 			game_flush_inputs();
 			event_toggle_focus(1);
 			key_toggle_repeat(0);
@@ -838,11 +869,19 @@ int automap_handler(window *wind, d_event *event, automap *am)
 		}
 			
 		case EVENT_WINDOW_DRAW:
+		{
+			static int draw_log_count = 0;
+			if (draw_log_count < 3) {
+				AUTOMAP_LOGI("automap_handler: EVENT_WINDOW_DRAW #%d", draw_log_count);
+				draw_log_count++;
+			}
 			automap_apply_input(am);
 			draw_automap(am);
 			break;
+		}
 			
 		case EVENT_WINDOW_CLOSE:
+			AUTOMAP_LOGI("automap_handler: EVENT_WINDOW_CLOSE");
 			if (!am->pause_game)
 				ConsoleObject->mtype.phys_info.flags |= am->old_wiggle;		// Restore wiggle
 			if (am->pause_game)
@@ -850,6 +889,10 @@ int automap_handler(window *wind, d_event *event, automap *am)
 			event_toggle_focus(0);
 			key_toggle_repeat(1);
 #ifdef OGL
+			gr_free_bitmap_data(&am->automap_background);
+#else
+			/* Non-OGL: the bitmap data was allocated by pcx_read_bitmap,
+			 * free it to avoid a leak. */
 			gr_free_bitmap_data(&am->automap_background);
 #endif
 			d_free(am->edges);
@@ -876,15 +919,20 @@ void do_automap()
 	window *automap_wind = NULL;
 	automap *am;
 	
+	AUTOMAP_LOGI("do_automap() entered");
+
 	CALLOC(am, automap, 1);
+	AUTOMAP_LOGI("CALLOC automap: %p", (void*)am);
 	
 	if (am)
 	{
 		automap_wind = window_create(&grd_curscreen->sc_canvas, 0, 0, SWIDTH, SHEIGHT, (int (*)(window *, d_event *, void *)) automap_handler, am);
+		AUTOMAP_LOGI("window_create: %p (SWIDTH=%d, SHEIGHT=%d)", (void*)automap_wind, SWIDTH, SHEIGHT);
 	}
 
 	if (automap_wind == NULL)
 	{
+		AUTOMAP_LOGE("automap window creation failed — out of memory");
 		Warning("Out of memory");
 		return;
 	}
@@ -896,10 +944,13 @@ void do_automap()
 	am->num_edges = 0;
 	am->highest_edge_index = -1;
 	am->max_edges = Num_segments*12;
+	AUTOMAP_LOGI("Allocating edges: max_edges=%d (Num_segments=%d)", am->max_edges, Num_segments);
 	MALLOC(am->edges, Edge_info, am->max_edges);
 	MALLOC(am->drawingListBright, int, am->max_edges);
+	AUTOMAP_LOGI("edges=%p, drawingListBright=%p", (void*)am->edges, (void*)am->drawingListBright);
 	if (!am->edges || !am->drawingListBright)
 	{
+		AUTOMAP_LOGE("edge allocation failed");
 		if (am->edges)
 			d_free(am->edges);
 		if (am->drawingListBright)
@@ -919,6 +970,7 @@ void do_automap()
 		am->pause_game = 0;
 
 	if (am->pause_game) {
+		AUTOMAP_LOGI("Pausing game, hiding Game_wind=%p", (void*)Game_wind);
 		window_set_visible(Game_wind, 0);
 	}
 	if (!am->pause_game)	{
@@ -930,7 +982,9 @@ void do_automap()
 
 	gr_set_current_canvas(NULL);
 
+	AUTOMAP_LOGI("Building edge list...");
 	automap_build_edge_list(am);
+	AUTOMAP_LOGI("Edge list built: num_edges=%d, highest_edge_index=%d", am->num_edges, am->highest_edge_index);
 
 	if ( am->viewDist==0 )
 		am->viewDist = ZOOM_DEFAULT;
@@ -950,21 +1004,47 @@ void do_automap()
 	//Fill in Automap_visited from Objects[Players[Player_num].objnum].segnum
 	am->max_segments_away = set_segment_depths(Objects[Players[Player_num].objnum].segnum, Automap_visited);
 	am->segment_limit = am->max_segments_away;
+	AUTOMAP_LOGI("Segment depths: max_segments_away=%d", am->max_segments_away);
 
 	adjust_segment_limit(am, am->segment_limit);
 
 	// ZICO - code from above to show frame in OGL correctly. Redundant, but better readable.
 	// KREATOR - Now applies to all platforms so double buffering is supported
+	AUTOMAP_LOGI("Loading background PCX: checking HIRESMODE...");
 	gr_init_bitmap_data (&am->automap_background);
-	pcx_error = pcx_read_bitmap(MAP_BACKGROUND_FILENAME, &am->automap_background, BM_LINEAR, pal);
-	if (pcx_error != PCX_ERROR_NONE)
+	{
+		char *pcx_name = MAP_BACKGROUND_FILENAME;
+		AUTOMAP_LOGI("Loading PCX file: '%s'", pcx_name);
+		pcx_error = pcx_read_bitmap(pcx_name, &am->automap_background, BM_LINEAR, pal);
+		AUTOMAP_LOGI("pcx_read_bitmap result: %d (0=OK)", pcx_error);
+	}
+	if (pcx_error != PCX_ERROR_NONE) {
+		AUTOMAP_LOGE("PCX load FAILED: file=%s error=%d (%s)", MAP_BACKGROUND_FILENAME, pcx_error, pcx_errormsg(pcx_error));
+#ifdef ANDROID
+		/* On Android, don't crash — just show a warning and bail out.
+		 * The Error() call would exit() the process, which looks like
+		 * a normal quit (restarts SetupActivity). */
+		Warning("Automap: cannot load %s: %s", MAP_BACKGROUND_FILENAME, pcx_errormsg(pcx_error));
+		d_free(am->edges);
+		d_free(am->drawingListBright);
+		window_close(automap_wind);
+		d_free(am);
+		return;
+#else
 		Error("File %s - PCX error: %s", MAP_BACKGROUND_FILENAME, pcx_errormsg(pcx_error));
+#endif
+	}
+	AUTOMAP_LOGI("PCX loaded: %dx%d", am->automap_background.bm_w, am->automap_background.bm_h);
+	AUTOMAP_LOGI("Remapping bitmap...");
 	gr_remap_bitmap_good(&am->automap_background, pal, -1, -1);
+	AUTOMAP_LOGI("Creating automap sub-canvas...");
 	gr_init_sub_canvas(&am->automap_view, &grd_curscreen->sc_canvas, (SWIDTH/23), (SHEIGHT/6), (SWIDTH/1.1), (SHEIGHT/1.45));
 
+	AUTOMAP_LOGI("Loading palette...");
 	gr_palette_load( gr_palette );
 	g_active_automap = am;
 	Automap_active = 1;
+	AUTOMAP_LOGI("do_automap() completed successfully — automap is active");
 }
 
 void adjust_segment_limit(automap *am, int SegmentLimit)
