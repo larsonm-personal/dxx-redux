@@ -1,0 +1,63 @@
+{
+    "configurations": [
+        {
+            "name": "Android (arm64)",
+            "compileCommands": "${workspaceFolder}/android/app/.cxx/tools/debug/arm64-v8a/compile_commands.json",
+            "compilerPath": "C:/local/android-ndk-r27d/toolchains/llvm/prebuilt/windows-x86_64/bin/clang.exe",
+            "compilerArgs": [
+                "--target=aarch64-none-linux-android23",
+                "--sysroot=C:/local/android-ndk-r27d/toolchains/llvm/prebuilt/windows-x86_64/sysroot"
+            ],
+            "intelliSenseMode": "linux-clang-arm64",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "defines": [
+                "ANDROID",
+                "__ANDROID__",
+                "__ANDROID_API__=23",
+                "NETWORK",
+                "HAVE_STRUCT_TIMESPEC",
+                "HAVE_STRUCT_TIMEVAL",
+                "__unix__",
+                "__linux__",
+                "USE_UDP",
+                "INTROSPECT_ON",
+                "SHAREPATH=\".\""
+            ],
+            "includePath": [
+                "${workspaceFolder}/d2/include",
+                "${workspaceFolder}/d2/main",
+                "${workspaceFolder}/d2/arch/include",
+                "${workspaceFolder}/d2/arch/sdl",
+                "${workspaceFolder}/d2/introspect",
+                "${workspaceFolder}/android/app/src/main/cpp"
+            ]
+        },
+        {
+            "name": "Win32 (MSVC)",
+            "intelliSenseMode": "windows-msvc-x86",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "defines": [
+                "WINDOWS",
+                "HAVE_STRUCT_TIMEVAL",
+                "WINDOWS_IGNORE_PACKING_MISMATCH",
+                "NETWORK",
+                "OGL",
+                "USE_SDLMIXER",
+                "USE_UDP",
+                "USE_TRACKER",
+                "HAVE_LIBPNG",
+                "OGL_MERGE"
+            ],
+            "includePath": [
+                "${workspaceFolder}/d2/include",
+                "${workspaceFolder}/d2/main",
+                "${workspaceFolder}/d2/arch/include",
+                "${workspaceFolder}/d2/arch/sdl",
+                "${workspaceFolder}/d2/arch/ogl"
+            ]
+        }
+    ],
+    "version": 4
+}
