@@ -93,6 +93,8 @@ class SetupActivity : ComponentActivity() {
     // ── Controller live-state ───────────────────────────────────────────
     /** Axis values observable by Compose (LX, LY, RX, RY, LT, RT). */
     internal val controllerAxes = FloatArray(6)
+    /** D-Pad HAT axis values (hatX, hatY). */
+    internal val dpadAxes = FloatArray(2)
     /** Compose-observable axis update counter (increment triggers recompose). */
     internal val axisGeneration = mutableIntStateOf(0)
     /** Currently pressed gamepad buttons (name strings). */
@@ -108,6 +110,8 @@ class SetupActivity : ComponentActivity() {
             controllerAxes[3] = event.getAxisValue(MotionEvent.AXIS_RZ)
             controllerAxes[4] = event.getAxisValue(MotionEvent.AXIS_LTRIGGER)
             controllerAxes[5] = event.getAxisValue(MotionEvent.AXIS_RTRIGGER)
+            dpadAxes[0] = event.getAxisValue(MotionEvent.AXIS_HAT_X)
+            dpadAxes[1] = event.getAxisValue(MotionEvent.AXIS_HAT_Y)
             axisGeneration.intValue++
             return true
         }
@@ -246,6 +250,7 @@ class SetupActivity : ComponentActivity() {
                 gameRunning = gameRunning,
                 refreshTrigger = refreshTrigger.intValue,
                 controllerAxes = controllerAxes,
+                dpadAxes = dpadAxes,
                 axisGeneration = axisGeneration.intValue,
                 pressedButtons = pressedButtons,
                 onLaunchGame = {
@@ -404,11 +409,18 @@ private val D1_FILES = listOf(
         downloadUrl = "https://dxx-redux.com/dl/d1xr-hires.dxa"),
 )
 
+private val MUSIC_FILES = listOf(
+    GameFileInfo("descent_ii.gog", "GOG CD image (Redbook audio)",
+        required = false, alternatives = listOf("DESCENT_II.gog")),
+    GameFileInfo("descent_ii.inst", "GOG CD cue sheet (Redbook audio)",
+        required = false, alternatives = listOf("DESCENT_II.inst")),
+)
+
 // ── SAF directory scanning ───────────────────────────────────────────────────
 
-/** All filenames we care about (D2 + D1), lowercase for matching. */
+/** All filenames we care about (D2 + D1 + Music), lowercase for matching. */
 private val ALL_GAME_FILENAMES: Set<String> by lazy {
-    (D2_FILES + D1_FILES).flatMap { info ->
+    (D2_FILES + D1_FILES + MUSIC_FILES).flatMap { info ->
         listOf(info.filename) + info.alternatives
     }.map { it.lowercase() }.toSet()
 }
@@ -505,6 +517,7 @@ private fun SetupScreen(
     gameRunning: Boolean,
     refreshTrigger: Int,
     controllerAxes: FloatArray,
+    dpadAxes: FloatArray,
     axisGeneration: Int,
     pressedButtons: SnapshotStateList<String>,
     onLaunchGame: () -> Unit,
@@ -789,7 +802,7 @@ private fun SetupScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // ── Music section ────────────────────────
-                    MusicInfoSection()
+                    MusicInfoSection(filesDir = filesDir, refreshTrigger = refreshTrigger)
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -797,6 +810,7 @@ private fun SetupScreen(
                     val prefs = context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
                     ControllerSection(
                         axes = controllerAxes,
+                        dpadAxes = dpadAxes,
                         axisGeneration = axisGeneration,
                         pressedButtons = pressedButtons,
                         prefs = prefs
@@ -913,31 +927,32 @@ private fun SectionHeader(title: String) {
 }
 
 @Composable
-private fun MusicInfoSection() {
+private fun MusicInfoSection(filesDir: File, refreshTrigger: Int) {
+    val musicStatuses = remember(refreshTrigger) { checkFiles(filesDir, MUSIC_FILES) }
+    val redbookReady = musicStatuses.all { it.found }
     var expanded by remember { mutableStateOf(false) }
     GameSectionHeader(
         title = "Music",
-        ready = false,
+        ready = redbookReady,
         expanded = expanded,
         onToggle = { expanded = !expanded }
     )
     if (expanded) {
         Text(
-            text = "MIDI music is not yet supported on Android. " +
-                   "The original HMP soundtrack files are inside descent2.hog, " +
-                   "so no additional data files are needed \u2014 only engine support.\n\n" +
-                   "Redbook (CD) audio is not applicable on Android.\n\n" +
-                   "Custom music (jukebox) will also require engine support.",
+            text = "MIDI audio is supported from game files (with a built-in MIDI library). " +
+                   "Redbook audio from the GOG bin/cue is supported.",
             fontSize = 13.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 8.dp)
         )
+        musicStatuses.forEach { FileStatusRow(it) }
     }
 }
 
 @Composable
 private fun ControllerSection(
     axes: FloatArray,
+    dpadAxes: FloatArray,
     axisGeneration: Int,
     pressedButtons: SnapshotStateList<String>,
     prefs: SharedPreferences
@@ -1108,6 +1123,19 @@ private fun ControllerSection(
             Text("  R: ${"%.2f".format(rt)}", fontSize = 12.sp, color = axisColor,
                 modifier = Modifier.weight(1f))
         }
+
+        val hatX = dpadAxes[0]; val hatY = dpadAxes[1]
+        val dpadDir = buildString {
+            if (hatY < -0.5f) append("Up ")
+            if (hatY >  0.5f) append("Down ")
+            if (hatX < -0.5f) append("Left ")
+            if (hatX >  0.5f) append("Right ")
+        }.trimEnd().ifEmpty { "(none)" }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text("D-Pad", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+            color = labelColor, modifier = Modifier.padding(bottom = 2.dp))
+        Text("  $dpadDir", fontSize = 12.sp,
+            color = if (dpadDir == "(none)") axisColor else Color(0xFF4CAF50))
 
         Spacer(modifier = Modifier.height(4.dp))
         Text("Buttons", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,

@@ -87,6 +87,10 @@ int new_player_config()
 	PlayerCfg.ControlType=0; // Assume keyboard
 	memcpy(PlayerCfg.KeySettings, DefaultKeySettings, sizeof(DefaultKeySettings));
 	memcpy(PlayerCfg.KeySettingsD2X, DefaultKeySettingsD2X, sizeof(DefaultKeySettingsD2X));
+#ifdef ANDROID
+	extern void android_apply_gamepad_defaults(void);
+	android_apply_gamepad_defaults();
+#endif
 	kc_set_controls();
 
 	PlayerCfg.DefaultDifficulty = 1;

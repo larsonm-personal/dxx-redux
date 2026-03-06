@@ -291,11 +291,16 @@ Java_com_dxxredux_app_MainActivity_nativeKeyEvent(JNIEnv *env, jobject thiz,
 extern void mix_background_pause(void);
 extern void mix_background_resume(void);
 
+/* Declared in rbaudio_bin.c / rbaudio.c — pause/resume redbook (CD) audio */
+extern void RBAPause(void);
+extern int  RBAResume(void);
+
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeOnResume(JNIEnv *env, jobject thiz)
 {
     LOGI("nativeOnResume — resuming music");
     mix_background_resume();
+    RBAResume();
 }
 
 JNIEXPORT void JNICALL
@@ -303,6 +308,7 @@ Java_com_dxxredux_app_MainActivity_nativeOnPause(JNIEnv *env, jobject thiz)
 {
     /* Pause music immediately — before the Escape injection logic */
     mix_background_pause();
+    RBAPause();
     /* Are we in live gameplay with no menu on top? */
     if (!Game_wind || Game_wind != window_get_front()) {
         LOGI("nativeOnPause — game not at front, skipping Escape injection");
@@ -575,6 +581,25 @@ void android_hide_keyboard(void)
 
     if (attached) (*g_jvm)->DetachCurrentThread(g_jvm);
     LOGI("android_hide_keyboard()");
+}
+
+/* ── Gamepad default bindings ──────────────────────────────
+ *
+ * Called from new_player_config() to set up joystick defaults
+ * suited to a modern Android gamepad (e.g. GameSir G8):
+ *   right stick = yaw/pitch, left stick = translate,
+ *   triggers = throttle, A = fire primary, B = fire secondary.
+ */
+void android_apply_gamepad_defaults(void)
+{
+    PlayerCfg.ControlType = CONTROL_USING_JOYSTICK;
+    PlayerCfg.AutomapFreeFlight = 1;
+    PlayerCfg.KeySettings[1][2]  = 21;  /* Accelerate = +RT axis button */
+    PlayerCfg.KeySettings[1][3]  = 19;  /* Reverse    = +LT axis button */
+    PlayerCfg.KeySettings[1][13] = 3;   /* Pitch U/D  = axis 3 (RY) */
+    PlayerCfg.KeySettings[1][15] = 2;   /* Turn L/R   = axis 2 (RX) */
+    PlayerCfg.KeySettings[1][17] = 0;   /* Slide L/R  = axis 0 (LX) */
+    PlayerCfg.KeySettings[1][19] = 1;   /* Slide U/D  = axis 1 (LY) */
 }
 
 #endif /* ANDROID */

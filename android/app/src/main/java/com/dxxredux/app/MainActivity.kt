@@ -696,6 +696,9 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     }
 
     // ── Gamepad analog axes ─────────────────────────────────
+    private var hatXState = 0  // -1, 0, +1
+    private var hatYState = 0
+
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
         if (event.source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
             && event.action == MotionEvent.ACTION_MOVE
@@ -706,6 +709,27 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
             nativeJoystickAxis(3, event.getAxisValue(MotionEvent.AXIS_RZ))
             nativeJoystickAxis(4, event.getAxisValue(MotionEvent.AXIS_LTRIGGER))
             nativeJoystickAxis(5, event.getAxisValue(MotionEvent.AXIS_RTRIGGER))
+
+            // D-pad reported as HAT axes → synthesize keyboard arrow keys
+            val hx = event.getAxisValue(MotionEvent.AXIS_HAT_X)
+            val hy = event.getAxisValue(MotionEvent.AXIS_HAT_Y)
+            val newHatX = if (hx < -0.5f) -1 else if (hx > 0.5f) 1 else 0
+            val newHatY = if (hy < -0.5f) -1 else if (hy > 0.5f) 1 else 0
+            if (newHatX != hatXState) {
+                if (hatXState == -1) nativeKeyEvent(1, KeyEvent.KEYCODE_DPAD_LEFT, 0)
+                if (hatXState ==  1) nativeKeyEvent(1, KeyEvent.KEYCODE_DPAD_RIGHT, 0)
+                if (newHatX   == -1) nativeKeyEvent(0, KeyEvent.KEYCODE_DPAD_LEFT, 0)
+                if (newHatX   ==  1) nativeKeyEvent(0, KeyEvent.KEYCODE_DPAD_RIGHT, 0)
+                hatXState = newHatX
+            }
+            if (newHatY != hatYState) {
+                if (hatYState == -1) nativeKeyEvent(1, KeyEvent.KEYCODE_DPAD_UP, 0)
+                if (hatYState ==  1) nativeKeyEvent(1, KeyEvent.KEYCODE_DPAD_DOWN, 0)
+                if (newHatY   == -1) nativeKeyEvent(0, KeyEvent.KEYCODE_DPAD_UP, 0)
+                if (newHatY   ==  1) nativeKeyEvent(0, KeyEvent.KEYCODE_DPAD_DOWN, 0)
+                hatYState = newHatY
+            }
+
             return true
         }
         return super.onGenericMotionEvent(event)
