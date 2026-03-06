@@ -79,10 +79,12 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     private var edgeSwipeTracking = false
     private var edgeSwipeStartX = 0f
 
-    // ── Automap gesture state (drag = pan/tilt, pinch = thrust/rotate) ──
+    // ── Automap gesture state (drag = pan/tilt, pinch = thrust/rotate/translate) ──
     private val automapPointers = mutableMapOf<Int, PointF>()  // pointerId → last position
     private var automapPinchDist = 0f                          // last distance between two fingers
     private var automapPinchAngle = 0f                         // last angle between two fingers (radians)
+    private var automapPinchMidX = 0f                          // last midpoint X between two fingers
+    private var automapPinchMidY = 0f                          // last midpoint Y between two fingers
 
     // ── Double-tap → translate mode ─────────────────────────
     private var automapLastTapTime = 0L          // SystemClock.uptimeMillis of last single-finger up
@@ -460,6 +462,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     //  1-finger drag         →  pan / tilt  (heading_time, pitch_time)
     //  double-tap then drag  →  translate x/y (sideways_thrust, vertical_thrust)
     //  2-finger pinch        →  zoom (forward_thrust) + rotate (bank_time)
+    //  2-finger pan          →  translate x/y (sideways_thrust, vertical_thrust)
     //
     // Called from handleTouch (overlay off) and from the overlay's
     // unmatched-touch callback (overlay on).
@@ -494,6 +497,9 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                 if (automapPointers.size == 2) {
                     automapPinchDist = automapFingerDistance(event)
                     automapPinchAngle = automapFingerAngle(event)
+                    val mid = automapFingerMidpoint(event)
+                    automapPinchMidX = mid.x
+                    automapPinchMidY = mid.y
                     // Two-finger gesture cancels translate mode
                     automapTranslateMode = false
                 }
@@ -526,14 +532,15 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                         }
                     }
                 } else if (automapPointers.size >= 2) {
-                    // ── Pinch → zoom + rotate ───────────────────
+                    // ── Pinch → zoom + rotate + translate ───────
                     val dist = automapFingerDistance(event)
                     val angle = automapFingerAngle(event)
+                    val mid = automapFingerMidpoint(event)
 
                     if (automapPinchDist > 0f) {
                         val delta = dist - automapPinchDist
-                        // 20× multiplier for usable zoom rate on touch screens
-                        val thrust = delta / screenW * 20f
+                        // 60× multiplier for usable zoom rate on touch screens
+                        val thrust = delta / screenW * 60f
 
                         // Rotation: delta angle (radians) → bank, normalised
                         var dAngle = angle - automapPinchAngle
@@ -543,12 +550,18 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                         // Scale: full rotation (2π) ≈ full-screen worth of bank
                         val bank = dAngle / Math.PI.toFloat()
 
-                        if (thrust != 0f || bank != 0f) {
-                            nativeAutomapInput(0f, 0f, thrust, bank)
+                        // Two-finger pan → translate X/Y
+                        val sideways = (mid.x - automapPinchMidX) / screenW
+                        val vertical = -(mid.y - automapPinchMidY) / screenH
+
+                        if (thrust != 0f || bank != 0f || sideways != 0f || vertical != 0f) {
+                            nativeAutomapInput(0f, 0f, thrust, bank, vertical, sideways)
                         }
                     }
                     automapPinchDist = dist
                     automapPinchAngle = angle
+                    automapPinchMidX = mid.x
+                    automapPinchMidY = mid.y
 
                     // Also update stored positions so a lift→single-finger
                     // transition doesn't jump.
@@ -567,9 +580,14 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                 if (automapPointers.size >= 2) {
                     automapPinchDist = automapFingerDistance(event)
                     automapPinchAngle = automapFingerAngle(event)
+                    val mid = automapFingerMidpoint(event)
+                    automapPinchMidX = mid.x
+                    automapPinchMidY = mid.y
                 } else {
                     automapPinchDist = 0f
                     automapPinchAngle = 0f
+                    automapPinchMidX = 0f
+                    automapPinchMidY = 0f
                     // Update the remaining pointer's position to avoid a jump
                     for ((id, pt) in automapPointers) {
                         val i = event.findPointerIndex(id)
@@ -589,6 +607,8 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                 automapPointers.clear()
                 automapPinchDist = 0f
                 automapPinchAngle = 0f
+                automapPinchMidX = 0f
+                automapPinchMidY = 0f
                 automapTranslateMode = false
             }
         }
@@ -617,6 +637,17 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         val dx = event.getX(i1) - event.getX(i0)
         val dy = event.getY(i1) - event.getY(i0)
         return kotlin.math.atan2(dy, dx)
+    }
+
+    /** Midpoint between the first two tracked automap fingers. */
+    private fun automapFingerMidpoint(event: MotionEvent): PointF {
+        val ids = automapPointers.keys.toList()
+        if (ids.size < 2) return PointF(0f, 0f)
+        val i0 = event.findPointerIndex(ids[0])
+        val i1 = event.findPointerIndex(ids[1])
+        if (i0 < 0 || i1 < 0) return PointF(0f, 0f)
+        return PointF((event.getX(i0) + event.getX(i1)) / 2f,
+                       (event.getY(i0) + event.getY(i1)) / 2f)
     }
 
     /** Map Android gamepad KEYCODE_BUTTON_* to virtual joystick button index (0-9). */
