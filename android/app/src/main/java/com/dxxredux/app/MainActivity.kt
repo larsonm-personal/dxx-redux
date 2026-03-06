@@ -58,6 +58,8 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     external fun nativeSetIntrospectPath(path: String)
     external fun nativeLoadAutomationScript(path: String)
     external fun nativeSetAutomationPath(path: String)
+    external fun nativeSetMusicGain(gainDb: Float)
+    external fun nativeSetMusicVoices(maxVoices: Int)
     external fun nativeJoystickAxis(axis: Int, value: Float)
     external fun nativeJoystickButton(button: Int, pressed: Int)
     external fun nativeIsInGame(): Boolean
@@ -312,6 +314,29 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         }
     }
 
+    // ── Game command API (debug builds only) ─────────────────
+    //   adb shell am broadcast -a com.dxxredux.GAME_COMMAND --es command gain --ef value -20.0
+    //   adb shell am broadcast -a com.dxxredux.GAME_COMMAND --es command voices --ei value 32
+    private val gameCommandReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (!gameStarted) return
+            val cmd = intent.getStringExtra("command") ?: return
+            when (cmd) {
+                "gain" -> {
+                    val db = intent.getFloatExtra("value", -10.0f)
+                    Log.i("DXX-Command", "Setting music gain to ${db} dB")
+                    nativeSetMusicGain(db)
+                }
+                "voices" -> {
+                    val n = intent.getIntExtra("value", 48)
+                    Log.i("DXX-Command", "Setting max voices to $n")
+                    nativeSetMusicVoices(n)
+                }
+                else -> Log.w("DXX-Command", "Unknown command: $cmd")
+            }
+        }
+    }
+
     override fun onStart() {
         super.onStart()
         if (BuildConfig.DEBUG) {
@@ -334,6 +359,14 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                 @Suppress("UnspecifiedRegisterReceiverFlag")
                 registerReceiver(automateReceiver, automateFilter)
             }
+
+            val cmdFilter = IntentFilter("com.dxxredux.GAME_COMMAND")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(gameCommandReceiver, cmdFilter, RECEIVER_EXPORTED)
+            } else {
+                @Suppress("UnspecifiedRegisterReceiverFlag")
+                registerReceiver(gameCommandReceiver, cmdFilter)
+            }
         }
     }
 
@@ -341,6 +374,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         if (BuildConfig.DEBUG) {
             try { unregisterReceiver(introspectReceiver) } catch (_: Exception) {}
             try { unregisterReceiver(automateReceiver) } catch (_: Exception) {}
+            try { unregisterReceiver(gameCommandReceiver) } catch (_: Exception) {}
         }
         super.onDestroy()
     }

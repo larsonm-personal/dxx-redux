@@ -44,9 +44,17 @@ extern "C" {
     int  tsf_music_get_playing(void);
     int  tsf_music_get_paused(void);
     int  tsf_music_get_cb_count(void);
-    long tsf_music_get_cb_max_ns(void);
-    long tsf_music_get_cb_total_ns(void);
     int  tsf_music_get_cb_overrun_count(void);
+    int  tsf_music_get_clip_count(void);
+    int  tsf_music_get_sample_count(void);
+    int  tsf_music_get_peak_sample(void);
+    int  tsf_music_get_active_voices_max(void);
+    int  tsf_music_get_max_voices(void);
+    int  tsf_music_get_rb_fill(void);
+    int  tsf_music_get_rb_capacity(void);
+    float tsf_music_get_gain_db(void);
+    void tsf_music_set_gain_db(float db);
+    void tsf_music_set_max_voices(int n);
     int  androidaud_get_play_count(void);
     int  androidaud_get_enqueue_fail(void);
     int  androidaud_get_sem_zero_count(void);
@@ -292,8 +300,19 @@ extern "C" char *game_introspect_get_state(void) {
             {"tsf_playing", (bool)tsf_music_get_playing()},
             {"tsf_paused", (bool)tsf_music_get_paused()},
             {"tsf_cb_count", tsf_music_get_cb_count()},
-            {"tsf_cb_max_us", tsf_music_get_cb_max_ns() / 1000},
-            {"tsf_cb_overruns", tsf_music_get_cb_overrun_count()},
+            {"tsf_rb_underruns", tsf_music_get_cb_overrun_count()},
+            {"tsf_rb_fill", tsf_music_get_rb_fill()},
+            {"tsf_rb_capacity", tsf_music_get_rb_capacity()},
+            {"tsf_rb_fill_pct", tsf_music_get_rb_capacity() > 0
+                ? (int)(tsf_music_get_rb_fill() * 100 / tsf_music_get_rb_capacity()) : 0},
+            {"tsf_clip_count", tsf_music_get_clip_count()},
+            {"tsf_sample_count", tsf_music_get_sample_count()},
+            {"tsf_peak_sample", tsf_music_get_peak_sample()},
+            {"tsf_peak_pct", tsf_music_get_sample_count() > 0
+                ? (int)(tsf_music_get_peak_sample() * 100 / 32767) : 0},
+            {"tsf_active_voices_max", tsf_music_get_active_voices_max()},
+            {"tsf_max_voices", tsf_music_get_max_voices()},
+            {"tsf_gain_db", tsf_music_get_gain_db()},
             {"osl_play_count", androidaud_get_play_count()},
             {"osl_enqueue_fail", androidaud_get_enqueue_fail()},
             {"osl_sem_waits", androidaud_get_sem_zero_count()},
@@ -301,9 +320,6 @@ extern "C" char *game_introspect_get_state(void) {
             {"osl_freq", androidaud_get_audio_freq()},
             {"osl_buf_frames", androidaud_get_audio_buf_frames()}
         };
-        if (tsf_music_get_cb_count() > 0) {
-            audio["tsf_cb_avg_us"] = (tsf_music_get_cb_total_ns() / tsf_music_get_cb_count()) / 1000;
-        }
         j["audio"] = std::move(audio);
     }
 

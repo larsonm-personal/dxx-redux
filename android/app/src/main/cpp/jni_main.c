@@ -166,4 +166,20 @@ Java_com_dxxredux_app_MainActivity_nativeSetAutomationPath(JNIEnv *env, jobject 
     game_automate_set_path(path);
     (*env)->ReleaseStringUTFChars(env, jpath, path);
 }
+
+/* ── Audio tuning: adjust TSF global gain in dB ──────────────────── */
+extern void tsf_music_set_gain_db(float db);
+extern void tsf_music_set_max_voices(int n);
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetMusicGain(JNIEnv *env, jobject thiz, jfloat gain_db)
+{
+    tsf_music_set_gain_db((float)gain_db);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetMusicVoices(JNIEnv *env, jobject thiz, jint max_voices)
+{
+    tsf_music_set_max_voices((int)max_voices);
+}
 #endif /* INTROSPECT_ON */
