@@ -957,8 +957,17 @@ private fun ControllerSection(
     pressedButtons: SnapshotStateList<String>,
     prefs: SharedPreferences
 ) {
-    // Detect connected gamepads
-    val gamepads = remember(axisGeneration) {
+    // Poll for controller connect/disconnect every 1 second
+    var pollTick by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(1000)
+            pollTick++
+        }
+    }
+
+    // Detect connected gamepads (re-evaluated on axis events OR poll tick)
+    val gamepads = remember(axisGeneration, pollTick) {
         InputDevice.getDeviceIds().toList()
             .mapNotNull { InputDevice.getDevice(it) }
             .filter { d ->
