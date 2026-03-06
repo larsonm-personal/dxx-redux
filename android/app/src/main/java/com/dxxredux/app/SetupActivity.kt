@@ -565,7 +565,20 @@ private fun SetupScreen(
         }
     }
 
+    // ── Page navigation state ────────────────────────────
+    var showControllerPage by remember { mutableStateOf(false) }
+
     MaterialTheme(colorScheme = darkColorScheme()) {
+        if (showControllerPage) {
+            ControllerConfigPage(
+                axes = controllerAxes,
+                dpadAxes = dpadAxes,
+                axisGeneration = axisGeneration,
+                pressedButtons = pressedButtons,
+                onBack = { showControllerPage = false }
+            )
+            return@MaterialTheme
+        }
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
@@ -813,7 +826,8 @@ private fun SetupScreen(
                         dpadAxes = dpadAxes,
                         axisGeneration = axisGeneration,
                         pressedButtons = pressedButtons,
-                        prefs = prefs
+                        prefs = prefs,
+                        onDefineControls = { showControllerPage = true }
                     )
 
                     // ── Restart/Reset buttons ───────────────
@@ -955,7 +969,8 @@ private fun ControllerSection(
     dpadAxes: FloatArray,
     axisGeneration: Int,
     pressedButtons: SnapshotStateList<String>,
-    prefs: SharedPreferences
+    prefs: SharedPreferences,
+    onDefineControls: () -> Unit = {}
 ) {
     // Poll for controller connect/disconnect every 1 second
     var pollTick by remember { mutableIntStateOf(0) }
@@ -1073,6 +1088,15 @@ private fun ControllerSection(
                 color = Color(0xFF4CAF50)
             )
         }
+    }
+
+    // ── Define Controls button ──
+    OutlinedButton(
+        onClick = onDefineControls,
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+        modifier = Modifier.height(32.dp).padding(vertical = 2.dp)
+    ) {
+        Text("Define Controls", fontSize = 12.sp)
     }
 
     if (showResetDialog) {

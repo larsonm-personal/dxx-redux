@@ -585,21 +585,52 @@ void android_hide_keyboard(void)
 
 /* ── Gamepad default bindings ──────────────────────────────
  *
- * Called from new_player_config() to set up joystick defaults
- * suited to a modern Android gamepad (e.g. GameSir G8):
- *   right stick = yaw/pitch, left stick = translate,
- *   triggers = throttle, A = fire primary, B = fire secondary.
+ * Called from new_player_config() AND after read_player_file() to set up
+ * joystick defaults suited to a modern Android gamepad (e.g. GameSir G8).
+ *
+ * If the user has saved a config from the UI (gamepad_bindings.cfg),
+ * that file is read and applied.  Otherwise hardcoded defaults are used.
  */
+#include <stdio.h>
+
 void android_apply_gamepad_defaults(void)
 {
+    FILE *f;
+    char path[256];
+    int  have_file = 0;
+
     PlayerCfg.ControlType = CONTROL_USING_JOYSTICK;
     PlayerCfg.AutomapFreeFlight = 1;
-    PlayerCfg.KeySettings[1][2]  = 21;  /* Accelerate = +RT axis button */
-    PlayerCfg.KeySettings[1][3]  = 19;  /* Reverse    = +LT axis button */
-    PlayerCfg.KeySettings[1][13] = 3;   /* Pitch U/D  = axis 3 (RY) */
-    PlayerCfg.KeySettings[1][15] = 2;   /* Turn L/R   = axis 2 (RX) */
-    PlayerCfg.KeySettings[1][17] = 0;   /* Slide L/R  = axis 0 (LX) */
-    PlayerCfg.KeySettings[1][19] = 1;   /* Slide U/D  = axis 1 (LY) */
+
+    /* Try to read user-configured bindings from the setup UI */
+    snprintf(path, sizeof(path),
+             "/data/data/com.dxxredux.app/files/gamepad_bindings.cfg");
+    f = fopen(path, "r");
+    if (f) {
+        char line[64];
+        while (fgets(line, sizeof(line), f)) {
+            int idx, val;
+            if (line[0] == '#' || line[0] == '\n') continue;
+            if (sscanf(line, "%d=%d", &idx, &val) == 2) {
+                if (idx >= 0 && idx < MAX_CONTROLS)
+                    PlayerCfg.KeySettings[1][idx] = (ubyte)val;
+            }
+        }
+        fclose(f);
+        have_file = 1;
+    }
+
+    if (!have_file) {
+        /* Hardcoded defaults when no config file exists */
+        PlayerCfg.KeySettings[1][0]  = 0;   /* Fire Primary  = A button   */
+        PlayerCfg.KeySettings[1][1]  = 1;   /* Fire Secondary= B button   */
+        PlayerCfg.KeySettings[1][2]  = 21;  /* Accelerate    = +RT axis   */
+        PlayerCfg.KeySettings[1][3]  = 19;  /* Reverse       = +LT axis   */
+        PlayerCfg.KeySettings[1][13] = 3;   /* Pitch U/D     = axis 3 (RY)*/
+        PlayerCfg.KeySettings[1][15] = 2;   /* Turn L/R      = axis 2 (RX)*/
+        PlayerCfg.KeySettings[1][17] = 0;   /* Slide L/R     = axis 0 (LX)*/
+        PlayerCfg.KeySettings[1][19] = 1;   /* Slide U/D     = axis 1 (LY)*/
+    }
 }
 
 #endif /* ANDROID */
