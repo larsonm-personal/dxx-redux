@@ -458,6 +458,52 @@ if (-not $alreadyUploaded) {
     Write-Host ""
 }
 
+# ═══════════════════════════════════════════════════════════════════
+#  If the release ended up as "draft", promote it to "completed"
+# ═══════════════════════════════════════════════════════════════════
+
+# note that this will fail until a closed alpha has been created (with screenshots, description, etc.)
+# https://stackoverflow.com/questions/76541480/how-does-fully-create-an-internal-release-on-google-play-console-via-api
+
+if ($releaseStatus -eq "draft") {
+    Write-Host "Promoting release from draft to completed..."
+    $promoteEdit = Invoke-RestMethod -Uri "$baseUrl/edits" -Method POST -Headers $headers `
+                   -ContentType "application/json" -Body "{}" -TimeoutSec 30
+    $promoteEditId = $promoteEdit.id
+
+    $promoteBody = @{
+        track    = $selectedTrack
+        releases = @(
+            @{
+                name         = "v$versionCode"
+                versionCodes = @( $versionCode )
+                status       = "completed"
+            }
+        )
+    } | ConvertTo-Json -Depth 5
+
+    try {
+        Invoke-RestMethod -Uri "$baseUrl/edits/$promoteEditId/tracks/$selectedTrack" `
+            -Method PUT -Headers $headers `
+            -ContentType "application/json" -Body $promoteBody -TimeoutSec 30 | Out-Null
+
+        $promoteCommitError = TryCommitEdit $baseUrl $promoteEditId $headers
+        if ($promoteCommitError) {
+            Write-Host "WARNING: Could not promote to completed: $promoteCommitError"
+            Write-Host "Release remains in draft status."
+        } else {
+            $releaseStatus = "completed"
+            Write-Host "Release promoted to completed."
+        }
+    } catch {
+        $errBody = $_.ErrorDetails.Message
+        if (-not $errBody) { try { $errBody = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
+        Write-Host "WARNING: Could not promote to completed: $errBody"
+        Write-Host "Release remains in draft status."
+    }
+    Write-Host ""
+}
+
 Write-Host ""
 Write-Host "=== Deployment successful ==="
 Write-Host "  Package:     $PACKAGE"

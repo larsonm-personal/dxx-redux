@@ -384,6 +384,10 @@ private val D2_FILES = listOf(
         required = false, alternatives = listOf("robots-l.mvl")),
     GameFileInfo("d2x.hog", "Vertigo expansion", required = false),
     GameFileInfo("hoard.ham", "Hoard multiplayer mode", required = false),
+    GameFileInfo("descent_ii.gog", "GOG CD image (Redbook audio)",
+        required = false, alternatives = listOf("DESCENT_II.gog")),
+    GameFileInfo("descent_ii.inst", "GOG CD cue sheet (Redbook audio)",
+        required = false, alternatives = listOf("DESCENT_II.inst")),
 )
 
 private val D1_FILES = listOf(

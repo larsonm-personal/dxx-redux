@@ -303,8 +303,10 @@ target_include_directories(arch_sdl PRIVATE ${D2_SRC}/introspect)
 # we remove it and add our TSF-based replacement instead.
 get_target_property(_arch_sdl_sources arch_sdl SOURCES)
 list(FILTER _arch_sdl_sources EXCLUDE REGEX "digi_mixer_music\\.c$")
+list(FILTER _arch_sdl_sources EXCLUDE REGEX "rbaudio\\.c$")
 set_property(TARGET arch_sdl PROPERTY SOURCES ${_arch_sdl_sources})
 target_sources(arch_sdl PRIVATE ${D2_SRC}/arch/sdl/digi_tsf_music.c)
+target_sources(arch_sdl PRIVATE ${D2_SRC}/arch/sdl/rbaudio_bin.c)
 target_include_directories(arch_sdl PRIVATE ${_TSF_DIR})
 target_compile_definitions(arch_sdl PRIVATE ANDROID)
 

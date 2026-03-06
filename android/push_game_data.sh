@@ -19,6 +19,12 @@ GAME_DATA_DIR="$REPO_ROOT/game_data"
 PACKAGE="com.dxxredux.app"
 
 source "$SCRIPT_DIR/set_vars.sh"
+
+# Prevent MSYS/Git Bash from mangling Unix-style device paths
+# (e.g. /data/local/tmp/) into Windows paths when calling adb.exe.
+# Local paths are converted explicitly via _host_path/cygpath.
+export MSYS_NO_PATHCONV=1
+
 echo ""
 
 ADB="$ANDROID_HOME/platform-tools/adb"
@@ -29,6 +35,8 @@ ADB="$ANDROID_HOME/platform-tools/adb"
 _host_path() {
     if command -v wslpath >/dev/null 2>&1; then
         wslpath -w "$1"
+    elif command -v cygpath >/dev/null 2>&1; then
+        cygpath -w "$1"
     else
         echo "$1"
     fi

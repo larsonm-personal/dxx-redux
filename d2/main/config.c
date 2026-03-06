@@ -92,6 +92,13 @@ static void android_apply_initial_defaults(void)
 	/* Enable free-flight automap so that pinch-to-thrust on the touch
 	 * screen translates through the level instead of just zooming. */
 	PlayerCfg.AutomapFreeFlight = 1;
+
+	/* If GOG disc image files are present, default to CD audio */
+	if (PHYSFSX_exists("descent_ii.gog", 1) && PHYSFSX_exists("descent_ii.inst", 1))
+	{
+		GameCfg.MusicType = MUSIC_TYPE_REDBOOK;
+		GameCfg.OrigTrackOrder = 1;
+	}
 }
 #endif
 
