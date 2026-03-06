@@ -9,6 +9,8 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -104,6 +106,39 @@ private val AXIS_FUNCTIONS = listOf(
     AxisFunc(23, "Throttle"),
 )
 
+// D-pad direction → internal KEY_* scancode
+private val DPAD_CONTROLS = linkedMapOf(
+    "DUp" to 0xC8, "DDown" to 0xD0,
+    "DLeft" to 0xCB, "DRight" to 0xCD
+)
+
+private data class KbFunc(val kcSecondaryIndex: Int, val label: String)
+
+private val KB_FUNCTIONS = listOf(
+    KbFunc(1, "Pitch Forward"),
+    KbFunc(3, "Pitch Backward"),
+    KbFunc(5, "Turn Left"),
+    KbFunc(7, "Turn Right"),
+    KbFunc(11, "Slide Left"),
+    KbFunc(13, "Slide Right"),
+    KbFunc(15, "Slide Up"),
+    KbFunc(17, "Slide Down"),
+    KbFunc(21, "Bank Left"),
+    KbFunc(23, "Bank Right"),
+    KbFunc(25, "Fire Primary"),
+    KbFunc(27, "Fire Secondary"),
+    KbFunc(29, "Fire Flare"),
+    KbFunc(31, "Accelerate"),
+    KbFunc(33, "Reverse"),
+    KbFunc(35, "Drop Bomb"),
+    KbFunc(37, "Rear View"),
+    KbFunc(47, "Afterburner"),
+    KbFunc(49, "Cycle Primary"),
+    KbFunc(51, "Cycle Secondary"),
+    KbFunc(53, "Headlight"),
+    KbFunc(45, "Automap"),
+)
+
 private val DEFAULT_BINDINGS = mapOf(
     "A" to "Fire Primary",
     "B" to "Fire Secondary",
@@ -113,13 +148,21 @@ private val DEFAULT_BINDINGS = mapOf(
     "RS_Y" to "Pitch U/D",
     "LS_X" to "Slide L/R",
     "LS_Y" to "Slide U/D",
+    "DUp" to "Slide Up",
+    "DDown" to "Slide Down",
+    "DLeft" to "Slide Left",
+    "DRight" to "Slide Right",
 )
 
 // ── Config file I/O ─────────────────────────────────────────────────────────
 
 private const val CONFIG_FILENAME = "gamepad_bindings.cfg"
 
-private fun bindingsToKeySettings(bindings: Map<String, String>): Map<Int, Int> {
+private fun saveConfig(context: Context, bindings: Map<String, String>) {
+    val sb = StringBuilder()
+    sb.appendLine("# gamepad_bindings.cfg")
+
+    // Joystick axis/button bindings (KeySettings[1])
     val ks = mutableMapOf<Int, Int>()
     for ((controlId, funcLabel) in bindings) {
         val btnIdx = BUTTON_CONTROLS[controlId]
@@ -134,32 +177,69 @@ private fun bindingsToKeySettings(bindings: Map<String, String>): Map<Int, Int> 
             if (func != null) ks[func.kcIndex] = axisIdx
         }
     }
-    return ks
-}
-
-private fun saveConfig(context: Context, bindings: Map<String, String>) {
-    val ks = bindingsToKeySettings(bindings)
-    val sb = StringBuilder()
-    sb.appendLine("# gamepad_bindings.cfg")
     for ((idx, value) in ks.toSortedMap()) {
         sb.appendLine("$idx=$value")
     }
+
+    // D-pad keyboard bindings (KeySettings[0])
+    for ((controlId, funcLabel) in bindings) {
+        val scancode = DPAD_CONTROLS[controlId] ?: continue
+        val func = KB_FUNCTIONS.find { it.label == funcLabel } ?: continue
+        sb.appendLine("kb:${func.kcSecondaryIndex}=$scancode")
+    }
+
     File(context.filesDir, CONFIG_FILENAME).writeText(sb.toString())
 }
 
-private fun loadConfig(context: Context): Map<String, String>? {
+private fun saveInverts(context: Context, inverts: Set<String>, bindings: Map<String, String>) {
+    val file = File(context.filesDir, CONFIG_FILENAME)
+    // Remove old inv: lines, append new ones
+    val existing = if (file.exists()) {
+        file.readLines().filter { !it.startsWith("inv:") }
+    } else return
+    val sb = StringBuilder()
+    existing.forEach { sb.appendLine(it) }
+    for (axisCtrl in inverts) {
+        val funcLabel = bindings[axisCtrl] ?: continue
+        val func = AXIS_FUNCTIONS.find { it.label == funcLabel } ?: continue
+        sb.appendLine("inv:${func.kcIndex + 1}=1")
+    }
+    file.writeText(sb.toString())
+}
+
+private fun loadConfig(context: Context): Pair<Map<String, String>, Set<String>>? {
     val file = File(context.filesDir, CONFIG_FILENAME)
     if (!file.exists()) return null
 
     val ks = mutableMapOf<Int, Int>()
+    val kbKs = mutableMapOf<Int, Int>()
+    val invKs = mutableSetOf<Int>()  // invert flag kcIndices
     file.readLines().forEach { line ->
         val trimmed = line.trim()
         if (trimmed.isEmpty() || trimmed.startsWith("#")) return@forEach
-        val parts = trimmed.split("=", limit = 2)
-        if (parts.size == 2) {
-            val idx = parts[0].toIntOrNull()
-            val value = parts[1].toIntOrNull()
-            if (idx != null && value != null) ks[idx] = value
+        if (trimmed.startsWith("kb:")) {
+            val rest = trimmed.removePrefix("kb:")
+            val parts = rest.split("=", limit = 2)
+            if (parts.size == 2) {
+                val idx = parts[0].toIntOrNull()
+                val scancode = parts[1].toIntOrNull()
+                if (idx != null && scancode != null) kbKs[idx] = scancode
+            }
+        } else if (trimmed.startsWith("inv:")) {
+            val rest = trimmed.removePrefix("inv:")
+            val parts = rest.split("=", limit = 2)
+            if (parts.size == 2) {
+                val idx = parts[0].toIntOrNull()
+                val value = parts[1].toIntOrNull()
+                if (idx != null && value == 1) invKs.add(idx)
+            }
+        } else {
+            val parts = trimmed.split("=", limit = 2)
+            if (parts.size == 2) {
+                val idx = parts[0].toIntOrNull()
+                val value = parts[1].toIntOrNull()
+                if (idx != null && value != null) ks[idx] = value
+            }
         }
     }
 
@@ -175,7 +255,24 @@ private fun loadConfig(context: Context): Map<String, String>? {
         val controlId = AXIS_CONTROLS.entries.find { it.value == virtualAxis }?.key ?: continue
         bindings[controlId] = func.label
     }
-    return bindings
+    // D-pad keyboard bindings
+    for (func in KB_FUNCTIONS) {
+        val scancode = kbKs[func.kcSecondaryIndex] ?: continue
+        val controlId = DPAD_CONTROLS.entries.find { it.value == scancode }?.key ?: continue
+        bindings[controlId] = func.label
+    }
+    // Reconstruct inverted axis control IDs from invert flag indices
+    val invertedControls = mutableSetOf<String>()
+    for (func in AXIS_FUNCTIONS) {
+        if (func.kcIndex + 1 in invKs) {
+            // Find which axis control has this function assigned
+            val controlId = bindings.entries.find {
+                it.value == func.label && it.key in AXIS_CONTROLS
+            }?.key
+            if (controlId != null) invertedControls.add(controlId)
+        }
+    }
+    return Pair(bindings, invertedControls)
 }
 
 // ── Assignment logic ────────────────────────────────────────────────────────
@@ -210,6 +307,21 @@ private fun assignAxisFunction(
     bindings[axisControlId] = funcLabel
 }
 
+private fun assignDpadFunction(
+    bindings: MutableMap<String, String>, controlId: String, funcLabel: String?
+) {
+    if (funcLabel == null) {
+        bindings.remove(controlId)
+        return
+    }
+    // Clear this function from any other d-pad direction
+    val existing = bindings.entries.find {
+        it.value == funcLabel && it.key != controlId && it.key in DPAD_CONTROLS
+    }
+    if (existing != null) bindings.remove(existing.key)
+    bindings[controlId] = funcLabel
+}
+
 // ── Abbreviations for on-canvas labels ──────────────────────────────────────
 
 private fun abbreviate(label: String): String = when (label) {
@@ -219,13 +331,13 @@ private fun abbreviate(label: String): String = when (label) {
     "Reverse" -> "Rev"
     "Fire Flare" -> "Flare"
     "Slide On" -> "SldOn"
-    "Slide Left" -> "Sld L"
-    "Slide Right" -> "Sld R"
-    "Slide Up" -> "Sld U"
-    "Slide Down" -> "Sld D"
+    "Slide Left" -> "Sld←"
+    "Slide Right" -> "Sld→"
+    "Slide Up" -> "Sld↑"
+    "Slide Down" -> "Sld↓"
     "Bank On" -> "BnkOn"
-    "Bank Left" -> "Bnk L"
-    "Bank Right" -> "Bnk R"
+    "Bank Left" -> "Bnk←"
+    "Bank Right" -> "Bnk→"
     "Rear View" -> "Rear"
     "Drop Bomb" -> "Bomb"
     "Afterburner" -> "ABurn"
@@ -241,7 +353,32 @@ private fun abbreviate(label: String): String = when (label) {
     "Slide U/D" -> "SldUD"
     "Bank L/R" -> "Bank"
     "Throttle" -> "Thrtl"
+    "Pitch Forward" -> "Pit\u2191"
+    "Pitch Backward" -> "Pit\u2193"
+    "Turn Left" -> "Trn\u2190"
+    "Turn Right" -> "Trn\u2192"
     else -> label.take(5)
+}
+
+// Returns (negative-direction label, positive-direction label) for an axis function
+private fun axisNegLabel(funcLabel: String): String = when (funcLabel) {
+    "Pitch U/D" -> "Pit\u2191"
+    "Turn L/R" -> "Trn\u2190"
+    "Slide L/R" -> "Sld\u2190"
+    "Slide U/D" -> "Sld\u2191"
+    "Bank L/R" -> "Bnk\u2190"
+    "Throttle" -> "Thr+"
+    else -> funcLabel.take(4)
+}
+
+private fun axisPosLabel(funcLabel: String): String = when (funcLabel) {
+    "Pitch U/D" -> "Pit\u2193"
+    "Turn L/R" -> "Trn\u2192"
+    "Slide L/R" -> "Sld\u2192"
+    "Slide U/D" -> "Sld\u2193"
+    "Bank L/R" -> "Bnk\u2192"
+    "Throttle" -> "Thr\u2212"
+    else -> funcLabel.take(4)
 }
 
 // ── Main Composable ─────────────────────────────────────────────────────────
@@ -264,10 +401,16 @@ fun ControllerConfigPage(
 
     // Bindings state: control ID → function label
     val bindings = remember { mutableStateMapOf<String, String>() }
+    val inverts = remember { mutableStateListOf<String>() }  // inverted axis control IDs
     var initialized by remember { mutableStateOf(false) }
     if (!initialized) {
         val saved = loadConfig(context)
-        bindings.putAll(saved ?: DEFAULT_BINDINGS)
+        if (saved != null) {
+            bindings.putAll(saved.first)
+            inverts.addAll(saved.second)
+        } else {
+            bindings.putAll(DEFAULT_BINDINGS)
+        }
         initialized = true
     }
 
@@ -276,6 +419,7 @@ fun ControllerConfigPage(
     var selectedControl by remember { mutableStateOf<String?>(null) }
     var showButtonPicker by remember { mutableStateOf(false) }
     var showStickPicker by remember { mutableStateOf(false) }
+    var showDpadPicker by remember { mutableStateOf(false) }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -324,10 +468,10 @@ fun ControllerConfigPage(
                             for ((id, rect) in controlBounds) {
                                 if (rect.contains(offset)) {
                                     selectedControl = id
-                                    if (id == "LS" || id == "RS") {
-                                        showStickPicker = true
-                                    } else {
-                                        showButtonPicker = true
+                                    when {
+                                        id == "LS" || id == "RS" -> showStickPicker = true
+                                        id in DPAD_CONTROLS -> showDpadPicker = true
+                                        else -> showButtonPicker = true
                                     }
                                     break
                                 }
@@ -396,27 +540,74 @@ fun ControllerConfigPage(
                     lsCx - stickR - touchPad, lsCy - stickR - touchPad,
                     lsCx + stickR + touchPad, lsCy + stickR + touchPad
                 )
-                // Show axis assignments on stick
+                // Show directional labels around left stick
                 val lsxFunc = bindings["LS_X"]
                 val lsyFunc = bindings["LS_Y"]
-                if (lsxFunc != null || lsyFunc != null) {
-                    val lsLabel = buildString {
-                        if (lsxFunc != null) append("X:${abbreviate(lsxFunc)}")
-                        if (lsxFunc != null && lsyFunc != null) append(" ")
-                        if (lsyFunc != null) append("Y:${abbreviate(lsyFunc)}")
-                    }
-                    drawFuncLabel(textMeasurer, lsLabel, lsCx, lsCy + stickR + scale * 0.03f, scale)
+                val sLabelOff = stickR + scale * 0.035f
+                val lsxInv = "LS_X" in inverts
+                val lsyInv = "LS_Y" in inverts
+                if (lsyFunc != null) {
+                    val topLabel = if (lsyInv) axisPosLabel(lsyFunc) else axisNegLabel(lsyFunc)
+                    val botLabel = if (lsyInv) axisNegLabel(lsyFunc) else axisPosLabel(lsyFunc)
+                    val topC = if (ly < -0.3f) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, topLabel, lsCx, lsCy - sLabelOff, scale, topC)
+                    val botC = if (ly > 0.3f) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, botLabel, lsCx, lsCy + sLabelOff, scale, botC)
+                }
+                if (lsxFunc != null) {
+                    val leftLabel = if (lsxInv) axisPosLabel(lsxFunc) else axisNegLabel(lsxFunc)
+                    val rightLabel = if (lsxInv) axisNegLabel(lsxFunc) else axisPosLabel(lsxFunc)
+                    val leftC = if (lx < -0.3f) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, leftLabel, lsCx - sLabelOff * 1.5f, lsCy, scale, leftC)
+                    val rightC = if (lx > 0.3f) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, rightLabel, lsCx + sLabelOff * 1.5f, lsCy, scale, rightC)
                 }
                 // Highlight if selected
                 if (selectedControl == "LS") {
                     drawCircle(cHighlight, stickR + touchPad, Offset(lsCx, lsCy))
                 }
 
-                // D-pad (non-interactive)
+                // D-pad (interactive)
                 val dpadCx = lgCx
                 val dpadCy = gripY + gripH * 0.65f
                 val dpadSize = scale * 0.07f
                 drawDpad(dpadCx, dpadCy, dpadSize, hatX, hatY)
+                // D-pad touch bounds for each arm
+                val dArmW = dpadSize * 0.35f
+                controlBounds["DUp"] = Rect(
+                    dpadCx - dArmW / 2 - touchPad, dpadCy - dpadSize - touchPad,
+                    dpadCx + dArmW / 2 + touchPad, dpadCy - touchPad
+                )
+                controlBounds["DDown"] = Rect(
+                    dpadCx - dArmW / 2 - touchPad, dpadCy + touchPad,
+                    dpadCx + dArmW / 2 + touchPad, dpadCy + dpadSize + touchPad
+                )
+                controlBounds["DLeft"] = Rect(
+                    dpadCx - dpadSize - touchPad, dpadCy - dArmW / 2 - touchPad,
+                    dpadCx - touchPad, dpadCy + dArmW / 2 + touchPad
+                )
+                controlBounds["DRight"] = Rect(
+                    dpadCx + touchPad, dpadCy - dArmW / 2 - touchPad,
+                    dpadCx + dpadSize + touchPad, dpadCy + dArmW / 2 + touchPad
+                )
+                // D-pad direction labels
+                val dLabelOff = dpadSize + scale * 0.025f
+                bindings["DUp"]?.let {
+                    val c = if (hatY < -0.5f) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, abbreviate(it), dpadCx, dpadCy - dLabelOff, scale, c)
+                }
+                bindings["DDown"]?.let {
+                    val c = if (hatY > 0.5f) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, abbreviate(it), dpadCx, dpadCy + dLabelOff, scale, c)
+                }
+                bindings["DLeft"]?.let {
+                    val c = if (hatX < -0.5f) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, abbreviate(it), dpadCx - dLabelOff * 1.2f, dpadCy, scale, c)
+                }
+                bindings["DRight"]?.let {
+                    val c = if (hatX > 0.5f) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, abbreviate(it), dpadCx + dLabelOff * 1.2f, dpadCy, scale, c)
+                }
 
                 // L1 bumper
                 val bumperH = scale * 0.025f
@@ -434,8 +625,9 @@ fun ControllerConfigPage(
                     l1X + bumperW + touchPad, l1Y + bumperH + touchPad)
                 drawLabel(textMeasurer, "L1", l1X + bumperW / 2f, l1Y + bumperH + scale * 0.012f, scale)
                 bindings["L1"]?.let {
+                    val c = if (l1Pressed) cActive else cAssignLabel
                     drawFuncLabel(textMeasurer, abbreviate(it), l1X + bumperW / 2f,
-                        l1Y + bumperH + scale * 0.035f, scale)
+                        l1Y + bumperH + scale * 0.035f, scale, c)
                 }
 
                 // LT trigger
@@ -448,8 +640,9 @@ fun ControllerConfigPage(
                     l2X + triggerW + touchPad, l2Y + triggerH + touchPad)
                 drawLabel(textMeasurer, "LT", l2X + triggerW / 2f, l2Y - scale * 0.02f, scale)
                 bindings["LT"]?.let {
+                    val c = if (lt > 0.1f) cActive else cAssignLabel
                     drawFuncLabel(textMeasurer, abbreviate(it), l2X + triggerW / 2f,
-                        l2Y - scale * 0.045f, scale)
+                        l2Y - scale * 0.045f, scale, c)
                 }
 
                 // L3 (stick press)
@@ -476,13 +669,23 @@ fun ControllerConfigPage(
                 )
                 val rsxFunc = bindings["RS_X"]
                 val rsyFunc = bindings["RS_Y"]
-                if (rsxFunc != null || rsyFunc != null) {
-                    val rsLabel = buildString {
-                        if (rsxFunc != null) append("X:${abbreviate(rsxFunc)}")
-                        if (rsxFunc != null && rsyFunc != null) append(" ")
-                        if (rsyFunc != null) append("Y:${abbreviate(rsyFunc)}")
-                    }
-                    drawFuncLabel(textMeasurer, rsLabel, rsCx, rsCy + stickR + scale * 0.03f, scale)
+                val rsxInv = "RS_X" in inverts
+                val rsyInv = "RS_Y" in inverts
+                if (rsyFunc != null) {
+                    val topLabel = if (rsyInv) axisPosLabel(rsyFunc) else axisNegLabel(rsyFunc)
+                    val botLabel = if (rsyInv) axisNegLabel(rsyFunc) else axisPosLabel(rsyFunc)
+                    val topC = if (ry < -0.3f) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, topLabel, rsCx, rsCy - sLabelOff, scale, topC)
+                    val botC = if (ry > 0.3f) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, botLabel, rsCx, rsCy + sLabelOff, scale, botC)
+                }
+                if (rsxFunc != null) {
+                    val leftLabel = if (rsxInv) axisPosLabel(rsxFunc) else axisNegLabel(rsxFunc)
+                    val rightLabel = if (rsxInv) axisNegLabel(rsxFunc) else axisPosLabel(rsxFunc)
+                    val leftC = if (rx < -0.3f) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, leftLabel, rsCx - sLabelOff * 1.5f, rsCy, scale, leftC)
+                    val rightC = if (rx > 0.3f) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, rightLabel, rsCx + sLabelOff * 1.5f, rsCy, scale, rightC)
                 }
                 if (selectedControl == "RS") {
                     drawCircle(cHighlight, stickR + touchPad, Offset(rsCx, rsCy))
@@ -509,8 +712,9 @@ fun ControllerConfigPage(
                         fb.cx + btnR + touchPad, fb.cy + btnR + touchPad
                     )
                     bindings[fb.id]?.let {
+                        val c = if (pressed) cActive else cAssignLabel
                         drawFuncLabel(textMeasurer, abbreviate(it), fb.cx,
-                            fb.cy + btnR + scale * 0.025f, scale)
+                            fb.cy + btnR + scale * 0.025f, scale, c)
                     }
                 }
 
@@ -528,8 +732,9 @@ fun ControllerConfigPage(
                     r1X + bumperW + touchPad, r1Y + bumperH + touchPad)
                 drawLabel(textMeasurer, "R1", r1X + bumperW / 2f, r1Y + bumperH + scale * 0.012f, scale)
                 bindings["R1"]?.let {
+                    val c = if (r1Pressed) cActive else cAssignLabel
                     drawFuncLabel(textMeasurer, abbreviate(it), r1X + bumperW / 2f,
-                        r1Y + bumperH + scale * 0.035f, scale)
+                        r1Y + bumperH + scale * 0.035f, scale, c)
                 }
 
                 // RT trigger
@@ -540,8 +745,9 @@ fun ControllerConfigPage(
                     r2X + triggerW + touchPad, r2Y + triggerH + touchPad)
                 drawLabel(textMeasurer, "RT", r2X + triggerW / 2f, r2Y - scale * 0.02f, scale)
                 bindings["RT"]?.let {
+                    val c = if (rt > 0.1f) cActive else cAssignLabel
                     drawFuncLabel(textMeasurer, abbreviate(it), r2X + triggerW / 2f,
-                        r2Y - scale * 0.045f, scale)
+                        r2Y - scale * 0.045f, scale, c)
                 }
 
                 // R3 (stick press)
@@ -572,8 +778,9 @@ fun ControllerConfigPage(
                 )
                 drawLabel(textMeasurer, "Sel", selX, centerY + centerBtnR + scale * 0.015f, scale)
                 bindings["Select"]?.let {
+                    val c = if (selPressed) cActive else cAssignLabel
                     drawFuncLabel(textMeasurer, abbreviate(it), selX,
-                        centerY + centerBtnR + scale * 0.04f, scale)
+                        centerY + centerBtnR + scale * 0.04f, scale, c)
                 }
 
                 val staPressed = "Start" in pressedButtons
@@ -587,8 +794,9 @@ fun ControllerConfigPage(
                 )
                 drawLabel(textMeasurer, "Sta", staX, centerY + centerBtnR + scale * 0.015f, scale)
                 bindings["Start"]?.let {
+                    val c = if (staPressed) cActive else cAssignLabel
                     drawFuncLabel(textMeasurer, abbreviate(it), staX,
-                        centerY + centerBtnR + scale * 0.04f, scale)
+                        centerY + centerBtnR + scale * 0.04f, scale, c)
                 }
             }
 
@@ -597,7 +805,7 @@ fun ControllerConfigPage(
             // ── Live readout ──
             val activeButtonsStr = pressedButtons.joinToString(", ").ifEmpty { "none" }
             Text(
-                text = "Buttons: $activeButtonsStr",
+                text = "Pressed buttons: $activeButtonsStr",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -620,6 +828,7 @@ fun ControllerConfigPage(
             Button(
                 onClick = {
                     saveConfig(context, bindings.toMap())
+                    saveInverts(context, inverts.toSet(), bindings.toMap())
                     Toast.makeText(
                         context,
                         "Saved! Controls will apply to all pilots on next game load.",
@@ -667,14 +876,41 @@ fun ControllerConfigPage(
             stickLabel = if (selectedControl == "LS") "Left Stick" else "Right Stick",
             currentXFunc = bindings[xKey],
             currentYFunc = bindings[yKey],
-            onConfirm = { xFunc, yFunc ->
+            currentXInvert = xKey in inverts,
+            currentYInvert = yKey in inverts,
+            onConfirm = { xFunc, yFunc, xInv, yInv ->
                 assignAxisFunction(bindings, xKey, xFunc)
                 assignAxisFunction(bindings, yKey, yFunc)
+                inverts.remove(xKey); inverts.remove(yKey)
+                if (xInv) inverts.add(xKey)
+                if (yInv) inverts.add(yKey)
                 showStickPicker = false
                 selectedControl = null
             },
             onDismiss = {
                 showStickPicker = false
+                selectedControl = null
+            }
+        )
+    }
+
+    if (showDpadPicker && selectedControl != null) {
+        DpadFunctionPickerDialog(
+            directionLabel = when (selectedControl) {
+                "DUp" -> "D-Pad Up"
+                "DDown" -> "D-Pad Down"
+                "DLeft" -> "D-Pad Left"
+                "DRight" -> "D-Pad Right"
+                else -> selectedControl!!
+            },
+            currentFunc = bindings[selectedControl!!],
+            onSelect = { funcLabel ->
+                assignDpadFunction(bindings, selectedControl!!, funcLabel)
+                showDpadPicker = false
+                selectedControl = null
+            },
+            onDismiss = {
+                showDpadPicker = false
                 selectedControl = null
             }
         )
@@ -738,34 +974,46 @@ private fun StickPickerDialog(
     stickLabel: String,
     currentXFunc: String?,
     currentYFunc: String?,
-    onConfirm: (xFunc: String?, yFunc: String?) -> Unit,
+    currentXInvert: Boolean,
+    currentYInvert: Boolean,
+    onConfirm: (xFunc: String?, yFunc: String?, xInvert: Boolean, yInvert: Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
     var selectedX by remember { mutableStateOf(currentXFunc) }
     var selectedY by remember { mutableStateOf(currentYFunc) }
+    var invertX by remember { mutableStateOf(currentXInvert) }
+    var invertY by remember { mutableStateOf(currentYInvert) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stickLabel) },
         text = {
-            Column(modifier = Modifier.heightIn(max = 450.dp)) {
-                Text(
-                    "X Axis (left/right)",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
+            Column(modifier = Modifier.heightIn(max = 450.dp).verticalScroll(rememberScrollState())) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "X Axis (left/right)",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Checkbox(checked = invertX, onCheckedChange = { invertX = it })
+                    Text("Invert", fontSize = 12.sp)
+                }
                 AxisFunctionRadioGroup(
                     selected = selectedX,
                     onSelect = { selectedX = it }
                 )
                 Spacer(Modifier.height(12.dp))
-                Text(
-                    "Y Axis (up/down)",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Y Axis (up/down)",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Checkbox(checked = invertY, onCheckedChange = { invertY = it })
+                    Text("Invert", fontSize = 12.sp)
+                }
                 AxisFunctionRadioGroup(
                     selected = selectedY,
                     onSelect = { selectedY = it }
@@ -773,7 +1021,7 @@ private fun StickPickerDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(selectedX, selectedY) }) { Text("OK") }
+            TextButton(onClick = { onConfirm(selectedX, selectedY, invertX, invertY) }) { Text("OK") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
@@ -813,6 +1061,56 @@ private fun AxisFunctionRadioGroup(
             Text(func.label, fontSize = 13.sp)
         }
     }
+}
+
+@Composable
+private fun DpadFunctionPickerDialog(
+    directionLabel: String,
+    currentFunc: String?,
+    onSelect: (String?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Assign: $directionLabel") },
+        text = {
+            LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelect(null) }
+                            .padding(vertical = 6.dp, horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(selected = currentFunc == null, onClick = { onSelect(null) })
+                        Spacer(Modifier.width(8.dp))
+                        Text("None", color = Color.Gray)
+                    }
+                }
+                items(KB_FUNCTIONS) { func ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelect(func.label) }
+                            .padding(vertical = 6.dp, horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = currentFunc == func.label,
+                            onClick = { onSelect(func.label) }
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(func.label)
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
 }
 
 // ── Canvas drawing helpers ──────────────────────────────────────────────────
@@ -902,10 +1200,11 @@ private fun DrawScope.drawLabel(
 
 private fun DrawScope.drawFuncLabel(
     textMeasurer: androidx.compose.ui.text.TextMeasurer,
-    text: String, cx: Float, cy: Float, scale: Float
+    text: String, cx: Float, cy: Float, scale: Float,
+    color: Color = cAssignLabel
 ) {
     val style = TextStyle(
-        color = cAssignLabel,
+        color = color,
         fontSize = (scale * 0.017f).sp,
         fontWeight = FontWeight.Normal
     )

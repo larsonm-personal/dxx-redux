@@ -611,7 +611,26 @@ void android_apply_gamepad_defaults(void)
         while (fgets(line, sizeof(line), f)) {
             int idx, val;
             if (line[0] == '#' || line[0] == '\n') continue;
-            if (sscanf(line, "%d=%d", &idx, &val) == 2) {
+            if (strncmp(line, "kb:", 3) == 0) {
+                /* Keyboard binding: kb:index=scancode */
+                if (sscanf(line + 3, "%d=%d", &idx, &val) == 2) {
+                    if (idx >= 0 && idx < MAX_CONTROLS) {
+                        /* Clear any existing binding with this scancode */
+                        int i;
+                        for (i = 0; i < MAX_CONTROLS; i++) {
+                            if (PlayerCfg.KeySettings[0][i] == (ubyte)val)
+                                PlayerCfg.KeySettings[0][i] = 255;
+                        }
+                        PlayerCfg.KeySettings[0][idx] = (ubyte)val;
+                    }
+                }
+            } else if (strncmp(line, "inv:", 4) == 0) {
+                /* Axis invert flag: inv:index=1 */
+                if (sscanf(line + 4, "%d=%d", &idx, &val) == 2) {
+                    if (idx >= 0 && idx < MAX_CONTROLS)
+                        PlayerCfg.KeySettings[1][idx] = (ubyte)val;
+                }
+            } else if (sscanf(line, "%d=%d", &idx, &val) == 2) {
                 if (idx >= 0 && idx < MAX_CONTROLS)
                     PlayerCfg.KeySettings[1][idx] = (ubyte)val;
             }
