@@ -31,6 +31,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.File
 import kotlin.math.abs
 import kotlin.math.min
@@ -154,123 +156,104 @@ private val DEFAULT_BINDINGS = mapOf(
     "DRight" to "Slide Right",
 )
 
+// Axis functions that implicitly cover discrete button functions
+private val AXIS_COVERS_BUTTONS = mapOf(
+    "Slide L/R" to listOf("Slide Left", "Slide Right"),
+    "Slide U/D" to listOf("Slide Up", "Slide Down"),
+    "Bank L/R"  to listOf("Bank Left", "Bank Right"),
+    "Throttle"  to listOf("Accelerate", "Reverse"),
+)
+
 // ── Config file I/O ─────────────────────────────────────────────────────────
 
-private const val CONFIG_FILENAME = "gamepad_bindings.cfg"
+private const val CONFIG_FILENAME = "controller_config.json"
+private const val MAX_CONTROLS = 60
 
-private fun saveConfig(context: Context, bindings: Map<String, String>) {
-    val sb = StringBuilder()
-    sb.appendLine("# gamepad_bindings.cfg")
-
-    // Joystick axis/button bindings (KeySettings[1])
-    val ks = mutableMapOf<Int, Int>()
+/** Compute the 60-byte KeySettings[1] (joystick) array from bindings + inverts. */
+private fun computeJoystickSettings(bindings: Map<String, String>, inverts: Set<String>): ByteArray {
+    val ks = ByteArray(MAX_CONTROLS) { 0xFF.toByte() }
     for ((controlId, funcLabel) in bindings) {
         val btnIdx = BUTTON_CONTROLS[controlId]
         if (btnIdx != null) {
             val func = BUTTON_FUNCTIONS.find { it.label == funcLabel }
-            if (func != null) ks[func.kcIndex] = btnIdx
+            if (func != null && func.kcIndex in 0 until MAX_CONTROLS) ks[func.kcIndex] = btnIdx.toByte()
             continue
         }
         val axisIdx = AXIS_CONTROLS[controlId]
         if (axisIdx != null) {
             val func = AXIS_FUNCTIONS.find { it.label == funcLabel }
-            if (func != null) ks[func.kcIndex] = axisIdx
+            if (func != null && func.kcIndex in 0 until MAX_CONTROLS) {
+                ks[func.kcIndex] = axisIdx.toByte()
+                // Set invert flag at kcIndex+1
+                if (controlId in inverts && func.kcIndex + 1 < MAX_CONTROLS) {
+                    ks[func.kcIndex + 1] = 1
+                }
+            }
         }
     }
-    for ((idx, value) in ks.toSortedMap()) {
-        sb.appendLine("$idx=$value")
-    }
+    return ks
+}
 
-    // D-pad keyboard bindings (KeySettings[0])
+/** Compute the 60-byte KeySettings[0] (keyboard) array from d-pad bindings. */
+private fun computeKeyboardSettings(bindings: Map<String, String>): ByteArray {
+    val ks = ByteArray(MAX_CONTROLS) { 0xFF.toByte() }
     for ((controlId, funcLabel) in bindings) {
         val scancode = DPAD_CONTROLS[controlId] ?: continue
         val func = KB_FUNCTIONS.find { it.label == funcLabel } ?: continue
-        sb.appendLine("kb:${func.kcSecondaryIndex}=$scancode")
+        if (func.kcSecondaryIndex in 0 until MAX_CONTROLS) {
+            // Clear any existing binding with this scancode
+            for (i in 0 until MAX_CONTROLS) {
+                if (ks[i] == scancode.toByte()) ks[i] = 0xFF.toByte()
+            }
+            ks[func.kcSecondaryIndex] = scancode.toByte()
+        }
     }
-
-    File(context.filesDir, CONFIG_FILENAME).writeText(sb.toString())
+    return ks
 }
 
-private fun saveInverts(context: Context, inverts: Set<String>, bindings: Map<String, String>) {
-    val file = File(context.filesDir, CONFIG_FILENAME)
-    // Remove old inv: lines, append new ones
-    val existing = if (file.exists()) {
-        file.readLines().filter { !it.startsWith("inv:") }
-    } else return
-    val sb = StringBuilder()
-    existing.forEach { sb.appendLine(it) }
-    for (axisCtrl in inverts) {
-        val funcLabel = bindings[axisCtrl] ?: continue
-        val func = AXIS_FUNCTIONS.find { it.label == funcLabel } ?: continue
-        sb.appendLine("inv:${func.kcIndex + 1}=1")
-    }
-    file.writeText(sb.toString())
+private fun saveConfig(context: Context, bindings: Map<String, String>, inverts: Set<String>) {
+    val json = JSONObject()
+    json.put("version", 1)
+    json.put("control_type", 1) // CONTROL_USING_JOYSTICK
+    json.put("automap_free_flight", 1)
+
+    // Human-readable bindings for UI reconstruction
+    val bindingsObj = JSONObject()
+    for ((k, v) in bindings) bindingsObj.put(k, v)
+    json.put("bindings", bindingsObj)
+
+    // Inverted axes
+    val invertsArr = JSONArray()
+    for (inv in inverts) invertsArr.put(inv)
+    json.put("inverts", invertsArr)
+
+    // Pre-computed KeySettings arrays for C-side and pilot patching
+    val ksJoy = computeJoystickSettings(bindings, inverts)
+    val ksKb = computeKeyboardSettings(bindings)
+    val joyArr = JSONArray()
+    for (b in ksJoy) joyArr.put(b.toInt() and 0xFF)
+    json.put("key_settings_joystick", joyArr)
+    val kbArr = JSONArray()
+    for (b in ksKb) kbArr.put(b.toInt() and 0xFF)
+    json.put("key_settings_keyboard", kbArr)
+
+    File(context.filesDir, CONFIG_FILENAME).writeText(json.toString(2))
 }
 
 private fun loadConfig(context: Context): Pair<Map<String, String>, Set<String>>? {
     val file = File(context.filesDir, CONFIG_FILENAME)
     if (!file.exists()) return null
+    val json = JSONObject(file.readText())
+    if (!json.has("bindings")) return null
 
-    val ks = mutableMapOf<Int, Int>()
-    val kbKs = mutableMapOf<Int, Int>()
-    val invKs = mutableSetOf<Int>()  // invert flag kcIndices
-    file.readLines().forEach { line ->
-        val trimmed = line.trim()
-        if (trimmed.isEmpty() || trimmed.startsWith("#")) return@forEach
-        if (trimmed.startsWith("kb:")) {
-            val rest = trimmed.removePrefix("kb:")
-            val parts = rest.split("=", limit = 2)
-            if (parts.size == 2) {
-                val idx = parts[0].toIntOrNull()
-                val scancode = parts[1].toIntOrNull()
-                if (idx != null && scancode != null) kbKs[idx] = scancode
-            }
-        } else if (trimmed.startsWith("inv:")) {
-            val rest = trimmed.removePrefix("inv:")
-            val parts = rest.split("=", limit = 2)
-            if (parts.size == 2) {
-                val idx = parts[0].toIntOrNull()
-                val value = parts[1].toIntOrNull()
-                if (idx != null && value == 1) invKs.add(idx)
-            }
-        } else {
-            val parts = trimmed.split("=", limit = 2)
-            if (parts.size == 2) {
-                val idx = parts[0].toIntOrNull()
-                val value = parts[1].toIntOrNull()
-                if (idx != null && value != null) ks[idx] = value
-            }
-        }
-    }
-
-    // Reverse-map: KeySettings indices back to control→function
+    val bindingsObj = json.getJSONObject("bindings")
     val bindings = mutableMapOf<String, String>()
-    for (func in BUTTON_FUNCTIONS) {
-        val virtualBtn = ks[func.kcIndex] ?: continue
-        val controlId = BUTTON_CONTROLS.entries.find { it.value == virtualBtn }?.key ?: continue
-        bindings[controlId] = func.label
-    }
-    for (func in AXIS_FUNCTIONS) {
-        val virtualAxis = ks[func.kcIndex] ?: continue
-        val controlId = AXIS_CONTROLS.entries.find { it.value == virtualAxis }?.key ?: continue
-        bindings[controlId] = func.label
-    }
-    // D-pad keyboard bindings
-    for (func in KB_FUNCTIONS) {
-        val scancode = kbKs[func.kcSecondaryIndex] ?: continue
-        val controlId = DPAD_CONTROLS.entries.find { it.value == scancode }?.key ?: continue
-        bindings[controlId] = func.label
-    }
-    // Reconstruct inverted axis control IDs from invert flag indices
+    for (key in bindingsObj.keys()) bindings[key] = bindingsObj.getString(key)
+
     val invertedControls = mutableSetOf<String>()
-    for (func in AXIS_FUNCTIONS) {
-        if (func.kcIndex + 1 in invKs) {
-            // Find which axis control has this function assigned
-            val controlId = bindings.entries.find {
-                it.value == func.label && it.key in AXIS_CONTROLS
-            }?.key
-            if (controlId != null) invertedControls.add(controlId)
-        }
+    if (json.has("inverts")) {
+        val arr = json.getJSONArray("inverts")
+        for (i in 0 until arr.length()) invertedControls.add(arr.getString(i))
     }
     return Pair(bindings, invertedControls)
 }
@@ -437,7 +420,7 @@ fun ControllerConfigPage(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(onClick = onBack) {
-                    Text("\u2190 Back", fontSize = 14.sp)
+                    Text("Cancel", fontSize = 14.sp)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
@@ -798,9 +781,74 @@ fun ControllerConfigPage(
                     drawFuncLabel(textMeasurer, abbreviate(it), staX,
                         centerY + centerBtnR + scale * 0.04f, scale, c)
                 }
+
+                // ── Expand touch bounds to cover function labels ──
+                val labelPad = scale * 0.035f
+                val growBounds = { id: String, cx: Float, cy: Float ->
+                    controlBounds[id]?.let { r ->
+                        controlBounds[id] = Rect(
+                            minOf(r.left, cx - labelPad),
+                            minOf(r.top, cy - labelPad),
+                            maxOf(r.right, cx + labelPad),
+                            maxOf(r.bottom, cy + labelPad)
+                        )
+                    }
+                }
+                // Sticks
+                growBounds("LS", lsCx, lsCy - sLabelOff)
+                growBounds("LS", lsCx, lsCy + sLabelOff)
+                growBounds("LS", lsCx - sLabelOff * 1.5f, lsCy)
+                growBounds("LS", lsCx + sLabelOff * 1.5f, lsCy)
+                growBounds("RS", rsCx, rsCy - sLabelOff)
+                growBounds("RS", rsCx, rsCy + sLabelOff)
+                growBounds("RS", rsCx - sLabelOff * 1.5f, rsCy)
+                growBounds("RS", rsCx + sLabelOff * 1.5f, rsCy)
+                // D-pad
+                growBounds("DUp", dpadCx, dpadCy - dLabelOff)
+                growBounds("DDown", dpadCx, dpadCy + dLabelOff)
+                growBounds("DLeft", dpadCx - dLabelOff * 1.2f, dpadCy)
+                growBounds("DRight", dpadCx + dLabelOff * 1.2f, dpadCy)
+                // Bumpers
+                growBounds("L1", l1X + bumperW / 2f, l1Y + bumperH + scale * 0.035f)
+                growBounds("R1", r1X + bumperW / 2f, r1Y + bumperH + scale * 0.035f)
+                // Triggers
+                growBounds("LT", l2X + triggerW / 2f, l2Y - scale * 0.045f)
+                growBounds("RT", r2X + triggerW / 2f, r2Y - scale * 0.045f)
+                // Face buttons
+                for (fb in faceButtons) {
+                    growBounds(fb.id, fb.cx, fb.cy + btnR + scale * 0.025f)
+                }
+                // Center buttons
+                growBounds("Select", selX, centerY + centerBtnR + scale * 0.04f)
+                growBounds("Start", staX, centerY + centerBtnR + scale * 0.04f)
             }
 
             Spacer(modifier = Modifier.height(6.dp))
+
+            // ── Unassigned functions ──
+            val assignedBtnFuncs = bindings.entries
+                .filter { it.key in BUTTON_CONTROLS }
+                .map { it.value }.toSet()
+            val assignedAxisFuncs = bindings.entries
+                .filter { it.key in AXIS_CONTROLS }
+                .map { it.value }.toSet()
+            val assignedDpadFuncs = bindings.entries
+                .filter { it.key in DPAD_CONTROLS }
+                .map { it.value }.toSet()
+            // Button functions implicitly covered by an assigned axis
+            val coveredByAxis = assignedAxisFuncs.flatMap { AXIS_COVERS_BUTTONS[it].orEmpty() }.toSet()
+            val unassignedBtns = BUTTON_FUNCTIONS.filter { it.label !in assignedBtnFuncs && it.label !in coveredByAxis }.map { it.label }
+            val unassignedAxes = AXIS_FUNCTIONS.filter { it.label !in assignedAxisFuncs }.map { it.label }
+            val unassignedDpad = KB_FUNCTIONS.filter { it.label !in assignedDpadFuncs }.map { it.label }
+            val allUnassigned = (unassignedBtns + unassignedAxes).distinct()
+            if (allUnassigned.isNotEmpty()) {
+                Text(
+                    text = "Unassigned: ${allUnassigned.joinToString(", ")}",
+                    fontSize = 10.sp,
+                    color = Color(0xFFEF5350),
+                    maxLines = 3
+                )
+            }
 
             // ── Live readout ──
             val activeButtonsStr = pressedButtons.joinToString(", ").ifEmpty { "none" }
@@ -827,13 +875,9 @@ fun ControllerConfigPage(
             // ── Save & Apply button ──
             Button(
                 onClick = {
-                    saveConfig(context, bindings.toMap())
-                    saveInverts(context, inverts.toSet(), bindings.toMap())
-                    Toast.makeText(
-                        context,
-                        "Saved! Controls will apply to all pilots on next game load.",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    saveConfig(context, bindings.toMap(), inverts.toSet())
+                    Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
+                    onBack()
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -843,7 +887,7 @@ fun ControllerConfigPage(
                 )
             ) {
                 Text(
-                    text = "ASSIGN CONTROLS TO ALL PILOT CONFIGS",
+                    text = "SAVE CONTROLLER CONFIG",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -853,10 +897,23 @@ fun ControllerConfigPage(
 
     // ── Dialogs ──
 
+    val assignedButtonFuncs = bindings.entries
+        .filter { it.key in BUTTON_CONTROLS }
+        .map { it.value }.toSet() +
+        bindings.entries.filter { it.key in AXIS_CONTROLS }
+            .flatMap { AXIS_COVERS_BUTTONS[it.value].orEmpty() }
+    val assignedAxisFuncsForDialog = bindings.entries
+        .filter { it.key in AXIS_CONTROLS }
+        .map { it.value }.toSet()
+    val assignedDpadFuncsForDialog = bindings.entries
+        .filter { it.key in DPAD_CONTROLS }
+        .map { it.value }.toSet()
+
     if (showButtonPicker && selectedControl != null) {
         ButtonFunctionPickerDialog(
             controlLabel = selectedControl!!,
             currentFunc = bindings[selectedControl!!],
+            assignedFunctions = assignedButtonFuncs,
             onSelect = { funcLabel ->
                 assignButtonFunction(bindings, selectedControl!!, funcLabel)
                 showButtonPicker = false
@@ -878,6 +935,7 @@ fun ControllerConfigPage(
             currentYFunc = bindings[yKey],
             currentXInvert = xKey in inverts,
             currentYInvert = yKey in inverts,
+            assignedFunctions = assignedAxisFuncsForDialog,
             onConfirm = { xFunc, yFunc, xInv, yInv ->
                 assignAxisFunction(bindings, xKey, xFunc)
                 assignAxisFunction(bindings, yKey, yFunc)
@@ -904,6 +962,7 @@ fun ControllerConfigPage(
                 else -> selectedControl!!
             },
             currentFunc = bindings[selectedControl!!],
+            assignedFunctions = assignedDpadFuncsForDialog,
             onSelect = { funcLabel ->
                 assignDpadFunction(bindings, selectedControl!!, funcLabel)
                 showDpadPicker = false
@@ -923,6 +982,7 @@ fun ControllerConfigPage(
 private fun ButtonFunctionPickerDialog(
     controlLabel: String,
     currentFunc: String?,
+    assignedFunctions: Set<String> = emptySet(),
     onSelect: (String?) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -945,6 +1005,7 @@ private fun ButtonFunctionPickerDialog(
                     }
                 }
                 items(BUTTON_FUNCTIONS) { func ->
+                    val isAssigned = func.label in assignedFunctions && func.label != currentFunc
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -957,7 +1018,11 @@ private fun ButtonFunctionPickerDialog(
                             onClick = { onSelect(func.label) }
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text(func.label)
+                        Text(
+                            func.label,
+                            color = if (!isAssigned && func.label != currentFunc)
+                                Color(0xFFEF5350) else Color.Unspecified
+                        )
                     }
                 }
             }
@@ -976,6 +1041,7 @@ private fun StickPickerDialog(
     currentYFunc: String?,
     currentXInvert: Boolean,
     currentYInvert: Boolean,
+    assignedFunctions: Set<String> = emptySet(),
     onConfirm: (xFunc: String?, yFunc: String?, xInvert: Boolean, yInvert: Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -1001,6 +1067,7 @@ private fun StickPickerDialog(
                 }
                 AxisFunctionRadioGroup(
                     selected = selectedX,
+                    assignedFunctions = assignedFunctions,
                     onSelect = { selectedX = it }
                 )
                 Spacer(Modifier.height(12.dp))
@@ -1016,6 +1083,7 @@ private fun StickPickerDialog(
                 }
                 AxisFunctionRadioGroup(
                     selected = selectedY,
+                    assignedFunctions = assignedFunctions,
                     onSelect = { selectedY = it }
                 )
             }
@@ -1032,6 +1100,7 @@ private fun StickPickerDialog(
 @Composable
 private fun AxisFunctionRadioGroup(
     selected: String?,
+    assignedFunctions: Set<String> = emptySet(),
     onSelect: (String?) -> Unit
 ) {
     Row(
@@ -1046,6 +1115,7 @@ private fun AxisFunctionRadioGroup(
         Text("None", color = Color.Gray, fontSize = 13.sp)
     }
     for (func in AXIS_FUNCTIONS) {
+        val isAssigned = func.label in assignedFunctions && func.label != selected
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1058,7 +1128,12 @@ private fun AxisFunctionRadioGroup(
                 onClick = { onSelect(func.label) }
             )
             Spacer(Modifier.width(4.dp))
-            Text(func.label, fontSize = 13.sp)
+            Text(
+                func.label,
+                fontSize = 13.sp,
+                color = if (!isAssigned && func.label != selected)
+                    Color(0xFFEF5350) else Color.Unspecified
+            )
         }
     }
 }
@@ -1067,6 +1142,7 @@ private fun AxisFunctionRadioGroup(
 private fun DpadFunctionPickerDialog(
     directionLabel: String,
     currentFunc: String?,
+    assignedFunctions: Set<String> = emptySet(),
     onSelect: (String?) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -1089,6 +1165,7 @@ private fun DpadFunctionPickerDialog(
                     }
                 }
                 items(KB_FUNCTIONS) { func ->
+                    val isAssigned = func.label in assignedFunctions && func.label != currentFunc
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1101,7 +1178,11 @@ private fun DpadFunctionPickerDialog(
                             onClick = { onSelect(func.label) }
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text(func.label)
+                        Text(
+                            func.label,
+                            color = if (!isAssigned && func.label != currentFunc)
+                                Color(0xFFEF5350) else Color.Unspecified
+                        )
                     }
                 }
             }

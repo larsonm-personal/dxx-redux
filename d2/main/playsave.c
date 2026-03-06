@@ -994,15 +994,6 @@ int read_player_file()
 	strcat(filename, ".plx");
 	read_player_d2x(filename);
 
-#ifdef ANDROID
-	/* Apply the saved gamepad config to every pilot on load, ensuring the
-	 * user's Setup-screen control assignments always take effect. */
-	{
-		extern void android_apply_gamepad_defaults(void);
-		android_apply_gamepad_defaults();
-	}
-#endif
-
 	kc_set_controls();
 
 	return EZERO;
