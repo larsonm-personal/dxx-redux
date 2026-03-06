@@ -125,29 +125,33 @@ class TouchOverlayView @JvmOverloads constructor(
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
 
-        // ── Stick: ~15% of screen width radius, 10% margins ──
-        stickRadius = w * 0.15f
+        // Use the shorter dimension so controls stay the same absolute
+        // size regardless of portrait/landscape orientation.
+        val base = min(w, h).toFloat()
+
+        // ── Stick: ~15% of short-edge radius, 10% margins ──
+        stickRadius = base * 0.15f
         val marginX = w * 0.10f + stickRadius
         val marginY = h * 0.10f + stickRadius
         stickCenterX = marginX
         stickCenterY = h - marginY
 
-        // ── Fire buttons: 5% screen width radius ──
-        btnRadius = w * 0.05f
+        // ── Fire buttons: 5% of short-edge radius ──
+        btnRadius = base * 0.05f
         paintBtnLabel.textSize = btnRadius * 0.7f
 
         // Button 0 (fire primary): 10% from right, 5% from bottom
         btn0CenterX = w - w * 0.10f - btnRadius
-        btn0CenterY = h - w * 0.05f - btnRadius
+        btn0CenterY = h - base * 0.05f - btnRadius
 
         // Button 1 (fire secondary): 5% from right, 10% from bottom
         btn1CenterX = w - w * 0.05f - btnRadius
-        btn1CenterY = h - w * 0.10f - btnRadius
+        btn1CenterY = h - base * 0.10f - btnRadius
 
         // MAP button: smaller, top-right corner
-        mapBtnRadius = w * 0.035f
+        mapBtnRadius = base * 0.035f
         mapBtnCenterX = w - w * 0.05f - mapBtnRadius
-        mapBtnCenterY = w * 0.05f + mapBtnRadius
+        mapBtnCenterY = base * 0.05f + mapBtnRadius
     }
 
     // ── Drawing ─────────────────────────────────────────────
