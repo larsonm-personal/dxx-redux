@@ -11,12 +11,11 @@
 
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
-#include <SDL_mutex.h>
 
 /* Hidden "this" pointer for the audio functions */
 #define _THIS	SDL_AudioDevice *this
 
-#define NUM_BUFFERS 3
+#define NUM_BUFFERS 4
 
 struct SDL_PrivateAudioData {
     /* OpenSL ES objects */
@@ -27,16 +26,14 @@ struct SDL_PrivateAudioData {
     SLPlayItf    playerPlay;
     SLAndroidSimpleBufferQueueItf playerBufferQueue;
 
-    /* Audio buffers — SDL mixes into mixbuf (U8), we convert to
-     * playbuf (S16) before enqueueing to OpenSL ES. */
-    Uint8   *mixbuf;              /* SDL mix buffer (spec.size bytes, U8) */
-    Sint16  *playbuf[NUM_BUFFERS]; /* double-buffered S16 output */
+    /* Audio buffers — bqPlayerCallback mixes directly into playbuf
+     * via SDL_mixer's callback, then re-enqueues.  mixbuf is kept
+     * for SDL_RunAudio compatibility but unused in callback mode. */
+    Uint8   *mixbuf;              /* SDL mix buffer (unused in callback mode) */
+    Sint16  *playbuf[NUM_BUFFERS]; /* play buffers rotated by callback */
     int      next_buf;            /* which playbuf to fill next */
-    Uint32   mixlen;              /* spec.size (bytes of U8 data) */
-    Uint32   playlen;             /* playbuf size in bytes (mixlen * 2 if U8→S16) */
-
-    /* Synchronization */
-    SDL_sem *sem;                 /* posted by OpenSL callback when buffer done */
+    Uint32   mixlen;              /* spec.size (bytes) */
+    Uint32   playlen;             /* playbuf size in bytes */
 };
 
 #endif /* _SDL_androidaudio_h */

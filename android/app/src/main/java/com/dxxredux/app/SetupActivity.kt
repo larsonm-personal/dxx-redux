@@ -856,7 +856,7 @@ private fun SetupScreen(
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                             modifier = Modifier.weight(1f).height(44.dp)
                         ) {
-                            Text("Reset controls & restart", fontSize = 14.sp)
+                            Text("Reset controls & restart", fontSize = 10.sp)
                         }
                     }
 

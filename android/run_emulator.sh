@@ -139,7 +139,7 @@ if [ "$NO_DATA" -eq 0 ] && [ -f "$SCRIPT_DIR/push_game_data.sh" ]; then
     REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
     if [ -d "$REPO_ROOT/game_data" ] && [ -n "$(ls "$REPO_ROOT/game_data" 2>/dev/null)" ]; then
         echo ""
-        bash "$SCRIPT_DIR/push_game_data.sh"
+        CALLED_FROM_SCRIPT=1 bash "$SCRIPT_DIR/push_game_data.sh"
     else
         echo ""
         echo "(No game_data/ directory found — skipping game data push)"

@@ -11,7 +11,9 @@ wait_for_key() {
     echo "Press any key to exit..."
     read -r -n1 -s
 }
-trap wait_for_key EXIT
+if [ "${CALLED_FROM_SCRIPT:-0}" != "1" ]; then
+    trap wait_for_key EXIT
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"

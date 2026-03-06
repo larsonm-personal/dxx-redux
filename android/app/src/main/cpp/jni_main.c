@@ -63,6 +63,53 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
         LOGI("AAssetManager cached for native asset access");
     }
 
+    /* Query native audio sample rate and buffer size from AudioManager.
+     * This lets OpenSL ES avoid AudioFlinger resampling. */
+    {
+        extern int g_android_native_sample_rate;
+        extern int g_android_native_buffer_frames;
+
+        jclass actCls = (*env)->GetObjectClass(env, thiz);
+        jmethodID getSysSvc = (*env)->GetMethodID(env, actCls,
+            "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
+        jstring audioStr = (*env)->NewStringUTF(env, "audio");
+        jobject audioMgr = (*env)->CallObjectMethod(env, thiz, getSysSvc, audioStr);
+        (*env)->DeleteLocalRef(env, audioStr);
+
+        if (audioMgr) {
+            jclass amCls = (*env)->GetObjectClass(env, audioMgr);
+            jmethodID getProp = (*env)->GetMethodID(env, amCls,
+                "getProperty", "(Ljava/lang/String;)Ljava/lang/String;");
+
+            /* PROPERTY_OUTPUT_SAMPLE_RATE */
+            jstring keyRate = (*env)->NewStringUTF(env,
+                "android.media.property.OUTPUT_SAMPLE_RATE");
+            jstring valRate = (*env)->CallObjectMethod(env, audioMgr, getProp, keyRate);
+            if (valRate) {
+                const char *s = (*env)->GetStringUTFChars(env, valRate, NULL);
+                g_android_native_sample_rate = atoi(s);
+                (*env)->ReleaseStringUTFChars(env, valRate, s);
+                (*env)->DeleteLocalRef(env, valRate);
+            }
+            (*env)->DeleteLocalRef(env, keyRate);
+
+            /* PROPERTY_OUTPUT_FRAMES_PER_BUFFER */
+            jstring keyBuf = (*env)->NewStringUTF(env,
+                "android.media.property.OUTPUT_FRAMES_PER_BUFFER");
+            jstring valBuf = (*env)->CallObjectMethod(env, audioMgr, getProp, keyBuf);
+            if (valBuf) {
+                const char *s = (*env)->GetStringUTFChars(env, valBuf, NULL);
+                g_android_native_buffer_frames = atoi(s);
+                (*env)->ReleaseStringUTFChars(env, valBuf, s);
+                (*env)->DeleteLocalRef(env, valBuf);
+            }
+            (*env)->DeleteLocalRef(env, keyBuf);
+            (*env)->DeleteLocalRef(env, audioMgr);
+        }
+        LOGI("Native audio: rate=%d buf=%d",
+             g_android_native_sample_rate, g_android_native_buffer_frames);
+    }
+
     /* Tell SDL 1.2 to use the dummy video driver.
      * The dummy video driver's Available() only returns 1 when this is set.
      * Audio uses our custom Android OpenSL ES driver (no env var needed). */

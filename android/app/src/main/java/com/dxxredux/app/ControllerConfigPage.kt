@@ -45,6 +45,7 @@ import org.json.JSONObject
 import java.io.File
 import kotlin.math.abs
 import kotlin.math.min
+import kotlin.math.sqrt
 
 // ── Colors ──────────────────────────────────────────────────────────────────
 private val cOutline = Color(0xFF9E9E9E)
@@ -63,6 +64,11 @@ private val cPhoneBody = Color(0xFF1A1A1A)
 private val cPhoneScreen = Color(0xFF0D47A1)
 private val cAssignLabel = Color(0xFFFFAB40)  // amber for function labels
 private val cHighlight = Color(0x44FFFF00)    // translucent yellow for selection
+
+// Shared sizing for picker dialog radio rows
+private val PICKER_RADIO_SIZE = 24.dp
+private val PICKER_RADIO_GAP = 4.dp
+private val PICKER_FONT_SIZE = 13.sp
 
 // ── Data Model ──────────────────────────────────────────────────────────────
 
@@ -425,11 +431,12 @@ fun ControllerConfigPage(
     val assignedDpadFuncs = bindings.entries
         .filter { it.key in DPAD_CONTROLS }
         .map { it.value }.toSet()
+    val allAssignedBtnLike = assignedBtnFuncs + assignedDpadFuncs
     val coveredByAxis = assignedAxisFuncs.flatMap { AXIS_COVERS_BUTTONS[it].orEmpty() }.toSet()
-    val unassignedBtns = BUTTON_FUNCTIONS.filter { it.label !in assignedBtnFuncs && it.label !in coveredByAxis }.map { it.label }
+    val unassignedBtns = BUTTON_FUNCTIONS.filter { it.label !in allAssignedBtnLike && it.label !in coveredByAxis }.map { it.label }
     val coveredByButtons = AXIS_FUNCTIONS.filter { af ->
         val btns = AXIS_COVERS_BUTTONS[af.label]
-        btns != null && btns.all { it in assignedBtnFuncs }
+        btns != null && btns.all { it in allAssignedBtnLike }
     }.map { it.label }.toSet()
     val unassignedAxes = AXIS_FUNCTIONS.filter { it.label !in assignedAxisFuncs && it.label !in coveredByButtons }.map { it.label }
     val allUnassigned = (unassignedBtns + unassignedAxes).distinct()
@@ -447,10 +454,16 @@ fun ControllerConfigPage(
                     detectTapGestures { offset ->
                         for ((id, rect) in controlBounds) {
                             if (rect.contains(offset)) {
-                                selectedControl = id
+                                // Direction labels map back to their parent stick
+                                val resolvedId = when {
+                                    id.startsWith("LS_L") -> "LS"
+                                    id.startsWith("RS_L") -> "RS"
+                                    else -> id
+                                }
+                                selectedControl = resolvedId
                                 when {
-                                    id == "LS" || id == "RS" -> showStickPicker = true
-                                    id in DPAD_CONTROLS -> showDpadPicker = true
+                                    resolvedId == "LS" || resolvedId == "RS" -> showStickPicker = true
+                                    resolvedId in DPAD_CONTROLS -> showDpadPicker = true
                                     else -> showButtonPicker = true
                                 }
                                 break
@@ -511,14 +524,15 @@ fun ControllerConfigPage(
                 val lgCx = leftGripX + gripW / 2f
                 val stickR = scale * 0.055f
                 val touchPad = scale * 0.03f  // extra padding for touch targets
+                val btnR = scale * 0.026f
 
                 // Left stick
                 val lsCx = lgCx
                 val lsCy = gripY + gripH * 0.30f
                 drawStick(lsCx, lsCy, stickR, lx, ly, "LS")
                 controlBounds["LS"] = Rect(
-                    lsCx - stickR - touchPad, lsCy - stickR - touchPad,
-                    lsCx + stickR + touchPad, lsCy + stickR + touchPad
+                    lsCx - stickR, lsCy - stickR,
+                    lsCx + stickR, lsCy + stickR
                 )
                 // Show directional labels around left stick
                 val lsxFunc = bindings["LS_X"]
@@ -544,7 +558,7 @@ fun ControllerConfigPage(
                 }
                 // Highlight if selected
                 if (selectedControl == "LS") {
-                    drawCircle(cHighlight, stickR + touchPad, Offset(lsCx, lsCy))
+                    drawCircle(cHighlight, stickR, Offset(lsCx, lsCy))
                 }
 
                 // D-pad (interactive)
@@ -625,11 +639,34 @@ fun ControllerConfigPage(
                         l2X - scale * 0.01f, l2Y + triggerH / 2f, scale, c)
                 }
 
-                // L3 (stick press) – touch target only, no graphic
+                // L3 (stick press) – small circle, down-left from left stick
+                val l3Offset = stickR + btnR * 3  // 2.5× button-radius gap from stick edge
+                val invSqrt2 = 0.7071f  // 1/sqrt(2) for 45° diagonal
+                val l3Cx = lsCx - l3Offset * invSqrt2
+                val l3Cy = lsCy + l3Offset * invSqrt2
+                val l3Pressed = "L3" in pressedButtons
+                run {
+                    val dx = l3Cx - lsCx; val dy = l3Cy - lsCy
+                    val dist = sqrt(dx * dx + dy * dy)
+                    val nx = dx / dist; val ny = dy / dist
+                    drawLine(cOutline,
+                        Offset(lsCx + stickR * nx, lsCy + stickR * ny),
+                        Offset(l3Cx - btnR * nx, l3Cy - btnR * ny),
+                        strokeWidth = 1.5f)
+                }
+                drawFaceButton(textMeasurer, l3Cx, l3Cy, btnR, "Dn", l3Pressed, scale)
                 controlBounds["L3"] = Rect(
-                    lsCx - touchPad, lsCy + stickR,
-                    lsCx + touchPad, lsCy + stickR + touchPad * 2
+                    l3Cx - btnR - touchPad, l3Cy - btnR - touchPad,
+                    l3Cx + btnR + touchPad, l3Cy + btnR + touchPad
                 )
+                bindings["L3"]?.let {
+                    val c = if (l3Pressed) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, abbreviate(it),
+                        l3Cx, l3Cy + btnR + scale * 0.02f, scale, c)
+                }
+                if (selectedControl == "L3") {
+                    drawCircle(cHighlight, btnR + touchPad, Offset(l3Cx, l3Cy))
+                }
 
                 // ── Right grip controls ──
                 val rgCx = rightGripX + gripW / 2f
@@ -639,8 +676,8 @@ fun ControllerConfigPage(
                 val rsCy = dpadCy
                 drawStick(rsCx, rsCy, stickR, rx, ry, "RS")
                 controlBounds["RS"] = Rect(
-                    rsCx - stickR - touchPad, rsCy - stickR - touchPad,
-                    rsCx + stickR + touchPad, rsCy + stickR + touchPad
+                    rsCx - stickR, rsCy - stickR,
+                    rsCx + stickR, rsCy + stickR
                 )
                 val rsxFunc = bindings["RS_X"]
                 val rsyFunc = bindings["RS_Y"]
@@ -663,14 +700,13 @@ fun ControllerConfigPage(
                     drawFuncLabel(textMeasurer, rightLabel, rsCx + sLabelOff * 1.5f, rsCy, scale, rightC)
                 }
                 if (selectedControl == "RS") {
-                    drawCircle(cHighlight, stickR + touchPad, Offset(rsCx, rsCy))
+                    drawCircle(cHighlight, stickR, Offset(rsCx, rsCy))
                 }
 
                 // Face buttons ABXY
                 val btnCx = rgCx
                 val btnCy = gripY + gripH * 0.30f
                 val btnSpacing = scale * 0.046f
-                val btnR = scale * 0.026f
 
                 data class FaceBtn(val id: String, val cx: Float, val cy: Float)
                 val faceButtons = listOf(
@@ -737,11 +773,32 @@ fun ControllerConfigPage(
                         r2X + triggerW + scale * 0.01f, r2Y + triggerH / 2f, scale, c)
                 }
 
-                // R3 (stick press) – touch target only, no graphic
+                // R3 (stick press) – small circle, up-right from right stick
+                val r3Cx = rsCx + l3Offset * invSqrt2
+                val r3Cy = rsCy - l3Offset * invSqrt2
+                val r3Pressed = "R3" in pressedButtons
+                run {
+                    val dx = r3Cx - rsCx; val dy = r3Cy - rsCy
+                    val dist = sqrt(dx * dx + dy * dy)
+                    val nx = dx / dist; val ny = dy / dist
+                    drawLine(cOutline,
+                        Offset(rsCx + stickR * nx, rsCy + stickR * ny),
+                        Offset(r3Cx - btnR * nx, r3Cy - btnR * ny),
+                        strokeWidth = 1.5f)
+                }
+                drawFaceButton(textMeasurer, r3Cx, r3Cy, btnR, "Dn", r3Pressed, scale)
                 controlBounds["R3"] = Rect(
-                    rsCx - touchPad, rsCy + stickR,
-                    rsCx + touchPad, rsCy + stickR + touchPad * 2
+                    r3Cx - btnR - touchPad, r3Cy - btnR - touchPad,
+                    r3Cx + btnR + touchPad, r3Cy + btnR + touchPad
                 )
+                bindings["R3"]?.let {
+                    val c = if (r3Pressed) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, abbreviate(it),
+                        r3Cx, r3Cy - btnR - scale * 0.02f, scale, c)
+                }
+                if (selectedControl == "R3") {
+                    drawCircle(cHighlight, btnR + touchPad, Offset(r3Cx, r3Cy))
+                }
 
                 // ── Center buttons (Select / Start) ──
                 val centerBtnR = btnR  // same size as A/B/X/Y
@@ -785,15 +842,13 @@ fun ControllerConfigPage(
                         )
                     }
                 }
-                // Sticks
-                growBounds("LS", lsCx, lsCy - sLabelOff)
-                growBounds("LS", lsCx, lsCy + sLabelOff)
-                growBounds("LS", lsCx - sLabelOff * 1.5f, lsCy)
-                growBounds("LS", lsCx + sLabelOff * 1.5f, lsCy)
-                growBounds("RS", rsCx, rsCy - sLabelOff)
-                growBounds("RS", rsCx, rsCy + sLabelOff)
-                growBounds("RS", rsCx - sLabelOff * 1.5f, rsCy)
-                growBounds("RS", rsCx + sLabelOff * 1.5f, rsCy)
+                // Stick direction labels as separate touch targets (open same picker)
+                for ((stickId, sCx, sCy) in listOf(Triple("LS", lsCx, lsCy), Triple("RS", rsCx, rsCy))) {
+                    controlBounds["${stickId}_LU"] = Rect(sCx - labelPad, sCy - sLabelOff - labelPad, sCx + labelPad, sCy - sLabelOff + labelPad)
+                    controlBounds["${stickId}_LD"] = Rect(sCx - labelPad, sCy + sLabelOff - labelPad, sCx + labelPad, sCy + sLabelOff + labelPad)
+                    controlBounds["${stickId}_LL"] = Rect(sCx - sLabelOff * 1.5f - labelPad, sCy - labelPad, sCx - sLabelOff * 1.5f + labelPad, sCy + labelPad)
+                    controlBounds["${stickId}_LR"] = Rect(sCx + sLabelOff * 1.5f - labelPad, sCy - labelPad, sCx + sLabelOff * 1.5f + labelPad, sCy + labelPad)
+                }
                 // D-pad
                 growBounds("DUp", dpadCx, dpadCy - dLabelOff)
                 growBounds("DDown", dpadCx, dpadCy + dLabelOff)
@@ -818,6 +873,9 @@ fun ControllerConfigPage(
                 // Center buttons
                 growBounds("Select", selX, centerY + centerBtnR + scale * 0.02f)
                 growBounds("Start", staX, centerY + centerBtnR + scale * 0.02f)
+                // L3 / R3
+                growBounds("L3", l3Cx, l3Cy + btnR + scale * 0.02f)
+                growBounds("R3", r3Cx, r3Cy - btnR - scale * 0.02f)
         }
     }
 
@@ -978,7 +1036,7 @@ fun ControllerConfigPage(
     // ── Dialogs ──
 
     val assignedButtonFuncs = bindings.entries
-        .filter { it.key in BUTTON_CONTROLS }
+        .filter { it.key in BUTTON_CONTROLS || it.key in DPAD_CONTROLS }
         .map { it.value }.toSet() +
         bindings.entries.filter { it.key in AXIS_CONTROLS }
             .flatMap { AXIS_COVERS_BUTTONS[it.value].orEmpty() }
@@ -1106,41 +1164,44 @@ private fun ButtonFunctionPickerDialog(
         onDismissRequest = onDismiss,
         title = { Text("Assign: $controlLabel") },
         text = {
-            LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
-                item {
+            val btnScrollState = rememberScrollState()
+            Box(modifier = Modifier.heightIn(max = 400.dp)) {
+                Column(modifier = Modifier.fillMaxWidth().verticalScroll(btnScrollState)) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onSelect(null) }
-                            .padding(vertical = 2.dp, horizontal = 4.dp),
+                            .clickable { onSelect(null) },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        RadioButton(selected = currentFunc == null, onClick = { onSelect(null) })
-                        Spacer(Modifier.width(8.dp))
-                        Text("None", color = Color.Gray)
+                        RadioButton(selected = currentFunc == null, onClick = { onSelect(null) },
+                            modifier = Modifier.size(PICKER_RADIO_SIZE))
+                        Spacer(Modifier.width(PICKER_RADIO_GAP))
+                        Text("None", color = Color.Gray, fontSize = PICKER_FONT_SIZE)
+                    }
+                    for (func in BUTTON_FUNCTIONS) {
+                        val isAssigned = func.label in assignedFunctions && func.label != currentFunc
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onSelect(func.label) },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = currentFunc == func.label,
+                                onClick = { onSelect(func.label) },
+                                modifier = Modifier.size(PICKER_RADIO_SIZE)
+                            )
+                            Spacer(Modifier.width(PICKER_RADIO_GAP))
+                            Text(
+                                func.label,
+                                fontSize = PICKER_FONT_SIZE,
+                                color = if (!isAssigned && func.label != currentFunc)
+                                    Color(0xFFEF5350) else Color.Unspecified
+                            )
+                        }
                     }
                 }
-                items(BUTTON_FUNCTIONS) { func ->
-                    val isAssigned = func.label in assignedFunctions && func.label != currentFunc
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onSelect(func.label) }
-                            .padding(vertical = 2.dp, horizontal = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = currentFunc == func.label,
-                            onClick = { onSelect(func.label) }
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            func.label,
-                            color = if (!isAssigned && func.label != currentFunc)
-                                Color(0xFFEF5350) else Color.Unspecified
-                        )
-                    }
-                }
+                ScrollArrows(btnScrollState)
             }
         },
         confirmButton = {},
@@ -1170,38 +1231,42 @@ private fun StickPickerDialog(
         onDismissRequest = onDismiss,
         title = { Text(stickLabel) },
         text = {
-            Column(modifier = Modifier.heightIn(max = 450.dp).verticalScroll(rememberScrollState())) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "X Axis (left/right)",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        modifier = Modifier.weight(1f)
+            val stickScrollState = rememberScrollState()
+            Box(modifier = Modifier.heightIn(max = 450.dp)) {
+                Column(modifier = Modifier.fillMaxWidth().verticalScroll(stickScrollState)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "X Axis (left/right)",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Checkbox(checked = invertX, onCheckedChange = { invertX = it })
+                        Text("Invert", fontSize = 12.sp)
+                    }
+                    AxisFunctionRadioGroup(
+                        selected = selectedX,
+                        assignedFunctions = assignedFunctions,
+                        onSelect = { selectedX = it }
                     )
-                    Checkbox(checked = invertX, onCheckedChange = { invertX = it })
-                    Text("Invert", fontSize = 12.sp)
-                }
-                AxisFunctionRadioGroup(
-                    selected = selectedX,
-                    assignedFunctions = assignedFunctions,
-                    onSelect = { selectedX = it }
-                )
-                Spacer(Modifier.height(12.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "Y Axis (up/down)",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        modifier = Modifier.weight(1f)
+                    Spacer(Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Y Axis (up/down)",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Checkbox(checked = invertY, onCheckedChange = { invertY = it })
+                        Text("Invert", fontSize = 12.sp)
+                    }
+                    AxisFunctionRadioGroup(
+                        selected = selectedY,
+                        assignedFunctions = assignedFunctions,
+                        onSelect = { selectedY = it }
                     )
-                    Checkbox(checked = invertY, onCheckedChange = { invertY = it })
-                    Text("Invert", fontSize = 12.sp)
                 }
-                AxisFunctionRadioGroup(
-                    selected = selectedY,
-                    assignedFunctions = assignedFunctions,
-                    onSelect = { selectedY = it }
-                )
+                ScrollArrows(stickScrollState)
             }
         },
         confirmButton = {
@@ -1222,31 +1287,31 @@ private fun AxisFunctionRadioGroup(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onSelect(null) }
-            .padding(vertical = 1.dp),
+            .clickable { onSelect(null) },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        RadioButton(selected = selected == null, onClick = { onSelect(null) })
-        Spacer(Modifier.width(4.dp))
-        Text("None", color = Color.Gray, fontSize = 13.sp)
+        RadioButton(selected = selected == null, onClick = { onSelect(null) },
+            modifier = Modifier.size(PICKER_RADIO_SIZE))
+        Spacer(Modifier.width(PICKER_RADIO_GAP))
+        Text("None", color = Color.Gray, fontSize = PICKER_FONT_SIZE)
     }
     for (func in AXIS_FUNCTIONS) {
         val isAssigned = func.label in assignedFunctions && func.label != selected
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onSelect(func.label) }
-                .padding(vertical = 1.dp),
+                .clickable { onSelect(func.label) },
             verticalAlignment = Alignment.CenterVertically
         ) {
             RadioButton(
                 selected = selected == func.label,
-                onClick = { onSelect(func.label) }
+                onClick = { onSelect(func.label) },
+                modifier = Modifier.size(PICKER_RADIO_SIZE)
             )
-            Spacer(Modifier.width(4.dp))
+            Spacer(Modifier.width(PICKER_RADIO_GAP))
             Text(
                 func.label,
-                fontSize = 13.sp,
+                fontSize = PICKER_FONT_SIZE,
                 color = if (!isAssigned && func.label != selected)
                     Color(0xFFEF5350) else Color.Unspecified
             )

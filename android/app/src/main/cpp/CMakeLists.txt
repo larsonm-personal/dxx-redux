@@ -48,12 +48,29 @@ endif()
 
 # Inject our bootstrap entry into SDL_audio.c's bootstrap[] array
 file(READ "${sdl12_SOURCE_DIR}/src/audio/SDL_audio.c" _audio_c)
+set(_audio_c_dirty FALSE)
+
 string(FIND "${_audio_c}" "SDL_AUDIO_DRIVER_ANDROID" _android_found2)
 if(_android_found2 EQUAL -1)
     string(REPLACE
         "#if SDL_AUDIO_DRIVER_DUMMY\n\t&DUMMYAUD_bootstrap,"
         "#if SDL_AUDIO_DRIVER_ANDROID\n\t&ANDROIDAUD_bootstrap,\n#endif\n#if SDL_AUDIO_DRIVER_DUMMY\n\t&DUMMYAUD_bootstrap,"
         _audio_c "${_audio_c}")
+    set(_audio_c_dirty TRUE)
+endif()
+
+# Park SDL_RunAudio's thread on Android — audio is driven entirely by
+# the OpenSL ES buffer-queue callback in SDL_androidaudio.c.
+string(FIND "${_audio_c}" "Audio driven by OpenSL ES callback" _park_found)
+if(_park_found EQUAL -1)
+    string(REPLACE
+        "\t/* Loop, filling the audio buffers */\n\twhile ( audio->enabled ) {"
+        "\t/* Loop, filling the audio buffers */\n#ifdef __ANDROID__\n\t/* Audio driven by OpenSL ES callback — park this thread */\n\twhile ( audio->enabled ) { SDL_Delay(1000); }\n\treturn(0);\n#endif\n\twhile ( audio->enabled ) {"
+        _audio_c "${_audio_c}")
+    set(_audio_c_dirty TRUE)
+endif()
+
+if(_audio_c_dirty)
     file(WRITE "${sdl12_SOURCE_DIR}/src/audio/SDL_audio.c" "${_audio_c}")
 endif()
 

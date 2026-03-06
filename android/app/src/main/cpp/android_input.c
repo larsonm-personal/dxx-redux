@@ -38,6 +38,7 @@ volatile fix g_automap_thrust   = 0;
 volatile fix g_automap_bank     = 0;
 volatile fix g_automap_vertical = 0;
 volatile fix g_automap_sideways = 0;
+volatile int g_automap_center   = 0;
 
 /* ── Touch → Mouse ──────────────────────────────────────────
  *
@@ -529,6 +530,57 @@ Java_com_dxxredux_app_MainActivity_nativeAutomapInput(JNIEnv *env, jobject thiz,
     g_automap_bank     += (fix)(bank     * 80000.0f);
     g_automap_vertical += (fix)(vertical * 80000.0f);
     g_automap_sideways += (fix)(sideways * 80000.0f);
+}
+
+/*
+ * nativeAutomapCenter() — request automap re-center on player position
+ */
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeAutomapCenter(JNIEnv *env, jobject thiz)
+{
+    g_automap_center = 1;
+}
+
+/*
+ * nativeAutomapSelectMarker(idx) — inject key 1-9 to highlight a marker
+ */
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeAutomapSelectMarker(JNIEnv *env, jobject thiz,
+                                                             jint idx)
+{
+    if (idx < 0 || idx > 9) return;
+    SDLKey sym = (idx == 9) ? SDLK_0 : (SDLKey)(SDLK_1 + idx);
+
+    SDL_Event ev;
+    memset(&ev, 0, sizeof(ev));
+    ev.type = SDL_KEYDOWN;
+    ev.key.state = SDL_PRESSED;
+    ev.key.keysym.sym = sym;
+    ev.key.keysym.mod = KMOD_NONE;
+    ev.key.keysym.unicode = 0;
+    SDL_PushEvent(&ev);
+
+    memset(&ev, 0, sizeof(ev));
+    ev.type = SDL_KEYUP;
+    ev.key.state = SDL_RELEASED;
+    ev.key.keysym.sym = sym;
+    ev.key.keysym.mod = KMOD_NONE;
+    SDL_PushEvent(&ev);
+}
+
+/*
+ * nativeGetMarkerCount() — returns number of placed markers (0-9 in single player)
+ */
+extern int MarkerObject[];
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetMarkerCount(JNIEnv *env, jobject thiz)
+{
+    int count = 0;
+    for (int i = 0; i < 10; i++) {
+        if (MarkerObject[i] != -1) count++;
+        else break;  /* markers are placed sequentially */
+    }
+    return count;
 }
 
 /* ── C→Java keyboard callbacks ──────────────────────────────

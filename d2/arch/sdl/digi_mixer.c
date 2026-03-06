@@ -43,8 +43,9 @@
 
 #define MAX_SOUND_SLOTS 64
 #ifdef ANDROID
-#define SOUND_BUFFER_SIZE 2048 // larger buffer absorbs Android scheduling jitter
-#define DIGI_MIXER_OUTPUT_RATE SAMPLE_RATE_48K // 48 kHz = native rate on most Android devices
+#define SOUND_BUFFER_SIZE 4096 // larger buffer absorbs Android scheduling jitter
+extern int g_android_native_sample_rate;  /* set from JNI before audio init */
+#define DIGI_MIXER_OUTPUT_RATE (g_android_native_sample_rate > 0 ? g_android_native_sample_rate : SAMPLE_RATE_48K)
 #else
 #define SOUND_BUFFER_SIZE 512 // sample frames, so 44100/512 = 86 updates/second
 #define DIGI_MIXER_OUTPUT_RATE SAMPLE_RATE_44K
@@ -97,8 +98,14 @@ int digi_mixer_init()
 	{
 		int actual_freq; Uint16 actual_fmt; int actual_ch;
 		Mix_QuerySpec(&actual_freq, &actual_fmt, &actual_ch);
+#ifdef ANDROID
+		MIXLOG("Mix_OpenAudio ok: requested=%d actual=%d fmt=0x%04X ch=%d buf=%d (native_rate=%d)",
+			DIGI_MIXER_OUTPUT_RATE, actual_freq, actual_fmt, actual_ch, SOUND_BUFFER_SIZE,
+			g_android_native_sample_rate);
+#else
 		MIXLOG("Mix_OpenAudio ok: requested=%d actual=%d fmt=0x%04X ch=%d buf=%d",
 			DIGI_MIXER_OUTPUT_RATE, actual_freq, actual_fmt, actual_ch, SOUND_BUFFER_SIZE);
+#endif
 	}
 
 	digi_max_channels = Mix_AllocateChannels(digi_max_channels);

@@ -71,6 +71,8 @@ static int  s_play_last       = 0;
 static int  s_read_sector     = 0;   /* next sector to read */
 static int  s_track_end       = 0;   /* sector past end of current track */
 static float s_volume         = 1.0f;
+static int  s_rb_underruns    = 0;   /* callback found buffer empty */
+static int  s_rb_cb_count     = 0;   /* total callbacks */
 
 static void (*s_finished_hook)(void) = NULL;
 static volatile int s_song_finished  = 0;
@@ -403,15 +405,23 @@ static void rba_music_callback(void *udata, Uint8 *stream, int len)
 	int got;
 	(void)udata;
 
+	s_rb_cb_count++;
+
 	if (!s_playing || s_paused) {
 		memset(stream, 0, len);
 		return;
 	}
 
 	got = rb_read(out, needed);
-	if (got < needed)
+	if (got < needed) {
 		memset(out + got, 0, (needed - got) * (int)sizeof(short));
-
+		if (s_playing) {
+			s_rb_underruns++;
+			if (s_rb_underruns <= 10 || (s_rb_underruns % 50) == 0)
+				RBA_LOG("CD underrun #%d: got=%d needed=%d rb_fill=%u",
+					s_rb_underruns, got, needed, rb_available());
+		}
+	}
 	/* Volume scaling */
 	if (s_volume < 0.99f) {
 		int i;
@@ -483,6 +493,8 @@ int RBAPlayTrack(int track)
 	s_resample_frac = 0.0;
 	s_song_finished = 0;
 	s_paused        = 0;
+	s_rb_underruns  = 0;
+	s_rb_cb_count   = 0;
 	s_playing       = 1;
 
 	render_thread_start();
@@ -513,6 +525,8 @@ int RBAPlayTracks(int first, int last, void (*hook_finished)(void))
 	s_resample_frac = 0.0;
 	s_song_finished = 0;
 	s_paused        = 0;
+	s_rb_underruns  = 0;
+	s_rb_cb_count   = 0;
 	s_playing       = 1;
 
 	render_thread_start();

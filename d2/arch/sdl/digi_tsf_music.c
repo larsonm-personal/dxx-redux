@@ -376,7 +376,12 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 	/* Zero-fill if ring buffer had less data than needed (underrun) */
 	if (got < needed) {
 		memset(out + got, 0, (needed - got) * (int)sizeof(short));
-		if (g_playing) g_rb_underruns++;
+		if (g_playing) {
+			g_rb_underruns++;
+			if (g_rb_underruns <= 10 || (g_rb_underruns % 50) == 0)
+				TSFMUSIC_LOG("MIDI underrun #%d: got=%d needed=%d rb_fill=%u",
+					g_rb_underruns, got, needed, rb_available());
+		}
 	}
 
 	/* Apply volume scaling (cheap — just multiply) */

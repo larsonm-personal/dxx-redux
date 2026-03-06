@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.PointF
+import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
@@ -85,14 +86,32 @@ class TouchOverlayView @JvmOverloads constructor(
     // ── Automap gesture state (pointers not on stick/buttons) ──
     /** Set to true by the activity when the automap is displayed. */
     var automapActive = false
+        set(value) {
+            if (field != value) {
+                field = value
+                invalidate()
+            }
+        }
     private val automapPointers = mutableMapOf<Int, PointF>()
     private var automapPinchDist = 0f
     private var automapPinchAngle = 0f
+    private var automapPinchMidX = 0f
+    private var automapPinchMidY = 0f
 
-    // Double-tap → translate mode
-    private var automapLastTapTime = 0L
-    private var automapLastTapPos = PointF()
-    private var automapTranslateMode = false
+    /** Called when the automap center button is tapped. */
+    var automapCenterCallback: (() -> Unit)? = null
+    /** Called with marker index (0-based) when a marker button is tapped. */
+    var automapMarkerCallback: ((Int) -> Unit)? = null
+    /** Called to query how many markers currently exist. */
+    var markerCountProvider: (() -> Int)? = null
+
+    // ── Automap overlay button geometry (computed in onSizeChanged) ──
+    private var automapBtnSize = 0f    // button width/height
+    private var automapBtnY = 0f       // top of buttons
+    private var automapBtnSpacing = 0f // gap between buttons
+    private val automapBtnRects = mutableListOf<RectF>() // [0]=center, [1..n]=markers
+    private var automapBtnPressed = -1 // index of currently pressed button, -1=none
+    private var automapBtnPointerId = -1
 
     // ── Paint objects ───────────────────────────────────────
     private val paintRing = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -119,6 +138,24 @@ class TouchOverlayView @JvmOverloads constructor(
     private val paintBtnLabel = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
         color = 0xAAFFFFFF.toInt()
+        textAlign = Paint.Align.CENTER
+    }
+    private val paintAutomapHelpText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = 0xAAFFFFFF.toInt()
+        textAlign = Paint.Align.CENTER
+    }
+    private val paintAutomapBtnBg = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = 0x44FFFFFF
+    }
+    private val paintAutomapBtnBgPressed = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = 0x88FFFFFF.toInt()
+    }
+    private val paintAutomapBtnText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = 0xDDFFFFFF.toInt()
         textAlign = Paint.Align.CENTER
     }
 
@@ -152,11 +189,35 @@ class TouchOverlayView @JvmOverloads constructor(
         mapBtnRadius = base * 0.035f
         mapBtnCenterX = w - w * 0.05f - mapBtnRadius
         mapBtnCenterY = base * 0.05f + mapBtnRadius
+
+        // ── Automap overlay geometry ──
+        automapBtnSize = base * 0.09f
+        automapBtnSpacing = base * 0.02f
+        automapBtnY = h * 0.03f
+        paintAutomapBtnText.textSize = automapBtnSize * 0.28f
+        paintAutomapHelpText.textSize = base * 0.04f
+        recomputeAutomapBtnRects()
+    }
+
+    /** Recompute automap button rectangles based on current marker count. */
+    private fun recomputeAutomapBtnRects() {
+        val count = 1 + (markerCountProvider?.invoke() ?: 0) // center + markers
+        automapBtnRects.clear()
+        var x = automapBtnSpacing
+        for (i in 0 until count) {
+            automapBtnRects.add(RectF(x, automapBtnY, x + automapBtnSize, automapBtnY + automapBtnSize))
+            x += automapBtnSize + automapBtnSpacing
+        }
     }
 
     // ── Drawing ─────────────────────────────────────────────
     override fun onDraw(canvas: Canvas) {
         if (!isActive) return
+
+        if (automapActive) {
+            drawAutomapOverlay(canvas)
+            return
+        }
 
         // ── Analog stick ────────────────────────────────────
         canvas.drawCircle(stickCenterX, stickCenterY, stickRadius, paintFill)
@@ -188,12 +249,50 @@ class TouchOverlayView @JvmOverloads constructor(
         paintBtnLabel.textSize = savedSize
     }
 
+    private fun drawAutomapOverlay(canvas: Canvas) {
+        recomputeAutomapBtnRects()
+        val cornerR = automapBtnSize * 0.15f
+
+        for ((i, rect) in automapBtnRects.withIndex()) {
+            val bg = if (i == automapBtnPressed) paintAutomapBtnBgPressed else paintAutomapBtnBg
+            canvas.drawRoundRect(rect, cornerR, cornerR, bg)
+            canvas.drawRoundRect(rect, cornerR, cornerR, paintRing)
+
+            val cx = rect.centerX()
+            val cy = rect.centerY()
+            if (i == 0) {
+                canvas.drawText("center", cx, cy + paintAutomapBtnText.textSize * 0.35f, paintAutomapBtnText)
+            } else {
+                canvas.drawText("marker $i", cx, cy + paintAutomapBtnText.textSize * 0.35f, paintAutomapBtnText)
+            }
+        }
+
+        // MAP button (top-right, same position as normal overlay)
+        val fillMap = if (mapBtnPointerId >= 0) paintBtnPressed else paintBtnIdle
+        canvas.drawCircle(mapBtnCenterX, mapBtnCenterY, mapBtnRadius, fillMap)
+        canvas.drawCircle(mapBtnCenterX, mapBtnCenterY, mapBtnRadius, paintRing)
+        val savedSize = paintBtnLabel.textSize
+        paintBtnLabel.textSize = mapBtnRadius * 0.65f
+        canvas.drawText("MAP", mapBtnCenterX, mapBtnCenterY + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+        paintBtnLabel.textSize = savedSize
+
+        // Help text at bottom center
+        val helpY = height - height * 0.04f
+        canvas.drawText(
+            "Touch to spin  \u2022  Pinch to zoom  \u2022  Two-finger drag to slide",
+            width / 2f, helpY, paintAutomapHelpText
+        )
+    }
+
     // ── Touch handling ──────────────────────────────────────
     // When the overlay is active we consume ALL touches so that nothing
     // leaks through to the game SurfaceView (where it would be
     // interpreted as a mouse click → fire primary).
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (!isActive) return false
+
+        // When automap is active, use dedicated automap touch handler
+        if (automapActive) return handleAutomapOverlayTouch(event)
 
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
@@ -221,26 +320,6 @@ class TouchOverlayView @JvmOverloads constructor(
                         mapBtnPointerId = pid
                         invalidate()
                     }
-                    else -> {
-                        // Touch not on any control — track for automap gestures
-                        if (automapActive) {
-                            automapPointers[pid] = PointF(px, py)
-                            // Check for double-tap on first automap finger
-                            if (automapPointers.size == 1) {
-                                val now = android.os.SystemClock.uptimeMillis()
-                                val dt = now - automapLastTapTime
-                                val dist = hypot(px - automapLastTapPos.x, py - automapLastTapPos.y)
-                                if (dt < 300L && dist < 80f) {
-                                    automapTranslateMode = true
-                                }
-                            }
-                            if (automapPointers.size == 2) {
-                                automapPinchDist = automapFingerDist(event)
-                                automapPinchAngle = automapFingerAngle(event)
-                                automapTranslateMode = false
-                            }
-                        }
-                    }
                 }
             }
             MotionEvent.ACTION_MOVE -> {
@@ -251,20 +330,12 @@ class TouchOverlayView @JvmOverloads constructor(
                         updateStickFromTouch(event.getX(idx), event.getY(idx))
                     }
                 }
-                // Update automap gestures for unmatched pointers
-                if (automapActive && automapPointers.isNotEmpty()) {
-                    handleAutomapMove(event)
-                }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 if (stickPointerId >= 0) resetStick()
                 releaseButton0()
                 releaseButton1()
                 releaseMapButton(event.actionMasked == MotionEvent.ACTION_UP)
-                automapPointers.clear()
-                automapPinchDist = 0f
-                automapPinchAngle = 0f
-                automapTranslateMode = false
             }
             MotionEvent.ACTION_POINTER_UP -> {
                 val idx = event.actionIndex
@@ -274,24 +345,100 @@ class TouchOverlayView @JvmOverloads constructor(
                     btn0PointerId  -> releaseButton0()
                     btn1PointerId  -> releaseButton1()
                     mapBtnPointerId -> releaseMapButton(true)
-                    else -> {
-                        // Automap pointer lifted
-                        // Record tap time for double-tap detection if single automap finger lifts
-                        if (automapPointers.size == 1 && !automapTranslateMode) {
-                            automapLastTapTime = android.os.SystemClock.uptimeMillis()
-                            val i = event.findPointerIndex(pid)
-                            if (i >= 0) automapLastTapPos.set(event.getX(i), event.getY(i))
+                }
+            }
+        }
+        return true   // always consume when active
+    }
+
+    /** Handle touches in automap overlay mode: buttons at top + gesture passthrough. */
+    private fun handleAutomapOverlayTouch(event: MotionEvent): Boolean {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                val idx = event.actionIndex
+                val px = event.getX(idx)
+                val py = event.getY(idx)
+                val pid = event.getPointerId(idx)
+
+                // Check MAP button (top-right)
+                if (mapBtnPointerId < 0) {
+                    val dx = px - mapBtnCenterX; val dy = py - mapBtnCenterY
+                    if (dx * dx + dy * dy <= mapBtnRadius * mapBtnRadius * 4) {
+                        mapBtnPointerId = pid
+                        invalidate()
+                        return true
+                    }
+                }
+
+                // Check automap buttons
+                if (automapBtnPointerId < 0) {
+                    for ((i, rect) in automapBtnRects.withIndex()) {
+                        if (rect.contains(px, py)) {
+                            automapBtnPointerId = pid
+                            automapBtnPressed = i
+                            invalidate()
+                            return true
                         }
-                        automapPointers.remove(pid)
-                        if (automapPointers.size >= 2) {
-                            automapPinchDist = automapFingerDist(event)
-                            automapPinchAngle = automapFingerAngle(event)
-                        } else {
-                            automapPinchDist = 0f
-                            automapPinchAngle = 0f
-                        }
-                        if (automapPointers.isEmpty()) automapTranslateMode = false
-                        // Refresh remaining pointer positions to avoid jump
+                    }
+                }
+
+                // Not on a button → track as automap gesture
+                automapPointers[pid] = PointF(px, py)
+                if (automapPointers.size == 2) {
+                    automapPinchDist = automapFingerDist(event)
+                    automapPinchAngle = automapFingerAngle(event)
+                    val mid = automapFingerMidpoint(event)
+                    automapPinchMidX = mid.x
+                    automapPinchMidY = mid.y
+                }
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                if (automapPointers.isNotEmpty()) {
+                    handleAutomapMove(event)
+                }
+            }
+
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                // Fire MAP button if it was pressed
+                releaseMapButton(event.actionMasked == MotionEvent.ACTION_UP)
+                // Fire automap button if one was pressed
+                if (automapBtnPressed >= 0 && event.actionMasked == MotionEvent.ACTION_UP) {
+                    fireAutomapButton(automapBtnPressed)
+                }
+                automapBtnPressed = -1
+                automapBtnPointerId = -1
+                automapPointers.clear()
+                automapPinchDist = 0f
+                automapPinchAngle = 0f
+                automapPinchMidX = 0f
+                automapPinchMidY = 0f
+                invalidate()
+            }
+
+            MotionEvent.ACTION_POINTER_UP -> {
+                val idx = event.actionIndex
+                val pid = event.getPointerId(idx)
+                if (pid == mapBtnPointerId) {
+                    releaseMapButton(true)
+                } else if (pid == automapBtnPointerId) {
+                    fireAutomapButton(automapBtnPressed)
+                    automapBtnPressed = -1
+                    automapBtnPointerId = -1
+                    invalidate()
+                } else {
+                    automapPointers.remove(pid)
+                    if (automapPointers.size >= 2) {
+                        automapPinchDist = automapFingerDist(event)
+                        automapPinchAngle = automapFingerAngle(event)
+                        val mid = automapFingerMidpoint(event)
+                        automapPinchMidX = mid.x
+                        automapPinchMidY = mid.y
+                    } else {
+                        automapPinchDist = 0f
+                        automapPinchAngle = 0f
+                        automapPinchMidX = 0f
+                        automapPinchMidY = 0f
                         for ((id, pt) in automapPointers) {
                             val i = event.findPointerIndex(id)
                             if (i >= 0) pt.set(event.getX(i), event.getY(i))
@@ -300,7 +447,15 @@ class TouchOverlayView @JvmOverloads constructor(
                 }
             }
         }
-        return true   // always consume when active
+        return true
+    }
+
+    private fun fireAutomapButton(index: Int) {
+        if (index == 0) {
+            automapCenterCallback?.invoke()
+        } else {
+            automapMarkerCallback?.invoke(index - 1)
+        }
     }
 
     private fun isInsideStick(px: Float, py: Float): Boolean {
@@ -388,43 +543,39 @@ class TouchOverlayView @JvmOverloads constructor(
                 val dy = event.getY(idx) - prev.y
                 prev.set(event.getX(idx), event.getY(idx))
                 if (dx != 0f || dy != 0f) {
-                    if (automapTranslateMode) {
-                        // Double-tap drag → translate x/y
-                        val sideways = dx / w
-                        val vertical = -dy / h
-                        automapInputCallback?.invoke(0f, 0f, 0f, 0f, vertical, sideways)
-                    } else {
-                        // Single finger → pan / tilt
-                        automapInputCallback?.invoke(dx / w, dy / h, 0f, 0f, 0f, 0f)
-                    }
+                    // Single finger → pan / tilt
+                    automapInputCallback?.invoke(dx / w, dy / h, 0f, 0f, 0f, 0f)
                 }
             }
         } else if (automapPointers.size >= 2) {
-            // Two+ fingers → pinch = thrust + rotate = bank
-            // Update all automap pointer positions first
+            // Two+ fingers → pinch = zoom + rotate + slide
             for ((pid, pt) in automapPointers) {
                 val idx = event.findPointerIndex(pid)
                 if (idx >= 0) pt.set(event.getX(idx), event.getY(idx))
             }
             val dist = automapFingerDist(event)
             val angle = automapFingerAngle(event)
+            val mid = automapFingerMidpoint(event)
             if (automapPinchDist > 0f) {
                 val delta = dist - automapPinchDist
-                // 20× multiplier for usable zoom rate on touch screens
                 val thrust = delta / w * 20f
 
-                // Rotation: delta angle (radians) → bank
                 var dAngle = angle - automapPinchAngle
                 while (dAngle > Math.PI.toFloat())  dAngle -= (2 * Math.PI).toFloat()
                 while (dAngle < -Math.PI.toFloat()) dAngle += (2 * Math.PI).toFloat()
                 val bank = dAngle / Math.PI.toFloat()
 
-                if (thrust != 0f || bank != 0f) {
-                    automapInputCallback?.invoke(0f, 0f, thrust, bank, 0f, 0f)
+                val sideways = (mid.x - automapPinchMidX) / w
+                val vertical = -(mid.y - automapPinchMidY) / h
+
+                if (thrust != 0f || bank != 0f || sideways != 0f || vertical != 0f) {
+                    automapInputCallback?.invoke(0f, 0f, thrust, bank, vertical, sideways)
                 }
             }
             automapPinchDist = dist
             automapPinchAngle = angle
+            automapPinchMidX = mid.x
+            automapPinchMidY = mid.y
         }
     }
 
@@ -450,5 +601,18 @@ class TouchOverlayView @JvmOverloads constructor(
         val dx = event.getX(i1) - event.getX(i0)
         val dy = event.getY(i1) - event.getY(i0)
         return atan2(dy, dx)
+    }
+
+    /** Midpoint between the first two automap pointers. */
+    private fun automapFingerMidpoint(event: MotionEvent): PointF {
+        val ids = automapPointers.keys.toList()
+        if (ids.size < 2) return PointF(0f, 0f)
+        val i0 = event.findPointerIndex(ids[0])
+        val i1 = event.findPointerIndex(ids[1])
+        if (i0 < 0 || i1 < 0) return PointF(0f, 0f)
+        return PointF(
+            (event.getX(i0) + event.getX(i1)) / 2f,
+            (event.getY(i0) + event.getY(i1)) / 2f
+        )
     }
 }
