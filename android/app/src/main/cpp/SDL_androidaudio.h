@@ -1,7 +1,5 @@
 /*
  * SDL_androidaudio.h — Private data for the Android OpenSL ES audio driver.
- *
- * SDL 1.2 driver interface: see SDL_sysaudio.h for the function-pointer table.
  */
 #ifndef _SDL_androidaudio_h
 #define _SDL_androidaudio_h

@@ -43,11 +43,11 @@
 
 #define MAX_SOUND_SLOTS 64
 #ifdef ANDROID
-#define SOUND_BUFFER_SIZE 4096 // larger buffer absorbs Android scheduling jitter
-extern int g_android_native_sample_rate;  /* set from JNI before audio init */
+#define SOUND_BUFFER_SIZE 4096
+extern int g_android_native_sample_rate;
 #define DIGI_MIXER_OUTPUT_RATE (g_android_native_sample_rate > 0 ? g_android_native_sample_rate : SAMPLE_RATE_48K)
 #else
-#define SOUND_BUFFER_SIZE 512 // sample frames, so 44100/512 = 86 updates/second
+#define SOUND_BUFFER_SIZE 512
 #define DIGI_MIXER_OUTPUT_RATE SAMPLE_RATE_44K
 #endif
 #define MIN_VOLUME 10

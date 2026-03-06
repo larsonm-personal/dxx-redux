@@ -57,8 +57,6 @@ extern "C" {
     void tsf_music_set_max_voices(int n);
     int  androidaud_get_play_count(void);
     int  androidaud_get_enqueue_fail(void);
-    int  androidaud_get_sem_zero_count(void);
-    long androidaud_get_play_max_wait_ns(void);
     int  androidaud_get_audio_freq(void);
     int  androidaud_get_audio_buf_frames(void);
 }
@@ -315,8 +313,6 @@ extern "C" char *game_introspect_get_state(void) {
             {"tsf_gain_db", tsf_music_get_gain_db()},
             {"osl_play_count", androidaud_get_play_count()},
             {"osl_enqueue_fail", androidaud_get_enqueue_fail()},
-            {"osl_sem_waits", androidaud_get_sem_zero_count()},
-            {"osl_max_wait_us", androidaud_get_play_max_wait_ns() / 1000},
             {"osl_freq", androidaud_get_audio_freq()},
             {"osl_buf_frames", androidaud_get_audio_buf_frames()}
         };

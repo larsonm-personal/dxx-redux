@@ -1,17 +1,10 @@
 /*
- * SDL_androidaudio.c — SDL 1.2 audio driver for Android using OpenSL ES.
+ * SDL_androidaudio.c — Callback-driven OpenSL ES audio driver for SDL 1.2.
  *
- * The game mixes 8-bit unsigned PCM (AUDIO_U8, 22050 Hz, stereo, 1024 frames).
- * This driver converts U8→S16 and feeds double-buffered output to OpenSL ES.
- *
- * Follows the exact SDL 1.2 audio driver convention used by dummy, dsp, alsa etc:
- *   Available()  → can this driver work?
- *   CreateDevice()→ allocate SDL_AudioDevice + wire function pointers
- *   OpenAudio()  → init hardware, allocate buffers
- *   WaitAudio()  → block until device ready for more data
- *   PlayAudio()  → submit mixed buffer to device
- *   GetAudioBuf()→ return pointer to mix buffer
- *   CloseAudio() → shutdown, free resources
+ * SDL 1.2's SDL_RunAudio thread is parked (via a patch in CMakeLists.txt).
+ * Instead, OpenSL ES drives audio via buffer-queue callbacks: each time a
+ * buffer finishes playing, bqPlayerCallback mixes new audio directly into
+ * the freed buffer via SDL_mixer's callback and re-enqueues it.
  */
 
 #include "SDL_config.h"
@@ -103,16 +96,8 @@ AudioBootStrap ANDROIDAUD_bootstrap = {
     ANDROIDAUD_Available, ANDROIDAUD_CreateDevice
 };
 
-/* ── OpenSL ES buffer-queue callback (CALLBACK-DRIVEN MODE) ── */
-/*
- * This is the heart of the audio pipeline.  OpenSL ES calls us each time
- * a buffer finishes playing.  We mix new audio directly into the freed
- * buffer via SDL_mixer's callback and immediately re-enqueue it.
- *
- * This bypasses SDL 1.2's SDL_RunAudio thread entirely (which is parked
- * via a patch to SDL_audio.c), eliminating an unnecessary thread + mutex
- * + semaphore + memcpy per audio cycle.
- */
+/* ── OpenSL ES buffer-queue callback ──────────────────────── */
+
 static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
 {
     SDL_AudioDevice *audio = (SDL_AudioDevice *)context;
@@ -160,11 +145,10 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
     LOGI("OpenAudio: freq=%d fmt=0x%04X channels=%d samples=%d",
          spec->freq, spec->format, spec->channels, spec->samples);
 
-    h->mixlen  = spec->size;      /* bytes per callback (S16 stereo) */
-    h->playlen = spec->size;       /* OpenSL ES also uses S16 — same size */
+    h->mixlen  = spec->size;
+    h->playlen = spec->size;
 
-    /* Allocate mix buffer (kept for SDL_RunAudio compatibility, not used
-     * in callback-driven mode) */
+    /* Allocate mix buffer (needed by SDL_RunAudio even though it's parked) */
     h->mixbuf = (Uint8 *)SDL_AllocAudioMem(h->mixlen);
     if (!h->mixbuf) {
         LOGE("Failed to allocate mixbuf (%u bytes)", h->mixlen);
@@ -226,8 +210,7 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
     };
     SLDataSink audioSnk = { &loc_outmix, NULL };
 
-    /* Request NONE performance mode to let Android use its optimal path.
-     * Available on API 26+ — we request but don't require it. */
+    /* Request NONE performance mode (API 26+, optional) */
     const SLInterfaceID ids[2] = { SL_IID_BUFFERQUEUE, SL_IID_ANDROIDCONFIGURATION };
     const SLboolean     req[2] = { SL_BOOLEAN_TRUE,    SL_BOOLEAN_FALSE };
 
@@ -237,9 +220,7 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
         LOGE("CreateAudioPlayer failed: %d", (int)result);
         return -1;
     }
-    /* Try to set NONE performance mode (API 26+) — lets AudioFlinger choose
-     * the best path, avoiding forced low-latency that can glitch.  Must be
-     * set before Realize(). */
+    /* Set NONE performance mode before Realize (API 26+) */
     {
         SLAndroidConfigurationItf cfg;
         if ((*h->playerObject)->GetInterface(h->playerObject,
@@ -288,7 +269,7 @@ static int ANDROIDAUD_OpenAudio(_THIS, SDL_AudioSpec *spec)
     return 0;
 }
 
-/* ── Stubs (SDL_RunAudio is parked — these are never called) ── */
+/* ── Stubs (SDL_RunAudio is parked; audio is callback-driven) ── */
 
 static void ANDROIDAUD_WaitAudio(_THIS) { }
 
@@ -340,8 +321,6 @@ static void ANDROIDAUD_CloseAudio(_THIS)
 
 int androidaud_get_play_count(void)      { return g_play_count; }
 int androidaud_get_enqueue_fail(void)    { return g_enqueue_fail; }
-int androidaud_get_sem_zero_count(void)  { return 0; /* no longer used */ }
-long androidaud_get_play_max_wait_ns(void) { return 0; /* no longer used */ }
 int androidaud_get_audio_freq(void)      { return g_audio_freq; }
 int androidaud_get_audio_buf_frames(void) { return g_audio_buf_frames; }
 
