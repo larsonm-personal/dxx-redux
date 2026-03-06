@@ -1,16 +1,23 @@
 package com.dxxredux.app
 
 import android.content.Context
+import android.content.res.Configuration
+import android.view.InputDevice
 import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -24,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -404,64 +412,48 @@ fun ControllerConfigPage(
     var showStickPicker by remember { mutableStateOf(false) }
     var showDpadPicker by remember { mutableStateOf(false) }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Column(
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    // ── Unassigned functions (computed once, used in both layouts) ──
+    val assignedBtnFuncs = bindings.entries
+        .filter { it.key in BUTTON_CONTROLS }
+        .map { it.value }.toSet()
+    val assignedAxisFuncs = bindings.entries
+        .filter { it.key in AXIS_CONTROLS }
+        .map { it.value }.toSet()
+    val assignedDpadFuncs = bindings.entries
+        .filter { it.key in DPAD_CONTROLS }
+        .map { it.value }.toSet()
+    val coveredByAxis = assignedAxisFuncs.flatMap { AXIS_COVERS_BUTTONS[it].orEmpty() }.toSet()
+    val unassignedBtns = BUTTON_FUNCTIONS.filter { it.label !in assignedBtnFuncs && it.label !in coveredByAxis }.map { it.label }
+    val unassignedAxes = AXIS_FUNCTIONS.filter { it.label !in assignedAxisFuncs }.map { it.label }
+    val allUnassigned = (unassignedBtns + unassignedAxes).distinct()
+
+    // ── Reusable composable blocks ──
+
+    val controllerCanvas: @Composable (Modifier) -> Unit = { sizeModifier ->
+        val textMeasurer = rememberTextMeasurer()
+        Canvas(
             modifier = Modifier
-                .fillMaxSize()
-                .safeDrawingPadding()
-                .padding(12.dp)
-        ) {
-            // ── Header ──
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextButton(onClick = onBack) {
-                    Text("Cancel", fontSize = 14.sp)
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Controller Layout",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = "Tap any control to assign a function",
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // ── Controller graphic with touch detection ──
-            val textMeasurer = rememberTextMeasurer()
-
-            Canvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .background(Color(0xFF121212))
-                    .pointerInput(Unit) {
-                        detectTapGestures { offset ->
-                            for ((id, rect) in controlBounds) {
-                                if (rect.contains(offset)) {
-                                    selectedControl = id
-                                    when {
-                                        id == "LS" || id == "RS" -> showStickPicker = true
-                                        id in DPAD_CONTROLS -> showDpadPicker = true
-                                        else -> showButtonPicker = true
-                                    }
-                                    break
+                .fillMaxWidth()
+                .then(sizeModifier)
+                .background(Color(0xFF121212))
+                .pointerInput(Unit) {
+                    detectTapGestures { offset ->
+                        for ((id, rect) in controlBounds) {
+                            if (rect.contains(offset)) {
+                                selectedControl = id
+                                when {
+                                    id == "LS" || id == "RS" -> showStickPicker = true
+                                    id in DPAD_CONTROLS -> showDpadPicker = true
+                                    else -> showButtonPicker = true
                                 }
+                                break
                             }
                         }
                     }
-            ) {
+                }
+        ) {
                 val w = size.width
                 val h = size.height
                 val scale = min(w, h)
@@ -821,76 +813,151 @@ fun ControllerConfigPage(
                 // Center buttons
                 growBounds("Select", selX, centerY + centerBtnR + scale * 0.04f)
                 growBounds("Start", staX, centerY + centerBtnR + scale * 0.04f)
+        }
+    }
+
+    val infoAndButtons: @Composable ColumnScope.() -> Unit = {
+        Text(
+            text = "Controller Layout",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = "Tap any control to assign a function",
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+
+        if (allUnassigned.isNotEmpty()) {
+            Text(
+                text = "Unassigned: ${allUnassigned.joinToString(", ")}",
+                fontSize = 10.sp,
+                color = Color(0xFFEF5350),
+                maxLines = 3
+            )
+        }
+
+        // ── Controller detection ──
+        val gamepads = remember(axisGeneration) {
+            InputDevice.getDeviceIds().toList()
+                .mapNotNull { InputDevice.getDevice(it) }
+                .filter { d ->
+                    val src = d.sources
+                    src and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
+                    src and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
+                }
+        }
+        val hasController = gamepads.isNotEmpty()
+        Text(
+            text = if (hasController) "\u2713 ${gamepads.first().name}"
+                   else "\u2717 Not detected",
+            color = if (hasController) Color(0xFF4CAF50) else Color(0xFFF44336),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // ── Live readout ──
+        val activeButtonsStr = pressedButtons.joinToString(", ").ifEmpty { "none" }
+        Text(
+            text = "Pressed buttons: $activeButtonsStr",
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = "L-Stick: (${"%.2f".format(lx)}, ${"%.2f".format(ly)})  " +
+                   "R-Stick: (${"%.2f".format(rx)}, ${"%.2f".format(ry)})",
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = "Triggers: LT=${"%.2f".format(lt)}  RT=${"%.2f".format(rt)}  " +
+                   "D-Pad: (${"%.1f".format(hatX)}, ${"%.1f".format(hatY)})",
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // ── Save & Cancel buttons ──
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedButton(
+                onClick = onBack,
+                modifier = Modifier.weight(1f).height(48.dp)
+            ) {
+                Text("Cancel", fontSize = 14.sp)
             }
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // ── Unassigned functions ──
-            val assignedBtnFuncs = bindings.entries
-                .filter { it.key in BUTTON_CONTROLS }
-                .map { it.value }.toSet()
-            val assignedAxisFuncs = bindings.entries
-                .filter { it.key in AXIS_CONTROLS }
-                .map { it.value }.toSet()
-            val assignedDpadFuncs = bindings.entries
-                .filter { it.key in DPAD_CONTROLS }
-                .map { it.value }.toSet()
-            // Button functions implicitly covered by an assigned axis
-            val coveredByAxis = assignedAxisFuncs.flatMap { AXIS_COVERS_BUTTONS[it].orEmpty() }.toSet()
-            val unassignedBtns = BUTTON_FUNCTIONS.filter { it.label !in assignedBtnFuncs && it.label !in coveredByAxis }.map { it.label }
-            val unassignedAxes = AXIS_FUNCTIONS.filter { it.label !in assignedAxisFuncs }.map { it.label }
-            val unassignedDpad = KB_FUNCTIONS.filter { it.label !in assignedDpadFuncs }.map { it.label }
-            val allUnassigned = (unassignedBtns + unassignedAxes).distinct()
-            if (allUnassigned.isNotEmpty()) {
-                Text(
-                    text = "Unassigned: ${allUnassigned.joinToString(", ")}",
-                    fontSize = 10.sp,
-                    color = Color(0xFFEF5350),
-                    maxLines = 3
-                )
-            }
-
-            // ── Live readout ──
-            val activeButtonsStr = pressedButtons.joinToString(", ").ifEmpty { "none" }
-            Text(
-                text = "Pressed buttons: $activeButtonsStr",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "L-Stick: (${"%.2f".format(lx)}, ${"%.2f".format(ly)})  " +
-                       "R-Stick: (${"%.2f".format(rx)}, ${"%.2f".format(ry)})",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "Triggers: LT=${"%.2f".format(lt)}  RT=${"%.2f".format(rt)}  " +
-                       "D-Pad: (${"%.1f".format(hatX)}, ${"%.1f".format(hatY)})",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // ── Save & Apply button ──
             Button(
                 onClick = {
                     saveConfig(context, bindings.toMap(), inverts.toSet())
                     Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
                     onBack()
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
+                modifier = Modifier.weight(1f).height(48.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {
-                Text(
-                    text = "SAVE CONTROLLER CONFIG",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "Save",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "(to all pilots)",
+                        fontSize = 10.sp
+                    )
+                }
+            }
+        }
+    }
+
+    // ── Layout ──
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        if (isLandscape) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .safeDrawingPadding()
+                    .padding(8.dp)
+            ) {
+                Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(end = 8.dp)) {
+                    controllerCanvas(Modifier.fillMaxHeight())
+                }
+                val rightScroll = rememberScrollState()
+                Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rightScroll)
+                            .padding(start = 8.dp)
+                    ) {
+                        infoAndButtons()
+                    }
+                    ScrollArrows(rightScroll)
+                }
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .safeDrawingPadding()
+                    .padding(12.dp)
+            ) {
+                controllerCanvas(Modifier.weight(1f))
+                Spacer(modifier = Modifier.height(6.dp))
+                infoAndButtons()
             }
         }
     }
@@ -973,6 +1040,42 @@ fun ControllerConfigPage(
                 selectedControl = null
             }
         )
+    }
+}
+
+// ── Scroll Indicators ───────────────────────────────────────────────────────
+
+@Composable
+private fun BoxScope.ScrollArrows(scrollState: ScrollState) {
+    if (scrollState.canScrollBackward) {
+        Surface(
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 4.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
+            shadowElevation = 2.dp
+        ) {
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowUp,
+                contentDescription = "Scroll up",
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+    if (scrollState.canScrollForward) {
+        Surface(
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
+            shadowElevation = 2.dp
+        ) {
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = "Scroll down",
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 

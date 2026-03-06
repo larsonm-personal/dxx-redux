@@ -16,15 +16,22 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import android.content.res.Configuration
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -583,11 +590,13 @@ private fun SetupScreen(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
+            val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .safeDrawingPadding()
-                    .padding(16.dp)
+                    .padding(if (isLandscape) 8.dp else 16.dp)
             ) {
                 // ── Title + About ────────────────────────────
                 var showAbout by remember { mutableStateOf(false) }
@@ -606,7 +615,7 @@ private fun SetupScreen(
                         Text("About", fontSize = 12.sp)
                     }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+                if (!isLandscape) Spacer(modifier = Modifier.height(8.dp))
 
                 if (showAbout) {
                     AlertDialog(
@@ -629,122 +638,119 @@ private fun SetupScreen(
                     )
                 }
 
-                // ── Missing-files help ──────────────────────
-                if (!canLaunch && !gameRunning) {
-                    MissingFilesHelp()
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
+                // ── Shared composable blocks ──
 
-                // ── Import files button (always available) ──
-                Button(
-                    onClick = { filePickerLauncher.launch(arrayOf("application/octet-stream", "*/*")) },
-                    enabled = !scanning,
-                    modifier = Modifier.fillMaxWidth().height(44.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary
-                    )
-                ) {
-                    Text(
-                        text = if (scanning) "Importing\u2026"
-                               else "\uD83D\uDCC2 Select Game Files to Import",
-                        fontSize = 14.sp
-                    )
-                }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Select .hog, .ham, .pig files from Downloads or any folder.",
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                val filesPane: @Composable ColumnScope.() -> Unit = {
+                    // ── Missing-files help ──────────────────────
+                    if (!canLaunch && !gameRunning) {
+                        MissingFilesHelp()
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
 
-                // ── Scan results / import card ──────────────
-                if (scanResults != null) {
-                    val found = scanResults!!
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (found.isEmpty())
-                                MaterialTheme.colorScheme.errorContainer
-                            else MaterialTheme.colorScheme.secondaryContainer
+                    // ── Import files button ──
+                    Button(
+                        onClick = { filePickerLauncher.launch(arrayOf("application/octet-stream", "*/*")) },
+                        enabled = !scanning,
+                        modifier = Modifier.fillMaxWidth().height(44.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary
                         )
                     ) {
-                        Column(modifier = Modifier
-                            .padding(12.dp)
-                            .verticalScroll(rememberScrollState())
+                        Text(
+                            text = if (scanning) "Importing\u2026"
+                                   else "\uD83D\uDCC2 Select Game Files to Import",
+                            fontSize = 14.sp
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Select .hog, .ham, .pig files from Downloads or any folder.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // ── Scan results / import card ──────────────
+                    if (scanResults != null) {
+                        val found = scanResults!!
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (found.isEmpty())
+                                    MaterialTheme.colorScheme.errorContainer
+                                else MaterialTheme.colorScheme.secondaryContainer
+                            )
                         ) {
-                            if (found.isEmpty()) {
-                                Text(
-                                    text = "No game files found in that folder.",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onErrorContainer
-                                )
-                                Text(
-                                    text = "Try selecting the folder that contains .hog, .ham, and .pig files.",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onErrorContainer
-                                )
-                            } else {
-                                Text(
-                                    text = "Found ${found.size} game file(s): ${found.joinToString(", ") { it.name ?: "?" }}",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Button(
-                                        onClick = {
-                                            scope.launch(Dispatchers.IO) {
-                                                var imported = 0
-                                                found.forEach { f ->
-                                                    if (importFile(context, f, filesDir)) imported++
-                                                }
-                                                withContext(Dispatchers.Main) {
-                                                    importStatus = "Imported $imported of ${found.size} files."
-                                                    scanResults = null
-                                                    onRefresh()
+                            Column(modifier = Modifier
+                                .padding(12.dp)
+                                .verticalScroll(rememberScrollState())
+                            ) {
+                                if (found.isEmpty()) {
+                                    Text(
+                                        text = "No game files found in that folder.",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                    Text(
+                                        text = "Try selecting the folder that contains .hog, .ham, and .pig files.",
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                } else {
+                                    Text(
+                                        text = "Found ${found.size} game file(s): ${found.joinToString(", ") { it.name ?: "?" }}",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Button(
+                                            onClick = {
+                                                scope.launch(Dispatchers.IO) {
+                                                    var imported = 0
+                                                    found.forEach { f ->
+                                                        if (importFile(context, f, filesDir)) imported++
+                                                    }
+                                                    withContext(Dispatchers.Main) {
+                                                        importStatus = "Imported $imported of ${found.size} files."
+                                                        scanResults = null
+                                                        onRefresh()
+                                                    }
                                                 }
                                             }
+                                        ) {
+                                            Text("Import All", fontSize = 13.sp)
                                         }
-                                    ) {
-                                        Text("Import All", fontSize = 13.sp)
-                                    }
-                                    OutlinedButton(
-                                        onClick = { scanResults = null }
-                                    ) {
-                                        Text("Dismiss", fontSize = 13.sp)
+                                        OutlinedButton(
+                                            onClick = { scanResults = null }
+                                        ) {
+                                            Text("Dismiss", fontSize = 13.sp)
+                                        }
                                     }
                                 }
                             }
                         }
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
 
-                if (importStatus.isNotEmpty()) {
-                    Text(
-                        text = importStatus,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF4CAF50),
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                }
+                    if (importStatus.isNotEmpty()) {
+                        Text(
+                            text = importStatus,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF4CAF50),
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
 
-                // ── Scrollable file list ────────────────────
-                var d2Expanded by remember { mutableStateOf(false) }
-                var d1Expanded by remember { mutableStateOf(false) }
+                    // ── File sections ────────────────────
+                    var d2Expanded by remember { mutableStateOf(false) }
+                    var d1Expanded by remember { mutableStateOf(false) }
 
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    // ── Descent 2 section ───────────────────
                     GameSectionHeader(
                         title = "Descent 2",
                         ready = d2RequiredOk,
@@ -766,7 +772,6 @@ private fun SetupScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // ── Descent 1 section ───────────────────
                     GameSectionHeader(
                         title = "Descent 1",
                         ready = d1RequiredOk,
@@ -813,13 +818,10 @@ private fun SetupScreen(
                     } // end if (d1Expanded)
 
                     Spacer(modifier = Modifier.height(16.dp))
-
-                    // ── Music section ────────────────────────
                     MusicInfoSection(filesDir = filesDir, refreshTrigger = refreshTrigger)
+                }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // ── Controller section ──────────────────
+                val controlsPane: @Composable ColumnScope.() -> Unit = {
                     val prefs = context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
                     ControllerSection(
                         axes = controllerAxes,
@@ -830,7 +832,6 @@ private fun SetupScreen(
                         onDefineControls = { showControllerPage = true }
                     )
 
-                    // ── Restart/Reset buttons ───────────────
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                         Button(
@@ -858,29 +859,107 @@ private fun SetupScreen(
                             Text("Reset controls & restart", fontSize = 14.sp)
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = onLaunchGame,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        enabled = canLaunch || gameRunning,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (!canLaunch && !gameRunning)
+                                MaterialTheme.colorScheme.surfaceVariant
+                            else
+                                MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text(
+                            text = if (gameRunning) "Return to Game" else "Launch Game",
+                            fontSize = 18.sp
+                        )
+                    }
                 }
 
-                // ── Launch / Return button ──────────────────
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = onLaunchGame,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    enabled = canLaunch || gameRunning,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (!canLaunch && !gameRunning)
-                            MaterialTheme.colorScheme.surfaceVariant
-                        else
-                            MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Text(
-                        text = if (gameRunning) "Return to Game" else "Launch Game",
-                        fontSize = 18.sp
-                    )
+                // ── Layout: landscape = side-by-side, portrait = stacked ──
+
+                if (isLandscape) {
+                    Row(modifier = Modifier.weight(1f)) {
+                        val leftScroll = rememberScrollState()
+                        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .verticalScroll(leftScroll)
+                                    .padding(end = 8.dp)
+                            ) {
+                                filesPane()
+                            }
+                            ScrollArrows(leftScroll)
+                        }
+                        val rightScroll = rememberScrollState()
+                        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .verticalScroll(rightScroll)
+                                    .padding(start = 8.dp)
+                            ) {
+                                controlsPane()
+                            }
+                            ScrollArrows(rightScroll)
+                        }
+                    }
+                } else {
+                    val portraitScroll = rememberScrollState()
+                    Box(modifier = Modifier.weight(1f)) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(portraitScroll)
+                        ) {
+                            filesPane()
+                            Spacer(modifier = Modifier.height(16.dp))
+                            controlsPane()
+                        }
+                        ScrollArrows(portraitScroll)
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun BoxScope.ScrollArrows(scrollState: ScrollState) {
+    if (scrollState.canScrollBackward) {
+        Surface(
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 4.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
+            shadowElevation = 2.dp
+        ) {
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowUp,
+                contentDescription = "Scroll up",
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+    if (scrollState.canScrollForward) {
+        Surface(
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
+            shadowElevation = 2.dp
+        ) {
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = "Scroll down",
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
