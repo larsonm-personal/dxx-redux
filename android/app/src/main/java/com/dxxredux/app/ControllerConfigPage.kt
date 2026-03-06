@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -426,7 +427,11 @@ fun ControllerConfigPage(
         .map { it.value }.toSet()
     val coveredByAxis = assignedAxisFuncs.flatMap { AXIS_COVERS_BUTTONS[it].orEmpty() }.toSet()
     val unassignedBtns = BUTTON_FUNCTIONS.filter { it.label !in assignedBtnFuncs && it.label !in coveredByAxis }.map { it.label }
-    val unassignedAxes = AXIS_FUNCTIONS.filter { it.label !in assignedAxisFuncs }.map { it.label }
+    val coveredByButtons = AXIS_FUNCTIONS.filter { af ->
+        val btns = AXIS_COVERS_BUTTONS[af.label]
+        btns != null && btns.all { it in assignedBtnFuncs }
+    }.map { it.label }.toSet()
+    val unassignedAxes = AXIS_FUNCTIONS.filter { it.label !in assignedAxisFuncs && it.label !in coveredByButtons }.map { it.label }
     val allUnassigned = (unassignedBtns + unassignedAxes).distinct()
 
     // ── Reusable composable blocks ──
@@ -459,12 +464,12 @@ fun ControllerConfigPage(
                 val scale = min(w, h)
 
                 val phoneW = w * 0.30f
-                val phoneH = h * 0.55f
+                val phoneH = h * 0.70f
                 val phoneX = (w - phoneW) / 2f
                 val phoneY = (h - phoneH) / 2f
 
-                val gripW = w * 0.22f
-                val gripH = h * 0.65f
+                val gripW = w * 0.24f
+                val gripH = h * 0.82f
                 val gripY = (h - gripH) / 2f
                 val leftGripX = phoneX - gripW + 8f
                 val rightGripX = phoneX + phoneW - 8f
@@ -544,7 +549,7 @@ fun ControllerConfigPage(
 
                 // D-pad (interactive)
                 val dpadCx = lgCx
-                val dpadCy = gripY + gripH * 0.65f
+                val dpadCy = gripY + gripH * 0.72f
                 val dpadSize = scale * 0.07f
                 drawDpad(dpadCx, dpadCy, dpadSize, hatX, hatY)
                 // D-pad touch bounds for each arm
@@ -577,11 +582,11 @@ fun ControllerConfigPage(
                 }
                 bindings["DLeft"]?.let {
                     val c = if (hatX < -0.5f) cActive else cAssignLabel
-                    drawFuncLabel(textMeasurer, abbreviate(it), dpadCx - dLabelOff * 1.2f, dpadCy, scale, c)
+                    drawFuncLabel(textMeasurer, abbreviate(it), dpadCx - dLabelOff * 1.5f, dpadCy, scale, c)
                 }
                 bindings["DRight"]?.let {
                     val c = if (hatX > 0.5f) cActive else cAssignLabel
-                    drawFuncLabel(textMeasurer, abbreviate(it), dpadCx + dLabelOff * 1.2f, dpadCy, scale, c)
+                    drawFuncLabel(textMeasurer, abbreviate(it), dpadCx + dLabelOff * 1.5f, dpadCy, scale, c)
                 }
 
                 // L1 bumper
@@ -601,8 +606,8 @@ fun ControllerConfigPage(
                 drawLabel(textMeasurer, "L1", l1X + bumperW / 2f, l1Y + bumperH + scale * 0.012f, scale)
                 bindings["L1"]?.let {
                     val c = if (l1Pressed) cActive else cAssignLabel
-                    drawFuncLabel(textMeasurer, abbreviate(it), l1X + bumperW / 2f,
-                        l1Y + bumperH + scale * 0.035f, scale, c)
+                    drawFuncLabelRightAligned(textMeasurer, abbreviate(it),
+                        l1X - scale * 0.01f, l1Y + bumperH / 2f, scale, c)
                 }
 
                 // LT trigger
@@ -616,27 +621,22 @@ fun ControllerConfigPage(
                 drawLabel(textMeasurer, "LT", l2X + triggerW / 2f, l2Y - scale * 0.02f, scale)
                 bindings["LT"]?.let {
                     val c = if (lt > 0.1f) cActive else cAssignLabel
-                    drawFuncLabel(textMeasurer, abbreviate(it), l2X + triggerW / 2f,
-                        l2Y - scale * 0.045f, scale, c)
+                    drawFuncLabelRightAligned(textMeasurer, abbreviate(it),
+                        l2X - scale * 0.01f, l2Y + triggerH / 2f, scale, c)
                 }
 
-                // L3 (stick press)
-                val l3Pressed = "L3" in pressedButtons
-                val l3Cx = lsCx
-                val l3Cy = lsCy + stickR + scale * 0.015f
-                drawCircle(
-                    color = if (l3Pressed) cActive else cInactive.copy(alpha = 0.4f),
-                    radius = scale * 0.010f, center = Offset(l3Cx, l3Cy)
+                // L3 (stick press) – touch target only, no graphic
+                controlBounds["L3"] = Rect(
+                    lsCx - touchPad, lsCy + stickR,
+                    lsCx + touchPad, lsCy + stickR + touchPad * 2
                 )
-                controlBounds["L3"] = Rect(l3Cx - touchPad, l3Cy - touchPad,
-                    l3Cx + touchPad, l3Cy + touchPad)
 
                 // ── Right grip controls ──
                 val rgCx = rightGripX + gripW / 2f
 
-                // Right stick
+                // Right stick (vertically aligned with D-pad center)
                 val rsCx = rgCx
-                val rsCy = gripY + gripH * 0.65f
+                val rsCy = dpadCy
                 drawStick(rsCx, rsCy, stickR, rx, ry, "RS")
                 controlBounds["RS"] = Rect(
                     rsCx - stickR - touchPad, rsCy - stickR - touchPad,
@@ -669,8 +669,8 @@ fun ControllerConfigPage(
                 // Face buttons ABXY
                 val btnCx = rgCx
                 val btnCy = gripY + gripH * 0.30f
-                val btnSpacing = scale * 0.042f
-                val btnR = scale * 0.022f
+                val btnSpacing = scale * 0.046f
+                val btnR = scale * 0.026f
 
                 data class FaceBtn(val id: String, val cx: Float, val cy: Float)
                 val faceButtons = listOf(
@@ -681,15 +681,27 @@ fun ControllerConfigPage(
                 )
                 for (fb in faceButtons) {
                     val pressed = fb.id in pressedButtons
-                    drawFaceButton(fb.cx, fb.cy, btnR, fb.id, pressed)
+                    drawFaceButton(textMeasurer, fb.cx, fb.cy, btnR, fb.id, pressed, scale)
+                    // Touch bounds = circle only (no touchPad) to avoid overlap
                     controlBounds[fb.id] = Rect(
-                        fb.cx - btnR - touchPad, fb.cy - btnR - touchPad,
-                        fb.cx + btnR + touchPad, fb.cy + btnR + touchPad
+                        fb.cx - btnR, fb.cy - btnR,
+                        fb.cx + btnR, fb.cy + btnR
                     )
                     bindings[fb.id]?.let {
                         val c = if (pressed) cActive else cAssignLabel
-                        drawFuncLabel(textMeasurer, abbreviate(it), fb.cx,
-                            fb.cy + btnR + scale * 0.025f, scale, c)
+                        val abbr = abbreviate(it)
+                        when (fb.id) {
+                            "A" -> drawFuncLabel(textMeasurer, abbr,
+                                fb.cx, fb.cy + btnR + scale * 0.024f, scale, c)
+                            "B" -> drawFuncLabelLeftAligned(textMeasurer, abbr,
+                                fb.cx + btnR + scale * 0.01f, fb.cy, scale, c)
+                            "X" -> drawFuncLabelRightAligned(textMeasurer, abbr,
+                                fb.cx - btnR - scale * 0.01f, fb.cy, scale, c)
+                            "Y" -> drawFuncLabel(textMeasurer, abbr,
+                                fb.cx, fb.cy - btnR - scale * 0.024f, scale, c)
+                            else -> drawFuncLabel(textMeasurer, abbr, fb.cx,
+                                fb.cy + btnR + scale * 0.025f, scale, c)
+                        }
                     }
                 }
 
@@ -708,8 +720,8 @@ fun ControllerConfigPage(
                 drawLabel(textMeasurer, "R1", r1X + bumperW / 2f, r1Y + bumperH + scale * 0.012f, scale)
                 bindings["R1"]?.let {
                     val c = if (r1Pressed) cActive else cAssignLabel
-                    drawFuncLabel(textMeasurer, abbreviate(it), r1X + bumperW / 2f,
-                        r1Y + bumperH + scale * 0.035f, scale, c)
+                    drawFuncLabelLeftAligned(textMeasurer, abbreviate(it),
+                        r1X + bumperW + scale * 0.01f, r1Y + bumperH / 2f, scale, c)
                 }
 
                 // RT trigger
@@ -721,57 +733,44 @@ fun ControllerConfigPage(
                 drawLabel(textMeasurer, "RT", r2X + triggerW / 2f, r2Y - scale * 0.02f, scale)
                 bindings["RT"]?.let {
                     val c = if (rt > 0.1f) cActive else cAssignLabel
-                    drawFuncLabel(textMeasurer, abbreviate(it), r2X + triggerW / 2f,
-                        r2Y - scale * 0.045f, scale, c)
+                    drawFuncLabelLeftAligned(textMeasurer, abbreviate(it),
+                        r2X + triggerW + scale * 0.01f, r2Y + triggerH / 2f, scale, c)
                 }
 
-                // R3 (stick press)
-                val r3Cx = rsCx
-                val r3Cy = rsCy + stickR + scale * 0.015f
-                val r3Pressed = "R3" in pressedButtons
-                drawCircle(
-                    color = if (r3Pressed) cActive else cInactive.copy(alpha = 0.4f),
-                    radius = scale * 0.010f, center = Offset(r3Cx, r3Cy)
+                // R3 (stick press) – touch target only, no graphic
+                controlBounds["R3"] = Rect(
+                    rsCx - touchPad, rsCy + stickR,
+                    rsCx + touchPad, rsCy + stickR + touchPad * 2
                 )
-                controlBounds["R3"] = Rect(r3Cx - touchPad, r3Cy - touchPad,
-                    r3Cx + touchPad, r3Cy + touchPad)
 
                 // ── Center buttons (Select / Start) ──
-                val centerY = gripY + gripH * 0.12f
-                val centerBtnR = scale * 0.012f
+                val centerBtnR = btnR  // same size as A/B/X/Y
+                val centerY = phoneY + phoneH * 0.20f - centerBtnR * 2
                 val selX = phoneX + phoneW * 0.25f
                 val staX = phoneX + phoneW * 0.75f
 
                 val selPressed = "Select" in pressedButtons
-                drawCircle(
-                    color = if (selPressed) cActive else cInactive,
-                    radius = centerBtnR, center = Offset(selX, centerY)
-                )
+                drawFaceButton(textMeasurer, selX, centerY, centerBtnR, "Sel", selPressed, scale)
                 controlBounds["Select"] = Rect(
                     selX - centerBtnR - touchPad, centerY - centerBtnR - touchPad,
                     selX + centerBtnR + touchPad, centerY + centerBtnR + touchPad
                 )
-                drawLabel(textMeasurer, "Sel", selX, centerY + centerBtnR + scale * 0.015f, scale)
                 bindings["Select"]?.let {
                     val c = if (selPressed) cActive else cAssignLabel
                     drawFuncLabel(textMeasurer, abbreviate(it), selX,
-                        centerY + centerBtnR + scale * 0.04f, scale, c)
+                        centerY + centerBtnR + scale * 0.02f, scale, c)
                 }
 
                 val staPressed = "Start" in pressedButtons
-                drawCircle(
-                    color = if (staPressed) cActive else cInactive,
-                    radius = centerBtnR, center = Offset(staX, centerY)
-                )
+                drawFaceButton(textMeasurer, staX, centerY, centerBtnR, "Sta", staPressed, scale)
                 controlBounds["Start"] = Rect(
                     staX - centerBtnR - touchPad, centerY - centerBtnR - touchPad,
                     staX + centerBtnR + touchPad, centerY + centerBtnR + touchPad
                 )
-                drawLabel(textMeasurer, "Sta", staX, centerY + centerBtnR + scale * 0.015f, scale)
                 bindings["Start"]?.let {
                     val c = if (staPressed) cActive else cAssignLabel
                     drawFuncLabel(textMeasurer, abbreviate(it), staX,
-                        centerY + centerBtnR + scale * 0.04f, scale, c)
+                        centerY + centerBtnR + scale * 0.02f, scale, c)
                 }
 
                 // ── Expand touch bounds to cover function labels ──
@@ -798,21 +797,27 @@ fun ControllerConfigPage(
                 // D-pad
                 growBounds("DUp", dpadCx, dpadCy - dLabelOff)
                 growBounds("DDown", dpadCx, dpadCy + dLabelOff)
-                growBounds("DLeft", dpadCx - dLabelOff * 1.2f, dpadCy)
-                growBounds("DRight", dpadCx + dLabelOff * 1.2f, dpadCy)
+                growBounds("DLeft", dpadCx - dLabelOff * 1.5f, dpadCy)
+                growBounds("DRight", dpadCx + dLabelOff * 1.5f, dpadCy)
                 // Bumpers
-                growBounds("L1", l1X + bumperW / 2f, l1Y + bumperH + scale * 0.035f)
-                growBounds("R1", r1X + bumperW / 2f, r1Y + bumperH + scale * 0.035f)
+                growBounds("L1", l1X - scale * 0.01f, l1Y + bumperH / 2f)
+                growBounds("R1", r1X + bumperW + scale * 0.01f, r1Y + bumperH / 2f)
                 // Triggers
-                growBounds("LT", l2X + triggerW / 2f, l2Y - scale * 0.045f)
-                growBounds("RT", r2X + triggerW / 2f, r2Y - scale * 0.045f)
+                growBounds("LT", l2X - scale * 0.01f, l2Y + triggerH / 2f)
+                growBounds("RT", r2X + triggerW + scale * 0.01f, r2Y + triggerH / 2f)
                 // Face buttons
                 for (fb in faceButtons) {
-                    growBounds(fb.id, fb.cx, fb.cy + btnR + scale * 0.025f)
+                    when (fb.id) {
+                        "A" -> growBounds(fb.id, fb.cx, fb.cy + btnR + scale * 0.024f)
+                        "B" -> growBounds(fb.id, fb.cx + btnR + scale * 0.01f, fb.cy)
+                        "X" -> growBounds(fb.id, fb.cx - btnR - scale * 0.01f, fb.cy)
+                        "Y" -> growBounds(fb.id, fb.cx, fb.cy - btnR - scale * 0.024f)
+                        else -> growBounds(fb.id, fb.cx, fb.cy + btnR + scale * 0.025f)
+                    }
                 }
                 // Center buttons
-                growBounds("Select", selX, centerY + centerBtnR + scale * 0.04f)
-                growBounds("Start", staX, centerY + centerBtnR + scale * 0.04f)
+                growBounds("Select", selX, centerY + centerBtnR + scale * 0.02f)
+                growBounds("Start", staX, centerY + centerBtnR + scale * 0.02f)
         }
     }
 
@@ -840,8 +845,15 @@ fun ControllerConfigPage(
             )
         }
 
-        // ── Controller detection ──
-        val gamepads = remember(axisGeneration) {
+        // ── Controller detection (poll once/second) ──
+        var pollTick by remember { mutableIntStateOf(0) }
+        LaunchedEffect(Unit) {
+            while (true) {
+                kotlinx.coroutines.delay(1000)
+                pollTick++
+            }
+        }
+        val gamepads = remember(axisGeneration, pollTick) {
             InputDevice.getDeviceIds().toList()
                 .mapNotNull { InputDevice.getDevice(it) }
                 .filter { d ->
@@ -900,6 +912,7 @@ fun ControllerConfigPage(
                     onBack()
                 },
                 modifier = Modifier.weight(1f).height(48.dp),
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary
                 )
@@ -907,12 +920,12 @@ fun ControllerConfigPage(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = "Save",
-                        fontSize = 14.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = "(to all pilots)",
-                        fontSize = 10.sp
+                        fontSize = 8.sp
                     )
                 }
             }
@@ -1099,7 +1112,7 @@ private fun ButtonFunctionPickerDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onSelect(null) }
-                            .padding(vertical = 6.dp, horizontal = 4.dp),
+                            .padding(vertical = 2.dp, horizontal = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(selected = currentFunc == null, onClick = { onSelect(null) })
@@ -1113,7 +1126,7 @@ private fun ButtonFunctionPickerDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onSelect(func.label) }
-                            .padding(vertical = 6.dp, horizontal = 4.dp),
+                            .padding(vertical = 2.dp, horizontal = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
@@ -1210,7 +1223,7 @@ private fun AxisFunctionRadioGroup(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onSelect(null) }
-            .padding(vertical = 3.dp),
+            .padding(vertical = 1.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         RadioButton(selected = selected == null, onClick = { onSelect(null) })
@@ -1223,7 +1236,7 @@ private fun AxisFunctionRadioGroup(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onSelect(func.label) }
-                .padding(vertical = 3.dp),
+                .padding(vertical = 1.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             RadioButton(
@@ -1259,7 +1272,7 @@ private fun DpadFunctionPickerDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onSelect(null) }
-                            .padding(vertical = 6.dp, horizontal = 4.dp),
+                            .padding(vertical = 2.dp, horizontal = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(selected = currentFunc == null, onClick = { onSelect(null) })
@@ -1273,7 +1286,7 @@ private fun DpadFunctionPickerDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onSelect(func.label) }
-                            .padding(vertical = 6.dp, horizontal = 4.dp),
+                            .padding(vertical = 2.dp, horizontal = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
@@ -1335,14 +1348,25 @@ private fun DrawScope.drawDpad(
 }
 
 private fun DrawScope.drawFaceButton(
+    textMeasurer: androidx.compose.ui.text.TextMeasurer,
     cx: Float, cy: Float, radius: Float,
-    label: String, pressed: Boolean
+    label: String, pressed: Boolean, scale: Float
 ) {
     drawCircle(
         color = if (pressed) cActive else cInactive,
         radius = radius, center = Offset(cx, cy)
     )
     drawCircle(color = cOutline, radius = radius, center = Offset(cx, cy), style = Stroke(1f))
+    val style = TextStyle(
+        color = cLabel,
+        fontSize = (scale * 0.016f).sp,
+        fontWeight = FontWeight.Bold
+    )
+    val result = textMeasurer.measure(label, style)
+    drawText(
+        textLayoutResult = result,
+        topLeft = Offset(cx - result.size.width / 2f, cy - result.size.height / 2f)
+    )
 }
 
 private fun DrawScope.drawTrigger(
@@ -1396,5 +1420,41 @@ private fun DrawScope.drawFuncLabel(
     drawText(
         textLayoutResult = result,
         topLeft = Offset(cx - result.size.width / 2f, cy - result.size.height / 2f)
+    )
+}
+
+// Right edge at x=rightX, vertically centered at cy
+private fun DrawScope.drawFuncLabelRightAligned(
+    textMeasurer: androidx.compose.ui.text.TextMeasurer,
+    text: String, rightX: Float, cy: Float, scale: Float,
+    color: Color = cAssignLabel
+) {
+    val style = TextStyle(
+        color = color,
+        fontSize = (scale * 0.017f).sp,
+        fontWeight = FontWeight.Normal
+    )
+    val result = textMeasurer.measure(text, style)
+    drawText(
+        textLayoutResult = result,
+        topLeft = Offset(rightX - result.size.width, cy - result.size.height / 2f)
+    )
+}
+
+// Left edge at x=leftX, vertically centered at cy
+private fun DrawScope.drawFuncLabelLeftAligned(
+    textMeasurer: androidx.compose.ui.text.TextMeasurer,
+    text: String, leftX: Float, cy: Float, scale: Float,
+    color: Color = cAssignLabel
+) {
+    val style = TextStyle(
+        color = color,
+        fontSize = (scale * 0.017f).sp,
+        fontWeight = FontWeight.Normal
+    )
+    val result = textMeasurer.measure(text, style)
+    drawText(
+        textLayoutResult = result,
+        topLeft = Offset(leftX, cy - result.size.height / 2f)
     )
 }
