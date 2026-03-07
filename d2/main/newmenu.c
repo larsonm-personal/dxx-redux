@@ -1559,13 +1559,14 @@ int newmenu_draw(window *wind, newmenu *menu)
 	gr_set_current_canvas(save_canvas);
 
 #ifdef ANDROID
-	/* Post-draw scale-blit: copy the menu region from the canvas into a
-	 * temp bitmap, then scale it back larger so the menu fills ~85% of
-	 * the screen.  The background wallpaper stays at normal size.
-	 * Skip when the menu has a fullscreen PCX background (e.g. main menu)
-	 * since the text is drawn directly on the artwork — scaling would
-	 * distort the background image behind the text. */
-	if (menu->filename == NULL)
+	/* Scale-blit the menu content so it fills ~85% of the screen.
+	 * Two paths:
+	 * 1) Menus with an opaque box (filename==NULL): copy the drawn menu
+	 *    region, scale it up, write it back (background box scales with it).
+	 * 2) Menus with a fullscreen PCX background (filename!=NULL): render
+	 *    menu text to an offscreen bitmap filled with TRANSPARENCY_COLOR,
+	 *    scale that up, then masked-blit onto the screen so only text
+	 *    pixels overwrite the background — the PCX art stays untouched. */
 	{
 		extern int g_menu_scale_src_x, g_menu_scale_src_y;
 		extern int g_menu_scale_src_w, g_menu_scale_src_h;
@@ -1596,23 +1597,77 @@ int newmenu_draw(window *wind, newmenu *menu)
 			if (sx1 + sw > SWIDTH)  sw = SWIDTH  - sx1;
 			if (sy1 + sh > SHEIGHT) sh = SHEIGHT - sy1;
 
-			/* Copy the menu region to a temp bitmap */
-			grs_bitmap tmp;
-			gr_init_bitmap_alloc(&tmp, BM_LINEAR, 0, 0, sw, sh, sw);
-			{
-				unsigned char *scr = grd_curscreen->sc_canvas.cv_bitmap.bm_data;
-				int rowsize = grd_curscreen->sc_canvas.cv_bitmap.bm_rowsize;
-				for (int r = 0; r < sh; r++)
-					memcpy(tmp.bm_data + r * sw, scr + (sy1 + r) * rowsize + sx1, sw);
-			}
+			if (menu->filename != NULL) {
+				/* PCX background: build an offscreen text-only bitmap.
+				 * Fill with 255 (TRANSPARENCY_COLOR), draw all menu
+				 * content onto it, scale up, masked-blit.
+				 * First re-draw the PCX to erase the small text that
+				 * was already rendered by the normal draw path above. */
+				gr_set_current_canvas(NULL);
+				show_fullscr(&nm_background1);
 
-			/* Scale-blit into the destination rect on screen */
-			{
-				grs_canvas *sub = gr_create_sub_canvas(&grd_curscreen->sc_canvas, dx, dy, dw, dh);
-				gr_bitmap_scale_to(&tmp, &sub->cv_bitmap);
-				gr_free_sub_canvas(sub);
+				grs_bitmap tmp;
+				gr_init_bitmap_alloc(&tmp, BM_LINEAR, 0, 0, sw, sh, sw);
+				memset(tmp.bm_data, 255, sw * sh);
+
+				/* Set up a canvas on the temp bitmap and redraw menu content */
+				{
+					grs_canvas off_canvas;
+					gr_init_canvas(&off_canvas, tmp.bm_data, BM_LINEAR, sw, sh);
+					grs_canvas *prev = grd_curcanv;
+					gr_set_current_canvas(&off_canvas);
+
+					/* Adjust coordinates: items are relative to menu->x,y
+					 * but our canvas origin is sx1,sy1 */
+					int ox = menu->x - sx1;
+					int oy = menu->y - sy1;
+					int tth = 0;
+
+					if (menu->title) {
+						gr_set_curfont(HUGE_FONT);
+						gr_set_fontcolor(BM_XRGB(31,31,31), -1);
+						gr_get_string_size(menu->title, &string_width, &string_height, &average_width);
+						tth = string_height;
+						gr_string(ox + (menu->w - string_width) / 2, oy + BORDERY, menu->title);
+					}
+					if (menu->subtitle) {
+						gr_set_curfont(MEDIUM3_FONT);
+						gr_set_fontcolor(BM_XRGB(21,21,21), -1);
+						gr_get_string_size(menu->subtitle, &string_width, &string_height, &average_width);
+						gr_string(ox + (menu->w - string_width) / 2, oy + BORDERY + tth, menu->subtitle);
+					}
+
+					gr_set_curfont(menu->tiny_mode ? GAME_FONT : MEDIUM1_FONT);
+					for (i = menu->scroll_offset; i < menu->max_displayable + menu->scroll_offset; i++)
+						draw_item(&menu->items[i], (i == menu->citem && !menu->all_text), menu->tiny_mode, menu->tabs_flag, menu->scroll_offset);
+
+					gr_set_current_canvas(prev);
+				}
+
+				/* Masked scale-blit onto screen */
+				{
+					grs_canvas *sub = gr_create_sub_canvas(&grd_curscreen->sc_canvas, dx, dy, dw, dh);
+					gr_bitmap_scale_to_masked(&tmp, &sub->cv_bitmap);
+					gr_free_sub_canvas(sub);
+				}
+				gr_free_bitmap_data(&tmp);
+			} else {
+				/* Opaque-box menu: copy the already-drawn region and scale */
+				grs_bitmap tmp;
+				gr_init_bitmap_alloc(&tmp, BM_LINEAR, 0, 0, sw, sh, sw);
+				{
+					unsigned char *scr = grd_curscreen->sc_canvas.cv_bitmap.bm_data;
+					int rowsize = grd_curscreen->sc_canvas.cv_bitmap.bm_rowsize;
+					for (int r = 0; r < sh; r++)
+						memcpy(tmp.bm_data + r * sw, scr + (sy1 + r) * rowsize + sx1, sw);
+				}
+				{
+					grs_canvas *sub = gr_create_sub_canvas(&grd_curscreen->sc_canvas, dx, dy, dw, dh);
+					gr_bitmap_scale_to(&tmp, &sub->cv_bitmap);
+					gr_free_sub_canvas(sub);
+				}
+				gr_free_bitmap_data(&tmp);
 			}
-			gr_free_bitmap_data(&tmp);
 
 			/* Publish rects for touch remapping */
 			g_menu_scale_src_x = sx1; g_menu_scale_src_y = sy1;
@@ -1623,9 +1678,6 @@ int newmenu_draw(window *wind, newmenu *menu)
 		} else {
 			g_menu_scale_active = 0;
 		}
-	} else {
-		extern int g_menu_scale_active;
-		g_menu_scale_active = 0;
 	}
 #endif
 

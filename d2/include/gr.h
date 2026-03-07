@@ -267,6 +267,7 @@ int gr_uline(fix x0,fix y0,fix x1,fix y1);
 void gr_bitmap(int x,int y,grs_bitmap *bm);
 void gr_ubitmap(int x,int y,grs_bitmap *bm);
 void gr_bitmap_scale_to(grs_bitmap *src, grs_bitmap *dst);
+void gr_bitmap_scale_to_masked(grs_bitmap *src, grs_bitmap *dst);
 void show_fullscr(grs_bitmap *bm);
 
 // Find transparent area in bitmap
