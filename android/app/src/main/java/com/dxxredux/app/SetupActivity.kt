@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.core.view.WindowCompat
 import android.content.SharedPreferences
 import java.io.File
@@ -161,8 +162,9 @@ class SetupActivity : ComponentActivity() {
     private fun writeIntrospectJson() {
         try {
             val dir = filesDir
-            val d2Statuses = checkFiles(dir, D2_FILES)
-            val d1Statuses = checkFiles(dir, D1_FILES)
+            val manifest = AssetManifest(dir)
+            val d2Statuses = checkFiles(dir, D2_FILES, manifest)
+            val d1Statuses = checkFiles(dir, D1_FILES, manifest)
             val d2Ready = d2Statuses.filter { it.info.required }.all { it.found }
             val d1Ready = d1Statuses.filter { it.info.required }.all { it.found }
 
@@ -220,6 +222,10 @@ class SetupActivity : ComponentActivity() {
             if (s.info.downloadUrl != null)
                 obj.put("download_url", s.info.downloadUrl)
             obj.put("description", s.info.description)
+            if (s.manifestEntry != null) {
+                obj.put("sha256", s.manifestEntry.sha256)
+                obj.put("version", s.manifestEntry.versionDisplay)
+            }
             arr.put(obj)
         }
         return arr
@@ -346,7 +352,8 @@ private data class GameFileInfo(
 private data class FileStatus(
     val info: GameFileInfo,
     val found: Boolean,
-    val foundName: String?
+    val foundName: String?,
+    val manifestEntry: AssetManifest.AssetEntry? = null
 )
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -357,14 +364,15 @@ private fun findFile(dir: File, name: String): String? {
     return files.firstOrNull { it.name.equals(name, ignoreCase = true) }?.name
 }
 
-private fun checkFiles(dir: File, fileList: List<GameFileInfo>): List<FileStatus> =
+private fun checkFiles(dir: File, fileList: List<GameFileInfo>, manifest: AssetManifest? = null): List<FileStatus> =
     fileList.map { info ->
         val primaryMatch = findFile(dir, info.filename)
         val altMatch = if (primaryMatch == null)
             info.alternatives.firstNotNullOfOrNull { findFile(dir, it) }
         else null
         val foundName = primaryMatch ?: altMatch
-        FileStatus(info, found = foundName != null, foundName = foundName)
+        val entry = if (foundName != null) manifest?.getEntry(foundName) else null
+        FileStatus(info, found = foundName != null, foundName = foundName, manifestEntry = entry)
     }
 
 // ── File definitions ────────────────────────────────────────────────────────
@@ -531,8 +539,36 @@ private fun SetupScreen(
     onRefresh: () -> Unit,
     onDownloadStateChanged: (String, Int) -> Unit = { _, _ -> }
 ) {
-    val d2Statuses = remember(refreshTrigger) { checkFiles(filesDir, D2_FILES) }
-    val d1Statuses = remember(refreshTrigger) { checkFiles(filesDir, D1_FILES) }
+    val manifest = remember { AssetManifest(filesDir) }
+    val d2Statuses = remember(refreshTrigger) { checkFiles(filesDir, D2_FILES, manifest) }
+    val d1Statuses = remember(refreshTrigger) { checkFiles(filesDir, D1_FILES, manifest) }
+
+    // ── Hashing progress state ──────────────────────────────
+    var hashingFile by remember { mutableStateOf<String?>(null) }
+    var hashingFileIndex by remember { mutableIntStateOf(0) }
+    var hashingTotalFiles by remember { mutableIntStateOf(0) }
+    var hashingProgress by remember { mutableFloatStateOf(0f) }
+    val isHashing = hashingFile != null
+
+    // ── Startup: hash any stale/new files ───────────────────
+    LaunchedEffect(Unit) {
+        val allGameNames = ALL_GAME_FILENAMES
+        val staleFiles = manifest.findStaleFiles(allGameNames)
+        if (staleFiles.isNotEmpty()) {
+            hashingTotalFiles = staleFiles.size
+            for ((i, file) in staleFiles.withIndex()) {
+                hashingFileIndex = i + 1
+                hashingFile = file.name
+                hashingProgress = 0f
+                val sha256 = AssetManifest.computeSha256(file) { bytesRead, totalBytes ->
+                    if (totalBytes > 0) hashingProgress = bytesRead.toFloat() / totalBytes
+                }
+                manifest.upsert(file.name, sha256, file.length())
+            }
+            hashingFile = null
+            onRefresh()
+        }
+    }
 
     val d2RequiredOk = d2Statuses.filter { it.info.required }.all { it.found }
     val d1RequiredOk = d1Statuses.filter { it.info.required }.all { it.found }
@@ -648,6 +684,33 @@ private fun SetupScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                     }
 
+                    // ── Hashing progress bar ──
+                    if (isHashing) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = "Processing: $hashingFile ($hashingFileIndex/$hashingTotalFiles)",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                LinearProgressIndicator(
+                                    progress = { hashingProgress },
+                                    modifier = Modifier.fillMaxWidth().height(8.dp),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    trackColor = MaterialTheme.colorScheme.primaryContainer,
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
                     // ── Import files button ──
                     Button(
                         onClick = { filePickerLauncher.launch(arrayOf("application/octet-stream", "*/*")) },
@@ -711,16 +774,29 @@ private fun SetupScreen(
                                     ) {
                                         Button(
                                             onClick = {
-                                                scope.launch(Dispatchers.IO) {
+                                                scope.launch {
                                                     var imported = 0
-                                                    found.forEach { f ->
-                                                        if (importFile(context, f, filesDir)) imported++
+                                                    hashingTotalFiles = found.size
+                                                    for ((i, f) in found.withIndex()) {
+                                                        hashingFileIndex = i + 1
+                                                        hashingFile = f.name
+                                                        hashingProgress = 0f
+                                                        val ok = withContext(Dispatchers.IO) {
+                                                            importFile(context, f, filesDir)
+                                                        }
+                                                        if (ok) {
+                                                            imported++
+                                                            val destFile = File(filesDir, f.name.lowercase())
+                                                            val sha256 = AssetManifest.computeSha256(destFile) { bytesRead, totalBytes ->
+                                                                if (totalBytes > 0) hashingProgress = bytesRead.toFloat() / totalBytes
+                                                            }
+                                                            manifest.upsert(destFile.name, sha256, destFile.length())
+                                                        }
                                                     }
-                                                    withContext(Dispatchers.Main) {
-                                                        importStatus = "Imported $imported of ${found.size} files."
-                                                        scanResults = null
-                                                        onRefresh()
-                                                    }
+                                                    hashingFile = null
+                                                    importStatus = "Imported $imported of ${found.size} files."
+                                                    scanResults = null
+                                                    onRefresh()
                                                 }
                                             }
                                         ) {
@@ -1280,8 +1356,11 @@ private fun FileStatusRow(status: FileStatus) {
         val altHint = if (!status.found && status.info.alternatives.isNotEmpty())
             " (or ${status.info.alternatives.joinToString(", ")})"
         else ""
+        val versionHint = if (status.found && status.manifestEntry != null)
+            " [${status.manifestEntry.versionDisplay}]"
+        else ""
         Text(
-            text = "$name \u2014 ${status.info.description}$altHint",
+            text = "$name \u2014 ${status.info.description}$altHint$versionHint",
             color = if (status.found) MaterialTheme.colorScheme.onSurface
                     else MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
