@@ -168,8 +168,9 @@ class SetupActivity : ComponentActivity() {
         try {
             val dir = filesDir
             val manifest = AssetManifest(dir)
-            val d2Statuses = checkFiles(dir, D2_FILES, manifest)
-            val d1Statuses = checkFiles(dir, D1_FILES, manifest)
+            val safManifest = SafManifest.forDir(dir)
+            val d2Statuses = checkFiles(dir, D2_FILES, manifest, safManifest)
+            val d1Statuses = checkFiles(dir, D1_FILES, manifest, safManifest)
             val d2Ready = d2Statuses.filter { it.info.required }.all { it.found }
             val d1Ready = d1Statuses.filter { it.info.required }.all { it.found }
 
@@ -376,17 +377,27 @@ private fun findFile(dir: File, name: String): String? {
     return files.firstOrNull { it.name.equals(name, ignoreCase = true) }?.name
 }
 
-private fun checkFiles(dir: File, fileList: List<GameFileInfo>, manifest: AssetManifest? = null): List<FileStatus> =
+private fun checkFiles(dir: File, fileList: List<GameFileInfo>, manifest: AssetManifest? = null,
+                       safManifest: SafManifest? = null): List<FileStatus> =
     fileList.map { info ->
         val primaryMatch = findFile(dir, info.filename)
         val altMatch = if (primaryMatch == null)
             info.alternatives.firstNotNullOfOrNull { findFile(dir, it) }
         else null
         val foundName = primaryMatch ?: altMatch
+        // SAF leave-in-place: if the file isn't on disk, check the SAF manifest.
+        // Files referenced there will be served by the native PhysFS archiver.
+        val safFound = if (foundName == null) safManifest?.let { sm ->
+            val entries = sm.read()
+            entries.any { it.filename.equals(info.filename, ignoreCase = true) } ||
+            info.alternatives.any { alt -> entries.any { it.filename.equals(alt, ignoreCase = true) } }
+        } ?: false else false
         // Also check manifest when file is missing — detects "was tracked but now gone"
         val entry = if (foundName != null) manifest?.getEntry(foundName)
                     else manifest?.getEntry(info.filename)
-        FileStatus(info, found = foundName != null, foundName = foundName, manifestEntry = entry)
+        FileStatus(info, found = foundName != null || safFound,
+                   foundName = foundName ?: if (safFound) info.filename else null,
+                   manifestEntry = entry)
     }
 
 /** Look up the description for a filename from the known file lists. */
@@ -564,8 +575,9 @@ private fun SetupScreen(
     onDownloadStateChanged: (String, Int) -> Unit = { _, _ -> }
 ) {
     val manifest = remember { AssetManifest(filesDir) }
-    val d2Statuses = remember(refreshTrigger) { checkFiles(filesDir, D2_FILES, manifest) }
-    val d1Statuses = remember(refreshTrigger) { checkFiles(filesDir, D1_FILES, manifest) }
+    val safManifest = remember { SafManifest.forDir(filesDir) }
+    val d2Statuses = remember(refreshTrigger) { checkFiles(filesDir, D2_FILES, manifest, safManifest) }
+    val d1Statuses = remember(refreshTrigger) { checkFiles(filesDir, D1_FILES, manifest, safManifest) }
 
     // ── Hashing progress state ──────────────────────────────
     var hashingFile by remember { mutableStateOf<String?>(null) }
