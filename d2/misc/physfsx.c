@@ -52,6 +52,30 @@ void PHYSFSX_init(int argc, char *argv[])
 			PHYSFS_setWriteDir(pref);
 			PHYSFS_addToSearchPath(pref, 1);
 		}
+
+		/* Register the SAF leave-in-place archiver so .saf_manifest.json
+		 * can be mounted as a virtual directory of game files. */
+		{
+			extern const PHYSFS_Archiver SAF_Archiver;
+			PHYSFS_registerArchiver(&SAF_Archiver);
+		}
+
+		/* SAF leave-in-place: mount .saf_manifest.json if it exists.
+		 * This lets the engine read game files directly from their
+		 * original location via SAF content URIs. */
+		if (pref)
+		{
+			char safpath[512];
+			snprintf(safpath, sizeof(safpath), "%s.saf_manifest.json", pref);
+			{
+				FILE *sf = fopen(safpath, "r");
+				if (sf) {
+					fclose(sf);
+					PHYSFS_mount(safpath, NULL, 1); /* append after filesDir */
+				}
+			}
+		}
+
 		PHYSFS_addToSearchPath(PHYSFS_getBaseDir(), 1);
 		PHYSFSX_addRelToSearchPath("data", 1);
 	}

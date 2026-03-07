@@ -327,10 +327,12 @@ if(OPENGL)
 endif()
 target_sources(d2x-redux PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/jni_main.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni_saf.c
     ${CMAKE_CURRENT_SOURCE_DIR}/android_surface.c
     ${CMAKE_CURRENT_SOURCE_DIR}/android_input.c
     ${CMAKE_CURRENT_SOURCE_DIR}/android_gamepad_config.cpp
     ${D2_SRC}/arch/android/messagebox.c
+    ${D2_SRC}/arch/android/physfs_archiver_saf.c
     ${D2_SRC}/introspect/game_introspect.cpp
     ${D2_SRC}/introspect/game_automate.cpp
 )

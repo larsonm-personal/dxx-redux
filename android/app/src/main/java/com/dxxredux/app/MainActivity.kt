@@ -8,6 +8,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
+import android.os.ParcelFileDescriptor
 import android.graphics.Color
 import android.graphics.PointF
 import android.graphics.Rect
@@ -73,6 +75,27 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     external fun nativeGetMarkerCount(): Int
     external fun nativeGetGameWidth(): Int
     external fun nativeGetGameHeight(): Int
+
+    // ── SAF leave-in-place: called from native via JNI (jni_saf.c) ───
+    @Suppress("unused")  // Called from native code
+    fun openSafFile(contentUri: String): Int {
+        return try {
+            if (contentUri.startsWith("/")) {
+                // Test mode: direct filesystem path (for adb testing)
+                val pfd = ParcelFileDescriptor.open(
+                    java.io.File(contentUri), ParcelFileDescriptor.MODE_READ_ONLY
+                )
+                return pfd.detachFd()
+            }
+            // Production mode: SAF content URI
+            val uri = Uri.parse(contentUri)
+            val pfd = contentResolver.openFileDescriptor(uri, "r") ?: return -1
+            pfd.detachFd()  // transfers fd ownership to native
+        } catch (e: Exception) {
+            Log.e("MainActivity", "openSafFile failed for $contentUri", e)
+            -1
+        }
+    }
 
     private var gameStarted = false
     private lateinit var gameSurfaceView: GameSurfaceView
