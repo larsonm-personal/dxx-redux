@@ -76,7 +76,6 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     external fun nativeAutomapCenter()
     external fun nativeAutomapSelectMarker(idx: Int)
     external fun nativeGetMarkerCount(): Int
-    external fun nativeSetResolution(w: Int, h: Int)
     external fun nativeGetGameWidth(): Int
     external fun nativeGetGameHeight(): Int
 
@@ -233,15 +232,14 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         if (!gameStarted) {
             gameStarted = true
 
-            // Read resolution choice from SharedPreferences and tell the engine
+            // Read resolution from SharedPreferences for touch coordinate mapping.
+            // The actual engine resolution comes from descent.cfg (written by
+            // the setup screen's resolution picker).
             val prefs = getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
             val resPref = prefs.getString("render_resolution", "640x480") ?: "640x480"
             val parts = resPref.split("x")
-            val resW = parts.getOrNull(0)?.toIntOrNull() ?: 640
-            val resH = parts.getOrNull(1)?.toIntOrNull() ?: 480
-            GAME_W = resW
-            GAME_H = resH
-            nativeSetResolution(resW, resH)
+            GAME_W = parts.getOrNull(0)?.toIntOrNull() ?: 640
+            GAME_H = parts.getOrNull(1)?.toIntOrNull() ?: 480
 
             Thread {
                 startGame()

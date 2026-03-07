@@ -834,7 +834,7 @@ private fun SetupScreen(
 
                     // ── Resolution picker ────────────────
                     Spacer(modifier = Modifier.height(12.dp))
-                    ResolutionPicker(prefs = prefs)
+                    ResolutionPicker(prefs = prefs, filesDir = filesDir)
 
                     Spacer(modifier = Modifier.height(12.dp))
                     Button(
@@ -1027,8 +1027,39 @@ private fun MusicInfoSection(filesDir: File, refreshTrigger: Int) {
     }
 }
 
+/**
+ * Update ResolutionX/ResolutionY in descent.cfg.
+ * If the file exists, replace existing lines; otherwise create with just those keys.
+ */
+private fun updateDescentCfgResolution(filesDir: File, resolution: String) {
+    val parts = resolution.split("x")
+    val w = parts.getOrNull(0)?.toIntOrNull() ?: return
+    val h = parts.getOrNull(1)?.toIntOrNull() ?: return
+    val cfgFile = File(filesDir, "descent.cfg")
+
+    if (cfgFile.exists()) {
+        var text = cfgFile.readText()
+        val rxRegex = Regex("^ResolutionX=.*$", RegexOption.MULTILINE)
+        val ryRegex = Regex("^ResolutionY=.*$", RegexOption.MULTILINE)
+        text = if (rxRegex.containsMatchIn(text)) {
+            rxRegex.replace(text, "ResolutionX=$w")
+        } else {
+            text.trimEnd() + "\nResolutionX=$w\n"
+        }
+        text = if (ryRegex.containsMatchIn(text)) {
+            ryRegex.replace(text, "ResolutionY=$h")
+        } else {
+            text.trimEnd() + "\nResolutionY=$h\n"
+        }
+        cfgFile.writeText(text)
+    } else {
+        cfgFile.writeText("ResolutionX=$w\nResolutionY=$h\n")
+    }
+    Log.i("DXX-Setup", "Updated descent.cfg: ResolutionX=$w ResolutionY=$h")
+}
+
 @Composable
-private fun ResolutionPicker(prefs: SharedPreferences) {
+private fun ResolutionPicker(prefs: SharedPreferences, filesDir: File) {
     val options = listOf("640x480" to "Low (640×480)", "960x720" to "Medium (960×720)", "1280x960" to "High (1280×960)")
     var selected by remember { mutableStateOf(prefs.getString("render_resolution", "640x480") ?: "640x480") }
 
@@ -1046,6 +1077,7 @@ private fun ResolutionPicker(prefs: SharedPreferences) {
                 onClick = {
                     selected = value
                     prefs.edit().putString("render_resolution", value).apply()
+                    updateDescentCfgResolution(filesDir, value)
                 }
             )
             Text(text = label, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp))
