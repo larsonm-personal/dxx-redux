@@ -832,6 +832,10 @@ private fun SetupScreen(
                         onDefineControls = { showControllerPage = true }
                     )
 
+                    // ── Resolution picker ────────────────
+                    Spacer(modifier = Modifier.height(12.dp))
+                    ResolutionPicker(prefs = prefs)
+
                     Spacer(modifier = Modifier.height(12.dp))
                     Button(
                         onClick = { android.os.Process.killProcess(android.os.Process.myPid()) },
@@ -1021,6 +1025,37 @@ private fun MusicInfoSection(filesDir: File, refreshTrigger: Int) {
         )
         musicStatuses.forEach { FileStatusRow(it) }
     }
+}
+
+@Composable
+private fun ResolutionPicker(prefs: SharedPreferences) {
+    val options = listOf("640x480" to "Low (640×480)", "960x720" to "Medium (960×720)", "1280x960" to "High (1280×960)")
+    var selected by remember { mutableStateOf(prefs.getString("render_resolution", "640x480") ?: "640x480") }
+
+    Text("Render Resolution", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    Spacer(modifier = Modifier.height(4.dp))
+    options.forEach { (value, label) ->
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp)
+        ) {
+            RadioButton(
+                selected = selected == value,
+                onClick = {
+                    selected = value
+                    prefs.edit().putString("render_resolution", value).apply()
+                }
+            )
+            Text(text = label, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp))
+        }
+    }
+    Text(
+        "Takes effect on next launch",
+        fontSize = 11.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
 }
 
 @Composable

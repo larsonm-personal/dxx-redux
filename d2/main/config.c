@@ -284,6 +284,20 @@ int ReadConfigFile()
 	if (GameCfg.ResolutionX >= 320 && GameCfg.ResolutionY >= 200)
 		Game_screen_mode = SM(GameCfg.ResolutionX,GameCfg.ResolutionY);
 
+#ifdef ANDROID
+	/* If the Kotlin loader set a resolution override via JNI, use that
+	 * instead of whatever descent.cfg had.  This lets the setup screen
+	 * resolution picker take effect without rewriting the cfg file. */
+	{
+		extern int g_android_resolution_w, g_android_resolution_h;
+		if (g_android_resolution_w >= 320 && g_android_resolution_h >= 200) {
+			Game_screen_mode = SM(g_android_resolution_w, g_android_resolution_h);
+			GameCfg.ResolutionX = g_android_resolution_w;
+			GameCfg.ResolutionY = g_android_resolution_h;
+		}
+	}
+#endif
+
 	return 0;
 }
 

@@ -42,9 +42,11 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         init {
             System.loadLibrary("d2x-redux")
         }
-        /** Game canvas resolution (must match gr_set_mode in the engine) */
-        const val GAME_W = 640
-        const val GAME_H = 480
+        /** Game canvas resolution — updated at runtime from SharedPreferences */
+        var GAME_W = 640
+            private set
+        var GAME_H = 480
+            private set
     }
 
     // ── JNI declarations ────────────────────────────────────
@@ -74,6 +76,9 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     external fun nativeAutomapCenter()
     external fun nativeAutomapSelectMarker(idx: Int)
     external fun nativeGetMarkerCount(): Int
+    external fun nativeSetResolution(w: Int, h: Int)
+    external fun nativeGetGameWidth(): Int
+    external fun nativeGetGameHeight(): Int
 
     private var gameStarted = false
     private lateinit var gameSurfaceView: GameSurfaceView
@@ -227,6 +232,16 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         // Start the engine only once, after the surface is ready
         if (!gameStarted) {
             gameStarted = true
+
+            // Read resolution choice from SharedPreferences and tell the engine
+            val prefs = getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
+            val resPref = prefs.getString("render_resolution", "640x480") ?: "640x480"
+            val parts = resPref.split("x")
+            val resW = parts.getOrNull(0)?.toIntOrNull() ?: 640
+            val resH = parts.getOrNull(1)?.toIntOrNull() ?: 480
+            GAME_W = resW
+            GAME_H = resH
+            nativeSetResolution(resW, resH)
 
             Thread {
                 startGame()

@@ -159,6 +159,33 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
     (*env)->CallStaticVoidMethod(env, processCls, killProc, pid);
 }
 
+/* ── Resolution override from Kotlin loader ─────────────────────── */
+int g_android_resolution_w = 0;
+int g_android_resolution_h = 0;
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetResolution(JNIEnv *env, jobject thiz,
+                                                       jint w, jint h)
+{
+    g_android_resolution_w = (int)w;
+    g_android_resolution_h = (int)h;
+    LOGI("nativeSetResolution: %dx%d", g_android_resolution_w, g_android_resolution_h);
+}
+
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetGameWidth(JNIEnv *env, jobject thiz)
+{
+    extern unsigned int grd_curscreen_w(void);
+    return (jint)grd_curscreen_w();
+}
+
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetGameHeight(JNIEnv *env, jobject thiz)
+{
+    extern unsigned int grd_curscreen_h(void);
+    return (jint)grd_curscreen_h();
+}
+
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeQuit(JNIEnv *env, jobject thiz)
 {
