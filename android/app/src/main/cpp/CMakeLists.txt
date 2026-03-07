@@ -273,7 +273,12 @@ set(SDL_MIXER_LIBRARY      SDL_mixer                CACHE STRING "" FORCE)
 # ──────────────────────────────────────────────────────────────
 # 5. D2 build options
 # ──────────────────────────────────────────────────────────────
-set(OPENGL     ON  CACHE BOOL "" FORCE)
+# ANDROID_USE_OPENGL is passed from Gradle (gradle.properties: useOpenGL)
+if(ANDROID_USE_OPENGL STREQUAL "true")
+    set(OPENGL     ON  CACHE BOOL "" FORCE)
+else()
+    set(OPENGL     OFF CACHE BOOL "" FORCE)
+endif()
 set(OPENGLMERGE OFF CACHE BOOL "" FORCE)   # no shader-based texmerge on GLES 1.1
 set(SDLMIXER   ON  CACHE BOOL "" FORCE)
 set(PNG        OFF CACHE BOOL "" FORCE)
@@ -282,6 +287,7 @@ set(EDITOR     OFF CACHE BOOL "" FORCE)
 set(UDP        ON  CACHE BOOL "" FORCE)
 set(TRACKER    OFF CACHE BOOL "" FORCE)
 
+if(OPENGL)
 # Pre-set OpenGL/GLEW so find_package() in the D2 tree succeeds without
 # a system search.  Android NDK provides EGL + GLESv1_CM natively.
 set(OPENGL_FOUND      TRUE  CACHE BOOL   "" FORCE)
@@ -305,6 +311,7 @@ list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_BINARY_DIR}/cmake_modules")
 # OGLES must be visible to ALL targets in the D2 tree (2d, 3d, main, etc.)
 # so that ogl_init.h correctly guards <GL/glew.h>.
 add_definitions(-DOGLES)
+endif() # OPENGL
 
 # ──────────────────────────────────────────────────────────────
 # 6. Add D2 source tree
@@ -314,7 +321,10 @@ add_subdirectory("${D2_SRC}" "${CMAKE_CURRENT_BINARY_DIR}/d2")
 # ──────────────────────────────────────────────────────────────
 # 7. Android-specific fixups for d2x-redux target
 # ──────────────────────────────────────────────────────────────
-target_link_libraries(d2x-redux PRIVATE android log EGL GLESv1_CM)
+target_link_libraries(d2x-redux PRIVATE android log)
+if(OPENGL)
+    target_link_libraries(d2x-redux PRIVATE EGL GLESv1_CM)
+endif()
 target_sources(d2x-redux PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/jni_main.c
     ${CMAKE_CURRENT_SOURCE_DIR}/android_surface.c
@@ -355,6 +365,7 @@ target_compile_definitions(arch_sdl PRIVATE ANDROID)
 
 # OpenGL ES 1.1: link EGL + GLESv1_CM into the arch_ogl static library,
 # and add Android-specific include paths.
+if(OPENGL)
 target_compile_definitions(arch_ogl PRIVATE ANDROID)
 target_link_libraries(arch_ogl PRIVATE EGL GLESv1_CM)
 target_include_directories(arch_ogl PRIVATE
@@ -365,6 +376,7 @@ target_include_directories(arch_ogl PRIVATE
 
 # xmodel needs the PhysFS include path (not set by its own CMakeLists.txt).
 target_include_directories(xmodel PRIVATE ${PHYSFS_INCLUDE_DIR})
+endif() # OPENGL
 
 # nlohmann/json — used by the introspection/automation C++ files
 target_link_libraries(d2x-redux PRIVATE nlohmann_json::nlohmann_json)

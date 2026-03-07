@@ -42,18 +42,13 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         init {
             System.loadLibrary("d2x-redux")
         }
-        /** Game canvas resolution — updated at runtime from SharedPreferences */
-        var GAME_W = 640
-            private set
-        var GAME_H = 480
-            private set
     }
 
     // ── JNI declarations ────────────────────────────────────
     external fun helloFromNative(): String
     external fun startGame()
     external fun nativeSetSurface(surface: Surface?)
-    external fun nativeTouchEvent(action: Int, gameX: Int, gameY: Int)
+    external fun nativeTouchEvent(action: Int, normX: Float, normY: Float)
     external fun nativeKeyEvent(action: Int, androidKeyCode: Int, unicodeChar: Int)
     external fun nativeTextInput(unicodeChar: Int)
     external fun nativeOnPause()
@@ -231,15 +226,6 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         // Start the engine only once, after the surface is ready
         if (!gameStarted) {
             gameStarted = true
-
-            // Read resolution from SharedPreferences for touch coordinate mapping.
-            // The actual engine resolution comes from descent.cfg (written by
-            // the setup screen's resolution picker).
-            val prefs = getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
-            val resPref = prefs.getString("render_resolution", "640x480") ?: "640x480"
-            val parts = resPref.split("x")
-            GAME_W = parts.getOrNull(0)?.toIntOrNull() ?: 640
-            GAME_H = parts.getOrNull(1)?.toIntOrNull() ?: 480
 
             Thread {
                 startGame()
@@ -464,14 +450,15 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         }
 
         // ── Normal game touch handling ──────────────────────
-        // The engine renders 640×480 into ANativeWindow which the compositor
-        // stretches to fill the entire SurfaceView.  Map proportionally.
+        // Map touch to normalised 0.0–1.0 coordinates.  The native side
+        // converts to engine resolution via grd_curscreen, so Kotlin
+        // never needs to know the game resolution.
         val viewW = view.width.toFloat()
         val viewH = view.height.toFloat()
         if (viewW <= 0f || viewH <= 0f) return false
 
-        val gameX = (event.x / viewW * GAME_W).toInt().coerceIn(0, GAME_W - 1)
-        val gameY = (event.y / viewH * GAME_H).toInt().coerceIn(0, GAME_H - 1)
+        val normX = (event.x / viewW).coerceIn(0f, 1f)
+        val normY = (event.y / viewH).coerceIn(0f, 1f)
 
         val action = when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> 0
@@ -480,7 +467,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
             else -> return false
         }
 
-        nativeTouchEvent(action, gameX, gameY)
+        nativeTouchEvent(action, normX, normY)
         return true
     }
 

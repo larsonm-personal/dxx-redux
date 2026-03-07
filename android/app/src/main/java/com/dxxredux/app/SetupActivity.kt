@@ -632,7 +632,8 @@ private fun SetupScreen(
                                 " ${BuildInfo.BUILD_TYPE}\n" +
                                 "Date: ${BuildInfo.BUILD_DATE}" +
                                 " ${BuildInfo.BUILD_TIME}\n" +
-                                "Arch: $arch"
+                                "Arch: $arch\n" +
+                                "Renderer: ${BuildConfig.RENDERER}"
                             )
                         }
                     )

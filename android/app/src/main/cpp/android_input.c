@@ -18,6 +18,7 @@
 #include <string.h>
 #include <android/keycodes.h>
 #include "fix.h"
+#include "gr.h"
 
 /* Automap_active is defined in automap.c; we only need the extern. */
 extern int Automap_active;
@@ -46,8 +47,8 @@ volatile int g_automap_center   = 0;
  * accumulated into Mouse.x / Mouse.y.  We keep the last known touch position
  * and convert absolute touch coords to relative deltas.
  *
- * Touch coordinates from Kotlin are already in *game canvas* space
- * (the Kotlin side maps from SurfaceView pixels → 640×480).
+ * Touch coordinates from Kotlin are normalised 0.0–1.0 across
+ * the SurfaceView and mapped to engine resolution here.
  */
 
 static int g_last_touch_x = -1;
@@ -56,13 +57,14 @@ static int g_touch_active = 0;   /* is a finger currently down? */
 static int g_input_count  = 0;   /* debug counter */
 
 /*
- * nativeTouchEvent(action, gameX, gameY)
+ * nativeTouchEvent(action, normX, normY)
  *   action: 0 = DOWN, 1 = MOVE, 2 = UP  (matches MotionEvent.ACTION_*)
- *   gameX, gameY: coordinates already mapped to 640×480 canvas space
+ *   normX, normY: touch position normalised to 0.0-1.0 across the SurfaceView.
+ *                 The native side maps to engine resolution via grd_curscreen.
  */
 
 /* Menu scale-blit rect globals (defined in newmenu.c via game thread).
- * src = original menu rect in 640×480 canvas space.
+ * src = original menu rect in 640x480 canvas space.
  * dst = enlarged rect where the scale-blit placed the magnified menu. */
 int g_menu_scale_active = 0;
 int g_menu_scale_src_x = 0, g_menu_scale_src_y = 0;
@@ -90,10 +92,23 @@ static void remap_touch(int *gx, int *gy)
 
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeTouchEvent(JNIEnv *env, jobject thiz,
-                                                     jint action, jint gameX, jint gameY)
+                                                     jint action, jfloat normX, jfloat normY)
 {
     SDL_Event ev;
     memset(&ev, 0, sizeof(ev));
+
+    /* Map normalised coordinates to the engine's actual resolution.
+     * This avoids any mismatch between the Kotlin-side GAME_W/H
+     * (from SharedPreferences) and the real engine resolution
+     * (from descent.cfg via grd_curscreen). */
+    int screenW = grd_curscreen ? grd_curscreen->sc_w : 640;
+    int screenH = grd_curscreen ? grd_curscreen->sc_h : 480;
+    jint gameX = (jint)(normX * screenW);
+    jint gameY = (jint)(normY * screenH);
+    if (gameX < 0) gameX = 0;
+    if (gameX >= screenW) gameX = screenW - 1;
+    if (gameY < 0) gameY = 0;
+    if (gameY >= screenH) gameY = screenH - 1;
 
     remap_touch(&gameX, &gameY);
 

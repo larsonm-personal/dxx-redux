@@ -137,6 +137,9 @@ android {
         versionCode gitVersionCode
         versionName "1.1"
 
+        def opengl = (project.findProperty('useOpenGL') ?: 'true') == 'true'
+        buildConfigField "String", "RENDERER", "\"${opengl ? 'OpenGL ES' : 'Software'}\""
+
         ndk {
             abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64'
         }
@@ -144,7 +147,8 @@ android {
         externalNativeBuild {
             cmake {
                 arguments '-DANDROID_STL=c++_shared',
-                          '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON'
+                          '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON',
+                          "-DANDROID_USE_OPENGL=${project.findProperty('useOpenGL') ?: 'true'}"
             }
         }
     }

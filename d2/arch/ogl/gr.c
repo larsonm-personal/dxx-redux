@@ -383,10 +383,12 @@ int ogl_init_window(int x, int y)
 		}
 
 		if (win) {
-			/* Match the EGL surface format to the chosen config */
+			/* Match the EGL surface format and set the buffer size to
+			 * the game resolution.  The Android compositor scales the
+			 * buffer to fill the physical display automatically. */
 			EGLint format;
 			eglGetConfigAttrib(eglDisplay, eglConfig, EGL_NATIVE_VISUAL_ID, &format);
-			ANativeWindow_setBuffersGeometry(win, 0, 0, format);
+			ANativeWindow_setBuffersGeometry(win, x, y, format);
 
 			eglSurface = eglCreateWindowSurface(eglDisplay, eglConfig, (EGLNativeWindowType)win, winAttribs);
 		}

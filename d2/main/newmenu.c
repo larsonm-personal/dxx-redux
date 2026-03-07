@@ -1558,7 +1558,7 @@ int newmenu_draw(window *wind, newmenu *menu)
 
 	gr_set_current_canvas(save_canvas);
 
-#ifdef ANDROID
+#if defined(ANDROID) && !defined(OGL)
 	/* Scale-blit the menu content so it fills ~85% of the screen.
 	 * Two paths:
 	 * 1) Menus with an opaque box (filename==NULL): copy the drawn menu
@@ -2426,7 +2426,7 @@ int listbox_draw(window *wind, listbox *lb)
 			(*lb->listbox_callback)(lb, &event, lb->userdata);
 	}
 
-#ifdef ANDROID
+#if defined(ANDROID) && !defined(OGL)
 	{
 		extern int g_menu_scale_src_x, g_menu_scale_src_y;
 		extern int g_menu_scale_src_w, g_menu_scale_src_h;

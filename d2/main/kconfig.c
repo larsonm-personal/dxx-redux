@@ -587,7 +587,7 @@ void kconfig_draw(kc_menu *menu)
 	grd_curcanv->cv_font	= save_font;
 	gr_set_current_canvas( save_canvas );
 
-#ifdef ANDROID
+#if defined(ANDROID) && !defined(OGL)
 	/* Post-draw scale-blit for kconfig menus (joystick, mouse, keyboard,
 	 * weapon keys).  Same approach as newmenu: copy the drawn region to
 	 * a temp bitmap, scale it up to fill ~85% of the screen, blit back. */
