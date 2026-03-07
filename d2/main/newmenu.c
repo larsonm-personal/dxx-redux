@@ -1561,7 +1561,11 @@ int newmenu_draw(window *wind, newmenu *menu)
 #ifdef ANDROID
 	/* Post-draw scale-blit: copy the menu region from the canvas into a
 	 * temp bitmap, then scale it back larger so the menu fills ~85% of
-	 * the screen.  The background wallpaper stays at normal size. */
+	 * the screen.  The background wallpaper stays at normal size.
+	 * Skip when the menu has a fullscreen PCX background (e.g. main menu)
+	 * since the text is drawn directly on the artwork — scaling would
+	 * distort the background image behind the text. */
+	if (menu->filename == NULL)
 	{
 		extern int g_menu_scale_src_x, g_menu_scale_src_y;
 		extern int g_menu_scale_src_w, g_menu_scale_src_h;
@@ -1619,6 +1623,9 @@ int newmenu_draw(window *wind, newmenu *menu)
 		} else {
 			g_menu_scale_active = 0;
 		}
+	} else {
+		extern int g_menu_scale_active;
+		g_menu_scale_active = 0;
 	}
 #endif
 

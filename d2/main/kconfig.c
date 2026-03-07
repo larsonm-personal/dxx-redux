@@ -586,6 +586,65 @@ void kconfig_draw(kc_menu *menu)
 	gr_set_fontcolor( BM_XRGB(28,28,28), -1 );
 	grd_curcanv->cv_font	= save_font;
 	gr_set_current_canvas( save_canvas );
+
+#ifdef ANDROID
+	/* Post-draw scale-blit for kconfig menus (joystick, mouse, keyboard,
+	 * weapon keys).  Same approach as newmenu: copy the drawn region to
+	 * a temp bitmap, scale it up to fill ~85% of the screen, blit back. */
+	{
+		extern int g_menu_scale_src_x, g_menu_scale_src_y;
+		extern int g_menu_scale_src_w, g_menu_scale_src_h;
+		extern int g_menu_scale_dst_x, g_menu_scale_dst_y;
+		extern int g_menu_scale_dst_w, g_menu_scale_dst_h;
+		extern int g_menu_scale_active;
+
+		/* The background was drawn with these bounds */
+		int sx1 = ((SWIDTH - w) / 2) - BORDERX;
+		int sy1 = ((SHEIGHT - h) / 2) - BORDERY;
+		int sw = w + 2 * BORDERX;
+		int sh = h + 2 * BORDERY;
+		float scx = 0.85f * SWIDTH  / sw;
+		float scy = 0.85f * SHEIGHT / sh;
+		float scale = (scx < scy) ? scx : scy;
+		if (scale > 2.5f) scale = 2.5f;
+
+		if (scale > 1.05f && sw > 0 && sh > 0) {
+			int dw = (int)(sw * scale);
+			int dh = (int)(sh * scale);
+			int dx = (SWIDTH  - dw) / 2;
+			int dy = (SHEIGHT - dh) / 2;
+
+			if (sx1 < 0) { sw += sx1; sx1 = 0; }
+			if (sy1 < 0) { sh += sy1; sy1 = 0; }
+			if (sx1 + sw > SWIDTH)  sw = SWIDTH  - sx1;
+			if (sy1 + sh > SHEIGHT) sh = SHEIGHT - sy1;
+
+			grs_bitmap tmp;
+			gr_init_bitmap_alloc(&tmp, BM_LINEAR, 0, 0, sw, sh, sw);
+			{
+				unsigned char *scr = grd_curscreen->sc_canvas.cv_bitmap.bm_data;
+				int rowsize = grd_curscreen->sc_canvas.cv_bitmap.bm_rowsize;
+				for (int r = 0; r < sh; r++)
+					memcpy(tmp.bm_data + r * sw, scr + (sy1 + r) * rowsize + sx1, sw);
+			}
+
+			{
+				grs_canvas *sub = gr_create_sub_canvas(&grd_curscreen->sc_canvas, dx, dy, dw, dh);
+				gr_bitmap_scale_to(&tmp, &sub->cv_bitmap);
+				gr_free_sub_canvas(sub);
+			}
+			gr_free_bitmap_data(&tmp);
+
+			g_menu_scale_src_x = sx1; g_menu_scale_src_y = sy1;
+			g_menu_scale_src_w = sw;  g_menu_scale_src_h = sh;
+			g_menu_scale_dst_x = dx;  g_menu_scale_dst_y = dy;
+			g_menu_scale_dst_w = dw;  g_menu_scale_dst_h = dh;
+			g_menu_scale_active = 1;
+		} else {
+			g_menu_scale_active = 0;
+		}
+	}
+#endif
 }
 
 void kconfig_start_changing(kc_menu *menu)
