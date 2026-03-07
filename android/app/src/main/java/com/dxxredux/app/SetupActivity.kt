@@ -1,4 +1,4 @@
-package com.dxxredux.app
+﻿package com.dxxredux.app
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -833,31 +833,12 @@ private fun SetupScreen(
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        Button(
-                            onClick = { android.os.Process.killProcess(android.os.Process.myPid()) },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-                            modifier = Modifier.weight(1f).height(44.dp)
-                        ) {
-                            Text("Restart game", fontSize = 14.sp)
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Button(
-                            onClick = {
-                                val ctx = context
-                                val playersDir = java.io.File(ctx.filesDir, "Players")
-                                if (playersDir.exists()) {
-                                    playersDir.listFiles()
-                                        ?.filter { it.extension.equals("plr", ignoreCase = true) }
-                                        ?.forEach { it.delete() }
-                                }
-                                android.os.Process.killProcess(android.os.Process.myPid())
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                            modifier = Modifier.weight(1f).height(44.dp)
-                        ) {
-                            Text("Reset controls & restart", fontSize = 10.sp)
-                        }
+                    Button(
+                        onClick = { android.os.Process.killProcess(android.os.Process.myPid()) },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                        modifier = Modifier.fillMaxWidth().height(44.dp)
+                    ) {
+                        Text("Restart game", fontSize = 14.sp)
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -985,7 +966,7 @@ private fun GameSectionHeader(
             modifier = Modifier.weight(1f)
         )
         Text(
-            text = if (ready) "\u2713 Ready" else "\u2717 Missing files",
+            text = if (ready) "\u2713 Ready" else "\u2717 Missing, will use MIDI",
             color = if (ready) Color(0xFF4CAF50) else Color(0xFFF44336),
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold
@@ -1141,34 +1122,6 @@ private fun ControllerSection(
         )
     }
 
-    // ── Reset in-game controls ──
-    val ctx = LocalContext.current
-    var showResetDialog by remember { mutableStateOf(false) }
-    var resetDone by remember { mutableStateOf(false) }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        OutlinedButton(
-            onClick = { showResetDialog = true },
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-            modifier = Modifier.height(32.dp)
-        ) {
-            Text("Reset in-game controls", fontSize = 12.sp)
-        }
-        if (resetDone) {
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "\u2713 Reset — restart game to apply",
-                fontSize = 12.sp,
-                color = Color(0xFF4CAF50)
-            )
-        }
-    }
-
     // ── Define Controls button ──
     OutlinedButton(
         onClick = onDefineControls,
@@ -1176,29 +1129,6 @@ private fun ControllerSection(
         modifier = Modifier.height(32.dp).padding(vertical = 2.dp)
     ) {
         Text("Define Controls", fontSize = 12.sp)
-    }
-
-    if (showResetDialog) {
-        AlertDialog(
-            onDismissRequest = { showResetDialog = false },
-            title = { Text("Reset Controls?") },
-            text = { Text("This deletes your saved player profile(s) so the game recreates them with default control mappings. You will need to re-enter your callsign.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    val playersDir = java.io.File(ctx.filesDir, "Players")
-                    if (playersDir.exists()) {
-                        playersDir.listFiles()
-                            ?.filter { it.extension.equals("plr", ignoreCase = true) }
-                            ?.forEach { it.delete() }
-                    }
-                    resetDone = true
-                    showResetDialog = false
-                }) { Text("Reset") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showResetDialog = false }) { Text("Cancel") }
-            }
-        )
     }
 
     if (expanded && hasController) {

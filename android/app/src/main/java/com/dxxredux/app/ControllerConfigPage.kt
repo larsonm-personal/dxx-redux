@@ -10,8 +10,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -154,6 +152,8 @@ private val KB_FUNCTIONS = listOf(
     KbFunc(51, "Cycle Secondary"),
     KbFunc(53, "Headlight"),
     KbFunc(45, "Automap"),
+    KbFunc(55, "Energy\u2192Shield"),
+    KbFunc(56, "Toggle Bomb"),
 )
 
 private val DEFAULT_BINDINGS = mapOf(
@@ -1331,41 +1331,44 @@ private fun DpadFunctionPickerDialog(
         onDismissRequest = onDismiss,
         title = { Text("Assign: $directionLabel") },
         text = {
-            LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
-                item {
+            val dpadScrollState = rememberScrollState()
+            Box(modifier = Modifier.heightIn(max = 400.dp)) {
+                Column(modifier = Modifier.fillMaxWidth().verticalScroll(dpadScrollState)) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onSelect(null) }
-                            .padding(vertical = 2.dp, horizontal = 4.dp),
+                            .clickable { onSelect(null) },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        RadioButton(selected = currentFunc == null, onClick = { onSelect(null) })
-                        Spacer(Modifier.width(8.dp))
-                        Text("None", color = Color.Gray)
+                        RadioButton(selected = currentFunc == null, onClick = { onSelect(null) },
+                            modifier = Modifier.size(PICKER_RADIO_SIZE))
+                        Spacer(Modifier.width(PICKER_RADIO_GAP))
+                        Text("None", color = Color.Gray, fontSize = PICKER_FONT_SIZE)
+                    }
+                    for (func in KB_FUNCTIONS) {
+                        val isAssigned = func.label in assignedFunctions && func.label != currentFunc
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onSelect(func.label) },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = currentFunc == func.label,
+                                onClick = { onSelect(func.label) },
+                                modifier = Modifier.size(PICKER_RADIO_SIZE)
+                            )
+                            Spacer(Modifier.width(PICKER_RADIO_GAP))
+                            Text(
+                                func.label,
+                                fontSize = PICKER_FONT_SIZE,
+                                color = if (!isAssigned && func.label != currentFunc)
+                                    Color(0xFFEF5350) else Color.Unspecified
+                            )
+                        }
                     }
                 }
-                items(KB_FUNCTIONS) { func ->
-                    val isAssigned = func.label in assignedFunctions && func.label != currentFunc
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onSelect(func.label) }
-                            .padding(vertical = 2.dp, horizontal = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = currentFunc == func.label,
-                            onClick = { onSelect(func.label) }
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            func.label,
-                            color = if (!isAssigned && func.label != currentFunc)
-                                Color(0xFFEF5350) else Color.Unspecified
-                        )
-                    }
-                }
+                ScrollArrows(dpadScrollState)
             }
         },
         confirmButton = {},

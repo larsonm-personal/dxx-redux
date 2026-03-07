@@ -59,6 +59,7 @@ set(D2X_MAIN_SOURCES
     slew.c
     songs.c
     state.c
+    track_names.c
     switch.c
     terrain.c
     texmerge.c

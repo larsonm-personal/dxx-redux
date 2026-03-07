@@ -1,16 +1,23 @@
 package com.dxxredux.app
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ObjectAnimator
 import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Color
 import android.graphics.PointF
 import android.graphics.Rect
+import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.util.Log
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -24,6 +31,7 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
+import android.widget.TextView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -70,6 +78,8 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     private var gameStarted = false
     private lateinit var gameSurfaceView: GameSurfaceView
     private lateinit var touchOverlay: TouchOverlayView
+    private lateinit var trackNameView: TextView
+    private var trackNameAnimator: ObjectAnimator? = null
     private var overlayEnabled = false
     private val overlayPoller = android.os.Handler(android.os.Looper.getMainLooper())
 
@@ -149,6 +159,23 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         touchOverlay.mapButtonCallback = { toggleAutomap() }
         touchOverlay.isActive = false
 
+        // Track name overlay (upper-left, starts invisible)
+        trackNameView = TextView(this).apply {
+            setTextColor(Color.GREEN)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+            typeface = Typeface.MONOSPACE
+            alpha = 0f
+            visibility = View.GONE
+        }
+        val trackLp = FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            val pad = (8 * resources.displayMetrics.density).toInt()
+            setMargins(pad, pad, 0, 0)
+        }
+
         // Layer surface + overlay in a FrameLayout
         val frame = FrameLayout(this)
         frame.addView(gameSurfaceView, FrameLayout.LayoutParams(
@@ -159,6 +186,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
         ))
+        frame.addView(trackNameView, trackLp)
 
         setContentView(frame)
 
@@ -719,6 +747,40 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
             gameSurfaceView.keyboardActive = false
             val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
             imm.hideSoftInputFromWindow(gameSurfaceView.windowToken, 0)
+        }
+    }
+
+    // ── Track name overlay (called from JNI) ────────────────
+    @Suppress("unused")   // Called from native code
+    fun showTrackName(name: String) {
+        runOnUiThread {
+            // Cancel any running animation
+            trackNameAnimator?.cancel()
+
+            trackNameView.text = name
+            trackNameView.visibility = View.VISIBLE
+
+            // Fade in 0.5s, hold 3s, fade out 0.5s
+            val fadeIn = ObjectAnimator.ofFloat(trackNameView, "alpha", 0f, 1f).apply {
+                duration = 500
+            }
+            fadeIn.addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    val fadeOut = ObjectAnimator.ofFloat(trackNameView, "alpha", 1f, 0f).apply {
+                        startDelay = 3000
+                        duration = 500
+                    }
+                    fadeOut.addListener(object : AnimatorListenerAdapter() {
+                        override fun onAnimationEnd(animation: Animator) {
+                            trackNameView.visibility = View.GONE
+                        }
+                    })
+                    trackNameAnimator = fadeOut
+                    fadeOut.start()
+                }
+            })
+            trackNameAnimator = fadeIn
+            fadeIn.start()
         }
     }
 

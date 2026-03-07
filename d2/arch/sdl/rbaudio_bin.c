@@ -28,6 +28,7 @@
 #include "console.h"
 #include "timer.h"
 #include "ignorecase.h"
+#include "track_names.h"
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -205,6 +206,27 @@ static int parse_cue_file(void)
 				continue;
 			}
 		}
+		/* TITLE "..." */
+		{
+			char *p = line;
+			while (*p == ' ' || *p == '\t') p++;
+			if (strncasecmp(p, "TITLE", 5) == 0 && cur_track >= 1) {
+				char *q = strchr(p, '"');
+				if (q) {
+					q++;
+					char *end = strchr(q, '"');
+					if (end) {
+						int len = (int)(end - q);
+						char title[64];
+						if (len > 63) len = 63;
+						memcpy(title, q, len);
+						title[len] = '\0';
+						track_names_set_cue_title(cur_track, title);
+					}
+				}
+				continue;
+			}
+		}
 		/* INDEX 01 MM:SS:FF */
 		{
 			int idx;
@@ -217,6 +239,8 @@ static int parse_cue_file(void)
 		}
 	}
 	PHYSFS_close(f);
+
+	track_names_set_cue_count(s_num_tracks);
 
 	/* Open the BIN file */
 	s_gog_file = open_ci("descent_ii.gog");

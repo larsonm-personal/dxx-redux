@@ -34,6 +34,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "config.h"
 #include "timer.h"
 #include "args.h"
+#include "track_names.h"
 
 int Songs_initialized = 0;
 static int Song_playing = -1; // -1 if no song playing, else the Descent song number
@@ -332,7 +333,10 @@ int songs_play_song( int songnum, int repeat )
 
 			Song_playing = -1;
 			if (songs_play_file(BIMSongs[songnum].filename, repeat, NULL))
+			{
 				Song_playing = songnum;
+				track_overlay_notify(songnum, 1, 0);
+			}
 			break;
 		}
 		case MUSIC_TYPE_REDBOOK:
@@ -346,6 +350,7 @@ int songs_play_song( int songnum, int repeat )
 				{
 					Redbook_playing = REDBOOK_TITLE_TRACK;
 					Song_playing = songnum;
+					track_overlay_notify(REDBOOK_TITLE_TRACK, 0, RBAGetDiscID());
 				}
 			}
 			else if ((songnum == SONG_CREDITS) && (REDBOOK_CREDITS_TRACK <= num_tracks))
@@ -354,6 +359,7 @@ int songs_play_song( int songnum, int repeat )
 				{
 					Redbook_playing = REDBOOK_CREDITS_TRACK;
 					Song_playing = songnum;
+					track_overlay_notify(REDBOOK_CREDITS_TRACK, 0, RBAGetDiscID());
 				}
 			}
 			break;
@@ -415,7 +421,10 @@ int songs_play_level_song( int levelnum, int offset )
 			{
 				songnum = SONG_FIRST_LEVEL_SONG + (songnum % (Num_bim_songs - SONG_FIRST_LEVEL_SONG));
 				if (songs_play_file(BIMSongs[songnum].filename, 1, NULL))
+				{
 					Song_playing = songnum;
+					track_overlay_notify(songnum, 1, 0);
+				}
 			}
 			break;
 		}
@@ -448,6 +457,7 @@ int songs_play_level_song( int levelnum, int offset )
 				{
 					Song_playing = songnum + SONG_FIRST_LEVEL_SONG;
 					Redbook_playing = tracknum;
+					track_overlay_notify(tracknum, 0, RBAGetDiscID());
 				}
 			}
 			break;
