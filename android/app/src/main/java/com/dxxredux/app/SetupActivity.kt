@@ -18,9 +18,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import android.content.res.Configuration
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -51,6 +53,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * Pre-game setup screen built with Jetpack Compose.
@@ -375,6 +380,16 @@ private fun checkFiles(dir: File, fileList: List<GameFileInfo>, manifest: AssetM
         FileStatus(info, found = foundName != null, foundName = foundName, manifestEntry = entry)
     }
 
+/** Look up the description for a filename from the known file lists. */
+private fun descriptionForFile(filename: String): String {
+    val lower = filename.lowercase()
+    val allFiles = D2_FILES + D1_FILES + MUSIC_FILES
+    return allFiles.firstOrNull { info ->
+        info.filename.equals(lower, ignoreCase = true) ||
+        info.alternatives.any { it.equals(lower, ignoreCase = true) }
+    }?.description ?: "Unknown file"
+}
+
 // ── File definitions ────────────────────────────────────────────────────────
 
 private val D2_FILES = listOf(
@@ -582,6 +597,9 @@ private fun SetupScreen(
     val downloadProgress = remember { mutableStateMapOf<String, Int>() }
     val scope = rememberCoroutineScope()
 
+    // ── File detail popup state ─────────────────────────────
+    var detailStatus by remember { mutableStateOf<FileStatus?>(null) }
+
     // ── SAF file-search state ───────────────────────────────
     val context = androidx.compose.ui.platform.LocalContext.current
     var scanResults by remember { mutableStateOf<List<FoundFile>?>(null) }
@@ -675,6 +693,11 @@ private fun SetupScreen(
                     )
                 }
 
+                // ── File detail popup ──
+                detailStatus?.let { status ->
+                    FileDetailDialog(status = status, onDismiss = { detailStatus = null })
+                }
+
                 // ── Shared composable blocks ──
 
                 val filesPane: @Composable ColumnScope.() -> Unit = {
@@ -694,18 +717,30 @@ private fun SetupScreen(
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Text(
-                                    text = "Processing: $hashingFile ($hashingFileIndex/$hashingTotalFiles)",
+                                    text = "Hashing: $hashingFile ($hashingFileIndex/$hashingTotalFiles)",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                                 Spacer(modifier = Modifier.height(6.dp))
+                                // Per-file progress
                                 LinearProgressIndicator(
                                     progress = { hashingProgress },
                                     modifier = Modifier.fillMaxWidth().height(8.dp),
                                     color = MaterialTheme.colorScheme.primary,
                                     trackColor = MaterialTheme.colorScheme.primaryContainer,
                                 )
+                                // Overall progress across all files
+                                if (hashingTotalFiles > 1) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    val overallProgress = ((hashingFileIndex - 1).toFloat() + hashingProgress) / hashingTotalFiles
+                                    LinearProgressIndicator(
+                                        progress = { overallProgress },
+                                        modifier = Modifier.fillMaxWidth().height(4.dp),
+                                        color = MaterialTheme.colorScheme.tertiary,
+                                        trackColor = MaterialTheme.colorScheme.primaryContainer,
+                                    )
+                                }
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -714,7 +749,7 @@ private fun SetupScreen(
                     // ── Import files button ──
                     Button(
                         onClick = { filePickerLauncher.launch(arrayOf("application/octet-stream", "*/*")) },
-                        enabled = !scanning,
+                        enabled = !scanning && !isHashing,
                         modifier = Modifier.fillMaxWidth().height(44.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.secondary
@@ -763,7 +798,7 @@ private fun SetupScreen(
                                     )
                                 } else {
                                     Text(
-                                        text = "Found ${found.size} game file(s): ${found.joinToString(", ") { it.name ?: "?" }}",
+                                        text = "Found ${found.size} game file(s): ${found.joinToString(", ") { it.name }}",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 14.sp,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -838,12 +873,12 @@ private fun SetupScreen(
                     if (d2Expanded) {
                         SectionHeader("Required Files")
                         d2Statuses.filter { it.info.required }.forEach {
-                            FileStatusRow(it)
+                            FileStatusRow(it) { detailStatus = it }
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         SectionHeader("Optional Files")
                         d2Statuses.filter { !it.info.required }.forEach {
-                            FileStatusRow(it)
+                            FileStatusRow(it) { detailStatus = it }
                         }
                     }
 
@@ -859,7 +894,7 @@ private fun SetupScreen(
                     if (d1Expanded) {
                         SectionHeader("Required Files")
                         d1Statuses.filter { it.info.required }.forEach {
-                            FileStatusRow(it)
+                            FileStatusRow(it) { detailStatus = it }
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         SectionHeader("Optional Files")
@@ -889,7 +924,7 @@ private fun SetupScreen(
                                 }
                             )
                         } else {
-                            FileStatusRow(status)
+                            FileStatusRow(status) { detailStatus = status }
                         }
                     }
                     } // end if (d1Expanded)
@@ -928,9 +963,9 @@ private fun SetupScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
-                        enabled = canLaunch || gameRunning,
+                        enabled = (canLaunch || gameRunning) && !isHashing,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (!canLaunch && !gameRunning)
+                            containerColor = if ((!canLaunch && !gameRunning) || isHashing)
                                 MaterialTheme.colorScheme.surfaceVariant
                             else
                                 MaterialTheme.colorScheme.primary
@@ -1101,6 +1136,95 @@ private fun MusicInfoSection(filesDir: File, refreshTrigger: Int) {
             modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 8.dp)
         )
         musicStatuses.forEach { FileStatusRow(it) }
+    }
+}
+
+/** Format epoch millis as a human-readable date/time string. */
+private fun formatTimestamp(millis: Long): String {
+    val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+    return sdf.format(Date(millis))
+}
+
+/** Format byte size as human-readable (KB, MB, GB). */
+private fun formatSize(bytes: Long): String = when {
+    bytes >= 1_073_741_824 -> "%.2f GB".format(bytes / 1_073_741_824.0)
+    bytes >= 1_048_576 -> "%.1f MB".format(bytes / 1_048_576.0)
+    bytes >= 1_024 -> "%.0f KB".format(bytes / 1_024.0)
+    else -> "$bytes B"
+}
+
+@Composable
+private fun FileDetailDialog(status: FileStatus, onDismiss: () -> Unit) {
+    val entry = status.manifestEntry
+    val name = status.foundName ?: status.info.filename
+    val description = descriptionForFile(name)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        },
+        title = {
+            Text(name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+        },
+        text = {
+            Column {
+                // Category / description
+                DetailRow("Category", description)
+
+                // Status
+                DetailRow("Status", if (status.found) "Found" else "Missing")
+                if (status.info.required) {
+                    DetailRow("Required", "Yes")
+                }
+
+                if (entry != null) {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                    // File details from manifest
+                    DetailRow("File on disk", entry.filename)
+                    DetailRow("Size", formatSize(entry.sizeBytes))
+                    DetailRow("Imported", formatTimestamp(entry.importedAt))
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                    // SHA-256 (full, selectable)
+                    Text("SHA-256", fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    SelectionContainer {
+                        Text(entry.sha256, fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(bottom = 4.dp))
+                    }
+
+                    // Version match
+                    if (entry.versionName != null) {
+                        DetailRow("Version match", entry.versionName)
+                    } else {
+                        DetailRow("Version match", "Unknown (#${entry.shortHash})")
+                    }
+                } else if (!status.found) {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    if (status.info.alternatives.isNotEmpty()) {
+                        DetailRow("Alternatives",
+                            status.info.alternatives.joinToString(", "))
+                    }
+                    if (status.info.downloadUrl != null) {
+                        DetailRow("Download", status.info.downloadUrl)
+                    }
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun DetailRow(label: String, value: String) {
+    Row(modifier = Modifier.padding(vertical = 2.dp)) {
+        Text("$label: ", fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -1337,10 +1461,11 @@ private fun ControllerSection(
 }
 
 @Composable
-private fun FileStatusRow(status: FileStatus) {
+private fun FileStatusRow(status: FileStatus, onClick: (() -> Unit)? = null) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .let { if (onClick != null) it.clickable(onClick = onClick) else it }
             .padding(vertical = 1.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
