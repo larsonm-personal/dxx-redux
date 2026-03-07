@@ -155,4 +155,11 @@ void android_surface_cleanup(void)
     pthread_mutex_unlock(&g_surface_mutex);
 }
 
+/* ── Accessor for OGL EGL init ──────────────────────────────── */
+
+ANativeWindow *android_surface_get_native_window(void)
+{
+    return g_native_window;
+}
+
 #endif /* ANDROID */

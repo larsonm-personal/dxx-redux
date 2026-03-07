@@ -57,6 +57,9 @@ int xmodel_load_gl(void *model) {
 		if (!bm.Width() || (!rm.bmvertcount[i] && !bm.Team()))
 			continue;
 		glBindTexture(GL_TEXTURE_2D, rm.bmtex[i]);
+#ifdef OGLES
+		glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+#endif
 		if (bm.BPP() == 4)
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
 				bm.Width(), bm.Height(), 0, GL_RGBA, GL_UNSIGNED_BYTE,
@@ -67,7 +70,9 @@ int xmodel_load_gl(void *model) {
 				bm.Buffer());
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+#ifndef OGLES
 		glGenerateMipmap(GL_TEXTURE_2D);
+#endif
 	}
 
 	glGenBuffers(1, &rm.vbo);
