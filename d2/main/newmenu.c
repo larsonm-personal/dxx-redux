@@ -1566,7 +1566,12 @@ int newmenu_draw(window *wind, newmenu *menu)
 	 * 2) Menus with a fullscreen PCX background (filename!=NULL): render
 	 *    menu text to an offscreen bitmap filled with TRANSPARENCY_COLOR,
 	 *    scale that up, then masked-blit onto the screen so only text
-	 *    pixels overwrite the background — the PCX art stays untouched. */
+	 *    pixels overwrite the background — the PCX art stays untouched.
+	 *
+	 * At higher internal resolutions (e.g. 1280x960) the bitmap fonts stay
+	 * the same pixel size but BORDERX/BORDERY grow proportionally. To keep
+	 * the text filling the same fraction of the screen at every resolution,
+	 * we crop the excess border from the source before scaling. */
 	{
 		extern int g_menu_scale_src_x, g_menu_scale_src_y;
 		extern int g_menu_scale_src_w, g_menu_scale_src_h;
@@ -1580,22 +1585,43 @@ int newmenu_draw(window *wind, newmenu *menu)
 		int sy2 = menu->y + menu->h;
 		int sw = sx2 - sx1;
 		int sh = sy2 - sy1;
-		float scx = 0.85f * SWIDTH  / sw;
-		float scy = 0.85f * SHEIGHT / sh;
+
+		/* Crop excess border: keep 15 px of padding around content.
+		 * BORDERX/BORDERY grow with resolution; the text does not.
+		 * By trimming to a fixed padding, the text-to-source ratio
+		 * stays constant so the 85%-of-screen target yields the same
+		 * visual text size at every resolution. */
+		int crop_pad = 15;
+		int crop_l = BORDERX - crop_pad; if (crop_l < 0) crop_l = 0;
+		int crop_t = BORDERY - crop_pad; if (crop_t < 0) crop_t = 0;
+		int crop_r = crop_l;
+		int crop_b = crop_t;
+		int cw = sw - crop_l - crop_r; if (cw < 1) cw = sw;
+		int ch = sh - crop_t - crop_b; if (ch < 1) ch = sh;
+
+		float scx = 0.85f * SWIDTH  / cw;
+		float scy = 0.85f * SHEIGHT / ch;
 		float scale = (scx < scy) ? scx : scy;
-		if (scale > 2.5f) scale = 2.5f;
 
 		if (scale > 1.05f && sw > 0 && sh > 0) {
-			int dw = (int)(sw * scale);
-			int dh = (int)(sh * scale);
-			int dx = (SWIDTH  - dw) / 2;
-			int dy = (SHEIGHT - dh) / 2;
-
 			/* Clamp source to screen */
 			if (sx1 < 0) { sw += sx1; sx1 = 0; }
 			if (sy1 < 0) { sh += sy1; sy1 = 0; }
 			if (sx1 + sw > SWIDTH)  sw = SWIDTH  - sx1;
 			if (sy1 + sh > SHEIGHT) sh = SHEIGHT - sy1;
+
+			/* Recompute crops if source was clamped */
+			if (crop_l > sw) crop_l = 0;
+			if (crop_t > sh) crop_t = 0;
+			crop_r = crop_l;
+			crop_b = crop_t;
+			cw = sw - crop_l - crop_r; if (cw < 1) cw = sw;
+			ch = sh - crop_t - crop_b; if (ch < 1) ch = sh;
+
+			int dw = (int)(cw * scale);
+			int dh = (int)(ch * scale);
+			int dx = (SWIDTH  - dw) / 2;
+			int dy = (SHEIGHT - dh) / 2;
 
 			if (menu->filename != NULL) {
 				/* PCX background: build an offscreen text-only bitmap.
@@ -1644,22 +1670,31 @@ int newmenu_draw(window *wind, newmenu *menu)
 					gr_set_current_canvas(prev);
 				}
 
-				/* Masked scale-blit onto screen */
+				/* Crop the offscreen bitmap to content area, then
+				 * masked scale-blit onto screen */
 				{
+					grs_bitmap cropped;
+					gr_init_bitmap_alloc(&cropped, BM_LINEAR, 0, 0, cw, ch, cw);
+					for (int r = 0; r < ch; r++)
+						memcpy(cropped.bm_data + r * cw,
+						       tmp.bm_data + (crop_t + r) * sw + crop_l, cw);
+
 					grs_canvas *sub = gr_create_sub_canvas(&grd_curscreen->sc_canvas, dx, dy, dw, dh);
-					gr_bitmap_scale_to_masked(&tmp, &sub->cv_bitmap);
+					gr_bitmap_scale_to_masked(&cropped, &sub->cv_bitmap);
 					gr_free_sub_canvas(sub);
+					gr_free_bitmap_data(&cropped);
 				}
 				gr_free_bitmap_data(&tmp);
 			} else {
-				/* Opaque-box menu: copy the already-drawn region and scale */
+				/* Opaque-box menu: copy the content region and scale */
 				grs_bitmap tmp;
-				gr_init_bitmap_alloc(&tmp, BM_LINEAR, 0, 0, sw, sh, sw);
+				gr_init_bitmap_alloc(&tmp, BM_LINEAR, 0, 0, cw, ch, cw);
 				{
 					unsigned char *scr = grd_curscreen->sc_canvas.cv_bitmap.bm_data;
 					int rowsize = grd_curscreen->sc_canvas.cv_bitmap.bm_rowsize;
-					for (int r = 0; r < sh; r++)
-						memcpy(tmp.bm_data + r * sw, scr + (sy1 + r) * rowsize + sx1, sw);
+					for (int r = 0; r < ch; r++)
+						memcpy(tmp.bm_data + r * cw,
+						       scr + (sy1 + crop_t + r) * rowsize + (sx1 + crop_l), cw);
 				}
 				{
 					grs_canvas *sub = gr_create_sub_canvas(&grd_curscreen->sc_canvas, dx, dy, dw, dh);
@@ -1670,8 +1705,8 @@ int newmenu_draw(window *wind, newmenu *menu)
 			}
 
 			/* Publish rects for touch remapping */
-			g_menu_scale_src_x = sx1; g_menu_scale_src_y = sy1;
-			g_menu_scale_src_w = sw;  g_menu_scale_src_h = sh;
+			g_menu_scale_src_x = sx1 + crop_l; g_menu_scale_src_y = sy1 + crop_t;
+			g_menu_scale_src_w = cw;            g_menu_scale_src_h = ch;
 			g_menu_scale_dst_x = dx;  g_menu_scale_dst_y = dy;
 			g_menu_scale_dst_w = dw;  g_menu_scale_dst_h = dh;
 			g_menu_scale_active = 1;
@@ -2405,29 +2440,46 @@ int listbox_draw(window *wind, listbox *lb)
 		int sy2 = lb->box_y + lb->height + BORDERY;
 		int sw = sx2 - sx1;
 		int sh = sy2 - sy1;
-		float scx = 0.85f * SWIDTH  / sw;
-		float scy = 0.85f * SHEIGHT / sh;
+
+		/* Crop excess border (same logic as newmenu path) */
+		int crop_pad = 15;
+		int crop_l = BORDERX - crop_pad; if (crop_l < 0) crop_l = 0;
+		int crop_t = BORDERY - crop_pad; if (crop_t < 0) crop_t = 0;
+		int crop_r = crop_l;
+		int crop_b = crop_t;
+		int cw = sw - crop_l - crop_r; if (cw < 1) cw = sw;
+		int ch = sh - crop_t - crop_b; if (ch < 1) ch = sh;
+
+		float scx = 0.85f * SWIDTH  / cw;
+		float scy = 0.85f * SHEIGHT / ch;
 		float scale = (scx < scy) ? scx : scy;
-		if (scale > 2.5f) scale = 2.5f;
 
 		if (scale > 1.05f && sw > 0 && sh > 0) {
-			int dw = (int)(sw * scale);
-			int dh = (int)(sh * scale);
-			int dx = (SWIDTH  - dw) / 2;
-			int dy = (SHEIGHT - dh) / 2;
-
 			if (sx1 < 0) { sw += sx1; sx1 = 0; }
 			if (sy1 < 0) { sh += sy1; sy1 = 0; }
 			if (sx1 + sw > SWIDTH)  sw = SWIDTH  - sx1;
 			if (sy1 + sh > SHEIGHT) sh = SHEIGHT - sy1;
 
+			if (crop_l > sw) crop_l = 0;
+			if (crop_t > sh) crop_t = 0;
+			crop_r = crop_l;
+			crop_b = crop_t;
+			cw = sw - crop_l - crop_r; if (cw < 1) cw = sw;
+			ch = sh - crop_t - crop_b; if (ch < 1) ch = sh;
+
+			int dw = (int)(cw * scale);
+			int dh = (int)(ch * scale);
+			int dx = (SWIDTH  - dw) / 2;
+			int dy = (SHEIGHT - dh) / 2;
+
 			grs_bitmap tmp;
-			gr_init_bitmap_alloc(&tmp, BM_LINEAR, 0, 0, sw, sh, sw);
+			gr_init_bitmap_alloc(&tmp, BM_LINEAR, 0, 0, cw, ch, cw);
 			{
 				unsigned char *scr = grd_curscreen->sc_canvas.cv_bitmap.bm_data;
 				int rowsize = grd_curscreen->sc_canvas.cv_bitmap.bm_rowsize;
-				for (int r = 0; r < sh; r++)
-					memcpy(tmp.bm_data + r * sw, scr + (sy1 + r) * rowsize + sx1, sw);
+				for (int r = 0; r < ch; r++)
+					memcpy(tmp.bm_data + r * cw,
+					       scr + (sy1 + crop_t + r) * rowsize + (sx1 + crop_l), cw);
 			}
 
 			{
@@ -2437,8 +2489,8 @@ int listbox_draw(window *wind, listbox *lb)
 			}
 			gr_free_bitmap_data(&tmp);
 
-			g_menu_scale_src_x = sx1; g_menu_scale_src_y = sy1;
-			g_menu_scale_src_w = sw;  g_menu_scale_src_h = sh;
+			g_menu_scale_src_x = sx1 + crop_l; g_menu_scale_src_y = sy1 + crop_t;
+			g_menu_scale_src_w = cw;            g_menu_scale_src_h = ch;
 			g_menu_scale_dst_x = dx;  g_menu_scale_dst_y = dy;
 			g_menu_scale_dst_w = dw;  g_menu_scale_dst_h = dh;
 			g_menu_scale_active = 1;
