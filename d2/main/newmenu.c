@@ -70,6 +70,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define MAXDISPLAYABLEITEMSTINY 21
 #define MESSAGEBOX_TEXT_SIZE 2176  // How many characters in messagebox
 #define MAX_TEXT_WIDTH FSPACX(120) // How many pixels wide a input box can be
+#define LB_ITEMS_ON_SCREEN 8
 
 struct newmenu
 {
@@ -1557,6 +1558,70 @@ int newmenu_draw(window *wind, newmenu *menu)
 
 	gr_set_current_canvas(save_canvas);
 
+#ifdef ANDROID
+	/* Post-draw scale-blit: copy the menu region from the canvas into a
+	 * temp bitmap, then scale it back larger so the menu fills ~85% of
+	 * the screen.  The background wallpaper stays at normal size. */
+	{
+		extern int g_menu_scale_src_x, g_menu_scale_src_y;
+		extern int g_menu_scale_src_w, g_menu_scale_src_h;
+		extern int g_menu_scale_dst_x, g_menu_scale_dst_y;
+		extern int g_menu_scale_dst_w, g_menu_scale_dst_h;
+		extern int g_menu_scale_active;
+
+		int sx1 = menu->x - (menu->is_scroll_box ? (int)FSPACX(5) : 0);
+		int sy1 = menu->y;
+		int sx2 = menu->x + menu->w;
+		int sy2 = menu->y + menu->h;
+		int sw = sx2 - sx1;
+		int sh = sy2 - sy1;
+		float scx = 0.85f * SWIDTH  / sw;
+		float scy = 0.85f * SHEIGHT / sh;
+		float scale = (scx < scy) ? scx : scy;
+		if (scale > 2.5f) scale = 2.5f;
+
+		if (scale > 1.05f && sw > 0 && sh > 0) {
+			int dw = (int)(sw * scale);
+			int dh = (int)(sh * scale);
+			int dx = (SWIDTH  - dw) / 2;
+			int dy = (SHEIGHT - dh) / 2;
+
+			/* Clamp source to screen */
+			if (sx1 < 0) { sw += sx1; sx1 = 0; }
+			if (sy1 < 0) { sh += sy1; sy1 = 0; }
+			if (sx1 + sw > SWIDTH)  sw = SWIDTH  - sx1;
+			if (sy1 + sh > SHEIGHT) sh = SHEIGHT - sy1;
+
+			/* Copy the menu region to a temp bitmap */
+			grs_bitmap tmp;
+			gr_init_bitmap_alloc(&tmp, BM_LINEAR, 0, 0, sw, sh, sw);
+			{
+				unsigned char *scr = grd_curscreen->sc_canvas.cv_bitmap.bm_data;
+				int rowsize = grd_curscreen->sc_canvas.cv_bitmap.bm_rowsize;
+				for (int r = 0; r < sh; r++)
+					memcpy(tmp.bm_data + r * sw, scr + (sy1 + r) * rowsize + sx1, sw);
+			}
+
+			/* Scale-blit into the destination rect on screen */
+			{
+				grs_canvas *sub = gr_create_sub_canvas(&grd_curscreen->sc_canvas, dx, dy, dw, dh);
+				gr_bitmap_scale_to(&tmp, &sub->cv_bitmap);
+				gr_free_sub_canvas(sub);
+			}
+			gr_free_bitmap_data(&tmp);
+
+			/* Publish rects for touch remapping */
+			g_menu_scale_src_x = sx1; g_menu_scale_src_y = sy1;
+			g_menu_scale_src_w = sw;  g_menu_scale_src_h = sh;
+			g_menu_scale_dst_x = dx;  g_menu_scale_dst_y = dy;
+			g_menu_scale_dst_w = dw;  g_menu_scale_dst_h = dh;
+			g_menu_scale_active = 1;
+		} else {
+			g_menu_scale_active = 0;
+		}
+	}
+#endif
+
 	return 1;
 }
 
@@ -1742,7 +1807,7 @@ newmenu *newmenu_do4( char * title, char * subtitle, int nitems, newmenu_item * 
 	menu->last_scroll_check = -1;
 	menu->all_text = 0;
 	menu->is_scroll_box = 0;
-	menu->max_on_menu = TinyMode?MAXDISPLAYABLEITEMSTINY:MAXDISPLAYABLEITEMS;
+	menu->max_on_menu = TinyMode ? MAXDISPLAYABLEITEMSTINY : MAXDISPLAYABLEITEMS;
 	menu->dblclick_flag = 0;
 	menu->drag_start_y = -1;
 	menu->drag_happened = 0;
@@ -1861,8 +1926,6 @@ int nm_messagebox( char *title, int nchoices, ... )
 // 	}
 // 	return 0;
 // }
-
-#define LB_ITEMS_ON_SCREEN 8
 
 struct listbox
 {
@@ -2268,6 +2331,63 @@ int listbox_draw(window *wind, listbox *lb)
 		if ( lb->listbox_callback )
 			(*lb->listbox_callback)(lb, &event, lb->userdata);
 	}
+
+#ifdef ANDROID
+	{
+		extern int g_menu_scale_src_x, g_menu_scale_src_y;
+		extern int g_menu_scale_src_w, g_menu_scale_src_h;
+		extern int g_menu_scale_dst_x, g_menu_scale_dst_y;
+		extern int g_menu_scale_dst_w, g_menu_scale_dst_h;
+		extern int g_menu_scale_active;
+
+		int sx1 = lb->box_x - BORDERX;
+		int sy1 = lb->box_y - lb->title_height - BORDERY;
+		int sx2 = lb->box_x + lb->box_w + BORDERX;
+		int sy2 = lb->box_y + lb->height + BORDERY;
+		int sw = sx2 - sx1;
+		int sh = sy2 - sy1;
+		float scx = 0.85f * SWIDTH  / sw;
+		float scy = 0.85f * SHEIGHT / sh;
+		float scale = (scx < scy) ? scx : scy;
+		if (scale > 2.5f) scale = 2.5f;
+
+		if (scale > 1.05f && sw > 0 && sh > 0) {
+			int dw = (int)(sw * scale);
+			int dh = (int)(sh * scale);
+			int dx = (SWIDTH  - dw) / 2;
+			int dy = (SHEIGHT - dh) / 2;
+
+			if (sx1 < 0) { sw += sx1; sx1 = 0; }
+			if (sy1 < 0) { sh += sy1; sy1 = 0; }
+			if (sx1 + sw > SWIDTH)  sw = SWIDTH  - sx1;
+			if (sy1 + sh > SHEIGHT) sh = SHEIGHT - sy1;
+
+			grs_bitmap tmp;
+			gr_init_bitmap_alloc(&tmp, BM_LINEAR, 0, 0, sw, sh, sw);
+			{
+				unsigned char *scr = grd_curscreen->sc_canvas.cv_bitmap.bm_data;
+				int rowsize = grd_curscreen->sc_canvas.cv_bitmap.bm_rowsize;
+				for (int r = 0; r < sh; r++)
+					memcpy(tmp.bm_data + r * sw, scr + (sy1 + r) * rowsize + sx1, sw);
+			}
+
+			{
+				grs_canvas *sub = gr_create_sub_canvas(&grd_curscreen->sc_canvas, dx, dy, dw, dh);
+				gr_bitmap_scale_to(&tmp, &sub->cv_bitmap);
+				gr_free_sub_canvas(sub);
+			}
+			gr_free_bitmap_data(&tmp);
+
+			g_menu_scale_src_x = sx1; g_menu_scale_src_y = sy1;
+			g_menu_scale_src_w = sw;  g_menu_scale_src_h = sh;
+			g_menu_scale_dst_x = dx;  g_menu_scale_dst_y = dy;
+			g_menu_scale_dst_w = dw;  g_menu_scale_dst_h = dh;
+			g_menu_scale_active = 1;
+		} else {
+			g_menu_scale_active = 0;
+		}
+	}
+#endif
 
 	return 1;
 }

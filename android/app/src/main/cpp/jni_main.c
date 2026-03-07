@@ -12,6 +12,7 @@
 #include <android/asset_manager_jni.h>
 #include <physfs.h>
 #include <SDL.h>
+
 #ifdef INTROSPECT_ON
 #include "game_introspect.h"
 #include "game_automate.h"

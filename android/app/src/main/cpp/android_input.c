@@ -60,12 +60,42 @@ static int g_input_count  = 0;   /* debug counter */
  *   action: 0 = DOWN, 1 = MOVE, 2 = UP  (matches MotionEvent.ACTION_*)
  *   gameX, gameY: coordinates already mapped to 640×480 canvas space
  */
+
+/* Menu scale-blit rect globals (defined in newmenu.c via game thread).
+ * src = original menu rect in 640×480 canvas space.
+ * dst = enlarged rect where the scale-blit placed the magnified menu. */
+int g_menu_scale_active = 0;
+int g_menu_scale_src_x = 0, g_menu_scale_src_y = 0;
+int g_menu_scale_src_w = 0, g_menu_scale_src_h = 0;
+int g_menu_scale_dst_x = 0, g_menu_scale_dst_y = 0;
+int g_menu_scale_dst_w = 0, g_menu_scale_dst_h = 0;
+
+static void remap_touch(int *gx, int *gy)
+{
+    if (!g_menu_scale_active || g_menu_scale_dst_w <= 0 || g_menu_scale_dst_h <= 0)
+        return;
+
+    int tx = *gx, ty = *gy;
+    /* If the touch is within the enlarged (destination) rect, map it
+     * back to the original (source) rect so the menu code sees the
+     * correct item coordinates. */
+    if (tx >= g_menu_scale_dst_x && tx < g_menu_scale_dst_x + g_menu_scale_dst_w &&
+        ty >= g_menu_scale_dst_y && ty < g_menu_scale_dst_y + g_menu_scale_dst_h) {
+        *gx = g_menu_scale_src_x + (tx - g_menu_scale_dst_x) * g_menu_scale_src_w / g_menu_scale_dst_w;
+        *gy = g_menu_scale_src_y + (ty - g_menu_scale_dst_y) * g_menu_scale_src_h / g_menu_scale_dst_h;
+    }
+    /* Touches outside the enlarged rect pass through — they'll hit
+     * background area and the menu will ignore them. */
+}
+
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeTouchEvent(JNIEnv *env, jobject thiz,
                                                      jint action, jint gameX, jint gameY)
 {
     SDL_Event ev;
     memset(&ev, 0, sizeof(ev));
+
+    remap_touch(&gameX, &gameY);
 
     switch (action) {
     case 0: /* ACTION_DOWN */
