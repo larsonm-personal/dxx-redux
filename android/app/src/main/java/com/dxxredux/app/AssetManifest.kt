@@ -23,13 +23,17 @@ class AssetManifest(private val filesDir: File) {
         val sha256: String,
         val sizeBytes: Long,
         val importedAt: Long,
-        val versionName: String?
+        val versionName: String?,
+        val sourceUri: String? = null   // non-null = externally picked (forgettable)
     ) {
         /** Last 8 hex chars of SHA-256 for UI display when version is unknown. */
         val shortHash: String get() = KnownVersions.shortHash(sha256)
 
         /** Display string: version name if known, otherwise short hash. */
         val versionDisplay: String get() = versionName ?: "#$shortHash"
+
+        /** True when this file was picked from outside the data dir. */
+        val isExternal: Boolean get() = sourceUri != null
     }
 
     private val manifestFile get() = File(filesDir, "assets.json")
@@ -49,7 +53,8 @@ class AssetManifest(private val filesDir: File) {
                     sha256 = obj.getString("sha256"),
                     sizeBytes = obj.getLong("sizeBytes"),
                     importedAt = obj.getLong("importedAt"),
-                    versionName = obj.optString("versionName", null)
+                    versionName = obj.optString("versionName").takeIf { it.isNotEmpty() },
+                    sourceUri = obj.optString("sourceUri").takeIf { it.isNotEmpty() }
                 )
             }
         } catch (e: Exception) {
@@ -72,6 +77,9 @@ class AssetManifest(private val filesDir: File) {
             if (entry.versionName != null) {
                 obj.put("versionName", entry.versionName)
             }
+            if (entry.sourceUri != null) {
+                obj.put("sourceUri", entry.sourceUri)
+            }
             json.put(obj)
         }
         manifestFile.writeText(json.toString(2))
@@ -81,14 +89,14 @@ class AssetManifest(private val filesDir: File) {
      * Insert or update an entry for [filename]. Automatically looks up the version
      * from [KnownVersions]. Returns the new/updated entry.
      */
-    fun upsert(filename: String, sha256: String, sizeBytes: Long): AssetEntry {
+    fun upsert(filename: String, sha256: String, sizeBytes: Long, sourceUri: String? = null): AssetEntry {
         val entries = load().toMutableList()
         val lowerName = filename.lowercase()
         val versionName = KnownVersions.lookup(lowerName, sha256)
         val now = System.currentTimeMillis()
 
         val existing = entries.indexOfFirst { it.filename == lowerName }
-        val entry = AssetEntry(lowerName, sha256.lowercase(), sizeBytes, now, versionName)
+        val entry = AssetEntry(lowerName, sha256.lowercase(), sizeBytes, now, versionName, sourceUri)
 
         if (existing >= 0) {
             entries[existing] = entry
@@ -105,6 +113,15 @@ class AssetManifest(private val filesDir: File) {
      */
     fun getEntry(filename: String): AssetEntry? {
         return load().firstOrNull { it.filename == filename.lowercase() }
+    }
+
+    /**
+     * Remove a manifest entry by filename (case-insensitive).
+     */
+    fun remove(filename: String) {
+        val entries = load().toMutableList()
+        entries.removeAll { it.filename == filename.lowercase() }
+        save(entries)
     }
 
     /**

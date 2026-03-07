@@ -230,6 +230,13 @@ class SetupActivity : ComponentActivity() {
             if (s.manifestEntry != null) {
                 obj.put("sha256", s.manifestEntry.sha256)
                 obj.put("version", s.manifestEntry.versionDisplay)
+                if (s.manifestEntry.isExternal) {
+                    obj.put("source_uri", s.manifestEntry.sourceUri)
+                    obj.put("external", true)
+                }
+                if (!s.found) {
+                    obj.put("missing_from_disk", true)
+                }
             }
             arr.put(obj)
         }
@@ -376,7 +383,9 @@ private fun checkFiles(dir: File, fileList: List<GameFileInfo>, manifest: AssetM
             info.alternatives.firstNotNullOfOrNull { findFile(dir, it) }
         else null
         val foundName = primaryMatch ?: altMatch
-        val entry = if (foundName != null) manifest?.getEntry(foundName) else null
+        // Also check manifest when file is missing — detects "was tracked but now gone"
+        val entry = if (foundName != null) manifest?.getEntry(foundName)
+                    else manifest?.getEntry(info.filename)
         FileStatus(info, found = foundName != null, foundName = foundName, manifestEntry = entry)
     }
 
@@ -695,7 +704,26 @@ private fun SetupScreen(
 
                 // ── File detail popup ──
                 detailStatus?.let { status ->
-                    FileDetailDialog(status = status, onDismiss = { detailStatus = null })
+                    FileDetailDialog(
+                        status = status,
+                        onDismiss = { detailStatus = null },
+                        onDelete = if (status.found && status.manifestEntry != null) {
+                            {
+                                val entry = status.manifestEntry
+                                File(filesDir, entry.filename).delete()
+                                manifest.remove(entry.filename)
+                                detailStatus = null
+                                onRefresh()
+                            }
+                        } else if (status.manifestEntry?.isExternal == true) {
+                            // External but missing from disk — just forget the entry
+                            {
+                                manifest.remove(status.manifestEntry.filename)
+                                detailStatus = null
+                                onRefresh()
+                            }
+                        } else null
+                    )
                 }
 
                 // ── Shared composable blocks ──
@@ -816,16 +844,26 @@ private fun SetupScreen(
                                                         hashingFileIndex = i + 1
                                                         hashingFile = f.name
                                                         hashingProgress = 0f
+                                                        val canonicalName = f.name.lowercase()
+                                                        val destFile = File(filesDir, canonicalName)
+                                                        // Determine track: native data-dir vs external
+                                                        val existedBefore = destFile.exists()
+                                                        val existingEntry = manifest.getEntry(canonicalName)
                                                         val ok = withContext(Dispatchers.IO) {
                                                             importFile(context, f, filesDir)
                                                         }
                                                         if (ok) {
                                                             imported++
-                                                            val destFile = File(filesDir, f.name.lowercase())
                                                             val sha256 = AssetManifest.computeSha256(destFile) { bytesRead, totalBytes ->
                                                                 if (totalBytes > 0) hashingProgress = bytesRead.toFloat() / totalBytes
                                                             }
-                                                            manifest.upsert(destFile.name, sha256, destFile.length())
+                                                            // Data-dir track: file existed on disk without a sourceUri
+                                                            val sourceUri = if (existedBefore && (existingEntry == null || !existingEntry.isExternal)) {
+                                                                null
+                                                            } else {
+                                                                f.uri.toString()
+                                                            }
+                                                            manifest.upsert(destFile.name, sha256, destFile.length(), sourceUri)
                                                         }
                                                     }
                                                     hashingFile = null
@@ -1154,16 +1192,43 @@ private fun formatSize(bytes: Long): String = when {
 }
 
 @Composable
-private fun FileDetailDialog(status: FileStatus, onDismiss: () -> Unit) {
+private fun FileDetailDialog(
+    status: FileStatus,
+    onDismiss: () -> Unit,
+    onDelete: (() -> Unit)? = null
+) {
     val entry = status.manifestEntry
     val name = status.foundName ?: status.info.filename
     val description = descriptionForFile(name)
+    val isMissing = !status.found && entry != null
+    val isExternal = entry?.isExternal == true
+    var confirmingDelete by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = onDismiss) { Text("Close") }
         },
+        dismissButton = if (onDelete != null) {
+            {
+                if (isExternal) {
+                    // External files: single-step "Forget"
+                    TextButton(onClick = onDelete) {
+                        Text("Forget", color = MaterialTheme.colorScheme.error)
+                    }
+                } else if (!confirmingDelete) {
+                    // Data-dir files: first step
+                    TextButton(onClick = { confirmingDelete = true }) {
+                        Text("Delete from data folder?", color = MaterialTheme.colorScheme.error)
+                    }
+                } else {
+                    // Data-dir files: confirmation step
+                    TextButton(onClick = onDelete) {
+                        Text("Are you sure? Delete", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            }
+        } else null,
         title = {
             Text(name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
         },
@@ -1173,9 +1238,21 @@ private fun FileDetailDialog(status: FileStatus, onDismiss: () -> Unit) {
                 DetailRow("Category", description)
 
                 // Status
-                DetailRow("Status", if (status.found) "Found" else "Missing")
+                val statusText = when {
+                    status.found -> "Found"
+                    isMissing -> "Error: not found"
+                    else -> "Missing"
+                }
+                DetailRow("Status", statusText)
                 if (status.info.required) {
                     DetailRow("Required", "Yes")
+                }
+
+                // Location
+                if (isExternal && entry?.sourceUri != null) {
+                    DetailRow("Location", entry.sourceUri)
+                } else if (entry != null) {
+                    DetailRow("Location", "(in data folder)")
                 }
 
                 if (entry != null) {
@@ -1202,6 +1279,15 @@ private fun FileDetailDialog(status: FileStatus, onDismiss: () -> Unit) {
                         DetailRow("Version match", entry.versionName)
                     } else {
                         DetailRow("Version match", "Unknown (#${entry.shortHash})")
+                    }
+
+                    if (isMissing) {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                        Text(
+                            "This file was previously imported but is no longer on disk.",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
                 } else if (!status.found) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -1462,6 +1548,7 @@ private fun ControllerSection(
 
 @Composable
 private fun FileStatusRow(status: FileStatus, onClick: (() -> Unit)? = null) {
+    val isMissing = !status.found && status.manifestEntry != null
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1470,24 +1557,36 @@ private fun FileStatusRow(status: FileStatus, onClick: (() -> Unit)? = null) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = if (status.found) "\u2713" else "\u2717",
-            color = if (status.found) Color(0xFF4CAF50) else Color(0xFFF44336),
+            text = when {
+                status.found -> "\u2713"
+                isMissing -> "\u26A0"
+                else -> "\u2717"
+            },
+            color = when {
+                status.found -> Color(0xFF4CAF50)
+                isMissing -> Color(0xFFFF9800)  // orange warning
+                else -> Color(0xFFF44336)
+            },
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.width(20.dp)
         )
 
         val name = status.foundName ?: status.info.filename
-        val altHint = if (!status.found && status.info.alternatives.isNotEmpty())
+        val altHint = if (!status.found && !isMissing && status.info.alternatives.isNotEmpty())
             " (or ${status.info.alternatives.joinToString(", ")})"
         else ""
         val versionHint = if (status.found && status.manifestEntry != null)
             " [${status.manifestEntry.versionDisplay}]"
         else ""
+        val missingHint = if (isMissing) " [Error: not found]" else ""
         Text(
-            text = "$name \u2014 ${status.info.description}$altHint$versionHint",
-            color = if (status.found) MaterialTheme.colorScheme.onSurface
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
+            text = "$name \u2014 ${status.info.description}$altHint$versionHint$missingHint",
+            color = when {
+                status.found -> MaterialTheme.colorScheme.onSurface
+                isMissing -> Color(0xFFFF9800)
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
+            },
             fontSize = 13.sp,
             maxLines = 1,
             modifier = Modifier.weight(1f)
