@@ -184,7 +184,7 @@ class SetupActivity : ComponentActivity() {
             val joy = ByteArray(joyArr.length()) { (joyArr.getInt(it) and 0xFF).toByte() }
             val kb  = ByteArray(kbArr.length())  { (kbArr.getInt(it) and 0xFF).toByte() }
             val ct  = json.optInt("control_type", 1)
-            return PilotPatcher.patchAll(this, joy, kb, ct)
+            return NativePilotPatcher.nativePatchPilotFiles(filesDir.absolutePath, joy, kb, ct)
         } catch (e: Exception) {
             Log.e("DXX-Setup", "patchPilotsFromConfig failed", e)
             return 0

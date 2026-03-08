@@ -255,7 +255,7 @@ private fun saveConfig(context: Context, bindings: Map<String, String>, inverts:
     File(context.filesDir, CONFIG_FILENAME).writeText(json.toString(2))
 
     // Patch all existing pilot files with the new controller settings
-    PilotPatcher.patchAll(context, ksJoy, ksKb, 1) // 1 = CONTROL_USING_JOYSTICK
+    NativePilotPatcher.nativePatchPilotFiles(context.filesDir.absolutePath, ksJoy, ksKb, 1)
 }
 
 private fun loadConfig(context: Context): Pair<Map<String, String>, Set<String>>? {
