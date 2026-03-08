@@ -168,17 +168,21 @@ class SetupActivity : ComponentActivity() {
     private fun writeIntrospectJson() {
         try {
             val dir = filesDir
-            val manifest = AssetManifest(dir)
-            val safManifest = SafManifest.forDir(dir)
-            val d2FileList = detectD2FileList(dir, safManifest)
-            val d2Statuses = checkFiles(dir, d2FileList, manifest, safManifest)
-            val d1Statuses = checkFiles(dir, D1_FILES, manifest, safManifest)
+            val fsm = FileSetManager(dir)
+            val activeSet = fsm.getActive()
+            val setDir = fsm.getSetDir(activeSet)
+            val manifest = AssetManifest(setDir)
+            val safManifest = fsm.safManifestForSet(activeSet)
+            val d2FileList = detectD2FileList(setDir, safManifest)
+            val d2Statuses = checkFiles(setDir, d2FileList, manifest, safManifest)
+            val d1Statuses = checkFiles(dir, D1_FILES, AssetManifest(dir), SafManifest.forDir(dir))
             val d2Ready = d2Statuses.filter { it.info.required }.all { it.found }
             val d1Ready = d1Statuses.filter { it.info.required }.all { it.found }
 
             val root = JSONObject()
             root.put("screen", "setup")
             root.put("can_launch", d2Ready || d1Ready)
+            root.put("active_set", activeSet)
 
             // All files on disk
             val allFiles = dir.listFiles()?.map { it.name }?.sorted() ?: emptyList()
@@ -230,6 +234,10 @@ class SetupActivity : ComponentActivity() {
             if (s.info.downloadUrl != null)
                 obj.put("download_url", s.info.downloadUrl)
             obj.put("description", s.info.description)
+            if (s.safUri != null) {
+                obj.put("saf_linked", true)
+                obj.put("saf_uri", s.safUri)
+            }
             if (s.manifestEntry != null) {
                 obj.put("sha256", s.manifestEntry.sha256)
                 obj.put("version", s.manifestEntry.versionDisplay)
@@ -369,7 +377,9 @@ private data class FileStatus(
     val info: GameFileInfo,
     val found: Boolean,
     val foundName: String?,
-    val manifestEntry: AssetManifest.AssetEntry? = null
+    val manifestEntry: AssetManifest.AssetEntry? = null,
+    val safUri: String? = null,
+    val safSizeBytes: Long = 0
 )
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -381,27 +391,30 @@ private fun findFile(dir: File, name: String): String? {
 }
 
 private fun checkFiles(dir: File, fileList: List<GameFileInfo>, manifest: AssetManifest? = null,
-                       safManifest: SafManifest? = null): List<FileStatus> =
-    fileList.map { info ->
+                       safManifest: SafManifest? = null): List<FileStatus> {
+    val safEntries = safManifest?.read() ?: emptyList()
+    return fileList.map { info ->
         val primaryMatch = findFile(dir, info.filename)
         val altMatch = if (primaryMatch == null)
             info.alternatives.firstNotNullOfOrNull { findFile(dir, it) }
         else null
         val foundName = primaryMatch ?: altMatch
         // SAF leave-in-place: if the file isn't on disk, check the SAF manifest.
-        // Files referenced there will be served by the native PhysFS archiver.
-        val safFound = if (foundName == null) safManifest?.let { sm ->
-            val entries = sm.read()
-            entries.any { it.filename.equals(info.filename, ignoreCase = true) } ||
-            info.alternatives.any { alt -> entries.any { it.filename.equals(alt, ignoreCase = true) } }
-        } ?: false else false
-        // Also check manifest when file is missing — detects "was tracked but now gone"
+        val safEntry = if (foundName == null) {
+            safEntries.firstOrNull { it.filename.equals(info.filename, ignoreCase = true) }
+                ?: info.alternatives.firstNotNullOfOrNull { alt ->
+                    safEntries.firstOrNull { it.filename.equals(alt, ignoreCase = true) }
+                }
+        } else null
         val entry = if (foundName != null) manifest?.getEntry(foundName)
                     else manifest?.getEntry(info.filename)
-        FileStatus(info, found = foundName != null || safFound,
-                   foundName = foundName ?: if (safFound) info.filename else null,
-                   manifestEntry = entry)
+        FileStatus(info, found = foundName != null || safEntry != null,
+                   foundName = foundName ?: if (safEntry != null) info.filename else null,
+                   manifestEntry = entry,
+                   safUri = safEntry?.contentUri,
+                   safSizeBytes = safEntry?.sizeBytes ?: 0)
     }
+}
 
 /** Look up the description for a filename from the known file lists. */
 private fun descriptionForFile(filename: String): String {
@@ -597,11 +610,16 @@ private fun SetupScreen(
     onRefresh: () -> Unit,
     onDownloadStateChanged: (String, Int) -> Unit = { _, _ -> }
 ) {
-    val manifest = remember { AssetManifest(filesDir) }
-    val safManifest = remember { SafManifest.forDir(filesDir) }
-    val d2FileList = remember(refreshTrigger) { detectD2FileList(filesDir, safManifest) }
-    val d2Statuses = remember(refreshTrigger) { checkFiles(filesDir, d2FileList, manifest, safManifest) }
-    val d1Statuses = remember(refreshTrigger) { checkFiles(filesDir, D1_FILES, manifest, safManifest) }
+    val fileSetManager = remember { FileSetManager(filesDir) }
+    var activeSetName by remember { mutableStateOf(fileSetManager.getActive()) }
+    val setDir = remember(activeSetName) { fileSetManager.getSetDir(activeSetName) }
+    val manifest = remember(activeSetName) { AssetManifest(setDir) }
+    val safManifest = remember(activeSetName) { fileSetManager.safManifestForSet(activeSetName) }
+    val rootManifest = remember { AssetManifest(filesDir) }
+    val rootSafManifest = remember { SafManifest.forDir(filesDir) }
+    val d2FileList = remember(refreshTrigger, activeSetName) { detectD2FileList(setDir, safManifest) }
+    val d2Statuses = remember(refreshTrigger, activeSetName) { checkFiles(setDir, d2FileList, manifest, safManifest) }
+    val d1Statuses = remember(refreshTrigger) { checkFiles(filesDir, D1_FILES, rootManifest, rootSafManifest) }
 
     // ── Hashing progress state ──────────────────────────────
     var hashingFile by remember { mutableStateOf<String?>(null) }
@@ -611,7 +629,7 @@ private fun SetupScreen(
     val isHashing = hashingFile != null
 
     // ── Startup: hash any stale/new files ───────────────────
-    LaunchedEffect(Unit) {
+    LaunchedEffect(activeSetName) {
         val allGameNames = ALL_GAME_FILENAMES
         val staleFiles = manifest.findStaleFiles(allGameNames)
         if (staleFiles.isNotEmpty()) {
@@ -644,6 +662,10 @@ private fun SetupScreen(
 
     // ── File detail popup state ─────────────────────────────
     var detailStatus by remember { mutableStateOf<FileStatus?>(null) }
+    var detailIsD2 by remember { mutableStateOf(true) }
+
+    // ── Set management dialog state ─────────────────────────
+    var showSetDialog by remember { mutableStateOf(false) }
 
     // ── SAF file-search state ───────────────────────────────
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -740,31 +762,91 @@ private fun SetupScreen(
 
                 // ── File detail popup ──
                 detailStatus?.let { status ->
+                    val effectiveDir = if (detailIsD2) setDir else filesDir
+                    val effectiveManifest = if (detailIsD2) manifest else rootManifest
+                    val effectiveSafManifest = if (detailIsD2) safManifest else rootSafManifest
+
                     FileDetailDialog(
                         status = status,
                         onDismiss = { detailStatus = null },
-                        onDelete = if (status.found && status.manifestEntry != null) {
-                            {
-                                val entry = status.manifestEntry
-                                File(filesDir, entry.filename).delete()
-                                manifest.remove(entry.filename)
-                                detailStatus = null
-                                onRefresh()
+                        onDelete = when {
+                            // SAF leave-in-place file — unlink from SAF manifest
+                            status.safUri != null -> {
+                                {
+                                    effectiveSafManifest.remove(status.info.filename)
+                                    detailStatus = null
+                                    onRefresh()
+                                }
                             }
-                        } else if (status.manifestEntry?.isExternal == true) {
-                            // External but missing from disk — just forget the entry
-                            {
-                                manifest.remove(status.manifestEntry.filename)
-                                detailStatus = null
-                                onRefresh()
+                            // File on disk with manifest entry — delete file + manifest entry
+                            status.found && status.manifestEntry != null -> {
+                                {
+                                    val entry = status.manifestEntry
+                                    File(effectiveDir, entry.filename).delete()
+                                    effectiveManifest.remove(entry.filename)
+                                    detailStatus = null
+                                    onRefresh()
+                                }
                             }
-                        } else null
+                            // External import but missing from disk — forget the manifest entry
+                            status.manifestEntry?.isExternal == true -> {
+                                {
+                                    effectiveManifest.remove(status.manifestEntry.filename)
+                                    detailStatus = null
+                                    onRefresh()
+                                }
+                            }
+                            else -> null
+                        }
+                    )
+                }
+
+                // ── Set management dialog ──
+                if (showSetDialog) {
+                    SetManagementDialog(
+                        fileSetManager = fileSetManager,
+                        activeSetName = activeSetName,
+                        onSwitchSet = { newSet ->
+                            fileSetManager.setActive(newSet)
+                            activeSetName = newSet
+                            showSetDialog = false
+                            onRefresh()
+                        },
+                        onDismiss = { showSetDialog = false }
                     )
                 }
 
                 // ── Shared composable blocks ──
 
                 val filesPane: @Composable ColumnScope.() -> Unit = {
+                    // ── Active set indicator ──────────────────────
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Files in use: ",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = activeSetName,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        TextButton(
+                            onClick = { showSetDialog = true },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                            modifier = Modifier.height(28.dp)
+                        ) {
+                            Text("Change", fontSize = 12.sp)
+                        }
+                    }
+
                     // ── Missing-files help ──────────────────────
                     if (!canLaunch && !gameRunning) {
                         MissingFilesHelp()
@@ -947,12 +1029,12 @@ private fun SetupScreen(
                     if (d2Expanded) {
                         SectionHeader("Required Files")
                         d2Statuses.filter { it.info.required }.forEach {
-                            FileStatusRow(it) { detailStatus = it }
+                            FileStatusRow(it) { detailStatus = it; detailIsD2 = true }
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         SectionHeader("Optional Files")
                         d2Statuses.filter { !it.info.required }.forEach {
-                            FileStatusRow(it) { detailStatus = it }
+                            FileStatusRow(it) { detailStatus = it; detailIsD2 = true }
                         }
                     }
 
@@ -968,7 +1050,7 @@ private fun SetupScreen(
                     if (d1Expanded) {
                         SectionHeader("Required Files")
                         d1Statuses.filter { it.info.required }.forEach {
-                            FileStatusRow(it) { detailStatus = it }
+                            FileStatusRow(it) { detailStatus = it; detailIsD2 = false }
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         SectionHeader("Optional Files")
@@ -998,7 +1080,7 @@ private fun SetupScreen(
                                 }
                             )
                         } else {
-                            FileStatusRow(status) { detailStatus = status }
+                            FileStatusRow(status) { detailStatus = status; detailIsD2 = false }
                         }
                     }
                     } // end if (d1Expanded)
@@ -1247,7 +1329,12 @@ private fun FileDetailDialog(
         },
         dismissButton = if (onDelete != null) {
             {
-                if (isExternal) {
+                if (status.safUri != null) {
+                    // SAF leave-in-place: single-step "Unlink"
+                    TextButton(onClick = onDelete) {
+                        Text("Unlink", color = MaterialTheme.colorScheme.error)
+                    }
+                } else if (isExternal) {
                     // External files: single-step "Forget"
                     TextButton(onClick = onDelete) {
                         Text("Forget", color = MaterialTheme.colorScheme.error)
@@ -1285,7 +1372,12 @@ private fun FileDetailDialog(
                 }
 
                 // Location
-                if (isExternal && entry?.sourceUri != null) {
+                if (status.safUri != null) {
+                    DetailRow("Location", "leave-in-place (linked)")
+                    if (status.safSizeBytes > 0) {
+                        DetailRow("Size", formatSize(status.safSizeBytes))
+                    }
+                } else if (isExternal && entry?.sourceUri != null) {
                     DetailRow("Location", entry.sourceUri)
                 } else if (entry != null) {
                     DetailRow("Location", "(in data folder)")
@@ -1728,6 +1820,148 @@ private fun MissingFilesHelp() {
             )
         }
     }
+}
+
+@Composable
+private fun SetManagementDialog(
+    fileSetManager: FileSetManager,
+    activeSetName: String,
+    onSwitchSet: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var newSetName by remember { mutableStateOf("") }
+    var showNewSetInput by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val sets = remember { fileSetManager.listSets() }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        },
+        title = { Text("File Sets", fontWeight = FontWeight.Bold) },
+        text = {
+            Column {
+                // Current set info
+                Text("Current: $activeSetName", fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold)
+                val usage = fileSetManager.diskUsage(activeSetName)
+                Text("Size: ${formatSize(usage)}", fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Other sets to switch to
+                val otherSets = sets.filter { it.name != activeSetName }
+                if (otherSets.isNotEmpty()) {
+                    otherSets.forEach { set ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onSwitchSet(set.name) }
+                                .padding(vertical = 8.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Switch to \"${set.name}\"",
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                text = formatSize(fileSetManager.diskUsage(set.name)),
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                }
+
+                // Add new set
+                if (showNewSetInput) {
+                    OutlinedTextField(
+                        value = newSetName,
+                        onValueChange = { newSetName = it; errorMessage = null },
+                        label = { Text("Set name") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = errorMessage != null,
+                        supportingText = errorMessage?.let { { Text(it) } }
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = {
+                            try {
+                                fileSetManager.createSet(newSetName.trim())
+                                onSwitchSet(newSetName.trim())
+                            } catch (e: IllegalArgumentException) {
+                                errorMessage = e.message
+                            }
+                        }) {
+                            Text("Create", fontSize = 13.sp)
+                        }
+                        OutlinedButton(onClick = {
+                            showNewSetInput = false; newSetName = ""
+                        }) {
+                            Text("Cancel", fontSize = 13.sp)
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showNewSetInput = true }
+                            .padding(vertical = 8.dp, horizontal = 4.dp)
+                    ) {
+                        Text(
+                            text = "+ Add new set\u2026",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                // Delete current set (if not default)
+                if (activeSetName != FileSetManager.DEFAULT_SET) {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    if (!confirmDelete) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { confirmDelete = true }
+                                .padding(vertical = 8.dp, horizontal = 4.dp)
+                        ) {
+                            Text(
+                                text = "Delete \"$activeSetName\"",
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    fileSetManager.deleteSet(activeSetName)
+                                    onSwitchSet(FileSetManager.DEFAULT_SET)
+                                }
+                                .padding(vertical = 8.dp, horizontal = 4.dp)
+                        ) {
+                            Text(
+                                text = "Confirm delete \"$activeSetName\"?",
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.error,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    )
 }
 
 // ── Download helper ─────────────────────────────────────────────────────────

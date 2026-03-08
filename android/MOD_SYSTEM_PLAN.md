@@ -314,73 +314,105 @@ Verified with existing test suite:
 
 ---
 
-### Phase M3: File Set UI
+### Phase M3: File Set UI ✅ COMPLETE
 
 **Goal:** User can create, switch, and delete file sets. File imports (SAF leave-in-place or copy) route to the active set.
+
+**Status:** Complete. All Compose UI components implemented and tested. Users can see and switch active sets, create new sets, delete named sets, and imported files route to the active set's directory. File detail dialogs show SAF leave-in-place info with Unlink action for linked files.
 
 **Depends on:** M2 (FileSetManager, set persistence).
 
 #### M3.1 — Active set indicator
 
-Above the file sections in the files pane:
+**File:** `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt`
+
+Row at the top of the files pane showing the active set:
 
 ```
 Files in use: default     [Change]
 ```
 
-#### M3.2 — Set management dialog
+Implemented as a `Row` with the set name in bold and a `TextButton("Change")` that opens the set management dialog. Always visible above the file sections.
 
-```
-┌─────────────────────────────────┐
-│  Choose File Set                │
-│                                 │
-│  Current: D2 Demo               │
-│  Size: 12.3 MB                  │
-│                                 │
-│  ─────────────────────────────  │
-│  ▸ Switch to set "default"      │
-│  ▸ Switch to set "Steam v1.1"   │
-│                                 │
-│  ─────────────────────────────  │
-│  ▸ Add new set...               │
-│  ▸ Delete "D2 Demo"             │
-│                                 │
-│              [Close]            │
-└─────────────────────────────────┘
-```
+#### M3.2 — Set management dialog (SetManagementDialog composable)
 
-Switching sets: update `file_sets.json`, write `.active_set_path`, refresh UI.
-Delete: recursively delete `files/sets/<name>/`, release persisted SAF permissions for that set's URIs, switch to default if active was deleted.
+**File:** `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt` (~130 lines)
+
+`AlertDialog` showing:
+
+- **Current set** name and disk usage (`formatSize()`)
+- **Switch list** — clickable rows for each other set with size display
+- **Add new set** — inline `OutlinedTextField` with Create/Cancel, validates via `FileSetManager.createSet()` (catches `IllegalArgumentException` for invalid names)
+- **Delete current set** — 2-step confirmation for non-default sets, calls `FileSetManager.deleteSet()` then switches to default
+
+Switching sets: calls `fileSetManager.setActive(name)`, updates `activeSetName` state, dismisses dialog, triggers `onRefresh()`. All downstream `remember(activeSetName)` values recompute automatically.
 
 #### M3.3 — Route file selection to active set
 
-When files are selected via SAF picker, the "leave in place" or "import" flow targets the active set:
-- **Leave in place:** writes to `fileSetManager.getSetDir(active)/.saf_manifest.json`
-- **Import (copy):** copies to `fileSetManager.getSetDir(active)/`
+**File:** `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt`
 
-Both update the active set's `AssetManifest`.
+The import flow (file picker → `importFile()` → hash → `manifest.upsert()`) now targets the active set's directory:
+
+- `File(setDir, canonicalName)` replaces `File(filesDir, canonicalName)` for destination
+- `importFile(context, f, setDir)` replaces `importFile(context, f, filesDir)`
+- `manifest` is `AssetManifest(setDir)` — per-set manifest
+
+For the default set, `setDir == filesDir`, so behavior is unchanged. For named sets, files are imported to `filesDir/sets/<name>/`.
 
 #### M3.4 — Per-set readiness display
 
-Readiness checks both the set's copied files AND its `.saf_manifest.json` entries. A file is "found" if it exists on disk in the set dir, in `filesDir` (fallback), or in the SAF manifest:
+**File:** `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt`
+
+D2 file status uses the active set's directory and SAF manifest:
 
 ```kotlin
-fun checkFilesForSet(
-    setDir: File,
-    safManifest: SafManifest,
-    fallbackDir: File,
-    fileList: List<GameFileInfo>,
-    assetManifest: AssetManifest?
-): List<FileStatus>
+val fileSetManager = remember { FileSetManager(filesDir) }
+var activeSetName by remember { mutableStateOf(fileSetManager.getActive()) }
+val setDir = remember(activeSetName) { fileSetManager.getSetDir(activeSetName) }
+val manifest = remember(activeSetName) { AssetManifest(setDir) }
+val safManifest = remember(activeSetName) { fileSetManager.safManifestForSet(activeSetName) }
+val d2Statuses = remember(refreshTrigger, activeSetName) { checkFiles(setDir, d2FileList, manifest, safManifest) }
 ```
+
+D1 files always use `filesDir` with separate `rootManifest` and `rootSafManifest` (D1 doesn't support sets).
+
+The `checkFiles()` function was refactored to read SAF entries once (outside the `map`) and capture the matching `SafFileEntry` for each file, enabling `safUri` and `safSizeBytes` fields on `FileStatus`.
+
+Hashing (`LaunchedEffect`) is keyed on `activeSetName` — re-hashes when switching sets.
 
 #### M3.5 — FileDetailDialog: leave-in-place info
 
-The file detail popup shows additional info for SAF-linked files:
+**File:** `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt`
 
-- **Location:** `content://... (leave-in-place)` or `(in app storage)`
-- **Action button:** "Unlink" (removes from SAF manifest, releases URI permission) or "Delete" (removes copied file)
-- **Status indicator:** checkmark for accessible, warning for stale permission
+`FileStatus` extended with `safUri: String?` and `safSizeBytes: Long` fields, populated from the matching `SafFileEntry` in `checkFiles()`.
+
+FileDetailDialog shows:
+
+- **SAF-linked files**: Location as "leave-in-place (linked)" with file size; "Unlink" button removes the SAF manifest entry
+- **Data-dir files**: Location as "(in data folder)"; 2-step "Delete" confirmation
+- **External imports**: "Forget" button (unchanged)
+
+The delete handler uses `detailIsD2` state to select the correct directory (`setDir` vs `filesDir`) and manifest (`manifest` vs `rootManifest`) for operations.
+
+#### M3.6 — Introspection updates
+
+**File:** `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt`
+
+`writeIntrospectJson()` updated to be set-aware:
+
+- Creates `FileSetManager` to determine active set and set directory
+- D2 file checks use the active set's dir and SAF manifest
+- D1 file checks always use `filesDir`
+- Output includes `"active_set"` field
+
+`fileStatusArray()` includes `saf_linked: true` and `saf_uri` for SAF-linked files.
+
+#### M3.7 — Testing
+
+Verified with existing test suite:
+- SAF archiver test: PASS (37 steps)
+- Regression test (test_launch_to_automap): PASS (41 steps)
+- Build: `BUILD SUCCESSFUL`
 
 ---
 
