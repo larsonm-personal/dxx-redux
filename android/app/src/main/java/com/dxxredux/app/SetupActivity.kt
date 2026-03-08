@@ -427,6 +427,34 @@ private fun descriptionForFile(filename: String): String {
     }?.description ?: "Unknown file"
 }
 
+/** Describe a file's type based on its extension. */
+private fun describeExtension(filename: String): String {
+    val ext = filename.substringAfterLast('.', "").lowercase()
+    return EXTENSION_TYPES[ext] ?: "[.$ext] \u2014 unknown type"
+}
+
+private val EXTENSION_TYPES = mapOf(
+    "hog" to ".hog \u2014 mission archive",
+    "mn2" to ".mn2 \u2014 Descent II mission descriptor",
+    "msn" to ".msn \u2014 Descent I mission descriptor",
+    "ham" to ".ham \u2014 global robot/weapon data",
+    "vham" to ".vham \u2014 variant HAM (D2X-XL)",
+    "pig" to ".pig \u2014 texture/sound container",
+    "pog" to ".pog \u2014 texture override pack",
+    "pcx" to ".pcx \u2014 briefing/cutscene image",
+    "s11" to ".s11 \u2014 11 kHz PCM sound",
+    "s22" to ".s22 \u2014 22 kHz PCM sound",
+    "hmp" to ".hmp \u2014 HMI-format MIDI music",
+    "raw" to ".raw \u2014 raw PCM audio",
+    "rl2" to ".rl2 \u2014 Descent II level",
+    "rdl" to ".rdl \u2014 Descent I level",
+    "mvl" to ".mvl \u2014 movie library archive",
+    "dxa" to ".dxa \u2014 hi-res texture/sound pack",
+    "dtx" to ".dtx \u2014 D2X-XL texture pack",
+    "gog" to ".gog \u2014 GOG CD image (Redbook audio)",
+    "inst" to ".inst \u2014 GOG CD cue sheet",
+)
+
 // ── File definitions ────────────────────────────────────────────────────────
 
 private val D2_FILES = listOf(
@@ -1738,6 +1766,7 @@ private fun FileDetailDialog(
             Column {
                 // Category / description
                 DetailRow("Category", description)
+                DetailRow("Type", describeExtension(name))
 
                 // Status
                 val statusText = when {
