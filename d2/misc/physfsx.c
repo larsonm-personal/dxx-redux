@@ -60,13 +60,36 @@ void PHYSFSX_init(int argc, char *argv[])
 			PHYSFS_registerArchiver(&SAF_Archiver);
 		}
 
-		/* SAF leave-in-place: mount .saf_manifest.json if it exists.
-		 * This lets the engine read game files directly from their
-		 * original location via SAF content URIs. */
+		/* File-set support: if .active_set_path exists and contains a
+		 * non-empty path, prepend that directory so its files take
+		 * priority over filesDir.  The SAF manifest for the active set
+		 * lives in that directory; otherwise fall back to filesDir's. */
 		if (pref)
 		{
+			char asp[512];
+			char setdir[512] = "";
 			char safpath[512];
-			snprintf(safpath, sizeof(safpath), "%s.saf_manifest.json", pref);
+
+			snprintf(asp, sizeof(asp), "%s.active_set_path", pref);
+			{
+				FILE *f = fopen(asp, "r");
+				if (f) {
+					if (fgets(setdir, sizeof(setdir), f)) {
+						char *nl = strchr(setdir, '\n');
+						if (nl) *nl = '\0';
+						if (strlen(setdir) > 0)
+							PHYSFS_addToSearchPath(setdir, 0); /* prepend */
+					}
+					fclose(f);
+				}
+			}
+
+			/* Mount SAF manifest (from set dir if active, else from pref) */
+			if (strlen(setdir) > 0)
+				snprintf(safpath, sizeof(safpath), "%s/.saf_manifest.json", setdir);
+			else
+				snprintf(safpath, sizeof(safpath), "%s.saf_manifest.json", pref);
+
 			{
 				FILE *sf = fopen(safpath, "r");
 				if (sf) {

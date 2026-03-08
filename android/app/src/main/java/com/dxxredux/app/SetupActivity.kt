@@ -91,6 +91,7 @@ class SetupActivity : ComponentActivity() {
                     if (gameRunningFlag) {
                         finish()
                     } else {
+                        FileSetManager(filesDir).writeActiveSetPath()
                         writeInitialGameConfig()
                         startActivity(Intent(this@SetupActivity, MainActivity::class.java))
                     }
@@ -169,7 +170,8 @@ class SetupActivity : ComponentActivity() {
             val dir = filesDir
             val manifest = AssetManifest(dir)
             val safManifest = SafManifest.forDir(dir)
-            val d2Statuses = checkFiles(dir, D2_FILES, manifest, safManifest)
+            val d2FileList = detectD2FileList(dir, safManifest)
+            val d2Statuses = checkFiles(dir, d2FileList, manifest, safManifest)
             val d1Statuses = checkFiles(dir, D1_FILES, manifest, safManifest)
             val d2Ready = d2Statuses.filter { it.info.required }.all { it.found }
             val d1Ready = d1Statuses.filter { it.info.required }.all { it.found }
@@ -283,6 +285,7 @@ class SetupActivity : ComponentActivity() {
                     if (gameRunning) {
                         finish()   // return to the already-running game
                     } else {
+                        FileSetManager(filesDir).writeActiveSetPath()
                         writeInitialGameConfig()
                         startActivity(Intent(this, MainActivity::class.java))
                         // Don't finish() — stay in back stack so quitting
@@ -403,7 +406,7 @@ private fun checkFiles(dir: File, fileList: List<GameFileInfo>, manifest: AssetM
 /** Look up the description for a filename from the known file lists. */
 private fun descriptionForFile(filename: String): String {
     val lower = filename.lowercase()
-    val allFiles = D2_FILES + D1_FILES + MUSIC_FILES
+    val allFiles = D2_FILES + D2_DEMO_FILES + D1_FILES + MUSIC_FILES
     return allFiles.firstOrNull { info ->
         info.filename.equals(lower, ignoreCase = true) ||
         info.alternatives.any { it.equals(lower, ignoreCase = true) }
@@ -445,6 +448,26 @@ private val D2_FILES = listOf(
         required = false, alternatives = listOf("DESCENT_II.inst")),
 )
 
+private val D2_DEMO_FILES = listOf(
+    GameFileInfo("d2demo.hog", "Demo game data", required = true),
+    GameFileInfo("d2demo.ham", "Demo models & objects", required = true),
+    GameFileInfo("d2demo.pig", "Demo textures", required = true),
+)
+
+/**
+ * Detect whether the files on disk (and in SAF manifest) correspond to the
+ * D2 demo or the full game, and return the appropriate file list.
+ */
+private fun detectD2FileList(dir: File, safManifest: SafManifest? = null): List<GameFileInfo> {
+    val demoFiles = listOf("d2demo.hog", "d2demo.ham", "d2demo.pig")
+    val hasDemoOnDisk = demoFiles.any { findFile(dir, it) != null }
+    val hasDemoInSaf = safManifest?.let { sm ->
+        val entries = sm.read()
+        demoFiles.any { demo -> entries.any { it.filename.equals(demo, ignoreCase = true) } }
+    } ?: false
+    return if (hasDemoOnDisk || hasDemoInSaf) D2_DEMO_FILES else D2_FILES
+}
+
 private val D1_FILES = listOf(
     // Required – core D1 files
     GameFileInfo("descent.hog", "D1 game data", required = true),
@@ -468,9 +491,9 @@ private val MUSIC_FILES = listOf(
 
 // ── SAF directory scanning ───────────────────────────────────────────────────
 
-/** All filenames we care about (D2 + D1 + Music), lowercase for matching. */
+/** All filenames we care about (D2 + D2 Demo + D1 + Music), lowercase for matching. */
 private val ALL_GAME_FILENAMES: Set<String> by lazy {
-    (D2_FILES + D1_FILES + MUSIC_FILES).flatMap { info ->
+    (D2_FILES + D2_DEMO_FILES + D1_FILES + MUSIC_FILES).flatMap { info ->
         listOf(info.filename) + info.alternatives
     }.map { it.lowercase() }.toSet()
 }
@@ -576,7 +599,8 @@ private fun SetupScreen(
 ) {
     val manifest = remember { AssetManifest(filesDir) }
     val safManifest = remember { SafManifest.forDir(filesDir) }
-    val d2Statuses = remember(refreshTrigger) { checkFiles(filesDir, D2_FILES, manifest, safManifest) }
+    val d2FileList = remember(refreshTrigger) { detectD2FileList(filesDir, safManifest) }
+    val d2Statuses = remember(refreshTrigger) { checkFiles(filesDir, d2FileList, manifest, safManifest) }
     val d1Statuses = remember(refreshTrigger) { checkFiles(filesDir, D1_FILES, manifest, safManifest) }
 
     // ── Hashing progress state ──────────────────────────────

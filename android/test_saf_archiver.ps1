@@ -330,7 +330,13 @@ if (!$NoCleanup) {
     Start-Sleep -Seconds 1
     
     # Restore the file to app's files dir
-    Adb shell "run-as $PACKAGE cp $SAF_DIR/$TEST_FILE files/$TEST_FILE" | Out-Null
+    # Note: run-as can't read /data/local/tmp/, so re-push from local game_data
+    $restoreTmp = "/data/local/tmp/$TEST_FILE"
+    if (Test-Path $localGameData) {
+        Adb push $localGameData $restoreTmp | Out-Null
+    }
+    Adb shell "run-as $PACKAGE cp $restoreTmp files/$TEST_FILE" | Out-Null
+    Adb shell "rm -f $restoreTmp" | Out-Null
     
     # Remove SAF test artifacts
     Adb shell "run-as $PACKAGE rm -f files/.saf_manifest.json" | Out-Null
