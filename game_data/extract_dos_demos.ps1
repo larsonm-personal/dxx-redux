@@ -28,7 +28,13 @@ if (-not $dosboxDirName) {
     exit 1
 }
 
-$DosboxExe = "C:\local\$dosboxDirName\dosbox-x.exe"
+$_depBaseFile = Join-Path $RepoRoot "dependency_base.txt"
+if (-not (Test-Path $_depBaseFile)) {
+    Write-Error "dependency_base.txt not found at $_depBaseFile. Create it with a single line containing the path to your dependency directory (e.g. C:\local)."
+    exit 1
+}
+$DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
+$DosboxExe = "$DEP_BASE\$dosboxDirName\dosbox-x.exe"
 if (-not (Test-Path $DosboxExe)) {
     Write-Error "DOSBox-X not found at $DosboxExe`nRun:  bash android/get_deps/get_dosbox.sh"
     exit 1

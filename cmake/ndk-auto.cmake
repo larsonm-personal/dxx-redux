@@ -5,7 +5,7 @@
 # Search order:
 #   1. ANDROID_NDK_ROOT / ANDROID_NDK environment variables (standard)
 #   2. NDK_ROOT environment variable
-#   3. Newest android-ndk-* folder under C:/local  (Windows convention)
+#   3. Newest android-ndk-* folder under dependency_base.txt dir (or C:/local fallback)
 #   4. Common SDK locations (<SDK>/ndk/<version> and <SDK>/ndk-bundle)
 #   5. Common standalone install locations
 #
@@ -39,9 +39,18 @@ foreach(_envvar ANDROID_NDK_ROOT ANDROID_NDK NDK_ROOT)
     endif()
 endforeach()
 
-# 3. Scan C:/local for the newest android-ndk-* folder (Windows)
+# 3. Scan dependency base dir for newest android-ndk-* folder (Windows)
 if(NOT _NDK_ROOT AND WIN32)
-    file(GLOB _ndk_candidates LIST_DIRECTORIES true "C:/local/android-ndk-*")
+    # Read dependency_base.txt from repo root
+    set(_dep_base_file "${CMAKE_CURRENT_LIST_DIR}/../dependency_base.txt")
+    if(EXISTS "${_dep_base_file}")
+        file(READ "${_dep_base_file}" _dep_base)
+        string(STRIP "${_dep_base}" _dep_base)
+        file(TO_CMAKE_PATH "${_dep_base}" _dep_base)
+        file(GLOB _ndk_candidates LIST_DIRECTORIES true "${_dep_base}/android-ndk-*")
+    else()
+        file(GLOB _ndk_candidates LIST_DIRECTORIES true "C:/local/android-ndk-*")
+    endif()
     if(_ndk_candidates)
         list(SORT _ndk_candidates ORDER DESCENDING)
         foreach(_c IN LISTS _ndk_candidates)
@@ -87,7 +96,7 @@ else()
     message(WARNING
         "ndk-auto: Android NDK not found. Install the NDK and either:\n"
         "  - set ANDROID_NDK_ROOT environment variable, or\n"
-        "  - place it under C:/local/android-ndk-<version>\n"
+        "  - set the path in dependency_base.txt and place the NDK under it\n"
     )
 endif()
 

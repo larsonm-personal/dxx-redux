@@ -1,15 +1,14 @@
 #!/bin/bash
-# get_sdk.sh — Download and install Android SDK command-line tools to C:/local/android-sdk if not present.
+# get_sdk.sh — Download and install Android SDK command-line tools if not present.
 # Reads URL from tool_versions.conf.
 # After running this, run finalize.sh to accept licenses and install platform packages.
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/tool_versions.conf"
+source "$SCRIPT_DIR/resolve_dep_base.sh"
 
-INSTALL_DIR="/c/local"
-[ ! -d "$INSTALL_DIR" ] && INSTALL_DIR="/mnt/c/local"
-[ ! -d "$INSTALL_DIR" ] && INSTALL_DIR="C:/local"
+INSTALL_DIR="$LOCAL_DIR"
 
 DEST="$INSTALL_DIR/android-sdk"
 

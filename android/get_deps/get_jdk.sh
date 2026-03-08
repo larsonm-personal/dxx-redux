@@ -1,15 +1,14 @@
 #!/bin/bash
-# get_jdk.sh — Download and install OpenJDK to C:/local/ if not present.
+# get_jdk.sh — Download and install OpenJDK if not present.
 # Reads version/URL from tool_versions.conf.
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/tool_versions.conf"
+source "$SCRIPT_DIR/resolve_dep_base.sh"
 
 JDK_DIR_NAME="jdk-$JDK_MAJOR"
-INSTALL_DIR="/c/local"
-[ ! -d "$INSTALL_DIR" ] && INSTALL_DIR="/mnt/c/local"
-[ ! -d "$INSTALL_DIR" ] && INSTALL_DIR="C:/local"
+INSTALL_DIR="$LOCAL_DIR"
 
 DEST="$INSTALL_DIR/$JDK_DIR_NAME"
 

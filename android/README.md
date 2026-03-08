@@ -1,8 +1,9 @@
 # windows build dependencies
 * see auto-download scripts in `android/get_deps/`
-* android NDK (gets automatically found if placed in `C:\local\android-ndk...\`)
-* android SDK command line tools (`C:\local\android-sdk...\`)
-* JDK (`C:\local\jdk...\`)
+* create `dependency_base.txt` in the repo root with the path to your dependency directory (e.g. `C:\local`)
+* android NDK (gets automatically found under `<dependency_base>/android-ndk.../`)
+* android SDK command line tools (`<dependency_base>/android-sdk.../`)
+* JDK (`<dependency_base>/jdk.../`)
 * wsl (for bash)
 
 # VS code extensions

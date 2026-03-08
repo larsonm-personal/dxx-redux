@@ -1,18 +1,10 @@
 #!/bin/bash
 # set_vars.sh — Source this to set JAVA_HOME, ANDROID_HOME, ANDROID_NDK_ROOT.
-# Scans C:/local (or /c/local in MSYS/Git Bash) for the newest matching folders.
+# Reads the dependency base directory from dependency_base.txt.
 
-# Determine the base directory (works in Git Bash / MSYS2 and WSL)
-if [ -d "/c/local" ]; then
-    LOCAL_DIR="/c/local"
-elif [ -d "/mnt/c/local" ]; then
-    LOCAL_DIR="/mnt/c/local"
-elif [ -d "C:/local" ]; then
-    LOCAL_DIR="C:/local"
-else
-    echo "ERROR: C:\\local not found" >&2
-    return 1 2>/dev/null || exit 1
-fi
+# Resolve LOCAL_DIR from dependency_base.txt
+_SET_VARS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$_SET_VARS_DIR/get_deps/resolve_dep_base.sh"
 
 # Find newest folder matching a prefix (sorted descending, first match wins)
 _find_newest() {

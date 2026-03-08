@@ -21,5 +21,15 @@ dependencyResolutionManagement {
     }
 }
 
+// Auto-generate local.properties from dependency_base.txt if it doesn't exist
+def localPropsFile = new File(rootDir, "local.properties")
+if (!localPropsFile.exists()) {
+    def depBaseFile = new File(rootDir, "../dependency_base.txt")
+    if (depBaseFile.exists()) {
+        def depBase = depBaseFile.text.trim().replace('\\', '/')
+        localPropsFile.text = "# Auto-generated from dependency_base.txt\nsdk.dir=${depBase}/android-sdk\n"
+    }
+}
+
 rootProject.name = "dxx-redux"
 include ':app'

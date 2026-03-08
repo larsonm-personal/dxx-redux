@@ -113,11 +113,15 @@ tasks.configureEach { task ->
     }
 }
 
+// Load dependency base path
+def depBaseFile = rootProject.file("../dependency_base.txt")
+def depBase = depBaseFile.exists() ? depBaseFile.text.trim().replace('\\', '/') : null
+
 android {
     namespace 'com.dxxredux.app'
     compileSdk toolVersions['COMPILE_SDK'].toInteger()
     ndkVersion toolVersions['NDK_FULL_VERSION']
-    ndkPath System.getenv('ANDROID_NDK_ROOT') ?: "C:/local/android-ndk-${toolVersions['NDK_VERSION']}"
+    ndkPath System.getenv('ANDROID_NDK_ROOT') ?: (depBase ? "${depBase}/android-ndk-${toolVersions['NDK_VERSION']}" : null)
 
     if (keystorePropertiesFile.exists()) {
         signingConfigs {

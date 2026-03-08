@@ -66,6 +66,7 @@ build*/
 # Android #
 ###########
 local.properties
+dependency_base.txt
 keystore.properties
 play-store-credentials.json
 *.keystore

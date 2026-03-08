@@ -18,8 +18,14 @@ param(
     [int]$TimeoutSeconds = 120
 )
 
-$ADB = "C:\local\android-sdk\platform-tools\adb.exe"
-$EMULATOR = "C:\local\android-sdk\emulator\emulator.exe"
+$_depBaseFile = Join-Path (Split-Path $PSScriptRoot) "dependency_base.txt"
+if (-not (Test-Path $_depBaseFile)) {
+    Write-Error "dependency_base.txt not found at $_depBaseFile. Create it with a single line containing the path to your dependency directory (e.g. C:\local)."
+    exit 1
+}
+$DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
+$ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
+$EMULATOR = "$DEP_BASE\android-sdk\emulator\emulator.exe"
 $AVD_NAME = "Pixel_6_API_34"
 
 function Test-EmulatorHealth {

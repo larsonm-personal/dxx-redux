@@ -84,9 +84,11 @@ function Get-LatestJDKVersion {
 function Get-LatestBuildToolsVersion {
     # Use sdkmanager --list to find latest build-tools (if available)
     $sdkDir = $null
-    foreach ($base in @("C:\local", "C:/local")) {
-        $candidate = Join-Path $base "android-sdk"
-        if (Test-Path $candidate) { $sdkDir = $candidate; break }
+    $_depBaseFile = Join-Path (Split-Path (Split-Path $PSScriptRoot)) "dependency_base.txt"
+    if (Test-Path $_depBaseFile) {
+        $DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
+        $candidate = Join-Path $DEP_BASE "android-sdk"
+        if (Test-Path $candidate) { $sdkDir = $candidate }
     }
     if (-not $sdkDir) { return $null }
     

@@ -7,12 +7,18 @@ Push-Location $PSScriptRoot
 try {
     # Set JAVA_HOME if not already set
     if (-not $env:JAVA_HOME) {
-        $jdk = Get-ChildItem "C:\local\jdk-*" -Directory | Sort-Object Name -Descending | Select-Object -First 1
+        $_depBaseFile = Join-Path (Split-Path $PSScriptRoot) "dependency_base.txt"
+        if (-not (Test-Path $_depBaseFile)) {
+            Write-Error "dependency_base.txt not found at $_depBaseFile. Create it with a single line containing the path to your dependency directory (e.g. C:\local)."
+            exit 1
+        }
+        $DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
+        $jdk = Get-ChildItem "$DEP_BASE\jdk-*" -Directory | Sort-Object Name -Descending | Select-Object -First 1
         if ($jdk) {
             $env:JAVA_HOME = $jdk.FullName
             Write-Host "JAVA_HOME = $env:JAVA_HOME"
         } else {
-            Write-Error "No JDK found in C:\local\jdk-*. Set JAVA_HOME manually."
+            Write-Error "No JDK found in $DEP_BASE\jdk-*. Set JAVA_HOME manually."
         }
     }
 

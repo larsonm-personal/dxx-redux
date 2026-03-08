@@ -4,14 +4,20 @@ $ErrorActionPreference = "Stop"
 
 Push-Location $PSScriptRoot
 try {
-    # Find keytool via JAVA_HOME or auto-detect from C:\local\jdk-*
+    # Find keytool via JAVA_HOME or auto-detect
     $javaHome = $env:JAVA_HOME
     if (-not $javaHome) {
-        $jdk = Get-ChildItem "C:\local\jdk-*" -Directory | Sort-Object Name -Descending | Select-Object -First 1
+        $_depBaseFile = Join-Path (Split-Path $PSScriptRoot) "dependency_base.txt"
+        if (-not (Test-Path $_depBaseFile)) {
+            Write-Error "dependency_base.txt not found at $_depBaseFile. Create it with a single line containing the path to your dependency directory (e.g. C:\local)."
+            exit 1
+        }
+        $DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
+        $jdk = Get-ChildItem "$DEP_BASE\jdk-*" -Directory | Sort-Object Name -Descending | Select-Object -First 1
         if ($jdk) {
             $javaHome = $jdk.FullName
         } else {
-            Write-Error "No JDK found in C:\local\jdk-*. Set JAVA_HOME manually."
+            Write-Error "No JDK found in $DEP_BASE\jdk-*. Set JAVA_HOME manually."
         }
     }
 

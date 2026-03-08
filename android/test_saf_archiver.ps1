@@ -41,7 +41,13 @@ if (!(Test-Path "$repoRoot\android")) {
 $androidDir = "$repoRoot\android"
 $apkPath = "$androidDir\app\build\outputs\apk\debug\app-debug.apk"
 $scriptSource = "$androidDir\game_scripts\test_saf_basic.json5"
-$adb = "C:\local\android-sdk\platform-tools\adb.exe"
+$_depBaseFile = Join-Path (Split-Path $PSScriptRoot) "dependency_base.txt"
+if (-not (Test-Path $_depBaseFile)) {
+    Write-Error "dependency_base.txt not found at $_depBaseFile. Create it with a single line containing the path to your dependency directory (e.g. C:\local)."
+    exit 1
+}
+$DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
+$adb = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
 
 $PACKAGE = "com.dxxredux.app"
 $TEST_FILE = "descent2.ham"

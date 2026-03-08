@@ -5,10 +5,9 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/tool_versions.conf"
+source "$SCRIPT_DIR/resolve_dep_base.sh"
 
-INSTALL_DIR="/c/local"
-[ ! -d "$INSTALL_DIR" ] && INSTALL_DIR="/mnt/c/local"
-[ ! -d "$INSTALL_DIR" ] && INSTALL_DIR="C:/local"
+INSTALL_DIR="$LOCAL_DIR"
 
 SDK_DIR="$INSTALL_DIR/android-sdk"
 SDKMANAGER="$SDK_DIR/cmdline-tools/latest/bin/sdkmanager"

@@ -1,5 +1,5 @@
 #!/bin/bash
-# get_dosbox.sh — Download and install DOSBox-X to C:/local/ if not present.
+# get_dosbox.sh — Download and install DOSBox-X if not present.
 # Reads version from tool_versions.conf.
 # DOSBox-X is used to run DOS shareware demo installers for file extraction.
 # Releases: https://github.com/joncampbell123/dosbox-x/releases
@@ -7,10 +7,9 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/tool_versions.conf"
+source "$SCRIPT_DIR/resolve_dep_base.sh"
 
-INSTALL_DIR="/c/local"
-[ ! -d "$INSTALL_DIR" ] && INSTALL_DIR="/mnt/c/local"
-[ ! -d "$INSTALL_DIR" ] && INSTALL_DIR="C:/local"
+INSTALL_DIR="$LOCAL_DIR"
 
 DEST="$INSTALL_DIR/$DOSBOX_DIR_NAME"
 

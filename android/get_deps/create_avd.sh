@@ -5,9 +5,10 @@ set -e
 
 AVD_NAME="Pixel_6_API_34"
 
-INSTALL_DIR="/c/local"
-[ ! -d "$INSTALL_DIR" ] && INSTALL_DIR="/mnt/c/local"
-[ ! -d "$INSTALL_DIR" ] && INSTALL_DIR="C:/local"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$SCRIPT_DIR/resolve_dep_base.sh"
+
+INSTALL_DIR="$LOCAL_DIR"
 
 SDK_DIR="$INSTALL_DIR/android-sdk"
 AVDMANAGER="$SDK_DIR/cmdline-tools/latest/bin/avdmanager"
