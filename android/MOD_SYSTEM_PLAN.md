@@ -416,35 +416,53 @@ Verified with existing test suite:
 
 ---
 
-### Phase M4: ZIP Import Support
+### Phase M4: ZIP Import Support ✅ COMPLETE
 
-**Goal:** User can pick `.zip` files containing game data. Extracted files are registered via SAF manifest or copied, depending on user choice.
+**Goal:** User can pick `.zip` files containing game data. Extracted files are hashed, identified via KnownVersions, and imported to the active set.
 
 **Depends on:** M3 (set UI for routing extracted files to sets).
 
-#### M4.1 — Accept ZIP in file picker
+#### M4.1 — Accept ZIP in file picker ✅
 
-Partition selected files into zips and regular game files. Regular files go through the M1 leave-in-place/import flow. Zips go through extraction.
+File picker now accepts `application/zip` MIME type alongside `application/octet-stream` and `*/*`. Selected files are partitioned: `.zip` files → extraction flow, known game filenames → existing import flow.
 
-#### M4.2 — Streaming ZIP extraction & hashing
+**As-built:** `filePickerLauncher` callback in `SetupScreen` splits URIs into `zipUris` and `gameUris`. Button text updated to "Select Game Files or ZIP to Import". Helper text mentions `.zip` archives.
 
-For each zip (≤50MB):
-1. Hash the zip itself (streamed)
-2. Extract entries matching known game filenames to `filesDir/tmp/`
-3. Hash extracted files, check against `KnownVersions`
-4. Collect results
+#### M4.2 — Streaming ZIP extraction & hashing ✅
 
-#### M4.3 — ZIP recognition dialog
+`extractZipContents()` suspend function streams `ZipInputStream` one entry at a time:
+1. Filters entries by `ALL_GAME_FILENAMES` (case-insensitive, handles nested paths via `substringAfterLast('/')`)
+2. Extracts matching entries to `filesDir/tmp/`
+3. Computes SHA-256 during extraction (single pass, no re-read)
+4. Returns `List<ExtractedFile>` with name, tmpFile, sha256, sizeBytes
 
-If recognized, suggest creating a named set or adding to existing set.
+**As-built:** `ExtractedFile` data class added. Extraction runs on `Dispatchers.IO`. Progress callback updates `zipProgressFile` state for UI. After extraction, `KnownVersions.identifyPackage()` is called on the collected file hashes.
 
-#### M4.4 — Place extracted files
+#### M4.3 — ZIP recognition card ✅
 
-Extracted temp files are moved to the target set directory as copied files (zips can't be left in place — the individual files inside need to be on disk for PhysFS). Update the set's `AssetManifest`.
+ZIP results shown in a Card composable:
+- **Empty:** "No game files found in ZIP archive." with Dismiss button.
+- **Recognized:** "✅ Recognized: {packageName}" header, file list with sizes, "Import to Current Set" and "Dismiss" buttons.
+- **Unrecognized:** "Found N game file(s)" header, same buttons.
 
-#### M4.5 — Cleanup
+Extraction progress shown in a separate card with indeterminate LinearProgressIndicator and current filename.
 
-Delete `filesDir/tmp/` after extraction regardless of outcome.
+#### M4.4 — Place extracted files ✅
+
+"Import to Current Set" button copies each `ExtractedFile.tmpFile` to `setDir` (active set directory), then calls `manifest.upsert()` with the pre-computed SHA-256 hash. No re-hashing needed since hash was computed during extraction.
+
+**As-built:** Uses `File.copyTo(overwrite = true)`. Shows hashing progress bar during import (reuses `hashingFile`/`hashingProgress` state). Import status shows "Imported N of M files from ZIP."
+
+#### M4.5 — Cleanup ✅
+
+`cleanupTmpDir(filesDir)` deletes `filesDir/tmp/` recursively. Called on:
+- Successful import completion
+- Dismiss button click
+- Empty extraction result dismissal
+
+#### M4.6 — M3 Bug Fix (bonus) ✅
+
+Fixed Import All handler that still referenced `filesDir` instead of `setDir` for import destinations (2 occurrences at the original lines 966/972). This was a silent failure from M3's `multi_replace_string_in_file` operation.
 
 ---
 

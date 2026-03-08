@@ -47,6 +47,7 @@ import java.io.FileOutputStream
 import java.io.FileWriter
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.zip.ZipInputStream
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -517,6 +518,14 @@ private data class FoundFile(
     val uri: Uri             // content:// URI to read from
 )
 
+/** Result of extracting a game file from a ZIP archive. */
+private data class ExtractedFile(
+    val name: String,        // lowercase canonical filename
+    val tmpFile: File,       // temp location
+    val sha256: String,      // SHA-256 of extracted file
+    val sizeBytes: Long      // file size
+)
+
 /**
  * Recursively walk a SAF document tree and return game files found.
  * Uses DocumentsContract for efficiency (no MediaStore needed).
@@ -593,6 +602,62 @@ private fun getDisplayName(context: Context, uri: Uri): String? {
     } catch (e: Exception) {
         null
     }
+}
+
+/**
+ * Extract game files from a ZIP archive. Streams one entry at a time to tmpDir.
+ * Returns list of extracted files with SHA-256 hashes.
+ */
+private suspend fun extractZipContents(
+    context: Context,
+    zipUri: Uri,
+    tmpDir: File,
+    onProgress: (String) -> Unit
+): List<ExtractedFile> = kotlinx.coroutines.withContext(Dispatchers.IO) {
+    tmpDir.mkdirs()
+    val results = mutableListOf<ExtractedFile>()
+    try {
+        context.contentResolver.openInputStream(zipUri)?.use { raw ->
+            ZipInputStream(raw).use { zis ->
+                var entry = zis.nextEntry
+                while (entry != null) {
+                    val name = entry.name.substringAfterLast('/').lowercase()
+                    if (!entry.isDirectory && name in ALL_GAME_FILENAMES) {
+                        kotlinx.coroutines.withContext(Dispatchers.Main) {
+                            onProgress(name)
+                        }
+                        val tmpFile = File(tmpDir, name)
+                        val digest = java.security.MessageDigest.getInstance("SHA-256")
+                        var size = 0L
+                        FileOutputStream(tmpFile).use { out ->
+                            val buf = ByteArray(8192)
+                            while (true) {
+                                val n = zis.read(buf)
+                                if (n <= 0) break
+                                out.write(buf, 0, n)
+                                digest.update(buf, 0, n)
+                                size += n
+                            }
+                        }
+                        val sha256 = digest.digest().joinToString("") { "%02x".format(it) }
+                        results.add(ExtractedFile(name, tmpFile, sha256, size))
+                        Log.i("DXX-Setup", "Extracted from ZIP: $name ($size bytes, sha256=${sha256.take(16)}...)")
+                    }
+                    zis.closeEntry()
+                    entry = zis.nextEntry
+                }
+            }
+        }
+    } catch (e: Exception) {
+        Log.e("DXX-Setup", "ZIP extraction failed", e)
+    }
+    results
+}
+
+/** Clean up temporary extraction directory. */
+private fun cleanupTmpDir(filesDir: File) {
+    val tmpDir = File(filesDir, "tmp")
+    if (tmpDir.exists()) tmpDir.deleteRecursively()
 }
 
 // ── Composables ─────────────────────────────────────────────────────────────
@@ -673,6 +738,12 @@ private fun SetupScreen(
     var scanning by remember { mutableStateOf(false) }
     var importStatus by remember { mutableStateOf("") }
 
+    // ── ZIP extraction state ────────────────────────────
+    var zipExtracted by remember { mutableStateOf<List<ExtractedFile>?>(null) }
+    var zipPackageName by remember { mutableStateOf<String?>(null) }
+    var zipExtracting by remember { mutableStateOf(false) }
+    var zipProgressFile by remember { mutableStateOf("") }
+
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments()
     ) { uris: List<Uri> ->
@@ -680,15 +751,44 @@ private fun SetupScreen(
         scanning = true
         importStatus = ""
         scope.launch(Dispatchers.IO) {
-            val found = uris.mapNotNull { uri ->
+            val zipUris = mutableListOf<Uri>()
+            val gameUris = mutableListOf<FoundFile>()
+            for (uri in uris) {
                 val name = getDisplayName(context, uri)
-                if (name != null && name.lowercase() in ALL_GAME_FILENAMES) {
-                    FoundFile(name, uri)
-                } else null
+                if (name != null) {
+                    if (name.lowercase().endsWith(".zip")) {
+                        zipUris.add(uri)
+                    } else if (name.lowercase() in ALL_GAME_FILENAMES) {
+                        gameUris.add(FoundFile(name, uri))
+                    }
+                }
             }
             withContext(Dispatchers.Main) {
-                scanResults = found
+                if (gameUris.isNotEmpty()) {
+                    scanResults = gameUris
+                }
                 scanning = false
+            }
+            // Handle ZIP files
+            if (zipUris.isNotEmpty()) {
+                withContext(Dispatchers.Main) { zipExtracting = true }
+                val tmpDir = File(filesDir, "tmp")
+                val allExtracted = mutableListOf<ExtractedFile>()
+                for (zipUri in zipUris) {
+                    val extracted = extractZipContents(context, zipUri, tmpDir) { name ->
+                        zipProgressFile = name
+                    }
+                    allExtracted.addAll(extracted)
+                }
+                // Identify package
+                val fileHashes = allExtracted.associate { it.name to it.sha256 }
+                val pkgName = KnownVersions.identifyPackage(fileHashes)
+                withContext(Dispatchers.Main) {
+                    zipExtracted = allExtracted
+                    zipPackageName = pkgName
+                    zipExtracting = false
+                    zipProgressFile = ""
+                }
             }
         }
     }
@@ -894,22 +994,22 @@ private fun SetupScreen(
 
                     // ── Import files button ──
                     Button(
-                        onClick = { filePickerLauncher.launch(arrayOf("application/octet-stream", "*/*")) },
-                        enabled = !scanning && !isHashing,
+                        onClick = { filePickerLauncher.launch(arrayOf("application/octet-stream", "application/zip", "*/*")) },
+                        enabled = !scanning && !isHashing && !zipExtracting,
                         modifier = Modifier.fillMaxWidth().height(44.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.secondary
                         )
                     ) {
                         Text(
-                            text = if (scanning) "Importing\u2026"
-                                   else "\uD83D\uDCC2 Select Game Files to Import",
+                            text = if (scanning || zipExtracting) "Importing\u2026"
+                                   else "\uD83D\uDCC2 Select Game Files or ZIP to Import",
                             fontSize = 14.sp
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Select .hog, .ham, .pig files from Downloads or any folder.",
+                        text = "Select .hog, .ham, .pig files or a .zip archive from Downloads or any folder.",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -963,12 +1063,12 @@ private fun SetupScreen(
                                                         hashingFile = f.name
                                                         hashingProgress = 0f
                                                         val canonicalName = f.name.lowercase()
-                                                        val destFile = File(filesDir, canonicalName)
+                                                        val destFile = File(setDir, canonicalName)
                                                         // Determine track: native data-dir vs external
                                                         val existedBefore = destFile.exists()
                                                         val existingEntry = manifest.getEntry(canonicalName)
                                                         val ok = withContext(Dispatchers.IO) {
-                                                            importFile(context, f, filesDir)
+                                                            importFile(context, f, setDir)
                                                         }
                                                         if (ok) {
                                                             imported++
@@ -1013,6 +1113,150 @@ private fun SetupScreen(
                             color = Color(0xFF4CAF50),
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
+                    }
+
+                    // ── ZIP extraction progress ─────────────────
+                    if (zipExtracting) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = "Extracting ZIP\u2026",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                                if (zipProgressFile.isNotEmpty()) {
+                                    Text(
+                                        text = zipProgressFile,
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                LinearProgressIndicator(
+                                    modifier = Modifier.fillMaxWidth().height(4.dp),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    trackColor = MaterialTheme.colorScheme.primaryContainer,
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    // ── ZIP results card ───────────────────────
+                    if (zipExtracted != null) {
+                        val extracted = zipExtracted!!
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (extracted.isEmpty())
+                                    MaterialTheme.colorScheme.errorContainer
+                                else MaterialTheme.colorScheme.secondaryContainer
+                            )
+                        ) {
+                            Column(modifier = Modifier
+                                .padding(12.dp)
+                                .verticalScroll(rememberScrollState())
+                            ) {
+                                if (extracted.isEmpty()) {
+                                    Text(
+                                        text = "No game files found in ZIP archive.",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    OutlinedButton(
+                                        onClick = {
+                                            zipExtracted = null
+                                            zipPackageName = null
+                                            cleanupTmpDir(filesDir)
+                                        }
+                                    ) {
+                                        Text("Dismiss", fontSize = 13.sp)
+                                    }
+                                } else {
+                                    if (zipPackageName != null) {
+                                        Text(
+                                            text = "\u2705 Recognized: $zipPackageName",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                    } else {
+                                        Text(
+                                            text = "Found ${extracted.size} game file(s)",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    for (ef in extracted) {
+                                        Text(
+                                            text = "\u2022 ${ef.name} (${ef.sizeBytes / 1024} KB)",
+                                            fontSize = 12.sp,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Button(
+                                            onClick = {
+                                                scope.launch {
+                                                    var imported = 0
+                                                    hashingTotalFiles = extracted.size
+                                                    for ((i, ef) in extracted.withIndex()) {
+                                                        hashingFileIndex = i + 1
+                                                        hashingFile = ef.name
+                                                        hashingProgress = 1f
+                                                        val destFile = File(setDir, ef.name)
+                                                        val ok = withContext(Dispatchers.IO) {
+                                                            try {
+                                                                ef.tmpFile.copyTo(destFile, overwrite = true)
+                                                                true
+                                                            } catch (e: Exception) {
+                                                                Log.e("DXX-Setup", "Failed to move extracted file ${ef.name}", e)
+                                                                false
+                                                            }
+                                                        }
+                                                        if (ok) {
+                                                            imported++
+                                                            manifest.upsert(ef.name, ef.sha256, ef.sizeBytes)
+                                                        }
+                                                    }
+                                                    hashingFile = null
+                                                    importStatus = "Imported $imported of ${extracted.size} files from ZIP."
+                                                    zipExtracted = null
+                                                    zipPackageName = null
+                                                    cleanupTmpDir(filesDir)
+                                                    onRefresh()
+                                                }
+                                            }
+                                        ) {
+                                            Text("Import to Current Set", fontSize = 13.sp)
+                                        }
+                                        OutlinedButton(
+                                            onClick = {
+                                                zipExtracted = null
+                                                zipPackageName = null
+                                                cleanupTmpDir(filesDir)
+                                            }
+                                        ) {
+                                            Text("Dismiss", fontSize = 13.sp)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
 
                     // ── File sections ────────────────────
