@@ -449,7 +449,7 @@ private val EXTENSION_TYPES = mapOf(
     "rl2" to ".rl2 \u2014 Descent II level",
     "rdl" to ".rdl \u2014 Descent I level",
     "mvl" to ".mvl \u2014 movie library archive",
-    "dxa" to ".dxa \u2014 hi-res texture/sound pack",
+    "dxa" to ".dxa \u2014 Rebirth zip addon file",
     "dtx" to ".dtx \u2014 D2X-XL texture pack",
     "gog" to ".gog \u2014 GOG CD image (Redbook audio)",
     "inst" to ".inst \u2014 GOG CD cue sheet",
@@ -484,10 +484,6 @@ private val D2_FILES = listOf(
         required = false, alternatives = listOf("robots-l.mvl")),
     GameFileInfo("d2x.hog", "Vertigo expansion", required = false),
     GameFileInfo("hoard.ham", "Hoard multiplayer mode", required = false),
-    GameFileInfo("descent_ii.gog", "GOG CD image (Redbook audio)",
-        required = false, alternatives = listOf("DESCENT_II.gog")),
-    GameFileInfo("descent_ii.inst", "GOG CD cue sheet (Redbook audio)",
-        required = false, alternatives = listOf("DESCENT_II.inst")),
 )
 
 private val D2_DEMO_FILES = listOf(
@@ -1459,6 +1455,7 @@ private fun SetupScreen(
                             DownloadableFileRow(
                                 status = status,
                                 progress = downloadProgress[status.info.filename],
+                                onInfo = { detailStatus = status; detailIsD2 = false },
                                 onDownload = {
                                     scope.launch {
                                         downloadFile(
@@ -1678,6 +1675,7 @@ private fun MusicInfoSection(filesDir: File, refreshTrigger: Int, hasMidiSource:
     val musicStatuses = remember(refreshTrigger) { checkFiles(filesDir, MUSIC_FILES) }
     val redbookReady = musicStatuses.all { it.found }
     var expanded by remember { mutableStateOf(false) }
+    var detailStatus by remember { mutableStateOf<FileStatus?>(null) }
     val musicLabel = when {
         redbookReady -> "\u2713 Ready"
         hasMidiSource -> "\u2717 Missing, will use MIDI"
@@ -1698,7 +1696,12 @@ private fun MusicInfoSection(filesDir: File, refreshTrigger: Int, hasMidiSource:
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 8.dp)
         )
-        musicStatuses.forEach { FileStatusRow(it) }
+        musicStatuses.forEach { status ->
+            FileStatusRow(status) { detailStatus = status }
+        }
+    }
+    detailStatus?.let { st ->
+        FileDetailDialog(status = st, onDismiss = { detailStatus = null })
     }
 }
 
@@ -1763,7 +1766,9 @@ private fun FileDetailDialog(
             Text(name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
         },
         text = {
-            Column {
+            val scrollState = rememberScrollState()
+            Box {
+            Column(modifier = Modifier.verticalScroll(scrollState)) {
                 // Category / description
                 DetailRow("Category", description)
                 DetailRow("Type", describeExtension(name))
@@ -1835,6 +1840,8 @@ private fun FileDetailDialog(
                         DetailRow("Download", status.info.downloadUrl)
                     }
                 }
+            }
+            ScrollArrows(scrollState)
             }
         }
     )
@@ -2134,7 +2141,8 @@ private fun FileStatusRow(status: FileStatus, onClick: (() -> Unit)? = null) {
 private fun DownloadableFileRow(
     status: FileStatus,
     progress: Int?,        // null = not started, 0..100 = %, -1 = error, -2 = done
-    onDownload: () -> Unit
+    onDownload: () -> Unit,
+    onInfo: (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier
@@ -2155,7 +2163,9 @@ private fun DownloadableFileRow(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
             maxLines = 1,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier
+                .weight(1f)
+                .then(if (onInfo != null) Modifier.clickable(onClick = onInfo) else Modifier)
         )
 
         Spacer(modifier = Modifier.width(8.dp))
