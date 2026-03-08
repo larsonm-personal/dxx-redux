@@ -176,7 +176,7 @@ class SetupActivity : ComponentActivity() {
             val safManifest = fsm.safManifestForSet(activeSet)
             val d2FileList = detectD2FileList(setDir, safManifest)
             val d2Statuses = checkFiles(setDir, d2FileList, manifest, safManifest)
-            val d1Statuses = checkFiles(dir, D1_FILES, AssetManifest(dir), SafManifest.forDir(dir))
+            val d1Statuses = checkFiles(setDir, D1_FILES, manifest, safManifest)
             val d2Ready = d2Statuses.filter { it.info.required }.all { it.found }
             val d1Ready = d1Statuses.filter { it.info.required }.all { it.found }
 
@@ -503,6 +503,26 @@ private val MUSIC_FILES = listOf(
         required = false, alternatives = listOf("DESCENT_II.inst")),
 )
 
+// ── Demo downloads ──────────────────────────────────────────────────────────
+
+private data class DemoPackage(
+    val name: String,
+    val url: String,
+    val description: String,
+    val sizeBytes: Long,
+    val files: List<String>,   // expected extracted filenames (lowercase)
+)
+
+private val DEMO_DOWNLOADS = listOf(
+    DemoPackage(
+        name = "D2 Demo",
+        url = "https://dxx-redux.com/dl/d2demo.zip",
+        description = "Official Descent 2 Demo (3 levels)",
+        sizeBytes = 5_500_000L,
+        files = listOf("d2demo.hog", "d2demo.ham", "d2demo.pig"),
+    ),
+)
+
 // ── SAF directory scanning ───────────────────────────────────────────────────
 
 /** All filenames we care about (D2 + D2 Demo + D1 + Music), lowercase for matching. */
@@ -675,16 +695,14 @@ private fun SetupScreen(
     onRefresh: () -> Unit,
     onDownloadStateChanged: (String, Int) -> Unit = { _, _ -> }
 ) {
-    val fileSetManager = remember { FileSetManager(filesDir) }
+    val fileSetManager = remember { FileSetManager(filesDir).also { it.migrateDefaultSetIfNeeded() } }
     var activeSetName by remember { mutableStateOf(fileSetManager.getActive()) }
     val setDir = remember(activeSetName) { fileSetManager.getSetDir(activeSetName) }
     val manifest = remember(activeSetName) { AssetManifest(setDir) }
     val safManifest = remember(activeSetName) { fileSetManager.safManifestForSet(activeSetName) }
-    val rootManifest = remember { AssetManifest(filesDir) }
-    val rootSafManifest = remember { SafManifest.forDir(filesDir) }
     val d2FileList = remember(refreshTrigger, activeSetName) { detectD2FileList(setDir, safManifest) }
     val d2Statuses = remember(refreshTrigger, activeSetName) { checkFiles(setDir, d2FileList, manifest, safManifest) }
-    val d1Statuses = remember(refreshTrigger) { checkFiles(filesDir, D1_FILES, rootManifest, rootSafManifest) }
+    val d1Statuses = remember(refreshTrigger, activeSetName) { checkFiles(setDir, D1_FILES, manifest, safManifest) }
 
     // ── Hashing progress state ──────────────────────────────
     var hashingFile by remember { mutableStateOf<String?>(null) }
@@ -737,6 +755,11 @@ private fun SetupScreen(
     var scanResults by remember { mutableStateOf<List<FoundFile>?>(null) }
     var scanning by remember { mutableStateOf(false) }
     var importStatus by remember { mutableStateOf("") }
+
+    // ── Demo download state ─────────────────────────────────
+    var demoDownloading by remember { mutableStateOf<String?>(null) }  // package name or null
+    var demoDownloadProgress by remember { mutableIntStateOf(0) }
+    var demoDownloadError by remember { mutableStateOf<String?>(null) }
 
     // ── ZIP extraction state ────────────────────────────
     var zipExtracted by remember { mutableStateOf<List<ExtractedFile>?>(null) }
@@ -862,10 +885,6 @@ private fun SetupScreen(
 
                 // ── File detail popup ──
                 detailStatus?.let { status ->
-                    val effectiveDir = if (detailIsD2) setDir else filesDir
-                    val effectiveManifest = if (detailIsD2) manifest else rootManifest
-                    val effectiveSafManifest = if (detailIsD2) safManifest else rootSafManifest
-
                     FileDetailDialog(
                         status = status,
                         onDismiss = { detailStatus = null },
@@ -873,7 +892,7 @@ private fun SetupScreen(
                             // SAF leave-in-place file — unlink from SAF manifest
                             status.safUri != null -> {
                                 {
-                                    effectiveSafManifest.remove(status.info.filename)
+                                    safManifest.remove(status.info.filename)
                                     detailStatus = null
                                     onRefresh()
                                 }
@@ -882,8 +901,8 @@ private fun SetupScreen(
                             status.found && status.manifestEntry != null -> {
                                 {
                                     val entry = status.manifestEntry
-                                    File(effectiveDir, entry.filename).delete()
-                                    effectiveManifest.remove(entry.filename)
+                                    File(setDir, entry.filename).delete()
+                                    manifest.remove(entry.filename)
                                     detailStatus = null
                                     onRefresh()
                                 }
@@ -891,7 +910,7 @@ private fun SetupScreen(
                             // External import but missing from disk — forget the manifest entry
                             status.manifestEntry?.isExternal == true -> {
                                 {
-                                    effectiveManifest.remove(status.manifestEntry.filename)
+                                    manifest.remove(status.manifestEntry.filename)
                                     detailStatus = null
                                     onRefresh()
                                 }
@@ -951,6 +970,115 @@ private fun SetupScreen(
                     if (!canLaunch && !gameRunning) {
                         MissingFilesHelp()
                         Spacer(modifier = Modifier.height(8.dp))
+
+                        // ── Demo download offers ──────────────────
+                        for (demo in DEMO_DOWNLOADS) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                                )
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text(
+                                        text = "\uD83C\uDFAE ${demo.name}",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                    Text(
+                                        text = "${demo.description} (${demo.sizeBytes / 1_000_000} MB)",
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    if (demoDownloading == demo.name) {
+                                        Text(
+                                            text = "Downloading\u2026 $demoDownloadProgress%",
+                                            fontSize = 12.sp,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                        LinearProgressIndicator(
+                                            progress = { demoDownloadProgress / 100f },
+                                            modifier = Modifier.fillMaxWidth().height(4.dp),
+                                            color = MaterialTheme.colorScheme.primary,
+                                            trackColor = MaterialTheme.colorScheme.primaryContainer,
+                                        )
+                                    } else {
+                                        if (demoDownloadError != null) {
+                                            Text(
+                                                text = "Error: $demoDownloadError",
+                                                fontSize = 12.sp,
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                        }
+                                        Button(
+                                            onClick = {
+                                                demoDownloadError = null
+                                                demoDownloading = demo.name
+                                                demoDownloadProgress = 0
+                                                scope.launch {
+                                                    val tmpDir = File(filesDir, "tmp")
+                                                    tmpDir.mkdirs()
+                                                    val zipFile = File(tmpDir, "${demo.name.lowercase().replace(' ', '_')}.zip")
+                                                    // Download ZIP
+                                                    var downloadOk = false
+                                                    downloadFile(
+                                                        url = demo.url,
+                                                        destDir = tmpDir,
+                                                        filename = zipFile.name,
+                                                        onProgress = { pct -> demoDownloadProgress = pct },
+                                                        onDone = { success -> downloadOk = success }
+                                                    )
+                                                    if (!downloadOk) {
+                                                        demoDownloading = null
+                                                        demoDownloadError = "Download failed"
+                                                        cleanupTmpDir(filesDir)
+                                                        return@launch
+                                                    }
+                                                    // Extract ZIP contents
+                                                    val zipUri = android.net.Uri.fromFile(zipFile)
+                                                    val extracted = extractZipContents(context, zipUri, tmpDir) { _ -> }
+                                                    if (extracted.isEmpty()) {
+                                                        demoDownloading = null
+                                                        demoDownloadError = "No game files found in ZIP"
+                                                        cleanupTmpDir(filesDir)
+                                                        return@launch
+                                                    }
+                                                    // Move files to setDir
+                                                    var imported = 0
+                                                    for (ef in extracted) {
+                                                        val destFile = File(setDir, ef.name)
+                                                        val ok = withContext(Dispatchers.IO) {
+                                                            try {
+                                                                ef.tmpFile.copyTo(destFile, overwrite = true)
+                                                                true
+                                                            } catch (e: Exception) {
+                                                                Log.e("DXX-Setup", "Failed to move demo file ${ef.name}", e)
+                                                                false
+                                                            }
+                                                        }
+                                                        if (ok) {
+                                                            imported++
+                                                            manifest.upsert(ef.name, ef.sha256, ef.sizeBytes)
+                                                        }
+                                                    }
+                                                    cleanupTmpDir(filesDir)
+                                                    demoDownloading = null
+                                                    importStatus = "Installed ${demo.name}: $imported files."
+                                                    onRefresh()
+                                                }
+                                            },
+                                            enabled = demoDownloading == null
+                                        ) {
+                                            Text("Download & Install", fontSize = 13.sp)
+                                        }
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
                     }
 
                     // ── Hashing progress bar ──
@@ -1307,7 +1435,7 @@ private fun SetupScreen(
                                     scope.launch {
                                         downloadFile(
                                             url = status.info.downloadUrl,
-                                            destDir = filesDir,
+                                            destDir = setDir,
                                             filename = status.info.filename,
                                             onProgress = { pct ->
                                                 downloadProgress[status.info.filename] = pct
@@ -1330,7 +1458,7 @@ private fun SetupScreen(
                     } // end if (d1Expanded)
 
                     Spacer(modifier = Modifier.height(16.dp))
-                    MusicInfoSection(filesDir = filesDir, refreshTrigger = refreshTrigger)
+                    MusicInfoSection(filesDir = filesDir, refreshTrigger = refreshTrigger, hasMidiSource = d2RequiredOk || d1RequiredOk)
                 }
 
                 val controlsPane: @Composable ColumnScope.() -> Unit = {
@@ -1466,7 +1594,8 @@ private fun GameSectionHeader(
     title: String,
     ready: Boolean,
     expanded: Boolean,
-    onToggle: () -> Unit
+    onToggle: () -> Unit,
+    notReadyLabel: String = "\u2717 Missing"
 ) {
     Row(
         modifier = Modifier
@@ -1482,7 +1611,7 @@ private fun GameSectionHeader(
             modifier = Modifier.weight(1f)
         )
         Text(
-            text = if (ready) "\u2713 Ready" else "\u2717 Missing, will use MIDI",
+            text = if (ready) "\u2713 Ready" else notReadyLabel,
             color = if (ready) Color(0xFF4CAF50) else Color(0xFFF44336),
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold
@@ -1517,15 +1646,21 @@ private fun SectionHeader(title: String) {
 }
 
 @Composable
-private fun MusicInfoSection(filesDir: File, refreshTrigger: Int) {
+private fun MusicInfoSection(filesDir: File, refreshTrigger: Int, hasMidiSource: Boolean = false) {
     val musicStatuses = remember(refreshTrigger) { checkFiles(filesDir, MUSIC_FILES) }
     val redbookReady = musicStatuses.all { it.found }
     var expanded by remember { mutableStateOf(false) }
+    val musicLabel = when {
+        redbookReady -> "\u2713 Ready"
+        hasMidiSource -> "\u2717 Missing, will use MIDI"
+        else -> "\u2717 Missing"
+    }
     GameSectionHeader(
         title = "Music",
         ready = redbookReady,
         expanded = expanded,
-        onToggle = { expanded = !expanded }
+        onToggle = { expanded = !expanded },
+        notReadyLabel = musicLabel
     )
     if (expanded) {
         Text(

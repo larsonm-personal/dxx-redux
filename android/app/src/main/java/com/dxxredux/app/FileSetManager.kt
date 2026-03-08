@@ -8,13 +8,16 @@ import java.io.File
 /**
  * Manages multiple file sets — named collections of game data files.
  *
- * The "default" set uses [filesDir] directly (no subdirectory).
- * Named sets live in `filesDir/sets/<name>/`.
+ * All sets (including "default") live in `filesDir/sets/<name>/`.
+ * The root [filesDir] holds only configs, saves, music, and metadata.
  *
  * Each set can have its own `.saf_manifest.json` for leave-in-place files,
  * plus any locally copied files in its directory.
  *
  * Persistence is via `file_sets.json` in [filesDir].
+ *
+ * Call [migrateDefaultSetIfNeeded] once at startup to move legacy game data
+ * from filesDir root into `sets/default/`.
  */
 class FileSetManager(private val filesDir: File) {
 
@@ -125,11 +128,11 @@ class FileSetManager(private val filesDir: File) {
     }
 
     /**
-     * Get the directory for a set. "default" maps to [filesDir],
-     * named sets map to `filesDir/sets/<name>/`.
+     * Get the directory for a set. All sets live under `filesDir/sets/<name>/`,
+     * including "default".
      */
     fun getSetDir(name: String): File {
-        return if (name == DEFAULT_SET) filesDir else File(setsDir, name)
+        return File(setsDir, name).also { it.mkdirs() }
     }
 
     /**
@@ -155,14 +158,8 @@ class FileSetManager(private val filesDir: File) {
      * Call this before launching the game engine.
      */
     fun writeActiveSetPath() {
-        val active = getActive()
         val aspFile = File(filesDir, ".active_set_path")
-        val setDir = getSetDir(active)
-        if (setDir.absolutePath != filesDir.absolutePath) {
-            aspFile.writeText(setDir.absolutePath)
-        } else {
-            aspFile.delete()
-        }
+        aspFile.writeText(getSetDir(getActive()).absolutePath)
     }
 
     private fun validateSetName(name: String) {
@@ -186,8 +183,62 @@ class FileSetManager(private val filesDir: File) {
         configFile.writeText(config.toString(2))
     }
 
+    /**
+     * Migrate game data files from filesDir root into sets/default/.
+     * Called once at startup. Idempotent — skips if already migrated.
+     *
+     * Moves files by extension (case-insensitive) and known game data
+     * subdirectories (e.g. missions/). Music (.gog/.inst) and
+     * configs/saves/metadata stay in filesDir.
+     */
+    fun migrateDefaultSetIfNeeded() {
+        val defaultDir = getSetDir(DEFAULT_SET) // creates dir via mkdirs()
+
+        val config = loadConfig()
+        if (config.optInt("migration_version", 0) >= 1) return
+
+        var movedCount = 0
+        val files = filesDir.listFiles() ?: emptyArray()
+        for (file in files) {
+            if (file.isDirectory) {
+                if (file.name.lowercase() in GAME_DATA_DIRS) {
+                    val dest = File(defaultDir, file.name)
+                    if (!dest.exists() && file.renameTo(dest)) movedCount++
+                }
+                continue
+            }
+            val ext = file.extension.lowercase()
+            if (ext in GAME_DATA_EXTENSIONS) {
+                val dest = File(defaultDir, file.name)
+                if (!dest.exists() && file.renameTo(dest)) movedCount++
+            }
+        }
+
+        // Move per-set manifests to default set dir
+        for (name in listOf(".asset_manifest.json", ".saf_manifest.json")) {
+            val src = File(filesDir, name)
+            if (src.exists()) {
+                val dest = File(defaultDir, name)
+                if (!dest.exists()) src.renameTo(dest)
+            }
+        }
+
+        config.put("migration_version", 1)
+        saveConfig(config)
+        Log.i(TAG, "Default-set migration: moved $movedCount items to ${defaultDir.absolutePath}")
+    }
+
     companion object {
         private const val TAG = "FileSetManager"
         const val DEFAULT_SET = "default"
+
+        /** File extensions (lowercase) that are per-set game data. */
+        private val GAME_DATA_EXTENSIONS = setOf(
+            "pig", "hog", "ham", "mvl", "s11", "s22",
+            "mn2", "msn", "dxa", "pog", "rl2", "dtx",
+        )
+
+        /** Subdirectory names (lowercase) that contain per-set game data. */
+        private val GAME_DATA_DIRS = setOf("missions")
     }
 }

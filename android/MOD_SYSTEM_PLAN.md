@@ -39,14 +39,14 @@ PhysFS search path  ←  game engine reads files normally
 ### PhysFS Search Path Order
 
 ```
-0. files/sets/<active-set>/   ← highest (file set override, if non-default)
-1. files/                     ← write dir + configs/saves + music
+0. files/sets/<active-set>/   ← highest (game data for active set, always present)
+1. files/                     ← write dir + configs/saves + music (no game data)
 2. [SAF archiver mount]       ← leave-in-place files (primary game data source)
 3. APK base dir               ← bundled assets
 4. data/                      ← relative subdir
 ```
 
-Copied files (in `files/` or a set subdirectory) shadow SAF files with the same name. This is the correct priority: if the user later copies a file that was previously left in place, the copy wins.
+All sets (including "default") live under `files/sets/<name>/`. The root `files/` directory holds only configs, saves, music, and metadata — never game data files. This ensures complete isolation between sets: switching to a blank set means the engine sees no game data.
 
 ### File Categories
 
@@ -88,13 +88,13 @@ Symlinks have API level problems (`Files.createSymbolicLink()` requires API 26; 
 
 ZIP files are stream-extracted using `java.util.zip.ZipInputStream` — one entry at a time to a temp file, never the whole archive in memory. No OOM risk.
 
-### 2.5 D1 Deferred
+### 2.5 D1 Per-Set
 
-`d1/misc/physfsx.c` has no `#ifdef ANDROID` block. D1 file set support is out of scope for the initial release.
+D1 files (`descent.hog`, `descent.pig`, `.dxa` extras) are per-set, same as D2. Both `checkFiles()` calls in the UI and introspection use `setDir` + the set's manifests. D1 engine code (`d1/misc/physfsx.c`) is still unchanged — the D2 engine handles D1 files via PhysFS.
 
-### 2.6 Music & Extras — Separate Handling
+### 2.6 Music — Separate Handling
 
-Music files (GOG CD images for Redbook audio) and extras (`.dxa` hi-res packs) stay in the root `files/` directory. They are shared across all sets — switching sets does not affect music.
+Music files (GOG CD images for Redbook audio) stay in the root `files/` directory. They are shared across all sets — switching sets does not affect music. Migration explicitly skips `.gog`/`.inst` files.
 
 ### 2.7 Mods — Future
 
@@ -235,10 +235,10 @@ Manages multiple file sets with CRUD operations and persistence:
 - `getActive()` / `setActive(name)` — get/set active set name
 - `createSet(name, source)` — creates `filesDir/sets/<name>/` with validation (no path separators, max 50 chars, can't recreate "default")
 - `deleteSet(name)` — deletes set dir recursively, switches to "default" if deleted set was active
-- `getSetDir(name)` — "default" → `filesDir`, named → `filesDir/sets/<name>/`
+- `getSetDir(name)` — returns `filesDir/sets/<name>/` for all sets including "default" (changed in M6; originally "default" mapped to `filesDir`)
 - `safManifestForSet(name)` — SAF manifest for a specific set
 - `diskUsage(name)` — calculates directory size (local files only, not SAF-linked)
-- `writeActiveSetPath()` — writes `.active_set_path` for the C engine; deletes file when "default" is active
+- `writeActiveSetPath()` — writes `.active_set_path` for the C engine; always writes since M6 (previously deleted file when "default" was active)
 
 #### M2.2 — Persistence via file_sets.json
 
@@ -268,8 +268,8 @@ Extended the existing M1 block with file-set support:
 
 Search path order after init:
 ```
-0. sets/<active>/   ← if non-default set (prepended via .active_set_path)
-1. filesDir/        ← write dir + configs/saves + default set files
+0. sets/<active>/   ← always present (game data for active set)
+1. filesDir/        ← write dir + configs/saves + music (no game data after M6 migration)
 2. [SAF manifest]   ← leave-in-place files for active set
 3. APK base dir     ← bundled assets
 4. data/            ← relative subdir
@@ -376,6 +376,8 @@ val d2Statuses = remember(refreshTrigger, activeSetName) { checkFiles(setDir, d2
 
 D1 files always use `filesDir` with separate `rootManifest` and `rootSafManifest` (D1 doesn't support sets).
 
+**Note:** As of M6, D1 files are per-set — `d1Statuses` now uses `setDir`/`manifest`/`safManifest` like D2. The `rootManifest`/`rootSafManifest` variables were removed.
+
 The `checkFiles()` function was refactored to read SAF entries once (outside the `map`) and capture the matching `SafFileEntry` for each file, enabling `safUri` and `safSizeBytes` fields on `FileStatus`.
 
 Hashing (`LaunchedEffect`) is keyed on `activeSetName` — re-hashes when switching sets.
@@ -466,44 +468,127 @@ Fixed Import All handler that still referenced `filesDir` instead of `setDir` fo
 
 ---
 
-### Phase M5: Demo Auto-Download
+### Phase M5: Demo Auto-Download ✅ COMPLETE
 
 **Goal:** One-tap download and install of official demo versions.
 
 **Depends on:** M4 (ZIP extraction flow), M3 (set creation).
 
-#### M5.1 — Download URLs
+#### M5.1 — Download URLs ✅
 
+`DemoPackage` data class and `DEMO_DOWNLOADS` list defined in SetupActivity.kt. Uses `https://dxx-redux.com/dl/` base URL (same domain as existing D1 optional file downloads).
+
+**As-built:**
 ```kotlin
-val DEMO_DOWNLOADS = listOf(
-    DemoPackage(
-        name = "D2 Demo",
-        url = "https://github.com/<org>/<repo>/releases/download/demos/d2demo.zip",
-        zipSha256 = "<hash>",
-        sizeBytes = 5_000_000L,
-        description = "Official Descent 2 Demo (3 levels)"
-    ),
+data class DemoPackage(
+    val name: String,
+    val url: String,
+    val description: String,
+    val sizeBytes: Long,
+    val files: List<String>,
 )
 ```
 
-#### M5.2 — Demo section in UI
+Currently configured: D2 Demo (d2demo.zip, ~5.5 MB). KnownVersions demo hashes are placeholder — will be filled in when actual demo files are obtained and verified.
 
-When no required files are found, offer download.
+#### M5.2 — Demo section in UI ✅
 
-#### M5.3 — Download → extract → create set
+Demo download cards appear when `!canLaunch && !gameRunning` (no required files found for either D1 or D2), below the existing `MissingFilesHelp` card. Each demo shows:
+- Package name with game controller emoji
+- Description and download size
+- "Download & Install" button (disabled during active download)
+- Progress bar with percentage during download
+- Error message display with retry capability
 
-1. Fetch zip to `filesDir/tmp/`
-2. Verify SHA-256
-3. Feed into M4 extraction flow
-4. Auto-create set, set as active, refresh UI
+#### M5.3 — Download → extract → import ✅
 
-#### M5.4 — GitHub Releases hosting
+Flow:
+1. Create `filesDir/tmp/`, download ZIP via existing `downloadFile()` with progress callback
+2. Extract ZIP using M4's `extractZipContents()` (streams entries, hashes during extraction)
+3. Copy extracted files to active `setDir`, register in `AssetManifest` via `manifest.upsert()`
+4. Cleanup `filesDir/tmp/` via `cleanupTmpDir()`
+5. Show import status message, refresh UI
 
-Package demo files as .zip, compute hashes, upload to GitHub release tagged `demos`.
+Error handling: download failure and empty extraction both show error message and clean up tmp dir.
+
+#### M5.4 — Hosting (deferred)
+
+Demo ZIP files need to be hosted at `https://dxx-redux.com/dl/d2demo.zip`. Not yet deployed — download will show "Download failed" until the file is hosted. KnownVersions hashes need to be computed from actual demo files and uncommented.
+
+#### M5.5 — Label bug fix (bonus) ✅
+
+Fixed `GameSectionHeader` to use context-appropriate "not ready" labels:
+- **D1/D2 sections:** "✗ Missing" (was incorrectly showing "✗ Missing, will use MIDI")
+- **Music section:** "✗ Missing, will use MIDI" only when D1 or D2 is ready (MIDI comes from game files); "✗ Missing" when neither game is installed
 
 ---
 
-### Phase M6: Mod Layering (Future — separate plan)
+### Phase M6: Set Isolation & Default Migration ✅ COMPLETE
+
+**Goal:** Fully isolate file sets so that switching to a blank set means the engine sees no game data. Move all game data (including "default" set) out of `filesDir` root into `sets/<name>/`.
+
+**Problem:** Previously, `getSetDir("default")` returned `filesDir` directly. Since `filesDir` is always in the PhysFS search path (for configs/saves/music), game data files in `filesDir` leaked into every set. A "blank" set could still launch the game because D1/D2 files were visible via `filesDir`.
+
+**Depends on:** M5 (all prior set infrastructure).
+
+#### M6.1 — `getSetDir` always uses `sets/` ✅
+
+**File:** `FileSetManager.kt`
+
+`getSetDir(name)` now always returns `File(setsDir, name)` with `.also { it.mkdirs() }`. The "default" set lives at `filesDir/sets/default/`, same as named sets. No special case.
+
+#### M6.2 — `writeActiveSetPath` always writes ✅
+
+`.active_set_path` is always written (even for "default"), since `sets/default/` ≠ `filesDir`. The C engine always sees a set directory prepended to the search path.
+
+#### M6.3 — One-time migration ✅
+
+**File:** `FileSetManager.kt` — `migrateDefaultSetIfNeeded()`
+
+Idempotent migration on first launch after upgrade:
+1. Creates `sets/default/`
+2. Scans `filesDir` for files with game data extensions (case-insensitive): `.pig`, `.hog`, `.ham`, `.mvl`, `.s11`, `.s22`, `.mn2`, `.msn`, `.dxa`, `.pog`, `.rl2`, `.dtx`
+3. Scans for known game data subdirectories: `missions/`
+4. Moves matches to `sets/default/` via `File.renameTo()` (atomic, O(1) on same filesystem)
+5. Moves `.asset_manifest.json` and `.saf_manifest.json` if present
+6. Skips music files (`.gog`, `.inst`) — they stay in `filesDir` (shared)
+7. Writes `migration_version: 1` in `file_sets.json`
+
+Extension-based scanning handles arbitrary mod filenames (e.g., `panic.hog`, `vertigo.mn2`) not just files in `ALL_GAME_FILENAMES`.
+
+#### M6.4 — D1 files per-set ✅
+
+**File:** `SetupActivity.kt`
+
+- `d1Statuses` now uses `setDir`/`manifest`/`safManifest` (same as D2), keyed on `activeSetName`
+- Removed `rootManifest` and `rootSafManifest` — no longer needed
+- D1 optional file downloads (`.dxa`) now target `setDir` instead of `filesDir`
+- File detail popup uses `setDir`/`manifest`/`safManifest` for both D1 and D2
+- Introspection D1 checks use `setDir`
+
+#### M6.5 — What stays in `filesDir` (shared)
+
+| Pattern | Purpose |
+|---------|---------|
+| `*.ini`, `*.plr`, `*.sg*`, `*.cfg` | Configs & saves |
+| `*.gog`, `*.inst` | Music (Redbook CD images) |
+| `file_sets.json`, `.active_set_path` | Set metadata |
+| `introspect.json`, `setup_introspect.json` | Debug |
+| `sets/` | All game data (per-set) |
+| `tmp/` | Temporary extraction |
+
+#### M6.6 — Testing ✅
+
+Verified on emulator:
+- Blank set "ff": D1 not ready, D2 not ready, `can_launch: false`
+- Default set: D1 ready, D2 ready, `can_launch: true`
+- Game launches and runs with files in `sets/default/`
+- Music files (`.gog`, `.inst`) correctly stayed in `filesDir`
+- Migration marker `migration_version: 1` written to `file_sets.json`
+
+---
+
+### Phase M7: Mod Layering (Future — separate plan)
 
 Mods layer on top of the active base file set at even higher PhysFS priority. Deferred until file sets are stable. Will be specified in a separate plan.
 
@@ -540,7 +625,13 @@ M5 (Demo Auto-Download)
  └── M5.1-M5.4: Download URLs + UI + extraction + hosting
       │
       ▼
-M6 (Mod Layering — future, separate plan)
+M6 (Set Isolation & Default Migration)
+ ├── M6.1-M6.2: getSetDir always uses sets/, writeActiveSetPath always writes
+ ├── M6.3: One-time migration (extension-based scan + renameTo)
+ └── M6.4: D1 files per-set
+      │
+      ▼
+M7 (Mod Layering — future, separate plan)
 ```
 
 Each phase depends on the one above it. M1 can be built and tested independently via adb — no UI, no file sets, just the raw archiver+JNI+PhysFS integration.
@@ -572,5 +663,5 @@ Each phase depends on the one above it. M1 can be built and tested independently
 - **Config & save files** — always in `files/` root, shared across sets
 - **Music handling** — stays in `files/` root, unaffected by set switching
 - **Hashing/manifest system** — same `AssetManifest` class, extended with `leaveInPlace` flag
-- **D1 engine code** — no changes until D1 support is added
+- **D1 engine code** — `d1/misc/physfsx.c` unchanged; D1 file set support is handled by the D2 engine's PhysFS search path
 - **File copy option** — importing (copying) files still works as before; leave-in-place is the new default but copy remains available

@@ -43,7 +43,7 @@ object KnownVersions {
         add("descent_ii.inst", "839d528316009f104cf864cf09d8954943d206ee3b527266da4a7661da190dcb", "D2 GOG cue sheet")
 
         // ── D2 Demo v1.04a ─────────────────────────────────────────
-        // Placeholder hashes — fill in when demo files are available
+        // Hashes will be filled in once demo files are obtained and verified
         // add("d2demo.hog", "<sha256>", "D2 Demo v1.04a")
         // add("d2demo.ham", "<sha256>", "D2 Demo v1.04a")
         // add("d2demo.pig", "<sha256>", "D2 Demo v1.04a")
