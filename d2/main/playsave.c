@@ -994,6 +994,16 @@ int read_player_file()
 	strcat(filename, ".plx");
 	read_player_d2x(filename);
 
+#ifdef ANDROID
+	/* Re-apply launcher controller config after loading pilot file.
+	   The .plr binary overwrites KeySettings set by new_player_config(),
+	   so we must re-apply the launcher's bindings here. */
+	{
+		extern void android_apply_gamepad_defaults(void);
+		android_apply_gamepad_defaults();
+	}
+#endif
+
 	kc_set_controls();
 
 	return EZERO;

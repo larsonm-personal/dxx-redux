@@ -72,6 +72,24 @@ extern "C" {
  */
 extern "C" int newmenu_handler(window *wind, d_event *event, void *data);
 extern "C" int listbox_handler(window *wind, d_event *event, void *data);
+extern "C" int kconfig_handler(window *wind, d_event *event, void *data);
+
+/* ── Joystick binding introspection helpers (defined in kconfig.c) ── */
+extern "C" int kconfig_get_joystick_count(void);
+extern "C" void kconfig_get_joystick_item(int idx, const char **name, int *type, int *value);
+
+/* ── BT_TYPE → string (kconfig control types) ──────────────────────── */
+static const char *bt_type_name(int type) {
+    switch (type) {
+        case 0: return "key";
+        case 1: return "mouse_button";
+        case 2: return "mouse_axis";
+        case 3: return "joy_button";
+        case 4: return "joy_axis";
+        case 5: return "invert";
+        default: return "unknown";
+    }
+}
 
 /* ── NM_TYPE → string ───────────────────────────────────────────────── */
 static const char *nm_type_name(int type) {
@@ -257,12 +275,44 @@ extern "C" char *game_introspect_get_state(void) {
                 j["menu"] = serialize_newmenu(data);
             } else if (cb == (int (*)(window *, d_event *, void *))listbox_handler && data) {
                 j["menu"] = serialize_listbox_data(data);
+            } else if (cb == (int (*)(window *, d_event *, void *))kconfig_handler) {
+                j["menu"] = {{"type", "kconfig"}};
             } else {
                 j["menu"] = {{"type", "unknown_window"}};
             }
         } else if (!front) {
             j["menu"] = nullptr;
         }
+    }
+
+    /* ── Joystick control bindings (always available) ───────────── */
+    {
+        int n = kconfig_get_joystick_count();
+        json items = json::array();
+        int bound_count = 0;
+        int bound_controls = 0; /* excludes invert flags */
+        for (int i = 0; i < n; i++) {
+            const char *name = "";
+            int type = -1, value = 255;
+            kconfig_get_joystick_item(i, &name, &type, &value);
+            bool bound = (value != 255);
+            if (bound) bound_count++;
+            if (bound && type != 5 /* BT_INVERT */) bound_controls++;
+            items.push_back({
+                {"index", i},
+                {"name", name ? name : ""},
+                {"type", bt_type_name(type)},
+                {"value", value},
+                {"bound", bound}
+            });
+        }
+        j["joystick_controls"] = {
+            {"control_type", (int)PlayerCfg.ControlType},
+            {"bound_count", bound_count},
+            {"bound_controls", bound_controls},
+            {"total_count", n},
+            {"items", std::move(items)}
+        };
     }
 
     /* ── Automap ──────────────────────────────────────────────── */

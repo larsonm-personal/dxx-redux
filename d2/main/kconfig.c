@@ -1977,3 +1977,13 @@ char GetKeyValue (char key)
 {
 	return (kc_keyboard[(int)key].value);
 }
+
+#ifdef INTROSPECT_ON
+int kconfig_get_joystick_count(void) { return NUM_JOYSTICK_CONTROLS; }
+void kconfig_get_joystick_item(int idx, const char **name, int *type, int *value) {
+	if (idx < 0 || idx >= NUM_JOYSTICK_CONTROLS) { *name = ""; *type = -1; *value = 255; return; }
+	*name = kc_joystick[idx].text;
+	*type = kc_joystick[idx].type;
+	*value = kc_joystick[idx].value;
+}
+#endif

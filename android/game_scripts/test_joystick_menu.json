@@ -1,0 +1,25 @@
+{
+  "description": "Navigate to customize joystick menu and introspect",
+  "steps": [
+    {"action": "wait", "ms": 3000, "comment": "wait for main menu"},
+    {"action": "key", "key": "down", "comment": "Options"},
+    {"action": "wait", "ms": 300},
+    {"action": "key", "key": "down"},
+    {"action": "wait", "ms": 300},
+    {"action": "key", "key": "down"},
+    {"action": "wait", "ms": 300},
+    {"action": "key", "key": "enter", "comment": "select Options"},
+    {"action": "wait", "ms": 1000},
+    {"action": "key", "key": "down", "comment": "Controls"},
+    {"action": "wait", "ms": 300},
+    {"action": "key", "key": "down"},
+    {"action": "wait", "ms": 300},
+    {"action": "key", "key": "enter", "comment": "select Controls"},
+    {"action": "wait", "ms": 1000},
+    {"action": "key", "key": "down", "comment": "Customize Joystick"},
+    {"action": "wait", "ms": 300},
+    {"action": "key", "key": "enter", "comment": "select Customize Joystick"},
+    {"action": "wait", "ms": 2000},
+    {"action": "introspect", "comment": "capture joystick menu state"}
+  ]
+}
