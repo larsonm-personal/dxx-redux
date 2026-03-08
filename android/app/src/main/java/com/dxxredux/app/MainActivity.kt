@@ -254,6 +254,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         // Start the engine only once, after the surface is ready
         if (!gameStarted) {
             gameStarted = true
+            Log.i("DXX-Automate", "Game surface created, gameStarted=true")
 
             Thread {
                 startGame()
@@ -357,7 +358,10 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     //   adb shell am broadcast -a com.dxxredux.AUTOMATE --es script files/automate.json
     private val automateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            if (!gameStarted) return
+            if (!gameStarted) {
+                Log.w("DXX-Automate", "AUTOMATE broadcast ignored: game not started yet")
+                return
+            }
             val scriptPath = intent.getStringExtra("script")
             if (scriptPath.isNullOrEmpty()) {
                 Log.e("DXX-Automate", "No 'script' extra in AUTOMATE broadcast")

@@ -44,6 +44,7 @@ extern "C" {
 #include "inferno.h"
 #include "window.h"
 #include "newmenu.h"
+#include "object.h"
 }
 
 /* Automap_active is defined in automap.c; we just need the extern. */
@@ -131,7 +132,8 @@ enum step_type {
     STEP_WAIT_FOR,      /* wait for a game state condition */
     STEP_INTROSPECT,    /* trigger introspection dump */
     STEP_LOG,           /* emit a logcat message */
-    STEP_ASSERT         /* check introspection values, fail if mismatch */
+    STEP_ASSERT,        /* check introspection values, fail if mismatch */
+    STEP_SELECT         /* find menu item by text and select it */
 };
 
 /* Key-value pair for STEP_ASSERT expectations */
@@ -149,6 +151,7 @@ struct auto_step {
     int         timeout_ms = 0;        /* STEP_WAIT_FOR: timeout (0 = infinite) */
     std::string message;                /* STEP_LOG: message text */
     std::vector<assert_expect> expects; /* STEP_ASSERT: expected values */
+    std::string select_text;            /* STEP_SELECT: partial text to match */
 };
 
 /* ── Script state ───────────────────────────────────────────────────── */
@@ -159,6 +162,10 @@ static int        g_active       = 0;
 static int        g_failed       = 0;   /* set to 1 on assert/timeout failure */
 static Uint32     g_step_start   = 0;   /* SDL_GetTicks() when step began */
 static int        g_key_phase    = 0;   /* 0=not sent, 1=down sent, 2=done */
+
+/* ── STEP_SELECT state (multi-frame navigation) ─────────────────────── */
+static int        g_select_phase   = 0;   /* 0=init, 1=navigating, 2=enter sent */
+static int        g_select_delta   = 0;   /* remaining navigation steps (+down, -up) */
 
 static char g_automate_dir[512]    = "";
 static char g_pending_script[512]  = "";
@@ -173,7 +180,8 @@ static void inject_key(SDLKey sym, int down) {
     ev.key.state      = down ? SDL_PRESSED : SDL_RELEASED;
     ev.key.keysym.sym = sym;
     ev.key.keysym.mod = KMOD_NONE;
-    ev.key.keysym.unicode = 0;
+    /* Set unicode for printable chars so key_ascii() works (needed for text input fields) */
+    ev.key.keysym.unicode = (down && sym >= 32 && sym < 127) ? (Uint16)sym : 0;
     SDL_PushEvent(&ev);
 }
 
@@ -186,6 +194,102 @@ static void inject_key_tap(const std::string &name) {
     LOGI("Injecting key: %s (SDLK %d)", name.c_str(), (int)sym);
     inject_key(sym, 1);  /* down */
     inject_key(sym, 0);  /* up */
+}
+
+/* ── Menu item search for STEP_SELECT ───────────────────────────────── */
+
+/*
+ * Case-insensitive substring search.
+ * Returns true if needle is found within haystack.
+ */
+static bool icontains(const char *haystack, const char *needle) {
+    if (!haystack || !needle) return false;
+    size_t hlen = strlen(haystack);
+    size_t nlen = strlen(needle);
+    if (nlen > hlen) return false;
+    for (size_t i = 0; i <= hlen - nlen; i++) {
+        bool match = true;
+        for (size_t j = 0; j < nlen; j++) {
+            if (tolower((unsigned char)haystack[i + j]) != tolower((unsigned char)needle[j])) {
+                match = false;
+                break;
+            }
+        }
+        if (match) return true;
+    }
+    return false;
+}
+
+extern "C" int newmenu_handler(window *wind, d_event *event, void *data);
+extern "C" int listbox_handler(window *wind, d_event *event, void *data);
+
+/*
+ * Find a menu item whose text contains `text` (case-insensitive).
+ * Searches the front window (newmenu or listbox).
+ * On success sets *out_target to the item index and *out_current to
+ * the currently selected item. Returns true.
+ * On failure logs the error and returns false.
+ */
+static bool select_find_item(const char *text, int *out_target, int *out_current) {
+    window *front = window_get_front();
+    if (!front) {
+        LOGE("SELECT: no front window");
+        return false;
+    }
+
+    int (*cb)(window *, d_event *, void *) = window_get_callback(front);
+    void *data = window_get_data(front);
+    if (!data) {
+        LOGE("SELECT: front window has no data");
+        return false;
+    }
+
+    if (cb == (int (*)(window *, d_event *, void *))newmenu_handler) {
+        newmenu *menu = (newmenu *)data;
+        newmenu_item *items = newmenu_get_items(menu);
+        int nitems = newmenu_get_nitems(menu);
+        int citem  = newmenu_get_citem(menu);
+
+        for (int i = 0; i < nitems; i++) {
+            if (items[i].text && icontains(items[i].text, text)) {
+                /* Skip NM_TYPE_TEXT items — they are not selectable */
+                if (items[i].type == NM_TYPE_TEXT) continue;
+                *out_target  = i;
+                *out_current = citem;
+                LOGI("SELECT: found \"%s\" at index %d (current=%d) in newmenu",
+                     items[i].text, i, citem);
+                return true;
+            }
+        }
+        LOGE("SELECT: no item matching \"%s\" in newmenu (%d items)", text, nitems);
+        for (int i = 0; i < nitems; i++)
+            LOGI("  item[%d]: \"%s\"", i, items[i].text ? items[i].text : "(null)");
+        return false;
+    }
+    else if (cb == (int (*)(window *, d_event *, void *))listbox_handler) {
+        listbox *lb = (listbox *)data;
+        char **items = listbox_get_items(lb);
+        int nitems   = listbox_get_nitems(lb);
+        int citem    = listbox_get_citem(lb);
+
+        for (int i = 0; i < nitems; i++) {
+            if (items[i] && icontains(items[i], text)) {
+                *out_target  = i;
+                *out_current = citem;
+                LOGI("SELECT: found \"%s\" at index %d (current=%d) in listbox",
+                     items[i], i, citem);
+                return true;
+            }
+        }
+        LOGE("SELECT: no item matching \"%s\" in listbox (%d items)", text, nitems);
+        for (int i = 0; i < nitems; i++)
+            LOGI("  item[%d]: \"%s\"", i, items[i] ? items[i] : "(null)");
+        return false;
+    }
+    else {
+        LOGE("SELECT: front window is not a newmenu or listbox");
+        return false;
+    }
 }
 
 /* ── Condition checking ─────────────────────────────────────────────── */
@@ -217,6 +321,14 @@ static int check_condition(const std::string &field, const std::string &value) {
         int is_front = (front && front == Game_wind);
         if (strcasecmp(value.c_str(), "true") == 0) return is_front;
         if (strcasecmp(value.c_str(), "false") == 0) return !is_front;
+    }
+    else if (strcasecmp(field.c_str(), "player_dead") == 0) {
+        if (strcasecmp(value.c_str(), "true") == 0) return Player_is_dead;
+        if (strcasecmp(value.c_str(), "false") == 0) return !Player_is_dead;
+    }
+    else if (strcasecmp(field.c_str(), "player_exploded") == 0) {
+        if (strcasecmp(value.c_str(), "true") == 0) return Player_exploded;
+        if (strcasecmp(value.c_str(), "false") == 0) return !Player_exploded;
     }
     else {
         /* Fallback: parse introspection JSON with nlohmann and look up the field */
@@ -266,17 +378,19 @@ static int parse_script(const char *json_text) {
             else if (action == "introspect") s.type = STEP_INTROSPECT;
             else if (action == "log")        s.type = STEP_LOG;
             else if (action == "assert")     s.type = STEP_ASSERT;
+            else if (action == "select")     s.type = STEP_SELECT;
             else {
                 LOGE("Unknown action: %s", action.c_str());
                 continue;
             }
 
-            s.key_name   = step_json.value("key", "");
-            s.delay_ms   = step_json.value("delay_ms", step_json.value("ms", 300));
-            s.field      = step_json.value("field", "");
-            s.value      = step_json.value("value", "");
-            s.timeout_ms = step_json.value("timeout_ms", 0);
-            s.message    = step_json.value("message", "");
+            s.key_name    = step_json.value("key", "");
+            s.delay_ms    = step_json.value("delay_ms", step_json.value("ms", 300));
+            s.field       = step_json.value("field", "");
+            s.value       = step_json.value("value", "");
+            s.timeout_ms  = step_json.value("timeout_ms", 0);
+            s.message     = step_json.value("message", "");
+            s.select_text = step_json.value("text", "");
 
             /* Parse "expect" object for STEP_ASSERT */
             if (step_json.contains("expect") && step_json["expect"].is_object()) {
@@ -418,6 +532,8 @@ static void advance_step(void) {
     g_current_step++;
     g_step_start = SDL_GetTicks();
     g_key_phase = 0;
+    g_select_phase = 0;
+    g_select_delta = 0;
 
     if (g_current_step >= (int)g_steps.size()) {
         LOGI("SCRIPT_RESULT: PASS (%d steps)", (int)g_steps.size());
@@ -458,6 +574,8 @@ extern "C" void game_automate_tick(void) {
             g_current_step = 0;
             g_step_start = SDL_GetTicks();
             g_key_phase = 0;
+            g_select_phase = 0;
+            g_select_delta = 0;
             g_active = 1;
             g_failed = 0;
             LOGI("Script started: %d steps", (int)g_steps.size());
@@ -524,6 +642,63 @@ extern "C" void game_automate_tick(void) {
             advance_step();
         } else {
             stop_script_fail("assertion failed");
+        }
+        break;
+
+    case STEP_SELECT:
+        if (g_select_phase == 0) {
+            /* Phase 0: find the target item and compute navigation delta */
+            int target, current;
+            if (!select_find_item(s.select_text.c_str(), &target, &current)) {
+                char reason[256];
+                snprintf(reason, sizeof(reason),
+                         "SELECT: item \"%s\" not found in menu",
+                         s.select_text.c_str());
+                stop_script_fail(reason);
+                break;
+            }
+            g_select_delta = target - current;
+            g_select_phase = 1;
+            if (g_select_delta == 0) {
+                /* Already on the right item — go straight to enter */
+                g_select_phase = 2;
+            }
+        }
+        if (g_select_phase == 1) {
+            /*
+             * Phase 1: re-read the live citem each frame and inject
+             * one navigation key.  This handles menus where
+             * newmenu_scroll() skips NM_TYPE_TEXT items, so a single
+             * DOWN press may advance by more than one index.
+             */
+            int target, current;
+            if (!select_find_item(s.select_text.c_str(), &target, &current)) {
+                stop_script_fail("SELECT: menu disappeared during navigation");
+                break;
+            }
+            int delta = target - current;
+            if (delta > 0) {
+                inject_key_tap("down");
+            } else if (delta < 0) {
+                inject_key_tap("up");
+            }
+            if (delta == 0) {
+                g_select_phase = 2;
+            }
+            /* else: keep navigating next frame */
+        }
+        else if (g_select_phase == 2) {
+            /* Phase 2: press enter to confirm selection */
+            inject_key_tap("enter");
+            LOGI("SELECT: confirmed \"%s\"", s.select_text.c_str());
+            g_select_phase = 3;
+            g_step_start = now;
+        }
+        else if (g_select_phase == 3) {
+            /* Phase 3: wait for the key to be processed before advancing */
+            if (elapsed >= (Uint32)s.delay_ms) {
+                advance_step();
+            }
         }
         break;
     }

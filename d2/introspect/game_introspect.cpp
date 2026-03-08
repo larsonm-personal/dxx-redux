@@ -230,6 +230,10 @@ extern "C" char *game_introspect_get_state(void) {
     bool in_game = (Game_wind != NULL && Screen_mode == SCREEN_GAME);
     j["in_game"] = in_game;
 
+    /* ── Death state ──────────────────────────────────────────── */
+    j["player_dead"] = (bool)Player_is_dead;
+    j["player_exploded"] = (bool)Player_exploded;
+
     /* ── Window stack ───────────────────────────────────────────── */
     {
         int nwin = 0;
