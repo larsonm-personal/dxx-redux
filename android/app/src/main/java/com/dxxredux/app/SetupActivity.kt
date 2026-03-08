@@ -101,6 +101,10 @@ class SetupActivity : ComponentActivity() {
                     val n = patchPilotsFromConfig()
                     Log.i("DXX-Setup", "patch_pilots: patched $n file(s)")
                 }
+                "controller_introspect" -> {
+                    writeControllerIntrospectJson()
+                    Log.i("DXX-Setup", "controller_introspect: written")
+                }
                 else -> Log.w("DXX-Setup", "Unknown command: $cmd")
             }
         }
@@ -188,6 +192,132 @@ class SetupActivity : ComponentActivity() {
         } catch (e: Exception) {
             Log.e("DXX-Setup", "patchPilotsFromConfig failed", e)
             return 0
+        }
+    }
+
+    // ── kc_joystick item metadata (mirrors kconfig.c) ────────────────
+    // Name and type for each of the 56 kc_joystick[] entries, matching
+    // the in-game introspection output exactly (case-sensitive).
+    private data class KcMeta(val name: String, val type: String)
+    private val KC_JOY_META = arrayOf(
+        KcMeta("Fire primary", "joy_button"),    //  0
+        KcMeta("Fire secondary", "joy_button"),  //  1
+        KcMeta("Accelerate", "joy_button"),       //  2
+        KcMeta("reverse", "joy_button"),          //  3
+        KcMeta("Fire flare", "joy_button"),       //  4
+        KcMeta("Slide on", "joy_button"),         //  5
+        KcMeta("Slide left", "joy_button"),       //  6
+        KcMeta("Slide right", "joy_button"),      //  7
+        KcMeta("Slide up", "joy_button"),         //  8
+        KcMeta("Slide down", "joy_button"),       //  9
+        KcMeta("Bank on", "joy_button"),          // 10
+        KcMeta("Bank left", "joy_button"),        // 11
+        KcMeta("Bank right", "joy_button"),       // 12
+        KcMeta("Pitch U/D", "joy_axis"),          // 13
+        KcMeta("Pitch U/D", "invert"),            // 14
+        KcMeta("Turn L/R", "joy_axis"),           // 15
+        KcMeta("Turn L/R", "invert"),             // 16
+        KcMeta("Slide L/R", "joy_axis"),          // 17
+        KcMeta("Slide L/R", "invert"),            // 18
+        KcMeta("Slide U/D", "joy_axis"),          // 19
+        KcMeta("Slide U/D", "invert"),            // 20
+        KcMeta("Bank L/R", "joy_axis"),           // 21
+        KcMeta("Bank L/R", "invert"),             // 22
+        KcMeta("throttle", "joy_axis"),           // 23
+        KcMeta("throttle", "invert"),             // 24
+        KcMeta("REAR VIEW", "joy_button"),        // 25
+        KcMeta("Drop Bomb", "joy_button"),        // 26
+        KcMeta("Afterburner", "joy_button"),      // 27
+        KcMeta("Cycle Primary", "joy_button"),    // 28
+        KcMeta("Cycle Secondary", "joy_button"),  // 29
+        KcMeta("Headlight", "joy_button"),        // 30
+        KcMeta("Fire primary", "joy_button"),     // 31 (secondary)
+        KcMeta("Fire secondary", "joy_button"),   // 32
+        KcMeta("Accelerate", "joy_button"),       // 33
+        KcMeta("reverse", "joy_button"),          // 34
+        KcMeta("Fire flare", "joy_button"),       // 35
+        KcMeta("Slide on", "joy_button"),         // 36
+        KcMeta("Slide left", "joy_button"),       // 37
+        KcMeta("Slide right", "joy_button"),      // 38
+        KcMeta("Slide up", "joy_button"),         // 39
+        KcMeta("Slide down", "joy_button"),       // 40
+        KcMeta("Bank on", "joy_button"),          // 41
+        KcMeta("Bank left", "joy_button"),        // 42
+        KcMeta("Bank right", "joy_button"),       // 43
+        KcMeta("REAR VIEW", "joy_button"),        // 44
+        KcMeta("Drop Bomb", "joy_button"),        // 45
+        KcMeta("Afterburner", "joy_button"),      // 46
+        KcMeta("Cycle Primary", "joy_button"),    // 47
+        KcMeta("Cycle Secondary", "joy_button"),  // 48
+        KcMeta("Headlight", "joy_button"),        // 49
+        KcMeta("Automap", "joy_button"),          // 50
+        KcMeta("Automap", "joy_button"),          // 51
+        KcMeta("Energy->Shield", "joy_button"),   // 52
+        KcMeta("Energy->Shield", "joy_button"),   // 53
+        KcMeta("Toggle Bomb", "joy_button"),      // 54
+        KcMeta("Toggle Bomb", "joy_button"),      // 55
+    )
+
+    /**
+     * Write controller_introspect.json in the same format as the in-game
+     * joystick_controls introspection, but using the launcher's config.
+     *
+     *   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command controller_introspect
+     *   adb shell run-as com.dxxredux.app cat files/controller_introspect.json
+     */
+    private fun writeControllerIntrospectJson() {
+        try {
+            val cfg = File(filesDir, "controller_config.json")
+            if (!cfg.exists()) {
+                Log.w("DXX-Setup", "No controller_config.json to introspect")
+                return
+            }
+            val json = JSONObject(cfg.readText())
+            val joyArr = json.optJSONArray("key_settings_joystick")
+            val ct = json.optInt("control_type", 1)
+
+            val n = KC_JOY_META.size  // 56
+            val items = JSONArray()
+            var boundCount = 0
+            var boundControls = 0
+            for (i in 0 until n) {
+                var value = if (joyArr != null && i < joyArr.length()) joyArr.getInt(i) else 255
+                // Apply the same normalization as kc_set_controls in the game:
+                // BT_INVERT values are clamped to 0 or 1 (any value != 1 becomes 0)
+                if (KC_JOY_META[i].type == "invert") {
+                    value = if (value == 1) 1 else 0
+                }
+                val bound = value != 255
+                if (bound) boundCount++
+                if (bound && KC_JOY_META[i].type != "invert") boundControls++
+                val item = JSONObject()
+                item.put("index", i)
+                item.put("name", KC_JOY_META[i].name)
+                item.put("type", KC_JOY_META[i].type)
+                item.put("value", value)
+                item.put("bound", bound)
+                items.put(item)
+            }
+
+            val root = JSONObject()
+            root.put("source", "launcher")
+            val jc = JSONObject()
+            jc.put("control_type", ct)
+            jc.put("bound_count", boundCount)
+            jc.put("bound_controls", boundControls)
+            jc.put("total_count", n)
+            jc.put("items", items)
+            root.put("joystick_controls", jc)
+
+            // Also include the human-readable bindings for reference
+            if (json.has("bindings")) root.put("bindings", json.getJSONObject("bindings"))
+            if (json.has("inverts")) root.put("inverts", json.getJSONArray("inverts"))
+
+            val outFile = File(filesDir, "controller_introspect.json")
+            FileWriter(outFile).use { it.write(root.toString(2)) }
+            Log.i("DXX-Setup", "Controller introspect written: ${outFile.absolutePath}")
+        } catch (e: Exception) {
+            Log.e("DXX-Setup", "Failed to write controller introspect JSON", e)
         }
     }
 

@@ -1,0 +1,19 @@
+// TEST: Load existing pilot and introspect joystick controls
+// Used by run_controller_compare.ps1 to compare launcher vs in-game config.
+// Selects the first pilot from the list and introspects at the main menu.
+[
+    {"action": "log", "message": "=== TEST: Controller Config Compare (in-game) ==="},
+
+    {"action": "wait_ms", "ms": 2000},
+
+    // Pilot select — pick the first one
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 10000},
+    {"action": "select", "text": "player", "post_delay_ms": 2000},
+
+    // At main menu — introspect to capture joystick bindings
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "introspect"},
+    {"action": "wait_ms", "ms": 1000},
+
+    {"action": "log", "message": "=== TEST: Controller Config Compare — COMPLETE ==="}
+]

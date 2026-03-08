@@ -184,9 +184,12 @@ private val AXIS_COVERS_BUTTONS = mapOf(
 private const val CONFIG_FILENAME = "controller_config.json"
 private const val MAX_CONTROLS = 60
 
+// Indices in kc_joystick[] that are BT_INVERT flags (game normalizes these: !=1 → 0)
+private val INVERT_INDICES = setOf(14, 16, 18, 20, 22, 24)
+
 /** Compute the 60-byte KeySettings[1] (joystick) array from bindings + inverts. */
 private fun computeJoystickSettings(bindings: Map<String, String>, inverts: Set<String>): ByteArray {
-    val ks = ByteArray(MAX_CONTROLS) { 0xFF.toByte() }
+    val ks = ByteArray(MAX_CONTROLS) { if (it in INVERT_INDICES) 0 else 0xFF.toByte() }
     for ((controlId, funcLabel) in bindings) {
         val btnIdx = BUTTON_CONTROLS[controlId]
         if (btnIdx != null) {
@@ -199,9 +202,9 @@ private fun computeJoystickSettings(bindings: Map<String, String>, inverts: Set<
             val func = AXIS_FUNCTIONS.find { it.label == funcLabel }
             if (func != null && func.kcIndex in 0 until MAX_CONTROLS) {
                 ks[func.kcIndex] = axisIdx.toByte()
-                // Set invert flag at kcIndex+1
-                if (controlId in inverts && func.kcIndex + 1 < MAX_CONTROLS) {
-                    ks[func.kcIndex + 1] = 1
+                // Set invert flag at kcIndex+1: 0 = normal, 1 = inverted
+                if (func.kcIndex + 1 < MAX_CONTROLS) {
+                    ks[func.kcIndex + 1] = if (controlId in inverts) 1 else 0
                 }
             }
         }
