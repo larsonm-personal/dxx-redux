@@ -3,8 +3,10 @@
 // via SAF archiver. If the HAM file fails to load, the game won't reach
 // in-game state with valid player data.
 //
-// Timing data (5 runs on Pixel_6_API_34 emulator):
-//   in_game:  27ms, 30ms, 35ms, 43ms, 53ms  (min 27ms, max 53ms)
+// Timing data (3 runs on Pixel_6_API_34 emulator):
+//   screen_mode=menu (pilot): 28ms, 57ms, 49ms  (min 28ms, max 57ms)
+//   screen_mode=menu (main):  24ms, 52ms, 54ms  (min 24ms, max 54ms)
+//   in_game:                  37ms, 148ms, 63ms (min 37ms, max 148ms)
 // Timeouts set to min + 5s.
 [
     {"action": "log", "message": "=== TEST: SAF Archiver Basic ==="},
@@ -13,34 +15,40 @@
     // Step 1: Wait for init
     {"action": "wait_ms", "ms": 2000},
 
-    // Step 2: Pilot select → press Enter
-    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 10000},
-    {"action": "key", "key": "enter", "delay_ms": 2000},
+    // Step 2: Pilot select  (min 28ms + 5s)
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5028},
+    {"action": "select", "text": "player", "delay_ms": 2000},
 
-    // Step 3: Assert main menu
-    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 10000},
-    {"action": "assert", "expect": {"screen_mode": "menu", "in_game": "false"}},
+    // Step 3: Main menu → New game  (min 24ms + 5s)
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5024},
+    {"action": "select", "text": "New game", "delay_ms": 1000},
 
-    // Step 4: New Game
-    {"action": "key", "key": "enter", "delay_ms": 1000},
+    // Step 4: Mission select → D2 Counterstrike
+    {"action": "wait_ms", "ms": 1000},
+    {"action": "select", "text": "Counterstrike", "delay_ms": 1500},
 
-    // Step 5: Accept default difficulty
-    {"action": "key", "key": "enter", "delay_ms": 1500},
+    // Step 5: Level select → accept default level 1
+    {"action": "wait_ms", "ms": 500},
+    {"action": "select", "text": "Ok", "delay_ms": 1500},
 
-    // Step 6: Skip briefing screens (2x Enter — minimum required)
+    // Step 6: Difficulty → Rookie
+    {"action": "wait_ms", "ms": 500},
+    {"action": "select", "text": "Rookie", "delay_ms": 1500},
+
+    // Step 7: Skip briefing screens (2x Enter — minimum required)
     {"action": "key", "key": "enter", "delay_ms": 400},
     {"action": "key", "key": "enter", "delay_ms": 400},
 
-    // Step 7: Skip intro movie (Escape)
+    // Step 8: Skip intro movie (Escape)
     {"action": "key", "key": "escape", "delay_ms": 1000},
 
-    // Step 8: Wait for game to load  (min 27ms + 5s = 5027ms)
-    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 5027},
+    // Step 9: Wait for game to load  (min 37ms + 5s)
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 5037},
 
-    // Step 9: Assert in-game on level 1
+    // Step 10: Assert in-game on level 1
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
 
-    // Step 10: Verify player state (proves HAM data loaded)
+    // Step 11: Verify player state (proves HAM data loaded)
     {"action": "introspect"},
 
     {"action": "log", "message": "=== TEST: SAF Archiver Basic — COMPLETE ==="}
