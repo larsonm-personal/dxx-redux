@@ -719,7 +719,10 @@ private fun SetupScreen(
     onRefresh: () -> Unit,
     onDownloadStateChanged: (String, Int) -> Unit = { _, _ -> }
 ) {
-    val fileSetManager = remember { FileSetManager(filesDir).also { it.migrateDefaultSetIfNeeded() } }
+    val fileSetManager = remember { FileSetManager(filesDir).also {
+                it.migrateDefaultSetIfNeeded()
+                it.sweepRootGameFiles()
+            } }
     var activeSetName by remember { mutableStateOf(fileSetManager.getActive()) }
     val setDir = remember(activeSetName) { fileSetManager.getSetDir(activeSetName) }
     val manifest = remember(activeSetName) { AssetManifest(setDir) }

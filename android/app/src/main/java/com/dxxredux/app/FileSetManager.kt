@@ -228,6 +228,36 @@ class FileSetManager(private val filesDir: File) {
         Log.i(TAG, "Default-set migration: moved $movedCount items to ${defaultDir.absolutePath}")
     }
 
+    /**
+     * Remove any game-data files still sitting in filesDir root.
+     * After the one-time migration, these are either duplicates of files
+     * already in a set dir, or orphans left by adb push / incomplete
+     * migration.  Either way they must not remain in filesDir because it
+     * is always on the PhysFS search path and would leak data into every
+     * set.  Runs every startup (cheap — just a dir listing).
+     */
+    fun sweepRootGameFiles() {
+        val config = loadConfig()
+        if (config.optInt("migration_version", 0) < 1) return  // migration hasn't run yet
+        var swept = 0
+        val files = filesDir.listFiles() ?: return
+        for (file in files) {
+            if (file.isDirectory) {
+                if (file.name.lowercase() in GAME_DATA_DIRS) {
+                    file.deleteRecursively()
+                    swept++
+                }
+                continue
+            }
+            if (file.extension.lowercase() in GAME_DATA_EXTENSIONS) {
+                file.delete()
+                swept++
+            }
+        }
+        if (swept > 0)
+            Log.i(TAG, "Swept $swept orphaned game-data items from filesDir root")
+    }
+
     companion object {
         private const val TAG = "FileSetManager"
         const val DEFAULT_SET = "default"

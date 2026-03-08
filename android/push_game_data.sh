@@ -80,9 +80,10 @@ if [ -z "$FILES" ]; then
     exit 1
 fi
 
-DEST="/data/data/$PACKAGE/files"
+FILES_DIR="/data/data/$PACKAGE/files"
+DEST="$FILES_DIR/sets/default"
 
-# Ensure the files directory exists
+# Ensure the set directory exists
 "$ADB" shell "run-as $PACKAGE mkdir -p $DEST" 2>/dev/null || true
 
 echo "=== Pushing game data to emulator ==="
@@ -126,14 +127,14 @@ echo ""
 echo "=== Files in app storage ==="
 "$ADB" shell "run-as $PACKAGE ls -la $DEST/" 2>&1 || true
 
-# Remove files from emulator that are no longer in game_data/
+# Remove game files from set dir that are no longer in game_data/
 echo ""
 echo "=== Cleaning removed files ==="
 REMOTE_FILES=$("$ADB" shell "run-as $PACKAGE ls $DEST/" 2>/dev/null | tr -d '\r') || true
 for REMOTE in $REMOTE_FILES; do
-    # Skip app-generated files (configs, saves, logs, etc.)
+    # Skip manifests and metadata
     case "$REMOTE" in
-        *.cfg|*.txt|*.json|*.ngp|*.plr|*.plx|profileInstalled) continue ;;
+        *.json|*.cfg) continue ;;
     esac
     # Check if any local file (lowercased) matches this remote file
     FOUND=false
@@ -149,6 +150,18 @@ for REMOTE in $REMOTE_FILES; do
         echo "  No longer in game_data/, removing $REMOTE"
         "$ADB" shell "run-as $PACKAGE rm -f $DEST/$REMOTE" 2>/dev/null || true
     fi
+done
+
+# Clean any stale game data from filesDir root (prevents PhysFS leaking)
+echo "=== Cleaning filesDir root ==="
+ROOT_FILES=$("$ADB" shell "run-as $PACKAGE ls $FILES_DIR/" 2>/dev/null | tr -d '\r') || true
+for RF in $ROOT_FILES; do
+    case "$RF" in
+        *.pig|*.hog|*.ham|*.mvl|*.s11|*.s22|*.mn2|*.msn|*.dxa|*.pog|*.rl2|*.dtx)
+            echo "  Removing stale $RF from filesDir root"
+            "$ADB" shell "run-as $PACKAGE rm -f $FILES_DIR/$RF" 2>/dev/null || true
+            ;;
+    esac
 done
 echo ""
 if [ "$ERRORS" -gt 0 ]; then
