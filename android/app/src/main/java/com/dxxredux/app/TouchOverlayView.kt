@@ -40,6 +40,9 @@ class TouchOverlayView @JvmOverloads constructor(
     /** Called when the MAP button is tapped (toggles automap). */
     var mapButtonCallback: (() -> Unit)? = null
 
+    /** Called when a tap lands outside all overlay controls (pass-through for "press any key" screens). */
+    var tapPassthroughCallback: (() -> Unit)? = null
+
     /** Called with (heading, pitch, thrust, bank, vertical, sideways) when automap gestures are detected.
      *  heading/pitch/bank are fractions of screen dimension; thrust is fraction of screen width;
      *  vertical/sideways are fractions of screen dimension. */
@@ -77,6 +80,9 @@ class TouchOverlayView @JvmOverloads constructor(
     // ── Current stick state ─────────────────────────────────
     private var stickPointerId = -1    // active pointer ID, -1 = no touch
     private val stickPos = PointF()    // current stick position (in px, relative to center)
+
+    // Pointer IDs that touched empty space (no control hit)
+    private val passthroughPointers = mutableSetOf<Int>()
 
     // ── Button pointer tracking (one pointer per button) ────
     private var btn0PointerId = -1
@@ -320,6 +326,7 @@ class TouchOverlayView @JvmOverloads constructor(
                         mapBtnPointerId = pid
                         invalidate()
                     }
+                    else -> passthroughPointers.add(pid)
                 }
             }
             MotionEvent.ACTION_MOVE -> {
@@ -332,6 +339,11 @@ class TouchOverlayView @JvmOverloads constructor(
                 }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                val pid = event.getPointerId(event.actionIndex)
+                if (passthroughPointers.remove(pid) && event.actionMasked == MotionEvent.ACTION_UP) {
+                    tapPassthroughCallback?.invoke()
+                }
+                passthroughPointers.clear()
                 if (stickPointerId >= 0) resetStick()
                 releaseButton0()
                 releaseButton1()
@@ -340,7 +352,9 @@ class TouchOverlayView @JvmOverloads constructor(
             MotionEvent.ACTION_POINTER_UP -> {
                 val idx = event.actionIndex
                 val pid = event.getPointerId(idx)
-                when (pid) {
+                if (passthroughPointers.remove(pid)) {
+                    tapPassthroughCallback?.invoke()
+                } else when (pid) {
                     stickPointerId -> resetStick()
                     btn0PointerId  -> releaseButton0()
                     btn1PointerId  -> releaseButton1()

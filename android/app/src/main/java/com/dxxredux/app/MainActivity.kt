@@ -179,6 +179,11 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         touchOverlay.automapMarkerCallback = { idx -> nativeAutomapSelectMarker(idx) }
         touchOverlay.markerCountProvider = { try { nativeGetMarkerCount() } catch (_: Exception) { 0 } }
         touchOverlay.mapButtonCallback = { toggleAutomap() }
+        touchOverlay.tapPassthroughCallback = {
+            // Inject Enter key press so "press any key" screens respond to touch
+            nativeKeyEvent(0, android.view.KeyEvent.KEYCODE_ENTER, '\r'.code)
+            nativeKeyEvent(1, android.view.KeyEvent.KEYCODE_ENTER, 0)
+        }
         touchOverlay.isActive = false
 
         // Track name overlay (upper-left, starts invisible)
