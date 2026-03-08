@@ -40,7 +40,7 @@ if (!(Test-Path "$repoRoot\android")) {
 }
 $androidDir = "$repoRoot\android"
 $apkPath = "$androidDir\app\build\outputs\apk\debug\app-debug.apk"
-$scriptSource = "$androidDir\game_scripts\test_saf_basic.json"
+$scriptSource = "$androidDir\game_scripts\test_saf_basic.json5"
 $adb = "C:\local\android-sdk\platform-tools\adb.exe"
 
 $PACKAGE = "com.dxxredux.app"
@@ -239,7 +239,7 @@ if (!$gameStarted) {
 Write-Host ""
 Write-Host "Step 7: Running test_saf_basic automation..." -ForegroundColor Yellow
 
-$scriptBasename = "test_saf_basic.json"
+$scriptBasename = "test_saf_basic.json5"
 $deviceTmp = "/data/local/tmp/$scriptBasename"
 
 Adb push $scriptSource $deviceTmp | Out-Null

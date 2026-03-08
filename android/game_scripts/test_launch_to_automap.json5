@@ -1,0 +1,52 @@
+// TEST: Launch to Automap
+// Verifies normal D2 game launch through to automap screen.
+// Navigates from startup → pilot select → new game → briefing → movie → in-game → TAB.
+//
+// Timing data (5 runs):
+//   in_game:              min 23ms, max 49ms   (always immediate after movie skip)
+//   game_window_is_front: min 29ms, max 42ms   (always immediate)
+[
+    {"action": "log", "message": "=== TEST: Launch to Automap ==="},
+
+    // Step 1: Wait for init
+    {"action": "wait_ms", "ms": 2000},
+
+    // Step 2: Pilot select → press Enter
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 10000},
+    {"action": "key", "key": "enter", "delay_ms": 2000},
+
+    // Step 3: Assert main menu
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 10000},
+    {"action": "assert", "expect": {"screen_mode": "menu", "in_game": "false"}},
+
+    // Step 4: New Game
+    {"action": "key", "key": "enter", "delay_ms": 1000},
+
+    // Step 5: Accept default difficulty
+    {"action": "key", "key": "enter", "delay_ms": 1500},
+
+    // Step 6: Skip briefing screens (2x Enter — minimum required)
+    {"action": "key", "key": "enter", "delay_ms": 400},
+    {"action": "key", "key": "enter", "delay_ms": 400},
+
+    // Step 7: Skip intro movie (Escape)
+    {"action": "key", "key": "escape", "delay_ms": 1000},
+
+    // Step 8: Wait for game — observed min 23ms, timeout min+5s
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 5050},
+
+    // Step 9: Assert in-game on level 1
+    {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
+
+    // Step 10: Wait for game window — observed min 29ms, timeout min+5s
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5050},
+
+    // Step 11: Press TAB for automap
+    {"action": "key", "key": "tab", "delay_ms": 2000},
+
+    // Step 12: Assert automap active
+    {"action": "assert", "expect": {"automap_active": "true", "in_game": "true", "screen_mode": "game"}},
+
+    {"action": "log", "message": "=== TEST: Launch to Automap — COMPLETE ==="},
+    {"action": "introspect"}
+]

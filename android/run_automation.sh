@@ -3,9 +3,9 @@
 # run_automation.sh — Push and execute automation test scripts on Android.
 #
 # Usage:
-#   ./android/run_automation.sh [script.json]           # run a single test
+#   ./android/run_automation.sh [script.json5]          # run a single test
 #   ./android/run_automation.sh                         # run default test
-#   ./android/run_automation.sh --all                   # run all game_scripts/test_*.json
+#   ./android/run_automation.sh --all                   # run all game_scripts/test_*.json5
 #   ./android/run_automation.sh --watch script.json     # run + keep tailing logcat
 #
 # The script is pushed to the app's files directory, then a broadcast
@@ -19,7 +19,7 @@ set -euo pipefail
 PACKAGE="com.dxxredux.app"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 GAME_SCRIPTS_DIR="$SCRIPT_DIR/game_scripts"
-DEFAULT_SCRIPT="$GAME_SCRIPTS_DIR/test_launch_to_automap.json"
+DEFAULT_SCRIPT="$GAME_SCRIPTS_DIR/test_launch_to_automap.json5"
 TIMEOUT_SEC=120   # max time to wait for a single test
 
 WATCH=false
@@ -36,11 +36,11 @@ done
 
 if $RUN_ALL; then
     SCRIPTS=()
-    for f in "$GAME_SCRIPTS_DIR"/test_*.json; do
+    for f in "$GAME_SCRIPTS_DIR"/test_*.json5; do
         [ -f "$f" ] && SCRIPTS+=("$f")
     done
     if [ ${#SCRIPTS[@]} -eq 0 ]; then
-        echo "ERROR: No test_*.json files found in $GAME_SCRIPTS_DIR" >&2
+        echo "ERROR: No test_*.json5 files found in $GAME_SCRIPTS_DIR" >&2
         exit 1
     fi
 elif [ ${#SCRIPTS[@]} -eq 0 ]; then

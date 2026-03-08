@@ -1,20 +1,29 @@
+// TEST: Death on D1 Level 11 (Insane)
+// Verifies that player_dead and player_exploded introspection fields work.
+// Launches D1 mission "First Strike" on level 11 at Insane difficulty,
+// then waits for the swarm of enemies to kill the player.
+//
+// Timing data (7 runs):
+//   in_game:              min 29ms
+//   game_window_is_front: min 32ms
+//   player_dead:          min 349ms, max 5404ms
 [
     {"action": "log", "message": "=== TEST: Death on D1 Level 11 (Insane) ==="},
 
-    {"action": "log", "message": "Step 1: Wait for init and get past pilot select..."},
+    // Wait for init and pilot select
     {"action": "wait_ms", "ms": 2000},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 10000},
     {"action": "key", "key": "enter", "delay_ms": 2000},
 
-    {"action": "log", "message": "Step 2: At main menu, press Enter for New Game..."},
+    // Main menu → New Game
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 10000},
     {"action": "key", "key": "enter", "delay_ms": 1500},
 
-    {"action": "log", "message": "Step 3: Select D1 mission 'Descent: First Strike'..."},
+    // Select D1 mission "Descent: First Strike"
     {"action": "wait_ms", "ms": 1000},
     {"action": "select", "text": "First Strike", "delay_ms": 1500},
 
-    {"action": "log", "message": "Step 4: Level select — clear default and type 11..."},
+    // Level select — clear default and type 11
     {"action": "wait_ms", "ms": 500},
     {"action": "key", "key": "backspace", "delay_ms": 200},
     {"action": "key", "key": "1", "delay_ms": 200},
@@ -22,26 +31,24 @@
     {"action": "key", "key": "down", "delay_ms": 200},
     {"action": "key", "key": "enter", "delay_ms": 1500},
 
-    {"action": "log", "message": "Step 5: Select Insane difficulty..."},
     {"action": "wait_ms", "ms": 500},
     {"action": "select", "text": "Insane", "delay_ms": 1500},
 
-    {"action": "log", "message": "Step 6: Skip briefing screens (2x Enter)..."},
+    // Skip briefing screens (2 enters is the minimum for this level)
     {"action": "key", "key": "enter", "delay_ms": 400},
     {"action": "key", "key": "enter", "delay_ms": 400},
 
-    {"action": "log", "message": "Step 7: Wait for game to be fully loaded..."},
+    // Wait for game — observed min 29ms, timeout 5s for reliability
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 5000},
+    // observed min 32ms, timeout 5s
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
 
-    {"action": "log", "message": "Step 8: Assert we are in-game on level 11..."},
     {"action": "assert", "expect": {"in_game": "true", "current_level_num": "11"}},
     {"action": "introspect"},
 
-    {"action": "log", "message": "Step 9: Wait for player death (Insane enemies should kill quickly)..."},
+    // Wait for death — observed min 349ms, max 5404ms
     {"action": "wait_for", "field": "player_dead", "value": "true", "timeout_ms": 5000},
 
-    {"action": "log", "message": "Step 10: Assert player is dead..."},
     {"action": "assert", "expect": {"player_dead": "true"}},
     {"action": "introspect"},
 

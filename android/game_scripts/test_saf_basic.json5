@@ -1,0 +1,47 @@
+// TEST: SAF Archiver Basic
+// Verifies the game loads when a critical file (descent2.ham) is served
+// via SAF archiver. If the HAM file fails to load, the game won't reach
+// in-game state with valid player data.
+//
+// Timing data (5 runs on Pixel_6_API_34 emulator):
+//   in_game:  27ms, 30ms, 35ms, 43ms, 53ms  (min 27ms, max 53ms)
+// Timeouts set to min + 5s.
+[
+    {"action": "log", "message": "=== TEST: SAF Archiver Basic ==="},
+    {"action": "log", "message": "Verifies the game loads when a critical file (descent2.ham) is served via SAF archiver."},
+
+    // Step 1: Wait for init
+    {"action": "wait_ms", "ms": 2000},
+
+    // Step 2: Pilot select → press Enter
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 10000},
+    {"action": "key", "key": "enter", "delay_ms": 2000},
+
+    // Step 3: Assert main menu
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 10000},
+    {"action": "assert", "expect": {"screen_mode": "menu", "in_game": "false"}},
+
+    // Step 4: New Game
+    {"action": "key", "key": "enter", "delay_ms": 1000},
+
+    // Step 5: Accept default difficulty
+    {"action": "key", "key": "enter", "delay_ms": 1500},
+
+    // Step 6: Skip briefing screens (2x Enter — minimum required)
+    {"action": "key", "key": "enter", "delay_ms": 400},
+    {"action": "key", "key": "enter", "delay_ms": 400},
+
+    // Step 7: Skip intro movie (Escape)
+    {"action": "key", "key": "escape", "delay_ms": 1000},
+
+    // Step 8: Wait for game to load  (min 27ms + 5s = 5027ms)
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 5027},
+
+    // Step 9: Assert in-game on level 1
+    {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
+
+    // Step 10: Verify player state (proves HAM data loaded)
+    {"action": "introspect"},
+
+    {"action": "log", "message": "=== TEST: SAF Archiver Basic — COMPLETE ==="}
+]

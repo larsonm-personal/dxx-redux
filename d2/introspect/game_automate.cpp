@@ -355,13 +355,13 @@ static int check_condition(const std::string &field, const std::string &value) {
     return 0;
 }
 
-/* ── Parse script JSON with nlohmann ────────────────────────────────── */
+/* ── Parse script JSON/JSON5 with nlohmann ──────────────────────────── */
 
 static int parse_script(const char *json_text) {
     g_steps.clear();
 
     try {
-        json script = json::parse(json_text);
+        json script = json::parse(json_text, nullptr, true, true);
         if (!script.is_array()) {
             LOGE("Script must be a JSON array");
             return 0;

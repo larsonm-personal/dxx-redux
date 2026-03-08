@@ -2,9 +2,9 @@
 # run_test.ps1 — Run an automation test script on the Android emulator with health checks.
 #
 # Usage:
-#   .\run_test.ps1 test_death_d1_level11.json
-#   .\run_test.ps1 test_death_d1_level11.json -Install   # also install APK first
-#   .\run_test.ps1 test_death_d1_level11.json -Verbose   # show all logcat
+#   .\run_test.ps1 test_death_d1_level11.json5
+#   .\run_test.ps1 test_death_d1_level11.json5 -Install   # also install APK first
+#   .\run_test.ps1 test_death_d1_level11.json5 -Verbose   # show all logcat
 #
 # The script will:
 #   1. Verify emulator is healthy (restart if needed)
