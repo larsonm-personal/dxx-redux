@@ -84,42 +84,83 @@ private val AXIS_CONTROLS = linkedMapOf(
     "RS_X" to 2, "RS_Y" to 3
 )
 
-private data class BtnFunc(val kcIndex: Int, val label: String)
-private data class AxisFunc(val kcIndex: Int, val label: String)
-
-private val BUTTON_FUNCTIONS = listOf(
-    BtnFunc(0, "Fire Primary"),
-    BtnFunc(1, "Fire Secondary"),
-    BtnFunc(2, "Accelerate"),
-    BtnFunc(3, "Reverse"),
-    BtnFunc(4, "Fire Flare"),
-    BtnFunc(5, "Slide On"),
-    BtnFunc(6, "Slide Left"),
-    BtnFunc(7, "Slide Right"),
-    BtnFunc(8, "Slide Up"),
-    BtnFunc(9, "Slide Down"),
-    BtnFunc(10, "Bank On"),
-    BtnFunc(11, "Bank Left"),
-    BtnFunc(12, "Bank Right"),
-    BtnFunc(25, "Rear View"),
-    BtnFunc(26, "Drop Bomb"),
-    BtnFunc(27, "Afterburner"),
-    BtnFunc(28, "Cycle Primary"),
-    BtnFunc(29, "Cycle Secondary"),
-    BtnFunc(30, "Headlight"),
-    BtnFunc(50, "Automap"),
-    BtnFunc(52, "Energy\u2192Shield"),
-    BtnFunc(54, "Toggle Bomb"),
+/*
+ * Joystick function → kc_joystick[] index maps.
+ * IMPORTANT: These indices mirror the kc_joystick[] array layout in
+ * d2/main/kconfig.c (primary BT_JOY_BUTTON / BT_JOY_AXIS slots).
+ * Update both locations together.  Search for "BUTTON_KC_INDEX" in kconfig.h.
+ *
+ * Axis entries: the axis value is at the listed index; the invert flag is at index+1.
+ * Invert indices (14, 16, 18, 20, 22, 24) default to 0 in the C fill function.
+ */
+private val BUTTON_KC_INDEX = linkedMapOf(
+    "Fire Primary"     to  0,
+    "Fire Secondary"   to  1,
+    "Accelerate"       to  2,
+    "Reverse"          to  3,
+    "Fire Flare"       to  4,
+    "Slide On"         to  5,
+    "Slide Left"       to  6,
+    "Slide Right"      to  7,
+    "Slide Up"         to  8,
+    "Slide Down"       to  9,
+    "Bank On"          to 10,
+    "Bank Left"        to 11,
+    "Bank Right"       to 12,
+    "Rear View"        to 25,
+    "Drop Bomb"        to 26,
+    "Afterburner"      to 27,
+    "Cycle Primary"    to 28,
+    "Cycle Secondary"  to 29,
+    "Headlight"        to 30,
+    "Automap"          to 50,
+    "Energy\u2192Shield"   to 52,
+    "Toggle Bomb"      to 54,
 )
 
-private val AXIS_FUNCTIONS = listOf(
-    AxisFunc(13, "Pitch U/D"),
-    AxisFunc(15, "Turn L/R"),
-    AxisFunc(17, "Slide L/R"),
-    AxisFunc(19, "Slide U/D"),
-    AxisFunc(21, "Bank L/R"),
-    AxisFunc(23, "Throttle"),
+private val AXIS_KC_INDEX = linkedMapOf(
+    "Pitch U/D"  to 13,
+    "Turn L/R"   to 15,
+    "Slide L/R"  to 17,
+    "Slide U/D"  to 19,
+    "Bank L/R"   to 21,
+    "Throttle"   to 23,
 )
+
+/*
+ * Keyboard function → kc_keyboard[] secondary-slot index.
+ * IMPORTANT: These mirror the odd-indexed entries of kc_keyboard[] in
+ * d2/main/kconfig.c.  Update both locations together.
+ */
+private val KB_KC_INDEX = linkedMapOf(
+    "Pitch Forward"    to  1,
+    "Pitch Backward"   to  3,
+    "Turn Left"        to  5,
+    "Turn Right"       to  7,
+    "Slide Left"       to 11,
+    "Slide Right"      to 13,
+    "Slide Up"         to 15,
+    "Slide Down"       to 17,
+    "Bank Left"        to 21,
+    "Bank Right"       to 23,
+    "Fire Primary"     to 25,
+    "Fire Secondary"   to 27,
+    "Fire Flare"       to 29,
+    "Accelerate"       to 31,
+    "Reverse"          to 33,
+    "Drop Bomb"        to 35,
+    "Rear View"        to 37,
+    "Automap"          to 45,
+    "Afterburner"      to 47,
+    "Cycle Primary"    to 49,
+    "Cycle Secondary"  to 51,
+    "Headlight"        to 53,
+    "Energy\u2192Shield"   to 55,
+    "Toggle Bomb"      to 56,
+)
+
+private val BUTTON_FUNCTIONS = BUTTON_KC_INDEX.keys.toList()
+private val AXIS_FUNCTIONS = AXIS_KC_INDEX.keys.toList()
 
 // D-pad direction → internal KEY_* scancode
 private val DPAD_CONTROLS = linkedMapOf(
@@ -127,34 +168,7 @@ private val DPAD_CONTROLS = linkedMapOf(
     "DLeft" to 0xCB, "DRight" to 0xCD
 )
 
-private data class KbFunc(val kcSecondaryIndex: Int, val label: String)
-
-private val KB_FUNCTIONS = listOf(
-    KbFunc(1, "Pitch Forward"),
-    KbFunc(3, "Pitch Backward"),
-    KbFunc(5, "Turn Left"),
-    KbFunc(7, "Turn Right"),
-    KbFunc(11, "Slide Left"),
-    KbFunc(13, "Slide Right"),
-    KbFunc(15, "Slide Up"),
-    KbFunc(17, "Slide Down"),
-    KbFunc(21, "Bank Left"),
-    KbFunc(23, "Bank Right"),
-    KbFunc(25, "Fire Primary"),
-    KbFunc(27, "Fire Secondary"),
-    KbFunc(29, "Fire Flare"),
-    KbFunc(31, "Accelerate"),
-    KbFunc(33, "Reverse"),
-    KbFunc(35, "Drop Bomb"),
-    KbFunc(37, "Rear View"),
-    KbFunc(47, "Afterburner"),
-    KbFunc(49, "Cycle Primary"),
-    KbFunc(51, "Cycle Secondary"),
-    KbFunc(53, "Headlight"),
-    KbFunc(45, "Automap"),
-    KbFunc(55, "Energy\u2192Shield"),
-    KbFunc(56, "Toggle Bomb"),
-)
+private val KB_FUNCTIONS = KB_KC_INDEX.keys.toList()
 
 private val DEFAULT_BINDINGS = mapOf(
     "A" to "Fire Primary",
@@ -182,83 +196,76 @@ private val AXIS_COVERS_BUTTONS = mapOf(
 // ── Config file I/O ─────────────────────────────────────────────────────────
 
 private const val CONFIG_FILENAME = "controller_config.json"
-private const val MAX_CONTROLS = 60
 
-// Indices in kc_joystick[] that are BT_INVERT flags (game normalizes these: !=1 → 0)
-private val INVERT_INDICES = setOf(14, 16, 18, 20, 22, 24)
-
-/** Compute the 60-byte KeySettings[1] (joystick) array from bindings + inverts. */
-private fun computeJoystickSettings(bindings: Map<String, String>, inverts: Set<String>): ByteArray {
-    val ks = ByteArray(MAX_CONTROLS) { if (it in INVERT_INDICES) 0 else 0xFF.toByte() }
+/**
+ * Save controller bindings.  Builds KeySettings byte arrays via C (kconfig.c
+ * handles defaults and invert slots), writes controller_config.json, and
+ * patches all .plr pilot files.
+ */
+private fun saveConfig(context: Context, bindings: Map<String, String>, inverts: Set<String>) {
+    // Collect (kc_index, value) pairs for joystick settings
+    val joyIndices = mutableListOf<Int>()
+    val joyValues = mutableListOf<Int>()
     for ((controlId, funcLabel) in bindings) {
-        val btnIdx = BUTTON_CONTROLS[controlId]
-        if (btnIdx != null) {
-            val func = BUTTON_FUNCTIONS.find { it.label == funcLabel }
-            if (func != null && func.kcIndex in 0 until MAX_CONTROLS) ks[func.kcIndex] = btnIdx.toByte()
+        val btnKcIdx = BUTTON_KC_INDEX[funcLabel]
+        val btnSdlId = BUTTON_CONTROLS[controlId]
+        if (btnKcIdx != null && btnSdlId != null) {
+            joyIndices.add(btnKcIdx); joyValues.add(btnSdlId)
             continue
         }
-        val axisIdx = AXIS_CONTROLS[controlId]
-        if (axisIdx != null) {
-            val func = AXIS_FUNCTIONS.find { it.label == funcLabel }
-            if (func != null && func.kcIndex in 0 until MAX_CONTROLS) {
-                ks[func.kcIndex] = axisIdx.toByte()
-                // Set invert flag at kcIndex+1: 0 = normal, 1 = inverted
-                if (func.kcIndex + 1 < MAX_CONTROLS) {
-                    ks[func.kcIndex + 1] = if (controlId in inverts) 1 else 0
-                }
-            }
+        val axisKcIdx = AXIS_KC_INDEX[funcLabel]
+        val axisSdlId = AXIS_CONTROLS[controlId]
+        if (axisKcIdx != null && axisSdlId != null) {
+            joyIndices.add(axisKcIdx); joyValues.add(axisSdlId)
+            joyIndices.add(axisKcIdx + 1); joyValues.add(if (controlId in inverts) 1 else 0)
         }
     }
-    return ks
-}
 
-/** Compute the 60-byte KeySettings[0] (keyboard) array from d-pad bindings. */
-private fun computeKeyboardSettings(bindings: Map<String, String>): ByteArray {
-    val ks = ByteArray(MAX_CONTROLS) { 0xFF.toByte() }
+    // Collect (kc_index, scancode) pairs for keyboard settings (d-pad)
+    val kbIndices = mutableListOf<Int>()
+    val kbValues = mutableListOf<Int>()
     for ((controlId, funcLabel) in bindings) {
-        val scancode = DPAD_CONTROLS[controlId] ?: continue
-        val func = KB_FUNCTIONS.find { it.label == funcLabel } ?: continue
-        if (func.kcSecondaryIndex in 0 until MAX_CONTROLS) {
-            // Clear any existing binding with this scancode
-            for (i in 0 until MAX_CONTROLS) {
-                if (ks[i] == scancode.toByte()) ks[i] = 0xFF.toByte()
-            }
-            ks[func.kcSecondaryIndex] = scancode.toByte()
+        val kbKcIdx = KB_KC_INDEX[funcLabel]
+        val scancode = DPAD_CONTROLS[controlId]
+        if (kbKcIdx != null && scancode != null) {
+            kbIndices.add(kbKcIdx); kbValues.add(scancode)
         }
     }
-    return ks
-}
 
-private fun saveConfig(context: Context, bindings: Map<String, String>, inverts: Set<String>) {
+    // C builds the 60-byte arrays (handles invert defaults, 0xFF init, etc.)
+    val joySettings = NativePilotPatcher.nativeBuildJoySettings(
+        joyIndices.toIntArray(), joyValues.toIntArray())
+    val kbSettings = NativePilotPatcher.nativeBuildKbSettings(
+        kbIndices.toIntArray(), kbValues.toIntArray())
+
+    val controlType = 1 // CONTROL_USING_JOYSTICK
+
+    // Build JSON config for UI reconstruction + byte arrays for re-patching
     val json = JSONObject()
     json.put("version", 1)
-    json.put("control_type", 1) // CONTROL_USING_JOYSTICK
+    json.put("control_type", controlType)
     json.put("automap_free_flight", 1)
 
-    // Human-readable bindings for UI reconstruction
     val bindingsObj = JSONObject()
     for ((k, v) in bindings) bindingsObj.put(k, v)
     json.put("bindings", bindingsObj)
 
-    // Inverted axes
     val invertsArr = JSONArray()
     for (inv in inverts) invertsArr.put(inv)
     json.put("inverts", invertsArr)
 
-    // Pre-computed KeySettings arrays for C-side and pilot patching
-    val ksJoy = computeJoystickSettings(bindings, inverts)
-    val ksKb = computeKeyboardSettings(bindings)
     val joyArr = JSONArray()
-    for (b in ksJoy) joyArr.put(b.toInt() and 0xFF)
+    for (b in joySettings) joyArr.put(b.toInt() and 0xFF)
     json.put("key_settings_joystick", joyArr)
+
     val kbArr = JSONArray()
-    for (b in ksKb) kbArr.put(b.toInt() and 0xFF)
+    for (b in kbSettings) kbArr.put(b.toInt() and 0xFF)
     json.put("key_settings_keyboard", kbArr)
 
     File(context.filesDir, CONFIG_FILENAME).writeText(json.toString(2))
 
-    // Patch all existing pilot files with the new controller settings
-    NativePilotPatcher.nativePatchPilotFiles(context.filesDir.absolutePath, ksJoy, ksKb, 1)
+    NativePilotPatcher.nativePatchPilotFiles(
+        context.filesDir.absolutePath, joySettings, kbSettings, controlType)
 }
 
 private fun loadConfig(context: Context): Pair<Map<String, String>, Set<String>>? {
@@ -439,12 +446,12 @@ fun ControllerConfigPage(
         .map { it.value }.toSet()
     val allAssignedBtnLike = assignedBtnFuncs + assignedDpadFuncs
     val coveredByAxis = assignedAxisFuncs.flatMap { AXIS_COVERS_BUTTONS[it].orEmpty() }.toSet()
-    val unassignedBtns = BUTTON_FUNCTIONS.filter { it.label !in allAssignedBtnLike && it.label !in coveredByAxis }.map { it.label }
+    val unassignedBtns = BUTTON_FUNCTIONS.filter { it !in allAssignedBtnLike && it !in coveredByAxis }
     val coveredByButtons = AXIS_FUNCTIONS.filter { af ->
-        val btns = AXIS_COVERS_BUTTONS[af.label]
+        val btns = AXIS_COVERS_BUTTONS[af]
         btns != null && btns.all { it in allAssignedBtnLike }
-    }.map { it.label }.toSet()
-    val unassignedAxes = AXIS_FUNCTIONS.filter { it.label !in assignedAxisFuncs && it.label !in coveredByButtons }.map { it.label }
+    }.toSet()
+    val unassignedAxes = AXIS_FUNCTIONS.filter { it !in assignedAxisFuncs && it !in coveredByButtons }
     val allUnassigned = (unassignedBtns + unassignedAxes).distinct()
 
     // ── Reusable composable blocks ──
@@ -1185,23 +1192,23 @@ private fun ButtonFunctionPickerDialog(
                         Text("None", color = Color.Gray, fontSize = PICKER_FONT_SIZE)
                     }
                     for (func in BUTTON_FUNCTIONS) {
-                        val isAssigned = func.label in assignedFunctions && func.label != currentFunc
+                        val isAssigned = func in assignedFunctions && func != currentFunc
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onSelect(func.label) },
+                                .clickable { onSelect(func) },
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(
-                                selected = currentFunc == func.label,
-                                onClick = { onSelect(func.label) },
+                                selected = currentFunc == func,
+                                onClick = { onSelect(func) },
                                 modifier = Modifier.size(PICKER_RADIO_SIZE)
                             )
                             Spacer(Modifier.width(PICKER_RADIO_GAP))
                             Text(
-                                func.label,
+                                func,
                                 fontSize = PICKER_FONT_SIZE,
-                                color = if (!isAssigned && func.label != currentFunc)
+                                color = if (!isAssigned && func != currentFunc)
                                     Color(0xFFEF5350) else Color.Unspecified
                             )
                         }
@@ -1302,23 +1309,23 @@ private fun AxisFunctionRadioGroup(
         Text("None", color = Color.Gray, fontSize = PICKER_FONT_SIZE)
     }
     for (func in AXIS_FUNCTIONS) {
-        val isAssigned = func.label in assignedFunctions && func.label != selected
+        val isAssigned = func in assignedFunctions && func != selected
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onSelect(func.label) },
+                .clickable { onSelect(func) },
             verticalAlignment = Alignment.CenterVertically
         ) {
             RadioButton(
-                selected = selected == func.label,
-                onClick = { onSelect(func.label) },
+                selected = selected == func,
+                onClick = { onSelect(func) },
                 modifier = Modifier.size(PICKER_RADIO_SIZE)
             )
             Spacer(Modifier.width(PICKER_RADIO_GAP))
             Text(
-                func.label,
+                func,
                 fontSize = PICKER_FONT_SIZE,
-                color = if (!isAssigned && func.label != selected)
+                color = if (!isAssigned && func != selected)
                     Color(0xFFEF5350) else Color.Unspecified
             )
         }
@@ -1352,23 +1359,23 @@ private fun DpadFunctionPickerDialog(
                         Text("None", color = Color.Gray, fontSize = PICKER_FONT_SIZE)
                     }
                     for (func in KB_FUNCTIONS) {
-                        val isAssigned = func.label in assignedFunctions && func.label != currentFunc
+                        val isAssigned = func in assignedFunctions && func != currentFunc
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onSelect(func.label) },
+                                .clickable { onSelect(func) },
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(
-                                selected = currentFunc == func.label,
-                                onClick = { onSelect(func.label) },
+                                selected = currentFunc == func,
+                                onClick = { onSelect(func) },
                                 modifier = Modifier.size(PICKER_RADIO_SIZE)
                             )
                             Spacer(Modifier.width(PICKER_RADIO_GAP))
                             Text(
-                                func.label,
+                                func,
                                 fontSize = PICKER_FONT_SIZE,
-                                color = if (!isAssigned && func.label != currentFunc)
+                                color = if (!isAssigned && func != currentFunc)
                                     Color(0xFFEF5350) else Color.Unspecified
                             )
                         }

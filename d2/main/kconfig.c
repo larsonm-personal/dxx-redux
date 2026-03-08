@@ -1978,8 +1978,12 @@ char GetKeyValue (char key)
 	return (kc_keyboard[(int)key].value);
 }
 
-#ifdef INTROSPECT_ON
+#if defined(INTROSPECT_ON) || defined(ANDROID)
 int kconfig_get_joystick_count(void) { return NUM_JOYSTICK_CONTROLS; }
+int kconfig_get_keyboard_count(void) { return NUM_KEY_CONTROLS; }
+#endif
+
+#ifdef INTROSPECT_ON
 void kconfig_get_joystick_item(int idx, const char **name, int *type, int *value) {
 	if (idx < 0 || idx >= NUM_JOYSTICK_CONTROLS) { *name = ""; *type = -1; *value = 255; return; }
 	*name = kc_joystick[idx].text;
@@ -1987,3 +1991,41 @@ void kconfig_get_joystick_item(int idx, const char **name, int *type, int *value
 	*value = kc_joystick[idx].value;
 }
 #endif
+
+#ifdef ANDROID
+/*
+ * Fill a MAX_CONTROLS-byte joystick KeySettings array from (index, value) pairs.
+ * BT_INVERT slots default to 0; all other slots default to 0xFF (unbound).
+ *
+ * The indices are kc_joystick[] positions — shared with BUTTON_KC_INDEX /
+ * AXIS_KC_INDEX in ControllerConfigPage.kt.  Update both when the layout changes.
+ */
+void kconfig_fill_joy_settings(const int *indices, const int *values, int count, ubyte *out)
+{
+	int i;
+	for (i = 0; i < MAX_CONTROLS; i++) {
+		if (i < NUM_JOYSTICK_CONTROLS && kc_joystick[i].type == BT_INVERT)
+			out[i] = 0;
+		else
+			out[i] = 0xFF;
+	}
+	for (i = 0; i < count; i++) {
+		if (indices[i] >= 0 && indices[i] < MAX_CONTROLS)
+			out[indices[i]] = (ubyte)(values[i] & 0xFF);
+	}
+}
+
+/*
+ * Fill a MAX_CONTROLS-byte keyboard KeySettings array from (index, value) pairs.
+ * All slots default to 0xFF (unbound).
+ */
+void kconfig_fill_kb_settings(const int *indices, const int *values, int count, ubyte *out)
+{
+	int i;
+	memset(out, 0xFF, MAX_CONTROLS);
+	for (i = 0; i < count; i++) {
+		if (indices[i] >= 0 && indices[i] < MAX_CONTROLS)
+			out[indices[i]] = (ubyte)(values[i] & 0xFF);
+	}
+}
+#endif /* ANDROID */

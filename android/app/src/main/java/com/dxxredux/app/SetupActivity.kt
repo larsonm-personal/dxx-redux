@@ -195,13 +195,13 @@ class SetupActivity : ComponentActivity() {
         }
     }
 
-    // ── kc_joystick item metadata (mirrors kconfig.c) ────────────────
-    // Name and type for each of the 56 kc_joystick[] entries, matching
-    // the in-game introspection output exactly (case-sensitive).
+    // ── kc_joystick[] metadata for controller introspection ────────
+    // IMPORTANT: Mirrors kc_joystick[NUM_JOYSTICK_CONTROLS] in d2/main/kconfig.c.
+    // Update both locations together when the joystick control layout changes.
     private data class KcMeta(val name: String, val type: String)
-    private val KC_JOY_META = arrayOf(
-        KcMeta("Fire primary", "joy_button"),    //  0
-        KcMeta("Fire secondary", "joy_button"),  //  1
+    private val KC_JOY_META = listOf(
+        KcMeta("Fire primary", "joy_button"),     //  0
+        KcMeta("Fire secondary", "joy_button"),   //  1
         KcMeta("Accelerate", "joy_button"),       //  2
         KcMeta("reverse", "joy_button"),          //  3
         KcMeta("Fire flare", "joy_button"),       //  4
@@ -251,11 +251,11 @@ class SetupActivity : ComponentActivity() {
         KcMeta("Cycle Secondary", "joy_button"),  // 48
         KcMeta("Headlight", "joy_button"),        // 49
         KcMeta("Automap", "joy_button"),          // 50
-        KcMeta("Automap", "joy_button"),          // 51
+        KcMeta("Automap", "joy_button"),          // 51 (secondary)
         KcMeta("Energy->Shield", "joy_button"),   // 52
-        KcMeta("Energy->Shield", "joy_button"),   // 53
+        KcMeta("Energy->Shield", "joy_button"),   // 53 (secondary)
         KcMeta("Toggle Bomb", "joy_button"),      // 54
-        KcMeta("Toggle Bomb", "joy_button"),      // 55
+        KcMeta("Toggle Bomb", "joy_button"),      // 55 (secondary)
     )
 
     /**
@@ -276,7 +276,8 @@ class SetupActivity : ComponentActivity() {
             val joyArr = json.optJSONArray("key_settings_joystick")
             val ct = json.optInt("control_type", 1)
 
-            val n = KC_JOY_META.size  // 56
+            val meta = KC_JOY_META
+            val n = meta.size
             val items = JSONArray()
             var boundCount = 0
             var boundControls = 0
@@ -284,16 +285,16 @@ class SetupActivity : ComponentActivity() {
                 var value = if (joyArr != null && i < joyArr.length()) joyArr.getInt(i) else 255
                 // Apply the same normalization as kc_set_controls in the game:
                 // BT_INVERT values are clamped to 0 or 1 (any value != 1 becomes 0)
-                if (KC_JOY_META[i].type == "invert") {
+                if (meta[i].type == "invert") {
                     value = if (value == 1) 1 else 0
                 }
                 val bound = value != 255
                 if (bound) boundCount++
-                if (bound && KC_JOY_META[i].type != "invert") boundControls++
+                if (bound && meta[i].type != "invert") boundControls++
                 val item = JSONObject()
                 item.put("index", i)
-                item.put("name", KC_JOY_META[i].name)
-                item.put("type", KC_JOY_META[i].type)
+                item.put("name", meta[i].name)
+                item.put("type", meta[i].type)
                 item.put("value", value)
                 item.put("bound", bound)
                 items.put(item)

@@ -26,6 +26,7 @@ using json = nlohmann::json;
 /* Engine headers (C linkage) */
 extern "C" {
 #include "playsave.h"
+#include "kconfig.h"
 
 extern struct player_config PlayerCfg;
 }
@@ -138,6 +139,56 @@ Java_com_dxxredux_app_NativePilotPatcher_nativePatchPilotFiles(
     env->ReleaseStringUTFChars(jfilesDir, files_dir);
 
     return (jint)total;
+}
+
+/* ── JNI: build joystick KeySettings from (index, value) pairs ── */
+
+/*
+ * Takes parallel int arrays of kc_joystick[] indices and corresponding
+ * values.  Returns a MAX_CONTROLS-byte array with correct defaults
+ * (BT_INVERT slots = 0, others = 0xFF) and the specified values filled in.
+ *
+ * The indices are shared constants defined in ControllerConfigPage.kt
+ * (BUTTON_KC_INDEX, AXIS_KC_INDEX) — update both when the layout changes.
+ */
+extern "C" JNIEXPORT jbyteArray JNICALL
+Java_com_dxxredux_app_NativePilotPatcher_nativeBuildJoySettings(
+    JNIEnv *env, jclass, jintArray jindices, jintArray jvalues)
+{
+    jint count = env->GetArrayLength(jindices);
+    jint *indices = env->GetIntArrayElements(jindices, NULL);
+    jint *values = env->GetIntArrayElements(jvalues, NULL);
+
+    ubyte out[MAX_CONTROLS];
+    kconfig_fill_joy_settings((const int *)indices, (const int *)values, (int)count, out);
+
+    env->ReleaseIntArrayElements(jvalues, values, JNI_ABORT);
+    env->ReleaseIntArrayElements(jindices, indices, JNI_ABORT);
+
+    jbyteArray result = env->NewByteArray(MAX_CONTROLS);
+    env->SetByteArrayRegion(result, 0, MAX_CONTROLS, (const jbyte *)out);
+    return result;
+}
+
+/* ── JNI: build keyboard KeySettings from (index, value) pairs ── */
+
+extern "C" JNIEXPORT jbyteArray JNICALL
+Java_com_dxxredux_app_NativePilotPatcher_nativeBuildKbSettings(
+    JNIEnv *env, jclass, jintArray jindices, jintArray jvalues)
+{
+    jint count = env->GetArrayLength(jindices);
+    jint *indices = env->GetIntArrayElements(jindices, NULL);
+    jint *values = env->GetIntArrayElements(jvalues, NULL);
+
+    ubyte out[MAX_CONTROLS];
+    kconfig_fill_kb_settings((const int *)indices, (const int *)values, (int)count, out);
+
+    env->ReleaseIntArrayElements(jvalues, values, JNI_ABORT);
+    env->ReleaseIntArrayElements(jindices, indices, JNI_ABORT);
+
+    jbyteArray result = env->NewByteArray(MAX_CONTROLS);
+    env->SetByteArrayRegion(result, 0, MAX_CONTROLS, (const jbyte *)out);
+    return result;
 }
 
 #endif /* ANDROID */

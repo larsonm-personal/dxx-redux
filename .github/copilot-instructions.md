@@ -2,9 +2,32 @@
 - the current goal is to create an android port
 
 ## principles
-- this project, as of now, is largely about porting via build systems, rather than detailed source code changes. try to make as few source changes as possible
+- this project, as of now, is largely about porting via build systems, rather than detailed source code changes. try to make as few source changes (within d1/ or d2/) as possible
+  - exceptions:
+  - introspection or game control API extensions in order to support automated testing (this project has already started)
+  - additional touch features such as adding "OK" to some menus
+  - android-specific dependency changes or extensions to work with the android filesystem and ecompass the loader's function as mod manager, etc.
+  - maintaining a single source of truth. for example, the details of the player file format should stay in playsave.c and *not* be brought into the kotlin code to support editing player files from the launcher. the launcher code should call into playsave.c functions for every detailed bit of access it needs
+  - it's ok to have shared constants that exist in both java and C code in order to make interfaces cleaner. document wherever there are duplicated constants/arrays/structs so both copies can be maintained
 - any changes that are made should keep the existing windows/linux/mac builds intact, using #defines or separate files or similar
 - any changes should be accompanied by a successful cmake build and test run
+
+## new features
+### launcher
+- there *is* a need to build a launcher that encompasses game file management and configuration editing. there will be significant new code for that and it will be mostly kotlin
+- this launcher will need to have interfaces to set configurations within the game. in general, the launcher will be operating by changing the game asset files and config files *before* the game launches, and then letting the game read those files in its existing ways, which aren't modified from the base redux game
+- when editing config files, attempt to centralize the logic for how the files are laid out within the existing C code,but add clean interfaces so the kotlin can call into helper functions to make edits
+- for these interfaces, it's ok to add shared constants in order to make the interfaces clean and minimize line count
+- the goal is for the C code to be the source of truth (along with shared constants) so config logic isn't spread unnecessarily between kotlin and C
+
+### touch interfaces and overlays
+- there will be new touch interfaces and overlays added. some of these will expose info in an overlay from the base game. interfaces between kotlin and java should be clean and simple. there will be some places where C helper functions are added to expose things the overlay can use, similar to the introspection API, although the full introspection API is probably the wrong answer for this because as it grows it will become more and more inefficient
+- the goal for the game is to have the full game be operable through a pure screen touch interface.  in effect, means playing the full game with only a mouse (no keyboard). there are places where keyboard presses are currently required. we're slowly adding ways to skip these with touches
+
+## code quality and testing
+- attempt to minimize line count to some extent. don't take this to an extreme, but avoid abstractions that are just wrappers, duplicated code, and other verbose things
+- add simple, high-level integration tests to catch regressions and document high level functionality. it's not necessary to add tests to cover every little function unless the function has tricky edge cases or is very complex by itself
+- add these tests for any code centralized in the android/ directory as the code is added. add test runner scripts or helpers so they're easy to re-run after code changes
 
 ## building
 - standard cmake commands (`mkdir build`, `cd build`, `cmake ..`, `cmake --build .`)

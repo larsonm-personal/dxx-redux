@@ -68,4 +68,24 @@ extern void reset_cruise(void);
 extern char *joybutton_text[JOY_MAX_BUTTONS];
 extern char *joyaxis_text[JOY_MAX_AXES];
 
+#if defined(INTROSPECT_ON) || defined(ANDROID)
+extern int kconfig_get_joystick_count(void);
+extern int kconfig_get_keyboard_count(void);
+#endif
+
+#ifdef INTROSPECT_ON
+extern void kconfig_get_joystick_item(int idx, const char **name, int *type, int *value);
+#endif
+
+#ifdef ANDROID
+/*
+ * Build joystick/keyboard KeySettings arrays from (index, value) pairs.
+ * Indices are kc_joystick[]/kc_keyboard[] positions shared with
+ * BUTTON_KC_INDEX / AXIS_KC_INDEX / KB_KC_INDEX in ControllerConfigPage.kt.
+ * Update both locations when the layout changes.
+ */
+extern void kconfig_fill_joy_settings(const int *indices, const int *values, int count, ubyte *out);
+extern void kconfig_fill_kb_settings(const int *indices, const int *values, int count, ubyte *out);
+#endif
+
 #endif /* _KCONFIG_H */
