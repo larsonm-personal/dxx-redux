@@ -87,10 +87,6 @@ int new_player_config()
 	PlayerCfg.ControlType=0; // Assume keyboard
 	memcpy(PlayerCfg.KeySettings, DefaultKeySettings, sizeof(DefaultKeySettings));
 	memcpy(PlayerCfg.KeySettingsD2X, DefaultKeySettingsD2X, sizeof(DefaultKeySettingsD2X));
-#ifdef ANDROID
-	extern void android_apply_gamepad_defaults(void);
-	android_apply_gamepad_defaults();
-#endif
 	kc_set_controls();
 
 	PlayerCfg.DefaultDifficulty = 1;
@@ -1191,6 +1187,89 @@ int write_player_file()
 
 	return -1;
 }
+
+#ifdef ANDROID
+/*
+ * Patch the KeySettings and control_type in a single .plr file using stdio.
+ * This can be called before PhysFS is initialised (e.g. from the launcher JNI).
+ * The binary layout mirrors write_player_file() / read_player_file() above
+ *
+ * Returns 1 on success, 0 on failure.
+ */
+int plr_patch_keysettings(const char *path,
+                         const ubyte *kb, int kb_len,
+                         const ubyte *joy, int joy_len,
+                         int control_type)
+{
+	unsigned char buf[4];
+	unsigned int id;
+	int ver, n_highest, fixed_header;
+	long ks_base;
+	FILE *f;
+
+	f = fopen(path, "r+b");
+	if (!f) return 0;
+
+	/* Read and validate SAVE_FILE_ID (4 bytes LE) */
+	if (fread(buf, 1, 4, f) != 4) { fclose(f); return 0; }
+	id = (unsigned)buf[0] | ((unsigned)buf[1]<<8) |
+	     ((unsigned)buf[2]<<16) | ((unsigned)buf[3]<<24);
+	if (id != (unsigned)SAVE_FILE_ID) { fclose(f); return 0; }
+
+	/* Read version (2 bytes LE) */
+	if (fread(buf, 1, 2, f) != 2) { fclose(f); return 0; }
+	ver = buf[0] | (buf[1] << 8);
+	if (ver < COMPATIBLE_PLAYER_FILE_VERSION) { fclose(f); return 0; }
+
+	/* Compute offset of NHighestLevels.
+	 * Fixed header: 4 (ID) + 2 (version) + 4 (window) + 8 (single-byte fields)
+	 * + 1 (Automap_always_hires) if version >= 19. */
+	fixed_header = 18;
+	if (ver >= 19) fixed_header = 19;
+
+	/* Read NHighestLevels (2 bytes LE) */
+	fseek(f, fixed_header, SEEK_SET);
+	if (fread(buf, 1, 2, f) != 2) { fclose(f); return 0; }
+	n_highest = buf[0] | (buf[1] << 8);
+
+	/* KeySettings base = fixed_header + 2 (NHighestLevels)
+	 *   + n_highest * sizeof(hli)
+	 *   + 4 * MAX_MESSAGE_LEN (NetworkMessageMacro) */
+	ks_base = fixed_header + 2
+	        + (long)n_highest * sizeof(hli)
+	        + 4 * MAX_MESSAGE_LEN;
+
+	/* Layout from ks_base (matching write_player_file exactly):
+	 *   +0              KeySettings[0] keyboard  (MAX_CONTROLS bytes)
+	 *   +MAX_CONTROLS   KeySettings[1] joystick  (MAX_CONTROLS bytes)
+	 *   +2*MC           obsolete (3*MC zeros)
+	 *   +5*MC           KeySettings[2] mouse     (MC bytes)
+	 *   +6*MC           obsolete (2*MC zeros)
+	 *   +8*MC           control_type_dos          (1 byte)
+	 *
+	 * File must be large enough for control_type_dos. */
+	fseek(f, 0, SEEK_END);
+	if (ftell(f) < ks_base + 8 * MAX_CONTROLS + 1) { fclose(f); return 0; }
+
+	/* Patch KeySettings[0] keyboard */
+	fseek(f, ks_base, SEEK_SET);
+	fwrite(kb, 1, kb_len < MAX_CONTROLS ? kb_len : MAX_CONTROLS, f);
+
+	/* Patch KeySettings[1] joystick */
+	fseek(f, ks_base + MAX_CONTROLS, SEEK_SET);
+	fwrite(joy, 1, joy_len < MAX_CONTROLS ? joy_len : MAX_CONTROLS, f);
+
+	/* Patch control_type_dos */
+	fseek(f, ks_base + 8 * MAX_CONTROLS, SEEK_SET);
+	{
+		unsigned char ct = (unsigned char)control_type;
+		fwrite(&ct, 1, 1, f);
+	}
+
+	fclose(f);
+	return 1;
+}
+#endif /* ANDROID */
 
 int get_lifetime_checksum (int a,int b)
 {
