@@ -145,7 +145,7 @@ struct assert_expect {
 struct auto_step {
     step_type   type = STEP_KEY;
     std::string key_name;               /* STEP_KEY: key name */
-    int         delay_ms = 300;         /* STEP_KEY / STEP_WAIT_MS: delay in ms */
+    int         post_delay_ms = 300;    /* STEP_KEY / STEP_SELECT: post-action delay */
     std::string field;                  /* STEP_WAIT_FOR: field name */
     std::string value;                  /* STEP_WAIT_FOR: expected value */
     int         timeout_ms = 0;        /* STEP_WAIT_FOR: timeout (0 = infinite) */
@@ -385,7 +385,7 @@ static int parse_script(const char *json_text) {
             }
 
             s.key_name    = step_json.value("key", "");
-            s.delay_ms    = step_json.value("delay_ms", step_json.value("ms", 300));
+            s.post_delay_ms = step_json.value("post_delay_ms", step_json.value("ms", 300));
             s.field       = step_json.value("field", "");
             s.value       = step_json.value("value", "");
             s.timeout_ms  = step_json.value("timeout_ms", 0);
@@ -601,15 +601,15 @@ extern "C" void game_automate_tick(void) {
             g_key_phase = 1;
             g_step_start = now;
         } else if (g_key_phase == 1) {
-            if (elapsed >= (Uint32)s.delay_ms) {
+            if (elapsed >= (Uint32)s.post_delay_ms) {
                 advance_step();
             }
         }
         break;
 
     case STEP_WAIT_MS:
-        if (elapsed >= (Uint32)s.delay_ms) {
-            LOGI("Wait completed: %d ms", s.delay_ms);
+        if (elapsed >= (Uint32)s.post_delay_ms) {
+            LOGI("Wait completed: %d ms", s.post_delay_ms);
             advance_step();
         }
         break;
@@ -696,7 +696,7 @@ extern "C" void game_automate_tick(void) {
         }
         else if (g_select_phase == 3) {
             /* Phase 3: wait for the key to be processed before advancing */
-            if (elapsed >= (Uint32)s.delay_ms) {
+            if (elapsed >= (Uint32)s.post_delay_ms) {
                 advance_step();
             }
         }

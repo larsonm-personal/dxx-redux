@@ -1,55 +1,51 @@
 // TEST: Death on D1 Level 11 (Insane)
-// Verifies that player_dead and player_exploded introspection fields work.
-// Launches D1 mission "First Strike" on level 11 at Insane difficulty,
-// then waits for the swarm of enemies to kill the player.
+// Verifies player_dead and player_exploded introspection fields.
 //
 // Timing data (3 runs on Pixel_6_API_34 emulator):
-//   screen_mode=menu (pilot): 28ms, 64ms, 46ms  (min 28ms, max 64ms)
-//   screen_mode=menu (main):  32ms, 41ms, 57ms  (min 32ms, max 57ms)
-//   in_game:                  137ms, 175ms, 150ms (min 137ms, max 175ms)
-//   game_window_is_front:     58ms, 64ms, 89ms  (min 58ms, max 89ms)
-//   player_dead:              3960ms, 4232ms, 3901ms (min 3901ms, max 4232ms)
+//   screen_mode=menu (pilot): 28ms, 64ms, 46ms  (min 28ms)
+//   screen_mode=menu (main):  32ms, 41ms, 57ms  (min 32ms)
+//   in_game:                  137ms, 175ms, 150ms (min 137ms)
+//   game_window_is_front:     58ms, 64ms, 89ms  (min 58ms)
+//   player_dead:              3960ms, 4232ms, 3901ms (min 3901ms)
 [
     {"action": "log", "message": "=== TEST: Death on D1 Level 11 (Insane) ==="},
 
-    // Wait for init and pilot select  (min 28ms + 5s)
     {"action": "wait_ms", "ms": 2000},
+
+    // Pilot select
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5028},
-    {"action": "select", "text": "player", "delay_ms": 2000},
+    {"action": "select", "text": "player", "post_delay_ms": 2000},
 
-    // Main menu → New Game  (min 32ms + 5s)
+    // Main menu
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5032},
-    {"action": "select", "text": "New game", "delay_ms": 1500},
+    {"action": "select", "text": "New game", "post_delay_ms": 1500},
 
-    // Select D1 mission "Descent: First Strike"
+    // Mission select
     {"action": "wait_ms", "ms": 1000},
-    {"action": "select", "text": "First Strike", "delay_ms": 1500},
+    {"action": "select", "text": "First Strike", "post_delay_ms": 1500},
 
-    // Level select — clear default and type 11, then Ok
+    // Level 11
     {"action": "wait_ms", "ms": 500},
-    {"action": "key", "key": "backspace", "delay_ms": 200},
-    {"action": "key", "key": "1", "delay_ms": 200},
-    {"action": "key", "key": "1", "delay_ms": 200},
-    {"action": "select", "text": "Ok", "delay_ms": 1500},
+    {"action": "key", "key": "backspace", "post_delay_ms": 200},
+    {"action": "key", "key": "1", "post_delay_ms": 200},
+    {"action": "key", "key": "1", "post_delay_ms": 200},
+    {"action": "select", "text": "Ok", "post_delay_ms": 1500},
 
+    // Insane difficulty
     {"action": "wait_ms", "ms": 500},
-    {"action": "select", "text": "Insane", "delay_ms": 1500},
+    {"action": "select", "text": "Insane", "post_delay_ms": 1500},
 
-    // Skip briefing screens (2 enters is the minimum for this level)
-    {"action": "key", "key": "enter", "delay_ms": 400},
-    {"action": "key", "key": "enter", "delay_ms": 400},
+    // Skip briefing (1 ESC aborts all pages)
+    {"action": "key", "key": "escape", "post_delay_ms": 1000},
 
-    // Wait for game  (min 137ms + 5s)
-    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 5137},
-    // (min 58ms + 5s)
-    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5058},
-
+    // Wait for game
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 5000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
     {"action": "assert", "expect": {"in_game": "true", "current_level_num": "11"}},
     {"action": "introspect"},
 
-    // Wait for death  (min 3901ms + 5s)
-    {"action": "wait_for", "field": "player_dead", "value": "true", "timeout_ms": 8901},
-
+    // Wait for death
+    {"action": "wait_for", "field": "player_dead", "value": "true", "timeout_ms": 10000},
     {"action": "assert", "expect": {"player_dead": "true"}},
     {"action": "introspect"},
 

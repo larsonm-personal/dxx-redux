@@ -1,59 +1,45 @@
 // TEST: Launch to Automap
 // Verifies normal D2 game launch through to automap screen.
-// Navigates from startup → pilot select → new game → briefing → movie → in-game → TAB.
 //
 // Timing data (3 runs on Pixel_6_API_34 emulator):
-//   screen_mode=menu (pilot): 26ms, 38ms, 31ms  (min 26ms, max 38ms)
-//   screen_mode=menu (main):  26ms, 26ms, 30ms  (min 26ms, max 30ms)
-//   in_game:                  29ms, 50ms, 48ms  (min 29ms, max 50ms)
-//   game_window_is_front:     40ms, 25ms, 46ms  (min 25ms, max 46ms)
+//   screen_mode=menu (pilot): 26ms, 38ms, 31ms  (min 26ms)
+//   screen_mode=menu (main):  26ms, 26ms, 30ms  (min 26ms)
+//   in_game:                  29ms, 50ms, 48ms  (min 29ms)
+//   game_window_is_front:     40ms, 25ms, 46ms  (min 25ms)
 // Timeouts set to min + 5s.
 [
     {"action": "log", "message": "=== TEST: Launch to Automap ==="},
 
-    // Step 1: Wait for init
     {"action": "wait_ms", "ms": 2000},
 
-    // Step 2: Pilot select  (min 26ms + 5s)
+    // Pilot select
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5026},
-    {"action": "select", "text": "player", "delay_ms": 2000},
+    {"action": "select", "text": "player", "post_delay_ms": 2000},
 
-    // Step 3: Main menu → New game  (min 26ms + 5s)
+    // Main menu
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5026},
-    {"action": "select", "text": "New game", "delay_ms": 1000},
+    {"action": "select", "text": "New game", "post_delay_ms": 1000},
 
-    // Step 4: Mission select → D2 Counterstrike
+    // Mission select
     {"action": "wait_ms", "ms": 1000},
-    {"action": "select", "text": "Counterstrike", "delay_ms": 1500},
-
-    // Step 5: Level select → accept default level 1
+    {"action": "select", "text": "Counterstrike", "post_delay_ms": 1500},
+    // accept default level 1
     {"action": "wait_ms", "ms": 500},
-    {"action": "select", "text": "Ok", "delay_ms": 1500},
-
-    // Step 6: Difficulty → Rookie
+    {"action": "select", "text": "Ok", "post_delay_ms": 1500},
+    // difficulty
     {"action": "wait_ms", "ms": 500},
-    {"action": "select", "text": "Rookie", "delay_ms": 1500},
+    {"action": "select", "text": "Rookie", "post_delay_ms": 1500},
 
-    // Step 7: Skip briefing screens (2x Enter — minimum required)
-    {"action": "key", "key": "enter", "delay_ms": 400},
-    {"action": "key", "key": "enter", "delay_ms": 400},
+    // Skip briefing (no movie for Counterstrike mission)
+    {"action": "key", "key": "escape", "post_delay_ms": 1000},
 
-    // Step 8: Skip intro movie (Escape)
-    {"action": "key", "key": "escape", "delay_ms": 1000},
-
-    // Step 9: Wait for game  (min 29ms + 5s)
+    // Wait for game
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 5029},
-
-    // Step 10: Assert in-game on level 1
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
-
-    // Step 11: Wait for game window  (min 25ms + 5s)
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5025},
 
-    // Step 12: Press TAB for automap
-    {"action": "key", "key": "tab", "delay_ms": 2000},
-
-    // Step 13: Assert automap active
+    // TAB for automap
+    {"action": "key", "key": "tab", "post_delay_ms": 2000},
     {"action": "assert", "expect": {"automap_active": "true", "in_game": "true", "screen_mode": "game"}},
 
     {"action": "log", "message": "=== TEST: Launch to Automap — COMPLETE ==="},
