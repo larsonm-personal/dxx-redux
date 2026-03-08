@@ -1,0 +1,373 @@
+/*
+ * ISO 9660 reader for Mode 1 data tracks in raw BIN/CUE disc images.
+ *
+ * Raw CD sector layout (Mode 1, 2352 bytes):
+ *   Bytes  0–11  : Sync pattern (00 FF FF FF FF FF FF FF FF FF FF 00)
+ *   Bytes 12–15  : Header (minute, second, frame, mode)
+ *   Bytes 16–2063: User data (2048 bytes)
+ *   Bytes 2064–2351: ECC/EDC (288 bytes)
+ *
+ * ISO 9660 uses 2048-byte logical sectors.  The Primary Volume
+ * Descriptor is at logical sector 16.
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+#include "iso9660_reader.h"
+
+#ifdef ANDROID
+#include <android/log.h>
+#define ISO_LOG(...) __android_log_print(ANDROID_LOG_INFO, "ISO9660", __VA_ARGS__)
+#else
+#define ISO_LOG(...) ((void)0)
+#endif
+
+/* ── Constants ───────────────────────────────────────────────────────── */
+
+#define RAW_SECTOR_SIZE    2352
+#define USER_DATA_OFFSET   16     /* Mode 1: skip sync(12) + header(4) */
+#define USER_DATA_SIZE     2048
+
+/* ISO 9660 PVD is at logical sector 16 */
+#define PVD_SECTOR         16
+
+/* Volume descriptor type codes */
+#define VD_PRIMARY         1
+#define VD_TERMINATOR      255
+
+/* Directory record flag bits */
+#define DR_FLAG_DIRECTORY  0x02
+
+/* ── Helpers ─────────────────────────────────────────────────────────── */
+
+/* Read the 2048-byte user-data portion of a raw Mode 1 sector.
+ * logical_sector is relative to the data track start.
+ * Returns 0 on success, -1 on error. */
+static int read_user_sector(int fd, int track_start_sector,
+                            int logical_sector, unsigned char *buf)
+{
+	off_t offset = (off_t)(track_start_sector + logical_sector) * RAW_SECTOR_SIZE
+	             + USER_DATA_OFFSET;
+	ssize_t n = pread(fd, buf, USER_DATA_SIZE, offset);
+	if (n != USER_DATA_SIZE) return -1;
+	return 0;
+}
+
+/* Read little-endian uint32 from ISO directory record (both-endian fields) */
+static unsigned int le32(const unsigned char *p)
+{
+	return (unsigned int)p[0]
+	     | ((unsigned int)p[1] << 8)
+	     | ((unsigned int)p[2] << 16)
+	     | ((unsigned int)p[3] << 24);
+}
+
+/* Ensure a directory exists, creating parents as needed */
+static int mkdirs(const char *path)
+{
+	char tmp[ISO_PATH_LEN];
+	char *p;
+	size_t len;
+
+	snprintf(tmp, sizeof(tmp), "%s", path);
+	len = strlen(tmp);
+	if (len > 0 && tmp[len - 1] == '/') tmp[len - 1] = '\0';
+
+	for (p = tmp + 1; *p; p++) {
+		if (*p == '/') {
+			*p = '\0';
+			mkdir(tmp, 0755);
+			*p = '/';
+		}
+	}
+	return mkdir(tmp, 0755);
+}
+
+/* Clean an ISO 9660 filename: remove version suffix (;1), trailing dots,
+ * and convert to lowercase.  Writes into dst (max dst_len). */
+static void clean_iso_name(const char *src, int src_len,
+                           char *dst, int dst_len)
+{
+	int i, o = 0;
+	for (i = 0; i < src_len && o < dst_len - 1; i++) {
+		char c = src[i];
+		if (c == ';') break;  /* version separator — stop */
+		dst[o++] = (char)tolower((unsigned char)c);
+	}
+	/* Trim trailing dots */
+	while (o > 0 && dst[o - 1] == '.') o--;
+	dst[o] = '\0';
+}
+
+/* Check if a filename extension matches one in a filter list.
+ * Returns 1 if it matches (or if extensions is NULL = accept all). */
+static int ext_matches(const char *filename, const char **extensions)
+{
+	const char *dot;
+	int i;
+
+	if (!extensions) return 1;
+
+	dot = strrchr(filename, '.');
+	if (!dot) return 0;
+	dot++;  /* skip the dot */
+
+	for (i = 0; extensions[i]; i++) {
+		if (strcasecmp(dot, extensions[i]) == 0)
+			return 1;
+	}
+	return 0;
+}
+
+/* ── Directory tree walker ───────────────────────────────────────────── */
+
+/* Recursively walk an ISO 9660 directory, appending entries to file_list.
+ * dir_lba : LBA of the directory extent
+ * dir_size: size of the directory extent in bytes
+ * prefix  : path prefix (e.g., "" for root, "MISSIONS/" for subdir) */
+static int walk_directory(int fd, int track_start,
+                          unsigned int dir_lba, unsigned int dir_size,
+                          const char *prefix,
+                          iso_file_list_t *out)
+{
+	unsigned char sector[USER_DATA_SIZE];
+	unsigned int bytes_read = 0;
+	unsigned int sector_idx = 0;
+	unsigned int sectors_needed = (dir_size + USER_DATA_SIZE - 1) / USER_DATA_SIZE;
+
+	while (sector_idx < sectors_needed && bytes_read < dir_size) {
+		unsigned int pos = 0;
+
+		if (read_user_sector(fd, track_start, (int)(dir_lba + sector_idx), sector) < 0) {
+			ISO_LOG("Failed to read directory sector at LBA %u", dir_lba + sector_idx);
+			return -1;
+		}
+
+		while (pos < USER_DATA_SIZE && bytes_read < dir_size) {
+			unsigned char rec_len = sector[pos];
+			unsigned char name_len;
+			unsigned int extent_lba, data_size;
+			unsigned char flags;
+			char raw_name[256], clean_name[256], full_path[ISO_PATH_LEN];
+
+			if (rec_len == 0) {
+				/* Padding to sector boundary — advance to next sector */
+				bytes_read += USER_DATA_SIZE - pos;
+				break;
+			}
+
+			if (pos + rec_len > USER_DATA_SIZE) break;
+
+			name_len   = sector[pos + 32];
+			extent_lba = le32(&sector[pos + 2]);
+			data_size  = le32(&sector[pos + 10]);
+			flags      = sector[pos + 25];
+
+			/* Extract raw name */
+			if (name_len > 0 && name_len < (int)sizeof(raw_name)) {
+				memcpy(raw_name, &sector[pos + 33], name_len);
+				raw_name[name_len] = '\0';
+			} else {
+				raw_name[0] = '\0';
+			}
+
+			/* Skip . and .. entries */
+			if (name_len == 1 && (raw_name[0] == 0x00 || raw_name[0] == 0x01)) {
+				pos += rec_len;
+				bytes_read += rec_len;
+				continue;
+			}
+
+			clean_iso_name(raw_name, name_len, clean_name, sizeof(clean_name));
+
+			/* Build full path */
+			if (prefix[0])
+				snprintf(full_path, sizeof(full_path), "%s/%s", prefix, clean_name);
+			else
+				snprintf(full_path, sizeof(full_path), "%s", clean_name);
+
+			if (flags & DR_FLAG_DIRECTORY) {
+				/* Recurse into subdirectory */
+				if (out->num_files < ISO_MAX_FILES) {
+					iso_file_entry_t *e = &out->files[out->num_files];
+					strncpy(e->path, full_path, ISO_PATH_LEN - 1);
+					e->path[ISO_PATH_LEN - 1] = '\0';
+					e->lba = extent_lba;
+					e->size = data_size;
+					e->is_dir = 1;
+					out->num_files++;
+				}
+				walk_directory(fd, track_start, extent_lba, data_size,
+				               full_path, out);
+			} else {
+				/* Regular file */
+				if (out->num_files < ISO_MAX_FILES) {
+					iso_file_entry_t *e = &out->files[out->num_files];
+					strncpy(e->path, full_path, ISO_PATH_LEN - 1);
+					e->path[ISO_PATH_LEN - 1] = '\0';
+					e->lba = extent_lba;
+					e->size = data_size;
+					e->is_dir = 0;
+					out->num_files++;
+					ISO_LOG("  File: %s  LBA=%u  size=%u", full_path, extent_lba, data_size);
+				}
+			}
+
+			pos += rec_len;
+			bytes_read += rec_len;
+		}
+
+		sector_idx++;
+	}
+
+	return 0;
+}
+
+/* ── Public API ──────────────────────────────────────────────────────── */
+
+int iso_list_files(int bin_fd, int track_start_sector, int track_num_sectors,
+                   iso_file_list_t *out)
+{
+	unsigned char pvd[USER_DATA_SIZE];
+	unsigned int root_lba, root_size;
+
+	(void)track_num_sectors;  /* used for bounds checking if needed later */
+
+	if (bin_fd < 0 || !out) return -1;
+
+	memset(out, 0, sizeof(*out));
+
+	/* Read Primary Volume Descriptor at logical sector 16 */
+	if (read_user_sector(bin_fd, track_start_sector, PVD_SECTOR, pvd) < 0) {
+		ISO_LOG("Failed to read PVD at sector %d+16", track_start_sector);
+		return -1;
+	}
+
+	/* Validate: byte 0 = type (1 = primary), bytes 1-5 = "CD001" */
+	if (pvd[0] != VD_PRIMARY ||
+	    memcmp(&pvd[1], "CD001", 5) != 0)
+	{
+		ISO_LOG("Invalid PVD signature at sector %d+16", track_start_sector);
+		return -1;
+	}
+
+	ISO_LOG("Found ISO 9660 Primary Volume Descriptor");
+
+	/* Root directory record is at PVD offset 156, 34 bytes */
+	root_lba  = le32(&pvd[156 + 2]);   /* extent location */
+	root_size = le32(&pvd[156 + 10]);  /* data length */
+
+	ISO_LOG("Root directory: LBA=%u  size=%u", root_lba, root_size);
+
+	/* Walk the directory tree */
+	if (walk_directory(bin_fd, track_start_sector, root_lba, root_size, "", out) < 0)
+		return -1;
+
+	ISO_LOG("Listed %d entries total", out->num_files);
+	return out->num_files;
+}
+
+int iso_extract_files(int bin_fd, int track_start_sector, int track_num_sectors,
+                      const iso_file_list_t *file_list,
+                      const char *output_dir,
+                      const char **extensions,
+                      iso_progress_fn progress, void *user_data)
+{
+	int i, extracted = 0;
+	long long total_bytes = 0, done_bytes = 0;
+	unsigned char sector[USER_DATA_SIZE];
+
+	(void)track_num_sectors;
+
+	if (bin_fd < 0 || !file_list || !output_dir) return -1;
+
+	/* Calculate total bytes for progress */
+	for (i = 0; i < file_list->num_files; i++) {
+		if (!file_list->files[i].is_dir &&
+		    ext_matches(file_list->files[i].path, extensions))
+			total_bytes += file_list->files[i].size;
+	}
+
+	for (i = 0; i < file_list->num_files; i++) {
+		const iso_file_entry_t *entry = &file_list->files[i];
+		char out_path[ISO_PATH_LEN * 2];
+		int out_fd;
+
+		/* Skip directories stored in the listing (created on demand) */
+		if (entry->is_dir) continue;
+
+		/* Filter by extension */
+		if (!ext_matches(entry->path, extensions)) continue;
+
+		/* Build output path */
+		snprintf(out_path, sizeof(out_path), "%s/%s", output_dir, entry->path);
+
+		/* Ensure parent directory exists */
+		{
+			char dir_path[ISO_PATH_LEN * 2];
+			char *last_slash;
+			strncpy(dir_path, out_path, sizeof(dir_path) - 1);
+			dir_path[sizeof(dir_path) - 1] = '\0';
+			last_slash = strrchr(dir_path, '/');
+			if (last_slash) {
+				*last_slash = '\0';
+				mkdirs(dir_path);
+			}
+		}
+
+		/* Open output file */
+		out_fd = open(out_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+		if (out_fd < 0) {
+			ISO_LOG("Failed to create %s: %s", out_path, strerror(errno));
+			continue;
+		}
+
+		ISO_LOG("Extracting %s (%u bytes)", entry->path, entry->size);
+
+		/* Read file data sector by sector */
+		{
+			unsigned int remaining = entry->size;
+			unsigned int lba = entry->lba;
+
+			while (remaining > 0) {
+				int to_write = (remaining > USER_DATA_SIZE) ? USER_DATA_SIZE : (int)remaining;
+
+				if (read_user_sector(bin_fd, track_start_sector, (int)lba, sector) < 0) {
+					ISO_LOG("Read error at LBA %u for %s", lba, entry->path);
+					break;
+				}
+
+				if (write(out_fd, sector, to_write) != to_write) {
+					ISO_LOG("Write error for %s: %s", entry->path, strerror(errno));
+					break;
+				}
+
+				remaining -= to_write;
+				done_bytes += to_write;
+				lba++;
+
+				/* Progress callback */
+				if (progress) {
+					if (progress(entry->path, done_bytes, total_bytes, user_data) != 0) {
+						close(out_fd);
+						ISO_LOG("Extraction cancelled by user");
+						return extracted;
+					}
+				}
+			}
+		}
+
+		close(out_fd);
+		extracted++;
+	}
+
+	ISO_LOG("Extracted %d files", extracted);
+	return extracted;
+}

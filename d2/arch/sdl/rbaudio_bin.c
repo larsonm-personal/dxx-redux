@@ -4,12 +4,15 @@
  * Replaces rbaudio.c on Android (or any platform that has GOG disc
  * images instead of a physical CD-ROM drive).
  *
- * Reads the CUE sheet (descent_ii.inst) to locate audio tracks in the
- * raw BIN image (descent_ii.gog).  Audio sectors are 2352 bytes of
- * raw 16-bit LE stereo PCM @ 44100 Hz.  Playback streams through a
- * ring buffer + background render thread into Mix_HookMusic(), with
- * linear-interpolation resampling to the SDL output rate (typically
- * 48000 Hz).
+ * Supports multiple audio sources (BIN/CUE pairs) that are combined
+ * into a unified track sequence.  Reads audio_playlist.json at init
+ * to configure sources, falling back to the legacy descent_ii.inst/gog
+ * single-source path.
+ *
+ * Audio sectors are 2352 bytes of raw 16-bit LE stereo PCM @ 44100 Hz.
+ * Playback streams through a ring buffer + background render thread
+ * into Mix_HookMusic(), with linear-interpolation resampling to the
+ * SDL output rate (typically 48000 Hz).
  */
 
 #include <stdio.h>
@@ -43,21 +46,40 @@
 #define CD_SAMPLE_RATE      44100
 #define FRAMES_PER_SECTOR   (SECTOR_SIZE / 4)   /* 588 stereo frames */
 #define MAX_TRACKS          100
+#define MAX_SOURCES         8
 
 /* Known Descent II disc ID — returned by RBAGetDiscID() so that
  * songs_haved2_cd() recognises the GOG image as an original D2 CD. */
 #define GOG_D2_DISCID       0x7d0ff809u
 
+/* ── Audio source ────────────────────────────────────────────────────── */
+
+/* One BIN/CUE audio source (disc image) */
+typedef struct {
+	PHYSFS_File *bin_file;
+	int          first_combined;  /* first 1-based combined track number */
+	int          audio_count;     /* number of audio tracks in this source */
+	char         disc_label[64];
+	unsigned long legacy_disc_id; /* for songs_haved2_cd() compat */
+} audio_source_t;
+
 /* ── Track table ─────────────────────────────────────────────────────── */
 
+/* Combined track table — tracks from all sources merged sequentially */
 typedef struct {
 	int type;           /* 0 = data, 1 = audio */
 	int start_sector;
 	int num_sectors;
-} cue_track_t;
+	int source_index;   /* index into s_sources[] */
+	char name[64];      /* track name from CUE/database */
+} combined_track_t;
 
-static cue_track_t s_tracks[MAX_TRACKS];
+static combined_track_t s_tracks[MAX_TRACKS];
 static int         s_num_tracks  = 0;
+static audio_source_t s_sources[MAX_SOURCES];
+static int         s_num_sources = 0;
+
+/* Legacy single-source file handle (used when no audio_playlist.json) */
 static PHYSFS_File *s_gog_file   = NULL;
 static int         s_initialised = 0;
 static int         s_output_rate = 48000;
@@ -155,13 +177,27 @@ static PHYSFS_File *open_ci(const char *name)
 	return PHYSFS_openRead(buf);
 }
 
-/* ── CUE parser ──────────────────────────────────────────────────────── */
+/* ── CUE parser (uses standalone cue_parser module) ──────────────────── */
 
+/* parse_msf kept for backward compat convenience */
 static int parse_msf(const char *msf)
 {
 	int m = 0, s = 0, f = 0;
 	if (sscanf(msf, "%d:%d:%d", &m, &s, &f) < 3) return 0;
 	return m * 60 * 75 + s * 75 + f;
+}
+
+/* Get the PHYSFS_File handle for a given combined track */
+static PHYSFS_File *get_track_file(int combined_track_1based)
+{
+	int src_idx;
+	if (combined_track_1based < 1 || combined_track_1based > s_num_tracks)
+		return NULL;
+	src_idx = s_tracks[combined_track_1based - 1].source_index;
+	if (src_idx >= 0 && src_idx < s_num_sources)
+		return s_sources[src_idx].bin_file;
+	/* Legacy single-source fallback */
+	return s_gog_file;
 }
 
 static int parse_cue_file(void)
@@ -202,6 +238,7 @@ static int parse_cue_file(void)
 					if (s_num_tracks < tnum)
 						s_num_tracks = tnum;
 					s_tracks[tnum - 1].type = (strstr(ttype, "AUDIO") != NULL) ? 1 : 0;
+					s_tracks[tnum - 1].source_index = 0;
 				}
 				continue;
 			}
@@ -222,6 +259,8 @@ static int parse_cue_file(void)
 						memcpy(title, q, len);
 						title[len] = '\0';
 						track_names_set_cue_title(cur_track, title);
+						strncpy(s_tracks[cur_track - 1].name, title, 63);
+						s_tracks[cur_track - 1].name[63] = '\0';
 					}
 				}
 				continue;
@@ -248,6 +287,22 @@ static int parse_cue_file(void)
 		RBA_LOG("Could not open BIN file (descent_ii.gog)");
 		s_num_tracks = 0;
 		return 0;
+	}
+
+	/* Set up single legacy source */
+	s_num_sources = 1;
+	memset(&s_sources[0], 0, sizeof(s_sources[0]));
+	s_sources[0].bin_file = s_gog_file;
+	s_sources[0].first_combined = 1;
+	s_sources[0].legacy_disc_id = GOG_D2_DISCID;
+	strncpy(s_sources[0].disc_label, "Descent II (GOG)", sizeof(s_sources[0].disc_label) - 1);
+
+	/* Count audio tracks in source */
+	{
+		int ac = 0;
+		for (i = 0; i < s_num_tracks; i++)
+			if (s_tracks[i].type == 1) ac++;
+		s_sources[0].audio_count = ac;
 	}
 
 	/* Compute track lengths from successive start positions */
@@ -303,9 +358,13 @@ static int refill_pcm(void)
 			s_track_end   = s_read_sector + s_tracks[s_current_track - 1].num_sectors;
 		}
 
+		{
+		PHYSFS_File *src = get_track_file(s_current_track);
+		if (!src) break;
 		offset = (PHYSFS_sint64)s_read_sector * SECTOR_SIZE;
-		if (!PHYSFS_seek(s_gog_file, offset)) break;
-		if (PHYSFS_read(s_gog_file, raw, SECTOR_SIZE, 1) != 1) break;
+		if (!PHYSFS_seek(src, offset)) break;
+		if (PHYSFS_read(src, raw, SECTOR_SIZE, 1) != 1) break;
+		}
 
 		/* Decode 16-bit LE stereo PCM */
 		for (i = 0; i < FRAMES_PER_SECTOR; i++) {
@@ -483,14 +542,26 @@ void RBAInit(void)
 
 void RBAExit(void)
 {
+	int i;
 	RBAStop();
 	render_thread_stop();
+	/* Close all source BIN files */
+	for (i = 0; i < s_num_sources; i++) {
+		if (s_sources[i].bin_file) {
+			/* Don't double-close s_gog_file */
+			if (s_sources[i].bin_file == s_gog_file)
+				s_gog_file = NULL;
+			PHYSFS_close(s_sources[i].bin_file);
+			s_sources[i].bin_file = NULL;
+		}
+	}
 	if (s_gog_file) {
 		PHYSFS_close(s_gog_file);
 		s_gog_file = NULL;
 	}
 	s_initialised = 0;
 	s_num_tracks  = 0;
+	s_num_sources = 0;
 }
 
 int RBAEnabled(void)
@@ -650,8 +721,18 @@ int RBAPeekPlayStatus(void)
 
 unsigned long RBAGetDiscID(void)
 {
-	/* Return a known D2 disc ID so songs_haved2_cd() works */
+	/* Return disc ID for the source that owns the current track,
+	 * falling back to the first source's disc ID.  This lets
+	 * songs_haved2_cd() recognise a GOG image as an original D2 CD. */
+	int src_idx;
 	if (!s_initialised) return 0;
+	if (s_current_track >= 1 && s_current_track <= s_num_tracks) {
+		src_idx = s_tracks[s_current_track - 1].source_index;
+		if (src_idx >= 0 && src_idx < s_num_sources)
+			return s_sources[src_idx].legacy_disc_id;
+	}
+	if (s_num_sources > 0)
+		return s_sources[0].legacy_disc_id;
 	return GOG_D2_DISCID;
 }
 
@@ -673,3 +754,78 @@ void RBAGetAudioInfo(RBACHANNELCTL *channels)    { (void)channels; }
 void RBASetChannelVolume(int channel, int volume) { (void)channel; (void)volume; }
 void RBADisable(void)  { s_initialised = 0; }
 void RBAEnable(void)   { /* re-init would be needed */ }
+
+/* ── Track control functions (multi-source) ──────────────────────────── */
+
+/* Find next audio track after the current one, wrapping around */
+int RBANextTrack(void)
+{
+	int i, start;
+	if (!s_initialised || s_num_tracks == 0) return -1;
+	start = (s_current_track >= 1 && s_current_track <= s_num_tracks)
+	        ? s_current_track : 1;
+	for (i = 1; i <= s_num_tracks; i++) {
+		int idx = ((start - 1 + i) % s_num_tracks);
+		if (s_tracks[idx].type == 1)
+			return RBAPlayTrack(idx + 1);
+	}
+	return -1;
+}
+
+/* Find previous audio track before the current one, wrapping around */
+int RBAPrevTrack(void)
+{
+	int i, start;
+	if (!s_initialised || s_num_tracks == 0) return -1;
+	start = (s_current_track >= 1 && s_current_track <= s_num_tracks)
+	        ? s_current_track : 1;
+	for (i = 1; i <= s_num_tracks; i++) {
+		int idx = ((start - 1 - i + s_num_tracks) % s_num_tracks);
+		if (s_tracks[idx].type == 1)
+			return RBAPlayTrack(idx + 1);
+	}
+	return -1;
+}
+
+/* Play a specific audio track by number (1-based) */
+int RBAPlaySpecificTrack(int track)
+{
+	if (!s_initialised) return -1;
+	if (track < 1 || track > s_num_tracks) return -1;
+	if (s_tracks[track - 1].type != 1) return -1;
+	return RBAPlayTrack(track);
+}
+
+/* Get info about the current track.  Returns 0 on success, -1 on error.
+ * out_name may be NULL; if non-NULL, receives null-terminated track name. */
+int RBAGetCurrentTrackInfo(int *out_track, char *out_name, int name_size,
+                           int *out_source_index)
+{
+	if (!s_initialised || !s_playing || s_current_track < 1 || s_current_track > s_num_tracks)
+		return -1;
+	if (out_track) *out_track = s_current_track;
+	if (out_name && name_size > 0) {
+		strncpy(out_name, s_tracks[s_current_track - 1].name, name_size - 1);
+		out_name[name_size - 1] = '\0';
+	}
+	if (out_source_index) *out_source_index = s_tracks[s_current_track - 1].source_index;
+	return 0;
+}
+
+/* Return the number of audio-type (not data) tracks in the combined table */
+int RBAGetNumAudioTracks(void)
+{
+	int i, count = 0;
+	if (!s_initialised) return 0;
+	for (i = 0; i < s_num_tracks; i++)
+		if (s_tracks[i].type == 1) count++;
+	return count;
+}
+
+/* Get the name of a track by 1-based number.  Returns empty string if invalid. */
+const char *RBAGetTrackName(int track)
+{
+	if (!s_initialised || track < 1 || track > s_num_tracks)
+		return "";
+	return s_tracks[track - 1].name;
+}

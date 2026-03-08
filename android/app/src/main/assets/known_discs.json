@@ -1,0 +1,41 @@
+{
+  "_comment": "Known disc database for BIN/CUE CD image identification. Per-track SHA1 hashes match redump convention (hash of full raw 2352-byte sectors). Disc matching: compare SHA1s in order from track 1; the disc with the most consecutive matches from the beginning wins.",
+  "discs": [
+    {
+      "id": "d2-gog-v1.2",
+      "label": "Descent II v1.2 (GOG)",
+      "game": "d2",
+      "legacy_disc_id": "0x7d0ff809",
+      "track_mapping": {
+        "title": 2,
+        "credits": 3,
+        "first_level": 4
+      },
+      "tracks": [
+        {"track": 1, "type": "data",  "sha1": "2e7aacfb188866b0ac345a5f505cda052be26935"},
+        {"track": 2, "type": "audio", "sha1": "91e2cc3690108d592f0a93d022d13923cc2fab2c", "name": "Title"},
+        {"track": 3, "type": "audio", "sha1": "1f40faac9ff1455055d48108d09c06c094b7c7a5", "name": "Base Return"},
+        {"track": 4, "type": "audio", "sha1": "8ff9d41a577703a0498dc9a0bcc60335459c7cb4", "name": "Crawl"},
+        {"track": 5, "type": "audio", "sha1": "f8349ef25af19315e8b3fb1cdcdf2ee9bf167cb1", "name": "Gunner Down"},
+        {"track": 6, "type": "audio", "sha1": "89b6e07b48154f27d128e767198181c466596dd4", "name": "Ratzez"},
+        {"track": 7, "type": "audio", "sha1": "9ab52bfd2cebd0bc69e098ba52883385460b61ba", "name": "Techno Industry"},
+        {"track": 8, "type": "audio", "sha1": "bc58275dd8b147d6efc8542c80c09ba22bdb42d6", "name": "Are You Descent"},
+        {"track": 9, "type": "audio", "sha1": "9c6a08c57f7a68a2225887c87382094b455a1388", "name": "Robot Jungle"}
+      ]
+    },
+    {
+      "id": "d1d2-definitive-disc1",
+      "label": "Descent I & II Definitive Collection (EU) Disc 1",
+      "game": "d1",
+      "legacy_disc_id": "0x87102209",
+      "track_mapping": {
+        "title": -1,
+        "credits": -1,
+        "first_level": -1
+      },
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "8684369335fd6a6d29cc0f02072fc6010251562b"}
+      ]
+    }
+  ]
+}
