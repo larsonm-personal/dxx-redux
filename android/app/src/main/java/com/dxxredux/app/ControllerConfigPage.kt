@@ -253,6 +253,9 @@ private fun saveConfig(context: Context, bindings: Map<String, String>, inverts:
     json.put("key_settings_keyboard", kbArr)
 
     File(context.filesDir, CONFIG_FILENAME).writeText(json.toString(2))
+
+    // Patch all existing pilot files with the new controller settings
+    PilotPatcher.patchAll(context, ksJoy, ksKb, 1) // 1 = CONTROL_USING_JOYSTICK
 }
 
 private fun loadConfig(context: Context): Pair<Map<String, String>, Set<String>>? {

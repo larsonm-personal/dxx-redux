@@ -1,0 +1,27 @@
+// TEST: Navigate to Customize Joystick menu and introspect
+// Verifies joystick bindings are applied to the kconfig joystick menu.
+// Uses introspection to read bound_count and individual control bindings.
+[
+    {"action": "log", "message": "=== TEST: Joystick Menu Introspection ==="},
+
+    {"action": "wait_ms", "ms": 2000},
+
+    // Pilot select
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "select", "text": "player", "post_delay_ms": 2000},
+
+    // Main menu → Options
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "select", "text": "Options", "post_delay_ms": 1000},
+
+    // Options → Controls
+    {"action": "select", "text": "Controls...", "post_delay_ms": 1000},
+
+    // Controls → Customize Joystick
+    {"action": "select", "text": "CUSTOMIZE JOYSTICK", "post_delay_ms": 2000},
+
+    // Capture joystick menu state
+    {"action": "introspect"},
+
+    {"action": "log", "message": "=== TEST: Joystick Menu Introspection — COMPLETE ==="}
+]

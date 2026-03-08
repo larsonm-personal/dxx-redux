@@ -97,6 +97,10 @@ class SetupActivity : ComponentActivity() {
                         startActivity(Intent(this@SetupActivity, MainActivity::class.java))
                     }
                 }
+                "patch_pilots" -> {
+                    val n = patchPilotsFromConfig()
+                    Log.i("DXX-Setup", "patch_pilots: patched $n file(s)")
+                }
                 else -> Log.w("DXX-Setup", "Unknown command: $cmd")
             }
         }
@@ -164,6 +168,27 @@ class SetupActivity : ComponentActivity() {
             return true
         }
         return super.dispatchKeyEvent(event)
+    }
+
+    /**
+     * Read controller_config.json and patch all .plr files with its KeySettings.
+     * Returns the number of files patched.
+     */
+    private fun patchPilotsFromConfig(): Int {
+        val cfg = File(filesDir, "controller_config.json")
+        if (!cfg.exists()) return 0
+        try {
+            val json = org.json.JSONObject(cfg.readText())
+            val joyArr = json.optJSONArray("key_settings_joystick") ?: return 0
+            val kbArr  = json.optJSONArray("key_settings_keyboard") ?: return 0
+            val joy = ByteArray(joyArr.length()) { (joyArr.getInt(it) and 0xFF).toByte() }
+            val kb  = ByteArray(kbArr.length())  { (kbArr.getInt(it) and 0xFF).toByte() }
+            val ct  = json.optInt("control_type", 1)
+            return PilotPatcher.patchAll(this, joy, kb, ct)
+        } catch (e: Exception) {
+            Log.e("DXX-Setup", "patchPilotsFromConfig failed", e)
+            return 0
+        }
     }
 
     private fun writeIntrospectJson() {
