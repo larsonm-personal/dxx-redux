@@ -87,3 +87,6 @@ android/app/src/main/assets/gm.sf2
 
 # original game data for testing
 game_data/
+
+# android emulator testing
+game_data_to_copy_to_emulator/

@@ -1,9 +1,9 @@
 #!/bin/bash
-# push_game_data.sh — Push game data files from game_data/ to the emulator.
+# push_game_data.sh — Push game data files from game_data_to_copy_to_emulator/.
 # Usage:  bash push_game_data.sh
 #
 # Expects game data files (descent2.hog, groupa.pig, etc.) in
-# <repo_root>/game_data/.  Pushes them to the app's internal storage
+# <repo_root>/game_data_to_copy_to_emulator/.  Pushes them to the app's internal storage
 # via /data/local/tmp/ staging (necessary because run-as can't read /sdcard).
 
 wait_for_key() {
@@ -17,7 +17,7 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-GAME_DATA_DIR="$REPO_ROOT/game_data"
+GAME_DATA_DIR="$REPO_ROOT/game_data_to_copy_to_emulator"
 PACKAGE="com.dxxredux.app"
 
 source "$SCRIPT_DIR/set_vars.sh"
@@ -69,7 +69,7 @@ _push_timeout() {
 }
 
 if [ ! -d "$GAME_DATA_DIR" ]; then
-    echo "ERROR: game_data/ directory not found at $GAME_DATA_DIR"
+    echo "ERROR: game_data_to_copy_to_emulator/ directory not found at $GAME_DATA_DIR"
     echo "Place your Descent 2 game files (descent2.hog, groupa.pig, etc.) there."
     exit 1
 fi
@@ -127,7 +127,7 @@ echo ""
 echo "=== Files in app storage ==="
 "$ADB" shell "run-as $PACKAGE ls -la $DEST/" 2>&1 || true
 
-# Remove game files from set dir that are no longer in game_data/
+# Remove game files from set dir that are no longer in game_data_to_copy_to_emulator/
 echo ""
 echo "=== Cleaning removed files ==="
 REMOTE_FILES=$("$ADB" shell "run-as $PACKAGE ls $DEST/" 2>/dev/null | tr -d '\r') || true
@@ -147,7 +147,7 @@ for REMOTE in $REMOTE_FILES; do
         fi
     done
     if [ "$FOUND" = "false" ]; then
-        echo "  No longer in game_data/, removing $REMOTE"
+        echo "  No longer in game_data_to_copy_to_emulator/, removing $REMOTE"
         "$ADB" shell "run-as $PACKAGE rm -f $DEST/$REMOTE" 2>/dev/null || true
     fi
 done
