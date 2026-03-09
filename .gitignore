@@ -58,6 +58,7 @@ Thumbs.db
 # Executables #
 ###############
 *.app
+*.exe
 d*x-rebirth
 /*/out/install
 

@@ -1,0 +1,536 @@
+﻿// Known disc database for BIN/CUE CD image identification.
+// Per-track SHA1 hashes match redump convention (hash of full raw 2352-byte sectors).
+// Disc matching: compare SHA1s in order from track 1; the disc with the most
+// consecutive matches from the beginning wins.
+//
+// Maintained by game_data/hash_disc_tracks.ps1
+{
+  "discs": [
+    // -- Descent II v1.2 (GOG)
+    {
+      "id": "d2-gog-v1.2",
+      "label": "Descent II v1.2 (GOG)",
+      "game": "d2",
+      "legacy_disc_id": "0x7d0ff809",
+      "track_mapping": {
+        "title": 2,
+        "credits": 3,
+        "first_level": 4
+      },
+      "tracks": [
+        {"track": 1, "type": "data",  "sha1": "2e7aacfb188866b0ac345a5f505cda052be26935"},
+        {"track": 2, "type": "audio", "sha1": "91e2cc3690108d592f0a93d022d13923cc2fab2c", "name": "Title"},
+        {"track": 3, "type": "audio", "sha1": "1f40faac9ff1455055d48108d09c06c094b7c7a5", "name": "Base Return"},
+        {"track": 4, "type": "audio", "sha1": "8ff9d41a577703a0498dc9a0bcc60335459c7cb4", "name": "Crawl"},
+        {"track": 5, "type": "audio", "sha1": "f8349ef25af19315e8b3fb1cdcdf2ee9bf167cb1", "name": "Gunner Down"},
+        {"track": 6, "type": "audio", "sha1": "89b6e07b48154f27d128e767198181c466596dd4", "name": "Ratzez"},
+        {"track": 7, "type": "audio", "sha1": "9ab52bfd2cebd0bc69e098ba52883385460b61ba", "name": "Techno Industry"},
+        {"track": 8, "type": "audio", "sha1": "bc58275dd8b147d6efc8542c80c09ba22bdb42d6", "name": "Are You Descent"},
+        {"track": 9, "type": "audio", "sha1": "9c6a08c57f7a68a2225887c87382094b455a1388", "name": "Robot Jungle"}
+      ]
+    },
+
+    // -- Descent I & II Definitive Collection (EU) Disc 1
+    {
+      "id": "d1d2-definitive-disc1",
+      "label": "Descent I & II Definitive Collection (EU) Disc 1",
+      "game": "d1",
+      "legacy_disc_id": "0x87102209",
+      "track_mapping": {
+        "title": -1,
+        "credits": -1,
+        "first_level": -1
+      },
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "8684369335fd6a6d29cc0f02072fc6010251562b"}
+      ]
+    },
+
+    // -- Descent - Anniversary Edition (Brazil) (Covermount)
+    //   assets match Descent - Anniversary Edition (Brazil) (Covermount) (2 files)
+    {
+      "id": "descent-anniversary-edition-brazil-covermount",
+      "label": "Descent - Anniversary Edition (Brazil) (Covermount)",
+      "game": "d1",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "a9dba1fafc8ebfab98e6ac554dc1307a0cbcbf16"}
+      ]
+    },
+
+    // -- Descent - Anniversary Edition (USA)
+    //   assets match Descent - Anniversary Edition (Brazil) (Covermount) (2 files)
+    {
+      "id": "descent-anniversary-edition-usa",
+      "label": "Descent - Anniversary Edition (USA)",
+      "game": "d1",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "40aff7207b3282d00ba1fcf01c5ded8e305998ca"}
+      ]
+    },
+
+    // -- Descent - Destination Saturn (USA)
+    //   assets match Descent - Destination Saturn (USA) (2 files)
+    {
+      "id": "descent-destination-saturn-usa",
+      "label": "Descent - Destination Saturn (USA)",
+      "game": "d1",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "dbe03f0ce0402a9db2c39c170c179d8dd7ad0162"}
+      ]
+    },
+
+    // -- Descent - Levels of the World (USA)
+    //   no key game assets
+    {
+      "id": "descent-levels-of-the-world-usa",
+      "label": "Descent - Levels of the World (USA)",
+      "game": "d1",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "b115bec1d98c913715a932d6d1af74863ae42d8b"}
+      ]
+    },
+
+    // -- Descent - Test Flight (USA)
+    //   no key game assets
+    {
+      "id": "descent-test-flight-usa",
+      "label": "Descent - Test Flight (USA)",
+      "game": "d1",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "c7191034f8255b63e64ab4a674abd9db6be83479"}
+      ]
+    },
+
+    // -- Descent (Europe)
+    //   assets match Descent (Europe) (2 files)
+    {
+      "id": "descent-europe",
+      "label": "Descent (Europe)",
+      "game": "d1",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "15b5e02f5188b206eb4a1344ea2eec452f8203e7"}
+      ]
+    },
+
+    // -- Descent (Europe) (Alt)
+    //   assets match Descent (Europe) (2 files)
+    {
+      "id": "descent-europe-alt",
+      "label": "Descent (Europe) (Alt)",
+      "game": "d1",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "f8088ac4d214919799a7dc384bade20bf2ac509b"}
+      ]
+    },
+
+    // -- Descent (USA)
+    //   assets match Descent (Europe) (2 files)
+    {
+      "id": "descent-usa",
+      "label": "Descent (USA)",
+      "game": "d1",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "79bc2722981c0a9943157909c83f02361dc170be"}
+      ]
+    },
+
+    // -- Descent I and II - The Definitive Collection (Europe) (Disc 1)
+    //   assets match Descent - Anniversary Edition (Brazil) (Covermount) (2 files)
+    {
+      "id": "descent-i-and-ii-the-definitive-collection-europe-disc-1",
+      "label": "Descent I and II - The Definitive Collection (Europe) (Disc 1)",
+      "game": "d1d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "4571b75ecf6571949b18392c0ec7c1cbc9eade45"}
+      ]
+    },
+
+    // -- Descent I and II - The Definitive Collection (Europe) (Disc 2)
+    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 2) (22 files)
+    {
+      "id": "descent-i-and-ii-the-definitive-collection-europe-disc-2",
+      "label": "Descent I and II - The Definitive Collection (Europe) (Disc 2)",
+      "game": "d1d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "5e89ff373598e009a86708ea6be28f95ec57bb6f"},
+        {"track": 2, "type": "audio", "sha1": "8b1c169c9b8c9391c94075f19b32322d155b16e4"},
+        {"track": 3, "type": "audio", "sha1": "0a37ab86979e6d5a76fdecc4f84420840d5f3073"},
+        {"track": 4, "type": "audio", "sha1": "efefe65e11681000eb6f4cf1903f28dab9c637ad"},
+        {"track": 5, "type": "audio", "sha1": "293a3190bcd305a1ec6e5b38d23773c1823e15f8"},
+        {"track": 6, "type": "audio", "sha1": "7825c6cb55cde97c62f0819aacca563a778593c3"},
+        {"track": 7, "type": "audio", "sha1": "912039eae24cb066df7ab1686316db243cb5a600"},
+        {"track": 8, "type": "audio", "sha1": "25997061a318058bcf78c684f82783855ca8d0af"},
+        {"track": 9, "type": "audio", "sha1": "0cef8b35dd09a00a06b0fa98d93f9be91d726165"}
+      ]
+    },
+
+    // -- Descent I and II - The Definitive Collection (Europe) (Disc 3)
+    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 3) (4 files)
+    {
+      "id": "descent-i-and-ii-the-definitive-collection-europe-disc-3",
+      "label": "Descent I and II - The Definitive Collection (Europe) (Disc 3)",
+      "game": "d1d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "c9b04757f9b4de85f918e13eaa14a1b12c4ec058"},
+        {"track": 2, "type": "audio", "sha1": "3664c3a1b25b8dc13b6704d6c1b8f5a9dfebc70b"},
+        {"track": 3, "type": "audio", "sha1": "62bbf627a58990cbf8570b1824099b4029ffdc31"},
+        {"track": 4, "type": "audio", "sha1": "37003c19fadd42ba30eb7d81b023dcf82f26b3dd"},
+        {"track": 5, "type": "audio", "sha1": "f151cc198c9e90496d4cdee15fc28eb0ede5616b"},
+        {"track": 6, "type": "audio", "sha1": "dd6a3ae0ec11b0623230364b7a62179e6f7b6352"},
+        {"track": 7, "type": "audio", "sha1": "4cc39dcf3d55e963d4716934a5aee4db0f8aa6e1"},
+        {"track": 8, "type": "audio", "sha1": "89b961d0e7006689087b957bb0ebd52132a992ed"}
+      ]
+    },
+
+    // -- Descent I and II - The Definitive Collection (USA) (Disc 1)
+    //   assets match Descent - Anniversary Edition (Brazil) (Covermount) (2 files)
+    {
+      "id": "descent-i-and-ii-the-definitive-collection-usa-disc-1",
+      "label": "Descent I and II - The Definitive Collection (USA) (Disc 1)",
+      "game": "d1d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "5c28257432e778389e5ff702b79306f3d6610491"}
+      ]
+    },
+
+    // -- Descent I and II - The Definitive Collection (USA) (Disc 2)
+    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 2) (22 files)
+    {
+      "id": "descent-i-and-ii-the-definitive-collection-usa-disc-2",
+      "label": "Descent I and II - The Definitive Collection (USA) (Disc 2)",
+      "game": "d1d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "5e89ff373598e009a86708ea6be28f95ec57bb6f"},
+        {"track": 2, "type": "audio", "sha1": "bb0fea2c435ffb5e38786fb9d1cb4ff50025a622"},
+        {"track": 3, "type": "audio", "sha1": "8563ec8252c9bc998d5f59548ab37bd670ff0005"},
+        {"track": 4, "type": "audio", "sha1": "fc06ad2ebd5727475b598ee808d59127b0a5ca6e"},
+        {"track": 5, "type": "audio", "sha1": "3604d175db8a15767d25d2deaba18904e01e92e6"},
+        {"track": 6, "type": "audio", "sha1": "d713dbafb08b2d4695e0a888676ce94b54bd6c97"},
+        {"track": 7, "type": "audio", "sha1": "42048543996c1fc047368a5ef0f16dfa9372fbe8"},
+        {"track": 8, "type": "audio", "sha1": "307041e093b2feb59ca8a2dd2b80df038e70baae"},
+        {"track": 9, "type": "audio", "sha1": "f1b109392ccd21c847e4ea7fba69c6fe1754fae6"}
+      ]
+    },
+
+    // -- Descent I and II - The Definitive Collection (USA) (Disc 3)
+    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 3) (4 files)
+    {
+      "id": "descent-i-and-ii-the-definitive-collection-usa-disc-3",
+      "label": "Descent I and II - The Definitive Collection (USA) (Disc 3)",
+      "game": "d1d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "c9b04757f9b4de85f918e13eaa14a1b12c4ec058"},
+        {"track": 2, "type": "audio", "sha1": "6c4bdbf6f74c16addc3e949d523f6b59e8ff6c76"},
+        {"track": 3, "type": "audio", "sha1": "faf5247b1a7df114419a879fe38d2cab66763329"},
+        {"track": 4, "type": "audio", "sha1": "cd9a724b715e2fa1f879ad425ba6ad1521103628"},
+        {"track": 5, "type": "audio", "sha1": "94fee918cdb0305de38cf650b7074754305ad22d"},
+        {"track": 6, "type": "audio", "sha1": "9496836c4d216a8270228053c805a6ee05b7e95a"},
+        {"track": 7, "type": "audio", "sha1": "ed62753637f034e2246d66fba0bd9cb9105371c8"},
+        {"track": 8, "type": "audio", "sha1": "ce2e4712ae047610020c1a7efd95e8d1fede819b"}
+      ]
+    },
+
+    // -- Descent II - Destination Quartzon (Europe)
+    //   1 MVLs from Descent I and II - The Definitive Collection (Europe) (Disc 2)
+    //   5 MVLs from Descent II - Destination Quartzon (Europe)
+    {
+      "id": "descent-ii-destination-quartzon-europe",
+      "label": "Descent II - Destination Quartzon (Europe)",
+      "game": "d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "38c9f4e2ebaf2e78e32c9753696abed9620127f8"},
+        {"track": 2, "type": "audio", "sha1": "72b956115d39b9628a6684dcf9487b4f5e2537ee"},
+        {"track": 3, "type": "audio", "sha1": "07f4fa2126eb55ece5a94bcb61550b9606bf9e81"},
+        {"track": 4, "type": "audio", "sha1": "54a803cfb8f2817e4f8f32948858743f8a4b9c59"},
+        {"track": 5, "type": "audio", "sha1": "f000f39b43282a42036a1ffc93ef005dbf062ea1"},
+        {"track": 6, "type": "audio", "sha1": "d047ac5b6bc070affac1d5521fb9c108428c3bb1"},
+        {"track": 7, "type": "audio", "sha1": "22c7f6b2b9a872d67c3b62d71dd90267b67fe7aa"},
+        {"track": 8, "type": "audio", "sha1": "51639a3b9cc0a38bb67453138ead8e3439c8654c"},
+        {"track": 9, "type": "audio", "sha1": "b1ada48e3343c64ac8fcf19b5537edd7d16f619c"},
+        {"track": 10, "type": "audio", "sha1": "8319759cbc83a302758c1030b31c8071040113d6"},
+        {"track": 11, "type": "audio", "sha1": "3e310f7cd25b22c887febb3988028a796e752078"},
+        {"track": 12, "type": "audio", "sha1": "71bd2f588e2584c3def082f3a579902eebbdc803"},
+        {"track": 13, "type": "audio", "sha1": "988cb7058ab24268bd664f62304f853ce745c390"}
+      ]
+    },
+
+    // -- Descent II - Destination Quartzon (USA)
+    //   1 MVLs from Descent I and II - The Definitive Collection (Europe) (Disc 2)
+    //   5 MVLs from Descent II - Destination Quartzon (Europe)
+    {
+      "id": "descent-ii-destination-quartzon-usa",
+      "label": "Descent II - Destination Quartzon (USA)",
+      "game": "d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "d603dcd8845c46b323d6648c423f197bc98985b5"},
+        {"track": 2, "type": "audio", "sha1": "45ac15417514c4acb7402e0eafe0f377eb284995"},
+        {"track": 3, "type": "audio", "sha1": "6c277a06c44d73eb56856e96fc6385c27241c314"},
+        {"track": 4, "type": "audio", "sha1": "b76b8bd79a1da5af9086260ede5f49dd1085b115"},
+        {"track": 5, "type": "audio", "sha1": "bea415946c4b820a5008c9d5441fb3cf78567bb9"},
+        {"track": 6, "type": "audio", "sha1": "ffabf42793a798141dfddb318cd1c92d7c8978dd"},
+        {"track": 7, "type": "audio", "sha1": "ed22bf3edeec8cd4f78ceec5921c4c961cc3f727"},
+        {"track": 8, "type": "audio", "sha1": "bade70b87c5783afdcfd9d52ac04f1feae86ec3f"},
+        {"track": 9, "type": "audio", "sha1": "0c0e699ed4a462c3f169033d7f44b4ffaae0c670"},
+        {"track": 10, "type": "audio", "sha1": "7a8a8dc305fc22ee1fa97550e3100e33df42175a"},
+        {"track": 11, "type": "audio", "sha1": "026cdcf2034f6c9c948d0ee16126a57798c1d4a6"},
+        {"track": 12, "type": "audio", "sha1": "6aad92fe971a691a0b54332bace6c5d1f65b075e"},
+        {"track": 13, "type": "audio", "sha1": "bd11da50af40c98a5f8c130266642a6afd1e98cf"}
+      ]
+    },
+
+    // -- Descent II - Destination Quartzon (USA) (Diamond OEM)
+    //   1 MVLs from Descent I and II - The Definitive Collection (Europe) (Disc 2)
+    //   5 MVLs from Descent II - Destination Quartzon (Europe)
+    {
+      "id": "descent-ii-destination-quartzon-usa-diamond-oem",
+      "label": "Descent II - Destination Quartzon (USA) (Diamond OEM)",
+      "game": "d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "0476c7012510ecf53b25db99d2223919aaad6328"},
+        {"track": 2, "type": "audio", "sha1": "a383d766b791a893855dcca619580b17d4cb1d53"},
+        {"track": 3, "type": "audio", "sha1": "a75093f70c13b714e39e59e29cd93c1f176ca939"},
+        {"track": 4, "type": "audio", "sha1": "4283481bd6eb45368c2adab35e9df5243a3ad733"},
+        {"track": 5, "type": "audio", "sha1": "a2eb18ed15f0499a6a8a3800e4787bf797236492"},
+        {"track": 6, "type": "audio", "sha1": "35e190dfb6a954f5c5fc2c8249c0d55c12e8a8ba"},
+        {"track": 7, "type": "audio", "sha1": "448cd1f951ca613343a56c73be98f1f9995f275e"},
+        {"track": 8, "type": "audio", "sha1": "c6d7997f4e1f85aab83d2698c23bc1a022d0627b"},
+        {"track": 9, "type": "audio", "sha1": "74c5d7cdf445e28c9721e03fad50f80f7b7d35fb"},
+        {"track": 10, "type": "audio", "sha1": "77448fb849d1d785522ac071bcbdbed581224860"},
+        {"track": 11, "type": "audio", "sha1": "bdcea1c28d21b3de9f22e4bd7419b41b81809927"},
+        {"track": 12, "type": "audio", "sha1": "9548eba36b7774e5c663a7ffa9e1b14cfa1cf3dd"},
+        {"track": 13, "type": "audio", "sha1": "e7a61692e976a84e29f6c3854ea76b3777b97965"}
+      ]
+    },
+
+    // -- Descent II - Destination Quartzon (USA) (Logitech OEM)
+    //   1 MVLs from Descent I and II - The Definitive Collection (Europe) (Disc 2)
+    //   5 MVLs from Descent II - Destination Quartzon (Europe)
+    {
+      "id": "descent-ii-destination-quartzon-usa-logitech-oem",
+      "label": "Descent II - Destination Quartzon (USA) (Logitech OEM)",
+      "game": "d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "571eeb7dceadb411b2f0d9859ae5e5f2ad2c3360"},
+        {"track": 2, "type": "audio", "sha1": "71b78cac733d54cabe03cd29d098b7ad2cc30da3"},
+        {"track": 3, "type": "audio", "sha1": "0822a591d3983179cd1349055036a4498d06799b"},
+        {"track": 4, "type": "audio", "sha1": "7cd14bd0e79ff16561dd7b3be9e30d6bc555ec46"},
+        {"track": 5, "type": "audio", "sha1": "a20bfe99e0867c10bd4a8dc6cbc8cbaa7f65b71a"},
+        {"track": 6, "type": "audio", "sha1": "7cae9cfee6e16403b5aed20217e42c5b4084a40a"},
+        {"track": 7, "type": "audio", "sha1": "01e2b7b5e9ef045ed7c0bdcec1585a0cf4247c18"},
+        {"track": 8, "type": "audio", "sha1": "4d5bebc63cc2ab47b54667a4e9eb96798c85588d"},
+        {"track": 9, "type": "audio", "sha1": "4a32512893058a75a3ea0457f645ad216dc6ad89"},
+        {"track": 10, "type": "audio", "sha1": "1e3c2c9eb35959ccb4128044b8c19b3fd882b7b5"},
+        {"track": 11, "type": "audio", "sha1": "35b67aa03aac1ce50baff9a3fa83f863c41f661d"},
+        {"track": 12, "type": "audio", "sha1": "3d1be1e30400cc0f1dc05f17cddc95aae3a278a2"},
+        {"track": 13, "type": "audio", "sha1": "0f96b91e6e66375ec868f978f05987e97bc17907"}
+      ]
+    },
+
+    // -- Descent II - Destination Quartzon 3D (Europe)
+    //   1 MVLs from Descent II - Destination Quartzon (Europe)
+    //   2 MVLs from Descent II - Destination Quartzon 3D (Europe)
+    {
+      "id": "descent-ii-destination-quartzon-3d-europe",
+      "label": "Descent II - Destination Quartzon 3D (Europe)",
+      "game": "d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "efaca6ad7ab0c219a851c5409bbb66f223908ef9"},
+        {"track": 2, "type": "audio", "sha1": "eb02db626e94acde1a633211249c685dc6667caa"},
+        {"track": 3, "type": "audio", "sha1": "637fab7cbd7483e7227ba5272cb76e8eb9ebbce5"},
+        {"track": 4, "type": "audio", "sha1": "6b3a0b3a56f4bba0752a9a0142b0b5f327cb0aef"},
+        {"track": 5, "type": "audio", "sha1": "353e80f4074662d88e3fcd1ad37112db6eb622b5"},
+        {"track": 6, "type": "audio", "sha1": "29c17535fcd78338eb79f4c3a391811400058603"}
+      ]
+    },
+
+    // -- Descent II - The Vertigo Series (USA)
+    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 3) (4 files)
+    {
+      "id": "descent-ii-the-vertigo-series-usa",
+      "label": "Descent II - The Vertigo Series (USA)",
+      "game": "d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "28f45a753337676488031d975d635ff00f00b1d9"},
+        {"track": 2, "type": "audio", "sha1": "ba82f35564b30feea234cc34a77f7b398e84b015"},
+        {"track": 3, "type": "audio", "sha1": "f4772ea521ed18d6a36576437296f464078e9f20"},
+        {"track": 4, "type": "audio", "sha1": "6312ed6c722ee087fb9d966755794fef70990c22"},
+        {"track": 5, "type": "audio", "sha1": "c7c7d672c14ec263a2eafe38771940ef8940bcca"},
+        {"track": 6, "type": "audio", "sha1": "4b338823b8d47d27ab5d9c48a4280e4d082e078f"},
+        {"track": 7, "type": "audio", "sha1": "936841dea37f2699ae142615c2dbdea8b386f98c"},
+        {"track": 8, "type": "audio", "sha1": "851bd26608685f8fc918e58674cd6676ef448c53"}
+      ]
+    },
+
+    // -- Descent II (Europe)
+    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 2) (6 files)
+    {
+      "id": "descent-ii-europe",
+      "label": "Descent II (Europe)",
+      "game": "d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "0f8f9f805607cebca3d6f85581a3ad547168eebb"},
+        {"track": 2, "type": "audio", "sha1": "b3690198db82a6c891e9af4ccf2a07299cf00ce4"},
+        {"track": 3, "type": "audio", "sha1": "8a4138d3bdff031ad21854d394e8719570b37b6d"},
+        {"track": 4, "type": "audio", "sha1": "5650f993de9287f0f53dbc842c29b86ae53f8e46"},
+        {"track": 5, "type": "audio", "sha1": "f7618d2a4ef5ad21b13193e6e88c01397082af72"},
+        {"track": 6, "type": "audio", "sha1": "6cd55d968ff2aa45a4469b3b3b7ca201395d241b"},
+        {"track": 7, "type": "audio", "sha1": "90c9321e1c0d2b0e6b7c062d97c348ee4eb3efdd"},
+        {"track": 8, "type": "audio", "sha1": "ea54073b260df81ea1f8d5cc90cd84565622d8fd"},
+        {"track": 9, "type": "audio", "sha1": "b0d9c3511d37ab3a27d03c71c600ee42df4181c2"},
+        {"track": 10, "type": "audio", "sha1": "2fa38071b3b9c463d0a6854fe00c1a91082c63a8"},
+        {"track": 11, "type": "audio", "sha1": "4a39559eb558f5c2d29f0602482d7f6ee5735bc6"},
+        {"track": 12, "type": "audio", "sha1": "9b65d8454bddb7fa778cc7b87d83d55f9c5d2b09"},
+        {"track": 13, "type": "audio", "sha1": "979ccab10885ebfac6b382e79f9128412192ba74"}
+      ]
+    },
+
+    // -- Descent II (Europe) (v1.1)
+    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 2) (22 files)
+    {
+      "id": "descent-ii-europe-v11",
+      "label": "Descent II (Europe) (v1.1)",
+      "game": "d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "1ee705d8cfd6636dec3d55002927bde3fc9d980e"},
+        {"track": 2, "type": "audio", "sha1": "a1048d8b3693434f76b179ecb96cfaf4756c9dd6"},
+        {"track": 3, "type": "audio", "sha1": "1f8cf69c18ba8fef4cb0a524bd925cdcbf2aaffc"},
+        {"track": 4, "type": "audio", "sha1": "aed98220b3ab05b192d3da6a0cd7757a32c1de86"},
+        {"track": 5, "type": "audio", "sha1": "309b842f873eb3cfb68696b23e4545969ad61005"},
+        {"track": 6, "type": "audio", "sha1": "e19887ad9c470d2621503924e867323f521363d9"},
+        {"track": 7, "type": "audio", "sha1": "4f539b2f4897e384d9432b19f022092ffa461f22"},
+        {"track": 8, "type": "audio", "sha1": "0ffe40a001aa24588796440825031d985dcec859"},
+        {"track": 9, "type": "audio", "sha1": "5eed754c07bb3b7fde9915a139880129a4295c26"}
+      ]
+    },
+
+    // -- Descent II (USA)
+    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 2) (6 files)
+    {
+      "id": "descent-ii-usa",
+      "label": "Descent II (USA)",
+      "game": "d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "c40bf76f373d9db56dc8a30350466c79d75d1b6b"},
+        {"track": 2, "type": "audio", "sha1": "dc2eb4c003bea454333f960f1f928691dadf768d"},
+        {"track": 3, "type": "audio", "sha1": "65678c58128597f71364001e326df49ca2a8620e"},
+        {"track": 4, "type": "audio", "sha1": "b0f262697efb48a085b31c492d93e92273409513"},
+        {"track": 5, "type": "audio", "sha1": "2eec71676b95ad84c4eabf004713019626212343"},
+        {"track": 6, "type": "audio", "sha1": "c18e50ab6749e0d8d65a5ca12f1df8c58b7618d2"},
+        {"track": 7, "type": "audio", "sha1": "4dec9356b0f8c2cb68c59010a4050ff029e0978f"},
+        {"track": 8, "type": "audio", "sha1": "a81ea3831deedcbbb272a0bcbf87f3b4bb02fe88"},
+        {"track": 9, "type": "audio", "sha1": "97c1923a4041bb4c54768b96ac822d63d312aa4a"},
+        {"track": 10, "type": "audio", "sha1": "393bd6fb4f59070265f923bcad22159a3e54ee1a"},
+        {"track": 11, "type": "audio", "sha1": "55bd33d823db9f4b10dbac50ff0fa7492acaa107"},
+        {"track": 12, "type": "audio", "sha1": "2a21c797a99d62a6deed22eda3497a8595ae9e6a"},
+        {"track": 13, "type": "audio", "sha1": "d2d1bf87209e6514fc6fb9cbbf9f4e0f0deada18"}
+      ]
+    },
+
+    // -- Descent II (USA) (3-Level Interactive Preview)
+    //   no key game assets
+    {
+      "id": "descent-ii-usa-3-level-interactive-preview",
+      "label": "Descent II (USA) (3-Level Interactive Preview)",
+      "game": "d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "66c5d7c81c5106b76fc834b8784897ca1aaccbb0"}
+      ]
+    },
+
+    // -- Descent II (USA) (Alt)
+    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 2) (6 files)
+    {
+      "id": "descent-ii-usa-alt",
+      "label": "Descent II (USA) (Alt)",
+      "game": "d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "c40bf76f373d9db56dc8a30350466c79d75d1b6b"},
+        {"track": 2, "type": "audio", "sha1": "6e97770ebd68b2c9dd0a97e7862701eda7304e73"},
+        {"track": 3, "type": "audio", "sha1": "8594fb77e70cb472c2b379fd7f570c045e1e4c64"},
+        {"track": 4, "type": "audio", "sha1": "cb97202f0b81822deaebc76e259fab18372c8213"},
+        {"track": 5, "type": "audio", "sha1": "0e6f20e9136fe6360d6fa258873df44d77376541"},
+        {"track": 6, "type": "audio", "sha1": "3e607be736f49f49022c524c344585c9ae7b3f90"},
+        {"track": 7, "type": "audio", "sha1": "5f224dd378febb34e8238f8f5edcdada1650b464"},
+        {"track": 8, "type": "audio", "sha1": "c57d8f87c5a8049597fcc69ead81e068e8ac9612"},
+        {"track": 9, "type": "audio", "sha1": "f2665cef8ed0146814ab8545b58774dbc1a01e1f"},
+        {"track": 10, "type": "audio", "sha1": "640e917aec792b4efe0718d76862062d024f33ef"},
+        {"track": 11, "type": "audio", "sha1": "9eeb4e728fd61d1c6c1eeebcae996f6e2b562a41"},
+        {"track": 12, "type": "audio", "sha1": "8d543224a1bda15257606a69168765e8b45519f7"},
+        {"track": 13, "type": "audio", "sha1": "f4bce7e0500dacc83032bbdeb8af9782fdffa716"}
+      ]
+    },
+
+    // -- Descent II (USA) (Rerelease)
+    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 2) (22 files)
+    {
+      "id": "descent-ii-usa-rerelease",
+      "label": "Descent II (USA) (Rerelease)",
+      "game": "d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "63bf6596bb4f913b19fbf821d7f06f492f612690"},
+        {"track": 2, "type": "audio", "sha1": "bfed26b6cf026174f960198da5cc31077bea0520"},
+        {"track": 3, "type": "audio", "sha1": "af500c4428b4e4d7df373f89b36ce53b1132d351"},
+        {"track": 4, "type": "audio", "sha1": "8ee3f348670e55e9648e54efe63ef98b36832b57"},
+        {"track": 5, "type": "audio", "sha1": "c3192de71b5617bb2a46457ac01214c4ccd4d5d3"},
+        {"track": 6, "type": "audio", "sha1": "51eecf42408a59baae9e4f1b67a70f0fc7484da7"},
+        {"track": 7, "type": "audio", "sha1": "c7f2a58c2687160c44106e6b38f295f818627159"},
+        {"track": 8, "type": "audio", "sha1": "76aa854f4f09f435ba1a8a46ddee793000d2c03f"},
+        {"track": 9, "type": "audio", "sha1": "67c80da265da495bccdf939e07233a740a144cdb"}
+      ]
+    },
+
+    // -- Descent II (USA) (v1.1)
+    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 2) (22 files)
+    {
+      "id": "descent-ii-usa-v11",
+      "label": "Descent II (USA) (v1.1)",
+      "game": "d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "1ee705d8cfd6636dec3d55002927bde3fc9d980e"},
+        {"track": 2, "type": "audio", "sha1": "9c0669a9495407536e440468764f0b6b3dac2269"},
+        {"track": 3, "type": "audio", "sha1": "5f12db79a989be1d943e5836fbf86ef3477bf22b"},
+        {"track": 4, "type": "audio", "sha1": "66555820ad01298554f84701ce32b5172dcd853d"},
+        {"track": 5, "type": "audio", "sha1": "55d9a77f0e843b246da4804ea84aae71211f8f0a"},
+        {"track": 6, "type": "audio", "sha1": "57ff56b7c46cc22b9bab75279f5ddbdcd97c297f"},
+        {"track": 7, "type": "audio", "sha1": "8154446835d16525ff3b2ea5dee5ec614d163bf1"},
+        {"track": 8, "type": "audio", "sha1": "0de82a7c3412223db93658710248664c42d76fec"},
+        {"track": 9, "type": "audio", "sha1": "24df677d84b3c063f904fd9b88c8f3ce1ee6e15f"}
+      ]
+    },
+
+    // -- Descent-II-Destination-Quartzon_Win_EN_ISO-Version
+    //   1 MVLs from Descent I and II - The Definitive Collection (Europe) (Disc 2)
+    //   5 MVLs from Descent II - Destination Quartzon (Europe)
+    {
+      "id": "descent-ii-destination-quartzonwineniso-version",
+      "label": "Descent-II-Destination-Quartzon_Win_EN_ISO-Version",
+      "game": "d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "09cb721ddec06eaccce2ebb091a252d7d13337c3"},
+        {"track": 2, "type": "audio", "sha1": "71b78cac733d54cabe03cd29d098b7ad2cc30da3"},
+        {"track": 3, "type": "audio", "sha1": "0822a591d3983179cd1349055036a4498d06799b"},
+        {"track": 4, "type": "audio", "sha1": "7cd14bd0e79ff16561dd7b3be9e30d6bc555ec46"},
+        {"track": 5, "type": "audio", "sha1": "a20bfe99e0867c10bd4a8dc6cbc8cbaa7f65b71a"},
+        {"track": 6, "type": "audio", "sha1": "7cae9cfee6e16403b5aed20217e42c5b4084a40a"},
+        {"track": 7, "type": "audio", "sha1": "01e2b7b5e9ef045ed7c0bdcec1585a0cf4247c18"},
+        {"track": 8, "type": "audio", "sha1": "4d5bebc63cc2ab47b54667a4e9eb96798c85588d"},
+        {"track": 9, "type": "audio", "sha1": "4a32512893058a75a3ea0457f645ad216dc6ad89"},
+        {"track": 10, "type": "audio", "sha1": "1e3c2c9eb35959ccb4128044b8c19b3fd882b7b5"},
+        {"track": 11, "type": "audio", "sha1": "35b67aa03aac1ce50baff9a3fa83f863c41f661d"},
+        {"track": 12, "type": "audio", "sha1": "3d1be1e30400cc0f1dc05f17cddc95aae3a278a2"},
+        {"track": 13, "type": "audio", "sha1": "0f96b91e6e66375ec868f978f05987e97bc17907"}
+      ]
+    },
+
+    // -- Dimensions for Descent (USA)
+    //   no key game assets
+    {
+      "id": "dimensions-for-descent-usa",
+      "label": "Dimensions for Descent (USA)",
+      "game": "d1",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "0007cabce9c5d172e55cfc822659e058d3aadca6"}
+      ]
+    }
+  ]
+}

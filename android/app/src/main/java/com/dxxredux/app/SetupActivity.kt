@@ -414,6 +414,8 @@ class SetupActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        KnownVersions.init(this)
+
         // Edge-to-edge: draw behind system bars, Compose handles insets
         WindowCompat.setDecorFitsSystemWindows(window, false)
 

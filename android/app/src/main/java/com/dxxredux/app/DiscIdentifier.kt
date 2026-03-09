@@ -7,7 +7,7 @@ import java.security.MessageDigest
 
 /**
  * Identifies BIN/CUE disc images by matching per-track SHA1 hashes against
- * the known_discs.json database bundled in APK assets.
+ * the known_discs.json5 database bundled in APK assets.
  *
  * Matching algorithm: for each known disc, compare SHA1s in order starting
  * from track 1. The disc with the most consecutive in-order matches from
@@ -55,8 +55,8 @@ class DiscIdentifier(context: Context) {
 
     private fun loadDatabase(context: Context): List<KnownDisc> {
         return try {
-            val json = context.assets.open("known_discs.json").bufferedReader().readText()
-            val root = JSONObject(json)
+            val raw = context.assets.open("known_discs.json5").bufferedReader().readText()
+            val root = JSONObject(Json5.strip(raw))
             val discsArray = root.getJSONArray("discs")
             (0 until discsArray.length()).map { i ->
                 val d = discsArray.getJSONObject(i)
@@ -84,7 +84,7 @@ class DiscIdentifier(context: Context) {
                 )
             }
         } catch (e: Exception) {
-            android.util.Log.e("DiscIdentifier", "Failed to load known_discs.json: ${e.message}")
+            android.util.Log.e("DiscIdentifier", "Failed to load known_discs.json5: ${e.message}")
             emptyList()
         }
     }
