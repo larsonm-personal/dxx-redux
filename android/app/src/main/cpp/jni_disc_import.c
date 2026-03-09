@@ -58,9 +58,12 @@ Java_com_dxxredux_app_DiscImportBridge_nativeParseCue(
 
     char *cue_text = (char *)malloc(len + 1);
     if (!cue_text) { fclose(f); return NULL; }
-    fread(cue_text, 1, len, f);
-    cue_text[len] = '\0';
+    size_t nread = fread(cue_text, 1, len, f);
+    cue_text[nread] = '\0';
     fclose(f);
+    if ((long)nread != len) {
+        LOGE("CUE file read incomplete: got %zu of %ld", nread, len);
+    }
 
     /* Get BIN sizes */
     long long *sizes = NULL;
@@ -69,6 +72,11 @@ Java_com_dxxredux_app_DiscImportBridge_nativeParseCue(
         num_sizes = (*env)->GetArrayLength(env, binSizes);
         jlong *jsizes = (*env)->GetLongArrayElements(env, binSizes, NULL);
         sizes = (long long *)malloc(num_sizes * sizeof(long long));
+        if (!sizes) {
+            (*env)->ReleaseLongArrayElements(env, binSizes, jsizes, JNI_ABORT);
+            free(cue_text);
+            return NULL;
+        }
         for (int i = 0; i < num_sizes; i++)
             sizes[i] = (long long)jsizes[i];
         (*env)->ReleaseLongArrayElements(env, binSizes, jsizes, JNI_ABORT);
@@ -122,8 +130,8 @@ Java_com_dxxredux_app_DiscImportBridge_nativeGetCueTitles(
 
     char *cue_text = (char *)malloc(len + 1);
     if (!cue_text) { fclose(f); return NULL; }
-    fread(cue_text, 1, len, f);
-    cue_text[len] = '\0';
+    size_t nread2 = fread(cue_text, 1, len, f);
+    cue_text[nread2] = '\0';
     fclose(f);
 
     long long *sizes = NULL;
@@ -132,6 +140,11 @@ Java_com_dxxredux_app_DiscImportBridge_nativeGetCueTitles(
         num_sizes = (*env)->GetArrayLength(env, binSizes);
         jlong *jsizes = (*env)->GetLongArrayElements(env, binSizes, NULL);
         sizes = (long long *)malloc(num_sizes * sizeof(long long));
+        if (!sizes) {
+            (*env)->ReleaseLongArrayElements(env, binSizes, jsizes, JNI_ABORT);
+            free(cue_text);
+            return NULL;
+        }
         for (int i = 0; i < num_sizes; i++)
             sizes[i] = (long long)jsizes[i];
         (*env)->ReleaseLongArrayElements(env, binSizes, jsizes, JNI_ABORT);
@@ -170,6 +183,11 @@ Java_com_dxxredux_app_DiscImportBridge_nativeListIsoFiles(
         JNIEnv *env, jclass clazz,
         jint binFd, jint trackStart, jint trackSectors)
 {
+    if (binFd < 0) {
+        LOGE("nativeListIsoFiles: invalid binFd %d", binFd);
+        return NULL;
+    }
+
     iso_file_list_t list;
     memset(&list, 0, sizeof(list));
 
@@ -243,6 +261,11 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoFiles(
         jint binFd, jint trackStart, jint trackSectors,
         jstring outputDir, jobject progress)
 {
+    if (binFd < 0) {
+        LOGE("nativeExtractIsoFiles: invalid binFd %d", binFd);
+        return -1;
+    }
+
     const char *out_dir = (*env)->GetStringUTFChars(env, outputDir, NULL);
     if (!out_dir) return -1;
 

@@ -364,15 +364,22 @@ static int parse_source_cue(const char *cue_name, const char *bin_name,
 
 	/* Compute track lengths from successive start positions */
 	file_size = PHYSFS_fileLength(s_sources[source_idx].bin_file);
+	if (file_size <= 0) {
+		RBA_LOG("parse_source_cue: BIN file %s has invalid size %lld", bin_name, (long long)file_size);
+		PHYSFS_close(s_sources[source_idx].bin_file);
+		s_sources[source_idx].bin_file = NULL;
+		s_num_tracks = base;
+		return 0;
+	}
 	total_sectors = (int)(file_size / SECTOR_SIZE);
 
 	for (i = base; i < s_num_tracks; i++) {
+		int ns;
 		if (i + 1 < s_num_tracks)
-			s_tracks[i].num_sectors =
-				s_tracks[i + 1].start_sector - s_tracks[i].start_sector;
+			ns = s_tracks[i + 1].start_sector - s_tracks[i].start_sector;
 		else
-			s_tracks[i].num_sectors =
-				total_sectors - s_tracks[i].start_sector;
+			ns = total_sectors - s_tracks[i].start_sector;
+		s_tracks[i].num_sectors = (ns > 0) ? ns : 0;
 	}
 
 	/* Set source first_combined (1-based) and audio count */
@@ -658,7 +665,7 @@ static int refill_pcm(void)
 	}
 	s_pcm_pos = 0;
 
-	while (s_pcm_len < PCM_BUF_FRAMES) {
+	while (s_pcm_len + FRAMES_PER_SECTOR <= PCM_BUF_FRAMES) {
 		unsigned char raw[SECTOR_SIZE];
 		PHYSFS_sint64 offset;
 		int i;

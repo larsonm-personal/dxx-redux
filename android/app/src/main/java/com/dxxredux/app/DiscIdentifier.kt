@@ -54,33 +54,38 @@ class DiscIdentifier(context: Context) {
     }
 
     private fun loadDatabase(context: Context): List<KnownDisc> {
-        val json = context.assets.open("known_discs.json").bufferedReader().readText()
-        val root = JSONObject(json)
-        val discsArray = root.getJSONArray("discs")
-        return (0 until discsArray.length()).map { i ->
-            val d = discsArray.getJSONObject(i)
-            val tracksArray = d.getJSONArray("tracks")
-            val tracks = (0 until tracksArray.length()).map { j ->
-                val t = tracksArray.getJSONObject(j)
-                KnownTrack(
-                    track = t.getInt("track"),
-                    type = t.getString("type"),
-                    sha1 = t.getString("sha1"),
-                    name = t.optString("name", null)
+        return try {
+            val json = context.assets.open("known_discs.json").bufferedReader().readText()
+            val root = JSONObject(json)
+            val discsArray = root.getJSONArray("discs")
+            (0 until discsArray.length()).map { i ->
+                val d = discsArray.getJSONObject(i)
+                val tracksArray = d.getJSONArray("tracks")
+                val tracks = (0 until tracksArray.length()).map { j ->
+                    val t = tracksArray.getJSONObject(j)
+                    KnownTrack(
+                        track = t.getInt("track"),
+                        type = t.getString("type"),
+                        sha1 = t.getString("sha1"),
+                        name = t.optString("name", null)
+                    )
+                }
+                val mapping = mutableMapOf<String, Int>()
+                d.optJSONObject("track_mapping")?.let { tm ->
+                    tm.keys().forEach { key -> mapping[key] = tm.getInt(key) }
+                }
+                KnownDisc(
+                    id = d.getString("id"),
+                    label = d.getString("label"),
+                    game = d.getString("game"),
+                    legacyDiscId = d.optString("legacy_disc_id", null),
+                    trackMapping = mapping,
+                    tracks = tracks
                 )
             }
-            val mapping = mutableMapOf<String, Int>()
-            d.optJSONObject("track_mapping")?.let { tm ->
-                tm.keys().forEach { key -> mapping[key] = tm.getInt(key) }
-            }
-            KnownDisc(
-                id = d.getString("id"),
-                label = d.getString("label"),
-                game = d.getString("game"),
-                legacyDiscId = d.optString("legacy_disc_id", null),
-                trackMapping = mapping,
-                tracks = tracks
-            )
+        } catch (e: Exception) {
+            android.util.Log.e("DiscIdentifier", "Failed to load known_discs.json: ${e.message}")
+            emptyList()
         }
     }
 

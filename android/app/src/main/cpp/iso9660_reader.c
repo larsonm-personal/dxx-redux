@@ -17,8 +17,27 @@
 #include <ctype.h>
 #include <errno.h>
 #include <sys/stat.h>
+
+#ifdef _WIN32
+#include <io.h>
+#include <fcntl.h>
+#include <direct.h>
+#define read(fd, buf, n) _read(fd, buf, (unsigned int)(n))
+#define lseek _lseek
+#define close _close
+#define mkdir(d, m) _mkdir(d)
+#define open _open
+#define O_RDONLY _O_RDONLY
+#define O_WRONLY _O_WRONLY
+#define O_CREAT  _O_CREAT
+#define O_TRUNC  _O_TRUNC
+#define strcasecmp _stricmp
+/* write() already available via _write */
+#define write(fd, buf, n) _write(fd, buf, (unsigned int)(n))
+#else
 #include <unistd.h>
 #include <fcntl.h>
+#endif
 
 #include "iso9660_reader.h"
 
@@ -55,7 +74,12 @@ static int read_user_sector(int fd, int track_start_sector,
 {
 	off_t offset = (off_t)(track_start_sector + logical_sector) * RAW_SECTOR_SIZE
 	             + USER_DATA_OFFSET;
+#ifdef _WIN32
+	if (_lseeki64(fd, offset, SEEK_SET) != offset) return -1;
+	int n = _read(fd, buf, USER_DATA_SIZE);
+#else
 	ssize_t n = pread(fd, buf, USER_DATA_SIZE, offset);
+#endif
 	if (n != USER_DATA_SIZE) return -1;
 	return 0;
 }
@@ -128,19 +152,30 @@ static int ext_matches(const char *filename, const char **extensions)
 
 /* ── Directory tree walker ───────────────────────────────────────────── */
 
+#define MAX_DIR_DEPTH 16
+
 /* Recursively walk an ISO 9660 directory, appending entries to file_list.
  * dir_lba : LBA of the directory extent
  * dir_size: size of the directory extent in bytes
- * prefix  : path prefix (e.g., "" for root, "MISSIONS/" for subdir) */
+ * prefix  : path prefix (e.g., "" for root, "MISSIONS/" for subdir)
+ * depth   : current recursion depth (0 at root) */
 static int walk_directory(int fd, int track_start,
                           unsigned int dir_lba, unsigned int dir_size,
                           const char *prefix,
-                          iso_file_list_t *out)
+                          iso_file_list_t *out,
+                          int depth)
 {
 	unsigned char sector[USER_DATA_SIZE];
 	unsigned int bytes_read = 0;
 	unsigned int sector_idx = 0;
-	unsigned int sectors_needed = (dir_size + USER_DATA_SIZE - 1) / USER_DATA_SIZE;
+	unsigned int sectors_needed;
+
+	if (depth >= MAX_DIR_DEPTH) {
+		ISO_LOG("Maximum directory depth %d exceeded", MAX_DIR_DEPTH);
+		return -1;
+	}
+
+	sectors_needed = (dir_size + USER_DATA_SIZE - 1) / USER_DATA_SIZE;
 
 	while (sector_idx < sectors_needed && bytes_read < dir_size) {
 		unsigned int pos = 0;
@@ -171,7 +206,8 @@ static int walk_directory(int fd, int track_start,
 			flags      = sector[pos + 25];
 
 			/* Extract raw name */
-			if (name_len > 0 && name_len < (int)sizeof(raw_name)) {
+			if (name_len > 0 && name_len < (int)sizeof(raw_name) &&
+			    pos + 33 + name_len <= USER_DATA_SIZE) {
 				memcpy(raw_name, &sector[pos + 33], name_len);
 				raw_name[name_len] = '\0';
 			} else {
@@ -205,7 +241,7 @@ static int walk_directory(int fd, int track_start,
 					out->num_files++;
 				}
 				walk_directory(fd, track_start, extent_lba, data_size,
-				               full_path, out);
+				               full_path, out, depth + 1);
 			} else {
 				/* Regular file */
 				if (out->num_files < ISO_MAX_FILES) {
@@ -267,7 +303,7 @@ int iso_list_files(int bin_fd, int track_start_sector, int track_num_sectors,
 	ISO_LOG("Root directory: LBA=%u  size=%u", root_lba, root_size);
 
 	/* Walk the directory tree */
-	if (walk_directory(bin_fd, track_start_sector, root_lba, root_size, "", out) < 0)
+	if (walk_directory(bin_fd, track_start_sector, root_lba, root_size, "", out, 0) < 0)
 		return -1;
 
 	ISO_LOG("Listed %d entries total", out->num_files);

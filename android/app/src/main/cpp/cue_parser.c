@@ -14,6 +14,10 @@
 
 #include "cue_parser.h"
 
+#ifdef _MSC_VER
+#define strncasecmp _strnicmp
+#endif
+
 #ifdef ANDROID
 #include <android/log.h>
 #define CUE_LOG(...) __android_log_print(ANDROID_LOG_INFO, "CueParser", __VA_ARGS__)
@@ -140,8 +144,8 @@ int cue_parse(const char *cue_text,
 			int found_next = 0;
 			for (j = i + 1; j < out->num_tracks; j++) {
 				if (out->tracks[j].file_index == fi) {
-					out->tracks[i].num_sectors =
-						out->tracks[j].start_sector - out->tracks[i].start_sector;
+					int ns = out->tracks[j].start_sector - out->tracks[i].start_sector;
+					out->tracks[i].num_sectors = (ns > 0) ? ns : 0;
 					found_next = 1;
 					break;
 				}
@@ -151,7 +155,8 @@ int cue_parse(const char *cue_text,
 				long long fsize = out->files[fi].file_size;
 				if (fsize > 0) {
 					int total = (int)(fsize / CUE_SECTOR_SIZE);
-					out->tracks[i].num_sectors = total - out->tracks[i].start_sector;
+					int ns = total - out->tracks[i].start_sector;
+					out->tracks[i].num_sectors = (ns > 0) ? ns : 0;
 				}
 				/* else: leave as 0, caller can fix up */
 			}
