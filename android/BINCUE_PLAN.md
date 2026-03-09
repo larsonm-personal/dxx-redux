@@ -134,26 +134,25 @@ cue_disc_t     { cue_bin_file_t files[MAX_FILES]; int num_files; cue_track_t tra
 
 ---
 
-## Phase 6: In-Game Track Controls + Overlay (C-side partially complete)
+## Phase 6: In-Game Track Controls + Overlay ✅
 
 **Goal:** Add overlay controls for track navigation, disc browsing, and track labeling.
 
 **Steps:**
 
 ### Quick Controls (overlay top area)
-1. Add prev/next track buttons to `TouchOverlayView.kt` — small left/right arrows near the track name display area
-2. Wire buttons via JNI: `nativeNextTrack()`, `nativePrevTrack()` → new functions in `rbaudio_bin.c` that jump to the next/prev audio track
-3. Show current track info in overlay: "Disc: Descent II (GOG) | Track 5: Ratzez"
-4. Add a tap-to-expand gesture on the track name to open the detail panel
+1. ✅ Add prev/next track buttons to `TouchOverlayView.kt` — small ◀/▶ arrows below the track name area, only shown when music is playing
+2. ✅ Wire buttons via JNI: `nativeNextTrack()`, `nativePrevTrack()` called from overlay callbacks in `MainActivity.kt`
+3. ✅ Show current track info in overlay: track label with ♫ prefix, auto-polled every 500ms via overlay poller
+4. ✅ Add a tap-to-expand gesture on the track name label to open the detail panel
 
 ### Detail Panel (drawer)
-5. Create `MusicControlPanel.kt` — a bottom drawer or side panel showing:
-   - Current disc name + match quality
-   - Full track list for current disc (scrollable), highlight current track
-   - Disc switcher (tabs or dropdown) to browse other loaded discs
-   - Tap any track to play it
-6. JNI bridge: `nativePlayTrack(discIndex, trackNum)`, `nativeGetCurrentTrack()` → returns `{discIndex, trackNum, trackName}`
-7. Track labeling: in the detail panel, allow the user to assign custom names to tracks. Store in `audio_sources.json` alongside the disc entry. Custom names override database names.
+5. ✅ Create `MusicControlPanel.kt` — semi-transparent full-screen overlay panel showing:
+   - Full track list (scrollable with drag), highlight current track in green
+   - Tap any track to play it immediately
+   - Close button (✕) and tap-outside-to-dismiss
+6. ✅ JNI bridge: uses `nativePlaySpecificTrack()`, `nativeGetCurrentTrackInfo()`, `nativeGetTrackName()`, `nativeGetCurrentTrackNum()`, `nativeGetNumAudioTracks()` — all already bridged in Phase 5
+7. Track labeling: deferred to Phase 7 (custom names can override database names via `audio_sources.json`)
 
 ### C-side track control functions
 8. ✅ Add to `rbaudio_bin.c`:
@@ -165,10 +164,10 @@ cue_disc_t     { cue_bin_file_t files[MAX_FILES]; int num_files; cue_track_t tra
 9. ✅ Expose these via JNI in `jni_music_control.c`, with `external fun` declarations in `MainActivity.kt`
 
 **Relevant files:**
-- `android/app/src/main/java/com/dxxredux/app/TouchOverlayView.kt` — overlay buttons
-- `android/app/src/main/java/com/dxxredux/app/MainActivity.kt` — existing `showTrackName()` callback
-- New: `android/app/src/main/java/com/dxxredux/app/MusicControlPanel.kt`
-- New: `android/app/src/main/cpp/jni_music_control.c`
+- ✅ `android/app/src/main/java/com/dxxredux/app/TouchOverlayView.kt` — prev/next buttons + track label
+- ✅ `android/app/src/main/java/com/dxxredux/app/MainActivity.kt` — callbacks, track polling, panel wiring
+- ✅ New: `android/app/src/main/java/com/dxxredux/app/MusicControlPanel.kt` — full track list overlay
+- ✅ `android/app/src/main/cpp/jni_music_control.c` — JNI bridge for all track control functions
 - ✅ `d2/arch/sdl/rbaudio_bin.c` — track control functions done
 - `d2/main/track_names.c` — overlay notification updates
 - ✅ `d2/main/track_names.h` / `d2/include/rbaudio.h` — new API declarations

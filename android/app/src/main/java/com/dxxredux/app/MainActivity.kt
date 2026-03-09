@@ -113,6 +113,8 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     private var trackNameAnimator: ObjectAnimator? = null
     private var overlayEnabled = false
     private val overlayPoller = android.os.Handler(android.os.Looper.getMainLooper())
+    private var musicPanel: MusicControlPanel? = null
+    private var lastTrackNum = -1   // for detecting track changes in polling
 
     // ── Left-edge fling detection (→ setup screen) ────────────────────
     private lateinit var edgeFlingDetector: android.view.GestureDetector
@@ -188,6 +190,15 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         touchOverlay.automapMarkerCallback = { idx -> nativeAutomapSelectMarker(idx) }
         touchOverlay.markerCountProvider = { try { nativeGetMarkerCount() } catch (_: Exception) { 0 } }
         touchOverlay.mapButtonCallback = { toggleAutomap() }
+        touchOverlay.prevTrackCallback = {
+            nativePrevTrack()
+            updateTrackLabel()
+        }
+        touchOverlay.nextTrackCallback = {
+            nativeNextTrack()
+            updateTrackLabel()
+        }
+        touchOverlay.musicPanelCallback = { showMusicPanel() }
         touchOverlay.tapPassthroughCallback = {
             // Inject Enter key press so "press any key" screens respond to touch
             nativeKeyEvent(0, android.view.KeyEvent.KEYCODE_ENTER, '\r'.code)
@@ -329,6 +340,8 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                         } else if (!shouldShow && wasActive) {
                             nativeSetJoystickEnabled(false)
                         }
+                        // Poll current track to update overlay label
+                        if (shouldShow && !automap) pollTrackLabel()
                     } catch (_: Exception) {
                         touchOverlay.isActive = false
                         touchOverlay.automapActive = false
@@ -789,6 +802,53 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
             val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
             imm.hideSoftInputFromWindow(gameSurfaceView.windowToken, 0)
         }
+    }
+
+    // ── Music overlay helpers ─────────────────────────────────
+    private fun pollTrackLabel() {
+        try {
+            val trackNum = nativeGetCurrentTrackNum()
+            if (trackNum != lastTrackNum) {
+                lastTrackNum = trackNum
+                updateTrackLabel()
+            }
+        } catch (_: Exception) { /* not playing */ }
+    }
+
+    private fun updateTrackLabel() {
+        try {
+            val info = nativeGetCurrentTrackInfo()
+            if (info.isNotEmpty()) {
+                // Format: "trackNum|sourceIndex|trackName"
+                val parts = info.split("|", limit = 3)
+                val name = if (parts.size >= 3 && parts[2].isNotEmpty()) parts[2] else "Track ${parts[0]}"
+                touchOverlay.trackLabel = "\u266B $name"
+                touchOverlay.invalidate()
+            } else {
+                touchOverlay.trackLabel = ""
+            }
+        } catch (_: Exception) {
+            touchOverlay.trackLabel = ""
+        }
+    }
+
+    private fun showMusicPanel() {
+        if (musicPanel != null) return   // already showing
+        val panel = MusicControlPanel(this, { track ->
+            nativePlaySpecificTrack(track)
+            updateTrackLabel()
+        }, {
+            musicPanel?.let { mp ->
+                (gameSurfaceView.parent as? FrameLayout)?.removeView(mp)
+            }
+            musicPanel = null
+        })
+        musicPanel = panel
+        val frame = gameSurfaceView.parent as? FrameLayout ?: return
+        frame.addView(panel, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        ))
     }
 
     // ── Track name overlay (called from JNI) ────────────────

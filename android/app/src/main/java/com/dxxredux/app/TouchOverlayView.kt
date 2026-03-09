@@ -40,6 +40,13 @@ class TouchOverlayView @JvmOverloads constructor(
     /** Called when the MAP button is tapped (toggles automap). */
     var mapButtonCallback: (() -> Unit)? = null
 
+    /** Called to skip to the previous music track. */
+    var prevTrackCallback: (() -> Unit)? = null
+    /** Called to skip to the next music track. */
+    var nextTrackCallback: (() -> Unit)? = null
+    /** Called when the track info area is tapped (opens music panel). */
+    var musicPanelCallback: (() -> Unit)? = null
+
     /** Called when a tap lands outside all overlay controls (pass-through for "press any key" screens). */
     var tapPassthroughCallback: (() -> Unit)? = null
 
@@ -77,6 +84,12 @@ class TouchOverlayView @JvmOverloads constructor(
     private var mapBtnCenterX = 0f
     private var mapBtnCenterY = 0f
     private var mapBtnRadius  = 0f
+    // ── Music prev/next button geometry ──────────────────────────
+    private var musicBtnY = 0f       // center Y for both music buttons
+    private var prevBtnCenterX = 0f
+    private var nextBtnCenterX = 0f
+    private var musicBtnRadius = 0f
+    private var musicLabelX = 0f     // X position for track label between buttons
     // ── Current stick state ─────────────────────────────────
     private var stickPointerId = -1    // active pointer ID, -1 = no touch
     private val stickPos = PointF()    // current stick position (in px, relative to center)
@@ -88,6 +101,9 @@ class TouchOverlayView @JvmOverloads constructor(
     private var btn0PointerId = -1
     private var btn1PointerId = -1
     private var mapBtnPointerId = -1
+    private var prevBtnPointerId = -1
+    private var nextBtnPointerId = -1
+    private var musicLabelPointerId = -1
 
     // ── Automap gesture state (pointers not on stick/buttons) ──
     /** Set to true by the activity when the automap is displayed. */
@@ -110,6 +126,9 @@ class TouchOverlayView @JvmOverloads constructor(
     var automapMarkerCallback: ((Int) -> Unit)? = null
     /** Called to query how many markers currently exist. */
     var markerCountProvider: (() -> Int)? = null
+
+    /** Current track label text, set by the activity. */
+    var trackLabel: String = ""
 
     // ── Automap overlay button geometry (computed in onSizeChanged) ──
     private var automapBtnSize = 0f    // button width/height
@@ -196,6 +215,13 @@ class TouchOverlayView @JvmOverloads constructor(
         mapBtnCenterX = w - w * 0.05f - mapBtnRadius
         mapBtnCenterY = base * 0.05f + mapBtnRadius
 
+        // ── Music control buttons: top-left, below track name ──
+        musicBtnRadius = base * 0.03f
+        musicBtnY = base * 0.12f
+        prevBtnCenterX = w * 0.04f + musicBtnRadius
+        nextBtnCenterX = prevBtnCenterX + musicBtnRadius * 2 + base * 0.02f + musicBtnRadius
+        musicLabelX = nextBtnCenterX + musicBtnRadius + base * 0.02f
+
         // ── Automap overlay geometry ──
         automapBtnSize = base * 0.09f
         automapBtnSpacing = base * 0.02f
@@ -253,6 +279,25 @@ class TouchOverlayView @JvmOverloads constructor(
         paintBtnLabel.textSize = mapBtnRadius * 0.65f
         canvas.drawText("MAP", mapBtnCenterX, mapBtnCenterY + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
         paintBtnLabel.textSize = savedSize
+
+        // ── Music prev/next buttons ─────────────────────────
+        if (trackLabel.isNotEmpty()) {
+            val fillPrev = if (prevBtnPointerId >= 0) paintBtnPressed else paintBtnIdle
+            canvas.drawCircle(prevBtnCenterX, musicBtnY, musicBtnRadius, fillPrev)
+            canvas.drawCircle(prevBtnCenterX, musicBtnY, musicBtnRadius, paintRing)
+            val fillNext = if (nextBtnPointerId >= 0) paintBtnPressed else paintBtnIdle
+            canvas.drawCircle(nextBtnCenterX, musicBtnY, musicBtnRadius, fillNext)
+            canvas.drawCircle(nextBtnCenterX, musicBtnY, musicBtnRadius, paintRing)
+            // Arrow glyphs
+            paintBtnLabel.textSize = musicBtnRadius * 0.9f
+            canvas.drawText("\u25C0", prevBtnCenterX, musicBtnY + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+            canvas.drawText("\u25B6", nextBtnCenterX, musicBtnY + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+            // Track label
+            paintBtnLabel.textSize = musicBtnRadius * 0.7f
+            val labelPaint = Paint(paintBtnLabel).apply { textAlign = Paint.Align.LEFT }
+            canvas.drawText(trackLabel, musicLabelX, musicBtnY + labelPaint.textSize * 0.35f, labelPaint)
+            paintBtnLabel.textSize = savedSize
+        }
     }
 
     private fun drawAutomapOverlay(canvas: Canvas) {
@@ -326,6 +371,17 @@ class TouchOverlayView @JvmOverloads constructor(
                         mapBtnPointerId = pid
                         invalidate()
                     }
+                    prevBtnPointerId < 0 && trackLabel.isNotEmpty() && isInsideButton(px, py, prevBtnCenterX, musicBtnY, musicBtnRadius) -> {
+                        prevBtnPointerId = pid
+                        invalidate()
+                    }
+                    nextBtnPointerId < 0 && trackLabel.isNotEmpty() && isInsideButton(px, py, nextBtnCenterX, musicBtnY, musicBtnRadius) -> {
+                        nextBtnPointerId = pid
+                        invalidate()
+                    }
+                    musicLabelPointerId < 0 && trackLabel.isNotEmpty() && px >= musicLabelX && py >= musicBtnY - musicBtnRadius * 1.5f && py <= musicBtnY + musicBtnRadius * 1.5f -> {
+                        musicLabelPointerId = pid
+                    }
                     else -> passthroughPointers.add(pid)
                 }
             }
@@ -348,6 +404,9 @@ class TouchOverlayView @JvmOverloads constructor(
                 releaseButton0()
                 releaseButton1()
                 releaseMapButton(event.actionMasked == MotionEvent.ACTION_UP)
+                releasePrevButton(event.actionMasked == MotionEvent.ACTION_UP)
+                releaseNextButton(event.actionMasked == MotionEvent.ACTION_UP)
+                releaseMusicLabel(event.actionMasked == MotionEvent.ACTION_UP)
             }
             MotionEvent.ACTION_POINTER_UP -> {
                 val idx = event.actionIndex
@@ -359,6 +418,9 @@ class TouchOverlayView @JvmOverloads constructor(
                     btn0PointerId  -> releaseButton0()
                     btn1PointerId  -> releaseButton1()
                     mapBtnPointerId -> releaseMapButton(true)
+                    prevBtnPointerId -> releasePrevButton(true)
+                    nextBtnPointerId -> releaseNextButton(true)
+                    musicLabelPointerId -> releaseMusicLabel(true)
                 }
             }
         }
@@ -526,10 +588,36 @@ class TouchOverlayView @JvmOverloads constructor(
         }
     }
 
+    private fun releasePrevButton(fired: Boolean) {
+        if (prevBtnPointerId >= 0) {
+            prevBtnPointerId = -1
+            invalidate()
+            if (fired) prevTrackCallback?.invoke()
+        }
+    }
+
+    private fun releaseNextButton(fired: Boolean) {
+        if (nextBtnPointerId >= 0) {
+            nextBtnPointerId = -1
+            invalidate()
+            if (fired) nextTrackCallback?.invoke()
+        }
+    }
+
+    private fun releaseMusicLabel(fired: Boolean) {
+        if (musicLabelPointerId >= 0) {
+            musicLabelPointerId = -1
+            if (fired) musicPanelCallback?.invoke()
+        }
+    }
+
     private fun releaseAllButtons() {
         releaseButton0()
         releaseButton1()
         releaseMapButton(false)
+        releasePrevButton(false)
+        releaseNextButton(false)
+        releaseMusicLabel(false)
     }
 
     private fun releaseMapButton(fired: Boolean) {
