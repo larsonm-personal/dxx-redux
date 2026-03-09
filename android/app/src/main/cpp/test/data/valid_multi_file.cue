@@ -1,0 +1,11 @@
+FILE "data.bin" BINARY
+  TRACK 01 MODE1/2352
+    INDEX 01 00:00:00
+FILE "audio1.bin" BINARY
+  TRACK 02 AUDIO
+    TITLE "Song One"
+    INDEX 01 00:00:00
+FILE "audio2.bin" BINARY
+  TRACK 03 AUDIO
+    TITLE "Song Two"
+    INDEX 01 00:00:00

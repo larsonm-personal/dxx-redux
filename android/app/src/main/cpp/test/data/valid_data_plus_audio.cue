@@ -1,0 +1,9 @@
+FILE "game.bin" BINARY
+  TRACK 01 MODE1/2352
+    INDEX 01 00:00:00
+  TRACK 02 AUDIO
+    TITLE "Track Two"
+    INDEX 01 00:02:00
+  TRACK 03 AUDIO
+    TITLE "Track Three"
+    INDEX 01 00:04:00

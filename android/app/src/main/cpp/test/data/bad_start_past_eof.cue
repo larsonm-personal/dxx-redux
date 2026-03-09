@@ -1,0 +1,3 @@
+FILE "tiny.bin" BINARY
+  TRACK 01 MODE1/2352
+    INDEX 01 10:00:00

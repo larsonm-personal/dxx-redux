@@ -300,6 +300,31 @@ static char *read_test_file(const char *filename)
     return buf;
 }
 
+/* Read a CUE file from the test/data/ directory relative to the exe.
+ * Tries ./test/data/ first (in-tree build), then ../test/data/ etc. */
+static char *read_cue_data_file(const char *filename)
+{
+    char path[512];
+    const char *dirs[] = { "test/data", "../test/data",
+                           "app/src/main/cpp/test/data",
+                           "../app/src/main/cpp/test/data", NULL };
+    for (int i = 0; dirs[i]; i++) {
+        snprintf(path, sizeof(path), "%s/%s", dirs[i], filename);
+        FILE *f = fopen(path, "r");
+        if (f) {
+            fseek(f, 0, SEEK_END);
+            long len = ftell(f);
+            fseek(f, 0, SEEK_SET);
+            char *buf = (char *)malloc(len + 1);
+            fread(buf, 1, len, f);
+            buf[len] = '\0';
+            fclose(f);
+            return buf;
+        }
+    }
+    return NULL;
+}
+
 /* ── Test: Valid CUE parsing ─────────────────────────────────────────── */
 
 static void test_valid_cue_parse(void)
@@ -608,6 +633,533 @@ static void test_iso_extraction(void)
     }
 }
 
+/* ── Test: File-based CUE parsing (test/data/*.cue) ──────────────────── */
+
+static void test_file_based_cue(void)
+{
+    TEST(file_valid_single_data);
+    {
+        char *cue = read_cue_data_file("valid_single_data.cue");
+        if (!cue) { FAIL("cannot read valid_single_data.cue"); return; }
+        long long sz = 20LL * CUE_SECTOR_SIZE;
+        cue_disc_t disc;
+        int n = cue_parse(cue, &sz, 1, &disc);
+        free(cue);
+        if (n != 1) { FAIL("expected 1 track"); return; }
+        if (disc.tracks[0].type != CUE_TRACK_DATA) { FAIL("should be data"); return; }
+        if (disc.num_files != 1) { FAIL("expected 1 file"); return; }
+        if (strcmp(disc.files[0].filename, "game.bin") != 0) { FAIL("filename mismatch"); return; }
+        PASS();
+    }
+
+    TEST(file_valid_data_plus_audio);
+    {
+        char *cue = read_cue_data_file("valid_data_plus_audio.cue");
+        if (!cue) { FAIL("cannot read valid_data_plus_audio.cue"); return; }
+        long long sz = 320LL * CUE_SECTOR_SIZE;
+        cue_disc_t disc;
+        int n = cue_parse(cue, &sz, 1, &disc);
+        free(cue);
+        if (n != 3) { FAIL("expected 3 tracks"); return; }
+        if (disc.tracks[0].type != CUE_TRACK_DATA) { FAIL("track 1 type"); return; }
+        if (disc.tracks[1].type != CUE_TRACK_AUDIO) { FAIL("track 2 type"); return; }
+        if (strcmp(disc.tracks[1].title, "Track Two") != 0) { FAIL("track 2 title"); return; }
+        if (strcmp(disc.tracks[2].title, "Track Three") != 0) { FAIL("track 3 title"); return; }
+        if (disc.tracks[1].start_sector != 150) { FAIL("track 2 start"); return; }
+        PASS();
+    }
+
+    TEST(file_valid_multi_file);
+    {
+        char *cue = read_cue_data_file("valid_multi_file.cue");
+        if (!cue) { FAIL("cannot read valid_multi_file.cue"); return; }
+        long long sizes[3] = { 20LL * CUE_SECTOR_SIZE, 150LL * CUE_SECTOR_SIZE, 200LL * CUE_SECTOR_SIZE };
+        cue_disc_t disc;
+        int n = cue_parse(cue, sizes, 3, &disc);
+        free(cue);
+        if (n != 3) { FAIL("expected 3 tracks"); return; }
+        if (disc.num_files != 3) { FAIL("expected 3 files"); return; }
+        if (disc.tracks[0].file_index != 0) { FAIL("track 1 file"); return; }
+        if (disc.tracks[1].file_index != 1) { FAIL("track 2 file"); return; }
+        if (disc.tracks[2].file_index != 2) { FAIL("track 3 file"); return; }
+        if (strcmp(disc.tracks[1].title, "Song One") != 0) { FAIL("track 2 title"); return; }
+        PASS();
+    }
+
+    TEST(file_valid_many_audio);
+    {
+        char *cue = read_cue_data_file("valid_many_audio.cue");
+        if (!cue) { FAIL("cannot read valid_many_audio.cue"); return; }
+        long long sz = 1350LL * CUE_SECTOR_SIZE;
+        cue_disc_t disc;
+        int n = cue_parse(cue, &sz, 1, &disc);
+        free(cue);
+        if (n != 9) { FAIL("expected 9 tracks"); return; }
+        if (disc.tracks[0].type != CUE_TRACK_DATA) { FAIL("track 1 type"); return; }
+        for (int i = 1; i < 9; i++) {
+            if (disc.tracks[i].type != CUE_TRACK_AUDIO) { FAIL("audio track type"); return; }
+        }
+        PASS();
+    }
+
+    TEST(file_valid_pregap_index00);
+    {
+        char *cue = read_cue_data_file("valid_pregap.cue");
+        if (!cue) { FAIL("cannot read valid_pregap.cue"); return; }
+        long long sz = 500LL * CUE_SECTOR_SIZE;
+        cue_disc_t disc;
+        int n = cue_parse(cue, &sz, 1, &disc);
+        free(cue);
+        if (n != 2) { FAIL("expected 2 tracks"); return; }
+        /* Parser only uses INDEX 01, should ignore INDEX 00 */
+        if (disc.tracks[0].start_sector != 150) { FAIL("track 1 INDEX 01 should be 00:02:00=150"); return; }
+        if (disc.tracks[1].start_sector != 450) { FAIL("track 2 INDEX 01 should be 00:06:00=450"); return; }
+        PASS();
+    }
+
+    TEST(file_valid_mode2);
+    {
+        char *cue = read_cue_data_file("valid_mode2.cue");
+        if (!cue) { FAIL("cannot read valid_mode2.cue"); return; }
+        long long sz = 20LL * CUE_SECTOR_SIZE;
+        cue_disc_t disc;
+        int n = cue_parse(cue, &sz, 1, &disc);
+        free(cue);
+        if (n != 1) { FAIL("expected 1 track"); return; }
+        if (disc.tracks[0].type != CUE_TRACK_DATA) { FAIL("mode2 should be data"); return; }
+        PASS();
+    }
+
+    TEST(file_valid_extra_whitespace);
+    {
+        char *cue = read_cue_data_file("valid_extra_whitespace.cue");
+        if (!cue) { FAIL("cannot read valid_extra_whitespace.cue"); return; }
+        long long sz = 300LL * CUE_SECTOR_SIZE;
+        cue_disc_t disc;
+        int n = cue_parse(cue, &sz, 1, &disc);
+        free(cue);
+        if (n != 2) { FAIL("expected 2 tracks"); return; }
+        if (strcmp(disc.tracks[1].title, "Tabbed Title") != 0) { FAIL("title mismatch"); return; }
+        PASS();
+    }
+
+    TEST(file_bad_no_file_directive);
+    {
+        char *cue = read_cue_data_file("bad_no_file_directive.cue");
+        if (!cue) { FAIL("cannot read bad_no_file_directive.cue"); return; }
+        cue_disc_t disc;
+        int n = cue_parse(cue, NULL, 0, &disc);
+        free(cue);
+        if (n != 0) { FAIL("should parse 0 tracks without FILE"); return; }
+        PASS();
+    }
+
+    TEST(file_bad_unclosed_quote);
+    {
+        char *cue = read_cue_data_file("bad_unclosed_quote.cue");
+        if (!cue) { FAIL("cannot read bad_unclosed_quote.cue"); return; }
+        cue_disc_t disc;
+        int n = cue_parse(cue, NULL, 0, &disc);
+        free(cue);
+        if (n != 1) { FAIL("should still parse 1 track"); return; }
+        if (disc.files[0].filename[0] != '\0') { FAIL("filename should be empty"); return; }
+        PASS();
+    }
+
+    TEST(file_bad_garbage_msf);
+    {
+        char *cue = read_cue_data_file("bad_garbage_msf.cue");
+        if (!cue) { FAIL("cannot read bad_garbage_msf.cue"); return; }
+        cue_disc_t disc;
+        int n = cue_parse(cue, NULL, 0, &disc);
+        free(cue);
+        if (n != 1) { FAIL("should parse 1 track"); return; }
+        if (disc.tracks[0].start_sector != 0) { FAIL("garbage MSF should give 0"); return; }
+        PASS();
+    }
+
+    TEST(file_bad_missing_index);
+    {
+        char *cue = read_cue_data_file("bad_missing_index.cue");
+        if (!cue) { FAIL("cannot read bad_missing_index.cue"); return; }
+        long long sz = 300LL * CUE_SECTOR_SIZE;
+        cue_disc_t disc;
+        int n = cue_parse(cue, &sz, 1, &disc);
+        free(cue);
+        if (n != 2) { FAIL("should parse 2 tracks"); return; }
+        if (disc.tracks[0].start_sector != 0) { FAIL("track 1 start should be 0"); return; }
+        PASS();
+    }
+
+    TEST(file_bad_start_past_eof);
+    {
+        char *cue = read_cue_data_file("bad_start_past_eof.cue");
+        if (!cue) { FAIL("cannot read bad_start_past_eof.cue"); return; }
+        long long sz = 1LL * CUE_SECTOR_SIZE;
+        cue_disc_t disc;
+        int n = cue_parse(cue, &sz, 1, &disc);
+        free(cue);
+        if (n != 1) { FAIL("should parse 1 track"); return; }
+        if (disc.tracks[0].num_sectors != 0) { FAIL("should be 0 sectors"); return; }
+        PASS();
+    }
+
+    TEST(file_bad_empty);
+    {
+        char *cue = read_cue_data_file("bad_empty.cue");
+        if (!cue) { FAIL("cannot read bad_empty.cue"); return; }
+        cue_disc_t disc;
+        int n = cue_parse(cue, NULL, 0, &disc);
+        free(cue);
+        if (n != 0) { FAIL("should parse 0 tracks"); return; }
+        PASS();
+    }
+
+    TEST(file_bad_backwards_index);
+    {
+        char *cue = read_cue_data_file("bad_backwards_index.cue");
+        if (!cue) { FAIL("cannot read bad_backwards_index.cue"); return; }
+        long long sz = 500LL * CUE_SECTOR_SIZE;
+        cue_disc_t disc;
+        int n = cue_parse(cue, &sz, 1, &disc);
+        free(cue);
+        if (n != 2) { FAIL("should parse 2 tracks"); return; }
+        if (disc.tracks[0].num_sectors < 0) { FAIL("negative sectors"); return; }
+        if (disc.tracks[0].num_sectors != 0) { FAIL("should be 0 sectors (clamped)"); return; }
+        PASS();
+    }
+}
+
+/* ── Test: CUE parser edge cases ─────────────────────────────────────── */
+
+static void test_cue_edge_cases(void)
+{
+    TEST(cue_case_insensitive_directives);
+    {
+        const char *cue =
+            "file \"test.bin\" binary\n"
+            "  track 01 mode1/2352\n"
+            "    index 01 00:00:00\n"
+            "  track 02 audio\n"
+            "    title \"Lower Case\"\n"
+            "    index 01 00:02:00\n";
+        long long sz = 300LL * CUE_SECTOR_SIZE;
+        cue_disc_t disc;
+        int n = cue_parse(cue, &sz, 1, &disc);
+        if (n != 2) { FAIL("expected 2 tracks"); return; }
+        if (disc.tracks[1].type != CUE_TRACK_AUDIO) { FAIL("type wrong"); return; }
+        if (strcmp(disc.tracks[1].title, "Lower Case") != 0) { FAIL("title wrong"); return; }
+        PASS();
+    }
+
+    TEST(cue_windows_line_endings);
+    {
+        const char *cue =
+            "FILE \"test.bin\" BINARY\r\n"
+            "  TRACK 01 MODE1/2352\r\n"
+            "    INDEX 01 00:00:00\r\n"
+            "  TRACK 02 AUDIO\r\n"
+            "    TITLE \"CRLF Song\"\r\n"
+            "    INDEX 01 00:02:00\r\n";
+        long long sz = 300LL * CUE_SECTOR_SIZE;
+        cue_disc_t disc;
+        int n = cue_parse(cue, &sz, 1, &disc);
+        if (n != 2) { FAIL("expected 2 tracks"); return; }
+        if (strcmp(disc.tracks[1].title, "CRLF Song") != 0) { FAIL("title mismatch"); return; }
+        PASS();
+    }
+
+    TEST(cue_title_without_quotes);
+    {
+        const char *cue =
+            "FILE \"test.bin\" BINARY\n"
+            "  TRACK 01 AUDIO\n"
+            "    TITLE No Quotes Here\n"
+            "    INDEX 01 00:00:00\n";
+        long long sz = 150LL * CUE_SECTOR_SIZE;
+        cue_disc_t disc;
+        int n = cue_parse(cue, &sz, 1, &disc);
+        if (n != 1) { FAIL("expected 1 track"); return; }
+        if (disc.tracks[0].title[0] != '\0') { FAIL("title should be empty"); return; }
+        PASS();
+    }
+
+    TEST(cue_max_files_boundary);
+    {
+        char big_cue[8192];
+        int pos = 0;
+        for (int i = 0; i < CUE_MAX_FILES; i++) {
+            pos += snprintf(big_cue + pos, sizeof(big_cue) - pos,
+                "FILE \"file%02d.bin\" BINARY\nTRACK %02d MODE1/2352\n  INDEX 01 00:00:00\n",
+                i, i + 1);
+        }
+        pos += snprintf(big_cue + pos, sizeof(big_cue) - pos,
+            "FILE \"overflow.bin\" BINARY\nTRACK 51 MODE1/2352\n  INDEX 01 00:00:00\n");
+
+        cue_disc_t disc;
+        cue_parse(big_cue, NULL, 0, &disc);
+        if (disc.num_files != CUE_MAX_FILES) { FAIL("should cap at CUE_MAX_FILES"); return; }
+        PASS();
+    }
+
+    TEST(cue_msf_edge_values);
+    {
+        if (cue_msf_to_sector("00:00:74") != 74) { FAIL("00:00:74"); return; }
+        if (cue_msf_to_sector("01:00:00") != 4500) { FAIL("01:00:00"); return; }
+        if (cue_msf_to_sector("99:59:74") != 99*4500 + 59*75 + 74) { FAIL("99:59:74"); return; }
+        if (cue_msf_to_sector("00:00:00") != 0) { FAIL("00:00:00"); return; }
+        PASS();
+    }
+}
+
+/* ── Test: ISO 9660 name cleaning (indirect via listing) ─────────────── */
+
+static void test_iso_name_cleaning(void)
+{
+    TEST(iso_name_version_suffix);
+    {
+        int sectors;
+        unsigned char *img = build_minimal_iso("DESCENT2.HOG;1",
+            (const unsigned char *)"x", 1, &sectors);
+        char path[512];
+        snprintf(path, sizeof(path), "%s/name_test1.bin", TEST_DIR);
+        FILE *f = fopen(path, "wb");
+        fwrite(img, SECTOR_SIZE, sectors, f);
+        fclose(f); free(img);
+
+        int fd = open_bin(path);
+        iso_file_list_t list;
+        iso_list_files(fd, 0, sectors, &list);
+        close_fd(fd);
+
+        int found = 0;
+        for (int i = 0; i < list.num_files; i++)
+            if (strcmp(list.files[i].path, "descent2.hog") == 0) found = 1;
+        if (!found) { FAIL("version suffix not stripped"); return; }
+        PASS();
+    }
+
+    TEST(iso_name_trailing_dot);
+    {
+        int sectors;
+        unsigned char *img = build_minimal_iso("FILE.",
+            (const unsigned char *)"y", 1, &sectors);
+        char path[512];
+        snprintf(path, sizeof(path), "%s/name_test2.bin", TEST_DIR);
+        FILE *f = fopen(path, "wb");
+        fwrite(img, SECTOR_SIZE, sectors, f);
+        fclose(f); free(img);
+
+        int fd = open_bin(path);
+        iso_file_list_t list;
+        iso_list_files(fd, 0, sectors, &list);
+        close_fd(fd);
+
+        int found = 0;
+        for (int i = 0; i < list.num_files; i++)
+            if (strcmp(list.files[i].path, "file") == 0) found = 1;
+        if (!found) { FAIL("trailing dot not stripped"); return; }
+        PASS();
+    }
+
+    TEST(iso_name_lowercase);
+    {
+        int sectors;
+        unsigned char *img = build_minimal_iso("ROBOTS.HAM",
+            (const unsigned char *)"z", 1, &sectors);
+        char path[512];
+        snprintf(path, sizeof(path), "%s/name_test3.bin", TEST_DIR);
+        FILE *f = fopen(path, "wb");
+        fwrite(img, SECTOR_SIZE, sectors, f);
+        fclose(f); free(img);
+
+        int fd = open_bin(path);
+        iso_file_list_t list;
+        iso_list_files(fd, 0, sectors, &list);
+        close_fd(fd);
+
+        int found = 0;
+        for (int i = 0; i < list.num_files; i++)
+            if (strcmp(list.files[i].path, "robots.ham") == 0) found = 1;
+        if (!found) { FAIL("not lowercased"); return; }
+        PASS();
+    }
+}
+
+/* ── Test: ISO invalid PVD ───────────────────────────────────────────── */
+
+static void test_iso_invalid_pvd(void)
+{
+    TEST(iso_bad_pvd_signature);
+    {
+        int total = 20;
+        unsigned char *img = (unsigned char *)calloc(total, SECTOR_SIZE);
+        int m, s, f;
+        for (int i = 0; i < total; i++) {
+            lba_to_msf(i, &m, &s, &f);
+            build_mode1_sector(img + i * SECTOR_SIZE, m, s, f, NULL);
+        }
+        char path[512];
+        snprintf(path, sizeof(path), "%s/bad_pvd.bin", TEST_DIR);
+        FILE *fp = fopen(path, "wb");
+        fwrite(img, SECTOR_SIZE, total, fp);
+        fclose(fp); free(img);
+
+        int fd = open_bin(path);
+        iso_file_list_t list;
+        int rc = iso_list_files(fd, 0, total, &list);
+        close_fd(fd);
+
+        if (rc != -1) { FAIL("should fail with invalid PVD"); return; }
+        PASS();
+    }
+}
+
+/* ── Test: ISO extraction with extension filter ──────────────────────── */
+
+static void test_iso_ext_filter(void)
+{
+    TEST(iso_extract_filter_rejects);
+    {
+        int sectors;
+        unsigned char *img = build_minimal_iso("README.TXT",
+            (const unsigned char *)"readme", 6, &sectors);
+        char path[512];
+        snprintf(path, sizeof(path), "%s/filter_test.bin", TEST_DIR);
+        FILE *f = fopen(path, "wb");
+        fwrite(img, SECTOR_SIZE, sectors, f);
+        fclose(f); free(img);
+
+        int fd = open_bin(path);
+        iso_file_list_t list;
+        iso_list_files(fd, 0, sectors, &list);
+
+        char out_dir[512];
+        snprintf(out_dir, sizeof(out_dir), "%s/filter_out", TEST_DIR);
+        mkdir_p(out_dir);
+
+        static const char *hog_only[] = { "hog", NULL };
+        int extracted = iso_extract_files(fd, 0, sectors, &list, out_dir,
+                                          hog_only, NULL, NULL);
+        close_fd(fd);
+
+        if (extracted != 0) { FAIL("should extract 0 files (no .hog)"); return; }
+        PASS();
+    }
+
+    TEST(iso_extract_null_filter_extracts_all);
+    {
+        int sectors;
+        unsigned char *img = build_minimal_iso("DATA.BIN",
+            (const unsigned char *)"all", 3, &sectors);
+        char path[512];
+        snprintf(path, sizeof(path), "%s/allext_test.bin", TEST_DIR);
+        FILE *f = fopen(path, "wb");
+        fwrite(img, SECTOR_SIZE, sectors, f);
+        fclose(f); free(img);
+
+        int fd = open_bin(path);
+        iso_file_list_t list;
+        iso_list_files(fd, 0, sectors, &list);
+
+        char out_dir[512];
+        snprintf(out_dir, sizeof(out_dir), "%s/allext_out", TEST_DIR);
+        mkdir_p(out_dir);
+
+        int extracted = iso_extract_files(fd, 0, sectors, &list, out_dir,
+                                          NULL, NULL, NULL);
+        close_fd(fd);
+
+        if (extracted < 1) { FAIL("null filter should extract all"); return; }
+        PASS();
+    }
+}
+
+/* ── Test: Full round-trip integration ───────────────────────────────── */
+
+static void test_integration_round_trip(void)
+{
+    TEST(round_trip_cue_to_extract);
+    {
+        /* 1. Build a minimal ISO data track */
+        int data_sectors;
+        const char *game_data = "DESCENT2 DATA PAYLOAD";
+        unsigned char *img = build_minimal_iso("DESCENT2.HOG",
+            (const unsigned char *)game_data, (int)strlen(game_data),
+            &data_sectors);
+
+        /* 2. Write the combined BIN (data + 2 audio tracks of 150 sectors) */
+        int audio_per_track = 150;
+        write_test_bin("roundtrip.bin", img, data_sectors,
+                       audio_per_track, 2);
+        free(img);
+
+        /* 3. Build matching CUE text */
+        int t2_start = data_sectors;
+        int t3_start = data_sectors + audio_per_track;
+        char cue_text[512];
+        snprintf(cue_text, sizeof(cue_text),
+            "FILE \"roundtrip.bin\" BINARY\n"
+            "  TRACK 01 MODE1/2352\n"
+            "    INDEX 01 00:00:00\n"
+            "  TRACK 02 AUDIO\n"
+            "    TITLE \"Audio A\"\n"
+            "    INDEX 01 %02d:%02d:%02d\n"
+            "  TRACK 03 AUDIO\n"
+            "    TITLE \"Audio B\"\n"
+            "    INDEX 01 %02d:%02d:%02d\n",
+            t2_start / 4500, (t2_start / 75) % 60, t2_start % 75,
+            t3_start / 4500, (t3_start / 75) % 60, t3_start % 75);
+
+        /* 4. Parse the CUE */
+        long long bin_size = (long long)(data_sectors + audio_per_track * 2) * CUE_SECTOR_SIZE;
+        cue_disc_t disc;
+        int n = cue_parse(cue_text, &bin_size, 1, &disc);
+        if (n != 3) { FAIL("cue parse: expected 3 tracks"); return; }
+        if (disc.tracks[0].type != CUE_TRACK_DATA) { FAIL("track 1 type"); return; }
+        if (disc.tracks[1].type != CUE_TRACK_AUDIO) { FAIL("track 2 type"); return; }
+        if (disc.tracks[0].num_sectors != data_sectors) { FAIL("data sector count"); return; }
+
+        /* 5. Open BIN and list ISO files from data track */
+        char bin_path[512];
+        snprintf(bin_path, sizeof(bin_path), "%s/roundtrip.bin", TEST_DIR);
+        int fd = open_bin(bin_path);
+        if (fd < 0) { FAIL("cannot open roundtrip.bin"); return; }
+
+        iso_file_list_t list;
+        int rc = iso_list_files(fd, disc.tracks[0].start_sector,
+                                disc.tracks[0].num_sectors, &list);
+        if (rc < 0) { FAIL("iso_list_files failed"); close_fd(fd); return; }
+
+        /* 6. Extract and verify */
+        char out_dir[512];
+        snprintf(out_dir, sizeof(out_dir), "%s/roundtrip_out", TEST_DIR);
+        mkdir_p(out_dir);
+
+        static const char *exts[] = { "hog", NULL };
+        int extracted = iso_extract_files(fd, disc.tracks[0].start_sector,
+                                          disc.tracks[0].num_sectors,
+                                          &list, out_dir, exts, NULL, NULL);
+        close_fd(fd);
+
+        if (extracted != 1) { FAIL("should extract 1 file"); return; }
+
+        /* Verify content */
+        char check[512];
+        snprintf(check, sizeof(check), "%s/descent2.hog", out_dir);
+        FILE *f = fopen(check, "rb");
+        if (!f) { FAIL("extracted file missing"); return; }
+        char buf[64];
+        size_t nr = fread(buf, 1, sizeof(buf), f);
+        fclose(f);
+        if (nr != strlen(game_data) || memcmp(buf, game_data, nr) != 0) {
+            FAIL("content mismatch");
+            return;
+        }
+        PASS();
+    }
+}
+
 /* ── Test: Edge cases for sector count computation ───────────────────── */
 
 static void test_sector_count_edge_cases(void)
@@ -666,9 +1218,19 @@ int main(int argc, char *argv[])
     test_malformed_cue();
     test_sector_count_edge_cases();
 
+    printf("\n--- File-Based CUE Tests ---\n");
+    test_file_based_cue();
+    test_cue_edge_cases();
+
     printf("\n--- ISO 9660 Reader Tests ---\n");
     test_iso_reader();
     test_iso_extraction();
+    test_iso_name_cleaning();
+    test_iso_invalid_pvd();
+    test_iso_ext_filter();
+
+    printf("\n--- Integration Tests ---\n");
+    test_integration_round_trip();
 
     printf("\n%d/%d tests passed\n", tests_passed, tests_run);
     return (tests_passed == tests_run) ? 0 : 1;

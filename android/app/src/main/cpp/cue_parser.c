@@ -95,17 +95,19 @@ int cue_parse(const char *cue_text,
 		}
 
 		/* TRACK nn TYPE */
+		if (strncasecmp(trimmed, "TRACK", 5) == 0 &&
+		    (trimmed[5] == ' ' || trimmed[5] == '\t'))
 		{
 			int tnum;
 			char ttype[32];
-			if (sscanf(trimmed, "TRACK %d %31s", &tnum, ttype) == 2) {
+			if (sscanf(trimmed + 5, " %d %31s", &tnum, ttype) == 2) {
 				if (tnum >= 1 && tnum <= CUE_MAX_TRACKS && cur_file >= 0) {
 					int idx = out->num_tracks;
 					cur_track = tnum;
 					out->tracks[idx].track_num = tnum;
 					out->tracks[idx].file_index = cur_file;
 					out->tracks[idx].type =
-						(strstr(ttype, "AUDIO") != NULL) ? CUE_TRACK_AUDIO : CUE_TRACK_DATA;
+						(strncasecmp(ttype, "AUDIO", 5) == 0) ? CUE_TRACK_AUDIO : CUE_TRACK_DATA;
 					out->tracks[idx].title[0] = '\0';
 					if (out->num_tracks < CUE_MAX_TRACKS)
 						out->num_tracks++;
@@ -121,11 +123,13 @@ int cue_parse(const char *cue_text,
 		}
 
 		/* INDEX 01 MM:SS:FF */
+		if (strncasecmp(trimmed, "INDEX", 5) == 0 &&
+		    (trimmed[5] == ' ' || trimmed[5] == '\t'))
 		{
 			int idx_num;
 			char msf[32];
 			if (cur_track >= 1 && out->num_tracks > 0 &&
-			    sscanf(trimmed, "INDEX %d %31s", &idx_num, msf) == 2 && idx_num == 1)
+			    sscanf(trimmed + 5, " %d %31s", &idx_num, msf) == 2 && idx_num == 1)
 			{
 				out->tracks[out->num_tracks - 1].start_sector = cue_msf_to_sector(msf);
 			}
