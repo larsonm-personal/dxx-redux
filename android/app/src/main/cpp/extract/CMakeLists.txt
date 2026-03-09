@@ -91,6 +91,7 @@ set_tests_properties(cue_iso_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_
 add_executable(extract_gog
     ${CMAKE_CURRENT_SOURCE_DIR}/extract_gog.c
     ${CMAKE_CURRENT_SOURCE_DIR}/inno_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/pkg_reader.c
 )
 target_include_directories(extract_gog PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(extract_gog PRIVATE lzma_sdk_c ZLIB::ZLIB)

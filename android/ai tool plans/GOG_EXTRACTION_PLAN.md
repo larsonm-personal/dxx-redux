@@ -51,26 +51,20 @@ implemented; other branches return descriptive "unimplemented" errors.
 - Supports InnoSetup 5.5.7 (D2) and 5.6.2 (D1)
 - Verified: all 7 D1 + 21 D2 game files byte-for-byte identical to reference
 
-### 2B: XAR Reader (extract/xar_reader.c) — NOT STARTED
-- Parse XAR header (magic `xar!`, header/toc sizes)
-- Decompress TOC with zlib inflate
-- Minimal XML tag parser for file entries (offset, size, name, compression)
-- Extract payloads with progress callback
-- Enums for XAR compression methods (none, gzip, bzip2, xz) — only none+gzip implemented
+### 2B-D: Mac .pkg Reader (extract/pkg_reader.c) — DONE ✓
+- Consolidated XAR + cpio into single pkg_reader.h/c (no separate xar_reader/cpio_reader)
+- XAR: parse 28-byte BE header, decompress TOC XML with zlib uncompress()
+- TOC: minimal strstr-based XML parser finds package.pkg/Scripts entry
+- gzip: streaming inflate (MAX_WBITS+16) for the Scripts payload
+- cpio odc: parse "070707" ASCII format (76-byte headers, octal fields)
+- Streaming two-pass: pkg_open() scans headers, pkg_extract_all() extracts matches
+- Game files found at ./payload/Contents/Resources/game/ in the cpio archive
+- Verified: D1 7 files + D2 15 files byte-for-byte identical to .exe extraction
 
-### 2C: cpio Reader (extract/cpio_reader.c) — NOT STARTED
-- Parse cpio "newc" ASCII format headers
-- Extract files matching filter criteria
-- Enum for cpio magic formats (newc, odc, bin, crc) — only newc implemented
-
-### 2D: Mac .pkg Extractor (extract/pkg_reader.c) — NOT STARTED
-- Combines XAR + cpio: open .pkg → XAR → find Payload → decompress → cpio → files
-- API: `pkg_list_files()`, `pkg_extract_files()`
-
-### 2E: Standalone Test Tool (extract/extract_gog.c) — PARTIAL (exe only, no .pkg)
+### 2E: Standalone Test Tool (extract/extract_gog.c) — DONE ✓
 - Detects format from extension (.exe → InnoSetup, .pkg → Mac pkg)
-- Extracts game assets + optionally BIN/CUE if found
-- Prints JSON output with extracted file list and SHA-256 hashes
+- Extracts game assets to output directory
+- Prints JSON output with extracted file list
 
 ### 2F: CMake Integration — DONE ✓
 - LZMA SDK via FetchContent (not vendored)
@@ -89,13 +83,9 @@ implemented; other branches return descriptive "unimplemented" errors.
 android/app/src/main/cpp/extract/
   inno_reader.h      — InnoSetup extraction API
   inno_reader.c      — InnoSetup reader implementation
-  xar_reader.h       — XAR archive API
-  xar_reader.c       — XAR archive reader
-  cpio_reader.h      — cpio archive API
-  cpio_reader.c      — cpio archive reader
-  pkg_reader.h       — Mac .pkg extraction API
-  pkg_reader.c       — Mac .pkg reader (combines XAR + cpio)
-  extract_gog.c      — Standalone GOG extraction tool
+  pkg_reader.h       — Mac .pkg extraction API (XAR + gzip + cpio odc)
+  pkg_reader.c       — Mac .pkg reader (consolidated, no separate xar/cpio files)
+  extract_gog.c      — Standalone GOG extraction tool (.exe and .pkg)
 game_data/
   extract_all_gog.ps1 — Test script for all GOG installers
 ```
