@@ -72,11 +72,17 @@ implemented; other branches return descriptive "unimplemented" errors.
 - New test executables: extract_gog
 - All new sources added to both test CMakeLists.txt and Android CMakeLists.txt
 
-### 2G: Test Script (game_data/extract_all_gog.ps1) — NOT STARTED
-- Builds extract_gog.exe
-- Runs on all 4 GOG installers
+### 2G: Test Script (game_data/extract_all_gog.ps1) — DONE ✓
+- Builds extract_gog.exe via cmake
+- Runs on all 4 GOG installers (.exe and .pkg)
 - Extracts to game_data/gog installers/<name>/extracted/
-- Cross-references SHA-256 against known_versions.json5
+- SHA-256 hashes all extracted files
+- Cross-references against known_versions.json5
+- Idempotent: skips already-extracted unless -Force
+- Results: 50 files total, all matched known versions
+- Added chaos.msn to D1 v1.0 version group (was missing)
+- Mac .pkg extractions byte-for-byte identical to Windows .exe
+- D2 .pkg has 15 files; D2 .exe has 21 (extra missions + demo + .inst)
 
 ### New files
 ```
@@ -87,7 +93,9 @@ android/app/src/main/cpp/extract/
   pkg_reader.c       — Mac .pkg reader (consolidated, no separate xar/cpio files)
   extract_gog.c      — Standalone GOG extraction tool (.exe and .pkg)
 game_data/
-  extract_all_gog.ps1 — Test script for all GOG installers
+  extract_all_gog.ps1           — Test script for all GOG installers
+  generate_source_manifest.ps1  — Generates SOURCE_FILES.txt (SHA-256 manifest of originals)
+  SOURCE_FILES.txt              — SHA-256 manifest of all original source files (not in git)
 ```
 
 ### Modified files

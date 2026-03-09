@@ -3,6 +3,11 @@
 //
 // Each entry: { file, sha256, version }
 // Filenames are lowercase. Multiple versions of the same file are allowed.
+
+// see also:
+// https://salsa.debian.org/games-team/game-data-packager/-/blob/master/data/descent1.yaml
+// https://salsa.debian.org/games-team/game-data-packager/-/blob/master/data/descent2.yaml
+
 {
   "versions": [
     // -- D2 v1.2 --
@@ -60,6 +65,7 @@
 
     // -- D1 v1.0 --
     { "file": "chaos.hog", "sha256": "0c5fb0684443c0b9c4dbb2769db65b8460bdad4ca80d58a943396fd07c001ba4", "version": "D1 v1.0" },
+    { "file": "chaos.msn", "sha256": "9f6ed0de3b9c5aea3f609598fc8cd3ae959594a1399d38714b5fd3d9522de819", "version": "D1 v1.0" },
     { "file": "descent.dem", "sha256": "3ed575389e80953bcd0953f71344f036398ceb1f12aef044188d4f8ccb8aaaed", "version": "D1 v1.0" },
     { "file": "descent.hog", "sha256": "661b486f859461d11d89a9998e292084d1017fb69514413bddcf3da26f138ca2", "version": "D1 v1.0" },
     { "file": "descent.pig", "sha256": "e9d79c427a1d6f57048a1e776a7c3c1e3c17e8b596f0597926dc437e395548b7", "version": "D1 v1.0" },
