@@ -367,23 +367,26 @@ int main(int argc, char *argv[])
                 char sow_dir[1024];
                 path_dir(sow_list.paths[si], sow_dir, sizeof(sow_dir));
 
-                /* Relative path for JSON output */
+                /* Relative path for JSON output (forward slashes for valid JSON) */
                 const char *rel = sow_list.paths[si];
                 if (strncmp(rel, out_dir, strlen(out_dir)) == 0)
                     rel += strlen(out_dir) + 1;  /* skip out_dir + separator */
+                char rel_json[1024];
+                snprintf(rel_json, sizeof(rel_json), "%s", rel);
+                for (char *p = rel_json; *p; p++) if (*p == '\\') *p = '/';
 
                 fprintf(stderr, "  Extracting %s...\n", rel);
                 int sow_count = sow_extract(sow_list.paths[si], sow_dir,
                                             NULL, progress_cb, NULL);
                 if (sow_count >= 0) {
                     printf("{\"sow\": \"%s\", \"files_extracted\": %d}\n",
-                           rel, sow_count);
+                           rel_json, sow_count);
                     total_files_extracted += sow_count;
                     fprintf(stderr, "  Extracted %d files from %s\n",
                             sow_count, rel);
                 } else {
                     printf("{\"sow\": \"%s\", \"error\": \"extraction failed\"}\n",
-                           rel);
+                           rel_json);
                     errors++;
                 }
             }

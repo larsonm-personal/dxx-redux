@@ -13,19 +13,22 @@ Two-part plan:
 
 ---
 
-## Phase 1: CD Re-extraction and Re-hashing
+## Phase 1: CD Re-extraction and Re-hashing — DONE ✓
 
 ### Steps
-1. Rebuild extract_cd.exe (O_BINARY fix already applied)
-2. Update extract_all_cds.ps1: delete data_tracks/ on -Force
-3. Run extract_all_cds.ps1 -Force — re-extract all 31 CDs with SOW decompression
-4. Run hash_disc_tracks.ps1 -Force — regenerate known_discs.json5
-5. Run hash_assets.ps1 -Force — pick up SOW-extracted assets, regenerate known_versions.json5
-6. re-rationalize the versions extracted from each CD, and update comments in known_discs.json5. for example, you *should* match the .hog files in the 1.1 CD with the known version 1.1 files
+1. ✅ Rebuild extract_cd.exe (O_BINARY fix already applied)
+2. ✅ Update extract_all_cds.ps1: delete data_tracks/ on -Force
+3. ✅ Run extract_all_cds.ps1 -Force — re-extracted all 29 CDs with SOW decompression (2 CDs have no CUE)
+4. ✅ Run hash_disc_tracks.ps1 -Force — regenerated known_discs.json5 (31 entries, 29 CD + 2 hand-crafted)
+5. ✅ Run hash_assets.ps1 -Force — regenerated known_versions.json5 (181 entries, 19 version groups)
+6. ✅ Version rationalization — D2 v1.0/v1.1/v1.2 distinguished (v1.1 has different descent2.ham/hog from v1.0; v1.2 GOG matches v1.1); D1 v1.4a/v1.5 aliased (same game data); Added version comments to known_discs.json5
 
-### Expected results
-- Track SHA1s unchanged (disc-level hashes are independent of file content fix)
-- known_versions.json5 gains entries from assets previously locked inside .sow archives
+### Key findings from rationalization
+- D2 v1.0 CDs have unique descent2.ham (7A288B) and descent2.hog (AE0872, 7107354 bytes)
+- D2 v1.1 CDs (including Rerelease and Definitive Collection) have descent2.hog (F1ABF5, 7595079 bytes) matching GOG v1.2
+- D2 v1.1 CDs mapped correctly: "Descent II (v1.1)", "Rerelease", and Definitive Collection Disc 2
+- D1 v1.4a (GOG) and D1 v1.5 (Definitive Collection) have identical descent.hog/pig — both labels in known_versions.json5
+- O_BINARY fix changed CD-extracted hashes; shared files now correctly match GOG copies
 
 ---
 
@@ -48,33 +51,34 @@ implemented; other branches return descriptive "unimplemented" errors.
 - Supports InnoSetup 5.5.7 (D2) and 5.6.2 (D1)
 - Verified: all 7 D1 + 21 D2 game files byte-for-byte identical to reference
 
-### 2B: XAR Reader (extract/xar_reader.c)
+### 2B: XAR Reader (extract/xar_reader.c) — NOT STARTED
 - Parse XAR header (magic `xar!`, header/toc sizes)
 - Decompress TOC with zlib inflate
 - Minimal XML tag parser for file entries (offset, size, name, compression)
 - Extract payloads with progress callback
 - Enums for XAR compression methods (none, gzip, bzip2, xz) — only none+gzip implemented
 
-### 2C: cpio Reader (extract/cpio_reader.c)
+### 2C: cpio Reader (extract/cpio_reader.c) — NOT STARTED
 - Parse cpio "newc" ASCII format headers
 - Extract files matching filter criteria
 - Enum for cpio magic formats (newc, odc, bin, crc) — only newc implemented
 
-### 2D: Mac .pkg Extractor (extract/pkg_reader.c)
+### 2D: Mac .pkg Extractor (extract/pkg_reader.c) — NOT STARTED
 - Combines XAR + cpio: open .pkg → XAR → find Payload → decompress → cpio → files
 - API: `pkg_list_files()`, `pkg_extract_files()`
 
-### 2E: Standalone Test Tool (extract/extract_gog.c)
+### 2E: Standalone Test Tool (extract/extract_gog.c) — PARTIAL (exe only, no .pkg)
 - Detects format from extension (.exe → InnoSetup, .pkg → Mac pkg)
 - Extracts game assets + optionally BIN/CUE if found
 - Prints JSON output with extracted file list and SHA-256 hashes
 
-### 2F: CMake Integration
+### 2F: CMake Integration — DONE ✓
 - LZMA SDK via FetchContent (not vendored)
+- zlib via FetchContent (not vendored)
 - New test executables: extract_gog
 - All new sources added to both test CMakeLists.txt and Android CMakeLists.txt
 
-### 2G: Test Script (game_data/extract_all_gog.ps1)
+### 2G: Test Script (game_data/extract_all_gog.ps1) — NOT STARTED
 - Builds extract_gog.exe
 - Runs on all 4 GOG installers
 - Extracts to game_data/gog installers/<name>/extracted/
