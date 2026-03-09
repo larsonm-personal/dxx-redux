@@ -331,9 +331,10 @@ target_sources(d2x-redux PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/android_surface.c
     ${CMAKE_CURRENT_SOURCE_DIR}/android_input.c
     ${CMAKE_CURRENT_SOURCE_DIR}/android_gamepad_config.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/iso9660_reader.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/jni_disc_import.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/cue_parser.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/iso9660_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/sow_extract.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_disc_import.c
     ${CMAKE_CURRENT_SOURCE_DIR}/jni_music_control.c
     ${D2_SRC}/arch/android/messagebox.c
     ${D2_SRC}/arch/android/physfs_archiver_saf.c
@@ -348,6 +349,7 @@ target_include_directories(d2x-redux PRIVATE
     ${D2_SRC}/main
     ${D2_SRC}/include
     ${D2_SRC}/introspect
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract
 )
 
 # Enable introspection API (AI-assisted testing, debug Android builds only).
@@ -386,3 +388,5 @@ endif() # OPENGL
 
 # nlohmann/json — used by the introspection/automation C++ files
 target_link_libraries(d2x-redux PRIVATE nlohmann_json::nlohmann_json)
+
+# sow_extract.c (in extract/) has a self-contained ARJ decoder — no external library needed

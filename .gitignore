@@ -59,6 +59,7 @@ Thumbs.db
 ###############
 *.app
 *.exe
+*.obj
 d*x-rebirth
 /*/out/install
 

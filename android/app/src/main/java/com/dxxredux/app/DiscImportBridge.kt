@@ -135,6 +135,35 @@ object DiscImportBridge {
         }
     }
 
+    /* ── SOW (ARJ) archive operations ────────────────────────────── */
+
+    /**
+     * Scan a directory tree for .sow files.
+     *
+     * @param dirPath Directory to scan recursively
+     * @return List of absolute paths to .sow files found, or null on error
+     */
+    fun scanSowFiles(dirPath: String): List<String>? {
+        val raw = nativeScanSowFiles(dirPath) ?: return null
+        return raw.toList()
+    }
+
+    /**
+     * Extract game files from a .sow (ARJ) archive.
+     * Internal archive paths are flattened to just filenames.
+     *
+     * @param sowPath   Path to the .sow file
+     * @param outputDir Directory to extract game files into
+     * @param progress  Optional progress callback
+     * @return Number of files extracted, or -1 on error
+     */
+    fun extractSowFiles(
+        sowPath: String, outputDir: String,
+        progress: ExtractProgress? = null
+    ): Int {
+        return nativeExtractSowFiles(sowPath, outputDir, progress)
+    }
+
     /* ── Native methods ──────────────────────────────────────────── */
 
     private external fun nativeParseCue(cuePath: String, binSizes: LongArray): IntArray?
@@ -143,5 +172,10 @@ object DiscImportBridge {
     private external fun nativeExtractIsoFiles(
         binFd: Int, trackStart: Int, trackSectors: Int,
         outputDir: String, progress: ExtractProgress?
+    ): Int
+
+    private external fun nativeScanSowFiles(dirPath: String): Array<String>?
+    private external fun nativeExtractSowFiles(
+        sowPath: String, outputDir: String, progress: ExtractProgress?
     ): Int
 }

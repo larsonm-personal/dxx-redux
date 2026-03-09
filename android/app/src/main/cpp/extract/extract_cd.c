@@ -8,9 +8,9 @@
  * data tracks to <output_dir>/data_tracks/ (default: alongside the CUE file),
  * and prints per-track SHA-1 hashes as JSON lines to stdout.
  *
- * Build (standalone, from android/app/src/main/cpp):
- *   cl /DTEST_STANDALONE /I. extract_cd.c cue_parser.c iso9660_reader.c /Fe:extract_cd.exe
- *   gcc -DTEST_STANDALONE -I. -o extract_cd extract_cd.c cue_parser.c iso9660_reader.c
+ * Build (via CMake from repo root):
+ *   cmake -S android/app/src/main/cpp/extract -B android/tests/build
+ *   cmake --build android/tests/build --config Release --target extract_cd
  */
 
 #include <stdio.h>
@@ -43,6 +43,7 @@
 
 #include "cue_parser.h"
 #include "iso9660_reader.h"
+#include "sow_extract.h"
 
 /* ── Minimal SHA-1 (RFC 3174) ──────────────────────────────────────── */
 
@@ -354,6 +355,40 @@ int main(int argc, char *argv[])
 
     fprintf(stderr, "\nDone: %d data tracks extracted, %d total files, %d errors\n",
             data_tracks_extracted, total_files_extracted, errors);
+
+    /* ── Post-ISO: scan for and extract .sow archives ────────────── */
+    if (data_tracks_extracted > 0) {
+        sow_file_list_t sow_list;
+        int nsow = sow_scan_dir(out_dir, &sow_list);
+        if (nsow > 0) {
+            fprintf(stderr, "\nFound %d .sow archive(s), extracting...\n", nsow);
+            for (int si = 0; si < sow_list.count; si++) {
+                /* Extract to the directory containing the .sow file */
+                char sow_dir[1024];
+                path_dir(sow_list.paths[si], sow_dir, sizeof(sow_dir));
+
+                /* Relative path for JSON output */
+                const char *rel = sow_list.paths[si];
+                if (strncmp(rel, out_dir, strlen(out_dir)) == 0)
+                    rel += strlen(out_dir) + 1;  /* skip out_dir + separator */
+
+                fprintf(stderr, "  Extracting %s...\n", rel);
+                int sow_count = sow_extract(sow_list.paths[si], sow_dir,
+                                            NULL, progress_cb, NULL);
+                if (sow_count >= 0) {
+                    printf("{\"sow\": \"%s\", \"files_extracted\": %d}\n",
+                           rel, sow_count);
+                    total_files_extracted += sow_count;
+                    fprintf(stderr, "  Extracted %d files from %s\n",
+                            sow_count, rel);
+                } else {
+                    printf("{\"sow\": \"%s\", \"error\": \"extraction failed\"}\n",
+                           rel);
+                    errors++;
+                }
+            }
+        }
+    }
 
     return errors > 0 ? 1 : 0;
 }

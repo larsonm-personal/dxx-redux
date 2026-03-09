@@ -3,19 +3,29 @@
 #
 # Usage:  ./run_cue_iso_tests.sh
 #
-# Builds from android/app/src/main/cpp/ directory.
+# Uses CMake to build test executables in android/tests/build/.
 
 set -e
-cd "$(dirname "$0")/app/src/main/cpp"
 
-echo "Building test_cue_iso..."
-cc -DTEST_STANDALONE -I. -Wall -Wextra -o test_cue_iso \
-    test_cue_iso.c cue_parser.c iso9660_reader.c
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SRC_DIR="$SCRIPT_DIR/app/src/main/cpp/extract"
+BUILD_DIR="$SCRIPT_DIR/tests/build"
 
+# Configure + build
+if [ ! -f "$BUILD_DIR/CMakeCache.txt" ]; then
+    echo "Configuring cmake..."
+    cmake -S "$SRC_DIR" -B "$BUILD_DIR"
+fi
+echo "Building..."
+cmake --build "$BUILD_DIR"
+
+# Run tests via CTest
+echo ""
 echo "Running tests..."
-./test_cue_iso
+cd "$BUILD_DIR"
+ctest --output-on-failure
 rc=$?
 
-# Clean up
-rm -rf test_fixtures test_cue_iso
+# Clean up test fixtures
+rm -rf "$SRC_DIR/test_fixtures"
 exit $rc

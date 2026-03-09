@@ -4,8 +4,9 @@
  * Generates minimal BIN+CUE test fixtures in-memory and on disk,
  * then exercises the parsers against both valid and malformed inputs.
  *
- * Build (standalone, from android/app/src/main/cpp):
- *   cc -DTEST_STANDALONE -I. test_cue_iso.c cue_parser.c iso9660_reader.c -o test_cue_iso
+ * Build (via CMake from repo root):
+ *   cmake -S android/app/src/main/cpp/extract -B android/tests/build
+ *   cmake --build android/tests/build --config Release --target test_cue_iso
  *
  * Run:
  *   ./test_cue_iso
@@ -300,14 +301,15 @@ static char *read_test_file(const char *filename)
     return buf;
 }
 
-/* Read a CUE file from the test/data/ directory relative to the exe.
- * Tries ./test/data/ first (in-tree build), then ../test/data/ etc. */
+/* Read a CUE file from the test/data/ directory relative to cwd.
+ * CTest sets working_directory to the extract source dir. */
 static char *read_cue_data_file(const char *filename)
 {
     char path[512];
     const char *dirs[] = { "test/data", "../test/data",
-                           "app/src/main/cpp/test/data",
-                           "../app/src/main/cpp/test/data", NULL };
+                           "extract/test/data",
+                           "app/src/main/cpp/extract/test/data",
+                           "../app/src/main/cpp/extract/test/data", NULL };
     for (int i = 0; dirs[i]; i++) {
         snprintf(path, sizeof(path), "%s/%s", dirs[i], filename);
         FILE *f = fopen(path, "r");
