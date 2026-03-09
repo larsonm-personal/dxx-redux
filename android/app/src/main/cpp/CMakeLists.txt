@@ -333,6 +333,8 @@ target_sources(d2x-redux PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/android_gamepad_config.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
     ${CMAKE_CURRENT_SOURCE_DIR}/iso9660_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni_disc_import.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni_music_control.c
     ${D2_SRC}/arch/android/messagebox.c
     ${D2_SRC}/arch/android/physfs_archiver_saf.c
     ${D2_SRC}/introspect/game_introspect.cpp

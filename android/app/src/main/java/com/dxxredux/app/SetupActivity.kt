@@ -609,6 +609,8 @@ private val EXTENSION_TYPES = mapOf(
     "dtx" to ".dtx \u2014 D2X-XL texture pack",
     "gog" to ".gog \u2014 GOG CD image (Redbook audio)",
     "inst" to ".inst \u2014 GOG CD cue sheet",
+    "bin" to ".bin \u2014 CD disc image (BIN/CUE)",
+    "cue" to ".cue \u2014 CD cue sheet (BIN/CUE)",
 )
 
 // ── File definitions ────────────────────────────────────────────────────────
@@ -950,6 +952,11 @@ private fun SetupScreen(
     var zipExtracting by remember { mutableStateOf(false) }
     var zipProgressFile by remember { mutableStateOf("") }
 
+    // ── BIN/CUE disc import state ───────────────────────
+    var discImportCueName by remember { mutableStateOf<String?>(null) }
+    var discImportCueUri by remember { mutableStateOf<Uri?>(null) }
+    var discImportBins by remember { mutableStateOf<List<Pair<String, Uri>>>(emptyList()) }
+
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments()
     ) { uris: List<Uri> ->
@@ -959,19 +966,29 @@ private fun SetupScreen(
         scope.launch(Dispatchers.IO) {
             val zipUris = mutableListOf<Uri>()
             val gameUris = mutableListOf<FoundFile>()
+            val cueUris = mutableListOf<Pair<String, Uri>>()
+            val binUris = mutableListOf<Pair<String, Uri>>()
             for (uri in uris) {
                 val name = getDisplayName(context, uri)
                 if (name != null) {
-                    if (name.lowercase().endsWith(".zip")) {
-                        zipUris.add(uri)
-                    } else if (name.lowercase() in ALL_GAME_FILENAMES) {
-                        gameUris.add(FoundFile(name, uri))
+                    val lname = name.lowercase()
+                    when {
+                        lname.endsWith(".zip") -> zipUris.add(uri)
+                        lname.endsWith(".cue") -> cueUris.add(name to uri)
+                        lname.endsWith(".bin") -> binUris.add(name to uri)
+                        lname in ALL_GAME_FILENAMES -> gameUris.add(FoundFile(name, uri))
                     }
                 }
             }
             withContext(Dispatchers.Main) {
                 if (gameUris.isNotEmpty()) {
                     scanResults = gameUris
+                }
+                // Trigger disc import dialog if CUE file(s) found
+                if (cueUris.isNotEmpty()) {
+                    discImportCueName = cueUris.first().first
+                    discImportCueUri = cueUris.first().second
+                    discImportBins = binUris
                 }
                 scanning = false
             }
@@ -1115,6 +1132,28 @@ private fun SetupScreen(
                             onRefresh()
                         },
                         onDismiss = { showSetDialog = false }
+                    )
+                }
+
+                // ── BIN/CUE disc import dialog ──
+                if (discImportCueUri != null) {
+                    DiscImportDialog(
+                        cueName = discImportCueName ?: "unknown.cue",
+                        cueUri = discImportCueUri!!,
+                        binUris = discImportBins,
+                        filesDir = filesDir,
+                        context = context,
+                        onImported = {
+                            discImportCueUri = null
+                            discImportCueName = null
+                            discImportBins = emptyList()
+                            onRefresh()
+                        },
+                        onDismiss = {
+                            discImportCueUri = null
+                            discImportCueName = null
+                            discImportBins = emptyList()
+                        }
                     )
                 }
 
@@ -1320,7 +1359,7 @@ private fun SetupScreen(
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Select .hog, .ham, .pig files or a .zip archive from Downloads or any folder.",
+                        text = "Select .hog, .ham, .pig files, a .zip archive, or .cue/.bin disc images.",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1833,30 +1872,65 @@ private fun SectionHeader(title: String) {
 private fun MusicInfoSection(filesDir: File, refreshTrigger: Int, hasMidiSource: Boolean = false) {
     val musicStatuses = remember(refreshTrigger) { checkFiles(filesDir, MUSIC_FILES) }
     val redbookReady = musicStatuses.all { it.found }
+    val audioSrcManager = remember { AudioSourceManager(filesDir) }
+    val audioSources = remember(refreshTrigger) { audioSrcManager.getSources() }
+    val hasAnySources = redbookReady || audioSources.isNotEmpty()
     var expanded by remember { mutableStateOf(false) }
     var detailStatus by remember { mutableStateOf<FileStatus?>(null) }
     val musicLabel = when {
-        redbookReady -> "\u2713 Ready"
+        hasAnySources -> "\u2713 Ready"
         hasMidiSource -> "\u2717 Missing, will use MIDI"
         else -> "\u2717 Missing"
     }
     GameSectionHeader(
         title = "Music",
-        ready = redbookReady,
+        ready = hasAnySources,
         expanded = expanded,
         onToggle = { expanded = !expanded },
         notReadyLabel = musicLabel
     )
     if (expanded) {
         Text(
-            text = "MIDI audio is supported from game files (with a built-in MIDI library). " +
-                   "Redbook audio from the GOG bin/cue is supported.",
+            text = "MIDI audio is supported from game files. " +
+                   "Redbook audio from GOG or BIN/CUE disc images is supported.",
             fontSize = 13.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 8.dp)
         )
+        // Legacy GOG files
         musicStatuses.forEach { status ->
             FileStatusRow(status) { detailStatus = status }
+        }
+        // Registered audio sources
+        if (audioSources.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                "Registered Audio Sources:",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+            )
+            audioSources.forEach { src ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp, bottom = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (src.enabled) "\u2713" else "\u2717",
+                        color = if (src.enabled) Color(0xFF4CAF50) else Color(0xFFFF5252),
+                        fontSize = 13.sp
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "${src.discLabel} (${src.audioTrackCount} tracks)",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
         }
     }
     detailStatus?.let { st ->
@@ -2594,4 +2668,293 @@ private suspend fun downloadFile(
             withContext(Dispatchers.Main) { onDone(false) }
         }
     }
+}
+
+/* ── BIN/CUE disc import dialog ──────────────────────────────────────────── */
+
+/**
+ * Dialog for importing a BIN/CUE disc image.
+ *
+ * Flow:
+ *  1. Copies CUE to temp, gets BIN sizes via content resolver
+ *  2. Parses CUE to discover tracks (data + audio)
+ *  3. Optionally identifies disc via SHA1 hashing
+ *  4. Extracts game files from data track
+ *  5. Copies BIN to filesDir and registers as audio source
+ */
+@Composable
+private fun DiscImportDialog(
+    cueName: String,
+    cueUri: Uri,
+    binUris: List<Pair<String, Uri>>,
+    filesDir: File,
+    context: Context,
+    onImported: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    var status by remember { mutableStateOf("Ready to process") }
+    var tracks by remember { mutableStateOf<List<DiscImportBridge.CueTrack>?>(null) }
+    var processing by remember { mutableStateOf(false) }
+    var dataExtracted by remember { mutableIntStateOf(0) }
+    var audioRegistered by remember { mutableStateOf(false) }
+    var discLabel by remember { mutableStateOf<String?>(null) }
+    var discId by remember { mutableStateOf<String?>(null) }
+    var legacyDiscId by remember { mutableStateOf(0L) }
+    // Temp CUE path for native parsing
+    var tempCuePath by remember { mutableStateOf<String?>(null) }
+
+    // Copy CUE + parse tracks on first composition
+    LaunchedEffect(cueUri) {
+        withContext(Dispatchers.IO) {
+            try {
+                // Copy CUE file to temp
+                val tmpDir = File(filesDir, "tmp")
+                tmpDir.mkdirs()
+                val tmpCue = File(tmpDir, cueName.lowercase())
+                context.contentResolver.openInputStream(cueUri)?.use { input ->
+                    FileOutputStream(tmpCue).use { output -> input.copyTo(output) }
+                }
+                tempCuePath = tmpCue.absolutePath
+
+                // Get BIN sizes
+                val binSizes = binUris.map { (_, uri) ->
+                    context.contentResolver.query(
+                        uri, arrayOf(android.provider.OpenableColumns.SIZE),
+                        null, null, null
+                    )?.use { c -> if (c.moveToFirst()) c.getLong(0) else 0L } ?: 0L
+                }.toLongArray()
+
+                if (binSizes.isEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        status = "No BIN files selected \u2014 please select both .cue and .bin files"
+                    }
+                    return@withContext
+                }
+
+                // Parse CUE
+                val parsed = DiscImportBridge.parseCue(tmpCue.absolutePath, binSizes)
+                withContext(Dispatchers.Main) {
+                    tracks = parsed
+                    if (parsed != null) {
+                        val dataCount = parsed.count { it.isData }
+                        val audioCount = parsed.count { it.isAudio }
+                        status = "Found $dataCount data + $audioCount audio track(s)"
+                    } else {
+                        status = "Failed to parse CUE file"
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("DXX-DiscImport", "CUE parse failed", e)
+                withContext(Dispatchers.Main) { status = "Error: ${e.message}" }
+            }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = { if (!processing) onDismiss() },
+        confirmButton = {
+            if (!processing) {
+                TextButton(onClick = onDismiss) { Text("Close") }
+            }
+        },
+        title = { Text("Import Disc Image", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Text(cueName, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                if (binUris.isNotEmpty()) {
+                    Text(
+                        "BIN: ${binUris.joinToString(", ") { it.first }}",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (discLabel != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "\u2713 Identified: $discLabel",
+                        fontSize = 13.sp,
+                        color = Color(0xFF4CAF50)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(status, fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                // Track listing
+                tracks?.let { trackList ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    trackList.forEach { track ->
+                        val typeStr = if (track.isData) "DATA" else "AUDIO"
+                        val sizeStr = formatSize(track.numSectors.toLong() * 2352)
+                        Text(
+                            "Track ${track.trackNum}: $typeStr ($sizeStr)" +
+                                if (track.title.isNotEmpty()) " - ${track.title}" else "",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Action buttons
+                if (tracks != null && !processing) {
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Extract game files from data track
+                    val hasDataTrack = tracks?.any { it.isData } == true
+                    if (hasDataTrack && dataExtracted == 0) {
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    processing = true
+                                    status = "Extracting game files\u2026"
+                                    withContext(Dispatchers.IO) {
+                                        try {
+                                            val dataTrack = tracks!!.first { it.isData }
+                                            // Use first BIN file's fd
+                                            val binUri = binUris[dataTrack.fileIndex].second
+                                            val pfd = context.contentResolver.openFileDescriptor(binUri, "r")
+                                            if (pfd != null) {
+                                                val extracted = pfd.use {
+                                                    DiscImportBridge.extractIsoFiles(
+                                                        it.fd,
+                                                        dataTrack.startSector,
+                                                        dataTrack.numSectors,
+                                                        filesDir.absolutePath
+                                                    )
+                                                }
+                                                withContext(Dispatchers.Main) {
+                                                    dataExtracted = extracted
+                                                    status = if (extracted > 0)
+                                                        "Extracted $extracted game file(s)"
+                                                    else "No game files found on data track"
+                                                }
+                                            }
+                                        } catch (e: Exception) {
+                                            Log.e("DXX-DiscImport", "Extract failed", e)
+                                            withContext(Dispatchers.Main) {
+                                                status = "Extract error: ${e.message}"
+                                            }
+                                        }
+                                    }
+                                    processing = false
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Extract Game Files", fontSize = 13.sp)
+                        }
+                    }
+
+                    // Register as audio source
+                    val hasAudioTracks = tracks?.any { it.isAudio } == true
+                    if (hasAudioTracks && !audioRegistered) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    processing = true
+                                    status = "Copying BIN file(s) for audio\u2026"
+                                    withContext(Dispatchers.IO) {
+                                        try {
+                                            val audioCount = tracks!!.count { it.isAudio }
+                                            // Copy CUE to filesDir
+                                            val destCue = File(filesDir, cueName.lowercase())
+                                            tempCuePath?.let { File(it).copyTo(destCue, overwrite = true) }
+
+                                            // Copy BIN file(s) to filesDir
+                                            val destBinPaths = mutableListOf<String>()
+                                            for ((name, uri) in binUris) {
+                                                val destBin = File(filesDir, name.lowercase())
+                                                withContext(Dispatchers.Main) {
+                                                    status = "Copying ${name}\u2026"
+                                                }
+                                                context.contentResolver.openInputStream(uri)?.use { input ->
+                                                    FileOutputStream(destBin).use { output ->
+                                                        input.copyTo(output, bufferSize = 65536)
+                                                    }
+                                                }
+                                                destBinPaths.add(destBin.name)
+                                            }
+
+                                            // Try to identify the disc
+                                            try {
+                                                val identifier = DiscIdentifier(context)
+                                                // Quick identification by hashing first audio track
+                                                val firstAudio = tracks!!.first { it.isAudio }
+                                                val binFile = File(filesDir, destBinPaths[firstAudio.fileIndex])
+                                                val trackBytes = firstAudio.numSectors.toLong() * 2352
+                                                val trackOffset = firstAudio.startSector.toLong() * 2352
+                                                val sha1 = binFile.inputStream().use { fis ->
+                                                    fis.skip(trackOffset)
+                                                    DiscIdentifier.sha1Hash(fis, trackBytes)
+                                                }
+                                                val match = identifier.identify(mapOf(firstAudio.trackNum to sha1))
+                                                if (match.matched) {
+                                                    discLabel = match.label
+                                                    discId = match.disc?.id
+                                                    match.disc?.legacyDiscId?.let {
+                                                        legacyDiscId = java.lang.Long.decode(it)
+                                                    }
+                                                }
+                                            } catch (e: Exception) {
+                                                Log.w("DXX-DiscImport", "Disc identification failed", e)
+                                            }
+
+                                            // Register audio source
+                                            val srcManager = AudioSourceManager(filesDir)
+                                            val id = discId ?: "custom-${System.currentTimeMillis()}"
+                                            srcManager.addSource(
+                                                AudioSourceManager.AudioSource(
+                                                    id = id,
+                                                    cuePath = destCue.name,
+                                                    binPaths = destBinPaths,
+                                                    discLabel = discLabel ?: cueName,
+                                                    discId = discId ?: "unknown",
+                                                    trackCount = tracks!!.size,
+                                                    audioTrackCount = audioCount,
+                                                    legacyDiscId = legacyDiscId,
+                                                )
+                                            )
+
+                                            withContext(Dispatchers.Main) {
+                                                audioRegistered = true
+                                                status = "Audio source registered" +
+                                                    if (discLabel != null) " ($discLabel)" else ""
+                                            }
+                                        } catch (e: Exception) {
+                                            Log.e("DXX-DiscImport", "Audio registration failed", e)
+                                            withContext(Dispatchers.Main) {
+                                                status = "Error: ${e.message}"
+                                            }
+                                        }
+                                    }
+                                    processing = false
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Add as Audio Source", fontSize = 13.sp)
+                        }
+                    }
+
+                    // Done state
+                    if (dataExtracted > 0 || audioRegistered) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = onImported,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Done", fontSize = 13.sp)
+                        }
+                    }
+                }
+
+                if (processing) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+            }
+        }
+    )
 }

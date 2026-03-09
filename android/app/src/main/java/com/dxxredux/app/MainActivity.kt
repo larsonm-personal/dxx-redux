@@ -76,6 +76,15 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     external fun nativeGetGameWidth(): Int
     external fun nativeGetGameHeight(): Int
 
+    // ── Music track control (jni_music_control.c) ────────────────────
+    external fun nativeNextTrack(): Int
+    external fun nativePrevTrack(): Int
+    external fun nativePlaySpecificTrack(track: Int): Int
+    external fun nativeGetTrackName(track: Int): String
+    external fun nativeGetCurrentTrackNum(): Int
+    external fun nativeGetNumAudioTracks(): Int
+    external fun nativeGetCurrentTrackInfo(): String
+
     // ── SAF leave-in-place: called from native via JNI (jni_saf.c) ───
     @Suppress("unused")  // Called from native code
     fun openSafFile(contentUri: String): Int {
