@@ -200,6 +200,321 @@ static PHYSFS_File *get_track_file(int combined_track_1based)
 	return s_gog_file;
 }
 
+/* ── Minimal JSON helpers for audio_playlist.json ────────────────────── */
+
+static const char *pj_skip_ws(const char *p)
+{
+	while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r') p++;
+	return p;
+}
+
+/* Extract a JSON string starting at '"'. Writes into buf[bufsz].
+ * Advances *pp past the closing '"'. Returns 1 on success. */
+static int pj_string(const char **pp, char *buf, int bufsz)
+{
+	const char *p = *pp;
+	int i = 0;
+	if (*p != '"') return 0;
+	p++;
+	while (*p && *p != '"') {
+		if (*p == '\\') { p++; if (!*p) return 0; }
+		if (i < bufsz - 1) buf[i++] = *p;
+		p++;
+	}
+	if (*p != '"') return 0;
+	buf[i] = '\0';
+	*pp = ++p;
+	return 1;
+}
+
+/* Parse a JSON integer. Advances *pp. */
+static long pj_long(const char **pp)
+{
+	const char *p = *pp;
+	long val = 0;
+	int neg = 0;
+	if (*p == '-') { neg = 1; p++; }
+	while (*p >= '0' && *p <= '9') { val = val * 10 + (*p - '0'); p++; }
+	*pp = p;
+	return neg ? -val : val;
+}
+
+/* Skip a JSON value (string, number, object, array, bool, null). */
+static void pj_skip_value(const char **pp)
+{
+	const char *p = *pp;
+	p = pj_skip_ws(p);
+	if (*p == '"') {
+		p++;
+		while (*p && *p != '"') { if (*p == '\\') p++; p++; }
+		if (*p == '"') p++;
+	} else if (*p == '{') {
+		int depth = 1; p++;
+		while (*p && depth > 0) {
+			if (*p == '{') depth++;
+			else if (*p == '}') depth--;
+			else if (*p == '"') { p++; while (*p && *p != '"') { if (*p == '\\') p++; p++; } }
+			p++;
+		}
+	} else if (*p == '[') {
+		int depth = 1; p++;
+		while (*p && depth > 0) {
+			if (*p == '[') depth++;
+			else if (*p == ']') depth--;
+			else if (*p == '"') { p++; while (*p && *p != '"') { if (*p == '\\') p++; p++; } }
+			p++;
+		}
+	} else {
+		/* number, true, false, null */
+		while (*p && *p != ',' && *p != '}' && *p != ']') p++;
+	}
+	*pp = p;
+}
+
+/*
+ * Parse a single CUE file for a given source and append tracks to the
+ * combined table.  cue_name and bin_name are PhysFS-relative filenames.
+ * source_idx is which s_sources[] entry to associate tracks with.
+ * Returns the number of tracks parsed, or 0 on failure.
+ */
+static int parse_source_cue(const char *cue_name, const char *bin_name,
+                             int source_idx)
+{
+	PHYSFS_File *f;
+	PHYSFS_sint64 file_size;
+	int cur_track = -1;
+	int base = s_num_tracks;  /* where this source's tracks start */
+	int i, total_sectors, count;
+
+	f = open_ci(cue_name);
+	if (!f) {
+		RBA_LOG("parse_source_cue: cannot open %s", cue_name);
+		return 0;
+	}
+
+	while (!PHYSFS_eof(f)) {
+		char line[512];
+		int li = 0;
+		while (li < (int)sizeof(line) - 1 && !PHYSFS_eof(f)) {
+			char c;
+			if (PHYSFS_read(f, &c, 1, 1) != 1) break;
+			if (c == '\n') break;
+			if (c != '\r') line[li++] = c;
+		}
+		line[li] = '\0';
+
+		/* TRACK nn TYPE */
+		{
+			int tnum;
+			char ttype[32];
+			if (sscanf(line, " TRACK %d %31s", &tnum, ttype) == 2) {
+				if (tnum >= 1 && tnum <= MAX_TRACKS && s_num_tracks < MAX_TRACKS) {
+					cur_track = s_num_tracks;
+					s_tracks[cur_track].type =
+						(strstr(ttype, "AUDIO") != NULL) ? 1 : 0;
+					s_tracks[cur_track].source_index = source_idx;
+					s_tracks[cur_track].name[0] = '\0';
+					s_num_tracks++;
+				}
+				continue;
+			}
+		}
+		/* TITLE "..." */
+		{
+			char *p = line;
+			while (*p == ' ' || *p == '\t') p++;
+			if (strncasecmp(p, "TITLE", 5) == 0 && cur_track >= 0) {
+				char *q = strchr(p, '"');
+				if (q) {
+					q++;
+					char *end = strchr(q, '"');
+					if (end) {
+						int len = (int)(end - q);
+						if (len > 63) len = 63;
+						memcpy(s_tracks[cur_track].name, q, len);
+						s_tracks[cur_track].name[len] = '\0';
+					}
+				}
+				continue;
+			}
+		}
+		/* INDEX 01 MM:SS:FF */
+		{
+			int idx;
+			char msf[32];
+			if (cur_track >= 0 &&
+			    sscanf(line, " INDEX %d %31s", &idx, msf) == 2 && idx == 1)
+			{
+				s_tracks[cur_track].start_sector = parse_msf(msf);
+			}
+		}
+	}
+	PHYSFS_close(f);
+
+	count = s_num_tracks - base;
+	if (count <= 0) return 0;
+
+	/* Open the BIN file */
+	s_sources[source_idx].bin_file = open_ci(bin_name);
+	if (!s_sources[source_idx].bin_file) {
+		RBA_LOG("parse_source_cue: cannot open BIN %s", bin_name);
+		s_num_tracks = base;  /* roll back */
+		return 0;
+	}
+
+	/* Compute track lengths from successive start positions */
+	file_size = PHYSFS_fileLength(s_sources[source_idx].bin_file);
+	total_sectors = (int)(file_size / SECTOR_SIZE);
+
+	for (i = base; i < s_num_tracks; i++) {
+		if (i + 1 < s_num_tracks)
+			s_tracks[i].num_sectors =
+				s_tracks[i + 1].start_sector - s_tracks[i].start_sector;
+		else
+			s_tracks[i].num_sectors =
+				total_sectors - s_tracks[i].start_sector;
+	}
+
+	/* Set source first_combined (1-based) and audio count */
+	s_sources[source_idx].first_combined = base + 1;
+	{
+		int ac = 0;
+		for (i = base; i < s_num_tracks; i++)
+			if (s_tracks[i].type == 1) ac++;
+		s_sources[source_idx].audio_count = ac;
+	}
+
+	RBA_LOG("Source %d (%s): %d tracks (%d audio) from %s",
+	        source_idx, s_sources[source_idx].disc_label,
+	        count, s_sources[source_idx].audio_count, bin_name);
+
+	return count;
+}
+
+/*
+ * Try to load audio_playlist.json written by AudioSourceManager.
+ * Returns total number of tracks across all sources, or 0 if the
+ * file doesn't exist or parsing fails.
+ */
+static int parse_audio_playlist(void)
+{
+	PHYSFS_File *f;
+	PHYSFS_sint64 fsize;
+	char *json;
+	const char *p;
+	int total;
+
+	f = PHYSFS_openRead("audio_playlist.json");
+	if (!f) return 0;
+
+	fsize = PHYSFS_fileLength(f);
+	if (fsize <= 0 || fsize > 64 * 1024) {
+		PHYSFS_close(f);
+		return 0;
+	}
+
+	json = (char *)malloc((size_t)fsize + 1);
+	if (!json) { PHYSFS_close(f); return 0; }
+	if (PHYSFS_read(f, json, 1, (PHYSFS_uint32)fsize) != fsize) {
+		free(json);
+		PHYSFS_close(f);
+		return 0;
+	}
+	json[fsize] = '\0';
+	PHYSFS_close(f);
+
+	s_num_tracks = 0;
+	s_num_sources = 0;
+	memset(s_tracks, 0, sizeof(s_tracks));
+	memset(s_sources, 0, sizeof(s_sources));
+
+	/* Find "sources" array */
+	p = strstr(json, "\"sources\"");
+	if (!p) { free(json); return 0; }
+	p += 9;
+	p = pj_skip_ws(p);
+	if (*p == ':') p++;
+	p = pj_skip_ws(p);
+	if (*p != '[') { free(json); return 0; }
+	p++;  /* skip '[' */
+
+	while (s_num_sources < MAX_SOURCES) {
+		char cue_name[256] = {0};
+		char bin_name[256] = {0};
+		char label[64] = {0};
+		long legacy_id = 0;
+		char key[64];
+
+		p = pj_skip_ws(p);
+		if (*p == ']') break;
+		if (*p == ',') { p++; p = pj_skip_ws(p); }
+		if (*p != '{') break;
+		p++;  /* skip '{' */
+
+		/* Parse object keys */
+		while (*p && *p != '}') {
+			p = pj_skip_ws(p);
+			if (*p == ',') { p++; p = pj_skip_ws(p); }
+			if (*p == '}') break;
+
+			if (!pj_string(&p, key, sizeof(key))) break;
+			p = pj_skip_ws(p);
+			if (*p == ':') p++;
+			p = pj_skip_ws(p);
+
+			if (strcmp(key, "cue") == 0) {
+				pj_string(&p, cue_name, sizeof(cue_name));
+			} else if (strcmp(key, "bins") == 0) {
+				/* Array of bin filenames — take the first one */
+				if (*p == '[') {
+					p++;
+					p = pj_skip_ws(p);
+					if (*p == '"')
+						pj_string(&p, bin_name, sizeof(bin_name));
+					/* Skip rest of array */
+					while (*p && *p != ']') p++;
+					if (*p == ']') p++;
+				}
+			} else if (strcmp(key, "label") == 0) {
+				pj_string(&p, label, sizeof(label));
+			} else if (strcmp(key, "legacy_disc_id") == 0) {
+				legacy_id = pj_long(&p);
+			} else {
+				pj_skip_value(&p);
+			}
+		}
+		if (*p == '}') p++;  /* skip '}' */
+
+		if (cue_name[0] && bin_name[0]) {
+			int src = s_num_sources;
+			memset(&s_sources[src], 0, sizeof(s_sources[src]));
+			strncpy(s_sources[src].disc_label, label[0] ? label : "Unknown",
+			        sizeof(s_sources[src].disc_label) - 1);
+			s_sources[src].legacy_disc_id = (unsigned long)legacy_id;
+			s_num_sources++;
+
+			parse_source_cue(cue_name, bin_name, src);
+		}
+	}
+
+	free(json);
+
+	/* Set track names for the track_names system */
+	track_names_set_cue_count(s_num_tracks);
+	{
+		int i;
+		for (i = 0; i < s_num_tracks; i++) {
+			if (s_tracks[i].name[0])
+				track_names_set_cue_title(i + 1, s_tracks[i].name);
+		}
+	}
+
+	total = s_num_tracks;
+	RBA_LOG("audio_playlist.json: %d sources, %d total tracks",
+	        s_num_sources, total);
+	return total;
+}
+
 static int parse_cue_file(void)
 {
 	PHYSFS_File *f;
@@ -529,7 +844,9 @@ void RBAInit(void)
 		RBA_LOG("Output rate: %d Hz", s_output_rate);
 	}
 
-	if (parse_cue_file() < 2) {
+	if (parse_audio_playlist() >= 2) {
+		RBA_LOG("Loaded multi-source playlist");
+	} else if (parse_cue_file() < 2) {
 		RBA_LOG("No usable tracks found in CUE/BIN");
 		s_num_tracks = 0;
 		if (s_gog_file) { PHYSFS_close(s_gog_file); s_gog_file = NULL; }

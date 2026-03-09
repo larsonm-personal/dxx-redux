@@ -451,6 +451,7 @@ class SetupActivity : ComponentActivity() {
                         finish()   // return to the already-running game
                     } else {
                         FileSetManager(filesDir).writeActiveSetPath()
+                        AudioSourceManager(filesDir).writePlaylist()
                         writeInitialGameConfig()
                         startActivity(Intent(this, MainActivity::class.java))
                         // Don't finish() — stay in back stack so quitting
@@ -1873,10 +1874,14 @@ private fun MusicInfoSection(filesDir: File, refreshTrigger: Int, hasMidiSource:
     val musicStatuses = remember(refreshTrigger) { checkFiles(filesDir, MUSIC_FILES) }
     val redbookReady = musicStatuses.all { it.found }
     val audioSrcManager = remember { AudioSourceManager(filesDir) }
-    val audioSources = remember(refreshTrigger) { audioSrcManager.getSources() }
+    var audioSources by remember { mutableStateOf(audioSrcManager.getSources()) }
     val hasAnySources = redbookReady || audioSources.isNotEmpty()
     var expanded by remember { mutableStateOf(false) }
     var detailStatus by remember { mutableStateOf<FileStatus?>(null) }
+
+    // Re-read sources when refreshTrigger changes
+    LaunchedEffect(refreshTrigger) { audioSources = audioSrcManager.getSources() }
+
     val musicLabel = when {
         hasAnySources -> "\u2713 Ready"
         hasMidiSource -> "\u2717 Missing, will use MIDI"
@@ -1905,30 +1910,80 @@ private fun MusicInfoSection(filesDir: File, refreshTrigger: Int, hasMidiSource:
         if (audioSources.isNotEmpty()) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                "Registered Audio Sources:",
+                "Audio Sources:",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
             )
-            audioSources.forEach { src ->
+            audioSources.forEachIndexed { index, src ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 8.dp, bottom = 2.dp),
+                        .padding(start = 8.dp, bottom = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = if (src.enabled) "\u2713" else "\u2717",
-                        color = if (src.enabled) Color(0xFF4CAF50) else Color(0xFFFF5252),
-                        fontSize = 13.sp
+                    // Enable/disable toggle
+                    Checkbox(
+                        checked = src.enabled,
+                        onCheckedChange = { checked ->
+                            audioSrcManager.setEnabled(src.id, checked)
+                            audioSources = audioSrcManager.getSources()
+                        },
+                        modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "${src.discLabel} (${src.audioTrackCount} tracks)",
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (src.enabled) MaterialTheme.colorScheme.onSurface
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f)
                     )
+                    // Move up
+                    if (index > 0) {
+                        IconButton(
+                            onClick = {
+                                val ids = audioSources.map { it.id }.toMutableList()
+                                ids[index] = ids[index - 1].also { ids[index - 1] = ids[index] }
+                                audioSrcManager.reorder(ids)
+                                audioSources = audioSrcManager.getSources()
+                            },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(Icons.Filled.KeyboardArrowUp, "Move up",
+                                modifier = Modifier.size(16.dp))
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.size(24.dp))
+                    }
+                    // Move down
+                    if (index < audioSources.size - 1) {
+                        IconButton(
+                            onClick = {
+                                val ids = audioSources.map { it.id }.toMutableList()
+                                ids[index] = ids[index + 1].also { ids[index + 1] = ids[index] }
+                                audioSrcManager.reorder(ids)
+                                audioSources = audioSrcManager.getSources()
+                            },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(Icons.Filled.KeyboardArrowDown, "Move down",
+                                modifier = Modifier.size(16.dp))
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.size(24.dp))
+                    }
+                    // Remove
+                    TextButton(
+                        onClick = {
+                            audioSrcManager.removeSource(src.id)
+                            audioSources = audioSrcManager.getSources()
+                        },
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                        modifier = Modifier.height(24.dp)
+                    ) {
+                        Text("\u2717", fontSize = 12.sp, color = Color(0xFFFF5252))
+                    }
                 }
             }
         }

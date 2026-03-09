@@ -110,7 +110,7 @@ cue_disc_t     { cue_bin_file_t files[MAX_FILES]; int num_files; cue_track_t tra
 
 ---
 
-## Phase 5: Multiple Audio Source Management (mostly complete)
+## Phase 5: Multiple Audio Source Management ✅
 
 **Goal:** Support multiple CUE/BIN audio sources with user-configurable ordering and combined track sequences.
 
@@ -119,9 +119,9 @@ cue_disc_t     { cue_bin_file_t files[MAX_FILES]; int num_files; cue_track_t tra
 2. ✅ Each audio source entry: `{id, cuePath, binPath(s), discLabel, trackCount, audioTrackCount, enabled, order}`
 3. ✅ Storage: `audio_sources.json` in `filesDir` (shared across sets, like current music files)
 4. ✅ Music section in SetupActivity: shows registered audio sources with disc label + track count
-5. Add drag-to-reorder for disc priority — combined track numbering: disc 1 audio tracks 1..N, disc 2 audio tracks N+1..M, etc.
-6. At game launch, write an `audio_playlist.json` that the C engine reads to know which BIN/CUE files to use and in what order
-7. ✅ Modify `RBAInit()` in `rbaudio_bin.c` to support multi-source — `parse_cue_file()` populates `audio_source_t` and `combined_track_t` arrays (currently falls back to legacy `descent_ii.inst`/`.gog` path; `audio_playlist.json` reading not yet implemented)
+5. ✅ Up/down reorder buttons + enable/disable checkboxes in MusicInfoSection UI
+6. ✅ `AudioSourceManager.writePlaylist()` called before game launch in `onLaunchGame`
+7. ✅ `RBAInit()` tries `parse_audio_playlist()` first (reads `audio_playlist.json`, opens multi-source CUE/BIN files), falls back to legacy `parse_cue_file()` for `descent_ii.inst`/`.gog`
 8. ✅ Each track in the combined table references: `{file_handle, start_sector, num_sectors, source_disc_index}`
 9. ✅ Track advancement in `refill_pcm()` uses `get_track_file()` for multi-source sector I/O
 10. ✅ `RBAGetNumberOfTracks()` returns total across all enabled sources
