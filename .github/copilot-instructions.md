@@ -12,6 +12,10 @@
 - any changes that are made should keep the existing windows/linux/mac builds intact, using #defines or separate files or similar
 - any changes should be accompanied by a successful cmake build and test run
 
+# dependencies
+- whenever adding dependencies, or build tools, pin them to a specific version using a version string or git commit tag, etc. - see the existing methods for doing that
+- keep dependencies lightweight and cross platform. a few things are rebuilt as single file/AI-slop reimplementations because the formats were simple-ish and it was easier than bringing in boost, or whatever
+
 ## new features
 ### launcher
 - there *is* a need to build a launcher that encompasses game file management and configuration editing. there will be significant new code for that and it will be mostly kotlin
