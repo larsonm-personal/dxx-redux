@@ -31,12 +31,14 @@
 #define O_WRONLY _O_WRONLY
 #define O_CREAT  _O_CREAT
 #define O_TRUNC  _O_TRUNC
+#define O_BINARY _O_BINARY
 #define strcasecmp _stricmp
 /* write() already available via _write */
 #define write(fd, buf, n) _write(fd, buf, (unsigned int)(n))
 #else
 #include <unistd.h>
 #include <fcntl.h>
+#define O_BINARY 0
 #endif
 
 #include "iso9660_reader.h"
@@ -359,7 +361,7 @@ int iso_extract_files(int bin_fd, int track_start_sector, int track_num_sectors,
 		}
 
 		/* Open output file */
-		out_fd = open(out_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+		out_fd = open(out_path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0644);
 		if (out_fd < 0) {
 			ISO_LOG("Failed to create %s: %s", out_path, strerror(errno));
 			continue;
