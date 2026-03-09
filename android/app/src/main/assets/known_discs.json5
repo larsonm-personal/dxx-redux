@@ -47,7 +47,7 @@
     },
 
     // -- Descent - Anniversary Edition (Brazil) (Covermount)
-    //   assets match Descent - Anniversary Edition (Brazil) (Covermount) (2 files)
+    //   assets match D1 v1.5 (2 files)
     {
       "id": "descent-anniversary-edition-brazil-covermount",
       "label": "Descent - Anniversary Edition (Brazil) (Covermount)",
@@ -58,7 +58,7 @@
     },
 
     // -- Descent - Anniversary Edition (USA)
-    //   assets match Descent - Anniversary Edition (Brazil) (Covermount) (2 files)
+    //   assets match D1 v1.5 (2 files)
     {
       "id": "descent-anniversary-edition-usa",
       "label": "Descent - Anniversary Edition (USA)",
@@ -69,7 +69,7 @@
     },
 
     // -- Descent - Destination Saturn (USA)
-    //   assets match Descent - Destination Saturn (USA) (2 files)
+    //   assets match D1 Destination Saturn (2 files)
     {
       "id": "descent-destination-saturn-usa",
       "label": "Descent - Destination Saturn (USA)",
@@ -102,7 +102,7 @@
     },
 
     // -- Descent (Europe)
-    //   assets match Descent (Europe) (2 files)
+    //   assets match D1 v1.0 (2 files)
     {
       "id": "descent-europe",
       "label": "Descent (Europe)",
@@ -113,7 +113,7 @@
     },
 
     // -- Descent (Europe) (Alt)
-    //   assets match Descent (Europe) (2 files)
+    //   assets match D1 v1.0 (2 files)
     {
       "id": "descent-europe-alt",
       "label": "Descent (Europe) (Alt)",
@@ -124,7 +124,7 @@
     },
 
     // -- Descent (USA)
-    //   assets match Descent (Europe) (2 files)
+    //   assets match D1 v1.0 (2 files)
     {
       "id": "descent-usa",
       "label": "Descent (USA)",
@@ -135,7 +135,7 @@
     },
 
     // -- Descent I and II - The Definitive Collection (Europe) (Disc 1)
-    //   assets match Descent - Anniversary Edition (Brazil) (Covermount) (2 files)
+    //   assets match D1 v1.5 (2 files)
     {
       "id": "descent-i-and-ii-the-definitive-collection-europe-disc-1",
       "label": "Descent I and II - The Definitive Collection (Europe) (Disc 1)",
@@ -146,7 +146,7 @@
     },
 
     // -- Descent I and II - The Definitive Collection (Europe) (Disc 2)
-    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 2) (22 files)
+    //   assets match D2 v1.0 (6 files)
     {
       "id": "descent-i-and-ii-the-definitive-collection-europe-disc-2",
       "label": "Descent I and II - The Definitive Collection (Europe) (Disc 2)",
@@ -165,7 +165,7 @@
     },
 
     // -- Descent I and II - The Definitive Collection (Europe) (Disc 3)
-    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 3) (4 files)
+    //   assets match D2 Vertigo Series (4 files)
     {
       "id": "descent-i-and-ii-the-definitive-collection-europe-disc-3",
       "label": "Descent I and II - The Definitive Collection (Europe) (Disc 3)",
@@ -183,7 +183,7 @@
     },
 
     // -- Descent I and II - The Definitive Collection (USA) (Disc 1)
-    //   assets match Descent - Anniversary Edition (Brazil) (Covermount) (2 files)
+    //   assets match D1 v1.5 (2 files)
     {
       "id": "descent-i-and-ii-the-definitive-collection-usa-disc-1",
       "label": "Descent I and II - The Definitive Collection (USA) (Disc 1)",
@@ -194,7 +194,7 @@
     },
 
     // -- Descent I and II - The Definitive Collection (USA) (Disc 2)
-    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 2) (22 files)
+    //   assets match D2 v1.0 (6 files)
     {
       "id": "descent-i-and-ii-the-definitive-collection-usa-disc-2",
       "label": "Descent I and II - The Definitive Collection (USA) (Disc 2)",
@@ -213,7 +213,7 @@
     },
 
     // -- Descent I and II - The Definitive Collection (USA) (Disc 3)
-    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 3) (4 files)
+    //   assets match D2 Vertigo Series (4 files)
     {
       "id": "descent-i-and-ii-the-definitive-collection-usa-disc-3",
       "label": "Descent I and II - The Definitive Collection (USA) (Disc 3)",
@@ -231,8 +231,8 @@
     },
 
     // -- Descent II - Destination Quartzon (Europe)
-    //   1 MVLs from Descent I and II - The Definitive Collection (Europe) (Disc 2)
-    //   5 MVLs from Descent II - Destination Quartzon (Europe)
+    //   5 MVLs from D2 Destination Quartzon
+    //   1 MVLs from D2 v1.0
     {
       "id": "descent-ii-destination-quartzon-europe",
       "label": "Descent II - Destination Quartzon (Europe)",
@@ -255,8 +255,8 @@
     },
 
     // -- Descent II - Destination Quartzon (USA)
-    //   1 MVLs from Descent I and II - The Definitive Collection (Europe) (Disc 2)
-    //   5 MVLs from Descent II - Destination Quartzon (Europe)
+    //   5 MVLs from D2 Destination Quartzon
+    //   1 MVLs from D2 v1.0
     {
       "id": "descent-ii-destination-quartzon-usa",
       "label": "Descent II - Destination Quartzon (USA)",
@@ -279,8 +279,8 @@
     },
 
     // -- Descent II - Destination Quartzon (USA) (Diamond OEM)
-    //   1 MVLs from Descent I and II - The Definitive Collection (Europe) (Disc 2)
-    //   5 MVLs from Descent II - Destination Quartzon (Europe)
+    //   5 MVLs from D2 Destination Quartzon
+    //   1 MVLs from D2 v1.0
     {
       "id": "descent-ii-destination-quartzon-usa-diamond-oem",
       "label": "Descent II - Destination Quartzon (USA) (Diamond OEM)",
@@ -303,8 +303,8 @@
     },
 
     // -- Descent II - Destination Quartzon (USA) (Logitech OEM)
-    //   1 MVLs from Descent I and II - The Definitive Collection (Europe) (Disc 2)
-    //   5 MVLs from Descent II - Destination Quartzon (Europe)
+    //   5 MVLs from D2 Destination Quartzon
+    //   1 MVLs from D2 v1.0
     {
       "id": "descent-ii-destination-quartzon-usa-logitech-oem",
       "label": "Descent II - Destination Quartzon (USA) (Logitech OEM)",
@@ -327,8 +327,8 @@
     },
 
     // -- Descent II - Destination Quartzon 3D (Europe)
-    //   1 MVLs from Descent II - Destination Quartzon (Europe)
-    //   2 MVLs from Descent II - Destination Quartzon 3D (Europe)
+    //   1 MVLs from D2 Destination Quartzon
+    //   2 MVLs from D2 Destination Quartzon 3D
     {
       "id": "descent-ii-destination-quartzon-3d-europe",
       "label": "Descent II - Destination Quartzon 3D (Europe)",
@@ -344,7 +344,7 @@
     },
 
     // -- Descent II - The Vertigo Series (USA)
-    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 3) (4 files)
+    //   assets match D2 Vertigo Series (4 files)
     {
       "id": "descent-ii-the-vertigo-series-usa",
       "label": "Descent II - The Vertigo Series (USA)",
@@ -362,7 +362,7 @@
     },
 
     // -- Descent II (Europe)
-    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 2) (6 files)
+    //   assets match D2 v1.0 (6 files)
     {
       "id": "descent-ii-europe",
       "label": "Descent II (Europe)",
@@ -385,7 +385,7 @@
     },
 
     // -- Descent II (Europe) (v1.1)
-    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 2) (22 files)
+    //   assets match D2 v1.0 (6 files)
     {
       "id": "descent-ii-europe-v11",
       "label": "Descent II (Europe) (v1.1)",
@@ -404,7 +404,7 @@
     },
 
     // -- Descent II (USA)
-    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 2) (6 files)
+    //   assets match D2 v1.0 (6 files)
     {
       "id": "descent-ii-usa",
       "label": "Descent II (USA)",
@@ -438,7 +438,7 @@
     },
 
     // -- Descent II (USA) (Alt)
-    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 2) (6 files)
+    //   assets match D2 v1.0 (6 files)
     {
       "id": "descent-ii-usa-alt",
       "label": "Descent II (USA) (Alt)",
@@ -461,7 +461,7 @@
     },
 
     // -- Descent II (USA) (Rerelease)
-    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 2) (22 files)
+    //   assets match D2 v1.0 (6 files)
     {
       "id": "descent-ii-usa-rerelease",
       "label": "Descent II (USA) (Rerelease)",
@@ -480,7 +480,7 @@
     },
 
     // -- Descent II (USA) (v1.1)
-    //   assets match Descent I and II - The Definitive Collection (Europe) (Disc 2) (22 files)
+    //   assets match D2 v1.0 (6 files)
     {
       "id": "descent-ii-usa-v11",
       "label": "Descent II (USA) (v1.1)",
@@ -499,8 +499,8 @@
     },
 
     // -- Descent-II-Destination-Quartzon_Win_EN_ISO-Version
-    //   1 MVLs from Descent I and II - The Definitive Collection (Europe) (Disc 2)
-    //   5 MVLs from Descent II - Destination Quartzon (Europe)
+    //   5 MVLs from D2 Destination Quartzon
+    //   1 MVLs from D2 v1.0
     {
       "id": "descent-ii-destination-quartzonwineniso-version",
       "label": "Descent-II-Destination-Quartzon_Win_EN_ISO-Version",

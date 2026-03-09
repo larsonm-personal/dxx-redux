@@ -25,6 +25,7 @@
 - the goal for the game is to have the full game be operable through a pure screen touch interface.  in effect, means playing the full game with only a mouse (no keyboard). there are places where keyboard presses are currently required. we're slowly adding ways to skip these with touches
 
 ## code quality and testing
+- always create a plan as step 1 of any block of work. plan files go here: android\ai tool plans\
 - attempt to minimize line count to some extent. don't take this to an extreme, but avoid abstractions that are just wrappers, duplicated code, and other verbose things
 - add simple, high-level integration tests to catch regressions and document high level functionality. it's not necessary to add tests to cover every little function unless the function has tricky edge cases or is very complex by itself
 - add these tests for any code centralized in the android/ directory as the code is added. add test runner scripts or helpers so they're easy to re-run after code changes
