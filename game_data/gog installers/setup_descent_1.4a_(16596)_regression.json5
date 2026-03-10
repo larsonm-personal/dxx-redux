@@ -1,4 +1,4 @@
-﻿// Auto-generated regression spec for: setup_descent_1.4a_(16596).exe
+// Auto-generated regression spec for: setup_descent_1.4a_(16596).exe
 // Generated: 2026-03-09 19:33:37
 {
     "source_type":  "gog",
@@ -18,4 +18,13 @@
                        ],
     "audio_tracks":  0,
     "total_extracted":  7
+,
+    "last_test_result": {
+        "status": "fail",
+        "failure_step": "crash",
+        "level_reached": null,
+        "files_verified": 2,
+        "classification_confirmed": true,
+        "test_mode": "full"
+    }
 }

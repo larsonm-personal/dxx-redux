@@ -1,4 +1,4 @@
-﻿// Auto-generated regression spec for: descent_enUS_1_0_35122.pkg
+// Auto-generated regression spec for: descent_enUS_1_0_35122.pkg
 // Generated: 2026-03-09 19:33:39
 {
     "source_type":  "gog",
@@ -18,4 +18,13 @@
                        ],
     "audio_tracks":  0,
     "total_extracted":  7
+,
+    "last_test_result": {
+        "status": "fail",
+        "failure_step": "crash",
+        "level_reached": null,
+        "files_verified": 2,
+        "classification_confirmed": true,
+        "test_mode": "full"
+    }
 }

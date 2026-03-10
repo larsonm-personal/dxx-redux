@@ -1,4 +1,4 @@
-﻿// Auto-generated regression spec for: descent_2_enUS_1_0_51877.pkg
+// Auto-generated regression spec for: descent_2_enUS_1_0_51877.pkg
 // Generated: 2026-03-09 19:33:41
 {
     "source_type":  "gog",
@@ -21,4 +21,13 @@
                        ],
     "audio_tracks":  8,
     "total_extracted":  15
+,
+    "last_test_result": {
+        "status": "pass",
+        "failure_step": null,
+        "level_reached": "Ahayweh Gate",
+        "files_verified": 5,
+        "classification_confirmed": true,
+        "test_mode": "full"
+    }
 }

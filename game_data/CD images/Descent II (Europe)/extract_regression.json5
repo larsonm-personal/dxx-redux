@@ -1,4 +1,4 @@
-﻿// Auto-generated regression spec for: Descent II (Europe)
+// Auto-generated regression spec for: Descent II (Europe)
 // Generated: 2026-03-09 19:33:22
 {
     "source_type":  "cd",
@@ -74,4 +74,13 @@
                        ],
     "audio_tracks":  12,
     "total_extracted":  22
+,
+    "last_test_result": {
+        "status": "pass",
+        "failure_step": null,
+        "level_reached": "Ahayweh Gate",
+        "files_verified": 5,
+        "classification_confirmed": true,
+        "test_mode": "full"
+    }
 }

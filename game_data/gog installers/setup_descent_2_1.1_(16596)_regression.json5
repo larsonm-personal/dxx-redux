@@ -1,4 +1,4 @@
-﻿// Auto-generated regression spec for: setup_descent_2_1.1_(16596).exe
+// Auto-generated regression spec for: setup_descent_2_1.1_(16596).exe
 // Generated: 2026-03-09 19:33:39
 {
     "source_type":  "gog",
@@ -21,4 +21,13 @@
                        ],
     "audio_tracks":  8,
     "total_extracted":  21
+,
+    "last_test_result": {
+        "status": "pass",
+        "failure_step": null,
+        "level_reached": "Ahayweh Gate",
+        "files_verified": 5,
+        "classification_confirmed": true,
+        "test_mode": "full"
+    }
 }

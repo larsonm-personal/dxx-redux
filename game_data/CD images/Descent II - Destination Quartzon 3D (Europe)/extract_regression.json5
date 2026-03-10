@@ -1,4 +1,4 @@
-﻿// Auto-generated regression spec for: Descent II - Destination Quartzon 3D (Europe)
+// Auto-generated regression spec for: Descent II - Destination Quartzon 3D (Europe)
 // Generated: 2026-03-09 19:33:17
 {
     "source_type":  "cd",
@@ -44,4 +44,13 @@
                        ],
     "audio_tracks":  5,
     "total_extracted":  12
+,
+    "last_test_result": {
+        "status": "skip",
+        "failure_step": "not_ready",
+        "level_reached": null,
+        "files_verified": 3,
+        "classification_confirmed": false,
+        "test_mode": "file_only"
+    }
 }

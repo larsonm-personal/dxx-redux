@@ -1,4 +1,4 @@
-﻿// Auto-generated regression spec for: Descent II (USA) (3-Level Interactive Preview)
+// Auto-generated regression spec for: Descent II (USA) (3-Level Interactive Preview)
 // Generated: 2026-03-09 19:33:28
 {
     "source_type":  "cd",
@@ -24,4 +24,13 @@
                        ],
     "audio_tracks":  0,
     "total_extracted":  7
+,
+    "last_test_result": {
+        "status": "fail",
+        "failure_step": "launch_timeout",
+        "level_reached": null,
+        "files_verified": 3,
+        "classification_confirmed": true,
+        "test_mode": "full"
+    }
 }

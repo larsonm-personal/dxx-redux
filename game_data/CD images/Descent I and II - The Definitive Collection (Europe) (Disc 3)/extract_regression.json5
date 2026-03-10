@@ -1,4 +1,4 @@
-﻿// Auto-generated regression spec for: Descent I and II - The Definitive Collection (Europe) (Disc 3)
+// Auto-generated regression spec for: Descent I and II - The Definitive Collection (Europe) (Disc 3)
 // Generated: 2026-03-09 19:33:02
 {
     "source_type":  "cd",
@@ -53,4 +53,13 @@
                        ],
     "audio_tracks":  7,
     "total_extracted":  11
+,
+    "last_test_result": {
+        "status": "skip",
+        "failure_step": "not_ready",
+        "level_reached": null,
+        "files_verified": 4,
+        "classification_confirmed": false,
+        "test_mode": "file_only"
+    }
 }

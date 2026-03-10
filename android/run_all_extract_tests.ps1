@@ -133,7 +133,9 @@ function Repair-Emulator {
     # Second try: full emulator restart via emu_health.ps1
     if (Test-Path $HEALTH_SCRIPT) {
         Write-Host "  Restarting emulator..." -ForegroundColor Yellow
-        & $HEALTH_SCRIPT -Restart -Wait -TimeoutSeconds 180
+        try { & $HEALTH_SCRIPT -Restart -Wait -TimeoutSeconds 180 } catch {
+            Write-Host "  emu_health.ps1 error: $_" -ForegroundColor Yellow
+        }
         Start-Sleep -Seconds 5
         if (Test-EmulatorReady) {
             Write-Host "  Recovered after emulator restart" -ForegroundColor Green

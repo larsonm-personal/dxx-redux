@@ -1,4 +1,4 @@
-﻿// Auto-generated regression spec for: Descent - Test Flight (USA)
+// Auto-generated regression spec for: Descent - Test Flight (USA)
 // Generated: 2026-03-09 19:32:56
 {
     "source_type":  "cd",
@@ -23,4 +23,13 @@
                        ],
     "audio_tracks":  0,
     "total_extracted":  5
+,
+    "last_test_result": {
+        "status": "fail",
+        "failure_step": "crash",
+        "level_reached": null,
+        "files_verified": 2,
+        "classification_confirmed": true,
+        "test_mode": "full"
+    }
 }

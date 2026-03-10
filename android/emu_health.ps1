@@ -18,6 +18,9 @@ param(
     [int]$TimeoutSeconds = 120
 )
 
+# Prevent inherited ErrorActionPreference=Stop from treating adb stderr as errors
+$ErrorActionPreference = 'Continue'
+
 $_depBaseFile = Join-Path (Split-Path $PSScriptRoot) "dependency_base.txt"
 if (-not (Test-Path $_depBaseFile)) {
     Write-Error "dependency_base.txt not found at $_depBaseFile. Create it with a single line containing the path to your dependency directory (e.g. C:\local)."
@@ -38,7 +41,7 @@ function Test-EmulatorHealth {
     }
 
     # Step 1: Check if any emulator device is listed
-    $devices = & $ADB devices 2>&1 | Out-String
+    $devices = (& $ADB devices 2>&1) | Out-String
     if ($devices -notmatch 'emulator-\d+\s+device') {
         if ($devices -match 'emulator-\d+\s+offline') {
             return @{ Healthy = $false; Reason = "emulator is offline" }
@@ -83,7 +86,7 @@ function Stop-Emulator {
         Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 2
     # Kill adb server to clear stale device entries
-    & $ADB kill-server 2>&1 | Out-Null
+    try { & $ADB kill-server 2>&1 | Out-Null } catch {}
     Start-Sleep -Seconds 2
 }
 
