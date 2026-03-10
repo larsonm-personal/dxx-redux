@@ -335,6 +335,9 @@ target_sources(d2x-redux PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/extract/iso9660_reader.c
     ${CMAKE_CURRENT_SOURCE_DIR}/extract/sow_extract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_disc_import.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/inno_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/pkg_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_gog_import.c
     ${CMAKE_CURRENT_SOURCE_DIR}/jni_music_control.c
     ${D2_SRC}/arch/android/messagebox.c
     ${D2_SRC}/arch/android/physfs_archiver_saf.c
@@ -390,3 +393,28 @@ endif() # OPENGL
 target_link_libraries(d2x-redux PRIVATE nlohmann_json::nlohmann_json)
 
 # sow_extract.c (in extract/) has a self-contained ARJ decoder — no external library needed
+
+# ── LZMA SDK (for InnoSetup/GOG decompression) ──────────────────────────
+FetchContent_Declare(
+    lzma_sdk
+    GIT_REPOSITORY https://github.com/jljusten/LZMA-SDK.git
+    GIT_TAG        781863cdf592da3e97420f50de5dac056ad352a5  # 18.05
+    GIT_SHALLOW    TRUE
+)
+FetchContent_GetProperties(lzma_sdk)
+if(NOT lzma_sdk_POPULATED)
+    FetchContent_Populate(lzma_sdk)
+endif()
+add_library(lzma_sdk_c STATIC
+    ${lzma_sdk_SOURCE_DIR}/C/LzmaDec.c
+    ${lzma_sdk_SOURCE_DIR}/C/Lzma2Dec.c
+    ${lzma_sdk_SOURCE_DIR}/C/7zCrc.c
+    ${lzma_sdk_SOURCE_DIR}/C/7zCrcOpt.c
+)
+target_include_directories(lzma_sdk_c PUBLIC ${lzma_sdk_SOURCE_DIR}/C)
+target_compile_definitions(lzma_sdk_c PRIVATE _7ZIP_ST)
+
+# zlib — for GOG installer decompression (InnoSetup zlib streams, Mac .pkg XAR/gzip)
+# Android NDK always provides zlib as a system library.
+
+target_link_libraries(d2x-redux PRIVATE lzma_sdk_c z)

@@ -83,6 +83,11 @@ class SetupActivity : ComponentActivity() {
 
     // ── Setup-screen command API ────────────────────────────────────────
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command launch
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command create_set --es name "my set"
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command switch_set --es name "my set"
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command clear_set --es name "default"
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --es path /sdcard/setup_descent2.exe
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_files --es path /sdcard/DESCENT2.HOG
     private var gameRunningFlag = false
     private val commandReceiver = object : BroadcastReceiver() {
         override fun onReceive(ctx: Context?, intent: Intent?) {
@@ -104,6 +109,47 @@ class SetupActivity : ComponentActivity() {
                 "controller_introspect" -> {
                     writeControllerIntrospectJson()
                     Log.i("DXX-Setup", "controller_introspect: written")
+                }
+                "create_set" -> {
+                    val name = intent.getStringExtra("name") ?: return
+                    val fsm = FileSetManager(filesDir)
+                    val dir = fsm.createSet(name)
+                    Log.i("DXX-Setup", "create_set '$name': ${dir.absolutePath}")
+                }
+                "switch_set" -> {
+                    val name = intent.getStringExtra("name") ?: return
+                    val fsm = FileSetManager(filesDir)
+                    fsm.setActive(name)
+                    fsm.writeActiveSetPath()
+                    Log.i("DXX-Setup", "switch_set '$name': ok")
+                }
+                "clear_set" -> {
+                    val name = intent.getStringExtra("name") ?: return
+                    val fsm = FileSetManager(filesDir)
+                    val dir = fsm.getSetDir(name)
+                    val count = dir.listFiles()?.count { it.isFile && it.delete() } ?: 0
+                    Log.i("DXX-Setup", "clear_set '$name': deleted $count file(s)")
+                }
+                "import_gog" -> {
+                    val path = intent.getStringExtra("path") ?: return
+                    Thread {
+                        val fsm = FileSetManager(filesDir)
+                        val setDir = fsm.getSetDir(fsm.getActive())
+                        val count = GogImportBridge.extractFiles(path, setDir.absolutePath, null)
+                        Log.i("DXX-Setup", "import_gog '$path' -> $count file(s) to ${setDir.name}")
+                    }.start()
+                }
+                "import_files" -> {
+                    val path = intent.getStringExtra("path") ?: return
+                    val fsm = FileSetManager(filesDir)
+                    val setDir = fsm.getSetDir(fsm.getActive())
+                    val src = File(path)
+                    if (src.isFile) {
+                        src.copyTo(File(setDir, src.name), overwrite = true)
+                        Log.i("DXX-Setup", "import_files: copied ${src.name} to ${setDir.name}")
+                    } else {
+                        Log.w("DXX-Setup", "import_files: not a file: $path")
+                    }
                 }
                 else -> Log.w("DXX-Setup", "Unknown command: $cmd")
             }
@@ -374,6 +420,37 @@ class SetupActivity : ComponentActivity() {
                 }
                 root.put("downloads", dl)
             }
+
+            // All file sets with file counts
+            val setsArr = JSONArray()
+            for (setInfo in fsm.listSets()) {
+                val so = JSONObject()
+                so.put("name", setInfo.name)
+                val sd = fsm.getSetDir(setInfo.name)
+                so.put("file_count", sd.listFiles()?.count { it.isFile } ?: 0)
+                so.put("active", setInfo.name == activeSet)
+                setsArr.put(so)
+            }
+            root.put("sets", setsArr)
+
+            // Audio sources
+            val srcManager = AudioSourceManager(dir)
+            val sources = srcManager.getSources()
+            if (sources.isNotEmpty()) {
+                val audioArr = JSONArray()
+                for (src in sources) {
+                    val ao = JSONObject()
+                    ao.put("id", src.id)
+                    ao.put("label", src.discLabel)
+                    ao.put("cue_path", src.cuePath)
+                    ao.put("track_count", src.trackCount)
+                    ao.put("audio_track_count", src.audioTrackCount)
+                    audioArr.put(ao)
+                }
+                root.put("audio_sources", audioArr)
+            }
+            val hasLegacyGog = srcManager.hasLegacyGog(setDir)
+            if (hasLegacyGog) root.put("has_legacy_gog_audio", true)
 
             val outFile = File(dir, "setup_introspect.json")
             FileWriter(outFile).use { it.write(root.toString()) }
@@ -965,6 +1042,10 @@ private fun SetupScreen(
     var discImportCueUri by remember { mutableStateOf<Uri?>(null) }
     var discImportBins by remember { mutableStateOf<List<Pair<String, Uri>>>(emptyList()) }
 
+    // ── GOG installer import state ──────────────────────
+    var gogImportUri by remember { mutableStateOf<Uri?>(null) }
+    var gogImportName by remember { mutableStateOf<String?>(null) }
+
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments()
     ) { uris: List<Uri> ->
@@ -976,6 +1057,7 @@ private fun SetupScreen(
             val gameUris = mutableListOf<FoundFile>()
             val cueUris = mutableListOf<Pair<String, Uri>>()
             val binUris = mutableListOf<Pair<String, Uri>>()
+            var gogUri: Pair<String, Uri>? = null
             for (uri in uris) {
                 val name = getDisplayName(context, uri)
                 if (name != null) {
@@ -984,6 +1066,7 @@ private fun SetupScreen(
                         lname.endsWith(".zip") -> zipUris.add(uri)
                         lname.endsWith(".cue") -> cueUris.add(name to uri)
                         lname.endsWith(".bin") -> binUris.add(name to uri)
+                        lname.endsWith(".exe") || lname.endsWith(".pkg") -> gogUri = name to uri
                         lname in ALL_GAME_FILENAMES -> gameUris.add(FoundFile(name, uri))
                     }
                 }
@@ -997,6 +1080,11 @@ private fun SetupScreen(
                     discImportCueName = cueUris.first().first
                     discImportCueUri = cueUris.first().second
                     discImportBins = binUris
+                }
+                // Trigger GOG import dialog if .exe/.pkg found
+                gogUri?.let {
+                    gogImportName = it.first
+                    gogImportUri = it.second
                 }
                 scanning = false
             }
@@ -1162,6 +1250,26 @@ private fun SetupScreen(
                             discImportCueUri = null
                             discImportCueName = null
                             discImportBins = emptyList()
+                        }
+                    )
+                }
+
+                // ── GOG installer import dialog ──
+                if (gogImportUri != null) {
+                    GogImportDialog(
+                        installerName = gogImportName ?: "installer",
+                        installerUri = gogImportUri!!,
+                        filesDir = filesDir,
+                        setDir = setDir,
+                        context = context,
+                        onImported = {
+                            gogImportUri = null
+                            gogImportName = null
+                            onRefresh()
+                        },
+                        onDismiss = {
+                            gogImportUri = null
+                            gogImportName = null
                         }
                     )
                 }
@@ -1368,7 +1476,7 @@ private fun SetupScreen(
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Select .hog, .ham, .pig files, a .zip archive, or .cue/.bin disc images.",
+                        text = "Select .hog, .ham, .pig files, a .zip archive, .cue/.bin disc images, or GOG installer.",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -2733,6 +2841,204 @@ private suspend fun downloadFile(
     }
 }
 
+/* ── GOG installer import dialog ─────────────────────────────────────────── */
+
+/**
+ * Dialog for importing a GOG installer (.exe InnoSetup or .pkg Mac).
+ *
+ * Flow:
+ *  1. Copies installer to temp via content resolver
+ *  2. Detects format (InnoSetup / .pkg)
+ *  3. Lists game files inside the installer
+ *  4. Extracts game files to setDir with progress
+ *  5. Detects .gog/.inst audio pair after extraction
+ */
+@Composable
+private fun GogImportDialog(
+    installerName: String,
+    installerUri: Uri,
+    filesDir: File,
+    setDir: File,
+    context: Context,
+    onImported: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    var status by remember { mutableStateOf("Analyzing installer\u2026") }
+    var format by remember { mutableStateOf<String?>(null) }
+    var fileList by remember { mutableStateOf<List<GogImportBridge.GogFile>?>(null) }
+    var processing by remember { mutableStateOf(false) }
+    var extractedCount by remember { mutableIntStateOf(0) }
+    var progressFile by remember { mutableStateOf("") }
+    var progressPct by remember { mutableStateOf(0f) }
+    var tempPath by remember { mutableStateOf<String?>(null) }
+    var errorMsg by remember { mutableStateOf<String?>(null) }
+
+    // Copy installer to temp + detect format + list files
+    LaunchedEffect(installerUri) {
+        withContext(Dispatchers.IO) {
+            try {
+                val tmpDir = File(filesDir, "tmp")
+                tmpDir.mkdirs()
+                val tmpFile = File(tmpDir, installerName)
+                withContext(Dispatchers.Main) { status = "Copying installer\u2026" }
+                context.contentResolver.openInputStream(installerUri)?.use { input ->
+                    java.io.FileOutputStream(tmpFile).use { output -> input.copyTo(output, bufferSize = 65536) }
+                }
+                tempPath = tmpFile.absolutePath
+
+                val fmt = GogImportBridge.detectFormat(tmpFile.absolutePath)
+                val files = GogImportBridge.listFiles(tmpFile.absolutePath)
+                withContext(Dispatchers.Main) {
+                    format = fmt
+                    fileList = files
+                    if (fmt == "unknown") {
+                        status = "Not a recognized GOG installer"
+                        errorMsg = "This file doesn't appear to be a GOG InnoSetup (.exe) or Mac .pkg installer."
+                    } else if (files == null || files.isEmpty()) {
+                        status = "No game files found in installer"
+                        errorMsg = "The installer was recognized as $fmt but contains no game files."
+                    } else {
+                        val totalSize = files.sumOf { it.size }
+                        status = "Found ${files.size} game file(s) (${formatSize(totalSize)})"
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("DXX-GogImport", "Analysis failed", e)
+                withContext(Dispatchers.Main) {
+                    status = "Error: ${e.message}"
+                    errorMsg = e.message
+                }
+            }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = { if (!processing) onDismiss() },
+        confirmButton = {
+            if (!processing) {
+                TextButton(onClick = {
+                    tempPath?.let { File(it).delete() }
+                    cleanupTmpDir(filesDir)
+                    onDismiss()
+                }) { Text("Close") }
+            }
+        },
+        title = { Text("Import GOG Installer", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Text(installerName, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                if (format != null && format != "unknown") {
+                    Text(
+                        "Format: ${if (format == "innosetup") "InnoSetup (.exe)" else "Mac .pkg"}",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(status, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                // Error message
+                if (errorMsg != null && extractedCount == 0) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(errorMsg!!, fontSize = 11.sp, color = MaterialTheme.colorScheme.error)
+                }
+
+                // File listing
+                fileList?.let { files ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    files.forEach { f ->
+                        Text(
+                            "${f.name} (${formatSize(f.size)})",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Extract button
+                if (fileList != null && fileList!!.isNotEmpty() && !processing && extractedCount == 0) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                processing = true
+                                status = "Extracting game files\u2026"
+                                progressFile = ""
+                                progressPct = 0f
+                                withContext(Dispatchers.IO) {
+                                    try {
+                                        val count = GogImportBridge.extractFiles(
+                                            tempPath!!, setDir.absolutePath,
+                                            object : GogImportBridge.ExtractProgress {
+                                                override fun onProgress(
+                                                    currentFile: String, bytesDone: Long, bytesTotal: Long
+                                                ): Int {
+                                                    val pct = if (bytesTotal > 0)
+                                                        bytesDone.toFloat() / bytesTotal else 0f
+                                                    progressFile = currentFile
+                                                    progressPct = pct
+                                                    return 0
+                                                }
+                                            }
+                                        )
+                                        val hasGog = AudioSourceManager(filesDir).hasLegacyGog(setDir)
+                                        withContext(Dispatchers.Main) {
+                                            extractedCount = count
+                                            status = if (count > 0) {
+                                                val msg = "Extracted $count game file(s)"
+                                                if (hasGog) "$msg \u2014 GOG audio detected"
+                                                else msg
+                                            } else "No game files extracted"
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.e("DXX-GogImport", "Extraction failed", e)
+                                        withContext(Dispatchers.Main) {
+                                            status = "Extract error: ${e.message}"
+                                        }
+                                    }
+                                }
+                                processing = false
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Extract to \u201c${setDir.name}\u201d", fontSize = 13.sp)
+                    }
+                }
+
+                // Done button
+                if (extractedCount > 0) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            tempPath?.let { File(it).delete() }
+                            cleanupTmpDir(filesDir)
+                            onImported()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Done", fontSize = 13.sp)
+                    }
+                }
+
+                // Progress indicator
+                if (processing) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (progressFile.isNotEmpty()) {
+                        Text(progressFile, fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    LinearProgressIndicator(
+                        progress = { progressPct },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+    )
+}
+
 /* ── BIN/CUE disc import dialog ──────────────────────────────────────────── */
 
 /**
@@ -2887,11 +3193,30 @@ private fun DiscImportDialog(
                                                         setDir.absolutePath
                                                     )
                                                 }
+                                                // SOW decompression: scan for .sow files and extract them
+                                                var sowExtracted = 0
+                                                if (extracted > 0) {
+                                                    val sowFiles = DiscImportBridge.scanSowFiles(setDir.absolutePath)
+                                                    if (sowFiles != null && sowFiles.isNotEmpty()) {
+                                                        withContext(Dispatchers.Main) {
+                                                            status = "Decompressing ${sowFiles.size} .sow archive(s)\u2026"
+                                                        }
+                                                        for (sow in sowFiles) {
+                                                            sowExtracted += DiscImportBridge.extractSowFiles(
+                                                                sow, setDir.absolutePath, null
+                                                            ).coerceAtLeast(0)
+                                                        }
+                                                    }
+                                                }
                                                 withContext(Dispatchers.Main) {
-                                                    dataExtracted = extracted
-                                                    status = if (extracted > 0)
-                                                        "Extracted $extracted game file(s)"
-                                                    else "No game files found on data track"
+                                                    dataExtracted = extracted + sowExtracted
+                                                    status = when {
+                                                        extracted > 0 && sowExtracted > 0 ->
+                                                            "Extracted $extracted file(s) + $sowExtracted from .sow archives"
+                                                        extracted > 0 ->
+                                                            "Extracted $extracted game file(s)"
+                                                        else -> "No game files found on data track"
+                                                    }
                                                 }
                                             }
                                         } catch (e: Exception) {
