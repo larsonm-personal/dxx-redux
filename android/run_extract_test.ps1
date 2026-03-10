@@ -191,6 +191,69 @@ $spec = Read-Json5 $SpecPath
 $specDir = Split-Path (Resolve-Path $SpecPath) -Parent
 $sourceName = (Split-Path $specDir -Leaf)
 
+# ── Result tracking ──────────────────────────────────────────
+# Track test result in script-scope vars. Exit-Test writes them to the spec file.
+
+$script:testStatus = 'fail'
+$script:testFailureStep = 'unknown'
+$script:testLevel = $null
+$script:testFilesVerified = 0
+$script:testClassConfirmed = $false
+$script:testMode = 'full'
+
+function Write-TestResult {
+    # Persist last_test_result into the spec json5 file.
+    if (-not $SpecPath -or -not (Test-Path $SpecPath)) { return }
+    $text = Get-Content $SpecPath -Raw
+
+    # Remove existing last_test_result block (with optional leading comma/whitespace)
+    $text = [regex]::Replace($text, ',?\s*"last_test_result"\s*:\s*\{[^}]*\}', '')
+
+    # Build replacement block
+    $fs = if ($script:testFailureStep) { "`"$($script:testFailureStep)`"" } else { 'null' }
+    $lv = if ($script:testLevel) { "`"$($script:testLevel)`"" } else { 'null' }
+    $cc = if ($script:testClassConfirmed) { 'true' } else { 'false' }
+    $resultBlock = @"
+,
+    "last_test_result": {
+        "status": "$($script:testStatus)",
+        "failure_step": $fs,
+        "level_reached": $lv,
+        "files_verified": $($script:testFilesVerified),
+        "classification_confirmed": $cc,
+        "test_mode": "$($script:testMode)"
+    }
+"@
+
+    # Insert before final }
+    $text = $text.TrimEnd()
+    if ($text.EndsWith('}')) {
+        $text = $text.Substring(0, $text.Length - 1).TrimEnd() + "`n$resultBlock`n}`n"
+    }
+    Set-Content $SpecPath -Value $text -NoNewline
+}
+
+function Exit-Test {
+    param(
+        [int]$Code,
+        [string]$Status = 'fail',
+        [string]$FailureStep = $null,
+        [string]$Level = $null,
+        [int]$FilesVerified = -1,
+        [bool]$ClassConfirmed = $false,
+        [string]$TestMode = $null
+    )
+    $script:testStatus = $Status
+    $script:testFailureStep = $FailureStep
+    if ($Level) { $script:testLevel = $Level }
+    if ($FilesVerified -ge 0) { $script:testFilesVerified = $FilesVerified }
+    $script:testClassConfirmed = $ClassConfirmed
+    if ($TestMode) { $script:testMode = $TestMode }
+    Write-TestResult
+    Invoke-Cleanup
+    exit $Code
+}
+
 Write-Host ""
 Write-Host "============================================================" -ForegroundColor White
 Write-Host "  EXTRACT REGRESSION TEST" -ForegroundColor White
@@ -214,7 +277,7 @@ if ($spec.source_type -eq 'cd') {
     # Some CDs organize into subdirs (d1data, d2data)
     if (-not (Test-Path $extractedDir)) {
         Write-Error "No data_tracks/ directory found at $specDir. Run extract_all_cds.ps1 first."
-        exit 1
+        Exit-Test 1 'fail' 'source_missing'
     }
 } elseif ($spec.source_type -eq 'gog') {
     # GOG extracted dir is named after the installer (without extension)
@@ -223,7 +286,7 @@ if ($spec.source_type -eq 'cd') {
     $extractedDir = Join-Path $specDir $baseName
     if (-not (Test-Path $extractedDir)) {
         Write-Error "No extracted directory found at $extractedDir. Run extract_all_gog.ps1 first."
-        exit 1
+        Exit-Test 1 'fail' 'source_missing'
     }
 }
 
@@ -252,7 +315,7 @@ Write-Status "Found $($filesToPush.Count) game files to push from $extractedDir"
 
 if ($filesToPush.Count -eq 0) {
     Write-Status "FAIL: No game files found to push" 'Red'
-    exit 1
+    Exit-Test 1 'fail' 'file_push_failed'
 }
 
 # ── Compute demo set hashes for canary check ─────────────────
@@ -289,7 +352,7 @@ Write-Status "Checking emulator..."
 $devices = Adb -CmdArgs 'devices'
 if ($devices -notmatch 'emulator-\d+\s+device') {
     Write-Status "FAIL: No running emulator found" 'Red'
-    exit 1
+    Exit-Test 1 'fail' 'emulator_offline'
 }
 Write-Status "Emulator online" 'Green'
 
@@ -341,7 +404,7 @@ Write-Status "Cleaning filesDir root of game files..."
 $filesDir = "/data/data/$PACKAGE/files"
 $rootListing = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'ls', "$filesDir/")
 foreach ($rf in ($rootListing -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ })) {
-    $ext = [System.IO.Path]::GetExtension($rf).ToLower()
+    try { $ext = [System.IO.Path]::GetExtension($rf).ToLower() } catch { continue }
     if ($GAME_EXTENSIONS -contains $ext) {
         Write-Status "  Removing stale root file: $rf"
         Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', "$filesDir/$rf") | Out-Null
@@ -376,13 +439,13 @@ Write-Status "Canary check: verifying device is clean..."
 $state = Get-SetupIntrospection
 if (-not $state) {
     Write-Status "FAIL: Could not get setup introspection (app may not be running)" 'Red'
-    exit 1
+    Exit-Test 1 'fail' 'canary_failed'
 }
 
 # Verify active set is our test set
 if ($state.active_set -ne $TEST_SET) {
     Write-Status "FAIL: Active set is '$($state.active_set)' instead of '$TEST_SET'" 'Red'
-    exit 1
+    Exit-Test 1 'fail' 'canary_failed'
 }
 
 # Verify set is empty
@@ -395,7 +458,7 @@ if ($setFileCount -gt 0) {
     }
     if (($gameFilesInSet | Measure-Object).Count -gt 0) {
         Write-Status "FAIL: Canary check - test set still has game files after clear: $($gameFilesInSet -join ', ')" 'Red'
-        exit 1
+        Exit-Test 1 'fail' 'canary_failed'
     }
 }
 
@@ -407,7 +470,7 @@ if ($state.can_launch) {
     Write-Status "  This means game files are leaking from somewhere." 'Red'
     Write-Status "  Active set: $($state.active_set), set_files: $($state.set_files -join ', ')" 'Red'
     Write-Status "  files_on_disk: $($state.files_on_disk -join ', ')" 'Red'
-    exit 1
+    Exit-Test 1 'fail' 'canary_failed'
 }
 
 Write-Status "Canary PASSED - device is clean, game cannot launch" 'Green'
@@ -433,7 +496,7 @@ foreach ($file in $filesToPush) {
 
 if ($pushErrors -gt 0) {
     Write-Status "FAIL: $pushErrors file(s) failed to push" 'Red'
-    exit 1
+    Exit-Test 1 'fail' 'file_push_failed'
 }
 Write-Status "Pushed $pushCount files" 'Green'
 
@@ -452,7 +515,7 @@ Write-Status "Verifying files on device..."
 $state = Get-SetupIntrospection
 if (-not $state) {
     Write-Status "FAIL: Could not get setup introspection (app may not be running)" 'Red'
-    exit 1
+    Exit-Test 1 'fail' 'files_missing'
 }
 $remoteFiles = @($state.set_files | Where-Object { $_ })
 
@@ -471,9 +534,11 @@ foreach ($ef in $expectedFiles) {
 if ($missingFiles.Count -gt 0) {
     Write-Status "FAIL: Missing expected files: $($missingFiles -join ', ')" 'Red'
     Write-Status "  Files in set: $($remoteFiles -join ', ')" 'Yellow'
-    exit 1
+    $script:testFilesVerified = $expectedFiles.Count - $missingFiles.Count
+    Exit-Test 1 'fail' 'files_missing'
 }
 Write-Status "All $($expectedFiles.Count) expected files present (of $($remoteFiles.Count) total)" 'Green'
+$script:testFilesVerified = $expectedFiles.Count
 
 # ── Step 6: Anti-demo-set canary — verify file identity ──────
 # Hash signature game files on device and compare against demo set hashes.
@@ -540,7 +605,7 @@ if (-not $canLaunch) {
     if (-not $KeepFiles) {
         Send-SetupCommand 'clear_set' -Name $TEST_SET
     }
-    exit 0
+    Exit-Test 0 'pass' -TestMode 'file_only' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
 }
 
 if ($SkipLaunch) {
@@ -548,7 +613,7 @@ if ($SkipLaunch) {
     if (-not $KeepFiles) {
         Send-SetupCommand 'clear_set' -Name $TEST_SET
     }
-    exit 0
+    Exit-Test 0 'pass' -TestMode 'file_only' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
 }
 
 # Skip launch if the game says it can't launch (missing required files)
@@ -557,7 +622,7 @@ if (-not $state.can_launch) {
     if (-not $KeepFiles) {
         Send-SetupCommand 'clear_set' -Name $TEST_SET
     }
-    exit 0
+    Exit-Test 0 'skip' 'not_ready' -TestMode 'file_only' -FilesVerified $expectedFiles.Count
 }
 
 # ── Step 8: Launch game ──────────────────────────────────────
@@ -604,7 +669,7 @@ for ($i = 0; $i -lt 15; $i++) {
         if (-not $procCheck -or $procCheck -notmatch '^\d+') {
             Write-Status "FAIL: Game process died (crashed on startup?)" 'Red'
             Write-Status "  Classification: $($spec.classification), game: $($spec.game)" 'Yellow'
-            exit 1
+            Exit-Test 1 'fail' 'crash' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
         }
     }
     # Not at menu yet — press Escape then Enter to dismiss title/demo/movie screens
@@ -621,7 +686,7 @@ for ($i = 0; $i -lt 15; $i++) {
 if (-not $menuReached) {
     Write-Status "FAIL: Game did not reach menu state within 30s" 'Red'
     Write-Status "  screen_mode=$($gi.screen_mode), menu present=$($null -ne $gi.menu)" 'Yellow'
-    exit 1
+    Exit-Test 1 'fail' 'launch_timeout' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
 }
 
 Write-Status "Game reached menu: '$($gi.menu.title)'" 'Green'
@@ -654,7 +719,7 @@ while ($navAttempts -lt $maxNav) {
             $procCheck = Adb -CmdArgs @('shell', 'pidof', $PACKAGE)
             if (-not $procCheck -or $procCheck -notmatch '^\d+') {
                 Write-Status "FAIL: Game process died during navigation" 'Red'
-                exit 1
+                Exit-Test 1 'fail' 'crash' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
             }
         }
         Write-Status "  [$navAttempts] game loading/non-responsive (${loadingCount}x)" 'Gray'
@@ -713,6 +778,23 @@ if ($inGame) {
         Write-Status "PASS (level mismatch): In-game, level='$($gi.current_level_name)' expected='$($spec.expected_level1)'" 'Yellow'
         Write-Status "  (The game loaded - level name may need updating in spec)" 'Yellow'
     }
+
+    # ── Redbook audio check (informational) ──
+    $hasAudioFiles = ($filesToPush | Where-Object { $_.Extension.ToLower() -in @('.gog', '.inst') }).Count -ge 2
+    if ($hasAudioFiles -and $gi.redbook) {
+        if ($gi.redbook.enabled) {
+            Write-Status "  Redbook: enabled, $($gi.redbook.num_tracks) tracks, status=$($gi.redbook.play_status)" 'Cyan'
+        } else {
+            Write-Status "  Redbook: audio files pushed but not enabled (MusicType may not be set)" 'Yellow'
+        }
+    } elseif ($gi.redbook -and $gi.redbook.enabled) {
+        Write-Status "  Redbook: enabled (audio source present on device)" 'Cyan'
+    }
+
+    # ── Movie check (informational) ──
+    if ($gi.movie -and $gi.movie.last_name) {
+        Write-Status "  Movie: last='$($gi.movie.last_name)' result=$($gi.movie.last_result)" 'Cyan'
+    }
 } else {
     Write-Status "FAIL: Game not in-game state after $maxNav navigation attempts" 'Red'
     Write-Status "  screen_mode=$($gi.screen_mode), in_game=$($gi.in_game)" 'Yellow'
@@ -724,7 +806,7 @@ if ($inGame) {
             Write-Status "    [$($item.index)] type=$($item.type) text='$($item.text)'" 'Yellow'
         }
     }
-    exit 1
+    Exit-Test 1 'fail' 'menu_timeout' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
 }
 
 # ── Cleanup ──────────────────────────────────────────────────
@@ -748,5 +830,5 @@ Write-Host "  RESULT: PASS" -ForegroundColor Green
 Write-Host "  Source: $sourceName ($($spec.classification))" -ForegroundColor Green
 Write-Host "  Level: $($gi.current_level_name)" -ForegroundColor Green
 Write-Host "============================================================" -ForegroundColor Green
-Invoke-Cleanup
-exit 0
+$levelName = if ($gi.current_level_name) { $gi.current_level_name } else { $null }
+Exit-Test 0 'pass' -Level $levelName -FilesVerified $expectedFiles.Count -ClassConfirmed $true

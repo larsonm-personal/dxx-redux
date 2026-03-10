@@ -80,6 +80,14 @@ $ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
 $HEALTH_SCRIPT = Join-Path $SCRIPT_DIR 'emu_health.ps1'
 $PACKAGE = 'com.dxxredux.app'
 
+function Read-Json5 {
+    param([string]$Path)
+    $raw = Get-Content $Path -Raw
+    $raw = [regex]::Replace($raw, '//.*', '')
+    $raw = [regex]::Replace($raw, ',\s*([}\]])', '$1')
+    return ($raw | ConvertFrom-Json)
+}
+
 function Adb-Quick {
     # Quick adb call with timeout, used only for health checks in the orchestrator.
     param([string[]]$CmdArgs, [int]$Timeout = 10)
@@ -152,6 +160,13 @@ foreach ($specPath in $specs) {
 
     Write-Host "─── [$($results.Count + 1)/$($specs.Count)] $sourceName ───" -ForegroundColor Cyan
 
+    # Read prior test result from spec file (if any)
+    $priorStatus = $null
+    try {
+        $specData = Read-Json5 $specPath
+        if ($specData.last_test_result) { $priorStatus = $specData.last_test_result.status }
+    } catch {}
+
     # Pre-flight: verify emulator is healthy before each test
     if (-not (Test-EmulatorReady)) {
         if (-not (Repair-Emulator)) {
@@ -187,11 +202,22 @@ foreach ($specPath in $specs) {
     $elapsed = (Get-Date) - $testStart
     $status = if ($exitCode -eq 0) { 'PASS' } else { 'FAIL' }
 
+    # Read new result from spec file (written by Exit-Test)
+    $newStatus = $null
+    try {
+        $specData = Read-Json5 $specPath
+        if ($specData.last_test_result) { $newStatus = $specData.last_test_result.status }
+    } catch {}
+    $changed = ($priorStatus -ne $newStatus)
+
     $results += [PSCustomObject]@{
         Source   = $sourceName
         Status   = $status
         Time     = '{0:mm\:ss}' -f $elapsed
         ExitCode = $exitCode
+        Prior    = if ($priorStatus) { $priorStatus } else { '-' }
+        Saved    = if ($newStatus) { $newStatus } else { '-' }
+        Changed  = if ($changed -and $priorStatus) { '*' } else { '' }
     }
 
     if ($status -eq 'FAIL') {
@@ -209,15 +235,19 @@ foreach ($specPath in $specs) {
 
 $totalElapsed = (Get-Date) - $startTime
 $passed = @($results | Where-Object { $_.Status -eq 'PASS' }).Count
+$changedCount = @($results | Where-Object { $_.Changed -eq '*' }).Count
 
 Write-Host ""
 Write-Host "============================================================" -ForegroundColor White
 Write-Host "  RESULTS: $passed/$($results.Count) passed, $failures failed" -ForegroundColor $(if ($failures -eq 0) { 'Green' } else { 'Red' })
+if ($changedCount -gt 0) {
+    Write-Host "  Spec results changed: $changedCount" -ForegroundColor Yellow
+}
 Write-Host "  Total time: $( '{0:hh\:mm\:ss}' -f $totalElapsed )" -ForegroundColor White
 Write-Host "============================================================" -ForegroundColor White
 Write-Host ""
 
-$results | Format-Table Source, Status, Time, ExitCode -AutoSize
+$results | Format-Table Source, Status, Prior, Saved, Changed, Time, ExitCode -AutoSize
 
 # Final cleanup: ensure app is stopped
 Adb-Quick -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
