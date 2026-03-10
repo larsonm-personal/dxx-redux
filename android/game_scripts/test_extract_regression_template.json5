@@ -1,0 +1,50 @@
+// Extraction regression: verify game loads to expected level.
+// Used by run_extract_test.ps1 when running with the automation engine
+// instead of raw keyevent presses.
+//
+// Template parameters (substituted by the test runner):
+//   MISSION_NAME  - expected mission name for "select" action
+//   LEVEL_NAME    - expected level name for assertion
+//
+// This script assumes the game has been launched from SetupActivity
+// and will reach the pilot select screen first.
+[
+    {"action": "log", "message": "=== Extraction regression test ==="},
+
+    // Wait for pilot select
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 15000},
+    {"action": "select", "text": "player", "post_delay_ms": 2000},
+
+    // Main menu - start new game
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "select", "text": "New game", "post_delay_ms": 1000},
+
+    // Mission select
+    {"action": "wait_ms", "ms": 1000},
+    {"action": "select", "text": "MISSION_NAME", "post_delay_ms": 1500},
+    // Accept default level 1
+    {"action": "wait_ms", "ms": 500},
+    {"action": "select", "text": "Ok", "post_delay_ms": 1500},
+    // Difficulty
+    {"action": "wait_ms", "ms": 500},
+    {"action": "select", "text": "Rookie", "post_delay_ms": 1500},
+
+    // Skip briefing/movie
+    {"action": "key", "key": "escape", "post_delay_ms": 1000},
+    {"action": "key", "key": "escape", "post_delay_ms": 1000},
+
+    // Wait for game to load
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 15000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+
+    // Verify level loaded correctly
+    {"action": "assert", "expect": {
+        "in_game": "true",
+        "screen_mode": "game",
+        "current_level_num": "1",
+        "current_level_name": "LEVEL_NAME"
+    }},
+
+    {"action": "log", "message": "=== Extraction regression test -- PASS ==="},
+    {"action": "introspect"}
+]

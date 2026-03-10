@@ -295,18 +295,23 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 - Key discoveries: Java `File.listFiles()` can't see files created via `adb shell cat` redirect until app restart; `sha1sum` via `sh -c` hangs (args split); direct `adb shell run-as sha1sum` works
 - Verified: Full PASS on Descent II (USA) CD -- `Ahayweh Gate` level loaded
 
-### 3a.4: Orchestration script
+### 3a.4: Orchestration script ✅ DONE
 - `android/run_all_extract_tests.ps1`
-- Recursively finds all `extract_regression.json5` in `game_data/`
-- Runs each through 3a.3
-- Summary table at end: source name, PASS/FAIL, timing
+- Recursively finds all `*_regression.json5` specs in `game_data/`
+- Runs each through `run_extract_test.ps1` (3a.3)
+- Parameters: `-Filter` (wildcard on source dir name), `-SkipLaunch`, `-MaxFailures`, `-SpecPaths`
+- Uses hashtable splatting to correctly pass `-SkipLaunch` switch to child script
+- Summary table: source name, PASS/FAIL, timing, exit code
 - Exit code = number of failures
+- Resets `$ErrorActionPreference` after each child invocation (child may change it)
+- Verified: 2/2 PASS on Descent II (Europe) CDs with full launch in 2:28
 
-### 3a.5: Automation script template
+### 3a.5: Automation script template ✅ DONE
+- `android/game_scripts/test_extract_regression_template.json5`
 - Parameterized JSON5 automation script for in-game verification
-- Template in `android/game_scripts/test_extract_regression.json5`
-- Parameters substituted by the test runner: mission name, level name
-- Actions: wait for menu → select mission → skip briefing → assert in_game + level
+- Template parameters: `MISSION_NAME`, `LEVEL_NAME` (substituted by test runner)
+- Actions: wait for pilot select → new game → select mission → Ok → Rookie → skip briefing → assert in_game + level
+- Note: Currently exists as a future enhancement path — `run_extract_test.ps1` uses direct adb keyevent presses for menu navigation, which is already working reliably
 
 ### 3a.6: Full coverage run
 - Run 3a.4 against all 29 CDs + 4 GOG installers (33 total)
