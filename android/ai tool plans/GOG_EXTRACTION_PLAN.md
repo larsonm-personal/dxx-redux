@@ -107,20 +107,160 @@ game_data/extract_all_cds.ps1                    — clean re-extract on -Force
 
 ---
 
-## Phase 3: Android Integration (future, not this PR)
-- JNI bridge for InnoSetup + pkg extraction
-- SetupActivity .exe/.pkg detection dialog
-- BIN/CUE import prompt for D2 GOG
-- File set creation from extracted assets
+## Phase 3: Android Integration
 
-## phase 3a: verify android integration
-- scripts to clear the emulator's game data out (or start fresh), then copy a single bin+cue set, or a single gog installer (to an out-of-app location), and then pick that file in the file add menus, and choose to do a full import (bring game files into the default set, and extract the internal CD image from the gog d2 installers, but leave CD images in place for redbook audio purposes)
-- after doing the full import, ensure the game starts, select player, and then select mission (and ensure the mission's name matches the expected one, either descent or descent 2 (those aren't the accurate names, but whatever the names for those are)), and ensure level 1 loads and the final introspection shows in-level
-- there should be a script for a CD image, and another for a gog installer, and then an overall orchestration script. there should be a json test input file for each CD image or gog installer showing the expected mission name and level 1 name for the regression test
-- there should be some kind of parameterized (for filename, mission name, etc.) json5 regression test file like the other emulator regression test files
-- 
+### Known bugs to fix first
 
-## Phase 4: Regression Testing (future, not this PR)
-- Introspection extensions for file set contents
-- Emulator-based regression script
-- Automation scripts for each installer type
+1. **DiscImportDialog extracts to wrong directory** (SetupActivity.kt L2880)
+   - `extractIsoFiles()` passes `filesDir.absolutePath` instead of `setDir`
+   - Extracted game files land in root app dir, invisible to readiness checks which look in `setDir`
+   - Fix: pass `setDir.absolutePath` instead
+
+2. **`.gog`/`.inst` import path inconsistency**
+   - File picker dispatches them through `importFile()` which correctly writes to `setDir` (L1420)
+   - But `AudioSourceManager.hasLegacyGog()` (L57-61) checks `filesDir` root for the pair
+   - `hasLegacyGog()` needs to also check `setDir`, or the migration needs to handle this
+   - Fix: update `hasLegacyGog()` to accept/check setDir
+
+3. **Setup introspection `files_on_disk` reports wrong directory** (SetupActivity.kt L345)
+   - Lists `filesDir` (root app dir) not the active set directory
+   - Should list set dir contents (or both)
+   - Fix: add `set_files` field listing `setDir` contents
+
+### 3.1: Fix DiscImportDialog extraction target — DONE ✓
+- Change `filesDir.absolutePath` to `setDir.absolutePath` at L2880
+- Thread `setDir` into DiscImportDialog (it currently receives `filesDir`)
+- After extraction, trigger manifest rehash for newly extracted files
+
+### 3.2: Fix `.gog`/`.inst` legacy check — DONE ✓
+- Update `hasLegacyGog()` to accept optional setDir parameter
+- Check both filesDir (legacy) and setDir (new) for the .gog/.inst pair
+- This ensures both old installs and new imports work
+
+### 3.3: Fix setup introspection `files_on_disk` — DONE ✓
+- Add `set_files` field to setup introspection JSON that lists active set directory contents
+- Keep existing `files_on_disk` for backwards compatibility
+- Add `active_set_path` field showing the current set directory path
+
+### 3.4: GOG JNI bridge (gog_import_jni.c)
+- New JNI file wrapping `inno_reader.h` and `pkg_reader.h`
+- Three native functions:
+  - `detectGogFormat(path)` → "innosetup" | "pkg" | "unknown"
+  - `listGogFiles(path)` → array of {name, size}
+  - `extractGogFiles(path, outputDir, progressCallback)` → count or -1
+- Pattern after existing `disc_import_jni.c`
+- LZMA SDK + zlib already linked in Android CMakeLists.txt
+
+### 3.5: GogImportBridge.kt
+- Kotlin JNI wrapper (pattern: DiscImportBridge.kt)
+- Data classes: `GogFileInfo(name, size)`
+- Native method stubs matching 3.4
+
+### 3.6: GOG import dialog in SetupActivity
+- When file picker receives `.exe`/`.pkg` with GOG installer signatures:
+  - Show confirmation dialog: "GOG Installer detected — extract game files?"
+  - Set choice prompt (new set or existing)
+  - Extract game assets to chosen set via GogImportBridge
+  - For D2 installers: detect embedded .gog/.inst and register as audio source
+  - Progress bar during extraction
+  - Trigger manifest rehash + readiness recheck on completion
+
+### 3.7: Enhanced BIN/CUE import dialog
+- When BIN/CUE selected, existing DiscImportDialog handles extraction
+- Add option: "Extract game files to set" (in addition to audio-only)
+- Set choice prompt for game file extraction
+- SOW decompression if .sow files found in extracted data
+
+### 3.8: Broadcast commands for headless testing
+- Add SETUP_COMMAND handlers for automated testing without GUI:
+  - `create_set` — create named file set (~5 lines)
+  - `switch_set` — switch active set (~5 lines)  
+  - `clear_set` — delete all files in a set (~5 lines)
+  - `import_gog` — extract GOG installer to active set (~30 lines)
+  - `import_disc` — extract disc image to active set (~30 lines)
+  - `import_files` — copy individual files to active set (~15 lines)
+- Pattern: existing `launch`/`patch_pilots` cases in commandReceiver
+
+### 3.9: Enhanced setup introspection
+- Add to `writeIntrospectJson()`:
+  - `set_files` — sorted filenames in active set directory
+  - `active_set_path` — absolute path to active set dir
+  - `audio_sources` — registered audio source labels + paths
+  - `sets` — list of all set names with file counts
+
+---
+
+## Phase 3a: Verification & Regression Testing
+
+### 3a.1: Regression spec format (`extract_regression.json5`)
+- One file per CD image folder and per GOG installer
+- Located next to the source files (creates skeleton dirs in git)
+- Fields:
+  ```json5
+  {
+    source_type: "cd" | "gog",
+    source_files: [{ name: "foo.cue", sha256: "..." }, ...],
+    game: "d1" | "d2" | "d1d2",
+    expected_mission: "Descent: First Strike" | "Descent 2: Counterstrike!",
+    expected_level1: "Lunar Outpost" | ...,
+    expected_files: ["descent2.hog", "descent2.ham", ...],  // minimum required
+    audio_tracks: 8,  // expected audio track count, 0 if none
+  }
+  ```
+
+### 3a.2: Generate regression specs
+- Script `game_data/generate_regression_specs.ps1`
+- Walks `game_data/CD images/` and `game_data/gog installers/`
+- Hashes source files, looks up `known_discs.json5` for game type
+- Maps game type → mission name table:
+  - d2 full → "Descent 2: Counterstrike!"
+  - d1 full → "Descent: First Strike"
+  - d2 demo → "Descent 2 Demo"
+  - d2 oem → "D2 Destination:Quartzon"
+  - d1 demo → "Descent Demo"
+  - d1 oem → "Destination Saturn"
+- Writes one `extract_regression.json5` per source
+
+### 3a.3: Single-source test script
+- `android/run_extract_test.ps1 <path-to-extract_regression.json5>`
+- Steps:
+  1. Clear active set on emulator (broadcast `clear_set`)
+  2. Push source files to `/data/local/tmp/` via adb
+  3. Broadcast `import_disc` or `import_gog` (based on `source_type`)
+  4. Wait, then introspect setup state
+  5. Verify `set_files` contains `expected_files`
+  6. Broadcast `launch`
+  7. Wait for game main menu
+  8. Select mission matching `expected_mission`
+  9. Skip briefing, wait for level 1
+  10. Introspect: verify `in_game`, `current_level_name` matches
+  11. Report PASS/FAIL
+
+### 3a.4: Orchestration script
+- `android/run_all_extract_tests.ps1`
+- Recursively finds all `extract_regression.json5` in `game_data/`
+- Runs each through 3a.3
+- Summary table at end: source name, PASS/FAIL, timing
+- Exit code = number of failures
+
+### 3a.5: Automation script template
+- Parameterized JSON5 automation script for in-game verification
+- Template in `android/game_scripts/test_extract_regression.json5`
+- Parameters substituted by the test runner: mission name, level name
+- Actions: wait for menu → select mission → skip briefing → assert in_game + level
+
+### 3a.6: Full coverage run
+- Run 3a.4 against all 29 CDs + 4 GOG installers (33 total)
+- Investigate failures, categorize:
+  - Demo CDs (different mission names, may need special handling)
+  - Expansion-only CDs (Vertigo, Quartzon — no base game files)
+  - Multi-game CDs (Definitive Collection — both D1 and D2)
+- Document known limitations in results
+
+---
+
+## Phase 4: Polish & Extended Testing (future)
+- Multi-set regression (create set, import, switch, verify isolation)
+- Audio playback verification (Redbook tracks playing in-game)
+- SAF leave-in-place import testing
+- Performance profiling of extraction on device

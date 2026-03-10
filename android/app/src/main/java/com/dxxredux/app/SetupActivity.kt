@@ -341,9 +341,14 @@ class SetupActivity : ComponentActivity() {
             root.put("can_launch", d2Ready || d1Ready)
             root.put("active_set", activeSet)
 
-            // All files on disk
+            // All files on disk (legacy: root app dir)
             val allFiles = dir.listFiles()?.map { it.name }?.sorted() ?: emptyList()
             root.put("files_on_disk", JSONArray(allFiles))
+
+            // Active set directory contents and path
+            val setFiles = setDir.listFiles()?.map { it.name }?.sorted() ?: emptyList()
+            root.put("set_files", JSONArray(setFiles))
+            root.put("active_set_path", setDir.absolutePath)
 
             // D2 section
             val d2 = JSONObject()
@@ -1145,6 +1150,7 @@ private fun SetupScreen(
                         cueUri = discImportCueUri!!,
                         binUris = discImportBins,
                         filesDir = filesDir,
+                        setDir = setDir,
                         context = context,
                         onImported = {
                             discImportCueUri = null
@@ -2745,6 +2751,7 @@ private fun DiscImportDialog(
     cueUri: Uri,
     binUris: List<Pair<String, Uri>>,
     filesDir: File,
+    setDir: File,
     context: Context,
     onImported: () -> Unit,
     onDismiss: () -> Unit
@@ -2877,7 +2884,7 @@ private fun DiscImportDialog(
                                                         it.fd,
                                                         dataTrack.startSector,
                                                         dataTrack.numSectors,
-                                                        filesDir.absolutePath
+                                                        setDir.absolutePath
                                                     )
                                                 }
                                                 withContext(Dispatchers.Main) {

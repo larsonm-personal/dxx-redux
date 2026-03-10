@@ -54,7 +54,13 @@ class AudioSourceManager(private val filesDir: File) {
         sources.filter { it.enabled }.sortedBy { it.order }
 
     /** Check if the legacy GOG pair exists (no explicit source registration needed) */
-    fun hasLegacyGog(): Boolean {
+    fun hasLegacyGog(setDir: File? = null): Boolean {
+        // Check setDir first (new imports), then filesDir (legacy installs)
+        if (setDir != null) {
+            val gog = File(setDir, "descent_ii.gog")
+            val inst = File(setDir, "descent_ii.inst")
+            if (gog.exists() && inst.exists()) return true
+        }
         val gog = File(filesDir, "descent_ii.gog")
         val inst = File(filesDir, "descent_ii.inst")
         return gog.exists() && inst.exists()
