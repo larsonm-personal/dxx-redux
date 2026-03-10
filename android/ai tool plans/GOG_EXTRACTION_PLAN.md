@@ -367,13 +367,192 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 - D2 OEM/Quartzon and Vertigo sets are expansion-only — need base game files to launch
 - D2 demo (3-Level Preview) may use incompatible demo-specific data format
 
-### phase 4: direct .sow import
-- allow importing a .sow and populating a file set with it. this is the same extraction code paths, but skipping to the sow extract if a user happens to present one of those files
-- test: using *just* the d2 sow from one of the d2 CDs, boot the game and get into level 1
-- think through and expand this plan before starting, then do it
+---
 
-### phase 5: a deeper regression test for a single installer
-- the D2 gog windows installer will be the most-used file, probably. verify it with more introspection than the others
-- Audio playback verification (Redbook tracks playing in-game. skip forward and back tracks)
-- ensure the opening video and briefing videos play (may need additional introspection). when the files aren't present or don't load, the videos are silently skipped, so this is important
-- think through and expand this plan before starting, then do it
+## Phase 4: Direct .sow Import — DONE
+
+**Goal:** Allow importing a standalone `.sow` file and populating a file set with it, using the existing SOW extraction pipeline but triggered directly (no disc image step).
+
+**Result:** All 3 sub-steps complete. `import_sow` broadcast extracts 16 files from descent2.sow into a file set. Setup introspection confirms `d2.ready: true` with all 9 required files found. Also fixed `create_set` handler to not crash on duplicate set names.
+
+### 4.1: Add `import_sow` broadcast handler — *parallel with 4.2*
+- In `SetupActivity.kt` (~line 133), add handler following the `import_gog` pattern
+- Background thread, calls `DiscImportBridge.extractSowFiles(path, setDir.absolutePath, null)`
+- All JNI/C plumbing already exists: `nativeExtractSowFiles()` in `jni_disc_import.c` (line 363), `sow_extract()` in `sow_extract.h`
+- Extension filter already includes hog, ham, pig, s11, s22, mn2, mvl, dxa, cfg, txt, 256
+
+### 4.2: Update file picker for .sow recognition — *parallel with 4.1*
+- When user picks a `.sow` file in the SetupActivity UI, detect extension and route to SOW extraction dialog
+- Similar to how `.exe`/`.pkg` detection was added for GOG import in phase 3.6
+- Show extraction progress + result count, then trigger readiness refresh
+
+### 4.3: End-to-end verification — *depends on 4.1*
+- Extract `descent2.sow` from one of the D2 CD data_tracks (e.g., Descent II (USA) has `d2data/descent2.sow`)
+- `adb push descent2.sow /data/local/tmp/`
+- `adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_sow --es path /data/local/tmp/descent2.sow`
+- Introspect setup → verify files extracted (should include descent2.hog, descent2.ham, all .pig files)
+- Launch game → verify it reaches "Ahayweh Gate" (level 1)
+
+#### Relevant files
+- `SetupActivity.kt` — add `import_sow` handler at ~line 133
+- `DiscImportBridge.kt` — already has `extractSowFiles()`, `scanSowFiles()`
+- `jni_disc_import.c` — already has `nativeExtractSowFiles()` at line 363
+- `sow_extract.h` — `sow_extract()` signature
+
+#### Verification
+- Build APK, deploy to emulator
+- Broadcast `import_sow` with a standalone .sow path → introspect → confirm files appear
+- Launch game → introspect → confirm `current_level_name == "Ahayweh Gate"`
+
+---
+
+## Phase 5: Deep D2 GOG Regression (Audio + Movies)
+
+**Goal:** Verify the most common installer (D2 GOG) beyond "can it boot" — confirm audio tracks play and intro movies aren't silently skipped. Requires adding new introspection fields.
+
+### 5.1: Add Redbook audio fields to game introspection — *no dependencies*
+- In `game_introspect.cpp`, add `extern "C"` declarations for existing public functions from `rbaudio.h`:
+  - `RBAEnabled()` → returns `s_initialised`
+  - `RBAGetTrackNum()` → returns `s_current_track` (1-based)
+  - `RBAGetNumberOfTracks()` → returns `s_num_tracks`
+  - `RBAPeekPlayStatus()` → 1=playing, -1=paused, 0=stopped
+- Serialize as `"redbook": { "enabled": bool, "track": int, "num_tracks": int, "status": "playing"|"paused"|"stopped" }`
+- All accessor functions already exist in `rbaudio_bin.c` (~lines 890-1160) — no new C accessor code needed
+
+### 5.2: Add movie playback fields to game introspection — *parallel with 5.1*
+- In `movie.c`, add two globals:
+  - `char g_current_movie_name[FILENAME_LEN]` — set at top of `RunMovie()` (~line 413) before `PHYSFSRWOPS_openRead()`, cleared at function exit
+  - `int g_last_movie_result` — set to return value of `RunMovie()` (`MOVIE_PLAYED_FULL`, `MOVIE_ABORTED`, `MOVIE_NOT_PLAYED`)
+- In `game_introspect.cpp`, declare these as `extern` and serialize as: `"movie": { "current": "pla.mve", "last_played": "pla.mve", "last_result": "played"|"aborted"|"not_played"|"none" }`
+- This detects the "silently skipped" case: if `last_result == "not_played"`, the movie file was missing or couldn't open
+- The movie filename is already known in `RunMovie()` before the file handle is opened — just needs to be stored globally
+
+### 5.3: Audio verification test additions — *depends on 5.1*
+- Extend `run_extract_test.ps1` or create a dedicated deep-test script
+- After game boots to level 1: introspect → verify `redbook.enabled == true`, `redbook.num_tracks > 0`
+- D2 GOG should show audio tracks from the embedded `.gog` file (GOG audio uses `audio_playlist.json` generated by `AudioSourceManager.writePlaylist()`)
+- If Redbook controls are accessible via keyevent (check keybindings for track skip), test forward/back and verify `redbook.track` changes
+- If no key controls for Redbook skip in touch mode, at minimum verify `redbook.status` and `redbook.num_tracks`
+
+### 5.4: Movie verification test additions — *depends on 5.2*
+- During game startup sequence (after briefing screens), poll introspection to catch `screen_mode == "movie"` and `movie.current` non-empty
+- For D2 GOG full version, the intro movie `pla.mve` should play before level 1 (from `intro_movie[]` table in `gameseq.c` ~line 1710)
+- After reaching level 1: check `movie.last_result != "not_played"` to confirm the movie was actually shown
+- Movie library files needed: `INTRO-H.MVL`, `OTHER-H.MVL`, `ROBOTS-H.MVL`, `ROBOTS-L.MVL` — all present in D2 GOG extraction (21 files)
+
+### 5.5: Full deep regression run — *depends on 5.3 + 5.4*
+- Test subject: `setup_descent_2_1.1_(16596).exe`
+- Import via `import_gog` broadcast
+- Verify: file count (21), game boot, level 1 = "Ahayweh Gate", Redbook audio active, intro movie played
+- Document specific introspection snapshot values in the plan results
+
+#### Relevant files
+- `game_introspect.cpp` — add `redbook` + `movie` sections (uses nlohmann/json, pattern: `j["redbook"] = {...}`)
+- `rbaudio.h` — already declares `RBAGetTrackNum()`, `RBAPeekPlayStatus()`, etc.
+- `rbaudio_bin.c` — has all state vars (`s_playing`, `s_paused`, `s_current_track`, `s_num_tracks`), public getters already exist
+- `movie.c` — add `g_current_movie_name`, `g_last_movie_result`; `RunMovie()` at ~line 386
+- `gameseq.c` — `ShowLevelIntro()` at ~line 1710 calls `PlayMovie()` for level intro movies
+- `run_extract_test.ps1` — extend for audio/movie checks
+
+#### Verification
+- Build with introspection changes, deploy to emulator
+- Introspect during movie playback → `movie.current` non-empty
+- Introspect in-game → `redbook.enabled == true`, `redbook.num_tracks > 0`, `redbook.status == "playing"`
+- Verify `movie.last_result != "not_played"` for intro movie
+
+---
+
+## Phase 6: Regression Result Tracking in Spec Files
+
+**Goal:** Persist test pass/fail results directly in the json5 spec files so results are git-trackable, diffs show regressions/fixes, and no timestamps or other noisy fields cause spurious diffs.
+
+### 6.1: Git-track the spec files — *no dependencies, do first*
+- Currently `game_data/` is gitignored (contains large binary media)
+- Add exception to `.gitignore`: `!game_data/**/*_regression.json5`
+- This un-ignores just the small json5 spec files while keeping binaries ignored
+- `git add game_data/**/*_regression.json5` to stage all 33 specs
+
+### 6.2: Define `last_test_result` schema — *parallel with 6.1*
+- Fields (all deterministic, no timestamps):
+  - `status`: `"pass"` | `"fail"` | `"skip"`
+  - `failure_step`: `null` on pass, one of a defined vocabulary on fail/skip
+  - `level_reached`: level name string or `null`
+  - `files_verified`: count of expected_files confirmed present on device
+  - `classification_confirmed`: `true`/`false` — game type matched expected
+  - `test_mode`: `"full"` (with game launch) or `"file_only"`
+- Failure step vocabulary:
+  - `"file_push_failed"` — couldn't push files to device
+  - `"canary_failed"` — empty set canary check failed
+  - `"files_missing"` — expected files not found after push
+  - `"not_ready"` — `d2.ready`/`d1.ready` false after file push
+  - `"launch_timeout"` — game didn't start or reach menu
+  - `"menu_timeout"` — stuck in menus
+  - `"level_mismatch"` — reached game but wrong level/mission
+  - `"crash"` — game process died
+  - `"d1_no_engine"` — D1-only set, no D1 engine on Android
+  - `"expansion_only"` — expansion set, needs base game (skip status)
+
+### 6.3: Add `Write-TestResult` function to `run_extract_test.ps1` — *depends on 6.2*
+- After test completes (pass, fail, or skip), write `last_test_result` to the spec json5 file
+- Implementation: Read file text → if `last_test_result` block exists, regex-replace it; otherwise insert before final `}`
+- Must handle json5 format (comments, trailing commas) — read with `Read-Json5` for validation, write with targeted text replacement
+- Simpler alternative: always strip old `last_test_result` block + trailing `}`, then append new block + `}`
+- The result is written at the end of the test (both success and failure paths)
+
+### 6.4: Update orchestrator `run_all_extract_tests.ps1` — *depends on 6.3*
+- After all tests, print count of specs updated
+- Add note in summary about which specs changed vs stayed same
+- No `-DryRun` needed initially — results are deterministic so re-runs without changes produce no diff
+
+### 6.5: Initial population run — *depends on 6.1-6.4, ideally phases 4+5 done*
+- Run full `run_all_extract_tests.ps1` to populate all 33 specs
+- Expected initial results: 21 pass, 6 skip (expansion-only), 1 skip (D2 demo TBD), ~5 fail (D1 no engine)
+- `git add` + `git commit` the updated specs as baseline
+- Future re-runs that change results will show meaningful git diffs
+
+#### Relevant files
+- `.gitignore` — add `!game_data/**/*_regression.json5`
+- `run_extract_test.ps1` — add `Write-TestResult` function
+- `run_all_extract_tests.ps1` — summary of result updates
+- `generate_regression_specs.ps1` — may need awareness of result fields (preserve on regenerate)
+- All 33 `*_regression.json5` files in `game_data/` subdirectories
+
+#### Verification
+- Run single test → verify spec file has `last_test_result` with correct status
+- Re-run same test → `git diff` shows no changes (deterministic)
+- Introduce deliberate failure (e.g., wrong expected_level1) → `git diff` shows status change
+- `git status` shows json5 files tracked despite `game_data/` being in gitignore
+
+---
+
+## Identified Gaps / Unfinished Work
+
+### D2 Demo (3-Level Preview) — needs investigation, not a full phase
+- Status: FAIL in 3a.6 — game process alive but never reaches menu
+- Engine supports `d2demo.hog` via fallback (`inferno.c:359`: tries `descent2.hog` then `d2demo.hog`)
+- Demo detected by HOG size (2292566), uses `d2demo.ham`, `d2demo.pig`, levels `d2leva-1.sl2`
+- Likely issue: `d2.ready` check in setup introspection may require `descent2.hog` specifically, rejecting `d2demo.hog`. Or test script pushes files that don't include the demo-specific filenames
+- Fix: update `d2.files[]` readiness check to accept `d2demo.hog` as alternative, then re-test
+
+### D1 Engine on Android — out of scope
+- All D1-only tests fail (no d1x-redux binary on Android). Separate project effort.
+
+### import_disc broadcast command — not planned
+- Noted as unimplemented in 3.8. Not needed for current test pipeline.
+
+### Expansion-only sets (Quartzon, Vertigo) — future work
+- 6 D2 OEM + 3 D2 Vertigo sets skip because they need base game files merged. Could be tested later by combining sets.
+
+---
+
+## Dependency Map
+
+```
+Phase 4 (SOW import)          ─── independent, can start immediately
+Phase 5 (deep regression)     ─── independent from phase 4
+  5.1 + 5.2 (introspection)  ─── parallel, no deps
+  5.3 + 5.4 (test scripts)   ─── depend on 5.1 + 5.2
+  5.5 (full run)              ─── depends on 5.3 + 5.4
+Phase 6 (result tracking)     ─── 6.1-6.2 independent; 6.3+ depend on 6.2
+  6.5 (initial run)           ─── best done after all phases complete
+```

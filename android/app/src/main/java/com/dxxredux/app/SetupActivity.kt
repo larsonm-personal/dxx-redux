@@ -87,6 +87,7 @@ class SetupActivity : ComponentActivity() {
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command switch_set --es name "my set"
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command clear_set --es name "default"
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --es path /sdcard/setup_descent2.exe
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_sow --es path /sdcard/descent2.sow
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_files --es path /sdcard/DESCENT2.HOG
     private var gameRunningFlag = false
     private val commandReceiver = object : BroadcastReceiver() {
@@ -113,8 +114,12 @@ class SetupActivity : ComponentActivity() {
                 "create_set" -> {
                     val name = intent.getStringExtra("name") ?: return
                     val fsm = FileSetManager(filesDir)
-                    val dir = fsm.createSet(name)
-                    Log.i("DXX-Setup", "create_set '$name': ${dir.absolutePath}")
+                    try {
+                        val dir = fsm.createSet(name)
+                        Log.i("DXX-Setup", "create_set '$name': ${dir.absolutePath}")
+                    } catch (e: IllegalArgumentException) {
+                        Log.i("DXX-Setup", "create_set '$name': already exists")
+                    }
                 }
                 "switch_set" -> {
                     val name = intent.getStringExtra("name") ?: return
@@ -137,6 +142,15 @@ class SetupActivity : ComponentActivity() {
                         val setDir = fsm.getSetDir(fsm.getActive())
                         val count = GogImportBridge.extractFiles(path, setDir.absolutePath, null)
                         Log.i("DXX-Setup", "import_gog '$path' -> $count file(s) to ${setDir.name}")
+                    }.start()
+                }
+                "import_sow" -> {
+                    val path = intent.getStringExtra("path") ?: return
+                    Thread {
+                        val fsm = FileSetManager(filesDir)
+                        val setDir = fsm.getSetDir(fsm.getActive())
+                        val count = DiscImportBridge.extractSowFiles(path, setDir.absolutePath, null)
+                        Log.i("DXX-Setup", "import_sow '$path' -> $count file(s) to ${setDir.name}")
                     }.start()
                 }
                 "import_files" -> {
@@ -1046,6 +1060,10 @@ private fun SetupScreen(
     var gogImportUri by remember { mutableStateOf<Uri?>(null) }
     var gogImportName by remember { mutableStateOf<String?>(null) }
 
+    // ── SOW archive import state ────────────────────────
+    var sowImportUri by remember { mutableStateOf<Uri?>(null) }
+    var sowImportName by remember { mutableStateOf<String?>(null) }
+
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments()
     ) { uris: List<Uri> ->
@@ -1058,6 +1076,7 @@ private fun SetupScreen(
             val cueUris = mutableListOf<Pair<String, Uri>>()
             val binUris = mutableListOf<Pair<String, Uri>>()
             var gogUri: Pair<String, Uri>? = null
+            var sowUri: Pair<String, Uri>? = null
             for (uri in uris) {
                 val name = getDisplayName(context, uri)
                 if (name != null) {
@@ -1067,6 +1086,7 @@ private fun SetupScreen(
                         lname.endsWith(".cue") -> cueUris.add(name to uri)
                         lname.endsWith(".bin") -> binUris.add(name to uri)
                         lname.endsWith(".exe") || lname.endsWith(".pkg") -> gogUri = name to uri
+                        lname.endsWith(".sow") -> sowUri = name to uri
                         lname in ALL_GAME_FILENAMES -> gameUris.add(FoundFile(name, uri))
                     }
                 }
@@ -1085,6 +1105,11 @@ private fun SetupScreen(
                 gogUri?.let {
                     gogImportName = it.first
                     gogImportUri = it.second
+                }
+                // Trigger SOW import dialog if .sow found
+                sowUri?.let {
+                    sowImportName = it.first
+                    sowImportUri = it.second
                 }
                 scanning = false
             }
@@ -1270,6 +1295,26 @@ private fun SetupScreen(
                         onDismiss = {
                             gogImportUri = null
                             gogImportName = null
+                        }
+                    )
+                }
+
+                // ── SOW archive import dialog ──
+                if (sowImportUri != null) {
+                    SowImportDialog(
+                        sowName = sowImportName ?: "archive.sow",
+                        sowUri = sowImportUri!!,
+                        filesDir = filesDir,
+                        setDir = setDir,
+                        context = context,
+                        onImported = {
+                            sowImportUri = null
+                            sowImportName = null
+                            onRefresh()
+                        },
+                        onDismiss = {
+                            sowImportUri = null
+                            sowImportName = null
                         }
                     )
                 }
@@ -1476,7 +1521,7 @@ private fun SetupScreen(
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Select .hog, .ham, .pig files, a .zip archive, .cue/.bin disc images, or GOG installer.",
+                        text = "Select .hog, .ham, .pig files, a .zip archive, .cue/.bin disc images, .sow archive, or GOG installer.",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -3033,6 +3078,123 @@ private fun GogImportDialog(
                         progress = { progressPct },
                         modifier = Modifier.fillMaxWidth()
                     )
+                }
+            }
+        }
+    )
+}
+
+/* ── SOW archive import dialog ───────────────────────────────────────────── */
+
+@Composable
+private fun SowImportDialog(
+    sowName: String,
+    sowUri: Uri,
+    filesDir: File,
+    setDir: File,
+    context: Context,
+    onImported: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    var status by remember { mutableStateOf("Preparing\u2026") }
+    var processing by remember { mutableStateOf(false) }
+    var extractedCount by remember { mutableIntStateOf(0) }
+    var tempPath by remember { mutableStateOf<String?>(null) }
+
+    // Copy SOW to temp
+    LaunchedEffect(sowUri) {
+        withContext(Dispatchers.IO) {
+            try {
+                val tmpDir = File(filesDir, "tmp")
+                tmpDir.mkdirs()
+                val tmpFile = File(tmpDir, sowName)
+                context.contentResolver.openInputStream(sowUri)?.use { input ->
+                    java.io.FileOutputStream(tmpFile).use { output -> input.copyTo(output, bufferSize = 65536) }
+                }
+                tempPath = tmpFile.absolutePath
+                withContext(Dispatchers.Main) {
+                    status = "Ready to extract game files from SOW archive"
+                }
+            } catch (e: Exception) {
+                Log.e("DXX-SowImport", "Copy failed", e)
+                withContext(Dispatchers.Main) { status = "Error: ${e.message}" }
+            }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = { if (!processing) onDismiss() },
+        confirmButton = {
+            if (!processing) {
+                TextButton(onClick = {
+                    tempPath?.let { File(it).delete() }
+                    cleanupTmpDir(filesDir)
+                    onDismiss()
+                }) { Text("Close") }
+            }
+        },
+        title = { Text("Import SOW Archive", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Text(sowName, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(status, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                // Extract button
+                if (tempPath != null && !processing && extractedCount == 0) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                processing = true
+                                status = "Extracting game files\u2026"
+                                withContext(Dispatchers.IO) {
+                                    try {
+                                        val count = DiscImportBridge.extractSowFiles(
+                                            tempPath!!, setDir.absolutePath, null
+                                        )
+                                        withContext(Dispatchers.Main) {
+                                            extractedCount = count.coerceAtLeast(0)
+                                            status = if (count > 0)
+                                                "Extracted $count game file(s)"
+                                            else "No game files found in archive"
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.e("DXX-SowImport", "Extraction failed", e)
+                                        withContext(Dispatchers.Main) {
+                                            status = "Extract error: ${e.message}"
+                                        }
+                                    }
+                                }
+                                processing = false
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Extract to \u201c${setDir.name}\u201d", fontSize = 13.sp)
+                    }
+                }
+
+                // Done button
+                if (extractedCount > 0) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            tempPath?.let { File(it).delete() }
+                            cleanupTmpDir(filesDir)
+                            onImported()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Done", fontSize = 13.sp)
+                    }
+                }
+
+                // Progress indicator
+                if (processing) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
                 }
             }
         }
