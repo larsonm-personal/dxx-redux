@@ -1,0 +1,238 @@
+﻿# game_data/ Source File Manifest
+# Generated: 2026-03-09 15:54:29
+# Total: 221 files, 11.1 GB
+#
+# These are the original, non-derived source files needed to recreate the
+# game_data/ directory. They are NOT committed to git due to size.
+# Derived files (extracted/, data_tracks/) are produced by the scripts.
+#
+# Format: SHA256  SIZE  PATH
+
+## CD images
+b6bdcfc8c5bf6c92e86b3ea65d0e5c32f964047a611209828301074020f37a9e      94759728  CD images\Descent - Anniversary Edition (Brazil) (Covermount)\Descent - Anniversary Edition (Brazil) (Covermount).bin
+d3e94cfcf1602f355d787e585851351c94c93f41a8a52d85c394c06a20fc82e8           140  CD images\Descent - Anniversary Edition (Brazil) (Covermount)\Descent - Anniversary Edition (Brazil) (Covermount).cue
+daaef498fd455b9cddeb2b8c1dc7c60d090195635f6ca590fdcf7eb12c2e77a0      94054128  CD images\Descent - Anniversary Edition (USA)\Descent - Anniversary Edition (USA).bin
+15e0351d72b9917ff12983092b8b21f3fee40ffe2ca2d19d186c70bb39911cdc           101  CD images\Descent - Anniversary Edition (USA)\Descent - Anniversary Edition (USA).cue
+5435fca3797b0d404160d12e686f82667d2d4e4d4b4e8fcd1209b61abc8b26fd      24296160  CD images\Descent - Destination Saturn (USA)\Descent - Destination Saturn (USA).bin
+4c34304bf7c0dca9f5462f184a4c23ee8bdf9388f7d70454ed6dcfb8c035a8eb           123  CD images\Descent - Destination Saturn (USA)\Descent - Destination Saturn (USA).cue
+ef1ec392730c0e92139811d32a3bbf95ae7b9069a33ece89a3ab949d9b19f8cd      62161008  CD images\Descent - Levels of the World (USA)\Descent - Levels of the World (USA).bin
+a0857fc62ef1444e454eadaa60863702d830a2baf09944b3f31b2fc7ffc68740           101  CD images\Descent - Levels of the World (USA)\Descent - Levels of the World (USA).cue
+e4bac85d0fdd33e14e89720353ab306a935c7b7400a63a3e85fce2ac8cb46078       4334736  CD images\Descent - Test Flight (USA)\Descent - Test Flight (USA).bin
+80c652a5a45e22894da2b57f040102253fc1fd951ab54c0bd4ca7ec59773e46e           116  CD images\Descent - Test Flight (USA)\Descent - Test Flight (USA).cue
+acd92b2dd9b9ce772740e96bbdaaff8e59de99ec10ada83a2a99aa18aa2e566c      20210736  CD images\Descent (Europe) (Alt)\Descent (Europe) (Alt).bin
+b41dcae3713fb80dbcbaee7ff050d31581b43d28c0ecd096bda76e58666a5926           111  CD images\Descent (Europe) (Alt)\Descent (Europe) (Alt).cue
+967a1bf5ec32d655767169f25a140488257599fae58ebbe870667e4b1f409d82      19857936  CD images\Descent (Europe)\Descent (Europe).bin
+c28d5de67da9c76015e4de3118bc222398fde8a0a1187468c02a52a25a7c4fd8           105  CD images\Descent (Europe)\Descent (Europe).cue
+a433ed3712493649fb59c1361daf70d4a1776c706ff9a653e08c2ea93f0eab62      19505136  CD images\Descent (USA)\Descent (USA).bin
+144f9ad71b60060ce1a02844026a8549da47505a86ba32a994e944f1d9381259           102  CD images\Descent (USA)\Descent (USA).cue
+1b99d11a970a6216ade271ff4d2ae878dc381e770ffd1467d610aa2fb01c0746           334  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 1)\data_tracks\demos\swiv\layout.bin
+c8c4a05642f438298e13f7da870ba54c8367450325a6e9c9ca7be2cf247663df     217113120  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 1)\Descent I and II - The Definitive Collection (Europe) (Disc 1).bin
+186d05fce68be69db2170632502ed4f3072339ba8bfa562e66af6d1ff07554b0           151  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 1)\Descent I and II - The Definitive Collection (Europe) (Disc 1).cue
+a47ba66a0db2be6f5b99ae41b79233fb230dc17e94e6d3cf73065f1a382c61fb     431464992  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 2)\Descent I and II - The Definitive Collection (Europe) (Disc 2) (Track 1).bin
+6ff05de0e0b29947da58355802950246501c514bf541eeede4dfe40b40a965be       8114400  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 2)\Descent I and II - The Definitive Collection (Europe) (Disc 2) (Track 2).bin
+28cff75ec49554ddb7860fea4e4971f02dcded1c32a0ef1706beef6a359cd060      53096400  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 2)\Descent I and II - The Definitive Collection (Europe) (Disc 2) (Track 3).bin
+20717929536c1c5a0c3ac4d513b3a5cb441e476c013b9c2c45f0a6630086d8aa      39160800  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 2)\Descent I and II - The Definitive Collection (Europe) (Disc 2) (Track 4).bin
+6120d5423d11d936caf1b04c888fa233292b9edd35b964a160534017db37f14f      37926000  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 2)\Descent I and II - The Definitive Collection (Europe) (Disc 2) (Track 5).bin
+b2ef53c221c1bcfb4da03845ca8548810f1d0ab047235aed1b045cc35c8c43ce      24696000  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 2)\Descent I and II - The Definitive Collection (Europe) (Disc 2) (Track 6).bin
+6a973c3932e8a910160cb705c454c8183baef48fc5e22e1bfe68cc5eaa03f9d0      47098800  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 2)\Descent I and II - The Definitive Collection (Europe) (Disc 2) (Track 7).bin
+d34edd585d5dae07d2d593aa0e757cb4ca9be74fffb91a35d18cdb47b3bc1794      38984400  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 2)\Descent I and II - The Definitive Collection (Europe) (Disc 2) (Track 8).bin
+6c8381d1545cc6f2c847d3869d8c563af7722a111656936cb4039471dc0df557      48510000  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 2)\Descent I and II - The Definitive Collection (Europe) (Disc 2) (Track 9).bin
+b35f216abbc1681d917817ab5f60d866f0c22f6fe5d978851628583c0939513b          1386  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 2)\Descent I and II - The Definitive Collection (Europe) (Disc 2).cue
+3605a2077aaefc99b4c192c7e12f90e0f6023f0fd43c4b1d927ce9997cbbe8e8      32866848  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 3)\Descent I and II - The Definitive Collection (Europe) (Disc 3) (Track 1).bin
+6591fc6c3e3307ad71e88030f7d65889ba40b03c920a2ef6508f34dd9fd4efc2      49215600  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 3)\Descent I and II - The Definitive Collection (Europe) (Disc 3) (Track 2).bin
+640bd75f3e13977623ad00cea11138c0c8abb0bd34cc3994ddc47d32be60447b      23284800  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 3)\Descent I and II - The Definitive Collection (Europe) (Disc 3) (Track 3).bin
+67bb97ce4add540839d57003971be11bf251e30c2d59585f874d3b07b7667d27      52390800  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 3)\Descent I and II - The Definitive Collection (Europe) (Disc 3) (Track 4).bin
+1d78484850cde943ef8f7b6da6dcb0def745f87637d689eba040d2306084bbc1      38984400  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 3)\Descent I and II - The Definitive Collection (Europe) (Disc 3) (Track 5).bin
+499a63d4750965dbda01ab1a1cf0973e5dfa1efdf57767f4d09d6762694d1488      41277600  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 3)\Descent I and II - The Definitive Collection (Europe) (Disc 3) (Track 6).bin
+aa2a40def18b43cb8916a46bc1c61bda3b65ac2a1d7d41aee19989006bcb5408      46216800  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 3)\Descent I and II - The Definitive Collection (Europe) (Disc 3) (Track 7).bin
+63ede8da18fbc336293ea7695848b9eb0feebc54486d74df930b4bc81c93f490      35456400  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 3)\Descent I and II - The Definitive Collection (Europe) (Disc 3) (Track 8).bin
+ed4e03f4aa39571c1b9e04453613d87390d7b463f3a3810ae6b1e663c0ab8d0b          1230  CD images\Descent I and II - The Definitive Collection (Europe) (Disc 3)\Descent I and II - The Definitive Collection (Europe) (Disc 3).cue
+1b99d11a970a6216ade271ff4d2ae878dc381e770ffd1467d610aa2fb01c0746           334  CD images\Descent I and II - The Definitive Collection (USA) (Disc 1)\data_tracks\demos\swiv\layout.bin
+278b3251ca2d81c2a19e4286389981e1e3f2df30319d8cfff4aa9c4e105f3e28     216760320  CD images\Descent I and II - The Definitive Collection (USA) (Disc 1)\Descent I and II - The Definitive Collection (USA) (Disc 1).bin
+71459058991c75db8a899b2dcde94507c44935b9a0ea271ce87296b65969182a           125  CD images\Descent I and II - The Definitive Collection (USA) (Disc 1)\Descent I and II - The Definitive Collection (USA) (Disc 1).cue
+a47ba66a0db2be6f5b99ae41b79233fb230dc17e94e6d3cf73065f1a382c61fb     431464992  CD images\Descent I and II - The Definitive Collection (USA) (Disc 2)\Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 1).bin
+3358be1cb2040f9f9a8f7414559f02cf2fb4d2a3919b527fa8f3ae9785dcdfff       8114400  CD images\Descent I and II - The Definitive Collection (USA) (Disc 2)\Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 2).bin
+112582e1acb9c3de0eb10224ebe36b958a67d1dd64a614ce347f181187578e8b      53096400  CD images\Descent I and II - The Definitive Collection (USA) (Disc 2)\Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 3).bin
+b7a2433632dc18b634a562611aaf6c22688f394420e82cececc8f21a6cf82f54      39160800  CD images\Descent I and II - The Definitive Collection (USA) (Disc 2)\Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 4).bin
+e2e15dfc1bd050550dfd800afc4f3b3072f879200740c69ec40da1c0d16ff4fb      37926000  CD images\Descent I and II - The Definitive Collection (USA) (Disc 2)\Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 5).bin
+93d9985eb3615b663b461ea65db16408e078352d9f8659c0922048bea64216bb      24696000  CD images\Descent I and II - The Definitive Collection (USA) (Disc 2)\Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 6).bin
+606fc80895f723cfc1dd5ffaf2767ab191379149319e474650c3cdb8a8630a96      47098800  CD images\Descent I and II - The Definitive Collection (USA) (Disc 2)\Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 7).bin
+3f7552e4291b0accc8aed8e5c51503c4138593b355d387cde51c73c9859742ae      38984400  CD images\Descent I and II - The Definitive Collection (USA) (Disc 2)\Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 8).bin
+b795c5940a64c7dd8fc52922fa028515d330ef697fb0a98b4c3d02d3e42bf148      48157200  CD images\Descent I and II - The Definitive Collection (USA) (Disc 2)\Descent I and II - The Definitive Collection (USA) (Disc 2) (Track 9).bin
+4e0f066223eef1bc85385abace5ebba3467b5d248c50ef9efba48571a86a1de5          1359  CD images\Descent I and II - The Definitive Collection (USA) (Disc 2)\Descent I and II - The Definitive Collection (USA) (Disc 2).cue
+3605a2077aaefc99b4c192c7e12f90e0f6023f0fd43c4b1d927ce9997cbbe8e8      32866848  CD images\Descent I and II - The Definitive Collection (USA) (Disc 3)\Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 1).bin
+98b509a4dbab270f34ebec26fbdc121247706e8e21f5c5c0eb3f9477ba66e395      49215600  CD images\Descent I and II - The Definitive Collection (USA) (Disc 3)\Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 2).bin
+52a5d296bd0296f0936b274be678e66e58d3b5347c31f21e02cc0ce2303d030b      23284800  CD images\Descent I and II - The Definitive Collection (USA) (Disc 3)\Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 3).bin
+6fa4c75c0e6d540acc3b3c85e1b7c3f510f8c496e7a3eba54154a903a47db6d2      52390800  CD images\Descent I and II - The Definitive Collection (USA) (Disc 3)\Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 4).bin
+386c9bc3dbaa2b594478c769a783c7610226a466ab43343d620428f9c5569583      38984400  CD images\Descent I and II - The Definitive Collection (USA) (Disc 3)\Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 5).bin
+e9c47d6c473a3c6ebb35508abe9a2e1be06c7748375acbe422ffcf820ea2755c      41277600  CD images\Descent I and II - The Definitive Collection (USA) (Disc 3)\Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 6).bin
+a2395b0eda0e95ab40bb6907e613fbde1d2a77814e98dd6ca021b045563af875      46216800  CD images\Descent I and II - The Definitive Collection (USA) (Disc 3)\Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 7).bin
+115662d09b61d5cc0031e354b5196ff037b0171eb023840996415167845e49c9      35456400  CD images\Descent I and II - The Definitive Collection (USA) (Disc 3)\Descent I and II - The Definitive Collection (USA) (Disc 3) (Track 8).bin
+ffbbdbb14edf7f1b8471681f22ac5300c6a581e6204b5615a07fb833387954bc          1206  CD images\Descent I and II - The Definitive Collection (USA) (Disc 3)\Descent I and II - The Definitive Collection (USA) (Disc 3).cue
+a512e1435cfe279d22f7a25187f065d636b87355274794ca179195a3db1dda2a     223138944  CD images\Descent II - Destination Quartzon (Europe)\Descent II - Destination Quartzon (Europe) (Track 01).bin
+7e05f0e8c56ba0d39b11805a6742d4fdb8f0e22b76bdd998d3f785a8054f59b3       7234752  CD images\Descent II - Destination Quartzon (Europe)\Descent II - Destination Quartzon (Europe) (Track 02).bin
+bd3971652dfbcee4e1967789663e3630a100695afbdf085693379bd07421d237      27699504  CD images\Descent II - Destination Quartzon (Europe)\Descent II - Destination Quartzon (Europe) (Track 03).bin
+61a28663864802497bbb0c62699e55310c069c7503cc0fd118306b7ed29062ad      20467104  CD images\Descent II - Destination Quartzon (Europe)\Descent II - Destination Quartzon (Europe) (Track 04).bin
+f570c544a0f94d3b7f653d6059176cd8233f957aa7ab667696c5a7703d0079a5      26464704  CD images\Descent II - Destination Quartzon (Europe)\Descent II - Destination Quartzon (Europe) (Track 05).bin
+2c65770f09ad4610badea0c1d2a3cc96311bd9bd3a26cf0d08bfc6b00267b6ad      32285904  CD images\Descent II - Destination Quartzon (Europe)\Descent II - Destination Quartzon (Europe) (Track 06).bin
+626f6abff044f9c16db2f6729a5340ee3287db7caba6214acf59a27795f645df      26288304  CD images\Descent II - Destination Quartzon (Europe)\Descent II - Destination Quartzon (Europe) (Track 07).bin
+69a17262d0cfb0ec17a28333c6fef17f7672e03812bd32df7960d2145c9eba08      35990304  CD images\Descent II - Destination Quartzon (Europe)\Descent II - Destination Quartzon (Europe) (Track 08).bin
+4798f7fe86188a1ede76f31a9f89b6e757f3dac1b8a122649a9b89a0e680d0f5      30169104  CD images\Descent II - Destination Quartzon (Europe)\Descent II - Destination Quartzon (Europe) (Track 09).bin
+9df66fe21477f1f0cb6e3d5d5bca6203b93a0f7988bfdd6fc15f7a364cc2b3a8      29287104  CD images\Descent II - Destination Quartzon (Europe)\Descent II - Destination Quartzon (Europe) (Track 10).bin
+5604f96449d0357e48335f8f9c9559ece9660e64ecf8c85c8c468d9feaebdbb2      28757904  CD images\Descent II - Destination Quartzon (Europe)\Descent II - Destination Quartzon (Europe) (Track 11).bin
+62d69daa34f35f8065c34486aa6da4825958ade8896f29d55a7058656a0470d6      24524304  CD images\Descent II - Destination Quartzon (Europe)\Descent II - Destination Quartzon (Europe) (Track 12).bin
+eb83dd598db020e400ca5a60783ec47494c81c719b9b3edc34c44c9ae3be1846      31048752  CD images\Descent II - Destination Quartzon (Europe)\Descent II - Destination Quartzon (Europe) (Track 13).bin
+0b5f4b4910bb57abf2ea4e56f8f4a5aeed25ec72d15bbc8e38bc9c3d811a862c          1958  CD images\Descent II - Destination Quartzon (Europe)\Descent II - Destination Quartzon (Europe).cue
+c5c5b0b0633dadf5b9c23f47a602412e3e9e6cadf6668da84116f9e455419a4d     210713328  CD images\Descent II - Destination Quartzon (USA) (Diamond OEM)\Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 01).bin
+d151cd03d87f9392994370b94621662e9b829fee48ffe3e777060ba28ade477f       7173600  CD images\Descent II - Destination Quartzon (USA) (Diamond OEM)\Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 02).bin
+e5f0af4f1e4720c04268d881b5581e6d9ec154b42156c99cc4ae9e01e1fdfa12      27621888  CD images\Descent II - Destination Quartzon (USA) (Diamond OEM)\Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 03).bin
+13da0b6b599b6f4968658ea28e9d7253a9a8f26b8d4560fe520059f248d116b3      20328336  CD images\Descent II - Destination Quartzon (USA) (Diamond OEM)\Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 04).bin
+77949487834d13ef2dabc71f1464559a45269e3968ce5b334fec1a540c579c8c      26382384  CD images\Descent II - Destination Quartzon (USA) (Diamond OEM)\Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 05).bin
+c07bcc902c2ebec9f2752861ecb8e0af745a41b76750bc4c033521323cfcc124      32229456  CD images\Descent II - Destination Quartzon (USA) (Diamond OEM)\Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 06).bin
+57759f1e642c7070c26612c8f012c134ceaa2cb0dc86708ebf9f5b9c31ec61a0      26184816  CD images\Descent II - Destination Quartzon (USA) (Diamond OEM)\Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 07).bin
+6c0f828a314cbb14b43e5339d7c79f9ad051fd6d5074910ebf12711e6437360d      35875056  CD images\Descent II - Destination Quartzon (USA) (Diamond OEM)\Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 08).bin
+c78c9c635624ba2ad978d859c5579c2e8f3ef879c3a05482b6acdcc4fc9f740a      30020928  CD images\Descent II - Destination Quartzon (USA) (Diamond OEM)\Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 09).bin
+b763d0177d77bd2abc3873b54e3149cd51aaa0776cb99095f2e1f896dc91e144      29190672  CD images\Descent II - Destination Quartzon (USA) (Diamond OEM)\Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 10).bin
+4647d6ea77f743f5dcebbe420e55c0add825ec680b01f5e6e3e64a53eb3ce1c0      28680288  CD images\Descent II - Destination Quartzon (USA) (Diamond OEM)\Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 11).bin
+79c31d45df2b7dbc5cab531a1736cfdc460f25a3ed4acd2453bed869341304d6      24347904  CD images\Descent II - Destination Quartzon (USA) (Diamond OEM)\Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 12).bin
+6007ac92df34aa6c118d8c494f1b04bdd6649dd22b2835f346e9a9042e7ae3e9      31333344  CD images\Descent II - Destination Quartzon (USA) (Diamond OEM)\Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 13).bin
+9438608d0a7f8abc888933bead61134df14f36a0822a556c5e7da14771bccaa7          1906  CD images\Descent II - Destination Quartzon (USA) (Diamond OEM)\Descent II - Destination Quartzon (USA) (Diamond OEM).cue
+a0fcaeff3d818ffd42c3012f9a969d6c327c753ada63ff111843bffa24aae7ca     223134240  CD images\Descent II - Destination Quartzon (USA) (Logitech OEM)\Descent II - Destination Quartzon (USA) (Logitech OEM) (Track 01).bin
+1b337cb0cc2c6de3b6eb2dc9f6c0e2c0c52ea6103566ead177421a90ca7eca89       7589904  CD images\Descent II - Destination Quartzon (USA) (Logitech OEM)\Descent II - Destination Quartzon (USA) (Logitech OEM) (Track 02).bin
+3b19e07d3bcce0f8bcac61e008a543502f18a9fce05deeac7d8946b95591373b      27699504  CD images\Descent II - Destination Quartzon (USA) (Logitech OEM)\Descent II - Destination Quartzon (USA) (Logitech OEM) (Track 03).bin
+42d8c3ac62c68b0e4fe5f13871480530bac7730d60ceea1729595d78589219c1      20467104  CD images\Descent II - Destination Quartzon (USA) (Logitech OEM)\Descent II - Destination Quartzon (USA) (Logitech OEM) (Track 04).bin
+d07d59d759926b1c9b6e1a090a7b3a40e5607293b84786f766de7b95a66b8dcc      26464704  CD images\Descent II - Destination Quartzon (USA) (Logitech OEM)\Descent II - Destination Quartzon (USA) (Logitech OEM) (Track 05).bin
+877df7d6e45a2fde199ad98a2aeac692d64e4b18e9de57581e08591da81e2994      32285904  CD images\Descent II - Destination Quartzon (USA) (Logitech OEM)\Descent II - Destination Quartzon (USA) (Logitech OEM) (Track 06).bin
+4fcc193f6205d796444d8a01b815e81db8b23097d009249d9847fc5f2bc8ecb4      26288304  CD images\Descent II - Destination Quartzon (USA) (Logitech OEM)\Descent II - Destination Quartzon (USA) (Logitech OEM) (Track 07).bin
+84b33102aee504534b7950f263e37bea1d288918f070ff9ff1745b8da00df360      35990304  CD images\Descent II - Destination Quartzon (USA) (Logitech OEM)\Descent II - Destination Quartzon (USA) (Logitech OEM) (Track 08).bin
+5c9e58ba2295d52c7f08c099c1bd4076dea33636e613f4af3eeb96927b189665      30169104  CD images\Descent II - Destination Quartzon (USA) (Logitech OEM)\Descent II - Destination Quartzon (USA) (Logitech OEM) (Track 09).bin
+b0701fe574fddb0477e3826bfe8e12f8e6a5bd84de7e1dea8eef2f4bfa6d042e      29287104  CD images\Descent II - Destination Quartzon (USA) (Logitech OEM)\Descent II - Destination Quartzon (USA) (Logitech OEM) (Track 10).bin
+7cddb28845f3986cbefe93970771e860b21a5e4af3dd65feab373681ac3fb23a      28757904  CD images\Descent II - Destination Quartzon (USA) (Logitech OEM)\Descent II - Destination Quartzon (USA) (Logitech OEM) (Track 11).bin
+2b5c30cb25d4f7f9b4b4a01193d726b3c58ef88c5ba69f16aacf2e4b448281dd      24524304  CD images\Descent II - Destination Quartzon (USA) (Logitech OEM)\Descent II - Destination Quartzon (USA) (Logitech OEM) (Track 12).bin
+fd81c5b33f2cab2b743e68540c83c580b63c3307d4ef14f7ac828aff6893fd4e      31051104  CD images\Descent II - Destination Quartzon (USA) (Logitech OEM)\Descent II - Destination Quartzon (USA) (Logitech OEM) (Track 13).bin
+53c9e51e97861c638227ebad0dfc97438c13663aea19cefe1a1c87e4ea153215          1689  CD images\Descent II - Destination Quartzon (USA) (Logitech OEM)\Descent II - Destination Quartzon (USA) (Logitech OEM).cue
+49f8c4157919e8d13e188b936a83a2b95c735a314d67bf0833047b8942909e26     219519216  CD images\Descent II - Destination Quartzon (USA)\Descent II - Destination Quartzon (USA) (Track 01).bin
+18243cf907924da60db053701648aa724ca692187cf0dc7dbfe7d44131e75c4a       7241808  CD images\Descent II - Destination Quartzon (USA)\Descent II - Destination Quartzon (USA) (Track 02).bin
+dbda02896735b9a5121c3cd82357d76bdda0efb7fe2a64f69d1556de2424ec33      27699504  CD images\Descent II - Destination Quartzon (USA)\Descent II - Destination Quartzon (USA) (Track 03).bin
+d811a720a51f4b5a186cc1e3a18721724addfeccf6afb5d0733b22efa303e642      20467104  CD images\Descent II - Destination Quartzon (USA)\Descent II - Destination Quartzon (USA) (Track 04).bin
+e9d7ae31063782a622843707747933be7dc80c0a6e6d1159b1259e7750405e4a      26464704  CD images\Descent II - Destination Quartzon (USA)\Descent II - Destination Quartzon (USA) (Track 05).bin
+9774d269976067324fc5d08528114357a0eada09db5e6e84f64131262fcaa141      32285904  CD images\Descent II - Destination Quartzon (USA)\Descent II - Destination Quartzon (USA) (Track 06).bin
+ab425f3c5f641b05843bc49fd65f1fa7799fd21cc47ab3d0cf93d2c47d073af7      26288304  CD images\Descent II - Destination Quartzon (USA)\Descent II - Destination Quartzon (USA) (Track 07).bin
+ea8d42639567fe8b4ac2399522ee5fa3f1956785bb2292851bf15cce7782657e      35990304  CD images\Descent II - Destination Quartzon (USA)\Descent II - Destination Quartzon (USA) (Track 08).bin
+951692a0a7207edce83d1c59c0703e1fa3b013dabf4e702c591a9667d88ab6ae      30169104  CD images\Descent II - Destination Quartzon (USA)\Descent II - Destination Quartzon (USA) (Track 09).bin
+5210f5cd5dd04dc80b476d2d78e320129d23137fb815b094d9c7d9c14dc0ebe3      29287104  CD images\Descent II - Destination Quartzon (USA)\Descent II - Destination Quartzon (USA) (Track 10).bin
+580896f13ddac4bb015bca514ebb5f9816e7df2cce47bdefc832452f61697231      28757904  CD images\Descent II - Destination Quartzon (USA)\Descent II - Destination Quartzon (USA) (Track 11).bin
+bacfb38a0bfb1d68c73f3ff92d0ffa87eb44631f3b5ed788732a738a6d3476c6      24524304  CD images\Descent II - Destination Quartzon (USA)\Descent II - Destination Quartzon (USA) (Track 12).bin
+11723f50576ae41630ef3a47ec2087ebb76ef6af53d0926c3a6daa4b218b79a9      31048752  CD images\Descent II - Destination Quartzon (USA)\Descent II - Destination Quartzon (USA) (Track 13).bin
+12b669f420022d35367858000eb60f7972a79024d1a43da6a9f9a07cb27f9d7c          1942  CD images\Descent II - Destination Quartzon (USA)\Descent II - Destination Quartzon (USA).cue
+7c8940f0f731befbe16b100f66d2e2737f423fc82bf98e7394e2c943a8239842     137871888  CD images\Descent II - Destination Quartzon 3D (Europe)\Descent II - Destination Quartzon 3D (Europe) (Track 1).bin
+32737fc24bf0013df78ee5bd56815e602cfb3f26f4237808b292f58ece2f1b82       7350000  CD images\Descent II - Destination Quartzon 3D (Europe)\Descent II - Destination Quartzon 3D (Europe) (Track 2).bin
+59fd2e1d632583b7b1cfd01dae1d16983457a050f30ae58fc3ae697c9dabf880      26231856  CD images\Descent II - Destination Quartzon 3D (Europe)\Descent II - Destination Quartzon 3D (Europe) (Track 3).bin
+850bf49a9c41bcdecd49d97791d45502679e2e52201c464fa01c6f71efc3701d      29985648  CD images\Descent II - Destination Quartzon 3D (Europe)\Descent II - Destination Quartzon 3D (Europe) (Track 4).bin
+66fdc9d51ba46d2e518427b3437fd60a41bd862a195bc23e098e14fe3955c006      31067568  CD images\Descent II - Destination Quartzon 3D (Europe)\Descent II - Destination Quartzon 3D (Europe) (Track 5).bin
+eadd799b02f82906000647792d24e97f3ed843282c4d1d4a1abc488d79e26e37      28440384  CD images\Descent II - Destination Quartzon 3D (Europe)\Descent II - Destination Quartzon 3D (Europe) (Track 6).bin
+bb23c7573501b7ec63b6c9fd7978cd090273613f3931f000d6b002d622fa10b7           816  CD images\Descent II - Destination Quartzon 3D (Europe)\Descent II - Destination Quartzon 3D (Europe).cue
+fdf86268625d49cf3ce95a2f8b21c90fdbe5b87ba8e6a1b5710e0b01c8fcd9aa      54827472  CD images\Descent II - The Vertigo Series (USA)\Descent II - The Vertigo Series (USA) (Track 1).bin
+cfe3103777b90e4ea2a5ffe67c951cf54f54ce71c690bebef8d7b8033a307246      49076832  CD images\Descent II - The Vertigo Series (USA)\Descent II - The Vertigo Series (USA) (Track 2).bin
+8629a25444453aefd70f5669553f7c0fbf64b80ce28424ee55f782747fd9881f      22901424  CD images\Descent II - The Vertigo Series (USA)\Descent II - The Vertigo Series (USA) (Track 3).bin
+8c5bccf92bc37958bc3591bf8db5d84ecca3e0d8fc5e57eed80ac52e822118c9      52028592  CD images\Descent II - The Vertigo Series (USA)\Descent II - The Vertigo Series (USA) (Track 4).bin
+d7b08007a6a73f5264b23d82814d8115e0e287d28516ee763883a03c667ef132      38612784  CD images\Descent II - The Vertigo Series (USA)\Descent II - The Vertigo Series (USA) (Track 5).bin
+ebfe986bd9db64711e3022f01790908156985a5cffb648728737101cdf8218e8      40880112  CD images\Descent II - The Vertigo Series (USA)\Descent II - The Vertigo Series (USA) (Track 6).bin
+26950698365992d78adfc97bfa81a84032011395d86c8eb985b440461e055fe5      45755808  CD images\Descent II - The Vertigo Series (USA)\Descent II - The Vertigo Series (USA) (Track 7).bin
+79b16667c7b5fd8e363c25196715c28c306c7bea35c4c4e595a325ece62390b5      35047152  CD images\Descent II - The Vertigo Series (USA)\Descent II - The Vertigo Series (USA) (Track 8).bin
+f2337826473f5a799f5cfddf3712e70c237a337d30cb36f7f87b3764dfb37d7d           915  CD images\Descent II - The Vertigo Series (USA)\Descent II - The Vertigo Series (USA).cue
+971ebca0be8e5e241b6fe189aa55557c7f38a9da7e9b396fa77530087ba537c4     427852320  CD images\Descent II (Europe) (v1.1)\Descent II (Europe) (v1.1) (Track 1).bin
+93b1a4d60714a542fa103308e7214508774523b2a9fae7de405d273d6266e46a       8295504  CD images\Descent II (Europe) (v1.1)\Descent II (Europe) (v1.1) (Track 2).bin
+7d632b6a00e47963852fcfbce5973c633b0a95d483fe3fed0739bd01c8b66d3d      52924704  CD images\Descent II (Europe) (v1.1)\Descent II (Europe) (v1.1) (Track 3).bin
+228481a81979660a42f5e151f02c515915b6a3d8e285f495b8ca497dd8c38efc      38989104  CD images\Descent II (Europe) (v1.1)\Descent II (Europe) (v1.1) (Track 4).bin
+8b9372d4f02895af717b71ac03062da165e0536a30342eed37d7e536c798d44e      37754304  CD images\Descent II (Europe) (v1.1)\Descent II (Europe) (v1.1) (Track 5).bin
+88b51415a20c3f7c0f42e2099be288de58c85e02e1b0d4b99d74e994aae28e67      24524304  CD images\Descent II (Europe) (v1.1)\Descent II (Europe) (v1.1) (Track 6).bin
+b945f32d76477e3103f1ef05641e777a1660dddf3c4b0f9347f11b7f8712cd4a      46927104  CD images\Descent II (Europe) (v1.1)\Descent II (Europe) (v1.1) (Track 7).bin
+f37af8bd93fa2f44bb9255fa1e2ad7a2314280e01237abc789fd773e0bcf5760      38812704  CD images\Descent II (Europe) (v1.1)\Descent II (Europe) (v1.1) (Track 8).bin
+cb0a8f34fc30938b57c93736addff506230ecec26b3d924ea9a98fa3778052bd      47983152  CD images\Descent II (Europe) (v1.1)\Descent II (Europe) (v1.1) (Track 9).bin
+5e0f7bc1229148077983c326d8242a162ebcb8c4bfae168cada812d49581e62d           924  CD images\Descent II (Europe) (v1.1)\Descent II (Europe) (v1.1).cue
+9e9d0d999cb03f90599a73344d7bf48dad283764978eb36b5aa135e7bd31ec7c     405070848  CD images\Descent II (Europe)\Descent II (Europe) (Track 01).bin
+a9712408d073f01119d3f95a128ccf217e6d87648f88ff9245648aeaed5399a5       7175952  CD images\Descent II (Europe)\Descent II (Europe) (Track 02).bin
+89aeb46038831600297c78d8fcca0e8a07b95576f93d67a353a99b17e76c5d3e      27621888  CD images\Descent II (Europe)\Descent II (Europe) (Track 03).bin
+f5f6b1d81a6e30262c2e8cbf8e49870f594ef188d99160eee82350dbabca9d21      20328336  CD images\Descent II (Europe)\Descent II (Europe) (Track 04).bin
+44a58fc85e52e46417c27d680324b006c401608a8b1c4a7464a977ebea741809      26382384  CD images\Descent II (Europe)\Descent II (Europe) (Track 05).bin
+aeff93eac40e9a0ee36cd8ff486c8b9eeee03a15384815a4592493dbca08bd30      32229456  CD images\Descent II (Europe)\Descent II (Europe) (Track 06).bin
+97ef0696ea1c7167ebfa9183a5d162073263d140a71df92fbc7a32a174440add      26184816  CD images\Descent II (Europe)\Descent II (Europe) (Track 07).bin
+469f7c61d248cbf568652bfd68df9c5d6905013c345441fba2ef17c51db048ea      35875056  CD images\Descent II (Europe)\Descent II (Europe) (Track 08).bin
+8d2a4f74b2f020a6fece63e557575b7374cb1d6701701c04c44a2a077954208c      30020928  CD images\Descent II (Europe)\Descent II (Europe) (Track 09).bin
+56010c6cd2681631b49de08513d0fd9a160a988f4f5f07b3c052d4104c1f2312      29190672  CD images\Descent II (Europe)\Descent II (Europe) (Track 10).bin
+0759ddc84bdd7215676b547132329071e3438b26d0df421f6c40a662e4bdd431      28680288  CD images\Descent II (Europe)\Descent II (Europe) (Track 11).bin
+84194018b5da4a060ef88c8ec7f4cfcf38727e07b8651ae41236ac660bc046be      24347904  CD images\Descent II (Europe)\Descent II (Europe) (Track 12).bin
+b3df5f22e45cbf6e001b0eabf66c7ad7f963e2ab472acda2ab0d39f5f9a85ea6      30980544  CD images\Descent II (Europe)\Descent II (Europe) (Track 13).bin
+7ec2db136ce7f88c3d3cb9bda3ee1f3e26b0056d1d94f7acd417163f74c1388f          1667  CD images\Descent II (Europe)\Descent II (Europe).cue
+5952c8ea67164c7ae2fd716460e70a1180fdce9a2ba1b27442228710bfe269d8      36735888  CD images\Descent II (USA) (3-Level Interactive Preview)\Descent II (USA) (3-Level Interactive Preview).bin
+eccf04a96ec0f7bc6978b21b668bf62107941b17684e74e029e7b30b4213b7a9           135  CD images\Descent II (USA) (3-Level Interactive Preview)\Descent II (USA) (3-Level Interactive Preview).cue
+26fcb00867ce8d847d72c4c221f6a7deac76dac7b2b77daf540ba80f0bfbb4fc     404889744  CD images\Descent II (USA) (Alt)\Descent II (USA) (Alt) (Track 01).bin
+89ab8701f0e0f2323bb026ecf5430a189e294014db515b07930777e4e613ca26       7175952  CD images\Descent II (USA) (Alt)\Descent II (USA) (Alt) (Track 02).bin
+c0d513e796423636ddcef8c60685c6b1cdfe46cdf5e0cbe40fe172489b6df055      27621888  CD images\Descent II (USA) (Alt)\Descent II (USA) (Alt) (Track 03).bin
+32882db32660117705d3e325dc20b6eda40fad8612d7a529d56674df2039df18      20328336  CD images\Descent II (USA) (Alt)\Descent II (USA) (Alt) (Track 04).bin
+5b4c7773fb2e1d98fadcdc73bc2ec3ca1bfa4d4f0519bce0260159f4ca833157      26382384  CD images\Descent II (USA) (Alt)\Descent II (USA) (Alt) (Track 05).bin
+5cd39473d681993cb395724096b3f86103bd7f71aa31554928df07aaa11a391a      32229456  CD images\Descent II (USA) (Alt)\Descent II (USA) (Alt) (Track 06).bin
+1d86f162a24f320fdf47e437f9593da1c6a5fc7998b5e1fc0b634e895ace33af      26184816  CD images\Descent II (USA) (Alt)\Descent II (USA) (Alt) (Track 07).bin
+7b8bd640fb1789f5ad30eb8466a22c599522b7c091dff0e96b475c7711b00441      35875056  CD images\Descent II (USA) (Alt)\Descent II (USA) (Alt) (Track 08).bin
+d236df9d2bf3b65970b9b404af938464e1a6ce61af4182d2493ea2855025fd77      30020928  CD images\Descent II (USA) (Alt)\Descent II (USA) (Alt) (Track 09).bin
+4d86e68ac16ac1bd0e17421c8a3f0a9e5aa220ff0dbaed557126896c7cff5113      29190672  CD images\Descent II (USA) (Alt)\Descent II (USA) (Alt) (Track 10).bin
+6a472909d43ee38b4f8de5e8fd4274c08fc580015c6a8f12bc2ada996bc04ba2      28680288  CD images\Descent II (USA) (Alt)\Descent II (USA) (Alt) (Track 11).bin
+948bcc7210bce6929225a544d69b748c870b80cdff633a1a1326841401a0f22e      24347904  CD images\Descent II (USA) (Alt)\Descent II (USA) (Alt) (Track 12).bin
+9e80b6585f3501ac549959ebd4221a430e6451b96c025c7c7298a40736df2195      30980544  CD images\Descent II (USA) (Alt)\Descent II (USA) (Alt) (Track 13).bin
+119426bafc826c4d74d0c28b3c76c309f37293c5cf603d4fbef5aae114c63798          1683  CD images\Descent II (USA) (Alt)\Descent II (USA) (Alt).cue
+17c981808c217da113fd5d08ecb14466a0ac4a0af8985b68ae956aaff01cc845     438687984  CD images\Descent II (USA) (Rerelease)\Descent II (USA) (Rerelease) (Track 1).bin
+167823a00e058a021a26bbbbc034d7c67f5f6d76e7aaa6d79a2b2ad3b107d6a4       8119104  CD images\Descent II (USA) (Rerelease)\Descent II (USA) (Rerelease) (Track 2).bin
+29577ad40b167ea276abd606e19a4f93b42a2e79dbe0848188c3fafbf749c203      53096400  CD images\Descent II (USA) (Rerelease)\Descent II (USA) (Rerelease) (Track 3).bin
+294de6f3e6628519024575fe576b60a7378e422c75251fd8c01f8e492d4ab867      39160800  CD images\Descent II (USA) (Rerelease)\Descent II (USA) (Rerelease) (Track 4).bin
+1b7abb2f6bc4a244ae5a63f61489ba0d3d03853318fdf71111fe87fec440d265      37926000  CD images\Descent II (USA) (Rerelease)\Descent II (USA) (Rerelease) (Track 5).bin
+9a58a6ea2bbfa7a5262f42a3a23aa8e3198474e46e1a67fb3b9e291893341753      24696000  CD images\Descent II (USA) (Rerelease)\Descent II (USA) (Rerelease) (Track 6).bin
+60763d457b935add076d7bb4b4046c4e29910c04d2fd721dc8c409535ede662f      47098800  CD images\Descent II (USA) (Rerelease)\Descent II (USA) (Rerelease) (Track 7).bin
+1f33506dcfdd424eef39698b22563947a556616181420ac799592363f7e06b45      38984400  CD images\Descent II (USA) (Rerelease)\Descent II (USA) (Rerelease) (Track 8).bin
+1ece7f898a8eb77e6a213701ee051217e63aa17b9e51d9a537915efdc298104d      47802048  CD images\Descent II (USA) (Rerelease)\Descent II (USA) (Rerelease) (Track 9).bin
+d96cbe614c2868043c15813276beb9f1255f1e8e7d653be37bbcfedd6b91f48d          1080  CD images\Descent II (USA) (Rerelease)\Descent II (USA) (Rerelease).cue
+971ebca0be8e5e241b6fe189aa55557c7f38a9da7e9b396fa77530087ba537c4     427852320  CD images\Descent II (USA) (v1.1)\Descent II (USA) (v1.1) (Track 1).bin
+711c00730838f85b202b2b15e2ce4a68dc68781ffa97bcb8da4f62c968b29f77       7938000  CD images\Descent II (USA) (v1.1)\Descent II (USA) (v1.1) (Track 2).bin
+b7e6c0ed6bd455418c9119da7c864b1e702491ff8c4e077c2617c836090e88a5      52567200  CD images\Descent II (USA) (v1.1)\Descent II (USA) (v1.1) (Track 3).bin
+baeac8ecadb5297a56871392889623a3a0949fb70b34cef596386b3b68ba4af8      38631600  CD images\Descent II (USA) (v1.1)\Descent II (USA) (v1.1) (Track 4).bin
+9c50b9d8fa076950a466767fb6859b571d53cb8427ed24d352f7f38ac9e2db8e      37396800  CD images\Descent II (USA) (v1.1)\Descent II (USA) (v1.1) (Track 5).bin
+8c083f4f3beb94e8e59ba42361a09f14e814a701ff2d0438237214fa4b8b41ce      24166800  CD images\Descent II (USA) (v1.1)\Descent II (USA) (v1.1) (Track 6).bin
+6bf5ac12f86b8143650f2309d2f73bccb9db9c84601dc1e7f924a3942f83a70e      46569600  CD images\Descent II (USA) (v1.1)\Descent II (USA) (v1.1) (Track 7).bin
+0540c44cf47e2ac8282a4a9d9a5cc912cc2ec16bbe9921a03f424897debd6545      38455200  CD images\Descent II (USA) (v1.1)\Descent II (USA) (v1.1) (Track 8).bin
+055ec8be93860b9dc139d57f827528d4a0d251725810c779185c2901633cc611      47628000  CD images\Descent II (USA) (v1.1)\Descent II (USA) (v1.1) (Track 9).bin
+7e3150173456277490adb336b031f12819853d91e9770ab4272a2c234bb5876e           897  CD images\Descent II (USA) (v1.1)\Descent II (USA) (v1.1).cue
+26fcb00867ce8d847d72c4c221f6a7deac76dac7b2b77daf540ba80f0bfbb4fc     404889744  CD images\Descent II (USA)\Descent II (USA) (Track 01).bin
+3ca9268bdf07229e5cb360a13081c0df49654b78747acb55c3bef5ed680f3376       7175952  CD images\Descent II (USA)\Descent II (USA) (Track 02).bin
+3a70061f32f2199708bc8a1cf892b71faf6f1178a1c1138b64b183503f721fbe      27621888  CD images\Descent II (USA)\Descent II (USA) (Track 03).bin
+dfb478911db3419e2c0698b553c69ba3dba795f1067924d74f737c1d83ac6a33      20328336  CD images\Descent II (USA)\Descent II (USA) (Track 04).bin
+0fef6218ef6a60bb9e68dde1e3e14750fc3f2c6fbd51cfa86b62c914eea1032e      26382384  CD images\Descent II (USA)\Descent II (USA) (Track 05).bin
+e94f2fcb4e3df2d95efed6ffaf0f327969462407215e39b107ecf92f96af6740      32229456  CD images\Descent II (USA)\Descent II (USA) (Track 06).bin
+eb110b9a9027da837bbe2d0317b9a959fd9320f80b2a0023e4e73895e0320f3a      26184816  CD images\Descent II (USA)\Descent II (USA) (Track 07).bin
+b0666c04094245a6a01c3c601c1617914e20a61667207a82ce6460f7c0a1be7c      35875056  CD images\Descent II (USA)\Descent II (USA) (Track 08).bin
+07276edaa71996d93512b29bca6be11d34b02b0ed162e3938547e6bea7e38c49      30020928  CD images\Descent II (USA)\Descent II (USA) (Track 09).bin
+75dd05c0568bcb3bec41cb6238ff3e8480483321d0e91e98474aad573f9bfadb      29190672  CD images\Descent II (USA)\Descent II (USA) (Track 10).bin
+775bb6b1d303cf1471a4915dad1c3cf37187f40d6508591d3e58972959d8324c      28680288  CD images\Descent II (USA)\Descent II (USA) (Track 11).bin
+3f9bcb9211cd98013e9caf65544bd17b051d3d720c74d1c4d9b3dfc553cad497      24347904  CD images\Descent II (USA)\Descent II (USA) (Track 12).bin
+59e612034fcbc55e3b026d8c6819fcc431fbebe5187e97cb0b1ebd663f4c48d2      30980544  CD images\Descent II (USA)\Descent II (USA) (Track 13).bin
+69a19194e41653f55207aa02346faea5cfd25df27972dd27fc02706db4568d88          1605  CD images\Descent II (USA)\Descent II (USA).cue
+5e6d523489f5027272c11b08bf6a998d0f33106d7acc7d67ff4c69f152626f79          3104  CD images\Descent-II-Destination-Quartzon_Win_EN_ISO-Version\D2_DQ.ccd
+7942a311a2bf2c5fecf1e1a0a1b5bc6ddea39dd6bdea41e339d5f40fde7a0825           609  CD images\Descent-II-Destination-Quartzon_Win_EN_ISO-Version\D2_DQ.cue
+26b3f104f43b9743745eaa379c704701107a7243c4e5b2673f74ef7681f1789c     543709488  CD images\Descent-II-Destination-Quartzon_Win_EN_ISO-Version\D2_DQ.img
+250de7e6b5b8e2cdab1a5398515fa0a8b63a9511c8da312f6b43fd3bd374b552      22192224  CD images\Descent-II-Destination-Quartzon_Win_EN_ISO-Version\D2_DQ.sub
+86e43eddb1a9d04efda47862f7671818cbca521837af5259d67e3106f38ecc24       7938000  CD images\Dimensions for Descent (USA)\Dimensions for Descent (USA).bin
+140361049905f5edf3150c894c8b21edbe6d1b3f3f488ed19a5367f9854bda03           117  CD images\Dimensions for Descent (USA)\Dimensions for Descent (USA).cue
+
+## demo installers
+64741386ad88d7a60a9529383affb4d2415e11d907ea6dbab8a8a66e1c20b745       2877472  demo installers\descent 1 demo 1-4.zip
+622ab2d5328f5c5dd9f804e59b8a8769ed85fc25f92428a3cfb5ff53aed95d07       3936220  demo installers\descent 1 demo mac.zip
+a7c31eae6dfd22e1f6a4c0b9fb2dfb2e25197831bc43c3e9d65734c7fa446c4d       4307914  demo installers\descent 2 demo 1-0.zip
+
+## DESCENT2.SOW
+871d3684cb6c84b50140552c21d10254c881e7ab852238d1e5f3f0cb61dc9e48      23981577  DESCENT2.SOW
+
+## gog installers
+8714b8408913f36344a04cd4c8f7763e7dd2495d9fa78f94ea96ef4bb1ff355d      93840377  gog installers\Descent_(MAC_game_ost).zip
+7bca2841369dac46b043c95fb29830fb2115318f9e33ccd40fe046732ee91bfd     587449987  gog installers\descent_2_enUS_1_0_51877.pkg
+d0720e12b95cfaee95e133ae08249ef05fcec17c6e9ca362bd54d8efb96f2293      22251081  gog installers\descent_enUS_1_0_35122.pkg
+cd754293de928f73a3772630a85d274b22940c857b1aab80078afa962a5492a7      26384096  gog installers\setup_descent_1.4a_(16596).exe
+58ccb37ecd54c73b0ddbde8d9051a0a6498911fbe66cd025179da681e13559cd     563071744  gog installers\setup_descent_2_1.1_(16596).exe

@@ -113,6 +113,13 @@ game_data/extract_all_cds.ps1                    — clean re-extract on -Force
 - BIN/CUE import prompt for D2 GOG
 - File set creation from extracted assets
 
+## phase 3a: verify android integration
+- scripts to clear the emulator's game data out (or start fresh), then copy a single bin+cue set, or a single gog installer (to an out-of-app location), and then pick that file in the file add menus, and choose to do a full import (bring game files into the default set, and extract the internal CD image from the gog d2 installers, but leave CD images in place for redbook audio purposes)
+- after doing the full import, ensure the game starts, select player, and then select mission (and ensure the mission's name matches the expected one, either descent or descent 2 (those aren't the accurate names, but whatever the names for those are)), and ensure level 1 loads and the final introspection shows in-level
+- there should be a script for a CD image, and another for a gog installer, and then an overall orchestration script. there should be a json test input file for each CD image or gog installer showing the expected mission name and level 1 name for the regression test
+- there should be some kind of parameterized (for filename, mission name, etc.) json5 regression test file like the other emulator regression test files
+- 
+
 ## Phase 4: Regression Testing (future, not this PR)
 - Introspection extensions for file set contents
 - Emulator-based regression script
