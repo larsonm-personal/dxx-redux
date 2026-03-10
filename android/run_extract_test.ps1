@@ -64,24 +64,52 @@ $DEMO_SET_HASHES = @{}  # populated dynamically below
 
 # ── Helpers ──────────────────────────────────────────────────
 
+# ADB command timeout (seconds). If any single adb call takes longer, kill it.
+$ADB_TIMEOUT = 30
+
 function Write-Status {
     param([string]$Msg, [string]$Color = 'Cyan')
     Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] $Msg" -ForegroundColor $Color
 }
 
 function Adb {
-    param([string[]]$CmdArgs)
-    $prevEAP = $ErrorActionPreference
-    $ErrorActionPreference = 'Continue'
-    $output = & $ADB @CmdArgs 2>$null | Out-String
-    $ErrorActionPreference = $prevEAP
-    return $output.Trim()
+    param([string[]]$CmdArgs, [int]$Timeout = $script:ADB_TIMEOUT)
+    $psi = [System.Diagnostics.ProcessStartInfo]::new()
+    $psi.FileName = $ADB
+    $psi.Arguments = ($CmdArgs | ForEach-Object { if ($_ -match '\s') { "`"$_`"" } else { $_ } }) -join ' '
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $proc = [System.Diagnostics.Process]::Start($psi)
+    # Read stderr asynchronously to prevent deadlock when both buffers fill
+    $stderrTask = $proc.StandardError.ReadToEndAsync()
+    $stdout = $proc.StandardOutput.ReadToEnd()
+    $proc.WaitForExit($Timeout * 1000) | Out-Null
+    if (-not $proc.HasExited) {
+        Write-Status "  ADB timeout (${Timeout}s): $($CmdArgs -join ' ')" 'Red'
+        try { $proc.Kill() } catch {}
+        $proc.Dispose()
+        return ''
+    }
+    $proc.Dispose()
+    return $stdout.Trim()
 }
 
 function Adb-RunAs {
     param([string]$Cmd)
     return (Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'sh', '-c', $Cmd))
 }
+
+# Ensure the app is force-stopped on any exit (clean or error)
+$script:_cleanupDone = $false
+function Invoke-Cleanup {
+    if ($script:_cleanupDone) { return }
+    $script:_cleanupDone = $true
+    # Fire-and-forget force-stop with short timeout
+    try { Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) -Timeout 5 | Out-Null } catch {}
+}
+Register-EngineEvent PowerShell.Exiting -Action { Invoke-Cleanup } | Out-Null
 
 function Read-Json5 {
     # Parse JSON5 file (strip // comments and trailing commas)
@@ -103,10 +131,7 @@ function Get-SetupIntrospection {
 function Get-GameIntrospection {
     Adb -CmdArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.INTROSPECT') | Out-Null
     Start-Sleep -Seconds 2
-    $prevEAP = $ErrorActionPreference
-    $ErrorActionPreference = 'Continue'
     $json = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'cat', 'files/introspect.json')
-    $ErrorActionPreference = $prevEAP
     if (-not $json -or $json -notmatch '^\s*\{') {
         return [PSCustomObject]@{ screen_mode = 'loading'; menu = $null; in_game = $false }
     }
@@ -125,17 +150,27 @@ function Send-SetupCommand {
 
 function Push-FileToSet {
     # Push a local file to the active set dir via staging.
-    # adb push writes progress to stderr, so we must suppress ErrorActionPreference.
     param([string]$LocalPath, [string]$RemoteName)
-    $ErrorActionPreference = 'Continue'  # adb writes status to stderr
     $stagingPath = "/data/local/tmp/$RemoteName"
     $dest = "/data/data/$PACKAGE/files/sets/$TEST_SET/$RemoteName"
-    & $ADB push $LocalPath $stagingPath 2>$null | Out-Null
-    & $ADB shell chmod 644 $stagingPath 2>$null | Out-Null
-    # Use single-quoted sh command so PowerShell doesn't eat the > redirect
-    $shCmd = "cat $stagingPath > $dest"
-    & $ADB shell run-as $PACKAGE sh -c "'$shCmd'" 2>$null | Out-Null
-    & $ADB shell rm -f $stagingPath 2>$null | Out-Null
+    Adb -CmdArgs @('push', $LocalPath, $stagingPath) -Timeout 120 | Out-Null
+    Adb -CmdArgs @('shell', 'chmod', '644', $stagingPath) | Out-Null
+    # Direct ProcessStartInfo call — the sh -c argument needs single quotes to
+    # protect > from adb shell's outer shell interpretation.
+    $psi = [System.Diagnostics.ProcessStartInfo]::new()
+    $psi.FileName = $ADB
+    $psi.Arguments = "shell run-as $PACKAGE sh -c 'cat $stagingPath > $dest'"
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $proc = [System.Diagnostics.Process]::Start($psi)
+    $null = $proc.StandardError.ReadToEndAsync()
+    $null = $proc.StandardOutput.ReadToEnd()
+    $proc.WaitForExit(120000) | Out-Null
+    if (-not $proc.HasExited) { try { $proc.Kill() } catch {} }
+    $proc.Dispose()
+    Adb -CmdArgs @('shell', 'rm', '-f', $stagingPath) | Out-Null
 }
 
 function Get-RemoteFileSize {
@@ -455,9 +490,7 @@ foreach ($sf in $signatureFiles) {
 
     # Hash the file on device using sha1sum (don't use sh -c, it splits args)
     $remotePath = "files/sets/$TEST_SET/$sfLower"
-    $ErrorActionPreference = 'Continue'
     $hashOutput = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'sha1sum', $remotePath)
-    $ErrorActionPreference = 'Stop'
     if ($hashOutput -match '^([0-9a-f]{40})') {
         $deviceHash = $Matches[1]
         $demoHash = $demoHashes[$sfLower]
@@ -593,27 +626,86 @@ if (-not $menuReached) {
 
 Write-Status "Game reached menu: '$($gi.menu.title)'" 'Green'
 
-# Navigate to new game: press Enter to start
-Write-Status "Starting new game (pressing Enter)..."
-Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
-Start-Sleep -Seconds 3
+# Navigate to new game via introspection-guided keypresses.
+# Most menus just need Enter. The level-start dialog has a number input
+# focused by default — need Down to reach the Ok button before pressing Enter.
+Write-Status "Navigating to game (introspection-guided)..."
 
-# Navigate through menus and briefing. Use Down+Enter to hit "Ok" buttons
-# (e.g. level-start dialog has a number field selected by default — need Down to reach Ok)
-for ($i = 0; $i -lt 15; $i++) {
-    Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_DPAD_DOWN') | Out-Null
-    Start-Sleep -Milliseconds 200
+$navAttempts = 0
+$maxNav = 25
+$inGame = $false
+$loadingCount = 0  # consecutive 'loading' states (game non-responsive)
+
+while ($navAttempts -lt $maxNav) {
+    $navAttempts++
+    $gi = Get-GameIntrospection
+
+    # Already in-game — done
+    if ($gi.in_game) {
+        $inGame = $true
+        break
+    }
+
+    # Game is non-responsive (loading state — introspect.json not written)
+    if ($gi.screen_mode -eq 'loading') {
+        $loadingCount++
+        # Check process alive every few loading states
+        if ($loadingCount % 3 -eq 0) {
+            $procCheck = Adb -CmdArgs @('shell', 'pidof', $PACKAGE)
+            if (-not $procCheck -or $procCheck -notmatch '^\d+') {
+                Write-Status "FAIL: Game process died during navigation" 'Red'
+                exit 1
+            }
+        }
+        Write-Status "  [$navAttempts] game loading/non-responsive (${loadingCount}x)" 'Gray'
+        # Don't press any keys while loading — just wait
+        Start-Sleep -Seconds 2
+        continue
+    }
+    $loadingCount = 0
+
+    # Movie/briefing screen — press Enter to skip through pages
+    if ($gi.screen_mode -eq 'movie') {
+        Write-Status "  [$navAttempts] briefing/movie, pressing Enter to skip" 'Gray'
+        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
+        Start-Sleep -Seconds 1
+        continue
+    }
+
+    # In-game screen but not marked in_game (e.g., D1 demo/title screen)
+    if ($gi.screen_mode -eq 'game' -and -not $gi.in_game) {
+        Write-Status "  [$navAttempts] game screen but not in_game, pressing Escape" 'Gray'
+        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ESCAPE') | Out-Null
+        Start-Sleep -Seconds 1
+        continue
+    }
+
+    # Determine what to press based on menu state.
+    # The level-start dialog has an input/number field selected by default —
+    # need Down to reach the "Ok" button before pressing Enter.
+    $hasInputItem = $false
+    if ($gi.menu -and $gi.menu.items) {
+        foreach ($item in $gi.menu.items) {
+            if ($item.type -eq 'number' -or $item.type -eq 'input') {
+                $hasInputItem = $true; break
+            }
+        }
+    }
+
+    if ($hasInputItem) {
+        # Level-start dialog: Down to Ok button, then Enter
+        Write-Status "  [$navAttempts] input field detected, pressing Down+Enter" 'Gray'
+        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_DPAD_DOWN') | Out-Null
+        Start-Sleep -Milliseconds 200
+    } else {
+        Write-Status "  [$navAttempts] menu='$(if ($gi.menu) { $gi.menu.title } else { $gi.screen_mode })'" 'Gray'
+    }
+
     Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
-    Start-Sleep -Milliseconds 800
+    Start-Sleep -Seconds 1
 }
 
-# Wait for level to load
-Start-Sleep -Seconds 5
-
-# Final introspection
-$gi = Get-GameIntrospection
-
-if ($gi.in_game) {
+if ($inGame) {
     $levelMatch = ($gi.current_level_name -eq $spec.expected_level1)
     if ($levelMatch) {
         Write-Status "PASS: In-game, level='$($gi.current_level_name)' matches expected" 'Green'
@@ -622,12 +714,14 @@ if ($gi.in_game) {
         Write-Status "  (The game loaded - level name may need updating in spec)" 'Yellow'
     }
 } else {
-    Write-Status "FAIL: Game not in-game state after launching" 'Red'
+    Write-Status "FAIL: Game not in-game state after $maxNav navigation attempts" 'Red'
     Write-Status "  screen_mode=$($gi.screen_mode), in_game=$($gi.in_game)" 'Yellow'
     if ($gi.menu) {
-        Write-Status "  menu title='$($gi.menu.title)', items:" 'Yellow'
+        Write-Status "  menu title='$($gi.menu.title)'" 'Yellow'
+        if ($gi.menu.subtitle) { Write-Status "  subtitle='$($gi.menu.subtitle)'" 'Yellow' }
+        Write-Status "  items:" 'Yellow'
         foreach ($item in $gi.menu.items) {
-            Write-Status "    [$($item.index)] $($item.text)" 'Yellow'
+            Write-Status "    [$($item.index)] type=$($item.type) text='$($item.text)'" 'Yellow'
         }
     }
     exit 1
@@ -654,4 +748,5 @@ Write-Host "  RESULT: PASS" -ForegroundColor Green
 Write-Host "  Source: $sourceName ($($spec.classification))" -ForegroundColor Green
 Write-Host "  Level: $($gi.current_level_name)" -ForegroundColor Green
 Write-Host "============================================================" -ForegroundColor Green
+Invoke-Cleanup
 exit 0

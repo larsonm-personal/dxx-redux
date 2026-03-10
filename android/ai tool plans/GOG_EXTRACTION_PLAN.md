@@ -313,13 +313,59 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 - Actions: wait for pilot select → new game → select mission → Ok → Rookie → skip briefing → assert in_game + level
 - Note: Currently exists as a future enhancement path — `run_extract_test.ps1` uses direct adb keyevent presses for menu navigation, which is already working reliably
 
-### 3a.6: Full coverage run
+### 3a.6: Full coverage run ✅ DONE
 - Run 3a.4 against all 29 CDs + 4 GOG installers (33 total)
-- Investigate failures, categorize:
-  - Demo CDs (different mission names, may need special handling)
-  - Expansion-only CDs (Vertigo, Quartzon — no base game files)
-  - Multi-game CDs (Definitive Collection — both D1 and D2)
-- Document known limitations in results
+- Results: **21/33 PASS, 12 FAIL** (35:47 total time)
+- Script improvements this phase:
+  - Adb function rewritten with ProcessStartInfo (timeout, async stderr drain)
+  - Push-FileToSet uses direct ProcessStartInfo for sh -c 'cat > dest' (proper quoting)
+  - Introspection-guided navigation (detects input fields, movie/briefing, game screens)
+  - Cleanup handlers (Invoke-Cleanup, Register-EngineEvent PowerShell.Exiting)
+  - Orchestrator: pre/post force-stop, emulator health check, auto-repair
+  - Emulator GPU changed from swiftshader_indirect to auto (fixed loading crashes)
+
+#### Results by category
+
+**D2 full — 10 PASS** (all reach level "Ahayweh Gate"):
+- Descent II (USA), Descent II (USA) (Alt), Descent II (USA) (v1.1), Descent II (USA) (Rerelease)
+- Descent II (Europe), Descent II (Europe) (v1.1)
+- Definitive Collection (Europe) Disc 2, Definitive Collection (USA) Disc 2
+
+**D2 GOG — 2 PASS** (both reach level "Ahayweh Gate"):
+- descent_2_enUS_1_0_51877, setup_descent_2_1.1_(16596)
+
+**D2 OEM/Quartzon — 6 SKIP** (can_launch=false, expansion-only):
+- Descent II - Destination Quartzon (Europe), (USA), (USA Diamond OEM), (USA Logitech OEM)
+- Descent II - Destination Quartzon 3D (Europe)
+- Descent-II-Destination-Quartzon_Win_EN_ISO-Version
+
+**D2 Vertigo — 3 SKIP** (can_launch=false, expansion-only):
+- Descent II - The Vertigo Series (USA)
+- (2 Vertigo entries from Definitive Collection discs)
+
+**D2 Demo — 1 FAIL** (game process alive but never reaches menu):
+- Descent II (USA) (3-Level Interactive Preview) — uses d2demo.* files, may need special engine support
+
+**D1 full — 9 FAIL** (crash on startup — no D1 engine on Android):
+- Descent (USA), Descent (Europe), Descent (Europe) (Alt)
+- Descent - Anniversary Edition (USA), (Brazil)
+- Definitive Collection (Europe) Disc 1, Definitive Collection (USA) Disc 1
+- descent_enUS_1_0_35122 (GOG D1), setup_descent_1.4a_(16596) (GOG D1)
+
+**D1 expansion — 1 FAIL** (crash — no D1 engine):
+- Descent - Destination Saturn (USA)
+
+**D1 demo — 1 FAIL** (crash — no D1 engine):
+- Descent - Test Flight (USA)
+
+**D1 levels — 2 PASS** (file-only, no launch needed):
+- Descent - Levels of the World (USA) — 191 files verified
+- Dimensions for Descent (USA) — 88 files verified
+
+#### Known limitations
+- D1-only sources require a D1 engine build (not yet available on Android)
+- D2 OEM/Quartzon and Vertigo sets are expansion-only — need base game files to launch
+- D2 demo (3-Level Preview) may use incompatible demo-specific data format
 
 ### phase 4: direct .sow import
 - allow importing a .sow and populating a file set with it. this is the same extraction code paths, but skipping to the sow extract if a user happens to present one of those files
