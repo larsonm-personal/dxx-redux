@@ -6,6 +6,7 @@
 
 // see also:
 // https://salsa.debian.org/games-team/game-data-packager/-/blob/master/data/descent1.yaml
+// note: my D1 demo's descent.pig sha256 doesn't match what they have. I might have a different demo version
 // https://salsa.debian.org/games-team/game-data-packager/-/blob/master/data/descent2.yaml
 
 {
