@@ -181,7 +181,7 @@ static int extract_pkg(const char *pkg_path, const char *out_dir) {
     printf("]\n");
 
     /* Extract all game files */
-    int extracted = pkg_extract_all(&arc, out_dir, progress_cb, NULL);
+    int extracted = pkg_extract_all(&arc, out_dir, progress_cb, NULL, 0);
     if (extracted < 0) {
         fprintf(stderr, "ERROR: Extraction failed\n");
         pkg_close(&arc);

@@ -2918,6 +2918,7 @@ private fun GogImportDialog(
     var progressPct by remember { mutableStateOf(0f) }
     var tempPath by remember { mutableStateOf<String?>(null) }
     var errorMsg by remember { mutableStateOf<String?>(null) }
+    var includeAudio by remember { mutableStateOf(true) }
 
     // Copy installer to temp + detect format + list files
     LaunchedEffect(installerUri) {
@@ -2944,8 +2945,9 @@ private fun GogImportDialog(
                         status = "No game files found in installer"
                         errorMsg = "The installer was recognized as $fmt but contains no game files."
                     } else {
-                        val totalSize = files.sumOf { it.size }
-                        status = "Found ${files.size} game file(s) (${formatSize(totalSize)})"
+                        val gameFiles = files.filterNot { GogImportBridge.isAudioFile(it.name) }
+                        val totalSize = gameFiles.sumOf { it.size }
+                        status = "Found ${gameFiles.size} game file(s) (${formatSize(totalSize)})"
                     }
                 }
             } catch (e: Exception) {
@@ -2989,15 +2991,47 @@ private fun GogImportDialog(
                     Text(errorMsg!!, fontSize = 11.sp, color = MaterialTheme.colorScheme.error)
                 }
 
-                // File listing
+                // File listing — split game files and audio files
                 fileList?.let { files ->
-                    Spacer(modifier = Modifier.height(8.dp))
-                    files.forEach { f ->
-                        Text(
-                            "${f.name} (${formatSize(f.size)})",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    val gameFiles = files.filterNot { GogImportBridge.isAudioFile(it.name) }
+                    val audioFiles = files.filter { GogImportBridge.isAudioFile(it.name) }
+
+                    if (gameFiles.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        gameFiles.forEach { f ->
+                            Text(
+                                "${f.name} (${formatSize(f.size)})",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    // Audio files with opt-in checkbox
+                    if (audioFiles.isNotEmpty() && extractedCount == 0) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        val audioSize = audioFiles.sumOf { it.size }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(
+                                checked = includeAudio,
+                                onCheckedChange = { includeAudio = it },
+                                enabled = !processing
+                            )
+                            Text(
+                                "Include CD audio (${formatSize(audioSize)})",
+                                fontSize = 12.sp,
+                                modifier = Modifier.clickable(enabled = !processing) {
+                                    includeAudio = !includeAudio
+                                }
+                            )
+                        }
+                        audioFiles.forEach { f ->
+                            Text(
+                                "  ${f.name} (${formatSize(f.size)})",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
 
@@ -3025,16 +3059,18 @@ private fun GogImportDialog(
                                                     progressPct = pct
                                                     return 0
                                                 }
-                                            }
+                                            },
+                                            includeAudio = includeAudio
                                         )
-                                        val hasGog = AudioSourceManager(filesDir).hasLegacyGog(setDir)
+                                        val hasGog = if (includeAudio)
+                                            AudioSourceManager(filesDir).hasLegacyGog(setDir) else false
                                         withContext(Dispatchers.Main) {
                                             extractedCount = count
                                             status = if (count > 0) {
-                                                val msg = "Extracted $count game file(s)"
-                                                if (hasGog) "$msg \u2014 GOG audio detected"
+                                                val msg = "Extracted $count file(s)"
+                                                if (hasGog) "$msg \u2014 CD audio installed"
                                                 else msg
-                                            } else "No game files extracted"
+                                            } else "No files extracted"
                                         }
                                     } catch (e: Exception) {
                                         Log.e("DXX-GogImport", "Extraction failed", e)

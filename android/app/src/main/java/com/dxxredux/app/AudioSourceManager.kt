@@ -55,15 +55,21 @@ class AudioSourceManager(private val filesDir: File) {
 
     /** Check if the legacy GOG pair exists (no explicit source registration needed) */
     fun hasLegacyGog(setDir: File? = null): Boolean {
-        // Check setDir first (new imports), then filesDir (legacy installs)
-        if (setDir != null) {
-            val gog = File(setDir, "descent_ii.gog")
-            val inst = File(setDir, "descent_ii.inst")
-            if (gog.exists() && inst.exists()) return true
+        // Extracted filenames may be UPPERCASE; Android FS is case-sensitive
+        fun dirHasGogPair(dir: File): Boolean {
+            val files = dir.list() ?: return false
+            var hasGog = false
+            var hasInst = false
+            for (f in files) {
+                val lower = f.lowercase()
+                if (lower == "descent_ii.gog") hasGog = true
+                if (lower == "descent_ii.inst") hasInst = true
+                if (hasGog && hasInst) return true
+            }
+            return false
         }
-        val gog = File(filesDir, "descent_ii.gog")
-        val inst = File(filesDir, "descent_ii.inst")
-        return gog.exists() && inst.exists()
+        if (setDir != null && dirHasGogPair(setDir)) return true
+        return dirHasGogPair(filesDir)
     }
 
     /** Add a new audio source */

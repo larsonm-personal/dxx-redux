@@ -38,6 +38,13 @@ static int has_game_extension(const char *path) {
     return 0;
 }
 
+/* Audio extensions (.gog/.inst) — subset of game_extensions, optionally skipped */
+static int is_audio_extension(const char *path) {
+    const char *dot = strrchr(path, '.');
+    if (!dot) return 0;
+    return ci_cmp(dot, ".gog") == 0 || ci_cmp(dot, ".inst") == 0;
+}
+
 static const char *basename_only(const char *path) {
     const char *last = path;
     for (const char *p = path; *p; p++) {
@@ -179,7 +186,8 @@ static int gog_progress_cb(const char *current_file,
 JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_GogImportBridge_nativeExtractFiles(
         JNIEnv *env, jclass clazz,
-        jstring path, jstring outputDir, jobject progress)
+        jstring path, jstring outputDir, jobject progress,
+        jboolean includeAudio)
 {
     const char *p = (*env)->GetStringUTFChars(env, path, NULL);
     if (!p) return -1;
@@ -210,8 +218,10 @@ Java_com_dxxredux_app_GogImportBridge_nativeExtractFiles(
             LOGE("Failed to open .pkg: %s", p);
             extracted = -1;
         } else {
+            int skip_audio = !includeAudio;
             extracted = pkg_extract_all(&arc, out_dir,
-                                        progress ? gog_progress_cb : NULL, &ctx);
+                                        progress ? gog_progress_cb : NULL, &ctx,
+                                        skip_audio);
             pkg_close(&arc);
         }
     } else {
@@ -226,6 +236,7 @@ Java_com_dxxredux_app_GogImportBridge_nativeExtractFiles(
             int errors = 0;
             for (int i = 0; i < arc.file_count; i++) {
                 if (!has_game_extension(arc.files[i].destination)) continue;
+                if (!includeAudio && is_audio_extension(arc.files[i].destination)) continue;
                 const char *fname = basename_only(arc.files[i].destination);
                 char out_path[1024];
                 snprintf(out_path, sizeof(out_path), "%s/%s", out_dir, fname);

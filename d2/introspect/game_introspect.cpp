@@ -38,6 +38,21 @@ extern "C" {
 #include "playsave.h"
 }
 
+/* ── Redbook audio accessors (defined in rbaudio_bin.c / rbaudio.c) ── */
+extern "C" {
+    int  RBAEnabled(void);
+    int  RBAGetNumberOfTracks(void);
+    int  RBAGetTrackNum(void);
+    int  RBAPeekPlayStatus(void);
+}
+
+/* ── Movie tracking globals (defined in movie.c) ── */
+extern "C" {
+    extern char g_current_movie_name[];
+    extern int  g_last_movie_result;
+    extern char g_last_movie_name[];
+}
+
 /* ── Audio diagnostic accessors (defined in digi_tsf_music.c / SDL_androidaudio.c) ── */
 extern "C" {
     int  tsf_music_get_output_rate(void);
@@ -371,6 +386,37 @@ extern "C" char *game_introspect_get_state(void) {
             {"osl_buf_frames", androidaud_get_audio_buf_frames()}
         };
         j["audio"] = std::move(audio);
+    }
+
+    /* ── Redbook audio ────────────────────────────────────────────── */
+    {
+        json rb = { {"enabled", false} };
+        int enabled = RBAEnabled();
+        if (enabled) {
+            rb["enabled"] = true;
+            int status = RBAPeekPlayStatus();
+            rb["num_tracks"] = RBAGetNumberOfTracks();
+            rb["current_track"] = RBAGetTrackNum();
+            rb["play_status"] = (status == 1) ? "playing" : (status == -1) ? "paused" : "stopped";
+        }
+        j["redbook"] = std::move(rb);
+    }
+
+    /* ── Movie state ──────────────────────────────────────────────── */
+    {
+        json mv;
+        if (g_current_movie_name[0])
+            mv["current"] = std::string(g_current_movie_name);
+        if (g_last_movie_name[0])
+            mv["last_name"] = std::string(g_last_movie_name);
+        const char *result_str;
+        switch (g_last_movie_result) {
+            case 1:  result_str = "played_full"; break;
+            case 2:  result_str = "aborted"; break;
+            default: result_str = "not_played"; break;
+        }
+        mv["last_result"] = result_str;
+        j["movie"] = std::move(mv);
     }
 
     /* ── Player & position (only meaningful when a level is loaded) ── */

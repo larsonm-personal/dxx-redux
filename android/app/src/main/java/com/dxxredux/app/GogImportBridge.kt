@@ -19,6 +19,15 @@ object GogImportBridge {
     /** A game file found inside a GOG installer */
     data class GogFile(val name: String, val size: Long)
 
+    /** Audio extensions extracted from GOG installers (.gog/.inst) */
+    private val audioExtensions = setOf("gog", "inst")
+
+    /** Check if a filename is a GOG audio file (.gog or .inst) */
+    fun isAudioFile(name: String): Boolean {
+        val ext = name.substringAfterLast('.', "").lowercase()
+        return ext in audioExtensions
+    }
+
     /**
      * Detect the installer format from a file path.
      *
@@ -54,16 +63,18 @@ object GogImportBridge {
     /**
      * Extract game files from a GOG installer.
      *
-     * @param path      Filesystem path to the installer (.exe or .pkg)
-     * @param outputDir Directory to extract game files into (must exist)
-     * @param progress  Optional progress callback
+     * @param path         Filesystem path to the installer (.exe or .pkg)
+     * @param outputDir    Directory to extract game files into (must exist)
+     * @param progress     Optional progress callback
+     * @param includeAudio Whether to extract .gog/.inst CD audio files
      * @return Number of files extracted, or -1 on error
      */
     fun extractFiles(
         path: String, outputDir: String,
-        progress: ExtractProgress? = null
+        progress: ExtractProgress? = null,
+        includeAudio: Boolean = true
     ): Int {
-        return nativeExtractFiles(path, outputDir, progress)
+        return nativeExtractFiles(path, outputDir, progress, includeAudio)
     }
 
     /* ── Native methods ──────────────────────────────────────────── */
@@ -71,6 +82,7 @@ object GogImportBridge {
     private external fun nativeDetectFormat(path: String): String
     private external fun nativeListFiles(path: String): Array<String>?
     private external fun nativeExtractFiles(
-        path: String, outputDir: String, progress: ExtractProgress?
+        path: String, outputDir: String, progress: ExtractProgress?,
+        includeAudio: Boolean
     ): Int
 }

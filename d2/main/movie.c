@@ -61,6 +61,10 @@ extern char CDROM_dir[];
 
 int Vid_State;
 
+/* ── Movie tracking for introspection ─────────────────────────────── */
+char g_current_movie_name[FILENAME_LEN];
+int  g_last_movie_result = MOVIE_NOT_PLAYED;
+char g_last_movie_name[FILENAME_LEN];
 
 // Subtitle data
 typedef struct {
@@ -364,9 +368,17 @@ int RunMovie(char *filename, int hires_flag, int must_have,int dx,int dy)
 	ubyte pal_save[768];
 #endif
 
+	/* Track current movie for introspection */
+	strncpy(g_current_movie_name, filename, FILENAME_LEN - 1);
+	g_current_movie_name[FILENAME_LEN - 1] = '\0';
+
 	MALLOC(m, movie, 1);
-	if (!m)
+	if (!m) {
+		g_last_movie_result = MOVIE_NOT_PLAYED;
+		strncpy(g_last_movie_name, g_current_movie_name, FILENAME_LEN);
+		g_current_movie_name[0] = '\0';
 		return MOVIE_NOT_PLAYED;
+	}
 
 	m->result = 1;
 	m->aborted = 0;
@@ -381,6 +393,9 @@ int RunMovie(char *filename, int hires_flag, int must_have,int dx,int dy)
 		if (reshow)
 			show_menus();
 		d_free(m);
+		g_last_movie_result = MOVIE_NOT_PLAYED;
+		strncpy(g_last_movie_name, g_current_movie_name, FILENAME_LEN);
+		g_current_movie_name[0] = '\0';
 		return MOVIE_NOT_PLAYED;
 	}
 
@@ -403,6 +418,9 @@ int RunMovie(char *filename, int hires_flag, int must_have,int dx,int dy)
 		if (reshow)
 			show_menus();
 		d_free(m);
+		g_last_movie_result = MOVIE_NOT_PLAYED;
+		strncpy(g_last_movie_name, g_current_movie_name, FILENAME_LEN);
+		g_current_movie_name[0] = '\0';
 		return MOVIE_NOT_PLAYED;
 	}
 
@@ -427,6 +445,9 @@ int RunMovie(char *filename, int hires_flag, int must_have,int dx,int dy)
 		if (reshow)
 			show_menus();
 		d_free(m);
+		g_last_movie_result = MOVIE_NOT_PLAYED;
+		strncpy(g_last_movie_name, g_current_movie_name, FILENAME_LEN);
+		g_current_movie_name[0] = '\0';
 		return MOVIE_NOT_PLAYED;
 	}
 
@@ -454,7 +475,13 @@ int RunMovie(char *filename, int hires_flag, int must_have,int dx,int dy)
 	gr_palette_load(pal_save);
 #endif
 
-	return (aborted?MOVIE_ABORTED:MOVIE_PLAYED_FULL);
+	{
+		int ret = aborted ? MOVIE_ABORTED : MOVIE_PLAYED_FULL;
+		g_last_movie_result = ret;
+		strncpy(g_last_movie_name, g_current_movie_name, FILENAME_LEN);
+		g_current_movie_name[0] = '\0';
+		return ret;
+	}
 }
 
 

@@ -406,9 +406,19 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 
 ---
 
-## Phase 5: Deep D2 GOG Regression (Audio + Movies)
+## Phase 5: Deep D2 GOG Regression (Audio + Movies) — DONE
 
-**Goal:** Verify the most common installer (D2 GOG) beyond "can it boot" — confirm audio tracks play and intro movies aren't silently skipped. Requires adding new introspection fields.
+**Goal:** Verify the most common installer (D2 GOG .exe) beyond "can it boot" — confirm audio tracks play and intro movies aren't silently skipped. Requires adding new introspection fields.
+
+### Results
+- **5.1 + 5.2**: Redbook audio + movie introspection fields added to `game_introspect.cpp` and `movie.c`
+- **5.3**: Build succeeded. Initial SIGSEGV crash due to `nullptr` assignment in nlohmann json — fixed by using conditional `std::string()` instead
+- **5.4**: Verified in-game at level 1 ("Ahayweh Gate"):
+  - `redbook.enabled: false` — expected, no BIN/CUE audio source configured
+  - `movie.last_name: "pla.mve"`, `movie.last_result: "not_played"` — movies attempted but MVE files inside MVL containers not individually accessible
+  - Player: score=0, shields=100, energy=100, lives=3, level=1
+- **5.5**: Deferred — full end-to-end GOG import + deep regression to be done as part of Phase 6
+- **Key lesson**: Never assign `nullptr` to nlohmann json via subscript operator — causes SIGSEGV
 
 ### 5.1: Add Redbook audio fields to game introspection — *no dependencies*
 - In `game_introspect.cpp`, add `extern "C"` declarations for existing public functions from `rbaudio.h`:
@@ -459,6 +469,7 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
 - Introspect during movie playback → `movie.current` non-empty
 - Introspect in-game → `redbook.enabled == true`, `redbook.num_tracks > 0`, `redbook.status == "playing"`
 - Verify `movie.last_result != "not_played"` for intro movie
+- build functionality into a script that can be re-run, with results saved to a file that has a diff minimization strategy (same as in phase 6)
 
 ---
 

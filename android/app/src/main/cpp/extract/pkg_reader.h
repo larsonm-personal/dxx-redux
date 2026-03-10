@@ -57,11 +57,13 @@ int pkg_open(const char *pkg_path, pkg_archive_t *arc);
 
 /*
  * Extract all game files to output_dir in a single streaming pass.
+ * If skip_audio is non-zero, .gog/.inst files are skipped.
  *
  * Returns number of files extracted, or -1 on error.
  */
 int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
-                    pkg_progress_fn progress, void *user_data);
+                    pkg_progress_fn progress, void *user_data,
+                    int skip_audio);
 
 /*
  * Close archive and free resources.

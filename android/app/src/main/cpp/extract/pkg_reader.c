@@ -301,6 +301,13 @@ static const char *game_extensions[] = {
     NULL
 };
 
+/* Audio extensions — skipped when skip_audio is set */
+static int is_audio_ext(const char *fname) {
+    const char *dot = strrchr(fname, '.');
+    if (!dot) return 0;
+    return _stricmp(dot, ".gog") == 0 || _stricmp(dot, ".inst") == 0;
+}
+
 static int is_game_file(const char *cpio_path, const char **basename_out) {
     /* Must be under the game directory */
     size_t pfx_len = strlen(game_prefix);
@@ -417,7 +424,8 @@ fail:
 }
 
 int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
-                    pkg_progress_fn progress, void *user_data) {
+                    pkg_progress_fn progress, void *user_data,
+                    int skip_audio) {
     if (arc->fd < 0 || arc->file_count == 0) return 0;
 
     mkdir_p(output_dir);
@@ -434,7 +442,8 @@ int pkg_extract_all(pkg_archive_t *arc, const char *output_dir,
         const char *basename;
         int is_game = is_game_file(entry.name, &basename);
 
-        if (!is_game || entry.filesize == 0) {
+        if (!is_game || entry.filesize == 0 ||
+            (skip_audio && is_audio_ext(basename))) {
             if (entry.filesize > 0 && gz_skip(&gs, entry.filesize) < 0)
                 { ret = -1; break; }
             continue;
