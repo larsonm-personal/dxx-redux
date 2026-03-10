@@ -137,11 +137,14 @@ class SetupActivity : ComponentActivity() {
                 }
                 "import_gog" -> {
                     val path = intent.getStringExtra("path") ?: return
+                    val audio = intent.getBooleanExtra("include_audio", true)
                     Thread {
                         val fsm = FileSetManager(filesDir)
                         val setDir = fsm.getSetDir(fsm.getActive())
-                        val count = GogImportBridge.extractFiles(path, setDir.absolutePath, null)
-                        Log.i("DXX-Setup", "import_gog '$path' -> $count file(s) to ${setDir.name}")
+                        val count = GogImportBridge.extractFiles(path, setDir.absolutePath, null, audio)
+                        if (audio && count > 0 && AudioSourceManager(filesDir).hasLegacyGog(setDir))
+                            enableRedbookInConfig(filesDir)
+                        Log.i("DXX-Setup", "import_gog '$path' -> $count file(s) to ${setDir.name} (audio=$audio)")
                     }.start()
                 }
                 "import_sow" -> {
@@ -2337,6 +2340,24 @@ private fun updateDescentCfgResolution(filesDir: File, resolution: String) {
     Log.i("DXX-Setup", "Updated descent.cfg: ResolutionX=$w ResolutionY=$h")
 }
 
+/**
+ * Set MusicType=2 (REDBOOK) and OrigTrackOrder=1 in descent.cfg after GOG audio import.
+ * Mirrors the C engine's android_apply_initial_defaults() which only runs on first launch.
+ * MUSIC_TYPE_REDBOOK = 2 (shared constant, defined in d2/main/digi.h)
+ */
+private fun enableRedbookInConfig(filesDir: File) {
+    val cfgFile = File(filesDir, "descent.cfg")
+    if (!cfgFile.exists()) return  // writeInitialGameConfig will handle first launch
+    var text = cfgFile.readText()
+    for ((key, value) in listOf("MusicType" to "2", "OrigTrackOrder" to "1")) {
+        val regex = Regex("^$key=.*$", RegexOption.MULTILINE)
+        text = if (regex.containsMatchIn(text)) regex.replace(text, "$key=$value")
+               else text.trimEnd() + "\n$key=$value\n"
+    }
+    cfgFile.writeText(text)
+    Log.i("DXX-Setup", "Updated descent.cfg: MusicType=2 OrigTrackOrder=1")
+}
+
 @Composable
 private fun ResolutionPicker(prefs: SharedPreferences, filesDir: File) {
     val options = listOf("640x480" to "Low (640×480)", "960x720" to "Medium (960×720)", "1280x960" to "High (1280×960)")
@@ -3064,6 +3085,7 @@ private fun GogImportDialog(
                                         )
                                         val hasGog = if (includeAudio)
                                             AudioSourceManager(filesDir).hasLegacyGog(setDir) else false
+                                        if (hasGog) enableRedbookInConfig(filesDir)
                                         withContext(Dispatchers.Main) {
                                             extractedCount = count
                                             status = if (count > 0) {
