@@ -321,10 +321,13 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --
   - Multi-game CDs (Definitive Collection — both D1 and D2)
 - Document known limitations in results
 
----
+### phase 4: direct .sow import
+- allow importing a .sow and populating a file set with it. this is the same extraction code paths, but skipping to the sow extract if a user happens to present one of those files
+- test: using *just* the d2 sow from one of the d2 CDs, boot the game and get into level 1
+- think through and expand this plan before starting, then do it
 
-## Phase 4: Polish & Extended Testing (future)
-- Multi-set regression (create set, import, switch, verify isolation)
-- Audio playback verification (Redbook tracks playing in-game)
-- SAF leave-in-place import testing
-- Performance profiling of extraction on device
+### phase 5: a deeper regression test for a single installer
+- the D2 gog windows installer will be the most-used file, probably. verify it with more introspection than the others
+- Audio playback verification (Redbook tracks playing in-game. skip forward and back tracks)
+- ensure the opening video and briefing videos play (may need additional introspection). when the files aren't present or don't load, the videos are silently skipped, so this is important
+- think through and expand this plan before starting, then do it

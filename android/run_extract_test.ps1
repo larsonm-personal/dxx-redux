@@ -71,7 +71,10 @@ function Write-Status {
 
 function Adb {
     param([string[]]$CmdArgs)
-    $output = & $ADB @CmdArgs 2>&1 | Out-String
+    $prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    $output = & $ADB @CmdArgs 2>$null | Out-String
+    $ErrorActionPreference = $prevEAP
     return $output.Trim()
 }
 
@@ -93,14 +96,22 @@ function Get-SetupIntrospection {
     Adb -CmdArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_INTROSPECT') | Out-Null
     Start-Sleep -Seconds 2
     $json = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'cat', 'files/setup_introspect.json')
-    return ($json | ConvertFrom-Json)
+    if (-not $json -or $json -notmatch '^\s*\{') { return $null }
+    try { return ($json | ConvertFrom-Json) } catch { return $null }
 }
 
 function Get-GameIntrospection {
     Adb -CmdArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.INTROSPECT') | Out-Null
     Start-Sleep -Seconds 2
+    $prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
     $json = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'cat', 'files/introspect.json')
-    return ($json | ConvertFrom-Json)
+    $ErrorActionPreference = $prevEAP
+    if (-not $json -or $json -notmatch '^\s*\{') {
+        return [PSCustomObject]@{ screen_mode = 'loading'; menu = $null; in_game = $false }
+    }
+    try { return ($json | ConvertFrom-Json) }
+    catch { return [PSCustomObject]@{ screen_mode = 'loading'; menu = $null; in_game = $false } }
 }
 
 function Send-SetupCommand {
@@ -328,6 +339,10 @@ Start-Sleep -Seconds 3
 
 Write-Status "Canary check: verifying device is clean..."
 $state = Get-SetupIntrospection
+if (-not $state) {
+    Write-Status "FAIL: Could not get setup introspection (app may not be running)" 'Red'
+    exit 1
+}
 
 # Verify active set is our test set
 if ($state.active_set -ne $TEST_SET) {
@@ -400,11 +415,17 @@ Start-Sleep -Seconds 3
 
 Write-Status "Verifying files on device..."
 $state = Get-SetupIntrospection
+if (-not $state) {
+    Write-Status "FAIL: Could not get setup introspection (app may not be running)" 'Red'
+    exit 1
+}
 $remoteFiles = @($state.set_files | Where-Object { $_ })
 
 # Check expected files present
+$expectedFiles = @()
+if ($spec.expected_files -is [array]) { $expectedFiles = $spec.expected_files }
 $missingFiles = @()
-foreach ($ef in $spec.expected_files) {
+foreach ($ef in $expectedFiles) {
     $efLower = $ef.ToLower()
     $found = $remoteFiles | Where-Object { $_.ToLower() -eq $efLower }
     if (-not $found) {
@@ -417,7 +438,7 @@ if ($missingFiles.Count -gt 0) {
     Write-Status "  Files in set: $($remoteFiles -join ', ')" 'Yellow'
     exit 1
 }
-Write-Status "All $($spec.expected_files.Count) expected files present (of $($remoteFiles.Count) total)" 'Green'
+Write-Status "All $($expectedFiles.Count) expected files present (of $($remoteFiles.Count) total)" 'Green'
 
 # ── Step 6: Anti-demo-set canary — verify file identity ──────
 # Hash signature game files on device and compare against demo set hashes.
@@ -497,6 +518,15 @@ if ($SkipLaunch) {
     exit 0
 }
 
+# Skip launch if the game says it can't launch (missing required files)
+if (-not $state.can_launch) {
+    Write-Status "SKIP (can_launch=false): $($spec.classification) - $pushCount files pushed but game reports not launchable" 'Yellow'
+    if (-not $KeepFiles) {
+        Send-SetupCommand 'clear_set' -Name $TEST_SET
+    }
+    exit 0
+}
+
 # ── Step 8: Launch game ──────────────────────────────────────
 
 Write-Status "Launching game from set '$TEST_SET'..."
@@ -504,6 +534,9 @@ Write-Status "Launching game from set '$TEST_SET'..."
 # Force stop to ensure clean launch
 Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
 Start-Sleep -Seconds 2
+
+# Delete stale introspect.json so we only read fresh data from the new game session
+Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', 'files/introspect.json') | Out-Null
 
 # Re-launch setup activity
 Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null
@@ -521,13 +554,33 @@ Start-Sleep -Seconds 8
 
 Write-Status "Checking game state..."
 
-# Wait for game to reach main menu (up to 30s)
+# Wait for game to reach main menu (up to 45s)
+# D1 starts in demo/title mode (screen_mode=game) — press Escape to reach menu.
+# D2 goes directly to "Select pilot" menu.
 $menuReached = $false
-for ($i = 0; $i -lt 10; $i++) {
+$escPressed = 0
+for ($i = 0; $i -lt 15; $i++) {
     $gi = Get-GameIntrospection
     if ($gi.screen_mode -eq 'menu' -and $gi.menu) {
         $menuReached = $true
         break
+    }
+    # Check if the game process is still alive (detect early crashes)
+    if ($gi.screen_mode -eq 'loading') {
+        $procCheck = Adb -CmdArgs @('shell', 'pidof', $PACKAGE)
+        if (-not $procCheck -or $procCheck -notmatch '^\d+') {
+            Write-Status "FAIL: Game process died (crashed on startup?)" 'Red'
+            Write-Status "  Classification: $($spec.classification), game: $($spec.game)" 'Yellow'
+            exit 1
+        }
+    }
+    # Not at menu yet — press Escape then Enter to dismiss title/demo/movie screens
+    if ($i -ge 2 -and $escPressed -lt 5) {
+        Write-Status "  Not at menu (screen_mode=$($gi.screen_mode)), pressing keys..." 'Gray'
+        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ESCAPE') | Out-Null
+        Start-Sleep -Milliseconds 500
+        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
+        $escPressed++
     }
     Start-Sleep -Seconds 3
 }
@@ -545,9 +598,11 @@ Write-Status "Starting new game (pressing Enter)..."
 Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
 Start-Sleep -Seconds 3
 
-# If there's a mission selection, we may need to navigate further
-# For now, just hit Enter repeatedly to get past menus and briefing
+# Navigate through menus and briefing. Use Down+Enter to hit "Ok" buttons
+# (e.g. level-start dialog has a number field selected by default — need Down to reach Ok)
 for ($i = 0; $i -lt 15; $i++) {
+    Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_DPAD_DOWN') | Out-Null
+    Start-Sleep -Milliseconds 200
     Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
     Start-Sleep -Milliseconds 800
 }

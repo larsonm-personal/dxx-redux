@@ -72,6 +72,29 @@ Write-Host "  Mode:  $(if ($SkipLaunch) { 'file-only (-SkipLaunch)' } else { 'fu
 Write-Host "============================================================" -ForegroundColor White
 Write-Host ""
 
+# ── Helpers ──────────────────────────────────────────────────
+
+$_depBaseFile = Join-Path $REPO_ROOT 'dependency_base.txt'
+$DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
+$ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
+
+function Test-ActivityManager {
+    $ErrorActionPreference = 'Continue'
+    $result = & $ADB shell am get-config 2>&1 | Out-String
+    return ($result -notmatch "Can't find service" -and $result -match '\w')
+}
+
+function Wait-ActivityManager {
+    param([int]$Timeout = 60)
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt $Timeout) {
+        if (Test-ActivityManager) { return $true }
+        Write-Host "  Waiting for activity manager..." -ForegroundColor Yellow
+        Start-Sleep -Seconds 5
+    }
+    return $false
+}
+
 # ── Run tests ────────────────────────────────────────────────
 
 $results = @()
@@ -87,6 +110,19 @@ foreach ($specPath in $specs) {
     }
 
     Write-Host "─── [$($results.Count + 1)/$($specs.Count)] $sourceName ───" -ForegroundColor Cyan
+
+    # Check activity manager health before each test
+    if (-not (Test-ActivityManager)) {
+        Write-Host "  Activity manager unresponsive. Waiting for recovery..." -ForegroundColor Yellow
+        if (-not (Wait-ActivityManager -Timeout 60)) {
+            Write-Host "  Activity manager not recovered. Skipping remaining tests." -ForegroundColor Red
+            # Mark this and all remaining specs as FAIL
+            $results += [PSCustomObject]@{ Source = $sourceName; Status = 'FAIL'; Time = '00:00'; ExitCode = 98 }
+            $failures++
+            # Don't continue running specs that will all fail
+            break
+        }
+    }
 
     $testStart = Get-Date
     $testParams = @{ SpecPath = $specPath }

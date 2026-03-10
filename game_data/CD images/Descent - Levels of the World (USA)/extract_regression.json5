@@ -17,9 +17,7 @@
     "classification":  "d1_levels",
     "expected_mission":  null,
     "expected_level1":  null,
-    "expected_files":  {
-
-                       },
+    "expected_files":  [],
     "audio_tracks":  0,
     "total_extracted":  191
 }

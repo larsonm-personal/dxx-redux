@@ -56,7 +56,7 @@ function Test-EmulatorHealth {
         $completed = $job | Wait-Job -Timeout 5
         if (-not $completed) {
             Remove-Job $job -Force -ErrorAction SilentlyContinue
-            return @{ Healthy = $false; Reason = "shell unresponsive (getprop timed out — emulator likely frozen)" }
+            return @{ Healthy = $false; Reason = "shell unresponsive (getprop timed out - emulator likely frozen)" }
         }
         $result = Receive-Job $job
         Remove-Job $job -Force -ErrorAction SilentlyContinue
@@ -64,6 +64,7 @@ function Test-EmulatorHealth {
             return @{ Healthy = $false; Reason = "shell unresponsive (boot_completed='$($result.Trim())')" }
         }
     } catch {
+        if ($job) { Remove-Job $job -Force -ErrorAction SilentlyContinue }
         return @{ Healthy = $false; Reason = "shell command failed: $_" }
     }
 
