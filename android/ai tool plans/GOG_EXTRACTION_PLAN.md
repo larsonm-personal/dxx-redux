@@ -142,55 +142,109 @@ game_data/extract_all_cds.ps1                    — clean re-extract on -Force
 - Keep existing `files_on_disk` for backwards compatibility
 - Add `active_set_path` field showing the current set directory path
 
-### 3.4: GOG JNI bridge (gog_import_jni.c)
-- New JNI file wrapping `inno_reader.h` and `pkg_reader.h`
-- Three native functions:
-  - `detectGogFormat(path)` → "innosetup" | "pkg" | "unknown"
-  - `listGogFiles(path)` → array of {name, size}
-  - `extractGogFiles(path, outputDir, progressCallback)` → count or -1
-- Pattern after existing `disc_import_jni.c`
-- LZMA SDK + zlib already linked in Android CMakeLists.txt
+### 3.4: GOG JNI bridge (jni_gog_import.c) — DONE ✓
+- New file `extract/jni_gog_import.c` wrapping `inno_reader.h` and `pkg_reader.h`
+- Three JNI functions (naming: `Java_com_dxxredux_app_GogImportBridge_native*`):
+  - `nativeDetectFormat(path)` → "innosetup" | "pkg" | "unknown" (extension-based)
+  - `nativeListFiles(path)` → String[] of "name|size" entries (game extensions only)
+  - `nativeExtractFiles(path, outputDir, progress)` → file count or -1
+- Progress callback via `gog_extract_ctx_t` struct: `onProgress(String, long, long): int`
+- Game extension filter: .hog, .pig, .ham, .s11, .s22, .dem, .mvl, .msn, .mn2, .gog, .inst
+- LZMA SDK linked via FetchContent (same git repo/tag as test CMakeLists.txt)
+- Android NDK zlib linked as system library `-lz` (no FetchContent needed)
 
-### 3.5: GogImportBridge.kt
-- Kotlin JNI wrapper (pattern: DiscImportBridge.kt)
-- Data classes: `GogFileInfo(name, size)`
-- Native method stubs matching 3.4
+### 3.5: GogImportBridge.kt — DONE ✓
+- Kotlin JNI wrapper object (pattern: DiscImportBridge.kt)
+- `GogFile(name: String, size: Long)` data class
+- `detectFormat(path)`, `listFiles(path)` → List<GogFile>?, `extractFiles(path, outputDir, progress)`
+- `ExtractProgress` interface with `onProgress(currentFile, bytesDone, bytesTotal): Int`
+- Parses native "name|size" strings into GogFile objects
 
-### 3.6: GOG import dialog in SetupActivity
-- When file picker receives `.exe`/`.pkg` with GOG installer signatures:
-  - Show confirmation dialog: "GOG Installer detected — extract game files?"
-  - Set choice prompt (new set or existing)
-  - Extract game assets to chosen set via GogImportBridge
-  - For D2 installers: detect embedded .gog/.inst and register as audio source
-  - Progress bar during extraction
-  - Trigger manifest rehash + readiness recheck on completion
+### 3.6: GOG import dialog in SetupActivity — DONE ✓
+- File picker now detects `.exe`/`.pkg` extensions → sets `gogImportUri`/`gogImportName`
+- `GogImportDialog` composable (~160 lines):
+  - LaunchedEffect copies installer to tmp via content resolver
+  - Calls `GogImportBridge.detectFormat()` and `listFiles()` on load
+  - Shows format, file listing with sizes
+  - "Extract to \"setName\"" button with progress bar (LinearProgressIndicator)
+  - Progress via `GogImportBridge.ExtractProgress` callback
+  - After extraction checks `AudioSourceManager.hasLegacyGog(setDir)` for GOG audio
+  - Done button cleans up tmp and triggers onRefresh()
+  - Error handling for unknown format or empty file list
+- Help text updated: "Select .hog, .ham, .pig files, a .zip archive, .cue/.bin disc images, or GOG installer."
 
-### 3.7: Enhanced BIN/CUE import dialog
-- When BIN/CUE selected, existing DiscImportDialog handles extraction
-- Add option: "Extract game files to set" (in addition to audio-only)
-- Set choice prompt for game file extraction
-- SOW decompression if .sow files found in extracted data
+### 3.7: Enhanced BIN/CUE import dialog — DONE ✓
+- After ISO extraction succeeds, scans setDir for .sow files via `DiscImportBridge.scanSowFiles()`
+- Decompresses any found .sow archives via `DiscImportBridge.extractSowFiles()`
+- Status message shows combined counts: "Extracted N file(s) + M from .sow archives"
+- No set choice prompt added (extracts to current active set, matching GOG dialog)
 
-### 3.8: Broadcast commands for headless testing
-- Add SETUP_COMMAND handlers for automated testing without GUI:
-  - `create_set` — create named file set (~5 lines)
-  - `switch_set` — switch active set (~5 lines)  
-  - `clear_set` — delete all files in a set (~5 lines)
-  - `import_gog` — extract GOG installer to active set (~30 lines)
-  - `import_disc` — extract disc image to active set (~30 lines)
-  - `import_files` — copy individual files to active set (~15 lines)
-- Pattern: existing `launch`/`patch_pilots` cases in commandReceiver
+### 3.8: Broadcast commands for headless testing — DONE ✓
+- Added 5 new SETUP_COMMAND handlers to `commandReceiver`:
+  - `create_set --es name "..."` — creates named file set via FileSetManager
+  - `switch_set --es name "..."` — switches active set + writes .active_set_path
+  - `clear_set --es name "..."` — deletes all files in named set directory
+  - `import_gog --es path "..."` — extracts GOG installer to active set (runs on background thread)
+  - `import_files --es path "..."` — copies single file to active set
+- Usage examples in comments at declaration site
+- Note: `import_disc` not implemented yet (would need fd-based BIN/CUE import from filesystem path)
 
-### 3.9: Enhanced setup introspection
-- Add to `writeIntrospectJson()`:
-  - `set_files` — sorted filenames in active set directory
-  - `active_set_path` — absolute path to active set dir
-  - `audio_sources` — registered audio source labels + paths
-  - `sets` — list of all set names with file counts
+### 3.9: Enhanced setup introspection — DONE ✓
+- Added to `writeIntrospectJson()`:
+  - `sets` — JSONArray of {name, file_count, active} for all file sets
+  - `audio_sources` — JSONArray of {id, label, cue_path, track_count, audio_track_count}
+  - `has_legacy_gog_audio` — boolean, true if .gog/.inst pair found in active set
+- Previously added (3.3): `set_files`, `active_set_path`
+
+### New files (Phase 3)
+```
+android/app/src/main/cpp/extract/jni_gog_import.c  — GOG JNI bridge
+android/app/src/main/java/com/dxxredux/app/GogImportBridge.kt — Kotlin wrapper
+```
+
+### Modified files (Phase 3)
+```
+android/app/src/main/cpp/CMakeLists.txt       — added GOG sources + LZMA SDK FetchContent + zlib link
+android/app/src/main/java/com/dxxredux/app/SetupActivity.kt — GOG dialog, SOW post-extract, broadcast cmds, introspection
+android/app/src/main/java/com/dxxredux/app/AudioSourceManager.kt — hasLegacyGog(setDir) parameter
+```
 
 ---
 
 ## Phase 3a: Verification & Regression Testing
+
+### 3a.0: Manual end-to-end verification — DONE
+Verified GOG import pipeline on Android emulator (Pixel_6_API_34, x86_64).
+
+**Test results:**
+| Test | Result | Details |
+|------|--------|---------|
+| D1 GOG import (.exe) | PASS | `setup_descent_1.4a_(16596).exe` → 7 files (InnoSetup 5.6.2 unicode) |
+| D2 GOG import (.exe) | PASS | `setup_descent_2_1.1_(16596).exe` → 21 files (InnoSetup 5.5.7 unicode) |
+| Set management | PASS | create_set, switch_set, clear_set all work via broadcast |
+| Setup introspection | PASS | sets array, set_files, has_legacy_gog_audio, audio_sources all correct |
+| D2 game launch (GOG set) | PASS | HOG files found, level "Ahayweh Gate" loaded, player shields=100 |
+| Combined D1+D2 GOG set | PASS | Both missions visible in mission select |
+| D1-only set launch | **FAIL** | D2 binary requires descent2.hog — crashes with SIGABRT |
+| UPPERCASE filenames | PASS | GOG extraction produces UPPERCASE; game handles case-insensitively |
+
+**Extracted file inventories:**
+- D1 GOG (7 files): CHAOS.HOG, CHAOS.MSN, DESCENT.DEM, DESCENT.HOG, DESCENT.PIG, LEVEL18.DEM, MINIBOSS.DEM
+- D2 GOG (21 files): ALIEN1/2.PIG, DESCENT2.HAM/HOG/S11/S22, DESCENT_II.gog/inst, FIRE/GROUPA/ICE/WATER.PIG, INTRO-H/OTHER-H/ROBOTS-H/ROBOTS-L.MVL, d2-2plyr.hog/mn2, d2chaos.hog/mn2, descent2.dem
+
+**Known issue — D1-only sets:**
+The android build only produces d2x-redux binary. D1-only sets crash immediately because
+`descent2.hog` is required at startup. This isn't a GOG extraction issue — it's an architectural
+constraint. Options: (a) always require D2 files, (b) build d1x-redux too, (c) make D2 binary
+gracefully handle D1-only mode. For now, the launcher should prevent launching with D1-only sets
+unless a D2 HOG is also present.
+
+**Broadcast command syntax (verified):**
+```bash
+# Separate --es for each parameter:
+adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command switch_set --es name default"
+adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --es path /data/local/tmp/installer.exe"
+```
 
 ### 3a.1: Regression spec format (`extract_regression.json5`)
 - One file per CD image folder and per GOG installer
