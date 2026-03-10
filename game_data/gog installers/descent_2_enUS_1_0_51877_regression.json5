@@ -1,0 +1,24 @@
+﻿// Auto-generated regression spec for: descent_2_enUS_1_0_51877.pkg
+// Generated: 2026-03-09 19:33:41
+{
+    "source_type":  "gog",
+    "source_files":  [
+                         {
+                             "sha256":  "7bca2841369dac46b043c95fb29830fb2115318f9e33ccd40fe046732ee91bfd",
+                             "name":  "descent_2_enUS_1_0_51877.pkg"
+                         }
+                     ],
+    "game":  "d2",
+    "classification":  "d2_full",
+    "expected_mission":  "Descent 2: Counterstrike!",
+    "expected_level1":  "Ahayweh Gate",
+    "expected_files":  [
+                           "DESCENT2.HAM",
+                           "DESCENT2.HOG",
+                           "DESCENT2.S11",
+                           "DESCENT2.S22",
+                           "GROUPA.PIG"
+                       ],
+    "audio_tracks":  8,
+    "total_extracted":  15
+}

@@ -1,0 +1,21 @@
+﻿// Auto-generated regression spec for: setup_descent_1.4a_(16596).exe
+// Generated: 2026-03-09 19:33:37
+{
+    "source_type":  "gog",
+    "source_files":  [
+                         {
+                             "sha256":  "cd754293de928f73a3772630a85d274b22940c857b1aab80078afa962a5492a7",
+                             "name":  "setup_descent_1.4a_(16596).exe"
+                         }
+                     ],
+    "game":  "d1",
+    "classification":  "d1_full",
+    "expected_mission":  "Descent: First Strike",
+    "expected_level1":  "Lunar Outpost",
+    "expected_files":  [
+                           "DESCENT.HOG",
+                           "DESCENT.PIG"
+                       ],
+    "audio_tracks":  0,
+    "total_extracted":  7
+}

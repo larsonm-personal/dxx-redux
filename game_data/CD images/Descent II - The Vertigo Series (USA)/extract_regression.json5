@@ -1,0 +1,56 @@
+﻿// Auto-generated regression spec for: Descent II - The Vertigo Series (USA)
+// Generated: 2026-03-09 19:33:19
+{
+    "source_type":  "cd",
+    "disc_id":  "descent-ii-the-vertigo-series-usa",
+    "source_files":  [
+                         {
+                             "sha256":  "f2337826473f5a799f5cfddf3712e70c237a337d30cb36f7f87b3764dfb37d7d",
+                             "name":  "Descent II - The Vertigo Series (USA).cue"
+                         },
+                         {
+                             "sha256":  "fdf86268625d49cf3ce95a2f8b21c90fdbe5b87ba8e6a1b5710e0b01c8fcd9aa",
+                             "name":  "Descent II - The Vertigo Series (USA) (Track 1).bin"
+                         },
+                         {
+                             "sha256":  "cfe3103777b90e4ea2a5ffe67c951cf54f54ce71c690bebef8d7b8033a307246",
+                             "name":  "Descent II - The Vertigo Series (USA) (Track 2).bin"
+                         },
+                         {
+                             "sha256":  "8629a25444453aefd70f5669553f7c0fbf64b80ce28424ee55f782747fd9881f",
+                             "name":  "Descent II - The Vertigo Series (USA) (Track 3).bin"
+                         },
+                         {
+                             "sha256":  "8c5bccf92bc37958bc3591bf8db5d84ecca3e0d8fc5e57eed80ac52e822118c9",
+                             "name":  "Descent II - The Vertigo Series (USA) (Track 4).bin"
+                         },
+                         {
+                             "sha256":  "d7b08007a6a73f5264b23d82814d8115e0e287d28516ee763883a03c667ef132",
+                             "name":  "Descent II - The Vertigo Series (USA) (Track 5).bin"
+                         },
+                         {
+                             "sha256":  "ebfe986bd9db64711e3022f01790908156985a5cffb648728737101cdf8218e8",
+                             "name":  "Descent II - The Vertigo Series (USA) (Track 6).bin"
+                         },
+                         {
+                             "sha256":  "26950698365992d78adfc97bfa81a84032011395d86c8eb985b440461e055fe5",
+                             "name":  "Descent II - The Vertigo Series (USA) (Track 7).bin"
+                         },
+                         {
+                             "sha256":  "79b16667c7b5fd8e363c25196715c28c306c7bea35c4c4e595a325ece62390b5",
+                             "name":  "Descent II - The Vertigo Series (USA) (Track 8).bin"
+                         }
+                     ],
+    "game":  "d2",
+    "classification":  "d2_vertigo",
+    "expected_mission":  "D2: Vertigo!",
+    "expected_level1":  "Styx Level 1",
+    "expected_files":  [
+                           "d2x.hog",
+                           "d2x.mn2",
+                           "descent2.ham",
+                           "descent2.hog"
+                       ],
+    "audio_tracks":  7,
+    "total_extracted":  11
+}

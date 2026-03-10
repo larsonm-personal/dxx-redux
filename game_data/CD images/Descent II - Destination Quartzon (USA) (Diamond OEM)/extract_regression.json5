@@ -1,0 +1,75 @@
+﻿// Auto-generated regression spec for: Descent II - Destination Quartzon (USA) (Diamond OEM)
+// Generated: 2026-03-09 19:33:14
+{
+    "source_type":  "cd",
+    "disc_id":  "descent-ii-destination-quartzon-usa-diamond-oem",
+    "source_files":  [
+                         {
+                             "sha256":  "9438608d0a7f8abc888933bead61134df14f36a0822a556c5e7da14771bccaa7",
+                             "name":  "Descent II - Destination Quartzon (USA) (Diamond OEM).cue"
+                         },
+                         {
+                             "sha256":  "c5c5b0b0633dadf5b9c23f47a602412e3e9e6cadf6668da84116f9e455419a4d",
+                             "name":  "Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 01).bin"
+                         },
+                         {
+                             "sha256":  "d151cd03d87f9392994370b94621662e9b829fee48ffe3e777060ba28ade477f",
+                             "name":  "Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 02).bin"
+                         },
+                         {
+                             "sha256":  "e5f0af4f1e4720c04268d881b5581e6d9ec154b42156c99cc4ae9e01e1fdfa12",
+                             "name":  "Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 03).bin"
+                         },
+                         {
+                             "sha256":  "13da0b6b599b6f4968658ea28e9d7253a9a8f26b8d4560fe520059f248d116b3",
+                             "name":  "Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 04).bin"
+                         },
+                         {
+                             "sha256":  "77949487834d13ef2dabc71f1464559a45269e3968ce5b334fec1a540c579c8c",
+                             "name":  "Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 05).bin"
+                         },
+                         {
+                             "sha256":  "c07bcc902c2ebec9f2752861ecb8e0af745a41b76750bc4c033521323cfcc124",
+                             "name":  "Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 06).bin"
+                         },
+                         {
+                             "sha256":  "57759f1e642c7070c26612c8f012c134ceaa2cb0dc86708ebf9f5b9c31ec61a0",
+                             "name":  "Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 07).bin"
+                         },
+                         {
+                             "sha256":  "6c0f828a314cbb14b43e5339d7c79f9ad051fd6d5074910ebf12711e6437360d",
+                             "name":  "Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 08).bin"
+                         },
+                         {
+                             "sha256":  "c78c9c635624ba2ad978d859c5579c2e8f3ef879c3a05482b6acdcc4fc9f740a",
+                             "name":  "Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 09).bin"
+                         },
+                         {
+                             "sha256":  "b763d0177d77bd2abc3873b54e3149cd51aaa0776cb99095f2e1f896dc91e144",
+                             "name":  "Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 10).bin"
+                         },
+                         {
+                             "sha256":  "4647d6ea77f743f5dcebbe420e55c0add825ec680b01f5e6e3e64a53eb3ce1c0",
+                             "name":  "Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 11).bin"
+                         },
+                         {
+                             "sha256":  "79c31d45df2b7dbc5cab531a1736cfdc460f25a3ed4acd2453bed869341304d6",
+                             "name":  "Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 12).bin"
+                         },
+                         {
+                             "sha256":  "6007ac92df34aa6c118d8c494f1b04bdd6649dd22b2835f346e9a9042e7ae3e9",
+                             "name":  "Descent II - Destination Quartzon (USA) (Diamond OEM) (Track 13).bin"
+                         }
+                     ],
+    "game":  "d2",
+    "classification":  "d2_oem",
+    "expected_mission":  "D2 Destination:Quartzon",
+    "expected_level1":  "Drec Sphere",
+    "expected_files":  [
+                           "descent2.ham",
+                           "descent2.hog",
+                           "groupa.pig"
+                       ],
+    "audio_tracks":  12,
+    "total_extracted":  14
+}

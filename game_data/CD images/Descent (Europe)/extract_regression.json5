@@ -1,0 +1,26 @@
+﻿// Auto-generated regression spec for: Descent (Europe)
+// Generated: 2026-03-09 19:32:56
+{
+    "source_type":  "cd",
+    "disc_id":  "descent-europe",
+    "source_files":  [
+                         {
+                             "sha256":  "c28d5de67da9c76015e4de3118bc222398fde8a0a1187468c02a52a25a7c4fd8",
+                             "name":  "Descent (Europe).cue"
+                         },
+                         {
+                             "sha256":  "967a1bf5ec32d655767169f25a140488257599fae58ebbe870667e4b1f409d82",
+                             "name":  "Descent (Europe).bin"
+                         }
+                     ],
+    "game":  "d1",
+    "classification":  "d1_full",
+    "expected_mission":  "Descent: First Strike",
+    "expected_level1":  "Lunar Outpost",
+    "expected_files":  [
+                           "descent.hog",
+                           "descent.pig"
+                       ],
+    "audio_tracks":  0,
+    "total_extracted":  7
+}

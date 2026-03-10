@@ -1,0 +1,25 @@
+﻿// Auto-generated regression spec for: Descent - Levels of the World (USA)
+// Generated: 2026-03-09 19:32:56
+{
+    "source_type":  "cd",
+    "disc_id":  "descent-levels-of-the-world-usa",
+    "source_files":  [
+                         {
+                             "sha256":  "a0857fc62ef1444e454eadaa60863702d830a2baf09944b3f31b2fc7ffc68740",
+                             "name":  "Descent - Levels of the World (USA).cue"
+                         },
+                         {
+                             "sha256":  "ef1ec392730c0e92139811d32a3bbf95ae7b9069a33ece89a3ab949d9b19f8cd",
+                             "name":  "Descent - Levels of the World (USA).bin"
+                         }
+                     ],
+    "game":  "d1",
+    "classification":  "d1_levels",
+    "expected_mission":  null,
+    "expected_level1":  null,
+    "expected_files":  {
+
+                       },
+    "audio_tracks":  0,
+    "total_extracted":  191
+}

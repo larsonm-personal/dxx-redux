@@ -1,0 +1,25 @@
+﻿// Auto-generated regression spec for: Dimensions for Descent (USA)
+// Generated: 2026-03-09 19:33:36
+{
+    "source_type":  "cd",
+    "disc_id":  "dimensions-for-descent-usa",
+    "source_files":  [
+                         {
+                             "sha256":  "140361049905f5edf3150c894c8b21edbe6d1b3f3f488ed19a5367f9854bda03",
+                             "name":  "Dimensions for Descent (USA).cue"
+                         },
+                         {
+                             "sha256":  "86e43eddb1a9d04efda47862f7671818cbca521837af5259d67e3106f38ecc24",
+                             "name":  "Dimensions for Descent (USA).bin"
+                         }
+                     ],
+    "game":  "d1",
+    "classification":  "d1_levels",
+    "expected_mission":  null,
+    "expected_level1":  null,
+    "expected_files":  {
+
+                       },
+    "audio_tracks":  0,
+    "total_extracted":  88
+}

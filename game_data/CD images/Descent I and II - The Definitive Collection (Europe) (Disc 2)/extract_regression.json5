@@ -1,0 +1,61 @@
+﻿// Auto-generated regression spec for: Descent I and II - The Definitive Collection (Europe) (Disc 2)
+// Generated: 2026-03-09 19:33:01
+{
+    "source_type":  "cd",
+    "disc_id":  "descent-i-and-ii-the-definitive-collection-usa-disc-2",
+    "source_files":  [
+                         {
+                             "sha256":  "b35f216abbc1681d917817ab5f60d866f0c22f6fe5d978851628583c0939513b",
+                             "name":  "Descent I and II - The Definitive Collection (Europe) (Disc 2).cue"
+                         },
+                         {
+                             "sha256":  "a47ba66a0db2be6f5b99ae41b79233fb230dc17e94e6d3cf73065f1a382c61fb",
+                             "name":  "Descent I and II - The Definitive Collection (Europe) (Disc 2) (Track 1).bin"
+                         },
+                         {
+                             "sha256":  "6ff05de0e0b29947da58355802950246501c514bf541eeede4dfe40b40a965be",
+                             "name":  "Descent I and II - The Definitive Collection (Europe) (Disc 2) (Track 2).bin"
+                         },
+                         {
+                             "sha256":  "28cff75ec49554ddb7860fea4e4971f02dcded1c32a0ef1706beef6a359cd060",
+                             "name":  "Descent I and II - The Definitive Collection (Europe) (Disc 2) (Track 3).bin"
+                         },
+                         {
+                             "sha256":  "20717929536c1c5a0c3ac4d513b3a5cb441e476c013b9c2c45f0a6630086d8aa",
+                             "name":  "Descent I and II - The Definitive Collection (Europe) (Disc 2) (Track 4).bin"
+                         },
+                         {
+                             "sha256":  "6120d5423d11d936caf1b04c888fa233292b9edd35b964a160534017db37f14f",
+                             "name":  "Descent I and II - The Definitive Collection (Europe) (Disc 2) (Track 5).bin"
+                         },
+                         {
+                             "sha256":  "b2ef53c221c1bcfb4da03845ca8548810f1d0ab047235aed1b045cc35c8c43ce",
+                             "name":  "Descent I and II - The Definitive Collection (Europe) (Disc 2) (Track 6).bin"
+                         },
+                         {
+                             "sha256":  "6a973c3932e8a910160cb705c454c8183baef48fc5e22e1bfe68cc5eaa03f9d0",
+                             "name":  "Descent I and II - The Definitive Collection (Europe) (Disc 2) (Track 7).bin"
+                         },
+                         {
+                             "sha256":  "d34edd585d5dae07d2d593aa0e757cb4ca9be74fffb91a35d18cdb47b3bc1794",
+                             "name":  "Descent I and II - The Definitive Collection (Europe) (Disc 2) (Track 8).bin"
+                         },
+                         {
+                             "sha256":  "6c8381d1545cc6f2c847d3869d8c563af7722a111656936cb4039471dc0df557",
+                             "name":  "Descent I and II - The Definitive Collection (Europe) (Disc 2) (Track 9).bin"
+                         }
+                     ],
+    "game":  "d1d2",
+    "classification":  "d2_full",
+    "expected_mission":  "Descent 2: Counterstrike!",
+    "expected_level1":  "Ahayweh Gate",
+    "expected_files":  [
+                           "descent2.ham",
+                           "descent2.hog",
+                           "descent2.s11",
+                           "descent2.s22",
+                           "groupa.pig"
+                       ],
+    "audio_tracks":  8,
+    "total_extracted":  22
+}

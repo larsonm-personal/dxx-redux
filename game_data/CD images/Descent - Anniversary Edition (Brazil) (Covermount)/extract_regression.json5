@@ -1,0 +1,26 @@
+﻿// Auto-generated regression spec for: Descent - Anniversary Edition (Brazil) (Covermount)
+// Generated: 2026-03-09 19:32:55
+{
+    "source_type":  "cd",
+    "disc_id":  "descent-anniversary-edition-brazil-covermount",
+    "source_files":  [
+                         {
+                             "sha256":  "d3e94cfcf1602f355d787e585851351c94c93f41a8a52d85c394c06a20fc82e8",
+                             "name":  "Descent - Anniversary Edition (Brazil) (Covermount).cue"
+                         },
+                         {
+                             "sha256":  "b6bdcfc8c5bf6c92e86b3ea65d0e5c32f964047a611209828301074020f37a9e",
+                             "name":  "Descent - Anniversary Edition (Brazil) (Covermount).bin"
+                         }
+                     ],
+    "game":  "d1",
+    "classification":  "d1_full",
+    "expected_mission":  "Descent: First Strike",
+    "expected_level1":  "Lunar Outpost",
+    "expected_files":  [
+                           "descent.hog",
+                           "descent.pig"
+                       ],
+    "audio_tracks":  0,
+    "total_extracted":  233
+}

@@ -1,0 +1,27 @@
+﻿// Auto-generated regression spec for: Descent II (USA) (3-Level Interactive Preview)
+// Generated: 2026-03-09 19:33:28
+{
+    "source_type":  "cd",
+    "disc_id":  "descent-ii-usa-3-level-interactive-preview",
+    "source_files":  [
+                         {
+                             "sha256":  "eccf04a96ec0f7bc6978b21b668bf62107941b17684e74e029e7b30b4213b7a9",
+                             "name":  "Descent II (USA) (3-Level Interactive Preview).cue"
+                         },
+                         {
+                             "sha256":  "5952c8ea67164c7ae2fd716460e70a1180fdce9a2ba1b27442228710bfe269d8",
+                             "name":  "Descent II (USA) (3-Level Interactive Preview).bin"
+                         }
+                     ],
+    "game":  "d2",
+    "classification":  "d2_demo",
+    "expected_mission":  "Descent 2 Demo",
+    "expected_level1":  "Corliss Steam Mine",
+    "expected_files":  [
+                           "d2demo.ham",
+                           "d2demo.hog",
+                           "d2demo.pig"
+                       ],
+    "audio_tracks":  0,
+    "total_extracted":  7
+}

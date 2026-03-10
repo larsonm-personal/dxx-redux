@@ -246,49 +246,54 @@ adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command switch_set --
 adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --es path /data/local/tmp/installer.exe"
 ```
 
-### 3a.1: Regression spec format (`extract_regression.json5`)
+### 3a.1: Regression spec format (`extract_regression.json5`) — DONE
 - One file per CD image folder and per GOG installer
-- Located next to the source files (creates skeleton dirs in git)
+- Located next to the source files (in CD image dirs) or alongside installers (for GOG)
 - Fields:
   ```json5
   {
     source_type: "cd" | "gog",
+    disc_id: "descent-ii-usa",          // from known_discs.json5 (CD only)
     source_files: [{ name: "foo.cue", sha256: "..." }, ...],
     game: "d1" | "d2" | "d1d2",
-    expected_mission: "Descent: First Strike" | "Descent 2: Counterstrike!",
-    expected_level1: "Lunar Outpost" | ...,
-    expected_files: ["descent2.hog", "descent2.ham", ...],  // minimum required
+    classification: "d2_full" | "d1_full" | "d2_demo" | "d2_oem" | "d2_vertigo" | "d1_demo" | "d1_expansion" | "d1_levels",
+    expected_mission: "Descent 2: Counterstrike!" | null,  // null for levels-only discs
+    expected_level1: "Ahayweh Gate" | null,
+    expected_files: ["descent2.hog", ...],  // minimum required files
     audio_tracks: 8,  // expected audio track count, 0 if none
+    total_extracted: 22  // total file count from extraction
   }
   ```
+- Classifications with null mission (d1_levels) indicate add-on-only discs that can't launch standalone
 
-### 3a.2: Generate regression specs
-- Script `game_data/generate_regression_specs.ps1`
+### 3a.2: Generate regression specs — DONE
+- Script: `game_data/generate_regression_specs.ps1` (supports `-Force` to regenerate)
 - Walks `game_data/CD images/` and `game_data/gog installers/`
-- Hashes source files, looks up `known_discs.json5` for game type
-- Maps game type → mission name table:
-  - d2 full → "Descent 2: Counterstrike!"
-  - d1 full → "Descent: First Strike"
-  - d2 demo → "Descent 2 Demo"
-  - d2 oem → "D2 Destination:Quartzon"
-  - d1 demo → "Descent Demo"
-  - d1 oem → "Destination Saturn"
-- Writes one `extract_regression.json5` per source
+- CD identification: reads `track_hashes.json`, matches data track SHA1 → `known_discs.json5`
+- GOG identification: hardcoded installer→game mapping (4 known installers)
+- Classification logic in `Get-DiscClassification` function, using disc_id + extracted file patterns
+- **Results: 33 specs generated (29 CDs + 4 GOG)**
+  - 27 launchable (d1_full, d2_full, d1_demo, d1_expansion, d2_demo, d2_oem, d2_vertigo)
+  - 2 non-launchable (d1_levels: Levels of the World, Dimensions for Descent)
+  - Some disc_id overlap is expected (e.g. USA and Alt match same data track SHA1)
 
-### 3a.3: Single-source test script
-- `android/run_extract_test.ps1 <path-to-extract_regression.json5>`
-- Steps:
-  1. Clear active set on emulator (broadcast `clear_set`)
-  2. Push source files to `/data/local/tmp/` via adb
-  3. Broadcast `import_disc` or `import_gog` (based on `source_type`)
-  4. Wait, then introspect setup state
-  5. Verify `set_files` contains `expected_files`
-  6. Broadcast `launch`
-  7. Wait for game main menu
-  8. Select mission matching `expected_mission`
-  9. Skip briefing, wait for level 1
-  10. Introspect: verify `in_game`, `current_level_name` matches
-  11. Report PASS/FAIL
+### 3a.3: Single-source test script -- DONE
+- Implemented: `android/run_extract_test.ps1`
+- Takes a path to an `extract_regression.json5` spec file
+- Steps performed:
+  1. Sanitize device: force-stop, clear test/default sets (both broadcast & direct rm), clean filesDir root, clear stale test sets
+  2. Restart app so Java can see clean state
+  3. Canary check: verify `can_launch=false` with empty set
+  4. Push extracted game files to `regression_test` set via adb staging
+  5. Restart app, introspect to verify all expected files present
+  6. Anti-demo-set canary: SHA1 hash signature files vs demo set to detect false positives
+  7. Check game readiness (`d2.ready`/`d1.ready`)
+  8. Launch game, navigate menus (Enter key presses through briefing)
+  9. Introspect in-game state, verify `current_level_name` matches expected
+  10. Cleanup: force-stop, clear test set
+- Flags: `-SkipLaunch` (file-only), `-KeepFiles` (don't clean up)
+- Key discoveries: Java `File.listFiles()` can't see files created via `adb shell cat` redirect until app restart; `sha1sum` via `sh -c` hangs (args split); direct `adb shell run-as sha1sum` works
+- Verified: Full PASS on Descent II (USA) CD -- `Ahayweh Gate` level loaded
 
 ### 3a.4: Orchestration script
 - `android/run_all_extract_tests.ps1`

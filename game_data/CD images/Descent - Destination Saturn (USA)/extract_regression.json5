@@ -1,0 +1,26 @@
+﻿// Auto-generated regression spec for: Descent - Destination Saturn (USA)
+// Generated: 2026-03-09 19:32:56
+{
+    "source_type":  "cd",
+    "disc_id":  "descent-destination-saturn-usa",
+    "source_files":  [
+                         {
+                             "sha256":  "4c34304bf7c0dca9f5462f184a4c23ee8bdf9388f7d70454ed6dcfb8c035a8eb",
+                             "name":  "Descent - Destination Saturn (USA).cue"
+                         },
+                         {
+                             "sha256":  "5435fca3797b0d404160d12e686f82667d2d4e4d4b4e8fcd1209b61abc8b26fd",
+                             "name":  "Descent - Destination Saturn (USA).bin"
+                         }
+                     ],
+    "game":  "d1",
+    "classification":  "d1_expansion",
+    "expected_mission":  "Descent: First Strike",
+    "expected_level1":  "Lunar Outpost",
+    "expected_files":  [
+                           "descent.hog",
+                           "descent.pig"
+                       ],
+    "audio_tracks":  0,
+    "total_extracted":  8
+}

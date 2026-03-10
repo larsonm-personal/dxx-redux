@@ -1,0 +1,26 @@
+﻿// Auto-generated regression spec for: Descent I and II - The Definitive Collection (USA) (Disc 1)
+// Generated: 2026-03-09 19:33:03
+{
+    "source_type":  "cd",
+    "disc_id":  "descent-i-and-ii-the-definitive-collection-usa-disc-1",
+    "source_files":  [
+                         {
+                             "sha256":  "71459058991c75db8a899b2dcde94507c44935b9a0ea271ce87296b65969182a",
+                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 1).cue"
+                         },
+                         {
+                             "sha256":  "278b3251ca2d81c2a19e4286389981e1e3f2df30319d8cfff4aa9c4e105f3e28",
+                             "name":  "Descent I and II - The Definitive Collection (USA) (Disc 1).bin"
+                         }
+                     ],
+    "game":  "d1d2",
+    "classification":  "d1_full",
+    "expected_mission":  "Descent: First Strike",
+    "expected_level1":  "Lunar Outpost",
+    "expected_files":  [
+                           "descent.hog",
+                           "descent.pig"
+                       ],
+    "audio_tracks":  0,
+    "total_extracted":  32
+}

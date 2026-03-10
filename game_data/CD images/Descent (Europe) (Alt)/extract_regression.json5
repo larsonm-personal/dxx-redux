@@ -1,0 +1,26 @@
+﻿// Auto-generated regression spec for: Descent (Europe) (Alt)
+// Generated: 2026-03-09 19:32:56
+{
+    "source_type":  "cd",
+    "disc_id":  "descent-europe-alt",
+    "source_files":  [
+                         {
+                             "sha256":  "b41dcae3713fb80dbcbaee7ff050d31581b43d28c0ecd096bda76e58666a5926",
+                             "name":  "Descent (Europe) (Alt).cue"
+                         },
+                         {
+                             "sha256":  "acd92b2dd9b9ce772740e96bbdaaff8e59de99ec10ada83a2a99aa18aa2e566c",
+                             "name":  "Descent (Europe) (Alt).bin"
+                         }
+                     ],
+    "game":  "d1",
+    "classification":  "d1_full",
+    "expected_mission":  "Descent: First Strike",
+    "expected_level1":  "Lunar Outpost",
+    "expected_files":  [
+                           "descent.hog",
+                           "descent.pig"
+                       ],
+    "audio_tracks":  0,
+    "total_extracted":  7
+}

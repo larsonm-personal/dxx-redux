@@ -1,0 +1,26 @@
+﻿// Auto-generated regression spec for: Descent - Anniversary Edition (USA)
+// Generated: 2026-03-09 19:32:56
+{
+    "source_type":  "cd",
+    "disc_id":  "descent-anniversary-edition-usa",
+    "source_files":  [
+                         {
+                             "sha256":  "15e0351d72b9917ff12983092b8b21f3fee40ffe2ca2d19d186c70bb39911cdc",
+                             "name":  "Descent - Anniversary Edition (USA).cue"
+                         },
+                         {
+                             "sha256":  "daaef498fd455b9cddeb2b8c1dc7c60d090195635f6ca590fdcf7eb12c2e77a0",
+                             "name":  "Descent - Anniversary Edition (USA).bin"
+                         }
+                     ],
+    "game":  "d1",
+    "classification":  "d1_full",
+    "expected_mission":  "Descent: First Strike",
+    "expected_level1":  "Lunar Outpost",
+    "expected_files":  [
+                           "descent.hog",
+                           "descent.pig"
+                       ],
+    "audio_tracks":  0,
+    "total_extracted":  233
+}

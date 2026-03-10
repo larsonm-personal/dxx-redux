@@ -1,0 +1,75 @@
+﻿// Auto-generated regression spec for: Descent II - Destination Quartzon (USA)
+// Generated: 2026-03-09 19:33:12
+{
+    "source_type":  "cd",
+    "disc_id":  "descent-ii-destination-quartzon-usa",
+    "source_files":  [
+                         {
+                             "sha256":  "12b669f420022d35367858000eb60f7972a79024d1a43da6a9f9a07cb27f9d7c",
+                             "name":  "Descent II - Destination Quartzon (USA).cue"
+                         },
+                         {
+                             "sha256":  "49f8c4157919e8d13e188b936a83a2b95c735a314d67bf0833047b8942909e26",
+                             "name":  "Descent II - Destination Quartzon (USA) (Track 01).bin"
+                         },
+                         {
+                             "sha256":  "18243cf907924da60db053701648aa724ca692187cf0dc7dbfe7d44131e75c4a",
+                             "name":  "Descent II - Destination Quartzon (USA) (Track 02).bin"
+                         },
+                         {
+                             "sha256":  "dbda02896735b9a5121c3cd82357d76bdda0efb7fe2a64f69d1556de2424ec33",
+                             "name":  "Descent II - Destination Quartzon (USA) (Track 03).bin"
+                         },
+                         {
+                             "sha256":  "d811a720a51f4b5a186cc1e3a18721724addfeccf6afb5d0733b22efa303e642",
+                             "name":  "Descent II - Destination Quartzon (USA) (Track 04).bin"
+                         },
+                         {
+                             "sha256":  "e9d7ae31063782a622843707747933be7dc80c0a6e6d1159b1259e7750405e4a",
+                             "name":  "Descent II - Destination Quartzon (USA) (Track 05).bin"
+                         },
+                         {
+                             "sha256":  "9774d269976067324fc5d08528114357a0eada09db5e6e84f64131262fcaa141",
+                             "name":  "Descent II - Destination Quartzon (USA) (Track 06).bin"
+                         },
+                         {
+                             "sha256":  "ab425f3c5f641b05843bc49fd65f1fa7799fd21cc47ab3d0cf93d2c47d073af7",
+                             "name":  "Descent II - Destination Quartzon (USA) (Track 07).bin"
+                         },
+                         {
+                             "sha256":  "ea8d42639567fe8b4ac2399522ee5fa3f1956785bb2292851bf15cce7782657e",
+                             "name":  "Descent II - Destination Quartzon (USA) (Track 08).bin"
+                         },
+                         {
+                             "sha256":  "951692a0a7207edce83d1c59c0703e1fa3b013dabf4e702c591a9667d88ab6ae",
+                             "name":  "Descent II - Destination Quartzon (USA) (Track 09).bin"
+                         },
+                         {
+                             "sha256":  "5210f5cd5dd04dc80b476d2d78e320129d23137fb815b094d9c7d9c14dc0ebe3",
+                             "name":  "Descent II - Destination Quartzon (USA) (Track 10).bin"
+                         },
+                         {
+                             "sha256":  "580896f13ddac4bb015bca514ebb5f9816e7df2cce47bdefc832452f61697231",
+                             "name":  "Descent II - Destination Quartzon (USA) (Track 11).bin"
+                         },
+                         {
+                             "sha256":  "bacfb38a0bfb1d68c73f3ff92d0ffa87eb44631f3b5ed788732a738a6d3476c6",
+                             "name":  "Descent II - Destination Quartzon (USA) (Track 12).bin"
+                         },
+                         {
+                             "sha256":  "11723f50576ae41630ef3a47ec2087ebb76ef6af53d0926c3a6daa4b218b79a9",
+                             "name":  "Descent II - Destination Quartzon (USA) (Track 13).bin"
+                         }
+                     ],
+    "game":  "d2",
+    "classification":  "d2_oem",
+    "expected_mission":  "D2 Destination:Quartzon",
+    "expected_level1":  "Drec Sphere",
+    "expected_files":  [
+                           "descent2.ham",
+                           "descent2.hog",
+                           "groupa.pig"
+                       ],
+    "audio_tracks":  12,
+    "total_extracted":  14
+}
