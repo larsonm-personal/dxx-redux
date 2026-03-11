@@ -17,8 +17,8 @@ set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "" FORCE)   # PhysFS 3.2 compa
 
 include(FetchContent)
 
-set(D2_SRC "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../d2")
 set(D1_SRC "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../d1")
+set(D2_SRC "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../d2")
 
 # ──────────────────────────────────────────────────────────────
 # 1. SDL 1.2  (no cmake build — we compile it ourselves)
@@ -76,7 +76,7 @@ if(_audio_c_dirty)
 endif()
 
 set(SDL12_DIR ${sdl12_SOURCE_DIR})
-add_library(SDL12 STATIC
+add_library(SDL12 SHARED
     # --- core ---
     ${SDL12_DIR}/src/SDL.c
     ${SDL12_DIR}/src/SDL_error.c
@@ -164,7 +164,7 @@ target_include_directories(SDL12
             ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(SDL12 PRIVATE dl OpenSLES)
+target_link_libraries(SDL12 PRIVATE dl OpenSLES log)
 target_compile_options(SDL12 PRIVATE -w)   # suppress all warnings for third-party code
 
 # ──────────────────────────────────────────────────────────────
@@ -178,7 +178,7 @@ FetchContent_Declare(sdl_mixer12
 FetchContent_Populate(sdl_mixer12)
 
 set(SDLMIXER_DIR ${sdl_mixer12_SOURCE_DIR})
-add_library(SDL_mixer STATIC
+add_library(SDL_mixer SHARED
     # --- core mixer (SFX channels, effects, WAV loading) ---
     ${SDLMIXER_DIR}/mixer.c
     ${SDLMIXER_DIR}/music.c
@@ -244,7 +244,8 @@ FetchContent_MakeAvailable(nlohmann_json)
 # ──────────────────────────────────────────────────────────────
 # 3. PhysFS  (has native cmake support)
 # ──────────────────────────────────────────────────────────────
-set(PHYSFS_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+set(PHYSFS_BUILD_SHARED ON  CACHE BOOL "" FORCE)
+set(PHYSFS_BUILD_STATIC OFF CACHE BOOL "" FORCE)
 set(PHYSFS_BUILD_TEST   OFF CACHE BOOL "" FORCE)
 set(PHYSFS_BUILD_DOCS   OFF CACHE BOOL "" FORCE)
 set(PHYSFS_TARGETNAME_UNINSTALL "physfs_uninstall" CACHE STRING "" FORCE)
@@ -253,6 +254,36 @@ FetchContent_Declare(physfs
     URL https://github.com/icculus/physfs/archive/refs/tags/release-3.2.0.tar.gz
 )
 FetchContent_MakeAvailable(physfs)
+
+# ──────────────────────────────────────────────────────────────
+# 3b. LZMA SDK  (for InnoSetup/GOG decompression)
+# ──────────────────────────────────────────────────────────────
+FetchContent_Declare(
+    lzma_sdk
+    GIT_REPOSITORY https://github.com/jljusten/LZMA-SDK.git
+    GIT_TAG        781863cdf592da3e97420f50de5dac056ad352a5  # 18.05
+    GIT_SHALLOW    TRUE
+)
+FetchContent_GetProperties(lzma_sdk)
+if(NOT lzma_sdk_POPULATED)
+    FetchContent_Populate(lzma_sdk)
+endif()
+add_library(lzma_sdk_c SHARED
+    ${lzma_sdk_SOURCE_DIR}/C/LzmaDec.c
+    ${lzma_sdk_SOURCE_DIR}/C/Lzma2Dec.c
+    ${lzma_sdk_SOURCE_DIR}/C/7zCrc.c
+    ${lzma_sdk_SOURCE_DIR}/C/7zCrcOpt.c
+    ${lzma_sdk_SOURCE_DIR}/C/CpuArch.c
+)
+target_include_directories(lzma_sdk_c PUBLIC ${lzma_sdk_SOURCE_DIR}/C)
+target_compile_definitions(lzma_sdk_c PRIVATE _7ZIP_ST)
+
+# ──────────────────────────────────────────────────────────────
+# 3c. TinySoundFont shared library  (MIDI synth, linked by both games)
+# ──────────────────────────────────────────────────────────────
+add_library(tsf SHARED ${CMAKE_CURRENT_SOURCE_DIR}/shared/tsf_impl.c)
+target_include_directories(tsf PRIVATE ${_TSF_DIR})
+target_compile_options(tsf PRIVATE -w)
 
 # ──────────────────────────────────────────────────────────────
 # 4. Pre-set variables so find_package(SDL) / find_package(PhysFS)
@@ -265,14 +296,14 @@ set(SDLLIB          SDL12                         CACHE STRING "" FORCE)
 
 set(PHYSFS_FOUND       TRUE                       CACHE BOOL   "" FORCE)
 set(PHYSFS_INCLUDE_DIR "${physfs_SOURCE_DIR}/src"  CACHE PATH   "" FORCE)
-set(PHYSFS_LIBRARY     physfs-static               CACHE STRING "" FORCE)
+set(PHYSFS_LIBRARY     physfs                  CACHE STRING "" FORCE)
 
 set(SDL_MIXER_FOUND        TRUE                    CACHE BOOL   "" FORCE)
 set(SDL_MIXER_INCLUDE_DIRS "${SDLMIXER_DIR}"       CACHE PATH   "" FORCE)
 set(SDL_MIXER_LIBRARY      SDL_mixer                CACHE STRING "" FORCE)
 
 # ──────────────────────────────────────────────────────────────
-# 5. D2 build options
+# 5. Build options
 # ──────────────────────────────────────────────────────────────
 # ANDROID_USE_OPENGL is passed from Gradle (gradle.properties: useOpenGL)
 if(ANDROID_USE_OPENGL STREQUAL "true")
@@ -315,122 +346,13 @@ add_definitions(-DOGLES)
 endif() # OPENGL
 
 # ──────────────────────────────────────────────────────────────
-# 6. Add D2 source tree
-# ──────────────────────────────────────────────────────────────
-set(DXX_TARGET_PREFIX "d2_")
-add_subdirectory("${D2_SRC}" "${CMAKE_CURRENT_BINARY_DIR}/d2")
-
-# ──────────────────────────────────────────────────────────────
-# 7. Android-specific fixups for dxx-redux-d2 target
-# ──────────────────────────────────────────────────────────────
-target_link_libraries(dxx-redux-d2 PRIVATE android log)
-if(OPENGL)
-    target_link_libraries(dxx-redux-d2 PRIVATE EGL GLESv1_CM)
-endif()
-target_sources(dxx-redux-d2 PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/jni_main.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/jni_saf.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/android_surface.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/android_input.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/android_gamepad_config.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/extract/cue_parser.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extract/iso9660_reader.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extract/sow_extract.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_disc_import.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extract/inno_reader.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extract/pkg_reader.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_gog_import.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/jni_music_control.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/shared/messagebox.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfs_archiver_saf.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_introspect.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_jni_overlay.c
-)
-# android_surface.h lives in d2/arch/include (already on arch_sdl's include
-# path); make sure it's also visible when compiling android_surface.c itself.
-# game.h (for Game_wind) lives in d2/main and pulls in headers from d2/include.
-target_include_directories(dxx-redux-d2 PRIVATE
-    ${D2_SRC}/arch/include
-    ${D2_SRC}/main
-    ${D2_SRC}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/shared
-    ${CMAKE_CURRENT_SOURCE_DIR}/extract
-)
-
-# Enable introspection API (AI-assisted testing, debug Android builds only).
-# The Kotlin layer gates adb access behind BuildConfig.DEBUG.
-# Must also be set on arch_sdl since window.c and event.c live there.
-target_compile_definitions(dxx-redux-d2 PRIVATE INTROSPECT_ON)
-target_compile_definitions(dxx-redux-d2 PRIVATE DXX_BUILD_DESCENT_II)
-target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE INTROSPECT_ON)
-target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared)
-
-# Replace SDL_mixer's Timidity-based music with TinySoundFont MIDI synth.
-# digi_mixer_music.c is already compiled into arch_sdl by the D2 CMakeLists;
-# we remove it and add our TSF-based replacement instead.
-get_target_property(_arch_sdl_sources ${DXX_TARGET_PREFIX}arch_sdl SOURCES)
-list(FILTER _arch_sdl_sources EXCLUDE REGEX "digi_mixer_music\\.c$")
-list(FILTER _arch_sdl_sources EXCLUDE REGEX "rbaudio\\.c$")
-set_property(TARGET ${DXX_TARGET_PREFIX}arch_sdl PROPERTY SOURCES ${_arch_sdl_sources})
-target_sources(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/digi_tsf_music.c)
-target_sources(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/rbaudio_bin.c)
-target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${_TSF_DIR})
-target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ANDROID)
-
-# OpenGL ES 1.1: link EGL + GLESv1_CM into the arch_ogl static library,
-# and add Android-specific include paths.
-if(OPENGL)
-target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE ANDROID)
-target_link_libraries(${DXX_TARGET_PREFIX}arch_ogl PRIVATE EGL GLESv1_CM)
-target_include_directories(${DXX_TARGET_PREFIX}arch_ogl PRIVATE
-    ${D2_SRC}/arch/include
-    ${D2_SRC}/main
-    ${D2_SRC}/include
-)
-
-# xmodel needs the PhysFS include path (not set by its own CMakeLists.txt).
-target_include_directories(${DXX_TARGET_PREFIX}xmodel PRIVATE ${PHYSFS_INCLUDE_DIR})
-endif() # OPENGL
-
-# nlohmann/json — used by the introspection/automation C++ files
-target_link_libraries(dxx-redux-d2 PRIVATE nlohmann_json::nlohmann_json)
-
-# sow_extract.c (in extract/) has a self-contained ARJ decoder — no external library needed
-
-# ── LZMA SDK (for InnoSetup/GOG decompression) ──────────────────────────
-FetchContent_Declare(
-    lzma_sdk
-    GIT_REPOSITORY https://github.com/jljusten/LZMA-SDK.git
-    GIT_TAG        781863cdf592da3e97420f50de5dac056ad352a5  # 18.05
-    GIT_SHALLOW    TRUE
-)
-FetchContent_GetProperties(lzma_sdk)
-if(NOT lzma_sdk_POPULATED)
-    FetchContent_Populate(lzma_sdk)
-endif()
-add_library(lzma_sdk_c STATIC
-    ${lzma_sdk_SOURCE_DIR}/C/LzmaDec.c
-    ${lzma_sdk_SOURCE_DIR}/C/Lzma2Dec.c
-    ${lzma_sdk_SOURCE_DIR}/C/7zCrc.c
-    ${lzma_sdk_SOURCE_DIR}/C/7zCrcOpt.c
-)
-target_include_directories(lzma_sdk_c PUBLIC ${lzma_sdk_SOURCE_DIR}/C)
-target_compile_definitions(lzma_sdk_c PRIVATE _7ZIP_ST)
-
-# zlib — for GOG installer decompression (InnoSetup zlib streams, Mac .pkg XAR/gzip)
-# Android NDK always provides zlib as a system library.
-
-target_link_libraries(dxx-redux-d2 PRIVATE lzma_sdk_c z)
-
-# ──────────────────────────────────────────────────────────────
-# 8. Add D1 source tree
+# 6. Add D1 source tree
 # ──────────────────────────────────────────────────────────────
 set(DXX_TARGET_PREFIX "d1_")
 add_subdirectory("${D1_SRC}" "${CMAKE_CURRENT_BINARY_DIR}/d1")
 
 # ──────────────────────────────────────────────────────────────
-# 9. Android-specific fixups for dxx-redux-d1 target
+# 7. Android-specific fixups for dxx-redux-d1 target
 # ──────────────────────────────────────────────────────────────
 target_link_libraries(dxx-redux-d1 PRIVATE android log)
 if(OPENGL)
@@ -477,6 +399,7 @@ target_sources(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/
 target_sources(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/rbaudio_bin.c)
 target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${_TSF_DIR})
 target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ANDROID)
+target_link_libraries(${DXX_TARGET_PREFIX}arch_sdl tsf)
 
 if(OPENGL)
 target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE ANDROID)
@@ -491,3 +414,86 @@ endif() # OPENGL
 
 target_link_libraries(dxx-redux-d1 PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(dxx-redux-d1 PRIVATE lzma_sdk_c z)
+set_property(TARGET dxx-redux-d1 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+
+# ──────────────────────────────────────────────────────────────
+# 8. Add D2 source tree
+# ──────────────────────────────────────────────────────────────
+set(DXX_TARGET_PREFIX "d2_")
+add_subdirectory("${D2_SRC}" "${CMAKE_CURRENT_BINARY_DIR}/d2")
+
+# ──────────────────────────────────────────────────────────────
+# 9. Android-specific fixups for dxx-redux-d2 target
+# ──────────────────────────────────────────────────────────────
+target_link_libraries(dxx-redux-d2 PRIVATE android log)
+if(OPENGL)
+    target_link_libraries(dxx-redux-d2 PRIVATE EGL GLESv1_CM)
+endif()
+target_sources(dxx-redux-d2 PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni_main.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni_saf.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/android_surface.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/android_input.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/android_gamepad_config.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/cue_parser.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/iso9660_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/sow_extract.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_disc_import.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/inno_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/pkg_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_gog_import.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni_music_control.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/messagebox.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/physfs_archiver_saf.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_introspect.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_jni_overlay.c
+)
+target_include_directories(dxx-redux-d2 PRIVATE
+    ${D2_SRC}/arch/include
+    ${D2_SRC}/main
+    ${D2_SRC}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract
+)
+
+# Enable introspection API (AI-assisted testing, debug Android builds only).
+# The Kotlin layer gates adb access behind BuildConfig.DEBUG.
+# Must also be set on arch_sdl since window.c and event.c live there.
+target_compile_definitions(dxx-redux-d2 PRIVATE INTROSPECT_ON)
+target_compile_definitions(dxx-redux-d2 PRIVATE DXX_BUILD_DESCENT_II)
+target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE INTROSPECT_ON)
+target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared)
+
+# Replace SDL_mixer's Timidity-based music with TinySoundFont MIDI synth.
+# digi_mixer_music.c is already compiled into arch_sdl by the D2 CMakeLists;
+# we remove it and add our TSF-based replacement instead.
+get_target_property(_arch_sdl_sources ${DXX_TARGET_PREFIX}arch_sdl SOURCES)
+list(FILTER _arch_sdl_sources EXCLUDE REGEX "digi_mixer_music\\.c$")
+list(FILTER _arch_sdl_sources EXCLUDE REGEX "rbaudio\\.c$")
+set_property(TARGET ${DXX_TARGET_PREFIX}arch_sdl PROPERTY SOURCES ${_arch_sdl_sources})
+target_sources(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/digi_tsf_music.c)
+target_sources(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/rbaudio_bin.c)
+target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${_TSF_DIR})
+target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ANDROID)
+target_link_libraries(${DXX_TARGET_PREFIX}arch_sdl tsf)
+
+# OpenGL ES 1.1: link EGL + GLESv1_CM into the arch_ogl static library,
+# and add Android-specific include paths.
+if(OPENGL)
+target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE ANDROID)
+target_link_libraries(${DXX_TARGET_PREFIX}arch_ogl PRIVATE EGL GLESv1_CM)
+target_include_directories(${DXX_TARGET_PREFIX}arch_ogl PRIVATE
+    ${D2_SRC}/arch/include
+    ${D2_SRC}/main
+    ${D2_SRC}/include
+)
+
+# xmodel needs the PhysFS include path (not set by its own CMakeLists.txt).
+target_include_directories(${DXX_TARGET_PREFIX}xmodel PRIVATE ${PHYSFS_INCLUDE_DIR})
+endif() # OPENGL
+
+# nlohmann/json — used by the introspection/automation C++ files
+target_link_libraries(dxx-redux-d2 PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(dxx-redux-d2 PRIVATE lzma_sdk_c z)
+set_property(TARGET dxx-redux-d2 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)

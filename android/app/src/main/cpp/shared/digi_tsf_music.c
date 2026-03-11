@@ -26,13 +26,11 @@
 #define TSFMUSIC_LOG(...) ((void)0)
 #endif
 
-/* TinySoundFont — implementation in this translation unit */
-#define TSF_IMPLEMENTATION
+/* TinySoundFont — implementation in libtsf.so */
 #define TSF_NO_STDIO
 #include "tsf.h"
 
-/* TinyMidiLoader — implementation in this translation unit */
-#define TML_IMPLEMENTATION
+/* TinyMidiLoader — implementation in libtsf.so */
 #define TML_NO_STDIO
 #include "tml.h"
 
