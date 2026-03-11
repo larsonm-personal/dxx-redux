@@ -114,6 +114,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     private val overlayPoller = android.os.Handler(android.os.Looper.getMainLooper())
     private var musicPanel: MusicControlPanel? = null
     private var lastTrackNum = -1   // for detecting track changes in polling
+    private var gyroManager: GyroInputManager? = null
 
     // ── Left-edge fling detection (→ setup screen) ────────────────────
     private lateinit var edgeFlingDetector: android.view.GestureDetector
@@ -184,8 +185,18 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
 
         // Touch overlay
         touchOverlay = TouchOverlayView(this)
-        touchOverlay.setLayout(TouchLayoutRepository.load(this))
+        val layout = TouchLayoutRepository.load(this)
+        touchOverlay.setLayout(layout)
         touchOverlay.axisCallback = { axis, value -> nativeJoystickAxis(axis, value) }
+
+        // Gyro aiming
+        if (layout.gyro.enabled) {
+            val gm = GyroInputManager(this)
+            gm.setConfig(layout.gyro)
+            gm.axisCallback = { axis, value -> nativeJoystickAxis(axis, value) }
+            touchOverlay.gyroManager = gm
+            gyroManager = gm
+        }
         touchOverlay.buttonCallback = { button, pressed ->
             nativeJoystickButton(button, if (pressed) 1 else 0)
         }
@@ -298,6 +309,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     // ── Lifecycle ────────────────────────────────────────────
     override fun onStop() {
         super.onStop()
+        gyroManager?.pause()
         overlayPoller.removeCallbacksAndMessages(null)
         // Inject Escape so the engine opens its pause / game menu.
         // This pauses a single-player game while the app is in the background.
@@ -308,6 +320,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
 
     override fun onResume() {
         super.onResume()
+        gyroManager?.resume()
         // Resume music that was paused when backgrounded
         if (gameStarted) {
             nativeOnResume()

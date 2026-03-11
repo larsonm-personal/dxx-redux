@@ -58,6 +58,9 @@ class TouchOverlayView @JvmOverloads constructor(
      *  vertical/sideways are fractions of screen dimension. */
     var automapInputCallback: ((Float, Float, Float, Float, Float, Float) -> Unit)? = null
 
+    /** Optional gyro manager — set by MainActivity to enable TOUCH_STICK activation. */
+    var gyroManager: GyroInputManager? = null
+
     /** Whether the overlay should be visible and active. */
     var isActive: Boolean = false
         set(value) {
@@ -667,6 +670,9 @@ class TouchOverlayView @JvmOverloads constructor(
 
         axisCallback?.invoke(s.control.axisX, rawX)
         axisCallback?.invoke(s.control.axisY, rawY)
+
+        // Notify gyro manager that a stick sharing its axes is active
+        updateGyroStickActive()
     }
 
     private fun applyDeadzone(value: Float, deadzone: Float): Float {
@@ -682,6 +688,16 @@ class TouchOverlayView @JvmOverloads constructor(
         invalidate()
         axisCallback?.invoke(s.control.axisX, 0f)
         axisCallback?.invoke(s.control.axisY, 0f)
+        updateGyroStickActive()
+    }
+
+    /** Update gyro manager's rightStickActive based on whether any stick sharing gyro axes is touched. */
+    private fun updateGyroStickActive() {
+        val gm = gyroManager ?: return
+        val gyro = layout.gyro
+        gm.rightStickActive = stickStates.any { s ->
+            s.pointerId >= 0 && (s.control.axisX == gyro.axisX || s.control.axisY == gyro.axisY)
+        }
     }
 
     private fun resetAllSticks() {
