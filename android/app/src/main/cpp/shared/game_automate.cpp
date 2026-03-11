@@ -47,6 +47,11 @@ extern "C" {
 #include "object.h"
 }
 
+/* D1 does not have SCREEN_MOVIE */
+#ifndef SCREEN_MOVIE
+#define SCREEN_MOVIE 99
+#endif
+
 /* Automap_active is defined in automap.c; we just need the extern. */
 extern "C" int Automap_active;
 

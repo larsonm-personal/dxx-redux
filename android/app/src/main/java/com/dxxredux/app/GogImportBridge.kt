@@ -13,7 +13,7 @@ object GogImportBridge {
     private const val TAG = "DXX-GogImport"
 
     init {
-        System.loadLibrary("d2x-redux")
+        System.loadLibrary("dxx-redux-d2")
     }
 
     /** A game file found inside a GOG installer */

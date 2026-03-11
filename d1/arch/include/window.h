@@ -33,6 +33,12 @@ extern int window_send_event(window *wind, d_event *event);
 extern void window_set_modal(window *wind, int modal);
 extern int window_is_modal(window *wind);
 
+#ifdef INTROSPECT_ON
+/* Introspection accessors (game_introspect.c) */
+extern void *window_get_data(window *wind);
+extern int (*window_get_callback(window *wind))(window *, d_event *, void *);
+#endif
+
 #define WINDOW_SEND_EVENT(w, e)	\
 do {	\
 	con_printf(CON_DEBUG, "Sending event %s to window of dimensions %dx%d\n", #e, window_get_canvas(w)->cv_bitmap.bm_w, window_get_canvas(w)->cv_bitmap.bm_h);	\

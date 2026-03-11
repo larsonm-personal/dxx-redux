@@ -1,4 +1,4 @@
-add_library(maths STATIC
+add_library(${DXX_TARGET_PREFIX}maths STATIC
     fixc.c
     rand.c
     tables.c
@@ -8,4 +8,4 @@ add_library(maths STATIC
 include_directories(../include ../arch/include ../main)
 
 find_package(SDL)
-target_include_directories(maths PUBLIC ${SDL_INCLUDE_DIR})
+target_include_directories(${DXX_TARGET_PREFIX}maths PUBLIC ${SDL_INCLUDE_DIR})

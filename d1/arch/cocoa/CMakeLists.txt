@@ -1,4 +1,4 @@
-add_library(arch_cocoa STATIC
+add_library(${DXX_TARGET_PREFIX}arch_cocoa STATIC
     messagebox.m
     )
 

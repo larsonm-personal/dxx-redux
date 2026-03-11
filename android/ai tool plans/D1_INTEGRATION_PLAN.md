@@ -13,6 +13,7 @@ Port D2 Android changes to D1 while keeping both d1/ and d2/ as close to upstrea
 6. **Rename D2 target** — current target is `d2x-redux` (produces `libd2x-redux.so`). Rename to `dxx-redux-d2` (produces `libdxx-redux-d2.so`). D1 target is `dxx-redux-d1` (produces `libdxx-redux-d1.so`).
 7. **Shared dependency .so files** — SDL, PhysFS, SDL_mixer, and LZMA are built as shared libraries, linked by both game .so files. This avoids duplicating ~3MB of dependency code per ABI (see analysis below). Header-only deps (TinySoundFont, nlohmann/json) are compiled into each game .so as before.
 8. **DXX_TARGET_PREFIX for CMake** — avoid target name collisions between D1 and D2 static libraries (both define `arch_sdl`, `2d`, `3d`, etc.) by using a `${DXX_TARGET_PREFIX}` variable. This is a mechanical change to CMakeLists files and has zero effect on non-Android builds (prefix defaults to empty).
+9. cleanliness: in cases where both d1+d2 are listed in a source file or other file, organize things so that d1 is first. for example, in the android cmake file, some places have d1+d2 on two successive lines, the d1 line should be first, and so on
 
 ---
 

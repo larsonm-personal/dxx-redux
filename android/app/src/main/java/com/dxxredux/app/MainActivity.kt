@@ -44,7 +44,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
 
     companion object {
         init {
-            System.loadLibrary("d2x-redux")
+            System.loadLibrary("dxx-redux-d2")
         }
     }
 

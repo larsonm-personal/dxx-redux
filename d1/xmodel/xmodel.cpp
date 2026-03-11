@@ -65,9 +65,14 @@ int xmodel_load_gl(void *model) {
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
 				bm.Width(), bm.Height(), 0, GL_RGB, GL_UNSIGNED_BYTE,
 				bm.Buffer());
+#ifdef OGLES
+		glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+#endif
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+#ifndef OGLES
 		glGenerateMipmap(GL_TEXTURE_2D);
+#endif
 	}
 
 	glGenBuffers(1, &rm.vbo);

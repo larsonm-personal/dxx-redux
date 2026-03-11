@@ -1876,3 +1876,17 @@ void kc_set_controls()
 	for (i=0; i<NUM_D1X_CONTROLS; i++ )
 		kc_d1x[i].value = PlayerCfg.KeySettingsD1X[i];
 }
+
+#if defined(INTROSPECT_ON) || defined(ANDROID)
+int kconfig_get_joystick_count(void) { return NUM_JOYSTICK_CONTROLS; }
+int kconfig_get_keyboard_count(void) { return NUM_KEY_CONTROLS; }
+#endif
+
+#ifdef INTROSPECT_ON
+void kconfig_get_joystick_item(int idx, const char **name, int *type, int *value) {
+	if (idx < 0 || idx >= NUM_JOYSTICK_CONTROLS) { *name = ""; *type = -1; *value = 255; return; }
+	*name = kc_joystick[idx].text;
+	*type = kc_joystick[idx].type;
+	*value = kc_joystick[idx].value;
+}
+#endif

@@ -1,8 +1,8 @@
-# CMakeList.txt : CMake project for d1x-redux, include source and define
+# CMakeList.txt : CMake project for dxx-redux-d1, include source and define
 # project specific logic here.
 #
 cmake_minimum_required (VERSION 3.21)
-project(d1x-redux VERSION 1.1)
+project(dxx-redux-d1 VERSION 1.1)
 
 option(OPENGL "Build with OpenGL support [default: ON]" ON)
 option(SDLMIXER "Build with SDL_Mixer support for sound and music (includes external music support) [default: ON]" ON)
@@ -39,7 +39,10 @@ elseif(ASM)
 endif()
 if(SDLMIXER)
     add_definitions(/DUSE_SDLMIXER)
-    if (APPLE)
+    if (ANDROID)
+        # SDL_mixer is built by the Android CMakeLists.txt;
+        # SDL_MIXER_LIBRARY and SDL_MIXER_INCLUDE_DIRS are pre-set.
+    elseif (APPLE)
         include(FetchContent)
         FetchContent_Declare(
             SDL_mixer-1.2-cmake
@@ -82,11 +85,14 @@ if(WIN32)
     endif()
 elseif(APPLE)
     add_definitions(/DHAVE_STRUCT_TIMESPEC /DHAVE_STRUCT_TIMEVAL /D__unix__)
+elseif(ANDROID)
+    add_definitions(/DANDROID /DHAVE_STRUCT_TIMESPEC /DHAVE_STRUCT_TIMEVAL /D__unix__)
+    add_compile_definitions(SHAREPATH=".")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_definitions(/D__LINUX__ /DHAVE_STRUCT_TIMESPEC /DHAVE_STRUCT_TIMEVAL)
 endif()
 
-if(NOT WIN32)
+if(NOT WIN32 AND NOT ANDROID)
     add_compile_definitions(SHAREPATH="/usr/share/games/d1x-redux")
 endif()
 
@@ -100,31 +106,31 @@ add_subdirectory(mem)
 add_subdirectory(misc)
 add_subdirectory(texmap)
 
-add_dependencies(d1x-redux 2d 3d arch_sdl iff maths mem misc texmap)
+add_dependencies(dxx-redux-d1 ${DXX_TARGET_PREFIX}2d ${DXX_TARGET_PREFIX}3d ${DXX_TARGET_PREFIX}arch_sdl ${DXX_TARGET_PREFIX}iff ${DXX_TARGET_PREFIX}maths ${DXX_TARGET_PREFIX}mem ${DXX_TARGET_PREFIX}misc ${DXX_TARGET_PREFIX}texmap)
 
 if(WIN32)
     add_subdirectory(arch/win32)
-    add_dependencies(d1x-redux arch_win32)
+    add_dependencies(dxx-redux-d1 ${DXX_TARGET_PREFIX}arch_win32)
 endif()
 
 if(APPLE)
     add_subdirectory(arch/cocoa)
-    add_dependencies(d1x-redux arch_cocoa)
+    add_dependencies(dxx-redux-d1 ${DXX_TARGET_PREFIX}arch_cocoa)
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_subdirectory(arch/x11)
-    add_dependencies(d1x-redux arch_x11)
+    add_dependencies(dxx-redux-d1 ${DXX_TARGET_PREFIX}arch_x11)
 endif()
 
 if(OPENGL)
     add_subdirectory(arch/ogl)
     add_subdirectory(xmodel)
-    add_dependencies(d1x-redux arch_ogl xmodel)
+    add_dependencies(dxx-redux-d1 ${DXX_TARGET_PREFIX}arch_ogl ${DXX_TARGET_PREFIX}xmodel)
 endif()
 
 if(EDITOR)
     add_subdirectory(editor)
     add_subdirectory(ui)
-    add_dependencies(d1x-redux editor ui)
+    add_dependencies(dxx-redux-d1 ${DXX_TARGET_PREFIX}editor ${DXX_TARGET_PREFIX}ui)
 endif()

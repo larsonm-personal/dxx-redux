@@ -60,9 +60,13 @@
 #else
 #ifdef OGLES
 #include <EGL/egl.h>
+#ifdef ANDROID
+#include <android/native_window.h>
+#else
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <SDL/SDL_syswm.h>
+#endif
 #else
 #include <GL/glu.h>
 #endif
@@ -289,9 +293,11 @@ int ogl_init_window(int x, int y)
 	Uint32 use_flags;
 
 #ifdef OGLES
+#ifndef ANDROID
 	SDL_SysWMinfo info;
 	Window    x11Window = 0;
 	Display*  x11Display = 0;
+#endif
 	EGLint    ver_maj, ver_min;
 	EGLint configAttribs[] =
 	{
@@ -315,8 +321,10 @@ int ogl_init_window(int x, int y)
 	if (gl_initialized)
 		ogl_smash_texture_list_internal();//if we are or were fullscreen, changing vid mode will invalidate current textures
 
+#ifndef ANDROID
 	SDL_WM_SetCaption(DESCENT_VERSION, "Descent");
 	SDL_WM_SetIcon( SDL_LoadBMP( "d1x-redux.bmp" ), NULL );
+#endif
 
 	use_x=x;
 	use_y=y;
@@ -334,6 +342,7 @@ int ogl_init_window(int x, int y)
 		}
 	}
 
+#ifndef ANDROID
 	if (!SDL_SetVideoMode(use_x, use_y, use_bpp, use_flags))
 	{
 #ifdef RPI
@@ -343,8 +352,70 @@ int ogl_init_window(int x, int y)
 		Error("Could not set %dx%dx%d opengl video mode: %s\n", x, y, GameArg.DbgBpp, SDL_GetError());
 #endif
 	}
+#endif
 
 #ifdef OGLES
+
+#ifdef ANDROID
+	/* Android: get the ANativeWindow from android_surface.c and create
+	 * an EGL surface directly on it.  No X11, no SDL video mode needed. */
+	ogles_destroy();
+
+	{
+		extern ANativeWindow *android_surface_get_native_window(void);
+		ANativeWindow *win = android_surface_get_native_window();
+
+		eglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+		if (eglDisplay == EGL_NO_DISPLAY) {
+			con_printf(CON_URGENT, "EGL: Error querying EGL Display\n");
+		}
+
+		if (!eglInitialize(eglDisplay, &ver_maj, &ver_min)) {
+			con_printf(CON_URGENT, "EGL: Error initializing EGL\n");
+		} else {
+			con_printf(CON_DEBUG, "EGL: Initialized, version: major %i minor %i\n", ver_maj, ver_min);
+		}
+
+		if (!eglChooseConfig(eglDisplay, configAttribs, &eglConfig, 1, &iConfigs) || (iConfigs != 1)) {
+			con_printf(CON_URGENT, "EGL: Error choosing config\n");
+		} else {
+			con_printf(CON_DEBUG, "EGL: config chosen\n");
+		}
+
+		if (win) {
+			/* Match the EGL surface format and set the buffer size to
+			 * the game resolution.  The Android compositor scales the
+			 * buffer to fill the physical display automatically. */
+			EGLint format;
+			eglGetConfigAttrib(eglDisplay, eglConfig, EGL_NATIVE_VISUAL_ID, &format);
+			ANativeWindow_setBuffersGeometry(win, x, y, format);
+
+			eglSurface = eglCreateWindowSurface(eglDisplay, eglConfig, (EGLNativeWindowType)win, winAttribs);
+		}
+
+		if (eglSurface == EGL_NO_SURFACE) {
+			con_printf(CON_URGENT, "EGL: Error creating window surface\n");
+		} else {
+			con_printf(CON_DEBUG, "EGL: Created window surface\n");
+		}
+
+		eglContext = eglCreateContext(eglDisplay, eglConfig, EGL_NO_CONTEXT, contextAttribs);
+		if (eglContext == EGL_NO_CONTEXT) {
+			con_printf(CON_URGENT, "EGL: Error creating context\n");
+		} else {
+			con_printf(CON_DEBUG, "EGL: Created context\n");
+		}
+
+		eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
+		if (!TestEGLError("eglMakeCurrent")) {
+			con_printf(CON_URGENT, "EGL: Error making current\n");
+		} else {
+			con_printf(CON_DEBUG, "EGL: made context current\n");
+		}
+	}
+
+#else /* !ANDROID OGLES path (RPI / X11) */
+
 #ifndef RPI
 	// NOTE: on the RPi, the EGL stuff is not connected to the X11 window,
 	//       so there is no need to destroy and recreate this
@@ -419,8 +490,12 @@ int ogl_init_window(int x, int y)
 	} else {
 		con_printf(CON_DEBUG, "EGL: made context current\n");
 	}
-#endif
+
+#endif /* ANDROID vs RPI/X11 */
+
+#else /* !OGLES — desktop OpenGL */
 	glewInit();
+#endif /* OGLES */
 #ifdef OGL_MERGE
 	ogl_init_prog();
 #endif
@@ -839,6 +914,11 @@ void gr_close()
 #endif
 #endif
 }
+
+#ifdef ANDROID
+unsigned int grd_curscreen_w(void) { return grd_curscreen ? grd_curscreen->sc_w : 640; }
+unsigned int grd_curscreen_h(void) { return grd_curscreen ? grd_curscreen->sc_h : 480; }
+#endif
 
 extern int r_upixelc;
 void ogl_upixelc(int x, int y, int c)

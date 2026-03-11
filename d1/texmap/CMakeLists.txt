@@ -1,4 +1,4 @@
-add_library(texmap STATIC
+add_library(${DXX_TARGET_PREFIX}texmap STATIC
     ntmap.c
     scanline.c
     )
@@ -6,12 +6,12 @@ add_library(texmap STATIC
 include_directories(../include ../arch/include ../main)
 
 if(NOT OPENGL)
-    target_sources(texmap PRIVATE tmapflat.c)
+    target_sources(${DXX_TARGET_PREFIX}texmap PRIVATE tmapflat.c)
     if(ASM)
         if(NOT CMAKE_ASM_${ASM_DIALECT}_COMPILE_OBJECT)
             set(CMAKE_ASM_${ASM_DIALECT}_COMPILE_OBJECT "<CMAKE_ASM_${ASM_DIALECT}_COMPILER> -o <OBJECT> <SOURCE>")
         endif()
-        target_sources(texmap PRIVATE
+        target_sources(${DXX_TARGET_PREFIX}texmap PRIVATE
             tmap_ll.asm
             tmap_flt.asm
             tmapfade.asm
@@ -19,12 +19,12 @@ if(NOT OPENGL)
             tmap_per.asm
             )
     else()
-        target_compile_definitions(texmap PUBLIC NO_ASM)
+        target_compile_definitions(${DXX_TARGET_PREFIX}texmap PUBLIC NO_ASM)
     endif()
 else()
-    target_compile_definitions(texmap PUBLIC NO_ASM)
+    target_compile_definitions(${DXX_TARGET_PREFIX}texmap PUBLIC NO_ASM)
 endif()
 
 find_package(SDL)
 find_package(PhysFS)
-target_include_directories(texmap PUBLIC ${SDL_INCLUDE_DIR} ${PHYSFS_INCLUDE_DIR})
+target_include_directories(${DXX_TARGET_PREFIX}texmap PUBLIC ${SDL_INCLUDE_DIR} ${PHYSFS_INCLUDE_DIR})

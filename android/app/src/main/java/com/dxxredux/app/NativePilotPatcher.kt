@@ -6,7 +6,7 @@ package com.dxxredux.app
  * stays in C alongside playsave.c.
  */
 object NativePilotPatcher {
-    init { System.loadLibrary("d2x-redux") }
+    init { System.loadLibrary("dxx-redux-d2") }
 
     /**
      * Patch all .plr files in [filesDir] (and its Players/ subdirectory)

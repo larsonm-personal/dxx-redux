@@ -15,7 +15,7 @@ object DiscImportBridge {
     private const val TAG = "DXX-DiscImport"
 
     init {
-        System.loadLibrary("d2x-redux")
+        System.loadLibrary("dxx-redux-d2")
     }
 
     /* ── CUE parsing ─────────────────────────────────────────────── */

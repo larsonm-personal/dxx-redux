@@ -88,6 +88,11 @@ extern "C" void android_apply_gamepad_defaults(void)
     }
 }
 
+/* The JNI patching and kconfig-build functions below use D2-only APIs
+ * (plr_patch_keysettings, kconfig_fill_joy_settings, kconfig_fill_kb_settings).
+ * Guard them so they compile only for the D2 build. */
+#ifdef DXX_BUILD_DESCENT_II
+
 /* ── JNI entry point: patch all .plr files ─────────────────────── */
 
 extern "C" JNIEXPORT jint JNICALL
@@ -190,5 +195,7 @@ Java_com_dxxredux_app_NativePilotPatcher_nativeBuildKbSettings(
     env->SetByteArrayRegion(result, 0, MAX_CONTROLS, (const jbyte *)out);
     return result;
 }
+
+#endif /* DXX_BUILD_DESCENT_II */
 
 #endif /* ANDROID */

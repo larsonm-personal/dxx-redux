@@ -615,7 +615,9 @@ Java_com_dxxredux_app_MainActivity_nativeAutomapSelectMarker(JNIEnv *env, jobjec
 
 /*
  * nativeGetMarkerCount() — returns number of placed markers (0-9 in single player)
+ * D2 only — MarkerObject doesn't exist in D1.
  */
+#ifdef DXX_BUILD_DESCENT_II
 extern int MarkerObject[];
 JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetMarkerCount(JNIEnv *env, jobject thiz)
@@ -627,6 +629,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetMarkerCount(JNIEnv *env, jobject thi
     }
     return count;
 }
+#endif
 
 /* ── C→Java keyboard callbacks ──────────────────────────────
  *

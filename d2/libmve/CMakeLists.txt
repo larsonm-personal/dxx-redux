@@ -1,4 +1,4 @@
-add_library(libmve STATIC
+add_library(${DXX_TARGET_PREFIX}libmve STATIC
     decoder8.c
     decoder16.c
     mve_audio.c
@@ -9,20 +9,20 @@ add_library(libmve STATIC
 include_directories(../include ../arch/include ../main)
 
 find_package(SDL)
-target_include_directories(libmve PUBLIC ${SDL_INCLUDE_DIR})
+target_include_directories(${DXX_TARGET_PREFIX}libmve PUBLIC ${SDL_INCLUDE_DIR})
 
 if(SDLMIXER)
     #find_package(SDL_mixer)
     #target_include_directories(libmve PUBLIC ${SDL_MIXER_INCLUDE_DIRS})
-    target_link_libraries(libmve PUBLIC ${SDL_MIXER_LIBRARY})
+    target_link_libraries(${DXX_TARGET_PREFIX}libmve PUBLIC ${SDL_MIXER_LIBRARY})
 endif()
 
 include(CheckStructHasMember)
 check_struct_has_member("struct timeval" tv_sec sys/time.h HAVE_STRUCT_TIMEVAL LANGUAGE C)
 if(HAVE_STRUCT_TIMEVAL)
-    target_compile_definitions(libmve PUBLIC HAVE_STRUCT_TIMEVAL=1)
+    target_compile_definitions(${DXX_TARGET_PREFIX}libmve PUBLIC HAVE_STRUCT_TIMEVAL=1)
 endif()
 check_struct_has_member("struct timespec" tv_sec sys/time.h HAVE_STRUCT_TIMESPEC LANGUAGE C)
 if(HAVE_STRUCT_TIMESPEC)
-    target_compile_definitions(libmve PUBLIC HAVE_STRUCT_TIMESPEC=1)
+    target_compile_definitions(${DXX_TARGET_PREFIX}libmve PUBLIC HAVE_STRUCT_TIMESPEC=1)
 endif()

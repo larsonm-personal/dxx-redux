@@ -1,4 +1,4 @@
-add_library(misc STATIC
+add_library(${DXX_TARGET_PREFIX}misc STATIC
     args.c
     error.c
     hash.c
@@ -10,11 +10,11 @@ add_library(misc STATIC
     )
 
 if(PNG)
-    target_sources(misc PRIVATE pngfile.c)
+    target_sources(${DXX_TARGET_PREFIX}misc PRIVATE pngfile.c)
 endif()
 
 include_directories(../include ../arch/include ../main)
 
 find_package(SDL)
 find_package(PhysFS)
-target_include_directories(misc PUBLIC ${SDL_INCLUDE_DIR} ${PHYSFS_INCLUDE_DIR})
+target_include_directories(${DXX_TARGET_PREFIX}misc PUBLIC ${SDL_INCLUDE_DIR} ${PHYSFS_INCLUDE_DIR})

@@ -18,6 +18,9 @@
 #include "gamefont.h"
 #include "args.h"
 #include "config.h"
+#ifdef ANDROID
+#include "android_surface.h"
+#endif
 
 int sdl_video_flags = SDL_SWSURFACE | SDL_HWPALETTE | SDL_DOUBLEBUF;
 SDL_Surface *screen,*canvas;
@@ -33,6 +36,9 @@ void gr_flip()
 
 	SDL_BlitSurface(canvas, &src, screen, &dest);
 	SDL_Flip(screen);
+#ifdef ANDROID
+	android_surface_blit(canvas);
+#endif
 }
 
 // Set the buffer to draw to. 0 is front, 1 is back
@@ -87,6 +93,12 @@ int gr_check_mode(u_int32_t mode)
 	return SDL_VideoModeOK(w,h,GameArg.DbgBpp,sdl_video_flags);
 }
 
+#ifdef ANDROID
+/* Trivial accessors for JNI to query the actual game resolution */
+unsigned int grd_curscreen_w(void) { return grd_curscreen ? grd_curscreen->sc_w : 640; }
+unsigned int grd_curscreen_h(void) { return grd_curscreen ? grd_curscreen->sc_h : 480; }
+#endif
+
 int gr_set_mode(u_int32_t mode)
 {
 	unsigned int w, h;
@@ -100,9 +112,16 @@ int gr_set_mode(u_int32_t mode)
 
 	sdl_video_flags = (sdl_video_flags & ~SDL_NOFRAME) | (GameCfg.BorderlessWindow ? SDL_NOFRAME : 0);
 
+#ifndef ANDROID
 	SDL_WM_SetCaption(DESCENT_VERSION, "Descent");
 	SDL_WM_SetIcon( SDL_LoadBMP( "d1x-redux.bmp" ), NULL );
+#endif
 
+#ifdef ANDROID
+	/* The dummy video driver accepts any resolution; skip the
+	 * SDL_VideoModeOK check which may incorrectly fail. */
+	screen=SDL_SetVideoMode(w, h, GameArg.DbgBpp, sdl_video_flags);
+#else
 	if(SDL_VideoModeOK(w,h,GameArg.DbgBpp,sdl_video_flags))
 	{
 		screen=SDL_SetVideoMode(w, h, GameArg.DbgBpp, sdl_video_flags);
@@ -115,6 +134,7 @@ int gr_set_mode(u_int32_t mode)
 		Game_screen_mode=mode=SM(w,h);
 		screen=SDL_SetVideoMode(w, h, GameArg.DbgBpp, sdl_video_flags);
 	}
+#endif
 
 	if (screen == NULL)
 	{

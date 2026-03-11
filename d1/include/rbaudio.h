@@ -59,4 +59,13 @@ unsigned long RBAGetDiscID();
 // List the tracks on the CD
 void RBAList(void);
 
+// Track control (multi-source support)
+int RBANextTrack(void);
+int RBAPrevTrack(void);
+int RBAPlaySpecificTrack(int track);
+int RBAGetCurrentTrackInfo(int *out_track, char *out_name, int name_size,
+                           int *out_source_index);
+int RBAGetNumAudioTracks(void);
+const char *RBAGetTrackName(int track);
+
 #endif

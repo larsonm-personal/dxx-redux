@@ -71,14 +71,14 @@ set(D2X_MAIN_SOURCES
     )
 
 if(ANDROID)
-    add_library(d2x-redux SHARED ${D2X_MAIN_SOURCES})
+    add_library(dxx-redux-d2 SHARED ${D2X_MAIN_SOURCES})
 else()
-    add_executable(d2x-redux ${D2X_MAIN_SOURCES})
+    add_executable(dxx-redux-d2 ${D2X_MAIN_SOURCES})
 endif()
 
 include_directories(../include ../arch/include)
 
-target_compile_definitions(d2x-redux PUBLIC
+target_compile_definitions(dxx-redux-d2 PUBLIC
     DXX_VERSION_MAJORi=${PROJECT_VERSION_MAJOR}
     DXX_VERSION_MINORi=${PROJECT_VERSION_MINOR}
     DXX_VERSION_MICROi=$<IF:$<BOOL:${PROJECT_VERSION_MICRO}>,${PROJECT_VERSION_MICRO},0>
@@ -87,30 +87,30 @@ target_compile_definitions(d2x-redux PUBLIC
 include(CheckTypeSize)
 check_type_size("ssize_t" SIZEOF_SSIZE_T LANGUAGE C)
 if(NOT "${SIZEOF_SSIZE_T}" STREQUAL "")
-    target_compile_definitions(d2x-redux PUBLIC HAVE_SSIZE_T=1)
+    target_compile_definitions(dxx-redux-d2 PUBLIC HAVE_SSIZE_T=1)
 endif()
 
 if(OPENGL)
-    target_link_libraries(d2x-redux PRIVATE arch_ogl xmodel)
+    target_link_libraries(dxx-redux-d2 PRIVATE ${DXX_TARGET_PREFIX}arch_ogl ${DXX_TARGET_PREFIX}xmodel)
 endif()
 
 if(SDLMIXER)
-    target_link_libraries(d2x-redux PUBLIC ${SDL_MIXER_LIBRARIES})
+    target_link_libraries(dxx-redux-d2 PUBLIC ${SDL_MIXER_LIBRARIES})
 endif()
 
 if(EDITOR)
-    target_sources(d2x-redux PRIVATE bmread.c)
-    target_link_libraries(d2x-redux PRIVATE editor ui)
+    target_sources(dxx-redux-d2 PRIVATE bmread.c)
+    target_link_libraries(dxx-redux-d2 PRIVATE ${DXX_TARGET_PREFIX}editor ${DXX_TARGET_PREFIX}ui)
 endif()
 
 if(UDP)
-    target_sources(d2x-redux PRIVATE net_udp.c)
+    target_sources(dxx-redux-d2 PRIVATE net_udp.c)
 endif()
 
 if(WIN32)
     list(APPEND EXTRA_LIBRARIES glu32 winmm ws2_32 dbghelp)
-    target_link_libraries(d2x-redux PRIVATE arch_win32)
-    target_sources(d2x-redux PRIVATE
+    target_link_libraries(dxx-redux-d2 PRIVATE ${DXX_TARGET_PREFIX}arch_win32)
+    target_sources(dxx-redux-d2 PRIVATE
         ${CMAKE_SOURCE_DIR}/arch/win32/d2x-rebirth.ico
         ${CMAKE_SOURCE_DIR}/arch/win32/d2x-rebirth.rc
         )
@@ -119,7 +119,7 @@ if(WIN32)
         # The manifest has to be included through the .rc for compatibility with MSYS. However
         # MSVC will automatically generate a manifest using this method - which will cause a
         # collision - so we need to tell it not to.
-        target_link_options(d2x-redux PRIVATE "/MANIFEST:NO")
+        target_link_options(dxx-redux-d2 PRIVATE "/MANIFEST:NO")
         if(CMAKE_BUILD_TYPE STREQUAL "Debug")
             # Enable Hot Reload for debug builds
             target_link_options(${PROJECT_NAME} PRIVATE $<$<CONFIG:Debug>:/INCREMENTAL>)
@@ -156,11 +156,11 @@ if(WIN32)
 endif()
 
 if(APPLE)
-    target_link_libraries(d2x-redux PRIVATE arch_cocoa)
+    target_link_libraries(dxx-redux-d2 PRIVATE ${DXX_TARGET_PREFIX}arch_cocoa)
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_libraries(d2x-redux PRIVATE arch_x11)
+    target_link_libraries(dxx-redux-d2 PRIVATE ${DXX_TARGET_PREFIX}arch_x11)
     list(APPEND EXTRA_LIBRARIES "X11")
 endif()
 
@@ -178,8 +178,8 @@ endif()
 if(PNG)
     find_package(PNG REQUIRED)
 endif()
-target_include_directories(d2x-redux PUBLIC ${SDL_INCLUDE_DIR} ${PHYSFS_INCLUDE_DIR})
-target_link_libraries(d2x-redux PRIVATE 2d 3d arch_sdl iff libmve maths mem misc texmap)
-target_link_libraries(d2x-redux PUBLIC ${OPENGL_LIBRARY} ${SDL_LIBRARY} ${SDL_MIXER_LIBRARY} ${PHYSFS_LIBRARY} ${PNG_LIBRARY} ${EXTRA_LIBRARIES})
-target_sources(d2x-redux PRIVATE vers_id.c)
-install(TARGETS d2x-redux RUNTIME DESTINATION .)
+target_include_directories(dxx-redux-d2 PUBLIC ${SDL_INCLUDE_DIR} ${PHYSFS_INCLUDE_DIR})
+target_link_libraries(dxx-redux-d2 PRIVATE ${DXX_TARGET_PREFIX}2d ${DXX_TARGET_PREFIX}3d ${DXX_TARGET_PREFIX}arch_sdl ${DXX_TARGET_PREFIX}iff ${DXX_TARGET_PREFIX}libmve ${DXX_TARGET_PREFIX}maths ${DXX_TARGET_PREFIX}mem ${DXX_TARGET_PREFIX}misc ${DXX_TARGET_PREFIX}texmap)
+target_link_libraries(dxx-redux-d2 PUBLIC ${OPENGL_LIBRARY} ${SDL_LIBRARY} ${SDL_MIXER_LIBRARY} ${PHYSFS_LIBRARY} ${PNG_LIBRARY} ${EXTRA_LIBRARIES})
+target_sources(dxx-redux-d2 PRIVATE vers_id.c)
+install(TARGETS dxx-redux-d2 RUNTIME DESTINATION .)

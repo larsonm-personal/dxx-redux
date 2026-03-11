@@ -3,8 +3,8 @@
  * and forwards the result to the Java overlay layer via JNI.
  *
  * Two sources of names are tried, in priority order:
- *   1. TITLE fields parsed from the GOG CUE sheet (descent_ii.inst)
- *   2. A hardcoded table for Descent II CD tracks
+ *   1. TITLE fields parsed from the GOG CUE sheet (descent.inst)
+ *   2. A hardcoded table for Descent I CD tracks
  *
  * For MIDI tracks the overlay simply shows "MIDI Track N".
  */
@@ -50,41 +50,33 @@ const char *track_names_get_cue_title(int track)
 	return s_cue_titles[track - 1];
 }
 
-/* ── Hardcoded Descent II CD track names ─────────────────────────────
- *
- * These names are ONLY used when the disc ID matches the GOG release
- * (D2_1_DISCID / 0x7d0ff809).  Other disc variants have different
- * track orderings and will be added later.
+/* ── Hardcoded Descent I CD track names ──────────────────────────────
  *
  * Physical CD layout (GOG disc image):
  *   Track  1 : DATA
- *   Tracks 2–15 : Audio
+ *   Tracks 2–11 : Audio (10 tracks)
  *
  * The names below are indexed by physical 1-based track number.
  */
 
-#define D2_GOG_DISCID 0x7d0ff809u
+#define D1_GOG_DISCID 0x2e0d3a05u
 
-static const char *d2_track_names[] = {
-	NULL,               /*  0 — unused (tracks are 1-based) */
-	NULL,               /*  1 — DATA track */
-	"Title",            /*  2 */
-	"Base Return",      /*  3 */
-	"Crawl",            /*  4 */
-	"Gunner Down",      /*  5 */
-	"Ratzez",           /*  6 */
-	"Techno Industry",  /*  7 */
-	"Are You Descent",  /*  8 */
-	"Robot Jungle",     /*  9 */
-	"The Well",         /* 10 */
-	"Haunted",          /* 11 */
-	"Are You Descent",  /* 12 */
-	"Cold Reality",     /* 13 */
-	"Robot Jungle",     /* 14 */
-	"Final Mission",    /* 15 */
+static const char *d1_track_names[] = {
+	NULL,                   /*  0 — unused (tracks are 1-based) */
+	NULL,                   /*  1 — DATA track */
+	"Descent Main Theme",   /*  2 */
+	"Adrenaline Nightmare", /*  3 */
+	"Level 7 Briefing",     /*  4 */
+	"Briefing Theme",       /*  5 */
+	"Techno Industry",      /*  6 */
+	"Primitive Screwhead",  /*  7 */
+	"Untitled",             /*  8 */
+	"Alien Encounter",      /*  9 */
+	"Cold Reality",         /* 10 */
+	"Robotic Menace",       /* 11 */
 };
 
-#define D2_TRACK_COUNT ((int)(sizeof(d2_track_names) / sizeof(d2_track_names[0])))
+#define D1_TRACK_COUNT ((int)(sizeof(d1_track_names) / sizeof(d1_track_names[0])))
 
 static const char *lookup_redbook_name(int track, unsigned long disc_id)
 {
@@ -93,9 +85,9 @@ static const char *lookup_redbook_name(int track, unsigned long disc_id)
 	if (cue) return cue;
 
 	/* Hardcoded table — only for the GOG disc */
-	if (disc_id == D2_GOG_DISCID &&
-	    track >= 1 && track < D2_TRACK_COUNT && d2_track_names[track])
-		return d2_track_names[track];
+	if (disc_id == D1_GOG_DISCID &&
+	    track >= 1 && track < D1_TRACK_COUNT && d1_track_names[track])
+		return d1_track_names[track];
 
 	return NULL;
 }

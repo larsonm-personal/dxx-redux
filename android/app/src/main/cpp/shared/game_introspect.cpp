@@ -38,6 +38,11 @@ extern "C" {
 #include "playsave.h"
 }
 
+/* D1 does not have SCREEN_MOVIE */
+#ifndef SCREEN_MOVIE
+#define SCREEN_MOVIE 99
+#endif
+
 /* ── Redbook audio accessors (defined in rbaudio_bin.c / rbaudio.c) ── */
 extern "C" {
     int  RBAEnabled(void);
@@ -46,12 +51,14 @@ extern "C" {
     int  RBAPeekPlayStatus(void);
 }
 
-/* ── Movie tracking globals (defined in movie.c) ── */
+/* ── Movie tracking globals (defined in movie.c, D2 only) ── */
+#ifdef DXX_BUILD_DESCENT_II
 extern "C" {
     extern char g_current_movie_name[];
     extern int  g_last_movie_result;
     extern char g_last_movie_name[];
 }
+#endif /* DXX_BUILD_DESCENT_II movie globals */
 
 /* ── Audio diagnostic accessors (defined in digi_tsf_music.c / SDL_androidaudio.c) ── */
 extern "C" {
@@ -222,7 +229,9 @@ static json serialize_player() {
         {"secondary_weapon_flags", (unsigned)p->secondary_weapon_flags},
         {"hostages_on_board", (int)p->hostages_on_board},
         {"hostages_level", (int)p->hostages_level},
+#ifdef DXX_BUILD_DESCENT_II
         {"afterburner_charge", f2fl(p->afterburner_charge)},
+#endif
         {"primary_ammo", std::move(primary_ammo)},
         {"secondary_ammo", std::move(secondary_ammo)},
         {"has_blue_key", (bool)(p->flags & PLAYER_FLAGS_BLUE_KEY)},
@@ -332,6 +341,7 @@ extern "C" char *game_introspect_get_state(void) {
 
     /* ── Automap ──────────────────────────────────────────────── */
     j["automap_active"] = (bool)Automap_active;
+#ifdef DXX_BUILD_DESCENT_II
     {
         automap_view_info avi;
         if (automap_get_view_info(&avi)) {
@@ -353,6 +363,7 @@ extern "C" char *game_introspect_get_state(void) {
             j["automap"] = nullptr;
         }
     }
+#endif /* DXX_BUILD_DESCENT_II automap_view_info */
 
     /* ── Audio diagnostics ───────────────────────────────────────── */
     {
@@ -402,7 +413,8 @@ extern "C" char *game_introspect_get_state(void) {
         j["redbook"] = std::move(rb);
     }
 
-    /* ── Movie state ──────────────────────────────────────────────── */
+    /* ── Movie state (D2 only) ─────────────────────────────────── */
+#ifdef DXX_BUILD_DESCENT_II
     {
         json mv;
         if (g_current_movie_name[0])
@@ -418,6 +430,7 @@ extern "C" char *game_introspect_get_state(void) {
         mv["last_result"] = result_str;
         j["movie"] = std::move(mv);
     }
+#endif
 
     /* ── Player & position (only meaningful when a level is loaded) ── */
     if (Current_level_num != 0) {
