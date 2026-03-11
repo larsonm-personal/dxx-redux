@@ -92,6 +92,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "controls.h"
 #include "credits.h"
 #include "gamemine.h"
+#include "track_names.h"
 #ifdef EDITOR
 #include "editor/editor.h"
 #endif
@@ -752,6 +753,8 @@ void LoadLevel(int level_num,int page_in_textures)
 		Error("Couldn't load level file <%s>, error = %d",level_name,load_ret);
 
 	Current_level_num=level_num;
+
+	level_overlay_notify(level_num, Current_level_name);
 
 	load_palette(Current_level_palette,1,1);		//don't change screen
 

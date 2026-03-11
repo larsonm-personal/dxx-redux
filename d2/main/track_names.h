@@ -27,4 +27,7 @@ void track_names_set_cue_title(int track, const char *title);
 /* Set the total number of CUE tracks parsed. */
 void track_names_set_cue_count(int n);
 
+/* Call when a new level starts to show "Level N: Name" overlay. */
+void level_overlay_notify(int level_num, const char *level_name);
+
 #endif

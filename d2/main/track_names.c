@@ -16,6 +16,7 @@
 #include "pstypes.h"
 #include "songs.h"
 #include "track_names.h"
+#include "gameseq.h"
 
 #ifdef ANDROID
 #include <jni.h>
@@ -151,4 +152,47 @@ void track_overlay_notify(int track_or_song, int is_midi, unsigned long disc_id)
 	}
 
 	send_track_name_to_java(s_overlay_text);
+}
+
+/* ── Level name overlay ──────────────────────────────────────────────── */
+
+static void send_level_name_to_java(const char *name)
+{
+#ifdef ANDROID
+	JNIEnv *env;
+	int attached = 0;
+	if (!g_jvm || !g_activity) return;
+	if ((*g_jvm)->GetEnv(g_jvm, (void**)&env, JNI_VERSION_1_6) != JNI_OK) {
+		(*g_jvm)->AttachCurrentThread(g_jvm, &env, NULL);
+		attached = 1;
+	}
+	jclass cls = (*env)->GetObjectClass(env, g_activity);
+	jmethodID mid = (*env)->GetMethodID(env, cls, "showLevelName", "(Ljava/lang/String;)V");
+	if (mid) {
+		jstring jstr = (*env)->NewStringUTF(env, name);
+		(*env)->CallVoidMethod(env, g_activity, mid, jstr);
+		(*env)->DeleteLocalRef(env, jstr);
+	}
+	if (attached) (*g_jvm)->DetachCurrentThread(g_jvm);
+#else
+	(void)name;
+#endif
+}
+
+void level_overlay_notify(int level_num, const char *level_name)
+{
+	char buf[OVERLAY_TEXT_LEN];
+	int has_name = level_name && level_name[0];
+	if (level_num < 0) {
+		if (has_name)
+			snprintf(buf, OVERLAY_TEXT_LEN, "Secret Level %d: %s", -level_num, level_name);
+		else
+			snprintf(buf, OVERLAY_TEXT_LEN, "Secret Level %d", -level_num);
+	} else {
+		if (has_name)
+			snprintf(buf, OVERLAY_TEXT_LEN, "Level %d: %s", level_num, level_name);
+		else
+			snprintf(buf, OVERLAY_TEXT_LEN, "Level %d", level_num);
+	}
+	send_level_name_to_java(buf);
 }

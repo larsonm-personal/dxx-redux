@@ -32,7 +32,9 @@ import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
+import android.animation.LayoutTransition
 import android.widget.FrameLayout
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -109,8 +111,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     private var gameStarted = false
     private lateinit var gameSurfaceView: GameSurfaceView
     private lateinit var touchOverlay: TouchOverlayView
-    private lateinit var trackNameView: TextView
-    private var trackNameAnimator: ObjectAnimator? = null
+    private lateinit var overlayContainer: LinearLayout
     private var overlayEnabled = false
     private val overlayPoller = android.os.Handler(android.os.Looper.getMainLooper())
     private var musicPanel: MusicControlPanel? = null
@@ -206,15 +207,14 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         }
         touchOverlay.isActive = false
 
-        // Track name overlay (upper-left, starts invisible)
-        trackNameView = TextView(this).apply {
-            setTextColor(Color.GREEN)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
-            typeface = Typeface.MONOSPACE
-            alpha = 0f
-            visibility = View.GONE
+        // Multi-line overlay container (upper-left, items fade independently)
+        overlayContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutTransition = LayoutTransition().apply {
+                enableTransitionType(LayoutTransition.CHANGE_DISAPPEARING)
+            }
         }
-        val trackLp = FrameLayout.LayoutParams(
+        val overlayLp = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.WRAP_CONTENT,
             FrameLayout.LayoutParams.WRAP_CONTENT
         ).apply {
@@ -233,7 +233,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
         ))
-        frame.addView(trackNameView, trackLp)
+        frame.addView(overlayContainer, overlayLp)
 
         setContentView(frame)
 
@@ -851,39 +851,43 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         ))
     }
 
-    // ── Track name overlay (called from JNI) ────────────────
-    @Suppress("unused")   // Called from native code
-    fun showTrackName(name: String) {
+    // ── Overlay toast lines (multi-line, each fades independently) ──
+    private fun showOverlayLine(text: String) {
         runOnUiThread {
-            // Cancel any running animation
-            trackNameAnimator?.cancel()
-
-            trackNameView.text = name
-            trackNameView.visibility = View.VISIBLE
-
-            // Fade in 0.5s, hold 3s, fade out 0.5s
-            val fadeIn = ObjectAnimator.ofFloat(trackNameView, "alpha", 0f, 1f).apply {
-                duration = 500
+            val tv = TextView(this).apply {
+                this.text = text
+                setTextColor(Color.GREEN)
+                setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+                typeface = Typeface.MONOSPACE
+                alpha = 0f
             }
+            overlayContainer.addView(tv)
+
+            val fadeIn = ObjectAnimator.ofFloat(tv, "alpha", 0f, 1f).apply { duration = 500 }
             fadeIn.addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
-                    val fadeOut = ObjectAnimator.ofFloat(trackNameView, "alpha", 1f, 0f).apply {
-                        startDelay = 3000
-                        duration = 500
+                    val fadeOut = ObjectAnimator.ofFloat(tv, "alpha", 1f, 0f).apply {
+                        startDelay = 3000; duration = 500
                     }
                     fadeOut.addListener(object : AnimatorListenerAdapter() {
                         override fun onAnimationEnd(animation: Animator) {
-                            trackNameView.visibility = View.GONE
+                            overlayContainer.removeView(tv)
                         }
                     })
-                    trackNameAnimator = fadeOut
                     fadeOut.start()
                 }
             })
-            trackNameAnimator = fadeIn
             fadeIn.start()
         }
     }
+
+    // ── Track name overlay (called from JNI) ────────────────
+    @Suppress("unused")
+    fun showTrackName(name: String) { showOverlayLine(name) }
+
+    // ── Level name overlay (called from JNI) ────────────────
+    @Suppress("unused")
+    fun showLevelName(name: String) { showOverlayLine(name) }
 
     // ── GameSurfaceView with InputConnection for soft keyboard ──
     private inner class GameSurfaceView(context: Context) : SurfaceView(context) {
