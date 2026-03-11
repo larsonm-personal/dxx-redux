@@ -14,6 +14,10 @@
 #include "timer.h"
 #include "config.h"
 #include "args.h"
+#ifdef INTROSPECT_ON
+#include "game_introspect.h"
+#include "game_automate.h"
+#endif
 
 #include "joy.h"
 
@@ -161,6 +165,11 @@ void event_process(void)
 	window *wind = window_get_front();
 
 	timer_update();
+
+#ifdef INTROSPECT_ON
+	game_introspect_check_and_dump();
+	game_automate_tick();
+#endif
 
 	event_poll();	// send input events first
 

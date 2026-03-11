@@ -193,7 +193,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         }
         touchOverlay.automapCenterCallback = { nativeAutomapCenter() }
         touchOverlay.automapMarkerCallback = { idx -> nativeAutomapSelectMarker(idx) }
-        touchOverlay.markerCountProvider = { try { nativeGetMarkerCount() } catch (_: Exception) { 0 } }
+        touchOverlay.markerCountProvider = { try { nativeGetMarkerCount() } catch (_: Throwable) { 0 } }
         touchOverlay.mapButtonCallback = { toggleAutomap() }
         touchOverlay.prevTrackCallback = {
             nativePrevTrack()

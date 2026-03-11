@@ -26,7 +26,7 @@
 ,
     "last_test_result": {
         "status": "fail",
-        "failure_step": "crash",
+        "failure_step": "launch_timeout",
         "level_reached": null,
         "files_verified": 2,
         "classification_confirmed": true,

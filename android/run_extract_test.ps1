@@ -140,11 +140,12 @@ function Get-GameIntrospection {
 }
 
 function Send-SetupCommand {
-    param([string]$Command, [string]$Name, [string]$Path)
+    param([string]$Command, [string]$Name, [string]$Path, [string]$Game)
     $args_ = @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
                '--es', 'command', $Command)
     if ($Name) { $args_ += @('--es', 'name', $Name) }
     if ($Path) { $args_ += @('--es', 'path', $Path) }
+    if ($Game) { $args_ += @('--es', 'game', $Game) }
     Adb -CmdArgs $args_ | Out-Null
 }
 
@@ -405,7 +406,7 @@ $filesDir = "/data/data/$PACKAGE/files"
 $rootListing = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'ls', "$filesDir/")
 foreach ($rf in ($rootListing -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ })) {
     try { $ext = [System.IO.Path]::GetExtension($rf).ToLower() } catch { continue }
-    if ($GAME_EXTENSIONS -contains $ext) {
+    if ($GAME_EXTENSIONS -contains $ext -or $ext -in @('.plr', '.plx')) {
         Write-Status "  Removing stale root file: $rf"
         Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', "$filesDir/$rf") | Out-Null
     }
@@ -644,8 +645,9 @@ Start-Sleep -Seconds 3
 Send-SetupCommand 'switch_set' -Name $TEST_SET
 Start-Sleep -Seconds 1
 
-# Launch the game
-Send-SetupCommand 'launch'
+# Launch the game (pass game type from spec so the correct .so is loaded)
+$launchGame = if ($spec.game -match 'd1') { 'd1' } else { 'd2' }
+Send-SetupCommand 'launch' -Game $launchGame
 Start-Sleep -Seconds 8
 
 # ── Step 9: Verify in-game state ─────────────────────────────
@@ -742,6 +744,35 @@ while ($navAttempts -lt $maxNav) {
         Write-Status "  [$navAttempts] game screen but not in_game, pressing Escape" 'Gray'
         Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ESCAPE') | Out-Null
         Start-Sleep -Seconds 1
+        continue
+    }
+
+    # ── Pilot selection listbox: navigate to <Create New> (index 0) ──
+    if ($gi.menu -and $gi.menu.type -eq 'listbox' -and $gi.menu.title -match 'Select pilot') {
+        $sel = $gi.menu.selected_index
+        if ($sel -gt 0) {
+            Write-Status "  [$navAttempts] pilot listbox: moving from index $sel to 0" 'Gray'
+            for ($u = 0; $u -lt $sel; $u++) {
+                Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_DPAD_UP') | Out-Null
+                Start-Sleep -Milliseconds 100
+            }
+        } else {
+            Write-Status "  [$navAttempts] pilot listbox: selecting <Create New>" 'Gray'
+        }
+        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
+        Start-Sleep -Seconds 2
+        # After <Create New>, a callsign input dialog appears with pre-filled name.
+        # Just press Enter to accept the default callsign.
+        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
+        Start-Sleep -Seconds 1
+        continue
+    }
+
+    # Unknown window (e.g., D1 briefing) — press Escape to skip
+    if ($gi.menu -and $gi.menu.type -eq 'unknown_window') {
+        Write-Status "  [$navAttempts] unknown window (briefing?), pressing Escape to skip" 'Gray'
+        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ESCAPE') | Out-Null
+        Start-Sleep -Seconds 2
         continue
     }
 

@@ -83,6 +83,7 @@ class SetupActivity : ComponentActivity() {
 
     // ── Setup-screen command API ────────────────────────────────────────
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command launch
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command launch --es game d1
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command create_set --es name "my set"
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command switch_set --es name "my set"
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command clear_set --es name "default"
@@ -98,9 +99,12 @@ class SetupActivity : ComponentActivity() {
                     if (gameRunningFlag) {
                         finish()
                     } else {
+                        val game = intent.getStringExtra("game") ?: "d2"
                         FileSetManager(filesDir).writeActiveSetPath()
                         writeInitialGameConfig()
-                        startActivity(Intent(this@SetupActivity, MainActivity::class.java))
+                        val launchIntent = Intent(this@SetupActivity, MainActivity::class.java)
+                        launchIntent.putExtra("game", game)
+                        startActivity(launchIntent)
                     }
                 }
                 "patch_pilots" -> {
