@@ -1169,6 +1169,7 @@ private fun SetupScreen(
 
     // ── Page navigation state ────────────────────────────
     var showControllerPage by remember { mutableStateOf(false) }
+    var showTouchEditorPage by remember { mutableStateOf(false) }
 
     MaterialTheme(colorScheme = darkColorScheme()) {
         if (showControllerPage) {
@@ -1179,6 +1180,10 @@ private fun SetupScreen(
                 pressedButtons = pressedButtons,
                 onBack = { showControllerPage = false }
             )
+            return@MaterialTheme
+        }
+        if (showTouchEditorPage) {
+            TouchEditorPage(onBack = { showTouchEditorPage = false })
             return@MaterialTheme
         }
         Surface(
@@ -1884,7 +1889,8 @@ private fun SetupScreen(
                         axisGeneration = axisGeneration,
                         pressedButtons = pressedButtons,
                         prefs = prefs,
-                        onDefineControls = { showControllerPage = true }
+                        onDefineControls = { showControllerPage = true },
+                        onEditTouchLayout = { showTouchEditorPage = true }
                     )
 
                     // ── Resolution picker ────────────────
@@ -2456,7 +2462,8 @@ private fun ControllerSection(
     axisGeneration: Int,
     pressedButtons: SnapshotStateList<String>,
     prefs: SharedPreferences,
-    onDefineControls: () -> Unit = {}
+    onDefineControls: () -> Unit = {},
+    onEditTouchLayout: () -> Unit = {}
 ) {
     // Poll for controller connect/disconnect every 1 second
     var pollTick by remember { mutableIntStateOf(0) }
@@ -2549,12 +2556,21 @@ private fun ControllerSection(
     }
 
     // ── Define Controls button ──
-    OutlinedButton(
-        onClick = onDefineControls,
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-        modifier = Modifier.height(32.dp).padding(vertical = 2.dp)
-    ) {
-        Text("Define Controls", fontSize = 12.sp)
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedButton(
+            onClick = onDefineControls,
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+            modifier = Modifier.height(32.dp).padding(vertical = 2.dp)
+        ) {
+            Text("Define Controls", fontSize = 12.sp)
+        }
+        OutlinedButton(
+            onClick = onEditTouchLayout,
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+            modifier = Modifier.height(32.dp).padding(vertical = 2.dp)
+        ) {
+            Text("Touch Layout", fontSize = 12.sp)
+        }
     }
 
     if (expanded && hasController) {

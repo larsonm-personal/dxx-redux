@@ -3,14 +3,41 @@
 ## TL;DR
 Build a customizable touch control system for the Descent Android port, modeled after mobile shooters (CoD Mobile, PUBG Mobile, Apex Legends Mobile). Replace the hardcoded touch layout in TouchOverlayView with a data-driven system of positioned/sized widgets defined in a JSON layout file. Add a visual drag-and-drop editor, dual-stick support, gyro aiming, radial menus (guidebot, weapons), and user-customizable presets. Continue emulating a joystick/controller through the existing JNI bridge — no game engine changes needed.
 
-## Current State
-- **TouchOverlayView.kt** (~710 lines): Hardcoded left stick, A/B fire buttons, MAP button, music controls. Sizes/positions calculated as % of screen in `onSizeChanged()`. Stick output is linear (-1 to 1, clamped to circle, no response curve). No per-stick sensitivity or deadzone at the touch layer (engine has its own per-axis deadzone+sensitivity in kconfig).
-- **android_input.c**: JNI bridge with `nativeJoystickAxis(axis, value)` (6 axes: LX, LY, RX, RY, LT, RT) and `nativeJoystickButton(button, pressed)` (10 buttons). Also has automap-specific input. Game supports up to 128 axes and 128 buttons per joystick.
-- **ControllerConfigPage.kt**: Existing Compose-based gamepad config UI, accessed from SetupActivity's ControllerSection. Saves to `controller_config.json`. Uses shared constants mirroring `kc_joystick[]` indices.
-- **kconfig system (d2)**: 56-entry `kc_joystick[]` array. 6 analog axes (pitch, turn, slide L/R, slide U/D, bank, throttle). Per-axis deadzone (`JoystickDead[0-5]`) and sensitivity (`JoystickSens[0-5]`) applied at the engine level. Engine deadzones are in raw units (0-128 range), sensitivities are 0-100 with 50 = neutral.
-- **SDL 1.2.15**: No sensor/gyro API. Gyro must be done at Android layer.
-- **No gyro code** exists anywhere in the project.
-- **No haptic feedback** in current touch controls.
+## Phase Status
+
+| Phase | Status | Key Files |
+|-------|--------|-----------|
+| 1: Data Model & Layout Persistence | ✅ Complete | TouchBindings.kt (96 lines), TouchControl.kt (~520 lines), TouchLayoutRepository.kt (~170 lines) |
+| 2: Refactor TouchOverlayView | ✅ Complete | TouchOverlayView.kt (~840 lines, fully data-driven) |
+| 3: Gyro Input | ✅ Complete | GyroInputManager.kt (~180 lines), wired in TouchOverlayView + MainActivity |
+| 4: Touch Layout Editor | ✅ Complete | TouchEditorPage.kt (~790 lines), wired in SetupActivity |
+| 5: Guidebot Command Wheel | ⬜ Not Started | — |
+| 6: Polish & Presets | ⬜ Not Started | — |
+
+## Current State (post Phase 3)
+
+### Implemented files
+- **TouchBindings.kt** (96 lines): Constants for 23 button indices (BTN_FIRE_PRIMARY=0 through BTN_TOGGLE_BOMB=54), 6 axis indices (AXIS_LEFT_X=0 through AXIS_RTRIGGER=5), label maps, and layout constraint constants (size/opacity/sensitivity/deadzone/exponent limits). Indices mirror `kc_joystick[]` in C.
+- **TouchControl.kt** (~520 lines): 5 enums (ResponseCurve, DPadMode, ButtonShape, SliderOrientation, GyroActivation). `applyResponseCurve()` helper. 9 data classes with full JSON round-trip serialization (FloatingZone, AnalogStickControl, ButtonControl, SliderControl, RadialSegment, RadialMenuControl, DPadControl, GyroConfig, TouchLayout). All use percentage-based positioning (0-100).
+- **TouchLayoutRepository.kt** (~170 lines): `load()`/`save()` to `touch_layout.json`. 3 presets: Simple (1 stick, 2 buttons, map), Advanced (2 sticks with exponential curves, 6 buttons, throttle slider), Claw (2 floating sticks, 5 buttons, gyro enabled with TOUCH_STICK activation).
+- **TouchOverlayView.kt** (~840 lines): Fully data-driven. StickState/ButtonState inner classes. `setLayout()`/`getLayout()` API. Computes geometry from layout percentages in `computeGeometry()`. Dynamic hit-testing with floating stick support, toggle buttons, haptic feedback. `updateStickFromTouch()` applies deadzone → response curve → sensitivity → inversion. `updateGyroStickActive()` bridges to GyroInputManager. Music controls and automap overlay remain hardcoded (not layout-driven).
+- **GyroInputManager.kt** (~180 lines): SensorEventListener using TYPE_GAME_ROTATION_VECTOR. Quaternion-based rotation delta (refR^T × curR matrix). Extracts yaw/pitch, applies deadzone/sensitivity/inversion. Three activation modes: ALWAYS, TOUCH_STICK (via `rightStickActive` set by TouchOverlayView), ADS_ONLY (via `toggledOn`). Lifecycle-managed `resume()`/`pause()`. `calibrate()` resets reference orientation.
+- **MainActivity.kt**: Creates GyroInputManager when `layout.gyro.enabled`, wires `axisCallback` to `nativeJoystickAxis`, calls `resume()`/`pause()` in lifecycle, passes gyro to `touchOverlay.gyroManager`.
+
+### Existing infrastructure (unchanged)
+- **android_input.c**: JNI bridge with `nativeJoystickAxis(axis, value)` (6 axes) and `nativeJoystickButton(button, pressed)`. Also has automap-specific input. Game supports up to 128 axes and 128 buttons per joystick.
+- **ControllerConfigPage.kt**: Existing Compose-based gamepad config UI, accessed from SetupActivity's ControllerSection. Saves to `controller_config.json`.
+- **kconfig system (d2)**: 56-entry `kc_joystick[]` array. 6 analog axes. Per-axis deadzone/sensitivity at engine level.
+- **SDL 1.2.15**: No sensor/gyro API. Gyro done at Android layer.
+
+### Implementation notes discovered during build
+- **Gyro + stick are independent writers**: Both call `nativeJoystickAxis()` separately. The engine sees the last value written per axis per frame. This is functionally correct because gyro fires at sensor rate (~100Hz) while touch fires on ACTION_MOVE events — they naturally interleave. True additive combining would require tracking per-axis stick values in the overlay, which adds complexity for marginal benefit.
+- **Floating stick zone** is computed in pixels from percentage in `computeGeometry()` and checked in `onTouchEvent` — stick appears at first touch position within the zone.
+- **Toggle buttons** maintain `toggled` state across pointer up/down cycles. Visual feedback: brighter fill when toggled on.
+- **Haptic feedback** calls `performHapticFeedback(VIRTUAL_KEY)` per control's `hapticFeedback` flag.
+- **Passthrough taps**: touches that don't hit any control are tracked; on release, `tapPassthroughCallback` fires (for "press any key" screens).
+- **Button hit area**: 1.3× radius for generous touch targets.
+- **Automap overlay**: Separate code path in `onTouchEvent` when `automapActive=true`. 1-finger drag → heading/pitch, 2-finger pinch → zoom/rotate/translate. Automap buttons (center, markers, MAP) rendered at top.
 
 ## Mobile Shooter Control Research & Strategy
 

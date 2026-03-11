@@ -1,0 +1,860 @@
+package com.dxxredux.app
+
+import android.content.Context
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import kotlin.math.min
+import kotlin.math.sqrt
+
+// ── Colors ──────────────────────────────────────────────────────────────────
+private val cStickRing = Color(0xCC888888.toInt())
+private val cStickThumb = Color(0xCCCCCCCC.toInt())
+private val cButton = Color(0xCC666666.toInt())
+private val cButtonLabel = Color(0xFFDDDDDD.toInt())
+private val cSelected = Color(0xFF2196F3)
+private val cGrid = Color(0x22FFFFFF)
+private val cBackground = Color(0xFF1A1A1A)
+
+/**
+ * Full-screen touch layout editor.
+ * Displays controls on a canvas; tap to select, drag to move, bottom panel for properties.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TouchEditorPage(onBack: () -> Unit) {
+    val context = LocalContext.current
+    var layout by remember { mutableStateOf(TouchLayoutRepository.load(context)) }
+    var selectedType by remember { mutableStateOf<String?>(null) }  // "stick", "button"
+    var selectedIndex by remember { mutableIntStateOf(-1) }
+    var dirty by remember { mutableStateOf(false) }
+
+    // Dialogs
+    var showPresetPicker by remember { mutableStateOf(false) }
+    var showAddControl by remember { mutableStateOf(false) }
+    var showGlobalSettings by remember { mutableStateOf(false) }
+    var showGyroSettings by remember { mutableStateOf(false) }
+
+    // Save helper
+    fun save() {
+        TouchLayoutRepository.save(context, layout)
+        dirty = false
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Touch Layout Editor", fontSize = 16.sp) },
+                navigationIcon = {
+                    IconButton(onClick = { if (dirty) save(); onBack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    TextButton(onClick = { showPresetPicker = true }) {
+                        Text("Presets", fontSize = 12.sp)
+                    }
+                    TextButton(onClick = { showGlobalSettings = true }) {
+                        Text("Global", fontSize = 12.sp)
+                    }
+                    TextButton(onClick = { showGyroSettings = true }) {
+                        Text("Gyro", fontSize = 12.sp)
+                    }
+                    IconButton(onClick = { showAddControl = true }) {
+                        Icon(Icons.Default.Add, contentDescription = "Add control")
+                    }
+                    TextButton(onClick = { save() }, enabled = dirty) {
+                        Text("Save", fontSize = 12.sp,
+                            color = if (dirty) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f))
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF212121)
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .background(cBackground)
+        ) {
+            // ── Canvas area (fills available space minus bottom panel) ──
+            val textMeasurer = rememberTextMeasurer()
+            var canvasWidth by remember { mutableFloatStateOf(1f) }
+            var canvasHeight by remember { mutableFloatStateOf(1f) }
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(layout, selectedType, selectedIndex) {
+                            detectTapGestures { offset ->
+                                val hit = hitTest(layout, offset, canvasWidth, canvasHeight)
+                                if (hit != null) {
+                                    selectedType = hit.first
+                                    selectedIndex = hit.second
+                                } else {
+                                    selectedType = null
+                                    selectedIndex = -1
+                                }
+                            }
+                        }
+                        .pointerInput(layout, selectedType, selectedIndex) {
+                            detectDragGestures { change, dragAmount ->
+                                change.consume()
+                                if (selectedType != null && selectedIndex >= 0) {
+                                    val dxPct = (dragAmount.x / canvasWidth) * 100f
+                                    val dyPct = (dragAmount.y / canvasHeight) * 100f
+                                    layout = moveControl(layout, selectedType!!, selectedIndex, dxPct, dyPct)
+                                    dirty = true
+                                }
+                            }
+                        }
+                ) {
+                    canvasWidth = size.width
+                    canvasHeight = size.height
+                    drawGrid(this)
+                    drawAllControls(this, layout, selectedType, selectedIndex, textMeasurer)
+                }
+            }
+
+            // ── Bottom properties panel ──
+            Surface(
+                color = Color(0xFF262626),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 120.dp, max = 280.dp)
+            ) {
+                if (selectedType != null && selectedIndex >= 0) {
+                    Column(
+                        modifier = Modifier
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        when (selectedType) {
+                            "stick" -> StickPropertiesPanel(
+                                stick = layout.sticks[selectedIndex],
+                                onUpdate = { updated ->
+                                    layout = layout.copy(sticks = layout.sticks.toMutableList().also {
+                                        it[selectedIndex] = updated
+                                    })
+                                    dirty = true
+                                },
+                                onDelete = {
+                                    layout = layout.copy(sticks = layout.sticks.toMutableList().also {
+                                        it.removeAt(selectedIndex)
+                                    })
+                                    selectedType = null; selectedIndex = -1
+                                    dirty = true
+                                }
+                            )
+                            "button" -> ButtonPropertiesPanel(
+                                button = layout.buttons[selectedIndex],
+                                onUpdate = { updated ->
+                                    layout = layout.copy(buttons = layout.buttons.toMutableList().also {
+                                        it[selectedIndex] = updated
+                                    })
+                                    dirty = true
+                                },
+                                onDelete = {
+                                    layout = layout.copy(buttons = layout.buttons.toMutableList().also {
+                                        it.removeAt(selectedIndex)
+                                    })
+                                    selectedType = null; selectedIndex = -1
+                                    dirty = true
+                                }
+                            )
+                        }
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Tap a control to select it, drag to move",
+                            color = Color.Gray, fontSize = 13.sp)
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Dialogs ──────────────────────────────────────────────────────────────
+    if (showPresetPicker) {
+        PresetPickerDialog(
+            onDismiss = { showPresetPicker = false },
+            onSelect = { preset ->
+                layout = preset
+                selectedType = null; selectedIndex = -1
+                dirty = true
+                showPresetPicker = false
+            }
+        )
+    }
+    if (showAddControl) {
+        AddControlDialog(
+            onDismiss = { showAddControl = false },
+            onAddStick = {
+                layout = layout.copy(sticks = layout.sticks + AnalogStickControl(
+                    id = "stick_${layout.sticks.size}",
+                    xPct = 50f, yPct = 50f,
+                    axisX = TouchBindings.AXIS_RIGHT_X,
+                    axisY = TouchBindings.AXIS_RIGHT_Y
+                ))
+                selectedType = "stick"; selectedIndex = layout.sticks.lastIndex
+                dirty = true
+                showAddControl = false
+            },
+            onAddButton = {
+                layout = layout.copy(buttons = layout.buttons + ButtonControl(
+                    id = "btn_${layout.buttons.size}",
+                    xPct = 50f, yPct = 50f,
+                    label = "BTN",
+                    binding = TouchBindings.BTN_FIRE_PRIMARY
+                ))
+                selectedType = "button"; selectedIndex = layout.buttons.lastIndex
+                dirty = true
+                showAddControl = false
+            }
+        )
+    }
+    if (showGlobalSettings) {
+        GlobalSettingsDialog(
+            layout = layout,
+            onDismiss = { showGlobalSettings = false },
+            onUpdate = { updated -> layout = updated; dirty = true }
+        )
+    }
+    if (showGyroSettings) {
+        GyroSettingsDialog(
+            gyro = layout.gyro,
+            onDismiss = { showGyroSettings = false },
+            onUpdate = { updated ->
+                layout = layout.copy(gyro = updated)
+                dirty = true
+            }
+        )
+    }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Canvas drawing
+// ═════════════════════════════════════════════════════════════════════════════
+
+private fun drawGrid(scope: DrawScope) {
+    val w = scope.size.width; val h = scope.size.height
+    // 10% grid lines
+    for (i in 1..9) {
+        val x = w * i / 10f; val y = h * i / 10f
+        scope.drawLine(cGrid, Offset(x, 0f), Offset(x, h))
+        scope.drawLine(cGrid, Offset(0f, y), Offset(w, y))
+    }
+    // Center crosshair
+    scope.drawLine(Color(0x44FFFFFF), Offset(w / 2, 0f), Offset(w / 2, h), strokeWidth = 1.5f)
+    scope.drawLine(Color(0x44FFFFFF), Offset(0f, h / 2), Offset(w, h / 2), strokeWidth = 1.5f)
+}
+
+private fun drawAllControls(
+    scope: DrawScope, layout: TouchLayout,
+    selType: String?, selIdx: Int,
+    textMeasurer: androidx.compose.ui.text.TextMeasurer
+) {
+    val w = scope.size.width; val h = scope.size.height
+    val baseScale = min(w, h)
+
+    // Draw sticks
+    layout.sticks.forEachIndexed { i, stick ->
+        val cx = w * stick.xPct / 100f
+        val cy = h * stick.yPct / 100f
+        val r = baseScale * 0.12f * stick.sizeMult
+        val selected = selType == "stick" && selIdx == i
+        val alpha = layout.globalOpacity * stick.opacity
+
+        // Floating zone indicator
+        if (stick.floating) {
+            val fz = stick.floatingZone
+            scope.drawRect(
+                color = Color(0x1488CCFF),
+                topLeft = Offset(w * fz.leftPct / 100f, h * fz.topPct / 100f),
+                size = androidx.compose.ui.geometry.Size(
+                    w * (fz.rightPct - fz.leftPct) / 100f,
+                    h * (fz.bottomPct - fz.topPct) / 100f
+                )
+            )
+        }
+
+        // Ring
+        scope.drawCircle(
+            color = cStickRing.copy(alpha = alpha),
+            radius = r, center = Offset(cx, cy),
+            style = Stroke(width = 3f)
+        )
+        // Thumb (at center in editor)
+        scope.drawCircle(
+            color = cStickThumb.copy(alpha = alpha * 0.6f),
+            radius = r * 0.35f, center = Offset(cx, cy)
+        )
+        // Selection highlight
+        if (selected) {
+            scope.drawCircle(
+                color = cSelected,
+                radius = r + 4f, center = Offset(cx, cy),
+                style = Stroke(width = 3f)
+            )
+        }
+        // Label
+        val label = TouchBindings.AXIS_LABELS[stick.axisX]?.take(3) ?: "?"
+        val textResult = textMeasurer.measure(
+            label,
+            style = TextStyle(fontSize = 10.sp, color = cButtonLabel.copy(alpha = alpha))
+        )
+        scope.drawText(textResult, topLeft = Offset(
+            cx - textResult.size.width / 2f,
+            cy - textResult.size.height / 2f
+        ))
+    }
+
+    // Draw buttons
+    layout.buttons.forEachIndexed { i, btn ->
+        val cx = w * btn.xPct / 100f
+        val cy = h * btn.yPct / 100f
+        val r = baseScale * 0.04f * btn.sizeMult
+        val selected = selType == "button" && selIdx == i
+        val alpha = layout.globalOpacity * btn.opacity
+
+        scope.drawCircle(
+            color = cButton.copy(alpha = alpha),
+            radius = r, center = Offset(cx, cy)
+        )
+        if (selected) {
+            scope.drawCircle(
+                color = cSelected,
+                radius = r + 3f, center = Offset(cx, cy),
+                style = Stroke(width = 3f)
+            )
+        }
+        val textResult = textMeasurer.measure(
+            btn.label.take(4),
+            style = TextStyle(fontSize = 9.sp, color = cButtonLabel.copy(alpha = alpha))
+        )
+        scope.drawText(textResult, topLeft = Offset(
+            cx - textResult.size.width / 2f,
+            cy - textResult.size.height / 2f
+        ))
+    }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Hit testing & movement
+// ═════════════════════════════════════════════════════════════════════════════
+
+/** Returns (type, index) of the control at the given canvas offset, or null. */
+private fun hitTest(
+    layout: TouchLayout, offset: Offset,
+    canvasWidth: Float, canvasHeight: Float
+): Pair<String, Int>? {
+    val baseScale = min(canvasWidth, canvasHeight)
+
+    // Check buttons first (smaller targets, should take priority)
+    layout.buttons.forEachIndexed { i, btn ->
+        val cx = canvasWidth * btn.xPct / 100f
+        val cy = canvasHeight * btn.yPct / 100f
+        val r = baseScale * 0.04f * btn.sizeMult
+        val dist = sqrt((offset.x - cx) * (offset.x - cx) + (offset.y - cy) * (offset.y - cy))
+        if (dist <= r * 1.3f) return Pair("button", i)
+    }
+
+    // Check sticks
+    layout.sticks.forEachIndexed { i, stick ->
+        val cx = canvasWidth * stick.xPct / 100f
+        val cy = canvasHeight * stick.yPct / 100f
+        val r = baseScale * 0.12f * stick.sizeMult
+        val dist = sqrt((offset.x - cx) * (offset.x - cx) + (offset.y - cy) * (offset.y - cy))
+        if (dist <= r) return Pair("stick", i)
+    }
+
+    return null
+}
+
+/** Returns a new layout with the specified control moved by (dxPct, dyPct). */
+private fun moveControl(
+    layout: TouchLayout, type: String, index: Int,
+    dxPct: Float, dyPct: Float
+): TouchLayout {
+    return when (type) {
+        "stick" -> {
+            val s = layout.sticks[index]
+            val newX = (s.xPct + dxPct).coerceIn(5f, 95f)
+            val newY = (s.yPct + dyPct).coerceIn(5f, 95f)
+            layout.copy(sticks = layout.sticks.toMutableList().also {
+                it[index] = s.copy(xPct = newX, yPct = newY)
+            })
+        }
+        "button" -> {
+            val b = layout.buttons[index]
+            val newX = (b.xPct + dxPct).coerceIn(2f, 98f)
+            val newY = (b.yPct + dyPct).coerceIn(2f, 98f)
+            layout.copy(buttons = layout.buttons.toMutableList().also {
+                it[index] = b.copy(xPct = newX, yPct = newY)
+            })
+        }
+        else -> layout
+    }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Properties panels
+// ═════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun StickPropertiesPanel(
+    stick: AnalogStickControl,
+    onUpdate: (AnalogStickControl) -> Unit,
+    onDelete: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text("Stick: ${stick.id}", color = Color.White, fontSize = 14.sp)
+        IconButton(onClick = onDelete) {
+            Icon(Icons.Default.Delete, "Delete", tint = Color(0xFFEF5350))
+        }
+    }
+
+    // Axis bindings
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        AxisPicker("X Axis", stick.axisX, Modifier.weight(1f)) {
+            onUpdate(stick.copy(axisX = it))
+        }
+        AxisPicker("Y Axis", stick.axisY, Modifier.weight(1f)) {
+            onUpdate(stick.copy(axisY = it))
+        }
+    }
+
+    // Size & opacity
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LabeledSlider("Size", stick.sizeMult, TouchBindings.MIN_SIZE,
+            TouchBindings.MAX_SIZE, Modifier.weight(1f)) {
+            onUpdate(stick.copy(sizeMult = it))
+        }
+        LabeledSlider("Opacity", stick.opacity, TouchBindings.MIN_OPACITY,
+            TouchBindings.MAX_OPACITY, Modifier.weight(1f)) {
+            onUpdate(stick.copy(opacity = it))
+        }
+    }
+
+    // Deadzone & sensitivity
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LabeledSlider("Deadzone", stick.deadzone.toFloat(), 0f, 50f, Modifier.weight(1f)) {
+            onUpdate(stick.copy(deadzone = it.toInt()))
+        }
+        LabeledSlider("Sensitivity", stick.sensitivity, TouchBindings.MIN_SENSITIVITY,
+            TouchBindings.MAX_SENSITIVITY, Modifier.weight(1f)) {
+            onUpdate(stick.copy(sensitivity = it))
+        }
+    }
+
+    // Response curve
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        CurvePicker("Curve", stick.responseCurve, Modifier.weight(1f)) {
+            onUpdate(stick.copy(responseCurve = it))
+        }
+        if (stick.responseCurve == ResponseCurve.EXPONENTIAL) {
+            LabeledSlider("Exponent", stick.exponent, TouchBindings.MIN_EXPONENT,
+                TouchBindings.MAX_EXPONENT, Modifier.weight(1f)) {
+                onUpdate(stick.copy(exponent = it))
+            }
+        }
+    }
+
+    // Toggles
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        LabeledToggle("Floating", stick.floating) { onUpdate(stick.copy(floating = it)) }
+        LabeledToggle("Invert X", stick.invertX) { onUpdate(stick.copy(invertX = it)) }
+        LabeledToggle("Invert Y", stick.invertY) { onUpdate(stick.copy(invertY = it)) }
+        LabeledToggle("Haptic", stick.hapticFeedback) { onUpdate(stick.copy(hapticFeedback = it)) }
+    }
+}
+
+@Composable
+private fun ButtonPropertiesPanel(
+    button: ButtonControl,
+    onUpdate: (ButtonControl) -> Unit,
+    onDelete: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text("Button: ${button.id}", color = Color.White, fontSize = 14.sp)
+        IconButton(onClick = onDelete) {
+            Icon(Icons.Default.Delete, "Delete", tint = Color(0xFFEF5350))
+        }
+    }
+
+    // Binding & label
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        ButtonBindingPicker("Binding", button.binding, Modifier.weight(1f)) {
+            onUpdate(button.copy(binding = it))
+        }
+        LabelEditor("Label", button.label, Modifier.weight(1f)) {
+            onUpdate(button.copy(label = it))
+        }
+    }
+
+    // Size & opacity
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LabeledSlider("Size", button.sizeMult, TouchBindings.MIN_SIZE,
+            TouchBindings.MAX_SIZE, Modifier.weight(1f)) {
+            onUpdate(button.copy(sizeMult = it))
+        }
+        LabeledSlider("Opacity", button.opacity, TouchBindings.MIN_OPACITY,
+            TouchBindings.MAX_OPACITY, Modifier.weight(1f)) {
+            onUpdate(button.copy(opacity = it))
+        }
+    }
+
+    // Toggles
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        LabeledToggle("Toggle", button.toggle) { onUpdate(button.copy(toggle = it)) }
+        LabeledToggle("Haptic", button.hapticFeedback) { onUpdate(button.copy(hapticFeedback = it)) }
+    }
+
+    // Shape
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text("Shape: ", color = Color.Gray, fontSize = 12.sp)
+        ButtonShape.entries.forEach { shape ->
+            val selected = button.shape == shape
+            TextButton(onClick = { onUpdate(button.copy(shape = shape)) }) {
+                Text(
+                    shape.name.lowercase().replace('_', ' '),
+                    fontSize = 11.sp,
+                    color = if (selected) cSelected else Color.Gray
+                )
+            }
+        }
+    }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Reusable editor widgets
+// ═════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun LabeledSlider(
+    label: String, value: Float, min: Float, max: Float,
+    modifier: Modifier = Modifier, onChange: (Float) -> Unit
+) {
+    Column(modifier = modifier) {
+        Text("$label: ${"%.2f".format(value)}", color = Color.Gray, fontSize = 11.sp)
+        Slider(
+            value = value, onValueChange = onChange,
+            valueRange = min..max,
+            modifier = Modifier.height(28.dp)
+        )
+    }
+}
+
+@Composable
+private fun LabeledToggle(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Checkbox(
+            checked = checked, onCheckedChange = onChange,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(Modifier.width(2.dp))
+        Text(label, color = Color.Gray, fontSize = 11.sp)
+    }
+}
+
+@Composable
+private fun AxisPicker(
+    label: String, current: Int, modifier: Modifier = Modifier,
+    onChange: (Int) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val currentLabel = TouchBindings.AXIS_LABELS[current] ?: "Axis $current"
+
+    Column(modifier = modifier) {
+        Text(label, color = Color.Gray, fontSize = 11.sp)
+        Box {
+            TextButton(onClick = { expanded = true }) {
+                Text(currentLabel, fontSize = 11.sp)
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                TouchBindings.AXIS_LABELS.forEach { (idx, name) ->
+                    DropdownMenuItem(
+                        text = { Text(name, fontSize = 12.sp) },
+                        onClick = { onChange(idx); expanded = false }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ButtonBindingPicker(
+    label: String, current: Int, modifier: Modifier = Modifier,
+    onChange: (Int) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val currentLabel = TouchBindings.BUTTON_LABELS[current] ?: "Button $current"
+
+    Column(modifier = modifier) {
+        Text(label, color = Color.Gray, fontSize = 11.sp)
+        Box {
+            TextButton(onClick = { expanded = true }) {
+                Text(currentLabel, fontSize = 11.sp)
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                TouchBindings.BUTTON_LABELS.forEach { (idx, name) ->
+                    DropdownMenuItem(
+                        text = { Text(name, fontSize = 12.sp) },
+                        onClick = { onChange(idx); expanded = false }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CurvePicker(
+    label: String, current: ResponseCurve, modifier: Modifier = Modifier,
+    onChange: (ResponseCurve) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(modifier = modifier) {
+        Text(label, color = Color.Gray, fontSize = 11.sp)
+        Box {
+            TextButton(onClick = { expanded = true }) {
+                Text(current.name.lowercase(), fontSize = 11.sp)
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                ResponseCurve.entries.forEach { curve ->
+                    DropdownMenuItem(
+                        text = { Text(curve.name.lowercase().replace('_', ' '), fontSize = 12.sp) },
+                        onClick = { onChange(curve); expanded = false }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LabelEditor(
+    label: String, current: String, modifier: Modifier = Modifier,
+    onChange: (String) -> Unit
+) {
+    var text by remember(current) { mutableStateOf(current) }
+
+    Column(modifier = modifier) {
+        Text(label, color = Color.Gray, fontSize = 11.sp)
+        OutlinedTextField(
+            value = text,
+            onValueChange = { if (it.length <= 6) { text = it; onChange(it) } },
+            singleLine = true,
+            modifier = Modifier.height(40.dp).fillMaxWidth(),
+            textStyle = TextStyle(fontSize = 12.sp, color = Color.White)
+        )
+    }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Dialogs
+// ═════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun PresetPickerDialog(onDismiss: () -> Unit, onSelect: (TouchLayout) -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Load Preset") },
+        text = {
+            Column {
+                Text("This will replace your current layout.", fontSize = 13.sp,
+                    color = Color(0xFFFF9800))
+                Spacer(Modifier.height(12.dp))
+                TouchLayoutRepository.allPresets().forEach { preset ->
+                    TextButton(
+                        onClick = { onSelect(preset) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(preset.name, fontSize = 14.sp)
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
+private fun AddControlDialog(
+    onDismiss: () -> Unit,
+    onAddStick: () -> Unit,
+    onAddButton: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Control") },
+        text = {
+            Column {
+                TextButton(onClick = onAddStick, modifier = Modifier.fillMaxWidth()) {
+                    Text("Analog Stick")
+                }
+                TextButton(onClick = onAddButton, modifier = Modifier.fillMaxWidth()) {
+                    Text("Button")
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
+private fun GlobalSettingsDialog(
+    layout: TouchLayout,
+    onDismiss: () -> Unit,
+    onUpdate: (TouchLayout) -> Unit
+) {
+    var opacity by remember { mutableFloatStateOf(layout.globalOpacity) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Global Settings") },
+        text = {
+            Column {
+                Text("Global Opacity: ${"%.0f".format(opacity * 100)}%",
+                    fontSize = 13.sp, color = Color.Gray)
+                Slider(
+                    value = opacity,
+                    onValueChange = { opacity = it },
+                    valueRange = TouchBindings.MIN_GLOBAL_OPACITY..TouchBindings.MAX_GLOBAL_OPACITY
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                onUpdate(layout.copy(globalOpacity = opacity))
+                onDismiss()
+            }) { Text("OK") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
+private fun GyroSettingsDialog(
+    gyro: GyroConfig,
+    onDismiss: () -> Unit,
+    onUpdate: (GyroConfig) -> Unit
+) {
+    var enabled by remember { mutableStateOf(gyro.enabled) }
+    var activation by remember { mutableStateOf(gyro.activation) }
+    var sensX by remember { mutableFloatStateOf(gyro.sensitivityX) }
+    var sensY by remember { mutableFloatStateOf(gyro.sensitivityY) }
+    var invertX by remember { mutableStateOf(gyro.invertX) }
+    var invertY by remember { mutableStateOf(gyro.invertY) }
+    var deadzone by remember { mutableFloatStateOf(gyro.deadzone) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Gyro Settings") },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                LabeledToggle("Enabled", enabled) { enabled = it }
+
+                if (enabled) {
+                    Spacer(Modifier.height(8.dp))
+                    Text("Activation Mode", color = Color.Gray, fontSize = 12.sp)
+                    GyroActivation.entries.forEach { mode ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = activation == mode,
+                                onClick = { activation = mode },
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(mode.name.lowercase().replace('_', ' '),
+                                fontSize = 12.sp, color = Color.White)
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+                    LabeledSlider("Sensitivity X", sensX, 0.1f, 5f) { sensX = it }
+                    LabeledSlider("Sensitivity Y", sensY, 0.1f, 5f) { sensY = it }
+                    LabeledSlider("Deadzone", deadzone, 0f, 0.1f) { deadzone = it }
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        LabeledToggle("Invert X", invertX) { invertX = it }
+                        LabeledToggle("Invert Y", invertY) { invertY = it }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                onUpdate(gyro.copy(
+                    enabled = enabled, activation = activation,
+                    sensitivityX = sensX, sensitivityY = sensY,
+                    invertX = invertX, invertY = invertY,
+                    deadzone = deadzone
+                ))
+                onDismiss()
+            }) { Text("OK") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}

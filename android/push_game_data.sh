@@ -86,6 +86,20 @@ DEST="$FILES_DIR/sets/default"
 # Ensure the set directory exists
 "$ADB" shell "run-as $PACKAGE mkdir -p $DEST" 2>/dev/null || true
 
+# Ensure "default" is the active file set (a test run may have switched it)
+CURRENT_ACTIVE=$("$ADB" shell "run-as $PACKAGE cat $FILES_DIR/file_sets.json 2>/dev/null" 2>/dev/null \
+    | grep -o '"active"[^"]*"[^"]*"' | grep -o '"[^"]*"$' | tr -d '"' || true)
+if [ -n "$CURRENT_ACTIVE" ] && [ "$CURRENT_ACTIVE" != "default" ]; then
+    echo "  (Resetting active file set from '$CURRENT_ACTIVE' to 'default')"
+    TMPJSON="${TMPDIR:-/tmp}/_fsets_$$.json"
+    "$ADB" shell "run-as $PACKAGE cat $FILES_DIR/file_sets.json" > "$TMPJSON" 2>/dev/null
+    sed -i 's/"active"[[:space:]]*:[[:space:]]*"[^"]*"/"active": "default"/' "$TMPJSON"
+    "$ADB" push "$(_host_path "$TMPJSON")" /data/local/tmp/_fsets.json >/dev/null 2>&1
+    "$ADB" shell "run-as $PACKAGE sh -c 'cat /data/local/tmp/_fsets.json > $FILES_DIR/file_sets.json'" 2>/dev/null
+    "$ADB" shell "rm -f /data/local/tmp/_fsets.json" 2>/dev/null || true
+    rm -f "$TMPJSON" 2>/dev/null || true
+fi
+
 echo "=== Pushing game data to emulator ==="
 ERRORS=0
 for f in "$GAME_DATA_DIR"/*; do
