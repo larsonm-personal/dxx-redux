@@ -44,6 +44,7 @@ private val cRadialSeg = Color(0xAA555566.toInt())
 private val cSelected = Color(0xFF2196F3)
 private val cGrid = Color(0x22FFFFFF)
 private val cBackground = Color(0xFF1A1A1A)
+private val cCollisionWarn = Color(0xCCFF5722.toInt())
 
 /**
  * Full-screen touch layout editor.
@@ -216,6 +217,22 @@ fun TouchEditorPage(onBack: () -> Unit) {
                                     dirty = true
                                 }
                             )
+                            "slider" -> SliderPropertiesPanel(
+                                slider = layout.sliders[selectedIndex],
+                                onUpdate = { updated ->
+                                    layout = layout.copy(sliders = layout.sliders.toMutableList().also {
+                                        it[selectedIndex] = updated
+                                    })
+                                    dirty = true
+                                },
+                                onDelete = {
+                                    layout = layout.copy(sliders = layout.sliders.toMutableList().also {
+                                        it.removeAt(selectedIndex)
+                                    })
+                                    selectedType = null; selectedIndex = -1
+                                    dirty = true
+                                }
+                            )
                         }
                     }
                 } else {
@@ -279,6 +296,16 @@ fun TouchEditorPage(onBack: () -> Unit) {
                     )
                 ))
                 selectedType = "radial"; selectedIndex = layout.radialMenus.lastIndex
+                dirty = true
+                showAddControl = false
+            },
+            onAddSlider = {
+                layout = layout.copy(sliders = layout.sliders + SliderControl(
+                    id = "slider_${layout.sliders.size}",
+                    xPct = 50f, yPct = 50f,
+                    axis = TouchBindings.AXIS_LTRIGGER
+                ))
+                selectedType = "slider"; selectedIndex = layout.sliders.lastIndex
                 dirty = true
                 showAddControl = false
             }
@@ -467,6 +494,74 @@ private fun drawAllControls(
             cx - label.size.width / 2f, cy - label.size.height / 2f
         ))
     }
+
+    // Draw sliders
+    layout.sliders.forEachIndexed { i, sl ->
+        val cx = w * sl.xPct / 100f
+        val cy = h * sl.yPct / 100f
+        val trackLen = baseScale * 0.10f * sl.sizeMult
+        val thumbR = baseScale * 0.015f * sl.sizeMult
+        val selected = selType == "slider" && selIdx == i
+        val alpha = layout.globalOpacity * sl.opacity
+        val vertical = sl.orientation == SliderOrientation.VERTICAL
+
+        // Track line
+        val x0: Float; val y0: Float; val x1: Float; val y1: Float
+        if (vertical) {
+            x0 = cx; y0 = cy - trackLen; x1 = cx; y1 = cy + trackLen
+        } else {
+            x0 = cx - trackLen; y0 = cy; x1 = cx + trackLen; y1 = cy
+        }
+        scope.drawLine(
+            color = cStickRing.copy(alpha = alpha * 0.6f),
+            start = Offset(x0, y0), end = Offset(x1, y1),
+            strokeWidth = thumbR * 0.6f
+        )
+        // Thumb at center (editor preview)
+        scope.drawCircle(
+            color = cStickThumb.copy(alpha = alpha * 0.8f),
+            radius = thumbR, center = Offset(cx, cy)
+        )
+        if (selected) {
+            scope.drawLine(
+                color = cSelected, start = Offset(x0, y0), end = Offset(x1, y1),
+                strokeWidth = 3f
+            )
+            scope.drawCircle(
+                color = cSelected, radius = thumbR + 3f, center = Offset(cx, cy),
+                style = Stroke(width = 3f)
+            )
+        }
+        val slLabel = textMeasurer.measure(
+            sl.id.take(5),
+            style = TextStyle(fontSize = 8.sp, color = cButtonLabel.copy(alpha = alpha))
+        )
+        val labelOff = if (vertical) Offset(cx - slLabel.size.width / 2f, y1 + thumbR + 2f)
+                        else Offset(cx - slLabel.size.width / 2f, cy + thumbR + 2f)
+        scope.drawText(slLabel, topLeft = labelOff)
+    }
+
+    // ── Collision detection: warn when controls overlap >30% ──
+    data class ControlBounds(val cx: Float, val cy: Float, val r: Float)
+    val allBounds = mutableListOf<ControlBounds>()
+    layout.sticks.forEach { s -> allBounds.add(ControlBounds(w * s.xPct / 100f, h * s.yPct / 100f, baseScale * 0.12f * s.sizeMult)) }
+    layout.buttons.forEach { b -> allBounds.add(ControlBounds(w * b.xPct / 100f, h * b.yPct / 100f, baseScale * 0.04f * b.sizeMult)) }
+    layout.radialMenus.forEach { rm -> allBounds.add(ControlBounds(w * rm.xPct / 100f, h * rm.yPct / 100f, baseScale * 0.14f * rm.sizeMult)) }
+    layout.sliders.forEach { sl -> allBounds.add(ControlBounds(w * sl.xPct / 100f, h * sl.yPct / 100f, baseScale * 0.10f * sl.sizeMult)) }
+
+    for (i in allBounds.indices) {
+        for (j in i + 1 until allBounds.size) {
+            val a = allBounds[i]; val b = allBounds[j]
+            val dist = sqrt((a.cx - b.cx) * (a.cx - b.cx) + (a.cy - b.cy) * (a.cy - b.cy))
+            val smaller = min(a.r, b.r)
+            val overlap = (a.r + b.r - dist) / (smaller * 2)
+            if (overlap > 0.3f) {
+                // Draw warning rings on both
+                scope.drawCircle(color = cCollisionWarn, radius = a.r + 2f, center = Offset(a.cx, a.cy), style = Stroke(width = 2.5f))
+                scope.drawCircle(color = cCollisionWarn, radius = b.r + 2f, center = Offset(b.cx, b.cy), style = Stroke(width = 2.5f))
+            }
+        }
+    }
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -496,6 +591,18 @@ private fun hitTest(
         val r = baseScale * 0.14f * rm.sizeMult
         val dist = sqrt((offset.x - cx) * (offset.x - cx) + (offset.y - cy) * (offset.y - cy))
         if (dist <= r) return Pair("radial", i)
+    }
+
+    // Check sliders
+    layout.sliders.forEachIndexed { i, sl ->
+        val cx = canvasWidth * sl.xPct / 100f
+        val cy = canvasHeight * sl.yPct / 100f
+        val trackLen = baseScale * 0.10f * sl.sizeMult
+        val thumbR = baseScale * 0.015f * sl.sizeMult
+        val vertical = sl.orientation == SliderOrientation.VERTICAL
+        val along = if (vertical) kotlin.math.abs(offset.y - cy) else kotlin.math.abs(offset.x - cx)
+        val across = if (vertical) kotlin.math.abs(offset.x - cx) else kotlin.math.abs(offset.y - cy)
+        if (along <= trackLen + thumbR && across <= thumbR * 3) return Pair("slider", i)
     }
 
     // Check sticks
@@ -538,6 +645,14 @@ private fun moveControl(
             val newY = (rm.yPct + dyPct).coerceIn(5f, 95f)
             layout.copy(radialMenus = layout.radialMenus.toMutableList().also {
                 it[index] = rm.copy(xPct = newX, yPct = newY)
+            })
+        }
+        "slider" -> {
+            val sl = layout.sliders[index]
+            val newX = (sl.xPct + dxPct).coerceIn(5f, 95f)
+            val newY = (sl.yPct + dyPct).coerceIn(5f, 95f)
+            layout.copy(sliders = layout.sliders.toMutableList().also {
+                it[index] = sl.copy(xPct = newX, yPct = newY)
             })
         }
         else -> layout
@@ -734,6 +849,70 @@ private fun RadialPropertiesPanel(
     }
 }
 
+@Composable
+private fun SliderPropertiesPanel(
+    slider: SliderControl,
+    onUpdate: (SliderControl) -> Unit,
+    onDelete: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text("Slider: ${slider.id}", color = Color.White, fontSize = 14.sp)
+        IconButton(onClick = onDelete) {
+            Icon(Icons.Default.Delete, "Delete", tint = Color(0xFFEF5350))
+        }
+    }
+
+    // Axis & orientation
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        AxisPicker("Axis", slider.axis, Modifier.weight(1f)) {
+            onUpdate(slider.copy(axis = it))
+        }
+        Column(Modifier.weight(1f)) {
+            Text("Orientation", color = Color.Gray, fontSize = 11.sp)
+            Row {
+                SliderOrientation.entries.forEach { ori ->
+                    TextButton(onClick = { onUpdate(slider.copy(orientation = ori)) }) {
+                        Text(ori.name.lowercase(), fontSize = 11.sp,
+                            color = if (slider.orientation == ori) cSelected else Color.Gray)
+                    }
+                }
+            }
+        }
+    }
+
+    // Size & opacity
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LabeledSlider("Size", slider.sizeMult, TouchBindings.MIN_SIZE,
+            TouchBindings.MAX_SIZE, Modifier.weight(1f)) {
+            onUpdate(slider.copy(sizeMult = it))
+        }
+        LabeledSlider("Opacity", slider.opacity, TouchBindings.MIN_OPACITY,
+            TouchBindings.MAX_OPACITY, Modifier.weight(1f)) {
+            onUpdate(slider.copy(opacity = it))
+        }
+    }
+
+    // Sensitivity & curve
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LabeledSlider("Sensitivity", slider.sensitivity, TouchBindings.MIN_SENSITIVITY,
+            TouchBindings.MAX_SENSITIVITY, Modifier.weight(1f)) {
+            onUpdate(slider.copy(sensitivity = it))
+        }
+        CurvePicker("Curve", slider.responseCurve, Modifier.weight(1f)) {
+            onUpdate(slider.copy(responseCurve = it))
+        }
+    }
+
+    // Spring back toggle
+    LabeledToggle("Spring Back", slider.springBack) {
+        onUpdate(slider.copy(springBack = it))
+    }
+}
+
 // ═════════════════════════════════════════════════════════════════════════════
 // Reusable editor widgets
 // ═════════════════════════════════════════════════════════════════════════════
@@ -897,7 +1076,8 @@ private fun AddControlDialog(
     onDismiss: () -> Unit,
     onAddStick: () -> Unit,
     onAddButton: () -> Unit,
-    onAddRadial: () -> Unit
+    onAddRadial: () -> Unit,
+    onAddSlider: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -912,6 +1092,9 @@ private fun AddControlDialog(
                 }
                 TextButton(onClick = onAddRadial, modifier = Modifier.fillMaxWidth()) {
                     Text("Radial Menu")
+                }
+                TextButton(onClick = onAddSlider, modifier = Modifier.fillMaxWidth()) {
+                    Text("Slider")
                 }
             }
         },

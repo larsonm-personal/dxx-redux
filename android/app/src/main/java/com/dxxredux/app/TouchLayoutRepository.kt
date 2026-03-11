@@ -11,15 +11,27 @@ import java.io.File
  */
 object TouchLayoutRepository {
     private const val FILENAME = "touch_layout.json"
+    private const val CURRENT_VERSION = 1
 
     fun load(context: Context): TouchLayout {
         val file = File(context.filesDir, FILENAME)
         if (!file.exists()) return defaultLayout()
         return try {
-            TouchLayout.fromJson(JSONObject(file.readText()))
+            val layout = TouchLayout.fromJson(JSONObject(file.readText()))
+            migrate(layout)
         } catch (_: Exception) {
             defaultLayout()
         }
+    }
+
+    /** Apply migrations from older layout versions to CURRENT_VERSION. */
+    private fun migrate(layout: TouchLayout): TouchLayout {
+        if (layout.version >= CURRENT_VERSION) return layout
+        // Future migrations go here, chained:
+        // var l = layout
+        // if (l.version < 2) l = migrateV1toV2(l)
+        // return l.copy(version = CURRENT_VERSION)
+        return layout.copy(version = CURRENT_VERSION)
     }
 
     fun save(context: Context, layout: TouchLayout) {

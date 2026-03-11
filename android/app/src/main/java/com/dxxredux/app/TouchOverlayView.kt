@@ -112,9 +112,18 @@ class TouchOverlayView @JvmOverloads constructor(
         var weaponState: WeaponState? = null
     }
 
+    private class SliderState(val control: SliderControl) {
+        var centerX = 0f; var centerY = 0f
+        var trackLen = 0f   // half-length of the track in px
+        var thumbR = 0f     // thumb radius
+        var pointerId = -1
+        var thumbPos = 0f   // -1..1 (0 = center, clamped)
+    }
+
     private val stickStates = mutableListOf<StickState>()
     private val buttonStates = mutableListOf<ButtonState>()
     private val radialStates = mutableListOf<RadialMenuState>()
+    private val sliderStates = mutableListOf<SliderState>()
 
     // ── MAP button geometry (kept for automap overlay compat) ──
     private var mapBtnCenterX = 0f
@@ -237,9 +246,11 @@ class TouchOverlayView @JvmOverloads constructor(
         stickStates.clear()
         buttonStates.clear()
         radialStates.clear()
+        sliderStates.clear()
         layout.sticks.forEach { stickStates.add(StickState(it)) }
         layout.buttons.forEach { buttonStates.add(ButtonState(it)) }
         layout.radialMenus.forEach { radialStates.add(RadialMenuState(it)) }
+        layout.sliders.forEach { sliderStates.add(SliderState(it)) }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -295,6 +306,14 @@ class TouchOverlayView @JvmOverloads constructor(
             rm.radius = base * 0.18f * rm.control.sizeMult
         }
 
+        // Compute slider geometry from layout
+        for (sl in sliderStates) {
+            sl.centerX = wf * sl.control.xPct / 100f
+            sl.centerY = hf * sl.control.yPct / 100f
+            sl.trackLen = base * 0.12f * sl.control.sizeMult
+            sl.thumbR = base * 0.018f * sl.control.sizeMult
+        }
+
         musicBtnY = base * 0.12f
         prevBtnCenterX = wf * 0.04f + musicBtnRadius
         nextBtnCenterX = prevBtnCenterX + musicBtnRadius * 2 + base * 0.02f + musicBtnRadius
@@ -336,6 +355,9 @@ class TouchOverlayView @JvmOverloads constructor(
 
         // ── Layout buttons ──────────────────────────────────
         for (b in buttonStates) drawButton(canvas, b, gAlpha)
+
+        // ── Layout sliders ──────────────────────────────────
+        for (sl in sliderStates) drawSlider(canvas, sl, gAlpha)
 
         // ── Radial menus (triggers, then open wheels on top) ──
         for (rm in radialStates) if (!rm.isOpen) drawRadialMenu(canvas, rm, gAlpha)
@@ -394,6 +416,56 @@ class TouchOverlayView @JvmOverloads constructor(
             paintBtnLabel.textSize = b.radius * 0.7f
             canvas.drawText(b.control.label, b.centerX,
                 b.centerY + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+        }
+    }
+
+    private fun drawSlider(canvas: Canvas, sl: SliderState, gAlpha: Float) {
+        val eff = (gAlpha * sl.control.opacity).coerceIn(0f, 1f)
+        val vertical = sl.control.orientation == SliderOrientation.VERTICAL
+
+        // Track endpoints
+        val x0: Float; val y0: Float; val x1: Float; val y1: Float
+        if (vertical) {
+            x0 = sl.centerX; y0 = sl.centerY - sl.trackLen
+            x1 = sl.centerX; y1 = sl.centerY + sl.trackLen
+        } else {
+            x0 = sl.centerX - sl.trackLen; y0 = sl.centerY
+            x1 = sl.centerX + sl.trackLen; y1 = sl.centerY
+        }
+
+        // Draw track line
+        paintRing.alpha = (0x44 * eff).toInt()
+        val savedStroke = paintRing.strokeWidth
+        paintRing.strokeWidth = sl.thumbR * 0.6f
+        canvas.drawLine(x0, y0, x1, y1, paintRing)
+        paintRing.strokeWidth = savedStroke
+
+        // Thumb position along track (-1..1 mapped to endpoints)
+        val t = sl.thumbPos
+        val tx: Float; val ty: Float
+        if (vertical) {
+            tx = sl.centerX; ty = sl.centerY + t * sl.trackLen
+        } else {
+            tx = sl.centerX + t * sl.trackLen; ty = sl.centerY
+        }
+        val pressed = sl.pointerId >= 0
+        val thumbFill = if (pressed) paintBtnPressed else paintBtnIdle
+        thumbFill.alpha = ((if (pressed) 0x88 else 0x55) * eff).toInt()
+        canvas.drawCircle(tx, ty, sl.thumbR, thumbFill)
+        paintRing.alpha = (0x66 * eff).toInt()
+        canvas.drawCircle(tx, ty, sl.thumbR, paintRing)
+
+        // Label below/right of track
+        if (sl.control.id.isNotEmpty()) {
+            paintBtnLabel.alpha = (0x88 * eff).toInt()
+            paintBtnLabel.textSize = sl.thumbR * 1.2f
+            if (vertical) {
+                canvas.drawText(sl.control.id.take(5), sl.centerX,
+                    y1 + paintBtnLabel.textSize * 1.5f, paintBtnLabel)
+            } else {
+                canvas.drawText(sl.control.id.take(5), sl.centerX,
+                    sl.centerY + sl.thumbR + paintBtnLabel.textSize * 1.3f, paintBtnLabel)
+            }
         }
     }
 
@@ -716,9 +788,25 @@ class TouchOverlayView @JvmOverloads constructor(
                                 } else rm.control.segments
                             }
                             if (rm.control.hapticFeedback) {
-                                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                                performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                             }
                             invalidate()
+                            handled = true; break
+                        }
+                    }
+                }
+
+                // Try layout sliders
+                if (!handled) {
+                    for (sl in sliderStates) {
+                        if (sl.pointerId >= 0) continue
+                        val hitR = sl.trackLen + sl.thumbR * 2
+                        val vertical = sl.control.orientation == SliderOrientation.VERTICAL
+                        val along = if (vertical) abs(py - sl.centerY) else abs(px - sl.centerX)
+                        val across = if (vertical) abs(px - sl.centerX) else abs(py - sl.centerY)
+                        if (along <= hitR && across <= sl.thumbR * 3) {
+                            sl.pointerId = pid
+                            updateSliderFromTouch(sl, px, py)
                             handled = true; break
                         }
                     }
@@ -758,6 +846,12 @@ class TouchOverlayView @JvmOverloads constructor(
                         if (i >= 0) updateRadialSelection(rm, event.getX(i), event.getY(i))
                     }
                 }
+                for (sl in sliderStates) {
+                    if (sl.pointerId >= 0) {
+                        val i = event.findPointerIndex(sl.pointerId)
+                        if (i >= 0) updateSliderFromTouch(sl, event.getX(i), event.getY(i))
+                    }
+                }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 val pid = event.getPointerId(event.actionIndex)
@@ -769,6 +863,7 @@ class TouchOverlayView @JvmOverloads constructor(
                 resetAllSticks()
                 releaseAllLayoutButtons(fired)
                 releaseAllRadialMenus(fired)
+                releaseAllSliders()
                 releasePrevButton(fired)
                 releaseNextButton(fired)
                 releaseMusicLabel(fired)
@@ -793,6 +888,12 @@ class TouchOverlayView @JvmOverloads constructor(
                     if (!found) {
                         for (rm in radialStates) {
                             if (rm.pointerId == pid) { releaseRadialMenu(rm, true); found = true; break }
+                        }
+                    }
+                    // Check sliders
+                    if (!found) {
+                        for (sl in sliderStates) {
+                            if (sl.pointerId == pid) { releaseSlider(sl); found = true; break }
                         }
                     }
                     // Check music controls
@@ -989,6 +1090,34 @@ class TouchOverlayView @JvmOverloads constructor(
         for (s in stickStates) if (s.pointerId >= 0) resetStick(s)
     }
 
+    // ── Slider helpers ──────────────────────────────────────
+
+    private fun updateSliderFromTouch(sl: SliderState, px: Float, py: Float) {
+        val vertical = sl.control.orientation == SliderOrientation.VERTICAL
+        val raw = if (vertical) (py - sl.centerY) / sl.trackLen
+                  else (px - sl.centerX) / sl.trackLen
+        sl.thumbPos = raw.coerceIn(-1f, 1f)
+        invalidate()
+
+        var value = sl.thumbPos
+        value = applyResponseCurve(value, sl.control.responseCurve, sl.control.exponent)
+        value = (value * sl.control.sensitivity).coerceIn(-1f, 1f)
+        axisCallback?.invoke(sl.control.axis, value)
+    }
+
+    private fun releaseSlider(sl: SliderState) {
+        sl.pointerId = -1
+        if (sl.control.springBack) {
+            sl.thumbPos = 0f
+            axisCallback?.invoke(sl.control.axis, 0f)
+        }
+        invalidate()
+    }
+
+    private fun releaseAllSliders() {
+        for (sl in sliderStates) if (sl.pointerId >= 0) releaseSlider(sl)
+    }
+
     private fun releaseLayoutButton(b: ButtonState, fired: Boolean) {
         if (b.pointerId >= 0) {
             b.pointerId = -1
@@ -1042,7 +1171,7 @@ class TouchOverlayView @JvmOverloads constructor(
 
         if (rm.activeSegment != old) {
             if (rm.control.hapticFeedback) {
-                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
             }
             invalidate()
         }
@@ -1089,6 +1218,7 @@ class TouchOverlayView @JvmOverloads constructor(
     private fun releaseAllButtons() {
         releaseAllLayoutButtons(false)
         releaseAllRadialMenus(false)
+        releaseAllSliders()
         releasePrevButton(false)
         releaseNextButton(false)
         releaseMusicLabel(false)

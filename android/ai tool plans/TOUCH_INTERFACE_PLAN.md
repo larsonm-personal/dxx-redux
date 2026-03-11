@@ -12,7 +12,7 @@ Build a customizable touch control system for the Descent Android port, modeled 
 | 3: Gyro Input | ✅ Complete | GyroInputManager.kt (~180 lines), wired in TouchOverlayView + MainActivity |
 | 4: Touch Layout Editor | ✅ Complete | TouchEditorPage.kt (~790 lines), wired in SetupActivity |
 | 5: Radial Menus (Guidebot + Weapons) | ✅ Complete | TouchOverlayView.kt, TouchControl.kt, TouchLayoutRepository.kt, TouchEditorPage.kt, MainActivity.kt |
-| 6: Polish & Presets | ⬜ Not Started | — |
+| 6: Polish & Presets | ✅ Complete | TouchOverlayView.kt, TouchEditorPage.kt, TouchLayoutRepository.kt |
 
 ## Current State (post Phase 3)
 
@@ -495,7 +495,15 @@ When editing a stick's response curve properties, show a small preview graph (12
     - Secondary: Concussion, Homing, Proximity, Smart, Mega (5 segments)
     - Two separate wheels or one with sub-menus. Inject weapon select key events.
 
-### Phase 6: Polish & Presets (*depends on all above*)
+### Phase 6: Polish & Presets (*depends on all above*) — ✅ Complete
+
+**Implemented:**
+- **3 default presets** (Simple, Advanced, Claw) — already done in Phase 1
+- **Per-control opacity** — already done in Phase 2
+- **Slider rendering & touch handling** — SliderState, drawSlider(), touch down/move/release in TouchOverlayView. Supports vertical/horizontal orientation, response curve, sensitivity, spring-back. Editor support: canvas drawing, hit testing, SliderPropertiesPanel, Add Slider dialog option
+- **Collision detection** in editor — pairwise overlap check (>30% of smaller control's radius), orange warning rings drawn around colliding controls
+- **Version migration** — `TouchLayoutRepository.load()` calls `migrate()`, scaffold for future version bumps with chained migration functions
+- **Haptic feedback differentiation** — `VIRTUAL_KEY` for button press, `LONG_PRESS` for radial menu open, `CONTEXT_CLICK` for radial segment change
 
 14. **Create 3 default presets**:
     - **Simple**: Left stick (linear curve) + A/B fire buttons + MAP. Matches current hardcoded layout.
