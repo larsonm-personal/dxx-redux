@@ -122,9 +122,14 @@ Write-Status "Launching SetupActivity..."
 Adb -Args @("shell", "am", "start", "-n", "$PACKAGE/$ACTIVITY") | Out-Null
 Start-Sleep -Seconds 3
 
-# Launch game via setup command
+# Launch game via setup command — detect D1 scripts by filename
+$launchArgs = @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND", "--es", "command", "launch")
+if ($ScriptName -match '_d1_') {
+    Write-Status "Detected D1 script — launching as D1"
+    $launchArgs += @("--es", "game", "d1")
+}
 Write-Status "Sending launch command..."
-Adb -Args @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND", "--es", "command", "launch") | Out-Null
+Adb -Args $launchArgs | Out-Null
 Start-Sleep -Seconds 5
 
 # ── Step 5: Send automation broadcast ───────────────────────

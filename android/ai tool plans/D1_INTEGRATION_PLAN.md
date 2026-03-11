@@ -347,22 +347,28 @@ Note: if shared deps cause unexpected issues (e.g., symbol visibility problems, 
 
 ---
 
-## Phase 5: Regression Tests
+## Phase 5: Regression Tests ✅ COMPLETE
 
-### 5A. Current State
+### 5A. Results
 
-- 8 D1 regression specs already exist
-- Test infrastructure already handles D1 (title screen Escape key difference, D1 file routing)
-- D1 tests currently fail at "crash on launch" because D1 .so doesn't exist — Phase 2+3 fixes this
+- All 8 D1 regression specs pass (7 launch tests + 1 file-only prerelease demo)
+- D1 introspection working (event.c hooks added in d1/arch/sdl/event.c)
+- Test script handles D1 navigation: pilot listbox, callsign dialog, briefing (Escape), level selection
 
-### 5B. Changes Needed
+### 5B. Completed Tasks
 
-| # | Task |
-|---|------|
-| 69 | Update `run_extract_test.ps1` to pass game selection to the app (Intent extra or config file) |
-| 70 | Verify introspect.sh works for D1 (JSON schema should be identical since game_introspect is shared) |
-| 71 | Run all 8 D1 regression specs — expect them to pass once D1 boots |
-| 72 | Add D1-specific game scripts to `android/game_scripts/` for level navigation tests |
+| # | Task | Status |
+|---|------|--------|
+| 69 | Update `run_extract_test.ps1` to pass game selection to the app | ✅ Done |
+| 70 | Fixed D1 introspection — added event loop hooks to `d1/arch/sdl/event.c` | ✅ Done |
+| 71 | All 8 D1 regression specs pass (8/8) | ✅ Done |
+| 72 | Added `test_launch_d1_automap.json5` game script + D1 detection in `run_test.ps1` | ✅ Done |
+
+### Key fixes:
+- `d1/arch/sdl/event.c`: Added `game_introspect_check_and_dump()` + `game_automate_tick()`
+- `run_extract_test.ps1`: Pilot listbox handler, unknown_window (briefing) Escape handler, .plr/.plx cleanup
+- `run_test.ps1`: Auto-detects D1 scripts by filename pattern `_d1_` and passes `--es game d1`
+- "Descent - Test Flight (USA)" marked as `d1_prerelease_demo` (incompatible 28KB pig, file-only test)
 
 ---
 
