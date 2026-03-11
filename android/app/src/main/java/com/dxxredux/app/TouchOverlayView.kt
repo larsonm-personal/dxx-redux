@@ -6,12 +6,15 @@ import android.graphics.Paint
 import android.graphics.PointF
 import android.graphics.RectF
 import android.util.AttributeSet
+import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
+import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.min
+import kotlin.math.sign
 import kotlin.math.sin
 
 /**
@@ -62,45 +65,48 @@ class TouchOverlayView @JvmOverloads constructor(
                 field = value
                 visibility = if (value) VISIBLE else GONE
                 if (!value) {
-                    resetStick()
+                    resetAllSticks()
                     releaseAllButtons()
                 }
                 invalidate()
             }
         }
 
-    // ── Stick geometry (computed in onSizeChanged) ──────────
-    private var stickCenterX = 0f
-    private var stickCenterY = 0f
-    private var stickRadius  = 0f
+    // ── Layout state ──────────────────────────────────────
+    private var layout: TouchLayout = TouchLayoutRepository.defaultLayout()
 
-    // ── Fire-button geometry ────────────────────────────────
-    private var btn0CenterX = 0f   // fire primary
-    private var btn0CenterY = 0f
-    private var btn1CenterX = 0f   // fire secondary
-    private var btn1CenterY = 0f
-    private var btnRadius   = 0f
-    // ── MAP button geometry ───────────────────────────────────────
+    // ── Computed control states ──────────────────────────────
+    private class StickState(val control: AnalogStickControl) {
+        var centerX = 0f; var centerY = 0f; var radius = 0f
+        var pointerId = -1
+        val pos = PointF() // thumb offset in px from center
+        // Floating mode: zone bounds in px
+        var fzLeft = 0f; var fzTop = 0f; var fzRight = 0f; var fzBottom = 0f
+        var floatingCX = 0f; var floatingCY = 0f; var floatingActive = false
+    }
+
+    private class ButtonState(val control: ButtonControl) {
+        var centerX = 0f; var centerY = 0f; var radius = 0f
+        var pointerId = -1; var toggled = false
+    }
+
+    private val stickStates = mutableListOf<StickState>()
+    private val buttonStates = mutableListOf<ButtonState>()
+
+    // ── MAP button geometry (kept for automap overlay compat) ──
     private var mapBtnCenterX = 0f
     private var mapBtnCenterY = 0f
     private var mapBtnRadius  = 0f
     // ── Music prev/next button geometry ──────────────────────────
-    private var musicBtnY = 0f       // center Y for both music buttons
+    private var musicBtnY = 0f
     private var prevBtnCenterX = 0f
     private var nextBtnCenterX = 0f
     private var musicBtnRadius = 0f
-    private var musicLabelX = 0f     // X position for track label between buttons
-    // ── Current stick state ─────────────────────────────────
-    private var stickPointerId = -1    // active pointer ID, -1 = no touch
-    private val stickPos = PointF()    // current stick position (in px, relative to center)
+    private var musicLabelX = 0f
 
-    // Pointer IDs that touched empty space (no control hit)
+    // ── Non-layout pointer tracking ─────────────────────────
     private val passthroughPointers = mutableSetOf<Int>()
-
-    // ── Button pointer tracking (one pointer per button) ────
-    private var btn0PointerId = -1
-    private var btn1PointerId = -1
-    private var mapBtnPointerId = -1
+    private var mapBtnPointerId = -1  // used by automap overlay
     private var prevBtnPointerId = -1
     private var nextBtnPointerId = -1
     private var musicLabelPointerId = -1
@@ -184,48 +190,79 @@ class TouchOverlayView @JvmOverloads constructor(
         textAlign = Paint.Align.CENTER
     }
 
+    init { rebuildStates() }
+
+    /** Replace the current layout and recompute all control geometry. */
+    fun setLayout(newLayout: TouchLayout) {
+        layout = newLayout
+        rebuildStates()
+        if (width > 0 && height > 0) computeGeometry(width, height)
+        invalidate()
+    }
+
+    /** Get a copy of the current layout (for saving, etc.). */
+    fun getLayout(): TouchLayout = layout
+
+    private fun rebuildStates() {
+        stickStates.clear()
+        buttonStates.clear()
+        layout.sticks.forEach { stickStates.add(StickState(it)) }
+        layout.buttons.forEach { buttonStates.add(ButtonState(it)) }
+    }
+
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
+        computeGeometry(w, h)
+    }
 
-        // Use the shorter dimension so controls stay the same absolute
-        // size regardless of portrait/landscape orientation.
+    private fun computeGeometry(w: Int, h: Int) {
         val base = min(w, h).toFloat()
+        val wf = w.toFloat()
+        val hf = h.toFloat()
+        val defaultStickRadius = base * 0.15f
+        val defaultBtnRadius = base * 0.05f
+        paintBtnLabel.textSize = defaultBtnRadius * 0.7f
 
-        // ── Stick: ~15% of short-edge radius, 10% margins ──
-        stickRadius = base * 0.15f
-        val marginX = w * 0.10f + stickRadius
-        val marginY = h * 0.10f + stickRadius
-        stickCenterX = marginX
-        stickCenterY = h - marginY
+        // Compute stick geometry from layout
+        for (s in stickStates) {
+            s.radius = defaultStickRadius * s.control.sizeMult
+            s.centerX = wf * s.control.xPct / 100f
+            s.centerY = hf * s.control.yPct / 100f
+            if (s.control.floating) {
+                val z = s.control.floatingZone
+                s.fzLeft = wf * z.leftPct / 100f
+                s.fzTop = hf * z.topPct / 100f
+                s.fzRight = wf * z.rightPct / 100f
+                s.fzBottom = hf * z.bottomPct / 100f
+            }
+        }
 
-        // ── Fire buttons: 5% of short-edge radius ──
-        btnRadius = base * 0.05f
-        paintBtnLabel.textSize = btnRadius * 0.7f
-
-        // Button 0 (fire primary): 10% from right, 5% from bottom
-        btn0CenterX = w - w * 0.10f - btnRadius
-        btn0CenterY = h - base * 0.05f - btnRadius
-
-        // Button 1 (fire secondary): 5% from right, 10% from bottom
-        btn1CenterX = w - w * 0.05f - btnRadius
-        btn1CenterY = h - base * 0.10f - btnRadius
-
-        // MAP button: smaller, top-right corner
+        // Compute button geometry from layout; track MAP button for automap compat
         mapBtnRadius = base * 0.035f
-        mapBtnCenterX = w - w * 0.05f - mapBtnRadius
+        mapBtnCenterX = wf - wf * 0.05f - mapBtnRadius
         mapBtnCenterY = base * 0.05f + mapBtnRadius
+        for (b in buttonStates) {
+            b.radius = defaultBtnRadius * b.control.sizeMult
+            b.centerX = wf * b.control.xPct / 100f
+            b.centerY = hf * b.control.yPct / 100f
+            if (b.control.binding == TouchBindings.BTN_AUTOMAP) {
+                mapBtnCenterX = b.centerX
+                mapBtnCenterY = b.centerY
+                mapBtnRadius = b.radius
+            }
+        }
 
-        // ── Music control buttons: top-left, below track name ──
+        // Music controls (not layout-driven)
         musicBtnRadius = base * 0.03f
         musicBtnY = base * 0.12f
-        prevBtnCenterX = w * 0.04f + musicBtnRadius
+        prevBtnCenterX = wf * 0.04f + musicBtnRadius
         nextBtnCenterX = prevBtnCenterX + musicBtnRadius * 2 + base * 0.02f + musicBtnRadius
         musicLabelX = nextBtnCenterX + musicBtnRadius + base * 0.02f
 
-        // ── Automap overlay geometry ──
+        // Automap overlay geometry
         automapBtnSize = base * 0.09f
         automapBtnSpacing = base * 0.02f
-        automapBtnY = h * 0.03f
+        automapBtnY = hf * 0.03f
         paintAutomapBtnText.textSize = automapBtnSize * 0.28f
         paintAutomapHelpText.textSize = base * 0.04f
         recomputeAutomapBtnRects()
@@ -251,36 +288,15 @@ class TouchOverlayView @JvmOverloads constructor(
             return
         }
 
-        // ── Analog stick ────────────────────────────────────
-        canvas.drawCircle(stickCenterX, stickCenterY, stickRadius, paintFill)
-        canvas.drawCircle(stickCenterX, stickCenterY, stickRadius, paintRing)
-        val thumbX = stickCenterX + stickPos.x
-        val thumbY = stickCenterY + stickPos.y
-        val thumbRadius = stickRadius * 0.22f
-        canvas.drawCircle(thumbX, thumbY, thumbRadius, paintThumb)
+        val gAlpha = layout.globalOpacity
 
-        // ── Fire button 0 (primary) ─────────────────────────
-        val fill0 = if (btn0PointerId >= 0) paintBtnPressed else paintBtnIdle
-        canvas.drawCircle(btn0CenterX, btn0CenterY, btnRadius, fill0)
-        canvas.drawCircle(btn0CenterX, btn0CenterY, btnRadius, paintRing)
-        canvas.drawText("A", btn0CenterX, btn0CenterY + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+        // ── Layout sticks ───────────────────────────────────
+        for (s in stickStates) drawStick(canvas, s, gAlpha)
 
-        // ── Fire button 1 (secondary) ─────────────────────
-        val fill1 = if (btn1PointerId >= 0) paintBtnPressed else paintBtnIdle
-        canvas.drawCircle(btn1CenterX, btn1CenterY, btnRadius, fill1)
-        canvas.drawCircle(btn1CenterX, btn1CenterY, btnRadius, paintRing)
-        canvas.drawText("B", btn1CenterX, btn1CenterY + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+        // ── Layout buttons ──────────────────────────────────
+        for (b in buttonStates) drawButton(canvas, b, gAlpha)
 
-        // ── MAP button ───────────────────────────────────────
-        val fillMap = if (mapBtnPointerId >= 0) paintBtnPressed else paintBtnIdle
-        canvas.drawCircle(mapBtnCenterX, mapBtnCenterY, mapBtnRadius, fillMap)
-        canvas.drawCircle(mapBtnCenterX, mapBtnCenterY, mapBtnRadius, paintRing)
-        val savedSize = paintBtnLabel.textSize
-        paintBtnLabel.textSize = mapBtnRadius * 0.65f
-        canvas.drawText("MAP", mapBtnCenterX, mapBtnCenterY + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
-        paintBtnLabel.textSize = savedSize
-
-        // ── Music prev/next buttons ─────────────────────────
+        // ── Music prev/next buttons (not layout-driven) ─────
         if (trackLabel.isNotEmpty()) {
             val fillPrev = if (prevBtnPointerId >= 0) paintBtnPressed else paintBtnIdle
             canvas.drawCircle(prevBtnCenterX, musicBtnY, musicBtnRadius, fillPrev)
@@ -289,6 +305,7 @@ class TouchOverlayView @JvmOverloads constructor(
             canvas.drawCircle(nextBtnCenterX, musicBtnY, musicBtnRadius, fillNext)
             canvas.drawCircle(nextBtnCenterX, musicBtnY, musicBtnRadius, paintRing)
             // Arrow glyphs
+            val savedSize = paintBtnLabel.textSize
             paintBtnLabel.textSize = musicBtnRadius * 0.9f
             canvas.drawText("\u25C0", prevBtnCenterX, musicBtnY + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
             canvas.drawText("\u25B6", nextBtnCenterX, musicBtnY + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
@@ -297,6 +314,38 @@ class TouchOverlayView @JvmOverloads constructor(
             val labelPaint = Paint(paintBtnLabel).apply { textAlign = Paint.Align.LEFT }
             canvas.drawText(trackLabel, musicLabelX, musicBtnY + labelPaint.textSize * 0.35f, labelPaint)
             paintBtnLabel.textSize = savedSize
+        }
+    }
+
+    private fun drawStick(canvas: Canvas, s: StickState, gAlpha: Float) {
+        val eff = (gAlpha * s.control.opacity).coerceIn(0f, 1f)
+        val cx = if (s.control.floating && s.floatingActive) s.floatingCX else s.centerX
+        val cy = if (s.control.floating && s.floatingActive) s.floatingCY else s.centerY
+
+        paintFill.alpha = (0x33 * eff).toInt()
+        canvas.drawCircle(cx, cy, s.radius, paintFill)
+        paintRing.alpha = (0x66 * eff).toInt()
+        canvas.drawCircle(cx, cy, s.radius, paintRing)
+
+        val thumbX = cx + s.pos.x
+        val thumbY = cy + s.pos.y
+        paintThumb.alpha = (0x99 * eff).toInt()
+        canvas.drawCircle(thumbX, thumbY, s.radius * 0.22f, paintThumb)
+    }
+
+    private fun drawButton(canvas: Canvas, b: ButtonState, gAlpha: Float) {
+        val eff = (gAlpha * b.control.opacity).coerceIn(0f, 1f)
+        val pressed = b.pointerId >= 0 || b.toggled
+        val fill = if (pressed) paintBtnPressed else paintBtnIdle
+        fill.alpha = ((if (pressed) 0x66 else 0x33) * eff).toInt()
+        canvas.drawCircle(b.centerX, b.centerY, b.radius, fill)
+        paintRing.alpha = (0x66 * eff).toInt()
+        canvas.drawCircle(b.centerX, b.centerY, b.radius, paintRing)
+        if (b.control.label.isNotEmpty()) {
+            paintBtnLabel.alpha = (0xAA * eff).toInt()
+            paintBtnLabel.textSize = b.radius * 0.7f
+            canvas.drawText(b.control.label, b.centerX,
+                b.centerY + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
         }
     }
 
@@ -351,76 +400,119 @@ class TouchOverlayView @JvmOverloads constructor(
                 val px = event.getX(idx)
                 val py = event.getY(idx)
                 val pid = event.getPointerId(idx)
+                var handled = false
 
-                when {
-                    stickPointerId < 0 && isInsideStick(px, py) -> {
-                        stickPointerId = pid
-                        updateStickFromTouch(px, py)
+                // Try layout sticks
+                for (s in stickStates) {
+                    if (s.pointerId >= 0) continue
+                    if (s.control.floating) {
+                        if (px in s.fzLeft..s.fzRight && py in s.fzTop..s.fzBottom) {
+                            s.pointerId = pid
+                            s.floatingCX = px; s.floatingCY = py
+                            s.floatingActive = true
+                            s.pos.set(0f, 0f)
+                            invalidate()
+                            handled = true; break
+                        }
+                    } else if (hypot(px - s.centerX, py - s.centerY) <= s.radius) {
+                        s.pointerId = pid
+                        updateStickFromTouch(s, px, py)
+                        handled = true; break
                     }
-                    btn0PointerId < 0 && isInsideButton(px, py, btn0CenterX, btn0CenterY) -> {
-                        btn0PointerId = pid
-                        buttonCallback?.invoke(0, true)
-                        invalidate()
-                    }
-                    btn1PointerId < 0 && isInsideButton(px, py, btn1CenterX, btn1CenterY) -> {
-                        btn1PointerId = pid
-                        buttonCallback?.invoke(1, true)
-                        invalidate()
-                    }
-                    mapBtnPointerId < 0 && isInsideButton(px, py, mapBtnCenterX, mapBtnCenterY, mapBtnRadius) -> {
-                        mapBtnPointerId = pid
-                        invalidate()
-                    }
-                    prevBtnPointerId < 0 && trackLabel.isNotEmpty() && isInsideButton(px, py, prevBtnCenterX, musicBtnY, musicBtnRadius) -> {
-                        prevBtnPointerId = pid
-                        invalidate()
-                    }
-                    nextBtnPointerId < 0 && trackLabel.isNotEmpty() && isInsideButton(px, py, nextBtnCenterX, musicBtnY, musicBtnRadius) -> {
-                        nextBtnPointerId = pid
-                        invalidate()
-                    }
-                    musicLabelPointerId < 0 && trackLabel.isNotEmpty() && px >= musicLabelX && py >= musicBtnY - musicBtnRadius * 1.5f && py <= musicBtnY + musicBtnRadius * 1.5f -> {
-                        musicLabelPointerId = pid
-                    }
-                    else -> passthroughPointers.add(pid)
                 }
+
+                // Try layout buttons
+                if (!handled) {
+                    for (b in buttonStates) {
+                        if (b.pointerId >= 0) continue
+                        if (hypot(px - b.centerX, py - b.centerY) <= b.radius * 1.3f) {
+                            b.pointerId = pid
+                            if (b.control.toggle) {
+                                b.toggled = !b.toggled
+                                if (b.control.binding == TouchBindings.BTN_AUTOMAP) {
+                                    if (b.toggled) mapButtonCallback?.invoke()
+                                } else {
+                                    buttonCallback?.invoke(b.control.binding, b.toggled)
+                                }
+                            } else {
+                                // Non-toggle: press on down (MAP fires on release only)
+                                if (b.control.binding != TouchBindings.BTN_AUTOMAP) {
+                                    buttonCallback?.invoke(b.control.binding, true)
+                                }
+                            }
+                            if (b.control.hapticFeedback) {
+                                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                            }
+                            invalidate()
+                            handled = true; break
+                        }
+                    }
+                }
+
+                // Try music controls (not layout-driven)
+                if (!handled) {
+                    when {
+                        prevBtnPointerId < 0 && trackLabel.isNotEmpty() &&
+                                hypot(px - prevBtnCenterX, py - musicBtnY) <= musicBtnRadius * 1.3f -> {
+                            prevBtnPointerId = pid; invalidate(); handled = true
+                        }
+                        nextBtnPointerId < 0 && trackLabel.isNotEmpty() &&
+                                hypot(px - nextBtnCenterX, py - musicBtnY) <= musicBtnRadius * 1.3f -> {
+                            nextBtnPointerId = pid; invalidate(); handled = true
+                        }
+                        musicLabelPointerId < 0 && trackLabel.isNotEmpty() &&
+                                px >= musicLabelX && py >= musicBtnY - musicBtnRadius * 1.5f &&
+                                py <= musicBtnY + musicBtnRadius * 1.5f -> {
+                            musicLabelPointerId = pid; handled = true
+                        }
+                    }
+                }
+
+                if (!handled) passthroughPointers.add(pid)
             }
             MotionEvent.ACTION_MOVE -> {
-                // Update stick if its pointer moved
-                if (stickPointerId >= 0) {
-                    val idx = event.findPointerIndex(stickPointerId)
-                    if (idx >= 0) {
-                        updateStickFromTouch(event.getX(idx), event.getY(idx))
+                for (s in stickStates) {
+                    if (s.pointerId >= 0) {
+                        val i = event.findPointerIndex(s.pointerId)
+                        if (i >= 0) updateStickFromTouch(s, event.getX(i), event.getY(i))
                     }
                 }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 val pid = event.getPointerId(event.actionIndex)
-                if (passthroughPointers.remove(pid) && event.actionMasked == MotionEvent.ACTION_UP) {
+                val fired = event.actionMasked == MotionEvent.ACTION_UP
+                if (passthroughPointers.remove(pid) && fired) {
                     tapPassthroughCallback?.invoke()
                 }
                 passthroughPointers.clear()
-                if (stickPointerId >= 0) resetStick()
-                releaseButton0()
-                releaseButton1()
-                releaseMapButton(event.actionMasked == MotionEvent.ACTION_UP)
-                releasePrevButton(event.actionMasked == MotionEvent.ACTION_UP)
-                releaseNextButton(event.actionMasked == MotionEvent.ACTION_UP)
-                releaseMusicLabel(event.actionMasked == MotionEvent.ACTION_UP)
+                resetAllSticks()
+                releaseAllLayoutButtons(fired)
+                releasePrevButton(fired)
+                releaseNextButton(fired)
+                releaseMusicLabel(fired)
             }
             MotionEvent.ACTION_POINTER_UP -> {
-                val idx = event.actionIndex
-                val pid = event.getPointerId(idx)
+                val pid = event.getPointerId(event.actionIndex)
                 if (passthroughPointers.remove(pid)) {
                     tapPassthroughCallback?.invoke()
-                } else when (pid) {
-                    stickPointerId -> resetStick()
-                    btn0PointerId  -> releaseButton0()
-                    btn1PointerId  -> releaseButton1()
-                    mapBtnPointerId -> releaseMapButton(true)
-                    prevBtnPointerId -> releasePrevButton(true)
-                    nextBtnPointerId -> releaseNextButton(true)
-                    musicLabelPointerId -> releaseMusicLabel(true)
+                } else {
+                    // Check sticks
+                    var found = false
+                    for (s in stickStates) {
+                        if (s.pointerId == pid) { resetStick(s); found = true; break }
+                    }
+                    // Check layout buttons
+                    if (!found) {
+                        for (b in buttonStates) {
+                            if (b.pointerId == pid) { releaseLayoutButton(b, true); found = true; break }
+                        }
+                    }
+                    // Check music controls
+                    if (!found) when (pid) {
+                        prevBtnPointerId -> releasePrevButton(true)
+                        nextBtnPointerId -> releaseNextButton(true)
+                        musicLabelPointerId -> releaseMusicLabel(true)
+                    }
                 }
             }
         }
@@ -534,58 +626,91 @@ class TouchOverlayView @JvmOverloads constructor(
         }
     }
 
-    private fun isInsideStick(px: Float, py: Float): Boolean {
-        return hypot(px - stickCenterX, py - stickCenterY) <= stickRadius
-    }
+    private fun updateStickFromTouch(s: StickState, px: Float, py: Float) {
+        val cx = if (s.control.floating && s.floatingActive) s.floatingCX else s.centerX
+        val cy = if (s.control.floating && s.floatingActive) s.floatingCY else s.centerY
 
-    private fun isInsideButton(px: Float, py: Float, cx: Float, cy: Float, radius: Float = btnRadius): Boolean {
-        return hypot(px - cx, py - cy) <= radius * 1.3f   // slightly generous hit area
-    }
-
-    private fun updateStickFromTouch(px: Float, py: Float) {
-        var dx = px - stickCenterX
-        var dy = py - stickCenterY
+        var dx = px - cx
+        var dy = py - cy
         val dist = hypot(dx, dy)
 
         // Clamp to circle edge (but still respond to touches outside)
-        if (dist > stickRadius) {
+        if (dist > s.radius) {
             val angle = atan2(dy, dx)
-            dx = cos(angle) * stickRadius
-            dy = sin(angle) * stickRadius
+            dx = cos(angle) * s.radius
+            dy = sin(angle) * s.radius
         }
 
-        stickPos.set(dx, dy)
+        s.pos.set(dx, dy)
         invalidate()
 
-        // Convert to -1..1 range
-        val axisX = (dx / stickRadius).coerceIn(-1f, 1f)
-        val axisY = (dy / stickRadius).coerceIn(-1f, 1f)
-        axisCallback?.invoke(0, axisX)   // axis 0 = left stick X
-        axisCallback?.invoke(1, axisY)   // axis 1 = left stick Y
+        // Normalize to -1..1
+        var rawX = (dx / s.radius).coerceIn(-1f, 1f)
+        var rawY = (dy / s.radius).coerceIn(-1f, 1f)
+
+        // Apply deadzone
+        val dz = s.control.deadzone / 100f
+        rawX = applyDeadzone(rawX, dz)
+        rawY = applyDeadzone(rawY, dz)
+
+        // Apply response curve (from TouchControl.kt)
+        rawX = applyResponseCurve(rawX, s.control.responseCurve, s.control.exponent)
+        rawY = applyResponseCurve(rawY, s.control.responseCurve, s.control.exponent)
+
+        // Apply sensitivity
+        rawX = (rawX * s.control.sensitivity).coerceIn(-1f, 1f)
+        rawY = (rawY * s.control.sensitivity).coerceIn(-1f, 1f)
+
+        // Apply inversion
+        if (s.control.invertX) rawX = -rawX
+        if (s.control.invertY) rawY = -rawY
+
+        axisCallback?.invoke(s.control.axisX, rawX)
+        axisCallback?.invoke(s.control.axisY, rawY)
     }
 
-    private fun resetStick() {
-        stickPointerId = -1
-        stickPos.set(0f, 0f)
+    private fun applyDeadzone(value: Float, deadzone: Float): Float {
+        val a = abs(value)
+        if (a < deadzone) return 0f
+        return sign(value) * (a - deadzone) / (1f - deadzone)
+    }
+
+    private fun resetStick(s: StickState) {
+        s.pointerId = -1
+        s.pos.set(0f, 0f)
+        s.floatingActive = false
         invalidate()
-        axisCallback?.invoke(0, 0f)
-        axisCallback?.invoke(1, 0f)
+        axisCallback?.invoke(s.control.axisX, 0f)
+        axisCallback?.invoke(s.control.axisY, 0f)
     }
 
-    private fun releaseButton0() {
-        if (btn0PointerId >= 0) {
-            btn0PointerId = -1
-            buttonCallback?.invoke(0, false)
+    private fun resetAllSticks() {
+        for (s in stickStates) if (s.pointerId >= 0) resetStick(s)
+    }
+
+    private fun releaseLayoutButton(b: ButtonState, fired: Boolean) {
+        if (b.pointerId >= 0) {
+            b.pointerId = -1
+            if (!b.control.toggle) {
+                if (b.control.binding == TouchBindings.BTN_AUTOMAP) {
+                    if (fired) mapButtonCallback?.invoke()
+                } else {
+                    buttonCallback?.invoke(b.control.binding, false)
+                }
+            }
             invalidate()
         }
     }
 
-    private fun releaseButton1() {
-        if (btn1PointerId >= 0) {
-            btn1PointerId = -1
-            buttonCallback?.invoke(1, false)
-            invalidate()
-        }
+    private fun releaseAllLayoutButtons(fired: Boolean) {
+        for (b in buttonStates) releaseLayoutButton(b, fired)
+    }
+
+    private fun releaseAllButtons() {
+        releaseAllLayoutButtons(false)
+        releasePrevButton(false)
+        releaseNextButton(false)
+        releaseMusicLabel(false)
     }
 
     private fun releasePrevButton(fired: Boolean) {
@@ -609,15 +734,6 @@ class TouchOverlayView @JvmOverloads constructor(
             musicLabelPointerId = -1
             if (fired) musicPanelCallback?.invoke()
         }
-    }
-
-    private fun releaseAllButtons() {
-        releaseButton0()
-        releaseButton1()
-        releaseMapButton(false)
-        releasePrevButton(false)
-        releaseNextButton(false)
-        releaseMusicLabel(false)
     }
 
     private fun releaseMapButton(fired: Boolean) {

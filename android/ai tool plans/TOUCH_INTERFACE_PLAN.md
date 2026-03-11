@@ -386,6 +386,7 @@ When editing a stick's response curve properties, show a small preview graph (12
 
 8. **Gyro settings in editor** (Phase 4) or ControllerSection:
    - Enable/disable toggle
+   - which axex does it map to? Note that it's allowed to double bind with an axis since the common case will be for fine aim in conjunciton with gross aim on the touch screen
    - Sensitivity sliders (X and Y, independent)
    - Response curve picker + exponent slider
    - Activation mode picker (always / touch-right-stick / toggle)

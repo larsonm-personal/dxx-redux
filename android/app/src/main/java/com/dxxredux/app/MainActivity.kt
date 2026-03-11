@@ -184,6 +184,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
 
         // Touch overlay
         touchOverlay = TouchOverlayView(this)
+        touchOverlay.setLayout(TouchLayoutRepository.load(this))
         touchOverlay.axisCallback = { axis, value -> nativeJoystickAxis(axis, value) }
         touchOverlay.buttonCallback = { button, pressed ->
             nativeJoystickButton(button, if (pressed) 1 else 0)

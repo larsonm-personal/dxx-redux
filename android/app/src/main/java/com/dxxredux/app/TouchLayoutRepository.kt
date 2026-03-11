@@ -34,16 +34,16 @@ object TouchLayoutRepository {
         name = "Simple",
         sticks = listOf(
             AnalogStickControl(
-                id = "move", xPct = 15f, yPct = 80f,
+                id = "move", xPct = 18f, yPct = 75f,
                 axisX = TouchBindings.AXIS_LEFT_X, axisY = TouchBindings.AXIS_LEFT_Y
             )
         ),
         buttons = listOf(
-            ButtonControl(id = "fire1", xPct = 85f, yPct = 90f,
-                binding = TouchBindings.BTN_FIRE_PRIMARY, label = "1"),
-            ButtonControl(id = "fire2", xPct = 90f, yPct = 80f,
-                binding = TouchBindings.BTN_FIRE_SECONDARY, label = "2"),
-            ButtonControl(id = "map", xPct = 92f, yPct = 8f,
+            ButtonControl(id = "fire1", xPct = 87f, yPct = 90f,
+                binding = TouchBindings.BTN_FIRE_PRIMARY, label = "A"),
+            ButtonControl(id = "fire2", xPct = 92f, yPct = 82f,
+                binding = TouchBindings.BTN_FIRE_SECONDARY, label = "B"),
+            ButtonControl(id = "map", xPct = 93f, yPct = 8f,
                 binding = TouchBindings.BTN_AUTOMAP, label = "MAP", sizeMult = 0.7f)
         )
     )
