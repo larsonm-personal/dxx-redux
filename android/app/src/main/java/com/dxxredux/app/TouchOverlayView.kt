@@ -54,6 +54,12 @@ class TouchOverlayView @JvmOverloads constructor(
     /** Called with (action, androidKeyCode, unicodeChar) for radial menu key injection. */
     var keyCallback: ((Int, Int, Int) -> Unit)? = null
 
+    /** Called with a cheat code string to inject each char via nativeTextInput. */
+    var cheatCodeCallback: ((String) -> Unit)? = null
+
+    /** "d1" or "d2" — determines which cheat list to show. Set by MainActivity. */
+    var gameVariant: String = "d2"
+
     /** Returns current weapon state for weapon wheels. Set by MainActivity. */
     var weaponStateProvider: (() -> WeaponState?)? = null
 
@@ -229,6 +235,13 @@ class TouchOverlayView @JvmOverloads constructor(
         textAlign = Paint.Align.CENTER
     }
 
+    // ── Cheats overlay state ────────────────────────────────
+    private var cheatsOverlayOpen = false
+    private var cheatsOverlayPressedIndex = -1  // which cheat button is being pressed
+    private var cheatsOverlayPointerId = -1
+    private val cheatsOverlayRects = mutableListOf<RectF>()  // computed per-draw
+    private var cheatsCloseRect = RectF()
+
     init { rebuildStates() }
 
     /** Replace the current layout and recompute all control geometry. */
@@ -385,6 +398,9 @@ class TouchOverlayView @JvmOverloads constructor(
             canvas.drawText(trackLabel, musicLabelX, musicBtnY + labelPaint.textSize * 0.35f, labelPaint)
             paintBtnLabel.textSize = savedSize
         }
+
+        // ── Cheats overlay (drawn last, on top of everything) ──
+        if (cheatsOverlayOpen) drawCheatsOverlay(canvas)
     }
 
     private fun drawStick(canvas: Canvas, s: StickState, gAlpha: Float) {
@@ -709,6 +725,9 @@ class TouchOverlayView @JvmOverloads constructor(
         // When automap is active, use dedicated automap touch handler
         if (automapActive) return handleAutomapOverlayTouch(event)
 
+        // When cheats overlay is open, it consumes all touches
+        if (cheatsOverlayOpen) return handleCheatsOverlayTouch(event)
+
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                 val idx = event.actionIndex
@@ -742,7 +761,9 @@ class TouchOverlayView @JvmOverloads constructor(
                         if (b.pointerId >= 0) continue
                         if (hypot(px - b.centerX, py - b.centerY) <= b.radius * 1.3f) {
                             b.pointerId = pid
-                            if (b.control.toggle) {
+                            if (b.control.binding == TouchBindings.BTN_CHEATS_MENU) {
+                                cheatsOverlayOpen = !cheatsOverlayOpen
+                            } else if (b.control.toggle) {
                                 b.toggled = !b.toggled
                                 if (b.control.binding == TouchBindings.BTN_AUTOMAP) {
                                     if (b.toggled) mapButtonCallback?.invoke()
@@ -1121,7 +1142,9 @@ class TouchOverlayView @JvmOverloads constructor(
     private fun releaseLayoutButton(b: ButtonState, fired: Boolean) {
         if (b.pointerId >= 0) {
             b.pointerId = -1
-            if (!b.control.toggle) {
+            if (b.control.binding == TouchBindings.BTN_CHEATS_MENU) {
+                // toggle handled on press
+            } else if (!b.control.toggle) {
                 if (b.control.binding == TouchBindings.BTN_AUTOMAP) {
                     if (fired) mapButtonCallback?.invoke()
                 } else {
@@ -1343,5 +1366,119 @@ class TouchOverlayView @JvmOverloads constructor(
             (event.getX(i0) + event.getX(i1)) / 2f,
             (event.getY(i0) + event.getY(i1)) / 2f
         )
+    }
+
+    // ── Cheats overlay ──────────────────────────────────────
+
+    private fun drawCheatsOverlay(canvas: Canvas) {
+        val w = width.toFloat()
+        val h = height.toFloat()
+        // Dim background
+        canvas.drawColor(0xAA000000.toInt())
+
+        val cheats = if (gameVariant == "d1") TouchBindings.CHEATS_D1 else TouchBindings.CHEATS_D2
+        val cols = 4
+        val rows = (cheats.size + cols - 1) / cols
+        val pad = w * 0.02f
+        val closeH = h * 0.08f
+        val gridTop = pad
+        val gridBottom = h - closeH - pad * 2
+        val cellW = (w - pad * (cols + 1)) / cols
+        val cellH = ((gridBottom - gridTop) - pad * (rows - 1)) / rows
+
+        cheatsOverlayRects.clear()
+        val textPaint = Paint(paintBtnLabel).apply {
+            textSize = (cellH * 0.28f).coerceAtMost(w * 0.035f)
+            textAlign = Paint.Align.CENTER
+        }
+
+        for (i in cheats.indices) {
+            val col = i % cols
+            val row = i / cols
+            val left = pad + col * (cellW + pad)
+            val top = gridTop + row * (cellH + pad)
+            val rect = RectF(left, top, left + cellW, top + cellH)
+            cheatsOverlayRects.add(rect)
+
+            val bg = if (i == cheatsOverlayPressedIndex) paintBtnPressed else paintBtnIdle
+            bg.alpha = if (i == cheatsOverlayPressedIndex) 0xAA else 0x55
+            canvas.drawRoundRect(rect, cellH * 0.15f, cellH * 0.15f, bg)
+            paintRing.alpha = 0x66
+            canvas.drawRoundRect(rect, cellH * 0.15f, cellH * 0.15f, paintRing)
+
+            textPaint.alpha = 0xDD
+            canvas.drawText(
+                cheats[i].label,
+                rect.centerX(), rect.centerY() + textPaint.textSize * 0.35f, textPaint
+            )
+        }
+
+        // Close button at bottom
+        cheatsCloseRect = RectF(pad, h - closeH - pad, w - pad, h - pad)
+        val closeBg = Paint(paintBtnIdle).apply { alpha = 0x66 }
+        canvas.drawRoundRect(cheatsCloseRect, closeH * 0.25f, closeH * 0.25f, closeBg)
+        paintRing.alpha = 0x88
+        canvas.drawRoundRect(cheatsCloseRect, closeH * 0.25f, closeH * 0.25f, paintRing)
+        val closePaint = Paint(paintBtnLabel).apply {
+            textSize = closeH * 0.4f
+            textAlign = Paint.Align.CENTER
+            alpha = 0xDD
+        }
+        canvas.drawText("Close Cheats", cheatsCloseRect.centerX(),
+            cheatsCloseRect.centerY() + closePaint.textSize * 0.35f, closePaint)
+    }
+
+    private fun handleCheatsOverlayTouch(event: MotionEvent): Boolean {
+        val idx = event.actionIndex
+        val px = event.getX(idx)
+        val py = event.getY(idx)
+
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                cheatsOverlayPointerId = event.getPointerId(idx)
+                // Check close button
+                if (cheatsCloseRect.contains(px, py)) {
+                    cheatsOverlayPressedIndex = -2  // sentinel for close
+                    invalidate()
+                    return true
+                }
+                // Check cheat buttons
+                for (i in cheatsOverlayRects.indices) {
+                    if (cheatsOverlayRects[i].contains(px, py)) {
+                        cheatsOverlayPressedIndex = i
+                        invalidate()
+                        return true
+                    }
+                }
+                cheatsOverlayPressedIndex = -1
+                return true
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
+                if (event.getPointerId(idx) == cheatsOverlayPointerId) {
+                    if (cheatsOverlayPressedIndex == -2 && cheatsCloseRect.contains(px, py)) {
+                        cheatsOverlayOpen = false
+                    } else if (cheatsOverlayPressedIndex >= 0) {
+                        val cheats = if (gameVariant == "d1") TouchBindings.CHEATS_D1 else TouchBindings.CHEATS_D2
+                        if (cheatsOverlayPressedIndex < cheats.size &&
+                            cheatsOverlayPressedIndex < cheatsOverlayRects.size &&
+                            cheatsOverlayRects[cheatsOverlayPressedIndex].contains(px, py)) {
+                            cheatCodeCallback?.invoke(cheats[cheatsOverlayPressedIndex].code)
+                            performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        }
+                    }
+                    cheatsOverlayPressedIndex = -1
+                    cheatsOverlayPointerId = -1
+                    invalidate()
+                }
+                return true
+            }
+            MotionEvent.ACTION_CANCEL -> {
+                cheatsOverlayPressedIndex = -1
+                cheatsOverlayPointerId = -1
+                invalidate()
+                return true
+            }
+        }
+        return true  // consume all events while overlay is open
     }
 }

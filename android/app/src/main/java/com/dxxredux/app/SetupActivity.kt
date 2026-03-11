@@ -2555,6 +2555,52 @@ private fun ControllerSection(
         )
     }
 
+    // ── In-game orientation lock ──
+    var orientLandscape by remember {
+        mutableStateOf(prefs.getString("game_orientation", "landscape") == "landscape")
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "In-game:",
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(end = 8.dp)
+        )
+        TextButton(
+            onClick = {
+                orientLandscape = true
+                prefs.edit().putString("game_orientation", "landscape").apply()
+            },
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+            modifier = Modifier.height(28.dp)
+        ) {
+            Text(
+                "Landscape",
+                fontSize = 12.sp,
+                color = if (orientLandscape) MaterialTheme.colorScheme.primary else Color.Gray
+            )
+        }
+        TextButton(
+            onClick = {
+                orientLandscape = false
+                prefs.edit().putString("game_orientation", "portrait").apply()
+            },
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+            modifier = Modifier.height(28.dp)
+        ) {
+            Text(
+                "Portrait",
+                fontSize = 12.sp,
+                color = if (!orientLandscape) MaterialTheme.colorScheme.primary else Color.Gray
+            )
+        }
+    }
+
     // ── Define Controls button ──
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedButton(

@@ -142,6 +142,14 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         // Keep screen on while the game is running
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
+        // Apply orientation lock from launcher preference
+        val prefs = getSharedPreferences("dxx_prefs", MODE_PRIVATE)
+        val orientPref = prefs.getString("game_orientation", "landscape")
+        requestedOrientation = if (orientPref == "portrait")
+            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+        else
+            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+
         // Allow rendering into the display cutout (notch) area
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             window.attributes.layoutInDisplayCutoutMode =
@@ -203,6 +211,10 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         }
         touchOverlay.keyCallback = { action, keyCode, unicode ->
             nativeKeyEvent(action, keyCode, unicode)
+        }
+        touchOverlay.gameVariant = game
+        touchOverlay.cheatCodeCallback = { code ->
+            for (ch in code) nativeTextInput(ch.code)
         }
         touchOverlay.weaponStateProvider = {
             try { WeaponState.fromArray(nativeGetWeaponState()) } catch (_: Throwable) { null }

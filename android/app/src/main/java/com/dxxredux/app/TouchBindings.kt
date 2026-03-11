@@ -30,6 +30,9 @@ object TouchBindings {
     const val BTN_ENERGY_SHIELD   = 52
     const val BTN_TOGGLE_BOMB     = 54
 
+    // --- Virtual (overlay-only) bindings – not sent as joystick buttons ---
+    const val BTN_CHEATS_MENU     = 100
+
     /** All button bindings with readable labels, for UI pickers. */
     val BUTTON_LABELS = mapOf(
         BTN_FIRE_PRIMARY    to "Fire Primary",
@@ -53,7 +56,8 @@ object TouchBindings {
         BTN_HEADLIGHT       to "Headlight",
         BTN_AUTOMAP         to "Automap",
         BTN_ENERGY_SHIELD   to "Energy→Shield",
-        BTN_TOGGLE_BOMB     to "Toggle Bomb"
+        BTN_TOGGLE_BOMB     to "Toggle Bomb",
+        BTN_CHEATS_MENU     to "Cheats Menu"
     )
 
     // --- JNI axis indices (nativeJoystickAxis axis parameter) ---
@@ -92,4 +96,51 @@ object TouchBindings {
     const val MIN_GLOBAL_OPACITY = 0.2f
     const val MAX_GLOBAL_OPACITY = 1.0f
     const val DEFAULT_GLOBAL_OPACITY = 0.7f
+
+    // --- Cheat code definitions (from gamecntl.c cheat_codes[]) ---
+    // Keep in sync with cheat_codes[] in d2/main/gamecntl.c and d1/main/gamecntl.c
+    data class CheatDef(val code: String, val label: String)
+
+    val CHEATS_D2 = listOf(
+        CheatDef("gabbagabbahey", "Cheater!"),
+        CheatDef("honestbob", "All Weapons"),
+        CheatDef("algroove", "All Keys"),
+        CheatDef("alifalafel", "Accessories"),
+        CheatDef("almighty", "Invulnerable"),
+        CheatDef("blueorb", "Shield Boost"),
+        CheatDef("delshiftb", "Destroy Reactor"),
+        CheatDef("flash", "Exit Path"),
+        CheatDef("freespace", "Level Warp"),
+        CheatDef("rockrgrl", "Full Automap"),
+        CheatDef("astral", "Ghost Physics"),
+        CheatDef("wildfire", "Rapid Fire"),
+        CheatDef("duddaboo", "Bouncy Fire"),
+        CheatDef("buggin", "Turbo"),
+        CheatDef("imagespace", "Robots Stop"),
+        CheatDef("spaniard", "Kill All Robots"),
+        CheatDef("silkwing", "Robots Kill Robots"),
+        CheatDef("godzilla", "Monster Damage"),
+        CheatDef("helpvishnu", "Buddy Clone"),
+        CheatDef("gowingnut", "Buddy Angry"),
+        CheatDef("bittersweet", "Acid"),
+    )
+
+    val CHEATS_D1 = listOf(
+        CheatDef("gabbagabbahey", "Cheater!"),
+        CheatDef("scourge", "All Weapons"),
+        CheatDef("bigred", "Super Weapons"),
+        CheatDef("mitzi", "All Keys"),
+        CheatDef("racerx", "Invulnerable"),
+        CheatDef("guile", "Cloak"),
+        CheatDef("twilight", "Shield Boost"),
+        CheatDef("poboys", "Destroy Reactor"),
+        CheatDef("flash", "Exit Path"),
+        CheatDef("farmerjoe", "Level Warp"),
+        CheatDef("bruin", "Extra Life"),
+        CheatDef("astral", "Ghost Physics"),
+        CheatDef("porgys", "Rapid Fire"),
+        CheatDef("buggin", "Turbo"),
+        CheatDef("ahimsa", "Robots Stop"),
+        CheatDef("bittersweet", "Acid"),
+    )
 }

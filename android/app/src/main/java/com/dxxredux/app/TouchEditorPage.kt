@@ -10,10 +10,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,6 +38,9 @@ import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size as ComposeSize
 
 // ── Colors ──────────────────────────────────────────────────────────────────
 private val cStickRing = Color(0xCC888888.toInt())
@@ -58,12 +65,15 @@ fun TouchEditorPage(onBack: () -> Unit) {
     var selectedType by remember { mutableStateOf<String?>(null) }  // "stick", "button"
     var selectedIndex by remember { mutableIntStateOf(-1) }
     var dirty by remember { mutableStateOf(false) }
+    var canvasWidth by remember { mutableFloatStateOf(1f) }
+    var canvasHeight by remember { mutableFloatStateOf(1f) }
 
     // Dialogs
     var showPresetPicker by remember { mutableStateOf(false) }
     var showAddControl by remember { mutableStateOf(false) }
     var showGlobalSettings by remember { mutableStateOf(false) }
     var showGyroSettings by remember { mutableStateOf(false) }
+    var longPressPos by remember { mutableStateOf(Offset.Zero) }  // where to place new control
 
     // Save helper
     fun save() {
@@ -71,102 +81,57 @@ fun TouchEditorPage(onBack: () -> Unit) {
         dirty = false
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Touch Layout Editor", fontSize = 16.sp) },
-                navigationIcon = {
-                    IconButton(onClick = { if (dirty) save(); onBack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    TextButton(onClick = { showPresetPicker = true }) {
-                        Text("Presets", fontSize = 12.sp)
-                    }
-                    TextButton(onClick = { showGlobalSettings = true }) {
-                        Text("Global", fontSize = 12.sp)
-                    }
-                    TextButton(onClick = { showGyroSettings = true }) {
-                        Text("Gyro", fontSize = 12.sp)
-                    }
-                    IconButton(onClick = { showAddControl = true }) {
-                        Icon(Icons.Default.Add, contentDescription = "Add control")
-                    }
-                    TextButton(onClick = { save() }, enabled = dirty) {
-                        Text("Save", fontSize = 12.sp,
-                            color = if (dirty) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f))
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF212121)
-                )
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .background(cBackground)
-        ) {
-            // ── Canvas area (fills available space minus bottom panel) ──
-            val textMeasurer = rememberTextMeasurer()
-            var canvasWidth by remember { mutableFloatStateOf(1f) }
-            var canvasHeight by remember { mutableFloatStateOf(1f) }
+    val sheetState = rememberBottomSheetScaffoldState(
+        bottomSheetState = rememberStandardBottomSheetState(initialValue = SheetValue.PartiallyExpanded)
+    )
 
-            Box(
+    BottomSheetScaffold(
+        scaffoldState = sheetState,
+        sheetPeekHeight = 48.dp,
+        sheetContainerColor = Color(0xFF262626),
+        sheetContentColor = Color.White,
+        sheetDragHandle = null,
+        containerColor = cBackground,
+        sheetContent = {
+            // ── Toolbar row (always visible as peek content) ──
+            Row(
                 modifier = Modifier
-                    .weight(1f)
                     .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Canvas(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .pointerInput(layout, selectedType, selectedIndex) {
-                            detectTapGestures { offset ->
-                                val hit = hitTest(layout, offset, canvasWidth, canvasHeight)
-                                if (hit != null) {
-                                    selectedType = hit.first
-                                    selectedIndex = hit.second
-                                } else {
-                                    selectedType = null
-                                    selectedIndex = -1
-                                }
-                            }
-                        }
-                        .pointerInput(layout, selectedType, selectedIndex) {
-                            detectDragGestures { change, dragAmount ->
-                                change.consume()
-                                if (selectedType != null && selectedIndex >= 0) {
-                                    val dxPct = (dragAmount.x / canvasWidth) * 100f
-                                    val dyPct = (dragAmount.y / canvasHeight) * 100f
-                                    layout = moveControl(layout, selectedType!!, selectedIndex, dxPct, dyPct)
-                                    dirty = true
-                                }
-                            }
-                        }
-                ) {
-                    canvasWidth = size.width
-                    canvasHeight = size.height
-                    drawGrid(this)
-                    drawAllControls(this, layout, selectedType, selectedIndex, textMeasurer)
+                TextButton(onClick = { if (dirty) save(); onBack() }) {
+                    Text("Close Editor", fontSize = 12.sp, color = Color.White)
+                }
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = { showPresetPicker = true }) {
+                    Text("Presets", fontSize = 12.sp)
+                }
+                TextButton(onClick = { showGlobalSettings = true }) {
+                    Text("Global", fontSize = 12.sp)
+                }
+                TextButton(onClick = { showGyroSettings = true }) {
+                    Text("Gyro", fontSize = 12.sp)
+                }
+                IconButton(onClick = { showAddControl = true }, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Default.Add, "Add control", tint = Color.White)
+                }
+                TextButton(onClick = { save() }, enabled = dirty) {
+                    Text("Save", fontSize = 12.sp,
+                        color = if (dirty) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f))
                 }
             }
+            HorizontalDivider(color = Color(0xFF444444))
 
-            // ── Bottom properties panel ──
-            Surface(
-                color = Color(0xFF262626),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 120.dp, max = 280.dp)
-            ) {
-                if (selectedType != null && selectedIndex >= 0) {
-                    Column(
-                        modifier = Modifier
-                            .verticalScroll(rememberScrollState())
-                            .padding(horizontal = 12.dp, vertical = 8.dp)
+            // ── Properties panel (visible when sheet is expanded) ──
+            if (selectedType != null && selectedIndex >= 0) {
+                val panelScrollState = rememberScrollState()
+                Box(modifier = Modifier.heightIn(max = 300.dp)) {
+                Column(
+                    modifier = Modifier
+                        .verticalScroll(panelScrollState)
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
                     ) {
                         when (selectedType) {
                             "stick" -> StickPropertiesPanel(
@@ -235,16 +200,83 @@ fun TouchEditorPage(onBack: () -> Unit) {
                             )
                         }
                     }
-                } else {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("Tap a control to select it, drag to move",
-                            color = Color.Gray, fontSize = 13.sp)
-                    }
+                    ScrollArrows(panelScrollState)
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Tap a control to select it, drag to move",
+                        color = Color.Gray, fontSize = 13.sp)
                 }
             }
+        }
+    ) { innerPadding ->
+        // ── Full-screen canvas ──
+        val textMeasurer = rememberTextMeasurer()
+
+        // Snapshot refs so gesture blocks don't restart when layout changes
+        val layoutRef = rememberUpdatedState(layout)
+        val selTypeRef = rememberUpdatedState(selectedType)
+        val selIdxRef = rememberUpdatedState(selectedIndex)
+
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onTap = { offset ->
+                            val hit = hitTest(layoutRef.value, offset, canvasWidth, canvasHeight)
+                            if (hit != null) {
+                                selectedType = hit.first
+                                selectedIndex = hit.second
+                            } else {
+                                selectedType = null
+                                selectedIndex = -1
+                            }
+                        },
+                        onLongPress = { offset ->
+                            // Long-press on empty space → add control at that position
+                            val hit = hitTest(layoutRef.value, offset, canvasWidth, canvasHeight)
+                            if (hit == null) {
+                                longPressPos = offset
+                                showAddControl = true
+                            }
+                        }
+                    )
+                }
+                .pointerInput(Unit) {
+                    detectDragGestures { change, dragAmount ->
+                        change.consume()
+                        val st = selTypeRef.value
+                        val si = selIdxRef.value
+                        if (st != null && si >= 0) {
+                            val lay = layoutRef.value
+                            val cr = controlRadius(lay, st, si, canvasWidth, canvasHeight)
+                            val cc = controlCenter(lay, st, si, canvasWidth, canvasHeight)
+                            val maxDist = cr + canvasWidth * 0.10f
+                            val fingerDist = sqrt(
+                                (change.position.x - cc.x) * (change.position.x - cc.x) +
+                                (change.position.y - cc.y) * (change.position.y - cc.y)
+                            )
+                            if (fingerDist <= maxDist) {
+                                val dxPct = (dragAmount.x / canvasWidth) * 100f
+                                val dyPct = (dragAmount.y / canvasHeight) * 100f
+                                layout = moveControl(lay, st, si, dxPct, dyPct)
+                                dirty = true
+                            }
+                        }
+                    }
+                }
+        ) {
+            canvasWidth = size.width
+            canvasHeight = size.height
+            drawGrid(this)
+            drawAllControls(this, layout, selectedType, selectedIndex, textMeasurer)
         }
     }
 
@@ -261,34 +293,37 @@ fun TouchEditorPage(onBack: () -> Unit) {
         )
     }
     if (showAddControl) {
+        // If placed via long-press, use that position; otherwise center
+        val addX = if (longPressPos != Offset.Zero) (longPressPos.x / canvasWidth * 100f).coerceIn(5f, 95f) else 50f
+        val addY = if (longPressPos != Offset.Zero) (longPressPos.y / canvasHeight * 100f).coerceIn(5f, 95f) else 50f
         AddControlDialog(
-            onDismiss = { showAddControl = false },
+            onDismiss = { showAddControl = false; longPressPos = Offset.Zero },
             onAddStick = {
                 layout = layout.copy(sticks = layout.sticks + AnalogStickControl(
                     id = "stick_${layout.sticks.size}",
-                    xPct = 50f, yPct = 50f,
+                    xPct = addX, yPct = addY,
                     axisX = TouchBindings.AXIS_RIGHT_X,
                     axisY = TouchBindings.AXIS_RIGHT_Y
                 ))
                 selectedType = "stick"; selectedIndex = layout.sticks.lastIndex
                 dirty = true
-                showAddControl = false
+                showAddControl = false; longPressPos = Offset.Zero
             },
             onAddButton = {
                 layout = layout.copy(buttons = layout.buttons + ButtonControl(
                     id = "btn_${layout.buttons.size}",
-                    xPct = 50f, yPct = 50f,
+                    xPct = addX, yPct = addY,
                     label = "BTN",
                     binding = TouchBindings.BTN_FIRE_PRIMARY
                 ))
                 selectedType = "button"; selectedIndex = layout.buttons.lastIndex
                 dirty = true
-                showAddControl = false
+                showAddControl = false; longPressPos = Offset.Zero
             },
             onAddRadial = {
                 layout = layout.copy(radialMenus = layout.radialMenus + RadialMenuControl(
                     id = "menu_${layout.radialMenus.size}",
-                    xPct = 50f, yPct = 50f,
+                    xPct = addX, yPct = addY,
                     segments = listOf(
                         RadialSegment("Seg 1", android.view.KeyEvent.KEYCODE_1),
                         RadialSegment("Seg 2", android.view.KeyEvent.KEYCODE_2),
@@ -297,17 +332,17 @@ fun TouchEditorPage(onBack: () -> Unit) {
                 ))
                 selectedType = "radial"; selectedIndex = layout.radialMenus.lastIndex
                 dirty = true
-                showAddControl = false
+                showAddControl = false; longPressPos = Offset.Zero
             },
             onAddSlider = {
                 layout = layout.copy(sliders = layout.sliders + SliderControl(
                     id = "slider_${layout.sliders.size}",
-                    xPct = 50f, yPct = 50f,
+                    xPct = addX, yPct = addY,
                     axis = TouchBindings.AXIS_LTRIGGER
                 ))
                 selectedType = "slider"; selectedIndex = layout.sliders.lastIndex
                 dirty = true
-                showAddControl = false
+                showAddControl = false; longPressPos = Offset.Zero
             }
         )
     }
@@ -353,7 +388,8 @@ private fun drawAllControls(
     textMeasurer: androidx.compose.ui.text.TextMeasurer
 ) {
     val w = scope.size.width; val h = scope.size.height
-    val baseScale = min(w, h)
+    // Use geometric mean so controls stay the same apparent size in portrait & landscape
+    val baseScale = sqrt(w * h)
 
     // Draw sticks
     layout.sticks.forEachIndexed { i, stick ->
@@ -415,16 +451,35 @@ private fun drawAllControls(
         val selected = selType == "button" && selIdx == i
         val alpha = layout.globalOpacity * btn.opacity
 
-        scope.drawCircle(
-            color = cButton.copy(alpha = alpha),
-            radius = r, center = Offset(cx, cy)
-        )
-        if (selected) {
-            scope.drawCircle(
-                color = cSelected,
-                radius = r + 3f, center = Offset(cx, cy),
-                style = Stroke(width = 3f)
+        if (btn.shape == ButtonShape.ROUNDED_RECT) {
+            val side = r * 1.6f
+            scope.drawRoundRect(
+                color = cButton.copy(alpha = alpha),
+                topLeft = Offset(cx - side / 2, cy - side / 2),
+                size = ComposeSize(side, side),
+                cornerRadius = CornerRadius(side * 0.25f)
             )
+            if (selected) {
+                scope.drawRoundRect(
+                    color = cSelected,
+                    topLeft = Offset(cx - side / 2 - 3f, cy - side / 2 - 3f),
+                    size = ComposeSize(side + 6f, side + 6f),
+                    cornerRadius = CornerRadius(side * 0.25f + 3f),
+                    style = Stroke(width = 3f)
+                )
+            }
+        } else {
+            scope.drawCircle(
+                color = cButton.copy(alpha = alpha),
+                radius = r, center = Offset(cx, cy)
+            )
+            if (selected) {
+                scope.drawCircle(
+                    color = cSelected,
+                    radius = r + 3f, center = Offset(cx, cy),
+                    style = Stroke(width = 3f)
+                )
+            }
         }
         val textResult = textMeasurer.measure(
             btn.label.take(4),
@@ -568,12 +623,41 @@ private fun drawAllControls(
 // Hit testing & movement
 // ═════════════════════════════════════════════════════════════════════════════
 
+/** Returns the center position (in canvas pixels) of the given control. */
+private fun controlCenter(
+    layout: TouchLayout, type: String, index: Int,
+    canvasWidth: Float, canvasHeight: Float
+): Offset {
+    return when (type) {
+        "stick" -> { val s = layout.sticks[index]; Offset(canvasWidth * s.xPct / 100f, canvasHeight * s.yPct / 100f) }
+        "button" -> { val b = layout.buttons[index]; Offset(canvasWidth * b.xPct / 100f, canvasHeight * b.yPct / 100f) }
+        "radial" -> { val r = layout.radialMenus[index]; Offset(canvasWidth * r.xPct / 100f, canvasHeight * r.yPct / 100f) }
+        "slider" -> { val s = layout.sliders[index]; Offset(canvasWidth * s.xPct / 100f, canvasHeight * s.yPct / 100f) }
+        else -> Offset.Zero
+    }
+}
+
+/** Returns the visual radius (in canvas pixels) of the given control. */
+private fun controlRadius(
+    layout: TouchLayout, type: String, index: Int,
+    canvasWidth: Float, canvasHeight: Float
+): Float {
+    val baseScale = sqrt(canvasWidth * canvasHeight)
+    return when (type) {
+        "stick" -> baseScale * 0.12f * layout.sticks[index].sizeMult
+        "button" -> baseScale * 0.04f * layout.buttons[index].sizeMult
+        "radial" -> baseScale * 0.14f * layout.radialMenus[index].sizeMult
+        "slider" -> baseScale * 0.10f * layout.sliders[index].sizeMult
+        else -> 0f
+    }
+}
+
 /** Returns (type, index) of the control at the given canvas offset, or null. */
 private fun hitTest(
     layout: TouchLayout, offset: Offset,
     canvasWidth: Float, canvasHeight: Float
 ): Pair<String, Int>? {
-    val baseScale = min(canvasWidth, canvasHeight)
+    val baseScale = sqrt(canvasWidth * canvasHeight)
 
     // Check buttons first (smaller targets, should take priority)
     layout.buttons.forEachIndexed { i, btn ->
@@ -984,12 +1068,22 @@ private fun ButtonBindingPicker(
             TextButton(onClick = { expanded = true }) {
                 Text(currentLabel, fontSize = 11.sp)
             }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                TouchBindings.BUTTON_LABELS.forEach { (idx, name) ->
-                    DropdownMenuItem(
-                        text = { Text(name, fontSize = 12.sp) },
-                        onClick = { onChange(idx); expanded = false }
-                    )
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.heightIn(max = 300.dp)
+            ) {
+                val scrollState = rememberScrollState()
+                Box {
+                Column(Modifier.verticalScroll(scrollState)) {
+                    TouchBindings.BUTTON_LABELS.forEach { (idx, name) ->
+                        DropdownMenuItem(
+                            text = { Text(name, fontSize = 12.sp) },
+                            onClick = { onChange(idx); expanded = false }
+                        )
+                    }
+                }
+                ScrollArrows(scrollState)
                 }
             }
         }
@@ -1034,7 +1128,7 @@ private fun LabelEditor(
             value = text,
             onValueChange = { if (it.length <= 6) { text = it; onChange(it) } },
             singleLine = true,
-            modifier = Modifier.height(40.dp).fillMaxWidth(),
+            modifier = Modifier.height(48.dp).fillMaxWidth(),
             textStyle = TextStyle(fontSize = 12.sp, color = Color.White)
         )
     }
@@ -1111,31 +1205,24 @@ private fun GlobalSettingsDialog(
     onDismiss: () -> Unit,
     onUpdate: (TouchLayout) -> Unit
 ) {
-    var opacity by remember { mutableFloatStateOf(layout.globalOpacity) }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Global Settings") },
         text = {
             Column {
-                Text("Global Opacity: ${"%.0f".format(opacity * 100)}%",
+                Text("Global Opacity: ${"%.0f".format(layout.globalOpacity * 100)}%",
                     fontSize = 13.sp, color = Color.Gray)
                 Slider(
-                    value = opacity,
-                    onValueChange = { opacity = it },
+                    value = layout.globalOpacity,
+                    onValueChange = { onUpdate(layout.copy(globalOpacity = it)) },
                     valueRange = TouchBindings.MIN_GLOBAL_OPACITY..TouchBindings.MAX_GLOBAL_OPACITY
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = {
-                onUpdate(layout.copy(globalOpacity = opacity))
-                onDismiss()
-            }) { Text("OK") }
+            TextButton(onClick = onDismiss) { Text("OK") }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        }
+        dismissButton = {}
     )
 }
 
@@ -1157,7 +1244,9 @@ private fun GyroSettingsDialog(
         onDismissRequest = onDismiss,
         title = { Text("Gyro Settings") },
         text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+            val scrollState = rememberScrollState()
+            Box {
+            Column(modifier = Modifier.verticalScroll(scrollState)) {
                 LabeledToggle("Enabled", enabled) { enabled = it }
 
                 if (enabled) {
@@ -1187,6 +1276,8 @@ private fun GyroSettingsDialog(
                     }
                 }
             }
+            ScrollArrows(scrollState)
+            }
         },
         confirmButton = {
             TextButton(onClick = {
@@ -1203,4 +1294,42 @@ private fun GyroSettingsDialog(
             TextButton(onClick = onDismiss) { Text("Cancel") }
         }
     )
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Scroll Indicators
+// ═════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun BoxScope.ScrollArrows(scrollState: ScrollState) {
+    if (scrollState.canScrollBackward) {
+        Surface(
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 4.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
+            shadowElevation = 2.dp
+        ) {
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowUp,
+                contentDescription = "Scroll up",
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+    if (scrollState.canScrollForward) {
+        Surface(
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
+            shadowElevation = 2.dp
+        ) {
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = "Scroll down",
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }
