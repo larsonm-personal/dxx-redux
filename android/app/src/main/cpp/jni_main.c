@@ -7,6 +7,7 @@
 
 #include <jni.h>
 #include <stdlib.h>
+#include <string.h>
 #include <android/log.h>
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
@@ -189,13 +190,15 @@ Java_com_dxxredux_app_MainActivity_nativeQuit(JNIEnv *env, jobject thiz)
  *   [2]     = player flags (for ammo rack detection)
  *   [3..12] = primary_ammo[0..9]
  *   [13..22]= secondary_ammo[0..9]
- *   [23..32]= effective primary_ammo_max[0..9]  (doubled if ammo rack)
- *   [33..42]= effective secondary_ammo_max[0..9] (doubled if ammo rack)
+ *   [23..32]= effective primary_ammo_max[0..9]  (doubled if ammo rack, D2 only)
+ *   [33..42]= effective secondary_ammo_max[0..9] (doubled if ammo rack, D2 only)
+ *
+ * D1 has only 5 primary/secondary weapons; slots 5..9 are zeroed.
  */
 #include "player.h"
 #include "weapon.h"
 
-/* Shared constant: PLAYER_FLAGS_AMMO_RACK = 128 (duplicated in WeaponState.kt) */
+/* Shared constant: PLAYER_FLAGS_AMMO_RACK = 128 (duplicated in WeaponState.kt, D2 only) */
 
 JNIEXPORT jintArray JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetWeaponState(JNIEnv *env, jobject thiz)
@@ -204,19 +207,26 @@ Java_com_dxxredux_app_MainActivity_nativeGetWeaponState(JNIEnv *env, jobject thi
 
     enum { WS_SIZE = 43 };
     jint buf[WS_SIZE];
+    memset(buf, 0, sizeof(buf));
 
     buf[0] = (jint)Players[Player_num].primary_weapon_flags;
     buf[1] = (jint)Players[Player_num].secondary_weapon_flags;
     buf[2] = (jint)Players[Player_num].flags;
 
+#ifdef DXX_BUILD_DESCENT_II
     int has_rack = (Players[Player_num].flags & PLAYER_FLAGS_AMMO_RACK) ? 1 : 0;
+#else
+    int has_rack = 0;
+#endif
     int rack_mult = has_rack ? 2 : 1;
 
     int i;
-    for (i = 0; i < 10; i++) {
+    for (i = 0; i < MAX_PRIMARY_WEAPONS; i++) {
         buf[3 + i]  = (jint)Players[Player_num].primary_ammo[i];
-        buf[13 + i] = (jint)Players[Player_num].secondary_ammo[i];
         buf[23 + i] = (jint)(Primary_ammo_max[i] * rack_mult);
+    }
+    for (i = 0; i < MAX_SECONDARY_WEAPONS; i++) {
+        buf[13 + i] = (jint)Players[Player_num].secondary_ammo[i];
         buf[33 + i] = (jint)(Secondary_ammo_max[i] * rack_mult);
     }
 
