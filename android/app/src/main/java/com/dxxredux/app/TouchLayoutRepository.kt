@@ -1,6 +1,7 @@
 package com.dxxredux.app
 
 import android.content.Context
+import android.view.KeyEvent
 import org.json.JSONObject
 import java.io.File
 
@@ -79,7 +80,8 @@ object TouchLayoutRepository {
         sliders = listOf(
             SliderControl(id = "throttle", xPct = 5f, yPct = 40f,
                 axis = TouchBindings.AXIS_LTRIGGER, sizeMult = 1.2f)
-        )
+        ),
+        radialMenus = listOf(guidebotWheel(10f, 20f), weaponWheel(50f, 8f))
     )
 
     /** Claw grip: sticks in lower corners, fire buttons in upper corners. */
@@ -112,7 +114,44 @@ object TouchLayoutRepository {
             ButtonControl(id = "map", xPct = 50f, yPct = 5f,
                 binding = TouchBindings.BTN_AUTOMAP, label = "MAP", sizeMult = 0.7f)
         ),
+        radialMenus = listOf(guidebotWheel(40f, 5f), weaponWheel(60f, 5f)),
         gyro = GyroConfig(enabled = true, activation = GyroActivation.TOUCH_STICK)
+    )
+
+    // ── Radial menu factories ──
+
+    /** Guidebot command wheel: 9 commands + center "Clear" (KEY_0 = clear goal). */
+    private fun guidebotWheel(xPct: Float, yPct: Float) = RadialMenuControl(
+        id = "Guide", xPct = xPct, yPct = yPct, sizeMult = 1f,
+        centerLabel = "Clear", centerBinding = KeyEvent.KEYCODE_0,
+        segments = listOf(
+            RadialSegment("Energy",   KeyEvent.KEYCODE_1),
+            RadialSegment("Enrg Ctr", KeyEvent.KEYCODE_2),
+            RadialSegment("Shield",   KeyEvent.KEYCODE_3),
+            RadialSegment("Powerup",  KeyEvent.KEYCODE_4),
+            RadialSegment("Robot",    KeyEvent.KEYCODE_5),
+            RadialSegment("Hostage",  KeyEvent.KEYCODE_6),
+            RadialSegment("Scram!",   KeyEvent.KEYCODE_7),
+            RadialSegment("Spew",     KeyEvent.KEYCODE_8),
+            RadialSegment("Exit",     KeyEvent.KEYCODE_9)
+        )
+    )
+
+    /** Weapon select wheel: 5 primary (keys 1-5) + 5 secondary (keys 6-0). */
+    private fun weaponWheel(xPct: Float, yPct: Float) = RadialMenuControl(
+        id = "Wpns", xPct = xPct, yPct = yPct, sizeMult = 1f,
+        segments = listOf(
+            RadialSegment("Laser",   KeyEvent.KEYCODE_1),
+            RadialSegment("Vulcan",  KeyEvent.KEYCODE_2),
+            RadialSegment("Spread",  KeyEvent.KEYCODE_3),
+            RadialSegment("Plasma",  KeyEvent.KEYCODE_4),
+            RadialSegment("Fusion",  KeyEvent.KEYCODE_5),
+            RadialSegment("Concsn",  KeyEvent.KEYCODE_6),
+            RadialSegment("Homing",  KeyEvent.KEYCODE_7),
+            RadialSegment("Proxim",  KeyEvent.KEYCODE_8),
+            RadialSegment("Smart",   KeyEvent.KEYCODE_9),
+            RadialSegment("Mega",    KeyEvent.KEYCODE_0)
+        )
     )
 
     /** All available presets for the preset picker. */

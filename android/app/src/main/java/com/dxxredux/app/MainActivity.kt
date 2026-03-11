@@ -200,6 +200,9 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         touchOverlay.buttonCallback = { button, pressed ->
             nativeJoystickButton(button, if (pressed) 1 else 0)
         }
+        touchOverlay.keyCallback = { action, keyCode, unicode ->
+            nativeKeyEvent(action, keyCode, unicode)
+        }
         touchOverlay.automapInputCallback = { heading, pitch, thrust, bank, vertical, sideways ->
             nativeAutomapInput(heading, pitch, thrust, bank, vertical, sideways)
         }

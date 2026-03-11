@@ -195,6 +195,8 @@ data class RadialMenuControl(
     val sizeMult: Float = 1f,
     val opacity: Float = 0.7f,
     val segments: List<RadialSegment>,
+    val centerLabel: String = "",
+    val centerBinding: Int = -1,
     val hapticFeedback: Boolean = true
 ) {
     fun toJson() = JSONObject().apply {
@@ -202,6 +204,8 @@ data class RadialMenuControl(
         put("x", xPct.toDouble()); put("y", yPct.toDouble())
         put("size", sizeMult.toDouble()); put("opacity", opacity.toDouble())
         put("segments", JSONArray(segments.map { it.toJson() }))
+        if (centerLabel.isNotEmpty()) put("centerLabel", centerLabel)
+        if (centerBinding >= 0) put("centerBinding", centerBinding)
         put("haptic", hapticFeedback)
     }
     companion object {
@@ -213,6 +217,8 @@ data class RadialMenuControl(
             segments = j.getJSONArray("segments").let { arr ->
                 (0 until arr.length()).map { RadialSegment.fromJson(arr.getJSONObject(it)) }
             },
+            centerLabel = j.optString("centerLabel", ""),
+            centerBinding = j.optInt("centerBinding", -1),
             hapticFeedback = j.optBoolean("haptic", true)
         )
     }

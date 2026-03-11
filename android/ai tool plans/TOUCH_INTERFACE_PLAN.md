@@ -11,7 +11,7 @@ Build a customizable touch control system for the Descent Android port, modeled 
 | 2: Refactor TouchOverlayView | ✅ Complete | TouchOverlayView.kt (~840 lines, fully data-driven) |
 | 3: Gyro Input | ✅ Complete | GyroInputManager.kt (~180 lines), wired in TouchOverlayView + MainActivity |
 | 4: Touch Layout Editor | ✅ Complete | TouchEditorPage.kt (~790 lines), wired in SetupActivity |
-| 5: Guidebot Command Wheel | ⬜ Not Started | — |
+| 5: Radial Menus (Guidebot + Weapons) | ✅ Complete | TouchOverlayView.kt, TouchControl.kt, TouchLayoutRepository.kt, TouchEditorPage.kt, MainActivity.kt |
 | 6: Polish & Presets | ⬜ Not Started | — |
 
 ## Current State (post Phase 3)
@@ -38,6 +38,20 @@ Build a customizable touch control system for the Descent Android port, modeled 
 - **Passthrough taps**: touches that don't hit any control are tracked; on release, `tapPassthroughCallback` fires (for "press any key" screens).
 - **Button hit area**: 1.3× radius for generous touch targets.
 - **Automap overlay**: Separate code path in `onTouchEvent` when `automapActive=true`. 1-finger drag → heading/pitch, 2-finger pinch → zoom/rotate/translate. Automap buttons (center, markers, MAP) rendered at top.
+
+### Phase 5 implementation notes (Radial Menus)
+- **Data model**: `RadialMenuControl` extended with `centerLabel: String` and `centerBinding: Int` fields for the center zone action (e.g., guidebot "Clear Goal"). Both serialize to JSON with backward-compatible `optString`/`optInt` deserialization.
+- **`RadialSegment.binding`**: Stores Android `KeyEvent.KEYCODE_*` values (KEYCODE_0=7 through KEYCODE_9=16). Fired via `keyCallback` → `nativeKeyEvent()` in JNI — no new C code needed. Unicode chars derived from keycodes via `keycodeToUnicode()`.
+- **Shared drawing code**: Single `drawRadialMenu()` method handles both guidebot (9 segments) and weapon wheel (10 segments), parameterized by `segments.size`. Draws either trigger icon (when closed) or full pie wheel (when open).
+- **Trigger icon**: Small circle (button-sized, `base * 0.05f * sizeMult`) with 4-char label. Tapping opens the radial wheel.
+- **Open wheel**: Pie slices drawn via `android.graphics.Path` (moveTo center → arcTo → close). Wheel radius = `base * 0.18f * sizeMult`. Selected segment expands to 1.15× radius and uses darker fill color (0x88334455 vs 0x44888888). Segments start from top (-90°).
+- **Center zone**: Circle at `0.22× radius`. When `centerLabel` is set, fires `centerBinding` on release. When empty, center = cancel (no action). Guidebot wheel has center "Clear" → KEY_0 (clear escort goal). Weapon wheel has no center action.
+- **Touch interaction**: Press-hold on trigger opens wheel → drag to select segment (computed by angle from center, haptic feedback on segment transition) → release fires key down+up via `keyCallback`. Releasing on center fires center action or cancels. Releasing outside wheel = no action.
+- **Segment selection**: `updateRadialSelection()` uses `atan2` angle + 90° rotation to map finger direction to segment index. Center detected by distance < 0.22× radius. Haptic feedback on every segment change.
+- **Draw order**: Closed triggers drawn before open wheels so open wheels appear on top of everything.
+- **Presets**: Guidebot wheel (9 segments + center "Clear") and weapon wheel (10 segments: 5 primary + 5 secondary) added to Advanced and Claw presets at non-overlapping positions.
+- **Editor support**: `TouchEditorPage.kt` updated with radial menu canvas drawing (ghost wheel showing segment layout), hit testing, drag-to-move, properties panel (ID, center label, size, opacity, haptic, segment list display), and "Add Radial Menu" option.
+- **keyCallback**: New `(Int, Int, Int) -> Unit` callback on `TouchOverlayView` (action, androidKeyCode, unicodeChar). Wired in `MainActivity` to `nativeKeyEvent()`. Clean separation: radial menus use keyCallback, sticks use axisCallback, buttons use buttonCallback.
 
 ## Mobile Shooter Control Research & Strategy
 

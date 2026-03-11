@@ -30,7 +30,9 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.cos
 import kotlin.math.min
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 // ── Colors ──────────────────────────────────────────────────────────────────
@@ -38,6 +40,7 @@ private val cStickRing = Color(0xCC888888.toInt())
 private val cStickThumb = Color(0xCCCCCCCC.toInt())
 private val cButton = Color(0xCC666666.toInt())
 private val cButtonLabel = Color(0xFFDDDDDD.toInt())
+private val cRadialSeg = Color(0xAA555566.toInt())
 private val cSelected = Color(0xFF2196F3)
 private val cGrid = Color(0x22FFFFFF)
 private val cBackground = Color(0xFF1A1A1A)
@@ -197,6 +200,22 @@ fun TouchEditorPage(onBack: () -> Unit) {
                                     dirty = true
                                 }
                             )
+                            "radial" -> RadialPropertiesPanel(
+                                radial = layout.radialMenus[selectedIndex],
+                                onUpdate = { updated ->
+                                    layout = layout.copy(radialMenus = layout.radialMenus.toMutableList().also {
+                                        it[selectedIndex] = updated
+                                    })
+                                    dirty = true
+                                },
+                                onDelete = {
+                                    layout = layout.copy(radialMenus = layout.radialMenus.toMutableList().also {
+                                        it.removeAt(selectedIndex)
+                                    })
+                                    selectedType = null; selectedIndex = -1
+                                    dirty = true
+                                }
+                            )
                         }
                     }
                 } else {
@@ -246,6 +265,20 @@ fun TouchEditorPage(onBack: () -> Unit) {
                     binding = TouchBindings.BTN_FIRE_PRIMARY
                 ))
                 selectedType = "button"; selectedIndex = layout.buttons.lastIndex
+                dirty = true
+                showAddControl = false
+            },
+            onAddRadial = {
+                layout = layout.copy(radialMenus = layout.radialMenus + RadialMenuControl(
+                    id = "menu_${layout.radialMenus.size}",
+                    xPct = 50f, yPct = 50f,
+                    segments = listOf(
+                        RadialSegment("Seg 1", android.view.KeyEvent.KEYCODE_1),
+                        RadialSegment("Seg 2", android.view.KeyEvent.KEYCODE_2),
+                        RadialSegment("Seg 3", android.view.KeyEvent.KEYCODE_3)
+                    )
+                ))
+                selectedType = "radial"; selectedIndex = layout.radialMenus.lastIndex
                 dirty = true
                 showAddControl = false
             }
@@ -375,6 +408,65 @@ private fun drawAllControls(
             cy - textResult.size.height / 2f
         ))
     }
+
+    // Draw radial menus (as trigger circles with segment count label)
+    layout.radialMenus.forEachIndexed { i, rm ->
+        val cx = w * rm.xPct / 100f
+        val cy = h * rm.yPct / 100f
+        val trigR = baseScale * 0.04f * rm.sizeMult
+        val wheelR = baseScale * 0.14f * rm.sizeMult
+        val selected = selType == "radial" && selIdx == i
+        val alpha = layout.globalOpacity * rm.opacity
+
+        // Ghost wheel extent
+        val n = rm.segments.size
+        if (n > 0) {
+            val segAngle = 360f / n
+            for (seg in 0 until n) {
+                val startDeg = -90f + seg * segAngle
+                scope.drawArc(
+                    color = cRadialSeg.copy(alpha = alpha * 0.3f),
+                    startAngle = startDeg, sweepAngle = segAngle, useCenter = true,
+                    topLeft = Offset(cx - wheelR, cy - wheelR),
+                    size = androidx.compose.ui.geometry.Size(wheelR * 2, wheelR * 2)
+                )
+                scope.drawArc(
+                    color = cStickRing.copy(alpha = alpha * 0.4f),
+                    startAngle = startDeg, sweepAngle = segAngle, useCenter = true,
+                    topLeft = Offset(cx - wheelR, cy - wheelR),
+                    size = androidx.compose.ui.geometry.Size(wheelR * 2, wheelR * 2),
+                    style = Stroke(width = 1f)
+                )
+                // Segment label
+                val midRad = Math.toRadians((startDeg + segAngle / 2).toDouble())
+                val lx = cx + cos(midRad).toFloat() * wheelR * 0.65f
+                val ly = cy + sin(midRad).toFloat() * wheelR * 0.65f
+                val segLabel = textMeasurer.measure(
+                    rm.segments[seg].label.take(5),
+                    style = TextStyle(fontSize = 7.sp, color = cButtonLabel.copy(alpha = alpha * 0.5f))
+                )
+                scope.drawText(segLabel, topLeft = Offset(
+                    lx - segLabel.size.width / 2f, ly - segLabel.size.height / 2f
+                ))
+            }
+        }
+
+        // Trigger circle
+        scope.drawCircle(color = cButton.copy(alpha = alpha), radius = trigR, center = Offset(cx, cy))
+        if (selected) {
+            scope.drawCircle(
+                color = cSelected, radius = wheelR + 4f, center = Offset(cx, cy),
+                style = Stroke(width = 3f)
+            )
+        }
+        val label = textMeasurer.measure(
+            rm.id.take(4),
+            style = TextStyle(fontSize = 9.sp, color = cButtonLabel.copy(alpha = alpha))
+        )
+        scope.drawText(label, topLeft = Offset(
+            cx - label.size.width / 2f, cy - label.size.height / 2f
+        ))
+    }
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -395,6 +487,15 @@ private fun hitTest(
         val r = baseScale * 0.04f * btn.sizeMult
         val dist = sqrt((offset.x - cx) * (offset.x - cx) + (offset.y - cy) * (offset.y - cy))
         if (dist <= r * 1.3f) return Pair("button", i)
+    }
+
+    // Check radial menus (before sticks, they have smaller triggers)
+    layout.radialMenus.forEachIndexed { i, rm ->
+        val cx = canvasWidth * rm.xPct / 100f
+        val cy = canvasHeight * rm.yPct / 100f
+        val r = baseScale * 0.14f * rm.sizeMult
+        val dist = sqrt((offset.x - cx) * (offset.x - cx) + (offset.y - cy) * (offset.y - cy))
+        if (dist <= r) return Pair("radial", i)
     }
 
     // Check sticks
@@ -429,6 +530,14 @@ private fun moveControl(
             val newY = (b.yPct + dyPct).coerceIn(2f, 98f)
             layout.copy(buttons = layout.buttons.toMutableList().also {
                 it[index] = b.copy(xPct = newX, yPct = newY)
+            })
+        }
+        "radial" -> {
+            val rm = layout.radialMenus[index]
+            val newX = (rm.xPct + dxPct).coerceIn(5f, 95f)
+            val newY = (rm.yPct + dyPct).coerceIn(5f, 95f)
+            layout.copy(radialMenus = layout.radialMenus.toMutableList().also {
+                it[index] = rm.copy(xPct = newX, yPct = newY)
             })
         }
         else -> layout
@@ -572,6 +681,56 @@ private fun ButtonPropertiesPanel(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun RadialPropertiesPanel(
+    radial: RadialMenuControl,
+    onUpdate: (RadialMenuControl) -> Unit,
+    onDelete: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text("Radial: ${radial.id}", color = Color.White, fontSize = 14.sp)
+        IconButton(onClick = onDelete) {
+            Icon(Icons.Default.Delete, "Delete", tint = Color(0xFFEF5350))
+        }
+    }
+
+    // ID & center label
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LabelEditor("ID", radial.id, Modifier.weight(1f)) {
+            onUpdate(radial.copy(id = it))
+        }
+        LabelEditor("Center", radial.centerLabel, Modifier.weight(1f)) {
+            onUpdate(radial.copy(centerLabel = it))
+        }
+    }
+
+    // Size & opacity
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LabeledSlider("Size", radial.sizeMult, TouchBindings.MIN_SIZE,
+            TouchBindings.MAX_SIZE, Modifier.weight(1f)) {
+            onUpdate(radial.copy(sizeMult = it))
+        }
+        LabeledSlider("Opacity", radial.opacity, TouchBindings.MIN_OPACITY,
+            TouchBindings.MAX_OPACITY, Modifier.weight(1f)) {
+            onUpdate(radial.copy(opacity = it))
+        }
+    }
+
+    // Segments info
+    Text("Segments: ${radial.segments.size}  |  " +
+            radial.segments.joinToString(", ") { it.label },
+        color = Color.Gray, fontSize = 11.sp)
+
+    // Haptic toggle
+    LabeledToggle("Haptic", radial.hapticFeedback) {
+        onUpdate(radial.copy(hapticFeedback = it))
     }
 }
 
@@ -737,7 +896,8 @@ private fun PresetPickerDialog(onDismiss: () -> Unit, onSelect: (TouchLayout) ->
 private fun AddControlDialog(
     onDismiss: () -> Unit,
     onAddStick: () -> Unit,
-    onAddButton: () -> Unit
+    onAddButton: () -> Unit,
+    onAddRadial: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -749,6 +909,9 @@ private fun AddControlDialog(
                 }
                 TextButton(onClick = onAddButton, modifier = Modifier.fillMaxWidth()) {
                     Text("Button")
+                }
+                TextButton(onClick = onAddRadial, modifier = Modifier.fillMaxWidth()) {
+                    Text("Radial Menu")
                 }
             }
         },

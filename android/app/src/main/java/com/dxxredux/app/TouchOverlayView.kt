@@ -3,6 +3,7 @@ package com.dxxredux.app
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.PointF
 import android.graphics.RectF
 import android.util.AttributeSet
@@ -50,6 +51,9 @@ class TouchOverlayView @JvmOverloads constructor(
     /** Called when the track info area is tapped (opens music panel). */
     var musicPanelCallback: (() -> Unit)? = null
 
+    /** Called with (action, androidKeyCode, unicodeChar) for radial menu key injection. */
+    var keyCallback: ((Int, Int, Int) -> Unit)? = null
+
     /** Called when a tap lands outside all overlay controls (pass-through for "press any key" screens). */
     var tapPassthroughCallback: (() -> Unit)? = null
 
@@ -93,8 +97,17 @@ class TouchOverlayView @JvmOverloads constructor(
         var pointerId = -1; var toggled = false
     }
 
+    private class RadialMenuState(val control: RadialMenuControl) {
+        var triggerX = 0f; var triggerY = 0f; var triggerRadius = 0f
+        var radius = 0f         // wheel radius when open
+        var pointerId = -1
+        var activeSegment = -1  // -1 = none, RADIAL_CENTER = center, 0..n-1 = segment
+        var isOpen = false
+    }
+
     private val stickStates = mutableListOf<StickState>()
     private val buttonStates = mutableListOf<ButtonState>()
+    private val radialStates = mutableListOf<RadialMenuState>()
 
     // ── MAP button geometry (kept for automap overlay compat) ──
     private var mapBtnCenterX = 0f
@@ -148,6 +161,13 @@ class TouchOverlayView @JvmOverloads constructor(
     private var automapBtnPointerId = -1
 
     // ── Paint objects ───────────────────────────────────────
+    private companion object {
+        const val RADIAL_CENTER = -2
+    }
+    private val radialPath = Path()
+    private val paintRadialSeg = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+    }
     private val paintRing = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 3f
@@ -209,8 +229,10 @@ class TouchOverlayView @JvmOverloads constructor(
     private fun rebuildStates() {
         stickStates.clear()
         buttonStates.clear()
+        radialStates.clear()
         layout.sticks.forEach { stickStates.add(StickState(it)) }
         layout.buttons.forEach { buttonStates.add(ButtonState(it)) }
+        layout.radialMenus.forEach { radialStates.add(RadialMenuState(it)) }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -257,6 +279,15 @@ class TouchOverlayView @JvmOverloads constructor(
 
         // Music controls (not layout-driven)
         musicBtnRadius = base * 0.03f
+
+        // Compute radial menu geometry from layout
+        for (rm in radialStates) {
+            rm.triggerRadius = defaultBtnRadius * rm.control.sizeMult
+            rm.triggerX = wf * rm.control.xPct / 100f
+            rm.triggerY = hf * rm.control.yPct / 100f
+            rm.radius = base * 0.18f * rm.control.sizeMult
+        }
+
         musicBtnY = base * 0.12f
         prevBtnCenterX = wf * 0.04f + musicBtnRadius
         nextBtnCenterX = prevBtnCenterX + musicBtnRadius * 2 + base * 0.02f + musicBtnRadius
@@ -298,6 +329,10 @@ class TouchOverlayView @JvmOverloads constructor(
 
         // ── Layout buttons ──────────────────────────────────
         for (b in buttonStates) drawButton(canvas, b, gAlpha)
+
+        // ── Radial menus (triggers, then open wheels on top) ──
+        for (rm in radialStates) if (!rm.isOpen) drawRadialMenu(canvas, rm, gAlpha)
+        for (rm in radialStates) if (rm.isOpen) drawRadialMenu(canvas, rm, gAlpha)
 
         // ── Music prev/next buttons (not layout-driven) ─────
         if (trackLabel.isNotEmpty()) {
@@ -349,6 +384,80 @@ class TouchOverlayView @JvmOverloads constructor(
             paintBtnLabel.textSize = b.radius * 0.7f
             canvas.drawText(b.control.label, b.centerX,
                 b.centerY + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+        }
+    }
+
+    /** Shared radial menu drawing — handles both trigger icon and open wheel. */
+    private fun drawRadialMenu(canvas: Canvas, state: RadialMenuState, gAlpha: Float) {
+        val eff = (gAlpha * state.control.opacity).coerceIn(0f, 1f)
+
+        if (!state.isOpen) {
+            // Draw trigger icon (small circle with label, like a button)
+            val pressed = state.pointerId >= 0
+            val fill = if (pressed) paintBtnPressed else paintBtnIdle
+            fill.alpha = ((if (pressed) 0x66 else 0x33) * eff).toInt()
+            canvas.drawCircle(state.triggerX, state.triggerY, state.triggerRadius, fill)
+            paintRing.alpha = (0x66 * eff).toInt()
+            canvas.drawCircle(state.triggerX, state.triggerY, state.triggerRadius, paintRing)
+            paintBtnLabel.alpha = (0xAA * eff).toInt()
+            paintBtnLabel.textSize = state.triggerRadius * 0.6f
+            canvas.drawText(state.control.id.take(4), state.triggerX,
+                state.triggerY + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+            return
+        }
+
+        // Open wheel — draw pie segments parameterized by segment count
+        val cx = state.triggerX
+        val cy = state.triggerY
+        val segs = state.control.segments
+        val n = segs.size
+        if (n == 0) return
+
+        val r = state.radius
+        val expandR = r * 1.15f
+        val segAngle = 360f / n
+        val centerR = r * 0.22f
+
+        for (i in 0 until n) {
+            val active = state.activeSegment == i
+            val segR = if (active) expandR else r
+            val startDeg = -90f + i * segAngle
+
+            // Pie slice path
+            radialPath.reset()
+            radialPath.moveTo(cx, cy)
+            radialPath.arcTo(RectF(cx - segR, cy - segR, cx + segR, cy + segR), startDeg, segAngle)
+            radialPath.close()
+
+            // Fill — active segment is darker and more opaque
+            paintRadialSeg.color = if (active) 0x88334455.toInt() else 0x44888888
+            canvas.drawPath(radialPath, paintRadialSeg)
+
+            // Outline
+            paintRing.alpha = (0x44 * eff).toInt()
+            canvas.drawPath(radialPath, paintRing)
+
+            // Segment label at arc midpoint
+            val midRad = Math.toRadians((startDeg + segAngle / 2).toDouble())
+            val lx = cx + cos(midRad).toFloat() * segR * 0.65f
+            val ly = cy + sin(midRad).toFloat() * segR * 0.65f
+            paintBtnLabel.alpha = ((if (active) 0xFF else 0xAA) * eff).toInt()
+            paintBtnLabel.textSize = r * 0.11f
+            canvas.drawText(segs[i].label, lx, ly + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+        }
+
+        // Center circle
+        val cActive = state.activeSegment == RADIAL_CENTER
+        paintRadialSeg.color = if (cActive) 0x88445566.toInt() else 0x55444444
+        canvas.drawCircle(cx, cy, centerR, paintRadialSeg)
+        paintRing.alpha = (0x66 * eff).toInt()
+        canvas.drawCircle(cx, cy, centerR, paintRing)
+
+        if (state.control.centerLabel.isNotEmpty()) {
+            paintBtnLabel.alpha = (0xCC * eff).toInt()
+            paintBtnLabel.textSize = centerR * 0.45f
+            canvas.drawText(state.control.centerLabel, cx,
+                cy + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
         }
     }
 
@@ -452,6 +561,23 @@ class TouchOverlayView @JvmOverloads constructor(
                     }
                 }
 
+                // Try radial menu triggers
+                if (!handled) {
+                    for (rm in radialStates) {
+                        if (rm.pointerId >= 0) continue
+                        if (hypot(px - rm.triggerX, py - rm.triggerY) <= rm.triggerRadius * 1.3f) {
+                            rm.pointerId = pid
+                            rm.isOpen = true
+                            rm.activeSegment = -1
+                            if (rm.control.hapticFeedback) {
+                                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                            }
+                            invalidate()
+                            handled = true; break
+                        }
+                    }
+                }
+
                 // Try music controls (not layout-driven)
                 if (!handled) {
                     when {
@@ -480,6 +606,12 @@ class TouchOverlayView @JvmOverloads constructor(
                         if (i >= 0) updateStickFromTouch(s, event.getX(i), event.getY(i))
                     }
                 }
+                for (rm in radialStates) {
+                    if (rm.pointerId >= 0 && rm.isOpen) {
+                        val i = event.findPointerIndex(rm.pointerId)
+                        if (i >= 0) updateRadialSelection(rm, event.getX(i), event.getY(i))
+                    }
+                }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 val pid = event.getPointerId(event.actionIndex)
@@ -490,6 +622,7 @@ class TouchOverlayView @JvmOverloads constructor(
                 passthroughPointers.clear()
                 resetAllSticks()
                 releaseAllLayoutButtons(fired)
+                releaseAllRadialMenus(fired)
                 releasePrevButton(fired)
                 releaseNextButton(fired)
                 releaseMusicLabel(fired)
@@ -508,6 +641,12 @@ class TouchOverlayView @JvmOverloads constructor(
                     if (!found) {
                         for (b in buttonStates) {
                             if (b.pointerId == pid) { releaseLayoutButton(b, true); found = true; break }
+                        }
+                    }
+                    // Check radial menus
+                    if (!found) {
+                        for (rm in radialStates) {
+                            if (rm.pointerId == pid) { releaseRadialMenu(rm, true); found = true; break }
                         }
                     }
                     // Check music controls
@@ -722,8 +861,71 @@ class TouchOverlayView @JvmOverloads constructor(
         for (b in buttonStates) releaseLayoutButton(b, fired)
     }
 
+    // ── Radial menu helpers ─────────────────────────────────
+
+    private fun updateRadialSelection(rm: RadialMenuState, px: Float, py: Float) {
+        val dx = px - rm.triggerX
+        val dy = py - rm.triggerY
+        val dist = hypot(dx, dy)
+        val centerR = rm.radius * 0.22f
+
+        val old = rm.activeSegment
+        rm.activeSegment = if (dist < centerR) {
+            RADIAL_CENTER
+        } else {
+            val angle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat()
+            val n = rm.control.segments.size
+            val segAngle = 360f / n
+            var adjusted = angle + 90f  // rotate so top = 0
+            if (adjusted < 0) adjusted += 360f
+            (adjusted / segAngle).toInt().coerceIn(0, n - 1)
+        }
+
+        if (rm.activeSegment != old) {
+            if (rm.control.hapticFeedback) {
+                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+            }
+            invalidate()
+        }
+    }
+
+    private fun fireRadialSelection(rm: RadialMenuState) {
+        val binding = when {
+            rm.activeSegment >= 0 && rm.activeSegment < rm.control.segments.size ->
+                rm.control.segments[rm.activeSegment].binding
+            rm.activeSegment == RADIAL_CENTER && rm.control.centerBinding >= 0 ->
+                rm.control.centerBinding
+            else -> -1
+        }
+        if (binding >= 0) {
+            val unicode = keycodeToUnicode(binding)
+            keyCallback?.invoke(0, binding, unicode)
+            keyCallback?.invoke(1, binding, 0)
+        }
+    }
+
+    private fun releaseRadialMenu(rm: RadialMenuState, fired: Boolean) {
+        if (rm.pointerId >= 0) {
+            if (fired) fireRadialSelection(rm)
+            rm.pointerId = -1
+            rm.isOpen = false
+            rm.activeSegment = -1
+            invalidate()
+        }
+    }
+
+    private fun releaseAllRadialMenus(fired: Boolean) {
+        for (rm in radialStates) releaseRadialMenu(rm, fired)
+    }
+
+    private fun keycodeToUnicode(keycode: Int): Int = when (keycode) {
+        in 7..16 -> '0'.code + keycode - 7  // KEYCODE_0(7)..KEYCODE_9(16) → '0'..'9'
+        else -> 0
+    }
+
     private fun releaseAllButtons() {
         releaseAllLayoutButtons(false)
+        releaseAllRadialMenus(false)
         releasePrevButton(false)
         releaseNextButton(false)
         releaseMusicLabel(false)
