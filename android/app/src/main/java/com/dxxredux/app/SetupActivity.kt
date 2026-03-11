@@ -547,14 +547,16 @@ class SetupActivity : ComponentActivity() {
                 dpadAxes = dpadAxes,
                 axisGeneration = axisGeneration.intValue,
                 pressedButtons = pressedButtons,
-                onLaunchGame = {
+                onLaunchGame = { game ->
                     if (gameRunning) {
                         finish()   // return to the already-running game
                     } else {
                         FileSetManager(filesDir).writeActiveSetPath()
                         AudioSourceManager(filesDir).writePlaylist()
                         writeInitialGameConfig()
-                        startActivity(Intent(this, MainActivity::class.java))
+                        val intent = Intent(this, MainActivity::class.java)
+                        intent.putExtra("game", game)
+                        startActivity(intent)
                         // Don't finish() — stay in back stack so quitting
                         // the game returns here instead of the launcher.
                     }
@@ -975,7 +977,7 @@ private fun SetupScreen(
     dpadAxes: FloatArray,
     axisGeneration: Int,
     pressedButtons: SnapshotStateList<String>,
-    onLaunchGame: () -> Unit,
+    onLaunchGame: (String) -> Unit,
     onRefresh: () -> Unit,
     onDownloadStateChanged: (String, Int) -> Unit = { _, _ -> }
 ) {
@@ -1039,6 +1041,27 @@ private fun SetupScreen(
 
     // ── SAF file-search state ───────────────────────────────
     val context = androidx.compose.ui.platform.LocalContext.current
+
+    // ── Game selection state ────────────────────────────────
+    val gamePrefs = remember { context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE) }
+    var selectedGame by remember {
+        val saved = gamePrefs.getString("selected_game", null)
+        mutableStateOf(
+            when {
+                saved == "d1" && d1RequiredOk -> "d1"
+                saved == "d2" && d2RequiredOk -> "d2"
+                d1RequiredOk && !d2RequiredOk -> "d1"
+                d2RequiredOk -> "d2"
+                else -> "d2"
+            }
+        )
+    }
+    // Auto-correct if readiness changes (e.g. user adds/removes files)
+    LaunchedEffect(d1RequiredOk, d2RequiredOk) {
+        if (selectedGame == "d1" && !d1RequiredOk && d2RequiredOk) selectedGame = "d2"
+        if (selectedGame == "d2" && !d2RequiredOk && d1RequiredOk) selectedGame = "d1"
+    }
+
     var scanResults by remember { mutableStateOf<List<FoundFile>?>(null) }
     var scanning by remember { mutableStateOf(false) }
     var importStatus by remember { mutableStateOf("") }
@@ -1874,8 +1897,36 @@ private fun SetupScreen(
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
+
+                    // ── Game selection toggle ────────────────
+                    if (d1RequiredOk && d2RequiredOk) {
+                        Text("Select Game", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilterChip(
+                                selected = selectedGame == "d1",
+                                onClick = {
+                                    selectedGame = "d1"
+                                    gamePrefs.edit().putString("selected_game", "d1").apply()
+                                },
+                                label = { Text("Descent 1") },
+                                modifier = Modifier.weight(1f)
+                            )
+                            FilterChip(
+                                selected = selectedGame == "d2",
+                                onClick = {
+                                    selectedGame = "d2"
+                                    gamePrefs.edit().putString("selected_game", "d2").apply()
+                                },
+                                label = { Text("Descent 2") },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
                     Button(
-                        onClick = onLaunchGame,
+                        onClick = { onLaunchGame(selectedGame) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
@@ -1888,7 +1939,11 @@ private fun SetupScreen(
                         )
                     ) {
                         Text(
-                            text = if (gameRunning) "Return to Game" else "Launch Game",
+                            text = when {
+                                gameRunning -> "Return to Game"
+                                selectedGame == "d1" -> "Launch Descent 1"
+                                else -> "Launch Descent 2"
+                            },
                             fontSize = 18.sp
                         )
                     }

@@ -39,6 +39,72 @@ void PHYSFSX_init(int argc, char *argv[])
 	
 	PHYSFS_init(argv[0]);
 	PHYSFS_permitSymbolicLinks(1);
+
+#ifdef ANDROID
+	/* Android: argv[0] was a PHYSFS_AndroidInit struct, not a string.
+	 * PhysFS already resolved the APK path and internal storage dir via JNI.
+	 * Set up search paths and write dir, then return — skip the unix/mac
+	 * logic below (which assumes argv[0] is a string and tries ~/.d1x-redux). */
+	{
+		const char *pref = PHYSFS_getPrefDir("com.dxxredux", "d1x-redux");
+		if (pref)
+		{
+			PHYSFS_setWriteDir(pref);
+			PHYSFS_addToSearchPath(pref, 1);
+		}
+
+		/* Register the SAF leave-in-place archiver so .saf_manifest.json
+		 * can be mounted as a virtual directory of game files. */
+		{
+			extern const PHYSFS_Archiver SAF_Archiver;
+			PHYSFS_registerArchiver(&SAF_Archiver);
+		}
+
+		/* File-set support: if .active_set_path exists and contains a
+		 * non-empty path, prepend that directory so its files take
+		 * priority over filesDir.  The SAF manifest for the active set
+		 * lives in that directory; otherwise fall back to filesDir's. */
+		if (pref)
+		{
+			char asp[512];
+			char setdir[512] = "";
+			char safpath[512];
+
+			snprintf(asp, sizeof(asp), "%s.active_set_path", pref);
+			{
+				FILE *f = fopen(asp, "r");
+				if (f) {
+					if (fgets(setdir, sizeof(setdir), f)) {
+						char *nl = strchr(setdir, '\n');
+						if (nl) *nl = '\0';
+						if (strlen(setdir) > 0)
+							PHYSFS_addToSearchPath(setdir, 0); /* prepend */
+					}
+					fclose(f);
+				}
+			}
+
+			/* Mount SAF manifest (from set dir if active, else from pref) */
+			if (strlen(setdir) > 0)
+				snprintf(safpath, sizeof(safpath), "%s/.saf_manifest.json", setdir);
+			else
+				snprintf(safpath, sizeof(safpath), "%s.saf_manifest.json", pref);
+
+			{
+				FILE *sf = fopen(safpath, "r");
+				if (sf) {
+					fclose(sf);
+					PHYSFS_mount(safpath, NULL, 1); /* append after filesDir */
+				}
+			}
+		}
+
+		PHYSFS_addToSearchPath(PHYSFS_getBaseDir(), 1);
+		PHYSFSX_addRelToSearchPath("data", 1);
+	}
+	return;
+#endif
+
 	base_dir = strdup(PHYSFS_getBaseDir());
 	
 #ifdef __unix__

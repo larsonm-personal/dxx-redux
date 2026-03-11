@@ -43,9 +43,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 class MainActivity : Activity(), SurfaceHolder.Callback {
 
     companion object {
-        init {
-            System.loadLibrary("dxx-redux-d2")
-        }
+        // Library is loaded dynamically in onCreate based on intent extra
     }
 
     // ── JNI declarations ────────────────────────────────────
@@ -132,6 +130,12 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Load the correct game library based on the launcher's selection
+        val game = intent.getStringExtra("game") ?: "d2"
+        val libName = if (game == "d1") "dxx-redux-d1" else "dxx-redux-d2"
+        System.loadLibrary(libName)
+        Log.i("MainActivity", "Loaded native library: $libName")
 
         // Keep screen on while the game is running
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)

@@ -327,23 +327,23 @@ Note: if shared deps cause unexpected issues (e.g., symbol visibility problems, 
 
 ---
 
-## Phase 4: Launcher UI Changes
+## Phase 4: Launcher UI Changes ✅
 
-### 4A. Game Selection Logic (SetupActivity.kt)
+### 4A. Game Selection Logic (SetupActivity.kt) ✅
 
-| # | Task |
-|---|------|
-| 63 | Add `selectedGame: String` state to SetupActivity. Persist in SharedPreferences |
-| 64 | Auto-selection: only D2 ready → D2; only D1 ready → D1; both → show chooser, remember last |
-| 65 | Add D1/D2 toggle UI in the launch area (tabs, radio buttons, or segmented control) |
+| # | Task | Status |
+|---|------|--------|
+| 63 | Add `selectedGame: String` state to SetupActivity. Persist in SharedPreferences | ✅ |
+| 64 | Auto-selection: only D2 ready → D2; only D1 ready → D1; both → show chooser, remember last | ✅ |
+| 65 | Add D1/D2 toggle UI in the launch area (tabs, radio buttons, or segmented control) | ✅ FilterChip pair |
 
-### 4B. Launch Flow
+### 4B. Launch Flow ✅
 
-| # | Task |
-|---|------|
-| 66 | Pass selected game as Intent extra to MainActivity: `intent.putExtra("game", "d1")` |
-| 67 | MainActivity reads extra, loads correct .so: `System.loadLibrary(if (game == "d1") "dxx-redux-d1" else "dxx-redux-d2")` |
-| 68 | **Config isolation**: Each game uses its own write directory via PhysFS. Set write dir to `files/d1/` or `files/d2/` based on which .so is loaded. This keeps descent.cfg, player files, and save games separate |
+| # | Task | Status |
+|---|------|--------|
+| 66 | Pass selected game as Intent extra to MainActivity: `intent.putExtra("game", "d1")` | ✅ |
+| 67 | MainActivity reads extra, loads correct .so: `System.loadLibrary(if (game == "d1") "dxx-redux-d1" else "dxx-redux-d2")` | ✅ Dynamic in onCreate |
+| 68 | **Config isolation**: Each game uses its own write directory via PhysFS. D2 → `d2x-redux/`, D1 → `d1x-redux/` pref dirs | ✅ Added Android block to d1/misc/physfsx.c |
 
 ---
 
