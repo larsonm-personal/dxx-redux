@@ -75,6 +75,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     external fun nativeGetMarkerCount(): Int
     external fun nativeGetGameWidth(): Int
     external fun nativeGetGameHeight(): Int
+    external fun nativeGetWeaponState(): IntArray
 
     // ── Music track control (jni_music_control.c) ────────────────────
     external fun nativeNextTrack(): Int
@@ -202,6 +203,9 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         }
         touchOverlay.keyCallback = { action, keyCode, unicode ->
             nativeKeyEvent(action, keyCode, unicode)
+        }
+        touchOverlay.weaponStateProvider = {
+            try { WeaponState.fromArray(nativeGetWeaponState()) } catch (_: Throwable) { null }
         }
         touchOverlay.automapInputCallback = { heading, pitch, thrust, bank, vertical, sideways ->
             nativeAutomapInput(heading, pitch, thrust, bank, vertical, sideways)

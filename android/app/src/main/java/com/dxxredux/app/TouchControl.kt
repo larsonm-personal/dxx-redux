@@ -177,14 +177,17 @@ data class SliderControl(
 data class RadialSegment(
     val label: String,
     val binding: Int,
-    val iconRes: String = ""
+    val iconRes: String = "",
+    val weaponIndex: Int = -1  // weapon slot (0-4), -1 = not a weapon segment
 ) {
     fun toJson() = JSONObject().apply {
         put("label", label); put("binding", binding); put("iconRes", iconRes)
+        if (weaponIndex >= 0) put("wpnIdx", weaponIndex)
     }
     companion object {
         fun fromJson(j: JSONObject) = RadialSegment(
-            j.getString("label"), j.getInt("binding"), j.optString("iconRes", "")
+            j.getString("label"), j.getInt("binding"), j.optString("iconRes", ""),
+            j.optInt("wpnIdx", -1)
         )
     }
 }

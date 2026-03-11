@@ -182,6 +182,50 @@ Java_com_dxxredux_app_MainActivity_nativeQuit(JNIEnv *env, jobject thiz)
     SDL_PushEvent(&ev);
 }
 
+/* ── Weapon state query for touch overlay weapon wheels ──────────
+ * Returns an int array:
+ *   [0]     = primary_weapon_flags
+ *   [1]     = secondary_weapon_flags
+ *   [2]     = player flags (for ammo rack detection)
+ *   [3..12] = primary_ammo[0..9]
+ *   [13..22]= secondary_ammo[0..9]
+ *   [23..32]= effective primary_ammo_max[0..9]  (doubled if ammo rack)
+ *   [33..42]= effective secondary_ammo_max[0..9] (doubled if ammo rack)
+ */
+#include "player.h"
+#include "weapon.h"
+
+/* Shared constant: PLAYER_FLAGS_AMMO_RACK = 128 (duplicated in WeaponState.kt) */
+
+JNIEXPORT jintArray JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetWeaponState(JNIEnv *env, jobject thiz)
+{
+    extern int Player_num;
+
+    enum { WS_SIZE = 43 };
+    jint buf[WS_SIZE];
+
+    buf[0] = (jint)Players[Player_num].primary_weapon_flags;
+    buf[1] = (jint)Players[Player_num].secondary_weapon_flags;
+    buf[2] = (jint)Players[Player_num].flags;
+
+    int has_rack = (Players[Player_num].flags & PLAYER_FLAGS_AMMO_RACK) ? 1 : 0;
+    int rack_mult = has_rack ? 2 : 1;
+
+    int i;
+    for (i = 0; i < 10; i++) {
+        buf[3 + i]  = (jint)Players[Player_num].primary_ammo[i];
+        buf[13 + i] = (jint)Players[Player_num].secondary_ammo[i];
+        buf[23 + i] = (jint)(Primary_ammo_max[i] * rack_mult);
+        buf[33 + i] = (jint)(Secondary_ammo_max[i] * rack_mult);
+    }
+
+    jintArray result = (*env)->NewIntArray(env, WS_SIZE);
+    if (result)
+        (*env)->SetIntArrayRegion(env, result, 0, WS_SIZE, buf);
+    return result;
+}
+
 #ifdef INTROSPECT_ON
 /* ── Introspection: return current game state as a JSON string ────── */
 JNIEXPORT jstring JNICALL

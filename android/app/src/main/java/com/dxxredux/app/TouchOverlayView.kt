@@ -54,6 +54,9 @@ class TouchOverlayView @JvmOverloads constructor(
     /** Called with (action, androidKeyCode, unicodeChar) for radial menu key injection. */
     var keyCallback: ((Int, Int, Int) -> Unit)? = null
 
+    /** Returns current weapon state for weapon wheels. Set by MainActivity. */
+    var weaponStateProvider: (() -> WeaponState?)? = null
+
     /** Called when a tap lands outside all overlay controls (pass-through for "press any key" screens). */
     var tapPassthroughCallback: (() -> Unit)? = null
 
@@ -103,6 +106,10 @@ class TouchOverlayView @JvmOverloads constructor(
         var pointerId = -1
         var activeSegment = -1  // -1 = none, RADIAL_CENTER = center, 0..n-1 = segment
         var isOpen = false
+        // Weapon wheel state
+        var isWeaponWheel = false
+        var filteredSegments: List<RadialSegment> = emptyList()
+        var weaponState: WeaponState? = null
     }
 
     private val stickStates = mutableListOf<StickState>()
@@ -332,7 +339,10 @@ class TouchOverlayView @JvmOverloads constructor(
 
         // ── Radial menus (triggers, then open wheels on top) ──
         for (rm in radialStates) if (!rm.isOpen) drawRadialMenu(canvas, rm, gAlpha)
-        for (rm in radialStates) if (rm.isOpen) drawRadialMenu(canvas, rm, gAlpha)
+        for (rm in radialStates) if (rm.isOpen) {
+            if (rm.isWeaponWheel) drawWeaponWheel(canvas, rm, gAlpha)
+            else drawRadialMenu(canvas, rm, gAlpha)
+        }
 
         // ── Music prev/next buttons (not layout-driven) ─────
         if (trackLabel.isNotEmpty()) {
@@ -461,6 +471,127 @@ class TouchOverlayView @JvmOverloads constructor(
         }
     }
 
+    /** Weapon wheel drawing — counter-clockwise from bottom, with ammo display. */
+    private fun drawWeaponWheel(canvas: Canvas, state: RadialMenuState, gAlpha: Float) {
+        val eff = (gAlpha * state.control.opacity).coerceIn(0f, 1f)
+        val cx = state.triggerX
+        val cy = state.triggerY
+        val segs = state.filteredSegments
+        val n = segs.size
+        val ws = state.weaponState
+        val isPrimary = state.control.id == "PriWpn"
+
+        // Placeholder when only 1 weapon (always have Laser/Concsn)
+        if (n <= 1) {
+            val label = if (n == 1) segs[0].label else if (isPrimary) "Laser" else "Concsn"
+            val bubbleR = state.radius * 0.3f
+            paintRadialSeg.color = 0x88334455.toInt()
+            canvas.drawCircle(cx, cy, bubbleR, paintRadialSeg)
+            paintRing.alpha = (0x66 * eff).toInt()
+            canvas.drawCircle(cx, cy, bubbleR, paintRing)
+            paintBtnLabel.alpha = (0xCC * eff).toInt()
+            paintBtnLabel.textSize = bubbleR * 0.35f
+            canvas.drawText(label, cx, cy - paintBtnLabel.textSize * 0.3f, paintBtnLabel)
+            canvas.drawText("only", cx, cy + paintBtnLabel.textSize * 1.0f, paintBtnLabel)
+            return
+        }
+
+        val r = state.radius
+        val expandR = r * 1.15f
+        val segAngle = 360f / n
+        val centerR = r * 0.22f
+
+        for (i in 0 until n) {
+            val active = state.activeSegment == i
+            val segR = if (active) expandR else r
+            // Counter-clockwise from bottom: segment i starts at 90° - (i+0.5)*segAngle
+            val startDeg = 90f - (i + 0.5f) * segAngle
+
+            radialPath.reset()
+            radialPath.moveTo(cx, cy)
+            radialPath.arcTo(RectF(cx - segR, cy - segR, cx + segR, cy + segR), startDeg, segAngle)
+            radialPath.close()
+
+            paintRadialSeg.color = if (active) 0x88334455.toInt() else 0x44888888
+            canvas.drawPath(radialPath, paintRadialSeg)
+            paintRing.alpha = (0x44 * eff).toInt()
+            canvas.drawPath(radialPath, paintRing)
+
+            // Label at segment center angle = 90° - i * segAngle
+            val centerAngle = 90f - i * segAngle
+            val midRad = Math.toRadians(centerAngle.toDouble())
+            val lx = cx + cos(midRad).toFloat() * segR * 0.55f
+            val ly = cy + sin(midRad).toFloat() * segR * 0.55f
+            paintBtnLabel.alpha = ((if (active) 0xFF else 0xAA) * eff).toInt()
+            paintBtnLabel.textSize = r * 0.11f
+            canvas.drawText(segs[i].label, lx, ly + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+
+            // Ammo display for secondary weapons and vulcan
+            val seg = segs[i]
+            val wpnIdx = seg.weaponIndex
+            if (ws != null && wpnIdx >= 0) {
+                val ammoCount: Int
+                val ammoMax: Int
+                val isVulcan: Boolean
+
+                if (isPrimary) {
+                    isVulcan = wpnIdx == 1 // VULCAN_INDEX
+                    if (isVulcan) {
+                        ammoCount = ws.primaryAmmo[wpnIdx]
+                        ammoMax = ws.primaryAmmoMax[wpnIdx]
+                    } else { ammoCount = 0; ammoMax = 0 }
+                } else {
+                    isVulcan = false
+                    // Show base weapon ammo; if only super variant owned, show its ammo
+                    if (ws.hasSecondary(wpnIdx)) {
+                        ammoCount = ws.secondaryAmmo[wpnIdx]
+                        ammoMax = ws.secondaryAmmoMax[wpnIdx]
+                    } else {
+                        ammoCount = ws.secondaryAmmo[wpnIdx + 5]
+                        ammoMax = ws.secondaryAmmoMax[wpnIdx + 5]
+                    }
+                }
+
+                if (ammoMax > 0) {
+                    val pct = (ammoCount.toFloat() / ammoMax).coerceIn(0f, 1f)
+                    // Ammo text below label
+                    val ammoText = if (isVulcan) "${(pct * 100).toInt()}%" else "\u00D7$ammoCount"
+                    paintBtnLabel.textSize = r * 0.09f
+                    canvas.drawText(ammoText, lx, ly + r * 0.16f, paintBtnLabel)
+
+                    // Small pie chart
+                    val pieR = r * 0.06f
+                    val pieCx = lx
+                    val pieCy = ly + r * 0.26f
+                    paintRadialSeg.color = 0x44666666
+                    canvas.drawCircle(pieCx, pieCy, pieR, paintRadialSeg)
+                    paintRadialSeg.color = ammoColor(pct, eff)
+                    if (pct > 0f) {
+                        canvas.drawArc(
+                            RectF(pieCx - pieR, pieCy - pieR, pieCx + pieR, pieCy + pieR),
+                            -90f, 360f * pct, true, paintRadialSeg
+                        )
+                    }
+                }
+            }
+        }
+
+        // Center circle
+        val cActive = state.activeSegment == RADIAL_CENTER
+        paintRadialSeg.color = if (cActive) 0x88445566.toInt() else 0x55444444
+        canvas.drawCircle(cx, cy, centerR, paintRadialSeg)
+        paintRing.alpha = (0x66 * eff).toInt()
+        canvas.drawCircle(cx, cy, centerR, paintRing)
+    }
+
+    /** Green → Yellow → Red based on ammo fill percentage. */
+    private fun ammoColor(pct: Float, eff: Float): Int {
+        val alpha = (0xCC * eff).toInt().coerceIn(0, 255)
+        val r = ((1f - pct) * 255).toInt().coerceIn(0, 255)
+        val g = (pct * 200).toInt().coerceIn(0, 255)
+        return (alpha shl 24) or (r shl 16) or (g shl 8)
+    }
+
     private fun drawAutomapOverlay(canvas: Canvas) {
         recomputeAutomapBtnRects()
         val cornerR = automapBtnSize * 0.15f
@@ -569,6 +700,21 @@ class TouchOverlayView @JvmOverloads constructor(
                             rm.pointerId = pid
                             rm.isOpen = true
                             rm.activeSegment = -1
+                            // Initialize weapon wheel state
+                            rm.isWeaponWheel = rm.control.id == "PriWpn" || rm.control.id == "SecWpn"
+                            if (rm.isWeaponWheel) {
+                                val ws = weaponStateProvider?.invoke()
+                                rm.weaponState = ws
+                                val isPrimary = rm.control.id == "PriWpn"
+                                rm.filteredSegments = if (ws != null) {
+                                    rm.control.segments.filter { seg ->
+                                        val wi = seg.weaponIndex
+                                        if (wi < 0) true
+                                        else if (isPrimary) ws.hasPrimary(wi) || ws.hasPrimary(wi + 5)
+                                        else ws.hasSecondary(wi) || ws.hasSecondary(wi + 5)
+                                    }
+                                } else rm.control.segments
+                            }
                             if (rm.control.hapticFeedback) {
                                 performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                             }
@@ -869,16 +1015,29 @@ class TouchOverlayView @JvmOverloads constructor(
         val dist = hypot(dx, dy)
         val centerR = rm.radius * 0.22f
 
+        val segs = if (rm.isWeaponWheel) rm.filteredSegments else rm.control.segments
+        val n = segs.size
+
         val old = rm.activeSegment
-        rm.activeSegment = if (dist < centerR) {
+        rm.activeSegment = if (n == 0 || (rm.isWeaponWheel && n <= 1)) {
+            RADIAL_CENTER
+        } else if (dist < centerR) {
             RADIAL_CENTER
         } else {
             val angle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat()
-            val n = rm.control.segments.size
             val segAngle = 360f / n
-            var adjusted = angle + 90f  // rotate so top = 0
-            if (adjusted < 0) adjusted += 360f
-            (adjusted / segAngle).toInt().coerceIn(0, n - 1)
+
+            if (rm.isWeaponWheel) {
+                // Counter-clockwise from bottom (90°)
+                var offset = 90f + segAngle / 2f - angle
+                offset = ((offset % 360f) + 360f) % 360f
+                (offset / segAngle).toInt().coerceIn(0, n - 1)
+            } else {
+                // Clockwise from top (-90°)
+                var adjusted = angle + 90f
+                if (adjusted < 0) adjusted += 360f
+                (adjusted / segAngle).toInt().coerceIn(0, n - 1)
+            }
         }
 
         if (rm.activeSegment != old) {
@@ -890,9 +1049,10 @@ class TouchOverlayView @JvmOverloads constructor(
     }
 
     private fun fireRadialSelection(rm: RadialMenuState) {
+        val segs = if (rm.isWeaponWheel) rm.filteredSegments else rm.control.segments
         val binding = when {
-            rm.activeSegment >= 0 && rm.activeSegment < rm.control.segments.size ->
-                rm.control.segments[rm.activeSegment].binding
+            rm.activeSegment >= 0 && rm.activeSegment < segs.size ->
+                segs[rm.activeSegment].binding
             rm.activeSegment == RADIAL_CENTER && rm.control.centerBinding >= 0 ->
                 rm.control.centerBinding
             else -> -1
@@ -910,6 +1070,9 @@ class TouchOverlayView @JvmOverloads constructor(
             rm.pointerId = -1
             rm.isOpen = false
             rm.activeSegment = -1
+            rm.isWeaponWheel = false
+            rm.filteredSegments = emptyList()
+            rm.weaponState = null
             invalidate()
         }
     }

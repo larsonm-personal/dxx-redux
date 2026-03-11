@@ -41,17 +41,28 @@ Build a customizable touch control system for the Descent Android port, modeled 
 
 ### Phase 5 implementation notes (Radial Menus)
 - **Data model**: `RadialMenuControl` extended with `centerLabel: String` and `centerBinding: Int` fields for the center zone action (e.g., guidebot "Clear Goal"). Both serialize to JSON with backward-compatible `optString`/`optInt` deserialization.
-- **`RadialSegment.binding`**: Stores Android `KeyEvent.KEYCODE_*` values (KEYCODE_0=7 through KEYCODE_9=16). Fired via `keyCallback` → `nativeKeyEvent()` in JNI — no new C code needed. Unicode chars derived from keycodes via `keycodeToUnicode()`.
-- **Shared drawing code**: Single `drawRadialMenu()` method handles both guidebot (9 segments) and weapon wheel (10 segments), parameterized by `segments.size`. Draws either trigger icon (when closed) or full pie wheel (when open).
+- **`RadialSegment`**: Stores `binding` (Android `KeyEvent.KEYCODE_*` values) and optional `weaponIndex: Int` (0-4 for weapon slot mapping, -1 for non-weapon segments). Fired via `keyCallback` → `nativeKeyEvent()` in JNI. Unicode chars derived from keycodes via `keycodeToUnicode()`.
+- **Shared drawing code**: `drawRadialMenu()` handles generic radial menus (guidebot). `drawWeaponWheel()` handles weapon wheels with counter-clockwise layout, inventory filtering, and ammo display.
 - **Trigger icon**: Small circle (button-sized, `base * 0.05f * sizeMult`) with 4-char label. Tapping opens the radial wheel.
-- **Open wheel**: Pie slices drawn via `android.graphics.Path` (moveTo center → arcTo → close). Wheel radius = `base * 0.18f * sizeMult`. Selected segment expands to 1.15× radius and uses darker fill color (0x88334455 vs 0x44888888). Segments start from top (-90°).
-- **Center zone**: Circle at `0.22× radius`. When `centerLabel` is set, fires `centerBinding` on release. When empty, center = cancel (no action). Guidebot wheel has center "Clear" → KEY_0 (clear escort goal). Weapon wheel has no center action.
+- **Open wheel**: Pie slices drawn via `android.graphics.Path` (moveTo center → arcTo → close). Wheel radius = `base * 0.18f * sizeMult`. Selected segment expands to 1.15× radius and uses darker fill color (0x88334455 vs 0x44888888). Generic menus start from top (-90°), weapon wheels start from bottom (90°) going counter-clockwise.
+- **Center zone**: Circle at `0.22× radius`. When `centerLabel` is set, fires `centerBinding` on release. When empty, center = cancel (no action). Guidebot wheel has center "Clear" → KEY_0 (clear escort goal). Weapon wheels have no center action.
 - **Touch interaction**: Press-hold on trigger opens wheel → drag to select segment (computed by angle from center, haptic feedback on segment transition) → release fires key down+up via `keyCallback`. Releasing on center fires center action or cancels. Releasing outside wheel = no action.
-- **Segment selection**: `updateRadialSelection()` uses `atan2` angle + 90° rotation to map finger direction to segment index. Center detected by distance < 0.22× radius. Haptic feedback on every segment change.
+- **Segment selection**: `updateRadialSelection()` uses `atan2` angle math. Generic menus use +90° rotation (clockwise from top). Weapon wheels use counter-clockwise math from bottom (90°). Center detected by distance < 0.22× radius. Haptic feedback on every segment change.
 - **Draw order**: Closed triggers drawn before open wheels so open wheels appear on top of everything.
-- **Presets**: Guidebot wheel (9 segments + center "Clear") and weapon wheel (10 segments: 5 primary + 5 secondary) added to Advanced and Claw presets at non-overlapping positions.
+- **Presets**: Guidebot wheel (9 segments + center "Clear"), primary weapon wheel ("PriWpn", 5 segments), and secondary weapon wheel ("SecWpn", 5 segments) added to Advanced and Claw presets at non-overlapping positions.
 - **Editor support**: `TouchEditorPage.kt` updated with radial menu canvas drawing (ghost wheel showing segment layout), hit testing, drag-to-move, properties panel (ID, center label, size, opacity, haptic, segment list display), and "Add Radial Menu" option.
 - **keyCallback**: New `(Int, Int, Int) -> Unit` callback on `TouchOverlayView` (action, androidKeyCode, unicodeChar). Wired in `MainActivity` to `nativeKeyEvent()`. Clean separation: radial menus use keyCallback, sticks use axisCallback, buttons use buttonCallback.
+
+### Phase 5a implementation notes (Inventory-Aware Weapon Wheels)
+- **Separate wheels**: Primary weapon wheel ("PriWpn") and secondary weapon wheel ("SecWpn") replace the single combined weapon wheel. Each has 5 segments mapping to weapon slots 0-4 (base weapons). Super weapon variants (slots 5-9) are handled implicitly — they share key bindings with their base weapon and are included in visibility checks.
+- **C JNI hook**: `nativeGetWeaponState()` in jni_main.c (OUTSIDE `#ifdef INTROSPECT_ON`) returns a 43-element IntArray: `[primaryFlags, secondaryFlags, playerFlags, primaryAmmo[0..9], secondaryAmmo[0..9], primaryAmmoMax[0..9], secondaryAmmoMax[0..9]]`. Ammo max values are pre-doubled when player has ammo rack (`PLAYER_FLAGS_AMMO_RACK = 128`). Shared constant documented in both C and Kotlin.
+- **WeaponState.kt**: Data class with `fromArray(IntArray)` parser, `hasPrimary(index)` and `hasSecondary(index)` helpers. Includes both base ammo arrays (0-9) and effective max arrays (ammo-rack-adjusted).
+- **Inventory filtering**: When a weapon wheel opens, `weaponStateProvider` callback queries `nativeGetWeaponState()`. Segments are filtered to only weapons the player owns: `hasPrimary(i) || hasPrimary(i+5)` for base weapon i. Only `filteredSegments` are drawn and selectable.
+- **Counter-clockwise layout**: Segment 0 (Laser/Concussion) is centered at bottom (90° canvas angle). Subsequent segments go counter-clockwise (decreasing angle): segment i centered at `90° - i * segAngle`. Drawing formula: `startDeg = 90° - (i + 0.5) * segAngle`, sweep = `segAngle`.
+- **Placeholder mode**: When only 1 weapon owned (e.g., just Laser at level start), wheel shows a small bubble with weapon name + "only" text instead of a full wheel. No selection fires.
+- **Ammo display (secondary weapons)**: Shows "×N" text below label + small pie chart (filled circle) showing ammo/max ratio. Color transitions green→yellow→red based on fill percentage.
+- **Vulcan ammo display**: Shows "N%" text instead of round count + same pie chart. Uses `primaryAmmo[1]` (shared pool for Vulcan/Gauss). Ammo rack doubles max (reflected in pie chart proportion).
+- **Super weapon ammo handling**: If only super variant owned (not base), shows super variant's ammo. Otherwise shows base weapon ammo.
 
 ## Mobile Shooter Control Research & Strategy
 

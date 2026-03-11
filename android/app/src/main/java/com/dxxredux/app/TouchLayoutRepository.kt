@@ -81,7 +81,7 @@ object TouchLayoutRepository {
             SliderControl(id = "throttle", xPct = 5f, yPct = 40f,
                 axis = TouchBindings.AXIS_LTRIGGER, sizeMult = 1.2f)
         ),
-        radialMenus = listOf(guidebotWheel(10f, 20f), weaponWheel(50f, 8f))
+        radialMenus = listOf(guidebotWheel(10f, 20f), primaryWeaponWheel(40f, 8f), secondaryWeaponWheel(60f, 8f))
     )
 
     /** Claw grip: sticks in lower corners, fire buttons in upper corners. */
@@ -114,7 +114,7 @@ object TouchLayoutRepository {
             ButtonControl(id = "map", xPct = 50f, yPct = 5f,
                 binding = TouchBindings.BTN_AUTOMAP, label = "MAP", sizeMult = 0.7f)
         ),
-        radialMenus = listOf(guidebotWheel(40f, 5f), weaponWheel(60f, 5f)),
+        radialMenus = listOf(guidebotWheel(30f, 5f), primaryWeaponWheel(50f, 5f), secondaryWeaponWheel(70f, 5f)),
         gyro = GyroConfig(enabled = true, activation = GyroActivation.TOUCH_STICK)
     )
 
@@ -137,20 +137,29 @@ object TouchLayoutRepository {
         )
     )
 
-    /** Weapon select wheel: 5 primary (keys 1-5) + 5 secondary (keys 6-0). */
-    private fun weaponWheel(xPct: Float, yPct: Float) = RadialMenuControl(
-        id = "Wpns", xPct = xPct, yPct = yPct, sizeMult = 1f,
+    /** Primary weapon wheel: 5 base weapons (keys 1-5), counter-clockwise from bottom.
+     *  Super variants (5-9) share key bindings; visibility includes either base or super. */
+    private fun primaryWeaponWheel(xPct: Float, yPct: Float) = RadialMenuControl(
+        id = "PriWpn", xPct = xPct, yPct = yPct, sizeMult = 1f,
         segments = listOf(
-            RadialSegment("Laser",   KeyEvent.KEYCODE_1),
-            RadialSegment("Vulcan",  KeyEvent.KEYCODE_2),
-            RadialSegment("Spread",  KeyEvent.KEYCODE_3),
-            RadialSegment("Plasma",  KeyEvent.KEYCODE_4),
-            RadialSegment("Fusion",  KeyEvent.KEYCODE_5),
-            RadialSegment("Concsn",  KeyEvent.KEYCODE_6),
-            RadialSegment("Homing",  KeyEvent.KEYCODE_7),
-            RadialSegment("Proxim",  KeyEvent.KEYCODE_8),
-            RadialSegment("Smart",   KeyEvent.KEYCODE_9),
-            RadialSegment("Mega",    KeyEvent.KEYCODE_0)
+            RadialSegment("Laser",   KeyEvent.KEYCODE_1, weaponIndex = 0),
+            RadialSegment("Vulcan",  KeyEvent.KEYCODE_2, weaponIndex = 1),
+            RadialSegment("Spread",  KeyEvent.KEYCODE_3, weaponIndex = 2),
+            RadialSegment("Plasma",  KeyEvent.KEYCODE_4, weaponIndex = 3),
+            RadialSegment("Fusion",  KeyEvent.KEYCODE_5, weaponIndex = 4)
+        )
+    )
+
+    /** Secondary weapon wheel: 5 base weapons (keys 6-0), counter-clockwise from bottom.
+     *  Shows ammo count + pie chart per segment. */
+    private fun secondaryWeaponWheel(xPct: Float, yPct: Float) = RadialMenuControl(
+        id = "SecWpn", xPct = xPct, yPct = yPct, sizeMult = 1f,
+        segments = listOf(
+            RadialSegment("Concsn",  KeyEvent.KEYCODE_6, weaponIndex = 0),
+            RadialSegment("Homing",  KeyEvent.KEYCODE_7, weaponIndex = 1),
+            RadialSegment("Proxim",  KeyEvent.KEYCODE_8, weaponIndex = 2),
+            RadialSegment("Smart",   KeyEvent.KEYCODE_9, weaponIndex = 3),
+            RadialSegment("Mega",    KeyEvent.KEYCODE_0, weaponIndex = 4)
         )
     )
 
