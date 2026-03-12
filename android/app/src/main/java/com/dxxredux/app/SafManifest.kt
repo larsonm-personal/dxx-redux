@@ -12,12 +12,13 @@ import java.io.File
  * The C-side PhysFS archiver (`physfs_archiver_saf.c`) parses this same file
  * to know which URIs to open via JNI when the engine requests a game file.
  */
-class SafManifest(private val manifestFile: File) {
-
+class SafManifest(
+    private val manifestFile: File,
+) {
     data class SafFileEntry(
         val filename: String,
         val contentUri: String,
-        val sizeBytes: Long
+        val sizeBytes: Long,
     )
 
     fun read(): List<SafFileEntry> {
@@ -30,7 +31,7 @@ class SafManifest(private val manifestFile: File) {
                 SafFileEntry(
                     filename = obj.getString("filename"),
                     contentUri = obj.getString("content_uri"),
-                    sizeBytes = obj.getLong("size_bytes")
+                    sizeBytes = obj.getLong("size_bytes"),
                 )
             }
         } catch (e: Exception) {
@@ -42,11 +43,13 @@ class SafManifest(private val manifestFile: File) {
     fun write(entries: List<SafFileEntry>) {
         val arr = JSONArray()
         for (entry in entries) {
-            arr.put(JSONObject().apply {
-                put("filename", entry.filename)
-                put("content_uri", entry.contentUri)
-                put("size_bytes", entry.sizeBytes)
-            })
+            arr.put(
+                JSONObject().apply {
+                    put("filename", entry.filename)
+                    put("content_uri", entry.contentUri)
+                    put("size_bytes", entry.sizeBytes)
+                },
+            )
         }
         val root = JSONObject()
         root.put("files", arr)

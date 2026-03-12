@@ -18,10 +18,12 @@ import kotlin.math.min
 class MusicControlPanel(
     context: Context,
     private val onPlayTrack: (Int) -> Unit,
-    private val onDismiss: () -> Unit
+    private val onDismiss: () -> Unit,
 ) : View(context) {
-
-    data class TrackEntry(val index: Int, val name: String)
+    data class TrackEntry(
+        val index: Int,
+        val name: String,
+    )
 
     private val tracks = mutableListOf<TrackEntry>()
     private var currentTrack = -1
@@ -38,22 +40,26 @@ class MusicControlPanel(
 
     private val bgPaint = Paint().apply { color = 0xCC000000.toInt() }
     private val panelPaint = Paint().apply { color = 0xE6222222.toInt() }
-    private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFFCCCCCC.toInt()
-        textAlign = Paint.Align.LEFT
-    }
-    private val currentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFF44FF44.toInt()
-        textAlign = Paint.Align.LEFT
-    }
-    private val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFFFFFFFF.toInt()
-        textAlign = Paint.Align.CENTER
-    }
-    private val closePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFFFF4444.toInt()
-        textAlign = Paint.Align.CENTER
-    }
+    private val textPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFFCCCCCC.toInt()
+            textAlign = Paint.Align.LEFT
+        }
+    private val currentPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFF44FF44.toInt()
+            textAlign = Paint.Align.LEFT
+        }
+    private val titlePaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFFFFFFFF.toInt()
+            textAlign = Paint.Align.CENTER
+        }
+    private val closePaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFFFF4444.toInt()
+            textAlign = Paint.Align.CENTER
+        }
     private val highlightPaint = Paint().apply { color = 0x22FFFFFF }
 
     init {
@@ -70,10 +76,17 @@ class MusicControlPanel(
                 val name = activity.nativeGetTrackName(i)
                 tracks.add(TrackEntry(i, if (name.isNotEmpty()) name else "Track ${i + 1}"))
             }
-        } catch (_: Exception) { /* engine not ready */ }
+        } catch (_: Exception) {
+            // engine not ready
+        }
     }
 
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+    override fun onSizeChanged(
+        w: Int,
+        h: Int,
+        oldw: Int,
+        oldh: Int,
+    ) {
         super.onSizeChanged(w, h, oldw, oldh)
         val base = min(w, h).toFloat()
         val margin = base * 0.08f
@@ -89,7 +102,7 @@ class MusicControlPanel(
             panelRect.right - closeSize - base * 0.02f,
             panelRect.top + base * 0.01f,
             panelRect.right - base * 0.02f,
-            panelRect.top + base * 0.01f + closeSize
+            panelRect.top + base * 0.01f + closeSize,
         )
     }
 
@@ -101,12 +114,20 @@ class MusicControlPanel(
         canvas.drawRoundRect(panelRect, 16f, 16f, panelPaint)
 
         // Title
-        canvas.drawText("Music Tracks", panelRect.centerX(),
-            panelRect.top + titleHeight * 0.7f, titlePaint)
+        canvas.drawText(
+            "Music Tracks",
+            panelRect.centerX(),
+            panelRect.top + titleHeight * 0.7f,
+            titlePaint,
+        )
 
         // Close button
-        canvas.drawText("\u2715", closeRect.centerX(),
-            closeRect.centerY() + closePaint.textSize * 0.35f, closePaint)
+        canvas.drawText(
+            "\u2715",
+            closeRect.centerX(),
+            closeRect.centerY() + closePaint.textSize * 0.35f,
+            closePaint,
+        )
 
         // Track list (clipped to panel)
         canvas.save()

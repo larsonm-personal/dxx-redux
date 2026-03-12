@@ -6,7 +6,9 @@ package com.dxxredux.app
  * stays in C alongside playsave.c.
  */
 object NativePilotPatcher {
-    init { System.loadLibrary("dxx-redux-d2") }
+    init {
+        System.loadLibrary("dxx-redux-d2")
+    }
 
     /**
      * Patch all .plr files in [filesDir] (and its Players/ subdirectory)
@@ -19,7 +21,7 @@ object NativePilotPatcher {
         filesDir: String,
         joystickSettings: ByteArray,
         keyboardSettings: ByteArray,
-        controlType: Int
+        controlType: Int,
     ): Int
 
     /**
@@ -29,7 +31,10 @@ object NativePilotPatcher {
      * BUTTON_KC_INDEX / AXIS_KC_INDEX in ControllerConfigPage.kt.
      */
     @JvmStatic
-    external fun nativeBuildJoySettings(indices: IntArray, values: IntArray): ByteArray
+    external fun nativeBuildJoySettings(
+        indices: IntArray,
+        values: IntArray,
+    ): ByteArray
 
     /**
      * Build a 60-byte keyboard KeySettings array from (kc_index, scancode) pairs.
@@ -37,7 +42,10 @@ object NativePilotPatcher {
      * ControllerConfigPage.kt.
      */
     @JvmStatic
-    external fun nativeBuildKbSettings(indices: IntArray, values: IntArray): ByteArray
+    external fun nativeBuildKbSettings(
+        indices: IntArray,
+        values: IntArray,
+    ): ByteArray
 
     /**
      * Reset all .plr files in [filesDir] to engine default key settings

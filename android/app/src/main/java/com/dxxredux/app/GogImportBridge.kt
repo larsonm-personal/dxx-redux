@@ -1,7 +1,5 @@
 package com.dxxredux.app
 
-import android.util.Log
-
 /**
  * JNI bridge for GOG installer extraction (.exe InnoSetup, .pkg Mac).
  *
@@ -9,7 +7,6 @@ import android.util.Log
  * the GOG installer import flow in SetupActivity.
  */
 object GogImportBridge {
-
     private const val TAG = "DXX-GogImport"
 
     init {
@@ -17,7 +14,10 @@ object GogImportBridge {
     }
 
     /** A game file found inside a GOG installer */
-    data class GogFile(val name: String, val size: Long)
+    data class GogFile(
+        val name: String,
+        val size: Long,
+    )
 
     /** Audio extensions extracted from GOG installers (.gog/.inst) */
     private val audioExtensions = setOf("gog", "inst")
@@ -34,9 +34,7 @@ object GogImportBridge {
      * @param path Filesystem path to the installer
      * @return "innosetup", "pkg", or "unknown"
      */
-    fun detectFormat(path: String): String {
-        return nativeDetectFormat(path)
-    }
+    fun detectFormat(path: String): String = nativeDetectFormat(path)
 
     /**
      * List game files in a GOG installer.
@@ -50,14 +48,20 @@ object GogImportBridge {
             val parts = entry.split("|", limit = 2)
             if (parts.size == 2) {
                 GogFile(parts[0], parts[1].toLongOrNull() ?: 0L)
-            } else null
+            } else {
+                null
+            }
         }
     }
 
     /** Callback interface for extraction progress (same as DiscImportBridge) */
     interface ExtractProgress {
         /** Called with current file name and byte progress. Return non-zero to cancel. */
-        fun onProgress(currentFile: String, bytesDone: Long, bytesTotal: Long): Int
+        fun onProgress(
+            currentFile: String,
+            bytesDone: Long,
+            bytesTotal: Long,
+        ): Int
     }
 
     /**
@@ -70,19 +74,22 @@ object GogImportBridge {
      * @return Number of files extracted, or -1 on error
      */
     fun extractFiles(
-        path: String, outputDir: String,
+        path: String,
+        outputDir: String,
         progress: ExtractProgress? = null,
-        includeAudio: Boolean = true
-    ): Int {
-        return nativeExtractFiles(path, outputDir, progress, includeAudio)
-    }
+        includeAudio: Boolean = true,
+    ): Int = nativeExtractFiles(path, outputDir, progress, includeAudio)
 
-    /* ── Native methods ──────────────────────────────────────────── */
+    // ── Native methods ────────────────────────────────────────────
 
     private external fun nativeDetectFormat(path: String): String
+
     private external fun nativeListFiles(path: String): Array<String>?
+
     private external fun nativeExtractFiles(
-        path: String, outputDir: String, progress: ExtractProgress?,
-        includeAudio: Boolean
+        path: String,
+        outputDir: String,
+        progress: ExtractProgress?,
+        includeAudio: Boolean,
     ): Int
 }

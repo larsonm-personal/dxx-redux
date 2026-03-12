@@ -4,18 +4,15 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.ActivityInfo
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -24,12 +21,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -41,8 +38,6 @@ import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size as ComposeSize
 
 // ── Colors ──────────────────────────────────────────────────────────────────
@@ -65,7 +60,7 @@ private val cCollisionWarn = Color(0xCCFF5722.toInt())
 fun TouchEditorPage(onBack: () -> Unit) {
     val context = LocalContext.current
     var layout by remember { mutableStateOf(TouchLayoutRepository.load(context)) }
-    var selectedType by remember { mutableStateOf<String?>(null) }  // "stick", "button"
+    var selectedType by remember { mutableStateOf<String?>(null) } // "stick", "button"
     var selectedIndex by remember { mutableIntStateOf(-1) }
     var dirty by remember { mutableStateOf(false) }
     var canvasWidth by remember { mutableFloatStateOf(1f) }
@@ -77,10 +72,12 @@ fun TouchEditorPage(onBack: () -> Unit) {
         val prev = activity?.requestedOrientation
         val prefs = context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
         val orient = prefs.getString("game_orientation", "landscape")
-        activity?.requestedOrientation = if (orient == "portrait")
-            ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-        else
-            ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        activity?.requestedOrientation =
+            if (orient == "portrait") {
+                ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+            } else {
+                ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            }
         onDispose {
             activity?.requestedOrientation = prev ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
@@ -91,7 +88,7 @@ fun TouchEditorPage(onBack: () -> Unit) {
     var showAddControl by remember { mutableStateOf(false) }
     var showGlobalSettings by remember { mutableStateOf(false) }
     var showGyroSettings by remember { mutableStateOf(false) }
-    var longPressPos by remember { mutableStateOf(Offset.Zero) }  // where to place new control
+    var longPressPos by remember { mutableStateOf(Offset.Zero) } // where to place new control
 
     // Save helper
     fun save() {
@@ -99,9 +96,10 @@ fun TouchEditorPage(onBack: () -> Unit) {
         dirty = false
     }
 
-    val sheetState = rememberBottomSheetScaffoldState(
-        bottomSheetState = rememberStandardBottomSheetState(initialValue = SheetValue.PartiallyExpanded)
-    )
+    val sheetState =
+        rememberBottomSheetScaffoldState(
+            bottomSheetState = rememberStandardBottomSheetState(initialValue = SheetValue.PartiallyExpanded),
+        )
     val coroutineScope = rememberCoroutineScope()
 
     BottomSheetScaffold(
@@ -114,12 +112,16 @@ fun TouchEditorPage(onBack: () -> Unit) {
         sheetContent = {
             // ── Toolbar row (always visible as peek content) ──
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = { if (dirty) save(); onBack() }) {
+                TextButton(onClick = {
+                    if (dirty) save()
+                    onBack()
+                }) {
                     Text("Close Editor", fontSize = 12.sp, color = Color.White)
                 }
                 Spacer(Modifier.weight(1f))
@@ -136,9 +138,16 @@ fun TouchEditorPage(onBack: () -> Unit) {
                     Icon(Icons.Default.Add, "Add control", tint = Color.White)
                 }
                 TextButton(onClick = { save() }, enabled = dirty) {
-                    Text("Save", fontSize = 12.sp,
-                        color = if (dirty) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f))
+                    Text(
+                        "Save",
+                        fontSize = 12.sp,
+                        color =
+                            if (dirty) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                            },
+                    )
                 }
             }
             HorizontalDivider(color = Color(0xFF444444))
@@ -147,92 +156,137 @@ fun TouchEditorPage(onBack: () -> Unit) {
             if (selectedType != null && selectedIndex >= 0) {
                 val panelScrollState = rememberScrollState()
                 Box(modifier = Modifier.heightIn(max = 300.dp)) {
-                Column(
-                    modifier = Modifier
-                        .verticalScroll(panelScrollState)
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                    Column(
+                        modifier =
+                            Modifier
+                                .verticalScroll(panelScrollState)
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
                     ) {
                         when (selectedType) {
-                            "stick" -> StickPropertiesPanel(
-                                stick = layout.sticks[selectedIndex],
-                                onUpdate = { updated ->
-                                    layout = layout.copy(sticks = layout.sticks.toMutableList().also {
-                                        it[selectedIndex] = updated
-                                    })
-                                    dirty = true
-                                },
-                                onDelete = {
-                                    layout = layout.copy(sticks = layout.sticks.toMutableList().also {
-                                        it.removeAt(selectedIndex)
-                                    })
-                                    selectedType = null; selectedIndex = -1
-                                    dirty = true
-                                }
-                            )
-                            "button" -> ButtonPropertiesPanel(
-                                button = layout.buttons[selectedIndex],
-                                onUpdate = { updated ->
-                                    layout = layout.copy(buttons = layout.buttons.toMutableList().also {
-                                        it[selectedIndex] = updated
-                                    })
-                                    dirty = true
-                                },
-                                onDelete = {
-                                    layout = layout.copy(buttons = layout.buttons.toMutableList().also {
-                                        it.removeAt(selectedIndex)
-                                    })
-                                    selectedType = null; selectedIndex = -1
-                                    dirty = true
-                                }
-                            )
-                            "radial" -> RadialPropertiesPanel(
-                                radial = layout.radialMenus[selectedIndex],
-                                onUpdate = { updated ->
-                                    layout = layout.copy(radialMenus = layout.radialMenus.toMutableList().also {
-                                        it[selectedIndex] = updated
-                                    })
-                                    dirty = true
-                                },
-                                onDelete = {
-                                    layout = layout.copy(radialMenus = layout.radialMenus.toMutableList().also {
-                                        it.removeAt(selectedIndex)
-                                    })
-                                    selectedType = null; selectedIndex = -1
-                                    dirty = true
-                                }
-                            )
-                            "slider" -> SliderPropertiesPanel(
-                                slider = layout.sliders[selectedIndex],
-                                onUpdate = { updated ->
-                                    layout = layout.copy(sliders = layout.sliders.toMutableList().also {
-                                        it[selectedIndex] = updated
-                                    })
-                                    dirty = true
-                                },
-                                onDelete = {
-                                    layout = layout.copy(sliders = layout.sliders.toMutableList().also {
-                                        it.removeAt(selectedIndex)
-                                    })
-                                    selectedType = null; selectedIndex = -1
-                                    dirty = true
-                                }
-                            )
+                            "stick" ->
+                                StickPropertiesPanel(
+                                    stick = layout.sticks[selectedIndex],
+                                    onUpdate = { updated ->
+                                        layout =
+                                            layout.copy(
+                                                sticks =
+                                                    layout.sticks.toMutableList().also {
+                                                        it[selectedIndex] = updated
+                                                    },
+                                            )
+                                        dirty = true
+                                    },
+                                    onDelete = {
+                                        layout =
+                                            layout.copy(
+                                                sticks =
+                                                    layout.sticks.toMutableList().also {
+                                                        it.removeAt(selectedIndex)
+                                                    },
+                                            )
+                                        selectedType = null
+                                        selectedIndex = -1
+                                        dirty = true
+                                    },
+                                )
+                            "button" ->
+                                ButtonPropertiesPanel(
+                                    button = layout.buttons[selectedIndex],
+                                    onUpdate = { updated ->
+                                        layout =
+                                            layout.copy(
+                                                buttons =
+                                                    layout.buttons.toMutableList().also {
+                                                        it[selectedIndex] = updated
+                                                    },
+                                            )
+                                        dirty = true
+                                    },
+                                    onDelete = {
+                                        layout =
+                                            layout.copy(
+                                                buttons =
+                                                    layout.buttons.toMutableList().also {
+                                                        it.removeAt(selectedIndex)
+                                                    },
+                                            )
+                                        selectedType = null
+                                        selectedIndex = -1
+                                        dirty = true
+                                    },
+                                )
+                            "radial" ->
+                                RadialPropertiesPanel(
+                                    radial = layout.radialMenus[selectedIndex],
+                                    onUpdate = { updated ->
+                                        layout =
+                                            layout.copy(
+                                                radialMenus =
+                                                    layout.radialMenus.toMutableList().also {
+                                                        it[selectedIndex] = updated
+                                                    },
+                                            )
+                                        dirty = true
+                                    },
+                                    onDelete = {
+                                        layout =
+                                            layout.copy(
+                                                radialMenus =
+                                                    layout.radialMenus.toMutableList().also {
+                                                        it.removeAt(selectedIndex)
+                                                    },
+                                            )
+                                        selectedType = null
+                                        selectedIndex = -1
+                                        dirty = true
+                                    },
+                                )
+                            "slider" ->
+                                SliderPropertiesPanel(
+                                    slider = layout.sliders[selectedIndex],
+                                    onUpdate = { updated ->
+                                        layout =
+                                            layout.copy(
+                                                sliders =
+                                                    layout.sliders.toMutableList().also {
+                                                        it[selectedIndex] = updated
+                                                    },
+                                            )
+                                        dirty = true
+                                    },
+                                    onDelete = {
+                                        layout =
+                                            layout.copy(
+                                                sliders =
+                                                    layout.sliders.toMutableList().also {
+                                                        it.removeAt(selectedIndex)
+                                                    },
+                                            )
+                                        selectedType = null
+                                        selectedIndex = -1
+                                        dirty = true
+                                    },
+                                )
                         }
                     }
                     ScrollArrows(panelScrollState)
                 }
             } else {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Text("Tap a control to select it, drag to move",
-                        color = Color.Gray, fontSize = 13.sp)
+                    Text(
+                        "Tap a control to select it, drag to move",
+                        color = Color.Gray,
+                        fontSize = 13.sp,
+                    )
                 }
             }
-        }
+        },
     ) { innerPadding ->
         // ── Full-screen canvas ──
         val textMeasurer = rememberTextMeasurer()
@@ -243,59 +297,60 @@ fun TouchEditorPage(onBack: () -> Unit) {
         val selIdxRef = rememberUpdatedState(selectedIndex)
 
         Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onTap = { offset ->
-                            val hit = hitTest(layoutRef.value, offset, canvasWidth, canvasHeight)
-                            if (hit != null) {
-                                selectedType = hit.first
-                                selectedIndex = hit.second
-                            } else {
-                                selectedType = null
-                                selectedIndex = -1
-                            }
-                        },
-                        onLongPress = { offset ->
-                            val hit = hitTest(layoutRef.value, offset, canvasWidth, canvasHeight)
-                            if (hit != null) {
-                                // Long-press on control → select & expand bottom sheet
-                                selectedType = hit.first
-                                selectedIndex = hit.second
-                                coroutineScope.launch { sheetState.bottomSheetState.expand() }
-                            } else {
-                                // Long-press on empty space → add control at that position
-                                longPressPos = offset
-                                showAddControl = true
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onTap = { offset ->
+                                val hit = hitTest(layoutRef.value, offset, canvasWidth, canvasHeight)
+                                if (hit != null) {
+                                    selectedType = hit.first
+                                    selectedIndex = hit.second
+                                } else {
+                                    selectedType = null
+                                    selectedIndex = -1
+                                }
+                            },
+                            onLongPress = { offset ->
+                                val hit = hitTest(layoutRef.value, offset, canvasWidth, canvasHeight)
+                                if (hit != null) {
+                                    // Long-press on control → select & expand bottom sheet
+                                    selectedType = hit.first
+                                    selectedIndex = hit.second
+                                    coroutineScope.launch { sheetState.bottomSheetState.expand() }
+                                } else {
+                                    // Long-press on empty space → add control at that position
+                                    longPressPos = offset
+                                    showAddControl = true
+                                }
+                            },
+                        )
+                    }.pointerInput(Unit) {
+                        detectDragGestures { change, dragAmount ->
+                            change.consume()
+                            val st = selTypeRef.value
+                            val si = selIdxRef.value
+                            if (st != null && si >= 0) {
+                                val lay = layoutRef.value
+                                val cr = controlRadius(lay, st, si, canvasWidth, canvasHeight)
+                                val cc = controlCenter(lay, st, si, canvasWidth, canvasHeight)
+                                val maxDist = cr + canvasWidth * 0.10f
+                                val fingerDist =
+                                    sqrt(
+                                        (change.position.x - cc.x) * (change.position.x - cc.x) +
+                                            (change.position.y - cc.y) * (change.position.y - cc.y),
+                                    )
+                                if (fingerDist <= maxDist) {
+                                    val dxPct = (dragAmount.x / canvasWidth) * 100f
+                                    val dyPct = (dragAmount.y / canvasHeight) * 100f
+                                    layout = moveControl(lay, st, si, dxPct, dyPct)
+                                    dirty = true
+                                }
                             }
                         }
-                    )
-                }
-                .pointerInput(Unit) {
-                    detectDragGestures { change, dragAmount ->
-                        change.consume()
-                        val st = selTypeRef.value
-                        val si = selIdxRef.value
-                        if (st != null && si >= 0) {
-                            val lay = layoutRef.value
-                            val cr = controlRadius(lay, st, si, canvasWidth, canvasHeight)
-                            val cc = controlCenter(lay, st, si, canvasWidth, canvasHeight)
-                            val maxDist = cr + canvasWidth * 0.10f
-                            val fingerDist = sqrt(
-                                (change.position.x - cc.x) * (change.position.x - cc.x) +
-                                (change.position.y - cc.y) * (change.position.y - cc.y)
-                            )
-                            if (fingerDist <= maxDist) {
-                                val dxPct = (dragAmount.x / canvasWidth) * 100f
-                                val dyPct = (dragAmount.y / canvasHeight) * 100f
-                                layout = moveControl(lay, st, si, dxPct, dyPct)
-                                dirty = true
-                            }
-                        }
-                    }
-                }
+                    },
         ) {
             canvasWidth = size.width
             canvasHeight = size.height
@@ -310,10 +365,11 @@ fun TouchEditorPage(onBack: () -> Unit) {
             onDismiss = { showPresetPicker = false },
             onSelect = { preset ->
                 layout = preset
-                selectedType = null; selectedIndex = -1
+                selectedType = null
+                selectedIndex = -1
                 dirty = true
                 showPresetPicker = false
-            }
+            },
         )
     }
     if (showAddControl) {
@@ -321,60 +377,99 @@ fun TouchEditorPage(onBack: () -> Unit) {
         val addX = if (longPressPos != Offset.Zero) (longPressPos.x / canvasWidth * 100f).coerceIn(5f, 95f) else 50f
         val addY = if (longPressPos != Offset.Zero) (longPressPos.y / canvasHeight * 100f).coerceIn(5f, 95f) else 50f
         AddControlDialog(
-            onDismiss = { showAddControl = false; longPressPos = Offset.Zero },
+            onDismiss = {
+                showAddControl = false
+                longPressPos = Offset.Zero
+            },
             onAddStick = {
-                layout = layout.copy(sticks = layout.sticks + AnalogStickControl(
-                    id = "stick_${layout.sticks.size}",
-                    xPct = addX, yPct = addY,
-                    axisX = TouchBindings.AXIS_RIGHT_X,
-                    axisY = TouchBindings.AXIS_RIGHT_Y
-                ))
-                selectedType = "stick"; selectedIndex = layout.sticks.lastIndex
+                layout =
+                    layout.copy(
+                        sticks =
+                            layout.sticks +
+                                AnalogStickControl(
+                                    id = "stick_${layout.sticks.size}",
+                                    xPct = addX,
+                                    yPct = addY,
+                                    axisX = TouchBindings.AXIS_RIGHT_X,
+                                    axisY = TouchBindings.AXIS_RIGHT_Y,
+                                ),
+                    )
+                selectedType = "stick"
+                selectedIndex = layout.sticks.lastIndex
                 dirty = true
-                showAddControl = false; longPressPos = Offset.Zero
+                showAddControl = false
+                longPressPos = Offset.Zero
             },
             onAddButton = {
-                layout = layout.copy(buttons = layout.buttons + ButtonControl(
-                    id = "btn_${layout.buttons.size}",
-                    xPct = addX, yPct = addY,
-                    label = "BTN",
-                    binding = TouchBindings.BTN_FIRE_PRIMARY
-                ))
-                selectedType = "button"; selectedIndex = layout.buttons.lastIndex
+                layout =
+                    layout.copy(
+                        buttons =
+                            layout.buttons +
+                                ButtonControl(
+                                    id = "btn_${layout.buttons.size}",
+                                    xPct = addX,
+                                    yPct = addY,
+                                    label = "BTN",
+                                    binding = TouchBindings.BTN_FIRE_PRIMARY,
+                                ),
+                    )
+                selectedType = "button"
+                selectedIndex = layout.buttons.lastIndex
                 dirty = true
-                showAddControl = false; longPressPos = Offset.Zero
+                showAddControl = false
+                longPressPos = Offset.Zero
             },
             onAddRadial = {
-                layout = layout.copy(radialMenus = layout.radialMenus + RadialMenuControl(
-                    id = "menu_${layout.radialMenus.size}",
-                    xPct = addX, yPct = addY,
-                    segments = listOf(
-                        RadialSegment("Seg 1", android.view.KeyEvent.KEYCODE_1),
-                        RadialSegment("Seg 2", android.view.KeyEvent.KEYCODE_2),
-                        RadialSegment("Seg 3", android.view.KeyEvent.KEYCODE_3)
+                layout =
+                    layout.copy(
+                        radialMenus =
+                            layout.radialMenus +
+                                RadialMenuControl(
+                                    id = "menu_${layout.radialMenus.size}",
+                                    xPct = addX,
+                                    yPct = addY,
+                                    segments =
+                                        listOf(
+                                            RadialSegment("Seg 1", android.view.KeyEvent.KEYCODE_1),
+                                            RadialSegment("Seg 2", android.view.KeyEvent.KEYCODE_2),
+                                            RadialSegment("Seg 3", android.view.KeyEvent.KEYCODE_3),
+                                        ),
+                                ),
                     )
-                ))
-                selectedType = "radial"; selectedIndex = layout.radialMenus.lastIndex
+                selectedType = "radial"
+                selectedIndex = layout.radialMenus.lastIndex
                 dirty = true
-                showAddControl = false; longPressPos = Offset.Zero
+                showAddControl = false
+                longPressPos = Offset.Zero
             },
             onAddSlider = {
-                layout = layout.copy(sliders = layout.sliders + SliderControl(
-                    id = "slider_${layout.sliders.size}",
-                    xPct = addX, yPct = addY,
-                    axis = TouchBindings.AXIS_LTRIGGER
-                ))
-                selectedType = "slider"; selectedIndex = layout.sliders.lastIndex
+                layout =
+                    layout.copy(
+                        sliders =
+                            layout.sliders +
+                                SliderControl(
+                                    id = "slider_${layout.sliders.size}",
+                                    xPct = addX,
+                                    yPct = addY,
+                                    axis = TouchBindings.AXIS_LTRIGGER,
+                                ),
+                    )
+                selectedType = "slider"
+                selectedIndex = layout.sliders.lastIndex
                 dirty = true
-                showAddControl = false; longPressPos = Offset.Zero
-            }
+                showAddControl = false
+                longPressPos = Offset.Zero
+            },
         )
     }
     if (showGlobalSettings) {
         GlobalSettingsDialog(
             layout = layout,
             onDismiss = { showGlobalSettings = false },
-            onUpdate = { updated -> layout = updated; dirty = true }
+            onUpdate = { updated ->
+                layout = updated
+                dirty = true
+            },
         )
     }
     if (showGyroSettings) {
@@ -384,7 +479,7 @@ fun TouchEditorPage(onBack: () -> Unit) {
             onUpdate = { updated ->
                 layout = layout.copy(gyro = updated)
                 dirty = true
-            }
+            },
         )
     }
 }
@@ -394,10 +489,12 @@ fun TouchEditorPage(onBack: () -> Unit) {
 // ═════════════════════════════════════════════════════════════════════════════
 
 private fun drawGrid(scope: DrawScope) {
-    val w = scope.size.width; val h = scope.size.height
+    val w = scope.size.width
+    val h = scope.size.height
     // 10% grid lines
     for (i in 1..9) {
-        val x = w * i / 10f; val y = h * i / 10f
+        val x = w * i / 10f
+        val y = h * i / 10f
         scope.drawLine(cGrid, Offset(x, 0f), Offset(x, h))
         scope.drawLine(cGrid, Offset(0f, y), Offset(w, y))
     }
@@ -407,11 +504,14 @@ private fun drawGrid(scope: DrawScope) {
 }
 
 private fun drawAllControls(
-    scope: DrawScope, layout: TouchLayout,
-    selType: String?, selIdx: Int,
-    textMeasurer: androidx.compose.ui.text.TextMeasurer
+    scope: DrawScope,
+    layout: TouchLayout,
+    selType: String?,
+    selIdx: Int,
+    textMeasurer: androidx.compose.ui.text.TextMeasurer,
 ) {
-    val w = scope.size.width; val h = scope.size.height
+    val w = scope.size.width
+    val h = scope.size.height
     // Use geometric mean so controls stay the same apparent size in portrait & landscape
     val baseScale = sqrt(w * h)
 
@@ -429,42 +529,51 @@ private fun drawAllControls(
             scope.drawRect(
                 color = Color(0x1488CCFF),
                 topLeft = Offset(w * fz.leftPct / 100f, h * fz.topPct / 100f),
-                size = androidx.compose.ui.geometry.Size(
-                    w * (fz.rightPct - fz.leftPct) / 100f,
-                    h * (fz.bottomPct - fz.topPct) / 100f
-                )
+                size =
+                    androidx.compose.ui.geometry.Size(
+                        w * (fz.rightPct - fz.leftPct) / 100f,
+                        h * (fz.bottomPct - fz.topPct) / 100f,
+                    ),
             )
         }
 
         // Ring
         scope.drawCircle(
             color = cStickRing.copy(alpha = alpha),
-            radius = r, center = Offset(cx, cy),
-            style = Stroke(width = 3f)
+            radius = r,
+            center = Offset(cx, cy),
+            style = Stroke(width = 3f),
         )
         // Thumb (at center in editor)
         scope.drawCircle(
             color = cStickThumb.copy(alpha = alpha * 0.6f),
-            radius = r * 0.35f, center = Offset(cx, cy)
+            radius = r * 0.35f,
+            center = Offset(cx, cy),
         )
         // Selection highlight
         if (selected) {
             scope.drawCircle(
                 color = cSelected,
-                radius = r + 4f, center = Offset(cx, cy),
-                style = Stroke(width = 3f)
+                radius = r + 4f,
+                center = Offset(cx, cy),
+                style = Stroke(width = 3f),
             )
         }
         // Label
         val label = TouchBindings.AXIS_LABELS[stick.axisX]?.take(3) ?: "?"
-        val textResult = textMeasurer.measure(
-            label,
-            style = TextStyle(fontSize = 10.sp, color = cButtonLabel.copy(alpha = alpha))
+        val textResult =
+            textMeasurer.measure(
+                label,
+                style = TextStyle(fontSize = 10.sp, color = cButtonLabel.copy(alpha = alpha)),
+            )
+        scope.drawText(
+            textResult,
+            topLeft =
+                Offset(
+                    cx - textResult.size.width / 2f,
+                    cy - textResult.size.height / 2f,
+                ),
         )
-        scope.drawText(textResult, topLeft = Offset(
-            cx - textResult.size.width / 2f,
-            cy - textResult.size.height / 2f
-        ))
     }
 
     // Draw buttons
@@ -481,7 +590,7 @@ private fun drawAllControls(
                 color = cButton.copy(alpha = alpha),
                 topLeft = Offset(cx - side / 2, cy - side / 2),
                 size = ComposeSize(side, side),
-                cornerRadius = CornerRadius(side * 0.25f)
+                cornerRadius = CornerRadius(side * 0.25f),
             )
             if (selected) {
                 scope.drawRoundRect(
@@ -489,30 +598,37 @@ private fun drawAllControls(
                     topLeft = Offset(cx - side / 2 - 3f, cy - side / 2 - 3f),
                     size = ComposeSize(side + 6f, side + 6f),
                     cornerRadius = CornerRadius(side * 0.25f + 3f),
-                    style = Stroke(width = 3f)
+                    style = Stroke(width = 3f),
                 )
             }
         } else {
             scope.drawCircle(
                 color = cButton.copy(alpha = alpha),
-                radius = r, center = Offset(cx, cy)
+                radius = r,
+                center = Offset(cx, cy),
             )
             if (selected) {
                 scope.drawCircle(
                     color = cSelected,
-                    radius = r + 3f, center = Offset(cx, cy),
-                    style = Stroke(width = 3f)
+                    radius = r + 3f,
+                    center = Offset(cx, cy),
+                    style = Stroke(width = 3f),
                 )
             }
         }
-        val textResult = textMeasurer.measure(
-            btn.label.take(4),
-            style = TextStyle(fontSize = 9.sp, color = cButtonLabel.copy(alpha = alpha))
+        val textResult =
+            textMeasurer.measure(
+                btn.label.take(4),
+                style = TextStyle(fontSize = 9.sp, color = cButtonLabel.copy(alpha = alpha)),
+            )
+        scope.drawText(
+            textResult,
+            topLeft =
+                Offset(
+                    cx - textResult.size.width / 2f,
+                    cy - textResult.size.height / 2f,
+                ),
         )
-        scope.drawText(textResult, topLeft = Offset(
-            cx - textResult.size.width / 2f,
-            cy - textResult.size.height / 2f
-        ))
     }
 
     // Draw radial menus (as trigger circles with segment count label)
@@ -532,28 +648,42 @@ private fun drawAllControls(
                 val startDeg = -90f + seg * segAngle
                 scope.drawArc(
                     color = cRadialSeg.copy(alpha = alpha * 0.3f),
-                    startAngle = startDeg, sweepAngle = segAngle, useCenter = true,
+                    startAngle = startDeg,
+                    sweepAngle = segAngle,
+                    useCenter = true,
                     topLeft = Offset(cx - wheelR, cy - wheelR),
-                    size = androidx.compose.ui.geometry.Size(wheelR * 2, wheelR * 2)
+                    size =
+                        androidx.compose.ui.geometry
+                            .Size(wheelR * 2, wheelR * 2),
                 )
                 scope.drawArc(
                     color = cStickRing.copy(alpha = alpha * 0.4f),
-                    startAngle = startDeg, sweepAngle = segAngle, useCenter = true,
+                    startAngle = startDeg,
+                    sweepAngle = segAngle,
+                    useCenter = true,
                     topLeft = Offset(cx - wheelR, cy - wheelR),
-                    size = androidx.compose.ui.geometry.Size(wheelR * 2, wheelR * 2),
-                    style = Stroke(width = 1f)
+                    size =
+                        androidx.compose.ui.geometry
+                            .Size(wheelR * 2, wheelR * 2),
+                    style = Stroke(width = 1f),
                 )
                 // Segment label
                 val midRad = Math.toRadians((startDeg + segAngle / 2).toDouble())
                 val lx = cx + cos(midRad).toFloat() * wheelR * 0.65f
                 val ly = cy + sin(midRad).toFloat() * wheelR * 0.65f
-                val segLabel = textMeasurer.measure(
-                    rm.segments[seg].label.take(5),
-                    style = TextStyle(fontSize = 7.sp, color = cButtonLabel.copy(alpha = alpha * 0.5f))
+                val segLabel =
+                    textMeasurer.measure(
+                        rm.segments[seg].label.take(5),
+                        style = TextStyle(fontSize = 7.sp, color = cButtonLabel.copy(alpha = alpha * 0.5f)),
+                    )
+                scope.drawText(
+                    segLabel,
+                    topLeft =
+                        Offset(
+                            lx - segLabel.size.width / 2f,
+                            ly - segLabel.size.height / 2f,
+                        ),
                 )
-                scope.drawText(segLabel, topLeft = Offset(
-                    lx - segLabel.size.width / 2f, ly - segLabel.size.height / 2f
-                ))
             }
         }
 
@@ -561,17 +691,25 @@ private fun drawAllControls(
         scope.drawCircle(color = cButton.copy(alpha = alpha), radius = trigR, center = Offset(cx, cy))
         if (selected) {
             scope.drawCircle(
-                color = cSelected, radius = wheelR + 4f, center = Offset(cx, cy),
-                style = Stroke(width = 3f)
+                color = cSelected,
+                radius = wheelR + 4f,
+                center = Offset(cx, cy),
+                style = Stroke(width = 3f),
             )
         }
-        val label = textMeasurer.measure(
-            rm.id.take(4),
-            style = TextStyle(fontSize = 9.sp, color = cButtonLabel.copy(alpha = alpha))
+        val label =
+            textMeasurer.measure(
+                rm.id.take(4),
+                style = TextStyle(fontSize = 9.sp, color = cButtonLabel.copy(alpha = alpha)),
+            )
+        scope.drawText(
+            label,
+            topLeft =
+                Offset(
+                    cx - label.size.width / 2f,
+                    cy - label.size.height / 2f,
+                ),
         )
-        scope.drawText(label, topLeft = Offset(
-            cx - label.size.width / 2f, cy - label.size.height / 2f
-        ))
     }
 
     // Draw sliders
@@ -585,59 +723,126 @@ private fun drawAllControls(
         val vertical = sl.orientation == SliderOrientation.VERTICAL
 
         // Track line
-        val x0: Float; val y0: Float; val x1: Float; val y1: Float
+        val x0: Float
+        val y0: Float
+        val x1: Float
+        val y1: Float
         if (vertical) {
-            x0 = cx; y0 = cy - trackLen; x1 = cx; y1 = cy + trackLen
+            x0 = cx
+            y0 = cy - trackLen
+            x1 = cx
+            y1 = cy + trackLen
         } else {
-            x0 = cx - trackLen; y0 = cy; x1 = cx + trackLen; y1 = cy
+            x0 = cx - trackLen
+            y0 = cy
+            x1 = cx + trackLen
+            y1 = cy
         }
         scope.drawLine(
             color = cStickRing.copy(alpha = alpha * 0.6f),
-            start = Offset(x0, y0), end = Offset(x1, y1),
-            strokeWidth = thumbR * 0.6f
+            start = Offset(x0, y0),
+            end = Offset(x1, y1),
+            strokeWidth = thumbR * 0.6f,
         )
         // Thumb at center (editor preview)
         scope.drawCircle(
             color = cStickThumb.copy(alpha = alpha * 0.8f),
-            radius = thumbR, center = Offset(cx, cy)
+            radius = thumbR,
+            center = Offset(cx, cy),
         )
         if (selected) {
             scope.drawLine(
-                color = cSelected, start = Offset(x0, y0), end = Offset(x1, y1),
-                strokeWidth = 3f
+                color = cSelected,
+                start = Offset(x0, y0),
+                end = Offset(x1, y1),
+                strokeWidth = 3f,
             )
             scope.drawCircle(
-                color = cSelected, radius = thumbR + 3f, center = Offset(cx, cy),
-                style = Stroke(width = 3f)
+                color = cSelected,
+                radius = thumbR + 3f,
+                center = Offset(cx, cy),
+                style = Stroke(width = 3f),
             )
         }
-        val slLabel = textMeasurer.measure(
-            sl.id.take(5),
-            style = TextStyle(fontSize = 8.sp, color = cButtonLabel.copy(alpha = alpha))
-        )
-        val labelOff = if (vertical) Offset(cx - slLabel.size.width / 2f, y1 + thumbR + 2f)
-                        else Offset(cx - slLabel.size.width / 2f, cy + thumbR + 2f)
+        val slLabel =
+            textMeasurer.measure(
+                sl.id.take(5),
+                style = TextStyle(fontSize = 8.sp, color = cButtonLabel.copy(alpha = alpha)),
+            )
+        val labelOff =
+            if (vertical) {
+                Offset(cx - slLabel.size.width / 2f, y1 + thumbR + 2f)
+            } else {
+                Offset(cx - slLabel.size.width / 2f, cy + thumbR + 2f)
+            }
         scope.drawText(slLabel, topLeft = labelOff)
     }
 
     // ── Collision detection: warn when controls overlap >30% ──
-    data class ControlBounds(val cx: Float, val cy: Float, val r: Float)
+    data class ControlBounds(
+        val cx: Float,
+        val cy: Float,
+        val r: Float,
+    )
     val allBounds = mutableListOf<ControlBounds>()
-    layout.sticks.forEach { s -> allBounds.add(ControlBounds(w * s.xPct / 100f, h * s.yPct / 100f, baseScale * 0.12f * s.sizeMult)) }
-    layout.buttons.forEach { b -> allBounds.add(ControlBounds(w * b.xPct / 100f, h * b.yPct / 100f, baseScale * 0.04f * b.sizeMult)) }
-    layout.radialMenus.forEach { rm -> allBounds.add(ControlBounds(w * rm.xPct / 100f, h * rm.yPct / 100f, baseScale * 0.14f * rm.sizeMult)) }
-    layout.sliders.forEach { sl -> allBounds.add(ControlBounds(w * sl.xPct / 100f, h * sl.yPct / 100f, baseScale * 0.10f * sl.sizeMult)) }
+    layout.sticks.forEach { s ->
+        allBounds.add(
+            ControlBounds(
+                w * s.xPct / 100f,
+                h * s.yPct / 100f,
+                baseScale * 0.12f * s.sizeMult,
+            ),
+        )
+    }
+    layout.buttons.forEach { b ->
+        allBounds.add(
+            ControlBounds(
+                w * b.xPct / 100f,
+                h * b.yPct / 100f,
+                baseScale * 0.04f * b.sizeMult,
+            ),
+        )
+    }
+    layout.radialMenus.forEach { rm ->
+        allBounds.add(
+            ControlBounds(
+                w * rm.xPct / 100f,
+                h * rm.yPct / 100f,
+                baseScale * 0.14f * rm.sizeMult,
+            ),
+        )
+    }
+    layout.sliders.forEach { sl ->
+        allBounds.add(
+            ControlBounds(
+                w * sl.xPct / 100f,
+                h * sl.yPct / 100f,
+                baseScale * 0.10f * sl.sizeMult,
+            ),
+        )
+    }
 
     for (i in allBounds.indices) {
         for (j in i + 1 until allBounds.size) {
-            val a = allBounds[i]; val b = allBounds[j]
+            val a = allBounds[i]
+            val b = allBounds[j]
             val dist = sqrt((a.cx - b.cx) * (a.cx - b.cx) + (a.cy - b.cy) * (a.cy - b.cy))
             val smaller = min(a.r, b.r)
             val overlap = (a.r + b.r - dist) / (smaller * 2)
             if (overlap > 0.3f) {
                 // Draw warning rings on both
-                scope.drawCircle(color = cCollisionWarn, radius = a.r + 2f, center = Offset(a.cx, a.cy), style = Stroke(width = 2.5f))
-                scope.drawCircle(color = cCollisionWarn, radius = b.r + 2f, center = Offset(b.cx, b.cy), style = Stroke(width = 2.5f))
+                scope.drawCircle(
+                    color = cCollisionWarn,
+                    radius = a.r + 2f,
+                    center = Offset(a.cx, a.cy),
+                    style = Stroke(width = 2.5f),
+                )
+                scope.drawCircle(
+                    color = cCollisionWarn,
+                    radius = b.r + 2f,
+                    center = Offset(b.cx, b.cy),
+                    style = Stroke(width = 2.5f),
+                )
             }
         }
     }
@@ -649,22 +854,42 @@ private fun drawAllControls(
 
 /** Returns the center position (in canvas pixels) of the given control. */
 private fun controlCenter(
-    layout: TouchLayout, type: String, index: Int,
-    canvasWidth: Float, canvasHeight: Float
-): Offset {
-    return when (type) {
-        "stick" -> { val s = layout.sticks[index]; Offset(canvasWidth * s.xPct / 100f, canvasHeight * s.yPct / 100f) }
-        "button" -> { val b = layout.buttons[index]; Offset(canvasWidth * b.xPct / 100f, canvasHeight * b.yPct / 100f) }
-        "radial" -> { val r = layout.radialMenus[index]; Offset(canvasWidth * r.xPct / 100f, canvasHeight * r.yPct / 100f) }
-        "slider" -> { val s = layout.sliders[index]; Offset(canvasWidth * s.xPct / 100f, canvasHeight * s.yPct / 100f) }
+    layout: TouchLayout,
+    type: String,
+    index: Int,
+    canvasWidth: Float,
+    canvasHeight: Float,
+): Offset =
+    when (type) {
+        "stick" -> {
+            val s = layout.sticks[index]
+            Offset(canvasWidth * s.xPct / 100f, canvasHeight * s.yPct / 100f)
+        }
+        "button" -> {
+            val b = layout.buttons[index]
+            Offset(canvasWidth * b.xPct / 100f, canvasHeight * b.yPct / 100f)
+        }
+        "radial" -> {
+            val r = layout.radialMenus[index]
+            Offset(
+                canvasWidth * r.xPct / 100f,
+                canvasHeight * r.yPct / 100f,
+            )
+        }
+        "slider" -> {
+            val s = layout.sliders[index]
+            Offset(canvasWidth * s.xPct / 100f, canvasHeight * s.yPct / 100f)
+        }
         else -> Offset.Zero
     }
-}
 
 /** Returns the visual radius (in canvas pixels) of the given control. */
 private fun controlRadius(
-    layout: TouchLayout, type: String, index: Int,
-    canvasWidth: Float, canvasHeight: Float
+    layout: TouchLayout,
+    type: String,
+    index: Int,
+    canvasWidth: Float,
+    canvasHeight: Float,
 ): Float {
     val baseScale = sqrt(canvasWidth * canvasHeight)
     return when (type) {
@@ -678,8 +903,10 @@ private fun controlRadius(
 
 /** Returns (type, index) of the control at the given canvas offset, or null. */
 private fun hitTest(
-    layout: TouchLayout, offset: Offset,
-    canvasWidth: Float, canvasHeight: Float
+    layout: TouchLayout,
+    offset: Offset,
+    canvasWidth: Float,
+    canvasHeight: Float,
 ): Pair<String, Int>? {
     val baseScale = sqrt(canvasWidth * canvasHeight)
 
@@ -727,45 +954,59 @@ private fun hitTest(
 
 /** Returns a new layout with the specified control moved by (dxPct, dyPct). */
 private fun moveControl(
-    layout: TouchLayout, type: String, index: Int,
-    dxPct: Float, dyPct: Float
-): TouchLayout {
-    return when (type) {
+    layout: TouchLayout,
+    type: String,
+    index: Int,
+    dxPct: Float,
+    dyPct: Float,
+): TouchLayout =
+    when (type) {
         "stick" -> {
             val s = layout.sticks[index]
             val newX = (s.xPct + dxPct).coerceIn(5f, 95f)
             val newY = (s.yPct + dyPct).coerceIn(5f, 95f)
-            layout.copy(sticks = layout.sticks.toMutableList().also {
-                it[index] = s.copy(xPct = newX, yPct = newY)
-            })
+            layout.copy(
+                sticks =
+                    layout.sticks.toMutableList().also {
+                        it[index] = s.copy(xPct = newX, yPct = newY)
+                    },
+            )
         }
         "button" -> {
             val b = layout.buttons[index]
             val newX = (b.xPct + dxPct).coerceIn(2f, 98f)
             val newY = (b.yPct + dyPct).coerceIn(2f, 98f)
-            layout.copy(buttons = layout.buttons.toMutableList().also {
-                it[index] = b.copy(xPct = newX, yPct = newY)
-            })
+            layout.copy(
+                buttons =
+                    layout.buttons.toMutableList().also {
+                        it[index] = b.copy(xPct = newX, yPct = newY)
+                    },
+            )
         }
         "radial" -> {
             val rm = layout.radialMenus[index]
             val newX = (rm.xPct + dxPct).coerceIn(5f, 95f)
             val newY = (rm.yPct + dyPct).coerceIn(5f, 95f)
-            layout.copy(radialMenus = layout.radialMenus.toMutableList().also {
-                it[index] = rm.copy(xPct = newX, yPct = newY)
-            })
+            layout.copy(
+                radialMenus =
+                    layout.radialMenus.toMutableList().also {
+                        it[index] = rm.copy(xPct = newX, yPct = newY)
+                    },
+            )
         }
         "slider" -> {
             val sl = layout.sliders[index]
             val newX = (sl.xPct + dxPct).coerceIn(5f, 95f)
             val newY = (sl.yPct + dyPct).coerceIn(5f, 95f)
-            layout.copy(sliders = layout.sliders.toMutableList().also {
-                it[index] = sl.copy(xPct = newX, yPct = newY)
-            })
+            layout.copy(
+                sliders =
+                    layout.sliders.toMutableList().also {
+                        it[index] = sl.copy(xPct = newX, yPct = newY)
+                    },
+            )
         }
         else -> layout
     }
-}
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Properties panels
@@ -775,12 +1016,12 @@ private fun moveControl(
 private fun StickPropertiesPanel(
     stick: AnalogStickControl,
     onUpdate: (AnalogStickControl) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text("Stick: ${stick.id}", color = Color.White, fontSize = 14.sp)
         IconButton(onClick = onDelete) {
@@ -800,12 +1041,22 @@ private fun StickPropertiesPanel(
 
     // Size & opacity
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        LabeledSlider("Size", stick.sizeMult, TouchBindings.MIN_SIZE,
-            TouchBindings.MAX_SIZE, Modifier.weight(1f)) {
+        LabeledSlider(
+            "Size",
+            stick.sizeMult,
+            TouchBindings.MIN_SIZE,
+            TouchBindings.MAX_SIZE,
+            Modifier.weight(1f),
+        ) {
             onUpdate(stick.copy(sizeMult = it))
         }
-        LabeledSlider("Opacity", stick.opacity, TouchBindings.MIN_OPACITY,
-            TouchBindings.MAX_OPACITY, Modifier.weight(1f)) {
+        LabeledSlider(
+            "Opacity",
+            stick.opacity,
+            TouchBindings.MIN_OPACITY,
+            TouchBindings.MAX_OPACITY,
+            Modifier.weight(1f),
+        ) {
             onUpdate(stick.copy(opacity = it))
         }
     }
@@ -815,8 +1066,13 @@ private fun StickPropertiesPanel(
         LabeledSlider("Deadzone", stick.deadzone.toFloat(), 0f, 50f, Modifier.weight(1f)) {
             onUpdate(stick.copy(deadzone = it.toInt()))
         }
-        LabeledSlider("Sensitivity", stick.sensitivity, TouchBindings.MIN_SENSITIVITY,
-            TouchBindings.MAX_SENSITIVITY, Modifier.weight(1f)) {
+        LabeledSlider(
+            "Sensitivity",
+            stick.sensitivity,
+            TouchBindings.MIN_SENSITIVITY,
+            TouchBindings.MAX_SENSITIVITY,
+            Modifier.weight(1f),
+        ) {
             onUpdate(stick.copy(sensitivity = it))
         }
     }
@@ -827,8 +1083,13 @@ private fun StickPropertiesPanel(
             onUpdate(stick.copy(responseCurve = it))
         }
         if (stick.responseCurve == ResponseCurve.EXPONENTIAL) {
-            LabeledSlider("Exponent", stick.exponent, TouchBindings.MIN_EXPONENT,
-                TouchBindings.MAX_EXPONENT, Modifier.weight(1f)) {
+            LabeledSlider(
+                "Exponent",
+                stick.exponent,
+                TouchBindings.MIN_EXPONENT,
+                TouchBindings.MAX_EXPONENT,
+                Modifier.weight(1f),
+            ) {
                 onUpdate(stick.copy(exponent = it))
             }
         }
@@ -847,12 +1108,12 @@ private fun StickPropertiesPanel(
 private fun ButtonPropertiesPanel(
     button: ButtonControl,
     onUpdate: (ButtonControl) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text("Button: ${button.id}", color = Color.White, fontSize = 14.sp)
         IconButton(onClick = onDelete) {
@@ -872,12 +1133,22 @@ private fun ButtonPropertiesPanel(
 
     // Size & opacity
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        LabeledSlider("Size", button.sizeMult, TouchBindings.MIN_SIZE,
-            TouchBindings.MAX_SIZE, Modifier.weight(1f)) {
+        LabeledSlider(
+            "Size",
+            button.sizeMult,
+            TouchBindings.MIN_SIZE,
+            TouchBindings.MAX_SIZE,
+            Modifier.weight(1f),
+        ) {
             onUpdate(button.copy(sizeMult = it))
         }
-        LabeledSlider("Opacity", button.opacity, TouchBindings.MIN_OPACITY,
-            TouchBindings.MAX_OPACITY, Modifier.weight(1f)) {
+        LabeledSlider(
+            "Opacity",
+            button.opacity,
+            TouchBindings.MIN_OPACITY,
+            TouchBindings.MAX_OPACITY,
+            Modifier.weight(1f),
+        ) {
             onUpdate(button.copy(opacity = it))
         }
     }
@@ -891,7 +1162,7 @@ private fun ButtonPropertiesPanel(
     // Shape
     Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text("Shape: ", color = Color.Gray, fontSize = 12.sp)
         ButtonShape.entries.forEach { shape ->
@@ -900,7 +1171,7 @@ private fun ButtonPropertiesPanel(
                 Text(
                     shape.name.lowercase().replace('_', ' '),
                     fontSize = 11.sp,
-                    color = if (selected) cSelected else Color.Gray
+                    color = if (selected) cSelected else Color.Gray,
                 )
             }
         }
@@ -911,12 +1182,12 @@ private fun ButtonPropertiesPanel(
 private fun RadialPropertiesPanel(
     radial: RadialMenuControl,
     onUpdate: (RadialMenuControl) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text("Radial: ${radial.id}", color = Color.White, fontSize = 14.sp)
         IconButton(onClick = onDelete) {
@@ -936,20 +1207,33 @@ private fun RadialPropertiesPanel(
 
     // Size & opacity
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        LabeledSlider("Size", radial.sizeMult, TouchBindings.MIN_SIZE,
-            TouchBindings.MAX_SIZE, Modifier.weight(1f)) {
+        LabeledSlider(
+            "Size",
+            radial.sizeMult,
+            TouchBindings.MIN_SIZE,
+            TouchBindings.MAX_SIZE,
+            Modifier.weight(1f),
+        ) {
             onUpdate(radial.copy(sizeMult = it))
         }
-        LabeledSlider("Opacity", radial.opacity, TouchBindings.MIN_OPACITY,
-            TouchBindings.MAX_OPACITY, Modifier.weight(1f)) {
+        LabeledSlider(
+            "Opacity",
+            radial.opacity,
+            TouchBindings.MIN_OPACITY,
+            TouchBindings.MAX_OPACITY,
+            Modifier.weight(1f),
+        ) {
             onUpdate(radial.copy(opacity = it))
         }
     }
 
     // Segments info
-    Text("Segments: ${radial.segments.size}  |  " +
+    Text(
+        "Segments: ${radial.segments.size}  |  " +
             radial.segments.joinToString(", ") { it.label },
-        color = Color.Gray, fontSize = 11.sp)
+        color = Color.Gray,
+        fontSize = 11.sp,
+    )
 
     // Haptic toggle
     LabeledToggle("Haptic", radial.hapticFeedback) {
@@ -961,12 +1245,12 @@ private fun RadialPropertiesPanel(
 private fun SliderPropertiesPanel(
     slider: SliderControl,
     onUpdate: (SliderControl) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text("Slider: ${slider.id}", color = Color.White, fontSize = 14.sp)
         IconButton(onClick = onDelete) {
@@ -984,8 +1268,11 @@ private fun SliderPropertiesPanel(
             Row {
                 SliderOrientation.entries.forEach { ori ->
                     TextButton(onClick = { onUpdate(slider.copy(orientation = ori)) }) {
-                        Text(ori.name.lowercase(), fontSize = 11.sp,
-                            color = if (slider.orientation == ori) cSelected else Color.Gray)
+                        Text(
+                            ori.name.lowercase(),
+                            fontSize = 11.sp,
+                            color = if (slider.orientation == ori) cSelected else Color.Gray,
+                        )
                     }
                 }
             }
@@ -994,20 +1281,35 @@ private fun SliderPropertiesPanel(
 
     // Size & opacity
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        LabeledSlider("Size", slider.sizeMult, TouchBindings.MIN_SIZE,
-            TouchBindings.MAX_SIZE, Modifier.weight(1f)) {
+        LabeledSlider(
+            "Size",
+            slider.sizeMult,
+            TouchBindings.MIN_SIZE,
+            TouchBindings.MAX_SIZE,
+            Modifier.weight(1f),
+        ) {
             onUpdate(slider.copy(sizeMult = it))
         }
-        LabeledSlider("Opacity", slider.opacity, TouchBindings.MIN_OPACITY,
-            TouchBindings.MAX_OPACITY, Modifier.weight(1f)) {
+        LabeledSlider(
+            "Opacity",
+            slider.opacity,
+            TouchBindings.MIN_OPACITY,
+            TouchBindings.MAX_OPACITY,
+            Modifier.weight(1f),
+        ) {
             onUpdate(slider.copy(opacity = it))
         }
     }
 
     // Sensitivity & curve
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        LabeledSlider("Sensitivity", slider.sensitivity, TouchBindings.MIN_SENSITIVITY,
-            TouchBindings.MAX_SENSITIVITY, Modifier.weight(1f)) {
+        LabeledSlider(
+            "Sensitivity",
+            slider.sensitivity,
+            TouchBindings.MIN_SENSITIVITY,
+            TouchBindings.MAX_SENSITIVITY,
+            Modifier.weight(1f),
+        ) {
             onUpdate(slider.copy(sensitivity = it))
         }
         CurvePicker("Curve", slider.responseCurve, Modifier.weight(1f)) {
@@ -1027,25 +1329,35 @@ private fun SliderPropertiesPanel(
 
 @Composable
 private fun LabeledSlider(
-    label: String, value: Float, min: Float, max: Float,
-    modifier: Modifier = Modifier, onChange: (Float) -> Unit
+    label: String,
+    value: Float,
+    min: Float,
+    max: Float,
+    modifier: Modifier = Modifier,
+    onChange: (Float) -> Unit,
 ) {
     Column(modifier = modifier) {
         Text("$label: ${"%.2f".format(value)}", color = Color.Gray, fontSize = 11.sp)
         Slider(
-            value = value, onValueChange = onChange,
+            value = value,
+            onValueChange = onChange,
             valueRange = min..max,
-            modifier = Modifier.height(28.dp)
+            modifier = Modifier.height(28.dp),
         )
     }
 }
 
 @Composable
-private fun LabeledToggle(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+private fun LabeledToggle(
+    label: String,
+    checked: Boolean,
+    onChange: (Boolean) -> Unit,
+) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Checkbox(
-            checked = checked, onCheckedChange = onChange,
-            modifier = Modifier.size(20.dp)
+            checked = checked,
+            onCheckedChange = onChange,
+            modifier = Modifier.size(20.dp),
         )
         Spacer(Modifier.width(2.dp))
         Text(label, color = Color.Gray, fontSize = 11.sp)
@@ -1054,8 +1366,10 @@ private fun LabeledToggle(label: String, checked: Boolean, onChange: (Boolean) -
 
 @Composable
 private fun AxisPicker(
-    label: String, current: Int, modifier: Modifier = Modifier,
-    onChange: (Int) -> Unit
+    label: String,
+    current: Int,
+    modifier: Modifier = Modifier,
+    onChange: (Int) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val currentLabel = TouchBindings.AXIS_LABELS[current] ?: "Axis $current"
@@ -1070,7 +1384,10 @@ private fun AxisPicker(
                 TouchBindings.AXIS_LABELS.forEach { (idx, name) ->
                     DropdownMenuItem(
                         text = { Text(name, fontSize = 12.sp) },
-                        onClick = { onChange(idx); expanded = false }
+                        onClick = {
+                            onChange(idx)
+                            expanded = false
+                        },
                     )
                 }
             }
@@ -1080,8 +1397,10 @@ private fun AxisPicker(
 
 @Composable
 private fun ButtonBindingPicker(
-    label: String, current: Int, modifier: Modifier = Modifier,
-    onChange: (Int) -> Unit
+    label: String,
+    current: Int,
+    modifier: Modifier = Modifier,
+    onChange: (Int) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val currentLabel = TouchBindings.BUTTON_LABELS[current] ?: "Button $current"
@@ -1102,13 +1421,20 @@ private fun ButtonBindingPicker(
                             TouchBindings.BUTTON_LABELS.forEach { (idx, name) ->
                                 Text(
                                     name,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { onChange(idx); expanded = false }
-                                        .padding(vertical = 8.dp, horizontal = 4.dp),
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                onChange(idx)
+                                                expanded = false
+                                            }.padding(vertical = 8.dp, horizontal = 4.dp),
                                     fontSize = 12.sp,
-                                    color = if (idx == current) MaterialTheme.colorScheme.primary
-                                            else MaterialTheme.colorScheme.onSurface
+                                    color =
+                                        if (idx == current) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface
+                                        },
                                 )
                             }
                         }
@@ -1117,7 +1443,7 @@ private fun ButtonBindingPicker(
                 },
                 confirmButton = {
                     TextButton(onClick = { expanded = false }) { Text("Cancel") }
-                }
+                },
             )
         }
     }
@@ -1125,8 +1451,10 @@ private fun ButtonBindingPicker(
 
 @Composable
 private fun CurvePicker(
-    label: String, current: ResponseCurve, modifier: Modifier = Modifier,
-    onChange: (ResponseCurve) -> Unit
+    label: String,
+    current: ResponseCurve,
+    modifier: Modifier = Modifier,
+    onChange: (ResponseCurve) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -1140,7 +1468,10 @@ private fun CurvePicker(
                 ResponseCurve.entries.forEach { curve ->
                     DropdownMenuItem(
                         text = { Text(curve.name.lowercase().replace('_', ' '), fontSize = 12.sp) },
-                        onClick = { onChange(curve); expanded = false }
+                        onClick = {
+                            onChange(curve)
+                            expanded = false
+                        },
                     )
                 }
             }
@@ -1150,8 +1481,10 @@ private fun CurvePicker(
 
 @Composable
 private fun LabelEditor(
-    label: String, current: String, modifier: Modifier = Modifier,
-    onChange: (String) -> Unit
+    label: String,
+    current: String,
+    modifier: Modifier = Modifier,
+    onChange: (String) -> Unit,
 ) {
     var text by remember(current) { mutableStateOf(current) }
 
@@ -1159,10 +1492,15 @@ private fun LabelEditor(
         Text(label, color = Color.Gray, fontSize = 11.sp)
         OutlinedTextField(
             value = text,
-            onValueChange = { if (it.length <= 6) { text = it; onChange(it) } },
+            onValueChange = {
+                if (it.length <= 6) {
+                    text = it
+                    onChange(it)
+                }
+            },
             singleLine = true,
             modifier = Modifier.height(48.dp).fillMaxWidth(),
-            textStyle = TextStyle(fontSize = 12.sp, color = Color.White)
+            textStyle = TextStyle(fontSize = 12.sp, color = Color.White),
         )
     }
 }
@@ -1172,19 +1510,25 @@ private fun LabelEditor(
 // ═════════════════════════════════════════════════════════════════════════════
 
 @Composable
-private fun PresetPickerDialog(onDismiss: () -> Unit, onSelect: (TouchLayout) -> Unit) {
+private fun PresetPickerDialog(
+    onDismiss: () -> Unit,
+    onSelect: (TouchLayout) -> Unit,
+) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Load Preset") },
         text = {
             Column {
-                Text("This will replace your current layout.", fontSize = 13.sp,
-                    color = Color(0xFFFF9800))
+                Text(
+                    "This will replace your current layout.",
+                    fontSize = 13.sp,
+                    color = Color(0xFFFF9800),
+                )
                 Spacer(Modifier.height(12.dp))
                 TouchLayoutRepository.allPresets().forEach { preset ->
                     TextButton(
                         onClick = { onSelect(preset) },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(preset.name, fontSize = 14.sp)
                     }
@@ -1194,7 +1538,7 @@ private fun PresetPickerDialog(onDismiss: () -> Unit, onSelect: (TouchLayout) ->
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
-        }
+        },
     )
 }
 
@@ -1204,7 +1548,7 @@ private fun AddControlDialog(
     onAddStick: () -> Unit,
     onAddButton: () -> Unit,
     onAddRadial: () -> Unit,
-    onAddSlider: () -> Unit
+    onAddSlider: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1228,7 +1572,7 @@ private fun AddControlDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
-        }
+        },
     )
 }
 
@@ -1236,26 +1580,29 @@ private fun AddControlDialog(
 private fun GlobalSettingsDialog(
     layout: TouchLayout,
     onDismiss: () -> Unit,
-    onUpdate: (TouchLayout) -> Unit
+    onUpdate: (TouchLayout) -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Global Settings") },
         text = {
             Column {
-                Text("Global Opacity: ${"%.0f".format(layout.globalOpacity * 100)}%",
-                    fontSize = 13.sp, color = Color.Gray)
+                Text(
+                    "Global Opacity: ${"%.0f".format(layout.globalOpacity * 100)}%",
+                    fontSize = 13.sp,
+                    color = Color.Gray,
+                )
                 Slider(
                     value = layout.globalOpacity,
                     onValueChange = { onUpdate(layout.copy(globalOpacity = it)) },
-                    valueRange = TouchBindings.MIN_GLOBAL_OPACITY..TouchBindings.MAX_GLOBAL_OPACITY
+                    valueRange = TouchBindings.MIN_GLOBAL_OPACITY..TouchBindings.MAX_GLOBAL_OPACITY,
                 )
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text("OK") }
         },
-        dismissButton = {}
+        dismissButton = {},
     )
 }
 
@@ -1263,7 +1610,7 @@ private fun GlobalSettingsDialog(
 private fun GyroSettingsDialog(
     gyro: GyroConfig,
     onDismiss: () -> Unit,
-    onUpdate: (GyroConfig) -> Unit
+    onUpdate: (GyroConfig) -> Unit,
 ) {
     var enabled by remember { mutableStateOf(gyro.enabled) }
     var activation by remember { mutableStateOf(gyro.activation) }
@@ -1279,53 +1626,61 @@ private fun GyroSettingsDialog(
         text = {
             val scrollState = rememberScrollState()
             Box {
-            Column(modifier = Modifier.verticalScroll(scrollState)) {
-                LabeledToggle("Enabled", enabled) { enabled = it }
+                Column(modifier = Modifier.verticalScroll(scrollState)) {
+                    LabeledToggle("Enabled", enabled) { enabled = it }
 
-                if (enabled) {
-                    Spacer(Modifier.height(8.dp))
-                    Text("Activation Mode", color = Color.Gray, fontSize = 12.sp)
-                    GyroActivation.entries.forEach { mode ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(
-                                selected = activation == mode,
-                                onClick = { activation = mode },
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(mode.name.lowercase().replace('_', ' '),
-                                fontSize = 12.sp, color = Color.White)
+                    if (enabled) {
+                        Spacer(Modifier.height(8.dp))
+                        Text("Activation Mode", color = Color.Gray, fontSize = 12.sp)
+                        GyroActivation.entries.forEach { mode ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                RadioButton(
+                                    selected = activation == mode,
+                                    onClick = { activation = mode },
+                                    modifier = Modifier.size(20.dp),
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    mode.name.lowercase().replace('_', ' '),
+                                    fontSize = 12.sp,
+                                    color = Color.White,
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+                        LabeledSlider("Sensitivity X", sensX, 0.1f, 5f) { sensX = it }
+                        LabeledSlider("Sensitivity Y", sensY, 0.1f, 5f) { sensY = it }
+                        LabeledSlider("Deadzone", deadzone, 0f, 0.1f) { deadzone = it }
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            LabeledToggle("Invert X", invertX) { invertX = it }
+                            LabeledToggle("Invert Y", invertY) { invertY = it }
                         }
                     }
-
-                    Spacer(Modifier.height(8.dp))
-                    LabeledSlider("Sensitivity X", sensX, 0.1f, 5f) { sensX = it }
-                    LabeledSlider("Sensitivity Y", sensY, 0.1f, 5f) { sensY = it }
-                    LabeledSlider("Deadzone", deadzone, 0f, 0.1f) { deadzone = it }
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        LabeledToggle("Invert X", invertX) { invertX = it }
-                        LabeledToggle("Invert Y", invertY) { invertY = it }
-                    }
                 }
-            }
-            ScrollArrows(scrollState)
+                ScrollArrows(scrollState)
             }
         },
         confirmButton = {
             TextButton(onClick = {
-                onUpdate(gyro.copy(
-                    enabled = enabled, activation = activation,
-                    sensitivityX = sensX, sensitivityY = sensY,
-                    invertX = invertX, invertY = invertY,
-                    deadzone = deadzone
-                ))
+                onUpdate(
+                    gyro.copy(
+                        enabled = enabled,
+                        activation = activation,
+                        sensitivityX = sensX,
+                        sensitivityY = sensY,
+                        invertX = invertX,
+                        invertY = invertY,
+                        deadzone = deadzone,
+                    ),
+                )
                 onDismiss()
             }) { Text("OK") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
-        }
+        },
     )
 }
 
@@ -1340,13 +1695,13 @@ private fun BoxScope.ScrollArrows(scrollState: ScrollState) {
             modifier = Modifier.align(Alignment.TopCenter).padding(top = 4.dp),
             shape = CircleShape,
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
-            shadowElevation = 2.dp
+            shadowElevation = 2.dp,
         ) {
             Icon(
                 imageVector = Icons.Default.KeyboardArrowUp,
                 contentDescription = "Scroll up",
                 modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -1355,13 +1710,13 @@ private fun BoxScope.ScrollArrows(scrollState: ScrollState) {
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp),
             shape = CircleShape,
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
-            shadowElevation = 2.dp
+            shadowElevation = 2.dp,
         ) {
             Icon(
                 imageVector = Icons.Default.KeyboardArrowDown,
                 contentDescription = "Scroll down",
                 modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

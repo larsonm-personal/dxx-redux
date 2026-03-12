@@ -2,20 +2,21 @@ package com.dxxredux.app
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
+import android.animation.LayoutTransition
 import android.animation.ObjectAnimator
 import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.net.Uri
-import android.os.ParcelFileDescriptor
 import android.graphics.Color
 import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.ParcelFileDescriptor
 import android.text.InputType
 import android.util.Log
 import android.util.TypedValue
@@ -32,7 +33,6 @@ import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
-import android.animation.LayoutTransition
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -40,68 +40,125 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 
-class MainActivity : Activity(), SurfaceHolder.Callback {
-
+class MainActivity :
+    Activity(),
+    SurfaceHolder.Callback {
     companion object {
         // Library is loaded dynamically in onCreate based on intent extra
     }
 
     // ── JNI declarations ────────────────────────────────────
     external fun helloFromNative(): String
+
     external fun startGame()
+
     external fun nativeSetSurface(surface: Surface?)
-    external fun nativeTouchEvent(action: Int, normX: Float, normY: Float)
-    external fun nativeKeyEvent(action: Int, androidKeyCode: Int, unicodeChar: Int)
+
+    external fun nativeTouchEvent(
+        action: Int,
+        normX: Float,
+        normY: Float,
+    )
+
+    external fun nativeKeyEvent(
+        action: Int,
+        androidKeyCode: Int,
+        unicodeChar: Int,
+    )
+
     external fun nativeTextInput(unicodeChar: Int)
+
     external fun nativeOnPause()
+
     external fun nativeOnResume()
+
     external fun nativeQuit()
+
     external fun nativeGetGameState(): String
+
     external fun nativeRequestIntrospect()
+
     external fun nativeSetIntrospectPath(path: String)
+
     external fun nativeLoadAutomationScript(path: String)
+
     external fun nativeSetAutomationPath(path: String)
+
     external fun nativeSetMusicGain(gainDb: Float)
+
     external fun nativeSetMusicVoices(maxVoices: Int)
-    external fun nativeJoystickAxis(axis: Int, value: Float)
-    external fun nativeJoystickButton(button: Int, pressed: Int)
+
+    external fun nativeJoystickAxis(
+        axis: Int,
+        value: Float,
+    )
+
+    external fun nativeJoystickButton(
+        button: Int,
+        pressed: Int,
+    )
+
     external fun nativeIsInGame(): Boolean
+
     external fun nativeSetJoystickEnabled(enabled: Boolean)
+
     external fun nativeIsAutomapActive(): Boolean
+
     external fun nativeIsSkippableScreen(): Boolean
-    external fun nativeAutomapInput(heading: Float, pitch: Float, thrust: Float,
-                                     bank: Float = 0f, vertical: Float = 0f, sideways: Float = 0f)
+
+    external fun nativeAutomapInput(
+        heading: Float,
+        pitch: Float,
+        thrust: Float,
+        bank: Float = 0f,
+        vertical: Float = 0f,
+        sideways: Float = 0f,
+    )
+
     external fun nativeAutomapCenter()
+
     external fun nativeAutomapSelectMarker(idx: Int)
+
     external fun nativeGetMarkerCount(): Int
+
     external fun nativeGetGameWidth(): Int
+
     external fun nativeGetGameHeight(): Int
+
     external fun nativeGetWeaponState(): IntArray
 
     // ── Music track control (jni_music_control.c) ────────────────────
     external fun nativeNextTrack(): Int
+
     external fun nativePrevTrack(): Int
+
     external fun nativePlaySpecificTrack(track: Int): Int
+
     external fun nativeGetTrackName(track: Int): String
+
     external fun nativeGetCurrentTrackNum(): Int
+
     external fun nativeGetNumAudioTracks(): Int
+
     external fun nativeGetCurrentTrackInfo(): String
 
     // ── SAF leave-in-place: called from native via JNI (jni_saf.c) ───
-    @Suppress("unused")  // Called from native code
+    @Suppress("unused") // Called from native code
     fun openSafFile(contentUri: String): Int {
         return try {
             if (contentUri.startsWith("/")) {
                 // Test mode: direct filesystem path (for adb testing)
-                val pfd = ParcelFileDescriptor.open(
-                    java.io.File(contentUri), ParcelFileDescriptor.MODE_READ_ONLY
-                )
+                val pfd =
+                    ParcelFileDescriptor.open(
+                        java.io.File(contentUri),
+                        ParcelFileDescriptor.MODE_READ_ONLY,
+                    )
                 return pfd.detachFd()
             }
             // Production mode: SAF content URI
             val uri = Uri.parse(contentUri)
             val pfd = contentResolver.openFileDescriptor(uri, "r") ?: return -1
-            pfd.detachFd()  // transfers fd ownership to native
+            pfd.detachFd() // transfers fd ownership to native
         } catch (e: Exception) {
             Log.e("MainActivity", "openSafFile failed for $contentUri", e)
             -1
@@ -116,7 +173,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     private var overlayEnabled = false
     private val overlayPoller = android.os.Handler(android.os.Looper.getMainLooper())
     private var musicPanel: MusicControlPanel? = null
-    private var lastTrackNum = -1   // for detecting track changes in polling
+    private var lastTrackNum = -1 // for detecting track changes in polling
     private var gyroManager: GyroInputManager? = null
 
     // ── Left-edge fling detection (→ setup screen) ────────────────────
@@ -125,12 +182,11 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     private var edgeSwipeStartX = 0f
 
     // ── Automap gesture state (drag = pan/tilt, pinch = thrust/rotate/translate) ──
-    private val automapPointers = mutableMapOf<Int, PointF>()  // pointerId → last position
-    private var automapPinchDist = 0f                          // last distance between two fingers
-    private var automapPinchAngle = 0f                         // last angle between two fingers (radians)
-    private var automapPinchMidX = 0f                          // last midpoint X between two fingers
-    private var automapPinchMidY = 0f                          // last midpoint Y between two fingers
-
+    private val automapPointers = mutableMapOf<Int, PointF>() // pointerId → last position
+    private var automapPinchDist = 0f // last distance between two fingers
+    private var automapPinchAngle = 0f // last angle between two fingers (radians)
+    private var automapPinchMidX = 0f // last midpoint X between two fingers
+    private var automapPinchMidY = 0f // last midpoint Y between two fingers
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -147,10 +203,12 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         // Apply orientation lock from launcher preference
         val prefs = getSharedPreferences("dxx_prefs", MODE_PRIVATE)
         val orientPref = prefs.getString("game_orientation", "landscape")
-        requestedOrientation = if (orientPref == "portrait")
-            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-        else
-            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        requestedOrientation =
+            if (orientPref == "portrait") {
+                android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+            } else {
+                android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            }
 
         // Allow rendering into the display cutout (notch) area
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -162,26 +220,31 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         // Fling detector for left-edge swipe → open setup screen
-        edgeFlingDetector = android.view.GestureDetector(this,
-            object : android.view.GestureDetector.SimpleOnGestureListener() {
-                override fun onFling(
-                    e1: MotionEvent?, e2: MotionEvent,
-                    velocityX: Float, velocityY: Float
-                ): Boolean {
-                    if (e1 == null) return false
-                    val density = resources.displayMetrics.density
-                    val edgePx = 40 * density
-                    if (e1.x > edgePx) return false              // didn't start at left edge
-                    if (velocityX < 600) return false             // not fast enough rightward
-                    val dx = e2.x - e1.x
-                    val dy = kotlin.math.abs(e2.y - e1.y)
-                    if (dx > 30 * density && dy < dx * 1.5f) {    // roughly horizontal
-                        openSetupScreen()
-                        return true
+        edgeFlingDetector =
+            android.view.GestureDetector(
+                this,
+                object : android.view.GestureDetector.SimpleOnGestureListener() {
+                    override fun onFling(
+                        e1: MotionEvent?,
+                        e2: MotionEvent,
+                        velocityX: Float,
+                        velocityY: Float,
+                    ): Boolean {
+                        if (e1 == null) return false
+                        val density = resources.displayMetrics.density
+                        val edgePx = 40 * density
+                        if (e1.x > edgePx) return false // didn't start at left edge
+                        if (velocityX < 600) return false // not fast enough rightward
+                        val dx = e2.x - e1.x
+                        val dy = kotlin.math.abs(e2.y - e1.y)
+                        if (dx > 30 * density && dy < dx * 1.5f) { // roughly horizontal
+                            openSetupScreen()
+                            return true
+                        }
+                        return false
                     }
-                    return false
-                }
-            })
+                },
+            )
 
         gameSurfaceView = GameSurfaceView(this)
         gameSurfaceView.holder.addCallback(this)
@@ -219,14 +282,24 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
             for (ch in code) nativeTextInput(ch.code)
         }
         touchOverlay.weaponStateProvider = {
-            try { WeaponState.fromArray(nativeGetWeaponState()) } catch (_: Throwable) { null }
+            try {
+                WeaponState.fromArray(nativeGetWeaponState())
+            } catch (_: Throwable) {
+                null
+            }
         }
         touchOverlay.automapInputCallback = { heading, pitch, thrust, bank, vertical, sideways ->
             nativeAutomapInput(heading, pitch, thrust, bank, vertical, sideways)
         }
         touchOverlay.automapCenterCallback = { nativeAutomapCenter() }
         touchOverlay.automapMarkerCallback = { idx -> nativeAutomapSelectMarker(idx) }
-        touchOverlay.markerCountProvider = { try { nativeGetMarkerCount() } catch (_: Throwable) { 0 } }
+        touchOverlay.markerCountProvider = {
+            try {
+                nativeGetMarkerCount()
+            } catch (_: Throwable) {
+                0
+            }
+        }
         touchOverlay.mapButtonCallback = { toggleAutomap() }
         touchOverlay.prevTrackCallback = {
             nativePrevTrack()
@@ -245,41 +318,55 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         touchOverlay.isActive = false
 
         // Skip button for movies/briefings (upper-right, hidden by default)
-        skipButton = SkipButtonView(this).apply {
-            keyCallback = { action, keyCode, unicode -> nativeKeyEvent(action, keyCode, unicode) }
-            visibility = View.GONE
-        }
+        skipButton =
+            SkipButtonView(this).apply {
+                keyCallback = { action, keyCode, unicode -> nativeKeyEvent(action, keyCode, unicode) }
+                visibility = View.GONE
+            }
 
         // Multi-line overlay container (upper-left, items fade independently)
-        overlayContainer = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutTransition = LayoutTransition().apply {
-                enableTransitionType(LayoutTransition.CHANGE_DISAPPEARING)
+        overlayContainer =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutTransition =
+                    LayoutTransition().apply {
+                        enableTransitionType(LayoutTransition.CHANGE_DISAPPEARING)
+                    }
             }
-        }
-        val overlayLp = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.WRAP_CONTENT,
-            FrameLayout.LayoutParams.WRAP_CONTENT
-        ).apply {
-            gravity = Gravity.TOP or Gravity.START
-            val pad = (8 * resources.displayMetrics.density).toInt()
-            setMargins(pad, pad, 0, 0)
-        }
+        val overlayLp =
+            FrameLayout
+                .LayoutParams(
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                ).apply {
+                    gravity = Gravity.TOP or Gravity.START
+                    val pad = (8 * resources.displayMetrics.density).toInt()
+                    setMargins(pad, pad, 0, 0)
+                }
 
         // Layer surface + overlay in a FrameLayout
         val frame = FrameLayout(this)
-        frame.addView(gameSurfaceView, FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT
-        ))
-        frame.addView(touchOverlay, FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT
-        ))
-        frame.addView(skipButton, FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT
-        ))
+        frame.addView(
+            gameSurfaceView,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
+        frame.addView(
+            touchOverlay,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
+        frame.addView(
+            skipButton,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
         frame.addView(overlayContainer, overlayLp)
 
         setContentView(frame)
@@ -293,10 +380,11 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             gameSurfaceView.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
                 val edgePx = (40 * resources.displayMetrics.density).toInt()
-                v.systemGestureExclusionRects = listOf(
-                    Rect(0, 0, edgePx, v.height),                  // left edge
-                    Rect(v.width - edgePx, 0, v.width, v.height)   // right edge
-                )
+                v.systemGestureExclusionRects =
+                    listOf(
+                        Rect(0, 0, edgePx, v.height), // left edge
+                        Rect(v.width - edgePx, 0, v.width, v.height), // right edge
+                    )
             }
         }
     }
@@ -329,7 +417,12 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         }
     }
 
-    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+    override fun surfaceChanged(
+        holder: SurfaceHolder,
+        format: Int,
+        width: Int,
+        height: Int,
+    ) {
         nativeSetSurface(holder.surface)
     }
 
@@ -359,12 +452,13 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         // Re-read preference (user may have toggled in SetupActivity)
         val prefs = getSharedPreferences("dxx_prefs", MODE_PRIVATE)
         // Default to enabled when no physical controller is connected
-        val hasController = InputDevice.getDeviceIds().any { id ->
-            val dev = InputDevice.getDevice(id) ?: return@any false
-            val src = dev.sources
-            src and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
-            src and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
-        }
+        val hasController =
+            InputDevice.getDeviceIds().any { id ->
+                val dev = InputDevice.getDevice(id) ?: return@any false
+                val src = dev.sources
+                src and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
+                    src and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
+            }
         overlayEnabled = prefs.getBoolean("touch_overlay_enabled", !hasController)
         // Start polling in-game state to show/hide overlay
         startOverlayPolling()
@@ -372,44 +466,55 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
 
     private fun startOverlayPolling() {
         overlayPoller.removeCallbacksAndMessages(null)
-        val pollRunnable = object : Runnable {
-            override fun run() {
-                if (gameStarted) {
-                    try {
-                        val inGame = nativeIsInGame()
-                        val automap = try { nativeIsAutomapActive() } catch (_: Exception) { false }
-                        val skippable = try { nativeIsSkippableScreen() } catch (_: Exception) { false }
-                        // Show overlay when in-game with overlay enabled, or when automap is active
-                        val shouldShow = (inGame && overlayEnabled) || automap
-                        val wasActive = touchOverlay.isActive
-                        touchOverlay.isActive = shouldShow
-                        touchOverlay.automapActive = automap
-                        // Show/hide skip button (mutually exclusive with game overlay)
-                        skipButton.visibility = if (skippable && !shouldShow) View.VISIBLE else View.GONE
-                        // Enable/disable joystick input when overlay state changes
-                        if (shouldShow && !wasActive) {
-                            nativeSetJoystickEnabled(true)
-                        } else if (!shouldShow && wasActive) {
+        val pollRunnable =
+            object : Runnable {
+                override fun run() {
+                    if (gameStarted) {
+                        try {
+                            val inGame = nativeIsInGame()
+                            val automap =
+                                try {
+                                    nativeIsAutomapActive()
+                                } catch (_: Exception) {
+                                    false
+                                }
+                            val skippable =
+                                try {
+                                    nativeIsSkippableScreen()
+                                } catch (_: Exception) {
+                                    false
+                                }
+                            // Show overlay when in-game with overlay enabled, or when automap is active
+                            val shouldShow = (inGame && overlayEnabled) || automap
+                            val wasActive = touchOverlay.isActive
+                            touchOverlay.isActive = shouldShow
+                            touchOverlay.automapActive = automap
+                            // Show/hide skip button (mutually exclusive with game overlay)
+                            skipButton.visibility = if (skippable && !shouldShow) View.VISIBLE else View.GONE
+                            // Enable/disable joystick input when overlay state changes
+                            if (shouldShow && !wasActive) {
+                                nativeSetJoystickEnabled(true)
+                            } else if (!shouldShow && wasActive) {
+                                nativeSetJoystickEnabled(false)
+                            }
+                            // Poll current track to update overlay label
+                            if (shouldShow && !automap) pollTrackLabel()
+                        } catch (_: Exception) {
+                            touchOverlay.isActive = false
+                            touchOverlay.automapActive = false
+                            skipButton.visibility = View.GONE
+                        }
+                    } else {
+                        if (touchOverlay.isActive) {
                             nativeSetJoystickEnabled(false)
                         }
-                        // Poll current track to update overlay label
-                        if (shouldShow && !automap) pollTrackLabel()
-                    } catch (_: Exception) {
                         touchOverlay.isActive = false
                         touchOverlay.automapActive = false
                         skipButton.visibility = View.GONE
                     }
-                } else {
-                    if (touchOverlay.isActive) {
-                        nativeSetJoystickEnabled(false)
-                    }
-                    touchOverlay.isActive = false
-                    touchOverlay.automapActive = false
-                    skipButton.visibility = View.GONE
+                    overlayPoller.postDelayed(this, 500)
                 }
-                overlayPoller.postDelayed(this, 500)
             }
-        }
         overlayPoller.post(pollRunnable)
     }
 
@@ -417,13 +522,17 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     // Trigger a game state dump to a file readable via adb:
     //   adb shell am broadcast -a com.dxxredux.INTROSPECT -n com.dxxredux.app/.MainActivity
     //   adb shell run-as com.dxxredux.app cat files/introspect.json
-    private val introspectReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            if (!gameStarted) return
-            nativeRequestIntrospect()
-            Log.i("DXX-Introspect", "Introspection requested — will dump on next frame")
+    private val introspectReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(
+                context: Context,
+                intent: Intent,
+            ) {
+                if (!gameStarted) return
+                nativeRequestIntrospect()
+                Log.i("DXX-Introspect", "Introspection requested — will dump on next frame")
+            }
         }
-    }
 
     // ── Automation (debug builds only) ───────────────────────
     // Load and run a JSON automation script:
@@ -432,47 +541,59 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     // Or use the files dir:
     //   adb shell run-as com.dxxredux.app cp /data/local/tmp/script.json files/
     //   adb shell am broadcast -a com.dxxredux.AUTOMATE --es script files/automate.json
-    private val automateReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            if (!gameStarted) {
-                Log.w("DXX-Automate", "AUTOMATE broadcast ignored: game not started yet")
-                return
+    private val automateReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(
+                context: Context,
+                intent: Intent,
+            ) {
+                if (!gameStarted) {
+                    Log.w("DXX-Automate", "AUTOMATE broadcast ignored: game not started yet")
+                    return
+                }
+                val scriptPath = intent.getStringExtra("script")
+                if (scriptPath.isNullOrEmpty()) {
+                    Log.e("DXX-Automate", "No 'script' extra in AUTOMATE broadcast")
+                    return
+                }
+                // If path is relative, resolve against filesDir
+                val resolvedPath =
+                    if (scriptPath.startsWith("/")) {
+                        scriptPath
+                    } else {
+                        filesDir.absolutePath + "/" + scriptPath
+                    }
+                Log.i("DXX-Automate", "Loading automation script: $resolvedPath")
+                nativeLoadAutomationScript(resolvedPath)
             }
-            val scriptPath = intent.getStringExtra("script")
-            if (scriptPath.isNullOrEmpty()) {
-                Log.e("DXX-Automate", "No 'script' extra in AUTOMATE broadcast")
-                return
-            }
-            // If path is relative, resolve against filesDir
-            val resolvedPath = if (scriptPath.startsWith("/")) scriptPath
-                               else filesDir.absolutePath + "/" + scriptPath
-            Log.i("DXX-Automate", "Loading automation script: $resolvedPath")
-            nativeLoadAutomationScript(resolvedPath)
         }
-    }
 
     // ── Game command API (debug builds only) ─────────────────
     //   adb shell am broadcast -a com.dxxredux.GAME_COMMAND --es command gain --ef value -20.0
     //   adb shell am broadcast -a com.dxxredux.GAME_COMMAND --es command voices --ei value 32
-    private val gameCommandReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            if (!gameStarted) return
-            val cmd = intent.getStringExtra("command") ?: return
-            when (cmd) {
-                "gain" -> {
-                    val db = intent.getFloatExtra("value", -10.0f)
-                    Log.i("DXX-Command", "Setting music gain to ${db} dB")
-                    nativeSetMusicGain(db)
+    private val gameCommandReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(
+                context: Context,
+                intent: Intent,
+            ) {
+                if (!gameStarted) return
+                val cmd = intent.getStringExtra("command") ?: return
+                when (cmd) {
+                    "gain" -> {
+                        val db = intent.getFloatExtra("value", -10.0f)
+                        Log.i("DXX-Command", "Setting music gain to $db dB")
+                        nativeSetMusicGain(db)
+                    }
+                    "voices" -> {
+                        val n = intent.getIntExtra("value", 48)
+                        Log.i("DXX-Command", "Setting max voices to $n")
+                        nativeSetMusicVoices(n)
+                    }
+                    else -> Log.w("DXX-Command", "Unknown command: $cmd")
                 }
-                "voices" -> {
-                    val n = intent.getIntExtra("value", 48)
-                    Log.i("DXX-Command", "Setting max voices to $n")
-                    nativeSetMusicVoices(n)
-                }
-                else -> Log.w("DXX-Command", "Unknown command: $cmd")
             }
         }
-    }
 
     override fun onStart() {
         super.onStart()
@@ -509,17 +630,29 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
 
     override fun onDestroy() {
         if (BuildConfig.DEBUG) {
-            try { unregisterReceiver(introspectReceiver) } catch (_: Exception) {}
-            try { unregisterReceiver(automateReceiver) } catch (_: Exception) {}
-            try { unregisterReceiver(gameCommandReceiver) } catch (_: Exception) {}
+            try {
+                unregisterReceiver(introspectReceiver)
+            } catch (_: Exception) {
+            }
+            try {
+                unregisterReceiver(automateReceiver)
+            } catch (_: Exception) {
+            }
+            try {
+                unregisterReceiver(gameCommandReceiver)
+            } catch (_: Exception) {
+            }
         }
         super.onDestroy()
     }
 
     // ── Touch → Mouse ───────────────────────────────────────
-    private fun handleTouch(view: View, event: MotionEvent): Boolean {
+    private fun handleTouch(
+        view: View,
+        event: MotionEvent,
+    ): Boolean {
         val density = resources.displayMetrics.density
-        val edgeThresholdPx = 40 * density   // 40 dp from left edge
+        val edgeThresholdPx = 40 * density // 40 dp from left edge
 
         // ── Left-edge fling detection (→ setup screen) ──────
         when (event.actionMasked) {
@@ -554,7 +687,9 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                 if (nativeIsAutomapActive()) {
                     return handleAutomapTouch(event, view.width.toFloat(), view.height.toFloat())
                 }
-            } catch (_: Exception) { /* engine not ready */ }
+            } catch (_: Exception) {
+                // engine not ready
+            }
         }
 
         // ── Normal game touch handling ──────────────────────
@@ -568,12 +703,13 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         val normX = (event.x / viewW).coerceIn(0f, 1f)
         val normY = (event.y / viewH).coerceIn(0f, 1f)
 
-        val action = when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN -> 0
-            MotionEvent.ACTION_MOVE -> 1
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> 2
-            else -> return false
-        }
+        val action =
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> 0
+                MotionEvent.ACTION_MOVE -> 1
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> 2
+                else -> return false
+            }
 
         nativeTouchEvent(action, normX, normY)
         return true
@@ -608,7 +744,11 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
      * [screenW] / [screenH] are the view dimensions for normalisation.
      * Returns true if the event was consumed.
      */
-    fun handleAutomapTouch(event: MotionEvent, screenW: Float, screenH: Float): Boolean {
+    fun handleAutomapTouch(
+        event: MotionEvent,
+        screenW: Float,
+        screenH: Float,
+    ): Boolean {
         if (screenW <= 0f || screenH <= 0f) return false
 
         when (event.actionMasked) {
@@ -641,7 +781,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
 
                         // Single-finger drag → pan / tilt
                         val heading = dx / screenW
-                        val pitch   = dy / screenH
+                        val pitch = dy / screenH
                         if (heading != 0f || pitch != 0f) {
                             nativeAutomapInput(heading, pitch, 0f)
                         }
@@ -657,7 +797,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                         val thrust = delta / screenW * 60f
 
                         var dAngle = angle - automapPinchAngle
-                        while (dAngle > Math.PI.toFloat())  dAngle -= (2 * Math.PI).toFloat()
+                        while (dAngle > Math.PI.toFloat()) dAngle -= (2 * Math.PI).toFloat()
                         while (dAngle < -Math.PI.toFloat()) dAngle += (2 * Math.PI).toFloat()
                         val bank = dAngle / Math.PI.toFloat()
 
@@ -744,29 +884,36 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         val i0 = event.findPointerIndex(ids[0])
         val i1 = event.findPointerIndex(ids[1])
         if (i0 < 0 || i1 < 0) return PointF(0f, 0f)
-        return PointF((event.getX(i0) + event.getX(i1)) / 2f,
-                       (event.getY(i0) + event.getY(i1)) / 2f)
+        return PointF(
+            (event.getX(i0) + event.getX(i1)) / 2f,
+            (event.getY(i0) + event.getY(i1)) / 2f,
+        )
     }
 
     /** Map Android gamepad KEYCODE_BUTTON_* to virtual joystick button index (0-9). */
-    private fun gamepadButtonIndex(keyCode: Int): Int = when (keyCode) {
-        KeyEvent.KEYCODE_BUTTON_A      -> 0
-        KeyEvent.KEYCODE_BUTTON_B      -> 1
-        KeyEvent.KEYCODE_BUTTON_X      -> 2
-        KeyEvent.KEYCODE_BUTTON_Y      -> 3
-        KeyEvent.KEYCODE_BUTTON_L1     -> 4
-        KeyEvent.KEYCODE_BUTTON_R1     -> 5
-        KeyEvent.KEYCODE_BUTTON_SELECT -> 6
-        KeyEvent.KEYCODE_BUTTON_START  -> 7
-        KeyEvent.KEYCODE_BUTTON_THUMBL -> 8
-        KeyEvent.KEYCODE_BUTTON_THUMBR -> 9
-        else -> -1
-    }
+    private fun gamepadButtonIndex(keyCode: Int): Int =
+        when (keyCode) {
+            KeyEvent.KEYCODE_BUTTON_A -> 0
+            KeyEvent.KEYCODE_BUTTON_B -> 1
+            KeyEvent.KEYCODE_BUTTON_X -> 2
+            KeyEvent.KEYCODE_BUTTON_Y -> 3
+            KeyEvent.KEYCODE_BUTTON_L1 -> 4
+            KeyEvent.KEYCODE_BUTTON_R1 -> 5
+            KeyEvent.KEYCODE_BUTTON_SELECT -> 6
+            KeyEvent.KEYCODE_BUTTON_START -> 7
+            KeyEvent.KEYCODE_BUTTON_THUMBL -> 8
+            KeyEvent.KEYCODE_BUTTON_THUMBR -> 9
+            else -> -1
+        }
 
-    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+    override fun onKeyDown(
+        keyCode: Int,
+        event: KeyEvent,
+    ): Boolean {
         // Let the system handle volume keys
-        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
             return super.onKeyDown(keyCode, event)
+        }
 
         // Gamepad face / shoulder buttons → joystick button events
         val joyBtn = gamepadButtonIndex(keyCode)
@@ -779,9 +926,13 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         return true
     }
 
-    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)
+    override fun onKeyUp(
+        keyCode: Int,
+        event: KeyEvent,
+    ): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
             return super.onKeyUp(keyCode, event)
+        }
 
         val joyBtn = gamepadButtonIndex(keyCode)
         if (joyBtn >= 0) {
@@ -794,12 +945,12 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     }
 
     // ── Gamepad analog axes ─────────────────────────────────
-    private var hatXState = 0  // -1, 0, +1
+    private var hatXState = 0 // -1, 0, +1
     private var hatYState = 0
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
-        if (event.source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
-            && event.action == MotionEvent.ACTION_MOVE
+        if (event.source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK &&
+            event.action == MotionEvent.ACTION_MOVE
         ) {
             nativeJoystickAxis(0, event.getAxisValue(MotionEvent.AXIS_X))
             nativeJoystickAxis(1, event.getAxisValue(MotionEvent.AXIS_Y))
@@ -811,20 +962,34 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
             // D-pad reported as HAT axes → synthesize keyboard arrow keys
             val hx = event.getAxisValue(MotionEvent.AXIS_HAT_X)
             val hy = event.getAxisValue(MotionEvent.AXIS_HAT_Y)
-            val newHatX = if (hx < -0.5f) -1 else if (hx > 0.5f) 1 else 0
-            val newHatY = if (hy < -0.5f) -1 else if (hy > 0.5f) 1 else 0
+            val newHatX =
+                if (hx < -0.5f) {
+                    -1
+                } else if (hx > 0.5f) {
+                    1
+                } else {
+                    0
+                }
+            val newHatY =
+                if (hy < -0.5f) {
+                    -1
+                } else if (hy > 0.5f) {
+                    1
+                } else {
+                    0
+                }
             if (newHatX != hatXState) {
                 if (hatXState == -1) nativeKeyEvent(1, KeyEvent.KEYCODE_DPAD_LEFT, 0)
-                if (hatXState ==  1) nativeKeyEvent(1, KeyEvent.KEYCODE_DPAD_RIGHT, 0)
-                if (newHatX   == -1) nativeKeyEvent(0, KeyEvent.KEYCODE_DPAD_LEFT, 0)
-                if (newHatX   ==  1) nativeKeyEvent(0, KeyEvent.KEYCODE_DPAD_RIGHT, 0)
+                if (hatXState == 1) nativeKeyEvent(1, KeyEvent.KEYCODE_DPAD_RIGHT, 0)
+                if (newHatX == -1) nativeKeyEvent(0, KeyEvent.KEYCODE_DPAD_LEFT, 0)
+                if (newHatX == 1) nativeKeyEvent(0, KeyEvent.KEYCODE_DPAD_RIGHT, 0)
                 hatXState = newHatX
             }
             if (newHatY != hatYState) {
                 if (hatYState == -1) nativeKeyEvent(1, KeyEvent.KEYCODE_DPAD_UP, 0)
-                if (hatYState ==  1) nativeKeyEvent(1, KeyEvent.KEYCODE_DPAD_DOWN, 0)
-                if (newHatY   == -1) nativeKeyEvent(0, KeyEvent.KEYCODE_DPAD_UP, 0)
-                if (newHatY   ==  1) nativeKeyEvent(0, KeyEvent.KEYCODE_DPAD_DOWN, 0)
+                if (hatYState == 1) nativeKeyEvent(1, KeyEvent.KEYCODE_DPAD_DOWN, 0)
+                if (newHatY == -1) nativeKeyEvent(0, KeyEvent.KEYCODE_DPAD_UP, 0)
+                if (newHatY == 1) nativeKeyEvent(0, KeyEvent.KEYCODE_DPAD_DOWN, 0)
                 hatYState = newHatY
             }
 
@@ -834,13 +999,14 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     }
 
     // ── Soft keyboard show/hide (called from JNI) ───────────
-    @Suppress("unused")   // Called from native code
+    @Suppress("unused") // Called from native code
     fun showKeyboard(inputType: Int) {
         runOnUiThread {
-            gameSurfaceView.currentInputType = when (inputType) {
-                2    -> InputType.TYPE_CLASS_NUMBER
-                else -> InputType.TYPE_CLASS_TEXT
-            }
+            gameSurfaceView.currentInputType =
+                when (inputType) {
+                    2 -> InputType.TYPE_CLASS_NUMBER
+                    else -> InputType.TYPE_CLASS_TEXT
+                }
             gameSurfaceView.keyboardActive = true
             gameSurfaceView.requestFocus()
             val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
@@ -849,7 +1015,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         }
     }
 
-    @Suppress("unused")   // Called from native code
+    @Suppress("unused") // Called from native code
     fun hideKeyboard() {
         runOnUiThread {
             gameSurfaceView.keyboardActive = false
@@ -866,7 +1032,9 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                 lastTrackNum = trackNum
                 updateTrackLabel()
             }
-        } catch (_: Exception) { /* not playing */ }
+        } catch (_: Exception) {
+            // not playing
+        }
     }
 
     private fun updateTrackLabel() {
@@ -887,64 +1055,81 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     }
 
     private fun showMusicPanel() {
-        if (musicPanel != null) return   // already showing
-        val panel = MusicControlPanel(this, { track ->
-            nativePlaySpecificTrack(track)
-            updateTrackLabel()
-        }, {
-            musicPanel?.let { mp ->
-                (gameSurfaceView.parent as? FrameLayout)?.removeView(mp)
-            }
-            musicPanel = null
-        })
+        if (musicPanel != null) return // already showing
+        val panel =
+            MusicControlPanel(this, { track ->
+                nativePlaySpecificTrack(track)
+                updateTrackLabel()
+            }, {
+                musicPanel?.let { mp ->
+                    (gameSurfaceView.parent as? FrameLayout)?.removeView(mp)
+                }
+                musicPanel = null
+            })
         musicPanel = panel
         val frame = gameSurfaceView.parent as? FrameLayout ?: return
-        frame.addView(panel, FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT
-        ))
+        frame.addView(
+            panel,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
     }
 
     // ── Overlay toast lines (multi-line, each fades independently) ──
     private fun showOverlayLine(text: String) {
         runOnUiThread {
-            val tv = TextView(this).apply {
-                this.text = text
-                setTextColor(Color.GREEN)
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
-                typeface = Typeface.MONOSPACE
-                alpha = 0f
-            }
+            val tv =
+                TextView(this).apply {
+                    this.text = text
+                    setTextColor(Color.GREEN)
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+                    typeface = Typeface.MONOSPACE
+                    alpha = 0f
+                }
             overlayContainer.addView(tv)
 
             val fadeIn = ObjectAnimator.ofFloat(tv, "alpha", 0f, 1f).apply { duration = 500 }
-            fadeIn.addListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: Animator) {
-                    val fadeOut = ObjectAnimator.ofFloat(tv, "alpha", 1f, 0f).apply {
-                        startDelay = 3000; duration = 500
+            fadeIn.addListener(
+                object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        val fadeOut =
+                            ObjectAnimator.ofFloat(tv, "alpha", 1f, 0f).apply {
+                                startDelay = 3000
+                                duration = 500
+                            }
+                        fadeOut.addListener(
+                            object : AnimatorListenerAdapter() {
+                                override fun onAnimationEnd(animation: Animator) {
+                                    overlayContainer.removeView(tv)
+                                }
+                            },
+                        )
+                        fadeOut.start()
                     }
-                    fadeOut.addListener(object : AnimatorListenerAdapter() {
-                        override fun onAnimationEnd(animation: Animator) {
-                            overlayContainer.removeView(tv)
-                        }
-                    })
-                    fadeOut.start()
-                }
-            })
+                },
+            )
             fadeIn.start()
         }
     }
 
     // ── Track name overlay (called from JNI) ────────────────
     @Suppress("unused")
-    fun showTrackName(name: String) { showOverlayLine(name) }
+    fun showTrackName(name: String) {
+        showOverlayLine(name)
+    }
 
     // ── Level name overlay (called from JNI) ────────────────
     @Suppress("unused")
-    fun showLevelName(name: String) { showOverlayLine(name) }
+    fun showLevelName(name: String) {
+        showOverlayLine(name)
+    }
 
     // ── GameSurfaceView with InputConnection for soft keyboard ──
-    private inner class GameSurfaceView(context: Context) : SurfaceView(context) {
+    private inner class GameSurfaceView(
+        context: Context,
+    ) : SurfaceView(context) {
         var currentInputType = InputType.TYPE_CLASS_TEXT
         var keyboardActive = false
 
@@ -954,10 +1139,10 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
             // Disable word prediction / autocorrect so each keystroke arrives
             // immediately via commitText instead of being buffered in composition.
             outAttrs.inputType = currentInputType or
-                    InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or
-                    InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or
+                InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
             outAttrs.imeOptions = EditorInfo.IME_ACTION_DONE or
-                    EditorInfo.IME_FLAG_NO_EXTRACT_UI
+                EditorInfo.IME_FLAG_NO_EXTRACT_UI
             return GameInputConnection(this)
         }
     }
@@ -968,9 +1153,13 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
      * performEditorAction(DONE) → Enter key
      * deleteSurroundingText → Backspace key(s)
      */
-    private inner class GameInputConnection(view: View) : BaseInputConnection(view, false) {
-
-        override fun setComposingText(text: CharSequence, newCursorPosition: Int): Boolean {
+    private inner class GameInputConnection(
+        view: View,
+    ) : BaseInputConnection(view, false) {
+        override fun setComposingText(
+            text: CharSequence,
+            newCursorPosition: Int,
+        ): Boolean {
             // Some IMEs still compose even with NO_SUGGESTIONS.
             // Finish composition immediately and commit the text so each
             // character appears in the game without waiting for a space.
@@ -978,14 +1167,20 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
             return commitText(text, newCursorPosition)
         }
 
-        override fun commitText(text: CharSequence, newCursorPosition: Int): Boolean {
+        override fun commitText(
+            text: CharSequence,
+            newCursorPosition: Int,
+        ): Boolean {
             for (c in text) {
                 nativeTextInput(c.code)
             }
             return true
         }
 
-        override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
+        override fun deleteSurroundingText(
+            beforeLength: Int,
+            afterLength: Int,
+        ): Boolean {
             // Each "before" character = one Backspace press
             repeat(beforeLength) {
                 nativeKeyEvent(0, KeyEvent.KEYCODE_DEL, 0)

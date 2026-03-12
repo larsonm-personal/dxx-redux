@@ -19,12 +19,13 @@ import java.io.File
  * Call [migrateDefaultSetIfNeeded] once at startup to move legacy game data
  * from filesDir root into `sets/default/`.
  */
-class FileSetManager(private val filesDir: File) {
-
+class FileSetManager(
+    private val filesDir: File,
+) {
     data class FileSetInfo(
         val name: String,
         val createdAt: Long,
-        val source: String? = null
+        val source: String? = null,
     )
 
     private val configFile get() = File(filesDir, "file_sets.json")
@@ -40,11 +41,13 @@ class FileSetManager(private val filesDir: File) {
         val result = mutableListOf<FileSetInfo>()
         for (i in 0 until sets.length()) {
             val obj = sets.getJSONObject(i)
-            result.add(FileSetInfo(
-                name = obj.getString("name"),
-                createdAt = obj.optLong("createdAt", 0),
-                source = obj.optString("source").takeIf { it.isNotEmpty() }
-            ))
+            result.add(
+                FileSetInfo(
+                    name = obj.getString("name"),
+                    createdAt = obj.optLong("createdAt", 0),
+                    source = obj.optString("source").takeIf { it.isNotEmpty() },
+                ),
+            )
         }
         if (result.none { it.name == DEFAULT_SET }) {
             result.add(0, FileSetInfo(DEFAULT_SET, 0))
@@ -66,9 +69,11 @@ class FileSetManager(private val filesDir: File) {
     fun setActive(name: String) {
         val config = loadConfig()
         val sets = config.optJSONArray("sets") ?: JSONArray()
-        val exists = (0 until sets.length()).any {
-            sets.getJSONObject(it).getString("name") == name
-        } || name == DEFAULT_SET
+        val exists =
+            (0 until sets.length()).any {
+                sets.getJSONObject(it).getString("name") == name
+            } ||
+                name == DEFAULT_SET
         if (!exists) {
             Log.w(TAG, "Cannot activate unknown set: $name")
             return
@@ -81,7 +86,10 @@ class FileSetManager(private val filesDir: File) {
      * Create a new named set. Returns the set's directory.
      * Throws if the name is invalid or already exists.
      */
-    fun createSet(name: String, source: String? = null): File {
+    fun createSet(
+        name: String,
+        source: String? = null,
+    ): File {
         validateSetName(name)
         val config = loadConfig()
         val sets = config.optJSONArray("sets") ?: JSONArray()
@@ -131,16 +139,12 @@ class FileSetManager(private val filesDir: File) {
      * Get the directory for a set. All sets live under `filesDir/sets/<name>/`,
      * including "default".
      */
-    fun getSetDir(name: String): File {
-        return File(setsDir, name).also { it.mkdirs() }
-    }
+    fun getSetDir(name: String): File = File(setsDir, name).also { it.mkdirs() }
 
     /**
      * Get the SAF manifest for a set.
      */
-    fun safManifestForSet(name: String): SafManifest {
-        return SafManifest.forDir(getSetDir(name))
-    }
+    fun safManifestForSet(name: String): SafManifest = SafManifest.forDir(getSetDir(name))
 
     /**
      * Calculate disk usage for a set's directory (excludes SAF leave-in-place files).
@@ -148,7 +152,8 @@ class FileSetManager(private val filesDir: File) {
     fun diskUsage(name: String): Long {
         val dir = getSetDir(name)
         if (!dir.exists()) return 0
-        return dir.walkTopDown()
+        return dir
+            .walkTopDown()
             .filter { it.isFile }
             .sumOf { it.length() }
     }
@@ -170,14 +175,13 @@ class FileSetManager(private val filesDir: File) {
         require(name != DEFAULT_SET) { "Cannot create set named '$DEFAULT_SET'" }
     }
 
-    private fun loadConfig(): JSONObject {
-        return try {
+    private fun loadConfig(): JSONObject =
+        try {
             if (configFile.exists()) JSONObject(configFile.readText()) else JSONObject()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to parse file_sets.json", e)
             JSONObject()
         }
-    }
 
     private fun saveConfig(config: JSONObject) {
         configFile.writeText(config.toString(2))
@@ -238,7 +242,7 @@ class FileSetManager(private val filesDir: File) {
      */
     fun sweepRootGameFiles() {
         val config = loadConfig()
-        if (config.optInt("migration_version", 0) < 1) return  // migration hasn't run yet
+        if (config.optInt("migration_version", 0) < 1) return // migration hasn't run yet
         var swept = 0
         val files = filesDir.listFiles() ?: return
         for (file in files) {
@@ -254,8 +258,9 @@ class FileSetManager(private val filesDir: File) {
                 swept++
             }
         }
-        if (swept > 0)
+        if (swept > 0) {
             Log.i(TAG, "Swept $swept orphaned game-data items from filesDir root")
+        }
     }
 
     companion object {
@@ -263,10 +268,21 @@ class FileSetManager(private val filesDir: File) {
         const val DEFAULT_SET = "default"
 
         /** File extensions (lowercase) that are per-set game data. */
-        private val GAME_DATA_EXTENSIONS = setOf(
-            "pig", "hog", "ham", "mvl", "s11", "s22",
-            "mn2", "msn", "dxa", "pog", "rl2", "dtx",
-        )
+        private val GAME_DATA_EXTENSIONS =
+            setOf(
+                "pig",
+                "hog",
+                "ham",
+                "mvl",
+                "s11",
+                "s22",
+                "mn2",
+                "msn",
+                "dxa",
+                "pog",
+                "rl2",
+                "dtx",
+            )
 
         /** Subdirectory names (lowercase) that contain per-set game data. */
         private val GAME_DATA_DIRS = setOf("missions")

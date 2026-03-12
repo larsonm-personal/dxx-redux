@@ -13,38 +13,40 @@ import java.security.MessageDigest
  * from track 1. The disc with the most consecutive in-order matches from
  * the beginning wins. Ties broken by total match count.
  */
-class DiscIdentifier(context: Context) {
-
+class DiscIdentifier(
+    context: Context,
+) {
     data class KnownTrack(
         val track: Int,
-        val type: String,   // "data" or "audio"
+        val type: String, // "data" or "audio"
         val sha1: String,
-        val name: String?
+        val name: String?,
     )
 
     data class KnownDisc(
         val id: String,
         val label: String,
-        val game: String,              // "d1" or "d2"
-        val legacyDiscId: String?,     // e.g. "0x7d0ff809"
-        val trackMapping: Map<String, Int>,  // title, credits, first_level
-        val tracks: List<KnownTrack>
+        val game: String, // "d1" or "d2"
+        val legacyDiscId: String?, // e.g. "0x7d0ff809"
+        val trackMapping: Map<String, Int>, // title, credits, first_level
+        val tracks: List<KnownTrack>,
     )
 
     data class MatchResult(
         val disc: KnownDisc?,
-        val matchedTracks: Int,        // consecutive from beginning
+        val matchedTracks: Int, // consecutive from beginning
         val totalKnownTracks: Int,
         val allMatched: Boolean,
-        val totalMatchCount: Int       // total matching tracks (not necessarily consecutive)
+        val totalMatchCount: Int, // total matching tracks (not necessarily consecutive)
     ) {
         val matched get() = disc != null
         val label get() = disc?.label ?: "Unknown disc"
-        val matchDescription: String get() = when {
-            disc == null -> "No match"
-            allMatched -> "all track hashes matched"
-            else -> "$matchedTracks/$totalKnownTracks track hashes matched"
-        }
+        val matchDescription: String get() =
+            when {
+                disc == null -> "No match"
+                allMatched -> "all track hashes matched"
+                else -> "$matchedTracks/$totalKnownTracks track hashes matched"
+            }
     }
 
     private val knownDiscs: List<KnownDisc>
@@ -53,23 +55,28 @@ class DiscIdentifier(context: Context) {
         knownDiscs = loadDatabase(context)
     }
 
-    private fun loadDatabase(context: Context): List<KnownDisc> {
-        return try {
-            val raw = context.assets.open("known_discs.json5").bufferedReader().readText()
+    private fun loadDatabase(context: Context): List<KnownDisc> =
+        try {
+            val raw =
+                context.assets
+                    .open("known_discs.json5")
+                    .bufferedReader()
+                    .readText()
             val root = JSONObject(Json5.strip(raw))
             val discsArray = root.getJSONArray("discs")
             (0 until discsArray.length()).map { i ->
                 val d = discsArray.getJSONObject(i)
                 val tracksArray = d.getJSONArray("tracks")
-                val tracks = (0 until tracksArray.length()).map { j ->
-                    val t = tracksArray.getJSONObject(j)
-                    KnownTrack(
-                        track = t.getInt("track"),
-                        type = t.getString("type"),
-                        sha1 = t.getString("sha1"),
-                        name = t.optString("name", null)
-                    )
-                }
+                val tracks =
+                    (0 until tracksArray.length()).map { j ->
+                        val t = tracksArray.getJSONObject(j)
+                        KnownTrack(
+                            track = t.getInt("track"),
+                            type = t.getString("type"),
+                            sha1 = t.getString("sha1"),
+                            name = t.optString("name", null),
+                        )
+                    }
                 val mapping = mutableMapOf<String, Int>()
                 d.optJSONObject("track_mapping")?.let { tm ->
                     tm.keys().forEach { key -> mapping[key] = tm.getInt(key) }
@@ -80,14 +87,13 @@ class DiscIdentifier(context: Context) {
                     game = d.getString("game"),
                     legacyDiscId = d.optString("legacy_disc_id", null),
                     trackMapping = mapping,
-                    tracks = tracks
+                    tracks = tracks,
                 )
             }
         } catch (e: Exception) {
             android.util.Log.e("DiscIdentifier", "Failed to load known_discs.json5: ${e.message}")
             emptyList()
         }
-    }
 
     /**
      * Identify a disc from its per-track SHA1 hashes.
@@ -116,8 +122,8 @@ class DiscIdentifier(context: Context) {
 
             // Better match: more consecutive from beginning, then total as tiebreaker
             if (consecutive > bestConsecutive ||
-                (consecutive == bestConsecutive && total > bestTotal))
-            {
+                (consecutive == bestConsecutive && total > bestTotal)
+            ) {
                 bestDisc = disc
                 bestConsecutive = consecutive
                 bestTotal = total
@@ -130,7 +136,7 @@ class DiscIdentifier(context: Context) {
             matchedTracks = bestConsecutive,
             totalKnownTracks = bestKnownCount,
             allMatched = bestDisc != null && bestConsecutive == bestKnownCount,
-            totalMatchCount = bestTotal
+            totalMatchCount = bestTotal,
         )
     }
 
@@ -150,7 +156,7 @@ class DiscIdentifier(context: Context) {
         fun sha1Hash(
             input: InputStream,
             length: Long,
-            progressCallback: ((Long, Long) -> Boolean)? = null
+            progressCallback: ((Long, Long) -> Boolean)? = null,
         ): String {
             val digest = MessageDigest.getInstance("SHA-1")
             val buf = ByteArray(65536)

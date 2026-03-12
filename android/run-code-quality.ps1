@@ -29,9 +29,9 @@ Write-Host ""
 # --- ktlint ---
 Write-Host "--- Kotlin (ktlint) ---"
 if ($Fix) {
-    & "$scriptDir\run-ktlint.ps1" -Format
-} else {
     & "$scriptDir\run-ktlint.ps1"
+} else {
+    & "$scriptDir\run-ktlint.ps1" -Check
 }
 if ($LASTEXITCODE -ne 0) {
     $failed += "ktlint"

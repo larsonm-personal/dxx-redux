@@ -1,6 +1,5 @@
 package com.dxxredux.app
 
-import android.content.Context
 import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
@@ -16,8 +15,9 @@ import java.io.File
  * For the legacy single-source case (GOG descent_ii.gog/.inst), no
  * audio_sources.json is needed — the engine falls back to its hardcoded path.
  */
-class AudioSourceManager(private val filesDir: File) {
-
+class AudioSourceManager(
+    private val filesDir: File,
+) {
     companion object {
         private const val TAG = "DXX-AudioSrc"
         private const val SOURCES_FILE = "audio_sources.json"
@@ -28,16 +28,16 @@ class AudioSourceManager(private val filesDir: File) {
      * One registered audio source (a BIN/CUE pair from a disc image).
      */
     data class AudioSource(
-        val id: String,               // unique id (e.g., "d2-gog-v1.2")
-        val cuePath: String,          // path to CUE file (relative to filesDir)
-        val binPaths: List<String>,   // paths to BIN file(s)
-        val discLabel: String,        // human-readable disc label
-        val discId: String,           // known_discs.json disc id (or "unknown")
-        val trackCount: Int,          // total tracks (data + audio)
-        val audioTrackCount: Int,     // audio tracks only
-        val legacyDiscId: Long,       // e.g., 0x7d0ff809 for backward compat
+        val id: String, // unique id (e.g., "d2-gog-v1.2")
+        val cuePath: String, // path to CUE file (relative to filesDir)
+        val binPaths: List<String>, // paths to BIN file(s)
+        val discLabel: String, // human-readable disc label
+        val discId: String, // known_discs.json disc id (or "unknown")
+        val trackCount: Int, // total tracks (data + audio)
+        val audioTrackCount: Int, // audio tracks only
+        val legacyDiscId: Long, // e.g., 0x7d0ff809 for backward compat
         val enabled: Boolean = true,
-        val order: Int = 0            // user-defined sort order
+        val order: Int = 0, // user-defined sort order
     )
 
     private var sources: MutableList<AudioSource> = mutableListOf()
@@ -50,8 +50,7 @@ class AudioSourceManager(private val filesDir: File) {
     fun getSources(): List<AudioSource> = sources.sortedBy { it.order }
 
     /** Get only enabled sources, in order */
-    fun getEnabledSources(): List<AudioSource> =
-        sources.filter { it.enabled }.sortedBy { it.order }
+    fun getEnabledSources(): List<AudioSource> = sources.filter { it.enabled }.sortedBy { it.order }
 
     /** Check if the legacy GOG pair exists (no explicit source registration needed) */
     fun hasLegacyGog(setDir: File? = null): Boolean {
@@ -88,7 +87,10 @@ class AudioSourceManager(private val filesDir: File) {
     }
 
     /** Toggle enabled state */
-    fun setEnabled(id: String, enabled: Boolean) {
+    fun setEnabled(
+        id: String,
+        enabled: Boolean,
+    ) {
         sources.replaceAll {
             if (it.id == id) it.copy(enabled = enabled) else it
         }
@@ -138,7 +140,7 @@ class AudioSourceManager(private val filesDir: File) {
         return true
     }
 
-    /* ── Persistence ─────────────────────────────────────────────── */
+    // ── Persistence ───────────────────────────────────────────────
 
     private fun load() {
         val file = File(filesDir, SOURCES_FILE)
@@ -149,22 +151,24 @@ class AudioSourceManager(private val filesDir: File) {
         try {
             val json = JSONObject(file.readText())
             val arr = json.getJSONArray("sources")
-            sources = (0 until arr.length()).map { i ->
-                val obj = arr.getJSONObject(i)
-                val binArr = obj.getJSONArray("bins")
-                AudioSource(
-                    id = obj.getString("id"),
-                    cuePath = obj.getString("cue"),
-                    binPaths = (0 until binArr.length()).map { binArr.getString(it) },
-                    discLabel = obj.optString("label", "Unknown Disc"),
-                    discId = obj.optString("disc_id", "unknown"),
-                    trackCount = obj.optInt("track_count", 0),
-                    audioTrackCount = obj.optInt("audio_track_count", 0),
-                    legacyDiscId = obj.optLong("legacy_disc_id", 0),
-                    enabled = obj.optBoolean("enabled", true),
-                    order = obj.optInt("order", 0)
-                )
-            }.toMutableList()
+            sources =
+                (0 until arr.length())
+                    .map { i ->
+                        val obj = arr.getJSONObject(i)
+                        val binArr = obj.getJSONArray("bins")
+                        AudioSource(
+                            id = obj.getString("id"),
+                            cuePath = obj.getString("cue"),
+                            binPaths = (0 until binArr.length()).map { binArr.getString(it) },
+                            discLabel = obj.optString("label", "Unknown Disc"),
+                            discId = obj.optString("disc_id", "unknown"),
+                            trackCount = obj.optInt("track_count", 0),
+                            audioTrackCount = obj.optInt("audio_track_count", 0),
+                            legacyDiscId = obj.optLong("legacy_disc_id", 0),
+                            enabled = obj.optBoolean("enabled", true),
+                            order = obj.optInt("order", 0),
+                        )
+                    }.toMutableList()
             Log.i(TAG, "Loaded ${sources.size} audio sources")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load $SOURCES_FILE", e)

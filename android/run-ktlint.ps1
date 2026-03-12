@@ -1,10 +1,10 @@
 # run-ktlint.ps1 -- Run ktlint on Kotlin source files.
 # Usage:
-#   .\run-ktlint.ps1          # check only (report issues, exit 1 if any)
-#   .\run-ktlint.ps1 --format # auto-fix formatting
+#   .\run-ktlint.ps1          # auto-fix formatting (default)
+#   .\run-ktlint.ps1 --check  # report issues, exit 1 if any
 
 param(
-    [switch]$Format
+    [switch]$Check
 )
 
 $ErrorActionPreference = "Stop"
@@ -68,17 +68,17 @@ Write-Host "Found $($files.Count) Kotlin files."
 # --- Run ---
 $patterns = ($files | ForEach-Object { $_.FullName }) -join " "
 
-if ($Format) {
-    Write-Host "Formatting..."
-    & $java -jar $ktlintJar --format $files.FullName
-    Write-Host "Done."
-} else {
+if ($Check) {
     Write-Host "Checking..."
     & $java -jar $ktlintJar $files.FullName
     if ($LASTEXITCODE -ne 0) {
         Write-Host ""
-        Write-Host "ktlint found issues. Run with --format to auto-fix."
+        Write-Host "ktlint found issues. Run without --check to auto-fix."
         exit 1
     }
     Write-Host "All Kotlin files pass ktlint checks."
+} else {
+    Write-Host "Formatting..."
+    & $java -jar $ktlintJar --format $files.FullName
+    Write-Host "Done."
 }

@@ -19,8 +19,9 @@ import kotlin.math.sign
  *
  * Lifecycle: call [resume] in onResume and [pause] in onStop/onPause.
  */
-class GyroInputManager(context: Context) : SensorEventListener {
-
+class GyroInputManager(
+    context: Context,
+) : SensorEventListener {
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val sensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR)
 
@@ -38,8 +39,8 @@ class GyroInputManager(context: Context) : SensorEventListener {
     private val orientationAngles = FloatArray(3)
 
     // Activation state
-    var rightStickActive = false  // set by TouchOverlayView when right stick is touched
-    var toggledOn = false         // toggled by a dedicated button
+    var rightStickActive = false // set by TouchOverlayView when right stick is touched
+    var toggledOn = false // toggled by a dedicated button
 
     /** Whether this device has a usable gyro sensor. */
     val isAvailable: Boolean get() = sensor != null
@@ -66,17 +67,21 @@ class GyroInputManager(context: Context) : SensorEventListener {
         hasReference = false
     }
 
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+    override fun onAccuracyChanged(
+        sensor: Sensor?,
+        accuracy: Int,
+    ) {}
 
     override fun onSensorChanged(event: SensorEvent) {
         if (event.sensor.type != Sensor.TYPE_GAME_ROTATION_VECTOR) return
 
         // Check activation mode
-        val active = when (config.activation) {
-            GyroActivation.ALWAYS -> true
-            GyroActivation.TOUCH_STICK -> rightStickActive
-            GyroActivation.ADS_ONLY -> toggledOn
-        }
+        val active =
+            when (config.activation) {
+                GyroActivation.ALWAYS -> true
+                GyroActivation.TOUCH_STICK -> rightStickActive
+                GyroActivation.ADS_ONLY -> toggledOn
+            }
 
         SensorManager.getRotationMatrixFromVector(curRotationMatrix, event.values)
 
@@ -94,11 +99,13 @@ class GyroInputManager(context: Context) : SensorEventListener {
 
         // Compute delta: deltaR = refR^T * curR
         // refR is 3x3 row-major, transpose means swap row/col indices
-        for (r in 0..2) for (c in 0..2) {
-            deltaRotationMatrix[r * 3 + c] =
-                refRotationMatrix[0 * 3 + r] * curRotationMatrix[0 * 3 + c] +
-                refRotationMatrix[1 * 3 + r] * curRotationMatrix[1 * 3 + c] +
-                refRotationMatrix[2 * 3 + r] * curRotationMatrix[2 * 3 + c]
+        for (r in 0..2) {
+            for (c in 0..2) {
+                deltaRotationMatrix[r * 3 + c] =
+                    refRotationMatrix[0 * 3 + r] * curRotationMatrix[0 * 3 + c] +
+                    refRotationMatrix[1 * 3 + r] * curRotationMatrix[1 * 3 + c] +
+                    refRotationMatrix[2 * 3 + r] * curRotationMatrix[2 * 3 + c]
+            }
         }
 
         // Extract yaw (azimuth) and pitch from the delta rotation
@@ -127,7 +134,10 @@ class GyroInputManager(context: Context) : SensorEventListener {
         axisCallback?.invoke(config.axisY, outY)
     }
 
-    private fun applyDeadzone(value: Float, deadzone: Float): Float {
+    private fun applyDeadzone(
+        value: Float,
+        deadzone: Float,
+    ): Float {
         val a = abs(value)
         if (a < deadzone) return 0f
         return sign(value) * (a - deadzone) / (1f - deadzone)

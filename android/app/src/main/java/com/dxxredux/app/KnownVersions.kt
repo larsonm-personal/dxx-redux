@@ -11,8 +11,10 @@ import org.json.JSONObject
  * an Activity before first use (e.g. in SetupActivity.onCreate).
  */
 object KnownVersions {
-
-    data class VersionEntry(val sha256: String, val versionName: String)
+    data class VersionEntry(
+        val sha256: String,
+        val versionName: String,
+    )
 
     /** filename (lowercase) → list of known versions */
     private var table: Map<String, List<VersionEntry>> = emptyMap()
@@ -21,7 +23,11 @@ object KnownVersions {
     fun init(context: Context) {
         if (table.isNotEmpty()) return
         try {
-            val raw = context.assets.open("known_versions.json5").bufferedReader().readText()
+            val raw =
+                context.assets
+                    .open("known_versions.json5")
+                    .bufferedReader()
+                    .readText()
             val json = JSONObject(Json5.strip(raw))
             val arr = json.getJSONArray("versions")
             val t = mutableMapOf<String, MutableList<VersionEntry>>()
@@ -48,7 +54,10 @@ object KnownVersions {
      * Look up a version name for a file by its SHA-256 hash.
      * Returns null if the hash is not in the known table.
      */
-    fun lookup(filename: String, sha256: String): String? {
+    fun lookup(
+        filename: String,
+        sha256: String,
+    ): String? {
         val entries = table[filename.lowercase()] ?: return null
         return entries.firstOrNull { it.sha256 == sha256.lowercase() }?.versionName
     }

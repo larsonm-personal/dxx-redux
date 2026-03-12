@@ -16,15 +16,16 @@ import java.security.MessageDigest
  * The manifest lives in [filesDir] alongside the game files themselves.
  * It is a simple JSON array, human-readable and easy to inspect via adb.
  */
-class AssetManifest(private val filesDir: File) {
-
+class AssetManifest(
+    private val filesDir: File,
+) {
     data class AssetEntry(
         val filename: String,
         val sha256: String,
         val sizeBytes: Long,
         val importedAt: Long,
         val versionName: String?,
-        val sourceUri: String? = null   // non-null = externally picked (forgettable)
+        val sourceUri: String? = null, // non-null = externally picked (forgettable)
     ) {
         /** Last 8 hex chars of SHA-256 for UI display when version is unknown. */
         val shortHash: String get() = KnownVersions.shortHash(sha256)
@@ -54,7 +55,7 @@ class AssetManifest(private val filesDir: File) {
                     sizeBytes = obj.getLong("sizeBytes"),
                     importedAt = obj.getLong("importedAt"),
                     versionName = obj.optString("versionName").takeIf { it.isNotEmpty() },
-                    sourceUri = obj.optString("sourceUri").takeIf { it.isNotEmpty() }
+                    sourceUri = obj.optString("sourceUri").takeIf { it.isNotEmpty() },
                 )
             }
         } catch (e: Exception) {
@@ -89,7 +90,12 @@ class AssetManifest(private val filesDir: File) {
      * Insert or update an entry for [filename]. Automatically looks up the version
      * from [KnownVersions]. Returns the new/updated entry.
      */
-    fun upsert(filename: String, sha256: String, sizeBytes: Long, sourceUri: String? = null): AssetEntry {
+    fun upsert(
+        filename: String,
+        sha256: String,
+        sizeBytes: Long,
+        sourceUri: String? = null,
+    ): AssetEntry {
         val entries = load().toMutableList()
         val lowerName = filename.lowercase()
         val versionName = KnownVersions.lookup(lowerName, sha256)
@@ -111,9 +117,7 @@ class AssetManifest(private val filesDir: File) {
     /**
      * Look up a manifest entry by filename (case-insensitive).
      */
-    fun getEntry(filename: String): AssetEntry? {
-        return load().firstOrNull { it.filename == filename.lowercase() }
-    }
+    fun getEntry(filename: String): AssetEntry? = load().firstOrNull { it.filename == filename.lowercase() }
 
     /**
      * Remove a manifest entry by filename (case-insensitive).
@@ -154,24 +158,25 @@ class AssetManifest(private val filesDir: File) {
          */
         suspend fun computeSha256(
             file: File,
-            onProgress: ((bytesRead: Long, totalBytes: Long) -> Unit)? = null
-        ): String = withContext(Dispatchers.IO) {
-            val digest = MessageDigest.getInstance("SHA-256")
-            val totalBytes = file.length()
-            var bytesRead = 0L
-            val buffer = ByteArray(8192)
+            onProgress: ((bytesRead: Long, totalBytes: Long) -> Unit)? = null,
+        ): String =
+            withContext(Dispatchers.IO) {
+                val digest = MessageDigest.getInstance("SHA-256")
+                val totalBytes = file.length()
+                var bytesRead = 0L
+                val buffer = ByteArray(8192)
 
-            FileInputStream(file).use { input ->
-                while (true) {
-                    val n = input.read(buffer)
-                    if (n <= 0) break
-                    digest.update(buffer, 0, n)
-                    bytesRead += n
-                    onProgress?.invoke(bytesRead, totalBytes)
+                FileInputStream(file).use { input ->
+                    while (true) {
+                        val n = input.read(buffer)
+                        if (n <= 0) break
+                        digest.update(buffer, 0, n)
+                        bytesRead += n
+                        onProgress?.invoke(bytesRead, totalBytes)
+                    }
                 }
-            }
 
-            digest.digest().joinToString("") { "%02x".format(it) }
-        }
+                digest.digest().joinToString("") { "%02x".format(it) }
+            }
     }
 }

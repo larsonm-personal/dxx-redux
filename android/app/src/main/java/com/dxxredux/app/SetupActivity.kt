@@ -4,6 +4,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -16,7 +18,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import android.content.res.Configuration
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -29,6 +30,8 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,25 +41,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.core.view.WindowCompat
-import android.content.SharedPreferences
-import java.io.File
-import java.io.FileOutputStream
-import java.io.FileWriter
-import java.net.HttpURLConnection
-import java.net.URL
-import java.util.zip.ZipInputStream
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
+import java.io.FileOutputStream
+import java.io.FileWriter
+import java.net.HttpURLConnection
+import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.zip.ZipInputStream
 
 /**
  * Pre-game setup screen built with Jetpack Compose.
@@ -68,18 +67,21 @@ import java.util.Locale
  * This is the launcher activity.
  */
 class SetupActivity : ComponentActivity() {
-
     /** Incremented in onResume so Compose re-checks file status. */
     private val refreshTrigger = mutableIntStateOf(0)
 
     // ── Setup-screen introspection ──────────────────────────────────────
     //   adb shell am broadcast -a com.dxxredux.SETUP_INTROSPECT
     //   adb shell run-as com.dxxredux.app cat files/setup_introspect.json
-    private val introspectReceiver = object : BroadcastReceiver() {
-        override fun onReceive(ctx: Context?, intent: Intent?) {
-            writeIntrospectJson()
+    private val introspectReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(
+                ctx: Context?,
+                intent: Intent?,
+            ) {
+                writeIntrospectJson()
+            }
         }
-    }
 
     // ── Setup-screen command API ────────────────────────────────────────
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command launch
@@ -91,95 +93,100 @@ class SetupActivity : ComponentActivity() {
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_sow --es path /sdcard/descent2.sow
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_files --es path /sdcard/DESCENT2.HOG
     private var gameRunningFlag = false
-    private val commandReceiver = object : BroadcastReceiver() {
-        override fun onReceive(ctx: Context?, intent: Intent?) {
-            val cmd = intent?.getStringExtra("command") ?: return
-            when (cmd) {
-                "launch" -> {
-                    if (gameRunningFlag) {
-                        finish()
-                    } else {
-                        val game = intent.getStringExtra("game") ?: "d2"
-                        FileSetManager(filesDir).writeActiveSetPath()
-                        writeInitialGameConfig()
-                        val launchIntent = Intent(this@SetupActivity, MainActivity::class.java)
-                        launchIntent.putExtra("game", game)
-                        startActivity(launchIntent)
+    private val commandReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(
+                ctx: Context?,
+                intent: Intent?,
+            ) {
+                val cmd = intent?.getStringExtra("command") ?: return
+                when (cmd) {
+                    "launch" -> {
+                        if (gameRunningFlag) {
+                            finish()
+                        } else {
+                            val game = intent.getStringExtra("game") ?: "d2"
+                            FileSetManager(filesDir).writeActiveSetPath()
+                            writeInitialGameConfig()
+                            val launchIntent = Intent(this@SetupActivity, MainActivity::class.java)
+                            launchIntent.putExtra("game", game)
+                            startActivity(launchIntent)
+                        }
                     }
-                }
-                "patch_pilots" -> {
-                    val n = patchPilotsFromConfig()
-                    Log.i("DXX-Setup", "patch_pilots: patched $n file(s)")
-                }
-                "reset_controls" -> {
-                    val n = NativePilotPatcher.nativeResetToDefaults(filesDir.absolutePath)
-                    Log.i("DXX-Setup", "reset_controls: reset $n file(s) to engine defaults")
-                }
-                "controller_introspect" -> {
-                    writeControllerIntrospectJson()
-                    Log.i("DXX-Setup", "controller_introspect: written")
-                }
-                "create_set" -> {
-                    val name = intent.getStringExtra("name") ?: return
-                    val fsm = FileSetManager(filesDir)
-                    try {
-                        val dir = fsm.createSet(name)
-                        Log.i("DXX-Setup", "create_set '$name': ${dir.absolutePath}")
-                    } catch (e: IllegalArgumentException) {
-                        Log.i("DXX-Setup", "create_set '$name': already exists")
+                    "patch_pilots" -> {
+                        val n = patchPilotsFromConfig()
+                        Log.i("DXX-Setup", "patch_pilots: patched $n file(s)")
                     }
-                }
-                "switch_set" -> {
-                    val name = intent.getStringExtra("name") ?: return
-                    val fsm = FileSetManager(filesDir)
-                    fsm.setActive(name)
-                    fsm.writeActiveSetPath()
-                    Log.i("DXX-Setup", "switch_set '$name': ok")
-                }
-                "clear_set" -> {
-                    val name = intent.getStringExtra("name") ?: return
-                    val fsm = FileSetManager(filesDir)
-                    val dir = fsm.getSetDir(name)
-                    val count = dir.listFiles()?.count { it.isFile && it.delete() } ?: 0
-                    Log.i("DXX-Setup", "clear_set '$name': deleted $count file(s)")
-                }
-                "import_gog" -> {
-                    val path = intent.getStringExtra("path") ?: return
-                    val audio = intent.getBooleanExtra("include_audio", true)
-                    Thread {
+                    "reset_controls" -> {
+                        val n = NativePilotPatcher.nativeResetToDefaults(filesDir.absolutePath)
+                        Log.i("DXX-Setup", "reset_controls: reset $n file(s) to engine defaults")
+                    }
+                    "controller_introspect" -> {
+                        writeControllerIntrospectJson()
+                        Log.i("DXX-Setup", "controller_introspect: written")
+                    }
+                    "create_set" -> {
+                        val name = intent.getStringExtra("name") ?: return
+                        val fsm = FileSetManager(filesDir)
+                        try {
+                            val dir = fsm.createSet(name)
+                            Log.i("DXX-Setup", "create_set '$name': ${dir.absolutePath}")
+                        } catch (e: IllegalArgumentException) {
+                            Log.i("DXX-Setup", "create_set '$name': already exists")
+                        }
+                    }
+                    "switch_set" -> {
+                        val name = intent.getStringExtra("name") ?: return
+                        val fsm = FileSetManager(filesDir)
+                        fsm.setActive(name)
+                        fsm.writeActiveSetPath()
+                        Log.i("DXX-Setup", "switch_set '$name': ok")
+                    }
+                    "clear_set" -> {
+                        val name = intent.getStringExtra("name") ?: return
+                        val fsm = FileSetManager(filesDir)
+                        val dir = fsm.getSetDir(name)
+                        val count = dir.listFiles()?.count { it.isFile && it.delete() } ?: 0
+                        Log.i("DXX-Setup", "clear_set '$name': deleted $count file(s)")
+                    }
+                    "import_gog" -> {
+                        val path = intent.getStringExtra("path") ?: return
+                        val audio = intent.getBooleanExtra("include_audio", true)
+                        Thread {
+                            val fsm = FileSetManager(filesDir)
+                            val setDir = fsm.getSetDir(fsm.getActive())
+                            val count = GogImportBridge.extractFiles(path, setDir.absolutePath, null, audio)
+                            if (audio && count > 0 && AudioSourceManager(filesDir).hasLegacyGog(setDir)) {
+                                enableRedbookInConfig(filesDir)
+                            }
+                            Log.i("DXX-Setup", "import_gog '$path' -> $count file(s) to ${setDir.name} (audio=$audio)")
+                        }.start()
+                    }
+                    "import_sow" -> {
+                        val path = intent.getStringExtra("path") ?: return
+                        Thread {
+                            val fsm = FileSetManager(filesDir)
+                            val setDir = fsm.getSetDir(fsm.getActive())
+                            val count = DiscImportBridge.extractSowFiles(path, setDir.absolutePath, null)
+                            Log.i("DXX-Setup", "import_sow '$path' -> $count file(s) to ${setDir.name}")
+                        }.start()
+                    }
+                    "import_files" -> {
+                        val path = intent.getStringExtra("path") ?: return
                         val fsm = FileSetManager(filesDir)
                         val setDir = fsm.getSetDir(fsm.getActive())
-                        val count = GogImportBridge.extractFiles(path, setDir.absolutePath, null, audio)
-                        if (audio && count > 0 && AudioSourceManager(filesDir).hasLegacyGog(setDir))
-                            enableRedbookInConfig(filesDir)
-                        Log.i("DXX-Setup", "import_gog '$path' -> $count file(s) to ${setDir.name} (audio=$audio)")
-                    }.start()
-                }
-                "import_sow" -> {
-                    val path = intent.getStringExtra("path") ?: return
-                    Thread {
-                        val fsm = FileSetManager(filesDir)
-                        val setDir = fsm.getSetDir(fsm.getActive())
-                        val count = DiscImportBridge.extractSowFiles(path, setDir.absolutePath, null)
-                        Log.i("DXX-Setup", "import_sow '$path' -> $count file(s) to ${setDir.name}")
-                    }.start()
-                }
-                "import_files" -> {
-                    val path = intent.getStringExtra("path") ?: return
-                    val fsm = FileSetManager(filesDir)
-                    val setDir = fsm.getSetDir(fsm.getActive())
-                    val src = File(path)
-                    if (src.isFile) {
-                        src.copyTo(File(setDir, src.name), overwrite = true)
-                        Log.i("DXX-Setup", "import_files: copied ${src.name} to ${setDir.name}")
-                    } else {
-                        Log.w("DXX-Setup", "import_files: not a file: $path")
+                        val src = File(path)
+                        if (src.isFile) {
+                            src.copyTo(File(setDir, src.name), overwrite = true)
+                            Log.i("DXX-Setup", "import_files: copied ${src.name} to ${setDir.name}")
+                        } else {
+                            Log.w("DXX-Setup", "import_files: not a file: $path")
+                        }
                     }
+                    else -> Log.w("DXX-Setup", "Unknown command: $cmd")
                 }
-                else -> Log.w("DXX-Setup", "Unknown command: $cmd")
             }
         }
-    }
 
     /** Active download progress visible to introspection. */
     internal val downloadStates = mutableMapOf<String, Int>()
@@ -187,16 +194,19 @@ class SetupActivity : ComponentActivity() {
     // ── Controller live-state ───────────────────────────────────────────
     /** Axis values observable by Compose (LX, LY, RX, RY, LT, RT). */
     internal val controllerAxes = FloatArray(6)
+
     /** D-Pad HAT axis values (hatX, hatY). */
     internal val dpadAxes = FloatArray(2)
+
     /** Compose-observable axis update counter (increment triggers recompose). */
     internal val axisGeneration = mutableIntStateOf(0)
+
     /** Currently pressed gamepad buttons (name strings). */
     internal val pressedButtons = mutableStateListOf<String>()
 
     override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
-        if (event.source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
-            && event.action == MotionEvent.ACTION_MOVE
+        if (event.source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK &&
+            event.action == MotionEvent.ACTION_MOVE
         ) {
             controllerAxes[0] = event.getAxisValue(MotionEvent.AXIS_X)
             controllerAxes[1] = event.getAxisValue(MotionEvent.AXIS_Y)
@@ -212,25 +222,26 @@ class SetupActivity : ComponentActivity() {
         return super.dispatchGenericMotionEvent(event)
     }
 
-    private fun gamepadButtonName(keyCode: Int): String? = when (keyCode) {
-        KeyEvent.KEYCODE_BUTTON_A      -> "A"
-        KeyEvent.KEYCODE_BUTTON_B      -> "B"
-        KeyEvent.KEYCODE_BUTTON_X      -> "X"
-        KeyEvent.KEYCODE_BUTTON_Y      -> "Y"
-        KeyEvent.KEYCODE_BUTTON_L1     -> "L1"
-        KeyEvent.KEYCODE_BUTTON_R1     -> "R1"
-        KeyEvent.KEYCODE_BUTTON_L2     -> "L2"
-        KeyEvent.KEYCODE_BUTTON_R2     -> "R2"
-        KeyEvent.KEYCODE_BUTTON_SELECT -> "Select"
-        KeyEvent.KEYCODE_BUTTON_START  -> "Start"
-        KeyEvent.KEYCODE_BUTTON_THUMBL -> "L3"
-        KeyEvent.KEYCODE_BUTTON_THUMBR -> "R3"
-        KeyEvent.KEYCODE_DPAD_UP       -> "D-Up"
-        KeyEvent.KEYCODE_DPAD_DOWN     -> "D-Down"
-        KeyEvent.KEYCODE_DPAD_LEFT     -> "D-Left"
-        KeyEvent.KEYCODE_DPAD_RIGHT    -> "D-Right"
-        else -> null
-    }
+    private fun gamepadButtonName(keyCode: Int): String? =
+        when (keyCode) {
+            KeyEvent.KEYCODE_BUTTON_A -> "A"
+            KeyEvent.KEYCODE_BUTTON_B -> "B"
+            KeyEvent.KEYCODE_BUTTON_X -> "X"
+            KeyEvent.KEYCODE_BUTTON_Y -> "Y"
+            KeyEvent.KEYCODE_BUTTON_L1 -> "L1"
+            KeyEvent.KEYCODE_BUTTON_R1 -> "R1"
+            KeyEvent.KEYCODE_BUTTON_L2 -> "L2"
+            KeyEvent.KEYCODE_BUTTON_R2 -> "R2"
+            KeyEvent.KEYCODE_BUTTON_SELECT -> "Select"
+            KeyEvent.KEYCODE_BUTTON_START -> "Start"
+            KeyEvent.KEYCODE_BUTTON_THUMBL -> "L3"
+            KeyEvent.KEYCODE_BUTTON_THUMBR -> "R3"
+            KeyEvent.KEYCODE_DPAD_UP -> "D-Up"
+            KeyEvent.KEYCODE_DPAD_DOWN -> "D-Down"
+            KeyEvent.KEYCODE_DPAD_LEFT -> "D-Left"
+            KeyEvent.KEYCODE_DPAD_RIGHT -> "D-Right"
+            else -> null
+        }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val name = gamepadButtonName(event.keyCode)
@@ -255,10 +266,10 @@ class SetupActivity : ComponentActivity() {
         try {
             val json = org.json.JSONObject(cfg.readText())
             val joyArr = json.optJSONArray("key_settings_joystick") ?: return 0
-            val kbArr  = json.optJSONArray("key_settings_keyboard") ?: return 0
+            val kbArr = json.optJSONArray("key_settings_keyboard") ?: return 0
             val joy = ByteArray(joyArr.length()) { (joyArr.getInt(it) and 0xFF).toByte() }
-            val kb  = ByteArray(kbArr.length())  { (kbArr.getInt(it) and 0xFF).toByte() }
-            val ct  = json.optInt("control_type", 1)
+            val kb = ByteArray(kbArr.length()) { (kbArr.getInt(it) and 0xFF).toByte() }
+            val ct = json.optInt("control_type", 1)
             return NativePilotPatcher.nativePatchPilotFiles(filesDir.absolutePath, joy, kb, ct)
         } catch (e: Exception) {
             Log.e("DXX-Setup", "patchPilotsFromConfig failed", e)
@@ -269,65 +280,70 @@ class SetupActivity : ComponentActivity() {
     // ── kc_joystick[] metadata for controller introspection ────────
     // IMPORTANT: Mirrors kc_joystick[NUM_JOYSTICK_CONTROLS] in d2/main/kconfig.c.
     // Update both locations together when the joystick control layout changes.
-    private data class KcMeta(val name: String, val type: String)
-    private val KC_JOY_META = listOf(
-        KcMeta("Fire primary", "joy_button"),     //  0
-        KcMeta("Fire secondary", "joy_button"),   //  1
-        KcMeta("Accelerate", "joy_button"),       //  2
-        KcMeta("reverse", "joy_button"),          //  3
-        KcMeta("Fire flare", "joy_button"),       //  4
-        KcMeta("Slide on", "joy_button"),         //  5
-        KcMeta("Slide left", "joy_button"),       //  6
-        KcMeta("Slide right", "joy_button"),      //  7
-        KcMeta("Slide up", "joy_button"),         //  8
-        KcMeta("Slide down", "joy_button"),       //  9
-        KcMeta("Bank on", "joy_button"),          // 10
-        KcMeta("Bank left", "joy_button"),        // 11
-        KcMeta("Bank right", "joy_button"),       // 12
-        KcMeta("Pitch U/D", "joy_axis"),          // 13
-        KcMeta("Pitch U/D", "invert"),            // 14
-        KcMeta("Turn L/R", "joy_axis"),           // 15
-        KcMeta("Turn L/R", "invert"),             // 16
-        KcMeta("Slide L/R", "joy_axis"),          // 17
-        KcMeta("Slide L/R", "invert"),            // 18
-        KcMeta("Slide U/D", "joy_axis"),          // 19
-        KcMeta("Slide U/D", "invert"),            // 20
-        KcMeta("Bank L/R", "joy_axis"),           // 21
-        KcMeta("Bank L/R", "invert"),             // 22
-        KcMeta("throttle", "joy_axis"),           // 23
-        KcMeta("throttle", "invert"),             // 24
-        KcMeta("REAR VIEW", "joy_button"),        // 25
-        KcMeta("Drop Bomb", "joy_button"),        // 26
-        KcMeta("Afterburner", "joy_button"),      // 27
-        KcMeta("Cycle Primary", "joy_button"),    // 28
-        KcMeta("Cycle Secondary", "joy_button"),  // 29
-        KcMeta("Headlight", "joy_button"),        // 30
-        KcMeta("Fire primary", "joy_button"),     // 31 (secondary)
-        KcMeta("Fire secondary", "joy_button"),   // 32
-        KcMeta("Accelerate", "joy_button"),       // 33
-        KcMeta("reverse", "joy_button"),          // 34
-        KcMeta("Fire flare", "joy_button"),       // 35
-        KcMeta("Slide on", "joy_button"),         // 36
-        KcMeta("Slide left", "joy_button"),       // 37
-        KcMeta("Slide right", "joy_button"),      // 38
-        KcMeta("Slide up", "joy_button"),         // 39
-        KcMeta("Slide down", "joy_button"),       // 40
-        KcMeta("Bank on", "joy_button"),          // 41
-        KcMeta("Bank left", "joy_button"),        // 42
-        KcMeta("Bank right", "joy_button"),       // 43
-        KcMeta("REAR VIEW", "joy_button"),        // 44
-        KcMeta("Drop Bomb", "joy_button"),        // 45
-        KcMeta("Afterburner", "joy_button"),      // 46
-        KcMeta("Cycle Primary", "joy_button"),    // 47
-        KcMeta("Cycle Secondary", "joy_button"),  // 48
-        KcMeta("Headlight", "joy_button"),        // 49
-        KcMeta("Automap", "joy_button"),          // 50
-        KcMeta("Automap", "joy_button"),          // 51 (secondary)
-        KcMeta("Energy->Shield", "joy_button"),   // 52
-        KcMeta("Energy->Shield", "joy_button"),   // 53 (secondary)
-        KcMeta("Toggle Bomb", "joy_button"),      // 54
-        KcMeta("Toggle Bomb", "joy_button"),      // 55 (secondary)
+    private data class KcMeta(
+        val name: String,
+        val type: String,
     )
+
+    private val KC_JOY_META =
+        listOf(
+            KcMeta("Fire primary", "joy_button"), //  0
+            KcMeta("Fire secondary", "joy_button"), //  1
+            KcMeta("Accelerate", "joy_button"), //  2
+            KcMeta("reverse", "joy_button"), //  3
+            KcMeta("Fire flare", "joy_button"), //  4
+            KcMeta("Slide on", "joy_button"), //  5
+            KcMeta("Slide left", "joy_button"), //  6
+            KcMeta("Slide right", "joy_button"), //  7
+            KcMeta("Slide up", "joy_button"), //  8
+            KcMeta("Slide down", "joy_button"), //  9
+            KcMeta("Bank on", "joy_button"), // 10
+            KcMeta("Bank left", "joy_button"), // 11
+            KcMeta("Bank right", "joy_button"), // 12
+            KcMeta("Pitch U/D", "joy_axis"), // 13
+            KcMeta("Pitch U/D", "invert"), // 14
+            KcMeta("Turn L/R", "joy_axis"), // 15
+            KcMeta("Turn L/R", "invert"), // 16
+            KcMeta("Slide L/R", "joy_axis"), // 17
+            KcMeta("Slide L/R", "invert"), // 18
+            KcMeta("Slide U/D", "joy_axis"), // 19
+            KcMeta("Slide U/D", "invert"), // 20
+            KcMeta("Bank L/R", "joy_axis"), // 21
+            KcMeta("Bank L/R", "invert"), // 22
+            KcMeta("throttle", "joy_axis"), // 23
+            KcMeta("throttle", "invert"), // 24
+            KcMeta("REAR VIEW", "joy_button"), // 25
+            KcMeta("Drop Bomb", "joy_button"), // 26
+            KcMeta("Afterburner", "joy_button"), // 27
+            KcMeta("Cycle Primary", "joy_button"), // 28
+            KcMeta("Cycle Secondary", "joy_button"), // 29
+            KcMeta("Headlight", "joy_button"), // 30
+            KcMeta("Fire primary", "joy_button"), // 31 (secondary)
+            KcMeta("Fire secondary", "joy_button"), // 32
+            KcMeta("Accelerate", "joy_button"), // 33
+            KcMeta("reverse", "joy_button"), // 34
+            KcMeta("Fire flare", "joy_button"), // 35
+            KcMeta("Slide on", "joy_button"), // 36
+            KcMeta("Slide left", "joy_button"), // 37
+            KcMeta("Slide right", "joy_button"), // 38
+            KcMeta("Slide up", "joy_button"), // 39
+            KcMeta("Slide down", "joy_button"), // 40
+            KcMeta("Bank on", "joy_button"), // 41
+            KcMeta("Bank left", "joy_button"), // 42
+            KcMeta("Bank right", "joy_button"), // 43
+            KcMeta("REAR VIEW", "joy_button"), // 44
+            KcMeta("Drop Bomb", "joy_button"), // 45
+            KcMeta("Afterburner", "joy_button"), // 46
+            KcMeta("Cycle Primary", "joy_button"), // 47
+            KcMeta("Cycle Secondary", "joy_button"), // 48
+            KcMeta("Headlight", "joy_button"), // 49
+            KcMeta("Automap", "joy_button"), // 50
+            KcMeta("Automap", "joy_button"), // 51 (secondary)
+            KcMeta("Energy->Shield", "joy_button"), // 52
+            KcMeta("Energy->Shield", "joy_button"), // 53 (secondary)
+            KcMeta("Toggle Bomb", "joy_button"), // 54
+            KcMeta("Toggle Bomb", "joy_button"), // 55 (secondary)
+        )
 
     /**
      * Write controller_introspect.json in the same format as the in-game
@@ -437,11 +453,14 @@ class SetupActivity : ComponentActivity() {
             if (downloadStates.isNotEmpty()) {
                 val dl = JSONObject()
                 for ((name, progress) in downloadStates) {
-                    dl.put(name, when (progress) {
-                        -2 -> "complete"
-                        -1 -> "error"
-                        else -> "${progress}%"
-                    })
+                    dl.put(
+                        name,
+                        when (progress) {
+                            -2 -> "complete"
+                            -1 -> "error"
+                            else -> "$progress%"
+                        },
+                    )
                 }
                 root.put("downloads", dl)
             }
@@ -493,10 +512,12 @@ class SetupActivity : ComponentActivity() {
             obj.put("required", s.info.required)
             obj.put("found", s.found)
             if (s.foundName != null) obj.put("found_as", s.foundName)
-            if (s.info.alternatives.isNotEmpty())
+            if (s.info.alternatives.isNotEmpty()) {
                 obj.put("alternatives", JSONArray(s.info.alternatives))
-            if (s.info.downloadUrl != null)
+            }
+            if (s.info.downloadUrl != null) {
                 obj.put("download_url", s.info.downloadUrl)
+            }
             obj.put("description", s.info.description)
             if (s.safUri != null) {
                 obj.put("saf_linked", true)
@@ -557,7 +578,7 @@ class SetupActivity : ComponentActivity() {
                 pressedButtons = pressedButtons,
                 onLaunchGame = { game ->
                     if (gameRunning) {
-                        finish()   // return to the already-running game
+                        finish() // return to the already-running game
                     } else {
                         FileSetManager(filesDir).writeActiveSetPath()
                         AudioSourceManager(filesDir).writePlaylist()
@@ -571,9 +592,12 @@ class SetupActivity : ComponentActivity() {
                 },
                 onRefresh = { refreshTrigger.intValue++ },
                 onDownloadStateChanged = { name, progress ->
-                    if (progress == -2) downloadStates.remove(name)
-                    else downloadStates[name] = progress
-                }
+                    if (progress == -2) {
+                        downloadStates.remove(name)
+                    } else {
+                        downloadStates[name] = progress
+                    }
+                },
             )
         }
     }
@@ -588,35 +612,39 @@ class SetupActivity : ComponentActivity() {
      */
     private fun writeInitialGameConfig() {
         val cfgFile = File(filesDir, "descent.cfg")
-        if (cfgFile.exists()) return   // user already has a config — don't overwrite
+        if (cfgFile.exists()) return // user already has a config — don't overwrite
 
         // Determine the device's real screen dimensions (including system bars)
-        val (screenW, screenH) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val bounds = windowManager.currentWindowMetrics.bounds
-            Pair(bounds.width(), bounds.height())
-        } else {
-            @Suppress("DEPRECATION")
-            val size = android.graphics.Point()
-            @Suppress("DEPRECATION")
-            windowManager.defaultDisplay.getRealSize(size)
-            Pair(size.x, size.y)
-        }
+        val (screenW, screenH) =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val bounds = windowManager.currentWindowMetrics.bounds
+                Pair(bounds.width(), bounds.height())
+            } else {
+                @Suppress("DEPRECATION")
+                val size = android.graphics.Point()
+                @Suppress("DEPRECATION")
+                windowManager.defaultDisplay.getRealSize(size)
+                Pair(size.x, size.y)
+            }
 
         // Ensure wider dimension is treated as width (game is landscape)
         val w = maxOf(screenW, screenH)
         val h = minOf(screenW, screenH)
 
         // Reduce to simplest fraction via GCD
-        fun gcd(a: Int, b: Int): Int = if (b == 0) a else gcd(b, a % b)
+        fun gcd(
+            a: Int,
+            b: Int,
+        ): Int = if (b == 0) a else gcd(b, a % b)
         val g = gcd(w, h)
-        val aspectY = w / g   // width component  (game naming: Y = wider)
-        val aspectX = h / g   // height component (game naming: X = narrower)
+        val aspectY = w / g // width component  (game naming: Y = wider)
+        val aspectX = h / g // height component (game naming: X = narrower)
 
-        Log.i("DXX-Setup", "First launch: writing descent.cfg with aspect ${aspectY}x${aspectX} (from ${w}x${h})")
+        Log.i("DXX-Setup", "First launch: writing descent.cfg with aspect ${aspectY}x$aspectX (from ${w}x$h)")
 
         cfgFile.writeText(
             "AspectX=$aspectX\n" +
-            "AspectY=$aspectY\n"
+                "AspectY=$aspectY\n",
         )
     }
 
@@ -626,8 +654,14 @@ class SetupActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
-        try { unregisterReceiver(introspectReceiver) } catch (_: Exception) {}
-        try { unregisterReceiver(commandReceiver) } catch (_: Exception) {}
+        try {
+            unregisterReceiver(introspectReceiver)
+        } catch (_: Exception) {
+        }
+        try {
+            unregisterReceiver(commandReceiver)
+        } catch (_: Exception) {
+        }
         super.onDestroy()
     }
 }
@@ -639,7 +673,7 @@ private data class GameFileInfo(
     val description: String,
     val required: Boolean,
     val alternatives: List<String> = emptyList(),
-    val downloadUrl: String? = null       // non-null = show [Download] button
+    val downloadUrl: String? = null, // non-null = show [Download] button
 )
 
 private data class FileStatus(
@@ -648,40 +682,60 @@ private data class FileStatus(
     val foundName: String?,
     val manifestEntry: AssetManifest.AssetEntry? = null,
     val safUri: String? = null,
-    val safSizeBytes: Long = 0
+    val safSizeBytes: Long = 0,
 )
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Case-insensitive file lookup (Android ext4 is case-sensitive). */
-private fun findFile(dir: File, name: String): String? {
+private fun findFile(
+    dir: File,
+    name: String,
+): String? {
     val files = dir.listFiles() ?: return null
     return files.firstOrNull { it.name.equals(name, ignoreCase = true) }?.name
 }
 
-private fun checkFiles(dir: File, fileList: List<GameFileInfo>, manifest: AssetManifest? = null,
-                       safManifest: SafManifest? = null): List<FileStatus> {
+private fun checkFiles(
+    dir: File,
+    fileList: List<GameFileInfo>,
+    manifest: AssetManifest? = null,
+    safManifest: SafManifest? = null,
+): List<FileStatus> {
     val safEntries = safManifest?.read() ?: emptyList()
     return fileList.map { info ->
         val primaryMatch = findFile(dir, info.filename)
-        val altMatch = if (primaryMatch == null)
-            info.alternatives.firstNotNullOfOrNull { findFile(dir, it) }
-        else null
+        val altMatch =
+            if (primaryMatch == null) {
+                info.alternatives.firstNotNullOfOrNull { findFile(dir, it) }
+            } else {
+                null
+            }
         val foundName = primaryMatch ?: altMatch
         // SAF leave-in-place: if the file isn't on disk, check the SAF manifest.
-        val safEntry = if (foundName == null) {
-            safEntries.firstOrNull { it.filename.equals(info.filename, ignoreCase = true) }
-                ?: info.alternatives.firstNotNullOfOrNull { alt ->
-                    safEntries.firstOrNull { it.filename.equals(alt, ignoreCase = true) }
-                }
-        } else null
-        val entry = if (foundName != null) manifest?.getEntry(foundName)
-                    else manifest?.getEntry(info.filename)
-        FileStatus(info, found = foundName != null || safEntry != null,
-                   foundName = foundName ?: if (safEntry != null) info.filename else null,
-                   manifestEntry = entry,
-                   safUri = safEntry?.contentUri,
-                   safSizeBytes = safEntry?.sizeBytes ?: 0)
+        val safEntry =
+            if (foundName == null) {
+                safEntries.firstOrNull { it.filename.equals(info.filename, ignoreCase = true) }
+                    ?: info.alternatives.firstNotNullOfOrNull { alt ->
+                        safEntries.firstOrNull { it.filename.equals(alt, ignoreCase = true) }
+                    }
+            } else {
+                null
+            }
+        val entry =
+            if (foundName != null) {
+                manifest?.getEntry(foundName)
+            } else {
+                manifest?.getEntry(info.filename)
+            }
+        FileStatus(
+            info,
+            found = foundName != null || safEntry != null,
+            foundName = foundName ?: if (safEntry != null) info.filename else null,
+            manifestEntry = entry,
+            safUri = safEntry?.contentUri,
+            safSizeBytes = safEntry?.sizeBytes ?: 0,
+        )
     }
 }
 
@@ -689,10 +743,11 @@ private fun checkFiles(dir: File, fileList: List<GameFileInfo>, manifest: AssetM
 private fun descriptionForFile(filename: String): String {
     val lower = filename.lowercase()
     val allFiles = D2_FILES + D2_DEMO_FILES + D1_FILES + MUSIC_FILES
-    return allFiles.firstOrNull { info ->
-        info.filename.equals(lower, ignoreCase = true) ||
-        info.alternatives.any { it.equals(lower, ignoreCase = true) }
-    }?.description ?: "Unknown file"
+    return allFiles
+        .firstOrNull { info ->
+            info.filename.equals(lower, ignoreCase = true) ||
+                info.alternatives.any { it.equals(lower, ignoreCase = true) }
+        }?.description ?: "Unknown file"
 }
 
 /** Describe a file's type based on its extension. */
@@ -701,101 +756,149 @@ private fun describeExtension(filename: String): String {
     return EXTENSION_TYPES[ext] ?: "[.$ext] \u2014 unknown type"
 }
 
-private val EXTENSION_TYPES = mapOf(
-    "hog" to ".hog \u2014 mission archive",
-    "mn2" to ".mn2 \u2014 Descent II mission descriptor",
-    "msn" to ".msn \u2014 Descent I mission descriptor",
-    "ham" to ".ham \u2014 global robot/weapon data",
-    "vham" to ".vham \u2014 variant HAM (D2X-XL)",
-    "pig" to ".pig \u2014 texture/sound container",
-    "pog" to ".pog \u2014 texture override pack",
-    "pcx" to ".pcx \u2014 briefing/cutscene image",
-    "s11" to ".s11 \u2014 11 kHz PCM sound",
-    "s22" to ".s22 \u2014 22 kHz PCM sound",
-    "hmp" to ".hmp \u2014 HMI-format MIDI music",
-    "raw" to ".raw \u2014 raw PCM audio",
-    "rl2" to ".rl2 \u2014 Descent II level",
-    "rdl" to ".rdl \u2014 Descent I level",
-    "mvl" to ".mvl \u2014 movie library archive",
-    "dxa" to ".dxa \u2014 Rebirth zip addon file",
-    "dtx" to ".dtx \u2014 D2X-XL texture pack",
-    "gog" to ".gog \u2014 GOG CD image (Redbook audio)",
-    "inst" to ".inst \u2014 GOG CD cue sheet",
-    "bin" to ".bin \u2014 CD disc image (BIN/CUE)",
-    "cue" to ".cue \u2014 CD cue sheet (BIN/CUE)",
-)
+private val EXTENSION_TYPES =
+    mapOf(
+        "hog" to ".hog \u2014 mission archive",
+        "mn2" to ".mn2 \u2014 Descent II mission descriptor",
+        "msn" to ".msn \u2014 Descent I mission descriptor",
+        "ham" to ".ham \u2014 global robot/weapon data",
+        "vham" to ".vham \u2014 variant HAM (D2X-XL)",
+        "pig" to ".pig \u2014 texture/sound container",
+        "pog" to ".pog \u2014 texture override pack",
+        "pcx" to ".pcx \u2014 briefing/cutscene image",
+        "s11" to ".s11 \u2014 11 kHz PCM sound",
+        "s22" to ".s22 \u2014 22 kHz PCM sound",
+        "hmp" to ".hmp \u2014 HMI-format MIDI music",
+        "raw" to ".raw \u2014 raw PCM audio",
+        "rl2" to ".rl2 \u2014 Descent II level",
+        "rdl" to ".rdl \u2014 Descent I level",
+        "mvl" to ".mvl \u2014 movie library archive",
+        "dxa" to ".dxa \u2014 Rebirth zip addon file",
+        "dtx" to ".dtx \u2014 D2X-XL texture pack",
+        "gog" to ".gog \u2014 GOG CD image (Redbook audio)",
+        "inst" to ".inst \u2014 GOG CD cue sheet",
+        "bin" to ".bin \u2014 CD disc image (BIN/CUE)",
+        "cue" to ".cue \u2014 CD cue sheet (BIN/CUE)",
+    )
 
 // ── File definitions ────────────────────────────────────────────────────────
 
-private val D2_FILES = listOf(
-    // Required – core engine files
-    GameFileInfo("descent2.hog", "Main game data",
-        required = true, alternatives = listOf("d2demo.hog")),
-    GameFileInfo("descent2.ham", "Models & objects",
-        required = true, alternatives = listOf("d2demo.ham")),
-    GameFileInfo("groupa.pig", "Main textures",
-        required = true, alternatives = listOf("d2demo.pig")),
-    GameFileInfo("descent2.s22", "Sound effects (22 kHz)",
-        required = true, alternatives = listOf("descent2.s11")),
+private val D2_FILES =
+    listOf(
+        // Required – core engine files
+        GameFileInfo(
+            "descent2.hog",
+            "Main game data",
+            required = true,
+            alternatives = listOf("d2demo.hog"),
+        ),
+        GameFileInfo(
+            "descent2.ham",
+            "Models & objects",
+            required = true,
+            alternatives = listOf("d2demo.ham"),
+        ),
+        GameFileInfo(
+            "groupa.pig",
+            "Main textures",
+            required = true,
+            alternatives = listOf("d2demo.pig"),
+        ),
+        GameFileInfo(
+            "descent2.s22",
+            "Sound effects (22 kHz)",
+            required = true,
+            alternatives = listOf("descent2.s11"),
+        ),
+        // Required – level texture packs
+        GameFileInfo("alien1.pig", "Alien 1 level textures", required = true),
+        GameFileInfo("alien2.pig", "Alien 2 level textures", required = true),
+        GameFileInfo("fire.pig", "Fire level textures", required = true),
+        GameFileInfo("ice.pig", "Ice level textures", required = true),
+        GameFileInfo("water.pig", "Water level textures", required = true),
+        // Optional – movies & extras
+        GameFileInfo(
+            "intro-h.mvl",
+            "Intro movie",
+            required = false,
+            alternatives = listOf("intro-l.mvl"),
+        ),
+        GameFileInfo(
+            "other-h.mvl",
+            "Cutscene movies",
+            required = false,
+            alternatives = listOf("other-l.mvl"),
+        ),
+        GameFileInfo(
+            "robots-h.mvl",
+            "Robot movies",
+            required = false,
+            alternatives = listOf("robots-l.mvl"),
+        ),
+        GameFileInfo("d2x.hog", "Vertigo expansion", required = false),
+        GameFileInfo("hoard.ham", "Hoard multiplayer mode", required = false),
+    )
 
-    // Required – level texture packs
-    GameFileInfo("alien1.pig", "Alien 1 level textures", required = true),
-    GameFileInfo("alien2.pig", "Alien 2 level textures", required = true),
-    GameFileInfo("fire.pig", "Fire level textures", required = true),
-    GameFileInfo("ice.pig", "Ice level textures", required = true),
-    GameFileInfo("water.pig", "Water level textures", required = true),
-
-    // Optional – movies & extras
-    GameFileInfo("intro-h.mvl", "Intro movie",
-        required = false, alternatives = listOf("intro-l.mvl")),
-    GameFileInfo("other-h.mvl", "Cutscene movies",
-        required = false, alternatives = listOf("other-l.mvl")),
-    GameFileInfo("robots-h.mvl", "Robot movies",
-        required = false, alternatives = listOf("robots-l.mvl")),
-    GameFileInfo("d2x.hog", "Vertigo expansion", required = false),
-    GameFileInfo("hoard.ham", "Hoard multiplayer mode", required = false),
-)
-
-private val D2_DEMO_FILES = listOf(
-    GameFileInfo("d2demo.hog", "Demo game data", required = true),
-    GameFileInfo("d2demo.ham", "Demo models & objects", required = true),
-    GameFileInfo("d2demo.pig", "Demo textures", required = true),
-)
+private val D2_DEMO_FILES =
+    listOf(
+        GameFileInfo("d2demo.hog", "Demo game data", required = true),
+        GameFileInfo("d2demo.ham", "Demo models & objects", required = true),
+        GameFileInfo("d2demo.pig", "Demo textures", required = true),
+    )
 
 /**
  * Detect whether the files on disk (and in SAF manifest) correspond to the
  * D2 demo or the full game, and return the appropriate file list.
  */
-private fun detectD2FileList(dir: File, safManifest: SafManifest? = null): List<GameFileInfo> {
+private fun detectD2FileList(
+    dir: File,
+    safManifest: SafManifest? = null,
+): List<GameFileInfo> {
     val demoFiles = listOf("d2demo.hog", "d2demo.ham", "d2demo.pig")
     val hasDemoOnDisk = demoFiles.any { findFile(dir, it) != null }
-    val hasDemoInSaf = safManifest?.let { sm ->
-        val entries = sm.read()
-        demoFiles.any { demo -> entries.any { it.filename.equals(demo, ignoreCase = true) } }
-    } ?: false
+    val hasDemoInSaf =
+        safManifest?.let { sm ->
+            val entries = sm.read()
+            demoFiles.any { demo -> entries.any { it.filename.equals(demo, ignoreCase = true) } }
+        } ?: false
     return if (hasDemoOnDisk || hasDemoInSaf) D2_DEMO_FILES else D2_FILES
 }
 
-private val D1_FILES = listOf(
-    // Required – core D1 files
-    GameFileInfo("descent.hog", "D1 game data", required = true),
-    GameFileInfo("descent.pig", "D1 textures", required = true),
+private val D1_FILES =
+    listOf(
+        // Required – core D1 files
+        GameFileInfo("descent.hog", "D1 game data", required = true),
+        GameFileInfo("descent.pig", "D1 textures", required = true),
+        // Optional – downloadable extras
+        GameFileInfo(
+            "d1xr-mac-demo-sounds.dxa",
+            "Optional sound file",
+            required = false,
+            downloadUrl = "https://dxx-redux.com/dl/d1xr-mac-demo-sounds.dxa",
+        ),
+        GameFileInfo(
+            "d1xr-hires.dxa",
+            "Optional D1 high-res file",
+            required = false,
+            downloadUrl = "https://dxx-redux.com/dl/d1xr-hires.dxa",
+        ),
+    )
 
-    // Optional – downloadable extras
-    GameFileInfo("d1xr-mac-demo-sounds.dxa", "Optional sound file",
-        required = false,
-        downloadUrl = "https://dxx-redux.com/dl/d1xr-mac-demo-sounds.dxa"),
-    GameFileInfo("d1xr-hires.dxa", "Optional D1 high-res file",
-        required = false,
-        downloadUrl = "https://dxx-redux.com/dl/d1xr-hires.dxa"),
-)
-
-private val MUSIC_FILES = listOf(
-    GameFileInfo("descent_ii.gog", "GOG CD image (Redbook audio)",
-        required = false, alternatives = listOf("DESCENT_II.gog")),
-    GameFileInfo("descent_ii.inst", "GOG CD cue sheet (Redbook audio)",
-        required = false, alternatives = listOf("DESCENT_II.inst")),
-)
+private val MUSIC_FILES =
+    listOf(
+        GameFileInfo(
+            "descent_ii.gog",
+            "GOG CD image (Redbook audio)",
+            required = false,
+            alternatives = listOf("DESCENT_II.gog"),
+        ),
+        GameFileInfo(
+            "descent_ii.inst",
+            "GOG CD cue sheet (Redbook audio)",
+            required = false,
+            alternatives = listOf("DESCENT_II.inst"),
+        ),
+    )
 
 // ── Demo downloads ──────────────────────────────────────────────────────────
 
@@ -804,47 +907,53 @@ private data class DemoPackage(
     val url: String,
     val description: String,
     val sizeBytes: Long,
-    val files: List<String>,   // expected extracted filenames (lowercase)
+    val files: List<String>, // expected extracted filenames (lowercase)
 )
 
-private val DEMO_DOWNLOADS = listOf(
-    DemoPackage(
-        name = "D2 Demo",
-        url = "https://dxx-redux.com/dl/d2demo.zip",
-        description = "Official Descent 2 Demo (3 levels)",
-        sizeBytes = 5_500_000L,
-        files = listOf("d2demo.hog", "d2demo.ham", "d2demo.pig"),
-    ),
-)
+private val DEMO_DOWNLOADS =
+    listOf(
+        DemoPackage(
+            name = "D2 Demo",
+            url = "https://dxx-redux.com/dl/d2demo.zip",
+            description = "Official Descent 2 Demo (3 levels)",
+            sizeBytes = 5_500_000L,
+            files = listOf("d2demo.hog", "d2demo.ham", "d2demo.pig"),
+        ),
+    )
 
 // ── SAF directory scanning ───────────────────────────────────────────────────
 
 /** All filenames we care about (D2 + D2 Demo + D1 + Music), lowercase for matching. */
 private val ALL_GAME_FILENAMES: Set<String> by lazy {
-    (D2_FILES + D2_DEMO_FILES + D1_FILES + MUSIC_FILES).flatMap { info ->
-        listOf(info.filename) + info.alternatives
-    }.map { it.lowercase() }.toSet()
+    (D2_FILES + D2_DEMO_FILES + D1_FILES + MUSIC_FILES)
+        .flatMap { info ->
+            listOf(info.filename) + info.alternatives
+        }.map { it.lowercase() }
+        .toSet()
 }
 
 /** Result of scanning a user-chosen directory tree. */
 private data class FoundFile(
-    val name: String,        // original filename (preserving case)
-    val uri: Uri             // content:// URI to read from
+    val name: String, // original filename (preserving case)
+    val uri: Uri, // content:// URI to read from
 )
 
 /** Result of extracting a game file from a ZIP archive. */
 private data class ExtractedFile(
-    val name: String,        // lowercase canonical filename
-    val tmpFile: File,       // temp location
-    val sha256: String,      // SHA-256 of extracted file
-    val sizeBytes: Long      // file size
+    val name: String, // lowercase canonical filename
+    val tmpFile: File, // temp location
+    val sha256: String, // SHA-256 of extracted file
+    val sizeBytes: Long, // file size
 )
 
 /**
  * Recursively walk a SAF document tree and return game files found.
  * Uses DocumentsContract for efficiency (no MediaStore needed).
  */
-private fun scanTreeForGameFiles(context: Context, treeUri: Uri): List<FoundFile> {
+private fun scanTreeForGameFiles(
+    context: Context,
+    treeUri: Uri,
+): List<FoundFile> {
     val results = mutableListOf<FoundFile>()
     val docId = DocumentsContract.getTreeDocumentId(treeUri)
     val queue = ArrayDeque<String>()
@@ -853,15 +962,18 @@ private fun scanTreeForGameFiles(context: Context, treeUri: Uri): List<FoundFile
     while (queue.isNotEmpty()) {
         val parentId = queue.removeFirst()
         val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentId)
-        val cursor = context.contentResolver.query(
-            childrenUri,
-            arrayOf(
-                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-                DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-                DocumentsContract.Document.COLUMN_MIME_TYPE
-            ),
-            null, null, null
-        ) ?: continue
+        val cursor =
+            context.contentResolver.query(
+                childrenUri,
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                    DocumentsContract.Document.COLUMN_MIME_TYPE,
+                ),
+                null,
+                null,
+                null,
+            ) ?: continue
 
         cursor.use {
             while (it.moveToNext()) {
@@ -885,8 +997,12 @@ private fun scanTreeForGameFiles(context: Context, treeUri: Uri): List<FoundFile
  * Copy a SAF document to the app's files directory.
  * Returns true on success.
  */
-private fun importFile(context: Context, source: FoundFile, destDir: File): Boolean {
-    return try {
+private fun importFile(
+    context: Context,
+    source: FoundFile,
+    destDir: File,
+): Boolean =
+    try {
         // Use lowercase canonical name so the engine finds it
         val canonicalName = source.name.lowercase()
         val destFile = File(destDir, canonicalName)
@@ -901,22 +1017,26 @@ private fun importFile(context: Context, source: FoundFile, destDir: File): Bool
         Log.e("DXX-Setup", "Failed to import ${source.name}", e)
         false
     }
-}
 
 /** Get the display name (filename) for a content:// URI. */
-private fun getDisplayName(context: Context, uri: Uri): String? {
-    return try {
-        context.contentResolver.query(
-            uri,
-            arrayOf(android.provider.OpenableColumns.DISPLAY_NAME),
-            null, null, null
-        )?.use { cursor ->
-            if (cursor.moveToFirst()) cursor.getString(0) else null
-        }
+private fun getDisplayName(
+    context: Context,
+    uri: Uri,
+): String? =
+    try {
+        context.contentResolver
+            .query(
+                uri,
+                arrayOf(android.provider.OpenableColumns.DISPLAY_NAME),
+                null,
+                null,
+                null,
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) cursor.getString(0) else null
+            }
     } catch (e: Exception) {
         null
     }
-}
 
 /**
  * Extract game files from a ZIP archive. Streams one entry at a time to tmpDir.
@@ -926,47 +1046,48 @@ private suspend fun extractZipContents(
     context: Context,
     zipUri: Uri,
     tmpDir: File,
-    onProgress: (String) -> Unit
-): List<ExtractedFile> = kotlinx.coroutines.withContext(Dispatchers.IO) {
-    tmpDir.mkdirs()
-    val results = mutableListOf<ExtractedFile>()
-    try {
-        context.contentResolver.openInputStream(zipUri)?.use { raw ->
-            ZipInputStream(raw).use { zis ->
-                var entry = zis.nextEntry
-                while (entry != null) {
-                    val name = entry.name.substringAfterLast('/').lowercase()
-                    if (!entry.isDirectory && name in ALL_GAME_FILENAMES) {
-                        kotlinx.coroutines.withContext(Dispatchers.Main) {
-                            onProgress(name)
-                        }
-                        val tmpFile = File(tmpDir, name)
-                        val digest = java.security.MessageDigest.getInstance("SHA-256")
-                        var size = 0L
-                        FileOutputStream(tmpFile).use { out ->
-                            val buf = ByteArray(8192)
-                            while (true) {
-                                val n = zis.read(buf)
-                                if (n <= 0) break
-                                out.write(buf, 0, n)
-                                digest.update(buf, 0, n)
-                                size += n
+    onProgress: (String) -> Unit,
+): List<ExtractedFile> =
+    kotlinx.coroutines.withContext(Dispatchers.IO) {
+        tmpDir.mkdirs()
+        val results = mutableListOf<ExtractedFile>()
+        try {
+            context.contentResolver.openInputStream(zipUri)?.use { raw ->
+                ZipInputStream(raw).use { zis ->
+                    var entry = zis.nextEntry
+                    while (entry != null) {
+                        val name = entry.name.substringAfterLast('/').lowercase()
+                        if (!entry.isDirectory && name in ALL_GAME_FILENAMES) {
+                            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                onProgress(name)
                             }
+                            val tmpFile = File(tmpDir, name)
+                            val digest = java.security.MessageDigest.getInstance("SHA-256")
+                            var size = 0L
+                            FileOutputStream(tmpFile).use { out ->
+                                val buf = ByteArray(8192)
+                                while (true) {
+                                    val n = zis.read(buf)
+                                    if (n <= 0) break
+                                    out.write(buf, 0, n)
+                                    digest.update(buf, 0, n)
+                                    size += n
+                                }
+                            }
+                            val sha256 = digest.digest().joinToString("") { "%02x".format(it) }
+                            results.add(ExtractedFile(name, tmpFile, sha256, size))
+                            Log.i("DXX-Setup", "Extracted from ZIP: $name ($size bytes, sha256=${sha256.take(16)}...)")
                         }
-                        val sha256 = digest.digest().joinToString("") { "%02x".format(it) }
-                        results.add(ExtractedFile(name, tmpFile, sha256, size))
-                        Log.i("DXX-Setup", "Extracted from ZIP: $name ($size bytes, sha256=${sha256.take(16)}...)")
+                        zis.closeEntry()
+                        entry = zis.nextEntry
                     }
-                    zis.closeEntry()
-                    entry = zis.nextEntry
                 }
             }
+        } catch (e: Exception) {
+            Log.e("DXX-Setup", "ZIP extraction failed", e)
         }
-    } catch (e: Exception) {
-        Log.e("DXX-Setup", "ZIP extraction failed", e)
+        results
     }
-    results
-}
 
 /** Clean up temporary extraction directory. */
 private fun cleanupTmpDir(filesDir: File) {
@@ -987,12 +1108,15 @@ private fun SetupScreen(
     pressedButtons: SnapshotStateList<String>,
     onLaunchGame: (String) -> Unit,
     onRefresh: () -> Unit,
-    onDownloadStateChanged: (String, Int) -> Unit = { _, _ -> }
+    onDownloadStateChanged: (String, Int) -> Unit = { _, _ -> },
 ) {
-    val fileSetManager = remember { FileSetManager(filesDir).also {
+    val fileSetManager =
+        remember {
+            FileSetManager(filesDir).also {
                 it.migrateDefaultSetIfNeeded()
                 it.sweepRootGameFiles()
-            } }
+            }
+        }
     var activeSetName by remember { mutableStateOf(fileSetManager.getActive()) }
     val setDir = remember(activeSetName) { fileSetManager.getSetDir(activeSetName) }
     val manifest = remember(activeSetName) { AssetManifest(setDir) }
@@ -1018,9 +1142,10 @@ private fun SetupScreen(
                 hashingFileIndex = i + 1
                 hashingFile = file.name
                 hashingProgress = 0f
-                val sha256 = AssetManifest.computeSha256(file) { bytesRead, totalBytes ->
-                    if (totalBytes > 0) hashingProgress = bytesRead.toFloat() / totalBytes
-                }
+                val sha256 =
+                    AssetManifest.computeSha256(file) { bytesRead, totalBytes ->
+                        if (totalBytes > 0) hashingProgress = bytesRead.toFloat() / totalBytes
+                    }
                 manifest.upsert(file.name, sha256, file.length())
             }
             hashingFile = null
@@ -1033,8 +1158,9 @@ private fun SetupScreen(
     val canLaunch = d2RequiredOk || d1RequiredOk
 
     // True when zero required files are found for either game
-    val noRequiredFiles = d2Statuses.filter { it.info.required }.none { it.found }
-            && d1Statuses.filter { it.info.required }.none { it.found }
+    val noRequiredFiles =
+        d2Statuses.filter { it.info.required }.none { it.found } &&
+            d1Statuses.filter { it.info.required }.none { it.found }
 
     // Download state: filename → progress (0..100, -1 = error, -2 = complete)
     val downloadProgress = remember { mutableStateMapOf<String, Int>() }
@@ -1061,7 +1187,7 @@ private fun SetupScreen(
                 d1RequiredOk && !d2RequiredOk -> "d1"
                 d2RequiredOk -> "d2"
                 else -> "d2"
-            }
+            },
         )
     }
     // Auto-correct if readiness changes (e.g. user adds/removes files)
@@ -1075,7 +1201,7 @@ private fun SetupScreen(
     var importStatus by remember { mutableStateOf("") }
 
     // ── Demo download state ─────────────────────────────────
-    var demoDownloading by remember { mutableStateOf<String?>(null) }  // package name or null
+    var demoDownloading by remember { mutableStateOf<String?>(null) } // package name or null
     var demoDownloadProgress by remember { mutableIntStateOf(0) }
     var demoDownloadError by remember { mutableStateOf<String?>(null) }
 
@@ -1098,78 +1224,80 @@ private fun SetupScreen(
     var sowImportUri by remember { mutableStateOf<Uri?>(null) }
     var sowImportName by remember { mutableStateOf<String?>(null) }
 
-    val filePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenMultipleDocuments()
-    ) { uris: List<Uri> ->
-        if (uris.isEmpty()) return@rememberLauncherForActivityResult
-        scanning = true
-        importStatus = ""
-        scope.launch(Dispatchers.IO) {
-            val zipUris = mutableListOf<Uri>()
-            val gameUris = mutableListOf<FoundFile>()
-            val cueUris = mutableListOf<Pair<String, Uri>>()
-            val binUris = mutableListOf<Pair<String, Uri>>()
-            var gogUri: Pair<String, Uri>? = null
-            var sowUri: Pair<String, Uri>? = null
-            for (uri in uris) {
-                val name = getDisplayName(context, uri)
-                if (name != null) {
-                    val lname = name.lowercase()
-                    when {
-                        lname.endsWith(".zip") -> zipUris.add(uri)
-                        lname.endsWith(".cue") -> cueUris.add(name to uri)
-                        lname.endsWith(".bin") -> binUris.add(name to uri)
-                        lname.endsWith(".exe") || lname.endsWith(".pkg") -> gogUri = name to uri
-                        lname.endsWith(".sow") -> sowUri = name to uri
-                        lname in ALL_GAME_FILENAMES -> gameUris.add(FoundFile(name, uri))
+    val filePickerLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenMultipleDocuments(),
+        ) { uris: List<Uri> ->
+            if (uris.isEmpty()) return@rememberLauncherForActivityResult
+            scanning = true
+            importStatus = ""
+            scope.launch(Dispatchers.IO) {
+                val zipUris = mutableListOf<Uri>()
+                val gameUris = mutableListOf<FoundFile>()
+                val cueUris = mutableListOf<Pair<String, Uri>>()
+                val binUris = mutableListOf<Pair<String, Uri>>()
+                var gogUri: Pair<String, Uri>? = null
+                var sowUri: Pair<String, Uri>? = null
+                for (uri in uris) {
+                    val name = getDisplayName(context, uri)
+                    if (name != null) {
+                        val lname = name.lowercase()
+                        when {
+                            lname.endsWith(".zip") -> zipUris.add(uri)
+                            lname.endsWith(".cue") -> cueUris.add(name to uri)
+                            lname.endsWith(".bin") -> binUris.add(name to uri)
+                            lname.endsWith(".exe") || lname.endsWith(".pkg") -> gogUri = name to uri
+                            lname.endsWith(".sow") -> sowUri = name to uri
+                            lname in ALL_GAME_FILENAMES -> gameUris.add(FoundFile(name, uri))
+                        }
                     }
                 }
-            }
-            withContext(Dispatchers.Main) {
-                if (gameUris.isNotEmpty()) {
-                    scanResults = gameUris
-                }
-                // Trigger disc import dialog if CUE file(s) found
-                if (cueUris.isNotEmpty()) {
-                    discImportCueName = cueUris.first().first
-                    discImportCueUri = cueUris.first().second
-                    discImportBins = binUris
-                }
-                // Trigger GOG import dialog if .exe/.pkg found
-                gogUri?.let {
-                    gogImportName = it.first
-                    gogImportUri = it.second
-                }
-                // Trigger SOW import dialog if .sow found
-                sowUri?.let {
-                    sowImportName = it.first
-                    sowImportUri = it.second
-                }
-                scanning = false
-            }
-            // Handle ZIP files
-            if (zipUris.isNotEmpty()) {
-                withContext(Dispatchers.Main) { zipExtracting = true }
-                val tmpDir = File(filesDir, "tmp")
-                val allExtracted = mutableListOf<ExtractedFile>()
-                for (zipUri in zipUris) {
-                    val extracted = extractZipContents(context, zipUri, tmpDir) { name ->
-                        zipProgressFile = name
-                    }
-                    allExtracted.addAll(extracted)
-                }
-                // Identify package
-                val fileHashes = allExtracted.associate { it.name to it.sha256 }
-                val pkgName = KnownVersions.identifyPackage(fileHashes)
                 withContext(Dispatchers.Main) {
-                    zipExtracted = allExtracted
-                    zipPackageName = pkgName
-                    zipExtracting = false
-                    zipProgressFile = ""
+                    if (gameUris.isNotEmpty()) {
+                        scanResults = gameUris
+                    }
+                    // Trigger disc import dialog if CUE file(s) found
+                    if (cueUris.isNotEmpty()) {
+                        discImportCueName = cueUris.first().first
+                        discImportCueUri = cueUris.first().second
+                        discImportBins = binUris
+                    }
+                    // Trigger GOG import dialog if .exe/.pkg found
+                    gogUri?.let {
+                        gogImportName = it.first
+                        gogImportUri = it.second
+                    }
+                    // Trigger SOW import dialog if .sow found
+                    sowUri?.let {
+                        sowImportName = it.first
+                        sowImportUri = it.second
+                    }
+                    scanning = false
+                }
+                // Handle ZIP files
+                if (zipUris.isNotEmpty()) {
+                    withContext(Dispatchers.Main) { zipExtracting = true }
+                    val tmpDir = File(filesDir, "tmp")
+                    val allExtracted = mutableListOf<ExtractedFile>()
+                    for (zipUri in zipUris) {
+                        val extracted =
+                            extractZipContents(context, zipUri, tmpDir) { name ->
+                                zipProgressFile = name
+                            }
+                        allExtracted.addAll(extracted)
+                    }
+                    // Identify package
+                    val fileHashes = allExtracted.associate { it.name to it.sha256 }
+                    val pkgName = KnownVersions.identifyPackage(fileHashes)
+                    withContext(Dispatchers.Main) {
+                        zipExtracted = allExtracted
+                        zipPackageName = pkgName
+                        zipExtracting = false
+                        zipProgressFile = ""
+                    }
                 }
             }
         }
-    }
 
     // ── Page navigation state ────────────────────────────
     var showControllerPage by remember { mutableStateOf(false) }
@@ -1182,7 +1310,7 @@ private fun SetupScreen(
                 dpadAxes = dpadAxes,
                 axisGeneration = axisGeneration,
                 pressedButtons = pressedButtons,
-                onBack = { showControllerPage = false }
+                onBack = { showControllerPage = false },
             )
             return@MaterialTheme
         }
@@ -1192,28 +1320,29 @@ private fun SetupScreen(
         }
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
+            color = MaterialTheme.colorScheme.background,
         ) {
             val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .safeDrawingPadding()
-                    .padding(if (isLandscape) 8.dp else 16.dp)
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .safeDrawingPadding()
+                        .padding(if (isLandscape) 8.dp else 16.dp),
             ) {
                 // ── Title + About ────────────────────────────
                 var showAbout by remember { mutableStateOf(false) }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = "DXX-Redux Setup",
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
                     )
                     TextButton(onClick = { showAbout = true }) {
                         Text("About", fontSize = 12.sp)
@@ -1232,14 +1361,14 @@ private fun SetupScreen(
                             val arch = Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown"
                             Text(
                                 "Build ${BuildInfo.GIT_COMMIT_COUNT}" +
-                                " (${BuildInfo.GIT_SHORT_HASH})" +
-                                " ${BuildInfo.BUILD_TYPE}\n" +
-                                "Date: ${BuildInfo.BUILD_DATE}" +
-                                " ${BuildInfo.BUILD_TIME}\n" +
-                                "Arch: $arch\n" +
-                                "Renderer: ${BuildConfig.RENDERER}"
+                                    " (${BuildInfo.GIT_SHORT_HASH})" +
+                                    " ${BuildInfo.BUILD_TYPE}\n" +
+                                    "Date: ${BuildInfo.BUILD_DATE}" +
+                                    " ${BuildInfo.BUILD_TIME}\n" +
+                                    "Arch: $arch\n" +
+                                    "Renderer: ${BuildConfig.RENDERER}",
                             )
-                        }
+                        },
                     )
                 }
 
@@ -1248,35 +1377,36 @@ private fun SetupScreen(
                     FileDetailDialog(
                         status = status,
                         onDismiss = { detailStatus = null },
-                        onDelete = when {
-                            // SAF leave-in-place file — unlink from SAF manifest
-                            status.safUri != null -> {
-                                {
-                                    safManifest.remove(status.info.filename)
-                                    detailStatus = null
-                                    onRefresh()
+                        onDelete =
+                            when {
+                                // SAF leave-in-place file — unlink from SAF manifest
+                                status.safUri != null -> {
+                                    {
+                                        safManifest.remove(status.info.filename)
+                                        detailStatus = null
+                                        onRefresh()
+                                    }
                                 }
-                            }
-                            // File on disk with manifest entry — delete file + manifest entry
-                            status.found && status.manifestEntry != null -> {
-                                {
-                                    val entry = status.manifestEntry
-                                    File(setDir, entry.filename).delete()
-                                    manifest.remove(entry.filename)
-                                    detailStatus = null
-                                    onRefresh()
+                                // File on disk with manifest entry — delete file + manifest entry
+                                status.found && status.manifestEntry != null -> {
+                                    {
+                                        val entry = status.manifestEntry
+                                        File(setDir, entry.filename).delete()
+                                        manifest.remove(entry.filename)
+                                        detailStatus = null
+                                        onRefresh()
+                                    }
                                 }
-                            }
-                            // External import but missing from disk — forget the manifest entry
-                            status.manifestEntry?.isExternal == true -> {
-                                {
-                                    manifest.remove(status.manifestEntry.filename)
-                                    detailStatus = null
-                                    onRefresh()
+                                // External import but missing from disk — forget the manifest entry
+                                status.manifestEntry?.isExternal == true -> {
+                                    {
+                                        manifest.remove(status.manifestEntry.filename)
+                                        detailStatus = null
+                                        onRefresh()
+                                    }
                                 }
-                            }
-                            else -> null
-                        }
+                                else -> null
+                            },
                     )
                 }
 
@@ -1291,7 +1421,7 @@ private fun SetupScreen(
                             showSetDialog = false
                             onRefresh()
                         },
-                        onDismiss = { showSetDialog = false }
+                        onDismiss = { showSetDialog = false },
                     )
                 }
 
@@ -1314,7 +1444,7 @@ private fun SetupScreen(
                             discImportCueUri = null
                             discImportCueName = null
                             discImportBins = emptyList()
-                        }
+                        },
                     )
                 }
 
@@ -1334,7 +1464,7 @@ private fun SetupScreen(
                         onDismiss = {
                             gogImportUri = null
                             gogImportName = null
-                        }
+                        },
                     )
                 }
 
@@ -1354,7 +1484,7 @@ private fun SetupScreen(
                         onDismiss = {
                             sowImportUri = null
                             sowImportName = null
-                        }
+                        },
                     )
                 }
 
@@ -1363,27 +1493,28 @@ private fun SetupScreen(
                 val filesPane: @Composable ColumnScope.() -> Unit = {
                     // ── Active set indicator ──────────────────────
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             text = "Files in use: ",
                             fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
                             text = activeSetName,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         TextButton(
                             onClick = { showSetDialog = true },
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                            modifier = Modifier.height(28.dp)
+                            modifier = Modifier.height(28.dp),
                         ) {
                             Text("Change", fontSize = 12.sp)
                         }
@@ -1398,28 +1529,29 @@ private fun SetupScreen(
                         for (demo in DEMO_DOWNLOADS) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                                )
+                                colors =
+                                    CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    ),
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Text(
                                         text = "\uD83C\uDFAE ${demo.name}",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 14.sp,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                                     )
                                     Text(
                                         text = "${demo.description} (${demo.sizeBytes / 1_000_000} MB)",
                                         fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                                     )
                                     Spacer(modifier = Modifier.height(6.dp))
                                     if (demoDownloading == demo.name) {
                                         Text(
                                             text = "Downloading\u2026 $demoDownloadProgress%",
                                             fontSize = 12.sp,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
                                         )
                                         LinearProgressIndicator(
                                             progress = { demoDownloadProgress / 100f },
@@ -1432,7 +1564,7 @@ private fun SetupScreen(
                                             Text(
                                                 text = "Error: $demoDownloadError",
                                                 fontSize = 12.sp,
-                                                color = MaterialTheme.colorScheme.error
+                                                color = MaterialTheme.colorScheme.error,
                                             )
                                             Spacer(modifier = Modifier.height(4.dp))
                                         }
@@ -1444,7 +1576,8 @@ private fun SetupScreen(
                                                 scope.launch {
                                                     val tmpDir = File(filesDir, "tmp")
                                                     tmpDir.mkdirs()
-                                                    val zipFile = File(tmpDir, "${demo.name.lowercase().replace(' ', '_')}.zip")
+                                                    val zipFile =
+                                                        File(tmpDir, "${demo.name.lowercase().replace(' ', '_')}.zip")
                                                     // Download ZIP
                                                     var downloadOk = false
                                                     downloadFile(
@@ -1452,7 +1585,7 @@ private fun SetupScreen(
                                                         destDir = tmpDir,
                                                         filename = zipFile.name,
                                                         onProgress = { pct -> demoDownloadProgress = pct },
-                                                        onDone = { success -> downloadOk = success }
+                                                        onDone = { success -> downloadOk = success },
                                                     )
                                                     if (!downloadOk) {
                                                         demoDownloading = null
@@ -1473,15 +1606,20 @@ private fun SetupScreen(
                                                     var imported = 0
                                                     for (ef in extracted) {
                                                         val destFile = File(setDir, ef.name)
-                                                        val ok = withContext(Dispatchers.IO) {
-                                                            try {
-                                                                ef.tmpFile.copyTo(destFile, overwrite = true)
-                                                                true
-                                                            } catch (e: Exception) {
-                                                                Log.e("DXX-Setup", "Failed to move demo file ${ef.name}", e)
-                                                                false
+                                                        val ok =
+                                                            withContext(Dispatchers.IO) {
+                                                                try {
+                                                                    ef.tmpFile.copyTo(destFile, overwrite = true)
+                                                                    true
+                                                                } catch (e: Exception) {
+                                                                    Log.e(
+                                                                        "DXX-Setup",
+                                                                        "Failed to move demo file ${ef.name}",
+                                                                        e,
+                                                                    )
+                                                                    false
+                                                                }
                                                             }
-                                                        }
                                                         if (ok) {
                                                             imported++
                                                             manifest.upsert(ef.name, ef.sha256, ef.sizeBytes)
@@ -1493,7 +1631,7 @@ private fun SetupScreen(
                                                     onRefresh()
                                                 }
                                             },
-                                            enabled = demoDownloading == null
+                                            enabled = demoDownloading == null,
                                         ) {
                                             Text("Download & Install", fontSize = 13.sp)
                                         }
@@ -1508,16 +1646,17 @@ private fun SetupScreen(
                     if (isHashing) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            )
+                            colors =
+                                CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                ),
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Text(
                                     text = "Hashing: $hashingFile ($hashingFileIndex/$hashingTotalFiles)",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 )
                                 Spacer(modifier = Modifier.height(6.dp))
                                 // Per-file progress
@@ -1530,7 +1669,8 @@ private fun SetupScreen(
                                 // Overall progress across all files
                                 if (hashingTotalFiles > 1) {
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    val overallProgress = ((hashingFileIndex - 1).toFloat() + hashingProgress) / hashingTotalFiles
+                                    val overallProgress =
+                                        ((hashingFileIndex - 1).toFloat() + hashingProgress) / hashingTotalFiles
                                     LinearProgressIndicator(
                                         progress = { overallProgress },
                                         modifier = Modifier.fillMaxWidth().height(4.dp),
@@ -1545,24 +1685,33 @@ private fun SetupScreen(
 
                     // ── Import files button ──
                     Button(
-                        onClick = { filePickerLauncher.launch(arrayOf("application/octet-stream", "application/zip", "*/*")) },
+                        onClick = {
+                            filePickerLauncher.launch(
+                                arrayOf("application/octet-stream", "application/zip", "*/*"),
+                            )
+                        },
                         enabled = !scanning && !isHashing && !zipExtracting,
                         modifier = Modifier.fillMaxWidth().height(44.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary
-                        )
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary,
+                            ),
                     ) {
                         Text(
-                            text = if (scanning || zipExtracting) "Importing\u2026"
-                                   else "\uD83D\uDCC2 Select Game Files or ZIP to Import",
-                            fontSize = 14.sp
+                            text =
+                                if (scanning || zipExtracting) {
+                                    "Importing\u2026"
+                                } else {
+                                    "\uD83D\uDCC2 Select Game Files or ZIP to Import"
+                                },
+                            fontSize = 14.sp,
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Select .hog, .ham, .pig files, a .zip archive, .cue/.bin disc images, .sow archive, or GOG installer.",
                         fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -1571,38 +1720,46 @@ private fun SetupScreen(
                         val found = scanResults!!
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (found.isEmpty())
-                                    MaterialTheme.colorScheme.errorContainer
-                                else MaterialTheme.colorScheme.secondaryContainer
-                            )
+                            colors =
+                                CardDefaults.cardColors(
+                                    containerColor =
+                                        if (found.isEmpty()) {
+                                            MaterialTheme.colorScheme.errorContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.secondaryContainer
+                                        },
+                                ),
                         ) {
-                            Column(modifier = Modifier
-                                .padding(12.dp)
-                                .verticalScroll(rememberScrollState())
+                            Column(
+                                modifier =
+                                    Modifier
+                                        .padding(12.dp)
+                                        .verticalScroll(rememberScrollState()),
                             ) {
                                 if (found.isEmpty()) {
                                     Text(
                                         text = "No game files found in that folder.",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 14.sp,
-                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                        color = MaterialTheme.colorScheme.onErrorContainer,
                                     )
                                     Text(
                                         text = "Try selecting the folder that contains .hog, .ham, and .pig files.",
                                         fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                        color = MaterialTheme.colorScheme.onErrorContainer,
                                     )
                                 } else {
                                     Text(
-                                        text = "Found ${found.size} game file(s): ${found.joinToString(", ") { it.name }}",
+                                        text = "Found ${found.size} game file(s): ${found.joinToString(
+                                            ", ",
+                                        ) { it.name }}",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 14.sp,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Row(
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
                                         Button(
                                             onClick = {
@@ -1618,21 +1775,38 @@ private fun SetupScreen(
                                                         // Determine track: native data-dir vs external
                                                         val existedBefore = destFile.exists()
                                                         val existingEntry = manifest.getEntry(canonicalName)
-                                                        val ok = withContext(Dispatchers.IO) {
-                                                            importFile(context, f, setDir)
-                                                        }
+                                                        val ok =
+                                                            withContext(Dispatchers.IO) {
+                                                                importFile(context, f, setDir)
+                                                            }
                                                         if (ok) {
                                                             imported++
-                                                            val sha256 = AssetManifest.computeSha256(destFile) { bytesRead, totalBytes ->
-                                                                if (totalBytes > 0) hashingProgress = bytesRead.toFloat() / totalBytes
-                                                            }
+                                                            val sha256 =
+                                                                AssetManifest.computeSha256(
+                                                                    destFile,
+                                                                ) { bytesRead, totalBytes ->
+                                                                    if (totalBytes >
+                                                                        0
+                                                                    ) {
+                                                                        hashingProgress =
+                                                                            bytesRead.toFloat() / totalBytes
+                                                                    }
+                                                                }
                                                             // Data-dir track: file existed on disk without a sourceUri
-                                                            val sourceUri = if (existedBefore && (existingEntry == null || !existingEntry.isExternal)) {
-                                                                null
-                                                            } else {
-                                                                f.uri.toString()
-                                                            }
-                                                            manifest.upsert(destFile.name, sha256, destFile.length(), sourceUri)
+                                                            val sourceUri =
+                                                                if (existedBefore &&
+                                                                    (existingEntry == null || !existingEntry.isExternal)
+                                                                ) {
+                                                                    null
+                                                                } else {
+                                                                    f.uri.toString()
+                                                                }
+                                                            manifest.upsert(
+                                                                destFile.name,
+                                                                sha256,
+                                                                destFile.length(),
+                                                                sourceUri,
+                                                            )
                                                         }
                                                     }
                                                     hashingFile = null
@@ -1640,12 +1814,12 @@ private fun SetupScreen(
                                                     scanResults = null
                                                     onRefresh()
                                                 }
-                                            }
+                                            },
                                         ) {
                                             Text("Import All", fontSize = 13.sp)
                                         }
                                         OutlinedButton(
-                                            onClick = { scanResults = null }
+                                            onClick = { scanResults = null },
                                         ) {
                                             Text("Dismiss", fontSize = 13.sp)
                                         }
@@ -1662,7 +1836,7 @@ private fun SetupScreen(
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFF4CAF50),
-                            modifier = Modifier.padding(bottom = 8.dp)
+                            modifier = Modifier.padding(bottom = 8.dp),
                         )
                     }
 
@@ -1670,22 +1844,23 @@ private fun SetupScreen(
                     if (zipExtracting) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer
-                            )
+                            colors =
+                                CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                ),
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Text(
                                     text = "Extracting ZIP\u2026",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 )
                                 if (zipProgressFile.isNotEmpty()) {
                                     Text(
                                         text = zipProgressFile,
                                         fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -1704,22 +1879,28 @@ private fun SetupScreen(
                         val extracted = zipExtracted!!
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (extracted.isEmpty())
-                                    MaterialTheme.colorScheme.errorContainer
-                                else MaterialTheme.colorScheme.secondaryContainer
-                            )
+                            colors =
+                                CardDefaults.cardColors(
+                                    containerColor =
+                                        if (extracted.isEmpty()) {
+                                            MaterialTheme.colorScheme.errorContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.secondaryContainer
+                                        },
+                                ),
                         ) {
-                            Column(modifier = Modifier
-                                .padding(12.dp)
-                                .verticalScroll(rememberScrollState())
+                            Column(
+                                modifier =
+                                    Modifier
+                                        .padding(12.dp)
+                                        .verticalScroll(rememberScrollState()),
                             ) {
                                 if (extracted.isEmpty()) {
                                     Text(
                                         text = "No game files found in ZIP archive.",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 14.sp,
-                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                        color = MaterialTheme.colorScheme.onErrorContainer,
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     OutlinedButton(
@@ -1727,7 +1908,7 @@ private fun SetupScreen(
                                             zipExtracted = null
                                             zipPackageName = null
                                             cleanupTmpDir(filesDir)
-                                        }
+                                        },
                                     ) {
                                         Text("Dismiss", fontSize = 13.sp)
                                     }
@@ -1737,14 +1918,14 @@ private fun SetupScreen(
                                             text = "\u2705 Recognized: $zipPackageName",
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 14.sp,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
                                         )
                                     } else {
                                         Text(
                                             text = "Found ${extracted.size} game file(s)",
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 14.sp,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
                                         )
                                     }
                                     Spacer(modifier = Modifier.height(4.dp))
@@ -1752,12 +1933,12 @@ private fun SetupScreen(
                                         Text(
                                             text = "\u2022 ${ef.name} (${ef.sizeBytes / 1024} KB)",
                                             fontSize = 12.sp,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
                                         )
                                     }
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Row(
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
                                         Button(
                                             onClick = {
@@ -1769,28 +1950,34 @@ private fun SetupScreen(
                                                         hashingFile = ef.name
                                                         hashingProgress = 1f
                                                         val destFile = File(setDir, ef.name)
-                                                        val ok = withContext(Dispatchers.IO) {
-                                                            try {
-                                                                ef.tmpFile.copyTo(destFile, overwrite = true)
-                                                                true
-                                                            } catch (e: Exception) {
-                                                                Log.e("DXX-Setup", "Failed to move extracted file ${ef.name}", e)
-                                                                false
+                                                        val ok =
+                                                            withContext(Dispatchers.IO) {
+                                                                try {
+                                                                    ef.tmpFile.copyTo(destFile, overwrite = true)
+                                                                    true
+                                                                } catch (e: Exception) {
+                                                                    Log.e(
+                                                                        "DXX-Setup",
+                                                                        "Failed to move extracted file ${ef.name}",
+                                                                        e,
+                                                                    )
+                                                                    false
+                                                                }
                                                             }
-                                                        }
                                                         if (ok) {
                                                             imported++
                                                             manifest.upsert(ef.name, ef.sha256, ef.sizeBytes)
                                                         }
                                                     }
                                                     hashingFile = null
-                                                    importStatus = "Imported $imported of ${extracted.size} files from ZIP."
+                                                    importStatus =
+                                                        "Imported $imported of ${extracted.size} files from ZIP."
                                                     zipExtracted = null
                                                     zipPackageName = null
                                                     cleanupTmpDir(filesDir)
                                                     onRefresh()
                                                 }
-                                            }
+                                            },
                                         ) {
                                             Text("Import to Current Set", fontSize = 13.sp)
                                         }
@@ -1799,7 +1986,7 @@ private fun SetupScreen(
                                                 zipExtracted = null
                                                 zipPackageName = null
                                                 cleanupTmpDir(filesDir)
-                                            }
+                                            },
                                         ) {
                                             Text("Dismiss", fontSize = 13.sp)
                                         }
@@ -1818,18 +2005,24 @@ private fun SetupScreen(
                         title = "Descent 2",
                         ready = d2RequiredOk,
                         expanded = d2Expanded,
-                        onToggle = { d2Expanded = !d2Expanded }
+                        onToggle = { d2Expanded = !d2Expanded },
                     )
 
                     if (d2Expanded) {
                         SectionHeader("Required Files")
                         d2Statuses.filter { it.info.required }.forEach {
-                            FileStatusRow(it) { detailStatus = it; detailIsD2 = true }
+                            FileStatusRow(it) {
+                                detailStatus = it
+                                detailIsD2 = true
+                            }
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         SectionHeader("Optional Files")
                         d2Statuses.filter { !it.info.required }.forEach {
-                            FileStatusRow(it) { detailStatus = it; detailIsD2 = true }
+                            FileStatusRow(it) {
+                                detailStatus = it
+                                detailIsD2 = true
+                            }
                         }
                     }
 
@@ -1839,50 +2032,64 @@ private fun SetupScreen(
                         title = "Descent 1",
                         ready = d1RequiredOk,
                         expanded = d1Expanded,
-                        onToggle = { d1Expanded = !d1Expanded }
+                        onToggle = { d1Expanded = !d1Expanded },
                     )
 
                     if (d1Expanded) {
                         SectionHeader("Required Files")
                         d1Statuses.filter { it.info.required }.forEach {
-                            FileStatusRow(it) { detailStatus = it; detailIsD2 = false }
+                            FileStatusRow(it) {
+                                detailStatus = it
+                                detailIsD2 = false
+                            }
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         SectionHeader("Optional Files")
                         d1Statuses.filter { !it.info.required }.forEach { status ->
-                        if (!status.found && status.info.downloadUrl != null) {
-                            DownloadableFileRow(
-                                status = status,
-                                progress = downloadProgress[status.info.filename],
-                                onInfo = { detailStatus = status; detailIsD2 = false },
-                                onDownload = {
-                                    scope.launch {
-                                        downloadFile(
-                                            url = status.info.downloadUrl,
-                                            destDir = setDir,
-                                            filename = status.info.filename,
-                                            onProgress = { pct ->
-                                                downloadProgress[status.info.filename] = pct
-                                                onDownloadStateChanged(status.info.filename, pct)
-                                            },
-                                            onDone = { success ->
-                                                val code = if (success) -2 else -1
-                                                downloadProgress[status.info.filename] = code
-                                                onDownloadStateChanged(status.info.filename, code)
-                                                if (success) onRefresh()
-                                            }
-                                        )
-                                    }
+                            if (!status.found && status.info.downloadUrl != null) {
+                                DownloadableFileRow(
+                                    status = status,
+                                    progress = downloadProgress[status.info.filename],
+                                    onInfo = {
+                                        detailStatus = status
+                                        detailIsD2 = false
+                                    },
+                                    onDownload = {
+                                        scope.launch {
+                                            downloadFile(
+                                                url = status.info.downloadUrl,
+                                                destDir = setDir,
+                                                filename = status.info.filename,
+                                                onProgress = { pct ->
+                                                    downloadProgress[status.info.filename] = pct
+                                                    onDownloadStateChanged(status.info.filename, pct)
+                                                },
+                                                onDone = { success ->
+                                                    val code = if (success) -2 else -1
+                                                    downloadProgress[status.info.filename] = code
+                                                    onDownloadStateChanged(status.info.filename, code)
+                                                    if (success) onRefresh()
+                                                },
+                                            )
+                                        }
+                                    },
+                                )
+                            } else {
+                                FileStatusRow(status) {
+                                    detailStatus = status
+                                    detailIsD2 = false
                                 }
-                            )
-                        } else {
-                            FileStatusRow(status) { detailStatus = status; detailIsD2 = false }
+                            }
                         }
-                    }
                     } // end if (d1Expanded)
 
                     Spacer(modifier = Modifier.height(16.dp))
-                    MusicInfoSection(filesDir = filesDir, refreshTrigger = refreshTrigger, hasMidiSource = d2RequiredOk || d1RequiredOk)
+                    MusicInfoSection(
+                        filesDir = filesDir,
+                        refreshTrigger = refreshTrigger,
+                        hasMidiSource =
+                            d2RequiredOk || d1RequiredOk,
+                    )
                 }
 
                 val controlsPane: @Composable ColumnScope.() -> Unit = {
@@ -1894,7 +2101,7 @@ private fun SetupScreen(
                         pressedButtons = pressedButtons,
                         prefs = prefs,
                         onDefineControls = { showControllerPage = true },
-                        onEditTouchLayout = { showTouchEditorPage = true }
+                        onEditTouchLayout = { showTouchEditorPage = true },
                     )
 
                     // ── Resolution picker ────────────────
@@ -1905,7 +2112,7 @@ private fun SetupScreen(
                     Button(
                         onClick = { android.os.Process.killProcess(android.os.Process.myPid()) },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-                        modifier = Modifier.fillMaxWidth().height(44.dp)
+                        modifier = Modifier.fillMaxWidth().height(44.dp),
                     ) {
                         Text("Restart game", fontSize = 14.sp)
                     }
@@ -1924,7 +2131,7 @@ private fun SetupScreen(
                                     gamePrefs.edit().putString("selected_game", "d1").apply()
                                 },
                                 label = { Text("Descent 1") },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
                             )
                             FilterChip(
                                 selected = selectedGame == "d2",
@@ -1933,7 +2140,7 @@ private fun SetupScreen(
                                     gamePrefs.edit().putString("selected_game", "d2").apply()
                                 },
                                 label = { Text("Descent 2") },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
                             )
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -1941,24 +2148,29 @@ private fun SetupScreen(
 
                     Button(
                         onClick = { onLaunchGame(selectedGame) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
                         enabled = (canLaunch || gameRunning) && !isHashing,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if ((!canLaunch && !gameRunning) || isHashing)
-                                MaterialTheme.colorScheme.surfaceVariant
-                            else
-                                MaterialTheme.colorScheme.primary
-                        )
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor =
+                                    if ((!canLaunch && !gameRunning) || isHashing) {
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    } else {
+                                        MaterialTheme.colorScheme.primary
+                                    },
+                            ),
                     ) {
                         Text(
-                            text = when {
-                                gameRunning -> "Return to Game"
-                                selectedGame == "d1" -> "Launch Descent 1"
-                                else -> "Launch Descent 2"
-                            },
-                            fontSize = 18.sp
+                            text =
+                                when {
+                                    gameRunning -> "Return to Game"
+                                    selectedGame == "d1" -> "Launch Descent 1"
+                                    else -> "Launch Descent 2"
+                                },
+                            fontSize = 18.sp,
                         )
                     }
                 }
@@ -1970,10 +2182,11 @@ private fun SetupScreen(
                         val leftScroll = rememberScrollState()
                         Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                             Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .verticalScroll(leftScroll)
-                                    .padding(end = 8.dp)
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .verticalScroll(leftScroll)
+                                        .padding(end = 8.dp),
                             ) {
                                 filesPane()
                             }
@@ -1982,10 +2195,11 @@ private fun SetupScreen(
                         val rightScroll = rememberScrollState()
                         Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                             Column(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .verticalScroll(rightScroll)
-                                    .padding(start = 8.dp)
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .verticalScroll(rightScroll)
+                                        .padding(start = 8.dp),
                             ) {
                                 controlsPane()
                             }
@@ -1996,9 +2210,10 @@ private fun SetupScreen(
                     val portraitScroll = rememberScrollState()
                     Box(modifier = Modifier.weight(1f)) {
                         Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .verticalScroll(portraitScroll)
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .verticalScroll(portraitScroll),
                         ) {
                             filesPane()
                             Spacer(modifier = Modifier.height(16.dp))
@@ -2019,13 +2234,13 @@ private fun BoxScope.ScrollArrows(scrollState: ScrollState) {
             modifier = Modifier.align(Alignment.TopCenter).padding(top = 4.dp),
             shape = CircleShape,
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
-            shadowElevation = 2.dp
+            shadowElevation = 2.dp,
         ) {
             Icon(
                 imageVector = Icons.Default.KeyboardArrowUp,
                 contentDescription = "Scroll up",
                 modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -2034,13 +2249,13 @@ private fun BoxScope.ScrollArrows(scrollState: ScrollState) {
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp),
             shape = CircleShape,
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
-            shadowElevation = 2.dp
+            shadowElevation = 2.dp,
         ) {
             Icon(
                 imageVector = Icons.Default.KeyboardArrowDown,
                 contentDescription = "Scroll down",
                 modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -2052,42 +2267,43 @@ private fun GameSectionHeader(
     ready: Boolean,
     expanded: Boolean,
     onToggle: () -> Unit,
-    notReadyLabel: String = "\u2717 Missing"
+    notReadyLabel: String = "\u2717 Missing",
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = title,
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         )
         Text(
             text = if (ready) "\u2713 Ready" else notReadyLabel,
             color = if (ready) Color(0xFF4CAF50) else Color(0xFFF44336),
             fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold
+            fontWeight = FontWeight.SemiBold,
         )
         Spacer(modifier = Modifier.width(8.dp))
         TextButton(
             onClick = onToggle,
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-            modifier = Modifier.height(28.dp)
+            modifier = Modifier.height(28.dp),
         ) {
             Text(
                 text = if (expanded) "Hide Files" else "Show Files",
-                fontSize = 12.sp
+                fontSize = 12.sp,
             )
         }
     }
     HorizontalDivider(
         color = MaterialTheme.colorScheme.outlineVariant,
-        modifier = Modifier.padding(bottom = 4.dp)
+        modifier = Modifier.padding(bottom = 4.dp),
     )
 }
 
@@ -2098,12 +2314,16 @@ private fun SectionHeader(title: String) {
         fontSize = 15.sp,
         fontWeight = FontWeight.SemiBold,
         color = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.padding(bottom = 4.dp, top = 2.dp)
+        modifier = Modifier.padding(bottom = 4.dp, top = 2.dp),
     )
 }
 
 @Composable
-private fun MusicInfoSection(filesDir: File, refreshTrigger: Int, hasMidiSource: Boolean = false) {
+private fun MusicInfoSection(
+    filesDir: File,
+    refreshTrigger: Int,
+    hasMidiSource: Boolean = false,
+) {
     val musicStatuses = remember(refreshTrigger) { checkFiles(filesDir, MUSIC_FILES) }
     val redbookReady = musicStatuses.all { it.found }
     val audioSrcManager = remember { AudioSourceManager(filesDir) }
@@ -2115,25 +2335,27 @@ private fun MusicInfoSection(filesDir: File, refreshTrigger: Int, hasMidiSource:
     // Re-read sources when refreshTrigger changes
     LaunchedEffect(refreshTrigger) { audioSources = audioSrcManager.getSources() }
 
-    val musicLabel = when {
-        hasAnySources -> "\u2713 Ready"
-        hasMidiSource -> "\u2717 Missing, will use MIDI"
-        else -> "\u2717 Missing"
-    }
+    val musicLabel =
+        when {
+            hasAnySources -> "\u2713 Ready"
+            hasMidiSource -> "\u2717 Missing, will use MIDI"
+            else -> "\u2717 Missing"
+        }
     GameSectionHeader(
         title = "Music",
         ready = hasAnySources,
         expanded = expanded,
         onToggle = { expanded = !expanded },
-        notReadyLabel = musicLabel
+        notReadyLabel = musicLabel,
     )
     if (expanded) {
         Text(
-            text = "MIDI audio is supported from game files. " +
-                   "Redbook audio from GOG or BIN/CUE disc images is supported.",
+            text =
+                "MIDI audio is supported from game files. " +
+                    "Redbook audio from GOG or BIN/CUE disc images is supported.",
             fontSize = 13.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 8.dp)
+            modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 8.dp),
         )
         // Legacy GOG files
         musicStatuses.forEach { status ->
@@ -2146,14 +2368,15 @@ private fun MusicInfoSection(filesDir: File, refreshTrigger: Int, hasMidiSource:
                 "Audio Sources:",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
             )
             audioSources.forEachIndexed { index, src ->
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 8.dp, bottom = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(start = 8.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     // Enable/disable toggle
                     Checkbox(
@@ -2162,15 +2385,19 @@ private fun MusicInfoSection(filesDir: File, refreshTrigger: Int, hasMidiSource:
                             audioSrcManager.setEnabled(src.id, checked)
                             audioSources = audioSrcManager.getSources()
                         },
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(20.dp),
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "${src.discLabel} (${src.audioTrackCount} tracks)",
                         fontSize = 12.sp,
-                        color = if (src.enabled) MaterialTheme.colorScheme.onSurface
-                                else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.weight(1f)
+                        color =
+                            if (src.enabled) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        modifier = Modifier.weight(1f),
                     )
                     // Move up
                     if (index > 0) {
@@ -2181,10 +2408,13 @@ private fun MusicInfoSection(filesDir: File, refreshTrigger: Int, hasMidiSource:
                                 audioSrcManager.reorder(ids)
                                 audioSources = audioSrcManager.getSources()
                             },
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(24.dp),
                         ) {
-                            Icon(Icons.Filled.KeyboardArrowUp, "Move up",
-                                modifier = Modifier.size(16.dp))
+                            Icon(
+                                Icons.Filled.KeyboardArrowUp,
+                                "Move up",
+                                modifier = Modifier.size(16.dp),
+                            )
                         }
                     } else {
                         Spacer(modifier = Modifier.size(24.dp))
@@ -2198,10 +2428,13 @@ private fun MusicInfoSection(filesDir: File, refreshTrigger: Int, hasMidiSource:
                                 audioSrcManager.reorder(ids)
                                 audioSources = audioSrcManager.getSources()
                             },
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(24.dp),
                         ) {
-                            Icon(Icons.Filled.KeyboardArrowDown, "Move down",
-                                modifier = Modifier.size(16.dp))
+                            Icon(
+                                Icons.Filled.KeyboardArrowDown,
+                                "Move down",
+                                modifier = Modifier.size(16.dp),
+                            )
                         }
                     } else {
                         Spacer(modifier = Modifier.size(24.dp))
@@ -2213,7 +2446,7 @@ private fun MusicInfoSection(filesDir: File, refreshTrigger: Int, hasMidiSource:
                             audioSources = audioSrcManager.getSources()
                         },
                         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
-                        modifier = Modifier.height(24.dp)
+                        modifier = Modifier.height(24.dp),
                     ) {
                         Text("\u2717", fontSize = 12.sp, color = Color(0xFFFF5252))
                     }
@@ -2233,18 +2466,19 @@ private fun formatTimestamp(millis: Long): String {
 }
 
 /** Format byte size as human-readable (KB, MB, GB). */
-private fun formatSize(bytes: Long): String = when {
-    bytes >= 1_073_741_824 -> "%.2f GB".format(bytes / 1_073_741_824.0)
-    bytes >= 1_048_576 -> "%.1f MB".format(bytes / 1_048_576.0)
-    bytes >= 1_024 -> "%.0f KB".format(bytes / 1_024.0)
-    else -> "$bytes B"
-}
+private fun formatSize(bytes: Long): String =
+    when {
+        bytes >= 1_073_741_824 -> "%.2f GB".format(bytes / 1_073_741_824.0)
+        bytes >= 1_048_576 -> "%.1f MB".format(bytes / 1_048_576.0)
+        bytes >= 1_024 -> "%.0f KB".format(bytes / 1_024.0)
+        else -> "$bytes B"
+    }
 
 @Composable
 private fun FileDetailDialog(
     status: FileStatus,
     onDismiss: () -> Unit,
-    onDelete: (() -> Unit)? = null
+    onDelete: (() -> Unit)? = null,
 ) {
     val entry = status.manifestEntry
     val name = status.foundName ?: status.info.filename
@@ -2258,123 +2492,146 @@ private fun FileDetailDialog(
         confirmButton = {
             TextButton(onClick = onDismiss) { Text("Close") }
         },
-        dismissButton = if (onDelete != null) {
-            {
-                if (status.safUri != null) {
-                    // SAF leave-in-place: single-step "Unlink"
-                    TextButton(onClick = onDelete) {
-                        Text("Unlink", color = MaterialTheme.colorScheme.error)
-                    }
-                } else if (isExternal) {
-                    // External files: single-step "Forget"
-                    TextButton(onClick = onDelete) {
-                        Text("Forget", color = MaterialTheme.colorScheme.error)
-                    }
-                } else if (!confirmingDelete) {
-                    // Data-dir files: first step
-                    TextButton(onClick = { confirmingDelete = true }) {
-                        Text("Delete from data folder?", color = MaterialTheme.colorScheme.error)
-                    }
-                } else {
-                    // Data-dir files: confirmation step
-                    TextButton(onClick = onDelete) {
-                        Text("Are you sure? Delete", color = MaterialTheme.colorScheme.error)
+        dismissButton =
+            if (onDelete != null) {
+                {
+                    if (status.safUri != null) {
+                        // SAF leave-in-place: single-step "Unlink"
+                        TextButton(onClick = onDelete) {
+                            Text("Unlink", color = MaterialTheme.colorScheme.error)
+                        }
+                    } else if (isExternal) {
+                        // External files: single-step "Forget"
+                        TextButton(onClick = onDelete) {
+                            Text("Forget", color = MaterialTheme.colorScheme.error)
+                        }
+                    } else if (!confirmingDelete) {
+                        // Data-dir files: first step
+                        TextButton(onClick = { confirmingDelete = true }) {
+                            Text("Delete from data folder?", color = MaterialTheme.colorScheme.error)
+                        }
+                    } else {
+                        // Data-dir files: confirmation step
+                        TextButton(onClick = onDelete) {
+                            Text("Are you sure? Delete", color = MaterialTheme.colorScheme.error)
+                        }
                     }
                 }
-            }
-        } else null,
+            } else {
+                null
+            },
         title = {
             Text(name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
         },
         text = {
             val scrollState = rememberScrollState()
             Box {
-            Column(modifier = Modifier.verticalScroll(scrollState)) {
-                // Category / description
-                DetailRow("Category", description)
-                DetailRow("Type", describeExtension(name))
+                Column(modifier = Modifier.verticalScroll(scrollState)) {
+                    // Category / description
+                    DetailRow("Category", description)
+                    DetailRow("Type", describeExtension(name))
 
-                // Status
-                val statusText = when {
-                    status.found -> "Found"
-                    isMissing -> "Error: not found"
-                    else -> "Missing"
-                }
-                DetailRow("Status", statusText)
-                if (status.info.required) {
-                    DetailRow("Required", "Yes")
-                }
-
-                // Location
-                if (status.safUri != null) {
-                    DetailRow("Location", "leave-in-place (linked)")
-                    if (status.safSizeBytes > 0) {
-                        DetailRow("Size", formatSize(status.safSizeBytes))
-                    }
-                } else if (isExternal && entry?.sourceUri != null) {
-                    DetailRow("Location", entry.sourceUri)
-                } else if (entry != null) {
-                    DetailRow("Location", "(in data folder)")
-                }
-
-                if (entry != null) {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                    // File details from manifest
-                    DetailRow("File on disk", entry.filename)
-                    DetailRow("Size", formatSize(entry.sizeBytes))
-                    DetailRow("Imported", formatTimestamp(entry.importedAt))
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                    // SHA-256 (full, selectable)
-                    Text("SHA-256", fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    SelectionContainer {
-                        Text(entry.sha256, fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(bottom = 4.dp))
+                    // Status
+                    val statusText =
+                        when {
+                            status.found -> "Found"
+                            isMissing -> "Error: not found"
+                            else -> "Missing"
+                        }
+                    DetailRow("Status", statusText)
+                    if (status.info.required) {
+                        DetailRow("Required", "Yes")
                     }
 
-                    // Version match
-                    if (entry.versionName != null) {
-                        DetailRow("Version match", entry.versionName)
-                    } else {
-                        DetailRow("Version match", "Unknown (#${entry.shortHash})")
+                    // Location
+                    if (status.safUri != null) {
+                        DetailRow("Location", "leave-in-place (linked)")
+                        if (status.safSizeBytes > 0) {
+                            DetailRow("Size", formatSize(status.safSizeBytes))
+                        }
+                    } else if (isExternal && entry?.sourceUri != null) {
+                        DetailRow("Location", entry.sourceUri)
+                    } else if (entry != null) {
+                        DetailRow("Location", "(in data folder)")
                     }
 
-                    if (isMissing) {
+                    if (entry != null) {
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                        // File details from manifest
+                        DetailRow("File on disk", entry.filename)
+                        DetailRow("Size", formatSize(entry.sizeBytes))
+                        DetailRow("Imported", formatTimestamp(entry.importedAt))
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                        // SHA-256 (full, selectable)
                         Text(
-                            "This file was previously imported but is no longer on disk.",
+                            "SHA-256",
                             fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.error
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                    }
-                } else if (!status.found) {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                    if (status.info.alternatives.isNotEmpty()) {
-                        DetailRow("Alternatives",
-                            status.info.alternatives.joinToString(", "))
-                    }
-                    if (status.info.downloadUrl != null) {
-                        DetailRow("Download", status.info.downloadUrl)
+                        SelectionContainer {
+                            Text(
+                                entry.sha256,
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(bottom = 4.dp),
+                            )
+                        }
+
+                        // Version match
+                        if (entry.versionName != null) {
+                            DetailRow("Version match", entry.versionName)
+                        } else {
+                            DetailRow("Version match", "Unknown (#${entry.shortHash})")
+                        }
+
+                        if (isMissing) {
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                            Text(
+                                "This file was previously imported but is no longer on disk.",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    } else if (!status.found) {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                        if (status.info.alternatives.isNotEmpty()) {
+                            DetailRow(
+                                "Alternatives",
+                                status.info.alternatives.joinToString(", "),
+                            )
+                        }
+                        if (status.info.downloadUrl != null) {
+                            DetailRow("Download", status.info.downloadUrl)
+                        }
                     }
                 }
+                ScrollArrows(scrollState)
             }
-            ScrollArrows(scrollState)
-            }
-        }
+        },
     )
 }
 
 @Composable
-private fun DetailRow(label: String, value: String) {
+private fun DetailRow(
+    label: String,
+    value: String,
+) {
     Row(modifier = Modifier.padding(vertical = 2.dp)) {
-        Text("$label: ", fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onSurface)
+        Text(
+            "$label: ",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            value,
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
     }
 }
 
@@ -2382,7 +2639,10 @@ private fun DetailRow(label: String, value: String) {
  * Update ResolutionX/ResolutionY in descent.cfg.
  * If the file exists, replace existing lines; otherwise create with just those keys.
  */
-private fun updateDescentCfgResolution(filesDir: File, resolution: String) {
+private fun updateDescentCfgResolution(
+    filesDir: File,
+    resolution: String,
+) {
     val parts = resolution.split("x")
     val w = parts.getOrNull(0)?.toIntOrNull() ?: return
     val h = parts.getOrNull(1)?.toIntOrNull() ?: return
@@ -2392,16 +2652,18 @@ private fun updateDescentCfgResolution(filesDir: File, resolution: String) {
         var text = cfgFile.readText()
         val rxRegex = Regex("^ResolutionX=.*$", RegexOption.MULTILINE)
         val ryRegex = Regex("^ResolutionY=.*$", RegexOption.MULTILINE)
-        text = if (rxRegex.containsMatchIn(text)) {
-            rxRegex.replace(text, "ResolutionX=$w")
-        } else {
-            text.trimEnd() + "\nResolutionX=$w\n"
-        }
-        text = if (ryRegex.containsMatchIn(text)) {
-            ryRegex.replace(text, "ResolutionY=$h")
-        } else {
-            text.trimEnd() + "\nResolutionY=$h\n"
-        }
+        text =
+            if (rxRegex.containsMatchIn(text)) {
+                rxRegex.replace(text, "ResolutionX=$w")
+            } else {
+                text.trimEnd() + "\nResolutionX=$w\n"
+            }
+        text =
+            if (ryRegex.containsMatchIn(text)) {
+                ryRegex.replace(text, "ResolutionY=$h")
+            } else {
+                text.trimEnd() + "\nResolutionY=$h\n"
+            }
         cfgFile.writeText(text)
     } else {
         cfgFile.writeText("ResolutionX=$w\nResolutionY=$h\n")
@@ -2416,19 +2678,26 @@ private fun updateDescentCfgResolution(filesDir: File, resolution: String) {
  */
 private fun enableRedbookInConfig(filesDir: File) {
     val cfgFile = File(filesDir, "descent.cfg")
-    if (!cfgFile.exists()) return  // writeInitialGameConfig will handle first launch
+    if (!cfgFile.exists()) return // writeInitialGameConfig will handle first launch
     var text = cfgFile.readText()
     for ((key, value) in listOf("MusicType" to "2", "OrigTrackOrder" to "1")) {
         val regex = Regex("^$key=.*$", RegexOption.MULTILINE)
-        text = if (regex.containsMatchIn(text)) regex.replace(text, "$key=$value")
-               else text.trimEnd() + "\n$key=$value\n"
+        text =
+            if (regex.containsMatchIn(text)) {
+                regex.replace(text, "$key=$value")
+            } else {
+                text.trimEnd() + "\n$key=$value\n"
+            }
     }
     cfgFile.writeText(text)
     Log.i("DXX-Setup", "Updated descent.cfg: MusicType=2 OrigTrackOrder=1")
 }
 
 @Composable
-private fun ResolutionPicker(prefs: SharedPreferences, filesDir: File) {
+private fun ResolutionPicker(
+    prefs: SharedPreferences,
+    filesDir: File,
+) {
     val options = listOf("640x480" to "Low (640×480)", "960x720" to "Medium (960×720)", "1280x960" to "High (1280×960)")
     var selected by remember { mutableStateOf(prefs.getString("render_resolution", "640x480") ?: "640x480") }
 
@@ -2437,9 +2706,10 @@ private fun ResolutionPicker(prefs: SharedPreferences, filesDir: File) {
     options.forEach { (value, label) ->
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 2.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 2.dp),
         ) {
             RadioButton(
                 selected = selected == value,
@@ -2447,7 +2717,7 @@ private fun ResolutionPicker(prefs: SharedPreferences, filesDir: File) {
                     selected = value
                     prefs.edit().putString("render_resolution", value).apply()
                     updateDescentCfgResolution(filesDir, value)
-                }
+                },
             )
             Text(text = label, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp))
         }
@@ -2455,7 +2725,7 @@ private fun ResolutionPicker(prefs: SharedPreferences, filesDir: File) {
     Text(
         "Takes effect on next launch",
         fontSize = 11.sp,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
 
@@ -2467,7 +2737,7 @@ private fun ControllerSection(
     pressedButtons: SnapshotStateList<String>,
     prefs: SharedPreferences,
     onDefineControls: () -> Unit = {},
-    onEditTouchLayout: () -> Unit = {}
+    onEditTouchLayout: () -> Unit = {},
 ) {
     // Poll for controller connect/disconnect every 1 second
     var pollTick by remember { mutableIntStateOf(0) }
@@ -2479,57 +2749,65 @@ private fun ControllerSection(
     }
 
     // Detect connected gamepads (re-evaluated on axis events OR poll tick)
-    val gamepads = remember(axisGeneration, pollTick) {
-        InputDevice.getDeviceIds().toList()
-            .mapNotNull { InputDevice.getDevice(it) }
-            .filter { d ->
-                val src = d.sources
-                src and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
-                src and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
-            }
-    }
+    val gamepads =
+        remember(axisGeneration, pollTick) {
+            InputDevice
+                .getDeviceIds()
+                .toList()
+                .mapNotNull { InputDevice.getDevice(it) }
+                .filter { d ->
+                    val src = d.sources
+                    src and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
+                        src and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
+                }
+        }
 
     val hasController = gamepads.isNotEmpty()
     var expanded by remember { mutableStateOf(false) }
 
     // ── Header ──
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = "Controller",
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         )
         Text(
-            text = if (hasController) "\u2713 ${gamepads.first().name}"
-                   else "\u2717 Not detected",
+            text =
+                if (hasController) {
+                    "\u2713 ${gamepads.first().name}"
+                } else {
+                    "\u2717 Not detected"
+                },
             color = if (hasController) Color(0xFF4CAF50) else Color(0xFFF44336),
             fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold
+            fontWeight = FontWeight.SemiBold,
         )
         if (hasController) {
             Spacer(modifier = Modifier.width(8.dp))
             TextButton(
                 onClick = { expanded = !expanded },
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                modifier = Modifier.height(28.dp)
+                modifier = Modifier.height(28.dp),
             ) {
                 Text(
                     text = if (expanded) "Hide" else "Test",
-                    fontSize = 12.sp
+                    fontSize = 12.sp,
                 )
             }
         }
     }
     HorizontalDivider(
         color = MaterialTheme.colorScheme.outlineVariant,
-        modifier = Modifier.padding(bottom = 4.dp)
+        modifier = Modifier.padding(bottom = 4.dp),
     )
 
     // ── Touch overlay toggle ──
@@ -2538,10 +2816,11 @@ private fun ControllerSection(
         mutableStateOf(prefs.getBoolean("touch_overlay_enabled", defaultOverlay))
     }
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Checkbox(
             checked = touchOverlay,
@@ -2549,13 +2828,13 @@ private fun ControllerSection(
                 touchOverlay = checked
                 prefs.edit().putBoolean("touch_overlay_enabled", checked).apply()
             },
-            modifier = Modifier.height(24.dp)
+            modifier = Modifier.height(24.dp),
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(
             text = "Touch controls overlay",
             fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 
@@ -2564,16 +2843,17 @@ private fun ControllerSection(
         mutableStateOf(prefs.getString("game_orientation", "landscape") == "landscape")
     }
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = "In-game:",
             fontSize = 13.sp,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(end = 8.dp)
+            modifier = Modifier.padding(end = 8.dp),
         )
         TextButton(
             onClick = {
@@ -2581,12 +2861,12 @@ private fun ControllerSection(
                 prefs.edit().putString("game_orientation", "landscape").apply()
             },
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-            modifier = Modifier.height(28.dp)
+            modifier = Modifier.height(28.dp),
         ) {
             Text(
                 "Landscape",
                 fontSize = 12.sp,
-                color = if (orientLandscape) MaterialTheme.colorScheme.primary else Color.Gray
+                color = if (orientLandscape) MaterialTheme.colorScheme.primary else Color.Gray,
             )
         }
         TextButton(
@@ -2595,12 +2875,12 @@ private fun ControllerSection(
                 prefs.edit().putString("game_orientation", "portrait").apply()
             },
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-            modifier = Modifier.height(28.dp)
+            modifier = Modifier.height(28.dp),
         ) {
             Text(
                 "Portrait",
                 fontSize = 12.sp,
-                color = if (!orientLandscape) MaterialTheme.colorScheme.primary else Color.Gray
+                color = if (!orientLandscape) MaterialTheme.colorScheme.primary else Color.Gray,
             )
         }
     }
@@ -2610,14 +2890,14 @@ private fun ControllerSection(
         OutlinedButton(
             onClick = onDefineControls,
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-            modifier = Modifier.height(32.dp).padding(vertical = 2.dp)
+            modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
         ) {
             Text("Define Controls", fontSize = 12.sp)
         }
         OutlinedButton(
             onClick = onEditTouchLayout,
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-            modifier = Modifier.height(32.dp).padding(vertical = 2.dp)
+            modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
         ) {
             Text("Touch Layout", fontSize = 12.sp)
         }
@@ -2629,7 +2909,7 @@ private fun ControllerSection(
         onClick = { showResetDialog = true },
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
         modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFF44336))
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFF44336)),
     ) {
         Text("Reset All Controls", fontSize = 12.sp)
     }
@@ -2639,12 +2919,14 @@ private fun ControllerSection(
             onDismissRequest = { showResetDialog = false },
             title = { Text("Reset All Controls") },
             text = {
-                Text("This will reset ALL control bindings to defaults:\n\n" +
-                     "\u2022 Touch layout (positions, sizes, bindings)\n" +
-                     "\u2022 Physical controller mappings\n" +
-                     "\u2022 In-game joystick settings for every pilot\n\n" +
-                     "The game will restart after reset.",
-                    fontSize = 13.sp)
+                Text(
+                    "This will reset ALL control bindings to defaults:\n\n" +
+                        "\u2022 Touch layout (positions, sizes, bindings)\n" +
+                        "\u2022 Physical controller mappings\n" +
+                        "\u2022 In-game joystick settings for every pilot\n\n" +
+                        "The game will restart after reset.",
+                    fontSize = 13.sp,
+                )
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -2662,22 +2944,31 @@ private fun ControllerSection(
             },
             dismissButton = {
                 TextButton(onClick = { showResetDialog = false }) { Text("Cancel") }
-            }
+            },
         )
     }
 
     if (expanded && hasController) {
         // Read axes from the array (axisGeneration triggers recomposition)
-        @Suppress("UNUSED_EXPRESSION") axisGeneration
-        val lx = axes[0]; val ly = axes[1]
-        val rx = axes[2]; val ry = axes[3]
-        val lt = axes[4]; val rt = axes[5]
+        @Suppress("UNUSED_EXPRESSION")
+        axisGeneration
+        val lx = axes[0]
+        val ly = axes[1]
+        val rx = axes[2]
+        val ry = axes[3]
+        val lt = axes[4]
+        val rt = axes[5]
 
         val axisColor = MaterialTheme.colorScheme.onSurfaceVariant
         val labelColor = MaterialTheme.colorScheme.onSurface
 
-        Text("Analog Sticks", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-            color = labelColor, modifier = Modifier.padding(bottom = 2.dp))
+        Text(
+            "Analog Sticks",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = labelColor,
+            modifier = Modifier.padding(bottom = 2.dp),
+        )
         Row(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.weight(1f)) {
                 Text("Left Stick", fontSize = 12.sp, color = labelColor)
@@ -2692,85 +2983,130 @@ private fun ControllerSection(
         }
 
         Spacer(modifier = Modifier.height(4.dp))
-        Text("Triggers", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-            color = labelColor, modifier = Modifier.padding(bottom = 2.dp))
+        Text(
+            "Triggers",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = labelColor,
+            modifier = Modifier.padding(bottom = 2.dp),
+        )
         Row(modifier = Modifier.fillMaxWidth()) {
-            Text("  L: ${"%.2f".format(lt)}", fontSize = 12.sp, color = axisColor,
-                modifier = Modifier.weight(1f))
-            Text("  R: ${"%.2f".format(rt)}", fontSize = 12.sp, color = axisColor,
-                modifier = Modifier.weight(1f))
+            Text(
+                "  L: ${"%.2f".format(lt)}",
+                fontSize = 12.sp,
+                color = axisColor,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                "  R: ${"%.2f".format(rt)}",
+                fontSize = 12.sp,
+                color = axisColor,
+                modifier = Modifier.weight(1f),
+            )
         }
 
-        val hatX = dpadAxes[0]; val hatY = dpadAxes[1]
-        val dpadDir = buildString {
-            if (hatY < -0.5f) append("Up ")
-            if (hatY >  0.5f) append("Down ")
-            if (hatX < -0.5f) append("Left ")
-            if (hatX >  0.5f) append("Right ")
-        }.trimEnd().ifEmpty { "(none)" }
+        val hatX = dpadAxes[0]
+        val hatY = dpadAxes[1]
+        val dpadDir =
+            buildString {
+                if (hatY < -0.5f) append("Up ")
+                if (hatY > 0.5f) append("Down ")
+                if (hatX < -0.5f) append("Left ")
+                if (hatX > 0.5f) append("Right ")
+            }.trimEnd().ifEmpty { "(none)" }
         Spacer(modifier = Modifier.height(4.dp))
-        Text("D-Pad", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-            color = labelColor, modifier = Modifier.padding(bottom = 2.dp))
-        Text("  $dpadDir", fontSize = 12.sp,
-            color = if (dpadDir == "(none)") axisColor else Color(0xFF4CAF50))
+        Text(
+            "D-Pad",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = labelColor,
+            modifier = Modifier.padding(bottom = 2.dp),
+        )
+        Text(
+            "  $dpadDir",
+            fontSize = 12.sp,
+            color = if (dpadDir == "(none)") axisColor else Color(0xFF4CAF50),
+        )
 
         Spacer(modifier = Modifier.height(4.dp))
-        Text("Buttons", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
-            color = labelColor, modifier = Modifier.padding(bottom = 2.dp))
         Text(
-            text = if (pressedButtons.isEmpty()) "  (none pressed)"
-                   else "  " + pressedButtons.joinToString(", "),
+            "Buttons",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = labelColor,
+            modifier = Modifier.padding(bottom = 2.dp),
+        )
+        Text(
+            text =
+                if (pressedButtons.isEmpty()) {
+                    "  (none pressed)"
+                } else {
+                    "  " + pressedButtons.joinToString(", ")
+                },
             fontSize = 12.sp,
-            color = if (pressedButtons.isEmpty()) axisColor else Color(0xFF4CAF50)
+            color = if (pressedButtons.isEmpty()) axisColor else Color(0xFF4CAF50),
         )
         Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
 @Composable
-private fun FileStatusRow(status: FileStatus, onClick: (() -> Unit)? = null) {
+private fun FileStatusRow(
+    status: FileStatus,
+    onClick: (() -> Unit)? = null,
+) {
     val isMissing = !status.found && status.manifestEntry != null
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .let { if (onClick != null) it.clickable(onClick = onClick) else it }
-            .padding(vertical = 1.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .let { if (onClick != null) it.clickable(onClick = onClick) else it }
+                .padding(vertical = 1.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = when {
-                status.found -> "\u2713"
-                isMissing -> "\u26A0"
-                else -> "\u2717"
-            },
-            color = when {
-                status.found -> Color(0xFF4CAF50)
-                isMissing -> Color(0xFFFF9800)  // orange warning
-                else -> Color(0xFFF44336)
-            },
+            text =
+                when {
+                    status.found -> "\u2713"
+                    isMissing -> "\u26A0"
+                    else -> "\u2717"
+                },
+            color =
+                when {
+                    status.found -> Color(0xFF4CAF50)
+                    isMissing -> Color(0xFFFF9800) // orange warning
+                    else -> Color(0xFFF44336)
+                },
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.width(20.dp)
+            modifier = Modifier.width(20.dp),
         )
 
         val name = status.foundName ?: status.info.filename
-        val altHint = if (!status.found && !isMissing && status.info.alternatives.isNotEmpty())
-            " (or ${status.info.alternatives.joinToString(", ")})"
-        else ""
-        val versionHint = if (status.found && status.manifestEntry != null)
-            " [${status.manifestEntry.versionDisplay}]"
-        else ""
+        val altHint =
+            if (!status.found && !isMissing && status.info.alternatives.isNotEmpty()) {
+                " (or ${status.info.alternatives.joinToString(", ")})"
+            } else {
+                ""
+            }
+        val versionHint =
+            if (status.found && status.manifestEntry != null) {
+                " [${status.manifestEntry.versionDisplay}]"
+            } else {
+                ""
+            }
         val missingHint = if (isMissing) " [Error: not found]" else ""
         Text(
             text = "$name \u2014 ${status.info.description}$altHint$versionHint$missingHint",
-            color = when {
-                status.found -> MaterialTheme.colorScheme.onSurface
-                isMissing -> Color(0xFFFF9800)
-                else -> MaterialTheme.colorScheme.onSurfaceVariant
-            },
+            color =
+                when {
+                    status.found -> MaterialTheme.colorScheme.onSurface
+                    isMissing -> Color(0xFFFF9800)
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                },
             fontSize = 13.sp,
             maxLines = 1,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         )
     }
 }
@@ -2778,22 +3114,23 @@ private fun FileStatusRow(status: FileStatus, onClick: (() -> Unit)? = null) {
 @Composable
 private fun DownloadableFileRow(
     status: FileStatus,
-    progress: Int?,        // null = not started, 0..100 = %, -1 = error, -2 = done
+    progress: Int?, // null = not started, 0..100 = %, -1 = error, -2 = done
     onDownload: () -> Unit,
-    onInfo: (() -> Unit)? = null
+    onInfo: (() -> Unit)? = null,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = "\u2717",
-            color = Color(0xFFFFA726),   // orange for optional missing
+            color = Color(0xFFFFA726), // orange for optional missing
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.width(20.dp)
+            modifier = Modifier.width(20.dp),
         )
 
         Text(
@@ -2801,9 +3138,10 @@ private fun DownloadableFileRow(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
             maxLines = 1,
-            modifier = Modifier
-                .weight(1f)
-                .then(if (onInfo != null) Modifier.clickable(onClick = onInfo) else Modifier)
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .then(if (onInfo != null) Modifier.clickable(onClick = onInfo) else Modifier),
         )
 
         Spacer(modifier = Modifier.width(8.dp))
@@ -2814,7 +3152,7 @@ private fun DownloadableFileRow(
                 Button(
                     onClick = onDownload,
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                    modifier = Modifier.height(28.dp)
+                    modifier = Modifier.height(28.dp),
                 ) {
                     Text("Download", fontSize = 11.sp)
                 }
@@ -2825,7 +3163,7 @@ private fun DownloadableFileRow(
                     text = "$progress%",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.width(40.dp)
+                    modifier = Modifier.width(40.dp),
                 )
             }
             -1 -> {
@@ -2833,7 +3171,7 @@ private fun DownloadableFileRow(
                 Text(
                     text = "Error",
                     fontSize = 12.sp,
-                    color = Color(0xFFF44336)
+                    color = Color(0xFFF44336),
                 )
             }
             -2 -> {
@@ -2842,7 +3180,7 @@ private fun DownloadableFileRow(
                     text = "\u2713",
                     fontSize = 14.sp,
                     color = Color(0xFF4CAF50),
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
             }
         }
@@ -2853,26 +3191,28 @@ private fun DownloadableFileRow(
 private fun MissingFilesHelp() {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+            ),
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
                 text = "Missing Required Files",
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onErrorContainer
+                color = MaterialTheme.colorScheme.onErrorContainer,
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Copy D2 files (from Steam/GOG) and/or D1 files to the app:\n" +
+                text =
+                    "Copy D2 files (from Steam/GOG) and/or D1 files to the app:\n" +
                         "  adb push <file> /data/data/com.dxxredux.app/files/\n" +
                         "Filenames are matched case-insensitively.\n" +
                         "Either Descent 2 or Descent 1 files are needed to launch.",
                 color = MaterialTheme.colorScheme.onErrorContainer,
                 fontSize = 12.sp,
-                lineHeight = 16.sp
+                lineHeight = 16.sp,
             )
         }
     }
@@ -2883,7 +3223,7 @@ private fun SetManagementDialog(
     fileSetManager: FileSetManager,
     activeSetName: String,
     onSwitchSet: (String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     var newSetName by remember { mutableStateOf("") }
     var showNewSetInput by remember { mutableStateOf(false) }
@@ -2901,11 +3241,17 @@ private fun SetManagementDialog(
         text = {
             Column {
                 // Current set info
-                Text("Current: $activeSetName", fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Current: $activeSetName",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
                 val usage = fileSetManager.diskUsage(activeSetName)
-                Text("Size: ${formatSize(usage)}", fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "Size: ${formatSize(usage)}",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -2914,22 +3260,23 @@ private fun SetManagementDialog(
                 if (otherSets.isNotEmpty()) {
                     otherSets.forEach { set ->
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onSwitchSet(set.name) }
-                                .padding(vertical = 8.dp, horizontal = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onSwitchSet(set.name) }
+                                    .padding(vertical = 8.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
                                 text = "Switch to \"${set.name}\"",
                                 fontSize = 13.sp,
                                 color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
                             )
                             Text(
                                 text = formatSize(fileSetManager.diskUsage(set.name)),
                                 fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -2940,12 +3287,15 @@ private fun SetManagementDialog(
                 if (showNewSetInput) {
                     OutlinedTextField(
                         value = newSetName,
-                        onValueChange = { newSetName = it; errorMessage = null },
+                        onValueChange = {
+                            newSetName = it
+                            errorMessage = null
+                        },
                         label = { Text("Set name") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         isError = errorMessage != null,
-                        supportingText = errorMessage?.let { { Text(it) } }
+                        supportingText = errorMessage?.let { { Text(it) } },
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -2960,22 +3310,24 @@ private fun SetManagementDialog(
                             Text("Create", fontSize = 13.sp)
                         }
                         OutlinedButton(onClick = {
-                            showNewSetInput = false; newSetName = ""
+                            showNewSetInput = false
+                            newSetName = ""
                         }) {
                             Text("Cancel", fontSize = 13.sp)
                         }
                     }
                 } else {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showNewSetInput = true }
-                            .padding(vertical = 8.dp, horizontal = 4.dp)
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { showNewSetInput = true }
+                                .padding(vertical = 8.dp, horizontal = 4.dp),
                     ) {
                         Text(
                             text = "+ Add new set\u2026",
                             fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }
@@ -2985,38 +3337,39 @@ private fun SetManagementDialog(
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     if (!confirmDelete) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { confirmDelete = true }
-                                .padding(vertical = 8.dp, horizontal = 4.dp)
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable { confirmDelete = true }
+                                    .padding(vertical = 8.dp, horizontal = 4.dp),
                         ) {
                             Text(
                                 text = "Delete \"$activeSetName\"",
                                 fontSize = 13.sp,
-                                color = MaterialTheme.colorScheme.error
+                                color = MaterialTheme.colorScheme.error,
                             )
                         }
                     } else {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    fileSetManager.deleteSet(activeSetName)
-                                    onSwitchSet(FileSetManager.DEFAULT_SET)
-                                }
-                                .padding(vertical = 8.dp, horizontal = 4.dp)
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        fileSetManager.deleteSet(activeSetName)
+                                        onSwitchSet(FileSetManager.DEFAULT_SET)
+                                    }.padding(vertical = 8.dp, horizontal = 4.dp),
                         ) {
                             Text(
                                 text = "Confirm delete \"$activeSetName\"?",
                                 fontSize = 13.sp,
                                 color = MaterialTheme.colorScheme.error,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
                             )
                         }
                     }
                 }
             }
-        }
+        },
     )
 }
 
@@ -3027,7 +3380,7 @@ private suspend fun downloadFile(
     destDir: File,
     filename: String,
     onProgress: (Int) -> Unit,
-    onDone: (Boolean) -> Unit
+    onDone: (Boolean) -> Unit,
 ) {
     withContext(Dispatchers.IO) {
         try {
@@ -3065,9 +3418,8 @@ private suspend fun downloadFile(
             // Rename .tmp → final
             val destFile = File(destDir, filename)
             tmpFile.renameTo(destFile)
-            Log.i("DXX-Setup", "Downloaded $filename (${downloaded} bytes)")
+            Log.i("DXX-Setup", "Downloaded $filename ($downloaded bytes)")
             withContext(Dispatchers.Main) { onDone(true) }
-
         } catch (e: Exception) {
             Log.e("DXX-Setup", "Download error for $filename", e)
             withContext(Dispatchers.Main) { onDone(false) }
@@ -3075,7 +3427,7 @@ private suspend fun downloadFile(
     }
 }
 
-/* ── GOG installer import dialog ─────────────────────────────────────────── */
+// ── GOG installer import dialog ───────────────────────────────────────────
 
 /**
  * Dialog for importing a GOG installer (.exe InnoSetup or .pkg Mac).
@@ -3095,7 +3447,7 @@ private fun GogImportDialog(
     setDir: File,
     context: Context,
     onImported: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     var status by remember { mutableStateOf("Analyzing installer\u2026") }
@@ -3168,7 +3520,7 @@ private fun GogImportDialog(
                     Text(
                         "Format: ${if (format == "innosetup") "InnoSetup (.exe)" else "Mac .pkg"}",
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -3191,7 +3543,7 @@ private fun GogImportDialog(
                             Text(
                                 "${f.name} (${formatSize(f.size)})",
                                 fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -3204,21 +3556,22 @@ private fun GogImportDialog(
                             Checkbox(
                                 checked = includeAudio,
                                 onCheckedChange = { includeAudio = it },
-                                enabled = !processing
+                                enabled = !processing,
                             )
                             Text(
                                 "Include CD audio (${formatSize(audioSize)})",
                                 fontSize = 12.sp,
-                                modifier = Modifier.clickable(enabled = !processing) {
-                                    includeAudio = !includeAudio
-                                }
+                                modifier =
+                                    Modifier.clickable(enabled = !processing) {
+                                        includeAudio = !includeAudio
+                                    },
                             )
                         }
                         audioFiles.forEach { f ->
                             Text(
                                 "  ${f.name} (${formatSize(f.size)})",
                                 fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -3236,31 +3589,49 @@ private fun GogImportDialog(
                                 progressPct = 0f
                                 withContext(Dispatchers.IO) {
                                     try {
-                                        val count = GogImportBridge.extractFiles(
-                                            tempPath!!, setDir.absolutePath,
-                                            object : GogImportBridge.ExtractProgress {
-                                                override fun onProgress(
-                                                    currentFile: String, bytesDone: Long, bytesTotal: Long
-                                                ): Int {
-                                                    val pct = if (bytesTotal > 0)
-                                                        bytesDone.toFloat() / bytesTotal else 0f
-                                                    progressFile = currentFile
-                                                    progressPct = pct
-                                                    return 0
-                                                }
-                                            },
-                                            includeAudio = includeAudio
-                                        )
-                                        val hasGog = if (includeAudio)
-                                            AudioSourceManager(filesDir).hasLegacyGog(setDir) else false
+                                        val count =
+                                            GogImportBridge.extractFiles(
+                                                tempPath!!,
+                                                setDir.absolutePath,
+                                                object : GogImportBridge.ExtractProgress {
+                                                    override fun onProgress(
+                                                        currentFile: String,
+                                                        bytesDone: Long,
+                                                        bytesTotal: Long,
+                                                    ): Int {
+                                                        val pct =
+                                                            if (bytesTotal > 0) {
+                                                                bytesDone.toFloat() / bytesTotal
+                                                            } else {
+                                                                0f
+                                                            }
+                                                        progressFile = currentFile
+                                                        progressPct = pct
+                                                        return 0
+                                                    }
+                                                },
+                                                includeAudio = includeAudio,
+                                            )
+                                        val hasGog =
+                                            if (includeAudio) {
+                                                AudioSourceManager(filesDir).hasLegacyGog(setDir)
+                                            } else {
+                                                false
+                                            }
                                         if (hasGog) enableRedbookInConfig(filesDir)
                                         withContext(Dispatchers.Main) {
                                             extractedCount = count
-                                            status = if (count > 0) {
-                                                val msg = "Extracted $count file(s)"
-                                                if (hasGog) "$msg \u2014 CD audio installed"
-                                                else msg
-                                            } else "No files extracted"
+                                            status =
+                                                if (count > 0) {
+                                                    val msg = "Extracted $count file(s)"
+                                                    if (hasGog) {
+                                                        "$msg \u2014 CD audio installed"
+                                                    } else {
+                                                        msg
+                                                    }
+                                                } else {
+                                                    "No files extracted"
+                                                }
                                         }
                                     } catch (e: Exception) {
                                         Log.e("DXX-GogImport", "Extraction failed", e)
@@ -3272,7 +3643,7 @@ private fun GogImportDialog(
                                 processing = false
                             }
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text("Extract to \u201c${setDir.name}\u201d", fontSize = 13.sp)
                     }
@@ -3287,7 +3658,7 @@ private fun GogImportDialog(
                             cleanupTmpDir(filesDir)
                             onImported()
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text("Done", fontSize = 13.sp)
                     }
@@ -3297,20 +3668,23 @@ private fun GogImportDialog(
                 if (processing) {
                     Spacer(modifier = Modifier.height(8.dp))
                     if (progressFile.isNotEmpty()) {
-                        Text(progressFile, fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            progressFile,
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                     LinearProgressIndicator(
                         progress = { progressPct },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
-        }
+        },
     )
 }
 
-/* ── SOW archive import dialog ───────────────────────────────────────────── */
+// ── SOW archive import dialog ─────────────────────────────────────────────
 
 @Composable
 private fun SowImportDialog(
@@ -3320,7 +3694,7 @@ private fun SowImportDialog(
     setDir: File,
     context: Context,
     onImported: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     var status by remember { mutableStateOf("Preparing\u2026") }
@@ -3377,14 +3751,20 @@ private fun SowImportDialog(
                                 status = "Extracting game files\u2026"
                                 withContext(Dispatchers.IO) {
                                     try {
-                                        val count = DiscImportBridge.extractSowFiles(
-                                            tempPath!!, setDir.absolutePath, null
-                                        )
+                                        val count =
+                                            DiscImportBridge.extractSowFiles(
+                                                tempPath!!,
+                                                setDir.absolutePath,
+                                                null,
+                                            )
                                         withContext(Dispatchers.Main) {
                                             extractedCount = count.coerceAtLeast(0)
-                                            status = if (count > 0)
-                                                "Extracted $count game file(s)"
-                                            else "No game files found in archive"
+                                            status =
+                                                if (count > 0) {
+                                                    "Extracted $count game file(s)"
+                                                } else {
+                                                    "No game files found in archive"
+                                                }
                                         }
                                     } catch (e: Exception) {
                                         Log.e("DXX-SowImport", "Extraction failed", e)
@@ -3396,7 +3776,7 @@ private fun SowImportDialog(
                                 processing = false
                             }
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text("Extract to \u201c${setDir.name}\u201d", fontSize = 13.sp)
                     }
@@ -3411,7 +3791,7 @@ private fun SowImportDialog(
                             cleanupTmpDir(filesDir)
                             onImported()
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text("Done", fontSize = 13.sp)
                     }
@@ -3423,11 +3803,11 @@ private fun SowImportDialog(
                     CircularProgressIndicator(modifier = Modifier.size(24.dp))
                 }
             }
-        }
+        },
     )
 }
 
-/* ── BIN/CUE disc import dialog ──────────────────────────────────────────── */
+// ── BIN/CUE disc import dialog ────────────────────────────────────────────
 
 /**
  * Dialog for importing a BIN/CUE disc image.
@@ -3448,7 +3828,7 @@ private fun DiscImportDialog(
     setDir: File,
     context: Context,
     onImported: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     var status by remember { mutableStateOf("Ready to process") }
@@ -3476,12 +3856,18 @@ private fun DiscImportDialog(
                 tempCuePath = tmpCue.absolutePath
 
                 // Get BIN sizes
-                val binSizes = binUris.map { (_, uri) ->
-                    context.contentResolver.query(
-                        uri, arrayOf(android.provider.OpenableColumns.SIZE),
-                        null, null, null
-                    )?.use { c -> if (c.moveToFirst()) c.getLong(0) else 0L } ?: 0L
-                }.toLongArray()
+                val binSizes =
+                    binUris
+                        .map { (_, uri) ->
+                            context.contentResolver
+                                .query(
+                                    uri,
+                                    arrayOf(android.provider.OpenableColumns.SIZE),
+                                    null,
+                                    null,
+                                    null,
+                                )?.use { c -> if (c.moveToFirst()) c.getLong(0) else 0L } ?: 0L
+                        }.toLongArray()
 
                 if (binSizes.isEmpty()) {
                     withContext(Dispatchers.Main) {
@@ -3524,7 +3910,7 @@ private fun DiscImportDialog(
                     Text(
                         "BIN: ${binUris.joinToString(", ") { it.first }}",
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 if (discLabel != null) {
@@ -3532,12 +3918,15 @@ private fun DiscImportDialog(
                     Text(
                         "\u2713 Identified: $discLabel",
                         fontSize = 13.sp,
-                        color = Color(0xFF4CAF50)
+                        color = Color(0xFF4CAF50),
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(status, fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    status,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
 
                 // Track listing
                 tracks?.let { trackList ->
@@ -3549,7 +3938,7 @@ private fun DiscImportDialog(
                             "Track ${track.trackNum}: $typeStr ($sizeStr)" +
                                 if (track.title.isNotEmpty()) " - ${track.title}" else "",
                             fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -3573,38 +3962,45 @@ private fun DiscImportDialog(
                                             val binUri = binUris[dataTrack.fileIndex].second
                                             val pfd = context.contentResolver.openFileDescriptor(binUri, "r")
                                             if (pfd != null) {
-                                                val extracted = pfd.use {
-                                                    DiscImportBridge.extractIsoFiles(
-                                                        it.fd,
-                                                        dataTrack.startSector,
-                                                        dataTrack.numSectors,
-                                                        setDir.absolutePath
-                                                    )
-                                                }
+                                                val extracted =
+                                                    pfd.use {
+                                                        DiscImportBridge.extractIsoFiles(
+                                                            it.fd,
+                                                            dataTrack.startSector,
+                                                            dataTrack.numSectors,
+                                                            setDir.absolutePath,
+                                                        )
+                                                    }
                                                 // SOW decompression: scan for .sow files and extract them
                                                 var sowExtracted = 0
                                                 if (extracted > 0) {
                                                     val sowFiles = DiscImportBridge.scanSowFiles(setDir.absolutePath)
                                                     if (sowFiles != null && sowFiles.isNotEmpty()) {
                                                         withContext(Dispatchers.Main) {
-                                                            status = "Decompressing ${sowFiles.size} .sow archive(s)\u2026"
+                                                            status =
+                                                                "Decompressing ${sowFiles.size} .sow archive(s)\u2026"
                                                         }
                                                         for (sow in sowFiles) {
-                                                            sowExtracted += DiscImportBridge.extractSowFiles(
-                                                                sow, setDir.absolutePath, null
-                                                            ).coerceAtLeast(0)
+                                                            sowExtracted +=
+                                                                DiscImportBridge
+                                                                    .extractSowFiles(
+                                                                        sow,
+                                                                        setDir.absolutePath,
+                                                                        null,
+                                                                    ).coerceAtLeast(0)
                                                         }
                                                     }
                                                 }
                                                 withContext(Dispatchers.Main) {
                                                     dataExtracted = extracted + sowExtracted
-                                                    status = when {
-                                                        extracted > 0 && sowExtracted > 0 ->
-                                                            "Extracted $extracted file(s) + $sowExtracted from .sow archives"
-                                                        extracted > 0 ->
-                                                            "Extracted $extracted game file(s)"
-                                                        else -> "No game files found on data track"
-                                                    }
+                                                    status =
+                                                        when {
+                                                            extracted > 0 && sowExtracted > 0 ->
+                                                                "Extracted $extracted file(s) + $sowExtracted from .sow archives"
+                                                            extracted > 0 ->
+                                                                "Extracted $extracted game file(s)"
+                                                            else -> "No game files found on data track"
+                                                        }
                                                 }
                                             }
                                         } catch (e: Exception) {
@@ -3617,7 +4013,7 @@ private fun DiscImportDialog(
                                     processing = false
                                 }
                             },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text("Extract Game Files", fontSize = 13.sp)
                         }
@@ -3662,10 +4058,11 @@ private fun DiscImportDialog(
                                                 val binFile = File(filesDir, destBinPaths[firstAudio.fileIndex])
                                                 val trackBytes = firstAudio.numSectors.toLong() * 2352
                                                 val trackOffset = firstAudio.startSector.toLong() * 2352
-                                                val sha1 = binFile.inputStream().use { fis ->
-                                                    fis.skip(trackOffset)
-                                                    DiscIdentifier.sha1Hash(fis, trackBytes)
-                                                }
+                                                val sha1 =
+                                                    binFile.inputStream().use { fis ->
+                                                        fis.skip(trackOffset)
+                                                        DiscIdentifier.sha1Hash(fis, trackBytes)
+                                                    }
                                                 val match = identifier.identify(mapOf(firstAudio.trackNum to sha1))
                                                 if (match.matched) {
                                                     discLabel = match.label
@@ -3691,7 +4088,7 @@ private fun DiscImportDialog(
                                                     trackCount = tracks!!.size,
                                                     audioTrackCount = audioCount,
                                                     legacyDiscId = legacyDiscId,
-                                                )
+                                                ),
                                             )
 
                                             withContext(Dispatchers.Main) {
@@ -3709,7 +4106,7 @@ private fun DiscImportDialog(
                                     processing = false
                                 }
                             },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text("Add as Audio Source", fontSize = 13.sp)
                         }
@@ -3720,7 +4117,7 @@ private fun DiscImportDialog(
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(
                             onClick = onImported,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text("Done", fontSize = 13.sp)
                         }
@@ -3732,6 +4129,6 @@ private fun DiscImportDialog(
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                 }
             }
-        }
+        },
     )
 }
