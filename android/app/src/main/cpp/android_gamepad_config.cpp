@@ -84,7 +84,7 @@ extern "C" void android_apply_gamepad_defaults(void)
         PlayerCfg.KeySettings[1][13] = 3;   /* Pitch U/D     = axis 3 (RY)*/
         PlayerCfg.KeySettings[1][15] = 2;   /* Turn L/R      = axis 2 (RX)*/
         PlayerCfg.KeySettings[1][17] = 0;   /* Slide L/R     = axis 0 (LX)*/
-        PlayerCfg.KeySettings[1][19] = 1;   /* Slide U/D     = axis 1 (LY)*/
+        PlayerCfg.KeySettings[1][23] = 1;   /* Throttle      = axis 1 (LY)*/
     }
 }
 

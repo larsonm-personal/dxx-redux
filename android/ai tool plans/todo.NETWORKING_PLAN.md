@@ -338,26 +338,28 @@ At the matchmaking server:
 
 Implementation: sliding window counters in HashMap<Key, VecDeque<Instant>>.
 Cheap in memory, O(1) amortized per check.
+Clients should be told which rate limit they hit so that human players are less frustrated/can submit remediation requests more easily
 
 ### Additional Anti-Griefing
 
 - Lobby host can kick players (by player ID, not just IP)
 - Kicked players can't rejoin the same lobby
 - Lobby codes for invite-only sessions (skip public listing)
+  * quick share option for texting. the share link should load the game and pre-fill everything needed to join the lobby and connect (with a warning about sharing if it includes local IPs, etc.)
 - Server-side player reputation (future): track kick frequency, reports
 - Packet validation: malformed messages -> immediate disconnect, no state
   allocated until after authentication
 
 ### How Minecraft Servers Handle This (Reference)
 
-| Technique               | Minecraft                          | Our Equivalent                      |
+| Technique                | Minecraft                          | Our Equivalent                      |
 |--------------------------|------------------------------------|-------------------------------------|
 | Account verification     | Mojang session server UUID check   | GPGS token exchange                 |
 | Connection throttle      | 4s cooldown per IP (vanilla)       | 3 conn/min/IP rate limit            |
 | Persistent bans          | UUID ban (not IP ban)              | GPGS player ID ban                  |
-| Whitelist mode            | Pre-approved UUIDs only            | "Verified only" lobby setting       |
+| Whitelist mode           | Pre-approved UUIDs only            | "Verified only" lobby setting       |
 | Proxy-level protection   | BungeeCord/Velocity rate limiting  | Server-side rate limiting           |
-| Anti-bot                 | Forced movement check, CAPTCHAs   | GPGS (Google's bot prevention)      |
+| Anti-bot                 | Forced movement check, CAPTCHAs    | GPGS (Google's bot prevention)      |
 
 ---
 
@@ -549,6 +551,7 @@ the monitor vector. Extend with:
   level state matches (prevents ghost doors, missing walls, etc.)
 - MULTI_RESTORE_INVENTORY: new reliable message that sets the rejoining
   player's inventory fields after sync completes
+- wrap this with integration testing and checksumming because it's a difficult problem that will likely have bugs
 
 ### Files to Modify
 

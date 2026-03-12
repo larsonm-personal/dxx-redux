@@ -1897,7 +1897,7 @@ void kc_set_controls()
 		static const int col_map[][2] = {
 			{29,0},{30,1},{31,2},{32,3},{33,4},{34,5},{35,6},{36,7},{37,8},{38,9},
 			{39,10},{40,11},{41,12},
-			{42,25},{43,26},{28,27},{46,44},{47,45}
+			{42,25},{43,26},{28,50},{46,44},{47,45}
 		};
 		for (i = 0; i < (int)(sizeof(col_map)/sizeof(col_map[0])); i++) {
 			kc_joystick[col_map[i][0]].value = (ubyte)(col_map[i][1] + 128);
@@ -1946,7 +1946,7 @@ void kconfig_fill_joy_settings(const int *indices, const int *values, int count,
 		static const int col_map[][2] = {
 			{29,0},{30,1},{31,2},{32,3},{33,4},{34,5},{35,6},{36,7},{37,8},{38,9},
 			{39,10},{40,11},{41,12},
-			{42,25},{43,26},{28,27},{46,44},{47,45}
+			{42,25},{43,26},{28,50},{46,44},{47,45}
 		};
 		for (i = 0; i < (int)(sizeof(col_map)/sizeof(col_map[0])); i++)
 			out[col_map[i][0]] = (ubyte)(col_map[i][1] + 128);
@@ -1984,14 +1984,14 @@ void kconfig_get_default_settings(ubyte *kb_out, ubyte *joy_out, ubyte *mouse_ou
 	joy_out[13] = 3;   /* Pitch U/D  = axis 3 (RY) */
 	joy_out[15] = 2;   /* Turn L/R   = axis 2 (RX) */
 	joy_out[17] = 0;   /* Slide L/R  = axis 0 (LX) */
-	joy_out[19] = 1;   /* Slide U/D  = axis 1 (LY) */
+	joy_out[23] = 1;   /* Throttle   = axis 1 (LY) */
 
 	/* Apply touch overlay offsets to joystick column 2 */
 	{
 		static const int col_map[][2] = {
 			{29,0},{30,1},{31,2},{32,3},{33,4},{34,5},{35,6},{36,7},{37,8},{38,9},
 			{39,10},{40,11},{41,12},
-			{42,25},{43,26},{28,27},{46,44},{47,45}
+			{42,25},{43,26},{28,50},{46,44},{47,45}
 		};
 		int i;
 		for (i = 0; i < (int)(sizeof(col_map)/sizeof(col_map[0])); i++)

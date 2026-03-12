@@ -2090,7 +2090,7 @@ void kconfig_get_default_settings(ubyte *kb_out, ubyte *joy_out, ubyte *mouse_ou
 	joy_out[13] = 3;   /* Pitch U/D  = axis 3 (RY) */
 	joy_out[15] = 2;   /* Turn L/R   = axis 2 (RX) */
 	joy_out[17] = 0;   /* Slide L/R  = axis 0 (LX) */
-	joy_out[19] = 1;   /* Slide U/D  = axis 1 (LY) */
+	joy_out[23] = 1;   /* Throttle   = axis 1 (LY) */
 
 	/* Apply touch overlay offsets to joystick column 2 */
 	{

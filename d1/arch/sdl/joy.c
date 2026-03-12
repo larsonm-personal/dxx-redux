@@ -14,6 +14,7 @@
 #include "text.h"
 #include "u_mem.h"
 #include "playsave.h"
+#include "kconfig.h"
 
 extern char *joybutton_text[]; //from kconfig.c
 extern char *joyaxis_text[]; //from kconfig.c
@@ -203,6 +204,51 @@ void joy_init()
 {
 	int i,j,n;
 	char temp[10];
+
+#ifdef ANDROID
+	/* On Android we never use real SDL joysticks (SDL 1.2 has no Android
+	 * joystick backend).  SDL_Init(SDL_INIT_JOYSTICK) would fail and
+	 * cause an early return, leaving axis_map / button_map all-zero --
+	 * which maps every axis to axis 0 and every button to button 0.
+	 * Instead, skip straight to registering our virtual gamepad. */
+	memset(&Joystick, 0, sizeof(Joystick));
+	memset(joyaxis_text, 0, JOY_MAX_AXES * sizeof(char *));
+	memset(joybutton_text, 0, JOY_MAX_BUTTONS * sizeof(char *));
+
+	{
+		static const char *axis_names[] = {"LX","LY","RX","RY","LT","RT"};
+		static const char *btn_names[]  = {"A","B","X","Y","L1","R1","Sel","Sta","L3","R3"};
+
+		SDL_Joysticks[0].handle   = NULL;
+		SDL_Joysticks[0].n_axes   = 6;
+		SDL_Joysticks[0].n_buttons= 10;
+		SDL_Joysticks[0].n_hats   = 0;
+
+		for (j = 0; j < 6; j++) {
+			sprintf(temp, "J1 %s", axis_names[j]);
+			joyaxis_text[Joystick.n_axes] = d_strdup(temp);
+			SDL_Joysticks[0].axis_map[j] = Joystick.n_axes++;
+		}
+		for (j = 0; j < 10; j++) {
+			sprintf(temp, "J1 %s", btn_names[j]);
+			joybutton_text[Joystick.n_buttons] = d_strdup(temp);
+			SDL_Joysticks[0].button_map[j] = Joystick.n_buttons++;
+		}
+		for (j = 0; j < 6; j++) {
+			SDL_Joysticks[0].axis_button_map[j] = Joystick.n_buttons;
+			sprintf(temp, "J1 -%s", axis_names[j]);
+			joybutton_text[Joystick.n_buttons++] = d_strdup(temp);
+			sprintf(temp, "J1 +%s", axis_names[j]);
+			joybutton_text[Joystick.n_buttons++] = d_strdup(temp);
+		}
+
+		num_joysticks = 1;
+		con_printf(CON_NORMAL, "android-joystick: registered virtual gamepad (6 axes, 10+12 buttons)\n");
+	}
+
+	joy_num_axes = Joystick.n_axes;
+	return;
+#endif /* ANDROID */
 
 	if (SDL_Init(SDL_INIT_JOYSTICK) < 0) {
 		con_printf(CON_NORMAL, "sdl-joystick: initialisation failed: %s.",SDL_GetError());

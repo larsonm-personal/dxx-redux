@@ -30,6 +30,9 @@ object TouchBindings {
     const val BTN_ENERGY_SHIELD   = 52
     const val BTN_TOGGLE_BOMB     = 54
 
+    /** Buttons that only exist in D2 (D1 has no afterburner, headlight, etc.). */
+    val D2_ONLY_BUTTONS = setOf(BTN_AFTERBURNER, BTN_HEADLIGHT, BTN_ENERGY_SHIELD, BTN_TOGGLE_BOMB)
+
     /**
      * Offset added to kc_joystick[] indices when sending touch button events
      * via nativeJoystickButton, to avoid collisions with physical controller

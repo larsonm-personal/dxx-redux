@@ -368,7 +368,10 @@ class TouchOverlayView @JvmOverloads constructor(
         for (s in stickStates) drawStick(canvas, s, gAlpha)
 
         // ── Layout buttons ──────────────────────────────────
-        for (b in buttonStates) drawButton(canvas, b, gAlpha)
+        for (b in buttonStates) {
+            if (gameVariant == "d1" && b.control.binding in TouchBindings.D2_ONLY_BUTTONS) continue
+            drawButton(canvas, b, gAlpha)
+        }
 
         // ── Layout sliders ──────────────────────────────────
         for (sl in sliderStates) drawSlider(canvas, sl, gAlpha)
@@ -762,6 +765,7 @@ class TouchOverlayView @JvmOverloads constructor(
                 // Try layout buttons
                 if (!handled) {
                     for (b in buttonStates) {
+                        if (gameVariant == "d1" && b.control.binding in TouchBindings.D2_ONLY_BUTTONS) continue
                         if (b.pointerId >= 0) continue
                         if (hypot(px - b.centerX, py - b.centerY) <= b.radius * 1.3f) {
                             b.pointerId = pid
