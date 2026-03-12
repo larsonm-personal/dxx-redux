@@ -336,9 +336,12 @@ Java_com_dxxredux_app_MainActivity_nativeKeyEvent(JNIEnv *env, jobject thiz,
  * menu is modal over it.
  */
 
-/* Engine symbols we read (but never modify) from the UI thread. */
+/* Engine symbols we read (but never modify) from the UI thread.
+ * Only read simple globals (pointer / int) — do NOT traverse linked
+ * lists like window_get_front() because the game thread mutates them. */
 #include "game.h"            /* Game_wind */
-#include "window.h"          /* window_get_front() */
+#include "screens.h"         /* SCREEN_GAME */
+#include "inferno.h"         /* Screen_mode */
 
 /* Declared in digi_tsf_music.c — pause/resume MIDI when backgrounded */
 extern void mix_background_pause(void);
@@ -348,10 +351,15 @@ extern void mix_background_resume(void);
 extern void RBAPause(void);
 extern int  RBAResume(void);
 
+/* Declared in android_surface.c — prevent rendering while backgrounded */
+extern void android_surface_pause(void);
+extern void android_surface_resume(void);
+
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeOnResume(JNIEnv *env, jobject thiz)
 {
-    LOGI("nativeOnResume — resuming music");
+    LOGI("nativeOnResume — resuming");
+    android_surface_resume();
     mix_background_resume();
     RBAResume();
 }
@@ -359,12 +367,24 @@ Java_com_dxxredux_app_MainActivity_nativeOnResume(JNIEnv *env, jobject thiz)
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeOnPause(JNIEnv *env, jobject thiz)
 {
-    /* Pause music immediately — before the Escape injection logic */
+    /* Stop the rendering thread from touching ANativeWindow before the
+     * surface is destroyed.  This must happen first so that by the time
+     * surfaceDestroyed → nativeSetSurface(null) runs, no blit is in
+     * progress or can start. */
+    android_surface_pause();
+
+    /* Pause music immediately */
     mix_background_pause();
     RBAPause();
-    /* Are we in live gameplay with no menu on top? */
-    if (!Game_wind || Game_wind != window_get_front()) {
-        LOGI("nativeOnPause — game not at front, skipping Escape injection");
+
+    /* Inject Escape only when the player is in live gameplay.
+     * We check Game_wind (non-NULL means a level is loaded) and
+     * Screen_mode (SCREEN_GAME means we are in the 3-D view).
+     * Both are simple atomic reads — we intentionally avoid
+     * window_get_front() here because it traverses a linked list
+     * that the game thread mutates concurrently. */
+    if (!Game_wind || Screen_mode != SCREEN_GAME) {
+        LOGI("nativeOnPause — not in live gameplay, skipping Escape injection");
         return;
     }
 

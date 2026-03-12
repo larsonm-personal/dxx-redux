@@ -33,6 +33,7 @@ static pthread_mutex_t g_surface_mutex = PTHREAD_MUTEX_INITIALIZER;
 static uint32_t g_palette_argb[256];
 static int g_palette_dirty = 1;
 static int g_last_geo_w = 0, g_last_geo_h = 0;
+static volatile int g_app_paused = 0;
 
 /* ── JNI entry points called from Kotlin ────────────────────── */
 
@@ -75,7 +76,7 @@ void android_surface_blit(SDL_Surface *canvas)
 {
     pthread_mutex_lock(&g_surface_mutex);
 
-    if (!g_surface_ready || !g_native_window || !canvas) {
+    if (!g_surface_ready || !g_native_window || !canvas || g_app_paused) {
         pthread_mutex_unlock(&g_surface_mutex);
         return;
     }
@@ -139,6 +140,29 @@ void android_surface_blit(SDL_Surface *canvas)
              g_palette_argb[1]);
     }
 
+    pthread_mutex_unlock(&g_surface_mutex);
+}
+
+/* ── App lifecycle pause/resume ──────────────────────────────
+ * Called from nativeOnPause/nativeOnResume (UI thread) to prevent
+ * the rendering thread from touching ANativeWindow while the app
+ * is backgrounded.  The mutex ensures any in-progress blit finishes
+ * before the flag takes effect.
+ */
+
+void android_surface_pause(void)
+{
+    pthread_mutex_lock(&g_surface_mutex);
+    g_app_paused = 1;
+    LOGI("surface paused (app backgrounded)");
+    pthread_mutex_unlock(&g_surface_mutex);
+}
+
+void android_surface_resume(void)
+{
+    pthread_mutex_lock(&g_surface_mutex);
+    g_app_paused = 0;
+    LOGI("surface resumed (app foregrounded)");
     pthread_mutex_unlock(&g_surface_mutex);
 }
 

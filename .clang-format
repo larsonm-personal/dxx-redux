@@ -1,0 +1,43 @@
+# .clang-format -- format rules for android/ C/C++ code.
+# Matches the prevailing style in android/app/src/main/cpp/.
+# Run via: android/run-clang-format.ps1
+
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+
+# Functions: brace on next line.  Everything else: same line.
+BreakBeforeBraces: Linux
+
+# int *p, not int* p
+PointerAlignment: Right
+
+# if (x) but func(x)
+SpaceBeforeParens: ControlStatements
+
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Empty
+
+# Binary operators (|, &&, etc.) at start of continuation line
+BreakBeforeBinaryOperators: NonAssignment
+ContinuationIndentWidth: 4
+
+# Don't reorder includes -- grouping is intentional
+SortIncludes: Never
+IncludeBlocks: Preserve
+
+BinPackArguments: true
+BinPackParameters: true
+AlignAfterOpenBracket: Align
+AlignEscapedNewlines: Left
+AlignConsecutiveMacros: false
+
+SpaceAfterCStyleCast: false
+SpacesInParentheses: false
+
+# Keep C99/C11 designated initializers readable
+Cpp11BracedListStyle: false
