@@ -1,9 +1,9 @@
 /*
- * android_gamepad_config.cpp — Read controller_config.json (written by the
+ * android_gamepad_config.cpp -- Read controller_config.json (written by the
  * Setup-screen UI) and apply gamepad bindings to new pilot configs.
  *
  * The JNI entry point patches .plr files by calling plr_patch_keysettings()
- * in playsave.c — the single source of truth for the .plr binary format.
+ * in playsave.c -- the single source of truth for the .plr binary format.
  *
  * Uses nlohmann/json for parsing.
  */
@@ -181,7 +181,7 @@ Java_com_dxxredux_app_NativePilotPatcher_nativeResetToDefaults(
  * (BT_INVERT slots = 0, others = 0xFF) and the specified values filled in.
  *
  * The indices are shared constants defined in ControllerConfigPage.kt
- * (BUTTON_KC_INDEX, AXIS_KC_INDEX) — update both when the layout changes.
+ * (BUTTON_KC_INDEX, AXIS_KC_INDEX) -- update both when the layout changes.
  */
 extern "C" JNIEXPORT jbyteArray JNICALL
 Java_com_dxxredux_app_NativePilotPatcher_nativeBuildJoySettings(

@@ -1,4 +1,4 @@
-# deploy-playstore.ps1 — Upload AAB to Google Play via the Developer API
+# deploy-playstore.ps1 -- Upload AAB to Google Play via the Developer API
 #
 # Usage:
 #   .\deploy-playstore.ps1                              # auto-finds latest AAB in build-outputs/
@@ -157,7 +157,7 @@ function Get-AccessToken {
                                  -replace "\s+", ""
     $keyBytes = [Convert]::FromBase64String($pemKey)
 
-    # Import the private key — works on both .NET Framework (PS 5.1) and .NET Core (PS 7+)
+    # Import the private key -- works on both .NET Framework (PS 5.1) and .NET Core (PS 7+)
     $rsa = $null
     # Try modern API first (available on .NET Core / PS 7+)
     try {

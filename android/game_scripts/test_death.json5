@@ -1,0 +1,67 @@
+// TEST: Death on a dangerous level (Insane difficulty)
+// Verifies player_dead introspection field by starting on a hostile level.
+//   D1: Level 11 of "First Strike" -- instant threat
+//   D2: Level 12 of "Counterstrike" -- mid-game with aggressive enemies
+//
+// Uses _info.vars for game-specific mission name, level number, and
+// level input keys. Steps with "when" are only run for that game.
+
+// Timing data (3 runs on Pixel_6_API_34 emulator):
+//   screen_mode=menu (pilot): 28ms, 64ms, 46ms  (min 28ms)
+//   screen_mode=menu (main):  32ms, 41ms, 57ms  (min 32ms)
+//   in_game:                  137ms, 175ms, 150ms (min 137ms)
+//   game_window_is_front:     58ms, 64ms, 89ms  (min 58ms)
+//   player_dead:              3960ms, 4232ms, 3901ms (min 3901ms)
+[
+    {"_info": {
+        "games": ["d1", "d2"],
+        "vars": {
+            "d1": {"MISSION": "First Strike", "LEVEL": "11", "LEVEL_KEY_1": "1", "LEVEL_KEY_2": "1"},
+            "d2": {"MISSION": "Counterstrike", "LEVEL": "24", "LEVEL_KEY_1": "2", "LEVEL_KEY_2": "4"}
+        }
+    }},
+    {"action": "log", "message": "=== TEST: Death (Insane) ==="},
+
+    {"action": "wait_ms", "ms": 2000},
+
+    // Accept default pilot name (fresh .plr deleted by runner)
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5100},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 2000},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 2000},
+
+    // Main menu
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5100},
+    {"action": "select", "text": "New game", "post_delay_ms": 1500},
+
+    // Mission select (D2 only -- D1 has a single built-in mission)
+    {"action": "wait_ms", "ms": 1000, "when": "d2"},
+    {"action": "select", "text": "${MISSION}", "when": "d2", "post_delay_ms": 1500},
+
+    // Level number input (parameterized keys)
+    {"action": "wait_ms", "ms": 500},
+    {"action": "key", "key": "backspace", "post_delay_ms": 200},
+    {"action": "key", "key": "${LEVEL_KEY_1}", "post_delay_ms": 200},
+    {"action": "key", "key": "${LEVEL_KEY_2}", "post_delay_ms": 200},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 1500},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 1500},
+
+    // Insane difficulty
+    {"action": "wait_ms", "ms": 500},
+    {"action": "select", "text": "Insane", "post_delay_ms": 1500},
+
+    // Skip briefing (waits for level load, then escapes if briefing is showing)
+    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 1000},
+
+    // Wait for game
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+    {"action": "assert", "expect": {"in_game": "true", "current_level_num": "${LEVEL}"}},
+    {"action": "introspect"},
+
+    // Wait for death (generous timeout -- spawn kill time varies by run)
+    {"action": "wait_for", "field": "player_dead", "value": "true", "timeout_ms": 30000},
+    {"action": "assert", "expect": {"player_dead": "true"}},
+    {"action": "introspect"},
+
+    {"action": "log", "message": "=== TEST: Death (Insane) -- COMPLETE ==="}
+]

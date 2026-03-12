@@ -1,4 +1,4 @@
-# check-updates.ps1 — Check for newer versions of ALL Android build dependencies
+# check-updates.ps1 -- Check for newer versions of ALL Android build dependencies
 # and offer to upgrade them.  Updates tool_versions.conf + build files in place.
 #
 # Checks: AGP, Gradle, Kotlin, Compose Compiler, Compose BOM, AndroidX libs,
@@ -168,7 +168,7 @@ $deps = @(
        Latest = Get-LatestSoundfontVersion }
 )
 
-# JDK: special — only show update for current major, and upgrade option for the other
+# JDK: special -- only show update for current major, and upgrade option for the other
 $jdkVersions = Get-LatestJDKVersion
 $currentJDKMajor = $conf["JDK_MAJOR"]
 $currentJDKVersion = $conf["JDK_VERSION"]

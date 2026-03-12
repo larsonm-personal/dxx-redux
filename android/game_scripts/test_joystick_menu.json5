@@ -2,13 +2,15 @@
 // Verifies joystick bindings are applied to the kconfig joystick menu.
 // Uses introspection to read bound_count and individual control bindings.
 [
+    {"_info": {"games": ["d1", "d2"]}},
     {"action": "log", "message": "=== TEST: Joystick Menu Introspection ==="},
 
     {"action": "wait_ms", "ms": 2000},
 
-    // Pilot select
+    // Accept default pilot name (fresh .plr deleted by runner)
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
-    {"action": "select", "text": "player", "post_delay_ms": 2000},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 2000},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 2000},
 
     // Main menu → Options
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},

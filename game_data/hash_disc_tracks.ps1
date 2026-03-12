@@ -1,4 +1,4 @@
-# hash_disc_tracks.ps1 — Collect track hashes from all CD images and update known_discs.json5.
+# hash_disc_tracks.ps1 -- Collect track hashes from all CD images and update known_discs.json5.
 #
 # Reads track_hashes.json from each subfolder in game_data/CD images/,
 # generates disc entries (id + label + tracks), and merges into known_discs.json5.
@@ -150,7 +150,7 @@ if ($replaced.Count -gt 0) {
                 elseif ($ch -eq '}') { $braceDepth-- }
             }
             if ($braceDepth -le 0) {
-                # End of entry — strip trailing comma from closing line
+                # End of entry -- strip trailing comma from closing line
                 $lastLine = $currentBlock[-1] -replace ',\s*$', ''
                 $currentBlock[-1] = $lastLine
 

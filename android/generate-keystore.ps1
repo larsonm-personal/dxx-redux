@@ -1,4 +1,4 @@
-# generate-keystore.ps1 — Generate a release keystore for signing AABs.
+# generate-keystore.ps1 -- Generate a release keystore for signing AABs.
 # Usage: .\generate-keystore.ps1
 $ErrorActionPreference = "Stop"
 

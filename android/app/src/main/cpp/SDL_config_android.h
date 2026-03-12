@@ -1,5 +1,5 @@
 /*
- * SDL_config_android.h — SDL 1.2 configuration for Android (NDK / bionic).
+ * SDL_config_android.h -- SDL 1.2 configuration for Android (NDK / bionic).
  *
  * Uses dummy video/audio/cdrom/joystick backends and pthread/unix for
  * threading and timing.  This is enough to compile and link the game;

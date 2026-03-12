@@ -1,5 +1,5 @@
 #!/usr/bin/env pwsh
-# emu_health.ps1 — Check Android emulator health and optionally restart it.
+# emu_health.ps1 -- Check Android emulator health and optionally restart it.
 #
 # Usage:
 #   .\emu_health.ps1              # Check health, print status

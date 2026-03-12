@@ -312,6 +312,14 @@ int player_menu_handler( listbox *lb, d_event *event, char **list )
 			if (read_player_file() != EZERO)
 				return 1;		// abort close!
 
+#ifdef ANDROID
+			{
+				extern void android_apply_gamepad_defaults(void);
+				android_apply_gamepad_defaults();
+				kc_set_controls();
+			}
+#endif
+
 			WriteConfigFile();		// Update lastplr
 
 			PHYSFS_freeList(list);

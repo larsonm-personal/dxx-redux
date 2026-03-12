@@ -1,12 +1,12 @@
 /*
- * game_introspect.cpp — Debug introspection API for AI-assisted testing.
+ * game_introspect.cpp -- Debug introspection API for AI-assisted testing.
  *
  * Serializes the current game state into a JSON string so that
  * automated tools can query menus, player stats, position, etc.
  * without resorting to screenshot / image analysis.
  *
  * Uses nlohmann/json for serialization.
- * Guarded by INTROSPECT_ON — only compiled into debug Android builds.
+ * Guarded by INTROSPECT_ON -- only compiled into debug Android builds.
  */
 
 #ifdef INTROSPECT_ON
@@ -20,7 +20,7 @@
 
 using json = nlohmann::json;
 
-/* Engine headers are pure C — wrap them for C++ linkage. */
+/* Engine headers are pure C -- wrap them for C++ linkage. */
 extern "C" {
 #include "game_introspect.h"
 #include "window.h"
@@ -254,7 +254,7 @@ static json serialize_position() {
         {"z", f2fl(ConsoleObject->pos.z)},
         {"segment", (int)ConsoleObject->segnum},
         {"shields", f2fl(ConsoleObject->shields)},
-        /* Forward vector — lets tests detect orientation changes */
+        /* Forward vector -- lets tests detect orientation changes */
         {"fvec_x", f2fl(ConsoleObject->orient.fvec.x)},
         {"fvec_y", f2fl(ConsoleObject->orient.fvec.y)},
         {"fvec_z", f2fl(ConsoleObject->orient.fvec.z)}
@@ -438,7 +438,7 @@ extern "C" char *game_introspect_get_state(void) {
     }
 #endif
 
-    /* ── Live axis state (always available — useful for binding tests) ── */
+    /* ── Live axis state (always available -- useful for binding tests) ── */
     {
         json axes = json::array();
         for (int i = 0; i < 6; i++) {
@@ -460,12 +460,14 @@ extern "C" char *game_introspect_get_state(void) {
         j["axis_bind_pitch"]    = get_bind(13);
         j["axis_bind_turn"]     = get_bind(15);
         j["axis_bind_slide_lr"] = get_bind(17);
+        j["axis_bind_slide_ud"] = get_bind(19);
         j["axis_bind_throttle"] = get_bind(23);
 
-        /* Control timing — nonzero means the ship is actively rotating/thrusting */
+        /* Control timing -- nonzero means the ship is actively rotating/thrusting */
         j["heading_time"]    = (int)Controls.heading_time;
         j["pitch_time"]      = (int)Controls.pitch_time;
         j["slide_lr_time"]   = (int)Controls.sideways_thrust_time;
+        j["slide_ud_time"]   = (int)Controls.vertical_thrust_time;
         j["throttle_time"]   = (int)Controls.forward_thrust_time;
     }
 

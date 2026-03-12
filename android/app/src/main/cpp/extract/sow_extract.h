@@ -1,5 +1,5 @@
 /*
- * sow_extract.h — Extract game files from Descent .sow (ARJ) archives.
+ * sow_extract.h -- Extract game files from Descent .sow (ARJ) archives.
  *
  * SOW files are ARJ-compressed archives used by Interplay's installer on
  * original Descent II CD-ROMs.  This module wraps libarchive to extract
@@ -27,7 +27,7 @@ typedef struct {
     int  count;
 } sow_file_list_t;
 
-/* Progress callback — same signature as iso_progress_fn.
+/* Progress callback -- same signature as iso_progress_fn.
  * Return 0 to continue, non-zero to cancel. */
 typedef int (*sow_progress_fn)(const char *current_file,
                                 long long bytes_done,
@@ -51,7 +51,7 @@ int sow_scan_dir(const char *dir_path, sow_file_list_t *out);
  * progress   : optional progress callback (may be NULL)
  * user_data  : passed to progress callback
  *
- * Internal archive paths are flattened — only the filename is used
+ * Internal archive paths are flattened -- only the filename is used
  * (e.g. "zero/descent2.hog" → "descent2.hog").
  *
  * Returns number of files extracted, or -1 on error.

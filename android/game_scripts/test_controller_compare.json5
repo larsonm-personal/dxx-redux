@@ -2,13 +2,15 @@
 // Used by run_controller_compare.ps1 to compare launcher vs in-game config.
 // Selects the first pilot from the list and introspects at the main menu.
 [
+    {"_info": {"games": ["d1", "d2"]}},
     {"action": "log", "message": "=== TEST: Controller Config Compare (in-game) ==="},
 
     {"action": "wait_ms", "ms": 2000},
 
-    // Pilot select — pick the first one
+    // Accept default pilot name (fresh .plr deleted by runner)
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 10000},
-    {"action": "select", "text": "player", "post_delay_ms": 2000},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 2000},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 2000},
 
     // At main menu — introspect to capture joystick bindings
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},

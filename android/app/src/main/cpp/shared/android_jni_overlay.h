@@ -1,5 +1,5 @@
 /*
- * Shared JNI overlay helpers — send overlay text to the Kotlin UI layer.
+ * Shared JNI overlay helpers -- send overlay text to the Kotlin UI layer.
  * Used by both D1 and D2 track_names.c.
  */
 

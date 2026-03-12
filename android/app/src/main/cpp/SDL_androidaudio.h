@@ -1,5 +1,5 @@
 /*
- * SDL_androidaudio.h — Private data for the Android OpenSL ES audio driver.
+ * SDL_androidaudio.h -- Private data for the Android OpenSL ES audio driver.
  */
 #ifndef _SDL_androidaudio_h
 #define _SDL_androidaudio_h
@@ -24,7 +24,7 @@ struct SDL_PrivateAudioData {
     SLPlayItf    playerPlay;
     SLAndroidSimpleBufferQueueItf playerBufferQueue;
 
-    /* Audio buffers — bqPlayerCallback mixes directly into playbuf
+    /* Audio buffers -- bqPlayerCallback mixes directly into playbuf
      * via SDL_mixer's callback, then re-enqueues.  mixbuf is kept
      * for SDL_RunAudio compatibility but unused in callback mode. */
     Uint8   *mixbuf;              /* SDL mix buffer (unused in callback mode) */

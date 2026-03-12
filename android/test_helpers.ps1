@@ -272,6 +272,117 @@ function Get-GameIntrospection {
     try { return ($json | ConvertFrom-Json) } catch { return $null }
 }
 
+function Get-ScriptGameInfo {
+    # Read a .json5 test script and return the games array from its _info element.
+    # Returns @("d1","d2"), @("d1"), @("d2"), or $null if no _info element.
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$ScriptPath
+    )
+    if (-not (Test-Path $ScriptPath)) { return $null }
+    $raw = Get-Content $ScriptPath -Raw
+    # Strip single-line comments, trailing commas
+    $raw = [regex]::Replace($raw, '//.*', '')
+    $raw = [regex]::Replace($raw, ',\s*([}\]])', '$1')
+    try {
+        $arr = $raw | ConvertFrom-Json
+        if ($arr.Count -gt 0 -and $arr[0]._info -and $arr[0]._info.games) {
+            return @($arr[0]._info.games)
+        }
+    } catch {}
+    return $null
+}
+
+function Resolve-TestScript {
+    # Preprocess a .json5 test script for a specific game:
+    #   1. Read _info.vars.$GameId for variable substitution
+    #   2. Filter out steps where "when" doesn't match $GameId
+    #   3. Replace ${VAR} placeholders in all string values
+    #   4. Write resolved script to a temp file
+    # Returns the path to the resolved temp file, or $ScriptPath if no processing needed.
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$ScriptPath,
+        [Parameter(Mandatory=$true)]
+        [string]$GameId
+    )
+    if (-not (Test-Path $ScriptPath)) { return $ScriptPath }
+
+    $raw = Get-Content $ScriptPath -Raw
+    $cleaned = [regex]::Replace($raw, '//.*', '')
+    $cleaned = [regex]::Replace($cleaned, ',\s*([}\]])', '$1')
+
+    try {
+        $arr = $cleaned | ConvertFrom-Json
+    } catch {
+        return $ScriptPath
+    }
+
+    # Extract vars from _info element
+    $vars = @{}
+    if ($arr.Count -gt 0 -and $arr[0]._info) {
+        $info = $arr[0]._info
+        if ($info.vars -and $info.vars.$GameId) {
+            $gameVars = $info.vars.$GameId
+            foreach ($prop in $gameVars.PSObject.Properties) {
+                $vars[$prop.Name] = $prop.Value
+            }
+        }
+    }
+
+    # No vars and no "when" fields? No processing needed.
+    $hasWhen = $raw -match '"when"'
+    if ($vars.Count -eq 0 -and -not $hasWhen) {
+        return $ScriptPath
+    }
+
+    # Filter by "when" and remove _info elements
+    $filtered = @()
+    foreach ($step in $arr) {
+        if ($step._info) { continue }
+        $whenVal = $step.when
+        if ($whenVal -and $whenVal -ne $GameId) { continue }
+        # Remove the "when" property from output
+        if ($whenVal) {
+            $step.PSObject.Properties.Remove('when')
+        }
+        $filtered += $step
+    }
+
+    # Serialize to JSON and do variable substitution
+    $jsonOut = ConvertTo-Json $filtered -Depth 10 -Compress
+    foreach ($k in $vars.Keys) {
+        $jsonOut = $jsonOut.Replace("`${$k}", $vars[$k])
+    }
+
+    # Write to temp file
+    $tempDir = Join-Path (Split-Path $ScriptPath) ".resolved"
+    if (-not (Test-Path $tempDir)) { New-Item -ItemType Directory -Path $tempDir -Force | Out-Null }
+    $tempFile = Join-Path $tempDir ([System.IO.Path]::GetFileName($ScriptPath))
+    Set-Content -Path $tempFile -Value $jsonOut -Encoding UTF8
+    return $tempFile
+}
+
+function Get-ScriptTimeoutSeconds {
+    # Calculate a timeout from the sum of all timing fields in a .json5 script.
+    # Sums ms, timeout_ms, and post_delay_ms from every step, converts to
+    # seconds, and adds a buffer. Returns an integer.
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$ScriptPath,
+        [int]$BufferSeconds = 15
+    )
+    if (-not (Test-Path $ScriptPath)) { return 60 + $BufferSeconds }
+    $raw = Get-Content $ScriptPath -Raw
+    $totalMs = 0
+    # Match all numeric values for timing keys (works on raw json5 text)
+    foreach ($m in [regex]::Matches($raw, '"(?:ms|timeout_ms|post_delay_ms)"\s*:\s*(\d+)')) {
+        $totalMs += [int]$m.Groups[1].Value
+    }
+    $seconds = [Math]::Ceiling($totalMs / 1000.0)
+    return [Math]::Max(30, $seconds + $BufferSeconds)
+}
+
 function Get-SetupIntrospection {
     # Request and return parsed setup introspection JSON, or $null on failure.
     Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_INTROSPECT") | Out-Null

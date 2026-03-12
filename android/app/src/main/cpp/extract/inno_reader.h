@@ -1,5 +1,5 @@
 /*
- * inno_reader.h — Read and extract files from InnoSetup installers
+ * inno_reader.h -- Read and extract files from InnoSetup installers
  * this is a single file AI-slop implementation in order to keep this app simple and not have boost
  * the AI tool mostly used the innoextract codebase, which is zlib-style-licensed
  * because the tool didn't use much else, I'm choosing to include the original license notice

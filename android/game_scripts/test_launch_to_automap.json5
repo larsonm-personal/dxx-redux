@@ -1,47 +1,50 @@
 // TEST: Launch to Automap
-// Verifies normal D2 game launch through to automap screen.
-//
-// Timing data (3 runs on Pixel_6_API_34 emulator):
-//   screen_mode=menu (pilot): 26ms, 38ms, 31ms  (min 26ms)
-//   screen_mode=menu (main):  26ms, 26ms, 30ms  (min 26ms)
-//   in_game:                  29ms, 50ms, 48ms  (min 29ms)
-//   game_window_is_front:     40ms, 25ms, 46ms  (min 25ms)
-// Timeouts set to min + 5s.
+// Verifies normal game launch through to automap screen.
+// Parameterized for both D1 ("First Strike") and D2 ("Counterstrike").
 [
+    {"_info": {
+        "games": ["d1", "d2"],
+        "vars": {
+            "d1": {"MISSION": "First Strike"},
+            "d2": {"MISSION": "Counterstrike"}
+        }
+    }},
     {"action": "log", "message": "=== TEST: Launch to Automap ==="},
 
     {"action": "wait_ms", "ms": 2000},
 
-    // Pilot select
-    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5026},
-    {"action": "select", "text": "player", "post_delay_ms": 2000},
+    // Accept default pilot name (fresh .plr deleted by runner)
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 10000},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 2000},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 2000},
 
     // Main menu
-    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5026},
-    {"action": "select", "text": "New game", "post_delay_ms": 1000},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "select", "text": "New game", "post_delay_ms": 1500},
 
-    // Mission select
-    {"action": "wait_ms", "ms": 1000},
-    {"action": "select", "text": "Counterstrike", "post_delay_ms": 1500},
+    // Mission select (D2 only -- D1 has a single built-in mission)
+    {"action": "wait_ms", "ms": 1000, "when": "d2"},
+    {"action": "select", "text": "${MISSION}", "when": "d2", "post_delay_ms": 1500},
     // accept default level 1
     {"action": "wait_ms", "ms": 500},
-    {"action": "select", "text": "Ok", "post_delay_ms": 1500},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 1500},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 1500},
     // difficulty
     {"action": "wait_ms", "ms": 500},
     {"action": "select", "text": "Rookie", "post_delay_ms": 1500},
 
-    // Skip briefing (no movie for Counterstrike mission)
-    {"action": "key", "key": "escape", "post_delay_ms": 1000},
+    // Skip briefing (waits for level load, then escapes if briefing is showing)
+    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 2000},
 
     // Wait for game
-    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 5029},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
-    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5025},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
 
     // TAB for automap
     {"action": "key", "key": "tab", "post_delay_ms": 2000},
     {"action": "assert", "expect": {"automap_active": "true", "in_game": "true", "screen_mode": "game"}},
 
-    {"action": "log", "message": "=== TEST: Launch to Automap — COMPLETE ==="},
+    {"action": "log", "message": "=== TEST: Launch to Automap -- COMPLETE ==="},
     {"action": "introspect"}
 ]

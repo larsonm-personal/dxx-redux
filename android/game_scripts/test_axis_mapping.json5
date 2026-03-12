@@ -4,61 +4,81 @@
 //   Turn     = axis 2 (right stick X)
 //   Slide LR = axis 0 (left stick X)
 //   Throttle = axis 1 (left stick Y)
+//   Slide UD = unbound (255)
 //
-// Phase 1: Static check — assert axis bindings after new-pilot creation.
-// Phase 2: Dynamic check — send axis events and verify the correct
+// Phase 1: Static check -- assert axis bindings after new-pilot creation.
+// Phase 2: Dynamic check -- send axis events and verify the correct
 //          control timing values become nonzero (heading_time for turn,
 //          sideways_thrust_time for slide, etc.).
+// Phase 3: Negative check -- verify axis 1 does NOT drive pitch or
+//          slide_ud (catches ControllerConfigPage DEFAULT_BINDINGS bug
+//          and the old joy_out[19]=1 bug).
 //
 // Root cause this catches:
-//   If kc_set_controls() isn't called after android_apply_gamepad_defaults(),
-//   the live kc_joystick[].value array retains DOS defaults:
-//     Pitch=1(LY), Turn=0(LX), Slide=0xFF(unbound)
-//   instead of Android defaults:
-//     Pitch=3(RY), Turn=2(RX), Slide_LR=0(LX), Throttle=1(LY)
+//   1. ControllerConfigPage.kt DEFAULT_BINDINGS had LS_Y -> "Pitch U/D"
+//      instead of "Throttle". When controller_config.json exists, it
+//      overrides the correct C-side defaults, causing LY to drive pitch
+//      (and slide when slide_on modifier is active).
+//   2. The original joy_out[19]=1 bug mapped LY to Slide U/D index.
+//   3. If kc_set_controls() isn't called after android_apply_gamepad_defaults(),
+//      the live kc_joystick[].value array retains DOS defaults:
+//        Pitch=1(LY), Turn=0(LX), Slide=0xFF(unbound)
+//      instead of Android defaults:
+//        Pitch=3(RY), Turn=2(RX), Slide_LR=0(LX), Throttle=1(LY)
 [
+    {"_info": {
+        "games": ["d1", "d2"],
+        "vars": {
+            "d1": {"MISSION": "First Strike"},
+            "d2": {"MISSION": "Counterstrike"}
+        }
+    }},
     {"action": "log", "message": "=== TEST: Axis Mapping Regression ==="},
 
     {"action": "wait_ms", "ms": 2000},
 
-    // ── Create fresh pilot and launch into game ─────────────────
+    // -- Create fresh pilot and launch into game --
     // The test runner deletes player.plr before launch, so the game
     // goes straight to "Enter pilot name" with default "player".
     // Accept the default name to trigger new_player_config() +
     // android_apply_gamepad_defaults() + kc_set_controls().
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
-    {"action": "select", "text": "Ok", "post_delay_ms": 2000},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 2000},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 2000},
 
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
     {"action": "select", "text": "New game", "post_delay_ms": 1000},
 
-    {"action": "wait_ms", "ms": 1000},
-    {"action": "select", "text": "Counterstrike", "post_delay_ms": 1500},
+    // Mission select (D2 only -- D1 has a single built-in mission)
+    {"action": "wait_ms", "ms": 1000, "when": "d2"},
+    {"action": "select", "text": "${MISSION}", "when": "d2", "post_delay_ms": 1500},
     {"action": "wait_ms", "ms": 500},
-    {"action": "select", "text": "Ok", "post_delay_ms": 1500},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 1500},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 1500},
     {"action": "wait_ms", "ms": 500},
     {"action": "select", "text": "Rookie", "post_delay_ms": 1500},
 
-    // Skip briefing
-    {"action": "key", "key": "escape", "post_delay_ms": 1000},
+    // Skip briefing (waits for level load, then escapes if briefing is showing)
+    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 1000},
 
     // Wait for in-game
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
 
-    // ── Phase 1: Static binding assertions ────────────────────────
+    // -- Phase 1: Static binding assertions --
     {"action": "log", "message": "Phase 1: Checking axis bindings"},
     {"action": "assert", "expect": {
         "axis_bind_pitch":    "3",
         "axis_bind_turn":     "2",
         "axis_bind_slide_lr": "0",
+        "axis_bind_slide_ud": "255",
         "axis_bind_throttle": "1"
     }},
-    {"action": "log", "message": "Phase 1: PASS — axis bindings correct"},
+    {"action": "log", "message": "Phase 1: PASS -- axis bindings correct"},
 
-    // ── Phase 2: Dynamic axis tests ──────────────────────────────
+    // -- Phase 2: Dynamic axis tests (positive) --
     // Verify that axis events cause the CORRECT control timing value
-    // to become nonzero, proving the axis→control mapping is correct.
+    // to become nonzero, proving the axis->control mapping is correct.
     //
     // SDL axis values persist until changed, so heading_time etc.
     // remain nonzero on the frame after send_axis finishes.
@@ -69,17 +89,17 @@
     {"action": "assert", "expect": {
         "heading_time": {"ne": 0}
     }},
-    {"action": "log", "message": "Phase 2a: PASS — axis 2 drives heading"},
+    {"action": "log", "message": "Phase 2a: PASS -- axis 2 drives heading"},
     {"action": "send_axis", "axis": 2, "axis_value": 0.0, "post_delay_ms": 200},
 
-    // 2b: Axis 0 (LX) should cause sliding, NOT turning
+    // 2b: Axis 0 (LX) should cause sliding L/R, NOT turning
     {"action": "log", "message": "Phase 2b: Sending axis 0 (Slide L/R) = 0.5"},
     {"action": "send_axis", "axis": 0, "axis_value": 0.5, "post_delay_ms": 500},
     {"action": "assert", "expect": {
         "slide_lr_time": {"ne": 0},
         "heading_time":  "0"
     }},
-    {"action": "log", "message": "Phase 2b: PASS — axis 0 drives slide, not turn"},
+    {"action": "log", "message": "Phase 2b: PASS -- axis 0 drives slide L/R, not turn"},
     {"action": "send_axis", "axis": 0, "axis_value": 0.0, "post_delay_ms": 200},
 
     // 2c: Axis 3 (RY) should cause pitching
@@ -88,7 +108,7 @@
     {"action": "assert", "expect": {
         "pitch_time": {"ne": 0}
     }},
-    {"action": "log", "message": "Phase 2c: PASS — axis 3 drives pitch"},
+    {"action": "log", "message": "Phase 2c: PASS -- axis 3 drives pitch"},
     {"action": "send_axis", "axis": 3, "axis_value": 0.0, "post_delay_ms": 200},
 
     // 2d: Axis 1 (LY) should cause forward/back thrust (throttle)
@@ -97,9 +117,43 @@
     {"action": "assert", "expect": {
         "throttle_time": {"ne": 0}
     }},
-    {"action": "log", "message": "Phase 2d: PASS — axis 1 drives throttle"},
+    {"action": "log", "message": "Phase 2d: PASS -- axis 1 drives throttle"},
     {"action": "send_axis", "axis": 1, "axis_value": 0.0, "post_delay_ms": 200},
 
-    // ── Done ───────────────────────────────────────────────────────
-    {"action": "log", "message": "=== TEST: Axis Mapping Regression — ALL PHASES PASS ==="}
+    // -- Phase 3: Negative tests --
+    // These catch the specific regressions where axis 1 (LY) was
+    // incorrectly mapped to pitch or slide U/D.
+
+    // 3a: Axis 1 should NOT drive pitch (catches ControllerConfigPage bug)
+    {"action": "log", "message": "Phase 3a: Verify axis 1 does NOT drive pitch"},
+    {"action": "send_axis", "axis": 1, "axis_value": 0.5, "post_delay_ms": 500},
+    {"action": "assert", "expect": {
+        "pitch_time":    "0",
+        "throttle_time": {"ne": 0}
+    }},
+    {"action": "log", "message": "Phase 3a: PASS -- axis 1 does not drive pitch"},
+    {"action": "send_axis", "axis": 1, "axis_value": 0.0, "post_delay_ms": 200},
+
+    // 3b: Axis 1 should NOT drive slide U/D (catches old joy_out[19]=1 bug)
+    {"action": "log", "message": "Phase 3b: Verify axis 1 does NOT drive slide U/D"},
+    {"action": "send_axis", "axis": 1, "axis_value": 0.5, "post_delay_ms": 500},
+    {"action": "assert", "expect": {
+        "slide_ud_time": "0",
+        "throttle_time": {"ne": 0}
+    }},
+    {"action": "log", "message": "Phase 3b: PASS -- axis 1 does not drive slide U/D"},
+    {"action": "send_axis", "axis": 1, "axis_value": 0.0, "post_delay_ms": 200},
+
+    // 3c: Axis 3 should NOT drive throttle (only pitch)
+    {"action": "log", "message": "Phase 3c: Verify axis 3 does NOT drive throttle"},
+    {"action": "send_axis", "axis": 3, "axis_value": 0.5, "post_delay_ms": 500},
+    {"action": "assert", "expect": {
+        "throttle_time": "0",
+        "pitch_time":    {"ne": 0}
+    }},
+    {"action": "log", "message": "Phase 3c: PASS -- axis 3 does not drive throttle"},
+    {"action": "send_axis", "axis": 3, "axis_value": 0.0, "post_delay_ms": 200},
+
+    // -- Done --
+    {"action": "log", "message": "=== TEST: Axis Mapping Regression -- ALL PHASES PASS ==="}
 ]

@@ -13,13 +13,29 @@
 
 param(
     [switch]$Install,
-    [int]$TimeoutSeconds = 120
+    [int]$TimeoutSeconds = 120,
+    [ValidateSet("d1","d2")]
+    [string]$Game
 )
 
 $ErrorActionPreference = "Stop"
 . "$PSScriptRoot\test_helpers.ps1"
 
 $GAME_SCRIPT = "test_controller_compare.json5"
+
+# ── Determine game(s) to run ────────────────────────────────
+
+$scriptPath = Join-Path "$PSScriptRoot\game_scripts" $GAME_SCRIPT
+$gameList = Get-ScriptGameInfo -ScriptPath $scriptPath
+if ($Game) {
+    $gameList = @($Game)
+} elseif (-not $gameList) {
+    $gameList = @("d2")
+}
+
+if ($gameList.Count -gt 1) {
+    Write-Status "Multi-game script -- will run for: $($gameList -join ', ')"
+}
 
 # ── Step 1: Health check + install ───────────────────────────
 
@@ -35,120 +51,134 @@ if ($Install) {
     Adb -AdbArgs @("install", "-r", $apk) | Write-Host
 }
 
-# ── Step 2: Launch SetupActivity and do pre-game introspection ──
-
-Write-Status "Force-stopping app..."
-Adb -AdbArgs @("shell", "am", "force-stop", $PACKAGE) | Out-Null
-Start-Sleep -Seconds 2
-
-Adb -AdbArgs @("logcat", "-c") | Out-Null
-Write-Status "Launching SetupActivity..."
-Adb -AdbArgs @("shell", "am", "start", "-n", "$PACKAGE/$ACTIVITY") | Out-Null
-
-if (-not (Wait-SetupActivityReady)) {
-    Write-Status "FAIL: SetupActivity not responding" "Red"
-    exit 1
-}
-
-Write-Status "Patching pilot files from controller config..."
-Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND", "--es", "command", "patch_pilots") | Out-Null
-Start-Sleep -Seconds 2
-
-Write-Status "Dumping launcher controller introspection..."
-Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND", "--es", "command", "controller_introspect") | Out-Null
-Start-Sleep -Seconds 2
-
-$launcherJson = Adb-Timeout -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/controller_introspect.json") -Seconds 5
-if (-not $launcherJson -or $launcherJson.Length -lt 10) {
-    Write-Status "FAIL: Could not read launcher controller introspection" "Red"
-    exit 1
-}
-Write-Status "Launcher introspection read OK" "Green"
-
-# ── Step 3: Push game script and launch game ─────────────────
-
-if (-not (Send-AutomationScript $GAME_SCRIPT -PushOnly)) { exit 1 }
-
-if (-not (Start-GameWithRetry)) {
-    exit 1
-}
-
-# Send automation and wait for result
-Start-Sleep -Seconds 2
-Adb -AdbArgs @("logcat", "-c") | Out-Null
-Write-Status "Sending automation broadcast..."
-Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.AUTOMATE", "--es", "script", $GAME_SCRIPT) | Out-Null
-
-$passed = Watch-AutomationResult -TimeoutSeconds $TimeoutSeconds
-if (-not $passed) { exit 1 }
-Write-Status "Game script PASS" "Green"
-
-# ── Step 4: Read game introspection ──────────────────────────
-Start-Sleep -Seconds 2
-$gameJson = Adb-Timeout -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/introspect.json") -Seconds 5
-if (-not $gameJson -or $gameJson.Length -lt 10) {
-    Write-Status "FAIL: Could not read game introspection" "Red"
-    exit 1
-}
-Write-Status "Game introspection read OK" "Green"
-
-# ── Step 5: Compare joystick_controls ────────────────────────
-Write-Status "Comparing joystick controls..."
-
-$launcher = ($launcherJson | ConvertFrom-Json)
-$game = ($gameJson | ConvertFrom-Json)
-
-$launcherJC = $launcher.joystick_controls
-$gameJC = $game.joystick_controls
-
-# Compare summary fields
-$summaryOk = $true
-foreach ($field in @("control_type", "bound_count", "bound_controls", "total_count")) {
-    $lv = $launcherJC.$field
-    $gv = $gameJC.$field
-    if ($lv -ne $gv) {
-        Write-Host "  MISMATCH $field : launcher=$lv  game=$gv" -ForegroundColor Red
-        $summaryOk = $false
-    } else {
-        Write-Host "  OK       $field : $lv" -ForegroundColor Green
+$allPassed = $true
+foreach ($gameId in $gameList) {
+    if ($gameList.Count -gt 1) {
+        Write-Host ""
+        Write-Host "============================================================" -ForegroundColor White
+        Write-Host "  Controller Compare: $($gameId.ToUpper())" -ForegroundColor White
+        Write-Host "============================================================" -ForegroundColor White
     }
-}
 
-# Compare each item
-$itemMismatches = 0
-$launcherItems = $launcherJC.items
-$gameItems = $gameJC.items
-$count = [Math]::Min($launcherItems.Count, $gameItems.Count)
+    $extraArgs = @()
+    if ($gameId -eq "d1") { $extraArgs = @("--es", "game", "d1") }
 
-for ($i = 0; $i -lt $count; $i++) {
-    $li = $launcherItems[$i]
-    $gi = $gameItems[$i]
-    $diffs = @()
+    # ── Step 2: Launch SetupActivity and do pre-game introspection ──
 
-    if ($li.name -cne $gi.name) { $diffs += "name: '$($li.name)' vs '$($gi.name)'" }
-    if ($li.type -cne $gi.type) { $diffs += "type: '$($li.type)' vs '$($gi.type)'" }
-    if ($li.value -ne $gi.value) { $diffs += "value: $($li.value) vs $($gi.value)" }
+    Write-Status "Force-stopping app..."
+    Adb -AdbArgs @("shell", "am", "force-stop", $PACKAGE) | Out-Null
+    Start-Sleep -Seconds 2
 
-    if ($diffs.Count -gt 0) {
+    Adb -AdbArgs @("logcat", "-c") | Out-Null
+    Write-Status "Launching SetupActivity..."
+    Adb -AdbArgs @("shell", "am", "start", "-n", "$PACKAGE/$ACTIVITY") | Out-Null
+
+    if (-not (Wait-SetupActivityReady)) {
+        Write-Status "FAIL: SetupActivity not responding" "Red"
+        $allPassed = $false; continue
+    }
+
+    Write-Status "Patching pilot files from controller config..."
+    Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND", "--es", "command", "patch_pilots") | Out-Null
+    Start-Sleep -Seconds 2
+
+    Write-Status "Dumping launcher controller introspection..."
+    Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND", "--es", "command", "controller_introspect") | Out-Null
+    Start-Sleep -Seconds 2
+
+    $launcherJson = Adb-Timeout -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/controller_introspect.json") -Seconds 5
+    if (-not $launcherJson -or $launcherJson.Length -lt 10) {
+        Write-Status "FAIL: Could not read launcher controller introspection" "Red"
+        $allPassed = $false; continue
+    }
+    Write-Status "Launcher introspection read OK" "Green"
+
+    # ── Step 3: Push game script and launch game ─────────────────
+
+    if (-not (Send-AutomationScript $GAME_SCRIPT -PushOnly)) { $allPassed = $false; continue }
+
+    if (-not (Start-GameWithRetry -ExtraLaunchArgs $extraArgs)) {
+        $allPassed = $false; continue
+    }
+
+    # Send automation and wait for result
+    Start-Sleep -Seconds 2
+    Adb -AdbArgs @("logcat", "-c") | Out-Null
+    Write-Status "Sending automation broadcast..."
+    Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.AUTOMATE", "--es", "script", $GAME_SCRIPT) | Out-Null
+
+    $passed = Watch-AutomationResult -TimeoutSeconds $TimeoutSeconds
+    if (-not $passed) { $allPassed = $false; continue }
+    Write-Status "Game script PASS" "Green"
+
+    # ── Step 4: Read game introspection ──────────────────────────
+    Start-Sleep -Seconds 2
+    $gameJson = Adb-Timeout -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/introspect.json") -Seconds 5
+    if (-not $gameJson -or $gameJson.Length -lt 10) {
+        Write-Status "FAIL: Could not read game introspection" "Red"
+        $allPassed = $false; continue
+    }
+    Write-Status "Game introspection read OK" "Green"
+
+    # ── Step 5: Compare joystick_controls ────────────────────────
+    Write-Status "Comparing joystick controls..."
+
+    $launcher = ($launcherJson | ConvertFrom-Json)
+    $game = ($gameJson | ConvertFrom-Json)
+
+    $launcherJC = $launcher.joystick_controls
+    $gameJC = $game.joystick_controls
+
+    # Compare summary fields
+    $summaryOk = $true
+    foreach ($field in @("control_type", "bound_count", "bound_controls", "total_count")) {
+        $lv = $launcherJC.$field
+        $gv = $gameJC.$field
+        if ($lv -ne $gv) {
+            Write-Host "  MISMATCH $field : launcher=$lv  game=$gv" -ForegroundColor Red
+            $summaryOk = $false
+        } else {
+            Write-Host "  OK       $field : $lv" -ForegroundColor Green
+        }
+    }
+
+    # Compare each item
+    $itemMismatches = 0
+    $launcherItems = $launcherJC.items
+    $gameItems = $gameJC.items
+    $count = [Math]::Min($launcherItems.Count, $gameItems.Count)
+
+    for ($i = 0; $i -lt $count; $i++) {
+        $li = $launcherItems[$i]
+        $gi = $gameItems[$i]
+        $diffs = @()
+
+        if ($li.name -cne $gi.name) { $diffs += "name: '$($li.name)' vs '$($gi.name)'" }
+        if ($li.type -cne $gi.type) { $diffs += "type: '$($li.type)' vs '$($gi.type)'" }
+        if ($li.value -ne $gi.value) { $diffs += "value: $($li.value) vs $($gi.value)" }
+
+        if ($diffs.Count -gt 0) {
+            $itemMismatches++
+            $diffStr = $diffs -join ", "
+            Write-Host "  MISMATCH item[$i] ($($gi.name)): $diffStr" -ForegroundColor Red
+        } elseif ($li.value -ne 255) {
+            Write-Host "  OK       item[$i] $($gi.name) = $($gi.value)" -ForegroundColor Green
+        }
+    }
+
+    if ($launcherItems.Count -ne $gameItems.Count) {
+        Write-Host "  MISMATCH item count: launcher=$($launcherItems.Count) game=$($gameItems.Count)" -ForegroundColor Red
         $itemMismatches++
-        $diffStr = $diffs -join ", "
-        Write-Host "  MISMATCH item[$i] ($($gi.name)): $diffStr" -ForegroundColor Red
-    } elseif ($li.value -ne 255) {
-        Write-Host "  OK       item[$i] $($gi.name) = $($gi.value)" -ForegroundColor Green
+    }
+
+    # ── Result for this game ─────────────────────────────────────
+    Write-Host ""
+    if ($summaryOk -and $itemMismatches -eq 0) {
+        Write-Status "PASS: Launcher and in-game joystick configs match ($($gameId.ToUpper()))" "Green"
+    } else {
+        Write-Status "FAIL: $itemMismatches item mismatch(es) found ($($gameId.ToUpper()))" "Red"
+        $allPassed = $false
     }
 }
 
-if ($launcherItems.Count -ne $gameItems.Count) {
-    Write-Host "  MISMATCH item count: launcher=$($launcherItems.Count) game=$($gameItems.Count)" -ForegroundColor Red
-    $itemMismatches++
-}
-
-# ── Result ───────────────────────────────────────────────────
-Write-Host ""
-if ($summaryOk -and $itemMismatches -eq 0) {
-    Write-Status "PASS: Launcher and in-game joystick configs match perfectly" "Green"
-    exit 0
-} else {
-    Write-Status "FAIL: $itemMismatches item mismatch(es) found" "Red"
-    exit 1
-}
+if ($allPassed) { exit 0 } else { exit 1 }

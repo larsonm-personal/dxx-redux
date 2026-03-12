@@ -1,8 +1,8 @@
 /*
- * game_automate.h — Automated input scripting for AI-assisted testing.
+ * game_automate.h -- Automated input scripting for AI-assisted testing.
  *
  * Runs JSON-based scripts that inject key presses, wait for game states,
- * and trigger introspection dumps — allowing automated navigation through
+ * and trigger introspection dumps -- allowing automated navigation through
  * menus, briefings, and gameplay without manual interaction.
  *
  * This header is safe to include on all platforms; the implementation
@@ -41,7 +41,7 @@ void game_automate_tick(void);
 
 #else /* !INTROSPECT_ON */
 
-/* Stubs — compile to nothing on non-introspection builds. */
+/* Stubs -- compile to nothing on non-introspection builds. */
 static inline void game_automate_set_path(const char *p) { (void)p; }
 static inline void game_automate_load_script(const char *p) { (void)p; }
 static inline void game_automate_tick(void) {}

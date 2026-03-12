@@ -1,4 +1,4 @@
-# extract_dos_demos.ps1 — Extract game files from DOS shareware demo installers using DOSBox-X.
+# extract_dos_demos.ps1 -- Extract game files from DOS shareware demo installers using DOSBox-X.
 #
 # For each zip in game_data\demo installers\, this script:
 #   1. Extracts the zip to a temp directory
@@ -101,7 +101,7 @@ foreach ($inst in $Installers) {
     $safeName = $baseName -replace '[^a-zA-Z0-9_-]', '_'
     $tempBase  = Join-Path $env:TEMP "dxx_dosbox_$safeName"
     $sourceDir = Join-Path $tempBase "src"    # extracted zip (DOSBox D:)
-    $targetDir = Join-Path $tempBase "dst"    # DOSBox C: — installer writes here
+    $targetDir = Join-Path $tempBase "dst"    # DOSBox C: -- installer writes here
 
     # Clean and create
     if (Test-Path $tempBase) { Remove-Item $tempBase -Recurse -Force }

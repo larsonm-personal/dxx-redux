@@ -1,4 +1,4 @@
-# extract_all_cds.ps1 — Build extract_cd.exe and run it on all CD image folders.
+# extract_all_cds.ps1 -- Build extract_cd.exe and run it on all CD image folders.
 #
 # For each subfolder in game_data/CD images/:
 #   1. Find the .cue file

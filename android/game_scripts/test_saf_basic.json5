@@ -1,5 +1,5 @@
 // TEST: SAF Archiver Basic
-// Verifies the game loads when descent2.ham is served via SAF archiver.
+// Verifies the game loads when descent2.ham is served via SAF archiver
 //
 // Timing data (3 runs on Pixel_6_API_34 emulator):
 //   screen_mode=menu (pilot): 28ms, 57ms, 49ms  (min 28ms)
@@ -7,13 +7,14 @@
 //   in_game:                  37ms, 148ms, 63ms (min 37ms)
 // Timeouts set to min + 5s.
 [
+    {"_info": {"games": ["d2"]}},
     {"action": "log", "message": "=== TEST: SAF Archiver Basic ==="},
 
     {"action": "wait_ms", "ms": 2000},
 
-    // Pilot select
+    // Accept default pilot name (fresh .plr deleted by runner)
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5028},
-    {"action": "select", "text": "player", "post_delay_ms": 2000},
+    {"action": "select", "text": "Ok", "post_delay_ms": 2000},
 
     // Main menu
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5024},
@@ -29,8 +30,8 @@
     {"action": "wait_ms", "ms": 500},
     {"action": "select", "text": "Rookie", "post_delay_ms": 1500},
 
-    // Skip briefing (no movie for Counterstrike mission)
-    {"action": "key", "key": "escape", "post_delay_ms": 1000},
+    // Skip briefing (waits for level load, then escapes if briefing is showing)
+    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 1000},
 
     // Wait for game and verify HAM loaded
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 5000},

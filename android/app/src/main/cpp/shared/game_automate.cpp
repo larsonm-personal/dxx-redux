@@ -1,12 +1,12 @@
 /*
- * game_automate.cpp — Automated input scripting for AI-assisted testing.
+ * game_automate.cpp -- Automated input scripting for AI-assisted testing.
  *
  * Parses a JSON script of steps (key presses, waits, condition checks)
  * and executes them one per frame, injecting SDL key events to drive
  * the game through menus, briefings, and gameplay automatically.
  *
  * Uses nlohmann/json for parsing.
- * Guarded by INTROSPECT_ON — only compiled into debug Android builds.
+ * Guarded by INTROSPECT_ON -- only compiled into debug Android builds.
  */
 
 #ifdef INTROSPECT_ON
@@ -21,7 +21,7 @@
 
 using json = nlohmann::json;
 
-/* Engine headers are pure C — wrap them for C++ linkage. */
+/* Engine headers are pure C -- wrap them for C++ linkage. */
 extern "C" {
 #include <SDL.h>
 }
@@ -139,7 +139,8 @@ enum step_type {
     STEP_LOG,           /* emit a logcat message */
     STEP_ASSERT,        /* check introspection values, fail if mismatch */
     STEP_SELECT,        /* find menu item by text and select it */
-    STEP_SEND_AXIS      /* inject joystick axis event */
+    STEP_SEND_AXIS,     /* inject joystick axis event */
+    STEP_SKIP_BRIEFING  /* escape only if a non-game window covers Game_wind */
 };
 
 /* Key-value pair for STEP_ASSERT expectations.
@@ -285,7 +286,7 @@ static bool select_find_item(const char *text, int *out_target, int *out_current
 
         for (int i = 0; i < nitems; i++) {
             if (items[i].text && icontains(items[i].text, text)) {
-                /* Skip NM_TYPE_TEXT items — they are not selectable */
+                /* Skip NM_TYPE_TEXT items -- they are not selectable */
                 if (items[i].type == NM_TYPE_TEXT) continue;
                 *out_target  = i;
                 *out_current = citem;
@@ -413,6 +414,7 @@ static int parse_script(const char *json_text) {
             else if (action == "assert")     s.type = STEP_ASSERT;
             else if (action == "select")     s.type = STEP_SELECT;
             else if (action == "send_axis")  s.type = STEP_SEND_AXIS;
+            else if (action == "skip_briefing") s.type = STEP_SKIP_BRIEFING;
             else {
                 LOGE("Unknown action: %s", action.c_str());
                 continue;
@@ -622,7 +624,7 @@ static int run_assertions(auto_step &s) {
 /* ── Advance to next step ───────────────────────────────────────────── */
 
 static void stop_script_fail(const char *reason) {
-    LOGE("SCRIPT_RESULT: FAIL at step %d/%d — %s",
+    LOGE("SCRIPT_RESULT: FAIL at step %d/%d -- %s",
          g_current_step + 1, (int)g_steps.size(), reason);
     g_active = 0;
     g_failed = 1;
@@ -760,7 +762,7 @@ extern "C" void game_automate_tick(void) {
             g_select_delta = target - current;
             g_select_phase = 1;
             if (g_select_delta == 0) {
-                /* Already on the right item — go straight to enter */
+                /* Already on the right item -- go straight to enter */
                 g_select_phase = 2;
             }
         }
@@ -809,6 +811,39 @@ extern "C" void game_automate_tick(void) {
         /* Hold for post_delay_ms so the axis has time to affect the game */
         if (elapsed >= (Uint32)s.post_delay_ms) {
             advance_step();
+        }
+        break;
+
+    case STEP_SKIP_BRIEFING:
+        /* Poll each frame until the game window is front, dismissing
+         * any intervening windows (briefing, movie) with escape.
+         * ShowLevelIntro blocks until the briefing closes, so Game_wind
+         * won't exist until we dismiss the briefing first. */
+        if (g_key_phase == 0) {
+            window *front = window_get_front();
+            if (Game_wind != NULL && (front == NULL || front == Game_wind)) {
+                LOGI("skip_briefing: game window is front, done");
+                advance_step();
+            } else if (front != NULL && front != Game_wind) {
+                /* Briefing or other non-game window on top -- dismiss it. */
+                LOGI("skip_briefing: dismissing non-game window (Game_wind=%s)",
+                     Game_wind ? "exists" : "NULL");
+                inject_key_tap("escape");
+                g_key_phase = 1;
+                g_step_start = now;
+            } else {
+                /* No windows at all yet -- keep polling. */
+                if (s.timeout_ms > 0 && elapsed >= (Uint32)s.timeout_ms) {
+                    LOGI("skip_briefing: timed out with no windows (%u ms)", elapsed);
+                    advance_step();
+                }
+            }
+        } else if (g_key_phase == 1) {
+            /* Escape was sent; wait post_delay then re-check (phase 0). */
+            if (elapsed >= (Uint32)s.post_delay_ms) {
+                g_key_phase = 0;
+                g_step_start = now;
+            }
         }
         break;
     }

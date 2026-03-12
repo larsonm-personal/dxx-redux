@@ -131,8 +131,21 @@ void mouse_motion_handler(SDL_MouseMotionEvent *mme)
 	d_event_mouse_moved event;
 	
 	Mouse.cursor_time = timer_query();
+
+#ifdef ANDROID
+	/* On Android, touch events send absolute x/y with xrel=yrel=0.
+	 * Use absolute positioning instead of accumulating deltas. */
+	if (mme->xrel == 0 && mme->yrel == 0) {
+		Mouse.x = mme->x;
+		Mouse.y = mme->y;
+	} else {
+		Mouse.x += mme->xrel;
+		Mouse.y += mme->yrel;
+	}
+#else
 	Mouse.x += mme->xrel;
 	Mouse.y += mme->yrel;
+#endif
 	
 	event.type = EVENT_MOUSE_MOVED;
 	event.dx = mme->xrel;
@@ -163,7 +176,9 @@ void mouse_flush()	// clears all mice events...
 	Mouse.x = 0;
 	Mouse.y = 0;
 	Mouse.z = 0;
+#ifndef ANDROID
 	SDL_GetMouseState(&Mouse.x, &Mouse.y); // necessary because polling only gives us the delta.
+#endif
 }
 
 //========================================================================

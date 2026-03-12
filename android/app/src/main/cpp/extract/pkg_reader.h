@@ -1,5 +1,5 @@
 /*
- * pkg_reader.h — Extract game files from Mac .pkg installers (XAR+gzip+cpio)
+ * pkg_reader.h -- Extract game files from Mac .pkg installers (XAR+gzip+cpio)
  *
  * Mac GOG installers are XAR archives containing a gzip-compressed cpio
  * payload. Game files live at ./payload/Contents/Resources/game/ inside

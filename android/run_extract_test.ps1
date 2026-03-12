@@ -16,7 +16,7 @@
   Path to an extract_regression.json5 file.
 
 .PARAMETER SkipLaunch
-  Only verify file extraction — don't launch the game.
+  Only verify file extraction -- don't launch the game.
 
 .PARAMETER KeepFiles
   Don't clean up the regression_test set after running.
@@ -171,7 +171,7 @@ function Push-FileToSet {
     $dest = "/data/data/$PACKAGE/files/sets/$TEST_SET/$RemoteName"
     Adb -CmdArgs @('push', $LocalPath, $stagingPath) -Timeout 120 | Out-Null
     Adb -CmdArgs @('shell', 'chmod', '644', $stagingPath) | Out-Null
-    # Direct ProcessStartInfo call — the sh -c argument needs single quotes to
+    # Direct ProcessStartInfo call -- the sh -c argument needs single quotes to
     # protect > from adb shell's outer shell interpretation.
     $psi = [System.Diagnostics.ProcessStartInfo]::new()
     $psi.FileName = $ADB
@@ -452,7 +452,7 @@ foreach ($setName in ($otherSets -split "`n" | ForEach-Object { $_.Trim() } | Wh
     }
 }
 
-# ── Step 3: Canary check — verify device is CLEAN ────────────
+# ── Step 3: Canary check -- verify device is CLEAN ────────────
 # Restart the app so the clean state is visible to Java
 Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
 Start-Sleep -Seconds 1
@@ -489,7 +489,7 @@ if ($setFileCount -gt 0) {
     }
 }
 
-# Verify game marked not launchable — this is the definitive canary.
+# Verify game marked not launchable -- this is the definitive canary.
 # PhysFS searches: 1) active set dir, 2) filesDir root. If can_launch
 # is false with an empty test set, no game files are reachable.
 if ($state.can_launch) {
@@ -570,7 +570,7 @@ if ($missingFiles.Count -gt 0) {
 Write-Status "All $($expectedFiles.Count) expected files present (of $($remoteFiles.Count) total)" 'Green'
 $script:testFilesVerified = $expectedFiles.Count
 
-# ── Step 6: Anti-demo-set canary — verify file identity ──────
+# ── Step 6: Anti-demo-set canary -- verify file identity ──────
 # Hash signature game files on device and compare against demo set hashes.
 # If they match (and this isn't the same version), we've been fooled.
 $identityWarnings = @()
@@ -687,7 +687,7 @@ Start-Sleep -Seconds 8
 Write-Status "Checking game state..."
 
 # Wait for game to reach main menu (up to 45s)
-# D1 starts in demo/title mode (screen_mode=game) — press Escape to reach menu.
+# D1 starts in demo/title mode (screen_mode=game) -- press Escape to reach menu.
 # D2 goes directly to "Select pilot" menu.
 $menuReached = $false
 $escPressed = 0
@@ -706,7 +706,7 @@ for ($i = 0; $i -lt 15; $i++) {
             Exit-Test 1 'fail' 'crash' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
         }
     }
-    # Not at menu yet — press Escape then Enter to dismiss title/demo/movie screens
+    # Not at menu yet -- press Escape then Enter to dismiss title/demo/movie screens
     if ($i -ge 2 -and $escPressed -lt 5) {
         Write-Status "  Not at menu (screen_mode=$($gi.screen_mode)), pressing keys..." 'Gray'
         Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ESCAPE') | Out-Null
@@ -727,7 +727,7 @@ Write-Status "Game reached menu: '$($gi.menu.title)'" 'Green'
 
 # Navigate to new game via introspection-guided keypresses.
 # Most menus just need Enter. The level-start dialog has a number input
-# focused by default — need Down to reach the Ok button before pressing Enter.
+# focused by default -- need Down to reach the Ok button before pressing Enter.
 Write-Status "Navigating to game (introspection-guided)..."
 
 $navAttempts = 0
@@ -739,13 +739,13 @@ while ($navAttempts -lt $maxNav) {
     $navAttempts++
     $gi = Get-GameIntrospection
 
-    # Already in-game — done
+    # Already in-game -- done
     if ($gi.in_game) {
         $inGame = $true
         break
     }
 
-    # Game is non-responsive (loading state — introspect.json not written)
+    # Game is non-responsive (loading state -- introspect.json not written)
     if ($gi.screen_mode -eq 'loading') {
         $loadingCount++
         # Check process alive every few loading states
@@ -757,13 +757,13 @@ while ($navAttempts -lt $maxNav) {
             }
         }
         Write-Status "  [$navAttempts] game loading/non-responsive (${loadingCount}x)" 'Gray'
-        # Don't press any keys while loading — just wait
+        # Don't press any keys while loading -- just wait
         Start-Sleep -Seconds 2
         continue
     }
     $loadingCount = 0
 
-    # Movie/briefing screen — press Enter to skip through pages
+    # Movie/briefing screen -- press Enter to skip through pages
     if ($gi.screen_mode -eq 'movie') {
         Write-Status "  [$navAttempts] briefing/movie, pressing Enter to skip" 'Gray'
         Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
@@ -800,7 +800,7 @@ while ($navAttempts -lt $maxNav) {
         continue
     }
 
-    # Unknown window (e.g., D1 briefing) — press Escape to skip
+    # Unknown window (e.g., D1 briefing) -- press Escape to skip
     if ($gi.menu -and $gi.menu.type -eq 'unknown_window') {
         Write-Status "  [$navAttempts] unknown window (briefing?), pressing Escape to skip" 'Gray'
         Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ESCAPE') | Out-Null
@@ -809,7 +809,7 @@ while ($navAttempts -lt $maxNav) {
     }
 
     # Determine what to press based on menu state.
-    # The level-start dialog has an input/number field selected by default —
+    # The level-start dialog has an input/number field selected by default --
     # need Down to reach the "Ok" button before pressing Enter.
     $hasInputItem = $false
     if ($gi.menu -and $gi.menu.items) {

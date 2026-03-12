@@ -1,5 +1,5 @@
 /*
- * android_surface.h — Bridge between SDL framebuffer and Android ANativeWindow.
+ * android_surface.h -- Bridge between SDL framebuffer and Android ANativeWindow.
  */
 
 #ifndef ANDROID_SURFACE_H

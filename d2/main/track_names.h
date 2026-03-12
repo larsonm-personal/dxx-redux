@@ -1,5 +1,5 @@
 /*
- * Track name overlay — resolves the current music track to a
+ * Track name overlay -- resolves the current music track to a
  * human-readable name and forwards it to the Java UI layer via JNI.
  */
 
@@ -14,7 +14,7 @@
 void track_overlay_notify(int track_or_song, int is_midi, unsigned long disc_id);
 
 /* Try to extract TITLE fields from the GOG CUE sheet.
- * Called once during RBAInit — titles parsed here override the
+ * Called once during RBAInit -- titles parsed here override the
  * hardcoded fallback table. */
 void track_names_parse_cue_titles(void);
 

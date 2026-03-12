@@ -52,6 +52,7 @@
 - when testing with the android emulator, the game will initially load to the main menu. hitting enter opens the "new game" menu and hitting enter again goes to the briefing
 - the briefing screens can be skipped by hitting enter about 15 times. then the first level will load and the ship will be ready to move and show "score: 0" in the upper right. it's not possible to get stuck in the briefing screen after hitting enter enough times
 - at this point the in-game menu can be accessed with "back"/escape
+- note that the D1 level set (the base game, not an expansion) is referred to as "first strike" and the d2 level set (the base game, not an expansion) is "counterstrike!". these are used in mission selection during automated tests
 
 ## introspection API
 The game includes a debug introspection system that serializes current game state to JSON. This is the primary way to inspect what the game is doing — **do not screenshot and OCR**.

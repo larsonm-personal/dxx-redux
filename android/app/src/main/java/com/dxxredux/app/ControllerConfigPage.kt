@@ -179,7 +179,7 @@ private val DEFAULT_BINDINGS = mapOf(
     "RS_X" to "Turn L/R",
     "RS_Y" to "Pitch U/D",
     "LS_X" to "Slide L/R",
-    "LS_Y" to "Pitch U/D",
+    "LS_Y" to "Throttle",
     "DUp" to "Slide Up",
     "DDown" to "Slide Down",
     "DLeft" to "Slide Left",
