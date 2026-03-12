@@ -454,8 +454,15 @@ int RunMovie(char *filename, int hires_flag, int must_have,int dx,int dy)
 	MVE_sfCallbacks(MovieShowFrame);
 	MVE_palCallbacks(MovieSetPalette);
 
+#ifdef ANDROID
+	extern volatile int g_skippable_active;
+	g_skippable_active = 1;
+#endif
 	while (window_exists(wind))
 		event_process();
+#ifdef ANDROID
+	g_skippable_active = 0;
+#endif
 
 	Assert(m->aborted || m->result == MVE_ERR_EOF);	 ///movie should be over
 

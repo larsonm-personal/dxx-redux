@@ -68,6 +68,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     external fun nativeIsInGame(): Boolean
     external fun nativeSetJoystickEnabled(enabled: Boolean)
     external fun nativeIsAutomapActive(): Boolean
+    external fun nativeIsSkippableScreen(): Boolean
     external fun nativeAutomapInput(heading: Float, pitch: Float, thrust: Float,
                                      bank: Float = 0f, vertical: Float = 0f, sideways: Float = 0f)
     external fun nativeAutomapCenter()
@@ -110,6 +111,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
     private var gameStarted = false
     private lateinit var gameSurfaceView: GameSurfaceView
     private lateinit var touchOverlay: TouchOverlayView
+    private lateinit var skipButton: SkipButtonView
     private lateinit var overlayContainer: LinearLayout
     private var overlayEnabled = false
     private val overlayPoller = android.os.Handler(android.os.Looper.getMainLooper())
@@ -242,6 +244,12 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
         }
         touchOverlay.isActive = false
 
+        // Skip button for movies/briefings (upper-right, hidden by default)
+        skipButton = SkipButtonView(this).apply {
+            keyCallback = { action, keyCode, unicode -> nativeKeyEvent(action, keyCode, unicode) }
+            visibility = View.GONE
+        }
+
         // Multi-line overlay container (upper-left, items fade independently)
         overlayContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -265,6 +273,10 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
             FrameLayout.LayoutParams.MATCH_PARENT
         ))
         frame.addView(touchOverlay, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        ))
+        frame.addView(skipButton, FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
         ))
@@ -366,11 +378,14 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                     try {
                         val inGame = nativeIsInGame()
                         val automap = try { nativeIsAutomapActive() } catch (_: Exception) { false }
+                        val skippable = try { nativeIsSkippableScreen() } catch (_: Exception) { false }
                         // Show overlay when in-game with overlay enabled, or when automap is active
                         val shouldShow = (inGame && overlayEnabled) || automap
                         val wasActive = touchOverlay.isActive
                         touchOverlay.isActive = shouldShow
                         touchOverlay.automapActive = automap
+                        // Show/hide skip button (mutually exclusive with game overlay)
+                        skipButton.visibility = if (skippable && !shouldShow) View.VISIBLE else View.GONE
                         // Enable/disable joystick input when overlay state changes
                         if (shouldShow && !wasActive) {
                             nativeSetJoystickEnabled(true)
@@ -382,6 +397,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                     } catch (_: Exception) {
                         touchOverlay.isActive = false
                         touchOverlay.automapActive = false
+                        skipButton.visibility = View.GONE
                     }
                 } else {
                     if (touchOverlay.isActive) {
@@ -389,6 +405,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
                     }
                     touchOverlay.isActive = false
                     touchOverlay.automapActive = false
+                    skipButton.visibility = View.GONE
                 }
                 overlayPoller.postDelayed(this, 500)
             }

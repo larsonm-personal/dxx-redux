@@ -1433,8 +1433,15 @@ void do_briefing_screens(char *filename, int level_num)
 
 	// Stay where we are in the stack frame until briefing done
 	// Too complicated otherwise
+#ifdef ANDROID
+	extern volatile int g_skippable_active;
+	g_skippable_active = 1;
+#endif
 	while (window_exists(wind))
 		event_process();
+#ifdef ANDROID
+	g_skippable_active = 0;
+#endif
 }
 
 void do_end_briefing_screens(char *filename)

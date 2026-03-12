@@ -41,6 +41,13 @@ volatile fix g_automap_vertical = 0;
 volatile fix g_automap_sideways = 0;
 volatile int g_automap_center   = 0;
 
+/* ── Skippable-screen flag (movies, briefings) ──────────────
+ * Set to 1 by the game thread while inside a skippable event loop
+ * (movie playback, briefing screens).  Read by the Kotlin UI thread
+ * to show/hide the Skip overlay button.
+ */
+volatile int g_skippable_active = 0;
+
 /* ── Touch → Mouse ──────────────────────────────────────────
  *
  * The game tracks the mouse position via deltas (SDL_MouseMotionEvent.xrel/yrel)
@@ -400,6 +407,18 @@ Java_com_dxxredux_app_MainActivity_nativeIsInGame(JNIEnv *env, jobject thiz)
 {
     return (Game_wind != NULL && Screen_mode == SCREEN_GAME
             && Game_wind == window_get_front()) ? JNI_TRUE : JNI_FALSE;
+}
+
+/*
+ * Returns true while a skippable screen (movie, briefing) is active.
+ * The Kotlin layer uses this to show the circular Skip button.
+ */
+extern volatile int g_skippable_active;
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeIsSkippableScreen(JNIEnv *env, jobject thiz)
+{
+    return g_skippable_active ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
