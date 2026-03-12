@@ -11,7 +11,7 @@ both D1 and D2 despite different kc_joystick layouts).
 
 ---
 
-## Phase 1: D1 Virtual Gamepad Init (Bug #3 root cause -- BLOCKING)
+## Phase 1: D1 Virtual Gamepad Init (Bug #3 root cause -- COMPLETE)
 
 ### Problem
 d1/arch/sdl/joy.c lacks the `#ifdef ANDROID` block that d2/arch/sdl/joy.c has
@@ -33,7 +33,7 @@ values (10, 12, 14...) that don't collide with game control buttons.
 
 ---
 
-## Phase 2: Left Stick Y Axis Mapping (Bugs #3 partial, #4)
+## Phase 2: Left Stick Y Axis Mapping (Bugs #3 partial, #4 -- COMPLETE)
 
 ### Problem
 Both games default `joy_out[19] = 1`, mapping axis 1 (Left Y) to Slide U/D.
@@ -56,7 +56,7 @@ Update test_axis_mapping.json5 expected values if needed.
 
 ---
 
-## Phase 3: D1 Touch Button Remapping (Bug #3 continued)
+## Phase 3: D1 Touch Button Remapping (Bug #3 continued -- COMPLETE)
 
 ### Problem
 The touch overlay shows identical buttons for D1 and D2, but D1's kc_joystick
@@ -95,20 +95,24 @@ button that doesn't exist in D1.
 
 ---
 
-## Phase 4: Player File Segregation (Bug #1) -- DEFERRED
+## Phase 4: Player File Segregation (Bug #1) -- COMPLETE
 
-NativePilotPatcher scans the shared filesDir and patches ALL .plr files. While
-PhysFS creates separate pref dirs, GameArg.SysUsePlayersDir is always 0 on
-Android. Make android_gamepad_config.cpp game-aware and scan game-specific dirs.
+NativePilotPatcher was scanning the shared filesDir root, missing .plr files in
+game-specific subdirectories. Fixed patch_all_plr_files() in
+android_gamepad_config.cpp to scan d2x-redux/, d1x-redux/, and their Players/
+subdirectories (4 dirs instead of 2).
 
-## Phase 5: Afterburner Toggle Mode (Bug #5) -- DEFERRED
+## Phase 5: Afterburner Toggle Mode (Bug #5) -- COMPLETE
 
-Add a toggle option to the afterburner touch button (press on, press off).
+The toggle infrastructure already existed in ButtonControl and TouchOverlayView.
+Set toggle=true on the afterburner button in presetClaw() in TouchLayoutRepository.kt.
 
-## Phase 6: D1 Automap Touch Controls (Bug #6) -- DEFERRED
+## Phase 6: D1 Automap Touch Controls (Bug #6) -- COMPLETE
 
-Copy D2's automap touch accumulator reading block into D1's automap.c. Omit
-marker buttons and free-flight toggle (D1 has neither).
+Copied D2's #ifdef ANDROID touch accumulator block into d1/main/automap.c
+automap_apply_input(). The block reads volatile globals written by
+nativeAutomapInput() for heading, pitch, thrust, bank, and slide controls.
+D1 actually has AutomapFreeFlight, so the block was copied verbatim.
 
 ---
 

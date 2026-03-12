@@ -122,7 +122,7 @@ object TouchLayoutRepository {
             ButtonControl(id = "slide", xPct = 10f, yPct = 12f,
                 binding = TouchBindings.BTN_SLIDE_ON, label = "SL", toggle = true),
             ButtonControl(id = "afterburner", xPct = 20f, yPct = 12f,
-                binding = TouchBindings.BTN_AFTERBURNER, label = "AB"),
+                binding = TouchBindings.BTN_AFTERBURNER, label = "AB", toggle = true),
             ButtonControl(id = "map", xPct = 50f, yPct = 5f,
                 binding = TouchBindings.BTN_AUTOMAP, label = "MAP", sizeMult = 0.7f)
         ),

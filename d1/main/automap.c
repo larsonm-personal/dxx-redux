@@ -253,6 +253,30 @@ static void automap_apply_input(automap *am)
 {
 	vms_matrix tempm;
 
+#ifdef ANDROID
+	/* Merge touch-injected automap controls.
+	 * Written by nativeAutomapInput() on the UI thread, read + zeroed here. */
+	{
+		extern volatile fix g_automap_heading, g_automap_pitch, g_automap_thrust;
+		extern volatile fix g_automap_bank, g_automap_vertical, g_automap_sideways;
+		extern volatile int g_automap_center;
+		fix th = g_automap_heading;   g_automap_heading  = 0;
+		fix tp = g_automap_pitch;     g_automap_pitch    = 0;
+		fix tt = g_automap_thrust;    g_automap_thrust   = 0;
+		fix tb = g_automap_bank;      g_automap_bank     = 0;
+		fix tv = g_automap_vertical;  g_automap_vertical = 0;
+		fix ts = g_automap_sideways;  g_automap_sideways = 0;
+		int center = g_automap_center; g_automap_center = 0;
+		am->controls.heading_time        += th;
+		am->controls.pitch_time          += tp;
+		am->controls.forward_thrust_time += tt;
+		am->controls.bank_time           += tb;
+		am->controls.vertical_thrust_time  += tv;
+		am->controls.sideways_thrust_time  += ts;
+		if (center) am->controls.fire_primary_count++;
+	}
+#endif
+
 	if (PlayerCfg.AutomapFreeFlight)
 	{
 		if ( am->controls.fire_primary_count > 0)

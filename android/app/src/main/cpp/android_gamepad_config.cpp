@@ -98,14 +98,16 @@ static int patch_all_plr_files(const char *files_dir,
     int controlType)
 {
     int total = 0;
-    const char *dirs[2];
-    char players_dir[512];
+    /* Scan game-specific pref dirs where the engine actually writes .plr files.
+     * PhysFS creates d1x-redux/ and d2x-redux/ under files_dir. */
+    char d2_dir[512], d1_dir[512], d2_players[512], d1_players[512];
+    snprintf(d2_dir, sizeof(d2_dir), "%s/d2x-redux", files_dir);
+    snprintf(d1_dir, sizeof(d1_dir), "%s/d1x-redux", files_dir);
+    snprintf(d2_players, sizeof(d2_players), "%s/d2x-redux/Players", files_dir);
+    snprintf(d1_players, sizeof(d1_players), "%s/d1x-redux/Players", files_dir);
+    const char *dirs[] = { d2_dir, d1_dir, d2_players, d1_players };
 
-    dirs[0] = files_dir;
-    snprintf(players_dir, sizeof(players_dir), "%s/Players", files_dir);
-    dirs[1] = players_dir;
-
-    for (int d = 0; d < 2; d++) {
+    for (int d = 0; d < 4; d++) {
         DIR *dp = opendir(dirs[d]);
         if (!dp) continue;
         struct dirent *ent;

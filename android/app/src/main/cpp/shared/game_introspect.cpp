@@ -460,13 +460,13 @@ extern "C" char *game_introspect_get_state(void) {
         j["axis_bind_pitch"]    = get_bind(13);
         j["axis_bind_turn"]     = get_bind(15);
         j["axis_bind_slide_lr"] = get_bind(17);
-        j["axis_bind_slide_ud"] = get_bind(19);
+        j["axis_bind_throttle"] = get_bind(23);
 
         /* Control timing — nonzero means the ship is actively rotating/thrusting */
-        j["heading_time"]  = (int)Controls.heading_time;
-        j["pitch_time"]    = (int)Controls.pitch_time;
-        j["slide_lr_time"] = (int)Controls.sideways_thrust_time;
-        j["slide_ud_time"] = (int)Controls.vertical_thrust_time;
+        j["heading_time"]    = (int)Controls.heading_time;
+        j["pitch_time"]      = (int)Controls.pitch_time;
+        j["slide_lr_time"]   = (int)Controls.sideways_thrust_time;
+        j["throttle_time"]   = (int)Controls.forward_thrust_time;
     }
 
     /* ── Player & position (only meaningful when a level is loaded) ── */

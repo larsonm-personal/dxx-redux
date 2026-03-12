@@ -3,7 +3,7 @@
 //   Pitch    = axis 3 (right stick Y)
 //   Turn     = axis 2 (right stick X)
 //   Slide LR = axis 0 (left stick X)
-//   Slide UD = axis 1 (left stick Y)
+//   Throttle = axis 1 (left stick Y)
 //
 // Phase 1: Static check — assert axis bindings after new-pilot creation.
 // Phase 2: Dynamic check — send axis events and verify the correct
@@ -15,7 +15,7 @@
 //   the live kc_joystick[].value array retains DOS defaults:
 //     Pitch=1(LY), Turn=0(LX), Slide=0xFF(unbound)
 //   instead of Android defaults:
-//     Pitch=3(RY), Turn=2(RX), Slide_LR=0(LX), Slide_UD=1(LY)
+//     Pitch=3(RY), Turn=2(RX), Slide_LR=0(LX), Throttle=1(LY)
 [
     {"action": "log", "message": "=== TEST: Axis Mapping Regression ==="},
 
@@ -52,7 +52,7 @@
         "axis_bind_pitch":    "3",
         "axis_bind_turn":     "2",
         "axis_bind_slide_lr": "0",
-        "axis_bind_slide_ud": "1"
+        "axis_bind_throttle": "1"
     }},
     {"action": "log", "message": "Phase 1: PASS — axis bindings correct"},
 
@@ -91,13 +91,13 @@
     {"action": "log", "message": "Phase 2c: PASS — axis 3 drives pitch"},
     {"action": "send_axis", "axis": 3, "axis_value": 0.0, "post_delay_ms": 200},
 
-    // 2d: Axis 1 (LY) should cause vertical slide
-    {"action": "log", "message": "Phase 2d: Sending axis 1 (Slide U/D) = 0.5"},
+    // 2d: Axis 1 (LY) should cause forward/back thrust (throttle)
+    {"action": "log", "message": "Phase 2d: Sending axis 1 (Throttle) = 0.5"},
     {"action": "send_axis", "axis": 1, "axis_value": 0.5, "post_delay_ms": 500},
     {"action": "assert", "expect": {
-        "slide_ud_time": {"ne": 0}
+        "throttle_time": {"ne": 0}
     }},
-    {"action": "log", "message": "Phase 2d: PASS — axis 1 drives vertical slide"},
+    {"action": "log", "message": "Phase 2d: PASS — axis 1 drives throttle"},
     {"action": "send_axis", "axis": 1, "axis_value": 0.0, "post_delay_ms": 200},
 
     // ── Done ───────────────────────────────────────────────────────
