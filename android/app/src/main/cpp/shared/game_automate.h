@@ -42,8 +42,14 @@ void game_automate_tick(void);
 #else /* !INTROSPECT_ON */
 
 /* Stubs -- compile to nothing on non-introspection builds. */
-static inline void game_automate_set_path(const char *p) { (void)p; }
-static inline void game_automate_load_script(const char *p) { (void)p; }
+static inline void game_automate_set_path(const char *p)
+{
+	(void) p;
+}
+static inline void game_automate_load_script(const char *p)
+{
+	(void) p;
+}
 static inline void game_automate_tick(void) {}
 
 #endif /* INTROSPECT_ON */

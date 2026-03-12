@@ -4,7 +4,7 @@
  * the AI tool mostly used the innoextract codebase, which is zlib-style-licensed
  * because the tool didn't use much else, I'm choosing to include the original license notice
  * https://github.com/dscharrer/innoextract
- * 
+ *
  * Usage: extract_gog <installer.exe|installer.pkg> [output_dir]
  *
  * Detects format from extension:
@@ -45,11 +45,11 @@
 #include <sys/stat.h>
 
 #ifdef _WIN32
-  #include <direct.h>
-  #define mkdir_p(d) _mkdir(d)
+#include <direct.h>
+#define mkdir_p(d) _mkdir(d)
 #else
-  #include <sys/stat.h>
-  #define mkdir_p(d) mkdir((d), 0755)
+#include <sys/stat.h>
+#define mkdir_p(d) mkdir((d), 0755)
 #endif
 
 #include "inno_reader.h"
@@ -57,153 +57,160 @@
 
 /* ── Cross-platform case-insensitive compare ─────────────────────── */
 #ifndef _WIN32
-  #include <strings.h>
-  #define _stricmp strcasecmp
+#include <strings.h>
+#define _stricmp strcasecmp
 #endif
 
 /* ── Game file extensions we care about ──────────────────────────── */
 static const char *game_extensions[] = {
-    ".hog", ".pig", ".ham", ".s11", ".s22", ".dem",
-    ".mvl", ".msn", ".mn2", ".gog", ".inst",
-    NULL
+	".hog", ".pig", ".ham", ".s11", ".s22", ".dem",
+	".mvl", ".msn", ".mn2", ".gog", ".inst",
+	NULL
 };
 
-static int has_game_extension(const char *path) {
-    const char *dot = strrchr(path, '.');
-    if (!dot) return 0;
-    for (const char **ext = game_extensions; *ext; ext++) {
-        if (_stricmp(dot, *ext) == 0) return 1;
-    }
-    return 0;
+static int has_game_extension(const char *path)
+{
+	const char *dot = strrchr(path, '.');
+	if (!dot) return 0;
+	for (const char **ext = game_extensions; *ext; ext++) {
+		if (_stricmp(dot, *ext) == 0) return 1;
+	}
+	return 0;
 }
 
 /* Get just the filename from a path */
-static const char *basename_only(const char *path) {
-    const char *p = path;
-    const char *last = path;
-    while (*p) {
-        if (*p == '/' || *p == '\\') last = p + 1;
-        p++;
-    }
-    return last;
+static const char *basename_only(const char *path)
+{
+	const char *p = path;
+	const char *last = path;
+	while (*p) {
+		if (*p == '/' || *p == '\\') last = p + 1;
+		p++;
+	}
+	return last;
 }
 
-static int progress_cb(const char *filename, long long done, long long total, void *ud) {
-    (void)ud;
-    if (done == 0 && total > 0)
-        fprintf(stderr, "  Extracting %s (%lld bytes)...\n", filename, total);
-    return 0;
+static int progress_cb(const char *filename, long long done, long long total, void *ud)
+{
+	(void) ud;
+	if (done == 0 && total > 0)
+		fprintf(stderr, "  Extracting %s (%lld bytes)...\n", filename, total);
+	return 0;
 }
 
 /* ── Detect format from extension ────────────────────────────────── */
-static int is_pkg_file(const char *path) {
-    const char *dot = strrchr(path, '.');
-    return dot && _stricmp(dot, ".pkg") == 0;
+static int is_pkg_file(const char *path)
+{
+	const char *dot = strrchr(path, '.');
+	return dot && _stricmp(dot, ".pkg") == 0;
 }
 
 /* ── InnoSetup (.exe) extraction ─────────────────────────────────── */
-static int extract_exe(const char *exe_path, const char *out_dir) {
-    inno_archive_t arc;
-    int nfiles = inno_open(exe_path, &arc);
-    if (nfiles < 0) {
-        fprintf(stderr, "ERROR: Failed to open %s\n", exe_path);
-        return 1;
-    }
+static int extract_exe(const char *exe_path, const char *out_dir)
+{
+	inno_archive_t arc;
+	int nfiles = inno_open(exe_path, &arc);
+	if (nfiles < 0) {
+		fprintf(stderr, "ERROR: Failed to open %s\n", exe_path);
+		return 1;
+	}
 
-    fprintf(stderr, "InnoSetup %d.%d.%d%s — %d files, %d data entries\n",
-            arc.version.major, arc.version.minor, arc.version.patch,
-            arc.version.unicode ? " (unicode)" : "",
-            arc.file_count, arc.data_entry_count);
-    fprintf(stderr, "Compression: %d, header@0x%llx, data@0x%llx\n",
-            arc.compression,
-            (unsigned long long)arc.header_offset,
-            (unsigned long long)arc.data_offset);
+	fprintf(stderr, "InnoSetup %d.%d.%d%s — %d files, %d data entries\n",
+	        arc.version.major, arc.version.minor, arc.version.patch,
+	        arc.version.unicode ? " (unicode)" : "",
+	        arc.file_count, arc.data_entry_count);
+	fprintf(stderr, "Compression: %d, header@0x%llx, data@0x%llx\n",
+	        arc.compression,
+	        (unsigned long long) arc.header_offset,
+	        (unsigned long long) arc.data_offset);
 
-    /* List all files */
-    printf("[\n");
-    for (int i = 0; i < arc.file_count; i++) {
-        const char *dest = arc.files[i].destination;
-        int is_game = has_game_extension(dest);
-        uint64_t size = 0;
-        if (arc.files[i].location < (uint32_t)arc.data_entry_count)
-            size = arc.data_entries[arc.files[i].location].file_size;
+	/* List all files */
+	printf("[\n");
+	for (int i = 0; i < arc.file_count; i++) {
+		const char *dest = arc.files[i].destination;
+		int is_game = has_game_extension(dest);
+		uint64_t size = 0;
+		if (arc.files[i].location < (uint32_t) arc.data_entry_count)
+			size = arc.data_entries[arc.files[i].location].file_size;
 
-        printf("  {\"index\": %d, \"dest\": \"%s\", \"size\": %llu, \"game\": %s}%s\n",
-               i, dest, (unsigned long long)size,
-               is_game ? "true" : "false",
-               (i < arc.file_count - 1) ? "," : "");
-    }
-    printf("]\n");
+		printf("  {\"index\": %d, \"dest\": \"%s\", \"size\": %llu, \"game\": %s}%s\n",
+		       i, dest, (unsigned long long) size,
+		       is_game ? "true" : "false",
+		       (i < arc.file_count - 1) ? "," : "");
+	}
+	printf("]\n");
 
-    /* Extract game files */
-    mkdir_p(out_dir);
-    int extracted = 0, errors = 0;
+	/* Extract game files */
+	mkdir_p(out_dir);
+	int extracted = 0, errors = 0;
 
-    for (int i = 0; i < arc.file_count; i++) {
-        const char *dest = arc.files[i].destination;
-        if (!has_game_extension(dest)) continue;
+	for (int i = 0; i < arc.file_count; i++) {
+		const char *dest = arc.files[i].destination;
+		if (!has_game_extension(dest)) continue;
 
-        const char *fname = basename_only(dest);
-        char out_path[1024];
-        snprintf(out_path, sizeof(out_path), "%s/%s", out_dir, fname);
+		const char *fname = basename_only(dest);
+		char out_path[1024];
+		snprintf(out_path, sizeof(out_path), "%s/%s", out_dir, fname);
 
-        if (inno_extract_file(&arc, i, out_path, progress_cb, NULL) == 0) {
-            extracted++;
-        } else {
-            fprintf(stderr, "ERROR: Failed to extract %s\n", dest);
-            errors++;
-        }
-    }
+		if (inno_extract_file(&arc, i, out_path, progress_cb, NULL) == 0) {
+			extracted++;
+		} else {
+			fprintf(stderr, "ERROR: Failed to extract %s\n", dest);
+			errors++;
+		}
+	}
 
-    fprintf(stderr, "\nDone: %d files extracted, %d errors\n", extracted, errors);
-    inno_close(&arc);
-    return errors > 0 ? 1 : 0;
+	fprintf(stderr, "\nDone: %d files extracted, %d errors\n", extracted, errors);
+	inno_close(&arc);
+	return errors > 0 ? 1 : 0;
 }
 
 /* ── Mac .pkg extraction ─────────────────────────────────────────── */
-static int extract_pkg(const char *pkg_path, const char *out_dir) {
-    pkg_archive_t arc;
-    int nfiles = pkg_open(pkg_path, &arc);
-    if (nfiles < 0) {
-        fprintf(stderr, "ERROR: Failed to open %s\n", pkg_path);
-        return 1;
-    }
+static int extract_pkg(const char *pkg_path, const char *out_dir)
+{
+	pkg_archive_t arc;
+	int nfiles = pkg_open(pkg_path, &arc);
+	if (nfiles < 0) {
+		fprintf(stderr, "ERROR: Failed to open %s\n", pkg_path);
+		return 1;
+	}
 
-    fprintf(stderr, "Mac .pkg — %d game files found\n", arc.file_count);
+	fprintf(stderr, "Mac .pkg — %d game files found\n", arc.file_count);
 
-    /* List game files */
-    printf("[\n");
-    for (int i = 0; i < arc.file_count; i++) {
-        printf("  {\"index\": %d, \"dest\": \"%s\", \"size\": %llu, \"game\": true}%s\n",
-               i, arc.files[i].name, (unsigned long long)arc.files[i].size,
-               (i < arc.file_count - 1) ? "," : "");
-    }
-    printf("]\n");
+	/* List game files */
+	printf("[\n");
+	for (int i = 0; i < arc.file_count; i++) {
+		printf("  {\"index\": %d, \"dest\": \"%s\", \"size\": %llu, \"game\": true}%s\n",
+		       i, arc.files[i].name, (unsigned long long) arc.files[i].size,
+		       (i < arc.file_count - 1) ? "," : "");
+	}
+	printf("]\n");
 
-    /* Extract all game files */
-    int extracted = pkg_extract_all(&arc, out_dir, progress_cb, NULL, 0);
-    if (extracted < 0) {
-        fprintf(stderr, "ERROR: Extraction failed\n");
-        pkg_close(&arc);
-        return 1;
-    }
+	/* Extract all game files */
+	int extracted = pkg_extract_all(&arc, out_dir, progress_cb, NULL, 0);
+	if (extracted < 0) {
+		fprintf(stderr, "ERROR: Extraction failed\n");
+		pkg_close(&arc);
+		return 1;
+	}
 
-    fprintf(stderr, "\nDone: %d files extracted\n", extracted);
-    pkg_close(&arc);
-    return 0;
+	fprintf(stderr, "\nDone: %d files extracted\n", extracted);
+	pkg_close(&arc);
+	return 0;
 }
 
-int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        fprintf(stderr, "Usage: extract_gog <installer.exe|installer.pkg> [output_dir]\n");
-        return 1;
-    }
+int main(int argc, char *argv[])
+{
+	if (argc < 2) {
+		fprintf(stderr, "Usage: extract_gog <installer.exe|installer.pkg> [output_dir]\n");
+		return 1;
+	}
 
-    const char *path = argv[1];
-    const char *out_dir = (argc >= 3) ? argv[2] : "gog_extracted";
+	const char *path = argv[1];
+	const char *out_dir = (argc >= 3) ? argv[2] : "gog_extracted";
 
-    if (is_pkg_file(path))
-        return extract_pkg(path, out_dir);
-    else
-        return extract_exe(path, out_dir);
+	if (is_pkg_file(path))
+		return extract_pkg(path, out_dir);
+	else
+		return extract_exe(path, out_dir);
 }

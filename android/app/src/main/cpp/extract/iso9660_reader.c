@@ -22,19 +22,19 @@
 #include <io.h>
 #include <fcntl.h>
 #include <direct.h>
-#define read(fd, buf, n) _read(fd, buf, (unsigned int)(n))
-#define lseek _lseek
-#define close _close
-#define mkdir(d, m) _mkdir(d)
-#define open _open
-#define O_RDONLY _O_RDONLY
-#define O_WRONLY _O_WRONLY
-#define O_CREAT  _O_CREAT
-#define O_TRUNC  _O_TRUNC
-#define O_BINARY _O_BINARY
-#define strcasecmp _stricmp
+#define read(fd, buf, n) _read(fd, buf, (unsigned int) (n))
+#define lseek            _lseek
+#define close            _close
+#define mkdir(d, m)      _mkdir(d)
+#define open             _open
+#define O_RDONLY         _O_RDONLY
+#define O_WRONLY         _O_WRONLY
+#define O_CREAT          _O_CREAT
+#define O_TRUNC          _O_TRUNC
+#define O_BINARY         _O_BINARY
+#define strcasecmp       _stricmp
 /* write() already available via _write */
-#define write(fd, buf, n) _write(fd, buf, (unsigned int)(n))
+#define write(fd, buf, n) _write(fd, buf, (unsigned int) (n))
 #else
 #include <unistd.h>
 #include <fcntl.h>
@@ -47,24 +47,24 @@
 #include <android/log.h>
 #define ISO_LOG(...) __android_log_print(ANDROID_LOG_INFO, "ISO9660", __VA_ARGS__)
 #else
-#define ISO_LOG(...) ((void)0)
+#define ISO_LOG(...) ((void) 0)
 #endif
 
 /* ── Constants ───────────────────────────────────────────────────────── */
 
-#define RAW_SECTOR_SIZE    2352
-#define USER_DATA_OFFSET   16     /* Mode 1: skip sync(12) + header(4) */
-#define USER_DATA_SIZE     2048
+#define RAW_SECTOR_SIZE  2352
+#define USER_DATA_OFFSET 16 /* Mode 1: skip sync(12) + header(4) */
+#define USER_DATA_SIZE   2048
 
 /* ISO 9660 PVD is at logical sector 16 */
-#define PVD_SECTOR         16
+#define PVD_SECTOR 16
 
 /* Volume descriptor type codes */
-#define VD_PRIMARY         1
-#define VD_TERMINATOR      255
+#define VD_PRIMARY    1
+#define VD_TERMINATOR 255
 
 /* Directory record flag bits */
-#define DR_FLAG_DIRECTORY  0x02
+#define DR_FLAG_DIRECTORY 0x02
 
 /* ── Helpers ─────────────────────────────────────────────────────────── */
 
@@ -74,8 +74,7 @@
 static int read_user_sector(int fd, int track_start_sector,
                             int logical_sector, unsigned char *buf)
 {
-	off_t offset = (off_t)(track_start_sector + logical_sector) * RAW_SECTOR_SIZE
-	             + USER_DATA_OFFSET;
+	off_t offset = (off_t) (track_start_sector + logical_sector) * RAW_SECTOR_SIZE + USER_DATA_OFFSET;
 #ifdef _WIN32
 	if (_lseeki64(fd, offset, SEEK_SET) != offset) return -1;
 	int n = _read(fd, buf, USER_DATA_SIZE);
@@ -89,10 +88,7 @@ static int read_user_sector(int fd, int track_start_sector,
 /* Read little-endian uint32 from ISO directory record (both-endian fields) */
 static unsigned int le32(const unsigned char *p)
 {
-	return (unsigned int)p[0]
-	     | ((unsigned int)p[1] << 8)
-	     | ((unsigned int)p[2] << 16)
-	     | ((unsigned int)p[3] << 24);
+	return (unsigned int) p[0] | ((unsigned int) p[1] << 8) | ((unsigned int) p[2] << 16) | ((unsigned int) p[3] << 24);
 }
 
 /* Ensure a directory exists, creating parents as needed */
@@ -124,8 +120,8 @@ static void clean_iso_name(const char *src, int src_len,
 	int i, o = 0;
 	for (i = 0; i < src_len && o < dst_len - 1; i++) {
 		char c = src[i];
-		if (c == ';') break;  /* version separator — stop */
-		dst[o++] = (char)tolower((unsigned char)c);
+		if (c == ';') break; /* version separator — stop */
+		dst[o++] = (char) tolower((unsigned char) c);
 	}
 	/* Trim trailing dots */
 	while (o > 0 && dst[o - 1] == '.') o--;
@@ -143,7 +139,7 @@ static int ext_matches(const char *filename, const char **extensions)
 
 	dot = strrchr(filename, '.');
 	if (!dot) return 0;
-	dot++;  /* skip the dot */
+	dot++; /* skip the dot */
 
 	for (i = 0; extensions[i]; i++) {
 		if (strcasecmp(dot, extensions[i]) == 0)
@@ -182,7 +178,7 @@ static int walk_directory(int fd, int track_start,
 	while (sector_idx < sectors_needed && bytes_read < dir_size) {
 		unsigned int pos = 0;
 
-		if (read_user_sector(fd, track_start, (int)(dir_lba + sector_idx), sector) < 0) {
+		if (read_user_sector(fd, track_start, (int) (dir_lba + sector_idx), sector) < 0) {
 			ISO_LOG("Failed to read directory sector at LBA %u", dir_lba + sector_idx);
 			return -1;
 		}
@@ -202,13 +198,13 @@ static int walk_directory(int fd, int track_start,
 
 			if (pos + rec_len > USER_DATA_SIZE) break;
 
-			name_len   = sector[pos + 32];
+			name_len = sector[pos + 32];
 			extent_lba = le32(&sector[pos + 2]);
-			data_size  = le32(&sector[pos + 10]);
-			flags      = sector[pos + 25];
+			data_size = le32(&sector[pos + 10]);
+			flags = sector[pos + 25];
 
 			/* Extract raw name */
-			if (name_len > 0 && name_len < (int)sizeof(raw_name) &&
+			if (name_len > 0 && name_len < (int) sizeof(raw_name) &&
 			    pos + 33 + name_len <= USER_DATA_SIZE) {
 				memcpy(raw_name, &sector[pos + 33], name_len);
 				raw_name[name_len] = '\0';
@@ -276,7 +272,7 @@ int iso_list_files(int bin_fd, int track_start_sector, int track_num_sectors,
 	unsigned char pvd[USER_DATA_SIZE];
 	unsigned int root_lba, root_size;
 
-	(void)track_num_sectors;  /* used for bounds checking if needed later */
+	(void) track_num_sectors; /* used for bounds checking if needed later */
 
 	if (bin_fd < 0 || !out) return -1;
 
@@ -290,8 +286,7 @@ int iso_list_files(int bin_fd, int track_start_sector, int track_num_sectors,
 
 	/* Validate: byte 0 = type (1 = primary), bytes 1-5 = "CD001" */
 	if (pvd[0] != VD_PRIMARY ||
-	    memcmp(&pvd[1], "CD001", 5) != 0)
-	{
+	    memcmp(&pvd[1], "CD001", 5) != 0) {
 		ISO_LOG("Invalid PVD signature at sector %d+16", track_start_sector);
 		return -1;
 	}
@@ -299,8 +294,8 @@ int iso_list_files(int bin_fd, int track_start_sector, int track_num_sectors,
 	ISO_LOG("Found ISO 9660 Primary Volume Descriptor");
 
 	/* Root directory record is at PVD offset 156, 34 bytes */
-	root_lba  = le32(&pvd[156 + 2]);   /* extent location */
-	root_size = le32(&pvd[156 + 10]);  /* data length */
+	root_lba = le32(&pvd[156 + 2]);   /* extent location */
+	root_size = le32(&pvd[156 + 10]); /* data length */
 
 	ISO_LOG("Root directory: LBA=%u  size=%u", root_lba, root_size);
 
@@ -322,7 +317,7 @@ int iso_extract_files(int bin_fd, int track_start_sector, int track_num_sectors,
 	long long total_bytes = 0, done_bytes = 0;
 	unsigned char sector[USER_DATA_SIZE];
 
-	(void)track_num_sectors;
+	(void) track_num_sectors;
 
 	if (bin_fd < 0 || !file_list || !output_dir) return -1;
 
@@ -375,9 +370,9 @@ int iso_extract_files(int bin_fd, int track_start_sector, int track_num_sectors,
 			unsigned int lba = entry->lba;
 
 			while (remaining > 0) {
-				int to_write = (remaining > USER_DATA_SIZE) ? USER_DATA_SIZE : (int)remaining;
+				int to_write = (remaining > USER_DATA_SIZE) ? USER_DATA_SIZE : (int) remaining;
 
-				if (read_user_sector(bin_fd, track_start_sector, (int)lba, sector) < 0) {
+				if (read_user_sector(bin_fd, track_start_sector, (int) lba, sector) < 0) {
 					ISO_LOG("Read error at LBA %u for %s", lba, entry->path);
 					break;
 				}

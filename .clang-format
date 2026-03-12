@@ -1,12 +1,14 @@
 # .clang-format -- format rules for android/ C/C++ code.
-# Matches the prevailing style in android/app/src/main/cpp/.
+# Derived from the prevailing style in d1/ and d2/ source code.
 # Run via: android/run-clang-format.ps1
 
 BasedOnStyle: LLVM
 IndentWidth: 4
 TabWidth: 4
-UseTab: Never
-ColumnLimit: 100
+UseTab: ForIndentation
+
+# No column limit -- d1/d2 code has many long lines
+ColumnLimit: 0
 
 # Functions: brace on next line.  Everything else: same line.
 BreakBeforeBraces: Linux
@@ -17,27 +19,28 @@ PointerAlignment: Right
 # if (x) but func(x)
 SpaceBeforeParens: ControlStatements
 
+# d1/d2 commonly puts short if/else and loops on one line
 AllowShortFunctionsOnASingleLine: Empty
-AllowShortIfStatementsOnASingleLine: WithoutElse
-AllowShortLoopsOnASingleLine: false
-AllowShortBlocksOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLoopsOnASingleLine: true
+AllowShortBlocksOnASingleLine: Always
 
-# Binary operators (|, &&, etc.) at start of continuation line
-BreakBeforeBinaryOperators: NonAssignment
-ContinuationIndentWidth: 4
+# Space after C-style casts: (int) x
+SpaceAfterCStyleCast: true
+
+# case labels indented inside switch
+IndentCaseLabels: true
+AllowShortCaseLabelsOnASingleLine: true
+
+# Trailing comments
+AlignTrailingComments: true
+SpacesBeforeTrailingComments: 1
+
+# Align consecutive #defines (matches d1/d2 macro style)
+AlignConsecutiveMacros: Consecutive
 
 # Don't reorder includes -- grouping is intentional
 SortIncludes: Never
-IncludeBlocks: Preserve
-
-BinPackArguments: true
-BinPackParameters: true
-AlignAfterOpenBracket: Align
-AlignEscapedNewlines: Left
-AlignConsecutiveMacros: false
-
-SpaceAfterCStyleCast: false
-SpacesInParentheses: false
 
 # Keep C99/C11 designated initializers readable
 Cpp11BracedListStyle: false

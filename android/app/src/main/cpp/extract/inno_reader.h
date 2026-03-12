@@ -4,7 +4,7 @@
  * the AI tool mostly used the innoextract codebase, which is zlib-style-licensed
  * because the tool didn't use much else, I'm choosing to include the original license notice
  * https://github.com/dscharrer/innoextract
- * 
+ *
  * Supports InnoSetup 5.3.x through 5.6.x (Unicode builds) as used by
  * GOG.com game installers.  Only LZMA1 and zlib decompression paths are
  * implemented; other methods (BZip2, LZMA2) return errors at runtime.
@@ -32,7 +32,7 @@
  *    misrepresented as being the original software.
  * 3. This notice may not be removed or altered from any source distribution.
  */
- 
+
 #ifndef INNO_READER_H
 #define INNO_READER_H
 
@@ -43,70 +43,70 @@ extern "C" {
 #endif
 
 /* ── Limits ──────────────────────────────────────────────────────── */
-#define INNO_MAX_FILES  512
-#define INNO_PATH_LEN   512
+#define INNO_MAX_FILES 512
+#define INNO_PATH_LEN  512
 
 /* ── Compression method enum (full, from InnoSetup source) ─────── */
 typedef enum {
-    INNO_COMPRESS_STORED = 0,
-    INNO_COMPRESS_ZLIB   = 1,
-    INNO_COMPRESS_BZIP2  = 2,
-    INNO_COMPRESS_LZMA1  = 3,
-    INNO_COMPRESS_LZMA2  = 4,
+	INNO_COMPRESS_STORED = 0,
+	INNO_COMPRESS_ZLIB = 1,
+	INNO_COMPRESS_BZIP2 = 2,
+	INNO_COMPRESS_LZMA1 = 3,
+	INNO_COMPRESS_LZMA2 = 4,
 } inno_compress_method_t;
 
 /* ── InnoSetup version ───────────────────────────────────────────── */
 typedef struct {
-    int major, minor, patch;
-    int unicode;   /* 1 if "(u)" or "(U)" suffix */
+	int major, minor, patch;
+	int unicode; /* 1 if "(u)" or "(U)" suffix */
 } inno_version_t;
 
 /* ── File entry (from the decompressed header) ───────────────────── */
 typedef struct {
-    char     destination[INNO_PATH_LEN];  /* install-relative path */
-    uint32_t location;                    /* index into data entries */
-    uint64_t external_size;               /* expected file size      */
-    uint8_t  gog_galaxy;                  /* needs zlib decompression */
+	char destination[INNO_PATH_LEN]; /* install-relative path */
+	uint32_t location;               /* index into data entries */
+	uint64_t external_size;          /* expected file size      */
+	uint8_t gog_galaxy;              /* needs zlib decompression */
 } inno_file_entry_t;
 
 /* ── Data entry (from the second block stream) ───────────────────── */
 typedef struct {
-    uint32_t first_slice;
-    uint32_t last_slice;
-    uint64_t chunk_offset;         /* byte offset in setup-1.bin     */
-    uint64_t file_offset;          /* offset within decompressed chunk */
-    uint64_t file_size;            /* decompressed file size          */
-    uint64_t chunk_compressed_size;
-    uint8_t  sha1[20];
-    uint8_t  chunk_compressed;     /* ChunkCompressed flag            */
-    uint8_t  call_instruction_optimized; /* filter flag               */
+	uint32_t first_slice;
+	uint32_t last_slice;
+	uint64_t chunk_offset; /* byte offset in setup-1.bin     */
+	uint64_t file_offset;  /* offset within decompressed chunk */
+	uint64_t file_size;    /* decompressed file size          */
+	uint64_t chunk_compressed_size;
+	uint8_t sha1[20];
+	uint8_t chunk_compressed;           /* ChunkCompressed flag            */
+	uint8_t call_instruction_optimized; /* filter flag               */
 } inno_data_entry_t;
 
 /* ── Archive handle ──────────────────────────────────────────────── */
 typedef struct {
-    /* parsed version */
-    inno_version_t version;
-    inno_compress_method_t compression;
+	/* parsed version */
+	inno_version_t version;
+	inno_compress_method_t compression;
 
-    /* offset table */
-    uint64_t header_offset;  /* start of setup-0.bin in file */
-    uint64_t data_offset;    /* start of setup-1.bin in file */
+	/* offset table */
+	uint64_t header_offset; /* start of setup-0.bin in file */
+	uint64_t data_offset;   /* start of setup-1.bin in file */
 
-    /* entries */
-    inno_file_entry_t  files[INNO_MAX_FILES];
-    int                file_count;
-    inno_data_entry_t  *data_entries;    /* heap-allocated */
-    int                data_entry_count;
+	/* entries */
+	inno_file_entry_t files[INNO_MAX_FILES];
+	int file_count;
+	inno_data_entry_t *data_entries; /* heap-allocated */
+	int data_entry_count;
 
-    /* file handle (kept open for extraction) */
-    int fd;
+	/* file handle (kept open for extraction) */
+	int fd;
 } inno_archive_t;
 
 /* ── Progress callback (same signature as iso/sow modules) ────── */
 typedef int (*inno_progress_fn)(const char *current_file,
-                                 long long bytes_done,
-                                 long long bytes_total,
-                                 void *user_data);
+                                long long bytes_done,
+                                long long bytes_total,
+                                void *user_data);
 
 /*
  * Open an InnoSetup installer and parse its metadata.

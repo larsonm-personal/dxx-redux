@@ -19,35 +19,35 @@ extern "C" {
 #define CUE_TITLE_LEN    64
 #define CUE_FILENAME_LEN 256
 
-#define CUE_TRACK_DATA   0
-#define CUE_TRACK_AUDIO  1
+#define CUE_TRACK_DATA  0
+#define CUE_TRACK_AUDIO 1
 
 /* Raw sector size on all CD formats */
-#define CUE_SECTOR_SIZE  2352
+#define CUE_SECTOR_SIZE 2352
 
 /* One BIN file referenced by the CUE sheet */
 typedef struct {
 	char filename[CUE_FILENAME_LEN];
-	int  file_index;          /* 0-based index in cue_disc_t.files[] */
-	long long file_size;      /* bytes, -1 if unknown */
+	int file_index;      /* 0-based index in cue_disc_t.files[] */
+	long long file_size; /* bytes, -1 if unknown */
 } cue_bin_file_t;
 
 /* One track in the CUE sheet */
 typedef struct {
-	int  track_num;           /* 1-based */
-	int  type;                /* CUE_TRACK_DATA or CUE_TRACK_AUDIO */
-	int  file_index;          /* index into cue_disc_t.files[] */
-	int  start_sector;        /* sector offset within the parent BIN file */
-	int  num_sectors;         /* computed after parsing */
+	int track_num;    /* 1-based */
+	int type;         /* CUE_TRACK_DATA or CUE_TRACK_AUDIO */
+	int file_index;   /* index into cue_disc_t.files[] */
+	int start_sector; /* sector offset within the parent BIN file */
+	int num_sectors;  /* computed after parsing */
 	char title[CUE_TITLE_LEN];
 } cue_track_info_t;
 
 /* Complete parsed CUE sheet */
 typedef struct {
-	cue_bin_file_t   files[CUE_MAX_FILES];
-	int              num_files;
+	cue_bin_file_t files[CUE_MAX_FILES];
+	int num_files;
 	cue_track_info_t tracks[CUE_MAX_TRACKS];
-	int              num_tracks;
+	int num_tracks;
 } cue_disc_t;
 
 /*

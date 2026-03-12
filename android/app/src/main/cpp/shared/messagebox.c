@@ -9,10 +9,10 @@
 
 void msgbox_warning(char *message)
 {
-    __android_log_print(ANDROID_LOG_WARN, LOG_TAG, "WARNING: %s", message);
+	__android_log_print(ANDROID_LOG_WARN, LOG_TAG, "WARNING: %s", message);
 }
 
 void msgbox_error(const char *message)
 {
-    __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, "ERROR: %s", message);
+	__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, "ERROR: %s", message);
 }

@@ -23,7 +23,7 @@
 #include <android/asset_manager.h>
 #define TSFMUSIC_LOG(...) __android_log_print(ANDROID_LOG_INFO, "TSF-Music", __VA_ARGS__)
 #else
-#define TSFMUSIC_LOG(...) ((void)0)
+#define TSFMUSIC_LOG(...) ((void) 0)
 #endif
 
 /* TinySoundFont — implementation in libtsf.so */
@@ -42,59 +42,61 @@
 
 /* ── Globals ─────────────────────────────────────────────────────────── */
 
-static tsf *g_tsf              = NULL;   /* SoundFont synth instance       */
-static tml_message *g_midi     = NULL;   /* parsed MIDI message list       */
-static tml_message *g_midi_cur = NULL;   /* current playback cursor        */
+static tsf *g_tsf = NULL;              /* SoundFont synth instance       */
+static tml_message *g_midi = NULL;     /* parsed MIDI message list       */
+static tml_message *g_midi_cur = NULL; /* current playback cursor        */
 
 static unsigned char *g_midi_buf = NULL; /* raw MIDI bytes from hmp2mid    */
 
-static double g_playback_msec  = 0.0;   /* current playback time (ms)     */
-static int    g_playing        = 0;      /* 1 = music is actively playing  */
-static int    g_paused         = 0;      /* 1 = playback is paused         */
-static int    g_loop           = 0;      /* 1 = loop when reaching the end */
-static int    g_song_finished  = 0;      /* set by audio thread at end     */
-static int    g_bg_paused      = 0;      /* 1 = paused due to app background */
-static float  g_volume         = 1.0f;   /* 0.0 – 1.0 volume scale        */
-static int    g_output_rate    = 48000;  /* actual SDL output sample rate  */
+static double g_playback_msec = 0.0; /* current playback time (ms)     */
+static int g_playing = 0;            /* 1 = music is actively playing  */
+static int g_paused = 0;             /* 1 = playback is paused         */
+static int g_loop = 0;               /* 1 = loop when reaching the end */
+static int g_song_finished = 0;      /* set by audio thread at end     */
+static int g_bg_paused = 0;          /* 1 = paused due to app background */
+static float g_volume = 1.0f;        /* 0.0 – 1.0 volume scale        */
+static int g_output_rate = 48000;    /* actual SDL output sample rate  */
 
-static void (*g_finished_hook)(void) = NULL;  /* callback when song ends  */
+static void (*g_finished_hook)(void) = NULL; /* callback when song ends  */
 
 /* ── Configurable gain (dB) ──────────────────────────────────────────────── */
-static float    g_gain_db           = -10.0f; /* TSF global gain in dB      */
-static int      g_max_voices        = 48;     /* voice limit (runtime-tunable) */
+static float g_gain_db = -10.0f; /* TSF global gain in dB      */
+static int g_max_voices = 48;    /* voice limit (runtime-tunable) */
 
 /* ── Audio diagnostics ──────────────────────────────────────────────────── */
 #ifdef ANDROID
 #include <time.h>
-static int      g_clip_count        = 0;     /* samples that clipped       */
-static int      g_sample_count_total= 0;     /* total samples rendered     */
-static int      g_peak_sample       = 0;     /* peak absolute sample value */
-static int      g_active_voices_max = 0;     /* peak active voice count    */
+static int g_clip_count = 0;         /* samples that clipped       */
+static int g_sample_count_total = 0; /* total samples rendered     */
+static int g_peak_sample = 0;        /* peak absolute sample value */
+static int g_active_voices_max = 0;  /* peak active voice count    */
 
 /* Ring-buffer diagnostics */
-static int      g_rb_underruns      = 0;     /* callback found buffer empty */
-static int      g_rb_cb_count       = 0;     /* total callbacks             */
+static int g_rb_underruns = 0; /* callback found buffer empty */
+static int g_rb_cb_count = 0;  /* total callbacks             */
 #endif
 
 /* ── AAssetManager (Android) ─────────────────────────────────────────── */
 
 #ifdef ANDROID
-extern AAssetManager *g_asset_manager;   /* set in jni_main.c              */
+extern AAssetManager *g_asset_manager; /* set in jni_main.c              */
 #endif
 
 /* ── Soundfont loading ───────────────────────────────────────────────── */
 
 static int tsf_music_load_soundfont(void)
 {
-	if (g_tsf) return 1;  /* already loaded */
+	if (g_tsf) return 1; /* already loaded */
 
 	/* Query the actual output sample rate from SDL_mixer */
 	{
-		int freq = 0; Uint16 fmt; int ch;
+		int freq = 0;
+		Uint16 fmt;
+		int ch;
 		if (Mix_QuerySpec(&freq, &fmt, &ch) && freq > 0) {
 			g_output_rate = freq;
 		} else {
-			g_output_rate = 48000;  /* fallback */
+			g_output_rate = 48000; /* fallback */
 		}
 		TSFMUSIC_LOG("SDL mixer output: %d Hz, fmt=0x%04X, ch=%d", g_output_rate, fmt, ch);
 	}
@@ -115,7 +117,7 @@ static int tsf_music_load_soundfont(void)
 	const void *data = AAsset_getBuffer(asset);
 	off_t size = AAsset_getLength(asset);
 
-	g_tsf = tsf_load_memory(data, (int)size);
+	g_tsf = tsf_load_memory(data, (int) size);
 	AAsset_close(asset);
 
 	if (!g_tsf) {
@@ -146,7 +148,7 @@ static int tsf_music_load_soundfont(void)
  */
 static int render_frames(short *out, int frames)
 {
-	double rate = (double)g_output_rate;
+	double rate = (double) g_output_rate;
 	int rendered = 0;
 
 	/* Process in 256-frame blocks for adequate MIDI event timing */
@@ -159,31 +161,31 @@ static int render_frames(short *out, int frames)
 		g_playback_msec += block_ms;
 
 		/* Dispatch MIDI events up to current time */
-		while (g_midi_cur && g_midi_cur->time <= (unsigned int)g_playback_msec) {
+		while (g_midi_cur && g_midi_cur->time <= (unsigned int) g_playback_msec) {
 			tml_message *m = g_midi_cur;
 			switch (m->type) {
-			case TML_NOTE_ON:
-				tsf_channel_note_on(g_tsf, m->channel, m->key,
-				                    m->velocity / 127.0f);
-				break;
-			case TML_NOTE_OFF:
-				tsf_channel_note_off(g_tsf, m->channel, m->key);
-				break;
-			case TML_PROGRAM_CHANGE:
-				tsf_channel_set_presetnumber(g_tsf, m->channel,
-				                             m->program,
-				                             (m->channel == 9));
-				break;
-			case TML_CONTROL_CHANGE:
-				tsf_channel_midi_control(g_tsf, m->channel,
-				                         m->control, m->control_value);
-				break;
-			case TML_PITCH_BEND:
-				tsf_channel_set_pitchwheel(g_tsf, m->channel,
-				                           m->pitch_bend);
-				break;
-			default:
-				break;
+				case TML_NOTE_ON:
+					tsf_channel_note_on(g_tsf, m->channel, m->key,
+					                    m->velocity / 127.0f);
+					break;
+				case TML_NOTE_OFF:
+					tsf_channel_note_off(g_tsf, m->channel, m->key);
+					break;
+				case TML_PROGRAM_CHANGE:
+					tsf_channel_set_presetnumber(g_tsf, m->channel,
+					                             m->program,
+					                             (m->channel == 9));
+					break;
+				case TML_CONTROL_CHANGE:
+					tsf_channel_midi_control(g_tsf, m->channel,
+					                         m->control, m->control_value);
+					break;
+				case TML_PITCH_BEND:
+					tsf_channel_set_pitchwheel(g_tsf, m->channel,
+					                           m->pitch_bend);
+					break;
+				default:
+					break;
 			}
 			g_midi_cur = m->next;
 		}
@@ -237,15 +239,15 @@ static int render_frames(short *out, int frames)
 
 /* Power-of-2 ring buffer:  2^18 = 262144 samples = 131072 frames
  *                          = 2.73 seconds at 48 kHz stereo               */
-#define RB_SHIFT     18
-#define RB_SAMPLES   (1 << RB_SHIFT)
-#define RB_MASK      (RB_SAMPLES - 1)
+#define RB_SHIFT   18
+#define RB_SAMPLES (1 << RB_SHIFT)
+#define RB_MASK    (RB_SAMPLES - 1)
 
-static short          g_rb[RB_SAMPLES];
-static volatile int   g_rb_wpos;        /* monotonic write position       */
-static volatile int   g_rb_rpos;        /* monotonic read position        */
-static SDL_Thread    *g_render_thread = NULL;
-static volatile int   g_render_running;
+static short g_rb[RB_SAMPLES];
+static volatile int g_rb_wpos; /* monotonic write position       */
+static volatile int g_rb_rpos; /* monotonic read position        */
+static SDL_Thread *g_render_thread = NULL;
+static volatile int g_render_running;
 
 /* ── Ring buffer helpers ────────────────────────────────────────────── */
 
@@ -257,46 +259,46 @@ static void rb_reset(void)
 
 static void rb_write(const short *data, int count)
 {
-	unsigned int wpos = (unsigned int)__atomic_load_n(&g_rb_wpos, __ATOMIC_RELAXED);
+	unsigned int wpos = (unsigned int) __atomic_load_n(&g_rb_wpos, __ATOMIC_RELAXED);
 	unsigned int idx = wpos & RB_MASK;
-	int first = RB_SAMPLES - (int)idx;
+	int first = RB_SAMPLES - (int) idx;
 	if (first > count) first = count;
 	memcpy(&g_rb[idx], data, first * sizeof(short));
 	if (count > first)
 		memcpy(&g_rb[0], data + first, (count - first) * sizeof(short));
-	__atomic_store_n(&g_rb_wpos, (int)(wpos + (unsigned int)count), __ATOMIC_RELEASE);
+	__atomic_store_n(&g_rb_wpos, (int) (wpos + (unsigned int) count), __ATOMIC_RELEASE);
 }
 
 static int rb_read(short *out, int count)
 {
-	unsigned int wpos = (unsigned int)__atomic_load_n(&g_rb_wpos, __ATOMIC_ACQUIRE);
-	unsigned int rpos = (unsigned int)__atomic_load_n(&g_rb_rpos, __ATOMIC_RELAXED);
+	unsigned int wpos = (unsigned int) __atomic_load_n(&g_rb_wpos, __ATOMIC_ACQUIRE);
+	unsigned int rpos = (unsigned int) __atomic_load_n(&g_rb_rpos, __ATOMIC_RELAXED);
 	unsigned int avail = wpos - rpos;
-	if ((int)avail < count) count = (int)avail;
+	if ((int) avail < count) count = (int) avail;
 	if (count <= 0) return 0;
 
 	unsigned int idx = rpos & RB_MASK;
-	int first = RB_SAMPLES - (int)idx;
+	int first = RB_SAMPLES - (int) idx;
 	if (first > count) first = count;
 	memcpy(out, &g_rb[idx], first * sizeof(short));
 	if (count > first)
 		memcpy(out + first, &g_rb[0], (count - first) * sizeof(short));
-	__atomic_store_n(&g_rb_rpos, (int)(rpos + (unsigned int)count), __ATOMIC_RELEASE);
+	__atomic_store_n(&g_rb_rpos, (int) (rpos + (unsigned int) count), __ATOMIC_RELEASE);
 	return count;
 }
 
 static unsigned int rb_available(void)
 {
-	return (unsigned int)__atomic_load_n(&g_rb_wpos, __ATOMIC_ACQUIRE) -
-	       (unsigned int)__atomic_load_n(&g_rb_rpos, __ATOMIC_ACQUIRE);
+	return (unsigned int) __atomic_load_n(&g_rb_wpos, __ATOMIC_ACQUIRE) -
+	       (unsigned int) __atomic_load_n(&g_rb_rpos, __ATOMIC_ACQUIRE);
 }
 
 /* ── Render thread ──────────────────────────────────────────────────── */
 
 static int render_thread_func(void *data)
 {
-	(void)data;
-	enum { CHUNK = 2048 };     /* frames per render pass */
+	(void) data;
+	enum { CHUNK = 2048 }; /* frames per render pass */
 	short buf[CHUNK * 2];
 
 	TSFMUSIC_LOG("Render thread started");
@@ -312,7 +314,7 @@ static int render_thread_func(void *data)
 		unsigned int filled = rb_available();
 		unsigned int space = RB_SAMPLES - filled;
 		if (space < CHUNK * 2) {
-			SDL_Delay(5);        /* buffer is full enough */
+			SDL_Delay(5); /* buffer is full enough */
 			continue;
 		}
 
@@ -340,7 +342,7 @@ static int render_thread_func(void *data)
 
 static void render_thread_start(void)
 {
-	if (g_render_thread) return;  /* already running */
+	if (g_render_thread) return; /* already running */
 	rb_reset();
 	__atomic_store_n(&g_render_running, 1, __ATOMIC_SEQ_CST);
 	g_render_thread = SDL_CreateThread(render_thread_func, NULL);
@@ -358,9 +360,9 @@ static void render_thread_stop(void)
 
 static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 {
-	(void)udata;
-	int needed = len / (int)sizeof(short);   /* total samples (stereo) */
-	short *out = (short *)stream;
+	(void) udata;
+	int needed = len / (int) sizeof(short); /* total samples (stereo) */
+	short *out = (short *) stream;
 
 	g_rb_cb_count++;
 
@@ -373,12 +375,12 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 
 	/* Zero-fill if ring buffer had less data than needed (underrun) */
 	if (got < needed) {
-		memset(out + got, 0, (needed - got) * (int)sizeof(short));
+		memset(out + got, 0, (needed - got) * (int) sizeof(short));
 		if (g_playing) {
 			g_rb_underruns++;
 			if (g_rb_underruns <= 10 || (g_rb_underruns % 50) == 0)
 				TSFMUSIC_LOG("MIDI underrun #%d: got=%d needed=%d rb_fill=%u",
-					g_rb_underruns, got, needed, rb_available());
+				             g_rb_underruns, got, needed, rb_available());
 		}
 	}
 
@@ -386,23 +388,23 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 	if (g_volume < 0.99f) {
 		int i;
 		for (i = 0; i < got; i++)
-			out[i] = (short)(out[i] * g_volume);
+			out[i] = (short) (out[i] * g_volume);
 	}
 }
 
-#else  /* !ANDROID — desktop: render directly in callback */
+#else /* !ANDROID — desktop: render directly in callback */
 
 static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 {
-	(void)udata;
+	(void) udata;
 
 	if (!g_tsf || !g_midi_cur || !g_playing || g_paused || g_bg_paused) {
 		memset(stream, 0, len);
 		return;
 	}
 
-	int frames = len / (2 * (int)sizeof(short));
-	short *out = (short *)stream;
+	int frames = len / (2 * (int) sizeof(short));
+	short *out = (short *) stream;
 
 	int got = render_frames(out, frames);
 
@@ -414,7 +416,7 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 	if (g_volume < 0.99f) {
 		int i, n = got * 2;
 		for (i = 0; i < n; i++)
-			out[i] = (short)(out[i] * g_volume);
+			out[i] = (short) (out[i] * g_volume);
 	}
 }
 
@@ -464,8 +466,8 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 			con_printf(CON_CRITICAL, "TSF: cannot open %s\n", filename);
 			return 0;
 		}
-		bufsize = (unsigned int)PHYSFS_fileLength(fh);
-		g_midi_buf = (unsigned char *)malloc(bufsize);
+		bufsize = (unsigned int) PHYSFS_fileLength(fh);
+		g_midi_buf = (unsigned char *) malloc(bufsize);
 		if (!g_midi_buf) {
 			PHYSFS_close(fh);
 			return 0;
@@ -475,7 +477,7 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 	}
 
 	/* Parse MIDI with TinyMidiLoader */
-	g_midi = tml_load_memory(g_midi_buf, (int)bufsize);
+	g_midi = tml_load_memory(g_midi_buf, (int) bufsize);
 	if (!g_midi) {
 		con_printf(CON_CRITICAL, "TSF: tml_load_memory failed for %s\n",
 		           filename);
@@ -586,23 +588,69 @@ void mix_background_resume(void)
 
 /* ── Diagnostic accessors (called from game_introspect.cpp) ──────────── */
 
-int tsf_music_get_output_rate(void) { return g_output_rate; }
-int tsf_music_get_playing(void) { return g_playing; }
-int tsf_music_get_paused(void) { return g_paused; }
+int tsf_music_get_output_rate(void)
+{
+	return g_output_rate;
+}
+int tsf_music_get_playing(void)
+{
+	return g_playing;
+}
+int tsf_music_get_paused(void)
+{
+	return g_paused;
+}
 #ifdef ANDROID
-int tsf_music_get_cb_count(void) { return g_rb_cb_count; }
-long tsf_music_get_cb_max_ns(void) { return 0; }  /* no longer measured */
-long tsf_music_get_cb_total_ns(void) { return 0; }
-int tsf_music_get_cb_overrun_count(void) { return g_rb_underruns; }
-int tsf_music_get_clip_count(void) { return g_clip_count; }
-int tsf_music_get_sample_count(void) { return g_sample_count_total; }
-int tsf_music_get_peak_sample(void) { return g_peak_sample; }
-int tsf_music_get_active_voices_max(void) { return g_active_voices_max; }
-int tsf_music_get_max_voices(void) { return g_max_voices; }
-int tsf_music_get_rb_fill(void) { return (int)rb_available(); }
-int tsf_music_get_rb_capacity(void) { return RB_SAMPLES; }
-float tsf_music_get_gain_db(void) { return g_gain_db; }
-void tsf_music_set_gain_db(float db) {
+int tsf_music_get_cb_count(void)
+{
+	return g_rb_cb_count;
+}
+long tsf_music_get_cb_max_ns(void)
+{
+	return 0;
+} /* no longer measured */
+long tsf_music_get_cb_total_ns(void)
+{
+	return 0;
+}
+int tsf_music_get_cb_overrun_count(void)
+{
+	return g_rb_underruns;
+}
+int tsf_music_get_clip_count(void)
+{
+	return g_clip_count;
+}
+int tsf_music_get_sample_count(void)
+{
+	return g_sample_count_total;
+}
+int tsf_music_get_peak_sample(void)
+{
+	return g_peak_sample;
+}
+int tsf_music_get_active_voices_max(void)
+{
+	return g_active_voices_max;
+}
+int tsf_music_get_max_voices(void)
+{
+	return g_max_voices;
+}
+int tsf_music_get_rb_fill(void)
+{
+	return (int) rb_available();
+}
+int tsf_music_get_rb_capacity(void)
+{
+	return RB_SAMPLES;
+}
+float tsf_music_get_gain_db(void)
+{
+	return g_gain_db;
+}
+void tsf_music_set_gain_db(float db)
+{
 	g_gain_db = db;
 	if (g_tsf) {
 		tsf_set_output(g_tsf, TSF_STEREO_INTERLEAVED, g_output_rate, g_gain_db);
@@ -612,7 +660,8 @@ void tsf_music_set_gain_db(float db) {
 	g_peak_sample = 0;
 	g_active_voices_max = 0;
 }
-void tsf_music_set_max_voices(int n) {
+void tsf_music_set_max_voices(int n)
+{
 	if (n < 8) n = 8;
 	if (n > 256) n = 256;
 	g_max_voices = n;

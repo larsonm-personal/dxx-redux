@@ -19,30 +19,30 @@
 extern "C" {
 #endif
 
-#define PKG_MAX_FILES  128
-#define PKG_PATH_LEN   512
+#define PKG_MAX_FILES 128
+#define PKG_PATH_LEN  512
 
 /* ── File entry from the cpio archive ────────────────────────────── */
 typedef struct {
-    char     name[PKG_PATH_LEN]; /* basename (e.g., "DESCENT.HOG") */
-    uint64_t size;               /* uncompressed file size */
+	char name[PKG_PATH_LEN]; /* basename (e.g., "DESCENT.HOG") */
+	uint64_t size;           /* uncompressed file size */
 } pkg_file_entry_t;
 
 /* ── Archive handle ──────────────────────────────────────────────── */
 typedef struct {
-    int      fd;                  /* file descriptor (kept open) */
-    uint64_t scripts_abs_offset;  /* absolute offset of gzip data in file */
-    uint64_t scripts_length;      /* length of gzip data */
+	int fd;                      /* file descriptor (kept open) */
+	uint64_t scripts_abs_offset; /* absolute offset of gzip data in file */
+	uint64_t scripts_length;     /* length of gzip data */
 
-    pkg_file_entry_t files[PKG_MAX_FILES];
-    int              file_count;
+	pkg_file_entry_t files[PKG_MAX_FILES];
+	int file_count;
 } pkg_archive_t;
 
 /* ── Progress callback (same signature as inno_reader) ───────────── */
 typedef int (*pkg_progress_fn)(const char *current_file,
-                                long long bytes_done,
-                                long long bytes_total,
-                                void *user_data);
+                               long long bytes_done,
+                               long long bytes_total,
+                               void *user_data);
 
 /*
  * Open a .pkg file and scan for game files.

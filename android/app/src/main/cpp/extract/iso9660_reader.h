@@ -20,20 +20,20 @@ extern "C" {
 #define ISO_MAX_FILES 512
 
 /* Maximum path length for an extracted file */
-#define ISO_PATH_LEN  256
+#define ISO_PATH_LEN 256
 
 /* One file entry found in the ISO filesystem */
 typedef struct {
-	char     path[ISO_PATH_LEN];  /* relative path, e.g. "MISSIONS/D2X.HOG" */
-	unsigned int lba;             /* logical block address within the data track */
-	unsigned int size;            /* file size in bytes */
-	int          is_dir;          /* 1 = directory, 0 = file */
+	char path[ISO_PATH_LEN]; /* relative path, e.g. "MISSIONS/D2X.HOG" */
+	unsigned int lba;        /* logical block address within the data track */
+	unsigned int size;       /* file size in bytes */
+	int is_dir;              /* 1 = directory, 0 = file */
 } iso_file_entry_t;
 
 /* Result of scanning an ISO data track */
 typedef struct {
 	iso_file_entry_t files[ISO_MAX_FILES];
-	int              num_files;
+	int num_files;
 } iso_file_list_t;
 
 /* Progress callback for extraction.

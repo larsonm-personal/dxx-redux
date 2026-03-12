@@ -18,21 +18,21 @@
 extern "C" {
 #endif
 
-#define SOW_MAX_FILES 64   /* max .sow files found in one scan */
+#define SOW_MAX_FILES 64 /* max .sow files found in one scan */
 #define SOW_PATH_LEN  512
 
 /* Result of scanning a directory tree for .sow files */
 typedef struct {
-    char paths[SOW_MAX_FILES][SOW_PATH_LEN];  /* absolute paths */
-    int  count;
+	char paths[SOW_MAX_FILES][SOW_PATH_LEN]; /* absolute paths */
+	int count;
 } sow_file_list_t;
 
 /* Progress callback -- same signature as iso_progress_fn.
  * Return 0 to continue, non-zero to cancel. */
 typedef int (*sow_progress_fn)(const char *current_file,
-                                long long bytes_done,
-                                long long bytes_total,
-                                void *user_data);
+                               long long bytes_done,
+                               long long bytes_total,
+                               void *user_data);
 
 /*
  * Recursively scan a directory for .sow files.

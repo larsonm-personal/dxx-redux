@@ -22,7 +22,7 @@
 #include <android/log.h>
 #define CUE_LOG(...) __android_log_print(ANDROID_LOG_INFO, "CueParser", __VA_ARGS__)
 #else
-#define CUE_LOG(...) ((void)0)
+#define CUE_LOG(...) ((void) 0)
 #endif
 
 int cue_msf_to_sector(const char *msf)
@@ -43,7 +43,7 @@ static int extract_quoted(const char *line, char *dst, int dst_len)
 	q1++;
 	q2 = strchr(q1, '"');
 	if (!q2) return 0;
-	len = (int)(q2 - q1);
+	len = (int) (q2 - q1);
 	if (len >= dst_len) len = dst_len - 1;
 	memcpy(dst, q1, len);
 	dst[len] = '\0';
@@ -67,7 +67,7 @@ int cue_parse(const char *cue_text,
 		int li = 0;
 
 		/* Read one line */
-		while (*p && *p != '\n' && li < (int)sizeof(line) - 1) {
+		while (*p && *p != '\n' && li < (int) sizeof(line) - 1) {
 			if (*p != '\r')
 				line[li++] = *p;
 			p++;
@@ -81,8 +81,7 @@ int cue_parse(const char *cue_text,
 
 		/* FILE "name.bin" BINARY */
 		if (strncasecmp(trimmed, "FILE", 4) == 0 &&
-		    (trimmed[4] == ' ' || trimmed[4] == '\t'))
-		{
+		    (trimmed[4] == ' ' || trimmed[4] == '\t')) {
 			if (out->num_files >= CUE_MAX_FILES) continue;
 			cur_file = out->num_files;
 			out->files[cur_file].file_index = cur_file;
@@ -96,8 +95,7 @@ int cue_parse(const char *cue_text,
 
 		/* TRACK nn TYPE */
 		if (strncasecmp(trimmed, "TRACK", 5) == 0 &&
-		    (trimmed[5] == ' ' || trimmed[5] == '\t'))
-		{
+		    (trimmed[5] == ' ' || trimmed[5] == '\t')) {
 			int tnum;
 			char ttype[32];
 			if (sscanf(trimmed + 5, " %d %31s", &tnum, ttype) == 2) {
@@ -107,7 +105,7 @@ int cue_parse(const char *cue_text,
 					out->tracks[idx].track_num = tnum;
 					out->tracks[idx].file_index = cur_file;
 					out->tracks[idx].type =
-						(strncasecmp(ttype, "AUDIO", 5) == 0) ? CUE_TRACK_AUDIO : CUE_TRACK_DATA;
+					    (strncasecmp(ttype, "AUDIO", 5) == 0) ? CUE_TRACK_AUDIO : CUE_TRACK_DATA;
 					out->tracks[idx].title[0] = '\0';
 					if (out->num_tracks < CUE_MAX_TRACKS)
 						out->num_tracks++;
@@ -124,13 +122,11 @@ int cue_parse(const char *cue_text,
 
 		/* INDEX 01 MM:SS:FF */
 		if (strncasecmp(trimmed, "INDEX", 5) == 0 &&
-		    (trimmed[5] == ' ' || trimmed[5] == '\t'))
-		{
+		    (trimmed[5] == ' ' || trimmed[5] == '\t')) {
 			int idx_num;
 			char msf[32];
 			if (cur_track >= 1 && out->num_tracks > 0 &&
-			    sscanf(trimmed + 5, " %d %31s", &idx_num, msf) == 2 && idx_num == 1)
-			{
+			    sscanf(trimmed + 5, " %d %31s", &idx_num, msf) == 2 && idx_num == 1) {
 				out->tracks[out->num_tracks - 1].start_sector = cue_msf_to_sector(msf);
 			}
 		}
@@ -158,7 +154,7 @@ int cue_parse(const char *cue_text,
 				/* Last track in this file — use file size */
 				long long fsize = out->files[fi].file_size;
 				if (fsize > 0) {
-					int total = (int)(fsize / CUE_SECTOR_SIZE);
+					int total = (int) (fsize / CUE_SECTOR_SIZE);
 					int ns = total - out->tracks[i].start_sector;
 					out->tracks[i].num_sectors = (ns > 0) ? ns : 0;
 				}

@@ -7,15 +7,15 @@
 
 #ifdef ANDROID
 #include <jni.h>
-extern JavaVM  *g_jvm;
-extern jobject  g_activity;
+extern JavaVM *g_jvm;
+extern jobject g_activity;
 
 static void call_java_string_method(const char *method_name, const char *text)
 {
 	JNIEnv *env;
 	int attached = 0;
 	if (!g_jvm || !g_activity) return;
-	if ((*g_jvm)->GetEnv(g_jvm, (void**)&env, JNI_VERSION_1_6) != JNI_OK) {
+	if ((*g_jvm)->GetEnv(g_jvm, (void **) &env, JNI_VERSION_1_6) != JNI_OK) {
 		(*g_jvm)->AttachCurrentThread(g_jvm, &env, NULL);
 		attached = 1;
 	}
@@ -29,10 +29,22 @@ static void call_java_string_method(const char *method_name, const char *text)
 	if (attached) (*g_jvm)->DetachCurrentThread(g_jvm);
 }
 
-void android_send_track_name(const char *name) { call_java_string_method("showTrackName", name); }
-void android_send_level_name(const char *name) { call_java_string_method("showLevelName", name); }
+void android_send_track_name(const char *name)
+{
+	call_java_string_method("showTrackName", name);
+}
+void android_send_level_name(const char *name)
+{
+	call_java_string_method("showLevelName", name);
+}
 
 #else
-void android_send_track_name(const char *name) { (void)name; }
-void android_send_level_name(const char *name) { (void)name; }
+void android_send_track_name(const char *name)
+{
+	(void) name;
+}
+void android_send_level_name(const char *name)
+{
+	(void) name;
+}
 #endif

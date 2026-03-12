@@ -42,24 +42,24 @@
 
 /* ── Constants ───────────────────────────────────────────────────────── */
 
-#define SECTOR_SIZE         2352
-#define CD_SAMPLE_RATE      44100
-#define FRAMES_PER_SECTOR   (SECTOR_SIZE / 4)   /* 588 stereo frames */
-#define MAX_TRACKS          100
-#define MAX_SOURCES         8
+#define SECTOR_SIZE       2352
+#define CD_SAMPLE_RATE    44100
+#define FRAMES_PER_SECTOR (SECTOR_SIZE / 4) /* 588 stereo frames */
+#define MAX_TRACKS        100
+#define MAX_SOURCES       8
 
 /* Known Descent II disc ID — returned by RBAGetDiscID() so that
  * songs_haved2_cd() recognises the GOG image as an original D2 CD. */
-#define GOG_D2_DISCID       0x7d0ff809u
+#define GOG_D2_DISCID 0x7d0ff809u
 
 /* ── Audio source ────────────────────────────────────────────────────── */
 
 /* One BIN/CUE audio source (disc image) */
 typedef struct {
 	PHYSFS_File *bin_file;
-	int          first_combined;  /* first 1-based combined track number */
-	int          audio_count;     /* number of audio tracks in this source */
-	char         disc_label[64];
+	int first_combined; /* first 1-based combined track number */
+	int audio_count;    /* number of audio tracks in this source */
+	char disc_label[64];
 	unsigned long legacy_disc_id; /* for songs_haved2_cd() compat */
 } audio_source_t;
 
@@ -67,61 +67,61 @@ typedef struct {
 
 /* Combined track table — tracks from all sources merged sequentially */
 typedef struct {
-	int type;           /* 0 = data, 1 = audio */
+	int type; /* 0 = data, 1 = audio */
 	int start_sector;
 	int num_sectors;
-	int source_index;   /* index into s_sources[] */
-	char name[64];      /* track name from CUE/database */
+	int source_index; /* index into s_sources[] */
+	char name[64];    /* track name from CUE/database */
 } combined_track_t;
 
 static combined_track_t s_tracks[MAX_TRACKS];
-static int         s_num_tracks  = 0;
+static int s_num_tracks = 0;
 static audio_source_t s_sources[MAX_SOURCES];
-static int         s_num_sources = 0;
+static int s_num_sources = 0;
 
 /* Legacy single-source file handle (used when no audio_playlist.json) */
-static PHYSFS_File *s_gog_file   = NULL;
-static int         s_initialised = 0;
-static int         s_output_rate = 48000;
+static PHYSFS_File *s_gog_file = NULL;
+static int s_initialised = 0;
+static int s_output_rate = 48000;
 
 /* ── Playback state ──────────────────────────────────────────────────── */
 
 static volatile int s_playing = 0;
-static volatile int s_paused  = 0;
-static int  s_current_track   = 0;   /* 1-based */
-static int  s_play_first      = 0;
-static int  s_play_last       = 0;
-static int  s_read_sector     = 0;   /* next sector to read */
-static int  s_track_end       = 0;   /* sector past end of current track */
-static float s_volume         = 1.0f;
-static int  s_rb_underruns    = 0;   /* callback found buffer empty */
-static int  s_rb_cb_count     = 0;   /* total callbacks */
+static volatile int s_paused = 0;
+static int s_current_track = 0; /* 1-based */
+static int s_play_first = 0;
+static int s_play_last = 0;
+static int s_read_sector = 0; /* next sector to read */
+static int s_track_end = 0;   /* sector past end of current track */
+static float s_volume = 1.0f;
+static int s_rb_underruns = 0; /* callback found buffer empty */
+static int s_rb_cb_count = 0;  /* total callbacks */
 
 static void (*s_finished_hook)(void) = NULL;
-static volatile int s_song_finished  = 0;
+static volatile int s_song_finished = 0;
 
 /* ── PCM input buffer (raw CD audio before resampling) ───────────────── */
 
-#define PCM_BUF_FRAMES  (FRAMES_PER_SECTOR * 16)   /* 9408 frames ≈ 213 ms */
+#define PCM_BUF_FRAMES (FRAMES_PER_SECTOR * 16) /* 9408 frames ≈ 213 ms */
 
-static short s_pcm_buf[PCM_BUF_FRAMES * 2];   /* stereo interleaved */
-static int   s_pcm_len = 0;   /* valid frames in buffer  */
-static int   s_pcm_pos = 0;   /* current read position   */
+static short s_pcm_buf[PCM_BUF_FRAMES * 2]; /* stereo interleaved */
+static int s_pcm_len = 0;                   /* valid frames in buffer  */
+static int s_pcm_pos = 0;                   /* current read position   */
 
 /* Resampling accumulator (fractional input position, 0.0–1.0) */
 static double s_resample_frac = 0.0;
 
 /* ── Ring buffer (identical pattern to TSF music) ────────────────────── */
 
-#define RB_SHIFT    18
-#define RB_SAMPLES  (1 << RB_SHIFT)   /* 262144 samples ≈ 2.7 s @ 48 kHz */
-#define RB_MASK     (RB_SAMPLES - 1)
+#define RB_SHIFT   18
+#define RB_SAMPLES (1 << RB_SHIFT) /* 262144 samples ≈ 2.7 s @ 48 kHz */
+#define RB_MASK    (RB_SAMPLES - 1)
 
-static short        s_rb[RB_SAMPLES];
+static short s_rb[RB_SAMPLES];
 static volatile int s_rb_wpos = 0;
 static volatile int s_rb_rpos = 0;
 
-static SDL_Thread  *s_render_thread  = NULL;
+static SDL_Thread *s_render_thread = NULL;
 static volatile int s_render_running = 0;
 
 static void rb_reset(void)
@@ -132,37 +132,37 @@ static void rb_reset(void)
 
 static void rb_write(const short *data, int count)
 {
-	unsigned int wpos = (unsigned int)__atomic_load_n(&s_rb_wpos, __ATOMIC_RELAXED);
-	unsigned int idx  = wpos & RB_MASK;
-	int first = RB_SAMPLES - (int)idx;
+	unsigned int wpos = (unsigned int) __atomic_load_n(&s_rb_wpos, __ATOMIC_RELAXED);
+	unsigned int idx = wpos & RB_MASK;
+	int first = RB_SAMPLES - (int) idx;
 	if (first > count) first = count;
 	memcpy(&s_rb[idx], data, first * sizeof(short));
 	if (count > first)
 		memcpy(&s_rb[0], data + first, (count - first) * sizeof(short));
-	__atomic_store_n(&s_rb_wpos, (int)(wpos + (unsigned int)count), __ATOMIC_RELEASE);
+	__atomic_store_n(&s_rb_wpos, (int) (wpos + (unsigned int) count), __ATOMIC_RELEASE);
 }
 
 static int rb_read(short *out, int count)
 {
-	unsigned int wpos  = (unsigned int)__atomic_load_n(&s_rb_wpos, __ATOMIC_ACQUIRE);
-	unsigned int rpos  = (unsigned int)__atomic_load_n(&s_rb_rpos, __ATOMIC_RELAXED);
+	unsigned int wpos = (unsigned int) __atomic_load_n(&s_rb_wpos, __ATOMIC_ACQUIRE);
+	unsigned int rpos = (unsigned int) __atomic_load_n(&s_rb_rpos, __ATOMIC_RELAXED);
 	unsigned int avail = wpos - rpos;
-	if ((int)avail < count) count = (int)avail;
+	if ((int) avail < count) count = (int) avail;
 	if (count <= 0) return 0;
 	unsigned int idx = rpos & RB_MASK;
-	int first = RB_SAMPLES - (int)idx;
+	int first = RB_SAMPLES - (int) idx;
 	if (first > count) first = count;
 	memcpy(out, &s_rb[idx], first * sizeof(short));
 	if (count > first)
 		memcpy(out + first, &s_rb[0], (count - first) * sizeof(short));
-	__atomic_store_n(&s_rb_rpos, (int)(rpos + (unsigned int)count), __ATOMIC_RELEASE);
+	__atomic_store_n(&s_rb_rpos, (int) (rpos + (unsigned int) count), __ATOMIC_RELEASE);
 	return count;
 }
 
 static unsigned int rb_available(void)
 {
-	return (unsigned int)__atomic_load_n(&s_rb_wpos, __ATOMIC_ACQUIRE) -
-	       (unsigned int)__atomic_load_n(&s_rb_rpos, __ATOMIC_ACQUIRE);
+	return (unsigned int) __atomic_load_n(&s_rb_wpos, __ATOMIC_ACQUIRE) -
+	       (unsigned int) __atomic_load_n(&s_rb_rpos, __ATOMIC_ACQUIRE);
 }
 
 /* ── File helpers ────────────────────────────────────────────────────── */
@@ -217,7 +217,10 @@ static int pj_string(const char **pp, char *buf, int bufsz)
 	if (*p != '"') return 0;
 	p++;
 	while (*p && *p != '"') {
-		if (*p == '\\') { p++; if (!*p) return 0; }
+		if (*p == '\\') {
+			p++;
+			if (!*p) return 0;
+		}
 		if (i < bufsz - 1) buf[i++] = *p;
 		p++;
 	}
@@ -233,8 +236,14 @@ static long pj_long(const char **pp)
 	const char *p = *pp;
 	long val = 0;
 	int neg = 0;
-	if (*p == '-') { neg = 1; p++; }
-	while (*p >= '0' && *p <= '9') { val = val * 10 + (*p - '0'); p++; }
+	if (*p == '-') {
+		neg = 1;
+		p++;
+	}
+	while (*p >= '0' && *p <= '9') {
+		val = val * 10 + (*p - '0');
+		p++;
+	}
 	*pp = p;
 	return neg ? -val : val;
 }
@@ -246,22 +255,39 @@ static void pj_skip_value(const char **pp)
 	p = pj_skip_ws(p);
 	if (*p == '"') {
 		p++;
-		while (*p && *p != '"') { if (*p == '\\') p++; p++; }
+		while (*p && *p != '"') {
+			if (*p == '\\') p++;
+			p++;
+		}
 		if (*p == '"') p++;
 	} else if (*p == '{') {
-		int depth = 1; p++;
+		int depth = 1;
+		p++;
 		while (*p && depth > 0) {
 			if (*p == '{') depth++;
 			else if (*p == '}') depth--;
-			else if (*p == '"') { p++; while (*p && *p != '"') { if (*p == '\\') p++; p++; } }
+			else if (*p == '"') {
+				p++;
+				while (*p && *p != '"') {
+					if (*p == '\\') p++;
+					p++;
+				}
+			}
 			p++;
 		}
 	} else if (*p == '[') {
-		int depth = 1; p++;
+		int depth = 1;
+		p++;
 		while (*p && depth > 0) {
 			if (*p == '[') depth++;
 			else if (*p == ']') depth--;
-			else if (*p == '"') { p++; while (*p && *p != '"') { if (*p == '\\') p++; p++; } }
+			else if (*p == '"') {
+				p++;
+				while (*p && *p != '"') {
+					if (*p == '\\') p++;
+					p++;
+				}
+			}
 			p++;
 		}
 	} else {
@@ -278,12 +304,12 @@ static void pj_skip_value(const char **pp)
  * Returns the number of tracks parsed, or 0 on failure.
  */
 static int parse_source_cue(const char *cue_name, const char *bin_name,
-                             int source_idx)
+                            int source_idx)
 {
 	PHYSFS_File *f;
 	PHYSFS_sint64 file_size;
 	int cur_track = -1;
-	int base = s_num_tracks;  /* where this source's tracks start */
+	int base = s_num_tracks; /* where this source's tracks start */
 	int i, total_sectors, count;
 
 	f = open_ci(cue_name);
@@ -295,7 +321,7 @@ static int parse_source_cue(const char *cue_name, const char *bin_name,
 	while (!PHYSFS_eof(f)) {
 		char line[512];
 		int li = 0;
-		while (li < (int)sizeof(line) - 1 && !PHYSFS_eof(f)) {
+		while (li < (int) sizeof(line) - 1 && !PHYSFS_eof(f)) {
 			char c;
 			if (PHYSFS_read(f, &c, 1, 1) != 1) break;
 			if (c == '\n') break;
@@ -311,7 +337,7 @@ static int parse_source_cue(const char *cue_name, const char *bin_name,
 				if (tnum >= 1 && tnum <= MAX_TRACKS && s_num_tracks < MAX_TRACKS) {
 					cur_track = s_num_tracks;
 					s_tracks[cur_track].type =
-						(strstr(ttype, "AUDIO") != NULL) ? 1 : 0;
+					    (strstr(ttype, "AUDIO") != NULL) ? 1 : 0;
 					s_tracks[cur_track].source_index = source_idx;
 					s_tracks[cur_track].name[0] = '\0';
 					s_num_tracks++;
@@ -329,7 +355,7 @@ static int parse_source_cue(const char *cue_name, const char *bin_name,
 					q++;
 					char *end = strchr(q, '"');
 					if (end) {
-						int len = (int)(end - q);
+						int len = (int) (end - q);
 						if (len > 63) len = 63;
 						memcpy(s_tracks[cur_track].name, q, len);
 						s_tracks[cur_track].name[len] = '\0';
@@ -343,8 +369,7 @@ static int parse_source_cue(const char *cue_name, const char *bin_name,
 			int idx;
 			char msf[32];
 			if (cur_track >= 0 &&
-			    sscanf(line, " INDEX %d %31s", &idx, msf) == 2 && idx == 1)
-			{
+			    sscanf(line, " INDEX %d %31s", &idx, msf) == 2 && idx == 1) {
 				s_tracks[cur_track].start_sector = parse_msf(msf);
 			}
 		}
@@ -358,20 +383,20 @@ static int parse_source_cue(const char *cue_name, const char *bin_name,
 	s_sources[source_idx].bin_file = open_ci(bin_name);
 	if (!s_sources[source_idx].bin_file) {
 		RBA_LOG("parse_source_cue: cannot open BIN %s", bin_name);
-		s_num_tracks = base;  /* roll back */
+		s_num_tracks = base; /* roll back */
 		return 0;
 	}
 
 	/* Compute track lengths from successive start positions */
 	file_size = PHYSFS_fileLength(s_sources[source_idx].bin_file);
 	if (file_size <= 0) {
-		RBA_LOG("parse_source_cue: BIN file %s has invalid size %lld", bin_name, (long long)file_size);
+		RBA_LOG("parse_source_cue: BIN file %s has invalid size %lld", bin_name, (long long) file_size);
 		PHYSFS_close(s_sources[source_idx].bin_file);
 		s_sources[source_idx].bin_file = NULL;
 		s_num_tracks = base;
 		return 0;
 	}
-	total_sectors = (int)(file_size / SECTOR_SIZE);
+	total_sectors = (int) (file_size / SECTOR_SIZE);
 
 	for (i = base; i < s_num_tracks; i++) {
 		int ns;
@@ -420,9 +445,12 @@ static int parse_audio_playlist(void)
 		return 0;
 	}
 
-	json = (char *)malloc((size_t)fsize + 1);
-	if (!json) { PHYSFS_close(f); return 0; }
-	if (PHYSFS_read(f, json, 1, (PHYSFS_uint32)fsize) != fsize) {
+	json = (char *) malloc((size_t) fsize + 1);
+	if (!json) {
+		PHYSFS_close(f);
+		return 0;
+	}
+	if (PHYSFS_read(f, json, 1, (PHYSFS_uint32) fsize) != fsize) {
 		free(json);
 		PHYSFS_close(f);
 		return 0;
@@ -437,31 +465,43 @@ static int parse_audio_playlist(void)
 
 	/* Find "sources" array */
 	p = strstr(json, "\"sources\"");
-	if (!p) { free(json); return 0; }
+	if (!p) {
+		free(json);
+		return 0;
+	}
 	p += 9;
 	p = pj_skip_ws(p);
 	if (*p == ':') p++;
 	p = pj_skip_ws(p);
-	if (*p != '[') { free(json); return 0; }
-	p++;  /* skip '[' */
+	if (*p != '[') {
+		free(json);
+		return 0;
+	}
+	p++; /* skip '[' */
 
 	while (s_num_sources < MAX_SOURCES) {
-		char cue_name[256] = {0};
-		char bin_name[256] = {0};
-		char label[64] = {0};
+		char cue_name[256] = { 0 };
+		char bin_name[256] = { 0 };
+		char label[64] = { 0 };
 		long legacy_id = 0;
 		char key[64];
 
 		p = pj_skip_ws(p);
 		if (*p == ']') break;
-		if (*p == ',') { p++; p = pj_skip_ws(p); }
+		if (*p == ',') {
+			p++;
+			p = pj_skip_ws(p);
+		}
 		if (*p != '{') break;
-		p++;  /* skip '{' */
+		p++; /* skip '{' */
 
 		/* Parse object keys */
 		while (*p && *p != '}') {
 			p = pj_skip_ws(p);
-			if (*p == ',') { p++; p = pj_skip_ws(p); }
+			if (*p == ',') {
+				p++;
+				p = pj_skip_ws(p);
+			}
 			if (*p == '}') break;
 
 			if (!pj_string(&p, key, sizeof(key))) break;
@@ -490,14 +530,14 @@ static int parse_audio_playlist(void)
 				pj_skip_value(&p);
 			}
 		}
-		if (*p == '}') p++;  /* skip '}' */
+		if (*p == '}') p++; /* skip '}' */
 
 		if (cue_name[0] && bin_name[0]) {
 			int src = s_num_sources;
 			memset(&s_sources[src], 0, sizeof(s_sources[src]));
 			strncpy(s_sources[src].disc_label, label[0] ? label : "Unknown",
 			        sizeof(s_sources[src].disc_label) - 1);
-			s_sources[src].legacy_disc_id = (unsigned long)legacy_id;
+			s_sources[src].legacy_disc_id = (unsigned long) legacy_id;
 			s_num_sources++;
 
 			parse_source_cue(cue_name, bin_name, src);
@@ -540,9 +580,9 @@ static int parse_cue_file(void)
 
 	while (!PHYSFS_eof(f)) {
 		char line[512];
-		int  li = 0;
+		int li = 0;
 		/* Read one line */
-		while (li < (int)sizeof(line) - 1 && !PHYSFS_eof(f)) {
+		while (li < (int) sizeof(line) - 1 && !PHYSFS_eof(f)) {
 			char c;
 			if (PHYSFS_read(f, &c, 1, 1) != 1) break;
 			if (c == '\n') break;
@@ -575,7 +615,7 @@ static int parse_cue_file(void)
 					q++;
 					char *end = strchr(q, '"');
 					if (end) {
-						int len = (int)(end - q);
+						int len = (int) (end - q);
 						char title[64];
 						if (len > 63) len = 63;
 						memcpy(title, q, len);
@@ -593,8 +633,7 @@ static int parse_cue_file(void)
 			int idx;
 			char msf[32];
 			if (cur_track >= 1 &&
-			    sscanf(line, " INDEX %d %31s", &idx, msf) == 2 && idx == 1)
-			{
+			    sscanf(line, " INDEX %d %31s", &idx, msf) == 2 && idx == 1) {
 				s_tracks[cur_track - 1].start_sector = parse_msf(msf);
 			}
 		}
@@ -629,7 +668,7 @@ static int parse_cue_file(void)
 
 	/* Compute track lengths from successive start positions */
 	file_size = PHYSFS_fileLength(s_gog_file);
-	total_sectors = (int)(file_size / SECTOR_SIZE);
+	total_sectors = (int) (file_size / SECTOR_SIZE);
 
 	for (i = 0; i < s_num_tracks; i++) {
 		if (i + 1 < s_num_tracks)
@@ -673,28 +712,28 @@ static int refill_pcm(void)
 		/* Advance track if current one is exhausted */
 		while (s_read_sector >= s_track_end) {
 			if (s_current_track >= s_play_last) {
-				return frames_read;   /* all tracks done */
+				return frames_read; /* all tracks done */
 			}
 			s_current_track++;
 			s_read_sector = s_tracks[s_current_track - 1].start_sector;
-			s_track_end   = s_read_sector + s_tracks[s_current_track - 1].num_sectors;
+			s_track_end = s_read_sector + s_tracks[s_current_track - 1].num_sectors;
 		}
 
 		{
-		PHYSFS_File *src = get_track_file(s_current_track);
-		if (!src) break;
-		offset = (PHYSFS_sint64)s_read_sector * SECTOR_SIZE;
-		if (!PHYSFS_seek(src, offset)) break;
-		if (PHYSFS_read(src, raw, SECTOR_SIZE, 1) != 1) break;
+			PHYSFS_File *src = get_track_file(s_current_track);
+			if (!src) break;
+			offset = (PHYSFS_sint64) s_read_sector * SECTOR_SIZE;
+			if (!PHYSFS_seek(src, offset)) break;
+			if (PHYSFS_read(src, raw, SECTOR_SIZE, 1) != 1) break;
 		}
 
 		/* Decode 16-bit LE stereo PCM */
 		for (i = 0; i < FRAMES_PER_SECTOR; i++) {
 			int b = i * 4;
-			s_pcm_buf[(s_pcm_len + i) * 2]     = (short)((unsigned short)raw[b]     | ((unsigned short)raw[b + 1] << 8));
-			s_pcm_buf[(s_pcm_len + i) * 2 + 1] = (short)((unsigned short)raw[b + 2] | ((unsigned short)raw[b + 3] << 8));
+			s_pcm_buf[(s_pcm_len + i) * 2] = (short) ((unsigned short) raw[b] | ((unsigned short) raw[b + 1] << 8));
+			s_pcm_buf[(s_pcm_len + i) * 2 + 1] = (short) ((unsigned short) raw[b + 2] | ((unsigned short) raw[b + 3] << 8));
 		}
-		s_pcm_len   += FRAMES_PER_SECTOR;
+		s_pcm_len += FRAMES_PER_SECTOR;
 		frames_read += FRAMES_PER_SECTOR;
 		s_read_sector++;
 	}
@@ -707,7 +746,7 @@ static int refill_pcm(void)
 /* Render up to max_frames stereo output frames.  Returns actual count. */
 static int render_cd_frames(short *out, int max_frames)
 {
-	const double ratio = (double)CD_SAMPLE_RATE / (double)s_output_rate;
+	const double ratio = (double) CD_SAMPLE_RATE / (double) s_output_rate;
 	int written = 0;
 
 	while (written < max_frames && s_playing) {
@@ -723,16 +762,16 @@ static int render_cd_frames(short *out, int max_frames)
 
 		/* Linear interpolation */
 		{
-			int p0 = s_pcm_pos + (int)s_resample_frac;
-			double frac = s_resample_frac - (int)s_resample_frac;
+			int p0 = s_pcm_pos + (int) s_resample_frac;
+			double frac = s_resample_frac - (int) s_resample_frac;
 
 			if (p0 + 1 < s_pcm_len) {
-				short l0 = s_pcm_buf[p0 * 2],     r0 = s_pcm_buf[p0 * 2 + 1];
-				short l1 = s_pcm_buf[(p0+1) * 2],  r1 = s_pcm_buf[(p0+1) * 2 + 1];
-				out[written * 2]     = (short)(l0 + (int)((l1 - l0) * frac));
-				out[written * 2 + 1] = (short)(r0 + (int)((r1 - r0) * frac));
+				short l0 = s_pcm_buf[p0 * 2], r0 = s_pcm_buf[p0 * 2 + 1];
+				short l1 = s_pcm_buf[(p0 + 1) * 2], r1 = s_pcm_buf[(p0 + 1) * 2 + 1];
+				out[written * 2] = (short) (l0 + (int) ((l1 - l0) * frac));
+				out[written * 2 + 1] = (short) (r0 + (int) ((r1 - r0) * frac));
 			} else if (p0 < s_pcm_len) {
-				out[written * 2]     = s_pcm_buf[p0 * 2];
+				out[written * 2] = s_pcm_buf[p0 * 2];
 				out[written * 2 + 1] = s_pcm_buf[p0 * 2 + 1];
 			} else {
 				out[written * 2] = out[written * 2 + 1] = 0;
@@ -744,7 +783,7 @@ static int render_cd_frames(short *out, int max_frames)
 
 		/* Advance integer part of input position */
 		{
-			int consumed = (int)s_resample_frac;
+			int consumed = (int) s_resample_frac;
 			s_pcm_pos += consumed;
 			s_resample_frac -= consumed;
 		}
@@ -758,7 +797,7 @@ static int render_thread_func(void *data)
 {
 	enum { CHUNK = 2048 };
 	short buf[CHUNK * 2];
-	(void)data;
+	(void) data;
 
 	RBA_LOG("CD render thread started");
 
@@ -805,10 +844,10 @@ static void render_thread_stop(void)
 
 static void rba_music_callback(void *udata, Uint8 *stream, int len)
 {
-	int needed = len / (int)sizeof(short);
-	short *out = (short *)stream;
+	int needed = len / (int) sizeof(short);
+	short *out = (short *) stream;
 	int got;
-	(void)udata;
+	(void) udata;
 
 	s_rb_cb_count++;
 
@@ -819,19 +858,19 @@ static void rba_music_callback(void *udata, Uint8 *stream, int len)
 
 	got = rb_read(out, needed);
 	if (got < needed) {
-		memset(out + got, 0, (needed - got) * (int)sizeof(short));
+		memset(out + got, 0, (needed - got) * (int) sizeof(short));
 		if (s_playing) {
 			s_rb_underruns++;
 			if (s_rb_underruns <= 10 || (s_rb_underruns % 50) == 0)
 				RBA_LOG("CD underrun #%d: got=%d needed=%d rb_fill=%u",
-					s_rb_underruns, got, needed, rb_available());
+				        s_rb_underruns, got, needed, rb_available());
 		}
 	}
 	/* Volume scaling */
 	if (s_volume < 0.99f) {
 		int i;
 		for (i = 0; i < got; i++)
-			out[i] = (short)(out[i] * s_volume);
+			out[i] = (short) (out[i] * s_volume);
 	}
 }
 
@@ -843,7 +882,9 @@ void RBAInit(void)
 
 	/* Query SDL mixer output rate */
 	{
-		int freq = 0; Uint16 fmt; int ch;
+		int freq = 0;
+		Uint16 fmt;
+		int ch;
 		if (Mix_QuerySpec(&freq, &fmt, &ch) && freq > 0)
 			s_output_rate = freq;
 		else
@@ -856,7 +897,10 @@ void RBAInit(void)
 	} else if (parse_cue_file() < 2) {
 		RBA_LOG("No usable tracks found in CUE/BIN");
 		s_num_tracks = 0;
-		if (s_gog_file) { PHYSFS_close(s_gog_file); s_gog_file = NULL; }
+		if (s_gog_file) {
+			PHYSFS_close(s_gog_file);
+			s_gog_file = NULL;
+		}
 		return;
 	}
 
@@ -884,7 +928,7 @@ void RBAExit(void)
 		s_gog_file = NULL;
 	}
 	s_initialised = 0;
-	s_num_tracks  = 0;
+	s_num_tracks = 0;
 	s_num_sources = 0;
 }
 
@@ -898,23 +942,23 @@ int RBAPlayTrack(int track)
 {
 	if (!s_initialised) return -1;
 	if (track < 1 || track > s_num_tracks) return -1;
-	if (s_tracks[track - 1].type != 1) return -1;   /* not audio */
+	if (s_tracks[track - 1].type != 1) return -1; /* not audio */
 
 	RBAStop();
 
 	s_current_track = track;
-	s_play_first    = track;
-	s_play_last     = track;
-	s_read_sector   = s_tracks[track - 1].start_sector;
-	s_track_end     = s_read_sector + s_tracks[track - 1].num_sectors;
-	s_pcm_len       = 0;
-	s_pcm_pos       = 0;
+	s_play_first = track;
+	s_play_last = track;
+	s_read_sector = s_tracks[track - 1].start_sector;
+	s_track_end = s_read_sector + s_tracks[track - 1].num_sectors;
+	s_pcm_len = 0;
+	s_pcm_pos = 0;
 	s_resample_frac = 0.0;
 	s_song_finished = 0;
-	s_paused        = 0;
-	s_rb_underruns  = 0;
-	s_rb_cb_count   = 0;
-	s_playing       = 1;
+	s_paused = 0;
+	s_rb_underruns = 0;
+	s_rb_cb_count = 0;
+	s_playing = 1;
 
 	render_thread_start();
 	Mix_HookMusic(rba_music_callback, NULL);
@@ -935,18 +979,18 @@ int RBAPlayTracks(int first, int last, void (*hook_finished)(void))
 
 	s_finished_hook = hook_finished;
 	s_current_track = first;
-	s_play_first    = first;
-	s_play_last     = last;
-	s_read_sector   = s_tracks[first - 1].start_sector;
-	s_track_end     = s_read_sector + s_tracks[first - 1].num_sectors;
-	s_pcm_len       = 0;
-	s_pcm_pos       = 0;
+	s_play_first = first;
+	s_play_last = last;
+	s_read_sector = s_tracks[first - 1].start_sector;
+	s_track_end = s_read_sector + s_tracks[first - 1].num_sectors;
+	s_pcm_len = 0;
+	s_pcm_pos = 0;
 	s_resample_frac = 0.0;
 	s_song_finished = 0;
-	s_paused        = 0;
-	s_rb_underruns  = 0;
-	s_rb_cb_count   = 0;
-	s_playing       = 1;
+	s_paused = 0;
+	s_rb_underruns = 0;
+	s_rb_cb_count = 0;
+	s_playing = 1;
 
 	render_thread_start();
 	Mix_HookMusic(rba_music_callback, NULL);
@@ -972,7 +1016,7 @@ void RBAStop(void)
 void RBASetVolume(int volume)
 {
 	/* volume: 0–8 from the game */
-	s_volume = (volume > 0) ? (float)volume / 8.0f : 0.0f;
+	s_volume = (volume > 0) ? (float) volume / 8.0f : 0.0f;
 }
 
 void RBAPause(void)
@@ -1071,13 +1115,31 @@ void RBAList(void)
 }
 
 /* Stubs for unused functions */
-void RBAEjectDisk(void) { }
-void RBASetStereoAudio(RBACHANNELCTL *channels) { (void)channels; }
-void RBASetQuadAudio(RBACHANNELCTL *channels)   { (void)channels; }
-void RBAGetAudioInfo(RBACHANNELCTL *channels)    { (void)channels; }
-void RBASetChannelVolume(int channel, int volume) { (void)channel; (void)volume; }
-void RBADisable(void)  { s_initialised = 0; }
-void RBAEnable(void)   { /* re-init would be needed */ }
+void RBAEjectDisk(void) {}
+void RBASetStereoAudio(RBACHANNELCTL *channels)
+{
+	(void) channels;
+}
+void RBASetQuadAudio(RBACHANNELCTL *channels)
+{
+	(void) channels;
+}
+void RBAGetAudioInfo(RBACHANNELCTL *channels)
+{
+	(void) channels;
+}
+void RBASetChannelVolume(int channel, int volume)
+{
+	(void) channel;
+	(void) volume;
+}
+void RBADisable(void)
+{
+	s_initialised = 0;
+}
+void RBAEnable(void)
+{ /* re-init would be needed */
+}
 
 /* ── Track control functions (multi-source) ──────────────────────────── */
 
@@ -1087,7 +1149,8 @@ int RBANextTrack(void)
 	int i, start;
 	if (!s_initialised || s_num_tracks == 0) return -1;
 	start = (s_current_track >= 1 && s_current_track <= s_num_tracks)
-	        ? s_current_track : 1;
+	            ? s_current_track
+	            : 1;
 	for (i = 1; i <= s_num_tracks; i++) {
 		int idx = ((start - 1 + i) % s_num_tracks);
 		if (s_tracks[idx].type == 1)
@@ -1102,7 +1165,8 @@ int RBAPrevTrack(void)
 	int i, start;
 	if (!s_initialised || s_num_tracks == 0) return -1;
 	start = (s_current_track >= 1 && s_current_track <= s_num_tracks)
-	        ? s_current_track : 1;
+	            ? s_current_track
+	            : 1;
 	for (i = 1; i <= s_num_tracks; i++) {
 		int idx = ((start - 1 - i + s_num_tracks) % s_num_tracks);
 		if (s_tracks[idx].type == 1)

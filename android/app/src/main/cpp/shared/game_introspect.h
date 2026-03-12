@@ -46,8 +46,14 @@ void game_introspect_check_and_dump(void);
 #else /* !INTROSPECT_ON */
 
 /* Stubs -- compile to nothing on non-introspection builds. */
-static inline char *game_introspect_get_state(void) { return (char *)0; }
-static inline void game_introspect_set_path(const char *path) { (void)path; }
+static inline char *game_introspect_get_state(void)
+{
+	return (char *) 0;
+}
+static inline void game_introspect_set_path(const char *path)
+{
+	(void) path;
+}
 static inline void game_introspect_request(void) {}
 static inline void game_introspect_check_and_dump(void) {}
 
