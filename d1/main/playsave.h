@@ -169,4 +169,12 @@ void write_netgame_profile(netgame_info *ng);
 int read_netgame_settings_file(const char *filename, netgame_info *ng, int no_name);
 int write_netgame_settings_file(const char *filename, netgame_info *ng, int no_name);
 
+#ifdef ANDROID
+int plr_patch_keysettings(const char *path,
+                         const ubyte *kb, int kb_len,
+                         const ubyte *joy, int joy_len,
+                         const ubyte *mouse, int mouse_len,
+                         int control_type);
+#endif
+
 #endif

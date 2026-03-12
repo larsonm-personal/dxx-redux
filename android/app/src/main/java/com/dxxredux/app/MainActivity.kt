@@ -207,7 +207,7 @@ class MainActivity : Activity(), SurfaceHolder.Callback {
             gyroManager = gm
         }
         touchOverlay.buttonCallback = { button, pressed ->
-            nativeJoystickButton(button, if (pressed) 1 else 0)
+            nativeJoystickButton(button + TouchBindings.TOUCH_BTN_OFFSET, if (pressed) 1 else 0)
         }
         touchOverlay.keyCallback = { action, keyCode, unicode ->
             nativeKeyEvent(action, keyCode, unicode)

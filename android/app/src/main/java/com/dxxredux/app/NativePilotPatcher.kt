@@ -38,4 +38,14 @@ object NativePilotPatcher {
      */
     @JvmStatic
     external fun nativeBuildKbSettings(indices: IntArray, values: IntArray): ByteArray
+
+    /**
+     * Reset all .plr files in [filesDir] to engine default key settings
+     * (keyboard + joystick + mouse) with touch overlay offsets applied.
+     * Sets control_type to CONTROL_USING_JOYSTICK (1).
+     *
+     * @return number of files successfully patched
+     */
+    @JvmStatic
+    external fun nativeResetToDefaults(filesDir: String): Int
 }

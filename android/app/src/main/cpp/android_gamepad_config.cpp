@@ -88,28 +88,15 @@ extern "C" void android_apply_gamepad_defaults(void)
     }
 }
 
-/* The JNI patching and kconfig-build functions below use D2-only APIs
- * (plr_patch_keysettings, kconfig_fill_joy_settings, kconfig_fill_kb_settings).
- * Guard them so they compile only for the D2 build. */
-#ifdef DXX_BUILD_DESCENT_II
-
 /* ── JNI entry point: patch all .plr files ─────────────────────── */
 
-extern "C" JNIEXPORT jint JNICALL
-Java_com_dxxredux_app_NativePilotPatcher_nativePatchPilotFiles(
-    JNIEnv *env, jclass clazz,
-    jstring jfilesDir, jbyteArray jjoy, jbyteArray jkb, jint controlType)
+/* Scan files_dir (and Players/ subdir) for .plr files and patch each. */
+static int patch_all_plr_files(const char *files_dir,
+    const ubyte *kb, int kb_len,
+    const ubyte *joy, int joy_len,
+    const ubyte *mouse, int mouse_len,
+    int controlType)
 {
-    const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
-
-    jbyte *joy = env->GetByteArrayElements(jjoy, NULL);
-    jint joy_len = env->GetArrayLength(jjoy);
-
-    jbyte *kb = env->GetByteArrayElements(jkb, NULL);
-    jint kb_len = env->GetArrayLength(jkb);
-
-    /* Scan files_dir and files_dir/Players/ for .plr files,
-     * delegate each to plr_patch_keysettings() in playsave.c. */
     int total = 0;
     const char *dirs[2];
     char players_dir[512];
@@ -132,10 +119,31 @@ Java_com_dxxredux_app_NativePilotPatcher_nativePatchPilotFiles(
             total += plr_patch_keysettings(path,
                 (const ubyte *)kb, (int)kb_len,
                 (const ubyte *)joy, (int)joy_len,
+                (const ubyte *)mouse, (int)mouse_len,
                 (int)controlType);
         }
         closedir(dp);
     }
+    return total;
+}
+
+extern "C" JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_NativePilotPatcher_nativePatchPilotFiles(
+    JNIEnv *env, jclass clazz,
+    jstring jfilesDir, jbyteArray jjoy, jbyteArray jkb, jint controlType)
+{
+    const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
+
+    jbyte *joy = env->GetByteArrayElements(jjoy, NULL);
+    jint joy_len = env->GetArrayLength(jjoy);
+
+    jbyte *kb = env->GetByteArrayElements(jkb, NULL);
+    jint kb_len = env->GetArrayLength(jkb);
+
+    int total = patch_all_plr_files(files_dir,
+        (const ubyte *)kb, (int)kb_len,
+        (const ubyte *)joy, (int)joy_len,
+        NULL, 0, (int)controlType);
 
     LOGI("nativePatchPilotFiles: patched %d file(s) in %s", total, files_dir);
 
@@ -143,6 +151,23 @@ Java_com_dxxredux_app_NativePilotPatcher_nativePatchPilotFiles(
     env->ReleaseByteArrayElements(jjoy, joy, JNI_ABORT);
     env->ReleaseStringUTFChars(jfilesDir, files_dir);
 
+    return (jint)total;
+}
+
+/* ── JNI: reset all pilot files to engine defaults ──────────── */
+
+extern "C" JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_NativePilotPatcher_nativeResetToDefaults(
+    JNIEnv *env, jclass, jstring jfilesDir)
+{
+    ubyte kb[MAX_CONTROLS], joy[MAX_CONTROLS], mouse[MAX_CONTROLS];
+    kconfig_get_default_settings(kb, joy, mouse);
+
+    const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
+    int total = patch_all_plr_files(files_dir,
+        kb, MAX_CONTROLS, joy, MAX_CONTROLS, mouse, MAX_CONTROLS, 1);
+    LOGI("nativeResetToDefaults: patched %d file(s) in %s", total, files_dir);
+    env->ReleaseStringUTFChars(jfilesDir, files_dir);
     return (jint)total;
 }
 
@@ -195,7 +220,5 @@ Java_com_dxxredux_app_NativePilotPatcher_nativeBuildKbSettings(
     env->SetByteArrayRegion(result, 0, MAX_CONTROLS, (const jbyte *)out);
     return result;
 }
-
-#endif /* DXX_BUILD_DESCENT_II */
 
 #endif /* ANDROID */

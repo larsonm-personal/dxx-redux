@@ -138,13 +138,21 @@ enum step_type {
     STEP_INTROSPECT,    /* trigger introspection dump */
     STEP_LOG,           /* emit a logcat message */
     STEP_ASSERT,        /* check introspection values, fail if mismatch */
-    STEP_SELECT         /* find menu item by text and select it */
+    STEP_SELECT,        /* find menu item by text and select it */
+    STEP_SEND_AXIS      /* inject joystick axis event */
 };
 
-/* Key-value pair for STEP_ASSERT expectations */
+/* Key-value pair for STEP_ASSERT expectations.
+ * Simple equality: {"key": "3"} or {"key": 3}
+ * Comparison ops:  {"key": {"ne": 0}}, {"key": {"gt": 100}},
+ *                  {"key": {"range": [10, 1000]}} */
 struct assert_expect {
     std::string key;
-    std::string value;
+    std::string value;        /* for simple equality (op=="eq") */
+    std::string op = "eq";    /* eq, ne, gt, lt, gte, lte, range */
+    double num_value = 0;     /* for gt/lt/gte/lte/ne */
+    double range_min = 0;
+    double range_max = 0;
 };
 
 struct auto_step {
@@ -157,6 +165,8 @@ struct auto_step {
     std::string message;                /* STEP_LOG: message text */
     std::vector<assert_expect> expects; /* STEP_ASSERT: expected values */
     std::string select_text;            /* STEP_SELECT: partial text to match */
+    int         axis_id = -1;           /* STEP_SEND_AXIS: axis number (0-5) */
+    float       axis_value = 0.0f;      /* STEP_SEND_AXIS: value (-1.0 to 1.0) */
 };
 
 /* ── Script state ───────────────────────────────────────────────────── */
@@ -199,6 +209,24 @@ static void inject_key_tap(const std::string &name) {
     LOGI("Injecting key: %s (SDLK %d)", name.c_str(), (int)sym);
     inject_key(sym, 1);  /* down */
     inject_key(sym, 0);  /* up */
+}
+
+/* ── Axis injection ─────────────────────────────────────────────────── */
+
+static void inject_axis(int axis, float value) {
+    /* Clamp to SDL range: -32768..32767 */
+    int ival = (int)(value * 32767.0f);
+    if (ival > 32767) ival = 32767;
+    if (ival < -32768) ival = -32768;
+
+    SDL_Event ev;
+    memset(&ev, 0, sizeof(ev));
+    ev.type = SDL_JOYAXISMOTION;
+    ev.jaxis.which = 0;
+    ev.jaxis.axis = (Uint8)axis;
+    ev.jaxis.value = (Sint16)ival;
+    SDL_PushEvent(&ev);
+    LOGI("Injecting axis %d = %.3f (raw %d)", axis, value, ival);
 }
 
 /* ── Menu item search for STEP_SELECT ───────────────────────────────── */
@@ -384,6 +412,7 @@ static int parse_script(const char *json_text) {
             else if (action == "log")        s.type = STEP_LOG;
             else if (action == "assert")     s.type = STEP_ASSERT;
             else if (action == "select")     s.type = STEP_SELECT;
+            else if (action == "send_axis")  s.type = STEP_SEND_AXIS;
             else {
                 LOGE("Unknown action: %s", action.c_str());
                 continue;
@@ -396,20 +425,43 @@ static int parse_script(const char *json_text) {
             s.timeout_ms  = step_json.value("timeout_ms", 0);
             s.message     = step_json.value("message", "");
             s.select_text = step_json.value("text", "");
+            s.axis_id     = step_json.value("axis", -1);
+            s.axis_value  = step_json.value("axis_value", 0.0f);
 
             /* Parse "expect" object for STEP_ASSERT */
             if (step_json.contains("expect") && step_json["expect"].is_object()) {
                 for (auto &[key, val] : step_json["expect"].items()) {
                     assert_expect ae;
                     ae.key = key;
-                    if (val.is_string()) {
-                        ae.value = val.get<std::string>();
-                    } else if (val.is_boolean()) {
-                        ae.value = val.get<bool>() ? "true" : "false";
-                    } else if (val.is_number_integer()) {
-                        ae.value = std::to_string(val.get<int>());
+                    if (val.is_object()) {
+                        /* Comparison operator: {"gt": 0}, {"ne": 0}, {"range": [1,10]}, {"eq": "3"} */
+                        for (auto &[op, opval] : val.items()) {
+                            ae.op = op;
+                            if (op == "range" && opval.is_array() && opval.size() == 2) {
+                                ae.range_min = opval[0].get<double>();
+                                ae.range_max = opval[1].get<double>();
+                            } else if (opval.is_number()) {
+                                ae.num_value = opval.get<double>();
+                            } else if (opval.is_string()) {
+                                ae.value = opval.get<std::string>();
+                                /* Also parse as number if possible */
+                                try { ae.num_value = std::stod(ae.value); } catch (...) {}
+                            } else {
+                                ae.value = opval.dump();
+                            }
+                            break; /* only first operator */
+                        }
                     } else {
-                        ae.value = val.dump();
+                        ae.op = "eq";
+                        if (val.is_string()) {
+                            ae.value = val.get<std::string>();
+                        } else if (val.is_boolean()) {
+                            ae.value = val.get<bool>() ? "true" : "false";
+                        } else if (val.is_number_integer()) {
+                            ae.value = std::to_string(val.get<int>());
+                        } else {
+                            ae.value = val.dump();
+                        }
                     }
                     s.expects.push_back(std::move(ae));
                 }
@@ -490,35 +542,78 @@ static int run_assertions(auto_step &s) {
     for (const auto &ae : s.expects) {
         if (!state.contains(ae.key)) {
             LOGE("ASSERT_FAIL: key \"%s\" not found in introspection JSON", ae.key.c_str());
-            LOGI("ASSERT_EXPECTED: \"%s\" = \"%s\"", ae.key.c_str(), ae.value.c_str());
             return 0;
         }
 
-        std::string actual;
         const auto &val = state[ae.key];
-        if (val.is_string()) {
-            actual = val.get<std::string>();
+        double actual_num = 0;
+        bool is_num = false;
+        std::string actual_str;
+
+        if (val.is_number()) {
+            actual_num = val.get<double>();
+            is_num = true;
+            if (val.is_number_integer())
+                actual_str = std::to_string(val.get<int64_t>());
+            else {
+                char tmp[64];
+                snprintf(tmp, sizeof(tmp), "%.1f", actual_num);
+                actual_str = tmp;
+            }
         } else if (val.is_boolean()) {
-            actual = val.get<bool>() ? "true" : "false";
-        } else if (val.is_number_integer()) {
-            actual = std::to_string(val.get<int>());
-        } else if (val.is_number_float()) {
-            /* Format to match typical expectations (e.g. "100.0") */
-            char tmp[64];
-            snprintf(tmp, sizeof(tmp), "%.1f", val.get<double>());
-            actual = tmp;
+            actual_str = val.get<bool>() ? "true" : "false";
+            actual_num = val.get<bool>() ? 1.0 : 0.0;
+            is_num = true;
+        } else if (val.is_string()) {
+            actual_str = val.get<std::string>();
         } else if (val.is_null()) {
-            actual = "null";
+            actual_str = "null";
         } else {
-            actual = val.dump();
+            actual_str = val.dump();
         }
 
-        if (strcasecmp(actual.c_str(), ae.value.c_str()) != 0) {
-            LOGE("ASSERT_FAIL: \"%s\" expected \"%s\" but got \"%s\"",
-                 ae.key.c_str(), ae.value.c_str(), actual.c_str());
+        bool pass = false;
+        char desc[256];
+
+        if (ae.op == "eq") {
+            pass = (strcasecmp(actual_str.c_str(), ae.value.c_str()) == 0);
+            snprintf(desc, sizeof(desc), "\"%s\" == \"%s\" (got \"%s\")",
+                     ae.key.c_str(), ae.value.c_str(), actual_str.c_str());
+        } else if (ae.op == "ne") {
+            pass = is_num ? (actual_num != ae.num_value) : (actual_str != ae.value);
+            snprintf(desc, sizeof(desc), "\"%s\" != %.4g (got %s)",
+                     ae.key.c_str(), ae.num_value, actual_str.c_str());
+        } else if (ae.op == "gt") {
+            pass = is_num && actual_num > ae.num_value;
+            snprintf(desc, sizeof(desc), "\"%s\" > %.4g (got %s)",
+                     ae.key.c_str(), ae.num_value, actual_str.c_str());
+        } else if (ae.op == "lt") {
+            pass = is_num && actual_num < ae.num_value;
+            snprintf(desc, sizeof(desc), "\"%s\" < %.4g (got %s)",
+                     ae.key.c_str(), ae.num_value, actual_str.c_str());
+        } else if (ae.op == "gte") {
+            pass = is_num && actual_num >= ae.num_value;
+            snprintf(desc, sizeof(desc), "\"%s\" >= %.4g (got %s)",
+                     ae.key.c_str(), ae.num_value, actual_str.c_str());
+        } else if (ae.op == "lte") {
+            pass = is_num && actual_num <= ae.num_value;
+            snprintf(desc, sizeof(desc), "\"%s\" <= %.4g (got %s)",
+                     ae.key.c_str(), ae.num_value, actual_str.c_str());
+        } else if (ae.op == "range") {
+            pass = is_num && actual_num >= ae.range_min && actual_num <= ae.range_max;
+            snprintf(desc, sizeof(desc), "\"%s\" in [%.4g, %.4g] (got %s)",
+                     ae.key.c_str(), ae.range_min, ae.range_max, actual_str.c_str());
+        } else {
+            snprintf(desc, sizeof(desc), "\"%s\": unknown op \"%s\"",
+                     ae.key.c_str(), ae.op.c_str());
+        }
+
+        if (pass) {
+            LOGI("ASSERT_PASS: %s", desc);
+        } else {
+            LOGE("ASSERT_FAIL: %s", desc);
             return 0;
         }
-        LOGI("ASSERT_PASS: \"%s\" == \"%s\"", ae.key.c_str(), ae.value.c_str());
     }
 
     return 1;
@@ -704,6 +799,16 @@ extern "C" void game_automate_tick(void) {
             if (elapsed >= (Uint32)s.post_delay_ms) {
                 advance_step();
             }
+        }
+        break;
+
+    case STEP_SEND_AXIS:
+        if (s.axis_id >= 0 && s.axis_id < 6) {
+            inject_axis(s.axis_id, s.axis_value);
+        }
+        /* Hold for post_delay_ms so the axis has time to affect the game */
+        if (elapsed >= (Uint32)s.post_delay_ms) {
+            advance_step();
         }
         break;
     }

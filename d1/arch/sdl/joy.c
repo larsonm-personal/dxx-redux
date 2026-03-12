@@ -64,6 +64,15 @@ void joy_button_handler(SDL_JoyButtonEvent *jbe)
 	int button;
 	d_event_joystickbutton event;
 
+#ifdef ANDROID
+	/* Touch overlay sends button numbers >= 128 (kcIndex + TOUCH_BTN_OFFSET).
+	 * button_map[] is only MAX_BUTTONS_PER_JOYSTICK(128) elements, so bypass
+	 * the mapping for these — they are already the final button value.
+	 * button_state[] is JOY_MAX_BUTTONS(1024), so values up to ~182 are safe. */
+	if (jbe->button >= MAX_BUTTONS_PER_JOYSTICK)
+		button = jbe->button;
+	else
+#endif
 	button = SDL_Joysticks[jbe->which].button_map[jbe->button];
 
 	Joystick.button_state[button] = jbe->state;

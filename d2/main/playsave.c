@@ -1199,6 +1199,7 @@ int write_player_file()
 int plr_patch_keysettings(const char *path,
                          const ubyte *kb, int kb_len,
                          const ubyte *joy, int joy_len,
+                         const ubyte *mouse, int mouse_len,
                          int control_type)
 {
 	unsigned char buf[4];
@@ -1258,6 +1259,12 @@ int plr_patch_keysettings(const char *path,
 	/* Patch KeySettings[1] joystick */
 	fseek(f, ks_base + MAX_CONTROLS, SEEK_SET);
 	fwrite(joy, 1, joy_len < MAX_CONTROLS ? joy_len : MAX_CONTROLS, f);
+
+	/* Patch KeySettings[2] mouse (at ks_base + 5*MAX_CONTROLS) */
+	if (mouse != NULL && mouse_len > 0) {
+		fseek(f, ks_base + 5 * MAX_CONTROLS, SEEK_SET);
+		fwrite(mouse, 1, mouse_len < MAX_CONTROLS ? mouse_len : MAX_CONTROLS, f);
+	}
 
 	/* Patch control_type_dos */
 	fseek(f, ks_base + 8 * MAX_CONTROLS, SEEK_SET);

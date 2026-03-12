@@ -223,11 +223,13 @@ Note: `digi_tsf_music.c` and `rbaudio_bin.c` are in shared/ — no D1 copies nee
 
 ### 2D. Input & Config
 
-| # | D1 File | Change | Size |
-|---|---------|--------|------|
-| 23 | d1/main/config.c | Add playsave.h include + android_apply_initial_defaults block | ~20 lines |
-| 24 | d1/main/kconfig.c + .h | Add `kconfig_fill_joy_settings`, `kconfig_fill_kb_settings` functions | ~30 lines |
-| 25 | d1/main/playsave.c + .h | Add player save Android hooks | ~20 lines |
+| # | D1 File | Change | Size | Status |
+|---|---------|--------|------|--------|
+| 23 | d1/main/config.c | Add playsave.h include + android_apply_initial_defaults block | ~20 lines | |
+| 24 | d1/main/kconfig.c + .h | Add `kconfig_fill_joy_settings`, `kconfig_fill_kb_settings`, `kconfig_get_default_settings` functions + declarations | ~80 lines | ✅ Done |
+| 25 | d1/main/playsave.c + .h | Add `plr_patch_keysettings` (D1 binary format: 20-byte header, saved_games block, 7*MC layout) + declaration | ~70 lines | ✅ Done |
+
+Also removed `#ifdef DXX_BUILD_DESCENT_II` guard from `android_gamepad_config.cpp` so JNI patching/reset functions compile for both D1 and D2 builds.
 
 ### 2E. D1-Specific New Files
 
@@ -461,8 +463,8 @@ The following `#ifdef ANDROID` blocks CANNOT be extracted to shared files — th
 | newmenu.c keyboard show/hide | JNI call inline | 10 lines |
 | automap.c touch control merge | Merges volatile touch input | 15 lines |
 | digi_mixer.c buffer config | Android audio params | 12 lines |
-| kconfig.c fill_joy_settings | Standalone function behind #ifdef | 15 lines |
-| playsave.c patch_keysettings | Binary format manipulation | 19 lines |
+| kconfig.c fill_joy/kb/defaults | Standalone functions behind #ifdef | 80 lines |
+| playsave.c patch_keysettings | Binary format manipulation (D1 layout: 7*MC) | 70 lines |
 
 Total inline Android code per game: ~180 lines spread across ~16 files. This is the irreducible minimum — these blocks touch file-local variables or modify control flow that can't be factored into a called function.
 

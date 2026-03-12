@@ -210,6 +210,7 @@ try_again:
 	{
 		extern void android_apply_gamepad_defaults(void);
 		android_apply_gamepad_defaults();
+		kc_set_controls(); /* Sync kc_joystick[].value with updated PlayerCfg */
 	}
 #endif
 

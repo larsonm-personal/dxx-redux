@@ -30,6 +30,13 @@ object TouchBindings {
     const val BTN_ENERGY_SHIELD   = 52
     const val BTN_TOGGLE_BOMB     = 54
 
+    /**
+     * Offset added to kc_joystick[] indices when sending touch button events
+     * via nativeJoystickButton, to avoid collisions with physical controller
+     * button numbers.  Shared constant with C (kconfig.c TOUCH_BTN_OFFSET).
+     */
+    const val TOUCH_BTN_OFFSET    = 128
+
     // --- Virtual (overlay-only) bindings – not sent as joystick buttons ---
     const val BTN_CHEATS_MENU     = 100
 
@@ -68,12 +75,12 @@ object TouchBindings {
     const val AXIS_LTRIGGER = 4
     const val AXIS_RTRIGGER = 5
 
-    /** Axis labels for UI pickers. */
+    /** Axis labels for UI pickers — show game function (default mapping). */
     val AXIS_LABELS = mapOf(
-        AXIS_LEFT_X   to "Left Stick X",
-        AXIS_LEFT_Y   to "Left Stick Y",
-        AXIS_RIGHT_X  to "Right Stick X",
-        AXIS_RIGHT_Y  to "Right Stick Y",
+        AXIS_LEFT_X   to "Slide L/R",
+        AXIS_LEFT_Y   to "Fwd/Back",
+        AXIS_RIGHT_X  to "Turn L/R",
+        AXIS_RIGHT_Y  to "Pitch U/D",
         AXIS_LTRIGGER to "L Trigger",
         AXIS_RTRIGGER to "R Trigger"
     )

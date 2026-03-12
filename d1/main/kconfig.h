@@ -64,4 +64,10 @@ extern void kc_set_controls();
 //set the cruise speed to zero
 extern void reset_cruise(void);
 
+#ifdef ANDROID
+extern void kconfig_fill_joy_settings(const int *indices, const int *values, int count, ubyte *out);
+extern void kconfig_fill_kb_settings(const int *indices, const int *values, int count, ubyte *out);
+extern void kconfig_get_default_settings(ubyte *kb_out, ubyte *joy_out, ubyte *mouse_out);
+#endif
+
 #endif /* _KCONFIG_H */

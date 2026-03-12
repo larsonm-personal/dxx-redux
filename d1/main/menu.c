@@ -203,6 +203,14 @@ try_again:
 	if ( !new_player_config() )
 		goto try_again;			// They hit Esc during New player config
 
+#ifdef ANDROID
+	{
+		extern void android_apply_gamepad_defaults(void);
+		android_apply_gamepad_defaults();
+		kc_set_controls(); /* Sync kc_joystick[].value with updated PlayerCfg */
+	}
+#endif
+
 	strncpy(Players[Player_num].callsign, text, CALLSIGN_LEN);
 	d_strlwr(Players[Player_num].callsign);
 

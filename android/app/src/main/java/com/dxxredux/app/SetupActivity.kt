@@ -111,6 +111,10 @@ class SetupActivity : ComponentActivity() {
                     val n = patchPilotsFromConfig()
                     Log.i("DXX-Setup", "patch_pilots: patched $n file(s)")
                 }
+                "reset_controls" -> {
+                    val n = NativePilotPatcher.nativeResetToDefaults(filesDir.absolutePath)
+                    Log.i("DXX-Setup", "reset_controls: reset $n file(s) to engine defaults")
+                }
                 "controller_introspect" -> {
                     writeControllerIntrospectJson()
                     Log.i("DXX-Setup", "controller_introspect: written")
@@ -2617,6 +2621,49 @@ private fun ControllerSection(
         ) {
             Text("Touch Layout", fontSize = 12.sp)
         }
+    }
+
+    // ── Reset All Controls ──
+    var showResetDialog by remember { mutableStateOf(false) }
+    OutlinedButton(
+        onClick = { showResetDialog = true },
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+        modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFF44336))
+    ) {
+        Text("Reset All Controls", fontSize = 12.sp)
+    }
+    if (showResetDialog) {
+        val ctx = LocalContext.current
+        AlertDialog(
+            onDismissRequest = { showResetDialog = false },
+            title = { Text("Reset All Controls") },
+            text = {
+                Text("This will reset ALL control bindings to defaults:\n\n" +
+                     "\u2022 Touch layout (positions, sizes, bindings)\n" +
+                     "\u2022 Physical controller mappings\n" +
+                     "\u2022 In-game joystick settings for every pilot\n\n" +
+                     "The game will restart after reset.",
+                    fontSize = 13.sp)
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    // Delete config files
+                    File(ctx.filesDir, "controller_config.json").delete()
+                    File(ctx.filesDir, "touch_layout.json").delete()
+                    // Patch all .plr files with engine defaults (kb + joy + mouse + touch offsets)
+                    NativePilotPatcher.nativeResetToDefaults(ctx.filesDir.absolutePath)
+                    showResetDialog = false
+                    // Restart to apply
+                    android.os.Process.killProcess(android.os.Process.myPid())
+                }) {
+                    Text("Reset & Restart", color = Color(0xFFF44336))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetDialog = false }) { Text("Cancel") }
+            }
+        )
     }
 
     if (expanded && hasController) {

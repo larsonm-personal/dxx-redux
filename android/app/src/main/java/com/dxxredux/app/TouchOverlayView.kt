@@ -8,6 +8,7 @@ import android.graphics.PointF
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.HapticFeedbackConstants
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import kotlin.math.abs
@@ -373,7 +374,10 @@ class TouchOverlayView @JvmOverloads constructor(
         for (sl in sliderStates) drawSlider(canvas, sl, gAlpha)
 
         // ── Radial menus (triggers, then open wheels on top) ──
-        for (rm in radialStates) if (!rm.isOpen) drawRadialMenu(canvas, rm, gAlpha)
+        for (rm in radialStates) {
+            if (rm.control.id == "Guide" && gameVariant == "d1") continue
+            if (!rm.isOpen) drawRadialMenu(canvas, rm, gAlpha)
+        }
         for (rm in radialStates) if (rm.isOpen) {
             if (rm.isWeaponWheel) drawWeaponWheel(canvas, rm, gAlpha)
             else drawRadialMenu(canvas, rm, gAlpha)
@@ -789,6 +793,8 @@ class TouchOverlayView @JvmOverloads constructor(
                 if (!handled) {
                     for (rm in radialStates) {
                         if (rm.pointerId >= 0) continue
+                        // D1 has no Guide-Bot — skip the guidebot wheel entirely
+                        if (rm.control.id == "Guide" && gameVariant == "d1") continue
                         if (hypot(px - rm.triggerX, py - rm.triggerY) <= rm.triggerRadius * 1.3f) {
                             rm.pointerId = pid
                             rm.isOpen = true
@@ -1210,9 +1216,20 @@ class TouchOverlayView @JvmOverloads constructor(
             else -> -1
         }
         if (binding >= 0) {
-            val unicode = keycodeToUnicode(binding)
-            keyCallback?.invoke(0, binding, unicode)
-            keyCallback?.invoke(1, binding, 0)
+            if (rm.control.id == "Guide") {
+                // Open escort menu (Shift+F4) then send the command digit key
+                keyCallback?.invoke(0, KeyEvent.KEYCODE_SHIFT_LEFT, 0)
+                keyCallback?.invoke(0, KeyEvent.KEYCODE_F4, 0)
+                keyCallback?.invoke(1, KeyEvent.KEYCODE_F4, 0)
+                val unicode = keycodeToUnicode(binding)
+                keyCallback?.invoke(0, binding, unicode)
+                keyCallback?.invoke(1, binding, 0)
+                keyCallback?.invoke(1, KeyEvent.KEYCODE_SHIFT_LEFT, 0)
+            } else {
+                val unicode = keycodeToUnicode(binding)
+                keyCallback?.invoke(0, binding, unicode)
+                keyCallback?.invoke(1, binding, 0)
+            }
         }
     }
 

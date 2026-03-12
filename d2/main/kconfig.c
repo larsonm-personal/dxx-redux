@@ -130,6 +130,7 @@ typedef struct kc_menu
 	ubyte	changing;
 	ubyte	q_fade_i;	// for flashing the question mark
 	ubyte	mouse_state;
+	ubyte	read_only; // android: if controls are set by the external launcher, disable configuration here
 } kc_menu;
 
 const ubyte DefaultKeySettings[3][MAX_CONTROLS] = {
@@ -493,7 +494,10 @@ void kconfig_draw(kc_menu *menu)
 
 	grd_curcanv->cv_font = GAME_FONT;
 	gr_set_fontcolor( BM_XRGB(28,28,28), -1 );
-	gr_string( 0x8000, FSPACY(21), "Enter changes, ctrl-d deletes, ctrl-r resets defaults, ESC exits");
+	if (menu->read_only)
+		gr_string( 0x8000, FSPACY(21), "Managed by launcher (read-only). ESC exits");
+	else
+		gr_string( 0x8000, FSPACY(21), "Enter changes, ctrl-d deletes, ctrl-r resets defaults, ESC exits");
 	gr_set_fontcolor( BM_XRGB(28,28,28), -1 );
 
 	if ( menu->items == kc_keyboard )
@@ -649,6 +653,8 @@ void kconfig_draw(kc_menu *menu)
 
 void kconfig_start_changing(kc_menu *menu)
 {
+	if (menu->read_only)
+		return;
 	if (menu->items[menu->citem].type == BT_INVERT)
 	{
 		kc_change_invert(menu, &menu->items[menu->citem]);
@@ -726,9 +732,11 @@ int kconfig_key_command(window *wind, d_event *event, kc_menu *menu)
 	switch (k)
 	{
 		case KEY_CTRLED+KEY_D:
+			if (menu->read_only) return 1;
 			menu->items[menu->citem].value = 255;
 			return 1;
 		case KEY_CTRLED+KEY_R:	
+			if (menu->read_only) return 1;
 			if ( menu->items==kc_keyboard )
 				for (i=0; i<NUM_KEY_CONTROLS; i++ )
 					menu->items[i].value=DefaultKeySettings[0][i];
@@ -745,6 +753,7 @@ int kconfig_key_command(window *wind, d_event *event, kc_menu *menu)
 					menu->items[i].value=DefaultKeySettingsD2X[i];
 			return 1;
 		case KEY_DELETE:
+			if (menu->read_only) return 1;
 			menu->items[menu->citem].value=255;
 			return 1;
 		case KEY_UP: 		
@@ -1001,6 +1010,9 @@ void kconfig_sub(kc_item * items,int nitems, char *title)
 	menu->citem = 0;
 	menu->changing = 0;
 	menu->mouse_state = 0;
+#ifdef ANDROID
+	menu->read_only = (items == kc_joystick);
+#endif
 
 	if (!(menu->wind = window_create(&grd_curscreen->sc_canvas, (SWIDTH - FSPACX(320))/2, (SHEIGHT - FSPACY(200))/2, FSPACX(320), FSPACY(200),
 					   (int (*)(window *, d_event *, void *))kconfig_handler, menu)))
@@ -1971,6 +1983,25 @@ void kc_set_controls()
 
 	for (i=0; i<NUM_D2X_CONTROLS; i++ )
 		kc_d2x[i].value = PlayerCfg.KeySettingsD2X[i];
+
+#ifdef ANDROID
+	/* Touch overlay: fill column-2 joystick button entries with
+	 * col1_index + TOUCH_BTN_OFFSET so that touch buttons (which send
+	 * kcIndex + 128 as SDL button numbers) activate the correct controls.
+	 * Shared constant with Kotlin TouchBindings.TOUCH_BTN_OFFSET = 128. */
+	{
+		static const int col_map[][2] = {
+			{31,0},{32,1},{33,2},{34,3},{35,4},{36,5},{37,6},{38,7},{39,8},{40,9},
+			{41,10},{42,11},{43,12},
+			{44,25},{45,26},{46,27},{47,28},{48,29},{49,30},
+			{51,50},{53,52},{55,54}
+		};
+		for (i = 0; i < (int)(sizeof(col_map)/sizeof(col_map[0])); i++) {
+			kc_joystick[col_map[i][0]].value = (ubyte)(col_map[i][1] + 128);
+			PlayerCfg.KeySettings[1][col_map[i][0]] = kc_joystick[col_map[i][0]].value;
+		}
+	}
+#endif
 }
 
 char GetKeyValue (char key)
@@ -2013,6 +2044,19 @@ void kconfig_fill_joy_settings(const int *indices, const int *values, int count,
 		if (indices[i] >= 0 && indices[i] < MAX_CONTROLS)
 			out[indices[i]] = (ubyte)(values[i] & 0xFF);
 	}
+
+	/* Touch overlay: fill column-2 entries with col1_index + 128.
+	 * Shared constant with Kotlin TouchBindings.TOUCH_BTN_OFFSET. */
+	{
+		static const int col_map[][2] = {
+			{31,0},{32,1},{33,2},{34,3},{35,4},{36,5},{37,6},{38,7},{39,8},{40,9},
+			{41,10},{42,11},{43,12},
+			{44,25},{45,26},{46,27},{47,28},{48,29},{49,30},
+			{51,50},{53,52},{55,54}
+		};
+		for (i = 0; i < (int)(sizeof(col_map)/sizeof(col_map[0])); i++)
+			out[col_map[i][0]] = (ubyte)(col_map[i][1] + 128);
+	}
 }
 
 /*
@@ -2026,6 +2070,39 @@ void kconfig_fill_kb_settings(const int *indices, const int *values, int count, 
 	for (i = 0; i < count; i++) {
 		if (indices[i] >= 0 && indices[i] < MAX_CONTROLS)
 			out[indices[i]] = (ubyte)(values[i] & 0xFF);
+	}
+}
+
+/*
+ * Fill all three KeySettings arrays with engine defaults.
+ * Joystick array gets the touch overlay column-2 entries as well.
+ */
+void kconfig_get_default_settings(ubyte *kb_out, ubyte *joy_out, ubyte *mouse_out)
+{
+	memcpy(kb_out, DefaultKeySettings[0], MAX_CONTROLS);
+	memcpy(joy_out, DefaultKeySettings[1], MAX_CONTROLS);
+	memcpy(mouse_out, DefaultKeySettings[2], MAX_CONTROLS);
+
+	/* Override DOS 2-axis joystick defaults with Android 4-axis gamepad layout.
+	 * Must match android_apply_gamepad_defaults() in android_gamepad_config.cpp. */
+	joy_out[2]  = 21;  /* Accelerate = RT axis button */
+	joy_out[3]  = 19;  /* Reverse    = LT axis button */
+	joy_out[13] = 3;   /* Pitch U/D  = axis 3 (RY) */
+	joy_out[15] = 2;   /* Turn L/R   = axis 2 (RX) */
+	joy_out[17] = 0;   /* Slide L/R  = axis 0 (LX) */
+	joy_out[19] = 1;   /* Slide U/D  = axis 1 (LY) */
+
+	/* Apply touch overlay offsets to joystick column 2 */
+	{
+		static const int col_map[][2] = {
+			{31,0},{32,1},{33,2},{34,3},{35,4},{36,5},{37,6},{38,7},{39,8},{40,9},
+			{41,10},{42,11},{43,12},
+			{44,25},{45,26},{46,27},{47,28},{48,29},{49,30},
+			{51,50},{53,52},{55,54}
+		};
+		int i;
+		for (i = 0; i < (int)(sizeof(col_map)/sizeof(col_map[0])); i++)
+			joy_out[col_map[i][0]] = (ubyte)(col_map[i][1] + 128);
 	}
 }
 #endif /* ANDROID */

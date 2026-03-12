@@ -1,0 +1,105 @@
+// TEST: Axis Mapping Regression
+// Verifies that joystick axis bindings are correct for Android touch controls:
+//   Pitch    = axis 3 (right stick Y)
+//   Turn     = axis 2 (right stick X)
+//   Slide LR = axis 0 (left stick X)
+//   Slide UD = axis 1 (left stick Y)
+//
+// Phase 1: Static check — assert axis bindings after new-pilot creation.
+// Phase 2: Dynamic check — send axis events and verify the correct
+//          control timing values become nonzero (heading_time for turn,
+//          sideways_thrust_time for slide, etc.).
+//
+// Root cause this catches:
+//   If kc_set_controls() isn't called after android_apply_gamepad_defaults(),
+//   the live kc_joystick[].value array retains DOS defaults:
+//     Pitch=1(LY), Turn=0(LX), Slide=0xFF(unbound)
+//   instead of Android defaults:
+//     Pitch=3(RY), Turn=2(RX), Slide_LR=0(LX), Slide_UD=1(LY)
+[
+    {"action": "log", "message": "=== TEST: Axis Mapping Regression ==="},
+
+    {"action": "wait_ms", "ms": 2000},
+
+    // ── Create fresh pilot and launch into game ─────────────────
+    // The test runner deletes player.plr before launch, so the game
+    // goes straight to "Enter pilot name" with default "player".
+    // Accept the default name to trigger new_player_config() +
+    // android_apply_gamepad_defaults() + kc_set_controls().
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "select", "text": "Ok", "post_delay_ms": 2000},
+
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "select", "text": "New game", "post_delay_ms": 1000},
+
+    {"action": "wait_ms", "ms": 1000},
+    {"action": "select", "text": "Counterstrike", "post_delay_ms": 1500},
+    {"action": "wait_ms", "ms": 500},
+    {"action": "select", "text": "Ok", "post_delay_ms": 1500},
+    {"action": "wait_ms", "ms": 500},
+    {"action": "select", "text": "Rookie", "post_delay_ms": 1500},
+
+    // Skip briefing
+    {"action": "key", "key": "escape", "post_delay_ms": 1000},
+
+    // Wait for in-game
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+
+    // ── Phase 1: Static binding assertions ────────────────────────
+    {"action": "log", "message": "Phase 1: Checking axis bindings"},
+    {"action": "assert", "expect": {
+        "axis_bind_pitch":    "3",
+        "axis_bind_turn":     "2",
+        "axis_bind_slide_lr": "0",
+        "axis_bind_slide_ud": "1"
+    }},
+    {"action": "log", "message": "Phase 1: PASS — axis bindings correct"},
+
+    // ── Phase 2: Dynamic axis tests ──────────────────────────────
+    // Verify that axis events cause the CORRECT control timing value
+    // to become nonzero, proving the axis→control mapping is correct.
+    //
+    // SDL axis values persist until changed, so heading_time etc.
+    // remain nonzero on the frame after send_axis finishes.
+
+    // 2a: Axis 2 (RX) should cause turning
+    {"action": "log", "message": "Phase 2a: Sending axis 2 (Turn R/L) = 0.5"},
+    {"action": "send_axis", "axis": 2, "axis_value": 0.5, "post_delay_ms": 500},
+    {"action": "assert", "expect": {
+        "heading_time": {"ne": 0}
+    }},
+    {"action": "log", "message": "Phase 2a: PASS — axis 2 drives heading"},
+    {"action": "send_axis", "axis": 2, "axis_value": 0.0, "post_delay_ms": 200},
+
+    // 2b: Axis 0 (LX) should cause sliding, NOT turning
+    {"action": "log", "message": "Phase 2b: Sending axis 0 (Slide L/R) = 0.5"},
+    {"action": "send_axis", "axis": 0, "axis_value": 0.5, "post_delay_ms": 500},
+    {"action": "assert", "expect": {
+        "slide_lr_time": {"ne": 0},
+        "heading_time":  "0"
+    }},
+    {"action": "log", "message": "Phase 2b: PASS — axis 0 drives slide, not turn"},
+    {"action": "send_axis", "axis": 0, "axis_value": 0.0, "post_delay_ms": 200},
+
+    // 2c: Axis 3 (RY) should cause pitching
+    {"action": "log", "message": "Phase 2c: Sending axis 3 (Pitch U/D) = 0.5"},
+    {"action": "send_axis", "axis": 3, "axis_value": 0.5, "post_delay_ms": 500},
+    {"action": "assert", "expect": {
+        "pitch_time": {"ne": 0}
+    }},
+    {"action": "log", "message": "Phase 2c: PASS — axis 3 drives pitch"},
+    {"action": "send_axis", "axis": 3, "axis_value": 0.0, "post_delay_ms": 200},
+
+    // 2d: Axis 1 (LY) should cause vertical slide
+    {"action": "log", "message": "Phase 2d: Sending axis 1 (Slide U/D) = 0.5"},
+    {"action": "send_axis", "axis": 1, "axis_value": 0.5, "post_delay_ms": 500},
+    {"action": "assert", "expect": {
+        "slide_ud_time": {"ne": 0}
+    }},
+    {"action": "log", "message": "Phase 2d: PASS — axis 1 drives vertical slide"},
+    {"action": "send_axis", "axis": 1, "axis_value": 0.0, "post_delay_ms": 200},
+
+    // ── Done ───────────────────────────────────────────────────────
+    {"action": "log", "message": "=== TEST: Axis Mapping Regression — ALL PHASES PASS ==="}
+]

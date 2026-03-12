@@ -36,6 +36,7 @@ extern "C" {
 #include "weapon.h"
 #include "automap.h"
 #include "playsave.h"
+#include "kconfig.h"
 }
 
 /* D1 does not have SCREEN_MOVIE */
@@ -247,13 +248,18 @@ static json serialize_position() {
     if (!ConsoleObject)
         return nullptr;
 
-    return {
+    json pos = {
         {"x", f2fl(ConsoleObject->pos.x)},
         {"y", f2fl(ConsoleObject->pos.y)},
         {"z", f2fl(ConsoleObject->pos.z)},
         {"segment", (int)ConsoleObject->segnum},
-        {"shields", f2fl(ConsoleObject->shields)}
+        {"shields", f2fl(ConsoleObject->shields)},
+        /* Forward vector — lets tests detect orientation changes */
+        {"fvec_x", f2fl(ConsoleObject->orient.fvec.x)},
+        {"fvec_y", f2fl(ConsoleObject->orient.fvec.y)},
+        {"fvec_z", f2fl(ConsoleObject->orient.fvec.z)}
     };
+    return pos;
 }
 
 /* ── Main entry point ───────────────────────────────────────────────── */
@@ -431,6 +437,37 @@ extern "C" char *game_introspect_get_state(void) {
         j["movie"] = std::move(mv);
     }
 #endif
+
+    /* ── Live axis state (always available — useful for binding tests) ── */
+    {
+        json axes = json::array();
+        for (int i = 0; i < 6; i++) {
+            axes.push_back({
+                {"axis", i},
+                {"raw", Controls.raw_joy_axis[i]},
+                {"value", Controls.joy_axis[i]}
+            });
+        }
+        j["joy_axes"] = std::move(axes);
+
+        /* Flat keys for easy assertion: axis_bind_pitch, etc.
+         * These are the axis numbers that each control reads from. */
+        auto get_bind = [](int idx) -> int {
+            const char *n; int t, v = 255;
+            kconfig_get_joystick_item(idx, &n, &t, &v);
+            return v;
+        };
+        j["axis_bind_pitch"]    = get_bind(13);
+        j["axis_bind_turn"]     = get_bind(15);
+        j["axis_bind_slide_lr"] = get_bind(17);
+        j["axis_bind_slide_ud"] = get_bind(19);
+
+        /* Control timing — nonzero means the ship is actively rotating/thrusting */
+        j["heading_time"]  = (int)Controls.heading_time;
+        j["pitch_time"]    = (int)Controls.pitch_time;
+        j["slide_lr_time"] = (int)Controls.sideways_thrust_time;
+        j["slide_ud_time"] = (int)Controls.vertical_thrust_time;
+    }
 
     /* ── Player & position (only meaningful when a level is loaded) ── */
     if (Current_level_num != 0) {

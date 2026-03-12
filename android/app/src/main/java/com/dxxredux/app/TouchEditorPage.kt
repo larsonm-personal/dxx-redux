@@ -1,6 +1,8 @@
 package com.dxxredux.app
 
+import android.app.Activity
 import android.content.Context
+import android.content.pm.ActivityInfo
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -34,6 +36,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -68,6 +71,21 @@ fun TouchEditorPage(onBack: () -> Unit) {
     var canvasWidth by remember { mutableFloatStateOf(1f) }
     var canvasHeight by remember { mutableFloatStateOf(1f) }
 
+    // Lock orientation to match in-game orientation while editor is open
+    val activity = context as? Activity
+    DisposableEffect(Unit) {
+        val prev = activity?.requestedOrientation
+        val prefs = context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
+        val orient = prefs.getString("game_orientation", "landscape")
+        activity?.requestedOrientation = if (orient == "portrait")
+            ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+        else
+            ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        onDispose {
+            activity?.requestedOrientation = prev ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
+
     // Dialogs
     var showPresetPicker by remember { mutableStateOf(false) }
     var showAddControl by remember { mutableStateOf(false) }
@@ -84,6 +102,7 @@ fun TouchEditorPage(onBack: () -> Unit) {
     val sheetState = rememberBottomSheetScaffoldState(
         bottomSheetState = rememberStandardBottomSheetState(initialValue = SheetValue.PartiallyExpanded)
     )
+    val coroutineScope = rememberCoroutineScope()
 
     BottomSheetScaffold(
         scaffoldState = sheetState,
@@ -240,9 +259,14 @@ fun TouchEditorPage(onBack: () -> Unit) {
                             }
                         },
                         onLongPress = { offset ->
-                            // Long-press on empty space → add control at that position
                             val hit = hitTest(layoutRef.value, offset, canvasWidth, canvasHeight)
-                            if (hit == null) {
+                            if (hit != null) {
+                                // Long-press on control → select & expand bottom sheet
+                                selectedType = hit.first
+                                selectedIndex = hit.second
+                                coroutineScope.launch { sheetState.bottomSheetState.expand() }
+                            } else {
+                                // Long-press on empty space → add control at that position
                                 longPressPos = offset
                                 showAddControl = true
                             }
@@ -1064,28 +1088,37 @@ private fun ButtonBindingPicker(
 
     Column(modifier = modifier) {
         Text(label, color = Color.Gray, fontSize = 11.sp)
-        Box {
-            TextButton(onClick = { expanded = true }) {
-                Text(currentLabel, fontSize = 11.sp)
-            }
-            DropdownMenu(
-                expanded = expanded,
+        TextButton(onClick = { expanded = true }) {
+            Text(currentLabel, fontSize = 11.sp)
+        }
+        if (expanded) {
+            AlertDialog(
                 onDismissRequest = { expanded = false },
-                modifier = Modifier.heightIn(max = 300.dp)
-            ) {
-                val scrollState = rememberScrollState()
-                Box {
-                Column(Modifier.verticalScroll(scrollState)) {
-                    TouchBindings.BUTTON_LABELS.forEach { (idx, name) ->
-                        DropdownMenuItem(
-                            text = { Text(name, fontSize = 12.sp) },
-                            onClick = { onChange(idx); expanded = false }
-                        )
+                title = { Text(label, fontSize = 14.sp) },
+                text = {
+                    val scrollState = rememberScrollState()
+                    Box(Modifier.heightIn(max = 300.dp)) {
+                        Column(Modifier.verticalScroll(scrollState)) {
+                            TouchBindings.BUTTON_LABELS.forEach { (idx, name) ->
+                                Text(
+                                    name,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onChange(idx); expanded = false }
+                                        .padding(vertical = 8.dp, horizontal = 4.dp),
+                                    fontSize = 12.sp,
+                                    color = if (idx == current) MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                        ScrollArrows(scrollState)
                     }
+                },
+                confirmButton = {
+                    TextButton(onClick = { expanded = false }) { Text("Cancel") }
                 }
-                ScrollArrows(scrollState)
-                }
-            }
+            )
         }
     }
 }

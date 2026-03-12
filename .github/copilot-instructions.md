@@ -12,6 +12,11 @@
 - any changes that are made should keep the existing windows/linux/mac builds intact, using #defines or separate files or similar
 - any changes should be accompanied by a successful cmake build and test run
 
+## code quality
+- don't use emoji anywhere, not in code, not in comments, not in markdown files
+- don't use emdashes anywhere, but especially not in scripts
+- keep to probablye ascii wherever possible
+
 # dependencies
 - whenever adding dependencies, or build tools, pin them to a specific version using a version string or git commit tag, etc. - see the existing methods for doing that
 - keep dependencies lightweight and cross platform. a few things are rebuilt as single file/AI-slop reimplementations because the formats were simple-ish and it was easier than bringing in boost, or whatever
@@ -33,6 +38,7 @@
 - attempt to minimize line count to some extent. don't take this to an extreme, but avoid abstractions that are just wrappers, duplicated code, and other verbose things
 - add simple, high-level integration tests to catch regressions and document high level functionality. it's not necessary to add tests to cover every little function unless the function has tricky edge cases or is very complex by itself
 - add these tests for any code centralized in the android/ directory as the code is added. add test runner scripts or helpers so they're easy to re-run after code changes
+- d1/ and d2/ have a huge amount of duplicated code. this means that our hooks and other changes also need to be duplicated in many places. it is a mistake to *only* edit d1/ or d2/ in any set of changes. that said, I want to try to share as much code as possible between the two, *when that code is new*. don't de-duplciate in a way that makes the d1/ or d2/ change set larger which would make upstreaming harder
 
 ## building
 - standard cmake commands (`mkdir build`, `cd build`, `cmake ..`, `cmake --build .`)

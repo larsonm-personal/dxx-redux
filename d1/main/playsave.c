@@ -1561,3 +1561,89 @@ int write_netgame_settings_file(const char *filename, netgame_info *ng, int no_n
 
 	return 0;
 }
+
+#ifdef ANDROID
+/*
+ * Binary-patch keyboard, joystick, mouse settings and control_type in a
+ * D1 .plr file on disk (outside PhysFS).
+ *
+ * Layout (version 8, registered):
+ *   20-byte fixed header
+ *   + NHighestLevels * sizeof(hli)
+ *   + sizeof(saved_games)            [= saved_game_sw * N_SAVE_SLOTS]
+ *   + 4 * MAX_MESSAGE_LEN
+ *   then:
+ *     +0   KB (MC)   +MC  Joy (MC)   +2MC  obsolete (3*MC)
+ *     +5MC Mouse (MC)   +6MC  obsolete cyberman (MC)
+ *     +7MC ControlType (1 byte)
+ *
+ * Returns 1 on success, 0 on failure.
+ */
+int plr_patch_keysettings(const char *path,
+                         const ubyte *kb, int kb_len,
+                         const ubyte *joy, int joy_len,
+                         const ubyte *mouse, int mouse_len,
+                         int control_type)
+{
+	unsigned char buf[4];
+	unsigned int id;
+	int ver, n_highest;
+	long ks_base;
+	FILE *f;
+
+	f = fopen(path, "r+b");
+	if (!f) return 0;
+
+	/* Read and validate SAVE_FILE_ID (4 bytes LE) */
+	if (fread(buf, 1, 4, f) != 4) { fclose(f); return 0; }
+	id = (unsigned)buf[0] | ((unsigned)buf[1]<<8) |
+	     ((unsigned)buf[2]<<16) | ((unsigned)buf[3]<<24);
+	if (id != (unsigned)SAVE_FILE_ID) { fclose(f); return 0; }
+
+	/* Read version (2 bytes LE) — only support current version */
+	if (fread(buf, 1, 2, f) != 2) { fclose(f); return 0; }
+	ver = buf[0] | (buf[1] << 8);
+	if (ver != SAVED_GAME_VERSION) { fclose(f); return 0; }
+
+	/* Read NHighestLevels (4 bytes LE at offset 8, D1 uses int not short) */
+	fseek(f, 8, SEEK_SET);
+	if (fread(buf, 1, 4, f) != 4) { fclose(f); return 0; }
+	n_highest = (int)((unsigned)buf[0] | ((unsigned)buf[1]<<8) |
+	                  ((unsigned)buf[2]<<16) | ((unsigned)buf[3]<<24));
+
+	/* KeySettings base = fixed_header(20) + n_highest * sizeof(hli)
+	 *   + sizeof(saved_games) + 4 * MAX_MESSAGE_LEN */
+	ks_base = 20
+	        + (long)n_highest * sizeof(hli)
+	        + sizeof(saved_games)
+	        + 4 * MAX_MESSAGE_LEN;
+
+	/* Verify file is large enough: 7*MC + 1 (control_type) */
+	fseek(f, 0, SEEK_END);
+	if (ftell(f) < ks_base + 7 * MAX_CONTROLS + 1) { fclose(f); return 0; }
+
+	/* Patch KeySettings[0] keyboard */
+	fseek(f, ks_base, SEEK_SET);
+	fwrite(kb, 1, kb_len < MAX_CONTROLS ? kb_len : MAX_CONTROLS, f);
+
+	/* Patch KeySettings[1] joystick */
+	fseek(f, ks_base + MAX_CONTROLS, SEEK_SET);
+	fwrite(joy, 1, joy_len < MAX_CONTROLS ? joy_len : MAX_CONTROLS, f);
+
+	/* Patch KeySettings[2] mouse (at ks_base + 5*MC) */
+	if (mouse != NULL && mouse_len > 0) {
+		fseek(f, ks_base + 5 * MAX_CONTROLS, SEEK_SET);
+		fwrite(mouse, 1, mouse_len < MAX_CONTROLS ? mouse_len : MAX_CONTROLS, f);
+	}
+
+	/* Patch control_type (at ks_base + 7*MC, D1 has 1 less obsolete block than D2) */
+	fseek(f, ks_base + 7 * MAX_CONTROLS, SEEK_SET);
+	{
+		unsigned char ct = (unsigned char)control_type;
+		fwrite(&ct, 1, 1, f);
+	}
+
+	fclose(f);
+	return 1;
+}
+#endif /* ANDROID */
