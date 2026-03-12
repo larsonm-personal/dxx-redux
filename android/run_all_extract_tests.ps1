@@ -37,6 +37,8 @@ $REPO_ROOT = Split-Path $SCRIPT_DIR -Parent
 $GAME_DATA = Join-Path $REPO_ROOT 'game_data'
 $TEST_SCRIPT = Join-Path $SCRIPT_DIR 'run_extract_test.ps1'
 
+. "$PSScriptRoot\test_helpers.ps1"
+
 # ── Discover specs ───────────────────────────────────────────
 
 if ($SpecPaths -and $SpecPaths.Count -gt 0) {
@@ -74,76 +76,12 @@ Write-Host ""
 
 # ── Helpers ──────────────────────────────────────────────────
 
-$_depBaseFile = Join-Path $REPO_ROOT 'dependency_base.txt'
-$DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
-$ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
-$HEALTH_SCRIPT = Join-Path $SCRIPT_DIR 'emu_health.ps1'
-$PACKAGE = 'com.dxxredux.app'
-
 function Read-Json5 {
     param([string]$Path)
     $raw = Get-Content $Path -Raw
     $raw = [regex]::Replace($raw, '//.*', '')
     $raw = [regex]::Replace($raw, ',\s*([}\]])', '$1')
     return ($raw | ConvertFrom-Json)
-}
-
-function Adb-Quick {
-    # Quick adb call with timeout, used only for health checks in the orchestrator.
-    param([string[]]$CmdArgs, [int]$Timeout = 10)
-    $psi = [System.Diagnostics.ProcessStartInfo]::new()
-    $psi.FileName = $ADB
-    $psi.Arguments = ($CmdArgs | ForEach-Object { if ($_ -match '\s') { "`"$_`"" } else { $_ } }) -join ' '
-    $psi.RedirectStandardOutput = $true
-    $psi.RedirectStandardError = $true
-    $psi.UseShellExecute = $false
-    $psi.CreateNoWindow = $true
-    $proc = [System.Diagnostics.Process]::Start($psi)
-    $stderrTask = $proc.StandardError.ReadToEndAsync()
-    $stdout = $proc.StandardOutput.ReadToEnd()
-    if (-not $proc.WaitForExit($Timeout * 1000)) {
-        try { $proc.Kill() } catch {}
-        $proc.Dispose()
-        return ''
-    }
-    $proc.Dispose()
-    return $stdout.Trim()
-}
-
-function Test-EmulatorReady {
-    # Check emulator + activity manager are both responsive
-    $devices = Adb-Quick -CmdArgs 'devices'
-    if ($devices -notmatch 'emulator-\d+\s+device') { return $false }
-    $amResult = Adb-Quick -CmdArgs @('shell', 'am', 'get-config')
-    return ($amResult -and $amResult -notmatch "Can't find service" -and $amResult -match '\w')
-}
-
-function Repair-Emulator {
-    # Try to recover the emulator. Returns $true if successful.
-    Write-Host "  Emulator/AM unhealthy. Attempting recovery..." -ForegroundColor Yellow
-
-    # First try: just force-stop the app and wait for AM to recover
-    Adb-Quick -CmdArgs @('shell', 'am', 'force-stop', 'com.dxxredux.app') | Out-Null
-    Start-Sleep -Seconds 5
-    if (Test-EmulatorReady) {
-        Write-Host "  Recovered after force-stop" -ForegroundColor Green
-        return $true
-    }
-
-    # Second try: full emulator restart via emu_health.ps1
-    if (Test-Path $HEALTH_SCRIPT) {
-        Write-Host "  Restarting emulator..." -ForegroundColor Yellow
-        try { & $HEALTH_SCRIPT -Restart -Wait -TimeoutSeconds 180 } catch {
-            Write-Host "  emu_health.ps1 error: $_" -ForegroundColor Yellow
-        }
-        Start-Sleep -Seconds 5
-        if (Test-EmulatorReady) {
-            Write-Host "  Recovered after emulator restart" -ForegroundColor Green
-            return $true
-        }
-    }
-
-    return $false
 }
 
 # ── Run tests ────────────────────────────────────────────────
@@ -170,8 +108,8 @@ foreach ($specPath in $specs) {
     } catch {}
 
     # Pre-flight: verify emulator is healthy before each test
-    if (-not (Test-EmulatorReady)) {
-        if (-not (Repair-Emulator)) {
+    if (-not (Test-EmulatorHealthy)) {
+        try { Ensure-EmulatorHealthy } catch {
             Write-Host "  Emulator not recoverable. Stopping." -ForegroundColor Red
             $results += [PSCustomObject]@{ Source = $sourceName; Status = 'FAIL'; Time = '00:00'; ExitCode = 98 }
             $failures++
@@ -180,7 +118,7 @@ foreach ($specPath in $specs) {
     }
 
     # Force-stop app between tests to ensure clean state
-    Adb-Quick -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
+    Adb -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
     Start-Sleep -Seconds 1
 
     $testStart = Get-Date
@@ -197,7 +135,7 @@ foreach ($specPath in $specs) {
     }
 
     # Force-stop after each test regardless of outcome
-    Adb-Quick -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
+    Adb -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
     # Child script may change ErrorActionPreference; reset it
     $ErrorActionPreference = 'Stop'
 

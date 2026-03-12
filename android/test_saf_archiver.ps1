@@ -192,12 +192,25 @@ Write-Host ""
 Write-Host "Step 6: Launching game..." -ForegroundColor Yellow
 Adb shell "am start -n $PACKAGE/.SetupActivity" | Out-Null
 Write-Host "  Waiting for SetupActivity..."
-Start-Sleep -Seconds 3
+
+# Poll until SetupActivity's broadcast receiver is alive
+Adb shell "run-as $PACKAGE rm -f files/setup_introspect.json" | Out-Null
+$setupReady = $false
+$sw = [System.Diagnostics.Stopwatch]::StartNew()
+while ($sw.Elapsed.TotalSeconds -lt 30) {
+    Start-Sleep -Seconds 2
+    Adb shell "am broadcast -a com.dxxredux.SETUP_INTROSPECT" | Out-Null
+    Start-Sleep -Seconds 1
+    $probe = (Adb shell "run-as $PACKAGE cat files/setup_introspect.json" 2>&1) -join "`n"
+    if ($probe -match '"screen"') { $setupReady = $true; break }
+}
+if (-not $setupReady) {
+    Write-Host "[FAIL] SetupActivity not responding after 30s" -ForegroundColor Red
+    exit 1
+}
 
 # Check if game can launch by introspecting SetupActivity
-Adb shell "am broadcast -a com.dxxredux.SETUP_INTROSPECT" | Out-Null
-Start-Sleep -Seconds 1
-$setupState = (Adb shell "run-as $PACKAGE cat files/setup_introspect.json" 2>&1) -join "`n"
+$setupState = $probe
 Write-Host "  Setup state: $($setupState.Substring(0, [Math]::Min(200, $setupState.Length)))..."
 
 if ($setupState -match '"can_launch"\s*:\s*true') {

@@ -1,123 +1,98 @@
 #!/usr/bin/env pwsh
-# run_controller_compare.ps1 — Compare launcher controller config with in-game joystick bindings.
+# run_controller_compare.ps1 -- Compare launcher controller config with in-game joystick bindings.
 #
 # Usage:
 #   .\run_controller_compare.ps1
 #   .\run_controller_compare.ps1 -Install   # install APK first
 #
 # Steps:
-#   1. Launch SetupActivity
-#   2. Patch pilots from controller_config.json
-#   3. Dump launcher controller introspection
-#   4. Launch game, load existing pilot, dump game introspection
-#   5. Compare the two joystick_controls sections item by item
+#   1. Health check (restart emulator if needed)
+#   2. Launch SetupActivity, patch pilots, dump launcher controller introspection
+#   3. Launch game, run automation script, dump game introspection
+#   4. Compare the two joystick_controls sections item by item
 
 param(
     [switch]$Install,
     [int]$TimeoutSeconds = 120
 )
 
-$ErrorActionPreference = "Continue"
-$_depBaseFile = Join-Path (Split-Path $PSScriptRoot) "dependency_base.txt"
-if (-not (Test-Path $_depBaseFile)) {
-    Write-Error "dependency_base.txt not found at $_depBaseFile. Create it with a single line containing the path to your dependency directory (e.g. C:\local)."
-    exit 1
-}
-$DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
-$ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
-$PACKAGE = "com.dxxredux.app"
-$ACTIVITY = "com.dxxredux.app.SetupActivity"
-$SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ErrorActionPreference = "Stop"
+. "$PSScriptRoot\test_helpers.ps1"
+
 $GAME_SCRIPT = "test_controller_compare.json5"
 
-function Write-Status {
-    param([string]$Msg, [string]$Color = "Cyan")
-    Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] $Msg" -ForegroundColor $Color
-}
+# ── Step 1: Health check + install ───────────────────────────
 
-# ── Step 1: Install if requested ─────────────────────────────
+Ensure-EmulatorHealthy
+
 if ($Install) {
-    $apk = "$SCRIPT_DIR\app\build\outputs\apk\debug\app-debug.apk"
+    $apk = "$PSScriptRoot\app\build\outputs\apk\debug\app-debug.apk"
     if (-not (Test-Path $apk)) {
         Write-Status "FAIL: APK not found at $apk" "Red"
         exit 1
     }
     Write-Status "Installing APK..."
-    & $ADB install -r $apk 2>&1 | Write-Host
+    Adb -AdbArgs @("install", "-r", $apk) | Write-Host
 }
 
-# ── Step 2: Force stop and launch SetupActivity ─────────────
+# ── Step 2: Launch SetupActivity and do pre-game introspection ──
+
 Write-Status "Force-stopping app..."
-& $ADB shell am force-stop $PACKAGE 2>&1 | Out-Null
+Adb -AdbArgs @("shell", "am", "force-stop", $PACKAGE) | Out-Null
 Start-Sleep -Seconds 2
 
+Adb -AdbArgs @("logcat", "-c") | Out-Null
 Write-Status "Launching SetupActivity..."
-& $ADB shell am start -n "$PACKAGE/$ACTIVITY" 2>&1 | Out-Null
-Start-Sleep -Seconds 3
+Adb -AdbArgs @("shell", "am", "start", "-n", "$PACKAGE/$ACTIVITY") | Out-Null
 
-# ── Step 3: Patch pilots and dump launcher introspection ─────
+if (-not (Wait-SetupActivityReady)) {
+    Write-Status "FAIL: SetupActivity not responding" "Red"
+    exit 1
+}
+
 Write-Status "Patching pilot files from controller config..."
-& $ADB shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command patch_pilots 2>&1 | Out-Null
+Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND", "--es", "command", "patch_pilots") | Out-Null
 Start-Sleep -Seconds 2
 
 Write-Status "Dumping launcher controller introspection..."
-& $ADB shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command controller_introspect 2>&1 | Out-Null
+Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND", "--es", "command", "controller_introspect") | Out-Null
 Start-Sleep -Seconds 2
 
-$launcherJson = & $ADB shell run-as $PACKAGE cat files/controller_introspect.json 2>&1 | Out-String
+$launcherJson = Adb-Timeout -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/controller_introspect.json") -Seconds 5
 if (-not $launcherJson -or $launcherJson.Length -lt 10) {
     Write-Status "FAIL: Could not read launcher controller introspection" "Red"
     exit 1
 }
 Write-Status "Launcher introspection read OK" "Green"
 
-# ── Step 4: Push game script and launch game ─────────────────
-$scriptPath = "$SCRIPT_DIR\game_scripts\$GAME_SCRIPT"
-if (-not (Test-Path $scriptPath)) {
-    Write-Status "FAIL: Game script not found: $scriptPath" "Red"
+# ── Step 3: Push game script and launch game ─────────────────
+
+if (-not (Send-AutomationScript $GAME_SCRIPT -PushOnly)) { exit 1 }
+
+if (-not (Start-GameWithRetry)) {
     exit 1
 }
 
-Write-Status "Pushing game script: $GAME_SCRIPT"
-& $ADB push $scriptPath /data/local/tmp/$GAME_SCRIPT 2>&1 | Out-Null
-& $ADB shell run-as $PACKAGE cp /data/local/tmp/$GAME_SCRIPT files/$GAME_SCRIPT 2>&1 | Out-Null
-
-Write-Status "Launching game..."
-& $ADB shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command launch 2>&1 | Out-Null
-Start-Sleep -Seconds 8
-
-# Clear logcat and send automation
-& $ADB logcat -c 2>&1 | Out-Null
-Write-Status "Sending automation broadcast..."
-& $ADB shell am broadcast -a com.dxxredux.AUTOMATE --es script $GAME_SCRIPT 2>&1 | Out-Null
-
-# ── Step 5: Wait for automation to complete ──────────────────
-Write-Status "Waiting for game script (fixed 20s)..."
-Start-Sleep -Seconds 20
-
-$log = & $ADB logcat -d -s DXX-Automate 2>&1 | Out-String
-Write-Host $log -ForegroundColor Gray
-
-if ($log -match 'SCRIPT_RESULT:\s*PASS') {
-    Write-Status "Game script PASS" "Green"
-} elseif ($log -match 'SCRIPT_RESULT:\s*FAIL') {
-    Write-Status "FAIL: Game script reported failure" "Red"
-    exit 1
-} else {
-    Write-Status "FAIL: No SCRIPT_RESULT found in logcat" "Red"
-    exit 1
-}
-
-# ── Step 6: Read game introspection ──────────────────────────
+# Send automation and wait for result
 Start-Sleep -Seconds 2
-$gameJson = & $ADB shell run-as $PACKAGE cat files/introspect.json 2>&1 | Out-String
+Adb -AdbArgs @("logcat", "-c") | Out-Null
+Write-Status "Sending automation broadcast..."
+Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.AUTOMATE", "--es", "script", $GAME_SCRIPT) | Out-Null
+
+$passed = Watch-AutomationResult -TimeoutSeconds $TimeoutSeconds
+if (-not $passed) { exit 1 }
+Write-Status "Game script PASS" "Green"
+
+# ── Step 4: Read game introspection ──────────────────────────
+Start-Sleep -Seconds 2
+$gameJson = Adb-Timeout -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/introspect.json") -Seconds 5
 if (-not $gameJson -or $gameJson.Length -lt 10) {
     Write-Status "FAIL: Could not read game introspection" "Red"
     exit 1
 }
 Write-Status "Game introspection read OK" "Green"
 
-# ── Step 7: Compare joystick_controls ────────────────────────
+# ── Step 5: Compare joystick_controls ────────────────────────
 Write-Status "Comparing joystick controls..."
 
 $launcher = ($launcherJson | ConvertFrom-Json)

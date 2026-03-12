@@ -1,0 +1,282 @@
+#!/usr/bin/env pwsh
+# test_helpers.ps1 -- Shared helper functions for Android emulator test scripts.
+#
+# Usage (dot-source from another script):
+#   . "$PSScriptRoot\test_helpers.ps1"
+#
+# Provides:
+#   $ADB, $PACKAGE, $ACTIVITY  -- standard paths/constants
+#   Adb [-AdbArgs ...]         -- run adb with stderr tolerance
+#   Adb-Timeout [-AdbArgs ...] -- run adb with a timeout (returns $null on hang)
+#   Test-EmulatorHealthy       -- check emulator process + adb + shell
+#   Ensure-EmulatorHealthy     -- check + restart via emu_health.ps1 if needed
+#   Write-Status               -- timestamped colored output
+#   Start-GameWithRetry        -- full launch flow: SetupActivity -> verify -> game -> verify
+
+$_depBaseFile = Join-Path (Split-Path $PSScriptRoot) "dependency_base.txt"
+if (-not (Test-Path $_depBaseFile)) {
+    Write-Error "dependency_base.txt not found at $_depBaseFile. Create it with a single line containing the path to your dependency directory (e.g. C:\local)."
+    exit 1
+}
+$script:DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
+$script:ADB = "$script:DEP_BASE\android-sdk\platform-tools\adb.exe"
+$script:PACKAGE = "com.dxxredux.app"
+$script:ACTIVITY = "com.dxxredux.app.SetupActivity"
+
+function Adb {
+    param([string[]]$AdbArgs)
+    $prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    $output = & $script:ADB @AdbArgs 2>&1 | Out-String
+    $ErrorActionPreference = $prevEAP
+    return $output.Trim()
+}
+
+function Adb-Timeout {
+    # Run an adb command with a timeout; returns $null if it hangs.
+    param([string[]]$AdbArgs, [int]$Seconds = 8)
+    # Start-Job -ArgumentList flattens arrays in PS5.1, so pass all items
+    # flat and reconstruct inside via automatic $args slicing.
+    $adbPath = $script:ADB
+    $job = Start-Job -ScriptBlock {
+        $adb = $args[0]
+        $a = @($args[1..($args.Count - 1)])
+        & $adb @a 2>&1 | Out-String
+    } -ArgumentList (@($adbPath) + $AdbArgs)
+    $result = $job | Wait-Job -Timeout $Seconds | Receive-Job
+    $state = $job.State
+    Remove-Job $job -Force -ErrorAction SilentlyContinue
+    if ($state -eq 'Running') { return $null }
+    if ($null -eq $result) { return "" }
+    return $result.Trim()
+}
+
+function Test-EmulatorHealthy {
+    # Check if emulator process is running, adb sees it, and shell responds.
+    $emuProc = Get-Process | Where-Object {
+        $_.ProcessName -match 'qemu-system|emulator' -and $_.Path -like "*android*"
+    }
+    if (-not $emuProc) { return $false }
+    $devices = Adb -AdbArgs "devices"
+    if ($devices -notmatch 'emulator-\d+\s+device') { return $false }
+    $boot = Adb-Timeout -AdbArgs @("shell", "getprop", "sys.boot_completed") -Seconds 5
+    if ($null -eq $boot -or $boot -ne "1") { return $false }
+    return $true
+}
+
+function Ensure-EmulatorHealthy {
+    # Check emulator health; restart via emu_health.ps1 if needed.
+    # Returns $true on success, exits on unrecoverable failure.
+    Write-Status "Checking emulator health..."
+    if (Test-EmulatorHealthy) {
+        Write-Status "Emulator healthy" "Green"
+        return $true
+    }
+    Write-Status "Emulator unhealthy -- attempting restart..." "Yellow"
+    $healthScript = Join-Path $PSScriptRoot "emu_health.ps1"
+    & $healthScript -Restart -Wait -TimeoutSeconds 120
+    $emuExit = $LASTEXITCODE
+    if ($emuExit -ne 0 -and $emuExit -ne 2) {
+        Write-Status "FAIL: Emulator could not be restored (exit $emuExit)" "Red"
+        exit 1
+    }
+    Start-Sleep -Seconds 3
+    Write-Status "Emulator healthy" "Green"
+    return $true
+}
+
+function Write-Status {
+    param([string]$Msg, [string]$Color = "Cyan")
+    Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] $Msg" -ForegroundColor $Color
+}
+
+function Wait-SetupActivityReady {
+    # Poll until SetupActivity's broadcast receiver is alive (writes setup_introspect.json).
+    # Returns $true if ready, $false if timed out.
+    param([int]$TimeoutSeconds = 30)
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/setup_introspect.json") | Out-Null
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
+        Start-Sleep -Seconds 2
+        Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_INTROSPECT") | Out-Null
+        Start-Sleep -Seconds 1
+        $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json") -Seconds 5
+        if ($null -ne $json -and $json -match '"screen"') {
+            return $true
+        }
+    }
+    return $false
+}
+
+function Wait-GameStarted {
+    # Poll logcat for "gameStarted=true" (logged by MainActivity.surfaceCreated).
+    # Returns $true if detected, $false if timed out.
+    param([int]$TimeoutSeconds = 30)
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
+        Start-Sleep -Seconds 2
+        $log = Adb-Timeout -AdbArgs @("logcat", "-d", "-s", "DXX-Automate:*") -Seconds 5
+        if ($null -ne $log -and $log -match 'gameStarted=true') {
+            return $true
+        }
+    }
+    return $false
+}
+
+function Start-GameWithRetry {
+    # Full launch flow: force-stop -> SetupActivity -> verify ready -> launch command -> verify game started.
+    # Retries up to $MaxAttempts times.
+    # $ExtraLaunchArgs: additional broadcast extras, e.g. @("--es", "game", "d1")
+    # $PreLaunchScript: optional scriptblock to run after force-stop (e.g. delete pilot files)
+    # Returns $true on success, $false on failure (caller should exit).
+    param(
+        [string[]]$ExtraLaunchArgs = @(),
+        [scriptblock]$PreLaunchScript = $null,
+        [int]$MaxAttempts = 3
+    )
+
+    $launchArgs = @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND", "--es", "command", "launch")
+    $launchArgs += $ExtraLaunchArgs
+
+    for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+        if ($attempt -gt 1) {
+            Write-Status "Game didn't start, retry $attempt/$MaxAttempts..." "Yellow"
+        }
+
+        Write-Status "Force-stopping app..."
+        Adb -AdbArgs @("shell", "am", "force-stop", $script:PACKAGE) | Out-Null
+        Start-Sleep -Seconds 2
+
+        if ($PreLaunchScript) {
+            & $PreLaunchScript
+        }
+
+        Adb -AdbArgs @("logcat", "-c") | Out-Null
+
+        Write-Status "Launching SetupActivity..."
+        Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
+
+        if (-not (Wait-SetupActivityReady)) {
+            Write-Status "SetupActivity not responding after 30s" "Yellow"
+            continue
+        }
+
+        Write-Status "Sending launch command..."
+        Adb -AdbArgs $launchArgs | Out-Null
+
+        if (Wait-GameStarted) {
+            Write-Status "Game started" "Green"
+            return $true
+        }
+    }
+
+    Write-Status "FAIL: Game never started after $MaxAttempts attempts" "Red"
+    $diagLog = Adb-Timeout -AdbArgs @("logcat", "-d", "-t", "50") -Seconds 5
+    if ($diagLog) { Write-Host $diagLog }
+    return $false
+}
+
+function Send-AutomationScript {
+    # Push a test script to the device and optionally send the AUTOMATE broadcast.
+    # With -PushOnly, only copies the file (useful when pushing before game launch).
+    param(
+        [Parameter(Mandatory=$true, Position=0)]
+        [string]$ScriptName,
+        [string]$ScriptDir = $PSScriptRoot,
+        [switch]$PushOnly
+    )
+    $scriptPath = Join-Path $ScriptDir "game_scripts\$ScriptName"
+    if (-not (Test-Path $scriptPath)) {
+        Write-Status "FAIL: Script not found: $scriptPath" "Red"
+        return $false
+    }
+    Write-Status "Pushing test script: $ScriptName"
+    Adb -AdbArgs @("push", $scriptPath, "/data/local/tmp/$ScriptName") | Out-Null
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "cp", "/data/local/tmp/$ScriptName", "files/$ScriptName") | Out-Null
+
+    if ($PushOnly) { return $true }
+
+    Start-Sleep -Seconds 2
+    Adb -AdbArgs @("logcat", "-c") | Out-Null
+
+    Write-Status "Sending automation broadcast for: $ScriptName"
+    Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.AUTOMATE", "--es", "script", $ScriptName) | Out-Null
+    return $true
+}
+
+function Watch-AutomationResult {
+    # Monitor logcat for SCRIPT_RESULT, with periodic health checks.
+    # Returns $true for PASS, $false for FAIL/timeout.
+    param([int]$TimeoutSeconds = 300)
+
+    Write-Status "Monitoring test (timeout: ${TimeoutSeconds}s)..."
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    $lastHealthCheck = 0
+    $finished = $false
+    $passed = $false
+
+    while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds -and -not $finished) {
+        Start-Sleep -Seconds 3
+
+        $elapsed = [int]$sw.Elapsed.TotalSeconds
+        if ($elapsed - $lastHealthCheck -ge 15) {
+            if (-not (Test-EmulatorHealthy)) {
+                Write-Status "FAIL: Emulator crashed during test (after ${elapsed}s)" "Red"
+                return $false
+            }
+            $lastHealthCheck = $elapsed
+        }
+
+        $log = Adb-Timeout -AdbArgs @("logcat", "-d", "-s", "DXX-Automate:*") -Seconds 5
+        if ($null -eq $log) {
+            Write-Status "Warning: logcat not responding" "Yellow"
+            continue
+        }
+
+        if ($log.Length -gt 0) {
+            $lines = $log -split "`n"
+            foreach ($line in $lines) {
+                if ($line -match 'SCRIPT_RESULT:\s*PASS') {
+                    Write-Status "PASS" "Green"
+                    $finished = $true
+                    $passed = $true
+                }
+                elseif ($line -match 'SCRIPT_RESULT:\s*FAIL') {
+                    Write-Status "FAIL: $line" "Red"
+                    $finished = $true
+                    $passed = $false
+                }
+                elseif ($line -match 'DXX-Automate' -and $line.Trim().Length -gt 0) {
+                    Write-Host "  $($line.Trim())" -ForegroundColor Gray
+                }
+            }
+        }
+    }
+
+    if (-not $finished) {
+        Write-Status "FAIL: Test timed out after ${TimeoutSeconds}s" "Red"
+        $log = Adb-Timeout -AdbArgs @("logcat", "-d", "-s", "DXX-Automate:*") -Seconds 5
+        if ($log) { Write-Host $log }
+        return $false
+    }
+
+    return $passed
+}
+
+function Get-GameIntrospection {
+    # Request and return parsed game introspection JSON, or $null on failure.
+    Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.INTROSPECT") | Out-Null
+    Start-Sleep -Seconds 2
+    $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/introspect.json") -Seconds 5
+    if (-not $json -or $json -notmatch '^\s*\{') { return $null }
+    try { return ($json | ConvertFrom-Json) } catch { return $null }
+}
+
+function Get-SetupIntrospection {
+    # Request and return parsed setup introspection JSON, or $null on failure.
+    Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_INTROSPECT") | Out-Null
+    Start-Sleep -Seconds 2
+    $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json") -Seconds 5
+    if (-not $json -or $json -notmatch '^\s*\{') { return $null }
+    try { return ($json | ConvertFrom-Json) } catch { return $null }
+}

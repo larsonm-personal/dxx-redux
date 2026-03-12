@@ -11,11 +11,7 @@
   - it's ok to have shared constants that exist in both java and C code in order to make interfaces cleaner. document wherever there are duplicated constants/arrays/structs so both copies can be maintained
 - any changes that are made should keep the existing windows/linux/mac builds intact, using #defines or separate files or similar
 - any changes should be accompanied by a successful cmake build and test run
-
-## code quality
-- don't use emoji anywhere, not in code, not in comments, not in markdown files
-- don't use emdashes anywhere, but especially not in scripts
-- keep to probablye ascii wherever possible
+- before the first release (as in, currently), do *not* code for backwards compatibility within the launcher or android-specific code. do maintain compatibility in the d1/d2 dirs because it will help upstreaming. virtually every build will be a full apk rebuild with a data reset
 
 # dependencies
 - whenever adding dependencies, or build tools, pin them to a specific version using a version string or git commit tag, etc. - see the existing methods for doing that
@@ -33,7 +29,10 @@
 - there will be new touch interfaces and overlays added. some of these will expose info in an overlay from the base game. interfaces between kotlin and java should be clean and simple. there will be some places where C helper functions are added to expose things the overlay can use, similar to the introspection API, although the full introspection API is probably the wrong answer for this because as it grows it will become more and more inefficient
 - the goal for the game is to have the full game be operable through a pure screen touch interface.  in effect, means playing the full game with only a mouse (no keyboard). there are places where keyboard presses are currently required. we're slowly adding ways to skip these with touches
 
-## code quality and testing
+### code quality and testing
+- don't use emoji anywhere, not in code, not in comments, not in markdown files
+- don't use emdashes anywhere, but especially not in scripts
+- keep to printable ascii wherever possible
 - always create a plan as step 1 of any block of work. plan files go here: android\ai tool plans\
 - attempt to minimize line count to some extent. don't take this to an extreme, but avoid abstractions that are just wrappers, duplicated code, and other verbose things
 - add simple, high-level integration tests to catch regressions and document high level functionality. it's not necessary to add tests to cover every little function unless the function has tricky edge cases or is very complex by itself

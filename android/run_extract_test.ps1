@@ -128,6 +128,21 @@ function Get-SetupIntrospection {
     try { return ($json | ConvertFrom-Json) } catch { return $null }
 }
 
+function Wait-SetupReady {
+    # Poll until SetupActivity's broadcast receiver is alive.
+    param([int]$TimeoutSeconds = 30)
+    Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', 'files/setup_introspect.json') | Out-Null
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
+        Start-Sleep -Seconds 2
+        Adb -CmdArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_INTROSPECT') | Out-Null
+        Start-Sleep -Seconds 1
+        $json = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'cat', 'files/setup_introspect.json')
+        if ($json -and $json -match '"screen"') { return $true }
+    }
+    return $false
+}
+
 function Get-GameIntrospection {
     Adb -CmdArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.INTROSPECT') | Out-Null
     Start-Sleep -Seconds 2
@@ -355,6 +370,11 @@ if ($devices -notmatch 'emulator-\d+\s+device') {
     Write-Status "FAIL: No running emulator found" 'Red'
     Exit-Test 1 'fail' 'emulator_offline'
 }
+$boot = Adb -CmdArgs @('shell', 'getprop', 'sys.boot_completed')
+if ($boot.Trim() -ne '1') {
+    Write-Status "FAIL: Emulator not fully booted" 'Red'
+    Exit-Test 1 'fail' 'emulator_offline'
+}
 Write-Status "Emulator online" 'Green'
 
 # ── Step 2: Sanitize device state ────────────────────────────
@@ -372,7 +392,10 @@ Start-Sleep -Seconds 1
 
 # Launch SetupActivity (needed for broadcasts to work)
 Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null
-Start-Sleep -Seconds 3
+if (-not (Wait-SetupReady)) {
+    Write-Status 'FAIL: SetupActivity not responding' 'Red'
+    Exit-Test 1 'fail' 'setup_timeout'
+}
 
 # Create test set if it doesn't exist, then switch to it
 Send-SetupCommand 'create_set' -Name $TEST_SET
@@ -434,7 +457,10 @@ foreach ($setName in ($otherSets -split "`n" | ForEach-Object { $_.Trim() } | Wh
 Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
 Start-Sleep -Seconds 1
 Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null
-Start-Sleep -Seconds 3
+if (-not (Wait-SetupReady)) {
+    Write-Status 'FAIL: SetupActivity not responding after restart' 'Red'
+    Exit-Test 1 'fail' 'setup_timeout'
+}
 
 Write-Status "Canary check: verifying device is clean..."
 $state = Get-SetupIntrospection
@@ -507,7 +533,10 @@ Write-Status "Pushed $pushCount files" 'Green'
 Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
 Start-Sleep -Seconds 1
 Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null
-Start-Sleep -Seconds 3
+if (-not (Wait-SetupReady)) {
+    Write-Status 'FAIL: SetupActivity not responding after file push' 'Red'
+    Exit-Test 1 'fail' 'setup_timeout'
+}
 
 # ── Step 5: Verify files on device ───────────────────────────
 # After restart, Java File.listFiles() can see the files. Use introspection.
@@ -639,7 +668,10 @@ Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', 'files/introspect.json')
 
 # Re-launch setup activity
 Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null
-Start-Sleep -Seconds 3
+if (-not (Wait-SetupReady)) {
+    Write-Status 'FAIL: SetupActivity not responding before game launch' 'Red'
+    Exit-Test 1 'fail' 'setup_timeout'
+}
 
 # Make sure we're still on the right set
 Send-SetupCommand 'switch_set' -Name $TEST_SET
