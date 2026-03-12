@@ -49,9 +49,7 @@
 - use the introspection API (added specifically for AI tool debug access) to find out the current game state such as menu items, current level, ship position, etc. - do *not* rely on printing things to PNG and analyzing images. if you get stuck having to do that, extend the introspection API instead and re-run
 - use the automation api to drive the game into a desired state for testing. when using the automation api, save new automation scripts to android/game_scripts/*.json5 so they can be maintained and committed to git. eventually they'll be used for regression testing
 - place automated test files into "temp" within this repo so that the file writes don't need to be approved
-- when testing with the android emulator, the game will initially load to the main menu. hitting enter opens the "new game" menu and hitting enter again goes to the briefing
-- the briefing screens can be skipped by hitting enter about 15 times. then the first level will load and the ship will be ready to move and show "score: 0" in the upper right. it's not possible to get stuck in the briefing screen after hitting enter enough times
-- at this point the in-game menu can be accessed with "back"/escape
+- when testing with the android emulator, the game will initially load to the main menu. there are helper script bits to choose a player, mission, level and skip briefings. see the regression test .json5 files and their attendant scripts
 - note that the D1 level set (the base game, not an expansion) is referred to as "first strike" and the d2 level set (the base game, not an expansion) is "counterstrike!". these are used in mission selection during automated tests
 
 ## introspection API
