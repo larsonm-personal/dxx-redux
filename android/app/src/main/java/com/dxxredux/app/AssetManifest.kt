@@ -25,7 +25,8 @@ class AssetManifest(
         val sizeBytes: Long,
         val importedAt: Long,
         val versionName: String?,
-        val sourceUri: String? = null, // non-null = externally picked (forgettable)
+        // non-null = externally picked (forgettable)
+        val sourceUri: String? = null,
     ) {
         /** Last 8 hex chars of SHA-256 for UI display when version is unknown. */
         val shortHash: String get() = KnownVersions.shortHash(sha256)

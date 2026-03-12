@@ -28,16 +28,25 @@ class AudioSourceManager(
      * One registered audio source (a BIN/CUE pair from a disc image).
      */
     data class AudioSource(
-        val id: String, // unique id (e.g., "d2-gog-v1.2")
-        val cuePath: String, // path to CUE file (relative to filesDir)
-        val binPaths: List<String>, // paths to BIN file(s)
-        val discLabel: String, // human-readable disc label
-        val discId: String, // known_discs.json disc id (or "unknown")
-        val trackCount: Int, // total tracks (data + audio)
-        val audioTrackCount: Int, // audio tracks only
-        val legacyDiscId: Long, // e.g., 0x7d0ff809 for backward compat
+        // unique id (e.g., "d2-gog-v1.2")
+        val id: String,
+        // path to CUE file (relative to filesDir)
+        val cuePath: String,
+        // paths to BIN file(s)
+        val binPaths: List<String>,
+        // human-readable disc label
+        val discLabel: String,
+        // known_discs.json disc id (or "unknown")
+        val discId: String,
+        // total tracks (data + audio)
+        val trackCount: Int,
+        // audio tracks only
+        val audioTrackCount: Int,
+        // e.g., 0x7d0ff809 for backward compat
+        val legacyDiscId: Long,
         val enabled: Boolean = true,
-        val order: Int = 0, // user-defined sort order
+        // user-defined sort order
+        val order: Int = 0,
     )
 
     private var sources: MutableList<AudioSource> = mutableListOf()

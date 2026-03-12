@@ -232,7 +232,8 @@ data class RadialSegment(
     val label: String,
     val binding: Int,
     val iconRes: String = "",
-    val weaponIndex: Int = -1, // weapon slot (0-4), -1 = not a weapon segment
+    // weapon slot (0-4), -1 = not a weapon segment
+    val weaponIndex: Int = -1,
 ) {
     fun toJson() =
         JSONObject().apply {

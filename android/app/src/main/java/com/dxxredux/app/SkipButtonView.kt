@@ -19,7 +19,7 @@ class SkipButtonView(
 
     private val bgPaint =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = 0x66000000.toInt() // semi-transparent black
+            color = 0x66000000 // semi-transparent black
             style = Paint.Style.FILL
         }
     private val borderPaint =

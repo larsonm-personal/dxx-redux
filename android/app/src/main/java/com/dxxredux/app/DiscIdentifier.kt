@@ -34,10 +34,12 @@ class DiscIdentifier(
 
     data class MatchResult(
         val disc: KnownDisc?,
-        val matchedTracks: Int, // consecutive from beginning
+        // consecutive from beginning
+        val matchedTracks: Int,
         val totalKnownTracks: Int,
         val allMatched: Boolean,
-        val totalMatchCount: Int, // total matching tracks (not necessarily consecutive)
+        // total matching tracks (not necessarily consecutive)
+        val totalMatchCount: Int,
     ) {
         val matched get() = disc != null
         val label get() = disc?.label ?: "Unknown disc"
@@ -74,7 +76,7 @@ class DiscIdentifier(
                             track = t.getInt("track"),
                             type = t.getString("type"),
                             sha1 = t.getString("sha1"),
-                            name = t.optString("name", null),
+                            name = t.optString("name").takeIf { it.isNotEmpty() },
                         )
                     }
                 val mapping = mutableMapOf<String, Int>()
@@ -85,7 +87,7 @@ class DiscIdentifier(
                     id = d.getString("id"),
                     label = d.getString("label"),
                     game = d.getString("game"),
-                    legacyDiscId = d.optString("legacy_disc_id", null),
+                    legacyDiscId = d.optString("legacy_disc_id").takeIf { it.isNotEmpty() },
                     trackMapping = mapping,
                     tracks = tracks,
                 )

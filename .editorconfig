@@ -16,6 +16,12 @@ indent_size = 4
 indent_style = space
 indent_size = 4
 max_line_length = 120
+# Compose @Composable functions use PascalCase by convention
+ktlint_function_naming_ignore_when_annotated_with = Composable
+# Compose wildcard imports are standard practice
+ktlint_standard_no-wildcard-imports = disabled
+# Allow SCREAMING_SNAKE_CASE for constants mirroring C code
+ktlint_standard_property-naming = disabled
 
 [*.{gradle,gradle.kts}]
 indent_style = space

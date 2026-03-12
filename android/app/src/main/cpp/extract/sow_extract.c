@@ -279,7 +279,7 @@ static int huff_make_table(hufftree_t *ht, int nchar, const unsigned char *bitle
 {
 	unsigned short count[17] = { 0 };
 	unsigned short weight[17];
-	unsigned short start[18];
+	unsigned int   start[18];
 	int avail = nchar;
 	int i, ch, len, nextcode;
 

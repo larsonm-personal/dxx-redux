@@ -192,6 +192,7 @@ class SetupActivity : ComponentActivity() {
     internal val downloadStates = mutableMapOf<String, Int>()
 
     // ── Controller live-state ───────────────────────────────────────────
+
     /** Axis values observable by Compose (LX, LY, RX, RY, LT, RT). */
     internal val controllerAxes = FloatArray(6)
 
@@ -673,7 +674,8 @@ private data class GameFileInfo(
     val description: String,
     val required: Boolean,
     val alternatives: List<String> = emptyList(),
-    val downloadUrl: String? = null, // non-null = show [Download] button
+    // non-null = show [Download] button
+    val downloadUrl: String? = null,
 )
 
 private data class FileStatus(
@@ -907,7 +909,8 @@ private data class DemoPackage(
     val url: String,
     val description: String,
     val sizeBytes: Long,
-    val files: List<String>, // expected extracted filenames (lowercase)
+    // expected extracted filenames (lowercase)
+    val files: List<String>,
 )
 
 private val DEMO_DOWNLOADS =
@@ -934,16 +937,22 @@ private val ALL_GAME_FILENAMES: Set<String> by lazy {
 
 /** Result of scanning a user-chosen directory tree. */
 private data class FoundFile(
-    val name: String, // original filename (preserving case)
-    val uri: Uri, // content:// URI to read from
+    // original filename (preserving case)
+    val name: String,
+    // content:// URI to read from
+    val uri: Uri,
 )
 
 /** Result of extracting a game file from a ZIP archive. */
 private data class ExtractedFile(
-    val name: String, // lowercase canonical filename
-    val tmpFile: File, // temp location
-    val sha256: String, // SHA-256 of extracted file
-    val sizeBytes: Long, // file size
+    // lowercase canonical filename
+    val name: String,
+    // temp location
+    val tmpFile: File,
+    // SHA-256 of extracted file
+    val sha256: String,
+    // file size
+    val sizeBytes: Long,
 )
 
 /**
@@ -1709,7 +1718,9 @@ private fun SetupScreen(
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Select .hog, .ham, .pig files, a .zip archive, .cue/.bin disc images, .sow archive, or GOG installer.",
+                        text =
+                            "Select .hog, .ham, .pig files, a .zip archive, .cue/.bin disc images," +
+                                " .sow archive, or GOG installer.",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -2549,7 +2560,7 @@ private fun FileDetailDialog(
                         if (status.safSizeBytes > 0) {
                             DetailRow("Size", formatSize(status.safSizeBytes))
                         }
-                    } else if (isExternal && entry?.sourceUri != null) {
+                    } else if (isExternal && entry.sourceUri != null) {
                         DetailRow("Location", entry.sourceUri)
                     } else if (entry != null) {
                         DetailRow("Location", "(in data folder)")

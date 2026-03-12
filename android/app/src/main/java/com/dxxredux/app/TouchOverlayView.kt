@@ -178,6 +178,7 @@ class TouchOverlayView
         private var musicLabelPointerId = -1
 
         // ── Automap gesture state (pointers not on stick/buttons) ──
+
         /** Set to true by the activity when the automap is displayed. */
         var automapActive = false
             set(value) {

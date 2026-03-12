@@ -38,6 +38,8 @@
 - add simple, high-level integration tests to catch regressions and document high level functionality. it's not necessary to add tests to cover every little function unless the function has tricky edge cases or is very complex by itself
 - add these tests for any code centralized in the android/ directory as the code is added. add test runner scripts or helpers so they're easy to re-run after code changes
 - d1/ and d2/ have a huge amount of duplicated code. this means that our hooks and other changes also need to be duplicated in many places. it is a mistake to *only* edit d1/ or d2/ in any set of changes. that said, I want to try to share as much code as possible between the two, *when that code is new*. don't de-duplciate in a way that makes the d1/ or d2/ change set larger which would make upstreaming harder
+- new code should be as free of compiler warnings as possible. -werror isn't enabled, but do a 2nd pass to remove warnings when building to check
+- new code should have formatting linters run on it: `android\run-code-quality.ps1 --fix`
 
 ## building
 - standard cmake commands (`mkdir build`, `cd build`, `cmake ..`, `cmake --build .`)

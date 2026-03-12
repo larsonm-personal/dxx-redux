@@ -185,7 +185,7 @@ static int walk_directory(int fd, int track_start,
 
 		while (pos < USER_DATA_SIZE && bytes_read < dir_size) {
 			unsigned char rec_len = sector[pos];
-			unsigned char name_len;
+			int name_len;
 			unsigned int extent_lba, data_size;
 			unsigned char flags;
 			char raw_name[256], clean_name[256], full_path[ISO_PATH_LEN];
