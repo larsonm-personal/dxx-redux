@@ -93,6 +93,7 @@ class SetupActivity : ComponentActivity() {
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --es path /sdcard/setup_descent2.exe
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_sow --es path /sdcard/descent2.sow
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_files --es path /sdcard/DESCENT2.HOG
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_default_config
     private var gameRunningFlag = false
     private val commandReceiver =
         object : BroadcastReceiver() {
@@ -125,6 +126,10 @@ class SetupActivity : ComponentActivity() {
                     "controller_introspect" -> {
                         writeControllerIntrospectJson()
                         Log.i("DXX-Setup", "controller_introspect: written")
+                    }
+                    "write_default_config" -> {
+                        File(filesDir, "controller_config.json").delete()
+                        writeDefaultControllerConfig()
                     }
                     "create_set" -> {
                         val name = intent.getStringExtra("name") ?: return
@@ -613,6 +618,7 @@ class SetupActivity : ComponentActivity() {
      * handled here — those are set in config.c's android_apply_initial_defaults().
      */
     private fun writeInitialGameConfig() {
+        writeDefaultControllerConfig()
         val cfgFile = File(filesDir, "descent.cfg")
         if (cfgFile.exists()) return // user already has a config — don't overwrite
 
@@ -648,6 +654,18 @@ class SetupActivity : ComponentActivity() {
             "AspectX=$aspectX\n" +
                 "AspectY=$aspectY\n",
         )
+    }
+
+    /**
+     * Write controller_config.json from bundled defaults if it doesn't exist yet.
+     * Called during first launch (and during tests after the runner deletes config
+     * files) so the JSON default pipeline is always exercised.
+     */
+    private fun writeDefaultControllerConfig() {
+        if (File(filesDir, "controller_config.json").exists()) return
+        val bindings = loadDefaultBindings(applicationContext)
+        saveConfig(applicationContext, bindings, emptySet())
+        Log.i("DXX-Setup", "First launch: wrote default controller config from bundled defaults")
     }
 
     override fun onResume() {

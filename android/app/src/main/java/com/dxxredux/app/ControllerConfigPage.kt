@@ -217,7 +217,7 @@ private val FALLBACK_BINDINGS =
         "DRight" to "Slide Right",
     )
 
-private fun loadDefaultBindings(context: Context): Map<String, String> =
+internal fun loadDefaultBindings(context: Context): Map<String, String> =
     try {
         val json =
             context.assets.open("configs/controller/default.json").bufferedReader().use {
@@ -263,7 +263,7 @@ private const val CONFIG_FILENAME = "controller_config.json"
  * handles defaults and invert slots), writes controller_config.json, and
  * patches all .plr pilot files.
  */
-private fun saveConfig(
+internal fun saveConfig(
     context: Context,
     bindings: Map<String, String>,
     inverts: Set<String>,

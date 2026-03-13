@@ -326,6 +326,8 @@ extern "C" char *game_introspect_get_state(void)
 				j["menu_type"] = j["menu"]["type"];
 			if (j["menu"].contains("title"))
 				j["menu_title"] = j["menu"]["title"];
+			if (j["menu"].contains("subtitle"))
+				j["menu_subtitle"] = j["menu"]["subtitle"];
 		}
 	}
 
