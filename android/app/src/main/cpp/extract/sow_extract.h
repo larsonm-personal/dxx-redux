@@ -7,7 +7,7 @@
  *
  * Three on-disc patterns exist:
  *   1. d2data/descent2.sow              (most retail discs)
- *   2. sowstuff/d2_1.sow … d2_3.sow     (3-Level Preview)
+ *   2. sowstuff/d2_1.sow ... d2_3.sow     (3-Level Preview)
  *   3. descent1.sow + descent2.sow      (Test Flight, at root)
  */
 
@@ -52,7 +52,7 @@ int sow_scan_dir(const char *dir_path, sow_file_list_t *out);
  * user_data  : passed to progress callback
  *
  * Internal archive paths are flattened -- only the filename is used
- * (e.g. "zero/descent2.hog" → "descent2.hog").
+ * (e.g. "zero/descent2.hog" -> "descent2.hog").
  *
  * Returns number of files extracted, or -1 on error.
  */

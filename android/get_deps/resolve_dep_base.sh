@@ -1,5 +1,5 @@
 #!/bin/bash
-# resolve_dep_base.sh — Source this to set LOCAL_DIR from dependency_base.txt.
+# resolve_dep_base.sh - Source this to set LOCAL_DIR from dependency_base.txt.
 # Converts the Windows path in dependency_base.txt to a bash-compatible path.
 # Usage: source "$(dirname "$0")/resolve_dep_base.sh"  (from get_deps/)
 #    or: source "$(dirname "$0")/get_deps/resolve_dep_base.sh"  (from android/)

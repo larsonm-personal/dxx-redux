@@ -39,7 +39,7 @@ $TEST_SCRIPT = Join-Path $SCRIPT_DIR 'run_extract_test.ps1'
 
 . "$PSScriptRoot\test_helpers.ps1"
 
-# ── Discover specs ───────────────────────────────────────────
+# -- Discover specs -------------------------------------------
 
 if ($SpecPaths -and $SpecPaths.Count -gt 0) {
     $specs = @()
@@ -74,7 +74,7 @@ Write-Host "  Mode:  $(if ($SkipLaunch) { 'file-only (-SkipLaunch)' } else { 'fu
 Write-Host "============================================================" -ForegroundColor White
 Write-Host ""
 
-# ── Helpers ──────────────────────────────────────────────────
+# -- Helpers --------------------------------------------------
 
 function Read-Json5 {
     param([string]$Path)
@@ -84,7 +84,7 @@ function Read-Json5 {
     return ($raw | ConvertFrom-Json)
 }
 
-# ── Run tests ────────────────────────────────────────────────
+# -- Run tests ------------------------------------------------
 
 $results = @()
 $failures = 0
@@ -98,7 +98,7 @@ foreach ($specPath in $specs) {
         $sourceName = [System.IO.Path]::GetFileNameWithoutExtension($specPath) -replace '_regression$', ''
     }
 
-    Write-Host "─── [$($results.Count + 1)/$($specs.Count)] $sourceName ───" -ForegroundColor Cyan
+    Write-Host "--- [$($results.Count + 1)/$($specs.Count)] $sourceName ---" -ForegroundColor Cyan
 
     # Read prior test result from spec file (if any)
     $priorStatus = $null
@@ -171,7 +171,7 @@ foreach ($specPath in $specs) {
     Write-Host ""
 }
 
-# ── Summary ──────────────────────────────────────────────────
+# -- Summary --------------------------------------------------
 
 $totalElapsed = (Get-Date) - $startTime
 $passed = @($results | Where-Object { $_.Status -eq 'PASS' }).Count

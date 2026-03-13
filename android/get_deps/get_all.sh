@@ -1,5 +1,5 @@
 #!/bin/bash
-# get_all.sh — One-shot: download JDK, SDK, NDK, emulator, code quality tools, then finalize.
+# get_all.sh - One-shot: download JDK, SDK, NDK, emulator, code quality tools, then finalize.
 set -e
 
 wait_for_key() {

@@ -17,6 +17,29 @@ set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "" FORCE)   # PhysFS 3.2 compa
 
 include(FetchContent)
 
+# ──────────────────────────────────────────────────────────────
+# Compiler warnings
+# ──────────────────────────────────────────────────────────────
+add_compile_options(
+    -Wall
+    -Wextra
+    -Wformat=2
+    -Wno-unused-parameter           # too pervasive in callback-heavy legacy C
+    -Wno-missing-field-initializers  # partial struct init is idiomatic C
+    -Wno-sign-compare               # pervasive int/unsigned mixing in game code
+    # d1/d2 legacy-code noise (thousands of hits, unfixable without rewriting)
+    -Wno-ignored-qualifiers
+    -Wno-format-nonliteral
+    -Wno-self-assign
+    -Wno-misleading-indentation
+    -Wno-macro-redefined
+    -Wno-unused-but-set-variable
+    -Wno-string-plus-int
+    -Wno-logical-op-parentheses
+    -Wno-logical-not-parentheses
+    -Wno-unknown-attributes
+)
+
 set(D1_SRC "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../d1")
 set(D2_SRC "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../d2")
 

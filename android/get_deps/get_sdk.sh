@@ -1,5 +1,5 @@
 #!/bin/bash
-# get_sdk.sh — Download and install Android SDK command-line tools if not present.
+# get_sdk.sh - Download and install Android SDK command-line tools if not present.
 # Reads URL from tool_versions.conf.
 # After running this, run finalize.sh to accept licenses and install platform packages.
 set -e

@@ -26,11 +26,11 @@ param(
 $ErrorActionPreference = "Stop"
 . "$PSScriptRoot\test_helpers.ps1"
 
-# ── Step 1: Health check ─────────────────────────────────────
+# -- Step 1: Health check -------------------------------------
 
 Ensure-EmulatorHealthy
 
-# ── Step 2: Install APK if requested ────────────────────────
+# -- Step 2: Install APK if requested ------------------------
 
 if ($Install) {
     $apk = "$PSScriptRoot\app\build\outputs\apk\debug\app-debug.apk"
@@ -42,7 +42,7 @@ if ($Install) {
     Adb -AdbArgs @("install", "-r", $apk) | Write-Host
 }
 
-# ── Step 3: Determine which game(s) to run ───────────────────
+# -- Step 3: Determine which game(s) to run -------------------
 
 $scriptPath = Join-Path "$PSScriptRoot\game_scripts" $ScriptName
 $gameList = Get-ScriptGameInfo -ScriptPath $scriptPath
@@ -63,7 +63,7 @@ if ($gameList.Count -gt 1) {
     Write-Status "Multi-game script -- will run for: $($gameList -join ', ')"
 }
 
-# ── Run for each game ───────────────────────────────────────
+# -- Run for each game ---------------------------------------
 
 $allPassed = $true
 foreach ($gameId in $gameList) {
@@ -74,7 +74,7 @@ foreach ($gameId in $gameList) {
         Write-Host "============================================================" -ForegroundColor White
     }
 
-    # ── Resolve script (variable substitution + conditional filtering) ──
+    # -- Resolve script (variable substitution + conditional filtering) --
 
     $resolvedPath = Resolve-TestScript -ScriptPath $scriptPath -GameId $gameId
     $pushName = $ScriptName
@@ -88,7 +88,7 @@ foreach ($gameId in $gameList) {
     Adb -AdbArgs @("push", $pushSrc, "/data/local/tmp/$pushName") | Out-Null
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "cp", "/data/local/tmp/$pushName", "files/$pushName") | Out-Null
 
-    # ── Launch game with verification ────────────────────────────
+    # -- Launch game with verification ----------------------------
 
     $extraArgs = @()
     if ($gameId -eq "d1") {
@@ -110,14 +110,14 @@ foreach ($gameId in $gameList) {
         exit 1
     }
 
-    # ── Send automation broadcast ───────────────────────────────
+    # -- Send automation broadcast -------------------------------
 
     Start-Sleep -Seconds 2
     Adb -AdbArgs @("logcat", "-c") | Out-Null
     Write-Status "Sending automation broadcast for: $ScriptName"
     Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.AUTOMATE", "--es", "script", $ScriptName) | Out-Null
 
-    # ── Step 6: Monitor with health checks ──────────────────────
+    # -- Step 6: Monitor with health checks ----------------------
 
     # Calculate timeout from script timing fields (or use explicit -TimeoutSeconds)
     $scriptTimeout = $TimeoutSeconds
@@ -135,7 +135,7 @@ foreach ($gameId in $gameList) {
         exit 1
     }
 
-    # ── Step 7: Dump introspection ───────────────────────────────
+    # -- Step 7: Dump introspection -------------------------------
 
     Write-Status "Dumping final introspection state..."
     $intro = Get-GameIntrospection

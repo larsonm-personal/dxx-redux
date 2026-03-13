@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# run_test_menu.sh — Interactive menu for running regression tests
+# run_test_menu.sh - Interactive menu for running regression tests
 #
 # This script presents a menu of all available test_*.json5 tests,
 # allows you to select one, optionally preps the emulator, and runs it
@@ -21,27 +21,27 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# ── Helper functions ────────────────────────────────────────────────────────
+# -- Helper functions --------------------------------------------------------
 
 print_header() {
-    echo -e "${CYAN}═════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}=============================================${NC}"
     echo -e "${CYAN}$1${NC}"
-    echo -e "${CYAN}═════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}=============================================${NC}"
 }
 
 print_info() {
-    echo -e "${GREEN}ℹ ${NC}$1"
+    echo -e "${GREEN}i  ${NC}$1"
 }
 
 print_error() {
-    echo -e "${RED}✗ ${NC}$1" >&2
+    echo -e "${RED}X  ${NC}$1" >&2
 }
 
 print_success() {
-    echo -e "${GREEN}✓ ${NC}$1"
+    echo -e "${GREEN}OK ${NC}$1"
 }
 
-# ── Discover tests ──────────────────────────────────────────────────────────
+# -- Discover tests ----------------------------------------------------------
 
 print_header "DXX-Redux Regression Test Menu"
 echo

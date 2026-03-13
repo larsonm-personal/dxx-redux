@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# run_automation.sh — Push and execute automation test scripts on Android.
+# run_automation.sh - Push and execute automation test scripts on Android.
 #
 # Usage:
 #   ./android/run_automation.sh [script.json5]          # run a single test
@@ -47,7 +47,7 @@ elif [ ${#SCRIPTS[@]} -eq 0 ]; then
     SCRIPTS=("$DEFAULT_SCRIPT")
 fi
 
-# ── Helpers ─────────────────────────────────────────────────────────────
+# -- Helpers -------------------------------------------------------------
 
 push_script() {
     local script="$1"
@@ -71,7 +71,7 @@ run_single_test() {
         return 1
     fi
 
-    echo "────────────────────────────────────────"
+    echo "----------------------------------------"
     echo "TEST: $test_name"
     echo "  Script: $script"
 
@@ -169,7 +169,7 @@ $assert_lines"
     esac
 }
 
-# ── Main ────────────────────────────────────────────────────────────────
+# -- Main ----------------------------------------------------------------
 
 echo "=== DXX-Redux Test Runner ==="
 echo "Tests to run: ${#SCRIPTS[@]}"

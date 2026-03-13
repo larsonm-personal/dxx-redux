@@ -11,7 +11,7 @@
 
 #include "SDL_platform.h"
 
-/* ── standard C library ─────────────────────────────────────── */
+/* -- standard C library --------------------------------------- */
 #define STDC_HEADERS            1
 #define HAVE_ALLOCA_H           1
 #define HAVE_SYS_TYPES_H        1
@@ -28,7 +28,7 @@
 #define HAVE_MATH_H             1
 #define HAVE_SIGNAL_H           1
 
-/* ── C standard functions ───────────────────────────────────── */
+/* -- C standard functions ------------------------------------- */
 #define HAVE_MALLOC             1
 #define HAVE_CALLOC             1
 #define HAVE_REALLOC            1
@@ -73,7 +73,7 @@
 #define HAVE_MPROTECT           1
 #define HAVE_SEM_TIMEDWAIT      1
 
-/* ── backend selection ──────────────────────────────────────── */
+/* -- backend selection ---------------------------------------- */
 #define SDL_AUDIO_DRIVER_ANDROID        1
 #define SDL_AUDIO_DRIVER_DUMMY          1
 #define SDL_CDROM_DISABLED              1

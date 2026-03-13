@@ -1,5 +1,5 @@
 #!/bin/bash
-# get_emulator.sh — Install the Android emulator and an x86_64 system image via sdkmanager.
+# get_emulator.sh - Install the Android emulator and an x86_64 system image via sdkmanager.
 # Reads API level from tool_versions.conf.
 set -e
 

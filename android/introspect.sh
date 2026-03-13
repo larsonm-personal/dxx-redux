@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# introspect.sh — grab game/setup state from a running DXX-Redux Android emulator
+# introspect.sh - grab game/setup state from a running DXX-Redux Android emulator
 # Usage:
 #   ./android/introspect.sh            # pretty-print full game state
 #   ./android/introspect.sh raw        # raw JSON (no formatting)
@@ -34,7 +34,7 @@ ACTION="com.dxxredux.INTROSPECT"
 JSON=""
 if [[ "${1:-}" != "setup" ]]; then
     "$ADB" shell am broadcast -a "$ACTION" > /dev/null 2>&1 || {
-        echo "ERROR: broadcast failed — is the emulator running?" >&2
+        echo "ERROR: broadcast failed - is the emulator running?" >&2
         exit 1
     }
 
@@ -81,9 +81,9 @@ else:
 
 case "${1:-}" in
     setup)
-        # Setup-screen introspection — different broadcast & file
+        # Setup-screen introspection - different broadcast & file
         "$ADB" shell am broadcast -a com.dxxredux.SETUP_INTROSPECT > /dev/null 2>&1 || {
-            echo "ERROR: broadcast failed — is the emulator running?" >&2
+            echo "ERROR: broadcast failed - is the emulator running?" >&2
             exit 1
         }
         sleep 1

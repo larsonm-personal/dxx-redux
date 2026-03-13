@@ -1,5 +1,5 @@
 #!/bin/bash
-# push_game_data.sh — Push game data files from game_data_to_copy_to_emulator/.
+# push_game_data.sh - Push game data files from game_data_to_copy_to_emulator/.
 # Usage:  bash push_game_data.sh
 #
 # Expects game data files (descent2.hog, groupa.pig, etc.) in
@@ -62,7 +62,7 @@ _timed() {
     fi
 }
 
-# Timeout (seconds) per file — scales with size: 30s base + ~1s per MB
+# Timeout (seconds) per file - scales with size: 30s base + ~1s per MB
 _push_timeout() {
     local bytes=$1
     echo $(( bytes / 1000000 + 30 ))
@@ -113,11 +113,11 @@ for f in "$GAME_DATA_DIR"/*; do
     [ -z "$REMOTE_SIZE" ] && REMOTE_SIZE=0
     
     if [ "$LOCAL_SIZE" = "$REMOTE_SIZE" ]; then
-        echo "  $BASENAME → $LOWER  (already present, skipping)"
+        echo "  $BASENAME -> $LOWER  (already present, skipping)"
         continue
     fi
     
-    echo "  $BASENAME → $LOWER  ($LOCAL_SIZE bytes)"
+    echo "  $BASENAME -> $LOWER  ($LOCAL_SIZE bytes)"
     
     # Stage file to /data/local/tmp via adb push (use Windows path for adb.exe)
     HOST_FILE=$(_host_path "$f")

@@ -1,5 +1,5 @@
 #!/bin/bash
-# get_jdk.sh — Download and install OpenJDK if not present.
+# get_jdk.sh - Download and install OpenJDK if not present.
 # Reads version/URL from tool_versions.conf.
 set -e
 

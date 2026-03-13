@@ -25,7 +25,7 @@ $rawText = [regex]::Replace($rawText, '//.*', '')
 $rawText = [regex]::Replace($rawText, ',\s*([}\]])', '$1')
 $knownDiscs = ($rawText | ConvertFrom-Json).discs
 
-# Build SHA1→disc lookup (keyed by data track 1 SHA1)
+# Build SHA1->disc lookup (keyed by data track 1 SHA1)
 $sha1ToDisc = @{}
 foreach ($disc in $knownDiscs) {
     foreach ($track in $disc.tracks) {

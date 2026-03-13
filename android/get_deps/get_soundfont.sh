@@ -1,5 +1,5 @@
 #!/bin/bash
-# get_soundfont.sh — Download the GM soundfont (TimGM6mb.sf2) into the assets
+# get_soundfont.sh - Download the GM soundfont (TimGM6mb.sf2) into the assets
 # directory if it is missing or has the wrong hash.
 # Reads URL and SHA256 from tool_versions.conf.
 set -e

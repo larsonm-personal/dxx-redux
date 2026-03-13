@@ -17,7 +17,7 @@ param(
 $ErrorActionPreference = "Stop"
 $PACKAGE = "com.dxxredux.app"
 
-# ── Locate credentials ──────────────────────────────────────────────
+# -- Locate credentials ----------------------------------------------
 if (-not $CredentialsPath) {
     $CredentialsPath = Join-Path $PSScriptRoot "play-store-credentials.json"
 }
@@ -31,7 +31,7 @@ Create one by following the instructions in play-store-credentials.sample.json
 $creds = Get-Content $CredentialsPath -Raw | ConvertFrom-Json
 Write-Host "Service account: $($creds.client_email)"
 
-# ── Locate AAB ──────────────────────────────────────────────────────
+# -- Locate AAB ------------------------------------------------------
 if (-not $AabPath) {
     # Find the newest AAB in build-outputs/
     $outDir = Join-Path $PSScriptRoot "build-outputs"
@@ -57,9 +57,9 @@ $aabSize = [math]::Round((Get-Item $AabPath).Length / 1MB, 1)
 Write-Host "AAB file: $AabPath ($aabSize MB)"
 Write-Host ""
 
-# ═══════════════════════════════════════════════════════════════════
+# ===================================================================
 #  JWT / OAuth2 authentication
-# ═══════════════════════════════════════════════════════════════════
+# ===================================================================
 
 function ConvertTo-Base64Url([byte[]]$bytes) {
     [Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_')
@@ -164,7 +164,7 @@ function Get-AccessToken {
         $rsa = [System.Security.Cryptography.RSA]::Create()
         $rsa.ImportPkcs8PrivateKey($keyBytes, [ref]$null)
     } catch {
-        # Fall back for .NET Framework (PS 5.1): manually parse PKCS#8 → RSAPrivateKey ASN.1
+        # Fall back for .NET Framework (PS 5.1): manually parse PKCS#8 -> RSAPrivateKey ASN.1
         $rsa = Import-Pkcs8RsaKey $keyBytes
     }
 
@@ -193,9 +193,9 @@ Write-Host ""
 $headers = @{ Authorization = "Bearer $token" }
 $baseUrl = "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PACKAGE"
 
-# ═══════════════════════════════════════════════════════════════════
+# ===================================================================
 #  Create an edit
-# ═══════════════════════════════════════════════════════════════════
+# ===================================================================
 
 Write-Host "Creating edit..."
 $edit = Invoke-RestMethod -Uri "$baseUrl/edits" -Method POST -Headers $headers `
@@ -204,9 +204,9 @@ $editId = $edit.id
 Write-Host "Edit created: $editId"
 Write-Host ""
 
-# ═══════════════════════════════════════════════════════════════════
+# ===================================================================
 #  List tracks and present menu
-# ═══════════════════════════════════════════════════════════════════
+# ===================================================================
 
 Write-Host "Fetching available tracks..."
 $tracksResp = Invoke-RestMethod -Uri "$baseUrl/edits/$editId/tracks" -Method GET `
@@ -252,10 +252,10 @@ $selectedTrack = $trackNames[$idx]
 Write-Host "Selected track: $selectedTrack"
 Write-Host ""
 
-# ═══════════════════════════════════════════════════════════════════
+# ===================================================================
 #  Helper: commit an edit, handling changesNotSentForReview quirk
 #  Returns $null on success, or the error message string on failure.
-# ═══════════════════════════════════════════════════════════════════
+# ===================================================================
 function TryCommitEdit {
     param($baseUrl, $editId, $headers)
     $commitUrl = "$baseUrl/edits/$editId" + ":commit"
@@ -283,9 +283,9 @@ function TryCommitEdit {
     }
 }
 
-# ═══════════════════════════════════════════════════════════════════
+# ===================================================================
 #  Upload AAB
-# ═══════════════════════════════════════════════════════════════════
+# ===================================================================
 
 Write-Host "Uploading AAB (${aabSize} MB) - this may take a while..."
 $uploadUrl = "https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications/$PACKAGE/edits/$editId/bundles?uploadType=media"
@@ -316,9 +316,9 @@ try {
 Write-Host ""
 
 if (-not $alreadyUploaded) {
-    # ═══════════════════════════════════════════════════════════════════
+    # ===================================================================
     #  Update track with the new release
-    # ═══════════════════════════════════════════════════════════════════
+    # ===================================================================
 
     Write-Host "Assigning versionCode $versionCode to track '$selectedTrack'..."
     $releaseStatus = "completed"
@@ -345,10 +345,10 @@ if (-not $alreadyUploaded) {
     }
     Write-Host ""
 
-    # ═══════════════════════════════════════════════════════════════════
+    # ===================================================================
     #  Commit the edit
     #  Handles: changesNotSentForReview quirk, draft-app status constraint
-    # ═══════════════════════════════════════════════════════════════════
+    # ===================================================================
 
     Write-Host "Committing edit..."
     $commitError = TryCommitEdit $baseUrl $editId $headers
@@ -458,9 +458,9 @@ if (-not $alreadyUploaded) {
     Write-Host ""
 }
 
-# ═══════════════════════════════════════════════════════════════════
+# ===================================================================
 #  If the release ended up as "draft", promote it to "completed"
-# ═══════════════════════════════════════════════════════════════════
+# ===================================================================
 
 # note that this will fail until a closed alpha has been created (with screenshots, description, etc.)
 # https://stackoverflow.com/questions/76541480/how-does-fully-create-an-internal-release-on-google-play-console-via-api

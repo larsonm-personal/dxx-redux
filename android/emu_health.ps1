@@ -111,7 +111,7 @@ function Wait-EmulatorHealthy {
     return $false
 }
 
-# ── Main ──
+# -- Main --
 $status = Test-EmulatorHealth
 Write-Host "Emulator status: $($status.Reason)"
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# build.sh — Source environment vars and run the Gradle build.
+# build.sh - Source environment vars and run the Gradle build.
 # Works under Git Bash, MSYS2, or WSL.
 set -e
 

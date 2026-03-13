@@ -26,7 +26,7 @@ if (-not (Test-Path $runTestScript)) {
     exit 1
 }
 
-# ── Discover tests ──────────────────────────────────────────────────────────
+# -- Discover tests ----------------------------------------------------------
 
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "DXX-Redux Regression Test Menu" -ForegroundColor Cyan
@@ -60,7 +60,7 @@ $selectedTest = $tests[$choice - 1]
 Write-Host ""
 Write-Host "[*] Selected: $($selectedTest.BaseName)" -ForegroundColor Green
 
-# ── Game choice for multi-game scripts ──────────────────────────────────────
+# -- Game choice for multi-game scripts --------------------------------------
 
 $gameArg = @{}
 $games = Get-ScriptGameInfo -ScriptPath $selectedTest.FullName
@@ -81,7 +81,7 @@ if ($games -and $games.Count -gt 1) {
 }
 Write-Host ""
 
-# ── Delegate to run_test.ps1 ────────────────────────────────────────────────
+# -- Delegate to run_test.ps1 ------------------------------------------------
 
 & $runTestScript $selectedTest.Name @gameArg
 exit $LASTEXITCODE

@@ -42,11 +42,11 @@
 extern "C" {
 #endif
 
-/* ── Limits ──────────────────────────────────────────────────────── */
+/* -- Limits -------------------------------------------------------- */
 #define INNO_MAX_FILES 512
 #define INNO_PATH_LEN  512
 
-/* ── Compression method enum (full, from InnoSetup source) ─────── */
+/* -- Compression method enum (full, from InnoSetup source) ------- */
 typedef enum {
 	INNO_COMPRESS_STORED = 0,
 	INNO_COMPRESS_ZLIB = 1,
@@ -55,13 +55,13 @@ typedef enum {
 	INNO_COMPRESS_LZMA2 = 4,
 } inno_compress_method_t;
 
-/* ── InnoSetup version ───────────────────────────────────────────── */
+/* -- InnoSetup version --------------------------------------------- */
 typedef struct {
 	int major, minor, patch;
 	int unicode; /* 1 if "(u)" or "(U)" suffix */
 } inno_version_t;
 
-/* ── File entry (from the decompressed header) ───────────────────── */
+/* -- File entry (from the decompressed header) --------------------- */
 typedef struct {
 	char destination[INNO_PATH_LEN]; /* install-relative path */
 	uint32_t location;               /* index into data entries */
@@ -69,7 +69,7 @@ typedef struct {
 	uint8_t gog_galaxy;              /* needs zlib decompression */
 } inno_file_entry_t;
 
-/* ── Data entry (from the second block stream) ───────────────────── */
+/* -- Data entry (from the second block stream) --------------------- */
 typedef struct {
 	uint32_t first_slice;
 	uint32_t last_slice;
@@ -82,7 +82,7 @@ typedef struct {
 	uint8_t call_instruction_optimized; /* filter flag               */
 } inno_data_entry_t;
 
-/* ── Archive handle ──────────────────────────────────────────────── */
+/* -- Archive handle ------------------------------------------------ */
 typedef struct {
 	/* parsed version */
 	inno_version_t version;
@@ -102,7 +102,7 @@ typedef struct {
 	int fd;
 } inno_archive_t;
 
-/* ── Progress callback (same signature as iso/sow modules) ────── */
+/* -- Progress callback (same signature as iso/sow modules) ------ */
 typedef int (*inno_progress_fn)(const char *current_file,
                                 long long bytes_done,
                                 long long bytes_total,

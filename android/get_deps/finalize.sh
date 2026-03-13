@@ -1,5 +1,5 @@
 #!/bin/bash
-# finalize.sh — Accept Android SDK licenses and install required platform packages.
+# finalize.sh - Accept Android SDK licenses and install required platform packages.
 # Reads versions from tool_versions.conf. Run get_sdk.sh first.
 set -e
 

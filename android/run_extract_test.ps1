@@ -33,7 +33,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-# ── Config ───────────────────────────────────────────────────
+# -- Config ---------------------------------------------------
 
 $PACKAGE = 'com.dxxredux.app'
 $ACTIVITY = 'com.dxxredux.app.SetupActivity'
@@ -62,7 +62,7 @@ $SKIP_LARGE_EXTENSIONS = @('.mvl', '.sow', '.dem', '.rl2', '.dtx')
 # we know we're accidentally using the demo set.
 $DEMO_SET_HASHES = @{}  # populated dynamically below
 
-# ── Helpers ──────────────────────────────────────────────────
+# -- Helpers --------------------------------------------------
 
 # ADB command timeout (seconds). If any single adb call takes longer, kill it.
 $ADB_TIMEOUT = 30
@@ -196,7 +196,7 @@ function Get-RemoteFileSize {
     return 0
 }
 
-# ── Read spec ────────────────────────────────────────────────
+# -- Read spec ------------------------------------------------
 
 if (-not (Test-Path $SpecPath)) {
     Write-Error "Spec file not found: $SpecPath"
@@ -207,7 +207,7 @@ $spec = Read-Json5 $SpecPath
 $specDir = Split-Path (Resolve-Path $SpecPath) -Parent
 $sourceName = (Split-Path $specDir -Leaf)
 
-# ── Result tracking ──────────────────────────────────────────
+# -- Result tracking ------------------------------------------
 # Track test result in script-scope vars. Exit-Test writes them to the spec file.
 
 $script:testStatus = 'fail'
@@ -285,7 +285,7 @@ if (-not $canLaunch) {
     Write-Status "This is a non-launchable source ($($spec.classification)) - file-only test" 'Yellow'
 }
 
-# ── Locate extracted files ───────────────────────────────────
+# -- Locate extracted files -----------------------------------
 
 $extractedDir = $null
 if ($spec.source_type -eq 'cd') {
@@ -334,7 +334,7 @@ if ($filesToPush.Count -eq 0) {
     Exit-Test 1 'fail' 'file_push_failed'
 }
 
-# ── Compute demo set hashes for canary check ─────────────────
+# -- Compute demo set hashes for canary check -----------------
 # Hash a signature file from game_data_to_copy_to_emulator if it exists,
 # so we can verify pushed files are NOT from the demo set.
 
@@ -362,7 +362,7 @@ if (Test-Path $demoDir) {
     }
 }
 
-# ── Step 1: Verify emulator is reachable ─────────────────────
+# -- Step 1: Verify emulator is reachable ---------------------
 
 Write-Status "Checking emulator..."
 $devices = Adb -CmdArgs 'devices'
@@ -377,7 +377,7 @@ if ($boot.Trim() -ne '1') {
 }
 Write-Status "Emulator online" 'Green'
 
-# ── Step 2: Sanitize device state ────────────────────────────
+# -- Step 2: Sanitize device state ----------------------------
 # This is the critical section. We must ensure:
 # - No game files exist in filesDir root (PhysFS fallback)
 # - The default set is cleared (so no files leak)
@@ -452,7 +452,7 @@ foreach ($setName in ($otherSets -split "`n" | ForEach-Object { $_.Trim() } | Wh
     }
 }
 
-# ── Step 3: Canary check -- verify device is CLEAN ────────────
+# -- Step 3: Canary check -- verify device is CLEAN ------------
 # Restart the app so the clean state is visible to Java
 Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
 Start-Sleep -Seconds 1
@@ -502,7 +502,7 @@ if ($state.can_launch) {
 
 Write-Status "Canary PASSED - device is clean, game cannot launch" 'Green'
 
-# ── Step 4: Push extracted files to test set ─────────────────
+# -- Step 4: Push extracted files to test set -----------------
 
 Write-Status "Pushing $($filesToPush.Count) files to set '$TEST_SET'..."
 $pushErrors = 0
@@ -538,7 +538,7 @@ if (-not (Wait-SetupReady)) {
     Exit-Test 1 'fail' 'setup_timeout'
 }
 
-# ── Step 5: Verify files on device ───────────────────────────
+# -- Step 5: Verify files on device ---------------------------
 # After restart, Java File.listFiles() can see the files. Use introspection.
 
 Write-Status "Verifying files on device..."
@@ -570,7 +570,7 @@ if ($missingFiles.Count -gt 0) {
 Write-Status "All $($expectedFiles.Count) expected files present (of $($remoteFiles.Count) total)" 'Green'
 $script:testFilesVerified = $expectedFiles.Count
 
-# ── Step 6: Anti-demo-set canary -- verify file identity ──────
+# -- Step 6: Anti-demo-set canary -- verify file identity ------
 # Hash signature game files on device and compare against demo set hashes.
 # If they match (and this isn't the same version), we've been fooled.
 $identityWarnings = @()
@@ -609,7 +609,7 @@ if ($identityWarnings.Count -gt 0) {
     Write-Status "  Review manually if unexpected." 'Yellow'
 }
 
-# ── Step 7: Check file set readiness ─────────────────────────
+# -- Step 7: Check file set readiness -------------------------
 # $state was already populated by Step 5's introspection
 
 $gameKey = $spec.game
@@ -655,7 +655,7 @@ if (-not $state.can_launch) {
     Exit-Test 0 'skip' 'not_ready' -TestMode 'file_only' -FilesVerified $expectedFiles.Count
 }
 
-# ── Step 8: Launch game ──────────────────────────────────────
+# -- Step 8: Launch game --------------------------------------
 
 Write-Status "Launching game from set '$TEST_SET'..."
 
@@ -682,7 +682,7 @@ $launchGame = if ($spec.game -match 'd1') { 'd1' } else { 'd2' }
 Send-SetupCommand 'launch' -Game $launchGame
 Start-Sleep -Seconds 8
 
-# ── Step 9: Verify in-game state ─────────────────────────────
+# -- Step 9: Verify in-game state -----------------------------
 
 Write-Status "Checking game state..."
 
@@ -779,7 +779,7 @@ while ($navAttempts -lt $maxNav) {
         continue
     }
 
-    # ── Pilot selection listbox: navigate to <Create New> (index 0) ──
+    # -- Pilot selection listbox: navigate to <Create New> (index 0) --
     if ($gi.menu -and $gi.menu.type -eq 'listbox' -and $gi.menu.title -match 'Select pilot') {
         $sel = $gi.menu.selected_index
         if ($sel -gt 0) {
@@ -842,7 +842,7 @@ if ($inGame) {
         Write-Status "  (The game loaded - level name may need updating in spec)" 'Yellow'
     }
 
-    # ── Redbook audio check (informational) ──
+    # -- Redbook audio check (informational) --
     $hasAudioFiles = ($filesToPush | Where-Object { $_.Extension.ToLower() -in @('.gog', '.inst') }).Count -ge 2
     if ($hasAudioFiles -and $gi.redbook) {
         if ($gi.redbook.enabled) {
@@ -854,7 +854,7 @@ if ($inGame) {
         Write-Status "  Redbook: enabled (audio source present on device)" 'Cyan'
     }
 
-    # ── Movie check (informational) ──
+    # -- Movie check (informational) --
     if ($gi.movie -and $gi.movie.last_name) {
         Write-Status "  Movie: last='$($gi.movie.last_name)' result=$($gi.movie.last_result)" 'Cyan'
     }
@@ -872,7 +872,7 @@ if ($inGame) {
     Exit-Test 1 'fail' 'menu_timeout' -FilesVerified $expectedFiles.Count -ClassConfirmed $true
 }
 
-# ── Cleanup ──────────────────────────────────────────────────
+# -- Cleanup --------------------------------------------------
 
 # Stop the game
 Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null

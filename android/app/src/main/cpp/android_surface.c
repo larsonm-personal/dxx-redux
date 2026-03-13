@@ -31,7 +31,6 @@ static pthread_mutex_t g_surface_mutex = PTHREAD_MUTEX_INITIALIZER;
  * surface_
  * blit(). */
 static uint32_t g_palette_argb[256];
-static int g_palette_dirty = 1;
 static int g_last_geo_w = 0, g_last_geo_h = 0;
 static volatile int g_app_paused = 0;
 

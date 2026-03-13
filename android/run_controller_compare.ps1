@@ -23,7 +23,7 @@ $ErrorActionPreference = "Stop"
 
 $GAME_SCRIPT = "test_controller_compare.json5"
 
-# ── Determine game(s) to run ────────────────────────────────
+# -- Determine game(s) to run --------------------------------
 
 $scriptPath = Join-Path "$PSScriptRoot\game_scripts" $GAME_SCRIPT
 $gameList = Get-ScriptGameInfo -ScriptPath $scriptPath
@@ -37,7 +37,7 @@ if ($gameList.Count -gt 1) {
     Write-Status "Multi-game script -- will run for: $($gameList -join ', ')"
 }
 
-# ── Step 1: Health check + install ───────────────────────────
+# -- Step 1: Health check + install ---------------------------
 
 Ensure-EmulatorHealthy
 
@@ -63,7 +63,7 @@ foreach ($gameId in $gameList) {
     $extraArgs = @()
     if ($gameId -eq "d1") { $extraArgs = @("--es", "game", "d1") }
 
-    # ── Step 2: Launch SetupActivity and do pre-game introspection ──
+    # -- Step 2: Launch SetupActivity and do pre-game introspection --
 
     Write-Status "Force-stopping app..."
     Adb -AdbArgs @("shell", "am", "force-stop", $PACKAGE) | Out-Null
@@ -93,7 +93,7 @@ foreach ($gameId in $gameList) {
     }
     Write-Status "Launcher introspection read OK" "Green"
 
-    # ── Step 3: Push game script and launch game ─────────────────
+    # -- Step 3: Push game script and launch game -----------------
 
     if (-not (Send-AutomationScript $GAME_SCRIPT -PushOnly)) { $allPassed = $false; continue }
 
@@ -111,7 +111,7 @@ foreach ($gameId in $gameList) {
     if (-not $passed) { $allPassed = $false; continue }
     Write-Status "Game script PASS" "Green"
 
-    # ── Step 4: Read game introspection ──────────────────────────
+    # -- Step 4: Read game introspection --------------------------
     Start-Sleep -Seconds 2
     $gameJson = Adb-Timeout -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/introspect.json") -Seconds 5
     if (-not $gameJson -or $gameJson.Length -lt 10) {
@@ -120,7 +120,7 @@ foreach ($gameId in $gameList) {
     }
     Write-Status "Game introspection read OK" "Green"
 
-    # ── Step 5: Compare joystick_controls ────────────────────────
+    # -- Step 5: Compare joystick_controls ------------------------
     Write-Status "Comparing joystick controls..."
 
     $launcher = ($launcherJson | ConvertFrom-Json)
@@ -171,7 +171,7 @@ foreach ($gameId in $gameList) {
         $itemMismatches++
     }
 
-    # ── Result for this game ─────────────────────────────────────
+    # -- Result for this game -------------------------------------
     Write-Host ""
     if ($summaryOk -and $itemMismatches -eq 0) {
         Write-Status "PASS: Launcher and in-game joystick configs match ($($gameId.ToUpper()))" "Green"

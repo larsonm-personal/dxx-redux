@@ -91,7 +91,7 @@ extern "C" void android_apply_gamepad_defaults(void)
 	}
 }
 
-/* ── JNI entry point: patch all .plr files ─────────────────────── */
+/* -- JNI entry point: patch all .plr files ----------------------- */
 
 /* Scan files_dir (and Players/ subdir) for .plr files and patch each. */
 static int patch_all_plr_files(const char *files_dir,
@@ -159,7 +159,7 @@ Java_com_dxxredux_app_NativePilotPatcher_nativePatchPilotFiles(
 	return (jint) total;
 }
 
-/* ── JNI: reset all pilot files to engine defaults ──────────── */
+/* -- JNI: reset all pilot files to engine defaults ------------ */
 
 extern "C" JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_NativePilotPatcher_nativeResetToDefaults(
@@ -176,7 +176,7 @@ Java_com_dxxredux_app_NativePilotPatcher_nativeResetToDefaults(
 	return (jint) total;
 }
 
-/* ── JNI: build joystick KeySettings from (index, value) pairs ── */
+/* -- JNI: build joystick KeySettings from (index, value) pairs -- */
 
 /*
  * Takes parallel int arrays of kc_joystick[] indices and corresponding
@@ -205,7 +205,7 @@ Java_com_dxxredux_app_NativePilotPatcher_nativeBuildJoySettings(
 	return result;
 }
 
-/* ── JNI: build keyboard KeySettings from (index, value) pairs ── */
+/* -- JNI: build keyboard KeySettings from (index, value) pairs -- */
 
 extern "C" JNIEXPORT jbyteArray JNICALL
 Java_com_dxxredux_app_NativePilotPatcher_nativeBuildKbSettings(

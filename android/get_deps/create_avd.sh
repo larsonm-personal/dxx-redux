@@ -1,5 +1,5 @@
 #!/bin/bash
-# create_avd.sh — Create a Pixel 6 AVD (API 34, x86_64) if it doesn't exist.
+# create_avd.sh - Create a Pixel 6 AVD (API 34, x86_64) if it doesn't exist.
 # Run get_emulator.sh first to install the emulator and system image.
 set -e
 

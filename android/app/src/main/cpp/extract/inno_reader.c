@@ -160,8 +160,7 @@ static int find_pe_resource_11111(int fd, uint64_t *out_offset)
 	uint32_t rsrc_size = get_u32(opt + rva_entries_offset + 8 * 2 + 4);
 	if (rsrc_rva == 0 || rsrc_size == 0) return -1;
 
-	/* Find the .rsrc section to map RVA → file offset */
-	uint8_t *sec_table = pe_hdr + 24 + opt_hdr_size;
+	/* Find the .rsrc section to map RVA -> file offset */
 	uint32_t rsrc_file_offset = 0;
 	for (int i = 0; i < num_sections && i < 16; i++) {
 		/* Read section header from file if needed */
@@ -189,7 +188,6 @@ static int find_pe_resource_11111(int fd, uint64_t *out_offset)
 	/* Level 1: find RT_RCDATA (type 10) */
 	uint16_t num_named = get_u16(rsrc + 12);
 	uint16_t num_id = get_u16(rsrc + 14);
-	int found = -1;
 	for (int i = 0; i < num_named + num_id; i++) {
 		uint8_t *entry = rsrc + 16 + i * 8;
 		uint32_t name_or_id = get_u32(entry);

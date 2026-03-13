@@ -55,7 +55,7 @@ extern "C" {
 /* Automap_active is defined in automap.c; we just need the extern. */
 extern "C" int Automap_active;
 
-/* ── Key name → SDLKey mapping ──────────────────────────────────────── */
+/* -- Key name -> SDLKey mapping ---------------------------------------- */
 
 struct key_entry {
 	const char *name;
@@ -167,7 +167,7 @@ static SDLKey lookup_key(const char *name)
 	return SDLK_UNKNOWN;
 }
 
-/* ── Step types ─────────────────────────────────────────────────────── */
+/* -- Step types ------------------------------------------------------- */
 
 enum step_type {
 	STEP_KEY,          /* inject key down+up, then delay */
@@ -208,7 +208,7 @@ struct auto_step {
 	float axis_value = 0.0f;            /* STEP_SEND_AXIS: value (-1.0 to 1.0) */
 };
 
-/* ── Script state ───────────────────────────────────────────────────── */
+/* -- Script state ----------------------------------------------------- */
 
 static std::vector<auto_step> g_steps;
 static int g_current_step = 0;
@@ -217,7 +217,7 @@ static int g_failed = 0;        /* set to 1 on assert/timeout failure */
 static Uint32 g_step_start = 0; /* SDL_GetTicks() when step began */
 static int g_key_phase = 0;     /* 0=not sent, 1=down sent, 2=done */
 
-/* ── STEP_SELECT state (multi-frame navigation) ─────────────────────── */
+/* -- STEP_SELECT state (multi-frame navigation) ----------------------- */
 static int g_select_phase = 0; /* 0=init, 1=navigating, 2=enter sent */
 static int g_select_delta = 0; /* remaining navigation steps (+down, -up) */
 
@@ -225,7 +225,7 @@ static char g_automate_dir[512] = "";
 static char g_pending_script[512] = "";
 static volatile int g_load_requested = 0;
 
-/* ── Key injection ──────────────────────────────────────────────────── */
+/* -- Key injection ---------------------------------------------------- */
 
 static void inject_key(SDLKey sym, int down)
 {
@@ -252,7 +252,7 @@ static void inject_key_tap(const std::string &name)
 	inject_key(sym, 0); /* up */
 }
 
-/* ── Axis injection ─────────────────────────────────────────────────── */
+/* -- Axis injection --------------------------------------------------- */
 
 static void inject_axis(int axis, float value)
 {
@@ -271,7 +271,7 @@ static void inject_axis(int axis, float value)
 	LOGI("Injecting axis %d = %.3f (raw %d)", axis, value, ival);
 }
 
-/* ── Menu item search for STEP_SELECT ───────────────────────────────── */
+/* -- Menu item search for STEP_SELECT --------------------------------- */
 
 /*
  * Case-insensitive substring search.
@@ -367,7 +367,7 @@ static bool select_find_item(const char *text, int *out_target, int *out_current
 	}
 }
 
-/* ── Condition checking ─────────────────────────────────────────────── */
+/* -- Condition checking ----------------------------------------------- */
 
 extern "C" window *Game_wind;
 
@@ -425,7 +425,7 @@ static int check_condition(const std::string &field, const std::string &value)
 	return 0;
 }
 
-/* ── Parse script JSON/JSON5 with nlohmann ──────────────────────────── */
+/* -- Parse script JSON/JSON5 with nlohmann ---------------------------- */
 
 static int parse_script(const char *json_text)
 {
@@ -523,7 +523,7 @@ static int parse_script(const char *json_text)
 	return (int) g_steps.size();
 }
 
-/* ── Load script from file ──────────────────────────────────────────── */
+/* -- Load script from file -------------------------------------------- */
 
 static int load_script_file(const char *path)
 {
@@ -558,7 +558,7 @@ static int load_script_file(const char *path)
 	return result;
 }
 
-/* ── Assert: check introspection JSON values ───────────────────────── */
+/* -- Assert: check introspection JSON values ------------------------- */
 
 /*
  * Run all assertions for a STEP_ASSERT.
@@ -663,7 +663,7 @@ static int run_assertions(auto_step &s)
 	return 1;
 }
 
-/* ── Advance to next step ───────────────────────────────────────────── */
+/* -- Advance to next step --------------------------------------------- */
 
 static void stop_script_fail(const char *reason)
 {
@@ -691,7 +691,7 @@ static void advance_step(void)
 	}
 }
 
-/* ── Public API ─────────────────────────────────────────────────────── */
+/* -- Public API ------------------------------------------------------- */
 
 extern "C" void game_automate_set_path(const char *dir_path)
 {

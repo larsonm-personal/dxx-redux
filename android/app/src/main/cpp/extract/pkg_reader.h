@@ -22,13 +22,13 @@ extern "C" {
 #define PKG_MAX_FILES 128
 #define PKG_PATH_LEN  512
 
-/* ── File entry from the cpio archive ────────────────────────────── */
+/* -- File entry from the cpio archive ------------------------------ */
 typedef struct {
 	char name[PKG_PATH_LEN]; /* basename (e.g., "DESCENT.HOG") */
 	uint64_t size;           /* uncompressed file size */
 } pkg_file_entry_t;
 
-/* ── Archive handle ──────────────────────────────────────────────── */
+/* -- Archive handle ------------------------------------------------ */
 typedef struct {
 	int fd;                      /* file descriptor (kept open) */
 	uint64_t scripts_abs_offset; /* absolute offset of gzip data in file */
@@ -38,7 +38,7 @@ typedef struct {
 	int file_count;
 } pkg_archive_t;
 
-/* ── Progress callback (same signature as inno_reader) ───────────── */
+/* -- Progress callback (same signature as inno_reader) ------------- */
 typedef int (*pkg_progress_fn)(const char *current_file,
                                long long bytes_done,
                                long long bytes_total,

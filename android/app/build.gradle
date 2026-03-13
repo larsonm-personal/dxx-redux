@@ -184,6 +184,17 @@ android {
     }
 }
 
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += ['-Xlint:deprecation', '-Xlint:unchecked']
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    compilerOptions {
+        freeCompilerArgs.addAll(['-Xsam-conversions=class'])
+        allWarningsAsErrors = false
+    }
+}
+
 dependencies {
     implementation "androidx.core:core-ktx:${toolVersions['CORE_KTX_VERSION']}"
     implementation "androidx.appcompat:appcompat:${toolVersions['APPCOMPAT_VERSION']}"

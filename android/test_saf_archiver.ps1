@@ -13,8 +13,8 @@
       6. Restores the original file and cleans up
 
     The test proves the full SAF archiver pipeline:
-      physfsx.c mounts manifest → archiver parses it → saf_open_file() opens via direct path
-      → pread()-based I/O serves data to the engine.
+      physfsx.c mounts manifest -> archiver parses it -> saf_open_file() opens via direct path
+      -> pread()-based I/O serves data to the engine.
 
 .PARAMETER NoBuild
     Skip the Gradle build step (use an already-built APK).
@@ -29,7 +29,7 @@ param(
 
 $ErrorActionPreference = "Continue"
 
-# ── Paths ──────────────────────────────────────────────────────────────
+# -- Paths --------------------------------------------------------------
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 # Handle running from repo root or android/ dir
 if (!(Test-Path "$repoRoot\android")) {
@@ -61,7 +61,7 @@ if (!(Test-Path $adb)) {
 
 function Adb { & $adb @args 2>&1 }
 
-# ── Preflight ──────────────────────────────────────────────────────────
+# -- Preflight ----------------------------------------------------------
 Write-Host "=== SAF Archiver Test ===" -ForegroundColor Cyan
 Write-Host ""
 
@@ -73,7 +73,7 @@ if ($devices -notmatch "emulator.*device") {
 }
 Write-Host "[OK] Emulator connected" -ForegroundColor Green
 
-# ── Step 1: Build ──────────────────────────────────────────────────────
+# -- Step 1: Build ------------------------------------------------------
 if (!$NoBuild) {
     Write-Host ""
     Write-Host "Step 1: Building debug APK..." -ForegroundColor Yellow
@@ -94,14 +94,14 @@ if (!$NoBuild) {
     Write-Host "Step 1: Skipping build (--NoBuild)" -ForegroundColor DarkGray
 }
 
-# ── Step 2: Stop the game if running ───────────────────────────────────
+# -- Step 2: Stop the game if running -----------------------------------
 Write-Host ""
 Write-Host "Step 2: Stopping game..." -ForegroundColor Yellow
 Adb shell "am force-stop $PACKAGE" | Out-Null
 Start-Sleep -Seconds 2
 Write-Host "[OK] Game stopped" -ForegroundColor Green
 
-# ── Step 3: Install APK ───────────────────────────────────────────────
+# -- Step 3: Install APK -----------------------------------------------
 Write-Host ""
 Write-Host "Step 3: Installing debug APK..." -ForegroundColor Yellow
 $installResult = Adb install -r $apkPath
@@ -113,7 +113,7 @@ if ($installResult -match "Success") {
     exit 1
 }
 
-# ── Step 4: Get file size and move to SAF location ─────────────────────
+# -- Step 4: Get file size and move to SAF location ---------------------
 Write-Host ""
 Write-Host "Step 4: Moving $TEST_FILE to SAF test location..." -ForegroundColor Yellow
 
@@ -152,7 +152,7 @@ Write-Host "  Copied to $SAF_DIR/$TEST_FILE ($copiedSize bytes)"
 Adb shell "run-as $PACKAGE rm files/$TEST_FILE" | Out-Null
 Write-Host "  Removed from app files dir"
 
-# ── Step 5: Create .saf_manifest.json ──────────────────────────────────
+# -- Step 5: Create .saf_manifest.json ----------------------------------
 Write-Host ""
 Write-Host "Step 5: Creating .saf_manifest.json..." -ForegroundColor Yellow
 
@@ -187,7 +187,7 @@ if ($manifestCheck -match "descent2.ham") {
     exit 1
 }
 
-# ── Step 6: Launch the game ────────────────────────────────────────────
+# -- Step 6: Launch the game --------------------------------------------
 Write-Host ""
 Write-Host "Step 6: Launching game..." -ForegroundColor Yellow
 Adb shell "am start -n $PACKAGE/.SetupActivity" | Out-Null
@@ -254,7 +254,7 @@ if (!$gameStarted) {
     Write-Host "[WARN] Game engine not detected via introspection, trying automation anyway..." -ForegroundColor Yellow
 }
 
-# ── Step 7: Push and run the test automation script ────────────────────
+# -- Step 7: Push and run the test automation script --------------------
 Write-Host ""
 Write-Host "Step 7: Running test_saf_basic automation..." -ForegroundColor Yellow
 
@@ -305,9 +305,9 @@ if ($null -eq $result) {
     $failDetail = "Test did not complete within ${TIMEOUT_SEC}s"
 }
 
-# ── Step 8: Report result ─────────────────────────────────────────────
+# -- Step 8: Report result ---------------------------------------------
 Write-Host ""
-Write-Host "════════════════════════════════════════" -ForegroundColor Cyan
+Write-Host "========================================" -ForegroundColor Cyan
 
 switch ($result) {
     "PASS" {
@@ -337,9 +337,9 @@ switch ($result) {
     }
 }
 
-Write-Host "════════════════════════════════════════" -ForegroundColor Cyan
+Write-Host "========================================" -ForegroundColor Cyan
 
-# ── Step 9: Cleanup ───────────────────────────────────────────────────
+# -- Step 9: Cleanup ---------------------------------------------------
 if (!$NoCleanup) {
     Write-Host ""
     Write-Host "Step 9: Cleaning up..." -ForegroundColor Yellow

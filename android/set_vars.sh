@@ -1,5 +1,5 @@
 #!/bin/bash
-# set_vars.sh — Source this to set JAVA_HOME, ANDROID_HOME, ANDROID_NDK_ROOT.
+# set_vars.sh - Source this to set JAVA_HOME, ANDROID_HOME, ANDROID_NDK_ROOT.
 # Reads the dependency base directory from dependency_base.txt.
 
 # Resolve LOCAL_DIR from dependency_base.txt

@@ -1,5 +1,5 @@
 #!/bin/bash
-# run_emulator.sh — Build the APK, launch the emulator, install and run the app.
+# run_emulator.sh - Build the APK, launch the emulator, install and run the app.
 # Usage:  bash run_emulator.sh              (build + launch + install + push data)
 #         bash run_emulator.sh --no-build   (skip build, just launch + install + push data)
 #         bash run_emulator.sh --no-data    (skip game data push)
@@ -40,7 +40,7 @@ if [ ! -f "$EMULATOR" ] && [ ! -f "$EMULATOR.exe" ]; then
     exit 1
 fi
 
-# ── 1. Build APK ────────────────────────────────────────────
+# -- 1. Build APK --------------------------------------------
 if [ "$NO_BUILD" -eq 0 ]; then
     echo "=== Building APK ==="
     cd "$ANDROID_DIR"
@@ -55,7 +55,7 @@ if [ ! -f "$APK" ]; then
     exit 1
 fi
 
-# ── 2. Launch emulator (if not already running) ─────────────
+# -- 2. Launch emulator (if not already running) -------------
 echo "=== Launching emulator ($AVD_NAME) ==="
 
 # Check if emulator is already running
@@ -69,7 +69,7 @@ else
     echo "Emulator started (PID $EMULATOR_PID). Waiting for boot..."
 fi
 
-# ── 3. Wait for device ──────────────────────────────────────
+# -- 3. Wait for device --------------------------------------
 echo "Waiting for device to come online..."
 "$ADB" wait-for-device
 
@@ -89,12 +89,12 @@ if [ "$BOOT_COMPLETE" != "1" ]; then
 fi
 echo "Device booted."
 
-# ── 4. Install APK ──────────────────────────────────────────
+# -- 4. Install APK ------------------------------------------
 echo ""
 echo "=== Installing APK ==="
 "$ADB" install -r "$APK"
 
-# ── 4b. Add home screen icon (emulator only) ────────────────
+# -- 4b. Add home screen icon (emulator only) ----------------
 # The Pixel Launcher on API 34 doesn't auto-pin new apps to the home screen.
 # Use root to insert an icon into the launcher's database.
 LAUNCHER_DIR="/data/data/com.google.android.apps.nexuslauncher/databases"
@@ -127,14 +127,14 @@ if "$ADB" root >/dev/null 2>&1; then
             echo "Home screen icon already present."
         fi
     else
-        echo "(Launcher database not found — skipping home screen icon)"
+        echo "(Launcher database not found - skipping home screen icon)"
     fi
     "$ADB" unroot >/dev/null 2>&1 && sleep 1
 else
-    echo "(Root not available — skipping home screen icon. App is in the app drawer.)"
+    echo "(Root not available - skipping home screen icon. App is in the app drawer.)"
 fi
 
-# ── 5. Push game data (if available) ────────────────────────
+# -- 5. Push game data (if available) ------------------------
 if [ "$NO_DATA" -eq 0 ] && [ -f "$SCRIPT_DIR/push_game_data.sh" ]; then
     REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
     if [ -d "$REPO_ROOT/game_data_to_copy_to_emulator" ] && [ -n "$(ls "$REPO_ROOT/game_data_to_copy_to_emulator" 2>/dev/null)" ]; then
@@ -142,11 +142,11 @@ if [ "$NO_DATA" -eq 0 ] && [ -f "$SCRIPT_DIR/push_game_data.sh" ]; then
         CALLED_FROM_SCRIPT=1 bash "$SCRIPT_DIR/push_game_data.sh"
     else
         echo ""
-        echo "(No game_data_to_copy_to_emulator/ directory found — skipping game data push)"
+        echo "(No game_data_to_copy_to_emulator/ directory found - skipping game data push)"
     fi
 fi
 
-# ── 6. Launch the app ───────────────────────────────────────
+# -- 6. Launch the app ---------------------------------------
 echo ""
 echo "=== Launching $PACKAGE ==="
 "$ADB" shell am force-stop "$PACKAGE" 2>/dev/null || true

@@ -1,5 +1,5 @@
 #!/bin/bash
-# get_dosbox.sh — Download and install DOSBox-X if not present.
+# get_dosbox.sh - Download and install DOSBox-X if not present.
 # Reads version from tool_versions.conf.
 # DOSBox-X is used to run DOS shareware demo installers for file extraction.
 # Releases: https://github.com/joncampbell123/dosbox-x/releases
@@ -79,7 +79,7 @@ rm -rf "$TMPDIR2" "$TMPFILE"
 if [ -f "$DEST/dosbox-x.exe" ]; then
     echo "DOSBox-X $DOSBOX_VERSION installed at $DEST"
 else
-    echo "ERROR: installation failed — dosbox-x.exe not found at $DEST"
+    echo "ERROR: installation failed - dosbox-x.exe not found at $DEST"
     exit 1
 fi
 if [ -z "$GET_ALL_RUNNING" ]; then

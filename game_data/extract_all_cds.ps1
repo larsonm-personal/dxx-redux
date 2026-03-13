@@ -24,7 +24,7 @@ $CdImgDir   = Join-Path $ScriptDir "CD images"
 $ExeName    = "extract_cd.exe"
 $ExePath    = Join-Path $BuildDir "Release\$ExeName"
 
-# ── Build ────────────────────────────────────────────────────────────
+# -- Build ------------------------------------------------------------
 
 if (-not $SkipBuild) {
     if (-not (Test-Path "$BuildDir\CMakeCache.txt")) {
@@ -42,7 +42,7 @@ if (-not (Test-Path $ExePath)) {
     exit 1
 }
 
-# ── Process CD images ────────────────────────────────────────────────
+# -- Process CD images ------------------------------------------------
 
 if (-not (Test-Path $CdImgDir)) {
     Write-Error "CD images directory not found: $CdImgDir"
@@ -121,7 +121,7 @@ foreach ($folder in $folders) {
     }
 }
 
-# ── Report ───────────────────────────────────────────────────────────
+# -- Report -----------------------------------------------------------
 
 Write-Host "`n" -NoNewline
 Write-Host "============================================" -ForegroundColor Green

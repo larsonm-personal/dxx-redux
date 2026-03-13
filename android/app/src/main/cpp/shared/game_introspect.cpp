@@ -44,7 +44,7 @@ extern "C" {
 #define SCREEN_MOVIE 99
 #endif
 
-/* ── Redbook audio accessors (defined in rbaudio_bin.c / rbaudio.c) ── */
+/* -- Redbook audio accessors (defined in rbaudio_bin.c / rbaudio.c) -- */
 extern "C" {
 int RBAEnabled(void);
 int RBAGetNumberOfTracks(void);
@@ -52,7 +52,7 @@ int RBAGetTrackNum(void);
 int RBAPeekPlayStatus(void);
 }
 
-/* ── Movie tracking globals (defined in movie.c, D2 only) ── */
+/* -- Movie tracking globals (defined in movie.c, D2 only) -- */
 #ifdef DXX_BUILD_DESCENT_II
 extern "C" {
 extern char g_current_movie_name[];
@@ -61,7 +61,7 @@ extern char g_last_movie_name[];
 }
 #endif /* DXX_BUILD_DESCENT_II movie globals */
 
-/* ── Audio diagnostic accessors (defined in digi_tsf_music.c / SDL_androidaudio.c) ── */
+/* -- Audio diagnostic accessors (defined in digi_tsf_music.c / SDL_androidaudio.c) -- */
 extern "C" {
 int tsf_music_get_output_rate(void);
 int tsf_music_get_playing(void);
@@ -86,7 +86,7 @@ int androidaud_get_audio_buf_frames(void);
 
 #include <SDL_mixer.h>
 
-/* ── Helpers to identify front-window types ─────────────────────────── */
+/* -- Helpers to identify front-window types --------------------------- */
 
 /*
  * newmenu_handler / listbox_handler are non-static in newmenu.c, but
@@ -97,11 +97,11 @@ extern "C" int newmenu_handler(window *wind, d_event *event, void *data);
 extern "C" int listbox_handler(window *wind, d_event *event, void *data);
 extern "C" int kconfig_handler(window *wind, d_event *event, void *data);
 
-/* ── Joystick binding introspection helpers (defined in kconfig.c) ── */
+/* -- Joystick binding introspection helpers (defined in kconfig.c) -- */
 extern "C" int kconfig_get_joystick_count(void);
 extern "C" void kconfig_get_joystick_item(int idx, const char **name, int *type, int *value);
 
-/* ── BT_TYPE → string (kconfig control types) ──────────────────────── */
+/* -- BT_TYPE -> string (kconfig control types) ------------------------ */
 static const char *bt_type_name(int type)
 {
 	switch (type) {
@@ -115,7 +115,7 @@ static const char *bt_type_name(int type)
 	}
 }
 
-/* ── NM_TYPE → string ───────────────────────────────────────────────── */
+/* -- NM_TYPE -> string ------------------------------------------------- */
 static const char *nm_type_name(int type)
 {
 	switch (type) {
@@ -131,7 +131,7 @@ static const char *nm_type_name(int type)
 	}
 }
 
-/* ── Screen mode → string ───────────────────────────────────────────── */
+/* -- Screen mode -> string --------------------------------------------- */
 static const char *screen_mode_name(int mode)
 {
 	switch (mode) {
@@ -143,7 +143,7 @@ static const char *screen_mode_name(int mode)
 	}
 }
 
-/* ── Serialize a newmenu ────────────────────────────────────────────── */
+/* -- Serialize a newmenu ---------------------------------------------- */
 static json serialize_newmenu(void *data)
 {
 	newmenu *menu = (newmenu *) data;
@@ -181,7 +181,7 @@ static json serialize_newmenu(void *data)
 	};
 }
 
-/* ── Serialize a listbox ────────────────────────────────────────────── */
+/* -- Serialize a listbox ---------------------------------------------- */
 static json serialize_listbox_data(void *data)
 {
 	listbox *lb = (listbox *) data;
@@ -206,7 +206,7 @@ static json serialize_listbox_data(void *data)
 	};
 }
 
-/* ── Serialize player ───────────────────────────────────────────────── */
+/* -- Serialize player ------------------------------------------------- */
 static json serialize_player()
 {
 	player *p = &Players[Player_num];
@@ -247,7 +247,7 @@ static json serialize_player()
 	};
 }
 
-/* ── Serialize position ─────────────────────────────────────────────── */
+/* -- Serialize position ----------------------------------------------- */
 static json serialize_position()
 {
 	if (!ConsoleObject)
@@ -267,13 +267,13 @@ static json serialize_position()
 	return pos;
 }
 
-/* ── Main entry point ───────────────────────────────────────────────── */
+/* -- Main entry point ------------------------------------------------- */
 
 extern "C" char *game_introspect_get_state(void)
 {
 	json j;
 
-	/* ── General state ──────────────────────────────────────────── */
+	/* -- General state -------------------------------------------- */
 	j["screen_mode"] = screen_mode_name(Screen_mode);
 	j["game_mode"] = Game_mode;
 	j["quitting"] = (bool) Quitting;
@@ -284,11 +284,11 @@ extern "C" char *game_introspect_get_state(void)
 	bool in_game = (Game_wind != NULL && Screen_mode == SCREEN_GAME);
 	j["in_game"] = in_game;
 
-	/* ── Death state ──────────────────────────────────────────── */
+	/* -- Death state -------------------------------------------- */
 	j["player_dead"] = (bool) Player_is_dead;
 	j["player_exploded"] = (bool) Player_exploded;
 
-	/* ── Window stack ───────────────────────────────────────────── */
+	/* -- Window stack --------------------------------------------- */
 	{
 		int nwin = 0;
 		window *w;
@@ -297,7 +297,7 @@ extern "C" char *game_introspect_get_state(void)
 		j["window_count"] = nwin;
 	}
 
-	/* ── Front window (menu) analysis ───────────────────────────── */
+	/* -- Front window (menu) analysis ----------------------------- */
 	{
 		window *front = window_get_front();
 		bool is_game_front = (front && front == Game_wind);
@@ -321,7 +321,7 @@ extern "C" char *game_introspect_get_state(void)
 		}
 	}
 
-	/* ── Joystick control bindings (always available) ───────────── */
+	/* -- Joystick control bindings (always available) ------------- */
 	{
 		int n = kconfig_get_joystick_count();
 		json items = json::array();
@@ -349,7 +349,7 @@ extern "C" char *game_introspect_get_state(void)
 		};
 	}
 
-	/* ── Automap ──────────────────────────────────────────────── */
+	/* -- Automap ------------------------------------------------ */
 	j["automap_active"] = (bool) Automap_active;
 #ifdef DXX_BUILD_DESCENT_II
 	{
@@ -375,7 +375,7 @@ extern "C" char *game_introspect_get_state(void)
 	}
 #endif /* DXX_BUILD_DESCENT_II automap_view_info */
 
-	/* ── Audio diagnostics ───────────────────────────────────────── */
+	/* -- Audio diagnostics ----------------------------------------- */
 	{
 		int freq = 0;
 		Uint16 fmt = 0;
@@ -413,7 +413,7 @@ extern "C" char *game_introspect_get_state(void)
 		j["audio"] = std::move(audio);
 	}
 
-	/* ── Redbook audio ────────────────────────────────────────────── */
+	/* -- Redbook audio ---------------------------------------------- */
 	{
 		json rb = { { "enabled", false } };
 		int enabled = RBAEnabled();
@@ -428,7 +428,7 @@ extern "C" char *game_introspect_get_state(void)
 		j["redbook"] = std::move(rb);
 	}
 
-	/* ── Movie state (D2 only) ─────────────────────────────────── */
+	/* -- Movie state (D2 only) ----------------------------------- */
 #ifdef DXX_BUILD_DESCENT_II
 	{
 		json mv;
@@ -447,7 +447,7 @@ extern "C" char *game_introspect_get_state(void)
 	}
 #endif
 
-	/* ── Live axis state (always available -- useful for binding tests) ── */
+	/* -- Live axis state (always available -- useful for binding tests) -- */
 	{
 		json axes = json::array();
 		for (int i = 0; i < 6; i++) {
@@ -479,7 +479,7 @@ extern "C" char *game_introspect_get_state(void)
 		j["throttle_time"] = (int) Controls.forward_thrust_time;
 	}
 
-	/* ── Player & position (only meaningful when a level is loaded) ── */
+	/* -- Player & position (only meaningful when a level is loaded) -- */
 	if (Current_level_num != 0) {
 		j["player"] = serialize_player();
 		j["position"] = serialize_position();
@@ -497,7 +497,7 @@ extern "C" char *game_introspect_get_state(void)
 	return buf;
 }
 
-/* ── On-demand dump infrastructure ──────────────────────────────────── */
+/* -- On-demand dump infrastructure ------------------------------------ */
 
 static char introspect_path[512] = "";
 static volatile int introspect_requested = 0;

@@ -1,5 +1,5 @@
 #!/bin/bash
-# get_ndk.sh — Download Android NDK if not present.
+# get_ndk.sh - Download Android NDK if not present.
 # Reads version/URL from tool_versions.conf.
 set -e
 

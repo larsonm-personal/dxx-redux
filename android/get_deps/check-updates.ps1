@@ -12,7 +12,7 @@ $scriptDir   = $PSScriptRoot
 $androidDir  = Split-Path $scriptDir -Parent
 $confFile    = Join-Path $scriptDir "tool_versions.conf"
 
-# ── Load tool_versions.conf ──────────────────────────────────────────────────
+# -- Load tool_versions.conf --------------------------------------------------
 
 function Load-Conf {
     $cfg = @{}
@@ -27,7 +27,7 @@ function Load-Conf {
 
 $conf = Load-Conf
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+# -- Helpers ------------------------------------------------------------------
 
 function Get-LatestMavenVersion($group, $artifact) {
     $groupPath = $group -replace '\.', '/'
@@ -115,7 +115,7 @@ function Get-LatestSoundfontVersion {
     } catch { return $null }
 }
 
-# ── Fetch all versions ───────────────────────────────────────────────────────
+# -- Fetch all versions -------------------------------------------------------
 
 Write-Host ""
 Write-Host "Checking for updates..."
@@ -188,7 +188,7 @@ if ($currentJDKMajor -eq "17" -and $latestJDK17) {
                 Current = $currentJDKVersion; Latest = $latestJDK21 }
 }
 
-# ── Display table ────────────────────────────────────────────────────────────
+# -- Display table ------------------------------------------------------------
 
 $upgradeable = @()
 $i = 1
@@ -219,7 +219,7 @@ if ($upgradeable.Count -eq 0) {
     return
 }
 
-# ── Prompt ───────────────────────────────────────────────────────────────────
+# -- Prompt -------------------------------------------------------------------
 
 Write-Host ""
 Write-Host "Enter numbers to upgrade (comma-separated), 'a' for all, or Enter to skip:"
@@ -246,7 +246,7 @@ if ($selected.Count -eq 0) {
     return
 }
 
-# ── Apply upgrades ───────────────────────────────────────────────────────────
+# -- Apply upgrades -----------------------------------------------------------
 
 function Update-Conf($key, $value) {
     $lines = Get-Content $confFile
