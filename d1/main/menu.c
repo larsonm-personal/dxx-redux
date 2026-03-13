@@ -169,16 +169,17 @@ int MakeNewPlayerFile(int allow_abort)
 {
 	int x;
 	char filename[PATH_MAX];
-	newmenu_item m;
+	newmenu_item m[2];
 	char text[CALLSIGN_LEN+9]="";
 
 	strncpy(text, Players[Player_num].callsign,CALLSIGN_LEN);
 
 try_again:
-	m.type=NM_TYPE_INPUT; m.text_len = CALLSIGN_LEN; m.text = text;
+	m[0].type=NM_TYPE_INPUT; m[0].text_len = CALLSIGN_LEN; m[0].text = text;
+	m[1].type=NM_TYPE_MENU; m[1].text = TXT_OK;
 
 	Newmenu_allowed_chars = playername_allowed_chars;
-	x = newmenu_do( NULL, TXT_ENTER_PILOT_NAME, 1, &m, NULL, NULL );
+	x = newmenu_do( NULL, TXT_ENTER_PILOT_NAME, 2, m, NULL, NULL );
 	Newmenu_allowed_chars = NULL;
 
 	if ( x < 0 ) {

@@ -120,7 +120,7 @@ class SetupActivity : ComponentActivity() {
                         Log.i("DXX-Setup", "patch_pilots: patched $n file(s)")
                     }
                     "reset_controls" -> {
-                        val n = NativePilotPatcher.nativeResetToDefaults(filesDir.absolutePath)
+                        val n = NativePilotPatcher.nativeResetToDefaults(filesDir.absolutePath, "d2")
                         Log.i("DXX-Setup", "reset_controls: reset $n file(s) to engine defaults")
                     }
                     "controller_introspect" -> {
@@ -277,7 +277,7 @@ class SetupActivity : ComponentActivity() {
             val joy = ByteArray(joyArr.length()) { (joyArr.getInt(it) and 0xFF).toByte() }
             val kb = ByteArray(kbArr.length()) { (kbArr.getInt(it) and 0xFF).toByte() }
             val ct = json.optInt("control_type", 1)
-            return NativePilotPatcher.nativePatchPilotFiles(filesDir.absolutePath, joy, kb, ct)
+            return NativePilotPatcher.nativePatchPilotFiles(filesDir.absolutePath, joy, kb, ct, "d2")
         } catch (e: Exception) {
             Log.e("DXX-Setup", "patchPilotsFromConfig failed", e)
             return 0
@@ -2997,7 +2997,7 @@ private fun ControllerSection(
                     File(ctx.filesDir, "controller_config.json").delete()
                     File(ctx.filesDir, "touch_layout.json").delete()
                     // Patch all .plr files with engine defaults (kb + joy + mouse + touch offsets)
-                    NativePilotPatcher.nativeResetToDefaults(ctx.filesDir.absolutePath)
+                    NativePilotPatcher.nativeResetToDefaults(ctx.filesDir.absolutePath, "d2")
                     showResetDialog = false
                     // Restart to apply
                     android.os.Process.killProcess(android.os.Process.myPid())

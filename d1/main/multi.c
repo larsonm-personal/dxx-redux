@@ -2034,7 +2034,7 @@ int multi_message_input_sub(int key)
 void
 multi_send_message_dialog(void)
 {
-	newmenu_item m[1];
+	newmenu_item m[2];
 	int choice;
 
 	if (!(Game_mode&GM_MULTI))
@@ -2043,7 +2043,8 @@ multi_send_message_dialog(void)
 	Network_message[0] = 0;             // Get rid of old contents
 
 	m[0].type=NM_TYPE_INPUT; m[0].text = Network_message; m[0].text_len = MAX_MESSAGE_LEN-1;
-	choice = newmenu_do( NULL, TXT_SEND_MESSAGE, 1, m, NULL, NULL );
+	m[1].type=NM_TYPE_MENU; m[1].text = TXT_OK;
+	choice = newmenu_do( NULL, TXT_SEND_MESSAGE, 2, m, NULL, NULL );
 
 	if ((choice > -1) && (strlen(Network_message) > 0)) {
 		Network_message_reciever = 100;

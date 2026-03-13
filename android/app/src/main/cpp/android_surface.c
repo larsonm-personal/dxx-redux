@@ -33,6 +33,8 @@ static pthread_mutex_t g_surface_mutex = PTHREAD_MUTEX_INITIALIZER;
 static uint32_t g_palette_argb[256];
 static int g_last_geo_w = 0, g_last_geo_h = 0;
 static volatile int g_app_paused = 0;
+static volatile int g_egl_surface_stale = 0;
+static int g_had_surface = 0;
 
 /* ── JNI entry points called from Kotlin ────────────────────── */
 
@@ -52,6 +54,11 @@ Java_com_dxxredux_app_MainActivity_nativeSetSurface(JNIEnv *env, jobject thiz, j
 			g_surface_ready = 1;
 			g_last_geo_w = 0;
 			g_last_geo_h = 0;
+			if (g_had_surface) {
+				g_egl_surface_stale = 1;
+				LOGI("ANativeWindow re-acquired — EGL surface marked stale");
+			}
+			g_had_surface = 1;
 			LOGI("ANativeWindow acquired (%dx%d)",
 			     ANativeWindow_getWidth(g_native_window),
 			     ANativeWindow_getHeight(g_native_window));
@@ -160,6 +167,22 @@ void android_surface_resume(void)
 	g_app_paused = 0;
 	LOGI("surface resumed (app foregrounded)");
 	pthread_mutex_unlock(&g_surface_mutex);
+}
+
+/* ── Accessors for EGL lifecycle ─────────────────────────────── */
+
+int android_surface_egl_needs_recreate(void)
+{
+	if (g_egl_surface_stale) {
+		g_egl_surface_stale = 0;
+		return 1;
+	}
+	return 0;
+}
+
+int android_surface_is_paused(void)
+{
+	return g_app_paused;
 }
 
 /* ── Cleanup ────────────────────────────────────────────────── */

@@ -93,24 +93,24 @@ extern "C" void android_apply_gamepad_defaults(void)
 
 /* -- JNI entry point: patch all .plr files ----------------------- */
 
-/* Scan files_dir (and Players/ subdir) for .plr files and patch each. */
+/* Scan files_dir for .plr files in the specified game's pref dir and patch each.
+ * game must be "d1" or "d2". */
 static int patch_all_plr_files(const char *files_dir,
+                               const char *game,
                                const ubyte *kb, int kb_len,
                                const ubyte *joy, int joy_len,
                                const ubyte *mouse, int mouse_len,
                                int controlType)
 {
 	int total = 0;
-	/* Scan game-specific pref dirs where the engine actually writes .plr files.
-	 * PhysFS creates d1x-redux/ and d2x-redux/ under files_dir. */
-	char d2_dir[512], d1_dir[512], d2_players[512], d1_players[512];
-	snprintf(d2_dir, sizeof(d2_dir), "%s/d2x-redux", files_dir);
-	snprintf(d1_dir, sizeof(d1_dir), "%s/d1x-redux", files_dir);
-	snprintf(d2_players, sizeof(d2_players), "%s/d2x-redux/Players", files_dir);
-	snprintf(d1_players, sizeof(d1_players), "%s/d1x-redux/Players", files_dir);
-	const char *dirs[] = { d2_dir, d1_dir, d2_players, d1_players };
+	/* Scan only the specified game's pref dir. */
+	const char *subdir = (strcmp(game, "d1") == 0) ? "d1x-redux" : "d2x-redux";
+	char base_dir[512], players_dir[512];
+	snprintf(base_dir, sizeof(base_dir), "%s/%s", files_dir, subdir);
+	snprintf(players_dir, sizeof(players_dir), "%s/%s/Players", files_dir, subdir);
+	const char *dirs[] = { base_dir, players_dir };
 
-	for (int d = 0; d < 4; d++) {
+	for (int d = 0; d < 2; d++) {
 		DIR *dp = opendir(dirs[d]);
 		if (!dp) continue;
 		struct dirent *ent;
@@ -135,9 +135,11 @@ static int patch_all_plr_files(const char *files_dir,
 extern "C" JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_NativePilotPatcher_nativePatchPilotFiles(
     JNIEnv *env, jclass clazz,
-    jstring jfilesDir, jbyteArray jjoy, jbyteArray jkb, jint controlType)
+    jstring jfilesDir, jbyteArray jjoy, jbyteArray jkb, jint controlType,
+    jstring jgame)
 {
 	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
+	const char *game = env->GetStringUTFChars(jgame, NULL);
 
 	jbyte *joy = env->GetByteArrayElements(jjoy, NULL);
 	jint joy_len = env->GetArrayLength(jjoy);
@@ -145,15 +147,16 @@ Java_com_dxxredux_app_NativePilotPatcher_nativePatchPilotFiles(
 	jbyte *kb = env->GetByteArrayElements(jkb, NULL);
 	jint kb_len = env->GetArrayLength(jkb);
 
-	int total = patch_all_plr_files(files_dir,
+	int total = patch_all_plr_files(files_dir, game,
 	                                (const ubyte *) kb, (int) kb_len,
 	                                (const ubyte *) joy, (int) joy_len,
 	                                NULL, 0, (int) controlType);
 
-	LOGI("nativePatchPilotFiles: patched %d file(s) in %s", total, files_dir);
+	LOGI("nativePatchPilotFiles[%s]: patched %d file(s) in %s", game, total, files_dir);
 
 	env->ReleaseByteArrayElements(jkb, kb, JNI_ABORT);
 	env->ReleaseByteArrayElements(jjoy, joy, JNI_ABORT);
+	env->ReleaseStringUTFChars(jgame, game);
 	env->ReleaseStringUTFChars(jfilesDir, files_dir);
 
 	return (jint) total;
@@ -163,15 +166,17 @@ Java_com_dxxredux_app_NativePilotPatcher_nativePatchPilotFiles(
 
 extern "C" JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_NativePilotPatcher_nativeResetToDefaults(
-    JNIEnv *env, jclass, jstring jfilesDir)
+    JNIEnv *env, jclass, jstring jfilesDir, jstring jgame)
 {
 	ubyte kb[MAX_CONTROLS], joy[MAX_CONTROLS], mouse[MAX_CONTROLS];
 	kconfig_get_default_settings(kb, joy, mouse);
 
 	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
-	int total = patch_all_plr_files(files_dir,
+	const char *game = env->GetStringUTFChars(jgame, NULL);
+	int total = patch_all_plr_files(files_dir, game,
 	                                kb, MAX_CONTROLS, joy, MAX_CONTROLS, mouse, MAX_CONTROLS, 1);
-	LOGI("nativeResetToDefaults: patched %d file(s) in %s", total, files_dir);
+	LOGI("nativeResetToDefaults[%s]: patched %d file(s) in %s", game, total, files_dir);
+	env->ReleaseStringUTFChars(jgame, game);
 	env->ReleaseStringUTFChars(jfilesDir, files_dir);
 	return (jint) total;
 }

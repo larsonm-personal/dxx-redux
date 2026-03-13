@@ -113,9 +113,69 @@ bool TestEGLError(char* pszLocation)
 }
 #endif
 
+#if defined(OGLES) && defined(ANDROID)
+/*
+ * Recreate the EGL surface after the ANativeWindow has been replaced
+ * (e.g. after the app was backgrounded and resumed).  Preserves the
+ * EGL context so textures remain valid.  If the context was also lost
+ * (rare, memory-pressure case), does a full re-init.
+ */
+static void ogl_android_recreate_egl_surface(void)
+{
+	extern ANativeWindow *android_surface_get_native_window(void);
+	ANativeWindow *win = android_surface_get_native_window();
+	if (!win) return;
+
+	con_printf(CON_DEBUG, "EGL: recreating surface after resume\n");
+
+	/* Detach the old surface from the context */
+	eglMakeCurrent(eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, eglContext);
+
+	if (eglSurface != EGL_NO_SURFACE) {
+		eglDestroySurface(eglDisplay, eglSurface);
+		eglSurface = EGL_NO_SURFACE;
+	}
+
+	/* Match format and create new surface */
+	EGLint format;
+	eglGetConfigAttrib(eglDisplay, eglConfig, EGL_NATIVE_VISUAL_ID, &format);
+	ANativeWindow_setBuffersGeometry(win, grd_curscreen->sc_w, grd_curscreen->sc_h, format);
+
+	EGLint winAttribs[] = { EGL_RENDER_BUFFER, EGL_BACK_BUFFER, EGL_NONE, EGL_NONE };
+	eglSurface = eglCreateWindowSurface(eglDisplay, eglConfig, (EGLNativeWindowType)win, winAttribs);
+	if (eglSurface == EGL_NO_SURFACE) {
+		con_printf(CON_URGENT, "EGL: failed to create new surface after resume\n");
+		return;
+	}
+
+	if (!eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext)) {
+		/* Context was lost — full re-init */
+		con_printf(CON_URGENT, "EGL: context lost during resume, doing full re-init\n");
+		EGLint contextAttribs[] = { EGL_CONTEXT_CLIENT_VERSION, 1, EGL_NONE, EGL_NONE };
+		eglDestroyContext(eglDisplay, eglContext);
+		eglContext = eglCreateContext(eglDisplay, eglConfig, EGL_NO_CONTEXT, contextAttribs);
+		eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
+		ogl_smash_texture_list_internal();
+		con_printf(CON_DEBUG, "EGL: full re-init complete, textures invalidated\n");
+	} else {
+		con_printf(CON_DEBUG, "EGL: surface recreated, context preserved\n");
+	}
+}
+#endif /* OGLES && ANDROID */
+
 void ogl_swap_buffers_internal(void)
 {
 #ifdef OGLES
+#ifdef ANDROID
+	{
+		extern int android_surface_is_paused(void);
+		extern int android_surface_egl_needs_recreate(void);
+		if (android_surface_is_paused())
+			return;
+		if (android_surface_egl_needs_recreate())
+			ogl_android_recreate_egl_surface();
+	}
+#endif
 	eglSwapBuffers(eglDisplay, eglSurface);
 #else
 	SDL_GL_SwapBuffers();

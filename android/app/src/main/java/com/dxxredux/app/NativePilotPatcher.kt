@@ -11,8 +11,9 @@ object NativePilotPatcher {
     }
 
     /**
-     * Patch all .plr files in [filesDir] (and its Players/ subdirectory)
+     * Patch all .plr files for the given [game] ("d1" or "d2") in [filesDir]
      * with the given KeySettings byte arrays and control type.
+     * Only scans the matching game's pref directory (d1x-redux/ or d2x-redux/).
      *
      * @return number of files successfully patched
      */
@@ -22,6 +23,7 @@ object NativePilotPatcher {
         joystickSettings: ByteArray,
         keyboardSettings: ByteArray,
         controlType: Int,
+        game: String,
     ): Int
 
     /**
@@ -48,12 +50,12 @@ object NativePilotPatcher {
     ): ByteArray
 
     /**
-     * Reset all .plr files in [filesDir] to engine default key settings
-     * (keyboard + joystick + mouse) with touch overlay offsets applied.
-     * Sets control_type to CONTROL_USING_JOYSTICK (1).
+     * Reset all .plr files for the given [game] ("d1" or "d2") in [filesDir]
+     * to engine default key settings (keyboard + joystick + mouse) with touch
+     * overlay offsets applied.  Sets control_type to CONTROL_USING_JOYSTICK (1).
      *
      * @return number of files successfully patched
      */
     @JvmStatic
-    external fun nativeResetToDefaults(filesDir: String): Int
+    external fun nativeResetToDefaults(filesDir: String, game: String): Int
 }

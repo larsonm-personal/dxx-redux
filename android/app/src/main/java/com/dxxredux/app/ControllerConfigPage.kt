@@ -386,6 +386,7 @@ internal fun saveConfig(
         joySettings,
         kbSettings,
         controlType,
+        "d2",
     )
 }
 
