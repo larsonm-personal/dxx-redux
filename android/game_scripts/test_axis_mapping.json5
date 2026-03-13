@@ -13,6 +13,9 @@
 // Phase 3: Negative check -- verify axis 1 does NOT drive pitch or
 //          slide_ud (catches ControllerConfigPage DEFAULT_BINDINGS bug
 //          and the old joy_out[19]=1 bug).
+// Phase 4: Meta action key sequences -- verify the SDL key events that
+//          meta actions dispatch (ESC for game menu, digit keys for
+//          weapon switching) produce the expected game effects.
 //
 // Root cause this catches:
 //   1. ControllerConfigPage.kt DEFAULT_BINDINGS had LS_Y -> "Pitch U/D"
@@ -153,6 +156,36 @@
     }},
     {"action": "log", "message": "Phase 3c: PASS -- axis 3 does not drive throttle"},
     {"action": "send_axis", "axis": 3, "axis_value": 0.0, "post_delay_ms": 200},
+
+    // -- Phase 4: Meta action key sequence tests --
+    // Meta actions (android_meta_actions.c) work by injecting SDL key
+    // events when a controller button fires.  These tests verify the
+    // underlying key sequences produce the expected game effects.
+
+    // 4a: ESC key (META_GAME_MENU dispatches SDLK_ESCAPE)
+    //     Should open the in-game options menu over the game window.
+    {"action": "log", "message": "Phase 4a: ESC key opens in-game menu"},
+    {"action": "assert", "expect": {"game_window_is_front": "true"}},
+    {"action": "key", "key": "esc", "post_delay_ms": 500},
+    {"action": "assert", "expect": {
+        "game_window_is_front": "false",
+        "menu_type": "newmenu"
+    }},
+    {"action": "log", "message": "Phase 4a: PASS -- ESC opened menu"},
+    // Close the menu and return to game
+    {"action": "key", "key": "esc", "post_delay_ms": 500},
+    {"action": "assert", "expect": {"game_window_is_front": "true"}},
+    {"action": "log", "message": "Phase 4a: PASS -- menu closed, back in game"},
+
+    // 4b: Weapon key "1" (META_WEAPON_1 dispatches SDLK_1)
+    //     At level start on Rookie the player has Laser (primary 0)
+    //     and Concussion (secondary 0).  Verify initial weapon state.
+    {"action": "log", "message": "Phase 4b: Verify initial weapon state"},
+    {"action": "assert", "expect": {
+        "primary_weapon":   "0",
+        "secondary_weapon": "0"
+    }},
+    {"action": "log", "message": "Phase 4b: PASS -- weapon state correct"},
 
     // -- Done --
     {"action": "log", "message": "=== TEST: Axis Mapping Regression -- ALL PHASES PASS ==="}

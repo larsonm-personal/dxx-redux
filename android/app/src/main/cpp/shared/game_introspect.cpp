@@ -319,6 +319,14 @@ extern "C" char *game_introspect_get_state(void)
 		} else if (!front) {
 			j["menu"] = nullptr;
 		}
+
+		/* Flat menu keys for easy assertion */
+		if (j.contains("menu") && j["menu"].is_object()) {
+			if (j["menu"].contains("type"))
+				j["menu_type"] = j["menu"]["type"];
+			if (j["menu"].contains("title"))
+				j["menu_title"] = j["menu"]["title"];
+		}
 	}
 
 	/* -- Joystick control bindings (always available) ------------- */
@@ -483,6 +491,11 @@ extern "C" char *game_introspect_get_state(void)
 	if (Current_level_num != 0) {
 		j["player"] = serialize_player();
 		j["position"] = serialize_position();
+
+		/* Flat weapon keys for easy assertion */
+		player *p = &Players[Player_num];
+		j["primary_weapon"] = (int) p->primary_weapon;
+		j["secondary_weapon"] = (int) p->secondary_weapon;
 	} else {
 		j["player"] = nullptr;
 		j["position"] = nullptr;

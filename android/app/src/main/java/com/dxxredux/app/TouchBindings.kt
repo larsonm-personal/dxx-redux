@@ -33,6 +33,14 @@ object TouchBindings {
     /** Buttons that only exist in D2 (D1 has no afterburner, headlight, etc.). */
     val D2_ONLY_BUTTONS = setOf(BTN_AFTERBURNER, BTN_HEADLIGHT, BTN_ENERGY_SHIELD, BTN_TOGGLE_BOMB)
 
+    /** String labels for D2-only standard button functions (controller config uses labels). */
+    val D2_ONLY_BUTTON_LABELS = setOf("Afterburner", "Headlight", "Energy\u2192Shield", "Toggle Bomb")
+
+    /** String labels for D2-only meta actions (controller config uses labels). */
+    val D2_ONLY_META_LABELS: Set<String> by lazy {
+        D2_ONLY_META_ACTIONS.mapNotNull { META_BUTTON_LABELS[it] }.toSet()
+    }
+
     /**
      * Offset added to kc_joystick[] indices when sending touch button events
      * via nativeJoystickButton, to avoid collisions with physical controller

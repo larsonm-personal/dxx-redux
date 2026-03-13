@@ -517,6 +517,7 @@ fun ControllerConfigPage(
     dpadAxes: FloatArray,
     axisGeneration: Int,
     pressedButtons: SnapshotStateList<String>,
+    gameVariant: String = "d2",
     onBack: () -> Unit,
 ) {
     @Suppress("UNUSED_EXPRESSION")
@@ -1443,6 +1444,7 @@ fun ControllerConfigPage(
             controlLabel = selectedControl!!,
             currentFunc = bindings[selectedControl!!],
             assignedFunctions = assignedButtonFuncs,
+            gameVariant = gameVariant,
             onSelect = { funcLabel ->
                 assignButtonFunction(bindings, selectedControl!!, funcLabel)
                 showButtonPicker = false
@@ -1478,6 +1480,7 @@ fun ControllerConfigPage(
             currentYPosFunc = bindings[yPosKey],
             assignedFunctions = assignedAxisFuncsForDialog,
             assignedButtonFunctions = assignedButtonFuncs,
+            gameVariant = gameVariant,
             onConfirm = { result ->
                 // Clear all axis and axis-button bindings for this stick
                 bindings.remove(xKey)
@@ -1524,6 +1527,7 @@ fun ControllerConfigPage(
                 },
             currentFunc = bindings[selectedControl!!],
             assignedFunctions = assignedDpadFuncsForDialog,
+            gameVariant = gameVariant,
             onSelect = { funcLabel ->
                 assignDpadFunction(bindings, selectedControl!!, funcLabel)
                 showDpadPicker = false
@@ -1580,12 +1584,19 @@ private fun ButtonFunctionPickerDialog(
     controlLabel: String,
     currentFunc: String?,
     assignedFunctions: Set<String> = emptySet(),
+    gameVariant: String = "d2",
     onSelect: (String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var showExtra by remember { mutableStateOf(false) }
+    val isD1 = gameVariant == "d1"
     val funcList =
-        if (showExtra) TouchBindings.META_BUTTON_LABELS.values.toList() else BUTTON_FUNCTIONS
+        if (showExtra) {
+            TouchBindings.META_BUTTON_LABELS.values
+                .filter { !isD1 || it !in TouchBindings.D2_ONLY_META_LABELS }
+        } else {
+            BUTTON_FUNCTIONS.filter { !isD1 || it !in TouchBindings.D2_ONLY_BUTTON_LABELS }
+        }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1673,6 +1684,7 @@ private fun StickPickerDialog(
     currentYPosFunc: String? = null,
     assignedFunctions: Set<String> = emptySet(),
     assignedButtonFunctions: Set<String> = emptySet(),
+    gameVariant: String = "d2",
     onConfirm: (StickPickerResult) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -1713,10 +1725,10 @@ private fun StickPickerDialog(
                         }
                     }
                     if (xButtonMode) {
-                        AxisButtonPicker("Left (neg)", xNegFunc, assignedButtonFunctions) {
+                        AxisButtonPicker("Left (neg)", xNegFunc, assignedButtonFunctions, gameVariant) {
                             xNegFunc = it
                         }
-                        AxisButtonPicker("Right (pos)", xPosFunc, assignedButtonFunctions) {
+                        AxisButtonPicker("Right (pos)", xPosFunc, assignedButtonFunctions, gameVariant) {
                             xPosFunc = it
                         }
                     } else {
@@ -1747,10 +1759,10 @@ private fun StickPickerDialog(
                         }
                     }
                     if (yButtonMode) {
-                        AxisButtonPicker("Up (neg)", yNegFunc, assignedButtonFunctions) {
+                        AxisButtonPicker("Up (neg)", yNegFunc, assignedButtonFunctions, gameVariant) {
                             yNegFunc = it
                         }
-                        AxisButtonPicker("Down (pos)", yPosFunc, assignedButtonFunctions) {
+                        AxisButtonPicker("Down (pos)", yPosFunc, assignedButtonFunctions, gameVariant) {
                             yPosFunc = it
                         }
                     } else {
@@ -1796,6 +1808,7 @@ private fun AxisButtonPicker(
     label: String,
     currentFunc: String?,
     assignedFunctions: Set<String> = emptySet(),
+    gameVariant: String = "d2",
     onSelect: (String?) -> Unit,
 ) {
     var showPicker by remember { mutableStateOf(false) }
@@ -1817,6 +1830,7 @@ private fun AxisButtonPicker(
             controlLabel = label,
             currentFunc = currentFunc,
             assignedFunctions = assignedFunctions,
+            gameVariant = gameVariant,
             onSelect = { func ->
                 onSelect(func)
                 showPicker = false
@@ -1881,12 +1895,19 @@ private fun DpadFunctionPickerDialog(
     directionLabel: String,
     currentFunc: String?,
     assignedFunctions: Set<String> = emptySet(),
+    gameVariant: String = "d2",
     onSelect: (String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var showExtra by remember { mutableStateOf(false) }
+    val isD1 = gameVariant == "d1"
     val funcList =
-        if (showExtra) TouchBindings.META_BUTTON_LABELS.values.toList() else KB_FUNCTIONS
+        if (showExtra) {
+            TouchBindings.META_BUTTON_LABELS.values
+                .filter { !isD1 || it !in TouchBindings.D2_ONLY_META_LABELS }
+        } else {
+            KB_FUNCTIONS
+        }
 
     AlertDialog(
         onDismissRequest = onDismiss,

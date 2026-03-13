@@ -1319,12 +1319,16 @@ private fun SetupScreen(
                 dpadAxes = dpadAxes,
                 axisGeneration = axisGeneration,
                 pressedButtons = pressedButtons,
+                gameVariant = selectedGame,
                 onBack = { showControllerPage = false },
             )
             return@MaterialTheme
         }
         if (showTouchEditorPage) {
-            TouchEditorPage(onBack = { showTouchEditorPage = false })
+            TouchEditorPage(
+                gameVariant = selectedGame,
+                onBack = { showTouchEditorPage = false },
+            )
             return@MaterialTheme
         }
         Surface(

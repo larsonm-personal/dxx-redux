@@ -57,7 +57,10 @@ private val cCollisionWarn = Color(0xCCFF5722.toInt())
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TouchEditorPage(onBack: () -> Unit) {
+fun TouchEditorPage(
+    gameVariant: String = "d2",
+    onBack: () -> Unit,
+) {
     val context = LocalContext.current
     var layout by remember { mutableStateOf(TouchLayoutRepository.load(context)) }
     var selectedType by remember { mutableStateOf<String?>(null) } // "stick", "button"
@@ -166,6 +169,7 @@ fun TouchEditorPage(onBack: () -> Unit) {
                             "stick" ->
                                 StickPropertiesPanel(
                                     stick = layout.sticks[selectedIndex],
+                                    gameVariant = gameVariant,
                                     onUpdate = { updated ->
                                         layout =
                                             layout.copy(
@@ -192,6 +196,7 @@ fun TouchEditorPage(onBack: () -> Unit) {
                             "button" ->
                                 ButtonPropertiesPanel(
                                     button = layout.buttons[selectedIndex],
+                                    gameVariant = gameVariant,
                                     onUpdate = { updated ->
                                         layout =
                                             layout.copy(
@@ -218,6 +223,7 @@ fun TouchEditorPage(onBack: () -> Unit) {
                             "radial" ->
                                 RadialPropertiesPanel(
                                     radial = layout.radialMenus[selectedIndex],
+                                    gameVariant = gameVariant,
                                     onUpdate = { updated ->
                                         layout =
                                             layout.copy(
@@ -1015,6 +1021,7 @@ private fun moveControl(
 @Composable
 private fun StickPropertiesPanel(
     stick: AnalogStickControl,
+    gameVariant: String = "d2",
     onUpdate: (AnalogStickControl) -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -1035,18 +1042,18 @@ private fun StickPropertiesPanel(
     }
     if (stick.buttonMode) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ButtonBindingPicker("X Neg", stick.negXBinding, Modifier.weight(1f)) {
+            ButtonBindingPicker("X Neg", stick.negXBinding, Modifier.weight(1f), gameVariant) {
                 onUpdate(stick.copy(negXBinding = it))
             }
-            ButtonBindingPicker("X Pos", stick.posXBinding, Modifier.weight(1f)) {
+            ButtonBindingPicker("X Pos", stick.posXBinding, Modifier.weight(1f), gameVariant) {
                 onUpdate(stick.copy(posXBinding = it))
             }
         }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ButtonBindingPicker("Y Neg", stick.negYBinding, Modifier.weight(1f)) {
+            ButtonBindingPicker("Y Neg", stick.negYBinding, Modifier.weight(1f), gameVariant) {
                 onUpdate(stick.copy(negYBinding = it))
             }
-            ButtonBindingPicker("Y Pos", stick.posYBinding, Modifier.weight(1f)) {
+            ButtonBindingPicker("Y Pos", stick.posYBinding, Modifier.weight(1f), gameVariant) {
                 onUpdate(stick.copy(posYBinding = it))
             }
         }
@@ -1129,6 +1136,7 @@ private fun StickPropertiesPanel(
 @Composable
 private fun ButtonPropertiesPanel(
     button: ButtonControl,
+    gameVariant: String = "d2",
     onUpdate: (ButtonControl) -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -1145,7 +1153,7 @@ private fun ButtonPropertiesPanel(
 
     // Binding & label
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        ButtonBindingPicker("Binding", button.binding, Modifier.weight(1f)) {
+        ButtonBindingPicker("Binding", button.binding, Modifier.weight(1f), gameVariant) {
             onUpdate(button.copy(binding = it))
         }
         LabelEditor("Label", button.label, Modifier.weight(1f)) {
@@ -1203,6 +1211,7 @@ private fun ButtonPropertiesPanel(
 @Composable
 private fun RadialPropertiesPanel(
     radial: RadialMenuControl,
+    @Suppress("UNUSED_PARAMETER") gameVariant: String = "d2",
     onUpdate: (RadialMenuControl) -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -1422,13 +1431,18 @@ private fun ButtonBindingPicker(
     label: String,
     current: Int,
     modifier: Modifier = Modifier,
+    gameVariant: String = "d2",
     onChange: (Int) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     var showExtra by remember { mutableStateOf(false) }
     val currentLabel = TouchBindings.ALL_BUTTON_LABELS[current] ?: "Button $current"
+    val isD1 = gameVariant == "d1"
     val entries =
-        if (showExtra) TouchBindings.META_BUTTON_LABELS else TouchBindings.BUTTON_LABELS
+        (if (showExtra) TouchBindings.META_BUTTON_LABELS else TouchBindings.BUTTON_LABELS)
+            .filterKeys { id ->
+                !isD1 || (id !in TouchBindings.D2_ONLY_BUTTONS && id !in TouchBindings.D2_ONLY_META_ACTIONS)
+            }
 
     Column(modifier = modifier) {
         Text(label, color = Color.Gray, fontSize = 11.sp)
