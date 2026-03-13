@@ -84,6 +84,11 @@ data class AnalogStickControl(
     val floating: Boolean = false,
     val floatingZone: FloatingZone = FloatingZone(),
     val hapticFeedback: Boolean = true,
+    val buttonMode: Boolean = false,
+    val negXBinding: Int = TouchBindings.BTN_FIRE_PRIMARY,
+    val posXBinding: Int = TouchBindings.BTN_FIRE_PRIMARY,
+    val negYBinding: Int = TouchBindings.BTN_FIRE_PRIMARY,
+    val posYBinding: Int = TouchBindings.BTN_FIRE_PRIMARY,
 ) {
     fun toJson() =
         JSONObject().apply {
@@ -104,6 +109,13 @@ data class AnalogStickControl(
             put("floating", floating)
             put("floatingZone", floatingZone.toJson())
             put("haptic", hapticFeedback)
+            if (buttonMode) {
+                put("buttonMode", true)
+                put("negXBinding", negXBinding)
+                put("posXBinding", posXBinding)
+                put("negYBinding", negYBinding)
+                put("posYBinding", posYBinding)
+            }
         }
 
     companion object {
@@ -133,6 +145,11 @@ data class AnalogStickControl(
                         FloatingZone()
                     },
                 hapticFeedback = j.optBoolean("haptic", true),
+                buttonMode = j.optBoolean("buttonMode"),
+                negXBinding = j.optInt("negXBinding", TouchBindings.BTN_FIRE_PRIMARY),
+                posXBinding = j.optInt("posXBinding", TouchBindings.BTN_FIRE_PRIMARY),
+                negYBinding = j.optInt("negYBinding", TouchBindings.BTN_FIRE_PRIMARY),
+                posYBinding = j.optInt("posYBinding", TouchBindings.BTN_FIRE_PRIMARY),
             )
     }
 }

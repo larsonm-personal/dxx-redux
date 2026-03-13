@@ -96,6 +96,16 @@ private val AXIS_CONTROLS =
         "RS_Y" to 3,
     )
 
+// Axis-button SDL indices: axis → (negative button, positive button)
+// These match the layout from joy.c axis_button_map registration.
+private val AXIS_BUTTON_SDL =
+    mapOf(
+        "LS_X" to Pair(10, 11),
+        "LS_Y" to Pair(12, 13),
+        "RS_X" to Pair(14, 15),
+        "RS_Y" to Pair(16, 17),
+    )
+
 /*
  * Joystick function → kc_joystick[] index maps.
  * IMPORTANT: These indices mirror the kc_joystick[] array layout in
@@ -214,6 +224,20 @@ private val AXIS_COVERS_BUTTONS =
         "Throttle" to listOf("Accelerate", "Reverse"),
     )
 
+// Result from StickPickerDialog including axis-as-buttons mode
+private data class StickPickerResult(
+    val xFunc: String? = null,
+    val yFunc: String? = null,
+    val xInvert: Boolean = false,
+    val yInvert: Boolean = false,
+    val xButtonMode: Boolean = false,
+    val yButtonMode: Boolean = false,
+    val xNegFunc: String? = null,
+    val xPosFunc: String? = null,
+    val yNegFunc: String? = null,
+    val yPosFunc: String? = null,
+)
+
 // ── Config file I/O ─────────────────────────────────────────────────────────
 
 private const val CONFIG_FILENAME = "controller_config.json"
@@ -246,6 +270,19 @@ private fun saveConfig(
             joyValues.add(axisSdlId)
             joyIndices.add(axisKcIdx + 1)
             joyValues.add(if (controlId in inverts) 1 else 0)
+            continue
+        }
+        // Axis-as-buttons: keys like "LS_X_neg", "LS_X_pos"
+        val isNeg = controlId.endsWith("_neg")
+        val isPos = controlId.endsWith("_pos")
+        if ((isNeg || isPos) && btnKcIdx != null) {
+            val axisId = controlId.removeSuffix("_neg").removeSuffix("_pos")
+            val sdlPair = AXIS_BUTTON_SDL[axisId]
+            if (sdlPair != null) {
+                val sdlBtn = if (isNeg) sdlPair.first else sdlPair.second
+                joyIndices.add(btnKcIdx)
+                joyValues.add(sdlBtn)
+            }
         }
     }
 
@@ -302,6 +339,18 @@ private fun saveConfig(
         val dpadCode = DPAD_CONTROLS[controlId]
         if (dpadCode != null) {
             metaObj.put("dpad_$controlId", metaId)
+            continue
+        }
+        // Axis-as-buttons meta actions
+        val isNeg = controlId.endsWith("_neg")
+        val isPos = controlId.endsWith("_pos")
+        if (isNeg || isPos) {
+            val axisId = controlId.removeSuffix("_neg").removeSuffix("_pos")
+            val sdlPair = AXIS_BUTTON_SDL[axisId]
+            if (sdlPair != null) {
+                val abSdlBtn = if (isNeg) sdlPair.first else sdlPair.second
+                metaObj.put(abSdlBtn.toString(), metaId)
+            }
         }
     }
     json.put("meta_bindings", metaObj)
@@ -649,7 +698,20 @@ fun ControllerConfigPage(
             val sLabelOff = stickR + scale * 0.035f
             val lsxInv = "LS_X" in inverts
             val lsyInv = "LS_Y" in inverts
-            if (lsyFunc != null) {
+            // Y axis: axis mode or button mode
+            val lsyNeg = bindings["LS_Y_neg"]
+            val lsyPos = bindings["LS_Y_pos"]
+            if (lsyNeg != null || lsyPos != null) {
+                // Button mode Y
+                if (lsyNeg != null) {
+                    val topC = if (ly < -0.3f) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, abbreviate(lsyNeg), lsCx, lsCy - sLabelOff, scale, topC)
+                }
+                if (lsyPos != null) {
+                    val botC = if (ly > 0.3f) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, abbreviate(lsyPos), lsCx, lsCy + sLabelOff, scale, botC)
+                }
+            } else if (lsyFunc != null) {
                 val topLabel = if (lsyInv) axisPosLabel(lsyFunc) else axisNegLabel(lsyFunc)
                 val botLabel = if (lsyInv) axisNegLabel(lsyFunc) else axisPosLabel(lsyFunc)
                 val topC = if (ly < -0.3f) cActive else cAssignLabel
@@ -657,7 +719,19 @@ fun ControllerConfigPage(
                 val botC = if (ly > 0.3f) cActive else cAssignLabel
                 drawFuncLabel(textMeasurer, botLabel, lsCx, lsCy + sLabelOff, scale, botC)
             }
-            if (lsxFunc != null) {
+            // X axis: axis mode or button mode
+            val lsxNeg = bindings["LS_X_neg"]
+            val lsxPos = bindings["LS_X_pos"]
+            if (lsxNeg != null || lsxPos != null) {
+                if (lsxNeg != null) {
+                    val leftC = if (lx < -0.3f) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, abbreviate(lsxNeg), lsCx - sLabelOff * 1.5f, lsCy, scale, leftC)
+                }
+                if (lsxPos != null) {
+                    val rightC = if (lx > 0.3f) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, abbreviate(lsxPos), lsCx + sLabelOff * 1.5f, lsCy, scale, rightC)
+                }
+            } else if (lsxFunc != null) {
                 val leftLabel = if (lsxInv) axisPosLabel(lsxFunc) else axisNegLabel(lsxFunc)
                 val rightLabel = if (lsxInv) axisNegLabel(lsxFunc) else axisPosLabel(lsxFunc)
                 val leftC = if (lx < -0.3f) cActive else cAssignLabel
@@ -842,7 +916,19 @@ fun ControllerConfigPage(
             val rsyFunc = bindings["RS_Y"]
             val rsxInv = "RS_X" in inverts
             val rsyInv = "RS_Y" in inverts
-            if (rsyFunc != null) {
+            // Y axis: axis mode or button mode
+            val rsyNeg = bindings["RS_Y_neg"]
+            val rsyPos = bindings["RS_Y_pos"]
+            if (rsyNeg != null || rsyPos != null) {
+                if (rsyNeg != null) {
+                    val topC = if (ry < -0.3f) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, abbreviate(rsyNeg), rsCx, rsCy - sLabelOff, scale, topC)
+                }
+                if (rsyPos != null) {
+                    val botC = if (ry > 0.3f) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, abbreviate(rsyPos), rsCx, rsCy + sLabelOff, scale, botC)
+                }
+            } else if (rsyFunc != null) {
                 val topLabel = if (rsyInv) axisPosLabel(rsyFunc) else axisNegLabel(rsyFunc)
                 val botLabel = if (rsyInv) axisNegLabel(rsyFunc) else axisPosLabel(rsyFunc)
                 val topC = if (ry < -0.3f) cActive else cAssignLabel
@@ -850,7 +936,18 @@ fun ControllerConfigPage(
                 val botC = if (ry > 0.3f) cActive else cAssignLabel
                 drawFuncLabel(textMeasurer, botLabel, rsCx, rsCy + sLabelOff, scale, botC)
             }
-            if (rsxFunc != null) {
+            val rsxNeg = bindings["RS_X_neg"]
+            val rsxPos = bindings["RS_X_pos"]
+            if (rsxNeg != null || rsxPos != null) {
+                if (rsxNeg != null) {
+                    val leftC = if (rx < -0.3f) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, abbreviate(rsxNeg), rsCx - sLabelOff * 1.5f, rsCy, scale, leftC)
+                }
+                if (rsxPos != null) {
+                    val rightC = if (rx > 0.3f) cActive else cAssignLabel
+                    drawFuncLabel(textMeasurer, abbreviate(rsxPos), rsCx + sLabelOff * 1.5f, rsCy, scale, rightC)
+                }
+            } else if (rsxFunc != null) {
                 val leftLabel = if (rsxInv) axisPosLabel(rsxFunc) else axisNegLabel(rsxFunc)
                 val rightLabel = if (rsxInv) axisNegLabel(rsxFunc) else axisPosLabel(rsxFunc)
                 val leftC = if (rx < -0.3f) cActive else cAssignLabel
@@ -1320,8 +1417,12 @@ fun ControllerConfigPage(
 
     val assignedButtonFuncs =
         bindings.entries
-            .filter { it.key in BUTTON_CONTROLS || it.key in DPAD_CONTROLS }
-            .map { it.value }
+            .filter {
+                it.key in BUTTON_CONTROLS ||
+                    it.key in DPAD_CONTROLS ||
+                    it.key.endsWith("_neg") ||
+                    it.key.endsWith("_pos")
+            }.map { it.value }
             .toSet() +
             bindings.entries
                 .filter { it.key in AXIS_CONTROLS }
@@ -1357,20 +1458,50 @@ fun ControllerConfigPage(
     if (showStickPicker && selectedControl != null) {
         val xKey = "${selectedControl}_X"
         val yKey = "${selectedControl}_Y"
+        val xNegKey = "${xKey}_neg"
+        val xPosKey = "${xKey}_pos"
+        val yNegKey = "${yKey}_neg"
+        val yPosKey = "${yKey}_pos"
+        val xIsButtonMode = xNegKey in bindings || xPosKey in bindings
+        val yIsButtonMode = yNegKey in bindings || yPosKey in bindings
         StickPickerDialog(
             stickLabel = if (selectedControl == "LS") "Left Stick" else "Right Stick",
             currentXFunc = bindings[xKey],
             currentYFunc = bindings[yKey],
             currentXInvert = xKey in inverts,
             currentYInvert = yKey in inverts,
+            currentXButtonMode = xIsButtonMode,
+            currentYButtonMode = yIsButtonMode,
+            currentXNegFunc = bindings[xNegKey],
+            currentXPosFunc = bindings[xPosKey],
+            currentYNegFunc = bindings[yNegKey],
+            currentYPosFunc = bindings[yPosKey],
             assignedFunctions = assignedAxisFuncsForDialog,
-            onConfirm = { xFunc, yFunc, xInv, yInv ->
-                assignAxisFunction(bindings, xKey, xFunc)
-                assignAxisFunction(bindings, yKey, yFunc)
+            assignedButtonFunctions = assignedButtonFuncs,
+            onConfirm = { result ->
+                // Clear all axis and axis-button bindings for this stick
+                bindings.remove(xKey)
+                bindings.remove(yKey)
+                bindings.remove(xNegKey)
+                bindings.remove(xPosKey)
+                bindings.remove(yNegKey)
+                bindings.remove(yPosKey)
                 inverts.remove(xKey)
                 inverts.remove(yKey)
-                if (xInv) inverts.add(xKey)
-                if (yInv) inverts.add(yKey)
+                if (result.xButtonMode) {
+                    result.xNegFunc?.let { bindings[xNegKey] = it }
+                    result.xPosFunc?.let { bindings[xPosKey] = it }
+                } else {
+                    result.xFunc?.let { assignAxisFunction(bindings, xKey, it) }
+                    if (result.xInvert) inverts.add(xKey)
+                }
+                if (result.yButtonMode) {
+                    result.yNegFunc?.let { bindings[yNegKey] = it }
+                    result.yPosFunc?.let { bindings[yPosKey] = it }
+                } else {
+                    result.yFunc?.let { assignAxisFunction(bindings, yKey, it) }
+                    if (result.yInvert) inverts.add(yKey)
+                }
                 showStickPicker = false
                 selectedControl = null
             },
@@ -1534,14 +1665,27 @@ private fun StickPickerDialog(
     currentYFunc: String?,
     currentXInvert: Boolean,
     currentYInvert: Boolean,
+    currentXButtonMode: Boolean = false,
+    currentYButtonMode: Boolean = false,
+    currentXNegFunc: String? = null,
+    currentXPosFunc: String? = null,
+    currentYNegFunc: String? = null,
+    currentYPosFunc: String? = null,
     assignedFunctions: Set<String> = emptySet(),
-    onConfirm: (xFunc: String?, yFunc: String?, xInvert: Boolean, yInvert: Boolean) -> Unit,
+    assignedButtonFunctions: Set<String> = emptySet(),
+    onConfirm: (StickPickerResult) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var selectedX by remember { mutableStateOf(currentXFunc) }
     var selectedY by remember { mutableStateOf(currentYFunc) }
     var invertX by remember { mutableStateOf(currentXInvert) }
     var invertY by remember { mutableStateOf(currentYInvert) }
+    var xButtonMode by remember { mutableStateOf(currentXButtonMode) }
+    var yButtonMode by remember { mutableStateOf(currentYButtonMode) }
+    var xNegFunc by remember { mutableStateOf(currentXNegFunc) }
+    var xPosFunc by remember { mutableStateOf(currentXPosFunc) }
+    var yNegFunc by remember { mutableStateOf(currentYNegFunc) }
+    var yPosFunc by remember { mutableStateOf(currentYPosFunc) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1550,6 +1694,7 @@ private fun StickPickerDialog(
             val stickScrollState = rememberScrollState()
             Box(modifier = Modifier.heightIn(max = 450.dp)) {
                 Column(modifier = Modifier.fillMaxWidth().verticalScroll(stickScrollState)) {
+                    // -- X Axis --
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             "X Axis (left/right)",
@@ -1557,15 +1702,33 @@ private fun StickPickerDialog(
                             fontSize = 14.sp,
                             modifier = Modifier.weight(1f),
                         )
-                        Checkbox(checked = invertX, onCheckedChange = { invertX = it })
-                        Text("Invert", fontSize = 12.sp)
                     }
-                    AxisFunctionRadioGroup(
-                        selected = selectedX,
-                        assignedFunctions = assignedFunctions,
-                        onSelect = { selectedX = it },
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = xButtonMode, onCheckedChange = { xButtonMode = it })
+                        Text("Use as buttons", fontSize = 12.sp)
+                        if (!xButtonMode) {
+                            Spacer(Modifier.weight(1f))
+                            Checkbox(checked = invertX, onCheckedChange = { invertX = it })
+                            Text("Invert", fontSize = 12.sp)
+                        }
+                    }
+                    if (xButtonMode) {
+                        AxisButtonPicker("Left (neg)", xNegFunc, assignedButtonFunctions) {
+                            xNegFunc = it
+                        }
+                        AxisButtonPicker("Right (pos)", xPosFunc, assignedButtonFunctions) {
+                            xPosFunc = it
+                        }
+                    } else {
+                        AxisFunctionRadioGroup(
+                            selected = selectedX,
+                            assignedFunctions = assignedFunctions,
+                            onSelect = { selectedX = it },
+                        )
+                    }
                     Spacer(Modifier.height(8.dp))
+
+                    // -- Y Axis --
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             "Y Axis (up/down)",
@@ -1573,25 +1736,94 @@ private fun StickPickerDialog(
                             fontSize = 14.sp,
                             modifier = Modifier.weight(1f),
                         )
-                        Checkbox(checked = invertY, onCheckedChange = { invertY = it })
-                        Text("Invert", fontSize = 12.sp)
                     }
-                    AxisFunctionRadioGroup(
-                        selected = selectedY,
-                        assignedFunctions = assignedFunctions,
-                        onSelect = { selectedY = it },
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = yButtonMode, onCheckedChange = { yButtonMode = it })
+                        Text("Use as buttons", fontSize = 12.sp)
+                        if (!yButtonMode) {
+                            Spacer(Modifier.weight(1f))
+                            Checkbox(checked = invertY, onCheckedChange = { invertY = it })
+                            Text("Invert", fontSize = 12.sp)
+                        }
+                    }
+                    if (yButtonMode) {
+                        AxisButtonPicker("Up (neg)", yNegFunc, assignedButtonFunctions) {
+                            yNegFunc = it
+                        }
+                        AxisButtonPicker("Down (pos)", yPosFunc, assignedButtonFunctions) {
+                            yPosFunc = it
+                        }
+                    } else {
+                        AxisFunctionRadioGroup(
+                            selected = selectedY,
+                            assignedFunctions = assignedFunctions,
+                            onSelect = { selectedY = it },
+                        )
+                    }
                 }
                 ScrollArrows(stickScrollState)
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(selectedX, selectedY, invertX, invertY) }) { Text("OK") }
+            TextButton(
+                onClick = {
+                    onConfirm(
+                        StickPickerResult(
+                            xFunc = if (xButtonMode) null else selectedX,
+                            yFunc = if (yButtonMode) null else selectedY,
+                            xInvert = invertX,
+                            yInvert = invertY,
+                            xButtonMode = xButtonMode,
+                            yButtonMode = yButtonMode,
+                            xNegFunc = xNegFunc,
+                            xPosFunc = xPosFunc,
+                            yNegFunc = yNegFunc,
+                            yPosFunc = yPosFunc,
+                        ),
+                    )
+                },
+            ) { Text("OK") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
         },
     )
+}
+
+// Compact function picker for axis-as-buttons within StickPickerDialog
+@Composable
+private fun AxisButtonPicker(
+    label: String,
+    currentFunc: String?,
+    assignedFunctions: Set<String> = emptySet(),
+    onSelect: (String?) -> Unit,
+) {
+    var showPicker by remember { mutableStateOf(false) }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, fontSize = 12.sp, modifier = Modifier.width(90.dp))
+        TextButton(onClick = { showPicker = true }) {
+            Text(
+                currentFunc ?: "None",
+                fontSize = 12.sp,
+                color = if (currentFunc != null) Color.Unspecified else Color.Gray,
+            )
+        }
+    }
+    if (showPicker) {
+        ButtonFunctionPickerDialog(
+            controlLabel = label,
+            currentFunc = currentFunc,
+            assignedFunctions = assignedFunctions,
+            onSelect = { func ->
+                onSelect(func)
+                showPicker = false
+            },
+            onDismiss = { showPicker = false },
+        )
+    }
 }
 
 @Composable

@@ -116,6 +116,12 @@ class TouchOverlayView
             var floatingCX = 0f
             var floatingCY = 0f
             var floatingActive = false
+
+            // Button mode: direction press tracking
+            var xNegPressed = false
+            var xPosPressed = false
+            var yNegPressed = false
+            var yPosPressed = false
         }
 
         private class ButtonState(
@@ -1258,11 +1264,35 @@ class TouchOverlayView
             if (s.control.invertX) rawX = -rawX
             if (s.control.invertY) rawY = -rawY
 
-            axisCallback?.invoke(s.control.axisX, rawX)
-            axisCallback?.invoke(s.control.axisY, rawY)
+            if (s.control.buttonMode) {
+                // Button mode: fire press/release based on direction past deadzone
+                dispatchStickButton(s, rawX < 0f, s.xNegPressed, s.control.negXBinding) { s.xNegPressed = it }
+                dispatchStickButton(s, rawX > 0f, s.xPosPressed, s.control.posXBinding) { s.xPosPressed = it }
+                dispatchStickButton(s, rawY < 0f, s.yNegPressed, s.control.negYBinding) { s.yNegPressed = it }
+                dispatchStickButton(s, rawY > 0f, s.yPosPressed, s.control.posYBinding) { s.yPosPressed = it }
+            } else {
+                axisCallback?.invoke(s.control.axisX, rawX)
+                axisCallback?.invoke(s.control.axisY, rawY)
+            }
 
             // Notify gyro manager that a stick sharing its axes is active
             updateGyroStickActive()
+        }
+
+        private fun dispatchStickButton(
+            s: StickState,
+            nowPressed: Boolean,
+            wasPressed: Boolean,
+            binding: Int,
+            updateState: (Boolean) -> Unit,
+        ) {
+            if (nowPressed == wasPressed) return
+            updateState(nowPressed)
+            if (TouchBindings.isMetaAction(binding)) {
+                metaActionCallback?.invoke(binding, nowPressed)
+            } else {
+                buttonCallback?.invoke(binding, nowPressed)
+            }
         }
 
         private fun applyDeadzone(
@@ -1275,12 +1305,21 @@ class TouchOverlayView
         }
 
         private fun resetStick(s: StickState) {
+            // Release any held button-mode directions
+            if (s.control.buttonMode) {
+                dispatchStickButton(s, false, s.xNegPressed, s.control.negXBinding) { s.xNegPressed = it }
+                dispatchStickButton(s, false, s.xPosPressed, s.control.posXBinding) { s.xPosPressed = it }
+                dispatchStickButton(s, false, s.yNegPressed, s.control.negYBinding) { s.yNegPressed = it }
+                dispatchStickButton(s, false, s.yPosPressed, s.control.posYBinding) { s.yPosPressed = it }
+            }
             s.pointerId = -1
             s.pos.set(0f, 0f)
             s.floatingActive = false
             invalidate()
-            axisCallback?.invoke(s.control.axisX, 0f)
-            axisCallback?.invoke(s.control.axisY, 0f)
+            if (!s.control.buttonMode) {
+                axisCallback?.invoke(s.control.axisX, 0f)
+                axisCallback?.invoke(s.control.axisY, 0f)
+            }
             updateGyroStickActive()
         }
 

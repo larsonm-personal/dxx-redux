@@ -1029,13 +1029,35 @@ private fun StickPropertiesPanel(
         }
     }
 
-    // Axis bindings
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        AxisPicker("X Axis", stick.axisX, Modifier.weight(1f)) {
-            onUpdate(stick.copy(axisX = it))
+    // Axis bindings or button mode bindings
+    LabeledToggle("Button Mode", stick.buttonMode) {
+        onUpdate(stick.copy(buttonMode = it))
+    }
+    if (stick.buttonMode) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ButtonBindingPicker("X Neg", stick.negXBinding, Modifier.weight(1f)) {
+                onUpdate(stick.copy(negXBinding = it))
+            }
+            ButtonBindingPicker("X Pos", stick.posXBinding, Modifier.weight(1f)) {
+                onUpdate(stick.copy(posXBinding = it))
+            }
         }
-        AxisPicker("Y Axis", stick.axisY, Modifier.weight(1f)) {
-            onUpdate(stick.copy(axisY = it))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ButtonBindingPicker("Y Neg", stick.negYBinding, Modifier.weight(1f)) {
+                onUpdate(stick.copy(negYBinding = it))
+            }
+            ButtonBindingPicker("Y Pos", stick.posYBinding, Modifier.weight(1f)) {
+                onUpdate(stick.copy(posYBinding = it))
+            }
+        }
+    } else {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            AxisPicker("X Axis", stick.axisX, Modifier.weight(1f)) {
+                onUpdate(stick.copy(axisX = it))
+            }
+            AxisPicker("Y Axis", stick.axisY, Modifier.weight(1f)) {
+                onUpdate(stick.copy(axisY = it))
+            }
         }
     }
 

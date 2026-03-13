@@ -195,6 +195,7 @@ Add "extra" (meta) game actions to both the controller config and touch editor i
 8. Manual: switch to D1, verify guide bot/drop flag/drop marker hidden
 9. Introspection: verify state changes
 10. Integration tests for C dispatch table
+11. add a meta button to a test touch overlay and verify it by adding to this existing script: android\game_scripts\test_axis_mapping.json5
 
 ## Decisions
 
