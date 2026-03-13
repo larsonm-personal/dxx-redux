@@ -35,6 +35,7 @@
 - keep to printable ascii wherever possible
 - always create a plan as step 1 of any block of work. plan files go here: android\ai tool plans\
 - attempt to minimize line count to some extent. don't take this to an extreme, but avoid abstractions that are just wrappers, duplicated code, and other verbose things
+- mimic the style of the existing code. by and large, this is a "C in C++" codebase without classes or templates. it's ok to use things like std::array<> or simple RAII classes within the android/ dir, but don't get crazy. I *do* want you to use C++ patterns (within the android/ dir) that can avoid things like null pointer access and array bounds problems, the base game is highly susceptible to these things and it's sometimes a problem
 - add simple, high-level integration tests to catch regressions and document high level functionality. it's not necessary to add tests to cover every little function unless the function has tricky edge cases or is very complex by itself
 - add these tests for any code centralized in the android/ directory as the code is added. add test runner scripts or helpers so they're easy to re-run after code changes
 - d1/ and d2/ have a huge amount of duplicated code. this means that our hooks and other changes also need to be duplicated in many places. it is a mistake to *only* edit d1/ or d2/ in any set of changes. that said, I want to try to share as much code as possible between the two, *when that code is new*. don't de-duplciate in a way that makes the d1/ or d2/ change set larger which would make upstreaming harder

@@ -40,7 +40,7 @@ object TouchBindings {
      */
     const val TOUCH_BTN_OFFSET = 128
 
-    // --- Virtual (overlay-only) bindings – not sent as joystick buttons ---
+    // --- Virtual (overlay-only) bindings -- not sent as joystick buttons ---
     const val BTN_CHEATS_MENU = 100
 
     /** All button bindings with readable labels, for UI pickers. */
@@ -66,10 +66,102 @@ object TouchBindings {
             BTN_CYCLE_SECONDARY to "Cycle Secondary",
             BTN_HEADLIGHT to "Headlight",
             BTN_AUTOMAP to "Automap",
-            BTN_ENERGY_SHIELD to "Energy→Shield",
+            BTN_ENERGY_SHIELD to "Energy->Shield",
             BTN_TOGGLE_BOMB to "Toggle Bomb",
             BTN_CHEATS_MENU to "Cheats Menu",
         )
+
+    // --- Meta actions (extra controls) ---
+    // These are dispatched via C-side key injection (android_meta_actions.c),
+    // not through kc_joystick[]. IDs start at META_ACTION_OFFSET to avoid
+    // collisions.  Keep in sync with android_meta_actions.h.
+    const val META_ACTION_OFFSET = 1000
+
+    const val META_QUICK_SAVE = 1000
+    const val META_QUICK_LOAD = 1001
+    const val META_GAME_MENU = 1002
+    const val META_GUIDE_BOT_MENU = 1003
+    const val META_GUIDE_FIND_ENERGY = 1004
+    const val META_GUIDE_FIND_REACTOR = 1005
+    const val META_GUIDE_FIND_SHIELD = 1006
+    const val META_GUIDE_FIND_POWERUP = 1007
+    const val META_GUIDE_FIND_ROBOT = 1008
+    const val META_GUIDE_FIND_HOSTAGE = 1009
+    const val META_GUIDE_SCRAM = 1010
+    const val META_GUIDE_FIND_ITEMS = 1011
+    const val META_GUIDE_FIND_EXIT = 1012
+    const val META_GUIDE_CLEAR_GOAL = 1013
+    const val META_MULTIPLAYER_HUD = 1014
+    const val META_DROP_FLAG = 1015
+    const val META_DROP_MARKER = 1016
+    const val META_WEAPON_1 = 1020
+    const val META_WEAPON_2 = 1021
+    const val META_WEAPON_3 = 1022
+    const val META_WEAPON_4 = 1023
+    const val META_WEAPON_5 = 1024
+    const val META_WEAPON_6 = 1025
+    const val META_WEAPON_7 = 1026
+    const val META_WEAPON_8 = 1027
+    const val META_WEAPON_9 = 1028
+    const val META_WEAPON_10 = 1029
+    const val META_PAUSE = 1030
+
+    /** Labels for meta actions, used in Extra button pickers. */
+    val META_BUTTON_LABELS: Map<Int, String> =
+        linkedMapOf(
+            META_QUICK_SAVE to "Quick Save",
+            META_QUICK_LOAD to "Quick Load",
+            META_GAME_MENU to "Game Menu (ESC)",
+            META_GUIDE_BOT_MENU to "Guide Bot Menu",
+            META_GUIDE_FIND_ENERGY to "GB: Find Energy",
+            META_GUIDE_FIND_REACTOR to "GB: Find Reactor",
+            META_GUIDE_FIND_SHIELD to "GB: Find Shield",
+            META_GUIDE_FIND_POWERUP to "GB: Find Powerup",
+            META_GUIDE_FIND_ROBOT to "GB: Find Robot",
+            META_GUIDE_FIND_HOSTAGE to "GB: Find Hostage",
+            META_GUIDE_SCRAM to "GB: Scram",
+            META_GUIDE_FIND_ITEMS to "GB: Find Items",
+            META_GUIDE_FIND_EXIT to "GB: Find Exit",
+            META_GUIDE_CLEAR_GOAL to "GB: Clear Goal",
+            META_MULTIPLAYER_HUD to "Multiplayer HUD",
+            META_DROP_FLAG to "Drop Flag",
+            META_DROP_MARKER to "Drop Marker",
+            META_WEAPON_1 to "Weapon 1",
+            META_WEAPON_2 to "Weapon 2",
+            META_WEAPON_3 to "Weapon 3",
+            META_WEAPON_4 to "Weapon 4",
+            META_WEAPON_5 to "Weapon 5",
+            META_WEAPON_6 to "Weapon 6",
+            META_WEAPON_7 to "Weapon 7",
+            META_WEAPON_8 to "Weapon 8",
+            META_WEAPON_9 to "Weapon 9",
+            META_WEAPON_10 to "Weapon 10",
+            META_PAUSE to "Pause",
+        )
+
+    /** Meta actions that only exist in D2 (guide bot, markers, CTF flag). */
+    val D2_ONLY_META_ACTIONS =
+        setOf(
+            META_GUIDE_BOT_MENU,
+            META_GUIDE_FIND_ENERGY,
+            META_GUIDE_FIND_REACTOR,
+            META_GUIDE_FIND_SHIELD,
+            META_GUIDE_FIND_POWERUP,
+            META_GUIDE_FIND_ROBOT,
+            META_GUIDE_FIND_HOSTAGE,
+            META_GUIDE_SCRAM,
+            META_GUIDE_FIND_ITEMS,
+            META_GUIDE_FIND_EXIT,
+            META_GUIDE_CLEAR_GOAL,
+            META_DROP_FLAG,
+            META_DROP_MARKER,
+        )
+
+    /** Combined labels map for pickers that show all bindings (standard + extra). */
+    val ALL_BUTTON_LABELS: Map<Int, String> = BUTTON_LABELS + META_BUTTON_LABELS
+
+    /** Check if a binding ID is a meta action (dispatched via NativeMetaActions). */
+    fun isMetaAction(binding: Int): Boolean = binding >= META_ACTION_OFFSET
 
     // --- JNI axis indices (nativeJoystickAxis axis parameter) ---
     const val AXIS_LEFT_X = 0 // Left stick horizontal
