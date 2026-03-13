@@ -908,6 +908,8 @@ class TouchOverlayView
                                 b.pointerId = pid
                                 if (b.control.binding == TouchBindings.BTN_CHEATS_MENU) {
                                     cheatsOverlayOpen = !cheatsOverlayOpen
+                                } else if (b.control.binding == TouchBindings.BTN_GYRO_RECENTER) {
+                                    gyroManager?.calibrate()
                                 } else if (b.control.toggle) {
                                     b.toggled = !b.toggled
                                     if (b.control.binding == TouchBindings.BTN_AUTOMAP) {
@@ -1379,8 +1381,10 @@ class TouchOverlayView
         ) {
             if (b.pointerId >= 0) {
                 b.pointerId = -1
-                if (b.control.binding == TouchBindings.BTN_CHEATS_MENU) {
-                    // toggle handled on press
+                if (b.control.binding == TouchBindings.BTN_CHEATS_MENU ||
+                    b.control.binding == TouchBindings.BTN_GYRO_RECENTER
+                ) {
+                    // handled on press, no release action
                 } else if (!b.control.toggle) {
                     if (b.control.binding == TouchBindings.BTN_AUTOMAP) {
                         if (fired) mapButtonCallback?.invoke()

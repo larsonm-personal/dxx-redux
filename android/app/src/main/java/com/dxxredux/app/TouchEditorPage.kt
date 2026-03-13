@@ -35,6 +35,9 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.min
@@ -71,7 +74,7 @@ fun TouchEditorPage(
     var canvasWidth by remember { mutableFloatStateOf(1f) }
     var canvasHeight by remember { mutableFloatStateOf(1f) }
 
-    // Lock orientation to match in-game orientation while editor is open
+    // Lock orientation and hide system bars to match in-game while editor is open
     val activity = context as? Activity
     DisposableEffect(Unit) {
         val prev = activity?.requestedOrientation
@@ -83,8 +86,20 @@ fun TouchEditorPage(
             } else {
                 ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             }
+        // Hide system bars so controls at the top of the screen are reachable
+        val window = activity?.window
+        val insetsController =
+            window?.let {
+                WindowCompat.setDecorFitsSystemWindows(it, false)
+                WindowInsetsControllerCompat(it, it.decorView).apply {
+                    hide(WindowInsetsCompat.Type.systemBars())
+                    systemBarsBehavior =
+                        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                }
+            }
         onDispose {
             activity?.requestedOrientation = prev ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            insetsController?.show(WindowInsetsCompat.Type.systemBars())
         }
     }
 
@@ -1156,10 +1171,49 @@ private fun StickPropertiesPanel(
 
     // Toggles
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        LabeledToggle("Floating", stick.floating) { onUpdate(stick.copy(floating = it)) }
+        LabeledToggle("Floating", stick.floating) {
+            if (it && !stick.floating) {
+                // Auto-compute a zone around the stick's current position
+                onUpdate(
+                    stick.copy(
+                        floating = true,
+                        floatingZone =
+                            FloatingZone(
+                                leftPct = (stick.xPct - 20f).coerceIn(0f, 100f),
+                                topPct = (stick.yPct - 30f).coerceIn(0f, 100f),
+                                rightPct = (stick.xPct + 20f).coerceIn(0f, 100f),
+                                bottomPct = (stick.yPct + 30f).coerceIn(0f, 100f),
+                            ),
+                    ),
+                )
+            } else {
+                onUpdate(stick.copy(floating = it))
+            }
+        }
         LabeledToggle("Invert X", stick.invertX) { onUpdate(stick.copy(invertX = it)) }
         LabeledToggle("Invert Y", stick.invertY) { onUpdate(stick.copy(invertY = it)) }
         LabeledToggle("Haptic", stick.hapticFeedback) { onUpdate(stick.copy(hapticFeedback = it)) }
+    }
+
+    // Floating zone bounds (shown only when floating is enabled)
+    if (stick.floating) {
+        val fz = stick.floatingZone
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LabeledSlider("Left %", fz.leftPct, 0f, 100f, Modifier.weight(1f)) {
+                onUpdate(stick.copy(floatingZone = fz.copy(leftPct = it)))
+            }
+            LabeledSlider("Right %", fz.rightPct, 0f, 100f, Modifier.weight(1f)) {
+                onUpdate(stick.copy(floatingZone = fz.copy(rightPct = it)))
+            }
+        }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LabeledSlider("Top %", fz.topPct, 0f, 100f, Modifier.weight(1f)) {
+                onUpdate(stick.copy(floatingZone = fz.copy(topPct = it)))
+            }
+            LabeledSlider("Bottom %", fz.bottomPct, 0f, 100f, Modifier.weight(1f)) {
+                onUpdate(stick.copy(floatingZone = fz.copy(bottomPct = it)))
+            }
+        }
     }
 }
 

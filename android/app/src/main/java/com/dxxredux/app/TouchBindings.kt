@@ -50,6 +50,7 @@ object TouchBindings {
 
     // --- Virtual (overlay-only) bindings -- not sent as joystick buttons ---
     const val BTN_CHEATS_MENU = 100
+    const val BTN_GYRO_RECENTER = 101
 
     /** All button bindings with readable labels, for UI pickers. */
     val BUTTON_LABELS =
@@ -77,6 +78,7 @@ object TouchBindings {
             BTN_ENERGY_SHIELD to "Energy->Shield",
             BTN_TOGGLE_BOMB to "Toggle Bomb",
             BTN_CHEATS_MENU to "Cheats Menu",
+            BTN_GYRO_RECENTER to "Gyro Recenter",
         )
 
     // --- Meta actions (extra controls) ---

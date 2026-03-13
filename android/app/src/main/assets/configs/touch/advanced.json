@@ -19,8 +19,8 @@
       "responseCurve": "LINEAR",
       "exponent": 2.0,
       "sensitivity": 1.0,
-      "floating": false,
-      "floatingZone": { "left": 0.0, "top": 0.0, "right": 50.0, "bottom": 100.0 },
+      "floating": true,
+      "floatingZone": { "left": 0.0, "top": 40.0, "right": 40.0, "bottom": 100.0 },
       "haptic": true
     },
     {
@@ -38,8 +38,8 @@
       "responseCurve": "EXPONENTIAL",
       "exponent": 2.0,
       "sensitivity": 1.0,
-      "floating": false,
-      "floatingZone": { "left": 0.0, "top": 0.0, "right": 50.0, "bottom": 100.0 },
+      "floating": true,
+      "floatingZone": { "left": 60.0, "top": 40.0, "right": 100.0, "bottom": 100.0 },
       "haptic": true
     }
   ],

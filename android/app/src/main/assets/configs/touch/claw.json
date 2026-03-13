@@ -108,6 +108,19 @@
       "shape": "CIRCLE",
       "toggle": false,
       "haptic": true
+    },
+    {
+      "type": "button",
+      "id": "gyro_recenter",
+      "x": 50.0,
+      "y": 92.0,
+      "size": 0.7,
+      "opacity": 0.7,
+      "binding": "Gyro Recenter",
+      "label": "GR",
+      "shape": "CIRCLE",
+      "toggle": false,
+      "haptic": true
     }
   ],
   "sliders": [],
