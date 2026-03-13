@@ -197,6 +197,7 @@ struct assert_expect {
 struct auto_step {
 	step_type type = STEP_KEY;
 	std::string key_name;               /* STEP_KEY: key name */
+	std::string modifier_name;          /* STEP_KEY: optional modifier (e.g. "lshift") */
 	int post_delay_ms = 300;            /* STEP_KEY / STEP_SELECT: post-action delay */
 	std::string field;                  /* STEP_WAIT_FOR: field name */
 	std::string value;                  /* STEP_WAIT_FOR: expected value */
@@ -250,6 +251,25 @@ static void inject_key_tap(const std::string &name)
 	LOGI("Injecting key: %s (SDLK %d)", name.c_str(), (int) sym);
 	inject_key(sym, 1); /* down */
 	inject_key(sym, 0); /* up */
+}
+
+static void inject_key_combo(const std::string &modifier, const std::string &key)
+{
+	SDLKey mod_sym = lookup_key(modifier.c_str());
+	SDLKey key_sym = lookup_key(key.c_str());
+	if (mod_sym == SDLK_UNKNOWN) {
+		LOGE("Unknown modifier name: '%s'", modifier.c_str());
+		return;
+	}
+	if (key_sym == SDLK_UNKNOWN) {
+		LOGE("Unknown key name: '%s'", key.c_str());
+		return;
+	}
+	LOGI("Injecting combo: %s + %s", modifier.c_str(), key.c_str());
+	inject_key(mod_sym, 1); /* modifier down */
+	inject_key(key_sym, 1); /* key down */
+	inject_key(key_sym, 0); /* key up */
+	inject_key(mod_sym, 0); /* modifier up */
 }
 
 /* -- Axis injection --------------------------------------------------- */
@@ -458,6 +478,7 @@ static int parse_script(const char *json_text)
 			}
 
 			s.key_name = step_json.value("key", "");
+			s.modifier_name = step_json.value("modifier", "");
 			s.post_delay_ms = step_json.value("post_delay_ms", step_json.value("ms", 300));
 			s.field = step_json.value("field", "");
 			s.value = step_json.value("value", "");
@@ -746,7 +767,10 @@ extern "C" void game_automate_tick(void)
 	switch (s.type) {
 		case STEP_KEY:
 			if (g_key_phase == 0) {
-				inject_key_tap(s.key_name);
+				if (!s.modifier_name.empty())
+					inject_key_combo(s.modifier_name, s.key_name);
+				else
+					inject_key_tap(s.key_name);
 				g_key_phase = 1;
 				g_step_start = now;
 			} else if (g_key_phase == 1) {

@@ -14,8 +14,9 @@
 //          slide_ud (catches ControllerConfigPage DEFAULT_BINDINGS bug
 //          and the old joy_out[19]=1 bug).
 // Phase 4: Meta action key sequences -- verify the SDL key events that
-//          meta actions dispatch (ESC for game menu, digit keys for
-//          weapon switching) produce the expected game effects.
+//          meta actions dispatch (ESC for game menu, SHIFT+F4 for
+//          Guide-Bot menu, F1 for help) produce the expected game
+//          effects.  Tests modifier key combo injection.
 //
 // Root cause this catches:
 //   1. ControllerConfigPage.kt DEFAULT_BINDINGS had LS_Y -> "Pitch U/D"
@@ -177,15 +178,34 @@
     {"action": "assert", "expect": {"game_window_is_front": "true"}},
     {"action": "log", "message": "Phase 4a: PASS -- menu closed, back in game"},
 
-    // 4b: Weapon key "1" (META_WEAPON_1 dispatches SDLK_1)
-    //     At level start on Rookie the player has Laser (primary 0)
-    //     and Concussion (secondary 0).  Verify initial weapon state.
-    {"action": "log", "message": "Phase 4b: Verify initial weapon state"},
+    // 4b: SHIFT+F4 opens Guide-Bot menu (D2 only)
+    //     META_GUIDE_BOT_MENU dispatches: LSHIFT down, F4 down, F4 up, LSHIFT up
+    //     The escort menu creates a window over the game.
+    {"action": "log", "message": "Phase 4b: SHIFT+F4 opens Guide-Bot window (D2 only)"},
+    {"action": "key", "key": "f4", "modifier": "lshift", "when": "d2", "post_delay_ms": 500},
     {"action": "assert", "expect": {
-        "primary_weapon":   "0",
-        "secondary_weapon": "0"
+        "game_window_is_front": "false"
+    }, "when": "d2"},
+    {"action": "log", "message": "Phase 4b: PASS -- Guide-Bot window opened", "when": "d2"},
+    // Dismiss it
+    {"action": "key", "key": "esc", "when": "d2", "post_delay_ms": 500},
+    {"action": "assert", "expect": {"game_window_is_front": "true"}, "when": "d2"},
+    {"action": "log", "message": "Phase 4b: PASS -- Guide-Bot window dismissed", "when": "d2"},
+
+    // 4c: F1 opens help screen (both D1 and D2)
+    //     show_help() calls newmenu_dotiny() with title "KEYS".
+    {"action": "log", "message": "Phase 4c: F1 opens help menu"},
+    {"action": "key", "key": "f1", "post_delay_ms": 500},
+    {"action": "assert", "expect": {
+        "game_window_is_front": "false",
+        "menu_type": "newmenu",
+        "menu_title": "KEYS"
     }},
-    {"action": "log", "message": "Phase 4b: PASS -- weapon state correct"},
+    {"action": "log", "message": "Phase 4c: PASS -- F1 opened help menu with title KEYS"},
+    // Dismiss help
+    {"action": "key", "key": "esc", "post_delay_ms": 500},
+    {"action": "assert", "expect": {"game_window_is_front": "true"}},
+    {"action": "log", "message": "Phase 4c: PASS -- help menu dismissed"},
 
     // -- Done --
     {"action": "log", "message": "=== TEST: Axis Mapping Regression -- ALL PHASES PASS ==="}
