@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.view.InputDevice
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -198,7 +199,8 @@ private val DPAD_CONTROLS =
 
 private val KB_FUNCTIONS = KB_KC_INDEX.keys.toList()
 
-private val DEFAULT_BINDINGS =
+// Hard-coded fallback in case the bundled asset fails to load
+private val FALLBACK_BINDINGS =
     mapOf(
         "A" to "Fire Primary",
         "B" to "Fire Secondary",
@@ -214,6 +216,20 @@ private val DEFAULT_BINDINGS =
         "DLeft" to "Slide Left",
         "DRight" to "Slide Right",
     )
+
+private fun loadDefaultBindings(context: Context): Map<String, String> =
+    try {
+        val json =
+            context.assets.open("configs/controller/default.json").bufferedReader().use {
+                JSONObject(it.readText())
+            }
+        val result = HumanReadableConfig.humanJsonToControllerConfig(json)
+        result.warnings.forEach { android.util.Log.w("ControllerConfig", it) }
+        result.value?.first ?: FALLBACK_BINDINGS
+    } catch (e: Exception) {
+        android.util.Log.e("ControllerConfig", "Failed to load default bindings", e)
+        FALLBACK_BINDINGS
+    }
 
 // Axis functions that implicitly cover discrete button functions
 private val AXIS_COVERS_BUTTONS =
@@ -543,10 +559,30 @@ fun ControllerConfigPage(
             bindings.putAll(saved.first)
             inverts.addAll(saved.second)
         } else {
-            bindings.putAll(DEFAULT_BINDINGS)
+            bindings.putAll(loadDefaultBindings(context))
         }
         initialized = true
     }
+
+    // SAF file picker for importing controller configs
+    val importPickerLauncher =
+        rememberLauncherForActivityResult(
+            contract =
+                androidx.activity.result.contract.ActivityResultContracts
+                    .OpenDocument(),
+        ) { uri ->
+            if (uri == null) return@rememberLauncherForActivityResult
+            val msg = ConfigImportExport.importFromUri(context, uri)
+            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+            // Reload the imported config
+            val reloaded = loadConfig(context)
+            if (reloaded != null) {
+                bindings.clear()
+                bindings.putAll(reloaded.first)
+                inverts.clear()
+                inverts.addAll(reloaded.second)
+            }
+        }
 
     // Touch/dialog state
     val controlBounds = remember { mutableMapOf<String, Rect>() }
@@ -1364,6 +1400,35 @@ fun ControllerConfigPage(
                         fontSize = 8.sp,
                     )
                 }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // ── Export / Import buttons ──
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            OutlinedButton(
+                onClick = {
+                    // Save current state first, then export
+                    saveConfig(context, bindings.toMap(), inverts.toSet())
+                    if (!ConfigImportExport.exportControllerConfig(context)) {
+                        Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                modifier = Modifier.weight(1f).height(36.dp),
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
+            ) {
+                Text("Export", fontSize = 12.sp)
+            }
+            OutlinedButton(
+                onClick = { importPickerLauncher.launch(arrayOf("application/json", "*/*")) },
+                modifier = Modifier.weight(1f).height(36.dp),
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
+            ) {
+                Text("Import", fontSize = 12.sp)
             }
         }
     }

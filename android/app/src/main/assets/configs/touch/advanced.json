@@ -1,0 +1,210 @@
+{
+  "type": "touch_layout",
+  "version": 1,
+  "name": "Advanced",
+  "globalOpacity": 0.7,
+  "sticks": [
+    {
+      "type": "analog_stick",
+      "id": "move",
+      "x": 15.0,
+      "y": 80.0,
+      "size": 1.0,
+      "opacity": 0.7,
+      "axisX": "Left Stick X",
+      "axisY": "Left Stick Y",
+      "invertX": false,
+      "invertY": false,
+      "deadzone": 15,
+      "responseCurve": "LINEAR",
+      "exponent": 2.0,
+      "sensitivity": 1.0,
+      "floating": false,
+      "floatingZone": { "left": 0.0, "top": 0.0, "right": 50.0, "bottom": 100.0 },
+      "haptic": true
+    },
+    {
+      "type": "analog_stick",
+      "id": "look",
+      "x": 85.0,
+      "y": 80.0,
+      "size": 1.0,
+      "opacity": 0.7,
+      "axisX": "Right Stick X",
+      "axisY": "Right Stick Y",
+      "invertX": false,
+      "invertY": false,
+      "deadzone": 15,
+      "responseCurve": "EXPONENTIAL",
+      "exponent": 2.0,
+      "sensitivity": 1.0,
+      "floating": false,
+      "floatingZone": { "left": 0.0, "top": 0.0, "right": 50.0, "bottom": 100.0 },
+      "haptic": true
+    }
+  ],
+  "buttons": [
+    {
+      "type": "button",
+      "id": "fire1",
+      "x": 95.0,
+      "y": 55.0,
+      "size": 1.0,
+      "opacity": 0.7,
+      "binding": "Fire Primary",
+      "label": "1",
+      "shape": "CIRCLE",
+      "toggle": false,
+      "haptic": true
+    },
+    {
+      "type": "button",
+      "id": "fire2",
+      "x": 95.0,
+      "y": 45.0,
+      "size": 1.0,
+      "opacity": 0.7,
+      "binding": "Fire Secondary",
+      "label": "2",
+      "shape": "CIRCLE",
+      "toggle": false,
+      "haptic": true
+    },
+    {
+      "type": "button",
+      "id": "flare",
+      "x": 95.0,
+      "y": 35.0,
+      "size": 0.7,
+      "opacity": 0.7,
+      "binding": "Fire Flare",
+      "label": "F",
+      "shape": "CIRCLE",
+      "toggle": false,
+      "haptic": true
+    },
+    {
+      "type": "button",
+      "id": "bomb",
+      "x": 95.0,
+      "y": 65.0,
+      "size": 0.7,
+      "opacity": 0.7,
+      "binding": "Drop Bomb",
+      "label": "B",
+      "shape": "CIRCLE",
+      "toggle": false,
+      "haptic": true
+    },
+    {
+      "type": "button",
+      "id": "map",
+      "x": 92.0,
+      "y": 8.0,
+      "size": 0.7,
+      "opacity": 0.7,
+      "binding": "Automap",
+      "label": "MAP",
+      "shape": "CIRCLE",
+      "toggle": false,
+      "haptic": true
+    },
+    {
+      "type": "button",
+      "id": "rear",
+      "x": 85.0,
+      "y": 8.0,
+      "size": 0.7,
+      "opacity": 0.7,
+      "binding": "Rear View",
+      "label": "R",
+      "shape": "CIRCLE",
+      "toggle": false,
+      "haptic": true
+    }
+  ],
+  "sliders": [
+    {
+      "type": "slider",
+      "id": "throttle",
+      "x": 5.0,
+      "y": 40.0,
+      "size": 1.2,
+      "opacity": 0.7,
+      "axis": "L Trigger",
+      "orientation": "VERTICAL",
+      "responseCurve": "LINEAR",
+      "exponent": 2.0,
+      "sensitivity": 1.0,
+      "springBack": true
+    }
+  ],
+  "radialMenus": [
+    {
+      "type": "radial_menu",
+      "id": "Guide",
+      "x": 10.0,
+      "y": 20.0,
+      "size": 1.0,
+      "opacity": 0.7,
+      "centerLabel": "Clear",
+      "centerBinding": "KEYCODE_0",
+      "haptic": true,
+      "segments": [
+        { "label": "Energy", "binding": "KEYCODE_1", "iconRes": "" },
+        { "label": "Enrg Ctr", "binding": "KEYCODE_2", "iconRes": "" },
+        { "label": "Shield", "binding": "KEYCODE_3", "iconRes": "" },
+        { "label": "Powerup", "binding": "KEYCODE_4", "iconRes": "" },
+        { "label": "Robot", "binding": "KEYCODE_5", "iconRes": "" },
+        { "label": "Hostage", "binding": "KEYCODE_6", "iconRes": "" },
+        { "label": "Scram!", "binding": "KEYCODE_7", "iconRes": "" },
+        { "label": "Spew", "binding": "KEYCODE_8", "iconRes": "" },
+        { "label": "Exit", "binding": "KEYCODE_9", "iconRes": "" }
+      ]
+    },
+    {
+      "type": "radial_menu",
+      "id": "PriWpn",
+      "x": 40.0,
+      "y": 8.0,
+      "size": 1.0,
+      "opacity": 0.7,
+      "haptic": true,
+      "segments": [
+        { "label": "Laser", "binding": "KEYCODE_1", "iconRes": "", "wpnIdx": 0 },
+        { "label": "Vulcan", "binding": "KEYCODE_2", "iconRes": "", "wpnIdx": 1 },
+        { "label": "Spread", "binding": "KEYCODE_3", "iconRes": "", "wpnIdx": 2 },
+        { "label": "Plasma", "binding": "KEYCODE_4", "iconRes": "", "wpnIdx": 3 },
+        { "label": "Fusion", "binding": "KEYCODE_5", "iconRes": "", "wpnIdx": 4 }
+      ]
+    },
+    {
+      "type": "radial_menu",
+      "id": "SecWpn",
+      "x": 60.0,
+      "y": 8.0,
+      "size": 1.0,
+      "opacity": 0.7,
+      "haptic": true,
+      "segments": [
+        { "label": "Concsn", "binding": "KEYCODE_6", "iconRes": "", "wpnIdx": 0 },
+        { "label": "Homing", "binding": "KEYCODE_7", "iconRes": "", "wpnIdx": 1 },
+        { "label": "Proxim", "binding": "KEYCODE_8", "iconRes": "", "wpnIdx": 2 },
+        { "label": "Smart", "binding": "KEYCODE_9", "iconRes": "", "wpnIdx": 3 },
+        { "label": "Mega", "binding": "KEYCODE_0", "iconRes": "", "wpnIdx": 4 }
+      ]
+    }
+  ],
+  "dpads": [],
+  "gyro": {
+    "enabled": false,
+    "activation": "ALWAYS",
+    "sensitivityX": 1.0,
+    "sensitivityY": 1.0,
+    "invertX": false,
+    "invertY": false,
+    "axisX": "Right Stick X",
+    "axisY": "Right Stick Y",
+    "deadzone": 0.02
+  }
+}

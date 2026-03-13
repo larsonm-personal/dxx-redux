@@ -1,0 +1,82 @@
+{
+  "type": "touch_layout",
+  "version": 1,
+  "name": "Simple",
+  "globalOpacity": 0.7,
+  "sticks": [
+    {
+      "type": "analog_stick",
+      "id": "move",
+      "x": 18.0,
+      "y": 75.0,
+      "size": 1.0,
+      "opacity": 0.7,
+      "axisX": "Left Stick X",
+      "axisY": "Left Stick Y",
+      "invertX": false,
+      "invertY": false,
+      "deadzone": 15,
+      "responseCurve": "LINEAR",
+      "exponent": 2.0,
+      "sensitivity": 1.0,
+      "floating": false,
+      "floatingZone": { "left": 0.0, "top": 0.0, "right": 50.0, "bottom": 100.0 },
+      "haptic": true
+    }
+  ],
+  "buttons": [
+    {
+      "type": "button",
+      "id": "fire1",
+      "x": 87.0,
+      "y": 90.0,
+      "size": 1.0,
+      "opacity": 0.7,
+      "binding": "Fire Primary",
+      "label": "A",
+      "shape": "CIRCLE",
+      "toggle": false,
+      "haptic": true
+    },
+    {
+      "type": "button",
+      "id": "fire2",
+      "x": 92.0,
+      "y": 82.0,
+      "size": 1.0,
+      "opacity": 0.7,
+      "binding": "Fire Secondary",
+      "label": "B",
+      "shape": "CIRCLE",
+      "toggle": false,
+      "haptic": true
+    },
+    {
+      "type": "button",
+      "id": "map",
+      "x": 93.0,
+      "y": 8.0,
+      "size": 0.7,
+      "opacity": 0.7,
+      "binding": "Automap",
+      "label": "MAP",
+      "shape": "CIRCLE",
+      "toggle": false,
+      "haptic": true
+    }
+  ],
+  "sliders": [],
+  "radialMenus": [],
+  "dpads": [],
+  "gyro": {
+    "enabled": false,
+    "activation": "ALWAYS",
+    "sensitivityX": 1.0,
+    "sensitivityY": 1.0,
+    "invertX": false,
+    "invertY": false,
+    "axisX": "Right Stick X",
+    "axisY": "Right Stick Y",
+    "deadzone": 0.02
+  }
+}

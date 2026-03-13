@@ -3,6 +3,8 @@ package com.dxxredux.app
 import android.app.Activity
 import android.content.Context
 import android.content.pm.ActivityInfo
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
@@ -93,6 +95,21 @@ fun TouchEditorPage(
     var showGyroSettings by remember { mutableStateOf(false) }
     var longPressPos by remember { mutableStateOf(Offset.Zero) } // where to place new control
 
+    // SAF file picker for importing touch layouts
+    val importPickerLauncher =
+        rememberLauncherForActivityResult(
+            contract =
+                androidx.activity.result.contract.ActivityResultContracts
+                    .OpenDocument(),
+        ) { uri ->
+            if (uri == null) return@rememberLauncherForActivityResult
+            val msg = ConfigImportExport.importFromUri(context, uri)
+            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+            // Reload after import
+            layout = TouchLayoutRepository.load(context)
+            dirty = false
+        }
+
     // Save helper
     fun save() {
         TouchLayoutRepository.save(context, layout)
@@ -139,6 +156,19 @@ fun TouchEditorPage(
                 }
                 IconButton(onClick = { showAddControl = true }, modifier = Modifier.size(36.dp)) {
                     Icon(Icons.Default.Add, "Add control", tint = Color.White)
+                }
+                TextButton(onClick = {
+                    save()
+                    if (!ConfigImportExport.exportTouchLayout(context)) {
+                        Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
+                    }
+                }) {
+                    Text("Export", fontSize = 12.sp, color = Color.White)
+                }
+                TextButton(onClick = {
+                    importPickerLauncher.launch(arrayOf("application/json", "*/*"))
+                }) {
+                    Text("Import", fontSize = 12.sp, color = Color.White)
                 }
                 TextButton(onClick = { save() }, enabled = dirty) {
                     Text(
@@ -1564,6 +1594,7 @@ private fun PresetPickerDialog(
     onDismiss: () -> Unit,
     onSelect: (TouchLayout) -> Unit,
 ) {
+    val context = LocalContext.current
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Load Preset") },
@@ -1575,7 +1606,7 @@ private fun PresetPickerDialog(
                     color = Color(0xFFFF9800),
                 )
                 Spacer(Modifier.height(12.dp))
-                TouchLayoutRepository.allPresets().forEach { preset ->
+                TouchLayoutRepository.allPresets(context).forEach { preset ->
                     TextButton(
                         onClick = { onSelect(preset) },
                         modifier = Modifier.fillMaxWidth(),

@@ -194,6 +194,85 @@ object TouchBindings {
             AXIS_RTRIGGER to "R Trigger",
         )
 
+    // --- Human-readable axis names for config export/import ---
+    // These are stable identifiers (not the game-function labels which change
+    // per mapping). Used in exported/bundled JSON files.
+    val AXIS_NAMES =
+        mapOf(
+            AXIS_LEFT_X to "Left Stick X",
+            AXIS_LEFT_Y to "Left Stick Y",
+            AXIS_RIGHT_X to "Right Stick X",
+            AXIS_RIGHT_Y to "Right Stick Y",
+            AXIS_LTRIGGER to "L Trigger",
+            AXIS_RTRIGGER to "R Trigger",
+        )
+
+    private val AXIS_NAMES_REVERSE: Map<String, Int> by lazy {
+        AXIS_NAMES.entries.associate { (k, v) -> v to k }
+    }
+
+    private val BUTTON_LABELS_REVERSE: Map<String, Int> by lazy {
+        BUTTON_LABELS.entries.associate { (k, v) -> v to k }
+    }
+
+    private val META_LABELS_REVERSE: Map<String, Int> by lazy {
+        META_BUTTON_LABELS.entries.associate { (k, v) -> v to k }
+    }
+
+    /** Convert a binding integer to a human-readable name.
+     *  Covers standard buttons, meta actions, and Android keycodes. */
+    fun bindingToName(id: Int): String {
+        BUTTON_LABELS[id]?.let { return it }
+        META_BUTTON_LABELS[id]?.let { return "Meta: $it" }
+        // Android KeyEvent keycodes (used in radial menus)
+        return keycodeToName(id) ?: "binding_$id"
+    }
+
+    /** Convert a human-readable binding name back to its integer ID.
+     *  Returns null if the name is not recognized. */
+    fun nameToBinding(name: String): Int? {
+        BUTTON_LABELS_REVERSE[name]?.let { return it }
+        if (name.startsWith("Meta: ")) {
+            META_LABELS_REVERSE[name.removePrefix("Meta: ")]?.let { return it }
+        }
+        // Also accept meta labels without the prefix
+        META_LABELS_REVERSE[name]?.let { return it }
+        nameToKeycode(name)?.let { return it }
+        // Fallback: binding_N format
+        if (name.startsWith("binding_")) {
+            name.removePrefix("binding_").toIntOrNull()?.let { return it }
+        }
+        return null
+    }
+
+    /** Convert an axis integer to a stable human-readable name. */
+    fun axisToName(id: Int): String = AXIS_NAMES[id] ?: "axis_$id"
+
+    /** Convert a human-readable axis name back to its integer ID.
+     *  Returns null if the name is not recognized. */
+    fun nameToAxis(name: String): Int? {
+        AXIS_NAMES_REVERSE[name]?.let { return it }
+        if (name.startsWith("axis_")) {
+            name.removePrefix("axis_").toIntOrNull()?.let { return it }
+        }
+        return null
+    }
+
+    /** Convert an Android KeyEvent keycode to "KEYCODE_*" string. */
+    private fun keycodeToName(keycode: Int): String? {
+        // Only map the keycodes actually used in radial menus (0-9 keys)
+        val name = android.view.KeyEvent.keyCodeToString(keycode)
+        // keyCodeToString returns "KEYCODE_0" etc, or "KEYCODE_UNKNOWN" for bad values
+        return if (name != "KEYCODE_UNKNOWN") name else null
+    }
+
+    /** Convert a "KEYCODE_*" string to its Android KeyEvent integer value. */
+    private fun nameToKeycode(name: String): Int? {
+        if (!name.startsWith("KEYCODE_")) return null
+        val code = android.view.KeyEvent.keyCodeFromString(name)
+        return if (code != android.view.KeyEvent.KEYCODE_UNKNOWN) code else null
+    }
+
     // --- Layout constraints ---
     const val MIN_SIZE = 0.5f
     const val MAX_SIZE = 2.0f

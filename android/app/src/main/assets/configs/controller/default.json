@@ -1,0 +1,20 @@
+{
+  "type": "controller_config",
+  "version": 1,
+  "bindings": {
+    "A": "Fire Primary",
+    "B": "Fire Secondary",
+    "Y": "Afterburner",
+    "RT": "Accelerate",
+    "LT": "Reverse",
+    "RS_X": "Turn L/R",
+    "RS_Y": "Pitch U/D",
+    "LS_X": "Slide L/R",
+    "LS_Y": "Throttle",
+    "DUp": "Slide Up",
+    "DDown": "Slide Down",
+    "DLeft": "Slide Left",
+    "DRight": "Slide Right"
+  },
+  "inverts": []
+}

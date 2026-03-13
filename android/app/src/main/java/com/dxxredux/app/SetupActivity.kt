@@ -14,6 +14,7 @@ import android.util.Log
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -2915,6 +2916,35 @@ private fun ControllerSection(
             modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
         ) {
             Text("Touch Layout", fontSize = 12.sp)
+        }
+    }
+
+    // ── Export / Import all configs ──
+    val ctx = LocalContext.current
+    val configImportLauncher =
+        rememberLauncherForActivityResult(
+            contract =
+                androidx.activity.result.contract.ActivityResultContracts
+                    .OpenDocument(),
+        ) { uri ->
+            if (uri == null) return@rememberLauncherForActivityResult
+            val msg = ConfigImportExport.importFromUri(ctx, uri)
+            Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show()
+        }
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedButton(
+            onClick = { ConfigImportExport.exportAll(ctx) },
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+            modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
+        ) {
+            Text("Export All Configs", fontSize = 12.sp)
+        }
+        OutlinedButton(
+            onClick = { configImportLauncher.launch(arrayOf("application/json", "*/*")) },
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+            modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
+        ) {
+            Text("Import Config", fontSize = 12.sp)
         }
     }
 
