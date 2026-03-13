@@ -163,6 +163,10 @@ object TouchBindings {
     /** Check if a binding ID is a meta action (dispatched via NativeMetaActions). */
     fun isMetaAction(binding: Int): Boolean = binding >= META_ACTION_OFFSET
 
+    /** Reverse lookup: label string to meta action ID, or -1. */
+    fun metaActionIdForLabel(label: String): Int =
+        META_BUTTON_LABELS.entries.firstOrNull { it.value == label }?.key ?: -1
+
     // --- JNI axis indices (nativeJoystickAxis axis parameter) ---
     const val AXIS_LEFT_X = 0 // Left stick horizontal
     const val AXIS_LEFT_Y = 1 // Left stick vertical

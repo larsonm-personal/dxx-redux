@@ -39,6 +39,8 @@ import android.widget.TextView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import org.json.JSONObject
+import java.io.File
 
 class MainActivity :
     Activity(),
@@ -176,6 +178,12 @@ class MainActivity :
     private var lastTrackNum = -1 // for detecting track changes in polling
     private var gyroManager: GyroInputManager? = null
 
+    // Controller meta-action bindings: SDL button index → meta action ID
+    private var buttonMetaBindings = mapOf<Int, Int>()
+
+    // D-pad meta-action bindings: DPAD keycode → meta action ID
+    private var dpadMetaBindings = mapOf<Int, Int>()
+
     // ── Left-edge fling detection (→ setup screen) ────────────────────
     private lateinit var edgeFlingDetector: android.view.GestureDetector
     private var edgeSwipeTracking = false
@@ -196,6 +204,8 @@ class MainActivity :
         val libName = if (game == "d1") "dxx-redux-d1" else "dxx-redux-d2"
         System.loadLibrary(libName)
         Log.i("MainActivity", "Loaded native library: $libName")
+
+        loadMetaBindings()
 
         // Keep screen on while the game is running
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -272,7 +282,14 @@ class MainActivity :
             gyroManager = gm
         }
         touchOverlay.buttonCallback = { button, pressed ->
-            nativeJoystickButton(button + TouchBindings.TOUCH_BTN_OFFSET, if (pressed) 1 else 0)
+            if (TouchBindings.isMetaAction(button)) {
+                NativeMetaActions.nativeMetaAction(button, if (pressed) 1 else 0)
+            } else {
+                nativeJoystickButton(button + TouchBindings.TOUCH_BTN_OFFSET, if (pressed) 1 else 0)
+            }
+        }
+        touchOverlay.metaActionCallback = { actionId, pressed ->
+            NativeMetaActions.nativeMetaAction(actionId, if (pressed) 1 else 0)
         }
         touchOverlay.keyCallback = { action, keyCode, unicode ->
             nativeKeyEvent(action, keyCode, unicode)
@@ -890,6 +907,56 @@ class MainActivity :
         )
     }
 
+    /** Load controller meta-action bindings from controller_config.json. */
+    private fun loadMetaBindings() {
+        val file = File(filesDir, "controller_config.json")
+        if (!file.exists()) return
+        try {
+            val json = JSONObject(file.readText())
+            if (!json.has("meta_bindings")) return
+            val meta = json.getJSONObject("meta_bindings")
+            val btnMap = mutableMapOf<Int, Int>()
+            val dpadMap = mutableMapOf<Int, Int>()
+            for (key in meta.keys()) {
+                val actionId = meta.getInt(key)
+                if (key.startsWith("dpad_")) {
+                    val dpadKeyCode = dpadControlToKeyCode(key.removePrefix("dpad_"))
+                    if (dpadKeyCode > 0) dpadMap[dpadKeyCode] = actionId
+                } else {
+                    val sdlBtn = key.toIntOrNull()
+                    if (sdlBtn != null) btnMap[sdlBtn] = actionId
+                }
+            }
+            buttonMetaBindings = btnMap
+            dpadMetaBindings = dpadMap
+        } catch (e: Exception) {
+            Log.w("MainActivity", "Failed to load meta bindings", e)
+        }
+    }
+
+    /** Map d-pad control ID from config to Android KeyEvent keycode. */
+    private fun dpadControlToKeyCode(controlId: String): Int =
+        when (controlId) {
+            "DUp" -> KeyEvent.KEYCODE_DPAD_UP
+            "DDown" -> KeyEvent.KEYCODE_DPAD_DOWN
+            "DLeft" -> KeyEvent.KEYCODE_DPAD_LEFT
+            "DRight" -> KeyEvent.KEYCODE_DPAD_RIGHT
+            else -> -1
+        }
+
+    /** Dispatch a d-pad event, using meta action if bound, else normal key event. */
+    private fun dispatchDpad(
+        keyCode: Int,
+        action: Int,
+    ) {
+        val metaId = dpadMetaBindings[keyCode]
+        if (metaId != null) {
+            NativeMetaActions.nativeMetaAction(metaId, if (action == 0) 1 else 0)
+        } else {
+            nativeKeyEvent(action, keyCode, 0)
+        }
+    }
+
     /** Map Android gamepad KEYCODE_BUTTON_* to virtual joystick button index (0-9). */
     private fun gamepadButtonIndex(keyCode: Int): Int =
         when (keyCode) {
@@ -918,7 +985,12 @@ class MainActivity :
         // Gamepad face / shoulder buttons → joystick button events
         val joyBtn = gamepadButtonIndex(keyCode)
         if (joyBtn >= 0) {
-            nativeJoystickButton(joyBtn, 1)
+            val metaId = buttonMetaBindings[joyBtn]
+            if (metaId != null) {
+                NativeMetaActions.nativeMetaAction(metaId, 1)
+            } else {
+                nativeJoystickButton(joyBtn, 1)
+            }
             return true
         }
 
@@ -936,7 +1008,12 @@ class MainActivity :
 
         val joyBtn = gamepadButtonIndex(keyCode)
         if (joyBtn >= 0) {
-            nativeJoystickButton(joyBtn, 0)
+            val metaId = buttonMetaBindings[joyBtn]
+            if (metaId != null) {
+                NativeMetaActions.nativeMetaAction(metaId, 0)
+            } else {
+                nativeJoystickButton(joyBtn, 0)
+            }
             return true
         }
 
@@ -979,17 +1056,17 @@ class MainActivity :
                     0
                 }
             if (newHatX != hatXState) {
-                if (hatXState == -1) nativeKeyEvent(1, KeyEvent.KEYCODE_DPAD_LEFT, 0)
-                if (hatXState == 1) nativeKeyEvent(1, KeyEvent.KEYCODE_DPAD_RIGHT, 0)
-                if (newHatX == -1) nativeKeyEvent(0, KeyEvent.KEYCODE_DPAD_LEFT, 0)
-                if (newHatX == 1) nativeKeyEvent(0, KeyEvent.KEYCODE_DPAD_RIGHT, 0)
+                if (hatXState == -1) dispatchDpad(KeyEvent.KEYCODE_DPAD_LEFT, 1)
+                if (hatXState == 1) dispatchDpad(KeyEvent.KEYCODE_DPAD_RIGHT, 1)
+                if (newHatX == -1) dispatchDpad(KeyEvent.KEYCODE_DPAD_LEFT, 0)
+                if (newHatX == 1) dispatchDpad(KeyEvent.KEYCODE_DPAD_RIGHT, 0)
                 hatXState = newHatX
             }
             if (newHatY != hatYState) {
-                if (hatYState == -1) nativeKeyEvent(1, KeyEvent.KEYCODE_DPAD_UP, 0)
-                if (hatYState == 1) nativeKeyEvent(1, KeyEvent.KEYCODE_DPAD_DOWN, 0)
-                if (newHatY == -1) nativeKeyEvent(0, KeyEvent.KEYCODE_DPAD_UP, 0)
-                if (newHatY == 1) nativeKeyEvent(0, KeyEvent.KEYCODE_DPAD_DOWN, 0)
+                if (hatYState == -1) dispatchDpad(KeyEvent.KEYCODE_DPAD_UP, 1)
+                if (hatYState == 1) dispatchDpad(KeyEvent.KEYCODE_DPAD_DOWN, 1)
+                if (newHatY == -1) dispatchDpad(KeyEvent.KEYCODE_DPAD_UP, 0)
+                if (newHatY == 1) dispatchDpad(KeyEvent.KEYCODE_DPAD_DOWN, 0)
                 hatYState = newHatY
             }
 

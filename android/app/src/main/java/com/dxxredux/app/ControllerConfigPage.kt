@@ -289,6 +289,23 @@ private fun saveConfig(
     for (inv in inverts) invertsArr.put(inv)
     json.put("inverts", invertsArr)
 
+    // Meta action bindings: SDL button index or DPAD keycode → meta action ID
+    val metaObj = JSONObject()
+    for ((controlId, funcLabel) in bindings) {
+        val metaId = TouchBindings.metaActionIdForLabel(funcLabel)
+        if (metaId < 0) continue
+        val sdlBtn = BUTTON_CONTROLS[controlId]
+        if (sdlBtn != null) {
+            metaObj.put(sdlBtn.toString(), metaId)
+            continue
+        }
+        val dpadCode = DPAD_CONTROLS[controlId]
+        if (dpadCode != null) {
+            metaObj.put("dpad_$controlId", metaId)
+        }
+    }
+    json.put("meta_bindings", metaObj)
+
     val joyArr = JSONArray()
     for (b in joySettings) joyArr.put(b.toInt() and 0xFF)
     json.put("key_settings_joystick", joyArr)

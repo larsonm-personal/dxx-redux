@@ -43,6 +43,9 @@ class TouchOverlayView
         /** Called with (buttonIndex, pressed) when a fire button is touched/released. */
         var buttonCallback: ((Int, Boolean) -> Unit)? = null
 
+        /** Called with (metaActionId, pressed) for meta action dispatch. */
+        var metaActionCallback: ((Int, Boolean) -> Unit)? = null
+
         /** Called when the MAP button is tapped (toggles automap). */
         var mapButtonCallback: (() -> Unit)? = null
 
@@ -1411,7 +1414,10 @@ class TouchOverlayView
                     else -> -1
                 }
             if (binding >= 0) {
-                if (rm.control.id == "Guide") {
+                if (TouchBindings.isMetaAction(binding)) {
+                    metaActionCallback?.invoke(binding, true)
+                    metaActionCallback?.invoke(binding, false)
+                } else if (rm.control.id == "Guide") {
                     // Open escort menu (Shift+F4) then send the command digit key
                     keyCallback?.invoke(0, KeyEvent.KEYCODE_SHIFT_LEFT, 0)
                     keyCallback?.invoke(0, KeyEvent.KEYCODE_F4, 0)
