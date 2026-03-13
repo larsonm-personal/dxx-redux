@@ -1435,6 +1435,10 @@ private fun ButtonFunctionPickerDialog(
     onSelect: (String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    var showExtra by remember { mutableStateOf(false) }
+    val funcList =
+        if (showExtra) TouchBindings.META_BUTTON_LABELS.values.toList() else BUTTON_FUNCTIONS
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Assign: $controlLabel") },
@@ -1442,6 +1446,17 @@ private fun ButtonFunctionPickerDialog(
             val btnScrollState = rememberScrollState()
             Box(modifier = Modifier.heightIn(max = 400.dp)) {
                 Column(modifier = Modifier.fillMaxWidth().verticalScroll(btnScrollState)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TextButton(onClick = { showExtra = !showExtra }) {
+                            Text(
+                                if (showExtra) "Standard" else "Extra",
+                                fontSize = PICKER_FONT_SIZE,
+                            )
+                        }
+                    }
                     Row(
                         modifier =
                             Modifier
@@ -1457,7 +1472,7 @@ private fun ButtonFunctionPickerDialog(
                         Spacer(Modifier.width(PICKER_RADIO_GAP))
                         Text("None", color = Color.Gray, fontSize = PICKER_FONT_SIZE)
                     }
-                    for (func in BUTTON_FUNCTIONS) {
+                    for (func in funcList) {
                         val isAssigned = func in assignedFunctions && func != currentFunc
                         Row(
                             modifier =
@@ -1620,6 +1635,10 @@ private fun DpadFunctionPickerDialog(
     onSelect: (String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    var showExtra by remember { mutableStateOf(false) }
+    val funcList =
+        if (showExtra) TouchBindings.META_BUTTON_LABELS.values.toList() else KB_FUNCTIONS
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Assign: $directionLabel") },
@@ -1627,6 +1646,17 @@ private fun DpadFunctionPickerDialog(
             val dpadScrollState = rememberScrollState()
             Box(modifier = Modifier.heightIn(max = 400.dp)) {
                 Column(modifier = Modifier.fillMaxWidth().verticalScroll(dpadScrollState)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TextButton(onClick = { showExtra = !showExtra }) {
+                            Text(
+                                if (showExtra) "Standard" else "Extra",
+                                fontSize = PICKER_FONT_SIZE,
+                            )
+                        }
+                    }
                     Row(
                         modifier =
                             Modifier
@@ -1642,7 +1672,7 @@ private fun DpadFunctionPickerDialog(
                         Spacer(Modifier.width(PICKER_RADIO_GAP))
                         Text("None", color = Color.Gray, fontSize = PICKER_FONT_SIZE)
                     }
-                    for (func in KB_FUNCTIONS) {
+                    for (func in funcList) {
                         val isAssigned = func in assignedFunctions && func != currentFunc
                         Row(
                             modifier =

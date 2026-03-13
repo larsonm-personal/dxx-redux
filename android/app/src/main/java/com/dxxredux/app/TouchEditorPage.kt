@@ -1403,7 +1403,10 @@ private fun ButtonBindingPicker(
     onChange: (Int) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val currentLabel = TouchBindings.BUTTON_LABELS[current] ?: "Button $current"
+    var showExtra by remember { mutableStateOf(false) }
+    val currentLabel = TouchBindings.ALL_BUTTON_LABELS[current] ?: "Button $current"
+    val entries =
+        if (showExtra) TouchBindings.META_BUTTON_LABELS else TouchBindings.BUTTON_LABELS
 
     Column(modifier = modifier) {
         Text(label, color = Color.Gray, fontSize = 11.sp)
@@ -1418,7 +1421,18 @@ private fun ButtonBindingPicker(
                     val scrollState = rememberScrollState()
                     Box(Modifier.heightIn(max = 300.dp)) {
                         Column(Modifier.verticalScroll(scrollState)) {
-                            TouchBindings.BUTTON_LABELS.forEach { (idx, name) ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                TextButton(onClick = { showExtra = !showExtra }) {
+                                    Text(
+                                        if (showExtra) "Standard" else "Extra",
+                                        fontSize = 12.sp,
+                                    )
+                                }
+                            }
+                            entries.forEach { (idx, name) ->
                                 Text(
                                     name,
                                     modifier =
