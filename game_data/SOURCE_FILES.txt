@@ -1,9 +1,9 @@
 ﻿# game_data/ Source File Manifest
-# Generated: 2026-03-09 15:54:29
-# Total: 221 files, 11.1 GB
+# Generated: 2026-03-13 14:00:55
+# Total: 223 files, 11.77 GB
 #
 # These are the original, non-derived source files needed to recreate the
-# game_data/ directory. They are NOT committed to git due to size.
+# game_data/ directory. They are NOT committed to git due to size and copyright.
 # Derived files (extracted/, data_tracks/) are produced by the scripts.
 #
 # Format: SHA256  SIZE  PATH
@@ -17,6 +17,8 @@ daaef498fd455b9cddeb2b8c1dc7c60d090195635f6ca590fdcf7eb12c2e77a0      94054128  
 4c34304bf7c0dca9f5462f184a4c23ee8bdf9388f7d70454ed6dcfb8c035a8eb           123  CD images\Descent - Destination Saturn (USA)\Descent - Destination Saturn (USA).cue
 ef1ec392730c0e92139811d32a3bbf95ae7b9069a33ece89a3ab949d9b19f8cd      62161008  CD images\Descent - Levels of the World (USA)\Descent - Levels of the World (USA).bin
 a0857fc62ef1444e454eadaa60863702d830a2baf09944b3f31b2fc7ffc68740           101  CD images\Descent - Levels of the World (USA)\Descent - Levels of the World (USA).cue
+38393a12630bbdfdd2e2efac138da463c242586a42c889b91054fabf6ba7b925     718912320  CD images\Descent - Mac macplay\Descent - Mac macplay.bin
+b8127c0ce27a4573b596c5cfb78af0f0e7ce58e1dbe130e1424f3ede09d4446d          1125  CD images\Descent - Mac macplay\Descent - Mac macplay.cue
 e4bac85d0fdd33e14e89720353ab306a935c7b7400a63a3e85fce2ac8cb46078       4334736  CD images\Descent - Test Flight (USA)\Descent - Test Flight (USA).bin
 80c652a5a45e22894da2b57f040102253fc1fd951ab54c0bd4ca7ec59773e46e           116  CD images\Descent - Test Flight (USA)\Descent - Test Flight (USA).cue
 acd92b2dd9b9ce772740e96bbdaaff8e59de99ec10ada83a2a99aa18aa2e566c      20210736  CD images\Descent (Europe) (Alt)\Descent (Europe) (Alt).bin

@@ -16,6 +16,13 @@
 #include <SDL_audio.h>
 #include <SDL_mixer.h>
 
+#ifdef ANDROID
+#include <android/log.h>
+#define MIXLOG(...) __android_log_print(ANDROID_LOG_DEBUG, "digi_mixer_d1", __VA_ARGS__)
+#else
+#define MIXLOG(...) do {} while(0)
+#endif
+
 #include "pstypes.h"
 #include "dxxerror.h"
 #include "sounds.h"
@@ -35,7 +42,14 @@
 #define MIX_OUTPUT_CHANNELS	2
 
 #define MAX_SOUND_SLOTS 64
+#ifdef ANDROID
+#define SOUND_BUFFER_SIZE 4096
+extern int g_android_native_sample_rate;
+#define DIGI_MIXER_OUTPUT_RATE (g_android_native_sample_rate > 0 ? g_android_native_sample_rate : SAMPLE_RATE_44K)
+#else
 #define SOUND_BUFFER_SIZE 512 // sample frames, so 44100/512 = 86 updates/second
+#define DIGI_MIXER_OUTPUT_RATE SAMPLE_RATE_44K
+#endif
 #define MIN_VOLUME 10
 
 static int digi_initialised = 0;
@@ -58,7 +72,7 @@ static int digi_mixer_check_soundfont(const char *path, void *data)
 /* Initialise audio */
 int digi_mixer_init()
 {
-	digi_sample_rate = SAMPLE_RATE_44K;
+	digi_sample_rate = DIGI_MIXER_OUTPUT_RATE;
 
 	if (MIX_DIGI_DEBUG) con_printf(CON_DEBUG,"digi_init %d (SDL_Mixer)\n", MAX_SOUNDS);
 	if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0) Error("SDL audio initialisation failed: %s.", SDL_GetError());
@@ -78,9 +92,22 @@ int digi_mixer_init()
 	if (Mix_OpenAudio(digi_sample_rate, MIX_OUTPUT_FORMAT, MIX_OUTPUT_CHANNELS, SOUND_BUFFER_SIZE))
 	{
 		//edited on 10/05/98 by Matt Mueller - should keep running, just with no sound.
+		MIXLOG("ERROR: Couldn't open audio: %s", SDL_GetError());
 		con_printf(CON_URGENT,"\nError: Couldn't open audio: %s\n", SDL_GetError());
 		GameArg.SndNoSound = 1;
 		return 1;
+	}
+	{
+		int actual_freq; Uint16 actual_fmt; int actual_ch;
+		Mix_QuerySpec(&actual_freq, &actual_fmt, &actual_ch);
+#ifdef ANDROID
+		MIXLOG("Mix_OpenAudio ok: requested=%d actual=%d fmt=0x%04X ch=%d buf=%d (native_rate=%d)",
+			digi_sample_rate, actual_freq, actual_fmt, actual_ch, SOUND_BUFFER_SIZE,
+			g_android_native_sample_rate);
+#else
+		MIXLOG("Mix_OpenAudio ok: requested=%d actual=%d fmt=0x%04X ch=%d buf=%d",
+			digi_sample_rate, actual_freq, actual_fmt, actual_ch, SOUND_BUFFER_SIZE);
+#endif
 	}
 
 	digi_max_channels = Mix_AllocateChannels(digi_max_channels);
@@ -126,15 +153,19 @@ void mixdigi_convert_sound(int i)
 	SDL_AudioCVT cvt;
 	Uint8 *data = GameSounds[i].data;
 	Uint32 dlen = GameSounds[i].length;
-	int freq = GameSounds[i].freq;
-	//int bits = GameSounds[i].bits;
+	int out_freq;
+	Uint16 out_format;
+	int out_channels;
+
+	Mix_QuerySpec(&out_freq, &out_format, &out_channels);
 
 	if (SoundChunks[i].abuf) return; //proceed only if not converted yet
 
 	if (data)
 	{
+		int src_rate = GameSounds[i].freq;
 		if (MIX_DIGI_DEBUG) con_printf(CON_DEBUG,"converting %d (%d)\n", i, dlen);
-		SDL_BuildAudioCVT(&cvt, AUDIO_U8, 1, freq, MIX_OUTPUT_FORMAT, MIX_OUTPUT_CHANNELS, digi_sample_rate);
+		SDL_BuildAudioCVT(&cvt, AUDIO_U8, 1, src_rate, out_format, out_channels, out_freq);
 
 		cvt.buf = malloc(dlen * cvt.len_mult);
 		cvt.len = dlen;

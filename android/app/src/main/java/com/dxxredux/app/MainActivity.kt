@@ -47,6 +47,10 @@ class MainActivity :
     SurfaceHolder.Callback {
     companion object {
         // Library is loaded dynamically in onCreate based on intent extra
+
+        /** First virtual joystick button index for D-pad directions (Up=+0, Down=+1, Left=+2, Right=+3).
+         *  Must match DPAD_BUTTON_BASE in joy.c. */
+        const val DPAD_JOY_BUTTON_BASE = 22
     }
 
     // ── JNI declarations ────────────────────────────────────
@@ -811,15 +815,15 @@ class MainActivity :
 
                     if (automapPinchDist > 0f) {
                         val delta = dist - automapPinchDist
-                        val thrust = delta / screenW * 60f
+                        val thrust = delta / screenW * 60f * 3f
 
                         var dAngle = angle - automapPinchAngle
                         while (dAngle > Math.PI.toFloat()) dAngle -= (2 * Math.PI).toFloat()
                         while (dAngle < -Math.PI.toFloat()) dAngle += (2 * Math.PI).toFloat()
-                        val bank = dAngle / Math.PI.toFloat()
+                        val bank = dAngle / Math.PI.toFloat() * 3f
 
-                        val sideways = (mid.x - automapPinchMidX) / screenW
-                        val vertical = -(mid.y - automapPinchMidY) / screenH
+                        val sideways = -(mid.x - automapPinchMidX) / screenW
+                        val vertical = (mid.y - automapPinchMidY) / screenH
 
                         if (thrust != 0f || bank != 0f || sideways != 0f || vertical != 0f) {
                             nativeAutomapInput(0f, 0f, thrust, bank, vertical, sideways)
@@ -944,7 +948,9 @@ class MainActivity :
             else -> -1
         }
 
-    /** Dispatch a d-pad event, using meta action if bound, else normal key event. */
+    /** Dispatch a d-pad event, using meta action if bound, else joystick button.
+     *  D-pad virtual button indices: DUp=22, DDown=23, DLeft=24, DRight=25.
+     *  Shared constant with joy.c D-pad button registration. */
     private fun dispatchDpad(
         keyCode: Int,
         action: Int,
@@ -953,9 +959,22 @@ class MainActivity :
         if (metaId != null) {
             NativeMetaActions.nativeMetaAction(metaId, if (action == 0) 1 else 0)
         } else {
-            nativeKeyEvent(action, keyCode, 0)
+            val btnIdx = dpadKeyCodeToJoyButton(keyCode)
+            if (btnIdx >= 0) {
+                nativeJoystickButton(btnIdx, if (action == 0) 1 else 0)
+            }
         }
     }
+
+    /** Map d-pad keycode to virtual joystick button index (22-25). */
+    private fun dpadKeyCodeToJoyButton(keyCode: Int): Int =
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP -> DPAD_JOY_BUTTON_BASE
+            KeyEvent.KEYCODE_DPAD_DOWN -> DPAD_JOY_BUTTON_BASE + 1
+            KeyEvent.KEYCODE_DPAD_LEFT -> DPAD_JOY_BUTTON_BASE + 2
+            KeyEvent.KEYCODE_DPAD_RIGHT -> DPAD_JOY_BUTTON_BASE + 3
+            else -> -1
+        }
 
     /** Map Android gamepad KEYCODE_BUTTON_* to virtual joystick button index (0-9). */
     private fun gamepadButtonIndex(keyCode: Int): Int =

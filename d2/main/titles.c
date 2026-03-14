@@ -106,6 +106,13 @@ int title_handler(window *wind, d_event *event, title_screen *ts)
 					window_close(wind);
 			return 1;
 
+#ifdef ANDROID
+		case EVENT_JOYSTICK_BUTTON_DOWN:
+			if (ts->allow_keys)
+				window_close(wind);
+			return 1;
+#endif
+
 		case EVENT_IDLE:
 			timer_delay2(50);
 
@@ -1328,6 +1335,28 @@ int briefing_handler(window *wind, d_event *event, briefing *br)
 			}
 			break;
 		}
+
+#ifdef ANDROID
+		case EVENT_JOYSTICK_BUTTON_DOWN:
+		{
+			int btn = event_joystick_get_button(event);
+			if (btn == 1) {
+				window_close(wind);
+				return 1;
+			}
+			/* Any other button (including A) advances the briefing */
+			if (br->new_screen) {
+				if (!new_briefing_screen(br, 0)) {
+					window_close(wind);
+					return 1;
+				}
+			} else if (br->new_page)
+				init_new_page(br);
+			else
+				br->delay_count = 0;
+			return 1;
+		}
+#endif
 
 		case EVENT_WINDOW_DRAW:
 			gr_set_current_canvas(NULL);

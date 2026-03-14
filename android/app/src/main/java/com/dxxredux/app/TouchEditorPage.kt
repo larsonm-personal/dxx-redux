@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.ActivityInfo
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
@@ -66,6 +67,7 @@ fun TouchEditorPage(
     gameVariant: String = "d2",
     onBack: () -> Unit,
 ) {
+    BackHandler(onBack = onBack)
     val context = LocalContext.current
     var layout by remember { mutableStateOf(TouchLayoutRepository.load(context)) }
     var selectedType by remember { mutableStateOf<String?>(null) } // "stick", "button"
@@ -385,20 +387,10 @@ fun TouchEditorPage(
                             val si = selIdxRef.value
                             if (st != null && si >= 0) {
                                 val lay = layoutRef.value
-                                val cr = controlRadius(lay, st, si, canvasWidth, canvasHeight)
-                                val cc = controlCenter(lay, st, si, canvasWidth, canvasHeight)
-                                val maxDist = cr + canvasWidth * 0.10f
-                                val fingerDist =
-                                    sqrt(
-                                        (change.position.x - cc.x) * (change.position.x - cc.x) +
-                                            (change.position.y - cc.y) * (change.position.y - cc.y),
-                                    )
-                                if (fingerDist <= maxDist) {
-                                    val dxPct = (dragAmount.x / canvasWidth) * 100f
-                                    val dyPct = (dragAmount.y / canvasHeight) * 100f
-                                    layout = moveControl(lay, st, si, dxPct, dyPct)
-                                    dirty = true
-                                }
+                                val dxPct = (dragAmount.x / canvasWidth) * 100f
+                                val dyPct = (dragAmount.y / canvasHeight) * 100f
+                                layout = moveControl(lay, st, si, dxPct, dyPct)
+                                dirty = true
                             }
                         }
                     },
@@ -481,9 +473,21 @@ fun TouchEditorPage(
                                     yPct = addY,
                                     segments =
                                         listOf(
-                                            RadialSegment("Seg 1", android.view.KeyEvent.KEYCODE_1),
-                                            RadialSegment("Seg 2", android.view.KeyEvent.KEYCODE_2),
-                                            RadialSegment("Seg 3", android.view.KeyEvent.KEYCODE_3),
+                                            RadialSegment(
+                                                "Fire Primary",
+                                                TouchBindings.BTN_FIRE_PRIMARY,
+                                                bindingType = "action",
+                                            ),
+                                            RadialSegment(
+                                                "Fire Secondary",
+                                                TouchBindings.BTN_FIRE_SECONDARY,
+                                                bindingType = "action",
+                                            ),
+                                            RadialSegment(
+                                                "Fire Flare",
+                                                TouchBindings.BTN_FIRE_FLARE,
+                                                bindingType = "action",
+                                            ),
                                         ),
                                 ),
                     )
@@ -1295,10 +1299,11 @@ private fun ButtonPropertiesPanel(
 @Composable
 private fun RadialPropertiesPanel(
     radial: RadialMenuControl,
-    @Suppress("UNUSED_PARAMETER") gameVariant: String = "d2",
+    gameVariant: String = "d2",
     onUpdate: (RadialMenuControl) -> Unit,
     onDelete: () -> Unit,
 ) {
+    val isPreset = radial.id in listOf("PriWpn", "SecWpn", "Guide")
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -1342,13 +1347,72 @@ private fun RadialPropertiesPanel(
         }
     }
 
-    // Segments info
-    Text(
-        "Segments: ${radial.segments.size}  |  " +
-            radial.segments.joinToString(", ") { it.label },
-        color = Color.Gray,
-        fontSize = 11.sp,
-    )
+    // Segments
+    if (isPreset) {
+        Text(
+            "Preset segments (not editable): " +
+                radial.segments.joinToString(", ") { it.label },
+            color = Color.Gray,
+            fontSize = 11.sp,
+        )
+    } else {
+        Text("Segments", color = Color.Gray, fontSize = 12.sp)
+        radial.segments.forEachIndexed { idx, seg ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                LabelEditor("", seg.label, Modifier.weight(1f)) { newLabel ->
+                    val newSegs = radial.segments.toMutableList()
+                    newSegs[idx] = seg.copy(label = newLabel)
+                    onUpdate(radial.copy(segments = newSegs))
+                }
+                SegmentBindingPicker(
+                    current = seg.binding,
+                    gameVariant = gameVariant,
+                    modifier = Modifier.weight(1f),
+                ) { newBinding ->
+                    val newSegs = radial.segments.toMutableList()
+                    val bindingLabel =
+                        TouchBindings.ALL_BUTTON_LABELS[newBinding]
+                            ?: "Button $newBinding"
+                    newSegs[idx] =
+                        seg.copy(
+                            binding = newBinding,
+                            label = bindingLabel,
+                            bindingType = "action",
+                        )
+                    onUpdate(radial.copy(segments = newSegs))
+                }
+                IconButton(
+                    onClick = {
+                        if (radial.segments.size > 1) {
+                            val newSegs = radial.segments.toMutableList()
+                            newSegs.removeAt(idx)
+                            onUpdate(radial.copy(segments = newSegs))
+                        }
+                    },
+                    modifier = Modifier.size(24.dp),
+                ) {
+                    Icon(Icons.Default.Delete, "Remove", tint = Color(0xFFEF5350))
+                }
+            }
+        }
+        if (radial.segments.size < 12) {
+            TextButton(onClick = {
+                val newSeg =
+                    RadialSegment(
+                        label = "New",
+                        binding = TouchBindings.BTN_FIRE_PRIMARY,
+                        bindingType = "action",
+                    )
+                onUpdate(radial.copy(segments = radial.segments + newSeg))
+            }) {
+                Text("+ Add Segment", fontSize = 11.sp)
+            }
+        }
+    }
 
     // Haptic toggle
     LabeledToggle("Haptic", radial.hapticFeedback) {
@@ -1511,6 +1575,82 @@ private fun AxisPicker(
 }
 
 @Composable
+private fun SegmentBindingPicker(
+    current: Int,
+    gameVariant: String = "d2",
+    modifier: Modifier = Modifier,
+    onChange: (Int) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var showExtra by remember { mutableStateOf(false) }
+    val currentLabel = TouchBindings.ALL_BUTTON_LABELS[current] ?: "Binding $current"
+    val isD1 = gameVariant == "d1"
+    val entries =
+        (if (showExtra) TouchBindings.META_BUTTON_LABELS else TouchBindings.BUTTON_LABELS)
+            .filterKeys { id ->
+                !isD1 || (id !in TouchBindings.D2_ONLY_BUTTONS && id !in TouchBindings.D2_ONLY_META_ACTIONS)
+            }
+
+    Column(modifier = modifier) {
+        TextButton(onClick = { expanded = true }, modifier = Modifier.height(28.dp)) {
+            Text(currentLabel, fontSize = 10.sp)
+        }
+        if (expanded) {
+            AlertDialog(
+                onDismissRequest = { expanded = false },
+                title = { Text("Segment Binding", fontSize = 14.sp) },
+                text = {
+                    val scrollState = rememberScrollState()
+                    Box(Modifier.heightIn(max = 300.dp)) {
+                        Column(Modifier.verticalScroll(scrollState)) {
+                            OutlinedButton(
+                                onClick = { showExtra = !showExtra },
+                                border =
+                                    androidx.compose.foundation.BorderStroke(
+                                        2.dp,
+                                        Color(0xFF2196F3),
+                                    ),
+                                shape =
+                                    androidx.compose.foundation.shape
+                                        .RoundedCornerShape(8.dp),
+                            ) {
+                                Text(
+                                    if (showExtra) "view standard buttons" else "view extra buttons",
+                                    fontSize = 12.sp,
+                                )
+                            }
+                            entries.forEach { (idx, name) ->
+                                Text(
+                                    name,
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                onChange(idx)
+                                                expanded = false
+                                            }.padding(vertical = 8.dp, horizontal = 4.dp),
+                                    fontSize = 12.sp,
+                                    color =
+                                        if (idx == current) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface
+                                        },
+                                )
+                            }
+                        }
+                        ScrollArrows(scrollState)
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { expanded = false }) { Text("Cancel") }
+                },
+            )
+        }
+    }
+}
+
+@Composable
 private fun ButtonBindingPicker(
     label: String,
     current: Int,
@@ -1545,9 +1685,19 @@ private fun ButtonBindingPicker(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                TextButton(onClick = { showExtra = !showExtra }) {
+                                OutlinedButton(
+                                    onClick = { showExtra = !showExtra },
+                                    border =
+                                        androidx.compose.foundation.BorderStroke(
+                                            2.dp,
+                                            Color(0xFF2196F3),
+                                        ),
+                                    shape =
+                                        androidx.compose.foundation.shape
+                                            .RoundedCornerShape(8.dp),
+                                ) {
                                     Text(
-                                        if (showExtra) "Standard" else "Extra",
+                                        if (showExtra) "view standard buttons" else "view extra buttons",
                                         fontSize = 12.sp,
                                     )
                                 }
@@ -1754,10 +1904,22 @@ private fun GyroSettingsDialog(
     var invertX by remember { mutableStateOf(gyro.invertX) }
     var invertY by remember { mutableStateOf(gyro.invertY) }
     var deadzone by remember { mutableFloatStateOf(gyro.deadzone) }
+    var axisX by remember { mutableIntStateOf(gyro.axisX) }
+    var axisY by remember { mutableIntStateOf(gyro.axisY) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Gyro Settings") },
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Gyro Settings")
+                Spacer(Modifier.width(8.dp))
+                Checkbox(
+                    checked = enabled,
+                    onCheckedChange = { enabled = it },
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        },
         text = {
             val scrollState = rememberScrollState()
             Box {
@@ -1781,6 +1943,37 @@ private fun GyroSettingsDialog(
                                     color = Color.White,
                                 )
                             }
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+                        Text("Axis Mode", color = Color.Gray, fontSize = 12.sp)
+                        val isAim = (
+                            axisX == TouchBindings.AXIS_RIGHT_X &&
+                                axisY == TouchBindings.AXIS_RIGHT_Y
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = isAim,
+                                onClick = {
+                                    axisX = TouchBindings.AXIS_RIGHT_X
+                                    axisY = TouchBindings.AXIS_RIGHT_Y
+                                },
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text("Aim (turn/pitch)", fontSize = 12.sp, color = Color.White)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = !isAim,
+                                onClick = {
+                                    axisX = TouchBindings.AXIS_LEFT_X
+                                    axisY = TouchBindings.AXIS_LEFT_Y
+                                },
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text("Slide (left-right/up-down)", fontSize = 12.sp, color = Color.White)
                         }
 
                         Spacer(Modifier.height(8.dp))
@@ -1808,6 +2001,8 @@ private fun GyroSettingsDialog(
                         invertX = invertX,
                         invertY = invertY,
                         deadzone = deadzone,
+                        axisX = axisX,
+                        axisY = axisY,
                     ),
                 )
                 onDismiss()

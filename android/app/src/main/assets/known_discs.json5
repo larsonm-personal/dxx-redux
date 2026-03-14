@@ -496,6 +496,29 @@
       "tracks": [
         {"track": 1, "type": "data", "sha1": "0007cabce9c5d172e55cfc822659e058d3aadca6"}
       ]
+    },
+
+    // -- Descent - Mac macplay
+    {
+      "id": "descent-mac-macplay",
+      "label": "Descent - Mac macplay",
+      "game": "d1",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "fd32cb88782068aab7bc98b8920672e36637da80"},
+        {"track": 2, "type": "audio", "sha1": "ded6beef9289f363c22f325ca9d8bdde027ff98d"},
+        {"track": 3, "type": "audio", "sha1": "76b6c5cb7797b0f68cc997e955a147c3cb2325ae"},
+        {"track": 4, "type": "audio", "sha1": "6fd844ec88e41fd70584c97a36ed622fbfbea89e"},
+        {"track": 5, "type": "audio", "sha1": "e8b15be4f06f9fdbe65c0ad1a7ccc17780a0a1a8"},
+        {"track": 6, "type": "audio", "sha1": "a70ec5064e9f746aeb2e108cbab75a746728f123"},
+        {"track": 7, "type": "audio", "sha1": "4a399ba66b1b9193753d13c3d504ecbc4d680b90"},
+        {"track": 8, "type": "audio", "sha1": "6f9325eb1abcf721341008099245948d1d76a86e"},
+        {"track": 9, "type": "audio", "sha1": "fc6b61a57f6eec376b274740f26631e2830f4d37"},
+        {"track": 10, "type": "audio", "sha1": "283a6b4a47a940a94be0be7dd1df7b560e4d7fef"},
+        {"track": 11, "type": "audio", "sha1": "340f9730cc2e289e24ecde44d410ced0c058c92a"},
+        {"track": 12, "type": "audio", "sha1": "8e0152418877d98d6517c00dd510c6a17daef300"},
+        {"track": 13, "type": "audio", "sha1": "e33700422e21ff1e839a00a9ecb4264d40aafaa5"},
+        {"track": 14, "type": "audio", "sha1": "10fb4157f79cace7e3b99e2aab500462f64840f8"}
+      ]
     }
   ]
 }

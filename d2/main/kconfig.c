@@ -2085,12 +2085,16 @@ void kconfig_get_default_settings(ubyte *kb_out, ubyte *joy_out, ubyte *mouse_ou
 
 	/* Override DOS 2-axis joystick defaults with Android 4-axis gamepad layout.
 	 * Must match android_apply_gamepad_defaults() in android_gamepad_config.cpp. */
-	joy_out[2]  = 21;  /* Accelerate = RT axis button */
-	joy_out[3]  = 19;  /* Reverse    = LT axis button */
+	joy_out[2]  = 20;  /* Accelerate = +RT axis button */
+	joy_out[3]  = 18;  /* Reverse    = +LT axis button */
 	joy_out[13] = 3;   /* Pitch U/D  = axis 3 (RY) */
 	joy_out[15] = 2;   /* Turn L/R   = axis 2 (RX) */
 	joy_out[17] = 0;   /* Slide L/R  = axis 0 (LX) */
 	joy_out[23] = 1;   /* Throttle   = axis 1 (LY) */
+	joy_out[6]  = 24;  /* Slide Left = DLeft virtual button */
+	joy_out[7]  = 25;  /* Slide Right= DRight virtual button */
+	joy_out[8]  = 22;  /* Slide Up   = DUp virtual button */
+	joy_out[9]  = 23;  /* Slide Down = DDown virtual button */
 
 	/* Apply touch overlay offsets to joystick column 2 */
 	{

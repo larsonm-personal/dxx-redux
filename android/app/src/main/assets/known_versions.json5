@@ -3,12 +3,6 @@
 //
 // Each entry: { file, sha256, version }
 // Filenames are lowercase. Multiple versions of the same file are allowed.
-
-// see also:
-// https://salsa.debian.org/games-team/game-data-packager/-/blob/master/data/descent1.yaml
-// note: my D1 demo's descent.pig sha256 doesn't match what they have. I might have a different demo version
-// https://salsa.debian.org/games-team/game-data-packager/-/blob/master/data/descent2.yaml
-
 {
   "versions": [
     // -- D2 v1.2 --
@@ -227,6 +221,13 @@
 
     // -- D1 v1.5 --
     { "file": "descent.hog", "sha256": "83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052", "version": "D1 v1.5" },
-    { "file": "descent.pig", "sha256": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe", "version": "D1 v1.5" }
+    { "file": "descent.pig", "sha256": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe", "version": "D1 v1.5" },
+
+    // -- D1 Mac (MacPlay) --
+    { "file": "demo1.dem", "sha256": "182b0f6e209f6e4b5d34fe7c1cbe9222425f3295f6dfe50917fb0bc0cf6cde6a", "version": "D1 Mac (MacPlay)" },
+    { "file": "descent.hog", "sha256": "d0ab72fda672ac9d751d24899f96ac14eb1720386cf2b0226a5add71543c4339", "version": "D1 Mac (MacPlay)" },
+    { "file": "descent.pig", "sha256": "9eb232c9da830309b2d3a1de75713f6155c62215cd867f4570536180af31f299", "version": "D1 Mac (MacPlay)" },
+    { "file": "watchme.dem", "sha256": "a1d8fd365022a0ca56026d6a9325a6dbd41e483f76e6ec8c13d844a13ce24c87", "version": "D1 Mac (MacPlay)" },
+    { "file": "yep9.dem", "sha256": "20ee0e297f114b1ded6c1156db7247479866d30556598992dfd9ae245deee49b", "version": "D1 Mac (MacPlay)" }
   ]
 }

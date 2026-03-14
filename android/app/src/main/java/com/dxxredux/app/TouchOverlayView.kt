@@ -193,6 +193,7 @@ class TouchOverlayView
             set(value) {
                 if (field != value) {
                     field = value
+                    if (width > 0 && height > 0) computeGeometry(width, height)
                     invalidate()
                 }
             }
@@ -363,7 +364,7 @@ class TouchOverlayView
                 b.radius = defaultBtnRadius * b.control.sizeMult
                 b.centerX = wf * b.control.xPct / 100f
                 b.centerY = hf * b.control.yPct / 100f
-                if (b.control.binding == TouchBindings.BTN_AUTOMAP) {
+                if (b.control.binding == TouchBindings.BTN_AUTOMAP && !automapActive) {
                     mapBtnCenterX = b.centerX
                     mapBtnCenterY = b.centerY
                     mapBtnRadius = b.radius
@@ -1448,18 +1449,26 @@ class TouchOverlayView
 
         private fun fireRadialSelection(rm: RadialMenuState) {
             val segs = if (rm.isWeaponWheel) rm.filteredSegments else rm.control.segments
+            val seg =
+                when {
+                    rm.activeSegment >= 0 && rm.activeSegment < segs.size -> segs[rm.activeSegment]
+                    else -> null
+                }
             val binding =
                 when {
-                    rm.activeSegment >= 0 && rm.activeSegment < segs.size ->
-                        segs[rm.activeSegment].binding
+                    seg != null -> seg.binding
                     rm.activeSegment == RADIAL_CENTER && rm.control.centerBinding >= 0 ->
                         rm.control.centerBinding
                     else -> -1
                 }
+            val isAction = seg?.bindingType == "action"
             if (binding >= 0) {
                 if (TouchBindings.isMetaAction(binding)) {
                     metaActionCallback?.invoke(binding, true)
                     metaActionCallback?.invoke(binding, false)
+                } else if (isAction) {
+                    buttonCallback?.invoke(binding, true)
+                    buttonCallback?.invoke(binding, false)
                 } else if (rm.control.id == "Guide") {
                     // Open escort menu (Shift+F4) then send the command digit key
                     keyCallback?.invoke(0, KeyEvent.KEYCODE_SHIFT_LEFT, 0)

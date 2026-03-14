@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.view.InputDevice
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
@@ -105,18 +106,23 @@ private val AXIS_BUTTON_SDL =
         "LS_Y" to Pair(12, 13),
         "RS_X" to Pair(14, 15),
         "RS_Y" to Pair(16, 17),
+        "LT" to Pair(18, 19),
+        "RT" to Pair(20, 21),
     )
 
 /*
- * Joystick function → kc_joystick[] index maps.
+ * Joystick function -> kc_joystick[] index maps.
  * IMPORTANT: These indices mirror the kc_joystick[] array layout in
- * d2/main/kconfig.c (primary BT_JOY_BUTTON / BT_JOY_AXIS slots).
+ * d2/main/kconfig.c and d1/main/kconfig.c (primary BT_JOY_BUTTON / BT_JOY_AXIS slots).
+ * D1 has 48 entries, D2 has 56. Key differences: Automap is at index 27 in D1
+ * but index 50 in D2; D2 has Afterburner/Headlight/Energy-Shield/Toggle Bomb
+ * which don't exist in D1; Cycle Primary/Secondary are at 44/45 in D1 but 28/29 in D2.
  * Update both locations together.  Search for "BUTTON_KC_INDEX" in kconfig.h.
  *
  * Axis entries: the axis value is at the listed index; the invert flag is at index+1.
  * Invert indices (14, 16, 18, 20, 22, 24) default to 0 in the C fill function.
  */
-private val BUTTON_KC_INDEX =
+private val D2_BUTTON_KC_INDEX =
     linkedMapOf(
         "Fire Primary" to 0,
         "Fire Secondary" to 1,
@@ -141,6 +147,34 @@ private val BUTTON_KC_INDEX =
         "Energy\u2192Shield" to 52,
         "Toggle Bomb" to 54,
     )
+
+private val D1_BUTTON_KC_INDEX =
+    linkedMapOf(
+        "Fire Primary" to 0,
+        "Fire Secondary" to 1,
+        "Accelerate" to 2,
+        "Reverse" to 3,
+        "Fire Flare" to 4,
+        "Slide On" to 5,
+        "Slide Left" to 6,
+        "Slide Right" to 7,
+        "Slide Up" to 8,
+        "Slide Down" to 9,
+        "Bank On" to 10,
+        "Bank Left" to 11,
+        "Bank Right" to 12,
+        "Rear View" to 25,
+        "Drop Bomb" to 26,
+        "Automap" to 27,
+        "Cycle Primary" to 44,
+        "Cycle Secondary" to 45,
+    )
+
+internal fun buttonKcIndex(gameVariant: String): LinkedHashMap<String, Int> =
+    if (gameVariant == "d1") D1_BUTTON_KC_INDEX else D2_BUTTON_KC_INDEX
+
+// Default to D2 for contexts where gameVariant is unknown
+private val BUTTON_KC_INDEX = D2_BUTTON_KC_INDEX
 
 private val AXIS_KC_INDEX =
     linkedMapOf(
@@ -188,13 +222,13 @@ private val KB_KC_INDEX =
 private val BUTTON_FUNCTIONS = BUTTON_KC_INDEX.keys.toList()
 private val AXIS_FUNCTIONS = AXIS_KC_INDEX.keys.toList()
 
-// D-pad direction → internal KEY_* scancode
+// D-pad direction → virtual joystick button index (must match DPAD_BUTTON_BASE in joy.c)
 private val DPAD_CONTROLS =
     linkedMapOf(
-        "DUp" to 0xC8,
-        "DDown" to 0xD0,
-        "DLeft" to 0xCB,
-        "DRight" to 0xCD,
+        "DUp" to 22,
+        "DDown" to 23,
+        "DLeft" to 24,
+        "DRight" to 25,
     )
 
 private val KB_FUNCTIONS = KB_KC_INDEX.keys.toList()
@@ -267,12 +301,14 @@ internal fun saveConfig(
     context: Context,
     bindings: Map<String, String>,
     inverts: Set<String>,
+    gameVariant: String = "d2",
 ) {
     // Collect (kc_index, value) pairs for joystick settings
+    val btnKcMap = buttonKcIndex(gameVariant)
     val joyIndices = mutableListOf<Int>()
     val joyValues = mutableListOf<Int>()
     for ((controlId, funcLabel) in bindings) {
-        val btnKcIdx = BUTTON_KC_INDEX[funcLabel]
+        val btnKcIdx = btnKcMap[funcLabel]
         val btnSdlId = BUTTON_CONTROLS[controlId]
         if (btnKcIdx != null && btnSdlId != null) {
             joyIndices.add(btnKcIdx)
@@ -302,17 +338,17 @@ internal fun saveConfig(
         }
     }
 
-    // Collect (kc_index, scancode) pairs for keyboard settings (d-pad)
-    val kbIndices = mutableListOf<Int>()
-    val kbValues = mutableListOf<Int>()
+    // D-pad bindings go through joystick buttons (22-25)
     for ((controlId, funcLabel) in bindings) {
-        val kbKcIdx = KB_KC_INDEX[funcLabel]
-        val scancode = DPAD_CONTROLS[controlId]
-        if (kbKcIdx != null && scancode != null) {
-            kbIndices.add(kbKcIdx)
-            kbValues.add(scancode)
+        val dpadBtnIdx = DPAD_CONTROLS[controlId]
+        val dpadKcIdx = btnKcMap[funcLabel]
+        if (dpadBtnIdx != null && dpadKcIdx != null) {
+            joyIndices.add(dpadKcIdx)
+            joyValues.add(dpadBtnIdx)
         }
     }
+    val kbIndices = mutableListOf<Int>()
+    val kbValues = mutableListOf<Int>()
 
     // C builds the 60-byte arrays (handles invert defaults, 0xFF init, etc.)
     val joySettings =
@@ -537,6 +573,7 @@ fun ControllerConfigPage(
     gameVariant: String = "d2",
     onBack: () -> Unit,
 ) {
+    BackHandler(onBack = onBack)
     @Suppress("UNUSED_EXPRESSION")
     axisGeneration
 
@@ -1379,7 +1416,7 @@ fun ControllerConfigPage(
             }
             Button(
                 onClick = {
-                    saveConfig(context, bindings.toMap(), inverts.toSet())
+                    saveConfig(context, bindings.toMap(), inverts.toSet(), gameVariant)
                     Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
                     onBack()
                 },
@@ -1414,7 +1451,7 @@ fun ControllerConfigPage(
             OutlinedButton(
                 onClick = {
                     // Save current state first, then export
-                    saveConfig(context, bindings.toMap(), inverts.toSet())
+                    saveConfig(context, bindings.toMap(), inverts.toSet(), gameVariant)
                     if (!ConfigImportExport.exportControllerConfig(context)) {
                         Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
                     }

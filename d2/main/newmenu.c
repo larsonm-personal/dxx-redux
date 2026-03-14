@@ -1800,6 +1800,25 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 			break;
 
 #ifdef ANDROID
+		case EVENT_JOYSTICK_BUTTON_DOWN:
+		{
+			int btn = event_joystick_get_button(event);
+			if (btn == 0) {
+				struct { event_type type; int keycode; } ke;
+				ke.type = EVENT_KEY_COMMAND;
+				ke.keycode = KEY_ENTER;
+				return newmenu_key_command(wind, (d_event *)&ke, menu);
+			} else if (btn == 1) {
+				struct { event_type type; int keycode; } ke;
+				ke.type = EVENT_KEY_COMMAND;
+				ke.keycode = KEY_ESC;
+				return newmenu_key_command(wind, (d_event *)&ke, menu);
+			}
+			break;
+		}
+#endif
+
+#ifdef ANDROID
 		case EVENT_MOUSE_MOVED:
 			// Drag-to-scroll for scrollable menus
 			if (menu->mouse_state && menu->is_scroll_box && menu->drag_start_y >= 0) {
@@ -2539,6 +2558,25 @@ int listbox_handler(window *wind, d_event *event, listbox *lb)
 		case EVENT_KEY_COMMAND:
 			return listbox_key_command(wind, event, lb);
 			break;
+
+#ifdef ANDROID
+		case EVENT_JOYSTICK_BUTTON_DOWN:
+		{
+			int btn = event_joystick_get_button(event);
+			if (btn == 0) {
+				struct { event_type type; int keycode; } ke;
+				ke.type = EVENT_KEY_COMMAND;
+				ke.keycode = KEY_ENTER;
+				return listbox_key_command(wind, (d_event *)&ke, lb);
+			} else if (btn == 1) {
+				struct { event_type type; int keycode; } ke;
+				ke.type = EVENT_KEY_COMMAND;
+				ke.keycode = KEY_ESC;
+				return listbox_key_command(wind, (d_event *)&ke, lb);
+			}
+			break;
+		}
+#endif
 
 		case EVENT_IDLE:
 			timer_delay2(50);

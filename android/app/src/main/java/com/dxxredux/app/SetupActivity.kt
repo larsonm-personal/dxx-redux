@@ -120,7 +120,14 @@ class SetupActivity : ComponentActivity() {
                         Log.i("DXX-Setup", "patch_pilots: patched $n file(s)")
                     }
                     "reset_controls" -> {
-                        val n = NativePilotPatcher.nativeResetToDefaults(filesDir.absolutePath, "d2")
+                        val game = intent.getStringExtra("game")
+                        var n = 0
+                        if (game == null || game == "d2") {
+                            n += NativePilotPatcher.nativeResetToDefaults(filesDir.absolutePath, "d2")
+                        }
+                        if (game == null || game == "d1") {
+                            n += NativePilotPatcher.nativeResetToDefaults(filesDir.absolutePath, "d1")
+                        }
                         Log.i("DXX-Setup", "reset_controls: reset $n file(s) to engine defaults")
                     }
                     "controller_introspect" -> {
@@ -2134,6 +2141,7 @@ private fun SetupScreen(
                         axisGeneration = axisGeneration,
                         pressedButtons = pressedButtons,
                         prefs = prefs,
+                        selectedGame = selectedGame,
                         onDefineControls = { showControllerPage = true },
                         onEditTouchLayout = { showTouchEditorPage = true },
                     )
@@ -2770,6 +2778,7 @@ private fun ControllerSection(
     axisGeneration: Int,
     pressedButtons: SnapshotStateList<String>,
     prefs: SharedPreferences,
+    selectedGame: String = "d2",
     onDefineControls: () -> Unit = {},
     onEditTouchLayout: () -> Unit = {},
 ) {
@@ -2998,6 +3007,7 @@ private fun ControllerSection(
                     File(ctx.filesDir, "touch_layout.json").delete()
                     // Patch all .plr files with engine defaults (kb + joy + mouse + touch offsets)
                     NativePilotPatcher.nativeResetToDefaults(ctx.filesDir.absolutePath, "d2")
+                    NativePilotPatcher.nativeResetToDefaults(ctx.filesDir.absolutePath, "d1")
                     showResetDialog = false
                     // Restart to apply
                     android.os.Process.killProcess(android.os.Process.myPid())

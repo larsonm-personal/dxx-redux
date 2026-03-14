@@ -251,6 +251,9 @@ data class RadialSegment(
     val iconRes: String = "",
     // weapon slot (0-4), -1 = not a weapon segment
     val weaponIndex: Int = -1,
+    // "keycode" = binding is an Android KeyEvent keycode (legacy presets)
+    // "action"  = binding is a TouchBindings button ID (0-54) or meta action (1000+)
+    val bindingType: String = "keycode",
 ) {
     fun toJson() =
         JSONObject().apply {
@@ -258,6 +261,7 @@ data class RadialSegment(
             put("binding", binding)
             put("iconRes", iconRes)
             if (weaponIndex >= 0) put("wpnIdx", weaponIndex)
+            if (bindingType != "keycode") put("bindingType", bindingType)
         }
 
     companion object {
@@ -267,6 +271,7 @@ data class RadialSegment(
                 j.getInt("binding"),
                 j.optString("iconRes", ""),
                 j.optInt("wpnIdx", -1),
+                j.optString("bindingType", "keycode"),
             )
     }
 }

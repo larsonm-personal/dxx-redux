@@ -1273,6 +1273,8 @@ int plr_patch_keysettings(const char *path,
 		fwrite(&ct, 1, 1, f);
 	}
 
+	fflush(f);
+	fsync(fileno(f));
 	fclose(f);
 	return 1;
 }

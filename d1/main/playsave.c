@@ -22,6 +22,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <errno.h>
 #include <limits.h>
 #include <ctype.h>
+#ifdef ANDROID
+#include <unistd.h>
+#endif
 
 #include "dxxerror.h"
 #include "gameseq.h"
@@ -1643,6 +1646,8 @@ int plr_patch_keysettings(const char *path,
 		fwrite(&ct, 1, 1, f);
 	}
 
+	fflush(f);
+	fsync(fileno(f));
 	fclose(f);
 	return 1;
 }

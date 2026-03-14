@@ -239,8 +239,18 @@ void joy_init()
 			joybutton_text[Joystick.n_buttons++] = d_strdup(temp);
 		}
 
+		/* D-pad virtual buttons: DUp=22, DDown=23, DLeft=24, DRight=25.
+		 * Shared constant with MainActivity.kt DPAD_JOY_BUTTON_BASE. */
+		{
+			static const char *dpad_names[] = {"DUp","DDn","DLt","DRt"};
+			for (j = 0; j < 4; j++) {
+				sprintf(temp, "J1 %s", dpad_names[j]);
+				joybutton_text[Joystick.n_buttons++] = d_strdup(temp);
+			}
+		}
+
 		num_joysticks = 1;
-		con_printf(CON_NORMAL, "android-joystick: registered virtual gamepad (6 axes, 10+12 buttons)\n");
+		con_printf(CON_NORMAL, "android-joystick: registered virtual gamepad (6 axes, %d buttons)\n", Joystick.n_buttons);
 	}
 
 	joy_num_axes = Joystick.n_axes;
