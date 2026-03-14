@@ -223,8 +223,21 @@ class TouchOverlayView
         private var automapBtnPointerId = -1
 
         // ── Paint objects ───────────────────────────────────────
-        private companion object {
-            const val RADIAL_CENTER = -2
+        companion object {
+            private const val RADIAL_CENTER = -2
+
+            // Admin tray action indices dispatched via adminTrayCallback
+            const val ADMIN_INCREASE_VIEW = 0
+            const val ADMIN_DECREASE_VIEW = 1
+            const val ADMIN_TOGGLE_AUTOLEVEL = 2
+            const val ADMIN_QUICK_SAVE = 3
+            const val ADMIN_QUICK_LOAD = 4
+            const val ADMIN_OPEN_MENU = 5
+
+            // Cockpit mode constants (match C CM_* defines)
+            private const val CM_FULL_COCKPIT = 0
+            private const val CM_STATUS_BAR = 2
+            private const val CM_FULL_SCREEN = 3
         }
 
         private val radialPath = Path()
@@ -293,6 +306,26 @@ class TouchOverlayView
         private var cheatsOverlayPointerId = -1
         private val cheatsOverlayRects = mutableListOf<RectF>() // computed per-draw
         private var cheatsCloseRect = RectF()
+
+        // ── Admin tray state ────────────────────────────────────
+        // Visible bottom-center tab that opens a settings panel.
+        // Items: Increase View, Decrease View, Toggle Auto-Leveling,
+        //        Quick Save (Alt+F2), Quick Load (Alt+F3), Open Game Menu (ESC)
+        private var adminTrayOpen = false
+        private var adminTrayPressedIndex = -1
+        private var adminTrayPointerId = -1
+        private val adminTrayRects = mutableListOf<RectF>()
+        private var adminTrayCloseRect = RectF()
+        private var adminTrayTabRect = RectF()
+
+        // Callback: (actionIndex) -> Unit. Actions are:
+        // 0=Increase View, 1=Decrease View, 2=Toggle Auto-Leveling,
+        // 3=Quick Save, 4=Quick Load, 5=Open Game Menu
+        var adminTrayCallback: ((Int) -> Unit)? = null
+
+        // Provider for dynamic labels (auto-leveling state, cockpit mode)
+        var adminTrayAutoLevelingProvider: (() -> Boolean)? = null
+        var adminTrayCockpitModeProvider: (() -> Int)? = null
 
         init {
             rebuildStates()
@@ -474,6 +507,13 @@ class TouchOverlayView
 
             // ── Cheats overlay (drawn last, on top of everything) ──
             if (cheatsOverlayOpen) drawCheatsOverlay(canvas)
+
+            // ── Admin tray tab (visible) or panel (when open) ───
+            if (adminTrayOpen) {
+                drawAdminTrayPanel(canvas)
+            } else if (!cheatsOverlayOpen) {
+                drawAdminTrayTab(canvas)
+            }
         }
 
         private fun drawStick(
@@ -869,6 +909,9 @@ class TouchOverlayView
             // When cheats overlay is open, it consumes all touches
             if (cheatsOverlayOpen) return handleCheatsOverlayTouch(event)
 
+            // When admin tray panel is open, it consumes all touches
+            if (adminTrayOpen) return handleAdminTrayTouch(event)
+
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                     val idx = event.actionIndex
@@ -1018,6 +1061,13 @@ class TouchOverlayView
                                 handled = true
                             }
                         }
+                    }
+
+                    // Try admin tray tab
+                    if (!handled && adminTrayTabRect.contains(px, py)) {
+                        adminTrayOpen = true
+                        invalidate()
+                        handled = true
                     }
 
                     if (!handled) passthroughPointers.add(pid)
@@ -1753,5 +1803,197 @@ class TouchOverlayView
                 }
             }
             return true // consume all events while overlay is open
+        }
+
+        // ── Admin tray ──────────────────────────────────────────
+
+        private fun adminTrayLabel(index: Int): String =
+            when (index) {
+                ADMIN_INCREASE_VIEW -> {
+                    val mode = adminTrayCockpitModeProvider?.invoke() ?: -1
+                    val suffix =
+                        when (mode) {
+                            CM_FULL_COCKPIT -> " [Cockpit]"
+                            CM_STATUS_BAR -> " [Status]"
+                            CM_FULL_SCREEN -> " [Full]"
+                            else -> ""
+                        }
+                    "View +$suffix"
+                }
+                ADMIN_DECREASE_VIEW -> "View -"
+                ADMIN_TOGGLE_AUTOLEVEL -> {
+                    val on = adminTrayAutoLevelingProvider?.invoke() ?: true
+                    if (on) "AutoLevel: ON" else "AutoLevel: OFF"
+                }
+                ADMIN_QUICK_SAVE -> "Quick Save"
+                ADMIN_QUICK_LOAD -> "Quick Load"
+                ADMIN_OPEN_MENU -> "Game Menu"
+                else -> ""
+            }
+
+        private fun drawAdminTrayTab(canvas: Canvas) {
+            val w = width.toFloat()
+            val tabW = w * 0.12f
+            val tabH = w * 0.03f
+            val tabLeft = (w - tabW) / 2f
+            val tabTop = height.toFloat() - tabH
+            adminTrayTabRect = RectF(tabLeft, tabTop, tabLeft + tabW, height.toFloat())
+
+            val bg = Paint(paintBtnIdle).apply { alpha = 0x88 }
+            val cornerR = tabH * 0.5f
+            canvas.drawRoundRect(adminTrayTabRect, cornerR, cornerR, bg)
+            paintRing.alpha = 0x66
+            canvas.drawRoundRect(adminTrayTabRect, cornerR, cornerR, paintRing)
+
+            val textP =
+                Paint(paintBtnLabel).apply {
+                    textSize = tabH * 0.6f
+                    textAlign = Paint.Align.CENTER
+                    alpha = 0xBB
+                }
+            canvas.drawText(
+                "Settings",
+                adminTrayTabRect.centerX(),
+                adminTrayTabRect.centerY() + textP.textSize * 0.35f,
+                textP,
+            )
+        }
+
+        private fun drawAdminTrayPanel(canvas: Canvas) {
+            val w = width.toFloat()
+            val h = height.toFloat()
+            // Dim background
+            canvas.drawColor(0x88000000.toInt())
+
+            val itemCount = 6
+            val cols = 3
+            val rows = 2
+            val pad = w * 0.03f
+            val panelW = w * 0.7f
+            val panelH = h * 0.35f
+            val panelLeft = (w - panelW) / 2f
+            val panelTop = (h - panelH) / 2f
+            val closeH = h * 0.06f
+
+            val cellW = (panelW - pad * (cols + 1)) / cols
+            val cellH = (panelH - closeH - pad * (rows + 2)) / rows
+
+            adminTrayRects.clear()
+            val textPaint =
+                Paint(paintBtnLabel).apply {
+                    textSize = (cellH * 0.25f).coerceAtMost(w * 0.03f)
+                    textAlign = Paint.Align.CENTER
+                }
+
+            // Panel background
+            val panelBg =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.FILL
+                    color = 0xDD222222.toInt()
+                }
+            val panelRect = RectF(panelLeft, panelTop, panelLeft + panelW, panelTop + panelH)
+            canvas.drawRoundRect(panelRect, pad, pad, panelBg)
+            paintRing.alpha = 0x88
+            canvas.drawRoundRect(panelRect, pad, pad, paintRing)
+
+            for (i in 0 until itemCount) {
+                val col = i % cols
+                val row = i / cols
+                val left = panelLeft + pad + col * (cellW + pad)
+                val top = panelTop + pad + row * (cellH + pad)
+                val rect = RectF(left, top, left + cellW, top + cellH)
+                adminTrayRects.add(rect)
+
+                val bg = if (i == adminTrayPressedIndex) paintBtnPressed else paintBtnIdle
+                bg.alpha = if (i == adminTrayPressedIndex) 0xAA else 0x55
+                val cornerR = cellH * 0.15f
+                canvas.drawRoundRect(rect, cornerR, cornerR, bg)
+                paintRing.alpha = 0x66
+                canvas.drawRoundRect(rect, cornerR, cornerR, paintRing)
+
+                textPaint.alpha = 0xDD
+                canvas.drawText(
+                    adminTrayLabel(i),
+                    rect.centerX(),
+                    rect.centerY() + textPaint.textSize * 0.35f,
+                    textPaint,
+                )
+            }
+
+            // Close button at bottom of panel
+            val closeTop = panelTop + panelH - closeH - pad
+            adminTrayCloseRect = RectF(panelLeft + pad, closeTop, panelLeft + panelW - pad, closeTop + closeH)
+            val closeBg = Paint(paintBtnIdle).apply { alpha = 0x66 }
+            canvas.drawRoundRect(adminTrayCloseRect, closeH * 0.25f, closeH * 0.25f, closeBg)
+            paintRing.alpha = 0x88
+            canvas.drawRoundRect(adminTrayCloseRect, closeH * 0.25f, closeH * 0.25f, paintRing)
+            val closePaint =
+                Paint(paintBtnLabel).apply {
+                    textSize = closeH * 0.4f
+                    textAlign = Paint.Align.CENTER
+                    alpha = 0xDD
+                }
+            canvas.drawText(
+                "Close",
+                adminTrayCloseRect.centerX(),
+                adminTrayCloseRect.centerY() + closePaint.textSize * 0.35f,
+                closePaint,
+            )
+        }
+
+        private fun handleAdminTrayTouch(event: MotionEvent): Boolean {
+            val idx = event.actionIndex
+            val px = event.getX(idx)
+            val py = event.getY(idx)
+
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                    adminTrayPointerId = event.getPointerId(idx)
+                    if (adminTrayCloseRect.contains(px, py)) {
+                        adminTrayPressedIndex = -2
+                        invalidate()
+                        return true
+                    }
+                    for (i in adminTrayRects.indices) {
+                        if (adminTrayRects[i].contains(px, py)) {
+                            adminTrayPressedIndex = i
+                            invalidate()
+                            return true
+                        }
+                    }
+                    // Tap outside panel closes it
+                    adminTrayOpen = false
+                    adminTrayPressedIndex = -1
+                    adminTrayPointerId = -1
+                    invalidate()
+                    return true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
+                    if (event.getPointerId(idx) == adminTrayPointerId) {
+                        if (adminTrayPressedIndex == -2 && adminTrayCloseRect.contains(px, py)) {
+                            adminTrayOpen = false
+                        } else if (adminTrayPressedIndex >= 0 &&
+                            adminTrayPressedIndex < adminTrayRects.size &&
+                            adminTrayRects[adminTrayPressedIndex].contains(px, py)
+                        ) {
+                            adminTrayCallback?.invoke(adminTrayPressedIndex)
+                            performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                            // Don't auto-close: user may want multiple actions
+                            invalidate()
+                        }
+                        adminTrayPressedIndex = -1
+                        adminTrayPointerId = -1
+                        invalidate()
+                    }
+                    return true
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    adminTrayPressedIndex = -1
+                    adminTrayPointerId = -1
+                    invalidate()
+                    return true
+                }
+            }
+            return true
         }
     }

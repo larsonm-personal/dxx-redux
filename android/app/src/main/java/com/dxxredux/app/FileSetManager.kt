@@ -314,7 +314,8 @@ class FileSetManager(
     }
 
     /**
-     * Delete all player/pilot files from both game dirs across all sets.
+     * Delete all player/pilot files from both game dirs across all sets,
+     * plus legacy locations in filesDir root from before d1/d2 separation.
      */
     fun deleteAllPilotFiles(): Int {
         var total = 0
@@ -328,6 +329,18 @@ class FileSetManager(
                 val playersDir = File(gameDir, "Players")
                 if (playersDir.isDirectory) total += deletePilotFilesIn(playersDir)
             }
+        }
+        // Legacy locations from before d1/d2 separation
+        total += deletePilotFilesIn(filesDir)
+        for (sub in arrayOf(
+            "Players",
+            "d1x-redux",
+            "d2x-redux",
+            "d1x-redux/Players",
+            "d2x-redux/Players",
+        )) {
+            val dir = File(filesDir, sub)
+            if (dir.isDirectory) total += deletePilotFilesIn(dir)
         }
         return total
     }

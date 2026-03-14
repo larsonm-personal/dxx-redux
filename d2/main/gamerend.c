@@ -896,6 +896,35 @@ void toggle_cockpit()
 	write_player_file();
 }
 
+void toggle_cockpit_reverse()
+{
+	int new_mode=CM_FULL_SCREEN;
+
+	if (Rear_view || Player_is_dead)
+		return;
+
+	switch (PlayerCfg.PreferredCockpitMode)
+	{
+		case CM_FULL_COCKPIT:
+			new_mode = CM_FULL_SCREEN;
+			break;
+		case CM_STATUS_BAR:
+			if (PlayerCfg.DisableCockpit)
+				new_mode = CM_FULL_SCREEN;
+			else
+				new_mode = CM_FULL_COCKPIT;
+			break;
+		case CM_FULL_SCREEN:
+			new_mode = CM_STATUS_BAR;
+			break;
+	}
+
+	select_cockpit(new_mode);
+	HUD_clear_messages();
+	PlayerCfg.PreferredCockpitMode = new_mode;
+	write_player_file();
+}
+
 int last_drawn_cockpit = -1;
 extern void ogl_loadbmtexture(grs_bitmap *bm, int filter_blueship_wing);
 

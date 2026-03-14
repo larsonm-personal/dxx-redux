@@ -33,6 +33,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -1586,10 +1587,7 @@ private fun SegmentBindingPicker(
     val currentLabel = TouchBindings.ALL_BUTTON_LABELS[current] ?: "Binding $current"
     val isD1 = gameVariant == "d1"
     val entries =
-        (if (showExtra) TouchBindings.META_BUTTON_LABELS else TouchBindings.BUTTON_LABELS)
-            .filterKeys { id ->
-                !isD1 || (id !in TouchBindings.D2_ONLY_BUTTONS && id !in TouchBindings.D2_ONLY_META_ACTIONS)
-            }
+        if (showExtra) TouchBindings.META_BUTTON_LABELS else TouchBindings.BUTTON_LABELS
 
     Column(modifier = modifier) {
         TextButton(onClick = { expanded = true }, modifier = Modifier.height(28.dp)) {
@@ -1620,18 +1618,34 @@ private fun SegmentBindingPicker(
                                 )
                             }
                             entries.forEach { (idx, name) ->
+                                val isD2Only =
+                                    isD1 &&
+                                        (
+                                            idx in TouchBindings.D2_ONLY_BUTTONS ||
+                                                idx in TouchBindings.D2_ONLY_META_ACTIONS
+                                        )
+                                val displayText = if (isD2Only) "$name (D2 only)" else name
                                 Text(
-                                    name,
+                                    displayText,
                                     modifier =
                                         Modifier
                                             .fillMaxWidth()
-                                            .clickable {
-                                                onChange(idx)
-                                                expanded = false
-                                            }.padding(vertical = 8.dp, horizontal = 4.dp),
+                                            .then(
+                                                if (isD2Only) {
+                                                    Modifier
+                                                } else {
+                                                    Modifier.clickable {
+                                                        onChange(idx)
+                                                        expanded = false
+                                                    }
+                                                },
+                                            ).padding(vertical = 8.dp, horizontal = 4.dp),
                                     fontSize = 12.sp,
+                                    fontStyle = if (isD2Only) FontStyle.Italic else FontStyle.Normal,
                                     color =
-                                        if (idx == current) {
+                                        if (isD2Only) {
+                                            Color(0xFF999999)
+                                        } else if (idx == current) {
                                             MaterialTheme.colorScheme.primary
                                         } else {
                                             MaterialTheme.colorScheme.onSurface
@@ -1663,10 +1677,7 @@ private fun ButtonBindingPicker(
     val currentLabel = TouchBindings.ALL_BUTTON_LABELS[current] ?: "Button $current"
     val isD1 = gameVariant == "d1"
     val entries =
-        (if (showExtra) TouchBindings.META_BUTTON_LABELS else TouchBindings.BUTTON_LABELS)
-            .filterKeys { id ->
-                !isD1 || (id !in TouchBindings.D2_ONLY_BUTTONS && id !in TouchBindings.D2_ONLY_META_ACTIONS)
-            }
+        if (showExtra) TouchBindings.META_BUTTON_LABELS else TouchBindings.BUTTON_LABELS
 
     Column(modifier = modifier) {
         Text(label, color = Color.Gray, fontSize = 11.sp)
@@ -1703,18 +1714,34 @@ private fun ButtonBindingPicker(
                                 }
                             }
                             entries.forEach { (idx, name) ->
+                                val isD2Only =
+                                    isD1 &&
+                                        (
+                                            idx in TouchBindings.D2_ONLY_BUTTONS ||
+                                                idx in TouchBindings.D2_ONLY_META_ACTIONS
+                                        )
+                                val displayText = if (isD2Only) "$name (D2 only)" else name
                                 Text(
-                                    name,
+                                    displayText,
                                     modifier =
                                         Modifier
                                             .fillMaxWidth()
-                                            .clickable {
-                                                onChange(idx)
-                                                expanded = false
-                                            }.padding(vertical = 8.dp, horizontal = 4.dp),
+                                            .then(
+                                                if (isD2Only) {
+                                                    Modifier
+                                                } else {
+                                                    Modifier.clickable {
+                                                        onChange(idx)
+                                                        expanded = false
+                                                    }
+                                                },
+                                            ).padding(vertical = 8.dp, horizontal = 4.dp),
                                     fontSize = 12.sp,
+                                    fontStyle = if (isD2Only) FontStyle.Italic else FontStyle.Normal,
                                     color =
-                                        if (idx == current) {
+                                        if (isD2Only) {
+                                            Color(0xFF999999)
+                                        } else if (idx == current) {
                                             MaterialTheme.colorScheme.primary
                                         } else {
                                             MaterialTheme.colorScheme.onSurface

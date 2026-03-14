@@ -127,31 +127,10 @@ extern "C" void android_apply_gamepad_defaults(void)
 	PlayerCfg.AutomapFreeFlight = 1;
 
 	if (!load_config_into_playercfg()) {
-		/* Hardcoded defaults when no config file exists */
-		LOGI("No controller_config.json, using hardcoded gamepad defaults");
-		PlayerCfg.KeySettings[1][0] = 0;  /* Fire Primary  = A button   */
-		PlayerCfg.KeySettings[1][1] = 1;  /* Fire Secondary= B button   */
-		PlayerCfg.KeySettings[1][2] = 21; /* Accelerate    = +RT axis   */
-		PlayerCfg.KeySettings[1][3] = 19; /* Reverse       = +LT axis   */
-		PlayerCfg.KeySettings[1][13] = 3; /* Pitch U/D     = axis 3 (RY)*/
-		PlayerCfg.KeySettings[1][15] = 2; /* Turn L/R      = axis 2 (RX)*/
-		PlayerCfg.KeySettings[1][17] = 0; /* Slide L/R     = axis 0 (LX)*/
-		PlayerCfg.KeySettings[1][23] = 1; /* Throttle      = axis 1 (LY)*/
-		PlayerCfg.KeySettings[1][6] = 24; /* Slide Left    = DLeft btn  */
-		PlayerCfg.KeySettings[1][7] = 25; /* Slide Right   = DRight btn */
-		PlayerCfg.KeySettings[1][8] = 22; /* Slide Up      = DUp btn    */
-		PlayerCfg.KeySettings[1][9] = 23; /* Slide Down    = DDown btn  */
-		PlayerCfg.KeySettings[1][4] = 2;  /* Fire Flare    = X button   */
-#ifdef DXX_BUILD_DESCENT_II
-		PlayerCfg.KeySettings[1][27] = 3; /* Afterburner   = Y button   */
-		PlayerCfg.KeySettings[1][28] = 4; /* Cycle Primary = L1 button  */
-		PlayerCfg.KeySettings[1][29] = 5; /* Cycle Second. = R1 button  */
-		PlayerCfg.KeySettings[1][50] = 6; /* Automap       = Select btn */
-#else
-		PlayerCfg.KeySettings[1][27] = 6; /* Automap       = Select btn */
-		PlayerCfg.KeySettings[1][44] = 4; /* Cycle Primary = L1 button  */
-		PlayerCfg.KeySettings[1][45] = 5; /* Cycle Second. = R1 button  */
-#endif
+		/* SetupActivity.writeDefaultControllerConfig() writes a config file
+		 * from the bundled default.json asset before the game starts, so
+		 * this path should not be reached in normal operation. */
+		LOGI("No controller_config.json found -- controller bindings may be incomplete");
 	} else {
 		LOGI("Loaded controller config: joy[13]=%d joy[15]=%d joy[17]=%d joy[23]=%d",
 		     PlayerCfg.KeySettings[1][13], PlayerCfg.KeySettings[1][15],

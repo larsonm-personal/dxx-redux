@@ -721,4 +721,49 @@ void android_hide_keyboard(void)
 	LOGI("android_hide_keyboard()");
 }
 
+/* ── Admin tray JNI functions ───────────────────────────────
+ *
+ * Cockpit cycling, auto-leveling toggle, and state queries
+ * for the in-game admin settings tray.
+ */
+#include "object.h" /* ConsoleObject, PF_LEVELLING */
+
+extern void toggle_cockpit(void);
+extern void toggle_cockpit_reverse(void);
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeCycleCockpit(JNIEnv *env, jobject thiz,
+                                                      jint direction)
+{
+	if (direction > 0)
+		toggle_cockpit();
+	else
+		toggle_cockpit_reverse();
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeToggleAutoLeveling(JNIEnv *env, jobject thiz)
+{
+	PlayerCfg.AutoLeveling = !PlayerCfg.AutoLeveling;
+	if (ConsoleObject) {
+		if (PlayerCfg.AutoLeveling)
+			ConsoleObject->mtype.phys_info.flags |= PF_LEVELLING;
+		else
+			ConsoleObject->mtype.phys_info.flags &= ~PF_LEVELLING;
+	}
+	write_player_file();
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetAutoLeveling(JNIEnv *env, jobject thiz)
+{
+	return PlayerCfg.AutoLeveling ? JNI_TRUE : JNI_FALSE;
+}
+
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetCockpitMode(JNIEnv *env, jobject thiz)
+{
+	return PlayerCfg.PreferredCockpitMode;
+}
+
 #endif /* ANDROID */

@@ -133,6 +133,15 @@ class MainActivity :
 
     external fun nativeGetWeaponState(): IntArray
 
+    // ── Admin tray (android_input.c) ────────────────────────────────
+    external fun nativeCycleCockpit(direction: Int)
+
+    external fun nativeToggleAutoLeveling()
+
+    external fun nativeGetAutoLeveling(): Boolean
+
+    external fun nativeGetCockpitMode(): Int
+
     // ── Music track control (jni_music_control.c) ────────────────────
     external fun nativeNextTrack(): Int
 
@@ -302,6 +311,45 @@ class MainActivity :
         touchOverlay.cheatCodeCallback = { code ->
             for (ch in code) nativeTextInput(ch.code)
         }
+        touchOverlay.adminTrayCallback = { action ->
+            when (action) {
+                TouchOverlayView.ADMIN_INCREASE_VIEW -> nativeCycleCockpit(1)
+                TouchOverlayView.ADMIN_DECREASE_VIEW -> nativeCycleCockpit(-1)
+                TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL -> nativeToggleAutoLeveling()
+                TouchOverlayView.ADMIN_QUICK_SAVE -> {
+                    // Alt+F2
+                    nativeKeyEvent(0, KeyEvent.KEYCODE_ALT_LEFT, 0)
+                    nativeKeyEvent(0, KeyEvent.KEYCODE_F2, 0)
+                    nativeKeyEvent(1, KeyEvent.KEYCODE_F2, 0)
+                    nativeKeyEvent(1, KeyEvent.KEYCODE_ALT_LEFT, 0)
+                }
+                TouchOverlayView.ADMIN_QUICK_LOAD -> {
+                    // Alt+F3
+                    nativeKeyEvent(0, KeyEvent.KEYCODE_ALT_LEFT, 0)
+                    nativeKeyEvent(0, KeyEvent.KEYCODE_F3, 0)
+                    nativeKeyEvent(1, KeyEvent.KEYCODE_F3, 0)
+                    nativeKeyEvent(1, KeyEvent.KEYCODE_ALT_LEFT, 0)
+                }
+                TouchOverlayView.ADMIN_OPEN_MENU -> {
+                    nativeKeyEvent(0, KeyEvent.KEYCODE_ESCAPE, 0)
+                    nativeKeyEvent(1, KeyEvent.KEYCODE_ESCAPE, 0)
+                }
+            }
+        }
+        touchOverlay.adminTrayAutoLevelingProvider = {
+            try {
+                nativeGetAutoLeveling()
+            } catch (_: Throwable) {
+                true
+            }
+        }
+        touchOverlay.adminTrayCockpitModeProvider = {
+            try {
+                nativeGetCockpitMode()
+            } catch (_: Throwable) {
+                -1
+            }
+        }
         touchOverlay.weaponStateProvider = {
             try {
                 WeaponState.fromArray(nativeGetWeaponState())
@@ -314,13 +362,18 @@ class MainActivity :
         }
         touchOverlay.automapCenterCallback = { nativeAutomapCenter() }
         touchOverlay.automapMarkerCallback = { idx -> nativeAutomapSelectMarker(idx) }
-        touchOverlay.markerCountProvider = {
-            try {
-                nativeGetMarkerCount()
-            } catch (_: Throwable) {
-                0
+        touchOverlay.markerCountProvider =
+            if (game == "d1") {
+                { 0 } // D1 has no markers
+            } else {
+                {
+                    try {
+                        nativeGetMarkerCount()
+                    } catch (_: Throwable) {
+                        0
+                    }
+                }
             }
-        }
         touchOverlay.mapButtonCallback = { toggleAutomap() }
         touchOverlay.prevTrackCallback = {
             nativePrevTrack()
@@ -533,7 +586,7 @@ class MainActivity :
                         touchOverlay.automapActive = false
                         skipButton.visibility = View.GONE
                     }
-                    overlayPoller.postDelayed(this, 500)
+                    overlayPoller.postDelayed(this, 100)
                 }
             }
         overlayPoller.post(pollRunnable)
@@ -747,6 +800,8 @@ class MainActivity :
 
     /** Toggle the automap by injecting a TAB key press/release. */
     private fun toggleAutomap() {
+        // Immediately flip the overlay to avoid polling lag
+        touchOverlay.automapActive = !touchOverlay.automapActive
         nativeKeyEvent(0, KeyEvent.KEYCODE_TAB, '\t'.code)
         nativeKeyEvent(1, KeyEvent.KEYCODE_TAB, 0)
     }

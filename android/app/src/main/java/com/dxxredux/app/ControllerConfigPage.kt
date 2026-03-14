@@ -234,24 +234,6 @@ private val DPAD_CONTROLS =
 
 private val KB_FUNCTIONS = KB_KC_INDEX.keys.toList()
 
-// Hard-coded fallback in case the bundled asset fails to load
-private val FALLBACK_BINDINGS =
-    mapOf(
-        "A" to "Fire Primary",
-        "B" to "Fire Secondary",
-        "Y" to "Afterburner",
-        "RT" to "Accelerate",
-        "LT" to "Reverse",
-        "RS_X" to "Turn L/R",
-        "RS_Y" to "Pitch U/D",
-        "LS_X" to "Slide L/R",
-        "LS_Y" to "Throttle",
-        "DUp" to "Slide Up",
-        "DDown" to "Slide Down",
-        "DLeft" to "Slide Left",
-        "DRight" to "Slide Right",
-    )
-
 internal fun loadDefaultBindings(context: Context): Map<String, String> =
     try {
         val json =
@@ -260,10 +242,10 @@ internal fun loadDefaultBindings(context: Context): Map<String, String> =
             }
         val result = HumanReadableConfig.humanJsonToControllerConfig(json)
         result.warnings.forEach { android.util.Log.w("ControllerConfig", it) }
-        result.value?.bindings ?: FALLBACK_BINDINGS
+        result.value?.bindings ?: emptyMap()
     } catch (e: Exception) {
         android.util.Log.e("ControllerConfig", "Failed to load default bindings", e)
-        FALLBACK_BINDINGS
+        emptyMap()
     }
 
 // Default axis-to-button activation threshold (percentage, 5-95)
@@ -1406,15 +1388,19 @@ fun ControllerConfigPage(
         }
         val gamepads =
             remember(axisGeneration, pollTick) {
-                InputDevice
-                    .getDeviceIds()
-                    .toList()
-                    .mapNotNull { InputDevice.getDevice(it) }
-                    .filter { d ->
-                        val src = d.sources
-                        src and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
-                            src and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
-                    }
+                try {
+                    InputDevice
+                        .getDeviceIds()
+                        .toList()
+                        .mapNotNull { InputDevice.getDevice(it) }
+                        .filter { d ->
+                            val src = d.sources
+                            src and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
+                                src and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
+                        }
+                } catch (_: Exception) {
+                    emptyList()
+                }
             }
         val hasController = gamepads.isNotEmpty()
         Text(
