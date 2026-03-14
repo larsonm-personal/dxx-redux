@@ -874,7 +874,7 @@ extern "C" void game_automate_tick(void)
 			break;
 
 		case STEP_SEND_AXIS:
-			if (s.axis_id >= 0 && s.axis_id < 6) {
+			if (s.axis_id >= 0 && s.axis_id < 8) {
 				inject_axis(s.axis_id, s.axis_value);
 			}
 			/* Hold for post_delay_ms so the axis has time to affect the game */

@@ -378,8 +378,8 @@ data class DPadControl(
 data class GyroConfig(
     val enabled: Boolean = false,
     val activation: GyroActivation = GyroActivation.ALWAYS,
-    val sensitivityX: Float = 1f,
-    val sensitivityY: Float = 1f,
+    val sensitivityX: Float = 3f,
+    val sensitivityY: Float = 3f,
     val invertX: Boolean = false,
     val invertY: Boolean = false,
     val axisX: Int = TouchBindings.AXIS_RIGHT_X,
@@ -404,8 +404,8 @@ data class GyroConfig(
             GyroConfig(
                 enabled = j.optBoolean("enabled"),
                 activation = GyroActivation.valueOf(j.optString("activation", "ALWAYS")),
-                sensitivityX = j.optDouble("sensitivityX", 1.0).toFloat(),
-                sensitivityY = j.optDouble("sensitivityY", 1.0).toFloat(),
+                sensitivityX = j.optDouble("sensitivityX", 3.0).toFloat(),
+                sensitivityY = j.optDouble("sensitivityY", 3.0).toFloat(),
                 invertX = j.optBoolean("invertX"),
                 invertY = j.optBoolean("invertY"),
                 axisX = j.optInt("axisX", TouchBindings.AXIS_RIGHT_X),

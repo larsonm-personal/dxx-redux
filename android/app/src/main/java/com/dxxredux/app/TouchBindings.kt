@@ -184,6 +184,8 @@ object TouchBindings {
     const val AXIS_RIGHT_Y = 3 // Right stick vertical
     const val AXIS_LTRIGGER = 4
     const val AXIS_RTRIGGER = 5
+    const val AXIS_BANK = 6 // Virtual axis: Bank L/R (gyro roll mode)
+    const val AXIS_SLIDE_UD = 7 // Virtual axis: Slide U/D (gyro roll mode)
 
     /** Axis labels for UI pickers — show game function (default mapping). */
     val AXIS_LABELS =
@@ -194,6 +196,8 @@ object TouchBindings {
             AXIS_RIGHT_Y to "Pitch U/D",
             AXIS_LTRIGGER to "L Trigger",
             AXIS_RTRIGGER to "R Trigger",
+            AXIS_BANK to "Bank L/R",
+            AXIS_SLIDE_UD to "Slide U/D",
         )
 
     // --- Human-readable axis names for config export/import ---
@@ -207,6 +211,8 @@ object TouchBindings {
             AXIS_RIGHT_Y to "Right Stick Y",
             AXIS_LTRIGGER to "L Trigger",
             AXIS_RTRIGGER to "R Trigger",
+            AXIS_BANK to "Bank",
+            AXIS_SLIDE_UD to "Slide UD",
         )
 
     private val AXIS_NAMES_REVERSE: Map<String, Int> by lazy {

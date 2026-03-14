@@ -216,15 +216,15 @@ void joy_init()
 	memset(joybutton_text, 0, JOY_MAX_BUTTONS * sizeof(char *));
 
 	{
-		static const char *axis_names[] = {"LX","LY","RX","RY","LT","RT"};
+		static const char *axis_names[] = {"LX","LY","RX","RY","LT","RT","BK","SU"};
 		static const char *btn_names[]  = {"A","B","X","Y","L1","R1","Sel","Sta","L3","R3"};
 
 		SDL_Joysticks[0].handle   = NULL;
-		SDL_Joysticks[0].n_axes   = 6;
+		SDL_Joysticks[0].n_axes   = 8;
 		SDL_Joysticks[0].n_buttons= 10;
 		SDL_Joysticks[0].n_hats   = 0;
 
-		for (j = 0; j < 6; j++) {
+		for (j = 0; j < 8; j++) {
 			sprintf(temp, "J1 %s", axis_names[j]);
 			joyaxis_text[Joystick.n_axes] = d_strdup(temp);
 			SDL_Joysticks[0].axis_map[j] = Joystick.n_axes++;
@@ -234,6 +234,8 @@ void joy_init()
 			joybutton_text[Joystick.n_buttons] = d_strdup(temp);
 			SDL_Joysticks[0].button_map[j] = Joystick.n_buttons++;
 		}
+		/* Axis buttons only for physical axes 0-5; axes 6-7 are
+		 * virtual (gyro) and don't need directional buttons. */
 		for (j = 0; j < 6; j++) {
 			SDL_Joysticks[0].axis_button_map[j] = Joystick.n_buttons;
 			sprintf(temp, "J1 -%s", axis_names[j]);
@@ -253,7 +255,7 @@ void joy_init()
 		}
 
 		num_joysticks = 1;
-		con_printf(CON_NORMAL, "android-joystick: registered virtual gamepad (6 axes, %d buttons)\n", Joystick.n_buttons);
+		con_printf(CON_NORMAL, "android-joystick: registered virtual gamepad (8 axes, %d buttons)\n", Joystick.n_buttons);
 	}
 
 	joy_num_axes = Joystick.n_axes;

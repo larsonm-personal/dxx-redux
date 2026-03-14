@@ -1,0 +1,73 @@
+// TEST: Keyboard Defaults Regression
+// Verifies that keyboard bindings are populated after fresh pilot creation.
+//
+// Root cause this catches:
+//   kconfig_fill_kb_settings() used memset(out, 0xFF, MAX_CONTROLS)
+//   which cleared all keyboard bindings to unbound.  The fix changed
+//   this to memcpy(out, DefaultKeySettings[0], MAX_CONTROLS) so
+//   default keyboard bindings (like TAB=automap) survive the init.
+//
+// Phase 1: TAB opens automap -- proves TAB is bound in keyboard
+//          config.  If keyboard defaults were wiped (0xFF), TAB
+//          would be unbound and automap would not open.
+// Phase 2: Automap dismissal -- ESC closes automap and returns to
+//          game, proving the automap was fully active.
+//
+// This test also exercises the automap introspection field.
+[
+    {"_info": {
+        "games": ["d1", "d2"],
+        "vars": {
+            "d1": {"MISSION": "First Strike"},
+            "d2": {"MISSION": "Counterstrike"}
+        }
+    }},
+    {"action": "log", "message": "=== TEST: Keyboard Defaults Regression ==="},
+
+    {"action": "wait_ms", "ms": 2000},
+
+    // -- Create fresh pilot and launch into game --
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 2000},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 2000},
+
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "select", "text": "New game", "post_delay_ms": 1000},
+
+    // Mission select (D2 only)
+    {"action": "wait_ms", "ms": 1000, "when": "d2"},
+    {"action": "select", "text": "${MISSION}", "when": "d2", "post_delay_ms": 1500},
+    {"action": "wait_ms", "ms": 500},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 1500},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 1500},
+    {"action": "wait_ms", "ms": 500},
+    {"action": "select", "text": "Rookie", "post_delay_ms": 1500},
+
+    // Skip briefing
+    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 1000},
+
+    // Wait for in-game
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+
+    // -- Phase 1: TAB opens automap --
+    {"action": "log", "message": "Phase 1: Press TAB to open automap"},
+    {"action": "assert", "expect": {"automap_active": "false"}},
+    {"action": "key", "key": "tab", "post_delay_ms": 500},
+    {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 3000},
+    {"action": "assert", "expect": {"automap_active": "true"}},
+    {"action": "log", "message": "Phase 1: PASS -- TAB opened automap (keyboard defaults working)"},
+
+    // -- Phase 2: Dismiss automap --
+    {"action": "log", "message": "Phase 2: ESC closes automap"},
+    {"action": "key", "key": "esc", "post_delay_ms": 500},
+    {"action": "wait_for", "field": "automap_active", "value": "false", "timeout_ms": 3000},
+    {"action": "assert", "expect": {
+        "automap_active": "false",
+        "game_window_is_front": "true"
+    }},
+    {"action": "log", "message": "Phase 2: PASS -- automap dismissed, back in game"},
+
+    // -- Done --
+    {"action": "log", "message": "=== TEST: Keyboard Defaults Regression -- ALL PHASES PASS ==="}
+]

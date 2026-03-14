@@ -1951,6 +1951,14 @@ private fun GyroSettingsDialog(
                             axisX == TouchBindings.AXIS_RIGHT_X &&
                                 axisY == TouchBindings.AXIS_RIGHT_Y
                         )
+                        val isSlide = (
+                            axisX == TouchBindings.AXIS_LEFT_X &&
+                                axisY == TouchBindings.AXIS_LEFT_Y
+                        )
+                        val isRoll = (
+                            axisX == TouchBindings.AXIS_BANK &&
+                                axisY == TouchBindings.AXIS_SLIDE_UD
+                        )
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
                                 selected = isAim,
@@ -1965,7 +1973,7 @@ private fun GyroSettingsDialog(
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(
-                                selected = !isAim,
+                                selected = isSlide,
                                 onClick = {
                                     axisX = TouchBindings.AXIS_LEFT_X
                                     axisY = TouchBindings.AXIS_LEFT_Y
@@ -1974,6 +1982,18 @@ private fun GyroSettingsDialog(
                             )
                             Spacer(Modifier.width(4.dp))
                             Text("Slide (left-right/up-down)", fontSize = 12.sp, color = Color.White)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = isRoll,
+                                onClick = {
+                                    axisX = TouchBindings.AXIS_BANK
+                                    axisY = TouchBindings.AXIS_SLIDE_UD
+                                },
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text("Roll + slide up/down", fontSize = 12.sp, color = Color.White)
                         }
 
                         Spacer(Modifier.height(8.dp))

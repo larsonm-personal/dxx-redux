@@ -8,7 +8,6 @@ import android.graphics.PointF
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.HapticFeedbackConstants
-import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import kotlin.math.abs
@@ -1469,15 +1468,6 @@ class TouchOverlayView
                 } else if (isAction) {
                     buttonCallback?.invoke(binding, true)
                     buttonCallback?.invoke(binding, false)
-                } else if (rm.control.id == "Guide") {
-                    // Open escort menu (Shift+F4) then send the command digit key
-                    keyCallback?.invoke(0, KeyEvent.KEYCODE_SHIFT_LEFT, 0)
-                    keyCallback?.invoke(0, KeyEvent.KEYCODE_F4, 0)
-                    keyCallback?.invoke(1, KeyEvent.KEYCODE_F4, 0)
-                    val unicode = keycodeToUnicode(binding)
-                    keyCallback?.invoke(0, binding, unicode)
-                    keyCallback?.invoke(1, binding, 0)
-                    keyCallback?.invoke(1, KeyEvent.KEYCODE_SHIFT_LEFT, 0)
                 } else {
                     val unicode = keycodeToUnicode(binding)
                     keyCallback?.invoke(0, binding, unicode)

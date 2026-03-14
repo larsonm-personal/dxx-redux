@@ -1013,6 +1013,13 @@ class MainActivity :
             return true
         }
 
+        // D-pad keys: route through dispatchDpad to avoid dual dispatch
+        // (HAT axis path already sends joystick buttons 22-25)
+        if (dpadKeyCodeToJoyButton(keyCode) >= 0) {
+            dispatchDpad(keyCode, 0)
+            return true
+        }
+
         nativeKeyEvent(0, keyCode, event.unicodeChar)
         return true
     }
@@ -1033,6 +1040,11 @@ class MainActivity :
             } else {
                 nativeJoystickButton(joyBtn, 0)
             }
+            return true
+        }
+
+        if (dpadKeyCodeToJoyButton(keyCode) >= 0) {
+            dispatchDpad(keyCode, 1)
             return true
         }
 

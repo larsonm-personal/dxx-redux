@@ -98,6 +98,9 @@ extern "C" void android_apply_gamepad_defaults(void)
 		     PlayerCfg.KeySettings[1][13], PlayerCfg.KeySettings[1][15],
 		     PlayerCfg.KeySettings[1][17], PlayerCfg.KeySettings[1][23]);
 	}
+	/* Virtual gyro axes -- always apply (not editable from launcher UI) */
+	PlayerCfg.KeySettings[1][19] = 7; /* Slide U/D     = axis 7 (SU)*/
+	PlayerCfg.KeySettings[1][21] = 6; /* Bank L/R      = axis 6 (BK)*/
 }
 
 /* -- JNI entry point: patch all .plr files ----------------------- */

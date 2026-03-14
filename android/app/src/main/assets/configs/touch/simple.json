@@ -71,8 +71,8 @@
   "gyro": {
     "enabled": false,
     "activation": "ALWAYS",
-    "sensitivityX": 1.0,
-    "sensitivityY": 1.0,
+    "sensitivityX": 3.0,
+    "sensitivityY": 3.0,
     "invertX": false,
     "invertY": false,
     "axisX": "Right Stick X",

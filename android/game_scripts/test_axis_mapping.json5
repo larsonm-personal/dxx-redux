@@ -4,7 +4,8 @@
 //   Turn     = axis 2 (right stick X)
 //   Slide LR = axis 0 (left stick X)
 //   Throttle = axis 1 (left stick Y)
-//   Slide UD = unbound (255)
+//   Slide UD = axis 7 (virtual, gyro roll mode)
+//   Bank     = axis 6 (virtual, gyro roll mode)
 //
 // Phase 1: Static check -- assert axis bindings after new-pilot creation.
 // Phase 2: Dynamic check -- send axis events and verify the correct
@@ -17,6 +18,9 @@
 //          meta actions dispatch (ESC for game menu, SHIFT+F4 for
 //          Guide-Bot menu, F1 for help) produce the expected game
 //          effects.  Tests modifier key combo injection.
+// Phase 5: Virtual axis tests -- verify axes 6 (Bank) and 7 (Slide U/D)
+//          are bound and produce the expected control timing values.
+//          These are "virtual" axes used by gyro roll mode.
 //
 // Root cause this catches:
 //   1. ControllerConfigPage.kt DEFAULT_BINDINGS had LS_Y -> "Pitch U/D"
@@ -75,7 +79,8 @@
         "axis_bind_pitch":    "3",
         "axis_bind_turn":     "2",
         "axis_bind_slide_lr": "0",
-        "axis_bind_slide_ud": "255",
+        "axis_bind_slide_ud": "7",
+        "axis_bind_bank":     "6",
         "axis_bind_throttle": "1"
     }},
     {"action": "log", "message": "Phase 1: PASS -- axis bindings correct"},
@@ -138,7 +143,7 @@
     {"action": "log", "message": "Phase 3a: PASS -- axis 1 does not drive pitch"},
     {"action": "send_axis", "axis": 1, "axis_value": 0.0, "post_delay_ms": 200},
 
-    // 3b: Axis 1 should NOT drive slide U/D (catches old joy_out[19]=1 bug)
+    // 3b: Axis 1 should NOT drive slide U/D (slide_ud is on axis 7 now)
     {"action": "log", "message": "Phase 3b: Verify axis 1 does NOT drive slide U/D"},
     {"action": "send_axis", "axis": 1, "axis_value": 0.5, "post_delay_ms": 500},
     {"action": "assert", "expect": {
@@ -206,6 +211,39 @@
     {"action": "key", "key": "esc", "post_delay_ms": 100},
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 3000},
     {"action": "log", "message": "Phase 4c: PASS -- help menu dismissed"},
+
+    // -- Phase 5: Virtual axis tests (Bank=6, Slide U/D=7) --
+    // These axes are used by gyro "roll" mode. They are registered
+    // in joy.c as virtual axes with no physical D-pad buttons.
+
+    // 5a: Axis 6 (Bank) should cause banking
+    {"action": "log", "message": "Phase 5a: Sending axis 6 (Bank L/R) = 0.5"},
+    {"action": "send_axis", "axis": 6, "axis_value": 0.5, "post_delay_ms": 500},
+    {"action": "assert", "expect": {
+        "bank_time": {"ne": 0}
+    }},
+    {"action": "log", "message": "Phase 5a: PASS -- axis 6 drives banking"},
+    {"action": "send_axis", "axis": 6, "axis_value": 0.0, "post_delay_ms": 200},
+
+    // 5b: Axis 7 (Slide U/D) should cause vertical thrust
+    {"action": "log", "message": "Phase 5b: Sending axis 7 (Slide U/D) = 0.5"},
+    {"action": "send_axis", "axis": 7, "axis_value": 0.5, "post_delay_ms": 500},
+    {"action": "assert", "expect": {
+        "slide_ud_time": {"ne": 0}
+    }},
+    {"action": "log", "message": "Phase 5b: PASS -- axis 7 drives slide U/D"},
+    {"action": "send_axis", "axis": 7, "axis_value": 0.0, "post_delay_ms": 200},
+
+    // 5c: Axis 6 should NOT drive heading or pitch
+    {"action": "log", "message": "Phase 5c: Verify axis 6 does NOT drive heading or pitch"},
+    {"action": "send_axis", "axis": 6, "axis_value": 0.5, "post_delay_ms": 500},
+    {"action": "assert", "expect": {
+        "heading_time": "0",
+        "pitch_time":   "0",
+        "bank_time":    {"ne": 0}
+    }},
+    {"action": "log", "message": "Phase 5c: PASS -- axis 6 only drives bank"},
+    {"action": "send_axis", "axis": 6, "axis_value": 0.0, "post_delay_ms": 200},
 
     // -- Done --
     {"action": "log", "message": "=== TEST: Axis Mapping Regression -- ALL PHASES PASS ==="}

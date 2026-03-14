@@ -466,7 +466,7 @@ extern "C" char *game_introspect_get_state(void)
 	/* -- Live axis state (always available -- useful for binding tests) -- */
 	{
 		json axes = json::array();
-		for (int i = 0; i < 6; i++) {
+		for (int i = 0; i < 8; i++) {
 			axes.push_back({ { "axis", i },
 			                 { "raw", Controls.raw_joy_axis[i] },
 			                 { "value", Controls.joy_axis[i] } });
@@ -485,6 +485,7 @@ extern "C" char *game_introspect_get_state(void)
 		j["axis_bind_turn"] = get_bind(15);
 		j["axis_bind_slide_lr"] = get_bind(17);
 		j["axis_bind_slide_ud"] = get_bind(19);
+		j["axis_bind_bank"] = get_bind(21);
 		j["axis_bind_throttle"] = get_bind(23);
 
 		/* Control timing -- nonzero means the ship is actively rotating/thrusting */
@@ -492,6 +493,7 @@ extern "C" char *game_introspect_get_state(void)
 		j["pitch_time"] = (int) Controls.pitch_time;
 		j["slide_lr_time"] = (int) Controls.sideways_thrust_time;
 		j["slide_ud_time"] = (int) Controls.vertical_thrust_time;
+		j["bank_time"] = (int) Controls.bank_time;
 		j["throttle_time"] = (int) Controls.forward_thrust_time;
 	}
 

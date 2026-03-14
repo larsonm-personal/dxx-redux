@@ -2995,7 +2995,7 @@ private fun ControllerSection(
                     "This will reset ALL control bindings to defaults:\n\n" +
                         "\u2022 Touch layout (positions, sizes, bindings)\n" +
                         "\u2022 Physical controller mappings\n" +
-                        "\u2022 In-game joystick settings for every pilot\n\n" +
+                        "\u2022 In-game keyboard, joystick, and mouse settings for every pilot\n\n" +
                         "The game will restart after reset.",
                     fontSize = 13.sp,
                 )

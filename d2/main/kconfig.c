@@ -2066,7 +2066,7 @@ void kconfig_fill_joy_settings(const int *indices, const int *values, int count,
 void kconfig_fill_kb_settings(const int *indices, const int *values, int count, ubyte *out)
 {
 	int i;
-	memset(out, 0xFF, MAX_CONTROLS);
+	memcpy(out, DefaultKeySettings[0], MAX_CONTROLS);
 	for (i = 0; i < count; i++) {
 		if (indices[i] >= 0 && indices[i] < MAX_CONTROLS)
 			out[indices[i]] = (ubyte)(values[i] & 0xFF);
@@ -2095,6 +2095,8 @@ void kconfig_get_default_settings(ubyte *kb_out, ubyte *joy_out, ubyte *mouse_ou
 	joy_out[7]  = 25;  /* Slide Right= DRight virtual button */
 	joy_out[8]  = 22;  /* Slide Up   = DUp virtual button */
 	joy_out[9]  = 23;  /* Slide Down = DDown virtual button */
+	joy_out[19] = 7;   /* Slide U/D  = axis 7 (SU, virtual) */
+	joy_out[21] = 6;   /* Bank L/R   = axis 6 (BK, virtual) */
 
 	/* Apply touch overlay offsets to joystick column 2 */
 	{
