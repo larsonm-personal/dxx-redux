@@ -423,6 +423,7 @@ object HumanReadableConfig {
     fun controllerConfigToHumanJson(
         bindings: Map<String, String>,
         inverts: Set<String>,
+        thresholds: Map<String, Int> = emptyMap(),
     ): JSONObject {
         val j = JSONObject()
         j.put("type", "controller_config")
@@ -431,10 +432,21 @@ object HumanReadableConfig {
         for ((k, v) in bindings) bindingsObj.put(k, v)
         j.put("bindings", bindingsObj)
         j.put("inverts", JSONArray(inverts.toList()))
+        if (thresholds.isNotEmpty()) {
+            val tObj = JSONObject()
+            for ((k, v) in thresholds) tObj.put(k, v)
+            j.put("thresholds", tObj)
+        }
         return j
     }
 
-    fun humanJsonToControllerConfig(json: JSONObject): ParseResult<Pair<Map<String, String>, Set<String>>> {
+    data class ControllerConfigData(
+        val bindings: Map<String, String>,
+        val inverts: Set<String>,
+        val thresholds: Map<String, Int>,
+    )
+
+    fun humanJsonToControllerConfig(json: JSONObject): ParseResult<ControllerConfigData> {
         val warnings = mutableListOf<String>()
         try {
             if (!json.has("bindings")) {
@@ -453,7 +465,12 @@ object HumanReadableConfig {
                     inverts.add(invertsArr.getString(i))
                 }
             }
-            return ParseResult(Pair(bindings, inverts), warnings)
+            val thresholds = mutableMapOf<String, Int>()
+            val tObj = json.optJSONObject("thresholds")
+            if (tObj != null) {
+                for (key in tObj.keys()) thresholds[key] = tObj.getInt(key).coerceIn(5, 95)
+            }
+            return ParseResult(ControllerConfigData(bindings, inverts, thresholds), warnings)
         } catch (e: Exception) {
             warnings.add("Controller config parse failed: ${e.message}")
             Log.e(TAG, "Controller config parse failed", e)

@@ -39,6 +39,7 @@ using json = nlohmann::json;
 extern "C" {
 #include "playsave.h"
 #include "kconfig.h"
+#include "joy.h"
 
 extern struct player_config PlayerCfg;
 }
@@ -86,6 +87,31 @@ static bool load_config_into_playercfg(void)
 		PlayerCfg.ControlType = (ubyte) cfg["control_type"].get<int>();
 	if (cfg.contains("automap_free_flight"))
 		PlayerCfg.AutomapFreeFlight = (ubyte) cfg["automap_free_flight"].get<int>();
+
+	/* Per-axis thresholds for axis-to-button conversion.
+	 * JSON stores percentage (5-95), C uses 0-128 scale. */
+	if (cfg.contains("thresholds") && cfg["thresholds"].is_object()) {
+		static const struct {
+			const char *name;
+			int axis;
+		} axis_map[] = {
+			{ "LS_X", 0 },
+			{ "LS_Y", 1 },
+			{ "RS_X", 2 },
+			{ "RS_Y", 3 },
+			{ "LT", 4 },
+			{ "RT", 5 },
+		};
+		auto &thr = cfg["thresholds"];
+		for (size_t i = 0; i < sizeof(axis_map) / sizeof(axis_map[0]); i++) {
+			if (thr.contains(axis_map[i].name) && thr[axis_map[i].name].is_number()) {
+				int pct = thr[axis_map[i].name].get<int>();
+				if (pct < 5) pct = 5;
+				if (pct > 95) pct = 95;
+				joy_axis_button_deadzone[axis_map[i].axis] = pct * 128 / 100;
+			}
+		}
+	}
 
 	return true;
 }

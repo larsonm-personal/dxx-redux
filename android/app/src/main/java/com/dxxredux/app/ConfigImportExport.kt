@@ -32,17 +32,13 @@ object ConfigImportExport {
             return false
         }
         val saved = JSONObject(file.readText())
-        val bindings = mutableMapOf<String, String>()
-        val inverts = mutableSetOf<String>()
-        if (saved.has("bindings")) {
-            val obj = saved.getJSONObject("bindings")
-            for (key in obj.keys()) bindings[key] = obj.getString(key)
-        }
-        if (saved.has("inverts")) {
-            val arr = saved.getJSONArray("inverts")
-            for (i in 0 until arr.length()) inverts.add(arr.getString(i))
-        }
-        val json = HumanReadableConfig.controllerConfigToHumanJson(bindings, inverts)
+        val parsed = parseControllerFields(saved)
+        val json =
+            HumanReadableConfig.controllerConfigToHumanJson(
+                parsed.bindings,
+                parsed.inverts,
+                parsed.thresholds,
+            )
         return shareJson(context, json, "controller_config.json", "Share Controller Config")
     }
 
@@ -58,19 +54,14 @@ object ConfigImportExport {
         val ctrlFile = File(context.filesDir, "controller_config.json")
         if (ctrlFile.exists()) {
             val saved = JSONObject(ctrlFile.readText())
-            val bindings = mutableMapOf<String, String>()
-            val inverts = mutableSetOf<String>()
-            if (saved.has("bindings")) {
-                val obj = saved.getJSONObject("bindings")
-                for (key in obj.keys()) bindings[key] = obj.getString(key)
-            }
-            if (saved.has("inverts")) {
-                val arr = saved.getJSONArray("inverts")
-                for (i in 0 until arr.length()) inverts.add(arr.getString(i))
-            }
+            val parsed = parseControllerFields(saved)
             combined.put(
                 "controller_config",
-                HumanReadableConfig.controllerConfigToHumanJson(bindings, inverts),
+                HumanReadableConfig.controllerConfigToHumanJson(
+                    parsed.bindings,
+                    parsed.inverts,
+                    parsed.thresholds,
+                ),
             )
         }
 
@@ -150,15 +141,20 @@ object ConfigImportExport {
             val msg = result.warnings.joinToString("; ")
             return "Controller config import failed: $msg"
         }
-        // Write as a simple bindings+inverts JSON that loadConfig() can read
+        // Write as a simple bindings+inverts+thresholds JSON that loadConfig() can read
         val outJson = JSONObject()
         outJson.put("version", 1)
         val bindingsObj = JSONObject()
-        for ((k, v) in result.value.first) bindingsObj.put(k, v)
+        for ((k, v) in result.value.bindings) bindingsObj.put(k, v)
         outJson.put("bindings", bindingsObj)
         val invertsArr = org.json.JSONArray()
-        for (inv in result.value.second) invertsArr.put(inv)
+        for (inv in result.value.inverts) invertsArr.put(inv)
         outJson.put("inverts", invertsArr)
+        if (result.value.thresholds.isNotEmpty()) {
+            val tObj = JSONObject()
+            for ((k, v) in result.value.thresholds) tObj.put(k, v)
+            outJson.put("thresholds", tObj)
+        }
         File(context.filesDir, "controller_config.json").writeText(outJson.toString(2))
         val warnings =
             if (result.warnings.isNotEmpty()) {
@@ -185,6 +181,31 @@ object ConfigImportExport {
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────
+
+    private data class ControllerFields(
+        val bindings: Map<String, String>,
+        val inverts: Set<String>,
+        val thresholds: Map<String, Int>,
+    )
+
+    private fun parseControllerFields(saved: JSONObject): ControllerFields {
+        val bindings = mutableMapOf<String, String>()
+        val inverts = mutableSetOf<String>()
+        val thresholds = mutableMapOf<String, Int>()
+        if (saved.has("bindings")) {
+            val obj = saved.getJSONObject("bindings")
+            for (key in obj.keys()) bindings[key] = obj.getString(key)
+        }
+        if (saved.has("inverts")) {
+            val arr = saved.getJSONArray("inverts")
+            for (i in 0 until arr.length()) inverts.add(arr.getString(i))
+        }
+        val tObj = saved.optJSONObject("thresholds")
+        if (tObj != null) {
+            for (key in tObj.keys()) thresholds[key] = tObj.getInt(key)
+        }
+        return ControllerFields(bindings, inverts, thresholds)
+    }
 
     private fun shareJson(
         context: Context,

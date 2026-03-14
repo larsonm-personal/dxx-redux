@@ -20,5 +20,13 @@
     "DLeft": "Slide Left",
     "DRight": "Slide Right"
   },
-  "inverts": []
+  "inverts": [],
+  "thresholds": {
+    "LS_X": 30,
+    "LS_Y": 30,
+    "RS_X": 30,
+    "RS_Y": 30,
+    "LT": 30,
+    "RT": 30
+  }
 }

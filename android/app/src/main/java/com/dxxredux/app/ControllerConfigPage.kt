@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
@@ -259,11 +260,20 @@ internal fun loadDefaultBindings(context: Context): Map<String, String> =
             }
         val result = HumanReadableConfig.humanJsonToControllerConfig(json)
         result.warnings.forEach { android.util.Log.w("ControllerConfig", it) }
-        result.value?.first ?: FALLBACK_BINDINGS
+        result.value?.bindings ?: FALLBACK_BINDINGS
     } catch (e: Exception) {
         android.util.Log.e("ControllerConfig", "Failed to load default bindings", e)
         FALLBACK_BINDINGS
     }
+
+// Default axis-to-button activation threshold (percentage, 5-95)
+const val DEFAULT_AXIS_THRESHOLD = 30
+
+// Axis IDs that support per-axis thresholds
+private val THRESHOLD_AXES = listOf("LS_X", "LS_Y", "RS_X", "RS_Y", "LT", "RT")
+
+// Build a default thresholds map with all axes at DEFAULT_AXIS_THRESHOLD
+private fun defaultThresholds(): Map<String, Int> = THRESHOLD_AXES.associateWith { DEFAULT_AXIS_THRESHOLD }
 
 // Axis functions that implicitly cover discrete button functions
 private val AXIS_COVERS_BUTTONS =
@@ -349,6 +359,7 @@ internal fun saveConfig(
     bindings: Map<String, String>,
     inverts: Set<String>,
     gameVariant: String = "d2",
+    thresholds: Map<String, Int> = defaultThresholds(),
 ) {
     // Build byte arrays for BOTH D1 and D2 since the config file is shared
     // and kconfig indices differ between games (e.g. Automap is index 27 in
@@ -425,6 +436,10 @@ internal fun saveConfig(
     for (b in kbSettings) kbArr.put(b.toInt() and 0xFF)
     json.put("key_settings_keyboard", kbArr)
 
+    val thresholdsObj = JSONObject()
+    for ((axis, pct) in thresholds) thresholdsObj.put(axis, pct)
+    json.put("thresholds", thresholdsObj)
+
     File(context.filesDir, CONFIG_FILENAME).writeText(json.toString(2))
 
     NativePilotPatcher.nativePatchPilotFiles(
@@ -436,7 +451,13 @@ internal fun saveConfig(
     )
 }
 
-private fun loadConfig(context: Context): Pair<Map<String, String>, Set<String>>? {
+private data class LoadedConfig(
+    val bindings: Map<String, String>,
+    val inverts: Set<String>,
+    val thresholds: Map<String, Int>,
+)
+
+private fun loadConfig(context: Context): LoadedConfig? {
     val file = File(context.filesDir, CONFIG_FILENAME)
     if (!file.exists()) return null
     val json = JSONObject(file.readText())
@@ -451,7 +472,15 @@ private fun loadConfig(context: Context): Pair<Map<String, String>, Set<String>>
         val arr = json.getJSONArray("inverts")
         for (i in 0 until arr.length()) invertedControls.add(arr.getString(i))
     }
-    return Pair(bindings, invertedControls)
+
+    val thresholds = defaultThresholds().toMutableMap()
+    if (json.has("thresholds")) {
+        val tObj = json.getJSONObject("thresholds")
+        for (key in tObj.keys()) {
+            if (key in thresholds) thresholds[key] = tObj.getInt(key).coerceIn(5, 95)
+        }
+    }
+    return LoadedConfig(bindings, invertedControls, thresholds)
 }
 
 // ── Assignment logic ────────────────────────────────────────────────────────
@@ -600,14 +629,17 @@ fun ControllerConfigPage(
     // Bindings state: control ID → function label
     val bindings = remember { mutableStateMapOf<String, String>() }
     val inverts = remember { mutableStateListOf<String>() } // inverted axis control IDs
+    val thresholds = remember { mutableStateMapOf<String, Int>() }
     var initialized by remember { mutableStateOf(false) }
     if (!initialized) {
         val saved = loadConfig(context)
         if (saved != null) {
-            bindings.putAll(saved.first)
-            inverts.addAll(saved.second)
+            bindings.putAll(saved.bindings)
+            inverts.addAll(saved.inverts)
+            thresholds.putAll(saved.thresholds)
         } else {
             bindings.putAll(loadDefaultBindings(context))
+            thresholds.putAll(defaultThresholds())
         }
         initialized = true
     }
@@ -626,9 +658,11 @@ fun ControllerConfigPage(
             val reloaded = loadConfig(context)
             if (reloaded != null) {
                 bindings.clear()
-                bindings.putAll(reloaded.first)
+                bindings.putAll(reloaded.bindings)
                 inverts.clear()
-                inverts.addAll(reloaded.second)
+                inverts.addAll(reloaded.inverts)
+                thresholds.clear()
+                thresholds.putAll(reloaded.thresholds)
             }
         }
 
@@ -659,7 +693,14 @@ fun ControllerConfigPage(
             .toSet()
     val allAssignedBtnLike = assignedBtnFuncs + assignedDpadFuncs
     val coveredByAxis = assignedAxisFuncs.flatMap { AXIS_COVERS_BUTTONS[it].orEmpty() }.toSet()
-    val unassignedBtns = BUTTON_FUNCTIONS.filter { it !in allAssignedBtnLike && it !in coveredByAxis }
+    val d2OnlyFilter: (String) -> Boolean =
+        if (gameVariant == "d1") {
+            { it !in TouchBindings.D2_ONLY_BUTTON_LABELS }
+        } else {
+            { true }
+        }
+    val unassignedBtns =
+        BUTTON_FUNCTIONS.filter { it !in allAssignedBtnLike && it !in coveredByAxis && d2OnlyFilter(it) }
     val coveredByButtons =
         AXIS_FUNCTIONS
             .filter { af ->
@@ -1426,7 +1467,7 @@ fun ControllerConfigPage(
             }
             Button(
                 onClick = {
-                    saveConfig(context, bindings.toMap(), inverts.toSet(), gameVariant)
+                    saveConfig(context, bindings.toMap(), inverts.toSet(), gameVariant, thresholds.toMap())
                     Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
                     onBack()
                 },
@@ -1461,7 +1502,7 @@ fun ControllerConfigPage(
             OutlinedButton(
                 onClick = {
                     // Save current state first, then export
-                    saveConfig(context, bindings.toMap(), inverts.toSet(), gameVariant)
+                    saveConfig(context, bindings.toMap(), inverts.toSet(), gameVariant, thresholds.toMap())
                     if (!ConfigImportExport.exportControllerConfig(context)) {
                         Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
                     }
@@ -1553,11 +1594,26 @@ fun ControllerConfigPage(
             .toSet()
 
     if (showButtonPicker && selectedControl != null) {
+        val axisKey =
+            when (selectedControl) {
+                "LT" -> "LT"
+                "RT" -> "RT"
+                else -> null
+            }
+        val axisVal =
+            when (selectedControl) {
+                "LT" -> lt
+                "RT" -> rt
+                else -> null
+            }
         ButtonFunctionPickerDialog(
             controlLabel = selectedControl!!,
             currentFunc = bindings[selectedControl!!],
             assignedFunctions = assignedButtonFuncs,
             gameVariant = gameVariant,
+            axisValue = axisVal,
+            threshold = axisKey?.let { thresholds[it] },
+            onThresholdChange = axisKey?.let { key -> { v: Int -> thresholds[key] = v } },
             onSelect = { funcLabel ->
                 assignButtonFunction(bindings, selectedControl!!, funcLabel)
                 showButtonPicker = false
@@ -1594,6 +1650,12 @@ fun ControllerConfigPage(
             assignedFunctions = assignedAxisFuncsForDialog,
             assignedButtonFunctions = assignedButtonFuncs,
             gameVariant = gameVariant,
+            xAxisValue = if (selectedControl == "LS") lx else rx,
+            yAxisValue = if (selectedControl == "LS") ly else ry,
+            xThreshold = thresholds[xKey] ?: DEFAULT_AXIS_THRESHOLD,
+            yThreshold = thresholds[yKey] ?: DEFAULT_AXIS_THRESHOLD,
+            onXThresholdChange = { v -> thresholds[xKey] = v },
+            onYThresholdChange = { v -> thresholds[yKey] = v },
             onConfirm = { result ->
                 // Clear all axis and axis-button bindings for this stick
                 bindings.remove(xKey)
@@ -1698,6 +1760,9 @@ private fun ButtonFunctionPickerDialog(
     currentFunc: String?,
     assignedFunctions: Set<String> = emptySet(),
     gameVariant: String = "d2",
+    axisValue: Float? = null,
+    threshold: Int? = null,
+    onThresholdChange: ((Int) -> Unit)? = null,
     onSelect: (String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -1705,10 +1770,9 @@ private fun ButtonFunctionPickerDialog(
     val isD1 = gameVariant == "d1"
     val funcList =
         if (showExtra) {
-            TouchBindings.META_BUTTON_LABELS.values
-                .filter { !isD1 || it !in TouchBindings.D2_ONLY_META_LABELS }
+            TouchBindings.META_BUTTON_LABELS.values.toList()
         } else {
-            BUTTON_FUNCTIONS.filter { !isD1 || it !in TouchBindings.D2_ONLY_BUTTON_LABELS }
+            BUTTON_FUNCTIONS
         }
 
     AlertDialog(
@@ -1746,6 +1810,14 @@ private fun ButtonFunctionPickerDialog(
                     }
                     for (func in funcList) {
                         val isAssigned = func in assignedFunctions && func != currentFunc
+                        val isD2Only =
+                            isD1 &&
+                                if (showExtra) {
+                                    func in TouchBindings.D2_ONLY_META_LABELS
+                                } else {
+                                    func in TouchBindings.D2_ONLY_BUTTON_LABELS
+                                }
+                        val displayText = if (isD2Only) "$func (D2 only)" else func
                         Row(
                             modifier =
                                 Modifier
@@ -1760,16 +1832,31 @@ private fun ButtonFunctionPickerDialog(
                             )
                             Spacer(Modifier.width(PICKER_RADIO_GAP))
                             Text(
-                                func,
+                                displayText,
                                 fontSize = PICKER_FONT_SIZE,
+                                fontStyle = if (isD2Only) FontStyle.Italic else FontStyle.Normal,
                                 color =
-                                    if (!isAssigned && func != currentFunc) {
+                                    if (isD2Only) {
+                                        Color(0xFF999999)
+                                    } else if (!isAssigned && func != currentFunc) {
                                         Color(0xFFEF5350)
                                     } else {
                                         Color.Unspecified
                                     },
                             )
                         }
+                    }
+                    if (threshold != null && onThresholdChange != null) {
+                        Spacer(Modifier.height(8.dp))
+                        Text("Threshold: $threshold%", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Slider(
+                            value = threshold.toFloat(),
+                            onValueChange = { onThresholdChange(it.toInt()) },
+                            valueRange = 5f..95f,
+                            steps = 17,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        AxisThresholdBar(axisValue ?: 0f, threshold)
                     }
                 }
                 ScrollArrows(btnScrollState)
@@ -1798,6 +1885,12 @@ private fun StickPickerDialog(
     assignedFunctions: Set<String> = emptySet(),
     assignedButtonFunctions: Set<String> = emptySet(),
     gameVariant: String = "d2",
+    xAxisValue: Float = 0f,
+    yAxisValue: Float = 0f,
+    xThreshold: Int = DEFAULT_AXIS_THRESHOLD,
+    yThreshold: Int = DEFAULT_AXIS_THRESHOLD,
+    onXThresholdChange: ((Int) -> Unit)? = null,
+    onYThresholdChange: ((Int) -> Unit)? = null,
     onConfirm: (StickPickerResult) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -1844,6 +1937,17 @@ private fun StickPickerDialog(
                         AxisButtonPicker("Right (pos)", xPosFunc, assignedButtonFunctions, gameVariant) {
                             xPosFunc = it
                         }
+                        if (onXThresholdChange != null) {
+                            Text("Threshold: $xThreshold%", fontSize = 11.sp)
+                            Slider(
+                                value = xThreshold.toFloat(),
+                                onValueChange = { onXThresholdChange(it.toInt()) },
+                                valueRange = 5f..95f,
+                                steps = 17,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            AxisThresholdBar(xAxisValue, xThreshold)
+                        }
                     } else {
                         AxisFunctionRadioGroup(
                             selected = selectedX,
@@ -1877,6 +1981,17 @@ private fun StickPickerDialog(
                         }
                         AxisButtonPicker("Down (pos)", yPosFunc, assignedButtonFunctions, gameVariant) {
                             yPosFunc = it
+                        }
+                        if (onYThresholdChange != null) {
+                            Text("Threshold: $yThreshold%", fontSize = 11.sp)
+                            Slider(
+                                value = yThreshold.toFloat(),
+                                onValueChange = { onYThresholdChange(it.toInt()) },
+                                valueRange = 5f..95f,
+                                steps = 17,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            AxisThresholdBar(yAxisValue, yThreshold)
                         }
                     } else {
                         AxisFunctionRadioGroup(
@@ -2016,8 +2131,7 @@ private fun DpadFunctionPickerDialog(
     val isD1 = gameVariant == "d1"
     val funcList =
         if (showExtra) {
-            TouchBindings.META_BUTTON_LABELS.values
-                .filter { !isD1 || it !in TouchBindings.D2_ONLY_META_LABELS }
+            TouchBindings.META_BUTTON_LABELS.values.toList()
         } else {
             KB_FUNCTIONS
         }
@@ -2057,6 +2171,14 @@ private fun DpadFunctionPickerDialog(
                     }
                     for (func in funcList) {
                         val isAssigned = func in assignedFunctions && func != currentFunc
+                        val isD2Only =
+                            isD1 &&
+                                if (showExtra) {
+                                    func in TouchBindings.D2_ONLY_META_LABELS
+                                } else {
+                                    func in TouchBindings.D2_ONLY_BUTTON_LABELS
+                                }
+                        val displayText = if (isD2Only) "$func (D2 only)" else func
                         Row(
                             modifier =
                                 Modifier
@@ -2071,10 +2193,13 @@ private fun DpadFunctionPickerDialog(
                             )
                             Spacer(Modifier.width(PICKER_RADIO_GAP))
                             Text(
-                                func,
+                                displayText,
                                 fontSize = PICKER_FONT_SIZE,
+                                fontStyle = if (isD2Only) FontStyle.Italic else FontStyle.Normal,
                                 color =
-                                    if (!isAssigned && func != currentFunc) {
+                                    if (isD2Only) {
+                                        Color(0xFF999999)
+                                    } else if (!isAssigned && func != currentFunc) {
                                         Color(0xFFEF5350)
                                     } else {
                                         Color.Unspecified
@@ -2091,6 +2216,39 @@ private fun DpadFunctionPickerDialog(
             TextButton(onClick = onDismiss) { Text("Cancel") }
         },
     )
+}
+
+// ── Threshold Bar ───────────────────────────────────────────────────────────
+
+@Composable
+private fun AxisThresholdBar(
+    axisValue: Float,
+    thresholdPct: Int,
+    modifier: Modifier = Modifier,
+) {
+    val absVal = abs(axisValue)
+    val thresholdFrac = thresholdPct / 100f
+    val aboveThreshold = absVal >= thresholdFrac
+    Canvas(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(24.dp),
+    ) {
+        val w = size.width
+        val h = size.height
+        // Background
+        drawRoundRect(Color(0xFF333333), cornerRadius = CornerRadius(4f, 4f))
+        // Fill
+        val fillW = w * absVal
+        if (fillW > 0f) {
+            val fillColor = if (aboveThreshold) Color(0xFF4CAF50) else Color(0xFFEF5350)
+            drawRoundRect(fillColor, size = Size(fillW, h), cornerRadius = CornerRadius(4f, 4f))
+        }
+        // Threshold marker
+        val markerX = w * thresholdFrac
+        drawLine(Color.White, Offset(markerX, 0f), Offset(markerX, h), strokeWidth = 2f)
+    }
 }
 
 // ── Canvas drawing helpers ──────────────────────────────────────────────────

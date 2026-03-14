@@ -30,6 +30,7 @@
 
 int num_joysticks = 0;
 int joy_num_axes = 0;
+int joy_axis_button_deadzone[JOY_MAX_AXES];
 
 /* This struct is a "virtual" joystick, which includes all the axes
  * and buttons of every joystick found.
@@ -193,10 +194,7 @@ int joy_axisbutton_handler(SDL_JoyAxisEvent *jae)
 	int pos_btn = button;
 #endif
 
-	// We have to hardcode a deadzone here. It's not mapped into the settings.
-	// We could add another deadzone slider called "axis button deadzone".
-	// I think it's safe to assume a 30% deadzone on analog button presses for now.
-	int deadzone = 38;
+	int deadzone = joy_axis_button_deadzone[jae->axis];
 	int prev_value = joy_apply_deadzone(Joystick.axis_value[jae->axis], deadzone);
 	int new_value = joy_apply_deadzone(jae->value/256, deadzone);
 
@@ -235,6 +233,8 @@ void joy_init()
 	memset(&Joystick, 0, sizeof(Joystick));
 	memset(joyaxis_text, 0, JOY_MAX_AXES * sizeof(char *));
 	memset(joybutton_text, 0, JOY_MAX_BUTTONS * sizeof(char *));
+	for (i = 0; i < JOY_MAX_AXES; i++)
+		joy_axis_button_deadzone[i] = 38;
 
 	{
 		static const char *axis_names[] = {"LX","LY","RX","RY","LT","RT","BK","SU"};
@@ -294,6 +294,8 @@ void joy_init()
 	memset(&Joystick,0,sizeof(Joystick));
 	memset(joyaxis_text, 0, JOY_MAX_AXES * sizeof(char *));
 	memset(joybutton_text, 0, JOY_MAX_BUTTONS * sizeof(char *));
+	for (i = 0; i < JOY_MAX_AXES; i++)
+		joy_axis_button_deadzone[i] = 38;
 
 	n = SDL_NumJoysticks();
 

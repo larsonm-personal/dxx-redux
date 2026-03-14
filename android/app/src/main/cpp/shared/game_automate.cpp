@@ -650,11 +650,17 @@ static int run_assertions(auto_step &s)
 				seg = seg.substr(0, bracket);
 			}
 			if (!seg.empty()) {
-				if (!cur->is_object() || !cur->contains(seg)) { path_ok = false; break; }
+				if (!cur->is_object() || !cur->contains(seg)) {
+					path_ok = false;
+					break;
+				}
 				cur = &(*cur)[seg];
 			}
 			if (arr_idx >= 0) {
-				if (!cur->is_array() || arr_idx >= (int)cur->size()) { path_ok = false; break; }
+				if (!cur->is_array() || arr_idx >= (int) cur->size()) {
+					path_ok = false;
+					break;
+				}
 				cur = &(*cur)[arr_idx];
 			}
 		}

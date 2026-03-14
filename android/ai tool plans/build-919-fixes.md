@@ -163,18 +163,40 @@ D1 differences: [27]=Automap(btn 6), [44]=CyclePri(btn 4), [45]=CycleSec(btn 5)
 - Added Phase 3 to test_dpad_triggers.json5 with D1/D2-specific button
   default assertions (Automap, Cycle Primary/Secondary, Afterburner, Flare)
 
-## Build verification
+### Phase 11: D2-only control visibility in pickers
+- Problem: ButtonFunctionPickerDialog and DpadFunctionPickerDialog filter
+  out D2-only functions when gameVariant=="d1", silently hiding them
+- Fix: Show all functions always; mark D2-only ones with dimmed/italic
+  style and "(D2 only)" suffix. They remain selectable.
+- Also update unassigned function computation to exclude D2-only functions
+  from the "unassigned" warning when D1 is active
+- Files: ControllerConfigPage.kt
+
+### Phase 12: Per-axis activation threshold
+- Problem: Axis-to-button threshold is hardcoded to 38/128 (~30%) in
+  joy_axisbutton_handler() in both d1/d2 joy.c
+- Fix: Add per-axis configurable threshold (5-95%, step 5, default 30%)
+  - JSON: "thresholds": {"LT": 30, "RT": 30, ...} in controller_config.json
+  - Kotlin UI: Slider + live AxisThresholdBar in picker dialogs for
+    LT/RT and sticks in button mode
+  - C: joy_axis_button_deadzone[] array read from JSON at startup,
+    used in joy_axisbutton_handler() instead of hardcoded 38
+- Files: ControllerConfigPage.kt, default.json, joy.c (d1+d2),
+  android_gamepad_config.cpp, ConfigImportExport.kt, HumanReadableConfig.kt
+
+## Build verification (after Phase 12)
 - MSVC D1: OK
 - MSVC D2: OK
 - Android APK: OK
+- Code quality (clang-format + ktlint): OK
 
-## Full test results (all EXIT 0)
+## Full test results after Phase 12 (all EXIT 0)
 | Test                    | D1   | D2   |
 |-------------------------|------|------|
-| test_dpad_triggers      | PASS | PASS |
-| test_axis_mapping       | PASS | PASS |
-| test_keyboard_defaults  | PASS | PASS |
 | test_launch_to_automap  | PASS | PASS |
+| test_keyboard_defaults  | PASS | PASS |
 | test_joystick_menu      | PASS | PASS |
-| test_death              | PASS | PASS |
+| test_dpad_triggers      | PASS | PASS |
 | test_controller_compare | PASS | PASS |
+| test_axis_mapping       | PASS | PASS |
+| test_death              | PASS | PASS |
