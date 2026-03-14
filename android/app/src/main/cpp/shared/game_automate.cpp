@@ -178,6 +178,7 @@ enum step_type {
 	STEP_ASSERT,       /* check introspection values, fail if mismatch */
 	STEP_SELECT,       /* find menu item by text and select it */
 	STEP_SEND_AXIS,    /* inject joystick axis event */
+	STEP_SEND_BUTTON,  /* inject joystick button press+release */
 	STEP_SKIP_BRIEFING /* escape only if a non-game window covers Game_wind */
 };
 
@@ -207,6 +208,9 @@ struct auto_step {
 	std::string select_text;            /* STEP_SELECT: partial text to match */
 	int axis_id = -1;                   /* STEP_SEND_AXIS: axis number (0-5) */
 	float axis_value = 0.0f;            /* STEP_SEND_AXIS: value (-1.0 to 1.0) */
+	int button_id = -1;                 /* STEP_SEND_BUTTON: button index */
+	int button_held = 0;                /* STEP_SEND_BUTTON: 1 = hold (no release) */
+	int button_pressed = 1;             /* STEP_SEND_BUTTON: 0 = release only */
 };
 
 /* -- Script state ----------------------------------------------------- */
@@ -289,6 +293,20 @@ static void inject_axis(int axis, float value)
 	ev.jaxis.value = (Sint16) ival;
 	SDL_PushEvent(&ev);
 	LOGI("Injecting axis %d = %.3f (raw %d)", axis, value, ival);
+}
+
+/* -- Button injection ------------------------------------------------- */
+
+static void inject_button(int button, int pressed)
+{
+	SDL_Event ev;
+	memset(&ev, 0, sizeof(ev));
+	ev.type = pressed ? SDL_JOYBUTTONDOWN : SDL_JOYBUTTONUP;
+	ev.jbutton.which = 0;
+	ev.jbutton.button = (Uint8) button;
+	ev.jbutton.state = pressed ? SDL_PRESSED : SDL_RELEASED;
+	SDL_PushEvent(&ev);
+	LOGI("Injecting button %d %s", button, pressed ? "DOWN" : "UP");
 }
 
 /* -- Menu item search for STEP_SELECT --------------------------------- */
@@ -471,6 +489,7 @@ static int parse_script(const char *json_text)
 			else if (action == "assert") s.type = STEP_ASSERT;
 			else if (action == "select") s.type = STEP_SELECT;
 			else if (action == "send_axis") s.type = STEP_SEND_AXIS;
+			else if (action == "send_button") s.type = STEP_SEND_BUTTON;
 			else if (action == "skip_briefing") s.type = STEP_SKIP_BRIEFING;
 			else {
 				LOGE("Unknown action: %s", action.c_str());
@@ -487,6 +506,9 @@ static int parse_script(const char *json_text)
 			s.select_text = step_json.value("text", "");
 			s.axis_id = step_json.value("axis", -1);
 			s.axis_value = step_json.value("axis_value", 0.0f);
+			s.button_id = step_json.value("button", -1);
+			s.button_held = step_json.value("held", 0);
+			s.button_pressed = step_json.value("pressed", 1);
 
 			/* Parse "expect" object for STEP_ASSERT */
 			if (step_json.contains("expect") && step_json["expect"].is_object()) {
@@ -880,6 +902,24 @@ extern "C" void game_automate_tick(void)
 			/* Hold for post_delay_ms so the axis has time to affect the game */
 			if (elapsed >= (Uint32) s.post_delay_ms) {
 				advance_step();
+			}
+			break;
+
+		case STEP_SEND_BUTTON:
+			if (!s.button_pressed) {
+				/* Release-only mode */
+				inject_button(s.button_id, 0);
+				advance_step();
+			} else if (g_key_phase == 0 && s.button_id >= 0) {
+				inject_button(s.button_id, 1); /* press */
+				g_key_phase = 1;
+				g_step_start = now;
+			} else if (g_key_phase == 1) {
+				if (s.button_held || elapsed >= (Uint32) s.post_delay_ms) {
+					if (!s.button_held)
+						inject_button(s.button_id, 0); /* release */
+					advance_step();
+				}
 			}
 			break;
 

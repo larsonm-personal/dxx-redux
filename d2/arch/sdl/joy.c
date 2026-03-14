@@ -169,6 +169,18 @@ int joy_axisbutton_handler(SDL_JoyAxisEvent *jae)
 
 	button = SDL_Joysticks[jae->which].axis_button_map[jae->axis];
 
+#ifdef ANDROID
+	/* On Android the button registration order is: base = "-" button,
+	 * base+1 = "+" button.  Map them correctly so positive axis motion
+	 * fires the "+" button and negative fires the "-" button. */
+	int neg_btn = button;
+	int pos_btn = button + 1;
+#else
+	/* Desktop (legacy): original mapping kept for compatibility. */
+	int neg_btn = button + 1;
+	int pos_btn = button;
+#endif
+
 	// We have to hardcode a deadzone here. It's not mapped into the settings.
 	// We could add another deadzone slider called "axis button deadzone".
 	// I think it's safe to assume a 30% deadzone on analog button presses for now.
@@ -179,16 +191,16 @@ int joy_axisbutton_handler(SDL_JoyAxisEvent *jae)
 	if (prev_value <= 0 && new_value >= 0) // positive pressed
 	{
 		if (prev_value < 0) // Do previous direction release first if the case
-			sent |= send_axis_button_event(button + 1, EVENT_JOYSTICK_BUTTON_UP);
+			sent |= send_axis_button_event(neg_btn, EVENT_JOYSTICK_BUTTON_UP);
 		if (new_value > 0)
-			sent |= send_axis_button_event(button, EVENT_JOYSTICK_BUTTON_DOWN);
+			sent |= send_axis_button_event(pos_btn, EVENT_JOYSTICK_BUTTON_DOWN);
 	}
 	else if (prev_value >= 0 && new_value <= 0) // negative pressed
 	{
 		if (prev_value > 0) // Do previous direction release first if the case
-			sent |= send_axis_button_event(button, EVENT_JOYSTICK_BUTTON_UP);
+			sent |= send_axis_button_event(pos_btn, EVENT_JOYSTICK_BUTTON_UP);
 		if (new_value < 0)
-			sent |= send_axis_button_event(button + 1, EVENT_JOYSTICK_BUTTON_DOWN);
+			sent |= send_axis_button_event(neg_btn, EVENT_JOYSTICK_BUTTON_DOWN);
 	}
 
 	return sent;
@@ -242,11 +254,14 @@ void joy_init()
 		}
 
 		/* D-pad virtual buttons: DUp=22, DDown=23, DLeft=24, DRight=25.
-		 * Shared constant with MainActivity.kt DPAD_JOY_BUTTON_BASE. */
+		 * Shared constant with MainActivity.kt DPAD_JOY_BUTTON_BASE.
+		 * Must set button_map[] so joy_button_handler() translates the
+		 * raw SDL button index to the correct virtual button number. */
 		{
 			static const char *dpad_names[] = {"DUp","DDn","DLt","DRt"};
 			for (j = 0; j < 4; j++) {
 				sprintf(temp, "J1 %s", dpad_names[j]);
+				SDL_Joysticks[0].button_map[Joystick.n_buttons] = Joystick.n_buttons;
 				joybutton_text[Joystick.n_buttons++] = d_strdup(temp);
 			}
 		}

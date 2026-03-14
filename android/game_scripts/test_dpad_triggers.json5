@@ -1,0 +1,123 @@
+// TEST: D-pad and Trigger Button Mapping Regression
+// Verifies that D-pad button presses and trigger axis-buttons reach the
+// correct game controls on a fresh pilot with default bindings.
+//
+// Phase 1: D-pad -- press each D-pad button and verify the correct
+//          slide/control timing value becomes nonzero.
+// Phase 2: Triggers -- send LT/RT axis values and verify the correct
+//          thrust timing (forward/reverse) becomes nonzero.
+//          After the joy_axisbutton_handler fix, positive axis motion
+//          should fire the "+" button (19 for LT, 21 for RT).
+//
+// Root causes this catches:
+//   1. D-pad button_map[] not set: joy_button_handler() maps button 22-25
+//      to button 0 (Fire Primary) because button_map[22] is zero.
+//   2. joy_axisbutton_handler() backwards: positive axis fires base button
+//      instead of base+1, so trigger config values 19/21 never match.
+//   3. Trigger defaults wrong: hardcoded as 18/20 (negative) instead of
+//      19/21 (positive).
+[
+    {"_info": {
+        "games": ["d1", "d2"],
+        "vars": {
+            "d1": {"MISSION": "First Strike"},
+            "d2": {"MISSION": "Counterstrike"}
+        }
+    }},
+    {"action": "log", "message": "=== TEST: D-pad and Trigger Button Mapping ==="},
+
+    {"action": "wait_ms", "ms": 2000},
+
+    // -- Create fresh pilot and launch into game --
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 2000},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 2000},
+
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "select", "text": "New game", "post_delay_ms": 1000},
+
+    {"action": "wait_ms", "ms": 1000, "when": "d2"},
+    {"action": "select", "text": "${MISSION}", "when": "d2", "post_delay_ms": 1500},
+    {"action": "wait_ms", "ms": 500},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 1500},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 1500},
+    {"action": "wait_ms", "ms": 500},
+    {"action": "select", "text": "Rookie", "post_delay_ms": 1500},
+
+    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 1000},
+
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+
+    // ── Phase 1: D-pad buttons ──────────────────────────────────────────
+    // Pattern: hold button -> wait for kconfig to process -> assert -> release
+
+    // 1a: DUp (button 22) should cause Slide Up (vertical_thrust_time != 0)
+    {"action": "log", "message": "Phase 1a: DUp (button 22) -> Slide Up"},
+    {"action": "send_button", "button": 22, "held": 1},
+    {"action": "wait_ms", "ms": 300},
+    {"action": "assert", "expect": {
+        "slide_ud_time": {"ne": 0}
+    }},
+    {"action": "send_button", "button": 22, "pressed": 0},
+    {"action": "log", "message": "Phase 1a: PASS -- DUp drives slide up"},
+    {"action": "wait_ms", "ms": 200},
+
+    // 1b: DDn (button 23) should cause Slide Down
+    {"action": "log", "message": "Phase 1b: DDn (button 23) -> Slide Down"},
+    {"action": "send_button", "button": 23, "held": 1},
+    {"action": "wait_ms", "ms": 300},
+    {"action": "assert", "expect": {
+        "slide_ud_time": {"ne": 0}
+    }},
+    {"action": "send_button", "button": 23, "pressed": 0},
+    {"action": "log", "message": "Phase 1b: PASS -- DDn drives slide down"},
+    {"action": "wait_ms", "ms": 200},
+
+    // 1c: DLt (button 24) should cause Slide Left
+    {"action": "log", "message": "Phase 1c: DLt (button 24) -> Slide Left"},
+    {"action": "send_button", "button": 24, "held": 1},
+    {"action": "wait_ms", "ms": 300},
+    {"action": "assert", "expect": {
+        "slide_lr_time": {"ne": 0}
+    }},
+    {"action": "send_button", "button": 24, "pressed": 0},
+    {"action": "log", "message": "Phase 1c: PASS -- DLt drives slide left"},
+    {"action": "wait_ms", "ms": 200},
+
+    // 1d: DRt (button 25) should cause Slide Right
+    {"action": "log", "message": "Phase 1d: DRt (button 25) -> Slide Right"},
+    {"action": "send_button", "button": 25, "held": 1},
+    {"action": "wait_ms", "ms": 300},
+    {"action": "assert", "expect": {
+        "slide_lr_time": {"ne": 0}
+    }},
+    {"action": "send_button", "button": 25, "pressed": 0},
+    {"action": "log", "message": "Phase 1d: PASS -- DRt drives slide right"},
+    {"action": "wait_ms", "ms": 200},
+
+    // ── Phase 2: Trigger axis-buttons ───────────────────────────────────
+    // send_axis already holds the axis value during post_delay_ms, so
+    // assert BEFORE resetting to 0.
+
+    // 2a: RT axis (axis 5, value 0.8) should fire Accelerate (+RT = button 21)
+    {"action": "log", "message": "Phase 2a: RT trigger (axis 5) -> Accelerate"},
+    {"action": "send_axis", "axis": 5, "axis_value": 0.8, "post_delay_ms": 500},
+    {"action": "assert", "expect": {
+        "throttle_time": {"ne": 0}
+    }},
+    {"action": "log", "message": "Phase 2a: PASS -- RT drives forward thrust"},
+    {"action": "send_axis", "axis": 5, "axis_value": 0.0, "post_delay_ms": 200},
+    {"action": "wait_ms", "ms": 200},
+
+    // 2b: LT axis (axis 4, value 0.8) should fire Reverse (+LT = button 19)
+    {"action": "log", "message": "Phase 2b: LT trigger (axis 4) -> Reverse"},
+    {"action": "send_axis", "axis": 4, "axis_value": 0.8, "post_delay_ms": 500},
+    {"action": "assert", "expect": {
+        "throttle_time": {"ne": 0}
+    }},
+    {"action": "log", "message": "Phase 2b: PASS -- LT drives reverse thrust"},
+    {"action": "send_axis", "axis": 4, "axis_value": 0.0, "post_delay_ms": 200},
+
+    {"action": "log", "message": "=== TEST: D-pad and Trigger Button Mapping -- ALL PHASES PASS ==="}
+]

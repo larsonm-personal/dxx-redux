@@ -83,8 +83,8 @@ extern "C" void android_apply_gamepad_defaults(void)
 		LOGI("No controller_config.json, using hardcoded gamepad defaults");
 		PlayerCfg.KeySettings[1][0] = 0;  /* Fire Primary  = A button   */
 		PlayerCfg.KeySettings[1][1] = 1;  /* Fire Secondary= B button   */
-		PlayerCfg.KeySettings[1][2] = 20; /* Accelerate    = +RT axis   */
-		PlayerCfg.KeySettings[1][3] = 18; /* Reverse       = +LT axis   */
+		PlayerCfg.KeySettings[1][2] = 21; /* Accelerate    = +RT axis   */
+		PlayerCfg.KeySettings[1][3] = 19; /* Reverse       = +LT axis   */
 		PlayerCfg.KeySettings[1][13] = 3; /* Pitch U/D     = axis 3 (RY)*/
 		PlayerCfg.KeySettings[1][15] = 2; /* Turn L/R      = axis 2 (RX)*/
 		PlayerCfg.KeySettings[1][17] = 0; /* Slide L/R     = axis 0 (LX)*/
