@@ -112,7 +112,30 @@ foreach ($folder in $folders) {
         }
 
         if ($exitCode -ne 0) {
-            $failures += @{ Name = $name; Error = "extract_cd returned $exitCode"; Details = ($stderrLines -join "`n") }
+            # Check if the failure is an ISO listing error (e.g. Mac HFS disc)
+            $isoFailed = $jsonLines | Where-Object { $_ -match '"error":\s*"ISO listing failed"' }
+            if ($isoFailed) {
+                Write-Host "  ISO listing failed -- trying Mac (HFS) extraction..." -ForegroundColor Yellow
+                $macScript = Join-Path $ScriptDir "extract_mac_cd.ps1"
+                if (Test-Path $macScript) {
+                    try {
+                        & $macScript -CdFolder $folder.FullName -Force
+                        if ($LASTEXITCODE -eq 0 -and (Test-Path $dataTracksDir) -and
+                            (Get-ChildItem $dataTracksDir -File).Count -gt 0) {
+                            Write-Host "  Mac extraction OK" -ForegroundColor Green
+                            $successes += $name
+                        } else {
+                            $failures += @{ Name = $name; Error = "Mac extraction produced no files" }
+                        }
+                    } catch {
+                        $failures += @{ Name = $name; Error = "Mac extraction failed: $($_.Exception.Message)" }
+                    }
+                } else {
+                    $failures += @{ Name = $name; Error = "extract_cd returned $exitCode (ISO failed, no Mac extractor found)"; Details = ($stderrLines -join "`n") }
+                }
+            } else {
+                $failures += @{ Name = $name; Error = "extract_cd returned $exitCode"; Details = ($stderrLines -join "`n") }
+            }
         } else {
             $successes += $name
         }
