@@ -38,8 +38,9 @@
 - mimic the style of the existing code. by and large, this is a "C in C++" codebase without classes or templates. it's ok to use things like std::array<> or simple RAII classes within the android/ dir, but don't get crazy. I *do* want you to use C++ patterns (within the android/ dir) that can avoid things like null pointer access and array bounds problems, the base game is highly susceptible to these things and it's sometimes a problem
 - add simple, high-level integration tests to catch regressions and document high level functionality. it's not necessary to add tests to cover every little function unless the function has tricky edge cases or is very complex by itself
   - make every effort to include at least one integration test or an extension of an existing one with each major set of changes, and include it as a final phase of work. by-hand verification is ok, but I'd like to build up the high level test suite
-- add these tests for any code centralized in the android/ directory as the code is added. add test runner scripts or helpers so they're easy to re-run after code changes
-- d1/ and d2/ have a huge amount of duplicated code. this means that our hooks and other changes also need to be duplicated in many places. it is a mistake to *only* edit d1/ or d2/ in any set of changes. that said, I want to try to share as much code as possible between the two, *when that code is new*. don't de-duplciate in a way that makes the d1/ or d2/ change set larger which would make upstreaming harder
+  - don't just write the test, include in this phase a run of the actual as-written test and fixes until it passes
+  - add these tests for any code centralized in the android/ directory as the code is added. add test runner scripts or helpers so they're easy to re-run after code changes
+- d1/ and d2/ have a huge amount of duplicated code. this means that our hooks and other changes also need to be duplicated in many places. it is a mistake to edit *only one of* d1/ or d2/ in any set of changes, typically they both need the same hooks. that said, I want to try to share as much code as possible between the two, *when that code is new*. don't de-duplciate in a way that makes the d1/ or d2/ change set larger which would make upstreaming harder
 - new code should be as free of compiler warnings as possible. -werror isn't enabled, but do a 2nd pass to remove warnings when building to check
 - new code should have formatting linters run on it: `android\run-code-quality.ps1 --fix`
 
@@ -55,6 +56,27 @@
 - place automated test files into "temp" within this repo so that the file writes don't need to be approved
 - when testing with the android emulator, the game will initially load to the main menu. there are helper script bits to choose a player, mission, level and skip briefings. see the regression test .json5 files and their attendant scripts
 - note that the D1 level set (the base game, not an expansion) is referred to as "first strike" and the d2 level set (the base game, not an expansion) is "counterstrike!". these are used in mission selection during automated tests
+
+## running integration tests from an AI tool session
+### emulator
+- the emulator should already be running. check with `adb devices`. if it's not listed, start it with `android\run_emulator.sh` or the emulator GUI -- don't try to start it from powershell
+- if `adb devices` shows "offline" or "unauthorized", kill and restart the emulator
+
+### running a test
+```powershell
+# clear logcat first, then pipe output to a file to avoid terminal buffer issues
+cd d:\local\dxx-redux
+adb logcat -c; .\android\run_test.ps1 -ScriptName test_launch_to_automap.json5 -Game d2 2>&1 | Out-File temp\test_output.txt -Encoding utf8; Write-Output "EXIT: $LASTEXITCODE"
+# then read the tail of the output file
+Get-Content temp\test_output.txt | Select-Object -Last 30
+```
+
+### key pitfalls
+- **always pipe to a file** (`Out-File`). do not rely on reading terminal output directly -- the terminal buffer accumulates garbage from adb/logcat across runs and you'll see stale output or nothing at all
+- **always `adb logcat -c` before the test**. stale logcat lines from previous runs will confuse the test runner's pattern matching
+- **check exit code via `$LASTEXITCODE`** after the piped command, not via terminal scrollback
+- **don't run multiple test commands in parallel** -- they share the emulator and will interfere
+- **app resume after HOME**: the test runner uses `monkey -p com.dxxredux.app -c android.intent.category.LAUNCHER 1` followed by a BACK keypress to resume the app. `am start -n` does not work because MainActivity has no launch mode and no intent filter -- it creates a new instance instead of resuming. the monkey command brings the task to foreground but lands on SetupActivity; BACK dismisses it to reveal the running game's MainActivity
 
 ## introspection API
 The game includes a debug introspection system that serializes current game state to JSON. This is the primary way to inspect what the game is doing — **do not screenshot and OCR**.

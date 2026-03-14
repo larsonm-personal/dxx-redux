@@ -114,6 +114,14 @@ bool TestEGLError(char* pszLocation)
 #endif
 
 #if defined(OGLES) && defined(ANDROID)
+
+static int g_egl_recreate_count = 0;
+
+int ogl_get_egl_recreate_count(void)
+{
+	return g_egl_recreate_count;
+}
+
 /*
  * Recreate the EGL surface after the ANativeWindow has been replaced
  * (e.g. after the app was backgrounded and resumed).  Preserves the
@@ -160,6 +168,7 @@ static void ogl_android_recreate_egl_surface(void)
 	} else {
 		con_printf(CON_DEBUG, "EGL: surface recreated, context preserved\n");
 	}
+	g_egl_recreate_count++;
 }
 #endif /* OGLES && ANDROID */
 

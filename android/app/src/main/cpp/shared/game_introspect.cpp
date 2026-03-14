@@ -44,6 +44,9 @@ extern "C" {
 #define SCREEN_MOVIE 99
 #endif
 
+/* -- EGL surface recreation counter (defined in arch/ogl/gr.c) -- */
+extern "C" int ogl_get_egl_recreate_count(void);
+
 /* -- Redbook audio accessors (defined in rbaudio_bin.c / rbaudio.c) -- */
 extern "C" {
 int RBAEnabled(void);
@@ -283,6 +286,9 @@ extern "C" char *game_introspect_get_state(void)
 
 	bool in_game = (Game_wind != NULL && Screen_mode == SCREEN_GAME);
 	j["in_game"] = in_game;
+
+	/* -- EGL surface recreation counter (for background/resume testing) -- */
+	j["egl_recreate_count"] = ogl_get_egl_recreate_count();
 
 	/* -- Death state -------------------------------------------- */
 	j["player_dead"] = (bool) Player_is_dead;

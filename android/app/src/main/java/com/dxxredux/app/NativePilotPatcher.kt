@@ -57,5 +57,8 @@ object NativePilotPatcher {
      * @return number of files successfully patched
      */
     @JvmStatic
-    external fun nativeResetToDefaults(filesDir: String, game: String): Int
+    external fun nativeResetToDefaults(
+        filesDir: String,
+        game: String,
+    ): Int
 }

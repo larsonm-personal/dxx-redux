@@ -206,6 +206,7 @@ function Send-AutomationScript {
 
 function Watch-AutomationResult {
     # Monitor logcat for SCRIPT_RESULT, with periodic health checks.
+    # Handles SCRIPT_BACKGROUND markers by pressing HOME, waiting, then resuming.
     # Returns $true for PASS, $false for FAIL/timeout.
     param([int]$TimeoutSeconds = 300)
 
@@ -214,6 +215,7 @@ function Watch-AutomationResult {
     $lastHealthCheck = 0
     $finished = $false
     $passed = $false
+    $backgroundHandled = $false
 
     while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds -and -not $finished) {
         Start-Sleep -Seconds 3
@@ -245,6 +247,28 @@ function Watch-AutomationResult {
                     Write-Status "FAIL: $line" "Red"
                     $finished = $true
                     $passed = $false
+                }
+                elseif ($line -match 'SCRIPT_BACKGROUND:' -and -not $backgroundHandled) {
+                    $backgroundHandled = $true
+                    Write-Status "Background marker detected -- cycling app to background" "Yellow"
+                    Start-Sleep -Seconds 2
+                    # Press HOME to send app to background
+                    Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_HOME") | Out-Null
+                    Write-Status "HOME pressed -- waiting 5s in background..."
+                    Start-Sleep -Seconds 5
+                    # Bring app back to foreground via launcher intent (re-opens
+                    # existing task with SetupActivity on top), then press BACK
+                    # to get back to the running game's MainActivity, triggering
+                    # onResume and surface recreation.
+                    Write-Status "Resuming app..."
+                    Adb -AdbArgs @("shell", "monkey", "-p", $script:PACKAGE,
+                        "-c", "android.intent.category.LAUNCHER", "1") | Out-Null
+                    Start-Sleep -Seconds 2
+                    # BACK dismisses the new SetupActivity, revealing the
+                    # running game's MainActivity underneath
+                    Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_BACK") | Out-Null
+                    Start-Sleep -Seconds 3
+                    Write-Status "App resumed -- continuing test monitoring" "Green"
                 }
                 elseif ($line -match 'DXX-Automate' -and $line.Trim().Length -gt 0) {
                     Write-Host "  $($line.Trim())" -ForegroundColor Gray
