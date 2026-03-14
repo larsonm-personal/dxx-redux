@@ -11,11 +11,13 @@ import kotlin.math.atan2
 import kotlin.math.sign
 
 /**
- * Manages gyroscope-based aiming via TYPE_GAME_ROTATION_VECTOR.
+ * Manages gyroscope-based aiming via TYPE_ROTATION_VECTOR.
  *
- * Computes yaw/pitch deltas from phone orientation changes and outputs
- * them as axis values via [axisCallback]. Designed to layer on top of
- * stick input — the caller sums stick + gyro values before sending to JNI.
+ * Uses the gravity-referenced rotation vector sensor so tilt angles are
+ * stable and absolute (no heading drift). Computes yaw/pitch deltas from
+ * phone orientation changes and outputs them as axis values via
+ * [axisCallback]. Designed to layer on top of stick input -- the caller
+ * sums stick + gyro values before sending to JNI.
  *
  * Lifecycle: call [resume] in onResume and [pause] in onStop/onPause.
  */
@@ -23,7 +25,7 @@ class GyroInputManager(
     context: Context,
 ) : SensorEventListener {
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-    private val sensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR)
+    private val sensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
 
     /** Called with (axisIndex, deltaValue) when gyro produces input. */
     var axisCallback: ((Int, Float) -> Unit)? = null
@@ -73,7 +75,7 @@ class GyroInputManager(
     ) {}
 
     override fun onSensorChanged(event: SensorEvent) {
-        if (event.sensor.type != Sensor.TYPE_GAME_ROTATION_VECTOR) return
+        if (event.sensor.type != Sensor.TYPE_ROTATION_VECTOR) return
 
         // Check activation mode
         val active =
@@ -112,8 +114,11 @@ class GyroInputManager(
         val pitch = asin((-deltaRotationMatrix[7]).toDouble().coerceIn(-1.0, 1.0)).toFloat()
         val yaw = atan2(deltaRotationMatrix[6].toDouble(), deltaRotationMatrix[8].toDouble()).toFloat()
 
-        // Update reference to current (incremental tracking)
-        refRotationMatrix.indices.forEach { refRotationMatrix[it] = curRotationMatrix[it] }
+        if (config.mode == GyroMode.RATE) {
+            // Incremental: update reference each frame, output is angular velocity
+            refRotationMatrix.indices.forEach { refRotationMatrix[it] = curRotationMatrix[it] }
+        }
+        // ABSOLUTE mode: reference stays fixed, output is proportional to tilt angle
 
         // Apply deadzone
         val dzX = applyDeadzone(yaw, config.deadzone)
@@ -121,8 +126,19 @@ class GyroInputManager(
         if (dzX == 0f && dzY == 0f) return
 
         // Apply sensitivity and inversion
-        var outX = dzX * config.sensitivityX
-        var outY = dzY * config.sensitivityY
+        var outX: Float
+        var outY: Float
+        if (config.mode == GyroMode.ABSOLUTE) {
+            // Map angle beyond deadzone proportionally within maxAngle
+            val range = config.maxAngle - config.deadzone
+            outX = if (range > 0f) (dzX / range) else dzX
+            outY = if (range > 0f) (dzY / range) else dzY
+            outX *= config.sensitivityX
+            outY *= config.sensitivityY
+        } else {
+            outX = dzX * config.sensitivityX
+            outY = dzY * config.sensitivityY
+        }
         if (config.invertX) outX = -outX
         if (config.invertY) outY = -outY
 

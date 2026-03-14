@@ -293,38 +293,34 @@ private data class StickPickerResult(
 private const val CONFIG_FILENAME = "controller_config.json"
 
 /**
- * Save controller bindings.  Builds KeySettings byte arrays via C (kconfig.c
- * handles defaults and invert slots), writes controller_config.json, and
- * patches all .plr pilot files.
+ * Collect (kc_index, value) pairs for joystick settings from human-readable
+ * bindings using the given game variant's kconfig index mapping.
  */
-internal fun saveConfig(
-    context: Context,
+private fun buildJoyPairs(
     bindings: Map<String, String>,
     inverts: Set<String>,
-    gameVariant: String = "d2",
-) {
-    // Collect (kc_index, value) pairs for joystick settings
-    val btnKcMap = buttonKcIndex(gameVariant)
-    val joyIndices = mutableListOf<Int>()
-    val joyValues = mutableListOf<Int>()
+    variant: String,
+): Pair<IntArray, IntArray> {
+    val btnKcMap = buttonKcIndex(variant)
+    val indices = mutableListOf<Int>()
+    val values = mutableListOf<Int>()
     for ((controlId, funcLabel) in bindings) {
         val btnKcIdx = btnKcMap[funcLabel]
         val btnSdlId = BUTTON_CONTROLS[controlId]
         if (btnKcIdx != null && btnSdlId != null) {
-            joyIndices.add(btnKcIdx)
-            joyValues.add(btnSdlId)
+            indices.add(btnKcIdx)
+            values.add(btnSdlId)
             continue
         }
         val axisKcIdx = AXIS_KC_INDEX[funcLabel]
         val axisSdlId = AXIS_CONTROLS[controlId]
         if (axisKcIdx != null && axisSdlId != null) {
-            joyIndices.add(axisKcIdx)
-            joyValues.add(axisSdlId)
-            joyIndices.add(axisKcIdx + 1)
-            joyValues.add(if (controlId in inverts) 1 else 0)
+            indices.add(axisKcIdx)
+            values.add(axisSdlId)
+            indices.add(axisKcIdx + 1)
+            values.add(if (controlId in inverts) 1 else 0)
             continue
         }
-        // Axis-as-buttons: keys like "LS_X_neg", "LS_X_pos"
         val isNeg = controlId.endsWith("_neg")
         val isPos = controlId.endsWith("_pos")
         if ((isNeg || isPos) && btnKcIdx != null) {
@@ -332,30 +328,39 @@ internal fun saveConfig(
             val sdlPair = AXIS_BUTTON_SDL[axisId]
             if (sdlPair != null) {
                 val sdlBtn = if (isNeg) sdlPair.first else sdlPair.second
-                joyIndices.add(btnKcIdx)
-                joyValues.add(sdlBtn)
+                indices.add(btnKcIdx)
+                values.add(sdlBtn)
             }
         }
     }
-
-    // D-pad bindings go through joystick buttons (22-25)
     for ((controlId, funcLabel) in bindings) {
         val dpadBtnIdx = DPAD_CONTROLS[controlId]
         val dpadKcIdx = btnKcMap[funcLabel]
         if (dpadBtnIdx != null && dpadKcIdx != null) {
-            joyIndices.add(dpadKcIdx)
-            joyValues.add(dpadBtnIdx)
+            indices.add(dpadKcIdx)
+            values.add(dpadBtnIdx)
         }
     }
+    return Pair(indices.toIntArray(), values.toIntArray())
+}
+
+internal fun saveConfig(
+    context: Context,
+    bindings: Map<String, String>,
+    inverts: Set<String>,
+    gameVariant: String = "d2",
+) {
+    // Build byte arrays for BOTH D1 and D2 since the config file is shared
+    // and kconfig indices differ between games (e.g. Automap is index 27 in
+    // D1 but index 50 in D2).
+    val (d1Idx, d1Val) = buildJoyPairs(bindings, inverts, "d1")
+    val (d2Idx, d2Val) = buildJoyPairs(bindings, inverts, "d2")
+    val d1JoySettings = NativePilotPatcher.nativeBuildJoySettings(d1Idx, d1Val)
+    val d2JoySettings = NativePilotPatcher.nativeBuildJoySettings(d2Idx, d2Val)
+    val joySettings = if (gameVariant == "d1") d1JoySettings else d2JoySettings
+
     val kbIndices = mutableListOf<Int>()
     val kbValues = mutableListOf<Int>()
-
-    // C builds the 60-byte arrays (handles invert defaults, 0xFF init, etc.)
-    val joySettings =
-        NativePilotPatcher.nativeBuildJoySettings(
-            joyIndices.toIntArray(),
-            joyValues.toIntArray(),
-        )
     val kbSettings =
         NativePilotPatcher.nativeBuildKbSettings(
             kbIndices.toIntArray(),
@@ -407,9 +412,14 @@ internal fun saveConfig(
     }
     json.put("meta_bindings", metaObj)
 
-    val joyArr = JSONArray()
-    for (b in joySettings) joyArr.put(b.toInt() and 0xFF)
-    json.put("key_settings_joystick", joyArr)
+    // Write game-specific byte arrays so the C code (which is compiled
+    // separately for D1 and D2) can read the correct kconfig indices.
+    val d1JoyArr = JSONArray()
+    for (b in d1JoySettings) d1JoyArr.put(b.toInt() and 0xFF)
+    val d2JoyArr = JSONArray()
+    for (b in d2JoySettings) d2JoyArr.put(b.toInt() and 0xFF)
+    json.put("key_settings_joystick_d1", d1JoyArr)
+    json.put("key_settings_joystick_d2", d2JoyArr)
 
     val kbArr = JSONArray()
     for (b in kbSettings) kbArr.put(b.toInt() and 0xFF)

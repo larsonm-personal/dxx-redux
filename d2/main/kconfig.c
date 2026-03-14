@@ -2044,19 +2044,10 @@ void kconfig_fill_joy_settings(const int *indices, const int *values, int count,
 		if (indices[i] >= 0 && indices[i] < MAX_CONTROLS)
 			out[indices[i]] = (ubyte)(values[i] & 0xFF);
 	}
-
-	/* Touch overlay: fill column-2 entries with col1_index + 128.
-	 * Shared constant with Kotlin TouchBindings.TOUCH_BTN_OFFSET. */
-	{
-		static const int col_map[][2] = {
-			{31,0},{32,1},{33,2},{34,3},{35,4},{36,5},{37,6},{38,7},{39,8},{40,9},
-			{41,10},{42,11},{43,12},
-			{44,25},{45,26},{46,27},{47,28},{48,29},{49,30},
-			{51,50},{53,52},{55,54}
-		};
-		for (i = 0; i < (int)(sizeof(col_map)/sizeof(col_map[0])); i++)
-			out[col_map[i][0]] = (ubyte)(col_map[i][1] + 128);
-	}
+	/* Touch overlay (col2 entries) is NOT applied here because:
+	 * 1. kc_set_controls() applies it at runtime, so it's redundant
+	 * 2. This function is called from NativePilotPatcher (always D2 lib)
+	 *    but the output may be for D1, which has different col2 indices */
 }
 
 /*
@@ -2097,6 +2088,11 @@ void kconfig_get_default_settings(ubyte *kb_out, ubyte *joy_out, ubyte *mouse_ou
 	joy_out[9]  = 23;  /* Slide Down = DDown virtual button */
 	joy_out[19] = 7;   /* Slide U/D  = axis 7 (SU, virtual) */
 	joy_out[21] = 6;   /* Bank L/R   = axis 6 (BK, virtual) */
+	joy_out[4]  = 2;   /* Fire Flare    = X button */
+	joy_out[27] = 3;   /* Afterburner   = Y button */
+	joy_out[28] = 4;   /* Cycle Primary = L1 button */
+	joy_out[29] = 5;   /* Cycle Second. = R1 button */
+	joy_out[50] = 6;   /* Automap       = Select button */
 
 	/* Apply touch overlay offsets to joystick column 2 */
 	{

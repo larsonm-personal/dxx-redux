@@ -2,6 +2,18 @@
  * android_gamepad_config.cpp -- Read controller_config.json (written by the
  * Setup-screen UI) and apply gamepad bindings to new pilot configs.
  *
+ * This file is part of the two-layer virtual button/axis mapping model:
+ *
+ *   Physical input (Kotlin) -> virtual button/axis ID -> game action (kconfig)
+ *
+ * PlayerCfg.KeySettings[1][action_index] stores the virtual ID that the
+ * game engine looks up when processing joystick events.  The virtual IDs
+ * are defined by joy_init() in joy.c:
+ *
+ *   Buttons: 0-9 face/shoulder, 10-21 axis-buttons (2 per axis, neg/pos),
+ *            22-25 D-pad, 128+ touch overlay (bypass button_map)
+ *   Axes:    0=LX, 1=LY, 2=RX, 3=RY, 4=LT, 5=RT, 6=BK(virtual), 7=SU(virtual)
+ *
  * The JNI entry point patches .plr files by calling plr_patch_keysettings()
  * in playsave.c -- the single source of truth for the .plr binary format.
  *
@@ -50,8 +62,18 @@ static bool load_config_into_playercfg(void)
 		return false;
 	}
 
-	if (cfg.contains("key_settings_joystick") && cfg["key_settings_joystick"].is_array()) {
-		auto &arr = cfg["key_settings_joystick"];
+	/* Prefer game-specific byte array (D1/D2 have different kconfig indices) */
+#ifdef DXX_BUILD_DESCENT_II
+	const char *joy_key = "key_settings_joystick_d2";
+#else
+	const char *joy_key = "key_settings_joystick_d1";
+#endif
+	/* Fall back to the old unqualified key for pre-existing configs */
+	if (!cfg.contains(joy_key) || !cfg[joy_key].is_array()) {
+		joy_key = "key_settings_joystick";
+	}
+	if (cfg.contains(joy_key) && cfg[joy_key].is_array()) {
+		auto &arr = cfg[joy_key];
 		for (size_t i = 0; i < arr.size() && i < MAX_CONTROLS; i++)
 			PlayerCfg.KeySettings[1][i] = (ubyte) arr[i].get<int>();
 	}
@@ -93,6 +115,17 @@ extern "C" void android_apply_gamepad_defaults(void)
 		PlayerCfg.KeySettings[1][7] = 25; /* Slide Right   = DRight btn */
 		PlayerCfg.KeySettings[1][8] = 22; /* Slide Up      = DUp btn    */
 		PlayerCfg.KeySettings[1][9] = 23; /* Slide Down    = DDown btn  */
+		PlayerCfg.KeySettings[1][4] = 2;  /* Fire Flare    = X button   */
+#ifdef DXX_BUILD_DESCENT_II
+		PlayerCfg.KeySettings[1][27] = 3; /* Afterburner   = Y button   */
+		PlayerCfg.KeySettings[1][28] = 4; /* Cycle Primary = L1 button  */
+		PlayerCfg.KeySettings[1][29] = 5; /* Cycle Second. = R1 button  */
+		PlayerCfg.KeySettings[1][50] = 6; /* Automap       = Select btn */
+#else
+		PlayerCfg.KeySettings[1][27] = 6; /* Automap       = Select btn */
+		PlayerCfg.KeySettings[1][44] = 4; /* Cycle Primary = L1 button  */
+		PlayerCfg.KeySettings[1][45] = 5; /* Cycle Second. = R1 button  */
+#endif
 	} else {
 		LOGI("Loaded controller config: joy[13]=%d joy[15]=%d joy[17]=%d joy[23]=%d",
 		     PlayerCfg.KeySettings[1][13], PlayerCfg.KeySettings[1][15],

@@ -1634,16 +1634,42 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 		case EVENT_JOYSTICK_BUTTON_DOWN:
 		{
 			int btn = event_joystick_get_button(event);
-			if (btn == 0) {
+			int keycode = -1;
+			if (btn == 0)       keycode = KEY_ENTER;
+			else if (btn == 1)  keycode = KEY_ESC;
+			else if (btn == 22) keycode = KEY_UP;
+			else if (btn == 23) keycode = KEY_DOWN;
+			else if (btn == 24) keycode = KEY_LEFT;
+			else if (btn == 25) keycode = KEY_RIGHT;
+			if (keycode >= 0) {
 				struct { event_type type; int keycode; } ke;
 				ke.type = EVENT_KEY_COMMAND;
-				ke.keycode = KEY_ENTER;
+				ke.keycode = keycode;
 				return newmenu_key_command(wind, (d_event *)&ke, menu);
-			} else if (btn == 1) {
-				struct { event_type type; int keycode; } ke;
-				ke.type = EVENT_KEY_COMMAND;
-				ke.keycode = KEY_ESC;
-				return newmenu_key_command(wind, (d_event *)&ke, menu);
+			}
+			break;
+		}
+		case EVENT_JOYSTICK_MOVED:
+		{
+			int axis, value;
+			static int stick_dir[4]; /* LX, LY, RX, RY: -1/0/+1 */
+			event_joystick_get_axis(event, &axis, &value);
+			if (axis >= 0 && axis <= 3) {
+				int dir = (value < -64) ? -1 : (value > 64) ? 1 : 0;
+				if (dir != stick_dir[axis]) {
+					stick_dir[axis] = dir;
+					if (dir) {
+						int keycode;
+						if (axis == 0 || axis == 2)
+							keycode = (dir < 0) ? KEY_LEFT : KEY_RIGHT;
+						else
+							keycode = (dir < 0) ? KEY_UP : KEY_DOWN;
+						struct { event_type type; int keycode; } ke;
+						ke.type = EVENT_KEY_COMMAND;
+						ke.keycode = keycode;
+						return newmenu_key_command(wind, (d_event *)&ke, menu);
+					}
+				}
 			}
 			break;
 		}
@@ -2318,16 +2344,42 @@ int listbox_handler(window *wind, d_event *event, listbox *lb)
 		case EVENT_JOYSTICK_BUTTON_DOWN:
 		{
 			int btn = event_joystick_get_button(event);
-			if (btn == 0) {
+			int keycode = -1;
+			if (btn == 0)       keycode = KEY_ENTER;
+			else if (btn == 1)  keycode = KEY_ESC;
+			else if (btn == 22) keycode = KEY_UP;
+			else if (btn == 23) keycode = KEY_DOWN;
+			else if (btn == 24) keycode = KEY_LEFT;
+			else if (btn == 25) keycode = KEY_RIGHT;
+			if (keycode >= 0) {
 				struct { event_type type; int keycode; } ke;
 				ke.type = EVENT_KEY_COMMAND;
-				ke.keycode = KEY_ENTER;
+				ke.keycode = keycode;
 				return listbox_key_command(wind, (d_event *)&ke, lb);
-			} else if (btn == 1) {
-				struct { event_type type; int keycode; } ke;
-				ke.type = EVENT_KEY_COMMAND;
-				ke.keycode = KEY_ESC;
-				return listbox_key_command(wind, (d_event *)&ke, lb);
+			}
+			break;
+		}
+		case EVENT_JOYSTICK_MOVED:
+		{
+			int axis, value;
+			static int stick_dir[4];
+			event_joystick_get_axis(event, &axis, &value);
+			if (axis >= 0 && axis <= 3) {
+				int dir = (value < -64) ? -1 : (value > 64) ? 1 : 0;
+				if (dir != stick_dir[axis]) {
+					stick_dir[axis] = dir;
+					if (dir) {
+						int keycode;
+						if (axis == 0 || axis == 2)
+							keycode = (dir < 0) ? KEY_LEFT : KEY_RIGHT;
+						else
+							keycode = (dir < 0) ? KEY_UP : KEY_DOWN;
+						struct { event_type type; int keycode; } ke;
+						ke.type = EVENT_KEY_COMMAND;
+						ke.keycode = keycode;
+						return listbox_key_command(wind, (d_event *)&ke, lb);
+					}
+				}
 			}
 			break;
 		}

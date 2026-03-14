@@ -18,6 +18,8 @@ enum class SliderOrientation { VERTICAL, HORIZONTAL }
 
 enum class GyroActivation { ALWAYS, TOUCH_STICK, ADS_ONLY }
 
+enum class GyroMode { RATE, ABSOLUTE }
+
 // --- Response curve math ---
 
 /** Apply the selected response curve to a normalized -1..1 input value. */
@@ -378,6 +380,7 @@ data class DPadControl(
 data class GyroConfig(
     val enabled: Boolean = false,
     val activation: GyroActivation = GyroActivation.ALWAYS,
+    val mode: GyroMode = GyroMode.RATE,
     val sensitivityX: Float = 3f,
     val sensitivityY: Float = 3f,
     val invertX: Boolean = false,
@@ -385,11 +388,13 @@ data class GyroConfig(
     val axisX: Int = TouchBindings.AXIS_RIGHT_X,
     val axisY: Int = TouchBindings.AXIS_RIGHT_Y,
     val deadzone: Float = 0.02f,
+    val maxAngle: Float = 0.436f, // ~25 degrees, used in ABSOLUTE mode
 ) {
     fun toJson() =
         JSONObject().apply {
             put("enabled", enabled)
             put("activation", activation.name)
+            put("mode", mode.name)
             put("sensitivityX", sensitivityX.toDouble())
             put("sensitivityY", sensitivityY.toDouble())
             put("invertX", invertX)
@@ -397,6 +402,7 @@ data class GyroConfig(
             put("axisX", axisX)
             put("axisY", axisY)
             put("deadzone", deadzone.toDouble())
+            put("maxAngle", maxAngle.toDouble())
         }
 
     companion object {
@@ -404,6 +410,7 @@ data class GyroConfig(
             GyroConfig(
                 enabled = j.optBoolean("enabled"),
                 activation = GyroActivation.valueOf(j.optString("activation", "ALWAYS")),
+                mode = GyroMode.valueOf(j.optString("mode", "RATE")),
                 sensitivityX = j.optDouble("sensitivityX", 3.0).toFloat(),
                 sensitivityY = j.optDouble("sensitivityY", 3.0).toFloat(),
                 invertX = j.optBoolean("invertX"),
@@ -411,6 +418,7 @@ data class GyroConfig(
                 axisX = j.optInt("axisX", TouchBindings.AXIS_RIGHT_X),
                 axisY = j.optInt("axisY", TouchBindings.AXIS_RIGHT_Y),
                 deadzone = j.optDouble("deadzone", 0.02).toFloat(),
+                maxAngle = j.optDouble("maxAngle", 0.436).toFloat(),
             )
     }
 }

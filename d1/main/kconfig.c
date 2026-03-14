@@ -1991,6 +1991,10 @@ void kconfig_get_default_settings(ubyte *kb_out, ubyte *joy_out, ubyte *mouse_ou
 	joy_out[9]  = 23;  /* Slide Down = DDown virtual button */
 	joy_out[19] = 7;   /* Slide U/D  = axis 7 (SU, virtual) */
 	joy_out[21] = 6;   /* Bank L/R   = axis 6 (BK, virtual) */
+	joy_out[4]  = 2;   /* Fire Flare    = X button */
+	joy_out[27] = 6;   /* Automap       = Select button */
+	joy_out[44] = 4;   /* Cycle Primary = L1 button */
+	joy_out[45] = 5;   /* Cycle Second. = R1 button */
 
 	/* Apply touch overlay offsets to joystick column 2 */
 	{

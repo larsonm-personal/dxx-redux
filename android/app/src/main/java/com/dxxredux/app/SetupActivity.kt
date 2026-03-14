@@ -271,6 +271,7 @@ class SetupActivity : ComponentActivity() {
 
     /**
      * Read controller_config.json and patch all .plr files with its KeySettings.
+     * Patches both D1 and D2 pilots using game-specific byte arrays.
      * Returns the number of files patched.
      */
     private fun patchPilotsFromConfig(): Int {
@@ -278,12 +279,24 @@ class SetupActivity : ComponentActivity() {
         if (!cfg.exists()) return 0
         try {
             val json = org.json.JSONObject(cfg.readText())
-            val joyArr = json.optJSONArray("key_settings_joystick") ?: return 0
             val kbArr = json.optJSONArray("key_settings_keyboard") ?: return 0
-            val joy = ByteArray(joyArr.length()) { (joyArr.getInt(it) and 0xFF).toByte() }
             val kb = ByteArray(kbArr.length()) { (kbArr.getInt(it) and 0xFF).toByte() }
             val ct = json.optInt("control_type", 1)
-            return NativePilotPatcher.nativePatchPilotFiles(filesDir.absolutePath, joy, kb, ct, "d2")
+            var total = 0
+            for (game in arrayOf("d2", "d1")) {
+                val joyKey = "key_settings_joystick_$game"
+                val jArr = json.optJSONArray(joyKey) ?: continue
+                val joy = ByteArray(jArr.length()) { (jArr.getInt(it) and 0xFF).toByte() }
+                total +=
+                    NativePilotPatcher.nativePatchPilotFiles(
+                        filesDir.absolutePath,
+                        joy,
+                        kb,
+                        ct,
+                        game,
+                    )
+            }
+            return total
         } catch (e: Exception) {
             Log.e("DXX-Setup", "patchPilotsFromConfig failed", e)
             return 0
@@ -373,7 +386,10 @@ class SetupActivity : ComponentActivity() {
                 return
             }
             val json = JSONObject(cfg.readText())
-            val joyArr = json.optJSONArray("key_settings_joystick")
+            // KC_JOY_META mirrors D2's kc_joystick[], so use D2 byte array
+            val joyArr =
+                json.optJSONArray("key_settings_joystick_d2")
+                    ?: json.optJSONArray("key_settings_joystick")
             val ct = json.optInt("control_type", 1)
 
             val meta = KC_JOY_META

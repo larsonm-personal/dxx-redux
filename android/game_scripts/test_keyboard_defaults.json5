@@ -27,7 +27,8 @@
     {"action": "wait_ms", "ms": 2000},
 
     // -- Create fresh pilot and launch into game --
-    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    // D1 shows 3 title screens (3s each = 9s) before set_screen_mode(SCREEN_MENU).
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
     {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 2000},
     {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 2000},
 

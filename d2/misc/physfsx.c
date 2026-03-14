@@ -49,7 +49,15 @@ void PHYSFSX_init(int argc, char *argv[])
 		const char *pref = PHYSFS_getPrefDir("com.dxxredux", "d2x-redux");
 		if (pref)
 		{
+			/* On Android, PHYSFS_getPrefDir ignores org/app and returns the
+			 * app's files/ dir.  Create d2x-redux/ subdir so D1 and D2 pilot
+			 * files, saves, and configs are fully isolated. */
+			char gamedir[512];
+			snprintf(gamedir, sizeof(gamedir), "%sd2x-redux/", pref);
 			PHYSFS_setWriteDir(pref);
+			PHYSFS_mkdir("d2x-redux");
+			PHYSFS_setWriteDir(gamedir);
+			PHYSFS_addToSearchPath(gamedir, 1);
 			PHYSFS_addToSearchPath(pref, 1);
 		}
 

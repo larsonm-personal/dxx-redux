@@ -627,12 +627,43 @@ static int run_assertions(auto_step &s)
 	free(json_str);
 
 	for (const auto &ae : s.expects) {
-		if (!state.contains(ae.key)) {
+		/* Navigate dot-path keys like "joystick_controls.items[27].value".
+		 * Splits on '.' segments; each segment may have a [N] array index. */
+		const json *cur = &state;
+		std::string path_remaining = ae.key;
+		bool path_ok = true;
+		while (!path_remaining.empty() && path_ok) {
+			std::string seg;
+			auto dot = path_remaining.find('.');
+			if (dot != std::string::npos) {
+				seg = path_remaining.substr(0, dot);
+				path_remaining = path_remaining.substr(dot + 1);
+			} else {
+				seg = path_remaining;
+				path_remaining.clear();
+			}
+			/* Check for array index: "items[27]" -> key="items", idx=27 */
+			auto bracket = seg.find('[');
+			int arr_idx = -1;
+			if (bracket != std::string::npos) {
+				arr_idx = atoi(seg.c_str() + bracket + 1);
+				seg = seg.substr(0, bracket);
+			}
+			if (!seg.empty()) {
+				if (!cur->is_object() || !cur->contains(seg)) { path_ok = false; break; }
+				cur = &(*cur)[seg];
+			}
+			if (arr_idx >= 0) {
+				if (!cur->is_array() || arr_idx >= (int)cur->size()) { path_ok = false; break; }
+				cur = &(*cur)[arr_idx];
+			}
+		}
+		if (!path_ok) {
 			LOGE("ASSERT_FAIL: key \"%s\" not found in introspection JSON", ae.key.c_str());
 			return 0;
 		}
 
-		const auto &val = state[ae.key];
+		const auto &val = *cur;
 		double actual_num = 0;
 		bool is_num = false;
 		std::string actual_str;

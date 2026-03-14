@@ -2,6 +2,18 @@
  *
  * SDL joystick support
  *
+ * On Android, this registers a virtual gamepad with fixed button/axis IDs
+ * rather than enumerating real SDL joysticks. These virtual IDs form the
+ * contract between the Kotlin input layer and the kconfig game bindings:
+ *
+ *   Axes:    0=LX, 1=LY, 2=RX, 3=RY, 4=LT, 5=RT, 6=BK, 7=SU
+ *   Buttons: 0-9 = A,B,X,Y,L1,R1,Sel,Sta,L3,R3
+ *            10-21 = axis-buttons (2 per axis, even=neg, odd=pos)
+ *            22-25 = DUp,DDown,DLeft,DRight
+ *            128+  = touch overlay (kcIndex + TOUCH_BTN_OFFSET)
+ *
+ * See android_gamepad_config.cpp for how these IDs are stored in
+ * PlayerCfg.KeySettings[1][] and build-919-fixes.md for full docs.
  */
 
 #include <string.h>   // for memset

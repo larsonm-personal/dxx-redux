@@ -4,7 +4,11 @@
   "bindings": {
     "A": "Fire Primary",
     "B": "Fire Secondary",
+    "X": "Fire Flare",
     "Y": "Afterburner",
+    "L1": "Cycle Primary",
+    "R1": "Cycle Secondary",
+    "Select": "Automap",
     "RT": "Accelerate",
     "LT": "Reverse",
     "RS_X": "Turn L/R",
