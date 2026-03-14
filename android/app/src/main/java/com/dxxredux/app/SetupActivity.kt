@@ -14,7 +14,6 @@ import android.util.Log
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -1150,6 +1149,7 @@ private fun SetupScreen(
             FileSetManager(filesDir).also {
                 it.migrateDefaultSetIfNeeded()
                 it.sweepRootGameFiles()
+                it.migratePilotFiles()
             }
         }
     var activeSetName by remember { mutableStateOf(fileSetManager.getActive()) }
@@ -1337,6 +1337,7 @@ private fun SetupScreen(
     // ── Page navigation state ────────────────────────────
     var showControllerPage by remember { mutableStateOf(false) }
     var showTouchEditorPage by remember { mutableStateOf(false) }
+    var showAdvancedPage by remember { mutableStateOf(false) }
 
     MaterialTheme(colorScheme = darkColorScheme()) {
         if (showControllerPage) {
@@ -1354,6 +1355,14 @@ private fun SetupScreen(
             TouchEditorPage(
                 gameVariant = selectedGame,
                 onBack = { showTouchEditorPage = false },
+            )
+            return@MaterialTheme
+        }
+        if (showAdvancedPage) {
+            AdvancedSettingsPage(
+                filesDir = filesDir,
+                fileSetManager = fileSetManager,
+                onBack = { showAdvancedPage = false },
             )
             return@MaterialTheme
         }
@@ -2144,20 +2153,8 @@ private fun SetupScreen(
                         selectedGame = selectedGame,
                         onDefineControls = { showControllerPage = true },
                         onEditTouchLayout = { showTouchEditorPage = true },
+                        onAdvancedSettings = { showAdvancedPage = true },
                     )
-
-                    // ── Resolution picker ────────────────
-                    Spacer(modifier = Modifier.height(12.dp))
-                    ResolutionPicker(prefs = prefs, filesDir = filesDir)
-
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Button(
-                        onClick = { android.os.Process.killProcess(android.os.Process.myPid()) },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-                        modifier = Modifier.fillMaxWidth().height(44.dp),
-                    ) {
-                        Text("Restart game", fontSize = 14.sp)
-                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -2681,7 +2678,7 @@ private fun DetailRow(
  * Update ResolutionX/ResolutionY in descent.cfg.
  * If the file exists, replace existing lines; otherwise create with just those keys.
  */
-private fun updateDescentCfgResolution(
+internal fun updateDescentCfgResolution(
     filesDir: File,
     resolution: String,
 ) {
@@ -2736,42 +2733,6 @@ private fun enableRedbookInConfig(filesDir: File) {
 }
 
 @Composable
-private fun ResolutionPicker(
-    prefs: SharedPreferences,
-    filesDir: File,
-) {
-    val options = listOf("640x480" to "Low (640×480)", "960x720" to "Medium (960×720)", "1280x960" to "High (1280×960)")
-    var selected by remember { mutableStateOf(prefs.getString("render_resolution", "640x480") ?: "640x480") }
-
-    Text("Render Resolution", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-    Spacer(modifier = Modifier.height(4.dp))
-    options.forEach { (value, label) ->
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 2.dp),
-        ) {
-            RadioButton(
-                selected = selected == value,
-                onClick = {
-                    selected = value
-                    prefs.edit().putString("render_resolution", value).apply()
-                    updateDescentCfgResolution(filesDir, value)
-                },
-            )
-            Text(text = label, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp))
-        }
-    }
-    Text(
-        "Takes effect on next launch",
-        fontSize = 11.sp,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-}
-
-@Composable
 private fun ControllerSection(
     axes: FloatArray,
     dpadAxes: FloatArray,
@@ -2781,6 +2742,7 @@ private fun ControllerSection(
     selectedGame: String = "d2",
     onDefineControls: () -> Unit = {},
     onEditTouchLayout: () -> Unit = {},
+    onAdvancedSettings: () -> Unit = {},
 ) {
     // Poll for controller connect/disconnect every 1 second
     var pollTick by remember { mutableIntStateOf(0) }
@@ -2946,79 +2908,13 @@ private fun ControllerSection(
         }
     }
 
-    // ── Export / Import all configs ──
-    val ctx = LocalContext.current
-    val configImportLauncher =
-        rememberLauncherForActivityResult(
-            contract =
-                androidx.activity.result.contract.ActivityResultContracts
-                    .OpenDocument(),
-        ) { uri ->
-            if (uri == null) return@rememberLauncherForActivityResult
-            val msg = ConfigImportExport.importFromUri(ctx, uri)
-            Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show()
-        }
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedButton(
-            onClick = { ConfigImportExport.exportAll(ctx) },
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-            modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
-        ) {
-            Text("Export All Configs", fontSize = 12.sp)
-        }
-        OutlinedButton(
-            onClick = { configImportLauncher.launch(arrayOf("application/json", "*/*")) },
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-            modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
-        ) {
-            Text("Import Config", fontSize = 12.sp)
-        }
-    }
-
-    // ── Reset All Controls ──
-    var showResetDialog by remember { mutableStateOf(false) }
+    // ── Advanced Settings ──
     OutlinedButton(
-        onClick = { showResetDialog = true },
+        onClick = onAdvancedSettings,
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
         modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFF44336)),
     ) {
-        Text("Reset All Controls", fontSize = 12.sp)
-    }
-    if (showResetDialog) {
-        val ctx = LocalContext.current
-        AlertDialog(
-            onDismissRequest = { showResetDialog = false },
-            title = { Text("Reset All Controls") },
-            text = {
-                Text(
-                    "This will reset ALL control bindings to defaults:\n\n" +
-                        "\u2022 Touch layout (positions, sizes, bindings)\n" +
-                        "\u2022 Physical controller mappings\n" +
-                        "\u2022 In-game keyboard, joystick, and mouse settings for every pilot\n\n" +
-                        "The game will restart after reset.",
-                    fontSize = 13.sp,
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    // Delete config files
-                    File(ctx.filesDir, "controller_config.json").delete()
-                    File(ctx.filesDir, "touch_layout.json").delete()
-                    // Patch all .plr files with engine defaults (kb + joy + mouse + touch offsets)
-                    NativePilotPatcher.nativeResetToDefaults(ctx.filesDir.absolutePath, "d2")
-                    NativePilotPatcher.nativeResetToDefaults(ctx.filesDir.absolutePath, "d1")
-                    showResetDialog = false
-                    // Restart to apply
-                    android.os.Process.killProcess(android.os.Process.myPid())
-                }) {
-                    Text("Reset & Restart", color = Color(0xFFF44336))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showResetDialog = false }) { Text("Cancel") }
-            },
-        )
+        Text("Advanced Settings", fontSize = 12.sp)
     }
 
     if (expanded && hasController) {
@@ -3405,35 +3301,58 @@ private fun SetManagementDialog(
                     }
                 }
 
-                // Delete current set (if not default)
-                if (activeSetName != FileSetManager.DEFAULT_SET) {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                    if (!confirmDelete) {
-                        Row(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .clickable { confirmDelete = true }
-                                    .padding(vertical = 8.dp, horizontal = 4.dp),
-                        ) {
-                            Text(
-                                text = "Delete \"$activeSetName\"",
-                                fontSize = 13.sp,
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                        }
-                    } else {
+                // Delete / clear current set
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                if (!confirmDelete) {
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { confirmDelete = true }
+                                .padding(vertical = 8.dp, horizontal = 4.dp),
+                    ) {
+                        Text(
+                            text =
+                                if (activeSetName == FileSetManager.DEFAULT_SET) {
+                                    "Clear all files in \"$activeSetName\""
+                                } else {
+                                    "Delete \"$activeSetName\""
+                                },
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                } else {
+                    Column(modifier = Modifier.padding(horizontal = 4.dp)) {
+                        Text(
+                            text =
+                                "Imported files (copied to app data) will be permanently deleted.\n\n" +
+                                    "Files added via file picker (leave-in-place) will be unlinked " +
+                                    "but not deleted from their original location.",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
                         Row(
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        fileSetManager.deleteSet(activeSetName)
+                                        if (activeSetName == FileSetManager.DEFAULT_SET) {
+                                            fileSetManager.clearSet(activeSetName)
+                                        } else {
+                                            fileSetManager.deleteSet(activeSetName)
+                                        }
                                         onSwitchSet(FileSetManager.DEFAULT_SET)
-                                    }.padding(vertical = 8.dp, horizontal = 4.dp),
+                                    }.padding(vertical = 8.dp),
                         ) {
                             Text(
-                                text = "Confirm delete \"$activeSetName\"?",
+                                text =
+                                    if (activeSetName == FileSetManager.DEFAULT_SET) {
+                                        "Confirm clear \"$activeSetName\"?"
+                                    } else {
+                                        "Confirm delete \"$activeSetName\"?"
+                                    },
                                 fontSize = 13.sp,
                                 color = MaterialTheme.colorScheme.error,
                                 fontWeight = FontWeight.Bold,

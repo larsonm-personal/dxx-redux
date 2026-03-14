@@ -160,11 +160,17 @@ class FileSetManager(
 
     /**
      * Write `.active_set_path` so the C engine can find the active set at init.
-     * Call this before launching the game engine.
+     * The C code reads from `<pref_dir>/.active_set_path` where pref_dir is
+     * `filesDir/d2x-redux/` or `filesDir/d1x-redux/`.  Write to both so
+     * whichever game is launched finds the file.
      */
     fun writeActiveSetPath() {
-        val aspFile = File(filesDir, ".active_set_path")
-        aspFile.writeText(getSetDir(getActive()).absolutePath)
+        val path = getSetDir(getActive()).absolutePath
+        for (game in arrayOf("d2x-redux", "d1x-redux")) {
+            val dir = File(filesDir, game)
+            dir.mkdirs()
+            File(dir, ".active_set_path").writeText(path)
+        }
     }
 
     private fun validateSetName(name: String) {
@@ -263,6 +269,92 @@ class FileSetManager(
         }
     }
 
+    /**
+     * Migrate pilot files from game pref-dir roots into Players/ subdirs.
+     * With SysUsePlayersDir=1 the engine looks in Players/ exclusively.
+     * Runs every startup (cheap dir listing, idempotent).
+     */
+    fun migratePilotFiles() {
+        val sets = listSets()
+        for (set in sets) {
+            val setDir = getSetDir(set.name)
+            for (game in arrayOf("d1x-redux", "d2x-redux")) {
+                val gameDir = File(setDir, game)
+                if (!gameDir.isDirectory) continue
+                val playersDir = File(gameDir, "Players")
+                val moved = movePilotFilesInto(gameDir, playersDir)
+                if (moved > 0) {
+                    Log.i(TAG, "Migrated $moved pilot file(s) from ${gameDir.name}/ to Players/ in set ${set.name}")
+                }
+            }
+        }
+        // Also sweep any stray pilot files at filesDir root into d2x-redux/Players/
+        val defaultSet = getSetDir(DEFAULT_SET)
+        val fallbackDir = File(File(defaultSet, "d2x-redux"), "Players")
+        val swept = movePilotFilesInto(filesDir, fallbackDir)
+        if (swept > 0) {
+            Log.i(TAG, "Swept $swept stray pilot file(s) from filesDir root to d2x-redux/Players/")
+        }
+    }
+
+    private fun movePilotFilesInto(
+        srcDir: File,
+        destDir: File,
+    ): Int {
+        val files = srcDir.listFiles() ?: return 0
+        var count = 0
+        for (file in files) {
+            if (!file.isFile) continue
+            if (file.extension.lowercase() !in PILOT_FILE_EXTENSIONS) continue
+            destDir.mkdirs()
+            val dest = File(destDir, file.name)
+            if (!dest.exists() && file.renameTo(dest)) count++
+        }
+        return count
+    }
+
+    /**
+     * Delete all player/pilot files from both game dirs across all sets.
+     */
+    fun deleteAllPilotFiles(): Int {
+        var total = 0
+        val sets = listSets()
+        for (set in sets) {
+            val setDir = getSetDir(set.name)
+            for (game in arrayOf("d1x-redux", "d2x-redux")) {
+                val gameDir = File(setDir, game)
+                if (!gameDir.isDirectory) continue
+                total += deletePilotFilesIn(gameDir)
+                val playersDir = File(gameDir, "Players")
+                if (playersDir.isDirectory) total += deletePilotFilesIn(playersDir)
+            }
+        }
+        return total
+    }
+
+    private fun deletePilotFilesIn(dir: File): Int {
+        val files = dir.listFiles() ?: return 0
+        var count = 0
+        for (file in files) {
+            if (!file.isFile) continue
+            if (file.extension.lowercase() in PILOT_FILE_EXTENSIONS) {
+                if (file.delete()) count++
+            }
+        }
+        return count
+    }
+
+    /**
+     * Clear all files in a set without removing the set entry.
+     * Works for default and non-default sets. Recreates the empty directory.
+     */
+    fun clearSet(name: String) {
+        val dir = File(setsDir, name)
+        if (dir.exists()) dir.deleteRecursively()
+        dir.mkdirs()
+        Log.i(TAG, "Cleared set '$name'")
+    }
+
     companion object {
         private const val TAG = "FileSetManager"
         const val DEFAULT_SET = "default"
@@ -286,5 +378,16 @@ class FileSetManager(
 
         /** Subdirectory names (lowercase) that contain per-set game data. */
         private val GAME_DATA_DIRS = setOf("missions")
+
+        /** File extensions (lowercase) for pilot/player files. */
+        private val PILOT_FILE_EXTENSIONS =
+            buildSet {
+                addAll(listOf("plr", "plx", "eff", "ngp"))
+                // Saved games: .sg0-.sg9, .mg0-.mg9
+                for (i in 0..9) {
+                    add("sg$i")
+                    add("mg$i")
+                }
+            }
     }
 }

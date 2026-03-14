@@ -102,6 +102,7 @@ void PHYSFSX_init(int argc, char *argv[])
 		PHYSFS_addToSearchPath(PHYSFS_getBaseDir(), 1);
 		PHYSFSX_addRelToSearchPath("data", 1);
 	}
+	GameArg.SysUsePlayersDir = 1; /* pilots in Players/ subdir, isolates D1/D2 */
 	return;
 #endif
 

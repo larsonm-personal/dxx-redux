@@ -109,6 +109,7 @@ void PHYSFSX_init(int argc, char *argv[])
 	 * TODO: eventually call InitArgs(0,NULL) once all GameArg interactions
 	 * are verified on Android. */
 	GameArg.SndDigiSampleRate = 22050; /* SAMPLE_RATE_22K, avoid digi.h include */
+	GameArg.SysUsePlayersDir = 1; /* pilots in Players/ subdir, isolates D1/D2 */
 	return;
 #endif
 
