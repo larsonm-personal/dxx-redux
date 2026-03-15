@@ -768,9 +768,16 @@ int android_get_keyboard_state(int *kb_native, int *scr_native, int *field_y)
 	return 1;
 }
 
+static volatile int g_keyboard_requested = 0;
+
 void android_update_keyboard_field_y(int field_y)
 {
 	g_active_input_field_y = field_y;
+}
+
+int android_is_keyboard_shown(void)
+{
+	return g_keyboard_requested;
 }
 
 void android_show_keyboard(int numeric, int field_y)
@@ -779,6 +786,7 @@ void android_show_keyboard(int numeric, int field_y)
 	if (!g_jvm || !g_activity) return;
 
 	g_active_input_field_y = field_y;
+	g_keyboard_requested = 1;
 
 	JNIEnv *env;
 	int attached = 0;
@@ -817,6 +825,7 @@ void android_hide_keyboard(void)
 	if (attached) (*g_jvm)->DetachCurrentThread(g_jvm);
 	g_keyboard_height_native = 0;
 	g_blit_y_offset = 0;
+	g_keyboard_requested = 0;
 	LOGI("android_hide_keyboard()");
 }
 

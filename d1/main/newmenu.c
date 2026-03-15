@@ -1552,6 +1552,23 @@ int newmenu_draw(window *wind, newmenu *menu)
 		extern void android_update_keyboard_field_y(int field_y);
 		int visible_y = menu->y + menu->items[menu->citem].y - (((int)LINE_SPACING) * menu->scroll_offset);
 		android_update_keyboard_field_y(visible_y);
+
+		if (window_get_front() == wind) {
+			extern void android_show_keyboard(int numeric, int field_y);
+			extern void android_hide_keyboard(void);
+			extern int android_is_keyboard_shown(void);
+			int needs_kb = (menu->items[menu->citem].type == NM_TYPE_INPUT ||
+			                (menu->items[menu->citem].type == NM_TYPE_INPUT_MENU && menu->items[menu->citem].group == 1));
+			if (needs_kb && !android_is_keyboard_shown()) {
+				int numeric = 0;
+				const char *p = Newmenu_allowed_chars;
+				if (p && p[0] == '0' && p[1] == '9' && p[2] == '\0')
+					numeric = 1;
+				android_show_keyboard(numeric, visible_y);
+			} else if (!needs_kb && android_is_keyboard_shown()) {
+				android_hide_keyboard();
+			}
+		}
 	}
 #endif
 
@@ -1589,22 +1606,6 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 			game_flush_inputs();
 			event_toggle_focus(0);
 			key_toggle_repeat(1);
-#ifdef ANDROID
-			{
-				int ci = menu->citem;
-				if (ci >= 0 && ci < menu->nitems &&
-				    (menu->items[ci].type == NM_TYPE_INPUT ||
-				     (menu->items[ci].type == NM_TYPE_INPUT_MENU && menu->items[ci].group == 1))) {
-					extern void android_show_keyboard(int numeric, int field_y);
-					int numeric = 0;
-					const char *p = Newmenu_allowed_chars;
-					if (p && p[0] == '0' && p[1] == '9' && p[2] == '\0')
-						numeric = 1;
-					int visible_y = menu->y + menu->items[ci].y - (((int)LINE_SPACING) * menu->scroll_offset);
-					android_show_keyboard(numeric, visible_y);
-				}
-			}
-#endif
 			break;
 
 		case EVENT_WINDOW_DEACTIVATED:
