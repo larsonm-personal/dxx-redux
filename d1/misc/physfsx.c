@@ -77,8 +77,11 @@ void PHYSFSX_init(int argc, char *argv[])
 			char asp[512];
 			char setdir[512] = "";
 			char safpath[512];
-
-			snprintf(asp, sizeof(asp), "%s.active_set_path", pref);
+			/* gamedir is filesDir/d1x-redux/ — Kotlin writes
+			 * .active_set_path there, so read from the same place. */
+			char gd[512];
+			snprintf(gd, sizeof(gd), "%sd1x-redux/", pref);
+			snprintf(asp, sizeof(asp), "%s.active_set_path", gd);
 			{
 				FILE *f = fopen(asp, "r");
 				if (f) {

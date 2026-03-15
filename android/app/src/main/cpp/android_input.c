@@ -48,6 +48,9 @@ volatile int g_automap_center = 0;
  */
 volatile int g_skippable_active = 0;
 
+/* Forward declaration — defined later in this file, written by the blit path. */
+extern volatile int g_blit_y_offset;
+
 /* ── Touch → Mouse ──────────────────────────────────────────
  *
  * The game tracks the mouse position via deltas (SDL_MouseMotionEvent.xrel/yrel)
@@ -115,6 +118,12 @@ Java_com_dxxredux_app_MainActivity_nativeTouchEvent(JNIEnv *env, jobject thiz,
 	if (gameX < 0) gameX = 0;
 	if (gameX >= screenW) gameX = screenW - 1;
 	if (gameY < 0) gameY = 0;
+	if (gameY >= screenH) gameY = screenH - 1;
+
+	/* Compensate for keyboard blit offset: the rendered canvas is
+	 * shifted upward by g_blit_y_offset pixels, so screen-space
+	 * touches need to be mapped back to canvas-space. */
+	gameY += g_blit_y_offset;
 	if (gameY >= screenH) gameY = screenH - 1;
 
 	remap_touch(&gameX, &gameY);
@@ -678,9 +687,93 @@ Java_com_dxxredux_app_MainActivity_nativeGetMarkerCount(JNIEnv *env, jobject thi
 extern JavaVM *g_jvm;
 extern jobject g_activity;
 
-void android_show_keyboard(int numeric)
+/* ── Keyboard viewport offset ───────────────────────────────
+ *
+ * When the soft keyboard is visible it covers the bottom of the screen.
+ * We shift the rendered canvas upward so the active text input field
+ * is centered in the non-occluded visible area.
+ *
+ * g_keyboard_height_native / g_screen_height_native: set from Kotlin
+ *   via nativeSetKeyboardHeight() when IME insets change.
+ * g_active_input_field_y: canvas Y of the text input field, set
+ *   when android_show_keyboard() is called from newmenu.c.
+ * g_blit_y_offset: the computed pixel offset applied during blit,
+ *   also used by nativeTouchEvent() to remap touch coordinates.
+ */
+static volatile int g_keyboard_height_native = 0;
+static volatile int g_screen_height_native = 0;
+static volatile int g_active_input_field_y = 0;
+volatile int g_blit_y_offset = 0;
+
+int android_get_keyboard_y_offset(int canvas_h)
 {
+	int kb_h = g_keyboard_height_native;
+	int scr_h = g_screen_height_native;
+	if (kb_h <= 0 || scr_h <= 0)
+		return 0;
+
+	int kb_game = kb_h * canvas_h / scr_h;
+	int visible_h = canvas_h - kb_game;
+	if (visible_h <= 0) {
+		static int vis_warn = 0;
+		if (!vis_warn) {
+			LOGI("kb_y_offset: canvas_h=%d kb_game=%d visible_h=%d (<=0)", canvas_h, kb_game, visible_h);
+			vis_warn = 1;
+		}
+		return 0;
+	}
+
+	int field_y = g_active_input_field_y;
+	int field_y_orig = field_y;
+
+	/* If scale-blit is active, remap field_y to post-scale position */
+	if (g_menu_scale_active && g_menu_scale_src_h > 0 && g_menu_scale_dst_h > 0) {
+		field_y = g_menu_scale_dst_y +
+		          (field_y - g_menu_scale_src_y) * g_menu_scale_dst_h / g_menu_scale_src_h;
+	}
+
+	int target_center = visible_h / 2;
+	int offset = field_y - target_center;
+	if (offset < 0) offset = 0;
+	if (offset > kb_game) offset = kb_game;
+
+	static int last_logged_offset = -1;
+	if (offset != last_logged_offset) {
+		LOGI("kb_y_offset: kb_native=%d scr_native=%d canvas_h=%d kb_game=%d "
+		     "visible_h=%d field_y=%d(orig=%d) scale=%d offset=%d",
+		     kb_h, scr_h, canvas_h, kb_game,
+		     visible_h, field_y, field_y_orig, g_menu_scale_active, offset);
+		last_logged_offset = offset;
+	}
+
+	return offset;
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetKeyboardHeight(JNIEnv *env, jobject thiz,
+                                                           jint heightPx, jint screenHeightPx)
+{
+	LOGI("nativeSetKeyboardHeight: heightPx=%d screenHeightPx=%d (was %d/%d)",
+	     heightPx, screenHeightPx, g_keyboard_height_native, g_screen_height_native);
+	g_keyboard_height_native = heightPx;
+	g_screen_height_native = screenHeightPx;
+}
+
+/* Expose keyboard state for introspection (statics can't be externed) */
+int android_get_keyboard_state(int *kb_native, int *scr_native, int *field_y)
+{
+	if (kb_native) *kb_native = g_keyboard_height_native;
+	if (scr_native) *scr_native = g_screen_height_native;
+	if (field_y) *field_y = g_active_input_field_y;
+	return 1;
+}
+
+void android_show_keyboard(int numeric, int field_y)
+{
+	LOGI("android_show_keyboard(numeric=%d, field_y=%d)", numeric, field_y);
 	if (!g_jvm || !g_activity) return;
+
+	g_active_input_field_y = field_y;
 
 	JNIEnv *env;
 	int attached = 0;
@@ -697,7 +790,6 @@ void android_show_keyboard(int numeric)
 	}
 
 	if (attached) (*g_jvm)->DetachCurrentThread(g_jvm);
-	LOGI("android_show_keyboard(numeric=%d)", numeric);
 }
 
 void android_hide_keyboard(void)
@@ -718,6 +810,8 @@ void android_hide_keyboard(void)
 	}
 
 	if (attached) (*g_jvm)->DetachCurrentThread(g_jvm);
+	g_keyboard_height_native = 0;
+	g_blit_y_offset = 0;
 	LOGI("android_hide_keyboard()");
 }
 

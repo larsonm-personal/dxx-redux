@@ -1,0 +1,42 @@
+// TEST: Keyboard viewport offset -- manual navigation to pilot entry
+// Navigates through: Main Menu -> Change Pilots -> Create New Player
+// This triggers the keyboard and allows the viewport offset to be tested.
+[
+    {"_info": {"games": ["d2"]}},
+    {"action": "log", "message": "=== TEST: Keyboard Manual Navigation ==="},
+
+    // Wait for main menu
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 15000},
+    {"action": "wait_ms", "ms": 1000},
+
+    // Select "Change Pilots..."
+    {"action": "select", "text": "Change Pilots", "post_delay_ms": 2000},
+    {"action": "introspect"},
+    {"action": "log", "message": "Phase 1: On pilot selection listbox"},
+
+    // Select "Create New Player" (first item in listbox)
+    {"action": "select", "text": "Create New Player", "post_delay_ms": 2000},
+    {"action": "introspect"},
+    {"action": "log", "message": "Phase 2: On pilot name entry -- keyboard should open"},
+
+    // Wait 5 seconds with keyboard open to observe the viewport shift
+    {"action": "wait_ms", "ms": 5000},
+    {"action": "introspect"},
+    {"action": "log", "message": "Phase 3: After 5s with keyboard open"},
+
+    // Type a name
+    {"action": "key", "key": "x", "post_delay_ms": 200},
+    {"action": "key", "key": "y", "post_delay_ms": 200},
+    {"action": "key", "key": "z", "post_delay_ms": 500},
+
+    // Accept
+    {"action": "select", "text": "Ok", "post_delay_ms": 2000},
+
+    // Should return to pilot selection, then back to main menu
+    {"action": "key", "key": "escape", "post_delay_ms": 1000},
+    {"action": "introspect"},
+    {"action": "log", "message": "Phase 4: Back to main menu -- no crash"},
+
+    {"action": "assert", "expect": {"screen_mode": "menu"}},
+    {"action": "log", "message": "=== TEST: Keyboard Manual Navigation -- COMPLETE ==="}
+]

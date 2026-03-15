@@ -1586,13 +1586,13 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 				int i;
 				for (i = 0; i < menu->nitems; i++) {
 					if (menu->items[i].type == NM_TYPE_INPUT || menu->items[i].type == NM_TYPE_INPUT_MENU) {
-						extern void android_show_keyboard(int numeric);
+						extern void android_show_keyboard(int numeric, int field_y);
 						/* Show numeric keyboard only when input is restricted to digits */
 						int numeric = 0;
 						const char *p = Newmenu_allowed_chars;
 						if (p && p[0] == '0' && p[1] == '9' && p[2] == '\0')
 							numeric = 1;
-						android_show_keyboard(numeric);
+						android_show_keyboard(numeric, menu->y + menu->items[i].y);
 						break;
 					}
 				}

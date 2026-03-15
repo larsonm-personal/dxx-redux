@@ -28,6 +28,10 @@
 #include <math.h>
 #include <stdio.h>
 
+#ifdef ANDROID
+#include <android/log.h>
+#endif
+
 #include "3d.h"
 #include "piggy.h"
 #include "../../3d/globvars.h"
@@ -80,6 +84,9 @@
 unsigned char *ogl_pal=gr_palette;
 
 int last_width=-1,last_height=-1;
+#ifdef ANDROID
+int last_kb_off=0;
+#endif
 int GL_TEXTURE_2D_enabled=-1;
 int GL_texclamp_enabled=-1;
 GLfloat ogl_maxanisotropy = 0;
@@ -1186,6 +1193,13 @@ void ogl_start_frame(void){
 
 void ogl_end_frame(void){
 	OGL_VIEWPORT(0,0,grd_curscreen->sc_w,grd_curscreen->sc_h);
+#ifdef ANDROID
+	{
+		extern volatile int g_blit_y_offset;
+		int direct_off = android_get_keyboard_y_offset(grd_curscreen->sc_canvas.cv_bitmap.bm_h);
+		g_blit_y_offset = direct_off;
+	}
+#endif
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();//clear matrix
 #ifdef OGLES
@@ -1211,6 +1225,22 @@ void gr_flip(void)
 	ogl_do_palfx();
 	ogl_swap_buffers_internal();
 	glClear(GL_COLOR_BUFFER_BIT);
+#ifdef ANDROID
+	/* Apply keyboard viewport offset for the next frame (menus, HUD, etc.).
+	 * ogl_start_frame/ogl_end_frame handle this for 3D rendering, but menus
+	 * render without those calls so the offset must be applied here. */
+	{
+		extern volatile int g_blit_y_offset;
+		int koff = android_get_keyboard_y_offset(grd_curscreen->sc_canvas.cv_bitmap.bm_h);
+		int h = grd_curscreen->sc_h;
+		int w = grd_curscreen->sc_w;
+		glViewport(0, grd_curscreen->sc_canvas.cv_bitmap.bm_h - h + koff, w, h);
+		last_width = w;
+		last_height = h;
+		last_kb_off = koff;
+		g_blit_y_offset = koff;
+	}
+#endif
 }
 
 int tex_format_supported(int iformat,int format)

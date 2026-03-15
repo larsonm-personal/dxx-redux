@@ -511,6 +511,24 @@ extern "C" char *game_introspect_get_state(void)
 		j["position"] = nullptr;
 	}
 
+	/* -- Keyboard viewport offset state -------------------------- */
+	{
+		extern volatile int g_blit_y_offset;
+		extern int g_menu_scale_active;
+		/* These are in android_input.c -- declared static, so we
+		 * expose them via a helper instead of extern. */
+		extern int android_get_keyboard_state(int *kb_native, int *scr_native, int *field_y);
+		int kb_native = 0, scr_native = 0, field_y_val = 0;
+		android_get_keyboard_state(&kb_native, &scr_native, &field_y_val);
+		json kb;
+		kb["keyboard_height_native"] = kb_native;
+		kb["screen_height_native"] = scr_native;
+		kb["active_input_field_y"] = field_y_val;
+		kb["blit_y_offset"] = (int) g_blit_y_offset;
+		kb["scale_blit_active"] = (bool) g_menu_scale_active;
+		j["keyboard_viewport"] = kb;
+	}
+
 	/* Serialize to string and return as malloc'd C string */
 	std::string result = j.dump();
 	char *buf = (char *) malloc(result.size() + 1);

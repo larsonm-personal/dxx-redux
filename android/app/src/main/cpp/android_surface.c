@@ -83,6 +83,11 @@ void android_surface_blit(SDL_Surface *canvas)
 	pthread_mutex_lock(&g_surface_mutex);
 
 	if (!g_surface_ready || !g_native_window || !canvas || g_app_paused) {
+		static int skip_count = 0;
+		if (skip_count < 5 || (skip_count % 1000) == 0)
+			LOGI("blit skip #%d: ready=%d win=%d canvas=%d paused=%d",
+			     skip_count, g_surface_ready, g_native_window != NULL, canvas != NULL, g_app_paused);
+		skip_count++;
 		pthread_mutex_unlock(&g_surface_mutex);
 		return;
 	}
@@ -124,11 +129,24 @@ void android_surface_blit(SDL_Surface *canvas)
 	uint32_t *dst = (uint32_t *) buf.bits;
 	int dst_stride = buf.stride; /* in pixels, not bytes */
 
+	/* Keyboard viewport offset: when the soft keyboard is visible,
+	 * shift the canvas upward so the text input field is visible.
+	 * Rows beyond the canvas end are filled with black. */
+	extern int android_get_keyboard_y_offset(int canvas_h);
+	extern volatile int g_blit_y_offset;
+	int y_offset = android_get_keyboard_y_offset(src_h);
+	g_blit_y_offset = y_offset;
+
 	/* Blit row by row (canvas pitch may differ from buf stride) */
 	for (int y = 0; y < src_h && y < buf.height; y++) {
-		const uint8_t *src_row = src + y * canvas->pitch;
 		uint32_t *dst_row = dst + y * dst_stride;
 		int row_w = (src_w < buf.width) ? src_w : buf.width;
+		int src_y = y + y_offset;
+		if (src_y >= src_h) {
+			memset(dst_row, 0, row_w * sizeof(uint32_t));
+			continue;
+		}
+		const uint8_t *src_row = src + src_y * canvas->pitch;
 		for (int x = 0; x < row_w; x++) {
 			dst_row[x] = g_palette_argb[src_row[x]];
 		}

@@ -36,7 +36,9 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import org.json.JSONObject
@@ -130,6 +132,11 @@ class MainActivity :
     external fun nativeGetGameWidth(): Int
 
     external fun nativeGetGameHeight(): Int
+
+    external fun nativeSetKeyboardHeight(
+        keyboardHeightPx: Int,
+        screenHeightPx: Int,
+    )
 
     external fun nativeGetWeaponState(): IntArray
 
@@ -447,6 +454,38 @@ class MainActivity :
 
         // Hide system bars after content view is set
         hideSystemBars()
+
+        // Keyboard height detection: with adjustNothing, neither
+        // setOnApplyWindowInsetsListener nor WindowInsetsAnimationCompat
+        // fire reliably.  Instead we poll via getRootWindowInsets()/
+        // WindowInsets.Type.ime() from showKeyboard().  The animation
+        // callback is kept as a best-effort supplement.
+        ViewCompat.setWindowInsetsAnimationCallback(
+            window.decorView,
+            object :
+                WindowInsetsAnimationCompat.Callback(
+                    WindowInsetsAnimationCompat.Callback.DISPATCH_MODE_STOP,
+                ) {
+                override fun onProgress(
+                    insets: WindowInsetsCompat,
+                    runningAnimations: List<WindowInsetsAnimationCompat>,
+                ): WindowInsetsCompat {
+                    val imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+                    if (imeBottom > 0) {
+                        Log.i("DXX-Keyboard", "imeAnim onProgress: imeBottom=$imeBottom")
+                        nativeSetKeyboardHeight(imeBottom, window.decorView.height)
+                    }
+                    return insets
+                }
+
+                override fun onEnd(animation: WindowInsetsAnimationCompat) {
+                    val insets = ViewCompat.getRootWindowInsets(window.decorView)
+                    val imeBottom = insets?.getInsets(WindowInsetsCompat.Type.ime())?.bottom ?: 0
+                    Log.i("DXX-Keyboard", "imeAnim onEnd: imeBottom=$imeBottom")
+                    nativeSetKeyboardHeight(imeBottom, window.decorView.height)
+                }
+            },
+        )
 
         // Prevent the system back/nav gestures from consuming edge swipes.
         // Left edge: we use it for the setup-screen swipe.
@@ -1162,6 +1201,35 @@ class MainActivity :
     }
 
     // ── Soft keyboard show/hide (called from JNI) ───────────
+    private var keyboardPollRunnable: Runnable? = null
+
+    /** Poll for IME height via rootWindowInsets.  With adjustNothing
+     *  the insets callbacks don't fire, so we poll after requesting
+     *  the keyboard and stop once we detect a non-zero IME height. */
+    private fun pollKeyboardHeight(attemptsLeft: Int) {
+        if (attemptsLeft <= 0) return
+        val decorView = window.decorView
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val insets = decorView.rootWindowInsets
+            if (insets != null) {
+                val imeHeight =
+                    insets
+                        .getInsets(
+                            android.view.WindowInsets.Type
+                                .ime(),
+                        ).bottom
+                Log.i("DXX-Keyboard", "poll: imeHeight=$imeHeight viewH=${decorView.height} left=$attemptsLeft")
+                if (imeHeight > 0) {
+                    nativeSetKeyboardHeight(imeHeight, decorView.height)
+                    return
+                }
+            }
+        }
+        val r = Runnable { pollKeyboardHeight(attemptsLeft - 1) }
+        keyboardPollRunnable = r
+        decorView.postDelayed(r, 100)
+    }
+
     @Suppress("unused") // Called from native code
     fun showKeyboard(inputType: Int) {
         runOnUiThread {
@@ -1174,16 +1242,23 @@ class MainActivity :
             gameSurfaceView.requestFocus()
             val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
             imm.restartInput(gameSurfaceView)
-            imm.showSoftInput(gameSurfaceView, InputMethodManager.SHOW_IMPLICIT)
+            // Use WindowInsetsController API (works with setDecorFitsSystemWindows(false))
+            WindowInsetsControllerCompat(window, gameSurfaceView)
+                .show(WindowInsetsCompat.Type.ime())
+            // Start polling for keyboard height (up to 2 seconds)
+            pollKeyboardHeight(20)
         }
     }
 
     @Suppress("unused") // Called from native code
     fun hideKeyboard() {
         runOnUiThread {
+            keyboardPollRunnable?.let { window.decorView.removeCallbacks(it) }
+            keyboardPollRunnable = null
             gameSurfaceView.keyboardActive = false
-            val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.hideSoftInputFromWindow(gameSurfaceView.windowToken, 0)
+            WindowInsetsControllerCompat(window, gameSurfaceView)
+                .hide(WindowInsetsCompat.Type.ime())
+            nativeSetKeyboardHeight(0, window.decorView.height)
         }
     }
 

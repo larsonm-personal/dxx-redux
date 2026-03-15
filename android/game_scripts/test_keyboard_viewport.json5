@@ -1,0 +1,58 @@
+// TEST: Keyboard Viewport Offset (no-crash + visual)
+// Verifies that when the soft keyboard opens on a text input menu
+// (pilot name entry), the blit offset code runs without crashing
+// and text input still works.  The visual centering (canvas shifting
+// upward so the input field is visible above the keyboard) should be
+// verified manually on a real device or emulator.
+//
+// Flow:
+//   1. Fresh launch lands on "Enter your callsign" with NM_TYPE_INPUT
+//      (keyboard opens automatically via android_show_keyboard)
+//   2. Wait on that screen to let the keyboard + offset stabilize
+//   3. Type a pilot name to confirm text input works with offset active
+//   4. Accept the name and verify we reach the main menu (no crash)
+[
+    {"_info": {
+        "games": ["d1", "d2"],
+        "vars": {
+            "d1": {"MISSION": "First Strike"},
+            "d2": {"MISSION": "Counterstrike"}
+        }
+    }},
+    {"action": "log", "message": "=== TEST: Keyboard Viewport Offset ==="},
+
+    {"action": "wait_ms", "ms": 2000},
+
+    // Fresh launch: pilot name entry screen appears (keyboard should open)
+    // D1 shows title screens first (~9s), so use generous timeout
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+
+    // We should now be on "Enter your callsign" with keyboard open.
+    // Wait a moment to let the keyboard appear and blit offset activate.
+    {"action": "wait_ms", "ms": 2000},
+    {"action": "introspect"},
+    {"action": "log", "message": "Phase 1: On pilot name entry -- keyboard should be open"},
+
+    // Type a pilot name to verify text input works with offset active
+    {"action": "key", "key": "t", "post_delay_ms": 200},
+    {"action": "key", "key": "e", "post_delay_ms": 200},
+    {"action": "key", "key": "s", "post_delay_ms": 200},
+    {"action": "key", "key": "t", "post_delay_ms": 500},
+
+    // Wait another moment with keyboard open (offset still active)
+    {"action": "wait_ms", "ms": 1000},
+    {"action": "introspect"},
+    {"action": "log", "message": "Phase 2: Typed 'test' -- accepting pilot name"},
+
+    // Accept the pilot name
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 2000},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 2000},
+
+    // Should now be on main menu (keyboard dismissed, offset cleared)
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "introspect"},
+    {"action": "log", "message": "Phase 3: Reached main menu after pilot creation -- no crash"},
+
+    {"action": "assert", "expect": {"screen_mode": "menu"}},
+    {"action": "log", "message": "=== TEST: Keyboard Viewport Offset -- COMPLETE ==="}
+]

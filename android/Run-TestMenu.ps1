@@ -50,13 +50,13 @@ for ($i = 0; $i -lt $tests.Count; $i++) {
 Write-Host ""
 
 $choice = Read-Host "Select test (1-$($tests.Count))"
-
-if (-not [int]::TryParse($choice, [ref]0) -or $choice -lt 1 -or $choice -gt $tests.Count) {
+$parsed = 0
+if (-not [int]::TryParse($choice, [ref]$parsed) -or $parsed -lt 1 -or $parsed -gt $tests.Count) {
     Write-Host "[!] Invalid selection" -ForegroundColor Red
     exit 1
 }
 
-$selectedTest = $tests[$choice - 1]
+$selectedTest = $tests[$parsed - 1]
 Write-Host ""
 Write-Host "[*] Selected: $($selectedTest.BaseName)" -ForegroundColor Green
 
