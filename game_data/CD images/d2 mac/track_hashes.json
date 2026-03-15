@@ -1,0 +1,18 @@
+﻿[
+  {"track": 1, "type": "data", "sha1": "aca6c09a0c389dc0c3e11583a6a90b594b557b2a", "error": "ISO listing failed"},
+  {"track": 2, "type": "audio", "sha1": "7b7dac3da53c35ee5b848691e9e756cfa0a53ee5"},
+  {"track": 3, "type": "audio", "sha1": "13b8dd96297ec424fa3ddd429e515782dbc3e569"},
+  {"track": 4, "type": "audio", "sha1": "4d8f56045821a450f8540f1f986a514861b9fff8"},
+  {"track": 5, "type": "audio", "sha1": "2024fdc4244f093ccc32abbe57ef02ab99868c96"},
+  {"track": 6, "type": "audio", "sha1": "d8ea8e907a37f94a4cd4f47188674a1b03378f2a"},
+  {"track": 7, "type": "audio", "sha1": "312eeeee401d9eec28a22007dce256ba4a27878c"},
+  {"track": 8, "type": "audio", "sha1": "809c598890879772ae90f19a69671f097f7aca74"},
+  {"track": 9, "type": "audio", "sha1": "ee33e222f6f93f9ccb71e95dbcaa0540cb1fa255"},
+  {"track": 10, "type": "audio", "sha1": "c5dfa046fa8fbbfe4ff1ef25035dfcd6cba9e4a0"},
+  {"track": 11, "type": "audio", "sha1": "cbbedb2a9ee0e7d5f9fc727b32868cec0a7c241a"},
+  {"track": 12, "type": "audio", "sha1": "f6421bbfd06747233613be801e911afa81b0edb7"},
+  {"track": 13, "type": "audio", "sha1": "3afd35ae11fb881572c89d9616c0b97ee5f568e1"},
+  {"track": 14, "type": "audio", "sha1": "0ddb5b49ec81d72996a8848784763b80e73c3f09"},
+  {"track": 15, "type": "audio", "sha1": "e39ce6fec13db21e21e3cfcf20713feddea34753"},
+  {"track": 16, "type": "audio", "sha1": "eeacf74b64edaa0d4bad52b23604ceb7a44968f9"}
+]

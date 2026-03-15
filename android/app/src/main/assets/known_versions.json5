@@ -228,6 +228,20 @@
     { "file": "descent.hog", "sha256": "d0ab72fda672ac9d751d24899f96ac14eb1720386cf2b0226a5add71543c4339", "version": "D1 Mac (MacPlay)" },
     { "file": "descent.pig", "sha256": "9eb232c9da830309b2d3a1de75713f6155c62215cd867f4570536180af31f299", "version": "D1 Mac (MacPlay)" },
     { "file": "watchme.dem", "sha256": "a1d8fd365022a0ca56026d6a9325a6dbd41e483f76e6ec8c13d844a13ce24c87", "version": "D1 Mac (MacPlay)" },
-    { "file": "yep9.dem", "sha256": "20ee0e297f114b1ded6c1156db7247479866d30556598992dfd9ae245deee49b", "version": "D1 Mac (MacPlay)" }
+    { "file": "yep9.dem", "sha256": "20ee0e297f114b1ded6c1156db7247479866d30556598992dfd9ae245deee49b", "version": "D1 Mac (MacPlay)" },
+
+    // -- D2 Mac v1.1 --
+    { "file": "alien1.pig", "sha256": "5657656735ad2650c415357f6859b7a3006775115c1450ec366863ac173aa9ca", "version": "D2 Mac v1.1" },
+    { "file": "alien2.pig", "sha256": "4610fd4548f0fbbd2fea71daa278f787026f0009ea1239ca5ae8111f9104dd2c", "version": "D2 Mac v1.1" },
+    { "file": "d2-2plyr.mn2", "sha256": "dea17a0c9efb8f37fceb72e03dff208e07e0abc45368f221b61493487f33fd38", "version": "D2 Mac v1.1" },
+    { "file": "d2chaos.mn2", "sha256": "5b56046cdfca6dd7ac1f0a2f1b2b914736808150e925cf7c60d6f0f0699c4c3a", "version": "D2 Mac v1.1" },
+    { "file": "descent2.hog", "sha256": "84f782533e42cce7a7cee91d0d17fa5783b5e32967e458be52aad1abf364d490", "version": "D2 Mac v1.1" },
+    { "file": "fire.pig", "sha256": "8473b99e25c647e824d635a686fc591bbe6bd8cdb319a38b3b0f7f2f1fa09d64", "version": "D2 Mac v1.1" },
+    { "file": "groupa.pig", "sha256": "88e834d13f15bfe502e32570a44302326e6486f685cb95e12b3b81d0a14b8642", "version": "D2 Mac v1.1" },
+    { "file": "ice.pig", "sha256": "88aca81872345807a7d04e18d438b2558dd4413a048861ec860000153667d4d1", "version": "D2 Mac v1.1" },
+    { "file": "intro.mvl", "sha256": "48ded925e18380111585e98b43af247c261d8b87ab3d60f33b35e80bec4d77e7", "version": "D2 Mac v1.1" },
+    { "file": "other.mvl", "sha256": "93d7a1be80ef5699261ad343255d20d88e83dfba9ecb5867e6268ebe7d4dca7e", "version": "D2 Mac v1.1" },
+    { "file": "robots.mvl", "sha256": "d7ade09d45c486f06415677cb7fcf519eac5796740431a8fec3878d5b0725f16", "version": "D2 Mac v1.1" },
+    { "file": "water.pig", "sha256": "edc9fa76645e07e22786959aa6d5419a3c5d3d72ed2160dce5a3e59908de2ee9", "version": "D2 Mac v1.1" }
   ]
 }

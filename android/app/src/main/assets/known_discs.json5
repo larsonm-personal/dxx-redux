@@ -519,6 +519,54 @@
         {"track": 13, "type": "audio", "sha1": "e33700422e21ff1e839a00a9ecb4264d40aafaa5"},
         {"track": 14, "type": "audio", "sha1": "10fb4157f79cace7e3b99e2aab500462f64840f8"}
       ]
+    },
+
+    // -- d1 mac 2nd bin+cue
+    {
+      "id": "d1-mac-2nd-bincue",
+      "label": "d1 mac 2nd bin+cue",
+      "game": "unknown",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "527579d7c267f070abeafd1e9d0efc7d945b446d"},
+        {"track": 2, "type": "audio", "sha1": "45bffe339a5bcdc63158e036f722173c168ac6d4"},
+        {"track": 3, "type": "audio", "sha1": "ba79e69a0190165abc2be510ca1d25c19626b7e4"},
+        {"track": 4, "type": "audio", "sha1": "63abca9c22dcbbb1fec04146e4e01b0a7c447a84"},
+        {"track": 5, "type": "audio", "sha1": "f7d74a19257e183aafc554a9258e96abf545b2e8"},
+        {"track": 6, "type": "audio", "sha1": "c7d496e1850065f4f1f12713c619ccb25ad23209"},
+        {"track": 7, "type": "audio", "sha1": "b09a15020133a3a3ec5ef3392cc770094a760592"},
+        {"track": 8, "type": "audio", "sha1": "2747088988b21fc90921d5d73d58a2d380865bf5"},
+        {"track": 9, "type": "audio", "sha1": "24a78c7cedfdc1430cf8a9b6bed0331fcc4f5ef4"},
+        {"track": 10, "type": "audio", "sha1": "11ca16230180b527f5d54e1048da912ac5848e0e"},
+        {"track": 11, "type": "audio", "sha1": "9edc86c556e7530bcf2543bd95448ef7b1426319"},
+        {"track": 12, "type": "audio", "sha1": "0b3c57e0d9444fec50e7895f197c428e8e8494ca"},
+        {"track": 13, "type": "audio", "sha1": "eb9417f85d20a48ad69efb60d4425604f3766171"},
+        {"track": 14, "type": "audio", "sha1": "019b9faf03324bf375e8cd17fcd0356d48ea5346"}
+      ]
+    },
+
+    // -- d2 mac
+    {
+      "id": "d2-mac",
+      "label": "d2 mac",
+      "game": "d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "aca6c09a0c389dc0c3e11583a6a90b594b557b2a"},
+        {"track": 2, "type": "audio", "sha1": "7b7dac3da53c35ee5b848691e9e756cfa0a53ee5"},
+        {"track": 3, "type": "audio", "sha1": "13b8dd96297ec424fa3ddd429e515782dbc3e569"},
+        {"track": 4, "type": "audio", "sha1": "4d8f56045821a450f8540f1f986a514861b9fff8"},
+        {"track": 5, "type": "audio", "sha1": "2024fdc4244f093ccc32abbe57ef02ab99868c96"},
+        {"track": 6, "type": "audio", "sha1": "d8ea8e907a37f94a4cd4f47188674a1b03378f2a"},
+        {"track": 7, "type": "audio", "sha1": "312eeeee401d9eec28a22007dce256ba4a27878c"},
+        {"track": 8, "type": "audio", "sha1": "809c598890879772ae90f19a69671f097f7aca74"},
+        {"track": 9, "type": "audio", "sha1": "ee33e222f6f93f9ccb71e95dbcaa0540cb1fa255"},
+        {"track": 10, "type": "audio", "sha1": "c5dfa046fa8fbbfe4ff1ef25035dfcd6cba9e4a0"},
+        {"track": 11, "type": "audio", "sha1": "cbbedb2a9ee0e7d5f9fc727b32868cec0a7c241a"},
+        {"track": 12, "type": "audio", "sha1": "f6421bbfd06747233613be801e911afa81b0edb7"},
+        {"track": 13, "type": "audio", "sha1": "3afd35ae11fb881572c89d9616c0b97ee5f568e1"},
+        {"track": 14, "type": "audio", "sha1": "0ddb5b49ec81d72996a8848784763b80e73c3f09"},
+        {"track": 15, "type": "audio", "sha1": "e39ce6fec13db21e21e3cfcf20713feddea34753"},
+        {"track": 16, "type": "audio", "sha1": "eeacf74b64edaa0d4bad52b23604ceb7a44968f9"}
+      ]
     }
   ]
 }
