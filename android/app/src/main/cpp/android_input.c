@@ -768,6 +768,11 @@ int android_get_keyboard_state(int *kb_native, int *scr_native, int *field_y)
 	return 1;
 }
 
+void android_update_keyboard_field_y(int field_y)
+{
+	g_active_input_field_y = field_y;
+}
+
 void android_show_keyboard(int numeric, int field_y)
 {
 	LOGI("android_show_keyboard(numeric=%d, field_y=%d)", numeric, field_y);

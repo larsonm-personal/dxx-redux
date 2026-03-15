@@ -77,6 +77,7 @@ Get-Content temp\test_output.txt | Select-Object -Last 30
 - **check exit code via `$LASTEXITCODE`** after the piped command, not via terminal scrollback
 - **don't run multiple test commands in parallel** -- they share the emulator and will interfere
 - **app resume after HOME**: the test runner uses `monkey -p com.dxxredux.app -c android.intent.category.LAUNCHER 1` followed by a BACK keypress to resume the app. `am start -n` does not work because MainActivity has no launch mode and no intent filter -- it creates a new instance instead of resuming. the monkey command brings the task to foreground but lands on SetupActivity; BACK dismisses it to reveal the running game's MainActivity
+- **`ogl_start_frame`/`ogl_end_frame` are 3D-only**: menus render via `event_process()` -> `EVENT_WINDOW_DRAW` -> `newmenu_draw()` -> `gr_flip()` without ever calling `ogl_start_frame`/`ogl_end_frame`. Any per-frame OpenGL state (e.g. `glViewport` offset) that should affect menus must be applied in `gr_flip()`, not in the 3D frame helpers
 
 ## introspection API
 The game includes a debug introspection system that serializes current game state to JSON. This is the primary way to inspect what the game is doing — **do not screenshot and OCR**.

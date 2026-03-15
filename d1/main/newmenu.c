@@ -1547,6 +1547,14 @@ int newmenu_draw(window *wind, newmenu *menu)
 
 	gr_set_current_canvas(save_canvas);
 
+#ifdef ANDROID
+	if (menu->citem >= 0 && menu->citem < menu->nitems) {
+		extern void android_update_keyboard_field_y(int field_y);
+		int visible_y = menu->y + menu->items[menu->citem].y - (((int)LINE_SPACING) * menu->scroll_offset);
+		android_update_keyboard_field_y(visible_y);
+	}
+#endif
+
 	return 1;
 }
 
@@ -1583,18 +1591,17 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 			key_toggle_repeat(1);
 #ifdef ANDROID
 			{
-				int i;
-				for (i = 0; i < menu->nitems; i++) {
-					if (menu->items[i].type == NM_TYPE_INPUT || menu->items[i].type == NM_TYPE_INPUT_MENU) {
-						extern void android_show_keyboard(int numeric, int field_y);
-						/* Show numeric keyboard only when input is restricted to digits */
-						int numeric = 0;
-						const char *p = Newmenu_allowed_chars;
-						if (p && p[0] == '0' && p[1] == '9' && p[2] == '\0')
-							numeric = 1;
-						android_show_keyboard(numeric, menu->y + menu->items[i].y);
-						break;
-					}
+				int ci = menu->citem;
+				if (ci >= 0 && ci < menu->nitems &&
+				    (menu->items[ci].type == NM_TYPE_INPUT ||
+				     (menu->items[ci].type == NM_TYPE_INPUT_MENU && menu->items[ci].group == 1))) {
+					extern void android_show_keyboard(int numeric, int field_y);
+					int numeric = 0;
+					const char *p = Newmenu_allowed_chars;
+					if (p && p[0] == '0' && p[1] == '9' && p[2] == '\0')
+						numeric = 1;
+					int visible_y = menu->y + menu->items[ci].y - (((int)LINE_SPACING) * menu->scroll_offset);
+					android_show_keyboard(numeric, visible_y);
 				}
 			}
 #endif
