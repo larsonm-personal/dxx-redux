@@ -672,10 +672,23 @@ class SetupActivity : ComponentActivity() {
 
         Log.i("DXX-Setup", "First launch: writing descent.cfg with aspect ${aspectY}x$aspectX (from ${w}x$h)")
 
+        // Default render resolution: 1/2 screen (rounded to even)
+        val resW = (w / 2 + 1) and 0x7FFFFFFE.toInt()
+        val resH = (h / 2 + 1) and 0x7FFFFFFE.toInt()
+
         cfgFile.writeText(
             "AspectX=$aspectX\n" +
-                "AspectY=$aspectY\n",
+                "AspectY=$aspectY\n" +
+                "ResolutionX=$resW\n" +
+                "ResolutionY=$resH\n",
         )
+
+        // Store matching preference so the picker shows the right selection
+        getSharedPreferences("dxx_prefs", MODE_PRIVATE)
+            .edit()
+            .putString("render_resolution", "${resW}x$resH")
+            .apply()
+        Log.i("DXX-Setup", "First launch: default resolution ${resW}x$resH")
     }
 
     /**

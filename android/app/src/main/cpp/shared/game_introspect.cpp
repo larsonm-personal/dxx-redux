@@ -37,6 +37,7 @@ extern "C" {
 #include "automap.h"
 #include "playsave.h"
 #include "kconfig.h"
+#include "gr.h"
 }
 
 /* D1 does not have SCREEN_MOVIE */
@@ -46,6 +47,10 @@ extern "C" {
 
 /* -- EGL surface recreation counter (defined in arch/ogl/gr.c) -- */
 extern "C" int ogl_get_egl_recreate_count(void);
+
+/* -- Display surface dimensions (defined in android_surface.c) -- */
+extern "C" int android_surface_get_display_width(void);
+extern "C" int android_surface_get_display_height(void);
 
 /* -- Redbook audio accessors (defined in rbaudio_bin.c / rbaudio.c) -- */
 extern "C" {
@@ -289,6 +294,18 @@ extern "C" char *game_introspect_get_state(void)
 
 	/* -- EGL surface recreation counter (for background/resume testing) -- */
 	j["egl_recreate_count"] = ogl_get_egl_recreate_count();
+
+	/* -- Render and display resolution -------------------------------- */
+	{
+		json res;
+		if (grd_curscreen) {
+			res["render_width"] = (int) grd_curscreen->sc_w;
+			res["render_height"] = (int) grd_curscreen->sc_h;
+		}
+		res["display_width"] = android_surface_get_display_width();
+		res["display_height"] = android_surface_get_display_height();
+		j["resolution"] = std::move(res);
+	}
 
 	/* -- Death state -------------------------------------------- */
 	j["player_dead"] = (bool) Player_is_dead;

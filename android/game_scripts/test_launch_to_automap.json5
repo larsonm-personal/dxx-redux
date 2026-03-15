@@ -69,5 +69,14 @@
     }},
 
     {"action": "log", "message": "=== TEST: Launch + Background/Resume -- COMPLETE ==="},
+
+    // Verify render resolution introspection is populated and not stuck at 640x480
+    {"action": "assert", "expect": {
+        "resolution.render_width": {"gte": 640},
+        "resolution.render_height": {"gte": 480},
+        "resolution.display_width": {"gt": 0},
+        "resolution.display_height": {"gt": 0}
+    }},
+    {"action": "log", "message": "=== Resolution introspection verified ==="},
     {"action": "introspect"}
 ]

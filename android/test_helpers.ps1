@@ -34,21 +34,34 @@ function Adb {
 
 function Adb-Timeout {
     # Run an adb command with a timeout; returns $null if it hangs.
+    # Uses ProcessStartInfo instead of Start-Job because Start-Job with
+    # adb.exe hangs on Windows PowerShell 5.1 (pipe/handle inheritance issue).
     param([string[]]$AdbArgs, [int]$Seconds = 8)
-    # Start-Job -ArgumentList flattens arrays in PS5.1, so pass all items
-    # flat and reconstruct inside via automatic $args slicing.
-    $adbPath = $script:ADB
-    $job = Start-Job -ScriptBlock {
-        $adb = $args[0]
-        $a = @($args[1..($args.Count - 1)])
-        & $adb @a 2>&1 | Out-String
-    } -ArgumentList (@($adbPath) + $AdbArgs)
-    $result = $job | Wait-Job -Timeout $Seconds | Receive-Job
-    $state = $job.State
-    Remove-Job $job -Force -ErrorAction SilentlyContinue
-    if ($state -eq 'Running') { return $null }
-    if ($null -eq $result) { return "" }
-    return $result.Trim()
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = $script:ADB
+    $psi.Arguments = ($AdbArgs | ForEach-Object {
+        if ($_ -match '\s') { "`"$_`"" } else { $_ }
+    }) -join ' '
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    try {
+        $proc = [System.Diagnostics.Process]::Start($psi)
+        # Read both streams asynchronously to prevent buffer deadlock
+        $stdoutTask = $proc.StandardOutput.ReadToEndAsync()
+        $stderrTask = $proc.StandardError.ReadToEndAsync()
+        if (-not $proc.WaitForExit($Seconds * 1000)) {
+            try { $proc.Kill() } catch {}
+            return $null
+        }
+        # Process exited; wait for async reads to finish (already done since process exited)
+        $out = $stdoutTask.GetAwaiter().GetResult()
+        if ([string]::IsNullOrEmpty($out)) { return "" }
+        return $out.Trim()
+    } catch {
+        return $null
+    }
 }
 
 function Test-EmulatorHealthy {

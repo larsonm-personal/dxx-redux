@@ -762,6 +762,12 @@ int gr_list_modes( u_int32_t gsmodes[] )
 
 int gr_check_mode(u_int32_t mode)
 {
+#ifdef ANDROID
+	/* The dummy SDL video driver rejects all modes; accept any
+	 * resolution on Android where EGL handles the real surface. */
+	(void)mode;
+	return 32;
+#else
 	unsigned int w, h;
 
 	w=SM_W(mode);
@@ -773,6 +779,7 @@ int gr_check_mode(u_int32_t mode)
 		// just tell the caller that any mode is valid...
 		return 32;
 	}
+#endif
 }
 
 int gr_set_mode(u_int32_t mode)

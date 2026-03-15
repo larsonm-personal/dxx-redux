@@ -219,8 +219,17 @@ private fun ResolutionPickerAdvanced(
     prefs: android.content.SharedPreferences,
     filesDir: File,
 ) {
-    val options = listOf("640x480" to "Low (640x480)", "960x720" to "Medium (960x720)", "1280x960" to "High (1280x960)")
-    var selected by remember { mutableStateOf(prefs.getString("render_resolution", "640x480") ?: "640x480") }
+    val ctx = LocalContext.current
+    val options =
+        remember {
+            computeResolutionOptions(ctx)
+        }
+    val validValues = remember(options) { options.map { it.first }.toSet() }
+    val defaultValue = remember(options) { options.firstOrNull()?.first ?: "640x480" }
+    var selected by remember {
+        val stored = prefs.getString("render_resolution", null) ?: ""
+        mutableStateOf(if (stored in validValues) stored else defaultValue)
+    }
 
     Text("Render Resolution", fontWeight = FontWeight.Bold, fontSize = 14.sp)
     Spacer(modifier = Modifier.height(4.dp))
@@ -248,4 +257,39 @@ private fun ResolutionPickerAdvanced(
         fontSize = 11.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+}
+
+/** Compute resolution options as fractions of the device's real screen size. */
+internal fun computeResolutionOptions(ctx: android.content.Context): List<Pair<String, String>> {
+    val wm = ctx.getSystemService(android.content.Context.WINDOW_SERVICE) as android.view.WindowManager
+    val (rawW, rawH) =
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            val bounds = wm.currentWindowMetrics.bounds
+            Pair(bounds.width(), bounds.height())
+        } else {
+            @Suppress("DEPRECATION")
+            val size = android.graphics.Point()
+            @Suppress("DEPRECATION")
+            wm.defaultDisplay.getRealSize(size)
+            Pair(size.x, size.y)
+        }
+    // Normalize to landscape (width >= height)
+    val screenW = maxOf(rawW, rawH)
+    val screenH = minOf(rawW, rawH)
+
+    val labels = listOf("Full" to 1, "1/2" to 2, "1/3" to 3, "1/4" to 4)
+    val result = mutableListOf<Pair<String, String>>()
+    for ((label, divisor) in labels) {
+        // Round to nearest even to avoid odd-pixel issues
+        val w = (screenW / divisor + 1) and 0x7FFFFFFE
+        val h = (screenH / divisor + 1) and 0x7FFFFFFE
+        if (w < 640 || h < 480) break
+        val value = "${w}x$h"
+        result.add(value to "$label ($value)")
+    }
+    // Always offer at least 640x480 as a fallback
+    if (result.isEmpty()) {
+        result.add("640x480" to "Low (640x480)")
+    }
+    return result
 }

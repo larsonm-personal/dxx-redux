@@ -1,0 +1,32 @@
+// TEST: Render resolution verification
+// Launches to the main menu and asserts that resolution introspection
+// reports the expected render and display dimensions.
+// Used by test_resolution.ps1 which sets up descent.cfg before launch.
+//
+// The assert thresholds are intentionally loose (gte 1) so the script
+// itself always passes -- the *wrapper* script checks exact values via
+// introspection after the automation completes.
+[
+    {"_info": {"games": ["d2"]}},
+    {"action": "log", "message": "=== TEST: Resolution verification ==="},
+
+    {"action": "wait_ms", "ms": 2000},
+
+    // Accept default pilot name
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "Ok", "post_delay_ms": 2000},
+
+    // Main menu -- game has initialized and set its render resolution
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+
+    // Verify resolution introspection is populated
+    {"action": "assert", "expect": {
+        "resolution.render_width": {"gte": 1},
+        "resolution.render_height": {"gte": 1},
+        "resolution.display_width": {"gt": 0},
+        "resolution.display_height": {"gt": 0}
+    }},
+
+    {"action": "introspect"},
+    {"action": "log", "message": "=== TEST: Resolution verification -- COMPLETE ==="}
+]

@@ -223,4 +223,14 @@ ANativeWindow *android_surface_get_native_window(void)
 	return g_native_window;
 }
 
+int android_surface_get_display_width(void)
+{
+	return g_native_window ? ANativeWindow_getWidth(g_native_window) : 0;
+}
+
+int android_surface_get_display_height(void)
+{
+	return g_native_window ? ANativeWindow_getHeight(g_native_window) : 0;
+}
+
 #endif /* ANDROID */
