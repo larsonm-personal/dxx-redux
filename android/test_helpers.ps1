@@ -212,13 +212,16 @@ function Send-AutomationScript {
     Start-Sleep -Seconds 2
     Adb -AdbArgs @("logcat", "-c") | Out-Null
 
+    # Remove stale result file so prior run cannot confuse monitoring
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json") | Out-Null
+
     Write-Status "Sending automation broadcast for: $ScriptName"
     Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.AUTOMATE", "--es", "script", $ScriptName) | Out-Null
     return $true
 }
 
 function Watch-AutomationResult {
-    # Monitor logcat for SCRIPT_RESULT, with periodic health checks.
+    # Monitor for SCRIPT_RESULT via file-based result (primary) and logcat (fallback).
     # Handles SCRIPT_BACKGROUND markers by pressing HOME, waiting, then resuming.
     # Returns $true for PASS, $false for FAIL/timeout.
     param([int]$TimeoutSeconds = 300)
@@ -242,6 +245,29 @@ function Watch-AutomationResult {
             $lastHealthCheck = $elapsed
         }
 
+        # Primary: check file-based result (survives logcat issues)
+        $resultJson = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/automation_result.json") -Seconds 3
+        if ($resultJson -and $resultJson -match '"result"') {
+            try {
+                $resultObj = $resultJson | ConvertFrom-Json
+                if ($resultObj.result -eq "PASS") {
+                    Write-Status "PASS (file-based, $($resultObj.steps_completed)/$($resultObj.total_steps) steps, $($resultObj.elapsed_ms)ms)" "Green"
+                    $finished = $true
+                    $passed = $true
+                    continue
+                } elseif ($resultObj.result -eq "FAIL") {
+                    $reason = if ($resultObj.reason) { $resultObj.reason } else { "unknown" }
+                    Write-Status "FAIL (file-based): $reason (step $($resultObj.steps_completed)/$($resultObj.total_steps))" "Red"
+                    $finished = $true
+                    $passed = $false
+                    continue
+                }
+            } catch {
+                # Parse failed -- fall through to logcat
+            }
+        }
+
+        # Fallback: check logcat
         $log = Adb-Timeout -AdbArgs @("logcat", "-d", "-s", "DXX-Automate:*") -Seconds 5
         if ($null -eq $log) {
             Write-Status "Warning: logcat not responding" "Yellow"
@@ -252,12 +278,12 @@ function Watch-AutomationResult {
             $lines = $log -split "`n"
             foreach ($line in $lines) {
                 if ($line -match 'SCRIPT_RESULT:\s*PASS') {
-                    Write-Status "PASS" "Green"
+                    Write-Status "PASS (logcat)" "Green"
                     $finished = $true
                     $passed = $true
                 }
                 elseif ($line -match 'SCRIPT_RESULT:\s*FAIL') {
-                    Write-Status "FAIL: $line" "Red"
+                    Write-Status "FAIL (logcat): $line" "Red"
                     $finished = $true
                     $passed = $false
                 }
@@ -292,9 +318,36 @@ function Watch-AutomationResult {
 
     if (-not $finished) {
         Write-Status "FAIL: Test timed out after ${TimeoutSeconds}s" "Red"
+        # Dump diagnostics from files (more reliable than logcat)
+        Write-Status "--- automation_log.jsonl (last 30 lines) ---" "Yellow"
+        $stepLog = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/automation_log.jsonl") -Seconds 3
+        if ($stepLog) {
+            ($stepLog -split "`n") | Select-Object -Last 30 | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
+        } else {
+            Write-Host "  (not available)" -ForegroundColor Gray
+        }
+        Write-Status "--- gamelog.txt (last 30 lines) ---" "Yellow"
+        $gameLog = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/gamelog.txt") -Seconds 3
+        if ($gameLog) {
+            ($gameLog -split "`n") | Select-Object -Last 30 | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
+        } else {
+            Write-Host "  (not available)" -ForegroundColor Gray
+        }
+        Write-Status "--- logcat DXX-Automate (last 30 lines) ---" "Yellow"
         $log = Adb-Timeout -AdbArgs @("logcat", "-d", "-s", "DXX-Automate:*") -Seconds 5
-        if ($log) { Write-Host $log }
+        if ($log) {
+            ($log -split "`n") | Select-Object -Last 30 | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
+        }
         return $false
+    }
+
+    # On failure, dump step log for context
+    if (-not $passed) {
+        Write-Status "--- automation_log.jsonl (last 20 lines) ---" "Yellow"
+        $stepLog = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/automation_log.jsonl") -Seconds 3
+        if ($stepLog) {
+            ($stepLog -split "`n") | Select-Object -Last 20 | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
+        }
     }
 
     return $passed

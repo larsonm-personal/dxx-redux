@@ -95,8 +95,11 @@ Or use the helper script:
 ./android/introspect.sh menu     # show only the menu section
 ./android/introspect.sh player   # show only the player section
 ./android/introspect.sh position # show only the position section
+./android/introspect.sh console  # show recent con_printf output (ring buffer, last 50 lines)
 ./android/introspect.sh setup    # dump SetupActivity state (files, readiness, downloads)
 ./android/introspect.sh setup raw # raw SetupActivity JSON
+./android/introspect.sh autolog    # dump automation step log (automation_log.jsonl)
+./android/introspect.sh autoresult # dump automation result (automation_result.json)
 ```
 
 ### setup-screen introspection
@@ -145,6 +148,16 @@ adb shell am broadcast -a com.dxxredux.SETUP_INTROSPECT && sleep 1 && adb shell 
 | `menu.items[]` | when a menu is front | array of `{index, type, text, value, selected}` |
 | `player.*` | when level loaded | callsign, energy, shields, score, lives, level, weapons, ammo, keys, flags |
 | `position.*` | when level loaded | x, y, z (floats), segment number, shields |
+| `console` | always | `{next_seq, lines: [{seq, text}]}` -- last 50 con_printf lines from the engine ring buffer |
+
+### automation result files (debug builds only)
+The automation system writes durable files alongside logcat. These survive logcat buffer overflow, emulator restarts, and timing races. The test runner (`run_test.ps1`) uses these as the primary pass/fail source.
+
+- `files/automation_result.json` -- written on PASS/FAIL: `{result, steps_completed, total_steps, reason?, elapsed_ms}`
+- `files/automation_log.jsonl` -- one JSON line per step event: `{seq, step, total, action, status, elapsed_ms, detail}`
+- Read directly: `adb shell run-as com.dxxredux.app cat files/automation_result.json`
+- Or via helper: `./android/introspect.sh autoresult` / `./android/introspect.sh autolog`
+- On test timeout/failure, the runner automatically dumps `automation_log.jsonl` and `gamelog.txt` for diagnostics
 
 ### extending the API
 The introspection code lives in `d2/introspect/game_introspect.c`. To add new fields:

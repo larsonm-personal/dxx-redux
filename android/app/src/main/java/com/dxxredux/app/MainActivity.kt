@@ -96,6 +96,8 @@ class MainActivity :
 
     external fun nativeSetMusicVoices(maxVoices: Int)
 
+    external fun nativeGetConsoleSince(sinceSeq: Long): String
+
     external fun nativeJoystickAxis(
         axis: Int,
         value: Float,

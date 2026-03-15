@@ -94,6 +94,8 @@ int androidaud_get_audio_buf_frames(void);
 
 #include <SDL_mixer.h>
 
+#include "console_ringbuf.h"
+
 /* -- Helpers to identify front-window types --------------------------- */
 
 /*
@@ -544,6 +546,19 @@ extern "C" char *game_introspect_get_state(void)
 		kb["blit_y_offset"] = (int) g_blit_y_offset;
 		kb["scale_blit_active"] = (bool) g_menu_scale_active;
 		j["keyboard_viewport"] = kb;
+	}
+
+	/* -- Recent console output (last 50 con_printf lines) ----------- */
+	{
+		char *console_json = console_ringbuf_get_json(0, 50);
+		if (console_json) {
+			try {
+				j["console"] = json::parse(console_json);
+			} catch (...) {
+				j["console"] = nullptr;
+			}
+			free(console_json);
+		}
 	}
 
 	/* Serialize to string and return as malloc'd C string */

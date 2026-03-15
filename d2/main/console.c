@@ -20,6 +20,10 @@
 #include "vers_id.h"
 #include "timer.h"
 
+#ifdef INTROSPECT_ON
+#include "console_ringbuf.h"
+#endif
+
 static PHYSFS_file *gamelog_fp=NULL;
 static struct console_buffer con_buffer[CON_LINES_MAX];
 static int con_state = CON_STATE_CLOSED, con_scroll_offset = 0, con_size = 0;
@@ -84,6 +88,10 @@ void con_printf(int priority, const char *fmt, ...)
 
 		/* Print output to stdout */
 		printf("%s",buffer);
+
+#ifdef INTROSPECT_ON
+		console_ringbuf_add(buffer);
+#endif
 
 		/* Print output to gamelog.txt */
 		if (gamelog_fp)

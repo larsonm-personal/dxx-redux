@@ -6,8 +6,11 @@
 #   ./android/introspect.sh menu       # show only the menu section
 #   ./android/introspect.sh player     # show only the player section
 #   ./android/introspect.sh position   # show only the position section
+#   ./android/introspect.sh console    # show recent con_printf output (ring buffer)
 #   ./android/introspect.sh setup      # dump SetupActivity state (files, readiness, downloads)
 #   ./android/introspect.sh setup raw  # raw JSON from SetupActivity
+#   ./android/introspect.sh autolog    # dump automation step log (automation_log.jsonl)
+#   ./android/introspect.sh autoresult # dump automation result (automation_result.json)
 
 set -euo pipefail
 
@@ -108,6 +111,29 @@ case "${1:-}" in
         ;;
     position)
         extract_key position "$JSON"
+        ;;
+    console)
+        extract_key console "$JSON"
+        ;;
+    autolog)
+        # Dump automation step log (file-based, no introspection needed)
+        ALOG=$("$ADB" shell run-as "$PACKAGE" cat files/automation_log.jsonl 2>/dev/null) || {
+            echo "ERROR: Could not read automation_log.jsonl." >&2
+            exit 1
+        }
+        echo "$ALOG"
+        ;;
+    autoresult)
+        # Dump automation result (file-based, no introspection needed)
+        ARES=$("$ADB" shell run-as "$PACKAGE" cat files/automation_result.json 2>/dev/null) || {
+            echo "ERROR: Could not read automation_result.json." >&2
+            exit 1
+        }
+        if [[ "${2:-}" == "raw" ]]; then
+            echo "$ARES"
+        else
+            pretty_print "$ARES"
+        fi
         ;;
     *)
         pretty_print "$JSON"

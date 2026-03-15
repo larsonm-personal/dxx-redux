@@ -229,6 +229,119 @@ static int g_select_delta = 0; /* remaining navigation steps (+down, -up) */
 static char g_automate_dir[512] = "";
 static char g_pending_script[512] = "";
 static volatile int g_load_requested = 0;
+static Uint32 g_script_start = 0; /* SDL_GetTicks() when script began */
+static FILE *g_log_fp = NULL;     /* automation_log.jsonl file handle */
+static int g_log_seq = 0;         /* monotonic sequence for log lines */
+
+static const char *step_type_name(step_type t)
+{
+	switch (t) {
+		case STEP_KEY: return "key";
+		case STEP_WAIT_MS: return "wait_ms";
+		case STEP_WAIT_FOR: return "wait_for";
+		case STEP_INTROSPECT: return "introspect";
+		case STEP_LOG: return "log";
+		case STEP_ASSERT: return "assert";
+		case STEP_SELECT: return "select";
+		case STEP_SEND_AXIS: return "send_axis";
+		case STEP_SEND_BUTTON: return "send_button";
+		case STEP_SKIP_BRIEFING: return "skip_briefing";
+		default: return "unknown";
+	}
+}
+
+/* -- File-based result/log writing ------------------------------------ */
+
+static void write_result_file(const char *result, const char *reason)
+{
+	if (!g_automate_dir[0])
+		return;
+
+	char path[1024];
+	snprintf(path, sizeof(path), "%s/automation_result.json", g_automate_dir);
+
+	Uint32 elapsed = SDL_GetTicks() - g_script_start;
+
+	FILE *f = fopen(path, "w");
+	if (!f)
+		return;
+
+	if (reason && reason[0]) {
+		/* Minimal JSON escape for the reason string */
+		char escaped[512];
+		int ei = 0;
+		for (const char *p = reason; *p && ei < (int) sizeof(escaped) - 6; p++) {
+			if (*p == '"' || *p == '\\') {
+				escaped[ei++] = '\\';
+				escaped[ei++] = *p;
+			} else if (*p == '\n') {
+				escaped[ei++] = '\\';
+				escaped[ei++] = 'n';
+			} else if ((unsigned char) *p >= 0x20) {
+				escaped[ei++] = *p;
+			}
+		}
+		escaped[ei] = '\0';
+
+		fprintf(f,
+		        "{\"result\":\"%s\",\"steps_completed\":%d,"
+		        "\"total_steps\":%d,\"reason\":\"%s\","
+		        "\"elapsed_ms\":%u}\n",
+		        result, g_current_step + 1, (int) g_steps.size(),
+		        escaped, (unsigned) elapsed);
+	} else {
+		fprintf(f,
+		        "{\"result\":\"%s\",\"steps_completed\":%d,"
+		        "\"total_steps\":%d,\"elapsed_ms\":%u}\n",
+		        result, g_current_step + 1, (int) g_steps.size(),
+		        (unsigned) elapsed);
+	}
+
+	fclose(f);
+}
+
+static void log_append(const char *action, const char *status, const char *detail)
+{
+	if (!g_log_fp)
+		return;
+
+	Uint32 elapsed = SDL_GetTicks() - g_script_start;
+
+	fprintf(g_log_fp,
+	        "{\"seq\":%d,\"step\":%d,\"total\":%d,"
+	        "\"action\":\"%s\",\"status\":\"%s\","
+	        "\"elapsed_ms\":%u,\"detail\":\"%s\"}\n",
+	        g_log_seq++, g_current_step + 1, (int) g_steps.size(),
+	        action ? action : "", status ? status : "",
+	        (unsigned) elapsed, detail ? detail : "");
+	fflush(g_log_fp);
+}
+
+static void open_log_file(void)
+{
+	if (g_log_fp) {
+		fclose(g_log_fp);
+		g_log_fp = NULL;
+	}
+	g_log_seq = 0;
+
+	if (!g_automate_dir[0])
+		return;
+
+	char path[1024];
+	snprintf(path, sizeof(path), "%s/automation_log.jsonl", g_automate_dir);
+	g_log_fp = fopen(path, "w"); /* truncate */
+}
+
+static void remove_stale_result(void)
+{
+	if (!g_automate_dir[0])
+		return;
+
+	char path[1024];
+	snprintf(path, sizeof(path), "%s/automation_result.json", g_automate_dir);
+	remove(path);
+}
 
 /* -- Key injection ---------------------------------------------------- */
 
@@ -749,6 +862,12 @@ static void stop_script_fail(const char *reason)
 {
 	LOGE("SCRIPT_RESULT: FAIL at step %d/%d -- %s",
 	     g_current_step + 1, (int) g_steps.size(), reason);
+	write_result_file("FAIL", reason);
+	log_append("script", "FAIL", reason ? reason : "");
+	if (g_log_fp) {
+		fclose(g_log_fp);
+		g_log_fp = NULL;
+	}
 	g_active = 0;
 	g_failed = 1;
 }
@@ -763,11 +882,18 @@ static void advance_step(void)
 
 	if (g_current_step >= (int) g_steps.size()) {
 		LOGI("SCRIPT_RESULT: PASS (%d steps)", (int) g_steps.size());
+		write_result_file("PASS", NULL);
+		log_append("script", "PASS", "");
+		if (g_log_fp) {
+			fclose(g_log_fp);
+			g_log_fp = NULL;
+		}
 		g_active = 0;
 		g_failed = 0;
 	} else {
 		auto &s = g_steps[g_current_step];
 		LOGI("Step %d/%d: type=%d", g_current_step + 1, (int) g_steps.size(), (int) s.type);
+		log_append(step_type_name(s.type), "start", "");
 	}
 }
 
@@ -799,9 +925,13 @@ extern "C" void game_automate_tick(void)
 		g_load_requested = 0;
 		LOGI("Loading automation script: %s", g_pending_script);
 
+		remove_stale_result();
+		open_log_file();
+
 		if (load_script_file(g_pending_script)) {
 			g_current_step = 0;
 			g_step_start = SDL_GetTicks();
+			g_script_start = g_step_start;
 			g_key_phase = 0;
 			g_select_phase = 0;
 			g_select_delta = 0;
@@ -812,6 +942,7 @@ extern "C" void game_automate_tick(void)
 			if (!g_steps.empty()) {
 				auto &s = g_steps[0];
 				LOGI("Step 1/%d: type=%d", (int) g_steps.size(), (int) s.type);
+				log_append(step_type_name(s.type), "start", "");
 			}
 		}
 	}
@@ -842,6 +973,7 @@ extern "C" void game_automate_tick(void)
 		case STEP_WAIT_MS:
 			if (elapsed >= (Uint32) s.post_delay_ms) {
 				LOGI("Wait completed: %d ms", s.post_delay_ms);
+				log_append("wait_ms", "done", "");
 				advance_step();
 			}
 			break;
@@ -849,11 +981,13 @@ extern "C" void game_automate_tick(void)
 		case STEP_WAIT_FOR:
 			if (check_condition(s.field, s.value)) {
 				LOGI("Condition met: %s = %s (after %u ms)", s.field.c_str(), s.value.c_str(), elapsed);
+				log_append("wait_for", "done", s.field.c_str());
 				advance_step();
 			} else if (s.timeout_ms > 0 && elapsed >= (Uint32) s.timeout_ms) {
 				char reason[256];
 				snprintf(reason, sizeof(reason), "TIMEOUT waiting for %s = %s (after %d ms)",
 				         s.field.c_str(), s.value.c_str(), s.timeout_ms);
+				log_append("wait_for", "timeout", s.field.c_str());
 				stop_script_fail(reason);
 			}
 			break;
@@ -871,8 +1005,10 @@ extern "C" void game_automate_tick(void)
 
 		case STEP_ASSERT:
 			if (run_assertions(s)) {
+				log_append("assert", "pass", "");
 				advance_step();
 			} else {
+				log_append("assert", "fail", "");
 				stop_script_fail("assertion failed");
 			}
 			break;

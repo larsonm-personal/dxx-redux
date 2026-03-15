@@ -8,6 +8,7 @@
 #include <jni.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <android/log.h>
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
@@ -17,6 +18,7 @@
 #ifdef INTROSPECT_ON
 #include "game_introspect.h"
 #include "game_automate.h"
+#include "console_ringbuf.h"
 #endif
 
 #define LOG_TAG   "DXX-Redux"
@@ -297,5 +299,18 @@ JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetMusicVoices(JNIEnv *env, jobject thiz, jint max_voices)
 {
 	tsf_music_set_max_voices((int) max_voices);
+}
+
+/* -- Console ring buffer: return recent con_printf output as JSON ----- */
+JNIEXPORT jstring JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetConsoleSince(JNIEnv *env, jobject thiz, jlong since_seq)
+{
+	char *json = console_ringbuf_get_json((uint64_t) since_seq, 200);
+	if (!json) {
+		return (*env)->NewStringUTF(env, "{\"next_seq\":0,\"lines\":[]}");
+	}
+	jstring result = (*env)->NewStringUTF(env, json);
+	free(json);
+	return result;
 }
 #endif /* INTROSPECT_ON */
