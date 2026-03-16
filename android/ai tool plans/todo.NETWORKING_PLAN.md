@@ -164,20 +164,23 @@ launch into a co-op game from the launcher without touching in-game menus.
      JOIN_LOBBY. Player list with ready checkboxes. Host has "Start Game"
      button (enabled when all ready).
 
-1.5. Add JNI method nativeAutoJoin(hostIp, port, missionName, gameMode,
-     difficulty) to MainActivity. C side stores params in globals, sets
-     auto_join_pending flag.
+1.5. Add JNI method nativeSetAutoJoin(hostAddr, hostPort, myPort,
+     mission, gameMode, difficulty) to MainActivity. C side stores params
+     in globals, sets auto_join_pending flag.
+     **Detailed design in todo.CLIENT_NETWORKING_PLAN.md Phase C4b**
+     (JNI interface, globals, intent extras, engine menu bypass)
 
 1.6. Add game startup bypass in d2/main/inferno.c or menu.c: if
-     auto_join_pending, skip main menu and call net_udp_direct_join().
+     auto_join_pending, skip main menu and call check_auto_join().
+     Implementation in new auto_net.c/h files (shared pattern for d1/d2).
 
-1.7. Create net_udp_direct_join() in net_udp.c -- loads mission by name,
-     sets co-op mode, constructs sockaddr from host IP/port, sends
-     UPID_REQUEST directly, enters NETSTAT_WAITING. Existing
-     net_udp_read_sync_packet() handles the rest.
+1.7. check_auto_join() in auto_net.c: initializes networking, opens socket
+     on auto_my_port, fills direct_join struct with host addr, calls
+     net_udp_game_connect() directly (bypassing all menus).
 
-1.8. Host auto-start path: auto_host_pending flag, engine calls
-     net_udp_setup_game() + net_udp_start_game() automatically.
+1.8. Host auto-start path: auto_host_pending flag, check_auto_host()
+     initializes networking, configures Netgame, loads mission by name,
+     calls net_udp_start_game().
 
 1.9. "Start Game" flow in LobbyScreen: host sends START_GAME to all peers
      (includes host IP, port, mission, mode). All peers launch MainActivity
@@ -557,7 +560,13 @@ Clients should be told which rate limit they hit so that human players are less 
 - [x] Relay session assignment wired to lobby flow (RELAY_ASSIGNED on StartGame for Relay pairs)
 - [x] Predictive port allocation (Strategy 4 algorithm): generate_predicted_candidates() generates next-port candidates for sequential symmetric NATs
 - [ ] Client-side implementation (Kotlin STUN, holepunching, localhost proxy)
-- [ ] UPnP/PCP/NAT-PMP client-side integration
+      **Detailed client-side plan in todo.CLIENT_NETWORKING_PLAN.md Phase C4a**
+      (StunClient.kt, ConnectivityChecker.kt, LocalhostProxy.kt, NatTraversal.kt)
+- [ ] UPnP/PCP/NAT-PMP client-side integration (deferred to v2, relay covers gap)
+- [ ] Game auto-join/auto-host via JNI (menu bypass, intent extras, status overlay)
+      **Detailed plan in todo.CLIENT_NETWORKING_PLAN.md Phase C4b**
+      (auto_net.c/h in d1/ and d2/, jni_auto_net.c, MultiplayerStatusOverlay.kt)
+- [ ] Relay session cleanup server-side (RelaySession currently never cleaned up)
 
 ### Design Philosophy: ICE for Games
 

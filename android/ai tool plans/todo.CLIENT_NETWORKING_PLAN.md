@@ -633,6 +633,36 @@ android/app/src/main/java/com/dxxredux/app/
 - [ ] Join friend's game/lobby
 - [ ] Friend presence updates (handle FRIEND_PRESENCE_UPDATE push)
 
+### Phase C4a: NAT Traversal (Client Side) -- NOT STARTED
+
+See detailed section below (after Phase C9) for full implementation plan
+including STUN client, connectivity checking, localhost proxy, message
+flows, and error handling.
+
+- [ ] StunClient.kt: STUN Binding Request/Response parser, NAT type detection
+- [ ] ConnectivityChecker.kt: candidate pair race with probe send/recv
+- [ ] LocalhostProxy.kt: per-peer UDP forwarding coroutines + relay wrapping
+- [ ] NatTraversal.kt: orchestrator wiring STUN -> candidates -> checks -> proxy
+- [ ] Wire into MatchmakingService message dispatch
+- [ ] Add protocol messages to NetworkProtocol.kt (StunResult, PeerCandidates,
+      ConnectivityCheckGo, ConnectivityOk, ConnectionCandidate, CandidatePair)
+- [ ] LobbyScreen: show connection type and ping per player
+
+### Phase C4b: Game Launch from Lobby -- NOT STARTED
+
+See detailed section below (after Phase C4a) for full implementation plan
+including JNI interface, engine menu bypass, multiplayer status overlay,
+host/join flows, and shared constants.
+
+- [ ] auto_net.c/h in d2/ and d1/: auto_join_pending, auto_host_pending globals,
+      check_auto_join(), check_auto_host()
+- [ ] jni_auto_net.c: nativeSetAutoJoin, nativeSetAutoHost JNI methods
+- [ ] MainActivity.kt: read mp_* intent extras, call JNI before startGame()
+- [ ] MultiplayerStatusOverlay.kt: Canvas-based overlay for connect/sync status
+- [ ] Engine integration: hook check_auto_join/host into main menu handler
+- [ ] Engine: add notify_mp_status() C-to-Kotlin callbacks at state transitions
+- [ ] Engine: bind to loopback when auto_join/host_pending (internet mode)
+
 ### Phase C5: Google Play Games Sign-In
 
 - [ ] Add GPGS dependency
@@ -726,6 +756,1169 @@ android/app/src/main/java/com/dxxredux/app/
 
 ---
 
+---
+
+## Phase C4a: NAT Traversal -- Client Side (Detailed)
+
+This section covers the full client-side NAT traversal pipeline: what
+software is needed, which messages flow between client and server at
+each step, and what happens on success/failure at every point.
+
+### Software / Libraries Needed (Client Side)
+
+| Component            | Implementation              | Notes                                  |
+|----------------------|-----------------------------|----------------------------------------|
+| STUN client          | Hand-rolled Kotlin (~60 lines) | RFC 5389 Binding Request is 20 bytes fixed format. Parse XOR-MAPPED-ADDRESS from response. No library needed. |
+| UPnP port mapping    | Hand-rolled SSDP+SOAP (~200 lines) or skip for v1 | Android has no built-in UPnP. `cling`/`jupnp` are heavy. Minimal SSDP discovery + single SOAP AddPortMapping call. |
+| UDP sockets          | `java.net.DatagramSocket`   | Standard Android. One per peer for localhost proxy. |
+| Localhost proxy      | Kotlin coroutines           | One coroutine per peer, forwarding between loopback and real socket. |
+| NAT keepalive        | Kotlin coroutine timer      | 1-byte UDP ping every 15s per active NAT mapping. |
+
+### Software / Libraries Needed (Server Side) -- Already Implemented
+
+| Component            | Implementation              | Status    |
+|----------------------|-----------------------------|-----------|
+| STUN result storage  | ws_handler.rs StunResult    | Done      |
+| Predicted port calc  | generate_predicted_candidates() | Done  |
+| Candidate distribution | PEER_CANDIDATES broadcast | Done      |
+| Connectivity orchestration | build_connectivity_check_messages() | Done |
+| Relay session allocation | relay.rs RelaySession    | Done      |
+| Connection tracking  | lobby.rs LobbyPlayer fields | Done      |
+
+### Client-Side STUN Query Implementation
+
+The client performs two STUN Binding Requests to detect its public
+address and NAT type. This happens automatically when a player enters
+a lobby (or when they create one as host).
+
+```
+STUN Binding Request (20 bytes, fixed format):
+  [00 01]              Message Type: Binding Request
+  [00 00]              Message Length: 0 (no attributes)
+  [21 12 A4 42]        Magic Cookie (RFC 5389)
+  [... 12 bytes ...]   Transaction ID (random)
+
+STUN Binding Response contains XOR-MAPPED-ADDRESS attribute:
+  Attribute type: 0x0020
+  Port XOR'd with magic cookie upper 16 bits
+  IP XOR'd with magic cookie (IPv4) or magic+txn_id (IPv6)
+```
+
+Implementation:
+
+```kotlin
+// StunClient.kt (~60 lines)
+data class StunResult(val publicAddr: InetSocketAddress, val localAddr: InetSocketAddress)
+
+suspend fun queryStun(
+    stunServer: InetSocketAddress,
+    localSocket: DatagramSocket
+): StunResult? {
+    // Build 20-byte Binding Request
+    val txnId = ByteArray(12).also { SecureRandom().nextBytes(it) }
+    val request = ByteBuffer.allocate(20).apply {
+        putShort(0x0001.toShort())  // Binding Request
+        putShort(0x0000.toShort())  // length = 0
+        putInt(0x2112A442)          // magic cookie
+        put(txnId)
+    }.array()
+
+    // Send and receive with 2s timeout
+    localSocket.soTimeout = 2000
+    localSocket.send(DatagramPacket(request, 20, stunServer))
+    val buf = ByteArray(128)
+    val resp = DatagramPacket(buf, 128)
+    localSocket.receive(resp)  // throws SocketTimeoutException on failure
+
+    // Parse XOR-MAPPED-ADDRESS from response
+    // ... extract port ^ 0x2112, ip ^ 0x2112A442
+    return StunResult(publicAddr, localSocket.localSocketAddress)
+}
+```
+
+NAT type detection:
+
+```kotlin
+val socket = DatagramSocket()  // bind once, reuse for both queries
+val stun1 = queryStun(InetSocketAddress("stun.l.google.com", 19302), socket)
+val stun2 = queryStun(InetSocketAddress("stun.cloudflare.com", 3478), socket)
+
+val natType = when {
+    stun1 == null || stun2 == null -> "unknown"
+    stun1.publicAddr == stun2.publicAddr -> "full_cone"  // or restricted, can't tell without more
+    stun1.publicAddr.port == stun2.publicAddr.port -> "address_restricted"
+    abs(stun2.publicAddr.port - stun1.publicAddr.port) <= 3 -> "symmetric_sequential"
+    else -> "symmetric"
+}
+```
+
+Distinguishing full_cone vs port_restricted requires a third query from
+a different server IP to the same port. For our purposes, the distinction
+doesn't matter -- holepunch works the same for all cone types. The
+critical distinction is cone vs symmetric.
+
+### Candidate Gathering (Client Side)
+
+After STUN queries, the client assembles its candidate list:
+
+```kotlin
+fun gatherCandidates(
+    stunResults: Pair<StunResult?, StunResult?>,
+    natType: String,
+    upnpMappedPort: Int?   // from UPnP, null if not available
+): List<ConnectionCandidate> {
+    val candidates = mutableListOf<ConnectionCandidate>()
+
+    // 1. Host candidate: local LAN address
+    val localAddr = getWifiIpAddress()  // from WifiManager
+    candidates.add(ConnectionCandidate("host", "$localAddr:${UDP_PORT}"))
+
+    // 2. Server-reflexive: STUN result (if available)
+    stunResults.first?.let {
+        candidates.add(ConnectionCandidate("srflx", "${it.publicAddr}"))
+    }
+
+    // 3. UPnP-mapped port (if available, v2+)
+    upnpMappedPort?.let {
+        val publicIp = stunResults.first?.publicAddr?.address ?: return@let
+        candidates.add(ConnectionCandidate("upnp", "$publicIp:$it"))
+    }
+
+    // 4. Predicted candidates are generated server-side from our STUN
+    //    results. We don't add them here; the server generates them in
+    //    generate_predicted_candidates() and distributes via PEER_CANDIDATES.
+
+    return candidates
+}
+```
+
+### Full Message Flow: Success Path
+
+```
+  Client A (Joiner)          Matchmaking Server           Client B (Host)
+       |                            |                           |
+       |  [enters lobby]            |                           |
+       |                            |                           |
+       | --- STUN queries to Google/Cloudflare (UDP, direct) ---|
+       | (parallel, 2 queries from same socket)                 |
+       |                            |                           |
+       | STUN_RESULT {              |                           |
+       |   candidates: [            |                           |
+       |     {host, 192.168.1.50:42424},                        |
+       |     {srflx, 73.22.19.44:62014}                         |
+       |   ],                       |                           |
+       |   nat_type: "port_restricted_cone"                     |
+       | }                          |                           |
+       |--------------------------->|                           |
+       |                            |                           |
+       |                            |  (B already sent STUN_RESULT earlier)
+       |                            |                           |
+       |                            |  Server checks: all players
+       |                            |  have candidates?
+       |                            |  YES -> transition Waiting
+       |                            |         to Holepunching
+       |                            |                           |
+       |  PEER_CANDIDATES {         |  PEER_CANDIDATES {        |
+       |    peer_id: B,             |    peer_id: A,            |
+       |    candidates: [B's list], |    candidates: [A's list],|
+       |    nat_type: B's type      |    nat_type: A's type     |
+       |  }                         |  }                        |
+       |<---------------------------|-------------------------->|
+       |                            |                           |
+       |                            |  Server calls             |
+       |                            |  build_connectivity_check_messages()
+       |                            |  generates CandidatePair lists
+       |                            |  sorted by priority       |
+       |                            |                           |
+       |  CONNECTIVITY_CHECK_GO {   |  CONNECTIVITY_CHECK_GO {  |
+       |    peer_addrs: [           |    peer_addrs: [          |
+       |      {peer_id:B,           |      {peer_id:A,          |
+       |       local:host,          |       local:host,         |
+       |       remote:host,         |       remote:host,        |
+       |       remote_addr:B_lan,   |       remote_addr:A_lan,  |
+       |       priority:100},       |       priority:100},      |
+       |      {peer_id:B,           |      {peer_id:A,          |
+       |       local:srflx,         |       local:srflx,        |
+       |       remote:srflx,        |       remote:srflx,       |
+       |       remote_addr:B_pub,   |       remote_addr:A_pub,  |
+       |       priority:80},        |       priority:80},       |
+       |    ]                       |    ]                      |
+       |  }                         |  }                        |
+       |<---------------------------|-------------------------->|
+       |                            |                           |
+       |  --- connectivity check race (both sides, simultaneous) ---
+       |                            |                           |
+       |  For each CandidatePair in priority order:             |
+       |    Send 4-byte test packet to remote_addr              |
+       |    Wait up to 500ms for response                       |
+       |    If bidirectional: this pair wins                     |
+       |    If timeout: try next pair                           |
+       |  Total timeout: 3 seconds                              |
+       |                            |                           |
+       |  (assume srflx<->srflx wins at priority 80)            |
+       |                            |                           |
+       | CONNECTIVITY_OK {          |  CONNECTIVITY_OK {        |
+       |   peer_id: B,              |    peer_id: A,            |
+       |   winning_candidate_type:  |    winning_candidate_type:|
+       |     "srflx",               |      "srflx",            |
+       |   rtt_ms: 32               |    rtt_ms: 31            |
+       | }                          |  }                        |
+       |--------------------------->|<--------------------------|
+       |                            |                           |
+       |                            |  Server updates           |
+       |                            |  connection_type and      |
+       |                            |  ping_ms for both players |
+       |                            |                           |
+       |  CONNECTION_INFO {         |  CONNECTION_INFO {        |
+       |    connections: [{         |    connections: [{        |
+       |      peer_id: B,           |      peer_id: A,          |
+       |      method: "direct_holepunch",                       |
+       |      server_relay: false,  |      server_relay: false, |
+       |      estimated_latency_ms: 32                          |
+       |    }]                      |    }]                     |
+       |  }                         |  }                        |
+       |<---------------------------|-------------------------->|
+       |                            |                           |
+       |  Lobby UI updates:         |  Lobby UI updates:        |
+       |  "PlayerB 32ms (direct)"   |  "PlayerA 31ms (direct)" |
+```
+
+### Full Message Flow: Failure Path (Holepunch Fails, Relay Fallback)
+
+```
+  Client A (Joiner)          Matchmaking Server           Client B (Host)
+       |                            |                           |
+       |  [STUN queries]            |  [STUN queries]           |
+       |                            |                           |
+       | STUN_RESULT {              |  STUN_RESULT {            |
+       |   candidates: [host, srflx],  candidates: [host, srflx],
+       |   nat_type: "symmetric"    |    nat_type: "symmetric"  |
+       | }                          |  }                        |
+       |--------------------------->|<--------------------------|
+       |                            |                           |
+       |                            |  (Both symmetric -> server generates
+       |                            |   predicted candidates. Distributes
+       |                            |   PEER_CANDIDATES including predicted.)
+       |                            |                           |
+       |  CONNECTIVITY_CHECK_GO     |  CONNECTIVITY_CHECK_GO    |
+       |  (includes host, srflx,    |  (includes host, srflx,   |
+       |   predicted, relay pairs)  |   predicted, relay pairs) |
+       |<---------------------------|-------------------------->|
+       |                            |                           |
+       |  --- connectivity check race ---                       |
+       |  host<->host: timeout (different subnets)              |
+       |  srflx<->srflx: timeout (symmetric NAT, wrong ports)  |
+       |  predicted<->predicted: timeout (prediction wrong)     |
+       |  Total 3s timeout reached                              |
+       |                            |                           |
+       |  (No pair succeeded. Client falls back to relay.)      |
+       |                            |                           |
+       | CONNECTIVITY_OK {          |  CONNECTIVITY_OK {        |
+       |   peer_id: B,              |    peer_id: A,            |
+       |   winning_candidate_type:  |    winning_candidate_type:|
+       |     "relay",               |      "relay",             |
+       |   rtt_ms: 0                |    rtt_ms: 0              |
+       | }                          |  }                        |
+       |--------------------------->|<--------------------------|
+       |                            |                           |
+       |                            |  Server sets connection_type
+       |                            |  = Relay for this pair    |
+       |                            |                           |
+       |  CONNECTION_INFO {         |  CONNECTION_INFO {        |
+       |    connections: [{         |    connections: [{        |
+       |      peer_id: B,           |      peer_id: A,          |
+       |      method: "relay",      |      method: "relay",     |
+       |      server_relay: true,   |      server_relay: true,  |
+       |      estimated_latency_ms: null                        |
+       |    }]                      |    }]                     |
+       |  }                         |  }                        |
+       |<---------------------------|-------------------------->|
+       |                            |                           |
+       |  Lobby UI: "PlayerB (relay)"| Lobby UI: "PlayerA (relay)"|
+```
+
+### Full Message Flow: STUN Failure
+
+```
+  Client A                  Matchmaking Server
+       |                            |
+       |  STUN query to Google      |
+       |  -> SocketTimeoutException |
+       |  STUN query to Cloudflare  |
+       |  -> SocketTimeoutException |
+       |                            |
+       |  (Both STUN queries failed.|
+       |   Can't determine public   |
+       |   address. Send host-only  |
+       |   candidate.)              |
+       |                            |
+       | STUN_RESULT {              |
+       |   candidates: [            |
+       |     {host, 192.168.1.50:42424}  |
+       |   ],                       |
+       |   nat_type: "unknown"      |
+       | }                          |
+       |--------------------------->|
+       |                            |
+       |  (Server proceeds. Host candidate still allows LAN
+       |   connections. For internet peers, only relay will work.)
+```
+
+When STUN fails, the client still participates but is guaranteed to
+need relay for any internet connection. The connectivity check race
+will try host<->host (succeeds on LAN) and immediately fall back to
+relay for internet peers.
+
+### Full Message Flow: Game Start (After Holepunch)
+
+```
+  Client A (Joiner)          Matchmaking Server           Client B (Host)
+       |                            |                           |
+       |  (holepunch complete,      |  (holepunch complete,     |
+       |   lobby shows connected)   |   lobby shows connected)  |
+       |                            |                           |
+       |                            |  Host clicks "Start Game" |
+       |                            |  START_GAME {}            |
+       |                            |<--------------------------|
+       |                            |                           |
+       |                            |  Server:                  |
+       |                            |  1. Set lobby.state = Starting
+       |                            |  2. For relay pairs: allocate
+       |                            |     RelaySession (token, addrs)
+       |                            |  3. send_connection_info() to all
+       |                            |  4. Send GAME_STARTING to all
+       |                            |                           |
+       |  RELAY_ASSIGNED {          |  (only sent if this pair  |
+       |    relay_addr: "relay.example.com:9001",               |
+       |    session_token: "3847291056"                          |
+       |  }                         |                           |
+       |<---------------------------|  (only if relay needed)   |
+       |                            |                           |
+       |  CONNECTION_INFO {         |  CONNECTION_INFO {        |
+       |    connections: [{         |    connections: [{        |
+       |      peer_id: B,           |      peer_id: A,          |
+       |      method, detail,       |      method, detail,      |
+       |      server_relay, latency |      server_relay, latency|
+       |    }]                      |    }]                     |
+       |  }                         |  }                        |
+       |<---------------------------|-------------------------->|
+       |                            |                           |
+       |  GAME_STARTING {           |  GAME_STARTING {          |
+       |    host_addr: "73.x.x.x:42424",                       |
+       |    mission: "Counterstrike!",                          |
+       |    mode: "coop"            |    mode: "coop"           |
+       |  }                         |  }                        |
+       |<---------------------------|-------------------------->|
+       |                            |                           |
+       |  Client: handleGameStarting()                          |
+       |  1. Set up localhost proxy (see below)                 |
+       |  2. Launch MainActivity with auto-join intent          |
+       |  Host: handleGameStarting()                            |
+       |                            |  1. Set up localhost proxy|
+       |                            |  2. Launch MainActivity   |
+       |                            |     with auto-host intent |
+```
+
+### Connectivity Check Implementation (Client Side)
+
+The connectivity check is the core of the holepunch process. On
+receiving CONNECTIVITY_CHECK_GO, the client runs a race across all
+candidate pairs in priority order.
+
+```kotlin
+// ConnectivityChecker.kt
+
+data class CheckResult(
+    val peerIdToWinningType: Map<UUID, String>,  // peer_id -> "host"|"srflx"|...
+    val peerIdToRtt: Map<UUID, Int>,
+    val peerIdToAddr: Map<UUID, InetSocketAddress>,  // winning resolved address
+)
+
+suspend fun runConnectivityChecks(
+    socket: DatagramSocket,         // the same socket used for STUN
+    candidatePairs: List<CandidatePair>,
+    totalTimeoutMs: Long = 3000
+): CheckResult {
+    // Group pairs by peer_id, sorted by priority (descending = best first)
+    val peerGroups = candidatePairs.groupBy { it.peerId }
+        .mapValues { (_, pairs) -> pairs.sortedByDescending { it.priority } }
+
+    val results = ConcurrentHashMap<UUID, Pair<String, Int>>() // type, rtt
+    val resolvedAddrs = ConcurrentHashMap<UUID, InetSocketAddress>()
+
+    // Test packet: 4-byte magic + 8-byte timestamp
+    val magic = byteArrayOf(0xD2.toByte(), 0xCC.toByte(), 0x01, 0x00)
+
+    withTimeoutOrNull(totalTimeoutMs) {
+        // Launch parallel checks per peer
+        peerGroups.map { (peerId, pairs) ->
+            launch {
+                for (pair in pairs) {
+                    if (results.containsKey(peerId)) break  // already found
+
+                    val addr = parseAddress(pair.remoteAddr)
+                    val rtt = probeAddr(socket, addr, magic, timeoutMs = 500)
+                    if (rtt != null) {
+                        results[peerId] = Pair(pair.remoteType, rtt)
+                        resolvedAddrs[peerId] = addr
+                        break
+                    }
+                }
+            }
+        }.joinAll()
+    }
+
+    // Any peer without a result falls back to relay
+    for ((peerId, _) in peerGroups) {
+        if (!results.containsKey(peerId)) {
+            results[peerId] = Pair("relay", 0)
+        }
+    }
+
+    return CheckResult(
+        peerIdToWinningType = results.mapValues { it.value.first },
+        peerIdToRtt = results.mapValues { it.value.second },
+        peerIdToAddr = resolvedAddrs
+    )
+}
+
+// Send a probe and wait for echo response
+private suspend fun probeAddr(
+    socket: DatagramSocket,
+    addr: InetSocketAddress,
+    magic: ByteArray,
+    timeoutMs: Int
+): Int? {
+    val sendTime = System.nanoTime()
+    val payload = ByteBuffer.allocate(12).apply {
+        put(magic)
+        putLong(sendTime)
+    }.array()
+    socket.send(DatagramPacket(payload, 12, addr))
+
+    // Listen for response (the peer sends back our magic bytes)
+    val buf = ByteArray(12)
+    socket.soTimeout = timeoutMs
+    return try {
+        socket.receive(DatagramPacket(buf, 12))
+        if (buf.sliceArray(0..3).contentEquals(magic)) {
+            ((System.nanoTime() - sendTime) / 1_000_000).toInt()
+        } else null
+    } catch (e: SocketTimeoutException) { null }
+}
+```
+
+Both sides must be listening and sending simultaneously. Each side:
+1. Receives CONNECTIVITY_CHECK_GO from server
+2. Starts a listener coroutine on its STUN socket
+3. Sends probe packets to each candidate address
+4. When a probe arrives, echoes it back (so the sender can measure RTT)
+5. When an echo of our probe arrives, that pair is confirmed working
+
+The test packet format:
+- Bytes 0-3: magic `0xD2CC0100` (identifies our connectivity check)
+- Bytes 4-11: sender timestamp (for RTT calculation)
+
+On receiving a packet starting with the magic bytes, the receiver
+echoes the full 12 bytes back. The original sender sees the echo,
+confirms the pair works, and records RTT from the embedded timestamp.
+
+### Localhost Proxy Implementation (Client Side)
+
+The localhost proxy bridges the game engine (which uses fixed UDP
+port 42424 on localhost) to real peer addresses (direct or relay).
+
+Architecture:
+
+```
+Game Engine                Localhost Proxy (Kotlin)           Network
+  UDP_Socket[0]              per-peer coroutines
+  bound to :42424                                          direct/relay addrs
+       |                                                         |
+       | sendto(127.0.0.1:42430)                                 |
+       |-----> [proxy peer 0] -----> sendto(peer0_real_addr) --->|
+       |                                                         |
+       | sendto(127.0.0.1:42431)                                 |
+       |-----> [proxy peer 1] -----> sendto(peer1_real_addr) --->|
+       |                                                         |
+       |                     recv from real socket                |
+       |<----- [proxy peer 0] <----- recvfrom(peer0) <----------|
+       |                                                         |
+  recvfrom returns                                               |
+  source = 127.0.0.1:42430                                      |
+  (engine thinks it's peer 0)                                    |
+```
+
+For relay connections, the proxy wraps/unwraps relay headers:
+
+```
+Game packet going to peer via relay:
+  Engine sends: [game_packet] to 127.0.0.1:42430
+  Proxy wraps:  [session_token:4LE][dest_player:1][game_packet]
+  Proxy sends to: relay_server:9001
+
+Relay packet arriving from peer:
+  Proxy recvs:  [session_token:4LE][from_player:1][game_packet]
+  Proxy unwraps: [game_packet]
+  Proxy sends to: 127.0.0.1:42424 (game engine's listening socket)
+```
+
+Implementation:
+
+```kotlin
+// LocalhostProxy.kt
+
+class LocalhostProxy(private val scope: CoroutineScope) {
+    private val proxies = mutableListOf<PeerProxy>()
+
+    fun addPeer(
+        peerIndex: Int,
+        realAddr: InetSocketAddress,
+        isRelay: Boolean,
+        relayToken: UInt? = null,
+        relayPlayerSlot: UByte? = null
+    ) {
+        val localPort = 42430 + peerIndex
+        val proxy = PeerProxy(localPort, realAddr, isRelay, relayToken, relayPlayerSlot)
+        proxies.add(proxy)
+        scope.launch { proxy.run() }
+    }
+
+    fun shutdown() {
+        proxies.forEach { it.close() }
+    }
+}
+
+class PeerProxy(
+    private val localPort: Int,
+    private val realAddr: InetSocketAddress,
+    private val isRelay: Boolean,
+    private val relayToken: UInt?,
+    private val relayPlayerSlot: UByte?
+) {
+    private val localSocket = DatagramSocket(localPort, InetAddress.getLoopbackAddress())
+    private val realSocket = DatagramSocket()  // ephemeral port, for outbound
+
+    suspend fun run() = coroutineScope {
+        // Forward: local -> real
+        launch {
+            val buf = ByteArray(MAX_PACKET_SIZE)
+            while (isActive) {
+                val pkt = DatagramPacket(buf, buf.size)
+                localSocket.receive(pkt)
+                if (isRelay) {
+                    // Wrap with relay header: [token:4LE][dest:1][payload]
+                    val wrapped = ByteBuffer.allocate(5 + pkt.length).apply {
+                        order(ByteOrder.LITTLE_ENDIAN)
+                        putInt(relayToken!!.toInt())
+                        put(relayPlayerSlot!!.toByte())
+                        put(pkt.data, 0, pkt.length)
+                    }.array()
+                    realSocket.send(DatagramPacket(wrapped, wrapped.size, realAddr))
+                } else {
+                    realSocket.send(DatagramPacket(pkt.data, pkt.length, realAddr))
+                }
+            }
+        }
+        // Forward: real -> local
+        launch {
+            val buf = ByteArray(MAX_PACKET_SIZE)
+            val engineAddr = InetSocketAddress(InetAddress.getLoopbackAddress(), ENGINE_PORT)
+            while (isActive) {
+                val pkt = DatagramPacket(buf, buf.size)
+                realSocket.receive(pkt)
+                val payload = if (isRelay) {
+                    // Unwrap relay header: skip [token:4][from:1]
+                    pkt.data.copyOfRange(5, pkt.length)
+                } else {
+                    pkt.data.copyOfRange(0, pkt.length)
+                }
+                localSocket.send(DatagramPacket(payload, payload.size, engineAddr))
+            }
+        }
+        // NAT keepalive: send 1-byte ping every 15s
+        if (!isRelay) {
+            launch {
+                while (isActive) {
+                    delay(15_000)
+                    realSocket.send(DatagramPacket(byteArrayOf(0), 1, realAddr))
+                }
+            }
+        }
+    }
+
+    fun close() {
+        localSocket.close()
+        realSocket.close()
+    }
+
+    companion object {
+        const val MAX_PACKET_SIZE = 1500
+        const val ENGINE_PORT = 42424
+    }
+}
+```
+
+### Localhost Proxy: Telling the Engine About Peer Addresses
+
+The engine normally gets peer addresses from network communication
+(UPID_REQUEST/UPID_GAMEINFO handshake). With the localhost proxy, we
+need the engine to think peers are at 127.0.0.1:4243x. There are two
+approaches:
+
+**Approach A (preferred): Let the engine discover peers normally.**
+The proxy is transparent. When the host broadcasts game info on its
+real socket, the proxy intercepts and forwards to localhost:42424.
+When the joiner sends UPID_REQUEST, the proxy forwards it to the host's
+real address. The engine sees the source as 127.0.0.1:4243x and stores
+that as the peer address. All subsequent traffic goes through the proxy
+automatically.
+
+This requires:
+- The joiner's auto-join resolves the host address to 127.0.0.1:42430
+  (the localhost proxy port for peer 0 = the host)
+- The host's proxy listens for incoming packets from joiners on the
+  real socket and maps each joiner to a localhost port
+
+**Approach B (simpler for v1): Pre-fill and skip discovery.**
+Set Netgame.players[N].protocol.udp.addr to 127.0.0.1:4243N via JNI
+before the game opens sockets. The engine skips discovery and uses
+the pre-filled addresses directly.
+
+Approach A is more robust (matches existing engine flow). Approach B
+is simpler but requires more invasive engine changes. Use Approach A
+for v1.
+
+### Engine Socket Binding: Port Conflict Avoidance
+
+The engine binds UDP_Socket[0] to UDP_MyPort (default 42424). The
+localhost proxy also needs ports for each peer (42430+N). These don't
+conflict because:
+- The engine binds to 0.0.0.0:42424 (all interfaces, or just loopback
+  if we modify it)
+- The proxy binds to 127.0.0.1:42430, 127.0.0.1:42431, etc.
+- Different ports, no conflict
+
+For the engine socket on Android internet play, we should bind to
+127.0.0.1:42424 (loopback only) rather than 0.0.0.0:42424. This
+prevents the engine from accidentally receiving real network traffic
+that bypasses the proxy. This requires a one-line engine change:
+
+```c
+// In udp_open_socket(), for Android internet mode:
+#ifdef __ANDROID__
+    if (auto_join_pending || auto_host_pending) {
+        sAddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    } else {
+        sAddr.sin_addr.s_addr = INADDR_ANY;
+    }
+#else
+    sAddr.sin_addr.s_addr = INADDR_ANY;
+#endif
+```
+
+### Timing and State Machine Summary
+
+```
+Player enters lobby
+  |
+  v
+STUN queries (2x, parallel, 2s timeout each)
+  |
+  v
+Send STUN_RESULT to server via WebSocket
+  |
+  v
+Wait for server (all players must submit STUN_RESULT)
+  |
+  v
+Receive PEER_CANDIDATES (peer addresses)
+  |
+  v
+Receive CONNECTIVITY_CHECK_GO (candidate pair list)
+  |
+  v
+Run connectivity check race (3s total timeout)
+  |
+  +-> Success: send CONNECTIVITY_OK with winning type + RTT
+  |
+  +-> All pairs timeout: send CONNECTIVITY_OK with type="relay"
+  |
+  v
+Receive CONNECTION_INFO (final connection status per peer)
+  |
+  v
+Lobby UI shows connection status per peer
+  |
+  v
+Wait for host to click "Start Game"
+  |
+  v
+Receive GAME_STARTING -> set up localhost proxy -> launch game
+```
+
+### Error Handling Summary
+
+| Error                        | Consequence                           | Recovery                          |
+|------------------------------|---------------------------------------|-----------------------------------|
+| STUN timeout (both servers)  | No srflx candidate                    | Proceed with host-only, server assigns relay |
+| STUN timeout (one server)   | Can't detect NAT type precisely       | Assume "unknown", proceed         |
+| All connectivity checks fail | No direct path found                  | Fall back to relay (always works) |
+| Relay token not received     | Can't use relay                       | Bug; show error, leave lobby      |
+| WebSocket drops during check | Lost signaling channel                | Reconnect, re-join lobby, restart STUN |
+| Proxy socket bind fails     | Can't bridge engine to network        | Fatal error, show toast, return to lobby |
+| Peer disappears mid-check   | Connectivity check hangs for that peer| 3s timeout, relay fallback        |
+
+### Files to Create (Phase C4a)
+
+```
+android/app/src/main/java/com/dxxredux/app/multiplayer/
+    StunClient.kt             -- STUN Binding Request/Response, NAT type detection
+    ConnectivityChecker.kt     -- candidate pair race, probe send/recv
+    LocalhostProxy.kt         -- per-peer UDP forwarding coroutines
+    NatTraversal.kt            -- orchestrator: gatherCandidates, handleStunResult,
+                                  handleConnectivityCheckGo, handleGameStarting
+```
+
+### Files to Modify (Phase C4a)
+
+```
+android/app/src/main/java/com/dxxredux/app/multiplayer/
+    MatchmakingService.kt      -- wire NatTraversal into message dispatch,
+                                  start STUN on lobby join, store checkResult
+    NetworkProtocol.kt         -- add StunResult, PeerCandidates,
+                                  ConnectivityCheckGo, ConnectivityOk,
+                                  ConnectionCandidate, CandidatePair messages
+    LobbyScreen.kt             -- show connection type/ping per player
+```
+
+---
+
+## Phase C4b: Game Launch from Lobby (Detailed)
+
+This section covers how the lobby triggers the actual game, skipping all
+menus, presenting a Kotlin multiplayer status overlay, and starting gameplay.
+
+### Overview
+
+When the server sends GAME_STARTING, the client:
+1. Sets up the localhost proxy (Phase C4a) with peer addresses from
+   the connectivity check results
+2. Launches MainActivity with special intent extras for auto-join or
+   auto-host
+3. Shows a Kotlin overlay (Canvas-based, matching existing overlay system)
+   with multiplayer status ("Connecting...", "Waiting for players...")
+4. The game engine receives auto-join/host parameters via JNI, bypasses
+   all menus, and goes directly to the join/host flow
+5. When the engine reaches gameplay, the overlay transitions to the
+   normal touch controls overlay
+
+### Intent Extras for Multiplayer Launch
+
+```kotlin
+// In handleGameStarting() within MatchmakingService/NatTraversal:
+
+fun launchGame(context: Context, gameStarting: GameStarting, isHost: Boolean) {
+    val intent = Intent(context, MainActivity::class.java).apply {
+        putExtra("game", "d2")  // or "d1", from lobby settings
+        putExtra("mp_mode", if (isHost) "host" else "join")
+        putExtra("mp_host_addr", "127.0.0.1")  // always localhost (proxy)
+        putExtra("mp_host_port", 42430)         // proxy port for host peer
+        putExtra("mp_my_port", 42424)           // engine's local port
+        putExtra("mp_mission", gameStarting.mission)
+        putExtra("mp_game_mode", gameStarting.mode)  // "coop", "anarchy", etc.
+        putExtra("mp_difficulty", lobbySettings.difficulty) // 0-4
+        putExtra("mp_max_players", lobbySettings.maxPlayers)
+        putExtra("mp_level_num", lobbySettings.levelNum)
+    }
+    context.startActivity(intent)
+}
+```
+
+### JNI Interface for Auto-Join / Auto-Host
+
+New JNI methods in jni_main.c:
+
+```c
+// Called from MainActivity.kt before startGame()
+// Sets globals that DoMenu()/main menu will check on first frame
+
+static int auto_join_pending = 0;
+static int auto_host_pending = 0;
+static char auto_host_addr[128] = "";
+static int auto_host_port = 42424;
+static int auto_my_port = 42424;
+static char auto_mission[64] = "";
+static char auto_game_mode[16] = "";
+static int auto_difficulty = 1;
+static int auto_max_players = 4;
+static int auto_level_num = 1;
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetAutoJoin(
+    JNIEnv *env, jobject obj,
+    jstring hostAddr, jint hostPort, jint myPort,
+    jstring mission, jstring gameMode, jint difficulty)
+{
+    const char *addr = (*env)->GetStringUTFChars(env, hostAddr, NULL);
+    const char *miss = (*env)->GetStringUTFChars(env, mission, NULL);
+    const char *mode = (*env)->GetStringUTFChars(env, gameMode, NULL);
+    strncpy(auto_host_addr, addr, sizeof(auto_host_addr)-1);
+    auto_host_port = hostPort;
+    auto_my_port = myPort;
+    strncpy(auto_mission, miss, sizeof(auto_mission)-1);
+    strncpy(auto_game_mode, mode, sizeof(auto_game_mode)-1);
+    auto_difficulty = difficulty;
+    auto_join_pending = 1;
+    (*env)->ReleaseStringUTFChars(env, hostAddr, addr);
+    (*env)->ReleaseStringUTFChars(env, mission, miss);
+    (*env)->ReleaseStringUTFChars(env, gameMode, mode);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetAutoHost(
+    JNIEnv *env, jobject obj,
+    jint myPort, jstring mission, jstring gameMode,
+    jint difficulty, jint maxPlayers, jint levelNum)
+{
+    const char *miss = (*env)->GetStringUTFChars(env, mission, NULL);
+    const char *mode = (*env)->GetStringUTFChars(env, gameMode, NULL);
+    auto_my_port = myPort;
+    strncpy(auto_mission, miss, sizeof(auto_mission)-1);
+    strncpy(auto_game_mode, mode, sizeof(auto_game_mode)-1);
+    auto_difficulty = difficulty;
+    auto_max_players = maxPlayers;
+    auto_level_num = levelNum;
+    auto_host_pending = 1;
+    (*env)->ReleaseStringUTFChars(env, mission, miss);
+    (*env)->ReleaseStringUTFChars(env, gameMode, mode);
+}
+```
+
+### Engine-Side Menu Bypass
+
+The game engine normally shows a chain of menus:
+
+```
+Main Menu -> Multiplayer -> UDP/IP -> Host Game -> Select Mission ->
+  Configure Game -> Start Game -> Wait for Players -> StartNewLevel
+
+Main Menu -> Multiplayer -> UDP/IP -> Join Game -> Enter Address ->
+  Show Game Info -> Send Join Request -> Wait for Sync -> StartNewLevel
+```
+
+For auto-join, we bypass ALL of this and go directly to the connect+sync
+flow. For auto-host, we bypass to the select_players wait screen.
+
+Implementation in the main menu handler (checked once per frame):
+
+```c
+// In DoMenu() or game_handler() in d2/main/inferno.c:
+
+void check_auto_join(void)
+{
+    if (!auto_join_pending) return;
+    auto_join_pending = 0;
+
+    // Initialize networking
+    net_udp_init();
+
+    // Set our port
+    snprintf(UDP_MyPort, sizeof(UDP_MyPort), "%d", auto_my_port);
+
+    // Open our socket
+    if (udp_open_socket(0, auto_my_port) != 0) {
+        con_printf(CON_URGENT, "Auto-join: failed to open socket on port %d\n", auto_my_port);
+        return;
+    }
+
+    // Set up direct_join with the host address (localhost proxy)
+    direct_join dj;
+    memset(&dj, 0, sizeof(dj));
+    strncpy(dj.addrbuf, auto_host_addr, sizeof(dj.addrbuf)-1);
+    snprintf(dj.portbuf, sizeof(dj.portbuf), "%d", auto_host_port);
+    udp_dns_filladdr(dj.addrbuf, atoi(dj.portbuf), &dj.host_addr);
+    dj.connecting = 1;
+    dj.start_time = timer_query();
+    dj.last_time = 0;
+
+    // Set difficulty
+    Difficulty_level = auto_difficulty;
+
+    // Enter the connect+join loop
+    // This calls net_udp_game_connect() in a loop until connected or timeout
+    net_udp_game_connect(&dj);
+
+    // After game_connect succeeds, the engine proceeds to sync and StartNewLevel
+}
+
+void check_auto_host(void)
+{
+    if (!auto_host_pending) return;
+    auto_host_pending = 0;
+
+    // Initialize networking
+    net_udp_init();
+
+    // Set our port
+    snprintf(UDP_MyPort, sizeof(UDP_MyPort), "%d", auto_my_port);
+
+    // Configure the game
+    Difficulty_level = auto_difficulty;
+    Netgame.max_numplayers = auto_max_players;
+    Netgame.levelnum = auto_level_num;
+    // Set game mode from auto_game_mode string
+    // "coop" -> GM_MULTI_COOP, "anarchy" -> 0, etc.
+    Netgame.gamemode = parse_game_mode(auto_game_mode);
+
+    // Select mission
+    // net_udp_setup_game() normally does this interactively
+    // For auto-host, we need to select the mission by name
+    load_mission_by_name(auto_mission);
+
+    // Start hosting
+    net_udp_start_game();
+    // This opens sockets, enters net_udp_select_players() blocking loop
+    // When enough players join and host starts, calls StartNewLevel
+}
+```
+
+The exact insertion point needs care. The engine's main loop runs
+through `event_process()` -> window handlers. The cleanest approach is
+to check `auto_join_pending` / `auto_host_pending` in the main menu's
+handler function, before showing any menu UI:
+
+```c
+// In DoMenu() / newmenu_handler for the main menu:
+int main_menu_handler(...)
+{
+    // Check for auto-join/host before processing normal menu events
+    if (auto_join_pending) {
+        check_auto_join();
+        return 0;
+    }
+    if (auto_host_pending) {
+        check_auto_host();
+        return 0;
+    }
+    // ... normal menu handling
+}
+```
+
+### Multiplayer Status Overlay (Kotlin)
+
+During the join/host process, the game engine shows its own status
+screens (net_udp_game_connect shows "Connecting...",
+net_udp_select_players shows "Waiting for players..."). These are
+text-based menus rendered by the engine.
+
+We add a Kotlin overlay ON TOP of these screens to show a more
+informative multiplayer status with modern UI. This overlay is part
+of the existing FrameLayout stack in MainActivity:
+
+```
+GameSurfaceView (SDL rendering, shows game's own connect screen)
+  |
+TouchOverlayView (existing, hidden during menus)
+  |
+MultiplayerStatusOverlay (new, shown during connect/sync phase)
+  |
+overlayContainer (existing)
+```
+
+The overlay shows:
+- Current state: "Connecting to host...", "Waiting for game sync...",
+  "Loading level...", "Starting game..."
+- Connection quality per peer (from pre-game holepunch results)
+- Cancel button (leave lobby, return to MultiplayerScreen)
+- Animated progress indicator
+
+Implementation: Canvas-based view (matching existing TouchOverlayView),
+added to FrameLayout in MainActivity.onCreate():
+
+```kotlin
+class MultiplayerStatusOverlay(context: Context) : View(context) {
+    var status: String = "Connecting..."
+    var peers: List<PeerStatus> = emptyList()
+    var showCancel: Boolean = true
+
+    override fun onDraw(canvas: Canvas) {
+        // Semi-transparent background
+        canvas.drawColor(Color.argb(180, 0, 0, 0))
+
+        // Status text centered
+        val paint = Paint().apply {
+            color = Color.WHITE
+            textSize = 48f
+            textAlign = Paint.Align.CENTER
+        }
+        canvas.drawText(status, width / 2f, height / 2f - 100, paint)
+
+        // Peer connection info
+        peers.forEachIndexed { i, peer ->
+            val y = height / 2f + i * 60
+            val icon = if (peer.isRelay) "[R]" else "[D]"
+            canvas.drawText(
+                "$icon ${peer.callsign}: ${peer.pingMs}ms",
+                width / 2f, y, paint
+            )
+        }
+
+        // Cancel button at bottom
+        if (showCancel) {
+            canvas.drawText("[ Cancel ]", width / 2f, height - 200f, paint)
+        }
+    }
+}
+```
+
+The overlay is:
+- VISIBLE from the moment GAME_STARTING is received until the engine
+  enters gameplay (in_game = true via introspection or JNI callback)
+- Updated via JNI callbacks as the engine progresses through its
+  connect/sync states (Network_status changes)
+- HIDDEN once the game reaches the cockpit view, at which point the
+  normal TouchOverlayView becomes visible
+
+### Engine-to-Kotlin Status Callbacks
+
+New JNI calls from C to Kotlin to report connection progress:
+
+```c
+// In net_udp.c, at key state transitions:
+
+// When sending join request
+void notify_mp_status(const char *status) {
+#ifdef __ANDROID__
+    jni_notify_mp_status(status);  // calls Kotlin
+#endif
+}
+
+// Called at key points:
+// net_udp_game_connect(): notify_mp_status("requesting_game_info")
+// net_udp_send_request(): notify_mp_status("sending_join_request")
+// net_udp_sync_poll():    notify_mp_status("waiting_for_sync")
+// StartNewLevel():        notify_mp_status("loading_level")
+// When game starts:       notify_mp_status("in_game")
+```
+
+The Kotlin side receives these and updates MultiplayerStatusOverlay:
+
+```kotlin
+// In MainActivity.kt:
+fun onMultiplayerStatus(status: String) {
+    runOnUiThread {
+        multiplayerOverlay?.status = when (status) {
+            "requesting_game_info" -> "Connecting to host..."
+            "sending_join_request" -> "Requesting to join..."
+            "waiting_for_sync"     -> "Synchronizing game state..."
+            "loading_level"        -> "Loading level..."
+            "in_game"              -> { multiplayerOverlay?.visibility = View.GONE; "" }
+            else -> status
+        }
+        multiplayerOverlay?.invalidate()
+    }
+}
+```
+
+### Host-Side Flow (Auto-Host)
+
+The host's flow is similar but has different engine calls:
+
+1. GAME_STARTING received (host sent START_GAME, gets GAME_STARTING back)
+2. Localhost proxy starts (one proxy per non-host peer)
+3. MainActivity launches with mp_mode="host" intent
+4. JNI: nativeSetAutoHost() sets globals
+5. Engine checks auto_host_pending in main menu handler
+6. Engine calls net_udp_start_game() which:
+   - Opens socket on UDP_MyPort (127.0.0.1:42424, loopback)
+   - Sets Netgame fields (mode, mission, level, etc.)
+   - Enters net_udp_select_players() blocking loop
+   - Waits for joiners to send UPID_REQUEST (via proxy)
+   - When all expected players join, calls StartNewLevel
+7. Multiplayer overlay shows "Waiting for players to join... (2/4)"
+8. When level starts, overlay hides, touch controls appear
+
+### Post-Game Return to Lobby
+
+When the game ends (level complete, all players quit, or disconnect):
+
+1. Engine exits to main menu (or exits process on Android)
+2. Since Android uses process kill on exit, the return to lobby is
+   handled by the Kotlin lifecycle:
+   - MatchmakingService (foreground service) survives the process kill
+   - When SetupActivity resumes, it reconnects to MatchmakingService
+   - If the lobby still exists (server kept it during InGame state),
+     the player can rejoin or the lobby transitions back to Waiting
+3. For a cleaner experience (future optimization): keep the process
+   alive, return to a "game results" overlay, then back to lobby
+
+### Race Condition: Joiner Arrives Before Host is Ready
+
+The host and joiners receive GAME_STARTING simultaneously, but the
+host might take longer to start (loading mission, opening socket).
+If a joiner sends UPID_REQUEST before the host's socket is open, it
+gets no response.
+
+This is handled by the existing engine retry logic:
+- net_udp_game_connect() retries UPID_REQUEST every 1 second
+- Timeout is 10 seconds
+- The host typically starts within 1-2 seconds
+- The localhost proxy queues/discards packets that arrive before
+  the host socket is ready (the proxy itself starts before the engine)
+
+### Shared Constants (Kotlin <-> C)
+
+These constants must match between Kotlin and C code. Document here
+so both copies can be maintained:
+
+```
+UDP_PORT_DEFAULT = 42424      // d2/main/net_udp.c, NetworkConstants.kt
+PROXY_PORT_BASE = 42430       // LocalhostProxy.kt, new #define in net_udp.c
+CONNECTIVITY_MAGIC = 0xD2CC0100  // ConnectivityChecker.kt, new in net_udp.c
+                                 // (only used between Kotlin peers, not engine)
+```
+
+### Files to Create (Phase C4b)
+
+```
+android/app/src/main/java/com/dxxredux/app/
+    MultiplayerStatusOverlay.kt  -- Canvas-based overlay for connect/sync status
+
+d2/main/auto_net.c               -- check_auto_join(), check_auto_host(),
+                                    auto_join/host globals, notify_mp_status()
+d2/main/auto_net.h               -- extern declarations for auto_net globals
+d1/main/auto_net.c               -- same as d2 (duplicated per project rules)
+d1/main/auto_net.h               -- same as d2
+
+android/app/src/main/jni/jni_auto_net.c  -- JNI wrappers: nativeSetAutoJoin,
+                                            nativeSetAutoHost, jni_notify_mp_status
+```
+
+### Files to Modify (Phase C4b)
+
+```
+android/app/src/main/java/com/dxxredux/app/
+    MainActivity.kt               -- read mp_* intent extras, create overlay,
+                                     call nativeSetAutoJoin/Host before startGame()
+    multiplayer/
+        MatchmakingService.kt     -- handleGameStarting() sets up proxy, launches game
+        NatTraversal.kt           -- launchGame() builds intent with mp_* extras
+
+d2/main/inferno.c                 -- #include "auto_net.h", call check_auto_join/host
+                                     in main menu handler
+d2/main/net_udp.c                 -- add notify_mp_status() calls at state transitions,
+                                     bind to loopback when auto_join/host_pending
+d1/main/inferno.c                 -- same changes as d2
+d1/main/net_udp.c                 -- same changes as d2
+
+android/app/CMakeLists.txt        -- add jni_auto_net.c to build
+d2/CMakeLists.txt                 -- add auto_net.c to build
+d1/CMakeLists.txt                 -- add auto_net.c to build
+```
+
+---
+
 ## Open Questions
 
 - **Server URL**: hardcode for now, configurable later? The server doesn't
@@ -748,3 +1941,23 @@ android/app/src/main/java/com/dxxredux/app/
 - **Multiple accounts**: what if a device has multiple Google accounts?
   GPGS handles this via the Games profile. The player picks their
   profile once and it's remembered.
+
+- **Proxy port exhaustion**: with 7 peers max (8-player game), we need
+  ports 42430-42436. These are high ports unlikely to conflict. If a port
+  is already in use (another app), fail with a clear error message.
+
+- **IPv6 support**: the STUN client and proxy need to handle both IPv4
+  and IPv6 addresses. The engine uses `struct _sockaddr` which is
+  typedef'd to either sockaddr_in or sockaddr_in6 based on compile flags.
+  For v1, IPv4 only is acceptable (most mobile networks provide IPv4).
+
+- **Connectivity check packet vs game packet**: the connectivity check
+  uses a 12-byte probe packet with magic 0xD2CC0100. This magic must NOT
+  collide with any UPID_* value used by the game engine. UPID values are
+  single-byte (0x00-0x40 range), so a 4-byte magic starting with 0xD2 is
+  safe.
+
+- **Relay session cleanup**: the server currently has no relay session
+  cleanup (RelaySession entries are never removed). This must be fixed
+  server-side before relay is usable in production. Add a created_at
+  timestamp and periodic cleanup of sessions older than 2 hours.
