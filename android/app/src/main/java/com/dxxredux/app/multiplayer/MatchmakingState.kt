@@ -30,6 +30,19 @@ data class ChatMessage(
     val isMe: Boolean = false,
 )
 
+/** Peer NAT/connectivity information received from the server. */
+data class PeerNatInfo(
+    val peerId: String,
+    val candidates: List<ConnectionCandidate>,
+    val natType: String,
+)
+
+/** Relay session assigned by the server for NAT-blocked peers. */
+data class RelayInfo(
+    val relayAddr: String,
+    val sessionToken: String,
+)
+
 data class MatchmakingState(
     val status: ConnectionStatus = ConnectionStatus.DISCONNECTED,
     val serverUrl: String = NetworkConstants.DEFAULT_SERVER_URL,
@@ -45,6 +58,9 @@ data class MatchmakingState(
     val currentLobby: CurrentLobbyState? = null,
     val chatMessages: List<ChatMessage> = emptyList(),
     val connectionInfo: List<PeerConnectionInfoMsg> = emptyList(),
+    val peerCandidates: Map<String, PeerNatInfo> = emptyMap(),
+    val connectivityPairs: List<CandidatePair> = emptyList(),
+    val relayInfo: RelayInfo? = null,
 )
 
 // Global observable state for Compose UI

@@ -87,10 +87,11 @@ pub struct StatsSnapshot {
     pub peak_alltime: u32,
 }
 
-/// Periodic background tasks: stats snapshots, rate limiter cleanup.
+/// Periodic background tasks: stats snapshots, rate limiter cleanup, relay session reaping.
 pub async fn periodic_tasks(state: Arc<ServerState>) {
     let mut snapshot_interval = tokio::time::interval(Duration::from_secs(300));
     let mut cleanup_interval = tokio::time::interval(Duration::from_secs(600));
+    let mut relay_cleanup_interval = tokio::time::interval(Duration::from_secs(300));
 
     loop {
         tokio::select! {
@@ -108,6 +109,9 @@ pub async fn periodic_tasks(state: Arc<ServerState>) {
             }
             _ = cleanup_interval.tick() => {
                 state.rate_limiter.cleanup();
+            }
+            _ = relay_cleanup_interval.tick() => {
+                crate::relay::cleanup_stale_sessions(&state);
             }
         }
     }

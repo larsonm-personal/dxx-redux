@@ -2430,3 +2430,133 @@ async fn test_two_client_discovery_join_chat() {
     let lobbies2 = list2["lobbies"].as_array().unwrap();
     assert_eq!(lobbies2[0]["player_count"], 1);
 }
+
+// ---------------------------------------------------------------------------
+// Phase C: Relay session cleanup
+// ---------------------------------------------------------------------------
+
+/// Relay sessions older than MAX_RELAY_SESSION_SECS are reaped by
+/// cleanup_stale_sessions.
+#[tokio::test]
+async fn test_relay_cleanup_stale_sessions() {
+    let server = TestServer::start().await;
+
+    // Manually insert a relay session with a very old created_at
+    let old_session = dxx_matchmaking::relay::RelaySession {
+        session_token: 99999,
+        player_addrs: dashmap::DashMap::new(),
+        expected_players: 2,
+        created_at: std::time::Instant::now() - std::time::Duration::from_secs(8000),
+    };
+    server.state.relay_sessions.insert(99999, old_session);
+
+    // Insert a fresh relay session
+    let fresh_session = dxx_matchmaking::relay::RelaySession {
+        session_token: 11111,
+        player_addrs: dashmap::DashMap::new(),
+        expected_players: 2,
+        created_at: std::time::Instant::now(),
+    };
+    server.state.relay_sessions.insert(11111, fresh_session);
+
+    assert_eq!(server.state.relay_sessions.len(), 2);
+
+    let removed = dxx_matchmaking::relay::cleanup_stale_sessions(&server.state);
+    assert_eq!(removed, 1);
+    assert_eq!(server.state.relay_sessions.len(), 1);
+    assert!(server.state.relay_sessions.contains_key(&11111));
+    assert!(!server.state.relay_sessions.contains_key(&99999));
+}
+
+/// CONNECTIVITY_OK from a client updates the player's connection_type
+/// and ping_ms in the lobby state.
+#[tokio::test]
+async fn test_connectivity_ok_updates_player() {
+    let server = TestServer::start().await;
+
+    let mut host = connect_ws(&server).await;
+    authenticate(&mut host, "Host").await;
+
+    let create_resp = send_recv(
+        &mut host,
+        json!({
+            "type": "CREATE_LOBBY",
+            "game": "d2",
+            "mission": "Counterstrike!",
+            "mode": "coop",
+            "max_players": 4,
+        }),
+    )
+    .await;
+    let lobby_id = create_resp["lobby_id"].as_str().unwrap().to_string();
+
+    let mut joiner = connect_ws(&server).await;
+    let joiner_auth = authenticate(&mut joiner, "Joiner").await;
+    let joiner_id = joiner_auth["player_id"].as_str().unwrap().to_string();
+    send_only(
+        &mut joiner,
+        json!({"type": "JOIN_LOBBY", "lobby_id": lobby_id}),
+    )
+    .await;
+    // Drain LOBBY_UPDATEs
+    let _ = recv(&mut host).await;
+    let _ = recv(&mut joiner).await;
+
+    // Both submit STUN results to trigger CONNECTIVITY_CHECK_GO
+    send_only(
+        &mut host,
+        json!({
+            "type": "STUN_RESULT",
+            "candidates": [
+                { "candidate_type": "host", "addr": "192.168.1.10:5555" },
+                { "candidate_type": "srflx", "addr": "1.2.3.4:10001" },
+            ],
+            "nat_type": "full_cone",
+        }),
+    )
+    .await;
+    let _ = recv(&mut joiner).await; // PEER_CANDIDATES
+
+    send_only(
+        &mut joiner,
+        json!({
+            "type": "STUN_RESULT",
+            "candidates": [
+                { "candidate_type": "host", "addr": "192.168.1.20:5555" },
+                { "candidate_type": "srflx", "addr": "5.6.7.8:10002" },
+            ],
+            "nat_type": "full_cone",
+        }),
+    )
+    .await;
+    // Host: PEER_CANDIDATES + CONNECTIVITY_CHECK_GO
+    let _ = recv(&mut host).await;
+    let _ = recv(&mut host).await;
+    // Joiner: CONNECTIVITY_CHECK_GO
+    let _ = recv(&mut joiner).await;
+
+    // Host reports CONNECTIVITY_OK with a peer via srflx
+    send_only(
+        &mut host,
+        json!({
+            "type": "CONNECTIVITY_OK",
+            "peer_id": joiner_id,
+            "winning_candidate_type": "srflx",
+            "rtt_ms": 42,
+        }),
+    )
+    .await;
+
+    // Small delay to let the server process the message
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+
+    // Verify the lobby state directly: host should have DirectHolepunch + ping 42ms
+    let lobby_id_uuid: uuid::Uuid = lobby_id.parse().unwrap();
+    let lobby = server.state.lobbies.get(&lobby_id_uuid).unwrap();
+    let host_player = lobby.players.iter().find(|p| p.callsign == "Host").unwrap();
+    assert_eq!(
+        host_player.connection_type,
+        dxx_matchmaking::lobby::ConnectionType::DirectHolepunch
+    );
+    assert_eq!(host_player.ping_ms, Some(42));
+}

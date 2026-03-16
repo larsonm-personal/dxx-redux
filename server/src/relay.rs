@@ -7,6 +7,9 @@ use tracing::{debug, warn};
 
 use crate::ServerState;
 
+/// Maximum age of a relay session before it is reaped.
+const MAX_RELAY_SESSION_SECS: u64 = 7200; // 2 hours
+
 /// Active relay session mapping player slots to their UDP addresses.
 pub struct RelaySession {
     pub session_token: u32,
@@ -14,6 +17,29 @@ pub struct RelaySession {
     /// Number of expected players in this session (for address learning).
     pub expected_players: u8,
     pub created_at: std::time::Instant,
+}
+
+/// Remove relay sessions older than `MAX_RELAY_SESSION_SECS`.
+/// Returns the number of sessions removed.
+pub fn cleanup_stale_sessions(state: &ServerState) -> usize {
+    let cutoff = std::time::Duration::from_secs(MAX_RELAY_SESSION_SECS);
+    let now = std::time::Instant::now();
+    let mut removed = 0usize;
+    state.relay_sessions.retain(|_token, session| {
+        let keep = now.duration_since(session.created_at) < cutoff;
+        if !keep {
+            removed += 1;
+        }
+        keep
+    });
+    if removed > 0 {
+        tracing::info!(
+            removed,
+            remaining = state.relay_sessions.len(),
+            "reaped stale relay sessions"
+        );
+    }
+    removed
 }
 
 /// Relay packet format:

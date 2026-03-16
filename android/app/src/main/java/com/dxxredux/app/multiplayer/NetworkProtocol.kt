@@ -79,6 +79,37 @@ data class SendMessageMsg(
     val text: String,
 )
 
+// -- Client -> Server: NAT traversal messages --
+
+@Serializable
+data class StunResultMsg(
+    val type: String = "STUN_RESULT",
+    val candidates: List<ConnectionCandidate>,
+    @SerialName("nat_type") val natType: String,
+)
+
+@Serializable
+data class ConnectionCandidate(
+    @SerialName("candidate_type") val candidateType: String, // "host", "srflx", "upnp", "predicted"
+    val addr: String, // "ip:port"
+)
+
+@Serializable
+data class ConnectivityOkMsg(
+    val type: String = "CONNECTIVITY_OK",
+    @SerialName("peer_id") val peerId: String,
+    @SerialName("winning_candidate_type") val winningCandidateType: String,
+    @SerialName("rtt_ms") val rttMs: Int,
+)
+
+@Serializable
+data class ConnectivityUpdateMsg(
+    val type: String = "CONNECTIVITY_UPDATE",
+    @SerialName("peer_id") val peerId: String,
+    @SerialName("new_method") val newMethod: String,
+    val detail: String? = null,
+)
+
 // -- Server -> Client parsed types --
 
 @Serializable
@@ -210,6 +241,35 @@ data class ConnectionInfoMsg(
     val connections: List<PeerConnectionInfoMsg>,
 )
 
+// -- Server -> Client: NAT traversal messages --
+
+@Serializable
+data class PeerCandidatesMsg(
+    @SerialName("peer_id") val peerId: String,
+    val candidates: List<ConnectionCandidate>,
+    @SerialName("nat_type") val natType: String,
+)
+
+@Serializable
+data class CandidatePair(
+    @SerialName("peer_id") val peerId: String,
+    @SerialName("local_type") val localType: String,
+    @SerialName("remote_type") val remoteType: String,
+    @SerialName("remote_addr") val remoteAddr: String,
+    val priority: Int,
+)
+
+@Serializable
+data class ConnectivityCheckGoMsg(
+    @SerialName("peer_addrs") val peerAddrs: List<CandidatePair>,
+)
+
+@Serializable
+data class RelayAssignedMsg(
+    @SerialName("relay_addr") val relayAddr: String,
+    @SerialName("session_token") val sessionToken: String,
+)
+
 // Sealed class representing any server message, dispatched by "type" field
 sealed class ServerMessage {
     data class AuthOkMsg(
@@ -268,6 +328,18 @@ sealed class ServerMessage {
         val data: ConnectionInfoMsg,
     ) : ServerMessage()
 
+    data class PeerCandidatesReceived(
+        val data: PeerCandidatesMsg,
+    ) : ServerMessage()
+
+    data class ConnectivityCheckGoReceived(
+        val data: ConnectivityCheckGoMsg,
+    ) : ServerMessage()
+
+    data class RelayAssignedReceived(
+        val data: RelayAssignedMsg,
+    ) : ServerMessage()
+
     data class Unknown(
         val type: String,
         val raw: String,
@@ -292,6 +364,12 @@ sealed class ServerMessage {
                 "MESSAGE_RECEIVED" -> MessageReceived(protocolJson.decodeFromString<MessageReceivedMsg>(text))
                 "MESSAGE_SENT" -> MessageSent(protocolJson.decodeFromString<MessageSentMsg>(text))
                 "CONNECTION_INFO" -> ConnectionInfoReceived(protocolJson.decodeFromString<ConnectionInfoMsg>(text))
+                "PEER_CANDIDATES" -> PeerCandidatesReceived(protocolJson.decodeFromString<PeerCandidatesMsg>(text))
+                "CONNECTIVITY_CHECK_GO" ->
+                    ConnectivityCheckGoReceived(
+                        protocolJson.decodeFromString<ConnectivityCheckGoMsg>(text),
+                    )
+                "RELAY_ASSIGNED" -> RelayAssignedReceived(protocolJson.decodeFromString<RelayAssignedMsg>(text))
                 else -> Unknown(type, text)
             }
         }

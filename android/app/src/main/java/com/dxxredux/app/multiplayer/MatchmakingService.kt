@@ -33,6 +33,8 @@ object MatchmakingService {
     private var reconnectJob: Job? = null
     private var reconnectAttempt = 0
     private var manualDisconnect = false
+    private var stunJob: Job? = null
+    private var stunCompleted = false
 
     // Unique per app process -- ensures two emulators/devices get different player IDs
     // when using dev mode (SKIP_GPGS_VERIFY=true on the server)
@@ -63,6 +65,9 @@ object MatchmakingService {
     fun disconnect() {
         manualDisconnect = true
         reconnectJob?.cancel()
+        stunJob?.cancel()
+        stunJob = null
+        stunCompleted = false
         webSocket?.close(NetworkConstants.CLOSE_NORMAL, "user disconnect")
         webSocket = null
         state.update {
@@ -73,6 +78,9 @@ object MatchmakingService {
                 currentLobby = null,
                 chatMessages = emptyList(),
                 connectionInfo = emptyList(),
+                peerCandidates = emptyMap(),
+                connectivityPairs = emptyList(),
+                relayInfo = null,
                 nav = MultiplayerNav.BROWSER,
             )
         }
@@ -129,11 +137,17 @@ object MatchmakingService {
 
     fun leaveLobby() {
         send(protocolJson.encodeToString(LeaveLobbyMsg.serializer(), LeaveLobbyMsg()))
+        stunJob?.cancel()
+        stunJob = null
+        stunCompleted = false
         state.update {
             it.copy(
                 currentLobby = null,
                 chatMessages = emptyList(),
                 connectionInfo = emptyList(),
+                peerCandidates = emptyMap(),
+                connectivityPairs = emptyList(),
+                relayInfo = null,
                 nav = MultiplayerNav.BROWSER,
             )
         }
@@ -161,6 +175,23 @@ object MatchmakingService {
     ) {
         val msg = SendMessageMsg(targetPlayerId = targetPlayerId, text = text)
         send(protocolJson.encodeToString(SendMessageMsg.serializer(), msg))
+    }
+
+    fun sendStunResult(
+        candidates: List<ConnectionCandidate>,
+        natType: String,
+    ) {
+        val msg = StunResultMsg(candidates = candidates, natType = natType)
+        send(protocolJson.encodeToString(StunResultMsg.serializer(), msg))
+    }
+
+    fun sendConnectivityOk(
+        peerId: String,
+        winningCandidateType: String,
+        rttMs: Int,
+    ) {
+        val msg = ConnectivityOkMsg(peerId = peerId, winningCandidateType = winningCandidateType, rttMs = rttMs)
+        send(protocolJson.encodeToString(ConnectivityOkMsg.serializer(), msg))
     }
 
     /** Broadcast a message to all players in the current lobby. */
@@ -203,6 +234,44 @@ object MatchmakingService {
                 val s = state.state.value
                 connect(s.serverUrl, s.callsign)
             }
+    }
+
+    private fun launchStunDiscovery() {
+        stunJob =
+            scope.launch {
+                state.appendLog("Starting STUN discovery...")
+                try {
+                    val report = StunClient.discover()
+                    stunCompleted = true
+                    state.appendLog("STUN: ${report.natType}, ${report.candidates.size} candidates")
+                    sendStunResult(report.candidates, report.natType)
+                } catch (e: Exception) {
+                    Log.e(TAG, "STUN discovery failed", e)
+                    state.appendLog("STUN discovery failed: ${e.message}")
+                    // Send minimal result so the server can proceed (will use relay)
+                    stunCompleted = true
+                    sendStunResult(emptyList(), "unknown")
+                } finally {
+                    stunJob = null
+                }
+            }
+    }
+
+    private fun launchConnectivityCheck(pairs: List<CandidatePair>) {
+        scope.launch {
+            try {
+                val result = ConnectivityChecker.probe(pairs)
+                if (result != null) {
+                    state.appendLog("Direct connection: ${result.winningCandidateType} (${result.rttMs}ms)")
+                    sendConnectivityOk(result.peerId, result.winningCandidateType, result.rttMs)
+                } else {
+                    state.appendLog("No direct connection, will use relay")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Connectivity check failed", e)
+                state.appendLog("Connectivity check failed: ${e.message}")
+            }
+        }
     }
 
     private class Listener(
@@ -362,6 +431,10 @@ object MatchmakingService {
                 state.appendLog(
                     "Lobby updated: ${update.lobbyId} (${update.players.size} players)",
                 )
+                // Auto-start STUN when lobby has 2+ players and we haven't done it yet
+                if (update.players.size >= 2 && !stunCompleted && stunJob == null) {
+                    launchStunDiscovery()
+                }
             }
 
             is ServerMessage.ServerStatusReceived -> {
@@ -408,6 +481,28 @@ object MatchmakingService {
 
             is ServerMessage.ConnectionInfoReceived -> {
                 state.update { it.copy(connectionInfo = msg.data.connections) }
+            }
+
+            is ServerMessage.PeerCandidatesReceived -> {
+                val pc = msg.data
+                state.update { s ->
+                    val info = PeerNatInfo(pc.peerId, pc.candidates, pc.natType)
+                    s.copy(peerCandidates = s.peerCandidates + (pc.peerId to info))
+                }
+                state.appendLog("Peer candidates: ${pc.peerId} (${pc.natType}, ${pc.candidates.size} candidates)")
+            }
+
+            is ServerMessage.ConnectivityCheckGoReceived -> {
+                val pairs = msg.data.peerAddrs
+                state.update { it.copy(connectivityPairs = pairs) }
+                state.appendLog("Connectivity check GO: ${pairs.size} pairs to probe")
+                launchConnectivityCheck(pairs)
+            }
+
+            is ServerMessage.RelayAssignedReceived -> {
+                val relay = msg.data
+                state.update { it.copy(relayInfo = RelayInfo(relay.relayAddr, relay.sessionToken)) }
+                state.appendLog("Relay assigned: ${relay.relayAddr}")
             }
 
             is ServerMessage.Unknown -> {
