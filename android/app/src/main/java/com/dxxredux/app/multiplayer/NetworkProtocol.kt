@@ -1,0 +1,239 @@
+package com.dxxredux.app.multiplayer
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
+
+// JSON parser configured to ignore unknown fields (forward-compat with server additions)
+val protocolJson =
+    Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+    }
+
+// -- Client -> Server messages --
+// Each is serialized independently with a "type" field via @SerialName.
+
+@Serializable
+data class AuthenticateMsg(
+    val type: String = "AUTHENTICATE",
+    @SerialName("protocol_version") val protocolVersion: Int = NetworkConstants.PROTOCOL_VERSION,
+    @SerialName("client_version") val clientVersion: String = NetworkConstants.CLIENT_VERSION,
+    @SerialName("play_games_token") val playGamesToken: String? = null,
+    val callsign: String,
+    val platform: String = NetworkConstants.PLATFORM,
+    @SerialName("auth_method") val authMethod: String = "gpgs",
+)
+
+@Serializable
+data class ListLobbiesMsg(
+    val type: String = "LIST_LOBBIES",
+)
+
+@Serializable
+data class CreateLobbyMsg(
+    val type: String = "CREATE_LOBBY",
+    val game: String,
+    val mission: String,
+    val mode: String,
+    @SerialName("max_players") val maxPlayers: Int,
+    @SerialName("lobby_code") val lobbyCode: String? = null,
+    @SerialName("verified_only") val verifiedOnly: Boolean = false,
+)
+
+@Serializable
+data class JoinLobbyMsg(
+    val type: String = "JOIN_LOBBY",
+    @SerialName("lobby_id") val lobbyId: String,
+    @SerialName("lobby_code") val lobbyCode: String? = null,
+)
+
+@Serializable
+data class LeaveLobbyMsg(
+    val type: String = "LEAVE_LOBBY",
+)
+
+@Serializable
+data class ReadyMsg(
+    val type: String = "READY",
+    val ready: Boolean,
+)
+
+// -- Server -> Client parsed types --
+
+@Serializable
+data class AuthOk(
+    @SerialName("player_id") val playerId: String,
+    @SerialName("session_token") val sessionToken: String,
+)
+
+@Serializable
+data class AuthFail(
+    val reason: String,
+)
+
+@Serializable
+data class PowChallenge(
+    val challenge: String,
+    val difficulty: Int,
+)
+
+@Serializable
+data class ServerError(
+    val code: String,
+    val message: String,
+)
+
+@Serializable
+data class Motd(
+    val message: String,
+    val url: String? = null,
+    val severity: String = "info",
+)
+
+@Serializable
+data class LobbyInfo(
+    @SerialName("lobby_id") val lobbyId: String,
+    @SerialName("host_callsign") val hostCallsign: String,
+    val mission: String,
+    val mode: String,
+    @SerialName("player_count") val playerCount: Int,
+    @SerialName("max_players") val maxPlayers: Int,
+    val joinable: Boolean,
+    @SerialName("host_ping_ms") val hostPingMs: Int? = null,
+    @SerialName("has_code") val hasCode: Boolean = false,
+    @SerialName("verified_only") val verifiedOnly: Boolean = false,
+)
+
+@Serializable
+data class LobbyListMsg(
+    val lobbies: List<LobbyInfo>,
+)
+
+@Serializable
+data class LobbyPlayerInfo(
+    @SerialName("player_id") val playerId: String,
+    val callsign: String,
+    val ready: Boolean,
+    @SerialName("ping_ms") val pingMs: Int? = null,
+    @SerialName("connection_type") val connectionType: String = "unknown",
+)
+
+@Serializable
+data class LobbyUpdateMsg(
+    @SerialName("lobby_id") val lobbyId: String,
+    val players: List<LobbyPlayerInfo>,
+)
+
+@Serializable
+data class ServerStatusMsg(
+    @SerialName("online_players") val onlinePlayers: Int,
+    @SerialName("active_games_count") val activeGamesCount: Int,
+    @SerialName("active_game_list") val activeGameList: List<ActiveGameInfo> = emptyList(),
+    @SerialName("total_games_played") val totalGamesPlayed: Long = 0,
+)
+
+@Serializable
+data class ActiveGameInfo(
+    @SerialName("host_callsign") val hostCallsign: String,
+    val mission: String,
+    val mode: String,
+    @SerialName("player_count") val playerCount: Int,
+    @SerialName("duration_secs") val durationSecs: Long,
+)
+
+@Serializable
+data class GameStartingMsg(
+    @SerialName("host_addr") val hostAddr: String,
+    val mission: String,
+    val mode: String,
+)
+
+@Serializable
+data class RateLimitedMsg(
+    @SerialName("retry_after_ms") val retryAfterMs: Long,
+)
+
+@Serializable
+data class VersionRejectedMsg(
+    val reason: String,
+    @SerialName("required_version") val requiredVersion: Int,
+    @SerialName("required_version_name") val requiredVersionName: String,
+    @SerialName("current_server_version") val currentServerVersion: Int,
+    @SerialName("update_url") val updateUrl: String,
+)
+
+// Sealed class representing any server message, dispatched by "type" field
+sealed class ServerMessage {
+    data class AuthOkMsg(
+        val data: AuthOk,
+    ) : ServerMessage()
+
+    data class AuthFailMsg(
+        val data: AuthFail,
+    ) : ServerMessage()
+
+    data class PowChallengeMsg(
+        val data: PowChallenge,
+    ) : ServerMessage()
+
+    data class ErrorMsg(
+        val data: ServerError,
+    ) : ServerMessage()
+
+    data class MotdMsg(
+        val data: Motd,
+    ) : ServerMessage()
+
+    data class LobbyListReceived(
+        val data: LobbyListMsg,
+    ) : ServerMessage()
+
+    data class LobbyUpdated(
+        val data: LobbyUpdateMsg,
+    ) : ServerMessage()
+
+    data class ServerStatusReceived(
+        val data: ServerStatusMsg,
+    ) : ServerMessage()
+
+    data class GameStarting(
+        val data: GameStartingMsg,
+    ) : ServerMessage()
+
+    data class RateLimited(
+        val data: RateLimitedMsg,
+    ) : ServerMessage()
+
+    data class VersionRejected(
+        val data: VersionRejectedMsg,
+    ) : ServerMessage()
+
+    data class Unknown(
+        val type: String,
+        val raw: String,
+    ) : ServerMessage()
+
+    companion object {
+        fun parse(text: String): ServerMessage {
+            val obj = protocolJson.decodeFromString<JsonObject>(text)
+            val type = obj["type"]?.jsonPrimitive?.content ?: return Unknown("missing", text)
+            return when (type) {
+                "AUTH_OK" -> AuthOkMsg(protocolJson.decodeFromString<AuthOk>(text))
+                "AUTH_FAIL" -> AuthFailMsg(protocolJson.decodeFromString<AuthFail>(text))
+                "POW_CHALLENGE" -> PowChallengeMsg(protocolJson.decodeFromString<PowChallenge>(text))
+                "ERROR" -> ErrorMsg(protocolJson.decodeFromString<ServerError>(text))
+                "MOTD" -> MotdMsg(protocolJson.decodeFromString<Motd>(text))
+                "LOBBY_LIST" -> LobbyListReceived(protocolJson.decodeFromString<LobbyListMsg>(text))
+                "LOBBY_UPDATE" -> LobbyUpdated(protocolJson.decodeFromString<LobbyUpdateMsg>(text))
+                "SERVER_STATUS" -> ServerStatusReceived(protocolJson.decodeFromString<ServerStatusMsg>(text))
+                "GAME_STARTING" -> GameStarting(protocolJson.decodeFromString<GameStartingMsg>(text))
+                "RATE_LIMITED" -> RateLimited(protocolJson.decodeFromString<RateLimitedMsg>(text))
+                "VERSION_REJECTED" -> VersionRejected(protocolJson.decodeFromString<VersionRejectedMsg>(text))
+                else -> Unknown(type, text)
+            }
+        }
+    }
+}

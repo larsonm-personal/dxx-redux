@@ -136,7 +136,7 @@ Benefits:
 
 ---
 
-## Phase 1: LAN Discovery and Lobby
+## Phase 1: LAN Discovery and Lobby -- NOT STARTED
 
 ### Goal
 
@@ -208,7 +208,54 @@ launch into a co-op game from the launcher without touching in-game menus.
 
 ---
 
-## Phase 2: Internet Matchmaking Server (Rust)
+## Phase 2: Internet Matchmaking Server (Rust) -- PARTIALLY COMPLETE
+
+### Status
+
+Implemented (in server/):
+- [x] main.rs: startup, config, TLS, ws+http+relay task spawn
+- [x] ws_handler.rs: WebSocket lifecycle, message dispatch, all message handlers
+- [x] lobby.rs: lobby state, player tracking, presence, connection types
+- [x] protocol.rs: full client/server message definitions with serde
+- [x] relay.rs: UDP relay socket, session-token routing, rate limiting
+- [x] rate_limit.rs: per-IP and per-identity sliding-window rate limiting
+- [x] db.rs: SQLite persistence (players, bans, friends, match history)
+- [x] friends.rs: friend request/accept/remove/presence tracking
+- [x] stats.rs: in-memory counters (connections, lobbies, games, relays)
+- [x] config.rs: server configuration struct
+- [x] http_api.rs: health, status, admin endpoints, uptime tracking
+- [x] Integration tests: 27 tests covering auth, lobbies, friends, kicks, game start, HTTP API, welcome bundle, messaging, stable identity
+- [x] LOBBY_UPDATE broadcasting on create/join/leave/ready
+- [x] StartGame handler: CONNECTION_INFO + GAME_STARTING to all members, presence updates
+- [x] KickPlayer handler: notifications, session cleanup, lobby broadcast
+- [x] FileHashes forwarding to host
+- [x] ConnectivityOk/ConnectivityUpdate handlers
+- [x] ICE-style candidate exchange via STUN_RESULT/PEER_CANDIDATES
+- [x] Connection type reporting (CONNECTION_INFO with method/detail/relay flag)
+- [x] DashMap deadlock audit and fixes (StartGame, LeaveLobby, KickPlayer)
+- [x] Stable player identity via find_or_create_player_by_gpgs (db.rs + ws_handler.rs)
+- [x] Post-auth welcome bundle: SERVER_STATUS, LOBBY_LIST, FRIEND_LIST_RESP (Phase 2.5)
+- [x] Player messaging: SEND_MESSAGE handler with rate limiting, block check, validation
+- [x] ActiveGameInfo in SERVER_STATUS (host_callsign, mission, mode, player_count, duration)
+- [x] host_ping_ms field in LobbyInfo (lobby list and HTTP status)
+- [x] is_blocked() DB function for message filtering
+- [x] CONNECTIVITY_CHECK_GO orchestration: sent to all players when all STUN_RESULTs received, lobby transitions to Holepunching
+- [x] RELAY_ASSIGNED session allocation during StartGame for ConnectionType::Relay pairs, with STUN address pre-population
+- [x] Relay address learning: auto-register unknown sources on first packet (relay.rs)
+- [x] TLS certificate loading infrastructure: config fields (tls_cert_path, tls_key_path), tls.rs module with rustls-pemfile PEM loading
+- [x] relay_public_addr config field for RELAY_ASSIGNED message addressing
+- [x] candidate_pair_priority() scoring for ICE-style candidate pair ordering
+- [x] Integration tests: 38 tests (added CONNECTIVITY_CHECK_GO, RELAY_ASSIGNED, kicked-player rejoin, lobby codes, friend code bypass, predictive port candidates, verified-only lobby)
+- [x] identity.rs (Google Play Games token verification with skip_gpgs_verify dev mode)
+- [x] Kicked-player rejoin prevention (lobby.kicked_players tracked, checked in JoinLobby and JoinFriendGame)
+- [x] Lobby codes for invite-only sessions (CreateLobby/JoinLobby with lobby_code, has_code in listing, friend bypass)
+- [x] broadcast_lobby_update after successful JoinFriendGame join
+
+- [x] Predictive port allocation logic (Strategy 4): generate_predicted_candidates() in ws_handler.rs; server-side sequential port prediction for symmetric NATs, merged into PEER_CANDIDATES
+- [x] "Verified only" lobby setting: verified_only field on CreateLobby/Lobby/LobbyInfo, gpgs_verified on PlayerSession, enforcement in JoinLobby and JoinFriendGame
+
+Not yet implemented:
+- [ ] Mid-session relay-to-direct migration orchestration
 
 ### Goal
 
@@ -262,12 +309,69 @@ Server -> Client:
   GAME_STARTING   {host_addr, mission, mode, peer_localhost_ports}
   FILE_MISMATCH   {player, mismatched_files}
   RELAY_ASSIGNED  {relay_addr, session_token}
+  CONNECTION_INFO {connections: [{peer_id, method, detail}]}
   ERROR           {code, message}
   RATE_LIMITED    {retry_after_ms}
 
+### Connection Type Reporting (CONNECTION_INFO)
+
+After connection establishment is complete (holepunch or relay fallback),
+the server sends each client a CONNECTION_INFO message describing how it
+is connected to each peer. The client can display this in a stats view
+so players can see their connection quality.
+
+```
+Server -> Client (sent after GAME_STARTING, once per peer):
+  CONNECTION_INFO {
+    connections: [
+      {
+        peer_id: UUID,             // the peer player
+        peer_callsign: string,     // for display
+        method: string,            // "direct_holepunch", "relay", "direct_lan"
+        detail: string | null,     // extra context, e.g. "both peers cone NAT",
+                                   // "symmetric NAT fallback", "same subnet"
+        server_relay: bool,        // true if traffic goes through the server
+        estimated_latency_ms: u32 | null  // server-measured one-way latency
+                                          // to the relay, if applicable
+      }
+    ]
+  }
+```
+
+Connection method values:
+
+| method              | meaning                                               |
+|---------------------|-------------------------------------------------------|
+| `direct_lan`        | Both peers on same LAN/subnet, no NAT traversal       |
+| `direct_holepunch`  | UDP holepunch succeeded, direct peer-to-peer path     |
+| `relay`             | Holepunch failed, traffic relayed through server      |
+
+The `detail` field provides human-readable context:
+- `"both peers cone NAT"` -- holepunch was straightforward
+- `"symmetric NAT on one side"` -- holepunch succeeded but was less certain
+- `"both symmetric NAT, holepunch failed"` -- explains why relay is needed
+- `"same subnet detected"` -- LAN game, no internet traversal
+
+The client uses this to show a connection quality indicator per peer in
+the in-game stats overlay and post-game summary. Relay connections may
+have higher latency; showing this helps players understand performance.
+
 ---
 
-## Phase 3: Identity and Anti-Abuse
+## Phase 3: Identity and Anti-Abuse -- COMPLETE
+
+### Status
+
+- [x] Rate limiting (server-side sliding-window: ws_message, lobby_create, lobby_join, auth)
+- [x] Player banning (db.rs: ban/unban/is_banned, admin HTTP endpoints)
+- [x] Lobby host kick (KickPlayer handler with notifications)
+- [x] Match result tracking (db.rs)
+- [x] Friend system (friend request/accept/remove, mutual verification)
+- [x] Google Play Games identity verification (identity.rs, skip_gpgs_verify config for dev/test)
+- [x] Lobby codes for invite-only sessions (lobby_code on CreateLobby/JoinLobby, has_code in listing)
+- [x] Kicked-player rejoin prevention (lobby.kicked_players, JoinLobby + JoinFriendGame checks)
+- [x] Proof-of-work fallback for non-Google devices (pow.rs: challenge generation, SHA-256 PoW verification, ed25519 signature verification; db.rs: keypair_identities table; protocol.rs: PowChallenge/PowSolution messages; ws_handler.rs: two-phase auth flow for new keys, fast path for known keys; config: pow_difficulty setting)
+- [x] "Verified only" lobby setting (verified_only on CreateLobby, Lobby, LobbyInfo; gpgs_verified on sessions; VERIFIED_ONLY error code)
 
 ### The Problem with Bare Keypairs
 
@@ -285,12 +389,14 @@ GPGS provides server-side identity verification without building an account
 system:
 
 1. Android client calls PlayGamesSdk.getGamesSignInClient().signIn()
-2. On success, gets a server auth code (one-time token)
-3. Client sends this token to our matchmaking server
+2. On success, gets a server auth code via requestServerSideAccess()
+3. Client sends this token to our matchmaking server as play_games_token
 4. Server exchanges token with Google's OAuth2 endpoint
-   (POST https://oauth2.googleapis.com/token) to get an ID token
-5. Server decodes the ID token to extract the player's stable GPGS player ID
-6. This player ID is the persistent identity -- tied to a Google account
+   (POST https://oauth2.googleapis.com/token) to get an access_token + id_token
+5. Server uses the access_token to call the Play Games REST API
+   (GET https://www.googleapis.com/games/v1/players/me) to get the stable
+   GPGS player ID (distinct from the Google account ID in the id_token sub claim)
+6. This GPGS player ID is the persistent identity -- tied to a Google account
 
 Why this works for anti-abuse:
 - Google accounts are hard to mass-create (phone verification, CAPTCHA, etc.)
@@ -298,6 +404,78 @@ Why this works for anti-abuse:
 - No passwords, no email collection, no PII stored on our server
 - Free tier handles our scale easily
 - Already on every Android device
+
+### Server-Side Token Exchange Details
+
+The server exchanges the one-time auth code for tokens via a standard
+OAuth2 authorization_code grant. Confirmed by the Google docs and the
+StackOverflow C# example at
+https://stackoverflow.com/questions/56786698 (same flow, different language).
+
+```
+POST https://oauth2.googleapis.com/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code
+&code=SERVER_AUTH_CODE_FROM_CLIENT
+&client_id=WEB_CLIENT_ID (from Google API console, NOT the Android client ID)
+&client_secret=WEB_CLIENT_SECRET
+&redirect_uri=  (empty string -- must match the Google API console config)
+```
+
+Response:
+```json
+{
+  "access_token": "...",
+  "id_token": "...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "refresh_token": "..."
+}
+```
+
+Important implementation notes:
+- The client_id/client_secret are the WEB type OAuth credentials, not the
+  Android client ID. The Android client ID is only used client-side in
+  requestServerSideAccess(SERVER_CLIENT_ID).
+- redirect_uri must match what's configured in the API console. For mobile
+  app flows this is typically empty string. Getting this wrong gives a
+  misleading "redirect_uri_mismatch" error.
+- Server auth codes expire within minutes. Exchange immediately on receipt --
+  no caching or queuing. If debugging manually, the code may expire before
+  you can use it (Google returns "invalid_grant" which is misleading).
+- The id_token is a JWT whose "sub" claim is the Google account ID, NOT the
+  GPGS player ID. To get the stable GPGS player ID, use the access_token to
+  call GET https://www.googleapis.com/games/v1/players/me -- the response
+  contains a "playerId" field which is the GPGS-specific stable identity.
+- The access_token from this exchange is short-lived (~1 hour). We only need
+  it once to fetch the player ID, then discard it. No need to store or
+  refresh tokens.
+
+### Current Implementation Gap
+
+The server has the scaffolding ready:
+- config.rs: google_client_id and google_client_secret loaded from env vars
+  (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET) but not yet used
+- ws_handler.rs: AUTHENTICATE handler has a TODO comment, currently passes
+  play_games_token directly to find_or_create_player_by_gpgs as the identity
+  key (dev mode -- any string works as identity)
+- db.rs: find_or_create_player_by_gpgs() maps gpgs_player_id string to a
+  stable server-side UUID. Ready to receive real GPGS player IDs.
+- identity.rs: does not exist yet. Will contain the token exchange +
+  player ID fetch logic.
+
+When implementing identity.rs:
+1. Use reqwest (already a dependency) to POST to the token endpoint
+2. Parse the JSON response to get access_token
+3. Use access_token to GET /games/v1/players/me
+4. Extract playerId from the response
+5. Return the playerId string to the AUTHENTICATE handler
+6. Handler passes it to find_or_create_player_by_gpgs as before
+7. Add a config flag (e.g. SKIP_GPGS_VERIFY=true) for dev/test mode that
+   preserves the current behavior of using play_games_token directly
+8. Integration tests should set SKIP_GPGS_VERIFY=true so they can continue
+   using fake-token-* strings without hitting Google's servers
 
 ### Gradle Dependencies to Add
 
@@ -363,17 +541,50 @@ Clients should be told which rate limit they hit so that human players are less 
 
 ---
 
-## Phase 4: NAT Traversal (STUN + Holepunch + Relay)
+## Phase 4: NAT Traversal (ICE-Style Multi-Strategy Pipeline) -- PROTOCOL DEFINED, ORCHESTRATION NOT STARTED
+
+### Status
+
+- [x] Protocol messages defined: STUN_RESULT (with candidates/nat_type), PEER_CANDIDATES, CONNECTIVITY_CHECK_GO, CONNECTIVITY_OK, CONNECTIVITY_UPDATE
+- [x] ConnectionCandidate and CandidatePair types in protocol.rs
+- [x] ConnectionType enum: Unknown, DirectLan, DirectUpnp, DirectHolepunch, PredictedHolepunch, Relay
+- [x] determine_connection_type() logic based on candidates and NAT type
+- [x] Candidate exchange: STUN_RESULT stores candidates on LobbyPlayer, PEER_CANDIDATES distributes to peers
+- [x] ConnectivityOk handler records winning type and RTT
+- [x] ConnectivityUpdate handler for mid-session migration
+- [x] CONNECTION_INFO reporting to all lobby members
+- [x] CONNECTIVITY_CHECK_GO orchestration: server broadcasts to all players when all STUN_RESULTs received
+- [x] Relay session assignment wired to lobby flow (RELAY_ASSIGNED on StartGame for Relay pairs)
+- [x] Predictive port allocation (Strategy 4 algorithm): generate_predicted_candidates() generates next-port candidates for sequential symmetric NATs
+- [ ] Client-side implementation (Kotlin STUN, holepunching, localhost proxy)
+- [ ] UPnP/PCP/NAT-PMP client-side integration
+
+### Design Philosophy: ICE for Games
+
+ICE (Interactive Connectivity Establishment) is a framework, not a single
+protocol. It defines a deterministic pipeline that gathers every possible
+network path between two peers, races them in parallel, and picks the best
+one. WebRTC, Steam Networking Sockets, Xbox Live, and PlayStation Network
+all implement some variant of this.
+
+Our implementation follows the same pattern but is tuned for game traffic:
+- UDP-first (latency-critical)
+- Minimal candidate gathering (fast startup -- games can't wait 10 seconds)
+- Custom orchestration (hand-rolled; no crate covers the full pipeline)
+- Rust crates for the low-level primitives (STUN parsing, TURN relay, etc.)
+
+The key insight: ICE is not "try one thing and fall back." It is a parallel
+race across multiple candidate paths. The first path that succeeds wins.
 
 ### The NAT Landscape for Mobile Games
 
-| NAT Type              | Holepunch Works? | Where You See It             |
-|-----------------------|------------------|------------------------------|
-| Full Cone             | Always           | Rare (old routers)           |
-| Address-Restricted    | Yes              | Common home WiFi             |
-| Port-Restricted Cone  | Yes              | Most common home WiFi        |
-| Symmetric             | Usually fails    | Mobile carriers (CGNAT),     |
-|                       |                  | corporate networks           |
+| NAT Type              | UDP Holepunch? | TCP Holepunch? | Where You See It             |
+|-----------------------|----------------|----------------|------------------------------|
+| Full Cone             | Always         | Always         | Rare (old routers)           |
+| Address-Restricted    | Yes            | Yes            | Common home WiFi             |
+| Port-Restricted Cone  | Yes            | Sometimes      | Most common home WiFi        |
+| Symmetric             | Usually fails  | Usually fails  | Mobile carriers (CGNAT),     |
+|                       |                |                | corporate networks           |
 
 ### IPv6 Does NOT Solve NAT on Mobile
 
@@ -397,22 +608,187 @@ This is wrong in practice for mobile:
   difference is that symmetric NAT (port randomization) is less common
   on IPv6, so holepunching succeeds more often.
 
-### STUN: Discovering Your Reflexive Address
+### The Five NAT Traversal Strategies
 
-STUN (Session Traversal Utilities for NAT) is a simple protocol:
-1. Send 20-byte Binding Request to a STUN server
-2. Server replies with your external IP:port (XOR-MAPPED-ADDRESS)
-3. This tells you what address peers need to send to
+The server orchestrates all of these in parallel (or rapid sequence) for
+each peer pair. The first strategy that succeeds is used. The strategies
+are listed in priority order (best to worst).
 
-Implementation in Kotlin (~100 lines):
-- Build STUN request (20 bytes: type=0x0001, length=0, magic cookie, txn ID)
-- Send via the lobby DatagramSocket (same socket that will be used for game)
-- Parse response: find XOR-MAPPED-ADDRESS attribute, extract IP:port
-- Do this twice to two different STUN servers (or same server, different ports)
-  to detect symmetric NAT (reflexive port differs = symmetric)
+#### Strategy 1: Direct LAN (No Traversal Needed)
 
-Public STUN servers: stun.l.google.com:19302, stun.cloudflare.com:3478
-(both free, reliable, globally distributed)
+Both peers share the same public IP (same LAN or subnet). Detected by
+comparing STUN-reflected addresses. Skip all punching, connect directly.
+
+Priority: highest. Latency: sub-1ms.
+
+#### Strategy 2: UPnP / PCP / NAT-PMP Port Mapping
+
+Request the local router to create an explicit port mapping. This turns
+a restricted NAT into an open port.
+
+- UPnP (Universal Plug and Play): XML/SOAP, most home routers support it
+- NAT-PMP (NAT Port Mapping Protocol): Apple's simpler alternative
+- PCP (Port Control Protocol): successor to NAT-PMP (RFC 6887)
+
+Cannot be relied on (many routers have UPnP disabled, enterprise networks
+never support it), but when available it gives zero-overhead direct
+connectivity.
+
+Client-side only (Kotlin). The server is informed via a new message if
+a mapping was successfully created, so other peers can connect directly
+to the mapped port.
+
+Rust crate (server-side, for reference/testing): `igd-next` (UPnP IGD).
+Client-side (Kotlin): Android has no built-in UPnP; use the `cling` or
+`jupnp` Java library, or a minimal hand-rolled SSDP+SOAP client (~200
+lines for the port mapping case only).
+
+Priority: high (opportunistic). Latency: direct.
+
+#### Strategy 3: UDP Hole Punching (STUN-Coordinated)
+
+The core NAT traversal technique. Works against all cone NATs (full,
+address-restricted, port-restricted) which covers ~85-90% of home networks.
+
+1. Each peer sends a STUN Binding Request to discover their reflexive
+   address (public IP:port as seen by the STUN server).
+2. Peers exchange reflexive addresses via the matchmaking server.
+3. Both peers send priming UDP packets to each other's reflexive address
+   simultaneously (coordinated by the server).
+4. The NAT creates mappings for outbound packets. When the peer's packet
+   arrives, the NAT recognizes it as a response and lets it through.
+5. Once bidirectional UDP flows, the direct path is established.
+
+Implementation notes:
+- STUN binding via `stun_codec` crate (RFC 5389 message parsing) or the
+  `bytecodec`-based `stun_codec` on the server side. Client side in
+  Kotlin can hand-roll the 20-byte binding request (trivial format).
+- Query two different STUN servers (or same server on two ports) to
+  detect symmetric NAT: if reflexive ports differ, the NAT is symmetric.
+- Public STUN servers: stun.l.google.com:19302, stun.cloudflare.com:3478
+
+Symmetric NAT detection: if two STUN queries from the same local socket
+return different external ports, the NAT assigns ports unpredictably and
+standard holepunching will not work. Move to Strategy 4 or 5.
+
+Priority: primary. Latency: direct P2P.
+
+#### Strategy 4: Predictive Port Allocation (Symmetric NAT Workaround)
+
+Many symmetric NATs allocate ports sequentially (e.g., 50000, 50001,
+50002...). By observing the last two STUN-reflected ports, the server
+can predict the next port the NAT will allocate and instruct peers to
+punch to the predicted port.
+
+Algorithm:
+1. Client sends STUN to server A -> gets reflexive port P1
+2. Client sends STUN to server B -> gets reflexive port P2
+3. If P2 = P1 + 1 (or close), NAT is sequential-symmetric
+4. Server predicts next port = P2 + 1 (or P2 + delta)
+5. Server tells the other peer to punch to IP:predicted_port
+6. Client sends a new outbound packet (to trigger the NAT allocation)
+7. If prediction was correct, holepunch succeeds on the predicted port
+
+This is not reliable (port prediction can be wrong, some NATs are random),
+but it catches a meaningful fraction of symmetric NAT cases that would
+otherwise require relay. Worth attempting for ~500ms before falling back.
+
+Success rate: ~30-50% of symmetric NATs. Latency: direct P2P if it works.
+
+#### Strategy 5: Server-Relayed UDP (TURN-Like Fallback)
+
+When all direct-connection strategies fail (both peers behind symmetric
+NAT with random port allocation, or aggressive firewalls), the matchmaking
+server relays UDP traffic.
+
+Relay packet format:
+
+  [session_token (4 bytes LE) | dest_player_slot (1 byte) | game_packet]
+
+Server forwards to the destination peer:
+
+  [session_token (4 bytes LE) | from_player_slot (1 byte) | game_packet]
+
+5 bytes overhead per packet. Server is stateless per-packet (just a
+lookup table: session_token -> {player_slot -> peer_addr}).
+
+Relay characteristics:
+- Added latency: one extra hop, typically 10-30ms depending on server
+  location. For a game at 30fps (33ms/frame), this is less than one
+  frame of added latency.
+- Bandwidth: game uses ~5-15 KB/s per player. A $5 VPS can relay
+  hundreds of simultaneous sessions.
+- Rate-limited per session to prevent abuse (50 KB/s cap).
+
+Rust crate considerations: the relay is simple enough to hand-roll (it's
+just a UDP recv/lookup/send loop). A full TURN server (RFC 5766) is
+overkill for our relay because we don't need TURN's allocation mechanism,
+channel binding, or authentication -- our relay sessions are created via
+the WebSocket signaling channel with session tokens, not via TURN
+protocol messages. `turn-rs` or `coturn` could be used if interoperability
+with standard TURN clients were needed, but for a custom game relay the
+hand-rolled approach is simpler and more efficient.
+
+Priority: lowest (always works). Latency: 10-30ms added.
+
+### Strategy Summary and Expected Coverage
+
+| Strategy                  | Works Against         | Success Rate | Latency  |
+|---------------------------|-----------------------|--------------|----------|
+| Direct LAN                | Same subnet           | 100%         | <1ms     |
+| UPnP/PCP/NAT-PMP          | Home routers w/ UPnP  | ~40-60%      | Direct   |
+| UDP Holepunch (STUN)       | All cone NATs         | ~85-90%      | Direct   |
+| Predictive Port (Symmetric)| Sequential symmetric  | ~30-50%      | Direct   |
+| Server Relay               | Everything            | 100%         | +10-30ms |
+
+Combined, the first four strategies should achieve direct P2P for ~95%+
+of real-world peer pairs. Only the hardest cases (both behind random-port
+symmetric NATs with no UPnP, ~5%) will use relay.
+
+### ICE-Style Candidate Gathering
+
+Each client gathers a set of connection "candidates" before the game
+starts. This happens in the lobby phase, transparent to the player.
+
+```
+Candidate types (gathered per client):
+  1. Host candidate:  local LAN IP:port (e.g., 192.168.1.50:42424)
+  2. Server-reflexive: STUN-discovered public IP:port (e.g., 73.22.19.44:62014)
+  3. Predicted:        predicted next port for sequential symmetric NATs
+  4. UPnP-mapped:      explicitly mapped port via UPnP/PCP (if available)
+  5. Relay:            server relay endpoint (always available as fallback)
+```
+
+The client sends all gathered candidates to the server via STUN_RESULT
+(extended to carry multiple candidates). The server distributes each
+player's candidates to all other players and coordinates connectivity
+checks.
+
+### Connectivity Check Race
+
+Once candidates are exchanged, the server triggers simultaneous
+connectivity checks across all candidate pairs. This is the ICE "race":
+
+```
+For each peer pair (A, B):
+  candidate_pairs = cross_product(A.candidates, B.candidates)
+  sort by priority:
+    1. host <-> host           (LAN, if same public IP)
+    2. UPnP <-> any            (if A or B got a mapping)
+    3. srflx <-> srflx         (standard UDP holepunch)
+    4. predicted <-> predicted  (symmetric NAT workaround)
+    5. relay <-> relay          (guaranteed fallback)
+
+  For each pair (in priority order):
+    Both peers send test packets simultaneously
+    First pair to get bidirectional response wins
+    Timeout per pair: 500ms (aggressive for fast game startup)
+    Total timeout: 3 seconds (then relay fallback is forced)
+```
+
+The key difference from WebRTC ICE: we check fewer candidates (5 types
+max vs WebRTC's potentially dozens) and use shorter timeouts (games
+need fast connection, not exhaustive probing).
 
 ### Holepunch Sequence (Coordinated by Server)
 
@@ -421,59 +797,122 @@ Timeline (all in lobby, BEFORE game launch):
 
   Client A                  Server                     Client B
      |                        |                            |
-     | STUN_RESULT(203.0.113.5:42424)                      |
+     | STUN_RESULT(candidates=[...])                       |
      |----------------------->|                            |
-     |                        |  STUN_RESULT(198.51.100.7:42424)
+     |                        |  STUN_RESULT(candidates=[...])
      |                        |<---------------------------|
      |                        |                            |
-     |  PEER_STUN(198.51.100.7:42424)                      |
+     |  PEER_CANDIDATES(B's candidates)                    |
      |<-----------------------|                            |
-     |                        | PEER_STUN(203.0.113.5:42424)
+     |                        | PEER_CANDIDATES(A's candidates)
      |                        |--------------------------->|
      |                        |                            |
-     | HOLEPUNCH_OK           |           HOLEPUNCH_OK     |
-     |----------------------->|<---------------------------|
-     |                        |                            |
-     |  HOLEPUNCH_GO          |        HOLEPUNCH_GO        |
+     |  CONNECTIVITY_CHECK_GO |   CONNECTIVITY_CHECK_GO    |
      |<-----------------------|--------------------------->|
      |                        |                            |
-     | UDP ping-->            |            <--UDP ping     |
-     | (to 198.51.100.7:42424)|  (to 203.0.113.5:42424)   |
-     |                 simultaneous                        |
-     |                 ~30 pings over 3 sec                |
+     | -- parallel checks across all candidate pairs --    |
+     | UDP pings to each candidate addr simultaneously     |
      |                                                     |
-     | <------ direct UDP path established ------->        |
-     |                                                     |
-     | Lobby shows "Connected" for this peer               |
+     | CONNECTIVITY_OK(winning_pair)                       |
+     |----------------------->|                            |
+     |                        |  CONNECTIVITY_OK(winning_pair)
+     |                        |<---------------------------|
+     |                        |                            |
+     | Lobby shows "Connected (direct)" or "(relay)"       |
 ```
 
-Key: HOLEPUNCH_GO is sent to both peers simultaneously so they start
-punching at the same time. This is critical -- if A sends before B has
-sent, A's packet arrives at B's NAT before B has created a mapping,
-and gets dropped. Simultaneous sends maximize success.
+CONNECTIVITY_CHECK_GO is sent to both peers simultaneously so they
+start probing at the same time. Simultaneous sends maximize holepunch
+success -- if A sends before B, A's packet arrives at B's NAT before
+B has created a mapping and gets dropped.
 
-### Relay Fallback (Symmetric NAT)
+### Mid-Session Migration (Relay -> Direct)
 
-When holepunch fails (both peers behind symmetric NAT, ~5-10% of pairs):
+If a pair starts on relay (because holepunch timed out during the
+initial 3-second window), the client continues sending periodic
+direct-path probes in the background. If a direct path opens later
+(e.g., NAT mapping stabilized, network change), the client can
+migrate from relay to direct mid-game.
 
-The matchmaking server assigns a relay session. Each peer sends game
-packets to the server with a session header:
+Implementation:
+- Every 30 seconds, the localhost proxy sends a test packet via the
+  direct candidate (not through relay).
+- If a response comes back, switch the forwarding path.
+- Notify the server via CONNECTIVITY_UPDATE so connection_type is
+  updated and CONNECTION_INFO reflects the change.
+- No packet loss during migration: both paths are valid briefly,
+  old path continues until new path is confirmed.
 
-  [session_token (4 bytes) | dest_player_id (1 byte) | game_packet]
+This is an optimization, not required for v1. Implement after the
+basic pipeline is stable.
 
-Server forwards to the other peer:
+### Rust Crates for NAT Traversal Components
 
-  [session_token (4 bytes) | from_player_id (1 byte) | game_packet]
+The orchestration layer (candidate gathering, connectivity check race,
+priority logic, fallback decisions) is hand-rolled because no crate
+covers the full pipeline for games. But the low-level primitives should
+use existing crates where possible:
 
-5 bytes overhead. Server is stateless per-packet (just a lookup table
-of session -> {player_id -> peer_addr}).
+| Component              | Crate                  | Notes                              |
+|------------------------|------------------------|------------------------------------|
+| STUN message parsing   | `stun_codec` (=0.3)    | RFC 5389/8489, Binding Request/    |
+|                        |                        | Response, XOR-MAPPED-ADDRESS.      |
+|                        |                        | Handles encoding/decoding only.    |
+| STUN transport         | hand-rolled            | Just send/recv UDP with the parsed |
+|                        |                        | messages. ~30 lines.               |
+| NAT type detection     | hand-rolled            | Compare two STUN results. ~20 lines|
+| UPnP port mapping      | `igd-next` (=0.15)     | UPnP IGD for requesting port maps. |
+|                        |                        | Server-side testing/reference only.|
+| UDP relay              | hand-rolled            | Simple recv/lookup/send loop. TURN |
+|                        |                        | (RFC 5766) is overkill for our     |
+|                        |                        | custom session-token format.       |
+| Connectivity checks    | hand-rolled            | send test packets, track responses,|
+|                        |                        | pick winner. ~100 lines.           |
+| Candidate exchange     | existing WS protocol   | STUN_RESULT extended to carry      |
+|                        |                        | multiple candidates.               |
+| Orchestration/ICE logic| hand-rolled            | Priority sorting, timeout logic,   |
+|                        |                        | fallback decisions. ~200 lines.    |
 
-Added latency: one extra hop through the server. Typically 10-30ms
-depending on server location. For a game running at 30fps (33ms per
-frame), this is less than one frame of added latency.
+Why not use a full ICE/WebRTC crate (e.g., `webrtc-rs`, `str0m`)?
+- They bundle DTLS, SRTP, SDP, congestion control -- all unnecessary
+  for raw game UDP.
+- They are designed for media streams, not game packets.
+- Their ICE agents assume SDP-based signaling; we use our own WebSocket
+  protocol.
+- The orchestration layer is ~300 lines total. Pulling in a WebRTC stack
+  for that would add massive dependency weight and complexity.
 
-Bandwidth: game uses ~5-15 KB/s per player. A $5 VPS can relay hundreds
-of simultaneous sessions. Rate-limited per session to prevent abuse.
+Game networking crates (`laminar`, `renet`, `naia`, `quinn`) handle
+reliability/ordering layers but none implement NAT traversal. They
+assume you bring your own connectivity.
+
+### Protocol Changes for ICE-Style Traversal
+
+Extended client messages:
+
+```
+  STUN_RESULT  {
+    candidates: [
+      {type: "host",   addr: "192.168.1.50:42424"},
+      {type: "srflx",  addr: "73.22.19.44:62014"},
+      {type: "upnp",   addr: "73.22.19.44:42424"},       // if UPnP succeeded
+      {type: "predicted", addr: "73.22.19.44:62016"}      // if symmetric+sequential
+    ],
+    nat_type: "port_restricted_cone" | "symmetric" | "symmetric_sequential" | "unknown"
+  }
+
+  CONNECTIVITY_OK  {peer_id, winning_candidate_type, rtt_ms}
+  CONNECTIVITY_UPDATE  {peer_id, new_method, detail}  // mid-session migration
+```
+
+Extended server messages:
+
+```
+  PEER_CANDIDATES  {peer_id, candidates: [...]}   // relay peer's candidates
+  CONNECTIVITY_CHECK_GO  {peer_addrs: [...]}       // renamed from HOLEPUNCH_GO
+  RELAY_ASSIGNED  {relay_addr, session_token}       // unchanged
+  CONNECTION_INFO {connections: [{peer_id, method, detail, ...}]}  // unchanged
+```
 
 ### Localhost Proxy (Kotlin)
 
@@ -499,7 +938,7 @@ mapping from expiring (typical timeout: 30-60 seconds for UDP).
 
 ---
 
-## Phase 5: Drop-In/Drop-Out Co-op
+## Phase 5: Drop-In/Drop-Out Co-op -- NOT STARTED
 
 ### Goal
 
@@ -563,7 +1002,7 @@ the monitor vector. Extend with:
 
 ---
 
-## Phase 6: File Hash Verification and Level Exchange
+## Phase 6: File Hash Verification and Level Exchange -- NOT STARTED
 
 ### Game File Hashing
 
@@ -929,7 +1368,7 @@ in-game HUD display for this could be improved (future work).
 
 ---
 
-## Phase 7: Voice Chat
+## Phase 7: Voice Chat -- NOT STARTED
 
 ### Goal
 
@@ -1028,7 +1467,7 @@ pipeline instead of to the game engine. The engine never sees voice packets.
 
 ---
 
-## Phase 8: Launcher Game Presets (Full Server Setup from Launcher)
+## Phase 8: Launcher Game Presets (Full Server Setup from Launcher) -- NOT STARTED
 
 ### Goal
 
@@ -1438,6 +1877,1063 @@ Independent tracks (can proceed in parallel):
 
 ---
 
+## Phase 9: Protocol Versioning and Client Rejection
+
+### Goal
+
+The server must be able to reject outdated clients with a clear,
+actionable error message so players know exactly what to do.
+
+### Version Handshake
+
+Every WebSocket connection begins with an AUTHENTICATE message. Extend
+it to include version information:
+
+```
+Client -> Server:
+  AUTHENTICATE {
+    protocol_version: u32,        // monotonically increasing, e.g. 1
+    client_version: string,       // human-readable, e.g. "1.0.3"
+    min_server_version: u32,      // oldest server this client supports
+    play_games_token: string,
+    callsign: string,
+    platform: string,             // "android", "windows", "linux"
+    build_type: string            // "release", "debug"
+  }
+```
+
+The server checks `protocol_version` against its own supported range:
+
+```
+Server config:
+  min_client_protocol: u32       // oldest client the server will accept
+  current_protocol: u32          // server's own protocol version
+  update_url: string             // link to update instructions/store page
+  deprecation_message: string    // optional custom message
+```
+
+### Rejection Response
+
+```
+Server -> Client:
+  VERSION_REJECTED {
+    reason: string,               // human-readable explanation
+    required_version: u32,        // minimum protocol version needed
+    required_version_name: string,// e.g. "1.2.0"
+    current_server_version: u32,
+    update_url: string,           // Play Store link or website URL
+    grace_period_end: string      // ISO 8601 date, if applicable
+  }
+```
+
+Example reason strings:
+- "Your client is too old (v1.0.3). Please update to v1.2.0 or later."
+- "This server requires protocol version 3. Your client uses version 1.
+   Update the app from the Play Store."
+- "Your client version will stop working on 2026-05-01. Please update."
+
+### Soft Deprecation
+
+Before hard-rejecting old clients, the server can send a warning:
+
+```
+Server -> Client:
+  VERSION_WARNING {
+    message: string,              // "Update available: v1.3.0"
+    update_url: string,
+    deadline: string              // when this version stops working
+  }
+```
+
+The launcher displays this as a non-blocking banner in the lobby UI.
+After the deadline, the server switches to hard rejection.
+
+### Protocol Version Bump Rules
+
+Bump the protocol version when:
+- WebSocket message schema changes (new required fields, changed types)
+- Relay packet format changes
+- Lobby protocol changes that break backward compatibility
+- Authentication flow changes
+
+Do NOT bump for:
+- New optional fields in existing messages
+- New message types (old clients ignore unknown types)
+- Server-side-only changes
+
+### Version Constants
+
+Shared between client and server. On the client side, defined in:
+- `android/app/src/main/java/com/dxxredux/app/lobby/NetworkConstants.kt`
+
+On the server side, defined in:
+- `server/src/protocol.rs`
+
+Both files document that they must be kept in sync.
+
+### Minecraft Reference
+
+Minecraft's approach: the handshake packet includes a protocol version
+number. The server responds with human-readable JSON:
+`{"text": "Outdated client! Please use 1.20.4"}` which is displayed
+in the server browser. The version string and protocol number are
+separate -- the string is for humans, the number is for code.
+
+We follow the same pattern: `protocol_version` for code decisions,
+`client_version` for display.
+
+---
+
+## Phase 10: Friends List and Online Status
+
+### Goal
+
+Players can maintain a friends list and see whether friends are online,
+in a lobby, or in-game. Identity is based on a server-assigned opaque
+player ID derived from (but not directly exposing) the Google Play
+Games ID.
+
+### Identity Mapping
+
+The server assigns each authenticated player an opaque `player_id`
+(UUID v4 or similar). This ID is:
+- Derived from the GPGS player ID at first login (one-to-one mapping)
+- Stored server-side in a `players` table
+- Used for all social features (friends, stats, leaderboards)
+- Shared with other players for friend requests and display
+- NOT the raw GPGS player ID (privacy: prevents cross-referencing
+  with other games or Google services)
+
+```
+Server DB table: players
+  player_id      UUID PRIMARY KEY     -- our opaque ID
+  gpgs_player_id TEXT UNIQUE          -- Google's ID, never shared externally
+  callsign       TEXT                 -- display name
+  created_at     TIMESTAMP
+  last_seen      TIMESTAMP
+  total_playtime INTEGER              -- seconds
+  games_played   INTEGER
+```
+
+### Friends Data Model
+
+```
+Server DB table: friends
+  player_id   UUID REFERENCES players
+  friend_id   UUID REFERENCES players
+  status       TEXT  -- 'pending', 'accepted', 'blocked'
+  created_at   TIMESTAMP
+  PRIMARY KEY (player_id, friend_id)
+```
+
+Friendships are symmetric: when A adds B, both get a row with status
+'pending'. When B accepts, both rows flip to 'accepted'. Either side
+can remove (delete both rows) or block (set own row to 'blocked').
+
+### Presence Tracking
+
+The server tracks presence as an in-memory enum per connected player:
+
+```rust
+enum Presence {
+    Offline,                          // no WebSocket connected
+    Online,                           // connected, not in lobby or game
+    InLobby { lobby_id: Uuid },       // sitting in a lobby
+    InGame  { lobby_id: Uuid, mission: String, player_count: u8 },
+}
+```
+
+Presence updates happen automatically:
+- WebSocket connect -> Online
+- JOIN_LOBBY -> InLobby
+- START_GAME -> InGame
+- WebSocket disconnect -> Offline (with last_seen timestamp update)
+
+No explicit presence messages from the client are needed. The server
+infers presence from lobby/game state changes.
+
+### Friend Request Protocol
+
+```
+Client -> Server:
+  FRIEND_REQUEST    { target_callsign: string }
+    -- server resolves callsign to player_id
+    -- or: FRIEND_REQUEST { target_player_id: UUID }
+    -- both work; callsign is for convenience
+
+  FRIEND_ACCEPT     { player_id: UUID }
+  FRIEND_REMOVE     { player_id: UUID }
+  FRIEND_BLOCK      { player_id: UUID }
+  FRIEND_LIST       {}                      -- request full list
+
+Server -> Client:
+  FRIEND_LIST_RESP  {
+    friends: [{
+      player_id: UUID,
+      callsign: string,
+      status: "pending" | "accepted" | "blocked",
+      presence: "offline" | "online" | "in_lobby" | "in_game",
+      in_game_details: null | {
+        lobby_id: UUID,
+        mission: string,
+        player_count: u8,
+        max_players: u8,
+        joinable: bool        -- true if game is not full and not locked
+      },
+      last_seen: string       -- ISO 8601, only set when offline
+    }]
+  }
+
+  FRIEND_REQUEST_RECEIVED { from_player_id: UUID, from_callsign: string }
+  FRIEND_ACCEPTED         { player_id: UUID }
+  FRIEND_REMOVED          { player_id: UUID }
+  FRIEND_PRESENCE_UPDATE  { player_id: UUID, presence: ..., details: ... }
+```
+
+### Presence Push
+
+When a player's presence changes, the server pushes
+`FRIEND_PRESENCE_UPDATE` to all online friends. This keeps the friends
+list UI live without polling.
+
+### Privacy Considerations
+
+- The server never shares GPGS player IDs with other players
+- Players are identified by callsign + our opaque UUID
+- Blocked players cannot see your presence or send requests
+- Friend list data is only visible to the account owner
+- No discovery/search by GPGS player ID -- only by callsign
+- Callsign search is rate-limited to prevent enumeration (5/min)
+
+### Storage
+
+Friends and players tables stored in SQLite on the server. At our
+scale (hundreds of players), SQLite handles all reads/writes without
+contention. WAL mode for concurrent read/write.
+
+---
+
+## Phase 11: Join Friend's Game
+
+### Goal
+
+A player can see that a friend is in a joinable game and join it
+directly from the friends list, without browsing the lobby list.
+
+### Flow
+
+```
+1. Client opens friends list
+2. Sees: "PlayerTwo - In Game (Counterstrike L3, 2/4 players)"
+3. Taps "Join"
+4. Client sends JOIN_FRIEND_GAME { friend_player_id }
+5. Server checks:
+   a. Friend is actually in a game
+   b. Game is not full
+   c. Game is not locked (RefusePlayers)
+   d. Requesting player is not banned from host's lobbies
+6. Server responds with JOIN_FRIEND_GAME_RESP:
+   - On success: same data as JOIN_LOBBY response (lobby details,
+     peer addresses, connection instructions)
+   - On failure: reason ("Game is full", "Game is locked",
+     "Player not found", etc.)
+7. Client proceeds through normal lobby join flow (holepunch, etc.)
+   just as if they'd joined from the lobby list
+```
+
+### Server-Side
+
+```
+Client -> Server:
+  JOIN_FRIEND_GAME { friend_player_id: UUID }
+
+Server -> Client:
+  JOIN_FRIEND_GAME_RESP {
+    success: bool,
+    reason: string,          // only on failure
+    lobby_id: UUID,          // only on success
+    // ...rest is same as LOBBY_UPDATE
+  }
+```
+
+If successful, the server internally performs a JOIN_LOBBY for the
+requesting player, so all existing lobby mechanics (file hash check,
+readiness, etc.) apply.
+
+### Host Notification
+
+The host receives a LOBBY_UPDATE showing the new player joined, same
+as a regular join. The host doesn't know (or need to know) that the
+player joined via friends list vs lobby browser.
+
+### Mid-Game Join
+
+If the game is already running (not just in lobby), this becomes a
+mid-game join (Phase 5's drop-in functionality). The flow is the same
+but the server also coordinates NAT traversal and tells the joining
+client to connect to the game in progress rather than waiting in a
+lobby. The engine's existing rejoin/late-join mechanism handles the
+game-level sync.
+
+---
+
+## Phase 12: Player Count Tracking and Public API
+
+### Goal
+
+Track concurrent player counts over time. Expose current count via a
+lightweight HTTP API for embedding in web pages, Discord bots, etc.
+
+### Server-Side Tracking
+
+The server already knows how many WebSocket connections are alive. Add:
+
+```rust
+struct ServerStats {
+    current_online: AtomicU32,       // WebSocket connections
+    current_in_game: AtomicU32,      // players in active games
+    current_lobbies: AtomicU32,      // active lobbies
+    peak_online_today: AtomicU32,
+    peak_online_alltime: AtomicU32,
+    total_unique_players: u64,       // from players table COUNT
+    total_games_played: u64,         // from match_results table COUNT
+}
+```
+
+Periodic snapshots (every 5 minutes) written to a `player_counts`
+table for historical graphing:
+
+```
+Server DB table: player_count_history
+  timestamp    TIMESTAMP PRIMARY KEY
+  online       INTEGER
+  in_game      INTEGER
+  lobbies      INTEGER
+```
+
+### HTTP API
+
+A lightweight HTTP server (using `hyper` or `axum`, bound to a separate
+port, e.g. 8080) serves public status data:
+
+```
+GET /api/v1/status
+Response (JSON):
+{
+  "server_version": "1.0.0",
+  "protocol_version": 1,
+  "uptime_seconds": 86400,
+  "players": {
+    "online": 23,
+    "in_game": 18,
+    "in_lobbies": 5,
+    "peak_today": 42,
+    "peak_alltime": 127
+  },
+  "lobbies": {
+    "count": 3,
+    "games": [
+      {
+        "lobby_id": "...",
+        "host_callsign": "PlayerOne",
+        "mission": "Counterstrike!",
+        "level": 3,
+        "mode": "coop",
+        "players": 3,
+        "max_players": 4,
+        "joinable": true
+      }
+    ]
+  },
+  "stats": {
+    "total_unique_players": 1842,
+    "total_games_played": 5923,
+    "total_playtime_hours": 12450
+  }
+}
+
+GET /api/v1/status/simple
+Response (plain text):
+23
+(just the online count, for minimal embedding)
+
+GET /api/v1/status/badge
+Response (SVG):
+An SVG badge image showing "Players Online: 23"
+suitable for embedding in README files or web pages
+(shields.io compatible endpoint)
+```
+
+### Rate Limiting
+
+- `/api/v1/status`: 60 requests/min per IP, cached for 10 seconds
+- No authentication required (public data)
+- CORS headers set to allow embedding from any origin
+
+### Website Embedding Example
+
+```html
+<!-- Simple player count widget -->
+<script>
+fetch('https://matchmaking.dxx-redux.com/api/v1/status')
+  .then(r => r.json())
+  .then(d => document.getElementById('count').textContent = d.players.online);
+</script>
+<span id="count">...</span> players online
+```
+
+### Minecraft Reference
+
+Minecraft's Server List Ping protocol serves exactly this purpose --
+any client (or website) can query a server and get player count, MOTD,
+player sample, and version info as JSON. Our HTTP API does the same
+but over standard HTTP instead of a custom protocol, making web
+integration trivial.
+
+---
+
+## Phase 13: Game Result Tracking and Logging
+
+### Goal
+
+Record the outcome of every completed multiplayer game for statistics,
+leaderboards, and player profiles.
+
+---
+
+## Server Logging Infrastructure -- COMPLETE
+
+### Stack
+
+- `tracing` (=0.1.41) for instrumentation macros (info!, warn!, debug!, error!)
+- `tracing-subscriber` (=0.3.19) with env-filter and json features for output formatting
+- `tracing-appender` (=0.2.3) for file output with daily rotation and non-blocking writes
+
+### Configuration
+
+- `LOG_DIR` env var: set to a directory path to enable JSON file logging alongside console output
+  - Empty (default): console-only logging (human-readable format with targets)
+  - Set to a path: dual output -- console (human-readable) + file (JSON, daily rotation)
+  - File names: `dxx-matchmaking.log.YYYY-MM-DD`
+- `RUST_LOG` env var: controls log levels per module (standard tracing-subscriber env filter)
+  - Default: `info`
+  - Example: `RUST_LOG=debug` for all debug output
+  - Example: `RUST_LOG=dxx_matchmaking::relay=trace,info` for per-packet relay logs + info elsewhere
+
+### Log Level Strategy
+
+| Level | Usage |
+|-------|-------|
+| error | Fatal: DB open failure, server bind failure, TLS cert load failure |
+| warn  | Recoverable: rate limit triggers, banned player auth attempts, version rejections, admin auth failures, DB operation errors, non-host game start attempts |
+| info  | Significant events: player auth/disconnect, lobby create/join/leave, game start, STUN results, connectivity results, relay allocation, friend accept/remove/block, admin ban/unban, match results, config at startup |
+| debug | WS upgrade acceptance, WS read errors, serialization errors |
+| trace | Reserved for per-packet relay forwarding (not currently emitted, would spam) |
+
+### Current Coverage by Module
+
+- **main.rs**: startup config (listen addrs, DB path, TLS/GPGS status), TLS load result, file logging init
+- **ws_handler.rs**: WS upgrade rate-limit, WS upgrade accept, message rate-limit, version rejection (with versions), banned auth attempt, auth success (pid/callsign/platform), lobby create/join/leave, lobby rate-limits, game start (+ non-host rejection), STUN result (nat_type, candidate count), connectivity ok/update, player kicked, match result, friend accept/remove/block, message rate-limit, player disconnect
+- **http_api.rs**: HTTP listen, admin ban (pid/reason/duration), admin unban (pid), admin auth failures
+- **relay.rs**: relay listen, session lifecycle (created/allocated), per-packet forwarding at debug level
+- **stats.rs**: periodic snapshot (online/in_game/lobbies/peak) every 5 min
+- **friends.rs**: friend request sent
+
+### Logging Notes for Future Phases
+
+#### Phase 3 (Identity -- GPGS token verification)
+When implementing real GPGS token verification in ws_handler.rs:
+- info! on successful GPGS token exchange (player_id, gpgs_sub)
+- warn! on GPGS token verification failure (error detail, token prefix for debugging)
+- info! on first-time player creation vs returning player
+- debug! for token exchange HTTP request timing
+
+#### Phase 4 (NAT Traversal -- client-side)
+Client-side Kotlin logging (use Android Log or timber):
+- Log STUN server responses and detected NAT type
+- Log each connectivity check attempt and result (candidate type, RTT)
+- Log relay fallback trigger
+- Log UPnP/PCP mapping attempts and outcomes
+
+#### Phase 5 (Drop-In/Drop-Out Co-op)
+- info! on mid-game player join/leave
+- warn! on rejoin failures
+
+#### Phase 7+ (Localhost Proxy)
+- info! on proxy bind, connection established, peer address mapping
+- debug! packet forwarding counts (periodic, not per-packet)
+- warn! on proxy socket errors
+
+### Match Result Record
+
+```
+Server DB table: match_results
+  match_id       UUID PRIMARY KEY
+  lobby_id       UUID              -- which lobby spawned this game
+  started_at     TIMESTAMP
+  ended_at       TIMESTAMP
+  duration_secs  INTEGER
+  game_mode      TEXT              -- "coop", "anarchy", "team", "ctf", etc.
+  mission        TEXT              -- e.g. "Counterstrike!"
+  level          INTEGER
+  difficulty     INTEGER           -- 0-4
+  result         TEXT              -- "completed", "aborted", "host_quit"
+  player_count   INTEGER
+
+Server DB table: match_players
+  match_id       UUID REFERENCES match_results
+  player_id      UUID REFERENCES players
+  callsign       TEXT
+  score          INTEGER
+  kills          INTEGER
+  deaths         INTEGER
+  assists        INTEGER           -- if trackable
+  team           INTEGER           -- for team modes
+  result         TEXT              -- "won", "lost", "disconnected"
+  connected_secs INTEGER           -- how long this player was in the game
+  PRIMARY KEY (match_id, player_id)
+```
+
+### How Results Are Reported
+
+The host's client reports match results to the server when the game
+ends. The server validates that the reporting player was actually the
+host of that lobby.
+
+```
+Client (host) -> Server:
+  MATCH_RESULT {
+    lobby_id: UUID,
+    duration_secs: u32,
+    result: "completed" | "aborted" | "host_quit",
+    players: [{
+      player_id: UUID,
+      score: i32,
+      kills: u32,
+      deaths: u32,
+      result: "won" | "lost" | "disconnected"
+    }]
+  }
+
+Server -> Client (host):
+  MATCH_RESULT_ACK { match_id: UUID }
+```
+
+The server also independently tracks game duration (from START_GAME to
+last disconnect or MATCH_RESULT). If the host disconnects without
+sending MATCH_RESULT, the server creates a partial record marked
+"host_quit" with whatever data it has.
+
+### Aggregate Player Stats
+
+Derived from match_results + match_players, updated periodically or
+on match completion:
+
+```
+Server DB table (or materialized view): player_stats
+  player_id          UUID PRIMARY KEY REFERENCES players
+  total_games        INTEGER
+  total_wins         INTEGER
+  total_kills        INTEGER
+  total_deaths       INTEGER
+  total_score        INTEGER
+  total_playtime     INTEGER          -- seconds
+  coop_completions   INTEGER
+  favorite_mission   TEXT             -- most played
+  last_game_at       TIMESTAMP
+
+  -- per-mode breakdowns (stored as JSON or separate columns)
+  anarchy_games      INTEGER
+  anarchy_kills      INTEGER
+  coop_games         INTEGER
+  ctf_games          INTEGER
+```
+
+### Leaderboards
+
+Served via the HTTP API:
+
+```
+GET /api/v1/leaderboard?mode=anarchy&sort=kills&period=monthly&limit=25
+Response (JSON):
+{
+  "period": "2026-03",
+  "mode": "anarchy",
+  "sorted_by": "kills",
+  "entries": [
+    {"rank": 1, "callsign": "AceFlyer", "kills": 342, "deaths": 98, "games": 45},
+    ...
+  ]
+}
+
+GET /api/v1/player/{player_id}/stats
+Response (JSON):
+{
+  "callsign": "AceFlyer",
+  "total_games": 230,
+  "total_kills": 1842,
+  "total_deaths": 923,
+  "kd_ratio": 2.0,
+  "total_playtime_hours": 145,
+  "coop_completions": 67,
+  "recent_games": [...]
+}
+```
+
+### Anti-Tampering
+
+Match results are host-reported, which means a modified client could
+lie about scores. Mitigations:
+
+- Server validates that all reported player_ids were in the lobby
+- Server validates that game duration roughly matches (within 2x of
+  server-tracked time, to account for clock skew)
+- Anomaly detection: flag results where a player's K/D jumps
+  dramatically from their average
+- For v1, accept the limitation. Statistical cheating is detectable
+  over time and at our player scale, manual review is feasible
+
+### Coop-Specific Tracking
+
+For cooperative games, additional fields are useful:
+
+- Levels completed (how far the team got)
+- Total team deaths
+- Whether the mission was completed (all levels) or partial
+- Difficulty (higher difficulty = more impressive)
+
+These feed into a separate "coop leaderboard" sorted by mission
+completion time at each difficulty.
+
+---
+
+## Phase 14: Server Telemetry and Operational Tracking
+
+### Goal
+
+Track server health, game quality metrics, and operational data for
+maintaining reliable service.
+
+### Server Health Metrics
+
+Tracked in-memory, exposed via the HTTP API and optionally pushed to
+a monitoring system:
+
+```
+GET /api/v1/health
+Response (JSON):
+{
+  "status": "ok",
+  "uptime_seconds": 172800,
+  "memory_used_mb": 45,
+  "websocket_connections": 34,
+  "relay_sessions": 8,
+  "relay_bandwidth_kbps": 120,
+  "db_size_mb": 12,
+  "errors_last_hour": 0,
+  "avg_auth_latency_ms": 145
+}
+```
+
+### Connection Quality Tracking
+
+For understanding player experience and debugging connectivity issues:
+
+```
+Server DB table: connection_events
+  id             INTEGER PRIMARY KEY AUTOINCREMENT
+  timestamp      TIMESTAMP
+  player_id      UUID
+  event_type     TEXT    -- "connect", "disconnect", "auth_fail",
+                         -- "holepunch_success", "holepunch_fail",
+                         -- "relay_assigned", "relay_timeout"
+  details        TEXT    -- JSON blob with specifics
+  ip_country     TEXT    -- GeoIP lookup (for regional analysis)
+  nat_type       TEXT    -- from STUN result
+  latency_ms     INTEGER -- to server
+```
+
+### What Minecraft Servers Track (and What We Should Too)
+
+| Minecraft (Paper/Spigot)          | Our Equivalent                       |
+|-----------------------------------|--------------------------------------|
+| TPS (ticks per second)            | N/A (we don't run game logic)        |
+| Player join/leave events          | connection_events table              |
+| Chunk load performance            | N/A                                  |
+| Memory usage + GC stats           | /health endpoint                     |
+| Entity counts                     | lobby count, relay session count      |
+| Plugin load times                 | auth latency, holepunch duration     |
+| World save times                  | DB write latency                     |
+| Player count over time            | player_count_history table           |
+| Chat log                          | N/A (voice only, not logged)         |
+| Command usage stats               | API endpoint hit counts              |
+| Crash dumps + stack traces        | panic handler + structured logging   |
+
+### Structured Logging
+
+All server events logged as structured JSON (via `tracing` crate with
+JSON formatter). Log levels:
+
+- ERROR: panics, DB failures, auth backend unreachable
+- WARN: rate limit hit, malformed packet, relay timeout
+- INFO: player connect/disconnect, lobby create/close, game start/end
+- DEBUG: individual WebSocket messages, relay packet forwarding
+- TRACE: everything (development only)
+
+Log rotation: daily files, 30-day retention, or ship to a log
+aggregator if running multiple server regions.
+
+### Uptime and Crash Recovery
+
+- Server writes a heartbeat file every 30 seconds (for external
+  monitoring watchdog)
+- On startup, check for stale heartbeat = previous crash
+- Recover lobby state? No -- lobbies are ephemeral. Players reconnect
+  and re-create lobbies. Match results in-progress are lost (marked
+  "server_crash" if partially logged).
+- Player accounts and friends survive crashes (persisted in SQLite)
+
+### Operational Alerts
+
+For a single-server deployment, keep it simple:
+
+- Health endpoint returns non-200 on critical failure -> uptime monitor
+  (UptimeRobot, free tier) alerts via email/Discord webhook
+- Disk space monitoring (SQLite + logs can grow)
+- Memory usage trending (leak detection)
+- Player count anomalies (sudden drop = possible outage)
+
+### Discord Webhook Integration
+
+Push notable events to a Discord channel for the development team:
+
+- Server start/stop
+- Player count milestones (first 10, 50, 100 concurrent)
+- Match completions (optional, can be noisy)
+- Error rate spikes
+- New player registrations
+
+Implementation: POST to a Discord webhook URL with a simple JSON
+embed. ~10 lines of code per notification type.
+
+---
+
+## Phase 15: Additional Server Features
+
+### Message of the Day (MOTD)
+
+The server sends an MOTD to clients on connect:
+
+```
+Server -> Client (after AUTH_OK):
+  MOTD {
+    message: string,       // short text, e.g. "Welcome! New map pack available."
+    url: string | null,    // optional link
+    severity: "info" | "warning"  // warning for urgent stuff
+  }
+```
+
+Displayed as a toast or banner in the launcher. Configurable via a
+server config file or admin API endpoint. Useful for announcing
+maintenance windows, new features, or community events.
+
+### Server-Side Event Log (Audit Trail)
+
+For admin purposes, log significant actions:
+
+- Player bans/unbans (who, by whom, reason)
+- Lobby kicks (who kicked whom)
+- Rate limit enforcement events
+- Admin commands (if an admin CLI/API is added)
+- Configuration changes
+
+Stored in a separate `admin_log` table, queryable via admin API.
+
+### Planned Maintenance Mode
+
+Server can enter maintenance mode:
+
+```
+Server -> All Connected Clients:
+  MAINTENANCE_WARNING {
+    message: "Server maintenance in 15 minutes. Save your game.",
+    shutdown_at: "2026-04-01T03:00:00Z"
+  }
+```
+
+New connections during maintenance mode get:
+```
+Server -> Client:
+  MAINTENANCE {
+    message: "Server is undergoing maintenance. Back soon.",
+    estimated_return: "2026-04-01T03:30:00Z"
+  }
+```
+
+### Admin API (Authenticated)
+
+A separate set of HTTP endpoints (bearer token auth) for server
+administration:
+
+```
+POST /api/v1/admin/ban         { player_id, reason, duration }
+POST /api/v1/admin/unban       { player_id }
+GET  /api/v1/admin/players     -- search/list players
+GET  /api/v1/admin/matches     -- recent match history
+POST /api/v1/admin/motd        { message, url, severity }
+POST /api/v1/admin/maintenance { message, shutdown_at }
+GET  /api/v1/admin/logs        -- audit trail
+GET  /api/v1/admin/health      -- detailed health (more than public)
+```
+
+Auth: long-lived bearer token stored in server config. No user-facing
+admin UI for v1 -- curl or a simple script is fine.
+
+---
+
+## Implementation Order (Revised, with New Phases)
+
+### Phase 2.5: Post-Auth Welcome Bundle and Client Session Features -- COMPLETE
+
+When a client authenticates, the server should send a "welcome bundle" --
+a batch of messages immediately after AUTH_OK that gives the client everything
+it needs to render the main multiplayer screen without additional round-trips.
+
+#### Stable Player Identity
+
+Currently `player_id` is `Uuid::new_v4()` on every auth -- the player gets
+a new identity each session. This must be fixed before friends work properly.
+
+**Server changes (db.rs, ws_handler.rs):**
+- [x] `players` table already has a UNIQUE `gpgs_player_id` column
+- [x] Add `find_or_create_player_by_gpgs(gpgs_player_id, callsign) -> Uuid`:
+      looks up by `gpgs_player_id`; if not found, creates a new row with
+      `Uuid::new_v4()` as the PK. Returns the stable `player_id`.
+- [x] In the Authenticate handler, replace the bare `Uuid::new_v4()` with
+      this lookup so the same Google account always gets the same player_id.
+
+**Public player ID vs GPGS player ID:**
+The `player_id` (server-assigned UUID) is what other clients see. The
+`gpgs_player_id` is never exposed in any Server->Client message. This
+gives players a stable, non-guessable identity that doesn't leak their
+Google account details.
+
+#### Welcome Bundle (sent immediately after AUTH_OK)
+
+```
+Server -> Client (in order, all sent automatically):
+  1. AUTH_OK          { player_id, session_token }
+  2. MOTD             { message, url, severity }               -- if configured
+  3. SERVER_STATUS    { online_players, active_games, total_games_played,
+                        server_ping_ms }
+  4. LOBBY_LIST       { lobbies: [LobbyInfo, ...] }            -- existing message
+  5. FRIEND_LIST_RESP { friends: [FriendInfo, ...] }            -- existing message
+```
+
+The client doesn't need to send LIST_LOBBIES or FRIEND_LIST to get
+the initial data -- the server pushes it.
+
+**New server message: SERVER_STATUS**
+
+```rust
+ServerMessage::ServerStatus {
+    online_players: u32,          // from stats.current_online
+    active_games: u32,            // lobbies with state==InGame, capped at ~20 in the list
+    active_games_total: u32,      // total count
+    total_games_played: u64,      // from DB
+    your_ping_ms: Option<u32>,    // see ping section below
+}
+```
+
+This is distinct from the HTTP `/api/v1/status` endpoint (which is public
+and cacheable). The WebSocket version is targeted at this specific client
+and includes their ping.
+
+#### Active Games List
+
+Games that are already in progress (lobby state == InGame) are useful context:
+players like to see that the community is active. Currently LIST_LOBBIES
+only returns `Waiting` state lobbies. Two options:
+
+**Option A (recommended):** Add a second list to SERVER_STATUS with a
+trimmed game-in-progress struct:
+
+```rust
+ActiveGameInfo {
+    host_callsign: String,
+    mission: String,
+    mode: String,
+    player_count: u8,
+    duration_secs: u32,      // how long the game has been running
+}
+```
+
+Cap the list at 20 entries. Include `active_games_total` for the full count.
+These are display-only -- you can't join a game in progress from this list
+(that requires the friend join path or Phase 5 drop-in).
+
+**Option B:** Extend LobbyInfo with a `state` field and return all lobbies.
+Simpler but conflates joinable lobbies with non-joinable games.
+
+#### Friend List on Connect (Client-Submitted Matching)
+
+The user's question asks: "maybe the client submits its friends list and the
+server matches against it?" This is the right approach for the first connect,
+but the existing FRIEND_LIST mechanism already handles this because friends
+are stored server-side (in the `friends` DB table). The flow:
+
+1. Client authenticates (stable player_id from GPGS)
+2. Server calls `build_friend_list()` -- queries DB for accepted friends,
+   enriches with live presence from the sessions DashMap
+3. Server sends FRIEND_LIST_RESP with friend presence included
+
+No client-side friend list submission is needed because the server is the
+source of truth for friendships. The client discovers friends by searching
+callsigns (FRIEND_REQUEST), then the relationship is persisted server-side.
+
+However, there IS value in the client submitting its Google Play Games
+friends list for discovery (GPGS has an API for this). This would let the
+server say "hey, your Google friend PlayerTwo also plays this game":
+
+```
+Client -> Server:
+  GPGS_FRIENDS { gpgs_ids: [String, ...] }
+
+Server -> Client:
+  GPGS_FRIEND_SUGGESTIONS { suggestions: [{player_id, callsign}, ...] }
+```
+
+The server matches gpgs_ids against the `players.gpgs_player_id` column.
+Only returns matches for players who exist in our DB. Does NOT expose
+gpgs_player_id back to the client -- only our stable player_id + callsign.
+
+This is an optional discovery feature, not a requirement for v1.
+
+#### Ping Measurement
+
+The user wants two ping values visible:
+1. **Client -> matchmaking server** (the client's own latency)
+2. **Lobby/game host -> matchmaking server** (shown alongside each lobby)
+
+**Client ping measurement (server-side initiated):**
+
+After AUTH_OK, the server sends a `PING` WebSocket message (standard
+WebSocket ping frame, not a custom message). The server records the
+timestamp and measures the round-trip when the PONG comes back. This is
+stored on the session and included in SERVER_STATUS as `your_ping_ms`.
+
+Repeat every 30 seconds to update the value.
+
+```rust
+// In PlayerSession:
+pub ping_ms: Option<u32>,  // last measured client<->server RTT
+```
+
+**Lobby host ping (shown in lobby list):**
+
+Each LobbyInfo gets a new field:
+
+```rust
+pub host_ping_ms: Option<u32>,    // host's measured ping to the server
+```
+
+The client can display estimated total latency as:
+`my_ping + host_ping` (approximate worst case for relayed connection).
+
+For direct connections the actual latency would be lower, but this gives
+a useful upper bound that helps players choose lobbies.
+
+**Implementation in ws_handler.rs:**
+- After authentication, spawn a per-connection ping task that sends a WS
+  ping frame every 30 seconds and measures the pong RTT.
+- Store the RTT on the PlayerSession.
+- When building the lobby list, look up the host's session and include
+  their ping_ms.
+
+#### Player Messaging
+
+Rate-limited direct messages between players:
+
+```
+Client -> Server:
+  SEND_MESSAGE { target_player_id: UUID, text: String }
+
+Server -> Target:
+  MESSAGE_RECEIVED { from_player_id: UUID, from_callsign: String, text: String }
+
+Server -> Sender:
+  MESSAGE_SENT { target_player_id: UUID }
+  -- or ERROR { code: "PLAYER_OFFLINE" | "RATE_LIMITED" | "BLOCKED" }
+```
+
+Rate limit: 5 messages per 60 seconds per sender (add to rate_limit.rs).
+Messages are NOT persisted -- delivery is fire-and-forget. If the target
+is offline, the sender gets an error.
+
+Block list: if A has blocked B (via FRIEND_BLOCK), messages from B to A
+are silently dropped (no error to B to avoid confirming the block).
+
+Text validation: max 200 characters, printable ASCII only (no Unicode
+exploits), strip leading/trailing whitespace.
+
+#### Server-Side Implementation Checklist
+
+Files to modify:
+- [x] `protocol.rs`: Add `ServerStatus`, `ActiveGameInfo`, `SendMessage`,
+  `MessageReceived`, `MessageSent` messages
+- [x] `ws_handler.rs`: Send welcome bundle after AUTH_OK; add SEND_MESSAGE
+  handler with rate limiting; host_ping_ms in lobby list
+- [x] `db.rs`: Add `find_or_create_player_by_gpgs()` and `is_blocked()` functions
+- [x] `rate_limit.rs`: Add `check_player_message()` limiter (5/60s)
+- [x] `stats.rs`: No changes needed (counters already exist)
+- [x] `friends.rs`: No changes needed (build_friend_list already works)
+- [x] `lobby.rs`: No changes needed
+
+New test cases (all passing, 27 total):
+- [x] `test_welcome_bundle`: verify AUTH_OK is followed by SERVER_STATUS,
+  LOBBY_LIST, and FRIEND_LIST_RESP without the client requesting them
+- [x] `test_player_message`: send message, verify delivery and ack
+- [x] `test_player_message_rate_limit`: exceed 5/60s limit, verify RATE_LIMITED
+- [x] `test_player_message_blocked`: verify blocked sender gets fake ack but
+  target receives nothing
+- [x] `test_player_message_validation`: verify oversized text rejected
+- [x] `test_stable_player_id`: authenticate twice with same gpgs token,
+  verify same player_id returned
+- [x] `test_lobby_list_includes_host_ping`: verify host_ping_ms field present
+
+Note: WS ping/pong measurement task not yet implemented (ping_ms field
+exists on PlayerSession but no periodic ping sender). This is a future
+enhancement -- the infrastructure is in place.
+
+---
+
+## Implementation Order (Revised, with New Phases)
+
+1. LAN lobby + auto-join (Phase 1) -- standalone, no server needed
+2. Launcher game presets (Phase 8) -- .ngs writing, no server needed
+3. File hash verification (Phase 6) -- lobby-phase feature, no server
+4. **Matchmaking server skeleton (Phase 2) -- Rust, includes:**
+   - **Protocol versioning (Phase 9) -- built into initial handshake**
+   - **Player count API (Phase 12) -- built into initial HTTP server**
+   - **Server health endpoint (Phase 14) -- built into initial HTTP server**
+5. GPGS authentication (Phase 3) -- identity
+6. **Friends list and presence (Phase 10) -- requires identity**
+7. **Join friend's game (Phase 11) -- requires friends + lobby**
+8. STUN + holepunch + relay (Phase 4) -- internet play
+9. Drop-in/drop-out co-op (Phase 5) -- engine changes
+10. **Game result tracking (Phase 13) -- requires games being played**
+11. Voice chat (Phase 7) -- requires UDP infrastructure
+12. **Admin API + operational features (Phase 15) -- ongoing**
+
+Independent tracks (can proceed in parallel):
+- Track A: Phases 1, 8, 6 (all local, no server)
+- Track B: Phases 2+9+12+14, 3, 10, 11, 4 (server, sequential)
+- Phase 5 can start anytime after Phase 1
+- Phase 7 requires Phase 1's infrastructure at minimum
+- Phase 13 can start as soon as games are being played (after Phase 4)
+
+---
+
 ## Open Questions
 
 - Server hosting location: US-East? EU? Need to decide based on expected
@@ -1466,3 +2962,19 @@ Independent tracks (can proceed in parallel):
   the relay server twice. This could add 40-60ms. Consider having the
   relay server recognize this pattern and short-circuit (forward directly
   between the two peers if both are in the same relay session).
+- Friends list storage: SQLite is fine at small scale, but if we add
+  multiple server regions later, friends data needs to be global. Options:
+  centralized DB (single region handles friends), replication, or an
+  external service. Defer until multi-region is actually needed.
+- Leaderboard reset cadence: monthly? seasonal? Seasonal (3-month) is
+  more meaningful at small player counts since monthly boards would be
+  sparse.
+- Match result trust: host-reported results can be faked. At small scale,
+  manual review of anomalies is fine. At larger scale, consider requiring
+  agreement from multiple players or server-side game state validation.
+- MOTD content management: for v1, a JSON config file on the server is
+  fine. Later, a simple web admin panel would be better for non-technical
+  community managers.
+- Player data retention/GDPR: EU players will be banned from accessing the server and the server operator and code authors have zero EU nexus. no need
+- Badge/shield endpoint: decide on format. shields.io-compatible JSON
+  endpoint is simplest. SVG generation adds complexity for marginal benefit.

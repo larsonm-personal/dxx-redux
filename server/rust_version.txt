@@ -1,0 +1,7 @@
+rustc 1.96.0-nightly (03749d625 2026-03-14)
+rustup 1.29.0 (28d1352db 2026-03-05)
+cargo 1.96.0-nightly (cbb9bb8bd 2026-03-13)
+clippy 0.1.96 (03749d6254 2026-03-14)
+cargo-udeps 0.1.60
+cargo-edit-upgrade 0.13.9
+bindgen 0.72.1

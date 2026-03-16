@@ -1367,6 +1367,7 @@ private fun SetupScreen(
     var showControllerPage by remember { mutableStateOf(false) }
     var showTouchEditorPage by remember { mutableStateOf(false) }
     var showAdvancedPage by remember { mutableStateOf(false) }
+    var showMultiplayerPage by remember { mutableStateOf(false) }
 
     MaterialTheme(colorScheme = darkColorScheme()) {
         if (showControllerPage) {
@@ -1392,6 +1393,12 @@ private fun SetupScreen(
                 filesDir = filesDir,
                 fileSetManager = fileSetManager,
                 onBack = { showAdvancedPage = false },
+            )
+            return@MaterialTheme
+        }
+        if (showMultiplayerPage) {
+            com.dxxredux.app.multiplayer.MultiplayerScreen(
+                onBack = { showMultiplayerPage = false },
             )
             return@MaterialTheme
         }
@@ -2213,6 +2220,23 @@ private fun SetupScreen(
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                     }
+
+                    Button(
+                        onClick = { showMultiplayerPage = true },
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(40.dp),
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            ),
+                    ) {
+                        Text("Multiplayer", fontSize = 14.sp)
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     Button(
                         onClick = { onLaunchGame(selectedGame) },

@@ -1,0 +1,93 @@
+use std::net::SocketAddr;
+use std::sync::Arc;
+
+use dashmap::DashMap;
+use tokio::net::UdpSocket;
+use tracing::{debug, warn};
+
+use crate::ServerState;
+
+/// Active relay session mapping player slots to their UDP addresses.
+pub struct RelaySession {
+    pub session_token: u32,
+    pub player_addrs: DashMap<u8, SocketAddr>,
+    /// Number of expected players in this session (for address learning).
+    pub expected_players: u8,
+    pub created_at: std::time::Instant,
+}
+
+/// Relay packet format:
+///   [session_token: 4 bytes LE][dest_player: 1 byte][payload...]
+/// Forwarded as:
+///   [session_token: 4 bytes LE][from_player: 1 byte][payload...]
+const RELAY_HEADER_LEN: usize = 5;
+
+/// Run the UDP relay listener.
+pub async fn run(
+    addr: SocketAddr,
+    state: Arc<ServerState>,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let socket = UdpSocket::bind(addr).await?;
+    tracing::info!(%addr, "UDP relay listening");
+
+    let mut buf = [0u8; 2048];
+    loop {
+        let (len, src) = socket.recv_from(&mut buf).await?;
+        if len < RELAY_HEADER_LEN {
+            debug!(%src, len, "relay packet too short, dropping");
+            continue;
+        }
+
+        let token = u32::from_le_bytes([buf[0], buf[1], buf[2], buf[3]]);
+        let dest_player = buf[4];
+
+        let Some(session) = state.relay_sessions.get(&token) else {
+            debug!(%src, token, "unknown relay session token");
+            continue;
+        };
+
+        // Identify the sender by their source address
+        let from_player = session
+            .player_addrs
+            .iter()
+            .find(|entry| *entry.value() == src)
+            .map(|entry| *entry.key());
+
+        let from_player = match from_player {
+            Some(p) => p,
+            None => {
+                // Address learning: if there are unregistered slots, try to
+                // infer the sender. The sender is sending to dest_player,
+                // so the sender must be some OTHER slot.
+                let registered: std::collections::HashSet<u8> =
+                    session.player_addrs.iter().map(|e| *e.key()).collect();
+                let free_slot = (0..session.expected_players)
+                    .find(|s| !registered.contains(s) && *s != dest_player);
+                if let Some(slot) = free_slot {
+                    session.player_addrs.insert(slot, src);
+                    debug!(%src, slot, token, "auto-registered relay source address");
+                    slot
+                } else {
+                    warn!(%src, token, "relay packet from unregistered address");
+                    continue;
+                }
+            }
+        };
+
+        // Look up destination address
+        let Some(dest_addr) = session.player_addrs.get(&dest_player).map(|r| *r.value()) else {
+            debug!(token, dest_player, "relay dest player not found in session");
+            continue;
+        };
+
+        // Build forwarded packet: same header but replace dest with from
+        let mut fwd = Vec::with_capacity(len);
+        fwd.extend_from_slice(&buf[0..4]); // session_token
+        fwd.push(from_player); // from_player (replaces dest)
+        fwd.extend_from_slice(&buf[RELAY_HEADER_LEN..len]); // payload
+
+        if let Err(e) = socket.send_to(&fwd, dest_addr).await {
+            debug!(%e, %dest_addr, "relay forward failed");
+        }
+    }
+}

@@ -1,0 +1,19 @@
+package com.dxxredux.app.multiplayer
+
+// Shared protocol constants -- keep in sync with server/src/protocol.rs
+object NetworkConstants {
+    const val PROTOCOL_VERSION: Int = 1
+    const val CLIENT_VERSION: String = "android-0.1.0"
+    const val PLATFORM: String = "android"
+
+    // Default server URL for emulator (10.0.2.2 is the host loopback alias)
+    const val DEFAULT_SERVER_URL: String = "ws://10.0.2.2:9000/ws"
+
+    // Reconnection
+    const val RECONNECT_BASE_DELAY_MS: Long = 1000
+    const val RECONNECT_MAX_DELAY_MS: Long = 30000
+
+    // WebSocket close codes
+    const val CLOSE_NORMAL: Int = 1000
+    const val CLOSE_GOING_AWAY: Int = 1001
+}

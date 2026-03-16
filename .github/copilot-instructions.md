@@ -29,6 +29,13 @@
 - there will be new touch interfaces and overlays added. some of these will expose info in an overlay from the base game. interfaces between kotlin and java should be clean and simple. there will be some places where C helper functions are added to expose things the overlay can use, similar to the introspection API, although the full introspection API is probably the wrong answer for this because as it grows it will become more and more inefficient
 - the goal for the game is to have the full game be operable through a pure screen touch interface.  in effect, means playing the full game with only a mouse (no keyboard). there are places where keyboard presses are currently required. we're slowly adding ways to skip these with touches
 
+### matchmaking server
+- this is a freshly-built matchmaking and relay server in rust. it's in `/server/`
+- build with `cargo build` and test with `cargo test`
+- any changes should include a run of `rust_lint.sh` (it does a build+test call at the end to verify)
+- tests should complete within 60s, make sure to wrap them with a way to fail if it takes longer
+- server notes: the code will be open-source, so any possible flaw might be exploited. guard against malicious clients, dos, attempts to deadlock or crash the server, etc.  Clean up stale connections and clients such that the server doesn't leak system resources (for example, socket handles)
+
 ### code quality and testing
 - don't use emoji anywhere, not in code, not in comments, not in markdown files
 - don't use emdashes anywhere, but especially not in scripts

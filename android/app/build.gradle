@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.plugin.compose'
+    id 'org.jetbrains.kotlin.plugin.serialization'
 }
 
 // Load tool versions from central config
@@ -203,4 +204,8 @@ dependencies {
     implementation 'androidx.compose.material3:material3'
     implementation 'androidx.compose.material:material-icons-core'
     implementation 'androidx.compose.ui:ui'
+
+    // Networking / Multiplayer
+    implementation "com.squareup.okhttp3:okhttp:${toolVersions['OKHTTP_VERSION']}"
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:${toolVersions['KOTLINX_SERIALIZATION_VERSION']}"
 }
