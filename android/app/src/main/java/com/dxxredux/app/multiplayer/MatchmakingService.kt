@@ -12,6 +12,7 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.math.min
 
@@ -32,6 +33,10 @@ object MatchmakingService {
     private var reconnectJob: Job? = null
     private var reconnectAttempt = 0
     private var manualDisconnect = false
+
+    // Unique per app process -- ensures two emulators/devices get different player IDs
+    // when using dev mode (SKIP_GPGS_VERIFY=true on the server)
+    private val devToken: String = "dev-${UUID.randomUUID()}"
 
     fun connect(
         serverUrl: String,
@@ -88,7 +93,7 @@ object MatchmakingService {
         val msg =
             AuthenticateMsg(
                 callsign = callsign,
-                playGamesToken = "dev-token", // placeholder for dev/skip_gpgs_verify mode
+                playGamesToken = devToken,
             )
         send(protocolJson.encodeToString(AuthenticateMsg.serializer(), msg))
     }

@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 
 @Composable
 fun MultiplayerScreen(onBack: () -> Unit) {
@@ -61,6 +62,16 @@ private fun ServerBrowserContent(
     var serverUrl by remember { mutableStateOf(state.serverUrl) }
     var callsign by remember { mutableStateOf(state.callsign) }
     var showCreateDialog by remember { mutableStateOf(false) }
+
+    // Auto-refresh lobby list every 5 seconds while connected
+    if (state.status == ConnectionStatus.CONNECTED) {
+        LaunchedEffect(Unit) {
+            while (true) {
+                delay(5000)
+                MatchmakingService.requestLobbyList()
+            }
+        }
+    }
 
     Column(
         modifier =

@@ -2333,3 +2333,100 @@ async fn test_create_lobby_details() {
     assert_eq!(l["player_count"], 1);
     assert!(l["joinable"].as_bool().unwrap());
 }
+
+/// End-to-end two-client flow: connect, discover, join, chat, leave.
+/// This mirrors the live test scenario of two emulator/bot clients.
+#[tokio::test]
+async fn test_two_client_discovery_join_chat() {
+    let server = TestServer::start().await;
+
+    // Client A connects and creates a lobby
+    let mut client_a = connect_ws(&server).await;
+    let a_auth = authenticate(&mut client_a, "ClientA").await;
+    let a_id = a_auth["player_id"].as_str().unwrap().to_string();
+
+    let create = send_recv(
+        &mut client_a,
+        json!({
+            "type": "CREATE_LOBBY",
+            "game": "d2",
+            "mission": "Counterstrike!",
+            "mode": "anarchy",
+            "max_players": 4,
+        }),
+    )
+    .await;
+    assert_eq!(create["type"], "LOBBY_UPDATE");
+    let lobby_id = create["lobby_id"].as_str().unwrap().to_string();
+
+    // Client B connects, lists lobbies, sees A's lobby, joins it
+    let mut client_b = connect_ws(&server).await;
+    let b_auth = authenticate(&mut client_b, "ClientB").await;
+    let b_id = b_auth["player_id"].as_str().unwrap().to_string();
+    assert_ne!(a_id, b_id, "two clients must have different player IDs");
+
+    let list = send_recv(&mut client_b, json!({"type": "LIST_LOBBIES"})).await;
+    assert_eq!(list["type"], "LOBBY_LIST");
+    let lobbies = list["lobbies"].as_array().unwrap();
+    assert_eq!(lobbies.len(), 1);
+    assert_eq!(lobbies[0]["host_callsign"], "ClientA");
+    assert!(lobbies[0]["joinable"].as_bool().unwrap());
+
+    // B joins A's lobby
+    send_only(
+        &mut client_b,
+        json!({"type": "JOIN_LOBBY", "lobby_id": lobby_id}),
+    )
+    .await;
+    let b_update = recv(&mut client_b).await;
+    assert_eq!(b_update["type"], "LOBBY_UPDATE");
+    assert_eq!(b_update["players"].as_array().unwrap().len(), 2);
+    let a_update = recv(&mut client_a).await;
+    assert_eq!(a_update["type"], "LOBBY_UPDATE");
+    assert_eq!(a_update["players"].as_array().unwrap().len(), 2);
+
+    // A sends chat to B
+    send_only(
+        &mut client_a,
+        json!({
+            "type": "SEND_MESSAGE",
+            "target_player_id": b_id,
+            "text": "hello from A",
+        }),
+    )
+    .await;
+    let a_sent = recv(&mut client_a).await;
+    assert_eq!(a_sent["type"], "MESSAGE_SENT");
+    let b_recv = recv(&mut client_b).await;
+    assert_eq!(b_recv["type"], "MESSAGE_RECEIVED");
+    assert_eq!(b_recv["from_callsign"], "ClientA");
+    assert_eq!(b_recv["text"], "hello from A");
+
+    // B replies
+    send_only(
+        &mut client_b,
+        json!({
+            "type": "SEND_MESSAGE",
+            "target_player_id": a_id,
+            "text": "hi back from B",
+        }),
+    )
+    .await;
+    let b_sent = recv(&mut client_b).await;
+    assert_eq!(b_sent["type"], "MESSAGE_SENT");
+    let a_recv = recv(&mut client_a).await;
+    assert_eq!(a_recv["type"], "MESSAGE_RECEIVED");
+    assert_eq!(a_recv["from_callsign"], "ClientB");
+    assert_eq!(a_recv["text"], "hi back from B");
+
+    // B leaves lobby
+    send_only(&mut client_b, json!({"type": "LEAVE_LOBBY"})).await;
+    let a_after = recv(&mut client_a).await;
+    assert_eq!(a_after["type"], "LOBBY_UPDATE");
+    assert_eq!(a_after["players"].as_array().unwrap().len(), 1);
+
+    // A verifies lobby list shows only their lobby with 1 player
+    let list2 = send_recv(&mut client_a, json!({"type": "LIST_LOBBIES"})).await;
+    let lobbies2 = list2["lobbies"].as_array().unwrap();
+    assert_eq!(lobbies2[0]["player_count"], 1);
+}

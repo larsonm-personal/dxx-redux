@@ -656,6 +656,25 @@ android/app/src/main/java/com/dxxredux/app/
 - [x] 2 new server integration tests (test_lobby_chat_flow, test_create_lobby_details)
 - [ ] Rate limit indicator (show "slow down" when RATE_LIMITED received) -- future
 
+### Phase C-Test: Two-Client Visibility Testing -- COMPLETE
+
+- [x] Fix identity collision: two dev clients using the same hardcoded
+      "dev-token" silently overwrote each other's sessions. Now each app
+      instance generates a unique UUID-based devToken.
+      (MatchmakingService.kt: `devToken = "dev-${UUID.randomUUID()}"`)
+- [x] Auto-refresh lobby list every 5 seconds when connected
+      (MultiplayerScreen.kt LaunchedEffect)
+- [x] PowerShell WebSocket test bot (test_bot_client.ps1):
+      connects to server, creates/joins lobbies, auto-replies to chat.
+      Supports list/create/join/idle actions.
+      Key fix: .NET cancels WebSocket on CancellationToken timeout; bot
+      now uses blocking receive (no timeout) for main loops.
+- [x] Server integration test: test_two_client_discovery_join_chat
+      (two clients connect, one creates lobby, other discovers + joins,
+      bidirectional chat, leave, lobby state verified -- 51 tests total)
+- [x] Live-tested: bot creates lobby on host, emulator connects from
+      Android, emulator sees bot's lobby, joins, bidirectional chat works
+
 ### Phase C8: LAN Discovery
 
 - [ ] Create LanDiscoveryTab.kt
@@ -697,6 +716,13 @@ android/app/src/main/java/com/dxxredux/app/
 - Run through the full multiplayer flow
 - Verify welcome bundle contents match server state
 - Verify lobby join/leave updates are consistent
+- Use test_bot_client.ps1 as a second client to test two-player scenarios:
+  ```powershell
+  # Start bot as lobby host, then connect from emulator
+  .\android\test_bot_client.ps1 -Action create -Callsign BotHost
+  # Or join an emulator-created lobby
+  .\android\test_bot_client.ps1 -Action join -Callsign BotJoiner
+  ```
 
 ---
 
