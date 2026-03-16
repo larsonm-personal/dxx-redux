@@ -85,6 +85,7 @@ async fn status(State(state): State<Arc<ServerState>>) -> Json<StatusResponse> {
             LobbyInfo {
                 lobby_id: lobby.id,
                 host_callsign: lobby.host_callsign.clone(),
+                game: lobby.game.clone(),
                 mission: lobby.mission.clone(),
                 mode: lobby.mode.clone(),
                 player_count: lobby.player_count(),

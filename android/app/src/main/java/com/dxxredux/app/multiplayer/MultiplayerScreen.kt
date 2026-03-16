@@ -37,14 +37,17 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
 @Composable
-fun MultiplayerScreen(onBack: () -> Unit) {
+fun MultiplayerScreen(
+    onBack: () -> Unit,
+    onLaunchGame: (GameLaunchInfo) -> Unit,
+) {
     val state by MatchmakingStateHolder.state.collectAsState()
 
     when (state.nav) {
         MultiplayerNav.LOBBY -> {
             val lobby = state.currentLobby
             if (lobby != null) {
-                LobbyScreen()
+                LobbyScreen(onLaunchGame)
             } else {
                 // Stale nav state, reset
                 MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }

@@ -669,12 +669,17 @@ address-restricted, port-restricted) which covers ~85-90% of home networks.
 5. Once bidirectional UDP flows, the direct path is established.
 
 Implementation notes:
-- STUN binding via `stun_codec` crate (RFC 5389 message parsing) or the
-  `bytecodec`-based `stun_codec` on the server side. Client side in
-  Kotlin can hand-roll the 20-byte binding request (trivial format).
-- Query two different STUN servers (or same server on two ports) to
-  detect symmetric NAT: if reflexive ports differ, the NAT is symmetric.
-- Public STUN servers: stun.l.google.com:19302, stun.cloudflare.com:3478
+- Self-hosted STUN server embedded in the matchmaking server process.
+  Two UDP listeners on separate ports (default 3478 and 3479) for NAT
+  type detection (client queries both from the same local socket).
+- IP allowlisting: only responds to IPs that have an active authenticated
+  WebSocket session. IPs are added on auth, removed on disconnect.
+  Prevents abuse from unauthenticated/public traffic.
+- STUN server addresses sent to client in AUTH_OK response
+  (stun_addrs field: ["host:3478", "host:3479"]).
+- Client side hand-rolls the 20-byte binding request (trivial format).
+- Query both self-hosted STUN ports to detect symmetric NAT:
+  if reflexive ports differ, the NAT is symmetric.
 
 Symmetric NAT detection: if two STUN queries from the same local socket
 return different external ports, the NAT assigns ports unpredictably and
@@ -742,10 +747,10 @@ Priority: lowest (always works). Latency: 10-30ms added.
 
 ### Strategy Summary and Expected Coverage
 
-| Strategy                  | Works Against         | Success Rate | Latency  |
-|---------------------------|-----------------------|--------------|----------|
-| Direct LAN                | Same subnet           | 100%         | <1ms     |
-| UPnP/PCP/NAT-PMP          | Home routers w/ UPnP  | ~40-60%      | Direct   |
+| Strategy                   | Works Against         | Success Rate | Latency  |
+|----------------------------|-----------------------|--------------|----------|
+| Direct LAN                 | Same subnet           | 100%         | <1ms     |
+| UPnP/PCP/NAT-PMP           | Home routers w/ UPnP  | ~40-60%      | Direct   |
 | UDP Holepunch (STUN)       | All cone NATs         | ~85-90%      | Direct   |
 | Predictive Port (Symmetric)| Sequential symmetric  | ~30-50%      | Direct   |
 | Server Relay               | Everything            | 100%         | +10-30ms |
@@ -1620,12 +1625,14 @@ Java_com_dxxredux_app_MainActivity_nativeAutoHost(
 
 STUN binding requests are ~100 lines of code:
 - Build 20-byte request (type 0x0001, magic cookie 0x2112A442, random txn ID)
-- Send to stun.l.google.com:19302 via the lobby DatagramSocket
+- Send to self-hosted STUN server (addresses received in AUTH_OK)
 - Parse response: find XOR-MAPPED-ADDRESS (attr type 0x0020), XOR with
   magic cookie to get reflexive IP:port
-- Two queries to different servers detects symmetric NAT (ports differ)
+- Two queries to the two self-hosted STUN ports detects symmetric NAT
+  (ports differ)
 
-Pros: zero dependencies, tiny code, full control over socket reuse.
+Pros: zero dependencies, tiny code, full control, no reliance on
+  third-party STUN servers, IP allowlisting prevents abuse.
 Cons: no ICE, no TURN, no candidate gathering beyond basic reflexive.
 
 ### Option 2: libjuice (Recommended for Full ICE)
@@ -2359,7 +2366,7 @@ When implementing real GPGS token verification in ws_handler.rs:
 
 #### Phase 4 (NAT Traversal -- client-side)
 Client-side Kotlin logging (use Android Log or timber):
-- Log STUN server responses and detected NAT type
+- Log STUN server responses and detected NAT type (self-hosted STUN)
 - Log each connectivity check attempt and result (candidate type, RTT)
 - Log relay fallback trigger
 - Log UPnP/PCP mapping attempts and outcomes

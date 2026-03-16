@@ -145,6 +145,9 @@ pub enum ServerMessage {
     AuthOk {
         player_id: Uuid,
         session_token: String,
+        /// Self-hosted STUN server addresses for NAT discovery (e.g. ["1.2.3.4:3478", "1.2.3.4:3479"])
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        stun_addrs: Vec<String>,
     },
 
     #[serde(rename = "AUTH_FAIL")]
@@ -198,8 +201,14 @@ pub enum ServerMessage {
     #[serde(rename = "GAME_STARTING")]
     GameStarting {
         host_addr: String,
+        game: String,
         mission: String,
         mode: String,
+        your_slot: u8,
+        max_players: u8,
+        difficulty: u8,
+        level_num: i32,
+        peers: Vec<PeerAssignment>,
     },
 
     #[serde(rename = "RELAY_ASSIGNED")]
@@ -305,6 +314,7 @@ pub struct MatchPlayerResult {
 pub struct LobbyInfo {
     pub lobby_id: Uuid,
     pub host_callsign: String,
+    pub game: String,
     pub mission: String,
     pub mode: String,
     pub player_count: u8,
@@ -357,6 +367,18 @@ pub struct PeerConnectionInfo {
     pub detail: Option<String>,
     pub server_relay: bool,
     pub estimated_latency_ms: Option<u32>,
+}
+
+/// Per-peer connection assignment sent in GAME_STARTING.
+#[derive(Debug, Serialize, Clone)]
+pub struct PeerAssignment {
+    pub slot: u8,
+    pub addr: String,
+    pub is_relay: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub relay_token: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub relay_dest_slot: Option<u8>,
 }
 
 #[derive(Debug, Serialize, Clone)]

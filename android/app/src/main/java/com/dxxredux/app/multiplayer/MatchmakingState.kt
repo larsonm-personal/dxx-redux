@@ -43,6 +43,19 @@ data class RelayInfo(
     val sessionToken: String,
 )
 
+/** Game launch info received from the server in GAME_STARTING. */
+data class GameLaunchInfo(
+    val game: String,
+    val mission: String,
+    val mode: String,
+    val difficulty: Int,
+    val levelNum: Int,
+    val maxPlayers: Int,
+    val yourSlot: Int,
+    val isHost: Boolean,
+    val peers: List<PeerAssignment>,
+)
+
 data class MatchmakingState(
     val status: ConnectionStatus = ConnectionStatus.DISCONNECTED,
     val serverUrl: String = NetworkConstants.DEFAULT_SERVER_URL,
@@ -61,6 +74,8 @@ data class MatchmakingState(
     val peerCandidates: Map<String, PeerNatInfo> = emptyMap(),
     val connectivityPairs: List<CandidatePair> = emptyList(),
     val relayInfo: RelayInfo? = null,
+    val stunAddrs: List<String> = emptyList(),
+    val gameLaunchInfo: GameLaunchInfo? = null,
 )
 
 // Global observable state for Compose UI

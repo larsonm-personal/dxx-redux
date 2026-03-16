@@ -70,6 +70,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef USE_UDP
 #include "net_udp.h"
 #endif
+#ifdef __ANDROID__
+#include "auto_net.h"
+#endif
 #ifdef EDITOR
 #include "editor/editor.h"
 #include "editor/kdefs.h"
@@ -443,6 +446,9 @@ int main_menu_handler(newmenu *menu, d_event *event, int *menu_choice )
 				RegisterPlayer();
 			else
 				keyd_time_when_last_pressed = timer_query();		// .. 20 seconds from now!
+#ifdef __ANDROID__
+			check_auto_net();
+#endif
 			break;
 
 		case EVENT_KEY_COMMAND:

@@ -1,4 +1,4 @@
-use dxx_matchmaking::{config, http_api, relay, stats, tls, ws_handler};
+use dxx_matchmaking::{config, http_api, relay, stats, stun, tls, ws_handler};
 use std::sync::Arc;
 use tracing::{error, info};
 use tracing_subscriber::layer::SubscriberExt;
@@ -48,10 +48,13 @@ async fn main() {
         listen_ws = %config.ws_listen_addr,
         listen_http = %config.http_listen_addr,
         listen_relay = %config.relay_listen_addr,
+        listen_stun1 = %config.stun_listen_addr,
+        listen_stun2 = %config.stun_listen_addr_alt,
         db = %config.db_path,
         tls = !config.tls_cert_path.is_empty(),
         gpgs = !config.google_client_id.is_empty(),
         relay_public = %config.relay_public_addr,
+        stun_public = %config.stun_public_addrs,
         "starting dxx-matchmaking server"
     );
 
@@ -95,6 +98,33 @@ async fn main() {
         }
     });
 
+    // Spawn STUN listeners (only if public addresses are configured)
+    let stun_handles = if !state.config.stun_public_addrs.is_empty() {
+        let addr1 = state.config.stun_listen_addr;
+        let addr2 = state.config.stun_listen_addr_alt;
+        let al1 = Arc::clone(&state.stun_allowlist);
+        let al2 = Arc::clone(&state.stun_allowlist);
+        let h1 = tokio::spawn(async move {
+            if let Err(e) = stun::run(addr1, al1).await {
+                error!(%e, "STUN listener 1 failed");
+            }
+        });
+        let h2 = tokio::spawn(async move {
+            if let Err(e) = stun::run(addr2, al2).await {
+                error!(%e, "STUN listener 2 failed");
+            }
+        });
+        info!(
+            listen1 = %addr1, listen2 = %addr2,
+            public = %state.config.stun_public_addrs,
+            "STUN listeners started"
+        );
+        vec![h1, h2]
+    } else {
+        info!("STUN listeners disabled (STUN_PUBLIC_ADDRS not set)");
+        vec![]
+    };
+
     // Spawn periodic tasks (stats snapshots, cleanup)
     let periodic_state = Arc::clone(&state);
     let periodic_handle = tokio::spawn(async move {
@@ -112,4 +142,7 @@ async fn main() {
     http_handle.abort();
     relay_handle.abort();
     periodic_handle.abort();
+    for h in stun_handles {
+        h.abort();
+    }
 }

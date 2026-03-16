@@ -25,6 +25,12 @@ void net_udp_send_mdata_direct(ubyte *data, int data_len, int pnum, int priority
 void net_udp_send_netgame_update();
 void net_udp_send_obs_quit();
 
+#ifdef __ANDROID__
+int net_udp_auto_join(const char *host_addr, int host_port, int my_port);
+int net_udp_auto_host(int my_port, const char *mission, int mode,
+                      int difficulty, int max_players, int level_num);
+#endif
+
 // Some defines
 #ifdef IPv6
 #define UDP_MCASTv6_ADDR "ff02::1"

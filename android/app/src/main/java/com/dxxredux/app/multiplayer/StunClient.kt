@@ -35,25 +35,31 @@ data class StunReport(
 )
 
 object StunClient {
-    // Public STUN servers -- two are needed for NAT classification
-    private val STUN_SERVERS =
-        listOf(
-            InetSocketAddress("stun.l.google.com", 19302),
-            InetSocketAddress("stun1.l.google.com", 19302),
-        )
-
     /**
-     * Perform STUN queries from a single local UDP socket to two servers
-     * and classify the NAT type based on the reflexive addresses returned.
+     * Perform STUN queries from a single local UDP socket to two self-hosted
+     * STUN servers and classify the NAT type based on the reflexive addresses.
+     *
+     * @param stunAddrs Self-hosted STUN server addresses from AUTH_OK
+     *                  (e.g. ["1.2.3.4:3478", "1.2.3.4:3479"]).
+     *                  Must contain at least 2 entries for NAT classification.
      *
      * Runs blocking I/O -- call from a background thread / Dispatchers.IO.
      */
-    fun discover(): StunReport {
+    fun discover(stunAddrs: List<String>): StunReport {
+        if (stunAddrs.size < 2) {
+            Log.w(TAG, "Need at least 2 STUN addresses for NAT detection, got ${stunAddrs.size}")
+            return StunReport(emptyList(), "unknown")
+        }
+        val servers =
+            stunAddrs.take(2).map { addr ->
+                val parts = addr.split(":")
+                InetSocketAddress(parts[0], parts[1].toInt())
+            }
         val socket = DatagramSocket()
         socket.soTimeout = STUN_TIMEOUT_MS
         try {
             val localPort = socket.localPort
-            val results = STUN_SERVERS.map { server -> queryStun(socket, server) }
+            val results = servers.map { server -> queryStun(socket, server) }
             val candidates = mutableListOf<ConnectionCandidate>()
 
             // Add host candidates (local IPs)

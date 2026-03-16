@@ -116,6 +116,7 @@ data class ConnectivityUpdateMsg(
 data class AuthOk(
     @SerialName("player_id") val playerId: String,
     @SerialName("session_token") val sessionToken: String,
+    @SerialName("stun_addrs") val stunAddrs: List<String> = emptyList(),
 )
 
 @Serializable
@@ -146,6 +147,7 @@ data class Motd(
 data class LobbyInfo(
     @SerialName("lobby_id") val lobbyId: String,
     @SerialName("host_callsign") val hostCallsign: String,
+    val game: String,
     val mission: String,
     val mode: String,
     @SerialName("player_count") val playerCount: Int,
@@ -196,8 +198,23 @@ data class ActiveGameInfo(
 @Serializable
 data class GameStartingMsg(
     @SerialName("host_addr") val hostAddr: String,
+    val game: String,
     val mission: String,
     val mode: String,
+    @SerialName("your_slot") val yourSlot: Int = 0,
+    @SerialName("max_players") val maxPlayers: Int = 4,
+    val difficulty: Int = 1,
+    @SerialName("level_num") val levelNum: Int = 1,
+    val peers: List<PeerAssignment> = emptyList(),
+)
+
+@Serializable
+data class PeerAssignment(
+    val slot: Int,
+    val addr: String,
+    @SerialName("is_relay") val isRelay: Boolean = false,
+    @SerialName("relay_token") val relayToken: Long? = null,
+    @SerialName("relay_dest_slot") val relayDestSlot: Int? = null,
 )
 
 @Serializable

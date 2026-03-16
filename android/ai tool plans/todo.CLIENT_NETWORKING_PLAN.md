@@ -840,8 +840,9 @@ NAT type detection:
 
 ```kotlin
 val socket = DatagramSocket()  // bind once, reuse for both queries
-val stun1 = queryStun(InetSocketAddress("stun.l.google.com", 19302), socket)
-val stun2 = queryStun(InetSocketAddress("stun.cloudflare.com", 3478), socket)
+// STUN addresses received from server in AUTH_OK response
+val stun1 = queryStun(stunAddrs[0], socket)  // self-hosted STUN port 1
+val stun2 = queryStun(stunAddrs[1], socket)  // self-hosted STUN port 2
 
 val natType = when {
     stun1 == null || stun2 == null -> "unknown"

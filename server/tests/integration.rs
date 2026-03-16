@@ -46,6 +46,9 @@ impl TestServer {
             tls_cert_path: String::new(),
             tls_key_path: String::new(),
             relay_public_addr: "127.0.0.1:19001".into(),
+            stun_listen_addr: "127.0.0.1:0".parse().unwrap(),
+            stun_listen_addr_alt: "127.0.0.1:0".parse().unwrap(),
+            stun_public_addrs: String::new(),
             log_dir: String::new(),
             skip_gpgs_verify: true,
             pow_difficulty: 8, // low difficulty for fast tests
@@ -616,12 +619,16 @@ async fn test_start_game_flow() {
     assert_eq!(host_msg2["type"], "GAME_STARTING");
     assert_eq!(host_msg2["mission"], "Counterstrike!");
     assert_eq!(host_msg2["mode"], "coop");
+    assert_eq!(host_msg2["your_slot"], 0);
+    assert!(host_msg2["peers"].as_array().unwrap().len() == 1);
 
     let joiner_msg1 = recv(&mut joiner).await;
     assert_eq!(joiner_msg1["type"], "CONNECTION_INFO");
 
     let joiner_msg2 = recv(&mut joiner).await;
     assert_eq!(joiner_msg2["type"], "GAME_STARTING");
+    assert_eq!(joiner_msg2["your_slot"], 1);
+    assert!(joiner_msg2["peers"].as_array().unwrap().len() == 1);
 }
 
 /// Non-host cannot start the game.
@@ -1141,24 +1148,34 @@ async fn test_relay_assigned_on_game_start() {
     // Start game
     send_only(&mut host, json!({"type": "START_GAME"})).await;
 
-    // Both get CONNECTION_INFO, GAME_STARTING, then RELAY_ASSIGNED
+    // Both get CONNECTION_INFO, then GAME_STARTING (relay info is now embedded in peers)
     let h1 = recv(&mut host).await;
     assert_eq!(h1["type"], "CONNECTION_INFO");
     let h2 = recv(&mut host).await;
     assert_eq!(h2["type"], "GAME_STARTING");
-    let h3 = recv(&mut host).await;
-    assert_eq!(h3["type"], "RELAY_ASSIGNED");
-    assert!(!h3["relay_addr"].as_str().unwrap().is_empty());
-    assert!(!h3["session_token"].as_str().unwrap().is_empty());
+    assert_eq!(h2["your_slot"], 0);
+    let h_peers = h2["peers"].as_array().unwrap();
+    assert_eq!(h_peers.len(), 1);
+    assert!(h_peers[0]["is_relay"].as_bool().unwrap());
+    assert!(h_peers[0]["relay_token"].as_u64().is_some());
+    assert_eq!(h_peers[0]["relay_dest_slot"], 1);
 
     let j1 = recv(&mut joiner).await;
     assert_eq!(j1["type"], "CONNECTION_INFO");
     let j2 = recv(&mut joiner).await;
     assert_eq!(j2["type"], "GAME_STARTING");
-    let j3 = recv(&mut joiner).await;
-    assert_eq!(j3["type"], "RELAY_ASSIGNED");
-    // Both should share the same relay session
-    assert_eq!(h3["session_token"], j3["session_token"]);
+    assert_eq!(j2["your_slot"], 1);
+    let j_peers = j2["peers"].as_array().unwrap();
+    assert_eq!(j_peers.len(), 1);
+    assert!(j_peers[0]["is_relay"].as_bool().unwrap());
+    assert!(j_peers[0]["relay_token"].as_u64().is_some());
+    assert_eq!(j_peers[0]["relay_dest_slot"], 0);
+
+    // Both peers should reference the same relay token
+    assert_eq!(
+        h_peers[0]["relay_token"].as_u64().unwrap(),
+        j_peers[0]["relay_token"].as_u64().unwrap()
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -2559,4 +2576,197 @@ async fn test_connectivity_ok_updates_player() {
         dxx_matchmaking::lobby::ConnectionType::DirectHolepunch
     );
     assert_eq!(host_player.ping_ms, Some(42));
+}
+
+// ---------------------------------------------------------------------------
+// STUN self-hosted server tests
+// ---------------------------------------------------------------------------
+
+/// AUTH_OK includes stun_addrs when STUN_PUBLIC_ADDRS is configured.
+#[tokio::test]
+async fn auth_ok_includes_stun_addrs_when_configured() {
+    let config = ServerConfig {
+        ws_listen_addr: "127.0.0.1:0".parse().unwrap(),
+        http_listen_addr: "127.0.0.1:0".parse().unwrap(),
+        relay_listen_addr: "127.0.0.1:0".parse().unwrap(),
+        stun_listen_addr: "127.0.0.1:0".parse().unwrap(),
+        stun_listen_addr_alt: "127.0.0.1:0".parse().unwrap(),
+        stun_public_addrs: "203.0.113.5:3478,203.0.113.5:3479".into(),
+        db_path: ":memory:".into(),
+        google_client_id: String::new(),
+        google_client_secret: String::new(),
+        admin_token: "test-admin-token".into(),
+        motd: String::new(),
+        update_url: "https://example.com/update".into(),
+        tls_cert_path: String::new(),
+        tls_key_path: String::new(),
+        relay_public_addr: "127.0.0.1:19001".into(),
+        log_dir: String::new(),
+        skip_gpgs_verify: true,
+        pow_difficulty: 8,
+    };
+
+    let state = build_state(config).expect("build state");
+    let ws_listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let ws_addr = ws_listener.local_addr().unwrap();
+    let ws_state = Arc::clone(&state);
+    let _ws_handle = tokio::spawn(async move {
+        let app = ws_handler::ws_router(ws_state);
+        axum::serve(
+            ws_listener,
+            app.into_make_service_with_connect_info::<SocketAddr>(),
+        )
+        .await
+        .unwrap();
+    });
+
+    let url = format!("ws://{}/ws", ws_addr);
+    let (mut ws, _) = connect_async(&url).await.unwrap();
+    let auth_ok = send_recv(
+        &mut ws,
+        json!({
+            "type": "AUTHENTICATE",
+            "protocol_version": CURRENT_PROTOCOL,
+            "client_version": "test",
+            "play_games_token": "tok_stun_test",
+            "callsign": "StunTester",
+            "platform": "test",
+        }),
+    )
+    .await;
+
+    assert_eq!(auth_ok["type"], "AUTH_OK");
+    let addrs = auth_ok["stun_addrs"]
+        .as_array()
+        .expect("stun_addrs should be array");
+    assert_eq!(addrs.len(), 2);
+    assert_eq!(addrs[0], "203.0.113.5:3478");
+    assert_eq!(addrs[1], "203.0.113.5:3479");
+}
+
+/// AUTH_OK omits stun_addrs (or empty) when STUN_PUBLIC_ADDRS is not set.
+#[tokio::test]
+async fn auth_ok_no_stun_addrs_when_not_configured() {
+    let server = TestServer::start().await;
+    let mut ws = connect_ws(&server).await;
+    let auth_ok = authenticate(&mut ws, "NoStun").await;
+    // stun_addrs should either be absent or empty
+    let addrs = auth_ok.get("stun_addrs");
+    assert!(
+        addrs.is_none() || addrs.unwrap().as_array().map_or(true, |a| a.is_empty()),
+        "stun_addrs should be absent or empty, got {:?}",
+        addrs
+    );
+}
+
+/// STUN allowlist: IP is added on auth, removed on disconnect.
+#[tokio::test]
+async fn stun_allowlist_lifecycle() {
+    let server = TestServer::start().await;
+    assert!(
+        server.state.stun_allowlist.is_empty(),
+        "allowlist starts empty"
+    );
+
+    let mut ws = connect_ws(&server).await;
+    let _auth = authenticate(&mut ws, "AllowlistTest").await;
+
+    // After auth, the client's loopback IP should be in the allowlist
+    assert!(
+        server
+            .state
+            .stun_allowlist
+            .contains(&std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST)),
+        "client IP should be in allowlist after auth"
+    );
+
+    // Disconnect
+    ws.close(None).await.ok();
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+
+    // After disconnect, the IP should be removed
+    assert!(
+        server.state.stun_allowlist.is_empty(),
+        "allowlist should be empty after disconnect"
+    );
+}
+
+/// Self-hosted STUN server responds to allowlisted IPs with XOR-MAPPED-ADDRESS.
+#[tokio::test]
+async fn stun_server_responds_to_allowlisted_ip() {
+    use std::net::IpAddr;
+    use tokio::net::UdpSocket;
+
+    let allowlist = Arc::new(dashmap::DashSet::<IpAddr>::new());
+    allowlist.insert(IpAddr::V4(std::net::Ipv4Addr::LOCALHOST));
+
+    let bound = dxx_matchmaking::stun::run("127.0.0.1:0".parse().unwrap(), Arc::clone(&allowlist))
+        .await
+        .expect("STUN bind");
+
+    // Build a STUN Binding Request
+    let sock = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+    let local_addr = sock.local_addr().unwrap();
+    let mut request = Vec::with_capacity(20);
+    request.extend_from_slice(&0x0001u16.to_be_bytes()); // Binding Request
+    request.extend_from_slice(&0u16.to_be_bytes()); // length
+    request.extend_from_slice(&0x2112_A442u32.to_be_bytes()); // magic cookie
+    request.extend_from_slice(&[0xAA; 12]); // txn ID
+
+    sock.send_to(&request, bound).await.unwrap();
+
+    let mut buf = [0u8; 128];
+    let timeout = tokio::time::timeout(std::time::Duration::from_secs(2), sock.recv_from(&mut buf))
+        .await
+        .expect("STUN response timeout");
+    let (len, _from) = timeout.unwrap();
+
+    // Parse response header
+    assert!(len >= 20, "response too short");
+    let msg_type = u16::from_be_bytes([buf[0], buf[1]]);
+    assert_eq!(msg_type, 0x0101, "expected Binding Response");
+    let magic = u32::from_be_bytes([buf[4], buf[5], buf[6], buf[7]]);
+    assert_eq!(magic, 0x2112_A442);
+    assert_eq!(&buf[8..20], &[0xAA; 12], "txn ID mismatch");
+
+    // Parse XOR-MAPPED-ADDRESS attribute
+    let attr_type = u16::from_be_bytes([buf[20], buf[21]]);
+    assert_eq!(attr_type, 0x0020, "expected XOR-MAPPED-ADDRESS");
+    let xor_port = u16::from_be_bytes([buf[26], buf[27]]);
+    let port = xor_port ^ 0x2112;
+    assert_eq!(port, local_addr.port(), "reflexive port mismatch");
+}
+
+/// Self-hosted STUN server drops packets from non-allowlisted IPs.
+#[tokio::test]
+async fn stun_server_drops_non_allowlisted_ip() {
+    use std::net::IpAddr;
+    use tokio::net::UdpSocket;
+
+    let allowlist = Arc::new(dashmap::DashSet::<IpAddr>::new());
+    // Allowlist is empty -- no IPs allowed
+
+    let bound = dxx_matchmaking::stun::run("127.0.0.1:0".parse().unwrap(), Arc::clone(&allowlist))
+        .await
+        .expect("STUN bind");
+
+    let sock = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+    let mut request = Vec::with_capacity(20);
+    request.extend_from_slice(&0x0001u16.to_be_bytes());
+    request.extend_from_slice(&0u16.to_be_bytes());
+    request.extend_from_slice(&0x2112_A442u32.to_be_bytes());
+    request.extend_from_slice(&[0xBB; 12]);
+
+    sock.send_to(&request, bound).await.unwrap();
+
+    let mut buf = [0u8; 128];
+    let result = tokio::time::timeout(
+        std::time::Duration::from_millis(500),
+        sock.recv_from(&mut buf),
+    )
+    .await;
+    assert!(
+        result.is_err(),
+        "should not receive response from non-allowlisted IP"
+    );
 }

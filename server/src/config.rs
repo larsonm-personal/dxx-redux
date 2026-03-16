@@ -27,6 +27,13 @@ pub struct ServerConfig {
     pub tls_key_path: String,
     /// Public address of the UDP relay, sent to clients in RELAY_ASSIGNED
     pub relay_public_addr: String,
+    /// Address for STUN listener 1 (e.g. "0.0.0.0:3478")
+    pub stun_listen_addr: SocketAddr,
+    /// Address for STUN listener 2, different port for NAT detection (e.g. "0.0.0.0:3479")
+    pub stun_listen_addr_alt: SocketAddr,
+    /// Public STUN addresses sent to clients in AUTH_OK (e.g. "203.0.113.5:3478,203.0.113.5:3479")
+    /// If empty, STUN listeners are not started.
+    pub stun_public_addrs: String,
     /// Directory for log files (empty = no file logging, stdout only)
     pub log_dir: String,
     /// Skip GPGS token verification (dev/test mode: use token as identity key directly)
@@ -60,6 +67,9 @@ impl ServerConfig {
             tls_cert_path: env_or("TLS_CERT_PATH", ""),
             tls_key_path: env_or("TLS_KEY_PATH", ""),
             relay_public_addr: env_or("RELAY_PUBLIC_ADDR", ""),
+            stun_listen_addr: env_addr("STUN_LISTEN_ADDR", "0.0.0.0:3478"),
+            stun_listen_addr_alt: env_addr("STUN_LISTEN_ADDR_ALT", "0.0.0.0:3479"),
+            stun_public_addrs: env_or("STUN_PUBLIC_ADDRS", ""),
             log_dir: env_or("LOG_DIR", ""),
             skip_gpgs_verify: env_or("SKIP_GPGS_VERIFY", "false") == "true",
             pow_difficulty: env_or("POW_DIFFICULTY", "20").parse().unwrap_or(20),

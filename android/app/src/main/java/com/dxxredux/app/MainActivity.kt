@@ -164,6 +164,22 @@ class MainActivity :
 
     external fun nativeGetNumAudioTracks(): Int
 
+    // ── Matchmaking auto-join/host (jni_main.c) ─────────────────────
+    external fun nativeSetAutoJoin(
+        hostAddr: String,
+        hostPort: Int,
+        myPort: Int,
+    )
+
+    external fun nativeSetAutoHost(
+        myPort: Int,
+        mission: String,
+        mode: Int,
+        maxPlayers: Int,
+        levelNum: Int,
+        difficulty: Int,
+    )
+
     external fun nativeGetCurrentTrackInfo(): String
 
     // ── SAF leave-in-place: called from native via JNI (jni_saf.c) ───
@@ -226,6 +242,23 @@ class MainActivity :
         val libName = if (game == "d1") "dxx-redux-d1" else "dxx-redux-d2"
         System.loadLibrary(libName)
         Log.i("MainActivity", "Loaded native library: $libName")
+
+        // Check for multiplayer auto-join/host from the matchmaking lobby
+        val mpMode = intent.getStringExtra("mp_mode")
+        if (mpMode == "join") {
+            val hostAddr = intent.getStringExtra("mp_host_addr") ?: "127.0.0.1"
+            val hostPort = intent.getIntExtra("mp_host_port", 42430)
+            val myPort = intent.getIntExtra("mp_my_port", 42424)
+            nativeSetAutoJoin(hostAddr, hostPort, myPort)
+        } else if (mpMode == "host") {
+            val myPort = intent.getIntExtra("mp_my_port", 42424)
+            val mission = intent.getStringExtra("mp_mission") ?: "descent2"
+            val mode = intent.getIntExtra("mp_game_mode", 0)
+            val maxPlayers = intent.getIntExtra("mp_max_players", 4)
+            val levelNum = intent.getIntExtra("mp_level_num", 1)
+            val difficulty = intent.getIntExtra("mp_difficulty", 1)
+            nativeSetAutoHost(myPort, mission, mode, maxPlayers, levelNum, difficulty)
+        }
 
         loadMetaBindings()
 

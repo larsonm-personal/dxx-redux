@@ -103,6 +103,9 @@ endif()
 
 if(UDP)
     target_sources(dxx-redux-d1 PRIVATE net_udp.c)
+    if(ANDROID)
+        target_sources(dxx-redux-d1 PRIVATE auto_net.c)
+    endif()
 endif()
 
 if(WIN32)

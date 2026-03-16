@@ -42,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
+import com.dxxredux.app.multiplayer.NetworkConstants
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -619,6 +620,35 @@ class SetupActivity : ComponentActivity() {
                         // the game returns here instead of the launcher.
                     }
                 },
+                onMultiplayerLaunch = { info ->
+                    FileSetManager(filesDir).writeActiveSetPath()
+                    AudioSourceManager(filesDir).writePlaylist()
+                    writeInitialGameConfig()
+                    val mpIntent = Intent(this, MainActivity::class.java)
+                    mpIntent.putExtra("game", info.game)
+                    if (info.isHost) {
+                        mpIntent.putExtra("mp_mode", "host")
+                        mpIntent.putExtra("mp_my_port", NetworkConstants.ENGINE_PORT)
+                        mpIntent.putExtra("mp_mission", info.mission)
+                        mpIntent.putExtra(
+                            "mp_game_mode",
+                            NetworkConstants.gameModeToInt(info.mode),
+                        )
+                        mpIntent.putExtra("mp_max_players", info.maxPlayers)
+                        mpIntent.putExtra("mp_level_num", info.levelNum)
+                        mpIntent.putExtra("mp_difficulty", info.difficulty)
+                    } else {
+                        mpIntent.putExtra("mp_mode", "join")
+                        mpIntent.putExtra("mp_host_addr", "127.0.0.1")
+                        // Host is always slot 0; joiner connects via proxy for slot 0
+                        mpIntent.putExtra(
+                            "mp_host_port",
+                            NetworkConstants.PROXY_PORT_BASE,
+                        )
+                        mpIntent.putExtra("mp_my_port", NetworkConstants.ENGINE_PORT)
+                    }
+                    startActivity(mpIntent)
+                },
                 onRefresh = { refreshTrigger.intValue++ },
                 onDownloadStateChanged = { name, progress ->
                     if (progress == -2) {
@@ -1170,6 +1200,7 @@ private fun SetupScreen(
     axisGeneration: Int,
     pressedButtons: SnapshotStateList<String>,
     onLaunchGame: (String) -> Unit,
+    onMultiplayerLaunch: (com.dxxredux.app.multiplayer.GameLaunchInfo) -> Unit,
     onRefresh: () -> Unit,
     onDownloadStateChanged: (String, Int) -> Unit = { _, _ -> },
 ) {
@@ -1399,6 +1430,7 @@ private fun SetupScreen(
         if (showMultiplayerPage) {
             com.dxxredux.app.multiplayer.MultiplayerScreen(
                 onBack = { showMultiplayerPage = false },
+                onLaunchGame = onMultiplayerLaunch,
             )
             return@MaterialTheme
         }

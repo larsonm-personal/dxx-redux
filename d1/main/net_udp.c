@@ -185,6 +185,9 @@ int num_active_udp_games = 0;
 int num_active_udp_changed = 0;
 static int UDP_Socket[3] = { -1, -1, -1 };
 static char UDP_MyPort[6] = "";
+#ifdef __ANDROID__
+static int udp_bind_loopback = 0; /* when set, bind to 127.0.0.1 instead of INADDR_ANY */
+#endif
 struct _sockaddr GBcast; // global Broadcast address clients and hosts will use for lite_info exchange over LAN
 #ifdef IPv6
 struct _sockaddr GMcast_v6; // same for IPv6-only
@@ -525,7 +528,17 @@ int udp_open_socket(int socknum, int port)
 
 	sprintf(cport,"%i",port);
 
-	if ((err = getaddrinfo (NULL, cport, &hints, &res)) == 0)
+#ifdef __ANDROID__
+	{
+		const char *bind_addr = udp_bind_loopback ? "127.0.0.1" : NULL;
+		if (bind_addr)
+			hints.ai_flags = 0; /* AI_PASSIVE not valid with explicit host */
+		err = getaddrinfo(bind_addr, cport, &hints, &res);
+	}
+#else
+	err = getaddrinfo(NULL, cport, &hints, &res);
+#endif
+	if (err == 0)
 	{
 		sres = res;
 		while ((ai_family_ == 0) && (sres))
@@ -5144,6 +5157,111 @@ abort:
 
 	return(1);
 }
+
+#ifdef __ANDROID__
+/*
+ * Auto-join: connect to a host at host_addr:host_port without any UI.
+ * Called from check_auto_net() when the launcher sets auto_join_pending.
+ * Polls for game info with a 30-second timeout, then joins directly.
+ * Returns 1 on success, 0 on failure.
+ */
+int net_udp_auto_join(const char *host_addr, int host_port, int my_port)
+{
+	struct _sockaddr host;
+	fix64 start_time, last_req;
+
+	net_udp_init();
+	net_udp_reset_connection_statuses();
+
+	snprintf(UDP_MyPort, sizeof(UDP_MyPort), "%d", my_port);
+	udp_bind_loopback = 1;
+
+	if (udp_open_socket(0, my_port) != 0) {
+		con_printf(CON_URGENT, "auto_join: failed to open socket on port %d\n", my_port);
+		return 0;
+	}
+
+	if (udp_dns_filladdr((char *)host_addr, host_port, &host) < 0) {
+		con_printf(CON_URGENT, "auto_join: failed to resolve %s:%d\n", host_addr, host_port);
+		net_udp_close();
+		return 0;
+	}
+
+	multi_new_game();
+	net_udp_reset_connection_statuses();
+	N_players = 0;
+	change_playernum_to(1);
+
+	memcpy(&Netgame.players[0].protocol.udp.addr, &host, sizeof(struct _sockaddr));
+
+	Netgame.protocol.udp.valid = 0;
+	start_time = timer_query();
+	last_req = 0;
+
+	/* Poll for game info -- 30 second timeout */
+	while (timer_query() < start_time + F1_0 * 30) {
+		timer_update();
+
+		if (timer_query() >= last_req + F1_0) {
+			net_udp_request_game_info(host, 0);
+			last_req = timer_query();
+		}
+
+		timer_delay2(5);
+		net_udp_listen();
+
+		if (Netgame.protocol.udp.valid == -1) {
+			con_printf(CON_URGENT, "auto_join: version mismatch\n");
+			net_udp_close();
+			return 0;
+		}
+
+		if (Netgame.protocol.udp.valid == 1)
+			return net_udp_do_join_game(0);
+	}
+
+	con_printf(CON_URGENT, "auto_join: timeout waiting for host\n");
+	net_udp_close();
+	return 0;
+}
+
+/*
+ * Auto-host: load mission, configure game params, open sockets, then
+ * enter the player-select screen (host clicks "Start Game" manually).
+ * Returns 1 on success, 0 on failure.
+ */
+int net_udp_auto_host(int my_port, const char *mission, int mode,
+                      int difficulty, int max_players, int level_num)
+{
+	net_udp_init();
+	net_udp_reset_connection_statuses();
+	change_playernum_to(0);
+
+	snprintf(UDP_MyPort, sizeof(UDP_MyPort), "%d", my_port);
+	udp_bind_loopback = 1;
+
+	netgame_set_defaults();
+
+	/* Load the requested mission */
+	if (!load_mission_by_name((char *)mission)) {
+		con_printf(CON_URGENT, "auto_host: mission '%s' not found\n", mission);
+		return 0;
+	}
+
+	/* Set game parameters */
+	Netgame.gamemode = mode;
+	Netgame.difficulty = difficulty;
+	Netgame.max_numplayers = max_players;
+	Netgame.levelnum = level_num;
+	strcpy(Netgame.mission_name, Current_mission_filename);
+	strcpy(Netgame.mission_title, Current_mission_longname);
+	sprintf(Netgame.game_name, "%s%s", Players[Player_num].callsign, TXT_S_GAME);
+
+	/* This mirrors net_udp_start_game but we call it directly so we
+	 * enter select_players and the host can click Start. */
+	return net_udp_start_game();
+}
+#endif /* __ANDROID__ */
 
 int net_udp_start_game(void)
 {

@@ -1,0 +1,48 @@
+/*
+ * Auto-join/auto-host support for Android matchmaking integration.
+ * The Kotlin launcher sets these globals via JNI before the game reaches
+ * the main menu.  menu.c checks them on EVENT_WINDOW_ACTIVATED and
+ * triggers the appropriate network action without user interaction.
+ */
+
+#ifndef AUTO_NET_H
+#define AUTO_NET_H
+
+#ifdef __ANDROID__
+
+/* Maximum length for a host address string (IP or hostname). */
+#define AUTO_NET_ADDR_LEN 128
+
+/* --- globals (defined in auto_net.c, set by JNI) --- */
+
+/* Non-zero when the launcher wants an automatic join. */
+extern int auto_join_pending;
+/* Host address to connect to (e.g. "127.0.0.1"). */
+extern char auto_join_host_addr[AUTO_NET_ADDR_LEN];
+/* Host port to connect to (e.g. 42430). */
+extern int auto_join_host_port;
+/* Local port for our socket (e.g. 42424). */
+extern int auto_join_my_port;
+
+/* Non-zero when the launcher wants to auto-host. */
+extern int auto_host_pending;
+/* Local port for the host socket. */
+extern int auto_host_my_port;
+/* Mission filename (e.g. "descent2"). */
+extern char auto_host_mission[64];
+/* Game mode (NETGAME_ANARCHY, NETGAME_COOPERATIVE, etc.). */
+extern int auto_host_mode;
+/* Max players (2-8). */
+extern int auto_host_max_players;
+/* Starting level number. */
+extern int auto_host_level_num;
+/* Difficulty (0-4). */
+extern int auto_host_difficulty;
+
+/* Called from main_menu_handler on EVENT_WINDOW_ACTIVATED.
+ * Returns 1 if an auto action was started (caller should not proceed
+ * with normal menu logic), 0 otherwise. */
+int check_auto_net(void);
+
+#endif /* __ANDROID__ */
+#endif /* AUTO_NET_H */

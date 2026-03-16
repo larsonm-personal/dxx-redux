@@ -12,6 +12,7 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
+import java.net.InetSocketAddress
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.math.min
@@ -35,6 +36,7 @@ object MatchmakingService {
     private var manualDisconnect = false
     private var stunJob: Job? = null
     private var stunCompleted = false
+    private var localhostProxy: LocalhostProxy? = null
 
     // Unique per app process -- ensures two emulators/devices get different player IDs
     // when using dev mode (SKIP_GPGS_VERIFY=true on the server)
@@ -68,6 +70,8 @@ object MatchmakingService {
         stunJob?.cancel()
         stunJob = null
         stunCompleted = false
+        localhostProxy?.shutdown()
+        localhostProxy = null
         webSocket?.close(NetworkConstants.CLOSE_NORMAL, "user disconnect")
         webSocket = null
         state.update {
@@ -82,6 +86,7 @@ object MatchmakingService {
                 connectivityPairs = emptyList(),
                 relayInfo = null,
                 nav = MultiplayerNav.BROWSER,
+                gameLaunchInfo = null,
             )
         }
         state.appendLog("Disconnected.")
@@ -237,11 +242,18 @@ object MatchmakingService {
     }
 
     private fun launchStunDiscovery() {
+        val addrs = state.state.value.stunAddrs
+        if (addrs.size < 2) {
+            state.appendLog("STUN: no server addresses available, skipping")
+            stunCompleted = true
+            sendStunResult(emptyList(), "unknown")
+            return
+        }
         stunJob =
             scope.launch {
                 state.appendLog("Starting STUN discovery...")
                 try {
-                    val report = StunClient.discover()
+                    val report = StunClient.discover(addrs)
                     stunCompleted = true
                     state.appendLog("STUN: ${report.natType}, ${report.candidates.size} candidates")
                     sendStunResult(report.candidates, report.natType)
@@ -359,6 +371,7 @@ object MatchmakingService {
                         status = ConnectionStatus.CONNECTED,
                         playerId = msg.data.playerId,
                         sessionToken = msg.data.sessionToken,
+                        stunAddrs = msg.data.stunAddrs,
                         errorMessage = null,
                     )
                 }
@@ -446,7 +459,47 @@ object MatchmakingService {
             }
 
             is ServerMessage.GameStarting -> {
-                state.appendLog("Game starting: ${msg.data.mission} @ ${msg.data.hostAddr}")
+                val gs = msg.data
+                state.appendLog("Game starting: ${gs.mission} (slot ${gs.yourSlot})")
+
+                // Set up localhost proxy for each peer
+                localhostProxy?.shutdown()
+                val proxy = LocalhostProxy(scope)
+                for (peer in gs.peers) {
+                    val addrParts = peer.addr.split(":")
+                    if (addrParts.size != 2) {
+                        state.appendLog("Bad peer addr: ${peer.addr}")
+                        continue
+                    }
+                    val addr = InetSocketAddress(addrParts[0], addrParts[1].toIntOrNull() ?: continue)
+                    proxy.addPeer(
+                        PeerProxyConfig(
+                            peerSlot = peer.slot,
+                            localPort = NetworkConstants.PROXY_PORT_BASE + peer.slot,
+                            realAddr = addr,
+                            isRelay = peer.isRelay,
+                            relayToken = peer.relayToken?.toUInt() ?: 0u,
+                            relayDestSlot = peer.relayDestSlot ?: peer.slot,
+                        ),
+                    )
+                }
+                localhostProxy = proxy
+
+                // Determine if we're the host (slot 0 = host)
+                val isHost = gs.yourSlot == 0
+                val launchInfo =
+                    GameLaunchInfo(
+                        game = gs.game,
+                        mission = gs.mission,
+                        mode = gs.mode,
+                        difficulty = gs.difficulty,
+                        levelNum = gs.levelNum,
+                        maxPlayers = gs.maxPlayers,
+                        yourSlot = gs.yourSlot,
+                        isHost = isHost,
+                        peers = gs.peers,
+                    )
+                state.update { it.copy(gameLaunchInfo = launchInfo) }
             }
 
             is ServerMessage.RateLimited -> {

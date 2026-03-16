@@ -50,7 +50,10 @@ Wire into ServerMessage.parse() and MatchmakingService dispatch.
 Hand-rolled STUN Binding Request/Response:
 - 20-byte request (type=0x0001, length=0, magic=0x2112A442, txn_id)
 - Parse XOR-MAPPED-ADDRESS from response
-- Query two servers, detect NAT type from port comparison
+- Query self-hosted STUN server (two ports on matchmaking server)
+- STUN addresses received from server via AUTH_OK (stun_addrs field)
+- Server only responds to IPs with active authenticated WS sessions
+- Detect NAT type from port comparison across the two endpoints
 - Return candidates list
 
 ## Phase 5: ConnectivityChecker.kt
@@ -251,7 +254,9 @@ Test client A sends UDP through nat_sim_a. nat_sim_a maps the port
 and forwards. nat_sim_b receives on its external port, checks mapping
 rules (accept/reject based on NAT type), forwards to client B.
 
-The STUN server is a simple echo that returns the source address --
+The STUN server is self-hosted, embedded in the matchmaking server --
+two UDP listeners on separate ports. Only responds to IPs that have an
+active authenticated WebSocket session (IP allowlisting).
 when queried through the NAT simulator, it returns the mapped address.
 
 ### Test Scenarios

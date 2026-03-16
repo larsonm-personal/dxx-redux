@@ -34,10 +34,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun LobbyScreen() {
+fun LobbyScreen(onLaunchGame: (GameLaunchInfo) -> Unit) {
     val state by MatchmakingStateHolder.state.collectAsState()
     val lobby = state.currentLobby ?: return
     val myId = state.playerId
+
+    // Launch the game when gameLaunchInfo becomes available
+    val launchInfo = state.gameLaunchInfo
+    LaunchedEffect(launchInfo) {
+        if (launchInfo != null) {
+            onLaunchGame(launchInfo)
+        }
+    }
 
     Column(
         modifier =

@@ -16,4 +16,22 @@ object NetworkConstants {
     // WebSocket close codes
     const val CLOSE_NORMAL: Int = 1000
     const val CLOSE_GOING_AWAY: Int = 1001
+
+    // Game engine UDP ports (keep in sync with d1/d2 net_udp.h UDP_PORT_DEFAULT)
+    const val ENGINE_PORT: Int = 42424
+    const val PROXY_PORT_BASE: Int = 42430
+
+    // Game mode string-to-int mapping (keep in sync with d1/d2 main/net_udp.h NETGAME_* defines)
+    fun gameModeToInt(mode: String): Int =
+        when (mode.lowercase()) {
+            "anarchy" -> 0
+            "team_anarchy" -> 1
+            "robot_anarchy" -> 2
+            "cooperative", "coop" -> 3
+            "capture_flag", "ctf" -> 4
+            "hoard" -> 5
+            "team_hoard" -> 6
+            "bounty" -> 7
+            else -> 0
+        }
 }

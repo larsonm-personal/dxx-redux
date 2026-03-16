@@ -68,6 +68,7 @@ fn build_lobby_list(state: &ServerState) -> Vec<LobbyInfo> {
             LobbyInfo {
                 lobby_id: l.id,
                 host_callsign: l.host_callsign.clone(),
+                game: l.game.clone(),
                 mission: l.mission.clone(),
                 mode: l.mode.clone(),
                 player_count: l.player_count(),
@@ -321,7 +322,7 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                             );
                             complete_auth(
                                 &state, &tx, pid, &callsign, &platform, false, "keypair",
-                                session_id,
+                                session_id, addr,
                             );
                             player_id = Some(pid);
                         }
@@ -406,6 +407,7 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                         is_gpgs_verified,
                         method,
                         session_id,
+                        addr,
                     );
                     player_id = Some(pid);
                 }
@@ -468,6 +470,7 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                     false,
                     "keypair",
                     session_id,
+                    addr,
                 );
                 player_id = Some(pid);
                 pending_pow = None;
@@ -504,6 +507,8 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
         }
         state.sessions.remove(&pid);
         state.stats.player_disconnected();
+        // Remove client IP from STUN allowlist
+        state.stun_allowlist.remove(&addr.ip());
         let _ = state
             .db
             .log_connection_event(Some(&pid), "disconnect", None);
@@ -514,6 +519,16 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
     // and exit cleanly instead of being aborted mid-flight.
     drop(tx);
     let _ = send_task.await;
+}
+
+/// Pick the best candidate address for direct connection: prefer srflx, then host.
+fn best_candidate_addr(candidates: &[crate::protocol::ConnectionCandidate]) -> String {
+    candidates
+        .iter()
+        .find(|c| c.candidate_type == "srflx")
+        .or_else(|| candidates.iter().find(|c| c.candidate_type == "host"))
+        .map(|c| c.addr.clone())
+        .unwrap_or_default()
 }
 
 /// Determine connection type between two lobby players based on their
@@ -762,9 +777,9 @@ struct RelayPair {
 }
 
 /// Allocate a relay session for a player pair and send RELAY_ASSIGNED to both.
-fn allocate_relay_session(state: &ServerState, relay_addr: &str, pair: &RelayPair) {
+fn allocate_relay_session(state: &ServerState, relay_addr: &str, pair: &RelayPair) -> Option<u32> {
     if relay_addr.is_empty() {
-        return;
+        return None;
     }
     let token = Uuid::new_v4().as_u128() as u32;
     let player_addrs = dashmap::DashMap::new();
@@ -787,17 +802,8 @@ fn allocate_relay_session(state: &ServerState, relay_addr: &str, pair: &RelayPai
             created_at: std::time::Instant::now(),
         },
     );
-    let msg = ServerMessage::RelayAssigned {
-        relay_addr: relay_addr.to_string(),
-        session_token: token.to_string(),
-    };
-    if let Some(s) = state.sessions.get(&pair.pid_a) {
-        let _ = s.tx.send(msg.clone());
-    }
-    if let Some(s) = state.sessions.get(&pair.pid_b) {
-        let _ = s.tx.send(msg);
-    }
     info!(token, pid_a = %pair.pid_a, pid_b = %pair.pid_b, "relay session allocated");
+    Some(token)
 }
 
 /// Register session and send welcome bundle (AUTH_OK, MOTD, status, lobby list, friends).
@@ -812,6 +818,7 @@ fn complete_auth(
     gpgs_verified: bool,
     auth_method: &str,
     session_id: Uuid,
+    addr: SocketAddr,
 ) {
     state.sessions.insert(
         pid,
@@ -828,11 +835,27 @@ fn complete_auth(
     );
     state.stats.player_connected();
 
+    // Add client IP to STUN allowlist
+    state.stun_allowlist.insert(addr.ip());
+
     info!(%pid, %callsign, %platform, %auth_method, "player authenticated");
+
+    let stun_addrs: Vec<String> = if state.config.stun_public_addrs.is_empty() {
+        vec![]
+    } else {
+        state
+            .config
+            .stun_public_addrs
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect()
+    };
 
     let _ = tx.send(ServerMessage::AuthOk {
         player_id: pid,
         session_token: session_id.to_string(),
+        stun_addrs,
     });
 
     if !state.config.motd.is_empty() {
@@ -1077,19 +1100,17 @@ async fn handle_authenticated_message(
                         .map(|c| c.addr.clone())
                         .unwrap_or_default();
 
+                    let game = lobby.game.clone();
                     let mission = lobby.mission.clone();
                     let mode = lobby.mode.clone();
+                    let max_players = lobby.max_players;
 
-                    // Send GAME_STARTING to all lobby members
-                    let game_starting = ServerMessage::GameStarting {
-                        host_addr,
-                        mission,
-                        mode,
-                    };
-                    broadcast_to_lobby(&lobby, state, &game_starting);
-
-                    // Collect relay-needed pairs (connection type == Relay)
-                    let mut relay_pairs: Vec<RelayPair> = Vec::new();
+                    // Collect relay-needed pairs and allocate sessions BEFORE
+                    // building GAME_STARTING so relay info is available.
+                    // relay_tokens maps (slot_a, slot_b) -> token
+                    let relay_addr = state.config.relay_public_addr.clone();
+                    let mut relay_tokens: std::collections::HashMap<(u8, u8), u32> =
+                        std::collections::HashMap::new();
                     for i in 0..lobby.players.len() {
                         for j in (i + 1)..lobby.players.len() {
                             let (conn_type, _) =
@@ -1105,16 +1126,91 @@ async fn handle_authenticated_message(
                                     .iter()
                                     .find(|c| c.candidate_type == "srflx")
                                     .map(|c| c.addr.clone());
-                                relay_pairs.push(RelayPair {
+                                let pair = RelayPair {
                                     slot_a: i as u8,
                                     slot_b: j as u8,
                                     pid_a: lobby.players[i].player_id,
                                     pid_b: lobby.players[j].player_id,
                                     addr_a,
                                     addr_b,
-                                });
+                                };
+                                if let Some(token) =
+                                    allocate_relay_session(state, &relay_addr, &pair)
+                                {
+                                    relay_tokens.insert((i as u8, j as u8), token);
+                                }
                             }
                         }
+                    }
+
+                    // Build per-player GAME_STARTING with peer assignments
+                    let player_count = lobby.players.len();
+                    let mut per_player_msgs: Vec<(Uuid, ServerMessage)> =
+                        Vec::with_capacity(player_count);
+
+                    for my_slot in 0..player_count {
+                        let my_pid = lobby.players[my_slot].player_id;
+                        let mut peers = Vec::with_capacity(player_count - 1);
+
+                        for other_slot in 0..player_count {
+                            if other_slot == my_slot {
+                                continue;
+                            }
+                            let other = &lobby.players[other_slot];
+                            let (conn_type, _) = determine_connection_type(
+                                &lobby.players[my_slot],
+                                &lobby.players[other_slot],
+                            );
+                            let is_relay =
+                                conn_type == crate::lobby::ConnectionType::Relay;
+
+                            // For direct: use winning candidate addr; for relay: use relay server
+                            let addr = if is_relay {
+                                relay_addr.clone()
+                            } else {
+                                best_candidate_addr(&other.candidates)
+                            };
+
+                            // Look up relay token for this pair
+                            let (lo, hi) = if my_slot < other_slot {
+                                (my_slot as u8, other_slot as u8)
+                            } else {
+                                (other_slot as u8, my_slot as u8)
+                            };
+                            let relay_token = if is_relay {
+                                relay_tokens.get(&(lo, hi)).copied()
+                            } else {
+                                None
+                            };
+                            let relay_dest_slot = if is_relay {
+                                Some(other_slot as u8)
+                            } else {
+                                None
+                            };
+
+                            peers.push(crate::protocol::PeerAssignment {
+                                slot: other_slot as u8,
+                                addr,
+                                is_relay,
+                                relay_token,
+                                relay_dest_slot,
+                            });
+                        }
+
+                        per_player_msgs.push((
+                            my_pid,
+                            ServerMessage::GameStarting {
+                                host_addr: host_addr.clone(),
+                                game: game.clone(),
+                                mission: mission.clone(),
+                                mode: mode.clone(),
+                                your_slot: my_slot as u8,
+                                max_players,
+                                difficulty: 1, // default; lobby doesn't track this yet
+                                level_num: 1,
+                                peers,
+                            },
+                        ));
                     }
 
                     // Update presence for all players
@@ -1133,10 +1229,11 @@ async fn handle_authenticated_message(
                         }
                     }
 
-                    // Allocate relay sessions for pairs that need it
-                    let relay_addr = state.config.relay_public_addr.clone();
-                    for pair in &relay_pairs {
-                        allocate_relay_session(state, &relay_addr, pair);
+                    // Send per-player GAME_STARTING messages
+                    for (pid, msg) in per_player_msgs {
+                        if let Some(sess) = state.sessions.get(&pid) {
+                            let _ = sess.tx.send(msg);
+                        }
                     }
                 }
             }

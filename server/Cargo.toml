@@ -26,5 +26,9 @@ sha2 = "=0.11.0-rc.5"
 rand = { version = "=0.10.0", features = ["sys_rng"] }
 hex = "=0.4.3"
 
+[[bin]]
+name = "nat-sim"
+path = "src/bin/nat_sim.rs"
+
 [dev-dependencies]
 tempfile = "=3.27.0"

@@ -314,3 +314,53 @@ Java_com_dxxredux_app_MainActivity_nativeGetConsoleSince(JNIEnv *env, jobject th
 	return result;
 }
 #endif /* INTROSPECT_ON */
+
+/* ── Auto-net: set up automatic join/host from the matchmaking lobby ── */
+extern int auto_join_pending;
+extern char auto_join_host_addr[];
+extern int auto_join_host_port;
+extern int auto_join_my_port;
+
+extern int auto_host_pending;
+extern int auto_host_my_port;
+extern char auto_host_mission[];
+extern int auto_host_mode;
+extern int auto_host_max_players;
+extern int auto_host_level_num;
+extern int auto_host_difficulty;
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetAutoJoin(JNIEnv *env, jobject thiz,
+                                                     jstring jHostAddr, jint hostPort, jint myPort)
+{
+	const char *addr = (*env)->GetStringUTFChars(env, jHostAddr, NULL);
+	strncpy(auto_join_host_addr, addr, 127);
+	auto_join_host_addr[127] = '\0';
+	(*env)->ReleaseStringUTFChars(env, jHostAddr, addr);
+
+	auto_join_host_port = (int) hostPort;
+	auto_join_my_port = (int) myPort;
+	auto_join_pending = 1;
+	LOGI("nativeSetAutoJoin: %s:%d (my port %d)", auto_join_host_addr, auto_join_host_port, auto_join_my_port);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetAutoHost(JNIEnv *env, jobject thiz,
+                                                     jint myPort, jstring jMission, jint mode,
+                                                     jint maxPlayers, jint levelNum, jint difficulty)
+{
+	const char *mission = (*env)->GetStringUTFChars(env, jMission, NULL);
+	strncpy(auto_host_mission, mission, 63);
+	auto_host_mission[63] = '\0';
+	(*env)->ReleaseStringUTFChars(env, jMission, mission);
+
+	auto_host_my_port = (int) myPort;
+	auto_host_mode = (int) mode;
+	auto_host_max_players = (int) maxPlayers;
+	auto_host_level_num = (int) levelNum;
+	auto_host_difficulty = (int) difficulty;
+	auto_host_pending = 1;
+	LOGI("nativeSetAutoHost: port=%d mission=%s mode=%d max=%d lvl=%d diff=%d",
+	     auto_host_my_port, auto_host_mission, auto_host_mode,
+	     auto_host_max_players, auto_host_level_num, auto_host_difficulty);
+}
