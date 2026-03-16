@@ -602,23 +602,28 @@ android/app/src/main/java/com/dxxredux/app/
 - [x] Integration test: connect to local server, verify AUTH_OK received
       (tested E2E on emulator, full auth flow confirmed via logcat)
 
-### Phase C2: MultiplayerScreen (Server Browser) -- PARTIAL
+### Phase C2: MultiplayerScreen (Server Browser) -- COMPLETE
 
 - [x] Create MultiplayerScreen.kt with connection status, lobby list,
       status log (implemented as single-screen MVP, not tabbed yet)
-- [ ] Create ServerBrowserTab.kt: observe MatchmakingState.lobbies,
-      display as LazyColumn with LobbyInfo cards
-- [ ] Add ping display (own ping in header, estimated ping per lobby)
-- [ ] Join button: send JOIN_LOBBY, navigate to LobbyScreen
+- [x] Add ping display (host_ping_ms shown per lobby in LobbyCard)
+- [x] Join button: send JOIN_LOBBY, navigate to LobbyScreen on LOBBY_UPDATE
+- [x] Lobby code dialog for code-protected lobbies
+- [x] Nav dispatch: MultiplayerNav.BROWSER vs LOBBY controls sub-screen
 - [x] Wire into SetupActivity navigation
+- [ ] Create ServerBrowserTab.kt: evolve to tabbed layout (deferred, not blocking)
 
-### Phase C3: LobbyScreen
+### Phase C3: LobbyScreen -- COMPLETE
 
-- [ ] Create LobbyScreen.kt: player list, ready toggle, leave button
-- [ ] Handle LOBBY_UPDATE to refresh player list
-- [ ] Handle GAME_STARTING to launch game (auto-join intent)
-- [ ] Handle KICKED to return to MultiplayerScreen with toast
-- [ ] Host-only: Start Game button, kick player
+- [x] Create LobbyScreen.kt: player list, ready toggle, leave button
+- [x] Handle LOBBY_UPDATE to refresh player list (populates CurrentLobbyState)
+- [x] Handle GAME_STARTING (logged, kept for future game launch)
+- [x] Handle KICKED/ERROR to return to MultiplayerScreen
+- [x] Host-only: Start Game button (enabled when all ready + 2+ players), kick player
+- [x] Player cards show callsign, host/you badges, ready status, ping
+- [x] MatchmakingService: joinLobby(), leaveLobby(), setReady(), startGame(), kickPlayer()
+- [x] Server integration tests: 5 new tests covering full join/ready/start, leave, kick,
+      non-host start rejection, ready toggle (48 integration tests total)
 
 ### Phase C4: Friends Tab
 
@@ -641,12 +646,15 @@ android/app/src/main/java/com/dxxredux/app/
 - [ ] Handle SERVER_STATUS message
 - [ ] Periodic refresh (server push or client poll every 60s)
 
-### Phase C7: Player Messaging
+### Phase C7: Player Messaging -- COMPLETE
 
-- [ ] Create ChatDialog.kt: simple text input + send
-- [ ] Handle SEND_MESSAGE / MESSAGE_RECEIVED
-- [ ] Rate limit indicator (show "slow down" when RATE_LIMITED received)
-- [ ] In-lobby chat area in LobbyScreen
+- [x] Handle SEND_MESSAGE / MESSAGE_RECEIVED / MESSAGE_SENT / CONNECTION_INFO
+- [x] sendLobbyChat() broadcasts to all lobby players
+- [x] In-lobby chat area in LobbyScreen (LobbyChatArea)
+- [x] Create Lobby UI dialog in MultiplayerScreen (CreateLobbyDialog)
+- [x] Chat state cleared on disconnect/leave/kick
+- [x] 2 new server integration tests (test_lobby_chat_flow, test_create_lobby_details)
+- [ ] Rate limit indicator (show "slow down" when RATE_LIMITED received) -- future
 
 ### Phase C8: LAN Discovery
 

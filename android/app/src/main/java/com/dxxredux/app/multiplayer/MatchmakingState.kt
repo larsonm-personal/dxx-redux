@@ -12,6 +12,24 @@ enum class ConnectionStatus {
     RECONNECTING,
 }
 
+enum class MultiplayerNav {
+    BROWSER,
+    LOBBY,
+}
+
+data class CurrentLobbyState(
+    val lobbyId: String,
+    val players: List<LobbyPlayerInfo> = emptyList(),
+    val isHost: Boolean = false,
+    val hostPlayerId: String? = null,
+)
+
+data class ChatMessage(
+    val fromCallsign: String,
+    val text: String,
+    val isMe: Boolean = false,
+)
+
 data class MatchmakingState(
     val status: ConnectionStatus = ConnectionStatus.DISCONNECTED,
     val serverUrl: String = NetworkConstants.DEFAULT_SERVER_URL,
@@ -23,6 +41,10 @@ data class MatchmakingState(
     val motd: String? = null,
     val errorMessage: String? = null,
     val statusLog: List<String> = emptyList(),
+    val nav: MultiplayerNav = MultiplayerNav.BROWSER,
+    val currentLobby: CurrentLobbyState? = null,
+    val chatMessages: List<ChatMessage> = emptyList(),
+    val connectionInfo: List<PeerConnectionInfoMsg> = emptyList(),
 )
 
 // Global observable state for Compose UI

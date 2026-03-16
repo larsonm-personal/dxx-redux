@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
@@ -20,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -36,8 +38,29 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun MultiplayerScreen(onBack: () -> Unit) {
     val state by MatchmakingStateHolder.state.collectAsState()
+
+    when (state.nav) {
+        MultiplayerNav.LOBBY -> {
+            val lobby = state.currentLobby
+            if (lobby != null) {
+                LobbyScreen()
+            } else {
+                // Stale nav state, reset
+                MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
+            }
+        }
+        MultiplayerNav.BROWSER -> ServerBrowserContent(state, onBack)
+    }
+}
+
+@Composable
+private fun ServerBrowserContent(
+    state: MatchmakingState,
+    onBack: () -> Unit,
+) {
     var serverUrl by remember { mutableStateOf(state.serverUrl) }
     var callsign by remember { mutableStateOf(state.callsign) }
+    var showCreateDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier =
@@ -113,6 +136,9 @@ fun MultiplayerScreen(onBack: () -> Unit) {
                 Button(onClick = { MatchmakingService.requestLobbyList() }) {
                     Text("Refresh Lobbies")
                 }
+                Button(onClick = { showCreateDialog = true }) {
+                    Text("Create Lobby")
+                }
                 OutlinedButton(onClick = { MatchmakingService.disconnect() }) {
                     Text("Disconnect")
                 }
@@ -153,36 +179,41 @@ fun MultiplayerScreen(onBack: () -> Unit) {
         }
 
         // -- Status log --
-        HorizontalDivider()
-        Spacer(Modifier.height(4.dp))
-        Text("Log", style = MaterialTheme.typography.titleSmall)
-        val logListState = rememberLazyListState()
-        LaunchedEffect(state.statusLog.size) {
-            if (state.statusLog.isNotEmpty()) {
-                logListState.animateScrollToItem(state.statusLog.size - 1)
-            }
-        }
-        LazyColumn(
-            state = logListState,
-            modifier =
-                Modifier
-                    .height(120.dp)
-                    .fillMaxWidth(),
-        ) {
-            items(state.statusLog) { line ->
-                Text(line, fontSize = 11.sp, fontFamily = FontFamily.Monospace, maxLines = 2)
-            }
-        }
+        StatusLog(state.statusLog)
+    }
+
+    if (showCreateDialog) {
+        CreateLobbyDialog(
+            onCreate = { game, mission, mode, maxPlayers ->
+                showCreateDialog = false
+                MatchmakingService.createLobby(game, mission, mode, maxPlayers)
+            },
+            onDismiss = { showCreateDialog = false },
+        )
     }
 }
 
 @Composable
 private fun LobbyCard(lobby: LobbyInfo) {
+    var showCodeDialog by remember { mutableStateOf(false) }
+    val isConnected =
+        MatchmakingStateHolder.state
+            .collectAsState()
+            .value.status == ConnectionStatus.CONNECTED
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(lobby.hostCallsign, style = MaterialTheme.typography.titleSmall)
                 Spacer(Modifier.weight(1f))
+                lobby.hostPingMs?.let { ping ->
+                    Text(
+                        "${ping}ms",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                }
                 Text(
                     "${lobby.playerCount}/${lobby.maxPlayers}",
                     style = MaterialTheme.typography.bodyMedium,
@@ -195,6 +226,152 @@ private fun LobbyCard(lobby: LobbyInfo) {
             if (lobby.hasCode) {
                 Text("(code required)", style = MaterialTheme.typography.bodySmall)
             }
+            if (lobby.joinable && isConnected) {
+                Spacer(Modifier.height(4.dp))
+                Button(
+                    onClick = {
+                        if (lobby.hasCode) {
+                            showCodeDialog = true
+                        } else {
+                            MatchmakingService.joinLobby(lobby.lobbyId)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Join")
+                }
+            }
+        }
+    }
+
+    if (showCodeDialog) {
+        LobbyCodeDialog(
+            onJoin = { code ->
+                showCodeDialog = false
+                MatchmakingService.joinLobby(lobby.lobbyId, code)
+            },
+            onDismiss = { showCodeDialog = false },
+        )
+    }
+}
+
+@Composable
+private fun LobbyCodeDialog(
+    onJoin: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var code by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Enter Lobby Code") },
+        text = {
+            OutlinedTextField(
+                value = code,
+                onValueChange = { code = it },
+                label = { Text("Code") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onJoin(code) }, enabled = code.isNotBlank()) {
+                Text("Join")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
+}
+
+@Composable
+private fun CreateLobbyDialog(
+    onCreate: (game: String, mission: String, mode: String, maxPlayers: Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var game by remember { mutableStateOf("d2") }
+    var mission by remember { mutableStateOf("") }
+    var mode by remember { mutableStateOf("anarchy") }
+    var maxPlayersText by remember { mutableStateOf("4") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Create Lobby") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Game selector: simple toggle between d1/d2
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("d1", "d2").forEach { g ->
+                        if (g == game) {
+                            Button(onClick = {}) { Text(g.uppercase()) }
+                        } else {
+                            OutlinedButton(onClick = { game = g }) { Text(g.uppercase()) }
+                        }
+                    }
+                }
+                OutlinedTextField(
+                    value = mission,
+                    onValueChange = { mission = it },
+                    label = { Text("Mission") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                // Mode selector
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("anarchy", "coop").forEach { m ->
+                        if (m == mode) {
+                            Button(onClick = {}) { Text(m.replaceFirstChar { it.uppercase() }) }
+                        } else {
+                            OutlinedButton(onClick = { mode = m }) {
+                                Text(m.replaceFirstChar { it.uppercase() })
+                            }
+                        }
+                    }
+                }
+                OutlinedTextField(
+                    value = maxPlayersText,
+                    onValueChange = { maxPlayersText = it.filter { c -> c.isDigit() } },
+                    label = { Text("Max Players") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            val maxPlayers = maxPlayersText.toIntOrNull() ?: 0
+            TextButton(
+                onClick = { onCreate(game, mission, mode, maxPlayers) },
+                enabled = mission.isNotBlank() && maxPlayers in 2..8,
+            ) {
+                Text("Create")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
+}
+
+@Composable
+internal fun StatusLog(statusLog: List<String>) {
+    HorizontalDivider()
+    Spacer(Modifier.height(4.dp))
+    Text("Log", style = MaterialTheme.typography.titleSmall)
+    val logListState = rememberLazyListState()
+    LaunchedEffect(statusLog.size) {
+        if (statusLog.isNotEmpty()) {
+            logListState.animateScrollToItem(statusLog.size - 1)
+        }
+    }
+    LazyColumn(
+        state = logListState,
+        modifier =
+            Modifier
+                .height(120.dp)
+                .fillMaxWidth(),
+    ) {
+        items(statusLog) { line ->
+            Text(line, fontSize = 11.sp, fontFamily = FontFamily.Monospace, maxLines = 2)
         }
     }
 }

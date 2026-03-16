@@ -61,6 +61,24 @@ data class ReadyMsg(
     val ready: Boolean,
 )
 
+@Serializable
+data class StartGameMsg(
+    val type: String = "START_GAME",
+)
+
+@Serializable
+data class KickPlayerMsg(
+    val type: String = "KICK_PLAYER",
+    @SerialName("player_id") val playerId: String,
+)
+
+@Serializable
+data class SendMessageMsg(
+    val type: String = "SEND_MESSAGE",
+    @SerialName("target_player_id") val targetPlayerId: String,
+    val text: String,
+)
+
 // -- Server -> Client parsed types --
 
 @Serializable
@@ -165,6 +183,33 @@ data class VersionRejectedMsg(
     @SerialName("update_url") val updateUrl: String,
 )
 
+@Serializable
+data class MessageReceivedMsg(
+    @SerialName("from_player_id") val fromPlayerId: String,
+    @SerialName("from_callsign") val fromCallsign: String,
+    val text: String,
+)
+
+@Serializable
+data class MessageSentMsg(
+    @SerialName("target_player_id") val targetPlayerId: String,
+)
+
+@Serializable
+data class PeerConnectionInfoMsg(
+    @SerialName("peer_id") val peerId: String,
+    @SerialName("peer_callsign") val peerCallsign: String,
+    val method: String,
+    val detail: String? = null,
+    @SerialName("server_relay") val serverRelay: Boolean = false,
+    @SerialName("estimated_latency_ms") val estimatedLatencyMs: Int? = null,
+)
+
+@Serializable
+data class ConnectionInfoMsg(
+    val connections: List<PeerConnectionInfoMsg>,
+)
+
 // Sealed class representing any server message, dispatched by "type" field
 sealed class ServerMessage {
     data class AuthOkMsg(
@@ -211,6 +256,18 @@ sealed class ServerMessage {
         val data: VersionRejectedMsg,
     ) : ServerMessage()
 
+    data class MessageReceived(
+        val data: MessageReceivedMsg,
+    ) : ServerMessage()
+
+    data class MessageSent(
+        val data: MessageSentMsg,
+    ) : ServerMessage()
+
+    data class ConnectionInfoReceived(
+        val data: ConnectionInfoMsg,
+    ) : ServerMessage()
+
     data class Unknown(
         val type: String,
         val raw: String,
@@ -232,6 +289,9 @@ sealed class ServerMessage {
                 "GAME_STARTING" -> GameStarting(protocolJson.decodeFromString<GameStartingMsg>(text))
                 "RATE_LIMITED" -> RateLimited(protocolJson.decodeFromString<RateLimitedMsg>(text))
                 "VERSION_REJECTED" -> VersionRejected(protocolJson.decodeFromString<VersionRejectedMsg>(text))
+                "MESSAGE_RECEIVED" -> MessageReceived(protocolJson.decodeFromString<MessageReceivedMsg>(text))
+                "MESSAGE_SENT" -> MessageSent(protocolJson.decodeFromString<MessageSentMsg>(text))
+                "CONNECTION_INFO" -> ConnectionInfoReceived(protocolJson.decodeFromString<ConnectionInfoMsg>(text))
                 else -> Unknown(type, text)
             }
         }

@@ -65,6 +65,10 @@ object MatchmakingService {
                 status = ConnectionStatus.DISCONNECTED,
                 playerId = null,
                 sessionToken = null,
+                currentLobby = null,
+                chatMessages = emptyList(),
+                connectionInfo = emptyList(),
+                nav = MultiplayerNav.BROWSER,
             )
         }
         state.appendLog("Disconnected.")
@@ -107,6 +111,74 @@ object MatchmakingService {
                 maxPlayers = maxPlayers,
             )
         send(protocolJson.encodeToString(CreateLobbyMsg.serializer(), msg))
+    }
+
+    fun joinLobby(
+        lobbyId: String,
+        lobbyCode: String? = null,
+    ) {
+        val msg = JoinLobbyMsg(lobbyId = lobbyId, lobbyCode = lobbyCode)
+        send(protocolJson.encodeToString(JoinLobbyMsg.serializer(), msg))
+        state.appendLog("Joining lobby $lobbyId...")
+    }
+
+    fun leaveLobby() {
+        send(protocolJson.encodeToString(LeaveLobbyMsg.serializer(), LeaveLobbyMsg()))
+        state.update {
+            it.copy(
+                currentLobby = null,
+                chatMessages = emptyList(),
+                connectionInfo = emptyList(),
+                nav = MultiplayerNav.BROWSER,
+            )
+        }
+        state.appendLog("Left lobby.")
+        requestLobbyList()
+    }
+
+    fun setReady(ready: Boolean) {
+        send(protocolJson.encodeToString(ReadyMsg.serializer(), ReadyMsg(ready = ready)))
+    }
+
+    fun startGame() {
+        send(protocolJson.encodeToString(StartGameMsg.serializer(), StartGameMsg()))
+        state.appendLog("Requesting game start...")
+    }
+
+    fun kickPlayer(playerId: String) {
+        send(protocolJson.encodeToString(KickPlayerMsg.serializer(), KickPlayerMsg(playerId = playerId)))
+        state.appendLog("Kicking player $playerId...")
+    }
+
+    fun sendMessage(
+        targetPlayerId: String,
+        text: String,
+    ) {
+        val msg = SendMessageMsg(targetPlayerId = targetPlayerId, text = text)
+        send(protocolJson.encodeToString(SendMessageMsg.serializer(), msg))
+    }
+
+    /** Broadcast a message to all players in the current lobby. */
+    fun sendLobbyChat(text: String) {
+        val lobby = state.state.value.currentLobby ?: return
+        val myId = state.state.value.playerId ?: return
+        // Send to each player in the lobby except ourselves
+        for (player in lobby.players) {
+            if (player.playerId != myId) {
+                sendMessage(player.playerId, text)
+            }
+        }
+        // Add our own message to the chat locally
+        state.update { s ->
+            val msgs =
+                s.chatMessages.takeLast(49) +
+                    ChatMessage(
+                        fromCallsign = s.callsign,
+                        text = text,
+                        isMe = true,
+                    )
+            s.copy(chatMessages = msgs)
+        }
     }
 
     private fun scheduleReconnect() {
@@ -171,6 +243,10 @@ object MatchmakingService {
                     status = ConnectionStatus.DISCONNECTED,
                     playerId = null,
                     sessionToken = null,
+                    currentLobby = null,
+                    chatMessages = emptyList(),
+                    connectionInfo = emptyList(),
+                    nav = MultiplayerNav.BROWSER,
                 )
             }
             state.appendLog("Connection closed ($code).")
@@ -190,6 +266,10 @@ object MatchmakingService {
                     errorMessage = t.message,
                     playerId = null,
                     sessionToken = null,
+                    currentLobby = null,
+                    chatMessages = emptyList(),
+                    connectionInfo = emptyList(),
+                    nav = MultiplayerNav.BROWSER,
                 )
             }
             state.appendLog("Error: ${t.message}")
@@ -231,6 +311,19 @@ object MatchmakingService {
             is ServerMessage.ErrorMsg -> {
                 state.update { it.copy(errorMessage = "${msg.data.code}: ${msg.data.message}") }
                 state.appendLog("Server error: ${msg.data.code} - ${msg.data.message}")
+                // Kicked from lobby -- return to browser
+                if (msg.data.code.contains("KICKED", ignoreCase = true) ||
+                    msg.data.code.contains("LOBBY", ignoreCase = true)
+                ) {
+                    state.update {
+                        it.copy(
+                            currentLobby = null,
+                            chatMessages = emptyList(),
+                            connectionInfo = emptyList(),
+                            nav = MultiplayerNav.BROWSER,
+                        )
+                    }
+                }
             }
 
             is ServerMessage.MotdMsg -> {
@@ -244,8 +337,25 @@ object MatchmakingService {
             }
 
             is ServerMessage.LobbyUpdated -> {
+                val update = msg.data
+                val myId = state.state.value.playerId
+                // First player in the list is the host
+                val hostId = update.players.firstOrNull()?.playerId
+                val isHost = myId != null && myId == hostId
+                state.update {
+                    it.copy(
+                        currentLobby =
+                            CurrentLobbyState(
+                                lobbyId = update.lobbyId,
+                                players = update.players,
+                                isHost = isHost,
+                                hostPlayerId = hostId,
+                            ),
+                        nav = MultiplayerNav.LOBBY,
+                    )
+                }
                 state.appendLog(
-                    "Lobby updated: ${msg.data.lobbyId} (${msg.data.players.size} players)",
+                    "Lobby updated: ${update.lobbyId} (${update.players.size} players)",
                 )
             }
 
@@ -271,6 +381,28 @@ object MatchmakingService {
                 }
                 state.appendLog("Version rejected: ${msg.data.reason}")
                 manualDisconnect = true
+            }
+
+            is ServerMessage.MessageReceived -> {
+                val m = msg.data
+                state.update { s ->
+                    val msgs =
+                        s.chatMessages.takeLast(49) +
+                            ChatMessage(
+                                fromCallsign = m.fromCallsign,
+                                text = m.text,
+                                isMe = false,
+                            )
+                    s.copy(chatMessages = msgs)
+                }
+            }
+
+            is ServerMessage.MessageSent -> {
+                // Delivery confirmation -- no UI action needed
+            }
+
+            is ServerMessage.ConnectionInfoReceived -> {
+                state.update { it.copy(connectionInfo = msg.data.connections) }
             }
 
             is ServerMessage.Unknown -> {

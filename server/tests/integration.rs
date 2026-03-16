@@ -1949,3 +1949,387 @@ async fn test_keypair_not_gpgs_verified() {
     assert_eq!(join_resp["type"], "ERROR");
     assert!(join_resp["message"].as_str().unwrap().contains("verified"));
 }
+
+// ---------------------------------------------------------------------------
+// Phase C2/C3 live flow tests -- validate the full lobby lifecycle that the
+// Android client exercises: browse -> join -> ready -> start, plus leave and
+// kick. These ensure server behavior matches what the Kotlin client expects.
+// ---------------------------------------------------------------------------
+
+/// Full two-player lobby flow: host creates, joiner joins, both ready,
+/// host starts game. Verifies LOBBY_UPDATE broadcasts and GAME_STARTING.
+#[tokio::test]
+async fn test_full_lobby_flow_join_ready_start() {
+    let server = TestServer::start().await;
+
+    // -- Host creates lobby --
+    let mut host = connect_ws(&server).await;
+    let host_auth = authenticate(&mut host, "HostPlayer").await;
+    let host_id = host_auth["player_id"].as_str().unwrap().to_string();
+
+    let create_resp = send_recv(
+        &mut host,
+        json!({
+            "type": "CREATE_LOBBY",
+            "game": "d2",
+            "mission": "Counterstrike!",
+            "mode": "anarchy",
+            "max_players": 4,
+        }),
+    )
+    .await;
+    assert_eq!(create_resp["type"], "LOBBY_UPDATE");
+    let lobby_id = create_resp["lobby_id"].as_str().unwrap().to_string();
+    // Host should see themselves in the player list
+    let players = create_resp["players"].as_array().unwrap();
+    assert_eq!(players.len(), 1);
+    assert_eq!(players[0]["callsign"], "HostPlayer");
+
+    // -- Joiner connects and sees lobby in list --
+    let mut joiner = connect_ws(&server).await;
+    let joiner_auth = authenticate(&mut joiner, "JoinPlayer").await;
+    let _joiner_id = joiner_auth["player_id"].as_str().unwrap().to_string();
+
+    let list_resp = send_recv(&mut joiner, json!({"type": "LIST_LOBBIES"})).await;
+    assert_eq!(list_resp["type"], "LOBBY_LIST");
+    let lobbies = list_resp["lobbies"].as_array().unwrap();
+    assert_eq!(lobbies.len(), 1);
+    assert_eq!(lobbies[0]["host_callsign"], "HostPlayer");
+    assert!(lobbies[0]["joinable"].as_bool().unwrap());
+
+    // -- Joiner joins --
+    send_only(
+        &mut joiner,
+        json!({"type": "JOIN_LOBBY", "lobby_id": lobby_id}),
+    )
+    .await;
+
+    // Both players receive LOBBY_UPDATE with 2 players
+    let joiner_update = recv(&mut joiner).await;
+    assert_eq!(joiner_update["type"], "LOBBY_UPDATE");
+    assert_eq!(joiner_update["players"].as_array().unwrap().len(), 2);
+
+    let host_update = recv(&mut host).await;
+    assert_eq!(host_update["type"], "LOBBY_UPDATE");
+    assert_eq!(host_update["players"].as_array().unwrap().len(), 2);
+    // Host should be first in player list
+    assert_eq!(
+        host_update["players"][0]["player_id"].as_str().unwrap(),
+        host_id
+    );
+
+    // -- Both ready up --
+    send_only(&mut host, json!({"type": "READY", "ready": true})).await;
+    // Both get an update
+    let _ = recv(&mut host).await; // LOBBY_UPDATE
+    let _ = recv(&mut joiner).await; // LOBBY_UPDATE
+
+    send_only(&mut joiner, json!({"type": "READY", "ready": true})).await;
+    let host_u = recv(&mut host).await;
+    assert_eq!(host_u["type"], "LOBBY_UPDATE");
+    // Verify both are ready
+    for p in host_u["players"].as_array().unwrap() {
+        assert!(p["ready"].as_bool().unwrap(), "player should be ready");
+    }
+    let _ = recv(&mut joiner).await; // LOBBY_UPDATE
+
+    // -- Host starts game --
+    send_only(&mut host, json!({"type": "START_GAME"})).await;
+
+    // Server sends CONNECTION_INFO then GAME_STARTING to all players
+    let host_conn = recv(&mut host).await;
+    assert_eq!(host_conn["type"], "CONNECTION_INFO");
+    let host_start = recv(&mut host).await;
+    assert_eq!(host_start["type"], "GAME_STARTING");
+    assert_eq!(host_start["mission"], "Counterstrike!");
+    assert_eq!(host_start["mode"], "anarchy");
+
+    let joiner_conn = recv(&mut joiner).await;
+    assert_eq!(joiner_conn["type"], "CONNECTION_INFO");
+    let joiner_start = recv(&mut joiner).await;
+    assert_eq!(joiner_start["type"], "GAME_STARTING");
+    assert_eq!(joiner_start["mission"], "Counterstrike!");
+}
+
+/// Joiner leaves lobby, host gets LOBBY_UPDATE with 1 player.
+#[tokio::test]
+async fn test_leave_lobby_update() {
+    let server = TestServer::start().await;
+
+    let mut host = connect_ws(&server).await;
+    authenticate(&mut host, "Host").await;
+    let create_resp = send_recv(
+        &mut host,
+        json!({
+            "type": "CREATE_LOBBY",
+            "game": "d2",
+            "mission": "Counterstrike!",
+            "mode": "coop",
+            "max_players": 4,
+        }),
+    )
+    .await;
+    let lobby_id = create_resp["lobby_id"].as_str().unwrap();
+
+    let mut joiner = connect_ws(&server).await;
+    authenticate(&mut joiner, "Joiner").await;
+    send_only(
+        &mut joiner,
+        json!({"type": "JOIN_LOBBY", "lobby_id": lobby_id}),
+    )
+    .await;
+    let _ = recv(&mut host).await; // LOBBY_UPDATE (2 players)
+    let _ = recv(&mut joiner).await; // LOBBY_UPDATE (2 players)
+
+    // Joiner leaves
+    send_only(&mut joiner, json!({"type": "LEAVE_LOBBY"})).await;
+
+    let host_update = recv(&mut host).await;
+    assert_eq!(host_update["type"], "LOBBY_UPDATE");
+    assert_eq!(host_update["players"].as_array().unwrap().len(), 1);
+    assert_eq!(host_update["players"][0]["callsign"], "Host");
+}
+
+/// Host kicks a player, kicked player gets ERROR, host gets LOBBY_UPDATE.
+#[tokio::test]
+async fn test_kick_player_flow() {
+    let server = TestServer::start().await;
+
+    let mut host = connect_ws(&server).await;
+    authenticate(&mut host, "Host").await;
+    let create_resp = send_recv(
+        &mut host,
+        json!({
+            "type": "CREATE_LOBBY",
+            "game": "d2",
+            "mission": "Counterstrike!",
+            "mode": "coop",
+            "max_players": 4,
+        }),
+    )
+    .await;
+    let lobby_id = create_resp["lobby_id"].as_str().unwrap();
+
+    let mut joiner = connect_ws(&server).await;
+    let joiner_auth = authenticate(&mut joiner, "Victim").await;
+    let joiner_id = joiner_auth["player_id"].as_str().unwrap();
+
+    send_only(
+        &mut joiner,
+        json!({"type": "JOIN_LOBBY", "lobby_id": lobby_id}),
+    )
+    .await;
+    let _ = recv(&mut host).await; // LOBBY_UPDATE (2)
+    let _ = recv(&mut joiner).await; // LOBBY_UPDATE (2)
+
+    // Host kicks
+    send_only(
+        &mut host,
+        json!({"type": "KICK_PLAYER", "player_id": joiner_id}),
+    )
+    .await;
+
+    // Host gets LOBBY_UPDATE with 1 player
+    let host_update = recv(&mut host).await;
+    assert_eq!(host_update["type"], "LOBBY_UPDATE");
+    assert_eq!(host_update["players"].as_array().unwrap().len(), 1);
+
+    // Joiner gets an ERROR with kick info
+    let kick_msg = recv(&mut joiner).await;
+    assert_eq!(kick_msg["type"], "ERROR");
+    let msg_text = kick_msg["message"].as_str().unwrap_or("");
+    let code_text = kick_msg["code"].as_str().unwrap_or("");
+    assert!(
+        msg_text.to_lowercase().contains("kick") || code_text.to_lowercase().contains("kick"),
+        "expected kick-related error, got: code={code_text}, message={msg_text}"
+    );
+}
+
+/// Non-host cannot start the game.
+#[tokio::test]
+async fn test_non_host_cannot_start() {
+    let server = TestServer::start().await;
+
+    let mut host = connect_ws(&server).await;
+    authenticate(&mut host, "Host").await;
+    let create_resp = send_recv(
+        &mut host,
+        json!({
+            "type": "CREATE_LOBBY",
+            "game": "d2",
+            "mission": "Counterstrike!",
+            "mode": "coop",
+            "max_players": 4,
+        }),
+    )
+    .await;
+    let lobby_id = create_resp["lobby_id"].as_str().unwrap();
+
+    let mut joiner = connect_ws(&server).await;
+    authenticate(&mut joiner, "Joiner").await;
+    send_only(
+        &mut joiner,
+        json!({"type": "JOIN_LOBBY", "lobby_id": lobby_id}),
+    )
+    .await;
+    let _ = recv(&mut host).await; // LOBBY_UPDATE
+    let _ = recv(&mut joiner).await; // LOBBY_UPDATE
+
+    // Non-host tries to start
+    let resp = send_recv(&mut joiner, json!({"type": "START_GAME"})).await;
+    assert_eq!(resp["type"], "ERROR");
+}
+
+/// Ready toggle: player readies then unreadies.
+#[tokio::test]
+async fn test_ready_toggle() {
+    let server = TestServer::start().await;
+
+    let mut ws = connect_ws(&server).await;
+    authenticate(&mut ws, "Solo").await;
+    let create_resp = send_recv(
+        &mut ws,
+        json!({
+            "type": "CREATE_LOBBY",
+            "game": "d2",
+            "mission": "Counterstrike!",
+            "mode": "coop",
+            "max_players": 4,
+        }),
+    )
+    .await;
+    assert_eq!(create_resp["type"], "LOBBY_UPDATE");
+
+    // Ready up
+    send_only(&mut ws, json!({"type": "READY", "ready": true})).await;
+    let update = recv(&mut ws).await;
+    assert_eq!(update["type"], "LOBBY_UPDATE");
+    assert!(update["players"][0]["ready"].as_bool().unwrap());
+
+    // Unready
+    send_only(&mut ws, json!({"type": "READY", "ready": false})).await;
+    let update2 = recv(&mut ws).await;
+    assert_eq!(update2["type"], "LOBBY_UPDATE");
+    assert!(!update2["players"][0]["ready"].as_bool().unwrap());
+}
+
+/// Two players in a lobby exchange messages and observe the full chat flow.
+#[tokio::test]
+async fn test_lobby_chat_flow() {
+    let server = TestServer::start().await;
+
+    // Host creates lobby
+    let mut host = connect_ws(&server).await;
+    let host_auth = authenticate(&mut host, "HostChat").await;
+    let host_id = host_auth["player_id"].as_str().unwrap().to_string();
+
+    let create_resp = send_recv(
+        &mut host,
+        json!({
+            "type": "CREATE_LOBBY",
+            "game": "d2",
+            "mission": "Counterstrike!",
+            "mode": "anarchy",
+            "max_players": 4,
+        }),
+    )
+    .await;
+    assert_eq!(create_resp["type"], "LOBBY_UPDATE");
+    let lobby_id = create_resp["lobby_id"].as_str().unwrap().to_string();
+
+    // Joiner connects and joins
+    let mut joiner = connect_ws(&server).await;
+    let joiner_auth = authenticate(&mut joiner, "JoinerChat").await;
+    let joiner_id = joiner_auth["player_id"].as_str().unwrap().to_string();
+
+    send_only(
+        &mut joiner,
+        json!({"type": "JOIN_LOBBY", "lobby_id": lobby_id}),
+    )
+    .await;
+    let _ = recv(&mut joiner).await; // LOBBY_UPDATE
+    let _ = recv(&mut host).await; // LOBBY_UPDATE
+
+    // Host sends a message to joiner
+    send_only(
+        &mut host,
+        json!({
+            "type": "SEND_MESSAGE",
+            "target_player_id": joiner_id,
+            "text": "welcome to my lobby",
+        }),
+    )
+    .await;
+
+    // Host gets MESSAGE_SENT
+    let sent_ack = recv(&mut host).await;
+    assert_eq!(sent_ack["type"], "MESSAGE_SENT");
+    assert_eq!(sent_ack["target_player_id"], joiner_id);
+
+    // Joiner gets MESSAGE_RECEIVED
+    let received = recv(&mut joiner).await;
+    assert_eq!(received["type"], "MESSAGE_RECEIVED");
+    assert_eq!(received["from_callsign"], "HostChat");
+    assert_eq!(received["text"], "welcome to my lobby");
+
+    // Joiner replies
+    send_only(
+        &mut joiner,
+        json!({
+            "type": "SEND_MESSAGE",
+            "target_player_id": host_id,
+            "text": "thanks!",
+        }),
+    )
+    .await;
+
+    let sent_ack2 = recv(&mut joiner).await;
+    assert_eq!(sent_ack2["type"], "MESSAGE_SENT");
+    assert_eq!(sent_ack2["target_player_id"], host_id);
+
+    let received2 = recv(&mut host).await;
+    assert_eq!(received2["type"], "MESSAGE_RECEIVED");
+    assert_eq!(received2["from_callsign"], "JoinerChat");
+    assert_eq!(received2["text"], "thanks!");
+}
+
+/// Create lobby and verify it shows in the lobby list with correct details.
+#[tokio::test]
+async fn test_create_lobby_details() {
+    let server = TestServer::start().await;
+
+    let mut host = connect_ws(&server).await;
+    authenticate(&mut host, "Creator").await;
+
+    let create_resp = send_recv(
+        &mut host,
+        json!({
+            "type": "CREATE_LOBBY",
+            "game": "d1",
+            "mission": "First Strike",
+            "mode": "coop",
+            "max_players": 3,
+        }),
+    )
+    .await;
+    assert_eq!(create_resp["type"], "LOBBY_UPDATE");
+    let lobby_id = create_resp["lobby_id"].as_str().unwrap().to_string();
+    assert_eq!(create_resp["players"].as_array().unwrap().len(), 1);
+
+    // Another client lists lobbies and sees details
+    let mut viewer = connect_ws(&server).await;
+    authenticate(&mut viewer, "Viewer").await;
+
+    let list = send_recv(&mut viewer, json!({"type": "LIST_LOBBIES"})).await;
+    assert_eq!(list["type"], "LOBBY_LIST");
+    let lobbies = list["lobbies"].as_array().unwrap();
+    assert_eq!(lobbies.len(), 1);
+    let l = &lobbies[0];
+    assert_eq!(l["lobby_id"], lobby_id);
+    assert_eq!(l["host_callsign"], "Creator");
+    assert_eq!(l["mission"], "First Strike");
+    assert_eq!(l["mode"], "coop");
+    assert_eq!(l["max_players"], 3);
+    assert_eq!(l["player_count"], 1);
+    assert!(l["joinable"].as_bool().unwrap());
+}
