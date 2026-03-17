@@ -654,27 +654,36 @@ flows, and error handling.
 - [x] Relay fallback: send CONNECTIVITY_OK with type="relay" when probes fail
 - Note: NatTraversal.kt not needed -- orchestration lives in MatchmakingService directly
 
-### Phase C4b: Game Launch from Lobby -- NOT STARTED
+### Phase C4b: Game Launch from Lobby -- COMPLETE (LAN path)
 
-See detailed section below (after Phase C4a) for full implementation plan
-including JNI interface, engine menu bypass, multiplayer status overlay,
-host/join flows, and shared constants.
+LAN launch flow fully wired. Online launch deferred to future phase.
 
-- [ ] auto_net.c/h in d2/ and d1/: auto_join_pending, auto_host_pending globals,
-      check_auto_join(), check_auto_host()
-- [ ] jni_auto_net.c: nativeSetAutoJoin, nativeSetAutoHost JNI methods
-- [ ] MainActivity.kt: read mp_* intent extras, call JNI before startGame()
-- [ ] MultiplayerStatusOverlay.kt: Canvas-based overlay for connect/sync status
-- [ ] Engine integration: hook check_auto_join/host into main menu handler
-- [ ] Engine: add notify_mp_status() C-to-Kotlin callbacks at state transitions
-- [ ] Engine: bind to loopback when auto_join/host_pending (internet mode)
+- [x] auto_net.c/h in d2/ and d1/: auto_join_pending, auto_host_pending globals,
+      check_auto_join(), check_auto_host() -- pre-existing
+- [x] jni_main.c: nativeSetAutoJoin, nativeSetAutoHost JNI methods -- pre-existing
+- [x] MainActivity.kt: read mp_* intent extras, call JNI before startGame() -- pre-existing
+- [x] LobbyService.kt: startGame() sends START to joiners, emits GameLaunchInfo
+- [x] LobbyService.kt: handleStart() emits joiner GameLaunchInfo with lanHostAddr
+- [x] LanDiscoveryTab.kt: Start Game button + StartLanGameDialog (difficulty/level)
+- [x] MultiplayerScreen.kt: onLaunchGame plumbed through LanContent
+- [x] SetupActivity.kt: launchMultiplayerGame uses lanHostAddr for LAN join
+- [x] MatchmakingState.kt: GameLaunchInfo.lanHostAddr field added
+- [x] LobbyProtocol.kt: buildStart includes levelNum/maxPlayers
+- [ ] MultiplayerStatusOverlay.kt: Canvas-based overlay for connect/sync status (deferred)
+- [ ] Engine: add notify_mp_status() C-to-Kotlin callbacks at state transitions (deferred)
+- [ ] Engine: bind to loopback when auto_join/host_pending (internet mode) (deferred)
 
-### Phase C5: Google Play Games Sign-In
+### Phase C5: Google Play Games Sign-In -- COMPLETE
 
-- [ ] Add GPGS dependency
-- [ ] Implement sign-in flow in MatchmakingService
-- [ ] Replace dev token with real server auth code
-- [ ] Handle non-GPGS fallback (device keypair)
+- [x] Add GPGS dependency (play-services-games-v2:21.0.0)
+- [x] Version pin in tool_versions.conf
+- [x] auth_config.json5.template with instructions (gitignored actual file)
+- [x] Gradle reads auth_config.json5, injects server_client_id via BuildConfig
+- [x] AndroidManifest: com.google.android.gms.games.APP_ID from manifest placeholder
+- [x] PlayGamesAuth.kt: initialize(), isAuthenticated(), getServerAuthCode()
+- [x] MatchmakingService: setActivity(), sendAuthenticate tries GPGS then dev token fallback
+- [x] SetupActivity: initializes PlayGamesSdk and sets activity reference
+- [ ] Handle non-GPGS fallback (device keypair) -- deferred, dev token works for now
 
 ### Phase C6: Active Games + Status
 

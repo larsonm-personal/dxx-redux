@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,18 +36,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.dxxredux.app.lobby.LobbyService
 
 @Composable
-fun LanDiscoveryTab(callsign: String) {
+fun LanDiscoveryTab(
+    callsign: String,
+    onLaunchGame: (GameLaunchInfo) -> Unit,
+) {
     val context = LocalContext.current
     val discoveredLobbies by LobbyService.discoveredLobbies.collectAsState()
     val isHosting by LobbyService.isHosting.collectAsState()
     val isDiscovering by LobbyService.isDiscovering.collectAsState()
     val hostedPlayers by LobbyService.hostedLobbyPlayers.collectAsState()
+    val lanLaunchEvent by LobbyService.lanLaunchEvent.collectAsState()
 
     var showHostDialog by remember { mutableStateOf(false) }
+    var showStartGameDialog by remember { mutableStateOf(false) }
     var permissionGranted by remember {
         mutableStateOf(
             if (Build.VERSION.SDK_INT >= 33) {
@@ -78,6 +85,13 @@ fun LanDiscoveryTab(callsign: String) {
         onDispose {
             // Don't stop discovery on recomposition, only when leaving the screen
         }
+    }
+
+    // Consume LAN launch events (from host Start or joiner receiving START)
+    LaunchedEffect(lanLaunchEvent) {
+        val info = lanLaunchEvent ?: return@LaunchedEffect
+        LobbyService.clearLaunchEvent()
+        onLaunchGame(info)
     }
 
     Column(
@@ -180,6 +194,14 @@ fun LanDiscoveryTab(callsign: String) {
                     }
                 }
             }
+            Spacer(Modifier.height(8.dp))
+            Button(
+                onClick = { showStartGameDialog = true },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = hostedPlayers.size >= 2,
+            ) {
+                Text("Start Game")
+            }
             Spacer(Modifier.height(12.dp))
             HorizontalDivider()
             Spacer(Modifier.height(8.dp))
@@ -220,6 +242,16 @@ fun LanDiscoveryTab(callsign: String) {
                 LobbyService.hostLobby(callsign, game, mission, mode, maxPlayers)
             },
             onDismiss = { showHostDialog = false },
+        )
+    }
+
+    if (showStartGameDialog) {
+        StartLanGameDialog(
+            onStart = { difficulty, levelNum ->
+                showStartGameDialog = false
+                LobbyService.startGame(difficulty, levelNum)
+            },
+            onDismiss = { showStartGameDialog = false },
         )
     }
 }
@@ -328,6 +360,61 @@ private fun HostLanGameDialog(
                 enabled = mission.isNotBlank() && maxPlayers in 2..8,
             ) {
                 Text("Host")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
+}
+
+@Composable
+private fun StartLanGameDialog(
+    onStart: (difficulty: Int, levelNum: Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val difficulties = listOf("Trainee", "Rookie", "Hotshot", "Ace", "Insane")
+    var difficulty by remember { mutableStateOf(1) }
+    var levelText by remember { mutableStateOf("1") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Start Game") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Difficulty", style = MaterialTheme.typography.bodyMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    difficulties.forEachIndexed { idx, name ->
+                        if (idx == difficulty) {
+                            Button(onClick = {}, modifier = Modifier.weight(1f)) {
+                                Text(name, maxLines = 1, fontSize = 11.sp)
+                            }
+                        } else {
+                            OutlinedButton(
+                                onClick = { difficulty = idx },
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text(name, maxLines = 1, fontSize = 11.sp)
+                            }
+                        }
+                    }
+                }
+                OutlinedTextField(
+                    value = levelText,
+                    onValueChange = { levelText = it.filter { c -> c.isDigit() } },
+                    label = { Text("Starting Level") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            val level = levelText.toIntOrNull() ?: 0
+            TextButton(
+                onClick = { onStart(difficulty, level) },
+                enabled = level in 1..30,
+            ) {
+                Text("Start")
             }
         },
         dismissButton = {
