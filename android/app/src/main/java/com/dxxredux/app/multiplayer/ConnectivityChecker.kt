@@ -17,7 +17,6 @@ private const val PROBE_FLAG_REQUEST: Short = 0x0001
 private const val PROBE_FLAG_RESPONSE: Short = 0x0002
 
 private const val PROBE_INTERVAL_MS = 200L
-private const val PAIR_TIMEOUT_MS = 500L
 private const val TOTAL_TIMEOUT_MS = 3000L
 
 /** Result of connectivity checking for a single peer pair. */
@@ -29,13 +28,15 @@ data class ConnectivityResult(
 
 object ConnectivityChecker {
     /**
-     * Race UDP probes across all candidate pairs. Returns the first pair that
-     * gets a response, or null if none respond within the timeout.
+     * Race UDP probes across all candidate pairs. Both sides run this
+     * simultaneously: we send REQUEST probes and echo any incoming
+     * REQUEST as a RESPONSE back to the sender. The first RESPONSE
+     * matching one of our sent probes wins.
      *
      * Runs blocking I/O -- call from Dispatchers.IO.
      *
      * @param pairs Candidate pairs from CONNECTIVITY_CHECK_GO, sorted by priority descending
-     * @param token A 4-byte token embedded in probes so peers can correlate
+     * @param token A 4-byte token embedded in outgoing probes so peer can echo it back
      */
     fun probe(
         pairs: List<CandidatePair>,
@@ -51,28 +52,26 @@ object ConnectivityChecker {
             val sentTimes = mutableMapOf<Short, Pair<Long, CandidatePair>>()
 
             while (System.currentTimeMillis() - startTime < TOTAL_TIMEOUT_MS) {
-                // Send probes to pairs we haven't exhausted
+                // Send a probe to the next pair in round-robin
                 val pairIndex = (seq.toInt() and 0xFFFF) % pairs.size
                 val pair = pairs[pairIndex]
 
                 val probePacket = buildProbe(token, seq, PROBE_FLAG_REQUEST)
-                val addr =
-                    parseAddr(pair.remoteAddr) ?: run {
-                        seq++
-                        continue
+                val addr = parseAddr(pair.remoteAddr)
+                if (addr != null) {
+                    val sendTime = System.currentTimeMillis()
+                    sentTimes[seq] = Pair(sendTime, pair)
+                    try {
+                        socket.send(DatagramPacket(probePacket, probePacket.size, addr))
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Probe send failed to ${pair.remoteAddr}: ${e.message}")
                     }
-                val sendTime = System.currentTimeMillis()
-                sentTimes[seq] = Pair(sendTime, pair)
-
-                try {
-                    socket.send(DatagramPacket(probePacket, probePacket.size, addr))
-                } catch (e: Exception) {
-                    Log.w(TAG, "Probe send failed to ${pair.remoteAddr}: ${e.message}")
                 }
 
-                // Try to receive a response
-                val result = tryReceiveResponse(socket, token, sentTimes)
-                if (result != null) return result
+                // Receive loop: drain available packets until timeout, handling
+                // both incoming requests (echo back) and responses (our win).
+                val r = receiveAndEcho(socket, token, sentTimes)
+                if (r != null) return r
 
                 seq++
                 if (seq < 0) seq = 0 // unsigned wrap
@@ -85,9 +84,12 @@ object ConnectivityChecker {
         }
     }
 
-    private fun tryReceiveResponse(
+    // Read one packet from the socket. If it's a REQUEST, echo a RESPONSE
+    // back to the sender. If it's a RESPONSE matching one of our probes,
+    // return a ConnectivityResult.
+    private fun receiveAndEcho(
         socket: DatagramSocket,
-        expectedToken: Int,
+        ourToken: Int,
         sentTimes: Map<Short, Pair<Long, CandidatePair>>,
     ): ConnectivityResult? {
         try {
@@ -96,25 +98,39 @@ object ConnectivityChecker {
             socket.receive(pkt)
 
             if (pkt.length < PROBE_SIZE) return null
-            val resp = ByteBuffer.wrap(buf)
-            val magic = resp.int
+            val bb = ByteBuffer.wrap(buf)
+            val magic = bb.int
             if (magic != PROBE_MAGIC) return null
-            val token = resp.int
-            if (token != expectedToken) return null
-            val respSeq = resp.short
-            val flags = resp.short
-            if (flags != PROBE_FLAG_RESPONSE) return null
+            val pktToken = bb.int
+            val pktSeq = bb.short
+            val flags = bb.short
 
-            val entry = sentTimes[respSeq] ?: return null
-            val rtt = (System.currentTimeMillis() - entry.first).toInt()
-            val pair = entry.second
+            if (flags == PROBE_FLAG_REQUEST) {
+                // Echo the peer's probe back as a response, preserving
+                // their token and seq so they can match it.
+                val resp = buildProbe(pktToken, pktSeq, PROBE_FLAG_RESPONSE)
+                val replyAddr = InetSocketAddress(pkt.address, pkt.port)
+                try {
+                    socket.send(DatagramPacket(resp, resp.size, replyAddr))
+                } catch (e: Exception) {
+                    Log.w(TAG, "Echo send failed: ${e.message}")
+                }
+                return null
+            }
 
-            Log.i(TAG, "Connectivity OK: peer=${pair.peerId} type=${pair.remoteType} rtt=${rtt}ms")
-            return ConnectivityResult(
-                peerId = pair.peerId,
-                winningCandidateType = pair.remoteType,
-                rttMs = rtt,
-            )
+            if (flags == PROBE_FLAG_RESPONSE && pktToken == ourToken) {
+                val entry = sentTimes[pktSeq] ?: return null
+                val rtt = (System.currentTimeMillis() - entry.first).toInt()
+                val pair = entry.second
+                Log.i(TAG, "Connectivity OK: peer=${pair.peerId} type=${pair.remoteType} rtt=${rtt}ms")
+                return ConnectivityResult(
+                    peerId = pair.peerId,
+                    winningCandidateType = pair.remoteType,
+                    rttMs = rtt,
+                )
+            }
+
+            return null
         } catch (_: java.net.SocketTimeoutException) {
             return null
         }

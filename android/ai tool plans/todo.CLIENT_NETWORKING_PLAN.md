@@ -638,20 +638,21 @@ android/app/src/main/java/com/dxxredux/app/
 - [x] Server integration test: test_friend_full_lifecycle (request/accept/list/join/leave/remove/block)
 - Note: FRIEND_PRESENCE_UPDATE is not yet pushed by server; friends tab polls via FRIEND_LIST
 
-### Phase C4a: NAT Traversal (Client Side) -- NOT STARTED
+### Phase C4a: NAT Traversal (Client Side) -- COMPLETE
 
 See detailed section below (after Phase C9) for full implementation plan
 including STUN client, connectivity checking, localhost proxy, message
 flows, and error handling.
 
-- [ ] StunClient.kt: STUN Binding Request/Response parser, NAT type detection
-- [ ] ConnectivityChecker.kt: candidate pair race with probe send/recv
-- [ ] LocalhostProxy.kt: per-peer UDP forwarding coroutines + relay wrapping
-- [ ] NatTraversal.kt: orchestrator wiring STUN -> candidates -> checks -> proxy
-- [ ] Wire into MatchmakingService message dispatch
-- [ ] Add protocol messages to NetworkProtocol.kt (StunResult, PeerCandidates,
+- [x] StunClient.kt: STUN Binding Request/Response parser, NAT type detection
+- [x] ConnectivityChecker.kt: candidate pair race with probe send/recv + echo responder
+- [x] LocalhostProxy.kt: per-peer UDP forwarding coroutines + relay wrapping
+- [x] Wire into MatchmakingService message dispatch (launchStunDiscovery, launchConnectivityCheck)
+- [x] Add protocol messages to NetworkProtocol.kt (StunResult, PeerCandidates,
       ConnectivityCheckGo, ConnectivityOk, ConnectionCandidate, CandidatePair)
-- [ ] LobbyScreen: show connection type and ping per player
+- [x] LobbyScreen: show ping per player
+- [x] Relay fallback: send CONNECTIVITY_OK with type="relay" when probes fail
+- Note: NatTraversal.kt not needed -- orchestration lives in MatchmakingService directly
 
 ### Phase C4b: Game Launch from Lobby -- NOT STARTED
 

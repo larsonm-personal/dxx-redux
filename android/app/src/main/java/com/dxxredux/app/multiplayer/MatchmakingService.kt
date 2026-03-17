@@ -334,10 +334,18 @@ object MatchmakingService {
                     sendConnectivityOk(result.peerId, result.winningCandidateType, result.rttMs)
                 } else {
                     state.appendLog("No direct connection, will use relay")
+                    // Notify the server for each unique peer so it allocates relay
+                    pairs.map { it.peerId }.distinct().forEach { peerId ->
+                        sendConnectivityOk(peerId, "relay", 0)
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Connectivity check failed", e)
                 state.appendLog("Connectivity check failed: ${e.message}")
+                // Still notify the server so game launch isn't blocked
+                pairs.map { it.peerId }.distinct().forEach { peerId ->
+                    sendConnectivityOk(peerId, "relay", 0)
+                }
             }
         }
     }
