@@ -9,7 +9,7 @@
 
 ### 1. Lightweight AVDs
 - Created `android/get_deps/create_light_avds.ps1` to create two Nexus 5X AVDs
-- AVD config: 1280x960@320dpi, 1536M RAM, 2 CPU cores, no cameras/GPS/NFC/cell/sensors/audio
+- AVD config: 1280x720@320dpi, 1536M RAM, 2 CPU cores, no cameras/GPS/NFC/cell/sensors/audio
 - Updated script references in: run_emulator.sh, emu_health.ps1, create_avd.sh
 - Deleted old Pixel_6_API_34 and Pixel_6b_API_34 AVDs (freed ~22GB on C:)
 

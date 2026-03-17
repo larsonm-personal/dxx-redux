@@ -90,13 +90,15 @@ private val BUTTON_CONTROLS =
         "RT" to 21,
     )
 
-// Virtual axis indices for each physical stick axis
+// Virtual axis indices for each physical stick/trigger axis
 private val AXIS_CONTROLS =
     linkedMapOf(
         "LS_X" to 0,
         "LS_Y" to 1,
         "RS_X" to 2,
         "RS_Y" to 3,
+        "LT" to 4,
+        "RT" to 5,
     )
 
 // Axis-button SDL indices: axis → (negative button, positive button)
@@ -1580,6 +1582,7 @@ fun ControllerConfigPage(
             .toSet()
 
     if (showButtonPicker && selectedControl != null) {
+        val isTrigger = selectedControl == "LT" || selectedControl == "RT"
         val axisKey =
             when (selectedControl) {
                 "LT" -> "LT"
@@ -1600,8 +1603,14 @@ fun ControllerConfigPage(
             axisValue = axisVal,
             threshold = axisKey?.let { thresholds[it] },
             onThresholdChange = axisKey?.let { key -> { v: Int -> thresholds[key] = v } },
+            axisFunctions = if (isTrigger) AXIS_FUNCTIONS else emptyList(),
+            assignedAxisFunctions = if (isTrigger) assignedAxisFuncsForDialog else emptySet(),
             onSelect = { funcLabel ->
-                assignButtonFunction(bindings, selectedControl!!, funcLabel)
+                if (isTrigger && funcLabel != null && funcLabel in AXIS_KC_INDEX) {
+                    assignAxisFunction(bindings, selectedControl!!, funcLabel)
+                } else {
+                    assignButtonFunction(bindings, selectedControl!!, funcLabel)
+                }
                 showButtonPicker = false
                 selectedControl = null
             },
@@ -1749,6 +1758,8 @@ private fun ButtonFunctionPickerDialog(
     axisValue: Float? = null,
     threshold: Int? = null,
     onThresholdChange: ((Int) -> Unit)? = null,
+    axisFunctions: List<String> = emptyList(),
+    assignedAxisFunctions: Set<String> = emptySet(),
     onSelect: (String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -1760,6 +1771,7 @@ private fun ButtonFunctionPickerDialog(
         } else {
             BUTTON_FUNCTIONS
         }
+    val isAxisFunc = currentFunc != null && currentFunc in AXIS_KC_INDEX
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1794,6 +1806,52 @@ private fun ButtonFunctionPickerDialog(
                         Spacer(Modifier.width(PICKER_RADIO_GAP))
                         Text("None", color = Color.Gray, fontSize = PICKER_FONT_SIZE)
                     }
+                    // Axis functions section (for triggers)
+                    if (axisFunctions.isNotEmpty()) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Axis Functions",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(vertical = 2.dp),
+                        )
+                        for (func in axisFunctions) {
+                            val isAssigned = func in assignedAxisFunctions && func != currentFunc
+                            Row(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onSelect(func) },
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                RadioButton(
+                                    selected = isAxisFunc && currentFunc == func,
+                                    onClick = { onSelect(func) },
+                                    modifier = Modifier.size(PICKER_RADIO_SIZE),
+                                )
+                                Spacer(Modifier.width(PICKER_RADIO_GAP))
+                                Text(
+                                    func,
+                                    fontSize = PICKER_FONT_SIZE,
+                                    color =
+                                        if (!isAssigned && func != currentFunc) {
+                                            Color(0xFFEF5350)
+                                        } else {
+                                            Color.Unspecified
+                                        },
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Button Functions",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(vertical = 2.dp),
+                        )
+                    }
                     for (func in funcList) {
                         val isAssigned = func in assignedFunctions && func != currentFunc
                         val isD2Only =
@@ -1812,7 +1870,7 @@ private fun ButtonFunctionPickerDialog(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             RadioButton(
-                                selected = currentFunc == func,
+                                selected = !isAxisFunc && currentFunc == func,
                                 onClick = { onSelect(func) },
                                 modifier = Modifier.size(PICKER_RADIO_SIZE),
                             )

@@ -2,7 +2,7 @@
 # create_light_avds.ps1 -- Create two lightweight Nexus 5X AVDs for testing.
 # These replace the heavy Pixel_6_API_34 / Pixel_6b_API_34 AVDs.
 #
-# Settings: 1536 MB RAM, 1280x960 @ 320dpi, 2 cores, no cameras/gps/nfc/cell,
+# Settings: 1536 MB RAM, 1280x720 @ 320dpi, 2 cores, no cameras/gps/nfc/cell,
 #           4 GB SD card (for CD images), 8 GB data partition.
 
 param([switch]$Force)
@@ -72,7 +72,7 @@ foreach ($avd in $avds) {
         "hw.cpu.ncore"               = "2"
         "hw.ramSize"                 = "1536"
         "hw.lcd.width"               = "1280"
-        "hw.lcd.height"              = "960"
+        "hw.lcd.height"              = "720"
         "hw.lcd.density"             = "320"
         "hw.camera.back"             = "none"
         "hw.camera.front"            = "none"

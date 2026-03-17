@@ -1559,7 +1559,10 @@ int newmenu_draw(window *wind, newmenu *menu)
 			extern int android_is_keyboard_shown(void);
 			int needs_kb = (menu->items[menu->citem].type == NM_TYPE_INPUT ||
 			                (menu->items[menu->citem].type == NM_TYPE_INPUT_MENU && menu->items[menu->citem].group == 1));
-			if (needs_kb && !android_is_keyboard_shown()) {
+			// Don't open keyboard while finger is down (drag in progress) --
+			// dragging over a text-input item would pop the keyboard, shift
+			// the blit offset, and cause selection oscillation.
+			if (needs_kb && !android_is_keyboard_shown() && !menu->mouse_state) {
 				int numeric = 0;
 				const char *p = Newmenu_allowed_chars;
 				if (p && p[0] == '0' && p[1] == '9' && p[2] == '\0')
