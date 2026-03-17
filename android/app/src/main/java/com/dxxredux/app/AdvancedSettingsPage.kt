@@ -15,7 +15,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dxxredux.app.multiplayer.NetLog
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun AdvancedSettingsPage(
@@ -102,6 +106,13 @@ fun AdvancedSettingsPage(
                         Text("Import Config", fontSize = 12.sp)
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // -- Network Logging --
+                NetworkLoggingSection()
 
                 Spacer(modifier = Modifier.height(16.dp))
                 HorizontalDivider()
@@ -210,6 +221,95 @@ fun AdvancedSettingsPage(
 
                 Spacer(modifier = Modifier.height(16.dp))
             }
+        }
+    }
+}
+
+@Composable
+private fun NetworkLoggingSection() {
+    val ctx = LocalContext.current
+    var loggingEnabled by remember { mutableStateOf(NetLog.isEnabled(ctx)) }
+    var logFiles by remember { mutableStateOf(NetLog.listLogFiles(ctx)) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    val dateFmt = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US) }
+
+    Text("Network Logging", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    Spacer(modifier = Modifier.height(4.dp))
+    Text(
+        "Log network events (connections, lobbies, STUN, relay) to files for debugging.",
+        fontSize = 12.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text("Enable Logging", fontSize = 13.sp)
+        Spacer(modifier = Modifier.weight(1f))
+        Switch(
+            checked = loggingEnabled,
+            onCheckedChange = { on ->
+                NetLog.setEnabled(ctx, on)
+                loggingEnabled = on
+                logFiles = NetLog.listLogFiles(ctx)
+            },
+        )
+    }
+
+    if (logFiles.isNotEmpty()) {
+        Spacer(modifier = Modifier.height(8.dp))
+        Text("Log Files (${logFiles.size})", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        Spacer(modifier = Modifier.height(4.dp))
+        for (file in logFiles) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(file.name, fontSize = 11.sp)
+                    val sizeKb = file.length() / 1024
+                    val date = dateFmt.format(Date(file.lastModified()))
+                    Text(
+                        "$date -- ${sizeKb}KB",
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                OutlinedButton(
+                    onClick = { NetLog.shareLogFile(ctx, file) },
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                    modifier = Modifier.height(28.dp),
+                ) {
+                    Text("Export", fontSize = 11.sp)
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedButton(
+            onClick = { showDeleteDialog = true },
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+            modifier = Modifier.height(32.dp),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFF44336)),
+        ) {
+            Text("Delete All Logs", fontSize = 12.sp)
+        }
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text("Delete All Logs") },
+                text = { Text("Delete all network log files? This cannot be undone.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        NetLog.deleteAllLogs(ctx)
+                        logFiles = emptyList()
+                        showDeleteDialog = false
+                    }) {
+                        Text("Delete", color = Color(0xFFF44336))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
+                },
+            )
         }
     }
 }

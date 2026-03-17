@@ -52,6 +52,7 @@ impl TestServer {
             log_dir: String::new(),
             skip_gpgs_verify: true,
             pow_difficulty: 8, // low difficulty for fast tests
+            max_relay_sessions: 100,
         };
 
         let state = build_state(config).expect("failed to build state");
@@ -2604,6 +2605,7 @@ async fn auth_ok_includes_stun_addrs_when_configured() {
         log_dir: String::new(),
         skip_gpgs_verify: true,
         pow_difficulty: 8,
+        max_relay_sessions: 100,
     };
 
     let state = build_state(config).expect("build state");

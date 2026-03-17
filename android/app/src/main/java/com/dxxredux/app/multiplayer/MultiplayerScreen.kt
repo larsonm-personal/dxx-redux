@@ -67,6 +67,7 @@ private fun ServerBrowserContent(
     var serverUrl by remember { mutableStateOf(state.serverUrl) }
     var callsign by remember { mutableStateOf(state.callsign) }
     var showCreateDialog by remember { mutableStateOf(false) }
+    val activeGames = state.serverStatus?.activeGameList.orEmpty()
 
     // Auto-refresh lobby list every 5 seconds while connected
     if (state.status == ConnectionStatus.CONNECTED) {
@@ -195,18 +196,49 @@ private fun ServerBrowserContent(
             Text("MOTD: $motd", style = MaterialTheme.typography.bodySmall)
         }
 
+        // -- Maintenance warning --
+        state.maintenanceMessage?.let { msg ->
+            Spacer(Modifier.height(4.dp))
+            Text(
+                msg,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+
         Spacer(Modifier.height(12.dp))
         HorizontalDivider()
         Spacer(Modifier.height(8.dp))
 
-        // -- Lobby list --
-        if (state.lobbies.isNotEmpty()) {
-            Text("Lobbies (${state.lobbies.size})", style = MaterialTheme.typography.titleSmall)
-            Spacer(Modifier.height(4.dp))
+        // -- Lobby list + active games --
+        if (state.lobbies.isNotEmpty() || activeGames.isNotEmpty()) {
             LazyColumn(modifier = Modifier.weight(1f)) {
-                items(state.lobbies, key = { it.lobbyId }) { lobby ->
-                    LobbyCard(lobby)
-                    Spacer(Modifier.height(4.dp))
+                if (state.lobbies.isNotEmpty()) {
+                    item {
+                        Text(
+                            "Lobbies (${state.lobbies.size})",
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                    }
+                    items(state.lobbies, key = { it.lobbyId }) { lobby ->
+                        LobbyCard(lobby)
+                        Spacer(Modifier.height(4.dp))
+                    }
+                }
+                if (activeGames.isNotEmpty()) {
+                    item {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Active Games (${activeGames.size})",
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                    }
+                    items(activeGames, key = { "${it.hostCallsign}-${it.mission}" }) { game ->
+                        ActiveGameCard(game)
+                        Spacer(Modifier.height(4.dp))
+                    }
                 }
             }
         } else if (state.status == ConnectionStatus.CONNECTED) {

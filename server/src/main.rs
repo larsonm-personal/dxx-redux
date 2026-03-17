@@ -6,7 +6,7 @@ use tracing_subscriber::util::SubscriberInitExt;
 
 #[tokio::main]
 async fn main() {
-    let config = config::ServerConfig::from_env();
+    let config = config::ServerConfig::load();
 
     // Initialize structured logging: console (human-readable) + optional file (JSON)
     let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()

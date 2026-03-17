@@ -1,0 +1,50 @@
+// dxx-matchmaking server configuration
+// Copy to server_config.json5 and edit as needed.
+// All fields are optional -- defaults are shown below.
+// Environment variables override values in this file.
+{
+    // Network listeners
+    // ws_listen_addr: "0.0.0.0:9000",
+    // http_listen_addr: "0.0.0.0:8080",
+    // relay_listen_addr: "0.0.0.0:9001",
+
+    // Database
+    // db_path: "dxx_matchmaking.db",
+
+    // Google Play Games Services (GPGS) OAuth2
+    // google_client_id: "",
+    // google_client_secret: "",
+
+    // Admin bearer token for /api/v1/admin/* endpoints
+    // admin_token: "",
+
+    // Message of the day (shown to clients on connect)
+    // motd: "",
+
+    // URL shown when rejecting old clients
+    // update_url: "",
+
+    // TLS (leave empty for plain WebSocket; use reverse proxy for production)
+    // tls_cert_path: "",
+    // tls_key_path: "",
+
+    // UDP relay public address sent to clients in RELAY_ASSIGNED
+    // relay_public_addr: "",
+
+    // Maximum concurrent relay sessions (0 = unlimited, default 100)
+    // max_relay_sessions: 100,
+
+    // STUN server listeners (for self-hosted NAT discovery)
+    // stun_listen_addr: "0.0.0.0:3478",
+    // stun_listen_addr_alt: "0.0.0.0:3479",
+    // stun_public_addrs: "",   // e.g. "203.0.113.5:3478,203.0.113.5:3479"
+
+    // Logging
+    // log_dir: "",             // empty = stdout only; set path for daily JSON log rotation
+
+    // Dev/test mode
+    // skip_gpgs_verify: false, // true = accept any token as identity (dev only!)
+
+    // Proof-of-work difficulty (leading zero bits for keypair registration)
+    // pow_difficulty: 20,
+}

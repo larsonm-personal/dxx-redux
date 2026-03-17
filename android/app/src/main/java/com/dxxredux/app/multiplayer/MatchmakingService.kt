@@ -36,6 +36,7 @@ object MatchmakingService {
     private var reconnectJob: Job? = null
     private var reconnectAttempt = 0
     private var manualDisconnect = false
+    private var lastLobbyId: String? = null // saved for re-join after reconnect
     private var stunJob: Job? = null
     private var stunCompleted = false
     private var localhostProxy: LocalhostProxy? = null
@@ -69,6 +70,7 @@ object MatchmakingService {
             )
         }
         state.appendLog("Connecting to $serverUrl ...")
+        NetLog.log("CONNECT", "Connecting to $serverUrl as '$callsign'")
 
         val request = Request.Builder().url(serverUrl).build()
         webSocket = client.newWebSocket(request, Listener(callsign))
@@ -76,6 +78,7 @@ object MatchmakingService {
 
     fun disconnect() {
         manualDisconnect = true
+        lastLobbyId = null
         reconnectJob?.cancel()
         stunJob?.cancel()
         stunJob = null
@@ -102,6 +105,7 @@ object MatchmakingService {
             )
         }
         state.appendLog("Disconnected.")
+        NetLog.log("CONNECT", "Disconnected (manual)")
     }
 
     fun send(json: String) {
@@ -326,6 +330,7 @@ object MatchmakingService {
                     )
                 state.update { it.copy(status = ConnectionStatus.RECONNECTING) }
                 state.appendLog("Reconnecting in ${delayMs}ms (attempt ${reconnectAttempt + 1})...")
+                NetLog.log("CONNECT", "Reconnecting in ${delayMs}ms (attempt ${reconnectAttempt + 1})")
                 delay(delayMs)
                 reconnectAttempt++
                 val s = state.state.value
@@ -348,10 +353,12 @@ object MatchmakingService {
                     val report = StunClient.discover(addrs)
                     stunCompleted = true
                     state.appendLog("STUN: ${report.natType}, ${report.candidates.size} candidates")
+                    NetLog.log("STUN", "Result: natType=${report.natType} candidates=${report.candidates.size}")
                     sendStunResult(report.candidates, report.natType)
                 } catch (e: Exception) {
                     Log.e(TAG, "STUN discovery failed", e)
                     state.appendLog("STUN discovery failed: ${e.message}")
+                    NetLog.log("ERROR", "STUN discovery failed: ${e.message}")
                     // Send minimal result so the server can proceed (will use relay)
                     stunCompleted = true
                     sendStunResult(emptyList(), "unknown")
@@ -367,9 +374,14 @@ object MatchmakingService {
                 val result = ConnectivityChecker.probe(pairs)
                 if (result != null) {
                     state.appendLog("Direct connection: ${result.winningCandidateType} (${result.rttMs}ms)")
+                    NetLog.log(
+                        "HOLEPUNCH",
+                        "Direct: type=${result.winningCandidateType} rtt=${result.rttMs}ms peer=${result.peerId}",
+                    )
                     sendConnectivityOk(result.peerId, result.winningCandidateType, result.rttMs)
                 } else {
                     state.appendLog("No direct connection, will use relay")
+                    NetLog.log("HOLEPUNCH", "No direct connection, falling back to relay")
                     // Notify the server for each unique peer so it allocates relay
                     pairs.map { it.peerId }.distinct().forEach { peerId ->
                         sendConnectivityOk(peerId, "relay", 0)
@@ -397,6 +409,7 @@ object MatchmakingService {
             reconnectAttempt = 0
             state.update { it.copy(status = ConnectionStatus.AUTHENTICATING) }
             state.appendLog("Connected. Authenticating as '$callsign'...")
+            NetLog.log("CONNECT", "WebSocket open")
             sendAuthenticate(callsign)
         }
 
@@ -424,6 +437,9 @@ object MatchmakingService {
         ) {
             Log.i(TAG, "WebSocket closed: $code $reason")
             this@MatchmakingService.webSocket = null
+            // Save lobby ID for re-join after reconnect
+            val currentLobby = state.state.value.currentLobby
+            lastLobbyId = currentLobby?.lobbyId
             state.update {
                 it.copy(
                     status = ConnectionStatus.DISCONNECTED,
@@ -436,6 +452,7 @@ object MatchmakingService {
                 )
             }
             state.appendLog("Connection closed ($code).")
+            NetLog.log("CONNECT", "Closed code=$code reason='$reason'")
             scheduleReconnect()
         }
 
@@ -446,6 +463,11 @@ object MatchmakingService {
         ) {
             Log.e(TAG, "WebSocket failure: ${t.message}", t)
             this@MatchmakingService.webSocket = null
+            // Save lobby ID for re-join after reconnect
+            if (lastLobbyId == null) {
+                val currentLobby = state.state.value.currentLobby
+                lastLobbyId = currentLobby?.lobbyId
+            }
             state.update {
                 it.copy(
                     status = ConnectionStatus.DISCONNECTED,
@@ -459,6 +481,7 @@ object MatchmakingService {
                 )
             }
             state.appendLog("Error: ${t.message}")
+            NetLog.log("ERROR", "WebSocket failure: ${t.message}")
             scheduleReconnect()
         }
     }
@@ -473,12 +496,20 @@ object MatchmakingService {
                         sessionToken = msg.data.sessionToken,
                         stunAddrs = msg.data.stunAddrs,
                         errorMessage = null,
+                        maintenanceMessage = null,
                     )
                 }
                 state.appendLog("Authenticated! Player ID: ${msg.data.playerId}")
+                NetLog.log("AUTH", "Authenticated as ${msg.data.playerId}")
                 // Auto-request lobby list and friend list after auth
                 requestLobbyList()
                 requestFriendList()
+                // Re-join lobby if we had one before disconnect
+                lastLobbyId?.let { lobbyId ->
+                    state.appendLog("Re-joining lobby $lobbyId...")
+                    joinLobby(lobbyId)
+                    lastLobbyId = null
+                }
             }
 
             is ServerMessage.AuthFailMsg -> {
@@ -489,6 +520,7 @@ object MatchmakingService {
                     )
                 }
                 state.appendLog("Auth failed: ${msg.data.reason}")
+                NetLog.log("AUTH", "Auth failed: ${msg.data.reason}")
                 manualDisconnect = true // don't auto-reconnect on auth failure
             }
 
@@ -499,6 +531,7 @@ object MatchmakingService {
             is ServerMessage.ErrorMsg -> {
                 state.update { it.copy(errorMessage = "${msg.data.code}: ${msg.data.message}") }
                 state.appendLog("Server error: ${msg.data.code} - ${msg.data.message}")
+                NetLog.log("ERROR", "Server: ${msg.data.code} - ${msg.data.message}")
                 // Kicked from lobby -- return to browser
                 if (msg.data.code.contains("KICKED", ignoreCase = true) ||
                     msg.data.code.contains("LOBBY", ignoreCase = true)
@@ -545,6 +578,7 @@ object MatchmakingService {
                 state.appendLog(
                     "Lobby updated: ${update.lobbyId} (${update.players.size} players)",
                 )
+                NetLog.log("LOBBY", "Updated: ${update.lobbyId} players=${update.players.size} isHost=$isHost")
                 // Auto-start STUN when lobby has 2+ players and we haven't done it yet
                 if (update.players.size >= 2 && !stunCompleted && stunJob == null) {
                     launchStunDiscovery()
@@ -562,6 +596,10 @@ object MatchmakingService {
             is ServerMessage.GameStarting -> {
                 val gs = msg.data
                 state.appendLog("Game starting: ${gs.mission} (slot ${gs.yourSlot})")
+                NetLog.log(
+                    "GAME",
+                    "Starting: ${gs.game} mission=${gs.mission} slot=${gs.yourSlot} peers=${gs.peers.size}",
+                )
 
                 // Set up localhost proxy for each peer
                 localhostProxy?.shutdown()
@@ -644,12 +682,14 @@ object MatchmakingService {
                     s.copy(peerCandidates = s.peerCandidates + (pc.peerId to info))
                 }
                 state.appendLog("Peer candidates: ${pc.peerId} (${pc.natType}, ${pc.candidates.size} candidates)")
+                NetLog.log("STUN", "Peer ${pc.peerId}: natType=${pc.natType} candidates=${pc.candidates.size}")
             }
 
             is ServerMessage.ConnectivityCheckGoReceived -> {
                 val pairs = msg.data.peerAddrs
                 state.update { it.copy(connectivityPairs = pairs) }
                 state.appendLog("Connectivity check GO: ${pairs.size} pairs to probe")
+                NetLog.log("HOLEPUNCH", "Connectivity check: ${pairs.size} pairs")
                 launchConnectivityCheck(pairs)
             }
 
@@ -657,10 +697,28 @@ object MatchmakingService {
                 val relay = msg.data
                 state.update { it.copy(relayInfo = RelayInfo(relay.relayAddr, relay.sessionToken)) }
                 state.appendLog("Relay assigned: ${relay.relayAddr}")
+                NetLog.log("RELAY", "Assigned: ${relay.relayAddr} token=${relay.sessionToken}")
             }
 
             is ServerMessage.Unknown -> {
                 state.appendLog("Unknown message type: ${msg.type}")
+            }
+
+            is ServerMessage.MaintenanceReceived -> {
+                val m = msg.data
+                state.update { it.copy(maintenanceMessage = m.message) }
+                state.appendLog("Server maintenance: ${m.message}")
+                NetLog.log("CONNECT", "Maintenance shutdown: ${m.message}")
+                // Server is going down -- disconnect cleanly
+                manualDisconnect = true
+                disconnect()
+            }
+
+            is ServerMessage.MaintenanceWarningReceived -> {
+                val m = msg.data
+                val detail = m.shutdownAt?.let { " (shutdown at $it)" } ?: ""
+                state.update { it.copy(maintenanceMessage = "${m.message}$detail") }
+                state.appendLog("Maintenance warning: ${m.message}$detail")
             }
 
             is ServerMessage.FriendListReceived -> {

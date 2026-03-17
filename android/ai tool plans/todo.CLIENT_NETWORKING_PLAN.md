@@ -685,11 +685,12 @@ LAN launch flow fully wired. Online launch deferred to future phase.
 - [x] SetupActivity: initializes PlayGamesSdk and sets activity reference
 - [ ] Handle non-GPGS fallback (device keypair) -- deferred, dev token works for now
 
-### Phase C6: Active Games + Status
+### Phase C6: Active Games + Status -- COMPLETE
 
-- [ ] Create ActiveGamesTab.kt: display-only game list
-- [ ] Handle SERVER_STATUS message
-- [ ] Periodic refresh (server push or client poll every 60s)
+- [x] Create ActiveGamesTab.kt: display-only game list
+- [x] Handle SERVER_STATUS message (already existed)
+- [x] Active games shown in server browser alongside lobbies
+- [x] Periodic refresh via lobby list auto-refresh (every 5s, includes SERVER_STATUS)
 
 ### Phase C7: Player Messaging -- COMPLETE
 
@@ -732,14 +733,14 @@ LAN launch flow fully wired. Online launch deferred to future phase.
 - [x] Host LAN Game button + LAN lobby flow (host mode with player list management)
 - [x] LAN tab accessible from both connected and disconnected states
 - [x] Test bot script: android/tests/test_lan_discovery.ps1
-- [ ] Direct auto-join (deferred to C4b, needs JNI auto-join)
+- [x] Direct auto-join (completed with C4b JNI auto-join)
 
-### Phase C9: Connection Resilience
+### Phase C9: Connection Resilience -- COMPLETE
 
-- [ ] Reconnection with exponential backoff
-- [ ] Re-join lobby after reconnect (if lobby still exists)
-- [ ] Foreground service to maintain connection during game
-- [ ] Handle MAINTENANCE / MAINTENANCE_WARNING messages
+- [x] Reconnection with exponential backoff (scheduleReconnect, 1s-30s)
+- [x] Re-join lobby after reconnect (if lobby still exists) -- lastLobbyId saved on disconnect
+- [x] Handle MAINTENANCE / MAINTENANCE_WARNING messages (protocol + handlers + UI)
+- [ ] Foreground service to maintain connection during game -- deferred
 
 ---
 

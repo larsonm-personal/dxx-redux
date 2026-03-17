@@ -380,6 +380,18 @@ data class RelayAssignedMsg(
     @SerialName("session_token") val sessionToken: String,
 )
 
+@Serializable
+data class MaintenanceMsg(
+    val message: String,
+    @SerialName("estimated_return") val estimatedReturn: String? = null,
+)
+
+@Serializable
+data class MaintenanceWarningMsg(
+    val message: String,
+    @SerialName("shutdown_at") val shutdownAt: String? = null,
+)
+
 // Sealed class representing any server message, dispatched by "type" field
 sealed class ServerMessage {
     data class AuthOkMsg(
@@ -450,6 +462,14 @@ sealed class ServerMessage {
         val data: RelayAssignedMsg,
     ) : ServerMessage()
 
+    data class MaintenanceReceived(
+        val data: MaintenanceMsg,
+    ) : ServerMessage()
+
+    data class MaintenanceWarningReceived(
+        val data: MaintenanceWarningMsg,
+    ) : ServerMessage()
+
     data class FriendListReceived(
         val data: FriendListRespMsg,
     ) : ServerMessage()
@@ -504,6 +524,11 @@ sealed class ServerMessage {
                         protocolJson.decodeFromString<ConnectivityCheckGoMsg>(text),
                     )
                 "RELAY_ASSIGNED" -> RelayAssignedReceived(protocolJson.decodeFromString<RelayAssignedMsg>(text))
+                "MAINTENANCE" -> MaintenanceReceived(protocolJson.decodeFromString<MaintenanceMsg>(text))
+                "MAINTENANCE_WARNING" ->
+                    MaintenanceWarningReceived(
+                        protocolJson.decodeFromString<MaintenanceWarningMsg>(text),
+                    )
                 "FRIEND_LIST_RESP" ->
                     FriendListReceived(protocolJson.decodeFromString<FriendListRespMsg>(text))
                 "FRIEND_REQUEST_RECEIVED" ->

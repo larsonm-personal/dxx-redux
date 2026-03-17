@@ -69,6 +69,7 @@ data class MatchmakingState(
     val lobbies: List<LobbyInfo> = emptyList(),
     val serverStatus: ServerStatusMsg? = null,
     val motd: String? = null,
+    val maintenanceMessage: String? = null,
     val errorMessage: String? = null,
     val statusLog: List<String> = emptyList(),
     val nav: MultiplayerNav = MultiplayerNav.BROWSER,

@@ -777,8 +777,18 @@ struct RelayPair {
 }
 
 /// Allocate a relay session for a player pair and send RELAY_ASSIGNED to both.
+/// Returns None if relay is not configured or the server-wide relay limit is reached.
 fn allocate_relay_session(state: &ServerState, relay_addr: &str, pair: &RelayPair) -> Option<u32> {
     if relay_addr.is_empty() {
+        return None;
+    }
+    let max = state.config.max_relay_sessions;
+    if max > 0 && state.relay_sessions.len() >= max {
+        warn!(
+            max_relay_sessions = max,
+            current = state.relay_sessions.len(),
+            "relay session limit reached, rejecting allocation"
+        );
         return None;
     }
     let token = Uuid::new_v4().as_u128() as u32;
@@ -1111,6 +1121,7 @@ async fn handle_authenticated_message(
                     let relay_addr = state.config.relay_public_addr.clone();
                     let mut relay_tokens: std::collections::HashMap<(u8, u8), u32> =
                         std::collections::HashMap::new();
+                    let mut relay_limit_hit = false;
                     for i in 0..lobby.players.len() {
                         for j in (i + 1)..lobby.players.len() {
                             let (conn_type, _) =
@@ -1134,13 +1145,38 @@ async fn handle_authenticated_message(
                                     addr_a,
                                     addr_b,
                                 };
-                                if let Some(token) =
-                                    allocate_relay_session(state, &relay_addr, &pair)
-                                {
-                                    relay_tokens.insert((i as u8, j as u8), token);
+                                match allocate_relay_session(state, &relay_addr, &pair) {
+                                    Some(token) => {
+                                        relay_tokens.insert((i as u8, j as u8), token);
+                                    }
+                                    None if !relay_addr.is_empty() => {
+                                        relay_limit_hit = true;
+                                    }
+                                    None => {}
                                 }
                             }
                         }
+                    }
+
+                    // If relay limit was hit, abort game start and notify players
+                    if relay_limit_hit {
+                        lobby.state = LobbyState::Waiting;
+                        warn!(%lobby_id, "game start aborted: relay session limit reached");
+                        // Clean up any relay sessions we did allocate for this game
+                        for token in relay_tokens.values() {
+                            state.relay_sessions.remove(token);
+                        }
+                        let err_msg = ServerMessage::Error {
+                            code: "RELAY_LIMIT_REACHED".into(),
+                            message: "Server relay capacity reached. Try again later or use direct connections.".into(),
+                        };
+                        for p in lobby.players.iter() {
+                            if let Some(sess) = state.sessions.get(&p.player_id) {
+                                let _ = sess.tx.send(err_msg.clone());
+                            }
+                        }
+                        drop(lobby);
+                        return;
                     }
 
                     // Build per-player GAME_STARTING with peer assignments

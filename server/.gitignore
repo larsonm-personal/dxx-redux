@@ -5,3 +5,6 @@ target/
 *.db
 *.db-shm
 *.db-wal
+
+# runtime config (template is committed as server_config.json5.template)
+server_config.json5
