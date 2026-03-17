@@ -6,7 +6,7 @@
 #         bash run_emulator.sh --no-build --no-data
 set -e
 
-AVD_NAME="Pixel_6_API_34"
+AVD_NAME="Nexus5X_Light_1"
 PACKAGE="com.dxxredux.app"
 ACTIVITY="com.dxxredux.app.SetupActivity"
 

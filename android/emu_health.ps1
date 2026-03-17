@@ -29,7 +29,7 @@ if (-not (Test-Path $_depBaseFile)) {
 $DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
 $ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
 $EMULATOR = "$DEP_BASE\android-sdk\emulator\emulator.exe"
-$AVD_NAME = "Pixel_6_API_34"
+$AVD_NAME = "Nexus5X_Light_1"
 
 function Test-EmulatorHealth {
     # Step 0: Check if emulator process is actually running

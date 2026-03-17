@@ -21,9 +21,13 @@
             </intent-filter>
         </activity>
 
-        <!-- Game engine surface -->
+        <!-- Game engine surface: separate process avoids a libhwui.so
+             RenderThread crash (destroyed mutex FORTIFY abort) triggered by
+             transitioning from a Compose Activity to an SDL SurfaceView
+             Activity within the same process. -->
         <activity
             android:name=".MainActivity"
+            android:process=":game"
             android:exported="false"
             android:windowSoftInputMode="adjustResize"
             android:configChanges="orientation|screenSize|keyboardHidden" />

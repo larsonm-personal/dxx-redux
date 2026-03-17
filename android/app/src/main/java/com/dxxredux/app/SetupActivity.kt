@@ -287,7 +287,7 @@ class SetupActivity : ComponentActivity() {
                         mpJoinHostAddrOverride = intent.getStringExtra("host_addr")
                         val port = intent.getIntExtra("host_port", -1)
                         mpJoinHostPortOverride = if (port > 0) port else null
-                        Log.i("DXX-MP", "Join target override: ${mpJoinHostAddrOverride}:${mpJoinHostPortOverride}")
+                        Log.i("DXX-MP", "Join target override: $mpJoinHostAddrOverride:$mpJoinHostPortOverride")
                     }
                     else -> Log.w("DXX-MP", "Unknown MP command: $cmd")
                 }

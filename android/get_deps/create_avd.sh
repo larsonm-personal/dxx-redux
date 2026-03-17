@@ -3,7 +3,7 @@
 # Run get_emulator.sh first to install the emulator and system image.
 set -e
 
-AVD_NAME="Pixel_6_API_34"
+AVD_NAME="Nexus5X_Light_1"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/resolve_dep_base.sh"
@@ -40,24 +40,43 @@ fi
 
 IMAGE="system-images;android-34;google_apis;x86_64"
 
-echo "Creating AVD '$AVD_NAME' (Pixel 6, API 34, x86_64)..."
+echo "Creating AVD '$AVD_NAME' (Nexus 5X, API 34, x86_64)..."
 echo "no" | "$AVDMANAGER" create avd \
     --name "$AVD_NAME" \
     --package "$IMAGE" \
-    --device "pixel_6" \
+    --device "Nexus 5X" \
     --force
 
-# Apply hardware settings for a reasonable emulator experience
+# Apply lightweight hardware settings (low RAM, low res, minimal sensors)
 AVD_DIR="$HOME/.android/avd/${AVD_NAME}.avd"
 if [ -f "$AVD_DIR/config.ini" ]; then
     cat >> "$AVD_DIR/config.ini" <<'EOF'
-hw.ramSize=4096
+hw.ramSize=1536
+hw.cpu.ncore=2
 hw.gpu.enabled=yes
 hw.gpu.mode=auto
-disk.dataPartition.size=4096M
+disk.dataPartition.size=4G
 hw.keyboard=yes
+hw.lcd.width=1280
+hw.lcd.height=960
+hw.lcd.density=320
+hw.camera.back=none
+hw.camera.front=none
+hw.gps=no
+hw.nfc=no
+hw.gsmModem=no
+hw.radio=no
+hw.sim=no
+hw.accelerometer=no
+hw.gyroscope=no
+hw.audioInput=no
+hw.audioOutput=no
+hw.sdCard=yes
+sdcard.size=4096M
+showDeviceFrame=no
+skin.path=_no_skin
 EOF
-    echo "Applied hardware config (4 GB RAM, GPU accel, keyboard)."
+    echo "Applied lightweight hardware config (1536 MB RAM, 1280x960, minimal sensors)."
 fi
 
 echo "AVD '$AVD_NAME' created."
