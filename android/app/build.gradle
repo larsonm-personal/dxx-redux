@@ -15,6 +15,24 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
+// Load auth_config.json5 if it exists (for GPGS sign-in)
+// Strip // comments and trailing commas to make it valid JSON, then parse.
+def authConfigFile = rootProject.file("auth_config.json5")
+def authServerClientId = ""
+def authGamesAppId = "000000000000"
+if (authConfigFile.exists()) {
+    def json5Text = authConfigFile.text
+    def jsonText = json5Text
+        .replaceAll('(?m)//.*$', '')       // strip line comments
+        .replaceAll(',\\s*([}\\]])', '$1') // strip trailing commas
+    def parsed = new groovy.json.JsonSlurper().parseText(jsonText)
+    authServerClientId = parsed.server_client_id ?: ""
+    authGamesAppId = parsed.games_app_id ?: "000000000000"
+    logger.lifecycle("auth_config.json5: server_client_id=${authServerClientId.take(20)}..., games_app_id=$authGamesAppId")
+} else {
+    logger.lifecycle("auth_config.json5 not found — GPGS sign-in will be disabled (dev token fallback)")
+}
+
 // Derive versionCode from git commit count
 def gitVersionCode = {
     try {
@@ -144,6 +162,10 @@ android {
 
         def opengl = (project.findProperty('useOpenGL') ?: 'true') == 'true'
         buildConfigField "String", "RENDERER", "\"${opengl ? 'OpenGL ES' : 'Software'}\""
+        buildConfigField "String", "GPGS_SERVER_CLIENT_ID", "\"${authServerClientId}\""
+
+        // GPGS APP_ID for AndroidManifest meta-data
+        manifestPlaceholders["gamesAppId"] = authGamesAppId
 
         ndk {
             abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64'
@@ -208,4 +230,7 @@ dependencies {
     // Networking / Multiplayer
     implementation "com.squareup.okhttp3:okhttp:${toolVersions['OKHTTP_VERSION']}"
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:${toolVersions['KOTLINX_SERIALIZATION_VERSION']}"
+
+    // Google Play Games Services (GPGS v2) for player identity
+    implementation "com.google.android.gms:play-services-games-v2:${toolVersions['PLAY_SERVICES_GAMES_VERSION']}"
 }

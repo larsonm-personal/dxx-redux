@@ -1,5 +1,6 @@
 package com.dxxredux.app.multiplayer
 
+import android.app.Activity
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -12,6 +13,7 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
+import java.lang.ref.WeakReference
 import java.net.InetSocketAddress
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -41,6 +43,14 @@ object MatchmakingService {
     // Unique per app process -- ensures two emulators/devices get different player IDs
     // when using dev mode (SKIP_GPGS_VERIFY=true on the server)
     private val devToken: String = "dev-${UUID.randomUUID()}"
+
+    // Weak reference to current activity for GPGS auth code requests.
+    // Set by SetupActivity.onCreate(), cleared automatically by GC.
+    private var activityRef: WeakReference<Activity>? = null
+
+    fun setActivity(activity: Activity) {
+        activityRef = WeakReference(activity)
+    }
 
     fun connect(
         serverUrl: String,
@@ -105,10 +115,36 @@ object MatchmakingService {
     }
 
     fun sendAuthenticate(callsign: String) {
+        val activity = activityRef?.get()
+        if (activity != null && PlayGamesAuth.isConfigured) {
+            // Try GPGS auth -- get a fresh server auth code
+            scope.launch {
+                val authCode = PlayGamesAuth.getServerAuthCode(activity)
+                if (authCode != null) {
+                    Log.i(TAG, "Using GPGS auth code")
+                    val msg =
+                        AuthenticateMsg(
+                            callsign = callsign,
+                            playGamesToken = authCode,
+                            authMethod = "gpgs",
+                        )
+                    send(protocolJson.encodeToString(AuthenticateMsg.serializer(), msg))
+                } else {
+                    Log.i(TAG, "GPGS auth code unavailable, falling back to dev token")
+                    sendDevAuthenticate(callsign)
+                }
+            }
+        } else {
+            sendDevAuthenticate(callsign)
+        }
+    }
+
+    private fun sendDevAuthenticate(callsign: String) {
         val msg =
             AuthenticateMsg(
                 callsign = callsign,
                 playGamesToken = devToken,
+                authMethod = "dev",
             )
         send(protocolJson.encodeToString(AuthenticateMsg.serializer(), msg))
     }

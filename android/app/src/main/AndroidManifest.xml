@@ -12,6 +12,11 @@
         android:networkSecurityConfig="@xml/network_security_config"
         android:theme="@style/Theme.AppCompat.NoActionBar">
 
+        <!-- Google Play Games Services app ID (from auth_config.json5) -->
+        <meta-data
+            android:name="com.google.android.gms.games.APP_ID"
+            android:value="${gamesAppId}" />
+
         <!-- Pre-game setup / file-check screen (Jetpack Compose) -->
         <activity
             android:name=".SetupActivity"

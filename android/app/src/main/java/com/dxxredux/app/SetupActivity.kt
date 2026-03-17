@@ -46,6 +46,7 @@ import com.dxxredux.app.multiplayer.GameLaunchInfo
 import com.dxxredux.app.multiplayer.MatchmakingService
 import com.dxxredux.app.multiplayer.MatchmakingStateHolder
 import com.dxxredux.app.multiplayer.NetworkConstants
+import com.dxxredux.app.multiplayer.PlayGamesAuth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -560,11 +561,16 @@ class SetupActivity : ComponentActivity() {
             mpIntent.putExtra("mp_difficulty", info.difficulty)
         } else {
             mpIntent.putExtra("mp_mode", "join")
-            mpIntent.putExtra("mp_host_addr", mpJoinHostAddrOverride ?: "127.0.0.1")
-            mpIntent.putExtra(
-                "mp_host_port",
-                mpJoinHostPortOverride ?: NetworkConstants.PROXY_PORT_BASE,
-            )
+            // LAN direct: use the host's real IP; online: use localhost proxy
+            val hostAddr = info.lanHostAddr ?: mpJoinHostAddrOverride ?: "127.0.0.1"
+            val hostPort =
+                if (info.lanHostAddr != null) {
+                    NetworkConstants.ENGINE_PORT
+                } else {
+                    mpJoinHostPortOverride ?: NetworkConstants.PROXY_PORT_BASE
+                }
+            mpIntent.putExtra("mp_host_addr", hostAddr)
+            mpIntent.putExtra("mp_host_port", hostPort)
             mpIntent.putExtra("mp_my_port", NetworkConstants.ENGINE_PORT)
         }
         startActivity(mpIntent)
@@ -773,6 +779,10 @@ class SetupActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         KnownVersions.init(this)
+
+        // Initialize Google Play Games sign-in (no-op if not configured)
+        PlayGamesAuth.initialize(this)
+        MatchmakingService.setActivity(this)
 
         // Edge-to-edge: draw behind system bars, Compose handles insets
         WindowCompat.setDecorFitsSystemWindows(window, false)

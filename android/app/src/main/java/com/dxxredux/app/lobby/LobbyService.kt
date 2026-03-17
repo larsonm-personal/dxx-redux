@@ -59,6 +59,15 @@ object LobbyService {
     private val _isDiscovering = MutableStateFlow(false)
     val isDiscovering: StateFlow<Boolean> = _isDiscovering.asStateFlow()
 
+    // Emitted when a game should launch (host pressed Start, or joiner received START)
+    private val _lanLaunchEvent = MutableStateFlow<com.dxxredux.app.multiplayer.GameLaunchInfo?>(null)
+    val lanLaunchEvent: StateFlow<com.dxxredux.app.multiplayer.GameLaunchInfo?> = _lanLaunchEvent.asStateFlow()
+
+    /** Clear the launch event after it has been consumed. */
+    fun clearLaunchEvent() {
+        _lanLaunchEvent.value = null
+    }
+
     // -- Internal state --
 
     private var scope: CoroutineScope? = null
@@ -102,6 +111,7 @@ object LobbyService {
         lobbies.clear()
         _discoveredLobbies.value = emptyList()
         _hostedLobbyPlayers.value = emptyList()
+        _lanLaunchEvent.value = null
         closeSocket()
         Log.i(TAG, "LAN discovery stopped")
     }
@@ -373,17 +383,85 @@ object LobbyService {
         _hostedLobbyPlayers.value = players
     }
 
+    /**
+     * Host calls this to start the game. Sends START to all joiners
+     * and emits a launch event for the host side.
+     */
+    fun startGame(
+        difficulty: Int,
+        levelNum: Int,
+    ) {
+        if (!_isHosting.value) return
+        val lid = hostedLobbyId ?: return
+        val players = _hostedLobbyPlayers.value
+
+        // Send START to every joiner
+        val data =
+            buildStart(
+                lobbyId = lid,
+                hostAddress = "0.0.0.0", // joiners use senderAddr
+                hostPort = NetworkConstants.ENGINE_PORT,
+                game = hostedGame,
+                mission = hostedMission,
+                mode = hostedMode,
+                difficulty = difficulty,
+                levelNum = levelNum,
+                maxPlayers = hostedMaxPlayers,
+            )
+        for (p in players) {
+            if (p.address != "127.0.0.1") {
+                sendTo(data, p.address)
+            }
+        }
+
+        // Stop announcing
+        announceJob?.cancel()
+        announceJob = null
+
+        // Emit launch event for the host
+        _lanLaunchEvent.value =
+            com.dxxredux.app.multiplayer.GameLaunchInfo(
+                game = hostedGame,
+                mission = hostedMission,
+                mode = hostedMode,
+                difficulty = difficulty,
+                levelNum = levelNum,
+                maxPlayers = hostedMaxPlayers,
+                yourSlot = 0,
+                isHost = true,
+                peers = emptyList(),
+            )
+        Log.i(TAG, "Game started: $hostedGame/$hostedMission lvl=$levelNum diff=$difficulty")
+    }
+
     private fun handleStart(
         json: JSONObject,
         senderAddr: String,
     ) {
-        // TODO: C4b will implement auto-join via JNI
         val lobbyId = json.optString("lobby_id", "")
-        val hostAddress = json.optString("host_address", senderAddr)
         val hostPort = json.optInt("host_port", NetworkConstants.ENGINE_PORT)
         val game = json.optString("game", "d2")
         val mission = json.optString("mission", "")
-        Log.i(TAG, "START received for lobby $lobbyId: $game/$mission at $hostAddress:$hostPort")
+        val mode = json.optString("mode", "coop")
+        val difficulty = json.optInt("difficulty", 1)
+        val levelNum = json.optInt("level_num", 1)
+        val maxPlayers = json.optInt("max_players", 4)
+        Log.i(TAG, "START received for lobby $lobbyId: $game/$mission at $senderAddr:$hostPort")
+
+        // Emit launch event for the joiner
+        _lanLaunchEvent.value =
+            com.dxxredux.app.multiplayer.GameLaunchInfo(
+                game = game,
+                mission = mission,
+                mode = mode,
+                difficulty = difficulty,
+                levelNum = levelNum,
+                maxPlayers = maxPlayers,
+                yourSlot = 1, // non-zero = joiner
+                isHost = false,
+                peers = emptyList(),
+                lanHostAddr = senderAddr,
+            )
     }
 
     private fun handlePing(

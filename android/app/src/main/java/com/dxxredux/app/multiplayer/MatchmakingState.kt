@@ -56,6 +56,8 @@ data class GameLaunchInfo(
     val yourSlot: Int,
     val isHost: Boolean,
     val peers: List<PeerAssignment>,
+    // LAN direct join: host's real LAN IP address (null for online/proxy path)
+    val lanHostAddr: String? = null,
 )
 
 data class MatchmakingState(

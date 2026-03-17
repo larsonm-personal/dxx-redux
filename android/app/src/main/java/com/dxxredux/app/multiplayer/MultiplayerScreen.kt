@@ -54,7 +54,7 @@ fun MultiplayerScreen(
             }
         }
         MultiplayerNav.FRIENDS -> FriendsContent(state, onBack)
-        MultiplayerNav.LAN -> LanContent(state, onBack)
+        MultiplayerNav.LAN -> LanContent(state, onBack, onLaunchGame)
         MultiplayerNav.BROWSER -> ServerBrowserContent(state, onBack)
     }
 }
@@ -394,6 +394,7 @@ private fun CreateLobbyDialog(
 private fun LanContent(
     state: MatchmakingState,
     onBack: () -> Unit,
+    onLaunchGame: (GameLaunchInfo) -> Unit,
 ) {
     Column(
         modifier =
@@ -413,7 +414,7 @@ private fun LanContent(
         }
         Spacer(Modifier.height(8.dp))
 
-        LanDiscoveryTab(callsign = state.callsign)
+        LanDiscoveryTab(callsign = state.callsign, onLaunchGame = onLaunchGame)
     }
 }
 
