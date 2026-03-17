@@ -79,6 +79,43 @@ data class SendMessageMsg(
     val text: String,
 )
 
+// -- Client -> Server: friend messages --
+
+@Serializable
+data class FriendRequestMsg(
+    val type: String = "FRIEND_REQUEST",
+    @SerialName("target_callsign") val targetCallsign: String,
+)
+
+@Serializable
+data class FriendAcceptMsg(
+    val type: String = "FRIEND_ACCEPT",
+    @SerialName("player_id") val playerId: String,
+)
+
+@Serializable
+data class FriendRemoveMsg(
+    val type: String = "FRIEND_REMOVE",
+    @SerialName("player_id") val playerId: String,
+)
+
+@Serializable
+data class FriendBlockMsg(
+    val type: String = "FRIEND_BLOCK",
+    @SerialName("player_id") val playerId: String,
+)
+
+@Serializable
+data class FriendListRequestMsg(
+    val type: String = "FRIEND_LIST",
+)
+
+@Serializable
+data class JoinFriendGameMsg(
+    val type: String = "JOIN_FRIEND_GAME",
+    @SerialName("friend_player_id") val friendPlayerId: String,
+)
+
 // -- Client -> Server: NAT traversal messages --
 
 @Serializable
@@ -258,6 +295,62 @@ data class ConnectionInfoMsg(
     val connections: List<PeerConnectionInfoMsg>,
 )
 
+// -- Server -> Client: friend messages --
+
+@Serializable
+data class FriendInfo(
+    @SerialName("player_id") val playerId: String,
+    val callsign: String,
+    val status: String, // "pending", "accepted", "blocked"
+    val presence: String, // "online", "offline", "in_game"
+    @SerialName("in_game_details") val inGameDetails: InGameDetails? = null,
+    @SerialName("last_seen") val lastSeen: String? = null,
+)
+
+@Serializable
+data class InGameDetails(
+    @SerialName("lobby_id") val lobbyId: String,
+    val mission: String,
+    @SerialName("player_count") val playerCount: Int,
+    @SerialName("max_players") val maxPlayers: Int,
+    val joinable: Boolean,
+)
+
+@Serializable
+data class FriendListRespMsg(
+    val friends: List<FriendInfo>,
+)
+
+@Serializable
+data class FriendRequestReceivedMsg(
+    @SerialName("from_player_id") val fromPlayerId: String,
+    @SerialName("from_callsign") val fromCallsign: String,
+)
+
+@Serializable
+data class FriendAcceptedMsg(
+    @SerialName("player_id") val playerId: String,
+)
+
+@Serializable
+data class FriendRemovedMsg(
+    @SerialName("player_id") val playerId: String,
+)
+
+@Serializable
+data class FriendPresenceUpdateMsg(
+    @SerialName("player_id") val playerId: String,
+    val presence: String,
+    val details: InGameDetails? = null,
+)
+
+@Serializable
+data class JoinFriendGameRespMsg(
+    val success: Boolean,
+    val reason: String? = null,
+    @SerialName("lobby_id") val lobbyId: String? = null,
+)
+
 // -- Server -> Client: NAT traversal messages --
 
 @Serializable
@@ -357,6 +450,30 @@ sealed class ServerMessage {
         val data: RelayAssignedMsg,
     ) : ServerMessage()
 
+    data class FriendListReceived(
+        val data: FriendListRespMsg,
+    ) : ServerMessage()
+
+    data class FriendRequestReceived(
+        val data: FriendRequestReceivedMsg,
+    ) : ServerMessage()
+
+    data class FriendAccepted(
+        val data: FriendAcceptedMsg,
+    ) : ServerMessage()
+
+    data class FriendRemoved(
+        val data: FriendRemovedMsg,
+    ) : ServerMessage()
+
+    data class FriendPresenceUpdated(
+        val data: FriendPresenceUpdateMsg,
+    ) : ServerMessage()
+
+    data class JoinFriendGameResponse(
+        val data: JoinFriendGameRespMsg,
+    ) : ServerMessage()
+
     data class Unknown(
         val type: String,
         val raw: String,
@@ -387,6 +504,24 @@ sealed class ServerMessage {
                         protocolJson.decodeFromString<ConnectivityCheckGoMsg>(text),
                     )
                 "RELAY_ASSIGNED" -> RelayAssignedReceived(protocolJson.decodeFromString<RelayAssignedMsg>(text))
+                "FRIEND_LIST_RESP" ->
+                    FriendListReceived(protocolJson.decodeFromString<FriendListRespMsg>(text))
+                "FRIEND_REQUEST_RECEIVED" ->
+                    FriendRequestReceived(
+                        protocolJson.decodeFromString<FriendRequestReceivedMsg>(text),
+                    )
+                "FRIEND_ACCEPTED" ->
+                    FriendAccepted(protocolJson.decodeFromString<FriendAcceptedMsg>(text))
+                "FRIEND_REMOVED" ->
+                    FriendRemoved(protocolJson.decodeFromString<FriendRemovedMsg>(text))
+                "FRIEND_PRESENCE_UPDATE" ->
+                    FriendPresenceUpdated(
+                        protocolJson.decodeFromString<FriendPresenceUpdateMsg>(text),
+                    )
+                "JOIN_FRIEND_GAME_RESP" ->
+                    JoinFriendGameResponse(
+                        protocolJson.decodeFromString<JoinFriendGameRespMsg>(text),
+                    )
                 else -> Unknown(type, text)
             }
         }

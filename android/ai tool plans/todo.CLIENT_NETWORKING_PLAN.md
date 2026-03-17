@@ -625,13 +625,18 @@ android/app/src/main/java/com/dxxredux/app/
 - [x] Server integration tests: 5 new tests covering full join/ready/start, leave, kick,
       non-host start rejection, ready toggle (48 integration tests total)
 
-### Phase C4: Friends Tab
+### Phase C4: Friends Tab -- COMPLETE
 
-- [ ] Create FriendsTab.kt: display friend list with presence
-- [ ] Add Friend dialog (callsign search)
-- [ ] Accept/decline pending requests
-- [ ] Join friend's game/lobby
-- [ ] Friend presence updates (handle FRIEND_PRESENCE_UPDATE push)
+- [x] Create FriendsTab.kt: display friend list with presence
+- [x] Add Friend dialog (callsign search)
+- [x] Accept/decline pending requests
+- [x] Join friend's game/lobby
+- [x] Friend protocol messages in NetworkProtocol.kt
+- [x] Friend state in MatchmakingState.kt
+- [x] Friend methods + handlers in MatchmakingService.kt
+- [x] Wired into MultiplayerScreen navigation with badge
+- [x] Server integration test: test_friend_full_lifecycle (request/accept/list/join/leave/remove/block)
+- Note: FRIEND_PRESENCE_UPDATE is not yet pushed by server; friends tab polls via FRIEND_LIST
 
 ### Phase C4a: NAT Traversal (Client Side) -- NOT STARTED
 

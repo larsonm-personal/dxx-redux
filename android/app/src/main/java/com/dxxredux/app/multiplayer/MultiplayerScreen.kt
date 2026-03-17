@@ -53,6 +53,7 @@ fun MultiplayerScreen(
                 MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
             }
         }
+        MultiplayerNav.FRIENDS -> FriendsContent(state, onBack)
         MultiplayerNav.BROWSER -> ServerBrowserContent(state, onBack)
     }
 }
@@ -152,6 +153,14 @@ private fun ServerBrowserContent(
                 }
                 Button(onClick = { showCreateDialog = true }) {
                     Text("Create Lobby")
+                }
+                val pendingCount = state.pendingFriendRequests.size
+                val friendLabel = if (pendingCount > 0) "Friends ($pendingCount)" else "Friends"
+                Button(onClick = {
+                    MatchmakingService.requestFriendList()
+                    MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.FRIENDS) }
+                }) {
+                    Text(friendLabel)
                 }
                 OutlinedButton(onClick = { MatchmakingService.disconnect() }) {
                     Text("Disconnect")
@@ -364,6 +373,36 @@ private fun CreateLobbyDialog(
             TextButton(onClick = onDismiss) { Text("Cancel") }
         },
     )
+}
+
+@Composable
+private fun FriendsContent(
+    state: MatchmakingState,
+    onBack: () -> Unit,
+) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .safeDrawingPadding()
+                .padding(16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Friends", style = MaterialTheme.typography.headlineMedium)
+            Spacer(Modifier.weight(1f))
+            OutlinedButton(onClick = {
+                MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
+            }) { Text("Back to Lobbies") }
+            Spacer(Modifier.width(8.dp))
+            OutlinedButton(onClick = onBack) { Text("Back") }
+        }
+        Spacer(Modifier.height(8.dp))
+
+        FriendsTab(
+            friends = state.friends,
+            pendingRequests = state.pendingFriendRequests,
+        )
+    }
 }
 
 @Composable

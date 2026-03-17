@@ -87,6 +87,8 @@ object MatchmakingService {
                 relayInfo = null,
                 nav = MultiplayerNav.BROWSER,
                 gameLaunchInfo = null,
+                friends = emptyList(),
+                pendingFriendRequests = emptyList(),
             )
         }
         state.appendLog("Disconnected.")
@@ -188,6 +190,49 @@ object MatchmakingService {
     ) {
         val msg = StunResultMsg(candidates = candidates, natType = natType)
         send(protocolJson.encodeToString(StunResultMsg.serializer(), msg))
+    }
+
+    // -- Friend methods --
+
+    fun requestFriendList() {
+        send(protocolJson.encodeToString(FriendListRequestMsg.serializer(), FriendListRequestMsg()))
+    }
+
+    fun sendFriendRequest(targetCallsign: String) {
+        val msg = FriendRequestMsg(targetCallsign = targetCallsign)
+        send(protocolJson.encodeToString(FriendRequestMsg.serializer(), msg))
+        state.appendLog("Friend request sent to '$targetCallsign'")
+    }
+
+    fun acceptFriend(playerId: String) {
+        val msg = FriendAcceptMsg(playerId = playerId)
+        send(protocolJson.encodeToString(FriendAcceptMsg.serializer(), msg))
+        // Remove from pending requests
+        state.update { s ->
+            s.copy(pendingFriendRequests = s.pendingFriendRequests.filter { it.fromPlayerId != playerId })
+        }
+        state.appendLog("Accepted friend request from $playerId")
+        requestFriendList()
+    }
+
+    fun removeFriend(playerId: String) {
+        val msg = FriendRemoveMsg(playerId = playerId)
+        send(protocolJson.encodeToString(FriendRemoveMsg.serializer(), msg))
+        state.appendLog("Removed friend $playerId")
+        requestFriendList()
+    }
+
+    fun blockPlayer(playerId: String) {
+        val msg = FriendBlockMsg(playerId = playerId)
+        send(protocolJson.encodeToString(FriendBlockMsg.serializer(), msg))
+        state.appendLog("Blocked player $playerId")
+        requestFriendList()
+    }
+
+    fun joinFriendGame(friendPlayerId: String) {
+        val msg = JoinFriendGameMsg(friendPlayerId = friendPlayerId)
+        send(protocolJson.encodeToString(JoinFriendGameMsg.serializer(), msg))
+        state.appendLog("Joining friend's game...")
     }
 
     fun sendConnectivityOk(
@@ -387,8 +432,9 @@ object MatchmakingService {
                     )
                 }
                 state.appendLog("Authenticated! Player ID: ${msg.data.playerId}")
-                // Auto-request lobby list after auth
+                // Auto-request lobby list and friend list after auth
                 requestLobbyList()
+                requestFriendList()
             }
 
             is ServerMessage.AuthFailMsg -> {
@@ -571,6 +617,55 @@ object MatchmakingService {
 
             is ServerMessage.Unknown -> {
                 state.appendLog("Unknown message type: ${msg.type}")
+            }
+
+            is ServerMessage.FriendListReceived -> {
+                state.update { it.copy(friends = msg.data.friends) }
+            }
+
+            is ServerMessage.FriendRequestReceived -> {
+                val req = msg.data
+                state.update { s ->
+                    val pending = s.pendingFriendRequests.filter { it.fromPlayerId != req.fromPlayerId } + req
+                    s.copy(pendingFriendRequests = pending)
+                }
+                state.appendLog("Friend request from ${req.fromCallsign}")
+            }
+
+            is ServerMessage.FriendAccepted -> {
+                state.appendLog("Friend accepted: ${msg.data.playerId}")
+                requestFriendList()
+            }
+
+            is ServerMessage.FriendRemoved -> {
+                state.appendLog("Friend removed: ${msg.data.playerId}")
+                requestFriendList()
+            }
+
+            is ServerMessage.FriendPresenceUpdated -> {
+                val upd = msg.data
+                state.update { s ->
+                    val updated =
+                        s.friends.map { f ->
+                            if (f.playerId == upd.playerId) {
+                                f.copy(presence = upd.presence, inGameDetails = upd.details)
+                            } else {
+                                f
+                            }
+                        }
+                    s.copy(friends = updated)
+                }
+            }
+
+            is ServerMessage.JoinFriendGameResponse -> {
+                val resp = msg.data
+                if (resp.success && resp.lobbyId != null) {
+                    state.appendLog("Joining friend's lobby: ${resp.lobbyId}")
+                    joinLobby(resp.lobbyId)
+                } else {
+                    state.appendLog("Cannot join friend's game: ${resp.reason ?: "unknown"}")
+                    state.update { it.copy(errorMessage = resp.reason) }
+                }
             }
         }
     }

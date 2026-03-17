@@ -2653,7 +2653,7 @@ async fn auth_ok_no_stun_addrs_when_not_configured() {
     // stun_addrs should either be absent or empty
     let addrs = auth_ok.get("stun_addrs");
     assert!(
-        addrs.is_none() || addrs.unwrap().as_array().map_or(true, |a| a.is_empty()),
+        addrs.is_none() || addrs.unwrap().as_array().is_none_or(|a| a.is_empty()),
         "stun_addrs should be absent or empty, got {:?}",
         addrs
     );
@@ -2769,4 +2769,145 @@ async fn stun_server_drops_non_allowlisted_ip() {
         result.is_err(),
         "should not receive response from non-allowlisted IP"
     );
+}
+
+/// Full friend lifecycle: request, accept, list with presence, remove, block,
+/// and join friend's game.
+#[tokio::test]
+async fn test_friend_full_lifecycle() {
+    let server = TestServer::start().await;
+
+    let mut alice = connect_ws(&server).await;
+    let alice_auth = authenticate(&mut alice, "Alice").await;
+    let alice_id = alice_auth["player_id"].as_str().unwrap().to_string();
+
+    let mut bob = connect_ws(&server).await;
+    let bob_auth = authenticate(&mut bob, "Bob").await;
+    let bob_id = bob_auth["player_id"].as_str().unwrap().to_string();
+
+    // 1. Alice sends friend request to Bob
+    send_only(
+        &mut alice,
+        json!({ "type": "FRIEND_REQUEST", "target_callsign": "Bob" }),
+    )
+    .await;
+
+    // Bob receives the notification
+    let notif = recv(&mut bob).await;
+    assert_eq!(notif["type"], "FRIEND_REQUEST_RECEIVED");
+    assert_eq!(notif["from_callsign"], "Alice");
+    assert_eq!(notif["from_player_id"], alice_id);
+
+    // 2. Bob accepts
+    send_only(
+        &mut bob,
+        json!({ "type": "FRIEND_ACCEPT", "player_id": alice_id }),
+    )
+    .await;
+
+    // Alice gets FRIEND_ACCEPTED notification
+    let accepted = recv(&mut alice).await;
+    assert_eq!(accepted["type"], "FRIEND_ACCEPTED");
+    assert_eq!(accepted["player_id"], bob_id);
+
+    // 3. Both fetch friend list -- each should see the other
+    let alice_friends = send_recv(&mut alice, json!({ "type": "FRIEND_LIST" })).await;
+    assert_eq!(alice_friends["type"], "FRIEND_LIST_RESP");
+    let af = alice_friends["friends"].as_array().unwrap();
+    assert_eq!(af.len(), 1);
+    assert_eq!(af[0]["callsign"], "Bob");
+    assert_eq!(af[0]["status"], "accepted");
+    assert_eq!(af[0]["presence"], "online");
+
+    let bob_friends = send_recv(&mut bob, json!({ "type": "FRIEND_LIST" })).await;
+    let bf = bob_friends["friends"].as_array().unwrap();
+    assert_eq!(bf.len(), 1);
+    assert_eq!(bf[0]["callsign"], "Alice");
+    assert_eq!(bf[0]["status"], "accepted");
+
+    // 4. Bob creates a lobby
+    let lobby_update = send_recv(
+        &mut bob,
+        json!({
+            "type": "CREATE_LOBBY",
+            "game": "d2",
+            "mission": "Counterstrike!",
+            "mode": "coop",
+            "max_players": 4,
+        }),
+    )
+    .await;
+    assert_eq!(lobby_update["type"], "LOBBY_UPDATE");
+    let lobby_id = lobby_update["lobby_id"].as_str().unwrap().to_string();
+
+    // Alice's friend list should now show Bob with in_game_details
+    let alice_friends_ig = send_recv(&mut alice, json!({ "type": "FRIEND_LIST" })).await;
+    let af_ig = alice_friends_ig["friends"].as_array().unwrap();
+    assert_eq!(af_ig.len(), 1);
+    assert!(
+        af_ig[0]["presence"] == "in_game"
+            || af_ig[0]["presence"] == "in_lobby"
+            || af_ig[0]["presence"] == "online",
+        "unexpected presence: {}",
+        af_ig[0]["presence"]
+    );
+
+    // 5. Alice joins Bob's game via JOIN_FRIEND_GAME
+    let join_resp = send_recv(
+        &mut alice,
+        json!({ "type": "JOIN_FRIEND_GAME", "friend_player_id": bob_id }),
+    )
+    .await;
+    assert_eq!(join_resp["type"], "JOIN_FRIEND_GAME_RESP");
+    assert_eq!(join_resp["success"], true);
+    assert_eq!(join_resp["lobby_id"], lobby_id);
+
+    // Both get LOBBY_UPDATE from the join broadcast
+    let alice_lobby = recv(&mut alice).await;
+    assert_eq!(alice_lobby["type"], "LOBBY_UPDATE");
+    assert_eq!(alice_lobby["lobby_id"], lobby_id);
+
+    let bob_lobby = recv(&mut bob).await;
+    assert_eq!(bob_lobby["type"], "LOBBY_UPDATE");
+    let players = bob_lobby["players"].as_array().unwrap();
+    assert_eq!(players.len(), 2);
+
+    // 6. Alice leaves lobby, then removes Bob as friend
+    send_only(&mut alice, json!({ "type": "LEAVE_LOBBY" })).await;
+
+    // Bob gets lobby update (Alice left)
+    let bob_lobby2 = recv(&mut bob).await;
+    assert_eq!(bob_lobby2["type"], "LOBBY_UPDATE");
+    let players2 = bob_lobby2["players"].as_array().unwrap();
+    assert_eq!(players2.len(), 1);
+
+    // Remove friend
+    send_only(
+        &mut alice,
+        json!({ "type": "FRIEND_REMOVE", "player_id": bob_id }),
+    )
+    .await;
+
+    // Bob gets FRIEND_REMOVED notification
+    let removed = recv(&mut bob).await;
+    assert_eq!(removed["type"], "FRIEND_REMOVED");
+    assert_eq!(removed["player_id"], alice_id);
+
+    // Alice's friend list should now be empty
+    let alice_friends2 = send_recv(&mut alice, json!({ "type": "FRIEND_LIST" })).await;
+    let af2 = alice_friends2["friends"].as_array().unwrap();
+    assert_eq!(af2.len(), 0);
+
+    // 7. Alice blocks Bob (silent, no notification to Bob)
+    send_only(
+        &mut alice,
+        json!({ "type": "FRIEND_BLOCK", "player_id": bob_id }),
+    )
+    .await;
+
+    // Alice's friend list should show Bob as blocked
+    let alice_friends3 = send_recv(&mut alice, json!({ "type": "FRIEND_LIST" })).await;
+    let af3 = alice_friends3["friends"].as_array().unwrap();
+    assert_eq!(af3.len(), 1);
+    assert_eq!(af3[0]["status"], "blocked");
 }

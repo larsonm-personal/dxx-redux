@@ -1161,8 +1161,7 @@ async fn handle_authenticated_message(
                                 &lobby.players[my_slot],
                                 &lobby.players[other_slot],
                             );
-                            let is_relay =
-                                conn_type == crate::lobby::ConnectionType::Relay;
+                            let is_relay = conn_type == crate::lobby::ConnectionType::Relay;
 
                             // For direct: use winning candidate addr; for relay: use relay server
                             let addr = if is_relay {

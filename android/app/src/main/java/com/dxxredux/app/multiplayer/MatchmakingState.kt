@@ -15,6 +15,7 @@ enum class ConnectionStatus {
 enum class MultiplayerNav {
     BROWSER,
     LOBBY,
+    FRIENDS,
 }
 
 data class CurrentLobbyState(
@@ -76,6 +77,8 @@ data class MatchmakingState(
     val relayInfo: RelayInfo? = null,
     val stunAddrs: List<String> = emptyList(),
     val gameLaunchInfo: GameLaunchInfo? = null,
+    val friends: List<FriendInfo> = emptyList(),
+    val pendingFriendRequests: List<FriendRequestReceivedMsg> = emptyList(),
 )
 
 // Global observable state for Compose UI
