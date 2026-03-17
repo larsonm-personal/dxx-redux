@@ -98,6 +98,12 @@ class SetupActivity : ComponentActivity() {
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_files --es path /sdcard/DESCENT2.HOG
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_default_config
     private var gameRunningFlag = false
+
+    /** Guard against double-launch of multiplayer game (auto-launch from
+     *  LobbyScreen LaunchedEffect + explicit launch_game broadcast). Two
+     *  rapid startActivity calls create two MainActivity instances in the
+     *  :game process, causing a FORTIFY pthread_mutex crash. */
+    private var mpGameLaunching = false
     private val commandReceiver =
         object : BroadcastReceiver() {
             override fun onReceive(
@@ -533,6 +539,11 @@ class SetupActivity : ComponentActivity() {
     }
 
     private fun launchMultiplayerGame(info: GameLaunchInfo) {
+        if (mpGameLaunching) {
+            Log.w("DXX-MP", "Game already launching, ignoring duplicate")
+            return
+        }
+        mpGameLaunching = true
         FileSetManager(filesDir).writeActiveSetPath()
         AudioSourceManager(filesDir).writePlaylist()
         writeInitialGameConfig()
@@ -906,6 +917,7 @@ class SetupActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        mpGameLaunching = false
         refreshTrigger.intValue++
     }
 

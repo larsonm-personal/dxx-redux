@@ -53,8 +53,9 @@ if [ -f "$AVD_DIR/config.ini" ]; then
     cat >> "$AVD_DIR/config.ini" <<'EOF'
 hw.ramSize=1536
 hw.cpu.ncore=2
+vm.heapSize=512
 hw.gpu.enabled=yes
-hw.gpu.mode=auto
+hw.gpu.mode=host
 disk.dataPartition.size=4G
 hw.keyboard=yes
 hw.lcd.width=1280

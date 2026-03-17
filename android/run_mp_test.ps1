@@ -40,8 +40,8 @@ $ACTIVITY = "com.dxxredux.app.SetupActivity"
 
 $EMU1 = "emulator-5554"  # Player 1 (host)
 $EMU2 = "emulator-5556"  # Player 2 (joiner)
-$CALLSIGN1 = "HostPilot"
-$CALLSIGN2 = "JoinPilot"
+$CALLSIGN1 = "HostPlt"
+$CALLSIGN2 = "JoinPlt"
 
 $MISSION = if ($Game -eq "d1") { "descent" } else { "d2" }
 $MODE = "anarchy"
@@ -521,35 +521,10 @@ if (-not $bothReady) {
 }
 Write-Status "Both players ready" "Green"
 
-# Player 1 (host) starts the game
-Write-Status "Player 1 starting game..."
-Send-MpCommand -Serial $EMU1 -Command "start_game"
-
-# Wait for GAME_STARTING to arrive on both sides
-$gameStarting1 = Wait-ForCondition -Description "Player 1 received GAME_STARTING" -TimeoutSec 15 -PollMs 1500 -Condition {
-    $mp = Get-MpIntrospection -Serial $EMU1
-    return ($mp -and $mp.game_launch_pending -eq $true)
-}
-if (-not $gameStarting1) {
-    Write-Status "FAIL: Player 1 didn't get GAME_STARTING" "Red"
-    Cleanup; exit 1
-}
-
-$gameStarting2 = Wait-ForCondition -Description "Player 2 received GAME_STARTING" -TimeoutSec 15 -PollMs 1500 -Condition {
-    $mp = Get-MpIntrospection -Serial $EMU2
-    return ($mp -and $mp.game_launch_pending -eq $true)
-}
-if (-not $gameStarting2) {
-    Write-Status "FAIL: Player 2 didn't get GAME_STARTING" "Red"
-    Cleanup; exit 1
-}
-Write-Status "GAME_STARTING received by both players" "Green"
-
-# -- Step 8: Launch the actual game on both --
-Write-Status ""
-Write-Status "--- Phase 8: Launch game on both emulators ---" "White"
-
-# Set up UDP port forwarding via emulator console so the joiner can reach the host
+# Set up UDP relay infrastructure BEFORE start_game.
+# start_game triggers GAME_STARTING from the server, which auto-launches
+# the game via LobbyScreen's LaunchedEffect.  The relay and join target
+# must be ready before that auto-launch fires.
 function Setup-EmulatorRedir {
     param([int]$ConsolePort, [string]$RedirSpec)
     $token = (Get-Content "$env:USERPROFILE\.emulator_console_auth_token").Trim()
@@ -576,10 +551,12 @@ function Setup-EmulatorRedir {
 }
 
 # EMU1 redir: host:42500 -> EMU1:42424 (for relay -> host game inbound)
-# EMU2: NO redir - redir blocks outbound UDP from game port 42424
+# Delete first in case a previous test left it active, then re-add.
+$r1del = Setup-EmulatorRedir -ConsolePort 5554 -RedirSpec "del udp:42500"
+Write-Status "  EMU1 UDP redir cleanup: $r1del" "Gray"
 $r1 = Setup-EmulatorRedir -ConsolePort 5554 -RedirSpec "add udp:42500:42424"
 Write-Status "  EMU1 UDP redir: $r1" "Gray"
-# Delete EMU2 redir if it exists (it blocks outbound from port 42424)
+# EMU2: NO redir - redir blocks outbound UDP from game port 42424
 $r2del = Setup-EmulatorRedir -ConsolePort 5556 -RedirSpec "del udp:42501"
 Write-Status "  EMU2 UDP redir removed: $r2del" "Gray"
 
@@ -597,6 +574,39 @@ Send-MpCommand -Serial $EMU2 -Command "set_join_target" -Extras @(
 )
 Start-Sleep -Milliseconds 500
 
+# Player 1 (host) starts the game
+Write-Status "Player 1 starting game..."
+Send-MpCommand -Serial $EMU1 -Command "start_game"
+
+# Wait for GAME_STARTING to arrive on both sides
+$gameStarting1 = Wait-ForCondition -Description "Player 1 received GAME_STARTING" -TimeoutSec 15 -PollMs 1500 -Condition {
+    $mp = Get-MpIntrospection -Serial $EMU1
+    return ($mp -and $mp.game_launch_pending -eq $true)
+}
+if (-not $gameStarting1) {
+    Write-Status "FAIL: Player 1 didn't get GAME_STARTING" "Red"
+    Cleanup; exit 1
+}
+
+$gameStarting2 = Wait-ForCondition -Description "Player 2 received GAME_STARTING" -TimeoutSec 15 -PollMs 1500 -Condition {
+    $mp = Get-MpIntrospection -Serial $EMU2
+    return ($mp -and $mp.game_launch_pending -eq $true)
+}
+if (-not $gameStarting2) {
+    Write-Status "FAIL: Player 2 didn't get GAME_STARTING" "Red"
+    Cleanup; exit 1
+}
+Write-Status "GAME_STARTING received by both players" "Green"
+
+# -- Step 8: Launch the actual game on both --
+# The game auto-launches from LobbyScreen's LaunchedEffect when GAME_STARTING
+# is received.  UDP relay and join target were set up in Phase 7 before
+# start_game.  The explicit launch_game here is a fallback in case the
+# auto-launch didn't fire (the mpGameLaunching guard in SetupActivity
+# prevents double-launch / FORTIFY crash).
+Write-Status ""
+Write-Status "--- Phase 8: Wait for game launch ---" "White"
+
 # Clear logcat before launch
 & $ADB -s $EMU1 logcat -c 2>&1 | Out-Null
 & $ADB -s $EMU2 logcat -c 2>&1 | Out-Null
@@ -607,7 +617,8 @@ $logcatFile2 = Join-Path $REPO_ROOT "temp\emu2_logcat_phase8.txt"
 $logcatProc1 = Start-Process -FilePath $ADB -ArgumentList "-s",$EMU1,"logcat","-s","DXX-MP:*","dxxredux:*","DEBUG:*","AndroidRuntime:*","libc:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile1 -RedirectStandardError (Join-Path $REPO_ROOT "temp\emu1_logcat_err.txt")
 $logcatProc2 = Start-Process -FilePath $ADB -ArgumentList "-s",$EMU2,"logcat","-s","DXX-MP:*","dxxredux:*","DEBUG:*","AndroidRuntime:*","libc:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile2 -RedirectStandardError (Join-Path $REPO_ROOT "temp\emu2_logcat_err.txt")
 
-# Launch host first (enters select_players), then joiner
+# Fallback: send launch_game in case the auto-launch from LaunchedEffect
+# didn't fire.  The guard in launchMultiplayerGame prevents double-launch.
 Send-MpCommand -Serial $EMU1 -Command "launch_game"
 Start-Sleep -Seconds 5
 Send-MpCommand -Serial $EMU2 -Command "launch_game"

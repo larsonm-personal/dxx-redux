@@ -92,7 +92,7 @@ function Stop-Emulator {
 
 function Start-EmulatorFresh {
     Write-Host "Starting emulator ($AVD_NAME)..."
-    Start-Process -FilePath $EMULATOR -ArgumentList "-avd", $AVD_NAME, "-no-snapshot-load", "-gpu", "auto" -WindowStyle Minimized
+    Start-Process -FilePath $EMULATOR -ArgumentList "-avd", $AVD_NAME, "-no-snapshot-load", "-gpu", "host" -WindowStyle Minimized
 }
 
 function Wait-EmulatorHealthy {

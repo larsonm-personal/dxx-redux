@@ -64,7 +64,7 @@ if [ "$RUNNING" -gt 0 ]; then
     echo "Emulator already running."
 else
     # Launch in background; -no-snapshot for clean boot
-    "$EMULATOR" -avd "$AVD_NAME" -no-snapshot -gpu auto &
+    "$EMULATOR" -avd "$AVD_NAME" -no-snapshot -gpu host &
     EMULATOR_PID=$!
     echo "Emulator started (PID $EMULATOR_PID). Waiting for boot..."
 fi

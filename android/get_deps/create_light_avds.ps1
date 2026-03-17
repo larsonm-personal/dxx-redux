@@ -95,7 +95,7 @@ foreach ($avd in $avds) {
         "hw.sensors.proximity"       = "no"
         "hw.sensors.temperature"     = "no"
         "hw.gpu.enabled"             = "yes"
-        "hw.gpu.mode"                = "auto"
+        "hw.gpu.mode"                = "host"
         "hw.keyboard"                = "yes"
         "hw.sdCard"                  = "yes"
         "sdcard.size"                = "4096M"
@@ -135,5 +135,5 @@ foreach ($avd in $avds) {
 
 Write-Host "=== All AVDs created ==="
 Write-Host "Launch with:"
-Write-Host "  emulator -avd Nexus5X_Light_1 -no-snapshot-save -gpu swiftshader_indirect"
-Write-Host "  emulator -avd Nexus5X_Light_2 -no-snapshot-save -gpu swiftshader_indirect"
+Write-Host "  emulator -avd Nexus5X_Light_1 -no-snapshot-save -gpu host"
+Write-Host "  emulator -avd Nexus5X_Light_2 -no-snapshot-save -gpu host"
