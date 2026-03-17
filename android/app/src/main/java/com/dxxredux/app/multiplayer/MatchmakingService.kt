@@ -41,6 +41,26 @@ object MatchmakingService {
     private var stunCompleted = false
     private var localhostProxy: LocalhostProxy? = null
 
+    fun getProxyStats(): List<PeerProxyStats> = localhostProxy?.getStats() ?: emptyList()
+
+    /** Create a simple proxy for LAN joiner (one peer = the host). */
+    fun createLanProxy(
+        hostAddr: String,
+        hostPort: Int,
+    ) {
+        localhostProxy?.shutdown()
+        val proxy = LocalhostProxy(scope)
+        proxy.addPeer(
+            PeerProxyConfig(
+                peerSlot = 0,
+                localPort = NetworkConstants.PROXY_PORT_BASE,
+                realAddr = InetSocketAddress(hostAddr, hostPort),
+                isRelay = false,
+            ),
+        )
+        localhostProxy = proxy
+    }
+
     // Unique per app process -- ensures two emulators/devices get different player IDs
     // when using dev mode (SKIP_GPGS_VERIFY=true on the server)
     private val devToken: String = "dev-${UUID.randomUUID()}"

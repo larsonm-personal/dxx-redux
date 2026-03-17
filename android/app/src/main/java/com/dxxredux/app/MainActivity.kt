@@ -167,6 +167,8 @@ class MainActivity :
     // ── Matchmaking auto-join/host (jni_main.c) ─────────────────────
     external fun nativeSetCallsign(callsign: String)
 
+    external fun nativeGetMultiplayerPings(): IntArray
+
     external fun nativeSetAutoJoin(
         hostAddr: String,
         hostPort: Int,
@@ -215,6 +217,7 @@ class MainActivity :
     private var overlayEnabled = false
     private val overlayPoller = android.os.Handler(android.os.Looper.getMainLooper())
     private var musicPanel: MusicControlPanel? = null
+    private var netStatsOverlay: com.dxxredux.app.multiplayer.MultiplayerStatsOverlay? = null
     private var lastTrackNum = -1 // for detecting track changes in polling
     private var gyroManager: GyroInputManager? = null
 
@@ -384,6 +387,9 @@ class MainActivity :
                     nativeKeyEvent(0, KeyEvent.KEYCODE_ESCAPE, 0)
                     nativeKeyEvent(1, KeyEvent.KEYCODE_ESCAPE, 0)
                 }
+                TouchOverlayView.ADMIN_NET_STATS -> {
+                    netStatsOverlay?.toggle()
+                }
             }
         }
         touchOverlay.adminTrayAutoLevelingProvider = {
@@ -492,6 +498,35 @@ class MainActivity :
             ),
         )
         frame.addView(overlayContainer, overlayLp)
+
+        // Network stats overlay (hidden by default, toggled via admin tray)
+        val statsOverlay =
+            com.dxxredux.app.multiplayer.MultiplayerStatsOverlay(this).apply {
+                visibility = View.GONE
+                isLan = intent.getBooleanExtra("mp_is_lan", false)
+                pingProvider = {
+                    try {
+                        nativeGetMultiplayerPings()
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
+                proxyStatsProvider = {
+                    com.dxxredux.app.multiplayer.MatchmakingService
+                        .getProxyStats()
+                }
+                connectionInfoProvider = {
+                    com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value.connectionInfo
+                }
+            }
+        netStatsOverlay = statsOverlay
+        frame.addView(
+            statsOverlay,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
 
         setContentView(frame)
 
@@ -667,6 +702,7 @@ class MainActivity :
                         touchOverlay.isActive = false
                         touchOverlay.automapActive = false
                         skipButton.visibility = View.GONE
+                        netStatsOverlay?.hide()
                     }
                     overlayPoller.postDelayed(this, 100)
                 }

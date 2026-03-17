@@ -25,6 +25,14 @@ private const val TAG = "LocalhostProxy"
  * Relay wrapping: [session_token:4LE][dest_slot:1][payload]
  * Relay unwrapping: strips the 5-byte [token:4LE][from_slot:1] header.
  */
+data class PeerProxyStats(
+    val peerSlot: Int,
+    val packetsSent: Long,
+    val packetsReceived: Long,
+    val bytesSent: Long,
+    val bytesReceived: Long,
+)
+
 class LocalhostProxy(
     private val scope: CoroutineScope,
 ) {
@@ -42,6 +50,8 @@ class LocalhostProxy(
                 "relay=${peerConfig.isRelay}",
         )
     }
+
+    fun getStats(): List<PeerProxyStats> = peerProxies.map { it.getStats() }
 
     fun shutdown() {
         for (job in jobs) job.cancel()
@@ -74,6 +84,20 @@ private class PeerProxy(
     private val localSocket = DatagramSocket(config.localPort, loopback)
     private val realSocket = DatagramSocket()
 
+    @Volatile
+    var packetsSent: Long = 0L
+
+    @Volatile
+    var packetsReceived: Long = 0L
+
+    @Volatile
+    var bytesSent: Long = 0L
+
+    @Volatile
+    var bytesReceived: Long = 0L
+
+    fun getStats() = PeerProxyStats(config.peerSlot, packetsSent, packetsReceived, bytesSent, bytesReceived)
+
     suspend fun run() {
         val scope =
             kotlinx.coroutines.coroutineScope {
@@ -95,6 +119,8 @@ private class PeerProxy(
         while (kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive == true) {
             try {
                 localSocket.receive(pkt)
+                packetsSent++
+                bytesSent += pkt.length
                 if (config.isRelay) {
                     // Wrap: [token:4LE][dest_slot:1][payload]
                     val wrapped =
@@ -136,6 +162,8 @@ private class PeerProxy(
                     payload = pkt.data.copyOfRange(0, pkt.length)
                 }
                 localSocket.send(DatagramPacket(payload, payloadLen, engineAddr))
+                packetsReceived++
+                bytesReceived += payloadLen
             } catch (e: java.net.SocketException) {
                 if (e.message?.contains("closed") == true) break
                 Log.w(TAG, "real->local error: ${e.message}")

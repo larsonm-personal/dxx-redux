@@ -430,6 +430,7 @@ object LobbyService {
                 yourSlot = 0,
                 isHost = true,
                 peers = emptyList(),
+                isLan = true,
             )
         Log.i(TAG, "Game started: $hostedGame/$hostedMission lvl=$levelNum diff=$difficulty")
     }
@@ -461,6 +462,7 @@ object LobbyService {
                 isHost = false,
                 peers = emptyList(),
                 lanHostAddr = senderAddr,
+                isLan = true,
             )
     }
 

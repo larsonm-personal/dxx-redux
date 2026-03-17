@@ -233,6 +233,7 @@ class TouchOverlayView
             const val ADMIN_QUICK_SAVE = 3
             const val ADMIN_QUICK_LOAD = 4
             const val ADMIN_OPEN_MENU = 5
+            const val ADMIN_NET_STATS = 6
 
             // Cockpit mode constants (match C CM_* defines)
             private const val CM_FULL_COCKPIT = 0
@@ -1828,6 +1829,7 @@ class TouchOverlayView
                 ADMIN_QUICK_SAVE -> "Quick Save"
                 ADMIN_QUICK_LOAD -> "Quick Load"
                 ADMIN_OPEN_MENU -> "Game Menu"
+                ADMIN_NET_STATS -> "Net Stats"
                 else -> ""
             }
 
@@ -1865,12 +1867,12 @@ class TouchOverlayView
             // Dim background
             canvas.drawColor(0x88000000.toInt())
 
-            val itemCount = 6
+            val itemCount = 7
             val cols = 3
-            val rows = 2
+            val rows = 3
             val pad = w * 0.03f
             val panelW = w * 0.7f
-            val panelH = h * 0.35f
+            val panelH = h * 0.45f
             val panelLeft = (w - panelW) / 2f
             val panelTop = (h - panelH) / 2f
             val closeH = h * 0.06f

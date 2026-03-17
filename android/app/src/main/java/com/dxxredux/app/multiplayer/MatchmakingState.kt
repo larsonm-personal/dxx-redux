@@ -58,6 +58,7 @@ data class GameLaunchInfo(
     val peers: List<PeerAssignment>,
     // LAN direct join: host's real LAN IP address (null for online/proxy path)
     val lanHostAddr: String? = null,
+    val isLan: Boolean = false,
 )
 
 data class MatchmakingState(

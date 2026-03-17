@@ -561,18 +561,24 @@ class SetupActivity : ComponentActivity() {
             mpIntent.putExtra("mp_difficulty", info.difficulty)
         } else {
             mpIntent.putExtra("mp_mode", "join")
-            // LAN direct: use the host's real IP; online: use localhost proxy
-            val hostAddr = info.lanHostAddr ?: mpJoinHostAddrOverride ?: "127.0.0.1"
-            val hostPort =
-                if (info.lanHostAddr != null) {
-                    NetworkConstants.ENGINE_PORT
-                } else {
-                    mpJoinHostPortOverride ?: NetworkConstants.PROXY_PORT_BASE
-                }
-            mpIntent.putExtra("mp_host_addr", hostAddr)
-            mpIntent.putExtra("mp_host_port", hostPort)
+            if (info.lanHostAddr != null) {
+                // LAN joiner: route through proxy for packet stats
+                com.dxxredux.app.multiplayer.MatchmakingService.createLanProxy(
+                    info.lanHostAddr,
+                    NetworkConstants.ENGINE_PORT,
+                )
+                mpIntent.putExtra("mp_host_addr", "127.0.0.1")
+                mpIntent.putExtra("mp_host_port", NetworkConstants.PROXY_PORT_BASE)
+            } else {
+                // Online: use existing proxy from matchmaking
+                val hostAddr = mpJoinHostAddrOverride ?: "127.0.0.1"
+                val hostPort = mpJoinHostPortOverride ?: NetworkConstants.PROXY_PORT_BASE
+                mpIntent.putExtra("mp_host_addr", hostAddr)
+                mpIntent.putExtra("mp_host_port", hostPort)
+            }
             mpIntent.putExtra("mp_my_port", NetworkConstants.ENGINE_PORT)
         }
+        if (info.isLan) mpIntent.putExtra("mp_is_lan", true)
         startActivity(mpIntent)
     }
 

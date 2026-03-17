@@ -376,3 +376,37 @@ Java_com_dxxredux_app_MainActivity_nativeSetAutoHost(JNIEnv *env, jobject thiz,
 	     auto_host_my_port, auto_host_mission, auto_host_mode,
 	     auto_host_max_players, auto_host_level_num, auto_host_difficulty);
 }
+
+/* ── Multiplayer ping query for network stats overlay ────────────
+ * Returns an int array:
+ *   [0]           = N_players (number of active players)
+ *   [1]           = Player_num (my player index)
+ *   [2..9]        = ping[0..7] for each player slot (ms, 0 if unused)
+ *
+ * Shared constant: MAX_PLAYERS = 8 (duplicated in MultiplayerStatsOverlay.kt)
+ */
+#include "multi.h"
+
+JNIEXPORT jintArray JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetMultiplayerPings(JNIEnv *env, jobject thiz)
+{
+	extern int Player_num;
+	extern int N_players;
+
+	enum { MP_SIZE = 10 }; /* 2 header + 8 player slots */
+	jint buf[MP_SIZE];
+	memset(buf, 0, sizeof(buf));
+
+	buf[0] = (jint) N_players;
+	buf[1] = (jint) Player_num;
+
+	int i;
+	for (i = 0; i < MAX_PLAYERS; i++) {
+		buf[2 + i] = (jint) Netgame.players[i].ping;
+	}
+
+	jintArray result = (*env)->NewIntArray(env, MP_SIZE);
+	if (result)
+		(*env)->SetIntArrayRegion(env, result, 0, MP_SIZE, buf);
+	return result;
+}
