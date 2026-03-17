@@ -21,6 +21,10 @@ object NetworkConstants {
     const val ENGINE_PORT: Int = 42424
     const val PROXY_PORT_BASE: Int = 42430
 
+    // LAN lobby discovery port (Kotlin-side only, not used by the game engine)
+    const val LAN_LOBBY_PORT: Int = 42400
+    const val LAN_ANNOUNCE_INTERVAL_MS: Long = 3000
+
     // Game mode string-to-int mapping (keep in sync with d1/d2 main/net_udp.h NETGAME_* defines)
     fun gameModeToInt(mode: String): Int =
         when (mode.lowercase()) {

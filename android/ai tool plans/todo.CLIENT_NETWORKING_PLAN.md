@@ -712,13 +712,17 @@ host/join flows, and shared constants.
 
 ### Phase C8: LAN Discovery
 
-- [ ] Create LanDiscoveryTab.kt
-- [ ] Create LobbyService.kt: DatagramSocket on port 42400, broadcast
-      LOBBY_ANNOUNCE every 3 seconds, listen for responses
-- [ ] Runtime permission handling (NEARBY_WIFI_DEVICES / FINE_LOCATION)
-- [ ] Acquire WifiManager.MulticastLock during discovery
-- [ ] Host LAN Game button + LAN lobby flow
-- [ ] Direct auto-join (no localhost proxy needed for LAN)
+### Phase C8: LAN Discovery -- COMPLETE
+
+- [x] Create LanDiscoveryTab.kt (Compose UI with permission handling, lobby list, host dialog)
+- [x] Create LobbyProtocol.kt (JSON-over-UDP packet format: ANNOUNCE/JOIN/LEAVE/READY/START/PING/PONG)
+- [x] Create LobbyService.kt (DatagramSocket on port 42400, broadcast ANNOUNCE every 3s, listen/dispatch)
+- [x] Runtime permission handling (NEARBY_WIFI_DEVICES on API 33+)
+- [x] Acquire WifiManager.MulticastLock during discovery
+- [x] Host LAN Game button + LAN lobby flow (host mode with player list management)
+- [x] LAN tab accessible from both connected and disconnected states
+- [x] Test bot script: android/tests/test_lan_discovery.ps1
+- [ ] Direct auto-join (deferred to C4b, needs JNI auto-join)
 
 ### Phase C9: Connection Resilience
 

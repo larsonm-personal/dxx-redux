@@ -54,6 +54,7 @@ fun MultiplayerScreen(
             }
         }
         MultiplayerNav.FRIENDS -> FriendsContent(state, onBack)
+        MultiplayerNav.LAN -> LanContent(state, onBack)
         MultiplayerNav.BROWSER -> ServerBrowserContent(state, onBack)
     }
 }
@@ -137,11 +138,20 @@ private fun ServerBrowserContent(
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(8.dp))
-            Button(
-                onClick = { MatchmakingService.connect(serverUrl, callsign) },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Connect")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = { MatchmakingService.connect(serverUrl, callsign) },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("Connect")
+                }
+                Button(onClick = {
+                    // Store callsign so LAN tab can use it
+                    MatchmakingStateHolder.update { it.copy(callsign = callsign) }
+                    MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.LAN) }
+                }) {
+                    Text("LAN")
+                }
             }
         } else {
             Row(
@@ -161,6 +171,11 @@ private fun ServerBrowserContent(
                     MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.FRIENDS) }
                 }) {
                     Text(friendLabel)
+                }
+                Button(onClick = {
+                    MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.LAN) }
+                }) {
+                    Text("LAN")
                 }
                 OutlinedButton(onClick = { MatchmakingService.disconnect() }) {
                     Text("Disconnect")
@@ -373,6 +388,33 @@ private fun CreateLobbyDialog(
             TextButton(onClick = onDismiss) { Text("Cancel") }
         },
     )
+}
+
+@Composable
+private fun LanContent(
+    state: MatchmakingState,
+    onBack: () -> Unit,
+) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .safeDrawingPadding()
+                .padding(16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("LAN Games", style = MaterialTheme.typography.headlineMedium)
+            Spacer(Modifier.weight(1f))
+            OutlinedButton(onClick = {
+                MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
+            }) { Text("Back to Lobbies") }
+            Spacer(Modifier.width(8.dp))
+            OutlinedButton(onClick = onBack) { Text("Back") }
+        }
+        Spacer(Modifier.height(8.dp))
+
+        LanDiscoveryTab(callsign = state.callsign)
+    }
 }
 
 @Composable

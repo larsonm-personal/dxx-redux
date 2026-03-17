@@ -16,6 +16,7 @@ enum class MultiplayerNav {
     BROWSER,
     LOBBY,
     FRIENDS,
+    LAN,
 }
 
 data class CurrentLobbyState(
