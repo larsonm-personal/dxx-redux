@@ -86,6 +86,12 @@ Get-Content temp\test_output.txt | Select-Object -Last 30
 - **app resume after HOME**: the test runner uses `monkey -p com.dxxredux.app -c android.intent.category.LAUNCHER 1` followed by a BACK keypress to resume the app. `am start -n` does not work because MainActivity has no launch mode and no intent filter -- it creates a new instance instead of resuming. the monkey command brings the task to foreground but lands on SetupActivity; BACK dismisses it to reveal the running game's MainActivity
 - **`ogl_start_frame`/`ogl_end_frame` are 3D-only**: menus render via `event_process()` -> `EVENT_WINDOW_DRAW` -> `newmenu_draw()` -> `gr_flip()` without ever calling `ogl_start_frame`/`ogl_end_frame`. Any per-frame OpenGL state (e.g. `glViewport` offset) that should affect menus must be applied in `gr_flip()`, not in the 3D frame helpers
 
+### two-emulator multiplayer testing
+- **emulators crash under load**: long-running adb/logcat sessions and repeated test runs eventually cause emulators to go offline. check `adb devices` before each test run and restart if needed. launch with `-no-snapshot-save -gpu swiftshader_indirect`. kill zombie emulator/qemu processes before restarting
+- **fresh emulators lose app data**: `-no-snapshot-save` does NOT wipe app data (it skips saving emulator state on exit). app data on /data persists across restarts. however, if you wipe the AVD or delete its data folder, you must re-push game data and re-install the APK
+- **terminal buffer pollution**: the VS Code integrated terminal accumulates stale output from adb/logcat over time. for long-running operations, write helper .ps1 scripts and run them via `Start-Process powershell -ArgumentList "-File","script.ps1" -Wait -WindowStyle Hidden`, reading results from output files. never trust terminal scrollback for correctness
+- **kill stale powershell processes**: `Get-Process powershell | Where-Object { $_.Id -ne $PID -and $_.StartTime -lt (Get-Date).AddMinutes(-10) } | Stop-Process -Force` before starting tests
+
 ## introspection API
 The game includes a debug introspection system that serializes current game state to JSON. This is the primary way to inspect what the game is doing — **do not screenshot and OCR**.
 

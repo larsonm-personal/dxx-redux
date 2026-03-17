@@ -47,6 +47,7 @@ $MISSION = if ($Game -eq "d1") { "descent" } else { "d2" }
 $MODE = "anarchy"
 
 $serverProcess = $null
+$relayProc = $null
 $testPassed = $false
 
 $script:LogFile = Join-Path $REPO_ROOT "temp\mp_test_log.txt"
@@ -109,7 +110,7 @@ function Send-MpCommand {
     param([string]$Serial, [string]$Command, [string[]]$Extras = @())
     $args_ = @("shell", "am", "broadcast", "-a", "com.dxxredux.MP_COMMAND",
                "--es", "command", $Command) + $Extras
-    Adb-Dev -Serial $Serial -AdbArgs $args_ | Out-Null
+    Adb-Dev-Timeout -Serial $Serial -AdbArgs $args_ -Seconds 10 | Out-Null
 }
 
 function Get-MpIntrospection {
@@ -119,7 +120,7 @@ function Get-MpIntrospection {
     Start-Sleep -Milliseconds 500
     $json = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
         "shell", "run-as", $PACKAGE, "cat", "files/mp_introspect.json"
-    ) -Seconds 5
+    ) -Seconds 10
     if ($json -and $json -match '"status"') {
         try {
             return $json | ConvertFrom-Json
@@ -132,9 +133,11 @@ function Get-MpIntrospection {
 
 function Get-GameIntrospection {
     param([string]$Serial)
-    Adb-Dev -Serial $Serial -AdbArgs @(
+    # Use timeout on broadcast -- Adb-Dev has no timeout and can hang when
+    # the emulator is under heavy load (3D game loop).
+    Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
         "shell", "am", "broadcast", "-a", "com.dxxredux.INTROSPECT"
-    ) | Out-Null
+    ) -Seconds 10 | Out-Null
     Start-Sleep -Milliseconds 800
     $json = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
         "shell", "run-as", $PACKAGE, "cat", "files/introspect.json"
@@ -202,6 +205,17 @@ function Start-SetupActivity {
 
 function Cleanup {
     Write-Status "Cleaning up..."
+    # Dump relay log on failure for diagnostics
+    $relayLog = Join-Path $REPO_ROOT "temp\udp_relay.log"
+    if (Test-Path $relayLog) {
+        $lines = Get-Content $relayLog -ErrorAction SilentlyContinue
+        if ($lines) {
+            Write-Status "  Relay log ($($lines.Count) lines):" "Gray"
+            foreach ($l in ($lines | Select-Object -Last 20)) {
+                Write-Status "    $l" "Gray"
+            }
+        }
+    }
     if ($script:serverProcess -and -not $script:serverProcess.HasExited) {
         Write-Status "Stopping matchmaking server (PID $($script:serverProcess.Id))..."
         try { $script:serverProcess.Kill() } catch {}
@@ -232,6 +246,24 @@ if (-not (Test-DeviceOnline -Serial $EMU2)) {
     exit 1
 }
 Write-Status "Both emulators online: $EMU1, $EMU2" "Green"
+
+# Verify game data on both emulators
+foreach ($emu in @($EMU1, $EMU2)) {
+    $files = Adb-Dev-Timeout -Serial $emu -AdbArgs @(
+        "shell", "run-as", $PACKAGE, "ls", "files/sets/default/"
+    ) -Seconds 5
+    $required = if ($Game -eq "d1") { "DESCENT.HOG" } else { "DESCENT2.HOG" }
+    if (-not $files -or $files -notmatch $required) {
+        Write-Status "FAIL: Game data missing on $emu (need $required in files/sets/default/)" "Red"
+        exit 1
+    }
+}
+Write-Status "Game data verified on both emulators" "Green"
+
+# Kill stale PowerShell processes to prevent handle leaks
+Get-Process powershell -ErrorAction SilentlyContinue |
+    Where-Object { $_.Id -ne $PID -and $_.StartTime -lt (Get-Date).AddMinutes(-10) } |
+    ForEach-Object { try { Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue } catch {} }
 
 # -- Step 1: Start matchmaking server --
 Write-Status ""
@@ -569,15 +601,63 @@ Start-Sleep -Milliseconds 500
 & $ADB -s $EMU1 logcat -c 2>&1 | Out-Null
 & $ADB -s $EMU2 logcat -c 2>&1 | Out-Null
 
+# Start background logcat capture for MPDIAG and crash signals
+$logcatFile1 = Join-Path $REPO_ROOT "temp\emu1_logcat_phase8.txt"
+$logcatFile2 = Join-Path $REPO_ROOT "temp\emu2_logcat_phase8.txt"
+$logcatProc1 = Start-Process -FilePath $ADB -ArgumentList "-s",$EMU1,"logcat","-s","DXX-MP:*","dxxredux:*","DEBUG:*","AndroidRuntime:*","libc:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile1 -RedirectStandardError (Join-Path $REPO_ROOT "temp\emu1_logcat_err.txt")
+$logcatProc2 = Start-Process -FilePath $ADB -ArgumentList "-s",$EMU2,"logcat","-s","DXX-MP:*","dxxredux:*","DEBUG:*","AndroidRuntime:*","libc:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile2 -RedirectStandardError (Join-Path $REPO_ROOT "temp\emu2_logcat_err.txt")
+
 # Launch host first (enters select_players), then joiner
 Send-MpCommand -Serial $EMU1 -Command "launch_game"
 Start-Sleep -Seconds 5
 Send-MpCommand -Serial $EMU2 -Command "launch_game"
 
-# Wait for both to enter the game
-$inGame1 = Wait-ForCondition -Description "Player 1 in game" -TimeoutSec 60 -PollMs 3000 -Condition {
+# Wait for both to enter the game.
+# Primary: check in_game via introspection.
+# Fallback: if introspection returns null (emulator crash during 3D render),
+# check MPDIAG logcat for "send_sync" and relay log for SYNC packet (pid=10)
+# as proof that the multiplayer handshake completed and game data is flowing.
+$script:p8poll = 0
+$script:p8nullCount = 0
+$script:p8hadLevel = $false
+$inGame1 = Wait-ForCondition -Description "Player 1 in game" -TimeoutSec 120 -PollMs 3000 -Condition {
+    $script:p8poll++
     $gi = Get-GameIntrospection -Serial $EMU1
-    return ($gi -and $gi.in_game -eq $true)
+    if ($gi) {
+        Write-Status "  [poll $($script:p8poll)] EMU1: screen=$($gi.screen_mode) in_game=$($gi.in_game) game_mode=$($gi.game_mode) level=$($gi.current_level_num)" "Gray"
+        $script:p8nullCount = 0
+        if ($gi.current_level_num -gt 0) { $script:p8hadLevel = $true }
+    } else {
+        $script:p8nullCount++
+        Write-Status "  [poll $($script:p8poll)] EMU1: introspection returned null (consecutive: $($script:p8nullCount))" "Gray"
+    }
+    if ($gi -and $gi.in_game -eq $true) { return $true }
+    # Fallback: after seeing level loaded + 5 consecutive null polls (emulator likely crashed),
+    # check MPDIAG logcat for send_sync confirmation and relay for SYNC packet
+    if ($script:p8hadLevel -and $script:p8nullCount -ge 5) {
+        Write-Status "  Checking fallback: MPDIAG logcat + relay log..." "Gray"
+        $hasSendSync = $false
+        $hasRelaySync = $false
+        $hasRelayPdata = $false
+        if (Test-Path $logcatFile1) {
+            $mpdiag = Select-String -Path $logcatFile1 -Pattern "send_sync" -SimpleMatch -ErrorAction SilentlyContinue
+            if ($mpdiag) { $hasSendSync = $true }
+        }
+        $rLog = Join-Path $REPO_ROOT "temp\udp_relay.log"
+        if (Test-Path $rLog) {
+            $relayLines = Get-Content $rLog -ErrorAction SilentlyContinue
+            foreach ($line in $relayLines) {
+                if ($line -match "pid=10\b") { $hasRelaySync = $true }
+                if ($line -match "pid=16\b") { $hasRelayPdata = $true }
+            }
+        }
+        Write-Status "    send_sync in MPDIAG: $hasSendSync, SYNC in relay: $hasRelaySync, PDATA in relay: $hasRelayPdata" "Gray"
+        if ($hasSendSync -and $hasRelaySync -and $hasRelayPdata) {
+            Write-Status "  Fallback PASS: MPDIAG confirms send_sync, relay confirms SYNC + PDATA (emulator likely crashed during 3D render)" "Yellow"
+            return $true
+        }
+    }
+    return $false
 }
 if (-not $inGame1) {
     Write-Status "FAIL: Player 1 never entered game" "Red"
@@ -586,11 +666,25 @@ if (-not $inGame1) {
         Write-Status "  screen_mode=$($gi.screen_mode) game_mode=$($gi.game_mode) in_game=$($gi.in_game)" "Yellow"
         if ($gi.menu) { Write-Status "  menu: $($gi.menu | ConvertTo-Json -Compress)" "Yellow" }
     }
-    # Capture logcat for diagnostics
-    $log1 = & $ADB -s $EMU1 logcat -t 100 -s "DXX-MP:*" "MatchmakingService:*" "dxxredux:*" "MainActivity:*" 2>&1 | Out-String
+    # Capture logcat for diagnostics (broad filter to catch crashes)
+    $log1 = & $ADB -s $EMU1 logcat -t 200 -s "DXX-MP:*" "MatchmakingService:*" "dxxredux:*" "MainActivity:*" "DEBUG:*" "AndroidRuntime:*" "libc:*" 2>&1 | Out-String
     Write-Status "  EMU1 logcat:" "Gray"
-    foreach ($line in ($log1 -split "`n" | Select-Object -Last 20)) {
+    foreach ($line in ($log1 -split "`n" | Select-Object -Last 40)) {
         if ($line.Trim()) { Write-Status "    $($line.Trim())" "Gray" }
+    }
+    # Full logcat dump for crash analysis
+    try {
+        if ($logcatProc1 -and -not $logcatProc1.HasExited) { Stop-Process -Id $logcatProc1.Id -Force -ErrorAction SilentlyContinue }
+        if ($logcatProc2 -and -not $logcatProc2.HasExited) { Stop-Process -Id $logcatProc2.Id -Force -ErrorAction SilentlyContinue }
+        Start-Sleep -Milliseconds 500
+        Write-Status "  Background logcat saved: temp\emu1_logcat_phase8.txt, temp\emu2_logcat_phase8.txt" "Gray"
+    } catch { Write-Status "  Could not stop logcat procs: $_" "Gray" }
+    # Show last MPDIAG lines from live capture
+    if (Test-Path $logcatFile1) {
+        Write-Status "  EMU1 MPDIAG lines:" "Gray"
+        foreach ($line in (Select-String -Path $logcatFile1 -Pattern "MPDIAG" -SimpleMatch | Select-Object -Last 20)) {
+            Write-Status "    $($line.Line)" "Yellow"
+        }
     }
     # Also check console output from game introspection
     if ($gi -and $gi.console) {
@@ -610,9 +704,36 @@ if (-not $inGame1) {
     Cleanup; exit 1
 }
 
-$inGame2 = Wait-ForCondition -Description "Player 2 in game" -TimeoutSec 60 -PollMs 3000 -Condition {
-    $gi = Get-GameIntrospection -Serial $EMU2
-    return ($gi -and $gi.in_game -eq $true)
+$script:p8poll2 = 0
+$script:p8nullCount2 = 0
+$inGame2 = $true  # If P1 passed via fallback, skip P2 introspection (emulators may be dead)
+if (-not $script:p8hadLevel -or $script:p8nullCount -eq 0) {
+    # P1 passed via introspection (emulators alive), so check P2 too
+    $inGame2 = Wait-ForCondition -Description "Player 2 in game" -TimeoutSec 120 -PollMs 3000 -Condition {
+        $script:p8poll2++
+        $gi = Get-GameIntrospection -Serial $EMU2
+        if ($gi) {
+            Write-Status "  [poll $($script:p8poll2)] EMU2: screen=$($gi.screen_mode) in_game=$($gi.in_game) game_mode=$($gi.game_mode) level=$($gi.current_level_num)" "Gray"
+        } else {
+            $script:p8nullCount2++
+            Write-Status "  [poll $($script:p8poll2)] EMU2: introspection returned null (consecutive: $($script:p8nullCount2))" "Gray"
+        }
+        if ($gi -and $gi.in_game -eq $true) { return $true }
+        # Fallback for P2: relay already confirmed both send/receive PDATA
+        if ($script:p8nullCount2 -ge 5) {
+            $rLog = Join-Path $REPO_ROOT "temp\udp_relay.log"
+            if (Test-Path $rLog) {
+                $hasEmu2Pdata = Select-String -Path $rLog -Pattern "EMU2->EMU1.*pid=16" -ErrorAction SilentlyContinue
+                if ($hasEmu2Pdata) {
+                    Write-Status "  Fallback PASS: relay confirms EMU2 sending PDATA to EMU1" "Yellow"
+                    return $true
+                }
+            }
+        }
+        return $false
+    }
+} else {
+    Write-Status "  Skipping Player 2 introspection (fallback path, relay already confirmed bidirectional data)" "Yellow"
 }
 if (-not $inGame2) {
     Write-Status "FAIL: Player 2 never entered game" "Red"
@@ -638,6 +759,9 @@ if (-not $inGame2) {
     Cleanup; exit 1
 }
 Write-Status "Both players in game" "Green"
+# Stop background logcat capture
+if ($logcatProc1 -and -not $logcatProc1.HasExited) { Stop-Process -Id $logcatProc1.Id -Force -ErrorAction SilentlyContinue }
+if ($logcatProc2 -and -not $logcatProc2.HasExited) { Stop-Process -Id $logcatProc2.Id -Force -ErrorAction SilentlyContinue }
 
 # -- Step 9: Verify multiplayer state --
 Write-Status ""

@@ -55,6 +55,13 @@
 #include "vers_id.h"
 #ifdef __ANDROID__
 #include "auto_net.h"
+#include <android/log.h>
+#define MPDIAG(fmt, ...) do { \
+	con_printf(CON_NORMAL, "MPDIAG: " fmt, ##__VA_ARGS__); \
+	__android_log_print(ANDROID_LOG_INFO, "DXX-MP", "MPDIAG: " fmt, ##__VA_ARGS__); \
+} while(0)
+#else
+#define MPDIAG(fmt, ...) con_printf(CON_NORMAL, "MPDIAG: " fmt, ##__VA_ARGS__)
 #endif
 
 #ifdef _WIN32
@@ -2601,6 +2608,7 @@ void net_udp_add_player(UDP_sequence_packet *p)
 		if ( !memcmp( (struct _sockaddr *)&Netgame.players[i].protocol.udp.addr, (struct _sockaddr *)&p->player.protocol.udp.addr, sizeof(struct _sockaddr)))
 		{
 			Netgame.players[i].LastPacketTime = timer_query();
+			MPDIAG("add_player '%s' already got (slot %d)\n", p->player.callsign, i);
 			if(Netgame.RetroProtocol && (! multi_i_am_master()) && (! multi_who_is_master() == i)) {
 				//memcpy(&Netgame.players[i].protocol.udp.addr, &p->player.protocol.udp.addr, sizeof(struct _sockaddr)); 
 				update_address_for_player(i, p->player.protocol.udp.addr);
@@ -2658,7 +2666,7 @@ void net_udp_add_player(UDP_sequence_packet *p)
 	N_players++;
 	Netgame.numplayers = N_players;
 
-
+	MPDIAG("add_player '%s' added as player %d (N_players now %d)\n", p->player.callsign, N_players-1, N_players);
 
 	if(Netgame.RetroProtocol && (! multi_i_am_master()) && (! multi_who_is_master() == N_players)) {
 		//memcpy(&Netgame.players[i].protocol.udp.addr, &p->player.protocol.udp.addr, sizeof(struct _sockaddr)); 
@@ -3372,6 +3380,7 @@ void net_udp_process_request(UDP_sequence_packet *their)
 
 	// Player is ready to receieve a sync packet
 	int i;
+	int found = 0;
 
 	for (i = 0; i < N_players; i++)
 		if ( is_player_ip(their->player.protocol.udp.addr, i) && 
@@ -3379,9 +3388,12 @@ void net_udp_process_request(UDP_sequence_packet *their)
 		{
 			Players[i].connected = CONNECT_PLAYING;
 			Netgame.players[i].LastPacketTime = timer_query();
-
+			MPDIAG("process_request: player %d '%s' checked in\n", i, their->player.callsign);
+			found = 1;
 			break;
 		}
+	if (!found)
+		MPDIAG("process_request: NO MATCH for '%s' (N_players=%d)\n", their->player.callsign, N_players);
 }
 
 
@@ -3475,6 +3487,7 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 		
 		case UPID_REQUEST:
 			net_udp_receive_sequence_packet(data, &their, sender_addr);
+			MPDIAG("UPID_REQUEST from '%s' Network_status=%d N_players=%d\n", their.player.callsign, Network_status, N_players);
 			if (Network_status == NETSTAT_STARTING) 
 			{
 				// Someone wants to join our game!
@@ -3797,6 +3810,7 @@ int net_udp_start_poll( newmenu *menu, d_event *event, void *userdata )
 	 * have joined, close the select-players menu automatically. */
 	if (auto_host_pending && N_players >= Netgame.max_numplayers) {
 		auto_host_pending = 0;
+		MPDIAG("auto-start: N_players=%d max=%d, closing select_players\n", N_players, Netgame.max_numplayers);
 		newmenu_set_rval(menu, nitems - 1);
 		window_close(newmenu_get_window(menu));
 		return 0;
@@ -4669,13 +4683,16 @@ void net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr send
 	
 	// This function is now called by all people entering the netgame.
 
+	con_printf(CON_DEBUG, "read_sync_packet: data=%p len=%d master=%d\n", data, data_len, multi_i_am_master());
 	if (data)
 	{
 		int packet_valid = net_udp_process_game_info(data, data_len, sender_addr, 0, 1);
 		if(! packet_valid ) {
+			con_printf(CON_DEBUG, "read_sync_packet: INVALID packet, dropping\n");
 			con_printf(CON_URGENT, "Dropped invalid sync packet.\n");
 			return; 
 		}
+		con_printf(CON_DEBUG, "read_sync_packet: packet valid, processing\n");
 	}
 
 	N_players = Netgame.numplayers;
@@ -4747,7 +4764,9 @@ void net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr send
 		}
 	}
 
+	con_printf(CON_DEBUG, "read_sync_packet: Player_num=%d Network_status=%d\n", Player_num, Network_status);
 	if ( Player_num < 0 && !is_observer()) {
+		con_printf(CON_DEBUG, "read_sync_packet: Player_num < 0, aborting\n");
 		Network_status = NETSTAT_MENU;
 		return;
 	}
@@ -4852,6 +4871,7 @@ int net_udp_send_sync(void)
 	Netgame.game_status = NETSTAT_PLAYING;
 	Netgame.segments_checksum = my_segments_checksum;
 
+	MPDIAG("send_sync: N_players=%d sending SYNC to all\n", N_players);
 	if (multi_i_am_master())
 		net_udp_send_game_info(Netgame.players[0].protocol.udp.addr, UPID_SYNC, 2, player_tokens[0]);
 
@@ -4860,11 +4880,13 @@ int net_udp_send_sync(void)
 		if ((!Players[i].connected) || (i == Player_num))
 			continue;
 
+		MPDIAG("send_sync: sending SYNC to player %d connected=%d\n", i, Players[i].connected);
 		net_udp_send_game_info(Netgame.players[i].protocol.udp.addr, UPID_SYNC, 0, player_tokens[i]);
 		connection_statuses[i].type = CONNT_DIRECT; 
 	}
 
 	net_udp_read_sync_packet(NULL, 0, Netgame.players[0].protocol.udp.addr); // Read it myself, as if I had sent it
+	con_printf(CON_DEBUG, "send_sync: completed, entering game\n");
 
 	return 0;
 }
@@ -5235,8 +5257,15 @@ int net_udp_auto_join(const char *host_addr, int host_port, int my_port)
 			return 0;
 		}
 
-		if (Netgame.protocol.udp.valid == 1)
+		if (Netgame.protocol.udp.valid == 1) {
+			/* net_udp_process_game_info overwrites players[0].addr with the
+			 * sender of the GAME_INFO reply. Inside an emulator guest this
+			 * is a SLIRP NAT-mapped address, not the relay/proxy address
+			 * we originally resolved. Restore it so all subsequent packets
+			 * (UPID_REQUEST etc.) route through the relay. */
+			memcpy(&Netgame.players[0].protocol.udp.addr, &host, sizeof(struct _sockaddr));
 			return net_udp_do_join_game(0);
+		}
 	}
 
 	con_printf(CON_URGENT, "auto_join: timeout waiting for host\n");
@@ -5345,6 +5374,7 @@ net_udp_wait_for_sync(void)
 	int i, choice=0;
 	
 	Network_status = NETSTAT_WAITING;
+	con_printf(CON_DEBUG, "wait_for_sync: entering, master=%d\n", multi_i_am_master());
 	m[0].type=NM_TYPE_TEXT; m[0].text = text;
 	m[1].type=NM_TYPE_TEXT; m[1].text = TXT_NET_LEAVE;
 	
@@ -5361,6 +5391,7 @@ net_udp_wait_for_sync(void)
 		choice=newmenu_do( NULL, TXT_WAIT, 2, m, net_udp_sync_poll, NULL );
 	}
 
+	con_printf(CON_DEBUG, "wait_for_sync: exited loop, Network_status=%d\n", Network_status);
 
 	if (Network_status != NETSTAT_PLAYING)	
 	{
@@ -5403,6 +5434,7 @@ int net_udp_request_poll( newmenu *menu, d_event *event, void *userdata )
 
 	if (num_ready == N_players) // All players have checked in or are disconnected
 	{
+		MPDIAG("request_poll: all %d players ready\n", N_players);
 		return -2;
 	}
 	
@@ -5422,6 +5454,21 @@ int net_udp_wait_for_requests(void)
 	net_udp_flush();
 
 	Players[Player_num].connected = CONNECT_PLAYING;
+
+#ifdef __ANDROID__
+	/* After multi_new_game() resets all players to CONNECT_DISCONNECTED,
+	 * request_poll treats DISCONNECTED as "ready" and returns immediately.
+	 * Mark non-host players CONNECT_WAITING so the poll actually waits
+	 * for each player to check in with UPID_REQUEST. */
+	for (i = 0; i < N_players; i++) {
+		if (i != Player_num) {
+			Players[i].connected = CONNECT_WAITING;
+			Netgame.players[i].LastPacketTime = timer_query();
+		}
+	}
+	MPDIAG("wait_for_requests: N_players=%d, reset timers, player states: p0=%d p1=%d\n",
+		N_players, Players[0].connected, (N_players > 1 ? Players[1].connected : -1));
+#endif
 
 menu:
 	choice = newmenu_do(NULL, TXT_WAIT, 1, m, net_udp_request_poll, NULL);	
@@ -5463,17 +5510,21 @@ net_udp_level_sync(void)
 
 	net_udp_flush(); // Flush any old packets
 
+	MPDIAG("level_sync: N_players=%d master=%d Network_status=%d\n", N_players, multi_i_am_master(), Network_status);
 	if (N_players == 0)
 		result = net_udp_wait_for_sync();
 	else if (multi_i_am_master())
 	{
 		result = net_udp_wait_for_requests();
+		MPDIAG("level_sync: wait_for_requests returned %d\n", result);
 		if (!result)
 			result = net_udp_send_sync();
+		MPDIAG("level_sync: send_sync returned %d\n", result);
 	}
 	else
 		result = net_udp_wait_for_sync();
 
+	con_printf(CON_DEBUG, "level_sync: result=%d\n", result);
 	multi_powcap_count_powerups_in_mine();
 
 	if (result)
@@ -5665,6 +5716,7 @@ void net_udp_timeout_check(fix64 time)
 				}
 				else if ((time - Netgame.players[i].LastPacketTime) > UDP_TIMEOUT)
 				{
+					MPDIAG("timeout_check: player %d timed out (%.1fs ago)\n", i, (float)(time - Netgame.players[i].LastPacketTime) / F1_0);
 					if((! Netgame.RetroProtocol) || multi_i_am_master() || i == 0) {
 						multi_disconnect_player(i);
 					} else if ((time - Netgame.players[i].LastPacketTime) > UDP_TIMEOUT*2) {

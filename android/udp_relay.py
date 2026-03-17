@@ -16,6 +16,7 @@ Relay forwards replies to EMU2 via its learned NAT address.
 import socket
 import select
 import sys
+import time
 
 RELAY_PORT = 42600
 EMU1_REDIR = ("127.0.0.1", 42500)  # host game (via redir, inbound only)
@@ -36,6 +37,7 @@ def main():
     emu2_nat_addr = None  # learned from first packet (joiner via SLIRP NAT)
     emu1_redir_addr = None  # learned from first reply (host via redir session)
     pkt_count = 0
+    t0 = time.monotonic()
 
     while True:
         readable, _, _ = select.select([sock], [], [], 1.0)
@@ -48,22 +50,22 @@ def main():
         # First packet from a new source: joiner sends game_info request
         if emu2_nat_addr is None:
             emu2_nat_addr = addr
-            print(f"  [{pkt_count}] EMU2 joiner identified: {addr}")
+            print(f"  [{pkt_count}] +{time.monotonic()-t0:.1f}s EMU2 joiner identified: {addr}")
 
         if addr == emu2_nat_addr:
             # From joiner -> forward to host via redir
             sock.sendto(data, EMU1_REDIR)
-            if pkt_count <= 5 or pkt_count % 100 == 0:
-                print(f"  [{pkt_count}] EMU2->EMU1: {len(data)} bytes")
+            if pkt_count <= 200 or pkt_count % 50 == 0:
+                print(f"  [{pkt_count}] +{time.monotonic()-t0:.1f}s EMU2->EMU1: {len(data)} bytes (pid={data[0]})")
         else:
             # From host (via redir session) -> forward to joiner via NAT
             if emu1_redir_addr is None:
                 emu1_redir_addr = addr
-                print(f"  [{pkt_count}] EMU1 host identified: {addr}")
+                print(f"  [{pkt_count}] +{time.monotonic()-t0:.1f}s EMU1 host identified: {addr}")
             if emu2_nat_addr:
                 sock.sendto(data, emu2_nat_addr)
-            if pkt_count <= 5 or pkt_count % 100 == 0:
-                print(f"  [{pkt_count}] EMU1->EMU2: {len(data)} bytes")
+            if pkt_count <= 200 or pkt_count % 50 == 0:
+                print(f"  [{pkt_count}] +{time.monotonic()-t0:.1f}s EMU1->EMU2: {len(data)} bytes (pid={data[0]})")
 
 if __name__ == "__main__":
     try:
