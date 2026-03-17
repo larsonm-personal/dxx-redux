@@ -201,11 +201,21 @@ object MatchmakingService {
 
     /** Broadcast a message to all players in the current lobby. */
     fun sendLobbyChat(text: String) {
-        val lobby = state.state.value.currentLobby ?: return
-        val myId = state.state.value.playerId ?: return
+        val lobby = state.state.value.currentLobby
+        val myId = state.state.value.playerId
+        if (lobby == null) {
+            Log.w(TAG, "sendLobbyChat: no current lobby, dropping '$text'")
+            return
+        }
+        if (myId == null) {
+            Log.w(TAG, "sendLobbyChat: no player id, dropping '$text'")
+            return
+        }
+        Log.i(TAG, "sendLobbyChat: text='$text' lobby=${lobby.lobbyId} myId=$myId players=${lobby.players.size}")
         // Send to each player in the lobby except ourselves
         for (player in lobby.players) {
             if (player.playerId != myId) {
+                Log.i(TAG, "sendLobbyChat: sending to ${player.playerId}")
                 sendMessage(player.playerId, text)
             }
         }
@@ -220,6 +230,7 @@ object MatchmakingService {
                     )
             s.copy(chatMessages = msgs)
         }
+        Log.i(TAG, "sendLobbyChat: done, chatMessages=${state.state.value.chatMessages.size}")
     }
 
     private fun scheduleReconnect() {

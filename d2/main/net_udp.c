@@ -59,6 +59,9 @@
 #include "rbaudio.h"
 #include "config.h"
 #include "vers_id.h"
+#ifdef __ANDROID__
+#include "auto_net.h"
+#endif
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -3838,6 +3841,19 @@ int net_udp_start_poll( newmenu *menu, d_event *event, void *userdata )
 		}
    }
 
+#ifdef __ANDROID__
+	/* Auto-start: when launched via auto_host and all expected players
+	 * have joined, close the select-players menu automatically. */
+	if (auto_host_pending && N_players >= Netgame.max_numplayers) {
+		auto_host_pending = 0;
+		/* Set rval to the OK item index (last item) so newmenu_do1
+		 * returns a non-negative value → select_players proceeds. */
+		newmenu_set_rval(menu, nitems - 1);
+		window_close(newmenu_get_window(menu));
+		return 0;
+	}
+#endif
+
 	return 0;
 }
 
@@ -5250,11 +5266,16 @@ int net_udp_auto_join(const char *host_addr, int host_port, int my_port)
 	struct _sockaddr host;
 	fix64 start_time, last_req;
 
+	multi_protocol = MULTI_PROTO_UDP;
 	net_udp_init();
 	net_udp_reset_connection_statuses();
 
 	snprintf(UDP_MyPort, sizeof(UDP_MyPort), "%d", my_port);
-	udp_bind_loopback = 1;
+	/* Bind to loopback only when connecting to localhost (same-device proxy).
+	 * For cross-device connections (e.g. emulator relay via 10.0.2.2),
+	 * bind to INADDR_ANY so packets route through the virtual network. */
+	udp_bind_loopback = (strncmp(host_addr, "127.", 4) == 0 ||
+	                     strcmp(host_addr, "localhost") == 0) ? 1 : 0;
 
 	if (udp_open_socket(0, my_port) != 0) {
 		con_printf(CON_URGENT, "auto_join: failed to open socket on port %d\n", my_port);
@@ -5278,12 +5299,15 @@ int net_udp_auto_join(const char *host_addr, int host_port, int my_port)
 	start_time = timer_query();
 	last_req = 0;
 
+	int req_count = 0;
+
 	/* Poll for game info -- 30 second timeout */
 	while (timer_query() < start_time + F1_0 * 30) {
 		timer_update();
 
 		if (timer_query() >= last_req + F1_0) {
 			net_udp_request_game_info(host, 0);
+			req_count++;
 			last_req = timer_query();
 		}
 
@@ -5296,11 +5320,13 @@ int net_udp_auto_join(const char *host_addr, int host_port, int my_port)
 			return 0;
 		}
 
-		if (Netgame.protocol.udp.valid == 1)
+		if (Netgame.protocol.udp.valid == 1) {
+			con_printf(CON_NORMAL, "auto_join: got valid game info after %d reqs, joining\n", req_count);
 			return net_udp_do_join_game(0);
+		}
 	}
 
-	con_printf(CON_URGENT, "auto_join: timeout waiting for host\n");
+	con_printf(CON_URGENT, "auto_join: timeout waiting for host (sent %d reqs)\n", req_count);
 	net_udp_close();
 	return 0;
 }
@@ -5313,12 +5339,13 @@ int net_udp_auto_join(const char *host_addr, int host_port, int my_port)
 int net_udp_auto_host(int my_port, const char *mission, int mode,
                       int difficulty, int max_players, int level_num)
 {
+	multi_protocol = MULTI_PROTO_UDP;
 	net_udp_init();
 	net_udp_reset_connection_statuses();
 	change_playernum_to(0);
 
 	snprintf(UDP_MyPort, sizeof(UDP_MyPort), "%d", my_port);
-	udp_bind_loopback = 1;
+	udp_bind_loopback = 0; /* host binds to INADDR_ANY for cross-device joins */
 
 	netgame_set_defaults();
 
@@ -5556,7 +5583,6 @@ net_udp_level_sync(void)
 
 int net_udp_do_join_game(ubyte join_as_obs)
 {
-
 	if (Netgame.game_status == NETSTAT_ENDLEVEL)
 	{
 		nm_messagebox(TXT_SORRY, 1, TXT_OK, TXT_NET_GAME_BETWEEN2);
@@ -5596,13 +5622,15 @@ int net_udp_do_join_game(ubyte join_as_obs)
 
 	Network_status = NETSTAT_BROWSING; // We are looking at a game menu
 
-	switch (net_udp_can_join_netgame(&Netgame, join_as_obs))
+	int can_join = net_udp_can_join_netgame(&Netgame, join_as_obs);
+	switch (can_join)
 	{
 		case 0:
-			if (Netgame.numplayers == Netgame.max_numplayers)
+			if (Netgame.numplayers == Netgame.max_numplayers) {
 				nm_messagebox(TXT_SORRY, 1, TXT_OK, TXT_GAME_FULL);
-			else
+			} else {
 				nm_messagebox(TXT_SORRY, 1, TXT_OK, TXT_IN_PROGRESS);
+			}
 			return 0;
 	}
 

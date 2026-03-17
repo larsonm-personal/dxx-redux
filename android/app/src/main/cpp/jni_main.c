@@ -328,6 +328,18 @@ extern int auto_host_mode;
 extern int auto_host_max_players;
 extern int auto_host_level_num;
 extern int auto_host_difficulty;
+extern char auto_net_callsign[];
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetCallsign(JNIEnv *env, jobject thiz,
+                                                     jstring jCallsign)
+{
+	const char *cs = (*env)->GetStringUTFChars(env, jCallsign, NULL);
+	strncpy(auto_net_callsign, cs, 9);
+	auto_net_callsign[9] = '\0';
+	(*env)->ReleaseStringUTFChars(env, jCallsign, cs);
+	LOGI("nativeSetCallsign: %s", auto_net_callsign);
+}
 
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetAutoJoin(JNIEnv *env, jobject thiz,

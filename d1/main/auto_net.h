@@ -39,6 +39,15 @@ extern int auto_host_level_num;
 /* Difficulty (0-4). */
 extern int auto_host_difficulty;
 
+/* Callsign for auto-created pilot (shared by host and join paths).
+ * When non-empty and no pilot exists, a pilot with this name is created
+ * automatically before the network action starts. */
+extern char auto_net_callsign[10];
+
+/* Auto-create a pilot with auto_net_callsign if no pilot exists.
+ * Called from main_menu_handler before check_auto_net(). */
+int auto_create_pilot(void);
+
 /* Called from main_menu_handler on EVENT_WINDOW_ACTIVATED.
  * Returns 1 if an auto action was started (caller should not proceed
  * with normal menu logic), 0 otherwise. */

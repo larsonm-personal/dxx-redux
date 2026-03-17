@@ -42,6 +42,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
+import com.dxxredux.app.multiplayer.GameLaunchInfo
+import com.dxxredux.app.multiplayer.MatchmakingService
+import com.dxxredux.app.multiplayer.MatchmakingStateHolder
 import com.dxxredux.app.multiplayer.NetworkConstants
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -197,6 +200,96 @@ class SetupActivity : ComponentActivity() {
                         }
                     }
                     else -> Log.w("DXX-Setup", "Unknown command: $cmd")
+                }
+            }
+        }
+
+    // ── Multiplayer command API (test automation) ────────────────────────
+    //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command connect
+    //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command disconnect
+    //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command create_lobby --es game d2 --es mission "counterstrike!" --es mode anarchy
+    //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command join_first_lobby
+    //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command chat --es text "hello"
+    //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command set_ready --es ready true
+    //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command start_game
+    //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command introspect
+    //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command set_callsign --es callsign "Player1"
+    private var mpCallsign: String = "Player"
+    private var mpJoinHostAddrOverride: String? = null
+    private var mpJoinHostPortOverride: Int? = null
+    private val mpCommandReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(
+                ctx: Context?,
+                intent: Intent?,
+            ) {
+                val cmd = intent?.getStringExtra("command") ?: return
+                Log.i("DXX-MP", "MP_COMMAND: $cmd")
+                when (cmd) {
+                    "set_callsign" -> {
+                        mpCallsign = intent.getStringExtra("callsign") ?: "Player"
+                        Log.i("DXX-MP", "Callsign set to: $mpCallsign")
+                    }
+                    "connect" -> {
+                        val url =
+                            intent.getStringExtra("url")
+                                ?: NetworkConstants.DEFAULT_SERVER_URL
+                        MatchmakingService.connect(url, mpCallsign)
+                    }
+                    "disconnect" -> {
+                        MatchmakingService.disconnect()
+                    }
+                    "create_lobby" -> {
+                        val game = intent.getStringExtra("game") ?: "d2"
+                        val mission = intent.getStringExtra("mission") ?: "counterstrike!"
+                        val mode = intent.getStringExtra("mode") ?: "anarchy"
+                        val maxPlayers = intent.getIntExtra("max_players", 4)
+                        MatchmakingService.createLobby(game, mission, mode, maxPlayers)
+                    }
+                    "join_first_lobby" -> {
+                        val lobbies = MatchmakingStateHolder.state.value.lobbies
+                        if (lobbies.isNotEmpty()) {
+                            val lobby = lobbies.first()
+                            MatchmakingService.joinLobby(lobby.lobbyId)
+                            Log.i("DXX-MP", "Joining lobby: ${lobby.lobbyId} (${lobby.hostCallsign})")
+                        } else {
+                            Log.w("DXX-MP", "No lobbies available to join")
+                        }
+                    }
+                    "refresh_lobbies" -> {
+                        MatchmakingService.requestLobbyList()
+                    }
+                    "chat" -> {
+                        val text = intent.getStringExtra("text") ?: return
+                        MatchmakingService.sendLobbyChat(text)
+                    }
+                    "set_ready" -> {
+                        val ready = intent.getStringExtra("ready") != "false"
+                        MatchmakingService.setReady(ready)
+                    }
+                    "start_game" -> {
+                        MatchmakingService.startGame()
+                    }
+                    "launch_game" -> {
+                        // Trigger the actual game launch from pending gameLaunchInfo
+                        val info = MatchmakingStateHolder.state.value.gameLaunchInfo
+                        if (info != null) {
+                            Log.i("DXX-MP", "Launching game: ${info.game} ${info.mission} slot=${info.yourSlot}")
+                            launchMultiplayerGame(info)
+                        } else {
+                            Log.w("DXX-MP", "No game launch info pending")
+                        }
+                    }
+                    "introspect" -> {
+                        writeMpIntrospectJson()
+                    }
+                    "set_join_target" -> {
+                        mpJoinHostAddrOverride = intent.getStringExtra("host_addr")
+                        val port = intent.getIntExtra("host_port", -1)
+                        mpJoinHostPortOverride = if (port > 0) port else null
+                        Log.i("DXX-MP", "Join target override: ${mpJoinHostAddrOverride}:${mpJoinHostPortOverride}")
+                    }
+                    else -> Log.w("DXX-MP", "Unknown MP command: $cmd")
                 }
             }
         }
@@ -439,6 +532,102 @@ class SetupActivity : ComponentActivity() {
         }
     }
 
+    private fun launchMultiplayerGame(info: GameLaunchInfo) {
+        FileSetManager(filesDir).writeActiveSetPath()
+        AudioSourceManager(filesDir).writePlaylist()
+        writeInitialGameConfig()
+        val mpIntent = Intent(this, MainActivity::class.java)
+        mpIntent.putExtra("game", info.game)
+        mpIntent.putExtra("mp_callsign", mpCallsign)
+        if (info.isHost) {
+            mpIntent.putExtra("mp_mode", "host")
+            mpIntent.putExtra("mp_my_port", NetworkConstants.ENGINE_PORT)
+            mpIntent.putExtra("mp_mission", info.mission)
+            mpIntent.putExtra("mp_game_mode", NetworkConstants.gameModeToInt(info.mode))
+            mpIntent.putExtra("mp_max_players", info.maxPlayers)
+            mpIntent.putExtra("mp_level_num", info.levelNum)
+            mpIntent.putExtra("mp_difficulty", info.difficulty)
+        } else {
+            mpIntent.putExtra("mp_mode", "join")
+            mpIntent.putExtra("mp_host_addr", mpJoinHostAddrOverride ?: "127.0.0.1")
+            mpIntent.putExtra(
+                "mp_host_port",
+                mpJoinHostPortOverride ?: NetworkConstants.PROXY_PORT_BASE,
+            )
+            mpIntent.putExtra("mp_my_port", NetworkConstants.ENGINE_PORT)
+        }
+        startActivity(mpIntent)
+    }
+
+    private fun writeMpIntrospectJson() {
+        try {
+            val s = MatchmakingStateHolder.state.value
+            val root = JSONObject()
+            root.put("status", s.status.name)
+            root.put("callsign", s.callsign)
+            root.put("player_id", s.playerId ?: JSONObject.NULL)
+            root.put("nav", s.nav.name)
+            root.put("error", s.errorMessage ?: JSONObject.NULL)
+
+            val lobby = s.currentLobby
+            if (lobby != null) {
+                val lj = JSONObject()
+                lj.put("lobby_id", lobby.lobbyId)
+                lj.put("is_host", lobby.isHost)
+                lj.put("player_count", lobby.players.size)
+                val pArr = JSONArray()
+                for (p in lobby.players) {
+                    val pj = JSONObject()
+                    pj.put("player_id", p.playerId)
+                    pj.put("callsign", p.callsign)
+                    pj.put("ready", p.ready)
+                    pArr.put(pj)
+                }
+                lj.put("players", pArr)
+                root.put("lobby", lj)
+            }
+
+            root.put("lobby_count", s.lobbies.size)
+            val lobbiesArr = JSONArray()
+            for (l in s.lobbies) {
+                val lj = JSONObject()
+                lj.put("lobby_id", l.lobbyId)
+                lj.put("host_callsign", l.hostCallsign)
+                lj.put("game", l.game)
+                lj.put("mission", l.mission)
+                lj.put("mode", l.mode)
+                lj.put("player_count", l.playerCount)
+                lj.put("joinable", l.joinable)
+                lobbiesArr.put(lj)
+            }
+            root.put("lobbies", lobbiesArr)
+
+            val chatArr = JSONArray()
+            for (msg in s.chatMessages) {
+                val mj = JSONObject()
+                mj.put("from", msg.fromCallsign)
+                mj.put("text", msg.text)
+                mj.put("is_me", msg.isMe)
+                chatArr.put(mj)
+            }
+            root.put("chat", chatArr)
+
+            root.put("game_launch_pending", s.gameLaunchInfo != null)
+
+            val logArr = JSONArray()
+            for (line in s.statusLog.takeLast(20)) {
+                logArr.put(line)
+            }
+            root.put("log", logArr)
+
+            val file = File(filesDir, "mp_introspect.json")
+            file.writeText(root.toString(2))
+            Log.i("DXX-MP", "MP introspection written to ${file.absolutePath}")
+        } catch (e: Exception) {
+            Log.e("DXX-MP", "Failed to write MP introspection", e)
+        }
+    }
+
     private fun writeIntrospectJson() {
         try {
             val dir = filesDir
@@ -593,6 +782,14 @@ class SetupActivity : ComponentActivity() {
             registerReceiver(commandReceiver, cmdFilter)
         }
 
+        // Register multiplayer command receiver
+        val mpFilter = IntentFilter("com.dxxredux.MP_COMMAND")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(mpCommandReceiver, mpFilter, RECEIVER_EXPORTED)
+        } else {
+            registerReceiver(mpCommandReceiver, mpFilter)
+        }
+
         val gameRunning = intent.getBooleanExtra("gameRunning", false)
         gameRunningFlag = gameRunning
         val filesDir = filesDir
@@ -621,33 +818,7 @@ class SetupActivity : ComponentActivity() {
                     }
                 },
                 onMultiplayerLaunch = { info ->
-                    FileSetManager(filesDir).writeActiveSetPath()
-                    AudioSourceManager(filesDir).writePlaylist()
-                    writeInitialGameConfig()
-                    val mpIntent = Intent(this, MainActivity::class.java)
-                    mpIntent.putExtra("game", info.game)
-                    if (info.isHost) {
-                        mpIntent.putExtra("mp_mode", "host")
-                        mpIntent.putExtra("mp_my_port", NetworkConstants.ENGINE_PORT)
-                        mpIntent.putExtra("mp_mission", info.mission)
-                        mpIntent.putExtra(
-                            "mp_game_mode",
-                            NetworkConstants.gameModeToInt(info.mode),
-                        )
-                        mpIntent.putExtra("mp_max_players", info.maxPlayers)
-                        mpIntent.putExtra("mp_level_num", info.levelNum)
-                        mpIntent.putExtra("mp_difficulty", info.difficulty)
-                    } else {
-                        mpIntent.putExtra("mp_mode", "join")
-                        mpIntent.putExtra("mp_host_addr", "127.0.0.1")
-                        // Host is always slot 0; joiner connects via proxy for slot 0
-                        mpIntent.putExtra(
-                            "mp_host_port",
-                            NetworkConstants.PROXY_PORT_BASE,
-                        )
-                        mpIntent.putExtra("mp_my_port", NetworkConstants.ENGINE_PORT)
-                    }
-                    startActivity(mpIntent)
+                    launchMultiplayerGame(info)
                 },
                 onRefresh = { refreshTrigger.intValue++ },
                 onDownloadStateChanged = { name, progress ->
@@ -745,6 +916,10 @@ class SetupActivity : ComponentActivity() {
         }
         try {
             unregisterReceiver(commandReceiver)
+        } catch (_: Exception) {
+        }
+        try {
+            unregisterReceiver(mpCommandReceiver)
         } catch (_: Exception) {
         }
         super.onDestroy()

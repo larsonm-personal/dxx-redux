@@ -165,6 +165,8 @@ class MainActivity :
     external fun nativeGetNumAudioTracks(): Int
 
     // ── Matchmaking auto-join/host (jni_main.c) ─────────────────────
+    external fun nativeSetCallsign(callsign: String)
+
     external fun nativeSetAutoJoin(
         hostAddr: String,
         hostPort: Int,
@@ -245,6 +247,12 @@ class MainActivity :
 
         // Check for multiplayer auto-join/host from the matchmaking lobby
         val mpMode = intent.getStringExtra("mp_mode")
+        if (mpMode != null) {
+            val callsign = intent.getStringExtra("mp_callsign") ?: ""
+            if (callsign.isNotEmpty()) {
+                nativeSetCallsign(callsign)
+            }
+        }
         if (mpMode == "join") {
             val hostAddr = intent.getStringExtra("mp_host_addr") ?: "127.0.0.1"
             val hostPort = intent.getIntExtra("mp_host_port", 42430)

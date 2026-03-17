@@ -442,8 +442,12 @@ int main_menu_handler(newmenu *menu, d_event *event, int *menu_choice )
 		case EVENT_WINDOW_ACTIVATED:
 			load_palette(MENU_PALETTE,0,1);		//get correct palette
 
-			if ( Players[Player_num].callsign[0]==0 )
+			if ( Players[Player_num].callsign[0]==0 ) {
+#ifdef __ANDROID__
+				if (!auto_create_pilot())
+#endif
 				RegisterPlayer();
+			}
 			else
 				keyd_time_when_last_pressed = timer_query();		// .. 20 seconds from now!
 #ifdef __ANDROID__

@@ -38,6 +38,7 @@ extern "C" {
 #include "playsave.h"
 #include "kconfig.h"
 #include "gr.h"
+#include "multi.h"
 }
 
 /* D1 does not have SCREEN_MOVIE */
@@ -294,7 +295,63 @@ extern "C" char *game_introspect_get_state(void)
 	bool in_game = (Game_wind != NULL && Screen_mode == SCREEN_GAME);
 	j["in_game"] = in_game;
 
-	/* -- EGL surface recreation counter (for background/resume testing) -- */
+	/* -- Multiplayer state ---------------------------------------- */
+	{
+		bool is_network = (Game_mode & GM_NETWORK) != 0;
+		j["is_network"] = is_network;
+		if (is_network) {
+			json mp;
+			mp["num_players"] = (int) N_players;
+			mp["num_connected"] = (int) Netgame.numconnected;
+			mp["max_players"] = (int) Netgame.max_numplayers;
+			mp["game_name"] = std::string(Netgame.game_name);
+			mp["mission_title"] = std::string(Netgame.mission_title);
+			mp["mission_name"] = std::string(Netgame.mission_name);
+			mp["level_num"] = (int) Netgame.levelnum;
+			mp["gamemode"] = (int) Netgame.gamemode;
+			const char *mode_name;
+			switch (Netgame.gamemode) {
+				case NETGAME_ANARCHY: mode_name = "anarchy"; break;
+				case NETGAME_TEAM_ANARCHY: mode_name = "team_anarchy"; break;
+				case NETGAME_ROBOT_ANARCHY: mode_name = "robot_anarchy"; break;
+				case NETGAME_COOPERATIVE: mode_name = "cooperative"; break;
+#ifdef NETGAME_CAPTURE_FLAG
+				case NETGAME_CAPTURE_FLAG: mode_name = "capture_flag"; break;
+#endif
+#ifdef NETGAME_HOARD
+				case NETGAME_HOARD: mode_name = "hoard"; break;
+#endif
+#ifdef NETGAME_TEAM_HOARD
+				case NETGAME_TEAM_HOARD: mode_name = "team_hoard"; break;
+#endif
+				case NETGAME_BOUNTY: mode_name = "bounty"; break;
+				default: mode_name = "unknown"; break;
+			}
+			mp["gamemode_name"] = mode_name;
+			mp["difficulty"] = (int) Netgame.difficulty;
+			mp["game_status"] = (int) Netgame.game_status;
+			mp["network_status"] = Network_status;
+			mp["my_player_num"] = Player_num;
+
+			json players_arr = json::array();
+			for (int i = 0; i < N_players && i < MAX_PLAYERS; i++) {
+				json pl;
+				pl["slot"] = i;
+				pl["callsign"] = std::string(Players[i].callsign);
+				pl["connected"] = (int) Players[i].connected;
+				pl["score"] = (int) Players[i].score;
+				pl["kills"] = (int) Players[i].net_kills_total;
+				pl["deaths"] = (int) Players[i].net_killed_total;
+				pl["shields"] = f2fl(Players[i].shields);
+				pl["energy"] = f2fl(Players[i].energy);
+				pl["is_me"] = (i == Player_num);
+				players_arr.push_back(std::move(pl));
+			}
+			mp["players"] = std::move(players_arr);
+			j["multiplayer"] = std::move(mp);
+		}
+	}
+
 	j["egl_recreate_count"] = ogl_get_egl_recreate_count();
 
 	/* -- Render and display resolution -------------------------------- */

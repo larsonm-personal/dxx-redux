@@ -9,6 +9,8 @@
 #include <string.h>
 #include "auto_net.h"
 #include "console.h"
+#include "player.h"
+#include "playsave.h"
 
 /* --- globals, set by JNI before the main menu opens --- */
 
@@ -25,10 +27,37 @@ int  auto_host_max_players = 4;
 int  auto_host_level_num   = 1;
 int  auto_host_difficulty  = 1;
 
+char auto_net_callsign[10] = "";
+
 /* Implemented in net_udp.c - has access to UDP_MyPort and other statics. */
 extern int net_udp_auto_join(const char *host_addr, int host_port, int my_port);
 extern int net_udp_auto_host(int my_port, const char *mission, int mode,
                              int difficulty, int max_players, int level_num);
+
+int auto_create_pilot(void)
+{
+	if (!auto_net_callsign[0])
+		return 0;
+	if (!(auto_join_pending || auto_host_pending))
+		return 0;
+	if (Players[Player_num].callsign[0] != 0)
+		return 0;
+
+	con_printf(CON_NORMAL, "auto_net: creating pilot '%s'\n", auto_net_callsign);
+	strncpy(Players[Player_num].callsign, auto_net_callsign, CALLSIGN_LEN);
+	Players[Player_num].callsign[CALLSIGN_LEN] = 0;
+	new_player_config();
+
+#ifdef ANDROID
+	{
+		extern void android_apply_gamepad_defaults(void);
+		android_apply_gamepad_defaults();
+	}
+#endif
+
+	write_player_file();
+	return 1;
+}
 
 int check_auto_net(void)
 {
@@ -42,7 +71,9 @@ int check_auto_net(void)
 	}
 
 	if (auto_host_pending) {
-		auto_host_pending = 0;
+		/* Don't clear auto_host_pending yet - net_udp_start_poll uses it
+		 * to know when to auto-start after all players join. It gets
+		 * cleared by the poll callback or when select_players returns. */
 		con_printf(CON_NORMAL, "auto_net: starting auto-host on port %d "
 		           "(mission=%s mode=%d diff=%d max=%d lvl=%d)\n",
 		           auto_host_my_port, auto_host_mission, auto_host_mode,
