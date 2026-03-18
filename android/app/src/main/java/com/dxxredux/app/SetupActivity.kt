@@ -1602,6 +1602,7 @@ private fun SetupScreen(
     var showTouchEditorPage by remember { mutableStateOf(false) }
     var showAdvancedPage by remember { mutableStateOf(false) }
     var showMultiplayerPage by remember { mutableStateOf(false) }
+    var showAutoselectPage by remember { mutableStateOf(false) }
 
     MaterialTheme(colorScheme = darkColorScheme()) {
         if (showControllerPage) {
@@ -1634,6 +1635,14 @@ private fun SetupScreen(
             com.dxxredux.app.multiplayer.MultiplayerScreen(
                 onBack = { showMultiplayerPage = false },
                 onLaunchGame = onMultiplayerLaunch,
+            )
+            return@MaterialTheme
+        }
+        if (showAutoselectPage) {
+            AutoselectEditorPage(
+                gameVariant = selectedGame,
+                filesDir = filesDir.absolutePath,
+                onBack = { showAutoselectPage = false },
             )
             return@MaterialTheme
         }
@@ -2425,6 +2434,7 @@ private fun SetupScreen(
                         onDefineControls = { showControllerPage = true },
                         onEditTouchLayout = { showTouchEditorPage = true },
                         onAdvancedSettings = { showAdvancedPage = true },
+                        onEditAutoselect = { showAutoselectPage = true },
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -3031,6 +3041,7 @@ private fun ControllerSection(
     onDefineControls: () -> Unit = {},
     onEditTouchLayout: () -> Unit = {},
     onAdvancedSettings: () -> Unit = {},
+    onEditAutoselect: () -> Unit = {},
 ) {
     // Poll for controller connect/disconnect every 1 second
     var pollTick by remember { mutableIntStateOf(0) }
@@ -3196,13 +3207,22 @@ private fun ControllerSection(
         }
     }
 
-    // ── Advanced Settings ──
-    OutlinedButton(
-        onClick = onAdvancedSettings,
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-        modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
-    ) {
-        Text("Advanced Settings", fontSize = 12.sp)
+    // ── Weapon Autoselect / Advanced ──
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedButton(
+            onClick = onEditAutoselect,
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+            modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
+        ) {
+            Text("Weapon Autoselect", fontSize = 12.sp)
+        }
+        OutlinedButton(
+            onClick = onAdvancedSettings,
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+            modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
+        ) {
+            Text("Advanced Settings", fontSize = 12.sp)
+        }
     }
 
     if (expanded && hasController) {
