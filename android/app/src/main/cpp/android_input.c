@@ -450,6 +450,28 @@ Java_com_dxxredux_app_MainActivity_nativeIsSkippableScreen(JNIEnv *env, jobject 
 }
 
 /*
+ * Returns true while the player is dead (death animation / waiting for keypress).
+ */
+extern int Player_is_dead;
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeIsPlayerDead(JNIEnv *env, jobject thiz)
+{
+	return Player_is_dead ? JNI_TRUE : JNI_FALSE;
+}
+
+/*
+ * Returns true during the end-of-level flythrough/explosion sequence.
+ */
+extern int Endlevel_sequence;
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeIsEndlevelSequence(JNIEnv *env, jobject thiz)
+{
+	return Endlevel_sequence ? JNI_TRUE : JNI_FALSE;
+}
+
+/*
  * Enable or disable the "Use Joystick" flag in the player config.
  * Called from Kotlin when the touch overlay is activated/deactivated.
  *

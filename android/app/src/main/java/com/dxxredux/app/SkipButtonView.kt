@@ -16,6 +16,13 @@ class SkipButtonView(
     context: Context,
 ) : View(context) {
     var keyCallback: ((action: Int, keyCode: Int, unicode: Int) -> Unit)? = null
+    var label: String = "SKIP"
+        set(value) {
+            if (field != value) {
+                field = value
+                invalidate()
+            }
+        }
 
     private val bgPaint =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -66,7 +73,7 @@ class SkipButtonView(
         canvas.drawCircle(cx, cy, radius, if (pressed) pressedBgPaint else bgPaint)
         canvas.drawCircle(cx, cy, radius, borderPaint)
         val textY = cy - (textPaint.descent() + textPaint.ascent()) / 2f
-        canvas.drawText("SKIP", cx, textY, textPaint)
+        canvas.drawText(label, cx, textY, textPaint)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {

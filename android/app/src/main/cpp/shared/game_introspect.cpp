@@ -370,6 +370,12 @@ extern "C" char *game_introspect_get_state(void)
 	j["player_dead"] = (bool) Player_is_dead;
 	j["player_exploded"] = (bool) Player_exploded;
 
+	/* -- Endlevel sequence --------------------------------------- */
+	{
+		extern int Endlevel_sequence;
+		j["endlevel_sequence"] = Endlevel_sequence;
+	}
+
 	/* -- Window stack --------------------------------------------- */
 	{
 		int nwin = 0;

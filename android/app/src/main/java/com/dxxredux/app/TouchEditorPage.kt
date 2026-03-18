@@ -580,7 +580,7 @@ private fun drawAllControls(
         val alpha = layout.globalOpacity * stick.opacity
 
         // Floating zone indicator
-        if (stick.floating) {
+        if (stick.floating || stick.mouseMode) {
             val fz = stick.floatingZone
             scope.drawRect(
                 color = Color(0x1488CCFF),
@@ -1195,13 +1195,47 @@ private fun StickPropertiesPanel(
                 onUpdate(stick.copy(floating = it))
             }
         }
+        LabeledToggle("Mouse Mode", stick.mouseMode) {
+            if (it && !stick.mouseMode) {
+                // Auto-compute a zone if no floating zone set yet
+                val fz =
+                    if (!stick.floating) {
+                        FloatingZone(
+                            leftPct = (stick.xPct - 20f).coerceIn(0f, 100f),
+                            topPct = (stick.yPct - 30f).coerceIn(0f, 100f),
+                            rightPct = (stick.xPct + 20f).coerceIn(0f, 100f),
+                            bottomPct = (stick.yPct + 30f).coerceIn(0f, 100f),
+                        )
+                    } else {
+                        stick.floatingZone
+                    }
+                onUpdate(stick.copy(mouseMode = true, floatingZone = fz))
+            } else {
+                onUpdate(stick.copy(mouseMode = it))
+            }
+        }
         LabeledToggle("Invert X", stick.invertX) { onUpdate(stick.copy(invertX = it)) }
         LabeledToggle("Invert Y", stick.invertY) { onUpdate(stick.copy(invertY = it)) }
         LabeledToggle("Haptic", stick.hapticFeedback) { onUpdate(stick.copy(hapticFeedback = it)) }
     }
 
-    // Floating zone bounds (shown only when floating is enabled)
-    if (stick.floating) {
+    // Mouse mode sensitivity
+    if (stick.mouseMode) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LabeledSlider(
+                "Mouse Sensitivity",
+                stick.mouseSensitivity,
+                0.1f,
+                5f,
+                Modifier.weight(1f),
+            ) {
+                onUpdate(stick.copy(mouseSensitivity = it))
+            }
+        }
+    }
+
+    // Floating zone bounds (shown when floating or mouse mode is enabled)
+    if (stick.floating || stick.mouseMode) {
         val fz = stick.floatingZone
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             LabeledSlider("Left %", fz.leftPct, 0f, 100f, Modifier.weight(1f)) {

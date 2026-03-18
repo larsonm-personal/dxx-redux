@@ -7,6 +7,8 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PointF
 import android.graphics.RectF
+import android.os.Handler
+import android.os.Looper
 import android.util.AttributeSet
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
@@ -91,6 +93,7 @@ class TouchOverlayView
                     if (!value) {
                         resetAllSticks()
                         releaseAllButtons()
+                        stopMouseDrain()
                     }
                     invalidate()
                 }
@@ -117,6 +120,12 @@ class TouchOverlayView
             var floatingCX = 0f
             var floatingCY = 0f
             var floatingActive = false
+
+            // Mouse mode: accumulated drag delta (pixels, not yet consumed)
+            var mouseLastX = 0f
+            var mouseLastY = 0f
+            var mousePendingX = 0f
+            var mousePendingY = 0f
 
             // Button mode: direction press tracking
             var xNegPressed = false
@@ -167,6 +176,51 @@ class TouchOverlayView
         private val buttonStates = mutableListOf<ButtonState>()
         private val radialStates = mutableListOf<RadialMenuState>()
         private val sliderStates = mutableListOf<SliderState>()
+
+        // ── Mouse-mode drag buffer tick ─────────────────────────
+        private val mouseDrainHandler = Handler(Looper.getMainLooper())
+        private var mouseDrainRunning = false
+        private val mouseDrainRunnable =
+            object : Runnable {
+                override fun run() {
+                    drainMouseBuffers()
+                    if (mouseDrainRunning) {
+                        mouseDrainHandler.postDelayed(this, MOUSE_DRAIN_INTERVAL_MS)
+                    }
+                }
+            }
+
+        private fun startMouseDrain() {
+            if (!mouseDrainRunning) {
+                mouseDrainRunning = true
+                mouseDrainHandler.post(mouseDrainRunnable)
+            }
+        }
+
+        private fun stopMouseDrain() {
+            mouseDrainRunning = false
+            mouseDrainHandler.removeCallbacks(mouseDrainRunnable)
+        }
+
+        private fun drainMouseBuffers() {
+            for (s in stickStates) {
+                if (!s.control.mouseMode || s.pointerId < 0) continue
+                val cap = MOUSE_MAX_AXIS_PER_TICK * s.control.mouseSensitivity
+                val emitX = s.mousePendingX.coerceIn(-cap, cap)
+                val emitY = s.mousePendingY.coerceIn(-cap, cap)
+                s.mousePendingX -= emitX
+                s.mousePendingY -= emitY
+                // Discard tiny residuals to avoid drift
+                if (abs(s.mousePendingX) < 0.001f) s.mousePendingX = 0f
+                if (abs(s.mousePendingY) < 0.001f) s.mousePendingY = 0f
+                var outX = emitX
+                var outY = emitY
+                if (s.control.invertX) outX = -outX
+                if (s.control.invertY) outY = -outY
+                axisCallback?.invoke(s.control.axisX, outX.coerceIn(-1f, 1f))
+                axisCallback?.invoke(s.control.axisY, outY.coerceIn(-1f, 1f))
+            }
+        }
 
         // ── MAP button geometry (kept for automap overlay compat) ──
         private var mapBtnCenterX = 0f
@@ -227,6 +281,11 @@ class TouchOverlayView
         // ── Paint objects ───────────────────────────────────────
         companion object {
             private const val RADIAL_CENTER = -2
+
+            // Mouse-mode drag buffer constants
+            private const val MOUSE_DRAIN_INTERVAL_MS = 16L // ~60 Hz
+            private const val MOUSE_MAX_AXIS_PER_TICK = 0.6f // max axis output per tick before sensitivity
+            private const val MOUSE_REFERENCE_DISTANCE = 200f // pixels of drag for 1.0 axis at sensitivity=1
 
             // Admin tray action indices dispatched via adminTrayCallback
             const val ADMIN_INCREASE_VIEW = 0
@@ -389,7 +448,7 @@ class TouchOverlayView
                 s.radius = defaultStickRadius * s.control.sizeMult
                 s.centerX = wf * s.control.xPct / 100f
                 s.centerY = hf * s.control.yPct / 100f
-                if (s.control.floating) {
+                if (s.control.floating || s.control.mouseMode) {
                     val z = s.control.floatingZone
                     s.fzLeft = wf * z.leftPct / 100f
                     s.fzTop = hf * z.topPct / 100f
@@ -532,6 +591,14 @@ class TouchOverlayView
             gAlpha: Float,
         ) {
             val eff = (gAlpha * s.control.opacity).coerceIn(0f, 1f)
+
+            if (s.control.mouseMode) {
+                // Mouse mode: draw only a transparent bounding box for the touch region
+                paintRing.alpha = (0x44 * eff).toInt()
+                canvas.drawRect(s.fzLeft, s.fzTop, s.fzRight, s.fzBottom, paintRing)
+                return
+            }
+
             val cx = if (s.control.floating && s.floatingActive) s.floatingCX else s.centerX
             val cy = if (s.control.floating && s.floatingActive) s.floatingCY else s.centerY
 
@@ -933,7 +1000,20 @@ class TouchOverlayView
                     // Try layout sticks
                     for (s in stickStates) {
                         if (s.pointerId >= 0) continue
-                        if (s.control.floating) {
+                        if (s.control.mouseMode) {
+                            // Mouse mode: use floating zone bounds for hit detection
+                            if (px in s.fzLeft..s.fzRight && py in s.fzTop..s.fzBottom) {
+                                s.pointerId = pid
+                                s.mouseLastX = px
+                                s.mouseLastY = py
+                                s.mousePendingX = 0f
+                                s.mousePendingY = 0f
+                                s.floatingActive = true
+                                startMouseDrain()
+                                handled = true
+                                break
+                            }
+                        } else if (s.control.floating) {
                             if (px in s.fzLeft..s.fzRight && py in s.fzTop..s.fzBottom) {
                                 s.pointerId = pid
                                 s.floatingCX = px
@@ -1086,7 +1166,13 @@ class TouchOverlayView
                     for (s in stickStates) {
                         if (s.pointerId >= 0) {
                             val i = event.findPointerIndex(s.pointerId)
-                            if (i >= 0) updateStickFromTouch(s, event.getX(i), event.getY(i))
+                            if (i >= 0) {
+                                if (s.control.mouseMode) {
+                                    updateStickFromMouseDrag(s, event.getX(i), event.getY(i))
+                                } else {
+                                    updateStickFromTouch(s, event.getX(i), event.getY(i))
+                                }
+                            }
                         }
                     }
                     for (rm in radialStates) {
@@ -1283,6 +1369,21 @@ class TouchOverlayView
             }
         }
 
+        private fun updateStickFromMouseDrag(
+            s: StickState,
+            px: Float,
+            py: Float,
+        ) {
+            val dx = px - s.mouseLastX
+            val dy = py - s.mouseLastY
+            s.mouseLastX = px
+            s.mouseLastY = py
+            // Convert pixel delta to axis-space and accumulate
+            val scale = s.control.mouseSensitivity / MOUSE_REFERENCE_DISTANCE
+            s.mousePendingX += dx * scale
+            s.mousePendingY += dy * scale
+        }
+
         private fun updateStickFromTouch(
             s: StickState,
             px: Float,
@@ -1374,6 +1475,11 @@ class TouchOverlayView
                 dispatchStickButton(s, false, s.yNegPressed, s.control.negYBinding) { s.yNegPressed = it }
                 dispatchStickButton(s, false, s.yPosPressed, s.control.posYBinding) { s.yPosPressed = it }
             }
+            // Clear mouse-mode pending drag
+            if (s.control.mouseMode) {
+                s.mousePendingX = 0f
+                s.mousePendingY = 0f
+            }
             s.pointerId = -1
             s.pos.set(0f, 0f)
             s.floatingActive = false
@@ -1383,6 +1489,10 @@ class TouchOverlayView
                 axisCallback?.invoke(s.control.axisY, 0f)
             }
             updateGyroStickActive()
+            // Stop mouse drain if no mouse-mode sticks are active
+            if (s.control.mouseMode && stickStates.none { it.control.mouseMode && it.pointerId >= 0 }) {
+                stopMouseDrain()
+            }
         }
 
         /** Update gyro manager's rightStickActive based on whether any stick sharing gyro axes is touched. */

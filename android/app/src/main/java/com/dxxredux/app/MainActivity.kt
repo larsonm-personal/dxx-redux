@@ -116,6 +116,10 @@ class MainActivity :
 
     external fun nativeIsSkippableScreen(): Boolean
 
+    external fun nativeIsPlayerDead(): Boolean
+
+    external fun nativeIsEndlevelSequence(): Boolean
+
     external fun nativeAutomapInput(
         heading: Float,
         pitch: Float,
@@ -675,13 +679,32 @@ class MainActivity :
                                 } catch (_: Exception) {
                                     false
                                 }
+                            val playerDead =
+                                try {
+                                    nativeIsPlayerDead()
+                                } catch (_: Exception) {
+                                    false
+                                }
+                            val endlevel =
+                                try {
+                                    nativeIsEndlevelSequence()
+                                } catch (_: Exception) {
+                                    false
+                                }
+                            // During death or endlevel, show skip/continue button instead of controls
+                            val showCutsceneButton = playerDead || endlevel || skippable
                             // Show overlay when in-game with overlay enabled, or when automap is active
-                            val shouldShow = (inGame && overlayEnabled) || automap
+                            val shouldShow = (inGame && overlayEnabled && !playerDead && !endlevel) || automap
                             val wasActive = touchOverlay.isActive
                             touchOverlay.isActive = shouldShow
                             touchOverlay.automapActive = automap
-                            // Show/hide skip button (mutually exclusive with game overlay)
-                            skipButton.visibility = if (skippable && !shouldShow) View.VISIBLE else View.GONE
+                            // Show/hide skip button: death="CONTINUE", endlevel/skippable="SKIP"
+                            if (showCutsceneButton && !shouldShow) {
+                                skipButton.label = if (playerDead) "CONTINUE" else "SKIP"
+                                skipButton.visibility = View.VISIBLE
+                            } else {
+                                skipButton.visibility = View.GONE
+                            }
                             // Enable/disable joystick input when overlay state changes
                             if (shouldShow && !wasActive) {
                                 nativeSetJoystickEnabled(true)
