@@ -41,6 +41,7 @@ object MissionScanner {
     data class MissionInfo(
         val filename: String, // passed to nativeSetAutoHost (e.g. "d2", "descent", "mymod")
         val displayName: String,
+        val levelCount: Int = 0, // 0 = unknown
         val anarchyOnly: Boolean = false,
         val isBuiltin: Boolean = false,
     )
@@ -48,14 +49,14 @@ object MissionScanner {
     // -- mirrors d2/main/mission.h --
     private val D2_BUILTINS =
         listOf(
-            MissionInfo("d2", "Descent 2: Counterstrike!", isBuiltin = true),
-            MissionInfo("descent", "Descent: First Strike", isBuiltin = true),
+            MissionInfo("d2", "Descent 2: Counterstrike!", levelCount = 30, isBuiltin = true),
+            MissionInfo("descent", "Descent: First Strike", levelCount = 27, isBuiltin = true),
         )
 
     // -- mirrors d1/main/mission.h (D1_MISSION_FILENAME is "") --
     private val D1_BUILTINS =
         listOf(
-            MissionInfo("", "Descent: First Strike", isBuiltin = true),
+            MissionInfo("", "Descent: First Strike", levelCount = 27, isBuiltin = true),
         )
 
     fun scan(
@@ -98,10 +99,12 @@ object MissionScanner {
             BufferedReader(FileReader(file)).use { reader ->
                 var displayName: String? = null
                 var anarchyOnly = false
+                var levelCount = 0
                 val nameRe = Regex("^[xz]?name\\s*=\\s*(.+)", RegexOption.IGNORE_CASE)
                 val typeRe = Regex("^type\\s*=\\s*(\\S+)", RegexOption.IGNORE_CASE)
+                val levelsRe = Regex("^num_levels\\s*=\\s*(\\d+)", RegexOption.IGNORE_CASE)
 
-                for (i in 0 until 5) {
+                for (i in 0 until 10) {
                     val line = reader.readLine() ?: break
                     val trimmed = line.trim()
                     if (displayName == null) {
@@ -112,11 +115,15 @@ object MissionScanner {
                             anarchyOnly = true
                         }
                     }
-                    if (trimmed.startsWith("num_levels", ignoreCase = true)) break
+                    levelsRe.find(trimmed)?.let {
+                        levelCount = it.groupValues[1].toIntOrNull() ?: 0
+                    }
+                    if (levelCount > 0) break
                 }
                 MissionInfo(
                     filename = basename,
                     displayName = displayName ?: basename,
+                    levelCount = levelCount,
                     anarchyOnly = anarchyOnly,
                 )
             }
@@ -132,7 +139,7 @@ object MissionScanner {
  */
 @Composable
 fun MissionPickerField(
-    selectedFilename: String,
+    selectedFilename: String?,
     game: String,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -143,7 +150,7 @@ fun MissionPickerField(
     val missions = remember(game, setDir) { MissionScanner.scan(setDir, game) }
     val displayText =
         remember(selectedFilename, missions) {
-            if (selectedFilename.isEmpty()) {
+            if (selectedFilename == null) {
                 ""
             } else {
                 missions.find { it.filename == selectedFilename }?.displayName ?: selectedFilename

@@ -320,6 +320,39 @@ class SetupActivity : ComponentActivity() {
                         mpJoinHostPortOverride = if (port > 0) port else null
                         Log.i("DXX-MP", "Join target override: $mpJoinHostAddrOverride:$mpJoinHostPortOverride")
                     }
+                    "lan_launch" -> {
+                        val game = intent.getStringExtra("game") ?: "d2"
+                        val mpMode = intent.getStringExtra("mp_mode") ?: "host"
+                        val mission = intent.getStringExtra("mission") ?: ""
+                        val mode = intent.getStringExtra("mode") ?: "coop"
+                        val maxPlayers = intent.getIntExtra("max_players", 4)
+                        val levelNum = intent.getIntExtra("level_num", 1)
+                        val difficulty = intent.getIntExtra("difficulty", 1)
+                        val hostAddr = intent.getStringExtra("host_addr")
+                        val hostPort = intent.getIntExtra("host_port", NetworkConstants.ENGINE_PORT)
+                        intent.getStringExtra("callsign")?.let { mpCallsign = it }
+                        val isHost = mpMode == "host"
+                        val info =
+                            GameLaunchInfo(
+                                game = game,
+                                mission = mission,
+                                mode = mode,
+                                difficulty = difficulty,
+                                levelNum = levelNum,
+                                maxPlayers = maxPlayers,
+                                yourSlot = if (isHost) 0 else 1,
+                                isHost = isHost,
+                                peers = emptyList(),
+                                lanHostAddr = if (!isHost) hostAddr else null,
+                                lanHostPort = hostPort,
+                                isLan = true,
+                            )
+                        Log.i(
+                            "DXX-MP",
+                            "lan_launch: $mpMode $game/$mission lvl=$levelNum diff=$difficulty host=$hostAddr:$hostPort",
+                        )
+                        launchMultiplayerGame(info)
+                    }
                     else -> Log.w("DXX-MP", "Unknown MP command: $cmd")
                 }
             }
@@ -589,7 +622,7 @@ class SetupActivity : ComponentActivity() {
                 // LAN joiner: route through proxy for packet stats
                 com.dxxredux.app.multiplayer.MatchmakingService.createLanProxy(
                     info.lanHostAddr,
-                    NetworkConstants.ENGINE_PORT,
+                    info.lanHostPort,
                 )
                 mpIntent.putExtra("mp_host_addr", "127.0.0.1")
                 mpIntent.putExtra("mp_host_port", NetworkConstants.PROXY_PORT_BASE)

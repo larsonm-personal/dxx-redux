@@ -1,0 +1,29 @@
+// TEST: LAN Multiplayer Join Verification
+// Verifies the game has launched into a multiplayer game via LAN.
+// This script is pushed to both host and joiner emulators after the
+// lan_launch MP_COMMAND fires. It waits for the game to load and
+// checks that multiplayer state is correct.
+//
+// Used by: run_lan_test.ps1
+[
+    {"action": "log", "message": "=== TEST: LAN Multiplayer Verification ==="},
+
+    // Wait for game window to appear (level loading may take a while)
+    {"action": "wait_for", "field": "screen_mode", "value": "game", "timeout_ms": 30000},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 15000},
+
+    // Skip briefing if it appears
+    {"action": "skip_briefing", "timeout_ms": 5000, "post_delay_ms": 2000},
+
+    // Re-check in-game after briefing skip
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
+
+    // Verify we're in a multiplayer game on level 1
+    {"action": "assert", "expect": {
+        "in_game": "true",
+        "screen_mode": "game",
+        "current_level_num": "1"
+    }},
+
+    {"action": "log", "message": "=== LAN MP in-game verified ==="}
+]

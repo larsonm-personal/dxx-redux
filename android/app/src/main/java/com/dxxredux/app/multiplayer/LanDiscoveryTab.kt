@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -38,6 +40,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.dxxredux.app.FileSetManager
 import com.dxxredux.app.lobby.LobbyService
 
 @Composable
@@ -153,9 +156,12 @@ private fun LanDiscoveryView(
     val isDiscovering by LobbyService.isDiscovering.collectAsState()
     val hostedPlayers by LobbyService.hostedLobbyPlayers.collectAsState()
     val lanLaunchEvent by LobbyService.lanLaunchEvent.collectAsState()
+    val diagnostics by LobbyService.diagnostics.collectAsState()
 
     var showHostDialog by remember { mutableStateOf(false) }
     var showStartGameDialog by remember { mutableStateOf(false) }
+    var showJoinByIpDialog by remember { mutableStateOf(false) }
+    var hostedLevelCount by remember { mutableStateOf(30) }
     var permissionGranted by remember {
         mutableStateOf(
             if (Build.VERSION.SDK_INT >= 33) {
@@ -253,6 +259,9 @@ private fun LanDiscoveryView(
                 Button(onClick = { showHostDialog = true }) {
                     Text("Host LAN Game")
                 }
+                OutlinedButton(onClick = { showJoinByIpDialog = true }) {
+                    Text("Join by IP")
+                }
             } else if (isHosting) {
                 OutlinedButton(onClick = { LobbyService.stopHosting() }) {
                     Text("Stop Hosting")
@@ -335,12 +344,23 @@ private fun LanDiscoveryView(
                 }
             }
         }
+
+        // Diagnostics status line
+        if (diagnostics.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                diagnostics,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
     }
 
     if (showHostDialog) {
         HostLanGameDialog(
-            onHost = { game, mission, mode, maxPlayers ->
+            onHost = { game, mission, mode, maxPlayers, levelCount ->
                 showHostDialog = false
+                hostedLevelCount = if (levelCount > 0) levelCount else 30
                 LobbyService.hostLobby(callsign, game, mission, mode, maxPlayers)
             },
             onDismiss = { showHostDialog = false },
@@ -349,11 +369,37 @@ private fun LanDiscoveryView(
 
     if (showStartGameDialog) {
         StartLanGameDialog(
+            levelCount = hostedLevelCount,
             onStart = { difficulty, levelNum ->
                 showStartGameDialog = false
                 LobbyService.startGame(difficulty, levelNum)
             },
             onDismiss = { showStartGameDialog = false },
+        )
+    }
+
+    if (showJoinByIpDialog) {
+        JoinByIpDialog(
+            onJoin = { hostAddr ->
+                showJoinByIpDialog = false
+                // Direct LAN join: launch game as joiner pointed at the given IP
+                onLaunchGame(
+                    GameLaunchInfo(
+                        game = "d2",
+                        mission = "",
+                        mode = "coop",
+                        difficulty = 1,
+                        levelNum = 1,
+                        maxPlayers = 4,
+                        yourSlot = 1,
+                        isHost = false,
+                        peers = emptyList(),
+                        lanHostAddr = hostAddr,
+                        isLan = true,
+                    ),
+                )
+            },
+            onDismiss = { showJoinByIpDialog = false },
         )
     }
 }
@@ -404,14 +450,21 @@ private fun LanLobbyCard(
 
 @Composable
 private fun HostLanGameDialog(
-    onHost: (game: String, mission: String, mode: String, maxPlayers: Int) -> Unit,
+    onHost: (game: String, mission: String, mode: String, maxPlayers: Int, levelCount: Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val fsm = remember { FileSetManager(context.filesDir) }
+    val setDir = remember(fsm) { fsm.getSetDir(fsm.getActive()) }
     var game by remember { mutableStateOf("d2") }
-    var mission by remember { mutableStateOf("") }
-    var missionSelected by remember { mutableStateOf(false) }
+    var mission by remember { mutableStateOf<String?>(null) }
     var mode by remember { mutableStateOf("coop") }
     var maxPlayersText by remember { mutableStateOf("4") }
+    val missions = remember(game, setDir) { MissionScanner.scan(setDir, game) }
+    val selectedLevelCount =
+        remember(mission, missions) {
+            missions.find { it.filename == mission }?.levelCount ?: 0
+        }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -425,8 +478,7 @@ private fun HostLanGameDialog(
                         } else {
                             OutlinedButton(onClick = {
                                 game = g
-                                mission = ""
-                                missionSelected = false
+                                mission = null
                             }) { Text(g.uppercase()) }
                         }
                     }
@@ -434,10 +486,7 @@ private fun HostLanGameDialog(
                 MissionPickerField(
                     selectedFilename = mission,
                     game = game,
-                    onSelect = {
-                        mission = it
-                        missionSelected = true
-                    },
+                    onSelect = { mission = it },
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("anarchy", "coop").forEach { m ->
@@ -464,8 +513,8 @@ private fun HostLanGameDialog(
         confirmButton = {
             val maxPlayers = maxPlayersText.toIntOrNull() ?: 0
             TextButton(
-                onClick = { onHost(game, mission, mode, maxPlayers) },
-                enabled = missionSelected && maxPlayers in 2..8,
+                onClick = { onHost(game, mission ?: "", mode, maxPlayers, selectedLevelCount) },
+                enabled = mission != null && maxPlayers in 2..8,
             ) {
                 Text("Host")
             }
@@ -478,12 +527,14 @@ private fun HostLanGameDialog(
 
 @Composable
 private fun StartLanGameDialog(
+    levelCount: Int,
     onStart: (difficulty: Int, levelNum: Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val maxLevel = if (levelCount > 0) levelCount else 30
     val difficulties = listOf("Trainee", "Rookie", "Hotshot", "Ace", "Insane")
     var difficulty by remember { mutableStateOf(1) }
-    var levelText by remember { mutableStateOf("1") }
+    var selectedLevel by remember { mutableStateOf(1) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -507,22 +558,80 @@ private fun StartLanGameDialog(
                         }
                     }
                 }
+                Text("Starting Level", style = MaterialTheme.typography.bodyMedium)
+                LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
+                    items(maxLevel) { idx ->
+                        val level = idx + 1
+                        Text(
+                            "Level $level",
+                            style =
+                                if (level == selectedLevel) {
+                                    MaterialTheme.typography.bodyLarge
+                                } else {
+                                    MaterialTheme.typography.bodyMedium
+                                },
+                            color =
+                                if (level == selectedLevel) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable { selectedLevel = level }
+                                    .padding(vertical = 6.dp, horizontal = 4.dp),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onStart(difficulty, selectedLevel) },
+                enabled = selectedLevel in 1..maxLevel,
+            ) {
+                Text("Start")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
+}
+
+@Composable
+private fun JoinByIpDialog(
+    onJoin: (hostAddr: String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var hostIp by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Join by IP") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Enter the host's IP address to connect directly.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
                 OutlinedTextField(
-                    value = levelText,
-                    onValueChange = { levelText = it.filter { c -> c.isDigit() } },
-                    label = { Text("Starting Level") },
+                    value = hostIp,
+                    onValueChange = { hostIp = it.trim() },
+                    label = { Text("Host IP Address") },
+                    placeholder = { Text("192.168.1.100") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
         },
         confirmButton = {
-            val level = levelText.toIntOrNull() ?: 0
             TextButton(
-                onClick = { onStart(difficulty, level) },
-                enabled = level in 1..30,
+                onClick = { onJoin(hostIp) },
+                enabled = hostIp.isNotBlank(),
             ) {
-                Text("Start")
+                Text("Join")
             }
         },
         dismissButton = {

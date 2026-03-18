@@ -383,8 +383,7 @@ private fun CreateLobbyDialog(
     onDismiss: () -> Unit,
 ) {
     var game by remember { mutableStateOf("d2") }
-    var mission by remember { mutableStateOf("") }
-    var missionSelected by remember { mutableStateOf(false) }
+    var mission by remember { mutableStateOf<String?>(null) }
     var mode by remember { mutableStateOf("anarchy") }
     var maxPlayersText by remember { mutableStateOf("4") }
 
@@ -401,8 +400,7 @@ private fun CreateLobbyDialog(
                         } else {
                             OutlinedButton(onClick = {
                                 game = g
-                                mission = ""
-                                missionSelected = false
+                                mission = null
                             }) { Text(g.uppercase()) }
                         }
                     }
@@ -410,10 +408,7 @@ private fun CreateLobbyDialog(
                 MissionPickerField(
                     selectedFilename = mission,
                     game = game,
-                    onSelect = {
-                        mission = it
-                        missionSelected = true
-                    },
+                    onSelect = { mission = it },
                 )
                 // Mode selector
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -439,8 +434,8 @@ private fun CreateLobbyDialog(
         confirmButton = {
             val maxPlayers = maxPlayersText.toIntOrNull() ?: 0
             TextButton(
-                onClick = { onCreate(game, mission, mode, maxPlayers) },
-                enabled = missionSelected && maxPlayers in 2..8,
+                onClick = { onCreate(game, mission ?: "", mode, maxPlayers) },
+                enabled = mission != null && maxPlayers in 2..8,
             ) {
                 Text("Create")
             }
