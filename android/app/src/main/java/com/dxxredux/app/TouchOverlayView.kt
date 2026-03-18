@@ -126,6 +126,7 @@ class TouchOverlayView
             var mouseLastY = 0f
             var mousePendingX = 0f
             var mousePendingY = 0f
+
             // Mouse mode: touch-down origin for exponential scaling
             var mouseOriginX = 0f
             var mouseOriginY = 0f

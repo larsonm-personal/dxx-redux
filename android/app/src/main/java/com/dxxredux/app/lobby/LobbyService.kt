@@ -63,6 +63,19 @@ object LobbyService {
     private val _lanLaunchEvent = MutableStateFlow<com.dxxredux.app.multiplayer.GameLaunchInfo?>(null)
     val lanLaunchEvent: StateFlow<com.dxxredux.app.multiplayer.GameLaunchInfo?> = _lanLaunchEvent.asStateFlow()
 
+    // Joiner state: set when we successfully join a LAN lobby (JOIN_ACK received)
+    data class JoinedLobbyInfo(
+        val lobbyId: String,
+        val hostAddr: String,
+        val game: String,
+        val mission: String,
+        val mode: String,
+        val maxPlayers: Int,
+    )
+
+    private val _joinedLobby = MutableStateFlow<JoinedLobbyInfo?>(null)
+    val joinedLobby: StateFlow<JoinedLobbyInfo?> = _joinedLobby.asStateFlow()
+
     /** Clear the launch event after it has been consumed. */
     fun clearLaunchEvent() {
         _lanLaunchEvent.value = null
@@ -112,6 +125,7 @@ object LobbyService {
         _discoveredLobbies.value = emptyList()
         _hostedLobbyPlayers.value = emptyList()
         _lanLaunchEvent.value = null
+        _joinedLobby.value = null
         closeSocket()
         Log.i(TAG, "LAN discovery stopped")
     }
@@ -170,6 +184,16 @@ object LobbyService {
         val data = buildJoin(lobbyId, callsign)
         sendTo(data, hostAddress)
         Log.i(TAG, "Sent JOIN to $hostAddress for lobby $lobbyId")
+    }
+
+    /** Leave the LAN lobby we've joined (as a joiner). */
+    fun leaveLanLobby(callsign: String) {
+        val info = _joinedLobby.value ?: return
+        val data = buildLeave(info.lobbyId, callsign)
+        sendTo(data, info.hostAddr)
+        _joinedLobby.value = null
+        _hostedLobbyPlayers.value = emptyList()
+        Log.i(TAG, "Left LAN lobby ${info.lobbyId}")
     }
 
     /** Send a LEAVE packet to the given host address. */
@@ -284,6 +308,8 @@ object LobbyService {
             MSG_START -> handleStart(json, senderAddr)
             MSG_PING -> handlePing(json, senderAddr)
             MSG_PONG -> {} // future: calculate RTT
+            MSG_JOIN_ACK -> handleJoinAck(json, senderAddr)
+            MSG_JOIN_REJECT -> handleJoinReject(json)
         }
     }
 
@@ -317,15 +343,32 @@ object LobbyService {
     ) {
         if (!_isHosting.value) return
         val lobbyId = json.optString("lobby_id", "")
-        if (lobbyId != hostedLobbyId) return
+        if (lobbyId != hostedLobbyId) {
+            sendTo(buildJoinReject(lobbyId, "unknown lobby"), senderAddr)
+            return
+        }
 
         val callsign = json.optString("callsign", "Player")
         val current = _hostedLobbyPlayers.value
-        if (current.size >= hostedMaxPlayers) return
-        if (current.any { it.callsign == callsign }) return
+        if (current.size >= hostedMaxPlayers) {
+            sendTo(buildJoinReject(lobbyId, "lobby full"), senderAddr)
+            return
+        }
+        if (current.any { it.callsign == callsign }) {
+            // Already in lobby -- re-send ACK (idempotent)
+            sendTo(
+                buildJoinAck(lobbyId, hostedGame, hostedMission, hostedMode, hostedMaxPlayers),
+                senderAddr,
+            )
+            return
+        }
 
         val updated = current + LanPlayer(callsign = callsign, address = senderAddr)
         _hostedLobbyPlayers.value = updated
+        sendTo(
+            buildJoinAck(lobbyId, hostedGame, hostedMission, hostedMode, hostedMaxPlayers),
+            senderAddr,
+        )
         broadcastPlayerList()
         Log.i(TAG, "Player joined: $callsign from $senderAddr")
     }
@@ -381,6 +424,34 @@ object LobbyService {
         }
         // Also publish to hostedLobbyPlayers for the joined-lobby view
         _hostedLobbyPlayers.value = players
+    }
+
+    private fun handleJoinAck(
+        json: JSONObject,
+        senderAddr: String,
+    ) {
+        val lobbyId = json.optString("lobby_id", "")
+        if (lobbyId.isEmpty()) return
+        _joinedLobby.value =
+            JoinedLobbyInfo(
+                lobbyId = lobbyId,
+                hostAddr = senderAddr,
+                game = json.optString("game", "d2"),
+                mission = json.optString("mission", ""),
+                mode = json.optString("mode", "coop"),
+                maxPlayers = json.optInt("max_players", 4),
+            )
+        Log.i(TAG, "JOIN_ACK received for lobby $lobbyId from $senderAddr")
+    }
+
+    private fun handleJoinReject(json: JSONObject) {
+        val lobbyId = json.optString("lobby_id", "")
+        val reason = json.optString("reason", "unknown")
+        Log.w(TAG, "JOIN_REJECT for lobby $lobbyId: $reason")
+        // Clear joined state in case we were in a retry
+        if (_joinedLobby.value?.lobbyId == lobbyId) {
+            _joinedLobby.value = null
+        }
     }
 
     /**

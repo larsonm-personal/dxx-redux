@@ -408,6 +408,40 @@ private fun buildJoyPairs(
             values.add(dpadBtnIdx)
         }
     }
+
+    // Safety net: mutual exclusivity between axis and button bindings.
+    // When a physical axis is used as an axis (half or full), remove any
+    // button bindings that reference its synthetic axis-button indices.
+    // This prevents stale pilot files from retaining button-fire actions
+    // for triggers that were remapped to axis functions.
+    val poisonedButtons = mutableSetOf<Int>()
+    for (controlId in handledAsHalfAxis) {
+        AXIS_BUTTON_SDL[controlId]?.let { (neg, pos) ->
+            poisonedButtons.add(neg)
+            poisonedButtons.add(pos)
+        }
+    }
+    for ((controlId, funcLabel) in bindings) {
+        if (controlId in handledAsHalfAxis) continue
+        if (AXIS_CONTROLS.containsKey(controlId) && AXIS_KC_INDEX.containsKey(funcLabel)) {
+            AXIS_BUTTON_SDL[controlId]?.let { (neg, pos) ->
+                poisonedButtons.add(neg)
+                poisonedButtons.add(pos)
+            }
+        }
+    }
+    if (poisonedButtons.isNotEmpty()) {
+        val btnKcSlots = btnKcMap.values.toSet()
+        var i = indices.size - 1
+        while (i >= 0) {
+            if (indices[i] in btnKcSlots && values[i] in poisonedButtons) {
+                indices.removeAt(i)
+                values.removeAt(i)
+            }
+            i--
+        }
+    }
+
     return JoyPairsResult(indices.toIntArray(), values.toIntArray(), combiners)
 }
 
@@ -426,6 +460,16 @@ internal fun saveConfig(
     val d1JoySettings = NativePilotPatcher.nativeBuildJoySettings(d1Result.indices, d1Result.values)
     val d2JoySettings = NativePilotPatcher.nativeBuildJoySettings(d2Result.indices, d2Result.values)
     val joySettings = if (gameVariant == "d1") d1JoySettings else d2JoySettings
+
+    // Debug: log button slots (kc indices 0-12) to help diagnose trigger conflicts
+    val activeSettings = joySettings
+    val btnSummary = (0..12).joinToString { i -> "$i=${activeSettings[i].toInt() and 0xFF}" }
+    android.util.Log.d("ControllerConfig", "saveConfig[$gameVariant] btn: $btnSummary")
+    val axisSummary =
+        listOf(13, 15, 17, 19, 21, 23).joinToString { i ->
+            "$i=${activeSettings[i].toInt() and 0xFF}"
+        }
+    android.util.Log.d("ControllerConfig", "saveConfig[$gameVariant] axis: $axisSummary")
     // Use combiners from the active variant (they're the same either way
     // since combiner axes are game-independent)
     val combiners = d2Result.combiners

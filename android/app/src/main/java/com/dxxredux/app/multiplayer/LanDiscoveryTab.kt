@@ -45,6 +45,108 @@ fun LanDiscoveryTab(
     callsign: String,
     onLaunchGame: (GameLaunchInfo) -> Unit,
 ) {
+    val joinedLobby by LobbyService.joinedLobby.collectAsState()
+
+    if (joinedLobby != null) {
+        LanJoinedLobbyView(callsign, onLaunchGame)
+    } else {
+        LanDiscoveryView(callsign, onLaunchGame)
+    }
+}
+
+@Composable
+private fun LanJoinedLobbyView(
+    callsign: String,
+    onLaunchGame: (GameLaunchInfo) -> Unit,
+) {
+    val joinedLobby by LobbyService.joinedLobby.collectAsState()
+    val players by LobbyService.hostedLobbyPlayers.collectAsState()
+    val lanLaunchEvent by LobbyService.lanLaunchEvent.collectAsState()
+    val info = joinedLobby ?: return
+
+    // Consume LAN launch events
+    LaunchedEffect(lanLaunchEvent) {
+        val launchInfo = lanLaunchEvent ?: return@LaunchedEffect
+        LobbyService.clearLaunchEvent()
+        onLaunchGame(launchInfo)
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Header
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("LAN Lobby", style = MaterialTheme.typography.titleSmall)
+            Spacer(Modifier.weight(1f))
+            OutlinedButton(onClick = { LobbyService.leaveLanLobby(callsign) }) {
+                Text("Leave")
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+
+        // Lobby info
+        Text(
+            "${info.mission} -- ${info.mode} (${info.game})",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Text(
+            "Host: ${info.hostAddr}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(12.dp))
+
+        // Player list
+        Text(
+            "Players (${players.size}/${info.maxPlayers})",
+            style = MaterialTheme.typography.titleSmall,
+        )
+        Spacer(Modifier.height(4.dp))
+        LazyColumn(modifier = Modifier.weight(1f)) {
+            items(players, key = { it.callsign }) { player ->
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(12.dp),
+                    ) {
+                        Text(
+                            player.callsign,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(
+                            if (player.ready) "Ready" else "Not Ready",
+                            style = MaterialTheme.typography.bodySmall,
+                            color =
+                                if (player.ready) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                        )
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+
+        // Ready toggle
+        val myReady = players.find { it.callsign == callsign }?.ready ?: false
+        Button(
+            onClick = {
+                LobbyService.setReady(info.lobbyId, info.hostAddr, callsign, !myReady)
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(if (myReady) "Unready" else "Ready")
+        }
+    }
+}
+
+@Composable
+private fun LanDiscoveryView(
+    callsign: String,
+    onLaunchGame: (GameLaunchInfo) -> Unit,
+) {
     val context = LocalContext.current
     val discoveredLobbies by LobbyService.discoveredLobbies.collectAsState()
     val isHosting by LobbyService.isHosting.collectAsState()

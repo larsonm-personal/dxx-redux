@@ -400,6 +400,14 @@ Java_com_dxxredux_app_MainActivity_nativeOnPause(JNIEnv *env, jobject thiz)
 		return;
 	}
 
+	/* In multiplayer games, do NOT inject Escape — the session must
+	 * stay alive while the app is backgrounded.  A foreground service
+	 * keeps the process from being killed. */
+	if (Game_mode & GM_MULTI) {
+		LOGI("nativeOnPause — multiplayer active, skipping Escape injection");
+		return;
+	}
+
 	LOGI("nativeOnPause — injecting Escape key");
 
 	SDL_Event ev;

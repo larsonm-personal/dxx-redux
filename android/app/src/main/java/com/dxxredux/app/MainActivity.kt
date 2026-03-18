@@ -286,6 +286,12 @@ class MainActivity :
             nativeSetAutoHost(myPort, mission, mode, maxPlayers, levelNum, difficulty)
         }
 
+        // Start foreground service during multiplayer to prevent process kill
+        if (mpMode != null) {
+            com.dxxredux.app.multiplayer.MultiplayerForegroundService
+                .start(this)
+        }
+
         loadMetaBindings()
 
         // Keep screen on while the game is running
@@ -864,6 +870,8 @@ class MainActivity :
     }
 
     override fun onDestroy() {
+        com.dxxredux.app.multiplayer.MultiplayerForegroundService
+            .stop(this)
         if (BuildConfig.DEBUG) {
             try {
                 unregisterReceiver(introspectReceiver)

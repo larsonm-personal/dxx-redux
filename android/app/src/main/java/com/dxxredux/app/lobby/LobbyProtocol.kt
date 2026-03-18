@@ -17,6 +17,8 @@ const val MSG_READY = "READY"
 const val MSG_START = "START"
 const val MSG_PING = "PING"
 const val MSG_PONG = "PONG"
+const val MSG_JOIN_ACK = "JOIN_ACK"
+const val MSG_JOIN_REJECT = "JOIN_REJECT"
 
 /** A single player in a LAN lobby. */
 data class LanPlayer(
@@ -68,6 +70,36 @@ fun buildJoin(
     json.put("type", MSG_JOIN)
     json.put("lobby_id", lobbyId)
     json.put("callsign", callsign)
+    return json.toString().toByteArray(Charsets.UTF_8)
+}
+
+/** Build a JOIN_ACK packet (sent by host back to joiner on success). */
+fun buildJoinAck(
+    lobbyId: String,
+    game: String,
+    mission: String,
+    mode: String,
+    maxPlayers: Int,
+): ByteArray {
+    val json = JSONObject()
+    json.put("type", MSG_JOIN_ACK)
+    json.put("lobby_id", lobbyId)
+    json.put("game", game)
+    json.put("mission", mission)
+    json.put("mode", mode)
+    json.put("max_players", maxPlayers)
+    return json.toString().toByteArray(Charsets.UTF_8)
+}
+
+/** Build a JOIN_REJECT packet (sent by host when lobby is full or invalid). */
+fun buildJoinReject(
+    lobbyId: String,
+    reason: String,
+): ByteArray {
+    val json = JSONObject()
+    json.put("type", MSG_JOIN_REJECT)
+    json.put("lobby_id", lobbyId)
+    json.put("reason", reason)
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 

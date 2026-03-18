@@ -1,5 +1,6 @@
 package com.dxxredux.app.multiplayer
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dxxredux.app.lobby.LobbyService
 import kotlinx.coroutines.delay
 
 @Composable
@@ -45,6 +47,10 @@ fun MultiplayerScreen(
 
     when (state.nav) {
         MultiplayerNav.LOBBY -> {
+            BackHandler {
+                MatchmakingService.leaveLobby()
+                MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
+            }
             val lobby = state.currentLobby
             if (lobby != null) {
                 LobbyScreen(onLaunchGame)
@@ -53,9 +59,26 @@ fun MultiplayerScreen(
                 MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
             }
         }
-        MultiplayerNav.FRIENDS -> FriendsContent(state, onBack)
-        MultiplayerNav.LAN -> LanContent(state, onBack, onLaunchGame)
-        MultiplayerNav.BROWSER -> ServerBrowserContent(state, onBack)
+        MultiplayerNav.FRIENDS -> {
+            BackHandler {
+                MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
+            }
+            FriendsContent(state, onBack)
+        }
+        MultiplayerNav.LAN -> {
+            BackHandler {
+                if (LobbyService.joinedLobby.value != null) {
+                    LobbyService.leaveLanLobby(state.callsign)
+                } else {
+                    MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
+                }
+            }
+            LanContent(state, onBack, onLaunchGame)
+        }
+        MultiplayerNav.BROWSER -> {
+            BackHandler(onBack = onBack)
+            ServerBrowserContent(state, onBack)
+        }
     }
 }
 
