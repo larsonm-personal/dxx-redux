@@ -1278,6 +1278,104 @@ int plr_patch_keysettings(const char *path,
 	fclose(f);
 	return 1;
 }
+
+/*
+ * Compute the file offset past key settings to where weapon ordering starts.
+ * Returns offset on success, -1 on failure.  Leaves file position undefined.
+ */
+static long plr_weapon_order_offset(FILE *f)
+{
+	unsigned char buf[4];
+	unsigned int id;
+	int ver, n_highest, fixed_header;
+	long ks_base;
+
+	if (fread(buf, 1, 4, f) != 4) return -1;
+	id = (unsigned)buf[0] | ((unsigned)buf[1]<<8) |
+	     ((unsigned)buf[2]<<16) | ((unsigned)buf[3]<<24);
+	if (id != (unsigned)SAVE_FILE_ID) return -1;
+
+	if (fread(buf, 1, 2, f) != 2) return -1;
+	ver = buf[0] | (buf[1] << 8);
+	if (ver < COMPATIBLE_PLAYER_FILE_VERSION) return -1;
+
+	fixed_header = (ver >= 19) ? 19 : 18;
+
+	fseek(f, fixed_header, SEEK_SET);
+	if (fread(buf, 1, 2, f) != 2) return -1;
+	n_highest = buf[0] | (buf[1] << 8);
+
+	ks_base = fixed_header + 2
+	        + (long)n_highest * sizeof(hli)
+	        + 4 * MAX_MESSAGE_LEN;
+
+	/* Weapon order: ks_base + 8*MAX_CONTROLS + 3
+	 * (past key settings, control types, sensitivity) */
+	long offset = ks_base + 8 * MAX_CONTROLS + 3;
+
+	/* Verify file can hold 22 interleaved weapon bytes */
+	fseek(f, 0, SEEK_END);
+	if (ftell(f) < offset + 22) return -1;
+
+	return offset;
+}
+
+/*
+ * Read weapon ordering from a D2 .plr file.
+ * Fills primary[prim_len] and secondary[sec_len] from interleaved bytes.
+ * Returns 1 on success, 0 on failure.
+ */
+int plr_read_weapon_order(const char *path,
+                          ubyte *primary, int prim_len,
+                          ubyte *secondary, int sec_len)
+{
+	FILE *f = fopen(path, "rb");
+	if (!f) return 0;
+
+	long offset = plr_weapon_order_offset(f);
+	if (offset < 0) { fclose(f); return 0; }
+
+	fseek(f, offset, SEEK_SET);
+	int n = prim_len > sec_len ? prim_len : sec_len;
+	for (int i = 0; i < n; i++) {
+		int p = fgetc(f);
+		int s = fgetc(f);
+		if (p == EOF || s == EOF) { fclose(f); return 0; }
+		if (i < prim_len) primary[i] = (ubyte)p;
+		if (i < sec_len)  secondary[i] = (ubyte)s;
+	}
+
+	fclose(f);
+	return 1;
+}
+
+/*
+ * Write weapon ordering to a D2 .plr file.
+ * Writes interleaved primary[i], secondary[i] bytes.
+ * Returns 1 on success, 0 on failure.
+ */
+int plr_patch_weapon_order(const char *path,
+                           const ubyte *primary, int prim_len,
+                           const ubyte *secondary, int sec_len)
+{
+	FILE *f = fopen(path, "r+b");
+	if (!f) return 0;
+
+	long offset = plr_weapon_order_offset(f);
+	if (offset < 0) { fclose(f); return 0; }
+
+	fseek(f, offset, SEEK_SET);
+	int n = prim_len > sec_len ? prim_len : sec_len;
+	for (int i = 0; i < n; i++) {
+		fputc(i < prim_len ? primary[i] : 0, f);
+		fputc(i < sec_len ? secondary[i] : 0, f);
+	}
+
+	fflush(f);
+	fsync(fileno(f));
+	fclose(f);
+	return 1;
+}
 #endif /* ANDROID */
 
 int get_lifetime_checksum (int a,int b)

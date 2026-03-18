@@ -1651,4 +1651,142 @@ int plr_patch_keysettings(const char *path,
 	fclose(f);
 	return 1;
 }
+
+/*
+ * Read weapon ordering from a D1 .plx text file.
+ * Parses the [weapon reorder] INI section.
+ * Fills primary[prim_len] and secondary[sec_len] with weapon indices.
+ * Falls back to defaults from weapon.c if section missing.
+ * Returns 1 on success, 0 if file can't be opened.
+ */
+int plx_read_weapon_order(const char *path,
+                          ubyte *primary, int prim_len,
+                          ubyte *secondary, int sec_len)
+{
+	FILE *f = fopen(path, "r");
+	if (!f) return 0;
+
+	/* Defaults from weapon.c */
+	extern const ubyte DefaultPrimaryOrder[];
+	extern const ubyte DefaultSecondaryOrder[];
+	for (int i = 0; i < prim_len; i++)
+		primary[i] = DefaultPrimaryOrder[i];
+	for (int i = 0; i < sec_len; i++)
+		secondary[i] = DefaultSecondaryOrder[i];
+
+	char line[256];
+	int in_reorder = 0;
+	while (fgets(line, sizeof(line), f)) {
+		if (strstr(line, "[weapon reorder]") || strstr(line, "[WEAPON REORDER]")) {
+			in_reorder = 1;
+			continue;
+		}
+		if (in_reorder && (strstr(line, "[end]") || strstr(line, "[END]"))) {
+			break;
+		}
+		if (!in_reorder) continue;
+
+		if (strncmp(line, "primary=", 8) == 0) {
+			unsigned int w[7] = { 0 };
+			int n = sscanf(line + 8,
+			               "0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x",
+			               &w[0], &w[1], &w[2], &w[3], &w[4], &w[5], &w[6]);
+			if (n >= 6) {
+				for (int i = 0; i < prim_len && i < 7; i++)
+					primary[i] = (ubyte)w[i];
+			}
+		} else if (strncmp(line, "secondary=", 10) == 0) {
+			unsigned int w[6] = { 0 };
+			int n = sscanf(line + 10,
+			               "0x%x,0x%x,0x%x,0x%x,0x%x,0x%x",
+			               &w[0], &w[1], &w[2], &w[3], &w[4], &w[5]);
+			if (n >= 5) {
+				for (int i = 0; i < sec_len && i < 6; i++)
+					secondary[i] = (ubyte)w[i];
+			}
+		}
+	}
+
+	fclose(f);
+	return 1;
+}
+
+/*
+ * Write weapon ordering to a D1 .plx text file.
+ * Reads the existing file, replaces the [weapon reorder] section, writes back.
+ * Creates the section if not present.
+ * Returns 1 on success, 0 on failure.
+ */
+int plx_write_weapon_order(const char *path,
+                           const ubyte *primary, int prim_len,
+                           const ubyte *secondary, int sec_len)
+{
+	FILE *f = fopen(path, "r");
+
+	char buf[4096];
+	int buf_len = 0;
+	int in_reorder = 0;
+	int wrote_reorder = 0;
+
+#define PLX_BUF_APPEND(s) do { \
+		int _slen = (int)strlen(s); \
+		if (buf_len + _slen < (int)sizeof(buf)) { \
+			memcpy(buf + buf_len, s, _slen); \
+			buf_len += _slen; \
+		} \
+	} while (0)
+
+	char tmp[256];
+	/* Write the reorder section into the buffer */
+#define PLX_WRITE_REORDER() do { \
+		PLX_BUF_APPEND("[weapon reorder]\n"); \
+		snprintf(tmp, sizeof(tmp), \
+		         "primary=0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x\n", \
+		         primary[0], primary[1], primary[2], primary[3], \
+		         primary[4], primary[5], prim_len > 6 ? primary[6] : 0); \
+		PLX_BUF_APPEND(tmp); \
+		snprintf(tmp, sizeof(tmp), \
+		         "secondary=0x%x,0x%x,0x%x,0x%x,0x%x,0x%x\n", \
+		         secondary[0], secondary[1], secondary[2], \
+		         secondary[3], secondary[4], sec_len > 5 ? secondary[5] : 0); \
+		PLX_BUF_APPEND(tmp); \
+		PLX_BUF_APPEND("[end]\n"); \
+		wrote_reorder = 1; \
+	} while (0)
+
+	if (f) {
+		char line[256];
+		while (fgets(line, sizeof(line), f)) {
+			if (strstr(line, "[weapon reorder]") || strstr(line, "[WEAPON REORDER]")) {
+				in_reorder = 1;
+				PLX_WRITE_REORDER();
+				continue;
+			}
+			if (in_reorder) {
+				if (strstr(line, "[end]") || strstr(line, "[END]"))
+					in_reorder = 0;
+				continue;
+			}
+			PLX_BUF_APPEND(line);
+		}
+		fclose(f);
+	}
+
+	if (!wrote_reorder) {
+		if (buf_len == 0)
+			PLX_BUF_APPEND("[D1X Options]\n");
+		PLX_WRITE_REORDER();
+	}
+
+#undef PLX_BUF_APPEND
+#undef PLX_WRITE_REORDER
+
+	f = fopen(path, "w");
+	if (!f) return 0;
+	fwrite(buf, 1, buf_len, f);
+	fflush(f);
+	fsync(fileno(f));
+	fclose(f);
+	return 1;
+}
 #endif /* ANDROID */

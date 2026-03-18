@@ -20,7 +20,6 @@ package com.dxxredux.app
  */
 object NativeAutoselectPatcher {
     const val SEPARATOR = 255
-    const val D1_QUAD_LASERS_INDEX = 16
 
     /**
      * Read autoselect ordering from the first pilot file found.
@@ -42,23 +41,26 @@ object NativeAutoselectPatcher {
     ): Int
 
     /**
-     * Get weapon name strings for the current game build.
-     * D1: 5 primary names + "Quad Lasers" + 5 secondary names = 11
-     * D2: 10 primary names + 10 secondary names = 20
+     * Primary weapon entries: paired [indexStr, name, indexStr, name, ...].
+     * Every weapon index that can appear in a primary ordering is included,
+     * with its display name.  Separator (255) is included.
+     * Order length = result.size / 2.
      */
     @JvmStatic
-    external fun nativeGetWeaponNames(): Array<String>
+    external fun nativeGetPrimaryWeaponEntries(): Array<String>
 
     /**
-     * Get default autoselect ordering for the current game build.
-     * Same flat format as nativeReadAutoselect.
+     * Secondary weapon entries: same paired format as primary.
      */
     @JvmStatic
-    external fun nativeGetDefaultAutoselect(): IntArray
+    external fun nativeGetSecondaryWeaponEntries(): Array<String>
 
-    /**
-     * Get [primaryOrderLength, secondaryOrderLength] for the current game build.
-     */
-    @JvmStatic
-    external fun nativeGetOrderLengths(): IntArray
+    /** Parse paired [indexStr, name, ...] into a Map<weaponIndex, displayName>. */
+    fun parseWeaponEntries(entries: Array<String>): Map<Int, String> {
+        val map = LinkedHashMap<Int, String>(entries.size / 2)
+        for (i in entries.indices step 2) {
+            map[entries[i].toInt()] = entries[i + 1]
+        }
+        return map
+    }
 }

@@ -66,8 +66,8 @@ int	N_weapon_types=0;
 
 // autoselect ordering
 
-static const ubyte DefaultPrimaryOrder[]={9,8,7,6,5,4,3,2,1,0,255};
-static const ubyte DefaultSecondaryOrder[]={9,8,4,3,1,5,0,255,7,6,2};
+const ubyte DefaultPrimaryOrder[]={9,8,7,6,5,4,3,2,1,0,255};
+const ubyte DefaultSecondaryOrder[]={9,8,4,3,1,5,0,255,7,6,2};
 
 //allow player to reorder menus?
 extern ubyte MenuReordering;

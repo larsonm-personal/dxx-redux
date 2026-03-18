@@ -164,6 +164,12 @@ int plr_patch_keysettings(const char *path,
                          const ubyte *joy, int joy_len,
                          const ubyte *mouse, int mouse_len,
                          int control_type);
+int plr_read_weapon_order(const char *path,
+                          ubyte *primary, int prim_len,
+                          ubyte *secondary, int sec_len);
+int plr_patch_weapon_order(const char *path,
+                           const ubyte *primary, int prim_len,
+                           const ubyte *secondary, int sec_len);
 #endif
 
 #endif /* _PLAYSAVE_H */

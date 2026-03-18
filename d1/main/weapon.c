@@ -45,8 +45,8 @@ weapon_info Weapon_info[MAX_WEAPON_TYPES];
 int	N_weapon_types=0;
 int POrderList (int num);
 int SOrderList (int num);
-static const ubyte DefaultPrimaryOrder[] = { 4, 3, 2, 1, 0, 255, 16 };
-static const ubyte DefaultSecondaryOrder[] = { 4, 3, 1, 0, 255, 2 };
+const ubyte DefaultPrimaryOrder[] = { 4, 3, 2, 1, 0, 255, 16 };
+const ubyte DefaultSecondaryOrder[] = { 4, 3, 1, 0, 255, 2 };
 extern ubyte MenuReordering;
 
 int player_has_weapon_lasers_not_quads(int weapon_num, int secondary_flag) {

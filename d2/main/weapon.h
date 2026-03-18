@@ -179,6 +179,9 @@ extern ubyte Secondary_last_was_super[MAX_SECONDARY_WEAPONS];
 extern void auto_select_weapon(int weapon_type);        //parm is primary or secondary
 extern void select_weapon(int weapon_num, int secondary_flag, int print_message,int wait_for_rearm);
 
+extern const ubyte DefaultPrimaryOrder[];
+extern const ubyte DefaultSecondaryOrder[];
+
 extern const char *const Primary_weapon_names_short[];
 extern const char *const Secondary_weapon_names_short[];
 extern const char *const Primary_weapon_names[];
