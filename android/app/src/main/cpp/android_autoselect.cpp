@@ -32,6 +32,23 @@ extern "C" {
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
+/*
+ * Game-specific JNI function names.  Both libdxx-redux-d1.so and
+ * libdxx-redux-d2.so are loaded into the same process, so the JNI
+ * symbols must be unique.  Append D1/D2 to each method name.
+ */
+#define PASTE_(a, b, c) a##b##c
+#define PASTE3(a, b, c) PASTE_(a, b, c)
+
+#ifdef DXX_BUILD_DESCENT_II
+#define GAME_TAG D2
+#else
+#define GAME_TAG D1
+#endif
+
+#define JNI_FUNC(method) \
+	PASTE3(Java_com_dxxredux_app_NativeAutoselectPatcher_, method, GAME_TAG)
+
 /* Order array lengths.  Shared constants: keep in sync with playsave.h */
 #ifdef DXX_BUILD_DESCENT_II
 #define PRIM_ORDER_LEN (MAX_PRIMARY_WEAPONS + 1)   /* 11 */
@@ -127,7 +144,7 @@ static int write_visitor(const char *path, void *ctx)
 /* -- JNI entry points -------------------------------------------- */
 
 extern "C" JNIEXPORT jintArray JNICALL
-Java_com_dxxredux_app_NativeAutoselectPatcher_nativeReadAutoselect(
+JNI_FUNC(nativeReadAutoselect)(
     JNIEnv *env, jclass, jstring jfilesDir)
 {
 	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
@@ -176,7 +193,7 @@ Java_com_dxxredux_app_NativeAutoselectPatcher_nativeReadAutoselect(
 }
 
 extern "C" JNIEXPORT jint JNICALL
-Java_com_dxxredux_app_NativeAutoselectPatcher_nativeWriteAutoselect(
+JNI_FUNC(nativeWriteAutoselect)(
     JNIEnv *env, jclass, jstring jfilesDir,
     jintArray jprimary, jintArray jsecondary)
 {
@@ -257,7 +274,7 @@ static jobjectArray build_weapon_entries(JNIEnv *env, const ubyte *order,
 }
 
 extern "C" JNIEXPORT jobjectArray JNICALL
-Java_com_dxxredux_app_NativeAutoselectPatcher_nativeGetPrimaryWeaponEntries(
+JNI_FUNC(nativeGetPrimaryWeaponEntries)(
     JNIEnv *env, jclass)
 {
 	return build_weapon_entries(env, DefaultPrimaryOrder, PRIM_ORDER_LEN,
@@ -265,7 +282,7 @@ Java_com_dxxredux_app_NativeAutoselectPatcher_nativeGetPrimaryWeaponEntries(
 }
 
 extern "C" JNIEXPORT jobjectArray JNICALL
-Java_com_dxxredux_app_NativeAutoselectPatcher_nativeGetSecondaryWeaponEntries(
+JNI_FUNC(nativeGetSecondaryWeaponEntries)(
     JNIEnv *env, jclass)
 {
 	return build_weapon_entries(env, DefaultSecondaryOrder, SEC_ORDER_LEN,

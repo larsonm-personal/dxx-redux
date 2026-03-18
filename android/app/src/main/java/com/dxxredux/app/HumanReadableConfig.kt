@@ -50,6 +50,9 @@ object HumanReadableConfig {
             j.put("negYBinding", TouchBindings.bindingToName(s.negYBinding))
             j.put("posYBinding", TouchBindings.bindingToName(s.posYBinding))
         }
+        if (s.doubleTapBinding >= 0) {
+            j.put("doubleTapBinding", TouchBindings.bindingToName(s.doubleTapBinding))
+        }
         return j
     }
 
@@ -210,6 +213,12 @@ object HumanReadableConfig {
                         ?: TouchBindings.BTN_FIRE_PRIMARY
                 } else {
                     TouchBindings.BTN_FIRE_PRIMARY
+                },
+            doubleTapBinding =
+                if (j.has("doubleTapBinding")) {
+                    resolveBinding(j, "doubleTapBinding", warnings, "stick '$id'") ?: -1
+                } else {
+                    -1
                 },
         )
     }

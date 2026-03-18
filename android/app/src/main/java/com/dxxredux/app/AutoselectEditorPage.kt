@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,10 +18,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,6 +34,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -45,7 +51,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -77,14 +82,7 @@ fun AutoselectEditorPage(
     filesDir: String,
     onBack: () -> Unit,
 ) {
-    val context = LocalContext.current
-
-    // Use d2 native lib (d1 functions are compiled into d2 lib with different defines,
-    // but NativeAutoselectPatcher is compiled per-game -- we need both libs)
-    // Actually: both d1 and d2 are separate .so files, loaded by game variant.
-    // The NativeAutoselectPatcher calls are dispatched to whichever lib is loaded.
     var activeGame by remember { mutableStateOf(gameVariant) }
-    var libLoaded by remember { mutableStateOf(false) }
 
     // Weapon index -> display name maps, built from paired JNI entries
     var primaryNameMap by remember { mutableStateOf(emptyMap<Int, String>()) }
@@ -110,23 +108,14 @@ fun AutoselectEditorPage(
     }
 
     fun loadOrdering() {
-        try {
-            val libName = if (activeGame == "d1") "dxx-redux-d1" else "dxx-redux-d2"
-            System.loadLibrary(libName)
-            libLoaded = true
-        } catch (e: UnsatisfiedLinkError) {
-            statusMessage = "Failed to load native library"
-            return
-        }
-
-        val primEntries = NativeAutoselectPatcher.nativeGetPrimaryWeaponEntries()
-        val secEntries = NativeAutoselectPatcher.nativeGetSecondaryWeaponEntries()
+        val primEntries = NativeAutoselectPatcher.getPrimaryWeaponEntries(activeGame)
+        val secEntries = NativeAutoselectPatcher.getSecondaryWeaponEntries(activeGame)
         primaryNameMap = NativeAutoselectPatcher.parseWeaponEntries(primEntries)
         secondaryNameMap = NativeAutoselectPatcher.parseWeaponEntries(secEntries)
         val primLen = primaryNameMap.size
         val secLen = secondaryNameMap.size
 
-        val data = NativeAutoselectPatcher.nativeReadAutoselect(filesDir)
+        val data = NativeAutoselectPatcher.readAutoselect(activeGame, filesDir)
         if (data.isEmpty()) {
             // No pilot files -- use defaults (map keys are in default order)
             primaryOrder.clear()
@@ -313,7 +302,8 @@ fun AutoselectEditorPage(
                     Button(
                         onClick = {
                             val count =
-                                NativeAutoselectPatcher.nativeWriteAutoselect(
+                                NativeAutoselectPatcher.writeAutoselect(
+                                    activeGame,
                                     filesDir,
                                     primaryOrder.toIntArray(),
                                     secondaryOrder.toIntArray(),
@@ -359,7 +349,6 @@ private fun DragReorderList(
             itemHeightDp.toPx()
         }
 
-    // Drag state: track by *value* (not index) so the composable survives swaps.
     var draggedValue by remember { mutableStateOf<Int?>(null) }
     var dragOffsetY by remember { mutableStateOf(0f) }
     var overscrollSpeed by remember { mutableStateOf(0f) }
@@ -388,120 +377,166 @@ private fun DragReorderList(
         }
     }
 
-    LazyColumn(
-        state = listState,
-        modifier = modifier.fillMaxSize(),
-        userScrollEnabled = draggedValue == null,
-    ) {
-        itemsIndexed(items, key = { _, value -> value }) { index, value ->
-            val isDragging = value == draggedValue
-            val isSeparator = value == NativeAutoselectPatcher.SEPARATOR
-            val name = nameResolver(value)
+    Box(modifier = modifier) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            userScrollEnabled = draggedValue == null,
+        ) {
+            itemsIndexed(items, key = { _, value -> value }) { index, value ->
+                val isDragging = value == draggedValue
+                val isSeparator = value == NativeAutoselectPatcher.SEPARATOR
+                val name = nameResolver(value)
 
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(itemHeightDp)
-                        .then(
-                            if (isDragging) {
-                                Modifier
-                                    .zIndex(1f)
-                                    .offset { IntOffset(0, dragOffsetY.roundToInt()) }
-                                    .graphicsLayer { alpha = 0.8f }
-                            } else {
-                                Modifier.animateItem()
-                            },
-                        ).background(
-                            when {
-                                isDragging -> MaterialTheme.colorScheme.primaryContainer
-                                isSeparator -> MaterialTheme.colorScheme.surfaceVariant
-                                else -> Color.Transparent
-                            },
-                        ).pointerInput(value) {
-                            detectDragGesturesAfterLongPress(
-                                onDragStart = {
-                                    draggedValue = value
-                                    dragOffsetY = 0f
-                                    overscrollSpeed = 0f
-                                },
-                                onDrag = { change, dragAmount ->
-                                    change.consume()
-                                    dragOffsetY += dragAmount.y
-
-                                    val currentIdx = items.indexOf(value)
-                                    if (currentIdx >= 0) {
-                                        val target =
-                                            (currentIdx + (dragOffsetY / itemHeightPx).roundToInt())
-                                                .coerceIn(0, items.size - 1)
-                                        if (target != currentIdx) {
-                                            onReorder(currentIdx, target)
-                                            dragOffsetY -= (target - currentIdx) * itemHeightPx
-                                        }
-
-                                        // Compute auto-scroll speed from edge proximity.
-                                        val info =
-                                            listState.layoutInfo.visibleItemsInfo
-                                                .find { it.index == currentIdx }
-                                        if (info != null) {
-                                            val center = info.offset + info.size / 2 + dragOffsetY
-                                            val vpH = listState.layoutInfo.viewportEndOffset.toFloat()
-                                            val edge = vpH * 0.15f
-                                            overscrollSpeed =
-                                                when {
-                                                    center < edge ->
-                                                        -(1f - (center / edge).coerceIn(0f, 1f)) *
-                                                            itemHeightPx / 4f
-                                                    center > vpH - edge ->
-                                                        ((center - vpH + edge) / edge).coerceIn(0f, 1f) *
-                                                            itemHeightPx / 4f
-                                                    else -> 0f
-                                                }
-                                        }
-                                    }
-                                },
-                                onDragEnd = {
-                                    draggedValue = null
-                                    dragOffsetY = 0f
-                                    overscrollSpeed = 0f
-                                },
-                                onDragCancel = {
-                                    draggedValue = null
-                                    dragOffsetY = 0f
-                                    overscrollSpeed = 0f
-                                },
-                            )
-                        },
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
+                Box(
                     modifier =
                         Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 8.dp),
-                ) {
-                    Icon(
-                        Icons.Filled.Menu,
-                        contentDescription = "Drag to reorder",
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = name,
-                        fontSize = 13.sp,
-                        fontStyle = if (isSeparator) FontStyle.Italic else FontStyle.Normal,
-                        color =
-                            if (isSeparator) {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
+                            .fillMaxWidth()
+                            .height(itemHeightDp)
+                            .then(
+                                if (isDragging) {
+                                    Modifier
+                                        .zIndex(1f)
+                                        .offset { IntOffset(0, dragOffsetY.roundToInt()) }
+                                        .graphicsLayer { alpha = 0.8f }
+                                } else {
+                                    Modifier.animateItem()
+                                },
+                            ).background(
+                                when {
+                                    isDragging -> MaterialTheme.colorScheme.primaryContainer
+                                    isSeparator -> MaterialTheme.colorScheme.surfaceVariant
+                                    else -> Color.Transparent
+                                },
+                            ).pointerInput(value) {
+                                detectDragGesturesAfterLongPress(
+                                    onDragStart = {
+                                        draggedValue = value
+                                        dragOffsetY = 0f
+                                        overscrollSpeed = 0f
+                                    },
+                                    onDrag = { change, dragAmount ->
+                                        change.consume()
+                                        dragOffsetY += dragAmount.y
+
+                                        val currentIdx = items.indexOf(value)
+                                        if (currentIdx >= 0) {
+                                            val target =
+                                                (currentIdx + (dragOffsetY / itemHeightPx).roundToInt())
+                                                    .coerceIn(0, items.size - 1)
+                                            if (target != currentIdx) {
+                                                onReorder(currentIdx, target)
+                                                dragOffsetY -= (target - currentIdx) * itemHeightPx
+                                            }
+
+                                            // Look up by key (value) for correct position after swaps.
+                                            val info =
+                                                listState.layoutInfo.visibleItemsInfo
+                                                    .find { it.key == value }
+                                            if (info != null) {
+                                                val center = info.offset + info.size / 2 + dragOffsetY
+                                                val vpH = listState.layoutInfo.viewportEndOffset.toFloat()
+                                                val edge = vpH * 0.15f
+                                                overscrollSpeed =
+                                                    when {
+                                                        center < edge ->
+                                                            -(1f - (center / edge).coerceIn(0f, 1f)) *
+                                                                itemHeightPx / 4f
+                                                        center > vpH - edge ->
+                                                            ((center - vpH + edge) / edge).coerceIn(0f, 1f) *
+                                                                itemHeightPx / 4f
+                                                        else -> 0f
+                                                    }
+                                            } else {
+                                                // Item scrolled off-screen -- scroll toward it.
+                                                val firstVisible = listState.firstVisibleItemIndex
+                                                overscrollSpeed =
+                                                    if (currentIdx < firstVisible) {
+                                                        -itemHeightPx / 3f
+                                                    } else {
+                                                        itemHeightPx / 3f
+                                                    }
+                                            }
+                                        }
+                                    },
+                                    onDragEnd = {
+                                        draggedValue = null
+                                        dragOffsetY = 0f
+                                        overscrollSpeed = 0f
+                                    },
+                                    onDragCancel = {
+                                        draggedValue = null
+                                        dragOffsetY = 0f
+                                        overscrollSpeed = 0f
+                                    },
+                                )
                             },
-                        textAlign = if (isSeparator) TextAlign.Center else TextAlign.Start,
-                        modifier = if (isSeparator) Modifier.fillMaxWidth() else Modifier,
-                    )
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 8.dp),
+                    ) {
+                        Icon(
+                            Icons.Filled.Menu,
+                            contentDescription = "Drag to reorder",
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = name,
+                            fontSize = 13.sp,
+                            fontStyle = if (isSeparator) FontStyle.Italic else FontStyle.Normal,
+                            color =
+                                if (isSeparator) {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                            textAlign = if (isSeparator) TextAlign.Center else TextAlign.Start,
+                            modifier = if (isSeparator) Modifier.fillMaxWidth() else Modifier,
+                        )
+                    }
                 }
             }
+        }
+        LazyListScrollArrows(listState)
+    }
+}
+
+@Composable
+private fun BoxScope.LazyListScrollArrows(listState: LazyListState) {
+    if (listState.canScrollBackward) {
+        Surface(
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 4.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
+            shadowElevation = 2.dp,
+        ) {
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowUp,
+                contentDescription = "Scroll up",
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+    if (listState.canScrollForward) {
+        Surface(
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
+            shadowElevation = 2.dp,
+        ) {
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = "Scroll down",
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

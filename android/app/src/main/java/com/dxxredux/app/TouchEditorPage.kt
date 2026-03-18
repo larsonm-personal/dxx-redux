@@ -77,6 +77,11 @@ fun TouchEditorPage(
     var canvasWidth by remember { mutableFloatStateOf(1f) }
     var canvasHeight by remember { mutableFloatStateOf(1f) }
 
+    // Cycling state for stacked controls: tracks the last hit list and position in cycle
+    var cycleHits by remember { mutableStateOf<List<Pair<String, Int>>>(emptyList()) }
+    var cycleIndex by remember { mutableIntStateOf(0) }
+    var lastTapOffset by remember { mutableStateOf(Offset.Unspecified) }
+
     // Lock orientation and hide system bars to match in-game while editor is open
     val activity = context as? Activity
     DisposableEffect(Unit) {
@@ -358,14 +363,43 @@ fun TouchEditorPage(
                     .pointerInput(Unit) {
                         detectTapGestures(
                             onTap = { offset ->
-                                val hit = hitTest(layoutRef.value, offset, canvasWidth, canvasHeight)
-                                if (hit != null) {
-                                    selectedType = hit.first
-                                    selectedIndex = hit.second
-                                } else {
+                                val hits = hitTestAll(layoutRef.value, offset, canvasWidth, canvasHeight)
+                                if (hits.isEmpty()) {
                                     selectedType = null
                                     selectedIndex = -1
+                                    cycleHits = emptyList()
+                                } else if (hits.size == 1) {
+                                    selectedType = hits[0].first
+                                    selectedIndex = hits[0].second
+                                    cycleHits = hits
+                                    cycleIndex = 0
+                                } else {
+                                    // Multiple controls stacked: cycle through them
+                                    val nearPrev =
+                                        lastTapOffset != Offset.Unspecified &&
+                                            (offset - lastTapOffset).getDistance() < 30f
+                                    val sameList = nearPrev && cycleHits == hits
+                                    val current = Pair(selectedType, selectedIndex)
+                                    val nextIdx =
+                                        if (sameList) {
+                                            // Advance to next that isn't the current selection
+                                            val start = (cycleIndex + 1) % hits.size
+                                            if (hits[start] != current) {
+                                                start
+                                            } else {
+                                                (start + 1) % hits.size
+                                            }
+                                        } else {
+                                            // New tap location: if current is in hits, pick next; else first
+                                            val curPos = hits.indexOf(current)
+                                            if (curPos >= 0) (curPos + 1) % hits.size else 0
+                                        }
+                                    cycleHits = hits
+                                    cycleIndex = nextIdx
+                                    selectedType = hits[nextIdx].first
+                                    selectedIndex = hits[nextIdx].second
                                 }
+                                lastTapOffset = offset
                             },
                             onLongPress = { offset ->
                                 val hit = hitTest(layoutRef.value, offset, canvasWidth, canvasHeight)
@@ -582,38 +616,64 @@ private fun drawAllControls(
         // Floating zone indicator
         if (stick.floating || stick.mouseMode) {
             val fz = stick.floatingZone
+            val fzTopLeft = Offset(w * fz.leftPct / 100f, h * fz.topPct / 100f)
+            val fzSize =
+                androidx.compose.ui.geometry.Size(
+                    w * (fz.rightPct - fz.leftPct) / 100f,
+                    h * (fz.bottomPct - fz.topPct) / 100f,
+                )
             scope.drawRect(
                 color = Color(0x1488CCFF),
-                topLeft = Offset(w * fz.leftPct / 100f, h * fz.topPct / 100f),
-                size =
-                    androidx.compose.ui.geometry.Size(
-                        w * (fz.rightPct - fz.leftPct) / 100f,
-                        h * (fz.bottomPct - fz.topPct) / 100f,
-                    ),
+                topLeft = fzTopLeft,
+                size = fzSize,
             )
+            if (stick.mouseMode) {
+                // In mouse mode, draw a visible border instead of the stick circle
+                scope.drawRect(
+                    color = cStickRing.copy(alpha = alpha),
+                    topLeft = fzTopLeft,
+                    size = fzSize,
+                    style = Stroke(width = 2f),
+                )
+            }
         }
 
-        // Ring
-        scope.drawCircle(
-            color = cStickRing.copy(alpha = alpha),
-            radius = r,
-            center = Offset(cx, cy),
-            style = Stroke(width = 3f),
-        )
-        // Thumb (at center in editor)
-        scope.drawCircle(
-            color = cStickThumb.copy(alpha = alpha * 0.6f),
-            radius = r * 0.35f,
-            center = Offset(cx, cy),
-        )
-        // Selection highlight
-        if (selected) {
+        if (stick.mouseMode) {
+            // Mouse mode: selection highlight is a rect around the floating zone
+            if (selected) {
+                val fz = stick.floatingZone
+                scope.drawRect(
+                    color = cSelected,
+                    topLeft = Offset(w * fz.leftPct / 100f - 3f, h * fz.topPct / 100f - 3f),
+                    size =
+                        androidx.compose.ui.geometry.Size(
+                            w * (fz.rightPct - fz.leftPct) / 100f + 6f,
+                            h * (fz.bottomPct - fz.topPct) / 100f + 6f,
+                        ),
+                    style = Stroke(width = 3f),
+                )
+            }
+        } else {
+            // Normal stick mode: draw ring and thumb
             scope.drawCircle(
-                color = cSelected,
-                radius = r + 4f,
+                color = cStickRing.copy(alpha = alpha),
+                radius = r,
                 center = Offset(cx, cy),
                 style = Stroke(width = 3f),
             )
+            scope.drawCircle(
+                color = cStickThumb.copy(alpha = alpha * 0.6f),
+                radius = r * 0.35f,
+                center = Offset(cx, cy),
+            )
+            if (selected) {
+                scope.drawCircle(
+                    color = cSelected,
+                    radius = r + 4f,
+                    center = Offset(cx, cy),
+                    style = Stroke(width = 3f),
+                )
+            }
         }
         // Label
         val label = TouchBindings.AXIS_LABELS[stick.axisX]?.take(3) ?: "?"
@@ -964,7 +1024,19 @@ private fun hitTest(
     canvasWidth: Float,
     canvasHeight: Float,
 ): Pair<String, Int>? {
+    val all = hitTestAll(layout, offset, canvasWidth, canvasHeight)
+    return all.firstOrNull()
+}
+
+/** Returns all controls hit at the given offset, in priority order (buttons > radials > sliders > sticks). */
+private fun hitTestAll(
+    layout: TouchLayout,
+    offset: Offset,
+    canvasWidth: Float,
+    canvasHeight: Float,
+): List<Pair<String, Int>> {
     val baseScale = sqrt(canvasWidth * canvasHeight)
+    val hits = mutableListOf<Pair<String, Int>>()
 
     // Check buttons first (smaller targets, should take priority)
     layout.buttons.forEachIndexed { i, btn ->
@@ -972,7 +1044,7 @@ private fun hitTest(
         val cy = canvasHeight * btn.yPct / 100f
         val r = baseScale * 0.04f * btn.sizeMult
         val dist = sqrt((offset.x - cx) * (offset.x - cx) + (offset.y - cy) * (offset.y - cy))
-        if (dist <= r * 1.3f) return Pair("button", i)
+        if (dist <= r * 1.3f) hits.add(Pair("button", i))
     }
 
     // Check radial menus (before sticks, they have smaller triggers)
@@ -981,7 +1053,7 @@ private fun hitTest(
         val cy = canvasHeight * rm.yPct / 100f
         val r = baseScale * 0.14f * rm.sizeMult
         val dist = sqrt((offset.x - cx) * (offset.x - cx) + (offset.y - cy) * (offset.y - cy))
-        if (dist <= r) return Pair("radial", i)
+        if (dist <= r) hits.add(Pair("radial", i))
     }
 
     // Check sliders
@@ -993,19 +1065,29 @@ private fun hitTest(
         val vertical = sl.orientation == SliderOrientation.VERTICAL
         val along = if (vertical) kotlin.math.abs(offset.y - cy) else kotlin.math.abs(offset.x - cx)
         val across = if (vertical) kotlin.math.abs(offset.x - cx) else kotlin.math.abs(offset.y - cy)
-        if (along <= trackLen + thumbR && across <= thumbR * 3) return Pair("slider", i)
+        if (along <= trackLen + thumbR && across <= thumbR * 3) hits.add(Pair("slider", i))
     }
 
     // Check sticks
     layout.sticks.forEachIndexed { i, stick ->
-        val cx = canvasWidth * stick.xPct / 100f
-        val cy = canvasHeight * stick.yPct / 100f
-        val r = baseScale * 0.12f * stick.sizeMult
-        val dist = sqrt((offset.x - cx) * (offset.x - cx) + (offset.y - cy) * (offset.y - cy))
-        if (dist <= r) return Pair("stick", i)
+        if (stick.mouseMode) {
+            // Mouse mode: hit-test the floating zone rect
+            val fz = stick.floatingZone
+            val left = canvasWidth * fz.leftPct / 100f
+            val top = canvasHeight * fz.topPct / 100f
+            val right = canvasWidth * fz.rightPct / 100f
+            val bottom = canvasHeight * fz.bottomPct / 100f
+            if (offset.x in left..right && offset.y in top..bottom) hits.add(Pair("stick", i))
+        } else {
+            val cx = canvasWidth * stick.xPct / 100f
+            val cy = canvasHeight * stick.yPct / 100f
+            val r = baseScale * 0.12f * stick.sizeMult
+            val dist = sqrt((offset.x - cx) * (offset.x - cx) + (offset.y - cy) * (offset.y - cy))
+            if (dist <= r) hits.add(Pair("stick", i))
+        }
     }
 
-    return null
+    return hits
 }
 
 /** Returns a new layout with the specified control moved by (dxPct, dyPct). */
@@ -1217,6 +1299,13 @@ private fun StickPropertiesPanel(
         LabeledToggle("Invert X", stick.invertX) { onUpdate(stick.copy(invertX = it)) }
         LabeledToggle("Invert Y", stick.invertY) { onUpdate(stick.copy(invertY = it)) }
         LabeledToggle("Haptic", stick.hapticFeedback) { onUpdate(stick.copy(hapticFeedback = it)) }
+    }
+
+    // Double-tap action (available for all stick modes)
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        DoubleTapBindingPicker("Double-Tap Action", stick.doubleTapBinding, Modifier.weight(1f), gameVariant) {
+            onUpdate(stick.copy(doubleTapBinding = it))
+        }
     }
 
     // Mouse mode sensitivity
@@ -1767,6 +1856,95 @@ private fun ButtonBindingPicker(
                                                     Modifier.clickable {
                                                         onChange(idx)
                                                         expanded = false
+                                                    }
+                                                },
+                                            ).padding(vertical = 8.dp, horizontal = 4.dp),
+                                    fontSize = 12.sp,
+                                    fontStyle = if (isD2Only) FontStyle.Italic else FontStyle.Normal,
+                                    color =
+                                        if (isD2Only) {
+                                            Color(0xFF999999)
+                                        } else if (idx == current) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface
+                                        },
+                                )
+                            }
+                        }
+                        ScrollArrows(scrollState)
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { expanded = false }) { Text("Cancel") }
+                },
+            )
+        }
+    }
+}
+
+/** Like ButtonBindingPicker but with a "None" option (returns -1). */
+@Composable
+private fun DoubleTapBindingPicker(
+    label: String,
+    current: Int,
+    modifier: Modifier = Modifier,
+    gameVariant: String = "d2",
+    onChange: (Int) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val currentLabel = if (current < 0) "None" else (TouchBindings.ALL_BUTTON_LABELS[current] ?: "Button $current")
+    val isD1 = gameVariant == "d1"
+    val entries = TouchBindings.BUTTON_LABELS
+
+    Column(modifier = modifier) {
+        Text(label, color = Color.Gray, fontSize = 11.sp)
+        TextButton(onClick = { expanded = true }) {
+            Text(currentLabel, fontSize = 11.sp)
+        }
+        if (expanded) {
+            AlertDialog(
+                onDismissRequest = { expanded = false },
+                title = { Text(label, fontSize = 14.sp) },
+                text = {
+                    val scrollState = rememberScrollState()
+                    Box(Modifier.heightIn(max = 300.dp)) {
+                        Column(Modifier.verticalScroll(scrollState)) {
+                            Text(
+                                "None",
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            onChange(-1)
+                                            expanded = false
+                                        }.padding(vertical = 8.dp, horizontal = 4.dp),
+                                fontSize = 12.sp,
+                                color =
+                                    if (current <
+                                        0
+                                    ) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
+                            )
+                            entries.forEach { (idx, name) ->
+                                val isD2Only = isD1 && idx in TouchBindings.D2_ONLY_BUTTONS
+                                val displayText = if (isD2Only) "$name (D2 only)" else name
+                                Text(
+                                    displayText,
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .then(
+                                                if (isD2Only) {
+                                                    Modifier
+                                                } else {
+                                                    Modifier.clickable {
+                                                        onChange(idx)
+                                                        expanded =
+                                                            false
                                                     }
                                                 },
                                             ).padding(vertical = 8.dp, horizontal = 4.dp),

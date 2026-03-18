@@ -3,57 +3,70 @@ package com.dxxredux.app
 /**
  * JNI wrapper for weapon autoselect ordering read/write in pilot files.
  *
- * D1 pilot files store weapon ordering as text INI in .plx files.
- * D2 pilot files store weapon ordering as binary in .plr files.
- * All format details are in C (android_autoselect.cpp / playsave.c).
+ * Both libdxx-redux-d1.so and libdxx-redux-d2.so are loaded at init.
+ * Each exports game-specific JNI symbols (suffixed D1/D2) so ART
+ * resolves them to the correct library without caching conflicts.
  *
- * Weapon names are hardcoded English strings matching the in-game
- * "Reorder Primary" / "Reorder Secondary" menus exactly.
- *
- * Shared constants for array layout:
- *   D1 primary order: 7 entries (5 weapons + separator + Quad Lasers)
- *   D1 secondary order: 6 entries (5 weapons + separator)
- *   D2 primary order: 11 entries (10 weapons + separator)
- *   D2 secondary order: 11 entries (10 weapons + separator)
- *   Separator value: 255
- *   D1 Quad Lasers index: 16
+ * Kotlin callers use the dispatcher functions (readAutoselect, etc.)
+ * which route to the correct native method based on a game parameter.
  */
 object NativeAutoselectPatcher {
     const val SEPARATOR = 255
 
-    /**
-     * Read autoselect ordering from the first pilot file found.
-     * Returns flat int array: [primary..., secondary...]
-     * Returns empty array if no pilot file exists.
-     */
-    @JvmStatic
-    external fun nativeReadAutoselect(filesDir: String): IntArray
+    init {
+        System.loadLibrary("dxx-redux-d1")
+        System.loadLibrary("dxx-redux-d2")
+    }
 
-    /**
-     * Write autoselect ordering to ALL pilot files for this game.
-     * @return number of files patched
-     */
-    @JvmStatic
-    external fun nativeWriteAutoselect(
+    // -- D1 native methods (bound to libdxx-redux-d1.so) --
+    @JvmStatic external fun nativeReadAutoselectD1(filesDir: String): IntArray
+
+    @JvmStatic external fun nativeWriteAutoselectD1(
         filesDir: String,
         primaryOrder: IntArray,
         secondaryOrder: IntArray,
     ): Int
 
-    /**
-     * Primary weapon entries: paired [indexStr, name, indexStr, name, ...].
-     * Every weapon index that can appear in a primary ordering is included,
-     * with its display name.  Separator (255) is included.
-     * Order length = result.size / 2.
-     */
-    @JvmStatic
-    external fun nativeGetPrimaryWeaponEntries(): Array<String>
+    @JvmStatic external fun nativeGetPrimaryWeaponEntriesD1(): Array<String>
 
-    /**
-     * Secondary weapon entries: same paired format as primary.
-     */
-    @JvmStatic
-    external fun nativeGetSecondaryWeaponEntries(): Array<String>
+    @JvmStatic external fun nativeGetSecondaryWeaponEntriesD1(): Array<String>
+
+    // -- D2 native methods (bound to libdxx-redux-d2.so) --
+    @JvmStatic external fun nativeReadAutoselectD2(filesDir: String): IntArray
+
+    @JvmStatic external fun nativeWriteAutoselectD2(
+        filesDir: String,
+        primaryOrder: IntArray,
+        secondaryOrder: IntArray,
+    ): Int
+
+    @JvmStatic external fun nativeGetPrimaryWeaponEntriesD2(): Array<String>
+
+    @JvmStatic external fun nativeGetSecondaryWeaponEntriesD2(): Array<String>
+
+    // -- Dispatchers --
+    fun readAutoselect(
+        game: String,
+        filesDir: String,
+    ): IntArray = if (game == "d1") nativeReadAutoselectD1(filesDir) else nativeReadAutoselectD2(filesDir)
+
+    fun writeAutoselect(
+        game: String,
+        filesDir: String,
+        primary: IntArray,
+        secondary: IntArray,
+    ): Int =
+        if (game == "d1") {
+            nativeWriteAutoselectD1(filesDir, primary, secondary)
+        } else {
+            nativeWriteAutoselectD2(filesDir, primary, secondary)
+        }
+
+    fun getPrimaryWeaponEntries(game: String): Array<String> =
+        if (game == "d1") nativeGetPrimaryWeaponEntriesD1() else nativeGetPrimaryWeaponEntriesD2()
+
+    fun getSecondaryWeaponEntries(game: String): Array<String> =
+        if (game == "d1") nativeGetSecondaryWeaponEntriesD1() else nativeGetSecondaryWeaponEntriesD2()
 
     /** Parse paired [indexStr, name, ...] into a Map<weaponIndex, displayName>. */
     fun parseWeaponEntries(entries: Array<String>): Map<Int, String> {

@@ -132,6 +132,9 @@ class TouchOverlayView
             var xPosPressed = false
             var yNegPressed = false
             var yPosPressed = false
+
+            // Double-tap tracking
+            var lastTapTime: Long = 0
         }
 
         private class ButtonState(
@@ -205,7 +208,7 @@ class TouchOverlayView
         private fun drainMouseBuffers() {
             for (s in stickStates) {
                 if (!s.control.mouseMode || s.pointerId < 0) continue
-                val cap = MOUSE_MAX_AXIS_PER_TICK * s.control.mouseSensitivity
+                val cap = MOUSE_MAX_AXIS_PER_TICK * s.control.mouseSensitivity * MOUSE_SENSITIVITY_MULTIPLIER
                 val emitX = s.mousePendingX.coerceIn(-cap, cap)
                 val emitY = s.mousePendingY.coerceIn(-cap, cap)
                 s.mousePendingX -= emitX
@@ -286,6 +289,7 @@ class TouchOverlayView
             private const val MOUSE_DRAIN_INTERVAL_MS = 16L // ~60 Hz
             private const val MOUSE_MAX_AXIS_PER_TICK = 0.6f // max axis output per tick before sensitivity
             private const val MOUSE_REFERENCE_DISTANCE = 200f // pixels of drag for 1.0 axis at sensitivity=1
+            private const val MOUSE_SENSITIVITY_MULTIPLIER = 10f // hidden multiplier so slider stays low-range
 
             // Admin tray action indices dispatched via adminTrayCallback
             const val ADMIN_INCREASE_VIEW = 0
@@ -1003,6 +1007,15 @@ class TouchOverlayView
                         if (s.control.mouseMode) {
                             // Mouse mode: use floating zone bounds for hit detection
                             if (px in s.fzLeft..s.fzRight && py in s.fzTop..s.fzBottom) {
+                                // Double-tap detection
+                                val now = android.os.SystemClock.uptimeMillis()
+                                if (s.control.doubleTapBinding >= 0 && now - s.lastTapTime < 300L) {
+                                    buttonCallback?.invoke(s.control.doubleTapBinding, true)
+                                    buttonCallback?.invoke(s.control.doubleTapBinding, false)
+                                    s.lastTapTime = 0
+                                } else {
+                                    s.lastTapTime = now
+                                }
                                 s.pointerId = pid
                                 s.mouseLastX = px
                                 s.mouseLastY = py
@@ -1015,6 +1028,15 @@ class TouchOverlayView
                             }
                         } else if (s.control.floating) {
                             if (px in s.fzLeft..s.fzRight && py in s.fzTop..s.fzBottom) {
+                                // Double-tap detection for floating mode
+                                val now = android.os.SystemClock.uptimeMillis()
+                                if (s.control.doubleTapBinding >= 0 && now - s.lastTapTime < 300L) {
+                                    buttonCallback?.invoke(s.control.doubleTapBinding, true)
+                                    buttonCallback?.invoke(s.control.doubleTapBinding, false)
+                                    s.lastTapTime = 0
+                                } else {
+                                    s.lastTapTime = now
+                                }
                                 s.pointerId = pid
                                 s.floatingCX = px
                                 s.floatingCY = py
@@ -1025,6 +1047,15 @@ class TouchOverlayView
                                 break
                             }
                         } else if (hypot(px - s.centerX, py - s.centerY) <= s.radius) {
+                            // Double-tap detection for fixed sticks
+                            val now = android.os.SystemClock.uptimeMillis()
+                            if (s.control.doubleTapBinding >= 0 && now - s.lastTapTime < 300L) {
+                                buttonCallback?.invoke(s.control.doubleTapBinding, true)
+                                buttonCallback?.invoke(s.control.doubleTapBinding, false)
+                                s.lastTapTime = 0
+                            } else {
+                                s.lastTapTime = now
+                            }
                             s.pointerId = pid
                             updateStickFromTouch(s, px, py)
                             handled = true
@@ -1379,7 +1410,7 @@ class TouchOverlayView
             s.mouseLastX = px
             s.mouseLastY = py
             // Convert pixel delta to axis-space and accumulate
-            val scale = s.control.mouseSensitivity / MOUSE_REFERENCE_DISTANCE
+            val scale = s.control.mouseSensitivity * MOUSE_SENSITIVITY_MULTIPLIER / MOUSE_REFERENCE_DISTANCE
             s.mousePendingX += dx * scale
             s.mousePendingY += dy * scale
         }
@@ -1983,10 +2014,6 @@ class TouchOverlayView
         private fun drawAdminTrayPanel(canvas: Canvas) {
             val w = width.toFloat()
             val h = height.toFloat()
-
-            // Dim background proportional to slide progress
-            val dimAlpha = (0x88 * adminTraySlide).toInt()
-            canvas.drawColor((dimAlpha shl 24))
 
             val itemCount = 7
             val cols = 3

@@ -93,6 +93,7 @@ data class AnalogStickControl(
     val posXBinding: Int = TouchBindings.BTN_FIRE_PRIMARY,
     val negYBinding: Int = TouchBindings.BTN_FIRE_PRIMARY,
     val posYBinding: Int = TouchBindings.BTN_FIRE_PRIMARY,
+    val doubleTapBinding: Int = -1,
 ) {
     fun toJson() =
         JSONObject().apply {
@@ -124,6 +125,7 @@ data class AnalogStickControl(
                 put("negYBinding", negYBinding)
                 put("posYBinding", posYBinding)
             }
+            if (doubleTapBinding >= 0) put("doubleTapBinding", doubleTapBinding)
         }
 
     companion object {
@@ -160,6 +162,7 @@ data class AnalogStickControl(
                 posXBinding = j.optInt("posXBinding", TouchBindings.BTN_FIRE_PRIMARY),
                 negYBinding = j.optInt("negYBinding", TouchBindings.BTN_FIRE_PRIMARY),
                 posYBinding = j.optInt("posYBinding", TouchBindings.BTN_FIRE_PRIMARY),
+                doubleTapBinding = j.optInt("doubleTapBinding", -1),
             )
     }
 }

@@ -98,7 +98,16 @@ class SetupActivity : ComponentActivity() {
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_sow --es path /sdcard/descent2.sow
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_files --es path /sdcard/DESCENT2.HOG
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_default_config
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_autoselect --es game d2 --es primary "8,9,7,6,5,4,3,2,1,0,255" --es secondary "9,8,4,3,1,5,0,255,7,6,2"
     private var gameRunningFlag = false
+
+    /** Check if the :game process is alive (game engine still running).
+     *  On Android 5.1+ runningAppProcesses returns only same-uid processes,
+     *  which is exactly what we need -- :game shares our uid. */
+    private fun isGameProcessAlive(): Boolean {
+        val am = getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+        return am.runningAppProcesses?.any { it.processName == "$packageName:game" } == true
+    }
 
     /** Guard against double-launch of multiplayer game (auto-launch from
      *  LobbyScreen LaunchedEffect + explicit launch_game broadcast). Two
@@ -114,7 +123,7 @@ class SetupActivity : ComponentActivity() {
                 val cmd = intent?.getStringExtra("command") ?: return
                 when (cmd) {
                     "launch" -> {
-                        if (gameRunningFlag) {
+                        if (gameRunningFlag || isGameProcessAlive()) {
                             finish()
                         } else {
                             val game = intent.getStringExtra("game") ?: "d2"
@@ -205,6 +214,21 @@ class SetupActivity : ComponentActivity() {
                         } else {
                             Log.w("DXX-Setup", "import_files: not a file: $path")
                         }
+                    }
+                    "write_autoselect" -> {
+                        val game = intent.getStringExtra("game") ?: "d2"
+                        val primStr = intent.getStringExtra("primary") ?: return
+                        val secStr = intent.getStringExtra("secondary") ?: return
+                        val prim = primStr.split(",").map { it.trim().toInt() }.toIntArray()
+                        val sec = secStr.split(",").map { it.trim().toInt() }.toIntArray()
+                        val count =
+                            NativeAutoselectPatcher.writeAutoselect(
+                                game,
+                                filesDir.absolutePath,
+                                prim,
+                                sec,
+                            )
+                        Log.i("DXX-Setup", "write_autoselect ($game): patched $count file(s)")
                     }
                     else -> Log.w("DXX-Setup", "Unknown command: $cmd")
                 }
@@ -831,7 +855,7 @@ class SetupActivity : ComponentActivity() {
                 axisGeneration = axisGeneration.intValue,
                 pressedButtons = pressedButtons,
                 onLaunchGame = { game ->
-                    if (gameRunning) {
+                    if (gameRunning || isGameProcessAlive()) {
                         finish() // return to the already-running game
                     } else {
                         FileSetManager(filesDir).writeActiveSetPath()

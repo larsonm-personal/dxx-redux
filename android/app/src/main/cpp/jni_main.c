@@ -32,6 +32,20 @@ jobject g_activity = NULL; /* Global ref to MainActivity */
 /* ── AAssetManager (used by digi_tsf_music.c to load the GM soundfont) ── */
 AAssetManager *g_asset_manager = NULL;
 
+/* Guard against double-launch: two startGame() calls in the same :game
+ * process corrupt SDL/OpenGL/PhysFS globals and crash.  This happens when
+ * the user presses Home (backgrounding the game) and then taps "Launch"
+ * in the launcher, which starts a second MainActivity+thread in the same
+ * process.  The static flag survives across Activity instances. */
+static volatile int g_game_running = 0;
+
+/* Callable from Kotlin to check if main() is already executing. */
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeIsGameRunning(JNIEnv *env, jclass cls)
+{
+	return (jboolean) g_game_running;
+}
+
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved)
 {
 	g_jvm = vm;
@@ -52,6 +66,21 @@ Java_com_dxxredux_app_MainActivity_helloFromNative(JNIEnv *env, jobject thiz)
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 {
+	/* Guard: if main() is already running in another thread, do nothing.
+	 * This prevents the double-launch SIGSEGV that occurs when a second
+	 * Activity starts in the :game process while the first is still alive
+	 * (e.g. user presses Home then taps "Launch" in the launcher). */
+	if (g_game_running) {
+		LOGE("startGame() called while game already running -- aborting to avoid crash");
+		/* Finish this redundant Activity so the user sees the running game. */
+		jclass cls = (*env)->GetObjectClass(env, thiz);
+		jmethodID mid = (*env)->GetMethodID(env, cls, "finish", "()V");
+		if (mid)
+			(*env)->CallVoidMethod(env, thiz, mid);
+		return;
+	}
+	g_game_running = 1;
+
 	LOGI("Starting D2X-Redux game engine...");
 
 	/* Cache a global reference to the Activity for C→Java callbacks. */
@@ -131,6 +160,8 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 
 	char *argv[] = { (char *) &androidInit, NULL };
 	main(1, argv);
+
+	g_game_running = 0;
 
 	/* Engine has exited (user quit or fatal error).
 	 * Call Activity.finish() so the activity closes instead of freezing

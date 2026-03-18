@@ -164,6 +164,12 @@ static json serialize_newmenu(void *data)
 	const char *title = newmenu_get_title(menu);
 	const char *subtitle = newmenu_get_subtitle(menu);
 
+	/* Get canvas offset so we can report absolute screen positions */
+	window *wind = newmenu_get_window(menu);
+	grs_canvas *canvas = wind ? window_get_canvas(wind) : NULL;
+	int cx = canvas ? canvas->cv_bitmap.bm_x : 0;
+	int cy = canvas ? canvas->cv_bitmap.bm_y : 0;
+
 	json menu_items = json::array();
 	for (int i = 0; i < nitems; i++) {
 		json item = {
@@ -171,7 +177,11 @@ static json serialize_newmenu(void *data)
 			{ "type", nm_type_name(items[i].type) },
 			{ "text", items[i].text ? items[i].text : "" },
 			{ "value", items[i].value },
-			{ "selected", i == citem }
+			{ "selected", i == citem },
+			{ "x", cx + (int) items[i].x },
+			{ "y", cy + (int) items[i].y },
+			{ "w", (int) items[i].w },
+			{ "h", (int) items[i].h }
 		};
 		if (items[i].type == NM_TYPE_SLIDER || items[i].type == NM_TYPE_NUMBER) {
 			item["min"] = items[i].min_value;

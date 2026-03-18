@@ -282,6 +282,30 @@ private data class StickPickerResult(
     val yPosFunc: String? = null,
 )
 
+// Half-axis map: button function -> (axis function, isPositive).
+// isPositive means this button corresponds to the positive half of the
+// axis under the non-inverted sign convention in kconfig_read_controls().
+// Shared constant: sign conventions must match kconfig.c axis handling
+// (see vertical_thrust_time, sideways_thrust_time, forward_thrust_time).
+private val HALF_AXIS_MAP =
+    mapOf(
+        "Slide Up" to Pair("Slide U/D", true),
+        "Slide Down" to Pair("Slide U/D", false),
+        "Slide Right" to Pair("Slide L/R", true),
+        "Slide Left" to Pair("Slide L/R", false),
+        "Reverse" to Pair("Throttle", true),
+        "Accelerate" to Pair("Throttle", false),
+    )
+
+// First virtual combiner axis (must match joy.c VC axis registration)
+private const val VIRTUAL_AXIS_BASE = 8
+
+private data class JoyPairsResult(
+    val indices: IntArray,
+    val values: IntArray,
+    val combiners: List<Triple<Int, Int, Int>>,
+)
+
 // ── Config file I/O ─────────────────────────────────────────────────────────
 
 private const val CONFIG_FILENAME = "controller_config.json"
@@ -294,11 +318,47 @@ private fun buildJoyPairs(
     bindings: Map<String, String>,
     inverts: Set<String>,
     variant: String,
-): Pair<IntArray, IntArray> {
+): JoyPairsResult {
     val btnKcMap = buttonKcIndex(variant)
     val indices = mutableListOf<Int>()
     val values = mutableListOf<Int>()
+
+    // Detect trigger axes bound to half-axis-eligible button functions.
+    // These get combined into virtual axes for proportional control.
+    data class HalfAxisEntry(
+        val sourceAxis: Int,
+        val isPositive: Boolean,
+    )
+
+    val halfAxisGroups = mutableMapOf<String, MutableList<HalfAxisEntry>>()
+    val handledAsHalfAxis = mutableSetOf<String>()
+
     for ((controlId, funcLabel) in bindings) {
+        val ha = HALF_AXIS_MAP[funcLabel] ?: continue
+        val axisSdlId = AXIS_CONTROLS[controlId] ?: continue
+        halfAxisGroups
+            .getOrPut(ha.first) { mutableListOf() }
+            .add(HalfAxisEntry(axisSdlId, ha.second))
+        handledAsHalfAxis.add(controlId)
+    }
+
+    var nextVirtual = VIRTUAL_AXIS_BASE
+    val combiners = mutableListOf<Triple<Int, Int, Int>>()
+    for ((axisFunc, entries) in halfAxisGroups) {
+        val kcIdx = AXIS_KC_INDEX[axisFunc] ?: continue
+        val virtualAxis = nextVirtual++
+        indices.add(kcIdx)
+        values.add(virtualAxis)
+        indices.add(kcIdx + 1)
+        values.add(0) // not inverted
+        val posSource = entries.firstOrNull { it.isPositive }?.sourceAxis ?: -1
+        val negSource = entries.firstOrNull { !it.isPositive }?.sourceAxis ?: -1
+        combiners.add(Triple(virtualAxis, posSource, negSource))
+    }
+
+    // Normal button and axis bindings (skip those handled as half-axis)
+    for ((controlId, funcLabel) in bindings) {
+        if (controlId in handledAsHalfAxis) continue
         val btnKcIdx = btnKcMap[funcLabel]
         val btnSdlId = BUTTON_CONTROLS[controlId]
         if (btnKcIdx != null && btnSdlId != null) {
@@ -335,7 +395,7 @@ private fun buildJoyPairs(
             values.add(dpadBtnIdx)
         }
     }
-    return Pair(indices.toIntArray(), values.toIntArray())
+    return JoyPairsResult(indices.toIntArray(), values.toIntArray(), combiners)
 }
 
 internal fun saveConfig(
@@ -348,11 +408,14 @@ internal fun saveConfig(
     // Build byte arrays for BOTH D1 and D2 since the config file is shared
     // and kconfig indices differ between games (e.g. Automap is index 27 in
     // D1 but index 50 in D2).
-    val (d1Idx, d1Val) = buildJoyPairs(bindings, inverts, "d1")
-    val (d2Idx, d2Val) = buildJoyPairs(bindings, inverts, "d2")
-    val d1JoySettings = NativePilotPatcher.nativeBuildJoySettings(d1Idx, d1Val)
-    val d2JoySettings = NativePilotPatcher.nativeBuildJoySettings(d2Idx, d2Val)
+    val d1Result = buildJoyPairs(bindings, inverts, "d1")
+    val d2Result = buildJoyPairs(bindings, inverts, "d2")
+    val d1JoySettings = NativePilotPatcher.nativeBuildJoySettings(d1Result.indices, d1Result.values)
+    val d2JoySettings = NativePilotPatcher.nativeBuildJoySettings(d2Result.indices, d2Result.values)
     val joySettings = if (gameVariant == "d1") d1JoySettings else d2JoySettings
+    // Use combiners from the active variant (they're the same either way
+    // since combiner axes are game-independent)
+    val combiners = d2Result.combiners
 
     val kbIndices = mutableListOf<Int>()
     val kbValues = mutableListOf<Int>()
@@ -423,6 +486,20 @@ internal fun saveConfig(
     val thresholdsObj = JSONObject()
     for ((axis, pct) in thresholds) thresholdsObj.put(axis, pct)
     json.put("thresholds", thresholdsObj)
+
+    // Half-axis combiner config: [[virtualAxis, posSource, negSource], ...]
+    // Read by MainActivity to compute virtual axis values from trigger pairs.
+    if (combiners.isNotEmpty()) {
+        val combArr = JSONArray()
+        for ((virt, pos, neg) in combiners) {
+            val entry = JSONArray()
+            entry.put(virt)
+            entry.put(pos)
+            entry.put(neg)
+            combArr.put(entry)
+        }
+        json.put("half_axis_combiners", combArr)
+    }
 
     File(context.filesDir, CONFIG_FILENAME).writeText(json.toString(2))
 

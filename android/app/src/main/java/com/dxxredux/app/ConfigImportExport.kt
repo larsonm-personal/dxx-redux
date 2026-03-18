@@ -65,6 +65,21 @@ object ConfigImportExport {
             )
         }
 
+        // Autoselect weapon ordering for both games
+        val filesDir = context.filesDir.absolutePath
+        for (game in listOf("d1", "d2")) {
+            try {
+                val data = NativeAutoselectPatcher.readAutoselect(game, filesDir)
+                if (data.isNotEmpty()) {
+                    val arr = org.json.JSONArray()
+                    for (v in data) arr.put(v)
+                    combined.put("autoselect_$game", arr)
+                }
+            } catch (_: Exception) {
+                // Native lib may not be loaded in all contexts; skip quietly
+            }
+        }
+
         return shareJson(context, combined, "dxx_redux_config.json", "Share Config")
     }
 
@@ -175,6 +190,27 @@ object ConfigImportExport {
         }
         if (json.has("controller_config")) {
             results.add(importControllerConfig(context, json.getJSONObject("controller_config")))
+        }
+        // Autoselect ordering
+        val filesDir = context.filesDir.absolutePath
+        for (game in listOf("d1", "d2")) {
+            val key = "autoselect_$game"
+            if (json.has(key)) {
+                try {
+                    val arr = json.getJSONArray(key)
+                    val primEntries = NativeAutoselectPatcher.getPrimaryWeaponEntries(game)
+                    val primLen = primEntries.size / 2
+                    val secLen = arr.length() - primLen
+                    if (secLen > 0) {
+                        val prim = IntArray(primLen) { arr.getInt(it) }
+                        val sec = IntArray(secLen) { arr.getInt(primLen + it) }
+                        val count = NativeAutoselectPatcher.writeAutoselect(game, filesDir, prim, sec)
+                        results.add("Autoselect ($game): patched $count file(s)")
+                    }
+                } catch (e: Exception) {
+                    results.add("Autoselect ($game) import failed: ${e.message}")
+                }
+            }
         }
         if (results.isEmpty()) return "Combined config had no recognizable sections."
         return results.joinToString("\n")

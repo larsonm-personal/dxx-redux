@@ -53,6 +53,10 @@ class MainActivity :
         /** First virtual joystick button index for D-pad directions (Up=+0, Down=+1, Left=+2, Right=+3).
          *  Must match DPAD_BUTTON_BASE in joy.c. */
         const val DPAD_JOY_BUTTON_BASE = 22
+
+        /** Static check if main() is already executing (guards double-launch). */
+        @JvmStatic
+        external fun nativeIsGameRunning(): Boolean
     }
 
     // ── JNI declarations ────────────────────────────────────
@@ -115,6 +119,8 @@ class MainActivity :
     external fun nativeIsAutomapActive(): Boolean
 
     external fun nativeIsSkippableScreen(): Boolean
+
+    external fun nativeIsSaveLoadMenuActive(): Boolean
 
     external fun nativeIsPlayerDead(): Boolean
 
@@ -230,6 +236,11 @@ class MainActivity :
 
     // D-pad meta-action bindings: DPAD keycode → meta action ID
     private var dpadMetaBindings = mapOf<Int, Int>()
+
+    // Half-axis combiners: (virtualAxis, posSourceAxis, negSourceAxis)
+    // Loaded from controller_config.json; used in onGenericMotionEvent()
+    private var halfAxisCombiners = emptyList<Triple<Int, Int, Int>>()
+    private val rawAxisValues = FloatArray(6) // LX, LY, RX, RY, LT, RT
 
     // ── Left-edge fling detection (→ setup screen) ────────────────────
     private lateinit var edgeFlingDetector: android.view.GestureDetector
@@ -691,6 +702,12 @@ class MainActivity :
                                 } catch (_: Exception) {
                                     false
                                 }
+                            val saveloadMenu =
+                                try {
+                                    nativeIsSaveLoadMenuActive()
+                                } catch (_: Exception) {
+                                    false
+                                }
                             // During death or endlevel, show skip/continue button instead of controls
                             val showCutsceneButton = playerDead || endlevel || skippable
                             // Show overlay when in-game with overlay enabled, or when automap is active
@@ -698,8 +715,11 @@ class MainActivity :
                             val wasActive = touchOverlay.isActive
                             touchOverlay.isActive = shouldShow
                             touchOverlay.automapActive = automap
-                            // Show/hide skip button: death="CONTINUE", endlevel/skippable="SKIP"
-                            if (showCutsceneButton && !shouldShow) {
+                            // Show/hide skip button for cutscenes, death, or save/load back
+                            if (saveloadMenu) {
+                                skipButton.label = "BACK"
+                                skipButton.visibility = View.VISIBLE
+                            } else if (showCutsceneButton && !shouldShow) {
                                 skipButton.label = if (playerDead) "CONTINUE" else "SKIP"
                                 skipButton.visibility = View.VISIBLE
                             } else {
@@ -1113,22 +1133,33 @@ class MainActivity :
         if (!file.exists()) return
         try {
             val json = JSONObject(file.readText())
-            if (!json.has("meta_bindings")) return
-            val meta = json.getJSONObject("meta_bindings")
-            val btnMap = mutableMapOf<Int, Int>()
-            val dpadMap = mutableMapOf<Int, Int>()
-            for (key in meta.keys()) {
-                val actionId = meta.getInt(key)
-                if (key.startsWith("dpad_")) {
-                    val dpadKeyCode = dpadControlToKeyCode(key.removePrefix("dpad_"))
-                    if (dpadKeyCode > 0) dpadMap[dpadKeyCode] = actionId
-                } else {
-                    val sdlBtn = key.toIntOrNull()
-                    if (sdlBtn != null) btnMap[sdlBtn] = actionId
+            if (json.has("meta_bindings")) {
+                val meta = json.getJSONObject("meta_bindings")
+                val btnMap = mutableMapOf<Int, Int>()
+                val dpadMap = mutableMapOf<Int, Int>()
+                for (key in meta.keys()) {
+                    val actionId = meta.getInt(key)
+                    if (key.startsWith("dpad_")) {
+                        val dpadKeyCode = dpadControlToKeyCode(key.removePrefix("dpad_"))
+                        if (dpadKeyCode > 0) dpadMap[dpadKeyCode] = actionId
+                    } else {
+                        val sdlBtn = key.toIntOrNull()
+                        if (sdlBtn != null) btnMap[sdlBtn] = actionId
+                    }
                 }
+                buttonMetaBindings = btnMap
+                dpadMetaBindings = dpadMap
             }
-            buttonMetaBindings = btnMap
-            dpadMetaBindings = dpadMap
+            // Half-axis combiners: [[virtualAxis, posSource, negSource], ...]
+            if (json.has("half_axis_combiners")) {
+                val arr = json.getJSONArray("half_axis_combiners")
+                val list = mutableListOf<Triple<Int, Int, Int>>()
+                for (i in 0 until arr.length()) {
+                    val e = arr.getJSONArray(i)
+                    list.add(Triple(e.getInt(0), e.getInt(1), e.getInt(2)))
+                }
+                halfAxisCombiners = list
+            }
         } catch (e: Exception) {
             Log.w("MainActivity", "Failed to load meta bindings", e)
         }
@@ -1260,8 +1291,22 @@ class MainActivity :
             nativeJoystickAxis(1, event.getAxisValue(MotionEvent.AXIS_Y))
             nativeJoystickAxis(2, event.getAxisValue(MotionEvent.AXIS_Z))
             nativeJoystickAxis(3, event.getAxisValue(MotionEvent.AXIS_RZ))
-            nativeJoystickAxis(4, event.getAxisValue(MotionEvent.AXIS_LTRIGGER))
-            nativeJoystickAxis(5, event.getAxisValue(MotionEvent.AXIS_RTRIGGER))
+            val lt = event.getAxisValue(MotionEvent.AXIS_LTRIGGER)
+            val rt = event.getAxisValue(MotionEvent.AXIS_RTRIGGER)
+            nativeJoystickAxis(4, lt)
+            nativeJoystickAxis(5, rt)
+            rawAxisValues[0] = event.getAxisValue(MotionEvent.AXIS_X)
+            rawAxisValues[1] = event.getAxisValue(MotionEvent.AXIS_Y)
+            rawAxisValues[2] = event.getAxisValue(MotionEvent.AXIS_Z)
+            rawAxisValues[3] = event.getAxisValue(MotionEvent.AXIS_RZ)
+            rawAxisValues[4] = lt
+            rawAxisValues[5] = rt
+            // Compute half-axis combiner virtual axes
+            for ((virt, posSource, negSource) in halfAxisCombiners) {
+                val pos = if (posSource in 0..5) rawAxisValues[posSource] else 0f
+                val neg = if (negSource in 0..5) rawAxisValues[negSource] else 0f
+                nativeJoystickAxis(virt, (pos - neg).coerceIn(-1f, 1f))
+            }
 
             // D-pad reported as HAT axes → synthesize keyboard arrow keys
             val hx = event.getAxisValue(MotionEvent.AXIS_HAT_X)

@@ -1,0 +1,65 @@
+// TEST: Crash after launcher-based autoselect save
+// Reproduction: the test runner patches the .plr file before launching the game
+// (simulating the launcher's autoselect editor save), then opens menus.
+// The crash reportedly happens when exiting 2-level-deep menus after
+// a launcher-based autoselect ordering save.
+[
+    {"_info": {"games": ["d2"]}},
+    {"action": "log", "message": "=== Autoselect crash repro (stress) ==="},
+    {"action": "wait_ms", "ms": 2000},
+
+    // Select existing pilot from listbox (game shows pilot selection after restart)
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "wait_ms", "ms": 1000},
+    {"action": "select", "text": "player", "post_delay_ms": 2000},
+
+    // --- Path 1: Options -> Secondary autoselect ordering ---
+    {"action": "log", "message": "Path 1: Options -> Secondary ordering"},
+    {"action": "select", "text": "Options", "post_delay_ms": 1500},
+    {"action": "select", "text": "Secondary autoselect ordering...", "post_delay_ms": 1500},
+    {"action": "key", "key": "escape", "post_delay_ms": 500},
+    {"action": "key", "key": "escape", "post_delay_ms": 1500},
+    {"action": "introspect"},
+
+    // --- Path 2: Options -> Primary autoselect ordering ---
+    {"action": "log", "message": "Path 2: Options -> Primary ordering"},
+    {"action": "select", "text": "Options", "post_delay_ms": 1500},
+    {"action": "select", "text": "Primary autoselect ordering...", "post_delay_ms": 1500},
+    {"action": "key", "key": "escape", "post_delay_ms": 500},
+    {"action": "key", "key": "escape", "post_delay_ms": 1500},
+    {"action": "introspect"},
+
+    // --- Path 3: Options -> Secondary -> escape quickly ---
+    {"action": "log", "message": "Path 3: Options -> Secondary -> fast escape"},
+    {"action": "select", "text": "Options", "post_delay_ms": 1000},
+    {"action": "select", "text": "Secondary autoselect ordering...", "post_delay_ms": 500},
+    {"action": "key", "key": "escape", "post_delay_ms": 100},
+    {"action": "key", "key": "escape", "post_delay_ms": 1500},
+    {"action": "introspect"},
+
+    // --- Path 4: Options -> Primary -> escape quickly ---
+    {"action": "log", "message": "Path 4: Options -> Primary -> fast escape"},
+    {"action": "select", "text": "Options", "post_delay_ms": 1000},
+    {"action": "select", "text": "Primary autoselect ordering...", "post_delay_ms": 500},
+    {"action": "key", "key": "escape", "post_delay_ms": 100},
+    {"action": "key", "key": "escape", "post_delay_ms": 1500},
+    {"action": "introspect"},
+
+    // --- Path 5: Options -> Misc Options -> escape ---
+    {"action": "log", "message": "Path 5: Options -> Misc Options -> escape"},
+    {"action": "select", "text": "Options", "post_delay_ms": 1500},
+    {"action": "select", "text": "Misc Options...", "post_delay_ms": 1500},
+    {"action": "key", "key": "escape", "post_delay_ms": 500},
+    {"action": "key", "key": "escape", "post_delay_ms": 1500},
+    {"action": "introspect"},
+
+    // --- Path 6: Back to secondary ordering, slower ---
+    {"action": "log", "message": "Path 6: Secondary ordering again"},
+    {"action": "select", "text": "Options", "post_delay_ms": 2000},
+    {"action": "select", "text": "Secondary autoselect ordering...", "post_delay_ms": 2000},
+    {"action": "key", "key": "escape", "post_delay_ms": 1000},
+    {"action": "key", "key": "escape", "post_delay_ms": 2000},
+    {"action": "introspect"},
+
+    {"action": "log", "message": "All menu paths survived - test complete"}
+]

@@ -265,6 +265,14 @@ void joy_init()
 			joybutton_text[Joystick.n_buttons++] = d_strdup(temp);
 		}
 
+		/* Virtual combiner axes for half-axis trigger bindings.
+		 * Kotlin computes combined values and sends via nativeJoystickAxis(). */
+		for (j = 0; j < 3; j++) {
+			SDL_Joysticks[0].axis_map[8 + j] = Joystick.n_axes;
+			sprintf(temp, "J1 VC%d", j);
+			joyaxis_text[Joystick.n_axes++] = d_strdup(temp);
+		}
+
 		/* D-pad virtual buttons: DUp=22, DDown=23, DLeft=24, DRight=25.
 		 * Shared constant with MainActivity.kt DPAD_JOY_BUTTON_BASE.
 		 * Must set button_map[] so joy_button_handler() translates the

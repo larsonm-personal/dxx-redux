@@ -1755,7 +1755,9 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 #ifdef ANDROID
 			{
 				extern void android_hide_keyboard(void);
+				extern int g_menu_scale_active;
 				android_hide_keyboard();
+				g_menu_scale_active = 0;
 			}
 #endif
 			d_free(menu);
@@ -2407,6 +2409,12 @@ int listbox_handler(window *wind, d_event *event, listbox *lb)
 			break;
 
 		case EVENT_WINDOW_CLOSE:
+#ifdef ANDROID
+			{
+				extern int g_menu_scale_active;
+				g_menu_scale_active = 0;
+			}
+#endif
 			d_free(lb);
 			break;
 

@@ -635,8 +635,16 @@ int state_get_savegame_filename(char * fname, char * dsc, char * caption, int bl
 
 	if (blind_save)
 		choice = state_default_item + 1;
-	else
+	else {
+#ifdef __ANDROID__
+		extern volatile int g_saveload_menu_active;
+		g_saveload_menu_active = 1;
+#endif
 		choice = newmenu_do2( NULL, caption, NUM_SAVES+1, m, (int (*)(newmenu *, d_event *, void *))state_callback, sc_bmp, state_default_item + 1, NULL );
+#ifdef __ANDROID__
+		g_saveload_menu_active = 0;
+#endif
+	}
 
 	for (i=0; i<NUM_SAVES; i++ )	{
 		if ( sc_bmp[i] )
