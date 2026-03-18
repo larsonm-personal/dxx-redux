@@ -262,6 +262,8 @@ private fun defaultThresholds(): Map<String, Int> = THRESHOLD_AXES.associateWith
 // Axis functions that implicitly cover discrete button functions
 private val AXIS_COVERS_BUTTONS =
     mapOf(
+        "Pitch U/D" to listOf("Pitch Up", "Pitch Down"),
+        "Turn L/R" to listOf("Turn Left", "Turn Right"),
         "Slide L/R" to listOf("Slide Left", "Slide Right"),
         "Slide U/D" to listOf("Slide Up", "Slide Down"),
         "Bank L/R" to listOf("Bank Left", "Bank Right"),
@@ -286,16 +288,27 @@ private data class StickPickerResult(
 // isPositive means this button corresponds to the positive half of the
 // axis under the non-inverted sign convention in kconfig_read_controls().
 // Shared constant: sign conventions must match kconfig.c axis handling
-// (see vertical_thrust_time, sideways_thrust_time, forward_thrust_time).
+// (see pitch_time, heading_time, vertical_thrust_time, sideways_thrust_time,
+// bank_time, forward_thrust_time).
 private val HALF_AXIS_MAP =
     mapOf(
+        "Pitch Up" to Pair("Pitch U/D", false),
+        "Pitch Down" to Pair("Pitch U/D", true),
+        "Turn Left" to Pair("Turn L/R", false),
+        "Turn Right" to Pair("Turn L/R", true),
         "Slide Up" to Pair("Slide U/D", true),
         "Slide Down" to Pair("Slide U/D", false),
         "Slide Right" to Pair("Slide L/R", true),
         "Slide Left" to Pair("Slide L/R", false),
-        "Reverse" to Pair("Throttle", true),
+        "Bank Left" to Pair("Bank L/R", false),
+        "Bank Right" to Pair("Bank L/R", true),
         "Accelerate" to Pair("Throttle", false),
+        "Reverse" to Pair("Throttle", true),
     )
+
+// Ordered list of half-axis options shown in the trigger picker dialog.
+// These are direction-specific names for single-direction trigger assignment.
+private val TRIGGER_HALF_AXIS_OPTIONS = HALF_AXIS_MAP.keys.toList()
 
 // First virtual combiner axis (must match joy.c VC axis registration)
 private const val VIRTUAL_AXIS_BASE = 8
@@ -634,6 +647,8 @@ private fun abbreviate(label: String): String =
         "Throttle" -> "Thrtl"
         "Pitch Forward" -> "Pit\u2191"
         "Pitch Backward" -> "Pit\u2193"
+        "Pitch Up" -> "Pit\u2191"
+        "Pitch Down" -> "Pit\u2193"
         "Turn Left" -> "Trn\u2190"
         "Turn Right" -> "Trn\u2192"
         else -> label.take(5)
@@ -1680,14 +1695,9 @@ fun ControllerConfigPage(
             axisValue = axisVal,
             threshold = axisKey?.let { thresholds[it] },
             onThresholdChange = axisKey?.let { key -> { v: Int -> thresholds[key] = v } },
-            axisFunctions = if (isTrigger) AXIS_FUNCTIONS else emptyList(),
-            assignedAxisFunctions = if (isTrigger) assignedAxisFuncsForDialog else emptySet(),
+            axisFunctions = if (isTrigger) TRIGGER_HALF_AXIS_OPTIONS else emptyList(),
             onSelect = { funcLabel ->
-                if (isTrigger && funcLabel != null && funcLabel in AXIS_KC_INDEX) {
-                    assignAxisFunction(bindings, selectedControl!!, funcLabel)
-                } else {
-                    assignButtonFunction(bindings, selectedControl!!, funcLabel)
-                }
+                assignButtonFunction(bindings, selectedControl!!, funcLabel)
                 showButtonPicker = false
                 selectedControl = null
             },
@@ -1836,7 +1846,6 @@ private fun ButtonFunctionPickerDialog(
     threshold: Int? = null,
     onThresholdChange: ((Int) -> Unit)? = null,
     axisFunctions: List<String> = emptyList(),
-    assignedAxisFunctions: Set<String> = emptySet(),
     onSelect: (String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -1848,7 +1857,7 @@ private fun ButtonFunctionPickerDialog(
         } else {
             BUTTON_FUNCTIONS
         }
-    val isAxisFunc = currentFunc != null && currentFunc in AXIS_KC_INDEX
+    val isAxisFunc = currentFunc != null && (currentFunc in AXIS_KC_INDEX || currentFunc in HALF_AXIS_MAP)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1883,18 +1892,18 @@ private fun ButtonFunctionPickerDialog(
                         Spacer(Modifier.width(PICKER_RADIO_GAP))
                         Text("None", color = Color.Gray, fontSize = PICKER_FONT_SIZE)
                     }
-                    // Axis functions section (for triggers)
+                    // Single-direction axis options (for triggers)
                     if (axisFunctions.isNotEmpty()) {
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "Axis Functions",
+                            "Single-Direction Axis",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(vertical = 2.dp),
                         )
                         for (func in axisFunctions) {
-                            val isAssigned = func in assignedAxisFunctions && func != currentFunc
+                            val isAssigned = func in assignedFunctions && func != currentFunc
                             Row(
                                 modifier =
                                     Modifier
@@ -2052,10 +2061,10 @@ private fun StickPickerDialog(
                         }
                     }
                     if (xButtonMode) {
-                        AxisButtonPicker("Left (neg)", xNegFunc, assignedButtonFunctions, gameVariant) {
+                        AxisButtonPicker("Left (single direction)", xNegFunc, assignedButtonFunctions, gameVariant) {
                             xNegFunc = it
                         }
-                        AxisButtonPicker("Right (pos)", xPosFunc, assignedButtonFunctions, gameVariant) {
+                        AxisButtonPicker("Right (single direction)", xPosFunc, assignedButtonFunctions, gameVariant) {
                             xPosFunc = it
                         }
                         if (onXThresholdChange != null) {
@@ -2097,10 +2106,10 @@ private fun StickPickerDialog(
                         }
                     }
                     if (yButtonMode) {
-                        AxisButtonPicker("Up (neg)", yNegFunc, assignedButtonFunctions, gameVariant) {
+                        AxisButtonPicker("Up (single direction)", yNegFunc, assignedButtonFunctions, gameVariant) {
                             yNegFunc = it
                         }
-                        AxisButtonPicker("Down (pos)", yPosFunc, assignedButtonFunctions, gameVariant) {
+                        AxisButtonPicker("Down (single direction)", yPosFunc, assignedButtonFunctions, gameVariant) {
                             yPosFunc = it
                         }
                         if (onYThresholdChange != null) {
@@ -2165,7 +2174,7 @@ private fun AxisButtonPicker(
         modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, fontSize = 12.sp, modifier = Modifier.width(90.dp))
+        Text(label, fontSize = 12.sp, modifier = Modifier.width(140.dp))
         TextButton(onClick = { showPicker = true }) {
             Text(
                 currentFunc ?: "None",

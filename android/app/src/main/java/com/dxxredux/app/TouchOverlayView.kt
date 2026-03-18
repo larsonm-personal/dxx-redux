@@ -126,6 +126,9 @@ class TouchOverlayView
             var mouseLastY = 0f
             var mousePendingX = 0f
             var mousePendingY = 0f
+            // Mouse mode: touch-down origin for exponential scaling
+            var mouseOriginX = 0f
+            var mouseOriginY = 0f
 
             // Button mode: direction press tracking
             var xNegPressed = false
@@ -1019,6 +1022,8 @@ class TouchOverlayView
                                 s.pointerId = pid
                                 s.mouseLastX = px
                                 s.mouseLastY = py
+                                s.mouseOriginX = px
+                                s.mouseOriginY = py
                                 s.mousePendingX = 0f
                                 s.mousePendingY = 0f
                                 s.floatingActive = true
@@ -1411,8 +1416,19 @@ class TouchOverlayView
             s.mouseLastY = py
             // Convert pixel delta to axis-space and accumulate
             val scale = s.control.mouseSensitivity * MOUSE_SENSITIVITY_MULTIPLIER / MOUSE_REFERENCE_DISTANCE
-            s.mousePendingX += dx * scale
-            s.mousePendingY += dy * scale
+            // Exponential scaling: ramp multiplier from 1.0 to max based on
+            // distance from the touch-down origin (half-screen as reference)
+            val multiplier =
+                if (s.control.mouseExponential) {
+                    val dist = hypot(px - s.mouseOriginX, py - s.mouseOriginY)
+                    val halfScreen = (height / 2f).coerceAtLeast(1f)
+                    val ratio = (dist / halfScreen).coerceIn(0f, 1f)
+                    1f + (s.control.mouseExponentialMax - 1f) * ratio
+                } else {
+                    1f
+                }
+            s.mousePendingX += dx * scale * multiplier
+            s.mousePendingY += dy * scale * multiplier
         }
 
         private fun updateStickFromTouch(

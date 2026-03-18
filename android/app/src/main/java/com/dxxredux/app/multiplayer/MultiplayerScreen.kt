@@ -361,6 +361,7 @@ private fun CreateLobbyDialog(
 ) {
     var game by remember { mutableStateOf("d2") }
     var mission by remember { mutableStateOf("") }
+    var missionSelected by remember { mutableStateOf(false) }
     var mode by remember { mutableStateOf("anarchy") }
     var maxPlayersText by remember { mutableStateOf("4") }
 
@@ -375,16 +376,21 @@ private fun CreateLobbyDialog(
                         if (g == game) {
                             Button(onClick = {}) { Text(g.uppercase()) }
                         } else {
-                            OutlinedButton(onClick = { game = g }) { Text(g.uppercase()) }
+                            OutlinedButton(onClick = {
+                                game = g
+                                mission = ""
+                                missionSelected = false
+                            }) { Text(g.uppercase()) }
                         }
                     }
                 }
-                OutlinedTextField(
-                    value = mission,
-                    onValueChange = { mission = it },
-                    label = { Text("Mission") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                MissionPickerField(
+                    selectedFilename = mission,
+                    game = game,
+                    onSelect = {
+                        mission = it
+                        missionSelected = true
+                    },
                 )
                 // Mode selector
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -411,7 +417,7 @@ private fun CreateLobbyDialog(
             val maxPlayers = maxPlayersText.toIntOrNull() ?: 0
             TextButton(
                 onClick = { onCreate(game, mission, mode, maxPlayers) },
-                enabled = mission.isNotBlank() && maxPlayers in 2..8,
+                enabled = missionSelected && maxPlayers in 2..8,
             ) {
                 Text("Create")
             }

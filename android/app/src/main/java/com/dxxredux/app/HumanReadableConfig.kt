@@ -185,6 +185,10 @@ object HumanReadableConfig {
                     FloatingZone()
                 },
             hapticFeedback = j.optBoolean("haptic", true),
+            mouseMode = j.optBoolean("mouseMode"),
+            mouseSensitivity = j.optDouble("mouseSensitivity", 1.0).toFloat(),
+            mouseExponential = j.optBoolean("mouseExponential", true),
+            mouseExponentialMax = j.optDouble("mouseExponentialMax", 3.0).toFloat(),
             buttonMode = buttonMode,
             negXBinding =
                 if (buttonMode) {

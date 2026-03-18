@@ -307,6 +307,7 @@ private fun HostLanGameDialog(
 ) {
     var game by remember { mutableStateOf("d2") }
     var mission by remember { mutableStateOf("") }
+    var missionSelected by remember { mutableStateOf(false) }
     var mode by remember { mutableStateOf("coop") }
     var maxPlayersText by remember { mutableStateOf("4") }
 
@@ -320,16 +321,21 @@ private fun HostLanGameDialog(
                         if (g == game) {
                             Button(onClick = {}) { Text(g.uppercase()) }
                         } else {
-                            OutlinedButton(onClick = { game = g }) { Text(g.uppercase()) }
+                            OutlinedButton(onClick = {
+                                game = g
+                                mission = ""
+                                missionSelected = false
+                            }) { Text(g.uppercase()) }
                         }
                     }
                 }
-                OutlinedTextField(
-                    value = mission,
-                    onValueChange = { mission = it },
-                    label = { Text("Mission") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                MissionPickerField(
+                    selectedFilename = mission,
+                    game = game,
+                    onSelect = {
+                        mission = it
+                        missionSelected = true
+                    },
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("anarchy", "coop").forEach { m ->
@@ -357,7 +363,7 @@ private fun HostLanGameDialog(
             val maxPlayers = maxPlayersText.toIntOrNull() ?: 0
             TextButton(
                 onClick = { onHost(game, mission, mode, maxPlayers) },
-                enabled = mission.isNotBlank() && maxPlayers in 2..8,
+                enabled = missionSelected && maxPlayers in 2..8,
             ) {
                 Text("Host")
             }

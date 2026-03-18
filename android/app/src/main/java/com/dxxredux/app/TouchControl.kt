@@ -88,6 +88,8 @@ data class AnalogStickControl(
     val hapticFeedback: Boolean = true,
     val mouseMode: Boolean = false,
     val mouseSensitivity: Float = 1f,
+    val mouseExponential: Boolean = true,
+    val mouseExponentialMax: Float = 3f,
     val buttonMode: Boolean = false,
     val negXBinding: Int = TouchBindings.BTN_FIRE_PRIMARY,
     val posXBinding: Int = TouchBindings.BTN_FIRE_PRIMARY,
@@ -117,6 +119,8 @@ data class AnalogStickControl(
             if (mouseMode) {
                 put("mouseMode", true)
                 put("mouseSensitivity", mouseSensitivity.toDouble())
+                put("mouseExponential", mouseExponential)
+                put("mouseExponentialMax", mouseExponentialMax.toDouble())
             }
             if (buttonMode) {
                 put("buttonMode", true)
@@ -157,6 +161,8 @@ data class AnalogStickControl(
                 hapticFeedback = j.optBoolean("haptic", true),
                 mouseMode = j.optBoolean("mouseMode"),
                 mouseSensitivity = j.optDouble("mouseSensitivity", 1.0).toFloat(),
+                mouseExponential = j.optBoolean("mouseExponential", true),
+                mouseExponentialMax = j.optDouble("mouseExponentialMax", 3.0).toFloat(),
                 buttonMode = j.optBoolean("buttonMode"),
                 negXBinding = j.optInt("negXBinding", TouchBindings.BTN_FIRE_PRIMARY),
                 posXBinding = j.optInt("posXBinding", TouchBindings.BTN_FIRE_PRIMARY),
