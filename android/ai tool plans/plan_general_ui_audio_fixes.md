@@ -96,9 +96,21 @@ fallback, matching D2 exactly.
 
 ## Phase Ordering
 
-| Phase | Items | Notes |
-|-------|-------|-------|
-| A | 1, 5 | Small C changes in d1/d2 dirs |
-| B | 4 | Kotlin controller config fixes |
-| C | 2 + 3 | Admin tray UI redesign (intertwined) |
-| D | all | Integration testing + code quality linters |
+| Phase | Items | Status |
+|-------|-------|--------|
+| A | 1, 5 | DONE -- keyboard drag delay + D1 Redbook 48K |
+| B | 4 | DONE -- trigger axis controls + picker UI |
+| C | 2 + 3 | DONE -- admin tray slide-up + edge-to-edge grid |
+| D | all | DONE -- Phase 6 added to test_axis_mapping.json5 (trigger analog tests) |
+
+## Testing
+
+Extended `test_axis_mapping.json5` with Phase 6 (trigger analog axis tests):
+- 6a: RT (axis 5) at 0.8 drives only throttle, not pitch/heading/slide/bank
+- 6b: LT (axis 4) at 0.8 drives only throttle, not pitch/heading/slide/bank
+- 6c: RT at sub-threshold (0.1) fires nothing
+
+Emulator was not running at implementation time; test script is ready to run:
+```powershell
+adb logcat -c; .\android\run_test.ps1 -ScriptName test_axis_mapping.json5 -Game d2 2>&1 | Out-File temp\test_output.txt -Encoding utf8; Write-Output "EXIT: $LASTEXITCODE"
+```

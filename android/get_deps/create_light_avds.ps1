@@ -102,7 +102,7 @@ foreach ($avd in $avds) {
         "disk.dataPartition.size"    = "4G"
         "showDeviceFrame"            = "no"
         "skin.dynamic"               = "yes"
-        "skin.name"                  = "1280x960"
+        "skin.name"                  = "1280x720"
         "skin.path"                  = "_no_skin"
         "hw.audioInput"              = "no"
         "hw.audioOutput"             = "no"

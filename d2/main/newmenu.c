@@ -1596,7 +1596,7 @@ int newmenu_draw(window *wind, newmenu *menu)
 	 *    scale that up, then masked-blit onto the screen so only text
 	 *    pixels overwrite the background — the PCX art stays untouched.
 	 *
-	 * At higher internal resolutions (e.g. 1280x960) the bitmap fonts stay
+	 * At higher internal resolutions (e.g. 1280x720) the bitmap fonts stay
 	 * the same pixel size but BORDERX/BORDERY grow proportionally. To keep
 	 * the text filling the same fraction of the screen at every resolution,
 	 * we crop the excess border from the source before scaling. */

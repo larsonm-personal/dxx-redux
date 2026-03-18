@@ -77,7 +77,7 @@ sdcard.size=4096M
 showDeviceFrame=no
 skin.path=_no_skin
 EOF
-    echo "Applied lightweight hardware config (1536 MB RAM, 1280x960, minimal sensors)."
+    echo "Applied lightweight hardware config (1536 MB RAM, 1280x720, minimal sensors)."
 fi
 
 echo "AVD '$AVD_NAME' created."

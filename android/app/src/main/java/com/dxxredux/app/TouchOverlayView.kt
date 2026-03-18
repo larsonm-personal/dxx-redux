@@ -1,5 +1,6 @@
 package com.dxxredux.app
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -10,6 +11,7 @@ import android.util.AttributeSet
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
+import android.view.animation.DecelerateInterpolator
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -316,8 +318,15 @@ class TouchOverlayView
         private var adminTrayPressedIndex = -1
         private var adminTrayPointerId = -1
         private val adminTrayRects = mutableListOf<RectF>()
-        private var adminTrayCloseRect = RectF()
         private var adminTrayTabRect = RectF()
+
+        // Slide animation: 0 = fully closed (off-screen), 1 = fully open
+        private var adminTraySlide = 0f
+        private var adminTrayAnimator: ValueAnimator? = null
+
+        // Drag-to-dismiss tracking
+        private var adminTrayDragStartY = 0f
+        private var adminTrayDragging = false
 
         // Callback: (actionIndex) -> Unit. Actions are:
         // 0=Increase View, 1=Decrease View, 2=Toggle Auto-Leveling,
@@ -1067,7 +1076,7 @@ class TouchOverlayView
                     // Try admin tray tab
                     if (!handled && adminTrayTabRect.contains(px, py)) {
                         adminTrayOpen = true
-                        invalidate()
+                        animateAdminTray(true)
                         handled = true
                     }
 
@@ -1841,17 +1850,17 @@ class TouchOverlayView
             val tabTop = height.toFloat() - tabH
             adminTrayTabRect = RectF(tabLeft, tabTop, tabLeft + tabW, height.toFloat())
 
-            val bg = Paint(paintBtnIdle).apply { alpha = 0x88 }
+            val bg = Paint(paintBtnIdle).apply { alpha = 0x33 }
             val cornerR = tabH * 0.5f
             canvas.drawRoundRect(adminTrayTabRect, cornerR, cornerR, bg)
-            paintRing.alpha = 0x66
+            paintRing.alpha = 0x44
             canvas.drawRoundRect(adminTrayTabRect, cornerR, cornerR, paintRing)
 
             val textP =
                 Paint(paintBtnLabel).apply {
                     textSize = tabH * 0.6f
                     textAlign = Paint.Align.CENTER
-                    alpha = 0xBB
+                    alpha = 0x66
                 }
             canvas.drawText(
                 "Settings",
@@ -1864,26 +1873,28 @@ class TouchOverlayView
         private fun drawAdminTrayPanel(canvas: Canvas) {
             val w = width.toFloat()
             val h = height.toFloat()
-            // Dim background
-            canvas.drawColor(0x88000000.toInt())
+
+            // Dim background proportional to slide progress
+            val dimAlpha = (0x88 * adminTraySlide).toInt()
+            canvas.drawColor((dimAlpha shl 24))
 
             val itemCount = 7
             val cols = 3
-            val rows = 3
-            val pad = w * 0.03f
+            val rows = (itemCount + cols - 1) / cols
+            val divider = 1f // 1px divider between cells
             val panelW = w * 0.7f
-            val panelH = h * 0.45f
+            val cellH = h * 0.08f
+            val handleH = h * 0.02f
+            val panelH = rows * cellH + (rows - 1) * divider + handleH
             val panelLeft = (w - panelW) / 2f
-            val panelTop = (h - panelH) / 2f
-            val closeH = h * 0.06f
-
-            val cellW = (panelW - pad * (cols + 1)) / cols
-            val cellH = (panelH - closeH - pad * (rows + 2)) / rows
+            // Bottom-anchored, offset by slide progress (1 = fully visible)
+            val panelTop = h - panelH * adminTraySlide
+            val cornerR = panelW * 0.02f
 
             adminTrayRects.clear()
             val textPaint =
                 Paint(paintBtnLabel).apply {
-                    textSize = (cellH * 0.25f).coerceAtMost(w * 0.03f)
+                    textSize = (cellH * 0.3f).coerceAtMost(w * 0.03f)
                     textAlign = Paint.Align.CENTER
                 }
 
@@ -1894,24 +1905,46 @@ class TouchOverlayView
                     color = 0xDD222222.toInt()
                 }
             val panelRect = RectF(panelLeft, panelTop, panelLeft + panelW, panelTop + panelH)
-            canvas.drawRoundRect(panelRect, pad, pad, panelBg)
-            paintRing.alpha = 0x88
-            canvas.drawRoundRect(panelRect, pad, pad, paintRing)
+            canvas.drawRoundRect(panelRect, cornerR, cornerR, panelBg)
+            paintRing.alpha = 0x66
+            canvas.drawRoundRect(panelRect, cornerR, cornerR, paintRing)
+
+            // Drag handle bar at top of panel
+            val handlePaint =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.FILL
+                    color = 0x66FFFFFF.toInt()
+                }
+            val barW = panelW * 0.15f
+            val barH = handleH * 0.25f
+            val barLeft = panelLeft + (panelW - barW) / 2f
+            val barTop = panelTop + handleH * 0.375f
+            canvas.drawRoundRect(barLeft, barTop, barLeft + barW, barTop + barH, barH / 2, barH / 2, handlePaint)
+
+            val cellW = (panelW - (cols - 1) * divider) / cols
+            val gridTop = panelTop + handleH
 
             for (i in 0 until itemCount) {
                 val col = i % cols
                 val row = i / cols
-                val left = panelLeft + pad + col * (cellW + pad)
-                val top = panelTop + pad + row * (cellH + pad)
+                val left = panelLeft + col * (cellW + divider)
+                val top = gridTop + row * (cellH + divider)
                 val rect = RectF(left, top, left + cellW, top + cellH)
                 adminTrayRects.add(rect)
 
                 val bg = if (i == adminTrayPressedIndex) paintBtnPressed else paintBtnIdle
                 bg.alpha = if (i == adminTrayPressedIndex) 0xAA else 0x55
-                val cornerR = cellH * 0.15f
-                canvas.drawRoundRect(rect, cornerR, cornerR, bg)
-                paintRing.alpha = 0x66
-                canvas.drawRoundRect(rect, cornerR, cornerR, paintRing)
+                canvas.drawRect(rect, bg)
+
+                // Draw divider lines
+                if (col > 0) {
+                    val divPaint = Paint().apply { color = 0x33FFFFFF.toInt() }
+                    canvas.drawRect(left - divider, top, left, top + cellH, divPaint)
+                }
+                if (row > 0) {
+                    val divPaint = Paint().apply { color = 0x33FFFFFF.toInt() }
+                    canvas.drawRect(left, top - divider, left + cellW, top, divPaint)
+                }
 
                 textPaint.alpha = 0xDD
                 canvas.drawText(
@@ -1921,26 +1954,22 @@ class TouchOverlayView
                     textPaint,
                 )
             }
+        }
 
-            // Close button at bottom of panel
-            val closeTop = panelTop + panelH - closeH - pad
-            adminTrayCloseRect = RectF(panelLeft + pad, closeTop, panelLeft + panelW - pad, closeTop + closeH)
-            val closeBg = Paint(paintBtnIdle).apply { alpha = 0x66 }
-            canvas.drawRoundRect(adminTrayCloseRect, closeH * 0.25f, closeH * 0.25f, closeBg)
-            paintRing.alpha = 0x88
-            canvas.drawRoundRect(adminTrayCloseRect, closeH * 0.25f, closeH * 0.25f, paintRing)
-            val closePaint =
-                Paint(paintBtnLabel).apply {
-                    textSize = closeH * 0.4f
-                    textAlign = Paint.Align.CENTER
-                    alpha = 0xDD
+        private fun animateAdminTray(open: Boolean) {
+            adminTrayAnimator?.cancel()
+            val target = if (open) 1f else 0f
+            adminTrayAnimator =
+                ValueAnimator.ofFloat(adminTraySlide, target).apply {
+                    duration = 200
+                    interpolator = DecelerateInterpolator()
+                    addUpdateListener {
+                        adminTraySlide = it.animatedValue as Float
+                        if (adminTraySlide == 0f) adminTrayOpen = false
+                        invalidate()
+                    }
+                    start()
                 }
-            canvas.drawText(
-                "Close",
-                adminTrayCloseRect.centerX(),
-                adminTrayCloseRect.centerY() + closePaint.textSize * 0.35f,
-                closePaint,
-            )
         }
 
         private fun handleAdminTrayTouch(event: MotionEvent): Boolean {
@@ -1951,11 +1980,9 @@ class TouchOverlayView
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                     adminTrayPointerId = event.getPointerId(idx)
-                    if (adminTrayCloseRect.contains(px, py)) {
-                        adminTrayPressedIndex = -2
-                        invalidate()
-                        return true
-                    }
+                    adminTrayDragStartY = py
+                    adminTrayDragging = false
+                    // Check grid buttons
                     for (i in adminTrayRects.indices) {
                         if (adminTrayRects[i].contains(px, py)) {
                             adminTrayPressedIndex = i
@@ -1964,34 +1991,68 @@ class TouchOverlayView
                         }
                     }
                     // Tap outside panel closes it
-                    adminTrayOpen = false
-                    adminTrayPressedIndex = -1
-                    adminTrayPointerId = -1
-                    invalidate()
+                    val panelTop =
+                        if (adminTrayRects.isNotEmpty()) {
+                            adminTrayRects[0].top - height * 0.02f // above first row
+                        } else {
+                            height.toFloat()
+                        }
+                    if (py < panelTop) {
+                        animateAdminTray(false)
+                        adminTrayPressedIndex = -1
+                        adminTrayPointerId = -1
+                        return true
+                    }
+                    return true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (adminTrayPointerId < 0) return true
+                    val pi = event.findPointerIndex(adminTrayPointerId)
+                    if (pi < 0) return true
+                    val cy = event.getY(pi)
+                    val dy = cy - adminTrayDragStartY
+                    // Start drag after small threshold
+                    if (!adminTrayDragging && dy > 10f) {
+                        adminTrayDragging = true
+                        adminTrayPressedIndex = -1
+                    }
+                    if (adminTrayDragging) {
+                        // Compute panel height for slide ratio
+                        val h = height.toFloat()
+                        val itemCount = 7
+                        val cols = 3
+                        val rows = (itemCount + cols - 1) / cols
+                        val cellH = h * 0.08f
+                        val panelH = rows * cellH + (rows - 1) + h * 0.02f
+                        adminTraySlide = (1f - dy / panelH).coerceIn(0f, 1f)
+                        invalidate()
+                    }
                     return true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
                     if (event.getPointerId(idx) == adminTrayPointerId) {
-                        if (adminTrayPressedIndex == -2 && adminTrayCloseRect.contains(px, py)) {
-                            adminTrayOpen = false
+                        if (adminTrayDragging) {
+                            // If dragged past 30% threshold, close; otherwise snap open
+                            animateAdminTray(adminTraySlide > 0.7f)
                         } else if (adminTrayPressedIndex >= 0 &&
                             adminTrayPressedIndex < adminTrayRects.size &&
                             adminTrayRects[adminTrayPressedIndex].contains(px, py)
                         ) {
                             adminTrayCallback?.invoke(adminTrayPressedIndex)
                             performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                            // Don't auto-close: user may want multiple actions
                             invalidate()
                         }
                         adminTrayPressedIndex = -1
                         adminTrayPointerId = -1
-                        invalidate()
+                        adminTrayDragging = false
                     }
                     return true
                 }
                 MotionEvent.ACTION_CANCEL -> {
+                    if (adminTrayDragging) animateAdminTray(adminTraySlide > 0.7f)
                     adminTrayPressedIndex = -1
                     adminTrayPointerId = -1
+                    adminTrayDragging = false
                     invalidate()
                     return true
                 }

@@ -21,6 +21,10 @@
 // Phase 5: Virtual axis tests -- verify axes 6 (Bank) and 7 (Slide U/D)
 //          are bound and produce the expected control timing values.
 //          These are "virtual" axes used by gyro roll mode.
+// Phase 6: Trigger analog axis tests -- verify axes 4 (LT) and 5 (RT)
+//          drive throttle via the axis-button mechanism and do NOT
+//          accidentally drive pitch/heading/slide/bank. Also verifies
+//          sub-threshold trigger values fire nothing.
 //
 // Root cause this catches:
 //   1. ControllerConfigPage.kt DEFAULT_BINDINGS had LS_Y -> "Pitch U/D"
@@ -246,6 +250,52 @@
     }},
     {"action": "log", "message": "Phase 5c: PASS -- axis 6 only drives bank"},
     {"action": "send_axis", "axis": 6, "axis_value": 0.0, "post_delay_ms": 200},
+
+    // -- Phase 6: Trigger analog axis tests (LT=4, RT=5) --
+    // With the AXIS_CONTROLS addition of LT/RT, the controller config
+    // UI now allows binding trigger axes as analog controls. With
+    // default bindings, triggers are used as button-like controls
+    // (axis-buttons for accelerate/reverse) not as analog axis bindings.
+    // Verify that sending trigger axis values still drives throttle via
+    // the axis-button mechanism, and does NOT falsely drive pitch,
+    // heading, slide, or bank (which would indicate an accidental
+    // analog axis binding).
+
+    // 6a: RT axis (axis 5, value 0.8) should cause throttle via button
+    {"action": "log", "message": "Phase 6a: RT trigger (axis 5) analog = 0.8"},
+    {"action": "send_axis", "axis": 5, "axis_value": 0.8, "post_delay_ms": 500},
+    {"action": "assert", "expect": {
+        "throttle_time": {"ne": 0},
+        "pitch_time":    "0",
+        "heading_time":  "0",
+        "slide_lr_time": "0",
+        "bank_time":     "0"
+    }},
+    {"action": "log", "message": "Phase 6a: PASS -- RT drives only throttle"},
+    {"action": "send_axis", "axis": 5, "axis_value": 0.0, "post_delay_ms": 200},
+
+    // 6b: LT axis (axis 4, value 0.8) should cause throttle via button
+    {"action": "log", "message": "Phase 6b: LT trigger (axis 4) analog = 0.8"},
+    {"action": "send_axis", "axis": 4, "axis_value": 0.8, "post_delay_ms": 500},
+    {"action": "assert", "expect": {
+        "throttle_time": {"ne": 0},
+        "pitch_time":    "0",
+        "heading_time":  "0",
+        "slide_lr_time": "0",
+        "bank_time":     "0"
+    }},
+    {"action": "log", "message": "Phase 6b: PASS -- LT drives only throttle"},
+    {"action": "send_axis", "axis": 4, "axis_value": 0.0, "post_delay_ms": 200},
+
+    // 6c: RT axis at sub-threshold (0.1) should NOT fire axis-button
+    {"action": "log", "message": "Phase 6c: RT sub-threshold (axis 5) = 0.1"},
+    {"action": "send_axis", "axis": 5, "axis_value": 0.1, "post_delay_ms": 500},
+    {"action": "assert", "expect": {
+        "throttle_time": "0",
+        "pitch_time":    "0"
+    }},
+    {"action": "log", "message": "Phase 6c: PASS -- sub-threshold RT fires nothing"},
+    {"action": "send_axis", "axis": 5, "axis_value": 0.0, "post_delay_ms": 200},
 
     // -- Done --
     {"action": "log", "message": "=== TEST: Axis Mapping Regression -- ALL PHASES PASS ==="}
