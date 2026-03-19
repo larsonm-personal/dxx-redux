@@ -61,11 +61,20 @@
 #include "vers_id.h"
 #ifdef __ANDROID__
 #include "auto_net.h"
+#include "android_net_log.h"
 #include <android/log.h>
 #define MPDIAG(fmt, ...) do { \
-	con_printf(CON_NORMAL, "MPDIAG: " fmt, ##__VA_ARGS__); \
-	__android_log_print(ANDROID_LOG_INFO, "DXX-MP", "MPDIAG: " fmt, ##__VA_ARGS__); \
+	char _mpdiag_buf[256]; \
+	snprintf(_mpdiag_buf, sizeof(_mpdiag_buf), fmt, ##__VA_ARGS__); \
+	con_printf(CON_NORMAL, "MPDIAG: %s", _mpdiag_buf); \
+	__android_log_print(ANDROID_LOG_INFO, "DXX-MP", "MPDIAG: %s", _mpdiag_buf); \
+	android_net_log("MPDIAG", _mpdiag_buf); \
 } while(0)
+/* Set in net_udp_select_players from auto_host_pending; checked by
+ * net_udp_start_poll to auto-close menu when enough players join.
+ * Kept separate from auto_host_pending to avoid re-entry when the
+ * select-players window closes and the main menu re-activates. */
+static int net_auto_start_when_full = 0;
 #else
 #define MPDIAG(fmt, ...) con_printf(CON_NORMAL, "MPDIAG: " fmt, ##__VA_ARGS__)
 #endif
@@ -3912,9 +3921,14 @@ int net_udp_start_poll( newmenu *menu, d_event *event, void *userdata )
 
 #ifdef __ANDROID__
 	/* Auto-start: when launched via auto_host and all expected players
-	 * have joined, close the select-players menu automatically. */
-	if (auto_host_pending && N_players >= Netgame.max_numplayers) {
-		auto_host_pending = 0;
+	 * have joined, close the select-players menu automatically.
+	 * Uses net_auto_start_when_full (set in net_udp_select_players)
+	 * instead of auto_host_pending to avoid re-entry: closing this
+	 * menu fires EVENT_WINDOW_ACTIVATED on the main menu, which would
+	 * call check_auto_net() and re-enter the host flow if
+	 * auto_host_pending were still set. */
+	if (net_auto_start_when_full && N_players >= Netgame.max_numplayers) {
+		net_auto_start_when_full = 0;
 		MPDIAG("auto-start: N_players=%d max=%d, closing select_players\n", N_players, Netgame.max_numplayers);
 		/* Set rval to the OK item index (last item) so newmenu_do1
 		 * returns a non-negative value -> select_players proceeds. */
@@ -5251,10 +5265,21 @@ GetPlayersAgain:
 #endif
 
 #ifdef __ANDROID__
-	/* Android port: tell Kotlin overlay to show a "START GAME" button */
+	/* Android port: tell Kotlin overlay to show a "START GAME" button.
+	 * Transfer auto_host_pending into the file-scope net_auto_start_when_full
+	 * flag and clear auto_host_pending.  This prevents re-entry: when this
+	 * menu closes, window_close() fires EVENT_WINDOW_ACTIVATED on the main
+	 * menu, whose handler calls check_auto_net().  If auto_host_pending were
+	 * still set, check_auto_net would re-enter net_udp_auto_host and open a
+	 * second select-players menu recursively, resetting N_players to 0 and
+	 * causing the 'client briefly disconnects/reconnects' symptom. */
 	{
 		extern volatile int g_host_selecting_players;
 		g_host_selecting_players = 1;
+		if (auto_host_pending) {
+			net_auto_start_when_full = 1;
+			auto_host_pending = 0;
+		}
 	}
 #endif
 
@@ -5264,6 +5289,7 @@ GetPlayersAgain:
 	{
 		extern volatile int g_host_selecting_players;
 		g_host_selecting_players = 0;
+		net_auto_start_when_full = 0;
 	}
 #endif
 

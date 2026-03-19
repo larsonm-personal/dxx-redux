@@ -41,6 +41,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.dxxredux.app.multiplayer.NetLog
 import org.json.JSONObject
 import java.io.File
 
@@ -1567,6 +1568,15 @@ class MainActivity :
     @Suppress("unused")
     fun showLevelName(name: String) {
         showOverlayLine(name)
+    }
+
+    // ── Native net-log bridge (called from JNI on game thread) ──
+    @Suppress("unused")
+    fun netLogFromNative(
+        category: String,
+        message: String,
+    ) {
+        NetLog.log(category, message)
     }
 
     // ── GameSurfaceView with InputConnection for soft keyboard ──

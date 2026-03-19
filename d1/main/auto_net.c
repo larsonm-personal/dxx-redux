@@ -71,9 +71,10 @@ int check_auto_net(void)
 	}
 
 	if (auto_host_pending) {
-		/* Don't clear auto_host_pending yet - net_udp_start_poll uses it
-		 * to know when to auto-start after all players join. It gets
-		 * cleared by the poll callback or when select_players returns. */
+		/* auto_host_pending is cleared early in net_udp_select_players
+		 * (transferred to the file-scope net_auto_start_when_full flag).
+		 * This prevents re-entry when the select-players menu closes and
+		 * EVENT_WINDOW_ACTIVATED re-fires on the main menu. */
 		con_printf(CON_NORMAL, "auto_net: starting auto-host on port %d "
 		           "(mission=%s mode=%d diff=%d max=%d lvl=%d)\n",
 		           auto_host_my_port, auto_host_mission, auto_host_mode,

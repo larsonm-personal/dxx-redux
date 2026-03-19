@@ -403,6 +403,7 @@ target_sources(dxx-redux-d1 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/console_ringbuf.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_jni_overlay.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_meta_actions.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_net_log.c
 )
 target_include_directories(dxx-redux-d1 PRIVATE
     ${D1_SRC}/arch/include
@@ -477,6 +478,7 @@ target_sources(dxx-redux-d2 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/console_ringbuf.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_jni_overlay.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_meta_actions.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_net_log.c
 )
 target_include_directories(dxx-redux-d2 PRIVATE
     ${D2_SRC}/arch/include
