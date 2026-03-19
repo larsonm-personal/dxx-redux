@@ -2639,6 +2639,22 @@ void net_udp_add_player(UDP_sequence_packet *p)
 		return;		// too many of em
 	}
 
+	// Reject duplicate callsigns from different addresses
+	for (i=0; i<N_players; i++)
+	{
+		if (!d_stricmp(Netgame.players[i].callsign, p->player.callsign) &&
+		    memcmp((struct _sockaddr *)&Netgame.players[i].protocol.udp.addr,
+		           (struct _sockaddr *)&p->player.protocol.udp.addr, sizeof(struct _sockaddr)))
+		{
+			char logbuf[128];
+			snprintf(logbuf, sizeof(logbuf), "add_player: dump '%s' duplicate callsign (slot %d)", p->player.callsign, i);
+			net_log_comment(logbuf);
+			MPDIAG("add_player '%s' duplicate callsign (slot %d has same name)\n", p->player.callsign, i);
+			net_udp_dump_player(p->player.protocol.udp.addr, p->token, DUMP_DUPNAME);
+			return;
+		}
+	}
+
 	ClipRank (&p->player.rank);
 	memcpy( Netgame.players[N_players].callsign, p->player.callsign, CALLSIGN_LEN+1 );
 	if(Netgame.AllowPreferredColors) {
@@ -3344,6 +3360,9 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 void net_udp_process_dump(ubyte *data, int len, struct _sockaddr sender_addr)
 {
 	// Our request for join was denied.  Tell the user why.
+	char logbuf[64];
+	snprintf(logbuf, sizeof(logbuf), "process_dump: reason=%d", data[5]);
+	net_log_comment(logbuf);
 
 	switch (data[5])
 	{
@@ -3364,7 +3383,7 @@ void net_udp_process_dump(ubyte *data, int len, struct _sockaddr sender_addr)
 			multi_reset_stuff();
 			break;
 		default:
-			if (data[5] > DUMP_LEVEL) // invalid dump... heh
+			if (data[5] > DUMP_DUPNAME) // invalid dump... heh
 				break;
 			Network_status = NETSTAT_MENU; // stop us from sending before message
 			nm_messagebox(NULL, 1, TXT_OK, NET_DUMP_STRINGS(data[5]));
@@ -5205,6 +5224,10 @@ int net_udp_auto_join(const char *host_addr, int host_port, int my_port)
 {
 	struct _sockaddr host;
 	fix64 start_time, last_req;
+	char logbuf[128];
+
+	snprintf(logbuf, sizeof(logbuf), "auto_join: host=%s:%d my_port=%d", host_addr, host_port, my_port);
+	net_log_comment(logbuf);
 
 	multi_protocol = MULTI_PROTO_UDP;
 	net_udp_init();
@@ -5281,6 +5304,11 @@ int net_udp_auto_join(const char *host_addr, int host_port, int my_port)
 int net_udp_auto_host(int my_port, const char *mission, int mode,
                       int difficulty, int max_players, int level_num)
 {
+	char logbuf[128];
+	snprintf(logbuf, sizeof(logbuf), "auto_host: port=%d mission=%s mode=%d max=%d level=%d",
+	         my_port, mission, mode, max_players, level_num);
+	net_log_comment(logbuf);
+
 	multi_protocol = MULTI_PROTO_UDP;
 	net_udp_init();
 	net_udp_reset_connection_statuses();
@@ -5315,6 +5343,8 @@ int net_udp_auto_host(int my_port, const char *mission, int mode,
 int net_udp_start_game(void)
 {
 	int i;
+
+	net_log_comment("start_game: opening sockets and entering select_players");
 
 	i = udp_open_socket(0, atoi(UDP_MyPort));
 

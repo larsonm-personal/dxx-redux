@@ -691,6 +691,7 @@ static inline char *dxx_gettext(unsigned idx, const char *text)
 	((u) == DUMP_ABORTED) ? TXT_NET_GAME_NSTART	:	\
 	((u) == DUMP_CONNECTED) ? TXT_NET_GAME_CONNECT	:	\
 	((u) == DUMP_LEVEL) ? TXT_NET_GAME_WRONGLEV	:	\
+	((u) == DUMP_DUPNAME) ? "Duplicate callsign" :	\
 	(dxx_text_ensure_simple_expr(&(u), TXT_NET_GAME_CLOSED))	\
 	)
 #define MENU_DIFFICULTY_TEXT(u)	(	\

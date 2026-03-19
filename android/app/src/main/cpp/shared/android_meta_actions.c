@@ -105,6 +105,18 @@ int meta_action_dispatch(int action_id, int pressed)
 	const meta_action_entry_t *entry = NULL;
 	int i;
 
+	/* Special case: return to launcher pushes SDL_QUIT */
+	if (action_id == META_RETURN_TO_LAUNCHER) {
+		if (pressed) {
+			SDL_Event ev;
+			memset(&ev, 0, sizeof(ev));
+			ev.type = SDL_QUIT;
+			SDL_PushEvent(&ev);
+			LOGI("meta_action_dispatch: SDL_QUIT pushed (return to launcher)");
+		}
+		return 0;
+	}
+
 	for (i = 0; i < (int) DISPATCH_TABLE_SIZE; i++) {
 		if (dispatch_table[i].action_id == action_id) {
 			entry = &dispatch_table[i];

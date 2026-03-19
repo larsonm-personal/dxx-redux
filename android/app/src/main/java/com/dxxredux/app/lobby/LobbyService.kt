@@ -3,6 +3,7 @@ package com.dxxredux.app.lobby
 import android.content.Context
 import android.net.wifi.WifiManager
 import android.util.Log
+import com.dxxredux.app.multiplayer.NetLog
 import com.dxxredux.app.multiplayer.NetworkConstants
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -124,6 +125,7 @@ object LobbyService {
         hostCallsign = callsign
         openSocket(context)
         _isDiscovering.value = true
+        NetLog.log("LAN", "Discovery started on port ${NetworkConstants.LAN_LOBBY_PORT}")
         Log.i(TAG, "LAN discovery started on port ${NetworkConstants.LAN_LOBBY_PORT}")
     }
 
@@ -166,7 +168,7 @@ object LobbyService {
         hostedMaxPlayers = maxPlayers
         _hostedLobbyPlayers.value =
             listOf(
-                LanPlayer(callsign = callsign, address = "127.0.0.1", ready = false),
+                LanPlayer(callsign = callsign, address = "127.0.0.1", ready = true),
             )
         _isHosting.value = true
 
@@ -178,6 +180,7 @@ object LobbyService {
                     delay(NetworkConstants.LAN_ANNOUNCE_INTERVAL_MS)
                 }
             }
+        NetLog.log("LAN", "Hosting lobby $hostedLobbyId ($game, $mission, $mode, max=$maxPlayers)")
         Log.i(TAG, "Hosting LAN lobby $hostedLobbyId ($game, $mission, $mode)")
     }
 
@@ -198,6 +201,7 @@ object LobbyService {
         callsign: String,
     ) {
         Log.i(TAG, "joinLobby: lobbyId=$lobbyId host=$hostAddress callsign=$callsign")
+        NetLog.log("LAN", "Joining lobby $lobbyId at $hostAddress as $callsign")
         Log.i(TAG, "joinLobby: socket=${socket != null} bound=${socket?.isBound} closed=${socket?.isClosed}")
         joinRetryJob?.cancel()
         joinRetryJob =
@@ -411,6 +415,7 @@ object LobbyService {
         val callsign = json.optString("callsign", "Player")
         val current = _hostedLobbyPlayers.value
         if (current.size >= hostedMaxPlayers) {
+            NetLog.log("LAN", "JOIN rejected: lobby full (${current.size}/$hostedMaxPlayers) for $callsign from $senderAddr")
             Log.w(
                 TAG,
                 "handleJoin: lobby full (${current.size}/$hostedMaxPlayers), rejecting $callsign from $senderAddr",
@@ -418,13 +423,23 @@ object LobbyService {
             sendTo(buildJoinReject(lobbyId, "lobby full"), senderAddr)
             return
         }
-        if (current.any { it.callsign == callsign }) {
-            Log.i(TAG, "handleJoin: $callsign already in lobby, re-sending ACK to $senderAddr")
-            sendTo(
-                buildJoinAck(lobbyId, hostedGame, hostedMission, hostedMode, hostedMaxPlayers),
-                senderAddr,
-            )
-            return
+        val existing = current.find { it.callsign.equals(callsign, ignoreCase = true) }
+        if (existing != null) {
+            if (existing.address == senderAddr) {
+                // Same player re-joining (retry/reconnect) -- re-send ACK
+                Log.i(TAG, "handleJoin: $callsign re-joining from same addr $senderAddr, re-sending ACK")
+                sendTo(
+                    buildJoinAck(lobbyId, hostedGame, hostedMission, hostedMode, hostedMaxPlayers),
+                    senderAddr,
+                )
+                return
+            } else {
+                // Different player with duplicate callsign -- reject
+                NetLog.log("LAN", "JOIN rejected: duplicate callsign '$callsign' from $senderAddr")
+                Log.w(TAG, "handleJoin: duplicate callsign '$callsign' from $senderAddr (existing: ${existing.address})")
+                sendTo(buildJoinReject(lobbyId, "duplicate callsign"), senderAddr)
+                return
+            }
         }
 
         val updated = current + LanPlayer(callsign = callsign, address = senderAddr)
@@ -434,6 +449,7 @@ object LobbyService {
             senderAddr,
         )
         broadcastPlayerList()
+        NetLog.log("LAN", "Player joined: $callsign from $senderAddr (${updated.size} players)")
         Log.i(TAG, "Player joined: $callsign from $senderAddr")
     }
 
@@ -446,6 +462,7 @@ object LobbyService {
         val updated = _hostedLobbyPlayers.value.filter { it.callsign != callsign }
         _hostedLobbyPlayers.value = updated
         broadcastPlayerList()
+        NetLog.log("LAN", "Player left: $callsign")
         Log.i(TAG, "Player left: $callsign")
     }
 
@@ -461,6 +478,7 @@ object LobbyService {
                 if (p.callsign == callsign) p.copy(ready = ready) else p
             }
         _hostedLobbyPlayers.value = updated
+        NetLog.log("LAN", "READY: $callsign -> $ready")
         broadcastPlayerList()
     }
 
@@ -477,6 +495,7 @@ object LobbyService {
                     ready = pj.optBoolean("ready", false),
                 )
             }
+        NetLog.log("LAN", "PLAYER_LIST: ${players.size} players, lobby=$lobbyId")
         // Store in the lobby entry so UI can show it
         val existing = lobbies[lobbyId]
         if (existing != null) {
@@ -505,13 +524,18 @@ object LobbyService {
                 mode = json.optString("mode", "coop"),
                 maxPlayers = json.optInt("max_players", 4),
             )
+        NetLog.log("LAN", "JOIN_ACK received for lobby $lobbyId from $senderAddr")
         Log.i(TAG, "JOIN_ACK received for lobby $lobbyId from $senderAddr")
     }
 
     private fun handleJoinReject(json: JSONObject) {
         val lobbyId = json.optString("lobby_id", "")
         val reason = json.optString("reason", "unknown")
+        NetLog.log("LAN", "JOIN_REJECT for lobby $lobbyId: $reason")
         Log.w(TAG, "JOIN_REJECT for lobby $lobbyId: $reason")
+        joinRetryJob?.cancel()
+        joinRetryJob = null
+        _diagnostics.value = "Join rejected: $reason"
         // Clear joined state in case we were in a retry
         if (_joinedLobby.value?.lobbyId == lobbyId) {
             _joinedLobby.value = null
@@ -530,7 +554,7 @@ object LobbyService {
         val lid = hostedLobbyId ?: return
         val players = _hostedLobbyPlayers.value
 
-        // Send START to every joiner
+        // Send START to every joiner (redundant sends for reliability)
         val data =
             buildStart(
                 lobbyId = lid,
@@ -546,6 +570,16 @@ object LobbyService {
         for (p in players) {
             if (p.address != "127.0.0.1") {
                 sendTo(data, p.address)
+            }
+        }
+        scope?.launch(Dispatchers.IO) {
+            for (retry in 1..2) {
+                delay(200)
+                for (p in players) {
+                    if (p.address != "127.0.0.1") {
+                        sendTo(data, p.address)
+                    }
+                }
             }
         }
 
@@ -567,6 +601,7 @@ object LobbyService {
                 peers = emptyList(),
                 isLan = true,
             )
+        NetLog.log("LAN", "Game started: $hostedGame/$hostedMission lvl=$levelNum diff=$difficulty")
         Log.i(TAG, "Game started: $hostedGame/$hostedMission lvl=$levelNum diff=$difficulty")
     }
 
@@ -582,6 +617,7 @@ object LobbyService {
         val difficulty = json.optInt("difficulty", 1)
         val levelNum = json.optInt("level_num", 1)
         val maxPlayers = json.optInt("max_players", 4)
+        NetLog.log("LAN", "START received: $game/$mission lvl=$levelNum diff=$difficulty from $senderAddr")
         Log.i(TAG, "START received for lobby $lobbyId: $game/$mission at $senderAddr:$hostPort")
 
         // Emit launch event for the joiner

@@ -115,6 +115,7 @@ object TouchBindings {
     const val META_WEAPON_9 = 1028
     const val META_WEAPON_10 = 1029
     const val META_PAUSE = 1030
+    const val META_RETURN_TO_LAUNCHER = 1031
 
     /** Labels for meta actions, used in Extra button pickers. */
     val META_BUTTON_LABELS: Map<Int, String> =
@@ -147,6 +148,7 @@ object TouchBindings {
             META_WEAPON_9 to "Weapon 9",
             META_WEAPON_10 to "Weapon 10",
             META_PAUSE to "Pause",
+            META_RETURN_TO_LAUNCHER to "Exit to Launcher",
         )
 
     /** Meta actions that only exist in D2 (guide bot, markers, CTF flag). */

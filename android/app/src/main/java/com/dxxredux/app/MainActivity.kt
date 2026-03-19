@@ -411,6 +411,9 @@ class MainActivity :
                 TouchOverlayView.ADMIN_NET_STATS -> {
                     netStatsOverlay?.toggle()
                 }
+                TouchOverlayView.ADMIN_EXIT_LAUNCHER -> {
+                    NativeMetaActions.nativeMetaAction(TouchBindings.META_RETURN_TO_LAUNCHER, 1)
+                }
             }
         }
         touchOverlay.adminTrayAutoLevelingProvider = {

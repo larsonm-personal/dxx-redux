@@ -1,5 +1,6 @@
 package com.dxxredux.app.multiplayer
 
+import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -101,5 +102,29 @@ object MatchmakingStateHolder {
             val log = s.statusLog.takeLast(99) + msg
             s.copy(statusLog = log)
         }
+    }
+}
+
+/** Load/save multiplayer callsign via SharedPreferences("dxx_prefs"). */
+object CallsignPrefs {
+    private const val PREFS_NAME = "dxx_prefs"
+    private const val KEY = "mp_callsign"
+    // CALLSIGN_LEN=8 in D1/D2 engine
+    private const val MAX_LEN = 8
+
+    /** Load saved callsign or generate "Player##" on first launch. */
+    fun load(context: Context): String {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val saved = prefs.getString(KEY, null)
+        if (saved != null) return saved
+        val generated = "Player%02d".format((0..99).random())
+        prefs.edit().putString(KEY, generated).apply()
+        return generated
+    }
+
+    fun save(context: Context, callsign: String) {
+        val trimmed = callsign.take(MAX_LEN)
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit().putString(KEY, trimmed).apply()
     }
 }

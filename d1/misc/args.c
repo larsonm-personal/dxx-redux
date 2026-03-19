@@ -220,8 +220,12 @@ void ReadCmdArgs(void)
 	GameArg.DbgSdlASyncBlit = FindArg("-asyncblit");
 #endif
 
+#ifdef __ANDROID__
+	GameArg.LogNetTraffic		= 1;
+#else
 	//GameArg.LogNetTraffic 		= ! FindArg("-nonetlog");
 	GameArg.LogNetTraffic 		= FindArg("-netlog");
+#endif
 
 	GameArg.GameLogTimeStamp	= FindArg("-gamelog_timestamp");
 	GameArg.GameLogSplit		= FindArg("-gamelog_split");

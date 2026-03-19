@@ -602,6 +602,8 @@ class SetupActivity : ComponentActivity() {
             return
         }
         mpGameLaunching = true
+        // Close lobby socket before handing off to engine
+        com.dxxredux.app.lobby.LobbyService.stopDiscovery()
         FileSetManager(filesDir).writeActiveSetPath()
         AudioSourceManager(filesDir).writePlaylist()
         writeInitialGameConfig()
@@ -846,6 +848,10 @@ class SetupActivity : ComponentActivity() {
         // Initialize Google Play Games sign-in (no-op if not configured)
         PlayGamesAuth.initialize(this)
         MatchmakingService.setActivity(this)
+
+        // Load persisted callsign (or generate random on first run)
+        mpCallsign = com.dxxredux.app.multiplayer.CallsignPrefs.load(this)
+        MatchmakingStateHolder.update { it.copy(callsign = mpCallsign) }
 
         // Edge-to-edge: draw behind system bars, Compose handles insets
         WindowCompat.setDecorFitsSystemWindows(window, false)

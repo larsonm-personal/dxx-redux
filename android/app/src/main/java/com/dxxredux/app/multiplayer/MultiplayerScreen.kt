@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -87,6 +88,7 @@ private fun ServerBrowserContent(
     state: MatchmakingState,
     onBack: () -> Unit,
 ) {
+    val context = LocalContext.current
     var serverUrl by remember { mutableStateOf(state.serverUrl) }
     var callsign by remember { mutableStateOf(state.callsign) }
     var showCreateDialog by remember { mutableStateOf(false) }
@@ -164,13 +166,16 @@ private fun ServerBrowserContent(
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
-                    onClick = { MatchmakingService.connect(serverUrl, callsign) },
+                    onClick = {
+                        CallsignPrefs.save(context, callsign)
+                        MatchmakingService.connect(serverUrl, callsign)
+                    },
                     modifier = Modifier.weight(1f),
                 ) {
                     Text("Connect")
                 }
                 Button(onClick = {
-                    // Store callsign so LAN tab can use it
+                    CallsignPrefs.save(context, callsign)
                     MatchmakingStateHolder.update { it.copy(callsign = callsign) }
                     MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.LAN) }
                 }) {

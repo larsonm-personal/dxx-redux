@@ -44,6 +44,7 @@
 #define META_WEAPON_9           1028
 #define META_WEAPON_10          1029
 #define META_PAUSE              1030
+#define META_RETURN_TO_LAUNCHER 1031
 
 /* Flags for dispatch table entries */
 #define META_FLAG_INSTANT 1 /* inject full press+release on button down, ignore up */

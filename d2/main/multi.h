@@ -188,6 +188,7 @@ for_each_multiplayer_command(enum {, define_multiplayer_command, });
 #define DUMP_LEVEL      6
 #define DUMP_KICKED     7
 #define DUMP_PKTTIMEOUT 8
+#define DUMP_DUPNAME    9
 
 #define SPAWN_STYLE_NO_INVUL 0
 #define SPAWN_STYLE_SHORT_INVUL 1
