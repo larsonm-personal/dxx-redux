@@ -3705,10 +3705,17 @@ void net_udp_read_endlevel_packet( ubyte *data, int data_len, struct _sockaddr s
 /*
  * Polling loop waiting for sync packet to start game after having sent request
  */
-int net_udp_sync_poll( newmenu *menu, d_event *event, void *userdata )
+int
+net_udp_sync_poll( newmenu *menu, d_event *event, void *userdata )
 {
 	static fix64 t1 = 0;
+	static int poll_count = 0;
 	int rval = 0;
+#ifdef __android__
+	char logbuf[256];
+#else
+	(void)poll_count;  /* suppress unused warning when not using Android logging */
+#endif
 
 	if (event->type != EVENT_WINDOW_DRAW)
 		return 0;
@@ -3720,22 +3727,47 @@ int net_udp_sync_poll( newmenu *menu, d_event *event, void *userdata )
 
 	// Leave if Host disconnects
 	if (Netgame.players[0].connected == CONNECT_DISCONNECTED)
+	{
+#ifdef __android__
+		net_log_comment("[ANDROID] sync_poll: host disconnected!");
+#endif
 		rval = -2;
+	}
 
 	if (Network_status != NETSTAT_WAITING)	// Status changed to playing, exit the menu
+	{
+#ifdef __android__
+		if (Network_status == NETSTAT_PLAYING)
+			net_log_comment("[ANDROID] sync_poll: Network_status changed to PLAYING, exiting");
+		else
+		{
+			snprintf(logbuf, sizeof(logbuf), "[ANDROID] sync_poll: Network_status changed to %d, exiting", Network_status);
+			net_log_comment(logbuf);
+		}
+#endif
 		rval = -2;
+	}
 
 	if (Network_status != NETSTAT_MENU && !Network_rejoined && (timer_query() > t1+F1_0*2))
 	{
 		int i;
 
 		// Poll time expired, re-send request
-		
+		poll_count++;
+#ifdef __android__
+		snprintf(logbuf, sizeof(logbuf), "[ANDROID] sync_poll: timeout waiting for sync, resending request (attempt %d)", poll_count);
+		net_log_comment(logbuf);
+#endif
 		t1 = timer_query();
 
 		i = net_udp_send_request();
 		if (i < 0)
+		{
+#ifdef __android__
+			net_log_comment("[ANDROID] sync_poll: net_udp_send_request failed on retry!");
+#endif
 			rval = -2;
+		}
 	}
 	
 	return rval;
@@ -5426,18 +5458,35 @@ net_udp_wait_for_sync(void)
 	char text[60];
 	newmenu_item m[2];
 	int i, choice=0;
+#ifdef __android__
+	char logbuf[256];
+#endif
 	
 	Network_status = NETSTAT_WAITING;
 	con_printf(CON_DEBUG, "wait_for_sync: entering, master=%d\n", multi_i_am_master());
+
+#ifdef __android__
+	net_log_comment("[ANDROID] wait_for_sync START: sending initial request to host");
+#endif
 	m[0].type=NM_TYPE_TEXT; m[0].text = text;
 	m[1].type=NM_TYPE_TEXT; m[1].text = TXT_NET_LEAVE;
 	
 	i = net_udp_send_request();
 
 	if (i < 0)
+	{
+#ifdef __android__
+		net_log_comment("[ANDROID] wait_for_sync: net_udp_send_request failed!");
+#endif
 		return(-1);
+	}
 
 	sprintf( m[0].text, "%s\n'%s' %s", TXT_NET_WAITING, Netgame.players[i].callsign, TXT_NET_TO_ENTER );
+
+#ifdef __android__
+	snprintf(logbuf, sizeof(logbuf), "[ANDROID] wait_for_sync: entering menu loop, waiting for sync from host");
+	net_log_comment(logbuf);
+#endif
 
 	while (choice > -1)
 	{		
@@ -5447,10 +5496,18 @@ net_udp_wait_for_sync(void)
 
 	con_printf(CON_DEBUG, "wait_for_sync: exited loop, Network_status=%d\n", Network_status);
 
+#ifdef __android__
+	snprintf(logbuf, sizeof(logbuf), "[ANDROID] wait_for_sync: menu exited with Network_status=%d (NETSTAT_PLAYING=%d)",
+		Network_status, NETSTAT_PLAYING);
+	net_log_comment(logbuf);
+#endif
 	if (Network_status != NETSTAT_PLAYING)	
 	{
 		UDP_sequence_packet me;
 
+#ifdef __android__
+		net_log_comment("[ANDROID] wait_for_sync FAILED: not in PLAYING status, sending quit");
+#endif
 		memset(&me, 0, sizeof(UDP_sequence_packet));
 		me.type = UPID_QUIT_JOINING;
 		memcpy( me.player.callsign, Players[Player_num].callsign, CALLSIGN_LEN+1 );
@@ -5461,6 +5518,9 @@ net_udp_wait_for_sync(void)
 		Game_mode = GM_GAME_OVER;
 		return(-1);     // they cancelled
 	}
+#ifdef __android__
+	net_log_comment("[ANDROID] wait_for_sync OK: sync received and Network_status is PLAYING");
+#endif
 	return(0);
 }
 
@@ -5553,9 +5613,12 @@ menu:
 int
 net_udp_level_sync(void)
 {
- 	// Do required syncing between (before) levels
+	// Do required syncing between (before) levels
 
 	int result = 0;
+#ifdef __android__
+	char logbuf[256];
+#endif
 
 	memset(&UDP_MData, 0, sizeof(UDP_mdata_info));
 	net_udp_noloss_init_mdata_queue();
@@ -5564,23 +5627,59 @@ net_udp_level_sync(void)
 
 	net_udp_flush(); // Flush any old packets
 
+#ifdef __android__
+	snprintf(logbuf, sizeof(logbuf), "[ANDROID] level_sync START: N_players=%d master=%d Network_status=%d Player_num=%d",
+			N_players, multi_i_am_master(), Network_status, Player_num);
+	net_log_comment(logbuf);
+#endif
 	MPDIAG("level_sync: N_players=%d master=%d Network_status=%d\n", N_players, multi_i_am_master(), Network_status);
 	if (N_players == 0)
+	{
+#ifdef __android__
+		net_log_comment("[ANDROID] level_sync: awaiting sync as client (N_players==0)");
+#endif
 		result = net_udp_wait_for_sync();
+	}
 	else if (multi_i_am_master())
 	{
+#ifdef __android__
+		net_log_comment("[ANDROID] level_sync: host waiting for client requests");
+#endif
 		result = net_udp_wait_for_requests();
 		MPDIAG("level_sync: wait_for_requests returned %d\n", result);
+#ifdef __android__
+		snprintf(logbuf, sizeof(logbuf), "[ANDROID] level_sync: wait_for_requests returned %d", result);
+		net_log_comment(logbuf);
+#endif
 		if (!result)
+		{
+#ifdef __android__
+			net_log_comment("[ANDROID] level_sync: sending sync to all clients");
+#endif
 			result = net_udp_send_sync();
+		}
 		MPDIAG("level_sync: send_sync returned %d\n", result);
+#ifdef __android__
+		snprintf(logbuf, sizeof(logbuf), "[ANDROID] level_sync: send_sync returned %d", result);
+		net_log_comment(logbuf);
+#endif
 	}
 	else
+	{
+#ifdef __android__
+		net_log_comment("[ANDROID] level_sync: client waiting for sync from host");
+#endif
 		result = net_udp_wait_for_sync();
+	}
 
 	con_printf(CON_DEBUG, "level_sync: result=%d\n", result);
 	multi_powcap_count_powerups_in_mine();
 
+#ifdef __android__
+	snprintf(logbuf, sizeof(logbuf), "[ANDROID] level_sync END: result=%d Players_connected=%d", result,
+			Players[Player_num].connected);
+	net_log_comment(logbuf);
+#endif
 	if (result)
 	{
 		Players[Player_num].connected = CONNECT_DISCONNECTED;
@@ -5599,7 +5698,8 @@ net_udp_level_sync(void)
 	return(0);
 }
 
-int net_udp_do_join_game(ubyte join_as_obs)
+int
+net_udp_do_join_game(ubyte join_as_obs)
 {
 	
 	if (Netgame.game_status == NETSTAT_ENDLEVEL)
