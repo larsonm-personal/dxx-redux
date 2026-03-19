@@ -844,6 +844,7 @@ class SetupActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        CrashLog.install(this)
         KnownVersions.init(this)
         com.dxxredux.app.multiplayer.NetLog
             .init(this)
@@ -1598,68 +1599,77 @@ private fun SetupScreen(
             scanning = true
             importStatus = ""
             scope.launch(Dispatchers.IO) {
-                val zipUris = mutableListOf<Uri>()
-                val gameUris = mutableListOf<FoundFile>()
-                val cueUris = mutableListOf<Pair<String, Uri>>()
-                val binUris = mutableListOf<Pair<String, Uri>>()
-                var gogUri: Pair<String, Uri>? = null
-                var sowUri: Pair<String, Uri>? = null
-                for (uri in uris) {
-                    val name = getDisplayName(context, uri)
-                    if (name != null) {
-                        val lname = name.lowercase()
-                        when {
-                            lname.endsWith(".zip") -> zipUris.add(uri)
-                            lname.endsWith(".cue") -> cueUris.add(name to uri)
-                            lname.endsWith(".bin") -> binUris.add(name to uri)
-                            lname.endsWith(".exe") || lname.endsWith(".pkg") -> gogUri = name to uri
-                            lname.endsWith(".sow") -> sowUri = name to uri
-                            lname in ALL_GAME_FILENAMES -> gameUris.add(FoundFile(name, uri))
+                try {
+                    val zipUris = mutableListOf<Uri>()
+                    val gameUris = mutableListOf<FoundFile>()
+                    val cueUris = mutableListOf<Pair<String, Uri>>()
+                    val binUris = mutableListOf<Pair<String, Uri>>()
+                    var gogUri: Pair<String, Uri>? = null
+                    var sowUri: Pair<String, Uri>? = null
+                    for (uri in uris) {
+                        val name = getDisplayName(context, uri)
+                        if (name != null) {
+                            val lname = name.lowercase()
+                            when {
+                                lname.endsWith(".zip") -> zipUris.add(uri)
+                                lname.endsWith(".cue") -> cueUris.add(name to uri)
+                                lname.endsWith(".bin") -> binUris.add(name to uri)
+                                lname.endsWith(".exe") || lname.endsWith(".pkg") -> gogUri = name to uri
+                                lname.endsWith(".sow") -> sowUri = name to uri
+                                lname in ALL_GAME_FILENAMES -> gameUris.add(FoundFile(name, uri))
+                            }
                         }
                     }
-                }
-                withContext(Dispatchers.Main) {
-                    if (gameUris.isNotEmpty()) {
-                        scanResults = gameUris
-                    }
-                    // Trigger disc import dialog if CUE file(s) found
-                    if (cueUris.isNotEmpty()) {
-                        discImportCueName = cueUris.first().first
-                        discImportCueUri = cueUris.first().second
-                        discImportBins = binUris
-                    }
-                    // Trigger GOG import dialog if .exe/.pkg found
-                    gogUri?.let {
-                        gogImportName = it.first
-                        gogImportUri = it.second
-                    }
-                    // Trigger SOW import dialog if .sow found
-                    sowUri?.let {
-                        sowImportName = it.first
-                        sowImportUri = it.second
-                    }
-                    scanning = false
-                }
-                // Handle ZIP files
-                if (zipUris.isNotEmpty()) {
-                    withContext(Dispatchers.Main) { zipExtracting = true }
-                    val tmpDir = File(filesDir, "tmp")
-                    val allExtracted = mutableListOf<ExtractedFile>()
-                    for (zipUri in zipUris) {
-                        val extracted =
-                            extractZipContents(context, zipUri, tmpDir) { name ->
-                                zipProgressFile = name
-                            }
-                        allExtracted.addAll(extracted)
-                    }
-                    // Identify package
-                    val fileHashes = allExtracted.associate { it.name to it.sha256 }
-                    val pkgName = KnownVersions.identifyPackage(fileHashes)
                     withContext(Dispatchers.Main) {
-                        zipExtracted = allExtracted
-                        zipPackageName = pkgName
+                        if (gameUris.isNotEmpty()) {
+                            scanResults = gameUris
+                        }
+                        // Trigger disc import dialog if CUE file(s) found
+                        if (cueUris.isNotEmpty()) {
+                            discImportCueName = cueUris.first().first
+                            discImportCueUri = cueUris.first().second
+                            discImportBins = binUris
+                        }
+                        // Trigger GOG import dialog if .exe/.pkg found
+                        gogUri?.let {
+                            gogImportName = it.first
+                            gogImportUri = it.second
+                        }
+                        // Trigger SOW import dialog if .sow found
+                        sowUri?.let {
+                            sowImportName = it.first
+                            sowImportUri = it.second
+                        }
+                        scanning = false
+                    }
+                    // Handle ZIP files
+                    if (zipUris.isNotEmpty()) {
+                        withContext(Dispatchers.Main) { zipExtracting = true }
+                        val tmpDir = File(filesDir, "tmp")
+                        val allExtracted = mutableListOf<ExtractedFile>()
+                        for (zipUri in zipUris) {
+                            val extracted =
+                                extractZipContents(context, zipUri, tmpDir) { name ->
+                                    zipProgressFile = name
+                                }
+                            allExtracted.addAll(extracted)
+                        }
+                        // Identify package
+                        val fileHashes = allExtracted.associate { it.name to it.sha256 }
+                        val pkgName = KnownVersions.identifyPackage(fileHashes)
+                        withContext(Dispatchers.Main) {
+                            zipExtracted = allExtracted
+                            zipPackageName = pkgName
+                            zipExtracting = false
+                            zipProgressFile = ""
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("DXX-Setup", "File picker processing failed", e)
+                    withContext(Dispatchers.Main) {
+                        scanning = false
                         zipExtracting = false
-                        zipProgressFile = ""
+                        importStatus = "File processing failed: ${e.message}"
                     }
                 }
             }
@@ -2162,55 +2172,66 @@ private fun SetupScreen(
                                         Button(
                                             onClick = {
                                                 scope.launch {
-                                                    var imported = 0
-                                                    hashingTotalFiles = found.size
-                                                    for ((i, f) in found.withIndex()) {
-                                                        hashingFileIndex = i + 1
-                                                        hashingFile = f.name
-                                                        hashingProgress = 0f
-                                                        val canonicalName = f.name.lowercase()
-                                                        val destFile = File(setDir, canonicalName)
-                                                        // Determine track: native data-dir vs external
-                                                        val existedBefore = destFile.exists()
-                                                        val existingEntry = manifest.getEntry(canonicalName)
-                                                        val ok =
-                                                            withContext(Dispatchers.IO) {
-                                                                importFile(context, f, setDir)
-                                                            }
-                                                        if (ok) {
-                                                            imported++
-                                                            val sha256 =
-                                                                AssetManifest.computeSha256(
-                                                                    destFile,
-                                                                ) { bytesRead, totalBytes ->
-                                                                    if (totalBytes >
-                                                                        0
-                                                                    ) {
-                                                                        hashingProgress =
-                                                                            bytesRead.toFloat() / totalBytes
+                                                    try {
+                                                        var imported = 0
+                                                        hashingTotalFiles = found.size
+                                                        for ((i, f) in found.withIndex()) {
+                                                            hashingFileIndex = i + 1
+                                                            hashingFile = f.name
+                                                            hashingProgress = 0f
+                                                            val canonicalName = f.name.lowercase()
+                                                            val destFile = File(setDir, canonicalName)
+                                                            // Determine track: native data-dir vs external
+                                                            val existedBefore = destFile.exists()
+                                                            val existingEntry = manifest.getEntry(canonicalName)
+                                                            val ok =
+                                                                withContext(Dispatchers.IO) {
+                                                                    importFile(context, f, setDir)
+                                                                }
+                                                            if (ok) {
+                                                                imported++
+                                                                val sha256 =
+                                                                    AssetManifest.computeSha256(
+                                                                        destFile,
+                                                                    ) { bytesRead, totalBytes ->
+                                                                        if (totalBytes >
+                                                                            0
+                                                                        ) {
+                                                                            hashingProgress =
+                                                                                bytesRead.toFloat() / totalBytes
+                                                                        }
                                                                     }
-                                                                }
-                                                            // Data-dir track: file existed on disk without a sourceUri
-                                                            val sourceUri =
-                                                                if (existedBefore &&
-                                                                    (existingEntry == null || !existingEntry.isExternal)
-                                                                ) {
-                                                                    null
-                                                                } else {
-                                                                    f.uri.toString()
-                                                                }
-                                                            manifest.upsert(
-                                                                destFile.name,
-                                                                sha256,
-                                                                destFile.length(),
-                                                                sourceUri,
-                                                            )
+                                                                // Data-dir track: file existed on disk without a sourceUri
+                                                                val sourceUri =
+                                                                    if (existedBefore &&
+                                                                        (
+                                                                            existingEntry == null ||
+                                                                                !existingEntry.isExternal
+                                                                        )
+                                                                    ) {
+                                                                        null
+                                                                    } else {
+                                                                        f.uri.toString()
+                                                                    }
+                                                                manifest.upsert(
+                                                                    destFile.name,
+                                                                    sha256,
+                                                                    destFile.length(),
+                                                                    sourceUri,
+                                                                )
+                                                            }
                                                         }
+                                                        hashingFile = null
+                                                        importStatus =
+                                                            "Imported $imported of ${found.size} files."
+                                                        scanResults = null
+                                                        onRefresh()
+                                                    } catch (e: Exception) {
+                                                        Log.e("DXX-Setup", "Import failed", e)
+                                                        hashingFile = null
+                                                        importStatus = "Import failed: ${e.message}"
+                                                        scanResults = null
                                                     }
-                                                    hashingFile = null
-                                                    importStatus = "Imported $imported of ${found.size} files."
-                                                    scanResults = null
-                                                    onRefresh()
                                                 }
                                             },
                                         ) {

@@ -118,6 +118,13 @@ fun AdvancedSettingsPage(
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // -- Crash Reports --
+                CrashReportsSection()
+
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(16.dp))
+
                 // -- Dangerous zone --
                 Text("Danger Zone", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFFF44336))
                 Spacer(modifier = Modifier.height(8.dp))
@@ -311,6 +318,87 @@ private fun NetworkLoggingSection() {
                 },
             )
         }
+    }
+}
+
+@Composable
+private fun CrashReportsSection() {
+    val ctx = LocalContext.current
+    var crashFiles by remember { mutableStateOf(CrashLog.listCrashFiles(ctx)) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    val dateFmt = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US) }
+
+    Text("Crash Reports", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    Spacer(modifier = Modifier.height(4.dp))
+    Text(
+        "Crash reports are captured automatically when the app or game crashes.",
+        fontSize = 12.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+
+    if (crashFiles.isNotEmpty()) {
+        Spacer(modifier = Modifier.height(8.dp))
+        Text("Reports (${crashFiles.size})", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        Spacer(modifier = Modifier.height(4.dp))
+        for (file in crashFiles) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(file.name, fontSize = 11.sp)
+                    val sizeKb = file.length() / 1024
+                    val date = dateFmt.format(Date(file.lastModified()))
+                    Text(
+                        "$date -- ${sizeKb}KB",
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                OutlinedButton(
+                    onClick = { CrashLog.shareCrashFile(ctx, file) },
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                    modifier = Modifier.height(28.dp),
+                ) {
+                    Text("Export", fontSize = 11.sp)
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedButton(
+            onClick = { showDeleteDialog = true },
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+            modifier = Modifier.height(32.dp),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFF44336)),
+        ) {
+            Text("Delete All Reports", fontSize = 12.sp)
+        }
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text("Delete All Crash Reports") },
+                text = { Text("Delete all crash report files? This cannot be undone.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        CrashLog.deleteAllCrashFiles(ctx)
+                        crashFiles = emptyList()
+                        showDeleteDialog = false
+                    }) {
+                        Text("Delete", color = Color(0xFFF44336))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
+                },
+            )
+        }
+    } else {
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            "No crash reports.",
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

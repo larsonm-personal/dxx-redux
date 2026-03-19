@@ -2,4 +2,5 @@
 <paths>
     <cache-path name="config_exports" path="config_exports/" />
     <cache-path name="netlog_exports" path="netlog_exports/" />
+    <cache-path name="crashlog_exports" path="crashlog_exports/" />
 </paths>

@@ -262,6 +262,8 @@ class MainActivity :
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        CrashLog.install(this)
+
         // Load the correct game library based on the launcher's selection
         val game = intent.getStringExtra("game") ?: "d2"
         val libName = if (game == "d1") "dxx-redux-d1" else "dxx-redux-d2"
