@@ -20,6 +20,7 @@ const val MSG_PING = "PING"
 const val MSG_PONG = "PONG"
 const val MSG_JOIN_ACK = "JOIN_ACK"
 const val MSG_JOIN_REJECT = "JOIN_REJECT"
+const val MSG_QUERY = "QUERY" // ask a host what lobby they're running; host replies with ANNOUNCE
 
 /** A single player in a LAN lobby. */
 data class LanPlayer(
@@ -198,6 +199,13 @@ fun buildPong(
     json.put("type", MSG_PONG)
     json.put("lobby_id", lobbyId)
     json.put("ts", origTs)
+    return json.toString().toByteArray(Charsets.UTF_8)
+}
+
+/** Build a QUERY packet (ask a host what lobby they're running). */
+fun buildQuery(): ByteArray {
+    val json = JSONObject()
+    json.put("type", MSG_QUERY)
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 

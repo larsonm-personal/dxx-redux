@@ -88,6 +88,8 @@ object LobbyService {
     private val packetsReceived = AtomicLong(0)
     private val _diagnostics = MutableStateFlow("")
     val diagnostics: StateFlow<String> = _diagnostics.asStateFlow()
+    private val _broadcastFailing = MutableStateFlow(false)
+    val broadcastFailing: StateFlow<Boolean> = _broadcastFailing.asStateFlow()
 
     /** Clear the launch event after it has been consumed. */
     fun clearLaunchEvent() {
@@ -159,6 +161,8 @@ object LobbyService {
         packetsSent.set(0)
         packetsReceived.set(0)
         _diagnostics.value = ""
+        _broadcastFailing.value = false
+        consecutiveBroadcastFailures = 0
         closeSocket()
         NetLog.log("LAN", "Discovery stopped")
         Log.i(TAG, "LAN discovery stopped")
@@ -240,6 +244,41 @@ object LobbyService {
                     Log.w(TAG, "joinLobby: no JOIN_ACK after $JOIN_RETRY_COUNT attempts")
                     _diagnostics.value = "Join failed: no response from $hostAddress"
                 }
+            }
+    }
+
+    /**
+     * Join a lobby by IP: send QUERY to the host, wait for ANNOUNCE, then auto-join.
+     * Used when broadcast discovery isn't working but you know the host's IP.
+     */
+    fun joinLobbyByIp(
+        hostAddress: String,
+        callsign: String,
+    ) {
+        NetLog.log("LAN", "Querying lobby at $hostAddress")
+        Log.i(TAG, "joinLobbyByIp: querying $hostAddress")
+        _diagnostics.value = "Querying $hostAddress..."
+        joinRetryJob?.cancel()
+        joinRetryJob =
+            scope?.launch(Dispatchers.IO) {
+                val query = buildQuery()
+                for (attempt in 1..JOIN_RETRY_COUNT) {
+                    sendTo(query, hostAddress)
+                    delay(JOIN_RETRY_DELAY_MS)
+                    // Check if we discovered a lobby from this host
+                    val lobby =
+                        _discoveredLobbies.value.find {
+                            it.announce.hostAddress == hostAddress
+                        }
+                    if (lobby != null) {
+                        Log.i(TAG, "joinLobbyByIp: discovered lobby ${lobby.announce.lobbyId}, joining")
+                        _diagnostics.value = ""
+                        joinLobby(lobby.announce.lobbyId, hostAddress, callsign)
+                        return@launch
+                    }
+                }
+                _diagnostics.value = "No lobby found at $hostAddress"
+                Log.w(TAG, "joinLobbyByIp: no ANNOUNCE from $hostAddress after $JOIN_RETRY_COUNT attempts")
             }
     }
 
@@ -397,6 +436,7 @@ object LobbyService {
             MSG_PONG -> {} // future: calculate RTT
             MSG_JOIN_ACK -> handleJoinAck(json, senderAddr)
             MSG_JOIN_REJECT -> handleJoinReject(json)
+            MSG_QUERY -> handleQuery(senderAddr)
             else -> Log.w(TAG, "Unknown packet type '$type' from $senderAddr")
         }
     }
@@ -760,6 +800,23 @@ object LobbyService {
         sendTo(pong, senderAddr)
     }
 
+    /** Respond to a QUERY with a direct ANNOUNCE so the querier discovers our lobby. */
+    private fun handleQuery(senderAddr: String) {
+        val lid = hostedLobbyId ?: return // not hosting
+        val data =
+            buildAnnounce(
+                lobbyId = lid,
+                callsign = hostCallsign,
+                game = hostedGame,
+                mission = hostedMission,
+                mode = hostedMode,
+                playerCount = _hostedLobbyPlayers.value.size,
+                maxPlayers = hostedMaxPlayers,
+            )
+        sendTo(data, senderAddr)
+        Log.i(TAG, "handleQuery: sent ANNOUNCE to $senderAddr for lobby $lid")
+    }
+
     private fun broadcastAnnounce() {
         val lid = hostedLobbyId ?: return
         val data =
@@ -814,10 +871,12 @@ object LobbyService {
         }
         if (anySuccess) {
             consecutiveBroadcastFailures = 0
+            _broadcastFailing.value = false
         } else {
             consecutiveBroadcastFailures++
             if (consecutiveBroadcastFailures == 3) {
                 _diagnostics.value = "Broadcasts failing -- check Wi-Fi and Nearby Devices permission"
+                _broadcastFailing.value = true
             }
         }
     }
