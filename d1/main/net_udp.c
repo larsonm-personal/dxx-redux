@@ -5104,6 +5104,14 @@ GetPlayersAgain:
 		udp_tracker_register();
 #endif
 
+#ifdef __ANDROID__
+	/* Android port: tell Kotlin overlay to show a "START GAME" button */
+	{
+		extern volatile int g_host_selecting_players;
+		g_host_selecting_players = 1;
+	}
+#endif
+
         j=opt_msg;
          while(j==opt_msg)
           {
@@ -5117,6 +5125,14 @@ GetPlayersAgain:
                 multi_send_message();
              }
           }
+
+#ifdef __ANDROID__
+	{
+		extern volatile int g_host_selecting_players;
+		g_host_selecting_players = 0;
+	}
+#endif
+
 //end this section addition
 	save_nplayers = N_players;
 

@@ -126,6 +126,8 @@ class MainActivity :
 
     external fun nativeIsEndlevelSequence(): Boolean
 
+    external fun nativeIsHostSelectingPlayers(): Boolean
+
     external fun nativeAutomapInput(
         heading: Float,
         pitch: Float,
@@ -224,6 +226,7 @@ class MainActivity :
     private lateinit var touchOverlay: TouchOverlayView
     private lateinit var skipButton: SkipButtonView
     private lateinit var exitButton: ExitButtonView
+    private lateinit var startGameButton: StartGameButtonView
     private lateinit var overlayContainer: LinearLayout
     private var overlayEnabled = false
     private val overlayPoller = android.os.Handler(android.os.Looper.getMainLooper())
@@ -487,6 +490,13 @@ class MainActivity :
                 }
             }
 
+        // "START GAME" button for host player selection screen (hidden by default)
+        startGameButton =
+            StartGameButtonView(this).apply {
+                keyCallback = { action, keyCode, unicode -> nativeKeyEvent(action, keyCode, unicode) }
+                visibility = View.GONE
+            }
+
         // Multi-line overlay container (upper-left, items fade independently)
         overlayContainer =
             LinearLayout(this).apply {
@@ -532,6 +542,13 @@ class MainActivity :
         )
         frame.addView(
             exitButton,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
+        frame.addView(
+            startGameButton,
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -760,11 +777,21 @@ class MainActivity :
                             if (shouldShow && !automap) pollTrackLabel()
                             // Hide standalone exit when touch overlay is active (admin tray has Exit)
                             exitButton.visibility = if (shouldShow) View.GONE else View.VISIBLE
+                            // Show "START GAME" button when host is on player selection screen
+                            val hostSelecting =
+                                try {
+                                    nativeIsHostSelectingPlayers()
+                                } catch (_: Exception) {
+                                    false
+                                }
+                            startGameButton.visibility =
+                                if (hostSelecting) View.VISIBLE else View.GONE
                         } catch (_: Exception) {
                             touchOverlay.isActive = false
                             touchOverlay.automapActive = false
                             skipButton.visibility = View.GONE
                             exitButton.visibility = View.VISIBLE
+                            startGameButton.visibility = View.GONE
                         }
                     } else {
                         if (touchOverlay.isActive) {
@@ -773,6 +800,7 @@ class MainActivity :
                         touchOverlay.isActive = false
                         touchOverlay.automapActive = false
                         skipButton.visibility = View.GONE
+                        startGameButton.visibility = View.GONE
                         netStatsOverlay?.hide()
                     }
                     overlayPoller.postDelayed(this, 100)

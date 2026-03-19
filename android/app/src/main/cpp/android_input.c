@@ -51,6 +51,10 @@ volatile int g_skippable_active = 0;
 /* Set to 1 while save/load menu is open.  Kotlin shows a BACK button. */
 volatile int g_saveload_menu_active = 0;
 
+/* Set to 1 while the host is on the "select players" screen.
+ * Kotlin shows a "START GAME" overlay button. */
+volatile int g_host_selecting_players = 0;
+
 /* Forward declaration — defined later in this file, written by the blit path. */
 extern volatile int g_blit_y_offset;
 
@@ -466,6 +470,14 @@ JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MainActivity_nativeIsSaveLoadMenuActive(JNIEnv *env, jobject thiz)
 {
 	return g_saveload_menu_active ? JNI_TRUE : JNI_FALSE;
+}
+
+extern volatile int g_host_selecting_players;
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeIsHostSelectingPlayers(JNIEnv *env, jobject thiz)
+{
+	return g_host_selecting_players ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
