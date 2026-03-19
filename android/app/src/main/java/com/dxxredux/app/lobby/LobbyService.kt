@@ -786,26 +786,67 @@ object LobbyService {
         }
     }
 
+    @Volatile private var consecutiveBroadcastFailures: Int = 0
+
     private fun sendBroadcast(data: ByteArray) {
-        try {
-            val addr = InetAddress.getByName("255.255.255.255")
-            val packet =
-                DatagramPacket(
-                    data,
-                    data.size,
-                    addr,
-                    NetworkConstants.LAN_LOBBY_PORT,
+        val addresses = getBroadcastAddresses()
+        var anySuccess = false
+        for (addr in addresses) {
+            try {
+                val packet =
+                    DatagramPacket(
+                        data,
+                        data.size,
+                        addr,
+                        NetworkConstants.LAN_LOBBY_PORT,
+                    )
+                socket?.send(packet)
+                anySuccess = true
+                val txCount = packetsSent.incrementAndGet()
+                Log.d(
+                    TAG,
+                    "broadcast: ${data.size}B to ${addr.hostAddress}:${NetworkConstants.LAN_LOBBY_PORT} (total=$txCount)",
                 )
-            socket?.send(packet)
-            val txCount = packetsSent.incrementAndGet()
-            Log.d(
-                TAG,
-                "broadcast: ${data.size}B to 255.255.255.255:${NetworkConstants.LAN_LOBBY_PORT} (total=$txCount)",
-            )
-        } catch (e: Exception) {
-            NetLog.log("LAN", "Broadcast send FAILED: ${e.message}")
-            Log.w(TAG, "broadcast send error: ${e.message}", e)
+            } catch (e: Exception) {
+                NetLog.log("LAN", "Broadcast send FAILED to ${addr.hostAddress}: ${e.message}")
+                Log.w(TAG, "broadcast send error to ${addr.hostAddress}: ${e.message}", e)
+            }
         }
+        if (anySuccess) {
+            consecutiveBroadcastFailures = 0
+        } else {
+            consecutiveBroadcastFailures++
+            if (consecutiveBroadcastFailures == 3) {
+                _diagnostics.value = "Broadcasts failing -- check Wi-Fi and Nearby Devices permission"
+            }
+        }
+    }
+
+    /**
+     * Compute broadcast addresses for all active non-loopback IPv4 interfaces.
+     * Subnet-directed broadcasts (e.g. 192.168.1.255) are more reliable than
+     * 255.255.255.255 on Android and many consumer APs. Falls back to
+     * 255.255.255.255 if no interface addresses can be determined.
+     */
+    private fun getBroadcastAddresses(): List<InetAddress> {
+        val addrs = mutableListOf<InetAddress>()
+        try {
+            for (iface in NetworkInterface.getNetworkInterfaces()?.toList().orEmpty()) {
+                if (!iface.isUp || iface.isLoopback) continue
+                for (ifAddr in iface.interfaceAddresses) {
+                    val broadcast = ifAddr.broadcast
+                    if (broadcast != null && !addrs.contains(broadcast)) {
+                        addrs.add(broadcast)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to enumerate broadcast addresses: ${e.message}")
+        }
+        if (addrs.isEmpty()) {
+            addrs.add(InetAddress.getByName("255.255.255.255"))
+        }
+        return addrs
     }
 
     private fun sendTo(

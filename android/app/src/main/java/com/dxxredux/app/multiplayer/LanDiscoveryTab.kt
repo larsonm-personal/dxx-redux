@@ -1,8 +1,12 @@
 package com.dxxredux.app.multiplayer
 
 import android.Manifest
+import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -38,12 +42,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.dxxredux.app.BuildInfo
 import com.dxxredux.app.FileSetManager
 import com.dxxredux.app.lobby.LobbyService
+import java.net.Inet4Address
+import java.net.NetworkInterface
 
 @Composable
 fun LanDiscoveryTab(
@@ -185,14 +194,27 @@ private fun LanDiscoveryView(
             },
         )
     }
+    var permissionPermanentlyDenied by remember { mutableStateOf(false) }
 
     val permissionLauncher =
         rememberLauncherForActivityResult(
             ActivityResultContracts.RequestPermission(),
         ) { granted ->
             permissionGranted = granted
-            if (granted && !isDiscovering) {
-                LobbyService.startDiscovery(context, callsign)
+            if (granted) {
+                permissionPermanentlyDenied = false
+                if (!isDiscovering) {
+                    LobbyService.startDiscovery(context, callsign)
+                }
+            } else if (Build.VERSION.SDK_INT >= 33) {
+                val activity = context as? Activity
+                if (activity != null &&
+                    !activity.shouldShowRequestPermissionRationale(
+                        Manifest.permission.NEARBY_WIFI_DEVICES,
+                    )
+                ) {
+                    permissionPermanentlyDenied = true
+                }
             }
         }
 
@@ -204,6 +226,26 @@ private fun LanDiscoveryView(
         onDispose {
             // Don't stop discovery on recomposition, only when leaving the screen
         }
+    }
+
+    // Re-check permission when returning from Settings
+    @Suppress("DEPRECATION")
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME && Build.VERSION.SDK_INT >= 33) {
+                    val granted =
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.NEARBY_WIFI_DEVICES,
+                        ) == PackageManager.PERMISSION_GRANTED
+                    permissionGranted = granted
+                    if (granted) permissionPermanentlyDenied = false
+                }
+            }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     // Consume LAN launch events (from host Start or joiner receiving START)
@@ -225,16 +267,36 @@ private fun LanDiscoveryView(
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Spacer(Modifier.height(8.dp))
-                    Button(
-                        onClick = {
-                            if (Build.VERSION.SDK_INT >= 33) {
-                                permissionLauncher.launch(
-                                    Manifest.permission.NEARBY_WIFI_DEVICES,
-                                )
-                            }
-                        },
-                    ) {
-                        Text("Grant Permission")
+                    if (permissionPermanentlyDenied) {
+                        Text(
+                            "Permission was denied. Please enable it in app settings.",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Button(
+                            onClick = {
+                                val intent =
+                                    Intent(
+                                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                        Uri.fromParts("package", context.packageName, null),
+                                    )
+                                context.startActivity(intent)
+                            },
+                        ) {
+                            Text("Open Settings")
+                        }
+                    } else {
+                        Button(
+                            onClick = {
+                                if (Build.VERSION.SDK_INT >= 33) {
+                                    permissionLauncher.launch(
+                                        Manifest.permission.NEARBY_WIFI_DEVICES,
+                                    )
+                                }
+                            },
+                        ) {
+                            Text("Grant Permission")
+                        }
                     }
                 }
             }
@@ -284,6 +346,21 @@ private fun LanDiscoveryView(
                     Text("Join by IP")
                 }
             }
+        }
+
+        // Show local IP address for direct-connect reference
+        val localIps = remember { getLocalIpAddresses() }
+        if (localIps.isNotEmpty()) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                if (localIps.size == 1) {
+                    "Your IP: ${localIps[0]}"
+                } else {
+                    "Your IPs: ${localIps.joinToString(", ")}"
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
 
         Spacer(Modifier.height(12.dp))
@@ -685,3 +762,15 @@ private fun JoinByIpDialog(
         },
     )
 }
+
+private fun getLocalIpAddresses(): List<String> =
+    try {
+        val interfaces = NetworkInterface.getNetworkInterfaces()?.toList() ?: emptyList()
+        interfaces
+            .filter { it.isUp && !it.isLoopback }
+            .flatMap { it.inetAddresses.toList() }
+            .filterIsInstance<Inet4Address>()
+            .mapNotNull { it.hostAddress }
+    } catch (_: Exception) {
+        emptyList()
+    }
