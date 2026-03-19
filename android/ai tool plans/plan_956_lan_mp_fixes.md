@@ -280,3 +280,56 @@ has no limit -- users can type arbitrarily long names without visual feedback.
 - [x] Phase H2: Ready button threading fix
 - [x] Phase I1: 8-char callsign limit in TextField
 - [x] Phase J: Build verification
+
+---
+
+## Phase 3: Game Launch + Lobby Robustness (from testing)
+
+### Findings
+1. Exit overlay button missing on menu screens -- overlay gated by nativeIsInGame() which
+   requires Screen_mode==SCREEN_GAME && Game_wind is front. Menus return false, overlay GONE.
+2. Client never receives START -- initial sendTo burst in startGame() runs on UI thread,
+   same NetworkOnMainThreadException bug as fixed in setReady.
+3. No joined lobby timeout -- _joinedLobby never cleared when host disappears.
+4. Need more debugging around client START handling.
+
+### Phase K: Always-visible Exit Button
+
+Add a separate small EXIT button view in MainActivity, always visible on the SDL surface.
+Similar to SkipButtonView but positioned top-left. Fires META_RETURN_TO_LAUNCHER.
+
+#### K1. Create ExitButtonView
+Circular button, top-left corner, always visible. On tap: SDL_QUIT via meta action.
+
+#### K2. Add to MainActivity layout
+Add exitButton to FrameLayout. Always VISIBLE (no polling gate).
+
+### Phase L: Fix START Packet Delivery
+
+#### L1. Move initial START sends to IO dispatcher
+Wrap first sendTo burst in scope?.launch(Dispatchers.IO).
+
+#### L2. Add START delivery logging
+NetLog.log before/after sends and on receipt. Diagnostic for future issues.
+
+### Phase M: Joined Lobby Timeout
+
+#### M1. Track last-seen time from host
+Update lastHostSeenMs on PLAYER_LIST, ANNOUNCE from host.
+
+#### M2. Joined-lobby liveness check
+In prune loop, check if host unseen for >15s. If stale, auto-leave with diagnostic.
+
+### Phase N: Verification
+- assembleDebug
+- run-code-quality.ps1
+
+## Phase 3 Status
+
+- [x] Phase K1: ExitButtonView
+- [x] Phase K2: Add to MainActivity
+- [x] Phase L1: Fix START threading
+- [x] Phase L2: START delivery logging
+- [x] Phase M1: Track host last-seen time
+- [x] Phase M2: Joined lobby liveness check
+- [x] Phase N: Build verification

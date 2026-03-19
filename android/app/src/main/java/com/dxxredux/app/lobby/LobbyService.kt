@@ -42,6 +42,7 @@ object LobbyService {
     private const val RECV_BUF_SIZE = 2048
     private const val SOCKET_TIMEOUT_MS = 500
     private const val LOBBY_EXPIRY_MS = 10_000L
+    private const val JOINED_HOST_TIMEOUT_MS = 15_000L
     private const val JOIN_RETRY_COUNT = 3
     private const val JOIN_RETRY_DELAY_MS = 1000L
 
@@ -102,6 +103,8 @@ object LobbyService {
     private var announceJob: Job? = null
     private var pruneJob: Job? = null
     private var joinRetryJob: Job? = null
+
+    @Volatile private var lastHostSeenMs: Long = 0L
 
     // Keyed by lobbyId
     private val lobbies = ConcurrentHashMap<String, DiscoveredLobby>()
@@ -233,6 +236,7 @@ object LobbyService {
         scope?.launch(Dispatchers.IO) { sendTo(data, info.hostAddr) }
         _joinedLobby.value = null
         _hostedLobbyPlayers.value = emptyList()
+        lastHostSeenMs = 0L
         Log.i(TAG, "Left LAN lobby ${info.lobbyId}")
     }
 
@@ -397,6 +401,10 @@ object LobbyService {
             )
         lobbies[lobbyId] = DiscoveredLobby(announce = announce)
         publishLobbies()
+        // Track host liveness: ANNOUNCE from the host of our joined lobby
+        if (_joinedLobby.value?.lobbyId == lobbyId) {
+            lastHostSeenMs = System.currentTimeMillis()
+        }
     }
 
     private fun handleJoin(
@@ -498,6 +506,10 @@ object LobbyService {
                 )
             }
         NetLog.log("LAN", "PLAYER_LIST: ${players.size} players, lobby=$lobbyId")
+        // Track host liveness for joined lobby timeout
+        if (_joinedLobby.value?.lobbyId == lobbyId) {
+            lastHostSeenMs = System.currentTimeMillis()
+        }
         // Store in the lobby entry so UI can show it
         val existing = lobbies[lobbyId]
         if (existing != null) {
@@ -529,6 +541,7 @@ object LobbyService {
             )
         NetLog.log("LAN", "JOIN_ACK received for lobby $lobbyId from $senderAddr")
         Log.i(TAG, "JOIN_ACK received for lobby $lobbyId from $senderAddr")
+        lastHostSeenMs = System.currentTimeMillis()
     }
 
     private fun handleJoinReject(json: JSONObject) {
@@ -570,16 +583,20 @@ object LobbyService {
                 levelNum = levelNum,
                 maxPlayers = hostedMaxPlayers,
             )
-        for (p in players) {
-            if (p.address != "127.0.0.1") {
-                sendTo(data, p.address)
-            }
-        }
+        // Send START to every joiner on IO thread (avoid NetworkOnMainThreadException)
         scope?.launch(Dispatchers.IO) {
+            for (p in players) {
+                if (p.address != "127.0.0.1") {
+                    NetLog.log("LAN", "Sending START to ${p.callsign} at ${p.address}")
+                    sendTo(data, p.address)
+                }
+            }
+            // Redundant retries for unreliable networks
             for (retry in 1..2) {
                 delay(200)
                 for (p in players) {
                     if (p.address != "127.0.0.1") {
+                        NetLog.log("LAN", "START retry $retry to ${p.callsign} at ${p.address}")
                         sendTo(data, p.address)
                     }
                 }
@@ -623,6 +640,13 @@ object LobbyService {
         NetLog.log("LAN", "START received: $game/$mission lvl=$levelNum diff=$difficulty from $senderAddr")
         Log.i(TAG, "START received for lobby $lobbyId: $game/$mission at $senderAddr:$hostPort")
 
+        val joinedInfo = _joinedLobby.value
+        if (joinedInfo == null) {
+            NetLog.log("LAN", "START ignored: not in a joined lobby")
+            Log.w(TAG, "START received but not in a joined lobby, ignoring")
+            return
+        }
+
         // Emit launch event for the joiner
         _lanLaunchEvent.value =
             com.dxxredux.app.multiplayer.GameLaunchInfo(
@@ -638,6 +662,7 @@ object LobbyService {
                 lanHostAddr = senderAddr,
                 isLan = true,
             )
+        NetLog.log("LAN", "Launch event emitted for joiner: game=$game host=$senderAddr")
     }
 
     private fun handlePing(
@@ -722,6 +747,17 @@ object LobbyService {
         val now = System.currentTimeMillis()
         val removed = lobbies.entries.removeAll { (now - it.value.lastSeenMs) > LOBBY_EXPIRY_MS }
         if (removed) publishLobbies()
+
+        // Check joined lobby liveness
+        val joined = _joinedLobby.value
+        if (joined != null && lastHostSeenMs > 0L && (now - lastHostSeenMs) > JOINED_HOST_TIMEOUT_MS) {
+            NetLog.log("LAN", "Host timeout: no packets from ${joined.hostAddr} in ${(now - lastHostSeenMs) / 1000}s")
+            Log.w(TAG, "Joined lobby ${joined.lobbyId} host timed out")
+            _joinedLobby.value = null
+            _hostedLobbyPlayers.value = emptyList()
+            _diagnostics.value = "Host disconnected (timeout)"
+            lastHostSeenMs = 0L
+        }
     }
 
     private fun publishLobbies() {

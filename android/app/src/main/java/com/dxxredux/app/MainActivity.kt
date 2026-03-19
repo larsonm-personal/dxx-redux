@@ -223,6 +223,7 @@ class MainActivity :
     private lateinit var gameSurfaceView: GameSurfaceView
     private lateinit var touchOverlay: TouchOverlayView
     private lateinit var skipButton: SkipButtonView
+    private lateinit var exitButton: ExitButtonView
     private lateinit var overlayContainer: LinearLayout
     private var overlayEnabled = false
     private val overlayPoller = android.os.Handler(android.os.Looper.getMainLooper())
@@ -478,6 +479,14 @@ class MainActivity :
                 visibility = View.GONE
             }
 
+        // Always-visible exit button (upper-left, returns to launcher from any screen)
+        exitButton =
+            ExitButtonView(this).apply {
+                exitCallback = {
+                    NativeMetaActions.nativeMetaAction(TouchBindings.META_RETURN_TO_LAUNCHER, 1)
+                }
+            }
+
         // Multi-line overlay container (upper-left, items fade independently)
         overlayContainer =
             LinearLayout(this).apply {
@@ -516,6 +525,13 @@ class MainActivity :
         )
         frame.addView(
             skipButton,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
+        frame.addView(
+            exitButton,
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -742,10 +758,13 @@ class MainActivity :
                             }
                             // Poll current track to update overlay label
                             if (shouldShow && !automap) pollTrackLabel()
+                            // Hide standalone exit when touch overlay is active (admin tray has Exit)
+                            exitButton.visibility = if (shouldShow) View.GONE else View.VISIBLE
                         } catch (_: Exception) {
                             touchOverlay.isActive = false
                             touchOverlay.automapActive = false
                             skipButton.visibility = View.GONE
+                            exitButton.visibility = View.VISIBLE
                         }
                     } else {
                         if (touchOverlay.isActive) {
