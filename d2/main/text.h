@@ -666,6 +666,7 @@ static inline char *dxx_gettext(unsigned expr, const char *fmt)
 #define TXT_START_TCP_NET_GAME  dxx_gettext(641, "Start a TCPIP network game...")
 #define TXT_JOIN_TCP_NET_GAME   dxx_gettext(642, "Join a TCPIP network game...\n")
 #define TXT_AFTERBURNER         dxx_gettext(643, "Afterburner")
+#define TXT_NET_GAME_DUPNAME    dxx_gettext(644, "Duplicate callsign")
 
 //hey: there's a lot of empty slots up from 173-192, where
 //the commandline help used to be.  Add new things there
@@ -738,7 +739,7 @@ static inline char *dxx_gettext(unsigned expr, const char *fmt)
 	((u) == DUMP_ABORTED) ? TXT_NET_GAME_NSTART	:	\
 	((u) == DUMP_CONNECTED) ? TXT_NET_GAME_CONNECT	:	\
 	((u) == DUMP_LEVEL) ? TXT_NET_GAME_WRONGLEV	:	\
-	((u) == DUMP_DUPNAME) ? "Duplicate callsign" :	\
+	((u) == DUMP_DUPNAME) ? TXT_NET_GAME_DUPNAME :	\
 	(dxx_text_ensure_simple_expr(&(u), TXT_NET_GAME_CLOSED))	\
 	)
 #define MENU_DIFFICULTY_TEXT(u)	(	\

@@ -76,6 +76,7 @@ object LobbyService {
         val mission: String,
         val mode: String,
         val maxPlayers: Int,
+        val hostBuild: String = "",
     )
 
     private val _joinedLobby = MutableStateFlow<JoinedLobbyInfo?>(null)
@@ -229,7 +230,7 @@ object LobbyService {
     fun leaveLanLobby(callsign: String) {
         val info = _joinedLobby.value ?: return
         val data = buildLeave(info.lobbyId, callsign)
-        sendTo(data, info.hostAddr)
+        scope?.launch(Dispatchers.IO) { sendTo(data, info.hostAddr) }
         _joinedLobby.value = null
         _hostedLobbyPlayers.value = emptyList()
         Log.i(TAG, "Left LAN lobby ${info.lobbyId}")
@@ -242,7 +243,7 @@ object LobbyService {
         callsign: String,
     ) {
         val data = buildLeave(lobbyId, callsign)
-        sendTo(data, hostAddress)
+        scope?.launch(Dispatchers.IO) { sendTo(data, hostAddress) }
         Log.i(TAG, "Sent LEAVE to $hostAddress for lobby $lobbyId")
     }
 
@@ -254,7 +255,7 @@ object LobbyService {
         ready: Boolean,
     ) {
         val data = buildReady(lobbyId, callsign, ready)
-        sendTo(data, hostAddress)
+        scope?.launch(Dispatchers.IO) { sendTo(data, hostAddress) }
     }
 
     // ------------------------------------------------------------------
@@ -392,6 +393,7 @@ object LobbyService {
                 playerCount = json.optInt("player_count", 1),
                 maxPlayers = json.optInt("max_players", 4),
                 hostAddress = senderAddr,
+                build = json.optString("build", ""),
             )
         lobbies[lobbyId] = DiscoveredLobby(announce = announce)
         publishLobbies()
@@ -523,6 +525,7 @@ object LobbyService {
                 mission = json.optString("mission", ""),
                 mode = json.optString("mode", "coop"),
                 maxPlayers = json.optInt("max_players", 4),
+                hostBuild = json.optString("build", ""),
             )
         NetLog.log("LAN", "JOIN_ACK received for lobby $lobbyId from $senderAddr")
         Log.i(TAG, "JOIN_ACK received for lobby $lobbyId from $senderAddr")

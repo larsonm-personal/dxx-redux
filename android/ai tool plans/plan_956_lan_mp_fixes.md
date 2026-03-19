@@ -183,3 +183,100 @@ Files:
 - [x] Phase D2: Enable C netlog on Android
 - [x] Phase D3: net_log_comment() in C engine
 - [x] Build verification (assembleDebug passed, no new warnings)
+
+---
+
+## Phase 2: Follow-up Fixes (from testing)
+
+### Phase E: Code Hygiene
+
+#### E1. Add TXT_NET_GAME_DUPNAME constant
+Replace the hardcoded "Duplicate callsign" string in NET_DUMP_STRINGS with a proper TXT_ constant
+matching the existing pattern (all other dump strings use TXT_ constants via dxx_gettext).
+- d1/main/text.h: add `#define TXT_NET_GAME_DUPNAME dxx_gettext(621, "Duplicate callsign")` after
+  index 620, bump N_TEXT_STRINGS from 621 to 622
+- d2/main/text.h: add `#define TXT_NET_GAME_DUPNAME dxx_gettext(644, "Duplicate callsign")` after
+  index 643, N_TEXT_STRINGS stays at 649 (spare slots exist)
+- Both text.h: replace `"Duplicate callsign"` with `TXT_NET_GAME_DUPNAME` in NET_DUMP_STRINGS macro
+
+#### E2. Wrap Android debug logging with #ifdef __ANDROID__
+Mark the net_log_comment calls added in Phase D3 as Android port debug additions.
+- d1 and d2 net_udp.c: wrap each newly-added net_log_comment call block with
+  `#ifdef __ANDROID__` / `#endif /* android port: LAN debug logging */` at:
+  - net_udp_auto_join, net_udp_auto_host, net_udp_add_player (dupname path),
+    net_udp_start_game, net_udp_process_dump
+- Do NOT wrap DUMP_DUPNAME, TXT_NET_GAME_DUPNAME, or the duplicate callsign rejection
+  logic -- those are functional for all platforms
+- args.c changes are already properly wrapped
+
+### Phase F: Build Version Mismatch Warning
+
+#### F1. Add "build" field to lobby protocol
+- LobbyProtocol.kt: add `json.put("build", BuildInfo.GIT_COMMIT_COUNT)` to buildAnnounce()
+  and buildJoinAck()
+
+#### F2. Parse build in discovery + join
+- LobbyService.kt: extract "build" from ANNOUNCE and JOIN_ACK messages, store in
+  LanLobbyEntry and joined lobby state
+
+#### F3. Show version mismatch warning in UI
+- LanDiscoveryTab.kt: in the discovered lobby list, show warning text when entry.build
+  differs from local build. In joined lobby view, show persistent warning banner.
+  Non-blocking -- user can still join and play.
+
+### Phase G: UI Fixes
+
+#### G1. Fix portrait button layout
+"Back" and "Join by IP" buttons are smashed against the right side in portrait mode.
+- MultiplayerScreen.kt LanContent: move "Back to Lobbies" and "Back" from title Row to
+  a second Row below the heading
+- LanDiscoveryTab.kt: move "Join by IP" to a second Row below "Stop Scanning" / "Host LAN Game"
+
+#### G2. Add (self) tag to player names
+In both the host and joiner player lists, label the local player with "(self)".
+- LanJoinedLobbyView: display "${player.callsign} (self)" when player.callsign == callsign
+- Host view: display "${p.callsign} (self)" when p.callsign == callsign
+
+### Phase H: Critical Bugs
+
+#### H1. Fix NetLog.init() not called on cold start
+When "enable logging" is pre-set to ON from a previous run, no log file is present in the
+log files list. Root cause: NetLog.init() is never called anywhere. The `enabled` field
+starts as `false` and `writer` starts as `null`, so all NetLog.log() calls are no-ops.
+- SetupActivity.kt: add NetLog.init(this) early in onCreate()
+
+#### H2. Fix Ready button NetworkOnMainThreadException
+Joined player clicking "Ready" doesn't update the host's view. Root cause: setReady() calls
+sendTo() directly from the Compose UI thread. DatagramSocket.send() throws
+NetworkOnMainThreadException, caught and silently swallowed by the catch block.
+- LobbyService.kt setReady(): wrap sendTo() in scope?.launch(Dispatchers.IO)
+- Also fix leaveLanLobby() and leaveLobby() which have the same threading bug
+
+### Phase I: Callsign Length Enforcement
+
+#### I1. Enforce 8-char limit in callsign text field
+The engine uses CALLSIGN_LEN=8. CallsignPrefs.save() truncates silently, but the TextField
+has no limit -- users can type arbitrarily long names without visual feedback.
+- MultiplayerScreen.kt: in the callsign OutlinedTextField, filter onValueChange to
+  `{ callsign = it.take(CallsignPrefs.MAX_LEN) }` (requires making MAX_LEN internal or public)
+
+### Phase J: Verification
+
+- Build verification: assembleDebug must pass
+- Desktop build still compiles (d1/d2 changes guarded or universal)
+
+---
+
+## Phase 2 Status
+
+- [x] Phase E1: TXT_NET_GAME_DUPNAME constant
+- [x] Phase E2: #ifdef __ANDROID__ on debug logging
+- [x] Phase F1: Add build field to lobby protocol
+- [x] Phase F2: Parse build in discovery + join
+- [x] Phase F3: Version mismatch warning UI
+- [x] Phase G1: Portrait button layout fix
+- [x] Phase G2: (self) tag on player names
+- [x] Phase H1: NetLog.init() on cold start
+- [x] Phase H2: Ready button threading fix
+- [x] Phase I1: 8-char callsign limit in TextField
+- [x] Phase J: Build verification

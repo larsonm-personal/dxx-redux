@@ -110,7 +110,7 @@ object CallsignPrefs {
     private const val PREFS_NAME = "dxx_prefs"
     private const val KEY = "mp_callsign"
     // CALLSIGN_LEN=8 in D1/D2 engine
-    private const val MAX_LEN = 8
+    internal const val MAX_LEN = 8
 
     /** Load saved callsign or generate "Player##" on first launch. */
     fun load(context: Context): String {

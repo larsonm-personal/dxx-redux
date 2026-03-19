@@ -1,5 +1,6 @@
 package com.dxxredux.app.lobby
 
+import com.dxxredux.app.BuildInfo
 import org.json.JSONObject
 
 // LAN lobby discovery protocol. JSON-over-UDP on port 42400.
@@ -37,6 +38,7 @@ data class LanLobbyAnnounce(
     val playerCount: Int,
     val maxPlayers: Int,
     val hostAddress: String = "",
+    val build: String = "",
 )
 
 /** Build a JSON ANNOUNCE packet for broadcasting. */
@@ -58,6 +60,7 @@ fun buildAnnounce(
     json.put("mode", mode)
     json.put("player_count", playerCount)
     json.put("max_players", maxPlayers)
+    json.put("build", BuildInfo.GIT_COMMIT_COUNT)
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 
@@ -88,6 +91,7 @@ fun buildJoinAck(
     json.put("mission", mission)
     json.put("mode", mode)
     json.put("max_players", maxPlayers)
+    json.put("build", BuildInfo.GIT_COMMIT_COUNT)
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 

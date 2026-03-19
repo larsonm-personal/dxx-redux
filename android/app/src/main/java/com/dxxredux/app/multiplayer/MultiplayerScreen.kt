@@ -158,7 +158,7 @@ private fun ServerBrowserContent(
             Spacer(Modifier.height(4.dp))
             OutlinedTextField(
                 value = callsign,
-                onValueChange = { callsign = it },
+                onValueChange = { callsign = it.take(CallsignPrefs.MAX_LEN) },
                 label = { Text("Callsign") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -464,13 +464,12 @@ private fun LanContent(
                 .safeDrawingPadding()
                 .padding(16.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("LAN Games", style = MaterialTheme.typography.headlineMedium)
-            Spacer(Modifier.weight(1f))
+        Text("LAN Games", style = MaterialTheme.typography.headlineMedium)
+        Spacer(Modifier.height(4.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = {
                 MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
             }) { Text("Back to Lobbies") }
-            Spacer(Modifier.width(8.dp))
             OutlinedButton(onClick = onBack) { Text("Back") }
         }
         Spacer(Modifier.height(8.dp))

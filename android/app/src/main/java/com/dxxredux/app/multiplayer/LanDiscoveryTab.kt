@@ -40,6 +40,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.dxxredux.app.BuildInfo
 import com.dxxredux.app.FileSetManager
 import com.dxxredux.app.lobby.LobbyService
 
@@ -95,6 +96,13 @@ private fun LanJoinedLobbyView(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        if (info.hostBuild.isNotEmpty() && info.hostBuild != BuildInfo.GIT_COMMIT_COUNT) {
+            Text(
+                "Warning: host build (${info.hostBuild}) differs from yours (${BuildInfo.GIT_COMMIT_COUNT})",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
         Spacer(Modifier.height(12.dp))
 
         // Player list
@@ -105,13 +113,15 @@ private fun LanJoinedLobbyView(
         Spacer(Modifier.height(4.dp))
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(players, key = { it.callsign }) { player ->
+                val displayName =
+                    if (player.callsign == callsign) "${player.callsign} (self)" else player.callsign
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(12.dp),
                     ) {
                         Text(
-                            player.callsign,
+                            displayName,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.weight(1f),
                         )
@@ -259,12 +269,18 @@ private fun LanDiscoveryView(
                 Button(onClick = { showHostDialog = true }) {
                     Text("Host LAN Game")
                 }
-                OutlinedButton(onClick = { showJoinByIpDialog = true }) {
-                    Text("Join by IP")
-                }
             } else if (isHosting) {
                 OutlinedButton(onClick = { LobbyService.stopHosting() }) {
                     Text("Stop Hosting")
+                }
+            }
+        }
+
+        if (!isHosting && isDiscovering) {
+            Spacer(Modifier.height(4.dp))
+            Row {
+                OutlinedButton(onClick = { showJoinByIpDialog = true }) {
+                    Text("Join by IP")
                 }
             }
         }
@@ -282,12 +298,14 @@ private fun LanDiscoveryView(
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     for (p in hostedPlayers) {
+                        val displayName =
+                            if (p.callsign == callsign) "${p.callsign} (self)" else p.callsign
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(vertical = 2.dp),
                         ) {
                             Text(
-                                p.callsign,
+                                displayName,
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.weight(1f),
                             )
@@ -431,6 +449,13 @@ private fun LanLobbyCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (lobby.announce.build.isNotEmpty() && lobby.announce.build != BuildInfo.GIT_COMMIT_COUNT) {
+                Text(
+                    "Version mismatch (host: ${lobby.announce.build}, you: ${BuildInfo.GIT_COMMIT_COUNT})",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
             Spacer(Modifier.height(4.dp))
             Button(
                 onClick = {

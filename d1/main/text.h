@@ -640,10 +640,11 @@ static inline char *dxx_gettext(unsigned idx, const char *text)
 #define TXT_LUNACY			dxx_gettext(618, "Robots move fast, fire seldom")
 #define TXT_ROBOT_PAINTING_OFF 		dxx_gettext(619, "Robot painting OFF")
 #define TXT_ROBOT_PAINTING_ON 		dxx_gettext(620, "Robot painting with texture %d")
+#define TXT_NET_GAME_DUPNAME		dxx_gettext(621, "Duplicate callsign")
 
 
 #define N_TEXT_STRINGS_MIN				514
-#define N_TEXT_STRINGS                  621
+#define N_TEXT_STRINGS                  622
 
 #define dxx_text_ensure_simple_expr(E,T)	((void)(E), (Int3()), (T))
 
@@ -691,7 +692,7 @@ static inline char *dxx_gettext(unsigned idx, const char *text)
 	((u) == DUMP_ABORTED) ? TXT_NET_GAME_NSTART	:	\
 	((u) == DUMP_CONNECTED) ? TXT_NET_GAME_CONNECT	:	\
 	((u) == DUMP_LEVEL) ? TXT_NET_GAME_WRONGLEV	:	\
-	((u) == DUMP_DUPNAME) ? "Duplicate callsign" :	\
+	((u) == DUMP_DUPNAME) ? TXT_NET_GAME_DUPNAME :	\
 	(dxx_text_ensure_simple_expr(&(u), TXT_NET_GAME_CLOSED))	\
 	)
 #define MENU_DIFFICULTY_TEXT(u)	(	\

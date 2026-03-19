@@ -844,6 +844,7 @@ class SetupActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         KnownVersions.init(this)
+        com.dxxredux.app.multiplayer.NetLog.init(this)
 
         // Initialize Google Play Games sign-in (no-op if not configured)
         PlayGamesAuth.initialize(this)

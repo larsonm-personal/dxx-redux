@@ -2646,9 +2646,11 @@ void net_udp_add_player(UDP_sequence_packet *p)
 		    memcmp((struct _sockaddr *)&Netgame.players[i].protocol.udp.addr,
 		           (struct _sockaddr *)&p->player.protocol.udp.addr, sizeof(struct _sockaddr)))
 		{
+#ifdef __ANDROID__ /* android port: LAN debug logging */
 			char logbuf[128];
 			snprintf(logbuf, sizeof(logbuf), "add_player: dump '%s' duplicate callsign (slot %d)", p->player.callsign, i);
 			net_log_comment(logbuf);
+#endif
 			MPDIAG("add_player '%s' duplicate callsign (slot %d has same name)\n", p->player.callsign, i);
 			net_udp_dump_player(p->player.protocol.udp.addr, p->token, DUMP_DUPNAME);
 			return;
@@ -3360,9 +3362,13 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 void net_udp_process_dump(ubyte *data, int len, struct _sockaddr sender_addr)
 {
 	// Our request for join was denied.  Tell the user why.
-	char logbuf[64];
-	snprintf(logbuf, sizeof(logbuf), "process_dump: reason=%d", data[5]);
-	net_log_comment(logbuf);
+#ifdef __ANDROID__ /* android port: LAN debug logging */
+	{
+		char logbuf[64];
+		snprintf(logbuf, sizeof(logbuf), "process_dump: reason=%d", data[5]);
+		net_log_comment(logbuf);
+	}
+#endif
 
 	switch (data[5])
 	{
@@ -5344,7 +5350,9 @@ int net_udp_start_game(void)
 {
 	int i;
 
+#ifdef __ANDROID__ /* android port: LAN debug logging */
 	net_log_comment("start_game: opening sockets and entering select_players");
+#endif
 
 	i = udp_open_socket(0, atoi(UDP_MyPort));
 

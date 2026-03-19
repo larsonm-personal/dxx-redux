@@ -48,6 +48,8 @@
   - don't just write the test, include in this phase a run of the actual as-written test and fixes until it passes
   - add these tests for any code centralized in the android/ directory as the code is added. add test runner scripts or helpers so they're easy to re-run after code changes
 - d1/ and d2/ have a huge amount of duplicated code. this means that our hooks and other changes also need to be duplicated in many places. it is a mistake to edit *only one of* d1/ or d2/ in any set of changes, typically they both need the same hooks. that said, I want to try to share as much code as possible between the two, *when that code is new*. don't de-duplciate in a way that makes the d1/ or d2/ change set larger which would make upstreaming harder
+- for the few edits needed in d1/ or d2/, generally they're going to be either #idef __android__. if they're something like a test debug line, or additional log line, make sure to mark it as being related to android port work
+- for d1/ and d2/ edits, take extra care to match existing style in detail. for example, many string constants are in headers. don't add a new string constant in a source file right next to an existing header-included string constant - instead, add a header constant in the same style
 - new code should be as free of compiler warnings as possible. -werror isn't enabled, but do a 2nd pass to remove warnings when building to check
 - new code should have formatting linters run on it: `android\run-code-quality.ps1 --fix`
 
