@@ -8,6 +8,7 @@
     relay_listen_addr: "0.0.0.0:9001",
 
     // STUN server listeners (for NAT discovery) -- these use UDP, no TLS needed
+
     stun_listen_addr: "0.0.0.0:3478",
     stun_listen_addr_alt: "0.0.0.0:3479",
 
