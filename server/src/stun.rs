@@ -10,7 +10,7 @@
 use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 
-use dashmap::DashSet;
+use dashmap::DashMap;
 use tokio::net::UdpSocket;
 use tracing::{debug, info, trace, warn};
 
@@ -25,7 +25,7 @@ const STUN_HEADER_LEN: usize = 20;
 /// Returns the actual bound address (useful when port 0 is specified).
 pub async fn run(
     addr: SocketAddr,
-    allowlist: Arc<DashSet<IpAddr>>,
+    allowlist: Arc<DashMap<IpAddr, usize>>,
 ) -> Result<SocketAddr, std::io::Error> {
     let socket = UdpSocket::bind(addr).await?;
     let bound = socket.local_addr()?;
@@ -38,7 +38,7 @@ pub async fn run(
     Ok(bound)
 }
 
-async fn stun_loop(socket: &UdpSocket, allowlist: &DashSet<IpAddr>) {
+async fn stun_loop(socket: &UdpSocket, allowlist: &DashMap<IpAddr, usize>) {
     let mut buf = [0u8; 512];
     loop {
         let (len, src) = match socket.recv_from(&mut buf).await {
@@ -49,7 +49,7 @@ async fn stun_loop(socket: &UdpSocket, allowlist: &DashSet<IpAddr>) {
             }
         };
 
-        if !allowlist.contains(&src.ip()) {
+        if !allowlist.contains_key(&src.ip()) {
             trace!(%src, "STUN: dropped (not in allowlist)");
             continue;
         }

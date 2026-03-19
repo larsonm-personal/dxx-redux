@@ -1,7 +1,7 @@
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 
-use dashmap::DashMap;
+use dashmap::{DashMap, DashSet};
 use tokio::net::UdpSocket;
 use tracing::{debug, warn};
 
@@ -16,6 +16,8 @@ pub struct RelaySession {
     pub player_addrs: DashMap<u8, SocketAddr>,
     /// Number of expected players in this session (for address learning).
     pub expected_players: u8,
+    /// D12: IPs allowed to participate (pre-registered from WS peer addresses).
+    pub allowed_ips: DashSet<IpAddr>,
     pub created_at: std::time::Instant,
 }
 
@@ -58,7 +60,13 @@ pub async fn run(
 
     let mut buf = [0u8; 2048];
     loop {
-        let (len, src) = socket.recv_from(&mut buf).await?;
+        let (len, src) = match socket.recv_from(&mut buf).await {
+            Ok(v) => v,
+            Err(e) => {
+                tracing::warn!(%e, "relay recv_from error, continuing");
+                continue;
+            }
+        };
         if len < RELAY_HEADER_LEN {
             debug!(%src, len, "relay packet too short, dropping");
             continue;
@@ -90,6 +98,11 @@ pub async fn run(
                 let free_slot = (0..session.expected_players)
                     .find(|s| !registered.contains(s) && *s != dest_player);
                 if let Some(slot) = free_slot {
+                    // D12: only learn addresses from allowed IPs
+                    if !session.allowed_ips.is_empty() && !session.allowed_ips.contains(&src.ip()) {
+                        warn!(%src, token, "relay address learning rejected: IP not allowed");
+                        continue;
+                    }
                     session.player_addrs.insert(slot, src);
                     debug!(%src, slot, token, "auto-registered relay source address");
                     slot

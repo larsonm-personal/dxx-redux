@@ -25,6 +25,8 @@ pub struct RateLimiter {
     ws_messages: DashMap<Uuid, VecDeque<Instant>>,
     /// Per-player direct messages: max 5 per 60s
     player_messages: DashMap<Uuid, VecDeque<Instant>>,
+    /// Per-session lobby list requests: max 5 per 10s
+    lobby_lists: DashMap<Uuid, VecDeque<Instant>>,
 }
 
 impl Default for RateLimiter {
@@ -43,6 +45,7 @@ impl RateLimiter {
             callsign_searches: DashMap::new(),
             ws_messages: DashMap::new(),
             player_messages: DashMap::new(),
+            lobby_lists: DashMap::new(),
         }
     }
 
@@ -72,6 +75,10 @@ impl RateLimiter {
 
     pub fn check_player_message(&self, player_id: Uuid) -> bool {
         Self::check(&self.player_messages, player_id, 5, 60)
+    }
+
+    pub fn check_lobby_list(&self, session_id: Uuid) -> bool {
+        Self::check(&self.lobby_lists, session_id, 5, 10)
     }
 
     /// Returns true if the action is allowed, false if rate-limited.
@@ -113,6 +120,7 @@ impl RateLimiter {
         Self::cleanup_map(&self.callsign_searches, now, max_age);
         Self::cleanup_map(&self.ws_messages, now, max_age);
         Self::cleanup_map(&self.player_messages, now, max_age);
+        Self::cleanup_map(&self.lobby_lists, now, max_age);
     }
 
     fn cleanup_map<K: Eq + std::hash::Hash + Clone>(

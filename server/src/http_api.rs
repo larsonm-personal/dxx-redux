@@ -171,12 +171,24 @@ fn check_admin_token(
         .and_then(|v| v.to_str().ok())
         .and_then(|v| v.strip_prefix("Bearer "));
     match provided {
-        Some(token) if token == expected => Ok(()),
+        Some(token) if constant_time_eq(token.as_bytes(), expected.as_bytes()) => Ok(()),
         _ => {
             warn!("admin API authentication failed");
             Err((StatusCode::UNAUTHORIZED, "invalid admin token"))
         }
     }
+}
+
+/// Constant-time byte comparison to prevent timing side-channels on token checks.
+fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    let mut diff: u8 = 0;
+    for (x, y) in a.iter().zip(b.iter()) {
+        diff |= x ^ y;
+    }
+    diff == 0
 }
 
 #[derive(Deserialize)]

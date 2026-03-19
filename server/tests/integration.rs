@@ -53,6 +53,7 @@ impl TestServer {
             skip_gpgs_verify: true,
             pow_difficulty: 8, // low difficulty for fast tests
             max_relay_sessions: 100,
+            max_connections: 0, // unlimited for tests
         };
 
         let state = build_state(config).expect("failed to build state");
@@ -2464,6 +2465,7 @@ async fn test_relay_cleanup_stale_sessions() {
         session_token: 99999,
         player_addrs: dashmap::DashMap::new(),
         expected_players: 2,
+        allowed_ips: dashmap::DashSet::new(),
         created_at: std::time::Instant::now() - std::time::Duration::from_secs(8000),
     };
     server.state.relay_sessions.insert(99999, old_session);
@@ -2473,6 +2475,7 @@ async fn test_relay_cleanup_stale_sessions() {
         session_token: 11111,
         player_addrs: dashmap::DashMap::new(),
         expected_players: 2,
+        allowed_ips: dashmap::DashSet::new(),
         created_at: std::time::Instant::now(),
     };
     server.state.relay_sessions.insert(11111, fresh_session);
@@ -2606,6 +2609,7 @@ async fn auth_ok_includes_stun_addrs_when_configured() {
         skip_gpgs_verify: true,
         pow_difficulty: 8,
         max_relay_sessions: 100,
+        max_connections: 0,
     };
 
     let state = build_state(config).expect("build state");
@@ -2678,7 +2682,7 @@ async fn stun_allowlist_lifecycle() {
         server
             .state
             .stun_allowlist
-            .contains(&std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST)),
+            .contains_key(&std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST)),
         "client IP should be in allowlist after auth"
     );
 
@@ -2699,8 +2703,8 @@ async fn stun_server_responds_to_allowlisted_ip() {
     use std::net::IpAddr;
     use tokio::net::UdpSocket;
 
-    let allowlist = Arc::new(dashmap::DashSet::<IpAddr>::new());
-    allowlist.insert(IpAddr::V4(std::net::Ipv4Addr::LOCALHOST));
+    let allowlist = Arc::new(dashmap::DashMap::<IpAddr, usize>::new());
+    allowlist.insert(IpAddr::V4(std::net::Ipv4Addr::LOCALHOST), 1);
 
     let bound = dxx_matchmaking::stun::run("127.0.0.1:0".parse().unwrap(), Arc::clone(&allowlist))
         .await
@@ -2745,7 +2749,7 @@ async fn stun_server_drops_non_allowlisted_ip() {
     use std::net::IpAddr;
     use tokio::net::UdpSocket;
 
-    let allowlist = Arc::new(dashmap::DashSet::<IpAddr>::new());
+    let allowlist = Arc::new(dashmap::DashMap::<IpAddr, usize>::new());
     // Allowlist is empty -- no IPs allowed
 
     let bound = dxx_matchmaking::stun::run("127.0.0.1:0".parse().unwrap(), Arc::clone(&allowlist))

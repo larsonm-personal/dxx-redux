@@ -92,6 +92,7 @@ pub async fn periodic_tasks(state: Arc<ServerState>) {
     let mut snapshot_interval = tokio::time::interval(Duration::from_secs(300));
     let mut cleanup_interval = tokio::time::interval(Duration::from_secs(600));
     let mut relay_cleanup_interval = tokio::time::interval(Duration::from_secs(300));
+    let mut lobby_cleanup_interval = tokio::time::interval(Duration::from_secs(60));
 
     loop {
         tokio::select! {
@@ -113,6 +114,70 @@ pub async fn periodic_tasks(state: Arc<ServerState>) {
             _ = relay_cleanup_interval.tick() => {
                 crate::relay::cleanup_stale_sessions(&state);
             }
+            _ = lobby_cleanup_interval.tick() => {
+                cleanup_stale_lobbies(&state);
+            }
         }
+    }
+}
+
+/// Reap lobbies stuck in non-Waiting states (D5) and revert Holepunching timeouts (D6).
+fn cleanup_stale_lobbies(state: &Arc<ServerState>) {
+    use crate::lobby::LobbyState;
+    let now = std::time::Instant::now();
+    let max_lobby_age = Duration::from_secs(4 * 3600); // 4 hours
+    let holepunch_timeout = Duration::from_secs(30);
+
+    let mut to_remove = Vec::new();
+    let mut to_revert = Vec::new();
+
+    for entry in state.lobbies.iter() {
+        let lobby = entry.value();
+        let age = now.duration_since(lobby.created_at_instant);
+        // D6: revert Holepunching to Waiting after 30s
+        if lobby.state == LobbyState::Holepunching {
+            if let Some(started) = lobby.holepunch_started_at {
+                if now.duration_since(started) > holepunch_timeout {
+                    to_revert.push(lobby.id);
+                }
+            }
+        }
+        // D5: reap lobbies stuck in Starting/InGame for 4+ hours
+        if (lobby.state == LobbyState::Starting || lobby.state == LobbyState::InGame)
+            && age > max_lobby_age
+        {
+            to_remove.push(lobby.id);
+        }
+    }
+
+    for lid in to_revert {
+        if let Some(mut lobby) = state.lobbies.get_mut(&lid) {
+            if lobby.state == LobbyState::Holepunching {
+                lobby.state = LobbyState::Waiting;
+                lobby.holepunch_started_at = None;
+                info!(lobby_id = %lid, "holepunching timed out, reverted to Waiting");
+            }
+        }
+    }
+
+    for lid in to_remove {
+        // Notify players before removing
+        if let Some(lobby) = state.lobbies.get(&lid) {
+            for p in lobby.players.iter() {
+                if let Some(sess) = state.sessions.get(&p.player_id) {
+                    let _ = sess.tx.send(crate::protocol::ServerMessage::Error {
+                        code: "LOBBY_EXPIRED".into(),
+                        message: "Lobby expired due to inactivity".into(),
+                    });
+                }
+                if let Some(mut s) = state.sessions.get_mut(&p.player_id) {
+                    s.lobby_id = None;
+                    s.presence = crate::lobby::Presence::Online;
+                }
+            }
+        }
+        state.lobbies.remove(&lid);
+        state.stats.lobby_closed();
+        info!(lobby_id = %lid, "reaped stale lobby");
     }
 }

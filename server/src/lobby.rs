@@ -1,5 +1,6 @@
 use serde::Serialize;
 use std::collections::HashSet;
+use std::time::Instant;
 use uuid::Uuid;
 
 /// Possible lobby states.
@@ -89,12 +90,16 @@ pub struct Lobby {
     pub state: LobbyState,
     pub players: Vec<LobbyPlayer>,
     pub created_at: chrono::DateTime<chrono::Utc>,
+    /// Monotonic creation time for staleness checks.
+    pub created_at_instant: Instant,
     /// Optional lobby code for invite-only sessions.
     pub code: Option<String>,
     /// If true, only GPGS-verified players can join.
     pub verified_only: bool,
     /// Players kicked from this lobby (cannot rejoin).
     pub kicked_players: HashSet<Uuid>,
+    /// When the lobby entered Holepunching state (for timeout).
+    pub holepunch_started_at: Option<Instant>,
 }
 
 impl Lobby {
@@ -129,9 +134,11 @@ impl Lobby {
             state: LobbyState::Waiting,
             players: vec![host],
             created_at: chrono::Utc::now(),
+            created_at_instant: Instant::now(),
             code,
             verified_only,
             kicked_players: HashSet::new(),
+            holepunch_started_at: None,
         }
     }
 

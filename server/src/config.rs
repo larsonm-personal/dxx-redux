@@ -45,6 +45,8 @@ pub struct ServerConfig {
     pub pow_difficulty: u8,
     /// Maximum number of concurrent relay sessions. 0 = unlimited.
     pub max_relay_sessions: usize,
+    /// Maximum concurrent WebSocket connections. 0 = unlimited.
+    pub max_connections: usize,
 }
 
 /// JSON5 config file schema. All fields optional; env vars override file values.
@@ -70,6 +72,7 @@ struct ConfigFile {
     skip_gpgs_verify: Option<bool>,
     pow_difficulty: Option<u8>,
     max_relay_sessions: Option<usize>,
+    max_connections: Option<usize>,
 }
 
 impl ServerConfig {
@@ -127,6 +130,12 @@ impl ServerConfig {
             None => file_cfg.max_relay_sessions.unwrap_or(100),
         };
 
+        let max_conn_env = std::env::var("MAX_CONNECTIONS").ok();
+        let max_conn = match &max_conn_env {
+            Some(v) => v.parse().unwrap_or(500),
+            None => file_cfg.max_connections.unwrap_or(500),
+        };
+
         Self {
             ws_listen_addr: resolve_addr(
                 "WS_LISTEN_ADDR",
@@ -171,6 +180,7 @@ impl ServerConfig {
             skip_gpgs_verify: skip,
             pow_difficulty: pow,
             max_relay_sessions: max_relay,
+            max_connections: max_conn,
         }
     }
 

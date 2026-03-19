@@ -1,5 +1,6 @@
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
 
 use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{ConnectInfo, State, WebSocketUpgrade};
@@ -18,6 +19,18 @@ use crate::lobby::{Lobby, LobbyState, Presence};
 use crate::pow;
 use crate::protocol::*;
 use crate::ServerState;
+
+/// Wrapper around bounded mpsc::Sender that provides fire-and-forget send.
+/// Drops messages silently if the channel is full (slow client backpressure).
+#[derive(Debug, Clone)]
+pub struct BoundedSender(mpsc::Sender<ServerMessage>);
+
+impl BoundedSender {
+    #[allow(clippy::result_large_err)]
+    pub fn send(&self, msg: ServerMessage) -> Result<(), mpsc::error::TrySendError<ServerMessage>> {
+        self.0.try_send(msg)
+    }
+}
 
 /// Build a LOBBY_UPDATE message from the current lobby state.
 fn build_lobby_update(lobby: &Lobby) -> ServerMessage {
@@ -115,7 +128,7 @@ pub struct PlayerSession {
     pub callsign: String,
     pub presence: Presence,
     /// Channel to send messages to this player's WebSocket task.
-    pub tx: mpsc::UnboundedSender<ServerMessage>,
+    pub tx: BoundedSender,
     /// Which lobby (if any) this player is in.
     pub lobby_id: Option<Uuid>,
     /// Measured ping to this player's WebSocket connection (ms).
@@ -155,6 +168,12 @@ async fn ws_upgrade(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     State(state): State<Arc<ServerState>>,
 ) -> impl IntoResponse {
+    // D7: global connection cap
+    let max_conn = state.config.max_connections;
+    if max_conn > 0 && state.sessions.len() >= max_conn {
+        warn!(%addr, max_connections = max_conn, "connection cap reached");
+        return (axum::http::StatusCode::SERVICE_UNAVAILABLE, "server full").into_response();
+    }
     if !state.rate_limiter.check_ip_connection(addr.ip()) {
         warn!(%addr, "WebSocket upgrade rate-limited");
         return (axum::http::StatusCode::TOO_MANY_REQUESTS, "rate limited").into_response();
@@ -167,8 +186,10 @@ async fn ws_upgrade(
 async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<ServerState>) {
     let (mut ws_tx, mut ws_rx) = socket.split();
 
-    // Channel for sending messages back to this client
-    let (tx, mut rx) = mpsc::unbounded_channel::<ServerMessage>();
+    // Bounded channel for sending messages back to this client.
+    // Backpressure: if the client falls 256 messages behind, we drop it.
+    let (raw_tx, mut rx) = mpsc::channel::<ServerMessage>(256);
+    let tx = BoundedSender(raw_tx);
 
     // Task: drain the outbound channel and send to the WebSocket
     let send_task = tokio::spawn(async move {
@@ -180,8 +201,14 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                     continue;
                 }
             };
-            if ws_tx.send(Message::Text(text.into())).await.is_err() {
-                break;
+            // Timeout on send: if the client's TCP window is full for 10s, disconnect
+            match tokio::time::timeout(Duration::from_secs(10), ws_tx.send(Message::Text(text.into()))).await {
+                Ok(Ok(())) => {}
+                Ok(Err(_)) => break,  // send error
+                Err(_) => {
+                    warn!("WebSocket send timed out, dropping connection");
+                    break;
+                }
             }
         }
     });
@@ -199,8 +226,15 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
     }
     let mut pending_pow: Option<PendingPow> = None;
 
-    // Read loop
-    while let Some(msg_result) = ws_rx.next().await {
+    // Read loop -- timeout if no message (including pings) for 120s
+    while let Some(msg_result) = match tokio::time::timeout(Duration::from_secs(120), ws_rx.next()).await {
+        Ok(Some(r)) => Some(r),
+        Ok(None) => None,       // stream ended
+        Err(_) => {
+            debug!(%addr, "WebSocket read timed out (120s idle)");
+            None  // treat as disconnect
+        }
+    } {
         let msg = match msg_result {
             Ok(Message::Text(text)) => text,
             Ok(Message::Close(_)) => break,
@@ -257,6 +291,17 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                         update_url: state.config.update_url.clone(),
                     });
                     break; // disconnect
+                }
+
+                // Validate callsign: max 20 chars, printable ASCII only
+                let callsign = callsign.trim().to_string();
+                if callsign.is_empty() || callsign.len() > 20
+                    || !callsign.bytes().all(|b| (0x20..=0x7E).contains(&b))
+                {
+                    let _ = tx.send(ServerMessage::AuthFail {
+                        reason: "Invalid callsign (1-20 printable ASCII characters)".into(),
+                    });
+                    break;
                 }
 
                 if auth_method == "keypair" {
@@ -493,22 +538,56 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
     // Cleanup on disconnect
     if let Some(pid) = player_id {
         // Remove from lobby if in one
-        if let Some(session) = state.sessions.get(&pid) {
-            if let Some(lobby_id) = session.lobby_id {
-                if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
-                    lobby.remove_player(&pid);
-                    if lobby.players.is_empty() {
-                        drop(lobby);
-                        state.lobbies.remove(&lobby_id);
-                        state.stats.lobby_closed();
+        let lobby_id = state.sessions.get(&pid).and_then(|s| s.lobby_id);
+        if let Some(lobby_id) = lobby_id {
+            let should_remove = if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
+                let was_host = lobby.host_player_id == pid;
+                lobby.remove_player(&pid);
+                if lobby.players.is_empty() {
+                    true
+                } else if was_host {
+                    // Host left: dissolve the lobby and notify remaining players
+                    let kick_msg = ServerMessage::Error {
+                        code: "HOST_DISCONNECTED".into(),
+                        message: "The host has disconnected.".into(),
+                    };
+                    for p in lobby.players.iter() {
+                        if let Some(sess) = state.sessions.get(&p.player_id) {
+                            let _ = sess.tx.send(kick_msg.clone());
+                        }
+                        // Clear each player's lobby_id
+                        if let Some(mut s) = state.sessions.get_mut(&p.player_id) {
+                            s.lobby_id = None;
+                        }
                     }
+                    true // remove the orphaned lobby
+                } else {
+                    // Non-host left: broadcast updated player list
+                    broadcast_lobby_update(&lobby, &state);
+                    false
                 }
+            } else {
+                false
+            };
+            if should_remove {
+                state.lobbies.remove(&lobby_id);
+                state.stats.lobby_closed();
             }
         }
         state.sessions.remove(&pid);
         state.stats.player_disconnected();
-        // Remove client IP from STUN allowlist
-        state.stun_allowlist.remove(&addr.ip());
+        // Remove client IP from STUN allowlist (ref-counted, D17 fix)
+        let ip = addr.ip();
+        let remove = state
+            .stun_allowlist
+            .get(&ip)
+            .map(|c| *c <= 1)
+            .unwrap_or(true);
+        if remove {
+            state.stun_allowlist.remove(&ip);
+        } else if let Some(mut c) = state.stun_allowlist.get_mut(&ip) {
+            *c -= 1;
+        }
         let _ = state
             .db
             .log_connection_event(Some(&pid), "disconnect", None);
@@ -791,16 +870,33 @@ fn allocate_relay_session(state: &ServerState, relay_addr: &str, pair: &RelayPai
         );
         return None;
     }
-    let token = Uuid::new_v4().as_u128() as u32;
+    let token = {
+        let mut t = Uuid::new_v4().as_u128() as u32;
+        // D11: retry on collision (birthday problem with 32-bit truncation)
+        let mut attempts = 0;
+        while state.relay_sessions.contains_key(&t) && attempts < 10 {
+            t = Uuid::new_v4().as_u128() as u32;
+            attempts += 1;
+        }
+        if state.relay_sessions.contains_key(&t) {
+            warn!("relay token collision after 10 retries");
+            return None;
+        }
+        t
+    };
     let player_addrs = dashmap::DashMap::new();
+    // D12: pre-register allowed IPs from known peer addresses
+    let allowed_ips = dashmap::DashSet::new();
     if let Some(ref a) = pair.addr_a {
         if let Ok(sa) = a.parse::<SocketAddr>() {
             player_addrs.insert(pair.slot_a, sa);
+            allowed_ips.insert(sa.ip());
         }
     }
     if let Some(ref b) = pair.addr_b {
         if let Ok(sa) = b.parse::<SocketAddr>() {
             player_addrs.insert(pair.slot_b, sa);
+            allowed_ips.insert(sa.ip());
         }
     }
     state.relay_sessions.insert(
@@ -809,6 +905,7 @@ fn allocate_relay_session(state: &ServerState, relay_addr: &str, pair: &RelayPai
             session_token: token,
             player_addrs,
             expected_players: 2,
+            allowed_ips,
             created_at: std::time::Instant::now(),
         },
     );
@@ -821,7 +918,7 @@ fn allocate_relay_session(state: &ServerState, relay_addr: &str, pair: &RelayPai
 #[allow(clippy::too_many_arguments)]
 fn complete_auth(
     state: &Arc<ServerState>,
-    tx: &mpsc::UnboundedSender<ServerMessage>,
+    tx: &BoundedSender,
     pid: Uuid,
     callsign: &str,
     platform: &str,
@@ -845,8 +942,12 @@ fn complete_auth(
     );
     state.stats.player_connected();
 
-    // Add client IP to STUN allowlist
-    state.stun_allowlist.insert(addr.ip());
+    // Add client IP to STUN allowlist (ref-counted for shared NAT IPs, D17 fix)
+    state
+        .stun_allowlist
+        .entry(addr.ip())
+        .and_modify(|c| *c += 1)
+        .or_insert(1);
 
     info!(%pid, %callsign, %platform, %auth_method, "player authenticated");
 
@@ -903,7 +1004,7 @@ async fn handle_authenticated_message(
     state: &Arc<ServerState>,
     player_id: Uuid,
     msg: ClientMessage,
-    tx: &mpsc::UnboundedSender<ServerMessage>,
+    tx: &BoundedSender,
 ) {
     match msg {
         ClientMessage::CreateLobby {
@@ -914,6 +1015,21 @@ async fn handle_authenticated_message(
             lobby_code,
             verified_only,
         } => {
+            // Validate lobby parameters
+            if !(2..=8).contains(&max_players) {
+                let _ = tx.send(ServerMessage::Error {
+                    code: "INVALID_PARAMS".into(),
+                    message: "max_players must be 2-8".into(),
+                });
+                return;
+            }
+            if game.len() > 32 || mission.len() > 128 || mode.len() > 32 {
+                let _ = tx.send(ServerMessage::Error {
+                    code: "INVALID_PARAMS".into(),
+                    message: "game/mission/mode string too long".into(),
+                });
+                return;
+            }
             if !state.rate_limiter.check_lobby_create(player_id) {
                 warn!(%player_id, "lobby create rate-limited");
                 let _ = tx.send(ServerMessage::RateLimited {
@@ -955,8 +1071,14 @@ async fn handle_authenticated_message(
         }
 
         ClientMessage::ListLobbies {} => {
-            let lobbies = build_lobby_list(state);
-            let _ = tx.send(ServerMessage::LobbyList { lobbies });
+            if !state.rate_limiter.check_lobby_list(player_id) {
+                let _ = tx.send(ServerMessage::RateLimited {
+                    retry_after_ms: 10_000,
+                });
+            } else {
+                let lobbies = build_lobby_list(state);
+                let _ = tx.send(ServerMessage::LobbyList { lobbies });
+            }
         }
 
         ClientMessage::JoinLobby {
@@ -969,6 +1091,28 @@ async fn handle_authenticated_message(
                     retry_after_ms: 60_000,
                 });
                 return;
+            }
+
+            // D13: implicitly leave old lobby before joining a new one
+            let old_lobby_id = state.sessions.get(&player_id).and_then(|s| s.lobby_id);
+            if let Some(old_lid) = old_lobby_id {
+                if old_lid != lobby_id {
+                    if let Some(mut old_lobby) = state.lobbies.get_mut(&old_lid) {
+                        old_lobby.remove_player(&player_id);
+                        if old_lobby.players.is_empty() {
+                            drop(old_lobby);
+                            state.lobbies.remove(&old_lid);
+                            state.stats.lobby_closed();
+                        } else {
+                            broadcast_lobby_update(&old_lobby, state);
+                        }
+                    }
+                    if let Some(mut session) = state.sessions.get_mut(&player_id) {
+                        session.lobby_id = None;
+                        session.presence = Presence::Online;
+                    }
+                    info!(%player_id, lobby_id = %old_lid, "implicitly left old lobby");
+                }
             }
 
             // Check kicked-player and lobby-code restrictions before joining
@@ -1161,6 +1305,7 @@ async fn handle_authenticated_message(
                     // If relay limit was hit, abort game start and notify players
                     if relay_limit_hit {
                         lobby.state = LobbyState::Waiting;
+                        state.stats.game_ended(); // undo the game_started() above
                         warn!(%lobby_id, "game start aborted: relay session limit reached");
                         // Clean up any relay sessions we did allocate for this game
                         for token in relay_tokens.values() {
@@ -1321,6 +1466,7 @@ async fn handle_authenticated_message(
                             && lobby.state == LobbyState::Waiting;
                         let check_msgs = if all_have_candidates {
                             lobby.state = LobbyState::Holepunching;
+                            lobby.holepunch_started_at = Some(std::time::Instant::now());
                             Some(build_connectivity_check_messages(&lobby))
                         } else {
                             None
@@ -1454,7 +1600,10 @@ async fn handle_authenticated_message(
                     .unwrap_or(false);
                 if is_host {
                     if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
-                        lobby.kicked_players.insert(target);
+                        // Cap kicked_players to prevent unbounded growth (D16 fix)
+                        if lobby.kicked_players.len() < 100 {
+                            lobby.kicked_players.insert(target);
+                        }
                         lobby.remove_player(&target);
                         info!(%player_id, kicked = %target, %lobby_id, "player kicked");
                         broadcast_lobby_update(&lobby, state);

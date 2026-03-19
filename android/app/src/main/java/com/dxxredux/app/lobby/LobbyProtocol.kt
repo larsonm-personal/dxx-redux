@@ -26,6 +26,7 @@ data class LanPlayer(
     val callsign: String,
     val address: String,
     val ready: Boolean = false,
+    val lastSeenMs: Long = System.currentTimeMillis(),
 )
 
 /** Parsed LAN lobby announcement (received from a host broadcast). */

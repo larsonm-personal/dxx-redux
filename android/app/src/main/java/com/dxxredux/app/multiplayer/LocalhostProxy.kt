@@ -40,7 +40,13 @@ class LocalhostProxy(
     private val jobs = mutableListOf<Job>()
 
     fun addPeer(peerConfig: PeerProxyConfig) {
-        val proxy = PeerProxy(peerConfig)
+        val proxy =
+            try {
+                PeerProxy(peerConfig)
+            } catch (e: java.net.BindException) {
+                Log.e(TAG, "Failed to bind port ${peerConfig.localPort} for slot ${peerConfig.peerSlot}: ${e.message}")
+                return
+            }
         peerProxies.add(proxy)
         jobs.add(scope.launch(Dispatchers.IO) { proxy.run() })
         Log.i(
@@ -54,8 +60,9 @@ class LocalhostProxy(
     fun getStats(): List<PeerProxyStats> = peerProxies.map { it.getStats() }
 
     fun shutdown() {
-        for (job in jobs) job.cancel()
+        // C10: close sockets first to unblock receive() calls, then cancel jobs
         for (proxy in peerProxies) proxy.close()
+        for (job in jobs) job.cancel()
         jobs.clear()
         peerProxies.clear()
         Log.i(TAG, "Proxy shutdown complete")
@@ -105,10 +112,8 @@ private class PeerProxy(
                 launch { forwardLocalToReal() }
                 // real -> local: peer sends to our real socket, we forward to engine
                 launch { forwardRealToLocal() }
-                // NAT keepalive for direct connections
-                if (!config.isRelay) {
-                    launch { keepalive() }
-                }
+                // NAT keepalive (direct and relay)
+                launch { keepalive() }
             }
     }
 
@@ -172,11 +177,24 @@ private class PeerProxy(
     }
 
     private suspend fun keepalive() {
-        val ping = byteArrayOf(0)
+        val ping =
+            if (config.isRelay) {
+                // Relay-wrapped keepalive: [token:4LE][dest_slot:1][0x00]
+                ByteBuffer
+                    .allocate(RELAY_HEADER_LEN + 1)
+                    .apply {
+                        order(ByteOrder.LITTLE_ENDIAN)
+                        putInt(config.relayToken.toInt())
+                        put(config.relayDestSlot.toByte())
+                        put(0.toByte())
+                    }.array()
+            } else {
+                byteArrayOf(0)
+            }
         while (kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive == true) {
             try {
                 kotlinx.coroutines.delay(KEEPALIVE_INTERVAL_MS)
-                realSocket.send(DatagramPacket(ping, 1, config.realAddr))
+                realSocket.send(DatagramPacket(ping, ping.size, config.realAddr))
             } catch (e: java.net.SocketException) {
                 if (e.message?.contains("closed") == true) break
                 Log.w(TAG, "keepalive error: ${e.message}")

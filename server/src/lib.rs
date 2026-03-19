@@ -26,7 +26,7 @@ pub struct ServerState {
     pub stats: stats::ServerStats,
     pub db: db::Database,
     pub rate_limiter: rate_limit::RateLimiter,
-    pub stun_allowlist: Arc<dashmap::DashSet<IpAddr>>,
+    pub stun_allowlist: Arc<dashmap::DashMap<IpAddr, usize>>,
     pub started_at: std::time::Instant,
 }
 
@@ -41,7 +41,7 @@ pub fn build_state(config: config::ServerConfig) -> Result<Arc<ServerState>, rus
         stats: stats::ServerStats::new(),
         db,
         rate_limiter: rate_limit::RateLimiter::new(),
-        stun_allowlist: Arc::new(dashmap::DashSet::new()),
+        stun_allowlist: Arc::new(dashmap::DashMap::new()),
         started_at: std::time::Instant::now(),
     }))
 }

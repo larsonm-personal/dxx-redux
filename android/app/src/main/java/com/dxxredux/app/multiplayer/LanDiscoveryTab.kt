@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -398,12 +399,12 @@ private fun LanDiscoveryView(
 
     if (showJoinByIpDialog) {
         JoinByIpDialog(
-            onJoin = { hostAddr ->
+            onJoin = { hostAddr, game ->
                 showJoinByIpDialog = false
                 // Direct LAN join: launch game as joiner pointed at the given IP
                 onLaunchGame(
                     GameLaunchInfo(
-                        game = "d2",
+                        game = game,
                         mission = "",
                         mode = "coop",
                         difficulty = 1,
@@ -627,10 +628,15 @@ private fun StartLanGameDialog(
 
 @Composable
 private fun JoinByIpDialog(
-    onJoin: (hostAddr: String) -> Unit,
+    onJoin: (hostAddr: String, game: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var hostIp by remember { mutableStateOf("") }
+    var selectedGame by remember { mutableStateOf("d2") }
+    val ipPattern = remember { Regex("""^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$""") }
+    val isValidIp =
+        hostIp.matches(ipPattern) &&
+            hostIp.split(".").all { it.toIntOrNull() in 0..255 }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -647,14 +653,29 @@ private fun JoinByIpDialog(
                     label = { Text("Host IP Address") },
                     placeholder = { Text("192.168.1.100") },
                     singleLine = true,
+                    isError = hostIp.isNotBlank() && !isValidIp,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                // Game selector (B2 fix)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Game:", style = MaterialTheme.typography.bodyMedium)
+                    listOf("d1" to "Descent 1", "d2" to "Descent 2").forEach { (key, label) ->
+                        FilterChip(
+                            selected = selectedGame == key,
+                            onClick = { selectedGame = key },
+                            label = { Text(label) },
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
             TextButton(
-                onClick = { onJoin(hostIp) },
-                enabled = hostIp.isNotBlank(),
+                onClick = { onJoin(hostIp, selectedGame) },
+                enabled = isValidIp,
             ) {
                 Text("Join")
             }

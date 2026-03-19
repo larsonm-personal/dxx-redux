@@ -4,6 +4,7 @@ import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 enum class ConnectionStatus {
     DISCONNECTED,
@@ -94,7 +95,7 @@ object MatchmakingStateHolder {
     val state: StateFlow<MatchmakingState> = _state.asStateFlow()
 
     fun update(transform: (MatchmakingState) -> MatchmakingState) {
-        _state.value = transform(_state.value)
+        _state.update(transform)
     }
 
     fun appendLog(msg: String) {
@@ -109,6 +110,7 @@ object MatchmakingStateHolder {
 object CallsignPrefs {
     private const val PREFS_NAME = "dxx_prefs"
     private const val KEY = "mp_callsign"
+
     // CALLSIGN_LEN=8 in D1/D2 engine
     internal const val MAX_LEN = 8
 
@@ -122,9 +124,15 @@ object CallsignPrefs {
         return generated
     }
 
-    fun save(context: Context, callsign: String) {
+    fun save(
+        context: Context,
+        callsign: String,
+    ) {
         val trimmed = callsign.take(MAX_LEN)
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().putString(KEY, trimmed).apply()
+        context
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(KEY, trimmed)
+            .apply()
     }
 }
