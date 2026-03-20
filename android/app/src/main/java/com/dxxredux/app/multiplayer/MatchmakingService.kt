@@ -41,8 +41,17 @@ private fun normalizeServerUrl(raw: String): String {
 
     // Strip scheme to inspect host:port/path
     val schemeEnd = url.indexOf("://") + 3
-    val scheme = url.substring(0, schemeEnd)
+    var scheme = url.substring(0, schemeEnd)
     val rest = url.substring(schemeEnd)
+
+    // Upgrade ws:// to wss:// for non-emulator hosts (server always uses TLS).
+    // Only keep ws:// for emulator loopback aliases where the server has no TLS.
+    if (scheme == "ws://") {
+        val hostOnly = rest.substringBefore(':').substringBefore('/')
+        if (hostOnly != "10.0.2.2" && hostOnly != "localhost" && hostOnly != "127.0.0.1") {
+            scheme = "wss://"
+        }
+    }
 
     // Split into host(:port) and path
     val slashIdx = rest.indexOf('/')
