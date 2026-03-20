@@ -92,6 +92,7 @@ private fun ServerBrowserContent(
     var serverUrl by remember { mutableStateOf(state.serverUrl) }
     var callsign by remember { mutableStateOf(state.callsign) }
     var showCreateDialog by remember { mutableStateOf(false) }
+    val recentUrls = remember { mutableStateOf(RecentAddressPrefs.SERVER_URLS.load(context)) }
     val activeGames = state.serverStatus?.activeGameList.orEmpty()
 
     // Auto-refresh lobby list every 5 seconds while connected
@@ -155,6 +156,7 @@ private fun ServerBrowserContent(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
+            RecentSuggestions(recentUrls.value) { serverUrl = it }
             Spacer(Modifier.height(4.dp))
             OutlinedTextField(
                 value = callsign,
@@ -168,6 +170,8 @@ private fun ServerBrowserContent(
                 Button(
                     onClick = {
                         CallsignPrefs.save(context, callsign)
+                        RecentAddressPrefs.SERVER_URLS.add(context, serverUrl)
+                        recentUrls.value = RecentAddressPrefs.SERVER_URLS.load(context)
                         MatchmakingService.connect(serverUrl, callsign)
                     },
                     modifier = Modifier.weight(1f),

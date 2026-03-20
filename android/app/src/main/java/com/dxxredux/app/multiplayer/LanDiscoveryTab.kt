@@ -2,7 +2,6 @@ package com.dxxredux.app.multiplayer
 
 import android.Manifest
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -55,33 +54,8 @@ import com.dxxredux.app.lobby.LobbyService
 import java.net.Inet4Address
 import java.net.NetworkInterface
 
-/** Persistent storage for the last 5 IPs used in Join by IP / Join Lobby by IP. */
-object RecentIpsPrefs {
-    private const val PREFS_NAME = "dxx_prefs"
-    private const val KEY = "recent_lan_ips"
-    private const val MAX_ENTRIES = 5
-
-    fun load(context: Context): List<String> {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val raw = prefs.getString(KEY, null) ?: return emptyList()
-        return raw.split(",").filter { it.isNotBlank() }
-    }
-
-    fun add(
-        context: Context,
-        ip: String,
-    ) {
-        val current = load(context).toMutableList()
-        current.remove(ip) // de-duplicate
-        current.add(0, ip) // newest on top
-        val trimmed = current.take(MAX_ENTRIES)
-        context
-            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .putString(KEY, trimmed.joinToString(","))
-            .apply()
-    }
-}
+// Address caching for LAN dialogs -- see RecentAddressPrefs.kt
+private val LanIpsPrefs = RecentAddressPrefs.LAN_IPS
 
 /** Once-per-process default IP prefix derived from the device's own IPv4 address. */
 private var defaultIpPrefix: String? = null
@@ -231,7 +205,7 @@ private fun LanDiscoveryView(
     var showJoinByIpDialog by remember { mutableStateOf(false) }
     var showJoinLobbyByIpDialog by remember { mutableStateOf(false) }
     var hostedLevelCount by remember { mutableStateOf(30) }
-    val recentIps = remember { mutableStateOf(RecentIpsPrefs.load(context)) }
+    val recentIps = remember { mutableStateOf(LanIpsPrefs.load(context)) }
     var permissionGranted by remember {
         mutableStateOf(
             if (Build.VERSION.SDK_INT >= 33) {
@@ -547,8 +521,8 @@ private fun LanDiscoveryView(
             recentIps = recentIps.value,
             onJoin = { hostAddr, game ->
                 showJoinByIpDialog = false
-                RecentIpsPrefs.add(context, hostAddr)
-                recentIps.value = RecentIpsPrefs.load(context)
+                LanIpsPrefs.add(context, hostAddr)
+                recentIps.value = LanIpsPrefs.load(context)
                 // Direct LAN join: launch game as joiner pointed at the given IP
                 onLaunchGame(
                     GameLaunchInfo(
@@ -575,8 +549,8 @@ private fun LanDiscoveryView(
             recentIps = recentIps.value,
             onJoin = { hostAddr ->
                 showJoinLobbyByIpDialog = false
-                RecentIpsPrefs.add(context, hostAddr)
-                recentIps.value = RecentIpsPrefs.load(context)
+                LanIpsPrefs.add(context, hostAddr)
+                recentIps.value = LanIpsPrefs.load(context)
                 // Send a lobby-protocol JOIN to the given IP (use empty lobbyId; host will respond)
                 LobbyService.joinLobbyByIp(hostAddr, callsign)
             },
@@ -816,7 +790,7 @@ private fun JoinByIpDialog(
                     isError = hostIp.isNotBlank() && !isValidIp,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                RecentIpSuggestions(recentIps) { hostIp = it }
+                RecentSuggestions(recentIps) { hostIp = it }
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -873,7 +847,7 @@ private fun JoinLobbyByIpDialog(
                     isError = hostIp.isNotBlank() && !isValidIp,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                RecentIpSuggestions(recentIps) { hostIp = it }
+                RecentSuggestions(recentIps) { hostIp = it }
             }
         },
         confirmButton = {
@@ -890,27 +864,7 @@ private fun JoinLobbyByIpDialog(
     )
 }
 
-@Composable
-private fun RecentIpSuggestions(
-    recentIps: List<String>,
-    onSelect: (String) -> Unit,
-) {
-    if (recentIps.isNotEmpty()) {
-        Text("Recent:", style = MaterialTheme.typography.bodySmall)
-        for (ip in recentIps) {
-            Text(
-                ip,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable { onSelect(ip) }
-                        .padding(vertical = 4.dp),
-            )
-        }
-    }
-}
+// RecentIpSuggestions replaced by shared RecentSuggestions in RecentAddressPrefs.kt
 
 private val ipPattern = Regex("""^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$""")
 

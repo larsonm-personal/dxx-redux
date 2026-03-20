@@ -365,11 +365,14 @@ void net_log_log(char tx, const void* msg, int len, const struct sockaddr *addre
 
 void net_log_comment(char* comment) {
 	//return;
+	if(! GameArg.LogNetTraffic) { return; }
+
 #ifdef __ANDROID__
-	/* Always bridge to Kotlin NetLog regardless of LogNetTraffic setting */
+	/* Bridge to Kotlin overlay + NetLog. This sits after the LogNetTraffic
+	 * guard, but on Android GameArg.LogNetTraffic is hardcoded to 1
+	 * (see args.c) so it always executes. */
 	android_net_log("NETLOG", comment);
 #endif
-	if(! GameArg.LogNetTraffic) { return; }
 
 	net_log_init();
 

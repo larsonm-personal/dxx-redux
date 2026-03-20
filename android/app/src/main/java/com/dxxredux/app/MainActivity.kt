@@ -236,6 +236,7 @@ class MainActivity :
     private var musicPanel: MusicControlPanel? = null
     private var netStatsOverlay: com.dxxredux.app.multiplayer.MultiplayerStatsOverlay? = null
     private var netEventsOverlay: com.dxxredux.app.multiplayer.NetworkEventsOverlay? = null
+    private var netEventsManualToggle = false
     private var lastTrackNum = -1 // for detecting track changes in polling
     private var gyroManager: GyroInputManager? = null
 
@@ -422,7 +423,8 @@ class MainActivity :
                     netStatsOverlay?.toggle()
                 }
                 TouchOverlayView.ADMIN_NET_EVENTS -> {
-                    netEventsOverlay?.toggle()
+                    netEventsManualToggle = !netEventsManualToggle
+                    if (netEventsManualToggle) netEventsOverlay?.show() else netEventsOverlay?.hide()
                 }
                 TouchOverlayView.ADMIN_EXIT_LAUNCHER -> {
                     NativeMetaActions.nativeMetaAction(TouchBindings.META_RETURN_TO_LAUNCHER, 1)
@@ -816,9 +818,9 @@ class MainActivity :
                             // Auto-show/hide network events overlay during MP connecting phase
                             val mpState = com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value
                             val mpConnecting = mpState.gameLaunchInfo != null && !inGame
-                            if (mpConnecting) {
+                            if (mpConnecting || netEventsManualToggle) {
                                 netEventsOverlay?.show()
-                            } else if (inGame) {
+                            } else {
                                 netEventsOverlay?.hide()
                             }
                             // Show "START GAME" button when host is on player selection screen
@@ -838,7 +840,7 @@ class MainActivity :
                             startGameButton.visibility = View.GONE
                             // Still try to show net events overlay during MP connecting
                             val mpState2 = com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value
-                            if (mpState2.gameLaunchInfo != null) {
+                            if (mpState2.gameLaunchInfo != null || netEventsManualToggle) {
                                 netEventsOverlay?.show()
                             }
                         }
@@ -852,6 +854,7 @@ class MainActivity :
                         startGameButton.visibility = View.GONE
                         netStatsOverlay?.hide()
                         netEventsOverlay?.hide()
+                        netEventsManualToggle = false
                     }
                     overlayPoller.postDelayed(this, 100)
                 }
