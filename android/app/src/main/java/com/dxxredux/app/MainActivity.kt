@@ -813,6 +813,14 @@ class MainActivity :
                             exitButton.visibility = if (shouldShow) View.GONE else View.VISIBLE
                             // Hide net stats overlay when returning to menus
                             if (!inGame) netStatsOverlay?.hide()
+                            // Auto-show/hide network events overlay during MP connecting phase
+                            val mpState = com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value
+                            val mpConnecting = mpState.gameLaunchInfo != null && !inGame
+                            if (mpConnecting) {
+                                netEventsOverlay?.show()
+                            } else if (inGame) {
+                                netEventsOverlay?.hide()
+                            }
                             // Show "START GAME" button when host is on player selection screen
                             val hostSelecting =
                                 try {
@@ -838,6 +846,7 @@ class MainActivity :
                         skipButton.visibility = View.GONE
                         startGameButton.visibility = View.GONE
                         netStatsOverlay?.hide()
+                        netEventsOverlay?.hide()
                     }
                     overlayPoller.postDelayed(this, 100)
                 }
@@ -1629,6 +1638,8 @@ class MainActivity :
         message: String,
     ) {
         NetLog.log(category, message)
+        com.dxxredux.app.multiplayer.MatchmakingStateHolder
+            .appendLog("[$category] $message")
     }
 
     // ── GameSurfaceView with InputConnection for soft keyboard ──

@@ -335,6 +335,7 @@ object MatchmakingService {
         val msg = JoinLobbyMsg(lobbyId = lobbyId, lobbyCode = lobbyCode)
         send(protocolJson.encodeToString(JoinLobbyMsg.serializer(), msg))
         state.appendLog("Joining lobby $lobbyId...")
+        NetLog.log("LOBBY", "Joining lobby $lobbyId")
     }
 
     fun leaveLobby() {
@@ -352,10 +353,12 @@ object MatchmakingService {
                 peerCandidates = emptyMap(),
                 connectivityPairs = emptyList(),
                 relayInfo = null,
+                iceStatus = IceStatus(),
                 nav = MultiplayerNav.BROWSER,
             )
         }
         state.appendLog("Left lobby.")
+        NetLog.log("LOBBY", "Left lobby")
         requestLobbyList()
     }
 
@@ -366,11 +369,13 @@ object MatchmakingService {
     fun startGame() {
         send(protocolJson.encodeToString(StartGameMsg.serializer(), StartGameMsg()))
         state.appendLog("Requesting game start...")
+        NetLog.log("LOBBY", "Requesting game start")
     }
 
     fun kickPlayer(playerId: String) {
         send(protocolJson.encodeToString(KickPlayerMsg.serializer(), KickPlayerMsg(playerId = playerId)))
         state.appendLog("Kicking player $playerId...")
+        NetLog.log("LOBBY", "Kicking player $playerId")
     }
 
     fun sendMessage(
@@ -399,6 +404,7 @@ object MatchmakingService {
         val msg = FriendRequestMsg(targetCallsign = targetCallsign)
         send(protocolJson.encodeToString(FriendRequestMsg.serializer(), msg))
         state.appendLog("Friend request sent to '$targetCallsign'")
+        NetLog.log("SOCIAL", "Friend request sent to '$targetCallsign'")
     }
 
     fun acceptFriend(playerId: String) {
@@ -409,6 +415,7 @@ object MatchmakingService {
             s.copy(pendingFriendRequests = s.pendingFriendRequests.filter { it.fromPlayerId != playerId })
         }
         state.appendLog("Accepted friend request from $playerId")
+        NetLog.log("SOCIAL", "Accepted friend request from $playerId")
         requestFriendList()
     }
 
@@ -416,6 +423,7 @@ object MatchmakingService {
         val msg = FriendRemoveMsg(playerId = playerId)
         send(protocolJson.encodeToString(FriendRemoveMsg.serializer(), msg))
         state.appendLog("Removed friend $playerId")
+        NetLog.log("SOCIAL", "Removed friend $playerId")
         requestFriendList()
     }
 
@@ -423,6 +431,7 @@ object MatchmakingService {
         val msg = FriendBlockMsg(playerId = playerId)
         send(protocolJson.encodeToString(FriendBlockMsg.serializer(), msg))
         state.appendLog("Blocked player $playerId")
+        NetLog.log("SOCIAL", "Blocked player $playerId")
         requestFriendList()
     }
 
@@ -430,6 +439,7 @@ object MatchmakingService {
         val msg = JoinFriendGameMsg(friendPlayerId = friendPlayerId)
         send(protocolJson.encodeToString(JoinFriendGameMsg.serializer(), msg))
         state.appendLog("Joining friend's game...")
+        NetLog.log("SOCIAL", "Joining friend's game: $friendPlayerId")
     }
 
     fun sendConnectivityOk(
@@ -524,7 +534,9 @@ object MatchmakingService {
         val addrs = state.state.value.stunAddrs
         stunJob =
             scope.launch {
+                state.update { it.copy(iceStatus = IceStatus(phase = IcePhase.STUN_DISCOVERY)) }
                 state.appendLog("Starting candidate discovery (${addrs.size} STUN servers)...")
+                NetLog.log("STUN", "Starting candidate discovery (${addrs.size} STUN servers)")
                 try {
                     // Create the shared candidate socket. It persists through STUN,
                     // connectivity checking, and is handed to the first PeerProxy so
@@ -557,11 +569,32 @@ object MatchmakingService {
                     }
 
                     stunCompleted = true
+                    state.update { s ->
+                        s.copy(
+                            iceStatus =
+                                s.iceStatus.copy(
+                                    phase = IcePhase.STUN_COMPLETE,
+                                    stunNatType = report.natType,
+                                    stunCandidateCount = allCandidates.size,
+                                    upnpMapped = upnpResult != null,
+                                    upnpAddr = upnpResult?.let { "${it.externalIp}:${it.externalPort}" },
+                                ),
+                        )
+                    }
                     state.appendLog("Discovery: ${report.natType}, ${allCandidates.size} candidates")
                     NetLog.log("STUN", "Result: natType=${report.natType} candidates=${allCandidates.size}")
                     sendStunResult(allCandidates, report.natType)
                 } catch (e: Exception) {
                     Log.e(TAG, "Candidate discovery failed", e)
+                    state.update { s ->
+                        s.copy(
+                            iceStatus =
+                                s.iceStatus.copy(
+                                    phase = IcePhase.FAILED,
+                                    errorMessage = e.message,
+                                ),
+                        )
+                    }
                     state.appendLog("Candidate discovery failed: ${e.message}")
                     NetLog.log("ERROR", "Candidate discovery failed: ${e.message}")
                     // Send minimal result so the server can proceed (will use relay)
@@ -605,6 +638,16 @@ object MatchmakingService {
                             existingSocket = candidateSocket,
                         )
                     if (result != null) {
+                        state.update { s ->
+                            s.copy(
+                                iceStatus =
+                                    s.iceStatus.copy(
+                                        phase = IcePhase.COMPLETE,
+                                        probeResult = result.winningCandidateType,
+                                        probeRttMs = result.rttMs,
+                                    ),
+                            )
+                        }
                         state.appendLog("Direct connection: ${result.winningCandidateType} (${result.rttMs}ms)")
                         NetLog.log(
                             "HOLEPUNCH",
@@ -612,6 +655,15 @@ object MatchmakingService {
                         )
                         sendConnectivityOk(result.peerId, result.winningCandidateType, result.rttMs)
                     } else {
+                        state.update { s ->
+                            s.copy(
+                                iceStatus =
+                                    s.iceStatus.copy(
+                                        phase = IcePhase.COMPLETE,
+                                        probeResult = "relay",
+                                    ),
+                            )
+                        }
                         state.appendLog("No direct connection, will use relay")
                         NetLog.log("HOLEPUNCH", "No direct connection, falling back to relay")
                         // Notify the server for each unique peer so it allocates relay
@@ -621,7 +673,18 @@ object MatchmakingService {
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Connectivity check failed", e)
+                    state.update { s ->
+                        s.copy(
+                            iceStatus =
+                                s.iceStatus.copy(
+                                    phase = IcePhase.COMPLETE,
+                                    probeResult = "relay",
+                                    errorMessage = e.message,
+                                ),
+                        )
+                    }
                     state.appendLog("Connectivity check failed: ${e.message}")
+                    NetLog.log("ERROR", "Connectivity check failed: ${e.message}")
                     // Still notify the server so game launch isn't blocked
                     pairs.map { it.peerId }.distinct().forEach { peerId ->
                         sendConnectivityOk(peerId, "relay", 0)
@@ -746,6 +809,7 @@ object MatchmakingService {
                     // Re-join lobby if we had one before disconnect
                     lastLobbyId?.let { lobbyId ->
                         state.appendLog("Re-joining lobby $lobbyId...")
+                        NetLog.log("LOBBY", "Re-joining lobby $lobbyId")
                         joinLobby(lobbyId)
                         lastLobbyId = null
                     }
@@ -765,6 +829,7 @@ object MatchmakingService {
 
                 is ServerMessage.PowChallengeMsg -> {
                     state.appendLog("PoW challenge received (not yet implemented)")
+                    NetLog.log("AUTH", "PoW challenge received (not yet implemented)")
                 }
 
                 is ServerMessage.ErrorMsg -> {
@@ -789,11 +854,13 @@ object MatchmakingService {
                 is ServerMessage.MotdMsg -> {
                     state.update { it.copy(motd = msg.data.message) }
                     state.appendLog("MOTD: ${msg.data.message}")
+                    NetLog.log("SERVER", "MOTD: ${msg.data.message}")
                 }
 
                 is ServerMessage.LobbyListReceived -> {
                     state.update { it.copy(lobbies = msg.data.lobbies) }
                     state.appendLog("Lobby list: ${msg.data.lobbies.size} lobbies")
+                    NetLog.log("SERVER", "Lobby list: ${msg.data.lobbies.size} lobbies")
                 }
 
                 is ServerMessage.LobbyUpdated -> {
@@ -830,6 +897,7 @@ object MatchmakingService {
                         "Server: ${msg.data.onlinePlayers} online, " +
                             "${msg.data.activeGamesCount} games",
                     )
+                    NetLog.log("SERVER", "Status: ${msg.data.onlinePlayers} online, ${msg.data.activeGamesCount} games")
                 }
 
                 is ServerMessage.GameStarting -> {
@@ -852,6 +920,7 @@ object MatchmakingService {
                         val addrParts = peer.addr.split(":")
                         if (addrParts.size != 2) {
                             state.appendLog("Bad peer addr: ${peer.addr}")
+                            NetLog.log("ERROR", "Bad peer addr: ${peer.addr}")
                             continue
                         }
                         val addr = InetSocketAddress(addrParts[0], addrParts[1].toIntOrNull() ?: continue)
@@ -887,6 +956,7 @@ object MatchmakingService {
 
                 is ServerMessage.RateLimited -> {
                     state.appendLog("Rate limited, retry in ${msg.data.retryAfterMs}ms")
+                    NetLog.log("SERVER", "Rate limited, retry in ${msg.data.retryAfterMs}ms")
                 }
 
                 is ServerMessage.VersionRejected -> {
@@ -894,6 +964,7 @@ object MatchmakingService {
                         it.copy(errorMessage = "Version rejected: ${msg.data.reason}")
                     }
                     state.appendLog("Version rejected: ${msg.data.reason}")
+                    NetLog.log("ERROR", "Version rejected: ${msg.data.reason}")
                     manualDisconnect = true
                 }
 
@@ -923,7 +994,13 @@ object MatchmakingService {
                     val pc = msg.data
                     state.update { s ->
                         val info = PeerNatInfo(pc.peerId, pc.candidates, pc.natType)
-                        s.copy(peerCandidates = s.peerCandidates + (pc.peerId to info))
+                        s.copy(
+                            peerCandidates = s.peerCandidates + (pc.peerId to info),
+                            iceStatus =
+                                s.iceStatus.copy(
+                                    peerCandidatesReceived = s.iceStatus.peerCandidatesReceived + 1,
+                                ),
+                        )
                     }
                     state.appendLog("Peer candidates: ${pc.peerId} (${pc.natType}, ${pc.candidates.size} candidates)")
                     NetLog.log("STUN", "Peer ${pc.peerId}: natType=${pc.natType} candidates=${pc.candidates.size}")
@@ -931,7 +1008,12 @@ object MatchmakingService {
 
                 is ServerMessage.ConnectivityCheckGoReceived -> {
                     val pairs = msg.data.peerAddrs
-                    state.update { it.copy(connectivityPairs = pairs) }
+                    state.update { s ->
+                        s.copy(
+                            connectivityPairs = pairs,
+                            iceStatus = s.iceStatus.copy(phase = IcePhase.PROBING),
+                        )
+                    }
                     state.appendLog("Connectivity check GO: ${pairs.size} pairs to probe")
                     NetLog.log("HOLEPUNCH", "Connectivity check: ${pairs.size} pairs")
                     launchConnectivityCheck(pairs)
@@ -946,6 +1028,7 @@ object MatchmakingService {
 
                 is ServerMessage.Unknown -> {
                     state.appendLog("Unknown message type: ${msg.type}")
+                    NetLog.log("CONNECT", "Unknown message type: ${msg.type}")
                 }
 
                 is ServerMessage.MaintenanceReceived -> {
@@ -963,6 +1046,7 @@ object MatchmakingService {
                     val detail = m.shutdownAt?.let { " (shutdown at $it)" } ?: ""
                     state.update { it.copy(maintenanceMessage = "${m.message}$detail") }
                     state.appendLog("Maintenance warning: ${m.message}$detail")
+                    NetLog.log("SERVER", "Maintenance warning: ${m.message}$detail")
                 }
 
                 is ServerMessage.FriendListReceived -> {
@@ -976,15 +1060,18 @@ object MatchmakingService {
                         s.copy(pendingFriendRequests = pending)
                     }
                     state.appendLog("Friend request from ${req.fromCallsign}")
+                    NetLog.log("SOCIAL", "Friend request from ${req.fromCallsign}")
                 }
 
                 is ServerMessage.FriendAccepted -> {
                     state.appendLog("Friend accepted: ${msg.data.playerId}")
+                    NetLog.log("SOCIAL", "Friend accepted: ${msg.data.playerId}")
                     requestFriendList()
                 }
 
                 is ServerMessage.FriendRemoved -> {
                     state.appendLog("Friend removed: ${msg.data.playerId}")
+                    NetLog.log("SOCIAL", "Friend removed: ${msg.data.playerId}")
                     requestFriendList()
                 }
 
@@ -1007,9 +1094,11 @@ object MatchmakingService {
                     val resp = msg.data
                     if (resp.success && resp.lobbyId != null) {
                         state.appendLog("Joining friend's lobby: ${resp.lobbyId}")
+                        NetLog.log("SOCIAL", "Joining friend's lobby: ${resp.lobbyId}")
                         joinLobby(resp.lobbyId)
                     } else {
                         state.appendLog("Cannot join friend's game: ${resp.reason ?: "unknown"}")
+                        NetLog.log("ERROR", "Cannot join friend's game: ${resp.reason ?: "unknown"}")
                         state.update { it.copy(errorMessage = resp.reason) }
                     }
                 }
@@ -1017,6 +1106,7 @@ object MatchmakingService {
         } catch (e: Exception) {
             Log.e(TAG, "handleMessage error", e)
             state.appendLog("Internal error: ${e.message}")
+            NetLog.log("ERROR", "Internal error: ${e.message}")
         }
     }
 }

@@ -660,13 +660,43 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
 /// Pick the best candidate address for direct connection: prefer srflx, then
 /// observed (port-forwarded), then host.
 fn best_candidate_addr(candidates: &[crate::protocol::ConnectionCandidate]) -> String {
-    candidates
-        .iter()
-        .find(|c| c.candidate_type == "srflx")
-        .or_else(|| candidates.iter().find(|c| c.candidate_type == "observed"))
-        .or_else(|| candidates.iter().find(|c| c.candidate_type == "host"))
-        .map(|c| c.addr.clone())
-        .unwrap_or_default()
+    best_candidate_addr_for_type(candidates, &crate::lobby::ConnectionType::Unknown)
+}
+
+/// Pick the best candidate address considering the determined connection type.
+/// - DirectLan: prefer host (LAN address) so peers talk directly on LAN, not
+///   via the public NAT address (which fails with hairpin NAT).
+/// - DirectUpnp: prefer upnp candidate (explicitly port-forwarded).
+/// - Everything else: srflx > observed > host.
+fn best_candidate_addr_for_type(
+    candidates: &[crate::protocol::ConnectionCandidate],
+    conn_type: &crate::lobby::ConnectionType,
+) -> String {
+    use crate::lobby::ConnectionType;
+    match conn_type {
+        ConnectionType::DirectLan => candidates
+            .iter()
+            .find(|c| c.candidate_type == "host")
+            .or_else(|| candidates.iter().find(|c| c.candidate_type == "observed"))
+            .or_else(|| candidates.iter().find(|c| c.candidate_type == "srflx"))
+            .map(|c| c.addr.clone())
+            .unwrap_or_default(),
+        ConnectionType::DirectUpnp => candidates
+            .iter()
+            .find(|c| c.candidate_type == "upnp")
+            .or_else(|| candidates.iter().find(|c| c.candidate_type == "srflx"))
+            .or_else(|| candidates.iter().find(|c| c.candidate_type == "observed"))
+            .or_else(|| candidates.iter().find(|c| c.candidate_type == "host"))
+            .map(|c| c.addr.clone())
+            .unwrap_or_default(),
+        _ => candidates
+            .iter()
+            .find(|c| c.candidate_type == "srflx")
+            .or_else(|| candidates.iter().find(|c| c.candidate_type == "observed"))
+            .or_else(|| candidates.iter().find(|c| c.candidate_type == "host"))
+            .map(|c| c.addr.clone())
+            .unwrap_or_default(),
+    }
 }
 
 /// Check if two IPv4 addresses are both in the same private subnet (/16 for
@@ -1539,7 +1569,7 @@ async fn handle_authenticated_message(
                             let mut addr = if is_relay {
                                 relay_addr.clone()
                             } else {
-                                best_candidate_addr(&other.candidates)
+                                best_candidate_addr_for_type(&other.candidates, &conn_type)
                             };
 
                             // If direct addr is empty, downgrade to relay
@@ -2330,6 +2360,79 @@ mod tests {
     fn test_best_addr_empty_on_no_candidates() {
         let candidates: Vec<ConnectionCandidate> = vec![];
         assert_eq!(best_candidate_addr(&candidates), "");
+    }
+
+    // -- best_candidate_addr_for_type tests --
+
+    #[test]
+    fn test_best_addr_for_lan_prefers_host() {
+        let candidates = vec![
+            ConnectionCandidate {
+                candidate_type: "host".into(),
+                addr: "192.168.1.10:42424".into(),
+            },
+            ConnectionCandidate {
+                candidate_type: "srflx".into(),
+                addr: "203.0.113.5:42424".into(),
+            },
+        ];
+        assert_eq!(
+            best_candidate_addr_for_type(&candidates, &ConnectionType::DirectLan),
+            "192.168.1.10:42424"
+        );
+    }
+
+    #[test]
+    fn test_best_addr_for_lan_falls_back_to_observed() {
+        // No host candidate -- LAN should fall back to observed
+        let candidates = vec![ConnectionCandidate {
+            candidate_type: "observed".into(),
+            addr: "203.0.113.5:42424".into(),
+        }];
+        assert_eq!(
+            best_candidate_addr_for_type(&candidates, &ConnectionType::DirectLan),
+            "203.0.113.5:42424"
+        );
+    }
+
+    #[test]
+    fn test_best_addr_for_upnp_prefers_upnp() {
+        let candidates = vec![
+            ConnectionCandidate {
+                candidate_type: "host".into(),
+                addr: "192.168.1.10:42424".into(),
+            },
+            ConnectionCandidate {
+                candidate_type: "srflx".into(),
+                addr: "203.0.113.5:42424".into(),
+            },
+            ConnectionCandidate {
+                candidate_type: "upnp".into(),
+                addr: "203.0.113.5:5000".into(),
+            },
+        ];
+        assert_eq!(
+            best_candidate_addr_for_type(&candidates, &ConnectionType::DirectUpnp),
+            "203.0.113.5:5000"
+        );
+    }
+
+    #[test]
+    fn test_best_addr_for_holepunch_prefers_srflx() {
+        let candidates = vec![
+            ConnectionCandidate {
+                candidate_type: "host".into(),
+                addr: "192.168.1.10:42424".into(),
+            },
+            ConnectionCandidate {
+                candidate_type: "srflx".into(),
+                addr: "203.0.113.5:42424".into(),
+            },
+        ];
+        assert_eq!(
+            best_candidate_addr_for_type(&candidates, &ConnectionType::DirectHolepunch),
+            "203.0.113.5:42424"
+        );
     }
 
     // -- observed candidate tests --
