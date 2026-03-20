@@ -11,6 +11,7 @@ object NetworkConstants {
 
     // Default WebSocket port and path for production (wss:// via nginx on standard port)
     const val DEFAULT_WSS_PORT: Int = 443
+
     // Default WebSocket port for LAN (direct TLS on the matchmaking server)
     const val DEFAULT_LAN_WSS_PORT: Int = 9000
     const val DEFAULT_WS_PATH: String = "/ws"

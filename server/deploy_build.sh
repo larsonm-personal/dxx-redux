@@ -156,7 +156,101 @@ else
     echo ""
 fi
 
-# --- 6. Install and activate systemd service ---
+# --- 6. Public address configuration ---
+if [ "$DEPLOY_MODE" = "web" ]; then
+    echo "--- Configuring public addresses (relay + STUN) ---"
+
+    # Detect public IP for reference
+    PUBLIC_IP=""
+    for url in "https://api.ipify.org" "https://ifconfig.me" "https://icanhazip.com"; do
+        PUBLIC_IP=$(curl -s --max-time 5 "$url" 2>/dev/null | tr -d '[:space:]')
+        if [[ "$PUBLIC_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            break
+        fi
+        PUBLIC_IP=""
+    done
+
+    if [ -n "$PUBLIC_IP" ]; then
+        echo "Detected public IP: $PUBLIC_IP"
+    else
+        echo "Could not auto-detect public IP."
+    fi
+
+    # Read current config values (uncommented lines only)
+    CURRENT_RELAY=$(grep -oP '^\s*relay_public_addr:\s*"\K[^"]+' "$CONFIG_FILE" 2>/dev/null || echo "")
+    CURRENT_STUN=$(grep -oP '^\s*stun_public_addrs:\s*"\K[^"]+' "$CONFIG_FILE" 2>/dev/null || echo "")
+    CURRENT_HOST=""
+    if [ -n "$CURRENT_RELAY" ]; then
+        CURRENT_HOST="${CURRENT_RELAY%:*}"
+    fi
+
+    # Pick the best default: nginx domain > existing config > detected IP
+    SUGGESTED=""
+    if [ -n "$DOMAIN" ]; then
+        SUGGESTED="$DOMAIN"
+    elif [ -n "$CURRENT_HOST" ] && [ "$CURRENT_HOST" != "YOUR_HOST" ]; then
+        SUGGESTED="$CURRENT_HOST"
+    elif [ -n "$PUBLIC_IP" ]; then
+        SUGGESTED="$PUBLIC_IP"
+    fi
+
+    echo ""
+    echo "The relay and STUN services need a public hostname or IP that clients"
+    echo "can reach. A domain name is recommended for flexibility."
+    if [ -n "$CURRENT_HOST" ] && [ "$CURRENT_HOST" != "YOUR_HOST" ]; then
+        echo "  Current config: $CURRENT_HOST"
+    fi
+    if [ -n "$PUBLIC_IP" ] && [ "$PUBLIC_IP" != "$CURRENT_HOST" ]; then
+        echo "  Detected IP:    $PUBLIC_IP"
+    fi
+    if [ -n "$DOMAIN" ] && [ "$DOMAIN" != "$CURRENT_HOST" ]; then
+        echo "  nginx domain:   $DOMAIN"
+    fi
+    echo ""
+
+    if [ -n "$SUGGESTED" ]; then
+        read -p "Public host [$SUGGESTED]: " USER_HOST
+        PUBLIC_HOST="${USER_HOST:-$SUGGESTED}"
+    else
+        read -p "Public host (domain or IP): " PUBLIC_HOST
+    fi
+
+    if [ -z "$PUBLIC_HOST" ]; then
+        echo "Skipping -- you can edit $CONFIG_FILE manually later."
+    else
+        WANT_RELAY="${PUBLIC_HOST}:9001"
+        WANT_STUN="${PUBLIC_HOST}:3478,${PUBLIC_HOST}:3479"
+
+        if [ "$CURRENT_RELAY" = "$WANT_RELAY" ] && [ "$CURRENT_STUN" = "$WANT_STUN" ]; then
+            echo "Config already has correct values. No changes needed."
+        else
+            echo "Will set:"
+            echo "  relay_public_addr: \"$WANT_RELAY\""
+            echo "  stun_public_addrs: \"$WANT_STUN\""
+            read -p "Write to $CONFIG_FILE? (Y/n): " WRITE_ANSWER
+            if [[ "$WRITE_ANSWER" != [Nn] ]]; then
+                # Patch relay_public_addr (handles both commented-out and active lines)
+                if grep -qE '^\s*(//\s*)?relay_public_addr:' "$CONFIG_FILE"; then
+                    sed -i -E 's|^\s*(//\s*)?relay_public_addr:.*|    relay_public_addr: "'"$WANT_RELAY"'",|' "$CONFIG_FILE"
+                else
+                    sed -i '/^}/i\    relay_public_addr: "'"$WANT_RELAY"'",' "$CONFIG_FILE"
+                fi
+                # Patch stun_public_addrs
+                if grep -qE '^\s*(//\s*)?stun_public_addrs:' "$CONFIG_FILE"; then
+                    sed -i -E 's|^\s*(//\s*)?stun_public_addrs:.*|    stun_public_addrs: "'"$WANT_STUN"'",|' "$CONFIG_FILE"
+                else
+                    sed -i '/^}/i\    stun_public_addrs: "'"$WANT_STUN"'",' "$CONFIG_FILE"
+                fi
+                echo "Config updated."
+            else
+                echo "Skipped. Edit $CONFIG_FILE manually."
+            fi
+        fi
+    fi
+    echo ""
+fi
+
+# --- 7. Install and activate systemd service ---
 echo "--- Installing systemd service ---"
 "$SCRIPT_DIR/deploy_service.sh"
 
@@ -182,7 +276,6 @@ else
     echo "Clients connect via: wss://${DOMAIN:-YOUR_DOMAIN}/ws"
     echo ""
     echo "Next steps:"
-    echo "  1. Edit $CONFIG_FILE with your public IP, secrets, etc."
-    echo "  2. Set up Let's Encrypt: sudo certbot --nginx -d YOUR_DOMAIN"
-    echo "  3. sudo systemctl restart dxx-matchmaking"
+    echo "  1. Set up Let's Encrypt: sudo certbot --nginx -d ${DOMAIN:-YOUR_DOMAIN}"
+    echo "  2. sudo systemctl restart dxx-matchmaking"
 fi

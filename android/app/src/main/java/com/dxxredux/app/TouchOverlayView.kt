@@ -304,6 +304,7 @@ class TouchOverlayView
             const val ADMIN_OPEN_MENU = 5
             const val ADMIN_NET_STATS = 6
             const val ADMIN_EXIT_LAUNCHER = 7
+            const val ADMIN_NET_EVENTS = 8
 
             // Cockpit mode constants (match C CM_* defines)
             private const val CM_FULL_COCKPIT = 0
@@ -1999,6 +2000,7 @@ class TouchOverlayView
                 ADMIN_OPEN_MENU -> "Game Menu"
                 ADMIN_NET_STATS -> "Net Stats"
                 ADMIN_EXIT_LAUNCHER -> "Exit"
+                ADMIN_NET_EVENTS -> "Net Events"
                 else -> ""
             }
 
@@ -2034,7 +2036,7 @@ class TouchOverlayView
             val w = width.toFloat()
             val h = height.toFloat()
 
-            val itemCount = 8
+            val itemCount = 9
             val cols = 3
             val rows = (itemCount + cols - 1) / cols
             val divider = 1f // 1px divider between cells
@@ -2175,7 +2177,7 @@ class TouchOverlayView
                     if (adminTrayDragging) {
                         // Compute panel height for slide ratio
                         val h = height.toFloat()
-                        val itemCount = 8
+                        val itemCount = 9
                         val cols = 3
                         val rows = (itemCount + cols - 1) / cols
                         val cellH = h * 0.08f

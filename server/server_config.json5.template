@@ -28,7 +28,7 @@
     // tls_cert_path: "",
     // tls_key_path: "",
 
-    // UDP relay public address sent to clients in RELAY_ASSIGNED
+    // UDP relay public address sent to clients (domain name or IP, e.g. "match.example.com:9001")
     // relay_public_addr: "",
 
     // Maximum concurrent relay sessions (0 = unlimited, default 100)
@@ -37,7 +37,7 @@
     // STUN server listeners (for self-hosted NAT discovery)
     // stun_listen_addr: "0.0.0.0:3478",
     // stun_listen_addr_alt: "0.0.0.0:3479",
-    // stun_public_addrs: "",   // e.g. "203.0.113.5:3478,203.0.113.5:3479"
+    // stun_public_addrs: "",   // e.g. "match.example.com:3478,match.example.com:3479"
 
     // Logging
     // log_dir: "",             // empty = stdout only; set path for daily JSON log rotation

@@ -235,6 +235,7 @@ class MainActivity :
     private val overlayPoller = android.os.Handler(android.os.Looper.getMainLooper())
     private var musicPanel: MusicControlPanel? = null
     private var netStatsOverlay: com.dxxredux.app.multiplayer.MultiplayerStatsOverlay? = null
+    private var netEventsOverlay: com.dxxredux.app.multiplayer.NetworkEventsOverlay? = null
     private var lastTrackNum = -1 // for detecting track changes in polling
     private var gyroManager: GyroInputManager? = null
 
@@ -420,6 +421,9 @@ class MainActivity :
                 TouchOverlayView.ADMIN_NET_STATS -> {
                     netStatsOverlay?.toggle()
                 }
+                TouchOverlayView.ADMIN_NET_EVENTS -> {
+                    netEventsOverlay?.toggle()
+                }
                 TouchOverlayView.ADMIN_EXIT_LAUNCHER -> {
                     NativeMetaActions.nativeMetaAction(TouchBindings.META_RETURN_TO_LAUNCHER, 1)
                 }
@@ -592,6 +596,23 @@ class MainActivity :
         netStatsOverlay = statsOverlay
         frame.addView(
             statsOverlay,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
+
+        // Network events overlay (hidden by default, toggled via admin tray)
+        val eventsOverlay =
+            com.dxxredux.app.multiplayer.NetworkEventsOverlay(this).apply {
+                visibility = View.GONE
+                stateProvider = {
+                    com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value
+                }
+            }
+        netEventsOverlay = eventsOverlay
+        frame.addView(
+            eventsOverlay,
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT,

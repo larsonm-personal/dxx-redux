@@ -67,20 +67,21 @@ async fn main() {
     };
 
     // Load TLS certificate if configured
-    let tls_config = match tls::load_rustls_config(&state.config.tls_cert_path, &state.config.tls_key_path) {
-        Ok(Some(tls_cfg)) => {
-            info!("TLS certificate loaded -- native wss:// enabled");
-            Some(tls_cfg)
-        }
-        Ok(None) => {
-            info!("TLS not configured, serving plain WebSocket");
-            None
-        }
-        Err(e) => {
-            error!(%e, "failed to load TLS certificate");
-            std::process::exit(1);
-        }
-    };
+    let tls_config =
+        match tls::load_rustls_config(&state.config.tls_cert_path, &state.config.tls_key_path) {
+            Ok(Some(tls_cfg)) => {
+                info!("TLS certificate loaded -- native wss:// enabled");
+                Some(tls_cfg)
+            }
+            Ok(None) => {
+                info!("TLS not configured, serving plain WebSocket");
+                None
+            }
+            Err(e) => {
+                error!(%e, "failed to load TLS certificate");
+                std::process::exit(1);
+            }
+        };
 
     // Spawn the HTTP API server (public status + admin endpoints)
     let http_state = Arc::clone(&state);

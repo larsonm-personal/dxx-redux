@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
@@ -81,14 +82,13 @@ private fun normalizeServerUrl(raw: String): String {
 }
 
 /** Check if a hostname is a private/LAN IP address (RFC 1918 + link-local). */
-private fun isPrivateAddress(host: String): Boolean {
-    return try {
+private fun isPrivateAddress(host: String): Boolean =
+    try {
         val addr = InetAddress.getByName(host)
         addr.isSiteLocalAddress || addr.isLoopbackAddress || addr.isLinkLocalAddress
     } catch (_: Exception) {
         false
     }
-}
 
 object MatchmakingService {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -106,8 +106,16 @@ object MatchmakingService {
     private val lanClient: OkHttpClient by lazy {
         val trustAll =
             object : X509TrustManager {
-                override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
-                override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
+                override fun checkClientTrusted(
+                    chain: Array<X509Certificate>,
+                    authType: String,
+                ) {}
+
+                override fun checkServerTrusted(
+                    chain: Array<X509Certificate>,
+                    authType: String,
+                ) {}
+
                 override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
             }
         val sslContext = SSLContext.getInstance("TLS")
@@ -147,6 +155,14 @@ object MatchmakingService {
 
     @Volatile
     private var connectivityCheckJob: Job? = null
+
+    @Volatile
+    private var upnpMapping: UpnpMapping? = null
+
+    // Shared UDP socket used for STUN, connectivity checks, and then handed
+    // to the first PeerProxy so the UPnP port mapping stays valid.
+    @Volatile
+    private var candidateSocket: java.net.DatagramSocket? = null
 
     fun getProxyStats(): List<PeerProxyStats> = localhostProxy?.getStats() ?: emptyList()
 
@@ -216,6 +232,8 @@ object MatchmakingService {
         stunCompleted = false
         connectivityCheckJob?.cancel()
         connectivityCheckJob = null
+        cleanupUpnp()
+        closeCandidateSocket()
         localhostProxy?.shutdown()
         localhostProxy = null
         webSocket?.close(NetworkConstants.CLOSE_NORMAL, "user disconnect")
@@ -324,6 +342,8 @@ object MatchmakingService {
         stunJob?.cancel()
         stunJob = null
         stunCompleted = false
+        cleanupUpnp()
+        closeCandidateSocket()
         state.update {
             it.copy(
                 currentLobby = null,
@@ -486,27 +506,64 @@ object MatchmakingService {
             }
     }
 
+    private fun cleanupUpnp() {
+        upnpMapping?.let { mapping ->
+            scope.launch(Dispatchers.IO) {
+                UpnpClient.removeMapping(mapping)
+            }
+        }
+        upnpMapping = null
+    }
+
+    private fun closeCandidateSocket() {
+        candidateSocket?.close()
+        candidateSocket = null
+    }
+
     private fun launchStunDiscovery() {
         val addrs = state.state.value.stunAddrs
-        if (addrs.size < 2) {
-            state.appendLog("STUN: no server addresses available, skipping")
-            stunCompleted = true
-            sendStunResult(emptyList(), "unknown")
-            return
-        }
         stunJob =
             scope.launch {
-                state.appendLog("Starting STUN discovery...")
+                state.appendLog("Starting candidate discovery (${addrs.size} STUN servers)...")
                 try {
-                    val report = StunClient.discover(addrs)
+                    // Create the shared candidate socket. It persists through STUN,
+                    // connectivity checking, and is handed to the first PeerProxy so
+                    // that the UPnP port mapping remains associated with an open socket.
+                    val socket = java.net.DatagramSocket()
+                    candidateSocket = socket
+                    val candidatePort = socket.localPort
+
+                    // Run STUN and UPnP in parallel, both using the same port
+                    val stunDeferred =
+                        async(Dispatchers.IO) {
+                            StunClient.discover(addrs, socket)
+                        }
+                    val upnpDeferred =
+                        async(Dispatchers.IO) {
+                            tryUpnpMapping(candidatePort)
+                        }
+
+                    val report = stunDeferred.await()
+                    val upnpResult = upnpDeferred.await()
+
+                    // Merge UPnP candidate into the report if mapping succeeded
+                    val allCandidates = report.candidates.toMutableList()
+                    if (upnpResult != null) {
+                        allCandidates.add(
+                            ConnectionCandidate("upnp", "${upnpResult.externalIp}:${upnpResult.externalPort}"),
+                        )
+                        state.appendLog("UPnP: mapped ${upnpResult.externalIp}:${upnpResult.externalPort}")
+                        NetLog.log("UPNP", "Mapped ${upnpResult.externalIp}:${upnpResult.externalPort}")
+                    }
+
                     stunCompleted = true
-                    state.appendLog("STUN: ${report.natType}, ${report.candidates.size} candidates")
-                    NetLog.log("STUN", "Result: natType=${report.natType} candidates=${report.candidates.size}")
-                    sendStunResult(report.candidates, report.natType)
+                    state.appendLog("Discovery: ${report.natType}, ${allCandidates.size} candidates")
+                    NetLog.log("STUN", "Result: natType=${report.natType} candidates=${allCandidates.size}")
+                    sendStunResult(allCandidates, report.natType)
                 } catch (e: Exception) {
-                    Log.e(TAG, "STUN discovery failed", e)
-                    state.appendLog("STUN discovery failed: ${e.message}")
-                    NetLog.log("ERROR", "STUN discovery failed: ${e.message}")
+                    Log.e(TAG, "Candidate discovery failed", e)
+                    state.appendLog("Candidate discovery failed: ${e.message}")
+                    NetLog.log("ERROR", "Candidate discovery failed: ${e.message}")
                     // Send minimal result so the server can proceed (will use relay)
                     stunCompleted = true
                     sendStunResult(emptyList(), "unknown")
@@ -516,13 +573,37 @@ object MatchmakingService {
             }
     }
 
+    /**
+     * Attempt UPnP port mapping for [port] on the first available local IP.
+     * Returns the mapping or null. Catches all exceptions internally.
+     */
+    private fun tryUpnpMapping(port: Int): UpnpMapping? {
+        return try {
+            val localIps = StunClient.getLocalIpv4Addresses()
+            if (localIps.isEmpty()) return null
+            val localIp = localIps.first()
+            val mapping = UpnpClient.tryMap(port, localIp)
+            if (mapping != null) {
+                upnpMapping = mapping
+            }
+            mapping
+        } catch (e: Exception) {
+            Log.w(TAG, "UPnP attempt failed: ${e.message}")
+            null
+        }
+    }
+
     private fun launchConnectivityCheck(pairs: List<CandidatePair>) {
         // C11: cancel previous check to avoid duplicates
         connectivityCheckJob?.cancel()
         connectivityCheckJob =
             scope.launch {
                 try {
-                    val result = ConnectivityChecker.probe(pairs)
+                    val result =
+                        ConnectivityChecker.probe(
+                            pairs,
+                            existingSocket = candidateSocket,
+                        )
                     if (result != null) {
                         state.appendLog("Direct connection: ${result.winningCandidateType} (${result.rttMs}ms)")
                         NetLog.log(
@@ -759,9 +840,14 @@ object MatchmakingService {
                         "Starting: ${gs.game} mission=${gs.mission} slot=${gs.yourSlot} peers=${gs.peers.size}",
                     )
 
+                    // Hand the shared candidate socket to LocalhostProxy so all
+                    // peers share a single UDP socket (preserving UPnP/NAT pinholes).
+                    val sharedSocket = candidateSocket
+                    candidateSocket = null
+
                     // Set up localhost proxy for each peer
                     localhostProxy?.shutdown()
-                    val proxy = LocalhostProxy(scope)
+                    val proxy = LocalhostProxy(scope, sharedRealSocket = sharedSocket)
                     for (peer in gs.peers) {
                         val addrParts = peer.addr.split(":")
                         if (addrParts.size != 2) {

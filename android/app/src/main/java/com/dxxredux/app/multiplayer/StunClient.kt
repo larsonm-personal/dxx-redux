@@ -36,36 +36,45 @@ data class StunReport(
 
 object StunClient {
     /**
-     * Perform STUN queries from a single local UDP socket to two self-hosted
-     * STUN servers and classify the NAT type based on the reflexive addresses.
+     * Gather connection candidates and optionally perform STUN NAT classification.
      *
-     * @param stunAddrs Self-hosted STUN server addresses from AUTH_OK
-     *                  (e.g. ["1.2.3.4:3478", "1.2.3.4:3479"]).
-     *                  Must contain at least 2 entries for NAT classification.
+     * Always collects host candidates (local IPs). When stunAddrs has at least 2
+     * entries, also queries STUN servers for srflx candidates and NAT type.
+     * Returns natType="no_stun" when STUN is unavailable.
+     *
+     * If [existingSocket] is provided, it is used for all queries and is NOT closed.
+     * Otherwise a temporary socket is created and closed when done.
      *
      * Runs blocking I/O -- call from a background thread / Dispatchers.IO.
      */
-    fun discover(stunAddrs: List<String>): StunReport {
-        if (stunAddrs.size < 2) {
-            Log.w(TAG, "Need at least 2 STUN addresses for NAT detection, got ${stunAddrs.size}")
-            return StunReport(emptyList(), "unknown")
-        }
-        val servers =
-            stunAddrs.take(2).map { addr ->
-                val parts = addr.split(":")
-                InetSocketAddress(parts[0], parts[1].toInt())
-            }
-        val socket = DatagramSocket()
+    fun discover(
+        stunAddrs: List<String>,
+        existingSocket: DatagramSocket? = null,
+    ): StunReport {
+        val ownsSocket = existingSocket == null
+        val socket = existingSocket ?: DatagramSocket()
         socket.soTimeout = STUN_TIMEOUT_MS
         try {
             val localPort = socket.localPort
-            val results = servers.map { server -> queryStun(socket, server) }
             val candidates = mutableListOf<ConnectionCandidate>()
 
-            // Add host candidates (local IPs)
+            // Always add host candidates -- these enable LAN play without STUN
             for (addr in getLocalIpv4Addresses()) {
                 candidates.add(ConnectionCandidate("host", "$addr:$localPort"))
             }
+
+            // STUN queries are optional -- need at least 2 servers for NAT classification
+            if (stunAddrs.size < 2) {
+                Log.i(TAG, "No STUN servers, ${candidates.size} host candidates only")
+                return StunReport(candidates, "no_stun")
+            }
+
+            val servers =
+                stunAddrs.take(2).map { addr ->
+                    val parts = addr.split(":")
+                    InetSocketAddress(parts[0], parts[1].toInt())
+                }
+            val results = servers.map { server -> queryStun(socket, server) }
 
             // Add srflx candidates from STUN responses
             val reflexiveAddrs = results.mapNotNull { it.reflexiveAddr }
@@ -77,7 +86,7 @@ object StunClient {
             Log.i(TAG, "NAT type: $natType, candidates: ${candidates.size}")
             return StunReport(candidates, natType)
         } finally {
-            socket.close()
+            if (ownsSocket) socket.close()
         }
     }
 
@@ -223,7 +232,7 @@ object StunClient {
     }
 
     /** Get non-loopback IPv4 addresses for host candidates. */
-    private fun getLocalIpv4Addresses(): List<String> {
+    internal fun getLocalIpv4Addresses(): List<String> {
         val addrs = mutableListOf<String>()
         try {
             for (iface in NetworkInterface.getNetworkInterfaces().toList()) {

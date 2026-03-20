@@ -138,6 +138,9 @@ pub struct PlayerSession {
     pub gpgs_verified: bool,
     /// Authentication method: "gpgs", "keypair", or "dev".
     pub auth_method: String,
+    /// Client's public IP as observed from the WebSocket TCP connection.
+    /// Used to generate "observed" candidates for port-forwarding detection.
+    pub public_ip: std::net::IpAddr,
 }
 
 /// Build the WebSocket router (separated for testability).
@@ -180,12 +183,12 @@ pub async fn run(
                     }
                 };
                 // Build a per-connection service with ConnectInfo injected
-                let tower_svc = app
-                    .into_service()
-                    .map_request(move |mut req: hyper::Request<hyper::body::Incoming>| {
+                let tower_svc = app.into_service().map_request(
+                    move |mut req: hyper::Request<hyper::body::Incoming>| {
                         req.extensions_mut().insert(ConnectInfo(remote_addr));
                         req
-                    });
+                    },
+                );
                 let hyper_svc = hyper_util::service::TowerToHyperService::new(tower_svc);
                 let stream = hyper_util::rt::TokioIo::new(tls_stream);
                 let conn = hyper_util::server::conn::auto::Builder::new(
@@ -248,9 +251,14 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                 }
             };
             // Timeout on send: if the client's TCP window is full for 10s, disconnect
-            match tokio::time::timeout(Duration::from_secs(10), ws_tx.send(Message::Text(text.into()))).await {
+            match tokio::time::timeout(
+                Duration::from_secs(10),
+                ws_tx.send(Message::Text(text.into())),
+            )
+            .await
+            {
                 Ok(Ok(())) => {}
-                Ok(Err(_)) => break,  // send error
+                Ok(Err(_)) => break, // send error
                 Err(_) => {
                     warn!("WebSocket send timed out, dropping connection");
                     break;
@@ -273,14 +281,16 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
     let mut pending_pow: Option<PendingPow> = None;
 
     // Read loop -- timeout if no message (including pings) for 120s
-    while let Some(msg_result) = match tokio::time::timeout(Duration::from_secs(120), ws_rx.next()).await {
-        Ok(Some(r)) => Some(r),
-        Ok(None) => None,       // stream ended
-        Err(_) => {
-            debug!(%addr, "WebSocket read timed out (120s idle)");
-            None  // treat as disconnect
+    while let Some(msg_result) =
+        match tokio::time::timeout(Duration::from_secs(120), ws_rx.next()).await {
+            Ok(Some(r)) => Some(r),
+            Ok(None) => None, // stream ended
+            Err(_) => {
+                debug!(%addr, "WebSocket read timed out (120s idle)");
+                None // treat as disconnect
+            }
         }
-    } {
+    {
         let msg = match msg_result {
             Ok(Message::Text(text)) => text,
             Ok(Message::Close(_)) => break,
@@ -341,7 +351,8 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
 
                 // Validate callsign: max 20 chars, printable ASCII only
                 let callsign = callsign.trim().to_string();
-                if callsign.is_empty() || callsign.len() > 20
+                if callsign.is_empty()
+                    || callsign.len() > 20
                     || !callsign.bytes().all(|b| (0x20..=0x7E).contains(&b))
                 {
                     let _ = tx.send(ServerMessage::AuthFail {
@@ -646,14 +657,50 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
     let _ = send_task.await;
 }
 
-/// Pick the best candidate address for direct connection: prefer srflx, then host.
+/// Pick the best candidate address for direct connection: prefer srflx, then
+/// observed (port-forwarded), then host.
 fn best_candidate_addr(candidates: &[crate::protocol::ConnectionCandidate]) -> String {
     candidates
         .iter()
         .find(|c| c.candidate_type == "srflx")
+        .or_else(|| candidates.iter().find(|c| c.candidate_type == "observed"))
         .or_else(|| candidates.iter().find(|c| c.candidate_type == "host"))
         .map(|c| c.addr.clone())
         .unwrap_or_default()
+}
+
+/// Check if two IPv4 addresses are both in the same private subnet (/16 for
+/// 192.168.x.x and 172.16-31.x.x, /8 for 10.x.x.x).
+fn ips_share_private_subnet(a: &str, b: &str) -> bool {
+    let parse = |s: &str| -> Option<[u8; 4]> {
+        let parts: Vec<&str> = s.split('.').collect();
+        if parts.len() != 4 {
+            return None;
+        }
+        Some([
+            parts[0].parse().ok()?,
+            parts[1].parse().ok()?,
+            parts[2].parse().ok()?,
+            parts[3].parse().ok()?,
+        ])
+    };
+    let (a, b) = match (parse(a), parse(b)) {
+        (Some(a), Some(b)) => (a, b),
+        _ => return false,
+    };
+    // 10.0.0.0/8
+    if a[0] == 10 && b[0] == 10 {
+        return true;
+    }
+    // 172.16.0.0/12 -- compare first two octets
+    if a[0] == 172 && b[0] == 172 && (16..=31).contains(&a[1]) && (16..=31).contains(&b[1]) {
+        return a[1] == b[1];
+    }
+    // 192.168.0.0/16 -- compare first two octets
+    if a[0] == 192 && a[1] == 168 && b[0] == 192 && b[1] == 168 {
+        return true;
+    }
+    false
 }
 
 /// Determine connection type between two lobby players based on their
@@ -667,12 +714,18 @@ fn determine_connection_type(
     let a_nat = a.nat_type.as_deref().unwrap_or("unknown");
     let b_nat = b.nat_type.as_deref().unwrap_or("unknown");
 
-    // Extract srflx (server-reflexive) addrs from candidates for LAN check
-    let a_srflx = a.candidates.iter().find(|c| c.candidate_type == "srflx");
-    let b_srflx = b.candidates.iter().find(|c| c.candidate_type == "srflx");
+    // Extract public-facing addrs: srflx (from STUN) or observed (server-injected)
+    let a_public = a
+        .candidates
+        .iter()
+        .find(|c| c.candidate_type == "srflx" || c.candidate_type == "observed");
+    let b_public = b
+        .candidates
+        .iter()
+        .find(|c| c.candidate_type == "srflx" || c.candidate_type == "observed");
 
     // Check for same public IP (likely LAN)
-    if let (Some(ac), Some(bc)) = (a_srflx, b_srflx) {
+    if let (Some(ac), Some(bc)) = (a_public, b_public) {
         let a_ip = ac.addr.split(':').next().unwrap_or("");
         let b_ip = bc.addr.split(':').next().unwrap_or("");
         if !a_ip.is_empty() && a_ip == b_ip {
@@ -728,11 +781,63 @@ fn determine_connection_type(
         );
     }
 
-    // Both cone NATs or both have srflx candidates
-    if a_srflx.is_some() && b_srflx.is_some() {
+    // Both cone NATs or both have public-facing candidates (srflx or observed)
+    if a_public.is_some() && b_public.is_some() {
         return (
             ConnectionType::DirectHolepunch,
-            Some("both peers cone NAT".into()),
+            Some("both peers have public-facing candidates".into()),
+        );
+    }
+
+    // One side has a public-facing candidate (port-forwarded or STUN) and the other
+    // has only host candidates -- the public side is reachable, connectivity check
+    // will confirm.
+    if a_public.is_some() || b_public.is_some() {
+        return (
+            ConnectionType::DirectHolepunch,
+            Some("one peer has public-facing candidate".into()),
+        );
+    }
+
+    // Both peers have only host candidates (no srflx) -- check for LAN via
+    // matching private IP prefix. This enables LAN play without STUN.
+    let a_hosts: Vec<&str> = a
+        .candidates
+        .iter()
+        .filter(|c| c.candidate_type == "host")
+        .filter_map(|c| c.addr.split(':').next())
+        .collect();
+    let b_hosts: Vec<&str> = b
+        .candidates
+        .iter()
+        .filter(|c| c.candidate_type == "host")
+        .filter_map(|c| c.addr.split(':').next())
+        .collect();
+
+    if !a_hosts.is_empty() && !b_hosts.is_empty() {
+        // Check if any host IP pair shares a /16 private subnet
+        for a_ip in &a_hosts {
+            for b_ip in &b_hosts {
+                if ips_share_private_subnet(a_ip, b_ip) {
+                    return (
+                        ConnectionType::DirectLan,
+                        Some("host candidates on same private subnet".into()),
+                    );
+                }
+            }
+        }
+        // Host candidates exist but not on same subnet -- try holepunch
+        return (
+            ConnectionType::DirectHolepunch,
+            Some("host candidates only, different subnets".into()),
+        );
+    }
+
+    // No candidates at all from either peer -- fall back to relay
+    if a.candidates.is_empty() && b.candidates.is_empty() {
+        return (
+            ConnectionType::Relay,
+            Some("no candidates from either peer".into()),
         );
     }
 
@@ -845,6 +950,50 @@ fn generate_predicted_candidates(
     predicted
 }
 
+/// Generate "observed" candidates using the server-known public IP (from the
+/// WebSocket TCP connection) combined with each host candidate's port.
+///
+/// If a player has manually forwarded their game port at their router, the
+/// address public_ip:game_port is directly reachable. The connectivity checker
+/// will verify reachability. Skips if matching srflx candidates already exist.
+fn generate_observed_candidates(
+    candidates: &[ConnectionCandidate],
+    ws_ip: std::net::IpAddr,
+) -> Vec<ConnectionCandidate> {
+    let ws_ip_str = ws_ip.to_string();
+    // Don't inject for loopback (local testing) or link-local addresses
+    if ws_ip.is_loopback() {
+        return Vec::new();
+    }
+
+    // Collect existing srflx addrs to avoid duplicates
+    let srflx_addrs: std::collections::HashSet<String> = candidates
+        .iter()
+        .filter(|c| c.candidate_type == "srflx")
+        .map(|c| c.addr.clone())
+        .collect();
+
+    // Extract ports from host candidates
+    let host_ports: Vec<u16> = candidates
+        .iter()
+        .filter(|c| c.candidate_type == "host")
+        .filter_map(|c| c.addr.rsplit_once(':'))
+        .filter_map(|(_, port_str)| port_str.parse::<u16>().ok())
+        .collect();
+
+    let mut observed = Vec::new();
+    for port in host_ports {
+        let addr = format!("{ws_ip_str}:{port}");
+        if !srflx_addrs.contains(&addr) {
+            observed.push(ConnectionCandidate {
+                candidate_type: "observed".into(),
+                addr,
+            });
+        }
+    }
+    observed
+}
+
 /// Compute connection-check priority for a candidate pair.
 fn candidate_pair_priority(local_type: &str, remote_type: &str) -> u32 {
     match (local_type, remote_type) {
@@ -852,6 +1001,8 @@ fn candidate_pair_priority(local_type: &str, remote_type: &str) -> u32 {
         ("upnp", _) | (_, "upnp") => 90,
         ("srflx", "srflx") => 80,
         ("srflx", "host") | ("host", "srflx") => 75,
+        // "observed" = server-injected public_ip:game_port for port-forward detection
+        ("observed", _) | (_, "observed") => 70,
         ("predicted", "predicted") => 60,
         ("predicted", "srflx") | ("srflx", "predicted") => 50,
         ("predicted", _) | (_, "predicted") => 40,
@@ -984,6 +1135,7 @@ fn complete_auth(
             ping_ms: None,
             gpgs_verified,
             auth_method: auth_method.to_string(),
+            public_ip: addr.ip(),
         },
     );
     state.stats.player_connected();
@@ -1284,20 +1436,12 @@ async fn handle_authenticated_message(
                     // Send connection type info to all players
                     send_connection_info(&lobby, state);
 
-                    // Determine host address from candidates (prefer srflx, then host)
+                    // Determine host address from candidates
                     let host_addr = lobby
                         .players
                         .iter()
                         .find(|p| p.player_id == player_id)
-                        .and_then(|p| {
-                            p.candidates
-                                .iter()
-                                .find(|c| c.candidate_type == "srflx")
-                                .or_else(|| {
-                                    p.candidates.iter().find(|c| c.candidate_type == "host")
-                                })
-                        })
-                        .map(|c| c.addr.clone())
+                        .map(|p| best_candidate_addr(&p.candidates))
                         .unwrap_or_default();
 
                     let game = lobby.game.clone();
@@ -1317,16 +1461,17 @@ async fn handle_authenticated_message(
                             let (conn_type, _) =
                                 determine_connection_type(&lobby.players[i], &lobby.players[j]);
                             if conn_type == crate::lobby::ConnectionType::Relay {
-                                let addr_a = lobby.players[i]
-                                    .candidates
-                                    .iter()
-                                    .find(|c| c.candidate_type == "srflx")
-                                    .map(|c| c.addr.clone());
-                                let addr_b = lobby.players[j]
-                                    .candidates
-                                    .iter()
-                                    .find(|c| c.candidate_type == "srflx")
-                                    .map(|c| c.addr.clone());
+                                let find_public_addr = |p: &crate::lobby::LobbyPlayer| {
+                                    p.candidates
+                                        .iter()
+                                        .find(|c| {
+                                            c.candidate_type == "srflx"
+                                                || c.candidate_type == "observed"
+                                        })
+                                        .map(|c| c.addr.clone())
+                                };
+                                let addr_a = find_public_addr(&lobby.players[i]);
+                                let addr_b = find_public_addr(&lobby.players[j]);
                                 let pair = RelayPair {
                                     slot_a: i as u8,
                                     slot_b: j as u8,
@@ -1388,14 +1533,54 @@ async fn handle_authenticated_message(
                                 &lobby.players[my_slot],
                                 &lobby.players[other_slot],
                             );
-                            let is_relay = conn_type == crate::lobby::ConnectionType::Relay;
+                            let mut is_relay = conn_type == crate::lobby::ConnectionType::Relay;
 
                             // For direct: use winning candidate addr; for relay: use relay server
-                            let addr = if is_relay {
+                            let mut addr = if is_relay {
                                 relay_addr.clone()
                             } else {
                                 best_candidate_addr(&other.candidates)
                             };
+
+                            // If direct addr is empty, downgrade to relay
+                            if !is_relay && addr.is_empty() {
+                                warn!(
+                                    my_slot,
+                                    other_slot, "empty direct addr, downgrading to relay"
+                                );
+                                is_relay = true;
+                                addr = relay_addr.clone();
+
+                                // Allocate relay session for this downgraded pair if needed
+                                let (lo, hi) = if my_slot < other_slot {
+                                    (my_slot as u8, other_slot as u8)
+                                } else {
+                                    (other_slot as u8, my_slot as u8)
+                                };
+                                if !relay_tokens.contains_key(&(lo, hi)) && !addr.is_empty() {
+                                    let pair = RelayPair {
+                                        slot_a: lo,
+                                        slot_b: hi,
+                                        pid_a: lobby.players[lo as usize].player_id,
+                                        pid_b: lobby.players[hi as usize].player_id,
+                                        addr_a: None,
+                                        addr_b: None,
+                                    };
+                                    if let Some(token) =
+                                        allocate_relay_session(state, &relay_addr, &pair)
+                                    {
+                                        relay_tokens.insert((lo, hi), token);
+                                    }
+                                }
+                            }
+
+                            // Warn if addr is still empty (relay not configured)
+                            if addr.is_empty() {
+                                warn!(
+                                    my_slot,
+                                    other_slot, "peer addr empty and relay not configured"
+                                );
+                            }
 
                             // Look up relay token for this pair
                             let (lo, hi) = if my_slot < other_slot {
@@ -1471,12 +1656,27 @@ async fn handle_authenticated_message(
         } => {
             info!(%player_id, %nat_type, candidate_count = candidates.len(), "STUN result received");
             if let Some(session) = state.sessions.get(&player_id) {
+                let ws_ip = session.public_ip;
                 if let Some(lobby_id) = session.lobby_id {
                     if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
                         // Generate predicted port candidates for symmetric NATs
                         let predicted = generate_predicted_candidates(&candidates, &nat_type);
                         let mut all_candidates = candidates.clone();
                         all_candidates.extend(predicted);
+
+                        // Inject "observed" candidates: server-known public IP + each
+                        // host candidate's port. If the player port-forwarded, these
+                        // addresses will be directly reachable. The connectivity check
+                        // will verify. Skip if we already have a matching srflx.
+                        let observed = generate_observed_candidates(&all_candidates, ws_ip);
+                        if !observed.is_empty() {
+                            info!(
+                                %player_id,
+                                count = observed.len(),
+                                "injected observed candidates from WS IP"
+                            );
+                            all_candidates.extend(observed);
+                        }
 
                         if let Some(p) = lobby.players.iter_mut().find(|p| p.player_id == player_id)
                         {
@@ -1551,6 +1751,7 @@ async fn handle_authenticated_message(
                             "host" => crate::lobby::ConnectionType::DirectLan,
                             "upnp" => crate::lobby::ConnectionType::DirectUpnp,
                             "srflx" => crate::lobby::ConnectionType::DirectHolepunch,
+                            "observed" => crate::lobby::ConnectionType::DirectHolepunch,
                             "predicted" => crate::lobby::ConnectionType::PredictedHolepunch,
                             "relay" => crate::lobby::ConnectionType::Relay,
                             _ => crate::lobby::ConnectionType::Unknown,
@@ -1971,5 +2172,265 @@ async fn handle_authenticated_message(
 
         // Already handled before authentication
         ClientMessage::Authenticate { .. } | ClientMessage::PowSolution { .. } => {}
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::lobby::{ConnectionType, LobbyPlayer};
+    use crate::protocol::ConnectionCandidate;
+    use uuid::Uuid;
+
+    fn make_player(candidates: Vec<(&str, &str)>, nat_type: Option<&str>) -> LobbyPlayer {
+        LobbyPlayer {
+            player_id: Uuid::new_v4(),
+            callsign: "test".into(),
+            ready: false,
+            candidates: candidates
+                .into_iter()
+                .map(|(t, a)| ConnectionCandidate {
+                    candidate_type: t.into(),
+                    addr: a.into(),
+                })
+                .collect(),
+            nat_type: nat_type.map(|s| s.into()),
+            connection_type: ConnectionType::Unknown,
+            ping_ms: None,
+        }
+    }
+
+    // -- ips_share_private_subnet tests --
+
+    #[test]
+    fn test_same_192_168_subnet() {
+        assert!(ips_share_private_subnet("192.168.1.10", "192.168.1.20"));
+        assert!(ips_share_private_subnet("192.168.1.10", "192.168.99.20"));
+    }
+
+    #[test]
+    fn test_same_10_subnet() {
+        assert!(ips_share_private_subnet("10.0.1.5", "10.0.2.99"));
+        assert!(ips_share_private_subnet("10.255.0.1", "10.0.0.1"));
+    }
+
+    #[test]
+    fn test_same_172_16_subnet() {
+        assert!(ips_share_private_subnet("172.16.5.1", "172.16.5.2"));
+        // Different /16 within 172.16-31 range
+        assert!(!ips_share_private_subnet("172.16.5.1", "172.17.5.2"));
+    }
+
+    #[test]
+    fn test_different_private_ranges() {
+        assert!(!ips_share_private_subnet("192.168.1.1", "10.0.0.1"));
+        assert!(!ips_share_private_subnet("172.16.0.1", "192.168.0.1"));
+    }
+
+    #[test]
+    fn test_public_ips_not_shared() {
+        assert!(!ips_share_private_subnet("8.8.8.8", "8.8.4.4"));
+        assert!(!ips_share_private_subnet("203.0.113.1", "198.51.100.1"));
+    }
+
+    #[test]
+    fn test_invalid_ips() {
+        assert!(!ips_share_private_subnet("not-an-ip", "192.168.1.1"));
+        assert!(!ips_share_private_subnet("", ""));
+    }
+
+    // -- determine_connection_type tests --
+
+    #[test]
+    fn test_both_srflx_same_ip_is_lan() {
+        let a = make_player(vec![("srflx", "1.2.3.4:5000")], Some("full_cone"));
+        let b = make_player(vec![("srflx", "1.2.3.4:6000")], Some("full_cone"));
+        let (ct, _) = determine_connection_type(&a, &b);
+        assert_eq!(ct, ConnectionType::DirectLan);
+    }
+
+    #[test]
+    fn test_both_cone_srflx_different_ip_is_holepunch() {
+        let a = make_player(vec![("srflx", "1.2.3.4:5000")], Some("full_cone"));
+        let b = make_player(vec![("srflx", "5.6.7.8:6000")], Some("full_cone"));
+        let (ct, _) = determine_connection_type(&a, &b);
+        assert_eq!(ct, ConnectionType::DirectHolepunch);
+    }
+
+    #[test]
+    fn test_both_symmetric_no_predicted_is_relay() {
+        let a = make_player(vec![("srflx", "1.2.3.4:5000")], Some("symmetric"));
+        let b = make_player(vec![("srflx", "5.6.7.8:6000")], Some("symmetric"));
+        let (ct, _) = determine_connection_type(&a, &b);
+        assert_eq!(ct, ConnectionType::Relay);
+    }
+
+    #[test]
+    fn test_host_only_same_subnet_is_lan() {
+        let a = make_player(vec![("host", "192.168.1.10:5000")], Some("no_stun"));
+        let b = make_player(vec![("host", "192.168.1.20:6000")], Some("no_stun"));
+        let (ct, _) = determine_connection_type(&a, &b);
+        assert_eq!(ct, ConnectionType::DirectLan);
+    }
+
+    #[test]
+    fn test_host_only_different_subnet_is_holepunch() {
+        let a = make_player(vec![("host", "192.168.1.10:5000")], Some("no_stun"));
+        let b = make_player(vec![("host", "10.0.0.5:6000")], Some("no_stun"));
+        let (ct, _) = determine_connection_type(&a, &b);
+        assert_eq!(ct, ConnectionType::DirectHolepunch);
+    }
+
+    #[test]
+    fn test_no_candidates_is_relay() {
+        let a = make_player(vec![], Some("unknown"));
+        let b = make_player(vec![], Some("unknown"));
+        let (ct, _) = determine_connection_type(&a, &b);
+        assert_eq!(ct, ConnectionType::Relay);
+    }
+
+    #[test]
+    fn test_upnp_candidate_is_direct_upnp() {
+        let a = make_player(
+            vec![("host", "192.168.1.10:5000"), ("upnp", "1.2.3.4:5000")],
+            Some("full_cone"),
+        );
+        let b = make_player(vec![("srflx", "5.6.7.8:6000")], Some("full_cone"));
+        let (ct, _) = determine_connection_type(&a, &b);
+        assert_eq!(ct, ConnectionType::DirectUpnp);
+    }
+
+    // -- best_candidate_addr tests --
+
+    #[test]
+    fn test_best_addr_prefers_srflx() {
+        let candidates = vec![
+            ConnectionCandidate {
+                candidate_type: "host".into(),
+                addr: "192.168.1.1:5000".into(),
+            },
+            ConnectionCandidate {
+                candidate_type: "srflx".into(),
+                addr: "1.2.3.4:5000".into(),
+            },
+        ];
+        assert_eq!(best_candidate_addr(&candidates), "1.2.3.4:5000");
+    }
+
+    #[test]
+    fn test_best_addr_falls_back_to_host() {
+        let candidates = vec![ConnectionCandidate {
+            candidate_type: "host".into(),
+            addr: "192.168.1.1:5000".into(),
+        }];
+        assert_eq!(best_candidate_addr(&candidates), "192.168.1.1:5000");
+    }
+
+    #[test]
+    fn test_best_addr_empty_on_no_candidates() {
+        let candidates: Vec<ConnectionCandidate> = vec![];
+        assert_eq!(best_candidate_addr(&candidates), "");
+    }
+
+    // -- observed candidate tests --
+
+    #[test]
+    fn test_generate_observed_from_host_candidates() {
+        let candidates = vec![ConnectionCandidate {
+            candidate_type: "host".into(),
+            addr: "192.168.1.10:42424".into(),
+        }];
+        let ws_ip: std::net::IpAddr = "203.0.113.5".parse().unwrap();
+        let observed = generate_observed_candidates(&candidates, ws_ip);
+        assert_eq!(observed.len(), 1);
+        assert_eq!(observed[0].candidate_type, "observed");
+        assert_eq!(observed[0].addr, "203.0.113.5:42424");
+    }
+
+    #[test]
+    fn test_observed_skips_existing_srflx() {
+        let candidates = vec![
+            ConnectionCandidate {
+                candidate_type: "host".into(),
+                addr: "192.168.1.10:42424".into(),
+            },
+            ConnectionCandidate {
+                candidate_type: "srflx".into(),
+                addr: "203.0.113.5:42424".into(),
+            },
+        ];
+        let ws_ip: std::net::IpAddr = "203.0.113.5".parse().unwrap();
+        let observed = generate_observed_candidates(&candidates, ws_ip);
+        assert!(observed.is_empty(), "should skip when srflx matches");
+    }
+
+    #[test]
+    fn test_observed_skips_loopback() {
+        let candidates = vec![ConnectionCandidate {
+            candidate_type: "host".into(),
+            addr: "192.168.1.10:42424".into(),
+        }];
+        let ws_ip: std::net::IpAddr = "127.0.0.1".parse().unwrap();
+        let observed = generate_observed_candidates(&candidates, ws_ip);
+        assert!(observed.is_empty(), "should skip loopback IP");
+    }
+
+    #[test]
+    fn test_observed_candidate_enables_holepunch() {
+        let a = make_player(
+            vec![
+                ("host", "192.168.1.10:42424"),
+                ("observed", "203.0.113.5:42424"),
+            ],
+            Some("no_stun"),
+        );
+        let b = make_player(vec![("host", "10.0.0.5:42424")], Some("no_stun"));
+        let (ct, _) = determine_connection_type(&a, &b);
+        assert_eq!(ct, ConnectionType::DirectHolepunch);
+    }
+
+    #[test]
+    fn test_both_observed_same_ip_is_lan() {
+        let a = make_player(
+            vec![
+                ("host", "192.168.1.10:42424"),
+                ("observed", "203.0.113.5:42424"),
+            ],
+            Some("no_stun"),
+        );
+        let b = make_player(
+            vec![
+                ("host", "192.168.1.20:42424"),
+                ("observed", "203.0.113.5:42424"),
+            ],
+            Some("no_stun"),
+        );
+        let (ct, _) = determine_connection_type(&a, &b);
+        assert_eq!(ct, ConnectionType::DirectLan);
+    }
+
+    #[test]
+    fn test_best_addr_prefers_observed_over_host() {
+        let candidates = vec![
+            ConnectionCandidate {
+                candidate_type: "host".into(),
+                addr: "192.168.1.1:5000".into(),
+            },
+            ConnectionCandidate {
+                candidate_type: "observed".into(),
+                addr: "203.0.113.5:5000".into(),
+            },
+        ];
+        assert_eq!(best_candidate_addr(&candidates), "203.0.113.5:5000");
+    }
+
+    #[test]
+    fn test_candidate_pair_priority_observed() {
+        // observed should be prioritized between srflx and predicted
+        let obs = candidate_pair_priority("observed", "host");
+        let srflx = candidate_pair_priority("srflx", "host");
+        let predicted = candidate_pair_priority("predicted", "predicted");
+        assert!(obs < srflx, "observed < srflx");
+        assert!(obs > predicted, "observed > predicted");
     }
 }

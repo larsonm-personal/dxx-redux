@@ -37,14 +37,18 @@ object ConnectivityChecker {
      *
      * @param pairs Candidate pairs from CONNECTIVITY_CHECK_GO, sorted by priority descending
      * @param token A 4-byte token embedded in outgoing probes so peer can echo it back
+     * @param existingSocket If provided, used for probing and NOT closed. Otherwise a
+     *   temporary socket is created and closed when done.
      */
     fun probe(
         pairs: List<CandidatePair>,
         token: Int = SecureRandom().nextInt(),
+        existingSocket: DatagramSocket? = null,
     ): ConnectivityResult? {
         if (pairs.isEmpty()) return null
 
-        val socket = DatagramSocket()
+        val ownsSocket = existingSocket == null
+        val socket = existingSocket ?: DatagramSocket()
         socket.soTimeout = PROBE_INTERVAL_MS.toInt()
         try {
             val startTime = System.currentTimeMillis()
@@ -80,7 +84,7 @@ object ConnectivityChecker {
             Log.i(TAG, "All ${pairs.size} pairs timed out after ${TOTAL_TIMEOUT_MS}ms")
             return null
         } finally {
-            socket.close()
+            if (ownsSocket) socket.close()
         }
     }
 

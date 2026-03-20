@@ -22,9 +22,9 @@
     // tls_cert_path: "",
     // tls_key_path: "",
 
-    // Public addresses sent to clients (set to your server's public IP)
-    // relay_public_addr: "YOUR_PUBLIC_IP:9001",
-    // stun_public_addrs: "YOUR_PUBLIC_IP:3478,YOUR_PUBLIC_IP:3479",
+    // Public addresses sent to clients (domain name or IP that clients can reach)
+    // relay_public_addr: "YOUR_HOST:9001",
+    // stun_public_addrs: "YOUR_HOST:3478,YOUR_HOST:3479",
 
     // Google Play Games Services (GPGS) OAuth2
     // google_client_id: "",
