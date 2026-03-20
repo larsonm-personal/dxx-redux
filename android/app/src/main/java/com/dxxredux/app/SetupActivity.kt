@@ -2141,8 +2141,7 @@ private fun SetupScreen(
                             Column(
                                 modifier =
                                     Modifier
-                                        .padding(12.dp)
-                                        .verticalScroll(rememberScrollState()),
+                                        .padding(12.dp),
                             ) {
                                 if (found.isEmpty()) {
                                     Text(
@@ -2311,8 +2310,7 @@ private fun SetupScreen(
                             Column(
                                 modifier =
                                     Modifier
-                                        .padding(12.dp)
-                                        .verticalScroll(rememberScrollState()),
+                                        .padding(12.dp),
                             ) {
                                 if (extracted.isEmpty()) {
                                     Text(
