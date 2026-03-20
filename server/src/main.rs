@@ -67,18 +67,20 @@ async fn main() {
     };
 
     // Load TLS certificate if configured
-    match tls::load_rustls_config(&state.config.tls_cert_path, &state.config.tls_key_path) {
-        Ok(Some(_tls_config)) => {
-            info!("TLS certificate loaded (reverse proxy recommended for production)");
+    let tls_config = match tls::load_rustls_config(&state.config.tls_cert_path, &state.config.tls_key_path) {
+        Ok(Some(tls_cfg)) => {
+            info!("TLS certificate loaded -- native wss:// enabled");
+            Some(tls_cfg)
         }
         Ok(None) => {
             info!("TLS not configured, serving plain WebSocket");
+            None
         }
         Err(e) => {
             error!(%e, "failed to load TLS certificate");
             std::process::exit(1);
         }
-    }
+    };
 
     // Spawn the HTTP API server (public status + admin endpoints)
     let http_state = Arc::clone(&state);
@@ -134,7 +136,7 @@ async fn main() {
     // Run the WebSocket server (blocks on the main task)
     let ws_state = Arc::clone(&state);
     let ws_addr = state.config.ws_listen_addr;
-    if let Err(e) = ws_handler::run(ws_addr, ws_state).await {
+    if let Err(e) = ws_handler::run(ws_addr, ws_state, tls_config).await {
         error!(%e, "WebSocket server failed");
     }
 

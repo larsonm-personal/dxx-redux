@@ -9,8 +9,10 @@ object NetworkConstants {
     // Default server URL for emulator (10.0.2.2 is the host loopback alias)
     const val DEFAULT_SERVER_URL: String = "ws://10.0.2.2:9000/ws"
 
-    // Default WebSocket port and path (used when normalizing bare IP/hostname input)
-    const val DEFAULT_WS_PORT: Int = 9000
+    // Default WebSocket port and path for production (wss:// via nginx on standard port)
+    const val DEFAULT_WSS_PORT: Int = 443
+    // Default WebSocket port for LAN (direct TLS on the matchmaking server)
+    const val DEFAULT_LAN_WSS_PORT: Int = 9000
     const val DEFAULT_WS_PATH: String = "/ws"
 
     // Reconnection

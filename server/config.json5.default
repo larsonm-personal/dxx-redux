@@ -2,12 +2,12 @@
 // Copy to server_config.json5 and edit as needed.
 // Environment variables override values in this file.
 {
-    // Network listeners
-    ws_listen_addr: "0.0.0.0:9000",
-    http_listen_addr: "0.0.0.0:8080",
+    // Network listeners -- bound to localhost; nginx handles TLS on public ports
+    ws_listen_addr: "127.0.0.1:9000",
+    http_listen_addr: "127.0.0.1:8080",
     relay_listen_addr: "0.0.0.0:9001",
 
-    // STUN server listeners (for NAT discovery)
+    // STUN server listeners (for NAT discovery) -- these use UDP, no TLS needed
     stun_listen_addr: "0.0.0.0:3478",
     stun_listen_addr_alt: "0.0.0.0:3479",
 
@@ -17,9 +17,9 @@
     // Logging -- daily JSON rotation to this directory (also logs to journald via stdout)
     log_dir: "/var/log/dxx-matchmaking",
 
-    // TLS -- for Let's Encrypt, uncomment and set your domain:
-    // tls_cert_path: "/etc/letsencrypt/live/YOUR_DOMAIN/fullchain.pem",
-    // tls_key_path: "/etc/letsencrypt/live/YOUR_DOMAIN/privkey.pem",
+    // TLS -- handled by nginx reverse proxy; these are not needed when using nginx
+    // tls_cert_path: "",
+    // tls_key_path: "",
 
     // Public addresses sent to clients (set to your server's public IP)
     // relay_public_addr: "YOUR_PUBLIC_IP:9001",

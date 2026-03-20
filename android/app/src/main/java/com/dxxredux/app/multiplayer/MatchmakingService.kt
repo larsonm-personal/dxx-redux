@@ -14,22 +14,29 @@ import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import java.lang.ref.WeakReference
+import java.net.InetAddress
 import java.net.InetSocketAddress
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
 import java.util.UUID
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 import kotlin.math.min
 
 private const val TAG = "MatchmakingService"
 private const val MAX_RECONNECT_ATTEMPTS = 15
 
-/** Normalize user input like "192.168.1.5" into "ws://192.168.1.5:9000/ws". */
+/** Normalize user input like "myserver.com" into "wss://myserver.com/ws".
+ *  Defaults to wss:// (TLS). Only uses ws:// if the user explicitly typed it. */
 private fun normalizeServerUrl(raw: String): String {
     var url = raw.trim()
     if (url.isEmpty()) return NetworkConstants.DEFAULT_SERVER_URL
 
-    // Add scheme if missing
+    // Add scheme if missing -- default to wss:// (TLS required)
     if (!url.startsWith("ws://") && !url.startsWith("wss://")) {
-        url = "ws://$url"
+        url = "wss://$url"
     }
 
     // Strip scheme to inspect host:port/path
@@ -42,10 +49,18 @@ private fun normalizeServerUrl(raw: String): String {
     val hostPort = if (slashIdx >= 0) rest.substring(0, slashIdx) else rest
     val path = if (slashIdx >= 0) rest.substring(slashIdx) else ""
 
-    // Add default port if none specified (and host isn't empty)
+    // Add default port if none specified:
+    // LAN (private IP) -> 9000 (direct TLS on server)
+    // Public -> 443 (nginx reverse proxy)
     val withPort =
-        if (hostPort.isNotEmpty() && !hostPort.contains(':')) {
-            "$hostPort:${NetworkConstants.DEFAULT_WS_PORT}"
+        if (hostPort.isNotEmpty() && !hostPort.contains(':') && scheme == "wss://") {
+            val defaultPort =
+                if (isPrivateAddress(hostPort)) {
+                    NetworkConstants.DEFAULT_LAN_WSS_PORT
+                } else {
+                    NetworkConstants.DEFAULT_WSS_PORT
+                }
+            "$hostPort:$defaultPort"
         } else {
             hostPort
         }
@@ -54,6 +69,16 @@ private fun normalizeServerUrl(raw: String): String {
     val withPath = if (path.isEmpty()) NetworkConstants.DEFAULT_WS_PATH else path
 
     return "$scheme$withPort$withPath"
+}
+
+/** Check if a hostname is a private/LAN IP address (RFC 1918 + link-local). */
+private fun isPrivateAddress(host: String): Boolean {
+    return try {
+        val addr = InetAddress.getByName(host)
+        addr.isSiteLocalAddress || addr.isLoopbackAddress || addr.isLinkLocalAddress
+    } catch (_: Exception) {
+        false
+    }
 }
 
 object MatchmakingService {
@@ -66,6 +91,26 @@ object MatchmakingService {
             .pingInterval(30, TimeUnit.SECONDS)
             .readTimeout(0, TimeUnit.SECONDS) // no read timeout for websocket
             .build()
+
+    // OkHttp client that accepts self-signed certificates for LAN testing.
+    // Only used when connecting to private/RFC1918 IP addresses.
+    private val lanClient: OkHttpClient by lazy {
+        val trustAll =
+            object : X509TrustManager {
+                override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
+                override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
+                override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+            }
+        val sslContext = SSLContext.getInstance("TLS")
+        sslContext.init(null, arrayOf<TrustManager>(trustAll), SecureRandom())
+        OkHttpClient
+            .Builder()
+            .sslSocketFactory(sslContext.socketFactory, trustAll)
+            .hostnameVerifier { _, _ -> true }
+            .pingInterval(30, TimeUnit.SECONDS)
+            .readTimeout(0, TimeUnit.SECONDS)
+            .build()
+    }
 
     @Volatile
     private var webSocket: WebSocket? = null
@@ -147,7 +192,10 @@ object MatchmakingService {
         NetLog.log("CONNECT", "Connecting to $normalizedUrl as '$callsign'")
 
         val request = Request.Builder().url(normalizedUrl).build()
-        webSocket = client.newWebSocket(request, Listener(callsign))
+        // Use LAN-tolerant client (accepts self-signed certs) for private IPs
+        val host = request.url.host
+        val httpClient = if (isPrivateAddress(host)) lanClient else client
+        webSocket = httpClient.newWebSocket(request, Listener(callsign))
     }
 
     fun disconnect() {

@@ -26,6 +26,9 @@ ed25519-dalek = { version = "=3.0.0-pre.6", features = ["rand_core"] }
 sha2 = "=0.11.0-rc.5"
 rand = { version = "=0.10.0", features = ["sys_rng"] }
 hex = "=0.4.3"
+hyper = { version = "=1.8.1", features = ["server", "http1"] }
+hyper-util = { version = "=0.1.20", features = ["tokio", "server-auto", "http1", "service"] }
+tower = "=0.5.3"
 
 [[bin]]
 name = "nat-sim"
