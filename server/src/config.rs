@@ -27,13 +27,15 @@ pub struct ServerConfig {
     pub tls_cert_path: String,
     /// Path to TLS private key PEM file (empty = no TLS)
     pub tls_key_path: String,
-    /// Public address of the UDP relay, sent to clients in RELAY_ASSIGNED
+    /// Public address of the UDP relay, sent to clients in RELAY_ASSIGNED.
+    /// Can be a domain name or IP with port (e.g. "match.example.com:9001").
     pub relay_public_addr: String,
     /// Address for STUN listener 1 (e.g. "0.0.0.0:3478")
     pub stun_listen_addr: SocketAddr,
     /// Address for STUN listener 2, different port for NAT detection (e.g. "0.0.0.0:3479")
     pub stun_listen_addr_alt: SocketAddr,
-    /// Public STUN addresses sent to clients in AUTH_OK (e.g. "203.0.113.5:3478,203.0.113.5:3479")
+    /// Public STUN addresses sent to clients in AUTH_OK.
+    /// Can use domain names or IPs (e.g. "match.example.com:3478,match.example.com:3479").
     /// If empty, STUN listeners are not started.
     pub stun_public_addrs: String,
     /// Directory for log files (empty = no file logging, stdout only)
@@ -97,12 +99,8 @@ impl ServerConfig {
 
         // Helper: env var > file value > default
         fn resolve(env_key: &str, file_val: &Option<String>, default: &str) -> String {
-            std::env::var(env_key).unwrap_or_else(|_| {
-                file_val
-                    .as_deref()
-                    .unwrap_or(default)
-                    .to_string()
-            })
+            std::env::var(env_key)
+                .unwrap_or_else(|_| file_val.as_deref().unwrap_or(default).to_string())
         }
         fn resolve_addr(env_key: &str, file_val: &Option<String>, default: &str) -> SocketAddr {
             resolve(env_key, file_val, default)

@@ -140,6 +140,10 @@ fun LobbyScreen(onLaunchGame: (GameLaunchInfo) -> Unit) {
 
         Spacer(Modifier.height(8.dp))
 
+        // -- Network events --
+        NetworkEventsPanel(state)
+        Spacer(Modifier.height(4.dp))
+
         // -- Status log --
         StatusLog(state.statusLog)
     }

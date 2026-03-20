@@ -276,6 +276,10 @@ private fun ServerBrowserContent(
             Spacer(Modifier.weight(1f))
         }
 
+        // -- Network events --
+        NetworkEventsPanel(state)
+        Spacer(Modifier.height(4.dp))
+
         // -- Status log --
         StatusLog(state.statusLog)
     }
