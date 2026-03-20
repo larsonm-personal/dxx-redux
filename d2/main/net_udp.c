@@ -365,6 +365,10 @@ void net_log_log(char tx, const void* msg, int len, const struct sockaddr *addre
 
 void net_log_comment(char* comment) {
 	//return;
+#ifdef __ANDROID__
+	/* Always bridge to Kotlin NetLog regardless of LogNetTraffic setting */
+	android_net_log("NETLOG", comment);
+#endif
 	if(! GameArg.LogNetTraffic) { return; }
 
 	net_log_init();
@@ -5458,12 +5462,12 @@ int net_udp_auto_join(const char *host_addr, int host_port, int my_port)
 	                     strcmp(host_addr, "localhost") == 0) ? 1 : 0;
 
 	if (udp_open_socket(0, my_port) != 0) {
-		con_printf(CON_URGENT, "auto_join: failed to open socket on port %d\n", my_port);
+		MPDIAG("auto_join: failed to open socket on port %d", my_port);
 		return 0;
 	}
 
 	if (udp_dns_filladdr((char *)host_addr, host_port, &host) < 0) {
-		con_printf(CON_URGENT, "auto_join: failed to resolve %s:%d\n", host_addr, host_port);
+		MPDIAG("auto_join: failed to resolve %s:%d", host_addr, host_port);
 		net_udp_close();
 		return 0;
 	}
@@ -5495,13 +5499,13 @@ int net_udp_auto_join(const char *host_addr, int host_port, int my_port)
 		net_udp_listen();
 
 		if (Netgame.protocol.udp.valid == -1) {
-			con_printf(CON_URGENT, "auto_join: version mismatch\n");
+			MPDIAG("auto_join: version mismatch");
 			net_udp_close();
 			return 0;
 		}
 
 		if (Netgame.protocol.udp.valid == 1) {
-			con_printf(CON_NORMAL, "auto_join: got valid game info after %d reqs, joining\n", req_count);
+			MPDIAG("auto_join: got valid game info after %d reqs, joining", req_count);
 			/* net_udp_process_game_info overwrites players[0].addr with the
 			 * sender of the GAME_INFO reply. Inside an emulator guest this
 			 * is a SLIRP NAT-mapped address, not the relay/proxy address
@@ -5512,7 +5516,7 @@ int net_udp_auto_join(const char *host_addr, int host_port, int my_port)
 		}
 	}
 
-	con_printf(CON_URGENT, "auto_join: timeout waiting for host (sent %d reqs)\n", req_count);
+	MPDIAG("auto_join: timeout waiting for host (sent %d reqs)", req_count);
 	net_udp_close();
 	return 0;
 }
@@ -5542,7 +5546,7 @@ int net_udp_auto_host(int my_port, const char *mission, int mode,
 
 	/* Load the requested mission */
 	if (!load_mission_by_name((char *)mission)) {
-		con_printf(CON_URGENT, "auto_host: mission '%s' not found\n", mission);
+		MPDIAG("auto_host: mission '%s' not found", mission);
 		return 0;
 	}
 

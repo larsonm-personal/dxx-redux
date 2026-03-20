@@ -134,6 +134,10 @@ class LocalhostProxy(
                 }
 
                 // Unmatched: stale probe, connectivity echo, or unknown sender
+            } catch (_: java.net.SocketTimeoutException) {
+                // Socket may have a residual soTimeout from STUN/connectivity
+                // probing. Just continue; the socket is still usable.
+                continue
             } catch (e: java.net.SocketException) {
                 if (e.message?.contains("closed") == true) break
                 Log.w(TAG, "Shared receive error: ${e.message}")

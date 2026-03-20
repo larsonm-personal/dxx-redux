@@ -836,6 +836,11 @@ class MainActivity :
                             skipButton.visibility = View.GONE
                             exitButton.visibility = View.VISIBLE
                             startGameButton.visibility = View.GONE
+                            // Still try to show net events overlay during MP connecting
+                            val mpState2 = com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value
+                            if (mpState2.gameLaunchInfo != null) {
+                                netEventsOverlay?.show()
+                            }
                         }
                     } else {
                         if (touchOverlay.isActive) {

@@ -912,6 +912,9 @@ object MatchmakingService {
                     // peers share a single UDP socket (preserving UPnP/NAT pinholes).
                     val sharedSocket = candidateSocket
                     candidateSocket = null
+                    // Clear residual soTimeout from STUN/connectivity probing
+                    // so the proxy's receive loop blocks indefinitely.
+                    sharedSocket?.soTimeout = 0
 
                     // Set up localhost proxy for each peer
                     localhostProxy?.shutdown()
