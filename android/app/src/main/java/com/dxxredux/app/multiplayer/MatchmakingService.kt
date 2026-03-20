@@ -30,14 +30,18 @@ private const val TAG = "MatchmakingService"
 private const val MAX_RECONNECT_ATTEMPTS = 15
 
 /** Normalize user input like "myserver.com" into "wss://myserver.com/ws".
- *  Defaults to wss:// (TLS). Only uses ws:// if the user explicitly typed it. */
+ *  Defaults to wss:// (TLS) for public addresses, ws:// for private/LAN IPs.
+ *  Only overrides the scheme if the user didn't provide one. */
 private fun normalizeServerUrl(raw: String): String {
     var url = raw.trim()
     if (url.isEmpty()) return NetworkConstants.DEFAULT_SERVER_URL
 
-    // Add scheme if missing -- default to wss:// (TLS required)
-    if (!url.startsWith("ws://") && !url.startsWith("wss://")) {
-        url = "wss://$url"
+    val userProvidedScheme = url.startsWith("ws://") || url.startsWith("wss://")
+
+    // Add scheme if missing -- check private vs public to pick ws:// vs wss://
+    if (!userProvidedScheme) {
+        val hostOnly = url.substringBefore(':').substringBefore('/')
+        url = if (isPrivateAddress(hostOnly)) "ws://$url" else "wss://$url"
     }
 
     // Strip scheme to inspect host:port/path
@@ -45,11 +49,15 @@ private fun normalizeServerUrl(raw: String): String {
     var scheme = url.substring(0, schemeEnd)
     val rest = url.substring(schemeEnd)
 
-    // Upgrade ws:// to wss:// for non-emulator hosts (server always uses TLS).
-    // Only keep ws:// for emulator loopback aliases where the server has no TLS.
-    if (scheme == "ws://") {
+    // Upgrade ws:// to wss:// for non-private, non-emulator hosts when user typed ws://
+    // Keep ws:// for private IPs and emulator aliases (no TLS available)
+    if (scheme == "ws://" && userProvidedScheme) {
         val hostOnly = rest.substringBefore(':').substringBefore('/')
-        if (hostOnly != "10.0.2.2" && hostOnly != "localhost" && hostOnly != "127.0.0.1") {
+        if (hostOnly != "10.0.2.2" &&
+            hostOnly != "localhost" &&
+            hostOnly != "127.0.0.1" &&
+            !isPrivateAddress(hostOnly)
+        ) {
             scheme = "wss://"
         }
     }
@@ -60,12 +68,12 @@ private fun normalizeServerUrl(raw: String): String {
     val path = if (slashIdx >= 0) rest.substring(slashIdx) else ""
 
     // Add default port if none specified:
-    // LAN (private IP) -> 9000 (direct TLS on server)
-    // Public -> 443 (nginx reverse proxy)
+    // LAN (private IP with ws://) -> 9000
+    // Public (wss://) -> 443 (nginx reverse proxy)
     val withPort =
-        if (hostPort.isNotEmpty() && !hostPort.contains(':') && scheme == "wss://") {
+        if (hostPort.isNotEmpty() && !hostPort.contains(':')) {
             val defaultPort =
-                if (isPrivateAddress(hostPort)) {
+                if (scheme == "ws://") {
                     NetworkConstants.DEFAULT_LAN_WSS_PORT
                 } else {
                     NetworkConstants.DEFAULT_WSS_PORT

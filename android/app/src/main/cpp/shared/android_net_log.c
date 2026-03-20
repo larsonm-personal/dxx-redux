@@ -20,17 +20,28 @@ void android_net_log(const char *category, const char *message)
 	JNIEnv *env;
 	int attached = 0;
 
-	if (!g_jvm || !g_activity) return;
+	if (!g_jvm || !g_activity) {
+		__android_log_print(ANDROID_LOG_WARN, "DXX-NETLOG",
+		                    "android_net_log: g_jvm=%p g_activity=%p -- skipping",
+		                    (void *) g_jvm, (void *) g_activity);
+		return;
+	}
 	if ((*g_jvm)->GetEnv(g_jvm, (void **) &env, JNI_VERSION_1_6) != JNI_OK) {
-		if ((*g_jvm)->AttachCurrentThread(g_jvm, &env, NULL) != JNI_OK)
+		if ((*g_jvm)->AttachCurrentThread(g_jvm, &env, NULL) != JNI_OK) {
+			__android_log_print(ANDROID_LOG_WARN, "DXX-NETLOG",
+			                    "android_net_log: AttachCurrentThread failed");
 			return;
+		}
 		attached = 1;
 	}
 
 	jclass cls = (*env)->GetObjectClass(env, g_activity);
 	jmethodID mid = (*env)->GetMethodID(env, cls, "netLogFromNative",
 	                                    "(Ljava/lang/String;Ljava/lang/String;)V");
-	if (mid) {
+	if (!mid) {
+		__android_log_print(ANDROID_LOG_WARN, "DXX-NETLOG",
+		                    "android_net_log: GetMethodID(netLogFromNative) failed");
+	} else {
 		jstring jcat = (*env)->NewStringUTF(env, category);
 		jstring jmsg = (*env)->NewStringUTF(env, message);
 		(*env)->CallVoidMethod(env, g_activity, mid, jcat, jmsg);

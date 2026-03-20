@@ -14,8 +14,17 @@ use tracing::{info, warn};
 use crate::protocol::{LobbyInfo, CURRENT_PROTOCOL};
 use crate::ServerState;
 
-/// Run the HTTP API server.
-/// Build the HTTP API router (separated for testability).
+/// Build the public HTTP API router (no admin endpoints).
+pub fn public_router(state: Arc<ServerState>) -> Router {
+    Router::new()
+        .route("/api/v1/status", get(status))
+        .route("/api/v1/status/simple", get(status_simple))
+        .route("/api/v1/health", get(health))
+        .route("/api/v1/leaderboard", get(leaderboard_stub))
+        .with_state(state)
+}
+
+/// Build the combined public + admin router (used when no separate admin port).
 pub fn router(state: Arc<ServerState>) -> Router {
     Router::new()
         .route("/api/v1/status", get(status))
@@ -28,14 +37,42 @@ pub fn router(state: Arc<ServerState>) -> Router {
         .with_state(state)
 }
 
+/// Build admin-only router.
+pub fn admin_router(state: Arc<ServerState>) -> Router {
+    Router::new()
+        .route("/api/v1/admin/ban", axum::routing::post(admin_ban))
+        .route("/api/v1/admin/unban", axum::routing::post(admin_unban))
+        .route("/api/v1/admin/motd", axum::routing::post(admin_motd_stub))
+        .route("/api/v1/health", get(health))
+        .with_state(state)
+}
+
+/// Run the public HTTP API server.
 pub async fn run(
     addr: SocketAddr,
     state: Arc<ServerState>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let app = router(state);
+    let use_public_only = state.config.admin_http_listen_addr.is_some();
+    let app = if use_public_only {
+        public_router(state)
+    } else {
+        router(state)
+    };
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    tracing::info!(%addr, "HTTP API listening");
+    tracing::info!(%addr, public_only = use_public_only, "HTTP API listening");
+    axum::serve(listener, app).await?;
+    Ok(())
+}
+
+/// Run the admin-only HTTP API server on a separate port.
+pub async fn run_admin(
+    addr: SocketAddr,
+    state: Arc<ServerState>,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let app = admin_router(state);
+    let listener = tokio::net::TcpListener::bind(addr).await?;
+    tracing::info!(%addr, "Admin HTTP API listening");
     axum::serve(listener, app).await?;
     Ok(())
 }

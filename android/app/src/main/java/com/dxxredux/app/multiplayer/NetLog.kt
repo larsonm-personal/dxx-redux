@@ -133,7 +133,13 @@ object NetLog {
         val file = File(dir, "netlog_$stamp.txt")
         try {
             writer = BufferedWriter(FileWriter(file, true))
-            log("SYSTEM", "Log started")
+            log(
+                "SYSTEM",
+                "Log started -- build ${com.dxxredux.app.BuildInfo.GIT_COMMIT_COUNT}" +
+                    " (${com.dxxredux.app.BuildInfo.GIT_SHORT_HASH})" +
+                    " ${com.dxxredux.app.BuildInfo.BUILD_DATE}" +
+                    " ${com.dxxredux.app.BuildInfo.BUILD_TYPE}",
+            )
         } catch (e: Exception) {
             Log.e(TAG, "Failed to open log file", e)
             writer = null

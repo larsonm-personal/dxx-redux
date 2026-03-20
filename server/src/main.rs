@@ -47,6 +47,7 @@ async fn main() {
     info!(
         listen_ws = %config.ws_listen_addr,
         listen_http = %config.http_listen_addr,
+        listen_admin = config.admin_http_listen_addr.map(|a| a.to_string()).as_deref().unwrap_or("(same as http)"),
         listen_relay = %config.relay_listen_addr,
         listen_stun1 = %config.stun_listen_addr,
         listen_stun2 = %config.stun_listen_addr_alt,
@@ -83,7 +84,7 @@ async fn main() {
             }
         };
 
-    // Spawn the HTTP API server (public status + admin endpoints)
+    // Spawn the HTTP API server
     let http_state = Arc::clone(&state);
     let http_addr = state.config.http_listen_addr;
     let http_handle = tokio::spawn(async move {
@@ -91,6 +92,18 @@ async fn main() {
             error!(%e, "HTTP API server failed");
         }
     });
+
+    // Spawn admin HTTP server on a separate port (if configured)
+    let admin_handle = if let Some(admin_addr) = state.config.admin_http_listen_addr {
+        let admin_state = Arc::clone(&state);
+        Some(tokio::spawn(async move {
+            if let Err(e) = http_api::run_admin(admin_addr, admin_state).await {
+                error!(%e, "Admin HTTP API server failed");
+            }
+        }))
+    } else {
+        None
+    };
 
     // Spawn the UDP relay listener
     let relay_state = Arc::clone(&state);
@@ -143,6 +156,9 @@ async fn main() {
 
     // If the WS server exits, shut down everything
     http_handle.abort();
+    if let Some(h) = admin_handle {
+        h.abort();
+    }
     relay_handle.abort();
     periodic_handle.abort();
     for h in stun_handles {

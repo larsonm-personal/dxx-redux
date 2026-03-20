@@ -18,6 +18,11 @@
     // Admin bearer token for /api/v1/admin/* endpoints
     // admin_token: "",
 
+    // Optional separate listen address for admin-only HTTP endpoints.
+    // When set, admin routes (ban, unban, motd) move to this port and
+    // the main http_listen_addr serves only public routes.
+    // admin_http_listen_addr: "127.0.0.1:8081",
+
     // Message of the day (shown to clients on connect)
     // motd: "",
 

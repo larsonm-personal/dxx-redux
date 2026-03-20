@@ -237,6 +237,7 @@ class MainActivity :
     private var netStatsOverlay: com.dxxredux.app.multiplayer.MultiplayerStatsOverlay? = null
     private var netEventsOverlay: com.dxxredux.app.multiplayer.NetworkEventsOverlay? = null
     private var netEventsManualToggle = false
+    private var isMultiplayerGame = false
     private var lastTrackNum = -1 // for detecting track changes in polling
     private var gyroManager: GyroInputManager? = null
 
@@ -276,6 +277,7 @@ class MainActivity :
 
         // Check for multiplayer auto-join/host from the matchmaking lobby
         val mpMode = intent.getStringExtra("mp_mode")
+        isMultiplayerGame = mpMode != null
         if (mpMode != null) {
             val callsign = intent.getStringExtra("mp_callsign") ?: ""
             if (callsign.isNotEmpty()) {
@@ -815,14 +817,6 @@ class MainActivity :
                             exitButton.visibility = if (shouldShow) View.GONE else View.VISIBLE
                             // Hide net stats overlay when returning to menus
                             if (!inGame) netStatsOverlay?.hide()
-                            // Auto-show/hide network events overlay during MP connecting phase
-                            val mpState = com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value
-                            val mpConnecting = mpState.gameLaunchInfo != null && !inGame
-                            if (mpConnecting || netEventsManualToggle) {
-                                netEventsOverlay?.show()
-                            } else {
-                                netEventsOverlay?.hide()
-                            }
                             // Show "START GAME" button when host is on player selection screen
                             val hostSelecting =
                                 try {
@@ -832,6 +826,18 @@ class MainActivity :
                                 }
                             startGameButton.visibility =
                                 if (hostSelecting) View.VISIBLE else View.GONE
+                            // Auto-show/hide network events overlay during MP phases
+                            val mpState = com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value
+                            val showNetEvents =
+                                netEventsManualToggle ||
+                                    hostSelecting ||
+                                    (isMultiplayerGame && !inGame) ||
+                                    (mpState.gameLaunchInfo != null && !inGame)
+                            if (showNetEvents) {
+                                netEventsOverlay?.show()
+                            } else {
+                                netEventsOverlay?.hide()
+                            }
                         } catch (_: Exception) {
                             touchOverlay.isActive = false
                             touchOverlay.automapActive = false
@@ -840,7 +846,7 @@ class MainActivity :
                             startGameButton.visibility = View.GONE
                             // Still try to show net events overlay during MP connecting
                             val mpState2 = com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value
-                            if (mpState2.gameLaunchInfo != null || netEventsManualToggle) {
+                            if (isMultiplayerGame || mpState2.gameLaunchInfo != null || netEventsManualToggle) {
                                 netEventsOverlay?.show()
                             }
                         }

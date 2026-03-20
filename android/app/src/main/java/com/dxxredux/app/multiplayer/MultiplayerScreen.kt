@@ -146,9 +146,11 @@ private fun ServerBrowserContent(
         Spacer(Modifier.height(8.dp))
 
         // -- Connect controls --
-        if (state.status == ConnectionStatus.DISCONNECTED ||
-            state.status == ConnectionStatus.RECONNECTING
-        ) {
+        val isConnecting =
+            state.status == ConnectionStatus.CONNECTING ||
+                state.status == ConnectionStatus.AUTHENTICATING ||
+                state.status == ConnectionStatus.RECONNECTING
+        if (state.status == ConnectionStatus.DISCONNECTED || isConnecting) {
             OutlinedTextField(
                 value = serverUrl,
                 onValueChange = { serverUrl = it },
@@ -174,19 +176,29 @@ private fun ServerBrowserContent(
                         recentUrls.value = RecentAddressPrefs.SERVER_URLS.load(context)
                         MatchmakingService.connect(serverUrl, callsign)
                     },
+                    enabled = !isConnecting,
                     modifier = Modifier.weight(1f),
                 ) {
                     Text("Connect")
                 }
-                Button(onClick = {
-                    CallsignPrefs.save(context, callsign)
-                    MatchmakingStateHolder.update { it.copy(callsign = callsign) }
-                    MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.LAN) }
-                }) {
+                if (isConnecting) {
+                    OutlinedButton(onClick = { MatchmakingService.disconnect() }) {
+                        Text("Cancel")
+                    }
+                }
+                Button(
+                    onClick = {
+                        CallsignPrefs.save(context, callsign)
+                        MatchmakingStateHolder.update { it.copy(callsign = callsign) }
+                        MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.LAN) }
+                    },
+                    enabled = !isConnecting,
+                ) {
                     Text("LAN")
                 }
             }
         } else {
+            // Connected state - two rows to avoid portrait crowding
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth(),
@@ -197,6 +209,15 @@ private fun ServerBrowserContent(
                 Button(onClick = { showCreateDialog = true }) {
                     Text("Create Lobby")
                 }
+                OutlinedButton(onClick = { MatchmakingService.disconnect() }) {
+                    Text("Disconnect")
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 val pendingCount = state.pendingFriendRequests.size
                 val friendLabel = if (pendingCount > 0) "Friends ($pendingCount)" else "Friends"
                 Button(onClick = {
@@ -209,9 +230,6 @@ private fun ServerBrowserContent(
                     MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.LAN) }
                 }) {
                     Text("LAN")
-                }
-                OutlinedButton(onClick = { MatchmakingService.disconnect() }) {
-                    Text("Disconnect")
                 }
             }
         }

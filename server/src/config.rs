@@ -49,6 +49,10 @@ pub struct ServerConfig {
     pub max_relay_sessions: usize,
     /// Maximum concurrent WebSocket connections. 0 = unlimited.
     pub max_connections: usize,
+    /// Optional separate listen address for admin-only HTTP endpoints.
+    /// When set, admin routes are served on this port and the main HTTP port
+    /// serves only public routes. When None, all routes are on the main port.
+    pub admin_http_listen_addr: Option<SocketAddr>,
 }
 
 /// JSON5 config file schema. All fields optional; env vars override file values.
@@ -75,6 +79,7 @@ struct ConfigFile {
     pow_difficulty: Option<u8>,
     max_relay_sessions: Option<usize>,
     max_connections: Option<usize>,
+    admin_http_listen_addr: Option<String>,
 }
 
 impl ServerConfig {
@@ -179,6 +184,20 @@ impl ServerConfig {
             pow_difficulty: pow,
             max_relay_sessions: max_relay,
             max_connections: max_conn,
+            admin_http_listen_addr: {
+                let raw = resolve(
+                    "ADMIN_HTTP_LISTEN_ADDR",
+                    &file_cfg.admin_http_listen_addr,
+                    "",
+                );
+                if raw.is_empty() {
+                    None
+                } else {
+                    Some(raw.parse().unwrap_or_else(|e| {
+                        panic!("ADMIN_HTTP_LISTEN_ADDR is not a valid socket address: {e}");
+                    }))
+                }
+            },
         }
     }
 

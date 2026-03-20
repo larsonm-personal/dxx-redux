@@ -54,6 +54,7 @@ impl TestServer {
             pow_difficulty: 8, // low difficulty for fast tests
             max_relay_sessions: 100,
             max_connections: 0, // unlimited for tests
+            admin_http_listen_addr: None,
         };
 
         let state = build_state(config).expect("failed to build state");
@@ -2610,6 +2611,7 @@ async fn auth_ok_includes_stun_addrs_when_configured() {
         pow_difficulty: 8,
         max_relay_sessions: 100,
         max_connections: 0,
+        admin_http_listen_addr: None,
     };
 
     let state = build_state(config).expect("build state");
