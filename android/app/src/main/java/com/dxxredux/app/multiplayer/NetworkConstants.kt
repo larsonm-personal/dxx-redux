@@ -9,6 +9,10 @@ object NetworkConstants {
     // Default server URL for emulator (10.0.2.2 is the host loopback alias)
     const val DEFAULT_SERVER_URL: String = "ws://10.0.2.2:9000/ws"
 
+    // Default WebSocket port and path (used when normalizing bare IP/hostname input)
+    const val DEFAULT_WS_PORT: Int = 9000
+    const val DEFAULT_WS_PATH: String = "/ws"
+
     // Reconnection
     const val RECONNECT_BASE_DELAY_MS: Long = 1000
     const val RECONNECT_MAX_DELAY_MS: Long = 30000

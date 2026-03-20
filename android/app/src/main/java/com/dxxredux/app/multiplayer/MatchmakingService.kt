@@ -22,6 +22,40 @@ import kotlin.math.min
 private const val TAG = "MatchmakingService"
 private const val MAX_RECONNECT_ATTEMPTS = 15
 
+/** Normalize user input like "192.168.1.5" into "ws://192.168.1.5:9000/ws". */
+private fun normalizeServerUrl(raw: String): String {
+    var url = raw.trim()
+    if (url.isEmpty()) return NetworkConstants.DEFAULT_SERVER_URL
+
+    // Add scheme if missing
+    if (!url.startsWith("ws://") && !url.startsWith("wss://")) {
+        url = "ws://$url"
+    }
+
+    // Strip scheme to inspect host:port/path
+    val schemeEnd = url.indexOf("://") + 3
+    val scheme = url.substring(0, schemeEnd)
+    val rest = url.substring(schemeEnd)
+
+    // Split into host(:port) and path
+    val slashIdx = rest.indexOf('/')
+    val hostPort = if (slashIdx >= 0) rest.substring(0, slashIdx) else rest
+    val path = if (slashIdx >= 0) rest.substring(slashIdx) else ""
+
+    // Add default port if none specified (and host isn't empty)
+    val withPort =
+        if (hostPort.isNotEmpty() && !hostPort.contains(':')) {
+            "$hostPort:${NetworkConstants.DEFAULT_WS_PORT}"
+        } else {
+            hostPort
+        }
+
+    // Add default path if none specified
+    val withPath = if (path.isEmpty()) NetworkConstants.DEFAULT_WS_PATH else path
+
+    return "$scheme$withPort$withPath"
+}
+
 object MatchmakingService {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val state get() = MatchmakingStateHolder
@@ -100,18 +134,19 @@ object MatchmakingService {
         reconnectJob?.cancel()
         webSocket?.close(NetworkConstants.CLOSE_NORMAL, null)
 
+        val normalizedUrl = normalizeServerUrl(serverUrl)
         state.update {
             it.copy(
                 status = ConnectionStatus.CONNECTING,
-                serverUrl = serverUrl,
+                serverUrl = normalizedUrl,
                 callsign = callsign,
                 errorMessage = null,
             )
         }
-        state.appendLog("Connecting to $serverUrl ...")
-        NetLog.log("CONNECT", "Connecting to $serverUrl as '$callsign'")
+        state.appendLog("Connecting to $normalizedUrl ...")
+        NetLog.log("CONNECT", "Connecting to $normalizedUrl as '$callsign'")
 
-        val request = Request.Builder().url(serverUrl).build()
+        val request = Request.Builder().url(normalizedUrl).build()
         webSocket = client.newWebSocket(request, Listener(callsign))
     }
 
