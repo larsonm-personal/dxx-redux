@@ -47,6 +47,29 @@ data class RelayInfo(
     val sessionToken: String,
 )
 
+/** ICE negotiation phase -- tracks progress through STUN/UPnP/probe steps. */
+enum class IcePhase {
+    IDLE,
+    STUN_DISCOVERY,
+    STUN_COMPLETE,
+    PROBING,
+    COMPLETE,
+    FAILED,
+}
+
+/** Per-lobby ICE negotiation status shown in the lobby UI. */
+data class IceStatus(
+    val phase: IcePhase = IcePhase.IDLE,
+    val stunNatType: String? = null,
+    val stunCandidateCount: Int = 0,
+    val upnpMapped: Boolean = false,
+    val upnpAddr: String? = null,
+    val peerCandidatesReceived: Int = 0,
+    val probeResult: String? = null,
+    val probeRttMs: Int? = null,
+    val errorMessage: String? = null,
+)
+
 /** Game launch info received from the server in GAME_STARTING. */
 data class GameLaunchInfo(
     val game: String,
@@ -84,6 +107,7 @@ data class MatchmakingState(
     val connectivityPairs: List<CandidatePair> = emptyList(),
     val relayInfo: RelayInfo? = null,
     val stunAddrs: List<String> = emptyList(),
+    val iceStatus: IceStatus = IceStatus(),
     val gameLaunchInfo: GameLaunchInfo? = null,
     val friends: List<FriendInfo> = emptyList(),
     val pendingFriendRequests: List<FriendRequestReceivedMsg> = emptyList(),

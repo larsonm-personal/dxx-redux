@@ -145,6 +145,38 @@ class NetworkEventsOverlay(
             }
         }
 
+        // ICE status summary
+        val ice = state.iceStatus
+        if (ice.phase != IcePhase.IDLE) {
+            val iceLabel =
+                when (ice.phase) {
+                    IcePhase.STUN_DISCOVERY -> "ICE: discovering..."
+                    IcePhase.STUN_COMPLETE -> "ICE: STUN done (${ice.stunNatType}, ${ice.stunCandidateCount} cands)"
+                    IcePhase.PROBING -> "ICE: probing..."
+                    IcePhase.COMPLETE -> {
+                        val rtt = ice.probeRttMs?.let { " ${it}ms" } ?: ""
+                        "ICE: ${ice.probeResult ?: "done"}$rtt"
+                    }
+                    IcePhase.FAILED -> "ICE: FAILED - ${ice.errorMessage ?: "unknown"}"
+                    IcePhase.IDLE -> "ICE: idle"
+                }
+            val iceColor =
+                when (ice.phase) {
+                    IcePhase.COMPLETE -> if (ice.probeResult == "relay") 0xFFFFAA44u.toInt() else 0xFF44FF44u.toInt()
+                    IcePhase.FAILED -> 0xFFFF4444u.toInt()
+                    else -> 0xFFAAAAFFu.toInt()
+                }
+            lines.add(LineEntry(iceLabel, LineType.VALUE, iceColor))
+        }
+
+        // Recent status log (C-side MPDIAG + Kotlin events)
+        if (state.statusLog.isNotEmpty()) {
+            lines.add(LineEntry("Log:", LineType.LABEL))
+            for (msg in state.statusLog.takeLast(STATUS_LOG_LINES)) {
+                lines.add(LineEntry("  ${msg.take(MAX_LOG_LINE_LEN)}", LineType.VALUE))
+            }
+        }
+
         // Panel sizing
         val panelW = (w * 0.32f).coerceIn(160f * density, w * 0.45f)
         val panelH = pad * 2 + lineH * lines.size
@@ -190,5 +222,7 @@ class NetworkEventsOverlay(
 
     companion object {
         const val POLL_INTERVAL_MS = 1000L
+        private const val STATUS_LOG_LINES = 8
+        private const val MAX_LOG_LINE_LEN = 60
     }
 }
