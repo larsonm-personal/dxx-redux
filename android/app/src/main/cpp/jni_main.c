@@ -441,3 +441,37 @@ Java_com_dxxredux_app_MainActivity_nativeGetMultiplayerPings(JNIEnv *env, jobjec
 		(*env)->SetIntArrayRegion(env, result, 0, MP_SIZE, buf);
 	return result;
 }
+
+/* -- Multiplayer packet stats for network stats overlay --------
+ * Returns an int array:
+ *   [0]            = UDP_num_sendto  (total packets sent by engine)
+ *   [1]            = UDP_num_recvfrom (total packets received by engine)
+ *   [2..9]         = loss[0..7]   outbound loss % per player slot (0-100)
+ *   [10..17]       = rx_loss[0..7] inbound loss % per player slot (0-100)
+ *
+ * Shared constant: MAX_PLAYERS = 8 (duplicated in MultiplayerStatsOverlay.kt)
+ */
+JNIEXPORT jintArray JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetMultiplayerPacketStats(JNIEnv *env, jobject thiz)
+{
+	extern int UDP_num_sendto;
+	extern int UDP_num_recvfrom;
+
+	enum { PS_SIZE = 18 }; /* 2 header + 8 loss + 8 rx_loss */
+	jint buf[PS_SIZE];
+	memset(buf, 0, sizeof(buf));
+
+	buf[0] = (jint) UDP_num_sendto;
+	buf[1] = (jint) UDP_num_recvfrom;
+
+	int i;
+	for (i = 0; i < MAX_PLAYERS; i++) {
+		buf[2 + i] = (jint) Netgame.players[i].loss;
+		buf[10 + i] = (jint) Netgame.players[i].rx_loss;
+	}
+
+	jintArray result = (*env)->NewIntArray(env, PS_SIZE);
+	if (result)
+		(*env)->SetIntArrayRegion(env, result, 0, PS_SIZE, buf);
+	return result;
+}

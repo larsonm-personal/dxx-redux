@@ -182,6 +182,8 @@ class MainActivity :
 
     external fun nativeGetMultiplayerPings(): IntArray
 
+    external fun nativeGetMultiplayerPacketStats(): IntArray
+
     external fun nativeSetAutoJoin(
         hostAddr: String,
         hostPort: Int,
@@ -571,6 +573,13 @@ class MainActivity :
                         null
                     }
                 }
+                packetStatsProvider = {
+                    try {
+                        nativeGetMultiplayerPacketStats()
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
                 proxyStatsProvider = {
                     com.dxxredux.app.multiplayer.MatchmakingService
                         .getProxyStats()
@@ -578,6 +587,7 @@ class MainActivity :
                 connectionInfoProvider = {
                     com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value.connectionInfo
                 }
+                localIp = resolveLocalIp()
             }
         netStatsOverlay = statsOverlay
         frame.addView(
@@ -780,6 +790,8 @@ class MainActivity :
                             if (shouldShow && !automap) pollTrackLabel()
                             // Hide standalone exit when touch overlay is active (admin tray has Exit)
                             exitButton.visibility = if (shouldShow) View.GONE else View.VISIBLE
+                            // Hide net stats overlay when returning to menus
+                            if (!inGame) netStatsOverlay?.hide()
                             // Show "START GAME" button when host is on player selection screen
                             val hostSelecting =
                                 try {
@@ -1012,6 +1024,23 @@ class MainActivity :
     }
 
     // ── Keyboard & Gamepad buttons ────────────────────────────
+
+    /** Resolve the best local IP for display in the net stats overlay. */
+    private fun resolveLocalIp(): String? =
+        try {
+            val ifaces =
+                java.net.NetworkInterface
+                    .getNetworkInterfaces()
+                    ?.toList() ?: emptyList()
+            ifaces
+                .filter { it.isUp && !it.isLoopback }
+                .flatMap { it.inetAddresses.toList() }
+                .filterIsInstance<java.net.Inet4Address>()
+                .firstOrNull()
+                ?.hostAddress
+        } catch (_: Exception) {
+            null
+        }
 
     /** Open the setup screen (game pauses automatically via onStop). */
     private fun openSetupScreen() {

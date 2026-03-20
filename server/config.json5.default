@@ -1,0 +1,52 @@
+// dxx-matchmaking server -- production default configuration
+// Copy to server_config.json5 and edit as needed.
+// Environment variables override values in this file.
+{
+    // Network listeners
+    ws_listen_addr: "0.0.0.0:9000",
+    http_listen_addr: "0.0.0.0:8080",
+    relay_listen_addr: "0.0.0.0:9001",
+
+    // STUN server listeners (for NAT discovery)
+    stun_listen_addr: "0.0.0.0:3478",
+    stun_listen_addr_alt: "0.0.0.0:3479",
+
+    // Database
+    db_path: "dxx_matchmaking.db",
+
+    // Logging -- daily JSON rotation to this directory (also logs to journald via stdout)
+    log_dir: "/var/log/dxx-matchmaking",
+
+    // TLS -- for Let's Encrypt, uncomment and set your domain:
+    // tls_cert_path: "/etc/letsencrypt/live/YOUR_DOMAIN/fullchain.pem",
+    // tls_key_path: "/etc/letsencrypt/live/YOUR_DOMAIN/privkey.pem",
+
+    // Public addresses sent to clients (set to your server's public IP)
+    // relay_public_addr: "YOUR_PUBLIC_IP:9001",
+    // stun_public_addrs: "YOUR_PUBLIC_IP:3478,YOUR_PUBLIC_IP:3479",
+
+    // Google Play Games Services (GPGS) OAuth2
+    // google_client_id: "",
+    // google_client_secret: "",
+
+    // Admin bearer token for /api/v1/admin/* endpoints
+    // admin_token: "CHANGE_ME",
+
+    // Message of the day (shown to clients on connect)
+    // motd: "",
+
+    // URL shown when rejecting old clients
+    // update_url: "",
+
+    // Proof-of-work difficulty (leading zero bits for keypair registration)
+    pow_difficulty: 20,
+
+    // Maximum concurrent relay sessions (0 = unlimited)
+    max_relay_sessions: 100,
+
+    // Maximum concurrent WebSocket connections (0 = unlimited)
+    max_connections: 500,
+
+    // Dev/test mode -- NEVER enable in production
+    // skip_gpgs_verify: false,
+}
