@@ -1097,6 +1097,10 @@ int net_udp_game_connect(direct_join *dj)
 	// Timeout after 10 seconds
 	if (timer_query() >= dj->start_time + (F1_0*10))
 	{
+		{
+			struct sockaddr_in *ain = (struct sockaddr_in *)&dj->host_addr;
+			MPDIAG("game_connect: TIMEOUT after 10s to %s:%d (valid=%d)\n", inet_ntoa(ain->sin_addr), (int)SWAPSHORT(ain->sin_port), Netgame.protocol.udp.valid);
+		}
 		nm_messagebox(TXT_ERROR,1,TXT_OK,"No response by host.\n\nPossible reasons:\n* No game on this IP (anymore)\n* Port of Host not open\n  or different\n* Host uses a game version\n  I do not understand");
 		dj->connecting = 0;
 		return 0;
@@ -1104,6 +1108,7 @@ int net_udp_game_connect(direct_join *dj)
 	
 	if (Netgame.protocol.udp.valid == -1)
 	{
+		MPDIAG("game_connect: VERSION MISMATCH host=%d.%d.%d proto=%d ours=%s proto=%d\n", Netgame.protocol.udp.program_iver[0], Netgame.protocol.udp.program_iver[1], Netgame.protocol.udp.program_iver[2], Netgame.protocol.udp.program_iver[3], VERSION, MULTI_PROTO_VERSION);
 		nm_messagebox(TXT_ERROR,1,TXT_OK,"Version mismatch! Cannot join Game.\nHost game version: %i.%i.%i\nHost game protocol: %i\nYour game version: %s\nYour game protocol: %i",Netgame.protocol.udp.program_iver[0],Netgame.protocol.udp.program_iver[1],Netgame.protocol.udp.program_iver[2],Netgame.protocol.udp.program_iver[3],VERSION, MULTI_PROTO_VERSION);
 		dj->connecting = 0;
 		return 0;
@@ -1111,6 +1116,10 @@ int net_udp_game_connect(direct_join *dj)
 	
 	if (timer_query() >= dj->last_time + F1_0)
 	{
+		{
+			struct sockaddr_in *ain = (struct sockaddr_in *)&dj->host_addr;
+			MPDIAG("game_connect: sending GAME_INFO_REQ to %s:%d (phase=%d valid=%d sock=%d)\n", inet_ntoa(ain->sin_addr), (int)SWAPSHORT(ain->sin_port), dj->connecting, Netgame.protocol.udp.valid, UDP_Socket[0]);
+		}
 		net_udp_request_game_info(dj->host_addr, 0);
 		dj->last_time = timer_query();
 	}
@@ -1120,9 +1129,12 @@ int net_udp_game_connect(direct_join *dj)
 	if (Netgame.protocol.udp.valid != 1)
 		return 0;		// still trying to connect
 
+	MPDIAG("game_connect: got valid GAME_INFO response, phase=%d game='%s' players=%d/%d status=%d\n", dj->connecting, Netgame.game_name, Netgame.numconnected, Netgame.max_numplayers, Netgame.game_status);
+
 	if (dj->connecting == 1)
 	{
 		int show_info_result = net_udp_show_game_info();
+		MPDIAG("game_connect: show_game_info returned %d\n", show_info_result);
 		if (!show_info_result) // show info menu and check if we join
 		{
 			dj->connecting = 0;
@@ -1141,11 +1153,13 @@ int net_udp_game_connect(direct_join *dj)
 				dj->join_as_obs = 0;
 			}
 
+			MPDIAG("game_connect: re-requesting game info (phase 2) obs=%d\n", dj->join_as_obs);
 			return 0;
 		}
 	}
 		
 	dj->connecting = 0;
+	MPDIAG("game_connect: proceeding to do_join_game obs=%d\n", dj->join_as_obs);
 
 	return net_udp_do_join_game(dj->join_as_obs);
 }
@@ -1162,12 +1176,18 @@ static int manual_join_game_handler(newmenu *menu, d_event *event, direct_join *
 		case EVENT_KEY_COMMAND:
 			if (dj->connecting && event_key_get(event) == KEY_ESC)
 			{
+				MPDIAG("manual_join: user cancelled (ESC)\n");
 				dj->connecting = 0;
 				items[6].text = blank;
+#ifdef __ANDROID__
+				/* android port: close the menu so a queued SDL_QUIT can
+				 * propagate (the exit button injects ESC + SDL_QUIT). */
+				window_close(newmenu_get_window(menu));
+#endif
 				return 1;
 			}
 			break;
-			
+
 		case EVENT_IDLE:
 			if (dj->connecting)
 			{
@@ -1182,29 +1202,38 @@ static int manual_join_game_handler(newmenu *menu, d_event *event, direct_join *
 		{
 			int sockres = -1;
 
+			MPDIAG("manual_join: addr='%s' port='%s' myport='%s'\n", dj->addrbuf, dj->portbuf, UDP_MyPort);
 			net_udp_init(); // yes, redundant call but since the menu does not know any better it would allow any IP entry as long as Netgame-entry looks okay... my head hurts...
 			
 			if ((atoi(UDP_MyPort)) <= 1024 ||(atoi(UDP_MyPort)) > 65535)
 			{
 				snprintf (UDP_MyPort, sizeof(UDP_MyPort), "%d", UDP_PORT_DEFAULT);
+				MPDIAG("manual_join: illegal port, reset to %d\n", UDP_PORT_DEFAULT);
 				nm_messagebox(TXT_ERROR, 1, TXT_OK, "Illegal port");
 				return 1;
 			}
 			
 			sockres = udp_open_socket(0, atoi(UDP_MyPort));
+			MPDIAG("manual_join: udp_open_socket(%s) = %d, fd=%d\n", UDP_MyPort, sockres, UDP_Socket[0]);
 			
 			if (sockres != 0)
 			{
+				MPDIAG("manual_join: socket open FAILED\n");
 				return 1;
 			}
 			
 			// Resolve address
 			if (udp_dns_filladdr(dj->addrbuf, atoi(dj->portbuf), &dj->host_addr) < 0)
 			{
+				MPDIAG("manual_join: DNS resolve FAILED for '%s'\n", dj->addrbuf);
 				return 1;
 			}
 			else
 			{
+				{
+					struct sockaddr_in *ain = (struct sockaddr_in *)&dj->host_addr;
+					MPDIAG("manual_join: resolved to %s:%d\n", inet_ntoa(ain->sin_addr), (int)SWAPSHORT(ain->sin_port));
+				}
 				multi_new_game();
 				net_udp_reset_connection_statuses();
 				N_players = 0;
@@ -1216,6 +1245,7 @@ static int manual_join_game_handler(newmenu *menu, d_event *event, direct_join *
 				
 				dj->connecting = 1;
 				items[6].text = connecting_txt;
+				MPDIAG("manual_join: connecting started, will send GAME_INFO_REQ every 1s\n");
 				return 1;
 			}
 
@@ -3498,8 +3528,12 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 			break;
 		
 		case UPID_GAME_INFO:
+		{
+			struct sockaddr_in *ain = (struct sockaddr_in *)&sender_addr;
+			MPDIAG("rx UPID_GAME_INFO from %s:%d len=%d\n", inet_ntoa(ain->sin_addr), (int)SWAPSHORT(ain->sin_port), length);
 			net_udp_process_game_info(data, length, sender_addr, 0, 0);
 			break;
+		}
 
 		case UPID_GAME_INFO_LITE_REQ:		
 			if (net_udp_check_game_info_request(data, 1) == 1)

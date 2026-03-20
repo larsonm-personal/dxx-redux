@@ -23,9 +23,11 @@ class MultiplayerStatsOverlay(
 ) : View(context) {
     // Data providers set by MainActivity
     var pingProvider: (() -> IntArray?)? = null
+    var packetStatsProvider: (() -> IntArray?)? = null
     var proxyStatsProvider: (() -> List<PeerProxyStats>)? = null
     var connectionInfoProvider: (() -> List<PeerConnectionInfoMsg>)? = null
     var isLan = false
+    var localIp: String? = null
 
     private val handler = Handler(Looper.getMainLooper())
     private var polling = false
@@ -48,10 +50,19 @@ class MultiplayerStatsOverlay(
     private var lastProxyStats = emptyList<PeerProxyStats>()
     private var lastConnectionInfo = emptyList<PeerConnectionInfoMsg>()
 
+    // Engine-side packet counters (from JNI)
+    private var enginePktSent = 0
+    private var enginePktRecv = 0
+    private val playerLoss = IntArray(MAX_PLAYERS) // outbound loss % per slot
+    private val playerRxLoss = IntArray(MAX_PLAYERS) // inbound loss % per slot
+
+    // Loss history: ring buffer parallel to pingHistory (max loss% across peers per sample)
+    private val lossHistory = IntArray(GRAPH_SAMPLES)
+
     // Paints
     private val bgPaint =
         Paint().apply {
-            color = 0xCC000000.toInt()
+            color = 0x66000000
             style = Paint.Style.FILL
         }
     private val textPaint =
@@ -66,7 +77,7 @@ class MultiplayerStatsOverlay(
         }
     private val graphBgPaint =
         Paint().apply {
-            color = 0x44000000
+            color = 0x22000000
             style = Paint.Style.FILL
         }
     private val graphLinePaint =
@@ -81,6 +92,11 @@ class MultiplayerStatsOverlay(
             color = 0x33FFFFFF
             style = Paint.Style.STROKE
             strokeWidth = 1f
+        }
+    private val lossDotPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xFFFF4444u.toInt()
+            style = Paint.Style.FILL
         }
 
     private val pollRunnable =
@@ -118,6 +134,11 @@ class MultiplayerStatsOverlay(
         emaInitialized = false
         pingEma = 0f
         playerPing.fill(0)
+        playerLoss.fill(0)
+        playerRxLoss.fill(0)
+        lossHistory.fill(0)
+        enginePktSent = 0
+        enginePktRecv = 0
     }
 
     private fun pollStats() {
@@ -141,9 +162,18 @@ class MultiplayerStatsOverlay(
             }
             if (peerCount > 0) {
                 val avgPing = pingSum / peerCount
-                // Ring buffer
-                pingHistory[pingHistoryIndex] = avgPing
-                pingHistoryIndex = (pingHistoryIndex + 1) % GRAPH_SAMPLES
+                // Ring buffer -- ping
+                val idx = pingHistoryIndex
+                pingHistory[idx] = avgPing
+                // Ring buffer -- max loss% across peers for this sample
+                var maxLoss = 0
+                for (i in 0 until MAX_PLAYERS) {
+                    if (i != playerNum && i < nPlayers) {
+                        maxLoss = maxOf(maxLoss, playerLoss[i], playerRxLoss[i])
+                    }
+                }
+                lossHistory[idx] = maxLoss
+                pingHistoryIndex = (idx + 1) % GRAPH_SAMPLES
                 if (pingHistoryCount < GRAPH_SAMPLES) pingHistoryCount++
                 // EMA
                 if (!emaInitialized) {
@@ -152,6 +182,22 @@ class MultiplayerStatsOverlay(
                 } else {
                     pingEma = EMA_ALPHA * avgPing + (1f - EMA_ALPHA) * pingEma
                 }
+            }
+        }
+
+        // Engine-side packet stats (always available via JNI)
+        val pktStats =
+            try {
+                packetStatsProvider?.invoke()
+            } catch (_: Exception) {
+                null
+            }
+        if (pktStats != null && pktStats.size >= 18) {
+            enginePktSent = pktStats[0]
+            enginePktRecv = pktStats[1]
+            for (i in 0 until MAX_PLAYERS) {
+                playerLoss[i] = pktStats[2 + i]
+                playerRxLoss[i] = pktStats[10 + i]
             }
         }
 
@@ -195,8 +241,16 @@ class MultiplayerStatsOverlay(
             } else {
                 0
             }
-        // Title + packets + avg ping + per-peer pings + connections + graph
-        val contentLines = 1 + 1 + 1 + peerCount + connLines
+        // Compute max loss across peers for the loss line
+        var maxLossNow = 0
+        for (i in 0 until MAX_PLAYERS) {
+            if (i != playerNum && i < nPlayers) {
+                maxLossNow = maxOf(maxLossNow, playerLoss[i], playerRxLoss[i])
+            }
+        }
+        val hasLoss = maxLossNow > 0
+        // Title + packets + loss(opt) + avg ping + per-peer pings + connections + graph
+        val contentLines = 1 + 1 + (if (hasLoss) 1 else 0) + 1 + peerCount + connLines
         val panelH = pad * 2 + lineH * contentLines + graphH + pad
         val panelW = (w * 0.3f).coerceIn(180f * density, w * 0.45f)
 
@@ -213,21 +267,41 @@ class MultiplayerStatsOverlay(
 
         var y = panelTop + pad + baseTextSize
 
-        // Title
+        // Title + IP right-aligned
         textPaint.color = Color.WHITE
         canvas.drawText("NET STATS", panelLeft + pad, y, textPaint)
+        localIp?.let { ip ->
+            labelPaint.color = 0xFFAAAAAAu.toInt()
+            labelPaint.textSize = baseTextSize * 0.75f
+            val ipW = labelPaint.measureText(ip)
+            canvas.drawText(ip, panelLeft + panelW - pad - ipW, y, labelPaint)
+            labelPaint.textSize = baseTextSize * 0.85f
+        }
         y += lineH
 
-        // Packet totals
-        val totalSent = lastProxyStats.sumOf { it.packetsSent }
-        val totalRecv = lastProxyStats.sumOf { it.packetsReceived }
+        // Packet totals (engine counters, always available)
         labelPaint.color = 0xFFAAAAAAu.toInt()
-        if (totalSent > 0 || totalRecv > 0) {
-            canvas.drawText("Pkts: ${totalSent}tx / ${totalRecv}rx", panelLeft + pad, y, labelPaint)
+        val proxySent = lastProxyStats.sumOf { it.packetsSent }
+        val proxyRecv = lastProxyStats.sumOf { it.packetsReceived }
+        val hasProxy = proxySent > 0 || proxyRecv > 0
+        if (enginePktSent > 0 || enginePktRecv > 0) {
+            val base = "Pkts: ${enginePktSent}tx/${enginePktRecv}rx"
+            val suffix = if (hasProxy) " p:$proxySent/$proxyRecv" else ""
+            canvas.drawText(base + suffix, panelLeft + pad, y, labelPaint)
+        } else if (hasProxy) {
+            canvas.drawText("Pkts: ${proxySent}tx/${proxyRecv}rx", panelLeft + pad, y, labelPaint)
         } else {
             canvas.drawText("Pkts: --", panelLeft + pad, y, labelPaint)
         }
         y += lineH
+
+        // Loss line (only when loss detected)
+        if (hasLoss) {
+            labelPaint.color = 0xFFFF4444u.toInt()
+            canvas.drawText("Loss: $maxLossNow%", panelLeft + pad, y, labelPaint)
+            labelPaint.color = 0xFFAAAAAAu.toInt()
+            y += lineH
+        }
 
         // Average ping
         val emaMs = if (emaInitialized) pingEma.toInt() else 0
@@ -254,7 +328,8 @@ class MultiplayerStatsOverlay(
             }
         } else if (isLan) {
             labelPaint.color = 0xFFAAAAAAu.toInt()
-            canvas.drawText("Mode: LAN", panelLeft + pad, y, labelPaint)
+            val mode = if (lastProxyStats.isNotEmpty()) "LAN (proxy)" else "LAN (direct)"
+            canvas.drawText("Mode: $mode", panelLeft + pad, y, labelPaint)
             y += lineH
         }
 
@@ -279,7 +354,7 @@ class MultiplayerStatsOverlay(
             canvas.drawLine(graphLeft, gridY, graphRight, gridY, graphGridPaint)
         }
 
-        // Draw ping history line
+        // Draw ping history line (right-aligned: newest sample at right edge)
         if (pingHistoryCount >= 2) {
             val count = pingHistoryCount
             val startIdx = pingHistoryIndex
@@ -292,7 +367,7 @@ class MultiplayerStatsOverlay(
             for (j in 0 until count) {
                 val ringIdx = (startIdx - count + j + GRAPH_SAMPLES) % GRAPH_SAMPLES
                 val ms = pingHistory[ringIdx].coerceAtMost(PING_CAP_MS)
-                val x = graphLeft + (j.toFloat() / (GRAPH_SAMPLES - 1)) * actualGraphW
+                val x = graphLeft + ((GRAPH_SAMPLES - count + j).toFloat() / (GRAPH_SAMPLES - 1)) * actualGraphW
                 val gy = graphBottom - (ms.toFloat() / PING_CAP_MS) * graphH
                 // Color each segment
                 if (j > 0) {
@@ -302,6 +377,16 @@ class MultiplayerStatsOverlay(
                 }
                 prevX = x
                 prevY = gy
+            }
+
+            // Red dots at graph bottom for samples with packet loss
+            val dotR = 3f * density
+            for (j in 0 until count) {
+                val ringIdx = (startIdx - count + j + GRAPH_SAMPLES) % GRAPH_SAMPLES
+                if (lossHistory[ringIdx] > 0) {
+                    val x = graphLeft + ((GRAPH_SAMPLES - count + j).toFloat() / (GRAPH_SAMPLES - 1)) * actualGraphW
+                    canvas.drawCircle(x, graphBottom - dotR - 1f, dotR, lossDotPaint)
+                }
             }
         }
 
