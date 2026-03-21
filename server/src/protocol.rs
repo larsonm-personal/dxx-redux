@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
+use serde_json::Value as JsonValue;
 use uuid::Uuid;
 
 // -- Protocol version constants --
@@ -9,6 +10,9 @@ use uuid::Uuid;
 // constant in NetworkConstants.kt.
 pub const CURRENT_PROTOCOL: u32 = 1;
 pub const MIN_CLIENT_PROTOCOL: u32 = 1;
+
+/// Maximum serialized size of a game_info JSON object (5 KB).
+pub const GAME_INFO_MAX_BYTES: usize = 5 * 1024;
 
 /// Maximum serialized size of a game_info JSON object (5 KB).
 pub const GAME_INFO_MAX_BYTES: usize = 5 * 1024;
@@ -167,6 +171,10 @@ fn default_game_info() -> JsonValue {
     serde_json::json!({})
 }
 
+fn default_game_info() -> JsonValue {
+    serde_json::json!({})
+}
+
 // -- Server -> Client messages --
 
 #[derive(Debug, Serialize, Clone)]
@@ -235,6 +243,8 @@ pub enum ServerMessage {
         game: String,
         your_slot: u8,
         max_players: u8,
+        /// Extensible game config from the lobby (mission, mode, difficulty, etc.)
+        game_info: JsonValue,
         /// Extensible game config from the lobby (mission, mode, difficulty, etc.)
         game_info: JsonValue,
         peers: Vec<PeerAssignment>,
@@ -335,6 +345,22 @@ pub enum ServerMessage {
     /// Sent to host after late-join ICE completes. Host adds joiner to proxy.
     #[serde(rename = "LATE_JOIN_APPROVED")]
     LateJoinApproved { peer: PeerAssignment },
+
+    // -- Late-join (mid-game) ICE messages --
+
+    /// Sent to host when a joiner needs NAT holepunching.
+    /// Host should send blind probes from shared socket and enable probe echo.
+    #[serde(rename = "LATE_JOIN_PROBE")]
+    LateJoinProbe {
+        joiner_id: Uuid,
+        joiner_callsign: String,
+        /// Addresses to send blind probes to (opens NAT pinholes from shared socket).
+        probe_addrs: Vec<String>,
+    },
+
+    /// Sent to host after late-join ICE completes. Host adds joiner to proxy.
+    #[serde(rename = "LATE_JOIN_APPROVED")]
+    LateJoinApproved { peer: PeerAssignment },
 }
 
 // -- Supporting types --
@@ -366,6 +392,13 @@ pub struct LobbyInfo {
     pub host_ping_ms: Option<u32>,
     pub has_code: bool,
     pub verified_only: bool,
+    /// Extensible game config (mission, mode, difficulty, level_num, etc.)
+    pub game_info: JsonValue,
+    /// "waiting" or "in_progress"
+    pub lobby_state: String,
+    /// Current level number reported by host (only for in_progress)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub current_level: Option<i32>,
     /// Extensible game config (mission, mode, difficulty, level_num, etc.)
     pub game_info: JsonValue,
     /// "waiting" or "in_progress"
