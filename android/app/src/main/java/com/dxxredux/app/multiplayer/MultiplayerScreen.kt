@@ -202,7 +202,7 @@ private fun ServerBrowserContent(
                 }
             }
         } else {
-            // Connected state - two rows to avoid portrait crowding
+            // Connected state - three rows to avoid portrait crowding
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth(),
@@ -213,9 +213,10 @@ private fun ServerBrowserContent(
                 Button(onClick = { showCreateDialog = true }) {
                     Text("Create Lobby")
                 }
-                OutlinedButton(onClick = { MatchmakingService.disconnect() }) {
-                    Text("Disconnect")
-                }
+            }
+            Spacer(Modifier.height(4.dp))
+            OutlinedButton(onClick = { MatchmakingService.disconnect() }) {
+                Text("Disconnect")
             }
             Spacer(Modifier.height(4.dp))
             Row(

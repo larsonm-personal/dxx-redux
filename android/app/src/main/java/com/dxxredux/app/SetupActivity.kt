@@ -649,6 +649,8 @@ class SetupActivity : ComponentActivity() {
             mpIntent.putExtra("mp_my_port", NetworkConstants.ENGINE_PORT)
         }
         if (info.isLan) mpIntent.putExtra("mp_is_lan", true)
+        // Clear gameLaunchInfo after consumption to prevent stale re-launches
+        MatchmakingStateHolder.update { it.copy(gameLaunchInfo = null) }
         startActivity(mpIntent)
     }
 

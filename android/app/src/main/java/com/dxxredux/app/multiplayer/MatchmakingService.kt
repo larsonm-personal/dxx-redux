@@ -359,6 +359,7 @@ object MatchmakingService {
                 relayInfo = null,
                 iceStatus = IceStatus(),
                 nav = MultiplayerNav.BROWSER,
+                gameLaunchInfo = null,
             )
         }
         state.appendLog("Left lobby.")

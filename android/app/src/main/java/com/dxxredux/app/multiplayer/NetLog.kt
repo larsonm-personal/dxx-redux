@@ -25,6 +25,7 @@ object NetLog {
     private const val AUTHORITY = "com.dxxredux.app.fileprovider"
 
     private var writer: BufferedWriter? = null
+    private var currentFile: File? = null
     private var enabled = false
     private val lock = Any()
     private val tsFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US)
@@ -115,13 +116,15 @@ object NetLog {
             false
         }
 
-    /** Delete all log files. */
+    /** Delete all log files except the currently active one. */
     fun deleteAllLogs(context: Context) {
         synchronized(lock) {
-            closeLog()
+            val active = currentFile
+            val dir = File(context.filesDir, DIR_NAME)
+            dir.listFiles()?.forEach { f ->
+                if (active == null || f.absolutePath != active.absolutePath) f.delete()
+            }
         }
-        val dir = File(context.filesDir, DIR_NAME)
-        dir.listFiles()?.forEach { it.delete() }
     }
 
     private fun openLog(context: Context) {
@@ -133,6 +136,7 @@ object NetLog {
         val file = File(dir, "netlog_$stamp.txt")
         try {
             writer = BufferedWriter(FileWriter(file, true))
+            currentFile = file
             log(
                 "SYSTEM",
                 "Log started -- build ${com.dxxredux.app.BuildInfo.GIT_COMMIT_COUNT}" +
@@ -152,6 +156,7 @@ object NetLog {
         } catch (_: Exception) {
         }
         writer = null
+        currentFile = null
     }
 
     private fun pruneOldFiles(dir: File) {

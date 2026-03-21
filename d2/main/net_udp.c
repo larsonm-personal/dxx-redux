@@ -14,6 +14,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <errno.h>
 #ifdef __unix__
 #include <sys/time.h>
 #endif
@@ -583,6 +584,7 @@ int udp_open_socket(int socknum, int port)
 		if ((UDP_Socket[socknum] = socket (sres->ai_family, SOCK_DGRAM, 0)) < 0)
 		{
 			con_printf(CON_URGENT,"udp_open_socket: socket creation failed (port %i)\n", port);
+			MPDIAG("udp_open_socket: socket creation failed (port %d)", port);
 			nm_messagebox(TXT_ERROR,1,TXT_OK,"Port: %i\nCould not create socket.", port);
 			freeaddrinfo (res);
 			return -1;
@@ -591,6 +593,7 @@ int udp_open_socket(int socknum, int port)
 		if ((err = bind (UDP_Socket[socknum], sres->ai_addr, sres->ai_addrlen)) < 0)
 		{
 			con_printf(CON_URGENT,"udp_open_socket: bind name to socket failed (port %i)\n", port);
+			MPDIAG("udp_open_socket: bind failed (port %d, errno %d)", port, errno);
 			nm_messagebox(TXT_ERROR,1,TXT_OK,"Port: %i\nCould not bind name to socket.", port);
 			udp_close_socket(socknum);
 			freeaddrinfo (res);
