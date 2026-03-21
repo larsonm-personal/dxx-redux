@@ -6,11 +6,15 @@
 _SET_VARS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$_SET_VARS_DIR/get_deps/resolve_dep_base.sh"
 
-# Find newest folder matching a prefix (sorted descending, first match wins)
+# Find newest folder matching a prefix.
+# Uses a bash glob (expands in ascending order) instead of ls|sort -rV,
+# because Windows sort.exe shadows /usr/bin/sort in some Git Bash setups.
 _find_newest() {
-    local prefix="$1"
-    # ls -d sorts alphabetically; reverse to get newest version first
-    ls -d "${LOCAL_DIR}/${prefix}"* 2>/dev/null | sort -rV | head -n1
+    local prefix="$1" result=""
+    for _d in "${LOCAL_DIR}/${prefix}"*; do
+        [ -d "$_d" ] && result="$_d"
+    done
+    echo "$result"
 }
 
 # --- JDK ---

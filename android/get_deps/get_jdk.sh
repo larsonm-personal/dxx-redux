@@ -26,12 +26,15 @@ curl -fSL --progress-bar -o "$TMPFILE" "$URL"
 echo "Extracting to $DEST..."
 # The zip contains a folder like jdk-21.0.10+7/ at the top level
 unzip -q -o "$TMPFILE" -d "$INSTALL_DIR"
-# Rename the extracted folder (may include build number like +7) to the canonical name
+# Rename the extracted folder (may include build number like +7) to the canonical name.
+# Use a bash glob instead of find(1) -- on Windows, find.exe is a text-search tool.
 if [ ! -d "$DEST" ]; then
-    EXTRACTED=$(find "$INSTALL_DIR" -maxdepth 1 -type d -name "jdk-${JDK_VERSION}*" | head -1)
-    if [ -n "$EXTRACTED" ]; then
-        mv "$EXTRACTED" "$DEST"
-    fi
+    for _d in "$INSTALL_DIR"/jdk-${JDK_VERSION}*; do
+        if [ -d "$_d" ]; then
+            mv "$_d" "$DEST"
+            break
+        fi
+    done
 fi
 
 rm -f "$TMPFILE"

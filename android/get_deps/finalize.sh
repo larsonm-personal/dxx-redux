@@ -32,7 +32,12 @@ echo "Accepting SDK licenses..."
 yes | "$SDKMANAGER" --licenses 2>/dev/null || true
 
 echo "Installing platform packages..."
-"$SDKMANAGER" "platforms;android-$COMPILE_SDK" "build-tools;$BUILD_TOOLS_VERSION" "platform-tools"
+PACKAGES="platforms;android-$COMPILE_SDK build-tools;$BUILD_TOOLS_VERSION platform-tools cmake;$CMAKE_VERSION"
+# Also install the emulator's platform if it differs from COMPILE_SDK
+if [ -n "$EMULATOR_API_LEVEL" ] && [ "$EMULATOR_API_LEVEL" != "$COMPILE_SDK" ]; then
+    PACKAGES="$PACKAGES platforms;android-$EMULATOR_API_LEVEL"
+fi
+$SDKMANAGER $PACKAGES
 
 echo "Done. SDK is ready."
 if [ -z "$GET_ALL_RUNNING" ]; then

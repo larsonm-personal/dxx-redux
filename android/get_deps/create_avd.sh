@@ -29,8 +29,14 @@ if [ -z "$JAVA_HOME" ]; then
     fi
 fi
 
-export ANDROID_HOME="$SDK_DIR"
-export ANDROID_SDK_ROOT="$SDK_DIR"
+# avdmanager.bat needs Windows-style paths; Git Bash's /c/local/... won't work.
+if command -v cygpath >/dev/null 2>&1; then
+    export ANDROID_HOME="$(cygpath -w "$SDK_DIR")"
+    export ANDROID_SDK_ROOT="$(cygpath -w "$SDK_DIR")"
+else
+    export ANDROID_HOME="$SDK_DIR"
+    export ANDROID_SDK_ROOT="$SDK_DIR"
+fi
 
 # Check if AVD already exists
 if "$AVDMANAGER" list avd 2>/dev/null | grep -q "Name: $AVD_NAME"; then
@@ -68,10 +74,10 @@ hw.nfc=no
 hw.gsmModem=no
 hw.radio=no
 hw.sim=no
-hw.accelerometer=no
-hw.gyroscope=no
+hw.accelerometer=yes
+hw.gyroscope=yes
 hw.audioInput=no
-hw.audioOutput=no
+hw.audioOutput=yes
 hw.sdCard=yes
 sdcard.size=4096M
 showDeviceFrame=no

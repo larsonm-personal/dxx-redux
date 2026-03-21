@@ -75,6 +75,7 @@ auth_config.json5
 *.keystore
 *.jks
 .gradle/
+android/gradle/
 *.apk
 *.aab
 .cxx*/
