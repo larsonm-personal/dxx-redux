@@ -475,3 +475,35 @@ Java_com_dxxredux_app_MainActivity_nativeGetMultiplayerPacketStats(JNIEnv *env, 
 		(*env)->SetIntArrayRegion(env, result, 0, PS_SIZE, buf);
 	return result;
 }
+
+/* -- Netgame state query for matchmaking game-state updates --------
+ * Returns an int array:
+ *   [0] = game_status  (NETSTAT_MENU=0, NETSTAT_PLAYING=1, etc.)
+ *   [1] = numconnected (currently connected players)
+ *   [2] = max_numplayers
+ *   [3] = levelnum     (current level in the netgame struct)
+ *   [4] = gamemode      (Game_mode bitmask; & 4 == network game)
+ *
+ * Shared constants duplicated in MatchmakingService.kt:
+ *   NETSTAT_MENU=0, NETSTAT_PLAYING=1
+ *
+ * android port: game state polling for matchmaking server updates
+ */
+JNIEXPORT jintArray JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetNetgameState(JNIEnv *env, jobject thiz)
+{
+	extern int Game_mode;
+	enum { NGS_SIZE = 5 };
+	jint buf[NGS_SIZE];
+
+	buf[0] = (jint) Netgame.game_status;
+	buf[1] = (jint) Netgame.numconnected;
+	buf[2] = (jint) Netgame.max_numplayers;
+	buf[3] = (jint) Netgame.levelnum;
+	buf[4] = (jint) Game_mode;
+
+	jintArray result = (*env)->NewIntArray(env, NGS_SIZE);
+	if (result)
+		(*env)->SetIntArrayRegion(env, result, 0, NGS_SIZE, buf);
+	return result;
+}

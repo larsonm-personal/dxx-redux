@@ -9,6 +9,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -30,47 +33,34 @@ private const val TAG = "MatchmakingService"
 private const val MAX_RECONNECT_ATTEMPTS = 15
 
 /** Normalize user input like "myserver.com" into a connectable WebSocket URL.
- *  Always defaults to wss:// (TLS). Uses ws:// only for private/emulator IPs
- *  (no TLS available on LAN) or when the user explicitly typed ws://. */
+ *  Always defaults to wss:// (TLS). LAN self-signed certs are handled by lanClient.
+ *  Honors explicit ws:// if the user typed it. */
 private fun normalizeServerUrl(raw: String): String {
     var url = raw.trim()
     if (url.isEmpty()) return NetworkConstants.DEFAULT_SERVER_URL
 
-    // Add scheme if missing -- default to wss://
+    // Add scheme if missing -- always default to wss://
+    // (lanClient handles self-signed certs for private IPs)
     if (!url.startsWith("ws://") && !url.startsWith("wss://")) {
         url = "wss://$url"
     }
 
     // Strip scheme to inspect host:port/path
     val schemeEnd = url.indexOf("://") + 3
-    var scheme = url.substring(0, schemeEnd)
+    val scheme = url.substring(0, schemeEnd)
     val rest = url.substring(schemeEnd)
     val hostOnly = rest.substringBefore(':').substringBefore('/')
-
-    // Downgrade wss:// to ws:// for private/emulator IPs (no TLS on LAN servers)
-    if (scheme == "wss://" && isPrivateAddress(hostOnly)) {
-        scheme = "ws://"
-    }
-    // Upgrade ws:// to wss:// for public hosts (server requires TLS)
-    if (scheme == "ws://" &&
-        !isPrivateAddress(hostOnly) &&
-        hostOnly != "10.0.2.2" &&
-        hostOnly != "localhost" &&
-        hostOnly != "127.0.0.1"
-    ) {
-        scheme = "wss://"
-    }
 
     // Split into host(:port) and path
     val slashIdx = rest.indexOf('/')
     val hostPort = if (slashIdx >= 0) rest.substring(0, slashIdx) else rest
     val path = if (slashIdx >= 0) rest.substring(slashIdx) else ""
 
-    // Add default port if none specified
+    // Add default port if none specified: LAN -> 9000, public -> 443
     val withPort =
         if (hostPort.isNotEmpty() && !hostPort.contains(':')) {
             val defaultPort =
-                if (scheme == "ws://") {
+                if (isPrivateAddress(hostOnly)) {
                     NetworkConstants.DEFAULT_LAN_WSS_PORT
                 } else {
                     NetworkConstants.DEFAULT_WSS_PORT
@@ -155,11 +145,19 @@ object MatchmakingService {
     @Volatile
     private var stunCompleted = false
 
+    /** gameInfo sent with the last CREATE_LOBBY, so the first LOBBY_UPDATE can carry it. */
+    @Volatile
+    private var pendingGameInfo: JsonObject = JsonObject(emptyMap())
+
     @Volatile
     private var localhostProxy: LocalhostProxy? = null
 
     @Volatile
     private var connectivityCheckJob: Job? = null
+
+    // Periodic game state update coroutine (host-only, active during InGame)
+    @Volatile
+    private var gameStateUpdateJob: Job? = null
 
     @Volatile
     private var upnpMapping: UpnpMapping? = null
@@ -238,6 +236,7 @@ object MatchmakingService {
         stunCompleted = false
         connectivityCheckJob?.cancel()
         connectivityCheckJob = null
+        stopGameStateUpdates()
         cleanupUpnp()
         closeCandidateSocket()
         localhostProxy?.shutdown()
@@ -320,16 +319,15 @@ object MatchmakingService {
 
     fun createLobby(
         game: String,
-        mission: String,
-        mode: String,
         maxPlayers: Int,
+        gameInfo: JsonObject,
     ) {
+        pendingGameInfo = gameInfo
         val msg =
             CreateLobbyMsg(
                 game = game,
-                mission = mission,
-                mode = mode,
                 maxPlayers = maxPlayers,
+                gameInfo = gameInfo,
             )
         send(protocolJson.encodeToString(CreateLobbyMsg.serializer(), msg))
     }
@@ -382,6 +380,59 @@ object MatchmakingService {
         send(protocolJson.encodeToString(KickPlayerMsg.serializer(), KickPlayerMsg(playerId = playerId)))
         state.appendLog("Kicking player $playerId...")
         NetLog.log("LOBBY", "Kicking player $playerId")
+    }
+
+    // -- In-game state updates (host only) --
+    // Shared constants with C engine (multi.h):
+    // NETSTAT_MENU=0, NETSTAT_PLAYING=1, GM_NETWORK=4
+    private const val NETSTAT_PLAYING = 1
+    private const val GM_NETWORK = 4
+    private const val GAME_STATE_UPDATE_INTERVAL_MS = 10_000L
+
+    /** Start periodic game state updates to the matchmaking server (host only). */
+    fun startGameStateUpdates() {
+        gameStateUpdateJob?.cancel()
+        gameStateUpdateJob =
+            scope.launch {
+                delay(3000) // initial delay to let the game settle
+                while (true) {
+                    try {
+                        pollAndSendGameState()
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Game state update failed", e)
+                    }
+                    delay(GAME_STATE_UPDATE_INTERVAL_MS)
+                }
+            }
+        NetLog.log("GAME", "Started game state update loop")
+    }
+
+    /** Stop periodic game state updates. */
+    fun stopGameStateUpdates() {
+        gameStateUpdateJob?.cancel()
+        gameStateUpdateJob = null
+    }
+
+    private fun pollAndSendGameState() {
+        val activity = activityRef?.get() ?: return
+        if (activity !is com.dxxredux.app.MainActivity) return
+        val arr = activity.nativeGetNetgameState()
+        if (arr.size < 5) return
+        val gameStatus = arr[0]
+        val numConnected = arr[1]
+        val maxPlayers = arr[2]
+        val levelNum = arr[3]
+        val gameMode = arr[4]
+        // Only send updates when in a network game
+        if (gameMode and GM_NETWORK == 0) return
+        // Build and send the update message
+        val msg = org.json.JSONObject()
+        msg.put("type", "UPDATE_GAME_STATE")
+        msg.put("player_count", numConnected)
+        msg.put("max_players", maxPlayers)
+        msg.put("current_level", levelNum)
+        msg.put("game_status", gameStatus)
+        send(msg.toString())
     }
 
     fun sendMessage(
@@ -876,6 +927,12 @@ object MatchmakingService {
                     val hostId = update.players.firstOrNull()?.playerId
                     val isHost = myId != null && myId == hostId
                     state.update {
+                        // Preserve gameInfo from existing lobby state, look up from lobby list,
+                        // or use pendingGameInfo (set when host creates a lobby)
+                        val existingInfo =
+                            it.currentLobby?.takeIf { c -> c.lobbyId == update.lobbyId }?.gameInfo
+                                ?: it.lobbies.find { l -> l.lobbyId == update.lobbyId }?.gameInfo
+                                ?: pendingGameInfo
                         it.copy(
                             currentLobby =
                                 CurrentLobbyState(
@@ -883,6 +940,7 @@ object MatchmakingService {
                                     players = update.players,
                                     isHost = isHost,
                                     hostPlayerId = hostId,
+                                    gameInfo = existingInfo,
                                 ),
                             nav = MultiplayerNav.LOBBY,
                         )
@@ -908,10 +966,11 @@ object MatchmakingService {
 
                 is ServerMessage.GameStarting -> {
                     val gs = msg.data
-                    state.appendLog("Game starting: ${gs.mission} (slot ${gs.yourSlot})")
+                    val missionName = gs.gameInfo["mission"]?.jsonPrimitive?.content ?: ""
+                    state.appendLog("Game starting: $missionName (slot ${gs.yourSlot})")
                     NetLog.log(
                         "GAME",
-                        "Starting: ${gs.game} mission=${gs.mission} slot=${gs.yourSlot} peers=${gs.peers.size}",
+                        "Starting: ${gs.game} mission=$missionName slot=${gs.yourSlot} peers=${gs.peers.size}",
                     )
 
                     // Hand the shared candidate socket to LocalhostProxy so all
@@ -951,16 +1010,20 @@ object MatchmakingService {
                     val launchInfo =
                         GameLaunchInfo(
                             game = gs.game,
-                            mission = gs.mission,
-                            mode = gs.mode,
-                            difficulty = gs.difficulty,
-                            levelNum = gs.levelNum,
+                            mission = gs.gameInfo["mission"]?.jsonPrimitive?.content ?: "",
+                            mode = gs.gameInfo["mode"]?.jsonPrimitive?.content ?: "",
+                            difficulty = gs.gameInfo["difficulty"]?.jsonPrimitive?.intOrNull ?: 1,
+                            levelNum = gs.gameInfo["level_num"]?.jsonPrimitive?.intOrNull ?: 1,
                             maxPlayers = gs.maxPlayers,
                             yourSlot = gs.yourSlot,
                             isHost = isHost,
                             peers = gs.peers,
                         )
                     state.update { it.copy(gameLaunchInfo = launchInfo) }
+                    // Host sends periodic game state updates to the matchmaking server
+                    if (isHost) {
+                        startGameStateUpdates()
+                    }
                 }
 
                 is ServerMessage.RateLimited -> {
@@ -997,6 +1060,13 @@ object MatchmakingService {
 
                 is ServerMessage.ConnectionInfoReceived -> {
                     state.update { it.copy(connectionInfo = msg.data.connections) }
+                    for (ci in msg.data.connections) {
+                        val relay = if (ci.serverRelay) "relay" else "direct"
+                        val detail = ci.detail?.let { " ($it)" } ?: ""
+                        val latency = ci.estimatedLatencyMs?.let { " ${it}ms" } ?: ""
+                        NetLog.log("CONNECTION", "${ci.peerCallsign}: ${ci.method} [$relay]$detail$latency")
+                        state.appendLog("Connection: ${ci.peerCallsign} ${ci.method} [$relay]$latency")
+                    }
                 }
 
                 is ServerMessage.PeerCandidatesReceived -> {
@@ -1033,6 +1103,38 @@ object MatchmakingService {
                     state.update { it.copy(relayInfo = RelayInfo(relay.relayAddr, relay.sessionToken)) }
                     state.appendLog("Relay assigned: ${relay.relayAddr}")
                     NetLog.log("RELAY", "Assigned: ${relay.relayAddr} token=${relay.sessionToken}")
+                }
+
+                is ServerMessage.LateJoinProbeReceived -> {
+                    val probe = msg.data
+                    state.appendLog("Late-join probe: ${probe.joinerCallsign} (${probe.probeAddrs.size} addrs)")
+                    NetLog.log("LATEJOIN", "Probe for ${probe.joinerCallsign}: ${probe.probeAddrs.size} addrs")
+                    // Send blind probes from shared socket and enable probe echo
+                    localhostProxy?.sendLateJoinProbes(probe.probeAddrs)
+                }
+
+                is ServerMessage.LateJoinApprovedReceived -> {
+                    val peer = msg.data.peer
+                    state.appendLog("Late-join approved: slot ${peer.slot} -> ${peer.addr}")
+                    NetLog.log("LATEJOIN", "Approved: slot=${peer.slot} addr=${peer.addr} relay=${peer.isRelay}")
+                    // Add the new peer to the existing proxy
+                    val addrParts = peer.addr.split(":")
+                    if (addrParts.size == 2) {
+                        val port = addrParts[1].toIntOrNull()
+                        if (port != null) {
+                            val addr = InetSocketAddress(addrParts[0], port)
+                            localhostProxy?.addPeer(
+                                PeerProxyConfig(
+                                    peerSlot = peer.slot,
+                                    localPort = NetworkConstants.PROXY_PORT_BASE + peer.slot,
+                                    realAddr = addr,
+                                    isRelay = peer.isRelay,
+                                    relayToken = peer.relayToken?.toUInt() ?: 0u,
+                                    relayDestSlot = peer.relayDestSlot ?: peer.slot,
+                                ),
+                            )
+                        }
+                    }
                 }
 
                 is ServerMessage.Unknown -> {

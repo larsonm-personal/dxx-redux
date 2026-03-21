@@ -503,6 +503,29 @@ Java_com_dxxredux_app_MainActivity_nativeIsEndlevelSequence(JNIEnv *env, jobject
 }
 
 /*
+ * android port: mid-game join request state.
+ * WaitForRefuseAnswer is set by net_udp_do_refuse_stuff when a player
+ * wants to join a game with RefusePlayers enabled. RefusePlayerName
+ * contains the requesting player's callsign. Setting RefuseThisPlayer=1
+ * is equivalent to pressing F6 (accept the join request).
+ */
+extern char WaitForRefuseAnswer, RefuseThisPlayer, RefusePlayerName[];
+
+JNIEXPORT jstring JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetJoinRequest(JNIEnv *env, jobject thiz)
+{
+	if (WaitForRefuseAnswer)
+		return (*env)->NewStringUTF(env, RefusePlayerName);
+	return (*env)->NewStringUTF(env, "");
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeAcceptJoinRequest(JNIEnv *env, jobject thiz)
+{
+	RefuseThisPlayer = 1;
+}
+
+/*
  * Enable or disable the "Use Joystick" flag in the player config.
  * Called from Kotlin when the touch overlay is activated/deactivated.
  *

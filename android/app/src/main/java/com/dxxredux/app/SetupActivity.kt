@@ -50,6 +50,9 @@ import com.dxxredux.app.multiplayer.PlayGamesAuth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -275,7 +278,14 @@ class SetupActivity : ComponentActivity() {
                         val mission = intent.getStringExtra("mission") ?: "counterstrike!"
                         val mode = intent.getStringExtra("mode") ?: "anarchy"
                         val maxPlayers = intent.getIntExtra("max_players", 4)
-                        MatchmakingService.createLobby(game, mission, mode, maxPlayers)
+                        val gameInfo =
+                            JsonObject(
+                                mapOf(
+                                    "mission" to JsonPrimitive(mission),
+                                    "mode" to JsonPrimitive(mode),
+                                ),
+                            )
+                        MatchmakingService.createLobby(game, maxPlayers, gameInfo)
                     }
                     "join_first_lobby" -> {
                         val lobbies = MatchmakingStateHolder.state.value.lobbies
@@ -677,8 +687,8 @@ class SetupActivity : ComponentActivity() {
                 lj.put("lobby_id", l.lobbyId)
                 lj.put("host_callsign", l.hostCallsign)
                 lj.put("game", l.game)
-                lj.put("mission", l.mission)
-                lj.put("mode", l.mode)
+                lj.put("mission", l.gameInfo["mission"]?.jsonPrimitive?.content ?: "")
+                lj.put("mode", l.gameInfo["mode"]?.jsonPrimitive?.content ?: "")
                 lj.put("player_count", l.playerCount)
                 lj.put("joinable", l.joinable)
                 lobbiesArr.put(lj)

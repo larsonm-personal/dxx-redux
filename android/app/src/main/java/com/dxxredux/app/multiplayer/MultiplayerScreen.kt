@@ -38,6 +38,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dxxredux.app.lobby.LobbyService
 import kotlinx.coroutines.delay
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonPrimitive
 
 @Composable
 fun MultiplayerScreen(
@@ -308,9 +312,9 @@ private fun ServerBrowserContent(
 
     if (showCreateDialog) {
         CreateLobbyDialog(
-            onCreate = { game, mission, mode, maxPlayers ->
+            onCreate = { game, maxPlayers, gameInfo ->
                 showCreateDialog = false
-                MatchmakingService.createLobby(game, mission, mode, maxPlayers)
+                MatchmakingService.createLobby(game, maxPlayers, gameInfo)
             },
             onDismiss = { showCreateDialog = false },
         )
@@ -329,6 +333,14 @@ private fun LobbyCard(lobby: LobbyInfo) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(lobby.hostCallsign, style = MaterialTheme.typography.titleSmall)
+                if (lobby.lobbyState == "in_progress") {
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        "IN GAME",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
                 Spacer(Modifier.weight(1f))
                 lobby.hostPingMs?.let { ping ->
                     Text(
@@ -343,10 +355,21 @@ private fun LobbyCard(lobby: LobbyInfo) {
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
-            Text(
-                "${lobby.mission} -- ${lobby.mode}",
-                style = MaterialTheme.typography.bodySmall,
-            )
+            val diffNames = listOf("Trainee", "Rookie", "Hotshot", "Ace", "Insane")
+            val diff = lobby.gameInfo["difficulty"]?.jsonPrimitive?.intOrNull
+            val level = lobby.gameInfo["level_num"]?.jsonPrimitive?.intOrNull
+            val configLine =
+                buildString {
+                    val mission = lobby.gameInfo["mission"]?.jsonPrimitive?.content ?: ""
+                    val mode = lobby.gameInfo["mode"]?.jsonPrimitive?.content ?: ""
+                    append(mission)
+                    if (mode.isNotEmpty()) append(" -- $mode")
+                    if (diff != null) append(" / ${diffNames.getOrElse(diff) { "Diff $diff" }}")
+                    // For in-progress games, show current level from server
+                    val displayLevel = if (lobby.lobbyState == "in_progress") lobby.currentLevel else level
+                    if (displayLevel != null) append(" / Lv $displayLevel")
+                }
+            Text(configLine, style = MaterialTheme.typography.bodySmall)
             if (lobby.hasCode) {
                 Text("(code required)", style = MaterialTheme.typography.bodySmall)
             }
@@ -410,13 +433,17 @@ private fun LobbyCodeDialog(
 
 @Composable
 private fun CreateLobbyDialog(
-    onCreate: (game: String, mission: String, mode: String, maxPlayers: Int) -> Unit,
+    onCreate: (game: String, maxPlayers: Int, gameInfo: JsonObject) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var game by remember { mutableStateOf("d2") }
     var mission by remember { mutableStateOf<String?>(null) }
     var mode by remember { mutableStateOf("anarchy") }
     var maxPlayersText by remember { mutableStateOf("4") }
+    var difficulty by remember { mutableStateOf(1) }
+    var levelNumText by remember { mutableStateOf("1") }
+
+    val difficultyNames = listOf("Trainee", "Rookie", "Hotshot", "Ace", "Insane")
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -453,20 +480,60 @@ private fun CreateLobbyDialog(
                         }
                     }
                 }
-                OutlinedTextField(
-                    value = maxPlayersText,
-                    onValueChange = { maxPlayersText = it.filter { c -> c.isDigit() } },
-                    label = { Text("Max Players") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                // Difficulty selector
+                Text("Difficulty", style = MaterialTheme.typography.labelMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    difficultyNames.forEachIndexed { idx, name ->
+                        if (idx == difficulty) {
+                            Button(onClick = {}, modifier = Modifier.weight(1f)) {
+                                Text(name, maxLines = 1, fontSize = 10.sp)
+                            }
+                        } else {
+                            OutlinedButton(
+                                onClick = { difficulty = idx },
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text(name, maxLines = 1, fontSize = 10.sp)
+                            }
+                        }
+                    }
+                }
+                // Level number + Max players on same row
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = levelNumText,
+                        onValueChange = { levelNumText = it.filter { c -> c.isDigit() } },
+                        label = { Text("Level") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedTextField(
+                        value = maxPlayersText,
+                        onValueChange = { maxPlayersText = it.filter { c -> c.isDigit() } },
+                        label = { Text("Max Players") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
         },
         confirmButton = {
             val maxPlayers = maxPlayersText.toIntOrNull() ?: 0
+            val levelNum = levelNumText.toIntOrNull() ?: 1
             TextButton(
-                onClick = { onCreate(game, mission ?: "", mode, maxPlayers) },
-                enabled = mission != null && maxPlayers in 2..8,
+                onClick = {
+                    val gameInfo =
+                        JsonObject(
+                            mapOf(
+                                "mission" to JsonPrimitive(mission ?: ""),
+                                "mode" to JsonPrimitive(mode),
+                                "difficulty" to JsonPrimitive(difficulty),
+                                "level_num" to JsonPrimitive(levelNum),
+                            ),
+                        )
+                    onCreate(game, maxPlayers, gameInfo)
+                },
+                enabled = mission != null && maxPlayers in 2..8 && levelNum >= 1,
             ) {
                 Text("Create")
             }

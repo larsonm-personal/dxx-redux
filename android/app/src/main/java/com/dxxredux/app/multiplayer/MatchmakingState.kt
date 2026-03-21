@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.serialization.json.JsonObject
 
 enum class ConnectionStatus {
     DISCONNECTED,
@@ -26,6 +27,7 @@ data class CurrentLobbyState(
     val players: List<LobbyPlayerInfo> = emptyList(),
     val isHost: Boolean = false,
     val hostPlayerId: String? = null,
+    val gameInfo: JsonObject = JsonObject(emptyMap()),
 )
 
 data class ChatMessage(

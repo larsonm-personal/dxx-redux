@@ -1,4 +1,5 @@
 use serde::Serialize;
+use serde_json::Value as JsonValue;
 use std::collections::HashSet;
 use std::time::Instant;
 use uuid::Uuid;
@@ -84,8 +85,6 @@ pub struct Lobby {
     pub host_player_id: Uuid,
     pub host_callsign: String,
     pub game: String,
-    pub mission: String,
-    pub mode: String,
     pub max_players: u8,
     pub state: LobbyState,
     pub players: Vec<LobbyPlayer>,
@@ -100,6 +99,20 @@ pub struct Lobby {
     pub kicked_players: HashSet<Uuid>,
     /// When the lobby entered Holepunching state (for timeout).
     pub holepunch_started_at: Option<Instant>,
+    /// Extensible game config (mission, mode, difficulty, level_num, etc.)
+    /// Opaque JSON -- unknown fields preserved on passthrough.
+    pub game_info: JsonValue,
+    // -- runtime state updated by host during InGame via UPDATE_GAME_STATE --
+    /// Current connected player count (from host C engine).
+    pub runtime_player_count: Option<u8>,
+    /// Current level number (from host C engine).
+    pub runtime_level: Option<i32>,
+    /// Engine game_status (NETSTAT_PLAYING=1, etc.).
+    pub runtime_game_status: Option<u8>,
+    /// Last time the host sent an UPDATE_GAME_STATE.
+    pub last_state_update: Option<Instant>,
+    /// Players currently going through late-join ICE (joiner player_ids).
+    pub pending_late_joiners: HashSet<Uuid>,
 }
 
 impl Lobby {
@@ -108,11 +121,10 @@ impl Lobby {
         host_player_id: Uuid,
         host_callsign: String,
         game: String,
-        mission: String,
-        mode: String,
         max_players: u8,
         code: Option<String>,
         verified_only: bool,
+        game_info: JsonValue,
     ) -> Self {
         let host = LobbyPlayer {
             player_id: host_player_id,
@@ -128,8 +140,6 @@ impl Lobby {
             host_player_id,
             host_callsign,
             game,
-            mission,
-            mode,
             max_players,
             state: LobbyState::Waiting,
             players: vec![host],
@@ -139,6 +149,12 @@ impl Lobby {
             verified_only,
             kicked_players: HashSet::new(),
             holepunch_started_at: None,
+            game_info,
+            runtime_player_count: None,
+            runtime_level: None,
+            runtime_game_status: None,
+            last_state_update: None,
+            pending_late_joiners: HashSet::new(),
         }
     }
 
@@ -147,7 +163,24 @@ impl Lobby {
     }
 
     pub fn is_joinable(&self) -> bool {
-        self.state == LobbyState::Waiting && !self.is_full()
+        if self.is_full() {
+            return false;
+        }
+        match self.state {
+            LobbyState::Waiting => true,
+            LobbyState::InGame => {
+                // Joinable mid-game if host is sending fresh state updates
+                // (not stale >60s) and engine reports NETSTAT_PLAYING.
+                const STALE_SECS: u64 = 60;
+                const NETSTAT_PLAYING: u8 = 1;
+                self.runtime_game_status == Some(NETSTAT_PLAYING)
+                    && self
+                        .last_state_update
+                        .map(|t| t.elapsed().as_secs() < STALE_SECS)
+                        .unwrap_or(false)
+            }
+            _ => false,
+        }
     }
 
     /// Check if a player is allowed to join (not kicked).
@@ -156,8 +189,12 @@ impl Lobby {
     }
 
     pub fn add_player(&mut self, player_id: Uuid, callsign: String) -> bool {
-        if self.is_full() || self.state != LobbyState::Waiting {
+        if self.is_full() {
             return false;
+        }
+        match self.state {
+            LobbyState::Waiting | LobbyState::InGame => {}
+            _ => return false,
         }
         if self.players.iter().any(|p| p.player_id == player_id) {
             return false; // already in lobby
@@ -176,9 +213,19 @@ impl Lobby {
 
     pub fn remove_player(&mut self, player_id: &Uuid) {
         self.players.retain(|p| &p.player_id != player_id);
+        self.pending_late_joiners.remove(player_id);
     }
 
     pub fn player_count(&self) -> u8 {
         self.players.len() as u8
     }
+}
+
+/// Extract a string field from a game_info JSON value.
+pub fn game_info_str(game_info: &serde_json::Value, key: &str) -> String {
+    game_info
+        .get(key)
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string()
 }

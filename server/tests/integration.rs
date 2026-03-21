@@ -236,9 +236,8 @@ async fn test_create_and_list_lobby() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "anarchy",
             "max_players": 8,
+            "game_info": {"mission": "Counterstrike!", "mode": "anarchy"},
         }),
     )
     .await;
@@ -249,7 +248,7 @@ async fn test_create_and_list_lobby() {
     let lobbies = list_resp["lobbies"].as_array().unwrap();
     assert_eq!(lobbies.len(), 1);
     assert_eq!(lobbies[0]["host_callsign"], "Host");
-    assert_eq!(lobbies[0]["mission"], "Counterstrike!");
+    assert_eq!(lobbies[0]["game_info"]["mission"], "Counterstrike!");
 }
 
 /// Join another player's lobby.
@@ -265,9 +264,8 @@ async fn test_join_lobby() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "test-mission",
-            "mode": "coop",
             "max_players": 4,
+            "game_info": {"mission": "test-mission", "mode": "coop"},
         }),
     )
     .await;
@@ -320,9 +318,8 @@ async fn test_leave_lobby_cleanup() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d1",
-            "mission": "First Strike",
-            "mode": "anarchy",
             "max_players": 4,
+            "game_info": {"mission": "First Strike", "mode": "anarchy"},
         }),
     )
     .await;
@@ -511,9 +508,8 @@ async fn test_lobby_update_on_join() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
             "max_players": 4,
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
         }),
     )
     .await;
@@ -556,9 +552,8 @@ async fn test_lobby_update_on_ready() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
             "max_players": 4,
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
         }),
     )
     .await;
@@ -587,9 +582,8 @@ async fn test_start_game_flow() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
             "max_players": 4,
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
         }),
     )
     .await;
@@ -620,8 +614,8 @@ async fn test_start_game_flow() {
 
     let host_msg2 = recv(&mut host).await;
     assert_eq!(host_msg2["type"], "GAME_STARTING");
-    assert_eq!(host_msg2["mission"], "Counterstrike!");
-    assert_eq!(host_msg2["mode"], "coop");
+    assert_eq!(host_msg2["game_info"]["mission"], "Counterstrike!");
+    assert_eq!(host_msg2["game_info"]["mode"], "coop");
     assert_eq!(host_msg2["your_slot"], 0);
     assert!(host_msg2["peers"].as_array().unwrap().len() == 1);
 
@@ -647,9 +641,8 @@ async fn test_start_game_non_host_rejected() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "test",
-            "mode": "coop",
             "max_players": 4,
+            "game_info": {"mission": "test", "mode": "coop"},
         }),
     )
     .await;
@@ -684,9 +677,8 @@ async fn test_kick_player() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "test",
-            "mode": "coop",
             "max_players": 4,
+            "game_info": {"mission": "test", "mode": "coop"},
         }),
     )
     .await;
@@ -969,9 +961,8 @@ async fn test_lobby_list_includes_host_ping() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
             "max_players": 4,
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
         }),
     )
     .await;
@@ -1019,9 +1010,8 @@ async fn test_connectivity_check_go_after_all_stun() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
             "max_players": 4,
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
         }),
     )
     .await;
@@ -1102,9 +1092,8 @@ async fn test_relay_assigned_on_game_start() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
             "max_players": 4,
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
         }),
     )
     .await;
@@ -1198,9 +1187,8 @@ async fn test_kicked_player_rejoin_prevention() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
             "max_players": 4,
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
         }),
     )
     .await;
@@ -1254,10 +1242,9 @@ async fn test_lobby_code_required() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
             "max_players": 4,
             "lobby_code": "secret123",
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
         }),
     )
     .await;
@@ -1310,10 +1297,9 @@ async fn test_lobby_code_listing() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
             "max_players": 4,
             "lobby_code": "mycode",
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
         }),
     )
     .await;
@@ -1370,10 +1356,9 @@ async fn test_lobby_code_friend_bypass_and_kicked_friend() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
             "max_players": 4,
             "lobby_code": "friendcode",
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
         }),
     )
     .await;
@@ -1427,8 +1412,8 @@ async fn test_predictive_port_candidates() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
+            "max_players": 4,
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
             "max_players": 4,
         }),
     )
@@ -1487,8 +1472,8 @@ async fn test_predictive_port_skipped_for_random_nat() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
+            "max_players": 4,
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
             "max_players": 4,
         }),
     )
@@ -1541,10 +1526,9 @@ async fn test_verified_only_lobby_rejected() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
             "max_players": 4,
             "verified_only": true,
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
         }),
     )
     .await;
@@ -1576,10 +1560,9 @@ async fn test_verified_only_in_listing() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
             "max_players": 4,
             "verified_only": true,
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
         }),
     )
     .await;
@@ -1632,10 +1615,9 @@ async fn test_verified_only_friend_join_rejected() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
             "max_players": 4,
             "verified_only": true,
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
         }),
     )
     .await;
@@ -1952,10 +1934,9 @@ async fn test_keypair_not_gpgs_verified() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
             "max_players": 4,
             "verified_only": true,
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
         }),
     )
     .await;
@@ -1992,9 +1973,8 @@ async fn test_full_lobby_flow_join_ready_start() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "anarchy",
             "max_players": 4,
+            "game_info": {"mission": "Counterstrike!", "mode": "anarchy"},
         }),
     )
     .await;
@@ -2061,14 +2041,14 @@ async fn test_full_lobby_flow_join_ready_start() {
     assert_eq!(host_conn["type"], "CONNECTION_INFO");
     let host_start = recv(&mut host).await;
     assert_eq!(host_start["type"], "GAME_STARTING");
-    assert_eq!(host_start["mission"], "Counterstrike!");
-    assert_eq!(host_start["mode"], "anarchy");
+    assert_eq!(host_start["game_info"]["mission"], "Counterstrike!");
+    assert_eq!(host_start["game_info"]["mode"], "anarchy");
 
     let joiner_conn = recv(&mut joiner).await;
     assert_eq!(joiner_conn["type"], "CONNECTION_INFO");
     let joiner_start = recv(&mut joiner).await;
     assert_eq!(joiner_start["type"], "GAME_STARTING");
-    assert_eq!(joiner_start["mission"], "Counterstrike!");
+    assert_eq!(joiner_start["game_info"]["mission"], "Counterstrike!");
 }
 
 /// Joiner leaves lobby, host gets LOBBY_UPDATE with 1 player.
@@ -2083,9 +2063,8 @@ async fn test_leave_lobby_update() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
             "max_players": 4,
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
         }),
     )
     .await;
@@ -2122,9 +2101,8 @@ async fn test_kick_player_flow() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
             "max_players": 4,
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
         }),
     )
     .await;
@@ -2177,9 +2155,8 @@ async fn test_non_host_cannot_start() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
             "max_players": 4,
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
         }),
     )
     .await;
@@ -2212,9 +2189,8 @@ async fn test_ready_toggle() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
             "max_players": 4,
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
         }),
     )
     .await;
@@ -2248,9 +2224,8 @@ async fn test_lobby_chat_flow() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "anarchy",
             "max_players": 4,
+            "game_info": {"mission": "Counterstrike!", "mode": "anarchy"},
         }),
     )
     .await;
@@ -2326,9 +2301,8 @@ async fn test_create_lobby_details() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d1",
-            "mission": "First Strike",
-            "mode": "coop",
             "max_players": 3,
+            "game_info": {"mission": "First Strike", "mode": "coop"},
         }),
     )
     .await;
@@ -2347,8 +2321,8 @@ async fn test_create_lobby_details() {
     let l = &lobbies[0];
     assert_eq!(l["lobby_id"], lobby_id);
     assert_eq!(l["host_callsign"], "Creator");
-    assert_eq!(l["mission"], "First Strike");
-    assert_eq!(l["mode"], "coop");
+    assert_eq!(l["game_info"]["mission"], "First Strike");
+    assert_eq!(l["game_info"]["mode"], "coop");
     assert_eq!(l["max_players"], 3);
     assert_eq!(l["player_count"], 1);
     assert!(l["joinable"].as_bool().unwrap());
@@ -2370,9 +2344,8 @@ async fn test_two_client_discovery_join_chat() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "anarchy",
             "max_players": 4,
+            "game_info": {"mission": "Counterstrike!", "mode": "anarchy"},
         }),
     )
     .await;
@@ -2504,9 +2477,8 @@ async fn test_connectivity_ok_updates_player() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
             "max_players": 4,
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
         }),
     )
     .await;
@@ -2839,9 +2811,8 @@ async fn test_friend_full_lifecycle() {
         json!({
             "type": "CREATE_LOBBY",
             "game": "d2",
-            "mission": "Counterstrike!",
-            "mode": "coop",
             "max_players": 4,
+            "game_info": {"mission": "Counterstrike!", "mode": "coop"},
         }),
     )
     .await;
