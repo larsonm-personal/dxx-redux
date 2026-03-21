@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{ConnectInfo, State, WebSocketUpgrade};
@@ -16,7 +16,7 @@ use uuid::Uuid;
 use crate::db::{MatchPlayerData, MatchResultData};
 use crate::friends;
 use crate::identity;
-use crate::lobby::{Lobby, LobbyState, Presence};
+use crate::lobby::{game_info_str, Lobby, LobbyState, Presence};
 use crate::pow;
 use crate::protocol::*;
 use crate::ServerState;
@@ -72,25 +72,41 @@ fn build_lobby_list(state: &ServerState) -> Vec<LobbyInfo> {
     state
         .lobbies
         .iter()
-        .filter(|entry| entry.value().state == LobbyState::Waiting)
+        .filter(|entry| {
+            matches!(
+                entry.value().state,
+                LobbyState::Waiting | LobbyState::InGame
+            )
+        })
         .map(|entry| {
             let l = entry.value();
             let host_ping_ms = state
                 .sessions
                 .get(&l.host_player_id)
                 .and_then(|s| s.ping_ms);
+            let is_in_game = l.state == LobbyState::InGame;
+            let display_player_count = if is_in_game {
+                l.runtime_player_count.unwrap_or(l.player_count())
+            } else {
+                l.player_count()
+            };
             LobbyInfo {
                 lobby_id: l.id,
                 host_callsign: l.host_callsign.clone(),
                 game: l.game.clone(),
-                mission: l.mission.clone(),
-                mode: l.mode.clone(),
-                player_count: l.player_count(),
+                player_count: display_player_count,
                 max_players: l.max_players,
                 joinable: l.is_joinable(),
                 host_ping_ms,
                 has_code: l.code.is_some(),
                 verified_only: l.verified_only,
+                game_info: l.game_info.clone(),
+                lobby_state: if is_in_game {
+                    "in_progress".into()
+                } else {
+                    "waiting".into()
+                },
+                current_level: l.runtime_level,
             }
         })
         .collect()
@@ -114,8 +130,8 @@ fn build_active_game_list(state: &ServerState) -> Vec<ActiveGameInfo> {
             let elapsed = (now - l.created_at).num_seconds().max(0) as u64;
             ActiveGameInfo {
                 host_callsign: l.host_callsign.clone(),
-                mission: l.mission.clone(),
-                mode: l.mode.clone(),
+                mission: game_info_str(&l.game_info, "mission"),
+                mode: game_info_str(&l.game_info, "mode"),
                 player_count: l.player_count(),
                 duration_secs: elapsed,
             }
@@ -1237,11 +1253,10 @@ async fn handle_authenticated_message(
     match msg {
         ClientMessage::CreateLobby {
             game,
-            mission,
-            mode,
             max_players,
             lobby_code,
             verified_only,
+            game_info,
         } => {
             // Validate lobby parameters
             if !(2..=8).contains(&max_players) {
@@ -1251,10 +1266,17 @@ async fn handle_authenticated_message(
                 });
                 return;
             }
-            if game.len() > 32 || mission.len() > 128 || mode.len() > 32 {
+            if game.len() > 32 {
                 let _ = tx.send(ServerMessage::Error {
                     code: "INVALID_PARAMS".into(),
-                    message: "game/mission/mode string too long".into(),
+                    message: "game string too long".into(),
+                });
+                return;
+            }
+            if serde_json::to_string(&game_info).unwrap_or_default().len() > GAME_INFO_MAX_BYTES {
+                let _ = tx.send(ServerMessage::Error {
+                    code: "INVALID_PARAMS".into(),
+                    message: "game_info too large (max 5KB)".into(),
                 });
                 return;
             }
@@ -1276,11 +1298,10 @@ async fn handle_authenticated_message(
                 player_id,
                 callsign,
                 game,
-                mission,
-                mode,
                 max_players,
                 lobby_code,
                 verified_only,
+                game_info,
             );
             let lobby_id = lobby.id;
             state.lobbies.insert(lobby_id, lobby);
@@ -1306,6 +1327,69 @@ async fn handle_authenticated_message(
             } else {
                 let lobbies = build_lobby_list(state);
                 let _ = tx.send(ServerMessage::LobbyList { lobbies });
+            }
+        }
+
+        ClientMessage::UpdateGameInfo { game_info } => {
+            if serde_json::to_string(&game_info).unwrap_or_default().len() > GAME_INFO_MAX_BYTES {
+                let _ = tx.send(ServerMessage::Error {
+                    code: "INVALID_PARAMS".into(),
+                    message: "game_info too large (max 5KB)".into(),
+                });
+                return;
+            }
+            let lobby_id = state.sessions.get(&player_id).and_then(|s| s.lobby_id);
+            if let Some(lobby_id) = lobby_id {
+                if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
+                    if lobby.host_player_id != player_id {
+                        let _ = tx.send(ServerMessage::Error {
+                            code: "NOT_HOST".into(),
+                            message: "Only the host can update game info".into(),
+                        });
+                        return;
+                    }
+                    if lobby.state != LobbyState::Waiting {
+                        let _ = tx.send(ServerMessage::Error {
+                            code: "INVALID_STATE".into(),
+                            message: "Cannot update game info after game started".into(),
+                        });
+                        return;
+                    }
+                    lobby.game_info = game_info;
+                    broadcast_lobby_update(&lobby, state);
+                }
+            }
+        }
+
+        ClientMessage::UpdateGameState {
+            player_count,
+            max_players,
+            current_level,
+            game_status,
+        } => {
+            let lobby_id = state.sessions.get(&player_id).and_then(|s| s.lobby_id);
+            if let Some(lobby_id) = lobby_id {
+                if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
+                    if lobby.host_player_id != player_id {
+                        return; // silently ignore non-host updates
+                    }
+                    if lobby.state != LobbyState::InGame && lobby.state != LobbyState::Starting {
+                        return;
+                    }
+                    // First update transitions Starting -> InGame
+                    if lobby.state == LobbyState::Starting {
+                        lobby.state = LobbyState::InGame;
+                        info!(%lobby_id, "lobby transitioned Starting -> InGame");
+                    }
+                    lobby.runtime_player_count = Some(player_count);
+                    lobby.runtime_level = Some(current_level);
+                    lobby.runtime_game_status = Some(game_status);
+                    lobby.last_state_update = Some(Instant::now());
+                    // Update max_players in case host changed it mid-game
+                    if (2..=8).contains(&max_players) {
+                        lobby.max_players = max_players;
+                    }
+                }
             }
         }
 
@@ -1475,8 +1559,7 @@ async fn handle_authenticated_message(
                         .unwrap_or_default();
 
                     let game = lobby.game.clone();
-                    let mission = lobby.mission.clone();
-                    let mode = lobby.mode.clone();
+                    let game_info = lobby.game_info.clone();
                     let max_players = lobby.max_players;
 
                     // Collect relay-needed pairs and allocate sessions BEFORE
@@ -1643,12 +1726,9 @@ async fn handle_authenticated_message(
                             ServerMessage::GameStarting {
                                 host_addr: host_addr.clone(),
                                 game: game.clone(),
-                                mission: mission.clone(),
-                                mode: mode.clone(),
                                 your_slot: my_slot as u8,
                                 max_players,
-                                difficulty: 1, // default; lobby doesn't track this yet
-                                level_num: 1,
+                                game_info: game_info.clone(),
                                 peers,
                             },
                         ));
@@ -1656,7 +1736,7 @@ async fn handle_authenticated_message(
 
                     // Update presence for all players
                     let player_ids: Vec<Uuid> = lobby.players.iter().map(|p| p.player_id).collect();
-                    let lobby_mission = lobby.mission.clone();
+                    let lobby_mission = game_info_str(&lobby.game_info, "mission");
                     let pcount = lobby.player_count();
                     drop(lobby);
 
@@ -1748,6 +1828,70 @@ async fn handle_authenticated_message(
                             None
                         };
 
+                        // Late-join ICE: if lobby is InGame and the sender just got
+                        // candidates, and the host has candidates, start pairwise ICE
+                        // between the joiner and host only.
+                        let late_join_msgs = if lobby.state == LobbyState::InGame
+                            && player_id != lobby.host_player_id
+                        {
+                            let host_id = lobby.host_player_id;
+                            // Check both have candidates before borrowing players
+                            let both_have_candidates = lobby
+                                .players
+                                .iter()
+                                .find(|p| p.player_id == host_id)
+                                .map(|h| !h.candidates.is_empty())
+                                .unwrap_or(false)
+                                && lobby
+                                    .players
+                                    .iter()
+                                    .find(|p| p.player_id == player_id)
+                                    .map(|j| !j.candidates.is_empty())
+                                    .unwrap_or(false);
+                            if both_have_candidates {
+                                lobby.pending_late_joiners.insert(player_id);
+                                // Now safe to borrow players immutably
+                                let h = lobby
+                                    .players
+                                    .iter()
+                                    .find(|p| p.player_id == host_id)
+                                    .unwrap();
+                                let j = lobby
+                                    .players
+                                    .iter()
+                                    .find(|p| p.player_id == player_id)
+                                    .unwrap();
+                                let mut pairs: Vec<CandidatePair> = Vec::new();
+                                for local_cand in &j.candidates {
+                                    for remote_cand in &h.candidates {
+                                        pairs.push(CandidatePair {
+                                            peer_id: host_id,
+                                            local_type: local_cand.candidate_type.clone(),
+                                            remote_type: remote_cand.candidate_type.clone(),
+                                            remote_addr: remote_cand.addr.clone(),
+                                            priority: candidate_pair_priority(
+                                                &local_cand.candidate_type,
+                                                &remote_cand.candidate_type,
+                                            ),
+                                        });
+                                    }
+                                }
+                                pairs.sort_by_key(|p| std::cmp::Reverse(p.priority));
+                                let probe_addrs: Vec<String> =
+                                    j.candidates.iter().map(|c| c.addr.clone()).collect();
+                                let joiner_callsign = j.callsign.clone();
+                                info!(
+                                    %player_id, %host_id, pairs = pairs.len(),
+                                    "late-join ICE: sending probes"
+                                );
+                                Some((host_id, pairs, probe_addrs, joiner_callsign))
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        };
+
                         drop(lobby);
                         for (pid, msg) in peer_msgs {
                             if let Some(sess) = state.sessions.get(&pid) {
@@ -1762,6 +1906,29 @@ async fn handle_authenticated_message(
                                 }
                             }
                             info!(%lobby_id, "connectivity checks started (all STUN results received)");
+                        }
+                        // Send late-join ICE messages
+                        if let Some((host_id, pairs, probe_addrs, joiner_callsign)) =
+                            late_join_msgs
+                        {
+                            // CONNECTIVITY_CHECK_GO to joiner
+                            if let Some(sess) = state.sessions.get(&player_id) {
+                                let _ = sess.tx.send(ServerMessage::ConnectivityCheckGo {
+                                    peer_addrs: pairs,
+                                });
+                            }
+                            // LATE_JOIN_PROBE to host
+                            if let Some(sess) = state.sessions.get(&host_id) {
+                                let _ = sess.tx.send(ServerMessage::LateJoinProbe {
+                                    joiner_id: player_id,
+                                    joiner_callsign,
+                                    probe_addrs,
+                                });
+                            }
+                            info!(
+                                %lobby_id, joiner = %player_id,
+                                "late-join ICE initiated"
+                            );
                         }
                     }
                 }
@@ -1792,6 +1959,147 @@ async fn handle_authenticated_message(
                             p.ping_ms = Some(rtt_ms);
                         }
                         info!(%player_id, %peer, %winning_candidate_type, rtt_ms, "connectivity ok");
+
+                        // Late-join completion: joiner reported ConnectivityOk
+                        if lobby.state == LobbyState::InGame
+                            && lobby.pending_late_joiners.remove(&player_id)
+                        {
+                            let host_id = lobby.host_player_id;
+                            let host_player = lobby
+                                .players
+                                .iter()
+                                .find(|p| p.player_id == host_id);
+                            let joiner_player = lobby
+                                .players
+                                .iter()
+                                .find(|p| p.player_id == player_id);
+                            if let (Some(host_p), Some(joiner_p)) = (host_player, joiner_player) {
+                                let (pair_conn_type, _) =
+                                    determine_connection_type(host_p, joiner_p);
+                                let relay_addr = state.config.relay_public_addr.clone();
+                                let is_relay =
+                                    pair_conn_type == crate::lobby::ConnectionType::Relay;
+
+                                // Determine host address for joiner's peer assignment
+                                let host_addr = if is_relay {
+                                    relay_addr.clone()
+                                } else {
+                                    best_candidate_addr_for_type(
+                                        &host_p.candidates,
+                                        &pair_conn_type,
+                                    )
+                                };
+                                // Determine joiner address for host's peer assignment
+                                let joiner_addr = if is_relay {
+                                    relay_addr.clone()
+                                } else {
+                                    best_candidate_addr_for_type(
+                                        &joiner_p.candidates,
+                                        &pair_conn_type,
+                                    )
+                                };
+
+                                // Assign joiner slot = their position in lobby.players
+                                let joiner_slot = lobby
+                                    .players
+                                    .iter()
+                                    .position(|p| p.player_id == player_id)
+                                    .unwrap_or(1)
+                                    as u8;
+                                let host_slot = 0u8; // host is always slot 0
+
+                                // Allocate relay if needed
+                                let mut relay_token: Option<u32> = None;
+                                if is_relay && !relay_addr.is_empty() {
+                                    let pair = RelayPair {
+                                        slot_a: host_slot,
+                                        slot_b: joiner_slot,
+                                        pid_a: host_id,
+                                        pid_b: player_id,
+                                        addr_a: None,
+                                        addr_b: None,
+                                    };
+                                    relay_token =
+                                        allocate_relay_session(state, &relay_addr, &pair);
+                                }
+
+                                let game = lobby.game.clone();
+                                let game_info = lobby.game_info.clone();
+                                let max_players = lobby.max_players;
+
+                                info!(
+                                    %lobby_id, joiner = %player_id,
+                                    joiner_slot, method = pair_conn_type.as_str(),
+                                    "late-join ICE complete"
+                                );
+
+                                // Build GAME_STARTING for joiner (host as only peer)
+                                let joiner_msg = ServerMessage::GameStarting {
+                                    host_addr: host_addr.clone(),
+                                    game,
+                                    your_slot: joiner_slot,
+                                    max_players,
+                                    game_info,
+                                    peers: vec![PeerAssignment {
+                                        slot: host_slot,
+                                        addr: host_addr,
+                                        is_relay,
+                                        relay_token,
+                                        relay_dest_slot: if is_relay {
+                                            Some(host_slot)
+                                        } else {
+                                            None
+                                        },
+                                    }],
+                                };
+
+                                // Build LATE_JOIN_APPROVED for host
+                                let host_msg = ServerMessage::LateJoinApproved {
+                                    peer: PeerAssignment {
+                                        slot: joiner_slot,
+                                        addr: joiner_addr,
+                                        is_relay,
+                                        relay_token,
+                                        relay_dest_slot: if is_relay {
+                                            Some(joiner_slot)
+                                        } else {
+                                            None
+                                        },
+                                    },
+                                };
+
+                                // Update joiner's presence
+                                drop(lobby);
+                                if let Some(mut session) = state.sessions.get_mut(&player_id) {
+                                    let lobby_ref = state.lobbies.get(&lobby_id);
+                                    let mission = lobby_ref
+                                        .as_ref()
+                                        .map(|l| game_info_str(&l.game_info, "mission"))
+                                        .unwrap_or_default();
+                                    let pcount = lobby_ref
+                                        .as_ref()
+                                        .map(|l| l.player_count())
+                                        .unwrap_or(0);
+                                    session.presence = Presence::InGame {
+                                        lobby_id,
+                                        mission,
+                                        player_count: pcount,
+                                    };
+                                }
+
+                                // Send messages
+                                if let Some(sess) = state.sessions.get(&player_id) {
+                                    let _ = sess.tx.send(joiner_msg);
+                                }
+                                if let Some(sess) = state.sessions.get(&host_id) {
+                                    let _ = sess.tx.send(host_msg);
+                                }
+                            } else {
+                                drop(lobby);
+                            }
+                        } else {
+                            // Not a late-join completion -- nothing extra to do
+                        }
                     }
                 }
             }
@@ -1925,12 +2233,12 @@ async fn handle_authenticated_message(
             let mode = state
                 .lobbies
                 .get(&lobby_id)
-                .map(|l| l.mode.clone())
+                .map(|l| game_info_str(&l.game_info, "mode"))
                 .unwrap_or_default();
             let mission = state
                 .lobbies
                 .get(&lobby_id)
-                .map(|l| l.mission.clone())
+                .map(|l| game_info_str(&l.game_info, "mission"))
                 .unwrap_or_default();
 
             let _ = state.db.insert_match_result(&MatchResultData {

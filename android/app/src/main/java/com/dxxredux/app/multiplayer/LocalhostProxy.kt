@@ -12,6 +12,7 @@ import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 
 private const val TAG = "LocalhostProxy"
 
@@ -20,6 +21,12 @@ private const val MAX_PACKET_SIZE = 1500
 private const val ENGINE_PORT = 42424
 private const val RELAY_HEADER_LEN = 5
 private const val KEEPALIVE_INTERVAL_MS = 15_000L
+
+// Connectivity probe constants (must match ConnectivityChecker)
+private const val PROBE_MAGIC: Int = 0x44585043 // "DXPC"
+private const val PROBE_SIZE = 12
+private const val PROBE_FLAG_REQUEST: Short = 0x0001
+private const val PROBE_FLAG_RESPONSE: Short = 0x0002
 
 /**
  * UDP proxy between the game engine (localhost:42424) and remote peers.
@@ -54,6 +61,10 @@ class LocalhostProxy(
     // Demux maps for shared-socket mode (concurrent for thread safety with receiver)
     private val directPeersByAddr = ConcurrentHashMap<String, PeerProxy>()
     private val relayPeersBySlot = ConcurrentHashMap<Int, PeerProxy>()
+
+    // When active, the shared receive loop echoes DXPC probe requests from
+    // unknown senders (for late-join NAT holepunching).
+    private val lateJoinProbeActive = AtomicBoolean(false)
 
     init {
         if (sharedRealSocket != null) {
@@ -133,6 +144,30 @@ class LocalhostProxy(
                     }
                 }
 
+                // Unmatched: check for late-join probe echo
+                if (lateJoinProbeActive.get() && pkt.length == PROBE_SIZE) {
+                    val bb = ByteBuffer.wrap(pkt.data, 0, PROBE_SIZE)
+                    if (bb.int == PROBE_MAGIC) {
+                        val token = bb.int
+                        val seq = bb.short
+                        val flags = bb.short
+                        if (flags == PROBE_FLAG_REQUEST) {
+                            // Echo back as RESPONSE
+                            val resp = ByteArray(PROBE_SIZE)
+                            val rb = ByteBuffer.wrap(resp)
+                            rb.putInt(PROBE_MAGIC)
+                            rb.putInt(token)
+                            rb.putShort(seq)
+                            rb.putShort(PROBE_FLAG_RESPONSE)
+                            val dest = InetSocketAddress(pkt.address, pkt.port)
+                            try {
+                                socket.send(DatagramPacket(resp, PROBE_SIZE, dest))
+                            } catch (_: Exception) {
+                            }
+                            continue
+                        }
+                    }
+                }
                 // Unmatched: stale probe, connectivity echo, or unknown sender
             } catch (_: java.net.SocketTimeoutException) {
                 // Socket may have a residual soTimeout from STUN/connectivity
@@ -146,6 +181,37 @@ class LocalhostProxy(
     }
 
     fun getStats(): List<PeerProxyStats> = peerProxies.map { it.getStats() }
+
+    /**
+     * Enable probe echo on the shared socket and send blind probes to the
+     * given addresses. This opens NAT pinholes for a late-joining player
+     * and lets their ConnectivityChecker receive echo responses.
+     */
+    fun sendLateJoinProbes(addrs: List<String>) {
+        val socket = sharedRealSocket ?: return
+        lateJoinProbeActive.set(true)
+        val token = java.security.SecureRandom().nextInt()
+        scope.launch(Dispatchers.IO) {
+            for (addrStr in addrs) {
+                val parts = addrStr.split(":")
+                if (parts.size != 2) continue
+                val port = parts[1].toIntOrNull() ?: continue
+                try {
+                    val addr = InetSocketAddress(InetAddress.getByName(parts[0]), port)
+                    val buf = ByteArray(PROBE_SIZE)
+                    val bb = ByteBuffer.wrap(buf)
+                    bb.putInt(PROBE_MAGIC)
+                    bb.putInt(token)
+                    bb.putShort(0) // seq
+                    bb.putShort(PROBE_FLAG_REQUEST) // flags
+                    socket.send(DatagramPacket(buf, PROBE_SIZE, addr))
+                } catch (e: Exception) {
+                    Log.w(TAG, "Late-join blind probe failed to $addrStr: ${e.message}")
+                }
+            }
+            Log.i(TAG, "Sent ${addrs.size} late-join blind probes")
+        }
+    }
 
     fun shutdown() {
         // C10: close sockets first to unblock receive() calls, then cancel jobs

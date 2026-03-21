@@ -5558,6 +5558,7 @@ int net_udp_auto_host(int my_port, const char *mission, int mode,
 	Netgame.difficulty = difficulty;
 	Netgame.max_numplayers = max_players;
 	Netgame.levelnum = level_num;
+	Netgame.RefusePlayers = 1; /* android port: require host approval for mid-game joins */
 	strcpy(Netgame.mission_name, Current_mission_filename);
 	strcpy(Netgame.mission_title, Current_mission_longname);
 	sprintf(Netgame.game_name, "%s%s", Players[Player_num].callsign, TXT_S_GAME);

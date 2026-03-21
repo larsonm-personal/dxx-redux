@@ -123,8 +123,6 @@ async fn status(State(state): State<Arc<ServerState>>) -> Json<StatusResponse> {
                 lobby_id: lobby.id,
                 host_callsign: lobby.host_callsign.clone(),
                 game: lobby.game.clone(),
-                mission: lobby.mission.clone(),
-                mode: lobby.mode.clone(),
                 player_count: lobby.player_count(),
                 max_players: lobby.max_players,
                 joinable: lobby.is_joinable(),
@@ -134,6 +132,12 @@ async fn status(State(state): State<Arc<ServerState>>) -> Json<StatusResponse> {
                     .and_then(|s| s.ping_ms),
                 has_code: lobby.code.is_some(),
                 verified_only: lobby.verified_only,
+                game_info: lobby.game_info.clone(),
+                lobby_state: match lobby.state {
+                    crate::lobby::LobbyState::InGame => "in_progress".into(),
+                    _ => "waiting".into(),
+                },
+                current_level: lobby.runtime_level,
             }
         })
         .collect();

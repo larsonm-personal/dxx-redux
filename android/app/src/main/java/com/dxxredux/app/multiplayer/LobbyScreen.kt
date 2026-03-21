@@ -32,6 +32,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonPrimitive
 
 @Composable
 fun LobbyScreen(onLaunchGame: (GameLaunchInfo) -> Unit) {
@@ -68,6 +70,26 @@ fun LobbyScreen(onLaunchGame: (GameLaunchInfo) -> Unit) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        // Game config summary from game_info
+        val gi = lobby.gameInfo
+        val mission = gi["mission"]?.jsonPrimitive?.content ?: ""
+        val mode = gi["mode"]?.jsonPrimitive?.content ?: ""
+        val diff = gi["difficulty"]?.jsonPrimitive?.intOrNull
+        val level = gi["level_num"]?.jsonPrimitive?.intOrNull
+        val diffNames = listOf("Trainee", "Rookie", "Hotshot", "Ace", "Insane")
+        val configParts =
+            buildList {
+                if (mission.isNotEmpty()) add(mission)
+                if (mode.isNotEmpty()) add(mode)
+                if (diff != null) add(diffNames.getOrElse(diff) { "Diff $diff" })
+                if (level != null) add("Level $level")
+            }
+        if (configParts.isNotEmpty()) {
+            Text(
+                configParts.joinToString(" / "),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
         Spacer(Modifier.height(12.dp))
 
         // -- Player list --

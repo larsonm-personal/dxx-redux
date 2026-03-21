@@ -41,6 +41,7 @@
 - don't use emdashes anywhere, but especially not in scripts
 - keep to printable ascii wherever possible
 - always create a plan as step 1 of any block of work. plan files go here: android\ai tool plans\
+  - when a given tranche of work is done, always mark the finished parts in the plan file so the next phase can start at the right place
 - attempt to minimize line count to some extent. don't take this to an extreme, but avoid abstractions that are just wrappers, duplicated code, and other verbose things
 - mimic the style of the existing code. by and large, this is a "C in C++" codebase without classes or templates. it's ok to use things like std::array<> or simple RAII classes within the android/ dir, but don't get crazy. I *do* want you to use C++ patterns (within the android/ dir) that can avoid things like null pointer access and array bounds problems, the base game is highly susceptible to these things and it's sometimes a problem
 - add simple, high-level integration tests to catch regressions and document high level functionality. it's not necessary to add tests to cover every little function unless the function has tricky edge cases or is very complex by itself

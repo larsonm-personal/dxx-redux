@@ -129,6 +129,12 @@ class MainActivity :
 
     external fun nativeIsHostSelectingPlayers(): Boolean
 
+    /** Returns the callsign of a player requesting to join, or "" if none. */
+    external fun nativeGetJoinRequest(): String
+
+    /** Accept the pending join request (equivalent to pressing F6). */
+    external fun nativeAcceptJoinRequest()
+
     external fun nativeAutomapInput(
         heading: Float,
         pitch: Float,
@@ -184,6 +190,10 @@ class MainActivity :
 
     external fun nativeGetMultiplayerPacketStats(): IntArray
 
+    // Netgame state: [game_status, numconnected, max_numplayers, levelnum, gamemode]
+    // android port: game state polling for matchmaking server updates
+    external fun nativeGetNetgameState(): IntArray
+
     external fun nativeSetAutoJoin(
         hostAddr: String,
         hostPort: Int,
@@ -230,6 +240,7 @@ class MainActivity :
     private lateinit var skipButton: SkipButtonView
     private lateinit var exitButton: ExitButtonView
     private lateinit var startGameButton: StartGameButtonView
+    private lateinit var acceptJoinButton: AcceptJoinButtonView
     private lateinit var overlayContainer: LinearLayout
     private var overlayEnabled = false
     private val overlayPoller = android.os.Handler(android.os.Looper.getMainLooper())
@@ -510,6 +521,18 @@ class MainActivity :
                 visibility = View.GONE
             }
 
+        // "ACCEPT: callsign" button for mid-game join requests (hidden by default)
+        acceptJoinButton =
+            AcceptJoinButtonView(this).apply {
+                acceptCallback = {
+                    try {
+                        nativeAcceptJoinRequest()
+                    } catch (_: Exception) {
+                    }
+                }
+                visibility = View.GONE
+            }
+
         // Multi-line overlay container (upper-left, items fade independently)
         overlayContainer =
             LinearLayout(this).apply {
@@ -562,6 +585,13 @@ class MainActivity :
         )
         frame.addView(
             startGameButton,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
+        frame.addView(
+            acceptJoinButton,
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -826,6 +856,19 @@ class MainActivity :
                                 }
                             startGameButton.visibility =
                                 if (hostSelecting) View.VISIBLE else View.GONE
+                            // Show "ACCEPT" button when a player requests to join mid-game
+                            val joinCallsign =
+                                try {
+                                    nativeGetJoinRequest()
+                                } catch (_: Exception) {
+                                    ""
+                                }
+                            if (joinCallsign.isNotEmpty()) {
+                                acceptJoinButton.callsign = joinCallsign
+                                acceptJoinButton.visibility = View.VISIBLE
+                            } else {
+                                acceptJoinButton.visibility = View.GONE
+                            }
                             // Auto-show/hide network events overlay during MP phases
                             val mpState = com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value
                             val showNetEvents =
@@ -844,6 +887,7 @@ class MainActivity :
                             skipButton.visibility = View.GONE
                             exitButton.visibility = View.VISIBLE
                             startGameButton.visibility = View.GONE
+                            acceptJoinButton.visibility = View.GONE
                             // Still try to show net events overlay during MP connecting
                             val mpState2 = com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value
                             if (isMultiplayerGame || mpState2.gameLaunchInfo != null || netEventsManualToggle) {
@@ -858,6 +902,7 @@ class MainActivity :
                         touchOverlay.automapActive = false
                         skipButton.visibility = View.GONE
                         startGameButton.visibility = View.GONE
+                        acceptJoinButton.visibility = View.GONE
                         netStatsOverlay?.hide()
                         netEventsOverlay?.hide()
                         netEventsManualToggle = false

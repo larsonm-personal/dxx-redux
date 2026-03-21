@@ -7,7 +7,8 @@ object NetworkConstants {
     const val PLATFORM: String = "android"
 
     // Default server URL for emulator (10.0.2.2 is the host loopback alias)
-    const val DEFAULT_SERVER_URL: String = "ws://10.0.2.2:9000/ws"
+    // Always wss:// -- lanClient handles self-signed certs for private IPs
+    const val DEFAULT_SERVER_URL: String = "wss://10.0.2.2:9000/ws"
 
     // Default WebSocket port and path for production (wss:// via nginx on standard port)
     const val DEFAULT_WSS_PORT: Int = 443
