@@ -1631,6 +1631,9 @@ private fun SetupScreen(
                     val binUris = mutableListOf<Pair<String, Uri>>()
                     var gogUri: Pair<String, Uri>? = null
                     var sowUri: Pair<String, Uri>? = null
+                    // Track raw .gog/.inst pairs (GOG CD images picked directly)
+                    var gogDiscUri: Pair<String, Uri>? = null   // .gog BIN file
+                    var instDiscUri: Pair<String, Uri>? = null   // .inst CUE sheet
                     for (uri in uris) {
                         val name = getDisplayName(context, uri)
                         if (name != null) {
@@ -1638,12 +1641,23 @@ private fun SetupScreen(
                             when {
                                 lname.endsWith(".zip") -> zipUris.add(uri)
                                 lname.endsWith(".cue") -> cueUris.add(name to uri)
+                                lname.endsWith(".inst") -> instDiscUri = name to uri
+                                lname.endsWith(".gog") -> gogDiscUri = name to uri
                                 lname.endsWith(".bin") -> binUris.add(name to uri)
                                 lname.endsWith(".exe") || lname.endsWith(".pkg") -> gogUri = name to uri
                                 lname.endsWith(".sow") -> sowUri = name to uri
                                 lname in ALL_GAME_FILENAMES -> gameUris.add(FoundFile(name, uri))
                             }
                         }
+                    }
+                    // If .gog+.inst pair found, route to disc import as CUE+BIN
+                    if (gogDiscUri != null && instDiscUri != null) {
+                        cueUris.add(instDiscUri!!)
+                        binUris.add(gogDiscUri!!)
+                    } else {
+                        // Treat unpaired .gog/.inst as normal game files
+                        gogDiscUri?.let { gameUris.add(FoundFile(it.first, it.second)) }
+                        instDiscUri?.let { gameUris.add(FoundFile(it.first, it.second)) }
                     }
                     withContext(Dispatchers.Main) {
                         if (gameUris.isNotEmpty()) {

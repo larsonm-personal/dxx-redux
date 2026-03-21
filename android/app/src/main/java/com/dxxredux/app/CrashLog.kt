@@ -21,7 +21,7 @@ import java.util.Locale
 object CrashLog {
     private const val TAG = "CrashLog"
     private const val DIR_NAME = "crashlogs"
-    private const val MAX_FILES = 20
+    private const val MAX_FILES = 5
     private const val AUTHORITY = "com.dxxredux.app.fileprovider"
 
     private var installed = false

@@ -21,7 +21,7 @@ object NetLog {
     private const val PREFS_NAME = "dxx_prefs"
     private const val KEY_ENABLED = "net_logging_enabled"
     private const val DIR_NAME = "netlogs"
-    private const val MAX_FILES = 10
+    private const val MAX_FILES = 5
     private const val AUTHORITY = "com.dxxredux.app.fileprovider"
 
     private var writer: BufferedWriter? = null

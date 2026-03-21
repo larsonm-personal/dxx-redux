@@ -3,9 +3,14 @@ package com.dxxredux.app
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -63,12 +68,13 @@ fun AdvancedSettingsPage(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Column(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .verticalScroll(scrollState),
-            ) {
+            Box(modifier = Modifier.weight(1f)) {
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .verticalScroll(scrollState),
+                ) {
                 // -- Render Resolution --
                 ResolutionPickerAdvanced(prefs = prefs, filesDir = filesDir)
 
@@ -227,6 +233,8 @@ fun AdvancedSettingsPage(
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
+            }
+            ScrollArrows(scrollState)
             }
         }
     }
@@ -480,4 +488,38 @@ internal fun computeResolutionOptions(ctx: android.content.Context): List<Pair<S
         result.add("640x480" to "Low (640x480)")
     }
     return result
+}
+
+@Composable
+private fun BoxScope.ScrollArrows(scrollState: ScrollState) {
+    if (scrollState.canScrollBackward) {
+        Surface(
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 4.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
+            shadowElevation = 2.dp,
+        ) {
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowUp,
+                contentDescription = "Scroll up",
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+    if (scrollState.canScrollForward) {
+        Surface(
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
+            shadowElevation = 2.dp,
+        ) {
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = "Scroll down",
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
 }

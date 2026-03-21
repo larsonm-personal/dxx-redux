@@ -130,6 +130,8 @@ class MainActivity :
 
     external fun nativeIsHostSelectingPlayers(): Boolean
 
+    external fun nativeIsLevelCompleteActive(): Boolean
+
     /** Returns the callsign of a player requesting to join, or "" if none. */
     external fun nativeGetJoinRequest(): String
 
@@ -840,9 +842,18 @@ class MainActivity :
                             val wasActive = touchOverlay.isActive
                             touchOverlay.isActive = shouldShow
                             touchOverlay.automapActive = automap
-                            // Show/hide skip button for cutscenes, death, or save/load back
+                            // Show/hide skip button for cutscenes, death, save/load, or level complete
+                            val levelComplete =
+                                try {
+                                    nativeIsLevelCompleteActive()
+                                } catch (_: Exception) {
+                                    false
+                                }
                             if (saveloadMenu) {
                                 skipButton.label = "BACK"
+                                skipButton.visibility = View.VISIBLE
+                            } else if (levelComplete) {
+                                skipButton.label = "NEXT"
                                 skipButton.visibility = View.VISIBLE
                             } else if (showCutsceneButton && !shouldShow) {
                                 skipButton.label = if (playerDead) "CONTINUE" else "SKIP"

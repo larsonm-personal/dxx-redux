@@ -808,12 +808,19 @@ void DoEndLevelScoreGlitz(int network)
 
 	Assert(c <= N_GLITZITEMS);
 
+#ifdef __ANDROID__
+	extern volatile int g_levelcomplete_active;
+	g_levelcomplete_active = 1;
+#endif
 #ifdef NETWORK
 	if ( network && (Game_mode & GM_NETWORK) )
 		newmenu_do2(NULL, title, c, m, multi_endlevel_poll1, NULL, 0, Menu_pcx_name);
 	else
 #endif	// Note link!
 		newmenu_do2(NULL, title, c, m, NULL, NULL, 0, Menu_pcx_name);
+#ifdef __ANDROID__
+	g_levelcomplete_active = 0;
+#endif
 }
 
 int draw_rock(newmenu *menu, d_event *event, grs_bitmap *background)
