@@ -40,7 +40,6 @@ data class CreateLobbyMsg(
     @SerialName("lobby_code") val lobbyCode: String? = null,
     @SerialName("verified_only") val verifiedOnly: Boolean = false,
     @SerialName("game_info") val gameInfo: JsonObject = JsonObject(emptyMap()),
-    @SerialName("game_info") val gameInfo: JsonObject = JsonObject(emptyMap()),
 )
 
 @Serializable
@@ -206,10 +205,6 @@ data class LobbyInfo(
     // "waiting" or "in_progress"
     @SerialName("lobby_state") val lobbyState: String = "waiting",
     @SerialName("current_level") val currentLevel: Int? = null,
-    @SerialName("game_info") val gameInfo: JsonObject = JsonObject(emptyMap()),
-    // "waiting" or "in_progress"
-    @SerialName("lobby_state") val lobbyState: String = "waiting",
-    @SerialName("current_level") val currentLevel: Int? = null,
 )
 
 @Serializable
@@ -256,7 +251,6 @@ data class GameStartingMsg(
     val game: String,
     @SerialName("your_slot") val yourSlot: Int = 0,
     @SerialName("max_players") val maxPlayers: Int = 4,
-    @SerialName("game_info") val gameInfo: JsonObject = JsonObject(emptyMap()),
     @SerialName("game_info") val gameInfo: JsonObject = JsonObject(emptyMap()),
     val peers: List<PeerAssignment> = emptyList(),
 )
@@ -420,18 +414,6 @@ data class LateJoinApprovedMsg(
     val peer: PeerAssignment,
 )
 
-@Serializable
-data class LateJoinProbeMsg(
-    @SerialName("joiner_id") val joinerId: String,
-    @SerialName("joiner_callsign") val joinerCallsign: String,
-    @SerialName("probe_addrs") val probeAddrs: List<String>,
-)
-
-@Serializable
-data class LateJoinApprovedMsg(
-    val peer: PeerAssignment,
-)
-
 // Sealed class representing any server message, dispatched by "type" field
 sealed class ServerMessage {
     data class AuthOkMsg(
@@ -542,14 +524,6 @@ sealed class ServerMessage {
         val data: LateJoinApprovedMsg,
     ) : ServerMessage()
 
-    data class LateJoinProbeReceived(
-        val data: LateJoinProbeMsg,
-    ) : ServerMessage()
-
-    data class LateJoinApprovedReceived(
-        val data: LateJoinApprovedMsg,
-    ) : ServerMessage()
-
     data class Unknown(
         val type: String,
         val raw: String,
@@ -602,14 +576,6 @@ sealed class ServerMessage {
                 "JOIN_FRIEND_GAME_RESP" ->
                     JoinFriendGameResponse(
                         protocolJson.decodeFromString<JoinFriendGameRespMsg>(text),
-                    )
-                "LATE_JOIN_PROBE" ->
-                    LateJoinProbeReceived(
-                        protocolJson.decodeFromString<LateJoinProbeMsg>(text),
-                    )
-                "LATE_JOIN_APPROVED" ->
-                    LateJoinApprovedReceived(
-                        protocolJson.decodeFromString<LateJoinApprovedMsg>(text),
                     )
                 "LATE_JOIN_PROBE" ->
                     LateJoinProbeReceived(
