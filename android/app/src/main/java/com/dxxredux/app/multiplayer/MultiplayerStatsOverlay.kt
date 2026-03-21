@@ -254,7 +254,7 @@ class MultiplayerStatsOverlay(
         val panelH = pad * 2 + lineH * contentLines + graphH + pad
         val panelW = (w * 0.3f).coerceIn(180f * density, w * 0.45f)
 
-        val panelLeft = w - panelW - pad
+        val panelLeft = pad
         val panelTop = pad
 
         // Background

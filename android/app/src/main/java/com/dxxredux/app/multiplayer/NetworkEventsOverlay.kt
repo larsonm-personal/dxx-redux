@@ -13,7 +13,7 @@ import android.view.View
  * In-game overlay showing network connection events: per-peer connection method,
  * relay/direct status, estimated latency, NAT type, and STUN addresses.
  *
- * Positioned on the LEFT side to avoid overlapping MultiplayerStatsOverlay (right).
+ * Positioned on the RIGHT side to avoid overlapping MultiplayerStatsOverlay (left).
  * Toggled via admin tray (ADMIN_NET_EVENTS).
  */
 class NetworkEventsOverlay(
@@ -99,7 +99,28 @@ class NetworkEventsOverlay(
         // Collect lines to render
         val lines = mutableListOf<LineEntry>()
         lines.add(LineEntry("NET EVENTS", LineType.TITLE))
-        lines.add(LineEntry("Status: ${state.status.name}", LineType.LABEL))
+
+        // Status line: "Connected (direct/relay) - host/client"
+        val connType =
+            when {
+                state.connectionInfo.any { it.serverRelay } -> "relay"
+                state.connectionInfo.isNotEmpty() -> "direct"
+                else -> null
+            }
+        val method = state.connectionInfo.firstOrNull()?.method
+        val role =
+            when {
+                state.gameLaunchInfo?.isHost == true -> "host"
+                state.currentLobby?.isHost == true -> "host"
+                state.gameLaunchInfo != null -> "client"
+                state.currentLobby != null -> "client"
+                else -> null
+            }
+        val statusParts = mutableListOf(state.status.name)
+        connType?.let { statusParts[0] = "${state.status.name} ($it)" }
+        method?.let { statusParts.add(it) }
+        role?.let { statusParts.add(it) }
+        lines.add(LineEntry(statusParts.joinToString(" - "), LineType.LABEL))
 
         if (state.stunAddrs.isNotEmpty()) {
             lines.add(LineEntry("STUN: ${state.stunAddrs.joinToString(", ")}", LineType.LABEL))
@@ -180,7 +201,7 @@ class NetworkEventsOverlay(
         // Panel sizing
         val panelW = (w * 0.32f).coerceIn(160f * density, w * 0.45f)
         val panelH = pad * 2 + lineH * lines.size
-        val panelLeft = pad
+        val panelLeft = w - panelW - pad
         val panelTop = pad
 
         // Background

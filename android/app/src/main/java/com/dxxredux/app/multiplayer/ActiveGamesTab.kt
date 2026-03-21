@@ -1,5 +1,6 @@
 package com.dxxredux.app.multiplayer
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,7 +19,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun ActiveGamesTab(games: List<ActiveGameInfo>) {
+fun ActiveGamesTab(
+    games: List<ActiveGameInfo>,
+    onJoin: (String) -> Unit = {},
+) {
     if (games.isEmpty()) {
         Text("No active games.", style = MaterialTheme.typography.bodyMedium)
         return
@@ -27,14 +31,22 @@ fun ActiveGamesTab(games: List<ActiveGameInfo>) {
     Spacer(Modifier.height(4.dp))
     LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         items(games) { game ->
-            ActiveGameCard(game)
+            ActiveGameCard(game, onJoin = { onJoin(game.lobbyId) })
         }
     }
 }
 
 @Composable
-internal fun ActiveGameCard(game: ActiveGameInfo) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+internal fun ActiveGameCard(
+    game: ActiveGameInfo,
+    onJoin: () -> Unit = {},
+) {
+    Card(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(enabled = game.lobbyId.isNotEmpty()) { onJoin() },
+    ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(game.hostCallsign, style = MaterialTheme.typography.titleSmall)

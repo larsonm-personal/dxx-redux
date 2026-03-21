@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -290,8 +292,12 @@ private fun ServerBrowserContent(
                         )
                         Spacer(Modifier.height(4.dp))
                     }
-                    items(activeGames, key = { "${it.hostCallsign}-${it.mission}" }) { game ->
-                        ActiveGameCard(game)
+                    items(activeGames, key = { it.lobbyId.ifEmpty { "${it.hostCallsign}-${it.mission}" } }) { game ->
+                        ActiveGameCard(game, onJoin = {
+                            if (game.lobbyId.isNotEmpty()) {
+                                MatchmakingService.joinLobby(game.lobbyId)
+                            }
+                        })
                         Spacer(Modifier.height(4.dp))
                     }
                 }
@@ -437,12 +443,14 @@ private fun CreateLobbyDialog(
     onCreate: (game: String, maxPlayers: Int, gameInfo: JsonObject) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var game by remember { mutableStateOf("d2") }
-    var mission by remember { mutableStateOf<String?>(null) }
-    var mode by remember { mutableStateOf("anarchy") }
-    var maxPlayersText by remember { mutableStateOf("4") }
-    var difficulty by remember { mutableStateOf(1) }
-    var levelNumText by remember { mutableStateOf("1") }
+    val context = LocalContext.current
+    val defaults = remember { HostGameDefaults.load(context) }
+    var game by remember { mutableStateOf(defaults.game) }
+    var mission by remember { mutableStateOf(defaults.mission) }
+    var mode by remember { mutableStateOf(defaults.mode) }
+    var maxPlayersText by remember { mutableStateOf(defaults.maxPlayers.toString()) }
+    var difficulty by remember { mutableStateOf(defaults.difficulty) }
+    var levelNumText by remember { mutableStateOf(defaults.levelNum.toString()) }
 
     val difficultyNames = listOf("Trainee", "Rookie", "Hotshot", "Ace", "Insane")
 
@@ -450,7 +458,10 @@ private fun CreateLobbyDialog(
         onDismissRequest = onDismiss,
         title = { Text("Create Lobby") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+            ) {
                 // Game selector: simple toggle between d1/d2
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("d1", "d2").forEach { g ->
@@ -459,7 +470,14 @@ private fun CreateLobbyDialog(
                         } else {
                             OutlinedButton(onClick = {
                                 game = g
-                                mission = null
+                                // Load game-specific mission default
+                                val saved = HostGameDefaults.load(context)
+                                mission =
+                                    if (saved.game == g) {
+                                        saved.mission
+                                    } else {
+                                        HostGameDefaults.Defaults(game = g).mission
+                                    }
                             }) { Text(g.uppercase()) }
                         }
                     }
@@ -523,6 +541,17 @@ private fun CreateLobbyDialog(
             val levelNum = levelNumText.toIntOrNull() ?: 1
             TextButton(
                 onClick = {
+                    HostGameDefaults.save(
+                        context,
+                        HostGameDefaults.Defaults(
+                            game = game,
+                            mission = mission,
+                            mode = mode,
+                            difficulty = difficulty,
+                            levelNum = levelNum,
+                            maxPlayers = maxPlayers,
+                        ),
+                    )
                     val gameInfo =
                         JsonObject(
                             mapOf(

@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -616,12 +618,13 @@ private fun HostLanGameDialog(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
+    val defaults = remember { HostGameDefaults.load(context) }
     val fsm = remember { FileSetManager(context.filesDir) }
     val setDir = remember(fsm) { fsm.getSetDir(fsm.getActive()) }
-    var game by remember { mutableStateOf("d2") }
-    var mission by remember { mutableStateOf<String?>(null) }
-    var mode by remember { mutableStateOf("coop") }
-    var maxPlayersText by remember { mutableStateOf("4") }
+    var game by remember { mutableStateOf(defaults.game) }
+    var mission by remember { mutableStateOf(defaults.mission) }
+    var mode by remember { mutableStateOf(defaults.mode) }
+    var maxPlayersText by remember { mutableStateOf(defaults.maxPlayers.toString()) }
     val missions = remember(game, setDir) { MissionScanner.scan(setDir, game) }
     val selectedLevelCount =
         remember(mission, missions) {
@@ -632,7 +635,10 @@ private fun HostLanGameDialog(
         onDismissRequest = onDismiss,
         title = { Text("Host LAN Game") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+            ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("d1", "d2").forEach { g ->
                         if (g == game) {
@@ -640,7 +646,13 @@ private fun HostLanGameDialog(
                         } else {
                             OutlinedButton(onClick = {
                                 game = g
-                                mission = null
+                                val saved = HostGameDefaults.load(context)
+                                mission =
+                                    if (saved.game == g) {
+                                        saved.mission
+                                    } else {
+                                        HostGameDefaults.Defaults(game = g).mission
+                                    }
                             }) { Text(g.uppercase()) }
                         }
                     }
@@ -675,7 +687,18 @@ private fun HostLanGameDialog(
         confirmButton = {
             val maxPlayers = maxPlayersText.toIntOrNull() ?: 0
             TextButton(
-                onClick = { onHost(game, mission ?: "", mode, maxPlayers, selectedLevelCount) },
+                onClick = {
+                    HostGameDefaults.save(
+                        context,
+                        HostGameDefaults.Defaults(
+                            game = game,
+                            mission = mission,
+                            mode = mode,
+                            maxPlayers = maxPlayers,
+                        ),
+                    )
+                    onHost(game, mission ?: "", mode, maxPlayers, selectedLevelCount)
+                },
                 enabled = mission != null && maxPlayers in 2..8,
             ) {
                 Text("Host")

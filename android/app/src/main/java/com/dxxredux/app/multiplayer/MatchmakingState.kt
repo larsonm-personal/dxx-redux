@@ -162,3 +162,49 @@ object CallsignPrefs {
             .apply()
     }
 }
+
+/** Persistent host game defaults per game (d1/d2), stored in SharedPreferences. */
+object HostGameDefaults {
+    private const val PREFS_NAME = "dxx_prefs"
+
+    // Default missions: d2="d2" (Counterstrike!), d1="" (First Strike)
+    private val DEFAULT_MISSION = mapOf("d1" to "", "d2" to "d2")
+
+    data class Defaults(
+        val game: String = "d2",
+        val mission: String? = null,
+        val mode: String = "coop",
+        val difficulty: Int = 1, // Rookie
+        val levelNum: Int = 1,
+        val maxPlayers: Int = 4,
+    )
+
+    fun load(context: Context): Defaults {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val game = prefs.getString("host_game", "d2") ?: "d2"
+        return Defaults(
+            game = game,
+            mission = prefs.getString("host_mission_$game", DEFAULT_MISSION[game]),
+            mode = prefs.getString("host_mode", "coop") ?: "coop",
+            difficulty = prefs.getInt("host_difficulty", 1),
+            levelNum = prefs.getInt("host_level_num", 1),
+            maxPlayers = prefs.getInt("host_max_players", 4),
+        )
+    }
+
+    fun save(
+        context: Context,
+        d: Defaults,
+    ) {
+        context
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString("host_game", d.game)
+            .putString("host_mission_${d.game}", d.mission)
+            .putString("host_mode", d.mode)
+            .putInt("host_difficulty", d.difficulty)
+            .putInt("host_level_num", d.levelNum)
+            .putInt("host_max_players", d.maxPlayers)
+            .apply()
+    }
+}

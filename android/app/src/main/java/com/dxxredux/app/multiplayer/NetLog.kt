@@ -97,7 +97,7 @@ object NetLog {
             if (!enabled) return
             try {
                 val ts = tsFormat.format(Date())
-                w.write("$ts [$category] $message")
+                w.write("$ts [$category] ${message.trimEnd()}")
                 w.newLine()
                 w.flush()
             } catch (e: Exception) {

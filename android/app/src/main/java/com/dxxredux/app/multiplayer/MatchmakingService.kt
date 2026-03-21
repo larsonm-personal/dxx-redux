@@ -377,6 +377,16 @@ object MatchmakingService {
         NetLog.log("LOBBY", "Requesting game start")
     }
 
+    /** Host signals the server that the game engine has exited.
+     *  The server transitions the lobby back to Waiting so players can re-ready. */
+    fun endGame() {
+        stopGameStateUpdates()
+        send(protocolJson.encodeToString(EndGameMsg.serializer(), EndGameMsg()))
+        state.appendLog("Game ended, returning to lobby.")
+        NetLog.log("LOBBY", "Sent END_GAME")
+        requestLobbyList()
+    }
+
     fun kickPlayer(playerId: String) {
         send(protocolJson.encodeToString(KickPlayerMsg.serializer(), KickPlayerMsg(playerId = playerId)))
         state.appendLog("Kicking player $playerId...")
@@ -388,7 +398,7 @@ object MatchmakingService {
     // NETSTAT_MENU=0, NETSTAT_PLAYING=1, GM_NETWORK=4
     private const val NETSTAT_PLAYING = 1
     private const val GM_NETWORK = 4
-    private const val GAME_STATE_UPDATE_INTERVAL_MS = 10_000L
+    private const val GAME_STATE_UPDATE_INTERVAL_MS = 30_000L
 
     /** Start periodic game state updates to the matchmaking server (host only). */
     fun startGameStateUpdates() {

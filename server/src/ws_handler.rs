@@ -133,6 +133,7 @@ fn build_active_game_list(state: &ServerState) -> Vec<ActiveGameInfo> {
             let l = entry.value();
             let elapsed = (now - l.created_at).num_seconds().max(0) as u64;
             ActiveGameInfo {
+                lobby_id: *entry.key(),
                 host_callsign: l.host_callsign.clone(),
                 mission: game_info_str(&l.game_info, "mission"),
                 mode: game_info_str(&l.game_info, "mode"),
@@ -1403,6 +1404,31 @@ async fn handle_authenticated_message(
                     // Update max_players in case host changed it mid-game
                     if (2..=8).contains(&max_players) {
                         lobby.max_players = max_players;
+                    }
+                }
+            }
+        }
+
+        ClientMessage::EndGame {} => {
+            let lobby_id = state.sessions.get(&player_id).and_then(|s| s.lobby_id);
+            if let Some(lobby_id) = lobby_id {
+                if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
+                    if lobby.host_player_id != player_id {
+                        return; // only host can end the game
+                    }
+                    if matches!(lobby.state, LobbyState::InGame | LobbyState::Starting) {
+                        state.stats.game_ended();
+                        lobby.state = LobbyState::Waiting;
+                        lobby.runtime_player_count = None;
+                        lobby.runtime_level = None;
+                        lobby.runtime_game_status = None;
+                        lobby.last_state_update = None;
+                        // Reset all players to not-ready
+                        for p in &mut lobby.players {
+                            p.ready = false;
+                        }
+                        info!(%player_id, %lobby_id, "host ended game, lobby reset to Waiting");
+                        broadcast_lobby_update(&lobby, state);
                     }
                 }
             }

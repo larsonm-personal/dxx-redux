@@ -1020,6 +1020,15 @@ class SetupActivity : ComponentActivity() {
         super.onResume()
         mpGameLaunching = false
         refreshTrigger.intValue++
+        // If the host returns from a game, signal the server to reset the lobby
+        val mpState =
+            com.dxxredux.app.multiplayer.MatchmakingStateHolder
+                .state
+                .value
+        if (mpState.currentLobby?.isHost == true && !isGameProcessAlive()) {
+            com.dxxredux.app.multiplayer.MatchmakingService
+                .endGame()
+        }
     }
 
     override fun onDestroy() {

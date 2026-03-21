@@ -66,6 +66,11 @@ data class StartGameMsg(
 )
 
 @Serializable
+data class EndGameMsg(
+    val type: String = "END_GAME",
+)
+
+@Serializable
 data class UpdateGameInfoMsg(
     val type: String = "UPDATE_GAME_INFO",
     @SerialName("game_info") val gameInfo: JsonObject,
@@ -232,6 +237,7 @@ data class ServerStatusMsg(
 
 @Serializable
 data class ActiveGameInfo(
+    @SerialName("lobby_id") val lobbyId: String = "",
     @SerialName("host_callsign") val hostCallsign: String,
     val mission: String,
     val mode: String,

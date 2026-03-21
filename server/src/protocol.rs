@@ -71,6 +71,11 @@ pub enum ClientMessage {
         game_status: u8,
     },
 
+    /// Host signals that the game engine has exited and the lobby should
+    /// return to the Waiting state so players can re-ready and start again.
+    #[serde(rename = "END_GAME")]
+    EndGame {},
+
     #[serde(rename = "LIST_LOBBIES")]
     ListLobbies {},
 
@@ -437,6 +442,7 @@ pub struct InGameDetails {
 
 #[derive(Debug, Serialize, Clone)]
 pub struct ActiveGameInfo {
+    pub lobby_id: Uuid,
     pub host_callsign: String,
     pub mission: String,
     pub mode: String,

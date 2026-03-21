@@ -302,9 +302,9 @@ class TouchOverlayView
             const val ADMIN_QUICK_SAVE = 3
             const val ADMIN_QUICK_LOAD = 4
             const val ADMIN_OPEN_MENU = 5
-            const val ADMIN_NET_STATS = 6
+            const val ADMIN_NET_EVENTS = 6
             const val ADMIN_EXIT_LAUNCHER = 7
-            const val ADMIN_NET_EVENTS = 8
+            const val ADMIN_NET_STATS = 8
 
             // Cockpit mode constants (match C CM_* defines)
             private const val CM_FULL_COCKPIT = 0
