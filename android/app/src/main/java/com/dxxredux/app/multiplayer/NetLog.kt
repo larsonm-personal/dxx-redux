@@ -38,6 +38,35 @@ object NetLog {
         }
     }
 
+    /** Open an existing log file for appending (used by :game process to share the main log). */
+    fun initAppend(
+        context: Context,
+        filePath: String,
+    ) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        enabled = prefs.getBoolean(KEY_ENABLED, false)
+        if (!enabled) return
+        synchronized(lock) {
+            closeLog()
+            val file = File(filePath)
+            if (!file.exists()) {
+                // Fall back to creating a new file if the path is stale
+                openLog(context)
+                return
+            }
+            try {
+                writer = BufferedWriter(FileWriter(file, true))
+                currentFile = file
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to open log file for append", e)
+                writer = null
+            }
+        }
+    }
+
+    /** Return the absolute path of the current log file, or null. */
+    fun currentFilePath(): String? = synchronized(lock) { currentFile?.absolutePath }
+
     fun setEnabled(
         context: Context,
         on: Boolean,

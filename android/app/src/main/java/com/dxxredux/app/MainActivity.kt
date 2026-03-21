@@ -280,7 +280,13 @@ class MainActivity :
         super.onCreate(savedInstanceState)
 
         CrashLog.install(this)
-        NetLog.init(this)
+        // Append to the main-process log file if a path was passed, otherwise create new
+        val netlogPath = intent.getStringExtra("netlog_path")
+        if (netlogPath != null) {
+            NetLog.initAppend(this, netlogPath)
+        } else {
+            NetLog.init(this)
+        }
         MatchmakingService.setActivity(this)
 
         // Load the correct game library based on the launcher's selection
@@ -292,6 +298,12 @@ class MainActivity :
         // Check for multiplayer auto-join/host from the matchmaking lobby
         val mpMode = intent.getStringExtra("mp_mode")
         isMultiplayerGame = mpMode != null
+        // Seed game-process MatchmakingStateHolder so overlay shows "CONNECTED" not "DISCONNECTED"
+        if (mpMode != null) {
+            com.dxxredux.app.multiplayer.MatchmakingStateHolder.update {
+                it.copy(status = com.dxxredux.app.multiplayer.ConnectionStatus.CONNECTED)
+            }
+        }
         if (mpMode != null) {
             val callsign = intent.getStringExtra("mp_callsign") ?: ""
             if (callsign.isNotEmpty()) {

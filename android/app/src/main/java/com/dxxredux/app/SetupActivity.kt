@@ -649,6 +649,10 @@ class SetupActivity : ComponentActivity() {
             mpIntent.putExtra("mp_my_port", NetworkConstants.ENGINE_PORT)
         }
         if (info.isLan) mpIntent.putExtra("mp_is_lan", true)
+        // Pass current net log path so :game process appends to the same file
+        com.dxxredux.app.multiplayer.NetLog.currentFilePath()?.let {
+            mpIntent.putExtra("netlog_path", it)
+        }
         // Clear gameLaunchInfo after consumption to prevent stale re-launches
         MatchmakingStateHolder.update { it.copy(gameLaunchInfo = null) }
         startActivity(mpIntent)

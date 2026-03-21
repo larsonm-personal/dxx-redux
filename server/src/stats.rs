@@ -121,11 +121,11 @@ pub async fn periodic_tasks(state: Arc<ServerState>) {
     }
 }
 
-/// Reap lobbies stuck in non-Waiting states (D5) and revert Holepunching timeouts (D6).
+/// Reap lobbies stuck in non-Waiting states (D5) and revert Holepunching timeouts (D6)
 fn cleanup_stale_lobbies(state: &Arc<ServerState>) {
     use crate::lobby::LobbyState;
     let now = std::time::Instant::now();
-    let max_lobby_age = Duration::from_secs(4 * 3600); // 4 hours
+    let max_game_age = Duration::from_secs(5 * 60); // 5 minutes with no state update
     let holepunch_timeout = Duration::from_secs(30);
 
     let mut to_remove = Vec::new();
@@ -133,7 +133,6 @@ fn cleanup_stale_lobbies(state: &Arc<ServerState>) {
 
     for entry in state.lobbies.iter() {
         let lobby = entry.value();
-        let age = now.duration_since(lobby.created_at_instant);
         // D6: revert Holepunching to Waiting after 30s
         if lobby.state == LobbyState::Holepunching {
             if let Some(started) = lobby.holepunch_started_at {
@@ -142,11 +141,15 @@ fn cleanup_stale_lobbies(state: &Arc<ServerState>) {
                 }
             }
         }
-        // D5: reap lobbies stuck in Starting/InGame for 4+ hours
-        if (lobby.state == LobbyState::Starting || lobby.state == LobbyState::InGame)
-            && age > max_lobby_age
-        {
-            to_remove.push(lobby.id);
+        // D5: reap Starting/InGame lobbies with no recent state updates.
+        // Use last_state_update if available (InGame), else fall back to created_at.
+        if lobby.state == LobbyState::Starting || lobby.state == LobbyState::InGame {
+            let stale_since = lobby
+                .last_state_update
+                .unwrap_or(lobby.created_at_instant);
+            if now.duration_since(stale_since) > max_game_age {
+                to_remove.push(lobby.id);
+            }
         }
     }
 
@@ -178,6 +181,7 @@ fn cleanup_stale_lobbies(state: &Arc<ServerState>) {
         }
         state.lobbies.remove(&lid);
         state.stats.lobby_closed();
+        state.stats.game_ended();
         info!(lobby_id = %lid, "reaped stale lobby");
     }
 }

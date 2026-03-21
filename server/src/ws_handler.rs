@@ -115,14 +115,18 @@ fn build_lobby_list(state: &ServerState) -> Vec<LobbyInfo> {
 /// Build a list of active (in-progress) games, capped at 20.
 fn build_active_game_list(state: &ServerState) -> Vec<ActiveGameInfo> {
     let now = chrono::Utc::now();
+    let stale_cutoff = std::time::Duration::from_secs(5 * 60);
     state
         .lobbies
         .iter()
         .filter(|entry| {
-            matches!(
-                entry.value().state,
-                LobbyState::Starting | LobbyState::InGame
-            )
+            let l = entry.value();
+            if !matches!(l.state, LobbyState::Starting | LobbyState::InGame) {
+                return false;
+            }
+            // Exclude stale games: use last_state_update if available, else created_at
+            let ref_time = l.last_state_update.unwrap_or(l.created_at_instant);
+            ref_time.elapsed() < stale_cutoff
         })
         .take(20)
         .map(|entry| {
@@ -643,8 +647,19 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                 false
             };
             if should_remove {
+                // Track whether the lobby was in-game so we can decrement the counter
+                let was_in_game = state
+                    .lobbies
+                    .get(&lobby_id)
+                    .map(|l| {
+                        matches!(l.state, LobbyState::Starting | LobbyState::InGame)
+                    })
+                    .unwrap_or(false);
                 state.lobbies.remove(&lobby_id);
                 state.stats.lobby_closed();
+                if was_in_game {
+                    state.stats.game_ended();
+                }
             }
         }
         state.sessions.remove(&pid);
@@ -1412,9 +1427,16 @@ async fn handle_authenticated_message(
                     if let Some(mut old_lobby) = state.lobbies.get_mut(&old_lid) {
                         old_lobby.remove_player(&player_id);
                         if old_lobby.players.is_empty() {
+                            let was_in_game = matches!(
+                                old_lobby.state,
+                                LobbyState::Starting | LobbyState::InGame
+                            );
                             drop(old_lobby);
                             state.lobbies.remove(&old_lid);
                             state.stats.lobby_closed();
+                            if was_in_game {
+                                state.stats.game_ended();
+                            }
                         } else {
                             broadcast_lobby_update(&old_lobby, state);
                         }
@@ -1506,9 +1528,16 @@ async fn handle_authenticated_message(
                 if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
                     lobby.remove_player(&player_id);
                     if lobby.players.is_empty() {
+                        let was_in_game = matches!(
+                            lobby.state,
+                            LobbyState::Starting | LobbyState::InGame
+                        );
                         drop(lobby);
                         state.lobbies.remove(&lobby_id);
                         state.stats.lobby_closed();
+                        if was_in_game {
+                            state.stats.game_ended();
+                        }
                     } else {
                         broadcast_lobby_update(&lobby, state);
                     }
