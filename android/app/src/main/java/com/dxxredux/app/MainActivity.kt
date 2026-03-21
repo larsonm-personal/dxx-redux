@@ -41,6 +41,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.dxxredux.app.multiplayer.MatchmakingService
 import com.dxxredux.app.multiplayer.NetLog
 import org.json.JSONObject
 import java.io.File
@@ -279,6 +280,8 @@ class MainActivity :
         super.onCreate(savedInstanceState)
 
         CrashLog.install(this)
+        NetLog.init(this)
+        MatchmakingService.setActivity(this)
 
         // Load the correct game library based on the launcher's selection
         val game = intent.getStringExtra("game") ?: "d2"

@@ -332,8 +332,9 @@ private class PeerProxy(
                     realSocket.send(DatagramPacket(pkt.data, pkt.length, config.realAddr))
                 }
             } catch (e: java.net.SocketException) {
-                if (e.message?.contains("closed") == true) break
-                Log.w(TAG, "local->real error: ${e.message}")
+                val msg = e.message ?: ""
+                if ("closed" in msg || "EPERM" in msg || "Operation not permitted" in msg) break
+                Log.w(TAG, "local->real error: $msg")
             }
         }
     }
@@ -360,8 +361,9 @@ private class PeerProxy(
                 packetsReceived++
                 bytesReceived += payloadLen
             } catch (e: java.net.SocketException) {
-                if (e.message?.contains("closed") == true) break
-                Log.w(TAG, "real->local error: ${e.message}")
+                val msg = e.message ?: ""
+                if ("closed" in msg || "EPERM" in msg || "Operation not permitted" in msg) break
+                Log.w(TAG, "real->local error: $msg")
             }
         }
     }
@@ -386,8 +388,9 @@ private class PeerProxy(
                 kotlinx.coroutines.delay(KEEPALIVE_INTERVAL_MS)
                 realSocket.send(DatagramPacket(ping, ping.size, config.realAddr))
             } catch (e: java.net.SocketException) {
-                if (e.message?.contains("closed") == true) break
-                Log.w(TAG, "keepalive error: ${e.message}")
+                val msg = e.message ?: ""
+                if ("closed" in msg || "EPERM" in msg || "Operation not permitted" in msg) break
+                Log.w(TAG, "keepalive error: $msg")
             }
         }
     }

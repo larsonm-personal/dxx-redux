@@ -93,10 +93,10 @@ private fun ServerBrowserContent(
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
-    var serverUrl by remember { mutableStateOf(state.serverUrl) }
+    val recentUrls = remember { mutableStateOf(RecentAddressPrefs.SERVER_URLS.load(context)) }
+    var serverUrl by remember { mutableStateOf(recentUrls.value.firstOrNull() ?: state.serverUrl) }
     var callsign by remember { mutableStateOf(state.callsign) }
     var showCreateDialog by remember { mutableStateOf(false) }
-    val recentUrls = remember { mutableStateOf(RecentAddressPrefs.SERVER_URLS.load(context)) }
     val activeGames = state.serverStatus?.activeGameList.orEmpty()
 
     // Auto-refresh lobby list every 5 seconds while connected
