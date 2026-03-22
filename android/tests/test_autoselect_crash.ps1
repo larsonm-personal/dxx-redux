@@ -36,10 +36,7 @@ Set-Content -Path $createPilotScriptPath -Value $createPilotScript -Encoding UTF
 
 # Delete any existing pilot files for a clean start
 $preLaunch = {
-    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
-        "find", "files", "-name", "'*.plr'", "-delete") | Out-Null
-    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
-        "find", "files", "-name", "'descent.cfg'", "-delete") | Out-Null
+    Reset-GameState
 }
 
 if (-not (Start-GameWithRetry -PreLaunchScript $preLaunch)) {

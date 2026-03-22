@@ -97,14 +97,7 @@ foreach ($gameId in $gameList) {
     }
 
     $preLaunch = {
-        # Delete pilot/config files so tests get fresh defaults.
-        # Pilots live in files/{d1x,d2x}-redux/Players/ after Phase 5.
-        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
-            "find", "files", "-name", "'*.plr'", "-delete") | Out-Null
-        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
-            "find", "files", "-name", "'descent.cfg'", "-delete") | Out-Null
-        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
-            "rm", "-f", "files/controller_config.json") | Out-Null
+        Reset-GameState
     }
 
     if (-not (Start-GameWithRetry -ExtraLaunchArgs $extraArgs -PreLaunchScript $preLaunch)) {

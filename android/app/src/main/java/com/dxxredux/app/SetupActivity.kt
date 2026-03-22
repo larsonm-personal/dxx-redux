@@ -155,8 +155,9 @@ class SetupActivity : ComponentActivity() {
                         Log.i("DXX-Setup", "reset_controls: reset $n file(s) to engine defaults")
                     }
                     "controller_introspect" -> {
-                        writeControllerIntrospectJson()
-                        Log.i("DXX-Setup", "controller_introspect: written")
+                        val game = intent.getStringExtra("game")
+                        writeControllerIntrospectJson(game)
+                        Log.i("DXX-Setup", "controller_introspect: written (game=${game ?: "d2"})")
                     }
                     "write_default_config" -> {
                         File(filesDir, "controller_config.json").delete()
@@ -500,7 +501,8 @@ class SetupActivity : ComponentActivity() {
         val type: String,
     )
 
-    private val KC_JOY_META =
+    // D2: 56 entries matching d2/main/kconfig.c kc_joystick[]
+    private val KC_JOY_META_D2 =
         listOf(
             KcMeta("Fire primary", "joy_button"), //  0
             KcMeta("Fire secondary", "joy_button"), //  1
@@ -560,14 +562,70 @@ class SetupActivity : ComponentActivity() {
             KcMeta("Toggle Bomb", "joy_button"), // 55 (secondary)
         )
 
+    // D1: 48 entries matching d1/main/kconfig.c kc_joystick[]
+    // Key differences from D2: no Afterburner/Headlight/Energy->Shield/Toggle Bomb;
+    // Automap at 27-28 (not 50-51); Cycle Primary/Secondary at 44-47 (not 28-29);
+    // different capitalization on several names.
+    private val KC_JOY_META_D1 =
+        listOf(
+            KcMeta("Fire primary", "joy_button"), //  0
+            KcMeta("Fire secondary", "joy_button"), //  1
+            KcMeta("Accelerate", "joy_button"), //  2
+            KcMeta("Reverse", "joy_button"), //  3
+            KcMeta("Fire flare", "joy_button"), //  4
+            KcMeta("Slide on", "joy_button"), //  5
+            KcMeta("Slide left", "joy_button"), //  6
+            KcMeta("Slide right", "joy_button"), //  7
+            KcMeta("Slide up", "joy_button"), //  8
+            KcMeta("Slide down", "joy_button"), //  9
+            KcMeta("Bank on", "joy_button"), // 10
+            KcMeta("Bank left", "joy_button"), // 11
+            KcMeta("Bank right", "joy_button"), // 12
+            KcMeta("Pitch U/D", "joy_axis"), // 13
+            KcMeta("Pitch U/D", "invert"), // 14
+            KcMeta("Turn L/R", "joy_axis"), // 15
+            KcMeta("Turn L/R", "invert"), // 16
+            KcMeta("Slide L/R", "joy_axis"), // 17
+            KcMeta("Slide L/R", "invert"), // 18
+            KcMeta("Slide U/D", "joy_axis"), // 19
+            KcMeta("Slide U/D", "invert"), // 20
+            KcMeta("Bank L/R", "joy_axis"), // 21
+            KcMeta("Bank L/R", "invert"), // 22
+            KcMeta("Throttle", "joy_axis"), // 23
+            KcMeta("Throttle", "invert"), // 24
+            KcMeta("Rear view", "joy_button"), // 25
+            KcMeta("Drop bomb", "joy_button"), // 26
+            KcMeta("Automap", "joy_button"), // 27
+            KcMeta("Automap", "joy_button"), // 28 (secondary)
+            KcMeta("Fire primary", "joy_button"), // 29 (secondary)
+            KcMeta("Fire secondary", "joy_button"), // 30
+            KcMeta("Accelerate", "joy_button"), // 31
+            KcMeta("Reverse", "joy_button"), // 32
+            KcMeta("Fire flare", "joy_button"), // 33
+            KcMeta("Slide on", "joy_button"), // 34
+            KcMeta("Slide left", "joy_button"), // 35
+            KcMeta("Slide right", "joy_button"), // 36
+            KcMeta("Slide up", "joy_button"), // 37
+            KcMeta("Slide down", "joy_button"), // 38
+            KcMeta("Bank on", "joy_button"), // 39
+            KcMeta("Bank left", "joy_button"), // 40
+            KcMeta("Bank right", "joy_button"), // 41
+            KcMeta("Rear view", "joy_button"), // 42 (secondary)
+            KcMeta("Drop bomb", "joy_button"), // 43
+            KcMeta("Cycle Primary", "joy_button"), // 44
+            KcMeta("Cycle Secondary", "joy_button"), // 45
+            KcMeta("Cycle Primary", "joy_button"), // 46 (secondary)
+            KcMeta("Cycle Secondary", "joy_button"), // 47 (secondary)
+        )
+
     /**
      * Write controller_introspect.json in the same format as the in-game
      * joystick_controls introspection, but using the launcher's config.
      *
-     *   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command controller_introspect
+     *   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command controller_introspect --es game d2
      *   adb shell run-as com.dxxredux.app cat files/controller_introspect.json
      */
-    private fun writeControllerIntrospectJson() {
+    private fun writeControllerIntrospectJson(game: String? = null) {
         try {
             val cfg = File(filesDir, "controller_config.json")
             if (!cfg.exists()) {
@@ -575,13 +633,14 @@ class SetupActivity : ComponentActivity() {
                 return
             }
             val json = JSONObject(cfg.readText())
-            // KC_JOY_META mirrors D2's kc_joystick[], so use D2 byte array
+            // Select the right metadata and byte array for the requested game
+            val gameId = game ?: "d2"
+            val meta = if (gameId == "d1") KC_JOY_META_D1 else KC_JOY_META_D2
             val joyArr =
-                json.optJSONArray("key_settings_joystick_d2")
+                json.optJSONArray("key_settings_joystick_$gameId")
                     ?: json.optJSONArray("key_settings_joystick")
             val ct = json.optInt("control_type", 1)
 
-            val meta = KC_JOY_META
             val n = meta.size
             val items = JSONArray()
             var boundCount = 0

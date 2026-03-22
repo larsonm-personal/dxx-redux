@@ -26,10 +26,15 @@
 .PARAMETER TestTimeoutSeconds
     Maximum wall-clock seconds per test before killing it (default: 120).
 
+.PARAMETER AutoServer
+    Auto-build and start the matchmaking server if it is not already running.
+    The server is stopped when the test suite finishes.
+
 .EXAMPLE
     .\run_all_tests.ps1
     .\run_all_tests.ps1 -Filter "test_death*"
     .\run_all_tests.ps1 -StopOnFail
+    .\run_all_tests.ps1 -AutoServer
 #>
 
 param(
@@ -37,7 +42,8 @@ param(
     [switch]$IncludeManual,
     [switch]$StopOnFail,
     [string]$ReportDir,
-    [int]$TestTimeoutSeconds = 120
+    [int]$TestTimeoutSeconds = 120,
+    [switch]$AutoServer
 )
 
 $ErrorActionPreference = "Stop"
@@ -90,6 +96,51 @@ $hasEmu = Test-SingleEmulator
 $hasTwoEmu = Test-TwoEmulators
 $hasServer = Test-MatchmakingServer
 $hasGameData = Test-GameDataAvailable
+
+# -- Auto-start matchmaking server if requested --
+
+$script:autoServerProc = $null
+
+if ($AutoServer -and -not $hasServer) {
+    $serverDir = Join-Path $repoRoot "server"
+    $serverBin = Join-Path $serverDir "target\release\dxx-matchmaking.exe"
+    if (-not (Test-Path $serverBin)) {
+        $serverBin = Join-Path $serverDir "target\debug\dxx-matchmaking.exe"
+    }
+    if (-not (Test-Path $serverBin)) {
+        Write-Host "Building matchmaking server..." -ForegroundColor Yellow
+        Push-Location $serverDir
+        & cargo build --release 2>&1 | Out-Null
+        Pop-Location
+        $serverBin = Join-Path $serverDir "target\release\dxx-matchmaking.exe"
+    }
+    if (Test-Path $serverBin) {
+        $psi = New-Object System.Diagnostics.ProcessStartInfo
+        $psi.FileName = $serverBin
+        $psi.WorkingDirectory = $serverDir
+        $psi.RedirectStandardOutput = $true
+        $psi.RedirectStandardError = $true
+        $psi.UseShellExecute = $false
+        $psi.CreateNoWindow = $true
+        $psi.EnvironmentVariables["SKIP_GPGS_VERIFY"] = "true"
+        $psi.EnvironmentVariables["RUST_LOG"] = "info"
+        $script:autoServerProc = [System.Diagnostics.Process]::Start($psi)
+        $sw = [System.Diagnostics.Stopwatch]::StartNew()
+        while ($sw.Elapsed.TotalSeconds -lt 10) {
+            if (Test-MatchmakingServer) { $hasServer = $true; break }
+            Start-Sleep -Seconds 1
+        }
+        if ($hasServer) {
+            Write-Host "Auto-started matchmaking server (PID $($script:autoServerProc.Id))" -ForegroundColor Green
+        } else {
+            Write-Host "WARNING: Failed to auto-start matchmaking server" -ForegroundColor Yellow
+            try { $script:autoServerProc.Kill() } catch {}
+            $script:autoServerProc = $null
+        }
+    } else {
+        Write-Host "WARNING: -AutoServer requested but no server binary found" -ForegroundColor Yellow
+    }
+}
 
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "  DXX-Redux Unattended Test Suite" -ForegroundColor Cyan
@@ -397,5 +448,12 @@ if ($failCount -gt 0) {
 $md -join "`n" | Set-Content -Path $reportFile -Encoding utf8
 Write-Host "  Report: $reportFile" -ForegroundColor Cyan
 Write-Host ""
+
+# -- Cleanup auto-started server --
+
+if ($script:autoServerProc -and -not $script:autoServerProc.HasExited) {
+    Write-Host "Stopping auto-started matchmaking server (PID $($script:autoServerProc.Id))..." -ForegroundColor Yellow
+    try { $script:autoServerProc.Kill(); $script:autoServerProc.WaitForExit(5000) } catch {}
+}
 
 if ($failCount -gt 0) { exit 1 } else { exit 0 }

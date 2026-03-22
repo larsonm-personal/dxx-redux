@@ -75,7 +75,7 @@ function Test-EmulatorHealthy {
     if (-not $emuProc) { return $false }
     $devices = Adb -AdbArgs "devices"
     if ($devices -notmatch 'emulator-\d+\s+device') { return $false }
-    $boot = Adb-Timeout -AdbArgs @("shell", "getprop", "sys.boot_completed") -Seconds 5
+    $boot = Adb-Timeout -AdbArgs @("shell", "getprop", "sys.boot_completed") -Seconds 10
     if ($null -eq $boot -or $boot -ne "1") { return $false }
     return $true
 }
@@ -104,6 +104,19 @@ function Ensure-EmulatorHealthy {
 function Write-Status {
     param([string]$Msg, [string]$Color = "Cyan")
     Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] $Msg" -ForegroundColor $Color
+}
+
+function Reset-GameState {
+    # Delete pilot files, config, and controller config for fresh test state.
+    # Centralized here so every test uses the same cleanup logic.
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
+        "find", "files", "-name", "'*.plr'", "-delete") | Out-Null
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
+        "find", "files", "-name", "'*.plx'", "-delete") | Out-Null
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
+        "find", "files", "-name", "'descent.cfg'", "-delete") | Out-Null
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
+        "rm", "-f", "files/controller_config.json") | Out-Null
 }
 
 function Wait-SetupActivityReady {
@@ -242,8 +255,14 @@ function Watch-AutomationResult {
         $elapsed = [int]$sw.Elapsed.TotalSeconds
         if ($elapsed - $lastHealthCheck -ge 15) {
             if (-not (Test-EmulatorHealthy)) {
-                Write-Status "FAIL: Emulator crashed during test (after ${elapsed}s)" "Red"
-                return $false
+                # Retry once -- adb can be slow under heavy game load (level loading,
+                # title screens) without the emulator actually being dead.
+                Write-Status "Health check failed, retrying in 5s..." "Yellow"
+                Start-Sleep -Seconds 5
+                if (-not (Test-EmulatorHealthy)) {
+                    Write-Status "FAIL: Emulator crashed during test (after ${elapsed}s)" "Red"
+                    return $false
+                }
             }
             $lastHealthCheck = $elapsed
         }

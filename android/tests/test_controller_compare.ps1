@@ -82,8 +82,9 @@ foreach ($gameId in $gameList) {
     Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND", "--es", "command", "patch_pilots") | Out-Null
     Start-Sleep -Seconds 2
 
-    Write-Status "Dumping launcher controller introspection..."
-    Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND", "--es", "command", "controller_introspect") | Out-Null
+    Write-Status "Dumping launcher controller introspection for $($gameId.ToUpper())..."
+    Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
+        "--es", "command", "controller_introspect", "--es", "game", $gameId) | Out-Null
     Start-Sleep -Seconds 2
 
     $launcherJson = Adb-Timeout -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/controller_introspect.json") -Seconds 5

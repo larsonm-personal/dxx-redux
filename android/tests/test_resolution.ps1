@@ -65,13 +65,7 @@ Write-Host "  PHASE 1: Default half-screen resolution" -ForegroundColor White
 Write-Host "============================================================" -ForegroundColor White
 
 $preLaunch = {
-    # Delete config and pilot files (same as run_test.ps1)
-    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
-        "find", "files", "-name", "'*.plr'", "-delete") | Out-Null
-    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
-        "find", "files", "-name", "'descent.cfg'", "-delete") | Out-Null
-    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
-        "rm", "-f", "files/controller_config.json") | Out-Null
+    Reset-GameState
 }
 
 if (-not (Start-GameWithRetry -PreLaunchScript $preLaunch)) {
@@ -123,18 +117,14 @@ Write-Host "  PHASE 2: Explicit 640x480 resolution" -ForegroundColor White
 Write-Host "============================================================" -ForegroundColor White
 
 $preLaunch2 = {
-    # Delete pilot files but then write a custom descent.cfg with 640x480
-    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
-        "find", "files", "-name", "'*.plr'", "-delete") | Out-Null
-    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
-        "find", "files", "-name", "'descent.cfg'", "-delete") | Out-Null
-    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
-        "rm", "-f", "files/controller_config.json") | Out-Null
+    Reset-GameState
 
     # Write descent.cfg with 640x480 -- SetupActivity's writeInitialGameConfig
     # only writes when the file is missing, so pre-creating it pins the resolution.
-    Write-Status "Writing descent.cfg with ResolutionX=640 ResolutionY=480"
-    $cfgContent = "ResolutionX=640`nResolutionY=480`n"
+    # Must include AspectX/Y: game uses these for sc_aspect calculation in gr_set_mode.
+    # 640x480 is 4:3, so AspectX=3 (height component) AspectY=4 (width component).
+    Write-Status "Writing descent.cfg with 640x480 (4:3 aspect)"
+    $cfgContent = "AspectX=3`nAspectY=4`nResolutionX=640`nResolutionY=480`n"
     # Write to /data/local/tmp then copy with run-as
     $cfgContent | & $script:ADB shell "run-as $($script:PACKAGE) tee files/descent.cfg" | Out-Null
 }

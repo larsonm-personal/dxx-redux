@@ -28,10 +28,14 @@
 .PARAMETER Mission
     Mission name for lobby creation (default: Counterstrike!)
 
+.PARAMETER AutoServer
+    Auto-build and start the matchmaking server if it is not already running.
+
 .EXAMPLE
     .\test_bot_client.ps1
     .\test_bot_client.ps1 -Callsign "Player2" -Action join
     .\test_bot_client.ps1 -Action list
+    .\test_bot_client.ps1 -AutoServer
 #>
 
 param(
@@ -40,22 +44,73 @@ param(
     [ValidateSet("list", "create", "join", "idle")]
     [string]$Action = "create",
     [string]$Game = "d2",
-    [string]$Mission = "Counterstrike!"
+    [string]$Mission = "Counterstrike!",
+    [switch]$AutoServer
 )
 
 $ErrorActionPreference = "Stop"
 
-# --- Check server reachability before connecting ---
+# --- Check/start matchmaking server ---
 $serverHost = ([Uri]$ServerUrl).Host
 $serverPort = ([Uri]$ServerUrl).Port
-try {
-    $tcp = [System.Net.Sockets.TcpClient]::new()
-    $tcp.Connect($serverHost, $serverPort)
-    $tcp.Close()
-} catch {
-    Write-Host "FAIL: Matchmaking server not reachable at ${serverHost}:${serverPort}" -ForegroundColor Red
-    Write-Host "  Start the server first, or use test_dual_emu.ps1 which starts it automatically." -ForegroundColor Yellow
-    exit 1
+$script:autoServerProc = $null
+
+function Test-ServerReachable {
+    try {
+        $tcp = [System.Net.Sockets.TcpClient]::new()
+        $tcp.Connect($serverHost, $serverPort)
+        $tcp.Close()
+        return $true
+    } catch { return $false }
+}
+
+if (-not (Test-ServerReachable)) {
+    if ($AutoServer) {
+        $repoRoot = Split-Path (Split-Path $PSScriptRoot)
+        $serverDir = Join-Path $repoRoot "server"
+        $serverBin = Join-Path $serverDir "target\release\dxx-matchmaking.exe"
+        if (-not (Test-Path $serverBin)) {
+            $serverBin = Join-Path $serverDir "target\debug\dxx-matchmaking.exe"
+        }
+        if (-not (Test-Path $serverBin)) {
+            Write-Host "Building matchmaking server..." -ForegroundColor Yellow
+            Push-Location $serverDir
+            & cargo build --release 2>&1 | Out-Null
+            Pop-Location
+            $serverBin = Join-Path $serverDir "target\release\dxx-matchmaking.exe"
+        }
+        if (Test-Path $serverBin) {
+            $psi = New-Object System.Diagnostics.ProcessStartInfo
+            $psi.FileName = $serverBin
+            $psi.WorkingDirectory = $serverDir
+            $psi.RedirectStandardOutput = $true
+            $psi.RedirectStandardError = $true
+            $psi.UseShellExecute = $false
+            $psi.CreateNoWindow = $true
+            $psi.EnvironmentVariables["SKIP_GPGS_VERIFY"] = "true"
+            $psi.EnvironmentVariables["RUST_LOG"] = "info"
+            $script:autoServerProc = [System.Diagnostics.Process]::Start($psi)
+            $sw = [System.Diagnostics.Stopwatch]::StartNew()
+            while ($sw.Elapsed.TotalSeconds -lt 10) {
+                if (Test-ServerReachable) { break }
+                Start-Sleep -Seconds 1
+            }
+            if (Test-ServerReachable) {
+                Write-Host "Auto-started server (PID $($script:autoServerProc.Id))" -ForegroundColor Green
+            } else {
+                Write-Host "FAIL: Could not auto-start server" -ForegroundColor Red
+                try { $script:autoServerProc.Kill() } catch {}
+                exit 1
+            }
+        } else {
+            Write-Host "FAIL: No server binary found. Run 'cargo build' in server/" -ForegroundColor Red
+            exit 1
+        }
+    } else {
+        Write-Host "FAIL: Matchmaking server not reachable at ${serverHost}:${serverPort}" -ForegroundColor Red
+        Write-Host "  Use -AutoServer to auto-start, or start manually." -ForegroundColor Yellow
+        exit 1
+    }
 }
 
 # --- WebSocket helpers ---
@@ -332,3 +387,9 @@ switch ($Action) {
 }
 
 Write-Host "Bot disconnected." -ForegroundColor Yellow
+
+# Cleanup auto-started server
+if ($script:autoServerProc -and -not $script:autoServerProc.HasExited) {
+    Write-Host "Stopping auto-started server (PID $($script:autoServerProc.Id))..." -ForegroundColor Yellow
+    try { $script:autoServerProc.Kill(); $script:autoServerProc.WaitForExit(5000) } catch {}
+}
