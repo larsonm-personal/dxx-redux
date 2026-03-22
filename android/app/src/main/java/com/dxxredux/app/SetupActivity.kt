@@ -248,6 +248,8 @@ class SetupActivity : ComponentActivity() {
     //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command start_game
     //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command introspect
     //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command set_callsign --es callsign "Player1"
+    //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command stun_override --es addrs "10.0.2.2:13478,10.0.2.2:13479"
+    //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command stun_override_clear
     private var mpCallsign: String = "Player"
     private var mpJoinHostAddrOverride: String? = null
     private var mpJoinHostPortOverride: Int? = null
@@ -329,6 +331,19 @@ class SetupActivity : ComponentActivity() {
                         val port = intent.getIntExtra("host_port", -1)
                         mpJoinHostPortOverride = if (port > 0) port else null
                         Log.i("DXX-MP", "Join target override: $mpJoinHostAddrOverride:$mpJoinHostPortOverride")
+                    }
+                    "stun_override" -> {
+                        val addrs = intent.getStringExtra("addrs")
+                            ?.split(",")
+                            ?.map { it.trim() }
+                            ?.filter { it.isNotEmpty() }
+                            ?: emptyList()
+                        MatchmakingService.setStunOverride(addrs)
+                        Log.i("DXX-MP", "STUN override set: $addrs")
+                    }
+                    "stun_override_clear" -> {
+                        MatchmakingService.setStunOverride(null)
+                        Log.i("DXX-MP", "STUN override cleared")
                     }
                     "lan_launch" -> {
                         val game = intent.getStringExtra("game") ?: "d2"

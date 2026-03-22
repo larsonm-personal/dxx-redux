@@ -1,0 +1,43 @@
+# Docker Compose for NAT testbed -- simulates different NAT types for
+# STUN traffic between Android emulators and the matchmaking server.
+#
+# The matchmaking server runs on the host (not in Docker).
+# Each NAT container proxies STUN UDP traffic with configurable NAT behavior.
+#
+# Usage:
+#   docker compose up -d                              # defaults: full-cone + symmetric
+#   NAT_A=port-restricted NAT_B=symmetric docker compose up -d
+#   docker compose down
+#
+# Emulator routing:
+#   EMU1 STUN -> 10.0.2.2:13478/13479 -> nat_a -> host STUN :3478/:3479
+#   EMU2 STUN -> 10.0.2.2:23478/23479 -> nat_b -> host STUN :3478/:3479
+
+services:
+  nat_a:
+    build: .
+    ports:
+      - "13478:3478/udp"
+      - "13479:3479/udp"
+    environment:
+      NAT_TYPE: "${NAT_A:-full-cone}"
+      UPSTREAM_HOST: "host.docker.internal"
+      UPSTREAM_PORT1: "3478"
+      UPSTREAM_PORT2: "3479"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: "no"
+
+  nat_b:
+    build: .
+    ports:
+      - "23478:3478/udp"
+      - "23479:3479/udp"
+    environment:
+      NAT_TYPE: "${NAT_B:-symmetric}"
+      UPSTREAM_HOST: "host.docker.internal"
+      UPSTREAM_PORT1: "3478"
+      UPSTREAM_PORT2: "3479"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: "no"

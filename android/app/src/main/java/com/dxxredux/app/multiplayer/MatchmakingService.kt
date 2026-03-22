@@ -167,7 +167,17 @@ object MatchmakingService {
     @Volatile
     private var candidateSocket: java.net.DatagramSocket? = null
 
+    // Test-only: override STUN server addresses for Docker NAT testing.
+    // When set, launchStunDiscovery() uses these instead of AUTH_OK's stunAddrs.
+    @Volatile
+    private var stunOverrideAddrs: List<String>? = null
+
     fun getProxyStats(): List<PeerProxyStats> = localhostProxy?.getStats() ?: emptyList()
+
+    /** Set (or clear) STUN server address override for NAT testing. */
+    fun setStunOverride(addrs: List<String>?) {
+        stunOverrideAddrs = addrs
+    }
 
     /** Create a simple proxy for LAN joiner (one peer = the host). */
     fun createLanProxy(
@@ -599,7 +609,7 @@ object MatchmakingService {
     }
 
     private fun launchStunDiscovery() {
-        val addrs = state.state.value.stunAddrs
+        val addrs = stunOverrideAddrs ?: state.state.value.stunAddrs
         stunJob =
             scope.launch {
                 state.update { it.copy(iceStatus = IceStatus(phase = IcePhase.STUN_DISCOVERY)) }

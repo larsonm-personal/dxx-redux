@@ -6,5 +6,12 @@
     "files.associations": {
         "*.c": "c",
         "*.h": "c"
+    },
+    "java.configuration.runtimes": [
+    {
+      "name": "JavaSE-21",
+      "path": "C:\\local\\jdk-21", // absolute path won't be right for most
+      "default": true
     }
+  ]
 }

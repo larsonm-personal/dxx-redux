@@ -72,17 +72,22 @@ _push_timeout() {
 }
 
 if [ ! -d "$GAME_DATA_DIR" ]; then
-    echo "ERROR: game_data_to_copy_to_emulator/ directory not found at $GAME_DATA_DIR"
+    echo "NOTE: game_data_to_copy_to_emulator/ directory not found at $GAME_DATA_DIR"
     echo "Place game files in data/ and/or download/ subdirectories."
-    exit 1
 fi
 
 DATA_DIR="$GAME_DATA_DIR/data"
 DOWNLOAD_DIR="$GAME_DATA_DIR/download"
-DOWNLOAD_DEST="/sdcard/Download"
 
 # At least one subfolder must have files (ignore .gitkeep)
-_has_files() { find "$1" -maxdepth 1 -type f ! -name '.gitkeep' 2>/dev/null | head -1 | grep -q .; }
+_has_files() {
+    ls -p "$1" 2>/dev/null | grep -v '/$' | grep -v '^\.gitkeep$' >/dev/null
+}
+if ! _has_files "$DATA_DIR" && ! _has_files "$DOWNLOAD_DIR"; then
+    echo "NOTE: No files found in data/ or download/ under $GAME_DATA_DIR"
+fi
+
+
 
 FILES_DIR="/data/data/$PACKAGE/files"
 DEST="$FILES_DIR/sets/default"
@@ -151,31 +156,23 @@ if [ -d "$DATA_DIR" ] && _has_files "$DATA_DIR"; then
     _push_files "$DATA_DIR" "$DEST"
 fi
 
-# Push download/ files to /sdcard/Download/ (visible in file picker)
+DEVICE_DOWNLOAD_DIR="/sdcard/Download"
+# Push download/ files to public Downloads folder
 if [ -d "$DOWNLOAD_DIR" ] && _has_files "$DOWNLOAD_DIR"; then
-    echo "--- download/ -> $DOWNLOAD_DEST ---"
-    "$ADB" shell "mkdir -p $DOWNLOAD_DEST" 2>/dev/null || true
+    echo "--- download/ -> $DEVICE_DOWNLOAD_DIR ---"
+    "$ADB" shell "mkdir -p $DEVICE_DOWNLOAD_DIR" 2>/dev/null || true
     for f in "$DOWNLOAD_DIR"/*; do
         [ ! -f "$f" ] && continue
         BASENAME=$(basename "$f")
         [ "$BASENAME" = ".gitkeep" ] && continue
         LOWER=$(echo "$BASENAME" | tr '[:upper:]' '[:lower:]')
 
-        LOCAL_SIZE=$(wc -c < "$f" | tr -d ' ')
-        REMOTE_SIZE=$("$ADB" shell "stat -c %s $DOWNLOAD_DEST/$LOWER 2>/dev/null" 2>/dev/null | tr -d '\r\n') || true
-        [ -z "$REMOTE_SIZE" ] && REMOTE_SIZE=0
-
-        if [ "$LOCAL_SIZE" = "$REMOTE_SIZE" ]; then
-            echo "  $BASENAME -> $LOWER  (already present, skipping)"
-            continue
-        fi
-
-        echo "  $BASENAME -> $LOWER  ($LOCAL_SIZE bytes)"
         HOST_FILE=$(_host_path "$f")
-        TIMEOUT=$(_push_timeout "$LOCAL_SIZE")
-        if ! _timed "$TIMEOUT" "$ADB" push "$HOST_FILE" "$DOWNLOAD_DEST/$LOWER" >/dev/null 2>&1; then
+        TIMEOUT=$(_push_timeout "$(wc -c < "$f")")
+
+        echo "  $BASENAME -> $LOWER"
+        if ! _timed "$TIMEOUT" "$ADB" push "$HOST_FILE" "$DEVICE_DOWNLOAD_DIR/$LOWER" >/dev/null 2>&1; then
             echo "    ERROR: adb push failed or timed out (${TIMEOUT}s) for $BASENAME"
-            ERRORS=$((ERRORS + 1))
         fi
     done
 fi
