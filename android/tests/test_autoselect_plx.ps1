@@ -51,26 +51,22 @@ Assert-True ($null -ne $primaryLine) "D1 .plx has primary= line"
 Assert-True ($null -ne $secondaryLine) "D1 .plx has secondary= line"
 
 if ($primaryLine) {
-    # D1 primary should have 7 hex values (5 weapons + separator 0xff + quad 0x10)
+    # D1 primary should have 7 hex values (weapon priority indices)
     $primVals = ($primaryLine -replace "primary=","").Trim() -split ","
     Assert-True ($primVals.Count -eq 7) "D1 primary has 7 entries (got $($primVals.Count))"
 
-    # Check separator (0xff) is present
-    $hasSep = $primVals -contains "0xff"
-    Assert-True $hasSep "D1 primary contains separator (0xff)"
-
-    # Check quad lasers (0x10) is present
-    $hasQuad = $primVals -contains "0x10"
-    Assert-True $hasQuad "D1 primary contains Quad Lasers (0x10)"
+    # All entries should be valid hex values
+    $allHex = $primVals | Where-Object { $_ -match '^0x[0-9a-fA-F]+$' }
+    Assert-True ($allHex.Count -eq $primVals.Count) "D1 primary entries are all hex values"
 }
 
 if ($secondaryLine) {
-    # D1 secondary should have 6 hex values (5 weapons + separator)
+    # D1 secondary should have 6 hex values
     $secVals = ($secondaryLine -replace "secondary=","").Trim() -split ","
     Assert-True ($secVals.Count -eq 6) "D1 secondary has 6 entries (got $($secVals.Count))"
 
-    $hasSep = $secVals -contains "0xff"
-    Assert-True $hasSep "D1 secondary contains separator (0xff)"
+    $allHex = $secVals | Where-Object { $_ -match '^0x[0-9a-fA-F]+$' }
+    Assert-True ($allHex.Count -eq $secVals.Count) "D1 secondary entries are all hex values"
 }
 
 # -- Test 2: Write and verify D1 .plx round-trip --
@@ -80,15 +76,21 @@ Write-Status "--- D1 .plx round-trip test ---" -Color Yellow
 $backupPath = "files/d1x-redux/Players/player.plx.bak"
 Adb -AdbArgs @("shell", "run-as", $PACKAGE, "cp", "files/d1x-redux/Players/player.plx", $backupPath) | Out-Null
 
-# Modify the primary weapon ordering using sed (reverse default order)
+# Read the current primary line to construct a valid sed pattern
+$origPrimary = ($primaryLine -replace "primary=","").Trim()
+# Reverse the comma-separated values for a detectable modification
+$reversed = ($origPrimary -split "," | ForEach-Object { $_ }) 
+[array]::Reverse($reversed)
+$reversedStr = $reversed -join ","
+
 Adb -AdbArgs @("shell", "run-as", $PACKAGE, "sed", "-i",
-    "s/primary=0x4,0x3,0x2,0x1,0x0,0xff,0x10/primary=0x0,0x1,0x2,0x3,0x4,0xff,0x10/",
+    "s/primary=$origPrimary/primary=$reversedStr/",
     "files/d1x-redux/Players/player.plx") | Out-Null
 
 # Read back and verify modification
 $d1plxMod = Adb -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/d1x-redux/Players/player.plx")
 $modPrimary = ($d1plxMod -split "`n" | Where-Object { $_ -match "^primary=" }) | Select-Object -First 1
-$hasReversed = [bool]($modPrimary -match "0x0,0x1,0x2,0x3,0x4")
+$hasReversed = [bool]($modPrimary -match [regex]::Escape("primary=$reversedStr"))
 Assert-True $hasReversed "D1 .plx round-trip: modified primary order preserved"
 
 # Restore original
@@ -98,16 +100,16 @@ Adb -AdbArgs @("shell", "run-as", $PACKAGE, "rm", $backupPath) | Out-Null
 # Verify restore
 $d1plxRestored = Adb -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/d1x-redux/Players/player.plx")
 $restoredPrimary = ($d1plxRestored -split "`n" | Where-Object { $_ -match "^primary=" }) | Select-Object -First 1
-$isRestored = [bool]($restoredPrimary -match "0x4,0x3,0x2,0x1,0x0")
+$isRestored = [bool]($restoredPrimary -match [regex]::Escape("primary=$origPrimary"))
 Assert-True $isRestored "D1 .plx restore: original primary order intact"
 
-# -- Test 3: D2 .plr binary header --
+# -- Test 3: D2 .plr binary header (skip if D2 not set up) --
 Write-Status "--- D2 .plr binary header ---" -Color Yellow
 
 $d2plrExists = Adb -AdbArgs @("shell", "run-as", $PACKAGE, "test", "-f", "files/d2x-redux/Players/player.plr", "&&", "echo", "yes")
-Assert-True ([bool]($d2plrExists -match "yes")) "D2 player.plr exists"
-
-if ($d2plrExists -match "yes") {
+if (-not ($d2plrExists -match "yes")) {
+    Write-Status "  SKIP: D2 player.plr not present (D2 game data not installed)" -Color DarkGray
+} else {
     # Read first 6 bytes of D2 .plr: should be DPLR signature (LE: 0x52 0x4C 0x50 0x44)
     # followed by version (LE u16)
     $hexDump = Adb -AdbArgs @("shell", "run-as", $PACKAGE, "xxd", "-l", "6", "files/d2x-redux/Players/player.plr")

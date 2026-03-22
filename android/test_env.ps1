@@ -77,6 +77,12 @@ if (-not $script:_testEnvLoaded) {
             "$env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin",
             "$env:ProgramFiles\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin"
         )
+        # Also check Android SDK cmake (multiple versions, pick newest)
+        if ($script:_ENV_DEP_BASE) {
+            $sdkCmake = Get-ChildItem "$($script:_ENV_DEP_BASE)\android-sdk\cmake\*\bin" -Directory -ErrorAction SilentlyContinue |
+                        Sort-Object Name -Descending | Select-Object -First 1
+            if ($sdkCmake) { $cmakeCandidates = @($sdkCmake.FullName) + $cmakeCandidates }
+        }
         foreach ($dir in $cmakeCandidates) {
             if (Test-Path "$dir\cmake.exe") {
                 $env:PATH = "$dir;$env:PATH"

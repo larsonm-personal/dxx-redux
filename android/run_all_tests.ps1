@@ -23,6 +23,9 @@
 .PARAMETER ReportDir
     Directory for per-test output logs (default: temp\test_reports).
 
+.PARAMETER TestTimeoutSeconds
+    Maximum wall-clock seconds per test before killing it (default: 120).
+
 .EXAMPLE
     .\run_all_tests.ps1
     .\run_all_tests.ps1 -Filter "test_death*"
@@ -33,7 +36,8 @@ param(
     [string]$Filter,
     [switch]$IncludeManual,
     [switch]$StopOnFail,
-    [string]$ReportDir
+    [string]$ReportDir,
+    [int]$TestTimeoutSeconds = 120
 )
 
 $ErrorActionPreference = "Stop"
@@ -204,12 +208,13 @@ if ($runnable.Count -eq 0) {
     exit 0
 }
 
-# -- Run tests sequentially --
+# -- Run tests sequentially (each in a subprocess with timeout) --
 
 $runTestScript = Join-Path $scriptDir "run_test.ps1"
 $totalSw = [System.Diagnostics.Stopwatch]::StartNew()
 $passCount = 0
 $failCount = 0
+$timeoutCount = 0
 $stopEarly = $false
 
 foreach ($test in $runnable) {
@@ -219,29 +224,84 @@ foreach ($test in $runnable) {
     $logFile = Join-Path $ReportDir "${name}_${timestamp}.log"
 
     Write-Host "------------------------------------------------------------" -ForegroundColor DarkGray
-    Write-Host "  Running: $name  [$($test.Type)]" -ForegroundColor White
+    Write-Host "  Running: $name  [$($test.Type)]  (timeout: ${TestTimeoutSeconds}s)" -ForegroundColor White
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
 
+    # Build the command to run in a subprocess
+    if ($test.Type -eq "json5") {
+        $scriptFile = [System.IO.Path]::GetFileName($test.Path)
+        $testCmd = "& '$runTestScript' '$scriptFile'"
+    } else {
+        $testCmd = "& '$($test.Path)'"
+    }
+
+    # Run as a separate pwsh process so we can enforce a timeout
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = "pwsh"
+    $psi.Arguments = "-NoProfile -NonInteractive -Command `"$testCmd; exit `$LASTEXITCODE`""
+    $psi.WorkingDirectory = $scriptDir
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+
+    $timedOut = $false
+    $exitCode = 1
     try {
-        if ($test.Type -eq "json5") {
-            $scriptFile = [System.IO.Path]::GetFileName($test.Path)
-            & $runTestScript $scriptFile *>&1 | Tee-Object -FilePath $logFile
-            $exitCode = $LASTEXITCODE
+        $proc = [System.Diagnostics.Process]::Start($psi)
+        $stdoutTask = $proc.StandardOutput.ReadToEndAsync()
+        $stderrTask = $proc.StandardError.ReadToEndAsync()
+
+        if (-not $proc.WaitForExit($TestTimeoutSeconds * 1000)) {
+            $timedOut = $true
+            # Kill the process tree
+            try { $proc.Kill($true) } catch { try { $proc.Kill() } catch {} }
+            Start-Sleep -Seconds 1
+            $exitCode = 1
         } else {
-            & $test.Path *>&1 | Tee-Object -FilePath $logFile
-            $exitCode = $LASTEXITCODE
+            $exitCode = $proc.ExitCode
+        }
+
+        # Collect output (with 5s grace for async reads to finish)
+        $stdoutTask.Wait(5000) | Out-Null
+        $stderrTask.Wait(5000) | Out-Null
+        $stdout = if ($stdoutTask.IsCompleted) { $stdoutTask.Result } else { "" }
+        $stderr = if ($stderrTask.IsCompleted) { $stderrTask.Result } else { "" }
+        $proc.Dispose()
+
+        # Write to log file
+        $stdout | Out-File -FilePath $logFile -Encoding utf8
+        if ($stderr) { $stderr | Out-File -FilePath $logFile -Append -Encoding utf8 }
+        if ($timedOut) {
+            "TIMEOUT: Test killed after ${TestTimeoutSeconds}s" | Out-File -FilePath $logFile -Append -Encoding utf8
+        }
+
+        # Show last few lines of stdout on console
+        $lines = ($stdout -split "`n" | Where-Object { $_.Trim() })
+        $tail = $lines | Select-Object -Last 5
+        foreach ($line in $tail) {
+            Write-Host "    $($line.TrimEnd())" -ForegroundColor DarkGray
         }
     } catch {
         $exitCode = 1
-        "EXCEPTION: $_" | Out-File -FilePath $logFile -Append -Encoding utf8
+        "EXCEPTION: $_" | Out-File -FilePath $logFile -Encoding utf8
         Write-Host "  EXCEPTION: $_" -ForegroundColor Red
     }
 
     $sw.Stop()
     $elapsed = $sw.Elapsed.ToString("mm\:ss")
 
-    $status = if ($exitCode -eq 0) { "PASS" } else { "FAIL" }
-    $color = if ($exitCode -eq 0) { "Green" } else { "Red" }
+    if ($timedOut) {
+        $status = "TIMEOUT"
+        $color = "Yellow"
+        $timeoutCount++
+    } elseif ($exitCode -eq 0) {
+        $status = "PASS"
+        $color = "Green"
+    } else {
+        $status = "FAIL"
+        $color = "Red"
+    }
     Write-Host "  $status ($elapsed)" -ForegroundColor $color
 
     if ($exitCode -eq 0) { $passCount++ } else { $failCount++ }
@@ -283,7 +343,7 @@ foreach ($s in $skipped) {
 }
 
 Write-Host ""
-Write-Host "  Passed: $passCount  Failed: $failCount  Skipped: $($skipped.Count)  Total time: $totalElapsed"
+Write-Host "  Passed: $passCount  Failed: $failCount  Timeouts: $timeoutCount  Skipped: $($skipped.Count)  Total time: $totalElapsed"
 Write-Host ""
 
 # Markdown report
@@ -299,8 +359,10 @@ $md += ""
 $md += "## Summary"
 $md += "- Passed: $passCount"
 $md += "- Failed: $failCount"
+$md += "- Timeouts: $timeoutCount"
 $md += "- Skipped: $($skipped.Count)"
 $md += "- Total time: $totalElapsed"
+$md += "- Per-test timeout: ${TestTimeoutSeconds}s"
 $md += ""
 $md += "## Results"
 $md += ""

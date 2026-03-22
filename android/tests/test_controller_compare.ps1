@@ -125,11 +125,11 @@ foreach ($gameId in $gameList) {
     # -- Step 5: Compare joystick_controls ------------------------
     Write-Status "Comparing joystick controls..."
 
-    $launcher = ($launcherJson | ConvertFrom-Json)
-    $game = ($gameJson | ConvertFrom-Json)
+    $launcherIntro = ($launcherJson | ConvertFrom-Json)
+    $gameIntro = ($gameJson | ConvertFrom-Json)
 
-    $launcherJC = $launcher.joystick_controls
-    $gameJC = $game.joystick_controls
+    $launcherJC = $launcherIntro.joystick_controls
+    $gameJC = $gameIntro.joystick_controls
 
     # Compare summary fields
     $summaryOk = $true

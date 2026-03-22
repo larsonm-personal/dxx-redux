@@ -96,16 +96,16 @@ function Adb {
     $psi.UseShellExecute = $false
     $psi.CreateNoWindow = $true
     $proc = [System.Diagnostics.Process]::Start($psi)
-    # Read stderr asynchronously to prevent deadlock when both buffers fill
+    # Read both streams asynchronously to prevent deadlock
+    $stdoutTask = $proc.StandardOutput.ReadToEndAsync()
     $stderrTask = $proc.StandardError.ReadToEndAsync()
-    $stdout = $proc.StandardOutput.ReadToEnd()
-    $proc.WaitForExit($Timeout * 1000) | Out-Null
-    if (-not $proc.HasExited) {
+    if (-not $proc.WaitForExit($Timeout * 1000)) {
         Write-Status "  ADB timeout (${Timeout}s): $($CmdArgs -join ' ')" 'Red'
         try { $proc.Kill() } catch {}
         $proc.Dispose()
         return ''
     }
+    $stdout = $stdoutTask.GetAwaiter().GetResult()
     $proc.Dispose()
     return $stdout.Trim()
 }
@@ -680,6 +680,11 @@ Start-Sleep -Seconds 2
 # Delete stale introspect.json so we only read fresh data from the new game session
 Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', 'files/introspect.json') | Out-Null
 
+# Delete pilot files so we don't hit "Player already exists" loops
+Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'find', 'files', '-name', "'*.plr'", '-delete') | Out-Null
+Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'find', 'files', '-name', "'*.plx'", '-delete') | Out-Null
+Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'find', 'files', '-name', "'descent.cfg'", '-delete') | Out-Null
+
 # Re-launch setup activity
 Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null
 if (-not (Wait-SetupReady)) {
@@ -789,6 +794,25 @@ while ($navAttempts -lt $maxNav) {
     if ($gi.screen_mode -eq 'game' -and -not $gi.in_game) {
         Write-Status "  [$navAttempts] game screen but not in_game, pressing Escape" 'Gray'
         Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ESCAPE') | Out-Null
+        Start-Sleep -Seconds 1
+        continue
+    }
+
+    # -- "Player already exists" dialog: press Enter on Ok --
+    if ($gi.menu -and $gi.menu.subtitle -match 'already exists') {
+        Write-Status "  [$navAttempts] 'already exists' dialog, pressing Enter" 'Gray'
+        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
+        Start-Sleep -Seconds 1
+        # Clear the input field and type a unique name
+        $uniqueName = "plt$([System.Random]::new().Next(1000,9999))"
+        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_MOVE_HOME') | Out-Null
+        # Select all + delete
+        for ($c = 0; $c -lt 20; $c++) {
+            Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_DEL') | Out-Null
+        }
+        Adb -CmdArgs @('shell', 'input', 'text', $uniqueName) | Out-Null
+        Start-Sleep -Milliseconds 500
+        Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
         Start-Sleep -Seconds 1
         continue
     }
