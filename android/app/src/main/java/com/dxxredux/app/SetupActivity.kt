@@ -618,6 +618,7 @@ class SetupActivity : ComponentActivity() {
         FileSetManager(filesDir).writeActiveSetPath()
         AudioSourceManager(filesDir).writePlaylist()
         writeInitialGameConfig()
+        writeMusicConfigForLaunch()
         val mpIntent = Intent(this, MainActivity::class.java)
         mpIntent.putExtra("game", info.game)
         mpIntent.putExtra("mp_callsign", mpCallsign)
@@ -922,6 +923,7 @@ class SetupActivity : ComponentActivity() {
                         FileSetManager(filesDir).writeActiveSetPath()
                         AudioSourceManager(filesDir).writePlaylist()
                         writeInitialGameConfig()
+                        writeMusicConfigForLaunch()
                         val intent = Intent(this, MainActivity::class.java)
                         intent.putExtra("game", game)
                         startActivity(intent)
@@ -1720,6 +1722,7 @@ private fun SetupScreen(
     var showAdvancedPage by remember { mutableStateOf(false) }
     var showMultiplayerPage by remember { mutableStateOf(false) }
     var showAutoselectPage by remember { mutableStateOf(false) }
+    var showMusicPage by remember { mutableStateOf(false) }
 
     MaterialTheme(colorScheme = darkColorScheme()) {
         if (showControllerPage) {
@@ -1760,6 +1763,13 @@ private fun SetupScreen(
                 gameVariant = selectedGame,
                 filesDir = filesDir.absolutePath,
                 onBack = { showAutoselectPage = false },
+            )
+            return@MaterialTheme
+        }
+        if (showMusicPage) {
+            MusicPickerPage(
+                filesDir = filesDir,
+                onBack = { showMusicPage = false },
             )
             return@MaterialTheme
         }
@@ -2542,9 +2552,11 @@ private fun SetupScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     MusicInfoSection(
                         filesDir = filesDir,
+                        setDir = setDir,
                         refreshTrigger = refreshTrigger,
                         hasMidiSource =
                             d2RequiredOk || d1RequiredOk,
+                        onEditMusic = { showMusicPage = true },
                     )
                 }
 
@@ -2784,10 +2796,19 @@ private fun SectionHeader(title: String) {
 @Composable
 private fun MusicInfoSection(
     filesDir: File,
+    setDir: File,
     refreshTrigger: Int,
     hasMidiSource: Boolean = false,
+    onEditMusic: () -> Unit = {},
 ) {
-    val musicStatuses = remember(refreshTrigger) { checkFiles(filesDir, MUSIC_FILES) }
+    val musicStatuses = remember(refreshTrigger) {
+        // Check both filesDir and setDir for .gog/.inst files
+        val fromRoot = checkFiles(filesDir, MUSIC_FILES)
+        val fromSet = checkFiles(setDir, MUSIC_FILES)
+        fromRoot.zip(fromSet).map { (r, s) ->
+            if (r.found) r else s
+        }
+    }
     val redbookReady = musicStatuses.all { it.found }
     val audioSrcManager = remember { AudioSourceManager(filesDir) }
     var audioSources by remember { mutableStateOf(audioSrcManager.getSources()) }
@@ -2798,24 +2819,79 @@ private fun MusicInfoSection(
     // Re-read sources when refreshTrigger changes
     LaunchedEffect(refreshTrigger) { audioSources = audioSrcManager.getSources() }
 
+    // Read current music mode from prefs for display
+    val context = LocalContext.current
+    val prefs = context.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
+    val musicMode = prefs.getString("music_mode", "cd") ?: "cd"
+    val modeLabel = when (musicMode) {
+        "midi" -> "MIDI"
+        "cd" -> "CD Audio"
+        "files" -> "Audio Files"
+        else -> "CD Audio"
+    }
+
     val musicLabel =
         when {
             hasAnySources -> "\u2713 Ready"
             hasMidiSource -> "\u2717 Missing, will use MIDI"
             else -> "\u2717 Missing"
         }
-    GameSectionHeader(
-        title = "Music",
-        ready = hasAnySources,
-        expanded = expanded,
-        onToggle = { expanded = !expanded },
-        notReadyLabel = musicLabel,
+
+    // Custom header: "Music" [mode label] [status] [Edit] [Show Files]
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "Music",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = modeLabel,
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        Text(
+            text = if (hasAnySources) "\u2713 Ready" else musicLabel,
+            color = if (hasAnySources) Color(0xFF4CAF50) else Color(0xFFF44336),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        TextButton(
+            onClick = onEditMusic,
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+            modifier = Modifier.height(28.dp),
+        ) {
+            Text("Edit", fontSize = 12.sp)
+        }
+        TextButton(
+            onClick = { expanded = !expanded },
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+            modifier = Modifier.height(28.dp),
+        ) {
+            Text(
+                text = if (expanded) "Hide" else "Files",
+                fontSize = 12.sp,
+            )
+        }
+    }
+    HorizontalDivider(
+        color = MaterialTheme.colorScheme.outlineVariant,
+        modifier = Modifier.padding(bottom = 4.dp),
     )
     if (expanded) {
         Text(
             text =
                 "MIDI audio is supported from game files. " +
-                    "Redbook audio from GOG or BIN/CUE disc images is supported.",
+                    "Redbook audio from GOG/INST or BIN/CUE disc images is supported.",
             fontSize = 13.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 8.dp),
@@ -3154,6 +3230,55 @@ private fun enableRedbookInConfig(filesDir: File) {
     }
     cfgFile.writeText(text)
     Log.i("DXX-Setup", "Updated descent.cfg: MusicType=2 OrigTrackOrder=1")
+}
+
+/**
+ * Write music mode config to descent.cfg based on the user's music_mode pref.
+ *
+ * Music mode constants (shared with d2/main/digi.h):
+ *   MUSIC_TYPE_NONE=0, MUSIC_TYPE_BUILTIN=1 (MIDI),
+ *   MUSIC_TYPE_REDBOOK=2 (CD), MUSIC_TYPE_CUSTOM=3 (jukebox)
+ *
+ * For Custom mode, also writes an M3U playlist and sets CMLevelMusicPath.
+ */
+private fun SetupActivity.writeMusicConfigForLaunch() {
+    val prefs = getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
+    val mode = prefs.getString("music_mode", "cd") ?: "cd"
+    val musicType = when (mode) {
+        "midi" -> "1"
+        "cd" -> "2"
+        "files" -> "3"
+        else -> "2"
+    }
+
+    val cfgFile = File(filesDir, "descent.cfg")
+    if (!cfgFile.exists()) return
+    var text = cfgFile.readText()
+
+    // Write MusicType
+    val settings = mutableListOf("MusicType" to musicType)
+
+    if (mode == "cd") {
+        settings.add("OrigTrackOrder" to "1")
+    } else if (mode == "files") {
+        // Generate M3U playlist from custom audio sets
+        val m3uPath = CustomAudioSetManager(filesDir).writeM3U()
+        if (m3uPath != null) {
+            settings.add("CMLevelMusicPath" to m3uPath)
+            settings.add("CMLevelMusicPlayOrder" to "0") // continuous
+        }
+    }
+
+    for ((key, value) in settings) {
+        val regex = Regex("^$key=.*$", RegexOption.MULTILINE)
+        text = if (regex.containsMatchIn(text)) {
+            regex.replace(text, "$key=$value")
+        } else {
+            text.trimEnd() + "\n$key=$value\n"
+        }
+    }
+    cfgFile.writeText(text)
+    Log.i("DXX-Setup", "Updated descent.cfg: music_mode=$mode -> MusicType=$musicType")
 }
 
 @Composable

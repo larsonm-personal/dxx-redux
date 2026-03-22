@@ -36,45 +36,24 @@
 - DiscImportDialog already handles CUE parsing, track listing, and AudioSourceManager
   registration, so no additional dialog code needed
 
-## Phase 4: Music Picker -- NOT STARTED
+## Phase 4: Music Picker -- DONE (initial implementation)
 
-### 4a: MusicPickerPage.kt (new file)
-- Mode selector: MIDI | CD Audio | Audio Files
-- Maps to MUSIC_TYPE_BUILTIN (1), MUSIC_TYPE_REDBOOK (2), MUSIC_TYPE_CUSTOM (3)
-- Also offer MUSIC_TYPE_NONE (0) as "Off"
+Implemented files:
+- `CustomAudioSetManager.kt`: manages custom audio file sets (MP3/OGG/FLAC) with JSON persistence
+- `MusicPickerPage.kt`: full-screen Composable page with 3 modes (MIDI, CD Audio, Audio Files)
+- SetupActivity.kt: navigation wiring, ControllerSection "Music" button, config writing at launch
 
-### 4b: MIDI mode
-- Show count of HMP files in game data (informational)
-- Need JNI helper to count HMP in HOG archive
-- No user config beyond mode selection
+Implementation sub-phases all completed:
+- Phase 4a: MusicPickerPage scaffold + navigation wiring -- DONE
+- Phase 4b: Music mode selector (3 FilterChips, SharedPreferences) -- DONE
+- Phase 4c: Redbook section (AudioSourceManager list, enable/disable, reorder, remove) -- DONE
+- Phase 4d: Custom audio section (list sets, add via SAF picker + name dialog, remove w/ delete) -- DONE
+- Phase 4e: Track list preview dialog (merged track list per mode) -- DONE
+- Phase 4f: MIDI section (informational) -- DONE
+- Phase 4g: Config writing before launch (MusicType + CMLevelMusicPath + M3U) -- DONE
+- Phase 4h: GOG import enhancement (register as AudioSource) -- DEFERRED (existing flow works)
 
-### 4c: CD Audio (Redbook) mode
-- List registered sources from AudioSourceManager
-- Reorder, enable/disable, add via file picker, remove (with delete option)
-- "Preview track list" button for merged view
-
-### 4d: Audio Files (Jukebox) mode
-- "Import audio set" from MP3/OGG/FLAC with name prompt
-- List audio sets, per-set track list (alpha sorted)
-- Remove sets (with delete option)
-- Generate M3U playlist at launch time
-
-### 4e: Track list preview dialog
-- Scrollable list: track name + source indicator
-- Click row to show source details
-
-### 4f: Config writing before launch
-- MusicType=N in descent.cfg
-- REDBOOK: audio_playlist.json (existing)
-- CUSTOM: M3U + CMLevelMusicPath in descent.cfg
-
-### 4g: Persistence
-- Redbook: audio_sources.json (existing)
-- Custom sets: new JSON file (custom_audio_sets.json or extend audio_sources.json)
-- Selected mode: prefs or JSON
-
-### 4h: Navigation
-- Entry point from launcher settings or main screen
+Build verified: assembleDebug SUCCESS, no new warnings.
 
 ## Phase 5: Integration Testing -- NOT STARTED
 - Automation script for level complete NEXT button

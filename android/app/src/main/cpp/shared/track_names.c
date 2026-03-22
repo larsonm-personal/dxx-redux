@@ -1,28 +1,22 @@
 /*
- * Track name overlay — maps CD track numbers to human-readable names
+ * Track name overlay -- maps CD track numbers to human-readable names
  * and forwards the result to the Java overlay layer via JNI.
  *
- * Two sources of names are tried, in priority order:
- *   1. TITLE fields parsed from the GOG CUE sheet (descent.inst)
- *   2. A hardcoded table for Descent I CD tracks
- *
- * For MIDI tracks the overlay simply shows "MIDI Track N".
+ * Shared between D1 and D2 android builds.  Contains hardcoded track
+ * name tables for both games' GOG disc images plus the CUE-parsed
+ * title fallback and overlay formatting.
  */
 
 #include <stdio.h>
 #include <string.h>
-#include <ctype.h>
 
 #include "pstypes.h"
 #include "songs.h"
 #include "track_names.h"
-#include "gameseq.h"
 
-#ifdef ANDROID
 #include "android_jni_overlay.h"
-#endif
 
-/* ── CUE-parsed titles (filled by track_names_parse_cue_titles) ────── */
+/* -- CUE-parsed titles (filled by rbaudio_bin.c CUE parser) ---------- */
 
 #define MAX_CUE_TRACKS 100
 #define CUE_TITLE_LEN   64
@@ -50,20 +44,15 @@ const char *track_names_get_cue_title(int track)
 	return s_cue_titles[track - 1];
 }
 
-/* ── Hardcoded Descent I CD track names ──────────────────────────────
- *
- * Physical CD layout (GOG disc image):
- *   Track  1 : DATA
- *   Tracks 2–11 : Audio (10 tracks)
- *
- * The names below are indexed by physical 1-based track number.
- */
+/* -- Hardcoded track name tables ------------------------------------- */
 
 #define D1_GOG_DISCID 0x2e0d3a05u
+#define D2_GOG_DISCID 0x7d0ff809u
 
+/* Descent I GOG disc image: track 1 = DATA, tracks 2-11 = audio */
 static const char *d1_track_names[] = {
-	NULL,                   /*  0 — unused (tracks are 1-based) */
-	NULL,                   /*  1 — DATA track */
+	NULL,                   /*  0 -- unused (1-based) */
+	NULL,                   /*  1 -- DATA */
 	"Descent Main Theme",   /*  2 */
 	"Adrenaline Nightmare", /*  3 */
 	"Level 7 Briefing",     /*  4 */
@@ -76,33 +65,60 @@ static const char *d1_track_names[] = {
 	"Robotic Menace",       /* 11 */
 };
 
+/* Descent II GOG disc image: track 1 = DATA, tracks 2-15 = audio */
+static const char *d2_track_names[] = {
+	NULL,               /*  0 -- unused (1-based) */
+	NULL,               /*  1 -- DATA */
+	"Title",            /*  2 */
+	"Base Return",      /*  3 */
+	"Crawl",            /*  4 */
+	"Gunner Down",      /*  5 */
+	"Ratzez",           /*  6 */
+	"Techno Industry",  /*  7 */
+	"Are You Descent",  /*  8 */
+	"Robot Jungle",     /*  9 */
+	"The Well",         /* 10 */
+	"Haunted",          /* 11 */
+	"Are You Descent",  /* 12 */
+	"Cold Reality",     /* 13 */
+	"Robot Jungle",     /* 14 */
+	"Final Mission",    /* 15 */
+};
+
 #define D1_TRACK_COUNT ((int)(sizeof(d1_track_names) / sizeof(d1_track_names[0])))
+#define D2_TRACK_COUNT ((int)(sizeof(d2_track_names) / sizeof(d2_track_names[0])))
 
 static const char *lookup_redbook_name(int track, unsigned long disc_id)
 {
-	/* Prefer CUE-parsed title */
 	const char *cue = track_names_get_cue_title(track);
 	if (cue) return cue;
 
-	/* Hardcoded table — only for the GOG disc */
 	if (disc_id == D1_GOG_DISCID &&
 	    track >= 1 && track < D1_TRACK_COUNT && d1_track_names[track])
 		return d1_track_names[track];
 
+	if (disc_id == D2_GOG_DISCID &&
+	    track >= 1 && track < D2_TRACK_COUNT && d2_track_names[track])
+		return d2_track_names[track];
+
 	return NULL;
 }
 
-/* ── Overlay state ───────────────────────────────────────────────────── */
+const char *track_names_lookup(int track, unsigned long disc_id)
+{
+	return lookup_redbook_name(track, disc_id);
+}
+
+/* -- Overlay formatting ---------------------------------------------- */
 
 #define OVERLAY_TEXT_LEN 80
 
-static char  s_overlay_text[OVERLAY_TEXT_LEN];
+static char s_overlay_text[OVERLAY_TEXT_LEN];
 
 void track_overlay_notify(int track_or_song, int is_midi, unsigned long disc_id)
 {
 	if (is_midi)
 	{
-		/* MIDI tracks: "MIDI Track N" where N is 1-based level song index */
 		int display_num = track_or_song - SONG_FIRST_LEVEL_SONG + 1;
 		if (display_num < 1) display_num = track_or_song;
 		snprintf(s_overlay_text, OVERLAY_TEXT_LEN, "MIDI Track %d", display_num);
@@ -116,12 +132,8 @@ void track_overlay_notify(int track_or_song, int is_midi, unsigned long disc_id)
 			snprintf(s_overlay_text, OVERLAY_TEXT_LEN, "Track %d", track_or_song);
 	}
 
-#ifdef ANDROID
 	android_send_track_name(s_overlay_text);
-#endif
 }
-
-/* ── Level name overlay ──────────────────────────────────────────────── */
 
 void level_overlay_notify(int level_num, const char *level_name)
 {
@@ -138,7 +150,5 @@ void level_overlay_notify(int level_num, const char *level_name)
 		else
 			snprintf(buf, OVERLAY_TEXT_LEN, "Level %d", level_num);
 	}
-#ifdef ANDROID
 	android_send_level_name(buf);
-#endif
 }

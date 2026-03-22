@@ -95,4 +95,7 @@ game_data/**
 !game_data/**/*_regression.json5
 
 # android emulator testing
-game_data_to_copy_to_emulator/
+game_data_to_copy_to_emulator/data/*
+!game_data_to_copy_to_emulator/data/.gitkeep
+game_data_to_copy_to_emulator/download/*
+!game_data_to_copy_to_emulator/download/.gitkeep

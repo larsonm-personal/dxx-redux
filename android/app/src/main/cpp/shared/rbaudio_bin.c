@@ -1210,10 +1210,27 @@ int RBAGetNumAudioTracks(void)
 	return count;
 }
 
-/* Get the name of a track by 1-based number.  Returns empty string if invalid. */
+/* Get the name of a track by 1-based number.  Returns empty string if invalid.
+ * Falls back to track_names_lookup() (hardcoded table) when the CUE had no TITLE. */
 const char *RBAGetTrackName(int track)
 {
 	if (!s_initialised || track < 1 || track > s_num_tracks)
 		return "";
-	return s_tracks[track - 1].name;
+	if (s_tracks[track - 1].name[0])
+		return s_tracks[track - 1].name;
+	/* Fallback: try hardcoded track name table (android port) */
+	{
+		unsigned long disc_id = RBAGetDiscID();
+		const char *name = track_names_lookup(track, disc_id);
+		if (name) return name;
+	}
+	return "";
+}
+
+/* Check if a track (1-based) is an audio track.  Returns 1 for audio, 0 for data or invalid. */
+int RBAIsAudioTrack(int track)
+{
+	if (!s_initialised || track < 1 || track > s_num_tracks)
+		return 0;
+	return s_tracks[track - 1].type == 1 ? 1 : 0;
 }

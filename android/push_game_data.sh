@@ -2,9 +2,12 @@
 # push_game_data.sh - Push game data files from game_data_to_copy_to_emulator/.
 # Usage:  bash push_game_data.sh
 #
-# Expects game data files (descent2.hog, groupa.pig, etc.) in
-# <repo_root>/game_data_to_copy_to_emulator/.  Pushes them to the app's internal storage
-# via /data/local/tmp/ staging (necessary because run-as can't read /sdcard).
+# Expects game data files in two subdirectories:
+#   data/     -- HOG, PIG, etc. plus music (BIN/CUE, GOG/INST).
+#                Pushed to the app's active file set (sets/default/).
+#   download/ -- Files destined for the app's files dir root.
+#
+# Files are staged via /data/local/tmp/ (run-as can't read /sdcard).
 
 wait_for_key() {
     echo ""
@@ -70,15 +73,16 @@ _push_timeout() {
 
 if [ ! -d "$GAME_DATA_DIR" ]; then
     echo "ERROR: game_data_to_copy_to_emulator/ directory not found at $GAME_DATA_DIR"
-    echo "Place your Descent 2 game files (descent2.hog, groupa.pig, etc.) there."
+    echo "Place game files in data/ and/or download/ subdirectories."
     exit 1
 fi
 
-FILES=$(ls "$GAME_DATA_DIR" 2>/dev/null)
-if [ -z "$FILES" ]; then
-    echo "ERROR: No files found in $GAME_DATA_DIR"
-    exit 1
-fi
+DATA_DIR="$GAME_DATA_DIR/data"
+DOWNLOAD_DIR="$GAME_DATA_DIR/download"
+DOWNLOAD_DEST="/sdcard/Download"
+
+# At least one subfolder must have files (ignore .gitkeep)
+_has_files() { find "$1" -maxdepth 1 -type f ! -name '.gitkeep' 2>/dev/null | head -1 | grep -q .; }
 
 FILES_DIR="/data/data/$PACKAGE/files"
 DEST="$FILES_DIR/sets/default"
@@ -102,66 +106,105 @@ fi
 
 echo "=== Pushing game data to emulator ==="
 ERRORS=0
-for f in "$GAME_DATA_DIR"/*; do
-    [ ! -f "$f" ] && continue   # skip directories and non-files
-    BASENAME=$(basename "$f")
-    LOWER=$(echo "$BASENAME" | tr '[:upper:]' '[:lower:]')
-    
-    # Check if file already exists with correct size
-    LOCAL_SIZE=$(wc -c < "$f" | tr -d ' ')
-    REMOTE_SIZE=$("$ADB" shell "run-as $PACKAGE stat -c %s $DEST/$LOWER 2>/dev/null" 2>/dev/null | tr -d '\r\n') || true
-    [ -z "$REMOTE_SIZE" ] && REMOTE_SIZE=0
-    
-    if [ "$LOCAL_SIZE" = "$REMOTE_SIZE" ]; then
-        echo "  $BASENAME -> $LOWER  (already present, skipping)"
-        continue
-    fi
-    
-    echo "  $BASENAME -> $LOWER  ($LOCAL_SIZE bytes)"
-    
-    # Stage file to /data/local/tmp via adb push (use Windows path for adb.exe)
-    HOST_FILE=$(_host_path "$f")
-    TIMEOUT=$(_push_timeout "$LOCAL_SIZE")
-    if ! _timed "$TIMEOUT" "$ADB" push "$HOST_FILE" "/data/local/tmp/$LOWER" >/dev/null 2>&1; then
-        echo "    ERROR: adb push failed or timed out (${TIMEOUT}s) for $BASENAME"
-        ERRORS=$((ERRORS + 1))
-        continue
-    fi
-    
-    # Copy from staging to app-private storage via run-as
-    "$ADB" shell "chmod 644 /data/local/tmp/$LOWER" 2>/dev/null || true
-    if ! _timed "$TIMEOUT" "$ADB" shell "run-as $PACKAGE sh -c 'cat /data/local/tmp/$LOWER > $DEST/$LOWER'" 2>/dev/null; then
-        echo "    ERROR: copy to app storage failed or timed out for $BASENAME"
-        ERRORS=$((ERRORS + 1))
-    fi
-    "$ADB" shell "rm -f /data/local/tmp/$LOWER" 2>/dev/null || true
-done
+
+# _push_files <local_dir> <remote_dest>
+# Push all regular files from local_dir to remote_dest, lowercasing names.
+_push_files() {
+    local src_dir="$1" dest_dir="$2"
+    for f in "$src_dir"/*; do
+        [ ! -f "$f" ] && continue
+        BASENAME=$(basename "$f")
+        [ "$BASENAME" = ".gitkeep" ] && continue
+        LOWER=$(echo "$BASENAME" | tr '[:upper:]' '[:lower:]')
+
+        LOCAL_SIZE=$(wc -c < "$f" | tr -d ' ')
+        REMOTE_SIZE=$("$ADB" shell "run-as $PACKAGE stat -c %s $dest_dir/$LOWER 2>/dev/null" 2>/dev/null | tr -d '\r\n') || true
+        [ -z "$REMOTE_SIZE" ] && REMOTE_SIZE=0
+
+        if [ "$LOCAL_SIZE" = "$REMOTE_SIZE" ]; then
+            echo "  $BASENAME -> $LOWER  (already present, skipping)"
+            continue
+        fi
+
+        echo "  $BASENAME -> $LOWER  ($LOCAL_SIZE bytes)"
+
+        HOST_FILE=$(_host_path "$f")
+        TIMEOUT=$(_push_timeout "$LOCAL_SIZE")
+        if ! _timed "$TIMEOUT" "$ADB" push "$HOST_FILE" "/data/local/tmp/$LOWER" >/dev/null 2>&1; then
+            echo "    ERROR: adb push failed or timed out (${TIMEOUT}s) for $BASENAME"
+            ERRORS=$((ERRORS + 1))
+            continue
+        fi
+
+        "$ADB" shell "chmod 644 /data/local/tmp/$LOWER" 2>/dev/null || true
+        if ! _timed "$TIMEOUT" "$ADB" shell "run-as $PACKAGE sh -c 'cat /data/local/tmp/$LOWER > $dest_dir/$LOWER'" 2>/dev/null; then
+            echo "    ERROR: copy to app storage failed or timed out for $BASENAME"
+            ERRORS=$((ERRORS + 1))
+        fi
+        "$ADB" shell "rm -f /data/local/tmp/$LOWER" 2>/dev/null || true
+    done
+}
+
+# Push data/ files to set dir
+if [ -d "$DATA_DIR" ] && _has_files "$DATA_DIR"; then
+    echo "--- data/ -> $DEST ---"
+    _push_files "$DATA_DIR" "$DEST"
+fi
+
+# Push download/ files to /sdcard/Download/ (visible in file picker)
+if [ -d "$DOWNLOAD_DIR" ] && _has_files "$DOWNLOAD_DIR"; then
+    echo "--- download/ -> $DOWNLOAD_DEST ---"
+    "$ADB" shell "mkdir -p $DOWNLOAD_DEST" 2>/dev/null || true
+    for f in "$DOWNLOAD_DIR"/*; do
+        [ ! -f "$f" ] && continue
+        BASENAME=$(basename "$f")
+        [ "$BASENAME" = ".gitkeep" ] && continue
+        LOWER=$(echo "$BASENAME" | tr '[:upper:]' '[:lower:]')
+
+        LOCAL_SIZE=$(wc -c < "$f" | tr -d ' ')
+        REMOTE_SIZE=$("$ADB" shell "stat -c %s $DOWNLOAD_DEST/$LOWER 2>/dev/null" 2>/dev/null | tr -d '\r\n') || true
+        [ -z "$REMOTE_SIZE" ] && REMOTE_SIZE=0
+
+        if [ "$LOCAL_SIZE" = "$REMOTE_SIZE" ]; then
+            echo "  $BASENAME -> $LOWER  (already present, skipping)"
+            continue
+        fi
+
+        echo "  $BASENAME -> $LOWER  ($LOCAL_SIZE bytes)"
+        HOST_FILE=$(_host_path "$f")
+        TIMEOUT=$(_push_timeout "$LOCAL_SIZE")
+        if ! _timed "$TIMEOUT" "$ADB" push "$HOST_FILE" "$DOWNLOAD_DEST/$LOWER" >/dev/null 2>&1; then
+            echo "    ERROR: adb push failed or timed out (${TIMEOUT}s) for $BASENAME"
+            ERRORS=$((ERRORS + 1))
+        fi
+    done
+fi
 
 echo ""
 echo "=== Files in app storage ==="
 "$ADB" shell "run-as $PACKAGE ls -la $DEST/" 2>&1 || true
 
-# Remove game files from set dir that are no longer in game_data_to_copy_to_emulator/
+# Remove set-dir files no longer in data/
 echo ""
 echo "=== Cleaning removed files ==="
 REMOTE_FILES=$("$ADB" shell "run-as $PACKAGE ls $DEST/" 2>/dev/null | tr -d '\r') || true
 for REMOTE in $REMOTE_FILES; do
-    # Skip manifests and metadata
     case "$REMOTE" in
         *.json|*.cfg) continue ;;
     esac
-    # Check if any local file (lowercased) matches this remote file
     FOUND=false
-    for f in "$GAME_DATA_DIR"/*; do
-        [ ! -f "$f" ] && continue
-        LOCAL_LOWER=$(basename "$f" | tr '[:upper:]' '[:lower:]')
-        if [ "$LOCAL_LOWER" = "$REMOTE" ]; then
-            FOUND=true
-            break
-        fi
-    done
+    if [ -d "$DATA_DIR" ]; then
+        for f in "$DATA_DIR"/*; do
+            [ ! -f "$f" ] && continue
+            LOCAL_LOWER=$(basename "$f" | tr '[:upper:]' '[:lower:]')
+            if [ "$LOCAL_LOWER" = "$REMOTE" ]; then
+                FOUND=true
+                break
+            fi
+        done
+    fi
     if [ "$FOUND" = "false" ]; then
-        echo "  No longer in game_data_to_copy_to_emulator/, removing $REMOTE"
+        echo "  No longer in data/, removing $REMOTE"
         "$ADB" shell "run-as $PACKAGE rm -f $DEST/$REMOTE" 2>/dev/null || true
     fi
 done

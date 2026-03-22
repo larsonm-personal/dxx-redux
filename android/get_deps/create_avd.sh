@@ -38,12 +38,6 @@ else
     export ANDROID_SDK_ROOT="$SDK_DIR"
 fi
 
-# Check if AVD already exists
-if "$AVDMANAGER" list avd 2>/dev/null | grep -q "Name: $AVD_NAME"; then
-    echo "AVD '$AVD_NAME' already exists."
-    exit 0
-fi
-
 IMAGE="system-images;android-34;google_apis;x86_64"
 
 echo "Creating AVD '$AVD_NAME' (Nexus 5X, API 34, x86_64)..."
@@ -62,6 +56,8 @@ hw.cpu.ncore=2
 vm.heapSize=512
 hw.gpu.enabled=yes
 hw.gpu.mode=host
+hw.gpu.renderer=angle
+hw.gpu.vulkan=no
 disk.dataPartition.size=4G
 hw.keyboard=yes
 hw.lcd.width=1280
@@ -81,7 +77,6 @@ hw.audioOutput=yes
 hw.sdCard=yes
 sdcard.size=4096M
 showDeviceFrame=no
-skin.path=_no_skin
 EOF
     echo "Applied lightweight hardware config (1536 MB RAM, 1280x720, minimal sensors)."
 fi

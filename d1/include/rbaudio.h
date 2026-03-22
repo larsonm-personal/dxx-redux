@@ -67,5 +67,6 @@ int RBAGetCurrentTrackInfo(int *out_track, char *out_name, int name_size,
                            int *out_source_index);
 int RBAGetNumAudioTracks(void);
 const char *RBAGetTrackName(int track);
+int RBAIsAudioTrack(int track);
 
 #endif

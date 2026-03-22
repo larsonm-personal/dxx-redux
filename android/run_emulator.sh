@@ -137,7 +137,7 @@ fi
 # -- 5. Push game data (if available) ------------------------
 if [ "$NO_DATA" -eq 0 ] && [ -f "$SCRIPT_DIR/push_game_data.sh" ]; then
     REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-    if [ -d "$REPO_ROOT/game_data_to_copy_to_emulator" ] && [ -n "$(ls "$REPO_ROOT/game_data_to_copy_to_emulator" 2>/dev/null)" ]; then
+    if [ -d "$REPO_ROOT/game_data_to_copy_to_emulator" ] && { [ -n "$(ls "$REPO_ROOT/game_data_to_copy_to_emulator/data" 2>/dev/null)" ] || [ -n "$(ls "$REPO_ROOT/game_data_to_copy_to_emulator/download" 2>/dev/null)" ]; }; then
         echo ""
         CALLED_FROM_SCRIPT=1 bash "$SCRIPT_DIR/push_game_data.sh"
     else

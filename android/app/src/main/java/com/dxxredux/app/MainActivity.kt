@@ -186,6 +186,10 @@ class MainActivity :
 
     external fun nativeGetNumAudioTracks(): Int
 
+    external fun nativeGetTotalTracks(): Int
+
+    external fun nativeIsAudioTrack(track: Int): Boolean
+
     // ── Matchmaking auto-join/host (jni_main.c) ─────────────────────
     external fun nativeSetCallsign(callsign: String)
 

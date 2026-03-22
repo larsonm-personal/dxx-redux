@@ -13,11 +13,6 @@
  *   disc_id is ignored. */
 void track_overlay_notify(int track_or_song, int is_midi, unsigned long disc_id);
 
-/* Try to extract TITLE fields from the GOG CUE sheet.
- * Called once during RBAInit -- titles parsed here override the
- * hardcoded fallback table. */
-void track_names_parse_cue_titles(void);
-
 /* Return the CUE-parsed title for a 1-based CD track, or NULL. */
 const char *track_names_get_cue_title(int track);
 
@@ -26,6 +21,10 @@ void track_names_set_cue_title(int track, const char *title);
 
 /* Set the total number of CUE tracks parsed. */
 void track_names_set_cue_count(int n);
+
+/* Look up a track name from CUE titles or the hardcoded table.
+ * Returns NULL if no name is known.  Used by RBAGetTrackName() fallback. */
+const char *track_names_lookup(int track, unsigned long disc_id);
 
 /* Call when a new level starts to show "Level N: Name" overlay. */
 void level_overlay_notify(int level_num, const char *level_name);

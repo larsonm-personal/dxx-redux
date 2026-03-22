@@ -12,7 +12,7 @@ import kotlin.math.min
  * Semi-transparent full-screen overlay showing the track list.
  * Tap a track to play it; tap the X or outside the panel to dismiss.
  *
- * @param onPlayTrack called with the combined track index when a track is tapped
+ * @param onPlayTrack called with the 1-based combined track number when a track is tapped
  * @param onDismiss called when the panel should be removed
  */
 class MusicControlPanel(
@@ -20,6 +20,7 @@ class MusicControlPanel(
     private val onPlayTrack: (Int) -> Unit,
     private val onDismiss: () -> Unit,
 ) : View(context) {
+
     data class TrackEntry(
         val index: Int,
         val name: String,
@@ -61,6 +62,11 @@ class MusicControlPanel(
             textAlign = Paint.Align.CENTER
         }
     private val highlightPaint = Paint().apply { color = 0x22FFFFFF }
+    private val scrollHintPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0xAAFFFFFF.toInt()
+            textAlign = Paint.Align.CENTER
+        }
 
     init {
         loadTracks()
@@ -70,11 +76,14 @@ class MusicControlPanel(
         tracks.clear()
         try {
             val activity = context as? MainActivity ?: return
-            val total = activity.nativeGetNumAudioTracks()
+            val total = activity.nativeGetTotalTracks()
             currentTrack = activity.nativeGetCurrentTrackNum()
-            for (i in 0 until total) {
-                val name = activity.nativeGetTrackName(i)
-                tracks.add(TrackEntry(i, if (name.isNotEmpty()) name else "Track ${i + 1}"))
+            // Show all audio tracks; skip only data tracks.
+            for (t in 1..total) {
+                if (!activity.nativeIsAudioTrack(t)) continue
+                val cName = activity.nativeGetTrackName(t)
+                val label = if (cName.isNotEmpty()) "Track $t: $cName" else "Track $t"
+                tracks.add(TrackEntry(t, label))
             }
         } catch (_: Exception) {
             // engine not ready
@@ -146,10 +155,29 @@ class MusicControlPanel(
 
             val paint = if (track.index == currentTrack) currentPaint else textPaint
             val textY = y + rowHeight * 0.65f
-            val label = "${track.index + 1}. ${track.name}"
-            canvas.drawText(label, panelRect.left + 20f, textY, paint)
+            canvas.drawText(track.name, panelRect.left + 20f, textY, paint)
         }
         canvas.restore()
+
+        // Scroll indicators
+        scrollHintPaint.textSize = titlePaint.textSize * 0.7f
+        val max = maxScroll()
+        if (scrollOffset > 0f) {
+            canvas.drawText(
+                "\u25B2",
+                panelRect.centerX(),
+                listTop + scrollHintPaint.textSize,
+                scrollHintPaint,
+            )
+        }
+        if (max > 0f && scrollOffset < max - 1f) {
+            canvas.drawText(
+                "\u25BC",
+                panelRect.centerX(),
+                listBottom - 4f,
+                scrollHintPaint,
+            )
+        }
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {

@@ -62,7 +62,6 @@ set(D1X_MAIN_SOURCES
     texmerge.c
     text.c
     titles.c
-    track_names.c
     vclip.c
     wall.c
     weapon.c

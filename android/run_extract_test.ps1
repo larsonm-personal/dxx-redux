@@ -57,7 +57,7 @@ $ESSENTIAL_EXTENSIONS = @('.pig', '.hog', '.ham', '.s11', '.s22', '.mn2',
 # Large optional files we skip pushing to save time (MVLs = movie files, ~100MB each)
 $SKIP_LARGE_EXTENSIONS = @('.mvl', '.sow', '.dem', '.rl2', '.dtx')
 
-# Known SHA1 hashes for the base demo set files (game_data_to_copy_to_emulator/).
+# Known SHA1 hashes for the base demo set files (game_data_to_copy_to_emulator/data/).
 # If a pushed file matches one of these, and the spec expects a different version,
 # we know we're accidentally using the demo set.
 $DEMO_SET_HASHES = @{}  # populated dynamically below
@@ -335,11 +335,11 @@ if ($filesToPush.Count -eq 0) {
 }
 
 # -- Compute demo set hashes for canary check -----------------
-# Hash a signature file from game_data_to_copy_to_emulator if it exists,
+# Hash a signature file from game_data_to_copy_to_emulator/data/ if it exists,
 # so we can verify pushed files are NOT from the demo set.
 
 $repoRoot = Split-Path $PSScriptRoot -Parent
-$demoDir = Join-Path $repoRoot 'game_data_to_copy_to_emulator'
+$demoDir = Join-Path $repoRoot 'game_data_to_copy_to_emulator' 'data'
 $signatureFiles = @('descent2.hog', 'descent.hog', 'groupa.pig', 'descent.pig')
 $demoHashes = @{}  # filename -> SHA1
 

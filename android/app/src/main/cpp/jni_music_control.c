@@ -57,6 +57,20 @@ Java_com_dxxredux_app_MainActivity_nativeGetNumAudioTracks(
 	return RBAGetNumAudioTracks();
 }
 
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetTotalTracks(
+    JNIEnv *env, jobject thiz)
+{
+	return RBAGetNumberOfTracks();
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeIsAudioTrack(
+    JNIEnv *env, jobject thiz, jint track)
+{
+	return RBAIsAudioTrack(track) ? JNI_TRUE : JNI_FALSE;
+}
+
 /*
  * Get full current track info as a string: "trackNum|sourceIndex|trackName"
  * Returns empty string if not playing.

@@ -96,17 +96,17 @@ foreach ($avd in $avds) {
         "hw.sensors.temperature"     = "no"
         "hw.gpu.enabled"             = "yes"
         "hw.gpu.mode"                = "host"
+        "hw.gpu.renderer"            = "angle"
+        "hw.gpu.vulkan"              = "no"
         "hw.keyboard"                = "yes"
         "hw.sdCard"                  = "yes"
         "sdcard.size"                = "4096M"
         "disk.dataPartition.size"    = "4G"
         "showDeviceFrame"            = "no"
-        "skin.dynamic"               = "yes"
-        "skin.name"                  = "1280x720"
-        "skin.path"                  = "_no_skin"
         "hw.audioInput"              = "no"
         "hw.audioOutput"             = "yes"
         "vm.heapSize"                = "256M"
+        "hw.screenRound"             = "no"
     }
 
     # Apply overrides: replace existing lines or append

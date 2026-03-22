@@ -92,7 +92,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "controls.h"
 #include "credits.h"
 #include "gamemine.h"
+#ifdef ANDROID
 #include "track_names.h"
+#endif
 #ifdef EDITOR
 #include "editor/editor.h"
 #endif
@@ -754,7 +756,9 @@ void LoadLevel(int level_num,int page_in_textures)
 
 	Current_level_num=level_num;
 
+#ifdef ANDROID
 	level_overlay_notify(level_num, Current_level_name);
+#endif
 
 	load_palette(Current_level_palette,1,1);		//don't change screen
 
