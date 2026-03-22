@@ -11,7 +11,9 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Resolve script directory portably (handles backslash paths from PowerShell,
+# WSL /mnt/c/ paths, and MSYS2 /c/ paths)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 GAME_SCRIPTS_DIR="$SCRIPT_DIR/game_scripts"
 
 # Colors for output
@@ -46,11 +48,21 @@ print_success() {
 print_header "DXX-Redux Regression Test Menu"
 echo
 
-# Find all test_*.json5 files
-mapfile -t tests < <(find "$GAME_SCRIPTS_DIR" -name "test_*.json5" -type f | sort)
+# Find all test_*.json5 files using a glob (more portable than find+mapfile
+# across WSL, MSYS2, Git Bash, and native Linux)
+tests=()
+for f in "$GAME_SCRIPTS_DIR"/test_*.json5; do
+    [ -f "$f" ] && tests+=("$f")
+done
+# Sort the array (bash 4+)
+IFS=$'\n' tests=($(sort <<<"${tests[*]}")); unset IFS
 
 if [ ${#tests[@]} -eq 0 ]; then
     print_error "No test_*.json5 files found in $GAME_SCRIPTS_DIR"
+    print_error "  (resolved from SCRIPT_DIR=$SCRIPT_DIR)"
+    # Try to list what IS there for debugging
+    echo "  Contents of $(dirname "$GAME_SCRIPTS_DIR"):" >&2
+    ls -1 "$GAME_SCRIPTS_DIR" 2>/dev/null | head -10 >&2 || echo "  (directory not found)" >&2
     exit 1
 fi
 

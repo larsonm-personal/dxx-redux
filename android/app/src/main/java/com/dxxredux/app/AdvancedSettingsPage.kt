@@ -75,166 +75,166 @@ fun AdvancedSettingsPage(
                             .fillMaxSize()
                             .verticalScroll(scrollState),
                 ) {
-                // -- Render Resolution --
-                ResolutionPickerAdvanced(prefs = prefs, filesDir = filesDir)
+                    // -- Render Resolution --
+                    ResolutionPickerAdvanced(prefs = prefs, filesDir = filesDir)
 
-                Spacer(modifier = Modifier.height(16.dp))
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                // -- Export / Import configs --
-                Text("Config Management", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Spacer(modifier = Modifier.height(8.dp))
+                    // -- Export / Import configs --
+                    Text("Config Management", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                val configImportLauncher =
-                    rememberLauncherForActivityResult(
-                        contract =
-                            androidx.activity.result.contract.ActivityResultContracts
-                                .OpenDocument(),
-                    ) { uri ->
-                        if (uri == null) return@rememberLauncherForActivityResult
-                        val msg = ConfigImportExport.importFromUri(ctx, uri)
-                        Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show()
+                    val configImportLauncher =
+                        rememberLauncherForActivityResult(
+                            contract =
+                                androidx.activity.result.contract.ActivityResultContracts
+                                    .OpenDocument(),
+                        ) { uri ->
+                            if (uri == null) return@rememberLauncherForActivityResult
+                            val msg = ConfigImportExport.importFromUri(ctx, uri)
+                            Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show()
+                        }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            onClick = { ConfigImportExport.exportAll(ctx) },
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                            modifier = Modifier.height(32.dp),
+                        ) {
+                            Text("Export All Configs", fontSize = 12.sp)
+                        }
+                        OutlinedButton(
+                            onClick = { configImportLauncher.launch(arrayOf("application/json", "*/*")) },
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                            modifier = Modifier.height(32.dp),
+                        ) {
+                            Text("Import Config", fontSize = 12.sp)
+                        }
                     }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // -- Network Logging --
+                    NetworkLoggingSection()
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // -- Crash Reports --
+                    CrashReportsSection()
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // -- Dangerous zone --
+                    Text("Danger Zone", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFFF44336))
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Reset All Controls
+                    var showResetDialog by remember { mutableStateOf(false) }
                     OutlinedButton(
-                        onClick = { ConfigImportExport.exportAll(ctx) },
+                        onClick = { showResetDialog = true },
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                        modifier = Modifier.height(32.dp),
+                        modifier = Modifier.height(36.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFF44336)),
                     ) {
-                        Text("Export All Configs", fontSize = 12.sp)
+                        Text("Reset All Controls", fontSize = 12.sp)
                     }
+                    if (showResetDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showResetDialog = false },
+                            title = { Text("Reset All Controls") },
+                            text = {
+                                Text(
+                                    "This will reset ALL control bindings to defaults:\n\n" +
+                                        "- Touch layout (positions, sizes, bindings)\n" +
+                                        "- Physical controller mappings\n" +
+                                        "- In-game keyboard, joystick, and mouse settings for every pilot\n\n" +
+                                        "The app will restart after reset.",
+                                    fontSize = 13.sp,
+                                )
+                            },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    File(ctx.filesDir, "controller_config.json").delete()
+                                    File(ctx.filesDir, "touch_layout.json").delete()
+                                    NativePilotPatcher.nativeResetToDefaults(ctx.filesDir.absolutePath, "d2")
+                                    NativePilotPatcher.nativeResetToDefaults(ctx.filesDir.absolutePath, "d1")
+                                    showResetDialog = false
+                                    android.os.Process.killProcess(android.os.Process.myPid())
+                                }) {
+                                    Text("Reset & Restart", color = Color(0xFFF44336))
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showResetDialog = false }) { Text("Cancel") }
+                            },
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Delete All Player Files
+                    var showDeletePilotsDialog by remember { mutableStateOf(false) }
                     OutlinedButton(
-                        onClick = { configImportLauncher.launch(arrayOf("application/json", "*/*")) },
+                        onClick = { showDeletePilotsDialog = true },
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                        modifier = Modifier.height(32.dp),
+                        modifier = Modifier.height(36.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFF44336)),
                     ) {
-                        Text("Import Config", fontSize = 12.sp)
+                        Text("Delete All Player Files", fontSize = 12.sp)
                     }
+                    if (showDeletePilotsDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showDeletePilotsDialog = false },
+                            title = { Text("Delete All Player Files") },
+                            text = {
+                                Text(
+                                    "This will delete ALL pilot files (.plr), extended configs (.plx), " +
+                                        "effects (.eff), new game plus (.ngp), and saved games " +
+                                        "(.sg*, .mg*) for both Descent 1 and Descent 2 across all " +
+                                        "file sets.\n\nThis cannot be undone.\n\n" +
+                                        "The app will restart after deletion.",
+                                    fontSize = 13.sp,
+                                )
+                            },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    val deleted = fileSetManager.deleteAllPilotFiles()
+                                    showDeletePilotsDialog = false
+                                    Toast.makeText(ctx, "Deleted $deleted file(s)", Toast.LENGTH_SHORT).show()
+                                    android.os.Process.killProcess(android.os.Process.myPid())
+                                }) {
+                                    Text("Delete & Restart", color = Color(0xFFF44336))
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showDeletePilotsDialog = false }) { Text("Cancel") }
+                            },
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Restart App
+                    Button(
+                        onClick = { android.os.Process.killProcess(android.os.Process.myPid()) },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                        modifier = Modifier.fillMaxWidth().height(44.dp),
+                    ) {
+                        Text("Restart App", fontSize = 14.sp)
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // -- Network Logging --
-                NetworkLoggingSection()
-
-                Spacer(modifier = Modifier.height(16.dp))
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // -- Crash Reports --
-                CrashReportsSection()
-
-                Spacer(modifier = Modifier.height(16.dp))
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // -- Dangerous zone --
-                Text("Danger Zone", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFFF44336))
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Reset All Controls
-                var showResetDialog by remember { mutableStateOf(false) }
-                OutlinedButton(
-                    onClick = { showResetDialog = true },
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                    modifier = Modifier.height(36.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFF44336)),
-                ) {
-                    Text("Reset All Controls", fontSize = 12.sp)
-                }
-                if (showResetDialog) {
-                    AlertDialog(
-                        onDismissRequest = { showResetDialog = false },
-                        title = { Text("Reset All Controls") },
-                        text = {
-                            Text(
-                                "This will reset ALL control bindings to defaults:\n\n" +
-                                    "- Touch layout (positions, sizes, bindings)\n" +
-                                    "- Physical controller mappings\n" +
-                                    "- In-game keyboard, joystick, and mouse settings for every pilot\n\n" +
-                                    "The app will restart after reset.",
-                                fontSize = 13.sp,
-                            )
-                        },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                File(ctx.filesDir, "controller_config.json").delete()
-                                File(ctx.filesDir, "touch_layout.json").delete()
-                                NativePilotPatcher.nativeResetToDefaults(ctx.filesDir.absolutePath, "d2")
-                                NativePilotPatcher.nativeResetToDefaults(ctx.filesDir.absolutePath, "d1")
-                                showResetDialog = false
-                                android.os.Process.killProcess(android.os.Process.myPid())
-                            }) {
-                                Text("Reset & Restart", color = Color(0xFFF44336))
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showResetDialog = false }) { Text("Cancel") }
-                        },
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Delete All Player Files
-                var showDeletePilotsDialog by remember { mutableStateOf(false) }
-                OutlinedButton(
-                    onClick = { showDeletePilotsDialog = true },
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                    modifier = Modifier.height(36.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFF44336)),
-                ) {
-                    Text("Delete All Player Files", fontSize = 12.sp)
-                }
-                if (showDeletePilotsDialog) {
-                    AlertDialog(
-                        onDismissRequest = { showDeletePilotsDialog = false },
-                        title = { Text("Delete All Player Files") },
-                        text = {
-                            Text(
-                                "This will delete ALL pilot files (.plr), extended configs (.plx), " +
-                                    "effects (.eff), new game plus (.ngp), and saved games " +
-                                    "(.sg*, .mg*) for both Descent 1 and Descent 2 across all " +
-                                    "file sets.\n\nThis cannot be undone.\n\n" +
-                                    "The app will restart after deletion.",
-                                fontSize = 13.sp,
-                            )
-                        },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                val deleted = fileSetManager.deleteAllPilotFiles()
-                                showDeletePilotsDialog = false
-                                Toast.makeText(ctx, "Deleted $deleted file(s)", Toast.LENGTH_SHORT).show()
-                                android.os.Process.killProcess(android.os.Process.myPid())
-                            }) {
-                                Text("Delete & Restart", color = Color(0xFFF44336))
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showDeletePilotsDialog = false }) { Text("Cancel") }
-                        },
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Restart App
-                Button(
-                    onClick = { android.os.Process.killProcess(android.os.Process.myPid()) },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
-                    modifier = Modifier.fillMaxWidth().height(44.dp),
-                ) {
-                    Text("Restart App", fontSize = 14.sp)
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-            ScrollArrows(scrollState)
+                ScrollArrows(scrollState)
             }
         }
     }

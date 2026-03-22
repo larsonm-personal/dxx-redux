@@ -19,10 +19,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -191,8 +193,21 @@ class SetupActivity : ComponentActivity() {
                             val fsm = FileSetManager(filesDir)
                             val setDir = fsm.getSetDir(fsm.getActive())
                             val count = GogImportBridge.extractFiles(path, setDir.absolutePath, null, audio)
-                            if (audio && count > 0 && AudioSourceManager(filesDir).hasLegacyGog(setDir)) {
+                            val srcManager = AudioSourceManager(filesDir)
+                            if (audio && count > 0 && srcManager.hasLegacyGog(setDir)) {
                                 enableRedbookInConfig(filesDir)
+                                srcManager.addSource(
+                                    AudioSourceManager.AudioSource(
+                                        id = "d2-gog-v1.2",
+                                        cuePath = "descent_ii.inst",
+                                        binPaths = listOf("descent_ii.gog"),
+                                        discLabel = "Descent II (GOG)",
+                                        discId = "d2-gog-v1.2",
+                                        trackCount = 9,
+                                        audioTrackCount = 8,
+                                        legacyDiscId = 0x7d0ff809L,
+                                    ),
+                                )
                             }
                             Log.i("DXX-Setup", "import_gog '$path' -> $count file(s) to ${setDir.name} (audio=$audio)")
                         }.start()
@@ -333,11 +348,13 @@ class SetupActivity : ComponentActivity() {
                         Log.i("DXX-MP", "Join target override: $mpJoinHostAddrOverride:$mpJoinHostPortOverride")
                     }
                     "stun_override" -> {
-                        val addrs = intent.getStringExtra("addrs")
-                            ?.split(",")
-                            ?.map { it.trim() }
-                            ?.filter { it.isNotEmpty() }
-                            ?: emptyList()
+                        val addrs =
+                            intent
+                                .getStringExtra("addrs")
+                                ?.split(",")
+                                ?.map { it.trim() }
+                                ?.filter { it.isNotEmpty() }
+                                ?: emptyList()
                         MatchmakingService.setStunOverride(addrs)
                         Log.i("DXX-MP", "STUN override set: $addrs")
                     }
@@ -1566,6 +1583,17 @@ private fun SetupScreen(
     val d1RequiredOk = d1Statuses.filter { it.info.required }.all { it.found }
     val canLaunch = d2RequiredOk || d1RequiredOk
 
+    // ── Startup: prune audio sources whose files are gone ───
+    var prunedSourceNames by remember { mutableStateOf<List<String>>(emptyList()) }
+    LaunchedEffect(activeSetName) {
+        val srcManager = AudioSourceManager(filesDir)
+        val pruned = srcManager.pruneMissingSources(setDir)
+        if (pruned.isNotEmpty()) {
+            prunedSourceNames = pruned
+            onRefresh()
+        }
+    }
+
     // True when zero required files are found for either game
     val noRequiredFiles =
         d2Statuses.filter { it.info.required }.none { it.found } &&
@@ -1649,8 +1677,8 @@ private fun SetupScreen(
                     var gogUri: Pair<String, Uri>? = null
                     var sowUri: Pair<String, Uri>? = null
                     // Track raw .gog/.inst pairs (GOG CD images picked directly)
-                    var gogDiscUri: Pair<String, Uri>? = null   // .gog BIN file
-                    var instDiscUri: Pair<String, Uri>? = null   // .inst CUE sheet
+                    var gogDiscUri: Pair<String, Uri>? = null // .gog BIN file
+                    var instDiscUri: Pair<String, Uri>? = null // .inst CUE sheet
                     for (uri in uris) {
                         val name = getDisplayName(context, uri)
                         if (name != null) {
@@ -1669,7 +1697,10 @@ private fun SetupScreen(
                     }
                     // If .gog+.inst pair found, route to disc import as CUE+BIN
                     if (gogDiscUri != null && instDiscUri != null) {
-                        Log.i("DXX-Setup", "Routing .gog+.inst pair to disc import: gog=${gogDiscUri!!.first}, inst=${instDiscUri!!.first}")
+                        Log.i(
+                            "DXX-Setup",
+                            "Routing .gog+.inst pair to disc import: gog=${gogDiscUri!!.first}, inst=${instDiscUri!!.first}",
+                        )
                         cueUris.add(instDiscUri!!)
                         binUris.add(gogDiscUri!!)
                     } else {
@@ -1964,6 +1995,44 @@ private fun SetupScreen(
                 // ── Shared composable blocks ──
 
                 val filesPane: @Composable ColumnScope.() -> Unit = {
+                    // ── Pruned audio sources notification ────────
+                    if (prunedSourceNames.isNotEmpty()) {
+                        Row(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 8.dp)
+                                    .background(
+                                        Color(0xFFFFF3E0),
+                                        shape = RoundedCornerShape(6.dp),
+                                    ).padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.Top,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "Removed stale audio sources (files no longer present):",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF6D4C00),
+                                )
+                                prunedSourceNames.forEach { name ->
+                                    Text(
+                                        "  - $name",
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF6D4C00),
+                                    )
+                                }
+                            }
+                            TextButton(
+                                onClick = { prunedSourceNames = emptyList() },
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                                modifier = Modifier.height(24.dp),
+                            ) {
+                                Text("\u2717", fontSize = 12.sp, color = Color(0xFF6D4C00))
+                            }
+                        }
+                    }
+
                     // ── Active set indicator ──────────────────────
                     Row(
                         modifier =
@@ -2819,18 +2888,19 @@ private fun MusicInfoSection(
     hasMidiSource: Boolean = false,
     onEditMusic: () -> Unit = {},
 ) {
-    val musicStatuses = remember(refreshTrigger) {
-        // Check both filesDir and setDir for .gog/.inst files
-        val fromRoot = checkFiles(filesDir, MUSIC_FILES)
-        val fromSet = checkFiles(setDir, MUSIC_FILES)
-        fromRoot.zip(fromSet).map { (r, s) ->
-            if (r.found) r else s
+    val musicStatuses =
+        remember(refreshTrigger) {
+            // Check both filesDir and setDir for .gog/.inst files
+            val fromRoot = checkFiles(filesDir, MUSIC_FILES)
+            val fromSet = checkFiles(setDir, MUSIC_FILES)
+            fromRoot.zip(fromSet).map { (r, s) ->
+                if (r.found) r else s
+            }
         }
-    }
     val redbookReady = musicStatuses.all { it.found }
     val audioSrcManager = remember { AudioSourceManager(filesDir) }
     var audioSources by remember { mutableStateOf(audioSrcManager.getSources()) }
-    val hasAnySources = redbookReady || audioSources.isNotEmpty()
+    val hasCdAudio = redbookReady || audioSources.isNotEmpty()
     var expanded by remember { mutableStateOf(false) }
     var detailStatus by remember { mutableStateOf<FileStatus?>(null) }
 
@@ -2841,17 +2911,27 @@ private fun MusicInfoSection(
     val context = LocalContext.current
     val prefs = context.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
     val musicMode = prefs.getString("music_mode", "cd") ?: "cd"
-    val modeLabel = when (musicMode) {
-        "midi" -> "MIDI"
-        "cd" -> "CD Audio"
-        "files" -> "Audio Files"
-        else -> "CD Audio"
-    }
+    val modeLabel =
+        when (musicMode) {
+            "midi" -> "MIDI"
+            "cd" -> "CD Audio"
+            "files" -> "Audio Files"
+            else -> "CD Audio"
+        }
+
+    // Status reflects the currently selected music mode
+    val musicReady =
+        when (musicMode) {
+            "midi" -> hasMidiSource
+            "cd" -> hasCdAudio
+            "files" -> true // custom files are optional
+            else -> hasCdAudio
+        }
 
     val musicLabel =
         when {
-            hasAnySources -> "\u2713 Ready"
-            hasMidiSource -> "\u2717 Missing, will use MIDI"
+            musicReady -> "\u2713 Ready"
+            musicMode == "cd" && hasMidiSource -> "\u2717 Missing, will use MIDI"
             else -> "\u2717 Missing"
         }
 
@@ -2877,8 +2957,8 @@ private fun MusicInfoSection(
         )
         Spacer(modifier = Modifier.weight(1f))
         Text(
-            text = if (hasAnySources) "\u2713 Ready" else musicLabel,
-            color = if (hasAnySources) Color(0xFF4CAF50) else Color(0xFFF44336),
+            text = musicLabel,
+            color = if (musicReady) Color(0xFF4CAF50) else Color(0xFFF44336),
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
         )
@@ -3262,12 +3342,13 @@ private fun enableRedbookInConfig(filesDir: File) {
 private fun SetupActivity.writeMusicConfigForLaunch() {
     val prefs = getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
     val mode = prefs.getString("music_mode", "cd") ?: "cd"
-    val musicType = when (mode) {
-        "midi" -> "1"
-        "cd" -> "2"
-        "files" -> "3"
-        else -> "2"
-    }
+    val musicType =
+        when (mode) {
+            "midi" -> "1"
+            "cd" -> "2"
+            "files" -> "3"
+            else -> "2"
+        }
 
     val cfgFile = File(filesDir, "descent.cfg")
     if (!cfgFile.exists()) return
@@ -3289,11 +3370,12 @@ private fun SetupActivity.writeMusicConfigForLaunch() {
 
     for ((key, value) in settings) {
         val regex = Regex("^$key=.*$", RegexOption.MULTILINE)
-        text = if (regex.containsMatchIn(text)) {
-            regex.replace(text, "$key=$value")
-        } else {
-            text.trimEnd() + "\n$key=$value\n"
-        }
+        text =
+            if (regex.containsMatchIn(text)) {
+                regex.replace(text, "$key=$value")
+            } else {
+                text.trimEnd() + "\n$key=$value\n"
+            }
     }
     cfgFile.writeText(text)
     Log.i("DXX-Setup", "Updated descent.cfg: music_mode=$mode -> MusicType=$musicType")
@@ -4024,6 +4106,7 @@ private fun GogImportDialog(
     var fileList by remember { mutableStateOf<List<GogImportBridge.GogFile>?>(null) }
     var processing by remember { mutableStateOf(false) }
     var extractedCount by remember { mutableIntStateOf(0) }
+    var extractedFileNames by remember { mutableStateOf<List<String>>(emptyList()) }
     var progressFile by remember { mutableStateOf("") }
     var progressPct by remember { mutableStateOf(0f) }
     var tempPath by remember { mutableStateOf<String?>(null) }
@@ -4156,6 +4239,10 @@ private fun GogImportDialog(
                                 status = "Extracting game files\u2026"
                                 progressFile = ""
                                 progressPct = 0f
+                                val filesBefore =
+                                    withContext(Dispatchers.IO) {
+                                        setDir.list()?.toSet() ?: emptySet()
+                                    }
                                 withContext(Dispatchers.IO) {
                                     try {
                                         val count =
@@ -4181,15 +4268,34 @@ private fun GogImportDialog(
                                                 },
                                                 includeAudio = includeAudio,
                                             )
+                                        val srcManager = AudioSourceManager(filesDir)
                                         val hasGog =
                                             if (includeAudio) {
-                                                AudioSourceManager(filesDir).hasLegacyGog(setDir)
+                                                srcManager.hasLegacyGog(setDir)
                                             } else {
                                                 false
                                             }
-                                        if (hasGog) enableRedbookInConfig(filesDir)
+                                        if (hasGog) {
+                                            enableRedbookInConfig(filesDir)
+                                            // Register as audio source so music picker can see it
+                                            srcManager.addSource(
+                                                AudioSourceManager.AudioSource(
+                                                    id = "d2-gog-v1.2",
+                                                    cuePath = "descent_ii.inst",
+                                                    binPaths = listOf("descent_ii.gog"),
+                                                    discLabel = "Descent II (GOG)",
+                                                    discId = "d2-gog-v1.2",
+                                                    trackCount = 9,
+                                                    audioTrackCount = 8,
+                                                    legacyDiscId = 0x7d0ff809L,
+                                                ),
+                                            )
+                                        }
+                                        val filesAfter = setDir.list()?.toSet() ?: emptySet()
+                                        val newFiles = (filesAfter - filesBefore).sorted()
                                         withContext(Dispatchers.Main) {
                                             extractedCount = count
+                                            extractedFileNames = newFiles
                                             status =
                                                 if (count > 0) {
                                                     val msg = "Extracted $count file(s)"
@@ -4230,6 +4336,27 @@ private fun GogImportDialog(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text("Done", fontSize = 13.sp)
+                    }
+                }
+
+                // Show extracted file names
+                if (extractedFileNames.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Extracted files:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    val displayFiles = extractedFileNames.take(50)
+                    displayFiles.forEach { name ->
+                        Text(
+                            "  $name",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    if (extractedFileNames.size > 50) {
+                        Text(
+                            "  ... and ${extractedFileNames.size - 50} more",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
 
@@ -4431,14 +4558,15 @@ private fun DiscImportDialog(
                 val binSizes =
                     binUris
                         .map { (name, uri) ->
-                            val size = context.contentResolver
-                                .query(
-                                    uri,
-                                    arrayOf(android.provider.OpenableColumns.SIZE),
-                                    null,
-                                    null,
-                                    null,
-                                )?.use { c -> if (c.moveToFirst()) c.getLong(0) else 0L } ?: 0L
+                            val size =
+                                context.contentResolver
+                                    .query(
+                                        uri,
+                                        arrayOf(android.provider.OpenableColumns.SIZE),
+                                        null,
+                                        null,
+                                        null,
+                                    )?.use { c -> if (c.moveToFirst()) c.getLong(0) else 0L } ?: 0L
                             Log.i("DXX-DiscImport", "BIN '$name' size=$size")
                             size
                         }.toLongArray()

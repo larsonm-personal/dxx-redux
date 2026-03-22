@@ -1093,6 +1093,10 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 
 	inno_compress_method_t actual_method = de->chunk_compressed ? method : INNO_COMPRESS_STORED;
 
+	/* Cap per-iteration output size so decompression loops iterate
+	   frequently enough for progress callbacks to fire. */
+	const size_t DECOMP_STEP = 262144; /* 256 KB */
+
 	if (actual_method == INNO_COMPRESS_STORED) {
 		*out_len = (size_t) comp_size;
 		return comp_data;
@@ -1119,7 +1123,7 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 		zs.next_in = comp_data;
 		zs.avail_in = (uInt) comp_size;
 		zs.next_out = decomp;
-		zs.avail_out = (uInt) decomp_cap;
+		zs.avail_out = (uInt)(decomp_cap < DECOMP_STEP ? decomp_cap : DECOMP_STEP);
 
 		int zret;
 		size_t total_out = 0;
@@ -1133,17 +1137,20 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 				last_progress_out = total_out;
 			}
 			if (zs.avail_out == 0) {
-				decomp_cap *= 2;
-				uint8_t *tmp = (uint8_t *) realloc(decomp, decomp_cap);
-				if (!tmp) {
-					inflateEnd(&zs);
-					free(decomp);
-					free(comp_data);
-					return NULL;
+				if (total_out >= decomp_cap) {
+					decomp_cap *= 2;
+					uint8_t *tmp = (uint8_t *) realloc(decomp, decomp_cap);
+					if (!tmp) {
+						inflateEnd(&zs);
+						free(decomp);
+						free(comp_data);
+						return NULL;
+					}
+					decomp = tmp;
 				}
-				decomp = tmp;
 				zs.next_out = decomp + total_out;
-				zs.avail_out = (uInt) (decomp_cap - total_out);
+				size_t remain = decomp_cap - total_out;
+				zs.avail_out = (uInt)(remain < DECOMP_STEP ? remain : DECOMP_STEP);
 			}
 			if (zs.avail_in == 0) break;
 		}
@@ -1201,7 +1208,8 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 				}
 				decomp = tmp;
 			}
-			size_t dest_len = decomp_cap - decomp_len;
+			size_t avail = decomp_cap - decomp_len;
+			size_t dest_len = avail < DECOMP_STEP ? avail : DECOMP_STEP;
 			size_t src_len = comp_size - src_pos;
 			ELzmaStatus status;
 			SRes res = LzmaDec_DecodeToBuf(&dec, decomp + decomp_len, &dest_len,
@@ -1266,7 +1274,8 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 				}
 				decomp = tmp;
 			}
-			size_t dest_len = decomp_cap - decomp_len;
+			size_t avail2 = decomp_cap - decomp_len;
+			size_t dest_len = avail2 < DECOMP_STEP ? avail2 : DECOMP_STEP;
 			size_t src_len = comp_size - src_pos;
 			ELzmaStatus status;
 			SRes res = Lzma2Dec_DecodeToBuf(&dec, decomp + decomp_len, &dest_len,

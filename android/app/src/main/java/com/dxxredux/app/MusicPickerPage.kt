@@ -275,6 +275,28 @@ private fun CdAudioSection(
             modifier = Modifier.padding(start = 4.dp),
         )
     } else {
+        // Confirmation dialog state for source removal
+        var removeConfirmId by remember { mutableStateOf<String?>(null) }
+        val removeConfirmLabel = audioSources.firstOrNull { it.id == removeConfirmId }?.discLabel
+
+        if (removeConfirmId != null && removeConfirmLabel != null) {
+            AlertDialog(
+                onDismissRequest = { removeConfirmId = null },
+                title = { Text("Remove source") },
+                text = { Text("Remove \"$removeConfirmLabel\"?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        audioSrcManager.removeSource(removeConfirmId!!)
+                        removeConfirmId = null
+                        onSourcesChanged()
+                    }) { Text("Yes") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { removeConfirmId = null }) { Text("Cancel") }
+                },
+            )
+        }
+
         Text(
             "Audio Sources:",
             fontSize = 13.sp,
@@ -302,10 +324,7 @@ private fun CdAudioSection(
                     audioSrcManager.reorder(ids)
                     onSourcesChanged()
                 },
-                onRemove = {
-                    audioSrcManager.removeSource(src.id)
-                    onSourcesChanged()
-                },
+                onRemove = { removeConfirmId = src.id },
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -676,7 +695,10 @@ private suspend fun importAudioFiles(
     }
 }
 
-private fun resolveFileName(ctx: Context, uri: Uri): String? {
+private fun resolveFileName(
+    ctx: Context,
+    uri: Uri,
+): String? {
     // Try DocumentsContract display name first
     ctx.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
         val nameCol = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)

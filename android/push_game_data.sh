@@ -208,8 +208,7 @@ done
 
 # Remove download-dir files no longer in download/
 echo "=== Cleaning removed download files ==="
-DL_REMOTE_FILES=$("$ADB" shell "ls $DEVICE_DOWNLOAD_DIR/" 2>/dev/null | tr -d '\r') || true
-for DL_REMOTE in $DL_REMOTE_FILES; do
+"$ADB" shell "ls $DEVICE_DOWNLOAD_DIR/" 2>/dev/null | tr -d '\r' | while IFS= read -r DL_REMOTE; do
     [ -z "$DL_REMOTE" ] && continue
     FOUND=false
     if [ -d "$DOWNLOAD_DIR" ]; then
@@ -224,7 +223,7 @@ for DL_REMOTE in $DL_REMOTE_FILES; do
     fi
     if [ "$FOUND" = "false" ]; then
         echo "  No longer in download/, removing $DL_REMOTE"
-        "$ADB" shell "rm -f $DEVICE_DOWNLOAD_DIR/$DL_REMOTE" 2>/dev/null || true
+        "$ADB" shell "rm -f '$DEVICE_DOWNLOAD_DIR/$DL_REMOTE'" 2>/dev/null || true
     fi
 done
 

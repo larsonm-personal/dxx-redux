@@ -269,9 +269,9 @@ foreach ($serial in @($EMU1_SERIAL, $EMU2_SERIAL)) {
     Write-Status "  Installing on $serial..."
     $installOut = Adb-Dev-Timeout -Serial $serial -AdbArgs @("install", "-r", $APK) -Seconds 60
     if ($installOut -and $installOut -match "Success") {
-        Write-Status "  $serial: installed" "Green"
+        Write-Status "  ${serial}: installed" "Green"
     } else {
-        Write-Status "  $serial: install output: $installOut" "Yellow"
+        Write-Status "  ${serial}: install output: $installOut" "Yellow"
     }
 }
 
@@ -297,7 +297,7 @@ if (-not $NoData) {
                 Write-Status "  WARNING: push_game_data.sh failed for $serial (exit $pushExit)" "Yellow"
                 Write-Status ($pushOut | Select-Object -Last 10) "Gray"
             } else {
-                Write-Status "  $serial: data pushed" "Green"
+                Write-Status "  ${serial}: data pushed" "Green"
             }
         }
         Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue
@@ -404,9 +404,9 @@ foreach ($serial in @($EMU1_SERIAL, $EMU2_SERIAL)) {
         "shell", "run-as", $PACKAGE, "cat", "files/setup_introspect.json"
     ) -Seconds 5
     if ($json -and $json -match '"screen"') {
-        Write-Status "  $serial: setup screen ready" "Green"
+        Write-Status "  ${serial}: setup screen ready" "Green"
     } else {
-        Write-Status "  $serial: setup screen not confirmed (app may still be loading)" "Yellow"
+        Write-Status "  ${serial}: setup screen not confirmed (app may still be loading)" "Yellow"
     }
 }
 

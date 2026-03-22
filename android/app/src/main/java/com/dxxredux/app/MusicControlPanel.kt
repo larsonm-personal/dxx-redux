@@ -20,7 +20,6 @@ class MusicControlPanel(
     private val onPlayTrack: (Int) -> Unit,
     private val onDismiss: () -> Unit,
 ) : View(context) {
-
     data class TrackEntry(
         val index: Int,
         val name: String,

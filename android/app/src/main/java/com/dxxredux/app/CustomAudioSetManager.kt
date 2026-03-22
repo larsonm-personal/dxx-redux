@@ -49,7 +49,10 @@ class CustomAudioSetManager(
         Log.i(TAG, "Added set: ${set.label} (${set.files.size} files)")
     }
 
-    fun removeSet(id: String, deleteFiles: Boolean = false) {
+    fun removeSet(
+        id: String,
+        deleteFiles: Boolean = false,
+    ) {
         if (deleteFiles) {
             val dir = File(File(filesDir, MUSIC_DIR), id)
             if (dir.exists()) dir.deleteRecursively()
@@ -58,7 +61,10 @@ class CustomAudioSetManager(
         save()
     }
 
-    fun setEnabled(id: String, enabled: Boolean) {
+    fun setEnabled(
+        id: String,
+        enabled: Boolean,
+    ) {
         sets.replaceAll {
             if (it.id == id) it.copy(enabled = enabled) else it
         }
@@ -131,17 +137,19 @@ class CustomAudioSetManager(
         try {
             val json = JSONObject(file.readText())
             val arr = json.getJSONArray("sets")
-            sets = (0 until arr.length()).map { i ->
-                val obj = arr.getJSONObject(i)
-                val filesArr = obj.getJSONArray("files")
-                AudioSet(
-                    id = obj.getString("id"),
-                    label = obj.optString("label", "Unnamed"),
-                    files = (0 until filesArr.length()).map { filesArr.getString(it) },
-                    enabled = obj.optBoolean("enabled", true),
-                    order = obj.optInt("order", 0),
-                )
-            }.toMutableList()
+            sets =
+                (0 until arr.length())
+                    .map { i ->
+                        val obj = arr.getJSONObject(i)
+                        val filesArr = obj.getJSONArray("files")
+                        AudioSet(
+                            id = obj.getString("id"),
+                            label = obj.optString("label", "Unnamed"),
+                            files = (0 until filesArr.length()).map { filesArr.getString(it) },
+                            enabled = obj.optBoolean("enabled", true),
+                            order = obj.optInt("order", 0),
+                        )
+                    }.toMutableList()
             Log.i(TAG, "Loaded ${sets.size} custom audio sets")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load $SETS_FILE", e)

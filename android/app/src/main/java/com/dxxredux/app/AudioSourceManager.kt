@@ -95,6 +95,33 @@ class AudioSourceManager(
         save()
     }
 
+    /**
+     * Remove sources whose BIN/CUE files no longer exist on disk.
+     * Checks both filesDir and optional setDir.
+     * Returns list of pruned source labels for user notification.
+     */
+    fun pruneMissingSources(setDir: File? = null): List<String> {
+        val pruned = mutableListOf<String>()
+        val toRemove =
+            sources.filter { src ->
+                val allFiles = src.binPaths + src.cuePath
+                allFiles.any { name ->
+                    val inRoot = File(filesDir, name).exists()
+                    val inSet = setDir != null && File(setDir, name).exists()
+                    !inRoot && !inSet
+                }
+            }
+        for (src in toRemove) {
+            pruned.add(src.discLabel)
+            Log.i(TAG, "Pruning stale source: ${src.discLabel} (${src.id})")
+        }
+        if (toRemove.isNotEmpty()) {
+            sources.removeAll(toRemove.toSet())
+            save()
+        }
+        return pruned
+    }
+
     /** Toggle enabled state */
     fun setEnabled(
         id: String,
