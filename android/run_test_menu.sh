@@ -16,6 +16,22 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 GAME_SCRIPTS_DIR="$SCRIPT_DIR/game_scripts"
 
+# Find adb: honour $ADB, then PATH, then common Windows SDK locations
+if [[ -n "${ADB:-}" ]]; then
+    : # already set
+elif command -v adb &>/dev/null; then
+    ADB="adb"
+elif [[ -x "/mnt/c/local/android-sdk/platform-tools/adb.exe" ]]; then
+    ADB="/mnt/c/local/android-sdk/platform-tools/adb.exe"
+elif [[ -x "/c/local/android-sdk/platform-tools/adb.exe" ]]; then
+    ADB="/c/local/android-sdk/platform-tools/adb.exe"
+elif [[ -n "${LOCALAPPDATA:-}" && -x "${LOCALAPPDATA}/Android/Sdk/platform-tools/adb.exe" ]]; then
+    ADB="${LOCALAPPDATA}/Android/Sdk/platform-tools/adb.exe"
+else
+    echo "ERROR: adb not found. Set ADB= or add it to PATH." >&2
+    exit 1
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -99,9 +115,9 @@ prep_emulator=${prep_emulator:-y}
 if [[ "$prep_emulator" == "y" || "$prep_emulator" == "Y" ]]; then
     print_info "Preparing emulator..."
     # Clear game app state and restart
-    adb shell am force-stop com.dxxredux.app 2>/dev/null || true
+    "$ADB" shell am force-stop com.dxxredux.app 2>/dev/null || true
     sleep 1
-    adb logcat -c
+    "$ADB" logcat -c
     sleep 1
     print_success "Emulator prepped"
     echo

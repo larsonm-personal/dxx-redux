@@ -1,5 +1,5 @@
 #!/usr/bin/env pwsh
-# run_lan_test.ps1 -- Two-player LAN multiplayer integration test.
+# test_lan.ps1 -- Two-player LAN multiplayer integration test.
 #
 # Uses the lan_launch MP_COMMAND to bypass the launcher lobby UI entirely,
 # launching the game engine directly in host/join mode on two emulators.
@@ -11,9 +11,9 @@
 #   - Game data present on both
 #
 # Usage:
-#   .\run_lan_test.ps1
-#   .\run_lan_test.ps1 -Game d1
-#   .\run_lan_test.ps1 -SkipBuild
+#   .\test_lan.ps1
+#   .\test_lan.ps1 -Game d1
+#   .\test_lan.ps1 -SkipBuild
 
 param(
     [string]$Game = "d2",
@@ -25,7 +25,7 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 # -- Constants --
-$REPO_ROOT = Split-Path $PSScriptRoot
+$REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
 $DEP_BASE = (Get-Content (Join-Path $REPO_ROOT "dependency_base.txt") -First 1).Trim()
 $ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
 $PACKAGE = "com.dxxredux.app"
@@ -275,7 +275,7 @@ $r2del = Setup-EmulatorRedir -ConsolePort 5556 -RedirSpec "del udp:42501"
 Write-Status "  EMU2 redir cleanup: $r2del" "Gray"
 
 # Start UDP relay
-$relayScript = Join-Path $PSScriptRoot "udp_relay.py"
+$relayScript = Join-Path $PSScriptRoot "..\udp_relay.py"
 if (-not (Test-Path $relayScript)) {
     Write-Status "FAIL: udp_relay.py not found at $relayScript" "Red"; exit 1
 }

@@ -22,7 +22,7 @@
   Don't clean up the regression_test set after running.
 
 .EXAMPLE
-  .\run_extract_test.ps1 "..\game_data\CD images\Descent II (USA)\extract_regression.json5"
+  .\test_extract.ps1 "..\game_data\CD images\Descent II (USA)\extract_regression.json5"
 #>
 param(
     [Parameter(Mandatory=$true, Position=0)]
@@ -39,7 +39,7 @@ $PACKAGE = 'com.dxxredux.app'
 $ACTIVITY = 'com.dxxredux.app.SetupActivity'
 $TEST_SET = 'regression_test'
 
-$_depBaseFile = Join-Path (Split-Path $PSScriptRoot) 'dependency_base.txt'
+$_depBaseFile = Join-Path (Split-Path (Split-Path $PSScriptRoot)) 'dependency_base.txt'
 if (-not (Test-Path $_depBaseFile)) {
     Write-Error "dependency_base.txt not found. Create it with a line containing the dependency dir path."
     exit 1
@@ -338,7 +338,7 @@ if ($filesToPush.Count -eq 0) {
 # Hash a signature file from game_data_to_copy_to_emulator/data/ if it exists,
 # so we can verify pushed files are NOT from the demo set.
 
-$repoRoot = Split-Path $PSScriptRoot -Parent
+$repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $demoDir = Join-Path $repoRoot 'game_data_to_copy_to_emulator' 'data'
 $signatureFiles = @('descent2.hog', 'descent.hog', 'groupa.pig', 'descent.pig')
 $demoHashes = @{}  # filename -> SHA1

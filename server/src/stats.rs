@@ -144,9 +144,7 @@ fn cleanup_stale_lobbies(state: &Arc<ServerState>) {
         // D5: reap Starting/InGame lobbies with no recent state updates.
         // Use last_state_update if available (InGame), else fall back to created_at.
         if lobby.state == LobbyState::Starting || lobby.state == LobbyState::InGame {
-            let stale_since = lobby
-                .last_state_update
-                .unwrap_or(lobby.created_at_instant);
+            let stale_since = lobby.last_state_update.unwrap_or(lobby.created_at_instant);
             if now.duration_since(stale_since) > max_game_age {
                 to_remove.push(lobby.id);
             }

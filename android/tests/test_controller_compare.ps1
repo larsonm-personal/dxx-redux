@@ -1,9 +1,9 @@
 #!/usr/bin/env pwsh
-# run_controller_compare.ps1 -- Compare launcher controller config with in-game joystick bindings.
+# test_controller_compare.ps1 -- Compare launcher controller config with in-game joystick bindings.
 #
 # Usage:
-#   .\run_controller_compare.ps1
-#   .\run_controller_compare.ps1 -Install   # install APK first
+#   .\test_controller_compare.ps1
+#   .\test_controller_compare.ps1 -Install   # install APK first
 #
 # Steps:
 #   1. Health check (restart emulator if needed)
@@ -19,13 +19,13 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-. "$PSScriptRoot\test_helpers.ps1"
+. "$PSScriptRoot\..\test_helpers.ps1"
 
 $GAME_SCRIPT = "test_controller_compare.json5"
 
 # -- Determine game(s) to run --------------------------------
 
-$scriptPath = Join-Path "$PSScriptRoot\game_scripts" $GAME_SCRIPT
+$scriptPath = Join-Path "$PSScriptRoot\..\game_scripts" $GAME_SCRIPT
 $gameList = Get-ScriptGameInfo -ScriptPath $scriptPath
 if ($Game) {
     $gameList = @($Game)
@@ -42,7 +42,7 @@ if ($gameList.Count -gt 1) {
 Ensure-EmulatorHealthy
 
 if ($Install) {
-    $apk = "$PSScriptRoot\app\build\outputs\apk\debug\app-debug.apk"
+    $apk = "$PSScriptRoot\..\app\build\outputs\apk\debug\app-debug.apk"
     if (-not (Test-Path $apk)) {
         Write-Status "FAIL: APK not found at $apk" "Red"
         exit 1

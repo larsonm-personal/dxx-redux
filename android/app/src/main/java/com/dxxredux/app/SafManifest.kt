@@ -77,6 +77,31 @@ class SafManifest(
 
     fun isEmpty(): Boolean = read().isEmpty()
 
+    /**
+     * Remove entries whose content URIs are no longer readable.
+     * Returns list of pruned filenames for user notification.
+     */
+    fun pruneStaleEntries(context: android.content.Context): List<String> {
+        val entries = read()
+        val stale =
+            entries.filter { entry ->
+                try {
+                    val uri = android.net.Uri.parse(entry.contentUri)
+                    context.contentResolver.openInputStream(uri)?.close()
+                    false // accessible
+                } catch (_: Exception) {
+                    true // stale
+                }
+            }
+        if (stale.isEmpty()) return emptyList()
+        val pruned = stale.map { it.filename }
+        write(entries.filterNot { e -> stale.any { it.filename == e.filename } })
+        for (name in pruned) {
+            Log.i(TAG, "Pruned stale SAF entry: $name")
+        }
+        return pruned
+    }
+
     companion object {
         private const val TAG = "SafManifest"
         const val FILENAME = ".saf_manifest.json"

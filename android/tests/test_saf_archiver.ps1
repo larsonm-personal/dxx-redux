@@ -41,7 +41,7 @@ if (!(Test-Path "$repoRoot\android")) {
 $androidDir = "$repoRoot\android"
 $apkPath = "$androidDir\app\build\outputs\apk\debug\app-debug.apk"
 $scriptSource = "$androidDir\game_scripts\test_saf_basic.json5"
-$_depBaseFile = Join-Path (Split-Path $PSScriptRoot) "dependency_base.txt"
+$_depBaseFile = Join-Path $repoRoot "dependency_base.txt"
 if (-not (Test-Path $_depBaseFile)) {
     Write-Error "dependency_base.txt not found at $_depBaseFile. Create it with a single line containing the path to your dependency directory (e.g. C:\local)."
     exit 1

@@ -18,6 +18,22 @@ set -euo pipefail
 
 PACKAGE="com.dxxredux.app"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Find adb: honour $ADB, then PATH, then common Windows SDK locations
+if [[ -n "${ADB:-}" ]]; then
+    : # already set
+elif command -v adb &>/dev/null; then
+    ADB="adb"
+elif [[ -x "/mnt/c/local/android-sdk/platform-tools/adb.exe" ]]; then
+    ADB="/mnt/c/local/android-sdk/platform-tools/adb.exe"
+elif [[ -x "/c/local/android-sdk/platform-tools/adb.exe" ]]; then
+    ADB="/c/local/android-sdk/platform-tools/adb.exe"
+elif [[ -n "${LOCALAPPDATA:-}" && -x "${LOCALAPPDATA}/Android/Sdk/platform-tools/adb.exe" ]]; then
+    ADB="${LOCALAPPDATA}/Android/Sdk/platform-tools/adb.exe"
+else
+    echo "ERROR: adb not found. Set ADB= or add it to PATH." >&2
+    exit 1
+fi
 GAME_SCRIPTS_DIR="$SCRIPT_DIR/game_scripts"
 DEFAULT_SCRIPT="$GAME_SCRIPTS_DIR/test_launch_to_automap.json5"
 TIMEOUT_SEC=120   # max time to wait for a single test
@@ -55,9 +71,9 @@ push_script() {
     basename="$(basename "$script")"
     local device_tmp="/data/local/tmp/$basename"
 
-    adb push "$script" "$device_tmp" > /dev/null 2>&1
-    adb shell "run-as $PACKAGE cp $device_tmp files/$basename" 2>/dev/null
-    adb shell "rm -f $device_tmp" 2>/dev/null
+    "$ADB" push "$script" "$device_tmp" > /dev/null 2>&1
+    "$ADB" shell "run-as $PACKAGE cp $device_tmp files/$basename" 2>/dev/null
+    "$ADB" shell "rm -f $device_tmp" 2>/dev/null
     echo "$basename"
 }
 
@@ -80,10 +96,10 @@ run_single_test() {
     basename=$(push_script "$script")
 
     # Clear logcat buffer to get clean output
-    adb logcat -c 2>/dev/null || true
+    "$ADB" logcat -c 2>/dev/null || true
 
     # Send the broadcast
-    adb shell "am broadcast -a com.dxxredux.AUTOMATE --es script $basename" > /dev/null 2>&1
+    "$ADB" shell "am broadcast -a com.dxxredux.AUTOMATE --es script $basename" > /dev/null 2>&1
 
     echo "  Running... (timeout: ${TIMEOUT_SEC}s)"
 
@@ -97,7 +113,7 @@ run_single_test() {
     logcat_tmp=$(mktemp)
 
     # Start logcat in background, filtered for our tags
-    adb logcat -s "DXX-Automate:*" > "$logcat_tmp" 2>/dev/null &
+    "$ADB" logcat -s "DXX-Automate:*" > "$logcat_tmp" 2>/dev/null &
     local logcat_pid=$!
 
     while [ $((SECONDS - start_time)) -lt $TIMEOUT_SEC ]; do
@@ -121,7 +137,7 @@ $assert_lines"
             break
         fi
         # Check if process died (crash)
-        if ! adb shell "pidof $PACKAGE" > /dev/null 2>&1; then
+        if ! "$ADB" shell "pidof $PACKAGE" > /dev/null 2>&1; then
             result="CRASH"
             fail_detail="Game process died during test"
             break

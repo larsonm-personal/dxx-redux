@@ -321,7 +321,6 @@ pub enum ServerMessage {
     },
 
     // -- Late-join (mid-game) ICE messages --
-
     /// Sent to host when a joiner needs NAT holepunching.
     /// Host should send blind probes from shared socket and enable probe echo.
     #[serde(rename = "LATE_JOIN_PROBE")]

@@ -5,7 +5,7 @@
 
 .DESCRIPTION
   Finds extract_regression.json5 specs under game_data/ and runs each through
-  run_extract_test.ps1. Produces a summary table of results.
+  test_extract.ps1. Produces a summary table of results.
 
 .PARAMETER Filter
   Glob/wildcard filter for source directory names (e.g. "Descent II*").
@@ -20,9 +20,9 @@
   Explicit list of spec file paths to run (overrides auto-discovery).
 
 .EXAMPLE
-  .\run_all_extract_tests.ps1                          # all specs
-  .\run_all_extract_tests.ps1 -Filter "Descent II*"   # D2 CDs only
-  .\run_all_extract_tests.ps1 -SkipLaunch              # file-only
+  .\test_all_extracts.ps1                          # all specs
+  .\test_all_extracts.ps1 -Filter "Descent II*"   # D2 CDs only
+  .\test_all_extracts.ps1 -SkipLaunch              # file-only
 #>
 param(
     [string]$Filter,
@@ -33,11 +33,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $SCRIPT_DIR = $PSScriptRoot
-$REPO_ROOT = Split-Path $SCRIPT_DIR -Parent
+$REPO_ROOT = Split-Path (Split-Path $SCRIPT_DIR)
 $GAME_DATA = Join-Path $REPO_ROOT 'game_data'
-$TEST_SCRIPT = Join-Path $SCRIPT_DIR 'run_extract_test.ps1'
+$TEST_SCRIPT = Join-Path $SCRIPT_DIR 'test_extract.ps1'
 
-. "$PSScriptRoot\test_helpers.ps1"
+. "$PSScriptRoot\..\test_helpers.ps1"
 
 # -- Discover specs -------------------------------------------
 

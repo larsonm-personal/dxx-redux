@@ -61,25 +61,6 @@ class AudioSourceManager(
     /** Get only enabled sources, in order */
     fun getEnabledSources(): List<AudioSource> = sources.filter { it.enabled }.sortedBy { it.order }
 
-    /** Check if the legacy GOG pair exists (no explicit source registration needed) */
-    fun hasLegacyGog(setDir: File? = null): Boolean {
-        // Extracted filenames may be UPPERCASE; Android FS is case-sensitive
-        fun dirHasGogPair(dir: File): Boolean {
-            val files = dir.list() ?: return false
-            var hasGog = false
-            var hasInst = false
-            for (f in files) {
-                val lower = f.lowercase()
-                if (lower == "descent_ii.gog") hasGog = true
-                if (lower == "descent_ii.inst") hasInst = true
-                if (hasGog && hasInst) return true
-            }
-            return false
-        }
-        if (setDir != null && dirHasGogPair(setDir)) return true
-        return dirHasGogPair(filesDir)
-    }
-
     /** Add a new audio source */
     fun addSource(source: AudioSource) {
         // Remove any existing source with the same id
@@ -152,7 +133,6 @@ class AudioSourceManager(
     fun writePlaylist(): Boolean {
         val enabled = getEnabledSources()
         if (enabled.isEmpty()) {
-            // No explicit sources — engine uses legacy descent_ii.gog/.inst
             File(filesDir, PLAYLIST_FILE).delete()
             return false
         }

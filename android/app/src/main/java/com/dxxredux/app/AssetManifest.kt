@@ -130,6 +130,23 @@ class AssetManifest(
     }
 
     /**
+     * Remove manifest entries whose files no longer exist on disk.
+     * Returns list of pruned filenames for user notification.
+     */
+    fun pruneStaleEntries(): List<String> {
+        val entries = load()
+        val stale = entries.filter { !File(filesDir, it.filename).exists() }
+        if (stale.isEmpty()) return emptyList()
+        val pruned = stale.map { it.filename }
+        val kept = entries.filterNot { !File(filesDir, it.filename).exists() }
+        save(kept)
+        for (name in pruned) {
+            Log.i("AssetManifest", "Pruned stale entry: $name")
+        }
+        return pruned
+    }
+
+    /**
      * Find files on disk that have no manifest entry or whose size has changed,
      * meaning they need (re-)hashing.
      */

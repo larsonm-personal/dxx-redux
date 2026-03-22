@@ -17,7 +17,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-. "$PSScriptRoot\test_helpers.ps1"
+. "$PSScriptRoot\..\test_helpers.ps1"
 
 $ScriptName = "test_resolution.json5"
 
@@ -37,7 +37,7 @@ function Get-ResolutionFromIntrospection {
 Ensure-EmulatorHealthy
 
 if ($Install) {
-    $apk = "$PSScriptRoot\app\build\outputs\apk\debug\app-debug.apk"
+    $apk = "$PSScriptRoot\..\app\build\outputs\apk\debug\app-debug.apk"
     if (-not (Test-Path $apk)) {
         Write-Status "FAIL: APK not found at $apk" "Red"
         exit 1
@@ -47,7 +47,7 @@ if ($Install) {
 }
 
 # Push test script to device
-$scriptPath = Join-Path "$PSScriptRoot\game_scripts" $ScriptName
+$scriptPath = Join-Path "$PSScriptRoot\..\game_scripts" $ScriptName
 if (-not (Test-Path $scriptPath)) {
     Write-Status "FAIL: Script not found: $scriptPath" "Red"
     exit 1

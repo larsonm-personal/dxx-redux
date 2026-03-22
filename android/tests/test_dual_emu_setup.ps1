@@ -1,16 +1,16 @@
 #!/usr/bin/env pwsh
-# launch_dual_emulators.ps1 -- Launch two Android emulators with full
+# test_dual_emu_setup.ps1 -- Launch two Android emulators with full
 # multiplayer infrastructure ready for manual testing.
 #
 # Sets up: APK install, game data push, matchmaking server, UDP relay,
 # emulator port redirections, and app launch on both emulators.
 #
 # Usage:
-#   .\launch_dual_emulators.ps1                          # full build + launch
-#   .\launch_dual_emulators.ps1 -NoBuild                 # skip gradle + cargo builds
-#   .\launch_dual_emulators.ps1 -NoData                  # skip game data push
-#   .\launch_dual_emulators.ps1 -NoServer                # skip matchmaking server
-#   .\launch_dual_emulators.ps1 -KillOnExit              # stop emulators on exit
+#   .\test_dual_emu_setup.ps1                          # full build + launch
+#   .\test_dual_emu_setup.ps1 -NoBuild                 # skip gradle + cargo builds
+#   .\test_dual_emu_setup.ps1 -NoData                  # skip game data push
+#   .\test_dual_emu_setup.ps1 -NoServer                # skip matchmaking server
+#   .\test_dual_emu_setup.ps1 -KillOnExit              # stop emulators on exit
 
 param(
     [switch]$NoBuild,
@@ -22,7 +22,7 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-$REPO_ROOT = Split-Path $PSScriptRoot
+$REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
 $DEP_BASE = (Get-Content (Join-Path $REPO_ROOT "dependency_base.txt") -First 1).Trim()
 $ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
 $EMULATOR = "$DEP_BASE\android-sdk\emulator\emulator.exe"
@@ -188,12 +188,13 @@ Get-Process cl -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction 
 
 # ── Phase A2: Build APK ─────────────────────────────────────────────────
 
-$APK = Join-Path $PSScriptRoot "app\build\outputs\apk\debug\app-debug.apk"
+$ANDROID_DIR = Join-Path $REPO_ROOT "android"
+$APK = Join-Path $ANDROID_DIR "app\build\outputs\apk\debug\app-debug.apk"
 
 if (-not $NoBuild) {
     Write-Status ""
     Write-Status "--- Building APK ---" "White"
-    Push-Location $PSScriptRoot
+    Push-Location $ANDROID_DIR
     $gradleOut = & .\gradlew.bat assembleDebug 2>&1 | Out-String
     $gradleExit = $LASTEXITCODE
     Pop-Location
@@ -279,7 +280,7 @@ if (-not $NoData) {
     Write-Status ""
     Write-Status "--- Pushing game data to both emulators ---" "White"
 
-    $pushScript = Join-Path $PSScriptRoot "push_game_data.sh"
+    $pushScript = Join-Path $ANDROID_DIR "push_game_data.sh"
     $gameDataDir = Join-Path $REPO_ROOT "game_data_to_copy_to_emulator"
     $hasData = (Test-Path (Join-Path $gameDataDir "data")) -or (Test-Path (Join-Path $gameDataDir "download"))
 
@@ -371,7 +372,7 @@ $r2del = Setup-EmulatorRedir -ConsolePort 5556 -RedirSpec "del udp:42501"
 Write-Status "  EMU2 redir cleanup: $r2del" "Gray"
 
 # Start UDP relay
-$relayScript = Join-Path $PSScriptRoot "udp_relay.py"
+$relayScript = Join-Path $ANDROID_DIR "udp_relay.py"
 $relayLog = Join-Path $REPO_ROOT "temp\udp_relay.log"
 $relayErr = Join-Path $REPO_ROOT "temp\udp_relay_err.log"
 $script:relayProc = Start-Process python -ArgumentList "-u",$relayScript `
@@ -443,7 +444,7 @@ Write-Status "  adb -s $EMU2_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAN
 Write-Status "  adb -s $EMU1_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command start_game" "Gray"
 Write-Status ""
 Write-Status '  # Run existing multiplayer test:' "Gray"
-Write-Status "  .\run_mp_test.ps1 -SkipBuild" "Gray"
+Write-Status "  .\test_mp.ps1 -SkipBuild" "Gray"
 Write-Status ""
 Write-Status "Press Ctrl+C or Enter to shut down server and relay." "Yellow"
 

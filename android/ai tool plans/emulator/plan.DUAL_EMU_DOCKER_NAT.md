@@ -1,25 +1,36 @@
 # Plan: Dual Emulator Launch + Docker NAT Testbed
 
-## Status: IMPLEMENTED
+## Status: IMPLEMENTED (reorganized)
 
 ## Summary
 
 Two deliverables implemented:
 1. A PowerShell script that launches two Android emulators with full
-   multiplayer infrastructure (APK, game data, server, relay) ready for testing.
+   multiplayer infrastructure (APK, game data, server, relay) ready for testing,
+   including an interactive NAT configuration menu.
 2. A Docker Compose environment with configurable NAT containers for realistic
    STUN/NAT type testing.
 
+### Test reorganization (phase 2)
+- All .ps1 test scripts moved from `android/` to `android/tests/`
+- `android/Run-TestMenu.ps1` rewritten to discover both json5 and ps1 tests
+- `android/tests/test_dual_emu.ps1` is the new unified script that replaces
+  the old `launch_dual_emulators.ps1` + `setup_docker_nat.ps1` workflow
+
 ## Files Created
 
-### Part 1: Dual Emulator Launch
-- [x] `android/launch_dual_emulators.ps1` -- orchestrates both emulators, server, relay
-  - Flags: -NoBuild, -NoData, -NoServer, -KillOnExit
+### Primary: Dual Emulator + NAT Test
+- [x] `android/tests/test_dual_emu.ps1` -- all-in-one dual emulator + NAT menu
+  - Flags: -NoBuild, -NoData, -KillOnExit
   - Launches Nexus5X_Light_1 (emulator-5554) and Nexus5X_Light_2 (emulator-5556)
-  - Installs APK, pushes game data (via ANDROID_SERIAL env var), starts server + relay
-  - Prints summary with quick-test commands, waits for user input
+  - Installs APK, pushes game data, starts server + relay
+  - Interactive NAT menu with 8 presets (no NAT, full-cone, symmetric, etc.)
+  - Cleanup tears down Docker containers + relay + server
 
-### Part 2: Docker NAT Testbed
+### Legacy (kept but superseded by test_dual_emu.ps1)
+- [x] `android/tests/test_dual_emu_setup.ps1` -- moved from launch_dual_emulators.ps1
+
+### Docker NAT Infrastructure
 - [x] `docker/nat-testbed/Dockerfile` -- Python 3.12 Alpine image
 - [x] `docker/nat-testbed/nat_proxy.py` -- transparent UDP NAT proxy
   - Supports: full-cone, port-restricted, symmetric, symmetric-seq
@@ -27,12 +38,23 @@ Two deliverables implemented:
 - [x] `docker/nat-testbed/docker-compose.yml` -- two NAT containers
   - nat_a: host ports 13478/13479 (configurable via NAT_A env var)
   - nat_b: host ports 23478/23479 (configurable via NAT_B env var)
-- [x] `android/setup_docker_nat.ps1` -- starts containers + sends STUN overrides
-- [x] `android/teardown_docker_nat.ps1` -- stops containers + clears overrides
+- [x] `android/setup_docker_nat.ps1` -- standalone NAT setup (used by test_dual_emu.ps1)
+- [x] `android/teardown_docker_nat.ps1` -- standalone NAT teardown
+
+### Moved Tests (from android/ to android/tests/)
+- run_mp_test.ps1 -> test_mp.ps1
+- run_lan_test.ps1 -> test_lan.ps1
+- run_extract_test.ps1 -> test_extract.ps1
+- run_all_extract_tests.ps1 -> test_all_extracts.ps1
+- run_cue_iso_tests.ps1 -> test_cue_iso.ps1
+- run_controller_compare.ps1 -> test_controller_compare.ps1
+- test_resolution.ps1 -> test_resolution.ps1 (same name)
+- test_saf_archiver.ps1 -> test_saf_archiver.ps1 (same name)
+- test_bot_client.ps1 -> test_bot_client.ps1 (same name)
 
 ### Files Modified
-- [x] `android/push_game_data.sh` -- added ANDROID_SERIAL documentation (adb natively
-  respects this env var, no code change needed beyond documenting it)
+- [x] `android/Run-TestMenu.ps1` -- rewritten to discover json5 + ps1 tests
+- [x] `android/push_game_data.sh` -- added ANDROID_SERIAL documentation
 - [x] `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt`
   - Added `stun_override` and `stun_override_clear` MP_COMMAND handlers
 - [x] `android/app/src/main/java/com/dxxredux/app/multiplayer/MatchmakingService.kt`
@@ -53,26 +75,37 @@ Emulator A (SLIRP)        Windows Host / Docker            Emulator B (SLIRP)
 
 ## Testing
 
-### Dual emulator launch
+### Unified dual emulator + NAT test
 ```powershell
-cd android
-.\launch_dual_emulators.ps1           # full build + launch
-.\launch_dual_emulators.ps1 -NoBuild  # skip builds
+cd android/tests
+.\test_dual_emu.ps1           # full build + launch + NAT menu
+.\test_dual_emu.ps1 -NoBuild  # skip APK build
 ```
 
-### Docker NAT testbed
+### Test menu (discovers all tests)
 ```powershell
 cd android
-.\setup_docker_nat.ps1                                    # defaults: full-cone + symmetric
-.\setup_docker_nat.ps1 -NatA port-restricted -NatB symmetric
-.\setup_docker_nat.ps1 -NatA symmetric -NatB symmetric   # both symmetric
+.\Run-TestMenu.ps1   # shows json5 + ps1 tests, run interactively
+```
 
-# View NAT proxy logs
-docker compose -f ..\docker\nat-testbed\docker-compose.yml logs -f
-
-# Tear down
+### Standalone Docker NAT (for advanced use)
+```powershell
+cd android
+.\setup_docker_nat.ps1 -NatA full-cone -NatB symmetric
 .\teardown_docker_nat.ps1
 ```
+
+## NAT Presets (in test_dual_emu.ps1 menu)
+| # | Name | NAT A | NAT B |
+|---|------|-------|-------|
+| 1 | No NAT (direct STUN) | none | none |
+| 2 | Full-Cone / Full-Cone | full-cone | full-cone |
+| 3 | Full-Cone / Symmetric | full-cone | symmetric |
+| 4 | Port-Restricted / Symmetric | port-restricted | symmetric |
+| 5 | Symmetric / Symmetric | symmetric | symmetric |
+| 6 | Full-Cone / Port-Restricted | full-cone | port-restricted |
+| 7 | Port-Restricted / Port-Restricted | port-restricted | port-restricted |
+| 8 | Symmetric-Seq / Symmetric-Seq | symmetric-seq | symmetric-seq |
 
 ## Known Limitations
 - Holepunch between emulators NOT possible (SLIRP prevents routing to Docker bridge IPs)

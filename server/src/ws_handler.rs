@@ -652,9 +652,7 @@ async fn handle_connection(socket: WebSocket, addr: SocketAddr, state: Arc<Serve
                 let was_in_game = state
                     .lobbies
                     .get(&lobby_id)
-                    .map(|l| {
-                        matches!(l.state, LobbyState::Starting | LobbyState::InGame)
-                    })
+                    .map(|l| matches!(l.state, LobbyState::Starting | LobbyState::InGame))
                     .unwrap_or(false);
                 state.lobbies.remove(&lobby_id);
                 state.stats.lobby_closed();
@@ -1554,10 +1552,8 @@ async fn handle_authenticated_message(
                 if let Some(mut lobby) = state.lobbies.get_mut(&lobby_id) {
                     lobby.remove_player(&player_id);
                     if lobby.players.is_empty() {
-                        let was_in_game = matches!(
-                            lobby.state,
-                            LobbyState::Starting | LobbyState::InGame
-                        );
+                        let was_in_game =
+                            matches!(lobby.state, LobbyState::Starting | LobbyState::InGame);
                         drop(lobby);
                         state.lobbies.remove(&lobby_id);
                         state.stats.lobby_closed();
@@ -1963,14 +1959,13 @@ async fn handle_authenticated_message(
                             info!(%lobby_id, "connectivity checks started (all STUN results received)");
                         }
                         // Send late-join ICE messages
-                        if let Some((host_id, pairs, probe_addrs, joiner_callsign)) =
-                            late_join_msgs
+                        if let Some((host_id, pairs, probe_addrs, joiner_callsign)) = late_join_msgs
                         {
                             // CONNECTIVITY_CHECK_GO to joiner
                             if let Some(sess) = state.sessions.get(&player_id) {
-                                let _ = sess.tx.send(ServerMessage::ConnectivityCheckGo {
-                                    peer_addrs: pairs,
-                                });
+                                let _ = sess
+                                    .tx
+                                    .send(ServerMessage::ConnectivityCheckGo { peer_addrs: pairs });
                             }
                             // LATE_JOIN_PROBE to host
                             if let Some(sess) = state.sessions.get(&host_id) {
@@ -2020,14 +2015,9 @@ async fn handle_authenticated_message(
                             && lobby.pending_late_joiners.remove(&player_id)
                         {
                             let host_id = lobby.host_player_id;
-                            let host_player = lobby
-                                .players
-                                .iter()
-                                .find(|p| p.player_id == host_id);
-                            let joiner_player = lobby
-                                .players
-                                .iter()
-                                .find(|p| p.player_id == player_id);
+                            let host_player = lobby.players.iter().find(|p| p.player_id == host_id);
+                            let joiner_player =
+                                lobby.players.iter().find(|p| p.player_id == player_id);
                             if let (Some(host_p), Some(joiner_p)) = (host_player, joiner_player) {
                                 let (pair_conn_type, _) =
                                     determine_connection_type(host_p, joiner_p);
@@ -2074,8 +2064,7 @@ async fn handle_authenticated_message(
                                         addr_a: None,
                                         addr_b: None,
                                     };
-                                    relay_token =
-                                        allocate_relay_session(state, &relay_addr, &pair);
+                                    relay_token = allocate_relay_session(state, &relay_addr, &pair);
                                 }
 
                                 let game = lobby.game.clone();
@@ -2131,10 +2120,8 @@ async fn handle_authenticated_message(
                                         .as_ref()
                                         .map(|l| game_info_str(&l.game_info, "mission"))
                                         .unwrap_or_default();
-                                    let pcount = lobby_ref
-                                        .as_ref()
-                                        .map(|l| l.player_count())
-                                        .unwrap_or(0);
+                                    let pcount =
+                                        lobby_ref.as_ref().map(|l| l.player_count()).unwrap_or(0);
                                     session.presence = Presence::InGame {
                                         lobby_id,
                                         mission,

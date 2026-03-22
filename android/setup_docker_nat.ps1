@@ -105,9 +105,9 @@ foreach ($port in @(13478, 13479, 23478, 23479)) {
             0x00, 0x00, 0x00, 0x01)
         $udpClient.Send($stunReq, $stunReq.Length, "127.0.0.1", $port) | Out-Null
         $udpClient.Close()
-        Write-Status "  Port $port: reachable" "Green"
+        Write-Status "  Port ${port}: reachable" "Green"
     } catch {
-        Write-Status "  Port $port: send ok (response depends on upstream STUN)" "Gray"
+        Write-Status "  Port ${port}: send ok (response depends on upstream STUN)" "Gray"
     }
 }
 
@@ -119,13 +119,13 @@ Write-Status "Sending STUN overrides to emulators..." "White"
 & $ADB -s $EMU1 shell am broadcast -a com.dxxredux.MP_COMMAND `
     --es command stun_override `
     --es addrs "10.0.2.2:13478,10.0.2.2:13479" 2>&1 | Out-Null
-Write-Status "  $EMU1: STUN -> 10.0.2.2:13478/13479 (NAT A: $NatA)" "Green"
+Write-Status "  ${EMU1}: STUN -> 10.0.2.2:13478/13479 (NAT A: $NatA)" "Green"
 
 # EMU2 -> NAT B (ports 23478, 23479)
 & $ADB -s $EMU2 shell am broadcast -a com.dxxredux.MP_COMMAND `
     --es command stun_override `
     --es addrs "10.0.2.2:23478,10.0.2.2:23479" 2>&1 | Out-Null
-Write-Status "  $EMU2: STUN -> 10.0.2.2:23478/23479 (NAT B: $NatB)" "Green"
+Write-Status "  ${EMU2}: STUN -> 10.0.2.2:23478/23479 (NAT B: $NatB)" "Green"
 
 # -- Summary --
 Write-Status ""

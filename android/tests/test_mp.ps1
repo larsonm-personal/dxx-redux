@@ -1,5 +1,5 @@
 #!/usr/bin/env pwsh
-# run_mp_test.ps1 -- Two-player multiplayer integration test.
+# test_mp.ps1 -- Two-player multiplayer integration test.
 #
 # Orchestrates two Android emulator instances and a matchmaking server to:
 #   1. Connect both players to the server
@@ -18,9 +18,9 @@
 #   - Matchmaking server NOT running (this script starts it)
 #
 # Usage:
-#   .\run_mp_test.ps1
-#   .\run_mp_test.ps1 -Game d1
-#   .\run_mp_test.ps1 -SkipBuild
+#   .\test_mp.ps1
+#   .\test_mp.ps1 -Game d1
+#   .\test_mp.ps1 -SkipBuild
 
 param(
     [string]$Game = "d2",
@@ -32,7 +32,7 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 # -- Constants --
-$REPO_ROOT = Split-Path $PSScriptRoot
+$REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
 $DEP_BASE = (Get-Content (Join-Path $REPO_ROOT "dependency_base.txt") -First 1).Trim()
 $ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
 $PACKAGE = "com.dxxredux.app"
@@ -561,7 +561,7 @@ $r2del = Setup-EmulatorRedir -ConsolePort 5556 -RedirSpec "del udp:42501"
 Write-Status "  EMU2 UDP redir removed: $r2del" "Gray"
 
 # Start UDP relay to bridge the two emulators
-$relayScript = Join-Path $PSScriptRoot "udp_relay.py"
+$relayScript = Join-Path $PSScriptRoot "..\udp_relay.py"
 $relayProc = Start-Process python -ArgumentList "-u",$relayScript -PassThru -NoNewWindow -RedirectStandardOutput (Join-Path $REPO_ROOT "temp\udp_relay.log") -RedirectStandardError (Join-Path $REPO_ROOT "temp\udp_relay_err.log")
 $script:relayProc = $relayProc
 Write-Status "  UDP relay started (PID $($relayProc.Id))" "Gray"

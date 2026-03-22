@@ -1,13 +1,13 @@
 # Build and run CUE parser + ISO reader tests (Windows).
 #
-# Usage:  .\run_cue_iso_tests.ps1
+# Usage:  .\test_cue_iso.ps1
 #
 # Uses CMake to build test executables in android/tests/build/.
 
 $ErrorActionPreference = "Stop"
 
-$srcDir   = "$PSScriptRoot\app\src\main\cpp\extract"
-$buildDir = "$PSScriptRoot\tests\build"
+$srcDir   = "$PSScriptRoot\..\app\src\main\cpp\extract"
+$buildDir = "$PSScriptRoot\build"
 
 # Configure + build
 if (-not (Test-Path "$buildDir\CMakeCache.txt")) {
