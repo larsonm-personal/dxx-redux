@@ -1069,7 +1069,9 @@ static int parse_data_entries(const uint8_t *buf, size_t buf_len,
 static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
                                  const inno_data_entry_t *de,
                                  inno_compress_method_t method,
-                                 size_t *out_len)
+                                 size_t *out_len,
+                                 inno_progress_fn progress, void *progress_data,
+                                 const char *progress_name)
 {
 	uint64_t chunk_pos = data_offset + de->chunk_offset;
 
@@ -1121,8 +1123,15 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 
 		int zret;
 		size_t total_out = 0;
+		size_t last_progress_out = 0;
 		while ((zret = inflate(&zs, Z_NO_FLUSH)) == Z_OK || zret == Z_BUF_ERROR) {
 			total_out = zs.total_out;
+			if (progress && progress_name &&
+			    total_out - last_progress_out >= 1048576) {
+				progress(progress_name, (long long) zs.total_in,
+				         (long long) comp_size, progress_data);
+				last_progress_out = total_out;
+			}
 			if (zs.avail_out == 0) {
 				decomp_cap *= 2;
 				uint8_t *tmp = (uint8_t *) realloc(decomp, decomp_cap);
@@ -1173,7 +1182,14 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 
 		size_t src_pos = 5;
 		size_t decomp_len = 0;
+		size_t last_progress_pos = 0;
 		while (src_pos < comp_size) {
+			if (progress && progress_name &&
+			    src_pos - last_progress_pos >= 1048576) {
+				progress(progress_name, (long long) src_pos,
+				         (long long) comp_size, progress_data);
+				last_progress_pos = src_pos;
+			}
 			if (decomp_len >= decomp_cap) {
 				decomp_cap *= 2;
 				uint8_t *tmp = (uint8_t *) realloc(decomp, decomp_cap);
@@ -1231,7 +1247,14 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 
 		size_t src_pos = 1;
 		size_t decomp_len = 0;
+		size_t last_progress_pos2 = 0;
 		while (src_pos < comp_size) {
+			if (progress && progress_name &&
+			    src_pos - last_progress_pos2 >= 1048576) {
+				progress(progress_name, (long long) src_pos,
+				         (long long) comp_size, progress_data);
+				last_progress_pos2 = src_pos;
+			}
 			if (decomp_len >= decomp_cap) {
 				decomp_cap *= 2;
 				uint8_t *tmp = (uint8_t *) realloc(decomp, decomp_cap);
@@ -1453,13 +1476,15 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 	}
 
 	if (progress) {
-		progress(fe->destination, 0, (long long) de->file_size, user_data);
+		progress(fe->destination, 0,
+		         (long long) de->chunk_compressed_size, user_data);
 	}
 
 	/* Decompress the chunk */
 	size_t chunk_len = 0;
 	uint8_t *chunk = decompress_chunk(arc->fd, arc->data_offset, de,
-	                                  arc->compression, &chunk_len);
+	                                  arc->compression, &chunk_len,
+	                                  progress, user_data, fe->destination);
 	if (!chunk) {
 		INNO_LOG("failed to decompress chunk for %s", fe->destination);
 		return -1;
@@ -1550,8 +1575,9 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 	free(chunk);
 
 	if (progress) {
-		progress(fe->destination, (long long) de->file_size,
-		         (long long) de->file_size, user_data);
+		progress(fe->destination,
+		         (long long) de->chunk_compressed_size,
+		         (long long) de->chunk_compressed_size, user_data);
 	}
 
 	return 0;

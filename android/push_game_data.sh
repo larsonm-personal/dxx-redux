@@ -206,6 +206,28 @@ for REMOTE in $REMOTE_FILES; do
     fi
 done
 
+# Remove download-dir files no longer in download/
+echo "=== Cleaning removed download files ==="
+DL_REMOTE_FILES=$("$ADB" shell "ls $DEVICE_DOWNLOAD_DIR/" 2>/dev/null | tr -d '\r') || true
+for DL_REMOTE in $DL_REMOTE_FILES; do
+    [ -z "$DL_REMOTE" ] && continue
+    FOUND=false
+    if [ -d "$DOWNLOAD_DIR" ]; then
+        for f in "$DOWNLOAD_DIR"/*; do
+            [ ! -f "$f" ] && continue
+            LOCAL_LOWER=$(basename "$f" | tr '[:upper:]' '[:lower:]')
+            if [ "$LOCAL_LOWER" = "$DL_REMOTE" ]; then
+                FOUND=true
+                break
+            fi
+        done
+    fi
+    if [ "$FOUND" = "false" ]; then
+        echo "  No longer in download/, removing $DL_REMOTE"
+        "$ADB" shell "rm -f $DEVICE_DOWNLOAD_DIR/$DL_REMOTE" 2>/dev/null || true
+    fi
+done
+
 # Clean any stale game data from filesDir root (prevents PhysFS leaking)
 echo "=== Cleaning filesDir root ==="
 ROOT_FILES=$("$ADB" shell "run-as $PACKAGE ls $FILES_DIR/" 2>/dev/null | tr -d '\r') || true

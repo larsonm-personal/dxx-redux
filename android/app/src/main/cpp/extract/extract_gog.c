@@ -94,7 +94,7 @@ static int progress_cb(const char *filename, long long done, long long total, vo
 {
 	(void) ud;
 	if (done == 0 && total > 0)
-		fprintf(stderr, "  Extracting %s (%lld bytes)...\n", filename, total);
+		fprintf(stderr, "  Extracting %s (%lld compressed bytes)...\n", filename, total);
 	return 0;
 }
 

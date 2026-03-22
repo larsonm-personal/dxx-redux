@@ -1669,6 +1669,7 @@ private fun SetupScreen(
                     }
                     // If .gog+.inst pair found, route to disc import as CUE+BIN
                     if (gogDiscUri != null && instDiscUri != null) {
+                        Log.i("DXX-Setup", "Routing .gog+.inst pair to disc import: gog=${gogDiscUri!!.first}, inst=${instDiscUri!!.first}")
                         cueUris.add(instDiscUri!!)
                         binUris.add(gogDiscUri!!)
                     } else {
@@ -1914,6 +1915,7 @@ private fun SetupScreen(
                             discImportCueUri = null
                             discImportCueName = null
                             discImportBins = emptyList()
+                            onRefresh()
                         },
                     )
                 }
@@ -1934,6 +1936,7 @@ private fun SetupScreen(
                         onDismiss = {
                             gogImportUri = null
                             gogImportName = null
+                            onRefresh()
                         },
                     )
                 }
@@ -4234,8 +4237,9 @@ private fun GogImportDialog(
                 if (processing) {
                     Spacer(modifier = Modifier.height(8.dp))
                     if (progressFile.isNotEmpty()) {
+                        val pctText = if (progressPct > 0f) " (${(progressPct * 100).toInt()}%)" else ""
                         Text(
-                            progressFile,
+                            progressFile + pctText,
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -4412,6 +4416,7 @@ private fun DiscImportDialog(
     LaunchedEffect(cueUri) {
         withContext(Dispatchers.IO) {
             try {
+                Log.i("DXX-DiscImport", "Starting disc import: cue=$cueName, bins=${binUris.size}")
                 // Copy CUE file to temp
                 val tmpDir = File(filesDir, "tmp")
                 tmpDir.mkdirs()
@@ -4420,12 +4425,13 @@ private fun DiscImportDialog(
                     FileOutputStream(tmpCue).use { output -> input.copyTo(output) }
                 }
                 tempCuePath = tmpCue.absolutePath
+                Log.i("DXX-DiscImport", "CUE copied to ${tmpCue.absolutePath} (${tmpCue.length()} bytes)")
 
                 // Get BIN sizes
                 val binSizes =
                     binUris
-                        .map { (_, uri) ->
-                            context.contentResolver
+                        .map { (name, uri) ->
+                            val size = context.contentResolver
                                 .query(
                                     uri,
                                     arrayOf(android.provider.OpenableColumns.SIZE),
@@ -4433,6 +4439,8 @@ private fun DiscImportDialog(
                                     null,
                                     null,
                                 )?.use { c -> if (c.moveToFirst()) c.getLong(0) else 0L } ?: 0L
+                            Log.i("DXX-DiscImport", "BIN '$name' size=$size")
+                            size
                         }.toLongArray()
 
                 if (binSizes.isEmpty()) {
@@ -4444,6 +4452,7 @@ private fun DiscImportDialog(
 
                 // Parse CUE
                 val parsed = DiscImportBridge.parseCue(tmpCue.absolutePath, binSizes)
+                Log.i("DXX-DiscImport", "parseCue returned ${parsed?.size ?: "null"} tracks")
                 withContext(Dispatchers.Main) {
                     tracks = parsed
                     if (parsed != null) {

@@ -46,10 +46,38 @@ echo "  URL: $URL"
 
 mkdir -p "$DEST"
 TMPFILE="$(mktemp -p "${TMPDIR:-/tmp}" clang-format-XXXXXX)"
-
 curl -fSL --progress-bar -o "$TMPFILE" "$URL"
 mv "$TMPFILE" "$DEST/$DEST_NAME"
 chmod +x "$DEST/$DEST_NAME"
+
+# --- Windows VC++ runtime check --------------------------------------------
+if _is_windows_target; then
+    echo "Checking clang-format runtime..."
+
+    if ! "$DEST/$DEST_NAME" --version >/dev/null 2>&1; then
+        echo "clang-format failed to run; attempting to install Microsoft Visual C++ Redistributable..."
+
+        VC_REDIST_URL="https://aka.ms/vs/17/release/vc_redist.x64.exe"
+        VC_TMP="$(mktemp -p "${TMPDIR:-/tmp}" vc_redist-XXXXXX.exe)"
+
+        echo "  Downloading VC++ Redistributable from:"
+        echo "    $VC_REDIST_URL"
+
+        curl -fSL --progress-bar -o "$VC_TMP" "$VC_REDIST_URL"
+
+        echo "  Running installer silently..."
+        cmd.exe /C "$VC_TMP /install /quiet /norestart" || {
+            echo "VC++ Redistributable installation failed."
+            exit 1
+        }
+
+        echo "VC++ Redistributable installed. Re-testing clang-format..."
+        "$DEST/$DEST_NAME" --version
+    else
+        echo "clang-format runs successfully; VC++ runtime appears to be present."
+    fi
+fi
+# ---------------------------------------------------------------------------
 
 echo "clang-format $CLANG_FORMAT_VERSION installed at $DEST/$DEST_NAME"
 "$DEST/$DEST_NAME" --version

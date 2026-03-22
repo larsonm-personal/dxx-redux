@@ -157,11 +157,13 @@ Java_com_dxxredux_app_GogImportBridge_nativeListFiles(
 
 /* ── Extraction ──────────────────────────────────────────────────── */
 
-/* Progress callback state — calls through JNI to a Kotlin lambda */
+/* Progress callback state -- calls through JNI to a Kotlin lambda */
 typedef struct {
 	JNIEnv *env;
 	jobject callback;
 	jmethodID on_progress;
+	long long total_bytes;     /* sum of all files to extract */
+	long long completed_bytes; /* bytes for fully extracted files */
 } gog_extract_ctx_t;
 
 static int gog_progress_cb(const char *current_file,
@@ -171,12 +173,16 @@ static int gog_progress_cb(const char *current_file,
 	gog_extract_ctx_t *ctx = (gog_extract_ctx_t *) user_data;
 	if (!ctx->callback) return 0;
 
+	/* Report overall progress: completed files + current file progress */
+	long long overall_done = ctx->completed_bytes + bytes_done;
+	long long overall_total = ctx->total_bytes > 0 ? ctx->total_bytes : bytes_total;
+
 	jstring jfile = (*ctx->env)->NewStringUTF(ctx->env, current_file);
 	jint cancel = (*ctx->env)->CallIntMethod(ctx->env, ctx->callback,
 	                                         ctx->on_progress,
 	                                         jfile,
-	                                         (jlong) bytes_done,
-	                                         (jlong) bytes_total);
+	                                         (jlong) overall_done,
+	                                         (jlong) overall_total);
 	(*ctx->env)->DeleteLocalRef(ctx->env, jfile);
 	return (int) cancel;
 }
@@ -202,7 +208,7 @@ Java_com_dxxredux_app_GogImportBridge_nativeExtractFiles(
 	}
 
 	/* Set up progress callback */
-	gog_extract_ctx_t ctx = { env, NULL, NULL };
+	gog_extract_ctx_t ctx = { env, NULL, NULL, 0, 0 };
 	if (progress) {
 		ctx.callback = progress;
 		jclass cls = (*env)->GetObjectClass(env, progress);
@@ -235,6 +241,17 @@ Java_com_dxxredux_app_GogImportBridge_nativeExtractFiles(
 			LOGE("Failed to open .exe: %s", p);
 			extracted = -1;
 		} else {
+			/* Compute total bytes for overall progress */
+			long long total = 0;
+			for (int i = 0; i < arc.file_count; i++) {
+				if (!has_game_extension(arc.files[i].destination)) continue;
+				if (!includeAudio && is_audio_extension(arc.files[i].destination)) continue;
+				if (arc.files[i].location < (uint32_t) arc.data_entry_count)
+					total += (long long) arc.data_entries[arc.files[i].location].chunk_compressed_size;
+			}
+			ctx.total_bytes = total;
+			ctx.completed_bytes = 0;
+
 			extracted = 0;
 			int errors = 0;
 			for (int i = 0; i < arc.file_count; i++) {
@@ -243,6 +260,9 @@ Java_com_dxxredux_app_GogImportBridge_nativeExtractFiles(
 				const char *fname = basename_only(arc.files[i].destination);
 				char out_path[1024];
 				snprintf(out_path, sizeof(out_path), "%s/%s", out_dir, fname);
+				long long file_comp_size = 0;
+				if (arc.files[i].location < (uint32_t) arc.data_entry_count)
+					file_comp_size = (long long) arc.data_entries[arc.files[i].location].chunk_compressed_size;
 				if (inno_extract_file(&arc, i, out_path,
 				                      progress ? gog_progress_cb : NULL, &ctx) == 0) {
 					extracted++;
@@ -250,6 +270,7 @@ Java_com_dxxredux_app_GogImportBridge_nativeExtractFiles(
 					LOGE("Failed to extract: %s", arc.files[i].destination);
 					errors++;
 				}
+				ctx.completed_bytes += file_comp_size;
 			}
 			inno_close(&arc);
 			if (errors > 0 && extracted == 0) extracted = -1;
