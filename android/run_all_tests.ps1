@@ -1,15 +1,22 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-    Unattended sequential test runner with pass/fail report.
+    Unattended sequential test runner with automatic infrastructure setup.
 
 .DESCRIPTION
-    Discovers all json5 and ps1 tests, determines which are runnable based on
-    current environment (emulator running, two emulators, server, game data),
-    runs them sequentially, and produces a summary report.
+    Discovers all json5 and ps1 tests, automatically provisions required
+    infrastructure (emulators, matchmaking server, Docker NAT containers),
+    runs tests sequentially, and produces a summary report.
 
-    Designed to run overnight: continue-on-failure, stdout/stderr capture per
-    test, wall-clock timing, final markdown + console summary.
+    Infrastructure is brought up on demand and torn down at the end:
+      1. No-infra tests (game_data extraction, cue/iso, server unit tests)
+      2. Single emulator started, APK installed, game data pushed
+      3. Single-emulator tests (json5 automation + ps1 emulator tests)
+      4. Second emulator started, APK installed, game data pushed
+      5. Matchmaking server started
+      6. Two-emulator + server tests (multiplayer, LAN, bot client)
+      7. Docker NAT tests (if Docker is available)
+      8. Cleanup in reverse order
 
 .PARAMETER Filter
     Glob filter for test names (e.g. "test_death*").
@@ -26,15 +33,14 @@
 .PARAMETER TestTimeoutSeconds
     Maximum wall-clock seconds per test before killing it (default: 120).
 
-.PARAMETER AutoServer
-    Auto-build and start the matchmaking server if it is not already running.
-    The server is stopped when the test suite finishes.
+.PARAMETER SkipDocker
+    Skip Docker NAT tests even if Docker is available.
 
 .EXAMPLE
     .\run_all_tests.ps1
     .\run_all_tests.ps1 -Filter "test_death*"
     .\run_all_tests.ps1 -StopOnFail
-    .\run_all_tests.ps1 -AutoServer
+    .\run_all_tests.ps1 -SkipDocker
 #>
 
 param(
@@ -43,7 +49,7 @@ param(
     [switch]$StopOnFail,
     [string]$ReportDir,
     [int]$TestTimeoutSeconds = 120,
-    [switch]$AutoServer
+    [switch]$SkipDocker
 )
 
 $ErrorActionPreference = "Stop"
@@ -62,7 +68,7 @@ New-Item -Path $ReportDir -ItemType Directory -Force -ErrorAction SilentlyContin
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $reportFile = Join-Path $ReportDir "report_$timestamp.md"
 
-# -- Discover environment --
+# -- Environment probes (non-provisioning) --
 
 function Test-SingleEmulator {
     $out = Adb-Timeout -AdbArgs @("devices") -Seconds 5
@@ -73,8 +79,8 @@ function Test-SingleEmulator {
 function Test-TwoEmulators {
     $out = Adb-Timeout -AdbArgs @("devices") -Seconds 5
     if (-not $out) { return $false }
-    $matches = [regex]::Matches($out, "emulator-\d+\s+device")
-    return ($matches.Count -ge 2)
+    $m = [regex]::Matches($out, "emulator-\d+\s+device")
+    return ($m.Count -ge 2)
 }
 
 function Test-MatchmakingServer {
@@ -92,93 +98,28 @@ function Test-GameDataAvailable {
     return ($specs -and $specs.Count -gt 0)
 }
 
-$hasEmu = Test-SingleEmulator
-$hasTwoEmu = Test-TwoEmulators
-$hasServer = Test-MatchmakingServer
-$hasGameData = Test-GameDataAvailable
-
-# -- Auto-start matchmaking server if requested --
-
-$script:autoServerProc = $null
-
-if ($AutoServer -and -not $hasServer) {
-    $serverDir = Join-Path $repoRoot "server"
-    $serverBin = Join-Path $serverDir "target\release\dxx-matchmaking.exe"
-    if (-not (Test-Path $serverBin)) {
-        $serverBin = Join-Path $serverDir "target\debug\dxx-matchmaking.exe"
-    }
-    if (-not (Test-Path $serverBin)) {
-        Write-Host "Building matchmaking server..." -ForegroundColor Yellow
-        Push-Location $serverDir
-        & cargo build --release 2>&1 | Out-Null
-        Pop-Location
-        $serverBin = Join-Path $serverDir "target\release\dxx-matchmaking.exe"
-    }
-    if (Test-Path $serverBin) {
-        $psi = New-Object System.Diagnostics.ProcessStartInfo
-        $psi.FileName = $serverBin
-        $psi.WorkingDirectory = $serverDir
-        $psi.RedirectStandardOutput = $true
-        $psi.RedirectStandardError = $true
-        $psi.UseShellExecute = $false
-        $psi.CreateNoWindow = $true
-        $psi.EnvironmentVariables["SKIP_GPGS_VERIFY"] = "true"
-        $psi.EnvironmentVariables["RUST_LOG"] = "info"
-        $script:autoServerProc = [System.Diagnostics.Process]::Start($psi)
-        $sw = [System.Diagnostics.Stopwatch]::StartNew()
-        while ($sw.Elapsed.TotalSeconds -lt 10) {
-            if (Test-MatchmakingServer) { $hasServer = $true; break }
-            Start-Sleep -Seconds 1
-        }
-        if ($hasServer) {
-            Write-Host "Auto-started matchmaking server (PID $($script:autoServerProc.Id))" -ForegroundColor Green
-        } else {
-            Write-Host "WARNING: Failed to auto-start matchmaking server" -ForegroundColor Yellow
-            try { $script:autoServerProc.Kill() } catch {}
-            $script:autoServerProc = $null
-        }
-    } else {
-        Write-Host "WARNING: -AutoServer requested but no server binary found" -ForegroundColor Yellow
-    }
+function Test-DockerAvailable {
+    if ($SkipDocker) { return $false }
+    try {
+        $ver = docker version --format '{{.Server.Version}}' 2>&1
+        return ($LASTEXITCODE -eq 0)
+    } catch { return $false }
 }
 
-Write-Host "========================================================" -ForegroundColor Cyan
-Write-Host "  DXX-Redux Unattended Test Suite" -ForegroundColor Cyan
-Write-Host "========================================================" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "Environment:" -ForegroundColor White
-Write-Host "  Single emulator:  $(if ($hasEmu) { 'YES' } else { 'NO' })"
-Write-Host "  Two emulators:    $(if ($hasTwoEmu) { 'YES' } else { 'NO' })"
-Write-Host "  Match server:     $(if ($hasServer) { 'YES' } else { 'NO' })"
-Write-Host "  Game data (CDs):  $(if ($hasGameData) { 'YES' } else { 'NO' })"
-Write-Host ""
+# -- Test catalog --
 
-# -- Build test catalog --
-
-# Tests that are always skipped in unattended mode
+# Tests always skipped in unattended mode
 $manualTests = @(
     "test_keyboard_manual"     # requires human interaction
     "test_dual_emu"            # interactive menu
     "test_dual_emu_setup"      # interactive setup
 )
 
-# Tests requiring two emulators
-$twoEmuTests = @(
-    "test_mp"
-    "test_lan"
-    "test_lan_discovery"
-)
-
-# Tests requiring matchmaking server
-$serverTests = @(
-    "test_bot_client"
-)
-
-# Tests requiring game data / CD images
-$gameDataTests = @(
-    "test_extract"
-    "test_all_extracts"
-)
+# Infrastructure requirement classification
+$twoEmuTests = @("test_mp", "test_lan", "test_lan_discovery")
+$serverTests = @("test_bot_client")
+$gameDataTests = @("test_extract", "test_all_extracts")
+$noInfraTests = @("test_cue_iso", "test_server_integration")
 
 $allTests = @()
 
@@ -203,7 +144,7 @@ foreach ($t in $ps1Files) {
     if ($name -in $twoEmuTests) { $req = "two_emulators" }
     elseif ($name -in $serverTests) { $req = "server" }
     elseif ($name -in $gameDataTests) { $req = "game_data" }
-    elseif ($name -in @("test_cue_iso", "test_server_integration")) { $req = "none" }
+    elseif ($name -in $noInfraTests) { $req = "none" }
     else { $req = "emulator" }
 
     $allTests += @{
@@ -219,74 +160,70 @@ if ($Filter) {
     $allTests = @($allTests | Where-Object { $_.Name -like $Filter })
 }
 
-# Classify each test
-$results = @()
-$runnable = @()
-$skipped = @()
-
+# Separate manual from runnable
+$manualSkipped = @()
+$runnableTests = @()
 foreach ($test in $allTests) {
-    $name = $test.Name
-    $skip = $null
-
-    if ((-not $IncludeManual) -and ($name -in $manualTests)) {
-        $skip = "manual/interactive"
-    }
-    elseif ($test.Requires -eq "emulator" -and -not $hasEmu) {
-        $skip = "no emulator"
-    }
-    elseif ($test.Requires -eq "two_emulators" -and -not $hasTwoEmu) {
-        $skip = "need 2 emulators"
-    }
-    elseif ($test.Requires -eq "server" -and -not $hasServer) {
-        $skip = "no matchmaking server"
-    }
-    elseif ($test.Requires -eq "game_data" -and -not $hasGameData) {
-        $skip = "no game data"
-    }
-
-    if ($skip) {
-        $skipped += @{ Name = $name; Reason = $skip; Type = $test.Type }
+    if ((-not $IncludeManual) -and ($test.Name -in $manualTests)) {
+        $manualSkipped += @{ Name = $test.Name; Reason = "manual/interactive"; Type = $test.Type }
     } else {
-        $runnable += $test
+        $runnableTests += $test
     }
 }
 
-Write-Host "Tests found: $($allTests.Count) total, $($runnable.Count) runnable, $($skipped.Count) skipped" -ForegroundColor White
+# Group by infrastructure tier
+$tierNone      = @($runnableTests | Where-Object { $_.Requires -eq "none" -or $_.Requires -eq "game_data" })
+$tierSingleEmu = @($runnableTests | Where-Object { $_.Requires -eq "emulator" })
+$tierDualEmu   = @($runnableTests | Where-Object { $_.Requires -eq "two_emulators" -or $_.Requires -eq "server" })
+
+Write-Host "========================================================" -ForegroundColor Cyan
+Write-Host "  DXX-Redux Unattended Test Suite" -ForegroundColor Cyan
+Write-Host "========================================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Tests found: $($allTests.Count) total, $($runnableTests.Count) runnable, $($manualSkipped.Count) manual-skipped" -ForegroundColor White
+Write-Host "  Tier 0 (no infra):       $($tierNone.Count)"
+Write-Host "  Tier 1 (single emu):     $($tierSingleEmu.Count)"
+Write-Host "  Tier 2 (dual emu/server): $($tierDualEmu.Count)"
 Write-Host ""
 
-if ($runnable.Count -eq 0) {
+if ($runnableTests.Count -eq 0) {
     Write-Host "No runnable tests found." -ForegroundColor Yellow
     exit 0
 }
 
-# -- Run tests sequentially (each in a subprocess with timeout) --
+# -- Execution helpers --
 
 $runTestScript = Join-Path $scriptDir "run_test.ps1"
-$totalSw = [System.Diagnostics.Stopwatch]::StartNew()
+$results = @()
 $passCount = 0
 $failCount = 0
 $timeoutCount = 0
+$infraSkipped = @()
 $stopEarly = $false
+$totalSw = [System.Diagnostics.Stopwatch]::StartNew()
 
-foreach ($test in $runnable) {
-    if ($stopEarly) { break }
+# Tracked infra for cleanup
+$script:autoServerProc = $null
+$script:startedEmu1 = $false
+$script:startedEmu2 = $false
+$script:startedDocker = $false
 
-    $name = $test.Name
+function Run-SingleTest {
+    param([hashtable]$Test)
+    $name = $Test.Name
     $logFile = Join-Path $ReportDir "${name}_${timestamp}.log"
 
     Write-Host "------------------------------------------------------------" -ForegroundColor DarkGray
-    Write-Host "  Running: $name  [$($test.Type)]  (timeout: ${TestTimeoutSeconds}s)" -ForegroundColor White
+    Write-Host "  Running: $name  [$($Test.Type)]  (timeout: ${TestTimeoutSeconds}s)" -ForegroundColor White
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
 
-    # Build the command to run in a subprocess
-    if ($test.Type -eq "json5") {
-        $scriptFile = [System.IO.Path]::GetFileName($test.Path)
+    if ($Test.Type -eq "json5") {
+        $scriptFile = [System.IO.Path]::GetFileName($Test.Path)
         $testCmd = "& '$runTestScript' '$scriptFile'"
     } else {
-        $testCmd = "& '$($test.Path)'"
+        $testCmd = "& '$($Test.Path)'"
     }
 
-    # Run as a separate pwsh process so we can enforce a timeout
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = "pwsh"
     $psi.Arguments = "-NoProfile -NonInteractive -Command `"$testCmd; exit `$LASTEXITCODE`""
@@ -305,7 +242,6 @@ foreach ($test in $runnable) {
 
         if (-not $proc.WaitForExit($TestTimeoutSeconds * 1000)) {
             $timedOut = $true
-            # Kill the process tree
             try { $proc.Kill($true) } catch { try { $proc.Kill() } catch {} }
             Start-Sleep -Seconds 1
             $exitCode = 1
@@ -313,21 +249,18 @@ foreach ($test in $runnable) {
             $exitCode = $proc.ExitCode
         }
 
-        # Collect output (with 5s grace for async reads to finish)
         $stdoutTask.Wait(5000) | Out-Null
         $stderrTask.Wait(5000) | Out-Null
         $stdout = if ($stdoutTask.IsCompleted) { $stdoutTask.Result } else { "" }
         $stderr = if ($stderrTask.IsCompleted) { $stderrTask.Result } else { "" }
         $proc.Dispose()
 
-        # Write to log file
         $stdout | Out-File -FilePath $logFile -Encoding utf8
         if ($stderr) { $stderr | Out-File -FilePath $logFile -Append -Encoding utf8 }
         if ($timedOut) {
             "TIMEOUT: Test killed after ${TestTimeoutSeconds}s" | Out-File -FilePath $logFile -Append -Encoding utf8
         }
 
-        # Show last few lines of stdout on console
         $lines = ($stdout -split "`n" | Where-Object { $_.Trim() })
         $tail = $lines | Select-Object -Last 5
         foreach ($line in $tail) {
@@ -343,37 +276,140 @@ foreach ($test in $runnable) {
     $elapsed = $sw.Elapsed.ToString("mm\:ss")
 
     if ($timedOut) {
-        $status = "TIMEOUT"
-        $color = "Yellow"
-        $timeoutCount++
+        $status = "TIMEOUT"; $color = "Yellow"; $script:timeoutCount++
     } elseif ($exitCode -eq 0) {
-        $status = "PASS"
-        $color = "Green"
+        $status = "PASS"; $color = "Green"
     } else {
-        $status = "FAIL"
-        $color = "Red"
+        $status = "FAIL"; $color = "Red"
     }
     Write-Host "  $status ($elapsed)" -ForegroundColor $color
 
-    if ($exitCode -eq 0) { $passCount++ } else { $failCount++ }
+    if ($exitCode -eq 0) { $script:passCount++ } else { $script:failCount++ }
 
-    $results += @{
-        Name = $name
-        Type = $test.Type
-        Status = $status
-        ExitCode = $exitCode
-        Elapsed = $elapsed
-        LogFile = $logFile
+    $script:results += @{
+        Name = $name; Type = $Test.Type; Status = $status
+        ExitCode = $exitCode; Elapsed = $elapsed; LogFile = $logFile
     }
 
     if ($StopOnFail -and $exitCode -ne 0) {
         Write-Host "  Stopping early (-StopOnFail)" -ForegroundColor Yellow
-        $stopEarly = $true
+        $script:stopEarly = $true
+    }
+}
+
+# ── Tier 0: no-infrastructure tests ─────────────────────────────────────
+
+if ($tierNone.Count -gt 0 -and -not $stopEarly) {
+    Write-Host ""
+    Write-Host "== Tier 0: No-infrastructure tests ==" -ForegroundColor Cyan
+    # Check game data availability for game_data tests
+    $hasGameData = Test-GameDataAvailable
+    foreach ($test in $tierNone) {
+        if ($stopEarly) { break }
+        if ($test.Requires -eq "game_data" -and -not $hasGameData) {
+            $infraSkipped += @{ Name = $test.Name; Reason = "no game data (CD images)"; Type = $test.Type }
+            continue
+        }
+        Run-SingleTest -Test $test
+    }
+}
+
+# ── Tier 1: single-emulator tests ───────────────────────────────────────
+
+if ($tierSingleEmu.Count -gt 0 -and -not $stopEarly) {
+    Write-Host ""
+    Write-Host "== Tier 1: Single-emulator tests ==" -ForegroundColor Cyan
+
+    # Ensure emulator is running
+    if (-not (Test-SingleEmulator)) {
+        $emu1Ok = Start-SingleEmulator
+        if ($emu1Ok) { $script:startedEmu1 = $true }
+    } else {
+        $emu1Ok = $true
+    }
+
+    if ($emu1Ok) {
+        # Install APK and push game data
+        Install-ApkOnDevice | Out-Null
+        Push-GameDataToDevice
+
+        foreach ($test in $tierSingleEmu) {
+            if ($stopEarly) { break }
+            Run-SingleTest -Test $test
+        }
+    } else {
+        foreach ($test in $tierSingleEmu) {
+            $infraSkipped += @{ Name = $test.Name; Reason = "could not start emulator"; Type = $test.Type }
+        }
+    }
+}
+
+# ── Tier 2: dual-emulator + server tests ────────────────────────────────
+
+if ($tierDualEmu.Count -gt 0 -and -not $stopEarly) {
+    Write-Host ""
+    Write-Host "== Tier 2: Dual-emulator + server tests ==" -ForegroundColor Cyan
+
+    # Ensure first emulator is running (may already be from tier 1)
+    if (-not (Test-SingleEmulator)) {
+        $emu1Ok = Start-SingleEmulator
+        if ($emu1Ok) { $script:startedEmu1 = $true }
+    } else {
+        $emu1Ok = $true
+    }
+
+    # Ensure second emulator
+    $emu2Ok = $false
+    if ($emu1Ok) {
+        if (-not (Test-TwoEmulators)) {
+            $emu2Ok = Start-SecondEmulator
+            if ($emu2Ok) { $script:startedEmu2 = $true }
+        } else {
+            $emu2Ok = $true
+        }
+    }
+
+    # Ensure matchmaking server
+    $serverOk = $false
+    if ($emu2Ok) {
+        if (-not (Test-MatchmakingServer)) {
+            $script:autoServerProc = Start-MatchmakingServer
+            $serverOk = ($null -ne $script:autoServerProc)
+        } else {
+            $serverOk = $true
+        }
+    }
+
+    if ($emu2Ok -and $serverOk) {
+        # Install APK + push data on the second emulator
+        $devices = Adb-Timeout -AdbArgs @("devices") -Seconds 5
+        $serials = [regex]::Matches($devices, "(emulator-\d+)\s+device") |
+            ForEach-Object { $_.Groups[1].Value } | Sort-Object
+        if ($serials.Count -ge 2) {
+            $emu2Serial = $serials | Select-Object -Last 1
+            Install-ApkOnDevice -Serial $emu2Serial | Out-Null
+            Push-GameDataToDevice -Serial $emu2Serial
+        }
+
+        foreach ($test in $tierDualEmu) {
+            if ($stopEarly) { break }
+            Run-SingleTest -Test $test
+        }
+    } else {
+        $reason = if (-not $emu1Ok) { "could not start emulator" }
+                  elseif (-not $emu2Ok) { "could not start second emulator" }
+                  else { "could not start matchmaking server" }
+        foreach ($test in $tierDualEmu) {
+            $infraSkipped += @{ Name = $test.Name; Reason = $reason; Type = $test.Type }
+        }
     }
 }
 
 $totalSw.Stop()
 $totalElapsed = $totalSw.Elapsed.ToString("hh\:mm\:ss")
+
+# Merge manual + infra skips
+$allSkipped = @($manualSkipped) + @($infraSkipped)
 
 # -- Generate report --
 
@@ -387,33 +423,28 @@ Write-Host ""
 foreach ($r in $results) {
     $icon = if ($r.Status -eq "PASS") { "+" } else { "!" }
     $color = if ($r.Status -eq "PASS") { "Green" } else { "Red" }
-    Write-Host "  [$icon] $($r.Status.PadRight(4))  $($r.Elapsed)  $($r.Name)" -ForegroundColor $color
+    Write-Host "  [$icon] $($r.Status.PadRight(7))  $($r.Elapsed)  $($r.Name)" -ForegroundColor $color
 }
-foreach ($s in $skipped) {
-    Write-Host "  [-] SKIP        $($s.Name)  ($($s.Reason))" -ForegroundColor DarkGray
+foreach ($s in $allSkipped) {
+    Write-Host "  [-] SKIP           $($s.Name)  ($($s.Reason))" -ForegroundColor DarkGray
 }
 
 Write-Host ""
-Write-Host "  Passed: $passCount  Failed: $failCount  Timeouts: $timeoutCount  Skipped: $($skipped.Count)  Total time: $totalElapsed"
+Write-Host "  Passed: $passCount  Failed: $failCount  Timeouts: $timeoutCount  Skipped: $($allSkipped.Count)  Total time: $totalElapsed"
 Write-Host ""
 
 # Markdown report
 $md = @()
 $md += "# Test Report - $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 $md += ""
-$md += "## Environment"
-$md += "- Single emulator: $(if ($hasEmu) { 'yes' } else { 'no' })"
-$md += "- Two emulators: $(if ($hasTwoEmu) { 'yes' } else { 'no' })"
-$md += "- Matchmaking server: $(if ($hasServer) { 'yes' } else { 'no' })"
-$md += "- Game data (CDs): $(if ($hasGameData) { 'yes' } else { 'no' })"
-$md += ""
 $md += "## Summary"
 $md += "- Passed: $passCount"
 $md += "- Failed: $failCount"
 $md += "- Timeouts: $timeoutCount"
-$md += "- Skipped: $($skipped.Count)"
+$md += "- Skipped: $($allSkipped.Count)"
 $md += "- Total time: $totalElapsed"
 $md += "- Per-test timeout: ${TestTimeoutSeconds}s"
+$md += "- Auto-provisioned: emu1=$($script:startedEmu1) emu2=$($script:startedEmu2) server=$(($null -ne $script:autoServerProc)) docker=$($script:startedDocker)"
 $md += ""
 $md += "## Results"
 $md += ""
@@ -422,7 +453,7 @@ $md += "|--------|------|------|------|"
 foreach ($r in $results) {
     $md += "| $($r.Status) | $($r.Elapsed) | $($r.Name) | $($r.Type) |"
 }
-foreach ($s in $skipped) {
+foreach ($s in $allSkipped) {
     $md += "| SKIP | -- | $($s.Name) | $($s.Type) ($($s.Reason)) |"
 }
 $md += ""
@@ -434,7 +465,6 @@ if ($failCount -gt 0) {
         $md += "### $($r.Name)"
         $md += "- Exit code: $($r.ExitCode)"
         $md += "- Log: ``$(Split-Path $r.LogFile -Leaf)``"
-        # Include last 20 lines of the log
         if (Test-Path $r.LogFile) {
             $tail = Get-Content $r.LogFile -Tail 20
             $md += '```'
@@ -449,11 +479,19 @@ $md -join "`n" | Set-Content -Path $reportFile -Encoding utf8
 Write-Host "  Report: $reportFile" -ForegroundColor Cyan
 Write-Host ""
 
-# -- Cleanup auto-started server --
+# -- Cleanup auto-provisioned infrastructure (reverse order) --
+
+if ($script:startedDocker) {
+    Write-Host "Stopping Docker NAT containers..." -ForegroundColor Yellow
+    Stop-DockerNat
+}
 
 if ($script:autoServerProc -and -not $script:autoServerProc.HasExited) {
-    Write-Host "Stopping auto-started matchmaking server (PID $($script:autoServerProc.Id))..." -ForegroundColor Yellow
+    Write-Host "Stopping matchmaking server (PID $($script:autoServerProc.Id))..." -ForegroundColor Yellow
     try { $script:autoServerProc.Kill(); $script:autoServerProc.WaitForExit(5000) } catch {}
 }
+
+# Note: we do NOT stop emulators we started -- they're useful for the next run
+# and stopping them is slow. The user can stop them manually if desired.
 
 if ($failCount -gt 0) { exit 1 } else { exit 0 }

@@ -503,3 +503,184 @@ function Get-SetupIntrospection {
     if (-not $json -or $json -notmatch '^\s*\{') { return $null }
     try { return ($json | ConvertFrom-Json) } catch { return $null }
 }
+
+# ── Infrastructure management ────────────────────────────────────────────
+# Used by run_all_tests.ps1 to automatically bring up/tear down test infra.
+
+$script:EMULATOR_EXE = "$script:DEP_BASE\android-sdk\emulator\emulator.exe"
+$script:REPO_ROOT = Split-Path $PSScriptRoot
+
+function Start-SingleEmulator {
+    # Start EMU1 (Nexus5X_Light_1) if not already running. Returns $true on success.
+    $devices = Adb-Timeout -AdbArgs @("devices") -Seconds 5
+    if ($devices -and $devices -match "emulator-\d+\s+device") { return $true }
+    Write-Status "Starting emulator (Nexus5X_Light_1)..." "Yellow"
+    $healthScript = Join-Path $PSScriptRoot "emu_health.ps1"
+    & $healthScript -Restart -Wait -TimeoutSeconds 180
+    $ec = $LASTEXITCODE
+    if ($ec -eq 0 -or $ec -eq 2) { return $true }
+    Write-Status "FAIL: Could not start emulator" "Red"
+    return $false
+}
+
+function Start-SecondEmulator {
+    # Start EMU2 (Nexus5X_Light_2 on emulator-5556) if not already running.
+    # Returns $true on success.
+    $devices = Adb-Timeout -AdbArgs @("devices") -Seconds 5
+    if ($devices) {
+        $m = [regex]::Matches($devices, "emulator-\d+\s+device")
+        if ($m.Count -ge 2) { return $true }
+    }
+    Write-Status "Starting second emulator (Nexus5X_Light_2)..." "Yellow"
+    if (-not (Test-Path $script:EMULATOR_EXE)) {
+        Write-Status "FAIL: emulator.exe not found at $script:EMULATOR_EXE" "Red"
+        return $false
+    }
+    Start-Process -FilePath $script:EMULATOR_EXE `
+        -ArgumentList "-avd", "Nexus5X_Light_2", "-no-snapshot-save", "-gpu", "host" `
+        -WindowStyle Minimized
+    # Wait for it to appear in adb and boot
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt 180) {
+        Start-Sleep -Seconds 5
+        $devices = Adb-Timeout -AdbArgs @("devices") -Seconds 5
+        if ($devices) {
+            $m = [regex]::Matches($devices, "emulator-\d+\s+device")
+            if ($m.Count -ge 2) {
+                # Verify boot complete on the second one
+                $serials = [regex]::Matches($devices, "(emulator-\d+)\s+device") |
+                    ForEach-Object { $_.Groups[1].Value } | Sort-Object
+                $emu2 = $serials | Select-Object -Last 1
+                $boot = Adb-Timeout -AdbArgs @("-s", $emu2, "shell", "getprop", "sys.boot_completed") -Seconds 10
+                if ($boot -and $boot.Trim() -eq "1") {
+                    Write-Status "Second emulator ready ($emu2)" "Green"
+                    return $true
+                }
+            }
+        }
+    }
+    Write-Status "FAIL: Second emulator did not boot within 180s" "Red"
+    return $false
+}
+
+function Start-MatchmakingServer {
+    # Build (if needed) and start the matchmaking server. Returns the Process object
+    # or $null on failure. Caller is responsible for stopping it.
+    $serverDir = Join-Path $script:REPO_ROOT "server"
+    $serverBin = Join-Path $serverDir "target\release\dxx-matchmaking.exe"
+    if (-not (Test-Path $serverBin)) {
+        $serverBin = Join-Path $serverDir "target\debug\dxx-matchmaking.exe"
+    }
+    if (-not (Test-Path $serverBin)) {
+        Write-Status "Building matchmaking server..." "Yellow"
+        Push-Location $serverDir
+        & cargo build --release 2>&1 | Out-Null
+        Pop-Location
+        $serverBin = Join-Path $serverDir "target\release\dxx-matchmaking.exe"
+    }
+    if (-not (Test-Path $serverBin)) {
+        Write-Status "FAIL: matchmaking server binary not found" "Red"
+        return $null
+    }
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = $serverBin
+    $psi.WorkingDirectory = $serverDir
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $psi.EnvironmentVariables["SKIP_GPGS_VERIFY"] = "true"
+    $psi.EnvironmentVariables["RUST_LOG"] = "info"
+    $proc = [System.Diagnostics.Process]::Start($psi)
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt 15) {
+        try {
+            $tcp = [System.Net.Sockets.TcpClient]::new()
+            $tcp.Connect("127.0.0.1", 9000)
+            $tcp.Close()
+            Write-Status "Matchmaking server ready (PID $($proc.Id))" "Green"
+            return $proc
+        } catch { Start-Sleep -Seconds 1 }
+    }
+    Write-Status "FAIL: matchmaking server did not start on port 9000" "Red"
+    try { $proc.Kill() } catch {}
+    return $null
+}
+
+function Start-DockerNat {
+    # Start Docker NAT containers. Returns $true on success.
+    param(
+        [string]$NatA = "full-cone",
+        [string]$NatB = "symmetric"
+    )
+    $composeDir = Join-Path $script:REPO_ROOT "docker\nat-testbed"
+    if (-not (Test-Path (Join-Path $composeDir "docker-compose.yml"))) {
+        Write-Status "SKIP: docker/nat-testbed/docker-compose.yml not found" "Yellow"
+        return $false
+    }
+    $null = docker version --format '{{.Server.Version}}' 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Status "SKIP: Docker not running" "Yellow"
+        return $false
+    }
+    Write-Status "Starting Docker NAT ($NatA / $NatB)..." "Yellow"
+    $env:NAT_A = $NatA
+    $env:NAT_B = $NatB
+    Push-Location $composeDir
+    docker compose down 2>&1 | Out-Null
+    docker compose up -d --build 2>&1 | Out-Null
+    $rc = $LASTEXITCODE
+    Pop-Location
+    Remove-Item Env:\NAT_A -ErrorAction SilentlyContinue
+    Remove-Item Env:\NAT_B -ErrorAction SilentlyContinue
+    if ($rc -ne 0) {
+        Write-Status "FAIL: docker compose up failed" "Red"
+        return $false
+    }
+    Start-Sleep -Seconds 2
+    Write-Status "Docker NAT containers started" "Green"
+    return $true
+}
+
+function Stop-DockerNat {
+    $composeDir = Join-Path $script:REPO_ROOT "docker\nat-testbed"
+    $composeFile = Join-Path $composeDir "docker-compose.yml"
+    if (Test-Path $composeFile) {
+        docker compose -f $composeFile down 2>&1 | Out-Null
+    }
+}
+
+function Install-ApkOnDevice {
+    # Install the debug APK on a specific emulator serial, or default.
+    param([string]$Serial)
+    $apk = Join-Path $PSScriptRoot "app\build\outputs\apk\debug\app-debug.apk"
+    if (-not (Test-Path $apk)) {
+        Write-Status "WARN: No APK at $apk" "Yellow"
+        return $false
+    }
+    $args_ = if ($Serial) { @("-s", $Serial, "install", "-r", $apk) } else { @("install", "-r", $apk) }
+    $result = Adb-Timeout -AdbArgs $args_ -Seconds 60
+    return ($result -and $result -match "Success")
+}
+
+function Push-GameDataToDevice {
+    # Push game data to a specific emulator serial using push_game_data.sh.
+    param([string]$Serial)
+    $pushScript = Join-Path $PSScriptRoot "push_game_data.sh"
+    if (-not (Test-Path $pushScript)) { return }
+    $gameDataDir = Join-Path $script:REPO_ROOT "game_data_to_copy_to_emulator"
+    $hasData = (Test-Path (Join-Path $gameDataDir "data")) -or (Test-Path (Join-Path $gameDataDir "download"))
+    if (-not $hasData) { return }
+    $bashExe = "bash"
+    $gitBash = "$script:DEP_BASE\git\bin\bash.exe"
+    if (Test-Path $gitBash) { $bashExe = $gitBash }
+    $prevSerial = $env:ANDROID_SERIAL
+    if ($Serial) { $env:ANDROID_SERIAL = $Serial }
+    $env:CALLED_FROM_SCRIPT = "1"
+    & $bashExe $pushScript 2>&1 | Out-Null
+    Remove-Item Env:\CALLED_FROM_SCRIPT -ErrorAction SilentlyContinue
+    if ($Serial) {
+        if ($prevSerial) { $env:ANDROID_SERIAL = $prevSerial }
+        else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }
+    }
+}

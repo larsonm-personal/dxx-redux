@@ -141,6 +141,10 @@ Write-Host "  File size: $fileSize bytes"
 # Use /data/local/tmp/ which is world-readable on emulators.
 Adb shell "mkdir -p $SAF_DIR" | Out-Null
 $localGameData = "$repoRoot\game_data_to_copy_to_emulator\data\$($TEST_FILE.ToUpper())"
+if (-not (Test-Path $localGameData)) {
+    # Fallback: check extracted game data directories
+    $localGameData = "$repoRoot\game_data\extracted\VERTIGO\$($TEST_FILE.ToUpper())"
+}
 if (Test-Path $localGameData) {
     Adb push $localGameData "$SAF_DIR/$TEST_FILE" | Out-Null
 } else {
