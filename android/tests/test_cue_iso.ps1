@@ -6,6 +6,9 @@
 
 $ErrorActionPreference = "Stop"
 
+# Source shared env setup (adds cmake to PATH if needed)
+. "$PSScriptRoot\..\test_env.ps1"
+
 $srcDir   = "$PSScriptRoot\..\app\src\main\cpp\extract"
 $buildDir = "$PSScriptRoot\build"
 

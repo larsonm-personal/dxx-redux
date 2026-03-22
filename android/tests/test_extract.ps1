@@ -23,15 +23,29 @@
 
 .EXAMPLE
   .\test_extract.ps1 "..\game_data\CD images\Descent II (USA)\extract_regression.json5"
+  .\test_extract.ps1                # auto-discovers first available spec
 #>
 param(
-    [Parameter(Mandatory=$true, Position=0)]
+    [Parameter(Position=0)]
     [string]$SpecPath,
     [switch]$SkipLaunch,
     [switch]$KeepFiles
 )
 
 $ErrorActionPreference = 'Stop'
+
+# -- Auto-discover SpecPath if not provided -------------------
+if (-not $SpecPath) {
+    $gameDataDir = Join-Path (Split-Path (Split-Path $PSScriptRoot)) "game_data"
+    $specs = Get-ChildItem -Path $gameDataDir -Recurse -Filter "extract_regression.json5" -ErrorAction SilentlyContinue
+    if ($specs -and $specs.Count -gt 0) {
+        $SpecPath = $specs[0].FullName
+        Write-Host "Auto-selected spec: $SpecPath" -ForegroundColor Cyan
+    } else {
+        Write-Error "No SpecPath provided and no extract_regression.json5 found under $gameDataDir"
+        exit 1
+    }
+}
 
 # -- Config ---------------------------------------------------
 

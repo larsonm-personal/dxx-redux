@@ -229,10 +229,16 @@ Write-Status ""
 # -- Step 0: Verify both emulators are online --
 Write-Status "Checking emulators..."
 if (-not (Test-DeviceOnline -Serial $EMU1)) {
-    Write-Status "FAIL: Emulator $EMU1 is not online" "Red"; exit 1
+    Write-Status "FAIL: Emulator $EMU1 is not online." "Red"
+    Write-Status "  Two-player tests require both emulators running." "Yellow"
+    Write-Status "  Start them with: .\android\tests\test_dual_emu.ps1 -NoBuild" "Yellow"
+    exit 1
 }
 if (-not (Test-DeviceOnline -Serial $EMU2)) {
-    Write-Status "FAIL: Emulator $EMU2 is not online" "Red"; exit 1
+    Write-Status "FAIL: Emulator $EMU2 is not online." "Red"
+    Write-Status "  Two-player tests require both emulators running." "Yellow"
+    Write-Status "  Start them with: .\android\tests\test_dual_emu.ps1 -NoBuild" "Yellow"
+    exit 1
 }
 Write-Status "Both emulators online" "Green"
 

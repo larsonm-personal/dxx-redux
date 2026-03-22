@@ -20,6 +20,9 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+# Source shared env setup (JAVA_HOME, cmake, cargo)
+. "$PSScriptRoot\..\test_env.ps1"
+
 $REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
 $ANDROID_DIR = Join-Path $REPO_ROOT "android"
 $DEP_BASE = (Get-Content (Join-Path $REPO_ROOT "dependency_base.txt") -First 1).Trim()

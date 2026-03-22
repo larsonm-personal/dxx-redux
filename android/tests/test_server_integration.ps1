@@ -1,9 +1,8 @@
 #!/usr/bin/env pwsh
-# test_multiplayer_live.ps1 -- Live integration test for the multiplayer
-# client/server flow. Starts the Rust server, connects two WebSocket
-# clients, and exercises the full lobby lifecycle.
+# test_server_integration.ps1 -- Runs the Rust matchmaking server's
+# integration test suite (cargo test --test integration).
 #
-# Usage: .\android\tests\test_multiplayer_live.ps1
+# Usage: .\android\tests\test_server_integration.ps1
 # Requires: cargo (Rust toolchain), PowerShell 5.1+
 
 param(
@@ -12,11 +11,12 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+. "$PSScriptRoot\..\test_env.ps1"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = (Resolve-Path "$scriptDir\..\..").Path
 $serverDir = Join-Path $repoRoot "server"
 
-Write-Host "=== Multiplayer Live Test ==="
+Write-Host "=== Server Integration Test ==="
 Write-Host "Building server..."
 
 Push-Location $serverDir
@@ -53,4 +53,4 @@ try {
 }
 
 Write-Host ""
-Write-Host "=== Multiplayer Live Test PASSED ==="
+Write-Host "=== Server Integration Test PASSED ==="

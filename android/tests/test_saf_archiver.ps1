@@ -29,6 +29,9 @@ param(
 
 $ErrorActionPreference = "Continue"
 
+# -- Shared env setup (JAVA_HOME, cmake, cargo) ----------------------------
+. "$PSScriptRoot\..\test_env.ps1"
+
 # -- Paths --------------------------------------------------------------
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 # Handle running from repo root or android/ dir
@@ -65,11 +68,22 @@ function Adb { & $adb @args 2>&1 }
 Write-Host "=== SAF Archiver Test ===" -ForegroundColor Cyan
 Write-Host ""
 
-# Check emulator
+# Check emulator -- auto-start if needed
 $devices = (Adb devices) -join "`n"
 if ($devices -notmatch "emulator.*device") {
-    Write-Error "No emulator found. Start one with android/run_emulator.sh"
-    exit 1
+    Write-Host "Emulator not found -- attempting start..." -ForegroundColor Yellow
+    $healthScript = Join-Path $androidDir "emu_health.ps1"
+    & $healthScript -Restart -Wait -TimeoutSeconds 120
+    if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 2) {
+        Write-Error "Could not start emulator (exit $LASTEXITCODE)"
+        exit 1
+    }
+    Start-Sleep -Seconds 3
+    $devices = (Adb devices) -join "`n"
+    if ($devices -notmatch "emulator.*device") {
+        Write-Error "Emulator still not available after restart"
+        exit 1
+    }
 }
 Write-Host "[OK] Emulator connected" -ForegroundColor Green
 

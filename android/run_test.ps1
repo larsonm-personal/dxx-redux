@@ -117,6 +117,9 @@ foreach ($gameId in $gameList) {
 
     Start-Sleep -Seconds 2
     Adb -AdbArgs @("logcat", "-c") | Out-Null
+    # Remove stale result files so Watch-AutomationResult doesn't read a prior run's PASS
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json") | Out-Null
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_log.jsonl") | Out-Null
     Write-Status "Sending automation broadcast for: $ScriptName"
     Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.AUTOMATE", "--es", "script", $ScriptName) | Out-Null
 

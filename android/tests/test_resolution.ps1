@@ -104,9 +104,12 @@ if ($res1.render_width -eq 640 -and $res1.render_height -eq 480) {
     Write-Status "FAIL: Phase 1 got 640x480 -- default half-screen resolution not applied" "Red"
     exit 1
 }
-# Verify render resolution is at least 640x480
-if ($res1.render_width -lt 640 -or $res1.render_height -lt 480) {
-    Write-Status "FAIL: Phase 1 render resolution too small: $($res1.render_width)x$($res1.render_height)" "Red"
+# Verify render resolution is roughly half the display (within 10% tolerance)
+$expectedW = [int]($res1.display_width / 2)
+$expectedH = [int]($res1.display_height / 2)
+if ($res1.render_width -lt ($expectedW * 0.9) -or $res1.render_height -lt ($expectedH * 0.9)) {
+    Write-Status ("FAIL: Phase 1 render resolution too small: {0}x{1} (expected ~{2}x{3})" -f `
+        $res1.render_width, $res1.render_height, $expectedW, $expectedH) "Red"
     exit 1
 }
 Write-Status "Phase 1 PASS: Default resolution is $($res1.render_width)x$($res1.render_height)" "Green"

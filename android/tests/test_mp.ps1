@@ -31,6 +31,9 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+# Source shared env setup (JAVA_HOME, cmake, cargo)
+. "$PSScriptRoot\..\test_env.ps1"
+
 # -- Constants --
 $REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
 $DEP_BASE = (Get-Content (Join-Path $REPO_ROOT "dependency_base.txt") -First 1).Trim()
@@ -238,11 +241,15 @@ Write-Status ""
 
 Write-Status "Checking emulators..."
 if (-not (Test-DeviceOnline -Serial $EMU1)) {
-    Write-Status "FAIL: Emulator $EMU1 is not online. Start it first." "Red"
+    Write-Status "FAIL: Emulator $EMU1 is not online." "Red"
+    Write-Status "  Two-player tests require both emulators running." "Yellow"
+    Write-Status "  Start them with: .\android\tests\test_dual_emu.ps1 -NoBuild" "Yellow"
     exit 1
 }
 if (-not (Test-DeviceOnline -Serial $EMU2)) {
-    Write-Status "FAIL: Emulator $EMU2 is not online. Start both emulators first." "Red"
+    Write-Status "FAIL: Emulator $EMU2 is not online." "Red"
+    Write-Status "  Two-player tests require both emulators running." "Yellow"
+    Write-Status "  Start them with: .\android\tests\test_dual_emu.ps1 -NoBuild" "Yellow"
     exit 1
 }
 Write-Status "Both emulators online: $EMU1, $EMU2" "Green"

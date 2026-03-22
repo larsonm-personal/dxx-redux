@@ -101,9 +101,11 @@ foreach ($gameId in $gameList) {
         $allPassed = $false; continue
     }
 
-    # Send automation and wait for result
+    # Clear stale results and send automation
     Start-Sleep -Seconds 2
     Adb -AdbArgs @("logcat", "-c") | Out-Null
+    Adb -AdbArgs @("shell", "run-as", $PACKAGE, "rm", "-f", "files/automation_result.json") | Out-Null
+    Adb -AdbArgs @("shell", "run-as", $PACKAGE, "rm", "-f", "files/automation_log.jsonl") | Out-Null
     Write-Status "Sending automation broadcast..."
     Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.AUTOMATE", "--es", "script", $GAME_SCRIPT) | Out-Null
 

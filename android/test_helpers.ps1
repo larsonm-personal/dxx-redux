@@ -13,6 +13,9 @@
 #   Write-Status               -- timestamped colored output
 #   Start-GameWithRetry        -- full launch flow: SetupActivity -> verify -> game -> verify
 
+# Source shared environment setup (JAVA_HOME, cmake, cargo)
+. "$PSScriptRoot\test_env.ps1"
+
 $_depBaseFile = Join-Path (Split-Path $PSScriptRoot) "dependency_base.txt"
 if (-not (Test-Path $_depBaseFile)) {
     Write-Error "dependency_base.txt not found at $_depBaseFile. Create it with a single line containing the path to your dependency directory (e.g. C:\local)."

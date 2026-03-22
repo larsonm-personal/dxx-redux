@@ -40,7 +40,7 @@ Write-Status "--- D1 .plx weapon reorder format ---" -Color Yellow
 
 # Read existing D1 .plx file
 $d1plx = Adb -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/d1x-redux/Players/player.plx")
-$hasSection = $d1plx -match "\[weapon reorder\]"
+$hasSection = [bool]($d1plx -match "\[weapon reorder\]")
 Assert-True $hasSection "D1 .plx has [weapon reorder] section"
 
 # Parse primary and secondary lines
@@ -88,7 +88,7 @@ Adb -AdbArgs @("shell", "run-as", $PACKAGE, "sed", "-i",
 # Read back and verify modification
 $d1plxMod = Adb -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/d1x-redux/Players/player.plx")
 $modPrimary = ($d1plxMod -split "`n" | Where-Object { $_ -match "^primary=" }) | Select-Object -First 1
-$hasReversed = $modPrimary -match "0x0,0x1,0x2,0x3,0x4"
+$hasReversed = [bool]($modPrimary -match "0x0,0x1,0x2,0x3,0x4")
 Assert-True $hasReversed "D1 .plx round-trip: modified primary order preserved"
 
 # Restore original
@@ -98,14 +98,14 @@ Adb -AdbArgs @("shell", "run-as", $PACKAGE, "rm", $backupPath) | Out-Null
 # Verify restore
 $d1plxRestored = Adb -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/d1x-redux/Players/player.plx")
 $restoredPrimary = ($d1plxRestored -split "`n" | Where-Object { $_ -match "^primary=" }) | Select-Object -First 1
-$isRestored = $restoredPrimary -match "0x4,0x3,0x2,0x1,0x0"
+$isRestored = [bool]($restoredPrimary -match "0x4,0x3,0x2,0x1,0x0")
 Assert-True $isRestored "D1 .plx restore: original primary order intact"
 
 # -- Test 3: D2 .plr binary header --
 Write-Status "--- D2 .plr binary header ---" -Color Yellow
 
 $d2plrExists = Adb -AdbArgs @("shell", "run-as", $PACKAGE, "test", "-f", "files/d2x-redux/Players/player.plr", "&&", "echo", "yes")
-Assert-True ($d2plrExists -match "yes") "D2 player.plr exists"
+Assert-True ([bool]($d2plrExists -match "yes")) "D2 player.plr exists"
 
 if ($d2plrExists -match "yes") {
     # Read first 6 bytes of D2 .plr: should be DPLR signature (LE: 0x52 0x4C 0x50 0x44)
@@ -113,7 +113,7 @@ if ($d2plrExists -match "yes") {
     $hexDump = Adb -AdbArgs @("shell", "run-as", $PACKAGE, "xxd", "-l", "6", "files/d2x-redux/Players/player.plr")
     # xxd output: "00000000: 524c 5044 1300  RLPD.."
     # Bytes: R=0x52 L=0x4C P=0x50 D=0x44 = MAKE_SIG('D','P','L','R') in LE
-    $hasSignature = $hexDump -match "524c 5044"
+    $hasSignature = [bool]($hexDump -match "524c 5044")
     Assert-True $hasSignature "D2 .plr has valid DPLR signature"
 
     if ($hexDump -match "524c 5044 (\w{2})") {

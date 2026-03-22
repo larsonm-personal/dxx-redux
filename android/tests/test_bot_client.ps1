@@ -45,6 +45,19 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# --- Check server reachability before connecting ---
+$serverHost = ([Uri]$ServerUrl).Host
+$serverPort = ([Uri]$ServerUrl).Port
+try {
+    $tcp = [System.Net.Sockets.TcpClient]::new()
+    $tcp.Connect($serverHost, $serverPort)
+    $tcp.Close()
+} catch {
+    Write-Host "FAIL: Matchmaking server not reachable at ${serverHost}:${serverPort}" -ForegroundColor Red
+    Write-Host "  Start the server first, or use test_dual_emu.ps1 which starts it automatically." -ForegroundColor Yellow
+    exit 1
+}
+
 # --- WebSocket helpers ---
 
 function Connect-WebSocket {
