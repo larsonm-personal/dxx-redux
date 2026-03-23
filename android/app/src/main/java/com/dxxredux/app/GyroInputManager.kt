@@ -100,8 +100,12 @@ class GyroInputManager(
         }
 
         if (!active) {
-            // Not active -- update reference so there's no jump when activated
-            curOrientation.copyInto(refOrientation)
+            // In RATE mode, update reference so there's no jump when activated.
+            // In ABSOLUTE mode, keep reference fixed so tilt angle is preserved.
+            if (config.mode == GyroMode.RATE) {
+                curOrientation.copyInto(refOrientation)
+            }
+            diagnosticCallback?.invoke(0f, 0f, 0f)
             return
         }
 

@@ -405,7 +405,7 @@ data class DPadControl(
 data class GyroConfig(
     val enabled: Boolean = false,
     val activation: GyroActivation = GyroActivation.ALWAYS,
-    val mode: GyroMode = GyroMode.RATE,
+    val mode: GyroMode = GyroMode.ABSOLUTE,
     val sensitivityX: Float = 3f,
     val sensitivityY: Float = 3f,
     val sensitivityZ: Float = 3f,
@@ -491,6 +491,44 @@ data class DiagnosticControl(
     }
 }
 
+data class AxisRegionControl(
+    val id: String,
+    val axis: Int = TouchBindings.AXIS_SLIDE_UD,
+    val orientation: SliderOrientation = SliderOrientation.VERTICAL,
+    val zone: FloatingZone = FloatingZone(leftPct = 0f, topPct = 50f, rightPct = 8f, bottomPct = 100f),
+    val sensitivity: Float = 1f,
+    val responseCurve: ResponseCurve = ResponseCurve.LINEAR,
+    val exponent: Float = TouchBindings.DEFAULT_EXPONENT,
+    val opacity: Float = 0.3f,
+) {
+    fun toJson() =
+        JSONObject().apply {
+            put("type", "axis_region")
+            put("id", id)
+            put("axis", axis)
+            put("orientation", orientation.name)
+            put("zone", zone.toJson())
+            put("sensitivity", sensitivity.toDouble())
+            put("responseCurve", responseCurve.name)
+            put("exponent", exponent.toDouble())
+            put("opacity", opacity.toDouble())
+        }
+
+    companion object {
+        fun fromJson(j: JSONObject) =
+            AxisRegionControl(
+                id = j.getString("id"),
+                axis = j.optInt("axis", TouchBindings.AXIS_SLIDE_UD),
+                orientation = SliderOrientation.valueOf(j.optString("orientation", "VERTICAL")),
+                zone = if (j.has("zone")) FloatingZone.fromJson(j.getJSONObject("zone")) else FloatingZone(),
+                sensitivity = j.optDouble("sensitivity", 1.0).toFloat(),
+                responseCurve = ResponseCurve.valueOf(j.optString("responseCurve", "LINEAR")),
+                exponent = j.optDouble("exponent", TouchBindings.DEFAULT_EXPONENT.toDouble()).toFloat(),
+                opacity = j.optDouble("opacity", 0.3).toFloat(),
+            )
+    }
+}
+
 data class TouchLayout(
     val version: Int = 1,
     val name: String = "Default",
@@ -501,6 +539,7 @@ data class TouchLayout(
     val radialMenus: List<RadialMenuControl> = emptyList(),
     val dpads: List<DPadControl> = emptyList(),
     val diagnostics: List<DiagnosticControl> = emptyList(),
+    val axisRegions: List<AxisRegionControl> = emptyList(),
     val gyro: GyroConfig = GyroConfig(),
 ) {
     fun toJson() =
@@ -514,6 +553,7 @@ data class TouchLayout(
             put("radialMenus", JSONArray(radialMenus.map { it.toJson() }))
             put("dpads", JSONArray(dpads.map { it.toJson() }))
             put("diagnostics", JSONArray(diagnostics.map { it.toJson() }))
+            put("axisRegions", JSONArray(axisRegions.map { it.toJson() }))
             put("gyro", gyro.toJson())
         }
 
@@ -536,6 +576,7 @@ data class TouchLayout(
                 radialMenus = parseArray("radialMenus") { RadialMenuControl.fromJson(it) },
                 dpads = parseArray("dpads") { DPadControl.fromJson(it) },
                 diagnostics = parseArray("diagnostics") { DiagnosticControl.fromJson(it) },
+                axisRegions = parseArray("axisRegions") { AxisRegionControl.fromJson(it) },
                 gyro = if (j.has("gyro")) GyroConfig.fromJson(j.getJSONObject("gyro")) else GyroConfig(),
             )
         }

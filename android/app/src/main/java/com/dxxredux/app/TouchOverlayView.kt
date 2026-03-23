@@ -200,11 +200,29 @@ class TouchOverlayView
             var height = 0f
         }
 
+        private class AxisRegionState(
+            val control: AxisRegionControl,
+        ) {
+            var left = 0f
+            var top = 0f
+            var right = 0f
+            var bottom = 0f
+            var pointerId = -1
+            var touchOrigin = 0f // axis-position where the touch set the zero point
+            var value = 0f // current output -1..1
+
+            // Pointer stealing: which stick we stole from (to return the drag later)
+            var stealSourceStick: StickState? = null
+            var savedStickCX = 0f // original stick center when stolen
+            var savedStickCY = 0f
+        }
+
         private val stickStates = mutableListOf<StickState>()
         private val buttonStates = mutableListOf<ButtonState>()
         private val radialStates = mutableListOf<RadialMenuState>()
         private val sliderStates = mutableListOf<SliderState>()
         private val diagnosticStates = mutableListOf<DiagnosticState>()
+        private val axisRegionStates = mutableListOf<AxisRegionState>()
 
         // Gyro diagnostic values (updated in real time via GyroInputManager)
         @Volatile private var diagGyroYaw = 0f
@@ -482,11 +500,13 @@ class TouchOverlayView
             radialStates.clear()
             sliderStates.clear()
             diagnosticStates.clear()
+            axisRegionStates.clear()
             layout.sticks.forEach { stickStates.add(StickState(it)) }
             layout.buttons.forEach { buttonStates.add(ButtonState(it)) }
             layout.radialMenus.forEach { radialStates.add(RadialMenuState(it)) }
             layout.sliders.forEach { sliderStates.add(SliderState(it)) }
             layout.diagnostics.forEach { diagnosticStates.add(DiagnosticState(it)) }
+            layout.axisRegions.forEach { axisRegionStates.add(AxisRegionState(it)) }
         }
 
         override fun onSizeChanged(
@@ -580,6 +600,15 @@ class TouchOverlayView
                 d.width = paintDiagText.measureText("Roll: -100%") + diagTextSize * 2
                 d.height = diagTextSize * d.control.sizeMult * 4.5f
             }
+
+            // Compute axis region geometry from layout
+            for (ar in axisRegionStates) {
+                val z = ar.control.zone
+                ar.left = wf * z.leftPct / 100f
+                ar.top = hf * z.topPct / 100f
+                ar.right = wf * z.rightPct / 100f
+                ar.bottom = hf * z.bottomPct / 100f
+            }
         }
 
         /** Recompute automap button rectangles based on current marker count. */
@@ -615,6 +644,9 @@ class TouchOverlayView
 
             // ── Layout sliders ──────────────────────────────────
             for (sl in sliderStates) drawSlider(canvas, sl, gAlpha)
+
+            // ── Axis regions ────────────────────────────────────
+            for (ar in axisRegionStates) drawAxisRegion(canvas, ar, gAlpha)
 
             // ── Radial menus (triggers, then open wheels on top) ──
             for (rm in radialStates) {
@@ -786,6 +818,54 @@ class TouchOverlayView
                         paintBtnLabel,
                     )
                 }
+            }
+        }
+
+        private fun drawAxisRegion(
+            canvas: Canvas,
+            ar: AxisRegionState,
+            gAlpha: Float,
+        ) {
+            val eff = (gAlpha * ar.control.opacity).coerceIn(0f, 1f)
+            val pressed = ar.pointerId >= 0
+
+            // Fill rect
+            val fill = if (pressed) paintBtnPressed else paintBtnIdle
+            fill.alpha = ((if (pressed) 0x44 else 0x22) * eff).toInt()
+            canvas.drawRect(ar.left, ar.top, ar.right, ar.bottom, fill)
+
+            // Border
+            paintRing.alpha = (0x44 * eff).toInt()
+            canvas.drawRect(ar.left, ar.top, ar.right, ar.bottom, paintRing)
+
+            // Value indicator line
+            if (pressed) {
+                val vertical = ar.control.orientation == SliderOrientation.VERTICAL
+                paintRing.alpha = (0xAA * eff).toInt()
+                val savedStroke = paintRing.strokeWidth
+                paintRing.strokeWidth = 3f
+                if (vertical) {
+                    val midY = (ar.top + ar.bottom) / 2f
+                    val halfH = (ar.bottom - ar.top) / 2f
+                    val lineY = midY + ar.value * halfH
+                    canvas.drawLine(ar.left, lineY, ar.right, lineY, paintRing)
+                } else {
+                    val midX = (ar.left + ar.right) / 2f
+                    val halfW = (ar.right - ar.left) / 2f
+                    val lineX = midX + ar.value * halfW
+                    canvas.drawLine(lineX, ar.top, lineX, ar.bottom, paintRing)
+                }
+                paintRing.strokeWidth = savedStroke
+            }
+
+            // Label
+            if (ar.control.id.isNotEmpty()) {
+                paintBtnLabel.alpha = (0x66 * eff).toInt()
+                val base = min(width, height).toFloat()
+                paintBtnLabel.textSize = base * 0.02f
+                val cx = (ar.left + ar.right) / 2f
+                val cy = (ar.top + ar.bottom) / 2f
+                canvas.drawText(ar.control.id.take(6), cx, cy + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
             }
         }
 
@@ -1107,6 +1187,22 @@ class TouchOverlayView
                     val pid = event.getPointerId(idx)
                     var handled = false
 
+                    // Try axis regions (before sticks, since they can overlap)
+                    for (ar in axisRegionStates) {
+                        if (ar.pointerId >= 0) continue
+                        if (px in ar.left..ar.right && py in ar.top..ar.bottom) {
+                            ar.pointerId = pid
+                            val vertical = ar.control.orientation == SliderOrientation.VERTICAL
+                            ar.touchOrigin = if (vertical) py else px
+                            ar.value = 0f
+                            ar.stealSourceStick = null
+                            axisCallback?.invoke(ar.control.axis, 0f)
+                            invalidate()
+                            handled = true
+                            break
+                        }
+                    }
+
                     // Try layout sticks
                     for (s in stickStates) {
                         if (s.pointerId >= 0) continue
@@ -1293,6 +1389,86 @@ class TouchOverlayView
                     if (!handled) passthroughPointers.add(pid)
                 }
                 MotionEvent.ACTION_MOVE -> {
+                    // Check for pointer stealing: stick → axis region
+                    for (s in stickStates) {
+                        if (s.pointerId < 0) continue
+                        val si = event.findPointerIndex(s.pointerId)
+                        if (si < 0) continue
+                        val sx = event.getX(si)
+                        val sy = event.getY(si)
+                        for (ar in axisRegionStates) {
+                            if (ar.pointerId >= 0) continue
+                            if (sx in ar.left..ar.right && sy in ar.top..ar.bottom) {
+                                // Steal this pointer from the stick to the region
+                                ar.pointerId = s.pointerId
+                                val vertical = ar.control.orientation == SliderOrientation.VERTICAL
+                                ar.touchOrigin = if (vertical) sy else sx
+                                ar.value = 0f
+                                ar.stealSourceStick = s
+                                // Save stick center before reset so we can restore it
+                                ar.savedStickCX = if (s.floatingActive) s.floatingCX else s.centerX
+                                ar.savedStickCY = if (s.floatingActive) s.floatingCY else s.centerY
+                                // Zero the stick without releasing the pointer entirely
+                                s.pointerId = -1
+                                s.pos.set(0f, 0f)
+                                s.floatingActive = false
+                                if (!s.control.buttonMode) {
+                                    axisCallback?.invoke(s.control.axisX, 0f)
+                                    axisCallback?.invoke(s.control.axisY, 0f)
+                                }
+                                updateGyroStickActive()
+                                axisCallback?.invoke(ar.control.axis, 0f)
+                                invalidate()
+                                break
+                            }
+                        }
+                    }
+
+                    // Check for pointer stealing: axis region → stick (return to source)
+                    for (ar in axisRegionStates) {
+                        if (ar.pointerId < 0) continue
+                        val ai = event.findPointerIndex(ar.pointerId)
+                        if (ai < 0) continue
+                        val ax = event.getX(ai)
+                        val ay = event.getY(ai)
+                        if (ax !in ar.left..ar.right || ay !in ar.top..ar.bottom) {
+                            val src = ar.stealSourceStick
+                            if (src != null && src.pointerId < 0) {
+                                // Return pointer to the original stick
+                                src.pointerId = ar.pointerId
+                                if (src.control.floating || src.control.mouseMode) {
+                                    // Reuse original center if drag started in stick, else use fixed center
+                                    src.floatingCX = ar.savedStickCX
+                                    src.floatingCY = ar.savedStickCY
+                                    src.floatingActive = true
+                                    if (src.control.mouseMode) {
+                                        src.mouseLastX = ax
+                                        src.mouseLastY = ay
+                                        src.mouseOriginX = ar.savedStickCX
+                                        src.mouseOriginY = ar.savedStickCY
+                                        src.mousePendingX = 0f
+                                        src.mousePendingY = 0f
+                                        startMouseDrain()
+                                    }
+                                }
+                                // Release the region
+                                ar.pointerId = -1
+                                ar.value = 0f
+                                ar.stealSourceStick = null
+                                axisCallback?.invoke(ar.control.axis, 0f)
+                                // Immediately update stick with current position
+                                if (src.control.mouseMode) {
+                                    updateStickFromMouseDrag(src, ax, ay)
+                                } else {
+                                    updateStickFromTouch(src, ax, ay)
+                                }
+                                invalidate()
+                                continue
+                            }
+                        }
+                    }
+
+                    // Update active sticks
                     for (s in stickStates) {
                         if (s.pointerId >= 0) {
                             val i = event.findPointerIndex(s.pointerId)
@@ -1305,6 +1481,15 @@ class TouchOverlayView
                             }
                         }
                     }
+
+                    // Update active axis regions
+                    for (ar in axisRegionStates) {
+                        if (ar.pointerId >= 0) {
+                            val i = event.findPointerIndex(ar.pointerId)
+                            if (i >= 0) updateAxisRegionFromTouch(ar, event.getX(i), event.getY(i))
+                        }
+                    }
+
                     for (rm in radialStates) {
                         if (rm.pointerId >= 0 && rm.isOpen) {
                             val i = event.findPointerIndex(rm.pointerId)
@@ -1329,6 +1514,7 @@ class TouchOverlayView
                     releaseAllLayoutButtons(fired)
                     releaseAllRadialMenus(fired)
                     releaseAllSliders()
+                    releaseAllAxisRegions()
                     releasePrevButton(fired)
                     releaseNextButton(fired)
                     releaseMusicLabel(fired)
@@ -1372,6 +1558,16 @@ class TouchOverlayView
                             for (sl in sliderStates) {
                                 if (sl.pointerId == pid) {
                                     releaseSlider(sl)
+                                    found = true
+                                    break
+                                }
+                            }
+                        }
+                        // Check axis regions
+                        if (!found) {
+                            for (ar in axisRegionStates) {
+                                if (ar.pointerId == pid) {
+                                    releaseAxisRegion(ar)
                                     found = true
                                     break
                                 }
@@ -1700,6 +1896,38 @@ class TouchOverlayView
             for (sl in sliderStates) if (sl.pointerId >= 0) releaseSlider(sl)
         }
 
+        // ── Axis region helpers ─────────────────────────────────
+
+        private fun updateAxisRegionFromTouch(
+            ar: AxisRegionState,
+            px: Float,
+            py: Float,
+        ) {
+            val vertical = ar.control.orientation == SliderOrientation.VERTICAL
+            val pos = if (vertical) py else px
+            val halfRange = if (vertical) (ar.bottom - ar.top) / 2f else (ar.right - ar.left) / 2f
+            if (halfRange < 1f) return
+
+            var raw = ((pos - ar.touchOrigin) / halfRange).coerceIn(-1f, 1f)
+            raw = applyResponseCurve(raw, ar.control.responseCurve, ar.control.exponent)
+            raw = (raw * ar.control.sensitivity).coerceIn(-1f, 1f)
+            ar.value = raw
+            axisCallback?.invoke(ar.control.axis, raw)
+            invalidate()
+        }
+
+        private fun releaseAxisRegion(ar: AxisRegionState) {
+            ar.pointerId = -1
+            ar.value = 0f
+            ar.stealSourceStick = null
+            axisCallback?.invoke(ar.control.axis, 0f)
+            invalidate()
+        }
+
+        private fun releaseAllAxisRegions() {
+            for (ar in axisRegionStates) if (ar.pointerId >= 0) releaseAxisRegion(ar)
+        }
+
         private fun releaseLayoutButton(
             b: ButtonState,
             fired: Boolean,
@@ -1831,6 +2059,7 @@ class TouchOverlayView
             releaseAllLayoutButtons(false)
             releaseAllRadialMenus(false)
             releaseAllSliders()
+            releaseAllAxisRegions()
             releasePrevButton(false)
             releaseNextButton(false)
             releaseMusicLabel(false)

@@ -40,6 +40,9 @@ object HumanReadableConfig {
         if (layout.diagnostics.isNotEmpty()) {
             j.put("diagnostics", JSONArray(layout.diagnostics.map { it.toJson() }))
         }
+        if (layout.axisRegions.isNotEmpty()) {
+            j.put("axisRegions", JSONArray(layout.axisRegions.map { axisRegionToHuman(it) }))
+        }
         return j
     }
 
@@ -103,6 +106,12 @@ object HumanReadableConfig {
         return j
     }
 
+    private fun axisRegionToHuman(ar: AxisRegionControl): JSONObject {
+        val j = ar.toJson()
+        j.put("axis", TouchBindings.axisToName(ar.axis))
+        return j
+    }
+
     // ── Touch Layout: human-readable -> internal ──
 
     fun humanJsonToTouchLayout(json: JSONObject): ParseResult<TouchLayout> {
@@ -142,6 +151,10 @@ object HumanReadableConfig {
                 } else {
                     emptyList()
                 }
+            val axisRegions =
+                parseArraySafe(json, "axisRegions", warnings) { j, w ->
+                    parseAxisRegion(j, w)
+                }
             val gyro =
                 if (json.has("gyro")) {
                     parseGyro(json.getJSONObject("gyro"), warnings)
@@ -164,6 +177,7 @@ object HumanReadableConfig {
                     radialMenus = radials,
                     dpads = dpads,
                     diagnostics = diagnostics,
+                    axisRegions = axisRegions,
                     gyro = gyro,
                 )
             return ParseResult(layout, warnings)
@@ -384,6 +398,7 @@ object HumanReadableConfig {
         return GyroConfig(
             enabled = j.optBoolean("enabled"),
             activation = GyroActivation.valueOf(j.optString("activation", "ALWAYS")),
+            mode = GyroMode.valueOf(j.optString("mode", "ABSOLUTE")),
             sensitivityX = j.optDouble("sensitivityX", 1.0).toFloat(),
             sensitivityY = j.optDouble("sensitivityY", 1.0).toFloat(),
             sensitivityZ = j.optDouble("sensitivityZ", 1.0).toFloat(),
@@ -394,6 +409,25 @@ object HumanReadableConfig {
             axisY = axisY,
             axisZ = axisZ,
             deadzone = j.optDouble("deadzone", 0.02).toFloat(),
+            maxAngle = j.optDouble("maxAngle", 0.436).toFloat(),
+        )
+    }
+
+    private fun parseAxisRegion(
+        j: JSONObject,
+        warnings: MutableList<String>,
+    ): AxisRegionControl? {
+        val id = j.optString("id", "")
+        val axis = resolveAxis(j, "axis", warnings, "axis_region '$id'") ?: return null
+        return AxisRegionControl(
+            id = id,
+            axis = axis,
+            orientation = SliderOrientation.valueOf(j.optString("orientation", "VERTICAL")),
+            zone = if (j.has("zone")) FloatingZone.fromJson(j.getJSONObject("zone")) else FloatingZone(),
+            sensitivity = j.optDouble("sensitivity", 1.0).toFloat(),
+            responseCurve = ResponseCurve.valueOf(j.optString("responseCurve", "LINEAR")),
+            exponent = j.optDouble("exponent", TouchBindings.DEFAULT_EXPONENT.toDouble()).toFloat(),
+            opacity = j.optDouble("opacity", 0.3).toFloat(),
         )
     }
 

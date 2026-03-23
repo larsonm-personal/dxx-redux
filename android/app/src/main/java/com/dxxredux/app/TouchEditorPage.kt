@@ -371,6 +371,32 @@ fun TouchEditorPage(
                                         dirty = true
                                     },
                                 )
+                            "axisRegion" ->
+                                AxisRegionPropertiesPanel(
+                                    region = layout.axisRegions[selectedIndex],
+                                    onUpdate = { updated ->
+                                        layout =
+                                            layout.copy(
+                                                axisRegions =
+                                                    layout.axisRegions.toMutableList().also {
+                                                        it[selectedIndex] = updated
+                                                    },
+                                            )
+                                        dirty = true
+                                    },
+                                    onDelete = {
+                                        layout =
+                                            layout.copy(
+                                                axisRegions =
+                                                    layout.axisRegions.toMutableList().also {
+                                                        it.removeAt(selectedIndex)
+                                                    },
+                                            )
+                                        selectedType = null
+                                        selectedIndex = -1
+                                        dirty = true
+                                    },
+                                )
                         }
                     }
                     ScrollArrows(panelScrollState)
@@ -608,6 +634,21 @@ fun TouchEditorPage(
                     )
                 selectedType = "diagnostic"
                 selectedIndex = layout.diagnostics.lastIndex
+                dirty = true
+                showAddControl = false
+                longPressPos = Offset.Zero
+            },
+            onAddAxisRegion = {
+                layout =
+                    layout.copy(
+                        axisRegions =
+                            layout.axisRegions +
+                                AxisRegionControl(
+                                    id = "region_${layout.axisRegions.size}",
+                                ),
+                    )
+                selectedType = "axisRegion"
+                selectedIndex = layout.axisRegions.lastIndex
                 dirty = true
                 showAddControl = false
                 longPressPos = Offset.Zero
@@ -999,6 +1040,45 @@ private fun drawAllControls(
         }
     }
 
+    // Draw axis regions
+    layout.axisRegions.forEachIndexed { i, ar ->
+        val z = ar.zone
+        val left = w * z.leftPct / 100f
+        val top = h * z.topPct / 100f
+        val right = w * z.rightPct / 100f
+        val bottom = h * z.bottomPct / 100f
+        val selected = selType == "axisRegion" && selIdx == i
+        val alpha = layout.globalOpacity * ar.opacity
+
+        scope.drawRect(
+            color = Color(0x3388AAFF).copy(alpha = alpha),
+            topLeft = Offset(left, top),
+            size = ComposeSize(right - left, bottom - top),
+        )
+        scope.drawRect(
+            color = cStickRing.copy(alpha = alpha),
+            topLeft = Offset(left, top),
+            size = ComposeSize(right - left, bottom - top),
+            style = Stroke(width = 2f),
+        )
+        if (selected) {
+            scope.drawRect(
+                color = cSelected,
+                topLeft = Offset(left - 2f, top - 2f),
+                size = ComposeSize(right - left + 4f, bottom - top + 4f),
+                style = Stroke(width = 3f),
+            )
+        }
+        val arLabel =
+            textMeasurer.measure(
+                ar.id.take(6),
+                style = TextStyle(fontSize = 8.sp, color = cButtonLabel.copy(alpha = alpha)),
+            )
+        val cx = (left + right) / 2f
+        val cy = (top + bottom) / 2f
+        scope.drawText(arLabel, topLeft = Offset(cx - arLabel.size.width / 2f, cy - arLabel.size.height / 2f))
+    }
+
     // ── Collision detection: warn when controls overlap >30% ──
     data class ControlBounds(
         val cx: Float,
@@ -1206,6 +1286,16 @@ private fun hitTestAll(
         if (dist <= r) hits.add(Pair("diagnostic", i))
     }
 
+    // Check axis regions
+    layout.axisRegions.forEachIndexed { i, ar ->
+        val z = ar.zone
+        val left = canvasWidth * z.leftPct / 100f
+        val top = canvasHeight * z.topPct / 100f
+        val right = canvasWidth * z.rightPct / 100f
+        val bottom = canvasHeight * z.bottomPct / 100f
+        if (offset.x in left..right && offset.y in top..bottom) hits.add(Pair("axisRegion", i))
+    }
+
     return hits
 }
 
@@ -1270,6 +1360,23 @@ private fun moveControl(
                 diagnostics =
                     layout.diagnostics.toMutableList().also {
                         it[index] = d.copy(xPct = newX, yPct = newY)
+                    },
+            )
+        }
+        "axisRegion" -> {
+            val ar = layout.axisRegions[index]
+            val z = ar.zone
+            val w = z.rightPct - z.leftPct
+            val h = z.bottomPct - z.topPct
+            val newLeft = (z.leftPct + dxPct).coerceIn(0f, 100f - w)
+            val newTop = (z.topPct + dyPct).coerceIn(0f, 100f - h)
+            layout.copy(
+                axisRegions =
+                    layout.axisRegions.toMutableList().also {
+                        it[index] =
+                            ar.copy(
+                                zone = FloatingZone(newLeft, newTop, newLeft + w, newTop + h),
+                            )
                     },
             )
         }
@@ -1789,6 +1896,89 @@ private fun DiagnosticPropertiesPanel(
     }
 }
 
+@Composable
+private fun AxisRegionPropertiesPanel(
+    region: AxisRegionControl,
+    onUpdate: (AxisRegionControl) -> Unit,
+    onDelete: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("Axis Region: ${region.id}", color = Color.White, fontSize = 14.sp)
+        IconButton(onClick = onDelete) {
+            Icon(Icons.Default.Delete, "Delete", tint = Color(0xFFEF5350))
+        }
+    }
+
+    // Axis & orientation
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        AxisPicker("Axis", region.axis, Modifier.weight(1f)) {
+            onUpdate(region.copy(axis = it))
+        }
+        Column(Modifier.weight(1f)) {
+            Text("Orientation", color = Color.Gray, fontSize = 11.sp)
+            Row {
+                SliderOrientation.entries.forEach { ori ->
+                    TextButton(onClick = { onUpdate(region.copy(orientation = ori)) }) {
+                        Text(
+                            ori.name.lowercase(),
+                            fontSize = 11.sp,
+                            color = if (region.orientation == ori) cSelected else Color.Gray,
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // Zone edges
+    Text("Zone (% of screen)", color = Color.Gray, fontSize = 11.sp)
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LabeledSlider("Left", region.zone.leftPct, 0f, 100f, Modifier.weight(1f)) {
+            onUpdate(region.copy(zone = region.zone.copy(leftPct = it)))
+        }
+        LabeledSlider("Top", region.zone.topPct, 0f, 100f, Modifier.weight(1f)) {
+            onUpdate(region.copy(zone = region.zone.copy(topPct = it)))
+        }
+    }
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LabeledSlider("Right", region.zone.rightPct, 0f, 100f, Modifier.weight(1f)) {
+            onUpdate(region.copy(zone = region.zone.copy(rightPct = it)))
+        }
+        LabeledSlider("Bottom", region.zone.bottomPct, 0f, 100f, Modifier.weight(1f)) {
+            onUpdate(region.copy(zone = region.zone.copy(bottomPct = it)))
+        }
+    }
+
+    // Sensitivity, opacity, curve
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LabeledSlider(
+            "Sensitivity",
+            region.sensitivity,
+            TouchBindings.MIN_SENSITIVITY,
+            TouchBindings.MAX_SENSITIVITY,
+            Modifier.weight(1f),
+        ) {
+            onUpdate(region.copy(sensitivity = it))
+        }
+        LabeledSlider(
+            "Opacity",
+            region.opacity,
+            TouchBindings.MIN_OPACITY,
+            TouchBindings.MAX_OPACITY,
+            Modifier.weight(1f),
+        ) {
+            onUpdate(region.copy(opacity = it))
+        }
+    }
+    CurvePicker("Curve", region.responseCurve, Modifier.fillMaxWidth()) {
+        onUpdate(region.copy(responseCurve = it))
+    }
+}
+
 // ═════════════════════════════════════════════════════════════════════════════
 // Reusable editor widgets
 // ═════════════════════════════════════════════════════════════════════════════
@@ -2237,6 +2427,7 @@ private fun AddControlDialog(
     onAddRadial: () -> Unit,
     onAddSlider: () -> Unit,
     onAddDiagnostic: () -> Unit,
+    onAddAxisRegion: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -2259,6 +2450,9 @@ private fun AddControlDialog(
                     }
                     TextButton(onClick = onAddDiagnostic, modifier = Modifier.fillMaxWidth()) {
                         Text("Diagnostic Display")
+                    }
+                    TextButton(onClick = onAddAxisRegion, modifier = Modifier.fillMaxWidth()) {
+                        Text("Axis Region")
                     }
                 }
                 ScrollArrows(scrollState)
@@ -2309,6 +2503,7 @@ private fun GyroSettingsDialog(
 ) {
     var enabled by remember { mutableStateOf(gyro.enabled) }
     var activation by remember { mutableStateOf(gyro.activation) }
+    var mode by remember { mutableStateOf(gyro.mode) }
     var sensX by remember { mutableFloatStateOf(gyro.sensitivityX) }
     var sensY by remember { mutableFloatStateOf(gyro.sensitivityY) }
     var sensZ by remember { mutableFloatStateOf(gyro.sensitivityZ) }
@@ -2316,6 +2511,7 @@ private fun GyroSettingsDialog(
     var invertY by remember { mutableStateOf(gyro.invertY) }
     var invertZ by remember { mutableStateOf(gyro.invertZ) }
     var deadzone by remember { mutableFloatStateOf(gyro.deadzone) }
+    var maxAngle by remember { mutableFloatStateOf(gyro.maxAngle) }
     var axisX by remember { mutableIntStateOf(gyro.axisX) }
     var axisY by remember { mutableIntStateOf(gyro.axisY) }
     var axisZ by remember { mutableIntStateOf(gyro.axisZ) }
@@ -2356,6 +2552,27 @@ private fun GyroSettingsDialog(
                                     color = Color.White,
                                 )
                             }
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+                        Text("Response Mode", color = Color.Gray, fontSize = 12.sp)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = mode == GyroMode.ABSOLUTE,
+                                onClick = { mode = GyroMode.ABSOLUTE },
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text("Absolute (tilt angle)", fontSize = 12.sp, color = Color.White)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = mode == GyroMode.RATE,
+                                onClick = { mode = GyroMode.RATE },
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text("Rate (angular velocity)", fontSize = 12.sp, color = Color.White)
                         }
 
                         Spacer(Modifier.height(8.dp))
@@ -2447,6 +2664,10 @@ private fun GyroSettingsDialog(
                             LabeledSlider("Sensitivity Z", sensZ, 0.1f, 5f) { sensZ = it }
                         }
                         LabeledSlider("Deadzone", deadzone, 0f, 0.1f) { deadzone = it }
+                        if (mode == GyroMode.ABSOLUTE) {
+                            val angleDeg = "%.0f".format(Math.toDegrees(maxAngle.toDouble()))
+                            LabeledSlider("Tilt Range ($angleDeg deg)", maxAngle, 0.1f, 1.57f) { maxAngle = it }
+                        }
 
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             LabeledToggle("Invert X", invertX) { invertX = it }
@@ -2466,6 +2687,7 @@ private fun GyroSettingsDialog(
                     gyro.copy(
                         enabled = enabled,
                         activation = activation,
+                        mode = mode,
                         sensitivityX = sensX,
                         sensitivityY = sensY,
                         sensitivityZ = sensZ,
@@ -2473,6 +2695,7 @@ private fun GyroSettingsDialog(
                         invertY = invertY,
                         invertZ = invertZ,
                         deadzone = deadzone,
+                        maxAngle = maxAngle,
                         axisX = axisX,
                         axisY = axisY,
                         axisZ = axisZ,

@@ -62,6 +62,14 @@ echo "=== Launching emulator ($AVD_NAME) ==="
 RUNNING=$("$ADB" devices 2>/dev/null | grep -c "emulator-" || true)
 if [ "$RUNNING" -gt 0 ]; then
     echo "Emulator already running"
+    # Force rebuild+reinstall so code changes take effect
+    if [ "$NO_BUILD" -eq 1 ]; then
+        echo "(Overriding --no-build: rebuilding to pick up code changes)"
+        NO_BUILD=0
+        cd "$ANDROID_DIR"
+        ./gradlew assembleDebug
+        echo ""
+    fi
 else
     # Launch in background; -no-snapshot for clean boot
     "$EMULATOR" -avd "$AVD_NAME" -no-snapshot -gpu host &
