@@ -137,9 +137,14 @@ if ($installResult -match "Success") {
 Write-Host ""
 Write-Host "Step 4: Moving $TEST_FILE to SAF test location..." -ForegroundColor Yellow
 
-# Get the file size
-$sizeOutput = Adb shell "run-as $PACKAGE stat -c '%s' files/$TEST_FILE"
-$fileSize = [long]($sizeOutput.Trim())
+# Get the file size (game data lives under sets/default/)
+$GAME_DATA_DIR = "files/sets/default"
+$sizeOutput = Adb shell "run-as $PACKAGE stat -c '%s' $GAME_DATA_DIR/$TEST_FILE"
+if (-not $sizeOutput -or $sizeOutput -match 'No such file') {
+    Write-Error "$TEST_FILE not found at $GAME_DATA_DIR/$TEST_FILE on device"
+    exit 1
+}
+$fileSize = [long]($sizeOutput.ToString().Trim())
 Write-Host "  File size: $fileSize bytes"
 
 # Create target directory and push the file from local game_data/
@@ -156,7 +161,7 @@ if (Test-Path $localGameData) {
 } else {
     # Fallback: pull from device and push to new location
     $tmpLocal = "$env:TEMP\$TEST_FILE"
-    Adb shell "run-as $PACKAGE cat files/$TEST_FILE" | Set-Content -Path $tmpLocal -AsByteStream
+    Adb shell "run-as $PACKAGE cat $GAME_DATA_DIR/$TEST_FILE" | Set-Content -Path $tmpLocal -AsByteStream
     Adb push $tmpLocal "$SAF_DIR/$TEST_FILE" | Out-Null
     Remove-Item $tmpLocal -ErrorAction SilentlyContinue
 }
@@ -172,9 +177,9 @@ if ($copiedSize -ne $fileSize) {
 }
 Write-Host "  Copied to $SAF_DIR/$TEST_FILE ($copiedSize bytes)"
 
-# Remove from app's files dir (force SAF archiver usage)
-Adb shell "run-as $PACKAGE rm files/$TEST_FILE" | Out-Null
-Write-Host "  Removed from app files dir"
+# Remove from app's game data dir (force SAF archiver usage)
+Adb shell "run-as $PACKAGE rm $GAME_DATA_DIR/$TEST_FILE" | Out-Null
+Write-Host "  Removed from app game data dir"
 
 # -- Step 5: Create .saf_manifest.json ----------------------------------
 Write-Host ""
@@ -378,7 +383,7 @@ if (!$NoCleanup) {
     if (Test-Path $localGameData) {
         Adb push $localGameData $restoreTmp | Out-Null
     }
-    Adb shell "run-as $PACKAGE cp $restoreTmp files/$TEST_FILE" | Out-Null
+    Adb shell "run-as $PACKAGE cp $restoreTmp $GAME_DATA_DIR/$TEST_FILE" | Out-Null
     Adb shell "rm -f $restoreTmp" | Out-Null
     
     # Remove SAF test artifacts
@@ -386,7 +391,7 @@ if (!$NoCleanup) {
     Adb shell "rm -rf $SAF_DIR" | Out-Null
     
     # Verify restore
-    $restored = Adb shell "run-as $PACKAGE stat -c '%s' files/$TEST_FILE" 2>&1
+    $restored = Adb shell "run-as $PACKAGE stat -c '%s' $GAME_DATA_DIR/$TEST_FILE" 2>&1
     if ($restored.ToString().Trim() -eq $fileSize.ToString()) {
         Write-Host "[OK] $TEST_FILE restored to app files dir" -ForegroundColor Green
     } else {

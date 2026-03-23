@@ -5,6 +5,7 @@
 // a launcher-based autoselect ordering save.
 [
     {"_info": {
+        "_standalone": false,
         "games": ["d2"],
         "_deps": [
             {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},

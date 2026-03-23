@@ -56,7 +56,19 @@
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
 
-    {"action": "log", "message": "=== In-game verified -- testing background/resume ==="},
+    {"action": "log", "message": "=== In-game verified -- testing automap ==="},
+
+    // Open automap (TAB key)
+    {"action": "key", "key": "tab", "post_delay_ms": 500},
+    {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000},
+    {"action": "assert", "expect": {"automap_active": "true"}},
+    {"action": "log", "message": "=== Automap opened successfully ==="},
+
+    // Close automap (ESC)
+    {"action": "key", "key": "escape", "post_delay_ms": 500},
+    {"action": "wait_for", "field": "automap_active", "value": "false", "timeout_ms": 5000},
+    {"action": "assert", "expect": {"automap_active": "false"}},
+    {"action": "log", "message": "=== Automap closed -- testing background/resume ==="},
 
     // Snapshot EGL recreate count before backgrounding (typically 1 from startup)
     {"action": "introspect"},

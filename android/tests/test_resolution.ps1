@@ -36,10 +36,18 @@ function Get-ResolutionFromIntrospection {
 
 Ensure-EmulatorHealthy
 
-# Resolve game data deps up front
-if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
-    Write-Status "FAIL: Could not resolve game data deps" "Red"
-    exit 1
+# Resolve game data deps from script
+$deps = Get-ScriptDeps -ScriptPath $scriptPath
+if ($deps) {
+    if (-not (Resolve-GameDataDeps -Deps $deps)) {
+        Write-Status "FAIL: Could not resolve game data deps" "Red"
+        exit 1
+    }
+} else {
+    if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
+        Write-Status "FAIL: Could not resolve game data deps" "Red"
+        exit 1
+    }
 }
 
 if ($Install) {
@@ -52,13 +60,15 @@ if ($Install) {
     Adb -AdbArgs @("install", "-r", $apk) | Write-Host
 }
 
-# Push test script to device
+# Resolve and push test script to device
 $scriptPath = Join-Path "$PSScriptRoot\..\game_scripts" $ScriptName
 if (-not (Test-Path $scriptPath)) {
     Write-Status "FAIL: Script not found: $scriptPath" "Red"
     exit 1
 }
-Adb -AdbArgs @("push", $scriptPath, "/data/local/tmp/$ScriptName") | Out-Null
+$resolvedPath = Resolve-TestScript -ScriptPath $scriptPath -GameId "d2"
+$pushSrc = if ($resolvedPath -ne $scriptPath) { $resolvedPath } else { $scriptPath }
+Adb -AdbArgs @("push", $pushSrc, "/data/local/tmp/$ScriptName") | Out-Null
 Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "cp",
     "/data/local/tmp/$ScriptName", "files/$ScriptName") | Out-Null
 
@@ -139,8 +149,8 @@ if (-not (Start-GameWithRetry -PreLaunchScript $preLaunch2 -Game "d2" -SkipGameD
     exit 1
 }
 
-# Re-push script (may have been cleaned)
-Adb -AdbArgs @("push", $scriptPath, "/data/local/tmp/$ScriptName") | Out-Null
+# Re-push resolved script (may have been cleaned)
+Adb -AdbArgs @("push", $pushSrc, "/data/local/tmp/$ScriptName") | Out-Null
 Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "cp",
     "/data/local/tmp/$ScriptName", "files/$ScriptName") | Out-Null
 

@@ -38,6 +38,11 @@ Assert-True ($installed -match $PACKAGE) "App is installed"
 # -- Test 1: D1 .plx weapon reorder format --
 Write-Status "--- D1 .plx weapon reorder format ---" -Color Yellow
 
+$d1plxExists = Adb -AdbArgs @("shell", "run-as", $PACKAGE, "test", "-f", "files/d1x-redux/Players/player.plx", "&&", "echo", "yes")
+if (-not ($d1plxExists -match "yes")) {
+    Write-Status "  SKIP: D1 player.plx not present (D1 game data not installed or no pilot created)" -Color DarkGray
+} else {
+
 # Read existing D1 .plx file
 $d1plx = Adb -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/d1x-redux/Players/player.plx")
 $hasSection = [bool]($d1plx -match "\[weapon reorder\]")
@@ -72,6 +77,8 @@ if ($secondaryLine) {
 # -- Test 2: Write and verify D1 .plx round-trip --
 Write-Status "--- D1 .plx round-trip test ---" -Color Yellow
 
+if ($primaryLine) {
+
 # Backup original .plx
 $backupPath = "files/d1x-redux/Players/player.plx.bak"
 Adb -AdbArgs @("shell", "run-as", $PACKAGE, "cp", "files/d1x-redux/Players/player.plx", $backupPath) | Out-Null
@@ -102,6 +109,12 @@ $d1plxRestored = Adb -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/d1x-r
 $restoredPrimary = ($d1plxRestored -split "`n" | Where-Object { $_ -match "^primary=" }) | Select-Object -First 1
 $isRestored = [bool]($restoredPrimary -match [regex]::Escape("primary=$origPrimary"))
 Assert-True $isRestored "D1 .plx restore: original primary order intact"
+
+} else {
+    Write-Status "  SKIP: No primary= line found, cannot test round-trip" -Color DarkGray
+}
+
+} # end d1plxExists
 
 # -- Test 3: D2 .plr binary header (skip if D2 not set up) --
 Write-Status "--- D2 .plr binary header ---" -Color Yellow

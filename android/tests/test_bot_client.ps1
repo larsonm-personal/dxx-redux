@@ -28,14 +28,10 @@
 .PARAMETER Mission
     Mission name for lobby creation (default: Counterstrike!)
 
-.PARAMETER AutoServer
-    Auto-build and start the matchmaking server if it is not already running.
-
 .EXAMPLE
     .\test_bot_client.ps1
     .\test_bot_client.ps1 -Callsign "Player2" -Action join
     .\test_bot_client.ps1 -Action list
-    .\test_bot_client.ps1 -AutoServer
 #>
 
 param(
@@ -44,8 +40,7 @@ param(
     [ValidateSet("list", "create", "join", "idle")]
     [string]$Action = "create",
     [string]$Game = "d2",
-    [string]$Mission = "Counterstrike!",
-    [switch]$AutoServer
+    [string]$Mission = "Counterstrike!"
 )
 
 $ErrorActionPreference = "Stop"
@@ -65,7 +60,7 @@ function Test-ServerReachable {
 }
 
 if (-not (Test-ServerReachable)) {
-    if ($AutoServer) {
+    # Always auto-start server when not reachable
         $repoRoot = Split-Path (Split-Path $PSScriptRoot)
         $serverDir = Join-Path $repoRoot "server"
         $serverBin = Join-Path $serverDir "target\release\dxx-matchmaking.exe"
@@ -106,11 +101,6 @@ if (-not (Test-ServerReachable)) {
             Write-Host "FAIL: No server binary found. Run 'cargo build' in server/" -ForegroundColor Red
             exit 1
         }
-    } else {
-        Write-Host "FAIL: Matchmaking server not reachable at ${serverHost}:${serverPort}" -ForegroundColor Red
-        Write-Host "  Use -AutoServer to auto-start, or start manually." -ForegroundColor Yellow
-        exit 1
-    }
 }
 
 # --- WebSocket helpers ---

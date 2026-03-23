@@ -41,8 +41,10 @@ $ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
 $PACKAGE = "com.dxxredux.app"
 $ACTIVITY = "com.dxxredux.app.SetupActivity"
 
+$EMULATOR = "$DEP_BASE\android-sdk\emulator\emulator.exe"
 $EMU1 = "emulator-5554"  # Player 1 (host)
 $EMU2 = "emulator-5556"  # Player 2 (joiner)
+$AVD_MAP = @{ $EMU1 = "Nexus5X_Light_1"; $EMU2 = "Nexus5X_Light_2" }
 $CALLSIGN1 = "HostPlt"
 $CALLSIGN2 = "JoinPlt"
 
@@ -107,6 +109,36 @@ function Test-DeviceOnline {
     param([string]$Serial)
     $devices = & $ADB devices 2>&1 | Out-String
     return $devices -match "$Serial\s+device"
+}
+
+function Start-EmulatorIfNeeded {
+    param([string]$Serial)
+    if (Test-DeviceOnline -Serial $Serial) {
+        Write-Status "  $Serial already online"
+        return
+    }
+    $avd = $AVD_MAP[$Serial]
+    if (-not $avd) { Write-Status "FAIL: Unknown AVD for $Serial" "Red"; exit 1 }
+    Write-Status "  Starting $avd ($Serial)..." "Yellow"
+    Start-Process $EMULATOR -ArgumentList "-avd",$avd,"-no-snapshot-save","-gpu","host"
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt 60 -and -not (Test-DeviceOnline -Serial $Serial)) {
+        Start-Sleep -Seconds 2
+    }
+    if (-not (Test-DeviceOnline -Serial $Serial)) {
+        Write-Status "FAIL: $Serial did not appear in adb after 60s" "Red"; exit 1
+    }
+    Write-Status "  Waiting for $Serial to boot..."
+    $sw2 = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw2.Elapsed.TotalSeconds -lt 240) {
+        $r = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell","getprop","sys.boot_completed") -Seconds 5
+        if ($r -and $r.Trim() -eq "1") {
+            Write-Status "  $Serial booted" "Green"
+            return
+        }
+        Start-Sleep -Seconds 2
+    }
+    Write-Status "FAIL: $Serial did not boot within 240s" "Red"; exit 1
 }
 
 function Send-MpCommand {
@@ -239,19 +271,10 @@ Write-Status "=== Two-Player Multiplayer Integration Test ===" "White"
 Write-Status "Game: $Game | Mission: $MISSION | Mode: $MODE"
 Write-Status ""
 
+# -- Step 0: Ensure both emulators are online (auto-start if needed) --
 Write-Status "Checking emulators..."
-if (-not (Test-DeviceOnline -Serial $EMU1)) {
-    Write-Status "FAIL: Emulator $EMU1 is not online." "Red"
-    Write-Status "  Two-player tests require both emulators running." "Yellow"
-    Write-Status "  Start them with: .\android\tests\test_dual_emu.ps1 -NoBuild" "Yellow"
-    exit 1
-}
-if (-not (Test-DeviceOnline -Serial $EMU2)) {
-    Write-Status "FAIL: Emulator $EMU2 is not online." "Red"
-    Write-Status "  Two-player tests require both emulators running." "Yellow"
-    Write-Status "  Start them with: .\android\tests\test_dual_emu.ps1 -NoBuild" "Yellow"
-    exit 1
-}
+Start-EmulatorIfNeeded -Serial $EMU1
+Start-EmulatorIfNeeded -Serial $EMU2
 Write-Status "Both emulators online: $EMU1, $EMU2" "Green"
 
 # Verify game data on both emulators

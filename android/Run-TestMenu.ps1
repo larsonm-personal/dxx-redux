@@ -42,8 +42,10 @@ $allTests = @()
 $json5Tests = @(Get-ChildItem -Path $GameScriptsDir -Filter "test_*.json5" -File -ErrorAction SilentlyContinue | Sort-Object Name)
 foreach ($t in $json5Tests) {
     $games = Get-ScriptGameInfo -ScriptPath $t.FullName
+    $standalone = Get-ScriptStandalone -ScriptPath $t.FullName
     $tag = if ($games) { "[" + ($games -join ",") + "]" } else { "" }
-    $allTests += @{ Name = $t.BaseName; Type = "json5"; Path = $t.FullName; Games = $games; Tag = $tag }
+    if (-not $standalone) { $tag = "[support] $tag" }
+    $allTests += @{ Name = $t.BaseName; Type = "json5"; Path = $t.FullName; Games = $games; Tag = $tag; Standalone = $standalone }
 }
 
 # ps1 integration tests
@@ -70,7 +72,8 @@ for ($i = 0; $i -lt $allTests.Count; $i++) {
         Write-Host "  --- PowerShell integration tests ---" -ForegroundColor DarkGray
     }
     $entry = $allTests[$i]
-    Write-Host "  $($i + 1)) $($entry.Name)  $($entry.Tag)"
+    $color = if ($entry.Standalone -eq $false) { "DarkGray" } else { "White" }
+    Write-Host "  $($i + 1)) $($entry.Name)  $($entry.Tag)" -ForegroundColor $color
 }
 Write-Host ""
 

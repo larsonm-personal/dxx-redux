@@ -20,11 +20,15 @@
     }},
     {"action": "log", "message": "=== TEST: Keyboard Manual Navigation ==="},
 
-    // Wait for main menu
+    // Wait for pilot name entry (Reset-GameState deletes pilots, so fresh dialog appears)
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 15000},
     {"action": "wait_ms", "ms": 1000},
 
-    // Select "Change Pilots..."
+    // Accept default pilot name to reach main menu
+    {"action": "select", "text": "Ok", "post_delay_ms": 2000},
+
+    // Now at main menu -- select "Change Pilots..."
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
     {"action": "select", "text": "Change Pilots", "post_delay_ms": 2000},
     {"action": "introspect"},
     {"action": "log", "message": "Phase 1: On pilot selection listbox"},

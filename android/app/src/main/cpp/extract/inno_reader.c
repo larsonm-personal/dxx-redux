@@ -1123,7 +1123,7 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 		zs.next_in = comp_data;
 		zs.avail_in = (uInt) comp_size;
 		zs.next_out = decomp;
-		zs.avail_out = (uInt)(decomp_cap < DECOMP_STEP ? decomp_cap : DECOMP_STEP);
+		zs.avail_out = (uInt) (decomp_cap < DECOMP_STEP ? decomp_cap : DECOMP_STEP);
 
 		int zret;
 		size_t total_out = 0;
@@ -1150,7 +1150,7 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 				}
 				zs.next_out = decomp + total_out;
 				size_t remain = decomp_cap - total_out;
-				zs.avail_out = (uInt)(remain < DECOMP_STEP ? remain : DECOMP_STEP);
+				zs.avail_out = (uInt) (remain < DECOMP_STEP ? remain : DECOMP_STEP);
 			}
 			if (zs.avail_in == 0) break;
 		}

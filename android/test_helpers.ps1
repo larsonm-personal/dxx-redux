@@ -219,15 +219,35 @@ function Resolve-GameDataDeps {
 
     $pushCount = 0
     foreach ($target in $byTarget.Keys) {
-        $listing = Adb-Timeout -AdbArgs @("shell","run-as",$script:PACKAGE,"ls","$target/") -Seconds 5
-        $onDevice = @()
-        if ($listing) { $onDevice = ($listing -split "`n" | ForEach-Object { $_.Trim().ToLower() }) }
+        # Get filename + size in one call for efficient mismatch detection
+        $listing = Adb-Timeout -AdbArgs @("shell","run-as",$script:PACKAGE,"sh","-c",
+            "cd '$target' && stat -c '%s %n' * 2>/dev/null") -Seconds 5
+        $deviceFiles = @{}
+        if ($listing) {
+            foreach ($line in ($listing -split "`n")) {
+                if ($line.Trim() -match '^(\d+)\s+(.+)$') {
+                    $deviceFiles[$matches[2].Trim().ToLower()] = [long]$matches[1]
+                }
+            }
+        }
 
         foreach ($dep in $byTarget[$target]) {
             $fname = $dep.file.ToLower()
-            if ($fname -in $onDevice) { continue }
-
             $localFile = $idx[$dep.sha256]
+            $needsPush = $false
+
+            if (-not $deviceFiles.ContainsKey($fname)) {
+                $needsPush = $true
+            } elseif ($localFile -and (Test-Path $localFile)) {
+                $localSize = (Get-Item $localFile).Length
+                if ($deviceFiles[$fname] -ne $localSize) {
+                    Write-Status "  Size mismatch: $($dep.file) (device=$($deviceFiles[$fname]), local=$localSize)" "Yellow"
+                    $needsPush = $true
+                }
+            }
+
+            if (-not $needsPush) { continue }
+
             if (-not $localFile -or -not (Test-Path $localFile)) {
                 Write-Status "FAIL: Cannot resolve $($dep.file) (sha256: $($dep.sha256.Substring(0,12))...)" "Red"
                 return $false
@@ -581,6 +601,22 @@ function Get-ScriptGameInfo {
         }
     } catch {}
     return $null
+}
+
+function Get-ScriptStandalone {
+    # Return $false if the script's _info has "_standalone": false, else $true.
+    param([Parameter(Mandatory=$true)] [string]$ScriptPath)
+    if (-not (Test-Path $ScriptPath)) { return $true }
+    $raw = Get-Content $ScriptPath -Raw
+    $raw = [regex]::Replace($raw, '//.*', '')
+    $raw = [regex]::Replace($raw, ',\s*([}\]])', '$1')
+    try {
+        $arr = $raw | ConvertFrom-Json
+        if ($arr.Count -gt 0 -and $arr[0]._info -and $arr[0]._info._standalone -eq $false) {
+            return $false
+        }
+    } catch {}
+    return $true
 }
 
 function Resolve-TestScript {

@@ -1077,12 +1077,15 @@ extern "C" void game_automate_tick(void)
 			break;
 
 		case STEP_SEND_AXIS:
-			if (s.axis_id >= 0 && s.axis_id < 8) {
+			if (g_key_phase == 0 && s.axis_id >= 0 && s.axis_id < 8) {
 				inject_axis(s.axis_id, s.axis_value);
-			}
-			/* Hold for post_delay_ms so the axis has time to affect the game */
-			if (elapsed >= (Uint32) s.post_delay_ms) {
-				advance_step();
+				g_key_phase = 1;
+				g_step_start = now;
+			} else if (g_key_phase == 1) {
+				/* Hold for post_delay_ms so the axis has time to affect the game */
+				if (elapsed >= (Uint32) s.post_delay_ms) {
+					advance_step();
+				}
 			}
 			break;
 

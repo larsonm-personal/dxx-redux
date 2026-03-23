@@ -9,6 +9,7 @@
 // This script assumes the game has been launched from SetupActivity
 // and will reach the pilot select screen first.
 [
+    {"_info": {"_standalone": false}},
     {"action": "log", "message": "=== Extraction regression test ==="},
 
     // Wait for pilot select

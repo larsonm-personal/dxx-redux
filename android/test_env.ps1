@@ -10,7 +10,7 @@
 
 # -- Resolve repo root + DEP_BASE if not already set -------------------------
 
-if (-not $script:_testEnvLoaded) {
+if (-not (Test-Path variable:script:_testEnvLoaded) -or -not $script:_testEnvLoaded) {
     $script:_testEnvLoaded = $true
 
     # Find repo root from this file's location (android/test_env.ps1 -> repo root)

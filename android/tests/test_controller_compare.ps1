@@ -100,9 +100,13 @@ foreach ($gameId in $gameList) {
     }
     Write-Status "Launcher introspection read OK" "Green"
 
-    # -- Step 3: Push game script and launch game -----------------
+    # -- Step 3: Resolve + push game script and launch game ---------
 
-    if (-not (Send-AutomationScript $GAME_SCRIPT -PushOnly)) { $allPassed = $false; continue }
+    $resolvedPath = Resolve-TestScript -ScriptPath $scriptPath -GameId $gameId
+    $pushSrc = if ($resolvedPath -ne $scriptPath) { $resolvedPath } else { $scriptPath }
+    Write-Status "Pushing resolved test script: $GAME_SCRIPT"
+    Adb -AdbArgs @("push", $pushSrc, "/data/local/tmp/$GAME_SCRIPT") | Out-Null
+    Adb -AdbArgs @("shell", "run-as", $PACKAGE, "cp", "/data/local/tmp/$GAME_SCRIPT", "files/$GAME_SCRIPT") | Out-Null
 
     if (-not (Start-GameWithRetry -ExtraLaunchArgs $extraArgs -Game $gameId -SkipGameData)) {
         $allPassed = $false; continue
