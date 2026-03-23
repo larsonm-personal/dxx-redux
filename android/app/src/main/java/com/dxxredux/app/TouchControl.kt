@@ -89,7 +89,6 @@ data class AnalogStickControl(
     val floatingZone: FloatingZone = FloatingZone(),
     val hapticFeedback: Boolean = true,
     val mouseMode: Boolean = false,
-    val mouseSensitivity: Float = 1f, // legacy, unused -- kept for JSON compat
     val mouseExponential: Boolean = true,
     val mouseExponentialMax: Float = 3f,
     val buttonMode: Boolean = false,

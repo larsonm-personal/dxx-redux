@@ -1252,8 +1252,17 @@ void GameProcessFrame(void)
 //				    cannon.
 void FireLaser()
 {
-
+#ifdef ANDROID
+	/* Android port: touch double-tap fires a brief press that may arrive and
+	 * release within a single game frame, leaving fire_primary_state == 0.
+	 * fire_primary_count is edge-triggered (incremented on every button-down)
+	 * so it survives same-frame press+release.  Use it as a fallback. */
+	int wants_fire = Controls.fire_primary_state || Controls.fire_primary_count;
+	Controls.fire_primary_count = 0;
+	Global_laser_firing_count = wants_fire?Weapon_info[Primary_weapon_to_weapon_info[Players[Player_num].primary_weapon]].fire_count:0;
+#else
 	Global_laser_firing_count = Controls.fire_primary_state?Weapon_info[Primary_weapon_to_weapon_info[Players[Player_num].primary_weapon]].fire_count:0;
+#endif
 
 	if ((Players[Player_num].primary_weapon == FUSION_INDEX) && (Global_laser_firing_count)) {
 		if ((Players[Player_num].energy < F1_0*2) && (Auto_fire_fusion_cannon_time == 0)) {

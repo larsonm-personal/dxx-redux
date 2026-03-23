@@ -2216,7 +2216,7 @@ private fun AddControlDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add Control") },
         text = {
-            Column {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 TextButton(onClick = onAddStick, modifier = Modifier.fillMaxWidth()) {
                     Text("Analog Stick")
                 }
