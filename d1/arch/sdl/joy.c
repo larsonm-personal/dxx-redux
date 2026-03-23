@@ -184,6 +184,8 @@ int joy_axisbutton_handler(SDL_JoyAxisEvent *jae)
 	int sent = 0;
 
 	button = SDL_Joysticks[jae->which].axis_button_map[jae->axis];
+	if (button < 0)
+		return 0;
 
 #ifdef ANDROID
 	/* On Android the button registration order is: base = "-" button,
@@ -192,7 +194,7 @@ int joy_axisbutton_handler(SDL_JoyAxisEvent *jae)
 	int neg_btn = button;
 	int pos_btn = button + 1;
 #else
-	/* Desktop (legacy): original mapping kept for compatibility. */
+	// Desktop: original mapping
 	int neg_btn = button + 1;
 	int pos_btn = button;
 #endif
@@ -259,7 +261,8 @@ void joy_init()
 			SDL_Joysticks[0].button_map[j] = Joystick.n_buttons++;
 		}
 		/* Axis buttons only for physical axes 0-5; axes 6-7 are
-		 * virtual (gyro) and don't need directional buttons. */
+		 * virtual (gyro/slide) and don't need directional buttons.
+		 * Set them to -1 so joy_axisbutton_handler() skips them. */
 		for (j = 0; j < 6; j++) {
 			SDL_Joysticks[0].axis_button_map[j] = Joystick.n_buttons;
 			sprintf(temp, "J1 -%s", axis_names[j]);
@@ -267,6 +270,8 @@ void joy_init()
 			sprintf(temp, "J1 +%s", axis_names[j]);
 			joybutton_text[Joystick.n_buttons++] = d_strdup(temp);
 		}
+		for (j = 6; j < 8; j++)
+			SDL_Joysticks[0].axis_button_map[j] = -1;
 
 		/* Virtual combiner axes for half-axis trigger bindings.
 		 * Kotlin computes combined values and sends via nativeJoystickAxis(). */

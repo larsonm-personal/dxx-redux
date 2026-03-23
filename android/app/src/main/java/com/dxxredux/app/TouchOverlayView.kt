@@ -1905,10 +1905,17 @@ class TouchOverlayView
         ) {
             val vertical = ar.control.orientation == SliderOrientation.VERTICAL
             val pos = if (vertical) py else px
-            val halfRange = if (vertical) (ar.bottom - ar.top) / 2f else (ar.right - ar.left) / 2f
-            if (halfRange < 1f) return
+            // Asymmetric range: full -1..+1 from wherever the touch started
+            val posRange = if (vertical) ar.bottom - ar.touchOrigin else ar.right - ar.touchOrigin
+            val negRange = if (vertical) ar.touchOrigin - ar.top else ar.touchOrigin - ar.left
+            val delta = pos - ar.touchOrigin
 
-            var raw = ((pos - ar.touchOrigin) / halfRange).coerceIn(-1f, 1f)
+            var raw =
+                if (delta >= 0f) {
+                    if (posRange < 1f) 0f else (delta / posRange).coerceAtMost(1f)
+                } else {
+                    if (negRange < 1f) 0f else (delta / negRange).coerceAtLeast(-1f)
+                }
             raw = applyResponseCurve(raw, ar.control.responseCurve, ar.control.exponent)
             raw = (raw * ar.control.sensitivity).coerceIn(-1f, 1f)
             ar.value = raw

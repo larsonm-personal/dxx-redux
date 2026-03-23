@@ -413,6 +413,12 @@ class MainActivity :
             gm.diagnosticCallback = { yaw, pitch, roll ->
                 touchOverlay.updateGyroDiagnostic(yaw, pitch, roll)
             }
+            val ctx = this
+            gm.onCalibrated = { az, pi, ro ->
+                val cur = TouchLayoutRepository.load(ctx)
+                val updated = cur.copy(gyro = cur.gyro.copy(refAzimuth = az, refPitch = pi, refRoll = ro))
+                TouchLayoutRepository.save(ctx, updated)
+            }
             touchOverlay.gyroManager = gm
             gyroManager = gm
         }

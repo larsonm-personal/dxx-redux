@@ -35,6 +35,9 @@ class GyroInputManager(
     /** Called with (yaw, pitch, roll) raw clamped values for diagnostic display. */
     var diagnosticCallback: ((Float, Float, Float) -> Unit)? = null
 
+    /** Called with (azimuth, pitch, roll) when a new reference orientation is established. */
+    var onCalibrated: ((Float, Float, Float) -> Unit)? = null
+
     // Current config (updated via setConfig)
     private var config = GyroConfig()
 
@@ -54,6 +57,13 @@ class GyroInputManager(
     fun setConfig(gyroConfig: GyroConfig) {
         val wasEnabled = config.enabled
         config = gyroConfig
+        // Restore persisted reference orientation if available
+        if (gyroConfig.refAzimuth != null && gyroConfig.refPitch != null && gyroConfig.refRoll != null) {
+            refOrientation[0] = gyroConfig.refAzimuth
+            refOrientation[1] = gyroConfig.refPitch
+            refOrientation[2] = gyroConfig.refRoll
+            hasReference = true
+        }
         if (wasEnabled && !config.enabled) pause()
     }
 
@@ -96,6 +106,7 @@ class GyroInputManager(
         if (!hasReference) {
             curOrientation.copyInto(refOrientation)
             hasReference = true
+            onCalibrated?.invoke(refOrientation[0], refOrientation[1], refOrientation[2])
             return
         }
 

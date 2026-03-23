@@ -1067,8 +1067,8 @@ class SetupActivity : ComponentActivity() {
         Log.i("DXX-Setup", "First launch: writing descent.cfg with aspect ${aspectY}x$aspectX (from ${w}x$h)")
 
         // Default render resolution: 1/2 screen (rounded to even)
-        val resW = (w / 2 + 1) and 0x7FFFFFFE.toInt()
-        val resH = (h / 2 + 1) and 0x7FFFFFFE.toInt()
+        val resW = (w / 2 + 1) and 0x7FFFFFFE
+        val resH = (h / 2 + 1) and 0x7FFFFFFE
 
         cfgFile.writeText(
             "AspectX=$aspectX\n" +
@@ -1628,7 +1628,7 @@ private fun SetupScreen(
         // Prune stale asset manifest entries
         val prunedAssets = manifest.pruneStaleEntries()
         // Prune stale SAF manifest entries
-        val prunedSaf = safManifest?.pruneStaleEntries(context) ?: emptyList()
+        val prunedSaf = safManifest.pruneStaleEntries(context)
         val allPrunedData = prunedAssets + prunedSaf
         if (allPrunedData.isNotEmpty()) {
             prunedDataFiles = allPrunedData
@@ -1740,10 +1740,10 @@ private fun SetupScreen(
                     if (gogDiscUri != null && instDiscUri != null) {
                         Log.i(
                             "DXX-Setup",
-                            "Routing .gog+.inst pair to disc import: gog=${gogDiscUri!!.first}, inst=${instDiscUri!!.first}",
+                            "Routing .gog+.inst pair to disc import: gog=${gogDiscUri.first}, inst=${instDiscUri.first}",
                         )
-                        cueUris.add(instDiscUri!!)
-                        binUris.add(gogDiscUri!!)
+                        cueUris.add(instDiscUri)
+                        binUris.add(gogDiscUri)
                     } else {
                         // Treat unpaired .gog/.inst as normal game files
                         gogDiscUri?.let { gameUris.add(FoundFile(it.first, it.second)) }

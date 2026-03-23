@@ -96,6 +96,10 @@ fun TouchEditorPage(
                 gyroPitch = p
                 gyroRoll = r
             }
+            gm.onCalibrated = { az, pi, ro ->
+                layout = layout.copy(gyro = layout.gyro.copy(refAzimuth = az, refPitch = pi, refRoll = ro))
+                dirty = true
+            }
             gm.resume()
             onDispose { gm.pause() }
         }
@@ -2515,6 +2519,9 @@ private fun GyroSettingsDialog(
     var axisX by remember { mutableIntStateOf(gyro.axisX) }
     var axisY by remember { mutableIntStateOf(gyro.axisY) }
     var axisZ by remember { mutableIntStateOf(gyro.axisZ) }
+    var refAzimuth by remember { mutableStateOf(gyro.refAzimuth) }
+    var refPitch by remember { mutableStateOf(gyro.refPitch) }
+    var refRoll by remember { mutableStateOf(gyro.refRoll) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -2676,6 +2683,19 @@ private fun GyroSettingsDialog(
                                 LabeledToggle("Invert Z", invertZ) { invertZ = it }
                             }
                         }
+
+                        if (refAzimuth != null) {
+                            Spacer(Modifier.height(8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("Saved calibration", fontSize = 12.sp, color = Color.Gray)
+                                Spacer(Modifier.width(8.dp))
+                                TextButton(onClick = {
+                                    refAzimuth = null
+                                    refPitch = null
+                                    refRoll = null
+                                }) { Text("Reset", fontSize = 12.sp) }
+                            }
+                        }
                     }
                 }
                 ScrollArrows(scrollState)
@@ -2699,6 +2719,9 @@ private fun GyroSettingsDialog(
                         axisX = axisX,
                         axisY = axisY,
                         axisZ = axisZ,
+                        refAzimuth = refAzimuth,
+                        refPitch = refPitch,
+                        refRoll = refRoll,
                     ),
                 )
                 onDismiss()

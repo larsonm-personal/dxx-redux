@@ -417,6 +417,10 @@ data class GyroConfig(
     val axisZ: Int = -1, // -1 = disabled (roll not mapped by default)
     val deadzone: Float = 0.02f,
     val maxAngle: Float = 0.436f, // ~25 degrees, used in ABSOLUTE mode
+    // Persisted reference orientation from last recenter (null = not yet calibrated)
+    val refAzimuth: Float? = null,
+    val refPitch: Float? = null,
+    val refRoll: Float? = null,
 ) {
     fun toJson() =
         JSONObject().apply {
@@ -434,6 +438,9 @@ data class GyroConfig(
             put("axisZ", axisZ)
             put("deadzone", deadzone.toDouble())
             put("maxAngle", maxAngle.toDouble())
+            if (refAzimuth != null) put("refAzimuth", refAzimuth.toDouble())
+            if (refPitch != null) put("refPitch", refPitch.toDouble())
+            if (refRoll != null) put("refRoll", refRoll.toDouble())
         }
 
     companion object {
@@ -453,6 +460,9 @@ data class GyroConfig(
                 axisZ = j.optInt("axisZ", -1),
                 deadzone = j.optDouble("deadzone", 0.02).toFloat(),
                 maxAngle = j.optDouble("maxAngle", 0.436).toFloat(),
+                refAzimuth = if (j.has("refAzimuth")) j.getDouble("refAzimuth").toFloat() else null,
+                refPitch = if (j.has("refPitch")) j.getDouble("refPitch").toFloat() else null,
+                refRoll = if (j.has("refRoll")) j.getDouble("refRoll").toFloat() else null,
             )
     }
 }
