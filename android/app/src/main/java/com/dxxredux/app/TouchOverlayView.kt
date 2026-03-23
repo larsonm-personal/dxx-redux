@@ -84,6 +84,18 @@ class TouchOverlayView
         /** Optional gyro manager — set by MainActivity to enable TOUCH_STICK activation. */
         var gyroManager: GyroInputManager? = null
 
+        /** Update gyro diagnostic values (called from sensor thread). */
+        fun updateGyroDiagnostic(
+            yaw: Float,
+            pitch: Float,
+            roll: Float,
+        ) {
+            diagGyroYaw = yaw
+            diagGyroPitch = pitch
+            diagGyroRoll = roll
+            if (diagnosticStates.isNotEmpty()) postInvalidate()
+        }
+
         /** Whether the overlay should be visible and active. */
         var isActive: Boolean = false
             set(value) {
@@ -179,13 +191,32 @@ class TouchOverlayView
             var thumbPos = 0f // -1..1 (0 = center, clamped)
         }
 
+        private class DiagnosticState(
+            val control: DiagnosticControl,
+        ) {
+            var centerX = 0f
+            var centerY = 0f
+            var width = 0f
+            var height = 0f
+        }
+
         private val stickStates = mutableListOf<StickState>()
         private val buttonStates = mutableListOf<ButtonState>()
         private val radialStates = mutableListOf<RadialMenuState>()
         private val sliderStates = mutableListOf<SliderState>()
+        private val diagnosticStates = mutableListOf<DiagnosticState>()
+
+        // Gyro diagnostic values (updated in real time via GyroInputManager)
+        @Volatile private var diagGyroYaw = 0f
+
+        @Volatile private var diagGyroPitch = 0f
+
+        @Volatile private var diagGyroRoll = 0f
 
         // ── Mouse-mode drag buffer tick ─────────────────────────
-        private val mouseDrainHandler = Handler(Looper.getMainLooper())
+        private val mainHandler = Handler(Looper.getMainLooper())
+
+        private val mouseDrainHandler = mainHandler
         private var mouseDrainRunning = false
         private val mouseDrainRunnable =
             object : Runnable {
@@ -212,9 +243,11 @@ class TouchOverlayView
         private fun drainMouseBuffers() {
             for (s in stickStates) {
                 if (!s.control.mouseMode || s.pointerId < 0) continue
-                val cap = MOUSE_MAX_AXIS_PER_TICK * s.control.mouseSensitivity * MOUSE_SENSITIVITY_MULTIPLIER
-                val emitX = s.mousePendingX.coerceIn(-cap, cap)
-                val emitY = s.mousePendingY.coerceIn(-cap, cap)
+                val baseCap = MOUSE_MAX_AXIS_PER_TICK * MOUSE_SENSITIVITY_MULTIPLIER * MOUSE_BASE_MULTIPLIER
+                val capX = baseCap * s.control.sensitivityX
+                val capY = baseCap * s.control.sensitivityY
+                val emitX = s.mousePendingX.coerceIn(-capX, capX)
+                val emitY = s.mousePendingY.coerceIn(-capY, capY)
                 s.mousePendingX -= emitX
                 s.mousePendingY -= emitY
                 // Discard tiny residuals to avoid drift
@@ -289,11 +322,19 @@ class TouchOverlayView
         companion object {
             private const val RADIAL_CENTER = -2
 
+            // Double-tap button release delay -- ensures the press survives at
+            // least one game frame so level-triggered controls (fire primary) register
+            private const val DOUBLE_TAP_RELEASE_DELAY_MS = 50L
+
             // Mouse-mode drag buffer constants
             private const val MOUSE_DRAIN_INTERVAL_MS = 16L // ~60 Hz
             private const val MOUSE_MAX_AXIS_PER_TICK = 0.6f // max axis output per tick before sensitivity
             private const val MOUSE_REFERENCE_DISTANCE = 200f // pixels of drag for 1.0 axis at sensitivity=1
             private const val MOUSE_SENSITIVITY_MULTIPLIER = 10f // hidden multiplier so slider stays low-range
+
+            // Extra base multiplier stacking with the per-axis sensitivity so
+            // mouse mode feels responsive at the same slider value as stick mode
+            private const val MOUSE_BASE_MULTIPLIER = 2f
 
             // Admin tray action indices dispatched via adminTrayCallback
             const val ADMIN_INCREASE_VIEW = 0
@@ -372,6 +413,20 @@ class TouchOverlayView
                 textAlign = Paint.Align.CENTER
             }
 
+        // ── Diagnostic overlay paints ───────────────────────────
+        private val paintDiagBg =
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.FILL
+                color = 0x44000000
+            }
+        private val paintDiagText =
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.FILL
+                color = 0xCCFFFFFF.toInt()
+                textAlign = Paint.Align.LEFT
+                typeface = android.graphics.Typeface.MONOSPACE
+            }
+
         // ── Cheats overlay state ────────────────────────────────
         private var cheatsOverlayOpen = false
         private var cheatsOverlayPressedIndex = -1 // which cheat button is being pressed
@@ -426,10 +481,12 @@ class TouchOverlayView
             buttonStates.clear()
             radialStates.clear()
             sliderStates.clear()
+            diagnosticStates.clear()
             layout.sticks.forEach { stickStates.add(StickState(it)) }
             layout.buttons.forEach { buttonStates.add(ButtonState(it)) }
             layout.radialMenus.forEach { radialStates.add(RadialMenuState(it)) }
             layout.sliders.forEach { sliderStates.add(SliderState(it)) }
+            layout.diagnostics.forEach { diagnosticStates.add(DiagnosticState(it)) }
         }
 
         override fun onSizeChanged(
@@ -513,6 +570,16 @@ class TouchOverlayView
             paintAutomapBtnText.textSize = automapBtnSize * 0.28f
             paintAutomapHelpText.textSize = base * 0.04f
             recomputeAutomapBtnRects()
+
+            // Compute diagnostic overlay geometry
+            val diagTextSize = base * 0.025f * 1f // base text size
+            for (d in diagnosticStates) {
+                d.centerX = wf * d.control.xPct / 100f
+                d.centerY = hf * d.control.yPct / 100f
+                paintDiagText.textSize = diagTextSize * d.control.sizeMult
+                d.width = paintDiagText.measureText("Roll: -100%") + diagTextSize * 2
+                d.height = diagTextSize * d.control.sizeMult * 4.5f
+            }
         }
 
         /** Recompute automap button rectangles based on current marker count. */
@@ -583,6 +650,9 @@ class TouchOverlayView
                 canvas.drawText(trackLabel, musicLabelX, musicBtnY + labelPaint.textSize * 0.35f, labelPaint)
                 paintBtnLabel.textSize = savedSize
             }
+
+            // ── Diagnostic overlays ─────────────────────────────
+            for (d in diagnosticStates) drawDiagnostic(canvas, d, gAlpha)
 
             // ── Cheats overlay (drawn last, on top of everything) ──
             if (cheatsOverlayOpen) drawCheatsOverlay(canvas)
@@ -717,6 +787,36 @@ class TouchOverlayView
                     )
                 }
             }
+        }
+
+        private fun drawDiagnostic(
+            canvas: Canvas,
+            d: DiagnosticState,
+            gAlpha: Float,
+        ) {
+            val eff = (gAlpha * d.control.opacity).coerceIn(0f, 1f)
+            val ts = paintDiagText.textSize
+            val pad = ts * 0.5f
+            val lineH = ts * 1.3f
+
+            // Background box
+            paintDiagBg.alpha = (0x44 * eff).toInt()
+            val left = d.centerX - d.width / 2
+            val top = d.centerY - d.height / 2
+            canvas.drawRoundRect(left, top, left + d.width, top + d.height, pad, pad, paintDiagBg)
+
+            // Text lines
+            paintDiagText.alpha = (0xCC * eff).toInt()
+            val textX = left + pad
+            var textY = top + pad + ts
+            val yaw = (diagGyroYaw * 100).toInt()
+            val pitch = (diagGyroPitch * 100).toInt()
+            val roll = (diagGyroRoll * 100).toInt()
+            canvas.drawText("Yaw:   $yaw%", textX, textY, paintDiagText)
+            textY += lineH
+            canvas.drawText("Pitch: $pitch%", textX, textY, paintDiagText)
+            textY += lineH
+            canvas.drawText("Roll:  $roll%", textX, textY, paintDiagText)
         }
 
         /** Shared radial menu drawing — handles both trigger icon and open wheel. */
@@ -1016,8 +1116,7 @@ class TouchOverlayView
                                 // Double-tap detection
                                 val now = android.os.SystemClock.uptimeMillis()
                                 if (s.control.doubleTapBinding >= 0 && now - s.lastTapTime < 300L) {
-                                    buttonCallback?.invoke(s.control.doubleTapBinding, true)
-                                    buttonCallback?.invoke(s.control.doubleTapBinding, false)
+                                    fireDoubleTapBinding(s.control.doubleTapBinding)
                                     s.lastTapTime = 0
                                 } else {
                                     s.lastTapTime = now
@@ -1039,8 +1138,7 @@ class TouchOverlayView
                                 // Double-tap detection for floating mode
                                 val now = android.os.SystemClock.uptimeMillis()
                                 if (s.control.doubleTapBinding >= 0 && now - s.lastTapTime < 300L) {
-                                    buttonCallback?.invoke(s.control.doubleTapBinding, true)
-                                    buttonCallback?.invoke(s.control.doubleTapBinding, false)
+                                    fireDoubleTapBinding(s.control.doubleTapBinding)
                                     s.lastTapTime = 0
                                 } else {
                                     s.lastTapTime = now
@@ -1058,8 +1156,7 @@ class TouchOverlayView
                             // Double-tap detection for fixed sticks
                             val now = android.os.SystemClock.uptimeMillis()
                             if (s.control.doubleTapBinding >= 0 && now - s.lastTapTime < 300L) {
-                                buttonCallback?.invoke(s.control.doubleTapBinding, true)
-                                buttonCallback?.invoke(s.control.doubleTapBinding, false)
+                                fireDoubleTapBinding(s.control.doubleTapBinding)
                                 s.lastTapTime = 0
                             } else {
                                 s.lastTapTime = now
@@ -1418,7 +1515,9 @@ class TouchOverlayView
             s.mouseLastX = px
             s.mouseLastY = py
             // Convert pixel delta to axis-space and accumulate
-            val scale = s.control.mouseSensitivity * MOUSE_SENSITIVITY_MULTIPLIER / MOUSE_REFERENCE_DISTANCE
+            val baseScale = MOUSE_SENSITIVITY_MULTIPLIER * MOUSE_BASE_MULTIPLIER / MOUSE_REFERENCE_DISTANCE
+            val scaleX = s.control.sensitivityX * baseScale
+            val scaleY = s.control.sensitivityY * baseScale
             // Exponential scaling: ramp multiplier from 1.0 to max based on
             // distance from the touch-down origin (half-screen as reference)
             val multiplier =
@@ -1430,8 +1529,8 @@ class TouchOverlayView
                 } else {
                     1f
                 }
-            s.mousePendingX += dx * scale * multiplier
-            s.mousePendingY += dy * scale * multiplier
+            s.mousePendingX += dx * scaleX * multiplier
+            s.mousePendingY += dy * scaleY * multiplier
         }
 
         private fun updateStickFromTouch(
@@ -1470,8 +1569,8 @@ class TouchOverlayView
             rawY = applyResponseCurve(rawY, s.control.responseCurve, s.control.exponent)
 
             // Apply sensitivity
-            rawX = (rawX * s.control.sensitivity).coerceIn(-1f, 1f)
-            rawY = (rawY * s.control.sensitivity).coerceIn(-1f, 1f)
+            rawX = (rawX * s.control.sensitivityX).coerceIn(-1f, 1f)
+            rawY = (rawY * s.control.sensitivityY).coerceIn(-1f, 1f)
 
             // Apply inversion
             if (s.control.invertX) rawX = -rawX
@@ -1490,6 +1589,18 @@ class TouchOverlayView
 
             // Notify gyro manager that a stick sharing its axes is active
             updateGyroStickActive()
+        }
+
+        /** Fire a double-tap binding with a delayed release so the press survives
+         *  at least one game frame (fixes fire-primary which uses level-triggered state). */
+        private fun fireDoubleTapBinding(binding: Int) {
+            if (TouchBindings.isMetaAction(binding)) {
+                metaActionCallback?.invoke(binding, true)
+                mainHandler.postDelayed({ metaActionCallback?.invoke(binding, false) }, DOUBLE_TAP_RELEASE_DELAY_MS)
+            } else {
+                buttonCallback?.invoke(binding, true)
+                mainHandler.postDelayed({ buttonCallback?.invoke(binding, false) }, DOUBLE_TAP_RELEASE_DELAY_MS)
+            }
         }
 
         private fun dispatchStickButton(

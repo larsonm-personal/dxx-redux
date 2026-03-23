@@ -6,18 +6,20 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import kotlin.math.abs
-import kotlin.math.asin
-import kotlin.math.atan2
 import kotlin.math.sign
 
 /**
- * Manages gyroscope-based aiming via TYPE_ROTATION_VECTOR.
+ * Manages gyroscope-based aiming via TYPE_GAME_ROTATION_VECTOR.
  *
- * Uses the gravity-referenced rotation vector sensor so tilt angles are
- * stable and absolute (no heading drift). Computes yaw/pitch deltas from
- * phone orientation changes and outputs them as axis values via
- * [axisCallback]. Designed to layer on top of stick input -- the caller
- * sums stick + gyro values before sending to JNI.
+ * Uses the game rotation vector sensor (gyro + accelerometer, no
+ * magnetometer) for gravity-referenced pitch/roll and smooth relative yaw
+ * without magnetic interference. Extracts yaw/pitch/roll via
+ * SensorManager.getOrientation() and outputs delta values as axis input.
+ *
+ * All three axes are available for mapping to game controls:
+ *   yaw   (azimuth) -- relative horizontal rotation (drifts slowly)
+ *   pitch           -- gravity-referenced forward/back tilt
+ *   roll            -- gravity-referenced left/right tilt
  *
  * Lifecycle: call [resume] in onResume and [pause] in onStop/onPause.
  */
@@ -25,20 +27,22 @@ class GyroInputManager(
     context: Context,
 ) : SensorEventListener {
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-    private val sensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+    private val sensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR)
 
-    /** Called with (axisIndex, deltaValue) when gyro produces input. */
+    /** Called with (axisIndex, value) when gyro produces input. */
     var axisCallback: ((Int, Float) -> Unit)? = null
+
+    /** Called with (yaw, pitch, roll) raw clamped values for diagnostic display. */
+    var diagnosticCallback: ((Float, Float, Float) -> Unit)? = null
 
     // Current config (updated via setConfig)
     private var config = GyroConfig()
 
     // Orientation tracking
     private var hasReference = false
-    private val refRotationMatrix = FloatArray(9)
     private val curRotationMatrix = FloatArray(9)
-    private val deltaRotationMatrix = FloatArray(9)
-    private val orientationAngles = FloatArray(3)
+    private val curOrientation = FloatArray(3) // [azimuth, pitch, roll]
+    private val refOrientation = FloatArray(3)
 
     // Activation state
     var rightStickActive = false // set by TouchOverlayView when right stick is touched
@@ -75,7 +79,7 @@ class GyroInputManager(
     ) {}
 
     override fun onSensorChanged(event: SensorEvent) {
-        if (event.sensor.type != Sensor.TYPE_ROTATION_VECTOR) return
+        if (event.sensor.type != Sensor.TYPE_GAME_ROTATION_VECTOR) return
 
         // Check activation mode
         val active =
@@ -86,68 +90,75 @@ class GyroInputManager(
             }
 
         SensorManager.getRotationMatrixFromVector(curRotationMatrix, event.values)
+        SensorManager.getOrientation(curRotationMatrix, curOrientation)
+        // curOrientation: [0]=azimuth (yaw), [1]=pitch, [2]=roll (all radians)
 
         if (!hasReference) {
-            refRotationMatrix.indices.forEach { refRotationMatrix[it] = curRotationMatrix[it] }
+            curOrientation.copyInto(refOrientation)
             hasReference = true
             return
         }
 
         if (!active) {
-            // Not active — update reference so there's no jump when activated
-            refRotationMatrix.indices.forEach { refRotationMatrix[it] = curRotationMatrix[it] }
+            // Not active -- update reference so there's no jump when activated
+            curOrientation.copyInto(refOrientation)
             return
         }
 
-        // Compute delta: deltaR = refR^T * curR
-        // refR is 3x3 row-major, transpose means swap row/col indices
-        for (r in 0..2) {
-            for (c in 0..2) {
-                deltaRotationMatrix[r * 3 + c] =
-                    refRotationMatrix[0 * 3 + r] * curRotationMatrix[0 * 3 + c] +
-                    refRotationMatrix[1 * 3 + r] * curRotationMatrix[1 * 3 + c] +
-                    refRotationMatrix[2 * 3 + r] * curRotationMatrix[2 * 3 + c]
-            }
-        }
-
-        // Extract yaw (azimuth) and pitch from the delta rotation
-        val pitch = asin((-deltaRotationMatrix[7]).toDouble().coerceIn(-1.0, 1.0)).toFloat()
-        val yaw = atan2(deltaRotationMatrix[6].toDouble(), deltaRotationMatrix[8].toDouble()).toFloat()
+        // Compute deltas (handle yaw wrap-around at +/- PI)
+        var dYaw = normalizeAngle(curOrientation[0] - refOrientation[0])
+        var dPitch = curOrientation[1] - refOrientation[1]
+        var dRoll = curOrientation[2] - refOrientation[2]
 
         if (config.mode == GyroMode.RATE) {
             // Incremental: update reference each frame, output is angular velocity
-            refRotationMatrix.indices.forEach { refRotationMatrix[it] = curRotationMatrix[it] }
+            curOrientation.copyInto(refOrientation)
         }
-        // ABSOLUTE mode: reference stays fixed, output is proportional to tilt angle
+        // ABSOLUTE mode: reference stays fixed, output proportional to tilt angle
 
         // Apply deadzone
-        val dzX = applyDeadzone(yaw, config.deadzone)
-        val dzY = applyDeadzone(pitch, config.deadzone)
-        if (dzX == 0f && dzY == 0f) return
+        dYaw = applyDeadzone(dYaw, config.deadzone)
+        dPitch = applyDeadzone(dPitch, config.deadzone)
+        dRoll = applyDeadzone(dRoll, config.deadzone)
 
-        // Apply sensitivity and inversion
+        // Apply sensitivity and optional absolute-mode scaling
         var outX: Float
         var outY: Float
+        var outZ: Float
         if (config.mode == GyroMode.ABSOLUTE) {
-            // Map angle beyond deadzone proportionally within maxAngle
-            val range = config.maxAngle - config.deadzone
-            outX = if (range > 0f) (dzX / range) else dzX
-            outY = if (range > 0f) (dzY / range) else dzY
-            outX *= config.sensitivityX
-            outY *= config.sensitivityY
+            val range = (config.maxAngle - config.deadzone).coerceAtLeast(0.01f)
+            outX = (dYaw / range) * config.sensitivityX
+            outY = (dPitch / range) * config.sensitivityY
+            outZ = (dRoll / range) * config.sensitivityZ
         } else {
-            outX = dzX * config.sensitivityX
-            outY = dzY * config.sensitivityY
+            outX = dYaw * config.sensitivityX
+            outY = dPitch * config.sensitivityY
+            outZ = dRoll * config.sensitivityZ
         }
         if (config.invertX) outX = -outX
         if (config.invertY) outY = -outY
+        if (config.invertZ) outZ = -outZ
 
         // Clamp to -1..1
         outX = outX.coerceIn(-1f, 1f)
         outY = outY.coerceIn(-1f, 1f)
+        outZ = outZ.coerceIn(-1f, 1f)
 
-        axisCallback?.invoke(config.axisX, outX)
-        axisCallback?.invoke(config.axisY, outY)
+        // Diagnostic callback (fires even if all zero, for live display)
+        diagnosticCallback?.invoke(outX, outY, outZ)
+
+        // Send to game axes (skip disabled axes)
+        if (config.axisX >= 0) axisCallback?.invoke(config.axisX, outX)
+        if (config.axisY >= 0) axisCallback?.invoke(config.axisY, outY)
+        if (config.axisZ >= 0) axisCallback?.invoke(config.axisZ, outZ)
+    }
+
+    /** Normalize an angle delta to -PI..PI for yaw wrap-around. */
+    private fun normalizeAngle(a: Float): Float {
+        var v = a
+        while (v > Math.PI.toFloat()) v -= (2 * Math.PI).toFloat()
+        while (v < -Math.PI.toFloat()) v += (2 * Math.PI).toFloat()
+        return v
     }
 
     private fun applyDeadzone(

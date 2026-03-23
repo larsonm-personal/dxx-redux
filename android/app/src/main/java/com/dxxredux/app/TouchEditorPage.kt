@@ -326,6 +326,32 @@ fun TouchEditorPage(
                                         dirty = true
                                     },
                                 )
+                            "diagnostic" ->
+                                DiagnosticPropertiesPanel(
+                                    diag = layout.diagnostics[selectedIndex],
+                                    onUpdate = { updated ->
+                                        layout =
+                                            layout.copy(
+                                                diagnostics =
+                                                    layout.diagnostics.toMutableList().also {
+                                                        it[selectedIndex] = updated
+                                                    },
+                                            )
+                                        dirty = true
+                                    },
+                                    onDelete = {
+                                        layout =
+                                            layout.copy(
+                                                diagnostics =
+                                                    layout.diagnostics.toMutableList().also {
+                                                        it.removeAt(selectedIndex)
+                                                    },
+                                            )
+                                        selectedType = null
+                                        selectedIndex = -1
+                                        dirty = true
+                                    },
+                                )
                         }
                     }
                     ScrollArrows(panelScrollState)
@@ -546,6 +572,23 @@ fun TouchEditorPage(
                     )
                 selectedType = "slider"
                 selectedIndex = layout.sliders.lastIndex
+                dirty = true
+                showAddControl = false
+                longPressPos = Offset.Zero
+            },
+            onAddDiagnostic = {
+                layout =
+                    layout.copy(
+                        diagnostics =
+                            layout.diagnostics +
+                                DiagnosticControl(
+                                    id = "diag_${layout.diagnostics.size}",
+                                    xPct = addX,
+                                    yPct = addY,
+                                ),
+                    )
+                selectedType = "diagnostic"
+                selectedIndex = layout.diagnostics.lastIndex
                 dirty = true
                 showAddControl = false
                 longPressPos = Offset.Zero
@@ -894,6 +937,42 @@ private fun drawAllControls(
         scope.drawText(slLabel, topLeft = labelOff)
     }
 
+    // Draw diagnostics
+    layout.diagnostics.forEachIndexed { i, d ->
+        val cx = w * d.xPct / 100f
+        val cy = h * d.yPct / 100f
+        val boxW = baseScale * 0.12f * d.sizeMult
+        val boxH = baseScale * 0.06f * d.sizeMult
+        val selected = selType == "diagnostic" && selIdx == i
+        val alpha = layout.globalOpacity * d.opacity
+
+        scope.drawRoundRect(
+            color = Color(0x44000000).copy(alpha = alpha * 0.4f),
+            topLeft = Offset(cx - boxW / 2, cy - boxH / 2),
+            size =
+                androidx.compose.ui.geometry
+                    .Size(boxW, boxH),
+            cornerRadius = CornerRadius(4f, 4f),
+        )
+        val label =
+            textMeasurer.measure(
+                "Gyro Diag",
+                style = TextStyle(fontSize = 9.sp, color = cButtonLabel.copy(alpha = alpha)),
+            )
+        scope.drawText(label, topLeft = Offset(cx - label.size.width / 2f, cy - label.size.height / 2f))
+        if (selected) {
+            scope.drawRoundRect(
+                color = cSelected,
+                topLeft = Offset(cx - boxW / 2 - 2f, cy - boxH / 2 - 2f),
+                size =
+                    androidx.compose.ui.geometry
+                        .Size(boxW + 4f, boxH + 4f),
+                cornerRadius = CornerRadius(4f, 4f),
+                style = Stroke(width = 3f),
+            )
+        }
+    }
+
     // ── Collision detection: warn when controls overlap >30% ──
     data class ControlBounds(
         val cx: Float,
@@ -996,6 +1075,10 @@ private fun controlCenter(
             val s = layout.sliders[index]
             Offset(canvasWidth * s.xPct / 100f, canvasHeight * s.yPct / 100f)
         }
+        "diagnostic" -> {
+            val d = layout.diagnostics[index]
+            Offset(canvasWidth * d.xPct / 100f, canvasHeight * d.yPct / 100f)
+        }
         else -> Offset.Zero
     }
 
@@ -1013,6 +1096,7 @@ private fun controlRadius(
         "button" -> baseScale * 0.04f * layout.buttons[index].sizeMult
         "radial" -> baseScale * 0.14f * layout.radialMenus[index].sizeMult
         "slider" -> baseScale * 0.10f * layout.sliders[index].sizeMult
+        "diagnostic" -> baseScale * 0.06f * layout.diagnostics[index].sizeMult
         else -> 0f
     }
 }
@@ -1087,6 +1171,15 @@ private fun hitTestAll(
         }
     }
 
+    // Check diagnostics
+    layout.diagnostics.forEachIndexed { i, d ->
+        val cx = canvasWidth * d.xPct / 100f
+        val cy = canvasHeight * d.yPct / 100f
+        val r = baseScale * 0.06f * d.sizeMult
+        val dist = sqrt((offset.x - cx) * (offset.x - cx) + (offset.y - cy) * (offset.y - cy))
+        if (dist <= r) hits.add(Pair("diagnostic", i))
+    }
+
     return hits
 }
 
@@ -1140,6 +1233,17 @@ private fun moveControl(
                 sliders =
                     layout.sliders.toMutableList().also {
                         it[index] = sl.copy(xPct = newX, yPct = newY)
+                    },
+            )
+        }
+        "diagnostic" -> {
+            val d = layout.diagnostics[index]
+            val newX = (d.xPct + dxPct).coerceIn(5f, 95f)
+            val newY = (d.yPct + dyPct).coerceIn(5f, 95f)
+            layout.copy(
+                diagnostics =
+                    layout.diagnostics.toMutableList().also {
+                        it[index] = d.copy(xPct = newX, yPct = newY)
                     },
             )
         }
@@ -1228,13 +1332,22 @@ private fun StickPropertiesPanel(
             onUpdate(stick.copy(deadzone = it.toInt()))
         }
         LabeledSlider(
-            "Sensitivity",
-            stick.sensitivity,
+            "Sensitivity X",
+            stick.sensitivityX,
             TouchBindings.MIN_SENSITIVITY,
             TouchBindings.MAX_SENSITIVITY,
             Modifier.weight(1f),
         ) {
-            onUpdate(stick.copy(sensitivity = it))
+            onUpdate(stick.copy(sensitivityX = it))
+        }
+        LabeledSlider(
+            "Sensitivity Y",
+            stick.sensitivityY,
+            TouchBindings.MIN_SENSITIVITY,
+            TouchBindings.MAX_SENSITIVITY,
+            Modifier.weight(1f),
+        ) {
+            onUpdate(stick.copy(sensitivityY = it))
         }
     }
 
@@ -1305,21 +1418,6 @@ private fun StickPropertiesPanel(
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         DoubleTapBindingPicker("Double-Tap Action", stick.doubleTapBinding, Modifier.weight(1f), gameVariant) {
             onUpdate(stick.copy(doubleTapBinding = it))
-        }
-    }
-
-    // Mouse mode sensitivity
-    if (stick.mouseMode) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            LabeledSlider(
-                "Mouse Sensitivity",
-                stick.mouseSensitivity,
-                0.1f,
-                5f,
-                Modifier.weight(1f),
-            ) {
-                onUpdate(stick.copy(mouseSensitivity = it))
-            }
         }
     }
 
@@ -1623,6 +1721,45 @@ private fun SliderPropertiesPanel(
     // Spring back toggle
     LabeledToggle("Spring Back", slider.springBack) {
         onUpdate(slider.copy(springBack = it))
+    }
+}
+
+@Composable
+private fun DiagnosticPropertiesPanel(
+    diag: DiagnosticControl,
+    onUpdate: (DiagnosticControl) -> Unit,
+    onDelete: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("Diagnostic: ${diag.id}", color = Color.White, fontSize = 14.sp)
+        IconButton(onClick = onDelete) {
+            Icon(Icons.Default.Delete, "Delete", tint = Color(0xFFEF5350))
+        }
+    }
+
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LabeledSlider(
+            "Size",
+            diag.sizeMult,
+            TouchBindings.MIN_SIZE,
+            TouchBindings.MAX_SIZE,
+            Modifier.weight(1f),
+        ) {
+            onUpdate(diag.copy(sizeMult = it))
+        }
+        LabeledSlider(
+            "Opacity",
+            diag.opacity,
+            TouchBindings.MIN_OPACITY,
+            TouchBindings.MAX_OPACITY,
+            Modifier.weight(1f),
+        ) {
+            onUpdate(diag.copy(opacity = it))
+        }
     }
 }
 
@@ -2073,6 +2210,7 @@ private fun AddControlDialog(
     onAddButton: () -> Unit,
     onAddRadial: () -> Unit,
     onAddSlider: () -> Unit,
+    onAddDiagnostic: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -2090,6 +2228,9 @@ private fun AddControlDialog(
                 }
                 TextButton(onClick = onAddSlider, modifier = Modifier.fillMaxWidth()) {
                     Text("Slider")
+                }
+                TextButton(onClick = onAddDiagnostic, modifier = Modifier.fillMaxWidth()) {
+                    Text("Diagnostic Display")
                 }
             }
         },
@@ -2140,11 +2281,14 @@ private fun GyroSettingsDialog(
     var activation by remember { mutableStateOf(gyro.activation) }
     var sensX by remember { mutableFloatStateOf(gyro.sensitivityX) }
     var sensY by remember { mutableFloatStateOf(gyro.sensitivityY) }
+    var sensZ by remember { mutableFloatStateOf(gyro.sensitivityZ) }
     var invertX by remember { mutableStateOf(gyro.invertX) }
     var invertY by remember { mutableStateOf(gyro.invertY) }
+    var invertZ by remember { mutableStateOf(gyro.invertZ) }
     var deadzone by remember { mutableFloatStateOf(gyro.deadzone) }
     var axisX by remember { mutableIntStateOf(gyro.axisX) }
     var axisY by remember { mutableIntStateOf(gyro.axisY) }
+    var axisZ by remember { mutableIntStateOf(gyro.axisZ) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -2236,13 +2380,50 @@ private fun GyroSettingsDialog(
                         }
 
                         Spacer(Modifier.height(8.dp))
+                        Text("Roll Axis (3rd axis)", color = Color.Gray, fontSize = 12.sp)
+                        val rollDisabled = axisZ < 0
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = rollDisabled,
+                                onClick = { axisZ = -1 },
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text("Disabled", fontSize = 12.sp, color = Color.White)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = axisZ == TouchBindings.AXIS_BANK,
+                                onClick = { axisZ = TouchBindings.AXIS_BANK },
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text("Bank (roll)", fontSize = 12.sp, color = Color.White)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(
+                                selected = axisZ == TouchBindings.AXIS_LEFT_X,
+                                onClick = { axisZ = TouchBindings.AXIS_LEFT_X },
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text("Slide left/right", fontSize = 12.sp, color = Color.White)
+                        }
+
+                        Spacer(Modifier.height(8.dp))
                         LabeledSlider("Sensitivity X", sensX, 0.1f, 5f) { sensX = it }
                         LabeledSlider("Sensitivity Y", sensY, 0.1f, 5f) { sensY = it }
+                        if (axisZ >= 0) {
+                            LabeledSlider("Sensitivity Z", sensZ, 0.1f, 5f) { sensZ = it }
+                        }
                         LabeledSlider("Deadzone", deadzone, 0f, 0.1f) { deadzone = it }
 
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             LabeledToggle("Invert X", invertX) { invertX = it }
                             LabeledToggle("Invert Y", invertY) { invertY = it }
+                            if (axisZ >= 0) {
+                                LabeledToggle("Invert Z", invertZ) { invertZ = it }
+                            }
                         }
                     }
                 }
@@ -2257,11 +2438,14 @@ private fun GyroSettingsDialog(
                         activation = activation,
                         sensitivityX = sensX,
                         sensitivityY = sensY,
+                        sensitivityZ = sensZ,
                         invertX = invertX,
                         invertY = invertY,
+                        invertZ = invertZ,
                         deadzone = deadzone,
                         axisX = axisX,
                         axisY = axisY,
+                        axisZ = axisZ,
                     ),
                 )
                 onDismiss()

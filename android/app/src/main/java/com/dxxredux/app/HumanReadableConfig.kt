@@ -37,6 +37,9 @@ object HumanReadableConfig {
         j.put("radialMenus", JSONArray(layout.radialMenus.map { radialToHuman(it) }))
         j.put("dpads", JSONArray(layout.dpads.map { dpadToHuman(it) }))
         j.put("gyro", gyroToHuman(layout.gyro))
+        if (layout.diagnostics.isNotEmpty()) {
+            j.put("diagnostics", JSONArray(layout.diagnostics.map { it.toJson() }))
+        }
         return j
     }
 
@@ -96,6 +99,7 @@ object HumanReadableConfig {
         val j = g.toJson()
         j.put("axisX", TouchBindings.axisToName(g.axisX))
         j.put("axisY", TouchBindings.axisToName(g.axisY))
+        if (g.axisZ >= 0) j.put("axisZ", TouchBindings.axisToName(g.axisZ))
         return j
     }
 
@@ -124,6 +128,20 @@ object HumanReadableConfig {
                 parseArraySafe(json, "dpads", warnings) { j, w ->
                     parseDPad(j, w)
                 }
+            val diagnostics =
+                if (json.has("diagnostics")) {
+                    val arr = json.getJSONArray("diagnostics")
+                    (0 until arr.length()).mapNotNull { i ->
+                        try {
+                            DiagnosticControl.fromJson(arr.getJSONObject(i))
+                        } catch (e: Exception) {
+                            warnings.add("diagnostic[$i]: ${e.message}")
+                            null
+                        }
+                    }
+                } else {
+                    emptyList()
+                }
             val gyro =
                 if (json.has("gyro")) {
                     parseGyro(json.getJSONObject("gyro"), warnings)
@@ -145,6 +163,7 @@ object HumanReadableConfig {
                     sliders = sliders,
                     radialMenus = radials,
                     dpads = dpads,
+                    diagnostics = diagnostics,
                     gyro = gyro,
                 )
             return ParseResult(layout, warnings)
@@ -163,6 +182,10 @@ object HumanReadableConfig {
         val axisX = resolveAxis(j, "axisX", warnings, "stick '$id'") ?: return null
         val axisY = resolveAxis(j, "axisY", warnings, "stick '$id'") ?: return null
         val buttonMode = j.optBoolean("buttonMode")
+        // Migration: old configs have single "sensitivity", new have sensitivityX/Y
+        val baseSens = j.optDouble("sensitivity", 1.0).toFloat()
+        val sensX = j.optDouble("sensitivityX", baseSens.toDouble()).toFloat()
+        val sensY = j.optDouble("sensitivityY", baseSens.toDouble()).toFloat()
         return AnalogStickControl(
             id = id,
             xPct = j.getDouble("x").toFloat(),
@@ -176,7 +199,8 @@ object HumanReadableConfig {
             deadzone = j.optInt("deadzone", 15),
             responseCurve = ResponseCurve.valueOf(j.optString("responseCurve", "LINEAR")),
             exponent = j.optDouble("exponent", TouchBindings.DEFAULT_EXPONENT.toDouble()).toFloat(),
-            sensitivity = j.optDouble("sensitivity", 1.0).toFloat(),
+            sensitivityX = sensX,
+            sensitivityY = sensY,
             floating = j.optBoolean("floating"),
             floatingZone =
                 if (j.has("floatingZone")) {
@@ -186,7 +210,6 @@ object HumanReadableConfig {
                 },
             hapticFeedback = j.optBoolean("haptic", true),
             mouseMode = j.optBoolean("mouseMode"),
-            mouseSensitivity = j.optDouble("mouseSensitivity", 1.0).toFloat(),
             mouseExponential = j.optBoolean("mouseExponential", true),
             mouseExponentialMax = j.optDouble("mouseExponentialMax", 3.0).toFloat(),
             buttonMode = buttonMode,
@@ -352,15 +375,24 @@ object HumanReadableConfig {
         val axisY =
             resolveAxis(j, "axisY", warnings, "gyro")
                 ?: TouchBindings.AXIS_RIGHT_Y
+        val axisZ =
+            if (j.has("axisZ")) {
+                resolveAxis(j, "axisZ", warnings, "gyro") ?: -1
+            } else {
+                -1
+            }
         return GyroConfig(
             enabled = j.optBoolean("enabled"),
             activation = GyroActivation.valueOf(j.optString("activation", "ALWAYS")),
             sensitivityX = j.optDouble("sensitivityX", 1.0).toFloat(),
             sensitivityY = j.optDouble("sensitivityY", 1.0).toFloat(),
+            sensitivityZ = j.optDouble("sensitivityZ", 1.0).toFloat(),
             invertX = j.optBoolean("invertX"),
             invertY = j.optBoolean("invertY"),
+            invertZ = j.optBoolean("invertZ"),
             axisX = axisX,
             axisY = axisY,
+            axisZ = axisZ,
             deadzone = j.optDouble("deadzone", 0.02).toFloat(),
         )
     }

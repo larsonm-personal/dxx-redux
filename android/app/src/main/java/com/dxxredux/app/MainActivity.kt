@@ -410,6 +410,9 @@ class MainActivity :
             val gm = GyroInputManager(this)
             gm.setConfig(layout.gyro)
             gm.axisCallback = { axis, value -> nativeJoystickAxis(axis, value) }
+            gm.diagnosticCallback = { yaw, pitch, roll ->
+                touchOverlay.updateGyroDiagnostic(yaw, pitch, roll)
+            }
             touchOverlay.gyroManager = gm
             gyroManager = gm
         }

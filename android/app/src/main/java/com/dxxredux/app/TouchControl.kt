@@ -83,11 +83,13 @@ data class AnalogStickControl(
     val responseCurve: ResponseCurve = ResponseCurve.LINEAR,
     val exponent: Float = TouchBindings.DEFAULT_EXPONENT,
     val sensitivity: Float = 1f,
+    val sensitivityX: Float = sensitivity,
+    val sensitivityY: Float = sensitivity,
     val floating: Boolean = false,
     val floatingZone: FloatingZone = FloatingZone(),
     val hapticFeedback: Boolean = true,
     val mouseMode: Boolean = false,
-    val mouseSensitivity: Float = 1f,
+    val mouseSensitivity: Float = 1f, // legacy, unused -- kept for JSON compat
     val mouseExponential: Boolean = true,
     val mouseExponentialMax: Float = 3f,
     val buttonMode: Boolean = false,
@@ -113,12 +115,13 @@ data class AnalogStickControl(
             put("responseCurve", responseCurve.name)
             put("exponent", exponent.toDouble())
             put("sensitivity", sensitivity.toDouble())
+            put("sensitivityX", sensitivityX.toDouble())
+            put("sensitivityY", sensitivityY.toDouble())
             put("floating", floating)
             put("floatingZone", floatingZone.toJson())
             put("haptic", hapticFeedback)
             if (mouseMode) {
                 put("mouseMode", true)
-                put("mouseSensitivity", mouseSensitivity.toDouble())
                 put("mouseExponential", mouseExponential)
                 put("mouseExponentialMax", mouseExponentialMax.toDouble())
             }
@@ -133,8 +136,13 @@ data class AnalogStickControl(
         }
 
     companion object {
-        fun fromJson(j: JSONObject) =
-            AnalogStickControl(
+        fun fromJson(j: JSONObject): AnalogStickControl {
+            // Migration: old configs have a single "sensitivity" field.
+            // New configs have sensitivityX / sensitivityY.
+            val baseSens = j.optDouble("sensitivity", 1.0).toFloat()
+            val sensX = j.optDouble("sensitivityX", baseSens.toDouble()).toFloat()
+            val sensY = j.optDouble("sensitivityY", baseSens.toDouble()).toFloat()
+            return AnalogStickControl(
                 id = j.getString("id"),
                 xPct = j.getDouble("x").toFloat(),
                 yPct = j.getDouble("y").toFloat(),
@@ -147,7 +155,8 @@ data class AnalogStickControl(
                 deadzone = j.optInt("deadzone", 15),
                 responseCurve = ResponseCurve.valueOf(j.optString("responseCurve", "LINEAR")),
                 exponent = j.optDouble("exponent", TouchBindings.DEFAULT_EXPONENT.toDouble()).toFloat(),
-                sensitivity = j.optDouble("sensitivity", 1.0).toFloat(),
+                sensitivityX = sensX,
+                sensitivityY = sensY,
                 floating = j.optBoolean("floating"),
                 floatingZone =
                     if (j.has(
@@ -160,7 +169,6 @@ data class AnalogStickControl(
                     },
                 hapticFeedback = j.optBoolean("haptic", true),
                 mouseMode = j.optBoolean("mouseMode"),
-                mouseSensitivity = j.optDouble("mouseSensitivity", 1.0).toFloat(),
                 mouseExponential = j.optBoolean("mouseExponential", true),
                 mouseExponentialMax = j.optDouble("mouseExponentialMax", 3.0).toFloat(),
                 buttonMode = j.optBoolean("buttonMode"),
@@ -170,6 +178,7 @@ data class AnalogStickControl(
                 posYBinding = j.optInt("posYBinding", TouchBindings.BTN_FIRE_PRIMARY),
                 doubleTapBinding = j.optInt("doubleTapBinding", -1),
             )
+        }
     }
 }
 
@@ -400,10 +409,13 @@ data class GyroConfig(
     val mode: GyroMode = GyroMode.RATE,
     val sensitivityX: Float = 3f,
     val sensitivityY: Float = 3f,
+    val sensitivityZ: Float = 3f,
     val invertX: Boolean = false,
     val invertY: Boolean = false,
+    val invertZ: Boolean = false,
     val axisX: Int = TouchBindings.AXIS_RIGHT_X,
     val axisY: Int = TouchBindings.AXIS_RIGHT_Y,
+    val axisZ: Int = -1, // -1 = disabled (roll not mapped by default)
     val deadzone: Float = 0.02f,
     val maxAngle: Float = 0.436f, // ~25 degrees, used in ABSOLUTE mode
 ) {
@@ -414,10 +426,13 @@ data class GyroConfig(
             put("mode", mode.name)
             put("sensitivityX", sensitivityX.toDouble())
             put("sensitivityY", sensitivityY.toDouble())
+            put("sensitivityZ", sensitivityZ.toDouble())
             put("invertX", invertX)
             put("invertY", invertY)
+            put("invertZ", invertZ)
             put("axisX", axisX)
             put("axisY", axisY)
+            put("axisZ", axisZ)
             put("deadzone", deadzone.toDouble())
             put("maxAngle", maxAngle.toDouble())
         }
@@ -430,12 +445,49 @@ data class GyroConfig(
                 mode = GyroMode.valueOf(j.optString("mode", "RATE")),
                 sensitivityX = j.optDouble("sensitivityX", 3.0).toFloat(),
                 sensitivityY = j.optDouble("sensitivityY", 3.0).toFloat(),
+                sensitivityZ = j.optDouble("sensitivityZ", 3.0).toFloat(),
                 invertX = j.optBoolean("invertX"),
                 invertY = j.optBoolean("invertY"),
+                invertZ = j.optBoolean("invertZ"),
                 axisX = j.optInt("axisX", TouchBindings.AXIS_RIGHT_X),
                 axisY = j.optInt("axisY", TouchBindings.AXIS_RIGHT_Y),
+                axisZ = j.optInt("axisZ", -1),
                 deadzone = j.optDouble("deadzone", 0.02).toFloat(),
                 maxAngle = j.optDouble("maxAngle", 0.436).toFloat(),
+            )
+    }
+}
+
+enum class DiagnosticType { GYRO }
+
+data class DiagnosticControl(
+    val id: String,
+    val xPct: Float,
+    val yPct: Float,
+    val sizeMult: Float = 1f,
+    val opacity: Float = 0.7f,
+    val type: DiagnosticType = DiagnosticType.GYRO,
+) {
+    fun toJson() =
+        JSONObject().apply {
+            put("type", "diagnostic")
+            put("id", id)
+            put("x", xPct.toDouble())
+            put("y", yPct.toDouble())
+            put("size", sizeMult.toDouble())
+            put("opacity", opacity.toDouble())
+            put("diagType", type.name)
+        }
+
+    companion object {
+        fun fromJson(j: JSONObject) =
+            DiagnosticControl(
+                id = j.getString("id"),
+                xPct = j.getDouble("x").toFloat(),
+                yPct = j.getDouble("y").toFloat(),
+                sizeMult = j.optDouble("size", 1.0).toFloat(),
+                opacity = j.optDouble("opacity", 0.7).toFloat(),
+                type = DiagnosticType.valueOf(j.optString("diagType", "GYRO")),
             )
     }
 }
@@ -449,6 +501,7 @@ data class TouchLayout(
     val sliders: List<SliderControl> = emptyList(),
     val radialMenus: List<RadialMenuControl> = emptyList(),
     val dpads: List<DPadControl> = emptyList(),
+    val diagnostics: List<DiagnosticControl> = emptyList(),
     val gyro: GyroConfig = GyroConfig(),
 ) {
     fun toJson() =
@@ -461,6 +514,7 @@ data class TouchLayout(
             put("sliders", JSONArray(sliders.map { it.toJson() }))
             put("radialMenus", JSONArray(radialMenus.map { it.toJson() }))
             put("dpads", JSONArray(dpads.map { it.toJson() }))
+            put("diagnostics", JSONArray(diagnostics.map { it.toJson() }))
             put("gyro", gyro.toJson())
         }
 
@@ -482,6 +536,7 @@ data class TouchLayout(
                 sliders = parseArray("sliders") { SliderControl.fromJson(it) },
                 radialMenus = parseArray("radialMenus") { RadialMenuControl.fromJson(it) },
                 dpads = parseArray("dpads") { DPadControl.fromJson(it) },
+                diagnostics = parseArray("diagnostics") { DiagnosticControl.fromJson(it) },
                 gyro = if (j.has("gyro")) GyroConfig.fromJson(j.getJSONObject("gyro")) else GyroConfig(),
             )
         }
