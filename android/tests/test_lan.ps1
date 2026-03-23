@@ -24,6 +24,8 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+. "$PSScriptRoot\..\test_helpers.ps1"
+
 # -- Constants --
 $REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
 $DEP_BASE = (Get-Content (Join-Path $REPO_ROOT "dependency_base.txt") -First 1).Trim()
@@ -54,80 +56,6 @@ function Write-Status {
     $line = "[$([DateTime]::Now.ToString('HH:mm:ss'))] $Msg"
     Write-Host $line -ForegroundColor $Color
     $line | Add-Content -Path $script:LogFile -Encoding utf8
-}
-
-function Adb-Dev {
-    param([string]$Serial, [string[]]$AdbArgs)
-    $prevEAP = $ErrorActionPreference
-    $ErrorActionPreference = "Continue"
-    $fullArgs = @("-s", $Serial) + $AdbArgs
-    $output = & $ADB @fullArgs 2>&1 | Out-String
-    $ErrorActionPreference = $prevEAP
-    return $output.Trim()
-}
-
-function Adb-Dev-Timeout {
-    param([string]$Serial, [string[]]$AdbArgs, [int]$Seconds = 10)
-    $psi = New-Object System.Diagnostics.ProcessStartInfo
-    $psi.FileName = $ADB
-    $allArgs = @("-s", $Serial) + $AdbArgs
-    $psi.Arguments = ($allArgs | ForEach-Object {
-        if ($_ -match '\s') { "`"$_`"" } else { $_ }
-    }) -join ' '
-    $psi.RedirectStandardOutput = $true
-    $psi.RedirectStandardError = $true
-    $psi.UseShellExecute = $false
-    $psi.CreateNoWindow = $true
-    try {
-        $proc = [System.Diagnostics.Process]::Start($psi)
-        $stdoutTask = $proc.StandardOutput.ReadToEndAsync()
-        $stderrTask = $proc.StandardError.ReadToEndAsync()
-        if (-not $proc.WaitForExit($Seconds * 1000)) {
-            try { $proc.Kill() } catch {}
-            return $null
-        }
-        $out = $stdoutTask.GetAwaiter().GetResult()
-        if ([string]::IsNullOrEmpty($out)) { return "" }
-        return $out.Trim()
-    } catch {
-        return $null
-    }
-}
-
-function Test-DeviceOnline {
-    param([string]$Serial)
-    $devices = & $ADB devices 2>&1 | Out-String
-    return $devices -match "$Serial\s+device"
-}
-
-function Start-EmulatorIfNeeded {
-    param([string]$Serial)
-    if (Test-DeviceOnline -Serial $Serial) {
-        Write-Status "  $Serial already online"
-        return
-    }
-    $avd = $AVD_MAP[$Serial]
-    if (-not $avd) { Write-Status "FAIL: Unknown AVD for $Serial" "Red"; exit 1 }
-    Write-Status "  Starting $avd ($Serial)..." "Yellow"
-    Start-Process $EMULATOR -ArgumentList "-avd",$avd,"-no-snapshot-save","-gpu","host"
-    $sw = [System.Diagnostics.Stopwatch]::StartNew()
-    while ($sw.Elapsed.TotalSeconds -lt 60 -and -not (Test-DeviceOnline -Serial $Serial)) {
-        Start-Sleep -Seconds 2
-    }
-    if (-not (Test-DeviceOnline -Serial $Serial)) {
-        Write-Status "FAIL: $Serial did not appear in adb after 60s" "Red"; exit 1
-    }
-    Write-Status "  Waiting for $Serial to boot..."
-    $sw2 = [System.Diagnostics.Stopwatch]::StartNew()
-    while ($sw2.Elapsed.TotalSeconds -lt 240) {
-        $r = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell","getprop","sys.boot_completed") -Seconds 5
-        if ($r -and $r.Trim() -eq "1") {
-            Write-Status "  $Serial booted" "Green"
-            return
-        }
-        Start-Sleep -Seconds 2
-    }
-    Write-Status "FAIL: $Serial did not boot within 240s" "Red"; exit 1
 }
 
 function Send-MpCommand {
@@ -260,8 +188,8 @@ Write-Status ""
 
 # -- Step 0: Ensure both emulators are online (auto-start if needed) --
 Write-Status "Checking emulators..."
-Start-EmulatorIfNeeded -Serial $EMU1
-Start-EmulatorIfNeeded -Serial $EMU2
+Start-EmulatorIfNeeded -Serial $EMU1 -AvdMap $AVD_MAP
+Start-EmulatorIfNeeded -Serial $EMU2 -AvdMap $AVD_MAP
 Write-Status "Both emulators online" "Green"
 
 # Verify game data

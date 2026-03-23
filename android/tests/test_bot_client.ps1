@@ -211,7 +211,7 @@ $authMsg = @{
 }
 Send-WsMessage -Ws $ws -Json ($authMsg | ConvertTo-Json -Compress -Depth 10)
 
-# Read welcome bundle (AUTH_OK, MOTD, SERVER_STATUS, LOBBY_LIST, FRIEND_LIST)
+# Read welcome bundle (AUTH_OK, SERVER_STATUS, LOBBY_LIST, FRIEND_LIST_RESP; MOTD is optional)
 Write-Host "Waiting for auth..." -ForegroundColor Yellow
 $playerId = $null
 $welcomeMsgs = @()
@@ -227,8 +227,8 @@ for ($i = 0; $i -lt 10; $i++) {
         Write-Host "Auth failed: $($m.reason)" -ForegroundColor Red
         exit 1
     }
-    # Welcome bundle is 5 msgs: AUTH_OK, MOTD, SERVER_STATUS, LOBBY_LIST, FRIEND_LIST
-    if ($welcomeMsgs.Count -ge 5 -and $null -ne $playerId) { break }
+    # FRIEND_LIST_RESP is always last in the welcome bundle
+    if ($m.type -eq "FRIEND_LIST_RESP" -and $null -ne $playerId) { break }
 }
 
 if ($null -eq $playerId) {
@@ -278,44 +278,19 @@ switch ($Action) {
         if ($resp.type -eq "LOBBY_UPDATE") {
             Write-Host "Lobby created: $($resp.lobby_id)" -ForegroundColor Green
             Write-Host "Players: $($resp.players.Count)" -ForegroundColor Green
-            Write-Host ""
-            Write-Host "Waiting for other players to join... (Ctrl+C to quit)" -ForegroundColor Yellow
-            Write-Host ""
-
-            # Stay connected and react to lobby events (blocks on receive, no timeout)
-            while ($ws.State -eq [System.Net.WebSockets.WebSocketState]::Open) {
-                $m = Receive-WsMessage -Ws $ws
-                if ($null -eq $m) { continue }
-                switch ($m.type) {
-                    "LOBBY_UPDATE" {
-                        Write-Host "Lobby update: $($m.players.Count) players" -ForegroundColor Green
-                        foreach ($p in $m.players) {
-                            $readyStr = if ($p.ready) { "[READY]" } else { "[not ready]" }
-                            Write-Host "  $($p.callsign) $readyStr"
-                        }
-                    }
-                    "MESSAGE_RECEIVED" {
-                        Write-Host "Chat from $($m.from_callsign): $($m.text)" -ForegroundColor Magenta
-                        # Auto-reply
-                        $replyMsg = @{
-                            type = "SEND_MESSAGE"
-                            target_player_id = $m.from_player_id
-                            text = "Bot auto-reply: got your message!"
-                        }
-                        Send-WsMessage -Ws $ws -Json ($replyMsg | ConvertTo-Json -Compress -Depth 10)
-                        # MESSAGE_SENT ack will arrive in the next loop iteration
-                    }
-                    "GAME_STARTING" {
-                        Write-Host "Game starting! Mission: $($m.mission)" -ForegroundColor Green
-                    }
-                    "ERROR" {
-                        Write-Host "Error: $($m.code) - $($m.message)" -ForegroundColor Red
-                    }
-                    default {
-                        Write-Host "[$($m.type)]" -ForegroundColor DarkGray
-                    }
-                }
+            # Verify our lobby appears in the lobby list
+            $listResp = Send-AndReceive -Ws $ws -Msg @{ type = "LIST_LOBBIES" }
+            if ($listResp.type -eq "LOBBY_LIST" -and $listResp.lobbies.Count -gt 0) {
+                Write-Host "PASS: Lobby visible in list ($($listResp.lobbies.Count) lobbies)" -ForegroundColor Green
+            } else {
+                Write-Host "WARNING: Created lobby not visible in list" -ForegroundColor Yellow
             }
+        } elseif ($resp.type -eq "ERROR") {
+            Write-Host "FAIL: Lobby creation failed: $($resp.code) - $($resp.message)" -ForegroundColor Red
+            exit 1
+        } else {
+            Write-Host "FAIL: Unexpected response: $($resp.type)" -ForegroundColor Red
+            exit 1
         }
     }
 
@@ -331,49 +306,31 @@ switch ($Action) {
             exit 0
         }
         Write-Host "Joining lobby hosted by $($target.host_callsign)..." -ForegroundColor Yellow
-        $joinMsg = @{
+        $joinResp = Send-AndReceive -Ws $ws -Msg @{
             type = "JOIN_LOBBY"
             lobby_id = $target.lobby_id
         }
-        Send-WsMessage -Ws $ws -Json ($joinMsg | ConvertTo-Json -Compress -Depth 10)
-
-        # Listen for updates (blocks on receive, no timeout)
-        Write-Host "In lobby. Listening... (Ctrl+C to quit)" -ForegroundColor Yellow
-        while ($ws.State -eq [System.Net.WebSockets.WebSocketState]::Open) {
-            $m = Receive-WsMessage -Ws $ws
-            if ($null -eq $m) { continue }
-            switch ($m.type) {
-                "LOBBY_UPDATE" {
-                    Write-Host "Lobby update: $($m.players.Count) players" -ForegroundColor Green
-                    foreach ($p in $m.players) {
-                        $readyStr = if ($p.ready) { "[READY]" } else { "[not ready]" }
-                        Write-Host "  $($p.callsign) $readyStr"
-                    }
-                }
-                "MESSAGE_RECEIVED" {
-                    Write-Host "Chat from $($m.from_callsign): $($m.text)" -ForegroundColor Magenta
-                }
-                "GAME_STARTING" {
-                    Write-Host "Game starting! Mission: $($m.mission)" -ForegroundColor Green
-                }
-                "ERROR" {
-                    Write-Host "Error: $($m.code) - $($m.message)" -ForegroundColor Red
-                }
-                default {
-                    Write-Host "[$($m.type)]" -ForegroundColor DarkGray
-                }
-            }
+        if ($joinResp.type -eq "LOBBY_UPDATE") {
+            Write-Host "PASS: Joined lobby ($($joinResp.players.Count) players)" -ForegroundColor Green
+        } elseif ($joinResp.type -eq "ERROR") {
+            Write-Host "FAIL: Join failed: $($joinResp.code) - $($joinResp.message)" -ForegroundColor Red
+            exit 1
+        } else {
+            Write-Host "Join response: $($joinResp.type)" -ForegroundColor Yellow
         }
     }
 
     "idle" {
-        Write-Host "Connected and idle. Listening... (Ctrl+C to quit)" -ForegroundColor Yellow
-        while ($ws.State -eq [System.Net.WebSockets.WebSocketState]::Open) {
-            $m = Receive-WsMessage -Ws $ws
-            if ($null -eq $m) { continue }
-            Write-Host "[$($m.type)]" -ForegroundColor DarkGray
-        }
+        Write-Host "PASS: Connected and authenticated" -ForegroundColor Green
     }
+}
+
+# Graceful close
+if ($ws.State -eq [System.Net.WebSockets.WebSocketState]::Open) {
+    try {
+        $ws.CloseAsync([System.Net.WebSockets.WebSocketCloseStatus]::NormalClosure,
+            "done", [System.Threading.CancellationToken]::None).GetAwaiter().GetResult()
+    } catch {}
 }
 
 Write-Host "Bot disconnected." -ForegroundColor Yellow

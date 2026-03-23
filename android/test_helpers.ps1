@@ -8,8 +8,13 @@
 #   $ADB, $PACKAGE, $ACTIVITY  -- standard paths/constants
 #   Adb [-AdbArgs ...]         -- run adb with stderr tolerance
 #   Adb-Timeout [-AdbArgs ...] -- run adb with a timeout (returns $null on hang)
+#   Adb-Dev [-Serial ...]      -- run adb targeting a specific device
+#   Adb-Dev-Timeout [...]      -- device-targeted adb with timeout
 #   Test-EmulatorHealthy       -- check emulator process + adb + shell
 #   Ensure-EmulatorHealthy     -- check + restart via emu_health.ps1 if needed
+#   Test-DeviceOnline          -- check if a specific serial is online
+#   Start-EmulatorIfNeeded     -- boot + provision an emulator if not running
+#   Install-AppAndData         -- install APK + push game data to a device
 #   Write-Status               -- timestamped colored output
 #   Start-GameWithRetry        -- full launch flow: SetupActivity -> verify -> game -> verify
 
@@ -104,6 +109,114 @@ function Ensure-EmulatorHealthy {
 function Write-Status {
     param([string]$Msg, [string]$Color = "Cyan")
     Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] $Msg" -ForegroundColor $Color
+}
+
+# -- Multi-device helpers (for dual-emulator tests like test_mp, test_lan) --
+
+function Adb-Dev {
+    # Run adb targeting a specific device serial.
+    param([string]$Serial, [string[]]$AdbArgs)
+    $prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    $fullArgs = @("-s", $Serial) + $AdbArgs
+    $output = & $script:ADB @fullArgs 2>&1 | Out-String
+    $ErrorActionPreference = $prevEAP
+    return $output.Trim()
+}
+
+function Adb-Dev-Timeout {
+    # Run adb targeting a specific device serial, with a timeout.
+    param([string]$Serial, [string[]]$AdbArgs, [int]$Seconds = 10)
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = $script:ADB
+    $allArgs = @("-s", $Serial) + $AdbArgs
+    $psi.Arguments = ($allArgs | ForEach-Object {
+        if ($_ -match '\s') { "`"$_`"" } else { $_ }
+    }) -join ' '
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    try {
+        $proc = [System.Diagnostics.Process]::Start($psi)
+        $stdoutTask = $proc.StandardOutput.ReadToEndAsync()
+        $stderrTask = $proc.StandardError.ReadToEndAsync()
+        if (-not $proc.WaitForExit($Seconds * 1000)) {
+            try { $proc.Kill() } catch {}
+            return $null
+        }
+        $out = $stdoutTask.GetAwaiter().GetResult()
+        if ([string]::IsNullOrEmpty($out)) { return "" }
+        return $out.Trim()
+    } catch {
+        return $null
+    }
+}
+
+function Test-DeviceOnline {
+    param([string]$Serial)
+    $devices = & $script:ADB devices 2>&1 | Out-String
+    return $devices -match "$Serial\s+device"
+}
+
+function Install-AppAndData {
+    # Install APK and push game data to a specific device. Called after
+    # a fresh emulator boot or whenever a device needs provisioning.
+    param([Parameter(Mandatory)][string]$Serial)
+    $repoRoot = Split-Path $PSScriptRoot
+    $apk = Join-Path $repoRoot "android\app\build\outputs\apk\debug\app-debug.apk"
+    if (Test-Path $apk) {
+        Write-Status "  Installing APK on $Serial..."
+        Adb-Dev-Timeout -Serial $Serial -AdbArgs @("install","-r",$apk) -Seconds 60 | Out-Null
+    }
+    $pushScript = Join-Path $repoRoot "android\push_game_data.sh"
+    $bashExe = "bash"
+    if (Test-Path "$script:DEP_BASE\git\bin\bash.exe") { $bashExe = "$script:DEP_BASE\git\bin\bash.exe" }
+    if (Test-Path $pushScript) {
+        Write-Status "  Pushing game data to $Serial..."
+        $env:ANDROID_SERIAL = $Serial
+        $env:CALLED_FROM_SCRIPT = "1"
+        & $bashExe $pushScript 2>&1 | Out-Null
+        Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue
+        Remove-Item Env:\CALLED_FROM_SCRIPT -ErrorAction SilentlyContinue
+    }
+}
+
+function Start-EmulatorIfNeeded {
+    # Boot an emulator if it isn't already online, then provision it.
+    # $AvdMap: hashtable mapping serial -> AVD name (e.g. @{"emulator-5554"="Nexus5X_Light_1"})
+    param(
+        [Parameter(Mandatory)][string]$Serial,
+        [Parameter(Mandatory)][hashtable]$AvdMap
+    )
+    if (Test-DeviceOnline -Serial $Serial) {
+        Write-Status "  $Serial already online"
+        return
+    }
+    $avd = $AvdMap[$Serial]
+    if (-not $avd) { Write-Status "FAIL: Unknown AVD for $Serial" "Red"; exit 1 }
+    $emulatorExe = "$script:DEP_BASE\android-sdk\emulator\emulator.exe"
+    Write-Status "  Starting $avd ($Serial)..." "Yellow"
+    Start-Process $emulatorExe -ArgumentList "-avd",$avd,"-no-snapshot-save","-gpu","host"
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt 60 -and -not (Test-DeviceOnline -Serial $Serial)) {
+        Start-Sleep -Seconds 2
+    }
+    if (-not (Test-DeviceOnline -Serial $Serial)) {
+        Write-Status "FAIL: $Serial did not appear in adb after 60s" "Red"; exit 1
+    }
+    Write-Status "  Waiting for $Serial to boot..."
+    $sw2 = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw2.Elapsed.TotalSeconds -lt 240) {
+        $r = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell","getprop","sys.boot_completed") -Seconds 5
+        if ($r -and $r.Trim() -eq "1") {
+            Write-Status "  $Serial booted" "Green"
+            Install-AppAndData -Serial $Serial
+            return
+        }
+        Start-Sleep -Seconds 2
+    }
+    Write-Status "FAIL: $Serial did not boot within 240s" "Red"; exit 1
 }
 
 function Reset-GameState {
@@ -219,13 +332,13 @@ function Resolve-GameDataDeps {
 
     $pushCount = 0
     foreach ($target in $byTarget.Keys) {
-        # Get filename + size in one call for efficient mismatch detection
-        $listing = Adb-Timeout -AdbArgs @("shell","run-as",$script:PACKAGE,"sh","-c",
-            "cd '$target' && stat -c '%s %n' * 2>/dev/null") -Seconds 5
-        $deviceFiles = @{}
+        # List files with sizes via ls -la (reliable on Android toybox)
+        $listing = Adb-Timeout -AdbArgs @("shell","run-as",$script:PACKAGE,"ls","-la","$target/") -Seconds 5
+        $deviceFiles = @{}  # lowercase filename -> size
         if ($listing) {
             foreach ($line in ($listing -split "`n")) {
-                if ($line.Trim() -match '^(\d+)\s+(.+)$') {
+                # ls -la: perms links owner group SIZE date time filename
+                if ($line.Trim() -match '^\S+\s+\S+\s+\S+\s+\S+\s+(\d+)\s+\S+\s+\S+\s+(\S+)$') {
                     $deviceFiles[$matches[2].Trim().ToLower()] = [long]$matches[1]
                 }
             }
@@ -388,6 +501,11 @@ function Start-GameWithRetry {
             continue
         }
 
+        # Ensure "default" file set is active (a previous test may have switched it)
+        Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
+            "--es", "command", "switch_set", "--es", "name", "default") | Out-Null
+        Start-Sleep -Milliseconds 500
+
         Write-Status "Sending launch command..."
         Adb -AdbArgs $launchArgs | Out-Null
 
@@ -446,6 +564,7 @@ function Watch-AutomationResult {
     $finished = $false
     $passed = $false
     $backgroundHandled = $false
+    $launcherChecked = $false
 
     while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds -and -not $finished) {
         Start-Sleep -Seconds 3
@@ -463,6 +582,42 @@ function Watch-AutomationResult {
                 }
             }
             $lastHealthCheck = $elapsed
+
+            # Stuck-at-launcher detection: after 15s, if no automation progress,
+            # check if the game is actually stuck at the launcher/setup screen.
+            if (-not $launcherChecked -and $elapsed -ge 15) {
+                $launcherChecked = $true
+                $hasProgress = $false
+                # Check automation_log.jsonl for any step progress
+                $stepCheck = Adb-Timeout -AdbArgs @("shell","run-as",$script:PACKAGE,
+                    "ls","files/automation_log.jsonl") -Seconds 3
+                if ($stepCheck -and $stepCheck -notmatch 'No such file') { $hasProgress = $true }
+                if (-not $hasProgress) {
+                    # No automation progress -- check if launcher is still showing
+                    Adb -AdbArgs @("shell","am","broadcast","-a","com.dxxredux.SETUP_INTROSPECT") | Out-Null
+                    Start-Sleep -Milliseconds 800
+                    $setupJson = Adb-Timeout -AdbArgs @("shell","run-as",$script:PACKAGE,
+                        "cat","files/setup_introspect.json") -Seconds 3
+                    if ($setupJson -and $setupJson -match '"screen"\s*:\s*"setup"') {
+                        Write-Status "FAIL: Game stuck at launcher (SetupActivity still visible after ${elapsed}s)" "Red"
+                        Write-Status "  The game engine may not have found its data files." "Yellow"
+                        # Dump setup introspection for diagnostics
+                        try {
+                            $setupObj = $setupJson | ConvertFrom-Json
+                            if ($setupObj.d2 -and -not $setupObj.d2.ready) {
+                                Write-Status "  D2 files not ready on device" "Yellow"
+                            }
+                            if ($setupObj.d1 -and -not $setupObj.d1.ready) {
+                                Write-Status "  D1 files not ready on device" "Yellow"
+                            }
+                            if ($setupObj.files_on_disk) {
+                                Write-Status "  Files on disk: $($setupObj.files_on_disk -join ', ')" "Gray"
+                            }
+                        } catch {}
+                        return $false
+                    }
+                }
+            }
         }
 
         # Primary: check file-based result (survives logcat issues)
