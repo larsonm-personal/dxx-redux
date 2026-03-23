@@ -30,7 +30,7 @@ param(
 $ErrorActionPreference = "Continue"
 
 # -- Shared env setup (JAVA_HOME, cmake, cargo) ----------------------------
-. "$PSScriptRoot\..\test_env.ps1"
+. "$PSScriptRoot\..\test_helpers.ps1"
 
 # -- Paths --------------------------------------------------------------
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
@@ -86,6 +86,9 @@ if ($devices -notmatch "emulator.*device") {
     }
 }
 Write-Host "[OK] Emulator connected" -ForegroundColor Green
+
+# Ensure game data is on device before running the SAF test
+Ensure-GameDataOnDevice -Game "d2"
 
 # -- Step 1: Build ------------------------------------------------------
 if (!$NoBuild) {

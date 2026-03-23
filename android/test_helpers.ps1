@@ -152,20 +152,87 @@ function Wait-GameStarted {
     return $false
 }
 
+function Ensure-GameDataOnDevice {
+    # Ensure required game files for $Game are present on the device.
+    # Always pushes both D1 and D2 core files -- D2's mission list skips the
+    # selection dialog when num_missions<=1, and having D1 files ensures
+    # num_missions>=2 so the dialog appears (matching test expectations).
+    # If missing, find them locally and push them. Returns $true on success.
+    param([ValidateSet("d1","d2")][string]$Game = "d2")
+
+    $repoRoot = Split-Path $PSScriptRoot
+    $setDir = "files/sets/default"
+
+    # Required files per game (lowercase). Must match SetupActivity.kt D2_FILES/D1_FILES.
+    $d2Required = @("descent2.hog","descent2.ham","groupa.pig","descent2.s22",
+                     "alien1.pig","alien2.pig","fire.pig","ice.pig","water.pig")
+    $d1Required = @("descent.hog","descent.pig")
+    # Always push both sets so D2 mission-select dialog appears (needs num_missions>1)
+    $needed = ($d2Required + $d1Required) | Sort-Object -Unique
+
+    # List what's already on device
+    $listing = Adb-Timeout -AdbArgs @("shell","run-as",$script:PACKAGE,"ls","$setDir/") -Seconds 5
+    $onDevice = @()
+    if ($listing) { $onDevice = ($listing -split "`n" | ForEach-Object { $_.Trim().ToLower() }) }
+
+    $missing = $needed | Where-Object { $_ -notin $onDevice }
+    if (-not $missing -or $missing.Count -eq 0) { return $true }
+
+    Write-Status "Game data: $($missing.Count) files missing, pushing..." "Yellow"
+
+    # Search paths for local game files (order = preference)
+    $searchDirs = @(
+        (Join-Path $repoRoot "game_data_to_copy_to_emulator\temp"),
+        (Join-Path $repoRoot "game_data_to_copy_to_emulator\data"),
+        (Join-Path $repoRoot "game_data\extracted\VERTIGO"),
+        (Join-Path $repoRoot "game_data\extracted\d1 mac extracted")
+    )
+
+    # Ensure set dir exists
+    Adb -AdbArgs @("shell","run-as",$script:PACKAGE,"mkdir","-p",$setDir) | Out-Null
+
+    foreach ($fname in $missing) {
+        $localFile = $null
+        foreach ($dir in $searchDirs) {
+            if (-not (Test-Path $dir)) { continue }
+            # Case-insensitive match
+            $match = Get-ChildItem $dir -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -ieq $fname } | Select-Object -First 1
+            if ($match) { $localFile = $match.FullName; break }
+        }
+        if (-not $localFile) {
+            Write-Status "FAIL: Cannot find $fname locally" "Red"
+            return $false
+        }
+        & $script:ADB push $localFile "/data/local/tmp/$fname" 2>&1 | Out-Null
+        & $script:ADB shell "run-as $($script:PACKAGE) sh -c 'cat /data/local/tmp/$fname > /data/data/$($script:PACKAGE)/$setDir/$fname'" 2>&1 | Out-Null
+        & $script:ADB shell "rm -f /data/local/tmp/$fname" 2>&1 | Out-Null
+    }
+    Write-Status "Game data: $($missing.Count) files pushed" "Green"
+    return $true
+}
+
 function Start-GameWithRetry {
     # Full launch flow: force-stop -> SetupActivity -> verify ready -> launch command -> verify game started.
     # Retries up to $MaxAttempts times.
     # $ExtraLaunchArgs: additional broadcast extras, e.g. @("--es", "game", "d1")
     # $PreLaunchScript: optional scriptblock to run after force-stop (e.g. delete pilot files)
+    # $Game: "d1" or "d2" -- used to ensure game data is on device before launch.
     # Returns $true on success, $false on failure (caller should exit).
     param(
         [string[]]$ExtraLaunchArgs = @(),
         [scriptblock]$PreLaunchScript = $null,
-        [int]$MaxAttempts = 3
+        [int]$MaxAttempts = 3,
+        [string]$Game = "d2"
     )
 
     $launchArgs = @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND", "--es", "command", "launch")
     $launchArgs += $ExtraLaunchArgs
+
+    # Ensure game data is on device before attempting launch
+    if (-not (Ensure-GameDataOnDevice -Game $Game)) {
+        Write-Status "FAIL: Could not ensure game data for $Game on device" "Red"
+        return $false
+    }
 
     for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
         if ($attempt -gt 1) {

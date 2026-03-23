@@ -98,7 +98,7 @@ foreach ($gameId in $gameList) {
 
     if (-not (Send-AutomationScript $GAME_SCRIPT -PushOnly)) { $allPassed = $false; continue }
 
-    if (-not (Start-GameWithRetry -ExtraLaunchArgs $extraArgs)) {
+    if (-not (Start-GameWithRetry -ExtraLaunchArgs $extraArgs -Game $gameId)) {
         $allPassed = $false; continue
     }
 

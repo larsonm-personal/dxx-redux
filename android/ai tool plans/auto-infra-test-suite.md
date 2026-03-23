@@ -40,6 +40,17 @@ Complete rewrite of execution model:
 - `android/test_helpers.ps1` -- 9 new infrastructure functions
 - `android/run_all_tests.ps1` -- full tiered rewrite
 
+### Extract test "Descent (Europe)" failure [DONE]
+Root cause: `test_extract` and `test_all_extracts` were classified as `game_data`
+(Tier 0 = no infrastructure), but they need a running emulator to push files and
+launch the game. When `run_all_tests.ps1` ran them in Tier 0 before starting the
+emulator, they failed with `emulator_offline`.
+
+Fix: Changed classification from `game_data` to `extract`. Added Tier 3 that
+runs LAST (after all other tiers), requires both game data AND emulator.
+Verified: ran the Descent (Europe) extract test manually with emulator -- PASS.
+
 ### Verification
 - All three files pass PowerShell parse check
 - Pre-existing lint issues (clang-format, ktlint) are unrelated
+- Descent (Europe) extract test passes (status=pass, level=Lunar Outpost)

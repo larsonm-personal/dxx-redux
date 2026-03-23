@@ -100,7 +100,7 @@ foreach ($gameId in $gameList) {
         Reset-GameState
     }
 
-    if (-not (Start-GameWithRetry -ExtraLaunchArgs $extraArgs -PreLaunchScript $preLaunch)) {
+    if (-not (Start-GameWithRetry -ExtraLaunchArgs $extraArgs -PreLaunchScript $preLaunch -Game $gameId)) {
         $allPassed = $false
         if ($gameList.Count -gt 1) { Write-Status "FAIL for $($gameId.ToUpper())" "Red"; continue }
         exit 1

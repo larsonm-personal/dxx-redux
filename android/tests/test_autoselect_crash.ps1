@@ -39,7 +39,7 @@ $preLaunch = {
     Reset-GameState
 }
 
-if (-not (Start-GameWithRetry -PreLaunchScript $preLaunch)) {
+if (-not (Start-GameWithRetry -PreLaunchScript $preLaunch -Game $Game)) {
     Write-Status "FAIL: Could not start game for Phase 1" "Red"
     exit 1
 }
@@ -118,7 +118,7 @@ $preLaunch2 = {
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_log.jsonl") | Out-Null
 }
 
-if (-not (Start-GameWithRetry -PreLaunchScript $preLaunch2)) {
+if (-not (Start-GameWithRetry -PreLaunchScript $preLaunch2 -Game $Game)) {
     Write-Status "FAIL: Could not start game for Phase 3" "Red"
     exit 1
 }

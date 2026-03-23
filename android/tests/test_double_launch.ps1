@@ -18,6 +18,7 @@ $ErrorActionPreference = "Continue"
 . "$PSScriptRoot\..\test_helpers.ps1"
 
 Ensure-EmulatorHealthy
+Ensure-GameDataOnDevice -Game $Game
 
 $outFile = Join-Path $PSScriptRoot "..\..\temp\test_double_launch_result.txt"
 "" | Out-File $outFile

@@ -68,7 +68,7 @@ $preLaunch = {
     Reset-GameState
 }
 
-if (-not (Start-GameWithRetry -PreLaunchScript $preLaunch)) {
+if (-not (Start-GameWithRetry -PreLaunchScript $preLaunch -Game "d2")) {
     exit 1
 }
 
@@ -129,7 +129,7 @@ $preLaunch2 = {
     $cfgContent | & $script:ADB shell "run-as $($script:PACKAGE) tee files/descent.cfg" | Out-Null
 }
 
-if (-not (Start-GameWithRetry -PreLaunchScript $preLaunch2)) {
+if (-not (Start-GameWithRetry -PreLaunchScript $preLaunch2 -Game "d2")) {
     exit 1
 }
 

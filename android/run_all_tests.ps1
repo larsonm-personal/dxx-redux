@@ -118,7 +118,7 @@ $manualTests = @(
 # Infrastructure requirement classification
 $twoEmuTests = @("test_mp", "test_lan", "test_lan_discovery")
 $serverTests = @("test_bot_client")
-$gameDataTests = @("test_extract", "test_all_extracts")
+$extractTests = @("test_extract", "test_all_extracts")  # emulator + game data, run last
 $noInfraTests = @("test_cue_iso", "test_server_integration")
 
 $allTests = @()
@@ -143,7 +143,7 @@ foreach ($t in $ps1Files) {
     $req = "none"
     if ($name -in $twoEmuTests) { $req = "two_emulators" }
     elseif ($name -in $serverTests) { $req = "server" }
-    elseif ($name -in $gameDataTests) { $req = "game_data" }
+    elseif ($name -in $extractTests) { $req = "extract" }
     elseif ($name -in $noInfraTests) { $req = "none" }
     else { $req = "emulator" }
 
@@ -172,9 +172,10 @@ foreach ($test in $allTests) {
 }
 
 # Group by infrastructure tier
-$tierNone      = @($runnableTests | Where-Object { $_.Requires -eq "none" -or $_.Requires -eq "game_data" })
+$tierNone      = @($runnableTests | Where-Object { $_.Requires -eq "none" })
 $tierSingleEmu = @($runnableTests | Where-Object { $_.Requires -eq "emulator" })
 $tierDualEmu   = @($runnableTests | Where-Object { $_.Requires -eq "two_emulators" -or $_.Requires -eq "server" })
+$tierExtract   = @($runnableTests | Where-Object { $_.Requires -eq "extract" })
 
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "  DXX-Redux Unattended Test Suite" -ForegroundColor Cyan
@@ -184,6 +185,7 @@ Write-Host "Tests found: $($allTests.Count) total, $($runnableTests.Count) runna
 Write-Host "  Tier 0 (no infra):       $($tierNone.Count)"
 Write-Host "  Tier 1 (single emu):     $($tierSingleEmu.Count)"
 Write-Host "  Tier 2 (dual emu/server): $($tierDualEmu.Count)"
+Write-Host "  Tier 3 (extract/slow):   $($tierExtract.Count)"
 Write-Host ""
 
 if ($runnableTests.Count -eq 0) {
@@ -302,14 +304,8 @@ function Run-SingleTest {
 if ($tierNone.Count -gt 0 -and -not $stopEarly) {
     Write-Host ""
     Write-Host "== Tier 0: No-infrastructure tests ==" -ForegroundColor Cyan
-    # Check game data availability for game_data tests
-    $hasGameData = Test-GameDataAvailable
     foreach ($test in $tierNone) {
         if ($stopEarly) { break }
-        if ($test.Requires -eq "game_data" -and -not $hasGameData) {
-            $infraSkipped += @{ Name = $test.Name; Reason = "no game data (CD images)"; Type = $test.Type }
-            continue
-        }
         Run-SingleTest -Test $test
     }
 }
@@ -401,6 +397,41 @@ if ($tierDualEmu.Count -gt 0 -and -not $stopEarly) {
                   else { "could not start matchmaking server" }
         foreach ($test in $tierDualEmu) {
             $infraSkipped += @{ Name = $test.Name; Reason = $reason; Type = $test.Type }
+        }
+    }
+}
+
+# ── Tier 3: extract regression tests (slow, run last) ───────────────────
+
+if ($tierExtract.Count -gt 0 -and -not $stopEarly) {
+    Write-Host ""
+    Write-Host "== Tier 3: Extract regression tests (slow) ==" -ForegroundColor Cyan
+
+    $hasGameData = Test-GameDataAvailable
+    if (-not $hasGameData) {
+        foreach ($test in $tierExtract) {
+            $infraSkipped += @{ Name = $test.Name; Reason = "no game data (CD images)"; Type = $test.Type }
+        }
+    } else {
+        # Ensure emulator is running (may already be from tier 1/2)
+        if (-not (Test-SingleEmulator)) {
+            $emu1Ok = Start-SingleEmulator
+            if ($emu1Ok) { $script:startedEmu1 = $true }
+        } else {
+            $emu1Ok = $true
+        }
+
+        if ($emu1Ok) {
+            Install-ApkOnDevice | Out-Null
+            Push-GameDataToDevice
+            foreach ($test in $tierExtract) {
+                if ($stopEarly) { break }
+                Run-SingleTest -Test $test
+            }
+        } else {
+            foreach ($test in $tierExtract) {
+                $infraSkipped += @{ Name = $test.Name; Reason = "could not start emulator"; Type = $test.Type }
+            }
         }
     }
 }
