@@ -608,7 +608,7 @@ function Watch-AutomationResult {
                         "cat", "files/setup_introspect.json") -Seconds 3
                     if ($setupJson -and $setupJson -match '"screen"\s*:\s*"setup"') {
                         Write-Status "FAIL: Game stuck at launcher (SetupActivity still visible after ${elapsed}s)" "Red"
-                        Write-Status "  The game engine may not have found its data files." "Yellow"
+                        Write-Status "  The game engine may not have found its data files" "Yellow"
                         # Dump setup introspection for diagnostics
                         try {
                             $setupObj = $setupJson | ConvertFrom-Json

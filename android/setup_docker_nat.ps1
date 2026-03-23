@@ -39,7 +39,7 @@ function Write-Status {
 Write-Status "Checking Docker..."
 $dockerVer = docker version --format '{{.Server.Version}}' 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Status "FAIL: Docker is not running. Start Docker Desktop first." "Red"
+    Write-Status "FAIL: Docker is not running. Start Docker Desktop first" "Red"
     exit 1
 }
 Write-Status "Docker running (v$dockerVer)" "Green"

@@ -82,7 +82,7 @@ Button on the advanced page:
 - Red text, confirmation dialog
 - Warning: "Deletes all pilot files (.plr), configs (.plx), effects (.eff),
   new game plus (.ngp), saved games (.sg*, .mg*) for both Descent 1 and 2
-  across all file sets. Cannot be undone."
+  across all file sets. Cannot be undone"
 - Implementation: walk sets/*/d1x-redux/ and d2x-redux/ (and Players/ subdirs),
   delete matching extensions. Restart after.
 
@@ -105,9 +105,9 @@ Like deleteSet() but works for default:
 
 - Add delete/clear button for current set (including default)
 - Confirmation dialog differentiates:
-  - "Imported files (copied to app data) will be permanently deleted."
+  - "Imported files (copied to app data) will be permanently deleted"
   - "Files added via file picker (leave-in-place) will be unlinked but not
-    deleted from their original location."
+    deleted from their original location"
 - For default: calls clearSet(). For non-default: calls deleteSet().
 
 ### Files

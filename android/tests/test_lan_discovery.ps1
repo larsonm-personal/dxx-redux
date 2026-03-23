@@ -155,5 +155,5 @@ try {
 } finally {
     $udp.Close()
     Write-Host ""
-    Write-Host "Test bot stopped."
+    Write-Host "Test bot stopped"
 }

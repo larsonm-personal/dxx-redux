@@ -23,7 +23,7 @@ try {
             $env:JAVA_HOME = $jdk.FullName
             Write-Host "JAVA_HOME = $env:JAVA_HOME"
         } else {
-            Write-Error "No JDK found in $DEP_BASE\jdk-*. Set JAVA_HOME manually."
+            Write-Error "No JDK found in $DEP_BASE\jdk-*. Set JAVA_HOME manually"
         }
     }
 
@@ -86,7 +86,7 @@ object BuildInfo {
         $env:GET_ALL_RUNNING = $null
         $ErrorActionPreference = $prevEAP
         if (-not (Test-Path "gradle\wrapper\gradle-wrapper.jar")) {
-            throw "Failed to bootstrap Gradle wrapper. Run get_deps\get_gradle_wrapper.sh manually."
+            throw "Failed to bootstrap Gradle wrapper. Run get_deps\get_gradle_wrapper.sh manually"
         }
     }
 

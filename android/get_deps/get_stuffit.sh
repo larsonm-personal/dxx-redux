@@ -24,7 +24,7 @@ fi
 
 # Check for cargo
 if ! command -v cargo >/dev/null 2>&1; then
-    echo "ERROR: cargo not found. Install Rust from https://rustup.rs/ first."
+    echo "ERROR: cargo not found. Install Rust from https://rustup.rs/ first"
     exit 1
 fi
 
@@ -34,7 +34,7 @@ cargo install stuffit --version "$STUFFIT_CRATE_VERSION" --root "$DEST"
 if [ -f "$DEST/bin/stuffit.exe" ] || [ -f "$DEST/bin/stuffit" ]; then
     echo "stuffit $STUFFIT_CRATE_VERSION installed at $DEST"
 else
-    echo "ERROR: stuffit binary not found after build."
+    echo "ERROR: stuffit binary not found after build"
     exit 1
 fi
 

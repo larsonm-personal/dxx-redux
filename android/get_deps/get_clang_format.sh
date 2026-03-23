@@ -67,14 +67,14 @@ if _is_windows_target; then
 
         echo "  Running installer silently..."
         cmd.exe /C "$VC_TMP /install /quiet /norestart" || {
-            echo "VC++ Redistributable installation failed."
+            echo "VC++ Redistributable installation failed"
             exit 1
         }
 
         echo "VC++ Redistributable installed. Re-testing clang-format..."
         "$DEST/$DEST_NAME" --version
     else
-        echo "clang-format runs successfully; VC++ runtime appears to be present."
+        echo "clang-format runs successfully; VC++ runtime appears to be present"
     fi
 fi
 # ---------------------------------------------------------------------------

@@ -76,11 +76,11 @@ Write-Host ""
 # --- Summary ---
 Write-Host "=== Summary ==="
 if ($failed.Count -eq 0) {
-    Write-Host "All checks passed."
+    Write-Host "All checks passed"
 } else {
     Write-Host "Failed checks: $($failed -join ', ')"
     if (-not $Fix) {
-        Write-Host "Run with --fix to auto-format."
+        Write-Host "Run with --fix to auto-format"
     }
     exit 1
 }

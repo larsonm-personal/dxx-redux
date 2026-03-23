@@ -48,7 +48,7 @@ if (-not $AabPath) {
         elseif (Test-Path $debugAab) { $aab = Get-Item $debugAab }
     }
     if (-not $aab) {
-        Write-Error "No AAB found. Build one first with .\build-aab.ps1 or specify -AabPath."
+        Write-Error "No AAB found. Build one first with .\build-aab.ps1 or specify -AabPath"
     }
     $AabPath = $aab.FullName
 }
@@ -189,7 +189,7 @@ function Get-AccessToken {
 Write-Host "Authenticating..."
 $token = Get-AccessToken $creds
 if (-not $token) { Write-Error 'Authentication failed - no access token received.' }
-Write-Host "Authenticated successfully."
+Write-Host "Authenticated successfully"
 Write-Host ""
 
 $headers = @{ Authorization = "Bearer $token" }
@@ -315,7 +315,7 @@ try {
     if ($errBody -match "already been used") {
         # Extract the versionCode from the AAB filename or error message
         if ($errBody -match "Version code (\d+)") { $versionCode = [int]$Matches[1] }
-        Write-Host "Version code $versionCode already uploaded -- skipping to promotion."
+        Write-Host "Version code $versionCode already uploaded -- skipping to promotion"
         $alreadyUploaded = $true
     } else {
         Write-Error "Upload failed: $errBody`n$_"
@@ -391,7 +391,7 @@ if (-not $alreadyUploaded) {
     if ($commitError) {
         Write-Error "Commit failed: $commitError"
     } else {
-        Write-Host "Edit committed."
+        Write-Host "Edit committed"
     }
     Write-Host ""
 } else {
@@ -461,7 +461,7 @@ if (-not $alreadyUploaded) {
     if ($commitError) {
         Write-Error "Commit failed: $commitError"
     } else {
-        Write-Host "Edit committed."
+        Write-Host "Edit committed"
     }
     Write-Host ""
 }
@@ -498,16 +498,16 @@ if ($releaseStatus -eq "draft") {
         $promoteCommitError = TryCommitEdit $baseUrl $promoteEditId $headers
         if ($promoteCommitError) {
             Write-Host "WARNING: Could not promote to completed: $promoteCommitError"
-            Write-Host "Release remains in draft status."
+            Write-Host "Release remains in draft status"
         } else {
             $releaseStatus = "completed"
-            Write-Host "Release promoted to completed."
+            Write-Host "Release promoted to completed"
         }
     } catch {
         $errBody = $_.ErrorDetails.Message
         if (-not $errBody) { try { $errBody = $_.Exception.Response.GetResponseStream() | ForEach-Object { (New-Object System.IO.StreamReader($_)).ReadToEnd() } } catch {} }
         Write-Host "WARNING: Could not promote to completed: $errBody"
-        Write-Host "Release remains in draft status."
+        Write-Host "Release remains in draft status"
     }
     Write-Host ""
 }

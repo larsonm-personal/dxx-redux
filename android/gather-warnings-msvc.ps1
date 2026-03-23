@@ -37,7 +37,7 @@ function Build-And-Gather($name, $buildDir) {
     $fullBuildDir = Join-Path $repoRoot $buildDir
 
     if (-not (Test-Path $fullBuildDir)) {
-        Write-Host "Build directory $fullBuildDir does not exist -- skipping $name."
+        Write-Host "Build directory $fullBuildDir does not exist -- skipping $name"
         Write-Host "  Create it with: mkdir $buildDir; cd $buildDir; cmake ..\$name"
         return @()
     }

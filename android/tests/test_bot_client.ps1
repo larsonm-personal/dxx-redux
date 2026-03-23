@@ -196,7 +196,7 @@ Write-Host ""
 # Connect
 Write-Host "Connecting..." -ForegroundColor Yellow
 $ws = Connect-WebSocket -Url $ServerUrl
-Write-Host "Connected." -ForegroundColor Green
+Write-Host "Connected" -ForegroundColor Green
 
 # Authenticate
 $devToken = "dev-bot-$([guid]::NewGuid().ToString())"
@@ -254,7 +254,7 @@ switch ($Action) {
         $resp = Send-AndReceive -Ws $ws -Msg @{ type = "LIST_LOBBIES" }
         if ($resp.type -eq "LOBBY_LIST") {
             if ($resp.lobbies.Count -eq 0) {
-                Write-Host "No lobbies found." -ForegroundColor Yellow
+                Write-Host "No lobbies found" -ForegroundColor Yellow
             } else {
                 Write-Host "Lobbies ($($resp.lobbies.Count)):" -ForegroundColor Green
                 foreach ($lobby in $resp.lobbies) {
@@ -297,12 +297,12 @@ switch ($Action) {
     "join" {
         $resp = Send-AndReceive -Ws $ws -Msg @{ type = "LIST_LOBBIES" }
         if ($resp.type -ne "LOBBY_LIST" -or $resp.lobbies.Count -eq 0) {
-            Write-Host "No lobbies to join." -ForegroundColor Yellow
+            Write-Host "No lobbies to join" -ForegroundColor Yellow
             exit 0
         }
         $target = $resp.lobbies | Where-Object { $_.joinable } | Select-Object -First 1
         if ($null -eq $target) {
-            Write-Host "No joinable lobbies found." -ForegroundColor Yellow
+            Write-Host "No joinable lobbies found" -ForegroundColor Yellow
             exit 0
         }
         Write-Host "Joining lobby hosted by $($target.host_callsign)..." -ForegroundColor Yellow
@@ -333,7 +333,7 @@ if ($ws.State -eq [System.Net.WebSockets.WebSocketState]::Open) {
     } catch {}
 }
 
-Write-Host "Bot disconnected." -ForegroundColor Yellow
+Write-Host "Bot disconnected" -ForegroundColor Yellow
 
 # Cleanup auto-started server
 if ($script:autoServerProc -and -not $script:autoServerProc.HasExited) {

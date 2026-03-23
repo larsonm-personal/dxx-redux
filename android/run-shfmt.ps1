@@ -36,7 +36,7 @@ if (-not $shfmt) {
     if ($inPath) { $shfmt = $inPath.Source }
 }
 if (-not $shfmt) {
-    Write-Error "shfmt not found. Run android/get_deps/get_shfmt.sh to install."
+    Write-Error "shfmt not found. Run android/get_deps/get_shfmt.sh to install"
     exit 1
 }
 Write-Host "Using: $shfmt"
@@ -47,11 +47,11 @@ $files = Get-ChildItem -Path $PSScriptRoot -Recurse -Include "*.sh" |
     Where-Object { $_.FullName -notmatch '[\\\\/](build|build-outputs|\.cxx)[\\\\/]' }
 
 if ($files.Count -eq 0) {
-    Write-Host "No shell scripts found."
+    Write-Host "No shell scripts found"
     exit 0
 }
 
-Write-Host "Found $($files.Count) shell scripts."
+Write-Host "Found $($files.Count) shell scripts"
 
 # --- Run ---
 # shfmt flags: -i 4 (indent=4, matches .editorconfig), -bn (binary ops start of line)
@@ -77,10 +77,10 @@ if ($Check) {
         }
         exit 1
     }
-    Write-Host "All shell scripts are correctly formatted."
+    Write-Host "All shell scripts are correctly formatted"
 } else {
     foreach ($f in $files) {
         & $shfmt @shfmtArgs -w "$($f.FullName)"
     }
-    Write-Host "shfmt format pass complete."
+    Write-Host "shfmt format pass complete"
 }

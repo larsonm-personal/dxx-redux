@@ -9,7 +9,7 @@ RUN_USER="$(whoami)"
 
 if [ ! -f "$BINARY" ]; then
     echo "ERROR: binary not found at $BINARY"
-    echo "Run deploy_build.sh first."
+    echo "Run deploy_build.sh first"
     exit 1
 fi
 

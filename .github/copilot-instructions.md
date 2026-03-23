@@ -39,6 +39,7 @@
 ### code quality and testing
 - don't use emoji anywhere, not in code, not in comments, not in markdown files
 - don't use emdashes anywhere, but especially not in scripts
+- in printlines/comments, don't end self-contained sentences, especially those that already end with a newline, with a period. for example, `Write-Host "No lobbies to join"` instead of `Write-Host "No lobbies to join.`
 - keep to printable ascii wherever possible
 - always create a plan as step 1 of any block of work. plan files go here: android\ai tool plans\
   - when a given tranche of work is done, always mark the finished parts in the plan file so the next phase can start at the right place

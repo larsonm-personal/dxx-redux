@@ -36,7 +36,7 @@ if (-not $shellcheck) {
     if ($inPath) { $shellcheck = $inPath.Source }
 }
 if (-not $shellcheck) {
-    Write-Error "shellcheck not found. Run android/get_deps/get_shellcheck.sh to install."
+    Write-Error "shellcheck not found. Run android/get_deps/get_shellcheck.sh to install"
     exit 1
 }
 Write-Host "Using: $shellcheck"
@@ -47,16 +47,16 @@ $files = Get-ChildItem -Path $PSScriptRoot -Recurse -Include "*.sh" |
     Where-Object { $_.FullName -notmatch '[\\\\/](build|build-outputs|\.cxx)[\\\\/]' }
 
 if ($files.Count -eq 0) {
-    Write-Host "No shell scripts found."
+    Write-Host "No shell scripts found"
     exit 0
 }
 
-Write-Host "Found $($files.Count) shell scripts."
+Write-Host "Found $($files.Count) shell scripts"
 
 # --- Run ---
 # shellcheck has no auto-fix mode; both modes report issues.
 # Exclude SC1091: can't follow non-constant source (expected with variable paths).
-# Exclude SC2317: "unreachable" functions defined in source'd files.
+# Exclude SC2317: "unreachable" functions defined in sourced files.
 $hasIssues = $false
 $savedPref = $ErrorActionPreference
 $ErrorActionPreference = "Continue"
@@ -70,7 +70,7 @@ $ErrorActionPreference = $savedPref
 
 if ($hasIssues) {
     Write-Host ""
-    Write-Host "shellcheck found issues in one or more scripts."
+    Write-Host "shellcheck found issues in one or more scripts"
     exit 1
 }
-Write-Host "All shell scripts pass shellcheck."
+Write-Host "All shell scripts pass shellcheck"

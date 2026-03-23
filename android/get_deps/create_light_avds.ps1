@@ -36,7 +36,7 @@ foreach ($avd in $avds) {
     # Check if it already exists
     $existing = & $avdManager list avd 2>&1 | Out-String
     if ($existing -match "Name: $name" -and -not $Force) {
-        Write-Host "  AVD '$name' already exists. Use -Force to recreate."
+        Write-Host "  AVD '$name' already exists. Use -Force to recreate"
         continue
     }
 

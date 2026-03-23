@@ -17,7 +17,7 @@ try {
         if ($jdk) {
             $javaHome = $jdk.FullName
         } else {
-            Write-Error "No JDK found in $DEP_BASE\jdk-*. Set JAVA_HOME manually."
+            Write-Error "No JDK found in $DEP_BASE\jdk-*. Set JAVA_HOME manually"
         }
     }
 
@@ -29,7 +29,7 @@ try {
     $keystoreFile = "release.keystore"
     if (Test-Path $keystoreFile) {
         Write-Host "Keystore already exists: $keystoreFile"
-        Write-Host "Delete it first if you want to regenerate."
+        Write-Host "Delete it first if you want to regenerate"
         exit 1
     }
 
@@ -44,7 +44,7 @@ try {
     Write-Host "Keystore created: $keystoreFile"
     Write-Host ""
     Write-Host "Now copy keystore.properties.example to keystore.properties"
-    Write-Host "and fill in the passwords you just entered."
+    Write-Host "and fill in the passwords you just entered"
 } finally {
     Pop-Location
 }

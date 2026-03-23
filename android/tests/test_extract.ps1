@@ -55,7 +55,7 @@ $TEST_SET = 'regression_test'
 
 $_depBaseFile = Join-Path (Split-Path (Split-Path $PSScriptRoot)) 'dependency_base.txt'
 if (-not (Test-Path $_depBaseFile)) {
-    Write-Error "dependency_base.txt not found. Create it with a line containing the dependency dir path."
+    Write-Error "dependency_base.txt not found. Create it with a line containing the dependency dir path"
     exit 1
 }
 $DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
@@ -306,7 +306,7 @@ if ($spec.source_type -eq 'cd') {
     $extractedDir = Join-Path $specDir 'data_tracks'
     # Some CDs organize into subdirs (d1data, d2data)
     if (-not (Test-Path $extractedDir)) {
-        Write-Error "No data_tracks/ directory found at $specDir. Run extract_all_cds.ps1 first."
+        Write-Error "No data_tracks/ directory found at $specDir. Run extract_all_cds.ps1 first"
         Exit-Test 1 'fail' 'source_missing'
     }
 } elseif ($spec.source_type -eq 'gog') {
@@ -315,7 +315,7 @@ if ($spec.source_type -eq 'cd') {
     $baseName = [System.IO.Path]::GetFileNameWithoutExtension($installerName)
     $extractedDir = Join-Path $specDir $baseName
     if (-not (Test-Path $extractedDir)) {
-        Write-Error "No extracted directory found at $extractedDir. Run extract_all_gog.ps1 first."
+        Write-Error "No extracted directory found at $extractedDir. Run extract_all_gog.ps1 first"
         Exit-Test 1 'fail' 'source_missing'
     }
 }
@@ -508,7 +508,7 @@ if ($setFileCount -gt 0) {
 # is false with an empty test set, no game files are reachable.
 if ($state.can_launch) {
     Write-Status "FAIL: Canary check - game reports can_launch=true with empty test set!" 'Red'
-    Write-Status "  This means game files are leaking from somewhere." 'Red'
+    Write-Status "  This means game files are leaking from somewhere" 'Red'
     Write-Status "  Active set: $($state.active_set), set_files: $($state.set_files -join ', ')" 'Red'
     Write-Status "  files_on_disk: $($state.files_on_disk -join ', ')" 'Red'
     Exit-Test 1 'fail' 'canary_failed'
@@ -619,8 +619,8 @@ foreach ($sf in $signatureFiles) {
 if ($identityWarnings.Count -gt 0) {
     Write-Status "NOTICE: $($identityWarnings.Count) file(s) match demo set hashes:" 'Yellow'
     foreach ($w in $identityWarnings) { Write-Host $w -ForegroundColor Yellow }
-    Write-Status "  This may be OK if the disc version matches the demo set version." 'Yellow'
-    Write-Status "  Review manually if unexpected." 'Yellow'
+    Write-Status "  This may be OK if the disc version matches the demo set version" 'Yellow'
+    Write-Status "  Review manually if unexpected" 'Yellow'
 }
 
 # -- Step 7: Check file set readiness -------------------------

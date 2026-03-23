@@ -26,9 +26,9 @@ RELEASE_JSON=$(curl -sL "https://api.github.com/repos/joncampbell123/dosbox-x/re
 ASSET_URL=$(echo "$RELEASE_JSON" | grep -o '"browser_download_url": *"[^"]*mingw-win64[^"]*\.zip"' | head -1 | sed 's/"browser_download_url": *"//;s/"$//')
 
 if [ -z "$ASSET_URL" ]; then
-    echo "ERROR: Could not find DOSBox-X $DOSBOX_VERSION win64 download URL."
+    echo "ERROR: Could not find DOSBox-X $DOSBOX_VERSION win64 download URL"
     echo "Check https://github.com/joncampbell123/dosbox-x/releases for valid versions"
-    echo "and update DOSBOX_VERSION in tool_versions.conf."
+    echo "and update DOSBOX_VERSION in tool_versions.conf"
     exit 1
 fi
 
@@ -61,7 +61,7 @@ fi
 # Find dosbox-x.exe in the extracted contents
 DOSBOX_EXE=$(find "$TMPDIR2" -name "dosbox-x.exe" -type f | head -1)
 if [ -z "$DOSBOX_EXE" ]; then
-    echo "ERROR: Could not find dosbox-x.exe in extracted archive."
+    echo "ERROR: Could not find dosbox-x.exe in extracted archive"
     echo "Contents:"
     find "$TMPDIR2" -maxdepth 3 -type f | head -20
     rm -rf "$TMPDIR2" "$TMPFILE"

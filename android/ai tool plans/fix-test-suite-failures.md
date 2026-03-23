@@ -78,7 +78,7 @@ Remove -AutoServer switch. Always auto-start server if not reachable.
 stat path wrong: files/$TEST_FILE should be files/sets/default/$TEST_FILE.
 Also handle ErrorRecord from stat. Fix all file path refs in the test.
 
----
+---z
 
 ## Phase 11: Dual-emulator auto-start deps  [x]
 test_lan.ps1 + test_mp.ps1: auto-start missing emulators instead of failing.

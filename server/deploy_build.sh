@@ -18,7 +18,7 @@ while true; do
     case "$MODE_CHOICE" in
         1) DEPLOY_MODE="lan"; break ;;
         2) DEPLOY_MODE="web"; break ;;
-        *) echo "Invalid choice." ;;
+        *) echo "Invalid choice" ;;
     esac
 done
 echo "Mode: $DEPLOY_MODE"
@@ -74,9 +74,9 @@ if [ -f "$CONFIG_FILE" ]; then
     read -p "Overwrite with $DEPLOY_MODE template? (y/N): " answer
     if [[ "$answer" == [Yy] ]]; then
         cp "$TEMPLATE_CONFIG" "$CONFIG_FILE"
-        echo "Config overwritten from $DEPLOY_MODE template."
+        echo "Config overwritten from $DEPLOY_MODE template"
     else
-        echo "Keeping existing config."
+        echo "Keeping existing config"
     fi
 else
     echo "No config file found. Creating from $DEPLOY_MODE template..."
@@ -95,12 +95,12 @@ if [ "$DEPLOY_MODE" = "lan" ]; then
         exit 1
     fi
     if [ -f "$SCRIPT_DIR/lan_certs/cert.pem" ]; then
-        echo "Existing LAN cert found."
+        echo "Existing LAN cert found"
         read -p "Regenerate? (y/N): " answer
         if [[ "$answer" == [Yy] ]]; then
             bash "$CERT_SCRIPT"
         else
-            echo "Keeping existing cert."
+            echo "Keeping existing cert"
         fi
     else
         bash "$CERT_SCRIPT"
@@ -129,30 +129,30 @@ else
         echo "nginx config already exists: $NGINX_CONF"
         read -p "Overwrite? (y/N): " answer
         if [[ "$answer" != [Yy] ]]; then
-            echo "Keeping existing nginx config."
+            echo "Keeping existing nginx config"
         else
             read -p "Enter your domain name (e.g. match.example.com): " DOMAIN
             if [ -z "$DOMAIN" ]; then
-                echo "ERROR: domain name required for TLS."
+                echo "ERROR: domain name required for TLS"
                 exit 1
             fi
             sed "s/DOMAIN/$DOMAIN/g" "$NGINX_TEMPLATE" | sudo tee "$NGINX_CONF" > /dev/null
-            echo "nginx config written."
+            echo "nginx config written"
         fi
     else
         read -p "Enter your domain name (e.g. match.example.com): " DOMAIN
         if [ -z "$DOMAIN" ]; then
-            echo "ERROR: domain name required for TLS."
+            echo "ERROR: domain name required for TLS"
             exit 1
         fi
         sed "s/DOMAIN/$DOMAIN/g" "$NGINX_TEMPLATE" | sudo tee "$NGINX_CONF" > /dev/null
         sudo ln -sf "$NGINX_CONF" /etc/nginx/sites-enabled/dxx-matchmaking
-        echo "nginx config installed and enabled."
+        echo "nginx config installed and enabled"
     fi
 
     sudo nginx -t
     sudo systemctl reload nginx
-    echo "nginx reloaded."
+    echo "nginx reloaded"
     echo ""
 fi
 
@@ -173,7 +173,7 @@ if [ "$DEPLOY_MODE" = "web" ]; then
     if [ -n "$PUBLIC_IP" ]; then
         echo "Detected public IP: $PUBLIC_IP"
     else
-        echo "Could not auto-detect public IP."
+        echo "Could not auto-detect public IP"
     fi
 
     # Read current config values (uncommented lines only)
@@ -196,7 +196,7 @@ if [ "$DEPLOY_MODE" = "web" ]; then
 
     echo ""
     echo "The relay and STUN services need a public hostname or IP that clients"
-    echo "can reach. A domain name is recommended for flexibility."
+    echo "can reach. A domain name is recommended for flexibility"
     if [ -n "$CURRENT_HOST" ] && [ "$CURRENT_HOST" != "YOUR_HOST" ]; then
         echo "  Current config: $CURRENT_HOST"
     fi
@@ -216,13 +216,13 @@ if [ "$DEPLOY_MODE" = "web" ]; then
     fi
 
     if [ -z "$PUBLIC_HOST" ]; then
-        echo "Skipping -- you can edit $CONFIG_FILE manually later."
+        echo "Skipping -- you can edit $CONFIG_FILE manually later"
     else
         WANT_RELAY="${PUBLIC_HOST}:9001"
         WANT_STUN="${PUBLIC_HOST}:3478,${PUBLIC_HOST}:3479"
 
         if [ "$CURRENT_RELAY" = "$WANT_RELAY" ] && [ "$CURRENT_STUN" = "$WANT_STUN" ]; then
-            echo "Config already has correct values. No changes needed."
+            echo "Config already has correct values. No changes needed"
         else
             echo "Will set:"
             echo "  relay_public_addr: \"$WANT_RELAY\""
@@ -241,9 +241,9 @@ if [ "$DEPLOY_MODE" = "web" ]; then
                 else
                     sed -i '/^}/i\    stun_public_addrs: "'"$WANT_STUN"'",' "$CONFIG_FILE"
                 fi
-                echo "Config updated."
+                echo "Config updated"
             else
-                echo "Skipped. Edit $CONFIG_FILE manually."
+                echo "Skipped. Edit $CONFIG_FILE manually"
             fi
         fi
     fi

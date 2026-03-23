@@ -20,7 +20,7 @@ Up to 500ms latency before overlay switches to automap mode or back.
 **Root cause:** `NativePilotPatcher` loads `dxx-redux-d2` during setup. When
 D1 runs, `nativeGetMarkerCount()` resolves from the D2 library. D2's
 `MarkerObject[]` is zero-initialized (not -1), so all 10 entries count as
-"placed."
+"placed"
 
 **Fix:**
 1. In MainActivity where `markerCountProvider` is set: if `game == "d1"`,

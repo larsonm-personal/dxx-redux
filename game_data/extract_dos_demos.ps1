@@ -90,7 +90,7 @@ foreach ($inst in $Installers) {
         $existing = Get-ChildItem $outputDir -File -ErrorAction SilentlyContinue |
                     Where-Object { $_.Extension -match '\.(hog|pig|ham|mvl)$' }
         if ($existing.Count -gt 0) {
-            Write-Host ("$baseName already extracted, {0} game files. Use -Force to redo." -f $existing.Count)
+            Write-Host ("$baseName already extracted, {0} game files. Use -Force to redo" -f $existing.Count)
             continue
         }
     }
@@ -115,7 +115,7 @@ foreach ($inst in $Installers) {
     # Find INSTALL.EXE (might be in root or subdirectory)
     $installerExe = Get-ChildItem $sourceDir -Recurse -Filter $inst.Exe -File | Select-Object -First 1
     if (-not $installerExe) {
-        Write-Warning "  $($inst.Exe) not found in $zipName. Skipping."
+        Write-Warning "  $($inst.Exe) not found in $zipName. Skipping"
         Remove-Item $tempBase -Recurse -Force -ErrorAction SilentlyContinue
         continue
     }
@@ -193,7 +193,7 @@ foreach ($inst in $Installers) {
         if ($sizesSame) { $stableCount++ } else { $stableCount = 0 }
 
         if ($stableCount -ge 2) {
-            Write-Host "  Game files detected and stable - killing DOSBox."
+            Write-Host "  Game files detected and stable - killing DOSBox"
             $filesFound = $true
             break
         }
@@ -203,7 +203,7 @@ foreach ($inst in $Installers) {
         $proc.Kill()
         Start-Sleep -Seconds 1
         if (-not $filesFound) {
-            Write-Warning "  DOSBox-X timed out after ${TimeoutSec}s without expected game files."
+            Write-Warning "  DOSBox-X timed out after ${TimeoutSec}s without expected game files"
         }
     }
 
@@ -215,7 +215,7 @@ foreach ($inst in $Installers) {
     }
 
     if ($found.Count -eq 0) {
-        Write-Warning "  No game files found. The installer may need different keystrokes."
+        Write-Warning "  No game files found. The installer may need different keystrokes"
         Write-Host "  Contents of DOSBox C: drive:"
         Get-ChildItem $targetDir -Recurse -File | ForEach-Object {
             $rel = $_.FullName.Substring($targetDir.Length)
@@ -236,4 +236,4 @@ foreach ($inst in $Installers) {
 }
 
 Write-Host ""
-Write-Host "Done." -ForegroundColor Cyan
+Write-Host "Done" -ForegroundColor Cyan

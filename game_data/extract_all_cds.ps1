@@ -38,7 +38,7 @@ if (-not $SkipBuild) {
 }
 
 if (-not (Test-Path $ExePath)) {
-    Write-Error "extract_cd.exe not found at $ExePath. Run without -SkipBuild."
+    Write-Error "extract_cd.exe not found at $ExePath. Run without -SkipBuild"
     exit 1
 }
 

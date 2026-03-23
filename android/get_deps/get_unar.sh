@@ -47,7 +47,7 @@ rm -rf "$DEST/__MACOSX"
 if [ -f "$DEST/unar.exe" ]; then
     echo "unar installed at $DEST"
 else
-    echo "ERROR: unar.exe not found after extraction."
+    echo "ERROR: unar.exe not found after extraction"
     exit 1
 fi
 

@@ -18,7 +18,7 @@ _resolve_dep_base() {
     done
 
     if [ ! -f "$repo_root/dependency_base.txt" ]; then
-        echo "ERROR: dependency_base.txt not found." >&2
+        echo "ERROR: dependency_base.txt not found" >&2
         echo "Create it in the repo root with a single line containing the path to your" >&2
         echo "dependency directory (e.g. C:\\local)." >&2
         return 1 2>/dev/null || exit 1
@@ -29,7 +29,7 @@ _resolve_dep_base() {
     raw="$(head -1 "$repo_root/dependency_base.txt" | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
 
     if [ -z "$raw" ]; then
-        echo "ERROR: dependency_base.txt is empty." >&2
+        echo "ERROR: dependency_base.txt is empty" >&2
         return 1 2>/dev/null || exit 1
     fi
 

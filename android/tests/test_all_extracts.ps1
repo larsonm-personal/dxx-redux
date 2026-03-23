@@ -62,7 +62,7 @@ if ($SpecPaths -and $SpecPaths.Count -gt 0) {
 }
 
 if ($specs.Count -eq 0) {
-    Write-Host "No regression specs found." -ForegroundColor Red
+    Write-Host "No regression specs found" -ForegroundColor Red
     exit 1
 }
 
@@ -110,7 +110,7 @@ foreach ($specPath in $specs) {
     # Pre-flight: verify emulator is healthy before each test
     if (-not (Test-EmulatorHealthy)) {
         try { Ensure-EmulatorHealthy } catch {
-            Write-Host "  Emulator not recoverable. Stopping." -ForegroundColor Red
+            Write-Host "  Emulator not recoverable. Stopping" -ForegroundColor Red
             $results += [PSCustomObject]@{ Source = $sourceName; Status = 'FAIL'; Time = '00:00'; ExitCode = 98 }
             $failures++
             break

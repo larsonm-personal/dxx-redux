@@ -30,7 +30,7 @@ foreach ($line in Get-Content $confFile) {
 # Find ktlint jar
 $ktlintJar = Join-Path $DEP_BASE "ktlint-$ktlintVersion\ktlint.jar"
 if (-not (Test-Path $ktlintJar)) {
-    Write-Error "ktlint not found at $ktlintJar. Run android/get_deps/get_ktlint.sh to install."
+    Write-Error "ktlint not found at $ktlintJar. Run android/get_deps/get_ktlint.sh to install"
     exit 1
 }
 
@@ -47,7 +47,7 @@ if (Test-Path $candidate) {
     }
 }
 if (-not $java) {
-    Write-Error "java not found. Install JDK or run android/get_deps/get_jdk.sh."
+    Write-Error "java not found. Install JDK or run android/get_deps/get_jdk.sh"
     exit 1
 }
 
@@ -59,11 +59,11 @@ $ktDir = Join-Path $PSScriptRoot "app\src\main\java"
 $files = Get-ChildItem -Path $ktDir -Recurse -Include "*.kt"
 
 if ($files.Count -eq 0) {
-    Write-Host "No Kotlin files found."
+    Write-Host "No Kotlin files found"
     exit 0
 }
 
-Write-Host "Found $($files.Count) Kotlin files."
+Write-Host "Found $($files.Count) Kotlin files"
 
 # --- Run ---
 $patterns = ($files | ForEach-Object { $_.FullName }) -join " "
@@ -73,12 +73,12 @@ if ($Check) {
     & $java -jar $ktlintJar $files.FullName
     if ($LASTEXITCODE -ne 0) {
         Write-Host ""
-        Write-Host "ktlint found issues. Run without --check to auto-fix."
+        Write-Host "ktlint found issues. Run without --check to auto-fix"
         exit 1
     }
-    Write-Host "All Kotlin files pass ktlint checks."
+    Write-Host "All Kotlin files pass ktlint checks"
 } else {
     Write-Host "Formatting..."
     & $java -jar $ktlintJar --format $files.FullName
-    Write-Host "Done."
+    Write-Host "Done"
 }

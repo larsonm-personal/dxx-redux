@@ -31,7 +31,7 @@ elif [[ -x "/c/local/android-sdk/platform-tools/adb.exe" ]]; then
 elif [[ -n "${LOCALAPPDATA:-}" && -x "${LOCALAPPDATA}/Android/Sdk/platform-tools/adb.exe" ]]; then
     ADB="${LOCALAPPDATA}/Android/Sdk/platform-tools/adb.exe"
 else
-    echo "ERROR: adb not found. Set ADB= or add it to PATH." >&2
+    echo "ERROR: adb not found. Set ADB= or add it to PATH" >&2
     exit 1
 fi
 GAME_SCRIPTS_DIR="$SCRIPT_DIR/game_scripts"

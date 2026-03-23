@@ -13,7 +13,7 @@ try {
     # -- Resolve dependency base for JDK and bundletool --
     $_depBaseFile = Join-Path (Split-Path $PSScriptRoot) "dependency_base.txt"
     if (-not (Test-Path $_depBaseFile)) {
-        Write-Error "dependency_base.txt not found. Create it with the path to your dependency directory."
+        Write-Error "dependency_base.txt not found. Create it with the path to your dependency directory"
         exit 1
     }
     $DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
@@ -24,7 +24,7 @@ try {
         if ($jdk) {
             $env:JAVA_HOME = $jdk.FullName
         } else {
-            Write-Error "No JDK found in $DEP_BASE\jdk-*. Set JAVA_HOME manually."
+            Write-Error "No JDK found in $DEP_BASE\jdk-*. Set JAVA_HOME manually"
             exit 1
         }
     }
@@ -74,7 +74,7 @@ try {
     # -- Load keystore config --
     $ksProps = Join-Path $PSScriptRoot "keystore.properties"
     if (-not (Test-Path $ksProps)) {
-        Write-Error "keystore.properties not found. Copy keystore.properties.example and fill in values."
+        Write-Error "keystore.properties not found. Copy keystore.properties.example and fill in values"
         exit 1
     }
     $ksConfig = @{}
@@ -132,7 +132,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "adb install failed" }
 
     Write-Host ""
-    Write-Host "Done. APK installed on device."
+    Write-Host "Done. APK installed on device"
 } finally {
     Pop-Location
 }

@@ -36,7 +36,7 @@ ADB="$SDK_DIR/platform-tools/adb"
 [ ! -x "$ADB" ] && [ -f "$ADB.exe" ] && ADB="$ADB.exe"
 
 if [ ! -f "$EMULATOR" ] && [ ! -f "$EMULATOR.exe" ]; then
-    echo "ERROR: Emulator not found. Run get_emulator.sh first."
+    echo "ERROR: Emulator not found. Run get_emulator.sh first"
     exit 1
 fi
 
@@ -51,7 +51,7 @@ fi
 APK="$ANDROID_DIR/app/build/outputs/apk/debug/app-debug.apk"
 if [ ! -f "$APK" ]; then
     echo "ERROR: APK not found at $APK"
-    echo "Run without --no-build, or run build.sh first."
+    echo "Run without --no-build, or run build.sh first"
     exit 1
 fi
 
@@ -61,7 +61,7 @@ echo "=== Launching emulator ($AVD_NAME) ==="
 # Check if emulator is already running
 RUNNING=$("$ADB" devices 2>/dev/null | grep -c "emulator-" || true)
 if [ "$RUNNING" -gt 0 ]; then
-    echo "Emulator already running."
+    echo "Emulator already running"
 else
     # Launch in background; -no-snapshot for clean boot
     "$EMULATOR" -avd "$AVD_NAME" -no-snapshot -gpu host &
@@ -84,10 +84,10 @@ for _ in $(seq 1 120); do
 done
 
 if [ "$BOOT_COMPLETE" != "1" ]; then
-    echo "ERROR: Emulator did not finish booting within 4 minutes."
+    echo "ERROR: Emulator did not finish booting within 4 minutes"
     exit 1
 fi
-echo "Device booted."
+echo "Device booted"
 
 # -- 4. Install APK ------------------------------------------
 echo ""
@@ -119,12 +119,12 @@ if "$ADB" root >/dev/null 2>&1; then
             "$ADB" shell "sqlite3 '$LAUNCHER_DB' < $TMPSQL" 2>/dev/null
             "$ADB" shell "rm -f $TMPSQL" 2>/dev/null
 
-            echo "Home screen icon added."
+            echo "Home screen icon added"
             "$ADB" shell am force-stop com.google.android.apps.nexuslauncher 2>/dev/null || true
             sleep 2
         else
             "$ADB" shell "rm -f $TMPSQL" 2>/dev/null
-            echo "Home screen icon already present."
+            echo "Home screen icon already present"
         fi
     else
         echo "(Launcher database not found - skipping home screen icon)"

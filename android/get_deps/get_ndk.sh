@@ -30,7 +30,7 @@ rm -f "$TMPFILE"
 if [ -f "$DEST/build/cmake/android.toolchain.cmake" ]; then
     echo "Android NDK $NDK_VERSION installed at $DEST"
 else
-    echo "ERROR: extraction succeeded but toolchain file not found at expected path."
+    echo "ERROR: extraction succeeded but toolchain file not found at expected path"
     if [ -z "$GET_ALL_RUNNING" ]; then
         echo ""
         echo "Press any key to exit..."

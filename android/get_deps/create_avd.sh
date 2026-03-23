@@ -17,7 +17,7 @@ AVDMANAGER="$SDK_DIR/cmdline-tools/latest/bin/avdmanager"
 if [ -f "$AVDMANAGER.bat" ]; then
     AVDMANAGER="$AVDMANAGER.bat"
 elif [ ! -x "$AVDMANAGER" ]; then
-    echo "ERROR: avdmanager not found. Run get_sdk.sh first."
+    echo "ERROR: avdmanager not found. Run get_sdk.sh first"
     exit 1
 fi
 
@@ -83,7 +83,7 @@ EOF
     echo "Applied lightweight hardware config (1536 MB RAM, 1280x720, minimal sensors)."
 fi
 
-echo "AVD '$AVD_NAME' created."
+echo "AVD '$AVD_NAME' created"
 echo "Launch with: run_emulator.sh"
 if [ -z "$GET_ALL_RUNNING" ]; then
     echo ""

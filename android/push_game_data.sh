@@ -79,7 +79,7 @@ _push_timeout() {
 
 if [ ! -d "$GAME_DATA_DIR" ]; then
     echo "NOTE: game_data_to_copy_to_emulator/ directory not found at $GAME_DATA_DIR"
-    echo "Place game files in data/ and/or download/ subdirectories."
+    echo "Place game files in data/ and/or download/ subdirectories"
 fi
 
 DATA_DIR="$GAME_DATA_DIR/data"
@@ -250,5 +250,5 @@ if [ "$ERRORS" -gt 0 ]; then
     echo "Done with $ERRORS error(s)."
     exit 1
 else
-    echo "Done. All files pushed successfully."
+    echo "Done. All files pushed successfully"
 fi

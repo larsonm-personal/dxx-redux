@@ -48,7 +48,7 @@ $scriptPath = Join-Path "$PSScriptRoot\game_scripts" $ScriptName
 $gameList = Get-ScriptGameInfo -ScriptPath $scriptPath
 
 if (-not (Get-ScriptStandalone -ScriptPath $scriptPath)) {
-    Write-Status "WARNING: $ScriptName is a support script (not standalone). It is normally run by another test." "Yellow"
+    Write-Status "WARNING: $ScriptName is a support script (not standalone). It is normally run by another test" "Yellow"
 }
 
 if ($Game) {

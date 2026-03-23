@@ -71,5 +71,5 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\nRelay stopped.")
+        print("\nRelay stopped")
         sys.exit(0)

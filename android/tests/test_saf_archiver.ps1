@@ -341,8 +341,8 @@ Write-Host "========================================" -ForegroundColor Cyan
 switch ($result) {
     "PASS" {
         Write-Host "  RESULT: PASS" -ForegroundColor Green
-        Write-Host "  SAF archiver successfully served $TEST_FILE to the game engine." -ForegroundColor Green
-        Write-Host "  The game loaded to level 1 with HAM data served via PhysFS SAF archiver." -ForegroundColor Green
+        Write-Host "  SAF archiver successfully served $TEST_FILE to the game engine" -ForegroundColor Green
+        Write-Host "  The game loaded to level 1 with HAM data served via PhysFS SAF archiver" -ForegroundColor Green
     }
     "FAIL" {
         Write-Host "  RESULT: FAIL" -ForegroundColor Red

@@ -171,7 +171,7 @@ game_data/extract_all_cds.ps1                    — clean re-extract on -Force
   - After extraction checks `AudioSourceManager.hasLegacyGog(setDir)` for GOG audio
   - Done button cleans up tmp and triggers onRefresh()
   - Error handling for unknown format or empty file list
-- Help text updated: "Select .hog, .ham, .pig files, a .zip archive, .cue/.bin disc images, or GOG installer."
+- Help text updated: "Select .hog, .ham, .pig files, a .zip archive, .cue/.bin disc images, or GOG installer"
 
 ### 3.7: Enhanced BIN/CUE import dialog — DONE ✓
 - After ISO extraction succeeds, scans setDir for .sow files via `DiscImportBridge.scanSowFiles()`

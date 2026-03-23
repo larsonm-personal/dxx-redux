@@ -582,7 +582,7 @@ Our implementation follows the same pattern but is tuned for game traffic:
 - Custom orchestration (hand-rolled; no crate covers the full pipeline)
 - Rust crates for the low-level primitives (STUN parsing, TURN relay, etc.)
 
-The key insight: ICE is not "try one thing and fall back." It is a parallel
+The key insight: ICE is not "try one thing and fall back," it is a parallel
 race across multiple candidate paths. The first path that succeeds wins.
 
 ### The NAT Landscape for Mobile Games
@@ -597,7 +597,7 @@ race across multiple candidate paths. The first path that succeeds wins.
 
 ### IPv6 Does NOT Solve NAT on Mobile
 
-A common claim is "IPv6 means no NAT, so holepunching is unnecessary."
+A common claim is "IPv6 means no NAT, so holepunching is unnecessary"
 This is wrong in practice for mobile:
 
 - Nearly all mobile carriers run stateful firewalls even on IPv6. The
@@ -1943,10 +1943,10 @@ Server -> Client:
 ```
 
 Example reason strings:
-- "Your client is too old (v1.0.3). Please update to v1.2.0 or later."
+- "Your client is too old (v1.0.3). Please update to v1.2.0 or later"
 - "This server requires protocol version 3. Your client uses version 1.
-   Update the app from the Play Store."
-- "Your client version will stop working on 2026-05-01. Please update."
+   Update the app from the Play Store"
+- "Your client version will stop working on 2026-05-01. Please update"
 
 ### Soft Deprecation
 
@@ -2643,7 +2643,7 @@ The server sends an MOTD to clients on connect:
 ```
 Server -> Client (after AUTH_OK):
   MOTD {
-    message: string,       // short text, e.g. "Welcome! New map pack available."
+    message: string,       // short text, e.g. "Welcome! New map pack available"
     url: string | null,    // optional link
     severity: "info" | "warning"  // warning for urgent stuff
   }
@@ -2672,7 +2672,7 @@ Server can enter maintenance mode:
 ```
 Server -> All Connected Clients:
   MAINTENANCE_WARNING {
-    message: "Server maintenance in 15 minutes. Save your game.",
+    message: "Server maintenance in 15 minutes. Save your game",
     shutdown_at: "2026-04-01T03:00:00Z"
   }
 ```
@@ -2681,7 +2681,7 @@ New connections during maintenance mode get:
 ```
 Server -> Client:
   MAINTENANCE {
-    message: "Server is undergoing maintenance. Back soon.",
+    message: "Server is undergoing maintenance. Back soon",
     estimated_return: "2026-04-01T03:30:00Z"
   }
 ```

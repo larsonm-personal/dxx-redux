@@ -26,7 +26,7 @@ elif [[ -x "/c/local/android-sdk/platform-tools/adb.exe" ]]; then
 elif [[ -n "${LOCALAPPDATA:-}" && -x "${LOCALAPPDATA}/Android/Sdk/platform-tools/adb.exe" ]]; then
     ADB="${LOCALAPPDATA}/Android/Sdk/platform-tools/adb.exe"
 else
-    echo "ERROR: adb not found. Set ADB= or add it to PATH." >&2
+    echo "ERROR: adb not found. Set ADB= or add it to PATH" >&2
     exit 1
 fi
 
@@ -118,7 +118,7 @@ console)
 autolog)
     # Dump automation step log (file-based, no introspection needed)
     ALOG=$("$ADB" shell run-as "$PACKAGE" cat files/automation_log.jsonl 2>/dev/null) || {
-        echo "ERROR: Could not read automation_log.jsonl." >&2
+        echo "ERROR: Could not read automation_log.jsonl" >&2
         exit 1
     }
     echo "$ALOG"
@@ -126,7 +126,7 @@ autolog)
 autoresult)
     # Dump automation result (file-based, no introspection needed)
     ARES=$("$ADB" shell run-as "$PACKAGE" cat files/automation_result.json 2>/dev/null) || {
-        echo "ERROR: Could not read automation_result.json." >&2
+        echo "ERROR: Could not read automation_result.json" >&2
         exit 1
     }
     if [[ "${2:-}" == "raw" ]]; then

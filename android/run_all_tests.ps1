@@ -189,7 +189,7 @@ Write-Host "  Tier 3 (extract/slow):   $($tierExtract.Count)"
 Write-Host ""
 
 if ($runnableTests.Count -eq 0) {
-    Write-Host "No runnable tests found." -ForegroundColor Yellow
+    Write-Host "No runnable tests found" -ForegroundColor Yellow
     exit 0
 }
 

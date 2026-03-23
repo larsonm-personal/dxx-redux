@@ -41,7 +41,7 @@ if (-not $clangFormat) {
     }
 }
 if (-not $clangFormat) {
-    Write-Error "clang-format not found. Run android/get_deps/get_clang_format.sh to install."
+    Write-Error "clang-format not found. Run android/get_deps/get_clang_format.sh to install"
     exit 1
 }
 Write-Host "Using: $clangFormat"
@@ -61,11 +61,11 @@ $files = Get-ChildItem -Path $cppDir -Recurse -Include "*.c", "*.cpp", "*.h" |
     Where-Object { $excludes -notcontains $_.Name }
 
 if ($files.Count -eq 0) {
-    Write-Host "No files found to format."
+    Write-Host "No files found to format"
     exit 0
 }
 
-Write-Host "Found $($files.Count) files to check."
+Write-Host "Found $($files.Count) files to check"
 
 # --- Run ---
 if ($Check) {
@@ -88,10 +88,10 @@ if ($Check) {
         }
         exit 1
     }
-    Write-Host "All files are correctly formatted."
+    Write-Host "All files are correctly formatted"
 } else {
     foreach ($f in $files) {
         & $clangFormat -i --style=file "$($f.FullName)"
     }
-    Write-Host "Formatted $($files.Count) files."
+    Write-Host "Formatted $($files.Count) files"
 }

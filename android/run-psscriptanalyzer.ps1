@@ -28,11 +28,11 @@ $files = Get-ChildItem -Path $PSScriptRoot -Recurse -Include "*.ps1" |
     Where-Object { $_.FullName -notmatch '[\\/]build[\\/]' }
 
 if ($files.Count -eq 0) {
-    Write-Host "No PowerShell files found."
+    Write-Host "No PowerShell files found"
     exit 0
 }
 
-Write-Host "Found $($files.Count) PowerShell files."
+Write-Host "Found $($files.Count) PowerShell files"
 
 # --- Run ---
 if ($Check) {
@@ -76,7 +76,7 @@ if ($Check) {
         $exitCode = 1
     }
     if ($exitCode -eq 0) {
-        Write-Host "All PowerShell files pass checks."
+        Write-Host "All PowerShell files pass checks"
     }
     exit $exitCode
 } else {
@@ -94,5 +94,5 @@ if ($Check) {
             Write-Host "  Formatted: $rel"
         }
     }
-    Write-Host "PSScriptAnalyzer fix pass complete."
+    Write-Host "PSScriptAnalyzer fix pass complete"
 }

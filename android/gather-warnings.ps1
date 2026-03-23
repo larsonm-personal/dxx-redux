@@ -59,7 +59,7 @@ try {
     $header = @(
         "# Compiler warnings gathered on $datestamp",
         "# Source: gradlew assembleDebug",
-        "# NOTE: Do NOT modify d1/ or d2/ source files to fix these warnings.",
+        "# NOTE: Do NOT modify d1/ or d2/ source files to fix these warnings",
         "#       Only fix warnings in files under android/.",
         ""
     )

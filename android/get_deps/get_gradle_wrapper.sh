@@ -27,7 +27,7 @@ EOF
 echo "Generated $WRAPPER_PROPS (Gradle $GRADLE_VERSION)"
 
 if [ -f "$WRAPPER_JAR" ]; then
-    echo "gradle-wrapper.jar already present."
+    echo "gradle-wrapper.jar already present"
     if [ -z "$GET_ALL_RUNNING" ]; then
         echo ""
         echo "Press any key to exit..."

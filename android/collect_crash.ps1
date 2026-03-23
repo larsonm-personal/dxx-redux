@@ -23,7 +23,7 @@ $PACKAGE = "com.dxxredux.app"
 # Verify emulator
 $devs = adb devices 2>&1 | Out-String
 if ($devs -notmatch "emulator.*device") {
-    Write-Host "ERROR: No emulator found. Start one first." -ForegroundColor Red
+    Write-Host "ERROR: No emulator found. Start one first" -ForegroundColor Red
     Write-Host "  emulator -avd Nexus5X_Light_1 -no-snapshot-save -gpu swiftshader_indirect"
     exit 1
 }
@@ -42,9 +42,9 @@ $logcatJob = Start-Job -ScriptBlock {
     & adb logcat 2>&1 | Out-File $outFile -Encoding utf8
 } -ArgumentList $logcatFile
 
-Write-Host "[2/5] Logcat capture started." -ForegroundColor Green
+Write-Host "[2/5] Logcat capture started" -ForegroundColor Green
 Write-Host ""
-Write-Host "Now reproduce the crash in the emulator." -ForegroundColor White
+Write-Host "Now reproduce the crash in the emulator" -ForegroundColor White
 Write-Host "Steps:" -ForegroundColor White
 Write-Host "  1. Launch D2, accept pilot"
 Write-Host "  2. Close game (Quit from main menu)"
@@ -126,9 +126,9 @@ if ($logContent -match "Fatal signal") {
 } else {
     Write-Host ""
     Write-Host "NOTE: No 'Fatal signal' found in logcat. The crash may not have" -ForegroundColor Yellow
-    Write-Host "been a native SIGSEGV, or logcat capture may have missed it." -ForegroundColor Yellow
-    Write-Host "Check the tombstone file for details." -ForegroundColor Yellow
+    Write-Host "been a native SIGSEGV, or logcat capture may have missed it" -ForegroundColor Yellow
+    Write-Host "Check the tombstone file for details" -ForegroundColor Yellow
 }
 
 Write-Host ""
-Write-Host "To share: zip temp\crash_report and provide along with these repro steps." -ForegroundColor Cyan
+Write-Host "To share: zip temp\crash_report and provide along with these repro steps" -ForegroundColor Cyan

@@ -240,7 +240,7 @@ Write-Host "Enter numbers to upgrade (comma-separated), 'a' for all, or Enter to
 $input_str = Read-Host "Upgrade"
 
 if ([string]::IsNullOrWhiteSpace($input_str)) {
-    Write-Host "No changes made."
+    Write-Host "No changes made"
     return
 }
 
@@ -256,7 +256,7 @@ if ($input_str.Trim().ToLower() -eq 'a') {
 }
 
 if ($selected.Count -eq 0) {
-    Write-Host "No valid selections."
+    Write-Host "No valid selections"
     return
 }
 
@@ -367,18 +367,18 @@ foreach ($item in $selected) {
             Update-Conf "SOUNDFONT_VERSION" $new
             $sfUrl = "https://github.com/arbruijn/TimGM6mb/releases/download/v$new/TimGM6mb.sf2"
             Update-Conf "SOUNDFONT_URL" $sfUrl
-            Write-Host "    NOTE: Update SOUNDFONT_SHA256 in tool_versions.conf after downloading."
+            Write-Host "    NOTE: Update SOUNDFONT_SHA256 in tool_versions.conf after downloading"
             Write-Host "    Run: get_soundfont.sh (it will fail on hash mismatch until you update the hash)"
         }
     }
 }
 
 Write-Host ""
-Write-Host "tool_versions.conf and build files updated."
+Write-Host "tool_versions.conf and build files updated"
 Write-Host ""
 Write-Host "IMPORTANT NOTES:"
-Write-Host "  - Kotlin and Compose Compiler must be compatible."
+Write-Host "  - Kotlin and Compose Compiler must be compatible"
 Write-Host "    See https://developer.android.com/jetpack/androidx/releases/compose-kotlin"
-Write-Host "  - For NDK/JDK/SDK changes, re-run the get_deps install scripts."
+Write-Host "  - For NDK/JDK/SDK changes, re-run the get_deps install scripts"
 Write-Host "  - Run a test build:  cd ..; .\gradlew.bat assembleDebug"
 Write-Host ""

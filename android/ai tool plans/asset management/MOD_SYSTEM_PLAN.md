@@ -443,7 +443,7 @@ File picker now accepts `application/zip` MIME type alongside `application/octet
 #### M4.3 — ZIP recognition card ✅
 
 ZIP results shown in a Card composable:
-- **Empty:** "No game files found in ZIP archive." with Dismiss button.
+- **Empty:** "No game files found in ZIP archive" with Dismiss button.
 - **Recognized:** "✅ Recognized: {packageName}" header, file list with sizes, "Import to Current Set" and "Dismiss" buttons.
 - **Unrecognized:** "Found N game file(s)" header, same buttons.
 
@@ -453,7 +453,7 @@ Extraction progress shown in a separate card with indeterminate LinearProgressIn
 
 "Import to Current Set" button copies each `ExtractedFile.tmpFile` to `setDir` (active set directory), then calls `manifest.upsert()` with the pre-computed SHA-256 hash. No re-hashing needed since hash was computed during extraction.
 
-**As-built:** Uses `File.copyTo(overwrite = true)`. Shows hashing progress bar during import (reuses `hashingFile`/`hashingProgress` state). Import status shows "Imported N of M files from ZIP."
+**As-built:** Uses `File.copyTo(overwrite = true)`. Shows hashing progress bar during import (reuses `hashingFile`/`hashingProgress` state). Import status shows "Imported N of M files from ZIP"
 
 #### M4.5 — Cleanup ✅
 

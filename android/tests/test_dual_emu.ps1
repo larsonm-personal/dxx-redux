@@ -217,7 +217,7 @@ function Setup-DockerNat {
     Write-Status "Checking Docker..."
     $dockerVer = docker version --format '{{.Server.Version}}' 2>&1
     if ($LASTEXITCODE -ne 0) {
-        Write-Status "FAIL: Docker not running. Start Docker Desktop first." "Red"
+        Write-Status "FAIL: Docker not running. Start Docker Desktop first" "Red"
         return $false
     }
     Write-Status "Docker running (v$dockerVer)" "Green"
@@ -306,7 +306,7 @@ if (-not $NoBuild) {
 }
 if (-not (Test-Path $APK)) {
     Write-Status "FAIL: APK not found at $APK" "Red"
-    Write-Status "Run without -NoBuild, or build first." "Yellow"
+    Write-Status "Run without -NoBuild, or build first" "Yellow"
     exit 1
 }
 
@@ -557,7 +557,7 @@ if ($script:dockerNatActive) {
     Write-Status "  .\android\tests\test_dual_emu.ps1 -NoBuild -NoData" "Gray"
 }
 Write-Status ""
-Write-Status "Press Ctrl+C or Enter to shut down." "Yellow"
+Write-Status "Press Ctrl+C or Enter to shut down" "Yellow"
 
 try {
     Read-Host "Press Enter to exit"
@@ -566,4 +566,4 @@ try {
 }
 
 Cleanup
-Write-Status "Done." "Green"
+Write-Status "Done" "Green"

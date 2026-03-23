@@ -37,7 +37,7 @@ fi
 
 rm -f "$TMPFILE"
 echo "Android SDK command-line tools installed at $DEST"
-echo "Run finalize.sh next to accept licenses and install platform packages."
+echo "Run finalize.sh next to accept licenses and install platform packages"
 if [ -z "$GET_ALL_RUNNING" ]; then
     echo ""
     echo "Press any key to exit..."

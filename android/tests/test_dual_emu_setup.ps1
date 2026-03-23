@@ -211,7 +211,7 @@ if (-not $NoBuild) {
 
 if (-not (Test-Path $APK)) {
     Write-Status "FAIL: APK not found at $APK" "Red"
-    Write-Status "Run without -NoBuild, or build first." "Yellow"
+    Write-Status "Run without -NoBuild, or build first" "Yellow"
     exit 1
 }
 
@@ -449,7 +449,7 @@ Write-Status ""
 Write-Status '  # Run existing multiplayer test:' "Gray"
 Write-Status "  .\test_mp.ps1 -SkipBuild" "Gray"
 Write-Status ""
-Write-Status "Press Ctrl+C or Enter to shut down server and relay." "Yellow"
+Write-Status "Press Ctrl+C or Enter to shut down server and relay" "Yellow"
 
 try {
     Read-Host "Press Enter to exit"
@@ -458,4 +458,4 @@ try {
 }
 
 Cleanup
-Write-Status "Done." "Green"
+Write-Status "Done" "Green"

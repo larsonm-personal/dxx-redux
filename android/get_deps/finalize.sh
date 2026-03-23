@@ -16,7 +16,7 @@ SDKMANAGER="$SDK_DIR/cmdline-tools/latest/bin/sdkmanager"
 if [ -f "$SDKMANAGER.bat" ]; then
     SDKMANAGER="$SDKMANAGER.bat"
 elif [ ! -x "$SDKMANAGER" ]; then
-    echo "ERROR: sdkmanager not found. Run get_sdk.sh first."
+    echo "ERROR: sdkmanager not found. Run get_sdk.sh first"
     exit 1
 fi
 
@@ -40,7 +40,7 @@ fi
 # shellcheck disable=SC2086  # intentional word splitting on $PACKAGES
 $SDKMANAGER $PACKAGES
 
-echo "Done. SDK is ready."
+echo "Done. SDK is ready"
 if [ -z "$GET_ALL_RUNNING" ]; then
     echo ""
     echo "Press any key to exit..."

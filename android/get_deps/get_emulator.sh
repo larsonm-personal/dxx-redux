@@ -16,7 +16,7 @@ SDKMANAGER="$SDK_DIR/cmdline-tools/latest/bin/sdkmanager"
 if [ -f "$SDKMANAGER.bat" ]; then
     SDKMANAGER="$SDKMANAGER.bat"
 elif [ ! -x "$SDKMANAGER" ]; then
-    echo "ERROR: sdkmanager not found. Run get_sdk.sh first."
+    echo "ERROR: sdkmanager not found. Run get_sdk.sh first"
     exit 1
 fi
 
@@ -30,7 +30,7 @@ fi
 
 # Check if emulator is already installed
 if [ -f "$SDK_DIR/emulator/emulator.exe" ] || [ -x "$SDK_DIR/emulator/emulator" ]; then
-    echo "Emulator already installed."
+    echo "Emulator already installed"
 else
     echo "Installing Android emulator..."
     "$SDKMANAGER" "emulator"
@@ -47,7 +47,7 @@ else
     "$SDKMANAGER" "$IMAGE"
 fi
 
-echo "Emulator and system image ready."
+echo "Emulator and system image ready"
 if [ -z "$GET_ALL_RUNNING" ]; then
     echo ""
     echo "Press any key to exit..."
