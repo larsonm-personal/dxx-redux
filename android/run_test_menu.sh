@@ -35,7 +35,6 @@ fi
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
@@ -71,14 +70,14 @@ for f in "$GAME_SCRIPTS_DIR"/test_*.json5; do
     [ -f "$f" ] && tests+=("$f")
 done
 # Sort the array (bash 4+)
-IFS=$'\n' tests=($(sort <<<"${tests[*]}")); unset IFS
+mapfile -t tests < <(printf '%s\n' "${tests[@]}" | sort)
 
 if [ ${#tests[@]} -eq 0 ]; then
     print_error "No test_*.json5 files found in $GAME_SCRIPTS_DIR"
     print_error "  (resolved from SCRIPT_DIR=$SCRIPT_DIR)"
     # Try to list what IS there for debugging
     echo "  Contents of $(dirname "$GAME_SCRIPTS_DIR"):" >&2
-    ls -1 "$GAME_SCRIPTS_DIR" 2>/dev/null | head -10 >&2 || echo "  (directory not found)" >&2
+    find "$GAME_SCRIPTS_DIR" -maxdepth 1 -type f 2>/dev/null | head -10 >&2 || echo "  (directory not found)" >&2
     exit 1
 fi
 

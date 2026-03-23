@@ -1,4 +1,4 @@
-# run-clang-format.ps1 -- Run clang-format on android/ C/C++ code only.
+﻿# run-clang-format.ps1 -- Run clang-format on android/ C/C++ code only.
 # Usage:
 #   .\run-clang-format.ps1          # format in-place
 #   .\run-clang-format.ps1 --check  # dry-run, exit 1 if changes needed
@@ -57,7 +57,7 @@ $excludes = @(
     "SDL_config_android.h"
 )
 
-$files = Get-ChildItem -Path $cppDir -Recurse -Include "*.c","*.cpp","*.h" |
+$files = Get-ChildItem -Path $cppDir -Recurse -Include "*.c", "*.cpp", "*.h" |
     Where-Object { $excludes -notcontains $_.Name }
 
 if ($files.Count -eq 0) {

@@ -31,8 +31,10 @@ fi
 
 # avdmanager.bat needs Windows-style paths; Git Bash's /c/local/... won't work.
 if command -v cygpath >/dev/null 2>&1; then
-    export ANDROID_HOME="$(cygpath -w "$SDK_DIR")"
-    export ANDROID_SDK_ROOT="$(cygpath -w "$SDK_DIR")"
+    ANDROID_HOME="$(cygpath -w "$SDK_DIR")"
+    export ANDROID_HOME
+    ANDROID_SDK_ROOT="$(cygpath -w "$SDK_DIR")"
+    export ANDROID_SDK_ROOT
 else
     export ANDROID_HOME="$SDK_DIR"
     export ANDROID_SDK_ROOT="$SDK_DIR"
@@ -50,7 +52,7 @@ echo "no" | "$AVDMANAGER" create avd \
 # Apply lightweight hardware settings (low RAM, low res, minimal sensors)
 AVD_DIR="$HOME/.android/avd/${AVD_NAME}.avd"
 if [ -f "$AVD_DIR/config.ini" ]; then
-    cat >> "$AVD_DIR/config.ini" <<'EOF'
+    cat >>"$AVD_DIR/config.ini" <<'EOF'
 hw.ramSize=1536
 hw.cpu.ncore=2
 vm.heapSize=512

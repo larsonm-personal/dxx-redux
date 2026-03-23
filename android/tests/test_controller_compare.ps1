@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 # test_controller_compare.ps1 -- Compare launcher controller config with in-game joystick bindings.
 #
 # Usage:
@@ -14,7 +14,7 @@
 param(
     [switch]$Install,
     [int]$TimeoutSeconds = 120,
-    [ValidateSet("d1","d2")]
+    [ValidateSet("d1", "d2")]
     [string]$Game
 )
 

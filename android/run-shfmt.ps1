@@ -1,0 +1,86 @@
+# run-shfmt.ps1 -- Run shfmt on bash scripts in android/.
+# Usage:
+#   .\run-shfmt.ps1          # format in-place (default)
+#   .\run-shfmt.ps1 --check  # dry-run, exit 1 if changes needed
+
+param(
+    [switch]$Check
+)
+
+$ErrorActionPreference = "Stop"
+$repoRoot = Split-Path $PSScriptRoot
+
+# --- Locate shfmt ---
+$depBaseFile = Join-Path $repoRoot "dependency_base.txt"
+if (-not (Test-Path $depBaseFile)) {
+    Write-Error "dependency_base.txt not found at $depBaseFile"
+    exit 1
+}
+$DEP_BASE = (Get-Content $depBaseFile -First 1).Trim()
+
+$confFile = Join-Path $PSScriptRoot "get_deps\tool_versions.conf"
+$sfVersion = $null
+foreach ($line in Get-Content $confFile) {
+    if ($line -match '^SHFMT_VERSION=(.+)$') {
+        $sfVersion = $Matches[1]
+    }
+}
+
+$shfmt = $null
+$candidate = Join-Path $DEP_BASE "shfmt-$sfVersion\shfmt.exe"
+if (Test-Path $candidate) {
+    $shfmt = $candidate
+}
+if (-not $shfmt) {
+    $inPath = Get-Command "shfmt" -ErrorAction SilentlyContinue
+    if ($inPath) { $shfmt = $inPath.Source }
+}
+if (-not $shfmt) {
+    Write-Error "shfmt not found. Run android/get_deps/get_shfmt.sh to install."
+    exit 1
+}
+Write-Host "Using: $shfmt"
+& $shfmt --version
+
+# --- Gather .sh files ---
+$files = Get-ChildItem -Path $PSScriptRoot -Recurse -Include "*.sh" |
+    Where-Object { $_.FullName -notmatch '[\\\\/](build|build-outputs|\.cxx)[\\\\/]' }
+
+if ($files.Count -eq 0) {
+    Write-Host "No shell scripts found."
+    exit 0
+}
+
+Write-Host "Found $($files.Count) shell scripts."
+
+# --- Run ---
+# shfmt flags: -i 4 (indent=4, matches .editorconfig), -bn (binary ops start of line)
+$shfmtArgs = @("-i", "4", "-bn")
+
+if ($Check) {
+    $dirty = @()
+    $savedPref = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    foreach ($f in $files) {
+        & $shfmt @shfmtArgs -d "$($f.FullName)" 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            $dirty += $f.FullName
+        }
+    }
+    $ErrorActionPreference = $savedPref
+    if ($dirty.Count -gt 0) {
+        Write-Host ""
+        Write-Host "Files that need formatting ($($dirty.Count)):"
+        foreach ($d in $dirty) {
+            $rel = $d.Substring($repoRoot.Length + 1)
+            Write-Host "  $rel"
+        }
+        exit 1
+    }
+    Write-Host "All shell scripts are correctly formatted."
+} else {
+    foreach ($f in $files) {
+        & $shfmt @shfmtArgs -w "$($f.FullName)"
+    }
+    Write-Host "shfmt format pass complete."
+}

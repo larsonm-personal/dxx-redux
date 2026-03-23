@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     WebSocket test bot that connects to the matchmaking server as a second player.
     Use this alongside the emulator to test two-client interactions.
@@ -61,46 +61,46 @@ function Test-ServerReachable {
 
 if (-not (Test-ServerReachable)) {
     # Always auto-start server when not reachable
-        $repoRoot = Split-Path (Split-Path $PSScriptRoot)
-        $serverDir = Join-Path $repoRoot "server"
+    $repoRoot = Split-Path (Split-Path $PSScriptRoot)
+    $serverDir = Join-Path $repoRoot "server"
+    $serverBin = Join-Path $serverDir "target\release\dxx-matchmaking.exe"
+    if (-not (Test-Path $serverBin)) {
+        $serverBin = Join-Path $serverDir "target\debug\dxx-matchmaking.exe"
+    }
+    if (-not (Test-Path $serverBin)) {
+        Write-Host "Building matchmaking server..." -ForegroundColor Yellow
+        Push-Location $serverDir
+        & cargo build --release 2>&1 | Out-Null
+        Pop-Location
         $serverBin = Join-Path $serverDir "target\release\dxx-matchmaking.exe"
-        if (-not (Test-Path $serverBin)) {
-            $serverBin = Join-Path $serverDir "target\debug\dxx-matchmaking.exe"
+    }
+    if (Test-Path $serverBin) {
+        $psi = New-Object System.Diagnostics.ProcessStartInfo
+        $psi.FileName = $serverBin
+        $psi.WorkingDirectory = $serverDir
+        $psi.RedirectStandardOutput = $true
+        $psi.RedirectStandardError = $true
+        $psi.UseShellExecute = $false
+        $psi.CreateNoWindow = $true
+        $psi.EnvironmentVariables["SKIP_GPGS_VERIFY"] = "true"
+        $psi.EnvironmentVariables["RUST_LOG"] = "info"
+        $script:autoServerProc = [System.Diagnostics.Process]::Start($psi)
+        $sw = [System.Diagnostics.Stopwatch]::StartNew()
+        while ($sw.Elapsed.TotalSeconds -lt 10) {
+            if (Test-ServerReachable) { break }
+            Start-Sleep -Seconds 1
         }
-        if (-not (Test-Path $serverBin)) {
-            Write-Host "Building matchmaking server..." -ForegroundColor Yellow
-            Push-Location $serverDir
-            & cargo build --release 2>&1 | Out-Null
-            Pop-Location
-            $serverBin = Join-Path $serverDir "target\release\dxx-matchmaking.exe"
-        }
-        if (Test-Path $serverBin) {
-            $psi = New-Object System.Diagnostics.ProcessStartInfo
-            $psi.FileName = $serverBin
-            $psi.WorkingDirectory = $serverDir
-            $psi.RedirectStandardOutput = $true
-            $psi.RedirectStandardError = $true
-            $psi.UseShellExecute = $false
-            $psi.CreateNoWindow = $true
-            $psi.EnvironmentVariables["SKIP_GPGS_VERIFY"] = "true"
-            $psi.EnvironmentVariables["RUST_LOG"] = "info"
-            $script:autoServerProc = [System.Diagnostics.Process]::Start($psi)
-            $sw = [System.Diagnostics.Stopwatch]::StartNew()
-            while ($sw.Elapsed.TotalSeconds -lt 10) {
-                if (Test-ServerReachable) { break }
-                Start-Sleep -Seconds 1
-            }
-            if (Test-ServerReachable) {
-                Write-Host "Auto-started server (PID $($script:autoServerProc.Id))" -ForegroundColor Green
-            } else {
-                Write-Host "FAIL: Could not auto-start server" -ForegroundColor Red
-                try { $script:autoServerProc.Kill() } catch {}
-                exit 1
-            }
+        if (Test-ServerReachable) {
+            Write-Host "Auto-started server (PID $($script:autoServerProc.Id))" -ForegroundColor Green
         } else {
-            Write-Host "FAIL: No server binary found. Run 'cargo build' in server/" -ForegroundColor Red
+            Write-Host "FAIL: Could not auto-start server" -ForegroundColor Red
+            try { $script:autoServerProc.Kill() } catch {}
             exit 1
         }
+    } else {
+        Write-Host "FAIL: No server binary found. Run 'cargo build' in server/" -ForegroundColor Red
+        exit 1
+    }
 }
 
 # --- WebSocket helpers ---

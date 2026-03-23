@@ -20,10 +20,10 @@ fi
 # When running in WSL but targeting a Windows filesystem (/mnt/), use Windows binary.
 _is_windows_target() {
     case "$DEST" in
-        /mnt/[a-z]/*) return 0 ;;  # WSL path to Windows drive
+    /mnt/[a-z]/*) return 0 ;; # WSL path to Windows drive
     esac
     case "$(uname -s)" in
-        MINGW*|MSYS*|CYGWIN*|*_NT*) return 0 ;;
+    MINGW* | MSYS* | CYGWIN* | *_NT*) return 0 ;;
     esac
     return 1
 }

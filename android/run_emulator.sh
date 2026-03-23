@@ -18,8 +18,8 @@ NO_BUILD=0
 NO_DATA=0
 for arg in "$@"; do
     case "$arg" in
-        --no-build) NO_BUILD=1 ;;
-        --no-data)  NO_DATA=1  ;;
+    --no-build) NO_BUILD=1 ;;
+    --no-data) NO_DATA=1 ;;
     esac
 done
 
@@ -33,7 +33,7 @@ ADB="$SDK_DIR/platform-tools/adb"
 
 # Windows exe fallbacks
 [ ! -x "$EMULATOR" ] && [ -f "$EMULATOR.exe" ] && EMULATOR="$EMULATOR.exe"
-[ ! -x "$ADB" ]      && [ -f "$ADB.exe" ]      && ADB="$ADB.exe"
+[ ! -x "$ADB" ] && [ -f "$ADB.exe" ] && ADB="$ADB.exe"
 
 if [ ! -f "$EMULATOR" ] && [ ! -f "$EMULATOR.exe" ]; then
     echo "ERROR: Emulator not found. Run get_emulator.sh first."
@@ -75,7 +75,7 @@ echo "Waiting for device to come online..."
 
 echo "Waiting for boot to complete..."
 BOOT_COMPLETE=""
-for i in $(seq 1 120); do
+for _ in $(seq 1 120); do
     BOOT_COMPLETE=$("$ADB" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r\n' || true)
     if [ "$BOOT_COMPLETE" = "1" ]; then
         break
@@ -113,7 +113,7 @@ if "$ADB" root >/dev/null 2>&1; then
         if [ "$EXISTING" = "0" ] || [ -z "$EXISTING" ]; then
             "$ADB" shell "echo 'SELECT COALESCE(MAX(_id),0) FROM favorites;' > $TMPSQL"
             MAX_ID=$("$ADB" shell "sqlite3 '$LAUNCHER_DB' < $TMPSQL" 2>/dev/null | tr -d '\r\n')
-            NEXT_ID=$(( MAX_ID + 1 ))
+            NEXT_ID=$((MAX_ID + 1))
 
             "$ADB" shell "echo \"INSERT INTO favorites (_id, title, intent, container, screen, cellX, cellY, spanX, spanY, itemType, profileId) VALUES ($NEXT_ID, 'DXX-Redux', '$ICON_INTENT', -100, 0, 0, 3, 1, 1, 0, 0);\" > $TMPSQL"
             "$ADB" shell "sqlite3 '$LAUNCHER_DB' < $TMPSQL" 2>/dev/null

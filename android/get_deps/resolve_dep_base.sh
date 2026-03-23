@@ -37,8 +37,8 @@ _resolve_dep_base() {
     # C:\local or C:/local -> try /c/local first, then /mnt/c/local, then C:/local
     local drive_letter dir_part
     if [[ "$raw" =~ ^([A-Za-z]):[/\\](.*) ]]; then
-        drive_letter="${BASH_REMATCH[1],,}"  # lowercase
-        dir_part="${BASH_REMATCH[2]//\\//}"  # backslash to forward slash
+        drive_letter="${BASH_REMATCH[1],,}" # lowercase
+        dir_part="${BASH_REMATCH[2]//\\//}" # backslash to forward slash
         # Remove trailing slash
         dir_part="${dir_part%/}"
         # Try MSYS/Git Bash style first

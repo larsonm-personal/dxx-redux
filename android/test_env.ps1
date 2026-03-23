@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 # test_env.ps1 -- Shared environment setup for test scripts.
 #
 # Dot-source this to resolve JAVA_HOME, cmake, cargo, and other tool paths.
@@ -30,7 +30,7 @@ if (-not (Test-Path variable:script:_testEnvLoaded) -or -not $script:_testEnvLoa
         # 1. Check DEP_BASE\jdk-* (project convention)
         if ($script:_ENV_DEP_BASE) {
             $jdk = Get-ChildItem "$($script:_ENV_DEP_BASE)\jdk-*" -Directory -ErrorAction SilentlyContinue |
-                   Sort-Object Name -Descending | Select-Object -First 1
+                Sort-Object Name -Descending | Select-Object -First 1
             if ($jdk) {
                 $env:JAVA_HOME = $jdk.FullName
                 $found = $true
@@ -47,12 +47,12 @@ if (-not (Test-Path variable:script:_testEnvLoaded) -or -not $script:_testEnvLoa
         # 3. Check registry (Oracle/Adoptium)
         if (-not $found) {
             foreach ($regPath in @(
-                "HKLM:\SOFTWARE\JavaSoft\JDK",
-                "HKLM:\SOFTWARE\Eclipse Adoptium\JDK"
-            )) {
+                    "HKLM:\SOFTWARE\JavaSoft\JDK",
+                    "HKLM:\SOFTWARE\Eclipse Adoptium\JDK"
+                )) {
                 if (Test-Path $regPath) {
                     $ver = Get-ChildItem $regPath -ErrorAction SilentlyContinue |
-                           Sort-Object PSChildName -Descending | Select-Object -First 1
+                        Sort-Object PSChildName -Descending | Select-Object -First 1
                     if ($ver) {
                         $javaHome = (Get-ItemProperty $ver.PSPath -ErrorAction SilentlyContinue).JavaHome
                         if ($javaHome -and (Test-Path "$javaHome\bin\java.exe")) {
@@ -80,7 +80,7 @@ if (-not (Test-Path variable:script:_testEnvLoaded) -or -not $script:_testEnvLoa
         # Also check Android SDK cmake (multiple versions, pick newest)
         if ($script:_ENV_DEP_BASE) {
             $sdkCmake = Get-ChildItem "$($script:_ENV_DEP_BASE)\android-sdk\cmake\*\bin" -Directory -ErrorAction SilentlyContinue |
-                        Sort-Object Name -Descending | Select-Object -First 1
+                Sort-Object Name -Descending | Select-Object -First 1
             if ($sdkCmake) { $cmakeCandidates = @($sdkCmake.FullName) + $cmakeCandidates }
         }
         foreach ($dir in $cmakeCandidates) {

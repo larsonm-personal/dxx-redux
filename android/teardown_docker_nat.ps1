@@ -28,9 +28,9 @@ foreach ($serial in @($EMU1, $EMU2)) {
     if ($devices -match "$serial\s+device") {
         & $ADB -s $serial shell am broadcast -a com.dxxredux.MP_COMMAND `
             --es command stun_override_clear 2>&1 | Out-Null
-        Write-Status "  $serial: STUN override cleared" "Green"
+        Write-Status "  ${serial}: STUN override cleared" "Green"
     } else {
-        Write-Status "  $serial: not online (skipped)" "Yellow"
+        Write-Status "  ${serial}: not online (skipped)" "Yellow"
     }
 }
 

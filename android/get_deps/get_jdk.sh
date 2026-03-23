@@ -12,7 +12,7 @@ INSTALL_DIR="$LOCAL_DIR"
 
 DEST="$INSTALL_DIR/$JDK_DIR_NAME"
 
-if [ -d "$DEST" ] && [ -x "$DEST/bin/java" -o -x "$DEST/bin/java.exe" ]; then
+if [ -d "$DEST" ] && { [ -x "$DEST/bin/java" ] || [ -x "$DEST/bin/java.exe" ]; }; then
     echo "JDK $JDK_MAJOR already installed at $DEST"
     exit 0
 fi
@@ -29,7 +29,7 @@ unzip -q -o "$TMPFILE" -d "$INSTALL_DIR"
 # Rename the extracted folder (may include build number like +7) to the canonical name.
 # Use a bash glob instead of find(1) -- on Windows, find.exe is a text-search tool.
 if [ ! -d "$DEST" ]; then
-    for _d in "$INSTALL_DIR"/jdk-${JDK_VERSION}*; do
+    for _d in "$INSTALL_DIR"/jdk-"${JDK_VERSION}"*; do
         if [ -d "$_d" ]; then
             mv "$_d" "$DEST"
             break

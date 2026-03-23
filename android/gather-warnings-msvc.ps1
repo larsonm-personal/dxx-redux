@@ -55,7 +55,7 @@ function Build-And-Gather($name, $buildDir) {
         }
     }
 
-    Write-Host "  $name: $($warnings.Count) warnings"
+    Write-Host "  ${name}: $($warnings.Count) warnings"
     return $warnings
 }
 

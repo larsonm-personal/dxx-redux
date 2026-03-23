@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 # emu_health.ps1 -- Check Android emulator health and optionally restart it.
 #
 # Usage:
@@ -104,7 +104,7 @@ function Wait-EmulatorHealthy {
             Write-Host "Emulator healthy after $([int]$sw.Elapsed.TotalSeconds)s"
             return $true
         }
-        Write-Host "  waiting... ($($status.Reason))" 
+        Write-Host "  waiting... ($($status.Reason))"
         Start-Sleep -Seconds 5
     }
     Write-Host "ERROR: Emulator not healthy after ${Timeout}s"

@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Tests the SAF leave-in-place PhysFS archiver on an Android emulator.
 
@@ -99,8 +99,8 @@ if (!$NoBuild) {
     Write-Host "Step 1: Building debug APK..." -ForegroundColor Yellow
     Push-Location $androidDir
     try {
-        & .\gradlew.bat assembleDebug --console=plain 2>&1 | 
-            Where-Object { $_ -match "BUILD |FAIL|error:" } | 
+        & .\gradlew.bat assembleDebug --console=plain 2>&1 |
+            Where-Object { $_ -match "BUILD |FAIL|error:" } |
             ForEach-Object { Write-Host "  $_" }
         if ($LASTEXITCODE -ne 0) {
             Write-Error "Build failed"
@@ -307,7 +307,7 @@ $failDetail = ""
 
 while (((Get-Date) - $startTime).TotalSeconds -lt $TIMEOUT_SEC) {
     $logLines = (Adb logcat -d -s "DXX-Automate:*" 2>&1) -join "`n"
-    
+
     if ($logLines -match "SCRIPT_RESULT: PASS") {
         $result = "PASS"
         break
@@ -317,7 +317,7 @@ while (((Get-Date) - $startTime).TotalSeconds -lt $TIMEOUT_SEC) {
         $failDetail = ($logLines -split "`n" | Select-String "SCRIPT_RESULT: FAIL|ASSERT_FAIL|ASSERT_EXPECTED") -join "`n"
         break
     }
-    
+
     # Check if game crashed
     $procId = (Adb shell "pidof $PACKAGE" 2>&1) -join ""
     if ($procId -notmatch "\d+") {
@@ -325,7 +325,7 @@ while (((Get-Date) - $startTime).TotalSeconds -lt $TIMEOUT_SEC) {
         $failDetail = "Game process died during test"
         break
     }
-    
+
     Start-Sleep -Seconds 2
 }
 
@@ -372,11 +372,11 @@ Write-Host "========================================" -ForegroundColor Cyan
 if (!$NoCleanup) {
     Write-Host ""
     Write-Host "Step 9: Cleaning up..." -ForegroundColor Yellow
-    
+
     # Stop the game
     Adb shell "am force-stop $PACKAGE" | Out-Null
     Start-Sleep -Seconds 1
-    
+
     # Restore the file to app's files dir
     # Note: run-as can't read /data/local/tmp/, so re-push from local game_data
     $restoreTmp = "/data/local/tmp/$TEST_FILE"
@@ -385,11 +385,11 @@ if (!$NoCleanup) {
     }
     Adb shell "run-as $PACKAGE cp $restoreTmp $GAME_DATA_DIR/$TEST_FILE" | Out-Null
     Adb shell "rm -f $restoreTmp" | Out-Null
-    
+
     # Remove SAF test artifacts
     Adb shell "run-as $PACKAGE rm -f files/.saf_manifest.json" | Out-Null
     Adb shell "rm -rf $SAF_DIR" | Out-Null
-    
+
     # Verify restore
     $restored = Adb shell "run-as $PACKAGE stat -c '%s' $GAME_DATA_DIR/$TEST_FILE" 2>&1
     if ($restored.ToString().Trim() -eq $fileSize.ToString()) {

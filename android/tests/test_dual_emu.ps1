@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 # test_dual_emu.ps1 -- Interactive dual-emulator multiplayer test setup.
 #
 # Launches two emulators, installs APK + game data, starts the matchmaking
@@ -69,8 +69,8 @@ function Adb-Dev-Timeout {
     $psi.FileName = $ADB
     $allArgs = @("-s", $Serial) + $AdbArgs
     $psi.Arguments = ($allArgs | ForEach-Object {
-        if ($_ -match '\s') { "`"$_`"" } else { $_ }
-    }) -join ' '
+            if ($_ -match '\s') { "`"$_`"" } else { $_ }
+        }) -join ' '
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
     $psi.UseShellExecute = $false
@@ -177,14 +177,14 @@ function Cleanup {
 # ── NAT menu helper ─────────────────────────────────────────────────────
 
 $NAT_PRESETS = @(
-    @{ Label = "No NAT simulation (direct STUN)";       NatA = $null;              NatB = $null }
-    @{ Label = "Full-cone <-> Full-cone";                NatA = "full-cone";        NatB = "full-cone" }
-    @{ Label = "Full-cone <-> Symmetric";                NatA = "full-cone";        NatB = "symmetric" }
-    @{ Label = "Port-restricted <-> Symmetric";          NatA = "port-restricted";  NatB = "symmetric" }
-    @{ Label = "Symmetric <-> Symmetric (relay only)";   NatA = "symmetric";        NatB = "symmetric" }
-    @{ Label = "Full-cone <-> Port-restricted";          NatA = "full-cone";        NatB = "port-restricted" }
-    @{ Label = "Port-restricted <-> Port-restricted";    NatA = "port-restricted";  NatB = "port-restricted" }
-    @{ Label = "Symmetric-seq <-> Symmetric-seq";        NatA = "symmetric-seq";    NatB = "symmetric-seq" }
+    @{ Label = "No NAT simulation (direct STUN)"; NatA = $null; NatB = $null }
+    @{ Label = "Full-cone <-> Full-cone"; NatA = "full-cone"; NatB = "full-cone" }
+    @{ Label = "Full-cone <-> Symmetric"; NatA = "full-cone"; NatB = "symmetric" }
+    @{ Label = "Port-restricted <-> Symmetric"; NatA = "port-restricted"; NatB = "symmetric" }
+    @{ Label = "Symmetric <-> Symmetric (relay only)"; NatA = "symmetric"; NatB = "symmetric" }
+    @{ Label = "Full-cone <-> Port-restricted"; NatA = "full-cone"; NatB = "port-restricted" }
+    @{ Label = "Port-restricted <-> Port-restricted"; NatA = "port-restricted"; NatB = "port-restricted" }
+    @{ Label = "Symmetric-seq <-> Symmetric-seq"; NatA = "symmetric-seq"; NatB = "symmetric-seq" }
 )
 
 function Show-NatMenu {
@@ -322,7 +322,7 @@ if ($emu1Running) {
     Write-Status "  $AVD1 ($EMU1_SERIAL) already running"
 } else {
     Write-Status "  Starting $AVD1..."
-    $script:emu1Proc = Start-Process $EMULATOR -ArgumentList "-avd",$AVD1,"-no-snapshot-save","-gpu","host" -PassThru
+    $script:emu1Proc = Start-Process $EMULATOR -ArgumentList "-avd", $AVD1, "-no-snapshot-save", "-gpu", "host" -PassThru
     Write-Status "  $AVD1 started (PID $($script:emu1Proc.Id))"
 }
 
@@ -330,7 +330,7 @@ if ($emu2Running) {
     Write-Status "  $AVD2 ($EMU2_SERIAL) already running"
 } else {
     Write-Status "  Starting $AVD2..."
-    $script:emu2Proc = Start-Process $EMULATOR -ArgumentList "-avd",$AVD2,"-no-snapshot-save","-gpu","host" -PassThru
+    $script:emu2Proc = Start-Process $EMULATOR -ArgumentList "-avd", $AVD2, "-no-snapshot-save", "-gpu", "host" -PassThru
     Write-Status "  $AVD2 started (PID $($script:emu2Proc.Id))"
 }
 
@@ -464,7 +464,7 @@ Write-Status "  EMU2 redir cleanup: $r2del" "Gray"
 $relayScript = Join-Path $ANDROID_DIR "udp_relay.py"
 $relayLog = Join-Path $REPO_ROOT "temp\udp_relay.log"
 $relayErr = Join-Path $REPO_ROOT "temp\udp_relay_err.log"
-$script:relayProc = Start-Process python -ArgumentList "-u",$relayScript `
+$script:relayProc = Start-Process python -ArgumentList "-u", $relayScript `
     -PassThru -NoNewWindow `
     -RedirectStandardOutput $relayLog `
     -RedirectStandardError $relayErr

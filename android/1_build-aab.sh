@@ -23,7 +23,7 @@ fi
 # Source environment variables
 source "$SCRIPT_DIR/set_vars.sh"
 
-TASK="bundle$(echo "$VARIANT" | sed 's/.*/\u&/')"
+TASK="bundle${VARIANT^}"
 
 VERSION_CODE=$(git rev-list --count HEAD)
 GIT_HASH=$(git rev-parse --short HEAD)
@@ -37,7 +37,7 @@ echo "buildTime:   $BUILD_TIME PST"
 
 # Generate BuildInfo.kt with real build metadata
 BUILD_INFO="app/src/main/java/com/dxxredux/app/BuildInfo.kt"
-cat > "$BUILD_INFO" <<EOF
+cat >"$BUILD_INFO" <<EOF
 package com.dxxredux.app
 
 /**

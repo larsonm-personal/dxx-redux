@@ -1,4 +1,4 @@
-# upload_to_test.ps1 -- Automated AAB build, sign, and Play Store upload
+﻿# upload_to_test.ps1 -- Automated AAB build, sign, and Play Store upload
 #
 # Usage:
 #   .\0_upload_to_test.ps1                     # Build (Release) and upload to production track
@@ -22,7 +22,7 @@ try {
     Write-Host "DXX-Redux Automated Build & Upload"
     Write-Host "================================"
     Write-Host ""
-    
+
     # Build the AAB
     Write-Host "Step 1: Building AAB..."
     Write-Host ""
@@ -30,7 +30,7 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "Build failed with exit code $LASTEXITCODE"
     }
-    
+
     # Deploy to Play Store
     Write-Host ""
     Write-Host "Step 2: Uploading to Play Store..."
@@ -39,13 +39,13 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "Deploy failed with exit code $LASTEXITCODE"
     }
-    
+
     Write-Host ""
     Write-Host "================================"
     Write-Host "Build and upload completed successfully!"
     Write-Host "================================"
     Write-Host ""
-    
+
 } catch {
     Write-Host ""
     Write-Host "ERROR: $_"

@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 # test_resolution.ps1 -- Two-phase resolution verification test.
 #
 # Phase 1: Fresh launch (no descent.cfg) -> verifies SetupActivity writes default
@@ -106,8 +106,8 @@ $res1 = Get-ResolutionFromIntrospection
 if (-not $res1) { exit 1 }
 
 Write-Status ("Phase 1 resolution: render={0}x{1}  display={2}x{3}" -f `
-    $res1.render_width, $res1.render_height, `
-    $res1.display_width, $res1.display_height)
+        $res1.render_width, $res1.render_height, `
+        $res1.display_width, $res1.display_height)
 
 # Verify render resolution is NOT 640x480 (should be half-screen)
 if ($res1.render_width -eq 640 -and $res1.render_height -eq 480) {
@@ -119,7 +119,7 @@ $expectedW = [int]($res1.display_width / 2)
 $expectedH = [int]($res1.display_height / 2)
 if ($res1.render_width -lt ($expectedW * 0.9) -or $res1.render_height -lt ($expectedH * 0.9)) {
     Write-Status ("FAIL: Phase 1 render resolution too small: {0}x{1} (expected ~{2}x{3})" -f `
-        $res1.render_width, $res1.render_height, $expectedW, $expectedH) "Red"
+            $res1.render_width, $res1.render_height, $expectedW, $expectedH) "Red"
     exit 1
 }
 Write-Status "Phase 1 PASS: Default resolution is $($res1.render_width)x$($res1.render_height)" "Green"
@@ -171,13 +171,13 @@ $res2 = Get-ResolutionFromIntrospection
 if (-not $res2) { exit 1 }
 
 Write-Status ("Phase 2 resolution: render={0}x{1}  display={2}x{3}" -f `
-    $res2.render_width, $res2.render_height, `
-    $res2.display_width, $res2.display_height)
+        $res2.render_width, $res2.render_height, `
+        $res2.display_width, $res2.display_height)
 
 # Verify render resolution IS 640x480
 if ($res2.render_width -ne 640 -or $res2.render_height -ne 480) {
     Write-Status ("FAIL: Phase 2 expected 640x480, got {0}x{1}" -f `
-        $res2.render_width, $res2.render_height) "Red"
+            $res2.render_width, $res2.render_height) "Red"
     exit 1
 }
 Write-Status "Phase 2 PASS: Resolution correctly set to 640x480" "Green"

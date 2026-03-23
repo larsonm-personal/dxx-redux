@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 # run_test.ps1 -- Run an automation test script on the Android emulator with health checks.
 #
 # Usage:
@@ -15,11 +15,11 @@
 #   6. Report PASS/FAIL and exit
 
 param(
-    [Parameter(Mandatory=$true, Position=0)]
+    [Parameter(Mandatory = $true, Position = 0)]
     [string]$ScriptName,
     [switch]$Install,
     [int]$TimeoutSeconds = 300,
-    [ValidateSet("d1","d2")]
+    [ValidateSet("d1", "d2")]
     [string]$Game
 )
 

@@ -12,7 +12,7 @@ INSTALL_DIR="$LOCAL_DIR"
 
 DEST="$INSTALL_DIR/$CMAKE_DIR_NAME"
 
-if [ -d "$DEST" ] && [ -x "$DEST/bin/cmake" -o -x "$DEST/bin/cmake.exe" ]; then
+if [ -d "$DEST" ] && { [ -x "$DEST/bin/cmake" ] || [ -x "$DEST/bin/cmake.exe" ]; }; then
     echo "CMake $CMAKE_VERSION already installed at $DEST"
     "$DEST/bin/cmake" --version | head -1
     exit 0
@@ -29,7 +29,7 @@ echo "Extracting to $DEST..."
 unzip -q -o "$TMPFILE" -d "$INSTALL_DIR"
 # Rename the extracted folder to the canonical name.
 if [ ! -d "$DEST" ]; then
-    for _d in "$INSTALL_DIR"/cmake-${CMAKE_VERSION}*; do
+    for _d in "$INSTALL_DIR"/cmake-"${CMAKE_VERSION}"*; do
         if [ -d "$_d" ]; then
             mv "$_d" "$DEST"
             break
@@ -45,4 +45,3 @@ if [ -z "$GET_ALL_RUNNING" ]; then
     echo "Press any key to exit..."
     read -r -n1 -s
 fi
-

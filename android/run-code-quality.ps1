@@ -1,7 +1,9 @@
-# run-code-quality.ps1 -- Run all code quality checks (clang-format + ktlint).
+# run-code-quality.ps1 -- Run all code quality checks.
+# Tools: clang-format (C/C++), ktlint (Kotlin), PSScriptAnalyzer (PowerShell),
+#        shellcheck (bash lint), shfmt (bash format).
 # Usage:
 #   .\run-code-quality.ps1          # check only (exit 1 if issues)
-#   .\run-code-quality.ps1 --fix    # auto-format both C/C++ and Kotlin
+#   .\run-code-quality.ps1 --fix    # auto-format all supported languages
 
 param(
     [switch]$Fix
@@ -35,6 +37,39 @@ if ($Fix) {
 }
 if ($LASTEXITCODE -ne 0) {
     $failed += "ktlint"
+}
+Write-Host ""
+
+# --- PSScriptAnalyzer ---
+Write-Host "--- PowerShell (PSScriptAnalyzer) ---"
+if ($Fix) {
+    & "$scriptDir\run-psscriptanalyzer.ps1"
+} else {
+    & "$scriptDir\run-psscriptanalyzer.ps1" -Check
+}
+if ($LASTEXITCODE -ne 0) {
+    $failed += "psscriptanalyzer"
+}
+Write-Host ""
+
+# --- shellcheck ---
+Write-Host "--- Bash lint (shellcheck) ---"
+# shellcheck has no auto-fix; always runs in report mode
+& "$scriptDir\run-shellcheck.ps1"
+if ($LASTEXITCODE -ne 0) {
+    $failed += "shellcheck"
+}
+Write-Host ""
+
+# --- shfmt ---
+Write-Host "--- Bash format (shfmt) ---"
+if ($Fix) {
+    & "$scriptDir\run-shfmt.ps1"
+} else {
+    & "$scriptDir\run-shfmt.ps1" -Check
+}
+if ($LASTEXITCODE -ne 0) {
+    $failed += "shfmt"
 }
 Write-Host ""
 

@@ -1,4 +1,4 @@
-# deploy-playstore.ps1 -- Upload AAB to Google Play via the Developer API
+﻿# deploy-playstore.ps1 -- Upload AAB to Google Play via the Developer API
 #
 # Usage:
 #   .\deploy-playstore.ps1                              # auto-finds latest AAB in build-outputs/
@@ -43,9 +43,9 @@ if (-not $AabPath) {
     if (-not $aab) {
         # Fall back to Gradle output
         $releaseAab = Join-Path $PSScriptRoot "app\build\outputs\bundle\release\app-release.aab"
-        $debugAab   = Join-Path $PSScriptRoot "app\build\outputs\bundle\debug\app-debug.aab"
-        if     (Test-Path $releaseAab) { $aab = Get-Item $releaseAab }
-        elseif (Test-Path $debugAab)   { $aab = Get-Item $debugAab }
+        $debugAab = Join-Path $PSScriptRoot "app\build\outputs\bundle\debug\app-debug.aab"
+        if (Test-Path $releaseAab) { $aab = Get-Item $releaseAab }
+        elseif (Test-Path $debugAab) { $aab = Get-Item $debugAab }
     }
     if (-not $aab) {
         Write-Error "No AAB found. Build one first with .\build-aab.ps1 or specify -AabPath."
@@ -88,40 +88,40 @@ function Read-Asn1Integer([System.IO.BinaryReader]$reader) {
     if ($raw.Length -gt 1 -and $raw[0] -eq 0) {
         $raw = $raw[1..($raw.Length - 1)]
     }
-    return ,$raw   # comma prevents PowerShell from unrolling the array
+    return , $raw   # comma prevents PowerShell from unrolling the array
 }
 
 # Parse a PKCS#8-encoded RSA private key (DER bytes) into an RSACryptoServiceProvider.
 # Used on .NET Framework (PowerShell 5.1) where ImportPkcs8PrivateKey is unavailable.
 function Import-Pkcs8RsaKey([byte[]]$pkcs8Bytes) {
-    $ms = New-Object System.IO.MemoryStream(,$pkcs8Bytes)
+    $ms = New-Object System.IO.MemoryStream(, $pkcs8Bytes)
     $br = New-Object System.IO.BinaryReader($ms)
 
     # PKCS#8 PrivateKeyInfo: SEQUENCE { version INTEGER, SEQUENCE { OID, NULL }, OCTET STRING }
     $null = Read-Asn1TL $br              # outer SEQUENCE
-    $ver  = Read-Asn1TL $br              # version INTEGER (value 0)
+    $ver = Read-Asn1TL $br              # version INTEGER (value 0)
     $null = $br.ReadBytes($ver.Length)    # skip version value
-    $alg  = Read-Asn1TL $br              # algorithm identifier SEQUENCE
+    $alg = Read-Asn1TL $br              # algorithm identifier SEQUENCE
     $null = $br.ReadBytes($alg.Length)    # skip OID + params
-    $oct  = Read-Asn1TL $br              # OCTET STRING wrapping RSAPrivateKey
+    $oct = Read-Asn1TL $br              # OCTET STRING wrapping RSAPrivateKey
     [byte[]]$rsaKeyBytes = $br.ReadBytes($oct.Length)
     $br.Close(); $ms.Close()
 
     # RSAPrivateKey: SEQUENCE { version, n, e, d, p, q, dp, dq, iq }
-    $ms2 = New-Object System.IO.MemoryStream(,$rsaKeyBytes)
+    $ms2 = New-Object System.IO.MemoryStream(, $rsaKeyBytes)
     $br2 = New-Object System.IO.BinaryReader($ms2)
 
     $null = Read-Asn1TL $br2             # outer SEQUENCE
     $null = Read-Asn1Integer $br2        # version (0)
 
     $rsaParams = New-Object System.Security.Cryptography.RSAParameters
-    $rsaParams.Modulus  = Read-Asn1Integer $br2
+    $rsaParams.Modulus = Read-Asn1Integer $br2
     $rsaParams.Exponent = Read-Asn1Integer $br2
-    $rsaParams.D        = Read-Asn1Integer $br2
-    $rsaParams.P        = Read-Asn1Integer $br2
-    $rsaParams.Q        = Read-Asn1Integer $br2
-    $rsaParams.DP       = Read-Asn1Integer $br2
-    $rsaParams.DQ       = Read-Asn1Integer $br2
+    $rsaParams.D = Read-Asn1Integer $br2
+    $rsaParams.P = Read-Asn1Integer $br2
+    $rsaParams.Q = Read-Asn1Integer $br2
+    $rsaParams.DP = Read-Asn1Integer $br2
+    $rsaParams.DQ = Read-Asn1Integer $br2
     $rsaParams.InverseQ = Read-Asn1Integer $br2
     $br2.Close(); $ms2.Close()
 
@@ -153,10 +153,10 @@ function Get-AccessToken {
 
     # Sign with RSA private key from the service-account JSON
     $pemKey = $creds.private_key -replace "-----BEGIN PRIVATE KEY-----", "" `
-                                 -replace "-----END PRIVATE KEY-----", "" `
-                                 -replace "-----BEGIN RSA PRIVATE KEY-----", "" `
-                                 -replace "-----END RSA PRIVATE KEY-----", "" `
-                                 -replace "\s+", ""
+        -replace "-----END PRIVATE KEY-----", "" `
+        -replace "-----BEGIN RSA PRIVATE KEY-----", "" `
+        -replace "-----END RSA PRIVATE KEY-----", "" `
+        -replace "\s+", ""
     $keyBytes = [Convert]::FromBase64String($pemKey)
 
     # Import the private key -- works on both .NET Framework (PS 5.1) and .NET Core (PS 7+)
@@ -201,7 +201,7 @@ $baseUrl = "https://androidpublisher.googleapis.com/androidpublisher/v3/applicat
 
 Write-Host "Creating edit..."
 $edit = Invoke-RestMethod -Uri "$baseUrl/edits" -Method POST -Headers $headers `
-        -ContentType "application/json" -Body "{}" -TimeoutSec 30
+    -ContentType "application/json" -Body "{}" -TimeoutSec 30
 $editId = $edit.id
 Write-Host "Edit created: $editId"
 Write-Host ""
@@ -212,7 +212,7 @@ Write-Host ""
 
 Write-Host "Fetching available tracks..."
 $tracksResp = Invoke-RestMethod -Uri "$baseUrl/edits/$editId/tracks" -Method GET `
-              -Headers $headers -TimeoutSec 30
+    -Headers $headers -TimeoutSec 30
 $tracks = $tracksResp.tracks
 
 if (-not $tracks -or $tracks.Count -eq 0) {
@@ -304,8 +304,8 @@ $aabBytes = [System.IO.File]::ReadAllBytes($AabPath)
 $alreadyUploaded = $false
 try {
     $uploadResp = Invoke-WebRequest -Uri $uploadUrl -Method POST -Headers $headers `
-                  -ContentType "application/octet-stream" -Body $aabBytes -TimeoutSec 600 `
-                  -UseBasicParsing
+        -ContentType "application/octet-stream" -Body $aabBytes -TimeoutSec 600 `
+        -UseBasicParsing
     $uploadResult = $uploadResp.Content | ConvertFrom-Json
     $versionCode = $uploadResult.versionCode
     Write-Host "Upload complete. versionCode: $versionCode"
@@ -343,8 +343,8 @@ if (-not $alreadyUploaded) {
 
     try {
         $trackResult = Invoke-RestMethod -Uri "$baseUrl/edits/$editId/tracks/$selectedTrack" `
-                       -Method PUT -Headers $headers `
-                       -ContentType "application/json" -Body $trackBody -TimeoutSec 30
+            -Method PUT -Headers $headers `
+            -ContentType "application/json" -Body $trackBody -TimeoutSec 30
         Write-Host "Track updated: $($trackResult.track)  status=$($trackResult.releases[0].status)"
     } catch {
         $errBody = $_.ErrorDetails.Message
@@ -402,7 +402,7 @@ if (-not $alreadyUploaded) {
     } catch {}
 
     $edit2 = Invoke-RestMethod -Uri "$baseUrl/edits" -Method POST -Headers $headers `
-             -ContentType "application/json" -Body "{}" -TimeoutSec 30
+        -ContentType "application/json" -Body "{}" -TimeoutSec 30
     $editId = $edit2.id
 
     $releaseStatus = "completed"
@@ -419,8 +419,8 @@ if (-not $alreadyUploaded) {
 
     try {
         $trackResult = Invoke-RestMethod -Uri "$baseUrl/edits/$editId/tracks/$selectedTrack" `
-                       -Method PUT -Headers $headers `
-                       -ContentType "application/json" -Body $trackBody -TimeoutSec 30
+            -Method PUT -Headers $headers `
+            -ContentType "application/json" -Body $trackBody -TimeoutSec 30
         Write-Host "Track updated: status=$($trackResult.releases[0].status)"
     } catch {
         $errBody = $_.ErrorDetails.Message
@@ -476,7 +476,7 @@ if (-not $alreadyUploaded) {
 if ($releaseStatus -eq "draft") {
     Write-Host "Promoting release from draft to completed..."
     $promoteEdit = Invoke-RestMethod -Uri "$baseUrl/edits" -Method POST -Headers $headers `
-                   -ContentType "application/json" -Body "{}" -TimeoutSec 30
+        -ContentType "application/json" -Body "{}" -TimeoutSec 30
     $promoteEditId = $promoteEdit.id
 
     $promoteBody = @{

@@ -1,4 +1,4 @@
-# gather-warnings.ps1 -- Build the Android project and capture compiler warnings.
+﻿# gather-warnings.ps1 -- Build the Android project and capture compiler warnings.
 # Writes all warnings to temp/warnings-YYYY-MM-DD.log.
 #
 # Usage:
@@ -32,7 +32,7 @@ $depBaseFile = Join-Path $repoRoot "dependency_base.txt"
 if (-not $env:JAVA_HOME -and (Test-Path $depBaseFile)) {
     $DEP_BASE = (Get-Content $depBaseFile -First 1).Trim()
     $jdk = Get-ChildItem "$DEP_BASE\jdk-*" -Directory -ErrorAction SilentlyContinue |
-           Sort-Object Name -Descending | Select-Object -First 1
+        Sort-Object Name -Descending | Select-Object -First 1
     if ($jdk) {
         $env:JAVA_HOME = $jdk.FullName
         Write-Host "JAVA_HOME = $env:JAVA_HOME"

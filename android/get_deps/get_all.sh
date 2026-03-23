@@ -10,7 +10,7 @@ wait_for_key() {
 trap wait_for_key EXIT
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-export GET_ALL_RUNNING=1   # tell sub-scripts to skip their own wait-for-key
+export GET_ALL_RUNNING=1 # tell sub-scripts to skip their own wait-for-key
 
 echo "=== Step 1/9: JDK ==="
 bash "$SCRIPT_DIR/get_jdk.sh"

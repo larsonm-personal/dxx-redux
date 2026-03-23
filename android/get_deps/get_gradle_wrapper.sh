@@ -15,7 +15,7 @@ WRAPPER_PROPS="$WRAPPER_DIR/gradle-wrapper.properties"
 mkdir -p "$WRAPPER_DIR"
 
 # Always regenerate properties so the version stays in sync with tool_versions.conf
-cat > "$WRAPPER_PROPS" <<EOF
+cat >"$WRAPPER_PROPS" <<EOF
 distributionBase=GRADLE_USER_HOME
 distributionPath=wrapper/dists
 distributionUrl=https\://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip

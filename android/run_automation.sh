@@ -36,17 +36,19 @@ else
 fi
 GAME_SCRIPTS_DIR="$SCRIPT_DIR/game_scripts"
 DEFAULT_SCRIPT="$GAME_SCRIPTS_DIR/test_launch_to_automap.json5"
-TIMEOUT_SEC=120   # max time to wait for a single test
+TIMEOUT_SEC=120 # max time to wait for a single test
 
+WATCH=false
 WATCH=false
 RUN_ALL=false
 SCRIPTS=()
 
+# shellcheck disable=SC2034  # WATCH reserved for future watch-and-rerun mode
 for arg in "$@"; do
     case "$arg" in
-        --watch|-w) WATCH=true ;;
-        --all|-a)   RUN_ALL=true ;;
-        *)          SCRIPTS+=("$arg") ;;
+    --watch | -w) WATCH=true ;;
+    --all | -a) RUN_ALL=true ;;
+    *) SCRIPTS+=("$arg") ;;
     esac
 done
 
@@ -71,7 +73,7 @@ push_script() {
     basename="$(basename "$script")"
     local device_tmp="/data/local/tmp/$basename"
 
-    "$ADB" push "$script" "$device_tmp" > /dev/null 2>&1
+    "$ADB" push "$script" "$device_tmp" >/dev/null 2>&1
     "$ADB" shell "run-as $PACKAGE cp $device_tmp files/$basename" 2>/dev/null
     "$ADB" shell "rm -f $device_tmp" 2>/dev/null
     echo "$basename"
@@ -99,7 +101,7 @@ run_single_test() {
     "$ADB" logcat -c 2>/dev/null || true
 
     # Send the broadcast
-    "$ADB" shell "am broadcast -a com.dxxredux.AUTOMATE --es script $basename" > /dev/null 2>&1
+    "$ADB" shell "am broadcast -a com.dxxredux.AUTOMATE --es script $basename" >/dev/null 2>&1
 
     echo "  Running... (timeout: ${TIMEOUT_SEC}s)"
 
@@ -113,7 +115,7 @@ run_single_test() {
     logcat_tmp=$(mktemp)
 
     # Start logcat in background, filtered for our tags
-    "$ADB" logcat -s "DXX-Automate:*" > "$logcat_tmp" 2>/dev/null &
+    "$ADB" logcat -s "DXX-Automate:*" >"$logcat_tmp" 2>/dev/null &
     local logcat_pid=$!
 
     while [ $((SECONDS - start_time)) -lt $TIMEOUT_SEC ]; do
@@ -137,7 +139,7 @@ $assert_lines"
             break
         fi
         # Check if process died (crash)
-        if ! "$ADB" shell "pidof $PACKAGE" > /dev/null 2>&1; then
+        if ! "$ADB" shell "pidof $PACKAGE" >/dev/null 2>&1; then
             result="CRASH"
             fail_detail="Game process died during test"
             break
@@ -156,32 +158,33 @@ $assert_lines"
 
     # Print result
     case "$result" in
-        PASS)
-            echo "  RESULT: PASS"
-            rm -f "$logcat_tmp"
-            return 0
-            ;;
-        FAIL)
-            echo "  RESULT: FAIL"
-            echo "$fail_detail" | sed 's/^/    /'
-            rm -f "$logcat_tmp"
-            return 1
-            ;;
-        CRASH)
-            echo "  RESULT: CRASH"
-            echo "    $fail_detail"
-            rm -f "$logcat_tmp"
-            return 1
-            ;;
-        TIMEOUT)
-            echo "  RESULT: TIMEOUT"
-            echo "    $fail_detail"
-            # Dump last logcat lines for debugging
-            echo "    Last automation log lines:"
-            tail -5 "$logcat_tmp" 2>/dev/null | sed 's/^/      /' || true
-            rm -f "$logcat_tmp"
-            return 1
-            ;;
+    PASS)
+        echo "  RESULT: PASS"
+        rm -f "$logcat_tmp"
+        return 0
+        ;;
+    FAIL)
+        echo "  RESULT: FAIL"
+        # shellcheck disable=SC2001  # sed is clearer for multi-line prefix
+        echo "$fail_detail" | sed 's/^/    /'
+        rm -f "$logcat_tmp"
+        return 1
+        ;;
+    CRASH)
+        echo "  RESULT: CRASH"
+        echo "    $fail_detail"
+        rm -f "$logcat_tmp"
+        return 1
+        ;;
+    TIMEOUT)
+        echo "  RESULT: TIMEOUT"
+        echo "    $fail_detail"
+        # Dump last logcat lines for debugging
+        echo "    Last automation log lines:"
+        tail -5 "$logcat_tmp" 2>/dev/null | sed 's/^/      /' || true
+        rm -f "$logcat_tmp"
+        return 1
+        ;;
     esac
 }
 

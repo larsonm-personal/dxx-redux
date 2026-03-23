@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   Single-source extraction regression test. Validates that a CD image or GOG
@@ -26,7 +26,7 @@
   .\test_extract.ps1                # auto-discovers first available spec
 #>
 param(
-    [Parameter(Position=0)]
+    [Parameter(Position = 0)]
     [string]$SpecPath,
     [switch]$SkipLaunch,
     [switch]$KeepFiles
@@ -62,12 +62,12 @@ $DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
 $ADB = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
 
 $GAME_EXTENSIONS = @('.pig', '.hog', '.ham', '.mvl', '.s11', '.s22', '.mn2',
-                      '.msn', '.dxa', '.pog', '.rl2', '.dtx', '.sow',
-                      '.gog', '.inst', '.dem')
+    '.msn', '.dxa', '.pog', '.rl2', '.dtx', '.sow',
+    '.gog', '.inst', '.dem')
 
 # Extensions that are essential for gameplay (not movies/demos)
 $ESSENTIAL_EXTENSIONS = @('.pig', '.hog', '.ham', '.s11', '.s22', '.mn2',
-                          '.msn', '.dxa', '.pog', '.gog', '.inst')
+    '.msn', '.dxa', '.pog', '.gog', '.inst')
 # Large optional files we skip pushing to save time (MVLs = movie files, ~100MB each)
 $SKIP_LARGE_EXTENSIONS = @('.mvl', '.sow', '.dem', '.rl2', '.dtx')
 
@@ -171,7 +171,7 @@ function Get-GameIntrospection {
 function Send-SetupCommand {
     param([string]$Command, [string]$Name, [string]$Path, [string]$Game)
     $args_ = @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
-               '--es', 'command', $Command)
+        '--es', 'command', $Command)
     if ($Name) { $args_ += @('--es', 'name', $Name) }
     if ($Path) { $args_ += @('--es', 'path', $Path) }
     if ($Game) { $args_ += @('--es', 'game', $Game) }

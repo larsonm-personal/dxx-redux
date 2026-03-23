@@ -37,6 +37,7 @@ PACKAGES="platforms;android-$COMPILE_SDK build-tools;$BUILD_TOOLS_VERSION platfo
 if [ -n "$EMULATOR_API_LEVEL" ] && [ "$EMULATOR_API_LEVEL" != "$COMPILE_SDK" ]; then
     PACKAGES="$PACKAGES platforms;android-$EMULATOR_API_LEVEL"
 fi
+# shellcheck disable=SC2086  # intentional word splitting on $PACKAGES
 $SDKMANAGER $PACKAGES
 
 echo "Done. SDK is ready."

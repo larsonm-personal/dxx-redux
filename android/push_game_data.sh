@@ -51,16 +51,22 @@ _host_path() {
 # where coreutils `timeout` can misbehave.
 # Usage: _timed <seconds> <cmd> [args...]
 _timed() {
-    local limit=$1; shift
+    local limit=$1
+    shift
     "$@" &
     local pid=$!
-    ( sleep "$limit"; kill "$pid" 2>/dev/null ) &
+    (
+        sleep "$limit"
+        kill "$pid" 2>/dev/null
+    ) &
     local watcher=$!
     if wait "$pid" 2>/dev/null; then
-        kill "$watcher" 2>/dev/null; wait "$watcher" 2>/dev/null
+        kill "$watcher" 2>/dev/null
+        wait "$watcher" 2>/dev/null
         return 0
     else
-        kill "$watcher" 2>/dev/null; wait "$watcher" 2>/dev/null
+        kill "$watcher" 2>/dev/null
+        wait "$watcher" 2>/dev/null
         return 1
     fi
 }
@@ -68,7 +74,7 @@ _timed() {
 # Timeout (seconds) per file - scales with size: 30s base + ~1s per MB
 _push_timeout() {
     local bytes=$1
-    echo $(( bytes / 1000000 + 30 ))
+    echo $((bytes / 1000000 + 30))
 }
 
 if [ ! -d "$GAME_DATA_DIR" ]; then
@@ -81,13 +87,14 @@ DOWNLOAD_DIR="$GAME_DATA_DIR/download"
 
 # At least one subfolder must have files (ignore .gitkeep)
 _has_files() {
-    ls -p "$1" 2>/dev/null | grep -v '/$' | grep -v '^\.gitkeep$' >/dev/null
+    for _f in "$1"/*; do
+        [ -f "$_f" ] && [ "$(basename "$_f")" != ".gitkeep" ] && return 0
+    done
+    return 1
 }
 if ! _has_files "$DATA_DIR" && ! _has_files "$DOWNLOAD_DIR"; then
     echo "NOTE: No files found in data/ or download/ under $GAME_DATA_DIR"
 fi
-
-
 
 FILES_DIR="/data/data/$PACKAGE/files"
 DEST="$FILES_DIR/sets/default"
@@ -101,7 +108,7 @@ CURRENT_ACTIVE=$("$ADB" shell "run-as $PACKAGE cat $FILES_DIR/file_sets.json 2>/
 if [ -n "$CURRENT_ACTIVE" ] && [ "$CURRENT_ACTIVE" != "default" ]; then
     echo "  (Resetting active file set from '$CURRENT_ACTIVE' to 'default')"
     TMPJSON="${TMPDIR:-/tmp}/_fsets_$$.json"
-    "$ADB" shell "run-as $PACKAGE cat $FILES_DIR/file_sets.json" > "$TMPJSON" 2>/dev/null
+    "$ADB" shell "run-as $PACKAGE cat $FILES_DIR/file_sets.json" >"$TMPJSON" 2>/dev/null
     sed -i 's/"active"[[:space:]]*:[[:space:]]*"[^"]*"/"active": "default"/' "$TMPJSON"
     "$ADB" push "$(_host_path "$TMPJSON")" /data/local/tmp/_fsets.json >/dev/null 2>&1
     "$ADB" shell "run-as $PACKAGE sh -c 'cat /data/local/tmp/_fsets.json > $FILES_DIR/file_sets.json'" 2>/dev/null
@@ -122,7 +129,7 @@ _push_files() {
         [ "$BASENAME" = ".gitkeep" ] && continue
         LOWER=$(echo "$BASENAME" | tr '[:upper:]' '[:lower:]')
 
-        LOCAL_SIZE=$(wc -c < "$f" | tr -d ' ')
+        LOCAL_SIZE=$(wc -c <"$f" | tr -d ' ')
         REMOTE_SIZE=$("$ADB" shell "run-as $PACKAGE stat -c %s $dest_dir/$LOWER 2>/dev/null" 2>/dev/null | tr -d '\r\n') || true
         [ -z "$REMOTE_SIZE" ] && REMOTE_SIZE=0
 
@@ -168,7 +175,7 @@ if [ -d "$DOWNLOAD_DIR" ] && _has_files "$DOWNLOAD_DIR"; then
         LOWER=$(echo "$BASENAME" | tr '[:upper:]' '[:lower:]')
 
         HOST_FILE=$(_host_path "$f")
-        TIMEOUT=$(_push_timeout "$(wc -c < "$f")")
+        TIMEOUT=$(_push_timeout "$(wc -c <"$f")")
 
         echo "  $BASENAME -> $LOWER"
         if ! _timed "$TIMEOUT" "$ADB" push "$HOST_FILE" "$DEVICE_DOWNLOAD_DIR/$LOWER" >/dev/null 2>&1; then
@@ -187,7 +194,7 @@ echo "=== Cleaning removed files ==="
 REMOTE_FILES=$("$ADB" shell "run-as $PACKAGE ls $DEST/" 2>/dev/null | tr -d '\r') || true
 for REMOTE in $REMOTE_FILES; do
     case "$REMOTE" in
-        *.json|*.cfg) continue ;;
+    *.json | *.cfg) continue ;;
     esac
     FOUND=false
     if [ -d "$DATA_DIR" ]; then
@@ -232,10 +239,10 @@ echo "=== Cleaning filesDir root ==="
 ROOT_FILES=$("$ADB" shell "run-as $PACKAGE ls $FILES_DIR/" 2>/dev/null | tr -d '\r') || true
 for RF in $ROOT_FILES; do
     case "$RF" in
-        *.pig|*.hog|*.ham|*.mvl|*.s11|*.s22|*.mn2|*.msn|*.dxa|*.pog|*.rl2|*.dtx)
-            echo "  Removing stale $RF from filesDir root"
-            "$ADB" shell "run-as $PACKAGE rm -f $FILES_DIR/$RF" 2>/dev/null || true
-            ;;
+    *.pig | *.hog | *.ham | *.mvl | *.s11 | *.s22 | *.mn2 | *.msn | *.dxa | *.pog | *.rl2 | *.dtx)
+        echo "  Removing stale $RF from filesDir root"
+        "$ADB" shell "run-as $PACKAGE rm -f $FILES_DIR/$RF" 2>/dev/null || true
+        ;;
     esac
 done
 echo ""

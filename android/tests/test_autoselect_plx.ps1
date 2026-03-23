@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 # test_autoselect_plx.ps1 -- Integration test for weapon autoselect file handling.
 #
 # Verifies:
@@ -43,76 +43,76 @@ if (-not ($d1plxExists -match "yes")) {
     Write-Status "  SKIP: D1 player.plx not present (D1 game data not installed or no pilot created)" -Color DarkGray
 } else {
 
-# Read existing D1 .plx file
-$d1plx = Adb -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/d1x-redux/Players/player.plx")
-$hasSection = [bool]($d1plx -match "\[weapon reorder\]")
-Assert-True $hasSection "D1 .plx has [weapon reorder] section"
+    # Read existing D1 .plx file
+    $d1plx = Adb -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/d1x-redux/Players/player.plx")
+    $hasSection = [bool]($d1plx -match "\[weapon reorder\]")
+    Assert-True $hasSection "D1 .plx has [weapon reorder] section"
 
-# Parse primary and secondary lines
-$primaryLine = ($d1plx -split "`n" | Where-Object { $_ -match "^primary=" }) | Select-Object -First 1
-$secondaryLine = ($d1plx -split "`n" | Where-Object { $_ -match "^secondary=" }) | Select-Object -First 1
+    # Parse primary and secondary lines
+    $primaryLine = ($d1plx -split "`n" | Where-Object { $_ -match "^primary=" }) | Select-Object -First 1
+    $secondaryLine = ($d1plx -split "`n" | Where-Object { $_ -match "^secondary=" }) | Select-Object -First 1
 
-Assert-True ($null -ne $primaryLine) "D1 .plx has primary= line"
-Assert-True ($null -ne $secondaryLine) "D1 .plx has secondary= line"
+    Assert-True ($null -ne $primaryLine) "D1 .plx has primary= line"
+    Assert-True ($null -ne $secondaryLine) "D1 .plx has secondary= line"
 
-if ($primaryLine) {
-    # D1 primary should have 7 hex values (weapon priority indices)
-    $primVals = ($primaryLine -replace "primary=","").Trim() -split ","
-    Assert-True ($primVals.Count -eq 7) "D1 primary has 7 entries (got $($primVals.Count))"
+    if ($primaryLine) {
+        # D1 primary should have 7 hex values (weapon priority indices)
+        $primVals = ($primaryLine -replace "primary=", "").Trim() -split ","
+        Assert-True ($primVals.Count -eq 7) "D1 primary has 7 entries (got $($primVals.Count))"
 
-    # All entries should be valid hex values
-    $allHex = $primVals | Where-Object { $_ -match '^0x[0-9a-fA-F]+$' }
-    Assert-True ($allHex.Count -eq $primVals.Count) "D1 primary entries are all hex values"
-}
+        # All entries should be valid hex values
+        $allHex = $primVals | Where-Object { $_ -match '^0x[0-9a-fA-F]+$' }
+        Assert-True ($allHex.Count -eq $primVals.Count) "D1 primary entries are all hex values"
+    }
 
-if ($secondaryLine) {
-    # D1 secondary should have 6 hex values
-    $secVals = ($secondaryLine -replace "secondary=","").Trim() -split ","
-    Assert-True ($secVals.Count -eq 6) "D1 secondary has 6 entries (got $($secVals.Count))"
+    if ($secondaryLine) {
+        # D1 secondary should have 6 hex values
+        $secVals = ($secondaryLine -replace "secondary=", "").Trim() -split ","
+        Assert-True ($secVals.Count -eq 6) "D1 secondary has 6 entries (got $($secVals.Count))"
 
-    $allHex = $secVals | Where-Object { $_ -match '^0x[0-9a-fA-F]+$' }
-    Assert-True ($allHex.Count -eq $secVals.Count) "D1 secondary entries are all hex values"
-}
+        $allHex = $secVals | Where-Object { $_ -match '^0x[0-9a-fA-F]+$' }
+        Assert-True ($allHex.Count -eq $secVals.Count) "D1 secondary entries are all hex values"
+    }
 
-# -- Test 2: Write and verify D1 .plx round-trip --
-Write-Status "--- D1 .plx round-trip test ---" -Color Yellow
+    # -- Test 2: Write and verify D1 .plx round-trip --
+    Write-Status "--- D1 .plx round-trip test ---" -Color Yellow
 
-if ($primaryLine) {
+    if ($primaryLine) {
 
-# Backup original .plx
-$backupPath = "files/d1x-redux/Players/player.plx.bak"
-Adb -AdbArgs @("shell", "run-as", $PACKAGE, "cp", "files/d1x-redux/Players/player.plx", $backupPath) | Out-Null
+        # Backup original .plx
+        $backupPath = "files/d1x-redux/Players/player.plx.bak"
+        Adb -AdbArgs @("shell", "run-as", $PACKAGE, "cp", "files/d1x-redux/Players/player.plx", $backupPath) | Out-Null
 
-# Read the current primary line to construct a valid sed pattern
-$origPrimary = ($primaryLine -replace "primary=","").Trim()
-# Reverse the comma-separated values for a detectable modification
-$reversed = ($origPrimary -split "," | ForEach-Object { $_ }) 
-[array]::Reverse($reversed)
-$reversedStr = $reversed -join ","
+        # Read the current primary line to construct a valid sed pattern
+        $origPrimary = ($primaryLine -replace "primary=", "").Trim()
+        # Reverse the comma-separated values for a detectable modification
+        $reversed = ($origPrimary -split "," | ForEach-Object { $_ })
+        [array]::Reverse($reversed)
+        $reversedStr = $reversed -join ","
 
-Adb -AdbArgs @("shell", "run-as", $PACKAGE, "sed", "-i",
-    "s/primary=$origPrimary/primary=$reversedStr/",
-    "files/d1x-redux/Players/player.plx") | Out-Null
+        Adb -AdbArgs @("shell", "run-as", $PACKAGE, "sed", "-i",
+            "s/primary=$origPrimary/primary=$reversedStr/",
+            "files/d1x-redux/Players/player.plx") | Out-Null
 
-# Read back and verify modification
-$d1plxMod = Adb -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/d1x-redux/Players/player.plx")
-$modPrimary = ($d1plxMod -split "`n" | Where-Object { $_ -match "^primary=" }) | Select-Object -First 1
-$hasReversed = [bool]($modPrimary -match [regex]::Escape("primary=$reversedStr"))
-Assert-True $hasReversed "D1 .plx round-trip: modified primary order preserved"
+        # Read back and verify modification
+        $d1plxMod = Adb -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/d1x-redux/Players/player.plx")
+        $modPrimary = ($d1plxMod -split "`n" | Where-Object { $_ -match "^primary=" }) | Select-Object -First 1
+        $hasReversed = [bool]($modPrimary -match [regex]::Escape("primary=$reversedStr"))
+        Assert-True $hasReversed "D1 .plx round-trip: modified primary order preserved"
 
-# Restore original
-Adb -AdbArgs @("shell", "run-as", $PACKAGE, "cp", $backupPath, "files/d1x-redux/Players/player.plx") | Out-Null
-Adb -AdbArgs @("shell", "run-as", $PACKAGE, "rm", $backupPath) | Out-Null
+        # Restore original
+        Adb -AdbArgs @("shell", "run-as", $PACKAGE, "cp", $backupPath, "files/d1x-redux/Players/player.plx") | Out-Null
+        Adb -AdbArgs @("shell", "run-as", $PACKAGE, "rm", $backupPath) | Out-Null
 
-# Verify restore
-$d1plxRestored = Adb -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/d1x-redux/Players/player.plx")
-$restoredPrimary = ($d1plxRestored -split "`n" | Where-Object { $_ -match "^primary=" }) | Select-Object -First 1
-$isRestored = [bool]($restoredPrimary -match [regex]::Escape("primary=$origPrimary"))
-Assert-True $isRestored "D1 .plx restore: original primary order intact"
+        # Verify restore
+        $d1plxRestored = Adb -AdbArgs @("shell", "run-as", $PACKAGE, "cat", "files/d1x-redux/Players/player.plx")
+        $restoredPrimary = ($d1plxRestored -split "`n" | Where-Object { $_ -match "^primary=" }) | Select-Object -First 1
+        $isRestored = [bool]($restoredPrimary -match [regex]::Escape("primary=$origPrimary"))
+        Assert-True $isRestored "D1 .plx restore: original primary order intact"
 
-} else {
-    Write-Status "  SKIP: No primary= line found, cannot test round-trip" -Color DarkGray
-}
+    } else {
+        Write-Status "  SKIP: No primary= line found, cannot test round-trip" -Color DarkGray
+    }
 
 } # end d1plxExists
 

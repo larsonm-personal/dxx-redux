@@ -1,4 +1,4 @@
-# Build and run CUE parser + ISO reader tests (Windows).
+﻿# Build and run CUE parser + ISO reader tests (Windows).
 #
 # Usage:  .\test_cue_iso.ps1
 #
@@ -9,7 +9,7 @@ $ErrorActionPreference = "Stop"
 # Source shared env setup (adds cmake to PATH if needed)
 . "$PSScriptRoot\..\test_env.ps1"
 
-$srcDir   = "$PSScriptRoot\..\app\src\main\cpp\extract"
+$srcDir = "$PSScriptRoot\..\app\src\main\cpp\extract"
 $buildDir = "$PSScriptRoot\build"
 
 # Configure + build

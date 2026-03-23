@@ -13,7 +13,6 @@ INSTALL_DIR="$LOCAL_DIR"
 
 DEST="$INSTALL_DIR/$DOSBOX_DIR_NAME"
 
-
 if [ -d "$DEST" ] && [ -f "$DEST/dosbox-x.exe" ]; then
     echo "DOSBox-X $DOSBOX_VERSION already installed at $DEST"
     exit 0

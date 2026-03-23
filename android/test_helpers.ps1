@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 # test_helpers.ps1 -- Shared helper functions for Android emulator test scripts.
 #
 # Usage (dot-source from another script):
@@ -48,8 +48,8 @@ function Adb-Timeout {
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $script:ADB
     $psi.Arguments = ($AdbArgs | ForEach-Object {
-        if ($_ -match '\s') { "`"$_`"" } else { $_ }
-    }) -join ' '
+            if ($_ -match '\s') { "`"$_`"" } else { $_ }
+        }) -join ' '
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
     $psi.UseShellExecute = $false
@@ -131,8 +131,8 @@ function Adb-Dev-Timeout {
     $psi.FileName = $script:ADB
     $allArgs = @("-s", $Serial) + $AdbArgs
     $psi.Arguments = ($allArgs | ForEach-Object {
-        if ($_ -match '\s') { "`"$_`"" } else { $_ }
-    }) -join ' '
+            if ($_ -match '\s') { "`"$_`"" } else { $_ }
+        }) -join ' '
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
     $psi.UseShellExecute = $false
@@ -162,24 +162,26 @@ function Test-DeviceOnline {
 function Install-AppAndData {
     # Install APK and push game data to a specific device. Called after
     # a fresh emulator boot or whenever a device needs provisioning.
+    # Uses Resolve-GameDataDeps (SHA256 index) so it works even when
+    # game_data_to_copy_to_emulator/data/ is empty.
     param([Parameter(Mandatory)][string]$Serial)
     $repoRoot = Split-Path $PSScriptRoot
     $apk = Join-Path $repoRoot "android\app\build\outputs\apk\debug\app-debug.apk"
     if (Test-Path $apk) {
         Write-Status "  Installing APK on $Serial..."
-        Adb-Dev-Timeout -Serial $Serial -AdbArgs @("install","-r",$apk) -Seconds 60 | Out-Null
+        Adb-Dev-Timeout -Serial $Serial -AdbArgs @("install", "-r", $apk) -Seconds 60 | Out-Null
     }
-    $pushScript = Join-Path $repoRoot "android\push_game_data.sh"
-    $bashExe = "bash"
-    if (Test-Path "$script:DEP_BASE\git\bin\bash.exe") { $bashExe = "$script:DEP_BASE\git\bin\bash.exe" }
-    if (Test-Path $pushScript) {
-        Write-Status "  Pushing game data to $Serial..."
-        $env:ANDROID_SERIAL = $Serial
-        $env:CALLED_FROM_SCRIPT = "1"
-        & $bashExe $pushScript 2>&1 | Out-Null
-        Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue
-        Remove-Item Env:\CALLED_FROM_SCRIPT -ErrorAction SilentlyContinue
+    # Set ANDROID_SERIAL so Adb/Adb-Timeout target the right device
+    $prevSerial = $env:ANDROID_SERIAL
+    $env:ANDROID_SERIAL = $Serial
+    Write-Status "  Pushing game data to $Serial..."
+    $deps = Get-StandardGameDataDeps
+    $ok = Resolve-GameDataDeps -Deps $deps
+    if (-not $ok) {
+        Write-Status "  WARN: Could not push game data to $Serial" "Yellow"
     }
+    if ($prevSerial) { $env:ANDROID_SERIAL = $prevSerial }
+    else { Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue }
 }
 
 function Start-EmulatorIfNeeded {
@@ -197,7 +199,7 @@ function Start-EmulatorIfNeeded {
     if (-not $avd) { Write-Status "FAIL: Unknown AVD for $Serial" "Red"; exit 1 }
     $emulatorExe = "$script:DEP_BASE\android-sdk\emulator\emulator.exe"
     Write-Status "  Starting $avd ($Serial)..." "Yellow"
-    Start-Process $emulatorExe -ArgumentList "-avd",$avd,"-no-snapshot-save","-gpu","host"
+    Start-Process $emulatorExe -ArgumentList "-avd", $avd, "-no-snapshot-save", "-gpu", "host"
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt 60 -and -not (Test-DeviceOnline -Serial $Serial)) {
         Start-Sleep -Seconds 2
@@ -208,7 +210,7 @@ function Start-EmulatorIfNeeded {
     Write-Status "  Waiting for $Serial to boot..."
     $sw2 = [System.Diagnostics.Stopwatch]::StartNew()
     while ($sw2.Elapsed.TotalSeconds -lt 240) {
-        $r = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell","getprop","sys.boot_completed") -Seconds 5
+        $r = Adb-Dev-Timeout -Serial $Serial -AdbArgs @("shell", "getprop", "sys.boot_completed") -Seconds 5
         if ($r -and $r.Trim() -eq "1") {
             Write-Status "  $Serial booted" "Green"
             Install-AppAndData -Serial $Serial
@@ -294,7 +296,7 @@ function Read-GameDataIndex {
 function Get-ScriptDeps {
     # Read a .json5 test script and return the _deps array from its _info element.
     # Returns array of dep objects ({file, sha256, target?}) or $null.
-    param([Parameter(Mandatory=$true)][string]$ScriptPath)
+    param([Parameter(Mandatory = $true)][string]$ScriptPath)
     if (-not (Test-Path $ScriptPath)) { return $null }
     $raw = Get-Content $ScriptPath -Raw
     $raw = [regex]::Replace($raw, '//.*', '')
@@ -311,7 +313,7 @@ function Get-ScriptDeps {
 function Resolve-GameDataDeps {
     # Resolve declarative game data deps: look up each by sha256 in the index,
     # check if present on device, push if missing. Returns $true on success.
-    param([Parameter(Mandatory=$true)][array]$Deps)
+    param([Parameter(Mandatory = $true)][array]$Deps)
 
     $idx = Read-GameDataIndex
     if (-not $idx) {
@@ -320,7 +322,7 @@ function Resolve-GameDataDeps {
     }
 
     $defaultTarget = "files/sets/default"
-    Adb -AdbArgs @("shell","run-as",$script:PACKAGE,"mkdir","-p",$defaultTarget) | Out-Null
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", $defaultTarget) | Out-Null
 
     # Group deps by target dir, list what's on device per target
     $byTarget = @{}
@@ -333,7 +335,7 @@ function Resolve-GameDataDeps {
     $pushCount = 0
     foreach ($target in $byTarget.Keys) {
         # List files with sizes via ls -la (reliable on Android toybox)
-        $listing = Adb-Timeout -AdbArgs @("shell","run-as",$script:PACKAGE,"ls","-la","$target/") -Seconds 5
+        $listing = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", "-la", "$target/") -Seconds 5
         $deviceFiles = @{}  # lowercase filename -> size
         if ($listing) {
             foreach ($line in ($listing -split "`n")) {
@@ -380,17 +382,17 @@ function Resolve-GameDataDeps {
 function Get-StandardGameDataDeps {
     # Returns the standard 11-file D2+D1 game data deps array used by most tests.
     return @(
-        @{file="descent2.hog"; sha256="f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"}
-        @{file="descent2.ham"; sha256="5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"}
-        @{file="groupa.pig";   sha256="facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"}
-        @{file="descent2.s22"; sha256="4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728"}
-        @{file="alien1.pig";   sha256="811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233"}
-        @{file="alien2.pig";   sha256="75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055"}
-        @{file="fire.pig";     sha256="26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156"}
-        @{file="ice.pig";      sha256="ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1"}
-        @{file="water.pig";    sha256="de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"}
-        @{file="descent.hog";  sha256="83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052"}
-        @{file="descent.pig";  sha256="093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe"}
+        @{file = "descent2.hog"; sha256 = "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703" }
+        @{file = "descent2.ham"; sha256 = "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d" }
+        @{file = "groupa.pig"; sha256 = "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b" }
+        @{file = "descent2.s22"; sha256 = "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728" }
+        @{file = "alien1.pig"; sha256 = "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233" }
+        @{file = "alien2.pig"; sha256 = "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055" }
+        @{file = "fire.pig"; sha256 = "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156" }
+        @{file = "ice.pig"; sha256 = "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1" }
+        @{file = "water.pig"; sha256 = "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1" }
+        @{file = "descent.hog"; sha256 = "83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052" }
+        @{file = "descent.pig"; sha256 = "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe" }
     )
 }
 
@@ -400,20 +402,20 @@ function Ensure-GameDataOnDevice {
     # selection dialog when num_missions<=1, and having D1 files ensures
     # num_missions>=2 so the dialog appears (matching test expectations).
     # If missing, find them locally and push them. Returns $true on success.
-    param([ValidateSet("d1","d2")][string]$Game = "d2")
+    param([ValidateSet("d1", "d2")][string]$Game = "d2")
 
     $repoRoot = Split-Path $PSScriptRoot
     $setDir = "files/sets/default"
 
     # Required files per game (lowercase). Must match SetupActivity.kt D2_FILES/D1_FILES.
-    $d2Required = @("descent2.hog","descent2.ham","groupa.pig","descent2.s22",
-                     "alien1.pig","alien2.pig","fire.pig","ice.pig","water.pig")
-    $d1Required = @("descent.hog","descent.pig")
+    $d2Required = @("descent2.hog", "descent2.ham", "groupa.pig", "descent2.s22",
+        "alien1.pig", "alien2.pig", "fire.pig", "ice.pig", "water.pig")
+    $d1Required = @("descent.hog", "descent.pig")
     # Always push both sets so D2 mission-select dialog appears (needs num_missions>1)
     $needed = ($d2Required + $d1Required) | Sort-Object -Unique
 
     # List what's already on device
-    $listing = Adb-Timeout -AdbArgs @("shell","run-as",$script:PACKAGE,"ls","$setDir/") -Seconds 5
+    $listing = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", "$setDir/") -Seconds 5
     $onDevice = @()
     if ($listing) { $onDevice = ($listing -split "`n" | ForEach-Object { $_.Trim().ToLower() }) }
 
@@ -431,7 +433,7 @@ function Ensure-GameDataOnDevice {
     )
 
     # Ensure set dir exists
-    Adb -AdbArgs @("shell","run-as",$script:PACKAGE,"mkdir","-p",$setDir) | Out-Null
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", $setDir) | Out-Null
 
     foreach ($fname in $missing) {
         $localFile = $null
@@ -525,7 +527,7 @@ function Send-AutomationScript {
     # Push a test script to the device and optionally send the AUTOMATE broadcast.
     # With -PushOnly, only copies the file (useful when pushing before game launch).
     param(
-        [Parameter(Mandatory=$true, Position=0)]
+        [Parameter(Mandatory = $true, Position = 0)]
         [string]$ScriptName,
         [string]$ScriptDir = $PSScriptRoot,
         [switch]$PushOnly
@@ -589,15 +591,15 @@ function Watch-AutomationResult {
                 $launcherChecked = $true
                 $hasProgress = $false
                 # Check automation_log.jsonl for any step progress
-                $stepCheck = Adb-Timeout -AdbArgs @("shell","run-as",$script:PACKAGE,
-                    "ls","files/automation_log.jsonl") -Seconds 3
+                $stepCheck = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE,
+                    "ls", "files/automation_log.jsonl") -Seconds 3
                 if ($stepCheck -and $stepCheck -notmatch 'No such file') { $hasProgress = $true }
                 if (-not $hasProgress) {
                     # No automation progress -- check if launcher is still showing
-                    Adb -AdbArgs @("shell","am","broadcast","-a","com.dxxredux.SETUP_INTROSPECT") | Out-Null
+                    Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_INTROSPECT") | Out-Null
                     Start-Sleep -Milliseconds 800
-                    $setupJson = Adb-Timeout -AdbArgs @("shell","run-as",$script:PACKAGE,
-                        "cat","files/setup_introspect.json") -Seconds 3
+                    $setupJson = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE,
+                        "cat", "files/setup_introspect.json") -Seconds 3
                     if ($setupJson -and $setupJson -match '"screen"\s*:\s*"setup"') {
                         Write-Status "FAIL: Game stuck at launcher (SetupActivity still visible after ${elapsed}s)" "Red"
                         Write-Status "  The game engine may not have found its data files." "Yellow"
@@ -656,13 +658,11 @@ function Watch-AutomationResult {
                     Write-Status "PASS (logcat)" "Green"
                     $finished = $true
                     $passed = $true
-                }
-                elseif ($line -match 'SCRIPT_RESULT:\s*FAIL') {
+                } elseif ($line -match 'SCRIPT_RESULT:\s*FAIL') {
                     Write-Status "FAIL (logcat): $line" "Red"
                     $finished = $true
                     $passed = $false
-                }
-                elseif ($line -match 'SCRIPT_BACKGROUND:' -and -not $backgroundHandled) {
+                } elseif ($line -match 'SCRIPT_BACKGROUND:' -and -not $backgroundHandled) {
                     $backgroundHandled = $true
                     Write-Status "Background marker detected -- cycling app to background" "Yellow"
                     Start-Sleep -Seconds 2
@@ -683,8 +683,7 @@ function Watch-AutomationResult {
                     Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_BACK") | Out-Null
                     Start-Sleep -Seconds 3
                     Write-Status "App resumed -- continuing test monitoring" "Green"
-                }
-                elseif ($line -match 'DXX-Automate' -and $line.Trim().Length -gt 0) {
+                } elseif ($line -match 'DXX-Automate' -and $line.Trim().Length -gt 0) {
                     Write-Host "  $($line.Trim())" -ForegroundColor Gray
                 }
             }
@@ -741,7 +740,7 @@ function Get-ScriptGameInfo {
     # Read a .json5 test script and return the games array from its _info element.
     # Returns @("d1","d2"), @("d1"), @("d2"), or $null if no _info element.
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$ScriptPath
     )
     if (-not (Test-Path $ScriptPath)) { return $null }
@@ -760,7 +759,7 @@ function Get-ScriptGameInfo {
 
 function Get-ScriptStandalone {
     # Return $false if the script's _info has "_standalone": false, else $true.
-    param([Parameter(Mandatory=$true)] [string]$ScriptPath)
+    param([Parameter(Mandatory = $true)] [string]$ScriptPath)
     if (-not (Test-Path $ScriptPath)) { return $true }
     $raw = Get-Content $ScriptPath -Raw
     $raw = [regex]::Replace($raw, '//.*', '')
@@ -782,9 +781,9 @@ function Resolve-TestScript {
     #   4. Write resolved script to a temp file
     # Returns the path to the resolved temp file, or $ScriptPath if no processing needed.
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$ScriptPath,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$GameId
     )
     if (-not (Test-Path $ScriptPath)) { return $ScriptPath }
@@ -849,7 +848,7 @@ function Get-ScriptTimeoutSeconds {
     # Sums ms, timeout_ms, and post_delay_ms from every step, converts to
     # seconds, and adds a buffer. Returns an integer.
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$ScriptPath,
         [int]$BufferSeconds = 15
     )

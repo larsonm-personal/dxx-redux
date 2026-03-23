@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
     Unattended sequential test runner with automatic infrastructure setup.
@@ -172,10 +172,10 @@ foreach ($test in $allTests) {
 }
 
 # Group by infrastructure tier
-$tierNone      = @($runnableTests | Where-Object { $_.Requires -eq "none" })
+$tierNone = @($runnableTests | Where-Object { $_.Requires -eq "none" })
 $tierSingleEmu = @($runnableTests | Where-Object { $_.Requires -eq "emulator" })
-$tierDualEmu   = @($runnableTests | Where-Object { $_.Requires -eq "two_emulators" -or $_.Requires -eq "server" })
-$tierExtract   = @($runnableTests | Where-Object { $_.Requires -eq "extract" })
+$tierDualEmu = @($runnableTests | Where-Object { $_.Requires -eq "two_emulators" -or $_.Requires -eq "server" })
+$tierExtract = @($runnableTests | Where-Object { $_.Requires -eq "extract" })
 
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "  DXX-Redux Unattended Test Suite" -ForegroundColor Cyan
@@ -393,8 +393,8 @@ if ($tierDualEmu.Count -gt 0 -and -not $stopEarly) {
         }
     } else {
         $reason = if (-not $emu1Ok) { "could not start emulator" }
-                  elseif (-not $emu2Ok) { "could not start second emulator" }
-                  else { "could not start matchmaking server" }
+        elseif (-not $emu2Ok) { "could not start second emulator" }
+        else { "could not start matchmaking server" }
         foreach ($test in $tierDualEmu) {
             $infraSkipped += @{ Name = $test.Name; Reason = $reason; Type = $test.Type }
         }

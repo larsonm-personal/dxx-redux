@@ -1,4 +1,4 @@
-# check-updates.ps1 -- Check for newer versions of ALL Android build dependencies
+﻿# check-updates.ps1 -- Check for newer versions of ALL Android build dependencies
 # and offer to upgrade them.  Updates tool_versions.conf + build files in place.
 #
 # Checks: AGP, Gradle, Kotlin, Compose Compiler, Compose BOM, AndroidX libs,
@@ -8,9 +8,9 @@
 
 $ErrorActionPreference = "Stop"
 
-$scriptDir   = $PSScriptRoot
-$androidDir  = Split-Path $scriptDir -Parent
-$confFile    = Join-Path $scriptDir "tool_versions.conf"
+$scriptDir = $PSScriptRoot
+$androidDir = Split-Path $scriptDir -Parent
+$confFile = Join-Path $scriptDir "tool_versions.conf"
 
 # -- Load tool_versions.conf --------------------------------------------------
 
@@ -32,7 +32,7 @@ $conf = Load-Conf
 function Get-LatestMavenVersion($group, $artifact) {
     $groupPath = $group -replace '\.', '/'
     foreach ($repo in @("https://dl.google.com/dl/android/maven2",
-                        "https://repo1.maven.org/maven2")) {
+            "https://repo1.maven.org/maven2")) {
         $url = "$repo/$groupPath/$artifact/maven-metadata.xml"
         try {
             $xml = [xml](Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 10).Content
@@ -46,7 +46,7 @@ function Get-LatestMavenVersion($group, $artifact) {
 function Get-LatestGradleVersion {
     try {
         $json = (Invoke-WebRequest -Uri "https://services.gradle.org/versions/current" `
-                     -UseBasicParsing -TimeoutSec 10).Content | ConvertFrom-Json
+                -UseBasicParsing -TimeoutSec 10).Content | ConvertFrom-Json
         return $json.version
     } catch { return $null }
 }
@@ -55,7 +55,7 @@ function Get-LatestNDKVersion {
     # Scrape the NDK download page for the latest version tag
     try {
         $page = (Invoke-WebRequest -Uri "https://developer.android.com/ndk/downloads" `
-                     -UseBasicParsing -TimeoutSec 15).Content
+                -UseBasicParsing -TimeoutSec 15).Content
         # Look for "android-ndk-r<VER>-windows.zip" pattern
         if ($page -match 'android-ndk-(r\d+[a-z]?)-windows\.zip') {
             return $Matches[1]
@@ -91,14 +91,14 @@ function Get-LatestBuildToolsVersion {
         if (Test-Path $candidate) { $sdkDir = $candidate }
     }
     if (-not $sdkDir) { return $null }
-    
+
     $sdkmanager = Join-Path $sdkDir "cmdline-tools\latest\bin\sdkmanager.bat"
     if (-not (Test-Path $sdkmanager)) { return $null }
-    
+
     try {
         $output = & $sdkmanager --list 2>$null | Select-String "build-tools;" |
-                  ForEach-Object { if ($_ -match 'build-tools;(\d+\.\d+\.\d+)\s') { $Matches[1] } } |
-                  Sort-Object { [version]$_ } -Descending | Select-Object -First 1
+            ForEach-Object { if ($_ -match 'build-tools;(\d+\.\d+\.\d+)\s') { $Matches[1] } } |
+            Sort-Object { [version]$_ } -Descending | Select-Object -First 1
         return $output
     } catch { return $null }
 }
@@ -109,7 +109,7 @@ function Get-LatestSoundfontVersion {
         $headers = @{ "Accept" = "application/vnd.github.v3+json" }
         $url = "https://api.github.com/repos/arbruijn/TimGM6mb/releases/latest"
         $json = (Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 10 -Headers $headers).Content |
-                ConvertFrom-Json
+            ConvertFrom-Json
         $tag = $json.tag_name -replace '^v', ''
         return $tag
     } catch { return $null }
@@ -124,48 +124,59 @@ Write-Host ""
 # Build the dependency list: Name, ConfKey, Current, Latest, Extra conf keys to update
 $deps = @(
     @{ Name = "Android Gradle Plugin"; ConfKey = "AGP_VERSION";
-       Current = $conf["AGP_VERSION"];
-       Latest = Get-LatestMavenVersion "com.android.tools.build" "gradle" },
+        Current = $conf["AGP_VERSION"];
+        Latest = Get-LatestMavenVersion "com.android.tools.build" "gradle"
+    },
 
-    @{ Name = "Gradle";                ConfKey = "GRADLE_VERSION";
-       Current = $conf["GRADLE_VERSION"];
-       Latest = Get-LatestGradleVersion },
+    @{ Name = "Gradle"; ConfKey = "GRADLE_VERSION";
+        Current = $conf["GRADLE_VERSION"];
+        Latest = Get-LatestGradleVersion
+    },
 
-    @{ Name = "Kotlin";                ConfKey = "KOTLIN_VERSION";
-       Current = $conf["KOTLIN_VERSION"];
-       Latest = Get-LatestMavenVersion "org.jetbrains.kotlin" "kotlin-stdlib" },
+    @{ Name = "Kotlin"; ConfKey = "KOTLIN_VERSION";
+        Current = $conf["KOTLIN_VERSION"];
+        Latest = Get-LatestMavenVersion "org.jetbrains.kotlin" "kotlin-stdlib"
+    },
 
-    @{ Name = "Compose Compiler";      ConfKey = "COMPOSE_COMPILER_VERSION";
-       Current = $conf["COMPOSE_COMPILER_VERSION"];
-       Latest = Get-LatestMavenVersion "androidx.compose.compiler" "compiler" },
+    @{ Name = "Compose Compiler"; ConfKey = "COMPOSE_COMPILER_VERSION";
+        Current = $conf["COMPOSE_COMPILER_VERSION"];
+        Latest = Get-LatestMavenVersion "androidx.compose.compiler" "compiler"
+    },
 
-    @{ Name = "Compose BOM";           ConfKey = "COMPOSE_BOM_VERSION";
-       Current = $conf["COMPOSE_BOM_VERSION"];
-       Latest = Get-LatestMavenVersion "androidx.compose" "compose-bom" },
+    @{ Name = "Compose BOM"; ConfKey = "COMPOSE_BOM_VERSION";
+        Current = $conf["COMPOSE_BOM_VERSION"];
+        Latest = Get-LatestMavenVersion "androidx.compose" "compose-bom"
+    },
 
-    @{ Name = "core-ktx";              ConfKey = "CORE_KTX_VERSION";
-       Current = $conf["CORE_KTX_VERSION"];
-       Latest = Get-LatestMavenVersion "androidx.core" "core-ktx" },
+    @{ Name = "core-ktx"; ConfKey = "CORE_KTX_VERSION";
+        Current = $conf["CORE_KTX_VERSION"];
+        Latest = Get-LatestMavenVersion "androidx.core" "core-ktx"
+    },
 
-    @{ Name = "appcompat";             ConfKey = "APPCOMPAT_VERSION";
-       Current = $conf["APPCOMPAT_VERSION"];
-       Latest = Get-LatestMavenVersion "androidx.appcompat" "appcompat" },
+    @{ Name = "appcompat"; ConfKey = "APPCOMPAT_VERSION";
+        Current = $conf["APPCOMPAT_VERSION"];
+        Latest = Get-LatestMavenVersion "androidx.appcompat" "appcompat"
+    },
 
-    @{ Name = "activity-compose";      ConfKey = "ACTIVITY_COMPOSE_VERSION";
-       Current = $conf["ACTIVITY_COMPOSE_VERSION"];
-       Latest = Get-LatestMavenVersion "androidx.activity" "activity-compose" },
+    @{ Name = "activity-compose"; ConfKey = "ACTIVITY_COMPOSE_VERSION";
+        Current = $conf["ACTIVITY_COMPOSE_VERSION"];
+        Latest = Get-LatestMavenVersion "androidx.activity" "activity-compose"
+    },
 
-    @{ Name = "Android NDK";           ConfKey = "NDK_VERSION";
-       Current = $conf["NDK_VERSION"];
-       Latest = Get-LatestNDKVersion },
+    @{ Name = "Android NDK"; ConfKey = "NDK_VERSION";
+        Current = $conf["NDK_VERSION"];
+        Latest = Get-LatestNDKVersion
+    },
 
-    @{ Name = "Build Tools";           ConfKey = "BUILD_TOOLS_VERSION";
-       Current = $conf["BUILD_TOOLS_VERSION"];
-       Latest = Get-LatestBuildToolsVersion },
+    @{ Name = "Build Tools"; ConfKey = "BUILD_TOOLS_VERSION";
+        Current = $conf["BUILD_TOOLS_VERSION"];
+        Latest = Get-LatestBuildToolsVersion
+    },
 
-    @{ Name = "GM Soundfont";          ConfKey = "SOUNDFONT_VERSION";
-       Current = $conf["SOUNDFONT_VERSION"];
-       Latest = Get-LatestSoundfontVersion }
+    @{ Name = "GM Soundfont"; ConfKey = "SOUNDFONT_VERSION";
+        Current = $conf["SOUNDFONT_VERSION"];
+        Latest = Get-LatestSoundfontVersion
+    }
 )
 
 # JDK: special -- only show update for current major, and upgrade option for the other
@@ -177,15 +188,18 @@ $latestJDK21 = ($jdkVersions | Where-Object { $_.Major -eq 21 }).Version
 
 if ($currentJDKMajor -eq "17" -and $latestJDK17) {
     $deps += @{ Name = "JDK 17"; ConfKey = "JDK_VERSION";
-                Current = $currentJDKVersion; Latest = $latestJDK17 }
+        Current = $currentJDKVersion; Latest = $latestJDK17
+    }
     if ($latestJDK21) {
         $deps += @{ Name = "JDK 21 (upgrade)"; ConfKey = "JDK_VERSION";
-                    Current = "$currentJDKMajor ($currentJDKVersion)"; Latest = $latestJDK21;
-                    JDKMajor = 21 }
+            Current = "$currentJDKMajor ($currentJDKVersion)"; Latest = $latestJDK21;
+            JDKMajor = 21
+        }
     }
 } elseif ($currentJDKMajor -eq "21" -and $latestJDK21) {
     $deps += @{ Name = "JDK 21"; ConfKey = "JDK_VERSION";
-                Current = $currentJDKVersion; Latest = $latestJDK21 }
+        Current = $currentJDKVersion; Latest = $latestJDK21
+    }
 }
 
 # -- Display table ------------------------------------------------------------

@@ -36,7 +36,7 @@ ACTION="com.dxxredux.INTROSPECT"
 # For non-setup modes, request a game-state dump
 JSON=""
 if [[ "${1:-}" != "setup" ]]; then
-    "$ADB" shell am broadcast -a "$ACTION" > /dev/null 2>&1 || {
+    "$ADB" shell am broadcast -a "$ACTION" >/dev/null 2>&1 || {
         echo "ERROR: broadcast failed - is the emulator running?" >&2
         exit 1
     }
@@ -54,9 +54,9 @@ fi
 # Pick a formatter
 pretty_print() {
     if command -v python3 &>/dev/null; then
-        python3 -m json.tool <<< "$1"
+        python3 -m json.tool <<<"$1"
     elif command -v jq &>/dev/null; then
-        jq . <<< "$1"
+        jq . <<<"$1"
     else
         echo "$1"
     fi
@@ -73,9 +73,9 @@ if v is None:
     print('(not present in current state)')
 else:
     print(json.dumps(v, indent=2))
-" <<< "$json"
+" <<<"$json"
     elif command -v jq &>/dev/null; then
-        jq ".$key // \"(not present in current state)\"" <<< "$json"
+        jq ".$key // \"(not present in current state)\"" <<<"$json"
     else
         echo "(install python3 or jq to extract fields)"
         echo "$json"
@@ -83,61 +83,61 @@ else:
 }
 
 case "${1:-}" in
-    setup)
-        # Setup-screen introspection - different broadcast & file
-        "$ADB" shell am broadcast -a com.dxxredux.SETUP_INTROSPECT > /dev/null 2>&1 || {
-            echo "ERROR: broadcast failed - is the emulator running?" >&2
-            exit 1
-        }
-        sleep 1
-        SJSON=$("$ADB" shell run-as "$PACKAGE" cat files/setup_introspect.json 2>/dev/null) || {
-            echo "ERROR: Could not read setup_introspect.json. Is SetupActivity visible?" >&2
-            exit 1
-        }
-        if [[ "${2:-}" == "raw" ]]; then
-            echo "$SJSON"
-        else
-            pretty_print "$SJSON"
-        fi
-        ;;
-    raw)
-        echo "$JSON"
-        ;;
-    menu)
-        extract_key menu "$JSON"
-        ;;
-    player)
-        extract_key player "$JSON"
-        ;;
-    position)
-        extract_key position "$JSON"
-        ;;
-    console)
-        extract_key console "$JSON"
-        ;;
-    autolog)
-        # Dump automation step log (file-based, no introspection needed)
-        ALOG=$("$ADB" shell run-as "$PACKAGE" cat files/automation_log.jsonl 2>/dev/null) || {
-            echo "ERROR: Could not read automation_log.jsonl." >&2
-            exit 1
-        }
-        echo "$ALOG"
-        ;;
-    autoresult)
-        # Dump automation result (file-based, no introspection needed)
-        ARES=$("$ADB" shell run-as "$PACKAGE" cat files/automation_result.json 2>/dev/null) || {
-            echo "ERROR: Could not read automation_result.json." >&2
-            exit 1
-        }
-        if [[ "${2:-}" == "raw" ]]; then
-            echo "$ARES"
-        else
-            pretty_print "$ARES"
-        fi
-        ;;
-    *)
-        pretty_print "$JSON"
-        ;;
+setup)
+    # Setup-screen introspection - different broadcast & file
+    "$ADB" shell am broadcast -a com.dxxredux.SETUP_INTROSPECT >/dev/null 2>&1 || {
+        echo "ERROR: broadcast failed - is the emulator running?" >&2
+        exit 1
+    }
+    sleep 1
+    SJSON=$("$ADB" shell run-as "$PACKAGE" cat files/setup_introspect.json 2>/dev/null) || {
+        echo "ERROR: Could not read setup_introspect.json. Is SetupActivity visible?" >&2
+        exit 1
+    }
+    if [[ "${2:-}" == "raw" ]]; then
+        echo "$SJSON"
+    else
+        pretty_print "$SJSON"
+    fi
+    ;;
+raw)
+    echo "$JSON"
+    ;;
+menu)
+    extract_key menu "$JSON"
+    ;;
+player)
+    extract_key player "$JSON"
+    ;;
+position)
+    extract_key position "$JSON"
+    ;;
+console)
+    extract_key console "$JSON"
+    ;;
+autolog)
+    # Dump automation step log (file-based, no introspection needed)
+    ALOG=$("$ADB" shell run-as "$PACKAGE" cat files/automation_log.jsonl 2>/dev/null) || {
+        echo "ERROR: Could not read automation_log.jsonl." >&2
+        exit 1
+    }
+    echo "$ALOG"
+    ;;
+autoresult)
+    # Dump automation result (file-based, no introspection needed)
+    ARES=$("$ADB" shell run-as "$PACKAGE" cat files/automation_result.json 2>/dev/null) || {
+        echo "ERROR: Could not read automation_result.json." >&2
+        exit 1
+    }
+    if [[ "${2:-}" == "raw" ]]; then
+        echo "$ARES"
+    else
+        pretty_print "$ARES"
+    fi
+    ;;
+*)
+    pretty_print "$JSON"
+    ;;
 esac
 echo ""
 echo "Press any key to exit..."

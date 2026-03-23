@@ -1,4 +1,4 @@
-# test_lan_discovery.ps1 -- LAN lobby discovery test bot
+﻿# test_lan_discovery.ps1 -- LAN lobby discovery test bot
 # Sends ANNOUNCE packets on UDP port 42400 so the Android app can discover them.
 # Also listens for JOIN/LEAVE/READY packets from clients.
 #
@@ -127,11 +127,11 @@ try {
                 "READY" {
                     if ($msg.lobby_id -eq $lobbyId) {
                         $players = @($players | ForEach-Object {
-                            if ($_.callsign -eq $msg.callsign) {
-                                $_.ready = $msg.ready
-                            }
-                            $_
-                        })
+                                if ($_.callsign -eq $msg.callsign) {
+                                    $_.ready = $msg.ready
+                                }
+                                $_
+                            })
                         Write-Host "  -> Ready update: $($msg.callsign) = $($msg.ready)"
                     }
                 }

@@ -1,4 +1,4 @@
-# build-aab.ps1 -- Build an AAB with all ABIs and copy to build-outputs/
+﻿# build-aab.ps1 -- Build an AAB with all ABIs and copy to build-outputs/
 # Usage: .\build-aab.ps1 [[-BuildType] <string>]
 #        .\build-aab.ps1 -BuildType "2"     # Release (for Play Console)
 
@@ -37,7 +37,7 @@ try {
         $BuildType = Read-Host "Enter choice [2]"
     }
     if (-not $BuildType) { $BuildType = "2" }
-    
+
     if ($BuildType -eq '1') {
         $variant = "Debug"
     } else {
