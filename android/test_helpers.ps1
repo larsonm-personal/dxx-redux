@@ -327,7 +327,7 @@ function Resolve-GameDataDeps {
     # Group deps by target dir, list what's on device per target
     $byTarget = @{}
     foreach ($dep in $Deps) {
-        $t = if ($dep.target) { $dep.target } else { $defaultTarget }
+        $t = if ($dep['target']) { $dep['target'] } else { $defaultTarget }
         if (-not $byTarget.ContainsKey($t)) { $byTarget[$t] = @() }
         $byTarget[$t] += $dep
     }
@@ -367,9 +367,12 @@ function Resolve-GameDataDeps {
                 Write-Status "FAIL: Cannot resolve $($dep.file) (sha256: $($dep.sha256.Substring(0,12))...)" "Red"
                 return $false
             }
+            $prevEAP = $ErrorActionPreference
+            $ErrorActionPreference = "Continue"
             & $script:ADB push $localFile "/data/local/tmp/$fname" 2>&1 | Out-Null
             & $script:ADB shell "run-as $($script:PACKAGE) sh -c 'cat /data/local/tmp/$fname > /data/data/$($script:PACKAGE)/$target/$fname'" 2>&1 | Out-Null
             & $script:ADB shell "rm -f /data/local/tmp/$fname" 2>&1 | Out-Null
+            $ErrorActionPreference = $prevEAP
             $pushCount++
         }
     }
@@ -447,9 +450,12 @@ function Ensure-GameDataOnDevice {
             Write-Status "FAIL: Cannot find $fname locally" "Red"
             return $false
         }
+        $prevEAP = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
         & $script:ADB push $localFile "/data/local/tmp/$fname" 2>&1 | Out-Null
         & $script:ADB shell "run-as $($script:PACKAGE) sh -c 'cat /data/local/tmp/$fname > /data/data/$($script:PACKAGE)/$setDir/$fname'" 2>&1 | Out-Null
         & $script:ADB shell "rm -f /data/local/tmp/$fname" 2>&1 | Out-Null
+        $ErrorActionPreference = $prevEAP
     }
     Write-Status "Game data: $($missing.Count) files pushed" "Green"
     return $true
