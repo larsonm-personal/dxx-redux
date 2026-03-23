@@ -152,6 +152,115 @@ function Wait-GameStarted {
     return $false
 }
 
+# ── Declarative game data dependency resolution ──────────────────────────
+
+$script:GameDataIndex = $null
+
+function Read-GameDataIndex {
+    # Parse game_data/game_data_index.txt into a hashtable: sha256 -> full path.
+    # Cached in $script:GameDataIndex after first call.
+    if ($script:GameDataIndex) { return $script:GameDataIndex }
+    $repoRoot = Split-Path $PSScriptRoot
+    $indexFile = Join-Path $repoRoot "game_data\game_data_index.txt"
+    if (-not (Test-Path $indexFile)) {
+        Write-Status "WARN: game_data_index.txt not found -- run generate_game_data_index.ps1" "Yellow"
+        return $null
+    }
+    $ht = @{}
+    foreach ($line in (Get-Content $indexFile)) {
+        if ($line -match '^\s*#' -or $line -match '^\s*$') { continue }
+        $parts = $line -split '\s{2}', 2
+        if ($parts.Count -eq 2) {
+            $ht[$parts[0]] = Join-Path $repoRoot $parts[1]
+        }
+    }
+    $script:GameDataIndex = $ht
+    return $ht
+}
+
+function Get-ScriptDeps {
+    # Read a .json5 test script and return the _deps array from its _info element.
+    # Returns array of dep objects ({file, sha256, target?}) or $null.
+    param([Parameter(Mandatory=$true)][string]$ScriptPath)
+    if (-not (Test-Path $ScriptPath)) { return $null }
+    $raw = Get-Content $ScriptPath -Raw
+    $raw = [regex]::Replace($raw, '//.*', '')
+    $raw = [regex]::Replace($raw, ',\s*([}\]])', '$1')
+    try {
+        $arr = $raw | ConvertFrom-Json
+        if ($arr.Count -gt 0 -and $arr[0]._info -and $arr[0]._info._deps) {
+            return @($arr[0]._info._deps)
+        }
+    } catch {}
+    return $null
+}
+
+function Resolve-GameDataDeps {
+    # Resolve declarative game data deps: look up each by sha256 in the index,
+    # check if present on device, push if missing. Returns $true on success.
+    param([Parameter(Mandatory=$true)][array]$Deps)
+
+    $idx = Read-GameDataIndex
+    if (-not $idx) {
+        Write-Status "FAIL: No game data index available" "Red"
+        return $false
+    }
+
+    $defaultTarget = "files/sets/default"
+    Adb -AdbArgs @("shell","run-as",$script:PACKAGE,"mkdir","-p",$defaultTarget) | Out-Null
+
+    # Group deps by target dir, list what's on device per target
+    $byTarget = @{}
+    foreach ($dep in $Deps) {
+        $t = if ($dep.target) { $dep.target } else { $defaultTarget }
+        if (-not $byTarget.ContainsKey($t)) { $byTarget[$t] = @() }
+        $byTarget[$t] += $dep
+    }
+
+    $pushCount = 0
+    foreach ($target in $byTarget.Keys) {
+        $listing = Adb-Timeout -AdbArgs @("shell","run-as",$script:PACKAGE,"ls","$target/") -Seconds 5
+        $onDevice = @()
+        if ($listing) { $onDevice = ($listing -split "`n" | ForEach-Object { $_.Trim().ToLower() }) }
+
+        foreach ($dep in $byTarget[$target]) {
+            $fname = $dep.file.ToLower()
+            if ($fname -in $onDevice) { continue }
+
+            $localFile = $idx[$dep.sha256]
+            if (-not $localFile -or -not (Test-Path $localFile)) {
+                Write-Status "FAIL: Cannot resolve $($dep.file) (sha256: $($dep.sha256.Substring(0,12))...)" "Red"
+                return $false
+            }
+            & $script:ADB push $localFile "/data/local/tmp/$fname" 2>&1 | Out-Null
+            & $script:ADB shell "run-as $($script:PACKAGE) sh -c 'cat /data/local/tmp/$fname > /data/data/$($script:PACKAGE)/$target/$fname'" 2>&1 | Out-Null
+            & $script:ADB shell "rm -f /data/local/tmp/$fname" 2>&1 | Out-Null
+            $pushCount++
+        }
+    }
+    if ($pushCount -gt 0) {
+        Write-Status "Game data: $pushCount files pushed via deps" "Green"
+    }
+    return $true
+}
+
+function Get-StandardGameDataDeps {
+    # Returns the standard 11-file D2+D1 game data deps array used by most tests.
+    return @(
+        @{file="descent2.hog"; sha256="f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"}
+        @{file="descent2.ham"; sha256="5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"}
+        @{file="groupa.pig";   sha256="facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"}
+        @{file="descent2.s22"; sha256="4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728"}
+        @{file="alien1.pig";   sha256="811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233"}
+        @{file="alien2.pig";   sha256="75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055"}
+        @{file="fire.pig";     sha256="26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156"}
+        @{file="ice.pig";      sha256="ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1"}
+        @{file="water.pig";    sha256="de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"}
+        @{file="descent.hog";  sha256="83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052"}
+        @{file="descent.pig";  sha256="093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe"}
+    )
+}
+
 function Ensure-GameDataOnDevice {
     # Ensure required game files for $Game are present on the device.
     # Always pushes both D1 and D2 core files -- D2's mission list skips the
@@ -217,19 +326,21 @@ function Start-GameWithRetry {
     # $ExtraLaunchArgs: additional broadcast extras, e.g. @("--es", "game", "d1")
     # $PreLaunchScript: optional scriptblock to run after force-stop (e.g. delete pilot files)
     # $Game: "d1" or "d2" -- used to ensure game data is on device before launch.
+    # $SkipGameData: skip Ensure-GameDataOnDevice (caller already resolved deps).
     # Returns $true on success, $false on failure (caller should exit).
     param(
         [string[]]$ExtraLaunchArgs = @(),
         [scriptblock]$PreLaunchScript = $null,
         [int]$MaxAttempts = 3,
-        [string]$Game = "d2"
+        [string]$Game = "d2",
+        [switch]$SkipGameData
     )
 
     $launchArgs = @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND", "--es", "command", "launch")
     $launchArgs += $ExtraLaunchArgs
 
     # Ensure game data is on device before attempting launch
-    if (-not (Ensure-GameDataOnDevice -Game $Game)) {
+    if (-not $SkipGameData -and -not (Ensure-GameDataOnDevice -Game $Game)) {
         Write-Status "FAIL: Could not ensure game data for $Game on device" "Red"
         return $false
     }

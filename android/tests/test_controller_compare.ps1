@@ -41,6 +41,12 @@ if ($gameList.Count -gt 1) {
 
 Ensure-EmulatorHealthy
 
+# Resolve game data deps up front
+if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
+    Write-Status "FAIL: Could not resolve game data deps" "Red"
+    exit 1
+}
+
 if ($Install) {
     $apk = "$PSScriptRoot\..\app\build\outputs\apk\debug\app-debug.apk"
     if (-not (Test-Path $apk)) {
@@ -98,7 +104,7 @@ foreach ($gameId in $gameList) {
 
     if (-not (Send-AutomationScript $GAME_SCRIPT -PushOnly)) { $allPassed = $false; continue }
 
-    if (-not (Start-GameWithRetry -ExtraLaunchArgs $extraArgs -Game $gameId)) {
+    if (-not (Start-GameWithRetry -ExtraLaunchArgs $extraArgs -Game $gameId -SkipGameData)) {
         $allPassed = $false; continue
     }
 

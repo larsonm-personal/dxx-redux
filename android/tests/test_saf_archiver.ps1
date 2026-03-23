@@ -88,7 +88,10 @@ if ($devices -notmatch "emulator.*device") {
 Write-Host "[OK] Emulator connected" -ForegroundColor Green
 
 # Ensure game data is on device before running the SAF test
-Ensure-GameDataOnDevice -Game "d2"
+if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
+    Write-Error "Could not resolve game data deps"
+    exit 1
+}
 
 # -- Step 1: Build ------------------------------------------------------
 if (!$NoBuild) {

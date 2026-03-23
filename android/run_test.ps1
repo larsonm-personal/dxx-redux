@@ -88,6 +88,20 @@ foreach ($gameId in $gameList) {
     Adb -AdbArgs @("push", $pushSrc, "/data/local/tmp/$pushName") | Out-Null
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "cp", "/data/local/tmp/$pushName", "files/$pushName") | Out-Null
 
+    # -- Resolve declarative game data deps (if present) ----------
+
+    $skipGameData = $false
+    $deps = Get-ScriptDeps -ScriptPath $scriptPath
+    if ($deps) {
+        Write-Status "Resolving $($deps.Count) declared game data deps..."
+        if (-not (Resolve-GameDataDeps -Deps $deps)) {
+            $allPassed = $false
+            if ($gameList.Count -gt 1) { Write-Status "FAIL for $($gameId.ToUpper())" "Red"; continue }
+            exit 1
+        }
+        $skipGameData = $true
+    }
+
     # -- Launch game with verification ----------------------------
 
     $extraArgs = @()
@@ -100,7 +114,14 @@ foreach ($gameId in $gameList) {
         Reset-GameState
     }
 
-    if (-not (Start-GameWithRetry -ExtraLaunchArgs $extraArgs -PreLaunchScript $preLaunch -Game $gameId)) {
+    $launchParams = @{
+        ExtraLaunchArgs = $extraArgs
+        PreLaunchScript = $preLaunch
+        Game = $gameId
+    }
+    if ($skipGameData) { $launchParams.SkipGameData = $true }
+
+    if (-not (Start-GameWithRetry @launchParams)) {
         $allPassed = $false
         if ($gameList.Count -gt 1) { Write-Status "FAIL for $($gameId.ToUpper())" "Red"; continue }
         exit 1

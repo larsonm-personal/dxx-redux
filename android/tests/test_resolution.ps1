@@ -36,6 +36,12 @@ function Get-ResolutionFromIntrospection {
 
 Ensure-EmulatorHealthy
 
+# Resolve game data deps up front
+if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
+    Write-Status "FAIL: Could not resolve game data deps" "Red"
+    exit 1
+}
+
 if ($Install) {
     $apk = "$PSScriptRoot\..\app\build\outputs\apk\debug\app-debug.apk"
     if (-not (Test-Path $apk)) {
@@ -68,7 +74,7 @@ $preLaunch = {
     Reset-GameState
 }
 
-if (-not (Start-GameWithRetry -PreLaunchScript $preLaunch -Game "d2")) {
+if (-not (Start-GameWithRetry -PreLaunchScript $preLaunch -Game "d2" -SkipGameData)) {
     exit 1
 }
 
@@ -129,7 +135,7 @@ $preLaunch2 = {
     $cfgContent | & $script:ADB shell "run-as $($script:PACKAGE) tee files/descent.cfg" | Out-Null
 }
 
-if (-not (Start-GameWithRetry -PreLaunchScript $preLaunch2 -Game "d2")) {
+if (-not (Start-GameWithRetry -PreLaunchScript $preLaunch2 -Game "d2" -SkipGameData)) {
     exit 1
 }
 

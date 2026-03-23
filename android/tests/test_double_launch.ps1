@@ -18,7 +18,10 @@ $ErrorActionPreference = "Continue"
 . "$PSScriptRoot\..\test_helpers.ps1"
 
 Ensure-EmulatorHealthy
-Ensure-GameDataOnDevice -Game $Game
+if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
+    Write-Status "FAIL: Could not resolve game data deps" "Red"
+    exit 1
+}
 
 $outFile = Join-Path $PSScriptRoot "..\..\temp\test_double_launch_result.txt"
 "" | Out-File $outFile

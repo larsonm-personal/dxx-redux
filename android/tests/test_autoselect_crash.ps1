@@ -16,6 +16,12 @@ $ErrorActionPreference = "Continue"
 
 Ensure-EmulatorHealthy
 
+# Resolve game data deps up front (all phases share the same data)
+if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
+    Write-Status "FAIL: Could not resolve game data deps" "Red"
+    exit 1
+}
+
 # ===== Phase 1: Create a pilot =====
 Write-Status "=== Phase 1: Create pilot ==="
 
@@ -39,7 +45,7 @@ $preLaunch = {
     Reset-GameState
 }
 
-if (-not (Start-GameWithRetry -PreLaunchScript $preLaunch -Game $Game)) {
+if (-not (Start-GameWithRetry -PreLaunchScript $preLaunch -Game $Game -SkipGameData)) {
     Write-Status "FAIL: Could not start game for Phase 1" "Red"
     exit 1
 }
@@ -118,7 +124,7 @@ $preLaunch2 = {
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_log.jsonl") | Out-Null
 }
 
-if (-not (Start-GameWithRetry -PreLaunchScript $preLaunch2 -Game $Game)) {
+if (-not (Start-GameWithRetry -PreLaunchScript $preLaunch2 -Game $Game -SkipGameData)) {
     Write-Status "FAIL: Could not start game for Phase 3" "Red"
     exit 1
 }
