@@ -82,6 +82,25 @@ fun TouchEditorPage(
     var cycleIndex by remember { mutableIntStateOf(0) }
     var lastTapOffset by remember { mutableStateOf(Offset.Unspecified) }
 
+    // Live gyro values for editor diagnostic preview
+    var gyroYaw by remember { mutableFloatStateOf(0f) }
+    var gyroPitch by remember { mutableFloatStateOf(0f) }
+    var gyroRoll by remember { mutableFloatStateOf(0f) }
+    if (layout.diagnostics.isNotEmpty() && layout.gyro.enabled) {
+        val gyroConfig = layout.gyro
+        DisposableEffect(gyroConfig) {
+            val gm = GyroInputManager(context)
+            gm.setConfig(gyroConfig)
+            gm.diagnosticCallback = { y, p, r ->
+                gyroYaw = y
+                gyroPitch = p
+                gyroRoll = r
+            }
+            gm.resume()
+            onDispose { gm.pause() }
+        }
+    }
+
     // Lock orientation and hide system bars to match in-game while editor is open
     val activity = context as? Activity
     DisposableEffect(Unit) {
@@ -459,7 +478,7 @@ fun TouchEditorPage(
             canvasWidth = size.width
             canvasHeight = size.height
             drawGrid(this)
-            drawAllControls(this, layout, selectedType, selectedIndex, textMeasurer)
+            drawAllControls(this, layout, selectedType, selectedIndex, textMeasurer, gyroYaw, gyroPitch, gyroRoll)
         }
     }
 
@@ -642,6 +661,9 @@ private fun drawAllControls(
     selType: String?,
     selIdx: Int,
     textMeasurer: androidx.compose.ui.text.TextMeasurer,
+    gyroYaw: Float = 0f,
+    gyroPitch: Float = 0f,
+    gyroRoll: Float = 0f,
 ) {
     val w = scope.size.width
     val h = scope.size.height
@@ -954,12 +976,16 @@ private fun drawAllControls(
                     .Size(boxW, boxH),
             cornerRadius = CornerRadius(4f, 4f),
         )
-        val label =
-            textMeasurer.measure(
-                "Gyro Diag",
-                style = TextStyle(fontSize = 9.sp, color = cButtonLabel.copy(alpha = alpha)),
-            )
-        scope.drawText(label, topLeft = Offset(cx - label.size.width / 2f, cy - label.size.height / 2f))
+        val lineStyle = TextStyle(fontSize = 7.sp, color = cButtonLabel.copy(alpha = alpha))
+        val l1 = textMeasurer.measure("Yaw:   ${(gyroYaw * 100).toInt()}%", style = lineStyle)
+        val l2 = textMeasurer.measure("Pitch: ${(gyroPitch * 100).toInt()}%", style = lineStyle)
+        val l3 = textMeasurer.measure("Roll:  ${(gyroRoll * 100).toInt()}%", style = lineStyle)
+        val lineH = l1.size.height * 1.1f
+        val startY = cy - lineH * 1.5f
+        val textX = cx - boxW / 2 + 4f
+        scope.drawText(l1, topLeft = Offset(textX, startY))
+        scope.drawText(l2, topLeft = Offset(textX, startY + lineH))
+        scope.drawText(l3, topLeft = Offset(textX, startY + lineH * 2))
         if (selected) {
             scope.drawRoundRect(
                 color = cSelected,
@@ -2216,22 +2242,26 @@ private fun AddControlDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add Control") },
         text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                TextButton(onClick = onAddStick, modifier = Modifier.fillMaxWidth()) {
-                    Text("Analog Stick")
+            val scrollState = rememberScrollState()
+            Box(Modifier.heightIn(max = 300.dp)) {
+                Column(modifier = Modifier.verticalScroll(scrollState)) {
+                    TextButton(onClick = onAddStick, modifier = Modifier.fillMaxWidth()) {
+                        Text("Analog Stick")
+                    }
+                    TextButton(onClick = onAddButton, modifier = Modifier.fillMaxWidth()) {
+                        Text("Button")
+                    }
+                    TextButton(onClick = onAddRadial, modifier = Modifier.fillMaxWidth()) {
+                        Text("Radial Menu")
+                    }
+                    TextButton(onClick = onAddSlider, modifier = Modifier.fillMaxWidth()) {
+                        Text("Slider")
+                    }
+                    TextButton(onClick = onAddDiagnostic, modifier = Modifier.fillMaxWidth()) {
+                        Text("Diagnostic Display")
+                    }
                 }
-                TextButton(onClick = onAddButton, modifier = Modifier.fillMaxWidth()) {
-                    Text("Button")
-                }
-                TextButton(onClick = onAddRadial, modifier = Modifier.fillMaxWidth()) {
-                    Text("Radial Menu")
-                }
-                TextButton(onClick = onAddSlider, modifier = Modifier.fillMaxWidth()) {
-                    Text("Slider")
-                }
-                TextButton(onClick = onAddDiagnostic, modifier = Modifier.fillMaxWidth()) {
-                    Text("Diagnostic Display")
-                }
+                ScrollArrows(scrollState)
             }
         },
         confirmButton = {},

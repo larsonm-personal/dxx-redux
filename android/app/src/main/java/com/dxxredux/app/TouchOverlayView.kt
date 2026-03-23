@@ -1117,10 +1117,8 @@ class TouchOverlayView
                                 val now = android.os.SystemClock.uptimeMillis()
                                 if (s.control.doubleTapBinding >= 0 && now - s.lastTapTime < 300L) {
                                     fireDoubleTapBinding(s.control.doubleTapBinding)
-                                    s.lastTapTime = 0
-                                } else {
-                                    s.lastTapTime = now
                                 }
+                                s.lastTapTime = now
                                 s.pointerId = pid
                                 s.mouseLastX = px
                                 s.mouseLastY = py
@@ -1139,10 +1137,8 @@ class TouchOverlayView
                                 val now = android.os.SystemClock.uptimeMillis()
                                 if (s.control.doubleTapBinding >= 0 && now - s.lastTapTime < 300L) {
                                     fireDoubleTapBinding(s.control.doubleTapBinding)
-                                    s.lastTapTime = 0
-                                } else {
-                                    s.lastTapTime = now
                                 }
+                                s.lastTapTime = now
                                 s.pointerId = pid
                                 s.floatingCX = px
                                 s.floatingCY = py
@@ -1157,10 +1153,8 @@ class TouchOverlayView
                             val now = android.os.SystemClock.uptimeMillis()
                             if (s.control.doubleTapBinding >= 0 && now - s.lastTapTime < 300L) {
                                 fireDoubleTapBinding(s.control.doubleTapBinding)
-                                s.lastTapTime = 0
-                            } else {
-                                s.lastTapTime = now
                             }
+                            s.lastTapTime = now
                             s.pointerId = pid
                             updateStickFromTouch(s, px, py)
                             handled = true
