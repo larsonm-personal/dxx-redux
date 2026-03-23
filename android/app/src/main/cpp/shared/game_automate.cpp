@@ -719,14 +719,14 @@ static int load_script_file(const char *path)
 /*
  * Run all assertions for a STEP_ASSERT.
  * Parses introspection JSON with nlohmann and checks expected values.
- * Returns 1 if all pass, 0 on first failure (logs the failure).
+ * Returns empty string on success, or a failure description on first failure.
  */
-static int run_assertions(auto_step &s)
+static std::string run_assertions(auto_step &s)
 {
 	char *json_str = game_introspect_get_state();
 	if (!json_str) {
 		LOGE("ASSERT_FAIL: Could not get introspection state");
-		return 0;
+		return "could not get introspection state";
 	}
 
 	json state;
@@ -735,7 +735,9 @@ static int run_assertions(auto_step &s)
 	} catch (const std::exception &e) {
 		LOGE("ASSERT_FAIL: Failed to parse introspection JSON: %s", e.what());
 		free(json_str);
-		return 0;
+		std::string msg = "parse error: ";
+		msg += e.what();
+		return msg;
 	}
 	free(json_str);
 
@@ -779,7 +781,10 @@ static int run_assertions(auto_step &s)
 		}
 		if (!path_ok) {
 			LOGE("ASSERT_FAIL: key \"%s\" not found in introspection JSON", ae.key.c_str());
-			return 0;
+			std::string msg = "key \"";
+			msg += ae.key;
+			msg += "\" not found";
+			return msg;
 		}
 
 		const auto &val = *cur;
@@ -849,11 +854,11 @@ static int run_assertions(auto_step &s)
 			LOGI("ASSERT_PASS: %s", desc);
 		} else {
 			LOGE("ASSERT_FAIL: %s", desc);
-			return 0;
+			return std::string(desc);
 		}
 	}
 
-	return 1;
+	return std::string();
 }
 
 /* -- Advance to next step --------------------------------------------- */
@@ -1003,15 +1008,18 @@ extern "C" void game_automate_tick(void)
 			advance_step();
 			break;
 
-		case STEP_ASSERT:
-			if (run_assertions(s)) {
+		case STEP_ASSERT: {
+			std::string fail_desc = run_assertions(s);
+			if (fail_desc.empty()) {
 				log_append("assert", "pass", "");
 				advance_step();
 			} else {
-				log_append("assert", "fail", "");
-				stop_script_fail("assertion failed");
+				log_append("assert", "fail", fail_desc.c_str());
+				std::string reason = "assert: " + fail_desc;
+				stop_script_fail(reason.c_str());
 			}
 			break;
+		}
 
 		case STEP_SELECT:
 			if (g_select_phase == 0) {

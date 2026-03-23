@@ -457,7 +457,7 @@ function Watch-AutomationResult {
                     continue
                 } elseif ($resultObj.result -eq "FAIL") {
                     $reason = if ($resultObj.reason) { $resultObj.reason } else { "unknown" }
-                    Write-Status "FAIL (file-based): $reason (step $($resultObj.steps_completed)/$($resultObj.total_steps))" "Red"
+                    Write-Status "FAIL at step $($resultObj.steps_completed)/$($resultObj.total_steps): $reason" "Red"
                     $finished = $true
                     $passed = $false
                     continue
