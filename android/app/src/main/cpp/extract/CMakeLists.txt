@@ -213,3 +213,23 @@ if(MSVC)
 else()
     target_compile_options(fingerprint_cd PRIVATE -Wall)
 endif()
+
+# ── fingerprint_audio (loose MP3/OGG/FLAC files) ────────────────────
+add_executable(fingerprint_audio
+    ${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_audio.c
+    ${SHARED_DIR}/pcm_decoders.c
+    ${SHARED_DIR}/fingerprint_gen.c
+    ${_DECODERS_DIR}/stb_vorbis.c
+)
+target_include_directories(fingerprint_audio PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${SHARED_DIR}
+    ${_DECODERS_DIR}
+)
+target_compile_definitions(fingerprint_audio PRIVATE CHROMAPRINT_NODLL)
+target_link_libraries(fingerprint_audio PRIVATE chromaprint)
+if(MSVC)
+    target_compile_options(fingerprint_audio PRIVATE /W3)
+else()
+    target_compile_options(fingerprint_audio PRIVATE -Wall)
+endif()

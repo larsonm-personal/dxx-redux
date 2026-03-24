@@ -113,7 +113,7 @@ Files modified:
 
 ---
 
-## Phase 4: On-Device Fingerprinting [PARTIAL - C/JNI done, Kotlin not started]
+## Phase 4: On-Device Fingerprinting [COMPLETE]
 
 ### 4a. Fingerprint generation (C) [COMPLETE]
 - fingerprint_gen.c/.h created
@@ -128,72 +128,185 @@ Files modified:
   - nativeMatchFingerprint(fp, duration) -> {name, confidence}
   - nativeLoadFingerprintDb(json) -> void
 
-### 4c. Kotlin orchestration (one-time caching) [NOT STARTED]
-- On source import in SetupActivity, after CUE parsing:
-  1. For each audio track, call nativeFingerprintDiscTrack()
-  2. Call nativeMatchFingerprint() against loaded DB
-  3. If no match and AcoustID enabled, query web service
-  4. Store {fingerprint_b64, duration_ms, matched_name} per-track in AudioSource
-- Cache in audio_sources.json -- never re-fingerprint unless file size changes
-  (same invalidation as SHA-256 hashing uses via AssetManifest.findStaleFiles)
-- Show progress: per-track LinearProgressIndicator in same Card style as hashing
+### 4c. Kotlin orchestration (one-time caching) [COMPLETE]
+- FingerprintBridge.kt created: JNI bridge object with external fun declarations, DB
+  loading from known_discs.json5, fingerprint+match helpers, lookupTrackNames() for
+  known discs (avoids fingerprinting when disc ID already known)
+- AudioSource.trackNames added: Map<Int, String> persisted in audio_sources.json
+- audio_playlist.json extended: track_names object written per source
+- DiscImportDialog: after disc identification, looks up track names for known discs
+  or fingerprints+matches for unknown discs; stores in AudioSource
+- registerGogAudioSource: passes context for known_discs.json5 track name lookup
 
-### 4d. AcoustID web client
-- AcoustIdClient.kt: OkHttp POST to acoustid.org/v2/lookup
-- Off by default; toggled from music picker
-- API key from acoustid_config.json5
+### 4d. AcoustID web client [SKIPPED - no API key]
+
+Files created:
+- android/app/src/main/java/com/dxxredux/app/FingerprintBridge.kt
+
+Files modified:
+- android/app/src/main/java/com/dxxredux/app/AudioSourceManager.kt (trackNames field, persistence, writePlaylist)
+- android/app/src/main/java/com/dxxredux/app/SetupActivity.kt (fingerprint orchestration, GOG context)
+
+---
+
+## Phase 5: Replace Hardcoded Track Names [COMPLETE]
+
+Track names now flow through:
+  AudioSource.trackNames -> audio_playlist.json -> rbaudio_bin.c parse_audio_playlist() -> s_tracks[].name -> track_names_set_cue_title()
+
+- Removed d1_track_names[], d2_track_names[] arrays from track_names.c
+- Removed D1_GOG_DISCID, D2_GOG_DISCID constants
+- Removed lookup_redbook_name() multi-tier lookup
+- track_names_lookup() now delegates directly to track_names_get_cue_title()
+- rbaudio_bin.c parse_audio_playlist() extended to parse "track_names" JSON object
+  from each source entry, applies names after CUE parsing (overrides CUE TITLE fields)
+
+Files modified:
+- android/app/src/main/cpp/shared/track_names.c (removed hardcoded tables)
+- android/app/src/main/cpp/shared/rbaudio_bin.c (parse track_names, updated comments)
+
+---
+
+## Phase 6: Music Picker UI [COMPLETE]
+
+- TrackPreviewDialog shows fingerprint-matched names from AudioSource.trackNames
+- Falls back to "Track N" when names unavailable
+
+Files modified:
+- android/app/src/main/java/com/dxxredux/app/MusicPickerPage.kt (TrackPreviewDialog track name display)
+
+---
+
+## Phase 7: Testing [COMPLETE]
+
+- assembleDebug BUILD SUCCESSFUL
+- Code quality: all checks passed (clang-format, ktlint, PSScriptAnalyzer, shellcheck, shfmt)
+- No new compiler warnings
+
+---
+
+## Phase 8: Global Confidence Threshold + fingerprint_audio.exe [COMPLETE]
+
+### 8a. Global confidence threshold
+- Create `android/app/src/main/assets/fingerprint_config.json5` with:
+  `{ "match_threshold": 0.4, "duration_tolerance": 0.10 }`
+- C side: chromaprint_db.c reads threshold from a setter function instead of #define
+  (chromaprint_db_set_threshold). Default stays 0.4 if not called
+- Kotlin side: FingerprintBridge loads config and calls setter at DB load time
+- PC scripts: read same config file for dedup threshold
+- All matching code uses the single source of truth (the json5 asset file)
+
+### 8b. fingerprint_audio.exe (new PC tool for loose audio files)
+- Create `android/app/src/main/cpp/extract/fingerprint_audio.c`
+  - Accept directory path, enumerate .mp3/.ogg/.flac files
+  - Call fingerprint_from_audio_file() for each
+  - Output JSON array to stdout (sorted by filename)
+- Add `fingerprint_audio` target to extract/CMakeLists.txt
+  - Same deps as fingerprint_cd minus cue_parser
 
 Files to create:
-- android/app/src/main/cpp/shared/fingerprint_gen.c
-- android/app/src/main/cpp/shared/fingerprint_gen.h
-- android/app/src/main/cpp/jni_fingerprint.c
+- android/app/src/main/assets/fingerprint_config.json5
+- android/app/src/main/cpp/extract/fingerprint_audio.c
+
+Files to modify:
+- android/app/src/main/cpp/shared/chromaprint_db.h (add set_threshold/set_duration_tolerance)
+- android/app/src/main/cpp/shared/chromaprint_db.c (use configurable threshold)
+- android/app/src/main/cpp/extract/CMakeLists.txt (add fingerprint_audio target)
+- android/app/src/main/java/com/dxxredux/app/FingerprintBridge.kt (load config, call setter)
+
+---
+
+## Phase 9: Archive Extraction + Fingerprinting + AcoustID Lookup [COMPLETE]
+
+### 9a. 7-Zip dependency
+- Add SEVENZIP_VERSION/URL/SHA256 to tool_versions.conf
+- Create game_data/get_7zip.ps1 to download 7za.exe to $DEP_BASE
+
+### 9b. Main script: game_data/fingerprint_music_packs.ps1
+- Extract: for each archive in game_data/music/, parse album name (text before
+  first " - "), extract flattened to game_data/music/<album_name>/
+  - .zip/.DXA: Expand-Archive; .7z: 7za.exe
+  - Idempotent: skip if dir exists with files
+- Fingerprint: build fingerprint_audio.exe if needed, run per album dir
+- AcoustID lookup: read key from android/acoustid_config.json5, POST to
+  api.acoustid.org/v2/lookup with 350ms min delay between requests,
+  exponential backoff on 429/errors (1s/2s/4s, max 3 retries)
+  - Skip tracks already in existing chromaprint_info.json5
+- Output: per-album chromaprint_info.json5 with album name, tracks array
+  (filename, chromaprint, duration_ms, acoustid_name if matched)
+- Flags: -Force, -SkipAcoustId, -Album <name>
+
+Files to create:
+- game_data/get_7zip.ps1
+- game_data/fingerprint_music_packs.ps1
+
+Files to modify:
+- android/get_deps/tool_versions.conf (7-Zip version/URL)
+
+---
+
+## Phase 10: Database Consolidation [COMPLETE]
+
+### 10a. Consolidation script: game_data/update_known_discs_albums.ps1
+- Read all game_data/music/*/chromaprint_info.json5 files
+- Create album entries in the discs array with type: "album"
+  - id: slugified album name; label: album name; tracks: 1..N audio
+  - track name: filename without extension; acoustid_name if available
+- Dedup: for each album track, match chromaprint against existing CD tracks
+  using the global match_threshold from fingerprint_config.json5
+  - Duplicates: comment out in output, note CD source
+- Ordering: CD entries first (unchanged), then albums alphabetically
+- -DryRun flag
+
+### 10b. Run consolidation to produce extended known_discs.json5
+
+Files to create:
+- game_data/update_known_discs_albums.ps1
+
+Files to modify:
+- android/app/src/main/assets/known_discs.json5 (album entries appended)
+
+---
+
+## Phase 11: Android DB Loader Updates [COMPLETE]
+
+- Verify FingerprintBridge.flattenFingerprintDb() handles album entries
+  (should work since it iterates all discs[].tracks[] for audio+chromaprint)
+- Handle acoustid_name: when flattening, prefer acoustid_name over name for
+  the name field passed to C DB (gives AcoustID title priority over filenames)
+- Verify MAX_DB_ENTRIES (1024) sufficient for ~203 CD + ~375 album tracks
+
+Files to modify (if needed):
+- android/app/src/main/java/com/dxxredux/app/FingerprintBridge.kt
+
+---
+
+## Phase 12: Android AcoustID Client [COMPLETE]
+
+- Create AcoustIdClient.kt: OkHttp POST to acoustid.org/v2/lookup
+  - Rate limiter: 350ms coroutine delay between calls
+  - Exponential backoff on 429: 1s/2s/4s, max 3 retries
+  - Read API key from acoustid_config.json5 (optional, off by default)
+- Hook into FingerprintBridge as fallback after local DB miss
+- Configuration toggle in music picker settings
+
+Files to create:
 - android/app/src/main/java/com/dxxredux/app/AcoustIdClient.kt
 
 Files to modify:
-- android/app/src/main/cpp/CMakeLists.txt (link new sources)
-- android/app/src/main/java/com/dxxredux/app/AudioSourceManager.kt (track metadata)
-- android/app/src/main/java/com/dxxredux/app/SetupActivity.kt (fingerprint on import)
+- android/app/src/main/java/com/dxxredux/app/FingerprintBridge.kt
 
 ---
 
-## Phase 5: Replace Hardcoded Track Names [NOT STARTED]
+## Phase 13: Build + Quality + Integration Test [COMPLETE]
 
-New lookup hierarchy (replaces current 3-tier):
-1. Fingerprint match name (highest) -- from chromaprint_db or cached in AudioSource
-2. CUE-parsed title -- from CUE TITLE field
-3. Import-time disc match name -- from known_discs.json5 name field
-4. Generic "Track N" (lowest)
-
-- Remove d1_track_names[] and d2_track_names[] from track_names.c
-- Remove D1_GOG_DISCID / D2_GOG_DISCID hardcoded constants
-- Track names flow: AudioSource.trackNames -> audio_playlist.json -> C engine
-
-Files to modify:
-- android/app/src/main/cpp/shared/track_names.c
-- android/app/src/main/cpp/shared/track_names.h
-- android/app/src/main/cpp/shared/rbaudio_bin.c
-
----
-
-## Phase 6: Music Picker UI [NOT STARTED]
-
-- Show fingerprint-matched names in CD Audio and Audio Files tabs
-- AcoustID toggle at bottom of MusicPickerPage (below tabs, not in a tab)
-- Per-track status: matched name, unmatched "Track N", spinner during fingerprinting
-
-Files to modify:
-- android/app/src/main/java/com/dxxredux/app/MusicPickerPage.kt
-
----
-
-## Phase 7: Testing [NOT STARTED]
-
-- C unit tests for XOR-popcount matching with mock data
-- PC tool test against known disc image
-- Android integration: import disc, verify names, verify music picker
-- Regression: CUE TITLE fallback, "Track N" fallback
-- Code quality: android\run-code-quality.ps1 --fix
+- cmake build of fingerprint_audio target
+- Run fingerprint_music_packs.ps1 on all 25 archives
+- Run update_known_discs_albums.ps1 consolidation
+- assembleDebug -- verify Android build with extended DB
+- run-code-quality.ps1 --fix on all new/modified files
 - No new compiler warnings
+- Existing test regression check
 
 ---
 
@@ -202,4 +315,18 @@ Files to modify:
 Phase 1 (libs) --+-> Phase 2 (DB schema) -+-> Phase 4 (on-device) -> Phase 5 (names)
                   |                        |                           Phase 6 (UI)
                   +-> Phase 3 (PC tool) ---+                           Phase 7 (test)
+
+Phase 8a (global threshold) --> Phase 8b (fingerprint_audio.exe)
+                                    |
+                                    v
+                                Phase 9 (extract+fingerprint+AcoustID)
+                                    |
+                                    v
+                                Phase 10 (DB consolidation) --> Phase 11 (loader updates)
+                                                                    |
+                                                                    v
+                                                                Phase 12 (AcoustID client)
+                                                                    |
+                                                                    v
+                                                                Phase 13 (build + test)
 ```

@@ -25,6 +25,29 @@
 /* ── Database loading ────────────────────────────────────────────────── */
 
 /*
+ * Set match confidence threshold (0.0-1.0).
+ * Called before loading DB, from fingerprint_config.json5 values.
+ */
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_FingerprintBridge_nativeSetMatchThreshold(
+    JNIEnv *env, jclass clazz, jfloat threshold)
+{
+	chromaprint_db_set_threshold(threshold);
+	LOGI("Match threshold set to %.3f", (double) threshold);
+}
+
+/*
+ * Set duration pre-filter tolerance (0.0-1.0 fraction).
+ */
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_FingerprintBridge_nativeSetDurationTolerance(
+    JNIEnv *env, jclass clazz, jfloat tolerance)
+{
+	chromaprint_db_set_duration_tolerance(tolerance);
+	LOGI("Duration tolerance set to %.3f", (double) tolerance);
+}
+
+/*
  * Load the fingerprint database from a JSON array string.
  * The JSON is the flattened known_discs chromaprint data produced by Kotlin.
  * Returns number of entries loaded, or -1 on error.

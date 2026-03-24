@@ -197,7 +197,7 @@ class SetupActivity : ComponentActivity() {
                             val srcManager = AudioSourceManager(filesDir)
                             if (audio && count > 0 && findGogPair(setDir) != null) {
                                 enableRedbookInConfig(filesDir)
-                                registerGogAudioSource(srcManager, setDir)
+                                registerGogAudioSource(srcManager, setDir, this@SetupActivity)
                             }
                             Log.i("DXX-Setup", "import_gog '$path' -> $count file(s) to ${setDir.name} (audio=$audio)")
                         }.start()
@@ -3413,8 +3413,18 @@ private fun findGogPair(dir: File): String? {
 private fun registerGogAudioSource(
     srcManager: AudioSourceManager,
     setDir: File,
+    context: Context? = null,
 ) {
     val base = findGogPair(setDir) ?: return
+    // Look up track names from known_discs.json5 if context available
+    val trackNames =
+        context?.let {
+            try {
+                FingerprintBridge.lookupTrackNames(it, "d2-gog-v1.2")
+            } catch (e: Exception) {
+                emptyMap()
+            }
+        } ?: emptyMap()
     srcManager.addSource(
         AudioSourceManager.AudioSource(
             id = "d2-gog-v1.2",
@@ -3425,6 +3435,7 @@ private fun registerGogAudioSource(
             trackCount = 9,
             audioTrackCount = 8,
             legacyDiscId = 0x7d0ff809L,
+            trackNames = trackNames,
         ),
     )
 }
@@ -4376,7 +4387,7 @@ private fun GogImportDialog(
                                             }
                                         if (hasGog) {
                                             enableRedbookInConfig(filesDir)
-                                            registerGogAudioSource(srcManager, setDir)
+                                            registerGogAudioSource(srcManager, setDir, context)
                                         }
                                         val filesAfter = setDir.list()?.toSet() ?: emptySet()
                                         val newFiles = (filesAfter - filesBefore).sorted()
@@ -4868,6 +4879,38 @@ private fun DiscImportDialog(
                                             // Register audio source
                                             val srcManager = AudioSourceManager(filesDir)
                                             val id = discId ?: "custom-${System.currentTimeMillis()}"
+
+                                            // Get track names: direct lookup for known discs,
+                                            // fingerprint matching for unknown ones
+                                            var trackNames = emptyMap<Int, String>()
+                                            try {
+                                                if (discId != null) {
+                                                    trackNames = FingerprintBridge.lookupTrackNames(context, discId!!)
+                                                    Log.i(
+                                                        "DXX-DiscImport",
+                                                        "Looked up ${trackNames.size} track names for $discId",
+                                                    )
+                                                }
+                                                if (trackNames.isEmpty()) {
+                                                    withContext(Dispatchers.Main) {
+                                                        status = "Identifying audio tracks\u2026"
+                                                    }
+                                                    val binFile = File(filesDir, destBinPaths[0])
+                                                    trackNames =
+                                                        FingerprintBridge.fingerprintAndMatchDisc(
+                                                            context,
+                                                            binFile.absolutePath,
+                                                            tracks!!,
+                                                        )
+                                                    Log.i(
+                                                        "DXX-DiscImport",
+                                                        "Fingerprinted ${trackNames.size} track names",
+                                                    )
+                                                }
+                                            } catch (e: Exception) {
+                                                Log.w("DXX-DiscImport", "Track name identification failed", e)
+                                            }
+
                                             srcManager.addSource(
                                                 AudioSourceManager.AudioSource(
                                                     id = id,
@@ -4878,6 +4921,7 @@ private fun DiscImportDialog(
                                                     trackCount = tracks!!.size,
                                                     audioTrackCount = audioCount,
                                                     legacyDiscId = legacyDiscId,
+                                                    trackNames = trackNames,
                                                 ),
                                             )
 

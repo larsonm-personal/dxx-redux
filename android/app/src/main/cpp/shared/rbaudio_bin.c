@@ -485,6 +485,11 @@ static int parse_audio_playlist(void)
 		char label[64] = { 0 };
 		long legacy_id = 0;
 		char key[64];
+		/* Per-track names from fingerprint matching (keyed by 1-based CUE track num) */
+		char tn_names[MAX_TRACKS][64];
+		int tn_has_names = 0;
+
+		memset(tn_names, 0, sizeof(tn_names));
 
 		p = pj_skip_ws(p);
 		if (*p == ']') break;
@@ -512,7 +517,7 @@ static int parse_audio_playlist(void)
 			if (strcmp(key, "cue") == 0) {
 				pj_string(&p, cue_name, sizeof(cue_name));
 			} else if (strcmp(key, "bins") == 0) {
-				/* Array of bin filenames — take the first one */
+				/* Array of bin filenames -- take the first one */
 				if (*p == '[') {
 					p++;
 					p = pj_skip_ws(p);
@@ -526,6 +531,33 @@ static int parse_audio_playlist(void)
 				pj_string(&p, label, sizeof(label));
 			} else if (strcmp(key, "legacy_disc_id") == 0) {
 				legacy_id = pj_long(&p);
+			} else if (strcmp(key, "track_names") == 0) {
+				/* {"2":"Title","3":"Base Return",...} */
+				if (*p == '{') {
+					p++;
+					while (*p && *p != '}') {
+						char tk[16] = { 0 };
+						int tnum;
+						p = pj_skip_ws(p);
+						if (*p == ',') {
+							p++;
+							continue;
+						}
+						if (*p == '}') break;
+						if (!pj_string(&p, tk, sizeof(tk))) break;
+						p = pj_skip_ws(p);
+						if (*p == ':') p++;
+						p = pj_skip_ws(p);
+						tnum = atoi(tk);
+						if (tnum >= 1 && tnum <= MAX_TRACKS) {
+							pj_string(&p, tn_names[tnum - 1], 64);
+							tn_has_names = 1;
+						} else {
+							pj_skip_value(&p);
+						}
+					}
+					if (*p == '}') p++;
+				}
 			} else {
 				pj_skip_value(&p);
 			}
@@ -534,6 +566,7 @@ static int parse_audio_playlist(void)
 
 		if (cue_name[0] && bin_name[0]) {
 			int src = s_num_sources;
+			int base = s_num_tracks;
 			memset(&s_sources[src], 0, sizeof(s_sources[src]));
 			strncpy(s_sources[src].disc_label, label[0] ? label : "Unknown",
 			        sizeof(s_sources[src].disc_label) - 1);
@@ -541,6 +574,18 @@ static int parse_audio_playlist(void)
 			s_num_sources++;
 
 			parse_source_cue(cue_name, bin_name, src);
+
+			/* Apply fingerprint-matched track names (override CUE titles) */
+			if (tn_has_names) {
+				int count = s_num_tracks - base;
+				int i;
+				for (i = 0; i < count && i < MAX_TRACKS; i++) {
+					if (tn_names[i][0]) {
+						strncpy(s_tracks[base + i].name, tn_names[i], 63);
+						s_tracks[base + i].name[63] = '\0';
+					}
+				}
+			}
 		}
 	}
 
@@ -1211,14 +1256,14 @@ int RBAGetNumAudioTracks(void)
 }
 
 /* Get the name of a track by 1-based number.  Returns empty string if invalid.
- * Falls back to track_names_lookup() (hardcoded table) when the CUE had no TITLE. */
+ * Falls back to track_names_lookup() for names set via the CUE title system. */
 const char *RBAGetTrackName(int track)
 {
 	if (!s_initialised || track < 1 || track > s_num_tracks)
 		return "";
 	if (s_tracks[track - 1].name[0])
 		return s_tracks[track - 1].name;
-	/* Fallback: try hardcoded track name table (android port) */
+	/* Fallback: try track name system (fingerprint-matched or CUE titles) */
 	{
 		unsigned long disc_id = RBAGetDiscID();
 		const char *name = track_names_lookup(track, disc_id);

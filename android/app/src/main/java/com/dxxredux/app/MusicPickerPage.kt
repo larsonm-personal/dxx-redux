@@ -545,15 +545,22 @@ private fun TrackPreviewDialog(
 
     val tracks: List<Pair<String, String>> =
         if (musicMode == MUSIC_MODE_CD) {
-            // Show enabled redbook sources in order with track numbers
+            // Show enabled redbook sources in order with track names
             val sources = audioSrcManager.getEnabledSources()
             if (sources.isEmpty()) {
                 listOf("(no sources enabled)" to "")
             } else {
                 var trackNum = 1
                 sources.flatMap { src ->
+                    // Build sorted list of audio track CUE numbers
+                    val namedTracks = src.trackNames.toSortedMap()
                     (1..src.audioTrackCount).map { i ->
-                        "Track ${trackNum++}" to src.discLabel
+                        // Try to find the i-th audio track name from the sorted map
+                        val name =
+                            namedTracks.values.elementAtOrNull(i - 1)
+                                ?: "Track $trackNum"
+                        trackNum++
+                        name to src.discLabel
                     }
                 }
             }

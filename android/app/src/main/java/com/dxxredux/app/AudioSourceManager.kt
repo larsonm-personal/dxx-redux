@@ -47,6 +47,8 @@ class AudioSourceManager(
         val enabled: Boolean = true,
         // user-defined sort order
         val order: Int = 0,
+        // fingerprint-matched track names: 1-based track number -> name
+        val trackNames: Map<Int, String> = emptyMap(),
     )
 
     private var sources: MutableList<AudioSource> = mutableListOf()
@@ -147,6 +149,11 @@ class AudioSourceManager(
             entry.put("bins", bins)
             entry.put("label", src.discLabel)
             entry.put("legacy_disc_id", src.legacyDiscId)
+            if (src.trackNames.isNotEmpty()) {
+                val tn = JSONObject()
+                src.trackNames.forEach { (k, v) -> tn.put(k.toString(), v) }
+                entry.put("track_names", tn)
+            }
             arr.put(entry)
         }
         json.put("sources", arr)
@@ -183,6 +190,10 @@ class AudioSourceManager(
                             legacyDiscId = obj.optLong("legacy_disc_id", 0),
                             enabled = obj.optBoolean("enabled", true),
                             order = obj.optInt("order", 0),
+                            trackNames =
+                                obj.optJSONObject("track_names")?.let { tn ->
+                                    tn.keys().asSequence().associate { k -> k.toInt() to tn.getString(k) }
+                                } ?: emptyMap(),
                         )
                     }.toMutableList()
             Log.i(TAG, "Loaded ${sources.size} audio sources")
@@ -209,6 +220,11 @@ class AudioSourceManager(
             obj.put("legacy_disc_id", src.legacyDiscId)
             obj.put("enabled", src.enabled)
             obj.put("order", src.order)
+            if (src.trackNames.isNotEmpty()) {
+                val tn = JSONObject()
+                src.trackNames.forEach { (k, v) -> tn.put(k.toString(), v) }
+                obj.put("track_names", tn)
+            }
             arr.put(obj)
         }
         json.put("sources", arr)

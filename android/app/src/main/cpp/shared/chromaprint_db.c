@@ -21,11 +21,11 @@
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-/* Match threshold: minimum similarity to consider a positive match */
-#define MATCH_THRESHOLD 0.45f
-
-/* Duration tolerance: +/- percentage for duration pre-filter */
-#define DURATION_TOLERANCE 0.10f
+/* Defaults -- overridden at runtime via chromaprint_db_set_threshold()
+ * and chromaprint_db_set_duration_tolerance().  Single source of truth
+ * is fingerprint_config.json5 (loaded by Kotlin / PC scripts). */
+#define DEFAULT_MATCH_THRESHOLD    0.4f
+#define DEFAULT_DURATION_TOLERANCE 0.10f
 
 /* Max offset alignment shift (in fingerprint frames) */
 #define MAX_OFFSET 15
@@ -33,8 +33,23 @@
 /* Max entries in the database */
 #define MAX_DB_ENTRIES 1024
 
+static float s_match_threshold = DEFAULT_MATCH_THRESHOLD;
+static float s_duration_tolerance = DEFAULT_DURATION_TOLERANCE;
+
 static chromaprint_db_entry_t s_entries[MAX_DB_ENTRIES];
 static int s_entry_count = 0;
+
+void chromaprint_db_set_threshold(float threshold)
+{
+	if (threshold > 0.0f && threshold <= 1.0f)
+		s_match_threshold = threshold;
+}
+
+void chromaprint_db_set_duration_tolerance(float tolerance)
+{
+	if (tolerance > 0.0f && tolerance <= 1.0f)
+		s_duration_tolerance = tolerance;
+}
 
 /* ---------------------------------------------------------------------- */
 /* Simple JSON parser helpers (avoids pulling in a full JSON library)      */
@@ -308,8 +323,8 @@ int chromaprint_db_match(const uint32_t *raw_fp, int fp_len, int duration_ms,
 		/* Duration pre-filter */
 		if (duration_ms > 0 && e->duration_ms > 0) {
 			float ratio = (float) duration_ms / (float) e->duration_ms;
-			if (ratio < (1.0f - DURATION_TOLERANCE) ||
-			    ratio > (1.0f + DURATION_TOLERANCE))
+			if (ratio < (1.0f - s_duration_tolerance) ||
+			    ratio > (1.0f + s_duration_tolerance))
 				continue;
 		}
 
@@ -324,7 +339,7 @@ int chromaprint_db_match(const uint32_t *raw_fp, int fp_len, int duration_ms,
 		}
 	}
 
-	if (best_idx >= 0 && best_score >= MATCH_THRESHOLD) {
+	if (best_idx >= 0 && best_score >= s_match_threshold) {
 		out_match->confidence = best_score;
 		strncpy(out_match->name, s_entries[best_idx].name,
 		        CHROMAPRINT_DB_MAX_NAME - 1);

@@ -1,0 +1,14 @@
+// fingerprint_config.json5 -- Global fingerprint matching parameters.
+// Shared by: chromaprint_db.c (Android), FingerprintBridge.kt,
+//            PC scripts (fingerprint_music_packs.ps1, update_known_discs_albums.ps1).
+// Single source of truth for all fingerprint matching thresholds.
+{
+    // Minimum XOR-popcount similarity (0.0-1.0) to accept a match.
+    // Lower = more permissive. 0.4 works well for Descent music across
+    // different encodings (CD rips, MIDI renders, remixes of same source).
+    "match_threshold": 0.4,
+
+    // Duration pre-filter: skip DB entries whose duration differs by more
+    // than this fraction from the query. 0.10 = +/- 10%.
+    "duration_tolerance": 0.10
+}

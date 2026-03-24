@@ -1,0 +1,17 @@
+// acoustid_config.json5 -- AcoustID API configuration for audio fingerprint lookups
+// Copy this file to acoustid_config.json5 and fill in your values.
+// DO NOT commit acoustid_config.json5 to version control.
+//
+// How to obtain an API key:
+//   1. Register at https://acoustid.org/
+//   2. Go to https://acoustid.org/new-application
+//   3. Create a new application (name it anything, e.g. "dxx-redux")
+//   4. Copy the API key below
+//
+// The API key is used for fingerprint lookups against the AcoustID database.
+// Lookups send only the audio fingerprint and duration (not the audio itself).
+// Rate limit: 3 requests per second per API key.
+{
+    // AcoustID application API key
+    "api_key": "k0nviwXtCb"
+}
