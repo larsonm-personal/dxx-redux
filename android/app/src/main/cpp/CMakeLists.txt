@@ -302,11 +302,125 @@ target_include_directories(lzma_sdk_c PUBLIC ${lzma_sdk_SOURCE_DIR}/C)
 target_compile_definitions(lzma_sdk_c PRIVATE _7ZIP_ST)
 
 # ──────────────────────────────────────────────────────────────
+# 3b-ii. Chromaprint  (audio fingerprinting, uses bundled KissFFT)
+# ──────────────────────────────────────────────────────────────
+FetchContent_Declare(chromaprint
+    URL https://github.com/acoustid/chromaprint/archive/refs/tags/v1.5.1.tar.gz
+)
+FetchContent_GetProperties(chromaprint)
+if(NOT chromaprint_POPULATED)
+    FetchContent_Populate(chromaprint)
+endif()
+# Build core Chromaprint sources + bundled KissFFT (no FFTW needed)
+set(_CP_SRC ${chromaprint_SOURCE_DIR}/src)
+add_library(chromaprint SHARED
+    ${_CP_SRC}/chromaprint.cpp
+    ${_CP_SRC}/audio_processor.cpp
+    ${_CP_SRC}/chroma.cpp
+    ${_CP_SRC}/chroma_filter.cpp
+    ${_CP_SRC}/chroma_resampler.cpp
+    ${_CP_SRC}/fft.cpp
+    ${_CP_SRC}/fft_lib_kissfft.cpp
+    ${_CP_SRC}/fingerprint_calculator.cpp
+    ${_CP_SRC}/fingerprint_compressor.cpp
+    ${_CP_SRC}/fingerprint_decompressor.cpp
+    ${_CP_SRC}/fingerprint_matcher.cpp
+    ${_CP_SRC}/fingerprinter.cpp
+    ${_CP_SRC}/fingerprinter_configuration.cpp
+    ${_CP_SRC}/image_builder.cpp
+    ${_CP_SRC}/silence_remover.cpp
+    ${_CP_SRC}/simhash.cpp
+    ${_CP_SRC}/spectrum.cpp
+    ${_CP_SRC}/utils/base64.cpp
+    # KissFFT (bundled with Chromaprint)
+    ${chromaprint_SOURCE_DIR}/src/3rdparty/kissfft/kiss_fft.c
+    ${chromaprint_SOURCE_DIR}/src/3rdparty/kissfft/tools/kiss_fftr.c
+    # Bundled avresample (resampler from libav, included with Chromaprint)
+    ${chromaprint_SOURCE_DIR}/src/avresample/resample2.c
+)
+# Generate config.h that Chromaprint expects
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/chromaprint_config/config.h"
+    "#ifndef CHROMAPRINT_CONFIG_H\n"
+    "#define CHROMAPRINT_CONFIG_H\n"
+    "#define HAVE_ROUND 1\n"
+    "#define USE_KISSFFT 1\n"
+    "#endif\n"
+)
+target_include_directories(chromaprint
+    PUBLIC  ${chromaprint_SOURCE_DIR}/src
+    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/chromaprint_config
+            ${chromaprint_SOURCE_DIR}/src/3rdparty/kissfft
+            ${chromaprint_SOURCE_DIR}/src/3rdparty/kissfft/tools
+)
+target_compile_definitions(chromaprint PRIVATE HAVE_CONFIG_H)
+target_compile_options(chromaprint PRIVATE -w)
+
+# ──────────────────────────────────────────────────────────────
+# 3b-iii. Single-file PCM decoders  (minimp3, stb_vorbis, dr_flac)
+# ──────────────────────────────────────────────────────────────
+set(_DECODERS_DIR "${CMAKE_CURRENT_BINARY_DIR}/pcm_decoders")
+file(MAKE_DIRECTORY "${_DECODERS_DIR}")
+
+if(NOT EXISTS "${_DECODERS_DIR}/minimp3.h")
+    file(DOWNLOAD
+        "https://raw.githubusercontent.com/lieff/minimp3/afb604c06bc8beb145fecd42c0ceb5bda8795144/minimp3.h"
+        "${_DECODERS_DIR}/minimp3.h"
+    )
+endif()
+if(NOT EXISTS "${_DECODERS_DIR}/minimp3_ex.h")
+    file(DOWNLOAD
+        "https://raw.githubusercontent.com/lieff/minimp3/afb604c06bc8beb145fecd42c0ceb5bda8795144/minimp3_ex.h"
+        "${_DECODERS_DIR}/minimp3_ex.h"
+    )
+endif()
+set(_stb_vorbis_need_dl TRUE)
+if(EXISTS "${_DECODERS_DIR}/stb_vorbis.c")
+    file(SIZE "${_DECODERS_DIR}/stb_vorbis.c" _stb_vorbis_size)
+    if(_stb_vorbis_size GREATER 0)
+        set(_stb_vorbis_need_dl FALSE)
+    endif()
+endif()
+if(_stb_vorbis_need_dl)
+    file(DOWNLOAD
+        "https://raw.githubusercontent.com/nothings/stb/1ee679ca2ef753a528db5ba6801e1067b40481b8/stb_vorbis.c"
+        "${_DECODERS_DIR}/stb_vorbis.c"
+        STATUS _stb_dl_status
+    )
+    list(GET _stb_dl_status 0 _stb_dl_code)
+    if(NOT _stb_dl_code EQUAL 0)
+        message(FATAL_ERROR "Failed to download stb_vorbis.c: ${_stb_dl_status}")
+    endif()
+endif()
+if(NOT EXISTS "${_DECODERS_DIR}/dr_flac.h")
+    file(DOWNLOAD
+        "https://raw.githubusercontent.com/mackron/dr_libs/da35f9d6c7374a95353fd1df1d394d44ab66cf01/dr_flac.h"
+        "${_DECODERS_DIR}/dr_flac.h"
+    )
+endif()
+
+# ──────────────────────────────────────────────────────────────
 # 3c. TinySoundFont shared library  (MIDI synth, linked by both games)
 # ──────────────────────────────────────────────────────────────
 add_library(tsf SHARED ${CMAKE_CURRENT_SOURCE_DIR}/shared/tsf_impl.c)
 target_include_directories(tsf PRIVATE ${_TSF_DIR})
 target_compile_options(tsf PRIVATE -w)
+
+# ──────────────────────────────────────────────────────────────
+# 3d. PCM decoders + fingerprinting shared library
+# ──────────────────────────────────────────────────────────────
+add_library(dxx_fingerprint SHARED
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/pcm_decoders.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/chromaprint_db.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/fingerprint_gen.c
+    ${_DECODERS_DIR}/stb_vorbis.c
+)
+target_include_directories(dxx_fingerprint
+    PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/shared
+    PRIVATE ${_DECODERS_DIR}
+            ${chromaprint_SOURCE_DIR}/src
+)
+target_compile_options(dxx_fingerprint PRIVATE -w)  # suppress warnings in vendored decoder code
+target_link_libraries(dxx_fingerprint PRIVATE chromaprint log)
 
 # ──────────────────────────────────────────────────────────────
 # 4. Pre-set variables so find_package(SDL) / find_package(PhysFS)
@@ -406,6 +520,7 @@ target_sources(dxx-redux-d1 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_net_log.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/track_names.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni_fingerprint.c
 )
 target_include_directories(dxx-redux-d1 PRIVATE
     ${D1_SRC}/arch/include
@@ -442,7 +557,7 @@ target_include_directories(${DXX_TARGET_PREFIX}xmodel PRIVATE ${PHYSFS_INCLUDE_D
 endif() # OPENGL
 
 target_link_libraries(dxx-redux-d1 PRIVATE nlohmann_json::nlohmann_json)
-target_link_libraries(dxx-redux-d1 PRIVATE lzma_sdk_c z)
+target_link_libraries(dxx-redux-d1 PRIVATE lzma_sdk_c z dxx_fingerprint chromaprint)
 set_property(TARGET dxx-redux-d1 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 # ──────────────────────────────────────────────────────────────
@@ -483,6 +598,7 @@ target_sources(dxx-redux-d2 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_net_log.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/track_names.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni_fingerprint.c
 )
 target_include_directories(dxx-redux-d2 PRIVATE
     ${D2_SRC}/arch/include
@@ -530,5 +646,5 @@ endif() # OPENGL
 
 # nlohmann/json — used by the introspection/automation C++ files
 target_link_libraries(dxx-redux-d2 PRIVATE nlohmann_json::nlohmann_json)
-target_link_libraries(dxx-redux-d2 PRIVATE lzma_sdk_c z)
+target_link_libraries(dxx-redux-d2 PRIVATE lzma_sdk_c z dxx_fingerprint chromaprint)
 set_property(TARGET dxx-redux-d2 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)

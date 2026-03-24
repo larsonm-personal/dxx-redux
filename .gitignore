@@ -72,6 +72,7 @@ dependency_base.txt
 keystore.properties
 play-store-credentials.json
 auth_config.json5
+acoustid_config.json5
 *.keystore
 *.jks
 .gradle/
