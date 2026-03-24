@@ -86,6 +86,7 @@ fun TouchEditorPage(
     var gyroYaw by remember { mutableFloatStateOf(0f) }
     var gyroPitch by remember { mutableFloatStateOf(0f) }
     var gyroRoll by remember { mutableFloatStateOf(0f) }
+    var editorGyroManager by remember { mutableStateOf<GyroInputManager?>(null) }
     if (layout.diagnostics.isNotEmpty() && layout.gyro.enabled) {
         val gyroConfig = layout.gyro
         DisposableEffect(gyroConfig) {
@@ -100,8 +101,12 @@ fun TouchEditorPage(
                 layout = layout.copy(gyro = layout.gyro.copy(refAzimuth = az, refPitch = pi, refRoll = ro))
                 dirty = true
             }
+            editorGyroManager = gm
             gm.resume()
-            onDispose { gm.pause() }
+            onDispose {
+                gm.pause()
+                editorGyroManager = null
+            }
         }
     }
 
@@ -677,6 +682,7 @@ fun TouchEditorPage(
                 layout = layout.copy(gyro = updated)
                 dirty = true
             },
+            onRecenter = { editorGyroManager?.calibrate() },
         )
     }
 }
@@ -1978,6 +1984,7 @@ private fun AxisRegionPropertiesPanel(
             onUpdate(region.copy(opacity = it))
         }
     }
+    LabeledToggle("Invert", region.invert) { onUpdate(region.copy(invert = it)) }
     CurvePicker("Curve", region.responseCurve, Modifier.fillMaxWidth()) {
         onUpdate(region.copy(responseCurve = it))
     }
@@ -2504,6 +2511,7 @@ private fun GyroSettingsDialog(
     gyro: GyroConfig,
     onDismiss: () -> Unit,
     onUpdate: (GyroConfig) -> Unit,
+    onRecenter: () -> Unit = {},
 ) {
     var enabled by remember { mutableStateOf(gyro.enabled) }
     var activation by remember { mutableStateOf(gyro.activation) }
@@ -2684,16 +2692,20 @@ private fun GyroSettingsDialog(
                             }
                         }
 
-                        if (refAzimuth != null) {
-                            Spacer(Modifier.height(8.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Saved calibration", fontSize = 12.sp, color = Color.Gray)
-                                Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            TextButton(onClick = onRecenter) {
+                                Text("Recenter Now", fontSize = 12.sp)
+                            }
+                            if (refAzimuth != null) {
                                 TextButton(onClick = {
                                     refAzimuth = null
                                     refPitch = null
                                     refRoll = null
-                                }) { Text("Reset", fontSize = 12.sp) }
+                                }) { Text("Reset Saved", fontSize = 12.sp) }
                             }
                         }
                     }

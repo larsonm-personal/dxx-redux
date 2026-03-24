@@ -30,7 +30,7 @@ GIT_HASH=$(git rev-parse --short HEAD)
 BUILD_DATE=$(date +"%Y-%m-%d")
 BUILD_TIME=$(TZ='America/Los_Angeles' date +"%H:%M")
 echo ""
-echo "versionCode: $VERSION_CODE (git commits)"
+echo "versionCode: $VERSION_CODE (# of git commits)"
 echo "gitHash:     $GIT_HASH"
 echo "buildDate:   $BUILD_DATE"
 echo "buildTime:   $BUILD_TIME PST"

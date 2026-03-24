@@ -507,6 +507,7 @@ data class AxisRegionControl(
     val orientation: SliderOrientation = SliderOrientation.VERTICAL,
     val zone: FloatingZone = FloatingZone(leftPct = 0f, topPct = 50f, rightPct = 8f, bottomPct = 100f),
     val sensitivity: Float = 1f,
+    val invert: Boolean = false,
     val responseCurve: ResponseCurve = ResponseCurve.LINEAR,
     val exponent: Float = TouchBindings.DEFAULT_EXPONENT,
     val opacity: Float = 0.3f,
@@ -519,6 +520,7 @@ data class AxisRegionControl(
             put("orientation", orientation.name)
             put("zone", zone.toJson())
             put("sensitivity", sensitivity.toDouble())
+            put("invert", invert)
             put("responseCurve", responseCurve.name)
             put("exponent", exponent.toDouble())
             put("opacity", opacity.toDouble())
@@ -532,6 +534,7 @@ data class AxisRegionControl(
                 orientation = SliderOrientation.valueOf(j.optString("orientation", "VERTICAL")),
                 zone = if (j.has("zone")) FloatingZone.fromJson(j.getJSONObject("zone")) else FloatingZone(),
                 sensitivity = j.optDouble("sensitivity", 1.0).toFloat(),
+                invert = j.optBoolean("invert"),
                 responseCurve = ResponseCurve.valueOf(j.optString("responseCurve", "LINEAR")),
                 exponent = j.optDouble("exponent", TouchBindings.DEFAULT_EXPONENT.toDouble()).toFloat(),
                 opacity = j.optDouble("opacity", 0.3).toFloat(),

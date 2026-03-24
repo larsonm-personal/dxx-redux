@@ -205,7 +205,8 @@
       "axis": "Slide U/D",
       "orientation": "VERTICAL",
       "zone": { "left": 0.0, "top": 50.0, "right": 8.0, "bottom": 100.0 },
-      "sensitivity": 1.0,
+      "sensitivity": 2.5,
+      "invert": true,
       "responseCurve": "LINEAR",
       "exponent": 2.0,
       "opacity": 0.3

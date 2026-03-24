@@ -1918,6 +1918,7 @@ class TouchOverlayView
                 }
             raw = applyResponseCurve(raw, ar.control.responseCurve, ar.control.exponent)
             raw = (raw * ar.control.sensitivity).coerceIn(-1f, 1f)
+            if (ar.control.invert) raw = -raw
             ar.value = raw
             axisCallback?.invoke(ar.control.axis, raw)
             invalidate()

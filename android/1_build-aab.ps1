@@ -50,7 +50,7 @@ try {
     $buildDate = Get-Date -Format "yyyy-MM-dd"
     $buildTime = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId((Get-Date), 'Pacific Standard Time').ToString('HH:mm')
     Write-Host ""
-    Write-Host "versionCode: $versionCode (git commits)"
+    Write-Host "versionCode: $versionCode (# of git commits)"
     Write-Host "gitHash:     $gitHash"
     Write-Host "buildDate:   $buildDate"
     Write-Host "buildTime:   $buildTime PST"
