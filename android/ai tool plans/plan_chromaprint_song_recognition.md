@@ -83,21 +83,33 @@ Files to modify:
 
 ---
 
-## Phase 3: PC-Side Fingerprint Tool (C/C++) [NOT STARTED]
+## Phase 3: PC-Side Fingerprint Tool (C/C++) [COMPLETE]
 
 ### 3a. Standalone C tool
-- tools/chromaprint_tool/ with own CMakeLists.txt
-- Reuses cue_parser.c for BIN/CUE; single-file decoders for audio files
-- Outputs JSON: {track, chromaprint, duration_ms, name?}
-- Optional AcoustID lookup via libcurl for initial labeling
+- android/app/src/main/cpp/extract/fingerprint_cd.c
+- Reuses cue_parser.c for BIN/CUE; Chromaprint v1.5.1 (static, KissFFT)
+- Outputs JSON lines per track: {track, type, sha1, chromaprint?, duration_ms?}
+- SHA-1 matches redump convention (full raw 2352-byte sectors)
+- Built via extract/CMakeLists.txt as fingerprint_cd target
+- MSVC compat: NOMINMAX, _USE_MATH_DEFINES, HAVE_LRINTF, CHROMAPRINT_NODLL
 
-### 3b. Integration script
-- game_data/fingerprint_discs.ps1 wraps C tool, merges into known_discs.json5
+### 3b. Integration scripts
+- game_data/fingerprint_disc_tracks.ps1: builds tool, runs on all CD image folders,
+  writes track_fingerprints.json per folder
+- game_data/update_known_discs_fingerprints.ps1: merges chromaprint+duration_ms into
+  known_discs.json5 by matching audio track SHA-1s
+- 203 audio tracks across 34 discs now have chromaprint fingerprints
 
-Files to create:
-- tools/chromaprint_tool/CMakeLists.txt
-- tools/chromaprint_tool/main.c
-- game_data/fingerprint_discs.ps1
+Files created:
+- android/app/src/main/cpp/extract/fingerprint_cd.c
+- game_data/fingerprint_disc_tracks.ps1
+- game_data/update_known_discs_fingerprints.ps1
+
+Files modified:
+- android/app/src/main/cpp/extract/CMakeLists.txt (Chromaprint, decoders, fingerprint_cd target)
+- android/app/src/main/cpp/shared/fingerprint_gen.c (#ifdef ANDROID for log.h)
+- android/app/src/main/cpp/shared/pcm_decoders.c (#ifdef _WIN32 compat)
+- android/app/src/main/assets/known_discs.json5 (203 tracks with chromaprint+duration_ms)
 
 ---
 

@@ -11,12 +11,17 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <android/log.h>
 #include <chromaprint.h>
 
+#ifdef ANDROID
+#include <android/log.h>
 #define LOG_TAG   "fingerprint_gen"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+#else
+#define LOGI(...) ((void) 0)
+#define LOGE(...) ((void) 0)
+#endif
 
 /* Chromaprint wants at most ~120s of audio; clamp to avoid excess work */
 #define MAX_FINGERPRINT_SAMPLES (120 * 44100 * 2) /* 120s, stereo, 44100 Hz */

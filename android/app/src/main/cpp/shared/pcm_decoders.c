@@ -7,7 +7,16 @@
 
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef _WIN32
+#include <io.h>
+#include <sys/types.h>
+#define lseek _lseeki64
+#define read  _read
+typedef int ssize_t;
+#else
 #include <unistd.h>
+#endif
 
 /* minimp3 -- MP3 decoder */
 #define MINIMP3_IMPLEMENTATION
