@@ -94,6 +94,7 @@ android/app/src/main/assets/gm.sf2
 game_data/**
 !game_data/**/
 !game_data/**/*_regression.json5
+!game_data/**/track_fingerprints.json
 
 # android emulator testing
 game_data_to_copy_to_emulator/data/*

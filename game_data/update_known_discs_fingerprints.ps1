@@ -1,8 +1,8 @@
 # update_known_discs_fingerprints.ps1 -- Merge chromaprint fingerprints into known_discs.json5.
 #
 # Reads track_fingerprints.json from each CD image folder, matches tracks to
-# existing known_discs.json5 entries by SHA-1, and adds "chromaprint" and
-# "duration_ms" fields to audio tracks that have them.
+# existing known_discs.json5 entries by SHA-1, and adds "chromaprint",
+# "duration_ms", "acoustid_name", and "acoustid_album" fields to audio tracks.
 #
 # The merge is done via text manipulation to preserve comments and formatting.
 #
@@ -34,10 +34,17 @@ foreach ($folder in $folders) {
     $tracks = Get-Content $fpFile -Raw -Encoding UTF8 | ConvertFrom-Json
     foreach ($t in $tracks) {
         if ($t.type -eq "audio" -and $t.sha1 -and $t.chromaprint) {
-            $fpBySha1[$t.sha1] = @{
+            $entry = @{
                 chromaprint = $t.chromaprint
                 duration_ms = $t.duration_ms
             }
+            if ($t.PSObject.Properties["acoustid_name"] -and $t.acoustid_name) {
+                $entry.acoustid_name = $t.acoustid_name
+            }
+            if ($t.PSObject.Properties["acoustid_album"] -and $t.acoustid_album) {
+                $entry.acoustid_album = $t.acoustid_album
+            }
+            $fpBySha1[$t.sha1] = $entry
         }
     }
 }
@@ -49,9 +56,25 @@ if ($fpBySha1.Count -eq 0) {
     exit 0
 }
 
+# -- Helper: build the fields string from a fingerprint entry ----------
+
+function Get-FpFieldsString {
+    param($fp)
+    $parts = @("`"chromaprint`": `"$($fp.chromaprint)`"", "`"duration_ms`": $($fp.duration_ms)")
+    if ($fp.acoustid_name) {
+        $escaped = $fp.acoustid_name -replace '"', '\"'
+        $parts += "`"acoustid_name`": `"$escaped`""
+    }
+    if ($fp.acoustid_album) {
+        $escaped = $fp.acoustid_album -replace '"', '\"'
+        $parts += "`"acoustid_album`": `"$escaped`""
+    }
+    return $parts -join ", "
+}
+
 # -- Process known_discs.json5 line by line ----------------------------
 # For each audio track line that has a sha1 we have a fingerprint for,
-# add chromaprint and duration_ms fields (or update them).
+# add/update chromaprint, duration_ms, acoustid_name, acoustid_album.
 
 $content = Get-Content $Json5Path -Raw -Encoding UTF8
 $lines = $content -split "`n"
@@ -66,53 +89,33 @@ foreach ($line in $lines) {
         $sha1 = $Matches[1]
         if ($fpBySha1.ContainsKey($sha1)) {
             $fp = $fpBySha1[$sha1]
+            $fieldsStr = Get-FpFieldsString $fp
 
-            if ($line -match '"chromaprint"') {
-                # Already has chromaprint -- replace it with the new value
-                # Strip existing chromaprint and duration_ms fields, then re-add
-                $workLine = $line
-                $workLine = $workLine -replace ',\s*"chromaprint"\s*:\s*"[^"]*"', ''
-                $workLine = $workLine -replace ',\s*"duration_ms"\s*:\s*\d+', ''
+            # Strip existing fields we're about to re-add
+            $workLine = $line
+            $workLine = $workLine -replace ',\s*"chromaprint"\s*:\s*"[^"]*"', ''
+            $workLine = $workLine -replace ',\s*"duration_ms"\s*:\s*\d+', ''
+            $workLine = $workLine -replace ',\s*"acoustid_name"\s*:\s*"[^"]*"', ''
+            $workLine = $workLine -replace ',\s*"acoustid_album"\s*:\s*"[^"]*"', ''
 
-                # Insert new values before closing }
-                $trailingComma = ""
-                $trimmed = $workLine.TrimEnd()
-                if ($trimmed.EndsWith(",")) {
-                    $trailingComma = ","
-                    $trimmed = $trimmed.Substring(0, $trimmed.Length - 1).TrimEnd()
-                }
-                if ($trimmed.EndsWith("}")) {
-                    $trimmed = $trimmed.Substring(0, $trimmed.Length - 1).TrimEnd()
-                }
-
-                $newLine = "$trimmed, `"chromaprint`": `"$($fp.chromaprint)`", `"duration_ms`": $($fp.duration_ms)}$trailingComma"
-                if ($newLine -ne $line) {
-                    $modified++
-                    $newLines += $newLine
-                } else {
-                    $alreadyPresent++
-                    $newLines += $line
-                }
-                continue
-            }
-
-            # Insert chromaprint and duration_ms before the closing }
-            # Preserve trailing comma if present
+            # Insert new values before closing }
             $trailingComma = ""
-            $workLine = $line.TrimEnd()
-            if ($workLine.EndsWith(",")) {
+            $trimmed = $workLine.TrimEnd()
+            if ($trimmed.EndsWith(",")) {
                 $trailingComma = ","
-                $workLine = $workLine.Substring(0, $workLine.Length - 1).TrimEnd()
+                $trimmed = $trimmed.Substring(0, $trimmed.Length - 1).TrimEnd()
+            }
+            if ($trimmed.EndsWith("}")) {
+                $trimmed = $trimmed.Substring(0, $trimmed.Length - 1).TrimEnd()
             }
 
-            # Remove the closing }
-            if ($workLine.EndsWith("}")) {
-                $workLine = $workLine.Substring(0, $workLine.Length - 1).TrimEnd()
+            $newLine = "$trimmed, $fieldsStr}$trailingComma"
+            if ($newLine -ne $line) {
+                $modified++
+            } else {
+                $alreadyPresent++
             }
-
-            $newLine = "$workLine, `"chromaprint`": `"$($fp.chromaprint)`", `"duration_ms`": $($fp.duration_ms)}$trailingComma"
             $newLines += $newLine
-            $modified++
             continue
         }
     }

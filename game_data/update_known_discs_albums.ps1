@@ -131,12 +131,13 @@ foreach ($file in $albumFiles) {
             chromaprint = $t.chromaprint
         }
         $tracksList += [PSCustomObject]@{
-            TrackNum    = $trackNum
-            Filename    = $t.filename
-            BaseName    = $baseName
-            Chromaprint = $t.chromaprint
-            DurationMs  = $t.duration_ms
+            TrackNum     = $trackNum
+            Filename     = $t.filename
+            BaseName     = $baseName
+            Chromaprint  = $t.chromaprint
+            DurationMs   = $t.duration_ms
             AcoustidName = $t.acoustid_name
+            AcoustidAlbum = $t.acoustid_album
         }
         $trackNum++
     }
@@ -266,6 +267,9 @@ foreach ($albumInfo in $albumInfos) {
         if ($t.AcoustidName) {
             $trackEntry["acoustid_name"] = $t.AcoustidName
         }
+        if ($t.AcoustidAlbum) {
+            $trackEntry["acoustid_album"] = $t.AcoustidAlbum
+        }
 
         if ($isDuplicate) {
             $totalDuplicates++
@@ -394,6 +398,10 @@ for ($ai = 0; $ai -lt $albumEntries.Count; $ai++) {
         if ($e.acoustid_name) {
             $acoustidEscaped = $e.acoustid_name -replace '"', '\"'
             $line += ", `"acoustid_name`": `"$acoustidEscaped`""
+        }
+        if ($e.acoustid_album) {
+            $albumEscaped = $e.acoustid_album -replace '"', '\"'
+            $line += ", `"acoustid_album`": `"$albumEscaped`""
         }
         $line += "}$comma"
         $albumLines += $line

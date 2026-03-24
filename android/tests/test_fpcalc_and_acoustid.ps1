@@ -203,7 +203,7 @@ if (-not $SkipAcoustId) {
                 $wc = New-Object System.Net.WebClient
                 $nvc = New-Object System.Collections.Specialized.NameValueCollection
                 $nvc.Add("client", $apiKey)
-                $nvc.Add("meta", "recordings")
+                $nvc.Add("meta", "recordings releases")
                 $nvc.Add("duration", [string]$tDur)
                 $nvc.Add("fingerprint", $tFp)
                 $respBytes = $wc.UploadValues(
@@ -212,7 +212,7 @@ if (-not $SkipAcoustId) {
                 $json = $respStr | ConvertFrom-Json
 
                 if ($json.status -eq "ok") {
-                    $matchCount = 0; $bestTitle = ""
+                    $matchCount = 0; $bestTitle = ""; $bestAlbum = ""
                     foreach ($result in $json.results) {
                         if ($result.recordings) {
                             foreach ($rec in $result.recordings) {
@@ -220,11 +220,17 @@ if (-not $SkipAcoustId) {
                                 if (-not $bestTitle -and $rec.title) {
                                     $a = if ($rec.artists) { ($rec.artists | ForEach-Object { $_.name }) -join ", " } else { "" }
                                     $bestTitle = if ($a) { "$a - $($rec.title)" } else { $rec.title }
+                                    if ($rec.releases -and $rec.releases[0].title) {
+                                        $bestAlbum = $rec.releases[0].title
+                                    }
                                 }
                             }
                         }
                     }
-                    Write-Host "    $matchCount recording(s)$(if ($bestTitle) { ": $bestTitle" })"
+                    $display = "$matchCount recording(s)"
+                    if ($bestTitle) { $display += ": $bestTitle" }
+                    if ($bestAlbum) { $display += " [$bestAlbum]" }
+                    Write-Host "    $display"
                     if ($matchCount -gt 0) { $anyMatch = $true; break }
                 }
             } catch {

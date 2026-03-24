@@ -124,7 +124,7 @@ function Invoke-AcoustIdLookup {
             $wc = New-Object System.Net.WebClient
             $nvc = New-Object System.Collections.Specialized.NameValueCollection
             $nvc.Add("client", $acoustIdKey)
-            $nvc.Add("meta", "recordings")
+            $nvc.Add("meta", "recordings releases")
             $nvc.Add("duration", [string]$DurationSec)
             $nvc.Add("fingerprint", $Fingerprint)
             $responseBytes = $wc.UploadValues(
@@ -141,10 +141,12 @@ function Invoke-AcoustIdLookup {
                                 if ($rec.artists) {
                                     $artists = ($rec.artists | ForEach-Object { $_.name }) -join ", "
                                 }
-                                if ($artists) {
-                                    return "$artists - $title"
+                                $trackName = if ($artists) { "$artists - $title" } else { $title }
+                                $albumTitle = $null
+                                if ($rec.releases) {
+                                    $albumTitle = $rec.releases[0].title
                                 }
-                                return $title
+                                return @{ name = $trackName; album = $albumTitle }
                             }
                         }
                     }
@@ -342,13 +344,21 @@ foreach ($archive in $archives) {
         $existingEntry = $existingTracks[$fname]
         if ($existingEntry -and $existingEntry.acoustid_name -and -not $Force) {
             $track["acoustid_name"] = $existingEntry.acoustid_name
+            if ($existingEntry.acoustid_album) {
+                $track["acoustid_album"] = $existingEntry.acoustid_album
+            }
             Write-Host "  $fname -> cached: $($existingEntry.acoustid_name)"
         } elseif (-not $SkipAcoustId -and $chromaprint -and $durationMs -gt 0) {
             $durationSec = [math]::Round($durationMs / 1000)
-            $name = Invoke-AcoustIdLookup -Fingerprint $chromaprint -DurationSec $durationSec
-            if ($name) {
-                $track["acoustid_name"] = $name
-                Write-Host "  $fname -> $name"
+            $result = Invoke-AcoustIdLookup -Fingerprint $chromaprint -DurationSec $durationSec
+            if ($result) {
+                $track["acoustid_name"] = $result.name
+                if ($result.album) {
+                    $track["acoustid_album"] = $result.album
+                }
+                $display = $result.name
+                if ($result.album) { $display += " [$($result.album)]" }
+                Write-Host "  $fname -> $display"
             } else {
                 Write-Host "  $fname -> no AcoustID match"
             }
@@ -374,12 +384,16 @@ foreach ($archive in $archives) {
         $dur = $t.duration_ms
         $trailing = if ($i -lt $tracks.Count - 1) { "," } else { "" }
 
+        $extraFields = ""
         if ($t.acoustid_name) {
             $aname = $t.acoustid_name -replace '"', '\"'
-            $lines += "    {`"filename`": `"$fname`", `"chromaprint`": `"$cp`", `"duration_ms`": $dur, `"acoustid_name`": `"$aname`"}$trailing"
-        } else {
-            $lines += "    {`"filename`": `"$fname`", `"chromaprint`": `"$cp`", `"duration_ms`": $dur}$trailing"
+            $extraFields += ", `"acoustid_name`": `"$aname`""
         }
+        if ($t.acoustid_album) {
+            $aalbum = $t.acoustid_album -replace '"', '\"'
+            $extraFields += ", `"acoustid_album`": `"$aalbum`""
+        }
+        $lines += "    {`"filename`": `"$fname`", `"chromaprint`": `"$cp`", `"duration_ms`": $dur${extraFields}}$trailing"
     }
 
     $lines += "  ]"
