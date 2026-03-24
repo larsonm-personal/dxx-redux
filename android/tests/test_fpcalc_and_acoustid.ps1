@@ -1,14 +1,15 @@
-# test_fpcalc_and_acoustid.ps1 -- Validate our fingerprint pipeline against
+﻿# test_fpcalc_and_acoustid.ps1 -- Validate our fingerprint pipeline against
 # fpcalc (reference chromaprint CLI) and AcoustID (online lookup service).
 #
 # Tests:
 #   1. Compare our fingerprint_audio.exe output vs fpcalc on a real D2 MP3
-#   2. Verify AcoustID returns matches for D2 redbook tracks (known popular music)
+#   2. Verify AcoustID returns matches for D2 redbook tracks (known music)
 #
 # Prerequisites:
 #   - android/tests/build/Release/fingerprint_audio.exe (cmake build)
 #   - fpcalc.exe via android/get_deps/get_fpcalc.ps1
-#   - D2 redbook MP3 rips in game_data/music/D2 redbook mp3 rips/
+#   - D2 redbook MP3 in game_data/music/D2 infinite abyss redbook mp3/
+#     or game_data/music/D2 redbook mp3 rips/
 #   - AcoustID API key in android/acoustid_config.json5
 
 param(
@@ -48,9 +49,17 @@ if (-not (Test-Path $fpcalcExe)) {
 
 # ── Find a D2 redbook track to test with ────────────────────────────
 
-$redbookDir = "game_data/music/D2 redbook mp3 rips"
-if (-not (Test-Path $redbookDir)) {
-    Write-Error "D2 redbook MP3 rips not found at: $redbookDir"
+# Prefer "D2 infinite abyss redbook mp3" (known to have AcoustID entries),
+# fall back to "D2 redbook mp3 rips" if not available
+$redbookDir = $null
+foreach ($candidate in @(
+        "game_data/music/D2 infinite abyss redbook mp3",
+        "game_data/music/D2 redbook mp3 rips"
+    )) {
+    if (Test-Path $candidate) { $redbookDir = $candidate; break }
+}
+if (-not $redbookDir) {
+    Write-Error "No D2 redbook MP3 directory found"
 }
 
 # Use the first D2 redbook MP3 track
@@ -59,7 +68,7 @@ if (-not $testTrack) {
     Write-Error "No MP3 files found in $redbookDir"
 }
 $testMp3 = $testTrack.FullName
-Write-Host "Test track: $($testTrack.Name)"
+Write-Host "Test track: $($testTrack.Name) (from $redbookDir)"
 Write-Host ""
 
 # ── Test 1: fpcalc vs our tool comparison ───────────────────────────
@@ -138,7 +147,7 @@ if ([math]::Abs($ourDurationSec - $fpcalcDuration) -le 1) {
 # sanity check (exact match is unlikely due to decoder differences)
 if ($ourEncoded.Length -gt 0 -and $fpcalcEncoded.Length -gt 0) {
     $lenRatio = [math]::Min($ourEncoded.Length, $fpcalcEncoded.Length) / `
-                [math]::Max($ourEncoded.Length, $fpcalcEncoded.Length)
+        [math]::Max($ourEncoded.Length, $fpcalcEncoded.Length)
     Write-Host "  Encoded length ratio: $([math]::Round($lenRatio, 3)) (ours=$($ourEncoded.Length), fpcalc=$($fpcalcEncoded.Length))"
     if ($lenRatio -ge 0.90) {
         Test-Pass "Encoded fingerprint length ratio $([math]::Round($lenRatio, 3)) >= 0.90"
@@ -172,8 +181,8 @@ if (-not $SkipAcoustId) {
     if (-not $apiKey) {
         Write-Warning "No AcoustID API key found, skipping lookup test"
     } else {
-        # Try up to 3 tracks -- D2 redbook may or may not be in AcoustID
-        $tracks = Get-ChildItem $redbookDir -Filter "*.mp3" | Select-Object -First 3
+        # Try up to 5 tracks -- not all tracks are in AcoustID
+        $tracks = Get-ChildItem $redbookDir -Filter "*.mp3" | Select-Object -First 5
         $anyMatch = $false
 
         foreach ($track in $tracks) {
@@ -189,18 +198,18 @@ if (-not $SkipAcoustId) {
             }
             if (-not $tFp) { Write-Host "    Skipping (no fingerprint)"; continue }
 
-            $body = @{
-                client      = $apiKey
-                meta        = "recordings"
-                duration    = $tDur
-                fingerprint = $tFp
-            }
-
             try {
                 Start-Sleep -Milliseconds 400
-                $response = Invoke-WebRequest -Uri "https://api.acoustid.org/v2/lookup" `
-                    -Method POST -Body $body -UseBasicParsing -TimeoutSec 15
-                $json = $response.Content | ConvertFrom-Json
+                $wc = New-Object System.Net.WebClient
+                $nvc = New-Object System.Collections.Specialized.NameValueCollection
+                $nvc.Add("client", $apiKey)
+                $nvc.Add("meta", "recordings")
+                $nvc.Add("duration", [string]$tDur)
+                $nvc.Add("fingerprint", $tFp)
+                $respBytes = $wc.UploadValues(
+                    "https://api.acoustid.org/v2/lookup", "POST", $nvc)
+                $respStr = [System.Text.Encoding]::UTF8.GetString($respBytes)
+                $json = $respStr | ConvertFrom-Json
 
                 if ($json.status -eq "ok") {
                     $matchCount = 0; $bestTitle = ""
@@ -226,10 +235,7 @@ if (-not $SkipAcoustId) {
         if ($anyMatch) {
             Test-Pass "AcoustID returned matches for D2 redbook"
         } else {
-            # D2 redbook tracks may not be in AcoustID -- informational only
-            Write-Host "  INFO: No AcoustID matches for any tested track" -ForegroundColor Yellow
-            Write-Host "  D2 redbook tracks may not be submitted to AcoustID database"
-            Write-Host "  (This does not indicate a pipeline bug if fpcalc comparison passed)"
+            Test-Fail "AcoustID lookup" "No matches for any of $($tracks.Count) tested tracks from $redbookDir"
         }
     }
 } else {

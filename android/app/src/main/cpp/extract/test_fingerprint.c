@@ -32,40 +32,47 @@ static int s_tests_run = 0;
 static int s_tests_passed = 0;
 static int s_tests_failed = 0;
 
-#define TEST_BEGIN(name) \
-	do { \
-		s_tests_run++; \
+#define TEST_BEGIN(name)                 \
+	do {                                 \
+		s_tests_run++;                   \
 		const char *_test_name = (name); \
-		printf("  %-50s ", _test_name); \
+		printf("  %-50s ", _test_name);  \
 		fflush(stdout);
 
-#define TEST_END \
-		s_tests_passed++; \
-		printf("PASS\n"); \
+#define TEST_END      \
+	s_tests_passed++; \
+	printf("PASS\n"); \
+	}                 \
+	while (0)
+
+#define ASSERT_TRUE(cond, msg)                               \
+	do {                                                     \
+		if (!(cond)) {                                       \
+			printf("FAIL: %s (line %d)\n", (msg), __LINE__); \
+			s_tests_failed++;                                \
+			goto _test_cleanup;                              \
+		}                                                    \
 	} while (0)
 
-#define ASSERT_TRUE(cond, msg) \
-	do { if (!(cond)) { \
-		printf("FAIL: %s (line %d)\n", (msg), __LINE__); \
-		s_tests_failed++; \
-		goto _test_cleanup; \
-	}} while (0)
+#define ASSERT_EQ_INT(a, b, msg)                                  \
+	do {                                                          \
+		if ((a) != (b)) {                                         \
+			printf("FAIL: %s -- expected %d, got %d (line %d)\n", \
+			       (msg), (int) (a), (int) (b), __LINE__);        \
+			s_tests_failed++;                                     \
+			goto _test_cleanup;                                   \
+		}                                                         \
+	} while (0)
 
-#define ASSERT_EQ_INT(a, b, msg) \
-	do { if ((a) != (b)) { \
-		printf("FAIL: %s -- expected %d, got %d (line %d)\n", \
-		       (msg), (int)(a), (int)(b), __LINE__); \
-		s_tests_failed++; \
-		goto _test_cleanup; \
-	}} while (0)
-
-#define ASSERT_NEAR(a, b, tol, msg) \
-	do { if (fabs((double)(a) - (double)(b)) > (tol)) { \
-		printf("FAIL: %s -- expected ~%.3f, got %.3f (line %d)\n", \
-		       (msg), (double)(a), (double)(b), __LINE__); \
-		s_tests_failed++; \
-		goto _test_cleanup; \
-	}} while (0)
+#define ASSERT_NEAR(a, b, tol, msg)                                    \
+	do {                                                               \
+		if (fabs((double) (a) - (double) (b)) > (tol)) {               \
+			printf("FAIL: %s -- expected ~%.3f, got %.3f (line %d)\n", \
+			       (msg), (double) (a), (double) (b), __LINE__);       \
+			s_tests_failed++;                                          \
+			goto _test_cleanup;                                        \
+		}                                                              \
+	} while (0)
 
 /* ── Helpers ──────────────────────────────────────────────────────── */
 
@@ -83,16 +90,22 @@ static int load_raw_file(const char *filename, int16_t **out_data)
 	make_path(path, sizeof(path), filename);
 
 	FILE *f = fopen(path, "rb");
-	if (!f) { fprintf(stderr, "Cannot open %s\n", path); return -1; }
+	if (!f) {
+		fprintf(stderr, "Cannot open %s\n", path);
+		return -1;
+	}
 	fseek(f, 0, SEEK_END);
 	long sz = ftell(f);
 	fseek(f, 0, SEEK_SET);
 
-	*out_data = (int16_t *)malloc(sz);
-	if (!*out_data) { fclose(f); return -1; }
+	*out_data = (int16_t *) malloc(sz);
+	if (!*out_data) {
+		fclose(f);
+		return -1;
+	}
 	fread(*out_data, 1, sz, f);
 	fclose(f);
-	return (int)(sz / sizeof(int16_t));
+	return (int) (sz / sizeof(int16_t));
 }
 
 /* Parse test.mp3.fpcalc.out: lines DURATION=N and FINGERPRINT=v1,v2,...
@@ -117,7 +130,7 @@ static int load_fpcalc_reference(const char *filename,
 		} else if (strncmp(line, "FINGERPRINT=", 12) == 0) {
 			char *p = line + 12;
 			while (*p && count < max_raw) {
-				out_raw[count++] = (uint32_t)strtoul(p, &p, 10);
+				out_raw[count++] = (uint32_t) strtoul(p, &p, 10);
 				if (*p == ',') p++;
 			}
 		}
@@ -142,7 +155,7 @@ static float fp_similarity(const uint32_t *a, int a_len,
 	long total = 0;
 	for (int i = 0; i < overlap; i++)
 		total += POPCNT(a[i] ^ b[i]);
-	return 1.0f - (float)total / ((float)overlap * 32.0f);
+	return 1.0f - (float) total / ((float) overlap * 32.0f);
 }
 
 /* ── Tests ────────────────────────────────────────────────────────── */
@@ -155,7 +168,7 @@ static float fp_similarity(const uint32_t *a, int a_len,
 static void test_stereo_raw_matches_direct_api(void)
 {
 	int16_t *data = NULL;
-	fingerprint_result_t our_fp = {0};
+	fingerprint_result_t our_fp = { 0 };
 	char *direct_encoded = NULL;
 	ChromaprintContext *ctx = NULL;
 
@@ -197,7 +210,7 @@ _test_cleanup:
 static void test_mono_raw_matches_direct_api(void)
 {
 	int16_t *data = NULL;
-	fingerprint_result_t our_fp = {0};
+	fingerprint_result_t our_fp = { 0 };
 	char *direct_encoded = NULL;
 	ChromaprintContext *ctx = NULL;
 
@@ -239,7 +252,7 @@ _test_cleanup:
 static void test_duration_stereo(void)
 {
 	int16_t *data = NULL;
-	fingerprint_result_t fp = {0};
+	fingerprint_result_t fp = { 0 };
 
 	TEST_BEGIN("duration_stereo");
 
@@ -268,7 +281,7 @@ _test_cleanup:
 static void test_duration_mono(void)
 {
 	int16_t *data = NULL;
-	fingerprint_result_t fp = {0};
+	fingerprint_result_t fp = { 0 };
 
 	TEST_BEGIN("duration_mono");
 
@@ -297,7 +310,7 @@ _test_cleanup:
  */
 static void test_mp3_matches_fpcalc_reference(void)
 {
-	fingerprint_result_t fp = {0};
+	fingerprint_result_t fp = { 0 };
 	uint32_t ref_raw[512];
 
 	TEST_BEGIN("mp3_matches_fpcalc_reference");
@@ -339,8 +352,8 @@ _test_cleanup:
 static void test_stereo_mono_differ(void)
 {
 	int16_t *data = NULL;
-	fingerprint_result_t fp_stereo = {0};
-	fingerprint_result_t fp_mono = {0};
+	fingerprint_result_t fp_stereo = { 0 };
+	fingerprint_result_t fp_mono = { 0 };
 
 	TEST_BEGIN("stereo_mono_differ");
 

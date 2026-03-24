@@ -121,15 +121,16 @@ function Invoke-AcoustIdLookup {
     for ($attempt = 0; $attempt -le $maxRetries; $attempt++) {
         $script:lastRequestTime = [datetime]::UtcNow
         try {
-            $body = @{
-                client      = $acoustIdKey
-                meta        = "recordings"
-                duration    = $DurationSec
-                fingerprint = $Fingerprint
-            }
-            $response = Invoke-WebRequest -Uri "https://api.acoustid.org/v2/lookup" `
-                -Method POST -Body $body -UseBasicParsing -TimeoutSec 15
-            $json = $response.Content | ConvertFrom-Json
+            $wc = New-Object System.Net.WebClient
+            $nvc = New-Object System.Collections.Specialized.NameValueCollection
+            $nvc.Add("client", $acoustIdKey)
+            $nvc.Add("meta", "recordings")
+            $nvc.Add("duration", [string]$DurationSec)
+            $nvc.Add("fingerprint", $Fingerprint)
+            $responseBytes = $wc.UploadValues(
+                "https://api.acoustid.org/v2/lookup", "POST", $nvc)
+            $responseStr = [System.Text.Encoding]::UTF8.GetString($responseBytes)
+            $json = $responseStr | ConvertFrom-Json
             if ($json.status -eq "ok" -and $json.results) {
                 foreach ($result in $json.results) {
                     if ($result.recordings) {
@@ -158,14 +159,14 @@ function Invoke-AcoustIdLookup {
             }
             return $null
         } catch {
-            $statusCode = $_.Exception.Response.StatusCode.value__
-            if ($statusCode -eq 429 -or $statusCode -ge 500) {
-                Write-Warning "  AcoustID HTTP $statusCode, backing off ${backoffMs}ms"
+            $msg = $_.Exception.Message
+            if ($msg -match "429|50[0-9]") {
+                Write-Warning "  AcoustID HTTP error, backing off ${backoffMs}ms: $msg"
                 Start-Sleep -Milliseconds $backoffMs
                 $backoffMs *= 2
                 continue
             }
-            Write-Warning "  AcoustID lookup failed: $_"
+            Write-Warning "  AcoustID lookup failed: $msg"
             return $null
         }
     }
@@ -194,6 +195,8 @@ Write-Host "Found $($archives.Count) archive(s) to process"
 
 # ── Process each archive ───────────────────────────────────────────
 
+$cleanedAlbumDirs = @{}
+
 foreach ($archive in $archives) {
     $filename = $archive.Name
     # Parse album name: text before first " - "
@@ -220,6 +223,16 @@ foreach ($archive in $archives) {
             Write-Host "  Extracting $filename..."
             if (-not (Test-Path $albumDir)) {
                 New-Item -ItemType Directory -Path $albumDir -Force | Out-Null
+            }
+
+            # On re-extraction, clean old audio files to prevent _2 duplicates.
+            # Track cleaned dirs so multi-archive albums (e.g. SC55) only clean once.
+            $albumKey = $albumDir.ToLower()
+            if ($Force -and -not $cleanedAlbumDirs.ContainsKey($albumKey)) {
+                Get-ChildItem $albumDir -File | Where-Object {
+                    $_.Extension -match '^\.(mp3|ogg|flac)$'
+                } | Remove-Item -Force
+                $cleanedAlbumDirs[$albumKey] = $true
             }
 
             # Extract to a temp dir first, then flatten

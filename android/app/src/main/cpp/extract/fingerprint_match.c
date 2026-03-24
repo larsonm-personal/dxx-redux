@@ -20,11 +20,11 @@
 
 /* ── Matching parameters ──────────────────────────────────────────── */
 
-#define MAX_OFFSET          15
-#define DURATION_TOLERANCE  0.10f
-#define MAX_ENTRIES         4096
-#define MAX_NAME            128
-#define MAX_DISC_ID         128
+#define MAX_OFFSET         15
+#define DURATION_TOLERANCE 0.10f
+#define MAX_ENTRIES        4096
+#define MAX_NAME           128
+#define MAX_DISC_ID        128
 
 /* ── Data ─────────────────────────────────────────────────────────── */
 
@@ -52,7 +52,7 @@ static int sw_popcount(uint32_t x)
 {
 	x = x - ((x >> 1) & 0x55555555u);
 	x = (x & 0x33333333u) + ((x >> 2) & 0x33333333u);
-	return (int)((((x + (x >> 4)) & 0x0F0F0F0Fu) * 0x01010101u) >> 24);
+	return (int) ((((x + (x >> 4)) & 0x0F0F0F0Fu) * 0x01010101u) >> 24);
 }
 #define POPCNT(x) sw_popcount(x)
 #endif
@@ -66,24 +66,26 @@ static float fp_similarity(const uint32_t *a, int a_len,
 	int la = a_len, lb = b_len;
 	if (offset > 0) {
 		if (offset >= lb) return 0.0f;
-		pb += offset; lb -= offset;
+		pb += offset;
+		lb -= offset;
 	} else if (offset < 0) {
 		if (-offset >= la) return 0.0f;
-		pa += (-offset); la -= (-offset);
+		pa += (-offset);
+		la -= (-offset);
 	}
 	int overlap = la < lb ? la : lb;
 	if (overlap < 10) return 0.0f;
 	long total = 0;
 	for (int i = 0; i < overlap; i++)
 		total += POPCNT(pa[i] ^ pb[i]);
-	return 1.0f - (float)total / ((float)overlap * 32.0f);
+	return 1.0f - (float) total / ((float) overlap * 32.0f);
 }
 
 static float best_similarity(const entry_t *a, const entry_t *b)
 {
 	/* Duration pre-filter */
 	if (a->duration_ms > 0 && b->duration_ms > 0) {
-		float ratio = (float)a->duration_ms / (float)b->duration_ms;
+		float ratio = (float) a->duration_ms / (float) b->duration_ms;
 		if (ratio < 1.0f - DURATION_TOLERANCE || ratio > 1.0f + DURATION_TOLERANCE)
 			return 0.0f;
 	}
@@ -122,8 +124,14 @@ static const char *parse_str(const char *p, const char *end, char *buf, int blen
 static const char *parse_int(const char *p, const char *end, int *out)
 {
 	int neg = 0, v = 0;
-	if (p < end && *p == '-') { neg = 1; p++; }
-	while (p < end && *p >= '0' && *p <= '9') { v = v * 10 + (*p - '0'); p++; }
+	if (p < end && *p == '-') {
+		neg = 1;
+		p++;
+	}
+	while (p < end && *p >= '0' && *p <= '9') {
+		v = v * 10 + (*p - '0');
+		p++;
+	}
 	*out = neg ? -v : v;
 	return p;
 }
@@ -134,17 +142,27 @@ static const char *skip_val(const char *p, const char *end)
 	if (p >= end) return p;
 	if (*p == '"') {
 		p++;
-		while (p < end && *p != '"') { if (*p == '\\') p++; p++; }
+		while (p < end && *p != '"') {
+			if (*p == '\\') p++;
+			p++;
+		}
 		if (p < end) p++;
 		return p;
 	}
 	if (*p == '{' || *p == '[') {
 		char open = *p, close = (*p == '{') ? '}' : ']';
-		int depth = 1; p++;
+		int depth = 1;
+		p++;
 		while (p < end && depth > 0) {
 			if (*p == open) depth++;
 			else if (*p == close) depth--;
-			else if (*p == '"') { p++; while (p < end && *p != '"') { if (*p == '\\') p++; p++; } }
+			else if (*p == '"') {
+				p++;
+				while (p < end && *p != '"') {
+					if (*p == '\\') p++;
+					p++;
+				}
+			}
 			p++;
 		}
 		return p;
@@ -173,32 +191,45 @@ static int load_db(const char *data, int len)
 {
 	const char *p = data, *end = data + len;
 	p = skip_ws(p, end);
-	if (p >= end || *p != '[') { fprintf(stderr, "Expected JSON array\n"); return -1; }
+	if (p >= end || *p != '[') {
+		fprintf(stderr, "Expected JSON array\n");
+		return -1;
+	}
 	p++;
 
 	while (s_count < MAX_ENTRIES) {
 		p = skip_ws(p, end);
 		if (p >= end || *p == ']') break;
-		if (*p == ',') { p++; continue; }
-		if (*p != '{') { p++; continue; }
+		if (*p == ',') {
+			p++;
+			continue;
+		}
+		if (*p != '{') {
+			p++;
+			continue;
+		}
 		p++;
 
-		char name[MAX_NAME] = {0};
-		char disc_id[MAX_DISC_ID] = {0};
-		char fp_b64[8192] = {0};
+		char name[MAX_NAME] = { 0 };
+		char disc_id[MAX_DISC_ID] = { 0 };
+		char fp_b64[8192] = { 0 };
 		int track = 0, dur = 0;
 
 		while (p < end && *p != '}') {
 			p = skip_ws(p, end);
 			if (p >= end || *p == '}') break;
-			if (*p == ',') { p++; continue; }
+			if (*p == ',') {
+				p++;
+				continue;
+			}
 
-			char key[32] = {0};
+			char key[32] = { 0 };
 			p = parse_str(p, end, key, sizeof(key));
 			if (!p) break;
 			p = skip_ws(p, end);
 			if (p >= end || *p != ':') break;
-			p++; p = skip_ws(p, end);
+			p++;
+			p = skip_ws(p, end);
 
 			if (strcmp(key, "name") == 0)
 				p = parse_str_or_null(p, end, name, sizeof(name));
@@ -219,12 +250,13 @@ static int load_db(const char *data, int len)
 		if (fp_b64[0] && dur > 0) {
 			uint32_t *raw = NULL;
 			int raw_len = 0, alg = 0;
-			if (chromaprint_decode_fingerprint(fp_b64, (int)strlen(fp_b64),
-			                                   (void **)&raw, &raw_len, &alg, 1) == 1 && raw) {
+			if (chromaprint_decode_fingerprint(fp_b64, (int) strlen(fp_b64),
+			                                   (void **) &raw, &raw_len, &alg, 1) == 1 &&
+			    raw) {
 				entry_t *e = &s_entries[s_count];
-				e->raw_fp = (uint32_t *)malloc((size_t)raw_len * sizeof(uint32_t));
+				e->raw_fp = (uint32_t *) malloc((size_t) raw_len * sizeof(uint32_t));
 				if (e->raw_fp) {
-					memcpy(e->raw_fp, raw, (size_t)raw_len * sizeof(uint32_t));
+					memcpy(e->raw_fp, raw, (size_t) raw_len * sizeof(uint32_t));
 					e->fp_len = raw_len;
 					e->duration_ms = dur;
 					e->track_num = track;
@@ -262,7 +294,7 @@ int main(int argc, char **argv)
 
 	float threshold = 0.4f;
 	if (argc >= 3) {
-		threshold = (float)atof(argv[2]);
+		threshold = (float) atof(argv[2]);
 		if (threshold <= 0.0f || threshold > 1.0f) {
 			fprintf(stderr, "Invalid threshold: %s\n", argv[2]);
 			return 1;
@@ -270,17 +302,23 @@ int main(int argc, char **argv)
 	}
 
 	FILE *f = fopen(argv[1], "rb");
-	if (!f) { fprintf(stderr, "Cannot open %s\n", argv[1]); return 1; }
+	if (!f) {
+		fprintf(stderr, "Cannot open %s\n", argv[1]);
+		return 1;
+	}
 	fseek(f, 0, SEEK_END);
 	long sz = ftell(f);
 	fseek(f, 0, SEEK_SET);
-	char *data = (char *)malloc(sz + 1);
-	if (!data) { fclose(f); return 1; }
+	char *data = (char *) malloc(sz + 1);
+	if (!data) {
+		fclose(f);
+		return 1;
+	}
 	fread(data, 1, sz, f);
 	data[sz] = '\0';
 	fclose(f);
 
-	int n = load_db(data, (int)sz);
+	int n = load_db(data, (int) sz);
 	free(data);
 	if (n <= 0) {
 		fprintf(stderr, "No entries loaded\n");
