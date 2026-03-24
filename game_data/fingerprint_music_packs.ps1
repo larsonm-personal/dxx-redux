@@ -20,6 +20,10 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path "$PSScriptRoot/..").Path
+
+# Resolve cmake and other tool paths
+. "$repoRoot\android\test_env.ps1"
+
 $musicDir = Join-Path $PSScriptRoot "music"
 $depBase = (Get-Content "$repoRoot/dependency_base.txt" -Raw).Trim()
 
@@ -45,9 +49,9 @@ function Get-7zaPath {
     $onPath = Get-Command 7z -ErrorAction SilentlyContinue
     if ($onPath) { return $onPath.Source }
     # Try to download
-    $result = & "$PSScriptRoot/get_7zip.ps1"
+    $result = & "$repoRoot/android/get_deps/get_7zip.ps1"
     if ($result -and (Test-Path $result)) { return $result }
-    Write-Error "7za.exe not found. Run game_data/get_7zip.ps1 or install 7-Zip"
+    Write-Error "7za.exe not found. Run android/get_deps/get_7zip.ps1 or install 7-Zip"
 }
 
 $7za = Get-7zaPath

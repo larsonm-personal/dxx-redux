@@ -35,38 +35,24 @@ if (Test-Path $configPath) {
 }
 Write-Host "Match threshold: $matchThreshold"
 
-# ── Ensure fingerprint matching tool is built ───────────────────────
-# We need fingerprint_cd.exe for chromaprint decoding (to compare fingerprints).
-# Instead of reimplementing XOR-popcount in PowerShell, we use a simpler approach:
-# compare base64 chromaprint strings for exact matches (same source = same fp),
-# and use duration as a secondary filter.
-#
-# For true similarity matching, we'd need the C code. For now, we detect
-# exact duplicates (same chromaprint string) and near-duplicates by comparing
-# the first 100 chars of the chromaprint + duration within 10%.
+# ── Ensure fingerprint_match.exe is available ───────────────────────
+# Uses the C tool (XOR-popcount with offset alignment) for proper matching.
+# String prefix comparison does NOT work across different audio encodings.
 
-function Test-FingerprintDuplicate {
-    param(
-        [string]$AlbumFp,
-        [int]$AlbumDurationMs,
-        [string]$CdFp,
-        [int]$CdDurationMs
-    )
-    # Exact match
-    if ($AlbumFp -eq $CdFp) { return $true }
+$buildDir = Join-Path $repoRoot "android/tests/build"
+$matchExe = Join-Path $buildDir "Release/fingerprint_match.exe"
 
-    # Duration must be within tolerance
-    if ($AlbumDurationMs -le 0 -or $CdDurationMs -le 0) { return $false }
-    $ratio = [double]$AlbumDurationMs / [double]$CdDurationMs
-    if ($ratio -lt 0.90 -or $ratio -gt 1.10) { return $false }
-
-    # Compare fingerprint prefix (first 100 chars which encode ~25 frames)
-    # Same encoding of the same audio produces identical chromaprints
-    $prefixLen = [math]::Min(100, [math]::Min($AlbumFp.Length, $CdFp.Length))
-    if ($prefixLen -lt 20) { return $false }
-    $ap = $AlbumFp.Substring(0, $prefixLen)
-    $cp = $CdFp.Substring(0, $prefixLen)
-    return $ap -eq $cp
+if (-not (Test-Path $matchExe)) {
+    Write-Host "Building fingerprint_match.exe..."
+    . "$repoRoot\android\test_env.ps1"
+    if (-not (Test-Path $buildDir)) { New-Item -ItemType Directory -Path $buildDir | Out-Null }
+    Push-Location $buildDir
+    & cmake "$repoRoot/android/app/src/main/cpp/extract" -DCMAKE_BUILD_TYPE=Release 2>&1 | Out-Null
+    & cmake --build . --config Release --target fingerprint_match -- /p:ErrorLimit=10 2>&1 | Out-Null
+    Pop-Location
+    if (-not (Test-Path $matchExe)) {
+        Write-Error "Failed to build fingerprint_match.exe"
+    }
 }
 
 # ── Load existing known_discs.json5 ────────────────────────────────
@@ -107,59 +93,139 @@ Write-Host "Found $($albumFiles.Count) album info files"
 # Sort alphabetically by album name
 $albumFiles = $albumFiles | Sort-Object { $_.Directory.Name }
 
-# Process albums
-$albumEntries = @()
-$duplicateNotes = @()
-$totalTracks = 0
-$totalDuplicates = 0
+# ── Build flat JSON for fingerprint_match.exe ──────────────────────
+# Combine CD fingerprints + album fingerprints into a single JSON array
 
+$cdDiscIds = @{}
+foreach ($cd in $cdFingerprints) { $cdDiscIds[$cd.DiscId] = $true }
+
+$flatEntries = @()
+foreach ($cd in $cdFingerprints) {
+    $flatEntries += [ordered]@{
+        name        = if ($cd.TrackName) { $cd.TrackName } else { "" }
+        disc_id     = $cd.DiscId
+        track       = $cd.TrackNum
+        duration_ms = $cd.DurationMs
+        chromaprint = $cd.Chromaprint
+    }
+}
+
+# Load album tracks and collect them for the flat JSON + later output
+$albumInfos = @()
 foreach ($file in $albumFiles) {
     $raw = Get-Content $file.FullName -Raw
     $stripped = $raw -replace '//[^\n]*', '' -replace '/\*[\s\S]*?\*/', ''
     $info = $stripped | ConvertFrom-Json
-
     $albumName = $info.album
-    # Slugify for ID: lowercase, replace non-alphanum with hyphen, collapse dashes
     $albumId = ($albumName.ToLower() -replace '[^a-z0-9]+', '-').Trim('-')
 
-    $tracks = @()
     $trackNum = 1
+    $tracksList = @()
+    foreach ($t in $info.tracks) {
+        $baseName = [System.IO.Path]::GetFileNameWithoutExtension($t.filename)
+        $flatEntries += [ordered]@{
+            name        = $baseName
+            disc_id     = $albumId
+            track       = $trackNum
+            duration_ms = $t.duration_ms
+            chromaprint = $t.chromaprint
+        }
+        $tracksList += [PSCustomObject]@{
+            TrackNum    = $trackNum
+            Filename    = $t.filename
+            BaseName    = $baseName
+            Chromaprint = $t.chromaprint
+            DurationMs  = $t.duration_ms
+            AcoustidName = $t.acoustid_name
+        }
+        $trackNum++
+    }
+    $albumInfos += [PSCustomObject]@{
+        Id     = $albumId
+        Label  = $albumName
+        Tracks = $tracksList
+    }
+}
+
+# Write temp flat JSON (no BOM -- the C parser doesn't handle BOM)
+$tempJson = Join-Path $repoRoot "temp/dedup_fingerprints.json"
+$jsonText = $flatEntries | ConvertTo-Json -Depth 5
+[System.IO.File]::WriteAllText($tempJson, $jsonText, [System.Text.UTF8Encoding]::new($false))
+Write-Host "Wrote $($flatEntries.Count) entries to temp JSON for matching"
+
+# ── Run fingerprint_match.exe ──────────────────────────────────────
+
+Write-Host "Running fingerprint_match.exe (threshold $matchThreshold)..."
+$matchStderrFile = Join-Path $repoRoot "temp/dedup_match_stderr.txt"
+$matchStdoutFile = Join-Path $repoRoot "temp/dedup_match_stdout.json"
+$proc = Start-Process -FilePath $matchExe -ArgumentList $tempJson, $matchThreshold `
+    -RedirectStandardOutput $matchStdoutFile -RedirectStandardError $matchStderrFile `
+    -NoNewWindow -Wait -PassThru
+if (Test-Path $matchStderrFile) {
+    Get-Content $matchStderrFile | ForEach-Object { Write-Host $_ }
+}
+if ($proc.ExitCode -ne 0) {
+    Write-Error "fingerprint_match.exe exited with code $($proc.ExitCode)"
+}
+$matchStdout = Get-Content $matchStdoutFile -Raw
+
+$allPairs = $matchStdout | ConvertFrom-Json
+
+# Filter to CD-vs-Album pairs and build lookup: "albumId|trackNum" -> best CD match
+$dupLookup = @{}
+foreach ($pair in $allPairs) {
+    $aIsCd = $cdDiscIds.ContainsKey($pair.a_disc)
+    $bIsCd = $cdDiscIds.ContainsKey($pair.b_disc)
+    # We want exactly one side to be a CD and the other an album
+    if ($aIsCd -eq $bIsCd) { continue }
+    if ($aIsCd) {
+        $key = "$($pair.b_disc)|$($pair.b_track)"
+        $source = "$($pair.a_disc) track $($pair.a_track) ($($pair.a_name))"
+        $score = $pair.score
+    } else {
+        $key = "$($pair.a_disc)|$($pair.a_track)"
+        $source = "$($pair.b_disc) track $($pair.b_track) ($($pair.b_name))"
+        $score = $pair.score
+    }
+    # Keep the best match for each album track
+    if (-not $dupLookup.ContainsKey($key) -or $dupLookup[$key].Score -lt $score) {
+        $dupLookup[$key] = [PSCustomObject]@{ Source = $source; Score = $score }
+    }
+}
+Write-Host "Found $($allPairs.Count) total pairs, $($dupLookup.Count) album tracks matching CD tracks"
+
+# ── Build album entries with duplicate info ─────────────────────────
+
+$albumEntries = @()
+$totalTracks = 0
+$totalDuplicates = 0
+
+foreach ($albumInfo in $albumInfos) {
+    $tracks = @()
     $albumDuplicates = @()
 
-    foreach ($t in $info.tracks) {
+    foreach ($t in $albumInfo.Tracks) {
         $totalTracks++
-
-        # Check for duplicate against CD tracks
-        $isDuplicate = $false
-        $dupSource = $null
-        foreach ($cd in $cdFingerprints) {
-            if (Test-FingerprintDuplicate -AlbumFp $t.chromaprint -AlbumDurationMs $t.duration_ms `
-                -CdFp $cd.Chromaprint -CdDurationMs $cd.DurationMs) {
-                $isDuplicate = $true
-                $dupSource = "$($cd.DiscLabel) track $($cd.TrackNum) ($($cd.TrackName))"
-                break
-            }
-        }
-
-        # Track name: filename without extension
-        $baseName = [System.IO.Path]::GetFileNameWithoutExtension($t.filename)
+        $key = "$($albumInfo.Id)|$($t.TrackNum)"
+        $isDuplicate = $dupLookup.ContainsKey($key)
+        $dupSource = if ($isDuplicate) { $dupLookup[$key].Source } else { $null }
 
         $trackEntry = [ordered]@{
-            track       = $trackNum
+            track       = $t.TrackNum
             type        = "audio"
-            name        = $baseName
-            chromaprint = $t.chromaprint
-            duration_ms = $t.duration_ms
+            name        = $t.BaseName
+            chromaprint = $t.Chromaprint
+            duration_ms = $t.DurationMs
         }
-        if ($t.acoustid_name) {
-            $trackEntry["acoustid_name"] = $t.acoustid_name
+        if ($t.AcoustidName) {
+            $trackEntry["acoustid_name"] = $t.AcoustidName
         }
 
         if ($isDuplicate) {
             $totalDuplicates++
             $albumDuplicates += [PSCustomObject]@{
-                TrackNum = $trackNum
-                Filename = $t.filename
+                TrackNum = $t.TrackNum
+                Filename = $t.Filename
                 Source   = $dupSource
             }
         }
@@ -169,12 +235,11 @@ foreach ($file in $albumFiles) {
             IsDuplicate = $isDuplicate
             DupSource   = $dupSource
         }
-        $trackNum++
     }
 
     $albumEntries += [PSCustomObject]@{
-        Id         = $albumId
-        Label      = $albumName
+        Id         = $albumInfo.Id
+        Label      = $albumInfo.Label
         Tracks     = $tracks
         Duplicates = $albumDuplicates
     }
@@ -270,7 +335,7 @@ for ($ai = 0; $ai -lt $albumEntries.Count; $ai++) {
     $albumLines += "      `"type`": `"album`","
     $albumLines += "      `"tracks`": ["
 
-    $activeTracks = $album.Tracks | Where-Object { -not $_.IsDuplicate }
+    $activeTracks = @($album.Tracks | Where-Object { -not $_.IsDuplicate })
     for ($ti = 0; $ti -lt $activeTracks.Count; $ti++) {
         $t = $activeTracks[$ti]
         $e = $t.Entry
@@ -304,7 +369,7 @@ if ($DryRun) {
     Write-Host "`n--- DRY RUN: would write $($output.Count) lines to $dbPath ---"
     Write-Host "Albums to add: $($albumEntries.Count)"
     foreach ($album in $albumEntries) {
-        $active = ($album.Tracks | Where-Object { -not $_.IsDuplicate }).Count
+        $active = @($album.Tracks | Where-Object { -not $_.IsDuplicate }).Count
         $dupes = $album.Duplicates.Count
         Write-Host "  $($album.Label): $active tracks ($dupes duplicates removed)"
     }
@@ -313,7 +378,7 @@ if ($DryRun) {
     Write-Host "`nWrote $($output.Count) lines to $dbPath"
     Write-Host "Albums added: $($albumEntries.Count)"
     foreach ($album in $albumEntries) {
-        $active = ($album.Tracks | Where-Object { -not $_.IsDuplicate }).Count
+        $active = @($album.Tracks | Where-Object { -not $_.IsDuplicate }).Count
         $dupes = $album.Duplicates.Count
         Write-Host "  $($album.Label): $active tracks ($dupes duplicates removed)"
     }

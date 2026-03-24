@@ -1,4 +1,4 @@
-// Known disc database for BIN/CUE CD image identification.
+﻿// Known disc database for BIN/CUE CD image identification.
 // Per-track SHA1 hashes match redump convention (hash of full raw 2352-byte sectors).
 // Disc matching: compare SHA1s in order from track 1; the disc with the most
 // consecutive matches from the beginning wins.
@@ -566,6 +566,553 @@
         {"track": 14, "type": "audio", "sha1": "0ddb5b49ec81d72996a8848784763b80e73c3f09", "chromaprint": "AQADE0qSKoySJUpQakc_nCycGx93hJe0Qz9-4Q_qzbDDoDy-DdqP57iUwz90vFLwai9444d-9DpCekJDaTiH50qMWlmJX_iJkI9RJjvsfWCkpzueLcGNkxSuHrp2wV8eXOqIM3hrYr8LpUdveHdRGblwBteFXofXHdlP_NEh-oKP50Is64gunMkGxzT65HhKfNWHskN-wx_u48XRf7g04RTyC8l0HN_xwyr6HD8qlFw04Twu_LAbfMYrnEek48xi5MgJv4K46fiRH07Ex6is4yx6yTCJ0Ef1wUenvEel6UKOnziNJspxJsgqJSOeCTr6GGFG_diPnJtwHj3kw7geHx_EL8FF-NlxOGIG9XD3oTce9IfvHHIYB9eEB2b84MQ9bHI5eFnjo-SCU3kQNE4ifET0fDh6WsUPrTr8ojLjo4e7BRdM7tC54VKFf0PP4EWvC1o-HtDI4Iep4Qry1dhefFEO7yG6S8ZzVISRT8ehncT1C2gXWISO7xOOH8XRFxcedEPLo-lxnGgJ9wAzHdqFHzj8CWJ4PMQbgfeRq4ePVsg91DpE9WiJEzlqfBeRHzuJw_ahXbh3fDKuot5wGFE1oix-nniuobnxP3h-5PiO44I_1Bc-oh8uQcen4Cl0HEZ_5AZa6oKP_AIk53BOHAf1ox5x3IEmqnjh7miHG_0JH8UVrYX248SPHxcO8cXxDZeIkzjewTK44zAOfcdHiN-HasuP98al4ke59AN1XPj64jv-Qt9gXEKPlseP79Dx_cgPn-h1dEUOkxJ-qC4Fv-Bxw_gP_tCFr0JPo59h8fiDHzqu44F7fMc74YM-nIBvXMfxHacKVzjBHz9efMPPCc5p4JtgQlMPHuXh4__wGTquwVWP_7hwHieCE3aQ3yqOljweFKIa4jfugL9gfvDxFx_-DSK-_aDQH_3xjTis47iyQx9EbuhxHfWOwzjynMAlKceLg3pI4Tle5BScLYZ8PDuOkuvQc4UvLehxoyx84hnEG0duoZ3w1biF8jgaSvGHHD-6FmFIFpV5-Gg5o0-Rxod-5Fk8_IGP4wnxI_8gl4d_o89RHeZy6IH42AEHHdfh44d_FOEjHX7Ogfzh48enwMezGCmSbRoeCy9-_HhmE36y4tSJfJBzo2txNpB-9AnCw_mFH_0sJBN-pKeHvbC6B3twykf64TvxQ5d0mMKfLsgVBQ4vHDnxxLhIrdDCBT9qPBvBrzj-Q8eXDeeBVNTx48Q_nPCLCz7-Ix-M4zlu_HjhwxdEcjieSEiPPjQ6Hb4o5CL8AzdeCsZxH_6hdzij43h6pKLwFyd8dMd03Bl8csjxB8e9Q_yHqkcL8dLxY4adCd2XoQ90Hg68BRfUExduHFZ7QOR8nHihr4ePs8dxGfYLB8e5wV_x49AP2-g__OhD2McPXTgsIx9x-DnSuPiPC75w8zh6o9de8Ftg_fgOvnAVHvoG_8B1PHgWGLXx49MBTT9M4sU_XPBxXMdhkg6s4-iPoz9g4jnwX8Ml_LiGwxkOHD-gH_8G70KvBfcO_Sh_pBzxBD7uBWkvQXvQOhbSqoXlD1lufIN-hD8-wsZx5EcrHd-hHdRDfMUlvDiJHz5-HI6KQ8dJ43jg9bg9GO2OByH848dx-Dss87g0PDtS_OB2_CREBzVb8EWtEGeKb3CHK4coD9cF-NnQ97iEfvjhi_jh5-gXzihc6vCPFzDOQXiPDw9MHBeuQy4Ao4wSAggBkCLQGWKoUAAIKACQFgAICAEASIoEEgAYQRAwACBiiAAQCNCAAAgYYoAiVgnBCDDAEAUsFQwy4QhRSBOjkJBQGKWoAAIgSQxT1AoGBFHCAgiAkEgxjBUUBhjDBMZAAOAAAoRRApgwCggFHAFAUAQoIYIYIARRAAChiFDAOGiAIQIwgwQjACCEgHDUIqQMtIo5DJAJQAkADEIAMQchQAwIYYRgiAEAmHBEACYIcQJYwRxzQihpiUFCAwmYpYgoJ4wSSAiBnFMMIQWEMYwyy6xQCAAihCLOAOiMcEAR4jhFwAnjACBQAKWcAN4BgIDhAhFlADViMcqsEYYoJYByABiDmGLIACCUAwoAQMQQADFnKHDAMKAkAQQBSwkCSBABkCLOEoWAVAIoZSEQhAHgEKPgGUaAEMAhBoh1DCjpgFZIESSIBYtZYoAASoEDgRLCUAAYEMAYBYAF2jimkEECMACFIwwRIRgiRgAgDBLKGGGIAMYYBiSCgiHKDDDHOGCkA4ABZQFx1DxiHTDCYKYEIAgxo5wwSgAiqGIGaXIEACIYJpwCRAgAiEBEBIMdAIYJIISg0jkgrEJKCcKAUEwpKylQABgwFIEKCAAIMwwYYRSihhCCjFBWKAsMs8ISZQiSQhCgLFPUlKsEBAACARAARgGBhGBOKSScs5IA5zjwVhgnMKHWSUOsAYwB5AyzQAjEnPAAAaIABAgBARhxxFAmBAGIIAEU9AAsAQ", "duration_ms": 100060},
         {"track": 15, "type": "audio", "sha1": "e39ce6fec13db21e21e3cfcf20713feddea34753", "chromaprint": "AQADFEo0JaGikPjxaLiVoysR5oZ0HT_-DD0SfugbgcRziWhDHHl2aGEcXB9yKUf4qPCTQEdIHteRNYkeKO2PPgnChC6e48tTXHiO88F_fIocNLGLcpuGB0l-xHvBD3c04i96oRFzXDme40cjdYUr6qijIzeqPVCUcNBzhErEw89w4UEpGfkLtbLRKMdEttD34zueG41ThHKm4wjzpNAXHumPMtlxCmFsozOS4yHmZLjmwBfOxMg7QVHEI-wkI3-KH6ehXTmaT8iPWlORskK5Q0L1gSWDNzmuSIcY40rgdYcn9BkeC1pIoTrkFvlxH_0SNFUG_EiWvwhvkLPR8nB9vEF6aNuRH--CoqmOX0c4LxB59Dr44NzBM4WWS6gV5AfTKqAmUUR_XEPYEXcgPYGa8Ggq4VWO0_iOS-jDfBCzHXlpIXygq8Z1nEzBRE2E0CLOHs21bgi5Hu1BTUNFod-KRhvwcDjnBHIkpvCOS3iUGmHYB32I_MEfXDIaMQy0TRGuo4lbtPHxox6aE20cOE1yhMq0o4e_o_6IE_cR5jQ0HS8NPcR15M2MfmiuHDc6RkdCHqEI5nD34Ek7HFucnTiNxGWQRjp6oRf-wFYS48fJPPiNh8FffDh2If2RNDl-PAXHHWcOxwjXKOC2GvrGCYd2NCd-fFu4oPMCo1OPk0XPHA2JI-Rh9Mhz6PkRShx8CeZynA-uoqtwNLmOPjtyHjqacUcfGaqe49oRG80phE8UI2l5kGhiCWcDOy0e-DkY5cKPL0TTHX0u5GEhXkee44xS_MfDow-aHw_yQ2iHVEd4HaUGMU-C_PD0D-eOysdzPKiO5ifyQ-h3QUseGfnx4ztq6Qjzpkia4xv6HZ6t4JLBysfBKPpkxMclFhoLf4e-BO3xKEWfQczR4vTQqFnQH8-hHekt9MctHE3F4w2R14V43gi94z2O5ugXXMKU5-iZYu6EJ8MvND9qMUWunFCTI9Tg6_gj-CuQidzBTPly6N3wfeiL5if0hcSNZ9mCHs6OHi9z9El0GA-hDO2PB-eRH80ZdJseXHHwBZfQREd7PMG8HM3BHJWEf_Bp3DjSHuIjxCW6p6jMCmY_5IGeIt_RHOOF40ZaG_p05EczTQn6Czl5KCfyGOdRktmQ_tAlpEnGosl3XA--I7yG5IeJvsQTRPQPLZOP8BI-oVlZTC5-JCeDnDv-CT_65fBzhEomCdKuFNlPnGiFPEbCY3oz3MI_nDrCkIdGZsSZoqmioz9KEnoQqdmFf0G5FLl0qI7iI1X4CRUp7HqQS4GOkF5hnqgePDiPMJt0aP9wpUVzHaF_hP-hfDz6hciPIzyzQY8Qx8rR5B5OPEP4ZFCOFP0Y3MSPL7qO9IcelJUQpscvRCJpaA_y7MJ_hA-DQ4wl5KlyVD7eB3mgUamRwy-JqcfzI6lJhOl29McnoawSTCmPk0j-HPk-4cczNA9xLcib6EgUeRWeg9eJH8lS8QiPF8ePc7kQKYRGZniCesH2QSeDnDuuozzRx8gDtZEQRsGdcXgeo8e14UidcqjxH8-PmAIaJ5dQHveRb1GhvYh2vMQjyUKXB--DB6ElNC-Da8J9RFf6IN9TtGMIf9BEXchBD-VzOKQuMDPCSx203IixL6ikZcdzom_wHXlyNA9qRWlw5NKES0yFUH9CNCsLPccu5KHRw8x4VCryT9DyHuExPqjEZMQTH93z4i1yNN3Qh8FFxA-uSDn-BHmWojm0K0YePBEmspjyq3iPEGJPhLqOnh0eScLFow9eITycRoqFZ8d16EQXC2eO7kgnPpi0ZcWZAn0-hPkOddGFPJjyHA9-WAmPq_ARPke_NBDTMOiMP8Wz7AlRNczhfOim43qMjxVyhHl29DlOHdouI31xXFKO70PXB_mKP9CeoInn4YVM4YqPPhG2PYXI8cUZDal29MEjFSF-6IhO4SGb4yL-wZOP2B_UR8d15GGU4IqEWEKfBdr5BL-Ea0mU410KMQsR_jgr_BaaW5iO9kHzHtcRO0eyscYvHD_-o6my4haqMvAZpGpyQZN6PMKL6-h5aPmJWLji48KPkD20sMLF0HjmQV8-NGcQSjzaDF-N-jb2I7SIhHGCLkp2fDpGdcd_1C8aUcd_vHhT5DzYQ5O8Ij0NBxQQSADkGFFEISIWUUAQQrRFxhhhnCCGUMAEEE4woxAWhCiDFGXEACuBYQZIUQRSAhgkBCMHEEIQIIJZJRgBzjADhIEKACOME4IaAoQRCCIACFCCEUAQEcAJxwwgABqgCBKKKOcEEgABJpQhgAAAgTAUOgIIcIZBAhQAjggBAGVAECEhAEYQShgjyAgmgABGUAIMEEBZZ4kBjFHDBJFIMAUIE45DJYUiACgGACVAOMGEIEIIhgRwRiAGEBMAKQCQMMAAYZASTjhjiGAGCCOkEFQIJIAQABhgkBVKAKIYccIRQZBjijIjRBCJCeqAUEAYwQgpkBAhgEPAAAqcI0AYgBBRSAjKlANCACiCosY4Bwg0RAmlNAYSWLMEEYoQo6AAQkhniHCIMAEUAoABwwBRAggDpIEEEIEMkYQJIgzwRCkgGLCECSMgYcIIIYARUBEBtCDECMiAAQQQYhwVRgjmgTBASCCEAEhBogigAAACgDBACcABAYIAQ4gAwAAiGQAAMESAQoBRICwgkgLikBHKAYMEMcERIRygQAFmiBEKMEAEAQAwQdgAQCADCAPCKYIIIQYIbJUDgAGiCDEEALAIMQA5BQxnwAgGhBAEMCUIEwAIBixhQgBjgCCUCgMwIYIIAgCgQBgHhBJAASARQAQJYASDQAhClHLQcCGAYEgQAJAARgiADCBCGWcE8gABpBRCVBBCBAACEooMAUIIAZQ1QBEBFAGIAEMUQIARYAhRCggA", "duration_ms": 100266},
         {"track": 16, "type": "audio", "sha1": "eeacf74b64edaa0d4bad52b23604ceb7a44968f9", "chromaprint": "AQACKFGSSEqSRJKUBIePTxBPHNfx4kdH9DR8ohe-o4dVHDmOH0YOH4d2oxNhizh8nA2MQ3XhHsep48eOS7gEZSeFG8d1PDgOET9wvPgOdJKQo7AsS_iREzjE4zjxG-KF7zB51MehHRt64kd_OO4F6MGJwxfiHz46ZUJ0Ghca9MIxvRDFHPvw4T-OH_rx8Oh1XEcvHU3F4yWepeiUw6cHHdNp4tSCLz96Cfpx4lqNlB3xo2yPU0IuVGKI-9iPJlQkHA-64oef6bhMPIfVHLCD0zhjHD5zVFSm4gu0lQF--BNeGzsPqxkOPRgcijE-nEcTL8GVFX-IrtgP8UNf6MzRHz7eY3MR-sYzhGeM5ovwKQt0oj1-XIJP41mwahCP0YeN0GLQ78Z5NO9xR0P-oysfXIcOP0SrCx86Hz6h9vCPWgz6HA4do4-Gt0dP6MIv-KFxYw-xqYGOw4xxM3h2-KioCG_QscdnfIKyZ4c-Hoed4YaP-8TNYIcr4k1jtFFQ38Fhi8dF_PBd1AqOo79gN9CP0_jg44Sh4zAPnDh8HJcW44d8Az7Ow4d--PhxXAJ8HF-MF-Jh-Mbh44R44CJxAT4u3HjgF8dxHD4O6viR43gPXzhxpA5o6vCh__jxH3ZxHDcMXfBxHPDxw8dXmDzOsPCbGifR4-gLO-iDcIePHPYr6Dh-mD5QyBR6nEiR4xPeG8cPHxcOn_DBG_chHj_8BAdPDS9eSLIOnLCGEz9OAxSO0_jhE8eP2xAP3Itx-AzO4IQ-PPjg83g62Lhz4YeN7zjuIS9zXMlx5Id54Nlh_IKPi4sFtAqPT0TvwzmOHz7EkTgznPhU-Dgu-Dg_-MThF-Ij_EePoxGP4Ljh41phwz98HPlhEtBpINVhqiqOnGE6fPA_6D18xMZHAjkuwtKhE09h9zh0Bi9-HD-O8_jxAL3RFz_S48ZF5Ljh4_jhF_8BvzheQ_CD8PjRF7Z4hMcLTRV8fEds-CU-hD86Hj56HH3h4zrqD13u4IeOHyc_tNKFi7rRo_mgShXxotPxLYeP6lCe42jD48E1OJc2fNCOK1Me7MIpnBr6BN6PPoRKFX0WXPABp7EQ0zgriABMMAeeNWAYRq1wjBkBkHBCWKoEFeZw6yQAyzBrzTPCCEWAKEAYYoQxSCAhkcJOAIwIAY4AKQwAghABCFEKSAIMEQIQBigAwjDgAKPGAWQkEIA5IJhxghFjjGMAGQCcEAYIIgQBTACBJCRQKMEIYAAoYAAAFAlgmAAOASGFEMIbACTRCjCiGDBKCAGUAIgABAATyADgGnAQOIeccEI4RI0BRjuhhBBGOCWkU0o5ZZRQQiwGxHJKWCEsuAoIZoUYQlDiDLDGGmuNUE45KoDBVggDGFDWUWEOYwJZCpByAxBhrDLIEeaUMwg65QwAzCklhAPCAcaEEAZY4IARABglphBCOaAAIAZQqJQQximvtABCBSCMAE4xC5xwSoGgjANMEMQsgIoo6xwSTjkKqBMUSECsEEYBq41zTBgjVAOOISEEU0gB5IBS2AmgDCKOOkKAIERgoSQSJDHgGFUCMQEIIEIAAQQB", "duration_ms": 70953}
+      ]
+    },
+    // -- Album entries (from music packs, generated by update_known_discs_albums.ps1) --
+    // -- D1 macplay mp3
+    // duplicate: track 2 (02 Outerlimits.mp3) matches d1-mac-2nd-bincue track 3 ()
+    // duplicate: track 4 (04 Ether in the Air.mp3) matches d1-mac-2nd-bincue track 3 ()
+    // duplicate: track 6 (06 Virtual Tension.mp3) matches descent-mac-macplay track 7 ()
+    // duplicate: track 7 (07 Time for the Big Guns.mp3) matches descent-ii-destination-quartzon-usa-diamond-oem track 11 ()
+    // duplicate: track 11 (11 Industrial Accident.mp3) matches descent-mac-macplay track 12 ()
+    // duplicate: track 12 (12 Overdrive.mp3) matches descent-mac-macplay track 13 ()
+    {
+      "id": "d1-macplay-mp3",
+      "label": "D1 macplay mp3",
+      "type": "album",
+      "tracks": [
+        {"track": 1, "type": "audio", "name": "01 Primitive Rage", "chromaprint": "AQADtJGUTFkSMYS84yr2Hc5R_WjHIzUTfBIuXEsU5OGx7Yd24ST6BFcPh3UgnYGfCGGPUjrhfCPuBbkO59APpOmFRwOpF5ckEUf4oc8DMcaHkJSNr1oR_thG7MkkQjzuHOKXHGdI-Cl-pPLBdDR-OeiF0_COE2eLXLA-aCfY45mHMCfx59gcol-OUjt8Ilz0o--DKU5G4z5qZYGWijj4RCHCmcXbw7_QH9cSPGhKD8zxoCn1ID1qhR3-WNCewD_QfEZ-hDmzoqeFSwnKw88C7fxwonGyHP0DrYedCbXygC_OpEUtGuIWoptz3JeC9sdlYWoi6BWNMJeO6lhzItbxQ53CDPmMkjp89LiCfkEfnCHC_rClHe_hk7hhhZlw2FkI5zTuNvDkMEKN52CqC2KVRcMtIdzxJbiOF6FdQa9QURnySiUa92iP_-jRPAtyatBYmMqRB0-nwoUnZYivhMJ16LiO_rh2AZfRXEJFhZAPJnkOfTo88si1HdfhF5aPniGOwkeewOoFjSN-ZCGJ5qGFow_s4M0R84Kuw0etzPhRLjlcET1j_Ie2TSqav_iJZtGF68cPSTJxHjn44xXB57DoIvyOiwe35YIUEo6zB-F7TJ_xB46DCzaP9wgPnRnyjMGfEP9QPfCDPrlx8cOlCz0s_Uiv4zlE6diGWhlxfNrwH9_RVOjDA90U-EKvBZf0Qnvho3xwEbl03EYVLTl8hHJ4XBJ-FT2cjSneDC--o3xxdEyE5hyOcjnMFVLI5cIzNGJz9LhzQirRXDHCN3iPX8H9wN-GL7g05BGmQ3s-fNOFcjrC1MGZGZcOM46MXIea2Yi3Jcc_mMMdFyfRhw-aF_ltVF8CZYocpGPW4Lswq0JOHZ89KOLReYhW9FfwKCIRPoWo41cQP8MbuJtxU4LrdAivUdAfxCkzVHvRVDmeBhdj9MkQ5sdvPLwSaMlzhJZktEvkoHmQ63ilR1CjiEFISZrgFe1IDd_WoHGOXIJeRkiT_BhXRUO5EE8sIRLlGFqyKDt-RBcrdA_hmOgb9JkFf4mCe8gzTsMzB3LkwVsYhFYeob2RnkEpRcezB6ozhO9h9MEzI3yhjniYZA3y49OwPbGG_0ieLDlCUTme3PiyDCV1NOXxpsF9hOQgJs2Lsw9yXAzaZUZ_fCvSSMoOeYlkxCKjoA-Ox45wJQveo0bz408Qae3RkMf1BVp4o8-CX-if4D3UHc9y_IF5QTU6L5PwC_GUVviMpiKH8An048uRsxmqHz56rcGPV0ESfYGjG3mzGOaNSU2W4jym1ClC_dAvvDQi6csx5XhTtHfgJwp8HaH-odOyB6KPk0VeJYxw6ciVC0-Pig6mD2L1IfyDS9nRC0215HhwRU-GH32zIn1GaI2OmMcl9C78ICduiH_Rhwi6w7_wLUe6tdCsPEJJGn6INqIItQ-qFHlC-Nnx4ITP4YuQP4GYyMfbIFdm7OSEL0XTI24-PNahI6zC4I5wtriQC47uQG6OG-FzEbmOWkxha0bPQV5VVMuGHE5Do0-DnKiG5vTw49kyaCGV4_iXwU2Ibscf6OiZIEy348oVHE9gHatyJfgQ5kygL8e2H_WW4-GR50Go_RBHZkSf48qD3EOtkMSWUTk6HaGcPdBe5C32OHiCmg8cm0PEeIeiK8il409w5SjcHpNEPsF1C6HEQ6zy4GiqIZ-Ob0-GHzlzMHmG8HtwdM2K5i2eB-EPb4rQFfp4hMfXFc5xHn08fFvRC-eOMBL0ROiP9DWeD2_wHHmE8xAvWPoQOzueisSPNNfxH_4VyGEenIJFExqZ4xuap8it4yp8DZZdfJlG_ELKH33xBFr2oOeR5-jD4cfL40hp_NDJIn1ovBou_EN7I8tzwf5QPpCboR_YH_qKlMcXHp_xq_j14b7xI8wlqGKIHpnUuPjxyfhxTUE-SYGOWPtwHj41_DnyQ1x30Io6-BHyJwifHa-gE2EelD7-pMHDHOeM7gpSZ0V5XKqgL0R_ePyRcQp-hBu1DXeERwq0H8ej5BFOQ6xQPVOHH1fUCwz3BfqNfFmOkgc6Mh6cZ0Ot48ePI1cs1IIYMI9y9EUYNfgxOZ3hLiKRF6-glQv-HHkuPFYR1hcaNcdwEU-84GieI3zG4jkedDo8ZuiZCRnuM-gD_cfT499xIX_whrhxpI_YooeuDMg5obwQcwf1Q0f-D09Q7SdIvwi5SIFD8SHE8egZZD4lPMdZDs2DcJKGo320wKeHB_aPR5KR5hx-PB8ilTsucT30HrU-o_mCvMvxnbhzVExICddyOEZI5lCO_Cn4z3iOf_icomeowD9CKwtInSgvnKIjhM9y_GgmHR_-IyvpoqIhM1k0_EF1NA--RCG-4x_0BFWTobmC2xFOvC_OKyiPnsFzQXsMK-tQDf2DZg_-ClIeffBxJQMVd8MbpO-RRoyOHg-NT2hOoxKZCCd06mgeC2d2OBd-wfOhH_ngUYokUEe_4hfCbIVWnGieBf2IM0YTH2eYQX9gHoyO48XRb8QXNmjy4DsedE8H5wL1QTu-g-EniHnwD91HvMRLB6EuNHuCXMmh_UHzpMg1NEdvvBaFlwjLHeKLkLij49zQTy-aM8gZ6EdIS4XTDG8I59Lx4PCRjMgn5bi6452DF42Cqjm-HEydUABiALJACaoFEgIwAgQhgBEgEBAAKCcAsgg4wATBwAAhEBGKAMWIIaIBx4ABgBADABDACDAEQEAJxJgCSgiAgAAUCAGBAAQQQw0lAAgAGAECK4cYM1prIQgQgCBgGSCMGCAMMkACAQkAGAAFhVAKIUsUIQpoA4gRhAEGjABPGSMBIYJAZAQ3RgAAAAAQAQGYZYAzxAwjgiACBCNCIMOAAgJAoYwBCBgENBCAUGEYI4IYJgABAEgsEDHIGIEUwUJBQCiwCjAggBHAMGYAEk4oKwwQijCADHACKSEAAcoQYAQBhAFiEFQGEAUANQAIA4AwAhkDABEMCcAIBUQwAQBhBAAgkBCWGWCUAUQAQgwQBgiFiADAIwUgEOAYRIABUhAkgEAGIMEAA8wghhxCCChgBBHMECIAYAAQwgQAQAFABCAAEcEAQYIQAxARAgADgATAQAgAFcBYCAggBCAICAjBKQKAMU4JACAlDgmiBDBIkaUAQwaAAJQEQhAjwCTGAWGEEEgABoQABEnDgGBAEWEEUQYRAAQwxAoCiKBKACBAUIYZYBRABAmlCEAOAIagMooJwJSCAhgDFAAGK4MEoYAIAohgRAllABREUIUQYE4YIIwQQggmCHCEAEEMYAowhhRjBAjEgADAACGoEEIIg4QBgjDgoABAGMuAUo4QwoAgSAgBiFEGEGcAYgIIpqhABBhEAUUKJCCUAk0AoAARRgAgmAQCKWEVUAogYIBRAABgBGAGIAAAI8IAIoQTQBgAgEBGISEMcEIQwhSAAgAAHBBAUeOMAAxJRIwijhNBDBFGCCYQEYIIAagRQAjGFDBAIAGMI0RABghDBCiChDIQEWkKMYYxAgEhTgADABEGECGMkUIBAQAQDBAgBBMCMCYJA0BwYQg", "duration_ms": 184233},
+        {"track": 3, "type": "audio", "name": "03 The Escape", "chromaprint": "AQAAPku0JJqeILxC8NA_dPqRbuID-0Kf4WsGXjrCPCiZH_sDPQ9O5JjCNEHV4dIRPj4aDRpL2C_CTk_wMsG1aDjCPMEkB38CPTmO_JgeNJ6P87jR5CXyHaJ9vEYu-Di1EG-D6sP0GxfyHuEj_DharoH9oif-bQhZHnqCHO_wI8x4AQEMQAAARARCiADBjEISCGEYAYQiAokCBShjCCOMAIYQEEAobwCgwgIJDGAAOmMA", "duration_ms": 10286},
+        {"track": 5, "type": "audio", "name": "05 Robotic Menace", "chromaprint": "AQADtEoWZVOyJREe62i4fQhlfIf2DCYfHCF3hGTxsXD2440OZj4q78J_fBGqlUxwQ4uiLagM_hPCjEeW58hGDWE5uDv-oRy-TCiax_gd1Dae8dAeXIzwB016aKKIh8FjoelRFVeEXsWVwxN1dAxUqjEe9Gj-4FQ_SB1zPIuC_LgeNHlE9MmC08dvWMWFbD-0biHS48UkSjJR7oP1487gawi_Qsd7IuVxBSElpmg-6BJC-fC0h8KLXEqsocfV48koiC3OHH3WoVl2PExwTNeO7QqPPsePX3iO8sdh4fjRHz3souKNl2iU_ND0BdfRuEYffGj-GF-UJxC_otPRtUbD4CJKEu7hmIc-wqmh2cti_LCSQ2833IOiS8mE5plF_Ch3hDkenQqqjRls5Zj4EB8unWgm0Qh7Bqpe5NPRfEcflC0epYa3Gj26SNmBhtmRLyeSK5sUo-_R7Pix7oKvHK0QZngQetnRnJzwB81y0uh6xJRONA6DWnmwB3hyxFry4HrxoFF5lMzxH_kUY8cDt8Jq_GiOMiPOHF2Nm4NzPNC49NCrDtcSJSl-6MxRH14d_Mc_vIY--IWz6EaX__jRS4Z_-BruHW8uXMmFME8p4T_e9OjCCCbOwI6O58ih90M6fmifEM_x45zQZ8E7FoHo6MiPnj76w-yPPNAp-Dv8CzJz6If4HH12_A8UpSjDCPmmOMiL5mKE3oL649KRVz-eo1aO5kM-7dDxLDjDG1qmo8iVoH-IRsmEucd1fERvWCWFfsJnxONJ6DxCPmjyo3_gZ8d_WAyNfhrRa0jdo5QiQ2OG5sef45-FX9DWC46mQCsX4guPnDv6oJmc49-IfNTRk8cPPceN58HFHN_wCHvQdTiPMw808oJ_1NcxPfhvPMePG1omffgutDrCKFrUAT-mozl-IZdiCx0hZjtSS3iUwhVxbBVvXOUGizp--CFK4lMehFGknPhjKM89XEP64zni5rA4lIf-IdTGoBlzY-hLhCkV9DkcFtqO-0aTRR_qHM8nVD787Jj2cHh0XEoCTcgPO5Fx0biMP_gfw0uEn8LbI_6KhBd-XNqVwtJyXOKxxcFdBCIeIv_RjLnwx0LYHaJS7uhxbjku43hQQUsjisFHsbgPLct-hGzwIyce9Mvh9YOmTY9wHX22oxGnHA9KDQ2P_Oj1wHVI-A_68OhPNCdx8sHRiDkqUgluXEWrHrVTHGF5OD-0eZzwpPiOoyy0OMxw4yGPhqQFjcezBbV0-JJwBp0PPftwX-gzwyJ13BTxweOheXhQkkdzPDnxxMd1I2dookeYNFlw4kTJXIe6Xchf_IdDZTmOJ8KR4-HRdDzGQ1s-o1l4nBZytcizo3EN_SiZIZz0oVSPN7tQkjGmVMeXPbiP8Dmu45phKdB4XLLQo1mPa8cnfMmhHc2OPDmuzMe749RRIlUT6DfCSyFunEJ-QRyzMHiE_DkqPQZ8HeGzQBeF_sO3KIF1aM9yXDp-wx9xMx50Ij96uMcPk5SiocuRW93wQ-vwKTp2PBErpHGWY3_wjEWa53ghJxHskMNHPCqsafBRaYmNR9KhOkSvw8f04OLRwT-ii8YPr8d9vMhneHxgClV5yM3RrmjyBc92NJyUaZjoa6gOnQ0e4kY-OPKLXzO2iHyCfCr-yBCd4_CPH1dtWJoOTdpxBroSEdh-_McfVigtCyb0I9WNfcPhNDq8HwfSH9rzIj-abBSmVcI19JoR5hmFW0QhKszxpchrRThj-IQfDP_wHC9-uEc5RM_2QFt-pA-O__CjC44kIt-R7EfZPbCOa8N24jJ-Gf-RE5o3o08N73iOlPiPXBkvbBfU412O9LjxkkNxUgiTRD76Qc-LSRQa89iJij6asbvwKDzK7QrSGj6RXzH-4od3aKWQP8W-oumOF7YdVJ5KIjzR6MKZCz2HjcqnQM9RSQ6eyOgh6Tia6pDTJ1CnGkzWo9fw6tCWVxA5HuFzfDu-ZAEj07COylmIfBY0Li_SKC9-PNmR6prgHw8PMU2ONhfOQIN51K6gatmRSzvahwK1HsyPO8SZDCGzq9AyHXdx5UKf4y-u5YEYu0Tt4Dyq-IIkxsczFaeO_vhOfHKCJmkh5VkW4lE-9EGT4xIXnCLKN9CSB6egNszxIrSyBy-s7qg44pHwoKYOPIpKeDTC-1ApiRJyH4_R5B9qaTRO6sJH5EcjahWkXvhhLg_6ox3hMcS1oRGTB9xzNJE2C22NLswh9tAPO0sYDVfw8MOXXcfXHLlI8IfXUTJaUrikGU8r_ClCVskWiEeZIw_xHE168MTDI__wF_KP-Cu8H1fhDznqBa9lyFPWoefhLFugXce1FhWVBR5__NTwHDleujg1_IcvlM-NXjv-o9YSxNvRKF0HzY7xIb_wDn0JU_IU9DfyLhK0O0itHQ95cFSE64IdHv1CXDrCw_kDORc0LSrx5biGfhwa3MxRMusgSsqR4zzK40OW5zhEHrmDP_jgG7fkMeCR6xcuJQpkHo64CHeKL4fnSzgdNJfxNtCJfj2aIRf-GPfQHWmWXXiWCj76TNCVHhdp1B5hOUNJFkfD6MF1iJ0StD_-o39gRgzSZppQ8niHPmjGPPh8MFRyMNGU40b4CR6zQ2TyIKaOHyGAIkIx4oAhghAFAKGAIMAQcEgAJIwSzCAmFFIAEKYJAEIYIZCBgABgkBBCEygAUIYI5gUyRgmFhGJCIIEAIABYQREjgACkgEGCAAIEREgRQIBBQhlAnHIACICgoAAggZwwAlAhuGFCCUME0wYgoRQARAAjCCPKIEGFMUAAUSwgBCHEnACMIMANAEAYAgABwFkCDBCQCMAAMFABBgwWgRAgIFJCCCEEEUwIAowgAiCikBACECC0AIAQRoAQ4BChEBOCMQUUchQQIogEgBgIAAKMCEEMMAIAhAwxEAgAAABEAIsUNwwA6hxRBiAkgBACEAUokAo5JwxGUAhDzQACIAMUAMYIhBATihJkBBCMECIZEAAQY4TAiDlEBABGEAAAI8AQoZRRBAGjEAZIISqAIoQhT4UghCBBgImGAIMAEcoIApChBEAiEDKKIiEAVYgRQAgRAChEhWWACEAAYogAJJAAwlEFtgIACcOMAkgJKQA2QAFBpFDCGSSAIIAJRYwhAhnEBCISGEAcAEAABYAVjgEABEAMmCckEQwIQAlThBlAkMNGCIIEckAhoxBAjBEhHBOCIoaUMAYAAIw3gilgDCPAAICEAMIIEJyQSADGEBGAKSAYAAAqhyiRAAiAGDAAAMIAAkYBYpgQRgDMlFIACAmIMIgYQCAQVgAjAADAEWCpEA5RBQgRAiEmDCBEIYAAEAQQIpmAzCggEBOKMKaBcMIIg4SBDBGliBCCCSMUgEQAgoAhWBIhqBEUMKdEMcAAQgEhBAhHBDEIQGMEMRAgYYAARBiCgBIKWMkMoUQJAYwRQBAEKBBACGAEIIYh4YAhUgAAiBDMIUKQAgI5wZABhDBhACBWEmCYKAg7BYAkCDgELACAIGQoAEgRIrwBlBBFhTAAIiUAAYAagkBDgBhDhWCGGA", "duration_ms": 200180},
+        {"track": 8, "type": "audio", "name": "08 Mystery Metal", "chromaprint": "AQADtImqyEm6QBfyHG-O41oV9DOMHsmR48MVGj-aH1WjHT969DjwoA8LH67yo7iYnDjCQNOPsDw85sThB5VbdFPw5kOP4zt-1IoihKSE88OD_CjZIz209wivH85hPeiH20d9oxGToalOVD4ePFGLdFSCQ_3RcBR-iEWP_HjRE8dx-OhxXDnCHE8KHz0-oQ8eHD7kK3j3II1-9Jh-NPtxHMyFI2wP9bnQsTz4I-bg44SLe8dP4Gs4vMXpCrGoHy9ymchu_DA33IOZKVnBNTsuHiYJfjiLJwclnYReQ3-g66iPdwVjXYKkHD-uB6a04Lij4BNszUK1p4Ouo_7QnMad5dCPdjSsiTl-XFEOO8WjCCc46pBEaTm6iegDV-iX4keHJnQ66ET9wE6U4CkuZsjhSTlCTT6u4x-aiEzRZ4aOrjz8HCoF_YRoKcGzHedxH9d2WAyDNkcP8ZEOHj8sE45zSD-eLPhII_1A-rguZFaYoxbRHz4P7SH4oysvUM-h-nB1PFKCnCdOcP6GfDuYMEnxQfuD5lkKXkS4Is3T4SKMM8Orw5_hbTh3WML9HJoaXDee4VeOH03FUOi0DD8qT8dPuDs-wtImaMeXPOh_NFvo4ceJLoT4PLiJWgHLIs8pNByeI12XoepxSweT7tAenGtRXBGhZ3EGvTl-6ORx73gDPTua-rh7jCOaozw0-Cu6aAv-YNyOXjuaf3ihH82PqlpI_Be0Bv5ifDhSHd9CCS_4HBQXHUWPNA0PUg9xBYdjcpD0HOdRbdAjgcdPXBlabS_8HRfxXsF34riOb8cT_KB-3AuOH45L4lRw2Dk06sado1MEmylRK4txo_ogPug8nB_6ItOPXkXL9fBphF3xakc3-NB5w19y3Lugb8GnHLqYQRJ59DiN7hAdHnWTQ8_REw9044euWHgzvMenZEeDrAwe9HngqMtxxcfxHiEPnSP6Y6uWXJCbH198-CF25eiPfoezEdpoXMtR_fCPf_jx4A1-XAyu6NB5XPhxTgkuhUcu5McZ48QVWFI6XLmh7ngNzRuOG0x-oSuDD33hG9rxoxaP5kpwHoQWLovRH0EP20bYoT6e7oK4B-QvPIcrBp8SBdLhqggq-vjRiCHCPjjRH-p39MGLfrCaBXB9PNIhUtoBk3rwBFaO436GPjl0dD2cRYyhJ-twXCU-Gs5xanFg7qh_SN9RMscpeGQK_MEPUVMe3MQTFimXoz-OPoLdMEJ8_NA_4YE_fIS_HMJp_AgvqTgRPnkGn8GJazr4Q3rQRUf1E6aMcsnBkketHOYGjUygq3DU4VIfHJqeQYt16BKuLMa3FWGqDOGqo88HZyT4CD_eZEHz4lOGGz3UBzscKschW4lhjM2C_Lgf_MKzHDmJj4Z7PIsFsaLx4WWKE-9xFiaJH8r-4TrUPdB3WMMnfIXY48OfY1dQHT0Pdzx0JUPaEx_-5XBFdORxMfgQPocWPfh2fEL4wE50hDogl4d_vDZyJWiO8MepoxJ3-LgUHyLj4w205BaugNaHWszBPDJy-aiKRjPyoyuaQ11UC0-E2vDroC6ONxmsC4of4w5KG80XB1-mHCf6HaK0LEaF86inw07yQd2x04LlIzz6WmiuHI-O8IF9_LghZmOMZ2gqBnpy4hcutrgv5EPjopSIHD98JZC17EB4Hs55hJ506EqLnkbTHbmDH41fhNvxGzqa9-gVH59zNM_AVFkOuVlwPUcYRtmPnsebo97R5EHY52gOugp-aHlwHh9hK_JwfIPv4Q502Me3WIL1Y_zhE22U5dCPnhyaL8fnCzKDHmmOao8xL0e9CemFHtKJXrlx6bgSPRBH4mKMqFMOn7CT6MhLw4w07DyaPDr0WAAv6eizHD6Pt9CnHM5x5oNFufiJbzp8bnjgH2_yQPfhisEPSztOZfAZaE-EH32koOl25KgeCmGkZZAq6fjxMEV7FT4eHPqJC3YO_EHa4U-RqRWJHx_OGg-sC3oX6OAW5bgGV3yGHxeuwpLCB1eOw2OWosQV5dAiBv0KPVtwRRd6wl849NlwHz1zUGpWQc9x-DzUP8Mh6VkCrREvPDh6YvvhTMFPnIeP4zkOq8wGfbgzmA_qQfshOswhxjmOM4ctpWizHXeJhkd14TiPegthNTv-4Qr85MRVwr9g9bi2kOihHeZDoTOOyscjHVrGHBdx0aiMa_CTHXqI53h0-PhC9MePm9C-4jtcH36WowgPHz2u41GWDj_66Eg54sqCoz80NT98KUbnoZfwHGZ2YX7xXNAPpmOg5_iHZ4e2VAIv4jCV4Ef046HQ7_hzdHMH_2iXo7qO9GFxN8h_PBeRXsrxRhDzHSfOhEgZFf2NI-yy4Ed3KGako5J8PMcPH9WxH50e-LrQ5_gRdkyH5rj2BV2ILTz640fI9bizQCJzwTXRH3l3ood_5IqyAK4UwBARrhRIAgLFmACUMEUAAIIZoRATQSqmJDPGMCOMEAQQ4QlBhAnCKBNEGAaCIdJBS9gSWFqilINJGCAEEYIgB4JXAhCChFEGEcOAAUBoKoRAwgCFBEFIASAEYgwhBAQgygAABBKAImGYEphQgZgBAAmEiBQgIIGQEUQBRIjDABDGEGAICIQQQAoAwQRBRkFEDCNAeSQAMIggIABBADBkAFAMUSQAQEgRIwhAwAABlFDICWEUEcg4hgQQRCEoAFBCMEQAEIIJC5AQRjhGEGBGKAAQQ8wARIRFQDhChABGKQQkIwgIRIEhBAAHLAIIAIYEAAAiAIgQBCCCMLAAIKMoc4gJRACgAAkhEDFCCSuAAQgQZgghCBkgCBCOUAFAUkQQxAwQwDDAGEIGMAUQQEghB4gQShFBBRDCMAUYcAoAgQBRpAimiJBCIYAMYIYiBAQDgAhAnbHCAEUEEUMKqwAVRgjmAGDAAEYEQ8wBgYQgAoBDEAIMEMMIAMIowxUlCiAChGHGMS8YUIwCIZQCiDDnnCBCECGAYAYAIZATiiAAlBACIUCwIoQQ04QQCCFDhBDSKGAAEEAAwglkgAhhjADEMQCUAIghohwQRDHjhBAACCCEMUAiZwRShBAhAEAICCAAgIoAAQSxTCAjEPISEQEEMEgIAYDQRiCAiREEG4GQFsIIgCAhQgDBiGBGMAAgoMAAgwBFCABgJGDKCKIUEWIo4whDwlCCCHMAKgAIdgggARIgQiAhAAICQMGEAoYEwJQQRhgGBJcECQAUMEIwAYEEogkALAQEAIKJ0MAiBhRRAghjGDPICMSYIEwQAKgiIBhghECmCAWAUIoIRoBAijCGgBgEIQqQE4QIQxRADAGFACCAEaEAZYgAwpBxADgBhABCIUQAIMZYAZBQAhAgAA", "duration_ms": 210460},
+        {"track": 9, "type": "audio", "name": "09 Hydraulic Pressure", "chromaprint": "AQADtAkTZcuSRErQZ4YrYe0SNN9xSTquQyMffCyG5seJF_9QtYcoLUrwJXh55FHQPdlwKayA9MeDWkcThzh1NDwxPVKOUlPgoztefJEufIdm8UG_FFMe1DiuXdiHJg-eHfqMZziDLAuzEnmOhkFfXIEW99C8KD9yTNmroJsSBX3h8MX04D2eneCJPMyxJ4f44WWoIT8eCVP3qHDETDTuHHcOdtmD69gThBk3_NAT6bh4Do2mo10kNDsqajnCJzwcHj3xX7gYzPEnPAevBdeRXheUH2eOiDy6ByZ73Al-tMuSgaeHRzumFCV7PFKE_iuajh3y59CyI1yT4VOPOhOc_-jxLA_-IXogfSucMIiei3ii48eUSC--PBLSkVBpUfCYFXmZg150-DpC_dilHGqTo3lSdJuChigpHVeIHmLFoEce5sfDY3xynDL4S5gy4tIs1D9yS9CPfCN-NJrjYOyHpj-eLQgbH5TDEJPYQ9-DV_hxhfiH9rBWFdq0DEdlHT5jaDauGtVX_DdyzTjFrGhwR0e-o1FJHppU4g96wjscKoesMcN_xE0Gj8VJfBnS7ykgOt9xH_5xE0f3Bnug-4I0M3h69ISZgz8uFr2y48RvaHlz9D2iS0mIhjt6jcSbo2uO6seXHH1IpBVzIceLvwilD99xcWigzRK-AFcu9ITR3cKdBbV--HgP8czxwz_-OLB0nPzxe7iOT3gRksT1GSVJIw3V4y-2mPgGfQRDhkN4KYj3wAefpcdN6ESO3bpgpy0ueEyLvnnxI3x2qIu048zxToSrB19RHyUaCZUTpSp8R6glNM_RQ6-CypEDVzh-_DgeHT70HBeDE9-h93CWo1yL3zjDoiSPhkkP_aiMRlqJ_ziZuVDko1wW41s4_EfHN4KrHF3nIPZRsjjsB9PxBP2OMFRm6Ed15JE0PIct_MiVE44kQsf5onmW4ypOZSUaMUwFjYxyVFsnhMePuFMm4To6dSrEH_-HB5WzkriYo0NzEs9yxJ-IhgqPsgSao5yWo82OND40kh3uJccxydnh6sFT-IRmHV-6DB_Cp8Fj_NhZnEsOF-GPh8cVcdCsDx8VaNsVPMOLNuLQ4JGJH3pxxD6Ks8i1FXaYQ8-QwqdGVNWCG82JUzlynCP04yaqeKjMHI1PnIf2hvCHsFGEM0eOyseJLgz06mgcY5ITBb_Qxoe-wCd2XOiH77gPXahlNMe_Bl-3Bd0aqEyO_sePX8L_oBnHYZIT42WMWWKholUOP8lxpNXhRAtKHa9u4g96G80z_MeP-1iP_B80E_nRNcN5Bc-Jf6iO5sdrMLnCIw-03ET-HGeKl0F8QWe-QI8fZHlEnB_-YdO3oFJxV0fzI3zWqME_Qj-aM6jaI1y0Dc1DnEesX2ivSEET-fgO2UtxTWvQ8zB9_Hhy-DGuSD2a_8i31XjR5EHv4z92BpdwLi5-5EPy4y4VXAkqHRdh8ajeFXyOPkVCp0j7Gj0uPM3x7LiYK8ivINkjgsl3PDd-rJlWOM6CnIF-5OGP76icHWGkUGGhOWFShLmE67jgJxUuSlYQPoeeI-RMnEd1NBZ-hA8eE9-Pcsk8VNsnhOlxNOR1OGKOPkd0GdCjI1fwD9-FLrdQVK_RfMf1EX20oXkN5ghzvEc-LTmOi9GDSnki5De4R9CRVjQmMsd1XILPHh-P7_iOMFKoJoOeJkSKSj56Dc2TCqdkBWHiHCKjI-RS4j-qo_nx408RSlPQHboyF6p_-Jh_I_xxhCSPr9CRCx8u8fiWo8udoDrRH82lHE-UI6ckJMt5gjr648KV5jjO6EJ_GUlvIRPKJ3j0YGZgi8WZB1-N9wjlBPqFc8cf-LgPHz7kGz-uoz8u8rjQ_EM_GvID7YfrH-dx_LCM8_CH_riioDea88R99MHbw8dD_LCFH6fhD_2O73iKHS0J51Lwb8aPnYV4Dz3qIz2Jv-iJXJlx9IQYw8-CZxB1uBsuFT0vHO1aiDp6xNti1OpR_egJn8Et5NBH9EeOHlaJ_sihPixqZcE_vIHT5nh2uFMeuAgfXbiF-oOPfsXxB5cR0YM2H1t-PER-HMcjHicuXMqG8DlQ7SvEw3GGPEqIH2moEP43HO-Hl0Pz4z5OhFaP4zx8psKNHB8PHT09hD_86ehnvMiNJlQWGKpzpM4S3Dv-4cOp4XlxvPBZhH-OH7-hXER1iH-xNsef44I_6HCnELkMv_CYmCguhBKTQRtT9DlSRjB-WEefHQ_yOHhyaEfj42WGZxduaNEUHrXYI-fx4wjPwj90uOOGa8d1vElEwRz0FOkvHE8O__iP63jhz-gR0cHFQG_QRpth_bgoHcfO4P9w4hlsDT36REVzB3h5vNA2H8dl-EVP6Jnxo4cfyUNX-tB5PEVo8WJgLjgRPkebw4d4vOht3Dx-9MEbRvB1POI8aMJvtNORHn2IS8HRjMzh7-izY6_C497AK-iaqEhDFQKPENN3IH2PutA1fCzS50D8Dm9OXDp-SkAvXWg-nDty7fiu4MUjNFsPIRgQxiEkECLMCCaAIkYBhoBSAFBDgCAOEKEIMcYYwBhCAgkAiAAAEUoUQMIIC5QQBgFAgPAEWCOAURwAB4QQABgKgGKCEEQMJAoxSRgDAhjigBCKCCCIIc4BQ5RgChkFHAHAEKMIIghgIYigRCBhDAICKAIkAoApIJBACjrivABGCAIQAIAg4IygiAhADTAEICAQsMwRwYQExkADGAKIAEKEAQoZZCAQzjggBFAEGUEAMZgKIBwBABhABABIKQYNEYJAJ5QlBBAJBASACCEUUQI5hQCy0AyIAGMCIYmYI8gBhpgwzAAhCAREQCAMUoISQogBDgmJkCAGGAiAYhgxIQACEgHADCECWCQQAYwp5AyiUBgDLFECEsAYYIAiwZgRCCBhiAQQGGKMAYgJQRwhyhBlARRQIGGgAYAIBAgnygggLHBQQSAQU8gBAwwRTgBCBSEECoUVc0QgpIwAwgIBAAJASWKEUYIZRxQADAAgCALAKMEoMwgABQAQRwkAhGGEKUcgMAIMZAwSFiFCHCDAIaIIQExIQgxgRgAAsQECCCYEiAABCIAyFgghjGLAEGeIYMQogoAFAALnAWGAIGcMAUEgwQgARDhDABLKUGEhIYASAzQBRDAAnfOEACIcREAo5gBQwjBiDAGGGGEMEQZgRwwQViCApHFCCuWQkQARohwATjBmnRAIIgaMMAoQxJhCzAkimNMGCAOMUcoABQihEDDoBKCECAMEEJIQpRgxigAnCBNACIUAYQZQZQCTxhsDnHIAAaAoAMAJwBAQiAnKABASASUUAIIIyQQAADwFEBMCEAsMMFQAAwyBEhHhhWTOCCCJAsIKBhARijljBSJIIEkAFAYqYgACgBEmDIKEAEAOEYYZJxQwzAmHCEJKAUAABYwAIIxgQCCFlBDAISEB8UAAQYAAQBsCgDFKEAEMQ4AAYYQSAjEnAA", "duration_ms": 227286},
+        {"track": 10, "type": "audio", "name": "10 Not That Button!", "chromaprint": "AQADtEmSjEmWKJGS4Id-HHZ6tKiawHqCdtShH_3hN8Un4YOPM_ihHw_EKsvR9ejh7DFqEe_RHx7DFcdhdYHOHPixY3uW4_ugww_O41qOYTuDj8YPP_iCH_sL88GjEMdhXnjG4gd8BufwE-Z49ItxnJjyJRHeo4N2-At-HH_hHq8OeTocPfh46HgDP6hFaM_xw5_QH0fXw3xRF_0Hq0zx0TiV44evoCeNXngJP0F39PhniJWElqjMQ_wUdB6eozpSckF4oof542bw46Jk_PCJq_AJ-XiGHz9c1YI6jvgGSw9iE_XRHznhZ2iP6jAf_Phx-AzOQ-5gPjjxH4crBr8i6B_-w3ER2scRwlxR9IWf4ztevId4BvrwTd5w-AzOI8b_wTmHXBR-iD8uHd_hE0-gJc_xF9qTo3mRcxM-6kHzoSdu5LXQH6LI48OjLMhx5jjFg1L24UU1KiipgzquJYuRasJXWfjhF9fRKkcPP0dFoZsE8eiPWj_MH9qDt8XPodbh4y3s4TdewVE_nIee4ccnHS7642kWMdC0wz36HDf6HH4oYjeeKnByTH3xPcILt3hYXMa3HM2P-sI3VFUOy6hu9DpMQhc7aM_RRoeuFU-YbRBz1CbOHhca4otwNM-Gp7QQxkdPDz8b3EeTGv1xGXlzaImLsNVxNIyOSjdyc6goQSdyPniWHNSO_IF05XBETUWewz_yBD26ZoGY48jvY340RHuu4McXVrgeePpwp7gDBz4VvDkueOshXg3uwz_Cb_hztEf6rOh_6NIR4iz-4wphu3jEI8cZ_EjFHJV09IW_HMdvXHWQK8F_HH5RaRWuIxSVM3Al_MLFIyUn_JDLI35gPkUfFme0oQ9zmD-O406QizqOH9qV4_iLioYf9Bp-MA989Dqeoz_SJ8fX4zmMrkzxLXOQE_6gH_-DP0aYkfhQ6sJ7hFUCVnzwa4Q-PBQp5Phq4zvx5fB342rgHj3y-Wj6oY9-xJUufNKRZsG5RcRZXBEJ89D1GF81o4KJ_wgv9McjnMcZhKGF-4LGIX3hqMdhHt-M14j1YB8s6cKX4sfhR0Yb0Rj_oM_ywOhvtDRe-EPJPcdJowkXHRWOrkfj4I_R3_APc0SP_cS_Y-Lh87gj6eh-nJnxHeXRODm-IPwsNAqPTzly4jSa74cm5MMnCS2PHz8-nTiRk8c7iPPxD-fxwUep0cJXGToaoT6qH9d8-Dz-Q-SB4xLy4YUnCfl2_Kdw7pCDH4dj5jhz7D10BsdzDlveBf2RfygXioKvoOZx_cHRHul09CX0KWg-C_1xLR9-NM9QykP3gwxz6HiMk4cP0kMuXD_s5EL7HN-PHmk__ILV4_qGD70eVIboo0-G_kjzg_pxHh_ydLi2QBeO9MvRZsOP52jcBH125Li3gclz_MCPH3Zq_PpgTTP0Bn_wP8hzPMqHJ8cf-MT9IBozvYG4RU0Rbq_wY4cf1riO53i0HCUZMNURi3vwQPvQPBdxMJyiFBTvQeJxGn7Q6zgP7U1hVviOLwZ_w5fw5DhsXfBj1IuMzjrMQPvwB_3RnMil4zd6HRR-nNuRX-hy6PTRJ4dfIbKUB5dSR4gp4sczwox4QUxroVai4B2aHNN1XI6H3YK_Y156_DLaMfjhveiYWcJ5MFJ5mMedRcRfvOnwLRb0JfgPR_I05MsiHe8RE4ceBnx2pIe5WjijGA_xoqIYbYjMHJrR8EL0RDEuMkN_hNGNLxfUPUdoZfB-OFcC3rD-4uIVmIsJ_sfZ4FGMH6mhWjqO1CU-mL2Rt_hFaJmM-3iMStKJhsqho3rw5rDSz9Aj_IdOBvw-vA2eKh4-RseZUXgOUUcliUHYZYd7fAOfw1SiGPnxJ1NwLTuewz9KbYHOnPhzVLzh87gSPIRVolxyXDzO5YWWHcyVo2c0_ESqPBOeXXgO37jY41tmpOYhnsePvN3ht8gvvDNO6Duu4lzgH-8NlQ98RXgygp4O7yl6Elo6cQIjuhKeRsGlo6wZuOLxHOfROcejD5WeINo3HNtrVGIWhJEUHiWZDuce6GjqSOiJ58KPRhcY_dCzrKj14zxYtkiX5XCO5wKlNceZ49PhRbqEC3c2fBJ6SUUtaYdPhDk76OOQXdzRvOiT6PhxV0ePvDMe4v7gLDp6KUTZHboOj5InMF9-PMrRHJVZEU-VWGh3eB8uHc-DHz2eHxWVxYE_By1Yasd34c2Jrgwz4Vp0ONuHUj3uGnqCKoePM4SeWfiL50fsnLB6BXaNcBeeFZrEGeZl_DHUJjusLOgR70T47PB4PEcfohIz6Ic5PFFx4cZ_3NCTC04kpjnO4ExwoT90Cv_QzEcVcciV0Ail7biDW9BzId2HLzwo5YnwZHCs40h56FIq8Ifz4emOS7geOCauPtAHLkfu4An8T3DM48GPMD908TgnNDo-lEy8FNoPi8cjfBrY9PhhTYRmZcGH5gkABBHCRAAklAHOIOYMElIIDAgTAjgkmHBAGOEQAwIAxxBizhgBGKOCMQcMA4QQBojCAhhgCCCCCQMMQMIgCIhhRhBjAICECAAQFkAYYAxVAhjgFEIAOGAYE8AwwIRQiABACRMUGAAYAIABgIQgBDCCBABSMKAABQYIIoAxQDkGEIOKAGGAAgoAQQASTAAjiQIAMYEAYMYgpKQgCihDhBACMCMYQAIQZBwwRAgAEAYQGAMdE0oQAYFBBDhjEDDEIAQsEeCBBLQAwCBhJCACJAGMEsSAhAAh0ACvpBiCCCCkMQwwBBAwTBhBlCBACiAIIcARYAFyQDJHMFMCiIIQIUBRIKCgQAFAoXGAKQEYFwEQ8QgwFAEEqFAkGAoMMQIIhoASCjEDDECMKQKAEtQ4ApgQhmkGFAECCMOcgoYwZgBWghojBAEEAkWARogCIBAAwBBFBCAEGWAAEcpAYQDiwAEAEDHKGUcMYBgBIbwgFBimiBNECAAMJQI4JYgCggHDmBiMAUOIMIJRCogBAjllBBPACAIEMM8RI5ABwkBEhAKHAOUAAQIIJYBCACgEIDBMCEgMAEY6QLQUwgmFBFIAMQqUowIgARgSRgBhBMJEAAIIAM4DxJRyBgFmABFBMiSEMQAhBgBQhBFkoFLCAAaAAcYRQAhDSgihlHCGAgGFIE4QAAQFiAmlgFDKAEAEEQIZQwAigBpEgECKEAAgAMwAIpAAgjEBSDgIEEFEUYAoJgQwBAAAhEFEMQmMZkAJYARRAigAAAIACEMRQEYIAgQwgiBGEQDAAWABIEYZIhRERCDBGFFECGGcoIowYggQIAlguEAWAGggAkYRQpVwTAkKGBLAAKEAAoBQYACpSggsEFEEAGKwUFoqZhgDQihgEAGACKCAAYQhoogAThjGiCBKCAepAFIwYAoBAAHCCBhIOWIYQxQZBgRQgjhkFBBCIQIMIkYBAqhwggnBjFGEUUIkUBQ", "duration_ms": 182426},
+        {"track": 13, "type": "audio", "name": "13 A Big Problem", "chromaprint": "AQADtFMUJVEUZQnxYzN-TN_wH2R3XEebHFMm_kDzDP0Q-oL4lEce-IfXHe1TGReuozl64kajH2H9BHqEXDv64_iFf3B55PhzaDt6OKiHC0f7o8klDj-eJUeFxsZz5AwaEicH6zmu4D62_ch9eDo0zTp-_Kh9eMPVQI9SpDl-_PCDHz_imPiP4-GCIze8Eid-XEVvIR8SK0frwxdOqfBRdNMS-Eh85MFf_DgeefAX_EfK43Txw--DsMelKDh6uA6u41Uq-MG14PmRSD_Cu7gflD8aa8bRM7AVHWHy4A10Hk-UB1-h5RnCE2-A36jMYN2PH86lpjiF9EMN_cZ1C__xhzh8Ix-GF212vEhzHIJ73Djk4xNsgf6R40cO8-hQEX6OVlB7NF-OskNNwedxQ3wQ-sXTHteOHs5z8D1-_PiReEX8FD9-PG_wINMY6HBcPPAUHlqzDPrxxUUO_8eD78iP5Gi-o83x4NJ44zSOPccZ_MiTQxMf5DbqDjs67TgOOhcAMzdwcJIF9MYfPDtC6x76H3px-NClI08j4tON-wGj7EzQfMeDt0csHaJyKfjxLAyUa1PgB09MIzYzEk_W4ENOCTv-I-HycDhTxXg--M7xbgITewitI3mDX_A_XJ8GE_OSPbguhMqRLLlw5fia4NG14lzxkEdz5Yj05Ei-kMdzFndQZZakgMkZ_CByUdkKScHzNMJ4DT-0zEcVHaoWxnhGIuRZPDrqDw-u_3gyeujRvBfWSRreBHk9JNq_ROjhHf8wZT8eWrh0CacQJjySrRruPHgu3MqY4jnOGOmh52ExX0TsDE2yNMoSoz7yBOdy_KjyB016DffATscH_YkYOO0RR1moFh8afsOPp3j-42QEnzn6cEeWH1paZciPSx8OP8ePHx5rXBmFdxD1BCOV6DjTCH9lPCeOfsfW6giZ6lBFhviUS8J7LUFa_MZ9ZONxlgoc6QtOnDlysqgkHk3CG_t45A_xZ9AvonoxRWyOK5PyKPgqI_478IolxHki6DZyHU2J6SKOZreENhEuG3mQLL9QpTpORbGFbzOea_jR_Ed4KOeRV2GKZ_txWxL6N0FzH_lo_Ba-5oGYqwOf41lwPsFeD01OVNki6chzzDmuH08dojyaZceroL-QR2kgxVpExE_x5Pg99DSaLMoyGYcZx8GZcTgS5gryiXgT5biPJ6aGq2iu8AhtE9IRT2GIx3NxuQnC_GD04xteU4OUTOygncFvXJmJqyOmW2jyRXgsH6-lQl-PG2-KnhzEJTrO_hBvCZoVH413hA8uYo8e3FPQHNSFMhFPXEk-RLyRLDqqK7guCqcc4Tr24-GRXocQK3FycMnChni-BP8E40fMHvJSShTCRB4X9MRO_MFXC03yrUWlScpw48dXL8UlF5EzotcgVjyqXziTqMiT4WBz_JVQ5azQdEuN-_jhZ8cX5vgRRuiTpSN0Hj863hAvFeJO_Mh_8OnxKD8Oo2eDXLmgph_yD3-CNtLxo88Ojo_QxxSa4xvO40qFukfyIxxDfEd7UDt646xwHfkFnddwSTJibUO_CX7QX_iR_2hy8I5Y6HtxXUh3_Bd-2EmUC-aO6wR_hHkr6BuRX8Or40lDnCEeoWeJ5sd_4Tz441nw1OiH1DOS_ni4CpTa4LfgPcYRfoMuIl-LJ1KOvym6ZofPTEL4HGovnPJxDjnFoySL9PAPfRcaHpfKEE9zVLwm-Ba0a8H14yu6w2GTEdr1Ba2S6WhyhJuRZlwy9AuhH3lz3Bf64kcv5bilInziQUs7hM_QLL9w7g0-HR6Pb6j6ollRfUjYItQ9fMqOux0eNR9KfvBL9NmQPEe-4RmJO0o8NMmuET01fEuII9Y7odGVHppu4blwIlJOIaz24TeuJYuGMBGJ437go4x8ozxOoU8RfpygpZWJPPPx6Ti2cce3AP2JJtqNB_mFJmJ2aF2DfMXzo8_hZ0fI48G5iHgackJ1uOoK7doY_Me1C6ESKyum5LiSD8_R7A8qPsi1RIPqjmhqEeHf46OFJlt35E_wYouP51A-bQgpB6dwHU_yYKIuCs2HF73QRJ-QT4eOTA_OB9-PaxHRHqn44Ic15_hx4kuUQhwuiQjtGL_w6ijzEh535Me74j1-yEb5drheNMwe8EVJ_DhxSfzQTieOnviPF51iHY4Of8Z7nB38Q9-FTzli_Dh-eDqRecVNiGvwPsN-fNnh7keP9oI4STr6vDgfTHOP-Cy8H-32BT9qmNLUFDnENDvx8siD3_jG4_iBUNahExk74dyj4elUvCPqI_3ioBYH_TgYme1wXlC_GHt25PlxKoXjBSmXC9NGpdB7XO-QhxkalTeqT8h6_IfOI48l4hMVVD-O8se34_qRJULFEbpQ-rh7tBtuVM_hw-KRh0eP-oI_Dy9H_BlxnA8e58J3THaOB_3RRIryIJ9uqGYqhDmP6RYePLsknMoFhg-sSkclIs8H_egPx2mh50G4XMaFHo4ZCp5M40G-ONCP9siVwyNj_EKs_-iKJtzC4N-hy0HPgwp7dNOFn8eDGka7Qh8unujgSDdqHfqDvNGDEuYRUiqOPgmaM8cfPPiOqn3wtoKnOaCOH81vvI-OS8mJ3_gBQpBUQBgDJCIAKQQIUoAAgAwUhCggEEECCeGIQAggqxUSQAhqADMKCIEAEwApByAhhFAFFKIAOQQMEsBKY6gzQAHlrNEAQQSAEU8ABYBwRgFoQILAGCIEUQoARJASQgggCAFJCCCBIEIYAQwgQhAAjDLkGECZsUYBwBAAAzEghEDUAGEM4QAZoBQwFBjoHDEAQQcAdYoYgBCSDBBhFQCMOkCQQQo5xahzQFkiiRLAEIRAYYIAoIQjjAmmgGXGAMU9QQYA5ghACAHigCEGIGGEM9AIqwgxBgJBBHCOCgGcU4YwRhjzQAggtDDKAGC0cUIwJBQAhDCCJAIACKeIQ4AAIoEGgHiBJCJAAAoQIQIgShAEiAIjEBCGEUIAAsAhQQBwhAogEDcCCoCMEIYBZxwAhABACHJWDOIVMYAQhBASwBhFgBEACEQMEEIIRggxBAlnIFEECWWdMUZQAYQiTAAAiCSgCAUQBgwIIJlCRglADDBiKUYAAEQqZATUSBAgsXAAGSYMNQQZBhBxRCiAFAHQCEKkYERI8AgghCADABFAAgSYAABKAgAQwhBAhDHAGQIAQUIoABChEDCEFJMMI-UQAEIhBYhkwBihCBOMACCIUEQwBhQDghGihCAACGIYY04YxgwQIFAlDBEACIUIMAxgggDyBCCBAFECSAEUlQQihwQjUjAEFAAEIGKsoUQAQAwRxEhBAFFIAUAME4wJQARVggqChBCKEAUsUYoCggQTRAEAnCGAAoIUAgYBZYBAAABhhJBKMEoMIYoALB4BygBijAEMGgqEJMwwAQEDTgmrAHBCCkOccUAgJ4AgDDCBFFFCCEKsUk4BJohwRAiiGAEKAQGEAExRI5yCABBHIKJAEAIFNowoABAyBAkDCZGACQAQQoAJ4ggAiAgACRLKAGAUEMwIACgDRijDpEAEAIAUJQgQgYRyQDAABCKEASENoAIAYQAwAhAEAFAKCIIFEEAzABwBzigiqDNACQAIMIAS", "duration_ms": 211640}
+      ]
+    },
+    // -- D1 MIDI mp3
+    // duplicate: track 1 (briefing.ogg) matches descent-ii-usa-rerelease track 4 ()
+    // duplicate: track 2 (credits.ogg) matches descent-ii-destination-quartzon-usa track 12 ()
+    // duplicate: track 3 (endgame.ogg) matches descent-ii-usa-v11 track 6 ()
+    // duplicate: track 5 (level01.ogg) matches d2-mac track 13 ()
+    // duplicate: track 6 (level02.ogg) matches d2-mac track 15 ()
+    // duplicate: track 7 (level03.ogg) matches descent-i-and-ii-the-definitive-collection-europe-disc-2 track 5 ()
+    // duplicate: track 8 (level04.ogg) matches descent-ii-destination-quartzon-usa-diamond-oem track 5 ()
+    // duplicate: track 9 (level05.ogg) matches d2-mac track 10 ()
+    // duplicate: track 10 (level06.ogg) matches descent-ii-destination-quartzon-europe track 3 ()
+    // duplicate: track 11 (level07.ogg) matches descent-ii-europe track 11 ()
+    // duplicate: track 12 (level08.ogg) matches d2-mac track 15 ()
+    // duplicate: track 13 (level09.ogg) matches descent-mac-macplay track 13 ()
+    // duplicate: track 14 (level10.ogg) matches descent-ii-usa-v11 track 3 ()
+    // duplicate: track 15 (level11.ogg) matches descent-ii-destination-quartzon-usa-diamond-oem track 13 ()
+    // duplicate: track 16 (level12.ogg) matches d1-mac-2nd-bincue track 13 ()
+    // duplicate: track 17 (level13.ogg) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 5 ()
+    // duplicate: track 18 (level14.ogg) matches d1-mac-2nd-bincue track 14 ()
+    // duplicate: track 19 (level15.ogg) matches d2-mac track 15 ()
+    // duplicate: track 20 (level16.ogg) matches d2-mac track 15 ()
+    // duplicate: track 21 (level17.ogg) matches d2-mac track 15 ()
+    // duplicate: track 22 (level18.ogg) matches descent-mac-macplay track 10 ()
+    // duplicate: track 23 (level19.ogg) matches descent-ii-europe track 3 ()
+    // duplicate: track 24 (level20.ogg) matches d1-mac-2nd-bincue track 14 ()
+    // duplicate: track 25 (level21.ogg) matches d2-mac track 15 ()
+    // duplicate: track 26 (level22.ogg) matches descent-ii-destination-quartzon-usa-logitech-oem track 9 ()
+    // duplicate: track 27 (title.ogg) matches descent-i-and-ii-the-definitive-collection-europe-disc-3 track 8 ()
+    {
+      "id": "d1-midi-mp3",
+      "label": "D1 MIDI mp3",
+      "type": "album",
+      "tracks": [
+        {"track": 4, "type": "audio", "name": "exit", "chromaprint": "AQAAPGGWKGGUHD_hPA-mZ8c1Hj1SdceP-xvyH_vhHM8Opco5-NmQE4fJw-iiH_8OHn-FhjlyEuIVxD8-6vAZ_EhHHZegZQ--HXmlo-uN5sgjPEcvyNfRH2EP_6jE8EN1nMmH_BG8aUMrLbgkGQ-mz8Ql9BZ0avh25KrRaCNaH8CEEUIIwIBDABABjKMOEMygAQYAQYhBQgAhBFBIGIiIAAQRhjAQTFmAAGWACSQEUwABQgA", "duration_ms": 10083}
+      ]
+    },
+    // -- D1 MIDI mp3 ARACHNO
+    // duplicate: track 1 (briefing.ogg) matches descent-ii-destination-quartzon-usa-logitech-oem track 10 ()
+    // duplicate: track 2 (credits.ogg) matches descent-i-and-ii-the-definitive-collection-europe-disc-2 track 6 ()
+    // duplicate: track 3 (descent.ogg) matches descent-ii-usa-rerelease track 8 ()
+    // duplicate: track 4 (endgame.ogg) matches descent-ii-usa-v11 track 6 ()
+    // duplicate: track 6 (game01.ogg) matches descent-mac-macplay track 13 ()
+    // duplicate: track 7 (game02.ogg) matches descent-mac-macplay track 10 ()
+    // duplicate: track 8 (game03.ogg) matches descent-ii-the-vertigo-series-usa track 8 ()
+    // duplicate: track 9 (game04.ogg) matches descent-ii-destination-quartzon-usa-diamond-oem track 5 ()
+    // duplicate: track 10 (game05.ogg) matches descent-ii-europe track 6 ()
+    // duplicate: track 11 (game06.ogg) matches descent-ii-usa track 3 ()
+    // duplicate: track 12 (game07.ogg) matches descent-ii-destination-quartzon-usa-logitech-oem track 11 ()
+    // duplicate: track 13 (game08.ogg) matches descent-ii-destination-quartzon-3d-europe track 6 ()
+    // duplicate: track 14 (game09.ogg) matches descent-mac-macplay track 13 ()
+    // duplicate: track 15 (game10.ogg) matches d1-mac-2nd-bincue track 12 ()
+    // duplicate: track 16 (game11.ogg) matches descent-ii-destination-quartzon-europe track 11 ()
+    // duplicate: track 17 (game12.ogg) matches d1-mac-2nd-bincue track 13 ()
+    // duplicate: track 18 (game13.ogg) matches descent-ii-the-vertigo-series-usa track 8 ()
+    // duplicate: track 19 (game14.ogg) matches d1-mac-2nd-bincue track 14 ()
+    // duplicate: track 20 (game15.ogg) matches d2-mac track 15 ()
+    // duplicate: track 21 (game16.ogg) matches d2-mac track 15 ()
+    // duplicate: track 22 (game17.ogg) matches d2-mac track 11 ()
+    // duplicate: track 23 (game18.ogg) matches descent-mac-macplay track 10 ()
+    // duplicate: track 24 (game19.ogg) matches descent-ii-destination-quartzon-usa track 10 ()
+    // duplicate: track 25 (game20.ogg) matches d2-mac track 11 ()
+    // duplicate: track 26 (game21.ogg) matches d1-mac-2nd-bincue track 13 ()
+    // duplicate: track 27 (game22.ogg) matches descent-mac-macplay track 3 ()
+    {
+      "id": "d1-midi-mp3-arachno",
+      "label": "D1 MIDI mp3 ARACHNO",
+      "type": "album",
+      "tracks": [
+        {"track": 5, "type": "audio", "name": "endlevel", "chromaprint": "AQAAOJGSVFmSKGHQjBnUI2x8-EelHX-O8OFhLoZ-HseTwxX0IG92OD4egzqNWhme496x2ilCf9CS5ciDShOmjAuFrgyaTMmRH_oRdszxGvfxY3vwRdERWodOTUP48PiGuzjcV3iIi6mFG1NG5Lh0yA2y57iEPAmlg9EeQzUABIVxRBAADAFWIQiIooACAJijyCgIhANQCmSUYkAg7IRCDjWiBEEEAA", "duration_ms": 9624}
+      ]
+    },
+    // -- D1 MIDI mp3 MU80
+    // duplicate: track 1 (briefing.ogg) matches d2-mac track 13 ()
+    // duplicate: track 2 (credits.ogg) matches descent-ii-europe track 12 ()
+    // duplicate: track 3 (descent.ogg) matches descent-mac-macplay track 10 ()
+    // duplicate: track 4 (endgame.ogg) matches descent-ii-europe-v11 track 6 ()
+    // duplicate: track 6 (game01.ogg) matches d2-mac track 5 ()
+    // duplicate: track 7 (game02.ogg) matches descent-mac-macplay track 10 ()
+    // duplicate: track 8 (game03.ogg) matches d2-mac track 5 ()
+    // duplicate: track 9 (game04.ogg) matches descent-ii-destination-quartzon-europe track 12 ()
+    // duplicate: track 10 (game05.ogg) matches d2-mac track 14 ()
+    // duplicate: track 11 (game06.ogg) matches descent-ii-destination-quartzon-usa track 13 ()
+    // duplicate: track 12 (game07.ogg) matches descent-ii-destination-quartzon-usa-logitech-oem track 11 ()
+    // duplicate: track 13 (game08.ogg) matches descent-ii-destination-quartzon-3d-europe track 6 ()
+    // duplicate: track 14 (game09.ogg) matches descent-mac-macplay track 13 ()
+    // duplicate: track 15 (game10.ogg) matches d1-mac-2nd-bincue track 7 ()
+    // duplicate: track 16 (game11.ogg) matches descent-ii-destination-quartzon-usa-logitech-oem track 11 ()
+    // duplicate: track 17 (game12.ogg) matches descent-ii-destination-quartzon-3d-europe track 4 ()
+    // duplicate: track 18 (game13.ogg) matches descent-i-and-ii-the-definitive-collection-europe-disc-2 track 5 ()
+    // duplicate: track 19 (game14.ogg) matches descent-mac-macplay track 14 ()
+    // duplicate: track 20 (game15.ogg) matches d2-mac track 15 ()
+    // duplicate: track 21 (game16.ogg) matches d2-mac track 15 ()
+    // duplicate: track 22 (game17.ogg) matches descent-ii-destination-quartzon-3d-europe track 5 ()
+    // duplicate: track 23 (game18.ogg) matches descent-mac-macplay track 10 ()
+    // duplicate: track 24 (game19.ogg) matches descent-ii-europe track 3 ()
+    // duplicate: track 25 (game20.ogg) matches d2-mac track 11 ()
+    // duplicate: track 26 (game21.ogg) matches descent-ii-destination-quartzon-3d-europe track 4 ()
+    // duplicate: track 27 (game22.ogg) matches descent-ii-destination-quartzon-usa-logitech-oem track 10 ()
+    {
+      "id": "d1-midi-mp3-mu80",
+      "label": "D1 MIDI mp3 MU80",
+      "type": "album",
+      "tracks": [
+        {"track": 5, "type": "audio", "name": "endlevel", "chromaprint": "AQAAPEmyPJmyMAjX4yc8Hj1-lH-QaYdYhUe_IMfzok8O52jHIPR2iCNiFt4v8NlhPviPUzpuIicPrTtCXceFpg5e49IRQtcz5OiFx0fXqdjOox_yFroaPCmaSj8640bzY99HWEpS9EfRxDl46fiPexF0CR0nEbmUG-6eIJd29AAAAVDKSCAEE2IJgKgRxgBJCABECGOBAIooQkQwAhCinAGECiOIEogQIwAAChgBHA", "duration_ms": 10104}
+      ]
+    },
+    // -- D1 MIDI mp3 opl3
+    // duplicate: track 1 (01 Descent.mp3) matches descent-i-and-ii-the-definitive-collection-europe-disc-3 track 8 ()
+    // duplicate: track 2 (02 Briefing.mp3) matches descent-ii-destination-quartzon-usa-logitech-oem track 10 ()
+    // duplicate: track 3 (03 Credits.mp3) matches descent-ii-usa track 4 ()
+    // duplicate: track 5 (05 Ending.mp3) matches descent-ii-usa-v11 track 6 ()
+    // duplicate: track 6 (06 (Level 1) Lunar Outpost.mp3) matches descent-ii-the-vertigo-series-usa track 8 ()
+    // duplicate: track 7 (07 (Level 2) Lunar Scilab.mp3) matches d2-mac track 5 ()
+    // duplicate: track 8 (08 (Level 3) Lunar Military Base.mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 8 ()
+    // duplicate: track 9 (09 (Level 4) Venus Atmospheric Lab.mp3) matches d2-mac track 16 ()
+    // duplicate: track 10 (10 (Level 5) Venus Nickel-Iron Mine.mp3) matches d2-mac track 10 ()
+    // duplicate: track 11 (11 (Level 6) Mercury Solar Lab.mp3) matches descent-ii-europe track 3 ()
+    // duplicate: track 12 (12 (Level 7) Mercury Core.mp3) matches descent-ii-destination-quartzon-usa-logitech-oem track 11 ()
+    // duplicate: track 13 (13 (Level 8) Mars Processing Station.mp3) matches descent-ii-destination-quartzon-usa track 6 ()
+    // duplicate: track 14 (14 (Level 9) Mars Military Dig.mp3) matches descent-mac-macplay track 13 ()
+    // duplicate: track 15 (15 (Level 10) Mars Military Base.mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-2 track 3 ()
+    // duplicate: track 16 (16 (Level 11) Io Sulfur Mine.mp3) matches descent-ii-usa track 13 ()
+    // duplicate: track 17 (17 (Level 12) Callisto Tower Colony.mp3) matches descent-ii-usa track 13 ()
+    // duplicate: track 18 (18 (Level 13) Europa Mining Colony.mp3) matches d2-mac track 9 ()
+    // duplicate: track 19 (19 (Level 14) Europa CO2 Mine.mp3) matches d1-mac-2nd-bincue track 14 ()
+    // duplicate: track 20 (20 (Level 15) Titan Mine.mp3) matches descent-ii-the-vertigo-series-usa track 8 ()
+    // duplicate: track 21 (21 (Level 16) Hyperion Methane Mine.mp3) matches d2-mac track 13 ()
+    // duplicate: track 22 (22 (Level 17) Tethys H20 Mine.mp3) matches d2-mac track 11 ()
+    // duplicate: track 23 (23 (Level 18) Miranda Mine.mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 2 ()
+    // duplicate: track 24 (24 (Level 19) Oberon Mine.mp3) matches descent-ii-usa track 3 ()
+    // duplicate: track 25 (25 (Level 20) Oberon Iron Mine.mp3) matches d2-mac track 11 ()
+    // duplicate: track 26 (26 (Level 21) - Oberon Platinum Mine.mp3) matches descent-mac-macplay track 13 ()
+    // duplicate: track 27 (27 (Level 22) - Neptune Storage Depot.mp3) matches descent-ii-destination-quartzon-usa-diamond-oem track 11 ()
+    // duplicate: track 28 (28 Descent (Shareware Version).mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-2 track 8 ()
+    // duplicate: track 29 (29 Lunar Outpost (Shareware Version).mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 8 ()
+    // duplicate: track 30 (30 Lunar Scilab (Shareware Version).mp3) matches d2-mac track 6 ()
+    // duplicate: track 31 (31 Lunar Military Base (Shareware Version).mp3) matches d2-mac track 15 ()
+    {
+      "id": "d1-midi-mp3-opl3",
+      "label": "D1 MIDI mp3 opl3",
+      "type": "album",
+      "tracks": [
+        {"track": 4, "type": "audio", "name": "04 Escape", "chromaprint": "AQAAP8pGSVGSGO-O5-iDdI0OdcePb0uFZxGaHaR2PHsgpg1yHU_hsbh3_EfTSStWhkV6wsyWQ8eP0Fvx1cXvoUFFZTFy7IeWL8MkikeeXREuBTeJho8RksH3QOWh5Tn6kHgRBjUlF417YaJ25ND6DWG-GO9xCaeEnOGQ3CR-fFlwCl0MR1wetMtS4TZyAAKcUkASJxRUTAjGgDBAAEQUNQIhoYQAiADABEQAIIA8EMIgIYBShgkiAQ", "duration_ms": 10524}
+      ]
+    },
+    // -- D1 MIDI mp3 SC55
+    // duplicate: track 1 (01 Descent.mp3) matches d1-mac-2nd-bincue track 10 ()
+    // duplicate: track 2 (02 Briefing.mp3) matches descent-ii-destination-quartzon-europe track 10 ()
+    // duplicate: track 3 (03 Credits.mp3) matches d2-mac track 16 ()
+    // duplicate: track 5 (05 Ending.mp3) matches descent-i-and-ii-the-definitive-collection-europe-disc-2 track 6 ()
+    // duplicate: track 6 (06 (Level 1) Lunar Outpost.mp3) matches descent-ii-usa-v11 track 5 ()
+    // duplicate: track 7 (07 (Level 2) Lunar Scilab.mp3) matches d1-mac-2nd-bincue track 10 ()
+    // duplicate: track 8 (08 (Level 3) Lunar Military Base.mp3) matches descent-i-and-ii-the-definitive-collection-europe-disc-2 track 8 ()
+    // duplicate: track 9 (09 (Level 4) Venus Atmospheric Lab.mp3) matches d2-mac track 16 ()
+    // duplicate: track 10 (10 (Level 5) Venus Nickel-Iron Mine.mp3) matches descent-ii-europe track 6 ()
+    // duplicate: track 11 (11 (Level 6) Mercury Solar Lab.mp3) matches descent-ii-usa track 3 ()
+    // duplicate: track 12 (12 (Level 7) Mercury Core.mp3) matches descent-ii-destination-quartzon-usa-logitech-oem track 11 ()
+    // duplicate: track 13 (13 (Level 8) Mars Processing Station.mp3) matches descent-ii-destination-quartzon-europe track 11 ()
+    // duplicate: track 14 (14 (Level 9) Mars Military Dig.mp3) matches descent-mac-macplay track 13 ()
+    // duplicate: track 15 (15 (Level 10) Mars Military Base.mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-2 track 9 ()
+    // duplicate: track 16 (16 (Level 11) Io Sulfur Mine.mp3) matches descent-ii-destination-quartzon-usa-logitech-oem track 11 ()
+    // duplicate: track 17 (17 (Level 12) Callisto Tower Colony.mp3) matches descent-ii-destination-quartzon-3d-europe track 4 ()
+    // duplicate: track 18 (18 (Level 13) Europa Mining Colony.mp3) matches descent-ii-usa-rerelease track 5 ()
+    // duplicate: track 19 (19 (Level 14) Europa CO2 Mine.mp3) matches d1-mac-2nd-bincue track 14 ()
+    // duplicate: track 20 (20 (Level 15) Titan Mine.mp3) matches d2-mac track 15 ()
+    // duplicate: track 21 (21 (Level 16) Hyperion Methane Mine.mp3) matches d2-mac track 15 ()
+    // duplicate: track 22 (22 (Level 17) Tethys H2O Mine.mp3) matches descent-ii-destination-quartzon-3d-europe track 5 ()
+    // duplicate: track 23 (23 (Level 18) Miranda Mine.mp3) matches d1-mac-2nd-bincue track 10 ()
+    // duplicate: track 24 (24 (Level 19) Oberon Mine.mp3) matches descent-mac-macplay track 3 ()
+    // duplicate: track 25 (25 (Level 20) Oberon Iron Mine.mp3) matches d2-mac track 11 ()
+    // duplicate: track 26 (26 (Level 21) Oberon Platinum Mine.mp3) matches descent-ii-destination-quartzon-3d-europe track 4 ()
+    // duplicate: track 27 (27 (Level 22) Neptune Storage Depot.mp3) matches descent-ii-europe track 11 ()
+    {
+      "id": "d1-midi-mp3-sc55",
+      "label": "D1 MIDI mp3 SC55",
+      "type": "album",
+      "tracks": [
+        {"track": 4, "type": "audio", "name": "04 Escape", "chromaprint": "AQAAPKGSRFKyKCH0w8dvAf5xLbjVwRX00IL9Q8dDpJmCncdTlGcGnOsF8sV_4bmQZLN45MeNRn2CPcGl4FEQW0Ly4DWcTU_QexGOPxmafAhPCXqQP2ClA8wPh5uN58FzZLHwHNolHVny4CL-4DkuKRfxHEzqDb0U5MHZMsgvAWUMAsAIgBhATDABDFAECAaMEdQQxpAiAgkBDCiOAkyAoIgYgBw0BAKgkFAAIQ", "duration_ms": 10110}
+      ]
+    },
+    // -- D1 MIDI mp3 SC88
+    // duplicate: track 1 (briefing.ogg) matches descent-ii-destination-quartzon-usa-logitech-oem track 10 ()
+    // duplicate: track 2 (credits.ogg) matches d2-mac track 16 ()
+    // duplicate: track 3 (descent.ogg) matches d2-mac track 5 ()
+    // duplicate: track 4 (endgame.ogg) matches descent-i-and-ii-the-definitive-collection-europe-disc-2 track 6 ()
+    // duplicate: track 6 (game01.ogg) matches d2-mac track 13 ()
+    // duplicate: track 7 (game02.ogg) matches descent-i-and-ii-the-definitive-collection-europe-disc-2 track 4 ()
+    // duplicate: track 8 (game03.ogg) matches d1-mac-2nd-bincue track 2 ()
+    // duplicate: track 9 (game04.ogg) matches descent-ii-destination-quartzon-europe track 12 ()
+    // duplicate: track 10 (game05.ogg) matches d2-mac track 14 ()
+    // duplicate: track 11 (game06.ogg) matches descent-ii-destination-quartzon-3d-europe track 6 ()
+    // duplicate: track 12 (game07.ogg) matches descent-ii-destination-quartzon-usa-logitech-oem track 11 ()
+    // duplicate: track 13 (game08.ogg) matches descent-ii-destination-quartzon-usa track 6 ()
+    // duplicate: track 14 (game09.ogg) matches descent-mac-macplay track 13 ()
+    // duplicate: track 15 (game10.ogg) matches d1-mac-2nd-bincue track 6 ()
+    // duplicate: track 16 (game11.ogg) matches descent-ii-destination-quartzon-usa-logitech-oem track 11 ()
+    // duplicate: track 17 (game12.ogg) matches d2-mac track 13 ()
+    // duplicate: track 18 (game13.ogg) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 8 ()
+    // duplicate: track 19 (game14.ogg) matches d1-mac-2nd-bincue track 14 ()
+    // duplicate: track 20 (game15.ogg) matches d2-mac track 15 ()
+    // duplicate: track 21 (game16.ogg) matches d2-mac track 15 ()
+    // duplicate: track 22 (game17.ogg) matches d2-mac track 8 ()
+    // duplicate: track 23 (game18.ogg) matches descent-mac-macplay track 10 ()
+    // duplicate: track 24 (game19.ogg) matches descent-ii-destination-quartzon-usa-logitech-oem track 10 ()
+    // duplicate: track 25 (game20.ogg) matches d2-mac track 15 ()
+    // duplicate: track 26 (game21.ogg) matches d2-mac track 13 ()
+    // duplicate: track 27 (game22.ogg) matches descent-ii-destination-quartzon-usa-diamond-oem track 11 ()
+    {
+      "id": "d1-midi-mp3-sc88",
+      "label": "D1 MIDI mp3 SC88",
+      "type": "album",
+      "tracks": [
+        {"track": 5, "type": "audio", "name": "endlevel", "chromaprint": "AQAAPGmUJUqi5CgL6z80Xsd1hDA_PMRa4vB5OL1w47gfuD6cHyeBLj-ucPjBf2hHHdGqdngOnciJfviHE72Q6jmS6UG96DCPw7vx1fh25NwLZbkX5FqW4yzewwfpwV_GDH0uXOjcI8yjQ1WV4FPBB3k0J7iOMEdFJXgOYAAAAinHSCDMkiWEcYYgR5wRihlDNRMGCGGIIwMiIYwAiCgGBDCICGe4IUopBQ", "duration_ms": 10071}
+      ]
+    },
+    // -- D1 MIDI mp3 SC88Pro
+    // duplicate: track 1 (briefing.ogg) matches descent-ii-destination-quartzon-usa-logitech-oem track 10 ()
+    // duplicate: track 2 (credits.ogg) matches d2-mac track 16 ()
+    // duplicate: track 3 (descent.ogg) matches descent-ii-europe-v11 track 8 ()
+    // duplicate: track 4 (endgame.ogg) matches d2-mac track 16 ()
+    // duplicate: track 6 (game01.ogg) matches d2-mac track 13 ()
+    // duplicate: track 7 (game02.ogg) matches descent-i-and-ii-the-definitive-collection-europe-disc-2 track 4 ()
+    // duplicate: track 8 (game03.ogg) matches d2-mac track 11 ()
+    // duplicate: track 9 (game04.ogg) matches descent-ii-destination-quartzon-europe track 12 ()
+    // duplicate: track 10 (game05.ogg) matches d2-mac track 14 ()
+    // duplicate: track 11 (game06.ogg) matches descent-ii-destination-quartzon-3d-europe track 6 ()
+    // duplicate: track 12 (game07.ogg) matches descent-ii-destination-quartzon-usa-logitech-oem track 11 ()
+    // duplicate: track 13 (game08.ogg) matches descent-ii-usa track 6 ()
+    // duplicate: track 14 (game09.ogg) matches descent-mac-macplay track 13 ()
+    // duplicate: track 15 (game10.ogg) matches descent-i-and-ii-the-definitive-collection-usa-disc-2 track 9 ()
+    // duplicate: track 16 (game11.ogg) matches descent-ii-destination-quartzon-usa-logitech-oem track 11 ()
+    // duplicate: track 17 (game12.ogg) matches d2-mac track 13 ()
+    // duplicate: track 18 (game13.ogg) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 8 ()
+    // duplicate: track 19 (game14.ogg) matches descent-mac-macplay track 14 ()
+    // duplicate: track 20 (game15.ogg) matches d2-mac track 15 ()
+    // duplicate: track 21 (game16.ogg) matches d2-mac track 15 ()
+    // duplicate: track 22 (game17.ogg) matches d2-mac track 8 ()
+    // duplicate: track 23 (game18.ogg) matches descent-mac-macplay track 10 ()
+    // duplicate: track 24 (game19.ogg) matches descent-ii-destination-quartzon-usa-logitech-oem track 10 ()
+    // duplicate: track 25 (game20.ogg) matches d2-mac track 11 ()
+    // duplicate: track 26 (game21.ogg) matches d2-mac track 13 ()
+    // duplicate: track 27 (game22.ogg) matches descent-ii-destination-quartzon-usa-diamond-oem track 11 ()
+    {
+      "id": "d1-midi-mp3-sc88pro",
+      "label": "D1 MIDI mp3 SC88Pro",
+      "type": "album",
+      "tracks": [
+        {"track": 5, "type": "audio", "name": "endlevel", "chromaprint": "AQAAO0kTSVGiJA58Y1-K54B4psNVY0W1RYGWOsd5PCjlIMyDL0dJHo61B498-EePr2h-RPqCC2R34uegTC-OH32y7DBP9MehRc8xNeZCVGLgGyWZDgrHF7uOvoGWH6-OfhYaaxluaNvBJCNv5JeCF83RM8cfHe8yZJdy_NCTzBIepwlCAoQUAkYQxYwxAgiDgDFAEEKIMUYKIAAxigBkhAGICEfEAkpgKhAAThAAMDEA", "duration_ms": 9996}
+      ]
+    },
+    // -- D1 playstation mp3
+    // duplicate: track 1 (01 Descent Playstation Intro.mp3) matches descent-ii-destination-quartzon-usa track 5 ()
+    // duplicate: track 2 (02 Virtual Tension (PSX Mix).mp3) matches descent-mac-macplay track 7 ()
+    // duplicate: track 3 (03 Hydraulic Pressurce (PSX Mix).mp3) matches descent-mac-macplay track 10 ()
+    // duplicate: track 4 (04 Time for the Big Guns (PSX Mix).mp3) matches descent-mac-macplay track 8 ()
+    // duplicate: track 5 (05 Not That Button! (PSX Mix).mp3) matches descent-mac-macplay track 11 ()
+    // duplicate: track 6 (06 A Big Problem (PSX Mix).mp3) matches descent-mac-macplay track 14 ()
+    // duplicate: track 7 (07 Primitive Rage (PSX Mix).mp3) matches descent-mac-macplay track 2 ()
+    // duplicate: track 8 (08 Industrial Accident.mp3) matches descent-mac-macplay track 12 ()
+    // duplicate: track 9 (09 Haunted (PSX Mix).mp3) matches d1-mac-2nd-bincue track 8 ()
+    // duplicate: track 10 (10 Rusty (PSX Mix).mp3) matches descent-ii-europe-v11 track 8 ()
+    // duplicate: track 11 (11 Mystery Metal (PSX Mix).mp3) matches descent-mac-macplay track 9 ()
+    // duplicate: track 12 (12 Robotic Menace (PSX Mix).mp3) matches descent-mac-macplay track 6 ()
+    // duplicate: track 13 (13 Glut (PSX Mix).mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 2 ()
+    // duplicate: track 14 (14 Ratzez (PSX Mix).mp3) matches descent-ii-the-vertigo-series-usa track 7 ()
+    // duplicate: track 15 (15 Outerlimits.mp3) matches descent-mac-macplay track 3 ()
+    // duplicate: track 16 (16 Ether in the Air (PSX Mix).mp3) matches descent-mac-macplay track 5 ()
+    // duplicate: track 17 (17 Descent Playstation Ending.mp3) matches descent-ii-destination-quartzon-usa-diamond-oem track 4 ()
+    {
+      "id": "d1-playstation-mp3",
+      "label": "D1 playstation mp3",
+      "type": "album",
+      "tracks": [
+      ]
+    },
+    // -- D1 sunspire remix
+    // duplicate: track 1 (01 (Level 1) Lunar Outpost (SunSpire Remix).mp3) matches descent-ii-usa-v11 track 5 ()
+    // duplicate: track 2 (02 (Level 2) Lunar Scilab (SunSpire Remix).mp3) matches d1-mac-2nd-bincue track 10 ()
+    {
+      "id": "d1-sunspire-remix",
+      "label": "D1 sunspire remix",
+      "type": "album",
+      "tracks": [
+      ]
+    },
+    // -- D2 infinite abyss redbook mp3
+    // duplicate: track 1 (01 Title.mp3) matches descent-i-and-ii-the-definitive-collection-europe-disc-2 track 2 ()
+    // duplicate: track 2 (02 Cold Reality (Extended Remix).mp3) matches descent-ii-europe-v11 track 3 ()
+    // duplicate: track 3 (03 Crawl (Extended Remix).mp3) matches descent-ii-europe-v11 track 4 ()
+    // duplicate: track 4 (04 Gunner Down (Extended Remix).mp3) matches descent-ii-europe-v11 track 5 ()
+    // duplicate: track 5 (05 Ratzez (Short Remix).mp3) matches descent-ii-europe-v11 track 6 ()
+    // duplicate: track 6 (06 Techno Industry (Extended Remix).mp3) matches descent-ii-europe-v11 track 7 ()
+    // duplicate: track 7 (07 Are You Descent (Extended Remix).mp3) matches descent-ii-europe-v11 track 8 ()
+    // duplicate: track 8 (08 Robot Jungle (Extended Remix).mp3) matches descent-ii-europe-v11 track 9 ()
+    {
+      "id": "d2-infinite-abyss-redbook-mp3",
+      "label": "D2 infinite abyss redbook mp3",
+      "type": "album",
+      "tracks": [
+      ]
+    },
+    // -- D2 macplay mp3
+    // duplicate: track 1 (01 Title.mp3) matches descent-ii-destination-quartzon-3d-europe track 2 ()
+    // duplicate: track 2 (02 Crawl (Extended Remix).mp3) matches descent-ii-usa-v11 track 4 ()
+    // duplicate: track 3 (03 Glut (Extended Remix).mp3) matches descent-ii-the-vertigo-series-usa track 3 ()
+    // duplicate: track 4 (04 Gunner Down (Extended Remix).mp3) matches descent-ii-usa-v11 track 5 ()
+    // duplicate: track 5 (05 Cold Reality (MacPlay Mix).mp3) matches d2-mac track 6 ()
+    // duplicate: track 6 (06 Ratzez (Short Remix).mp3) matches descent-ii-usa-v11 track 6 ()
+    // duplicate: track 7 (07 Crush.mp3) matches d2-mac track 8 ()
+    // duplicate: track 8 (08 The Well (Mark 2) (MacPlay Mix).mp3) matches descent-ii-destination-quartzon-3d-europe track 5 ()
+    // duplicate: track 9 (09 Haunted (MacPlay Mix).mp3) matches d2-mac track 10 ()
+    // duplicate: track 10 (10 Are You Descent (MacPlay Mix).mp3) matches d2-mac track 11 ()
+    // duplicate: track 11 (11 Techno Industry (MacPlay Mix).mp3) matches d2-mac track 12 ()
+    // duplicate: track 12 (12 Robot Jungle (MacPlay Mix).mp3) matches d2-mac track 13 ()
+    // duplicate: track 13 (13 Pain (Short Remix).mp3) matches d2-mac track 14 ()
+    // duplicate: track 14 (14 Transmode Containment 2112 (Mark 1) (Short Remix).mp3) matches d2-mac track 15 ()
+    // duplicate: track 15 (15 Rusty (MacPlay Mix).mp3) matches d2-mac track 16 ()
+    {
+      "id": "d2-macplay-mp3",
+      "label": "D2 macplay mp3",
+      "type": "album",
+      "tracks": [
+      ]
+    },
+    // -- D2 MIDI mp3 ARACHNO
+    // duplicate: track 2 (credits.ogg) matches descent-ii-destination-quartzon-usa-diamond-oem track 12 ()
+    // duplicate: track 3 (descent2.ogg) matches descent-mac-macplay track 13 ()
+    // duplicate: track 4 (endgame.ogg) matches d2-mac track 7 ()
+    // duplicate: track 6 (game01.ogg) matches descent-ii-destination-quartzon-europe track 3 ()
+    // duplicate: track 7 (game02.ogg) matches d1-mac-2nd-bincue track 9 ()
+    // duplicate: track 8 (game03.ogg) matches descent-ii-the-vertigo-series-usa track 7 ()
+    // duplicate: track 9 (game04.ogg) matches descent-mac-macplay track 13 ()
+    {
+      "id": "d2-midi-mp3-arachno",
+      "label": "D2 MIDI mp3 ARACHNO",
+      "type": "album",
+      "tracks": [
+        {"track": 1, "type": "audio", "name": "briefing", "chromaprint": "AQABZ0kkLZKYxHjgb8KjDj7uDt8gPviDH8fhHjp89cjjgeFRfT-aE9eBn_iJ5sd7fIOPSzuOc4FzIj-MX4H2oxfOXUizPTiT48aLd_jBsMfz4-h74zt6If-RXMKzVLh8PMeFwo9C9Ef843jxoXlwa0GOU-GQB8cPfzjMwz1eHOKPD00-Hj-y98VPNDvCH9qRIvxSXH6g7wsq-fCJ7gm045H0BCaH1_gH4-rgZw9-HJeUQz-aMTyCHz184od_lLlE5JQS6MGbDPlMoifR4MrB43qO8McDPTh0-Dzq48SP7qDYHb3xHKXgBz1-QcrRNCY-_GiO6Q9R6mgYGfcg3DKaL6j94Ed1C-bhI88RPzLOQ9wRfhdaHg2eo-wOn0R_4wd6IsyH5CN-4hlmrcRzHD3hoz-O_8FP5DnOQTv8Fj1-vIfOo4eP_jiaKjy6F_-h5Sx6Yh_y8uiJ5kCYvsWzQ1Md4zvCW2iqEPdxCf3h40-FasSdDh-P50hfEj904sSH8j7So3-QY_qgpcuNnEqOPzgPXg_yTEZ_6IfHjAVzhhx-3IGO5lxw5bgtfBz-wH-A_3ARHrWJHH4PHb-I_sZ_gj_QH-IDH-ET492DsDnOI82LK_hL3A-uCP6QszhEvCTS5ziPH154MNSNH82PPseH5kEvIo-K5LgpBU924mqJG33gD_2R4x1-lMzga_iIO3h4XCyOHz-O8_CPHr-MZkefQ0tYjejxUziXQEq66fiRHr3RL8cvXEe84w8PcRbxH_50dCbaSSRE9CSu8OiQRjwe-ghchdBIGmH3Bu8PozmOJ8rxOA9yihT0IBePPovhfyhO6WCLH6ecMwhBIiynQBACiQAAEW2BU0QggiwClCKhBBCGEKAIQYwgbRgCVAAHBASAMEIIBkkQoLh1iHAjBUQICcJhER4gh4BBjhBpCBFCACS0IIwQBICwJEABGANWUAEYEAgxiBgBQAjGPElCOIUYFQ4phYETlioHmCNQAEINE4AJZAgB0ECnFHBWM8IAcZQxQCgIwDACJHXACoqMMEYJRAQCAAmFFFCMEEaoAYgbhIggwlGACATBC6EUgdUIZABhwEhlKBJMAA6gME4QQgwQiiLCgXCACKEgU4IqIhgRBgpBjBCCC2CAYko5RxBgzInjJCIIAIUIkpYKQA0D0AFrgHAAEQqFUI4zRRABTBFAIDNIEEGEAEIgJRkABAGBmSNCIGOEE0BRAQ", "duration_ms": 47136},
+        {"track": 5, "type": "audio", "name": "endlevel", "chromaprint": "AQAAOpGSPFGSKGEgHpUu5GijHE2aI7_wHNrEw0feHOeRVsHzB3KZCmmc4Z_gL0cbZQbfC_-xX_ipIcyhyQxiL0JjDWMYpjCXIzw020Yeo_Jx9ui6Fn5MtCPy6IHy_MgnXONR7_CN4yIuNUd0xbMgckcX_MczSD_eCCGZCw_xHvyOdJQBIIg0WAJKAEaOCSEIIQAQAoxBRCgMhFTGIKUAA0gQZR0SQChBiHMAAcWcAQA", "duration_ms": 9787}
+      ]
+    },
+    // -- D2 MIDI mp3 MU80
+    // duplicate: track 2 (credits.ogg) matches descent-ii-destination-quartzon-usa track 7 ()
+    // duplicate: track 3 (descent2.ogg) matches d1-mac-2nd-bincue track 13 ()
+    // duplicate: track 4 (endgame.ogg) matches descent-ii-usa-v11 track 6 ()
+    // duplicate: track 6 (game01.ogg) matches descent-ii-destination-quartzon-usa-logitech-oem track 3 ()
+    // duplicate: track 7 (game02.ogg) matches descent-i-and-ii-the-definitive-collection-usa-disc-2 track 9 ()
+    // duplicate: track 8 (game03.ogg) matches descent-mac-macplay track 9 ()
+    // duplicate: track 9 (game04.ogg) matches descent-ii-destination-quartzon-3d-europe track 5 ()
+    {
+      "id": "d2-midi-mp3-mu80",
+      "label": "D2 MIDI mp3 MU80",
+      "type": "album",
+      "tracks": [
+        {"track": 1, "type": "audio", "name": "briefing", "chromaprint": "AQABZ9GiJeGh_WjqIJ-HL0dzpeiK88IRWuSCQyfCfMSPo_rRjDt-9DXC_A30EDl6UHuKq2i4zMc_xIeeMbhw5OgXNN3w4RZ-5MeNKweT78jZ4zq83jj2I2-g52GQSyiuB3-O58UR6UdT6PiHi-XQlxBPPPjg3oF_dM9x6EdT6giv4TgR9od_6MSP9EcpEVfiBl9y5PB-fIEe0Dd8BtehH58vXMpDPDuCM4ff43he8ETPHJ6UD7keXAvEI3tT_MeP43vw6CiPpzhzPEeeKUNfNE7W4DzYuvh1fCS05_AfmMePow9O5UNYwbs0DVfhyvjx45dwpDckMkWTH9m1wMeP_SgJX6ge5NCK0MSDPzhqHw-RekOfBLKG_MBv_MJ7HD-as0KPIz2Sa8Sz4HhH9DnsEH3wH3-xH9eRH30u-IcvVEtwhHyRkxK-w16L8sT3CRf6I0w-_OjMgMoP6iP6Iz8U-biC3CRwhHqOh9BxJx1-_EFfaHlxrsiPm_g_XEfzGf_xH8lFhIl0PF_xbBG8B8dzTCmTE72i7DhzfMbHNMSR_xAdPO9wHWdQXanQ6EefDf6hPUuE-2iO2sH14zm0xFJetMuQ89iPnsedPfhjlNeDmEefBYeyo0doNL3w8ALDC-4W9CSKMId-XDfCI50UotfwR4XeFn-gbgjZ4S-uH9SyB_1-HP0PXwi_BMmDM8ezMzizdDjqE45J9CFxxKQFXTpelG_g48Wp4MJ3fND0o9fww09W_Oi9Qg_yo5R9OGaOB_5QU8ezHLmmQH-QNYTxFj-aXEJ3xKLCSETyLHh19Ghy_Pgu5Cq0HeF74cqOC--joTyF5iGia1DMoLYcpA_69OCR_3henEd9QsszCcd4K3gWSUZzosWeAUYQY4AYwsxQYFDhJHIGKGSFoAABCMFYRAkIGQKGCSEQskQGIBjRyBCBCCCDaWaAQdQBJYQwCgDovABUQECChMiIoRwHAAsGAGCAAQIAMA0RARRwgAoKAFLkCYoMQUhBKYAwAECBAAGIUSWAsA4wIghCQAoAHQPIQEagGYIgyhCyxAhAhmQYEYKUE8oQRJACgghhFBAOMQaUAYAYBCQEQlAjLBPUACMGUwgBZYCEgACGBAIIKWAsgJTJBgQwTDhDBRMMIEeEIIoBgQQQQDAilIBOKCCEIUYIaIwixgmJCRBYCMGIZIgApogAbABEhGKKAIKdsApwo5iBEDhDkFDASIWUIsgBxwAFjiHmHDJAIESMsUQgxARAAhAkFBIAOcGAAgoIZQA", "duration_ms": 47049},
+        {"track": 5, "type": "audio", "name": "endlevel", "chromaprint": "AQAAOkmyPFmSJQvyo4NzoiRltF4FeBKPdBOhmuhXIvzx5jCPXIwH8eMQHseb4EvEBT1OEX6OOw9SPocifThCJ9HRlMrwHT-O_JAp5BEmWhSaD8_xHZFTWXgPfTlC-5iyBjnxC_XYGE-OHj2P5niFG59CQbPhNBQciunxA6AEEIIooLgRgiHDAWKCAAKYcApYcxwBDEGBBDCOCYgYE0IIyoQzAA", "duration_ms": 9868}
+      ]
+    },
+    // -- D2 midi mp3 opl3
+    // duplicate: track 1 (01 Descent II.mp3) matches descent-mac-macplay track 13 ()
+    // duplicate: track 3 (03 Credits.mp3) matches descent-ii-usa-alt track 12 ()
+    // duplicate: track 4 (04 Game 1.mp3) matches descent-ii-usa track 3 ()
+    // duplicate: track 5 (05 Game 2.mp3) matches descent-i-and-ii-the-definitive-collection-europe-disc-2 track 9 ()
+    // duplicate: track 6 (06 Game 3.mp3) matches descent-ii-the-vertigo-series-usa track 7 ()
+    // duplicate: track 7 (07 Game 4.mp3) matches descent-ii-destination-quartzon-3d-europe track 5 ()
+    {
+      "id": "d2-midi-mp3-opl3",
+      "label": "D2 midi mp3 opl3",
+      "type": "album",
+      "tracks": [
+        {"track": 2, "type": "audio", "name": "02 Briefing", "chromaprint": "AQABY5ESRUmSRImSQjhyXC9u4ziHNIBOxPgPOOdBZ4erkwivF7r1Ij8uND-ewh9qyRKqh4GVZzluHEh_-MfxQ8-BeC-O9_ALnuPxHD6-6Oh1HMmRLxye8cOP3sALH9VxFfmFG32Hk_gL-PjxFr5xCPDKI8C_Hvh5ZIa_ktD4vLhe5EcPXyuuws-J6kW4a4eHvzhy-BmsEzeA-M4B_ceFPMd54-zhEzD6HX-QZ3iVzMXlosfv4dLhQ7Pwg2Umof9gWvhxfjiM63iK68Db4-QRNYQfvDl-5PAP7QSCMs_QjBeOPvCRX_BJEaqXkPjhE4dOXCt-GIdZ5Bf-4zc-PPAP-Nlh9Eh-5N3x7Dh6Y8-Lwz_6HMejoySRDz5-4Ifx6bhznDj84jy2HemPIz78Q_txBGjmZ_h24fAT5Dr8o_ILnWyH9oFX6Cm-4_jx4IfO4z_yX0O1oNQGnzcO_9jhD31y_OCHZ-3wO6gtE8iP-2isHfh2lD8sRzmOPPBRu0KrCVazUEP4oxAd4kin48ePHz-ayT1O5DwDPUGenGhO9KlwHm3mCE3MI3-I74Kvo5_gPKhH9IaH49BVhDvKH182yyj5oMez7MNB_XiEppp2JBfyHNd2PCd6PDh8VCfwTRFyHeVx6-CPI_1wvIblIMfhQ8d15B9-_MVh_sNlbejlItcDPTvCS0fz45uDko_Q5HiI7kfzhSTqo8GXoUP647izQ_PxpfiHHmH441KPPUQvvPB31GZxJsaNZ0OepcR0iH2KF8-JHvHxJdMBRhoQxgooBHBCIAEEgxQYKwwQiAmkAHdGIcMJBUQwABwyTDJGCJGKCaQZIcgYBKASwgAgBCEGEAAFgwpQAIwQDFgqmABCGYAIIMARSAQ0gkCFAHMCWCGYMIJJwBgQwgAlDJBcAAENVEg4QJkQSwrhmAGGEemosEhoKYQgCBxHKBCCkgaUcogRBoCAJhhkhBFSCCGoMYAYB5AQwEEnWESQOCiMUIAAAcByZBAIjSFEIAukEEQAwSEQwDlCwADCYMMVccoARRABBCBCBDXCSkgEAJgJ6pAjTAJCCLSUQeAcAEYYYIBmxghMGBOOAkSAIgIqJIxRAAFDgQDAIeAEsBQAYRABRjIhGCEKBMWYsAQA", "duration_ms": 46579}
+      ]
+    },
+    // -- D2 MIDI mp3 SC55
+    // duplicate: track 1 (01 Descent II.mp3) matches d1-mac-2nd-bincue track 13 ()
+    // duplicate: track 3 (03 Credits.mp3) matches descent-ii-usa-alt track 12 ()
+    // duplicate: track 4 (04 Game 1.mp3) matches descent-ii-europe track 3 ()
+    // duplicate: track 5 (05 Game 2.mp3) matches d1-mac-2nd-bincue track 9 ()
+    // duplicate: track 6 (06 Game 3.mp3) matches descent-mac-macplay track 11 ()
+    // duplicate: track 7 (07 Game 4.mp3) matches descent-ii-destination-quartzon-3d-europe track 5 ()
+    // duplicate: track 8 (08 Descent II Title Redux (Bonus).mp3) matches d2-mac track 14 ()
+    // duplicate: track 9 (09 Vampyro (Bonus).mp3) matches descent-ii-destination-quartzon-3d-europe track 6 ()
+    {
+      "id": "d2-midi-mp3-sc55",
+      "label": "D2 MIDI mp3 SC55",
+      "type": "album",
+      "tracks": [
+        {"track": 2, "type": "audio", "name": "02 Briefing", "chromaprint": "AQABY1EiLUmSRJGKHvdxHWEedN5xHP2Ro80B_UZ_-D80ncPxHz8u5tDyHL9x-AP8acV5QS9--Ligoyb6w0d_HMmElzjcgfoB_yjx9KiV5ErR-AuSGzl-zJiz4wdzNHXwHEd4bPMhXofW53jQo-mN_fhR_FAe_IB_4yz-HO2Jf_jK4zm057CP9Ebk44Jv4VoH9Xjx44P4feiE72hOlODR4_yhg7px5QiZHD_64_CH7QuaHvmUB3oiBnmw40ctxoctTP7wIxaJ6ZMIw_iO3uiPpj_wow984dHx7HhgPTicD_XxdNCNozkY7sWnoz_Eo_9QHe6N1ScOB99xaG5w5eh15HpQmzj6o5GyZTtGKbiAg_nxInSQfHjGpPgHXriEnjm-w81T9MYenDRCHT_qJzh6GP1xPCiw63hu_LiPE84hxQ-edDgO5mgqfLuhNYaPHj-i4ydyfEdf_NBy4RH-4sixH93BLTGuB-8RQT_SH9fRNEqOS_jxG5-C6Jeg6MSpo2mShSNuHCWTw1-uQPxQU8KZo_Yx5dGI42g-ohvHCdNzuD2OHtqa6XDMo81d3DGRi8hz-Dz0CxM_3LPg4xCZ4x9x4voF8RGOfiJCH9aRoxKSXS9-nMKOWXnxjBb-44Ov4x5cHtqX4w_YP7hyFRf6kCIOxyUYf8SRD3qE8sKHNj96ON3QHrcg_-iLfTyeyBB1XNBhNfxxE03_4uFxR8ilwz7ODZHYw59xfBBr4uPxHyKXcfiOF_gOH9WD5-B_MDd0wQz2-PiRXziuIk8x5WApQ08y5FIi7GGG_vCZyqinBw-uA46MYUg4ChwFjhAiAEKUCUMJQkAyIwYAyAkDpGhIAOaIogJBAgGBlCoBAKDEWSIIEAgDZwSxQiBgiAOAAoSIoYggS4VTCEphDBHCCQMAQBwRBsEgyCLhhAFQUwOcUwIpgBAAAmCFlEHCgIQUQaAZoYhSxACAgHDCGYIMWwC4yhAlhAgKhUOICUMoc0xpRqQjyBAihcHIIMpKEUoBigQjCQEEhBPSrScsYVaAoAQUkBhFhIWAA8HJAEAJAhQ1AwgILRNEGYKJMUgQwQwQVAAAhHEGA4MAFo4wJBwUDAJggQBAYeAA9QpwAYRChFABEJgcACCAUkhQyhShBgJgADNMABEUBQAJLxiRDDBkhBDQMEAUMgA", "duration_ms": 46605}
+      ]
+    },
+    // -- D2 MIDI mp3 SC88
+    // duplicate: track 2 (credits.ogg) matches descent-ii-destination-quartzon-usa track 7 ()
+    // duplicate: track 3 (descent2.ogg) matches descent-mac-macplay track 13 ()
+    // duplicate: track 4 (endgame.ogg) matches descent-ii-usa-rerelease track 6 ()
+    // duplicate: track 6 (game01.ogg) matches descent-ii-destination-quartzon-usa-diamond-oem track 3 ()
+    // duplicate: track 7 (game02.ogg) matches d1-mac-2nd-bincue track 5 ()
+    // duplicate: track 8 (game03.ogg) matches descent-mac-macplay track 9 ()
+    // duplicate: track 9 (game04.ogg) matches d2-mac track 9 ()
+    {
+      "id": "d2-midi-mp3-sc88",
+      "label": "D2 MIDI mp3 SC88",
+      "type": "album",
+      "tracks": [
+        {"track": 1, "type": "audio", "name": "briefing", "chromaprint": "AQABaVGUZFEiJTqO-8PREyl-5BneodvxHH8VdM4TpId_9LBu3IwWHHl0iCxt5CfOo-Ths6iP3Gh-aHq0IP-Gr0bXB--Oh4d_nBlyGo_x4VfwJIcfZMrx7fix_4d35IL4I7xiPHrx4y-Oh2twMjiKKQj-EM1l_Dl8Hj-y4zv8A-kP7Tu-Iz-eGy-6baDyD8eP6_CTHCdlmGMeTBTyBzrSN8J-HCyVyuiFnDj048QPq8VL6C3-6CJyC7mP4z9KiTF6Gsq648d14kaYHc-DI8czi2i6Dz9y4jomDl-aB_yRQz_6ocGPN0cPi9GOB4e5EiE1HC9R-Uh_9Bl0PMiJZjzChkef4xCrD9XRk7AaHvuhH8hx_PBp9MKFI_yhn7CgSeH8IG_wocePoyeSbyHy4JSMO0DfFE3nY8cVVId3HNGOisqhlyhSfIifQ0eP_PgtTM_hrsRb4hR6D7l4QOiP8wq05sdz_LC-4VSOPV_w4S_6wPqOHjqPXOh3-PjGkeh7_MX-IbGCbNVwvccdHP3hH3vSoelx4VHy4C-O6e3QPPzwIjfUH0zmWMJ1-MWTE-cDES_uD-G8IAdPkdB-pEePD30YHsc5o9QunDme7MiR7D1xMhqa7vjRJ3DOY7qQnAht-DjM6dhChXgQ6obWyYQP-UhXXOwJ5kWZH82J_UMR5kgePji-4rkTnDd6-HhW9EywI88F7cqRzgJv4Tzy4aehE_mJ44TPo1eKHMlxH82VNOhQHa64Gv0-_OhzJPeQfmqCFz_6o7-RPuhJCM034ngsONaJr_BjdMkWQ-dxH-HDHE2E6_gxHfkPEZ8R6ccLfrh6vIjMzCG0V0FT5yKeHM_0ANqNJupwH2CGsAIpxQCjRgiFICHAEMkUE1IwCQQBBioiCBGGKcegEA5QJKwAAADJBjJQUOWAKMQECAgAAghFIRFCAUKMMloI5oR2kknACGCEA4GAYQ4yRiBhAABplFFICKQcEkwQACFyzjjkgCCKKMMYQUIBpsQjQAhCxoEKUCMFMkghhoQQBlSioADUKybJIIIogDwIiEqEGECIEUUIUAIAoywgBgCEADAAEYKAwUBoKBgBRAAmpFAECOoUJEhpVAghLgDBDCCUAAYYcAgQIBjpRhDAIAOKKSCIYQAZYaSmRDJkAOACAAQVM5ASQYyCTFhFhCFOgCAUBNwBYUGnRChCiBSSAEIJMgIhJawEVBBCAUAKGWAJE0QJJwgyDCgAiAAS", "duration_ms": 47300},
+        {"track": 5, "type": "audio", "name": "endlevel", "chromaprint": "AQAAO0mYiFGSJEkY3CR6nESzP_iOP0e5EM2HRzm-pkN4mD_OEjXnYPVxH9OJXMPBXDNyn9gTVUIvvfCzHKGGNyG0JzpyRTj2BJd4pC-0nAxy3MGPpsSkjcazGMmvIPaOLoI9OPzRoxZjofGJU2ERkj4a6cqhZ8dMHc8n9MQtPEefo9oExAgQiBhAKAOEAOcIMFCBZgARBAAlAJCGAIXEIIAxQRTQBBgBkEACCGCUMAA", "duration_ms": 10026}
+      ]
+    },
+    // -- D2 MIDI mp3 SC88Pro
+    // duplicate: track 2 (credits.ogg) matches descent-ii-usa-alt track 12 ()
+    // duplicate: track 3 (descent2.ogg) matches descent-mac-macplay track 13 ()
+    // duplicate: track 4 (endgame.ogg) matches d2-mac track 16 ()
+    // duplicate: track 6 (game01.ogg) matches descent-ii-europe track 3 ()
+    // duplicate: track 7 (game02.ogg) matches d1-mac-2nd-bincue track 9 ()
+    // duplicate: track 8 (game03.ogg) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 2 ()
+    // duplicate: track 9 (game04.ogg) matches descent-ii-destination-quartzon-3d-europe track 5 ()
+    {
+      "id": "d2-midi-mp3-sc88pro",
+      "label": "D2 MIDI mp3 SC88Pro",
+      "type": "album",
+      "tracks": [
+        {"track": 1, "type": "audio", "name": "briefing", "chromaprint": "AQABaZOSJUmS5UiPzoR2whyrBD-a41I8PIcWXej74BdyNNOGXsGPH29EfGN0_GjqIzwTG3qO_MVFMGcDI4f4STiP-BtS-BXkHj9-_AdeiD96Igfz4w-2wj9e4xySXQ_yJBZ-HA-fFOfxoJfgypi8Iz8DaUY_hdAyCleI_OiJvsc_oXtgEuEFnQg_4jtuMLhQPTzMiujR8_CPXpLx7EOyx0hHGj1-hHmHHtJ0D21FDT9-5BeDl0g_fMW_Q5d0hN3x6UV_XHB_48ORK1B2Bh_8I0yPU8YcKsKllDiaH0-Uo7_xI88hTVzEofBDKvDRF7V2aHmOE7KWsAhj8cB3XAoNn6jT4z3CB2JM9EHwZ_hREg2R_9B34Q9CPHqxf0h5Q0c_5DhaEukP8TvyId9FuEey4z9-9PiNPxOOHoEe5MmHT8GNHvZR68dzHHsd9ICLpxVK5jieSJg6pD_y4z92fIejDD1-vGERJpTRM9CD42iWwUefcISOH-uHJs_RDzp6wvVRPTvC44X1Hfnh_MMP34XW40eso_OO8Znw4w_6gD-F4xmNPw1-7P3QnEP4DMqDH6V4MPkmob8gPiROEjgv-GHwGj90_cgP_-iu49nRH79RHqfo4onQIswOnUYeMLkV9PjR7rgyxId-nPBH4Yc-vsh1HD--40j8Iv5h_mBIWhl-3OiJ5suRh0hyAc8jhbge_OixPcvR9XiC-Bb0XLgghRf8GjmeA33Y4RJehDpENUTYHfjRN_A_MPLxcUa9E83FI39y6AmRxYLfCt-Y4PCOHP-OI38ER5JcPMOP30gPkfiRo3IbEXku4-bRHIrmH9VW6DjyroNvTJ_xgvVxHiH_DFM-XJks4hkeHz8OPyvOGAIJcogxBgVwABwRJCBAEaUEUs4g4g0hSBmnnAEIGAWIIZRAYRkVkFFCiiCGKsSAchJIISAgEDFHSDdGDGecYIRhR4ABVhgsiBAQAAEEI0YJBYBjGjjAHGEqAcaEQEohABgBxAKBCALCCIGcYsIBI4ARACkBCqBGEOANYcwARiQXFBi2wECEWUQIIyQppcAiRDEjAEdAUSAEQiwrCDAziGgKACASAAOAQlgBZzww3iBokHGECISJkIIAIIwSgDEAmENICAIVIIwJIQHzxAkKkigOQOiIQUwQoIRmBhl3ABVADDAEc4YYAAVUABFqkGECQEYEw0ZYJgTBBgElgELAMUcIIQA4hqAEADqDhABYENEEAEgZIgBFCABmAGAA", "duration_ms": 47299},
+        {"track": 5, "type": "audio", "name": "endlevel", "chromaprint": "AQAAPHHiKFGiBtrRvMYe7Oh7mGJmdA96zWjoBLny42ie41E2Rrjh4xpa7sgxIcwZnNnR5EmFbhSFPMKpQ0t-tAhTPUdVEfWQ3ujWQ3eCfNGDU0FJgknWGSdx5TTy_IP2SDnCGD_aZ0ej47zQ56AqGn6K_mDTCXkU4tMN7dphn_APx0yOEyVzDQWMEEACQwRJwgDEgAJEGEUMQgYQJgUBBAEgCAAUAEIJUgAopYQSAggjmAE", "duration_ms": 10077}
+      ]
+    },
+    // -- D2 mp3
+    // duplicate: track 1 (01_intro_crawl.ogg) matches descent-ii-the-vertigo-series-usa track 2 ()
+    // duplicate: track 2 (02_crush.ogg) matches descent-ii-the-vertigo-series-usa track 2 ()
+    // duplicate: track 3 (03_mark2.ogg) matches descent-ii-the-vertigo-series-usa track 6 ()
+    // duplicate: track 4 (04_coldreal.ogg) matches descent-ii-usa-v11 track 3 ()
+    // duplicate: track 5 (05_techno.ogg) matches descent-ii-usa-v11 track 9 ()
+    // duplicate: track 6 (06_glut.ogg) matches descent-ii-the-vertigo-series-usa track 3 ()
+    // duplicate: track 7 (07_gunner.ogg) matches descent-ii-usa-v11 track 5 ()
+    // duplicate: track 8 (08_mark1.ogg) matches descent-ii-the-vertigo-series-usa track 5 ()
+    // duplicate: track 9 (09_pain.ogg) matches descent-ii-the-vertigo-series-usa track 7 ()
+    // duplicate: track 10 (10_robot.ogg) matches descent-ii-usa-v11 track 7 ()
+    // duplicate: track 11 (11_ratzez.ogg) matches descent-ii-usa-v11 track 6 ()
+    // duplicate: track 12 (12_haunted.ogg) matches descent-ii-the-vertigo-series-usa track 4 ()
+    // duplicate: track 13 (13_rudescnt.ogg) matches descent-ii-usa-v11 track 8 ()
+    // duplicate: track 14 (14_rusty.ogg) matches descent-ii-the-vertigo-series-usa track 8 ()
+    // duplicate: track 15 (15_base_return.ogg) matches descent-i-and-ii-the-definitive-collection-europe-disc-2 track 5 ()
+    // duplicate: track 16 (16_final_mission.ogg) matches descent-ii-destination-quartzon-3d-europe track 3 ()
+    // duplicate: track 17 (briefing.ogg) matches descent-ii-usa-rerelease track 4 ()
+    // duplicate: track 18 (credits.ogg) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 3 ()
+    // duplicate: track 19 (d2_01.ogg) matches descent-ii-usa track 3 ()
+    // duplicate: track 20 (d2_02.ogg) matches descent-ii-usa-rerelease track 9 ()
+    // duplicate: track 21 (d2_03.ogg) matches descent-ii-usa-rerelease track 7 ()
+    // duplicate: track 22 (d2_04.ogg) matches d2-mac track 15 ()
+    // duplicate: track 23 (title.ogg) matches descent-mac-macplay track 13 ()
+    {
+      "id": "d2-mp3",
+      "label": "D2 mp3",
+      "type": "album",
+      "tracks": [
+      ]
+    },
+    // -- D2 redbook mp3 rips
+    // duplicate: track 1 (01 Base Return.mp3) matches descent-ii-usa-rerelease track 5 ()
+    // duplicate: track 2 (02 Title.mp3) matches descent-ii-usa track 2 ()
+    // duplicate: track 3 (03 Crawl.mp3) matches descent-ii-usa track 3 ()
+    // duplicate: track 4 (04 Glut.mp3) matches descent-ii-usa track 4 ()
+    // duplicate: track 5 (05 Gunner Down.mp3) matches descent-ii-usa track 5 ()
+    // duplicate: track 6 (06 Cold Reality.mp3) matches descent-ii-europe track 6 ()
+    // duplicate: track 7 (07 Ratzez.mp3) matches descent-ii-usa track 7 ()
+    // duplicate: track 8 (08 Crush.mp3) matches descent-ii-usa track 8 ()
+    // duplicate: track 9 (09 The Well (Mark 2).mp3) matches descent-ii-usa-alt track 9 ()
+    // duplicate: track 10 (10 Haunted (Instrumental Remix).mp3) matches descent-ii-usa track 10 ()
+    // duplicate: track 11 (11 Are You Descent.mp3) matches descent-ii-usa track 11 ()
+    // duplicate: track 12 (12 Techno Industry.mp3) matches descent-ii-usa track 12 ()
+    // duplicate: track 13 (13 Robot Jungle.mp3) matches descent-ii-europe track 13 ()
+    // duplicate: track 14 (14 Final Mission.mp3) matches descent-ii-destination-quartzon-3d-europe track 3 ()
+    {
+      "id": "d2-redbook-mp3-rips",
+      "label": "D2 redbook mp3 rips",
+      "type": "album",
+      "tracks": [
+      ]
+    },
+    // -- D2 vampyro mp3
+    // duplicate: track 1 (01 Vampyro Briefing (Remastered).mp3) matches descent-ii-europe track 4 ()
+    // duplicate: track 2 (02 Vampyro Title (Remastered).mp3) matches descent-ii-destination-quartzon-3d-europe track 6 ()
+    {
+      "id": "d2-vampyro-mp3",
+      "label": "D2 vampyro mp3",
+      "type": "album",
+      "tracks": [
+        {"track": 3, "type": "audio", "name": "03 Vampyro Credits (Remastered)", "chromaprint": "AQABP5EyJkoiBe0LnkdzetCJH8cvnMfxD36gD8dBXfhh3BdO5Lng_Th8Hz8eDT86nMGF4-HxRHoQisePQ4d_BD9-XLgP9ziBI-UPHfmOwz_iH_qRXweHj8aNHz96VIcr_MIO_0b8Y4e_4yIuwlyICz_c4YB5HDeeQfyIp0J6_LjgLseFK_AZ_MLBE8aXotKFFuknvPihqzjO4TL0HY6JKyoe4Yd4BuFQ_XhG2Dnew9_x7MHxGx7O4y_-4j8YfAef48qRL8qhZTnyFD36E38e5NARaseNH0yOHscvdKHGwPnhH_mhhyvSmMf5pbhyz_gPVzz6HS9Cj4eW5DhxCYeeB7lyPPiP5viHszBPhEiOesQH__jxd_AJH7lU3HCHK-gR_niOTVE2fHCOG_7xC_Xxo5alwCvCEyrFHDnRPMHz4gssKSJ69FmK5EdK4szwdEc3Hz-OV_DkIHkS5C2ab-jxZQuuHHuGWkKYs4HuICfqIV16SDJiPPjg58VH4_CJZNKRl0J3wpdxikd54udwmTh8fTjzIZc26M7QRHoUItyPXkQ6fIf-I78WvDpyPbCI6vg_HGWWIT_-LLgT4Sn6BPSK8wh1_CCnQJyl4kV-5Mcdo8ehXcphlcizHaB-PEcOMT5y_vC64-FRq0_wGzdupriIDD905ImOcj0-ufgPj0F941FxHX2QnkF_XFegCm9QLYLxZUka8NB-4Q_i4OgPQQBQyFkADKICWkItERQBQSwBLhFkkWUOMmGMgFRIKRCCgArAAKNCECaoAgYwJQRAGgqKzGLCKQEMFAAgzJgV2BwlMCFmAjGQsgw5IQAh1EhFBEMMGGEQAgQwgQ0AWikEBGHICsmIEQIwIwQAlDCLlLMiOCKIMAgZIQBAADDiADKOgcAMUsAQypAjVCvhFAIAAmu5QM4g6ZBgzCkkiKWSOCEQssoQaKQhAGqIHBHKG_OEQJgQBwwQwgiCCiDEGCKAABAYYwAgEjlGAFIWAaqNEwYKxogAxoshiGBKOGYUEIoAQIUI0CExjBJAGECQIUAJBwTxSgDAFAA", "duration_ms": 42120}
+      ]
+    },
+    // -- D2 vertigo mp3
+    // duplicate: track 1 (01 Crush (Extended Remix).mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 2 ()
+    // duplicate: track 2 (02 Glut (Extended Remix).mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 3 ()
+    // duplicate: track 3 (03 Haunted (Instrumental Re-Remix).mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 4 ()
+    // duplicate: track 4 (04 Transmode Containment 2112 (Mark 1).mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 5 ()
+    // duplicate: track 5 (05 The Well (Extended Remix) (Mark 2).mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 6 ()
+    // duplicate: track 6 (06 Pain.mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 7 ()
+    // duplicate: track 7 (07 Rusty.mp3) matches descent-i-and-ii-the-definitive-collection-usa-disc-3 track 8 ()
+    {
+      "id": "d2-vertigo-mp3",
+      "label": "D2 vertigo mp3",
+      "type": "album",
+      "tracks": [
+      ]
+    },
+    // -- Descent Maximum (ps1) mp3
+    // duplicate: track 1 (01 Title.mp3) matches descent-ii-destination-quartzon-3d-europe track 2 ()
+    // duplicate: track 2 (02 Glut (Extended Remix).mp3) matches descent-ii-the-vertigo-series-usa track 3 ()
+    // duplicate: track 3 (03 Ratzez (Short Remix).mp3) matches descent-ii-usa-v11 track 6 ()
+    // duplicate: track 4 (04 Techno Industry.mp3) matches descent-ii-europe track 12 ()
+    // duplicate: track 5 (05 Gunner Down.mp3) matches descent-ii-europe track 5 ()
+    // duplicate: track 6 (06 Are You Descent.mp3) matches descent-ii-europe track 11 ()
+    // duplicate: track 7 (07 Crawl (PSX Maximum Remix).mp3) matches descent-ii-destination-quartzon-usa-diamond-oem track 3 ()
+    // duplicate: track 8 (08 Haunted (Instrumental Remix).mp3) matches descent-ii-europe track 10 ()
+    // duplicate: track 9 (09 The Well (Mark 2).mp3) matches descent-ii-europe track 9 ()
+    // duplicate: track 10 (10 Cold Reality.mp3) matches descent-ii-europe track 6 ()
+    // duplicate: track 11 (11 Robot Jungle (PSX Maximum Remix).mp3) matches descent-ii-europe track 13 ()
+    // duplicate: track 12 (12 Crush (PSX Maximum Remix).mp3) matches d2-mac track 8 ()
+    // duplicate: track 13 (13 Rusty (PSX Maximum Remix).mp3) matches d2-mac track 16 ()
+    // duplicate: track 14 (14 Pain (Short Remix).mp3) matches d2-mac track 14 ()
+    // duplicate: track 15 (15 Transmode Containment 2012 (Mark 1) (Short Remix).mp3) matches d2-mac track 15 ()
+    {
+      "id": "descent-maximum-ps1-mp3",
+      "label": "Descent Maximum (ps1) mp3",
+      "type": "album",
+      "tracks": [
       ]
     }
   ]

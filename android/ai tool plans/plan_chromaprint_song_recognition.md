@@ -245,7 +245,7 @@ Files to modify:
 
 ---
 
-## Phase 10: Database Consolidation [COMPLETE]
+## Phase 10: Database Consolidation [COMPLETE - Fixed]
 
 ### 10a. Consolidation script: game_data/update_known_discs_albums.ps1
 - Read all game_data/music/*/chromaprint_info.json5 files
@@ -254,11 +254,25 @@ Files to modify:
   - track name: filename without extension; acoustid_name if available
 - Dedup: for each album track, match chromaprint against existing CD tracks
   using the global match_threshold from fingerprint_config.json5
+  - Uses fingerprint_match.exe (XOR-popcount with offset alignment)
+  - Original string prefix comparison was fundamentally broken for cross-format
+    fingerprints (CD BIN vs MP3 produce completely different base64 encodings)
+  - Results: 337 of 362 album tracks matched CD tracks (93% duplicate rate)
+  - 25 unique album tracks remain (MIDI renditions, unique arrangements)
   - Duplicates: comment out in output, note CD source
 - Ordering: CD entries first (unchanged), then albums alphabetically
 - -DryRun flag
 
-### 10b. Run consolidation to produce extended known_discs.json5
+### 10b. fingerprint_match.exe (new PC tool for bulk duplicate detection)
+- android/app/src/main/cpp/extract/fingerprint_match.c
+  - Reads flat JSON array of {name, disc_id, track, duration_ms, chromaprint}
+  - XOR-popcount similarity with offset alignment (-15..+15 frames)
+  - Duration pre-filter (10% tolerance)
+  - Handles JSON null values (parse_str_or_null)
+  - Outputs JSON array of all pairs above threshold with scores
+  - Stderr: progress messages (loaded count, pair count)
+
+### 10c. Run consolidation to produce extended known_discs.json5
 
 Files to create:
 - game_data/update_known_discs_albums.ps1

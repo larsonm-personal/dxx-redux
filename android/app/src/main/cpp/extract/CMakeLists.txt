@@ -233,3 +233,18 @@ if(MSVC)
 else()
     target_compile_options(fingerprint_audio PRIVATE -Wall)
 endif()
+
+# ── fingerprint_match (find duplicate fingerprints in a JSON DB) ─────
+add_executable(fingerprint_match
+    ${CMAKE_CURRENT_SOURCE_DIR}/fingerprint_match.c
+)
+target_include_directories(fingerprint_match PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+target_compile_definitions(fingerprint_match PRIVATE CHROMAPRINT_NODLL)
+target_link_libraries(fingerprint_match PRIVATE chromaprint)
+if(MSVC)
+    target_compile_options(fingerprint_match PRIVATE /W3)
+else()
+    target_compile_options(fingerprint_match PRIVATE -Wall)
+endif()
