@@ -68,9 +68,31 @@ foreach ($line in $lines) {
             $fp = $fpBySha1[$sha1]
 
             if ($line -match '"chromaprint"') {
-                # Already has chromaprint -- skip
-                $alreadyPresent++
-                $newLines += $line
+                # Already has chromaprint -- replace it with the new value
+                # Strip existing chromaprint and duration_ms fields, then re-add
+                $workLine = $line
+                $workLine = $workLine -replace ',\s*"chromaprint"\s*:\s*"[^"]*"', ''
+                $workLine = $workLine -replace ',\s*"duration_ms"\s*:\s*\d+', ''
+
+                # Insert new values before closing }
+                $trailingComma = ""
+                $trimmed = $workLine.TrimEnd()
+                if ($trimmed.EndsWith(",")) {
+                    $trailingComma = ","
+                    $trimmed = $trimmed.Substring(0, $trimmed.Length - 1).TrimEnd()
+                }
+                if ($trimmed.EndsWith("}")) {
+                    $trimmed = $trimmed.Substring(0, $trimmed.Length - 1).TrimEnd()
+                }
+
+                $newLine = "$trimmed, `"chromaprint`": `"$($fp.chromaprint)`", `"duration_ms`": $($fp.duration_ms)}$trailingComma"
+                if ($newLine -ne $line) {
+                    $modified++
+                    $newLines += $newLine
+                } else {
+                    $alreadyPresent++
+                    $newLines += $line
+                }
                 continue
             }
 

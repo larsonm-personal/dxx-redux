@@ -248,3 +248,30 @@ if(MSVC)
 else()
     target_compile_options(fingerprint_match PRIVATE -Wall)
 endif()
+
+# ── test_fingerprint (unit tests for fingerprint_gen) ────────────────
+add_executable(test_fingerprint
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_fingerprint.c
+    ${SHARED_DIR}/pcm_decoders.c
+    ${SHARED_DIR}/fingerprint_gen.c
+    ${_DECODERS_DIR}/stb_vorbis.c
+)
+target_include_directories(test_fingerprint PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${SHARED_DIR}
+    ${_DECODERS_DIR}
+)
+target_compile_definitions(test_fingerprint PRIVATE CHROMAPRINT_NODLL)
+target_link_libraries(test_fingerprint PRIVATE chromaprint)
+if(MSVC)
+    target_compile_options(test_fingerprint PRIVATE /W3)
+else()
+    target_compile_options(test_fingerprint PRIVATE -Wall)
+endif()
+
+# Chromaprint test data lives in the fetched source tree
+set(_CP_TEST_DATA "${chromaprint_SOURCE_DIR}/tests/data")
+add_test(NAME fingerprint_tests
+    COMMAND test_fingerprint "${_CP_TEST_DATA}")
+set_tests_properties(fingerprint_tests PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})

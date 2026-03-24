@@ -171,7 +171,45 @@ $matchStdout = Get-Content $matchStdoutFile -Raw
 
 $allPairs = $matchStdout | ConvertFrom-Json
 
+# ── CD priority hierarchy for stable match selection ────────────────
+# When an album track matches multiple CDs, pick the highest-priority CD.
+# Tier 0: base game discs, Mac discs, Definitive Collection, Vertigo/Infinite Abyss
+# Tier 1: all other CDs (alphabetically)
+# Within the same tier, lower alphabetical ID wins.
+
+$tier0Ids = @(
+    "descent-usa",
+    "descent-europe",
+    "descent-mac-macplay",
+    "d1-mac-2nd-bincue",
+    "descent-ii-usa",
+    "descent-ii-usa-v11",
+    "descent-ii-europe",
+    "descent-ii-europe-v11",
+    "d2-gog-v1.2",
+    "d2-mac",
+    "descent-i-and-ii-the-definitive-collection-usa-disc-1",
+    "descent-i-and-ii-the-definitive-collection-usa-disc-2",
+    "descent-i-and-ii-the-definitive-collection-usa-disc-3",
+    "descent-i-and-ii-the-definitive-collection-europe-disc-1",
+    "descent-i-and-ii-the-definitive-collection-europe-disc-2",
+    "descent-i-and-ii-the-definitive-collection-europe-disc-3",
+    "descent-ii-the-vertigo-series-usa"
+)
+$tier0Set = @{}
+foreach ($id in $tier0Ids) { $tier0Set[$id] = $true }
+
+function Compare-DiscMatch($a, $b) {
+    # Returns $true if $a is a better match than $b.
+    # Tier 0 always beats tier 1. Within the same tier, higher score wins.
+    # Same tier + same score: lower alphabetical disc ID wins (stable tiebreak).
+    if ($a.Tier -ne $b.Tier) { return $a.Tier -lt $b.Tier }
+    if ($a.Score -ne $b.Score) { return $a.Score -gt $b.Score }
+    return $a.DiscId -lt $b.DiscId
+}
+
 # Filter to CD-vs-Album pairs and build lookup: "albumId|trackNum" -> best CD match
+# "Best" = highest-tier CD first, then highest score within that tier.
 $dupLookup = @{}
 foreach ($pair in $allPairs) {
     $aIsCd = $cdDiscIds.ContainsKey($pair.a_disc)
@@ -180,16 +218,24 @@ foreach ($pair in $allPairs) {
     if ($aIsCd -eq $bIsCd) { continue }
     if ($aIsCd) {
         $key = "$($pair.b_disc)|$($pair.b_track)"
-        $source = "$($pair.a_disc) track $($pair.a_track) ($($pair.a_name))"
-        $score = $pair.score
+        $cdDisc = $pair.a_disc
+        $cdTrack = $pair.a_track
+        $cdName = $pair.a_name
     } else {
         $key = "$($pair.a_disc)|$($pair.a_track)"
-        $source = "$($pair.b_disc) track $($pair.b_track) ($($pair.b_name))"
-        $score = $pair.score
+        $cdDisc = $pair.b_disc
+        $cdTrack = $pair.b_track
+        $cdName = $pair.b_name
     }
-    # Keep the best match for each album track
-    if (-not $dupLookup.ContainsKey($key) -or $dupLookup[$key].Score -lt $score) {
-        $dupLookup[$key] = [PSCustomObject]@{ Source = $source; Score = $score }
+    $tier = if ($tier0Set.ContainsKey($cdDisc)) { 0 } else { 1 }
+    $candidate = [PSCustomObject]@{
+        Source = "$cdDisc track $cdTrack ($cdName)"
+        Score  = $pair.score
+        Tier   = $tier
+        DiscId = $cdDisc
+    }
+    if (-not $dupLookup.ContainsKey($key) -or (Compare-DiscMatch $candidate $dupLookup[$key])) {
+        $dupLookup[$key] = $candidate
     }
 }
 Write-Host "Found $($allPairs.Count) total pairs, $($dupLookup.Count) album tracks matching CD tracks"

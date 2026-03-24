@@ -23,7 +23,8 @@
 #define LOGE(...) ((void) 0)
 #endif
 
-/* Chromaprint wants at most ~120s of audio; clamp to avoid excess work */
+/* Chromaprint wants at most ~120s of audio; clamp to avoid excess work.
+ * This limit is in total int16 values (frames * channels). */
 #define MAX_FINGERPRINT_SAMPLES (120 * 44100 * 2) /* 120s, stereo, 44100 Hz */
 
 int fingerprint_from_pcm(const int16_t *samples, int total_samples,
@@ -46,11 +47,13 @@ int fingerprint_from_pcm(const int16_t *samples, int total_samples,
 		return -1;
 	}
 
-	int feed_samples = total_samples;
-	if (feed_samples > MAX_FINGERPRINT_SAMPLES)
-		feed_samples = MAX_FINGERPRINT_SAMPLES;
+	/* chromaprint_feed() size parameter is total int16 count (frames * channels),
+	 * matching the official fpcalc: first_part_size * reader.GetChannels() */
+	int feed_count = total_samples * channels;
+	if (feed_count > MAX_FINGERPRINT_SAMPLES)
+		feed_count = MAX_FINGERPRINT_SAMPLES;
 
-	if (!chromaprint_feed(ctx, samples, feed_samples)) {
+	if (!chromaprint_feed(ctx, samples, feed_count)) {
 		LOGE("chromaprint_feed failed");
 		chromaprint_free(ctx);
 		return -1;
@@ -89,9 +92,11 @@ int fingerprint_from_pcm(const int16_t *samples, int total_samples,
 		chromaprint_dealloc(encoded);
 	}
 
-	/* Duration */
+	/* Duration: total_samples is per-channel frame count, so no division
+	 * by channels needed. This is the full track duration, even if we
+	 * only fingerprinted the first 120s. */
 	out->duration_ms = (int) ((long long) total_samples * 1000LL /
-	                          ((long long) sample_rate * channels));
+	                          (long long) sample_rate);
 
 	chromaprint_free(ctx);
 	return 0;

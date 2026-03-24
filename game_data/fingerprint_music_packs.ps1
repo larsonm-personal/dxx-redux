@@ -290,12 +290,21 @@ foreach ($archive in $archives) {
     }
 
     Write-Host "  Running fingerprint_audio.exe..."
-    $fpJson = & $fpExe $albumDir 2>$null
-    if (-not $fpJson) {
-        Write-Warning "  No fingerprint output"
+    $fpStdout = Join-Path $albumDir "_fp_stdout.json"
+    $fpStderr = Join-Path $albumDir "_fp_stderr.txt"
+    $proc = Start-Process -FilePath $fpExe -ArgumentList "`"$albumDir`"" `
+        -RedirectStandardOutput $fpStdout -RedirectStandardError $fpStderr `
+        -NoNewWindow -Wait -PassThru
+    if (Test-Path $fpStderr) {
+        Get-Content $fpStderr | ForEach-Object { Write-Host "  $_" }
+        Remove-Item $fpStderr -ErrorAction SilentlyContinue
+    }
+    if ($proc.ExitCode -ne 0 -or -not (Test-Path $fpStdout)) {
+        Write-Warning "  fingerprint_audio.exe failed"
         continue
     }
-    $fpData = ($fpJson -join "`n") | ConvertFrom-Json
+    $fpData = Get-Content $fpStdout -Raw | ConvertFrom-Json
+    Remove-Item $fpStdout -ErrorAction SilentlyContinue
 
     if ($fpData.Count -eq 0) {
         Write-Warning "  No audio files fingerprinted"
