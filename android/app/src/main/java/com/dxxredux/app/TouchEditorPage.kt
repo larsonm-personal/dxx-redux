@@ -87,18 +87,22 @@ fun TouchEditorPage(
     var gyroPitch by remember { mutableFloatStateOf(0f) }
     var gyroRoll by remember { mutableFloatStateOf(0f) }
     var editorGyroManager by remember { mutableStateOf<GyroInputManager?>(null) }
-    if (layout.diagnostics.isNotEmpty() && layout.gyro.enabled) {
-        val gyroConfig = layout.gyro
-        DisposableEffect(gyroConfig) {
+    // Buffered ref values from calibration -- written to layout on save, not on every callback
+    val pendingRef = remember { mutableStateOf<Triple<Float, Float, Float>?>(null) }
+    val hasDiagnostics = layout.diagnostics.isNotEmpty()
+    val gyroEnabled = layout.gyro.enabled
+    if (hasDiagnostics && gyroEnabled) {
+        // Create the manager once; don't restart on every config change
+        DisposableEffect(Unit) {
             val gm = GyroInputManager(context)
-            gm.setConfig(gyroConfig)
+            gm.setConfig(layout.gyro)
             gm.diagnosticCallback = { y, p, r ->
                 gyroYaw = y
                 gyroPitch = p
                 gyroRoll = r
             }
             gm.onCalibrated = { az, pi, ro ->
-                layout = layout.copy(gyro = layout.gyro.copy(refAzimuth = az, refPitch = pi, refRoll = ro))
+                pendingRef.value = Triple(az, pi, ro)
                 dirty = true
             }
             editorGyroManager = gm
@@ -107,6 +111,11 @@ fun TouchEditorPage(
                 gm.pause()
                 editorGyroManager = null
             }
+        }
+        // Push config changes to existing manager without restarting it
+        val gyroConfig = layout.gyro
+        LaunchedEffect(gyroConfig) {
+            editorGyroManager?.setConfig(gyroConfig)
         }
     }
 
@@ -163,6 +172,20 @@ fun TouchEditorPage(
 
     // Save helper
     fun save() {
+        // Flush any pending gyro calibration reference into the layout before saving
+        val ref = pendingRef.value
+        if (ref != null) {
+            layout =
+                layout.copy(
+                    gyro =
+                        layout.gyro.copy(
+                            refAzimuth = ref.first,
+                            refPitch = ref.second,
+                            refRoll = ref.third,
+                        ),
+                )
+            pendingRef.value = null
+        }
         TouchLayoutRepository.save(context, layout)
         dirty = false
     }
@@ -480,6 +503,14 @@ fun TouchEditorPage(
                                     selectedIndex = hits[nextIdx].second
                                 }
                                 lastTapOffset = offset
+
+                                // In the editor, tapping a gyro recenter button triggers recenter
+                                if (selectedType == "button" && selectedIndex >= 0) {
+                                    val btn = layoutRef.value.buttons.getOrNull(selectedIndex)
+                                    if (btn?.binding == TouchBindings.BTN_GYRO_RECENTER) {
+                                        editorGyroManager?.calibrate()
+                                    }
+                                }
                             },
                             onLongPress = { offset ->
                                 val hit = hitTest(layoutRef.value, offset, canvasWidth, canvasHeight)
@@ -1029,8 +1060,8 @@ private fun drawAllControls(
         )
         val lineStyle = TextStyle(fontSize = 7.sp, color = cButtonLabel.copy(alpha = alpha))
         val l1 = textMeasurer.measure("Yaw:   ${(gyroYaw * 100).toInt()}%", style = lineStyle)
-        val l2 = textMeasurer.measure("Pitch: ${(gyroPitch * 100).toInt()}%", style = lineStyle)
-        val l3 = textMeasurer.measure("Roll:  ${(gyroRoll * 100).toInt()}%", style = lineStyle)
+        val l2 = textMeasurer.measure("Roll:  ${(gyroPitch * 100).toInt()}%", style = lineStyle)
+        val l3 = textMeasurer.measure("Pitch: ${(gyroRoll * 100).toInt()}%", style = lineStyle)
         val lineH = l1.size.height * 1.1f
         val startY = cy - lineH * 1.5f
         val textX = cx - boxW / 2 + 4f
@@ -2507,6 +2538,45 @@ private fun GlobalSettingsDialog(
 }
 
 @Composable
+private fun GyroAxisPicker(
+    label: String,
+    current: Int,
+    modifier: Modifier = Modifier,
+    onChange: (Int) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val currentLabel =
+        if (current < 0) "Disabled" else (TouchBindings.AXIS_LABELS[current] ?: "Axis $current")
+
+    Column(modifier = modifier) {
+        Text(label, color = Color.Gray, fontSize = 11.sp)
+        Box {
+            TextButton(onClick = { expanded = true }) {
+                Text(currentLabel, fontSize = 11.sp)
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                DropdownMenuItem(
+                    text = { Text("Disabled", fontSize = 12.sp) },
+                    onClick = {
+                        onChange(-1)
+                        expanded = false
+                    },
+                )
+                TouchBindings.AXIS_LABELS.forEach { (idx, name) ->
+                    DropdownMenuItem(
+                        text = { Text(name, fontSize = 12.sp) },
+                        onClick = {
+                            onChange(idx)
+                            expanded = false
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun GyroSettingsDialog(
     gyro: GyroConfig,
     onDismiss: () -> Unit,
@@ -2516,14 +2586,13 @@ private fun GyroSettingsDialog(
     var enabled by remember { mutableStateOf(gyro.enabled) }
     var activation by remember { mutableStateOf(gyro.activation) }
     var mode by remember { mutableStateOf(gyro.mode) }
-    var sensX by remember { mutableFloatStateOf(gyro.sensitivityX) }
-    var sensY by remember { mutableFloatStateOf(gyro.sensitivityY) }
-    var sensZ by remember { mutableFloatStateOf(gyro.sensitivityZ) }
     var invertX by remember { mutableStateOf(gyro.invertX) }
     var invertY by remember { mutableStateOf(gyro.invertY) }
     var invertZ by remember { mutableStateOf(gyro.invertZ) }
     var deadzone by remember { mutableFloatStateOf(gyro.deadzone) }
-    var maxAngle by remember { mutableFloatStateOf(gyro.maxAngle) }
+    var maxAngleX by remember { mutableFloatStateOf(gyro.maxAngleX) }
+    var maxAngleY by remember { mutableFloatStateOf(gyro.maxAngleY) }
+    var maxAngleZ by remember { mutableFloatStateOf(gyro.maxAngleZ) }
     var axisX by remember { mutableIntStateOf(gyro.axisX) }
     var axisY by remember { mutableIntStateOf(gyro.axisY) }
     var axisZ by remember { mutableIntStateOf(gyro.axisZ) }
@@ -2553,16 +2622,16 @@ private fun GyroSettingsDialog(
                     if (enabled) {
                         Spacer(Modifier.height(8.dp))
                         Text("Activation Mode", color = Color.Gray, fontSize = 12.sp)
-                        GyroActivation.entries.forEach { mode ->
+                        GyroActivation.entries.forEach { act ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 RadioButton(
-                                    selected = activation == mode,
-                                    onClick = { activation = mode },
+                                    selected = activation == act,
+                                    onClick = { activation = act },
                                     modifier = Modifier.size(20.dp),
                                 )
                                 Spacer(Modifier.width(4.dp))
                                 Text(
-                                    mode.name.lowercase().replace('_', ' '),
+                                    act.name.lowercase().replace('_', ' '),
                                     fontSize = 12.sp,
                                     color = Color.White,
                                 )
@@ -2590,106 +2659,38 @@ private fun GyroSettingsDialog(
                             Text("Rate (angular velocity)", fontSize = 12.sp, color = Color.White)
                         }
 
+                        // Per-axis binding (landscape: yaw=X, roll=Y, pitch=Z)
                         Spacer(Modifier.height(8.dp))
-                        Text("Axis Mode", color = Color.Gray, fontSize = 12.sp)
-                        val isAim = (
-                            axisX == TouchBindings.AXIS_RIGHT_X &&
-                                axisY == TouchBindings.AXIS_RIGHT_Y
-                        )
-                        val isSlide = (
-                            axisX == TouchBindings.AXIS_LEFT_X &&
-                                axisY == TouchBindings.AXIS_LEFT_Y
-                        )
-                        val isRoll = (
-                            axisX == TouchBindings.AXIS_BANK &&
-                                axisY == TouchBindings.AXIS_SLIDE_UD
-                        )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(
-                                selected = isAim,
-                                onClick = {
-                                    axisX = TouchBindings.AXIS_RIGHT_X
-                                    axisY = TouchBindings.AXIS_RIGHT_Y
-                                },
-                                modifier = Modifier.size(20.dp),
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text("Aim (turn/pitch)", fontSize = 12.sp, color = Color.White)
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(
-                                selected = isSlide,
-                                onClick = {
-                                    axisX = TouchBindings.AXIS_LEFT_X
-                                    axisY = TouchBindings.AXIS_LEFT_Y
-                                },
-                                modifier = Modifier.size(20.dp),
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text("Slide (left-right/up-down)", fontSize = 12.sp, color = Color.White)
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(
-                                selected = isRoll,
-                                onClick = {
-                                    axisX = TouchBindings.AXIS_BANK
-                                    axisY = TouchBindings.AXIS_SLIDE_UD
-                                },
-                                modifier = Modifier.size(20.dp),
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text("Roll + slide up/down", fontSize = 12.sp, color = Color.White)
+                        Text("Axis Bindings", color = Color.Gray, fontSize = 12.sp)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            GyroAxisPicker("Yaw axis", axisX, Modifier.weight(1f)) { axisX = it }
+                            GyroAxisPicker("Roll axis", axisY, Modifier.weight(1f)) { axisY = it }
+                            GyroAxisPicker("Pitch axis", axisZ, Modifier.weight(1f)) { axisZ = it }
                         }
 
-                        Spacer(Modifier.height(8.dp))
-                        Text("Roll Axis (3rd axis)", color = Color.Gray, fontSize = 12.sp)
-                        val rollDisabled = axisZ < 0
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(
-                                selected = rollDisabled,
-                                onClick = { axisZ = -1 },
-                                modifier = Modifier.size(20.dp),
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text("Disabled", fontSize = 12.sp, color = Color.White)
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(
-                                selected = axisZ == TouchBindings.AXIS_BANK,
-                                onClick = { axisZ = TouchBindings.AXIS_BANK },
-                                modifier = Modifier.size(20.dp),
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text("Bank (roll)", fontSize = 12.sp, color = Color.White)
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(
-                                selected = axisZ == TouchBindings.AXIS_LEFT_X,
-                                onClick = { axisZ = TouchBindings.AXIS_LEFT_X },
-                                modifier = Modifier.size(20.dp),
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text("Slide left/right", fontSize = 12.sp, color = Color.White)
-                        }
-
-                        Spacer(Modifier.height(8.dp))
-                        LabeledSlider("Sensitivity X", sensX, 0.1f, 5f) { sensX = it }
-                        LabeledSlider("Sensitivity Y", sensY, 0.1f, 5f) { sensY = it }
-                        if (axisZ >= 0) {
-                            LabeledSlider("Sensitivity Z", sensZ, 0.1f, 5f) { sensZ = it }
-                        }
-                        LabeledSlider("Deadzone", deadzone, 0f, 0.1f) { deadzone = it }
+                        // Per-axis tilt range (absolute mode only)
                         if (mode == GyroMode.ABSOLUTE) {
-                            val angleDeg = "%.0f".format(Math.toDegrees(maxAngle.toDouble()))
-                            LabeledSlider("Tilt Range ($angleDeg deg)", maxAngle, 0.1f, 1.57f) { maxAngle = it }
+                            Spacer(Modifier.height(8.dp))
+                            if (axisX >= 0) {
+                                val degX = "%.0f".format(Math.toDegrees(maxAngleX.toDouble()))
+                                LabeledSlider("Tilt Range X ($degX deg)", maxAngleX, 0.1f, 1.57f) { maxAngleX = it }
+                            }
+                            if (axisY >= 0) {
+                                val degY = "%.0f".format(Math.toDegrees(maxAngleY.toDouble()))
+                                LabeledSlider("Tilt Range Y ($degY deg)", maxAngleY, 0.1f, 1.57f) { maxAngleY = it }
+                            }
+                            if (axisZ >= 0) {
+                                val degZ = "%.0f".format(Math.toDegrees(maxAngleZ.toDouble()))
+                                LabeledSlider("Tilt Range Z ($degZ deg)", maxAngleZ, 0.1f, 1.57f) { maxAngleZ = it }
+                            }
                         }
+
+                        LabeledSlider("Deadzone", deadzone, 0f, 0.1f) { deadzone = it }
 
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            LabeledToggle("Invert X", invertX) { invertX = it }
-                            LabeledToggle("Invert Y", invertY) { invertY = it }
-                            if (axisZ >= 0) {
-                                LabeledToggle("Invert Z", invertZ) { invertZ = it }
-                            }
+                            if (axisX >= 0) LabeledToggle("Invert X", invertX) { invertX = it }
+                            if (axisY >= 0) LabeledToggle("Invert Y", invertY) { invertY = it }
+                            if (axisZ >= 0) LabeledToggle("Invert Z", invertZ) { invertZ = it }
                         }
 
                         Spacer(Modifier.height(8.dp))
@@ -2720,14 +2721,13 @@ private fun GyroSettingsDialog(
                         enabled = enabled,
                         activation = activation,
                         mode = mode,
-                        sensitivityX = sensX,
-                        sensitivityY = sensY,
-                        sensitivityZ = sensZ,
                         invertX = invertX,
                         invertY = invertY,
                         invertZ = invertZ,
                         deadzone = deadzone,
-                        maxAngle = maxAngle,
+                        maxAngleX = maxAngleX,
+                        maxAngleY = maxAngleY,
+                        maxAngleZ = maxAngleZ,
                         axisX = axisX,
                         axisY = axisY,
                         axisZ = axisZ,

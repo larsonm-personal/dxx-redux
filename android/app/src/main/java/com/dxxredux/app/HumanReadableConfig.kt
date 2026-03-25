@@ -399,9 +399,6 @@ object HumanReadableConfig {
             enabled = j.optBoolean("enabled"),
             activation = GyroActivation.valueOf(j.optString("activation", "ALWAYS")),
             mode = GyroMode.valueOf(j.optString("mode", "ABSOLUTE")),
-            sensitivityX = j.optDouble("sensitivityX", 1.0).toFloat(),
-            sensitivityY = j.optDouble("sensitivityY", 1.0).toFloat(),
-            sensitivityZ = j.optDouble("sensitivityZ", 1.0).toFloat(),
             invertX = j.optBoolean("invertX"),
             invertY = j.optBoolean("invertY"),
             invertZ = j.optBoolean("invertZ"),
@@ -409,7 +406,9 @@ object HumanReadableConfig {
             axisY = axisY,
             axisZ = axisZ,
             deadzone = j.optDouble("deadzone", 0.02).toFloat(),
-            maxAngle = j.optDouble("maxAngle", 0.436).toFloat(),
+            maxAngleX = j.optDouble("maxAngleX", j.optDouble("maxAngle", 0.436)).toFloat(),
+            maxAngleY = j.optDouble("maxAngleY", j.optDouble("maxAngle", 0.436)).toFloat(),
+            maxAngleZ = j.optDouble("maxAngleZ", j.optDouble("maxAngle", 0.436)).toFloat(),
         )
     }
 

@@ -1135,10 +1135,6 @@ void ogl_set_blending()
 GLubyte *pixels = NULL;
 
 void ogl_start_frame(void){
-	#ifdef OGL_MERGE
-	GLfloat mat[16];
-	#endif
-
 	r_polyc=0;r_tpolyc=0;r_bitmapc=0;r_ubitbltc=0;r_upixelc=0;
 
 	OGL_VIEWPORT(grd_curcanv->cv_bitmap.bm_x,grd_curcanv->cv_bitmap.bm_y,Canvas_width,Canvas_height);
@@ -1148,8 +1144,10 @@ void ogl_start_frame(void){
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+#ifndef OGL_MERGE
 	glEnable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_GEQUAL,0.02);
+#endif
 
 	if (!GameCfg.ClassicDepth || (Game_mode & GM_MULTI))
 		glEnable(GL_DEPTH_TEST);
@@ -1160,6 +1158,23 @@ void ogl_start_frame(void){
 	glEnable(GL_CULL_FACE);
 	glFrontFace(GL_CW);
 
+#ifdef OGL_MERGE
+	{
+		/* Build perspective matrix on CPU to avoid GLES 1 matrix stack calls
+		 * that generate GL_INVALID_OPERATION on Android (GLES 1/2 mixing) */
+		double n = 0.1, f = 5000.0;
+		double ymax = n * tan(90.0 * M_PI / 360.0);
+		double xmax = ymax; /* aspect = 1 */
+		GLfloat mat[16];
+		memset(mat, 0, sizeof(mat));
+		mat[0]  = (GLfloat)(n / xmax);
+		mat[5]  = (GLfloat)(n / ymax);
+		mat[10] = (GLfloat)(-(f + n) / (f - n));
+		mat[11] = -1.0f;
+		mat[14] = (GLfloat)(-2.0 * f * n / (f - n));
+		ogl_prog_set_matrix(mat);
+	}
+#else
 	glShadeModel(GL_SMOOTH);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();//clear matrix
@@ -1170,10 +1185,6 @@ void ogl_start_frame(void){
 #endif
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();//clear matrix
-
-#ifdef OGL_MERGE
-	glGetFloatv(GL_PROJECTION_MATRIX, mat);
-	ogl_prog_set_matrix(mat);
 #endif
 }
 
@@ -1199,6 +1210,10 @@ void ogl_end_frame(void){
 
 #ifdef OGL_MERGE
 	ogl_prog_set_matrix(ogl_mat_ortho);
+#endif
+#ifdef ANDROID
+	/* Drain GL errors from GLES 1/2 API mixing on Android */
+	while (glGetError() != GL_NO_ERROR) {}
 #endif
 }
 

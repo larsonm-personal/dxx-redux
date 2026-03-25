@@ -69,7 +69,8 @@ class GyroInputManager(
 
     fun resume() {
         if (!config.enabled || sensor == null) return
-        hasReference = false
+        // Only clear reference if setConfig didn't load persisted values
+        if (!hasReference) hasReference = false
         sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME)
     }
 
@@ -136,20 +137,13 @@ class GyroInputManager(
         dPitch = applyDeadzone(dPitch, config.deadzone)
         dRoll = applyDeadzone(dRoll, config.deadzone)
 
-        // Apply sensitivity and optional absolute-mode scaling
-        var outX: Float
-        var outY: Float
-        var outZ: Float
-        if (config.mode == GyroMode.ABSOLUTE) {
-            val range = (config.maxAngle - config.deadzone).coerceAtLeast(0.01f)
-            outX = (dYaw / range) * config.sensitivityX
-            outY = (dPitch / range) * config.sensitivityY
-            outZ = (dRoll / range) * config.sensitivityZ
-        } else {
-            outX = dYaw * config.sensitivityX
-            outY = dPitch * config.sensitivityY
-            outZ = dRoll * config.sensitivityZ
-        }
+        // Scale by per-axis tilt range (used for both ABSOLUTE and RATE modes)
+        val rangeX = (config.maxAngleX - config.deadzone).coerceAtLeast(0.01f)
+        val rangeY = (config.maxAngleY - config.deadzone).coerceAtLeast(0.01f)
+        val rangeZ = (config.maxAngleZ - config.deadzone).coerceAtLeast(0.01f)
+        var outX = dYaw / rangeX
+        var outY = dPitch / rangeY
+        var outZ = dRoll / rangeZ
         if (config.invertX) outX = -outX
         if (config.invertY) outY = -outY
         if (config.invertZ) outZ = -outZ

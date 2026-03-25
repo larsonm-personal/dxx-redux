@@ -406,9 +406,6 @@ data class GyroConfig(
     val enabled: Boolean = false,
     val activation: GyroActivation = GyroActivation.ALWAYS,
     val mode: GyroMode = GyroMode.ABSOLUTE,
-    val sensitivityX: Float = 3f,
-    val sensitivityY: Float = 3f,
-    val sensitivityZ: Float = 3f,
     val invertX: Boolean = false,
     val invertY: Boolean = false,
     val invertZ: Boolean = false,
@@ -416,7 +413,9 @@ data class GyroConfig(
     val axisY: Int = TouchBindings.AXIS_RIGHT_Y,
     val axisZ: Int = -1, // -1 = disabled (roll not mapped by default)
     val deadzone: Float = 0.02f,
-    val maxAngle: Float = 0.436f, // ~25 degrees, used in ABSOLUTE mode
+    val maxAngleX: Float = 0.436f, // ~25 degrees
+    val maxAngleY: Float = 0.436f,
+    val maxAngleZ: Float = 0.436f,
     // Persisted reference orientation from last recenter (null = not yet calibrated)
     val refAzimuth: Float? = null,
     val refPitch: Float? = null,
@@ -427,9 +426,6 @@ data class GyroConfig(
             put("enabled", enabled)
             put("activation", activation.name)
             put("mode", mode.name)
-            put("sensitivityX", sensitivityX.toDouble())
-            put("sensitivityY", sensitivityY.toDouble())
-            put("sensitivityZ", sensitivityZ.toDouble())
             put("invertX", invertX)
             put("invertY", invertY)
             put("invertZ", invertZ)
@@ -437,21 +433,22 @@ data class GyroConfig(
             put("axisY", axisY)
             put("axisZ", axisZ)
             put("deadzone", deadzone.toDouble())
-            put("maxAngle", maxAngle.toDouble())
+            put("maxAngleX", maxAngleX.toDouble())
+            put("maxAngleY", maxAngleY.toDouble())
+            put("maxAngleZ", maxAngleZ.toDouble())
             if (refAzimuth != null) put("refAzimuth", refAzimuth.toDouble())
             if (refPitch != null) put("refPitch", refPitch.toDouble())
             if (refRoll != null) put("refRoll", refRoll.toDouble())
         }
 
     companion object {
-        fun fromJson(j: JSONObject) =
-            GyroConfig(
+        fun fromJson(j: JSONObject): GyroConfig {
+            // Migration: old configs have single maxAngle; new have maxAngleX/Y/Z
+            val legacyAngle = j.optDouble("maxAngle", 0.436).toFloat()
+            return GyroConfig(
                 enabled = j.optBoolean("enabled"),
                 activation = GyroActivation.valueOf(j.optString("activation", "ALWAYS")),
-                mode = GyroMode.valueOf(j.optString("mode", "RATE")),
-                sensitivityX = j.optDouble("sensitivityX", 3.0).toFloat(),
-                sensitivityY = j.optDouble("sensitivityY", 3.0).toFloat(),
-                sensitivityZ = j.optDouble("sensitivityZ", 3.0).toFloat(),
+                mode = GyroMode.valueOf(j.optString("mode", "ABSOLUTE")),
                 invertX = j.optBoolean("invertX"),
                 invertY = j.optBoolean("invertY"),
                 invertZ = j.optBoolean("invertZ"),
@@ -459,11 +456,14 @@ data class GyroConfig(
                 axisY = j.optInt("axisY", TouchBindings.AXIS_RIGHT_Y),
                 axisZ = j.optInt("axisZ", -1),
                 deadzone = j.optDouble("deadzone", 0.02).toFloat(),
-                maxAngle = j.optDouble("maxAngle", 0.436).toFloat(),
+                maxAngleX = j.optDouble("maxAngleX", legacyAngle.toDouble()).toFloat(),
+                maxAngleY = j.optDouble("maxAngleY", legacyAngle.toDouble()).toFloat(),
+                maxAngleZ = j.optDouble("maxAngleZ", legacyAngle.toDouble()).toFloat(),
                 refAzimuth = if (j.has("refAzimuth")) j.getDouble("refAzimuth").toFloat() else null,
                 refPitch = if (j.has("refPitch")) j.getDouble("refPitch").toFloat() else null,
                 refRoll = if (j.has("refRoll")) j.getDouble("refRoll").toFloat() else null,
             )
+        }
     }
 }
 

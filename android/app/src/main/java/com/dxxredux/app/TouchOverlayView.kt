@@ -894,9 +894,9 @@ class TouchOverlayView
             val roll = (diagGyroRoll * 100).toInt()
             canvas.drawText("Yaw:   $yaw%", textX, textY, paintDiagText)
             textY += lineH
-            canvas.drawText("Pitch: $pitch%", textX, textY, paintDiagText)
+            canvas.drawText("Roll:  $pitch%", textX, textY, paintDiagText)
             textY += lineH
-            canvas.drawText("Roll:  $roll%", textX, textY, paintDiagText)
+            canvas.drawText("Pitch: $roll%", textX, textY, paintDiagText)
         }
 
         /** Shared radial menu drawing — handles both trigger icon and open wheel. */
@@ -1205,6 +1205,7 @@ class TouchOverlayView
 
                     // Try layout sticks
                     for (s in stickStates) {
+                        if (handled) break
                         if (s.pointerId >= 0) continue
                         if (s.control.mouseMode) {
                             // Mouse mode: use floating zone bounds for hit detection
@@ -1464,6 +1465,46 @@ class TouchOverlayView
                                 }
                                 invalidate()
                                 continue
+                            } else if (src == null) {
+                                // Touch originated directly on region; try to transfer to a stick
+                                var transferred = false
+                                for (s in stickStates) {
+                                    if (s.pointerId >= 0) continue
+                                    val inZone =
+                                        when {
+                                            s.control.mouseMode || s.control.floating ->
+                                                ax in s.fzLeft..s.fzRight && ay in s.fzTop..s.fzBottom
+                                            else ->
+                                                hypot(ax - s.centerX, ay - s.centerY) <= s.radius
+                                        }
+                                    if (inZone) {
+                                        s.pointerId = ar.pointerId
+                                        if (s.control.mouseMode) {
+                                            s.mouseLastX = ax
+                                            s.mouseLastY = ay
+                                            s.mouseOriginX = ax
+                                            s.mouseOriginY = ay
+                                            s.mousePendingX = 0f
+                                            s.mousePendingY = 0f
+                                            s.floatingActive = true
+                                            startMouseDrain()
+                                        } else if (s.control.floating) {
+                                            s.floatingCX = ax
+                                            s.floatingCY = ay
+                                            s.floatingActive = true
+                                            s.pos.set(0f, 0f)
+                                        } else {
+                                            updateStickFromTouch(s, ax, ay)
+                                        }
+                                        ar.pointerId = -1
+                                        ar.value = 0f
+                                        axisCallback?.invoke(ar.control.axis, 0f)
+                                        invalidate()
+                                        transferred = true
+                                        break
+                                    }
+                                }
+                                if (transferred) continue
                             }
                         }
                     }
