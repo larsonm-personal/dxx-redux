@@ -73,4 +73,8 @@ Android launcher's music management system.
   - CdTrackDetailDialog: play/pause, stop, seekable progress bar, duration display
 - [x] 2B. CD tracks clickable in TrackPreviewDialog -- DONE
 - [x] 2C. Scroll indicators in TrackPreviewDialog -- DONE
-- [ ] 3A-3E: future work
+- [x] 3B. CD audio source info view -- DONE (tap disc label in AudioSourceRow)
+- [x] 3C. Audio files source info view -- DONE (tap set label, shows file list + match counts)
+- [x] 3D. Delete confirmation for audio files -- DONE (dialog with file count + warning)
+- [x] 3E. Delete note for CD audio -- DONE (note: "BIN/CUE disc files will remain on disk")
+- [ ] 3A. Files view redesign -- deferred (no existing "Files" view to redesign)

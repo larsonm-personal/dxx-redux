@@ -42,6 +42,9 @@ private const val MUSIC_MODE_FILES = "files"
 
 private const val TAG = "DXX-MusicPicker"
 
+// Duplicated from FingerprintBridge.kt -- both files need it for filtering
+private fun isPlaceholderName(name: String): Boolean = name == "[unknown] - [untitled]"
+
 @Composable
 fun MusicPickerPage(
     filesDir: File,
@@ -291,11 +294,24 @@ private fun CdAudioSection(
         var removeConfirmId by remember { mutableStateOf<String?>(null) }
         val removeConfirmLabel = audioSources.firstOrNull { it.id == removeConfirmId }?.discLabel
 
+        // Source info dialog state
+        var infoSource by remember { mutableStateOf<AudioSourceManager.AudioSource?>(null) }
+
         if (removeConfirmId != null && removeConfirmLabel != null) {
             AlertDialog(
                 onDismissRequest = { removeConfirmId = null },
                 title = { Text("Remove source") },
-                text = { Text("Remove \"$removeConfirmLabel\"?") },
+                text = {
+                    Column {
+                        Text("Remove \"$removeConfirmLabel\"?")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "The BIN/CUE disc files will remain on disk",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                },
                 confirmButton = {
                     TextButton(onClick = {
                         audioSrcManager.removeSource(removeConfirmId!!)
@@ -305,6 +321,37 @@ private fun CdAudioSection(
                 },
                 dismissButton = {
                     TextButton(onClick = { removeConfirmId = null }) { Text("Cancel") }
+                },
+            )
+        }
+
+        // Source info dialog
+        infoSource?.let { src ->
+            AlertDialog(
+                onDismissRequest = { infoSource = null },
+                title = { Text("Source Info", fontSize = 16.sp) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(src.discLabel, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Text("Audio tracks: ${src.audioTrackCount}", fontSize = 12.sp)
+                        Text("Total tracks: ${src.trackCount}", fontSize = 12.sp)
+                        Text("CUE: ${src.cuePath}", fontSize = 12.sp)
+                        Text("BIN: ${src.binPaths.joinToString(", ")}", fontSize = 12.sp)
+                        if (src.discId != "unknown") {
+                            Text("Disc ID: ${src.discId}", fontSize = 12.sp)
+                        }
+                        val matched = src.trackNames.count { (_, v) -> v != "[unknown] - [untitled]" }
+                        if (matched > 0) {
+                            Text(
+                                "$matched/${src.audioTrackCount} tracks identified",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { infoSource = null }) { Text("Close") }
                 },
             )
         }
@@ -337,6 +384,7 @@ private fun CdAudioSection(
                     onSourcesChanged()
                 },
                 onRemove = { removeConfirmId = src.id },
+                onInfo = { infoSource = src },
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -359,6 +407,7 @@ private fun AudioSourceRow(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onRemove: () -> Unit,
+    onInfo: () -> Unit = {},
 ) {
     Row(
         modifier =
@@ -382,7 +431,7 @@ private fun AudioSourceRow(
                 } else {
                     MaterialTheme.colorScheme.onSurfaceVariant
                 },
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).clickable(onClick = onInfo),
         )
         if (index > 0) {
             IconButton(
@@ -430,6 +479,75 @@ private fun AudioFilesSection(
     )
     Spacer(modifier = Modifier.height(8.dp))
 
+    // Delete confirmation dialog state
+    var removeConfirmId by remember { mutableStateOf<String?>(null) }
+    val removeConfirmSet = customSets.firstOrNull { it.id == removeConfirmId }
+
+    // Set info dialog state
+    var infoSet by remember { mutableStateOf<CustomAudioSetManager.AudioSet?>(null) }
+
+    if (removeConfirmId != null && removeConfirmSet != null) {
+        AlertDialog(
+            onDismissRequest = { removeConfirmId = null },
+            title = { Text("Delete set") },
+            text = {
+                Column {
+                    Text("Delete \"${removeConfirmSet.label}\" and its ${removeConfirmSet.files.size} audio files?")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "This cannot be undone",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    customMgr.removeSet(removeConfirmId!!, deleteFiles = true)
+                    removeConfirmId = null
+                    onSetsChanged()
+                }) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { removeConfirmId = null }) { Text("Cancel") }
+            },
+        )
+    }
+
+    // Set info dialog
+    infoSet?.let { set ->
+        AlertDialog(
+            onDismissRequest = { infoSet = null },
+            title = { Text("Set Info", fontSize = 16.sp) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(set.label, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    Text("Files: ${set.files.size}", fontSize = 12.sp)
+                    val matched = set.trackNames.count { (_, v) -> v != "[unknown] - [untitled]" }
+                    if (matched > 0) {
+                        Text(
+                            "$matched/${set.files.size} tracks identified",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    if (set.files.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("Files:", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                        set.files.sorted().forEach { f ->
+                            val name = set.trackNames[f]
+                            val label = if (name != null && !isPlaceholderName(name)) "$f - $name" else f
+                            Text(label, fontSize = 10.sp)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { infoSet = null }) { Text("Close") }
+            },
+        )
+    }
+
     if (customSets.isEmpty() && !importingFiles) {
         Text(
             "No audio file sets added. Tap \"Add Set\" to import audio files.",
@@ -465,7 +583,7 @@ private fun AudioFilesSection(
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).clickable { infoSet = set },
             )
             if (index > 0) {
                 IconButton(
@@ -498,10 +616,7 @@ private fun AudioFilesSection(
                 Spacer(modifier = Modifier.size(24.dp))
             }
             TextButton(
-                onClick = {
-                    customMgr.removeSet(set.id, deleteFiles = true)
-                    onSetsChanged()
-                },
+                onClick = { removeConfirmId = set.id },
                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
                 modifier = Modifier.height(24.dp),
             ) {
