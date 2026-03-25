@@ -14,6 +14,7 @@ import android.util.Log
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -198,7 +199,7 @@ class SetupActivity : ComponentActivity() {
                             val count = GogImportBridge.extractFiles(path, setDir.absolutePath, null, audio)
                             val srcManager = AudioSourceManager(filesDir)
                             if (audio && count > 0 && findGogPair(setDir) != null) {
-                                enableRedbookInConfig(filesDir)
+                                enableRedbookInConfig(filesDir, this@SetupActivity)
                                 registerGogAudioSource(srcManager, setDir, this@SetupActivity)
                             }
                             Log.i("DXX-Setup", "import_gog '$path' -> $count file(s) to ${setDir.name} (audio=$audio)")
@@ -1728,6 +1729,7 @@ private fun SetupScreen(
                     // Track raw .gog/.inst pairs (GOG CD images picked directly)
                     var gogDiscUri: Pair<String, Uri>? = null // .gog BIN file
                     var instDiscUri: Pair<String, Uri>? = null // .inst CUE sheet
+                    val unhandledFiles = mutableListOf<String>()
                     for (uri in uris) {
                         val name = getDisplayName(context, uri)
                         if (name != null) {
@@ -1741,6 +1743,7 @@ private fun SetupScreen(
                                 lname.endsWith(".exe") || lname.endsWith(".pkg") -> gogUri = name to uri
                                 lname.endsWith(".sow") -> sowUri = name to uri
                                 lname in ALL_GAME_FILENAMES -> gameUris.add(FoundFile(name, uri))
+                                else -> unhandledFiles.add(name)
                             }
                         }
                     }
@@ -1757,12 +1760,25 @@ private fun SetupScreen(
                         gogDiscUri?.let { gameUris.add(FoundFile(it.first, it.second)) }
                         instDiscUri?.let { gameUris.add(FoundFile(it.first, it.second)) }
                     }
+                    // Collect warnings for files the picker couldn't route
+                    val warnings = mutableListOf<String>()
+                    if (binUris.isNotEmpty() && cueUris.isEmpty()) {
+                        for (b in binUris) warnings.add("${b.first} requires a matching CUE file")
+                    }
+                    if (cueUris.isNotEmpty() && binUris.isEmpty()) {
+                        for (c in cueUris) warnings.add("${c.first} requires a matching BIN file")
+                    }
+                    for (f in unhandledFiles) warnings.add("$f was not imported")
                     withContext(Dispatchers.Main) {
+                        for (w in warnings) {
+                            Toast.makeText(context, w, Toast.LENGTH_LONG).show()
+                            Log.w("DXX-Setup", "Import warning: $w")
+                        }
                         if (gameUris.isNotEmpty()) {
                             scanResults = gameUris
                         }
-                        // Trigger disc import dialog if CUE file(s) found
-                        if (cueUris.isNotEmpty()) {
+                        // Trigger disc import dialog if CUE+BIN pair found
+                        if (cueUris.isNotEmpty() && binUris.isNotEmpty()) {
                             discImportCueName = cueUris.first().first
                             discImportCueUri = cueUris.first().second
                             discImportBins = binUris
@@ -3383,10 +3399,14 @@ internal fun updateDescentCfgResolution(
 
 /**
  * Set MusicType=2 (REDBOOK) and OrigTrackOrder=1 in descent.cfg after GOG audio import.
+ * Also sets the launcher's music_mode pref to "cd" so the Music tab reflects the change.
  * Mirrors the C engine's android_apply_initial_defaults() which only runs on first launch.
  * MUSIC_TYPE_REDBOOK = 2 (shared constant, defined in d2/main/digi.h)
  */
-private fun enableRedbookInConfig(filesDir: File) {
+private fun enableRedbookInConfig(
+    filesDir: File,
+    context: Context,
+) {
     val cfgFile = File(filesDir, "descent.cfg")
     var text = if (cfgFile.exists()) cfgFile.readText() else ""
     for ((key, value) in listOf("MusicType" to "2", "OrigTrackOrder" to "1")) {
@@ -3399,7 +3419,12 @@ private fun enableRedbookInConfig(filesDir: File) {
             }
     }
     cfgFile.writeText(text)
-    Log.i("DXX-Setup", "Updated descent.cfg: MusicType=2 OrigTrackOrder=1")
+    context
+        .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
+        .edit()
+        .putString("music_mode", "cd")
+        .apply()
+    Log.i("DXX-Setup", "Updated descent.cfg: MusicType=2 OrigTrackOrder=1, music_mode=cd")
 }
 
 /**
@@ -4393,7 +4418,7 @@ private fun GogImportDialog(
                                                 false
                                             }
                                         if (hasGog) {
-                                            enableRedbookInConfig(filesDir)
+                                            enableRedbookInConfig(filesDir, context)
                                             registerGogAudioSource(srcManager, setDir, context)
                                         }
                                         val filesAfter = setDir.list()?.toSet() ?: emptySet()
@@ -4937,6 +4962,7 @@ private fun DiscImportDialog(
                                                 status = "Audio source registered" +
                                                     if (discLabel != null) " ($discLabel)" else ""
                                             }
+                                            enableRedbookInConfig(filesDir, context)
                                         } catch (e: Exception) {
                                             Log.e("DXX-DiscImport", "Audio registration failed", e)
                                             withContext(Dispatchers.Main) {

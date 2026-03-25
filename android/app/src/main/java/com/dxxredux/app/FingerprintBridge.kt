@@ -7,6 +7,9 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 
+// Filter AcoustID placeholder names where both artist and title are unknown
+private fun isPlaceholderName(name: String): Boolean = name == "[unknown] - [untitled]"
+
 /**
  * JNI bridge for Chromaprint audio fingerprinting.
  *
@@ -104,7 +107,9 @@ object FingerprintBridge {
                         acoustidName
                             ?: t.optString("name").takeIf { it.isNotEmpty() }
                             ?: continue
-                    names[t.getInt("track")] = name
+                    if (!isPlaceholderName(name)) {
+                        names[t.getInt("track")] = name
+                    }
                 }
                 break
             }
@@ -237,9 +242,11 @@ object FingerprintBridge {
                     if (durationMs <= 0) continue
                     val entry = JSONObject()
                     val acoustidName = t.optString("acoustid_name").takeIf { it.isNotEmpty() }
-                    val trackName =
+                    val rawName =
                         acoustidName
                             ?: t.optString("name", "Track ${t.getInt("track")}")
+                    val trackName =
+                        if (isPlaceholderName(rawName)) "Track ${t.getInt("track")}" else rawName
                     entry.put("name", trackName)
                     entry.put("disc_id", discId)
                     entry.put("track", t.getInt("track"))

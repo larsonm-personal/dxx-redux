@@ -59,6 +59,12 @@ const char *track_names_lookup(int track, unsigned long disc_id)
 
 static char s_overlay_text[OVERLAY_TEXT_LEN];
 
+/* Return 1 if name is exactly "[unknown] - [untitled]" (useless AcoustID placeholder) */
+static int is_placeholder_name(const char *name)
+{
+	return name && strcmp(name, "[unknown] - [untitled]") == 0;
+}
+
 void track_overlay_notify(int track_or_song, int is_midi, unsigned long disc_id)
 {
 	if (is_midi) {
@@ -67,7 +73,7 @@ void track_overlay_notify(int track_or_song, int is_midi, unsigned long disc_id)
 		snprintf(s_overlay_text, OVERLAY_TEXT_LEN, "MIDI Track %d", display_num);
 	} else {
 		const char *name = track_names_lookup(track_or_song, disc_id);
-		if (name)
+		if (name && !is_placeholder_name(name))
 			snprintf(s_overlay_text, OVERLAY_TEXT_LEN, "%s", name);
 		else
 			snprintf(s_overlay_text, OVERLAY_TEXT_LEN, "Track %d", track_or_song);

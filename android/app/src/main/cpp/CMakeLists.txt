@@ -491,7 +491,7 @@ add_subdirectory("${D1_SRC}" "${CMAKE_CURRENT_BINARY_DIR}/d1")
 # ──────────────────────────────────────────────────────────────
 # 7. Android-specific fixups for dxx-redux-d1 target
 # ──────────────────────────────────────────────────────────────
-target_link_libraries(dxx-redux-d1 PRIVATE android log)
+target_link_libraries(dxx-redux-d1 PRIVATE android log OpenSLES)
 if(OPENGL)
     target_link_libraries(dxx-redux-d1 PRIVATE EGL GLESv1_CM)
 endif()
@@ -521,6 +521,8 @@ target_sources(dxx-redux-d1 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_net_log.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/track_names.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/cd_preview.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni_cd_preview.c
     ${CMAKE_CURRENT_SOURCE_DIR}/jni_fingerprint.c
 )
 target_include_directories(dxx-redux-d1 PRIVATE
@@ -570,7 +572,7 @@ add_subdirectory("${D2_SRC}" "${CMAKE_CURRENT_BINARY_DIR}/d2")
 # ──────────────────────────────────────────────────────────────
 # 9. Android-specific fixups for dxx-redux-d2 target
 # ──────────────────────────────────────────────────────────────
-target_link_libraries(dxx-redux-d2 PRIVATE android log)
+target_link_libraries(dxx-redux-d2 PRIVATE android log OpenSLES)
 if(OPENGL)
     target_link_libraries(dxx-redux-d2 PRIVATE EGL GLESv1_CM)
 endif()
@@ -600,6 +602,8 @@ target_sources(dxx-redux-d2 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_net_log.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/track_names.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/cd_preview.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni_cd_preview.c
     ${CMAKE_CURRENT_SOURCE_DIR}/jni_fingerprint.c
 )
 target_include_directories(dxx-redux-d2 PRIVATE

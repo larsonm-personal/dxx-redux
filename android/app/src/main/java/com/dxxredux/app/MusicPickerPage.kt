@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -557,10 +558,19 @@ private fun TrackPreviewDialog(
     // Track info tap state
     var infoTrack by remember { mutableStateOf<CustomAudioSetManager.TrackDetail?>(null) }
 
+    // CD track tap state for mini player
+    data class CdTrackInfo(
+        val name: String,
+        val audioTrackIdx: Int,
+        val source: AudioSourceManager.AudioSource,
+    )
+    var cdPreviewTrack by remember { mutableStateOf<CdTrackInfo?>(null) }
+
     data class TrackRow(
         val display: String,
-        val source: String,
+        val sourceLabel: String,
         val detail: CustomAudioSetManager.TrackDetail?,
+        val cdInfo: CdTrackInfo? = null,
     )
 
     val tracks: List<TrackRow> =
@@ -573,11 +583,14 @@ private fun TrackPreviewDialog(
                 sources.flatMap { src ->
                     val namedTracks = src.trackNames.toSortedMap()
                     (1..src.audioTrackCount).map { i ->
-                        val name =
+                        val raw =
                             namedTracks.values.elementAtOrNull(i - 1)
                                 ?: "Track $trackNum"
+                        val name =
+                            if (raw == "[unknown] - [untitled]") "Track $trackNum" else raw
+                        val info = CdTrackInfo(name, i, src)
                         trackNum++
-                        TrackRow(name, src.discLabel, null)
+                        TrackRow(name, src.discLabel, null, info)
                     }
                 }
             }
@@ -592,50 +605,53 @@ private fun TrackPreviewDialog(
             }
         }
 
+    val filesDir = LocalContext.current.filesDir
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title, fontSize = 16.sp) },
         text = {
-            Column(
-                modifier =
-                    Modifier
-                        .heightIn(max = 400.dp)
-                        .verticalScroll(rememberScrollState()),
-            ) {
-                tracks.forEachIndexed { i, row ->
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 1.dp)
-                                .then(
-                                    if (row.detail != null) {
-                                        Modifier.clickable { infoTrack = row.detail }
-                                    } else {
-                                        Modifier
-                                    },
-                                ),
-                    ) {
-                        Text(
-                            "${i + 1}.",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.width(28.dp),
-                        )
-                        Text(
-                            row.display,
-                            fontSize = 11.sp,
-                            modifier = Modifier.weight(1f),
-                        )
-                        if (row.source.isNotEmpty()) {
+            val dialogScroll = rememberScrollState()
+            Box(modifier = Modifier.heightIn(max = 400.dp)) {
+                Column(modifier = Modifier.verticalScroll(dialogScroll)) {
+                    tracks.forEachIndexed { i, row ->
+                        Row(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 1.dp)
+                                    .then(
+                                        when {
+                                            row.cdInfo != null ->
+                                                Modifier.clickable { cdPreviewTrack = row.cdInfo }
+                                            row.detail != null ->
+                                                Modifier.clickable { infoTrack = row.detail }
+                                            else -> Modifier
+                                        },
+                                    ),
+                        ) {
                             Text(
-                                row.source,
-                                fontSize = 10.sp,
+                                "${i + 1}.",
+                                fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.width(28.dp),
                             )
+                            Text(
+                                row.display,
+                                fontSize = 11.sp,
+                                modifier = Modifier.weight(1f),
+                            )
+                            if (row.sourceLabel.isNotEmpty()) {
+                                Text(
+                                    row.sourceLabel,
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 }
+                ScrollArrows(dialogScroll)
             }
         },
         confirmButton = {
@@ -643,7 +659,7 @@ private fun TrackPreviewDialog(
         },
     )
 
-    // Track info sub-dialog
+    // Track info sub-dialog (audio files)
     infoTrack?.let { track ->
         AlertDialog(
             onDismissRequest = { infoTrack = null },
@@ -672,6 +688,155 @@ private fun TrackPreviewDialog(
             },
         )
     }
+
+    // CD track mini player dialog
+    cdPreviewTrack?.let { info ->
+        CdTrackDetailDialog(
+            filesDir = filesDir,
+            trackName = info.name,
+            audioTrackIdx = info.audioTrackIdx,
+            source = info.source,
+            onDismiss = { cdPreviewTrack = null },
+        )
+    }
+}
+
+// ── CD track detail dialog with mini player ────────────────────────
+
+@Composable
+private fun CdTrackDetailDialog(
+    filesDir: File,
+    trackName: String,
+    audioTrackIdx: Int,
+    source: AudioSourceManager.AudioSource,
+    onDismiss: () -> Unit,
+) {
+    val ctx = LocalContext.current
+    val sampleRate = remember { CdPreviewBridge.getNativeSampleRate(ctx) }
+
+    var playing by remember { mutableStateOf(false) }
+    var positionMs by remember { mutableIntStateOf(0) }
+    var durationMs by remember { mutableIntStateOf(0) }
+    var seeking by remember { mutableStateOf(false) }
+
+    // Stop preview when dialog is dismissed
+    DisposableEffect(Unit) {
+        onDispose { CdPreviewBridge.stop() }
+    }
+
+    // Poll playback state while playing or paused
+    LaunchedEffect(playing) {
+        while (playing) {
+            val state = CdPreviewBridge.getState()
+            if (!seeking) {
+                positionMs = state.positionMs
+                durationMs = state.durationMs
+            }
+            if (state.state == CdPreviewBridge.STATE_STOPPED && durationMs > 0) {
+                playing = false
+                positionMs = durationMs
+            }
+            delay(100)
+        }
+    }
+
+    fun togglePlayback() {
+        if (!playing) {
+            val binPath = File(filesDir, source.binPaths.first()).absolutePath
+            val cuePath = File(filesDir, source.cuePath).absolutePath
+            if (CdPreviewBridge.start(binPath, cuePath, audioTrackIdx, sampleRate)) {
+                playing = true
+            }
+        } else {
+            val state = CdPreviewBridge.getState()
+            if (state.state == CdPreviewBridge.STATE_PLAYING) {
+                CdPreviewBridge.pause()
+            } else {
+                CdPreviewBridge.resume()
+            }
+        }
+    }
+
+    fun formatTime(ms: Int): String {
+        val s = ms / 1000
+        return "%d:%02d".format(s / 60, s % 60)
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Track Preview", fontSize = 16.sp) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(trackName, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                Text(
+                    "Disc: ${source.discLabel}",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (durationMs > 0) {
+                    Text(
+                        "Duration: ${formatTime(durationMs)}",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Play/pause button
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    TextButton(onClick = { togglePlayback() }) {
+                        val state =
+                            if (!playing) {
+                                "Play"
+                            } else {
+                                val s = CdPreviewBridge.getState()
+                                if (s.state == CdPreviewBridge.STATE_PAUSED) "Resume" else "Pause"
+                            }
+                        Text(state, fontSize = 13.sp)
+                    }
+                    if (playing) {
+                        TextButton(onClick = {
+                            CdPreviewBridge.stop()
+                            playing = false
+                            positionMs = 0
+                        }) {
+                            Text("Stop", fontSize = 13.sp)
+                        }
+                    }
+                }
+
+                // Progress slider
+                if (durationMs > 0) {
+                    Slider(
+                        value = positionMs.toFloat() / durationMs.toFloat(),
+                        onValueChange = { frac ->
+                            seeking = true
+                            positionMs = (frac * durationMs).toInt()
+                        },
+                        onValueChangeFinished = {
+                            CdPreviewBridge.seek(positionMs.toFloat() / durationMs.toFloat())
+                            seeking = false
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(formatTime(positionMs), fontSize = 10.sp)
+                        Text(formatTime(durationMs), fontSize = 10.sp)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        },
+    )
 }
 
 // ── Scroll arrows (from AdvancedSettingsPage pattern) ──────────────
