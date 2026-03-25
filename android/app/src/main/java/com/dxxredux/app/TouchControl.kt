@@ -20,6 +20,13 @@ enum class GyroActivation { ALWAYS, TOUCH_STICK, ADS_ONLY }
 
 enum class GyroMode { RATE, ABSOLUTE }
 
+enum class DoubleTapMode {
+    REPEAT_FIRE, // Each additional tap fires again (3 taps = 2 fires) -- current default
+    SINGLE_FIRE, // One fire per double-tap only (4 taps = 2 fires)
+    LATCH_DOUBLE, // Double-tap to latch on, double-tap to release
+    LATCH_SINGLE, // Double-tap to latch on, single-tap to release
+}
+
 // --- Response curve math ---
 
 /** Apply the selected response curve to a normalized -1..1 input value. */
@@ -97,6 +104,7 @@ data class AnalogStickControl(
     val negYBinding: Int = TouchBindings.BTN_FIRE_PRIMARY,
     val posYBinding: Int = TouchBindings.BTN_FIRE_PRIMARY,
     val doubleTapBinding: Int = -1,
+    val doubleTapMode: DoubleTapMode = DoubleTapMode.REPEAT_FIRE,
 ) {
     fun toJson() =
         JSONObject().apply {
@@ -132,6 +140,7 @@ data class AnalogStickControl(
                 put("posYBinding", posYBinding)
             }
             if (doubleTapBinding >= 0) put("doubleTapBinding", doubleTapBinding)
+            if (doubleTapMode != DoubleTapMode.REPEAT_FIRE) put("doubleTapMode", doubleTapMode.name)
         }
 
     companion object {
@@ -176,6 +185,14 @@ data class AnalogStickControl(
                 negYBinding = j.optInt("negYBinding", TouchBindings.BTN_FIRE_PRIMARY),
                 posYBinding = j.optInt("posYBinding", TouchBindings.BTN_FIRE_PRIMARY),
                 doubleTapBinding = j.optInt("doubleTapBinding", -1),
+                doubleTapMode =
+                    try {
+                        DoubleTapMode.valueOf(j.optString("doubleTapMode", "REPEAT_FIRE"))
+                    } catch (
+                        _: IllegalArgumentException,
+                    ) {
+                        DoubleTapMode.REPEAT_FIRE
+                    },
             )
         }
     }
@@ -407,12 +424,12 @@ data class GyroConfig(
     val activation: GyroActivation = GyroActivation.ALWAYS,
     val mode: GyroMode = GyroMode.ABSOLUTE,
     val invertX: Boolean = false,
-    val invertY: Boolean = false,
-    val invertZ: Boolean = false,
+    val invertY: Boolean = true,
+    val invertZ: Boolean = true,
     val axisX: Int = TouchBindings.AXIS_RIGHT_X,
     val axisY: Int = TouchBindings.AXIS_RIGHT_Y,
     val axisZ: Int = -1, // -1 = disabled (roll not mapped by default)
-    val deadzone: Float = 0.02f,
+    val deadzone: Float = 0.1f, // fraction of maxAngle (0.0-0.3 = 0%-30%)
     val maxAngleX: Float = 0.436f, // ~25 degrees
     val maxAngleY: Float = 0.436f,
     val maxAngleZ: Float = 0.436f,
@@ -442,9 +459,19 @@ data class GyroConfig(
         }
 
     companion object {
+        /** Migrate old raw-radian deadzone (<=0.1) to fraction-of-maxAngle. */
+        private fun migrateDeadzone(raw: Float): Float {
+            // Old format: radians (0.0-0.1). New format: fraction (0.0-0.3).
+            // Old default was 0.02 rad with maxAngle 0.436 -> 0.02/0.436 ~= 0.046.
+            // Values <= 0.1 are clearly old-format radians; convert to fraction.
+            if (raw <= 0.1f && raw > 0f) return (raw / 0.436f).coerceIn(0f, 0.3f)
+            return raw
+        }
+
         fun fromJson(j: JSONObject): GyroConfig {
             // Migration: old configs have single maxAngle; new have maxAngleX/Y/Z
             val legacyAngle = j.optDouble("maxAngle", 0.436).toFloat()
+            val rawDz = j.optDouble("deadzone", 0.1).toFloat()
             return GyroConfig(
                 enabled = j.optBoolean("enabled"),
                 activation = GyroActivation.valueOf(j.optString("activation", "ALWAYS")),
@@ -455,7 +482,7 @@ data class GyroConfig(
                 axisX = j.optInt("axisX", TouchBindings.AXIS_RIGHT_X),
                 axisY = j.optInt("axisY", TouchBindings.AXIS_RIGHT_Y),
                 axisZ = j.optInt("axisZ", -1),
-                deadzone = j.optDouble("deadzone", 0.02).toFloat(),
+                deadzone = migrateDeadzone(rawDz),
                 maxAngleX = j.optDouble("maxAngleX", legacyAngle.toDouble()).toFloat(),
                 maxAngleY = j.optDouble("maxAngleY", legacyAngle.toDouble()).toFloat(),
                 maxAngleZ = j.optDouble("maxAngleZ", legacyAngle.toDouble()).toFloat(),

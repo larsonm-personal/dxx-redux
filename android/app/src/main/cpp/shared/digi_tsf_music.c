@@ -59,6 +59,15 @@ static int g_output_rate = 48000;    /* actual SDL output sample rate  */
 
 static void (*g_finished_hook)(void) = NULL; /* callback when song ends  */
 
+/* ── PCM playback state (OGG/MP3/FLAC via pcm_decoders) ─────────────── */
+#include "pcm_decoders.h"
+static int g_is_pcm;       /* 1 = PCM playback, 0 = MIDI         */
+static int16_t *g_pcm_buf; /* decoded interleaved PCM samples     */
+static size_t g_pcm_total; /* total frames (per-channel samples)  */
+static double g_pcm_pos;   /* fractional playback position        */
+static int g_pcm_channels; /* 1 or 2                              */
+static int g_pcm_rate;     /* source sample rate (e.g. 44100)     */
+
 /* ── Configurable gain (dB) ──────────────────────────────────────────────── */
 static float g_gain_db = -10.0f; /* TSF global gain in dB      */
 static int g_max_voices = 48;    /* voice limit (runtime-tunable) */
@@ -228,6 +237,54 @@ static int render_frames(short *out, int frames)
 	return rendered;
 }
 
+/* ── PCM render: resample decoded audio into stereo output buffer ───── */
+
+static int pcm_render_frames(short *out, int frames)
+{
+	if (!g_pcm_buf || g_pcm_total == 0) return 0;
+
+	double ratio = (double) g_pcm_rate / (double) g_output_rate;
+	int rendered = 0;
+
+	while (frames > 0) {
+		size_t idx = (size_t) g_pcm_pos;
+		if (idx >= g_pcm_total - 1) {
+			if (g_loop) {
+				g_pcm_pos = 0.0;
+				idx = 0;
+			} else {
+				g_playing = 0;
+				g_song_finished = 1;
+				break;
+			}
+		}
+
+		double frac = g_pcm_pos - (double) idx;
+		size_t next = idx + 1;
+		if (next >= g_pcm_total) next = 0;
+
+		int16_t s0l, s1l, s0r, s1r;
+		if (g_pcm_channels >= 2) {
+			s0l = g_pcm_buf[idx * 2];
+			s1l = g_pcm_buf[next * 2];
+			s0r = g_pcm_buf[idx * 2 + 1];
+			s1r = g_pcm_buf[next * 2 + 1];
+		} else {
+			s0l = s0r = g_pcm_buf[idx];
+			s1l = s1r = g_pcm_buf[next];
+		}
+
+		out[0] = (short) (s0l + (int) ((s1l - s0l) * frac));
+		out[1] = (short) (s0r + (int) ((s1r - s0r) * frac));
+		out += 2;
+		frames--;
+		rendered++;
+		g_pcm_pos += ratio;
+	}
+
+	return rendered;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
  *  Android: lock-free SPSC ring buffer + background render thread
  *
@@ -319,10 +376,11 @@ static int render_thread_func(void *data)
 		}
 
 		int frames = CHUNK;
-		int got = render_frames(buf, frames);
+		int got = g_is_pcm ? pcm_render_frames(buf, frames)
+		                   : render_frames(buf, frames);
 
-		/* Track peak active voices */
-		if (g_tsf) {
+		/* Track peak active voices (MIDI only) */
+		if (!g_is_pcm && g_tsf) {
 			int active = tsf_active_voice_count(g_tsf);
 			if (active > g_active_voices_max)
 				g_active_voices_max = active;
@@ -398,7 +456,12 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 {
 	(void) udata;
 
-	if (!g_tsf || !g_midi_cur || !g_playing || g_paused || g_bg_paused) {
+	if (!g_playing || g_paused || g_bg_paused) {
+		memset(stream, 0, len);
+		return;
+	}
+
+	if (!g_is_pcm && (!g_tsf || !g_midi_cur)) {
 		memset(stream, 0, len);
 		return;
 	}
@@ -406,7 +469,8 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 	int frames = len / (2 * (int) sizeof(short));
 	short *out = (short *) stream;
 
-	int got = render_frames(out, frames);
+	int got = g_is_pcm ? pcm_render_frames(out, frames)
+	                   : render_frames(out, frames);
 
 	/* Zero-fill remainder */
 	if (got < frames)
@@ -446,13 +510,78 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 	fptr = strrchr(filename, '.');
 	if (!fptr) return 0;
 
+	/* ── PCM path: OGG / MP3 / FLAC ─────────────────────────────────── */
+	if (!d_stricmp(fptr, ".ogg") || !d_stricmp(fptr, ".mp3") ||
+	    !d_stricmp(fptr, ".flac")) {
+		/* Load file via PhysFS into memory */
+		PHYSFS_file *fh = PHYSFS_openRead(filename);
+		if (!fh) {
+			con_printf(CON_CRITICAL, "PCM: cannot open %s\n", filename);
+			return 0;
+		}
+		unsigned int fsize = (unsigned int) PHYSFS_fileLength(fh);
+		unsigned char *fbuf = (unsigned char *) malloc(fsize);
+		if (!fbuf) {
+			PHYSFS_close(fh);
+			return 0;
+		}
+		PHYSFS_read(fh, fbuf, 1, fsize);
+		PHYSFS_close(fh);
+
+		/* Decode to raw PCM */
+		pcm_decode_result_t pcm;
+		if (pcm_decode_memory(fbuf, fsize, fptr, &pcm) != 0) {
+			con_printf(CON_CRITICAL, "PCM: decode failed for %s\n", filename);
+			free(fbuf);
+			return 0;
+		}
+		free(fbuf);
+
+		/* Query SDL output rate if not yet known */
+		if (g_output_rate <= 0) {
+			int freq = 0;
+			Uint16 fmt;
+			int ch;
+			if (Mix_QuerySpec(&freq, &fmt, &ch) && freq > 0)
+				g_output_rate = freq;
+			else
+				g_output_rate = 48000;
+		}
+
+		g_pcm_buf = pcm.pcm_data;
+		g_pcm_total = pcm.total_samples;
+		g_pcm_channels = pcm.channels;
+		g_pcm_rate = pcm.sample_rate;
+		g_pcm_pos = 0.0;
+		g_is_pcm = 1;
+
+		TSFMUSIC_LOG("Playing PCM %s (%zu frames, %dHz %dch, loop=%d)",
+		             filename, g_pcm_total, g_pcm_rate, g_pcm_channels, loop);
+
+		g_loop = loop;
+		g_paused = 0;
+		g_playing = 1;
+		g_finished_hook = hook_finished_track ? hook_finished_track : mix_free_music;
+
+#ifdef ANDROID
+		g_rb_underruns = 0;
+		g_rb_cb_count = 0;
+		render_thread_start();
+#endif
+		Mix_HookMusic(tsf_music_callback, NULL);
+		return 1;
+	}
+
+	/* ── MIDI path: HMP / MID ────────────────────────────────────────── */
+	g_is_pcm = 0;
+
 	/* Load the soundfont on first call */
 	if (!tsf_music_load_soundfont()) {
-		con_printf(CON_CRITICAL, "TSF: Cannot load soundfont — no music\n");
+		con_printf(CON_CRITICAL, "TSF: Cannot load soundfont -- no music\n");
 		return 0;
 	}
 
-	/* Convert HMP → MIDI in memory */
+	/* Convert HMP -> MIDI in memory */
 	if (!d_stricmp(fptr, ".hmp")) {
 		hmp2mid(filename, &g_midi_buf, &bufsize);
 		if (!g_midi_buf || !bufsize) {
@@ -511,7 +640,7 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 	g_finished_hook = hook_finished_track ? hook_finished_track : mix_free_music;
 
 #ifdef ANDROID
-	/* Start background render thread — fills ring buffer ahead */
+	/* Start background render thread -- fills ring buffer ahead */
 	render_thread_start();
 #endif
 
@@ -529,6 +658,17 @@ void mix_free_music(void)
 	g_playing = 0;
 	g_paused = 0;
 	g_song_finished = 0;
+
+	/* Clean up PCM state */
+	if (g_pcm_buf) {
+		free(g_pcm_buf);
+		g_pcm_buf = NULL;
+	}
+	g_pcm_total = 0;
+	g_pcm_pos = 0.0;
+	g_is_pcm = 0;
+
+	/* Clean up MIDI state */
 	g_midi_cur = NULL;
 
 	if (g_midi) {

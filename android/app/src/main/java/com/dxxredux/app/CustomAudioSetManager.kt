@@ -30,6 +30,8 @@ class CustomAudioSetManager(
         val files: List<String>,
         val enabled: Boolean = true,
         val order: Int = 0,
+        // fingerprint-matched track names: filename -> track name
+        val trackNames: Map<String, String> = emptyMap(),
     )
 
     private var sets: MutableList<AudioSet> = mutableListOf()
@@ -126,6 +128,25 @@ class CustomAudioSetManager(
         return tracks
     }
 
+    data class TrackDetail(
+        val filename: String,
+        val setLabel: String,
+        val matchedName: String?,
+    )
+
+    /** Get detailed track list including fingerprint-matched names */
+    fun getDetailedTrackList(): List<TrackDetail> {
+        val enabled = getEnabledSets()
+        val tracks = mutableListOf<TrackDetail>()
+        for (set in enabled) {
+            for (f in set.files.sorted()) {
+                tracks.add(TrackDetail(f, set.label, set.trackNames[f]))
+            }
+        }
+        tracks.sortBy { it.filename.lowercase() }
+        return tracks
+    }
+
     // ── Persistence ───────────────────────────────────────────────
 
     private fun load() {
@@ -142,12 +163,20 @@ class CustomAudioSetManager(
                     .map { i ->
                         val obj = arr.getJSONObject(i)
                         val filesArr = obj.getJSONArray("files")
+                        val namesObj = obj.optJSONObject("trackNames")
+                        val names =
+                            if (namesObj != null) {
+                                namesObj.keys().asSequence().associateWith { namesObj.getString(it) }
+                            } else {
+                                emptyMap()
+                            }
                         AudioSet(
                             id = obj.getString("id"),
                             label = obj.optString("label", "Unnamed"),
                             files = (0 until filesArr.length()).map { filesArr.getString(it) },
                             enabled = obj.optBoolean("enabled", true),
                             order = obj.optInt("order", 0),
+                            trackNames = names,
                         )
                     }.toMutableList()
             Log.i(TAG, "Loaded ${sets.size} custom audio sets")
@@ -169,6 +198,11 @@ class CustomAudioSetManager(
             obj.put("files", filesArr)
             obj.put("enabled", set.enabled)
             obj.put("order", set.order)
+            if (set.trackNames.isNotEmpty()) {
+                val namesObj = JSONObject()
+                set.trackNames.forEach { (k, v) -> namesObj.put(k, v) }
+                obj.put("trackNames", namesObj)
+            }
             arr.put(obj)
         }
         json.put("sets", arr)

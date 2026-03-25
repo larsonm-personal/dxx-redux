@@ -15,6 +15,9 @@
 #include "dxxerror.h"
 #include "console.h"
 #include "config.h"
+#ifdef __ANDROID__
+#include "track_names.h"
+#endif
 
 #define MUSIC_HUDMSG_MAXLEN 40
 #define JUKEBOX_HUDMSG_PLAYING "Now playing:"
@@ -267,6 +270,11 @@ int jukebox_play()
 	}
 
 	HUD_init_message(HM_DEFAULT, "%s %s", JUKEBOX_HUDMSG_PLAYING, hud_msg_buf);
+
+#ifdef __ANDROID__
+	/* Android port: send track name to touch overlay */
+	track_overlay_notify_jukebox(music_filename);
+#endif
 
 	d_free(full_filename);
 

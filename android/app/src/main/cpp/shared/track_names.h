@@ -29,4 +29,8 @@ const char *track_names_lookup(int track, unsigned long disc_id);
 /* Call when a new level starts to show "Level N: Name" overlay. */
 void level_overlay_notify(int level_num, const char *level_name);
 
+/* Call when a jukebox track starts playing.
+ * Strips the path/extension and sends a clean name to the overlay. */
+void track_overlay_notify_jukebox(const char *filename);
+
 #endif

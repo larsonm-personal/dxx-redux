@@ -8,6 +8,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -28,7 +29,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileOutputStream
 import java.util.UUID
+import java.util.zip.ZipInputStream
 
 // Music mode constants -- must match d2/main/digi.h
 // MUSIC_TYPE_NONE=0, MUSIC_TYPE_BUILTIN=1, MUSIC_TYPE_REDBOOK=2, MUSIC_TYPE_CUSTOM=3
@@ -164,7 +167,15 @@ fun MusicPickerPage(
                                 onSetsChanged = { customSets = customMgr.getSets() },
                                 onAddSet = {
                                     audioFilePicker.launch(
-                                        arrayOf("audio/mpeg", "audio/ogg", "audio/flac", "audio/*"),
+                                        arrayOf(
+                                            "audio/mpeg",
+                                            "audio/ogg",
+                                            "audio/flac",
+                                            "audio/*",
+                                            "application/zip",
+                                            "application/x-7z-compressed",
+                                            "application/octet-stream",
+                                        ),
                                     )
                                 },
                                 onShowTrackPreview = { showTrackPreview = true },
@@ -543,33 +554,41 @@ private fun TrackPreviewDialog(
     val title =
         if (musicMode == MUSIC_MODE_CD) "CD Audio Track Order" else "Audio File Playlist"
 
-    val tracks: List<Pair<String, String>> =
+    // Track info tap state
+    var infoTrack by remember { mutableStateOf<CustomAudioSetManager.TrackDetail?>(null) }
+
+    data class TrackRow(
+        val display: String,
+        val source: String,
+        val detail: CustomAudioSetManager.TrackDetail?,
+    )
+
+    val tracks: List<TrackRow> =
         if (musicMode == MUSIC_MODE_CD) {
-            // Show enabled redbook sources in order with track names
             val sources = audioSrcManager.getEnabledSources()
             if (sources.isEmpty()) {
-                listOf("(no sources enabled)" to "")
+                listOf(TrackRow("(no sources enabled)", "", null))
             } else {
                 var trackNum = 1
                 sources.flatMap { src ->
-                    // Build sorted list of audio track CUE numbers
                     val namedTracks = src.trackNames.toSortedMap()
                     (1..src.audioTrackCount).map { i ->
-                        // Try to find the i-th audio track name from the sorted map
                         val name =
                             namedTracks.values.elementAtOrNull(i - 1)
                                 ?: "Track $trackNum"
                         trackNum++
-                        name to src.discLabel
+                        TrackRow(name, src.discLabel, null)
                     }
                 }
             }
         } else {
-            val merged = customMgr.getMergedTrackList()
-            if (merged.isEmpty()) {
-                listOf("(no files)" to "")
+            val detailed = customMgr.getDetailedTrackList()
+            if (detailed.isEmpty()) {
+                listOf(TrackRow("(no files)", "", null))
             } else {
-                merged
+                detailed.map { d ->
+                    TrackRow(d.matchedName ?: d.filename, d.setLabel, d)
+                }
             }
         }
 
@@ -583,9 +602,19 @@ private fun TrackPreviewDialog(
                         .heightIn(max = 400.dp)
                         .verticalScroll(rememberScrollState()),
             ) {
-                tracks.forEachIndexed { i, (name, source) ->
+                tracks.forEachIndexed { i, row ->
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 1.dp)
+                                .then(
+                                    if (row.detail != null) {
+                                        Modifier.clickable { infoTrack = row.detail }
+                                    } else {
+                                        Modifier
+                                    },
+                                ),
                     ) {
                         Text(
                             "${i + 1}.",
@@ -594,13 +623,13 @@ private fun TrackPreviewDialog(
                             modifier = Modifier.width(28.dp),
                         )
                         Text(
-                            name,
+                            row.display,
                             fontSize = 11.sp,
                             modifier = Modifier.weight(1f),
                         )
-                        if (source.isNotEmpty()) {
+                        if (row.source.isNotEmpty()) {
                             Text(
-                                source,
+                                row.source,
                                 fontSize = 10.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -613,6 +642,36 @@ private fun TrackPreviewDialog(
             TextButton(onClick = onDismiss) { Text("Close") }
         },
     )
+
+    // Track info sub-dialog
+    infoTrack?.let { track ->
+        AlertDialog(
+            onDismissRequest = { infoTrack = null },
+            title = { Text("Track Info", fontSize = 16.sp) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("File: ${track.filename}", fontSize = 12.sp)
+                    Text("Set: ${track.setLabel}", fontSize = 12.sp)
+                    if (track.matchedName != null) {
+                        Text(
+                            "Matched: ${track.matchedName}",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    } else {
+                        Text(
+                            "No fingerprint match",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { infoTrack = null }) { Text("Close") }
+            },
+        )
+    }
 }
 
 // ── Scroll arrows (from AdvancedSettingsPage pattern) ──────────────
@@ -657,6 +716,13 @@ private fun BoxScope.ScrollArrows(scrollState: ScrollState) {
 
 // ── File import helper ─────────────────────────────────────────────
 
+private val AUDIO_EXTENSIONS = setOf("mp3", "ogg", "flac")
+private val ARCHIVE_EXTENSIONS = setOf("zip", "dxa", "7z")
+
+private fun isAudioFile(name: String): Boolean = name.substringAfterLast('.').lowercase() in AUDIO_EXTENSIONS
+
+private fun isArchiveFile(name: String): Boolean = name.substringAfterLast('.').lowercase() in ARCHIVE_EXTENSIONS
+
 private suspend fun importAudioFiles(
     ctx: Context,
     filesDir: File,
@@ -673,16 +739,37 @@ private suspend fun importAudioFiles(
         for (uri in uris) {
             try {
                 val fileName = resolveFileName(ctx, uri) ?: "track_${imported.size + 1}.audio"
-                val dest = File(destDir, fileName)
-                ctx.contentResolver.openInputStream(uri)?.use { input ->
-                    dest.outputStream().use { output -> input.copyTo(output) }
+                if (isArchiveFile(fileName)) {
+                    val extracted = extractAudioFromArchive(ctx, uri, destDir)
+                    imported.addAll(extracted)
+                } else {
+                    val dest = File(destDir, fileName)
+                    ctx.contentResolver.openInputStream(uri)?.use { input ->
+                        dest.outputStream().use { output -> input.copyTo(output) }
+                    }
+                    if (isAudioFile(fileName)) imported.add(fileName)
                 }
-                imported.add(fileName)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to import: $uri", e)
             }
         }
         if (imported.isNotEmpty()) {
+            // Run chromaprint matching on imported files
+            val trackNames = mutableMapOf<String, String>()
+            try {
+                FingerprintBridge.ensureDbLoaded(ctx)
+                for (f in imported) {
+                    val path = File(destDir, f).absolutePath
+                    val match = FingerprintBridge.fingerprintAndMatch(path)
+                    if (match != null) {
+                        trackNames[f] = match.name
+                        Log.i(TAG, "Matched '$f' -> '${match.name}' (${match.confidence})")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Fingerprint matching failed (non-fatal)", e)
+            }
+
             customMgr.addSet(
                 CustomAudioSetManager.AudioSet(
                     id = setId,
@@ -690,16 +777,47 @@ private suspend fun importAudioFiles(
                     files = imported,
                     enabled = true,
                     order = customMgr.getSets().size,
+                    trackNames = trackNames,
                 ),
             )
-            Log.i(TAG, "Imported ${imported.size} files as set '$setName'")
+            Log.i(TAG, "Imported ${imported.size} files as set '$setName' (${trackNames.size} matched)")
         } else {
             destDir.deleteRecursively()
             withContext(Dispatchers.Main) {
-                Toast.makeText(ctx, "No files could be imported", Toast.LENGTH_SHORT).show()
+                Toast.makeText(ctx, "No audio files found in import", Toast.LENGTH_SHORT).show()
             }
         }
     }
+}
+
+/** Extract audio files from a ZIP/DXA archive, returns filenames written to destDir */
+private fun extractAudioFromArchive(
+    ctx: Context,
+    uri: Uri,
+    destDir: File,
+): List<String> {
+    val extracted = mutableListOf<String>()
+    ctx.contentResolver.openInputStream(uri)?.use { raw ->
+        ZipInputStream(raw).use { zip ->
+            var entry = zip.nextEntry
+            while (entry != null) {
+                if (!entry.isDirectory) {
+                    val name = entry.name.substringAfterLast('/')
+                    if (isAudioFile(name)) {
+                        // Avoid path traversal
+                        val safeName = name.replace("..", "_").replace('/', '_').replace('\\', '_')
+                        val dest = File(destDir, safeName)
+                        FileOutputStream(dest).use { out -> zip.copyTo(out) }
+                        extracted.add(safeName)
+                    }
+                }
+                zip.closeEntry()
+                entry = zip.nextEntry
+            }
+        }
+    }
+    Log.i(TAG, "Extracted ${extracted.size} audio files from archive")
+    return extracted
 }
 
 private fun resolveFileName(

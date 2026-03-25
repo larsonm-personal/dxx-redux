@@ -75,9 +75,10 @@
     "sensitivityX": 3.0,
     "sensitivityY": 3.0,
     "invertX": false,
-    "invertY": false,
+    "invertY": true,
+    "invertZ": true,
     "axisX": "Right Stick X",
     "axisY": "Right Stick Y",
-    "deadzone": 0.02
+    "deadzone": 0.1
   }
 }

@@ -261,6 +261,14 @@ object HumanReadableConfig {
                 } else {
                     -1
                 },
+            doubleTapMode =
+                try {
+                    DoubleTapMode.valueOf(j.optString("doubleTapMode", "REPEAT_FIRE"))
+                } catch (
+                    _: IllegalArgumentException,
+                ) {
+                    DoubleTapMode.REPEAT_FIRE
+                },
         )
     }
 
@@ -395,6 +403,14 @@ object HumanReadableConfig {
             } else {
                 -1
             }
+        // Migrate old raw-radian deadzone to fraction-of-maxAngle
+        val rawDz = j.optDouble("deadzone", 0.1).toFloat()
+        val deadzone =
+            if (rawDz <= 0.1f && rawDz > 0f) {
+                (rawDz / 0.436f).coerceIn(0f, 0.3f)
+            } else {
+                rawDz
+            }
         return GyroConfig(
             enabled = j.optBoolean("enabled"),
             activation = GyroActivation.valueOf(j.optString("activation", "ALWAYS")),
@@ -405,7 +421,7 @@ object HumanReadableConfig {
             axisX = axisX,
             axisY = axisY,
             axisZ = axisZ,
-            deadzone = j.optDouble("deadzone", 0.02).toFloat(),
+            deadzone = deadzone,
             maxAngleX = j.optDouble("maxAngleX", j.optDouble("maxAngle", 0.436)).toFloat(),
             maxAngleY = j.optDouble("maxAngleY", j.optDouble("maxAngle", 0.436)).toFloat(),
             maxAngleZ = j.optDouble("maxAngleZ", j.optDouble("maxAngle", 0.436)).toFloat(),

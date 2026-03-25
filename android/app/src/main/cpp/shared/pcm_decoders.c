@@ -136,6 +136,84 @@ void pcm_decode_free(pcm_decode_result_t *r)
 	}
 }
 
+/* ── Memory-based decoders ──────────────────────────────────────────── */
+
+/* stb_vorbis memory API (compiled as separate TU in dxx_fingerprint) */
+extern int stb_vorbis_decode_memory(const unsigned char *mem, int len,
+                                    int *channels, int *sample_rate,
+                                    short **output);
+
+static int decode_mp3_mem(const void *data, size_t size, pcm_decode_result_t *out)
+{
+	mp3dec_t mp3d;
+	mp3dec_file_info_t info;
+	memset(&info, 0, sizeof(info));
+	mp3dec_init(&mp3d);
+	if (mp3dec_load_buf(&mp3d, (const uint8_t *) data, size, &info, NULL, NULL)) {
+		if (info.buffer) free(info.buffer);
+		return -1;
+	}
+	if (!info.buffer || info.samples == 0) {
+		if (info.buffer) free(info.buffer);
+		return -1;
+	}
+	out->pcm_data = (int16_t *) info.buffer;
+	out->sample_rate = info.hz;
+	out->channels = info.channels;
+	out->total_samples = info.samples / info.channels;
+	return 0;
+}
+
+static int decode_ogg_mem(const void *data, size_t size, pcm_decode_result_t *out)
+{
+	int channels = 0, sample_rate = 0;
+	short *pcm = NULL;
+	int n = stb_vorbis_decode_memory((const unsigned char *) data, (int) size,
+	                                 &channels, &sample_rate, &pcm);
+	if (n <= 0 || !pcm) {
+		if (pcm) free(pcm);
+		return -1;
+	}
+	out->pcm_data = pcm;
+	out->sample_rate = sample_rate;
+	out->channels = channels;
+	out->total_samples = (size_t) n;
+	return 0;
+}
+
+static int decode_flac_mem(const void *data, size_t size, pcm_decode_result_t *out)
+{
+	unsigned int channels = 0, sample_rate = 0;
+	drflac_uint64 total = 0;
+	drflac_int16 *pcm = drflac_open_memory_and_read_pcm_frames_s16(
+	    data, size, &channels, &sample_rate, &total, NULL);
+	if (!pcm || total == 0) {
+		if (pcm) drflac_free(pcm, NULL);
+		return -1;
+	}
+	out->pcm_data = pcm;
+	out->sample_rate = (int) sample_rate;
+	out->channels = (int) channels;
+	out->total_samples = (size_t) total;
+	return 0;
+}
+
+int pcm_decode_memory(const void *data, size_t size, const char *ext,
+                      pcm_decode_result_t *out)
+{
+	if (!data || !size || !ext || !out) return -1;
+	memset(out, 0, sizeof(*out));
+
+	if (strcasecmp_ext(ext, ".mp3") == 0)
+		return decode_mp3_mem(data, size, out);
+	if (strcasecmp_ext(ext, ".ogg") == 0)
+		return decode_ogg_mem(data, size, out);
+	if (strcasecmp_ext(ext, ".flac") == 0)
+		return decode_flac_mem(data, size, out);
+
+	return -1;
+}
+
 /* CD-DA: 2352 bytes per sector, 588 stereo samples per sector (16-bit LE) */
 #define CD_SECTOR_SIZE        2352
 #define CD_SAMPLES_PER_SECTOR (CD_SECTOR_SIZE / 4) /* 4 bytes per stereo sample */

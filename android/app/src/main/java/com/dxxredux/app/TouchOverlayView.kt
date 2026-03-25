@@ -151,6 +151,8 @@ class TouchOverlayView
 
             // Double-tap tracking
             var lastTapTime: Long = 0
+            var tapCount = 0 // running tap count within double-tap window
+            var dtLatched = false // true when double-tap latch is held on
         }
 
         private class ButtonState(
@@ -401,6 +403,11 @@ class TouchOverlayView
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.FILL
                 color = 0x66FFFFFF // brighter when pressed
+            }
+        private val paintBtnLatched =
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.FILL
+                color = 0x1A4CAF50.toInt() // Material Green at ~10% opacity
             }
         private val paintBtnLabel =
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -732,8 +739,24 @@ class TouchOverlayView
         ) {
             val eff = (gAlpha * b.control.opacity).coerceIn(0f, 1f)
             val pressed = b.pointerId >= 0 || b.toggled
-            val fill = if (pressed) paintBtnPressed else paintBtnIdle
-            fill.alpha = ((if (pressed) 0x66 else 0x33) * eff).toInt()
+            val latched = b.toggled && b.control.toggle && b.pointerId < 0
+            val fill =
+                if (latched) {
+                    paintBtnLatched
+                } else if (pressed) {
+                    paintBtnPressed
+                } else {
+                    paintBtnIdle
+                }
+            val fillAlpha =
+                if (latched) {
+                    0x44
+                } else if (pressed) {
+                    0x66
+                } else {
+                    0x33
+                }
+            fill.alpha = (fillAlpha * eff).toInt()
             canvas.drawCircle(b.centerX, b.centerY, b.radius, fill)
             paintRing.alpha = (0x66 * eff).toInt()
             canvas.drawCircle(b.centerX, b.centerY, b.radius, paintRing)
@@ -1210,10 +1233,15 @@ class TouchOverlayView
                         if (s.control.mouseMode) {
                             // Mouse mode: use floating zone bounds for hit detection
                             if (px in s.fzLeft..s.fzRight && py in s.fzTop..s.fzBottom) {
-                                // Double-tap detection
+                                // Double-tap / latch detection
                                 val now = android.os.SystemClock.uptimeMillis()
-                                if (s.control.doubleTapBinding >= 0 && now - s.lastTapTime < 300L) {
-                                    fireDoubleTapBinding(s.control.doubleTapBinding)
+                                val isDoubleTap = s.control.doubleTapBinding >= 0 && now - s.lastTapTime < 300L
+                                if (isDoubleTap) {
+                                    s.tapCount++
+                                    handleDoubleTap(s)
+                                } else {
+                                    s.tapCount = 1
+                                    handleSingleTapRelease(s)
                                 }
                                 s.lastTapTime = now
                                 s.pointerId = pid
@@ -1230,10 +1258,15 @@ class TouchOverlayView
                             }
                         } else if (s.control.floating) {
                             if (px in s.fzLeft..s.fzRight && py in s.fzTop..s.fzBottom) {
-                                // Double-tap detection for floating mode
+                                // Double-tap / latch detection for floating mode
                                 val now = android.os.SystemClock.uptimeMillis()
-                                if (s.control.doubleTapBinding >= 0 && now - s.lastTapTime < 300L) {
-                                    fireDoubleTapBinding(s.control.doubleTapBinding)
+                                val isDoubleTap = s.control.doubleTapBinding >= 0 && now - s.lastTapTime < 300L
+                                if (isDoubleTap) {
+                                    s.tapCount++
+                                    handleDoubleTap(s)
+                                } else {
+                                    s.tapCount = 1
+                                    handleSingleTapRelease(s)
                                 }
                                 s.lastTapTime = now
                                 s.pointerId = pid
@@ -1246,10 +1279,15 @@ class TouchOverlayView
                                 break
                             }
                         } else if (hypot(px - s.centerX, py - s.centerY) <= s.radius) {
-                            // Double-tap detection for fixed sticks
+                            // Double-tap / latch detection for fixed sticks
                             val now = android.os.SystemClock.uptimeMillis()
-                            if (s.control.doubleTapBinding >= 0 && now - s.lastTapTime < 300L) {
-                                fireDoubleTapBinding(s.control.doubleTapBinding)
+                            val isDoubleTap = s.control.doubleTapBinding >= 0 && now - s.lastTapTime < 300L
+                            if (isDoubleTap) {
+                                s.tapCount++
+                                handleDoubleTap(s)
+                            } else {
+                                s.tapCount = 1
+                                handleSingleTapRelease(s)
                             }
                             s.lastTapTime = now
                             s.pointerId = pid
@@ -1824,7 +1862,7 @@ class TouchOverlayView
 
         /** Fire a double-tap binding with a delayed release so the press survives
          *  at least one game frame (fixes fire-primary which uses level-triggered state). */
-        private fun fireDoubleTapBinding(binding: Int) {
+        private fun fireDoubleTapPulse(binding: Int) {
             if (TouchBindings.isMetaAction(binding)) {
                 metaActionCallback?.invoke(binding, true)
                 mainHandler.postDelayed({ metaActionCallback?.invoke(binding, false) }, DOUBLE_TAP_RELEASE_DELAY_MS)
@@ -1832,6 +1870,59 @@ class TouchOverlayView
                 buttonCallback?.invoke(binding, true)
                 mainHandler.postDelayed({ buttonCallback?.invoke(binding, false) }, DOUBLE_TAP_RELEASE_DELAY_MS)
             }
+        }
+
+        /** Set or release a latched double-tap binding. */
+        private fun setDoubleTapLatch(
+            binding: Int,
+            pressed: Boolean,
+        ) {
+            if (TouchBindings.isMetaAction(binding)) {
+                metaActionCallback?.invoke(binding, pressed)
+            } else {
+                buttonCallback?.invoke(binding, pressed)
+            }
+        }
+
+        /** Process a double-tap event for a stick, respecting the configured mode. */
+        private fun handleDoubleTap(s: StickState) {
+            val binding = s.control.doubleTapBinding
+            if (binding < 0) return
+            when (s.control.doubleTapMode) {
+                DoubleTapMode.REPEAT_FIRE -> fireDoubleTapPulse(binding)
+                DoubleTapMode.SINGLE_FIRE -> {
+                    // Only fire on even tap counts (every second tap in the double-tap window)
+                    if (s.tapCount % 2 == 0) fireDoubleTapPulse(binding)
+                }
+                DoubleTapMode.LATCH_DOUBLE -> {
+                    s.dtLatched = !s.dtLatched
+                    setDoubleTapLatch(binding, s.dtLatched)
+                    invalidate()
+                }
+                DoubleTapMode.LATCH_SINGLE -> {
+                    if (!s.dtLatched) {
+                        s.dtLatched = true
+                        setDoubleTapLatch(binding, true)
+                        invalidate()
+                    } else {
+                        // Double-tap while latched also releases
+                        s.dtLatched = false
+                        setDoubleTapLatch(binding, false)
+                        invalidate()
+                    }
+                }
+            }
+        }
+
+        /** Handle a single tap on a stick with LATCH_SINGLE mode -- releases latch. */
+        private fun handleSingleTapRelease(s: StickState) {
+            if (s.control.doubleTapMode != DoubleTapMode.LATCH_SINGLE) return
+            if (!s.dtLatched) return
+            val binding = s.control.doubleTapBinding
+            if (binding < 0) return
+            s.dtLatched = false
+            setDoubleTapLatch(binding, false)
+            invalidate()
         }
 
         private fun dispatchStickButton(

@@ -92,3 +92,27 @@ void level_overlay_notify(int level_num, const char *level_name)
 	}
 	android_send_level_name(buf);
 }
+
+void track_overlay_notify_jukebox(const char *filename)
+{
+	char buf[OVERLAY_TEXT_LEN];
+	const char *base, *p;
+
+	if (!filename || !filename[0]) return;
+
+	/* Find the last path separator */
+	base = filename;
+	for (p = filename; *p; p++) {
+		if (*p == '/' || *p == '\\')
+			base = p + 1;
+	}
+
+	/* Copy and strip extension */
+	strncpy(buf, base, OVERLAY_TEXT_LEN - 1);
+	buf[OVERLAY_TEXT_LEN - 1] = '\0';
+	p = strrchr(buf, '.');
+	if (p)
+		buf[p - buf] = '\0';
+
+	android_send_track_name(buf);
+}

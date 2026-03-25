@@ -23,7 +23,13 @@ typedef struct {
  * Returns 0 on success, -1 on failure. */
 int pcm_decode_file(const char *path, pcm_decode_result_t *out);
 
-/* Free PCM data allocated by pcm_decode_file(). */
+/* Decode audio from an in-memory buffer to 16-bit PCM.
+ * ext must include the dot, e.g. ".mp3", ".ogg", ".flac".
+ * Returns 0 on success, -1 on failure. */
+int pcm_decode_memory(const void *data, size_t size, const char *ext,
+                      pcm_decode_result_t *out);
+
+/* Free PCM data allocated by pcm_decode_file() or pcm_decode_memory(). */
 void pcm_decode_free(pcm_decode_result_t *r);
 
 /* Decode raw CD-DA sectors (2352 bytes each, 16-bit stereo 44100 Hz)

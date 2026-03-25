@@ -1595,6 +1595,30 @@ private fun StickPropertiesPanel(
         }
     }
 
+    // Double-tap mode (shown when a double-tap binding is set)
+    if (stick.doubleTapBinding >= 0) {
+        Text("Double-Tap Mode", color = Color.Gray, fontSize = 12.sp)
+        val modes = DoubleTapMode.entries
+        val modeLabels =
+            mapOf(
+                DoubleTapMode.REPEAT_FIRE to "Repeat (tap = fire)",
+                DoubleTapMode.SINGLE_FIRE to "Single (1 per double-tap)",
+                DoubleTapMode.LATCH_DOUBLE to "Latch (double-tap toggle)",
+                DoubleTapMode.LATCH_SINGLE to "Latch (double-tap on, tap off)",
+            )
+        modes.forEach { m ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(
+                    selected = stick.doubleTapMode == m,
+                    onClick = { onUpdate(stick.copy(doubleTapMode = m)) },
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(Modifier.width(4.dp))
+                Text(modeLabels[m] ?: m.name, fontSize = 12.sp, color = Color.White)
+            }
+        }
+    }
+
     // Floating zone bounds (shown when floating or mouse mode is enabled)
     if (stick.floating || stick.mouseMode) {
         val fz = stick.floatingZone
@@ -1669,7 +1693,7 @@ private fun ButtonPropertiesPanel(
 
     // Toggles
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        LabeledToggle("Toggle", button.toggle) { onUpdate(button.copy(toggle = it)) }
+        LabeledToggle("Latch", button.toggle) { onUpdate(button.copy(toggle = it)) }
         LabeledToggle("Haptic", button.hapticFeedback) { onUpdate(button.copy(hapticFeedback = it)) }
     }
 
@@ -2685,7 +2709,8 @@ private fun GyroSettingsDialog(
                             }
                         }
 
-                        LabeledSlider("Deadzone", deadzone, 0f, 0.1f) { deadzone = it }
+                        val dzPct = "%.0f".format(deadzone * 100f)
+                        LabeledSlider("Deadzone ($dzPct%)", deadzone, 0f, 0.3f) { deadzone = it }
 
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             if (axisX >= 0) LabeledToggle("Invert X", invertX) { invertX = it }
