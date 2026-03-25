@@ -33,7 +33,9 @@ $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\..\test_helpers.ps1"
 
 $GOG_FILENAME = 'setup_descent_2_1.1_(16596).exe'
-$DEVICE_GOG_PATH = "/sdcard/Download/$GOG_FILENAME"
+# Use /data/local/tmp/ because scoped storage (API 30+) prevents the app from
+# accessing /sdcard/Download/ directly via native open().
+$DEVICE_GOG_PATH = "/data/local/tmp/$GOG_FILENAME"
 $SCRIPT_NAME = 'test_gog_installer_redbook.json5'
 
 # -- Auto-discover GOG .exe path --------------------------------
@@ -64,9 +66,10 @@ Ensure-EmulatorHealthy
 if (-not $SkipPush) {
     Write-Status "Pushing GOG .exe to device (this may take a while for 563MB)..."
     # Check if file is already on device with correct size
+    # Shell-escape the path for adb shell commands (parentheses in filename)
     $localSize = (Get-Item $GogExePath).Length
-    $deviceSize = Adb-Timeout -AdbArgs @("shell", "stat", "-c", "%s", $DEVICE_GOG_PATH) -Seconds 5 2>$null
-    if ($deviceSize -and [long]$deviceSize -eq $localSize) {
+    $deviceSize = Adb-Timeout -AdbArgs @("shell", "stat -c %s '$DEVICE_GOG_PATH'") -Seconds 5 2>$null
+    if ($deviceSize -and $deviceSize -match '^\d+$' -and [long]$deviceSize -eq $localSize) {
         Write-Status "GOG .exe already on device with correct size, skipping push"
     } else {
         Adb -AdbArgs @("push", $GogExePath, $DEVICE_GOG_PATH)
@@ -77,7 +80,7 @@ if (-not $SkipPush) {
 }
 
 # Verify file is on device
-$check = Adb-Timeout -AdbArgs @("shell", "ls", "-la", $DEVICE_GOG_PATH) -Seconds 5 2>$null
+$check = Adb-Timeout -AdbArgs @("shell", "ls -la '$DEVICE_GOG_PATH'") -Seconds 5 2>$null
 if (-not $check) {
     Write-Status "FAIL: GOG .exe not found on device at $DEVICE_GOG_PATH" "Red"
     exit 1
@@ -111,10 +114,9 @@ Start-Sleep -Seconds 1
 # -- Step 4: Import GOG via SETUP_COMMAND ------------------------
 
 Write-Status "Sending import_gog command..."
-Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
-    "--es", "command", "import_gog",
-    "--es", "path", $DEVICE_GOG_PATH,
-    "--ez", "include_audio", "true") | Out-Null
+# Shell-escape the path (parentheses in filename break device shell without quotes)
+$quotedPath = "'$DEVICE_GOG_PATH'"
+Adb -AdbArgs @("shell", "am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --es path $quotedPath --ez include_audio true") | Out-Null
 
 # Poll for import completion via logcat
 Write-Status "Waiting for import to complete..."
@@ -122,10 +124,15 @@ $sw = [System.Diagnostics.Stopwatch]::StartNew()
 $importDone = $false
 while ($sw.Elapsed.TotalSeconds -lt 120) {
     Start-Sleep -Seconds 3
-    $log = Adb-Timeout -AdbArgs @("logcat", "-d", "-s", "DXX-Setup:I", "-t", "20") -Seconds 5
-    if ($log -and $log -match "import_gog.*file\(s\)") {
+    $log = Adb-Timeout -AdbArgs @("logcat", "-d", "-s", "DXX-Setup:I", "-t", "50") -Seconds 5
+    if ($log -and $log -match "import_gog '.*' -> (\-?\d+) file\(s\)") {
+        $fileCount = [int]$Matches[1]
+        if ($fileCount -lt 0) {
+            Write-Status "FAIL: import_gog returned error ($fileCount files)" "Red"
+            exit 1
+        }
         $importDone = $true
-        Write-Status "Import complete: $($Matches[0])"
+        Write-Status "Import complete: $fileCount files extracted"
         break
     }
 }

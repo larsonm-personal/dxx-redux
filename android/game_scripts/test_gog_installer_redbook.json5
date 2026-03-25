@@ -4,7 +4,7 @@
 // Run via: android/tests/test_gog_installer_redbook.ps1
 //
 // The custom test runner handles:
-//   1. Pushing GOG .exe to /sdcard/Download/
+//   1. Pushing GOG .exe to /data/local/tmp/
 //   2. Blank emulator setup (no prior game data)
 //   3. Import via SETUP_COMMAND import_gog (with audio)
 //   4. Verifying setup introspection (audio sources, track names, chromaprint)
@@ -30,11 +30,10 @@
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
     {"action": "select", "text": "New game", "post_delay_ms": 1500},
 
-    // Mission select
-    {"action": "wait_ms", "ms": 1000},
-    {"action": "select", "text": "Counterstrike", "post_delay_ms": 1500},
+    // GOG full install has only one mission -- the game skips mission selection
+    // and goes directly to "Select starting level" then difficulty.
     // Accept default level 1
-    {"action": "wait_ms", "ms": 500},
+    {"action": "wait_ms", "ms": 1000},
     {"action": "select", "text": "Ok", "post_delay_ms": 1500},
     // Difficulty
     {"action": "wait_ms", "ms": 500},

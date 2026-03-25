@@ -345,10 +345,10 @@ most likely failure points are:
 
 - [x] Phase 1a: Add .exe to game_data_index
 - [x] Phase 1b: Extend Resolve-GameDataDeps for /sdcard/
-- [ ] Phase 1c: Verify file placement on emulator
-- [ ] Phase 2: Blank emulator setup (handled by custom test runner inline)
+- [x] Phase 1c: Verify file placement on emulator (moved to /data/local/tmp/ for scoped storage)
+- [x] Phase 2: Blank emulator setup (handled by custom test runner inline)
 - [x] Phase 3a: Add track names + disc_id to setup introspection
-- [ ] Phase 3b: Verify introspection after import
+- [x] Phase 3b: Verify introspection after import
 - [x] Phase 4a: Create overlay_ringbuf.h/cpp
 - [x] Phase 4b: Hook overlay calls in track_names.c
 - [x] Phase 4c: Expose overlays in game_introspect.cpp
@@ -357,6 +357,6 @@ most likely failure points are:
 - [x] Phase 5c: In-game automation script (test_gog_installer_redbook.json5)
 - [x] Phase 6a FIX: enableRedbookInConfig now creates descent.cfg if missing
 - [x] Phase 6c FIX: launch SETUP_COMMAND now calls writePlaylist() + writeMusicConfigForLaunch()
-- [ ] Phase 6: Remaining bug investigation (run test, iterate)
-- [ ] Phase 7: Final passing test run
-- [x] Code quality: clang-format applied, build passes, PSScriptAnalyzer+shellcheck pass
+- [x] Phase 6: Bug fixes -- shell escaping for parens, scoped storage (/data/local/tmp/), mission select skip for GOG full install
+- [x] Phase 7: Final passing test run -- ALL CHECKS PASS
+- [x] Code quality: clang-format applied, build passes
