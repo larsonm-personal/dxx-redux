@@ -334,8 +334,16 @@ function Resolve-GameDataDeps {
 
     $pushCount = 0
     foreach ($target in $byTarget.Keys) {
-        # List files with sizes via ls -la (reliable on Android toybox)
-        $listing = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", "-la", "$target/") -Seconds 5
+        # External storage targets (e.g. /sdcard/Download) use direct adb push;
+        # app-private targets use run-as staging through /data/local/tmp/.
+        $isExternal = $target -match '^/(sdcard|storage)/'
+
+        if ($isExternal) {
+            Adb -AdbArgs @("shell", "mkdir", "-p", $target) | Out-Null
+            $listing = Adb-Timeout -AdbArgs @("shell", "ls", "-la", "$target/") -Seconds 5
+        } else {
+            $listing = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", "-la", "$target/") -Seconds 5
+        }
         $deviceFiles = @{}  # lowercase filename -> size
         if ($listing) {
             foreach ($line in ($listing -split "`n")) {
@@ -369,9 +377,15 @@ function Resolve-GameDataDeps {
             }
             $prevEAP = $ErrorActionPreference
             $ErrorActionPreference = "Continue"
-            & $script:ADB push $localFile "/data/local/tmp/$fname" 2>&1 | Out-Null
-            & $script:ADB shell "run-as $($script:PACKAGE) sh -c 'cat /data/local/tmp/$fname > /data/data/$($script:PACKAGE)/$target/$fname'" 2>&1 | Out-Null
-            & $script:ADB shell "rm -f /data/local/tmp/$fname" 2>&1 | Out-Null
+            if ($isExternal) {
+                # Push directly to external storage (no run-as needed)
+                & $script:ADB push $localFile "$target/$fname" 2>&1 | Out-Null
+            } else {
+                # Stage through /data/local/tmp then copy via run-as
+                & $script:ADB push $localFile "/data/local/tmp/$fname" 2>&1 | Out-Null
+                & $script:ADB shell "run-as $($script:PACKAGE) sh -c 'cat /data/local/tmp/$fname > /data/data/$($script:PACKAGE)/$target/$fname'" 2>&1 | Out-Null
+                & $script:ADB shell "rm -f /data/local/tmp/$fname" 2>&1 | Out-Null
+            }
             $ErrorActionPreference = $prevEAP
             $pushCount++
         }

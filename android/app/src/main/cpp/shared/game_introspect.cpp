@@ -96,6 +96,7 @@ int androidaud_get_audio_buf_frames(void);
 #include <SDL_mixer.h>
 
 #include "console_ringbuf.h"
+#include "overlay_ringbuf.h"
 
 /* -- Helpers to identify front-window types --------------------------- */
 
@@ -631,6 +632,19 @@ extern "C" char *game_introspect_get_state(void)
 				j["console"] = nullptr;
 			}
 			free(console_json);
+		}
+	}
+
+	/* -- Recent overlay messages (last 32 track/level popups) ------- */
+	{
+		char *overlay_json = overlay_ringbuf_get_json(0, 32);
+		if (overlay_json) {
+			try {
+				j["overlays"] = json::parse(overlay_json);
+			} catch (...) {
+				j["overlays"] = nullptr;
+			}
+			free(overlay_json);
 		}
 	}
 

@@ -39,6 +39,7 @@ extern "C" {
 extern "C" {
 #include "game_automate.h"
 #include "game_introspect.h"
+#include "overlay_ringbuf.h"
 #include "game.h"
 #include "screens.h"
 #include "inferno.h"
@@ -170,16 +171,17 @@ static SDLKey lookup_key(const char *name)
 /* -- Step types ------------------------------------------------------- */
 
 enum step_type {
-	STEP_KEY,          /* inject key down+up, then delay */
-	STEP_WAIT_MS,      /* wait N milliseconds */
-	STEP_WAIT_FOR,     /* wait for a game state condition */
-	STEP_INTROSPECT,   /* trigger introspection dump */
-	STEP_LOG,          /* emit a logcat message */
-	STEP_ASSERT,       /* check introspection values, fail if mismatch */
-	STEP_SELECT,       /* find menu item by text and select it */
-	STEP_SEND_AXIS,    /* inject joystick axis event */
-	STEP_SEND_BUTTON,  /* inject joystick button press+release */
-	STEP_SKIP_BRIEFING /* escape only if a non-game window covers Game_wind */
+	STEP_KEY,           /* inject key down+up, then delay */
+	STEP_WAIT_MS,       /* wait N milliseconds */
+	STEP_WAIT_FOR,      /* wait for a game state condition */
+	STEP_INTROSPECT,    /* trigger introspection dump */
+	STEP_LOG,           /* emit a logcat message */
+	STEP_ASSERT,        /* check introspection values, fail if mismatch */
+	STEP_SELECT,        /* find menu item by text and select it */
+	STEP_SEND_AXIS,     /* inject joystick axis event */
+	STEP_SEND_BUTTON,   /* inject joystick button press+release */
+	STEP_SKIP_BRIEFING, /* escape only if a non-game window covers Game_wind */
+	STEP_ASSERT_OVERLAY /* check overlay ring buffer for matching entry */
 };
 
 /* Key-value pair for STEP_ASSERT expectations.
@@ -246,6 +248,7 @@ static const char *step_type_name(step_type t)
 		case STEP_SEND_AXIS: return "send_axis";
 		case STEP_SEND_BUTTON: return "send_button";
 		case STEP_SKIP_BRIEFING: return "skip_briefing";
+		case STEP_ASSERT_OVERLAY: return "assert_overlay";
 		default: return "unknown";
 	}
 }
@@ -604,6 +607,7 @@ static int parse_script(const char *json_text)
 			else if (action == "send_axis") s.type = STEP_SEND_AXIS;
 			else if (action == "send_button") s.type = STEP_SEND_BUTTON;
 			else if (action == "skip_briefing") s.type = STEP_SKIP_BRIEFING;
+			else if (action == "assert_overlay") s.type = STEP_ASSERT_OVERLAY;
 			else {
 				LOGE("Unknown action: %s", action.c_str());
 				continue;
@@ -1139,6 +1143,54 @@ extern "C" void game_automate_tick(void)
 				}
 			}
 			break;
+
+		case STEP_ASSERT_OVERLAY: {
+			/* Search overlay ring buffer for entry matching type (field) and
+			 * text substring (value).  field="" matches any type. */
+			char *ov_json = overlay_ringbuf_get_json(0, 32);
+			if (!ov_json) {
+				log_append("assert_overlay", "fail", "could not read overlay buffer");
+				stop_script_fail("assert_overlay: could not read overlay buffer");
+				break;
+			}
+			bool found = false;
+			std::string detail;
+			try {
+				json ov = json::parse(ov_json);
+				const auto &lines = ov["lines"];
+				for (const auto &entry : lines) {
+					std::string etype = entry.value("type", "");
+					std::string etext = entry.value("text", "");
+					if (!s.field.empty() && etype != s.field)
+						continue;
+					if (etext.find(s.value) != std::string::npos) {
+						found = true;
+						detail = "matched: type=\"" + etype + "\" text=\"" + etext + "\"";
+						break;
+					}
+				}
+				if (!found) {
+					int n = (int) lines.size();
+					char tmp[128];
+					snprintf(tmp, sizeof(tmp), "no overlay entry matching type=\"%s\" contains=\"%s\" (%d entries)",
+					         s.field.c_str(), s.value.c_str(), n);
+					detail = tmp;
+				}
+			} catch (const std::exception &e) {
+				detail = std::string("parse error: ") + e.what();
+			}
+			free(ov_json);
+			if (found) {
+				LOGI("ASSERT_OVERLAY_PASS: %s", detail.c_str());
+				log_append("assert_overlay", "pass", detail.c_str());
+				advance_step();
+			} else {
+				LOGE("ASSERT_OVERLAY_FAIL: %s", detail.c_str());
+				log_append("assert_overlay", "fail", detail.c_str());
+				stop_script_fail(detail.c_str());
+			}
+			break;
+		}
 	}
 }
 

@@ -133,7 +133,9 @@ class SetupActivity : ComponentActivity() {
                         } else {
                             val game = intent.getStringExtra("game") ?: "d2"
                             FileSetManager(filesDir).writeActiveSetPath()
+                            AudioSourceManager(filesDir).writePlaylist()
                             writeInitialGameConfig()
+                            writeMusicConfigForLaunch()
                             val launchIntent = Intent(this@SetupActivity, MainActivity::class.java)
                             launchIntent.putExtra("game", game)
                             startActivity(launchIntent)
@@ -885,9 +887,15 @@ class SetupActivity : ComponentActivity() {
                     val ao = JSONObject()
                     ao.put("id", src.id)
                     ao.put("label", src.discLabel)
+                    ao.put("disc_id", src.discId)
                     ao.put("cue_path", src.cuePath)
                     ao.put("track_count", src.trackCount)
                     ao.put("audio_track_count", src.audioTrackCount)
+                    if (src.trackNames.isNotEmpty()) {
+                        val tn = JSONObject()
+                        for ((k, v) in src.trackNames) tn.put(k.toString(), v)
+                        ao.put("track_names", tn)
+                    }
                     audioArr.put(ao)
                 }
                 root.put("audio_sources", audioArr)
@@ -3380,8 +3388,7 @@ internal fun updateDescentCfgResolution(
  */
 private fun enableRedbookInConfig(filesDir: File) {
     val cfgFile = File(filesDir, "descent.cfg")
-    if (!cfgFile.exists()) return // writeInitialGameConfig will handle first launch
-    var text = cfgFile.readText()
+    var text = if (cfgFile.exists()) cfgFile.readText() else ""
     for ((key, value) in listOf("MusicType" to "2", "OrigTrackOrder" to "1")) {
         val regex = Regex("^$key=.*$", RegexOption.MULTILINE)
         text =

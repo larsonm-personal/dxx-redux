@@ -15,6 +15,7 @@
 #include "track_names.h"
 
 #include "android_jni_overlay.h"
+#include "overlay_ringbuf.h"
 
 /* -- CUE-parsed / fingerprint-matched titles ------------------------- */
 /* Populated by rbaudio_bin.c when loading audio_playlist.json.
@@ -73,6 +74,7 @@ void track_overlay_notify(int track_or_song, int is_midi, unsigned long disc_id)
 	}
 
 	android_send_track_name(s_overlay_text);
+	overlay_ringbuf_add("track", s_overlay_text);
 }
 
 void level_overlay_notify(int level_num, const char *level_name)
@@ -91,6 +93,7 @@ void level_overlay_notify(int level_num, const char *level_name)
 			snprintf(buf, OVERLAY_TEXT_LEN, "Level %d", level_num);
 	}
 	android_send_level_name(buf);
+	overlay_ringbuf_add("level", buf);
 }
 
 void track_overlay_notify_jukebox(const char *filename)
@@ -115,4 +118,5 @@ void track_overlay_notify_jukebox(const char *filename)
 		buf[p - buf] = '\0';
 
 	android_send_track_name(buf);
+	overlay_ringbuf_add("jukebox", buf);
 }
