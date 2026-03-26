@@ -962,7 +962,7 @@ private fun AudioFilesSection(
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        if (hasOnlyRefs) "Original files will not be affected" else "This cannot be undone",
+                        if (hasOnlyRefs) "Source reference will be removed. Original files on external storage are not affected" else "Extracted audio files in app storage will be deleted. Re-import from original source to restore",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

@@ -1601,8 +1601,8 @@ private fun StickPropertiesPanel(
         val modes = DoubleTapMode.entries
         val modeLabels =
             mapOf(
-                DoubleTapMode.REPEAT_FIRE to "Repeat (tap = fire)",
-                DoubleTapMode.SINGLE_FIRE to "Single (1 per double-tap)",
+                DoubleTapMode.REPEAT_FIRE to "Repeat (each successive tap = fire)",
+                DoubleTapMode.SINGLE_FIRE to "Single (1 per complete double-tap)",
                 DoubleTapMode.LATCH_DOUBLE to "Latch (double-tap toggle)",
                 DoubleTapMode.LATCH_SINGLE to "Latch (double-tap on, tap off)",
             )
