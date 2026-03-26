@@ -32,6 +32,8 @@ class CustomAudioSetManager(
         val order: Int = 0,
         // fingerprint-matched track names: filename -> track name
         val trackNames: Map<String, String> = emptyMap(),
+        // referenced (not copied) files: filename -> SAF content URI string
+        val referencedUris: Map<String, String> = emptyMap(),
     )
 
     private var sets: MutableList<AudioSet> = mutableListOf()
@@ -51,11 +53,32 @@ class CustomAudioSetManager(
         Log.i(TAG, "Added set: ${set.label} (${set.files.size} files)")
     }
 
+    /** Append files to an existing set */
+    fun addFilesToSet(
+        id: String,
+        newFiles: List<String>,
+        newRefs: Map<String, String> = emptyMap(),
+        newTrackNames: Map<String, String> = emptyMap(),
+    ) {
+        val existing = sets.firstOrNull { it.id == id } ?: return
+        val merged =
+            existing.copy(
+                files = existing.files + newFiles,
+                trackNames = existing.trackNames + newTrackNames,
+                referencedUris = existing.referencedUris + newRefs,
+            )
+        sets.replaceAll { if (it.id == id) merged else it }
+        save()
+        Log.i(TAG, "Added ${newFiles.size} files to set '${existing.label}'")
+    }
+
     fun removeSet(
         id: String,
         deleteFiles: Boolean = false,
     ) {
-        if (deleteFiles) {
+        val set = sets.firstOrNull { it.id == id }
+        if (deleteFiles && set != null) {
+            // Only delete the set directory (copied files). Referenced files stay
             val dir = File(File(filesDir, MUSIC_DIR), id)
             if (dir.exists()) dir.deleteRecursively()
         }
@@ -87,17 +110,35 @@ class CustomAudioSetManager(
 
     /**
      * Write an M3U playlist from all enabled sets' files, sorted alphabetically.
+     * Referenced (non-copied) files are staged to a temp directory so the C
+     * engine can read them by filesystem path.
      * Returns the playlist path relative to filesDir, or null if no files.
      */
-    fun writeM3U(): String? {
+    fun writeM3U(context: android.content.Context? = null): String? {
         val enabled = getEnabledSets()
-        val allFiles = mutableListOf<Pair<String, String>>() // (sortKey, relativePath)
+        val allFiles = mutableListOf<Pair<String, String>>() // (sortKey, absolutePath)
+        val stageDir = File(filesDir, "custom_music_stage")
         for (set in enabled) {
             val dir = setDir(set.id)
             for (f in set.files.sorted()) {
-                val path = File(dir, f)
-                if (path.exists()) {
-                    allFiles.add(f.lowercase() to path.absolutePath)
+                val refUri = set.referencedUris[f]
+                if (refUri != null && context != null) {
+                    // Stage referenced file to temp dir
+                    stageDir.mkdirs()
+                    val staged = File(stageDir, "${set.id}_$f")
+                    try {
+                        context.contentResolver.openInputStream(android.net.Uri.parse(refUri))?.use { input ->
+                            staged.outputStream().use { output -> input.copyTo(output) }
+                        }
+                        allFiles.add(f.lowercase() to staged.absolutePath)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to stage referenced file $f: ${e.message}")
+                    }
+                } else {
+                    val path = File(dir, f)
+                    if (path.exists()) {
+                        allFiles.add(f.lowercase() to path.absolutePath)
+                    }
                 }
             }
         }
@@ -171,6 +212,13 @@ class CustomAudioSetManager(
                             } else {
                                 emptyMap()
                             }
+                        val refsObj = obj.optJSONObject("referencedUris")
+                        val refs =
+                            if (refsObj != null) {
+                                refsObj.keys().asSequence().associateWith { refsObj.getString(it) }
+                            } else {
+                                emptyMap()
+                            }
                         AudioSet(
                             id = obj.getString("id"),
                             label = obj.optString("label", "Unnamed"),
@@ -178,6 +226,7 @@ class CustomAudioSetManager(
                             enabled = obj.optBoolean("enabled", true),
                             order = obj.optInt("order", 0),
                             trackNames = names,
+                            referencedUris = refs,
                         )
                     }.toMutableList()
             Log.i(TAG, "Loaded ${sets.size} custom audio sets")
@@ -203,6 +252,11 @@ class CustomAudioSetManager(
                 val namesObj = JSONObject()
                 set.trackNames.forEach { (k, v) -> namesObj.put(k, v) }
                 obj.put("trackNames", namesObj)
+            }
+            if (set.referencedUris.isNotEmpty()) {
+                val refsObj = JSONObject()
+                set.referencedUris.forEach { (k, v) -> refsObj.put(k, v) }
+                obj.put("referencedUris", refsObj)
             }
             arr.put(obj)
         }

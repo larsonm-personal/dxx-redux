@@ -524,6 +524,9 @@ target_sources(dxx-redux-d1 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/cd_preview.c
     ${CMAKE_CURRENT_SOURCE_DIR}/jni_cd_preview.c
     ${CMAKE_CURRENT_SOURCE_DIR}/jni_fingerprint.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_preview.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_enumeration.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni_midi_preview.c
 )
 target_include_directories(dxx-redux-d1 PRIVATE
     ${D1_SRC}/arch/include
@@ -531,6 +534,7 @@ target_include_directories(dxx-redux-d1 PRIVATE
     ${D1_SRC}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/shared
     ${CMAKE_CURRENT_SOURCE_DIR}/extract
+    ${_TSF_DIR}
 )
 
 target_compile_definitions(dxx-redux-d1 PRIVATE INTROSPECT_ON)
@@ -605,6 +609,9 @@ target_sources(dxx-redux-d2 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/cd_preview.c
     ${CMAKE_CURRENT_SOURCE_DIR}/jni_cd_preview.c
     ${CMAKE_CURRENT_SOURCE_DIR}/jni_fingerprint.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_preview.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_enumeration.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/jni_midi_preview.c
 )
 target_include_directories(dxx-redux-d2 PRIVATE
     ${D2_SRC}/arch/include
@@ -612,6 +619,7 @@ target_include_directories(dxx-redux-d2 PRIVATE
     ${D2_SRC}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/shared
     ${CMAKE_CURRENT_SOURCE_DIR}/extract
+    ${_TSF_DIR}
 )
 
 # Enable introspection API (AI-assisted testing, debug Android builds only).

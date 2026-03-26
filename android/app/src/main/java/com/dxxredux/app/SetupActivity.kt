@@ -1784,6 +1784,10 @@ private fun SetupScreen(
     var sowImportUri by remember { mutableStateOf<Uri?>(null) }
     var sowImportName by remember { mutableStateOf<String?>(null) }
 
+    // ── Audio file auto-import state ────────────────────
+    var audioImportUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    var audioImporting by remember { mutableStateOf(false) }
+
     val filePickerLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.OpenMultipleDocuments(),
@@ -1803,6 +1807,7 @@ private fun SetupScreen(
                     var gogDiscUri: Pair<String, Uri>? = null // .gog BIN file
                     var instDiscUri: Pair<String, Uri>? = null // .inst CUE sheet
                     val unhandledFiles = mutableListOf<String>()
+                    val audioFileUris = mutableListOf<Uri>()
                     for (uri in uris) {
                         val name = getDisplayName(context, uri)
                         if (name != null) {
@@ -1816,6 +1821,8 @@ private fun SetupScreen(
                                 lname.endsWith(".exe") || lname.endsWith(".pkg") -> gogUri = name to uri
                                 lname.endsWith(".sow") -> sowUri = name to uri
                                 lname in ALL_GAME_FILENAMES -> gameUris.add(FoundFile(name, uri))
+                                lname.endsWith(".mp3") || lname.endsWith(".ogg") || lname.endsWith(".flac") ->
+                                    audioFileUris.add(uri)
                                 else -> unhandledFiles.add(name)
                             }
                         }
@@ -1842,17 +1849,16 @@ private fun SetupScreen(
                         for (c in cueUris) warnings.add("${c.first} requires a matching BIN file")
                     }
                     for (f in unhandledFiles) {
-                        val ext = f.substringAfterLast('.', "").lowercase()
-                        if (ext in setOf("mp3", "ogg", "flac")) {
-                            warnings.add("$f: audio files can be added via the Music tab")
-                        } else {
-                            warnings.add("$f: file type not recognized")
-                        }
+                        warnings.add("$f: file type not recognized")
                     }
                     withContext(Dispatchers.Main) {
                         for (w in warnings) {
                             Toast.makeText(context, w, Toast.LENGTH_LONG).show()
                             Log.w("DXX-Setup", "Import warning: $w")
+                        }
+                        // Trigger audio import dialog if audio files found
+                        if (audioFileUris.isNotEmpty()) {
+                            audioImportUris = audioFileUris
                         }
                         if (gameUris.isNotEmpty()) {
                             scanResults = gameUris
@@ -2142,6 +2148,41 @@ private fun SetupScreen(
                         onDismiss = {
                             sowImportUri = null
                             sowImportName = null
+                        },
+                    )
+                }
+
+                // ── Audio file auto-import dialog ──
+                if (audioImportUris.isNotEmpty()) {
+                    val customMgr = remember { CustomAudioSetManager(filesDir) }
+                    var customSets by remember { mutableStateOf(customMgr.getSets()) }
+                    AddToSetDialog(
+                        existingSets = customSets,
+                        defaultName = "Set ${customSets.size + 1}",
+                        onDismiss = { audioImportUris = emptyList() },
+                        onConfirm = { targetSetId, newName, copyToStorage ->
+                            val uris = audioImportUris
+                            audioImportUris = emptyList()
+                            audioImporting = true
+                            scope.launch {
+                                importAudioFiles(
+                                    context,
+                                    filesDir,
+                                    customMgr,
+                                    newName,
+                                    uris,
+                                    targetSetId,
+                                    copyToStorage,
+                                )
+                                customSets = customMgr.getSets()
+                                audioImporting = false
+                                // Auto-switch music mode to "files"
+                                context
+                                    .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
+                                    .edit()
+                                    .putString("music_mode", "files")
+                                    .apply()
+                            }
                         },
                     )
                 }
@@ -3620,7 +3661,7 @@ private fun SetupActivity.writeMusicConfigForLaunch() {
         settings.add("OrigTrackOrder" to "1")
     } else if (mode == "files") {
         // Generate M3U playlist from custom audio sets
-        val m3uPath = CustomAudioSetManager(filesDir).writeM3U()
+        val m3uPath = CustomAudioSetManager(filesDir).writeM3U(this)
         if (m3uPath != null) {
             settings.add("CMLevelMusicPath" to m3uPath)
             settings.add("CMLevelMusicPlayOrder" to "0") // continuous

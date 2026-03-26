@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,9 +77,8 @@ fun MusicPickerPage(
 
     // Audio file import state
     var importingFiles by remember { mutableStateOf(false) }
-    var showNameDialog by remember { mutableStateOf(false) }
+    var showAddToSetDialog by remember { mutableStateOf(false) }
     var pendingUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
-    var pendingSetName by remember { mutableStateOf("") }
 
     val audioFilePicker =
         rememberLauncherForActivityResult(
@@ -86,8 +86,7 @@ fun MusicPickerPage(
         ) { uris ->
             if (uris.isNotEmpty()) {
                 pendingUris = uris
-                pendingSetName = "Set ${customSets.size + 1}"
-                showNameDialog = true
+                showAddToSetDialog = true
             }
         }
 
@@ -158,7 +157,7 @@ fun MusicPickerPage(
                             .verticalScroll(scrollState),
                 ) {
                     when (musicMode) {
-                        MUSIC_MODE_MIDI -> MidiSection()
+                        MUSIC_MODE_MIDI -> MidiSection(filesDir)
                         MUSIC_MODE_CD ->
                             CdAudioSection(
                                 audioSrcManager = audioSrcManager,
@@ -194,47 +193,24 @@ fun MusicPickerPage(
         }
     }
 
-    // Name dialog for new audio file set
-    if (showNameDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                showNameDialog = false
+    // Add-to-set dialog for audio file import
+    if (showAddToSetDialog) {
+        AddToSetDialog(
+            existingSets = customSets,
+            defaultName = "Set ${customSets.size + 1}",
+            onDismiss = {
+                showAddToSetDialog = false
                 pendingUris = emptyList()
             },
-            title = { Text("Name this set") },
-            text = {
-                OutlinedTextField(
-                    value = pendingSetName,
-                    onValueChange = { pendingSetName = it },
-                    singleLine = true,
-                    label = { Text("Set name") },
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showNameDialog = false
-                        val name = pendingSetName.trim().ifEmpty { "Set ${customSets.size + 1}" }
-                        val uris = pendingUris
-                        pendingUris = emptyList()
-                        scope.launch {
-                            importingFiles = true
-                            importAudioFiles(ctx, filesDir, customMgr, name, uris)
-                            customSets = customMgr.getSets()
-                            importingFiles = false
-                        }
-                    },
-                    enabled = pendingSetName.isNotBlank(),
-                ) {
-                    Text("OK")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    showNameDialog = false
-                    pendingUris = emptyList()
-                }) {
-                    Text("Cancel")
+            onConfirm = { targetSetId, newName, copyToStorage ->
+                showAddToSetDialog = false
+                val uris = pendingUris
+                pendingUris = emptyList()
+                scope.launch {
+                    importingFiles = true
+                    importAudioFiles(ctx, filesDir, customMgr, newName, uris, targetSetId, copyToStorage)
+                    customSets = customMgr.getSets()
+                    importingFiles = false
                 }
             },
         )
@@ -253,19 +229,424 @@ fun MusicPickerPage(
 
 // ── Mode sections ──────────────────────────────────────────────────
 
+/**
+ * Reusable dialog for importing audio files into a new or existing set.
+ * Used by both the Music tab picker and the game file picker in SetupActivity.
+ *
+ * @param existingSets current sets (empty = force "Create new set")
+ * @param defaultName pre-filled name for new sets
+ * @param onDismiss called when dialog is cancelled
+ * @param onConfirm called with (targetSetId or null for new, setName, copyToStorage)
+ */
 @Composable
-private fun MidiSection() {
+fun AddToSetDialog(
+    existingSets: List<CustomAudioSetManager.AudioSet>,
+    defaultName: String,
+    onDismiss: () -> Unit,
+    onConfirm: (targetSetId: String?, newName: String, copyToStorage: Boolean) -> Unit,
+) {
+    // "Create new set" is index 0, existing sets follow
+    val createNewIdx = 0
+    var selectedIdx by remember { mutableIntStateOf(createNewIdx) }
+    var newName by remember { mutableStateOf(defaultName) }
+    var copyToStorage by remember { mutableStateOf(true) }
+    var dropdownExpanded by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Import Audio Files") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (existingSets.isNotEmpty()) {
+                    // Destination selector
+                    Text("Add to:", fontSize = 13.sp)
+                    Box {
+                        OutlinedButton(
+                            onClick = { dropdownExpanded = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        ) {
+                            Text(
+                                if (selectedIdx == createNewIdx) {
+                                    "Create new set"
+                                } else {
+                                    existingSets[selectedIdx - 1].label
+                                },
+                                modifier = Modifier.weight(1f),
+                                fontSize = 13.sp,
+                            )
+                            Icon(Icons.Filled.KeyboardArrowDown, "Expand", Modifier.size(16.dp))
+                        }
+                        DropdownMenu(
+                            expanded = dropdownExpanded,
+                            onDismissRequest = { dropdownExpanded = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Create new set") },
+                                onClick = {
+                                    selectedIdx = createNewIdx
+                                    dropdownExpanded = false
+                                },
+                            )
+                            existingSets.forEachIndexed { i, set ->
+                                DropdownMenuItem(
+                                    text = { Text("${set.label} (${set.files.size} files)") },
+                                    onClick = {
+                                        selectedIdx = i + 1
+                                        dropdownExpanded = false
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
+                // Name field (only when creating new)
+                if (selectedIdx == createNewIdx) {
+                    OutlinedTextField(
+                        value = newName,
+                        onValueChange = { newName = it },
+                        singleLine = true,
+                        label = { Text("Set name") },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                // Copy checkbox
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { copyToStorage = !copyToStorage },
+                ) {
+                    Checkbox(
+                        checked = copyToStorage,
+                        onCheckedChange = { copyToStorage = it },
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Copy files to app storage", fontSize = 13.sp)
+                }
+                if (!copyToStorage) {
+                    Text(
+                        "Files will be referenced in place. If the original files " +
+                            "are moved or deleted, playback will fail",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            val canConfirm = selectedIdx != createNewIdx || newName.isNotBlank()
+            TextButton(
+                onClick = {
+                    val targetId = if (selectedIdx == createNewIdx) null else existingSets[selectedIdx - 1].id
+                    val name = newName.trim().ifEmpty { defaultName }
+                    onConfirm(targetId, name, copyToStorage)
+                },
+                enabled = canConfirm,
+            ) { Text("OK") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MidiSection(filesDir: File) {
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val sampleRate = remember { MidiPreviewBridge.getNativeSampleRate(ctx) }
+
+    var enumResult by remember { mutableStateOf<MidiEnumerationBridge.EnumerationResult?>(null) }
+    var enumerating by remember { mutableStateOf(false) }
+    var selectedSource by remember { mutableStateOf<MidiEnumerationBridge.SourceInfo?>(null) }
+    var previewTrack by remember { mutableStateOf<MidiEnumerationBridge.TrackInfo?>(null) }
+    var previewSource by remember { mutableStateOf<MidiEnumerationBridge.SourceInfo?>(null) }
+
+    // Initialize TSF and enumerate on first composition
+    LaunchedEffect(Unit) {
+        enumerating = true
+        withContext(Dispatchers.IO) {
+            MidiPreviewBridge.init(ctx)
+            enumResult = MidiEnumerationBridge.enumerateTracks(filesDir.absolutePath)
+        }
+        enumerating = false
+        // Auto-select first source
+        enumResult?.sources?.firstOrNull()?.let { selectedSource = it }
+    }
+
     Text(
-        "Uses built-in MIDI music from game files.",
+        "MIDI music from game data files (HMP format, played via SoundFont synth)",
         fontSize = 13.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+
     Spacer(modifier = Modifier.height(8.dp))
-    Text(
-        "No additional configuration needed. MIDI music plays from " +
-            "HMP/MID files included in the game data.",
-        fontSize = 12.sp,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+
+    if (enumerating) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Scanning game files...", fontSize = 12.sp)
+        }
+        return
+    }
+
+    val sources = enumResult?.sources ?: emptyList()
+    if (sources.isEmpty()) {
+        Text(
+            "No MIDI tracks found. Import game data files first.",
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        return
+    }
+
+    // Source selector dropdown
+    var sourceExpanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = sourceExpanded,
+        onExpandedChange = { sourceExpanded = it },
+    ) {
+        OutlinedTextField(
+            value = selectedSource?.label ?: "Select source",
+            onValueChange = {},
+            readOnly = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = sourceExpanded) },
+            modifier = Modifier.menuAnchor().fillMaxWidth(),
+            textStyle = LocalTextStyle.current.copy(fontSize = 13.sp),
+        )
+        ExposedDropdownMenu(expanded = sourceExpanded, onDismissRequest = { sourceExpanded = false }) {
+            sources.forEach { src ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            "${src.label} (${src.tracks.size} tracks)",
+                            fontSize = 13.sp,
+                        )
+                    },
+                    onClick = {
+                        selectedSource = src
+                        sourceExpanded = false
+                    },
+                )
+            }
+        }
+    }
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    // Track list
+    val currentSource = selectedSource
+    if (currentSource != null && currentSource.tracks.isNotEmpty()) {
+        Text(
+            "${currentSource.tracks.size} tracks",
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+
+        currentSource.tracks.forEachIndexed { idx, track ->
+            Surface(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            previewTrack = track
+                            previewSource = currentSource
+                        },
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                shape = MaterialTheme.shapes.small,
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "${idx + 1}.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.width(28.dp),
+                    )
+                    Text(track.filename, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                    if (track.duration_ms > 0) {
+                        val s = track.duration_ms / 1000
+                        Text(
+                            "%d:%02d".format(s / 60, s % 60),
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(2.dp))
+        }
+    }
+
+    // Preview dialog
+    if (previewTrack != null && previewSource != null) {
+        MidiTrackPreviewDialog(
+            filesDir = filesDir,
+            track = previewTrack!!,
+            source = previewSource!!,
+            sampleRate = sampleRate,
+            onDismiss = {
+                MidiPreviewBridge.stop()
+                previewTrack = null
+                previewSource = null
+            },
+        )
+    }
+}
+
+@Composable
+private fun MidiTrackPreviewDialog(
+    filesDir: File,
+    track: MidiEnumerationBridge.TrackInfo,
+    source: MidiEnumerationBridge.SourceInfo,
+    sampleRate: Int,
+    onDismiss: () -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+
+    var playing by remember { mutableStateOf(false) }
+    var positionMs by remember { mutableIntStateOf(0) }
+    var durationMs by remember { mutableIntStateOf(0) }
+    var seeking by remember { mutableStateOf(false) }
+    var loadError by remember { mutableStateOf<String?>(null) }
+
+    DisposableEffect(Unit) {
+        onDispose { MidiPreviewBridge.stop() }
+    }
+
+    // Poll playback state
+    LaunchedEffect(playing) {
+        while (playing) {
+            val state = MidiPreviewBridge.getState()
+            if (!seeking) {
+                positionMs = state.positionMs
+                durationMs = state.durationMs
+            }
+            if (state.state == MidiPreviewBridge.STATE_STOPPED && durationMs > 0) {
+                playing = false
+                positionMs = durationMs
+            }
+            delay(100)
+        }
+    }
+
+    fun togglePlayback() {
+        if (!playing) {
+            scope.launch(Dispatchers.IO) {
+                val data = MidiPreviewBridge.readHogEntry(source.hog, track.filename)
+                if (data == null) {
+                    loadError = "Could not read ${track.filename} from HOG"
+                    return@launch
+                }
+                val isHmp = track.filename.lowercase().endsWith(".hmp")
+                if (MidiPreviewBridge.start(data, isHmp, sampleRate)) {
+                    playing = true
+                    loadError = null
+                } else {
+                    loadError = "Playback failed"
+                }
+            }
+        } else {
+            val state = MidiPreviewBridge.getState()
+            if (state.state == MidiPreviewBridge.STATE_PLAYING) {
+                MidiPreviewBridge.pause()
+            } else {
+                MidiPreviewBridge.resume()
+            }
+        }
+    }
+
+    fun formatTime(ms: Int): String {
+        val s = ms / 1000
+        return "%d:%02d".format(s / 60, s % 60)
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("MIDI Preview", fontSize = 16.sp) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(track.filename, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                Text(
+                    "Source: ${source.label}",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (track.duration_ms > 0) {
+                    Text(
+                        "Duration: ${formatTime(track.duration_ms)}",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                loadError?.let {
+                    Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    TextButton(onClick = { togglePlayback() }) {
+                        val label =
+                            if (!playing) {
+                                "Play"
+                            } else {
+                                val s = MidiPreviewBridge.getState()
+                                if (s.state == MidiPreviewBridge.STATE_PAUSED) "Resume" else "Pause"
+                            }
+                        Text(label, fontSize = 13.sp)
+                    }
+                    if (playing) {
+                        TextButton(onClick = {
+                            MidiPreviewBridge.stop()
+                            playing = false
+                            positionMs = 0
+                        }) {
+                            Text("Stop", fontSize = 13.sp)
+                        }
+                    }
+                }
+
+                Slider(
+                    value = if (durationMs > 0) positionMs.toFloat() / durationMs.toFloat() else 0f,
+                    onValueChange = { frac ->
+                        if (durationMs > 0) {
+                            seeking = true
+                            positionMs = (frac * durationMs).toInt()
+                        }
+                    },
+                    onValueChangeFinished = {
+                        if (durationMs > 0) {
+                            MidiPreviewBridge.seek(positionMs.toFloat() / durationMs.toFloat())
+                        }
+                        seeking = false
+                    },
+                    enabled = durationMs > 0,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (durationMs > 0) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(formatTime(positionMs), fontSize = 10.sp)
+                        Text(formatTime(durationMs), fontSize = 10.sp)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        },
     )
 }
 
@@ -529,15 +910,30 @@ private fun AudioFilesSection(
     var infoSet by remember { mutableStateOf<CustomAudioSetManager.AudioSet?>(null) }
 
     if (removeConfirmId != null && removeConfirmSet != null) {
+        val copiedCount = removeConfirmSet.files.size - removeConfirmSet.referencedUris.size
+        val refCount = removeConfirmSet.referencedUris.size
+        val hasOnlyRefs = copiedCount <= 0
         AlertDialog(
             onDismissRequest = { removeConfirmId = null },
-            title = { Text("Delete set") },
+            title = { Text(if (hasOnlyRefs) "Remove set" else "Delete set") },
             text = {
                 Column {
-                    Text("Delete \"${removeConfirmSet.label}\" and its ${removeConfirmSet.files.size} audio files?")
+                    if (hasOnlyRefs) {
+                        Text("Remove \"${removeConfirmSet.label}\"? ($refCount referenced files will be unlinked)")
+                    } else if (refCount > 0) {
+                        Text("Remove \"${removeConfirmSet.label}\"?")
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            "$copiedCount copied file(s) will be deleted. $refCount referenced file(s) will be unlinked",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        Text("Delete \"${removeConfirmSet.label}\" and its ${removeConfirmSet.files.size} audio files?")
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "This cannot be undone",
+                        if (hasOnlyRefs) "Original files will not be affected" else "This cannot be undone",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -548,7 +944,7 @@ private fun AudioFilesSection(
                     customMgr.removeSet(removeConfirmId!!, deleteFiles = true)
                     removeConfirmId = null
                     onSetsChanged()
-                }) { Text("Delete") }
+                }) { Text(if (hasOnlyRefs) "Remove" else "Delete") }
             },
             dismissButton = {
                 TextButton(onClick = { removeConfirmId = null }) { Text("Cancel") }
@@ -1175,66 +1571,94 @@ private fun isAudioFile(name: String): Boolean = name.substringAfterLast('.').lo
 
 private fun isArchiveFile(name: String): Boolean = name.substringAfterLast('.').lowercase() in ARCHIVE_EXTENSIONS
 
-private suspend fun importAudioFiles(
+internal suspend fun importAudioFiles(
     ctx: Context,
     filesDir: File,
     customMgr: CustomAudioSetManager,
     setName: String,
     uris: List<Uri>,
+    targetSetId: String? = null,
+    copyToStorage: Boolean = true,
 ) {
-    val setId = UUID.randomUUID().toString().take(8)
+    val setId = targetSetId ?: UUID.randomUUID().toString().take(8)
     val destDir = customMgr.setDir(setId)
 
     withContext(Dispatchers.IO) {
-        destDir.mkdirs()
+        if (copyToStorage) destDir.mkdirs()
         val imported = mutableListOf<String>()
+        val referencedUris = mutableMapOf<String, String>()
         for (uri in uris) {
             try {
                 val fileName = resolveFileName(ctx, uri) ?: "track_${imported.size + 1}.audio"
                 if (isArchiveFile(fileName)) {
-                    val extracted = extractAudioFromArchive(ctx, uri, destDir, fileName)
-                    imported.addAll(extracted)
-                } else {
-                    val dest = File(destDir, fileName)
-                    ctx.contentResolver.openInputStream(uri)?.use { input ->
-                        dest.outputStream().use { output -> input.copyTo(output) }
+                    if (copyToStorage) {
+                        val extracted = extractAudioFromArchive(ctx, uri, destDir, fileName)
+                        imported.addAll(extracted)
                     }
-                    if (isAudioFile(fileName)) imported.add(fileName)
+                    // Archives are always extracted (copied). Can't reference archive contents
+                } else if (isAudioFile(fileName)) {
+                    if (copyToStorage) {
+                        val dest = File(destDir, fileName)
+                        ctx.contentResolver.openInputStream(uri)?.use { input ->
+                            dest.outputStream().use { output -> input.copyTo(output) }
+                        }
+                    } else {
+                        // Take persistable URI permission so we can read later
+                        try {
+                            ctx.contentResolver.takePersistableUriPermission(
+                                uri,
+                                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                            )
+                        } catch (e: SecurityException) {
+                            Log.w(TAG, "Could not persist URI permission for $fileName", e)
+                        }
+                        referencedUris[fileName] = uri.toString()
+                    }
+                    imported.add(fileName)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to import: $uri", e)
             }
         }
         if (imported.isNotEmpty()) {
-            // Run chromaprint matching on imported files
+            // Run chromaprint matching on copied files only
             val trackNames = mutableMapOf<String, String>()
-            try {
-                FingerprintBridge.ensureDbLoaded(ctx)
-                for (f in imported) {
-                    val path = File(destDir, f).absolutePath
-                    val match = FingerprintBridge.fingerprintAndMatch(path)
-                    if (match != null) {
-                        trackNames[f] = match.name
-                        Log.i(TAG, "Matched '$f' -> '${match.name}' (${match.confidence})")
+            if (copyToStorage) {
+                try {
+                    FingerprintBridge.ensureDbLoaded(ctx)
+                    for (f in imported) {
+                        val path = File(destDir, f).absolutePath
+                        val match = FingerprintBridge.fingerprintAndMatch(path)
+                        if (match != null) {
+                            trackNames[f] = match.name
+                            Log.i(TAG, "Matched '$f' -> '${match.name}' (${match.confidence})")
+                        }
                     }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Fingerprint matching failed (non-fatal)", e)
                 }
-            } catch (e: Exception) {
-                Log.w(TAG, "Fingerprint matching failed (non-fatal)", e)
             }
 
-            customMgr.addSet(
-                CustomAudioSetManager.AudioSet(
-                    id = setId,
-                    label = setName,
-                    files = imported,
-                    enabled = true,
-                    order = customMgr.getSets().size,
-                    trackNames = trackNames,
-                ),
-            )
-            Log.i(TAG, "Imported ${imported.size} files as set '$setName' (${trackNames.size} matched)")
+            if (targetSetId != null) {
+                // Append to existing set
+                customMgr.addFilesToSet(targetSetId, imported, referencedUris, trackNames)
+                Log.i(TAG, "Added ${imported.size} files to existing set '$targetSetId'")
+            } else {
+                customMgr.addSet(
+                    CustomAudioSetManager.AudioSet(
+                        id = setId,
+                        label = setName,
+                        files = imported,
+                        enabled = true,
+                        order = customMgr.getSets().size,
+                        trackNames = trackNames,
+                        referencedUris = referencedUris,
+                    ),
+                )
+                Log.i(TAG, "Imported ${imported.size} files as set '$setName' (${trackNames.size} matched)")
+            }
         } else {
-            destDir.deleteRecursively()
+            if (copyToStorage) destDir.deleteRecursively()
             withContext(Dispatchers.Main) {
                 Toast.makeText(ctx, "No audio files found in import", Toast.LENGTH_SHORT).show()
             }
