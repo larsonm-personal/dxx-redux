@@ -198,6 +198,7 @@ fun MusicPickerPage(
         AddToSetDialog(
             existingSets = customSets,
             defaultName = "Set ${customSets.size + 1}",
+            selectedUris = pendingUris,
             onDismiss = {
                 showAddToSetDialog = false
                 pendingUris = emptyList()
@@ -235,6 +236,7 @@ fun MusicPickerPage(
  *
  * @param existingSets current sets (empty = force "Create new set")
  * @param defaultName pre-filled name for new sets
+ * @param selectedUris URIs being imported (used to detect archive-only imports)
  * @param onDismiss called when dialog is cancelled
  * @param onConfirm called with (targetSetId or null for new, setName, copyToStorage)
  */
@@ -242,6 +244,7 @@ fun MusicPickerPage(
 fun AddToSetDialog(
     existingSets: List<CustomAudioSetManager.AudioSet>,
     defaultName: String,
+    selectedUris: List<Uri> = emptyList(),
     onDismiss: () -> Unit,
     onConfirm: (targetSetId: String?, newName: String, copyToStorage: Boolean) -> Unit,
 ) {
@@ -249,8 +252,18 @@ fun AddToSetDialog(
     val createNewIdx = 0
     var selectedIdx by remember { mutableIntStateOf(createNewIdx) }
     var newName by remember { mutableStateOf(defaultName) }
-    var copyToStorage by remember { mutableStateOf(true) }
     var dropdownExpanded by remember { mutableStateOf(false) }
+
+    // Archives (zip/7z/dxa) must always be extracted -- only show "copy" for raw audio
+    val ctx = LocalContext.current
+    val hasRawAudio =
+        remember(selectedUris) {
+            selectedUris.any { uri ->
+                val name = resolveFileName(ctx, uri) ?: ""
+                isAudioFile(name)
+            }
+        }
+    var copyToStorage by remember { mutableStateOf(true) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -310,26 +323,28 @@ fun AddToSetDialog(
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
-                // Copy checkbox
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clickable { copyToStorage = !copyToStorage },
-                ) {
-                    Checkbox(
-                        checked = copyToStorage,
-                        onCheckedChange = { copyToStorage = it },
-                        modifier = Modifier.size(20.dp),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Copy files to app storage", fontSize = 13.sp)
-                }
-                if (!copyToStorage) {
-                    Text(
-                        "Files will be referenced in place. If the original files " +
-                            "are moved or deleted, playback will fail",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                // Copy checkbox -- only for raw audio; archives always extract
+                if (hasRawAudio) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { copyToStorage = !copyToStorage },
+                    ) {
+                        Checkbox(
+                            checked = copyToStorage,
+                            onCheckedChange = { copyToStorage = it },
+                            modifier = Modifier.size(20.dp),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Copy files to app storage", fontSize = 13.sp)
+                    }
+                    if (!copyToStorage) {
+                        Text(
+                            "Files will be referenced in place. If the original files " +
+                                "are moved or deleted, playback will fail",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         },
@@ -962,7 +977,11 @@ private fun AudioFilesSection(
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        if (hasOnlyRefs) "Source reference will be removed. Original files on external storage are not affected" else "Extracted audio files in app storage will be deleted. Re-import from original source to restore",
+                        if (hasOnlyRefs) {
+                            "Source reference will be removed. Original files on external storage are not affected"
+                        } else {
+                            "Extracted audio files in app storage will be deleted. Re-import from original source to restore"
+                        },
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -1663,11 +1682,11 @@ internal suspend fun importAudioFiles(
             }
         }
         if (imported.isNotEmpty()) {
-            // Run chromaprint matching on copied files only
+            // Run chromaprint matching on imported files
             val trackNames = mutableMapOf<String, String>()
-            if (copyToStorage) {
-                try {
-                    FingerprintBridge.ensureDbLoaded(ctx)
+            try {
+                FingerprintBridge.ensureDbLoaded(ctx)
+                if (copyToStorage) {
                     for (f in imported) {
                         val path = File(destDir, f).absolutePath
                         val match = FingerprintBridge.fingerprintAndMatch(path)
@@ -1676,9 +1695,20 @@ internal suspend fun importAudioFiles(
                             Log.i(TAG, "Matched '$f' -> '${match.name}' (${match.confidence})")
                         }
                     }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Fingerprint matching failed (non-fatal)", e)
+                } else {
+                    // Fingerprint SAF-referenced files via content URI
+                    for (f in imported) {
+                        val uriStr = referencedUris[f] ?: continue
+                        val uri = android.net.Uri.parse(uriStr)
+                        val match = FingerprintBridge.fingerprintAndMatch(ctx.contentResolver, uri)
+                        if (match != null) {
+                            trackNames[f] = match.name
+                            Log.i(TAG, "Matched ref '$f' -> '${match.name}' (${match.confidence})")
+                        }
+                    }
                 }
+            } catch (e: Exception) {
+                Log.w(TAG, "Fingerprint matching failed (non-fatal)", e)
             }
 
             if (targetSetId != null) {

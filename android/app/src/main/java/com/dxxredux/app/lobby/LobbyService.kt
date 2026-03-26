@@ -126,6 +126,10 @@ object LobbyService {
 
     @Volatile private var gameStarted: Boolean = false
 
+    @Volatile private var inGameDifficulty: Int = -1
+
+    @Volatile private var inGameLevelNum: Int = -1
+
     /**
      * Start discovery mode. Acquires multicast lock, opens the UDP socket,
      * and begins listening for ANNOUNCE packets.
@@ -477,6 +481,9 @@ object LobbyService {
                 maxPlayers = json.optInt("max_players", 4),
                 hostAddress = senderAddr,
                 build = json.optString("build", ""),
+                status = json.optString("status", "lobby"),
+                difficulty = json.optInt("difficulty", -1),
+                levelNum = json.optInt("level_num", -1),
             )
         lobbies[lobbyId] = DiscoveredLobby(announce = announce)
         publishLobbies()
@@ -694,10 +701,11 @@ object LobbyService {
                 levelNum = levelNum,
                 maxPlayers = hostedMaxPlayers,
             )
-        // Stop announcing and reject further JOINs (A10 fix)
+        // Mark game started (rejects further JOINs) but keep announcing
+        // so in-game lobbies remain discoverable on LAN
         gameStarted = true
-        announceJob?.cancel()
-        announceJob = null
+        inGameDifficulty = difficulty
+        inGameLevelNum = levelNum
 
         // Capture values before launching coroutine (host fields are @Volatile)
         val game = hostedGame
@@ -741,6 +749,15 @@ object LobbyService {
             NetLog.log("LAN", "Game started: $game/$mission lvl=$levelNum diff=$difficulty")
             Log.i(TAG, "Game started: $game/$mission lvl=$levelNum diff=$difficulty")
         }
+    }
+
+    /** Stop the in-game announce loop when the game exits back to setup */
+    fun stopInGameBroadcast() {
+        announceJob?.cancel()
+        announceJob = null
+        gameStarted = false
+        inGameDifficulty = -1
+        inGameLevelNum = -1
     }
 
     private fun handleStart(
@@ -828,6 +845,9 @@ object LobbyService {
                 mode = hostedMode,
                 playerCount = _hostedLobbyPlayers.value.size,
                 maxPlayers = hostedMaxPlayers,
+                status = if (gameStarted) "in_game" else "lobby",
+                difficulty = inGameDifficulty,
+                levelNum = inGameLevelNum,
             )
         sendBroadcast(data)
     }

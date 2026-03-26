@@ -1,6 +1,8 @@
 package com.dxxredux.app
 
+import android.content.ContentResolver
 import android.content.Context
+import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import org.json.JSONArray
@@ -144,6 +146,19 @@ object FingerprintBridge {
     }
 
     /**
+     * Fingerprint a CD-DA audio track using an already-open file descriptor.
+     * Used for SAF-referenced BIN files where File() access may not work.
+     */
+    fun fingerprintDiscTrackFd(
+        fd: Int,
+        startSector: Int,
+        numSectors: Int,
+    ): FingerprintResult? {
+        val raw = nativeFingerprintDiscTrack(fd, startSector, numSectors) ?: return null
+        return parseFingerprintResult(raw)
+    }
+
+    /**
      * Fingerprint an audio file (MP3/OGG/FLAC).
      */
     fun fingerprintAudioFile(path: String): FingerprintResult? {
@@ -171,6 +186,24 @@ object FingerprintBridge {
     }
 
     /**
+     * Fingerprint an audio file from a SAF content URI and match.
+     * Opens a ParcelFileDescriptor and uses /proc/self/fd for native access.
+     */
+    fun fingerprintAndMatch(
+        resolver: ContentResolver,
+        uri: Uri,
+    ): MatchResult? {
+        val pfd = resolver.openFileDescriptor(uri, "r") ?: return null
+        return try {
+            val fdPath = "/proc/self/fd/${pfd.fd}"
+            val raw = nativeFingerprintAndMatch(fdPath) ?: return null
+            parseMatchResult(raw)
+        } finally {
+            pfd.close()
+        }
+    }
+
+    /**
      * Fingerprint all audio tracks in a disc and match them against the DB.
      * Returns map of 1-based track number -> matched name.
      */
@@ -195,6 +228,39 @@ object FingerprintBridge {
             }
         }
         return names
+    }
+
+    /**
+     * Fingerprint all audio tracks in a disc using a SAF content URI.
+     * Opens the BIN file via ContentResolver and uses the fd for each track.
+     */
+    fun fingerprintAndMatchDisc(
+        context: Context,
+        resolver: ContentResolver,
+        binUri: Uri,
+        tracks: List<DiscImportBridge.CueTrack>,
+        onProgress: ((current: Int, total: Int) -> Unit)? = null,
+    ): Map<Int, String> {
+        ensureDbLoaded(context)
+        val pfd = resolver.openFileDescriptor(binUri, "r") ?: return emptyMap()
+        return try {
+            val names = mutableMapOf<Int, String>()
+            val audioTracks = tracks.filter { it.isAudio }
+            audioTracks.forEachIndexed { idx, track ->
+                onProgress?.invoke(idx + 1, audioTracks.size)
+                val fp = fingerprintDiscTrackFd(pfd.fd, track.startSector, track.numSectors)
+                if (fp != null) {
+                    val match = matchFingerprint(fp.encoded, fp.durationMs)
+                    if (match != null) {
+                        names[track.trackNum] = match.name
+                        Log.i(TAG, "Track ${track.trackNum}: ${match.name} (${match.confidence})")
+                    }
+                }
+            }
+            names
+        } finally {
+            pfd.close()
+        }
     }
 
     // ── Helpers ───────────────────────────────────────────────────

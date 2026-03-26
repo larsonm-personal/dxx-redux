@@ -1,10 +1,13 @@
 package com.dxxredux.app
 
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -126,6 +129,13 @@ fun AdvancedSettingsPage(
 
                     // -- Crash Reports --
                     CrashReportsSection()
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // -- Storage Inspector --
+                    StorageInspectorSection(filesDir)
 
                     Spacer(modifier = Modifier.height(16.dp))
                     HorizontalDivider()
@@ -489,6 +499,205 @@ internal fun computeResolutionOptions(ctx: android.content.Context): List<Pair<S
     }
     return result
 }
+
+@Composable
+private fun StorageInspectorSection(filesDir: File) {
+    val ctx = LocalContext.current
+    var showFilesDialog by remember { mutableStateOf(false) }
+    var showSafDialog by remember { mutableStateOf(false) }
+
+    Text("Storage Inspector", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    Spacer(modifier = Modifier.height(4.dp))
+    Text(
+        "View files stored by the app and SAF (Storage Access Framework) links",
+        fontSize = 12.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedButton(
+            onClick = { showFilesDialog = true },
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+            modifier = Modifier.height(32.dp),
+        ) {
+            Text("View App Storage Files", fontSize = 12.sp)
+        }
+        OutlinedButton(
+            onClick = { showSafDialog = true },
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+            modifier = Modifier.height(32.dp),
+        ) {
+            Text("View SAF Links", fontSize = 12.sp)
+        }
+    }
+
+    if (showFilesDialog) {
+        val fileEntries =
+            remember {
+                filesDir
+                    .walkTopDown()
+                    .filter { it.isFile }
+                    .map { f ->
+                        val rel = f.relativeTo(filesDir).path
+                        val size = f.length()
+                        rel to size
+                    }.sortedBy { it.first }
+                    .toList()
+            }
+        val totalSize = remember(fileEntries) { fileEntries.sumOf { it.second } }
+
+        AlertDialog(
+            onDismissRequest = { showFilesDialog = false },
+            title = { Text("App Storage Files (${fileEntries.size})") },
+            text = {
+                Column {
+                    Text(
+                        "Total: ${formatSize(totalSize)}",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
+                        items(fileEntries) { (path, size) ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Text(
+                                    path,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Text(
+                                    formatSize(size),
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showFilesDialog = false }) { Text("Close") }
+            },
+        )
+    }
+
+    if (showSafDialog) {
+        data class SafEntry(
+            val label: String,
+            val uri: String,
+            val accessible: Boolean,
+        )
+
+        val safEntries =
+            remember {
+                val entries = mutableListOf<SafEntry>()
+                // Custom audio referenced URIs
+                try {
+                    val customMgr = CustomAudioSetManager(filesDir)
+                    for (set in customMgr.getSets()) {
+                        for ((filename, uriStr) in set.referencedUris) {
+                            val ok =
+                                try {
+                                    ctx.contentResolver.openInputStream(Uri.parse(uriStr))?.close()
+                                    true
+                                } catch (_: Exception) {
+                                    false
+                                }
+                            entries.add(SafEntry("Audio: $filename (${set.label})", uriStr, ok))
+                        }
+                    }
+                } catch (_: Exception) {
+                }
+                // CD audio SAF sources
+                try {
+                    val srcMgr = AudioSourceManager(filesDir)
+                    for (src in srcMgr.getSources()) {
+                        src.binContentUri?.let { uriStr ->
+                            val ok =
+                                try {
+                                    ctx.contentResolver.openFileDescriptor(Uri.parse(uriStr), "r")?.close()
+                                    true
+                                } catch (_: Exception) {
+                                    false
+                                }
+                            entries.add(SafEntry("CD BIN: ${src.discLabel}", uriStr, ok))
+                        }
+                        src.cueContentUri?.let { uriStr ->
+                            val ok =
+                                try {
+                                    ctx.contentResolver.openInputStream(Uri.parse(uriStr))?.close()
+                                    true
+                                } catch (_: Exception) {
+                                    false
+                                }
+                            entries.add(SafEntry("CD CUE: ${src.discLabel}", uriStr, ok))
+                        }
+                    }
+                } catch (_: Exception) {
+                }
+                // Persistable URI permissions
+                val persisted = ctx.contentResolver.persistedUriPermissions
+                for (perm in persisted) {
+                    val uriStr = perm.uri.toString()
+                    if (entries.none { it.uri == uriStr }) {
+                        entries.add(SafEntry("Permission", uriStr, perm.isReadPermission))
+                    }
+                }
+                entries.toList()
+            }
+
+        AlertDialog(
+            onDismissRequest = { showSafDialog = false },
+            title = { Text("SAF Links (${safEntries.size})") },
+            text = {
+                if (safEntries.isEmpty()) {
+                    Text("No SAF links", fontSize = 12.sp)
+                } else {
+                    LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
+                        items(safEntries) { entry ->
+                            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(entry.label, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        if (entry.accessible) "OK" else "BROKEN",
+                                        fontSize = 10.sp,
+                                        color =
+                                            if (entry.accessible) {
+                                                MaterialTheme.colorScheme.primary
+                                            } else {
+                                                Color(0xFFF44336)
+                                            },
+                                    )
+                                }
+                                Text(
+                                    entry.uri,
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 2,
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSafDialog = false }) { Text("Close") }
+            },
+        )
+    }
+}
+
+private fun formatSize(bytes: Long): String =
+    when {
+        bytes < 1024 -> "$bytes B"
+        bytes < 1024 * 1024 -> "${bytes / 1024} KB"
+        else -> String.format(Locale.US, "%.1f MB", bytes / (1024.0 * 1024.0))
+    }
 
 @Composable
 private fun BoxScope.ScrollArrows(scrollState: ScrollState) {

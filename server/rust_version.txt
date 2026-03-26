@@ -1,7 +1,7 @@
-rustc 1.94.0 (4a4ef493e 2026-03-02)
+rustc 1.94.1 (e408947bf 2026-03-25)
 rustup 1.29.0 (28d1352db 2026-03-05)
-cargo 1.94.0 (85eff7c80 2026-01-15)
-clippy 0.1.94 (4a4ef493e3 2026-03-02)
+cargo 1.94.1 (29ea6fb6a 2026-03-24)
+clippy 0.1.94 (e408947bfd 2026-03-25)
 cargo-udeps 0.1.60
 cargo-edit-upgrade 0.13.9
 bindgen 0.72.1

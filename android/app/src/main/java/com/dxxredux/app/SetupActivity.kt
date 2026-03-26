@@ -764,9 +764,14 @@ class SetupActivity : ComponentActivity() {
             return
         }
         mpGameLaunching = true
-        // Close lobby socket before handing off to engine
-        com.dxxredux.app.lobby.LobbyService
-            .stopDiscovery()
+        // For LAN hosts, keep the announce broadcast alive so the game
+        // remains discoverable; for everyone else, shut down fully
+        if (info.isLan && info.isHost) {
+            // stopInGameBroadcast will be called when the game exits
+        } else {
+            com.dxxredux.app.lobby.LobbyService
+                .stopDiscovery()
+        }
         FileSetManager(filesDir).writeActiveSetPath()
         AudioSourceManager(filesDir).writePlaylist(contentResolver)
         writeInitialGameConfig()
@@ -1221,6 +1226,9 @@ class SetupActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         mpGameLaunching = false
+        // If a LAN host was broadcasting in-game, stop now
+        com.dxxredux.app.lobby.LobbyService
+            .stopInGameBroadcast()
         refreshTrigger.intValue++
         // If the host returns from a game, signal the server to reset the lobby
         val mpState =
@@ -2272,6 +2280,7 @@ private fun SetupScreen(
                     AddToSetDialog(
                         existingSets = customSets,
                         defaultName = "Set ${customSets.size + 1}",
+                        selectedUris = audioImportUris,
                         onDismiss = { audioImportUris = emptyList() },
                         onConfirm = { targetSetId, newName, copyToStorage ->
                             val uris = audioImportUris
@@ -5222,30 +5231,17 @@ private fun DiscImportDialog(
                                                     withContext(Dispatchers.Main) {
                                                         status = "Identifying audio tracks\u2026"
                                                     }
-                                                    val pfd =
-                                                        context.contentResolver
-                                                            .openFileDescriptor(firstBinUri, "r")
-                                                    if (pfd != null) {
-                                                        // Create temp file for fingerprinting (reuse BIN fd)
-                                                        val tmpBin = File(filesDir, "tmp/fp_tmp.bin")
-                                                        tmpBin.parentFile?.mkdirs()
-                                                        // Symlink /proc/self/fd to temp path for native code
-                                                        val fdPath = "/proc/self/fd/${pfd.fd}"
-                                                        trackNames =
-                                                            try {
-                                                                FingerprintBridge.fingerprintAndMatchDisc(
-                                                                    context,
-                                                                    fdPath,
-                                                                    tracks!!,
-                                                                )
-                                                            } finally {
-                                                                pfd.close()
-                                                            }
-                                                        Log.i(
-                                                            "DXX-DiscImport",
-                                                            "Fingerprinted ${trackNames.size} track names via fd",
+                                                    trackNames =
+                                                        FingerprintBridge.fingerprintAndMatchDisc(
+                                                            context,
+                                                            context.contentResolver,
+                                                            firstBinUri,
+                                                            tracks!!,
                                                         )
-                                                    }
+                                                    Log.i(
+                                                        "DXX-DiscImport",
+                                                        "Fingerprinted ${trackNames.size} track names via SAF fd",
+                                                    )
                                                 }
                                             } catch (e: Exception) {
                                                 Log.w("DXX-DiscImport", "Track name identification failed", e)

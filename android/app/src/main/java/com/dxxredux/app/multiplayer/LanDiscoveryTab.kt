@@ -11,6 +11,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,18 +21,29 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -46,7 +59,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -463,7 +475,7 @@ private fun LanDiscoveryView(
                         discoveredLobbies,
                         key = { it.announce.lobbyId },
                     ) { lobby ->
-                        LanLobbyCard(lobby, callsign)
+                        LanLobbyCard(lobby, callsign, onJoinInGame = onLaunchGame)
                         Spacer(Modifier.height(4.dp))
                     }
                 }
@@ -565,7 +577,10 @@ private fun LanDiscoveryView(
 private fun LanLobbyCard(
     lobby: LobbyService.DiscoveredLobby,
     myCallsign: String,
+    onJoinInGame: ((GameLaunchInfo) -> Unit)? = null,
 ) {
+    val difficulties = listOf("Trainee", "Rookie", "Hotshot", "Ace", "Insane")
+    val isInGame = lobby.announce.status == "in_game"
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -583,6 +598,14 @@ private fun LanLobbyCard(
                 "${lobby.announce.mission} -- ${lobby.announce.mode} (${lobby.announce.game})",
                 style = MaterialTheme.typography.bodySmall,
             )
+            if (isInGame) {
+                val diffName = difficulties.getOrElse(lobby.announce.difficulty) { "?" }
+                Text(
+                    "In game: Level ${lobby.announce.levelNum}, $diffName",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
             Text(
                 "Host: ${lobby.announce.hostAddress}",
                 style = MaterialTheme.typography.bodySmall,
@@ -596,17 +619,42 @@ private fun LanLobbyCard(
                 )
             }
             Spacer(Modifier.height(4.dp))
-            Button(
-                onClick = {
-                    LobbyService.joinLobby(
-                        lobby.announce.lobbyId,
-                        lobby.announce.hostAddress,
-                        myCallsign,
-                    )
-                },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Join")
+            if (isInGame && onJoinInGame != null) {
+                Button(
+                    onClick = {
+                        onJoinInGame(
+                            GameLaunchInfo(
+                                game = lobby.announce.game,
+                                mission = lobby.announce.mission,
+                                mode = lobby.announce.mode,
+                                difficulty = lobby.announce.difficulty,
+                                levelNum = lobby.announce.levelNum,
+                                maxPlayers = lobby.announce.maxPlayers,
+                                yourSlot = 1,
+                                isHost = false,
+                                peers = emptyList(),
+                                lanHostAddr = lobby.announce.hostAddress,
+                                isLan = true,
+                            ),
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Join In-Game")
+                }
+            } else {
+                Button(
+                    onClick = {
+                        LobbyService.joinLobby(
+                            lobby.announce.lobbyId,
+                            lobby.announce.hostAddress,
+                            myCallsign,
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Join")
+                }
             }
         }
     }
@@ -727,47 +775,62 @@ private fun StartLanGameDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Difficulty", style = MaterialTheme.typography.bodyMedium)
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    difficulties.forEachIndexed { idx, name ->
-                        if (idx == difficulty) {
-                            Button(onClick = {}, modifier = Modifier.weight(1f)) {
-                                Text(name, maxLines = 1, fontSize = 11.sp)
-                            }
-                        } else {
-                            OutlinedButton(
-                                onClick = { difficulty = idx },
-                                modifier = Modifier.weight(1f),
-                            ) {
-                                Text(name, maxLines = 1, fontSize = 11.sp)
-                            }
+                var diffDropdownExpanded by remember { mutableStateOf(false) }
+                Box {
+                    OutlinedButton(
+                        onClick = { diffDropdownExpanded = true },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            difficulties[difficulty],
+                            modifier = Modifier.weight(1f),
+                        )
+                        Icon(Icons.Default.KeyboardArrowDown, "Expand", Modifier.size(16.dp))
+                    }
+                    DropdownMenu(
+                        expanded = diffDropdownExpanded,
+                        onDismissRequest = { diffDropdownExpanded = false },
+                    ) {
+                        difficulties.forEachIndexed { idx, name ->
+                            DropdownMenuItem(
+                                text = { Text(name) },
+                                onClick = {
+                                    difficulty = idx
+                                    diffDropdownExpanded = false
+                                },
+                            )
                         }
                     }
                 }
                 Text("Starting Level", style = MaterialTheme.typography.bodyMedium)
-                LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
-                    items(maxLevel) { idx ->
-                        val level = idx + 1
-                        Text(
-                            "Level $level",
-                            style =
-                                if (level == selectedLevel) {
-                                    MaterialTheme.typography.bodyLarge
-                                } else {
-                                    MaterialTheme.typography.bodyMedium
-                                },
-                            color =
-                                if (level == selectedLevel) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface
-                                },
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .clickable { selectedLevel = level }
-                                    .padding(vertical = 6.dp, horizontal = 4.dp),
-                        )
+                val listState = rememberLazyListState()
+                Box(modifier = Modifier.heightIn(max = 200.dp)) {
+                    LazyColumn(state = listState) {
+                        items(maxLevel) { idx ->
+                            val level = idx + 1
+                            Text(
+                                "Level $level",
+                                style =
+                                    if (level == selectedLevel) {
+                                        MaterialTheme.typography.bodyLarge
+                                    } else {
+                                        MaterialTheme.typography.bodyMedium
+                                    },
+                                color =
+                                    if (level == selectedLevel) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable { selectedLevel = level }
+                                        .padding(vertical = 6.dp, horizontal = 4.dp),
+                            )
+                        }
                     }
+                    LazyListScrollArrows(listState)
                 }
             }
         },
@@ -905,3 +968,37 @@ private fun getLocalIpAddresses(): List<String> =
     } catch (_: Exception) {
         emptyList()
     }
+
+@Composable
+private fun BoxScope.LazyListScrollArrows(listState: LazyListState) {
+    if (listState.canScrollBackward) {
+        Surface(
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 4.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
+            shadowElevation = 2.dp,
+        ) {
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowUp,
+                contentDescription = "Scroll up",
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+    if (listState.canScrollForward) {
+        Surface(
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
+            shadowElevation = 2.dp,
+        ) {
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = "Scroll down",
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}

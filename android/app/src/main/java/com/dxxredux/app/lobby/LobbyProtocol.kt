@@ -41,6 +41,10 @@ data class LanLobbyAnnounce(
     val maxPlayers: Int,
     val hostAddress: String = "",
     val build: String = "",
+    // "lobby" when in lobby, "in_game" when game is running
+    val status: String = "lobby",
+    val difficulty: Int = -1,
+    val levelNum: Int = -1,
 )
 
 /** Build a JSON ANNOUNCE packet for broadcasting. */
@@ -52,6 +56,9 @@ fun buildAnnounce(
     mode: String,
     playerCount: Int,
     maxPlayers: Int,
+    status: String = "lobby",
+    difficulty: Int = -1,
+    levelNum: Int = -1,
 ): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_ANNOUNCE)
@@ -63,6 +70,9 @@ fun buildAnnounce(
     json.put("player_count", playerCount)
     json.put("max_players", maxPlayers)
     json.put("build", BuildInfo.GIT_COMMIT_COUNT)
+    json.put("status", status)
+    if (difficulty >= 0) json.put("difficulty", difficulty)
+    if (levelNum >= 0) json.put("level_num", levelNum)
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 
