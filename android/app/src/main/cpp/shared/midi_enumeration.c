@@ -296,6 +296,29 @@ static void enumerate_missions_dir(const char *base_dir, const char *game,
 	closedir(dir);
 }
 
+/* ── Case-insensitive file finder ─────────────────────────────────────── */
+
+/*
+ * Find a file in dir by case-insensitive name match (Android/Linux is
+ * case-sensitive, but GOG extraction may produce uppercase filenames).
+ * Returns 1 and fills out_path on success, 0 if not found.
+ */
+static int find_file_ci(const char *dir, const char *name, char *out_path, int max_len)
+{
+	DIR *d = opendir(dir);
+	if (!d) return 0;
+	struct dirent *ent;
+	while ((ent = readdir(d)) != NULL) {
+		if (strcasecmp(ent->d_name, name) == 0) {
+			snprintf(out_path, max_len, "%s/%s", dir, ent->d_name);
+			closedir(d);
+			return 1;
+		}
+	}
+	closedir(d);
+	return 0;
+}
+
 /* ── Public API ──────────────────────────────────────────────────────── */
 
 char *midi_enumerate_tracks(const char *files_dir)
@@ -305,25 +328,21 @@ char *midi_enumerate_tracks(const char *files_dir)
 	sb_append(&sb, "{\"sources\":[");
 	int first = 1;
 
-	/* D2 built-in music from descent2.hog */
+	/* D2 built-in music from descent2.hog (case-insensitive lookup) */
 	char hog_path[512];
-	snprintf(hog_path, sizeof(hog_path), "%s/descent2.hog", files_dir);
-	struct stat st;
-	if (stat(hog_path, &st) == 0) {
+	if (find_file_ci(files_dir, "descent2.hog", hog_path, sizeof(hog_path))) {
 		enumerate_hog_tracks(hog_path, "d2-builtin", "Descent 2 (built-in)",
 		                     "d2", &sb, &first);
 	}
 
 	/* D1 built-in music from descent.hog */
-	snprintf(hog_path, sizeof(hog_path), "%s/descent.hog", files_dir);
-	if (stat(hog_path, &st) == 0) {
+	if (find_file_ci(files_dir, "descent.hog", hog_path, sizeof(hog_path))) {
 		enumerate_hog_tracks(hog_path, "d1-builtin", "Descent 1 (built-in)",
 		                     "d1", &sb, &first);
 	}
 
 	/* D2X Vertigo expansion */
-	snprintf(hog_path, sizeof(hog_path), "%s/d2x.hog", files_dir);
-	if (stat(hog_path, &st) == 0) {
+	if (find_file_ci(files_dir, "d2x.hog", hog_path, sizeof(hog_path))) {
 		enumerate_hog_tracks(hog_path, "d2-vertigo", "Vertigo Series",
 		                     "d2", &sb, &first);
 	}

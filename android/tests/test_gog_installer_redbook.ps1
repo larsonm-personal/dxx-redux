@@ -204,6 +204,85 @@ if (-not $setup.can_launch) {
 }
 Write-Status "can_launch=true -- game files are ready" "Green"
 
+# -- Step 5b: MIDI preview playback verification -----------------
+
+Write-Status "Testing MIDI preview playback (track 3)..."
+Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
+    "--es", "command", "music_midi_play", "--ei", "source", "0", "--ei", "track", "2") | Out-Null
+Start-Sleep -Seconds 4
+
+# Check MIDI playback state via setup introspection
+Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_INTROSPECT") | Out-Null
+Start-Sleep -Seconds 2
+$setupJson2 = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json") -Seconds 5
+$setup2 = $setupJson2 | ConvertFrom-Json
+
+$midiState = $setup2.music_preview.midi
+if (-not $midiState) {
+    Write-Status "FAIL: No music_preview.midi in setup introspection" "Red"
+    Write-Host "Setup JSON: $setupJson2"
+    exit 1
+}
+
+Write-Status "MIDI preview: state=$($midiState.state) position=$($midiState.position_ms)ms duration=$($midiState.duration_ms)ms"
+if ($midiState.state -ne "playing") {
+    Write-Status "FAIL: MIDI preview state is '$($midiState.state)', expected 'playing'" "Red"
+    # Also check if midi_sources are present
+    $midiSources = $setup2.music_preview.midi_sources
+    if (-not $midiSources -or $midiSources.Count -eq 0) {
+        Write-Host "No MIDI sources found -- enumeration may have failed"
+    } else {
+        Write-Host "MIDI sources: $($midiSources | ConvertTo-Json -Depth 5 -Compress)"
+    }
+    exit 1
+}
+if ($midiState.position_ms -lt 1000) {
+    Write-Status "FAIL: MIDI position_ms=$($midiState.position_ms), expected > 1000" "Red"
+    exit 1
+}
+Write-Status "MIDI preview playing at $($midiState.position_ms)ms -- OK" "Green"
+
+# Stop MIDI preview
+Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
+    "--es", "command", "music_midi_stop") | Out-Null
+Start-Sleep -Seconds 1
+
+# -- Step 5c: CD audio preview playback verification -------------
+
+Write-Status "Testing CD audio preview playback (track 3)..."
+Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
+    "--es", "command", "music_cd_play", "--ei", "source", "0", "--ei", "track", "2") | Out-Null
+Start-Sleep -Seconds 4
+
+# Check CD playback state via setup introspection
+Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_INTROSPECT") | Out-Null
+Start-Sleep -Seconds 2
+$setupJson3 = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json") -Seconds 5
+$setup3 = $setupJson3 | ConvertFrom-Json
+
+$cdState = $setup3.music_preview.cd
+if (-not $cdState) {
+    Write-Status "FAIL: No music_preview.cd in setup introspection" "Red"
+    Write-Host "Setup JSON: $setupJson3"
+    exit 1
+}
+
+Write-Status "CD preview: state=$($cdState.state) position=$($cdState.position_ms)ms duration=$($cdState.duration_ms)ms"
+if ($cdState.state -ne "playing") {
+    Write-Status "FAIL: CD preview state is '$($cdState.state)', expected 'playing'" "Red"
+    exit 1
+}
+if ($cdState.position_ms -lt 1000) {
+    Write-Status "FAIL: CD position_ms=$($cdState.position_ms), expected > 1000" "Red"
+    exit 1
+}
+Write-Status "CD preview playing at $($cdState.position_ms)ms -- OK" "Green"
+
+# Stop CD preview
+Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
+    "--es", "command", "music_cd_stop") | Out-Null
+Start-Sleep -Seconds 1
+
 # -- Step 6: Push automation script and launch game ---------------
 
 # Push the in-game automation script

@@ -106,6 +106,10 @@ class SetupActivity : ComponentActivity() {
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_files --es path /sdcard/DESCENT2.HOG
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_default_config
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_autoselect --es game d2 --es primary "8,9,7,6,5,4,3,2,1,0,255" --es secondary "9,8,4,3,1,5,0,255,7,6,2"
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command music_midi_play --ei source 0 --ei track 2
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command music_midi_stop
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command music_cd_play --ei source 0 --ei track 2
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command music_cd_stop
     private var gameRunningFlag = false
 
     /** Check if the :game process is alive (game engine still running).
@@ -241,6 +245,70 @@ class SetupActivity : ComponentActivity() {
                                 sec,
                             )
                         Log.i("DXX-Setup", "write_autoselect ($game): patched $count file(s)")
+                    }
+                    "music_midi_play" -> {
+                        val srcIdx = intent.getIntExtra("source", 0)
+                        val trkIdx = intent.getIntExtra("track", 0)
+                        Thread {
+                            val fsm = FileSetManager(filesDir)
+                            val setDir = fsm.getSetDir(fsm.getActive())
+                            val result = MidiEnumerationBridge.enumerateTracks(setDir.absolutePath)
+                            val src = result.sources.getOrNull(srcIdx)
+                            if (src == null) {
+                                Log.w(
+                                    "DXX-Setup",
+                                    "music_midi_play: source $srcIdx not found (${result.sources.size} available)",
+                                )
+                                return@Thread
+                            }
+                            val track = src.tracks.getOrNull(trkIdx)
+                            if (track == null) {
+                                Log.w(
+                                    "DXX-Setup",
+                                    "music_midi_play: track $trkIdx not found in ${src.label} (${src.tracks.size} available)",
+                                )
+                                return@Thread
+                            }
+                            MidiPreviewBridge.init(this@SetupActivity)
+                            val data = MidiPreviewBridge.readHogEntry(src.hog, track.filename)
+                            if (data == null) {
+                                Log.w("DXX-Setup", "music_midi_play: failed to read ${track.filename} from ${src.hog}")
+                                return@Thread
+                            }
+                            val isHmp = track.filename.lowercase().endsWith(".hmp")
+                            val sr = MidiPreviewBridge.getNativeSampleRate(this@SetupActivity)
+                            MidiPreviewBridge.start(data, isHmp, sr)
+                            Log.i("DXX-Setup", "music_midi_play: playing ${track.filename} from ${src.label}")
+                        }.start()
+                    }
+                    "music_midi_stop" -> {
+                        MidiPreviewBridge.stop()
+                        Log.i("DXX-Setup", "music_midi_stop: stopped")
+                    }
+                    "music_cd_play" -> {
+                        val srcIdx = intent.getIntExtra("source", 0)
+                        val trkIdx = intent.getIntExtra("track", 0)
+                        Thread {
+                            val srcManager = AudioSourceManager(filesDir)
+                            val sources = srcManager.getEnabledSources()
+                            val src = sources.getOrNull(srcIdx)
+                            if (src == null) {
+                                Log.w(
+                                    "DXX-Setup",
+                                    "music_cd_play: source $srcIdx not found (${sources.size} available)",
+                                )
+                                return@Thread
+                            }
+                            val binPath = File(filesDir, src.binPaths.first()).absolutePath
+                            val cuePath = File(filesDir, src.cuePath).absolutePath
+                            val sr = CdPreviewBridge.getNativeSampleRate(this@SetupActivity)
+                            val ok = CdPreviewBridge.start(binPath, cuePath, trkIdx, sr)
+                            Log.i("DXX-Setup", "music_cd_play: source=${src.discLabel} track=$trkIdx ok=$ok")
+                        }.start()
+                    }
+                    "music_cd_stop" -> {
+                        CdPreviewBridge.stop()
+                        Log.i("DXX-Setup", "music_cd_stop: stopped")
                     }
                     else -> Log.w("DXX-Setup", "Unknown command: $cmd")
                 }
@@ -903,6 +971,49 @@ class SetupActivity : ComponentActivity() {
                 root.put("audio_sources", audioArr)
             }
             if (findGogPair(setDir) != null) root.put("has_legacy_gog_audio", true)
+
+            // Music preview playback state
+            val musicPreview = JSONObject()
+            val midiState = MidiPreviewBridge.getState()
+            val midiObj = JSONObject()
+            midiObj.put(
+                "state",
+                when (midiState.state) {
+                    MidiPreviewBridge.STATE_PLAYING -> "playing"
+                    MidiPreviewBridge.STATE_PAUSED -> "paused"
+                    else -> "stopped"
+                },
+            )
+            midiObj.put("position_ms", midiState.positionMs)
+            midiObj.put("duration_ms", midiState.durationMs)
+            musicPreview.put("midi", midiObj)
+            val cdState = CdPreviewBridge.getState()
+            val cdObj = JSONObject()
+            cdObj.put(
+                "state",
+                when (cdState.state) {
+                    CdPreviewBridge.STATE_PLAYING -> "playing"
+                    CdPreviewBridge.STATE_PAUSED -> "paused"
+                    else -> "stopped"
+                },
+            )
+            cdObj.put("position_ms", cdState.positionMs)
+            cdObj.put("duration_ms", cdState.durationMs)
+            musicPreview.put("cd", cdObj)
+            // MIDI source enumeration (which HOG files have tracks)
+            val midiEnum = MidiEnumerationBridge.enumerateTracks(setDir.absolutePath)
+            if (midiEnum.sources.isNotEmpty()) {
+                val midiSrcArr = JSONArray()
+                for (ms in midiEnum.sources) {
+                    val mso = JSONObject()
+                    mso.put("id", ms.id)
+                    mso.put("label", ms.label)
+                    mso.put("track_count", ms.tracks.size)
+                    midiSrcArr.put(mso)
+                }
+                musicPreview.put("midi_sources", midiSrcArr)
+            }
+            root.put("music_preview", musicPreview)
 
             val outFile = File(dir, "setup_introspect.json")
             FileWriter(outFile).use { it.write(root.toString()) }
@@ -3587,13 +3698,13 @@ private fun enableRedbookInConfig(
 
 /**
  * Find a GOG .gog/.inst pair in a directory (case-insensitive).
- * Returns the lowercase base filename (e.g. "descent_ii") or null if not found.
+ * Returns the actual base filename preserving disk case (e.g. "DESCENT_II") or null.
  */
 private fun findGogPair(dir: File): String? {
     val files = dir.list() ?: return null
-    val lower = files.map { it.lowercase() }.toSet()
-    if ("descent_ii.gog" in lower && "descent_ii.inst" in lower) return "descent_ii"
-    return null
+    val gogFile = files.firstOrNull { it.equals("descent_ii.gog", ignoreCase = true) } ?: return null
+    val instFile = files.firstOrNull { it.equals("descent_ii.inst", ignoreCase = true) } ?: return null
+    return gogFile.substringBeforeLast('.')
 }
 
 /**

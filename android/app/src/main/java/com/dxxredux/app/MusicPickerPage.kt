@@ -368,7 +368,8 @@ private fun MidiSection(filesDir: File) {
         enumerating = true
         withContext(Dispatchers.IO) {
             MidiPreviewBridge.init(ctx)
-            enumResult = MidiEnumerationBridge.enumerateTracks(filesDir.absolutePath)
+            val setDir = FileSetManager(filesDir).let { it.getSetDir(it.getActive()) }
+            enumResult = MidiEnumerationBridge.enumerateTracks(setDir.absolutePath)
         }
         enumerating = false
         // Auto-select first source

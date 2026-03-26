@@ -80,7 +80,8 @@ class AudioSourceManager(
 
     /**
      * Remove sources whose BIN/CUE files no longer exist on disk.
-     * Checks both filesDir and optional setDir.
+     * Checks paths relative to filesDir with case-insensitive matching
+     * (GOG extraction may produce different case than what was stored).
      * Returns list of pruned source labels for user notification.
      */
     fun pruneMissingSources(setDir: File? = null): List<String> {
@@ -89,9 +90,13 @@ class AudioSourceManager(
             sources.filter { src ->
                 val allFiles = src.binPaths + src.cuePath
                 allFiles.any { name ->
-                    val inRoot = File(filesDir, name).exists()
-                    val inSet = setDir != null && File(setDir, name).exists()
-                    !inRoot && !inSet
+                    val f = File(filesDir, name)
+                    if (f.exists()) return@any false
+                    // Case-insensitive fallback: check parent dir listing
+                    val parent = f.parentFile
+                    val target = f.name.lowercase()
+                    val found = parent?.list()?.any { it.lowercase() == target } == true
+                    !found
                 }
             }
         for (src in toRemove) {
