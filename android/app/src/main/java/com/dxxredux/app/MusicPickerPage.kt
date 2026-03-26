@@ -683,13 +683,16 @@ private fun CdAudioSection(
 
         if (removeConfirmId != null && removeConfirmLabel != null) {
             val filesDir = LocalContext.current.filesDir
+            val ctx = LocalContext.current
             val removeSource = audioSources.firstOrNull { it.id == removeConfirmId }
+            val isSafSource = removeSource?.binContentUri != null
             // Check if source files are inside the app data dir
             val filesInAppDir =
-                removeSource?.let { src ->
-                    src.binPaths.any { File(filesDir, it).exists() } ||
-                        File(filesDir, src.cuePath).exists()
-                } ?: false
+                !isSafSource &&
+                    removeSource?.let { src ->
+                        src.binPaths.any { File(filesDir, it).exists() } ||
+                            File(filesDir, src.cuePath).exists()
+                    } ?: false
             AlertDialog(
                 onDismissRequest = { removeConfirmId = null },
                 title = { Text("Remove source") },
@@ -698,10 +701,13 @@ private fun CdAudioSection(
                         Text("Remove \"$removeConfirmLabel\"?")
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            if (filesInAppDir) {
-                                "Extracted audio files in app storage will be deleted. Re-import from original source to restore"
-                            } else {
-                                "The BIN/CUE disc files will remain on disk"
+                            when {
+                                isSafSource ->
+                                    "Source reference will be removed. Original files on external storage are not affected"
+                                filesInAppDir ->
+                                    "Extracted audio files in app storage will be deleted. Re-import from original source to restore"
+                                else ->
+                                    "The BIN/CUE disc files will remain on disk"
                             },
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -710,17 +716,33 @@ private fun CdAudioSection(
                 },
                 confirmButton = {
                     TextButton(onClick = {
-                        // Delete files if they're in app data dir
-                        if (filesInAppDir && removeSource != null) {
+                        val src = removeSource
+                        if (isSafSource && src != null) {
+                            // Release persistable URI permissions
+                            for (uriStr in listOfNotNull(src.binContentUri, src.cueContentUri)) {
+                                try {
+                                    ctx.contentResolver.releasePersistableUriPermission(
+                                        android.net.Uri.parse(uriStr),
+                                        android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                                    )
+                                } catch (_: SecurityException) {
+                                    // already released
+                                }
+                            }
+                            // Delete local CUE copy only
+                            val cueFile = File(filesDir, src.cuePath)
+                            if (cueFile.exists()) cueFile.delete()
+                        } else if (filesInAppDir && src != null) {
+                            // Delete files if they're in app data dir
                             val deletedDirs = mutableSetOf<File>()
-                            for (bin in removeSource.binPaths) {
+                            for (bin in src.binPaths) {
                                 val f = File(filesDir, bin)
                                 if (f.exists()) {
                                     deletedDirs.add(f.parentFile!!)
                                     f.delete()
                                 }
                             }
-                            val cueFile = File(filesDir, removeSource.cuePath)
+                            val cueFile = File(filesDir, src.cuePath)
                             if (cueFile.exists()) {
                                 deletedDirs.add(cueFile.parentFile!!)
                                 cueFile.delete()
@@ -737,7 +759,7 @@ private fun CdAudioSection(
                         audioSrcManager.removeSource(removeConfirmId!!)
                         removeConfirmId = null
                         onSourcesChanged()
-                    }) { Text(if (filesInAppDir) "Delete" else "Yes") }
+                    }) { Text(if (filesInAppDir) "Delete" else "Remove") }
                 },
                 dismissButton = {
                     TextButton(onClick = { removeConfirmId = null }) { Text("Cancel") }
@@ -756,11 +778,17 @@ private fun CdAudioSection(
                         Text(src.discLabel, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         Text("Audio tracks: ${src.audioTrackCount}", fontSize = 12.sp)
                         Text("Total tracks: ${src.trackCount}", fontSize = 12.sp)
-                        Text("CUE: ${File(filesDir, src.cuePath).absolutePath}", fontSize = 12.sp)
-                        Text(
-                            "BIN: ${src.binPaths.joinToString(", ") { File(filesDir, it).absolutePath }}",
-                            fontSize = 12.sp,
-                        )
+                        if (src.binContentUri != null) {
+                            Text("Source: SAF reference (not copied)", fontSize = 12.sp)
+                            Text("CUE: ${src.cuePath} (local copy)", fontSize = 12.sp)
+                            Text("BIN: ${src.binPaths.joinToString(", ")}", fontSize = 12.sp)
+                        } else {
+                            Text("CUE: ${File(filesDir, src.cuePath).absolutePath}", fontSize = 12.sp)
+                            Text(
+                                "BIN: ${src.binPaths.joinToString(", ") { File(filesDir, it).absolutePath }}",
+                                fontSize = 12.sp,
+                            )
+                        }
                         if (src.discId != "unknown") {
                             Text("Disc ID: ${src.discId}", fontSize = 12.sp)
                         }
@@ -1275,11 +1303,24 @@ private fun CdTrackDetailDialog(
 
     fun togglePlayback() {
         if (!playing) {
-            val binPath = File(filesDir, source.binPaths.first()).absolutePath
             val cuePath = File(filesDir, source.cuePath).absolutePath
-            if (CdPreviewBridge.start(binPath, cuePath, audioTrackIdx, sampleRate)) {
-                playing = true
-            }
+            val started =
+                if (source.binContentUri != null) {
+                    // SAF source: open fd via content resolver
+                    val uri = android.net.Uri.parse(source.binContentUri)
+                    val pfd = ctx.contentResolver.openFileDescriptor(uri, "r")
+                    if (pfd != null) {
+                        val ok = CdPreviewBridge.startFd(pfd.detachFd(), cuePath, audioTrackIdx, sampleRate)
+                        ok
+                    } else {
+                        false
+                    }
+                } else {
+                    // Local source: use file path
+                    val binPath = File(filesDir, source.binPaths.first()).absolutePath
+                    CdPreviewBridge.start(binPath, cuePath, audioTrackIdx, sampleRate)
+                }
+            if (started) playing = true
         } else {
             val state = CdPreviewBridge.getState()
             if (state.state == CdPreviewBridge.STATE_PLAYING) {

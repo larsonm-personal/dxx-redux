@@ -47,6 +47,17 @@ object CdPreviewBridge {
         sampleRate: Int,
     ): Boolean = nativeStart(binPath, cuePath, audioTrack, sampleRate)
 
+    /**
+     * Start preview using a file descriptor for the BIN file.
+     * The fd is dup'd internally so the caller may close it after this returns.
+     */
+    fun startFd(
+        fd: Int,
+        cuePath: String,
+        audioTrack: Int,
+        sampleRate: Int,
+    ): Boolean = nativeStartFd(fd, cuePath, audioTrack, sampleRate)
+
     fun stop() = nativeStop()
 
     fun pause() = nativePause()
@@ -70,6 +81,13 @@ object CdPreviewBridge {
 
     @JvmStatic private external fun nativeStart(
         binPath: String,
+        cuePath: String,
+        audioTrack: Int,
+        sampleRate: Int,
+    ): Boolean
+
+    @JvmStatic private external fun nativeStartFd(
+        fd: Int,
         cuePath: String,
         audioTrack: Int,
         sampleRate: Int,

@@ -26,6 +26,18 @@ Java_com_dxxredux_app_CdPreviewBridge_nativeStart(
 	return result ? JNI_TRUE : JNI_FALSE;
 }
 
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_CdPreviewBridge_nativeStartFd(
+    JNIEnv *env, jclass clazz,
+    jint fd, jstring jcue_path,
+    jint audio_track, jint sample_rate)
+{
+	const char *cue = (*env)->GetStringUTFChars(env, jcue_path, NULL);
+	int result = cd_preview_start_fd(fd, cue, audio_track, sample_rate);
+	(*env)->ReleaseStringUTFChars(env, jcue_path, cue);
+	return result ? JNI_TRUE : JNI_FALSE;
+}
+
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_CdPreviewBridge_nativeStop(
     JNIEnv *env, jclass clazz)

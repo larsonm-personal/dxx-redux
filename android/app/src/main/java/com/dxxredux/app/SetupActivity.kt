@@ -139,7 +139,7 @@ class SetupActivity : ComponentActivity() {
                         } else {
                             val game = intent.getStringExtra("game") ?: "d2"
                             FileSetManager(filesDir).writeActiveSetPath()
-                            AudioSourceManager(filesDir).writePlaylist()
+                            AudioSourceManager(filesDir).writePlaylist(contentResolver)
                             writeInitialGameConfig()
                             writeMusicConfigForLaunch()
                             val launchIntent = Intent(this@SetupActivity, MainActivity::class.java)
@@ -768,7 +768,7 @@ class SetupActivity : ComponentActivity() {
         com.dxxredux.app.lobby.LobbyService
             .stopDiscovery()
         FileSetManager(filesDir).writeActiveSetPath()
-        AudioSourceManager(filesDir).writePlaylist()
+        AudioSourceManager(filesDir).writePlaylist(contentResolver)
         writeInitialGameConfig()
         writeMusicConfigForLaunch()
         val mpIntent = Intent(this, MainActivity::class.java)
@@ -1121,7 +1121,7 @@ class SetupActivity : ComponentActivity() {
                         finish() // return to the already-running game
                     } else {
                         FileSetManager(filesDir).writeActiveSetPath()
-                        AudioSourceManager(filesDir).writePlaylist()
+                        AudioSourceManager(filesDir).writePlaylist(contentResolver)
                         writeInitialGameConfig()
                         writeMusicConfigForLaunch()
                         val intent = Intent(this, MainActivity::class.java)
@@ -1898,6 +1898,7 @@ private fun SetupScreen(
     // ── Audio file auto-import state ────────────────────
     var audioImportUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
     var audioImporting by remember { mutableStateOf(false) }
+    var zipArchiveUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
 
     val filePickerLauncher =
         rememberLauncherForActivityResult(
@@ -2019,6 +2020,7 @@ private fun SetupScreen(
                             zipExtracted = allExtracted
                             zipPackageName = pkgName
                             zipHadAudioFiles = anyAudio
+                            zipArchiveUris = zipUris.map { it.second }
                             zipExtracting = false
                             zipProgressFile = ""
                         }
@@ -2793,27 +2795,34 @@ private fun SetupScreen(
                                         .padding(12.dp),
                             ) {
                                 if (extracted.isEmpty()) {
-                                    Text(
-                                        text =
-                                            if (zipHadAudioFiles) {
-                                                "This archive contains audio files but no game files. To import music, use the Music tab"
-                                            } else {
-                                                "No game files found in archive"
-                                            },
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp,
-                                        color = MaterialTheme.colorScheme.onErrorContainer,
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    OutlinedButton(
-                                        onClick = {
+                                    if (zipHadAudioFiles) {
+                                        // Auto-trigger music import dialog for audio-only archives
+                                        LaunchedEffect(Unit) {
+                                            audioImportUris = zipArchiveUris
                                             zipExtracted = null
                                             zipPackageName = null
                                             zipHadAudioFiles = false
+                                            zipArchiveUris = emptyList()
                                             cleanupTmpDir(filesDir)
-                                        },
-                                    ) {
-                                        Text("Dismiss", fontSize = 13.sp)
+                                        }
+                                    } else {
+                                        Text(
+                                            text = "No game files found in archive",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp,
+                                            color = MaterialTheme.colorScheme.onErrorContainer,
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        OutlinedButton(
+                                            onClick = {
+                                                zipExtracted = null
+                                                zipPackageName = null
+                                                zipHadAudioFiles = false
+                                                cleanupTmpDir(filesDir)
+                                            },
+                                        ) {
+                                            Text("Dismiss", fontSize = 13.sp)
+                                        }
                                     }
                                 } else {
                                     if (zipPackageName != null) {
@@ -4567,43 +4576,81 @@ private fun GogImportDialog(
         },
         title = { Text("Import GOG Installer", fontWeight = FontWeight.Bold) },
         text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                Text(installerName, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                if (format != null && format != "unknown") {
-                    Text(
-                        "Format: ${if (format == "innosetup") "InnoSetup (.exe)" else "Mac .pkg"}",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(status, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column {
+                // ── Scrollable area: file listing and status ──
+                Column(
+                    modifier =
+                        Modifier
+                            .weight(1f, fill = false)
+                            .verticalScroll(rememberScrollState()),
+                ) {
+                    Text(installerName, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    if (format != null && format != "unknown") {
+                        Text(
+                            "Format: ${if (format == "innosetup") "InnoSetup (.exe)" else "Mac .pkg"}",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(status, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-                // Error message
-                if (errorMsg != null && extractedCount == 0) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(errorMsg!!, fontSize = 11.sp, color = MaterialTheme.colorScheme.error)
-                }
+                    // Error message
+                    if (errorMsg != null && extractedCount == 0) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(errorMsg!!, fontSize = 11.sp, color = MaterialTheme.colorScheme.error)
+                    }
 
-                // File listing — split game files and audio files
-                fileList?.let { files ->
-                    val gameFiles = files.filterNot { GogImportBridge.isAudioFile(it.name) }
-                    val audioFiles = files.filter { GogImportBridge.isAudioFile(it.name) }
+                    // File listing -- game files only
+                    fileList?.let { files ->
+                        val gameFiles = files.filterNot { GogImportBridge.isAudioFile(it.name) }
+                        if (gameFiles.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            gameFiles.forEach { f ->
+                                Text(
+                                    "${f.name} (${formatSize(f.size)})",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
 
-                    if (gameFiles.isNotEmpty()) {
+                    // Show extracted file names
+                    if (extractedFileNames.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(8.dp))
-                        gameFiles.forEach { f ->
+                        Text("Extracted files:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        val displayFiles = extractedFileNames.take(50)
+                        displayFiles.forEach { name ->
                             Text(
-                                "${f.name} (${formatSize(f.size)})",
+                                "  $name",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        if (extractedFileNames.size > 50) {
+                            Text(
+                                "  ... and ${extractedFileNames.size - 50} more",
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
+                }
 
-                    // Audio files with opt-in checkbox
+                // ── Fixed area: checkbox, buttons, progress ──
+                fileList?.let { files ->
+                    val audioFiles = files.filter { GogImportBridge.isAudioFile(it.name) }
+                    if (audioFiles.isNotEmpty() ||
+                        extractedCount > 0 ||
+                        (fileList != null && fileList!!.isNotEmpty() && !processing && extractedCount == 0) ||
+                        processing
+                    ) {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    }
+
+                    // Audio files checkbox
                     if (audioFiles.isNotEmpty() && extractedCount == 0) {
-                        Spacer(modifier = Modifier.height(8.dp))
                         val audioSize = audioFiles.sumOf { it.size }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(
@@ -4732,27 +4779,6 @@ private fun GogImportDialog(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text("Done", fontSize = 13.sp)
-                    }
-                }
-
-                // Show extracted file names
-                if (extractedFileNames.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Extracted files:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                    val displayFiles = extractedFileNames.take(50)
-                    displayFiles.forEach { name ->
-                        Text(
-                            "  $name",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    if (extractedFileNames.size > 50) {
-                        Text(
-                            "  ... and ${extractedFileNames.size - 50} more",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
                     }
                 }
 
@@ -5126,60 +5152,62 @@ private fun DiscImportDialog(
                             onClick = {
                                 scope.launch {
                                     processing = true
-                                    status = "Copying BIN file(s) for audio\u2026"
+                                    status = "Registering audio source\u2026"
                                     withContext(Dispatchers.IO) {
                                         try {
                                             val audioCount = tracks!!.count { it.isAudio }
-                                            // Copy CUE to filesDir
+                                            // Copy CUE to filesDir (small file, needed for parsing)
                                             val destCue = File(filesDir, cueName.lowercase())
                                             tempCuePath?.let { File(it).copyTo(destCue, overwrite = true) }
 
-                                            // Copy BIN file(s) to filesDir
-                                            val destBinPaths = mutableListOf<String>()
+                                            // Take persistable URI permissions on BIN files
+                                            val binNames = mutableListOf<String>()
+                                            var firstBinUri: Uri? = null
                                             for ((name, uri) in binUris) {
-                                                val destBin = File(filesDir, name.lowercase())
-                                                withContext(Dispatchers.Main) {
-                                                    status = "Copying ${name}\u2026"
+                                                try {
+                                                    context.contentResolver.takePersistableUriPermission(
+                                                        uri,
+                                                        android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                                                    )
+                                                } catch (e: SecurityException) {
+                                                    Log.w("DXX-DiscImport", "Could not persist URI for $name", e)
                                                 }
-                                                context.contentResolver.openInputStream(uri)?.use { input ->
-                                                    FileOutputStream(destBin).use { output ->
-                                                        input.copyTo(output, bufferSize = 65536)
-                                                    }
-                                                }
-                                                destBinPaths.add(destBin.name)
+                                                binNames.add(name.lowercase())
+                                                if (firstBinUri == null) firstBinUri = uri
                                             }
 
-                                            // Try to identify the disc
+                                            // Try to identify the disc via SAF fd
                                             try {
                                                 val identifier = DiscIdentifier(context)
-                                                // Quick identification by hashing first audio track
                                                 val firstAudio = tracks!!.first { it.isAudio }
-                                                val binFile = File(filesDir, destBinPaths[firstAudio.fileIndex])
-                                                val trackBytes = firstAudio.numSectors.toLong() * 2352
-                                                val trackOffset = firstAudio.startSector.toLong() * 2352
-                                                val sha1 =
-                                                    binFile.inputStream().use { fis ->
-                                                        fis.skip(trackOffset)
-                                                        DiscIdentifier.sha1Hash(fis, trackBytes)
-                                                    }
-                                                val match = identifier.identify(mapOf(firstAudio.trackNum to sha1))
-                                                if (match.matched) {
-                                                    discLabel = match.label
-                                                    discId = match.disc?.id
-                                                    match.disc?.legacyDiscId?.let {
-                                                        legacyDiscId = java.lang.Long.decode(it)
+                                                val binUri = binUris[firstAudio.fileIndex].second
+                                                val pfd = context.contentResolver.openFileDescriptor(binUri, "r")
+                                                if (pfd != null) {
+                                                    val trackBytes = firstAudio.numSectors.toLong() * 2352
+                                                    val trackOffset = firstAudio.startSector.toLong() * 2352
+                                                    val sha1 =
+                                                        pfd.use {
+                                                            java.io.FileInputStream(it.fileDescriptor).use { fis ->
+                                                                fis.skip(trackOffset)
+                                                                DiscIdentifier.sha1Hash(fis, trackBytes)
+                                                            }
+                                                        }
+                                                    val match = identifier.identify(mapOf(firstAudio.trackNum to sha1))
+                                                    if (match.matched) {
+                                                        discLabel = match.label
+                                                        discId = match.disc?.id
+                                                        match.disc?.legacyDiscId?.let {
+                                                            legacyDiscId = java.lang.Long.decode(it)
+                                                        }
                                                     }
                                                 }
                                             } catch (e: Exception) {
                                                 Log.w("DXX-DiscImport", "Disc identification failed", e)
                                             }
 
-                                            // Register audio source
+                                            // Get track names from database for known discs
                                             val srcManager = AudioSourceManager(filesDir)
                                             val id = discId ?: "custom-${System.currentTimeMillis()}"
-
-                                            // Get track names: direct lookup for known discs,
-                                            // fingerprint matching for unknown ones
                                             var trackNames = emptyMap<Int, String>()
                                             try {
                                                 if (discId != null) {
@@ -5189,21 +5217,35 @@ private fun DiscImportDialog(
                                                         "Looked up ${trackNames.size} track names for $discId",
                                                     )
                                                 }
-                                                if (trackNames.isEmpty()) {
+                                                // Fingerprint matching for unknown discs via SAF fd
+                                                if (trackNames.isEmpty() && firstBinUri != null) {
                                                     withContext(Dispatchers.Main) {
                                                         status = "Identifying audio tracks\u2026"
                                                     }
-                                                    val binFile = File(filesDir, destBinPaths[0])
-                                                    trackNames =
-                                                        FingerprintBridge.fingerprintAndMatchDisc(
-                                                            context,
-                                                            binFile.absolutePath,
-                                                            tracks!!,
+                                                    val pfd =
+                                                        context.contentResolver
+                                                            .openFileDescriptor(firstBinUri, "r")
+                                                    if (pfd != null) {
+                                                        // Create temp file for fingerprinting (reuse BIN fd)
+                                                        val tmpBin = File(filesDir, "tmp/fp_tmp.bin")
+                                                        tmpBin.parentFile?.mkdirs()
+                                                        // Symlink /proc/self/fd to temp path for native code
+                                                        val fdPath = "/proc/self/fd/${pfd.fd}"
+                                                        trackNames =
+                                                            try {
+                                                                FingerprintBridge.fingerprintAndMatchDisc(
+                                                                    context,
+                                                                    fdPath,
+                                                                    tracks!!,
+                                                                )
+                                                            } finally {
+                                                                pfd.close()
+                                                            }
+                                                        Log.i(
+                                                            "DXX-DiscImport",
+                                                            "Fingerprinted ${trackNames.size} track names via fd",
                                                         )
-                                                    Log.i(
-                                                        "DXX-DiscImport",
-                                                        "Fingerprinted ${trackNames.size} track names",
-                                                    )
+                                                    }
                                                 }
                                             } catch (e: Exception) {
                                                 Log.w("DXX-DiscImport", "Track name identification failed", e)
@@ -5213,13 +5255,15 @@ private fun DiscImportDialog(
                                                 AudioSourceManager.AudioSource(
                                                     id = id,
                                                     cuePath = destCue.name,
-                                                    binPaths = destBinPaths,
+                                                    binPaths = binNames,
                                                     discLabel = discLabel ?: cueName,
                                                     discId = discId ?: "unknown",
                                                     trackCount = tracks!!.size,
                                                     audioTrackCount = audioCount,
                                                     legacyDiscId = legacyDiscId,
                                                     trackNames = trackNames,
+                                                    binContentUri = firstBinUri?.toString(),
+                                                    cueContentUri = cueUri.toString(),
                                                 ),
                                             )
 

@@ -1057,6 +1057,7 @@ class MainActivity :
     }
 
     override fun onDestroy() {
+        AudioSourceManager.closeActivePfds()
         com.dxxredux.app.multiplayer.MultiplayerForegroundService
             .stop(this)
         if (BuildConfig.DEBUG) {

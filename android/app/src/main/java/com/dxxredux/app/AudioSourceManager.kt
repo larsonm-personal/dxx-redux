@@ -1,5 +1,8 @@
 package com.dxxredux.app
 
+import android.content.ContentResolver
+import android.net.Uri
+import android.os.ParcelFileDescriptor
 import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
@@ -22,6 +25,21 @@ class AudioSourceManager(
         private const val TAG = "DXX-AudioSrc"
         private const val SOURCES_FILE = "audio_sources.json"
         private const val PLAYLIST_FILE = "audio_playlist.json"
+
+        /** Open PFDs kept alive during game session for SAF sources */
+        private val activePfds = mutableListOf<ParcelFileDescriptor>()
+
+        /** Close all PFDs from a previous game session */
+        fun closeActivePfds() {
+            for (pfd in activePfds) {
+                try {
+                    pfd.close()
+                } catch (_: Exception) {
+                    // already closed
+                }
+            }
+            activePfds.clear()
+        }
     }
 
     /**
@@ -49,6 +67,10 @@ class AudioSourceManager(
         val order: Int = 0,
         // fingerprint-matched track names: 1-based track number -> name
         val trackNames: Map<Int, String> = emptyMap(),
+        // SAF content URI for BIN file (when referenced in-place, not copied)
+        val binContentUri: String? = null,
+        // SAF content URI for CUE file (when referenced in-place, not copied)
+        val cueContentUri: String? = null,
     )
 
     private var sources: MutableList<AudioSource> = mutableListOf()
@@ -88,6 +110,8 @@ class AudioSourceManager(
         val pruned = mutableListOf<String>()
         val toRemove =
             sources.filter { src ->
+                // SAF sources don't have local files to check
+                if (src.binContentUri != null) return@filter false
                 val allFiles = src.binPaths + src.cuePath
                 allFiles.any { name ->
                     val f = File(filesDir, name)
@@ -135,9 +159,12 @@ class AudioSourceManager(
      * Write audio_playlist.json for the C engine.
      *
      * Called before game launch so RBAInit() can read it.
+     * For SAF sources, opens file descriptors and writes /proc/self/fd paths.
+     * Call [closeActivePfds] after the game exits to release them.
      * Returns true if a playlist was written, false if legacy mode.
      */
-    fun writePlaylist(): Boolean {
+    fun writePlaylist(resolver: ContentResolver? = null): Boolean {
+        closeActivePfds()
         val enabled = getEnabledSources()
         if (enabled.isEmpty()) {
             File(filesDir, PLAYLIST_FILE).delete()
@@ -150,7 +177,24 @@ class AudioSourceManager(
             val entry = JSONObject()
             entry.put("cue", src.cuePath)
             val bins = JSONArray()
-            src.binPaths.forEach { bins.put(it) }
+            if (src.binContentUri != null && resolver != null) {
+                // SAF source: open fd and use /proc/self/fd path
+                try {
+                    val pfd = resolver.openFileDescriptor(Uri.parse(src.binContentUri), "r")
+                    if (pfd != null) {
+                        activePfds.add(pfd)
+                        bins.put("/proc/self/fd/${pfd.fd}")
+                    } else {
+                        Log.w(TAG, "Could not open SAF URI for ${src.discLabel}")
+                        src.binPaths.forEach { bins.put(it) }
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "SAF fd open failed for ${src.discLabel}", e)
+                    src.binPaths.forEach { bins.put(it) }
+                }
+            } else {
+                src.binPaths.forEach { bins.put(it) }
+            }
             entry.put("bins", bins)
             entry.put("label", src.discLabel)
             entry.put("legacy_disc_id", src.legacyDiscId)
@@ -164,7 +208,7 @@ class AudioSourceManager(
         json.put("sources", arr)
 
         File(filesDir, PLAYLIST_FILE).writeText(json.toString(2))
-        Log.i(TAG, "Wrote $PLAYLIST_FILE with ${enabled.size} sources")
+        Log.i(TAG, "Wrote $PLAYLIST_FILE with ${enabled.size} sources (${activePfds.size} SAF fds)")
         return true
     }
 
@@ -199,6 +243,8 @@ class AudioSourceManager(
                                 obj.optJSONObject("track_names")?.let { tn ->
                                     tn.keys().asSequence().associate { k -> k.toInt() to tn.getString(k) }
                                 } ?: emptyMap(),
+                            binContentUri = obj.optString("bin_content_uri", "").ifEmpty { null },
+                            cueContentUri = obj.optString("cue_content_uri", "").ifEmpty { null },
                         )
                     }.toMutableList()
             Log.i(TAG, "Loaded ${sources.size} audio sources")
@@ -230,6 +276,8 @@ class AudioSourceManager(
                 src.trackNames.forEach { (k, v) -> tn.put(k.toString(), v) }
                 obj.put("track_names", tn)
             }
+            src.binContentUri?.let { obj.put("bin_content_uri", it) }
+            src.cueContentUri?.let { obj.put("cue_content_uri", it) }
             arr.put(obj)
         }
         json.put("sources", arr)
