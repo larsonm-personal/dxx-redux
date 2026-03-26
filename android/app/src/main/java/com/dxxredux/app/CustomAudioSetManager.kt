@@ -130,6 +130,7 @@ class CustomAudioSetManager(
 
     data class TrackDetail(
         val filename: String,
+        val setId: String,
         val setLabel: String,
         val matchedName: String?,
     )
@@ -140,7 +141,7 @@ class CustomAudioSetManager(
         val tracks = mutableListOf<TrackDetail>()
         for (set in enabled) {
             for (f in set.files.sorted()) {
-                tracks.add(TrackDetail(f, set.label, set.trackNames[f]))
+                tracks.add(TrackDetail(f, set.id, set.label, set.trackNames[f]))
             }
         }
         tracks.sortBy { it.filename.lowercase() }

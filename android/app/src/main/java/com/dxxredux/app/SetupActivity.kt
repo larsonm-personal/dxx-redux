@@ -56,6 +56,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonPrimitive
+import org.apache.commons.compress.archivers.sevenz.SevenZFile
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -200,7 +201,7 @@ class SetupActivity : ComponentActivity() {
                             val srcManager = AudioSourceManager(filesDir)
                             if (audio && count > 0 && findGogPair(setDir) != null) {
                                 enableRedbookInConfig(filesDir, this@SetupActivity)
-                                registerGogAudioSource(srcManager, setDir, this@SetupActivity)
+                                registerGogAudioSource(srcManager, filesDir, setDir, this@SetupActivity)
                             }
                             Log.i("DXX-Setup", "import_gog '$path' -> $count file(s) to ${setDir.name} (audio=$audio)")
                         }.start()
@@ -1506,21 +1507,32 @@ private fun getDisplayName(
  * Extract game files from a ZIP archive. Streams one entry at a time to tmpDir.
  * Returns list of extracted files with SHA-256 hashes.
  */
+private data class ZipExtractionResult(
+    val files: List<ExtractedFile>,
+    val hadAudioFiles: Boolean,
+)
+
 private suspend fun extractZipContents(
     context: Context,
     zipUri: Uri,
     tmpDir: File,
     onProgress: (String) -> Unit,
-): List<ExtractedFile> =
+): ZipExtractionResult =
     kotlinx.coroutines.withContext(Dispatchers.IO) {
         tmpDir.mkdirs()
         val results = mutableListOf<ExtractedFile>()
+        var foundAudio = false
+        val audioExts = setOf("mp3", "ogg", "flac")
         try {
             context.contentResolver.openInputStream(zipUri)?.use { raw ->
                 ZipInputStream(raw).use { zis ->
                     var entry = zis.nextEntry
                     while (entry != null) {
                         val name = entry.name.substringAfterLast('/').lowercase()
+                        if (!entry.isDirectory && !foundAudio) {
+                            val ext = name.substringAfterLast('.', "")
+                            if (ext in audioExts) foundAudio = true
+                        }
                         if (!entry.isDirectory && name in ALL_GAME_FILENAMES) {
                             kotlinx.coroutines.withContext(Dispatchers.Main) {
                                 onProgress(name)
@@ -1550,7 +1562,67 @@ private suspend fun extractZipContents(
         } catch (e: Exception) {
             Log.e("DXX-Setup", "ZIP extraction failed", e)
         }
-        results
+        ZipExtractionResult(results, foundAudio)
+    }
+
+/**
+ * Extract game files from a 7z archive. Copies content URI to temp file first
+ * since SevenZFile requires a seekable file.
+ */
+private suspend fun extract7zContents(
+    context: Context,
+    archiveUri: Uri,
+    tmpDir: File,
+    onProgress: (String) -> Unit,
+): ZipExtractionResult =
+    kotlinx.coroutines.withContext(Dispatchers.IO) {
+        tmpDir.mkdirs()
+        val results = mutableListOf<ExtractedFile>()
+        var foundAudio = false
+        val audioExts = setOf("mp3", "ogg", "flac")
+        val tmpArchive = File(tmpDir, ".tmp_7z_import")
+        try {
+            context.contentResolver.openInputStream(archiveUri)?.use { input ->
+                FileOutputStream(tmpArchive).use { output -> input.copyTo(output) }
+            }
+            SevenZFile.builder().setFile(tmpArchive).get().use { szf ->
+                var entry = szf.nextEntry
+                while (entry != null) {
+                    val name = entry.name.substringAfterLast('/').lowercase()
+                    if (!entry.isDirectory && !foundAudio) {
+                        val ext = name.substringAfterLast('.', "")
+                        if (ext in audioExts) foundAudio = true
+                    }
+                    if (!entry.isDirectory && name in ALL_GAME_FILENAMES) {
+                        kotlinx.coroutines.withContext(Dispatchers.Main) {
+                            onProgress(name)
+                        }
+                        val tmpFile = File(tmpDir, name)
+                        val digest = java.security.MessageDigest.getInstance("SHA-256")
+                        var size = 0L
+                        FileOutputStream(tmpFile).use { out ->
+                            val buf = ByteArray(8192)
+                            while (true) {
+                                val n = szf.read(buf)
+                                if (n <= 0) break
+                                out.write(buf, 0, n)
+                                digest.update(buf, 0, n)
+                                size += n
+                            }
+                        }
+                        val sha256 = digest.digest().joinToString("") { "%02x".format(it) }
+                        results.add(ExtractedFile(name, tmpFile, sha256, size))
+                        Log.i("DXX-Setup", "Extracted from 7z: $name ($size bytes, sha256=${sha256.take(16)}...)")
+                    }
+                    entry = szf.nextEntry
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("DXX-Setup", "7z extraction failed", e)
+        } finally {
+            tmpArchive.delete()
+        }
+        ZipExtractionResult(results, foundAudio)
     }
 
 /** Clean up temporary extraction directory. */
@@ -1697,6 +1769,7 @@ private fun SetupScreen(
     var zipPackageName by remember { mutableStateOf<String?>(null) }
     var zipExtracting by remember { mutableStateOf(false) }
     var zipProgressFile by remember { mutableStateOf("") }
+    var zipHadAudioFiles by remember { mutableStateOf(false) }
 
     // ── BIN/CUE disc import state ───────────────────────
     var discImportCueName by remember { mutableStateOf<String?>(null) }
@@ -1720,7 +1793,7 @@ private fun SetupScreen(
             importStatus = ""
             scope.launch(Dispatchers.IO) {
                 try {
-                    val zipUris = mutableListOf<Uri>()
+                    val zipUris = mutableListOf<Pair<String, Uri>>()
                     val gameUris = mutableListOf<FoundFile>()
                     val cueUris = mutableListOf<Pair<String, Uri>>()
                     val binUris = mutableListOf<Pair<String, Uri>>()
@@ -1735,7 +1808,7 @@ private fun SetupScreen(
                         if (name != null) {
                             val lname = name.lowercase()
                             when {
-                                lname.endsWith(".zip") -> zipUris.add(uri)
+                                lname.endsWith(".zip") || lname.endsWith(".7z") -> zipUris.add(name to uri)
                                 lname.endsWith(".cue") -> cueUris.add(name to uri)
                                 lname.endsWith(".inst") -> instDiscUri = name to uri
                                 lname.endsWith(".gog") -> gogDiscUri = name to uri
@@ -1747,6 +1820,8 @@ private fun SetupScreen(
                             }
                         }
                     }
+                    // Collect warnings for files the picker couldn't route
+                    val warnings = mutableListOf<String>()
                     // If .gog+.inst pair found, route to disc import as CUE+BIN
                     if (gogDiscUri != null && instDiscUri != null) {
                         Log.i(
@@ -1756,19 +1831,24 @@ private fun SetupScreen(
                         cueUris.add(instDiscUri)
                         binUris.add(gogDiscUri)
                     } else {
-                        // Treat unpaired .gog/.inst as normal game files
-                        gogDiscUri?.let { gameUris.add(FoundFile(it.first, it.second)) }
-                        instDiscUri?.let { gameUris.add(FoundFile(it.first, it.second)) }
+                        // Warn about unpaired .gog/.inst (same as .bin/.cue)
+                        gogDiscUri?.let { warnings.add("${it.first} requires a matching .inst file") }
+                        instDiscUri?.let { warnings.add("${it.first} requires a matching .gog file") }
                     }
-                    // Collect warnings for files the picker couldn't route
-                    val warnings = mutableListOf<String>()
                     if (binUris.isNotEmpty() && cueUris.isEmpty()) {
                         for (b in binUris) warnings.add("${b.first} requires a matching CUE file")
                     }
                     if (cueUris.isNotEmpty() && binUris.isEmpty()) {
                         for (c in cueUris) warnings.add("${c.first} requires a matching BIN file")
                     }
-                    for (f in unhandledFiles) warnings.add("$f was not imported")
+                    for (f in unhandledFiles) {
+                        val ext = f.substringAfterLast('.', "").lowercase()
+                        if (ext in setOf("mp3", "ogg", "flac")) {
+                            warnings.add("$f: audio files can be added via the Music tab")
+                        } else {
+                            warnings.add("$f: file type not recognized")
+                        }
+                    }
                     withContext(Dispatchers.Main) {
                         for (w in warnings) {
                             Toast.makeText(context, w, Toast.LENGTH_LONG).show()
@@ -1795,17 +1875,25 @@ private fun SetupScreen(
                         }
                         scanning = false
                     }
-                    // Handle ZIP files
+                    // Handle ZIP/7z files
                     if (zipUris.isNotEmpty()) {
                         withContext(Dispatchers.Main) { zipExtracting = true }
                         val tmpDir = File(filesDir, "tmp")
                         val allExtracted = mutableListOf<ExtractedFile>()
-                        for (zipUri in zipUris) {
-                            val extracted =
-                                extractZipContents(context, zipUri, tmpDir) { name ->
-                                    zipProgressFile = name
+                        var anyAudio = false
+                        for ((arcName, arcUri) in zipUris) {
+                            val result =
+                                if (arcName.lowercase().endsWith(".7z")) {
+                                    extract7zContents(context, arcUri, tmpDir) { name ->
+                                        zipProgressFile = name
+                                    }
+                                } else {
+                                    extractZipContents(context, arcUri, tmpDir) { name ->
+                                        zipProgressFile = name
+                                    }
                                 }
-                            allExtracted.addAll(extracted)
+                            allExtracted.addAll(result.files)
+                            if (result.hadAudioFiles) anyAudio = true
                         }
                         // Identify package
                         val fileHashes = allExtracted.associate { it.name to it.sha256 }
@@ -1813,6 +1901,7 @@ private fun SetupScreen(
                         withContext(Dispatchers.Main) {
                             zipExtracted = allExtracted
                             zipPackageName = pkgName
+                            zipHadAudioFiles = anyAudio
                             zipExtracting = false
                             zipProgressFile = ""
                         }
@@ -2240,8 +2329,8 @@ private fun SetupScreen(
                                                     }
                                                     // Extract ZIP contents
                                                     val zipUri = android.net.Uri.fromFile(zipFile)
-                                                    val extracted = extractZipContents(context, zipUri, tmpDir) { _ -> }
-                                                    if (extracted.isEmpty()) {
+                                                    val result = extractZipContents(context, zipUri, tmpDir) { _ -> }
+                                                    if (result.files.isEmpty()) {
                                                         demoDownloading = null
                                                         demoDownloadError = "No game files found in ZIP"
                                                         cleanupTmpDir(filesDir)
@@ -2249,7 +2338,7 @@ private fun SetupScreen(
                                                     }
                                                     // Move files to setDir
                                                     var imported = 0
-                                                    for (ef in extracted) {
+                                                    for (ef in result.files) {
                                                         val destFile = File(setDir, ef.name)
                                                         val ok =
                                                             withContext(Dispatchers.IO) {
@@ -2347,7 +2436,7 @@ private fun SetupScreen(
                                 if (scanning || zipExtracting) {
                                     "Importing\u2026"
                                 } else {
-                                    "\uD83D\uDCC2 Select Game Files or ZIP to Import"
+                                    "\uD83D\uDCC2 Select Game Files or Archive to Import"
                                 },
                             fontSize = 14.sp,
                         )
@@ -2355,7 +2444,7 @@ private fun SetupScreen(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text =
-                            "Select .hog, .ham, .pig files, a .zip archive, .cue/.bin disc images," +
+                            "Select .hog, .ham, .pig files, a .zip/.7z archive, .cue/.bin disc images," +
                                 " .sow archive, or GOG installer.",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -2508,7 +2597,7 @@ private fun SetupScreen(
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Text(
-                                    text = "Extracting ZIP\u2026",
+                                    text = "Extracting archive\u2026",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -2553,7 +2642,12 @@ private fun SetupScreen(
                             ) {
                                 if (extracted.isEmpty()) {
                                     Text(
-                                        text = "No game files found in ZIP archive.",
+                                        text =
+                                            if (zipHadAudioFiles) {
+                                                "This archive contains audio files but no game files. To import music, use the Music tab"
+                                            } else {
+                                                "No game files found in archive"
+                                            },
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 14.sp,
                                         color = MaterialTheme.colorScheme.onErrorContainer,
@@ -2563,6 +2657,7 @@ private fun SetupScreen(
                                         onClick = {
                                             zipExtracted = null
                                             zipPackageName = null
+                                            zipHadAudioFiles = false
                                             cleanupTmpDir(filesDir)
                                         },
                                     ) {
@@ -3398,6 +3493,39 @@ internal fun updateDescentCfgResolution(
 }
 
 /**
+ * Apply key=value settings to all descent.cfg files: root (first-launch fallback),
+ * d1x-redux/ and d2x-redux/ (per-game configs created after first run).
+ * Each game's PHYSFS reads only its own subdir config, so we must write to all.
+ */
+private fun updateAllConfigFiles(
+    filesDir: File,
+    settings: List<Pair<String, String>>,
+) {
+    val cfgPaths = mutableListOf(File(filesDir, "descent.cfg"))
+    for (sub in listOf("d1x-redux", "d2x-redux")) {
+        val dir = File(filesDir, sub)
+        if (dir.isDirectory) cfgPaths.add(File(dir, "descent.cfg"))
+    }
+    for (cfgFile in cfgPaths) {
+        var text = if (cfgFile.exists()) cfgFile.readText() else ""
+        for ((key, value) in settings) {
+            val regex = Regex("^$key=.*$", RegexOption.MULTILINE)
+            text =
+                if (regex.containsMatchIn(text)) {
+                    regex.replace(text, "$key=$value")
+                } else {
+                    text.trimEnd() + "\n$key=$value\n"
+                }
+        }
+        cfgFile.writeText(text)
+    }
+    Log.i(
+        "DXX-Setup",
+        "Updated ${cfgPaths.size} descent.cfg files: ${settings.joinToString { "${it.first}=${it.second}" }}",
+    )
+}
+
+/**
  * Set MusicType=2 (REDBOOK) and OrigTrackOrder=1 in descent.cfg after GOG audio import.
  * Also sets the launcher's music_mode pref to "cd" so the Music tab reflects the change.
  * Mirrors the C engine's android_apply_initial_defaults() which only runs on first launch.
@@ -3407,24 +3535,13 @@ private fun enableRedbookInConfig(
     filesDir: File,
     context: Context,
 ) {
-    val cfgFile = File(filesDir, "descent.cfg")
-    var text = if (cfgFile.exists()) cfgFile.readText() else ""
-    for ((key, value) in listOf("MusicType" to "2", "OrigTrackOrder" to "1")) {
-        val regex = Regex("^$key=.*$", RegexOption.MULTILINE)
-        text =
-            if (regex.containsMatchIn(text)) {
-                regex.replace(text, "$key=$value")
-            } else {
-                text.trimEnd() + "\n$key=$value\n"
-            }
-    }
-    cfgFile.writeText(text)
+    updateAllConfigFiles(filesDir, listOf("MusicType" to "2", "OrigTrackOrder" to "1"))
     context
         .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
         .edit()
         .putString("music_mode", "cd")
         .apply()
-    Log.i("DXX-Setup", "Updated descent.cfg: MusicType=2 OrigTrackOrder=1, music_mode=cd")
+    Log.i("DXX-Setup", "Set music_mode=cd in SharedPreferences")
 }
 
 /**
@@ -3441,13 +3558,17 @@ private fun findGogPair(dir: File): String? {
 /**
  * Register a GOG .gog/.inst pair as a BIN/CUE audio source.
  * The .gog file is the BIN image and the .inst file is the CUE sheet.
+ * Paths are stored relative to filesDir so the preview player can resolve them.
  */
 private fun registerGogAudioSource(
     srcManager: AudioSourceManager,
+    filesDir: File,
     setDir: File,
     context: Context? = null,
 ) {
     val base = findGogPair(setDir) ?: return
+    val relDir = setDir.toRelativeString(filesDir)
+    val relBase = if (relDir.isEmpty()) base else "$relDir${File.separator}$base"
     // Look up track names from known_discs.json5 if context available
     val trackNames =
         context?.let {
@@ -3460,8 +3581,8 @@ private fun registerGogAudioSource(
     srcManager.addSource(
         AudioSourceManager.AudioSource(
             id = "d2-gog-v1.2",
-            cuePath = "$base.inst",
-            binPaths = listOf("$base.gog"),
+            cuePath = "$relBase.inst",
+            binPaths = listOf("$relBase.gog"),
             discLabel = "Descent II (GOG)",
             discId = "d2-gog-v1.2",
             trackCount = 9,
@@ -3492,11 +3613,7 @@ private fun SetupActivity.writeMusicConfigForLaunch() {
             else -> "2"
         }
 
-    val cfgFile = File(filesDir, "descent.cfg")
-    if (!cfgFile.exists()) return
-    var text = cfgFile.readText()
-
-    // Write MusicType
+    // Build settings list
     val settings = mutableListOf("MusicType" to musicType)
 
     if (mode == "cd") {
@@ -3510,17 +3627,7 @@ private fun SetupActivity.writeMusicConfigForLaunch() {
         }
     }
 
-    for ((key, value) in settings) {
-        val regex = Regex("^$key=.*$", RegexOption.MULTILINE)
-        text =
-            if (regex.containsMatchIn(text)) {
-                regex.replace(text, "$key=$value")
-            } else {
-                text.trimEnd() + "\n$key=$value\n"
-            }
-    }
-    cfgFile.writeText(text)
-    Log.i("DXX-Setup", "Updated descent.cfg: music_mode=$mode -> MusicType=$musicType")
+    updateAllConfigFiles(filesDir, settings)
 }
 
 @Composable
@@ -4371,9 +4478,16 @@ private fun GogImportDialog(
                     }
                 }
 
-                // Extract button
+                // Extract button with explanatory text
                 if (fileList != null && fileList!!.isNotEmpty() && !processing && extractedCount == 0) {
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "Game files will be extracted to \"${setDir.name}\"" +
+                            if (includeAudio) ". CD audio will be configured as the active music source" else "",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
                     Button(
                         onClick = {
                             scope.launch {
@@ -4419,7 +4533,7 @@ private fun GogImportDialog(
                                             }
                                         if (hasGog) {
                                             enableRedbookInConfig(filesDir, context)
-                                            registerGogAudioSource(srcManager, setDir, context)
+                                            registerGogAudioSource(srcManager, filesDir, setDir, context)
                                         }
                                         val filesAfter = setDir.list()?.toSet() ?: emptySet()
                                         val newFiles = (filesAfter - filesBefore).sorted()
@@ -4430,7 +4544,7 @@ private fun GogImportDialog(
                                                 if (count > 0) {
                                                     val msg = "Extracted $count file(s)"
                                                     if (hasGog) {
-                                                        "$msg \u2014 CD audio installed"
+                                                        "$msg. CD audio source registered and music mode set to Redbook"
                                                     } else {
                                                         msg
                                                     }

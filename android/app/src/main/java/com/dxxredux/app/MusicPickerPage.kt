@@ -1,6 +1,7 @@
 package com.dxxredux.app
 
 import android.content.Context
+import android.media.MediaPlayer
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
@@ -29,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.apache.commons.compress.archivers.sevenz.SevenZFile
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
@@ -298,6 +300,14 @@ private fun CdAudioSection(
         var infoSource by remember { mutableStateOf<AudioSourceManager.AudioSource?>(null) }
 
         if (removeConfirmId != null && removeConfirmLabel != null) {
+            val filesDir = LocalContext.current.filesDir
+            val removeSource = audioSources.firstOrNull { it.id == removeConfirmId }
+            // Check if source files are inside the app data dir
+            val filesInAppDir =
+                removeSource?.let { src ->
+                    src.binPaths.any { File(filesDir, it).exists() } ||
+                        File(filesDir, src.cuePath).exists()
+                } ?: false
             AlertDialog(
                 onDismissRequest = { removeConfirmId = null },
                 title = { Text("Remove source") },
@@ -306,7 +316,11 @@ private fun CdAudioSection(
                         Text("Remove \"$removeConfirmLabel\"?")
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "The BIN/CUE disc files will remain on disk",
+                            if (filesInAppDir) {
+                                "Extracted audio files in app storage will be deleted. Re-import from original source to restore"
+                            } else {
+                                "The BIN/CUE disc files will remain on disk"
+                            },
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -314,10 +328,34 @@ private fun CdAudioSection(
                 },
                 confirmButton = {
                     TextButton(onClick = {
+                        // Delete files if they're in app data dir
+                        if (filesInAppDir && removeSource != null) {
+                            val deletedDirs = mutableSetOf<File>()
+                            for (bin in removeSource.binPaths) {
+                                val f = File(filesDir, bin)
+                                if (f.exists()) {
+                                    deletedDirs.add(f.parentFile!!)
+                                    f.delete()
+                                }
+                            }
+                            val cueFile = File(filesDir, removeSource.cuePath)
+                            if (cueFile.exists()) {
+                                deletedDirs.add(cueFile.parentFile!!)
+                                cueFile.delete()
+                            }
+                            // Clean up empty parent dirs (e.g. sets/<name>/)
+                            for (dir in deletedDirs) {
+                                var d = dir
+                                while (d != filesDir && d.isDirectory && (d.list()?.isEmpty() == true)) {
+                                    d.delete()
+                                    d = d.parentFile ?: break
+                                }
+                            }
+                        }
                         audioSrcManager.removeSource(removeConfirmId!!)
                         removeConfirmId = null
                         onSourcesChanged()
-                    }) { Text("Yes") }
+                    }) { Text(if (filesInAppDir) "Delete" else "Yes") }
                 },
                 dismissButton = {
                     TextButton(onClick = { removeConfirmId = null }) { Text("Cancel") }
@@ -327,6 +365,7 @@ private fun CdAudioSection(
 
         // Source info dialog
         infoSource?.let { src ->
+            val filesDir = LocalContext.current.filesDir
             AlertDialog(
                 onDismissRequest = { infoSource = null },
                 title = { Text("Source Info", fontSize = 16.sp) },
@@ -335,8 +374,11 @@ private fun CdAudioSection(
                         Text(src.discLabel, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         Text("Audio tracks: ${src.audioTrackCount}", fontSize = 12.sp)
                         Text("Total tracks: ${src.trackCount}", fontSize = 12.sp)
-                        Text("CUE: ${src.cuePath}", fontSize = 12.sp)
-                        Text("BIN: ${src.binPaths.joinToString(", ")}", fontSize = 12.sp)
+                        Text("CUE: ${File(filesDir, src.cuePath).absolutePath}", fontSize = 12.sp)
+                        Text(
+                            "BIN: ${src.binPaths.joinToString(", ") { File(filesDir, it).absolutePath }}",
+                            fontSize = 12.sp,
+                        )
                         if (src.discId != "unknown") {
                             Text("Disc ID: ${src.discId}", fontSize = 12.sp)
                         }
@@ -774,33 +816,12 @@ private fun TrackPreviewDialog(
         },
     )
 
-    // Track info sub-dialog (audio files)
+    // Track info sub-dialog (audio files) with mini player
     infoTrack?.let { track ->
-        AlertDialog(
-            onDismissRequest = { infoTrack = null },
-            title = { Text("Track Info", fontSize = 16.sp) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("File: ${track.filename}", fontSize = 12.sp)
-                    Text("Set: ${track.setLabel}", fontSize = 12.sp)
-                    if (track.matchedName != null) {
-                        Text(
-                            "Matched: ${track.matchedName}",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    } else {
-                        Text(
-                            "No fingerprint match",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { infoTrack = null }) { Text("Close") }
-            },
+        AudioFileDetailDialog(
+            filesDir = filesDir,
+            track = track,
+            onDismiss = { infoTrack = null },
         )
     }
 
@@ -924,26 +945,177 @@ private fun CdTrackDetailDialog(
                     }
                 }
 
-                // Progress slider
-                if (durationMs > 0) {
-                    Slider(
-                        value = positionMs.toFloat() / durationMs.toFloat(),
-                        onValueChange = { frac ->
+                // Progress slider (shown immediately, disabled until duration known)
+                Slider(
+                    value = if (durationMs > 0) positionMs.toFloat() / durationMs.toFloat() else 0f,
+                    onValueChange = { frac ->
+                        if (durationMs > 0) {
                             seeking = true
                             positionMs = (frac * durationMs).toInt()
-                        },
-                        onValueChangeFinished = {
+                        }
+                    },
+                    onValueChangeFinished = {
+                        if (durationMs > 0) {
                             CdPreviewBridge.seek(positionMs.toFloat() / durationMs.toFloat())
-                            seeking = false
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                        }
+                        seeking = false
+                    },
+                    enabled = durationMs > 0,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (durationMs > 0) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Text(formatTime(positionMs), fontSize = 10.sp)
                         Text(formatTime(durationMs), fontSize = 10.sp)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        },
+    )
+}
+
+// ── Audio file detail dialog with mini player ──────────────────────
+
+@Composable
+private fun AudioFileDetailDialog(
+    filesDir: File,
+    track: CustomAudioSetManager.TrackDetail,
+    onDismiss: () -> Unit,
+) {
+    val audioFile = File(File(filesDir, CustomAudioSetManager.MUSIC_DIR), "${track.setId}/${track.filename}")
+    var player by remember { mutableStateOf<MediaPlayer?>(null) }
+    var playing by remember { mutableStateOf(false) }
+    var positionMs by remember { mutableIntStateOf(0) }
+    var durationMs by remember { mutableIntStateOf(0) }
+    var seeking by remember { mutableStateOf(false) }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            player?.release()
+        }
+    }
+
+    // Poll playback position
+    LaunchedEffect(playing) {
+        while (playing) {
+            val p = player
+            if (p != null && p.isPlaying && !seeking) {
+                positionMs = p.currentPosition
+            }
+            delay(100)
+        }
+    }
+
+    fun togglePlayback() {
+        val p = player
+        if (p == null) {
+            if (!audioFile.exists()) return
+            try {
+                val mp =
+                    MediaPlayer().apply {
+                        setDataSource(audioFile.absolutePath)
+                        prepare()
+                        start()
+                    }
+                player = mp
+                durationMs = mp.duration
+                playing = true
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to play ${audioFile.name}: ${e.message}")
+            }
+        } else if (p.isPlaying) {
+            p.pause()
+        } else {
+            p.start()
+            playing = true
+        }
+    }
+
+    fun formatTime(ms: Int): String {
+        val s = ms / 1000
+        return "%d:%02d".format(s / 60, s % 60)
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Track Info", fontSize = 16.sp) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("File: ${track.filename}", fontSize = 12.sp)
+                Text("Set: ${track.setLabel}", fontSize = 12.sp)
+                if (track.matchedName != null) {
+                    Text(
+                        "Matched: ${track.matchedName}",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                } else {
+                    Text(
+                        "No fingerprint match",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                if (audioFile.exists()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        TextButton(onClick = { togglePlayback() }) {
+                            val label =
+                                when {
+                                    player == null -> "Play"
+                                    player?.isPlaying == true -> "Pause"
+                                    else -> "Resume"
+                                }
+                            Text(label, fontSize = 13.sp)
+                        }
+                        if (player != null) {
+                            TextButton(onClick = {
+                                player?.stop()
+                                player?.release()
+                                player = null
+                                playing = false
+                                positionMs = 0
+                                durationMs = 0
+                            }) {
+                                Text("Stop", fontSize = 13.sp)
+                            }
+                        }
+                    }
+                    Slider(
+                        value = if (durationMs > 0) positionMs.toFloat() / durationMs.toFloat() else 0f,
+                        onValueChange = { frac ->
+                            if (durationMs > 0) {
+                                seeking = true
+                                positionMs = (frac * durationMs).toInt()
+                            }
+                        },
+                        onValueChangeFinished = {
+                            if (durationMs > 0) {
+                                player?.seekTo(positionMs)
+                            }
+                            seeking = false
+                        },
+                        enabled = durationMs > 0,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    if (durationMs > 0) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(formatTime(positionMs), fontSize = 10.sp)
+                            Text(formatTime(durationMs), fontSize = 10.sp)
+                        }
                     }
                 }
             }
@@ -964,8 +1136,8 @@ private fun BoxScope.ScrollArrows(scrollState: ScrollState) {
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
             modifier =
                 Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(end = 4.dp, top = 4.dp)
+                    .align(Alignment.TopCenter)
+                    .padding(top = 4.dp)
                     .size(28.dp),
         ) {
             Icon(
@@ -981,8 +1153,8 @@ private fun BoxScope.ScrollArrows(scrollState: ScrollState) {
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
             modifier =
                 Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 4.dp, bottom = 4.dp)
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 4.dp)
                     .size(28.dp),
         ) {
             Icon(
@@ -1020,7 +1192,7 @@ private suspend fun importAudioFiles(
             try {
                 val fileName = resolveFileName(ctx, uri) ?: "track_${imported.size + 1}.audio"
                 if (isArchiveFile(fileName)) {
-                    val extracted = extractAudioFromArchive(ctx, uri, destDir)
+                    val extracted = extractAudioFromArchive(ctx, uri, destDir, fileName)
                     imported.addAll(extracted)
                 } else {
                     val dest = File(destDir, fileName)
@@ -1070,8 +1242,22 @@ private suspend fun importAudioFiles(
     }
 }
 
-/** Extract audio files from a ZIP/DXA archive, returns filenames written to destDir */
+/** Extract audio files from a ZIP/DXA/7z archive, returns filenames written to destDir */
 private fun extractAudioFromArchive(
+    ctx: Context,
+    uri: Uri,
+    destDir: File,
+    fileName: String = "",
+): List<String> {
+    val ext = fileName.substringAfterLast('.', "").lowercase()
+    return if (ext == "7z") {
+        extract7zAudio(ctx, uri, destDir)
+    } else {
+        extractZipAudio(ctx, uri, destDir)
+    }
+}
+
+private fun extractZipAudio(
     ctx: Context,
     uri: Uri,
     destDir: File,
@@ -1084,7 +1270,6 @@ private fun extractAudioFromArchive(
                 if (!entry.isDirectory) {
                     val name = entry.name.substringAfterLast('/')
                     if (isAudioFile(name)) {
-                        // Avoid path traversal
                         val safeName = name.replace("..", "_").replace('/', '_').replace('\\', '_')
                         val dest = File(destDir, safeName)
                         FileOutputStream(dest).use { out -> zip.copyTo(out) }
@@ -1096,7 +1281,48 @@ private fun extractAudioFromArchive(
             }
         }
     }
-    Log.i(TAG, "Extracted ${extracted.size} audio files from archive")
+    Log.i(TAG, "Extracted ${extracted.size} audio files from ZIP archive")
+    return extracted
+}
+
+private fun extract7zAudio(
+    ctx: Context,
+    uri: Uri,
+    destDir: File,
+): List<String> {
+    val extracted = mutableListOf<String>()
+    // SevenZFile requires a seekable file; copy content URI to temp
+    val tmpFile = File(destDir, ".tmp_7z_import")
+    try {
+        ctx.contentResolver.openInputStream(uri)?.use { input ->
+            FileOutputStream(tmpFile).use { output -> input.copyTo(output) }
+        }
+        SevenZFile.builder().setFile(tmpFile).get().use { szf ->
+            var entry = szf.nextEntry
+            while (entry != null) {
+                if (!entry.isDirectory) {
+                    val name = entry.name.substringAfterLast('/')
+                    if (isAudioFile(name)) {
+                        val safeName = name.replace("..", "_").replace('/', '_').replace('\\', '_')
+                        val dest = File(destDir, safeName)
+                        FileOutputStream(dest).use { out ->
+                            val buf = ByteArray(8192)
+                            while (true) {
+                                val n = szf.read(buf)
+                                if (n <= 0) break
+                                out.write(buf, 0, n)
+                            }
+                        }
+                        extracted.add(safeName)
+                    }
+                }
+                entry = szf.nextEntry
+            }
+        }
+    } finally {
+        tmpFile.delete()
+    }
+    Log.i(TAG, "Extracted ${extracted.size} audio files from 7z archive")
     return extracted
 }
 
