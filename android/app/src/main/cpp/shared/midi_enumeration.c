@@ -93,7 +93,8 @@ static void sb_append_json_str(strbuf_t *sb, const char *s)
 
 /* ── Track duration via TML ──────────────────────────────────────────── */
 
-/* Declared in midi_preview.c */
+/* hmp2mid_mem is in d2/misc/hmp.c (and d1/misc/hmp.c).
+ * hog_read_entry and hog_list_entries are in midi_preview.c. */
 extern int hmp2mid_mem(const unsigned char *hmp, int hmp_len,
                        unsigned char **out_midi, int *out_len);
 extern int hog_read_entry(const char *hog_path, const char *entry_name,

@@ -5,9 +5,8 @@
  * lock-free ring buffer.  Renders MIDI via TinySoundFont (TSF) +
  * TinyMidiLoader (TML).
  *
- * HMP -> MIDI conversion is a standalone re-implementation of the
- * algorithm in d2/misc/hmp.c, reading from memory instead of PHYSFS.
- * Keep in sync with hmp.c if the format handling changes.
+ * HMP -> MIDI conversion reuses hmp2mid_mem() from d2/misc/hmp.c
+ * (and d1/misc/hmp.c), which parses HMP from a memory buffer.
  */
 
 #include "midi_preview.h"
@@ -120,21 +119,11 @@ static SLAndroidSimpleBufferQueueItf s_player_bq = NULL;
 static short s_play_bufs[NUM_BUFFERS][BUF_FRAMES * 2];
 static int s_next_buf = 0;
 
-/* ── HMP -> MIDI conversion (standalone, from memory) ────────────────
- *
- * Re-implements d2/misc/hmp.c:hmp2mid() without PHYSFS.
- * HMP format:
- *   offset 0x00: "HMIMIDIP" (8 bytes)
- *   offset 0x30: num_tracks (4 bytes LE)
- *   offset 0x38: tempo (4 bytes LE)
- *   offset 0x308: track data begins
- *   Each track: 4 bytes skip, 4 bytes track_size (includes 12-byte header),
- *               4 bytes skip, then (track_size - 12) bytes of track data.
- *
- * Keep in sync with d2/misc/hmp.c if format handling changes.
- */
+/* HMP to MIDI conversion -- reuses hmp2mid_mem() from d2/misc/hmp.c */
+extern int hmp2mid_mem(const unsigned char *hmp_data, int hmp_len,
+                       unsigned char **out_midi, int *out_len);
 
-#define HMP_TRACKS 32
+/* ── Utility ─────────────────────────────────────────────────────────── */
 
 static unsigned int read_le32(const unsigned char *p)
 {
@@ -142,215 +131,6 @@ static unsigned int read_le32(const unsigned char *p)
 	       ((unsigned int) p[1] << 8) |
 	       ((unsigned int) p[2] << 16) |
 	       ((unsigned int) p[3] << 24);
-}
-
-static void write_be16(unsigned char *p, unsigned short v)
-{
-	p[0] = (unsigned char) (v >> 8);
-	p[1] = (unsigned char) v;
-}
-
-static void write_be32(unsigned char *p, unsigned int v)
-{
-	p[0] = (unsigned char) (v >> 24);
-	p[1] = (unsigned char) (v >> 16);
-	p[2] = (unsigned char) (v >> 8);
-	p[3] = (unsigned char) v;
-}
-
-/* Dynamic buffer for building MIDI output */
-typedef struct {
-	unsigned char *data;
-	unsigned int len;
-	unsigned int cap;
-} midbuf_t;
-
-static void mb_init(midbuf_t *mb)
-{
-	mb->data = NULL;
-	mb->len = 0;
-	mb->cap = 0;
-}
-
-static void mb_ensure(midbuf_t *mb, unsigned int need)
-{
-	if (mb->len + need > mb->cap) {
-		unsigned int newcap = mb->cap ? mb->cap * 2 : 4096;
-		while (newcap < mb->len + need) newcap *= 2;
-		mb->data = (unsigned char *) realloc(mb->data, newcap);
-		mb->cap = newcap;
-	}
-}
-
-static void mb_append(midbuf_t *mb, const void *src, unsigned int n)
-{
-	mb_ensure(mb, n);
-	memcpy(mb->data + mb->len, src, n);
-	mb->len += n;
-}
-
-static void mb_append_byte(midbuf_t *mb, unsigned char b)
-{
-	mb_ensure(mb, 1);
-	mb->data[mb->len++] = b;
-}
-
-/*
- * Convert one HMP track to MIDI track data (MTrk body, no header).
- * Returns length of MIDI track body written.
- */
-static unsigned int hmptrk2mid(const unsigned char *data, int size, midbuf_t *mb)
-{
-	const unsigned char *dptr = data;
-	const unsigned char *end = data + size;
-	unsigned char last_com = 0;
-	unsigned int offset = mb->len;
-
-	while (data < end) {
-		/* Read variable-length delta time (HMI format) */
-		if (data[0] & 0x80) {
-			unsigned char b = data[0] & 0x7F;
-			mb_append_byte(mb, b);
-		} else {
-			unsigned int d = data[0] & 0x7F;
-			int n1 = 0;
-			while (data + n1 < end && (data[n1] & 0x80) == 0) {
-				n1++;
-				if (data + n1 >= end) break;
-				d += (unsigned int) (data[n1] & 0x7F) << (n1 * 7);
-			}
-			n1 = 1;
-			while (data + n1 < end && (data[n1] & 0x80) == 0) {
-				n1++;
-				if (n1 == 4) return 0;
-			}
-			/* Write as standard MIDI variable-length (big-endian) */
-			int n2;
-			for (n2 = 0; n2 <= n1; n2++) {
-				unsigned char b = data[n1 - n2] & 0x7F;
-				if (n2 != n1) b |= 0x80;
-				mb_append_byte(mb, b);
-			}
-			data += n1;
-		}
-		data++;
-		if (data >= end) break;
-
-		if (*data == 0xFF) {
-			/* Meta event */
-			if (data + 2 >= end) break;
-			unsigned int meta_len = data[2];
-			if (data + 3 + meta_len > end) break;
-			mb_append(mb, data, 3 + meta_len);
-			if (data[1] == 0x2F) break; /* end of track */
-			data += 3 + meta_len;
-		} else {
-			unsigned char lc1 = data[0];
-			if ((lc1 & 0x80) == 0) return 0;
-			switch (lc1 & 0xF0) {
-				case 0x80:
-				case 0x90:
-				case 0xA0:
-				case 0xB0:
-				case 0xE0:
-					if (lc1 != last_com) mb_append_byte(mb, lc1);
-					if (data + 2 >= end) break;
-					mb_append(mb, data + 1, 2);
-					data += 3;
-					break;
-				case 0xC0:
-				case 0xD0:
-					if (lc1 != last_com) mb_append_byte(mb, lc1);
-					if (data + 1 >= end) break;
-					mb_append(mb, data + 1, 1);
-					data += 2;
-					break;
-				default:
-					return 0;
-			}
-			last_com = lc1;
-		}
-	}
-	return mb->len - offset;
-
-	(void) dptr;
-}
-
-/*
- * Convert HMP data (in memory) to standard MIDI.
- * On success, *out_midi and *out_len are set (caller must free *out_midi).
- * Returns 1 on success, 0 on failure.
- */
-int hmp2mid_mem(const unsigned char *hmp, int hmp_len,
-                unsigned char **out_midi, int *out_len)
-{
-	if (hmp_len < 0x308 + 12) return 0;
-	if (memcmp(hmp, "HMIMIDIP", 8) != 0) return 0;
-
-	int num_tracks = (int) read_le32(hmp + 0x30);
-	if (num_tracks < 1 || num_tracks > HMP_TRACKS) return 0;
-
-	unsigned int tempo = read_le32(hmp + 0x38);
-	unsigned short time_div = (unsigned short) (tempo * 1.6);
-
-	midbuf_t mb;
-	mb_init(&mb);
-
-	/* MIDI header: MThd, length=6, format=1, ntrks, time_div */
-	unsigned char hdr[14];
-	memcpy(hdr, "MThd", 4);
-	write_be32(hdr + 4, 6);
-	write_be16(hdr + 8, 1); /* format */
-	write_be16(hdr + 10, (unsigned short) num_tracks);
-	write_be16(hdr + 12, time_div);
-	mb_append(&mb, hdr, 14);
-
-	/* Tempo track (track 0 in HMP is skipped, starts from track 1) */
-	static const unsigned char tempo_trk[] = {
-		'M', 'T', 'r', 'k', 0, 0, 0, 11,
-		0, 0xFF, 0x51, 0x03, 0x18, 0x80, 0x00,
-		0, 0xFF, 0x2F, 0x00
-	};
-	mb_append(&mb, tempo_trk, sizeof(tempo_trk));
-
-	/* Parse track data starting at offset 0x308 */
-	int offset = 0x308;
-	int i;
-	for (i = 0; i < num_tracks; i++) {
-		if (offset + 12 > hmp_len) break;
-		/* Skip 4 bytes, read track size (4 bytes LE), skip 4 bytes */
-		unsigned int trk_size = read_le32(hmp + offset + 4);
-		if (trk_size < 12) break;
-		unsigned int data_size = trk_size - 12;
-		offset += 12;
-		if (offset + (int) data_size > hmp_len) break;
-
-		if (i == 0) {
-			/* Track 0 is tempo, already emitted above -- skip */
-			offset += (int) data_size;
-			continue;
-		}
-
-		/* Write MTrk header, then convert track data */
-		unsigned int mtrk_pos = mb.len;
-		unsigned char mtrk_hdr[8];
-		memcpy(mtrk_hdr, "MTrk", 4);
-		write_be32(mtrk_hdr + 4, 0); /* placeholder */
-		mb_append(&mb, mtrk_hdr, 8);
-
-		unsigned int trk_body_len = hmptrk2mid(hmp + offset, (int) data_size, &mb);
-		if (trk_body_len == 0) {
-			LOGW("Track %d conversion failed", i);
-		}
-		/* Patch MTrk length */
-		write_be32(mb.data + mtrk_pos + 4, trk_body_len);
-
-		offset += (int) data_size;
-	}
-
-	*out_midi = mb.data;
-	*out_len = (int) mb.len;
-	return 1;
 }
 
 /* ── HOG file reader ─────────────────────────────────────────────────
