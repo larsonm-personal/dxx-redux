@@ -373,6 +373,10 @@ private data class JoyPairsResult(
 
 private const val CONFIG_FILENAME = "controller_config.json"
 
+// Bump when the config format changes to force regeneration from defaults.
+// SetupActivity.writeDefaultControllerConfig checks this on startup.
+internal const val CONTROLLER_CONFIG_VERSION = 2
+
 /**
  * Collect (kc_index, value) pairs for joystick settings from human-readable
  * bindings using the given game variant's kconfig index mapping.
@@ -467,11 +471,12 @@ private fun buildJoyPairs(
             }
         }
     }
-    for ((controlId, funcLabel) in bindings) {
-        val dpadKcIdx = btnKcMap[funcLabel]
-        // D-pad: skip, identity mapping + mixer_button_map handles them
-        if (DPAD_CONTROLS[controlId] != null && dpadKcIdx != null) {
-            continue
+    // Default gyro axis bindings (matches C fallback in android_apply_gamepad_defaults).
+    // When no explicit binding targets Slide U/D or Bank L/R axes, use gyro.
+    for ((kcIdx, axisVal) in arrayOf(19 to 7, 21 to 6)) {
+        if (kcIdx !in indices) {
+            indices.add(kcIdx)
+            values.add(axisVal)
         }
     }
 
@@ -578,7 +583,7 @@ internal fun saveConfig(
 
     // Build JSON config for UI reconstruction + byte arrays for re-patching
     val json = JSONObject()
-    json.put("version", 1)
+    json.put("version", CONTROLLER_CONFIG_VERSION)
     json.put("control_type", controlType)
     json.put("automap_free_flight", 1)
 

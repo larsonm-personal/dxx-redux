@@ -57,11 +57,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "ogl_init.h"
 #endif
 
-#ifdef ANDROID
-/* Legacy touch overlay offsets -- the InputMixer in Kotlin now handles
- * multi-source button combining.  Mixer sends MIXER_BTN_BASE + kc_index
- * which matches via the normal kc_joystick[i].value == btn path. */
-#endif
 #define JOY_BTN_MATCHES(idx, btn) \
 	(kc_joystick[idx].value == (btn))
 

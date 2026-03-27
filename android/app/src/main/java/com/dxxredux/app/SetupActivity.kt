@@ -1217,15 +1217,22 @@ class SetupActivity : ComponentActivity() {
     }
 
     /**
-     * Write controller_config.json from bundled defaults if it doesn't exist yet.
-     * Called during first launch (and during tests after the runner deletes config
-     * files) so the JSON default pipeline is always exercised.
+     * Write controller_config.json from bundled defaults if it doesn't exist
+     * or if its version is older than CONTROLLER_CONFIG_VERSION.
      */
     private fun writeDefaultControllerConfig() {
-        if (File(filesDir, "controller_config.json").exists()) return
+        val file = File(filesDir, "controller_config.json")
+        if (file.exists()) {
+            try {
+                val json = org.json.JSONObject(file.readText())
+                if (json.optInt("version", 0) >= CONTROLLER_CONFIG_VERSION) return
+            } catch (_: Exception) {
+                // corrupt, regenerate
+            }
+        }
         val bindings = loadDefaultBindings(applicationContext)
         saveConfig(applicationContext, bindings, emptySet())
-        Log.i("DXX-Setup", "First launch: wrote default controller config from bundled defaults")
+        Log.i("DXX-Setup", "Wrote default controller config (version $CONTROLLER_CONFIG_VERSION)")
     }
 
     override fun onResume() {

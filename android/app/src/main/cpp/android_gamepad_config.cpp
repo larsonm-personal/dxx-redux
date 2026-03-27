@@ -11,7 +11,7 @@
  * are defined by joy_init() in joy.c:
  *
  *   Buttons: 0-9 face/shoulder, 10-21 axis-buttons (2 per axis, neg/pos),
- *            22-25 D-pad, 128+ touch overlay (bypass button_map)
+ *            22-25 D-pad, 100+ mixer (MIXER_BTN_BASE + kc_index, bypass button_map)
  *   Axes:    0=LX, 1=LY, 2=RX, 3=RY, 4=LT, 5=RT, 6=BK(virtual), 7=SU(virtual)
  *
  * The JNI entry point patches .plr files by calling plr_patch_keysettings()
