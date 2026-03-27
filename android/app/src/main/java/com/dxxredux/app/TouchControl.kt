@@ -597,42 +597,6 @@ data class TouchLayout(
             put("gyro", gyro.toJson())
         }
 
-    /**
-     * Count how many controls use each binding value across all button sources.
-     * Returns a map of binding -> usage count.  Useful for enforcing the
-     * MAX_TOUCH_BINDINGS_PER_ACTION limit in the editor.
-     */
-    fun bindingUsageCounts(): Map<Int, Int> {
-        val counts = mutableMapOf<Int, Int>()
-
-        fun add(b: Int) {
-            if (b >= 0) counts[b] = (counts[b] ?: 0) + 1
-        }
-        for (btn in buttons) add(btn.binding)
-        for (s in sticks) {
-            if (s.buttonMode) {
-                add(s.negXBinding)
-                add(s.posXBinding)
-                add(s.negYBinding)
-                add(s.posYBinding)
-            }
-            if (s.doubleTapBinding >= 0) add(s.doubleTapBinding)
-        }
-        for (d in dpads) {
-            add(d.upBinding)
-            add(d.downBinding)
-            add(d.leftBinding)
-            add(d.rightBinding)
-        }
-        for (rm in radialMenus) {
-            for (seg in rm.segments) {
-                if (seg.bindingType == "action") add(seg.binding)
-            }
-            if (rm.centerBinding >= 0) add(rm.centerBinding)
-        }
-        return counts
-    }
-
     companion object {
         fun fromJson(j: JSONObject): TouchLayout {
             fun <T> parseArray(

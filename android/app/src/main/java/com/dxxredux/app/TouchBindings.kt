@@ -42,21 +42,13 @@ object TouchBindings {
     }
 
     /**
-     * Offset added to kc_joystick[] indices when sending touch button events
-     * via nativeJoystickButton, to avoid collisions with physical controller
-     * button numbers.  Shared constant with C (kconfig.c TOUCH_BTN_OFFSET).
+     * Base offset for mixer-dispatched button IDs sent to JNI.
+     * Mixer sends button = MIXER_BTN_BASE + kc_joystick_index.
+     * Avoids collisions with C-generated axis-button SDL indices (10-21)
+     * and D-pad button indices (22-25).  Pilot file stores matching values
+     * so the C kconfig handler matches: kc_joystick[i].value == btn.
      */
-    const val TOUCH_BTN_OFFSET = 128
-
-    /**
-     * Second touch binding offset.  When two touch controls share the same
-     * binding, the first uses TOUCH_BTN_OFFSET and the second uses this.
-     * Shared constant with C (kconfig.c TOUCH_BTN_OFFSET_2).
-     */
-    const val TOUCH_BTN_OFFSET_2 = 256
-
-    /** Maximum number of touch controls that can share the same binding. */
-    const val MAX_TOUCH_BINDINGS_PER_ACTION = 2
+    const val MIXER_BTN_BASE = 100
 
     // --- Virtual (overlay-only) bindings -- not sent as joystick buttons ---
     const val BTN_CHEATS_MENU = 100

@@ -258,6 +258,7 @@ class MainActivity :
     private var isMultiplayerGame = false
     private var lastTrackNum = -1 // for detecting track changes in polling
     private var gyroManager: GyroInputManager? = null
+    private var gameVariantId = "d2" // "d1" or "d2", set in onCreate
 
     // Controller meta-action bindings: SDL button index → meta action ID
     private var buttonMetaBindings = mapOf<Int, Int>()
@@ -269,6 +270,13 @@ class MainActivity :
     // Loaded from controller_config.json; used in onGenericMotionEvent()
     private var halfAxisCombiners = emptyList<Triple<Int, Int, Int>>()
     private val rawAxisValues = FloatArray(6) // LX, LY, RX, RY, LT, RT
+
+    // Input mixer: combines button/axis from touch, controller, gyro
+    private lateinit var inputMixer: InputMixer
+
+    // Mixer button map: SDL button index → list of kc_joystick action indices
+    // Loaded from controller_config.json mixer_button_map_d1/d2
+    private var mixerButtonMap = mapOf<Int, List<Int>>()
 
     // ── Left-edge fling detection (→ setup screen) ────────────────────
     private lateinit var edgeFlingDetector: android.view.GestureDetector
@@ -297,6 +305,7 @@ class MainActivity :
 
         // Load the correct game library based on the launcher's selection
         val game = intent.getStringExtra("game") ?: "d2"
+        gameVariantId = game
         val libName = if (game == "d1") "dxx-redux-d1" else "dxx-redux-d2"
         System.loadLibrary(libName)
         Log.i("MainActivity", "Loaded native library: $libName")
@@ -403,26 +412,32 @@ class MainActivity :
         touchOverlay = TouchOverlayView(this)
         val layout = TouchLayoutRepository.load(this)
         touchOverlay.setLayout(layout)
-        touchOverlay.axisCallback = { axis, value -> nativeJoystickAxis(axis, value) }
+
+        // Input mixer: combines button/axis inputs from touch, controller, gyro
+        inputMixer =
+            InputMixer(
+                buttonCallback = { btn, pressed ->
+                    nativeJoystickButton(TouchBindings.MIXER_BTN_BASE + btn, pressed)
+                },
+                axisCallback = { axis, value -> nativeJoystickAxis(axis, value) },
+            )
+        touchOverlay.inputMixer = inputMixer
+        touchOverlay.axisCallback = { axis, value ->
+            inputMixer.setAxis(axis, "touch", value)
+        }
 
         // Gyro aiming
         if (layout.gyro.enabled) {
             val gm = GyroInputManager(this)
             gm.setConfig(layout.gyro)
-            gm.axisCallback = { axis, value -> nativeJoystickAxis(axis, value) }
+            gm.axisCallback = { axis, value ->
+                inputMixer.setAxis(axis, "gyro", value)
+            }
             gm.diagnosticCallback = { yaw, pitch, roll ->
                 touchOverlay.updateGyroDiagnostic(yaw, pitch, roll)
             }
             touchOverlay.gyroManager = gm
             gyroManager = gm
-        }
-        touchOverlay.buttonCallback = { button, pressed ->
-            if (button >= TouchBindings.META_ACTION_OFFSET) {
-                NativeMetaActions.nativeMetaAction(button, if (pressed) 1 else 0)
-            } else {
-                // button already includes TOUCH_BTN_OFFSET or TOUCH_BTN_OFFSET_2
-                nativeJoystickButton(button, if (pressed) 1 else 0)
-            }
         }
         touchOverlay.metaActionCallback = { actionId, pressed ->
             NativeMetaActions.nativeMetaAction(actionId, if (pressed) 1 else 0)
@@ -1374,6 +1389,20 @@ class MainActivity :
                 }
                 halfAxisCombiners = list
             }
+            // Mixer button map: SDL button → list of kc_joystick action indices
+            val mapKey =
+                if (gameVariantId == "d1") "mixer_button_map_d1" else "mixer_button_map_d2"
+            if (json.has(mapKey)) {
+                val mapObj = json.getJSONObject(mapKey)
+                val result = mutableMapOf<Int, List<Int>>()
+                for (key in mapObj.keys()) {
+                    val sdlBtn = key.toIntOrNull() ?: continue
+                    val arr = mapObj.getJSONArray(key)
+                    val indices = (0 until arr.length()).map { arr.getInt(it) }
+                    result[sdlBtn] = indices
+                }
+                mixerButtonMap = result
+            }
         } catch (e: Exception) {
             Log.w("MainActivity", "Failed to load meta bindings", e)
         }
@@ -1389,20 +1418,27 @@ class MainActivity :
             else -> -1
         }
 
-    /** Dispatch a d-pad event, using meta action if bound, else joystick button.
+    /** Dispatch a d-pad event, using meta action if bound, else mixer.
      *  D-pad virtual button indices: DUp=22, DDown=23, DLeft=24, DRight=25.
      *  Shared constant with joy.c D-pad button registration. */
     private fun dispatchDpad(
         keyCode: Int,
         action: Int,
     ) {
+        val pressed = action == 0
         val metaId = dpadMetaBindings[keyCode]
         if (metaId != null) {
-            NativeMetaActions.nativeMetaAction(metaId, if (action == 0) 1 else 0)
+            NativeMetaActions.nativeMetaAction(metaId, if (pressed) 1 else 0)
         } else {
             val btnIdx = dpadKeyCodeToJoyButton(keyCode)
             if (btnIdx >= 0) {
-                nativeJoystickButton(btnIdx, if (action == 0) 1 else 0)
+                val tag = "ctrl:dpad$keyCode"
+                val kcIndices = mixerButtonMap[btnIdx]
+                if (kcIndices != null) {
+                    for (kc in kcIndices) inputMixer.setButton(kc, tag, pressed)
+                } else {
+                    nativeJoystickButton(btnIdx, if (pressed) 1 else 0)
+                }
             }
         }
     }
@@ -1442,14 +1478,20 @@ class MainActivity :
             return super.onKeyDown(keyCode, event)
         }
 
-        // Gamepad face / shoulder buttons → joystick button events
+        // Gamepad face / shoulder buttons → mixer or meta action
         val joyBtn = gamepadButtonIndex(keyCode)
         if (joyBtn >= 0) {
             val metaId = buttonMetaBindings[joyBtn]
             if (metaId != null) {
                 NativeMetaActions.nativeMetaAction(metaId, 1)
             } else {
-                nativeJoystickButton(joyBtn, 1)
+                val tag = "ctrl:btn$joyBtn"
+                val kcIndices = mixerButtonMap[joyBtn]
+                if (kcIndices != null) {
+                    for (kc in kcIndices) inputMixer.setButton(kc, tag, true)
+                } else {
+                    nativeJoystickButton(joyBtn, 1)
+                }
             }
             return true
         }
@@ -1479,7 +1521,13 @@ class MainActivity :
             if (metaId != null) {
                 NativeMetaActions.nativeMetaAction(metaId, 0)
             } else {
-                nativeJoystickButton(joyBtn, 0)
+                val tag = "ctrl:btn$joyBtn"
+                val kcIndices = mixerButtonMap[joyBtn]
+                if (kcIndices != null) {
+                    for (kc in kcIndices) inputMixer.setButton(kc, tag, false)
+                } else {
+                    nativeJoystickButton(joyBtn, 0)
+                }
             }
             return true
         }
@@ -1501,14 +1549,14 @@ class MainActivity :
         if (event.source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK &&
             event.action == MotionEvent.ACTION_MOVE
         ) {
-            nativeJoystickAxis(0, event.getAxisValue(MotionEvent.AXIS_X))
-            nativeJoystickAxis(1, event.getAxisValue(MotionEvent.AXIS_Y))
-            nativeJoystickAxis(2, event.getAxisValue(MotionEvent.AXIS_Z))
-            nativeJoystickAxis(3, event.getAxisValue(MotionEvent.AXIS_RZ))
+            inputMixer.setAxis(0, "ctrl", event.getAxisValue(MotionEvent.AXIS_X))
+            inputMixer.setAxis(1, "ctrl", event.getAxisValue(MotionEvent.AXIS_Y))
+            inputMixer.setAxis(2, "ctrl", event.getAxisValue(MotionEvent.AXIS_Z))
+            inputMixer.setAxis(3, "ctrl", event.getAxisValue(MotionEvent.AXIS_RZ))
             val lt = event.getAxisValue(MotionEvent.AXIS_LTRIGGER)
             val rt = event.getAxisValue(MotionEvent.AXIS_RTRIGGER)
-            nativeJoystickAxis(4, lt)
-            nativeJoystickAxis(5, rt)
+            inputMixer.setAxis(4, "ctrl", lt)
+            inputMixer.setAxis(5, "ctrl", rt)
             rawAxisValues[0] = event.getAxisValue(MotionEvent.AXIS_X)
             rawAxisValues[1] = event.getAxisValue(MotionEvent.AXIS_Y)
             rawAxisValues[2] = event.getAxisValue(MotionEvent.AXIS_Z)
@@ -1519,7 +1567,7 @@ class MainActivity :
             for ((virt, posSource, negSource) in halfAxisCombiners) {
                 val pos = if (posSource in 0..5) rawAxisValues[posSource] else 0f
                 val neg = if (negSource in 0..5) rawAxisValues[negSource] else 0f
-                nativeJoystickAxis(virt, (pos - neg).coerceIn(-1f, 1f))
+                inputMixer.setAxis(virt, "ctrl:half", (pos - neg).coerceIn(-1f, 1f))
             }
 
             // D-pad reported as HAT axes → synthesize keyboard arrow keys

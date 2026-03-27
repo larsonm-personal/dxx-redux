@@ -28,8 +28,8 @@ import kotlin.math.sin
  * Left side  – virtual analog stick (yaw / pitch)
  * Right side – two fire buttons (primary = button 0, secondary = button 1)
  *
- * axis values  → [axisCallback]   → nativeJoystickAxis()
- * button press → [buttonCallback] → nativeJoystickButton()
+ * axis values  → [axisCallback]   → InputMixer → nativeJoystickAxis()
+ * button press → InputMixer.setButton() → nativeJoystickButton()
  *
  * The overlay only draws/responds when [isActive] is true
  * (controlled by the in-game state polling in MainActivity).
@@ -43,8 +43,8 @@ class TouchOverlayView
         /** Called with (axisIndex, value) when the stick moves. */
         var axisCallback: ((Int, Float) -> Unit)? = null
 
-        /** Called with (buttonIndex, pressed) when a fire button is touched/released. */
-        var buttonCallback: ((Int, Boolean) -> Unit)? = null
+        /** Input mixer for OR-combining button states from multiple sources. */
+        var inputMixer: InputMixer? = null
 
         /** Called with (metaActionId, pressed) for meta action dispatch. */
         var metaActionCallback: ((Int, Boolean) -> Unit)? = null
@@ -226,42 +226,22 @@ class TouchOverlayView
         private val diagnosticStates = mutableListOf<DiagnosticState>()
         private val axisRegionStates = mutableListOf<AxisRegionState>()
 
-        // Track how many touch sources currently hold each binding via the primary
-        // offset (TOUCH_BTN_OFFSET).  When a second source presses the same binding
-        // while one is already held, it uses TOUCH_BTN_OFFSET_2 instead.  This
-        // gives each concurrent touch source its own state bit in the C engine.
-        private val touchPrimaryRefs = mutableMapOf<Int, Int>()
-
         /**
-         * Dispatch a touch button event with automatic primary/secondary offset.
-         * Standard button bindings get TOUCH_BTN_OFFSET or TOUCH_BTN_OFFSET_2
-         * added so the C engine can assign independent state bits.  Meta actions
-         * are forwarded unchanged.
+         * Dispatch a touch button event through the InputMixer.
+         * Meta actions bypass the mixer and go to metaActionCallback.
+         * [sourceTag] uniquely identifies the touch control so the mixer can
+         * OR-combine multiple simultaneous sources for the same binding.
          */
         private fun dispatchTouchButton(
             binding: Int,
             pressed: Boolean,
+            sourceTag: String = "touch",
         ) {
             if (TouchBindings.isMetaAction(binding)) {
-                buttonCallback?.invoke(binding, pressed)
+                metaActionCallback?.invoke(binding, pressed)
                 return
             }
-            val refs = touchPrimaryRefs.getOrDefault(binding, 0)
-            if (pressed) {
-                if (refs == 0) {
-                    touchPrimaryRefs[binding] = 1
-                    buttonCallback?.invoke(binding + TouchBindings.TOUCH_BTN_OFFSET, true)
-                } else {
-                    buttonCallback?.invoke(binding + TouchBindings.TOUCH_BTN_OFFSET_2, true)
-                }
-            } else {
-                if (refs > 0) {
-                    touchPrimaryRefs[binding] = refs - 1
-                    buttonCallback?.invoke(binding + TouchBindings.TOUCH_BTN_OFFSET, false)
-                } else {
-                    buttonCallback?.invoke(binding + TouchBindings.TOUCH_BTN_OFFSET_2, false)
-                }
-            }
+            inputMixer?.setButton(binding, sourceTag, pressed)
         }
 
         // Gyro diagnostic values (updated in real time via GyroInputManager)
@@ -1351,12 +1331,14 @@ class TouchOverlayView
                                     if (b.control.binding == TouchBindings.BTN_AUTOMAP) {
                                         if (b.toggled) mapButtonCallback?.invoke()
                                     } else {
-                                        dispatchTouchButton(b.control.binding, b.toggled)
+                                        val tag = "touch:btn${buttonStates.indexOf(b)}"
+                                        dispatchTouchButton(b.control.binding, b.toggled, tag)
                                     }
                                 } else {
                                     // Non-toggle: press on down (MAP fires on release only)
                                     if (b.control.binding != TouchBindings.BTN_AUTOMAP) {
-                                        dispatchTouchButton(b.control.binding, true)
+                                        val tag = "touch:btn${buttonStates.indexOf(b)}"
+                                        dispatchTouchButton(b.control.binding, true, tag)
                                     }
                                 }
                                 if (b.control.hapticFeedback) {
@@ -1885,10 +1867,11 @@ class TouchOverlayView
 
             if (s.control.buttonMode) {
                 // Button mode: fire press/release based on direction past deadzone
-                dispatchStickButton(s, rawX < 0f, s.xNegPressed, s.control.negXBinding) { s.xNegPressed = it }
-                dispatchStickButton(s, rawX > 0f, s.xPosPressed, s.control.posXBinding) { s.xPosPressed = it }
-                dispatchStickButton(s, rawY < 0f, s.yNegPressed, s.control.negYBinding) { s.yNegPressed = it }
-                dispatchStickButton(s, rawY > 0f, s.yPosPressed, s.control.posYBinding) { s.yPosPressed = it }
+                val tag = "touch:sbtn${stickStates.indexOf(s)}"
+                dispatchStickButton(s, rawX < 0f, s.xNegPressed, s.control.negXBinding, tag) { s.xNegPressed = it }
+                dispatchStickButton(s, rawX > 0f, s.xPosPressed, s.control.posXBinding, tag) { s.xPosPressed = it }
+                dispatchStickButton(s, rawY < 0f, s.yNegPressed, s.control.negYBinding, tag) { s.yNegPressed = it }
+                dispatchStickButton(s, rawY > 0f, s.yPosPressed, s.control.posYBinding, tag) { s.yPosPressed = it }
             } else {
                 axisCallback?.invoke(s.control.axisX, rawX)
                 axisCallback?.invoke(s.control.axisY, rawY)
@@ -1900,13 +1883,16 @@ class TouchOverlayView
 
         /** Fire a double-tap binding with a delayed release so the press survives
          *  at least one game frame (fixes fire-primary which uses level-triggered state). */
-        private fun fireDoubleTapPulse(binding: Int) {
+        private fun fireDoubleTapPulse(
+            binding: Int,
+            sourceTag: String = "touch:dtap",
+        ) {
             if (TouchBindings.isMetaAction(binding)) {
                 metaActionCallback?.invoke(binding, true)
                 mainHandler.postDelayed({ metaActionCallback?.invoke(binding, false) }, DOUBLE_TAP_RELEASE_DELAY_MS)
             } else {
-                dispatchTouchButton(binding, true)
-                mainHandler.postDelayed({ dispatchTouchButton(binding, false) }, DOUBLE_TAP_RELEASE_DELAY_MS)
+                dispatchTouchButton(binding, true, sourceTag)
+                mainHandler.postDelayed({ dispatchTouchButton(binding, false, sourceTag) }, DOUBLE_TAP_RELEASE_DELAY_MS)
             }
         }
 
@@ -1914,11 +1900,12 @@ class TouchOverlayView
         private fun setDoubleTapLatch(
             binding: Int,
             pressed: Boolean,
+            sourceTag: String = "touch:dtap",
         ) {
             if (TouchBindings.isMetaAction(binding)) {
                 metaActionCallback?.invoke(binding, pressed)
             } else {
-                dispatchTouchButton(binding, pressed)
+                dispatchTouchButton(binding, pressed, sourceTag)
             }
         }
 
@@ -1926,26 +1913,27 @@ class TouchOverlayView
         private fun handleDoubleTap(s: StickState) {
             val binding = s.control.doubleTapBinding
             if (binding < 0) return
+            val tag = "touch:dtap${stickStates.indexOf(s)}"
             when (s.control.doubleTapMode) {
-                DoubleTapMode.REPEAT_FIRE -> fireDoubleTapPulse(binding)
+                DoubleTapMode.REPEAT_FIRE -> fireDoubleTapPulse(binding, tag)
                 DoubleTapMode.SINGLE_FIRE -> {
                     // Only fire on even tap counts (every second tap in the double-tap window)
-                    if (s.tapCount % 2 == 0) fireDoubleTapPulse(binding)
+                    if (s.tapCount % 2 == 0) fireDoubleTapPulse(binding, tag)
                 }
                 DoubleTapMode.LATCH_DOUBLE -> {
                     s.dtLatched = !s.dtLatched
-                    setDoubleTapLatch(binding, s.dtLatched)
+                    setDoubleTapLatch(binding, s.dtLatched, tag)
                     invalidate()
                 }
                 DoubleTapMode.LATCH_SINGLE -> {
                     if (!s.dtLatched) {
                         s.dtLatched = true
-                        setDoubleTapLatch(binding, true)
+                        setDoubleTapLatch(binding, true, tag)
                         invalidate()
                     } else {
                         // Double-tap while latched also releases
                         s.dtLatched = false
-                        setDoubleTapLatch(binding, false)
+                        setDoubleTapLatch(binding, false, tag)
                         invalidate()
                     }
                 }
@@ -1958,8 +1946,9 @@ class TouchOverlayView
             if (!s.dtLatched) return
             val binding = s.control.doubleTapBinding
             if (binding < 0) return
+            val tag = "touch:dtap${stickStates.indexOf(s)}"
             s.dtLatched = false
-            setDoubleTapLatch(binding, false)
+            setDoubleTapLatch(binding, false, tag)
             invalidate()
         }
 
@@ -1968,6 +1957,7 @@ class TouchOverlayView
             nowPressed: Boolean,
             wasPressed: Boolean,
             binding: Int,
+            sourceTag: String,
             updateState: (Boolean) -> Unit,
         ) {
             if (nowPressed == wasPressed) return
@@ -1975,7 +1965,7 @@ class TouchOverlayView
             if (TouchBindings.isMetaAction(binding)) {
                 metaActionCallback?.invoke(binding, nowPressed)
             } else {
-                dispatchTouchButton(binding, nowPressed)
+                dispatchTouchButton(binding, nowPressed, sourceTag)
             }
         }
 
@@ -1991,10 +1981,11 @@ class TouchOverlayView
         private fun resetStick(s: StickState) {
             // Release any held button-mode directions
             if (s.control.buttonMode) {
-                dispatchStickButton(s, false, s.xNegPressed, s.control.negXBinding) { s.xNegPressed = it }
-                dispatchStickButton(s, false, s.xPosPressed, s.control.posXBinding) { s.xPosPressed = it }
-                dispatchStickButton(s, false, s.yNegPressed, s.control.negYBinding) { s.yNegPressed = it }
-                dispatchStickButton(s, false, s.yPosPressed, s.control.posYBinding) { s.yPosPressed = it }
+                val tag = "touch:sbtn${stickStates.indexOf(s)}"
+                dispatchStickButton(s, false, s.xNegPressed, s.control.negXBinding, tag) { s.xNegPressed = it }
+                dispatchStickButton(s, false, s.xPosPressed, s.control.posXBinding, tag) { s.xPosPressed = it }
+                dispatchStickButton(s, false, s.yNegPressed, s.control.negYBinding, tag) { s.yNegPressed = it }
+                dispatchStickButton(s, false, s.yPosPressed, s.control.posYBinding, tag) { s.yPosPressed = it }
             }
             // Clear mouse-mode pending drag
             if (s.control.mouseMode) {
@@ -2120,7 +2111,8 @@ class TouchOverlayView
                     if (b.control.binding == TouchBindings.BTN_AUTOMAP) {
                         if (fired) mapButtonCallback?.invoke()
                     } else {
-                        dispatchTouchButton(b.control.binding, false)
+                        val tag = "touch:btn${buttonStates.indexOf(b)}"
+                        dispatchTouchButton(b.control.binding, false, tag)
                     }
                 }
                 invalidate()
@@ -2197,8 +2189,8 @@ class TouchOverlayView
                     metaActionCallback?.invoke(binding, true)
                     metaActionCallback?.invoke(binding, false)
                 } else if (isAction) {
-                    dispatchTouchButton(binding, true)
-                    dispatchTouchButton(binding, false)
+                    dispatchTouchButton(binding, true, "touch:radial")
+                    dispatchTouchButton(binding, false, "touch:radial")
                 } else {
                     val unicode = keycodeToUnicode(binding)
                     keyCallback?.invoke(0, binding, unicode)

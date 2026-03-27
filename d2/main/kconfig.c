@@ -58,21 +58,12 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 #ifdef ANDROID
-/* Touch overlay buttons use SDL button numbers >= 128 (col1 kc index + 128).
- * A second touch binding for the same action uses TOUCH_BTN_OFFSET_2 (256).
- * Shared constants with Kotlin TouchBindings.TOUCH_BTN_OFFSET / _2. */
-#define TOUCH_BTN_OFFSET   128
-#define TOUCH_BTN_OFFSET_2 256
-/* Match a BT_JOY_BUTTON entry against an SDL button number.
- * On Android, also match touch overlay buttons implicitly via index. */
-#define JOY_BTN_MATCHES(idx, btn) \
-	((kc_joystick[idx].value == (btn)) || \
-	 ((idx) + TOUCH_BTN_OFFSET == (btn)) || \
-	 ((idx) + TOUCH_BTN_OFFSET_2 == (btn)))
-#else
+/* Legacy touch overlay offsets -- the InputMixer in Kotlin now handles
+ * multi-source button combining.  Mixer sends MIXER_BTN_BASE + kc_index
+ * which matches via the normal kc_joystick[i].value == btn path. */
+#endif
 #define JOY_BTN_MATCHES(idx, btn) \
 	(kc_joystick[idx].value == (btn))
-#endif
 
 vms_vector ExtForceVec;
 vms_matrix ExtApplyForceMatrix;
@@ -114,10 +105,6 @@ fix Cruise_speed=0;
 #define STATE_BIT3		4
 #define STATE_BIT4		8
 #define STATE_BIT5		16
-#ifdef ANDROID
-#define STATE_BIT6		32	/* touch primary */
-#define STATE_BIT7		64	/* touch secondary */
-#endif
 
 #define INFO_Y (188)
 
@@ -1412,17 +1399,6 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 					if (kc_joystick[i].ci_state_ptr != NULL)
 					{
 						int bit = kc_joystick[i].state_bit;
-#ifdef ANDROID
-						/* Touch buttons get dedicated state bits so they
-						 * don't interfere with physical gamepad bindings */
-						{
-							int btn = event_joystick_get_button(event);
-							if (btn >= TOUCH_BTN_OFFSET_2)
-								bit = STATE_BIT7;
-							else if (btn >= TOUCH_BTN_OFFSET)
-								bit = STATE_BIT6;
-						}
-#endif
 						if (event->type==EVENT_JOYSTICK_BUTTON_DOWN)
 							*kc_joystick[i].ci_state_ptr |= bit;
 						else

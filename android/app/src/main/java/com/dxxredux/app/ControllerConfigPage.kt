@@ -430,14 +430,20 @@ private fun buildJoyPairs(
         combiners.add(Triple(virtualAxis, posSource, negSource))
     }
 
+    // Set identity values for all col1 button slots so the mixer can
+    // activate any action via MIXER_BTN_BASE + kc_index.  The InputMixer
+    // handles the physical-button-to-action translation in Kotlin.
+    for (kcIdx in btnKcMap.values) {
+        indices.add(kcIdx)
+        values.add(TouchBindings.MIXER_BTN_BASE + kcIdx)
+    }
+
     // Normal button and axis bindings (skip those handled as half-axis)
     for ((controlId, funcLabel) in bindings) {
         if (controlId in handledAsHalfAxis) continue
         val btnKcIdx = btnKcMap[funcLabel]
-        val btnSdlId = BUTTON_CONTROLS[controlId]
-        if (btnKcIdx != null && btnSdlId != null) {
-            indices.add(btnKcIdx)
-            values.add(btnSdlId)
+        // Face buttons: skip, identity mapping + mixer_button_map handles them
+        if (btnKcIdx != null && BUTTON_CONTROLS[controlId] != null) {
             continue
         }
         val axisKcIdx = AXIS_KC_INDEX[funcLabel]
@@ -462,11 +468,10 @@ private fun buildJoyPairs(
         }
     }
     for ((controlId, funcLabel) in bindings) {
-        val dpadBtnIdx = DPAD_CONTROLS[controlId]
         val dpadKcIdx = btnKcMap[funcLabel]
-        if (dpadBtnIdx != null && dpadKcIdx != null) {
-            indices.add(dpadKcIdx)
-            values.add(dpadBtnIdx)
+        // D-pad: skip, identity mapping + mixer_button_map handles them
+        if (DPAD_CONTROLS[controlId] != null && dpadKcIdx != null) {
+            continue
         }
     }
 
@@ -644,6 +649,35 @@ internal fun saveConfig(
         }
         json.put("half_axis_combiners", combArr)
     }
+
+    // Mixer button map: SDL button → [kc_joystick indices]
+    // Used by MainActivity to translate physical button presses to game actions.
+    fun buildMixerButtonMap(variant: String): JSONObject {
+        val kcMap = buttonKcIndex(variant)
+        val result = JSONObject()
+        for ((controlId, funcLabel) in bindings) {
+            val kcIdx = kcMap[funcLabel] ?: continue
+            val sdlBtn = BUTTON_CONTROLS[controlId]
+            if (sdlBtn != null) {
+                val arr =
+                    result.optJSONArray(sdlBtn.toString())
+                        ?: JSONArray().also { result.put(sdlBtn.toString(), it) }
+                arr.put(kcIdx)
+                continue
+            }
+            val dpadBtn = DPAD_CONTROLS[controlId]
+            if (dpadBtn != null) {
+                val arr =
+                    result.optJSONArray(dpadBtn.toString())
+                        ?: JSONArray().also { result.put(dpadBtn.toString(), it) }
+                arr.put(kcIdx)
+                continue
+            }
+        }
+        return result
+    }
+    json.put("mixer_button_map_d1", buildMixerButtonMap("d1"))
+    json.put("mixer_button_map_d2", buildMixerButtonMap("d2"))
 
     File(context.filesDir, CONFIG_FILENAME).writeText(json.toString(2))
 

@@ -1,17 +1,17 @@
 // TEST: D-pad and Trigger Button Mapping Regression
-// Verifies that D-pad button presses and trigger axis-buttons reach the
-// correct game controls on a fresh pilot with default bindings.
+// Verifies that D-pad/slide button presses and trigger axis-buttons reach
+// the correct game controls on a fresh pilot with default bindings.
 //
-// Phase 1: D-pad -- press each D-pad button and verify the correct
-//          slide/control timing value becomes nonzero.
+// Phase 1: D-pad/Slide -- send MIXER_BTN_BASE + kc_index for each slide
+//          direction and verify the correct control timing value becomes
+//          nonzero.  (In the mixer architecture, D-pad buttons are dispatched
+//          through Kotlin InputMixer as MIXER_BTN_BASE + kc_joystick_index.)
 // Phase 2: Triggers -- send LT/RT axis values and verify the correct
-//          thrust timing (forward/reverse) becomes nonzero.
-//          After the joy_axisbutton_handler fix, positive axis motion
-//          should fire the "+" button (19 for LT, 21 for RT).
+//          thrust timing (forward/reverse) becomes nonzero via axis-button
+//          threshold detection in C.
 // Phase 3: Button defaults -- static assertions that the fresh-pilot
-//          controller_config.json wrote game-correct kconfig indices.
-//          Catches the D1/D2 config byte-array mismatch bug where D1
-//          loaded D2-format indices (Automap=3/Y instead of 6/Select).
+//          controller_config.json wrote game-correct MIXER_BTN_BASE + kc_index
+//          identity values for all col1 button slots.
 //
 // Root causes this catches:
 //   1. D-pad button_map[] not set: joy_button_handler() maps button 22-25
@@ -71,48 +71,52 @@
     // ── Phase 1: D-pad buttons ──────────────────────────────────────────
     // Pattern: hold button -> wait for kconfig to process -> assert -> release
 
-    // 1a: DUp (button 22) should cause Slide Up (vertical_thrust_time != 0)
-    {"action": "log", "message": "Phase 1a: DUp (button 22) -> Slide Up"},
-    {"action": "send_button", "button": 22, "held": 1},
+    // In the mixer architecture, D-pad buttons go through Kotlin InputMixer.
+    // send_button injects at the SDL/C level, so we use MIXER_BTN_BASE + kc_index.
+    // MIXER_BTN_BASE = 100.  kc indices: Slide Up=8, Down=9, Left=6, Right=7.
+
+    // 1a: Slide Up (kc=8, button 108) should cause vertical_thrust_time != 0
+    {"action": "log", "message": "Phase 1a: Slide Up (button 108) -> Slide Up"},
+    {"action": "send_button", "button": 108, "held": 1},
     {"action": "wait_ms", "ms": 300},
     {"action": "assert", "expect": {
         "slide_ud_time": {"ne": 0}
     }},
-    {"action": "send_button", "button": 22, "pressed": 0},
-    {"action": "log", "message": "Phase 1a: PASS -- DUp drives slide up"},
+    {"action": "send_button", "button": 108, "pressed": 0},
+    {"action": "log", "message": "Phase 1a: PASS -- Slide Up drives slide up"},
     {"action": "wait_ms", "ms": 200},
 
-    // 1b: DDn (button 23) should cause Slide Down
-    {"action": "log", "message": "Phase 1b: DDn (button 23) -> Slide Down"},
-    {"action": "send_button", "button": 23, "held": 1},
+    // 1b: Slide Down (kc=9, button 109)
+    {"action": "log", "message": "Phase 1b: Slide Down (button 109) -> Slide Down"},
+    {"action": "send_button", "button": 109, "held": 1},
     {"action": "wait_ms", "ms": 300},
     {"action": "assert", "expect": {
         "slide_ud_time": {"ne": 0}
     }},
-    {"action": "send_button", "button": 23, "pressed": 0},
-    {"action": "log", "message": "Phase 1b: PASS -- DDn drives slide down"},
+    {"action": "send_button", "button": 109, "pressed": 0},
+    {"action": "log", "message": "Phase 1b: PASS -- Slide Down drives slide down"},
     {"action": "wait_ms", "ms": 200},
 
-    // 1c: DLt (button 24) should cause Slide Left
-    {"action": "log", "message": "Phase 1c: DLt (button 24) -> Slide Left"},
-    {"action": "send_button", "button": 24, "held": 1},
+    // 1c: Slide Left (kc=6, button 106)
+    {"action": "log", "message": "Phase 1c: Slide Left (button 106) -> Slide Left"},
+    {"action": "send_button", "button": 106, "held": 1},
     {"action": "wait_ms", "ms": 300},
     {"action": "assert", "expect": {
         "slide_lr_time": {"ne": 0}
     }},
-    {"action": "send_button", "button": 24, "pressed": 0},
-    {"action": "log", "message": "Phase 1c: PASS -- DLt drives slide left"},
+    {"action": "send_button", "button": 106, "pressed": 0},
+    {"action": "log", "message": "Phase 1c: PASS -- Slide Left drives slide left"},
     {"action": "wait_ms", "ms": 200},
 
-    // 1d: DRt (button 25) should cause Slide Right
-    {"action": "log", "message": "Phase 1d: DRt (button 25) -> Slide Right"},
-    {"action": "send_button", "button": 25, "held": 1},
+    // 1d: Slide Right (kc=7, button 107)
+    {"action": "log", "message": "Phase 1d: Slide Right (button 107) -> Slide Right"},
+    {"action": "send_button", "button": 107, "held": 1},
     {"action": "wait_ms", "ms": 300},
     {"action": "assert", "expect": {
         "slide_lr_time": {"ne": 0}
     }},
-    {"action": "send_button", "button": 25, "pressed": 0},
-    {"action": "log", "message": "Phase 1d: PASS -- DRt drives slide right"},
+    {"action": "send_button", "button": 107, "pressed": 0},
+    {"action": "log", "message": "Phase 1d: PASS -- Slide Right drives slide right"},
     {"action": "wait_ms", "ms": 200},
 
     // ── Phase 2: Trigger axis-buttons ───────────────────────────────────
@@ -140,36 +144,39 @@
 
     // ── Phase 3: Button binding defaults ────────────────────────────────
     // Assert that the fresh pilot has the correct button<->action mappings.
+    // With identity mapping, pilot stores MIXER_BTN_BASE(100) + kc_index.
     // D1 and D2 have different kconfig index layouts, so these assertions
     // verify the game-specific byte array was used (not the wrong variant).
     //
-    // D2 layout: index 27=Afterburner, 28=CyclePri, 29=CycleSec, 50=Automap
-    // D1 layout: index 27=Automap, 44=CyclePri, 45=CycleSec
+    // D2: Fire Flare kc=4 val=104, Afterburner kc=27 val=127,
+    //     CyclePri kc=28 val=128, CycleSec kc=29 val=129, Automap kc=50 val=150
+    // D1: Automap kc=27 val=127, CyclePri kc=44 val=144, CycleSec kc=45 val=145
 
-    // Fire Flare = X (button 2) -- same index in both games
+    // Fire Flare (kc=4) -- same index in both games
     {"action": "log", "message": "Phase 3: Button binding defaults"},
     {"action": "assert", "expect": {
-        "joystick_controls.items[4].value": {"eq": "2"},
+        "joystick_controls.items[4].value": {"eq": "104"},
         "joystick_controls.items[4].name": {"eq": "Fire flare"}
     }},
 
-    // D2-only: Afterburner=Y(3), CyclePri=L1(4), CycleSec=R1(5), Automap=Select(6)
+    // D2-only: Afterburner(kc=27,val=127), CyclePri(kc=28,val=128),
+    //          CycleSec(kc=29,val=129), Automap(kc=50,val=150)
     {"action": "assert", "when": "d2", "expect": {
-        "joystick_controls.items[27].value": {"eq": "3"},
+        "joystick_controls.items[27].value": {"eq": "127"},
         "joystick_controls.items[27].name": {"eq": "Afterburner"},
-        "joystick_controls.items[28].value": {"eq": "4"},
-        "joystick_controls.items[29].value": {"eq": "5"},
-        "joystick_controls.items[50].value": {"eq": "6"},
+        "joystick_controls.items[28].value": {"eq": "128"},
+        "joystick_controls.items[29].value": {"eq": "129"},
+        "joystick_controls.items[50].value": {"eq": "150"},
         "joystick_controls.items[50].name": {"eq": "Automap"}
     }},
 
-    // D1-only: Automap=Select(6), CyclePri=L1(4), CycleSec=R1(5)
+    // D1-only: Automap(kc=27,val=127), CyclePri(kc=44,val=144), CycleSec(kc=45,val=145)
     {"action": "assert", "when": "d1", "expect": {
-        "joystick_controls.items[27].value": {"eq": "6"},
+        "joystick_controls.items[27].value": {"eq": "127"},
         "joystick_controls.items[27].name": {"eq": "Automap"},
-        "joystick_controls.items[44].value": {"eq": "4"},
+        "joystick_controls.items[44].value": {"eq": "144"},
         "joystick_controls.items[44].name": {"eq": "Cycle Primary"},
-        "joystick_controls.items[45].value": {"eq": "5"},
+        "joystick_controls.items[45].value": {"eq": "145"},
         "joystick_controls.items[45].name": {"eq": "Cycle Secondary"}
     }},
 

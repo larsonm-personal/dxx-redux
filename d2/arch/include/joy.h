@@ -17,6 +17,9 @@ struct d_event;
 #define MAX_AXES_PER_JOYSTICK		128
 #define MAX_BUTTONS_PER_JOYSTICK	128
 #define MAX_HATS_PER_JOYSTICK		4
+/* Kotlin InputMixer sends button = MIXER_BTN_BASE + kc_joystick_index.
+ * Shared constant with TouchBindings.kt MIXER_BTN_BASE. */
+#define MIXER_BTN_BASE				100
 #define JOY_MAX_AXES				(MAX_AXES_PER_JOYSTICK * MAX_JOYSTICKS)
 #define JOY_MAX_BUTTONS				(MAX_BUTTONS_PER_JOYSTICK * MAX_JOYSTICKS)
 

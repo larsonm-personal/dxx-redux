@@ -4,7 +4,7 @@
 // DOUBLE_TAP_RELEASE_DELAY_MS in the Kotlin overlay).
 //
 // The test fires primary 4 times with 50ms hold each and checks energy drops.
-// Button 128 = BTN_FIRE_PRIMARY (0) + TOUCH_BTN_OFFSET (128).
+// Button 100 = BTN_FIRE_PRIMARY (0) + MIXER_BTN_BASE (100).
 // Level 1 laser costs ~1 energy per shot, so 4 shots should reduce energy
 // from 100 to ~96.
 [
@@ -62,16 +62,16 @@
     {"action": "log", "message": "Initial energy >= 100 confirmed"},
 
     // Fire primary with 50ms hold (matching double-tap timing)
-    // Button 128 = BTN_FIRE_PRIMARY + TOUCH_BTN_OFFSET
+    // Button 100 = BTN_FIRE_PRIMARY + MIXER_BTN_BASE
     // Each shot costs ~0.25 energy at Trainee difficulty
     // Fire_wait for laser is ~500ms, so use 800ms gaps between presses
-    {"action": "send_button", "button": 128, "post_delay_ms": 50},
+    {"action": "send_button", "button": 100, "post_delay_ms": 50},
     {"action": "wait_ms", "ms": 800},
-    {"action": "send_button", "button": 128, "post_delay_ms": 50},
+    {"action": "send_button", "button": 100, "post_delay_ms": 50},
     {"action": "wait_ms", "ms": 800},
-    {"action": "send_button", "button": 128, "post_delay_ms": 50},
+    {"action": "send_button", "button": 100, "post_delay_ms": 50},
     {"action": "wait_ms", "ms": 800},
-    {"action": "send_button", "button": 128, "post_delay_ms": 50},
+    {"action": "send_button", "button": 100, "post_delay_ms": 50},
     {"action": "wait_ms", "ms": 800},
 
     // 4 shots at ~0.25 each = ~1.0 energy consumed → expect energy ~99.0

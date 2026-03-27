@@ -10,7 +10,7 @@
  *   Buttons: 0-9 = A,B,X,Y,L1,R1,Sel,Sta,L3,R3
  *            10-21 = axis-buttons (2 per axis, even=neg, odd=pos)
  *            22-25 = DUp,DDown,DLeft,DRight
- *            128+  = touch overlay (kcIndex + TOUCH_BTN_OFFSET)
+ *            100+  = InputMixer (MIXER_BTN_BASE + kc_joystick_index)
  *
  * See android_gamepad_config.cpp for how these IDs are stored in
  * PlayerCfg.KeySettings[1][] and build-919-fixes.md for full docs.
@@ -79,11 +79,11 @@ void joy_button_handler(SDL_JoyButtonEvent *jbe)
 	d_event_joystickbutton event;
 
 #ifdef ANDROID
-	/* Touch overlay sends button numbers >= 128 (kcIndex + TOUCH_BTN_OFFSET).
-	 * button_map[] is only MAX_BUTTONS_PER_JOYSTICK(128) elements, so bypass
-	 * the mapping for these — they are already the final button value.
-	 * button_state[] is JOY_MAX_BUTTONS(1024), so values up to ~182 are safe. */
-	if (jbe->button >= MAX_BUTTONS_PER_JOYSTICK)
+	/* InputMixer sends button = MIXER_BTN_BASE + kc_index (100-155).
+	 * button_map[] only has valid entries for physical indices 0-25,
+	 * so bypass the mapping for mixer buttons -- they are already
+	 * the final button value. */
+	if (jbe->button >= MIXER_BTN_BASE)
 		button = jbe->button;
 	else
 #endif
