@@ -16,6 +16,7 @@
 #include <SDL_mixer.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <physfs.h>
 
 #ifdef ANDROID
@@ -513,20 +514,41 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 	/* ── PCM path: OGG / MP3 / FLAC ─────────────────────────────────── */
 	if (!d_stricmp(fptr, ".ogg") || !d_stricmp(fptr, ".mp3") ||
 	    !d_stricmp(fptr, ".flac")) {
-		/* Load file via PhysFS into memory */
+		/* Load file into memory.  Try PhysFS first (game archives),
+		 * fall back to fopen for absolute paths (M3U jukebox entries). */
+		unsigned char *fbuf = NULL;
+		unsigned int fsize = 0;
 		PHYSFS_file *fh = PHYSFS_openRead(filename);
-		if (!fh) {
-			con_printf(CON_CRITICAL, "PCM: cannot open %s\n", filename);
-			return 0;
-		}
-		unsigned int fsize = (unsigned int) PHYSFS_fileLength(fh);
-		unsigned char *fbuf = (unsigned char *) malloc(fsize);
-		if (!fbuf) {
+		if (fh) {
+			fsize = (unsigned int) PHYSFS_fileLength(fh);
+			fbuf = (unsigned char *) malloc(fsize);
+			if (!fbuf) {
+				PHYSFS_close(fh);
+				return 0;
+			}
+			PHYSFS_read(fh, fbuf, 1, fsize);
 			PHYSFS_close(fh);
-			return 0;
+		} else {
+			FILE *fp = fopen(filename, "rb");
+			if (!fp) {
+				con_printf(CON_CRITICAL, "PCM: cannot open %s\n", filename);
+				return 0;
+			}
+			fseek(fp, 0, SEEK_END);
+			fsize = (unsigned int) ftell(fp);
+			fseek(fp, 0, SEEK_SET);
+			fbuf = (unsigned char *) malloc(fsize);
+			if (!fbuf) {
+				fclose(fp);
+				return 0;
+			}
+			if (fread(fbuf, 1, fsize, fp) != fsize) {
+				free(fbuf);
+				fclose(fp);
+				return 0;
+			}
+			fclose(fp);
 		}
-		PHYSFS_read(fh, fbuf, 1, fsize);
-		PHYSFS_close(fh);
 
 		/* Decode to raw PCM */
 		pcm_decode_result_t pcm;

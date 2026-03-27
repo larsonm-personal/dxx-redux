@@ -729,10 +729,19 @@ class TouchOverlayView
         ) {
             val eff = (gAlpha * s.control.opacity).coerceIn(0f, 1f)
 
+            val xLabel = TouchBindings.AXIS_LABELS[s.control.axisX] ?: "?"
+            val yLabel = TouchBindings.AXIS_LABELS[s.control.axisY] ?: "?"
+
             if (s.control.mouseMode) {
                 // Mouse mode: draw only a transparent bounding box for the touch region
                 paintRing.alpha = (0x44 * eff).toInt()
                 canvas.drawRect(s.fzLeft, s.fzTop, s.fzRight, s.fzBottom, paintRing)
+                val mcx = (s.fzLeft + s.fzRight) / 2f
+                val mcy = (s.fzTop + s.fzBottom) / 2f
+                paintBtnLabel.alpha = (0x66 * eff).toInt()
+                paintBtnLabel.textSize = (s.fzRight - s.fzLeft).coerceAtMost(s.fzBottom - s.fzTop) * 0.06f
+                canvas.drawText(xLabel, mcx, mcy - paintBtnLabel.textSize * 0.3f, paintBtnLabel)
+                canvas.drawText(yLabel, mcx, mcy + paintBtnLabel.textSize * 1.0f, paintBtnLabel)
                 return
             }
 
@@ -748,6 +757,12 @@ class TouchOverlayView
             val thumbY = cy + s.pos.y
             paintThumb.alpha = (0x99 * eff).toInt()
             canvas.drawCircle(thumbX, thumbY, s.radius * 0.22f, paintThumb)
+
+            // Axis name labels
+            paintBtnLabel.alpha = (0x66 * eff).toInt()
+            paintBtnLabel.textSize = s.radius * 0.22f
+            canvas.drawText(xLabel, cx, cy - paintBtnLabel.textSize * 0.3f, paintBtnLabel)
+            canvas.drawText(yLabel, cx, cy + paintBtnLabel.textSize * 1.0f, paintBtnLabel)
         }
 
         private fun drawButton(
@@ -841,24 +856,23 @@ class TouchOverlayView
             canvas.drawCircle(tx, ty, sl.thumbR, paintRing)
 
             // Label below/right of track
-            if (sl.control.id.isNotEmpty()) {
-                paintBtnLabel.alpha = (0x88 * eff).toInt()
-                paintBtnLabel.textSize = sl.thumbR * 1.2f
-                if (vertical) {
-                    canvas.drawText(
-                        sl.control.id.take(5),
-                        sl.centerX,
-                        y1 + paintBtnLabel.textSize * 1.5f,
-                        paintBtnLabel,
-                    )
-                } else {
-                    canvas.drawText(
-                        sl.control.id.take(5),
-                        sl.centerX,
-                        sl.centerY + sl.thumbR + paintBtnLabel.textSize * 1.3f,
-                        paintBtnLabel,
-                    )
-                }
+            val slLabel = TouchBindings.AXIS_LABELS[sl.control.axis] ?: sl.control.id
+            paintBtnLabel.alpha = (0x88 * eff).toInt()
+            paintBtnLabel.textSize = sl.thumbR * 1.2f
+            if (vertical) {
+                canvas.drawText(
+                    slLabel,
+                    sl.centerX,
+                    y1 + paintBtnLabel.textSize * 1.5f,
+                    paintBtnLabel,
+                )
+            } else {
+                canvas.drawText(
+                    slLabel,
+                    sl.centerX,
+                    sl.centerY + sl.thumbR + paintBtnLabel.textSize * 1.3f,
+                    paintBtnLabel,
+                )
             }
         }
 
@@ -900,14 +914,13 @@ class TouchOverlayView
             }
 
             // Label
-            if (ar.control.id.isNotEmpty()) {
-                paintBtnLabel.alpha = (0x66 * eff).toInt()
-                val base = min(width, height).toFloat()
-                paintBtnLabel.textSize = base * 0.02f
-                val cx = (ar.left + ar.right) / 2f
-                val cy = (ar.top + ar.bottom) / 2f
-                canvas.drawText(ar.control.id.take(6), cx, cy + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
-            }
+            val arLabel = TouchBindings.AXIS_LABELS[ar.control.axis] ?: ar.control.id
+            paintBtnLabel.alpha = (0x66 * eff).toInt()
+            val base = min(width, height).toFloat()
+            paintBtnLabel.textSize = base * 0.02f
+            val cx = (ar.left + ar.right) / 2f
+            val cy = (ar.top + ar.bottom) / 2f
+            canvas.drawText(arLabel, cx, cy + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
         }
 
         private fun drawDiagnostic(
@@ -1937,6 +1950,12 @@ class TouchOverlayView
                         invalidate()
                     }
                 }
+                DoubleTapMode.HOLD_FIRE -> {
+                    // Press on double-tap down, release handled in resetStick
+                    s.dtLatched = true
+                    setDoubleTapLatch(binding, true, tag)
+                    invalidate()
+                }
             }
         }
 
@@ -1986,6 +2005,15 @@ class TouchOverlayView
                 dispatchStickButton(s, false, s.xPosPressed, s.control.posXBinding, tag) { s.xPosPressed = it }
                 dispatchStickButton(s, false, s.yNegPressed, s.control.negYBinding, tag) { s.yNegPressed = it }
                 dispatchStickButton(s, false, s.yPosPressed, s.control.posYBinding, tag) { s.yPosPressed = it }
+            }
+            // Release HOLD_FIRE double-tap on finger lift
+            if (s.dtLatched && s.control.doubleTapMode == DoubleTapMode.HOLD_FIRE) {
+                val binding = s.control.doubleTapBinding
+                if (binding >= 0) {
+                    val tag = "touch:dtap${stickStates.indexOf(s)}"
+                    s.dtLatched = false
+                    setDoubleTapLatch(binding, false, tag)
+                }
             }
             // Clear mouse-mode pending drag
             if (s.control.mouseMode) {

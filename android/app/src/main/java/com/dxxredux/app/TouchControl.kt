@@ -25,6 +25,7 @@ enum class DoubleTapMode {
     SINGLE_FIRE, // One fire per double-tap only (4 taps = 2 fires)
     LATCH_DOUBLE, // Double-tap to latch on, double-tap to release
     LATCH_SINGLE, // Double-tap to latch on, single-tap to release
+    HOLD_FIRE, // Double-tap starts, releasing second tap stops
 }
 
 // --- Response curve math ---

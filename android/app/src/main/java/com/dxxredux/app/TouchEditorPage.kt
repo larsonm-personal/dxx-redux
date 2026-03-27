@@ -1446,33 +1446,36 @@ private fun StickPropertiesPanel(
         }
     }
 
+    val xLabel = TouchBindings.AXIS_LABELS[stick.axisX] ?: "Axis ${stick.axisX}"
+    val yLabel = TouchBindings.AXIS_LABELS[stick.axisY] ?: "Axis ${stick.axisY}"
+
     // Axis bindings or button mode bindings
     LabeledToggle("Button Mode", stick.buttonMode) {
         onUpdate(stick.copy(buttonMode = it))
     }
     if (stick.buttonMode) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ButtonBindingPicker("X Neg", stick.negXBinding, Modifier.weight(1f), gameVariant) {
+            ButtonBindingPicker("$xLabel Neg", stick.negXBinding, Modifier.weight(1f), gameVariant) {
                 onUpdate(stick.copy(negXBinding = it))
             }
-            ButtonBindingPicker("X Pos", stick.posXBinding, Modifier.weight(1f), gameVariant) {
+            ButtonBindingPicker("$xLabel Pos", stick.posXBinding, Modifier.weight(1f), gameVariant) {
                 onUpdate(stick.copy(posXBinding = it))
             }
         }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ButtonBindingPicker("Y Neg", stick.negYBinding, Modifier.weight(1f), gameVariant) {
+            ButtonBindingPicker("$yLabel Neg", stick.negYBinding, Modifier.weight(1f), gameVariant) {
                 onUpdate(stick.copy(negYBinding = it))
             }
-            ButtonBindingPicker("Y Pos", stick.posYBinding, Modifier.weight(1f), gameVariant) {
+            ButtonBindingPicker("$yLabel Pos", stick.posYBinding, Modifier.weight(1f), gameVariant) {
                 onUpdate(stick.copy(posYBinding = it))
             }
         }
     } else {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            AxisPicker("X Axis", stick.axisX, Modifier.weight(1f)) {
+            AxisPicker(xLabel, stick.axisX, Modifier.weight(1f)) {
                 onUpdate(stick.copy(axisX = it))
             }
-            AxisPicker("Y Axis", stick.axisY, Modifier.weight(1f)) {
+            AxisPicker(yLabel, stick.axisY, Modifier.weight(1f)) {
                 onUpdate(stick.copy(axisY = it))
             }
         }
@@ -1506,7 +1509,7 @@ private fun StickPropertiesPanel(
             onUpdate(stick.copy(deadzone = it.toInt()))
         }
         LabeledSlider(
-            "Sensitivity X",
+            "Sens: $xLabel",
             stick.sensitivityX,
             TouchBindings.MIN_SENSITIVITY,
             TouchBindings.MAX_SENSITIVITY,
@@ -1515,7 +1518,7 @@ private fun StickPropertiesPanel(
             onUpdate(stick.copy(sensitivityX = it))
         }
         LabeledSlider(
-            "Sensitivity Y",
+            "Sens: $yLabel",
             stick.sensitivityY,
             TouchBindings.MIN_SENSITIVITY,
             TouchBindings.MAX_SENSITIVITY,
@@ -1583,8 +1586,8 @@ private fun StickPropertiesPanel(
                 onUpdate(stick.copy(mouseMode = it))
             }
         }
-        LabeledToggle("Invert X", stick.invertX) { onUpdate(stick.copy(invertX = it)) }
-        LabeledToggle("Invert Y", stick.invertY) { onUpdate(stick.copy(invertY = it)) }
+        LabeledToggle("Inv: $xLabel", stick.invertX) { onUpdate(stick.copy(invertX = it)) }
+        LabeledToggle("Inv: $yLabel", stick.invertY) { onUpdate(stick.copy(invertY = it)) }
         LabeledToggle("Haptic", stick.hapticFeedback) { onUpdate(stick.copy(hapticFeedback = it)) }
     }
 
@@ -1610,6 +1613,7 @@ private fun StickPropertiesPanel(
                 DoubleTapMode.SINGLE_FIRE to "Single (1 per complete double-tap)",
                 DoubleTapMode.LATCH_DOUBLE to "Latch (double-tap toggle)",
                 DoubleTapMode.LATCH_SINGLE to "Latch (double-tap on, tap off)",
+                DoubleTapMode.HOLD_FIRE to "Hold (double-tap starts, lift stops)",
             )
         modes.forEach { m ->
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -2705,15 +2709,15 @@ private fun GyroSettingsDialog(
                             Spacer(Modifier.height(8.dp))
                             if (axisX >= 0) {
                                 val degX = "%.0f".format(Math.toDegrees(maxAngleX.toDouble()))
-                                LabeledSlider("Tilt Range X ($degX deg)", maxAngleX, 0.1f, 1.57f) { maxAngleX = it }
+                                LabeledSlider("Tilt Range Yaw ($degX deg)", maxAngleX, 0.1f, 1.57f) { maxAngleX = it }
                             }
                             if (axisY >= 0) {
                                 val degY = "%.0f".format(Math.toDegrees(maxAngleY.toDouble()))
-                                LabeledSlider("Tilt Range Y ($degY deg)", maxAngleY, 0.1f, 1.57f) { maxAngleY = it }
+                                LabeledSlider("Tilt Range Roll ($degY deg)", maxAngleY, 0.1f, 1.57f) { maxAngleY = it }
                             }
                             if (axisZ >= 0) {
                                 val degZ = "%.0f".format(Math.toDegrees(maxAngleZ.toDouble()))
-                                LabeledSlider("Tilt Range Z ($degZ deg)", maxAngleZ, 0.1f, 1.57f) { maxAngleZ = it }
+                                LabeledSlider("Tilt Range Pitch ($degZ deg)", maxAngleZ, 0.1f, 1.57f) { maxAngleZ = it }
                             }
                         }
 
@@ -2721,9 +2725,9 @@ private fun GyroSettingsDialog(
                         LabeledSlider("Deadzone ($dzPct%)", deadzone, 0f, 0.3f) { deadzone = it }
 
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            if (axisX >= 0) LabeledToggle("Invert X", invertX) { invertX = it }
-                            if (axisY >= 0) LabeledToggle("Invert Y", invertY) { invertY = it }
-                            if (axisZ >= 0) LabeledToggle("Invert Z", invertZ) { invertZ = it }
+                            if (axisX >= 0) LabeledToggle("Inv Yaw", invertX) { invertX = it }
+                            if (axisY >= 0) LabeledToggle("Inv Roll", invertY) { invertY = it }
+                            if (axisZ >= 0) LabeledToggle("Inv Pitch", invertZ) { invertZ = it }
                         }
 
                         Spacer(Modifier.height(8.dp))

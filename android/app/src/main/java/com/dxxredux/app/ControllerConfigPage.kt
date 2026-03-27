@@ -459,6 +459,17 @@ private fun buildJoyPairs(
             values.add(if (controlId in inverts) 1 else 0)
             continue
         }
+        // Axis control bound to a button function (e.g., RT -> Fire Primary).
+        // Use the positive axis-button SDL index so the C engine's
+        // axis-button handler can match it via col2 after deduplication.
+        if (btnKcIdx != null && axisSdlId != null) {
+            val sdlPair = AXIS_BUTTON_SDL[controlId]
+            if (sdlPair != null) {
+                indices.add(btnKcIdx)
+                values.add(sdlPair.second) // positive direction
+            }
+            continue
+        }
         val isNeg = controlId.endsWith("_neg")
         val isPos = controlId.endsWith("_pos")
         if ((isNeg || isPos) && btnKcIdx != null) {
