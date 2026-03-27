@@ -1,0 +1,12 @@
+[
+  {"track": 1, "type": "data", "sha1": "1ee705d8cfd6636dec3d55002927bde3fc9d980e", "files_extracted": 443},
+  {"track": 2, "type": "audio", "sha1": "9c0669a9495407536e440468764f0b6b3dac2269"},
+  {"track": 3, "type": "audio", "sha1": "5f12db79a989be1d943e5836fbf86ef3477bf22b"},
+  {"track": 4, "type": "audio", "sha1": "66555820ad01298554f84701ce32b5172dcd853d"},
+  {"track": 5, "type": "audio", "sha1": "55d9a77f0e843b246da4804ea84aae71211f8f0a"},
+  {"track": 6, "type": "audio", "sha1": "57ff56b7c46cc22b9bab75279f5ddbdcd97c297f"},
+  {"track": 7, "type": "audio", "sha1": "8154446835d16525ff3b2ea5dee5ec614d163bf1"},
+  {"track": 8, "type": "audio", "sha1": "0de82a7c3412223db93658710248664c42d76fec"},
+  {"track": 9, "type": "audio", "sha1": "24df677d84b3c063f904fd9b88c8f3ce1ee6e15f"},
+  {"sow": "d2data/descent2.sow", "files_extracted": 34}
+]
