@@ -313,6 +313,24 @@ private val TRIGGER_HALF_AXIS_OPTIONS = HALF_AXIS_MAP.keys.toList()
 // First virtual combiner axis (must match joy.c VC axis registration)
 private const val VIRTUAL_AXIS_BASE = 8
 
+// Col1 -> Col2 kc_joystick index map for BT_JOY_BUTTON entries.
+// Must match kc_joystick[] layout in d2/main/kconfig.c / d1/main/kconfig.c.
+// Used to place secondary button bindings (e.g., d-pad) when col1 is already taken.
+private val D2_COL2_MAP =
+    mapOf(
+        0 to 31, 1 to 32, 2 to 33, 3 to 34, 4 to 35, 5 to 36, 6 to 37, 7 to 38,
+        8 to 39, 9 to 40, 10 to 41, 11 to 42, 12 to 43,
+        25 to 44, 26 to 45, 27 to 46, 28 to 47, 29 to 48, 30 to 49,
+        50 to 51, 52 to 53, 54 to 55,
+    )
+private val D1_COL2_MAP =
+    mapOf(
+        0 to 29, 1 to 30, 2 to 31, 3 to 32, 4 to 33, 5 to 34, 6 to 35, 7 to 36,
+        8 to 37, 9 to 38, 10 to 39, 11 to 40, 12 to 41,
+        25 to 42, 26 to 43, 27 to 28,
+        44 to 46, 45 to 47,
+    )
+
 private data class JoyPairsResult(
     val indices: IntArray,
     val values: IntArray,
@@ -440,6 +458,32 @@ private fun buildJoyPairs(
             }
             i--
         }
+    }
+
+    // Deduplicate: when two bindings target the same kc index (e.g., a face
+    // button and a d-pad both bound to Slide Up), redirect the second to the
+    // col2 (secondary) kc index.  Touch overlay no longer uses col2 -- it
+    // uses implicit index-based matching in kconfig.c instead.
+    val col2Map = if (variant == "d1") D1_COL2_MAP else D2_COL2_MAP
+    val assigned = mutableSetOf<Int>()
+    var i2 = 0
+    while (i2 < indices.size) {
+        val idx = indices[i2]
+        if (idx in assigned) {
+            val col2 = col2Map[idx]
+            if (col2 != null) {
+                indices[i2] = col2
+                assigned.add(col2)
+            } else {
+                // No col2 slot available -- drop this duplicate
+                indices.removeAt(i2)
+                values.removeAt(i2)
+                continue
+            }
+        } else {
+            assigned.add(idx)
+        }
+        i2++
     }
 
     return JoyPairsResult(indices.toIntArray(), values.toIntArray(), combiners)

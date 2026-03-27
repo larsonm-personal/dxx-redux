@@ -80,7 +80,7 @@ if (-not (Test-Path variable:script:_testEnvLoaded) -or -not $script:_testEnvLoa
         # Also check Android SDK cmake (multiple versions, pick newest)
         if ($script:_ENV_DEP_BASE) {
             $sdkCmake = Get-ChildItem "$($script:_ENV_DEP_BASE)\android-sdk\cmake\*\bin" -Directory -ErrorAction SilentlyContinue |
-                Sort-Object Name -Descending | Select-Object -First 1
+                Sort-Object FullName -Descending | Select-Object -First 1
             if ($sdkCmake) { $cmakeCandidates = @($sdkCmake.FullName) + $cmakeCandidates }
         }
         foreach ($dir in $cmakeCandidates) {

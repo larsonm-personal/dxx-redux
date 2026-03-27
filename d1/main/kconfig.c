@@ -57,6 +57,19 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "ogl_init.h"
 #endif
 
+#ifdef ANDROID
+/* Touch overlay buttons use SDL button numbers >= 128 (col1 kc index + 128).
+ * Shared constant with Kotlin TouchBindings.TOUCH_BTN_OFFSET. */
+#define TOUCH_BTN_OFFSET 128
+/* Match a BT_JOY_BUTTON entry against an SDL button number.
+ * On Android, also match touch overlay buttons implicitly via index. */
+#define JOY_BTN_MATCHES(idx, btn) \
+	((kc_joystick[idx].value == (btn)) || ((idx) + TOUCH_BTN_OFFSET == (btn)))
+#else
+#define JOY_BTN_MATCHES(idx, btn) \
+	(kc_joystick[idx].value == (btn))
+#endif
+
 #define TABLE_CREATION 1
 
 // Array used to 'blink' the cursor while waiting for a keypress.
@@ -1175,7 +1188,7 @@ int is_key_rotate_event(d_event *event) {
 				break;
 			for (int i = 0; i < NUM_JOYSTICK_CONTROLS; i++)
 			{
-				if (kc_joystick[i].value < 255 && kc_joystick[i].type == BT_JOY_BUTTON && kc_joystick[i].value == event_joystick_get_button(event))
+				if (kc_joystick[i].value < 255 && kc_joystick[i].type == BT_JOY_BUTTON && JOY_BTN_MATCHES(i, event_joystick_get_button(event)))
 				{
 					if (kc_joystick[i].ci_state_ptr != NULL)
 					{
@@ -1289,7 +1302,7 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 				break;
 			for (i = 0; i < NUM_JOYSTICK_CONTROLS; i++)
 			{
-				if (kc_joystick[i].value < 255 && kc_joystick[i].type == BT_JOY_BUTTON && kc_joystick[i].value == event_joystick_get_button(event))
+				if (kc_joystick[i].value < 255 && kc_joystick[i].type == BT_JOY_BUTTON && JOY_BTN_MATCHES(i, event_joystick_get_button(event)))
 				{
 					if (kc_joystick[i].ci_state_ptr != NULL)
 					{
@@ -1887,24 +1900,6 @@ void kc_set_controls()
 
 	for (i=0; i<NUM_D1X_CONTROLS; i++ )
 		kc_d1x[i].value = PlayerCfg.KeySettingsD1X[i];
-
-#ifdef ANDROID
-	/* Touch overlay: fill column-2 joystick button entries with
-	 * col1_index + TOUCH_BTN_OFFSET so that touch buttons (which send
-	 * kcIndex + 128 as SDL button numbers) activate the correct controls.
-	 * Shared constant with Kotlin TouchBindings.TOUCH_BTN_OFFSET = 128. */
-	{
-		static const int col_map[][2] = {
-			{29,0},{30,1},{31,2},{32,3},{33,4},{34,5},{35,6},{36,7},{37,8},{38,9},
-			{39,10},{40,11},{41,12},
-			{42,25},{43,26},{28,27},{46,44},{47,45}
-		};
-		for (i = 0; i < (int)(sizeof(col_map)/sizeof(col_map[0])); i++) {
-			kc_joystick[col_map[i][0]].value = (ubyte)(col_map[i][1] + 128);
-			PlayerCfg.KeySettings[1][col_map[i][0]] = kc_joystick[col_map[i][0]].value;
-		}
-	}
-#endif
 }
 
 #if defined(INTROSPECT_ON) || defined(ANDROID)
@@ -1938,18 +1933,6 @@ void kconfig_fill_joy_settings(const int *indices, const int *values, int count,
 	for (i = 0; i < count; i++) {
 		if (indices[i] >= 0 && indices[i] < MAX_CONTROLS)
 			out[indices[i]] = (ubyte)(values[i] & 0xFF);
-	}
-
-	/* Touch overlay: fill column-2 entries with col1_index + 128.
-	 * Shared constant with Kotlin TouchBindings.TOUCH_BTN_OFFSET. */
-	{
-		static const int col_map[][2] = {
-			{29,0},{30,1},{31,2},{32,3},{33,4},{34,5},{35,6},{36,7},{37,8},{38,9},
-			{39,10},{40,11},{41,12},
-			{42,25},{43,26},{28,27},{46,44},{47,45}
-		};
-		for (i = 0; i < (int)(sizeof(col_map)/sizeof(col_map[0])); i++)
-			out[col_map[i][0]] = (ubyte)(col_map[i][1] + 128);
 	}
 }
 
@@ -1995,17 +1978,5 @@ void kconfig_get_default_settings(ubyte *kb_out, ubyte *joy_out, ubyte *mouse_ou
 	joy_out[27] = 6;   /* Automap       = Select button */
 	joy_out[44] = 4;   /* Cycle Primary = L1 button */
 	joy_out[45] = 5;   /* Cycle Second. = R1 button */
-
-	/* Apply touch overlay offsets to joystick column 2 */
-	{
-		static const int col_map[][2] = {
-			{29,0},{30,1},{31,2},{32,3},{33,4},{34,5},{35,6},{36,7},{37,8},{38,9},
-			{39,10},{40,11},{41,12},
-			{42,25},{43,26},{28,27},{46,44},{47,45}
-		};
-		int i;
-		for (i = 0; i < (int)(sizeof(col_map)/sizeof(col_map[0])); i++)
-			joy_out[col_map[i][0]] = (ubyte)(col_map[i][1] + 128);
-	}
 }
 #endif /* ANDROID */
