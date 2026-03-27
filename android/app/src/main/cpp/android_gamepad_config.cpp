@@ -136,9 +136,14 @@ extern "C" void android_apply_gamepad_defaults(void)
 		     PlayerCfg.KeySettings[1][13], PlayerCfg.KeySettings[1][15],
 		     PlayerCfg.KeySettings[1][17], PlayerCfg.KeySettings[1][23]);
 	}
-	/* Virtual gyro axes -- always apply (not editable from launcher UI) */
-	PlayerCfg.KeySettings[1][19] = 7; /* Slide U/D     = axis 7 (SU)*/
-	PlayerCfg.KeySettings[1][21] = 6; /* Bank L/R      = axis 6 (BK)*/
+	/* Virtual gyro axes: only apply defaults if the user's config didn't
+	 * specify values for these slots.  A half-axis combiner or explicit
+	 * axis binding writes a real value (< 0xFF); clobbering it with the
+	 * gyro axis would orphan the user's mapping. */
+	if (PlayerCfg.KeySettings[1][19] == 0xFF)
+		PlayerCfg.KeySettings[1][19] = 7; /* Slide U/D = axis 7 (SU) */
+	if (PlayerCfg.KeySettings[1][21] == 0xFF)
+		PlayerCfg.KeySettings[1][21] = 6; /* Bank L/R  = axis 6 (BK) */
 }
 
 /* -- JNI entry point: patch all .plr files ----------------------- */

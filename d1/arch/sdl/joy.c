@@ -274,9 +274,12 @@ void joy_init()
 			SDL_Joysticks[0].axis_button_map[j] = -1;
 
 		/* Virtual combiner axes for half-axis trigger bindings.
-		 * Kotlin computes combined values and sends via nativeJoystickAxis(). */
+		 * Kotlin computes combined values and sends via nativeJoystickAxis().
+		 * axis_button_map must be -1 so joy_axisbutton_handler skips them;
+		 * the memset-zero default (0) would cause spurious button-0/1 events. */
 		for (j = 0; j < 3; j++) {
 			SDL_Joysticks[0].axis_map[8 + j] = Joystick.n_axes;
+			SDL_Joysticks[0].axis_button_map[8 + j] = -1;
 			sprintf(temp, "J1 VC%d", j);
 			joyaxis_text[Joystick.n_axes++] = d_strdup(temp);
 		}

@@ -49,6 +49,12 @@
 /* Flags for dispatch table entries */
 #define META_FLAG_INSTANT 1 /* inject full press+release on button down, ignore up */
 
+/* Set by META_RETURN_TO_LAUNCHER so standard_handler skips the
+ * "Abort Game?" confirmation dialog during gameplay.
+ * Declared volatile because it is set on the UI thread (JNI) and
+ * read on the game thread. */
+extern volatile int android_force_quit;
+
 /*
  * Dispatch a meta action.  Called from JNI (UI thread).
  *   action_id: one of the META_* constants above

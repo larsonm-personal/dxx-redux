@@ -207,15 +207,25 @@ int standard_handler(d_event *event)
 	
 		if (wind == Game_wind)
 		{
-			int choice;
-			Quitting = 0;
-			choice=nm_messagebox( NULL, 2, TXT_YES, TXT_NO, TXT_ABORT_GAME );
-			if (choice != 0)
-				return 0;
-			else
-			{
+#ifdef ANDROID
+			/* android port: EXIT button sets force_quit to skip
+			 * the confirmation dialog and exit immediately */
+			extern volatile int android_force_quit;
+			if (android_force_quit) {
 				GameArg.SysAutoDemo = 0;
-				Quitting = 1;
+			} else
+#endif
+			{
+				int choice;
+				Quitting = 0;
+				choice=nm_messagebox( NULL, 2, TXT_YES, TXT_NO, TXT_ABORT_GAME );
+				if (choice != 0)
+					return 0;
+				else
+				{
+					GameArg.SysAutoDemo = 0;
+					Quitting = 1;
+				}
 			}
 		}
 		

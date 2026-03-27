@@ -18,6 +18,8 @@
 #include <android/log.h>
 #include "android_meta_actions.h"
 
+volatile int android_force_quit = 0;
+
 #define LOG_TAG   "DXX-MetaAction"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 
@@ -112,6 +114,9 @@ int meta_action_dispatch(int action_id, int pressed)
 	if (action_id == META_RETURN_TO_LAUNCHER) {
 		if (pressed) {
 			SDL_Event ev;
+
+			/* Tell standard_handler to skip the "Abort Game?" dialog */
+			android_force_quit = 1;
 
 			/* ESC key press+release -- closes the frontmost menu */
 			inject_sdl_key(SDLK_ESCAPE, 1);
