@@ -446,8 +446,10 @@ private fun buildJoyPairs(
     for ((controlId, funcLabel) in bindings) {
         if (controlId in handledAsHalfAxis) continue
         val btnKcIdx = btnKcMap[funcLabel]
-        // Face buttons: skip, identity mapping + mixer_button_map handles them
-        if (btnKcIdx != null && BUTTON_CONTROLS[controlId] != null) {
+        // Face buttons: skip, identity mapping + mixer_button_map handles them.
+        // Exclude RT/LT (axis controls that also appear in BUTTON_CONTROLS) --
+        // their primary input comes via axis events, not key events.
+        if (btnKcIdx != null && BUTTON_CONTROLS[controlId] != null && !AXIS_CONTROLS.containsKey(controlId)) {
             continue
         }
         val axisKcIdx = AXIS_KC_INDEX[funcLabel]

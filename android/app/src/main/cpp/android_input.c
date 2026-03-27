@@ -416,6 +416,14 @@ Java_com_dxxredux_app_MainActivity_nativeOnPause(JNIEnv *env, jobject thiz)
 		return;
 	}
 
+	/* If a menu window already covers the game (e.g., the player already
+	 * opened the game menu), the game is already paused — do not inject
+	 * another Escape which would close the menu and unpause. */
+	if (window_get_front() != Game_wind) {
+		LOGI("nativeOnPause — game menu already open, skipping Escape injection");
+		return;
+	}
+
 	LOGI("nativeOnPause — injecting Escape key");
 
 	SDL_Event ev;
