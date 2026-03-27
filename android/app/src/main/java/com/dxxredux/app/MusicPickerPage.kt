@@ -1366,6 +1366,11 @@ private fun CdTrackDetailDialog(
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                Text(
+                    "Track $audioTrackIdx",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 if (durationMs > 0) {
                     Text(
                         "Duration: ${formatTime(durationMs)}",
@@ -1506,9 +1511,20 @@ private fun AudioFileDetailDialog(
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("File: ${track.filename}", fontSize = 12.sp)
                 Text("Set: ${track.setLabel}", fontSize = 12.sp)
+                Text(
+                    "Path: ${CustomAudioSetManager.MUSIC_DIR}/${track.setId}/${track.filename}",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 if (track.matchedName != null) {
+                    val detail =
+                        buildString {
+                            append("Matched: ${track.matchedName}")
+                            if (track.trackNum != null) append(" (Track ${track.trackNum})")
+                            if (track.confidence != null) append(" [${"%d".format((track.confidence * 100).toInt())}%]")
+                        }
                     Text(
-                        "Matched: ${track.matchedName}",
+                        detail,
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.primary,
                     )
@@ -1684,6 +1700,17 @@ internal suspend fun importAudioFiles(
         if (imported.isNotEmpty()) {
             // Run chromaprint matching on imported files
             val trackNames = mutableMapOf<String, String>()
+            val trackConfidences = mutableMapOf<String, Float>()
+            val trackNumbers = mutableMapOf<String, Int>()
+
+            fun recordMatch(
+                f: String,
+                match: FingerprintBridge.MatchResult,
+            ) {
+                trackNames[f] = match.name
+                trackConfidences[f] = match.confidence
+                trackNumbers[f] = match.trackNum
+            }
             try {
                 FingerprintBridge.ensureDbLoaded(ctx)
                 if (copyToStorage) {
@@ -1691,7 +1718,7 @@ internal suspend fun importAudioFiles(
                         val path = File(destDir, f).absolutePath
                         val match = FingerprintBridge.fingerprintAndMatch(path)
                         if (match != null) {
-                            trackNames[f] = match.name
+                            recordMatch(f, match)
                             Log.i(TAG, "Matched '$f' -> '${match.name}' (${match.confidence})")
                         }
                     }
@@ -1702,7 +1729,7 @@ internal suspend fun importAudioFiles(
                         val uri = android.net.Uri.parse(uriStr)
                         val match = FingerprintBridge.fingerprintAndMatch(ctx.contentResolver, uri)
                         if (match != null) {
-                            trackNames[f] = match.name
+                            recordMatch(f, match)
                             Log.i(TAG, "Matched ref '$f' -> '${match.name}' (${match.confidence})")
                         }
                     }
@@ -1713,7 +1740,14 @@ internal suspend fun importAudioFiles(
 
             if (targetSetId != null) {
                 // Append to existing set
-                customMgr.addFilesToSet(targetSetId, imported, referencedUris, trackNames)
+                customMgr.addFilesToSet(
+                    targetSetId,
+                    imported,
+                    referencedUris,
+                    trackNames,
+                    trackConfidences,
+                    trackNumbers,
+                )
                 Log.i(TAG, "Added ${imported.size} files to existing set '$targetSetId'")
             } else {
                 customMgr.addSet(
@@ -1724,6 +1758,8 @@ internal suspend fun importAudioFiles(
                         enabled = true,
                         order = customMgr.getSets().size,
                         trackNames = trackNames,
+                        trackConfidences = trackConfidences,
+                        trackNumbers = trackNumbers,
                         referencedUris = referencedUris,
                     ),
                 )

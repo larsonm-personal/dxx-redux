@@ -226,6 +226,44 @@ class TouchOverlayView
         private val diagnosticStates = mutableListOf<DiagnosticState>()
         private val axisRegionStates = mutableListOf<AxisRegionState>()
 
+        // Track how many touch sources currently hold each binding via the primary
+        // offset (TOUCH_BTN_OFFSET).  When a second source presses the same binding
+        // while one is already held, it uses TOUCH_BTN_OFFSET_2 instead.  This
+        // gives each concurrent touch source its own state bit in the C engine.
+        private val touchPrimaryRefs = mutableMapOf<Int, Int>()
+
+        /**
+         * Dispatch a touch button event with automatic primary/secondary offset.
+         * Standard button bindings get TOUCH_BTN_OFFSET or TOUCH_BTN_OFFSET_2
+         * added so the C engine can assign independent state bits.  Meta actions
+         * are forwarded unchanged.
+         */
+        private fun dispatchTouchButton(
+            binding: Int,
+            pressed: Boolean,
+        ) {
+            if (TouchBindings.isMetaAction(binding)) {
+                buttonCallback?.invoke(binding, pressed)
+                return
+            }
+            val refs = touchPrimaryRefs.getOrDefault(binding, 0)
+            if (pressed) {
+                if (refs == 0) {
+                    touchPrimaryRefs[binding] = 1
+                    buttonCallback?.invoke(binding + TouchBindings.TOUCH_BTN_OFFSET, true)
+                } else {
+                    buttonCallback?.invoke(binding + TouchBindings.TOUCH_BTN_OFFSET_2, true)
+                }
+            } else {
+                if (refs > 0) {
+                    touchPrimaryRefs[binding] = refs - 1
+                    buttonCallback?.invoke(binding + TouchBindings.TOUCH_BTN_OFFSET, false)
+                } else {
+                    buttonCallback?.invoke(binding + TouchBindings.TOUCH_BTN_OFFSET_2, false)
+                }
+            }
+        }
+
         // Gyro diagnostic values (updated in real time via GyroInputManager)
         @Volatile private var diagGyroYaw = 0f
 
@@ -1313,12 +1351,12 @@ class TouchOverlayView
                                     if (b.control.binding == TouchBindings.BTN_AUTOMAP) {
                                         if (b.toggled) mapButtonCallback?.invoke()
                                     } else {
-                                        buttonCallback?.invoke(b.control.binding, b.toggled)
+                                        dispatchTouchButton(b.control.binding, b.toggled)
                                     }
                                 } else {
                                     // Non-toggle: press on down (MAP fires on release only)
                                     if (b.control.binding != TouchBindings.BTN_AUTOMAP) {
-                                        buttonCallback?.invoke(b.control.binding, true)
+                                        dispatchTouchButton(b.control.binding, true)
                                     }
                                 }
                                 if (b.control.hapticFeedback) {
@@ -1867,8 +1905,8 @@ class TouchOverlayView
                 metaActionCallback?.invoke(binding, true)
                 mainHandler.postDelayed({ metaActionCallback?.invoke(binding, false) }, DOUBLE_TAP_RELEASE_DELAY_MS)
             } else {
-                buttonCallback?.invoke(binding, true)
-                mainHandler.postDelayed({ buttonCallback?.invoke(binding, false) }, DOUBLE_TAP_RELEASE_DELAY_MS)
+                dispatchTouchButton(binding, true)
+                mainHandler.postDelayed({ dispatchTouchButton(binding, false) }, DOUBLE_TAP_RELEASE_DELAY_MS)
             }
         }
 
@@ -1880,7 +1918,7 @@ class TouchOverlayView
             if (TouchBindings.isMetaAction(binding)) {
                 metaActionCallback?.invoke(binding, pressed)
             } else {
-                buttonCallback?.invoke(binding, pressed)
+                dispatchTouchButton(binding, pressed)
             }
         }
 
@@ -1937,7 +1975,7 @@ class TouchOverlayView
             if (TouchBindings.isMetaAction(binding)) {
                 metaActionCallback?.invoke(binding, nowPressed)
             } else {
-                buttonCallback?.invoke(binding, nowPressed)
+                dispatchTouchButton(binding, nowPressed)
             }
         }
 
@@ -2082,7 +2120,7 @@ class TouchOverlayView
                     if (b.control.binding == TouchBindings.BTN_AUTOMAP) {
                         if (fired) mapButtonCallback?.invoke()
                     } else {
-                        buttonCallback?.invoke(b.control.binding, false)
+                        dispatchTouchButton(b.control.binding, false)
                     }
                 }
                 invalidate()
@@ -2159,8 +2197,8 @@ class TouchOverlayView
                     metaActionCallback?.invoke(binding, true)
                     metaActionCallback?.invoke(binding, false)
                 } else if (isAction) {
-                    buttonCallback?.invoke(binding, true)
-                    buttonCallback?.invoke(binding, false)
+                    dispatchTouchButton(binding, true)
+                    dispatchTouchButton(binding, false)
                 } else {
                     val unicode = keycodeToUnicode(binding)
                     keyCallback?.invoke(0, binding, unicode)

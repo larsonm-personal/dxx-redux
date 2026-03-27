@@ -318,17 +318,49 @@ private const val VIRTUAL_AXIS_BASE = 8
 // Used to place secondary button bindings (e.g., d-pad) when col1 is already taken.
 private val D2_COL2_MAP =
     mapOf(
-        0 to 31, 1 to 32, 2 to 33, 3 to 34, 4 to 35, 5 to 36, 6 to 37, 7 to 38,
-        8 to 39, 9 to 40, 10 to 41, 11 to 42, 12 to 43,
-        25 to 44, 26 to 45, 27 to 46, 28 to 47, 29 to 48, 30 to 49,
-        50 to 51, 52 to 53, 54 to 55,
+        0 to 31,
+        1 to 32,
+        2 to 33,
+        3 to 34,
+        4 to 35,
+        5 to 36,
+        6 to 37,
+        7 to 38,
+        8 to 39,
+        9 to 40,
+        10 to 41,
+        11 to 42,
+        12 to 43,
+        25 to 44,
+        26 to 45,
+        27 to 46,
+        28 to 47,
+        29 to 48,
+        30 to 49,
+        50 to 51,
+        52 to 53,
+        54 to 55,
     )
 private val D1_COL2_MAP =
     mapOf(
-        0 to 29, 1 to 30, 2 to 31, 3 to 32, 4 to 33, 5 to 34, 6 to 35, 7 to 36,
-        8 to 37, 9 to 38, 10 to 39, 11 to 40, 12 to 41,
-        25 to 42, 26 to 43, 27 to 28,
-        44 to 46, 45 to 47,
+        0 to 29,
+        1 to 30,
+        2 to 31,
+        3 to 32,
+        4 to 33,
+        5 to 34,
+        6 to 35,
+        7 to 36,
+        8 to 37,
+        9 to 38,
+        10 to 39,
+        11 to 40,
+        12 to 41,
+        25 to 42,
+        26 to 43,
+        27 to 28,
+        44 to 46,
+        45 to 47,
     )
 
 private data class JoyPairsResult(
@@ -356,16 +388,27 @@ private fun buildJoyPairs(
 
     // Detect trigger axes bound to half-axis-eligible button functions.
     // These get combined into virtual axes for proportional control.
+    // Skip if the same axis function already has a direct full-axis binding
+    // (e.g. LS_Y -> Throttle takes priority over RT/LT -> Accel/Reverse).
     data class HalfAxisEntry(
         val sourceAxis: Int,
         val isPositive: Boolean,
     )
+
+    // Pre-scan: which axis functions have a direct full-axis binding?
+    val directAxisFuncs = mutableSetOf<String>()
+    for ((controlId, funcLabel) in bindings) {
+        if (AXIS_CONTROLS.containsKey(controlId) && AXIS_KC_INDEX.containsKey(funcLabel)) {
+            directAxisFuncs.add(funcLabel)
+        }
+    }
 
     val halfAxisGroups = mutableMapOf<String, MutableList<HalfAxisEntry>>()
     val handledAsHalfAxis = mutableSetOf<String>()
 
     for ((controlId, funcLabel) in bindings) {
         val ha = HALF_AXIS_MAP[funcLabel] ?: continue
+        if (ha.first in directAxisFuncs) continue // full-axis binding takes priority
         val axisSdlId = AXIS_CONTROLS[controlId] ?: continue
         halfAxisGroups
             .getOrPut(ha.first) { mutableListOf() }

@@ -48,6 +48,16 @@ object TouchBindings {
      */
     const val TOUCH_BTN_OFFSET = 128
 
+    /**
+     * Second touch binding offset.  When two touch controls share the same
+     * binding, the first uses TOUCH_BTN_OFFSET and the second uses this.
+     * Shared constant with C (kconfig.c TOUCH_BTN_OFFSET_2).
+     */
+    const val TOUCH_BTN_OFFSET_2 = 256
+
+    /** Maximum number of touch controls that can share the same binding. */
+    const val MAX_TOUCH_BINDINGS_PER_ACTION = 2
+
     // --- Virtual (overlay-only) bindings -- not sent as joystick buttons ---
     const val BTN_CHEATS_MENU = 100
     const val BTN_GYRO_RECENTER = 101

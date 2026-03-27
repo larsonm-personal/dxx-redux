@@ -262,6 +262,7 @@ fun TouchEditorPage(
             // ── Properties panel (visible when sheet is expanded) ──
             if (selectedType != null && selectedIndex >= 0) {
                 val panelScrollState = rememberScrollState()
+                val bindingCounts = layout.bindingUsageCounts()
                 Box(modifier = Modifier.heightIn(max = 300.dp)) {
                     Column(
                         modifier =
@@ -274,6 +275,7 @@ fun TouchEditorPage(
                                 StickPropertiesPanel(
                                     stick = layout.sticks[selectedIndex],
                                     gameVariant = gameVariant,
+                                    bindingCounts = bindingCounts,
                                     onUpdate = { updated ->
                                         layout =
                                             layout.copy(
@@ -301,6 +303,7 @@ fun TouchEditorPage(
                                 ButtonPropertiesPanel(
                                     button = layout.buttons[selectedIndex],
                                     gameVariant = gameVariant,
+                                    bindingCounts = bindingCounts,
                                     onUpdate = { updated ->
                                         layout =
                                             layout.copy(
@@ -328,6 +331,7 @@ fun TouchEditorPage(
                                 RadialPropertiesPanel(
                                     radial = layout.radialMenus[selectedIndex],
                                     gameVariant = gameVariant,
+                                    bindingCounts = bindingCounts,
                                     onUpdate = { updated ->
                                         layout =
                                             layout.copy(
@@ -1432,6 +1436,7 @@ private fun moveControl(
 private fun StickPropertiesPanel(
     stick: AnalogStickControl,
     gameVariant: String = "d2",
+    bindingCounts: Map<Int, Int> = emptyMap(),
     onUpdate: (AnalogStickControl) -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -1452,18 +1457,18 @@ private fun StickPropertiesPanel(
     }
     if (stick.buttonMode) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ButtonBindingPicker("X Neg", stick.negXBinding, Modifier.weight(1f), gameVariant) {
+            ButtonBindingPicker("X Neg", stick.negXBinding, Modifier.weight(1f), gameVariant, bindingCounts) {
                 onUpdate(stick.copy(negXBinding = it))
             }
-            ButtonBindingPicker("X Pos", stick.posXBinding, Modifier.weight(1f), gameVariant) {
+            ButtonBindingPicker("X Pos", stick.posXBinding, Modifier.weight(1f), gameVariant, bindingCounts) {
                 onUpdate(stick.copy(posXBinding = it))
             }
         }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ButtonBindingPicker("Y Neg", stick.negYBinding, Modifier.weight(1f), gameVariant) {
+            ButtonBindingPicker("Y Neg", stick.negYBinding, Modifier.weight(1f), gameVariant, bindingCounts) {
                 onUpdate(stick.copy(negYBinding = it))
             }
-            ButtonBindingPicker("Y Pos", stick.posYBinding, Modifier.weight(1f), gameVariant) {
+            ButtonBindingPicker("Y Pos", stick.posYBinding, Modifier.weight(1f), gameVariant, bindingCounts) {
                 onUpdate(stick.copy(posYBinding = it))
             }
         }
@@ -1590,7 +1595,13 @@ private fun StickPropertiesPanel(
 
     // Double-tap action (available for all stick modes)
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        DoubleTapBindingPicker("Double-Tap Action", stick.doubleTapBinding, Modifier.weight(1f), gameVariant) {
+        DoubleTapBindingPicker(
+            "Double-Tap Action",
+            stick.doubleTapBinding,
+            Modifier.weight(1f),
+            gameVariant,
+            bindingCounts,
+        ) {
             onUpdate(stick.copy(doubleTapBinding = it))
         }
     }
@@ -1645,6 +1656,7 @@ private fun StickPropertiesPanel(
 private fun ButtonPropertiesPanel(
     button: ButtonControl,
     gameVariant: String = "d2",
+    bindingCounts: Map<Int, Int> = emptyMap(),
     onUpdate: (ButtonControl) -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -1661,7 +1673,7 @@ private fun ButtonPropertiesPanel(
 
     // Binding & label
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        ButtonBindingPicker("Binding", button.binding, Modifier.weight(1f), gameVariant) {
+        ButtonBindingPicker("Binding", button.binding, Modifier.weight(1f), gameVariant, bindingCounts) {
             onUpdate(button.copy(binding = it))
         }
         LabelEditor("Label", button.label, Modifier.weight(1f)) {
@@ -1720,6 +1732,7 @@ private fun ButtonPropertiesPanel(
 private fun RadialPropertiesPanel(
     radial: RadialMenuControl,
     gameVariant: String = "d2",
+    bindingCounts: Map<Int, Int> = emptyMap(),
     onUpdate: (RadialMenuControl) -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -1792,6 +1805,7 @@ private fun RadialPropertiesPanel(
                     current = seg.binding,
                     gameVariant = gameVariant,
                     modifier = Modifier.weight(1f),
+                    bindingCounts = bindingCounts,
                 ) { newBinding ->
                     val newSegs = radial.segments.toMutableList()
                     val bindingLabel =
@@ -2122,6 +2136,7 @@ private fun SegmentBindingPicker(
     current: Int,
     gameVariant: String = "d2",
     modifier: Modifier = Modifier,
+    bindingCounts: Map<Int, Int> = emptyMap(),
     onChange: (Int) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -2166,14 +2181,25 @@ private fun SegmentBindingPicker(
                                             idx in TouchBindings.D2_ONLY_BUTTONS ||
                                                 idx in TouchBindings.D2_ONLY_META_ACTIONS
                                         )
-                                val displayText = if (isD2Only) "$name (D2 only)" else name
+                                val usedCount =
+                                    bindingCounts.getOrDefault(idx, 0) -
+                                        (if (idx == current) 1 else 0)
+                                val max = TouchBindings.MAX_TOUCH_BINDINGS_PER_ACTION
+                                val atLimit = usedCount >= max
+                                val disabled = isD2Only || atLimit
+                                val suffix =
+                                    when {
+                                        isD2Only -> " (D2 only)"
+                                        atLimit -> " [bound $max/$max - limit]"
+                                        else -> ""
+                                    }
                                 Text(
-                                    displayText,
+                                    "$name$suffix",
                                     modifier =
                                         Modifier
                                             .fillMaxWidth()
                                             .then(
-                                                if (isD2Only) {
+                                                if (disabled) {
                                                     Modifier
                                                 } else {
                                                     Modifier.clickable {
@@ -2183,9 +2209,9 @@ private fun SegmentBindingPicker(
                                                 },
                                             ).padding(vertical = 8.dp, horizontal = 4.dp),
                                     fontSize = 12.sp,
-                                    fontStyle = if (isD2Only) FontStyle.Italic else FontStyle.Normal,
+                                    fontStyle = if (disabled) FontStyle.Italic else FontStyle.Normal,
                                     color =
-                                        if (isD2Only) {
+                                        if (disabled) {
                                             Color(0xFF999999)
                                         } else if (idx == current) {
                                             MaterialTheme.colorScheme.primary
@@ -2212,6 +2238,7 @@ private fun ButtonBindingPicker(
     current: Int,
     modifier: Modifier = Modifier,
     gameVariant: String = "d2",
+    bindingCounts: Map<Int, Int> = emptyMap(),
     onChange: (Int) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -2262,14 +2289,27 @@ private fun ButtonBindingPicker(
                                             idx in TouchBindings.D2_ONLY_BUTTONS ||
                                                 idx in TouchBindings.D2_ONLY_META_ACTIONS
                                         )
-                                val displayText = if (isD2Only) "$name (D2 only)" else name
+                                // Enforce max touch bindings: count excludes the current binding
+                                // because changing to the same value doesn't add a new use
+                                val usedCount =
+                                    bindingCounts.getOrDefault(idx, 0) -
+                                        (if (idx == current) 1 else 0)
+                                val max = TouchBindings.MAX_TOUCH_BINDINGS_PER_ACTION
+                                val atLimit = usedCount >= max
+                                val disabled = isD2Only || atLimit
+                                val suffix =
+                                    when {
+                                        isD2Only -> " (D2 only)"
+                                        atLimit -> " [bound $max/$max - limit]"
+                                        else -> ""
+                                    }
                                 Text(
-                                    displayText,
+                                    "$name$suffix",
                                     modifier =
                                         Modifier
                                             .fillMaxWidth()
                                             .then(
-                                                if (isD2Only) {
+                                                if (disabled) {
                                                     Modifier
                                                 } else {
                                                     Modifier.clickable {
@@ -2279,9 +2319,9 @@ private fun ButtonBindingPicker(
                                                 },
                                             ).padding(vertical = 8.dp, horizontal = 4.dp),
                                     fontSize = 12.sp,
-                                    fontStyle = if (isD2Only) FontStyle.Italic else FontStyle.Normal,
+                                    fontStyle = if (disabled) FontStyle.Italic else FontStyle.Normal,
                                     color =
-                                        if (isD2Only) {
+                                        if (disabled) {
                                             Color(0xFF999999)
                                         } else if (idx == current) {
                                             MaterialTheme.colorScheme.primary
@@ -2309,6 +2349,7 @@ private fun DoubleTapBindingPicker(
     current: Int,
     modifier: Modifier = Modifier,
     gameVariant: String = "d2",
+    bindingCounts: Map<Int, Int> = emptyMap(),
     onChange: (Int) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -2350,14 +2391,25 @@ private fun DoubleTapBindingPicker(
                             )
                             entries.forEach { (idx, name) ->
                                 val isD2Only = isD1 && idx in TouchBindings.D2_ONLY_BUTTONS
-                                val displayText = if (isD2Only) "$name (D2 only)" else name
+                                val usedCount =
+                                    bindingCounts.getOrDefault(idx, 0) -
+                                        (if (idx == current) 1 else 0)
+                                val max = TouchBindings.MAX_TOUCH_BINDINGS_PER_ACTION
+                                val atLimit = usedCount >= max
+                                val disabled = isD2Only || atLimit
+                                val suffix =
+                                    when {
+                                        isD2Only -> " (D2 only)"
+                                        atLimit -> " [bound $max/$max - limit]"
+                                        else -> ""
+                                    }
                                 Text(
-                                    displayText,
+                                    "$name$suffix",
                                     modifier =
                                         Modifier
                                             .fillMaxWidth()
                                             .then(
-                                                if (isD2Only) {
+                                                if (disabled) {
                                                     Modifier
                                                 } else {
                                                     Modifier.clickable {
@@ -2368,9 +2420,9 @@ private fun DoubleTapBindingPicker(
                                                 },
                                             ).padding(vertical = 8.dp, horizontal = 4.dp),
                                     fontSize = 12.sp,
-                                    fontStyle = if (isD2Only) FontStyle.Italic else FontStyle.Normal,
+                                    fontStyle = if (disabled) FontStyle.Italic else FontStyle.Normal,
                                     color =
-                                        if (isD2Only) {
+                                        if (disabled) {
                                             Color(0xFF999999)
                                         } else if (idx == current) {
                                             MaterialTheme.colorScheme.primary

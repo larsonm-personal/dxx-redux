@@ -127,6 +127,9 @@ $allTests = @()
 $gameScriptsDir = Join-Path $scriptDir "game_scripts"
 $json5Files = @(Get-ChildItem -Path $gameScriptsDir -Filter "test_*.json5" -File -ErrorAction SilentlyContinue | Sort-Object Name)
 foreach ($t in $json5Files) {
+    if (-not (Get-ScriptStandalone -ScriptPath $t.FullName)) {
+        continue  # skip template scripts that need a caller
+    }
     $allTests += @{
         Name = $t.BaseName
         Type = "json5"
@@ -325,9 +328,17 @@ if ($tierSingleEmu.Count -gt 0 -and -not $stopEarly) {
     }
 
     if ($emu1Ok) {
-        # Install APK and push game data
-        Install-ApkOnDevice | Out-Null
-        Push-GameDataToDevice
+        # Install APK and push game data via SHA256-indexed deps
+        $emu1Serial = (Adb-Timeout -AdbArgs @("devices") -Seconds 5) |
+            Select-String "(emulator-\d+)\s+device" |
+            ForEach-Object { $_.Matches[0].Groups[1].Value } |
+            Select-Object -First 1
+        if ($emu1Serial) {
+            Install-AppAndData -Serial $emu1Serial
+        } else {
+            Install-ApkOnDevice | Out-Null
+            Push-GameDataToDevice
+        }
 
         foreach ($test in $tierSingleEmu) {
             if ($stopEarly) { break }
@@ -383,8 +394,7 @@ if ($tierDualEmu.Count -gt 0 -and -not $stopEarly) {
             ForEach-Object { $_.Groups[1].Value } | Sort-Object
         if ($serials.Count -ge 2) {
             $emu2Serial = $serials | Select-Object -Last 1
-            Install-ApkOnDevice -Serial $emu2Serial | Out-Null
-            Push-GameDataToDevice -Serial $emu2Serial
+            Install-AppAndData -Serial $emu2Serial
         }
 
         foreach ($test in $tierDualEmu) {

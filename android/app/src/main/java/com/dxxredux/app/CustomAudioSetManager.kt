@@ -32,6 +32,10 @@ class CustomAudioSetManager(
         val order: Int = 0,
         // fingerprint-matched track names: filename -> track name
         val trackNames: Map<String, String> = emptyMap(),
+        // fingerprint match confidence: filename -> confidence (0.0-1.0)
+        val trackConfidences: Map<String, Float> = emptyMap(),
+        // fingerprint match CD track number: filename -> 1-based track number
+        val trackNumbers: Map<String, Int> = emptyMap(),
         // referenced (not copied) files: filename -> SAF content URI string
         val referencedUris: Map<String, String> = emptyMap(),
     )
@@ -59,12 +63,16 @@ class CustomAudioSetManager(
         newFiles: List<String>,
         newRefs: Map<String, String> = emptyMap(),
         newTrackNames: Map<String, String> = emptyMap(),
+        newConfidences: Map<String, Float> = emptyMap(),
+        newTrackNumbers: Map<String, Int> = emptyMap(),
     ) {
         val existing = sets.firstOrNull { it.id == id } ?: return
         val merged =
             existing.copy(
                 files = existing.files + newFiles,
                 trackNames = existing.trackNames + newTrackNames,
+                trackConfidences = existing.trackConfidences + newConfidences,
+                trackNumbers = existing.trackNumbers + newTrackNumbers,
                 referencedUris = existing.referencedUris + newRefs,
             )
         sets.replaceAll { if (it.id == id) merged else it }
@@ -174,6 +182,8 @@ class CustomAudioSetManager(
         val setId: String,
         val setLabel: String,
         val matchedName: String?,
+        val confidence: Float? = null,
+        val trackNum: Int? = null,
     )
 
     /** Get detailed track list including fingerprint-matched names */
@@ -182,7 +192,16 @@ class CustomAudioSetManager(
         val tracks = mutableListOf<TrackDetail>()
         for (set in enabled) {
             for (f in set.files.sorted()) {
-                tracks.add(TrackDetail(f, set.id, set.label, set.trackNames[f]))
+                tracks.add(
+                    TrackDetail(
+                        f,
+                        set.id,
+                        set.label,
+                        set.trackNames[f],
+                        set.trackConfidences[f],
+                        set.trackNumbers[f],
+                    ),
+                )
             }
         }
         tracks.sortBy { it.filename.lowercase() }
@@ -212,6 +231,20 @@ class CustomAudioSetManager(
                             } else {
                                 emptyMap()
                             }
+                        val confObj = obj.optJSONObject("trackConfidences")
+                        val confidences =
+                            if (confObj != null) {
+                                confObj.keys().asSequence().associateWith { confObj.getDouble(it).toFloat() }
+                            } else {
+                                emptyMap()
+                            }
+                        val numsObj = obj.optJSONObject("trackNumbers")
+                        val trackNums =
+                            if (numsObj != null) {
+                                numsObj.keys().asSequence().associateWith { numsObj.getInt(it) }
+                            } else {
+                                emptyMap()
+                            }
                         val refsObj = obj.optJSONObject("referencedUris")
                         val refs =
                             if (refsObj != null) {
@@ -226,6 +259,8 @@ class CustomAudioSetManager(
                             enabled = obj.optBoolean("enabled", true),
                             order = obj.optInt("order", 0),
                             trackNames = names,
+                            trackConfidences = confidences,
+                            trackNumbers = trackNums,
                             referencedUris = refs,
                         )
                     }.toMutableList()
@@ -252,6 +287,16 @@ class CustomAudioSetManager(
                 val namesObj = JSONObject()
                 set.trackNames.forEach { (k, v) -> namesObj.put(k, v) }
                 obj.put("trackNames", namesObj)
+            }
+            if (set.trackConfidences.isNotEmpty()) {
+                val confObj = JSONObject()
+                set.trackConfidences.forEach { (k, v) -> confObj.put(k, v.toDouble()) }
+                obj.put("trackConfidences", confObj)
+            }
+            if (set.trackNumbers.isNotEmpty()) {
+                val numsObj = JSONObject()
+                set.trackNumbers.forEach { (k, v) -> numsObj.put(k, v) }
+                obj.put("trackNumbers", numsObj)
             }
             if (set.referencedUris.isNotEmpty()) {
                 val refsObj = JSONObject()

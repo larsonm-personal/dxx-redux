@@ -37,6 +37,7 @@ function Get-ResolutionFromIntrospection {
 Ensure-EmulatorHealthy
 
 # Resolve game data deps from script
+$scriptPath = Join-Path "$PSScriptRoot\..\game_scripts" $ScriptName
 $deps = Get-ScriptDeps -ScriptPath $scriptPath
 if ($deps) {
     if (-not (Resolve-GameDataDeps -Deps $deps)) {

@@ -717,8 +717,13 @@ class SetupActivity : ComponentActivity() {
             val items = JSONArray()
             var boundCount = 0
             var boundControls = 0
+            // Mirror android_apply_gamepad_defaults() fallback: if Slide U/D
+            // and Bank L/R axis slots are unset (0xFF), the game fills them
+            // with virtual gyro axes 7 and 6 respectively
+            val gyroFallback = mapOf(19 to 7, 21 to 6)
             for (i in 0 until n) {
                 var value = if (joyArr != null && i < joyArr.length()) joyArr.getInt(i) else 255
+                if (value == 255 && i in gyroFallback) value = gyroFallback[i]!!
                 // Apply the same normalization as kc_set_controls in the game:
                 // BT_INVERT values are clamped to 0 or 1 (any value != 1 becomes 0)
                 if (meta[i].type == "invert") {

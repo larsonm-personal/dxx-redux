@@ -92,21 +92,14 @@ Eight features across music playback pipeline, archive import, chromaprint integ
 
 ## Phase 4: Track Info Dialog in Music Picker
 
-**Steps**:
-1. Add tap handler to track items in MusicPickerPage.kt (both CD Audio and Audio Files tabs)
-2. On tap, show a dialog/bottom sheet with:
-   - File size (human-readable)
-   - Track name from chromaprint (if matched)
-   - Album name from chromaprint (if matched)
-   - Match confidence (if matched)
-   - "No match" if chromaprint didn't find anything
-3. For CD Audio: file size = sector count * 2352 bytes; for custom files: actual file size
-4. Consider "Re-fingerprint" button in dialog to retry matching
+**Status**: DONE (build 1025)
 
-**Files to modify**:
-- `android/app/src/main/java/com/dxxredux/app/MusicPickerPage.kt` - tap handler + info dialog composable
-
-**Verification**: Tap a track in either tab -> dialog shows correct info
+Track info dialogs already exist (AudioFileDetailDialog, CdTrackDetailDialog). Enhanced with:
+- CdTrackDetailDialog: added "Track N" display line
+- AudioFileDetailDialog: added file path, match confidence (%), CD track number from fingerprint
+- Persisted confidence + trackNum in AudioSet (trackConfidences, trackNumbers maps)
+- TrackDetail data class expanded with confidence/trackNum fields
+- Import flow captures full MatchResult data (name, confidence, trackNum)
 
 ---
 

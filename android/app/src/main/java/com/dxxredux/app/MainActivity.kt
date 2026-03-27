@@ -417,10 +417,11 @@ class MainActivity :
             gyroManager = gm
         }
         touchOverlay.buttonCallback = { button, pressed ->
-            if (TouchBindings.isMetaAction(button)) {
+            if (button >= TouchBindings.META_ACTION_OFFSET) {
                 NativeMetaActions.nativeMetaAction(button, if (pressed) 1 else 0)
             } else {
-                nativeJoystickButton(button + TouchBindings.TOUCH_BTN_OFFSET, if (pressed) 1 else 0)
+                // button already includes TOUCH_BTN_OFFSET or TOUCH_BTN_OFFSET_2
+                nativeJoystickButton(button, if (pressed) 1 else 0)
             }
         }
         touchOverlay.metaActionCallback = { actionId, pressed ->

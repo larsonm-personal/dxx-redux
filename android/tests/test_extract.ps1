@@ -381,8 +381,17 @@ if (Test-Path $demoDir) {
 Write-Status "Checking emulator..."
 $devices = Adb -CmdArgs 'devices'
 if ($devices -notmatch 'emulator-\d+\s+device') {
-    Write-Status "FAIL: No running emulator found" 'Red'
-    Exit-Test 1 'fail' 'emulator_offline'
+    Write-Status "Emulator offline, attempting restart via emu_health.ps1..."
+    $healthScript = Join-Path $PSScriptRoot "..\emu_health.ps1"
+    if (Test-Path $healthScript) {
+        & $healthScript -Restart 2>&1 | Out-Null
+        Start-Sleep -Seconds 10
+        $devices = Adb -CmdArgs 'devices'
+    }
+    if ($devices -notmatch 'emulator-\d+\s+device') {
+        Write-Status "FAIL: No running emulator found" 'Red'
+        Exit-Test 1 'fail' 'emulator_offline'
+    }
 }
 $boot = Adb -CmdArgs @('shell', 'getprop', 'sys.boot_completed')
 if ($boot.Trim() -ne '1') {
