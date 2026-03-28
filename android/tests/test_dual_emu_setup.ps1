@@ -375,10 +375,10 @@ $r2del = Setup-EmulatorRedir -ConsolePort 5556 -RedirSpec "del udp:42501"
 Write-Status "  EMU2 redir cleanup: $r2del" "Gray"
 
 # Start UDP relay
-$relayScript = Join-Path $ANDROID_DIR "udp_relay.py"
+$relayScript = Join-Path $ANDROID_DIR "udp_relay.ps1"
 $relayLog = Join-Path $REPO_ROOT "temp\udp_relay.log"
 $relayErr = Join-Path $REPO_ROOT "temp\udp_relay_err.log"
-$script:relayProc = Start-Process python -ArgumentList "-u", $relayScript `
+$script:relayProc = Start-Process pwsh -ArgumentList "-File", $relayScript, "-Bind", "127.0.0.1" `
     -PassThru -NoNewWindow `
     -RedirectStandardOutput $relayLog `
     -RedirectStandardError $relayErr

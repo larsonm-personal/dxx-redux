@@ -951,9 +951,33 @@ function Start-SecondEmulator {
     return $false
 }
 
+function Ensure-FirewallRules {
+    # Check if Windows Firewall rules exist for test server/relay ports.
+    # If missing, warn and offer a one-liner the user can run as admin.
+    $rules = @(
+        @{ Name = "DXX-Redux Matchmaking (TCP-in 9000)"; Protocol = "TCP"; Port = 9000 },
+        @{ Name = "DXX-Redux UDP Relay (UDP-in 42600)"; Protocol = "UDP"; Port = 42600 },
+        @{ Name = "DXX-Redux UDP Redir (UDP-in 42500)"; Protocol = "UDP"; Port = 42500 }
+    )
+    $missing = @()
+    foreach ($r in $rules) {
+        $check = netsh advfirewall firewall show rule name="$($r.Name)" 2>&1 | Out-String
+        if ($check -notmatch "Rule Name") { $missing += $r }
+    }
+    if ($missing.Count -eq 0) { return }
+    # Not fatal -- tests bind to 127.0.0.1 to avoid prompts, but warn in case
+    # something uses 0.0.0.0 or the user runs the server manually.
+    $cmds = $missing | ForEach-Object {
+        "netsh advfirewall firewall add rule name='$($_.Name)' dir=in action=allow protocol=$($_.Protocol) localport=$($_.Port) enable=yes"
+    }
+    Write-Status "WARN: $($missing.Count) firewall rule(s) missing. Run as admin to fix:" "Yellow"
+    foreach ($c in $cmds) { Write-Status "  $c" "Yellow" }
+}
+
 function Start-MatchmakingServer {
     # Build (if needed) and start the matchmaking server. Returns the Process object
     # or $null on failure. Caller is responsible for stopping it.
+    Ensure-FirewallRules
     $serverDir = Join-Path $script:REPO_ROOT "server"
     $serverBin = Join-Path $serverDir "target\release\dxx-matchmaking.exe"
     if (-not (Test-Path $serverBin)) {
@@ -979,6 +1003,10 @@ function Start-MatchmakingServer {
     $psi.CreateNoWindow = $true
     $psi.EnvironmentVariables["SKIP_GPGS_VERIFY"] = "true"
     $psi.EnvironmentVariables["RUST_LOG"] = "info"
+    # Bind to localhost to avoid Windows Firewall prompts (emulator
+    # reaches host via 10.0.2.2 which maps to loopback)
+    $psi.EnvironmentVariables["WS_LISTEN_ADDR"] = "127.0.0.1:9000"
+    $psi.EnvironmentVariables["HTTP_LISTEN_ADDR"] = "127.0.0.1:8080"
     $proc = [System.Diagnostics.Process]::Start($psi)
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt 15) {

@@ -220,6 +220,9 @@ try {
     Write-Status ""
     Write-Status "--- Phase 2: Set up UDP relay ---" "White"
 
+    # Pre-create firewall rules to prevent UAC prompts during test
+    Ensure-FirewallRules
+
     # EMU1 redir: host:42500 -> EMU1:42424 (relay -> host game inbound)
     $r1del = Setup-EmulatorRedir -ConsolePort 5554 -RedirSpec "del udp:42500"
     Write-Status "  EMU1 redir cleanup: $r1del" "Gray"
@@ -231,11 +234,11 @@ try {
     Write-Status "  EMU2 redir cleanup: $r2del" "Gray"
 
     # Start UDP relay
-    $relayScript = Join-Path $PSScriptRoot "..\udp_relay.py"
+    $relayScript = Join-Path $PSScriptRoot "..\udp_relay.ps1"
     if (-not (Test-Path $relayScript)) {
-        Write-Status "FAIL: udp_relay.py not found at $relayScript" "Red"; exit 1
+        Write-Status "FAIL: udp_relay.ps1 not found at $relayScript" "Red"; exit 1
     }
-    $relayProc = Start-Process python -ArgumentList "-u", $relayScript -PassThru -NoNewWindow `
+    $relayProc = Start-Process pwsh -ArgumentList "-File", $relayScript, "-Bind", "127.0.0.1" -PassThru -NoNewWindow `
         -RedirectStandardOutput (Join-Path $REPO_ROOT "temp\udp_relay.log") `
         -RedirectStandardError (Join-Path $REPO_ROOT "temp\udp_relay_err.log")
     $script:relayProc = $relayProc
@@ -251,8 +254,8 @@ try {
     $logcatFile2 = Join-Path $REPO_ROOT "temp\lan_emu2_logcat.txt"
     & $ADB -s $EMU1 logcat -c 2>&1 | Out-Null
     & $ADB -s $EMU2 logcat -c 2>&1 | Out-Null
-    $logcatProc1 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU1, "logcat", "-s", "DXX-MP:*", "dxxredux:*", "AndroidRuntime:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile1 -RedirectStandardError (Join-Path $REPO_ROOT "temp\lan_emu1_logcat_err.txt")
-    $logcatProc2 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU2, "logcat", "-s", "DXX-MP:*", "dxxredux:*", "AndroidRuntime:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile2 -RedirectStandardError (Join-Path $REPO_ROOT "temp\lan_emu2_logcat_err.txt")
+    $logcatProc1 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU1, "logcat", "-s", "DXX-MP:*", "dxxredux:*", "AndroidRuntime:*", "LocalhostProxy:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile1 -RedirectStandardError (Join-Path $REPO_ROOT "temp\lan_emu1_logcat_err.txt")
+    $logcatProc2 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU2, "logcat", "-s", "DXX-MP:*", "dxxredux:*", "AndroidRuntime:*", "LocalhostProxy:*", "MatchmakingService:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile2 -RedirectStandardError (Join-Path $REPO_ROOT "temp\lan_emu2_logcat_err.txt")
     Start-Sleep -Seconds 1
 
     # Host (EMU1)
@@ -303,6 +306,22 @@ try {
     Write-Status ""
     Write-Status "--- Phase 4: Wait for multiplayer sync ---" "White"
 
+    # Quick diagnostic: is relay still alive?
+    if ($script:relayProc.HasExited) {
+        Write-Status "WARN: UDP relay exited early (code $($script:relayProc.ExitCode))" "Yellow"
+        $errLog = Join-Path $REPO_ROOT "temp\udp_relay_err.log"
+        if (Test-Path $errLog) {
+            Get-Content $errLog -ErrorAction SilentlyContinue | Select-Object -Last 5 | ForEach-Object { Write-Status "  relay err: $_" "Yellow" }
+        }
+    }
+
+    # Dump early EMU2 logcat to see if game launched and proxy started
+    Start-Sleep -Seconds 2
+    if (Test-Path $logcatFile2) {
+        $early = Get-Content $logcatFile2 -ErrorAction SilentlyContinue | Select-Object -First 20
+        foreach ($l in $early) { Write-Status "  [EMU2 early] $l" "Gray" }
+    }
+
     $script:pollCount = 0
     $syncOk = Wait-ForCondition -Description "MPDIAG sync on host" -TimeoutSec $TimeoutSeconds -PollMs 3000 -Condition {
         $script:pollCount++
@@ -316,6 +335,11 @@ try {
         } else {
             Write-Status "  [poll $($script:pollCount)] no MPDIAG yet" "Gray"
         }
+        # Every 3rd poll, show EMU2 proxy/mp state for diagnostics
+        if ($script:pollCount % 3 -eq 1 -and (Test-Path $logcatFile2)) {
+            $emu2lines = Get-Content $logcatFile2 -ErrorAction SilentlyContinue | Where-Object { $_ -match 'LocalhostProxy|MPDIAG|lan_launch|DXX-MP' } | Select-Object -Last 3
+            foreach ($l in $emu2lines) { Write-Status "  [EMU2] $l" "Gray" }
+        }
         return ($hasSync -and $hasTwoPlayers)
     }
 
@@ -326,8 +350,8 @@ try {
             Get-Content $logcatFile1 -ErrorAction SilentlyContinue | Where-Object { $_ -match 'MPDIAG' } | ForEach-Object { Write-Status "    $_" "Gray" }
         }
         if (Test-Path $logcatFile2) {
-            Write-Status "  EMU2 MPDIAG lines:" "Gray"
-            Get-Content $logcatFile2 -ErrorAction SilentlyContinue | Where-Object { $_ -match 'MPDIAG' } | ForEach-Object { Write-Status "    $_" "Gray" }
+            Write-Status "  EMU2 all captured lines:" "Gray"
+            Get-Content $logcatFile2 -ErrorAction SilentlyContinue | Select-Object -Last 30 | ForEach-Object { Write-Status "    $_" "Gray" }
         }
         Cleanup; exit 1
     }

@@ -17,14 +17,19 @@ import socket
 import select
 import sys
 import time
+import argparse
 
 RELAY_PORT = 42600
 EMU1_REDIR = ("127.0.0.1", 42500)  # host game (via redir, inbound only)
 
 def main():
+    parser = argparse.ArgumentParser(description="UDP relay for emulator MP testing")
+    parser.add_argument("--bind", default="0.0.0.0", help="Bind address (default: 0.0.0.0)")
+    args = parser.parse_args()
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind(("0.0.0.0", RELAY_PORT))
+    sock.bind((args.bind, RELAY_PORT))
     sock.setblocking(False)
 
     print(f"UDP relay listening on :{RELAY_PORT}")
