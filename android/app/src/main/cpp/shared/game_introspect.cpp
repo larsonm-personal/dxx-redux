@@ -588,6 +588,16 @@ extern "C" char *game_introspect_get_state(void)
 		j["slide_ud_time"] = (int) Controls.vertical_thrust_time;
 		j["bank_time"] = (int) Controls.bank_time;
 		j["throttle_time"] = (int) Controls.forward_thrust_time;
+
+		/* Diagnostic: raw axis state and modifier flags for axis test debugging */
+		j["slide_on_state"] = (int) Controls.slide_on_state;
+		j["bank_on_state"] = (int) Controls.bank_on_state;
+		j["control_type"] = (int) PlayerCfg.ControlType;
+		{
+			auto &rja = j["raw_joy_axis"];
+			for (int a = 0; a < 8; a++)
+				rja[a] = (int) Controls.raw_joy_axis[a];
+		}
 	}
 
 	/* -- Player & position (only meaningful when a level is loaded) -- */

@@ -1166,8 +1166,13 @@ class SetupActivity : ComponentActivity() {
      */
     private fun writeInitialGameConfig() {
         writeDefaultControllerConfig()
-        val cfgFile = File(filesDir, "descent.cfg")
-        if (cfgFile.exists()) return // user already has a config — don't overwrite
+        // Check all config paths -- don't overwrite if any exist (user has a config)
+        val cfgPaths = mutableListOf(File(filesDir, "descent.cfg"))
+        for (sub in listOf("d1x-redux", "d2x-redux")) {
+            val f = File(File(filesDir, sub), "descent.cfg")
+            if (f.exists()) cfgPaths.add(f)
+        }
+        if (cfgPaths.any { it.exists() }) return
 
         // Determine the device's real screen dimensions (including system bars)
         val (screenW, screenH) =
@@ -1201,11 +1206,16 @@ class SetupActivity : ComponentActivity() {
         val resW = (w / 2 + 1) and 0x7FFFFFFE
         val resH = (h / 2 + 1) and 0x7FFFFFFE
 
-        cfgFile.writeText(
-            "AspectX=$aspectX\n" +
-                "AspectY=$aspectY\n" +
-                "ResolutionX=$resW\n" +
-                "ResolutionY=$resH\n",
+        // Write to all config paths (root + game subdirs) so the game finds
+        // the resolution in whichever PHYSFS search path it checks first
+        updateAllConfigFiles(
+            filesDir,
+            listOf(
+                "AspectX" to "$aspectX",
+                "AspectY" to "$aspectY",
+                "ResolutionX" to "$resW",
+                "ResolutionY" to "$resH",
+            ),
         )
 
         // Store matching preference so the picker shows the right selection

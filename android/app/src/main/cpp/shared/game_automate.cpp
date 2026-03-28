@@ -394,6 +394,8 @@ static void inject_key_combo(const std::string &modifier, const std::string &key
 
 /* -- Axis injection --------------------------------------------------- */
 
+static int g_inject_axis_logged; /* suppress repeated logs for re-injection */
+
 static void inject_axis(int axis, float value)
 {
 	/* Clamp to SDL range: -32768..32767 */
@@ -408,7 +410,10 @@ static void inject_axis(int axis, float value)
 	ev.jaxis.axis = (Uint8) axis;
 	ev.jaxis.value = (Sint16) ival;
 	SDL_PushEvent(&ev);
-	LOGI("Injecting axis %d = %.3f (raw %d)", axis, value, ival);
+	if (!g_inject_axis_logged) {
+		LOGI("Injecting axis %d = %.3f (raw %d)", axis, value, ival);
+		g_inject_axis_logged = 1;
+	}
 }
 
 /* -- Button injection ------------------------------------------------- */
@@ -593,6 +598,10 @@ static int parse_script(const char *json_text)
 		}
 
 		for (const auto &step_json : script) {
+			/* Skip metadata elements (e.g. _info used by the test runner) */
+			if (step_json.contains("_info"))
+				continue;
+
 			auto_step s;
 
 			std::string action = step_json.value("action", "");
@@ -888,6 +897,7 @@ static void advance_step(void)
 	g_key_phase = 0;
 	g_select_phase = 0;
 	g_select_delta = 0;
+	g_inject_axis_logged = 0;
 
 	if (g_current_step >= (int) g_steps.size()) {
 		LOGI("SCRIPT_RESULT: PASS (%d steps)", (int) g_steps.size());
@@ -1086,7 +1096,8 @@ extern "C" void game_automate_tick(void)
 				g_key_phase = 1;
 				g_step_start = now;
 			} else if (g_key_phase == 1) {
-				/* Hold for post_delay_ms so the axis has time to affect the game */
+				/* Re-inject every tick to fight the touch overlay's zero-flood */
+				inject_axis(s.axis_id, s.axis_value);
 				if (elapsed >= (Uint32) s.post_delay_ms) {
 					advance_step();
 				}

@@ -118,6 +118,12 @@ $manualTests = @(
 # Infrastructure requirement classification
 $twoEmuTests = @("test_mp", "test_lan", "test_lan_discovery")
 $serverTests = @("test_bot_client")
+
+# Per-test timeout overrides (seconds) for multi-phase tests
+$testTimeouts = @{
+    "test_autoselect_crash" = 240
+    "test_saf_archiver"     = 240
+}
 $extractTests = @("test_extract", "test_all_extracts")  # emulator + game data, run last
 $noInfraTests = @("test_cue_iso", "test_server_integration")
 
@@ -155,6 +161,7 @@ foreach ($t in $ps1Files) {
         Type = "ps1"
         Path = $t.FullName
         Requires = $req
+        TimeoutSeconds = if ($testTimeouts.ContainsKey($name)) { $testTimeouts[$name] } else { 0 }
     }
 }
 
@@ -218,8 +225,12 @@ function Run-SingleTest {
     $name = $Test.Name
     $logFile = Join-Path $ReportDir "${name}_${timestamp}.log"
 
+    # Per-test timeout override for multi-phase tests that need more time
+    $testTimeout = $TestTimeoutSeconds
+    if ($Test.TimeoutSeconds) { $testTimeout = $Test.TimeoutSeconds }
+
     Write-Host "------------------------------------------------------------" -ForegroundColor DarkGray
-    Write-Host "  Running: $name  [$($Test.Type)]  (timeout: ${TestTimeoutSeconds}s)" -ForegroundColor White
+    Write-Host "  Running: $name  [$($Test.Type)]  (timeout: ${testTimeout}s)" -ForegroundColor White
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
 
     if ($Test.Type -eq "json5") {
@@ -245,7 +256,7 @@ function Run-SingleTest {
         $stdoutTask = $proc.StandardOutput.ReadToEndAsync()
         $stderrTask = $proc.StandardError.ReadToEndAsync()
 
-        if (-not $proc.WaitForExit($TestTimeoutSeconds * 1000)) {
+        if (-not $proc.WaitForExit($testTimeout * 1000)) {
             $timedOut = $true
             try { $proc.Kill($true) } catch { try { $proc.Kill() } catch {} }
             Start-Sleep -Seconds 1
@@ -263,7 +274,7 @@ function Run-SingleTest {
         $stdout | Out-File -FilePath $logFile -Encoding utf8
         if ($stderr) { $stderr | Out-File -FilePath $logFile -Append -Encoding utf8 }
         if ($timedOut) {
-            "TIMEOUT: Test killed after ${TestTimeoutSeconds}s" | Out-File -FilePath $logFile -Append -Encoding utf8
+            "TIMEOUT: Test killed after ${testTimeout}s" | Out-File -FilePath $logFile -Append -Encoding utf8
         }
 
         $lines = ($stdout -split "`n" | Where-Object { $_.Trim() })
