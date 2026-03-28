@@ -223,6 +223,7 @@ function Start-EmulatorIfNeeded {
 
 function Reset-GameState {
     # Delete pilot files, config, and controller config for fresh test state.
+    # Also reset the active file set to "default" so the game finds its HOGs.
     # Centralized here so every test uses the same cleanup logic.
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
         "find", "files", "-name", "'*.plr'", "-delete") | Out-Null
@@ -232,6 +233,10 @@ function Reset-GameState {
         "find", "files", "-name", "'descent.cfg'", "-delete") | Out-Null
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
         "rm", "-f", "files/controller_config.json") | Out-Null
+    # Reset active file set to "default" -- previous tests may have
+    # created/switched to a different set that is now empty.
+    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE,
+        "rm", "-f", "files/file_sets.json") | Out-Null
 }
 
 function Wait-SetupActivityReady {
@@ -578,7 +583,7 @@ function Watch-AutomationResult {
     # Monitor for SCRIPT_RESULT via file-based result (primary) and logcat (fallback).
     # Handles SCRIPT_BACKGROUND markers by pressing HOME, waiting, then resuming.
     # Returns $true for PASS, $false for FAIL/timeout.
-    param([int]$TimeoutSeconds = 300)
+    param([int]$TimeoutSeconds = 300, [switch]$IsLauncherScript)
 
     Write-Status "Monitoring test (timeout: ${TimeoutSeconds}s)..."
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
@@ -607,7 +612,8 @@ function Watch-AutomationResult {
 
             # Stuck-at-launcher detection: after 15s, if no automation progress,
             # check if the game is actually stuck at the launcher/setup screen.
-            if (-not $launcherChecked -and $elapsed -ge 15) {
+            # Skip for launcher scripts -- they're expected to be at SetupActivity.
+            if (-not $launcherChecked -and $elapsed -ge 15 -and -not $IsLauncherScript) {
                 $launcherChecked = $true
                 $hasProgress = $false
                 # Check automation_log.jsonl for any step progress
@@ -658,6 +664,12 @@ function Watch-AutomationResult {
                     $finished = $true
                     $passed = $false
                     continue
+                } elseif ($resultObj.result -eq "LAUNCHER_CONTINUE") {
+                    # Unified script: game exited, launcher resumes execution.
+                    # The launcher's onResume will pick this up, delete the file,
+                    # and continue running steps. Just keep polling.
+                    $nextStep = $resultObj.next_step
+                    Write-Status "LAUNCHER_CONTINUE at step $nextStep -- waiting for launcher to resume" "Yellow"
                 }
             } catch {
                 # Parse failed -- fall through to logcat
@@ -791,6 +803,24 @@ function Get-ScriptStandalone {
         }
     } catch {}
     return $true
+}
+
+function Get-ScriptIsLauncher {
+    # Return $true if the script's first non-_info action is "enter_launcher".
+    # These scripts start in SetupActivity and may transition to the game engine.
+    param([Parameter(Mandatory = $true)] [string]$ScriptPath)
+    if (-not (Test-Path $ScriptPath)) { return $false }
+    $raw = Get-Content $ScriptPath -Raw
+    $raw = [regex]::Replace($raw, '//.*', '')
+    $raw = [regex]::Replace($raw, ',\s*([}\]])', '$1')
+    try {
+        $arr = $raw | ConvertFrom-Json
+        foreach ($step in $arr) {
+            if ($step._info) { continue }
+            return ($step.action -eq "enter_launcher")
+        }
+    } catch {}
+    return $false
 }
 
 function Resolve-TestScript {

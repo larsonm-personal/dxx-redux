@@ -106,53 +106,78 @@ foreach ($gameId in $gameList) {
         $skipGameData = $true
     }
 
-    # -- Launch game with verification ----------------------------
+    # -- Detect launcher vs game script ---------------------------
 
-    $extraArgs = @()
-    if ($gameId -eq "d1") {
-        Write-Status "Launching as D1"
-        $extraArgs = @("--es", "game", "d1")
-    }
-
-    $preLaunch = {
-        Reset-GameState
-    }
-
-    $launchParams = @{
-        ExtraLaunchArgs = $extraArgs
-        PreLaunchScript = $preLaunch
-        Game = $gameId
-    }
-    if ($skipGameData) { $launchParams.SkipGameData = $true }
-
-    if (-not (Start-GameWithRetry @launchParams)) {
-        $allPassed = $false
-        if ($gameList.Count -gt 1) { Write-Status "FAIL for $($gameId.ToUpper())" "Red"; continue }
-        exit 1
-    }
-
-    # -- Send automation broadcast -------------------------------
-
-    Start-Sleep -Seconds 2
-    Adb -AdbArgs @("logcat", "-c") | Out-Null
-    # Remove stale result files so Watch-AutomationResult doesn't read a prior run's PASS
-    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json") | Out-Null
-    Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_log.jsonl") | Out-Null
-    Write-Status "Sending automation broadcast for: $ScriptName"
-    Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.AUTOMATE", "--es", "script", $ScriptName) | Out-Null
-
-    # -- Step 6: Monitor with health checks ----------------------
+    $isLauncherScript = Get-ScriptIsLauncher -ScriptPath $scriptPath
 
     # Calculate timeout from script timing fields (or use explicit -TimeoutSeconds)
     $scriptTimeout = $TimeoutSeconds
     if ($TimeoutSeconds -eq 300) {
-        # Default -- calculate from script content instead
         $srcForTimeout = if ($resolvedPath -ne $scriptPath) { $resolvedPath } else { $scriptPath }
         $scriptTimeout = Get-ScriptTimeoutSeconds -ScriptPath $srcForTimeout
         Write-Status "Calculated timeout: ${scriptTimeout}s (from script timing fields)"
     }
 
-    $passed = Watch-AutomationResult -TimeoutSeconds $scriptTimeout
+    if ($isLauncherScript) {
+        # -- Launcher script: launch SetupActivity + send SETUP_AUTOMATE -----
+
+        Write-Status "Launcher script detected -- using SetupActivity flow"
+        Adb -AdbArgs @("shell", "am", "force-stop", $script:PACKAGE) | Out-Null
+        Start-Sleep -Seconds 2
+        Reset-GameState
+        Adb -AdbArgs @("logcat", "-c") | Out-Null
+        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json") | Out-Null
+        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_log.jsonl") | Out-Null
+
+        Write-Status "Launching SetupActivity..."
+        Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
+        if (-not (Wait-SetupActivityReady)) {
+            Write-Status "FAIL: SetupActivity not responding" "Red"
+            $allPassed = $false
+            if ($gameList.Count -gt 1) { continue }
+            exit 1
+        }
+
+        Write-Status "Sending SETUP_AUTOMATE broadcast for: $ScriptName"
+        Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_AUTOMATE", "--es", "script", $ScriptName) | Out-Null
+
+        $passed = Watch-AutomationResult -TimeoutSeconds $scriptTimeout -IsLauncherScript
+    } else {
+        # -- Game script: launch game + send AUTOMATE broadcast -----------
+
+        $extraArgs = @()
+        if ($gameId -eq "d1") {
+            Write-Status "Launching as D1"
+            $extraArgs = @("--es", "game", "d1")
+        }
+
+        $preLaunch = {
+            Reset-GameState
+        }
+
+        $launchParams = @{
+            ExtraLaunchArgs = $extraArgs
+            PreLaunchScript = $preLaunch
+            Game = $gameId
+        }
+        if ($skipGameData) { $launchParams.SkipGameData = $true }
+
+        if (-not (Start-GameWithRetry @launchParams)) {
+            $allPassed = $false
+            if ($gameList.Count -gt 1) { Write-Status "FAIL for $($gameId.ToUpper())" "Red"; continue }
+            exit 1
+        }
+
+        Start-Sleep -Seconds 2
+        Adb -AdbArgs @("logcat", "-c") | Out-Null
+        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json") | Out-Null
+        Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_log.jsonl") | Out-Null
+        Write-Status "Sending automation broadcast for: $ScriptName"
+        Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.AUTOMATE", "--es", "script", $ScriptName) | Out-Null
+
+        $passed = Watch-AutomationResult -TimeoutSeconds $scriptTimeout
+    }
+
     if (-not $passed) {
         $allPassed = $false
         if ($gameList.Count -gt 1) { Write-Status "FAIL for $($gameId.ToUpper())" "Red"; continue }

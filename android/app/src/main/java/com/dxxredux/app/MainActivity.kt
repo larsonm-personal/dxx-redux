@@ -98,6 +98,8 @@ class MainActivity :
 
     external fun nativeSetAutomationPath(path: String)
 
+    external fun nativeSetAutomationStartStep(step: Int)
+
     external fun nativeSetMusicGain(gainDb: Float)
 
     external fun nativeSetMusicVoices(maxVoices: Int)
@@ -766,6 +768,27 @@ class MainActivity :
         if (!gameStarted) {
             gameStarted = true
             Log.i("DXX-Automate", "Game surface created, gameStarted=true")
+
+            // If launched with automation intent extras (from launcher script
+            // executor), load the script automatically once the engine starts
+            if (BuildConfig.DEBUG) {
+                val autoScript = intent.getStringExtra("automation_script")
+                val autoStep = intent.getIntExtra("automation_start_step", 0)
+                if (!autoScript.isNullOrEmpty()) {
+                    val resolved =
+                        if (autoScript.startsWith("/")) {
+                            autoScript
+                        } else {
+                            filesDir.absolutePath + "/" + autoScript
+                        }
+                    Log.i(
+                        "DXX-Automate",
+                        "Intent automation: script=$resolved start_step=$autoStep",
+                    )
+                    nativeSetAutomationStartStep(autoStep)
+                    nativeLoadAutomationScript(resolved)
+                }
+            }
 
             Thread {
                 startGame()

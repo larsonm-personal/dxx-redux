@@ -1,11 +1,15 @@
-// TEST: Crash after launcher-based autoselect save
-// Reproduction: the test runner patches the .plr file before launching the game
-// (simulating the launcher's autoselect editor save), then opens menus.
-// The crash reportedly happens when exiting 2-level-deep menus after
-// a launcher-based autoselect ordering save.
+// TEST: Autoselect crash reproduction (unified launcher + game)
+//
+// Reproduces crash: launcher-based autoselect ordering save followed by
+// opening nested menus in game.
+//
+// Phase 1: (Game) Create pilot, reach main menu, then exit
+// Phase 2: (Launcher) Patch .plr via write_autoselect (same as launcher save)
+// Phase 3: (Game) Relaunch, select existing pilot, navigate nested menus
+//
+// Run via: android/run_test.ps1 test_autoselect_crash_unified.json5
 [
     {"_info": {
-        "_standalone": false,
         "games": ["d2"],
         "_deps": [
             {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
@@ -21,10 +25,49 @@
             {"file": "descent.pig", "sha256": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe"}
         ]
     }},
-    {"action": "log", "message": "=== Autoselect crash repro (stress) ==="},
+
+    // ── Phase 1: Create pilot ───────────────────────────────────
+
+    {"action": "enter_launcher"},
+    {"action": "log", "message": "=== Phase 1: Create pilot ==="},
+
+    {"action": "reset_state"},
+
+    {"action": "enter_game", "game": "d2"},
+
     {"action": "wait_ms", "ms": 2000},
 
-    // Select existing pilot from listbox (game shows pilot selection after restart)
+    // Accept default pilot name
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "Ok", "post_delay_ms": 2000},
+
+    // At main menu -- pilot is saved. Exit back to launcher
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "log", "message": "Pilot created, returning to launcher"},
+
+    // ── Phase 2: Patch .plr via JNI autoselect save ─────────────
+
+    {"action": "enter_launcher"},
+    {"action": "log", "message": "=== Phase 2: Patch .plr via write_autoselect ==="},
+
+    // Swap primary weapon order: 8,9,... instead of default 9,8,...
+    {"action": "setup_command", "command": "write_autoselect",
+     "args": {
+         "game": "d2",
+         "primary": "8,9,7,6,5,4,3,2,1,0,255",
+         "secondary": "9,8,4,3,1,5,0,255,7,6,2"
+     }, "post_delay_ms": 2000},
+
+    {"action": "log", "message": "Pilot patched, launching game"},
+
+    // ── Phase 3: Navigate nested menus (crash test) ─────────────
+
+    {"action": "enter_game", "game": "d2"},
+
+    {"action": "log", "message": "=== Phase 3: Navigate menus with patched pilot ==="},
+    {"action": "wait_ms", "ms": 2000},
+
+    // Select existing pilot from listbox
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
     {"action": "wait_ms", "ms": 1000},
     {"action": "select", "text": "player", "post_delay_ms": 2000},
@@ -77,5 +120,5 @@
     {"action": "key", "key": "escape", "post_delay_ms": 2000},
     {"action": "introspect"},
 
-    {"action": "log", "message": "All menu paths survived - test complete"}
+    {"action": "log", "message": "=== All menu paths survived -- test complete ==="}
 ]

@@ -1,0 +1,142 @@
+// TEST: GOG Installer + Redbook Regression (unified launcher + game)
+//
+// Exercises the full GOG import pipeline:
+//   1. (Launcher) Clear game data, import GOG .exe with audio
+//   2. (Launcher) Verify setup introspection: can_launch, audio sources, track names
+//   3. (Launcher) MIDI preview playback verification
+//   4. (Launcher) CD audio preview playback verification
+//   5. (Game) Create pilot, start level 1
+//   6. (Game) Verify redbook playback and overlay entries
+//
+// Prerequisites (handled by PS1 wrapper):
+//   - GOG .exe pushed to /data/local/tmp/setup_descent_2_1.1_(16596).exe
+//
+// Run via: android/tests/test_gog_installer_redbook.ps1
+[
+    {"_info": {
+        "games": ["d2"],
+        "_standalone": false
+    }},
+
+    // ── Phase 1: Launcher setup ─────────────────────────────────
+
+    {"action": "enter_launcher"},
+    {"action": "log", "message": "=== GOG Installer + Redbook: Launcher Phase ==="},
+
+    {"action": "reset_state"},
+
+    // Clear any existing game data set
+    {"action": "setup_command", "command": "clear_set",
+     "args": {"name": "default"}, "post_delay_ms": 1000},
+
+    // Import GOG .exe with audio extraction
+    {"action": "setup_command", "command": "import_gog",
+     "args": {
+         "path": "/data/local/tmp/setup_descent_2_1.1_(16596).exe",
+         "include_audio": true
+     }},
+
+    // Wait for import to complete (can take ~120s for 563MB)
+    {"action": "wait_for", "field": "can_launch", "value": "true", "timeout_ms": 180000},
+    {"action": "log", "message": "Import complete, can_launch=true"},
+
+    // Verify D2 readiness
+    {"action": "assert", "expect": {
+        "d2.ready": "true"
+    }},
+
+    // Verify GOG audio source registered with correct disc_id
+    {"action": "assert", "expect": {
+        "audio_sources[0].disc_id": "d2-gog-v1.2"
+    }},
+
+    // Verify track 4 = "Crawl" (first level music track for D2)
+    {"action": "assert", "expect": {
+        "audio_sources[0].track_names.4": "Crawl"
+    }},
+
+    {"action": "log", "message": "Audio source verified: disc_id + track names"},
+
+    // ── Phase 2: MIDI preview verification ──────────────────────
+
+    {"action": "log", "message": "Testing MIDI preview playback (track 3)"},
+    {"action": "setup_command", "command": "music_midi_play",
+     "args": {"source": 0, "track": 2}, "post_delay_ms": 4000},
+
+    {"action": "assert", "expect": {
+        "music_preview.midi.state": "playing",
+        "music_preview.midi.position_ms": {"gt": 1000}
+    }},
+    {"action": "log", "message": "MIDI preview playing OK"},
+
+    {"action": "setup_command", "command": "music_midi_stop", "post_delay_ms": 1000},
+
+    // ── Phase 3: CD audio preview verification ──────────────────
+
+    {"action": "log", "message": "Testing CD audio preview playback (track 3)"},
+    {"action": "setup_command", "command": "music_cd_play",
+     "args": {"source": 0, "track": 2}, "post_delay_ms": 4000},
+
+    {"action": "assert", "expect": {
+        "music_preview.cd.state": "playing",
+        "music_preview.cd.position_ms": {"gt": 1000}
+    }},
+    {"action": "log", "message": "CD audio preview playing OK"},
+
+    {"action": "setup_command", "command": "music_cd_stop", "post_delay_ms": 1000},
+
+    // ── Phase 4: Switch to game ─────────────────────────────────
+
+    {"action": "log", "message": "Launcher checks passed -- switching to game"},
+
+    // Ensure default set is active before launch
+    {"action": "setup_command", "command": "switch_set",
+     "args": {"name": "default"}, "post_delay_ms": 500},
+
+    {"action": "enter_game", "game": "d2"},
+
+    // ── Phase 5: In-game verification ───────────────────────────
+
+    {"action": "log", "message": "=== GOG Installer + Redbook: In-Game Phase ==="},
+
+    // Accept default pilot name
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "Ok", "post_delay_ms": 2000},
+
+    // Main menu -> New game
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "select", "text": "New game", "post_delay_ms": 1500},
+
+    // GOG full install has only one mission -- skips to "Select starting level"
+    {"action": "wait_ms", "ms": 1000},
+    {"action": "select", "text": "Ok", "post_delay_ms": 1500},
+    // Difficulty
+    {"action": "wait_ms", "ms": 500},
+    {"action": "select", "text": "Rookie", "post_delay_ms": 1500},
+
+    // Skip briefing
+    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 2000},
+
+    // Wait for game
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 15000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+
+    // Wait for overlays to fire
+    {"action": "wait_ms", "ms": 3000},
+
+    // Verify redbook is playing
+    {"action": "introspect"},
+    {"action": "assert", "expect": {
+        "in_game": "true",
+        "screen_mode": "game",
+        "current_level_num": "1",
+        "redbook.play_status": "playing"
+    }},
+    {"action": "log", "message": "Redbook playing on level 1 -- checking overlays"},
+
+    // Verify overlay ring buffer
+    {"action": "assert_overlay", "field": "level", "value": "Level 1"},
+    {"action": "assert_overlay", "field": "track", "value": "Crawl"},
+
+    {"action": "log", "message": "=== TEST: GOG Installer + Redbook -- ALL CHECKS PASS ==="}
+]

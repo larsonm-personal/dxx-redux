@@ -121,8 +121,9 @@ $serverTests = @("test_bot_client")
 
 # Per-test timeout overrides (seconds) for multi-phase tests
 $testTimeouts = @{
-    "test_autoselect_crash" = 240
-    "test_saf_archiver"     = 240
+    "test_autoselect_crash_unified"       = 240
+    "test_gog_installer_redbook_unified"  = 300
+    "test_saf_archiver"                   = 240
 }
 $extractTests = @("test_extract", "test_all_extracts")  # emulator + game data, run last
 $noInfraTests = @("test_cue_iso", "test_server_integration")
@@ -136,11 +137,13 @@ foreach ($t in $json5Files) {
     if (-not (Get-ScriptStandalone -ScriptPath $t.FullName)) {
         continue  # skip template scripts that need a caller
     }
+    $name = $t.BaseName
     $allTests += @{
-        Name = $t.BaseName
+        Name = $name
         Type = "json5"
         Path = $t.FullName
         Requires = "emulator"
+        TimeoutSeconds = if ($testTimeouts.ContainsKey($name)) { $testTimeouts[$name] } else { 0 }
     }
 }
 

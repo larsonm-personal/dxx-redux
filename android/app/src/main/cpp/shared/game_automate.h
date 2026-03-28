@@ -32,6 +32,13 @@ void game_automate_set_path(const char *dir_path);
 void game_automate_load_script(const char *script_path);
 
 /*
+ * Set the starting step index for the next script load.
+ * Used when the launcher passes control to the game engine mid-script.
+ * Must be called before game_automate_load_script().
+ */
+void game_automate_set_start_step(int step);
+
+/*
  * Called from the game thread (event_process) each frame.
  * Advances the automation script by one tick, injecting keys or
  * checking conditions as needed.  Costs almost nothing when no
@@ -49,6 +56,10 @@ static inline void game_automate_set_path(const char *p)
 static inline void game_automate_load_script(const char *p)
 {
 	(void) p;
+}
+static inline void game_automate_set_start_step(int s)
+{
+	(void) s;
 }
 static inline void game_automate_tick(void) {}
 

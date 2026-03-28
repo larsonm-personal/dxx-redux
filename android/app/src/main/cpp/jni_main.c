@@ -301,6 +301,12 @@ Java_com_dxxredux_app_MainActivity_nativeSetIntrospectPath(JNIEnv *env, jobject 
 
 /* ── Automation: load and run a JSON script of input steps ────────── */
 JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetAutomationStartStep(JNIEnv *env, jobject thiz, jint step)
+{
+	game_automate_set_start_step((int) step);
+}
+
+JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeLoadAutomationScript(JNIEnv *env, jobject thiz, jstring jpath)
 {
 	const char *path = (*env)->GetStringUTFChars(env, jpath, NULL);

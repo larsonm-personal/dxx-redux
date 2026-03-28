@@ -125,6 +125,56 @@ class SetupActivity : ComponentActivity() {
      *  rapid startActivity calls create two MainActivity instances in the
      *  :game process, causing a FORTIFY pthread_mutex crash. */
     private var mpGameLaunching = false
+
+    // ── Launcher script automation (debug builds only) ──────────────────
+    //   adb shell am broadcast -a com.dxxredux.SETUP_AUTOMATE \
+    //     --es script files/test.json5
+    // Scripts can alternate between launcher and game phases via
+    // enter_launcher / enter_game steps in a single JSON5 array.
+    private var launcherExecutor: LauncherScriptExecutor? = null
+
+    private val automateSetupReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(
+                ctx: Context?,
+                intent: Intent?,
+            ) {
+                if (!BuildConfig.DEBUG) return
+                val scriptPath = intent?.getStringExtra("script") ?: return
+                val resolved =
+                    if (scriptPath.startsWith("/")) {
+                        scriptPath
+                    } else {
+                        filesDir.absolutePath + "/" + scriptPath
+                    }
+                Log.i("DXX-Setup", "SETUP_AUTOMATE: loading $resolved")
+                val executor =
+                    LauncherScriptExecutor(this@SetupActivity) { game, path, startStep ->
+                        launchGameForAutomation(game, path, startStep)
+                    }
+                launcherExecutor = executor
+                kotlinx.coroutines.MainScope().launch {
+                    executor.execute(resolved, 0)
+                }
+            }
+        }
+
+    private fun launchGameForAutomation(
+        game: String,
+        scriptPath: String,
+        startStep: Int,
+    ) {
+        FileSetManager(filesDir).writeActiveSetPath()
+        AudioSourceManager(filesDir).writePlaylist(contentResolver)
+        writeInitialGameConfig()
+        writeMusicConfigForLaunch()
+        val intent = Intent(this, MainActivity::class.java)
+        intent.putExtra("game", game)
+        intent.putExtra("automation_script", scriptPath)
+        intent.putExtra("automation_start_step", startStep)
+        startActivity(intent)
+    }
+
     private val commandReceiver =
         object : BroadcastReceiver() {
             override fun onReceive(
@@ -1117,6 +1167,16 @@ class SetupActivity : ComponentActivity() {
             registerReceiver(mpCommandReceiver, mpFilter)
         }
 
+        // Register automation receiver (debug only)
+        if (BuildConfig.DEBUG) {
+            val autoFilter = IntentFilter("com.dxxredux.SETUP_AUTOMATE")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(automateSetupReceiver, autoFilter, RECEIVER_EXPORTED)
+            } else {
+                registerReceiver(automateSetupReceiver, autoFilter)
+            }
+        }
+
         val gameRunning = intent.getBooleanExtra("gameRunning", false)
         gameRunningFlag = gameRunning
         val filesDir = filesDir
@@ -1265,6 +1325,26 @@ class SetupActivity : ComponentActivity() {
             com.dxxredux.app.multiplayer.MatchmakingService
                 .endGame()
         }
+        // Check if game exited with LAUNCHER_CONTINUE for automation
+        val executor = launcherExecutor
+        if (executor != null) {
+            val resultFile = File(filesDir, "automation_result.json")
+            if (resultFile.exists()) {
+                try {
+                    val json = org.json.JSONObject(resultFile.readText())
+                    if (json.optString("result") == "LAUNCHER_CONTINUE") {
+                        val nextStep = json.getInt("next_step")
+                        Log.i("DXX-Setup", "LAUNCHER_CONTINUE: resuming at step $nextStep")
+                        resultFile.delete()
+                        kotlinx.coroutines.MainScope().launch {
+                            executor.resume(nextStep)
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("DXX-Setup", "Error reading automation result", e)
+                }
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -1278,6 +1358,10 @@ class SetupActivity : ComponentActivity() {
         }
         try {
             unregisterReceiver(mpCommandReceiver)
+        } catch (_: Exception) {
+        }
+        try {
+            unregisterReceiver(automateSetupReceiver)
         } catch (_: Exception) {
         }
         super.onDestroy()

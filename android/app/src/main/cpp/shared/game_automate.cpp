@@ -171,17 +171,22 @@ static SDLKey lookup_key(const char *name)
 /* -- Step types ------------------------------------------------------- */
 
 enum step_type {
-	STEP_KEY,           /* inject key down+up, then delay */
-	STEP_WAIT_MS,       /* wait N milliseconds */
-	STEP_WAIT_FOR,      /* wait for a game state condition */
-	STEP_INTROSPECT,    /* trigger introspection dump */
-	STEP_LOG,           /* emit a logcat message */
-	STEP_ASSERT,        /* check introspection values, fail if mismatch */
-	STEP_SELECT,        /* find menu item by text and select it */
-	STEP_SEND_AXIS,     /* inject joystick axis event */
-	STEP_SEND_BUTTON,   /* inject joystick button press+release */
-	STEP_SKIP_BRIEFING, /* escape only if a non-game window covers Game_wind */
-	STEP_ASSERT_OVERLAY /* check overlay ring buffer for matching entry */
+	STEP_KEY,            /* inject key down+up, then delay */
+	STEP_WAIT_MS,        /* wait N milliseconds */
+	STEP_WAIT_FOR,       /* wait for a game state condition */
+	STEP_INTROSPECT,     /* trigger introspection dump */
+	STEP_LOG,            /* emit a logcat message */
+	STEP_ASSERT,         /* check introspection values, fail if mismatch */
+	STEP_SELECT,         /* find menu item by text and select it */
+	STEP_SEND_AXIS,      /* inject joystick axis event */
+	STEP_SEND_BUTTON,    /* inject joystick button press+release */
+	STEP_SKIP_BRIEFING,  /* escape only if a non-game window covers Game_wind */
+	STEP_ASSERT_OVERLAY, /* check overlay ring buffer for matching entry */
+	STEP_ENTER_LAUNCHER, /* yield back to launcher, write LAUNCHER_CONTINUE */
+	STEP_ENTER_GAME,     /* launcher-only: no-op in game engine (skip) */
+	STEP_SETUP_COMMAND,  /* launcher-only: no-op in game engine (skip) */
+	STEP_RESET_STATE,    /* launcher-only: no-op in game engine (skip) */
+	STEP_WRITE_CONFIG    /* launcher-only: no-op in game engine (skip) */
 };
 
 /* Key-value pair for STEP_ASSERT expectations.
@@ -231,6 +236,7 @@ static int g_select_delta = 0; /* remaining navigation steps (+down, -up) */
 static char g_automate_dir[512] = "";
 static char g_pending_script[512] = "";
 static volatile int g_load_requested = 0;
+static int g_start_step = 0;      /* skip to this step index on load */
 static Uint32 g_script_start = 0; /* SDL_GetTicks() when script began */
 static FILE *g_log_fp = NULL;     /* automation_log.jsonl file handle */
 static int g_log_seq = 0;         /* monotonic sequence for log lines */
@@ -249,6 +255,11 @@ static const char *step_type_name(step_type t)
 		case STEP_SEND_BUTTON: return "send_button";
 		case STEP_SKIP_BRIEFING: return "skip_briefing";
 		case STEP_ASSERT_OVERLAY: return "assert_overlay";
+		case STEP_ENTER_LAUNCHER: return "enter_launcher";
+		case STEP_ENTER_GAME: return "enter_game";
+		case STEP_SETUP_COMMAND: return "setup_command";
+		case STEP_RESET_STATE: return "reset_state";
+		case STEP_WRITE_CONFIG: return "write_config";
 		default: return "unknown";
 	}
 }
@@ -300,6 +311,29 @@ static void write_result_file(const char *result, const char *reason)
 		        (unsigned) elapsed);
 	}
 
+	fclose(f);
+}
+
+static void write_result_file_continue(int next_step)
+{
+	if (!g_automate_dir[0])
+		return;
+
+	char path[1024];
+	snprintf(path, sizeof(path), "%s/automation_result.json", g_automate_dir);
+
+	Uint32 elapsed = SDL_GetTicks() - g_script_start;
+
+	FILE *f = fopen(path, "w");
+	if (!f)
+		return;
+
+	fprintf(f,
+	        "{\"result\":\"LAUNCHER_CONTINUE\",\"next_step\":%d,"
+	        "\"steps_completed\":%d,\"total_steps\":%d,"
+	        "\"elapsed_ms\":%u}\n",
+	        next_step, g_current_step + 1, (int) g_steps.size(),
+	        (unsigned) elapsed);
 	fclose(f);
 }
 
@@ -617,6 +651,11 @@ static int parse_script(const char *json_text)
 			else if (action == "send_button") s.type = STEP_SEND_BUTTON;
 			else if (action == "skip_briefing") s.type = STEP_SKIP_BRIEFING;
 			else if (action == "assert_overlay") s.type = STEP_ASSERT_OVERLAY;
+			else if (action == "enter_launcher") s.type = STEP_ENTER_LAUNCHER;
+			else if (action == "enter_game") s.type = STEP_ENTER_GAME;
+			else if (action == "setup_command") s.type = STEP_SETUP_COMMAND;
+			else if (action == "reset_state") s.type = STEP_RESET_STATE;
+			else if (action == "write_config") s.type = STEP_WRITE_CONFIG;
 			else {
 				LOGE("Unknown action: %s", action.c_str());
 				continue;
@@ -948,7 +987,8 @@ extern "C" void game_automate_tick(void)
 		open_log_file();
 
 		if (load_script_file(g_pending_script)) {
-			g_current_step = 0;
+			g_current_step = g_start_step;
+			g_start_step = 0; /* reset for next load */
 			g_step_start = SDL_GetTicks();
 			g_script_start = g_step_start;
 			g_key_phase = 0;
@@ -956,11 +996,11 @@ extern "C" void game_automate_tick(void)
 			g_select_delta = 0;
 			g_active = 1;
 			g_failed = 0;
-			LOGI("Script started: %d steps", (int) g_steps.size());
+			LOGI("Script started: %d steps (from step %d)", (int) g_steps.size(), g_current_step);
 
-			if (!g_steps.empty()) {
-				auto &s = g_steps[0];
-				LOGI("Step 1/%d: type=%d", (int) g_steps.size(), (int) s.type);
+			if (g_current_step < (int) g_steps.size()) {
+				auto &s = g_steps[g_current_step];
+				LOGI("Step %d/%d: type=%d", g_current_step + 1, (int) g_steps.size(), (int) s.type);
 				log_append(step_type_name(s.type), "start", "");
 			}
 		}
@@ -1202,7 +1242,44 @@ extern "C" void game_automate_tick(void)
 			}
 			break;
 		}
+
+		case STEP_ENTER_LAUNCHER: {
+			/* Yield control back to the launcher (Kotlin).
+			 * Write LAUNCHER_CONTINUE with the next step index so the
+			 * launcher can resume the script from there. */
+			int next = g_current_step + 1;
+			LOGI("ENTER_LAUNCHER: yielding at step %d, next_step=%d",
+			     g_current_step + 1, next);
+			write_result_file_continue(next);
+			log_append("enter_launcher", "yield", "");
+			if (g_log_fp) {
+				fclose(g_log_fp);
+				g_log_fp = NULL;
+			}
+			g_active = 0;
+
+			/* Trigger graceful game exit so the launcher regains foreground */
+			extern int Quitting;
+			Quitting = 1;
+			break;
+		}
+
+		case STEP_ENTER_GAME:
+		case STEP_SETUP_COMMAND:
+		case STEP_RESET_STATE:
+		case STEP_WRITE_CONFIG:
+			/* Launcher-only steps -- skip with a log when encountered
+			 * in the game engine (should not normally happen) */
+			LOGI("Skipping launcher-only step: %s", step_type_name(s.type));
+			advance_step();
+			break;
 	}
+}
+
+extern "C" void game_automate_set_start_step(int step)
+{
+	g_start_step = step;
+	LOGI("Start step set to %d", step);
 }
 
 #endif /* INTROSPECT_ON */
