@@ -53,7 +53,6 @@ $MISSION = if ($Game -eq "d1") { "descent" } else { "d2" }
 $MODE = "anarchy"
 
 $serverProcess = $null
-$relayProc = $null
 $testPassed = $false
 
 $script:LogFile = Join-Path $REPO_ROOT "temp\mp_test_log.txt"
@@ -166,25 +165,25 @@ function Start-SetupActivity {
 
 function Cleanup {
     Write-Status "Cleaning up..."
-    # Dump relay log on failure for diagnostics
-    $relayLog = Join-Path $REPO_ROOT "temp\udp_relay.log"
-    if (Test-Path $relayLog) {
-        $lines = Get-Content $relayLog -ErrorAction SilentlyContinue
-        if ($lines) {
-            Write-Status "  Relay log ($($lines.Count) lines):" "Gray"
-            foreach ($l in ($lines | Select-Object -Last 20)) {
-                Write-Status "    $l" "Gray"
-            }
-        }
-    }
     if ($script:serverProcess -and -not $script:serverProcess.HasExited) {
         Write-Status "Stopping matchmaking server (PID $($script:serverProcess.Id))..."
         try { $script:serverProcess.Kill() } catch {}
         try { $script:serverProcess.WaitForExit(5000) } catch {}
     }
-    if ($script:relayProc -and -not $script:relayProc.HasExited) {
-        Write-Status "Stopping UDP relay (PID $($script:relayProc.Id))..."
-        try { $script:relayProc.Kill() } catch {}
+    # Wait briefly for log file to flush
+    Start-Sleep -Milliseconds 500
+    # Print server log tail for diagnostics
+    $serverLogDir = Join-Path $REPO_ROOT "temp"
+    $serverLogFile = Get-ChildItem $serverLogDir -Filter "dxx-matchmaking.log*" -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if ($serverLogFile) {
+        $lines = Get-Content $serverLogFile.FullName | Select-Object -Last 30
+        if ($lines) {
+            Write-Status "  Server log ($($serverLogFile.Name), last 30 lines):" "Gray"
+            foreach ($l in $lines) {
+                if ($l.Trim()) { Write-Status "    $($l.Trim())" "Gray" }
+            }
+        }
     }
 }
 
@@ -215,6 +214,14 @@ try {
         }
     }
     Write-Status "Game data verified on both emulators" "Green"
+
+    # Ensure active file set is 'default' (a previous test may have changed it)
+    foreach ($emu in @($EMU1, $EMU2)) {
+        Adb-Dev-Timeout -Serial $emu -AdbArgs @(
+            "shell", "run-as", $PACKAGE, "sh", "-c",
+            "printf '%s' '{`"migration_version`":1,`"active`":`"default`"}' > files/file_sets.json"
+        ) -Seconds 5 | Out-Null
+    }
 
     # Kill stale PowerShell processes to prevent handle leaks
     Get-Process powershell -ErrorAction SilentlyContinue |
@@ -254,23 +261,26 @@ try {
         }
     }
 
-    $psi = New-Object System.Diagnostics.ProcessStartInfo
-    $psi.FileName = $serverBin
-    $psi.WorkingDirectory = $serverDir
-    $psi.RedirectStandardOutput = $true
-    $psi.RedirectStandardError = $true
-    $psi.UseShellExecute = $false
-    $psi.CreateNoWindow = $true
-    $psi.EnvironmentVariables["SKIP_GPGS_VERIFY"] = "true"
-    $psi.EnvironmentVariables["RUST_LOG"] = "info"
+    # Set env vars for server, then launch with Start-Process for clean stderr capture
+    $env:SKIP_GPGS_VERIFY = "true"
+    $env:RUST_LOG = "info"
     # Bind to localhost to avoid Windows Firewall prompts (emulator
     # reaches host via 10.0.2.2 which maps to loopback)
-    $psi.EnvironmentVariables["WS_LISTEN_ADDR"] = "127.0.0.1:9000"
-    $psi.EnvironmentVariables["HTTP_LISTEN_ADDR"] = "127.0.0.1:8080"
-    $serverProcess = [System.Diagnostics.Process]::Start($psi)
+    $env:WS_LISTEN_ADDR = "127.0.0.1:9000"
+    $env:HTTP_LISTEN_ADDR = "127.0.0.1:8080"
+    # Configure built-in UDP relay so LocalhostProxy can route game traffic.
+    # Emulators reach host loopback at 10.0.2.2.
+    $env:RELAY_LISTEN_ADDR = "127.0.0.1:9001"
+    $env:RELAY_PUBLIC_ADDR = "10.0.2.2:9001"
+    $env:LOG_DIR = (Join-Path $REPO_ROOT "temp")
+    $script:serverLogPath = Join-Path $REPO_ROOT "temp\matchmaking_server.log"
+    $serverProcess = Start-Process -FilePath $serverBin -WorkingDirectory $serverDir `
+        -NoNewWindow -PassThru `
+        -RedirectStandardError $script:serverLogPath `
+        -RedirectStandardOutput (Join-Path $REPO_ROOT "temp\server_stdout.log")
     Write-Status "Server starting (PID $($serverProcess.Id))..."
 
-    # Wait for server to be ready
+    # Wait for server to be ready (both WS and relay ports)
     $serverReady = Wait-ForCondition -Description "Server listening on port 9000" -TimeoutSec 15 -PollMs 1000 -Condition {
         $conn = Get-NetTCPConnection -LocalPort 9000 -State Listen -ErrorAction SilentlyContinue
         return $null -ne $conn
@@ -486,101 +496,41 @@ try {
     }
     Write-Status "Both players ready" "Green"
 
-    # Set up UDP relay infrastructure BEFORE start_game.
-    # start_game triggers GAME_STARTING from the server, which auto-launches
-    # the game via LobbyScreen's LaunchedEffect.  The relay and join target
-    # must be ready before that auto-launch fires.
-    function Setup-EmulatorRedir {
-        param([int]$ConsolePort, [string]$RedirSpec)
-        $token = (Get-Content "$env:USERPROFILE\.emulator_console_auth_token").Trim()
-        try {
-            $c = New-Object System.Net.Sockets.TcpClient("127.0.0.1", $ConsolePort)
-            $s = $c.GetStream()
-            $b = New-Object byte[] 4096
-            Start-Sleep -Milliseconds 500
-            if ($s.DataAvailable) { $s.Read($b, 0, 4096) | Out-Null }
-            $w = [System.Text.Encoding]::ASCII.GetBytes("auth $token`r`n")
-            $s.Write($w, 0, $w.Length)
-            Start-Sleep -Milliseconds 300
-            if ($s.DataAvailable) { $s.Read($b, 0, 4096) | Out-Null }
-            $w = [System.Text.Encoding]::ASCII.GetBytes("redir $RedirSpec`r`n")
-            $s.Write($w, 0, $w.Length)
-            Start-Sleep -Milliseconds 300
-            $result = ""
-            if ($s.DataAvailable) { $n = $s.Read($b, 0, 4096); $result = [System.Text.Encoding]::ASCII.GetString($b, 0, $n) }
-            $c.Close()
-            return $result.Trim()
-        } catch {
-            return "ERROR: $($_.Exception.Message)"
-        }
+    # The matchmaking server's built-in relay handles UDP routing between
+    # emulators via LocalhostProxy. No custom relay or port redirection needed.
+
+    # Clear stale introspect files so Phase 8 doesn't read old game state
+    foreach ($emu in @($EMU1, $EMU2)) {
+        Adb-Dev -Serial $emu -AdbArgs @(
+            "shell", "run-as", $PACKAGE, "rm", "-f", "files/introspect.json"
+        ) | Out-Null
     }
 
-    # EMU1 redir: host:42500 -> EMU1:42424 (for relay -> host game inbound)
-    # Delete first in case a previous test left it active, then re-add.
-    $r1del = Setup-EmulatorRedir -ConsolePort 5554 -RedirSpec "del udp:42500"
-    Write-Status "  EMU1 UDP redir cleanup: $r1del" "Gray"
-    $r1 = Setup-EmulatorRedir -ConsolePort 5554 -RedirSpec "add udp:42500:42424"
-    Write-Status "  EMU1 UDP redir: $r1" "Gray"
-    # EMU2: NO redir - redir blocks outbound UDP from game port 42424
-    $r2del = Setup-EmulatorRedir -ConsolePort 5556 -RedirSpec "del udp:42501"
-    Write-Status "  EMU2 UDP redir removed: $r2del" "Gray"
+    # Clear logcat and start capture BEFORE start_game so we see GAME_STARTING
+    # and the auto-launch logs (including nativeSetAutoJoin address).
+    & $ADB -s $EMU1 logcat -c 2>&1 | Out-Null
+    & $ADB -s $EMU2 logcat -c 2>&1 | Out-Null
+    $logcatFile1 = Join-Path $REPO_ROOT "temp\emu1_logcat_phase8.txt"
+    $logcatFile2 = Join-Path $REPO_ROOT "temp\emu2_logcat_phase8.txt"
+    $logcatProc1 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU1, "logcat", "-s", "DXX-MP:*", "DXX-Redux:*", "dxxredux:*", "MatchmakingService:*", "DEBUG:*", "AndroidRuntime:*", "libc:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile1 -RedirectStandardError (Join-Path $REPO_ROOT "temp\emu1_logcat_err.txt")
+    $logcatProc2 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU2, "logcat", "-s", "DXX-MP:*", "DXX-Redux:*", "dxxredux:*", "MatchmakingService:*", "DEBUG:*", "AndroidRuntime:*", "libc:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile2 -RedirectStandardError (Join-Path $REPO_ROOT "temp\emu2_logcat_err.txt")
 
-    # Start UDP relay to bridge the two emulators
-    $relayScript = Join-Path $PSScriptRoot "..\udp_relay.ps1"
-    $relayProc = Start-Process pwsh -ArgumentList "-File", $relayScript, "-Bind", "127.0.0.1" -PassThru -NoNewWindow -RedirectStandardOutput (Join-Path $REPO_ROOT "temp\udp_relay.log") -RedirectStandardError (Join-Path $REPO_ROOT "temp\udp_relay_err.log")
-    $script:relayProc = $relayProc
-    Write-Status "  UDP relay started (PID $($relayProc.Id))" "Gray"
-    Start-Sleep -Seconds 1
-
-    # Tell joiner to connect through the relay (10.0.2.2:42600)
-    Send-MpCommand -Serial $EMU2 -Command "set_join_target" -Extras @(
-        "--es", "host_addr", "10.0.2.2",
-        "--ei", "host_port", "42600"
-    )
-    Start-Sleep -Milliseconds 500
-
-    # Player 1 (host) starts the game
+    # Player 1 (host) starts the game.  The server sends GAME_STARTING to both
+    # players, which triggers auto-launch via LobbyScreen's LaunchedEffect.
+    # gameLaunchInfo is set then immediately consumed, so we don't poll for it.
+    # Phase 8 waits for both players to actually enter the game.
     Write-Status "Player 1 starting game..."
     Send-MpCommand -Serial $EMU1 -Command "start_game"
-
-    # Wait for GAME_STARTING to arrive on both sides
-    $gameStarting1 = Wait-ForCondition -Description "Player 1 received GAME_STARTING" -TimeoutSec 15 -PollMs 1500 -Condition {
-        $mp = Get-MpIntrospection -Serial $EMU1
-        return ($mp -and $mp.game_launch_pending -eq $true)
-    }
-    if (-not $gameStarting1) {
-        Write-Status "FAIL: Player 1 didn't get GAME_STARTING" "Red"
-        Cleanup; exit 1
-    }
-
-    $gameStarting2 = Wait-ForCondition -Description "Player 2 received GAME_STARTING" -TimeoutSec 15 -PollMs 1500 -Condition {
-        $mp = Get-MpIntrospection -Serial $EMU2
-        return ($mp -and $mp.game_launch_pending -eq $true)
-    }
-    if (-not $gameStarting2) {
-        Write-Status "FAIL: Player 2 didn't get GAME_STARTING" "Red"
-        Cleanup; exit 1
-    }
-    Write-Status "GAME_STARTING received by both players" "Green"
+    Start-Sleep -Seconds 3  # give auto-launch time to fire
 
     # -- Step 8: Launch the actual game on both --
     # The game auto-launches from LobbyScreen's LaunchedEffect when GAME_STARTING
-    # is received.  UDP relay and join target were set up in Phase 7 before
-    # start_game.  The explicit launch_game here is a fallback in case the
-    # auto-launch didn't fire (the mpGameLaunching guard in SetupActivity
-    # prevents double-launch / FORTIFY crash).
+    # is received.  The server relay and LocalhostProxy handle UDP routing.
+    # The explicit launch_game here is a fallback in case the auto-launch didn't
+    # fire (the mpGameLaunching guard in SetupActivity prevents double-launch /
+    # FORTIFY crash).
     Write-Status ""
     Write-Status "--- Phase 8: Wait for game launch ---" "White"
-
-    # Clear logcat before launch
-    & $ADB -s $EMU1 logcat -c 2>&1 | Out-Null
-    & $ADB -s $EMU2 logcat -c 2>&1 | Out-Null
-
-    # Start background logcat capture for MPDIAG and crash signals
-    $logcatFile1 = Join-Path $REPO_ROOT "temp\emu1_logcat_phase8.txt"
-    $logcatFile2 = Join-Path $REPO_ROOT "temp\emu2_logcat_phase8.txt"
-    $logcatProc1 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU1, "logcat", "-s", "DXX-MP:*", "dxxredux:*", "DEBUG:*", "AndroidRuntime:*", "libc:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile1 -RedirectStandardError (Join-Path $REPO_ROOT "temp\emu1_logcat_err.txt")
-    $logcatProc2 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU2, "logcat", "-s", "DXX-MP:*", "dxxredux:*", "DEBUG:*", "AndroidRuntime:*", "libc:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile2 -RedirectStandardError (Join-Path $REPO_ROOT "temp\emu2_logcat_err.txt")
 
     # Fallback: send launch_game in case the auto-launch from LaunchedEffect
     # didn't fire.  The guard in launchMultiplayerGame prevents double-launch.
@@ -591,8 +541,8 @@ try {
     # Wait for both to enter the game.
     # Primary: check in_game via introspection.
     # Fallback: if introspection returns null (emulator crash during 3D render),
-    # check MPDIAG logcat for "send_sync" and relay log for SYNC packet (pid=10)
-    # as proof that the multiplayer handshake completed and game data is flowing.
+    # check MPDIAG logcat for "send_sync" as proof that the multiplayer handshake
+    # completed.
     $script:p8poll = 0
     $script:p8nullCount = 0
     $script:p8hadLevel = $false
@@ -610,28 +560,17 @@ try {
         }
         if ($gi -and $gi.in_game -eq $true) { return $true }
         # Fallback: after 5 consecutive null polls (emulator likely crashed during 3D render),
-        # check MPDIAG logcat for send_sync confirmation and relay for SYNC + PDATA packets.
-        # The level may never have shown >0 if the crash happens before introspection runs.
+        # check MPDIAG logcat for send_sync confirmation.
         if ($script:p8nullCount -ge 5) {
-            Write-Status "  Checking fallback: MPDIAG logcat + relay log..." "Gray"
+            Write-Status "  Checking fallback: MPDIAG logcat..." "Gray"
             $hasSendSync = $false
-            $hasRelaySync = $false
-            $hasRelayPdata = $false
             if (Test-Path $logcatFile1) {
                 $mpdiag = Select-String -Path $logcatFile1 -Pattern "send_sync" -SimpleMatch -ErrorAction SilentlyContinue
                 if ($mpdiag) { $hasSendSync = $true }
             }
-            $rLog = Join-Path $REPO_ROOT "temp\udp_relay.log"
-            if (Test-Path $rLog) {
-                $relayLines = Get-Content $rLog -ErrorAction SilentlyContinue
-                foreach ($line in $relayLines) {
-                    if ($line -match "pid=10\b") { $hasRelaySync = $true }
-                    if ($line -match "pid=16\b") { $hasRelayPdata = $true }
-                }
-            }
-            Write-Status "    send_sync in MPDIAG: $hasSendSync, SYNC in relay: $hasRelaySync, PDATA in relay: $hasRelayPdata" "Gray"
-            if ($hasSendSync -and $hasRelaySync -and $hasRelayPdata) {
-                Write-Status "  Fallback PASS: MPDIAG confirms send_sync, relay confirms SYNC + PDATA (emulator likely crashed during 3D render)" "Yellow"
+            Write-Status "    send_sync in MPDIAG: $hasSendSync" "Gray"
+            if ($hasSendSync) {
+                Write-Status "  Fallback PASS: MPDIAG confirms send_sync (emulator likely crashed during 3D render)" "Yellow"
                 $script:p8UsedFallback = $true
                 return $true
             }
@@ -698,13 +637,12 @@ try {
                 Write-Status "  [poll $($script:p8poll2)] EMU2: introspection returned null (consecutive: $($script:p8nullCount2))" "Gray"
             }
             if ($gi -and $gi.in_game -eq $true) { return $true }
-            # Fallback for P2: relay already confirmed both send/receive PDATA
+            # Fallback for P2: check MPDIAG for send_sync
             if ($script:p8nullCount2 -ge 5) {
-                $rLog = Join-Path $REPO_ROOT "temp\udp_relay.log"
-                if (Test-Path $rLog) {
-                    $hasEmu2Pdata = Select-String -Path $rLog -Pattern "EMU2->EMU1.*pid=16" -ErrorAction SilentlyContinue
-                    if ($hasEmu2Pdata) {
-                        Write-Status "  Fallback PASS: relay confirms EMU2 sending PDATA to EMU1" "Yellow"
+                if (Test-Path $logcatFile2) {
+                    $hasSendSync2 = Select-String -Path $logcatFile2 -Pattern "send_sync" -SimpleMatch -ErrorAction SilentlyContinue
+                    if ($hasSendSync2) {
+                        Write-Status "  Fallback PASS: MPDIAG confirms EMU2 send_sync" "Yellow"
                         return $true
                     }
                 }
@@ -712,7 +650,7 @@ try {
             return $false
         }
     } else {
-        Write-Status "  Skipping Player 2 introspection (fallback path, relay already confirmed bidirectional data)" "Yellow"
+        Write-Status "  Skipping Player 2 introspection (fallback path, MPDIAG confirmed connectivity)" "Yellow"
     }
     if (-not $inGame2) {
         Write-Status "FAIL: Player 2 never entered game" "Red"
@@ -747,7 +685,7 @@ try {
     Write-Status "--- Phase 9: Verify multiplayer state ---" "White"
 
     if ($script:p8UsedFallback) {
-        Write-Status "Skipping introspection checks (emulator crashed during 3D render, relay data confirmed connectivity)" "Yellow"
+        Write-Status "Skipping introspection checks (emulator crashed during 3D render, MPDIAG confirmed connectivity)" "Yellow"
         $failures = @()
         $gi1 = $null
         $gi2 = $null

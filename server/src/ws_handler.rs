@@ -1624,6 +1624,24 @@ async fn handle_authenticated_message(
                         for j in (i + 1)..lobby.players.len() {
                             let (conn_type, _) =
                                 determine_connection_type(&lobby.players[i], &lobby.players[j]);
+                            // Apply same unconfirmed-DirectLan downgrade
+                            let confirmed_direct = |ct: &crate::lobby::ConnectionType| {
+                                !matches!(
+                                    ct,
+                                    crate::lobby::ConnectionType::Unknown
+                                        | crate::lobby::ConnectionType::Relay
+                                )
+                            };
+                            let conn_type = if conn_type
+                                == crate::lobby::ConnectionType::DirectLan
+                                && !relay_addr.is_empty()
+                                && !confirmed_direct(&lobby.players[i].connection_type)
+                                && !confirmed_direct(&lobby.players[j].connection_type)
+                            {
+                                crate::lobby::ConnectionType::Relay
+                            } else {
+                                conn_type
+                            };
                             if conn_type == crate::lobby::ConnectionType::Relay {
                                 let find_public_addr = |p: &crate::lobby::LobbyPlayer| {
                                     p.candidates
@@ -1697,6 +1715,36 @@ async fn handle_authenticated_message(
                                 &lobby.players[my_slot],
                                 &lobby.players[other_slot],
                             );
+
+                            // Downgrade unconfirmed DirectLan to Relay when relay
+                            // is available. "Same public IP" is a heuristic that
+                            // fails for emulators, containers, or CGNAT where two
+                            // peers share a public IP but can't reach each other's
+                            // host candidates. Downgrade if neither player confirmed
+                            // direct connectivity (both Unknown or Relay after probes).
+                            let confirmed_direct = |ct: &crate::lobby::ConnectionType| {
+                                !matches!(
+                                    ct,
+                                    crate::lobby::ConnectionType::Unknown
+                                        | crate::lobby::ConnectionType::Relay
+                                )
+                            };
+                            let conn_type = if conn_type
+                                == crate::lobby::ConnectionType::DirectLan
+                                && !relay_addr.is_empty()
+                                && !confirmed_direct(&lobby.players[my_slot].connection_type)
+                                && !confirmed_direct(&lobby.players[other_slot].connection_type)
+                            {
+                                info!(
+                                    my_slot,
+                                    other_slot,
+                                    "DirectLan unconfirmed by probes, downgrading to Relay"
+                                );
+                                crate::lobby::ConnectionType::Relay
+                            } else {
+                                conn_type
+                            };
+
                             let mut is_relay = conn_type == crate::lobby::ConnectionType::Relay;
 
                             // For direct: use winning candidate addr; for relay: use relay server

@@ -1007,6 +1007,9 @@ function Start-MatchmakingServer {
     # reaches host via 10.0.2.2 which maps to loopback)
     $psi.EnvironmentVariables["WS_LISTEN_ADDR"] = "127.0.0.1:9000"
     $psi.EnvironmentVariables["HTTP_LISTEN_ADDR"] = "127.0.0.1:8080"
+    # Configure built-in UDP relay so LocalhostProxy can route game traffic
+    $psi.EnvironmentVariables["RELAY_LISTEN_ADDR"] = "127.0.0.1:9001"
+    $psi.EnvironmentVariables["RELAY_PUBLIC_ADDR"] = "10.0.2.2:9001"
     $proc = [System.Diagnostics.Process]::Start($psi)
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt 15) {

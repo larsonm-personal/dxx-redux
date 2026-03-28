@@ -806,6 +806,10 @@ class SetupActivity : ComponentActivity() {
                 // Online: use existing proxy from matchmaking
                 val hostAddr = mpJoinHostAddrOverride ?: "127.0.0.1"
                 val hostPort = mpJoinHostPortOverride ?: NetworkConstants.PROXY_PORT_BASE
+                Log.i(
+                    "DXX-MP",
+                    "launchMP join: override=$mpJoinHostAddrOverride:$mpJoinHostPortOverride resolved=$hostAddr:$hostPort",
+                )
                 mpIntent.putExtra("mp_host_addr", hostAddr)
                 mpIntent.putExtra("mp_host_port", hostPort)
             }
