@@ -330,6 +330,14 @@ if ($tierSingleEmu.Count -gt 0 -and -not $stopEarly) {
     Write-Host ""
     Write-Host "== Tier 1: Single-emulator tests ==" -ForegroundColor Cyan
 
+    # Kill stale ADB server to prevent hangs on first device command.
+    # A zombie adb.exe from a prior session can block indefinitely.
+    Write-Host "  Restarting ADB server..." -ForegroundColor DarkGray
+    Get-Process adb -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 1
+    & $script:ADB start-server 2>$null
+    Start-Sleep -Seconds 2
+
     # Ensure emulator is running
     if (-not (Test-SingleEmulator)) {
         $emu1Ok = Start-SingleEmulator

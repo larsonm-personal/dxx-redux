@@ -141,8 +141,18 @@ Write-Host "Step 4: Moving $TEST_FILE to SAF test location..." -ForegroundColor 
 $GAME_DATA_DIR = "files/sets/default"
 $sizeOutput = Adb shell "run-as $PACKAGE stat -c '%s' $GAME_DATA_DIR/$TEST_FILE"
 if (-not $sizeOutput -or $sizeOutput -match 'No such file') {
-    Write-Error "$TEST_FILE not found at $GAME_DATA_DIR/$TEST_FILE on device"
-    exit 1
+    # File missing -- a previous timed-out run may not have cleaned up.
+    # Re-push via the standard game data deps mechanism.
+    Write-Host "  $TEST_FILE missing on device, re-pushing..." -ForegroundColor Yellow
+    if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
+        Write-Error "Could not re-push game data deps"
+        exit 1
+    }
+    $sizeOutput = Adb shell "run-as $PACKAGE stat -c '%s' $GAME_DATA_DIR/$TEST_FILE"
+    if (-not $sizeOutput -or $sizeOutput -match 'No such file') {
+        Write-Error "$TEST_FILE still not found after re-push"
+        exit 1
+    }
 }
 $fileSize = [long]($sizeOutput.ToString().Trim())
 Write-Host "  File size: $fileSize bytes"
