@@ -25,11 +25,11 @@
     "total_extracted":  233
 ,
     "last_test_result": {
-        "status": "fail",
-        "failure_step": "setup_timeout",
-        "level_reached": null,
-        "files_verified": 0,
-        "classification_confirmed": false,
+        "status": "pass",
+        "failure_step": null,
+        "level_reached": "Lunar Outpost",
+        "files_verified": 2,
+        "classification_confirmed": true,
         "test_mode": "full"
     }
 }
