@@ -12,4 +12,8 @@ int jukebox_is_playing();
 int jukebox_numtracks();
 void jukebox_list();
 
+#ifdef __ANDROID__
+const char *jukebox_get_track_name(int index);
+#endif
+
 #endif

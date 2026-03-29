@@ -302,3 +302,12 @@ void jukebox_list() {
 			con_printf(CON_DEBUG,"* %s\n", JukeboxSongs.list[i]);
 	}
 }
+
+#ifdef __ANDROID__
+const char *jukebox_get_track_name(int index)
+{
+	if (!JukeboxSongs.list || index < 0 || index >= JukeboxSongs.num_songs)
+		return NULL;
+	return JukeboxSongs.list[index];
+}
+#endif

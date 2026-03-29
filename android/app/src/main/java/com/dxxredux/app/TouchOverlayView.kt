@@ -200,6 +200,16 @@ class TouchOverlayView
             var centerY = 0f
             var width = 0f
             var height = 0f
+
+            // Music-type geometry (computed in computeGeometry)
+            var musicPrevCX = 0f
+            var musicNextCX = 0f
+            var musicBtnY = 0f
+            var musicBtnR = 0f
+            var musicLabelX = 0f
+            var musicPrevPid = -1
+            var musicNextPid = -1
+            var musicLabelPid = -1
         }
 
         private class AxisRegionState(
@@ -305,19 +315,9 @@ class TouchOverlayView
         private var mapBtnCenterY = 0f
         private var mapBtnRadius = 0f
 
-        // ── Music prev/next button geometry ──────────────────────────
-        private var musicBtnY = 0f
-        private var prevBtnCenterX = 0f
-        private var nextBtnCenterX = 0f
-        private var musicBtnRadius = 0f
-        private var musicLabelX = 0f
-
         // ── Non-layout pointer tracking ─────────────────────────
         private val passthroughPointers = mutableSetOf<Int>()
         private var mapBtnPointerId = -1 // used by automap overlay
-        private var prevBtnPointerId = -1
-        private var nextBtnPointerId = -1
-        private var musicLabelPointerId = -1
 
         // ── Automap gesture state (pointers not on stick/buttons) ──
 
@@ -584,9 +584,6 @@ class TouchOverlayView
                 }
             }
 
-            // Music controls (not layout-driven)
-            musicBtnRadius = base * 0.03f
-
             // Compute radial menu geometry from layout
             for (rm in radialStates) {
                 rm.triggerRadius = defaultBtnRadius * rm.control.sizeMult
@@ -603,11 +600,6 @@ class TouchOverlayView
                 sl.thumbR = base * 0.018f * sl.control.sizeMult
             }
 
-            musicBtnY = base * 0.12f
-            prevBtnCenterX = wf * 0.04f + musicBtnRadius
-            nextBtnCenterX = prevBtnCenterX + musicBtnRadius * 2 + base * 0.02f + musicBtnRadius
-            musicLabelX = nextBtnCenterX + musicBtnRadius + base * 0.02f
-
             // Automap overlay geometry
             automapBtnSize = base * 0.09f
             automapBtnSpacing = base * 0.02f
@@ -622,8 +614,28 @@ class TouchOverlayView
                 d.centerX = wf * d.control.xPct / 100f
                 d.centerY = hf * d.control.yPct / 100f
                 paintDiagText.textSize = diagTextSize * d.control.sizeMult
-                d.width = paintDiagText.measureText("Roll: -100%") + diagTextSize * 2
-                d.height = diagTextSize * d.control.sizeMult * 4.5f
+                when (d.control.type) {
+                    DiagnosticType.GYRO -> {
+                        d.width = paintDiagText.measureText("Roll: -100%") + diagTextSize * 2
+                        d.height = diagTextSize * d.control.sizeMult * 4.5f
+                    }
+                    DiagnosticType.MUSIC -> {
+                        val r = base * 0.03f * d.control.sizeMult
+                        d.musicBtnR = r
+                        d.musicBtnY = d.centerY
+                        d.musicPrevCX = d.centerX - d.width / 2 + r + diagTextSize * 0.5f
+                        d.musicNextCX = d.musicPrevCX + r * 2 + base * 0.02f * d.control.sizeMult
+                        d.musicLabelX = d.musicNextCX + r + base * 0.02f * d.control.sizeMult
+                        // Size to fit buttons + reasonable label space
+                        d.width = (d.musicLabelX - d.musicPrevCX + r) +
+                            paintDiagText.measureText("Track 00/00: xxxxxxxx") + diagTextSize
+                        d.height = r * 3f
+                        // Recompute button positions now that width is known
+                        d.musicPrevCX = d.centerX - d.width / 2 + r + diagTextSize * 0.5f
+                        d.musicNextCX = d.musicPrevCX + r * 2 + base * 0.02f * d.control.sizeMult
+                        d.musicLabelX = d.musicNextCX + r + base * 0.02f * d.control.sizeMult
+                    }
+                }
             }
 
             // Compute axis region geometry from layout
@@ -686,26 +698,6 @@ class TouchOverlayView
                         drawRadialMenu(canvas, rm, gAlpha)
                     }
                 }
-            }
-
-            // ── Music prev/next buttons (not layout-driven) ─────
-            if (trackLabel.isNotEmpty()) {
-                val fillPrev = if (prevBtnPointerId >= 0) paintBtnPressed else paintBtnIdle
-                canvas.drawCircle(prevBtnCenterX, musicBtnY, musicBtnRadius, fillPrev)
-                canvas.drawCircle(prevBtnCenterX, musicBtnY, musicBtnRadius, paintRing)
-                val fillNext = if (nextBtnPointerId >= 0) paintBtnPressed else paintBtnIdle
-                canvas.drawCircle(nextBtnCenterX, musicBtnY, musicBtnRadius, fillNext)
-                canvas.drawCircle(nextBtnCenterX, musicBtnY, musicBtnRadius, paintRing)
-                // Arrow glyphs
-                val savedSize = paintBtnLabel.textSize
-                paintBtnLabel.textSize = musicBtnRadius * 0.9f
-                canvas.drawText("\u25C0", prevBtnCenterX, musicBtnY + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
-                canvas.drawText("\u25B6", nextBtnCenterX, musicBtnY + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
-                // Track label
-                paintBtnLabel.textSize = musicBtnRadius * 0.7f
-                val labelPaint = Paint(paintBtnLabel).apply { textAlign = Paint.Align.LEFT }
-                canvas.drawText(trackLabel, musicLabelX, musicBtnY + labelPaint.textSize * 0.35f, labelPaint)
-                paintBtnLabel.textSize = savedSize
             }
 
             // ── Diagnostic overlays ─────────────────────────────
@@ -928,6 +920,17 @@ class TouchOverlayView
             d: DiagnosticState,
             gAlpha: Float,
         ) {
+            when (d.control.type) {
+                DiagnosticType.GYRO -> drawDiagnosticGyro(canvas, d, gAlpha)
+                DiagnosticType.MUSIC -> drawDiagnosticMusic(canvas, d, gAlpha)
+            }
+        }
+
+        private fun drawDiagnosticGyro(
+            canvas: Canvas,
+            d: DiagnosticState,
+            gAlpha: Float,
+        ) {
             val eff = (gAlpha * d.control.opacity).coerceIn(0f, 1f)
             val ts = paintDiagText.textSize
             val pad = ts * 0.5f
@@ -951,6 +954,47 @@ class TouchOverlayView
             canvas.drawText("Roll:  $pitch%", textX, textY, paintDiagText)
             textY += lineH
             canvas.drawText("Pitch: $roll%", textX, textY, paintDiagText)
+        }
+
+        private fun drawDiagnosticMusic(
+            canvas: Canvas,
+            d: DiagnosticState,
+            gAlpha: Float,
+        ) {
+            if (trackLabel.isEmpty()) return
+            val eff = (gAlpha * d.control.opacity).coerceIn(0f, 1f)
+            val r = d.musicBtnR
+            val y = d.musicBtnY
+
+            // Prev button
+            val fillPrev = if (d.musicPrevPid >= 0) paintBtnPressed else paintBtnIdle
+            fillPrev.alpha = ((if (d.musicPrevPid >= 0) 0x66 else 0x33) * eff).toInt()
+            canvas.drawCircle(d.musicPrevCX, y, r, fillPrev)
+            paintRing.alpha = (0x66 * eff).toInt()
+            canvas.drawCircle(d.musicPrevCX, y, r, paintRing)
+
+            // Next button
+            val fillNext = if (d.musicNextPid >= 0) paintBtnPressed else paintBtnIdle
+            fillNext.alpha = ((if (d.musicNextPid >= 0) 0x66 else 0x33) * eff).toInt()
+            canvas.drawCircle(d.musicNextCX, y, r, fillNext)
+            canvas.drawCircle(d.musicNextCX, y, r, paintRing)
+
+            // Arrow glyphs
+            val savedSize = paintBtnLabel.textSize
+            paintBtnLabel.textSize = r * 0.9f
+            paintBtnLabel.alpha = (0xAA * eff).toInt()
+            canvas.drawText("\u25C0", d.musicPrevCX, y + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+            canvas.drawText("\u25B6", d.musicNextCX, y + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+
+            // Track label
+            paintBtnLabel.textSize = r * 0.7f
+            val labelPaint =
+                Paint(paintBtnLabel).apply {
+                    textAlign = Paint.Align.LEFT
+                    alpha = (0xCC * eff).toInt()
+                }
+            canvas.drawText(trackLabel, d.musicLabelX, y + labelPaint.textSize * 0.35f, labelPaint)
+            paintBtnLabel.textSize = savedSize
         }
 
         /** Shared radial menu drawing — handles both trigger icon and open wheel. */
@@ -1423,31 +1467,34 @@ class TouchOverlayView
                         }
                     }
 
-                    // Try music controls (not layout-driven)
-                    if (!handled) {
-                        when {
-                            prevBtnPointerId < 0 &&
-                                trackLabel.isNotEmpty() &&
-                                hypot(px - prevBtnCenterX, py - musicBtnY) <= musicBtnRadius * 1.3f -> {
-                                prevBtnPointerId = pid
-                                invalidate()
-                                handled = true
+                    // Try music controls (layout-driven via MUSIC diagnostics)
+                    if (!handled && trackLabel.isNotEmpty()) {
+                        for (d in diagnosticStates) {
+                            if (d.control.type != DiagnosticType.MUSIC) continue
+                            val r = d.musicBtnR
+                            val y = d.musicBtnY
+                            when {
+                                d.musicPrevPid < 0 &&
+                                    hypot(px - d.musicPrevCX, py - y) <= r * 1.3f -> {
+                                    d.musicPrevPid = pid
+                                    invalidate()
+                                    handled = true
+                                }
+                                d.musicNextPid < 0 &&
+                                    hypot(px - d.musicNextCX, py - y) <= r * 1.3f -> {
+                                    d.musicNextPid = pid
+                                    invalidate()
+                                    handled = true
+                                }
+                                d.musicLabelPid < 0 &&
+                                    px >= d.musicLabelX &&
+                                    py >= y - r * 1.5f &&
+                                    py <= y + r * 1.5f -> {
+                                    d.musicLabelPid = pid
+                                    handled = true
+                                }
                             }
-                            nextBtnPointerId < 0 &&
-                                trackLabel.isNotEmpty() &&
-                                hypot(px - nextBtnCenterX, py - musicBtnY) <= musicBtnRadius * 1.3f -> {
-                                nextBtnPointerId = pid
-                                invalidate()
-                                handled = true
-                            }
-                            musicLabelPointerId < 0 &&
-                                trackLabel.isNotEmpty() &&
-                                px >= musicLabelX &&
-                                py >= musicBtnY - musicBtnRadius * 1.5f &&
-                                py <= musicBtnY + musicBtnRadius * 1.5f -> {
-                                musicLabelPointerId = pid
-                                handled = true
-                            }
+                            if (handled) break
                         }
                     }
 
@@ -1627,9 +1674,7 @@ class TouchOverlayView
                     releaseAllRadialMenus(fired)
                     releaseAllSliders()
                     releaseAllAxisRegions()
-                    releasePrevButton(fired)
-                    releaseNextButton(fired)
-                    releaseMusicLabel(fired)
+                    releaseAllMusicDiagnostics(fired)
                 }
                 MotionEvent.ACTION_POINTER_UP -> {
                     val pid = event.getPointerId(event.actionIndex)
@@ -1685,12 +1730,25 @@ class TouchOverlayView
                                 }
                             }
                         }
-                        // Check music controls
+                        // Check music diagnostics
                         if (!found) {
-                            when (pid) {
-                                prevBtnPointerId -> releasePrevButton(true)
-                                nextBtnPointerId -> releaseNextButton(true)
-                                musicLabelPointerId -> releaseMusicLabel(true)
+                            for (d in diagnosticStates) {
+                                if (d.control.type != DiagnosticType.MUSIC) continue
+                                when (pid) {
+                                    d.musicPrevPid -> {
+                                        releaseMusicPrev(d, true)
+                                        found = true
+                                    }
+                                    d.musicNextPid -> {
+                                        releaseMusicNext(d, true)
+                                        found = true
+                                    }
+                                    d.musicLabelPid -> {
+                                        releaseMusicLabel(d, true)
+                                        found = true
+                                    }
+                                }
+                                if (found) break
                             }
                         }
                     }
@@ -2258,31 +2316,47 @@ class TouchOverlayView
             releaseAllRadialMenus(false)
             releaseAllSliders()
             releaseAllAxisRegions()
-            releasePrevButton(false)
-            releaseNextButton(false)
-            releaseMusicLabel(false)
+            releaseAllMusicDiagnostics(false)
         }
 
-        private fun releasePrevButton(fired: Boolean) {
-            if (prevBtnPointerId >= 0) {
-                prevBtnPointerId = -1
+        private fun releaseMusicPrev(
+            d: DiagnosticState,
+            fired: Boolean,
+        ) {
+            if (d.musicPrevPid >= 0) {
+                d.musicPrevPid = -1
                 invalidate()
                 if (fired) prevTrackCallback?.invoke()
             }
         }
 
-        private fun releaseNextButton(fired: Boolean) {
-            if (nextBtnPointerId >= 0) {
-                nextBtnPointerId = -1
+        private fun releaseMusicNext(
+            d: DiagnosticState,
+            fired: Boolean,
+        ) {
+            if (d.musicNextPid >= 0) {
+                d.musicNextPid = -1
                 invalidate()
                 if (fired) nextTrackCallback?.invoke()
             }
         }
 
-        private fun releaseMusicLabel(fired: Boolean) {
-            if (musicLabelPointerId >= 0) {
-                musicLabelPointerId = -1
+        private fun releaseMusicLabel(
+            d: DiagnosticState,
+            fired: Boolean,
+        ) {
+            if (d.musicLabelPid >= 0) {
+                d.musicLabelPid = -1
                 if (fired) musicPanelCallback?.invoke()
+            }
+        }
+
+        private fun releaseAllMusicDiagnostics(fired: Boolean) {
+            for (d in diagnosticStates) {
+                if (d.control.type != DiagnosticType.MUSIC) continue
+                releaseMusicPrev(d, fired)
+                releaseMusicNext(d, fired)
+                releaseMusicLabel(d, fired)
             }
         }
 

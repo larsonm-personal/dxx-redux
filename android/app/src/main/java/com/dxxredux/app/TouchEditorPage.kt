@@ -661,7 +661,7 @@ fun TouchEditorPage(
                 showAddControl = false
                 longPressPos = Offset.Zero
             },
-            onAddDiagnostic = {
+            onAddDiagnostic = { diagType ->
                 layout =
                     layout.copy(
                         diagnostics =
@@ -670,6 +670,7 @@ fun TouchEditorPage(
                                     id = "diag_${layout.diagnostics.size}",
                                     xPct = addX,
                                     yPct = addY,
+                                    type = diagType,
                                 ),
                     )
                 selectedType = "diagnostic"
@@ -1942,9 +1943,22 @@ private fun DiagnosticPropertiesPanel(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("Diagnostic: ${diag.id}", color = Color.White, fontSize = 14.sp)
+        Text("Info: ${diag.type.label}", color = Color.White, fontSize = 14.sp)
         IconButton(onClick = onDelete) {
             Icon(Icons.Default.Delete, "Delete", tint = Color(0xFFEF5350))
+        }
+    }
+
+    // Type selector
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        DiagnosticType.entries.forEach { dt ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(
+                    selected = diag.type == dt,
+                    onClick = { onUpdate(diag.copy(type = dt)) },
+                )
+                Text(dt.label, color = Color.White, fontSize = 12.sp)
+            }
         }
     }
 
@@ -2504,9 +2518,10 @@ private fun AddControlDialog(
     onAddButton: () -> Unit,
     onAddRadial: () -> Unit,
     onAddSlider: () -> Unit,
-    onAddDiagnostic: () -> Unit,
+    onAddDiagnostic: (DiagnosticType) -> Unit,
     onAddAxisRegion: () -> Unit,
 ) {
+    var showInfoSubMenu by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add Control") },
@@ -2526,8 +2541,21 @@ private fun AddControlDialog(
                     TextButton(onClick = onAddSlider, modifier = Modifier.fillMaxWidth()) {
                         Text("Slider")
                     }
-                    TextButton(onClick = onAddDiagnostic, modifier = Modifier.fillMaxWidth()) {
-                        Text("Diagnostic Display")
+                    TextButton(
+                        onClick = { showInfoSubMenu = !showInfoSubMenu },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Info")
+                    }
+                    if (showInfoSubMenu) {
+                        DiagnosticType.entries.forEach { dt ->
+                            TextButton(
+                                onClick = { onAddDiagnostic(dt) },
+                                modifier = Modifier.fillMaxWidth().padding(start = 24.dp),
+                            ) {
+                                Text(dt.label)
+                            }
+                        }
                     }
                     TextButton(onClick = onAddAxisRegion, modifier = Modifier.fillMaxWidth()) {
                         Text("Axis Region")

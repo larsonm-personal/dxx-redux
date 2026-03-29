@@ -495,7 +495,19 @@ data class GyroConfig(
     }
 }
 
-enum class DiagnosticType { GYRO }
+enum class DiagnosticType {
+    GYRO,
+    MUSIC,
+    ;
+
+    /** Human-readable label for the editor UI. */
+    val label: String
+        get() =
+            when (this) {
+                GYRO -> "Gyro Display"
+                MUSIC -> "Music Controls"
+            }
+}
 
 data class DiagnosticControl(
     val id: String,

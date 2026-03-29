@@ -1,9 +1,9 @@
 /*
- * jni_music_control.c — JNI bridge for in-game track control.
+ * jni_music_control.c -- JNI bridge for in-game track control.
  *
- * Exposes RBANextTrack/PrevTrack/PlaySpecificTrack and track info
- * queries to the Kotlin overlay (TouchOverlayView / MusicControlPanel).
- * All functions target MainActivity where the native library is loaded.
+ * Uses the unified songs_*() API so next/prev/play/info work across
+ * all music types (BUILTIN/MIDI, REDBOOK, CUSTOM/jukebox).
+ * Falls back to RBA* for Redbook-specific queries (track names, types).
  */
 
 #include <jni.h>
@@ -11,7 +11,10 @@
 #include <string.h>
 #include <android/log.h>
 
+#include "songs.h"
 #include "rbaudio.h"
+#include "config.h"
+#include "digi.h"
 
 #define TAG       "DXX-MusicCtrl"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
@@ -19,20 +22,20 @@
 JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_MainActivity_nativeNextTrack(JNIEnv *env, jobject thiz)
 {
-	return RBANextTrack();
+	return songs_next_track();
 }
 
 JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_MainActivity_nativePrevTrack(JNIEnv *env, jobject thiz)
 {
-	return RBAPrevTrack();
+	return songs_prev_track();
 }
 
 JNIEXPORT jint JNICALL
 Java_com_dxxredux_app_MainActivity_nativePlaySpecificTrack(
     JNIEnv *env, jobject thiz, jint track)
 {
-	return RBAPlaySpecificTrack(track);
+	return songs_play_specific_track(track);
 }
 
 JNIEXPORT jstring JNICALL
@@ -72,21 +75,40 @@ Java_com_dxxredux_app_MainActivity_nativeIsAudioTrack(
 }
 
 /*
- * Get full current track info as a string: "trackNum|sourceIndex|trackName"
- * Returns empty string if not playing.
+ * Unified current track info: "musicType|trackIndex|totalTracks|trackName"
+ * Works for BUILTIN, REDBOOK, and CUSTOM music types.
+ * Returns empty string if nothing is playing.
  */
 JNIEXPORT jstring JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetCurrentTrackInfo(
     JNIEnv *env, jobject thiz)
 {
-	int track = 0, source = 0;
-	char name[64] = "";
-	char buf[128];
+	int type = 0, track = 0, total = 0;
+	char name[128] = "";
+	char buf[256];
 
-	if (RBAGetCurrentTrackInfo(&track, name, sizeof(name), &source) == 0) {
-		snprintf(buf, sizeof(buf), "%d|%d|%s", track, source, name);
+	if (songs_get_track_info(&type, &track, &total, name, sizeof(name)) == 0) {
+		snprintf(buf, sizeof(buf), "%d|%d|%d|%s", type, track, total, name);
 	} else {
 		buf[0] = '\0';
 	}
+	return (*env)->NewStringUTF(env, buf);
+}
+
+/* Returns GameCfg.MusicType (0=none, 1=builtin, 2=redbook, 3=custom). */
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetMusicType(
+    JNIEnv *env, jobject thiz)
+{
+	return GameCfg.MusicType;
+}
+
+/* Returns JSON array of playable tracks for the track picker popup. */
+JNIEXPORT jstring JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetTrackList(
+    JNIEnv *env, jobject thiz)
+{
+	char buf[4096];
+	songs_get_track_list(buf, sizeof(buf));
 	return (*env)->NewStringUTF(env, buf);
 }

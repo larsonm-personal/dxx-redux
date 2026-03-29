@@ -220,6 +220,10 @@ class MainActivity :
 
     external fun nativeGetCurrentTrackInfo(): String
 
+    external fun nativeGetMusicType(): Int
+
+    external fun nativeGetTrackList(): String
+
     // ── SAF leave-in-place: called from native via JNI (jni_saf.c) ───
     @Suppress("unused") // Called from native code
     fun openSafFile(contentUri: String): Int {
@@ -1711,9 +1715,16 @@ class MainActivity :
         try {
             val info = nativeGetCurrentTrackInfo()
             if (info.isNotEmpty()) {
-                // Format: "trackNum|sourceIndex|trackName"
-                val parts = info.split("|", limit = 3)
-                val name = if (parts.size >= 3 && parts[2].isNotEmpty()) parts[2] else "Track ${parts[0]}"
+                // Format: "musicType|trackIndex|totalTracks|trackName"
+                val parts = info.split("|", limit = 4)
+                val name =
+                    if (parts.size >= 4 &&
+                        parts[3].isNotEmpty()
+                    ) {
+                        parts[3]
+                    } else {
+                        "Track ${parts.getOrElse(1) { "?" }}"
+                    }
                 touchOverlay.trackLabel = "\u266B $name"
                 touchOverlay.invalidate()
             } else {

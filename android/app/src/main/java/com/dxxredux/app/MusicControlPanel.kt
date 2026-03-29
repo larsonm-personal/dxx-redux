@@ -6,6 +6,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.view.MotionEvent
 import android.view.View
+import org.json.JSONArray
 import kotlin.math.min
 
 /**
@@ -75,17 +76,23 @@ class MusicControlPanel(
         tracks.clear()
         try {
             val activity = context as? MainActivity ?: return
-            val total = activity.nativeGetTotalTracks()
-            currentTrack = activity.nativeGetCurrentTrackNum()
-            // Show all audio tracks; skip only data tracks.
-            for (t in 1..total) {
-                if (!activity.nativeIsAudioTrack(t)) continue
-                val cName = activity.nativeGetTrackName(t)
-                val label = if (cName.isNotEmpty()) "Track $t: $cName" else "Track $t"
-                tracks.add(TrackEntry(t, label))
+            val json = activity.nativeGetTrackList()
+            val info = activity.nativeGetCurrentTrackInfo()
+            // Current track index from "musicType|trackIndex|totalTracks|trackName"
+            if (info.isNotEmpty()) {
+                val parts = info.split("|", limit = 4)
+                if (parts.size >= 2) currentTrack = parts[1].toIntOrNull() ?: -1
+            }
+            val arr = JSONArray(json)
+            for (i in 0 until arr.length()) {
+                val obj = arr.getJSONObject(i)
+                val idx = obj.getInt("index")
+                val name = obj.optString("name", "")
+                val label = if (name.isNotEmpty()) "Track ${idx + 1}: $name" else "Track ${idx + 1}"
+                tracks.add(TrackEntry(idx, label))
             }
         } catch (_: Exception) {
-            // engine not ready
+            // engine not ready or no tracks
         }
     }
 
