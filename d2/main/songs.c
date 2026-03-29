@@ -540,23 +540,32 @@ int songs_next_track(void)
 	switch (GameCfg.MusicType)
 	{
 		case MUSIC_TYPE_BUILTIN:
+		{
+			int track;
 			n_level_songs = Num_bim_songs - SONG_FIRST_LEVEL_SONG;
 			if (n_level_songs <= 0)
 				return 0;
 			if (Song_playing < SONG_FIRST_LEVEL_SONG)
-				Song_playing = SONG_FIRST_LEVEL_SONG;
+				track = SONG_FIRST_LEVEL_SONG;
 			else
-				Song_playing = SONG_FIRST_LEVEL_SONG +
+				track = SONG_FIRST_LEVEL_SONG +
 					((Song_playing - SONG_FIRST_LEVEL_SONG + 1) % n_level_songs);
-			if (songs_play_file(BIMSongs[Song_playing].filename, 1, NULL))
+			if (songs_play_file(BIMSongs[track].filename, 1, NULL))
 			{
-				track_overlay_notify(Song_playing, 1, 0);
+				Song_playing = track;
+				track_overlay_notify(track, 1, 0);
 				return 1;
 			}
 			return 0;
+		}
 
 		case MUSIC_TYPE_REDBOOK:
-			return RBANextTrack();
+		{
+			int track = RBANextTrack();
+			if (track > 0)
+				track_overlay_notify(track, 0, RBAGetDiscID());
+			return track;
+		}
 
 #ifdef USE_SDLMIXER
 		case MUSIC_TYPE_CUSTOM:
@@ -579,23 +588,32 @@ int songs_prev_track(void)
 	switch (GameCfg.MusicType)
 	{
 		case MUSIC_TYPE_BUILTIN:
+		{
+			int track;
 			n_level_songs = Num_bim_songs - SONG_FIRST_LEVEL_SONG;
 			if (n_level_songs <= 0)
 				return 0;
 			if (Song_playing < SONG_FIRST_LEVEL_SONG)
-				Song_playing = SONG_FIRST_LEVEL_SONG;
+				track = SONG_FIRST_LEVEL_SONG;
 			else
-				Song_playing = SONG_FIRST_LEVEL_SONG +
+				track = SONG_FIRST_LEVEL_SONG +
 					((Song_playing - SONG_FIRST_LEVEL_SONG - 1 + n_level_songs) % n_level_songs);
-			if (songs_play_file(BIMSongs[Song_playing].filename, 1, NULL))
+			if (songs_play_file(BIMSongs[track].filename, 1, NULL))
 			{
-				track_overlay_notify(Song_playing, 1, 0);
+				Song_playing = track;
+				track_overlay_notify(track, 1, 0);
 				return 1;
 			}
 			return 0;
+		}
 
 		case MUSIC_TYPE_REDBOOK:
-			return RBAPrevTrack();
+		{
+			int track = RBAPrevTrack();
+			if (track > 0)
+				track_overlay_notify(track, 0, RBAGetDiscID());
+			return track;
+		}
 
 #ifdef USE_SDLMIXER
 		case MUSIC_TYPE_CUSTOM:
@@ -675,6 +693,12 @@ int songs_get_track_info(int *out_type, int *out_track, int *out_total,
 			*out_total = GameCfg.CMLevelMusicTrack[1];
 			{
 				char *cur = jukebox_current();
+#ifdef __ANDROID__
+				const char *decoded = cur ? jukebox_names_lookup(cur) : NULL;
+				if (decoded && decoded[0]) {
+					strncpy(out_name, decoded, name_size - 1);
+				} else
+#endif
 				if (cur)
 					strncpy(out_name, cur, name_size - 1);
 				out_name[name_size - 1] = '\0';

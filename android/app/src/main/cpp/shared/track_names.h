@@ -30,7 +30,16 @@ const char *track_names_lookup(int track, unsigned long disc_id);
 void level_overlay_notify(int level_num, const char *level_name);
 
 /* Call when a jukebox track starts playing.
- * Strips the path/extension and sends a clean name to the overlay. */
+ * Strips the path/extension and sends a clean name to the overlay.
+ * If chromaprint names were loaded, uses the decoded name instead. */
 void track_overlay_notify_jukebox(const char *filename);
+
+/* Load jukebox track names from custom_music_names.json (absolute path).
+ * Called from jukebox_load() after reading the M3U playlist. */
+void jukebox_names_load(const char *json_path);
+
+/* Look up a chromaprint-decoded name for a jukebox file path.
+ * Returns NULL if no name is known. */
+const char *jukebox_names_lookup(const char *filepath);
 
 #endif

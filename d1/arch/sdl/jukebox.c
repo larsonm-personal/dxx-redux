@@ -207,6 +207,23 @@ void jukebox_load()
 			GameCfg.CMLevelMusicTrack[1] = JukeboxSongs.num_songs;
 			GameCfg.CMLevelMusicTrack[0] = 0; // number of songs changed so start from beginning.
 		}
+#ifdef __ANDROID__
+		/* Load chromaprint-decoded names sidecar from same dir as M3U */
+		{
+			char names_path[PATH_MAX];
+			const char *sep;
+			strncpy(names_path, GameCfg.CMLevelMusicPath, PATH_MAX - 1);
+			names_path[PATH_MAX - 1] = '\0';
+			sep = strrchr(names_path, '/');
+			if (sep)
+				names_path[sep - names_path + 1] = '\0';
+			else
+				names_path[0] = '\0';
+			strncat(names_path, "custom_music_names.json",
+			        PATH_MAX - 1 - strlen(names_path));
+			jukebox_names_load(names_path);
+		}
+#endif
 	}
 	else
 	{

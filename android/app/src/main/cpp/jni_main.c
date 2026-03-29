@@ -232,13 +232,17 @@ Java_com_dxxredux_app_MainActivity_nativeQuit(JNIEnv *env, jobject thiz)
 #include "weapon.h"
 
 /* Shared constant: PLAYER_FLAGS_AMMO_RACK = 128 (duplicated in WeaponState.kt, D2 only) */
+/* Array layout: [0]=priFlags, [1]=secFlags, [2]=playerFlags,
+ *   [3..12]=priAmmo, [13..22]=secAmmo, [23..32]=priMax, [33..42]=secMax,
+ *   [43]=currentPrimary, [44]=currentSecondary
+ * Indices 43-44 duplicated in WeaponState.kt */
 
 JNIEXPORT jintArray JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetWeaponState(JNIEnv *env, jobject thiz)
 {
 	extern int Player_num;
 
-	enum { WS_SIZE = 43 };
+	enum { WS_SIZE = 45 };
 	jint buf[WS_SIZE];
 	memset(buf, 0, sizeof(buf));
 
@@ -262,6 +266,9 @@ Java_com_dxxredux_app_MainActivity_nativeGetWeaponState(JNIEnv *env, jobject thi
 		buf[13 + i] = (jint) Players[Player_num].secondary_ammo[i];
 		buf[33 + i] = (jint) (Secondary_ammo_max[i] * rack_mult);
 	}
+
+	buf[43] = (jint) Players[Player_num].primary_weapon;
+	buf[44] = (jint) Players[Player_num].secondary_weapon;
 
 	jintArray result = (*env)->NewIntArray(env, WS_SIZE);
 	if (result)

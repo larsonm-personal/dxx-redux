@@ -5,9 +5,13 @@
  * Shared between D1 and D2 android builds.  Track names are populated
  * at load time from audio_playlist.json (written by AudioSourceManager
  * with fingerprint-matched or known_discs.json5-sourced names).
+ *
+ * Jukebox (custom music) names come from custom_music_names.json,
+ * a sidecar written by CustomAudioSetManager alongside the M3U playlist.
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "pstypes.h"
@@ -51,6 +55,111 @@ const char *track_names_lookup(int track, unsigned long disc_id)
 {
 	(void) disc_id;
 	return track_names_get_cue_title(track);
+}
+
+/* -- Jukebox (custom music) name table ------------------------------- */
+/* Loaded from custom_music_names.json written by CustomAudioSetManager.
+ * Maps absolute file paths to chromaprint-decoded track names. */
+
+#define MAX_JUKEBOX_NAMES 256
+#define JUKEBOX_PATH_LEN  256
+#define JUKEBOX_NAME_LEN  128
+
+static char s_jb_paths[MAX_JUKEBOX_NAMES][JUKEBOX_PATH_LEN];
+static char s_jb_names[MAX_JUKEBOX_NAMES][JUKEBOX_NAME_LEN];
+static int s_jb_count = 0;
+
+/* Minimal JSON string extraction: advance *pp past opening '"',
+ * copy contents into buf (handling \" escapes), null-terminate.
+ * Returns 1 on success, 0 if not a valid JSON string. */
+static int jb_parse_string(const char **pp, char *buf, int bufsz)
+{
+	const char *p = *pp;
+	int i = 0;
+	if (*p != '"') return 0;
+	p++;
+	while (*p && *p != '"') {
+		if (*p == '\\') {
+			p++;
+			if (!*p) return 0;
+		}
+		if (i < bufsz - 1) buf[i++] = *p;
+		p++;
+	}
+	if (*p != '"') return 0;
+	buf[i] = '\0';
+	*pp = ++p;
+	return 1;
+}
+
+void jukebox_names_load(const char *json_path)
+{
+	FILE *f;
+	long len;
+	char *buf, *p;
+
+	s_jb_count = 0;
+
+	f = fopen(json_path, "rb");
+	if (!f) return;
+
+	fseek(f, 0, SEEK_END);
+	len = ftell(f);
+	if (len <= 2 || len > 512 * 1024) {
+		fclose(f);
+		return;
+	}
+	fseek(f, 0, SEEK_SET);
+
+	buf = (char *) malloc(len + 1);
+	if (!buf) {
+		fclose(f);
+		return;
+	}
+	if (fread(buf, 1, len, f) != (size_t) len) {
+		free(buf);
+		fclose(f);
+		return;
+	}
+	buf[len] = '\0';
+	fclose(f);
+
+	/* Parse flat JSON object: {"path":"name", ...} */
+	p = buf;
+	while (*p && *p != '{') p++;
+	if (*p == '{') p++;
+
+	while (*p && s_jb_count < MAX_JUKEBOX_NAMES) {
+		while (*p && *p != '"' && *p != '}') p++;
+		if (*p != '"') break;
+
+		if (!jb_parse_string((const char **) &p,
+		                     s_jb_paths[s_jb_count], JUKEBOX_PATH_LEN))
+			break;
+
+		while (*p && *p != ':') p++;
+		if (*p == ':') p++;
+		while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r') p++;
+
+		if (!jb_parse_string((const char **) &p,
+		                     s_jb_names[s_jb_count], JUKEBOX_NAME_LEN))
+			break;
+
+		s_jb_count++;
+	}
+
+	free(buf);
+}
+
+const char *jukebox_names_lookup(const char *filepath)
+{
+	int i;
+	if (!filepath) return NULL;
+	for (i = 0; i < s_jb_count; i++) {
+		if (strcmp(s_jb_paths[i], filepath) == 0)
+			return s_jb_names[i];
+	}
+	return NULL;
 }
 
 /* -- Overlay formatting ---------------------------------------------- */
@@ -105,18 +214,26 @@ void level_overlay_notify(int level_num, const char *level_name)
 void track_overlay_notify_jukebox(const char *filename)
 {
 	char buf[OVERLAY_TEXT_LEN];
-	const char *base, *p;
+	const char *name, *base, *p;
 
 	if (!filename || !filename[0]) return;
 
-	/* Find the last path separator */
+	/* Try chromaprint-decoded name first */
+	name = jukebox_names_lookup(filename);
+	if (name && name[0]) {
+		snprintf(buf, OVERLAY_TEXT_LEN, "%s", name);
+		android_send_track_name(buf);
+		overlay_ringbuf_add("jukebox", buf);
+		return;
+	}
+
+	/* Fallback: strip path and extension */
 	base = filename;
 	for (p = filename; *p; p++) {
 		if (*p == '/' || *p == '\\')
 			base = p + 1;
 	}
 
-	/* Copy and strip extension */
 	strncpy(buf, base, OVERLAY_TEXT_LEN - 1);
 	buf[OVERLAY_TEXT_LEN - 1] = '\0';
 	p = strrchr(buf, '.');

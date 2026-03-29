@@ -900,7 +900,7 @@ private fun drawAllControls(
         val cx = w * rm.xPct / 100f
         val cy = h * rm.yPct / 100f
         val trigR = baseScale * 0.04f * rm.sizeMult
-        val wheelR = baseScale * 0.14f * rm.sizeMult
+        val wheelR = baseScale * 0.14f * rm.ringSizeMult
         val selected = selType == "radial" && selIdx == i
         val alpha = layout.globalOpacity * rm.opacity
 
@@ -1060,15 +1060,54 @@ private fun drawAllControls(
             cornerRadius = CornerRadius(4f, 4f),
         )
         val lineStyle = TextStyle(fontSize = 7.sp, color = cButtonLabel.copy(alpha = alpha))
-        val l1 = textMeasurer.measure("Yaw:   ${(gyroYaw * 100).toInt()}%", style = lineStyle)
-        val l2 = textMeasurer.measure("Roll:  ${(gyroPitch * 100).toInt()}%", style = lineStyle)
-        val l3 = textMeasurer.measure("Pitch: ${(gyroRoll * 100).toInt()}%", style = lineStyle)
-        val lineH = l1.size.height * 1.1f
-        val startY = cy - lineH * 1.5f
-        val textX = cx - boxW / 2 + 4f
-        scope.drawText(l1, topLeft = Offset(textX, startY))
-        scope.drawText(l2, topLeft = Offset(textX, startY + lineH))
-        scope.drawText(l3, topLeft = Offset(textX, startY + lineH * 2))
+        if (d.type == DiagnosticType.MUSIC) {
+            // Music control preview: prev/next buttons and track label
+            val btnR = baseScale * 0.015f * d.sizeMult
+            val btnY = cy
+            val prevCX = cx - boxW / 2 + btnR + 4f
+            val nextCX = prevCX + btnR * 2 + 4f
+            scope.drawCircle(
+                color = cButton.copy(alpha = alpha * 0.5f),
+                radius = btnR,
+                center = Offset(prevCX, btnY),
+            )
+            scope.drawCircle(
+                color = cButton.copy(alpha = alpha * 0.5f),
+                radius = btnR,
+                center = Offset(nextCX, btnY),
+            )
+            val arrowStyle = TextStyle(fontSize = 6.sp, color = cButtonLabel.copy(alpha = alpha))
+            val prevArrow = textMeasurer.measure("\u25C4", style = arrowStyle)
+            scope.drawText(
+                prevArrow,
+                topLeft =
+                    Offset(
+                        prevCX - prevArrow.size.width / 2f,
+                        btnY - prevArrow.size.height / 2f,
+                    ),
+            )
+            val nextArrow = textMeasurer.measure("\u25BA", style = arrowStyle)
+            scope.drawText(
+                nextArrow,
+                topLeft =
+                    Offset(
+                        nextCX - nextArrow.size.width / 2f,
+                        btnY - nextArrow.size.height / 2f,
+                    ),
+            )
+            val trackLabel = textMeasurer.measure("\u266B Track Name", style = lineStyle)
+            scope.drawText(trackLabel, topLeft = Offset(nextCX + btnR + 4f, btnY - trackLabel.size.height / 2f))
+        } else {
+            val l1 = textMeasurer.measure("Yaw:   ${(gyroYaw * 100).toInt()}%", style = lineStyle)
+            val l2 = textMeasurer.measure("Roll:  ${(gyroPitch * 100).toInt()}%", style = lineStyle)
+            val l3 = textMeasurer.measure("Pitch: ${(gyroRoll * 100).toInt()}%", style = lineStyle)
+            val lineH = l1.size.height * 1.1f
+            val startY = cy - lineH * 1.5f
+            val textX = cx - boxW / 2 + 4f
+            scope.drawText(l1, topLeft = Offset(textX, startY))
+            scope.drawText(l2, topLeft = Offset(textX, startY + lineH))
+            scope.drawText(l3, topLeft = Offset(textX, startY + lineH * 2))
+        }
         if (selected) {
             scope.drawRoundRect(
                 color = cSelected,
@@ -1151,7 +1190,7 @@ private fun drawAllControls(
             ControlBounds(
                 w * rm.xPct / 100f,
                 h * rm.yPct / 100f,
-                baseScale * 0.14f * rm.sizeMult,
+                baseScale * 0.05f * rm.sizeMult,
             ),
         )
     }
@@ -1758,7 +1797,7 @@ private fun RadialPropertiesPanel(
     // Size & opacity
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         LabeledSlider(
-            "Size",
+            "Button",
             radial.sizeMult,
             TouchBindings.MIN_SIZE,
             TouchBindings.MAX_SIZE,
@@ -1766,6 +1805,17 @@ private fun RadialPropertiesPanel(
         ) {
             onUpdate(radial.copy(sizeMult = it))
         }
+        LabeledSlider(
+            "Ring",
+            radial.ringSizeMult,
+            TouchBindings.MIN_SIZE,
+            TouchBindings.MAX_SIZE,
+            Modifier.weight(1f),
+        ) {
+            onUpdate(radial.copy(ringSizeMult = it))
+        }
+    }
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         LabeledSlider(
             "Opacity",
             radial.opacity,

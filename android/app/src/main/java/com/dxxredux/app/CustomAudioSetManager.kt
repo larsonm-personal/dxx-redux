@@ -21,6 +21,7 @@ class CustomAudioSetManager(
         private const val SETS_FILE = "custom_audio_sets.json"
         const val MUSIC_DIR = "custom_music"
         const val PLAYLIST_FILE = "custom_music.m3u"
+        const val NAMES_FILE = "custom_music_names.json"
     }
 
     data class AudioSet(
@@ -160,7 +161,28 @@ class CustomAudioSetManager(
             m3u.appendLine(path)
         }
         File(filesDir, PLAYLIST_FILE).writeText(m3u.toString())
-        Log.i(TAG, "Wrote $PLAYLIST_FILE with ${allFiles.size} tracks")
+        // Write sidecar JSON mapping absolute paths to chromaprint-decoded names
+        val namesJson = JSONObject()
+        for (set in enabled) {
+            val dir = setDir(set.id)
+            for (f in set.files) {
+                val name = set.trackNames[f] ?: continue
+                val refUri = set.referencedUris[f]
+                val absPath =
+                    if (refUri != null) {
+                        File(stageDir, "${set.id}_$f").absolutePath
+                    } else {
+                        File(dir, f).absolutePath
+                    }
+                namesJson.put(absPath, name)
+            }
+        }
+        if (namesJson.length() > 0) {
+            File(filesDir, NAMES_FILE).writeText(namesJson.toString())
+        } else {
+            File(filesDir, NAMES_FILE).delete()
+        }
+        Log.i(TAG, "Wrote $PLAYLIST_FILE with ${allFiles.size} tracks, ${namesJson.length()} names")
         return File(filesDir, PLAYLIST_FILE).absolutePath
     }
 

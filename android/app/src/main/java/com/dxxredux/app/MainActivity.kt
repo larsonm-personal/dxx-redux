@@ -1721,7 +1721,16 @@ class MainActivity :
                     if (parts.size >= 4 &&
                         parts[3].isNotEmpty()
                     ) {
-                        parts[3]
+                        // Safety: strip path and extension if C side returned a raw path
+                        val raw = parts[3]
+                        if ('/' in raw || '\\' in raw) {
+                            raw
+                                .substringAfterLast('/')
+                                .substringAfterLast('\\')
+                                .substringBeforeLast('.')
+                        } else {
+                            raw
+                        }
                     } else {
                         "Track ${parts.getOrElse(1) { "?" }}"
                     }
@@ -1783,6 +1792,7 @@ class MainActivity :
                         fadeOut.addListener(
                             object : AnimatorListenerAdapter() {
                                 override fun onAnimationEnd(animation: Animator) {
+                                    tv.alpha = 0f
                                     overlayContainer.removeView(tv)
                                 }
                             },

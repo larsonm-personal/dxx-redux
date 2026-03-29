@@ -2,8 +2,10 @@ package com.dxxredux.app
 
 /**
  * Weapon inventory from nativeGetWeaponState().
- * Array layout: [priFlags, secFlags, playerFlags, priAmmo[0..9], secAmmo[0..9], priMax[0..9], secMax[0..9]]
+ * Array layout: [priFlags, secFlags, playerFlags, priAmmo[0..9], secAmmo[0..9], priMax[0..9], secMax[0..9],
+ *                currentPrimary, currentSecondary]
  * Shared constant with C (jni_main.c): PLAYER_FLAGS_AMMO_RACK = 128
+ * Indices 43-44 (currentPrimary/currentSecondary) duplicated with jni_main.c
  */
 data class WeaponState(
     val primaryFlags: Int,
@@ -13,6 +15,8 @@ data class WeaponState(
     val secondaryAmmo: IntArray,
     val primaryAmmoMax: IntArray,
     val secondaryAmmoMax: IntArray,
+    val currentPrimary: Int,
+    val currentSecondary: Int,
 ) {
     fun hasPrimary(index: Int) = index in 0..9 && (primaryFlags and (1 shl index)) != 0
 
@@ -20,7 +24,7 @@ data class WeaponState(
 
     companion object {
         fun fromArray(arr: IntArray): WeaponState {
-            require(arr.size >= 43)
+            require(arr.size >= 45)
             return WeaponState(
                 primaryFlags = arr[0],
                 secondaryFlags = arr[1],
@@ -29,6 +33,8 @@ data class WeaponState(
                 secondaryAmmo = arr.sliceArray(13..22),
                 primaryAmmoMax = arr.sliceArray(23..32),
                 secondaryAmmoMax = arr.sliceArray(33..42),
+                currentPrimary = arr[43],
+                currentSecondary = arr[44],
             )
         }
     }

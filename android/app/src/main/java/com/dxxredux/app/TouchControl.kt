@@ -326,6 +326,7 @@ data class RadialMenuControl(
     val xPct: Float,
     val yPct: Float,
     val sizeMult: Float = 1f,
+    val ringSizeMult: Float = 1f,
     val opacity: Float = 0.7f,
     val segments: List<RadialSegment>,
     val centerLabel: String = "",
@@ -339,6 +340,7 @@ data class RadialMenuControl(
             put("x", xPct.toDouble())
             put("y", yPct.toDouble())
             put("size", sizeMult.toDouble())
+            put("ringSize", ringSizeMult.toDouble())
             put("opacity", opacity.toDouble())
             put("segments", JSONArray(segments.map { it.toJson() }))
             if (centerLabel.isNotEmpty()) put("centerLabel", centerLabel)
@@ -353,6 +355,7 @@ data class RadialMenuControl(
                 xPct = j.getDouble("x").toFloat(),
                 yPct = j.getDouble("y").toFloat(),
                 sizeMult = j.optDouble("size", 1.0).toFloat(),
+                ringSizeMult = j.optDouble("ringSize", 1.0).toFloat(),
                 opacity = j.optDouble("opacity", 0.7).toFloat(),
                 segments =
                     j.getJSONArray("segments").let { arr ->

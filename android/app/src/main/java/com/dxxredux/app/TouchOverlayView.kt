@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PointF
 import android.graphics.RectF
+import android.graphics.Typeface
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
@@ -175,6 +176,7 @@ class TouchOverlayView
             var pointerId = -1
             var activeSegment = -1 // -1 = none, RADIAL_CENTER = center, 0..n-1 = segment
             var isOpen = false
+            var quiescentLabel: String = "" // current weapon name for closed state
 
             // Weapon wheel state
             var isWeaponWheel = false
@@ -589,7 +591,7 @@ class TouchOverlayView
                 rm.triggerRadius = defaultBtnRadius * rm.control.sizeMult
                 rm.triggerX = wf * rm.control.xPct / 100f
                 rm.triggerY = hf * rm.control.yPct / 100f
-                rm.radius = base * 0.18f * rm.control.sizeMult
+                rm.radius = base * 0.18f * rm.control.ringSizeMult
             }
 
             // Compute slider geometry from layout
@@ -686,8 +688,17 @@ class TouchOverlayView
             for (ar in axisRegionStates) drawAxisRegion(canvas, ar, gAlpha)
 
             // ── Radial menus (triggers, then open wheels on top) ──
+            // Poll weapon state to update quiescent labels
+            val ws = weaponStateProvider?.invoke()
             for (rm in radialStates) {
                 if (rm.control.id == "Guide" && gameVariant == "d1") continue
+                if (!rm.isOpen && ws != null && (rm.control.id == "PriWpn" || rm.control.id == "SecWpn")) {
+                    val isPrimary = rm.control.id == "PriWpn"
+                    val curIdx = if (isPrimary) ws.currentPrimary else ws.currentSecondary
+                    rm.quiescentLabel = rm.control.segments
+                        .firstOrNull { it.weaponIndex == curIdx || it.weaponIndex == curIdx - 5 }
+                        ?.label ?: rm.control.id.take(4)
+                }
                 if (!rm.isOpen) drawRadialMenu(canvas, rm, gAlpha)
             }
             for (rm in radialStates) {
@@ -1014,9 +1025,10 @@ class TouchOverlayView
                 paintRing.alpha = (0x66 * eff).toInt()
                 canvas.drawCircle(state.triggerX, state.triggerY, state.triggerRadius, paintRing)
                 paintBtnLabel.alpha = (0xAA * eff).toInt()
-                paintBtnLabel.textSize = state.triggerRadius * 0.6f
+                val label = state.quiescentLabel.ifEmpty { state.control.id.take(4) }
+                paintBtnLabel.textSize = state.triggerRadius * (if (label.length > 5) 0.4f else 0.6f)
                 canvas.drawText(
-                    state.control.id.take(4),
+                    label,
                     state.triggerX,
                     state.triggerY + paintBtnLabel.textSize * 0.35f,
                     paintBtnLabel,
@@ -1060,19 +1072,14 @@ class TouchOverlayView
                 val lx = cx + cos(midRad).toFloat() * segR * 0.65f
                 val ly = cy + sin(midRad).toFloat() * segR * 0.65f
                 paintBtnLabel.alpha = ((if (active) 0xFF else 0xAA) * eff).toInt()
-                paintBtnLabel.textSize = r * 0.11f
+                if (active) {
+                    paintBtnLabel.textSize = r * 0.22f
+                    paintBtnLabel.typeface = Typeface.DEFAULT_BOLD
+                } else {
+                    paintBtnLabel.textSize = r * 0.11f
+                }
                 canvas.drawText(segs[i].label, lx, ly + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
-            }
-
-            // Center circle
-            val cActive = state.activeSegment == RADIAL_CENTER
-            paintRadialSeg.color = if (cActive) 0x88445566.toInt() else 0x55444444
-            canvas.drawCircle(cx, cy, centerR, paintRadialSeg)
-            paintRing.alpha = (0x66 * eff).toInt()
-            canvas.drawCircle(cx, cy, centerR, paintRing)
-
-            if (state.control.centerLabel.isNotEmpty()) {
-                paintBtnLabel.alpha = (0xCC * eff).toInt()
+                if (active) paintBtnLabel.typeface = Typeface.DEFAULT
                 paintBtnLabel.textSize = centerR * 0.45f
                 canvas.drawText(
                     state.control.centerLabel,
@@ -1146,8 +1153,14 @@ class TouchOverlayView
                 val lx = cx + cos(midRad).toFloat() * segR * 0.55f
                 val ly = cy + sin(midRad).toFloat() * segR * 0.55f
                 paintBtnLabel.alpha = ((if (active) 0xFF else 0xAA) * eff).toInt()
-                paintBtnLabel.textSize = r * 0.11f
+                if (active) {
+                    paintBtnLabel.textSize = r * 0.22f
+                    paintBtnLabel.typeface = Typeface.DEFAULT_BOLD
+                } else {
+                    paintBtnLabel.textSize = r * 0.11f
+                }
                 canvas.drawText(segs[i].label, lx, ly + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
+                if (active) paintBtnLabel.typeface = Typeface.DEFAULT
 
                 // Ammo display for secondary weapons and vulcan
                 val seg = segs[i]
