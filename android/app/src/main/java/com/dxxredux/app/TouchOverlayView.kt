@@ -1339,6 +1339,21 @@ class TouchOverlayView
                     val pid = event.getPointerId(idx)
                     var handled = false
 
+                    // Settings menu button takes top priority over all controls
+                    if (!handled) {
+                        for (d in diagnosticStates) {
+                            if (d.control.type != DiagnosticType.MENU) continue
+                            if (d.menuPid >= 0) continue
+                            val r = min(d.width, d.height) / 2f
+                            if (hypot(px - d.centerX, py - d.centerY) <= r * 1.3f) {
+                                d.menuPid = pid
+                                invalidate()
+                                handled = true
+                                break
+                            }
+                        }
+                    }
+
                     // Try axis regions (before sticks, since they can overlap)
                     for (ar in axisRegionStates) {
                         if (ar.pointerId >= 0) continue
@@ -1549,21 +1564,6 @@ class TouchOverlayView
                                 }
                             }
                             if (handled) break
-                        }
-                    }
-
-                    // Try menu diagnostic button
-                    if (!handled) {
-                        for (d in diagnosticStates) {
-                            if (d.control.type != DiagnosticType.MENU) continue
-                            if (d.menuPid >= 0) continue
-                            val r = min(d.width, d.height) / 2f
-                            if (hypot(px - d.centerX, py - d.centerY) <= r * 1.3f) {
-                                d.menuPid = pid
-                                invalidate()
-                                handled = true
-                                break
-                            }
                         }
                     }
 

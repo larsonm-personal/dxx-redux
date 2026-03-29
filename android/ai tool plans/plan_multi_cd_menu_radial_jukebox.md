@@ -79,3 +79,21 @@ Seven issues to address in this pass.
 **Problem:** `releaseMenuDiag()` dispatched `META_GAME_MENU` (SDLK_ESCAPE) which opens the game menu, not the settings admin tray.
 
 **Fix:** Changed `releaseMenuDiag()` to set `adminTrayOpen = true` and call `animateAdminTray(true)` instead. Also changed the overlay icon from hamburger (3 bars) to 3x3 dot grid. When a MENU diagnostic is configured, the default admin tray tab at the bottom edge is hidden (both visually and for touch input), since the MENU diagnostic replaces it.
+
+## Round 3 Fixes
+
+### Fix 3A: SAF-imported CD audio not playing in-game [DONE]
+
+**Problem:** BIN files from SAF disc imports stored as `/proc/self/fd/N` in `audio_playlist.json`. The C engine opened BINs via `PHYSFS_openRead()` which can't resolve absolute `/proc/self/fd/` paths (PHYSFS only searches registered dirs). The music picker worked fine because `cd_preview.c` uses standard `fopen`/`fdopen`.
+
+**Fix:** Added `bin_handle_t` abstraction in `rbaudio_bin.c` that wraps either `PHYSFS_File*` or `FILE*`. `bh_open()` detects absolute paths (`/` prefix) and uses `fopen`, else uses PHYSFS. All BIN file operations (`seek`, `read`, `length`, `close`) dispatch through wrapper functions. Changed `audio_source_t.bin_file` from `PHYSFS_File*` to `bin_handle_t`, updated all call sites.
+
+**Files:** rbaudio_bin.c (bin_handle_t wrapper + all BIN access sites)
+
+### Fix 3B: MENU button should be top-priority touchable [DONE]
+
+**Problem:** MENU diagnostic touch check was low priority in the handler chain (after axis regions, sticks, buttons, radials, sliders, and music controls). Tapping the MENU button while overlapping an axis region or stick would activate the underlying control instead.
+
+**Fix:** Moved MENU diagnostic touch check to first position in the ACTION_DOWN handler, before axis regions and all other controls. Removed duplicate check from its old position.
+
+**Files:** TouchOverlayView.kt (touch handler ACTION_DOWN ordering)

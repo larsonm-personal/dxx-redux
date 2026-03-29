@@ -52,11 +52,79 @@
  * songs_haved2_cd() recognises the GOG image as an original D2 CD. */
 #define GOG_D2_DISCID 0x7d0ff809u
 
+/* ── BIN file handle (PHYSFS or stdio) ───────────────────────────────── */
+
+/* Wraps either a PHYSFS_File or a stdio FILE so that SAF paths
+ * (/proc/self/fd/N) work alongside PHYSFS-relative paths.             */
+typedef struct {
+	PHYSFS_File *pf; /* set when using PHYSFS */
+	FILE *sf;        /* set when using stdio  */
+} bin_handle_t;
+
+static int bh_valid(const bin_handle_t *h)
+{
+	return h->pf || h->sf;
+}
+
+static void bh_open(bin_handle_t *h, const char *path)
+{
+	h->pf = NULL;
+	h->sf = NULL;
+	if (path[0] == '/') {
+		h->sf = fopen(path, "rb");
+	} else {
+		char buf[256];
+		strncpy(buf, path, sizeof(buf) - 1);
+		buf[sizeof(buf) - 1] = '\0';
+		PHYSFSEXT_locateCorrectCase(buf);
+		h->pf = PHYSFS_openRead(buf);
+	}
+}
+
+static PHYSFS_sint64 bh_length(const bin_handle_t *h)
+{
+	if (h->pf) return PHYSFS_fileLength(h->pf);
+	if (h->sf) {
+		long cur = ftell(h->sf);
+		fseek(h->sf, 0, SEEK_END);
+		long len = ftell(h->sf);
+		fseek(h->sf, cur, SEEK_SET);
+		return (PHYSFS_sint64) len;
+	}
+	return -1;
+}
+
+static int bh_seek(const bin_handle_t *h, PHYSFS_sint64 offset)
+{
+	if (h->pf) return PHYSFS_seek(h->pf, offset);
+	if (h->sf) return fseek(h->sf, (long) offset, SEEK_SET) == 0;
+	return 0;
+}
+
+static int bh_read(const bin_handle_t *h, void *buf, int size)
+{
+	if (h->pf) return (int) PHYSFS_read(h->pf, buf, (PHYSFS_uint32) size, 1);
+	if (h->sf) return (int) fread(buf, (size_t) size, 1, h->sf);
+	return 0;
+}
+
+static void bh_close(bin_handle_t *h)
+{
+	if (h->pf) {
+		PHYSFS_close(h->pf);
+		h->pf = NULL;
+	}
+	if (h->sf) {
+		fclose(h->sf);
+		h->sf = NULL;
+	}
+}
+
 /* ── Audio source ────────────────────────────────────────────────────── */
 
 /* One BIN/CUE audio source (disc image) */
 typedef struct {
-	PHYSFS_File *bin_file;
+	bin_handle_t bin_file;
 	int first_combined; /* first 1-based combined track number */
 	int audio_count;    /* number of audio tracks in this source */
 	char disc_label[64];
@@ -80,7 +148,7 @@ static audio_source_t s_sources[MAX_SOURCES];
 static int s_num_sources = 0;
 
 /* Legacy single-source file handle (used when no audio_playlist.json) */
-static PHYSFS_File *s_gog_file = NULL;
+static bin_handle_t s_gog_handle = { NULL, NULL };
 static int s_initialised = 0;
 static int s_output_rate = 48000;
 
@@ -187,17 +255,17 @@ static int parse_msf(const char *msf)
 	return m * 60 * 75 + s * 75 + f;
 }
 
-/* Get the PHYSFS_File handle for a given combined track */
-static PHYSFS_File *get_track_file(int combined_track_1based)
+/* Get the bin handle for a given combined track */
+static bin_handle_t *get_track_handle(int combined_track_1based)
 {
 	int src_idx;
 	if (combined_track_1based < 1 || combined_track_1based > s_num_tracks)
 		return NULL;
 	src_idx = s_tracks[combined_track_1based - 1].source_index;
 	if (src_idx >= 0 && src_idx < s_num_sources)
-		return s_sources[src_idx].bin_file;
+		return &s_sources[src_idx].bin_file;
 	/* Legacy single-source fallback */
-	return s_gog_file;
+	return &s_gog_handle;
 }
 
 /* ── Minimal JSON helpers for audio_playlist.json ────────────────────── */
@@ -380,19 +448,18 @@ static int parse_source_cue(const char *cue_name, const char *bin_name,
 	if (count <= 0) return 0;
 
 	/* Open the BIN file */
-	s_sources[source_idx].bin_file = open_ci(bin_name);
-	if (!s_sources[source_idx].bin_file) {
+	bh_open(&s_sources[source_idx].bin_file, bin_name);
+	if (!bh_valid(&s_sources[source_idx].bin_file)) {
 		RBA_LOG("parse_source_cue: cannot open BIN %s", bin_name);
 		s_num_tracks = base; /* roll back */
 		return 0;
 	}
 
 	/* Compute track lengths from successive start positions */
-	file_size = PHYSFS_fileLength(s_sources[source_idx].bin_file);
+	file_size = bh_length(&s_sources[source_idx].bin_file);
 	if (file_size <= 0) {
 		RBA_LOG("parse_source_cue: BIN file %s has invalid size %lld", bin_name, (long long) file_size);
-		PHYSFS_close(s_sources[source_idx].bin_file);
-		s_sources[source_idx].bin_file = NULL;
+		bh_close(&s_sources[source_idx].bin_file);
 		s_num_tracks = base;
 		return 0;
 	}
@@ -688,8 +755,8 @@ static int parse_cue_file(void)
 	track_names_set_cue_count(s_num_tracks);
 
 	/* Open the BIN file */
-	s_gog_file = open_ci("descent_ii.gog");
-	if (!s_gog_file) {
+	bh_open(&s_gog_handle, "descent_ii.gog");
+	if (!bh_valid(&s_gog_handle)) {
 		RBA_LOG("Could not open BIN file (descent_ii.gog)");
 		s_num_tracks = 0;
 		return 0;
@@ -698,7 +765,10 @@ static int parse_cue_file(void)
 	/* Set up single legacy source */
 	s_num_sources = 1;
 	memset(&s_sources[0], 0, sizeof(s_sources[0]));
-	s_sources[0].bin_file = s_gog_file;
+	s_sources[0].bin_file = s_gog_handle;
+	/* Clear s_gog_handle so only s_sources[0] owns the handle */
+	s_gog_handle.pf = NULL;
+	s_gog_handle.sf = NULL;
 	s_sources[0].first_combined = 1;
 	s_sources[0].legacy_disc_id = GOG_D2_DISCID;
 	strncpy(s_sources[0].disc_label, "Descent II (GOG)", sizeof(s_sources[0].disc_label) - 1);
@@ -712,7 +782,7 @@ static int parse_cue_file(void)
 	}
 
 	/* Compute track lengths from successive start positions */
-	file_size = PHYSFS_fileLength(s_gog_file);
+	file_size = bh_length(&s_gog_handle);
 	total_sectors = (int) (file_size / SECTOR_SIZE);
 
 	for (i = 0; i < s_num_tracks; i++) {
@@ -765,11 +835,11 @@ static int refill_pcm(void)
 		}
 
 		{
-			PHYSFS_File *src = get_track_file(s_current_track);
-			if (!src) break;
+			bin_handle_t *src = get_track_handle(s_current_track);
+			if (!src || !bh_valid(src)) break;
 			offset = (PHYSFS_sint64) s_read_sector * SECTOR_SIZE;
-			if (!PHYSFS_seek(src, offset)) break;
-			if (PHYSFS_read(src, raw, SECTOR_SIZE, 1) != 1) break;
+			if (!bh_seek(src, offset)) break;
+			if (!bh_read(src, raw, SECTOR_SIZE)) break;
 		}
 
 		/* Decode 16-bit LE stereo PCM */
@@ -942,9 +1012,8 @@ void RBAInit(void)
 	} else if (parse_cue_file() < 2) {
 		RBA_LOG("No usable tracks found in CUE/BIN");
 		s_num_tracks = 0;
-		if (s_gog_file) {
-			PHYSFS_close(s_gog_file);
-			s_gog_file = NULL;
+		if (bh_valid(&s_gog_handle)) {
+			bh_close(&s_gog_handle);
 		}
 		return;
 	}
@@ -960,18 +1029,9 @@ void RBAExit(void)
 	render_thread_stop();
 	/* Close all source BIN files */
 	for (i = 0; i < s_num_sources; i++) {
-		if (s_sources[i].bin_file) {
-			/* Don't double-close s_gog_file */
-			if (s_sources[i].bin_file == s_gog_file)
-				s_gog_file = NULL;
-			PHYSFS_close(s_sources[i].bin_file);
-			s_sources[i].bin_file = NULL;
-		}
+		bh_close(&s_sources[i].bin_file);
 	}
-	if (s_gog_file) {
-		PHYSFS_close(s_gog_file);
-		s_gog_file = NULL;
-	}
+	bh_close(&s_gog_handle);
 	s_initialised = 0;
 	s_num_tracks = 0;
 	s_num_sources = 0;
