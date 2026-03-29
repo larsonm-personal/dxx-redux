@@ -59,3 +59,23 @@ Seven issues to address in this pass.
 **Fix:** After disc identification determines the unique `id`, rename the CUE file to `${id}.cue`. This ensures each source has a unique CUE file on disk.
 
 **Files:** SetupActivity.kt (disc import registration block ~line 5511)
+
+## Round 2 Fixes
+
+### Fix 2A: Launcher "Preview Track List" still interleaved [DONE]
+
+**Problem:** `getDetailedTrackList()` in CustomAudioSetManager had a global `tracks.sortBy { it.filename.lowercase() }` that interleaved tracks across sets. The `writeM3U()` function was already correct (no global sort), so the in-game ordering was right but the launcher preview was wrong.
+
+**Fix:** Removed global sort from `getDetailedTrackList()`. Also removed unused `getMergedTrackList()`. Now `getDetailedTrackList()` is the single source of truth for track ordering in the launcher.
+
+### Fix 2B: "info: menu" showing gyro info in editor [DONE]
+
+**Problem:** The editor diagnostic preview only had two branches: MUSIC (with prev/next buttons) and everything-else (with gyro Yaw/Roll/Pitch text). MENU fell into the gyro branch.
+
+**Fix:** Added a `DiagnosticType.MENU` branch to the editor preview that draws a 3x3 dot grid icon (matching the admin tray's settings grid appearance).
+
+### Fix 2C: MENU diagnostic should open admin tray, not game menu [DONE]
+
+**Problem:** `releaseMenuDiag()` dispatched `META_GAME_MENU` (SDLK_ESCAPE) which opens the game menu, not the settings admin tray.
+
+**Fix:** Changed `releaseMenuDiag()` to set `adminTrayOpen = true` and call `animateAdminTray(true)` instead. Also changed the overlay icon from hamburger (3 bars) to 3x3 dot grid. When a MENU diagnostic is configured, the default admin tray tab at the bottom edge is hidden (both visually and for touch input), since the MENU diagnostic replaces it.

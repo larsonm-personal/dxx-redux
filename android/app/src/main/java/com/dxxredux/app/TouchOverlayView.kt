@@ -726,9 +726,11 @@ class TouchOverlayView
             if (cheatsOverlayOpen) drawCheatsOverlay(canvas)
 
             // ── Admin tray tab (visible) or panel (when open) ───
+            // Hide default tab when a MENU diagnostic is configured (it replaces the tab)
+            val hasMenuDiag = diagnosticStates.any { it.control.type == DiagnosticType.MENU }
             if (adminTrayOpen) {
                 drawAdminTrayPanel(canvas)
-            } else if (!cheatsOverlayOpen) {
+            } else if (!cheatsOverlayOpen && !hasMenuDiag) {
                 drawAdminTrayTab(canvas)
             }
         }
@@ -1031,20 +1033,19 @@ class TouchOverlayView
             paintRing.alpha = (0x66 * eff).toInt()
             canvas.drawCircle(d.centerX, d.centerY, r, paintRing)
 
-            // Three-bar hamburger icon
+            // 3x3 dot grid icon (matches settings admin tray)
             paintDiagText.alpha = (0xCC * eff).toInt()
-            val barW = r * 0.7f
-            val barH = r * 0.1f
-            val gap = r * 0.25f
-            for (i in -1..1) {
-                val by = d.centerY + i * gap
-                canvas.drawRect(
-                    d.centerX - barW,
-                    by - barH,
-                    d.centerX + barW,
-                    by + barH,
-                    paintDiagText,
-                )
+            val dotR = r * 0.08f
+            val gap = r * 0.35f
+            for (row in -1..1) {
+                for (col in -1..1) {
+                    canvas.drawCircle(
+                        d.centerX + col * gap,
+                        d.centerY + row * gap,
+                        dotR,
+                        paintDiagText,
+                    )
+                }
             }
         }
 
@@ -1566,8 +1567,9 @@ class TouchOverlayView
                         }
                     }
 
-                    // Try admin tray tab
-                    if (!handled && adminTrayTabRect.contains(px, py)) {
+                    // Try admin tray tab (hidden when MENU diagnostic replaces it)
+                    val hasMenuDiag = diagnosticStates.any { it.control.type == DiagnosticType.MENU }
+                    if (!handled && !hasMenuDiag && adminTrayTabRect.contains(px, py)) {
                         adminTrayOpen = true
                         animateAdminTray(true)
                         handled = true
@@ -2449,8 +2451,8 @@ class TouchOverlayView
                 d.menuPid = -1
                 invalidate()
                 if (fired) {
-                    metaActionCallback?.invoke(TouchBindings.META_GAME_MENU, true)
-                    metaActionCallback?.invoke(TouchBindings.META_GAME_MENU, false)
+                    adminTrayOpen = true
+                    animateAdminTray(true)
                 }
             }
         }

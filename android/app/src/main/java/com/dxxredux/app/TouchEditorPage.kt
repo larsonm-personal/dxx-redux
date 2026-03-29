@@ -1097,6 +1097,19 @@ private fun drawAllControls(
             )
             val trackLabel = textMeasurer.measure("\u266B Track Name", style = lineStyle)
             scope.drawText(trackLabel, topLeft = Offset(nextCX + btnR + 4f, btnY - trackLabel.size.height / 2f))
+        } else if (d.type == DiagnosticType.MENU) {
+            // Settings grid icon: draw a small 3x3 dot grid
+            val dotR = baseScale * 0.004f * d.sizeMult
+            val dotGap = baseScale * 0.015f * d.sizeMult
+            for (row in -1..1) {
+                for (col in -1..1) {
+                    scope.drawCircle(
+                        color = cButtonLabel.copy(alpha = alpha),
+                        radius = dotR,
+                        center = Offset(cx + col * dotGap, cy + row * dotGap),
+                    )
+                }
+            }
         } else {
             val l1 = textMeasurer.measure("Yaw:   ${(gyroYaw * 100).toInt()}%", style = lineStyle)
             val l2 = textMeasurer.measure("Roll:  ${(gyroPitch * 100).toInt()}%", style = lineStyle)

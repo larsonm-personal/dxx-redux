@@ -187,18 +187,6 @@ class CustomAudioSetManager(
         return File(filesDir, PLAYLIST_FILE).absolutePath
     }
 
-    /** Get the merged track list for preview (filename, set label) */
-    fun getMergedTrackList(): List<Pair<String, String>> {
-        val enabled = getEnabledSets()
-        val tracks = mutableListOf<Pair<String, String>>()
-        for (set in enabled) {
-            for (f in set.files.sorted()) {
-                tracks.add(f to set.label)
-            }
-        }
-        return tracks
-    }
-
     data class TrackDetail(
         val filename: String,
         val setId: String,
@@ -226,7 +214,8 @@ class CustomAudioSetManager(
                 )
             }
         }
-        tracks.sortBy { it.filename.lowercase() }
+        // No global sort -- sets are sequential in their configured order,
+        // tracks within each set are already sorted alphabetically above
         return tracks
     }
 
