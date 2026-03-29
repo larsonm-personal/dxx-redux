@@ -87,7 +87,7 @@ if ($Check) {
         # Auto-format
         $content = Get-Content $f.FullName -Raw
         if (-not $content) { continue }
-        $formatted = Invoke-Formatter -ScriptDefinition $content -Settings $settingsFile
+        $formatted = (Invoke-Formatter -ScriptDefinition $content -Settings $settingsFile) -replace "`r`n", "`n"
         if ($content -ne $formatted) {
             Set-Content -Path $f.FullName -Value $formatted -NoNewline
             $rel = $f.FullName.Substring((Split-Path $PSScriptRoot).Length + 1)

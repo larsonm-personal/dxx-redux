@@ -54,5 +54,5 @@ foreach ($f in $files) {
     $lines += "$hash  $($f.Length.ToString().PadLeft(12))  $rel"
 }
 
-$lines | Out-File $OutFile -Encoding UTF8
+($lines -join "`n") + "`n" | Set-Content $OutFile -NoNewline -Encoding UTF8
 Write-Host "`nManifest written to: $OutFile"

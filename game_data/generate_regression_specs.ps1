@@ -254,7 +254,7 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
     }
 
     # Write as json5 (just JSON with a comment header)
-    $json = $spec | ConvertTo-Json -Depth 4
+    $json = ($spec | ConvertTo-Json -Depth 4) -replace "`r`n", "`n"
     $content = "// Auto-generated regression spec for: $($dir.Name)`n// Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')`n$json"
     [System.IO.File]::WriteAllText($specPath, $content, [System.Text.Encoding]::UTF8)
     $specCount++
@@ -328,7 +328,7 @@ foreach ($gog in $gogInstallers) {
         total_extracted = $extractedCount
     }
 
-    $json = $spec | ConvertTo-Json -Depth 4
+    $json = ($spec | ConvertTo-Json -Depth 4) -replace "`r`n", "`n"
     $content = "// Auto-generated regression spec for: $($gog.file)`n// Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')`n$json"
     [System.IO.File]::WriteAllText($specPath, $content, [System.Text.Encoding]::UTF8)
     $specCount++

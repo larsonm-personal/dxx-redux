@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env pwsh
+#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
   Single-source extraction regression test. Validates that a CD image or GOG
@@ -264,7 +264,9 @@ function Write-TestResult {
     if ($text.EndsWith('}')) {
         $text = $text.Substring(0, $text.Length - 1).TrimEnd() + "`n$resultBlock`n}`n"
     }
-    Set-Content $SpecPath -Value $text -NoNewline
+    # Normalize to LF before writing (here-strings and ConvertTo-Json use CRLF on Windows)
+    $text = $text -replace "`r`n", "`n"
+    [System.IO.File]::WriteAllText($SpecPath, $text, [System.Text.UTF8Encoding]::new($false))
 }
 
 function Exit-Test {

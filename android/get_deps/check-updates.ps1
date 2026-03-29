@@ -1,4 +1,4 @@
-﻿# check-updates.ps1 -- Check for newer versions of ALL Android build dependencies
+# check-updates.ps1 -- Check for newer versions of ALL Android build dependencies
 # and offer to upgrade them.  Updates tool_versions.conf + build files in place.
 #
 # Checks: AGP, Gradle, Kotlin, Compose Compiler, Compose BOM, AndroidX libs,
@@ -272,7 +272,7 @@ function Update-Conf($key, $value) {
         } else { $_ }
     }
     if (-not $found) { $lines += "$key=$value" }
-    Set-Content $confFile $lines
+    ($lines -join "`n") + "`n" | Set-Content $confFile -NoNewline
 }
 
 function Update-BuildGradle($pattern, $replacement) {

@@ -224,7 +224,7 @@ foreach ($disc in $newDiscs) {
     $newBlock += (Format-DiscEntry $disc)
 }
 
-$newContent = $beforeClosing + $newBlock + "`n  ]`n}`n"
+$newContent = ($beforeClosing + $newBlock + "`n  ]`n}`n") -replace "`r`n", "`n"
 $newContent | Set-Content -NoNewline $Json5Path -Encoding UTF8
 Write-Host "`nAdded $($newDiscs.Count) new disc entries to known_discs.json5"
 

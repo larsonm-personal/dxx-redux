@@ -111,6 +111,7 @@ foreach ($folder in $folders) {
 
         # Save track hashes
         if ($jsonLines.Count -gt 0) {
+            $jsonLines = $jsonLines | ForEach-Object { $_ -replace "`r", "" }
             "[`n  " + ($jsonLines -join ",`n  ") + "`n]" | Set-Content -NoNewline $hashFile -Encoding UTF8
             Write-Host "  Saved $($jsonLines.Count) track hashes to track_hashes.json"
         }
