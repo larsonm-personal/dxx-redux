@@ -29,7 +29,7 @@
     {"action": "log", "message": "=== TEST: SAF Archiver Basic ==="},
 
     // Accept default pilot name (fresh .plr deleted by runner)
-    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5028},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 15000},
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Main menu

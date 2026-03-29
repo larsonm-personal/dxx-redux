@@ -207,6 +207,27 @@ if ($runnableTests.Count -eq 0) {
     exit 0
 }
 
+# -- Build APK if any emulator tests will run --
+
+$needsApk = ($tierSingleEmu.Count + $tierDualEmu.Count + $tierExtract.Count) -gt 0
+if ($needsApk) {
+    Write-Host "== Building debug APK ==" -ForegroundColor Cyan
+    Push-Location $scriptDir
+    try {
+        & .\gradlew.bat assembleDebug --console=plain 2>&1 |
+            Where-Object { $_ -match "BUILD |FAIL|error:" } |
+            ForEach-Object { Write-Host "  $_" }
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "FAIL: APK build failed" -ForegroundColor Red
+            exit 1
+        }
+        Write-Host "  Build OK" -ForegroundColor Green
+    } finally {
+        Pop-Location
+    }
+    Write-Host ""
+}
+
 # -- Execution helpers --
 
 $runTestScript = Join-Path $scriptDir "run_test.ps1"

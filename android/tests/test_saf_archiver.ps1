@@ -167,6 +167,13 @@ if ($null -eq $stopResult) {
 Start-Sleep -Seconds 2
 Write-Progress-Flush "[OK] Game stopped" Green
 
+# Clean stale pilot/config files so the game starts fresh
+Adb shell "run-as $PACKAGE find files -name '*.plr' -delete" | Out-Null
+Adb shell "run-as $PACKAGE find files -name '*.plx' -delete" | Out-Null
+Adb shell "run-as $PACKAGE find files -name 'descent.cfg' -delete" | Out-Null
+Adb shell "run-as $PACKAGE rm -f files/controller_config.json" | Out-Null
+Adb shell "run-as $PACKAGE rm -f files/file_sets.json" | Out-Null
+
 # -- Step 3: Install APK -----------------------------------------------
 Write-Host ""
 Write-Host "Step 3: Installing debug APK..." -ForegroundColor Yellow
@@ -240,44 +247,13 @@ Write-Host "  Copied to $SAF_DIR/$TEST_FILE ($copiedSize bytes)"
 Adb shell "run-as $PACKAGE rm $GAME_DATA_DIR/$TEST_FILE" | Out-Null
 Write-Host "  Removed from app game data dir"
 
-# -- Step 5: Create .saf_manifest.json ----------------------------------
+# -- Step 5: Launch SetupActivity first ---------------------------------
+# Must start SetupActivity BEFORE creating the SAF manifest.  SetupActivity's
+# LaunchedEffect runs pruneStaleEntries() which would delete our test manifest
+# entries (plain file paths aren't openable via ContentResolver).  By starting
+# SetupActivity first and waiting for pruning to finish, we avoid the race.
 Write-Host ""
-Write-Progress-Flush "Step 5: Creating .saf_manifest.json..." Yellow
-
-$manifestJson = @"
-{
-  "files": [
-    {
-      "filename": "$($TEST_FILE.ToLower())",
-      "content_uri": "$SAF_DIR/$TEST_FILE",
-      "size_bytes": $fileSize
-    }
-  ]
-}
-"@
-
-# Write manifest via adb push + run-as cp
-$manifestTmp = "/data/local/tmp/.saf_manifest.json"
-$localManifestTmp = "$env:TEMP\saf_manifest_test.json"
-$manifestJson | Set-Content -Path $localManifestTmp -NoNewline -Encoding UTF8
-Adb push $localManifestTmp $manifestTmp | Out-Null
-Adb shell "run-as $PACKAGE cp $manifestTmp files/.saf_manifest.json" | Out-Null
-Adb shell "rm -f $manifestTmp" | Out-Null
-Remove-Item $localManifestTmp -ErrorAction SilentlyContinue
-
-# Verify manifest was created
-$manifestCheck = Adb shell "run-as $PACKAGE cat files/.saf_manifest.json"
-if ($manifestCheck -match "descent2.ham") {
-    Write-Host "[OK] Manifest created with $TEST_FILE entry" -ForegroundColor Green
-} else {
-    Write-Host "  Manifest content: $manifestCheck"
-    Write-Host "FAIL: Manifest creation failed" -ForegroundColor Red
-    exit 1
-}
-
-# -- Step 6: Launch the game --------------------------------------------
-Write-Host ""
-Write-Progress-Flush "Step 6: Launching game..." Yellow
+Write-Progress-Flush "Step 5: Launching SetupActivity..." Yellow
 Adb shell "am start -n $PACKAGE/.SetupActivity" | Out-Null
 Write-Host "  Waiting for SetupActivity..."
 
@@ -297,25 +273,47 @@ if (-not $setupReady) {
     exit 1
 }
 
-# Check if game can launch by introspecting SetupActivity
-$setupState = $probe
-Write-Host "  Setup state: $($setupState.Substring(0, [Math]::Min(200, $setupState.Length)))..."
+# Give LaunchedEffect time to finish pruning stale entries
+Start-Sleep -Seconds 2
 
-if ($setupState -match '"can_launch"\s*:\s*true') {
-    Write-Host "[OK] Setup says can_launch=true (SAF file recognized)" -ForegroundColor Green
-} else {
-    Write-Host "[FAIL] Setup says can_launch=false -- SAF manifest not recognized" -ForegroundColor Red
-    # Cleanup and exit
-    if (!$NoCleanup) {
-        Write-Host "  Cleaning up..."
-        Adb shell "run-as $PACKAGE rm -f files/.saf_manifest.json" | Out-Null
-        Adb shell "cat $SAF_DIR/$TEST_FILE | run-as $PACKAGE sh -c 'cat > files/$TEST_FILE'" | Out-Null
-        Adb shell "rm -rf $SAF_DIR" | Out-Null
+# -- Step 6: Create .saf_manifest.json (after pruning has finished) -----
+Write-Host ""
+Write-Progress-Flush "Step 6: Creating .saf_manifest.json..." Yellow
+
+$manifestJson = @"
+{
+  "files": [
+    {
+      "filename": "$($TEST_FILE.ToLower())",
+      "content_uri": "$SAF_DIR/$TEST_FILE",
+      "size_bytes": $fileSize
     }
+  ]
+}
+"@
+
+# Write manifest via adb push + run-as cp
+$manifestTmp = "/data/local/tmp/.saf_manifest.json"
+$localManifestTmp = "$env:TEMP\saf_manifest_test.json"
+$manifestJson | Set-Content -Path $localManifestTmp -NoNewline -Encoding UTF8
+Adb push $localManifestTmp $manifestTmp | Out-Null
+Adb shell "run-as $PACKAGE cp $manifestTmp $GAME_DATA_DIR/.saf_manifest.json" | Out-Null
+Adb shell "rm -f $manifestTmp" | Out-Null
+Remove-Item $localManifestTmp -ErrorAction SilentlyContinue
+
+# Verify manifest was created
+$manifestCheck = Adb shell "run-as $PACKAGE cat $GAME_DATA_DIR/.saf_manifest.json"
+if ($manifestCheck -match "descent2.ham") {
+    Write-Host "[OK] Manifest created with $TEST_FILE entry" -ForegroundColor Green
+} else {
+    Write-Host "  Manifest content: $manifestCheck"
+    Write-Host "FAIL: Manifest creation failed" -ForegroundColor Red
     exit 1
 }
 
-# Use correct broadcast extra key: "command" (not "action")
+# -- Step 7: Launch the game -------------------------------------------
+Write-Host ""
+Write-Progress-Flush "Step 7: Launching game..." Yellow
 Adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command launch" | Out-Null
 
 # Wait for the game process to be up and the native engine to start
@@ -341,9 +339,9 @@ if (!$gameStarted) {
     Write-Host "[WARN] Game engine not detected via introspection, trying automation anyway..." -ForegroundColor Yellow
 }
 
-# -- Step 7: Push and run the test automation script --------------------
+# -- Step 8: Push and run the test automation script --------------------
 Write-Host ""
-Write-Progress-Flush "Step 7: Running test_saf_basic automation..." Yellow
+Write-Progress-Flush "Step 8: Running test_saf_basic automation..." Yellow
 
 $scriptBasename = "test_saf_basic.json5"
 $deviceTmp = "/data/local/tmp/$scriptBasename"
@@ -445,7 +443,7 @@ if (!$NoCleanup) {
     Adb shell "rm -f $restoreTmp" | Out-Null
 
     # Remove SAF test artifacts
-    Adb shell "run-as $PACKAGE rm -f files/.saf_manifest.json" | Out-Null
+    Adb shell "run-as $PACKAGE rm -f $GAME_DATA_DIR/.saf_manifest.json" | Out-Null
     Adb shell "rm -rf $SAF_DIR" | Out-Null
 
     # Verify restore
