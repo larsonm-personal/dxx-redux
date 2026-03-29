@@ -124,6 +124,7 @@ $testTimeouts = @{
     "test_autoselect_crash_unified"       = 240
     "test_gog_installer_redbook_unified"  = 300
     "test_saf_archiver"                   = 240
+    "test_all_extracts"                   = 300
 }
 $extractTests = @("test_extract", "test_all_extracts")  # emulator + game data, run last
 $noInfraTests = @("test_cue_iso", "test_server_integration")

@@ -34,6 +34,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Sentinel output to diagnose empty-log issues when run from run_all_tests
+[Console]::Out.Flush()
+Write-Host "test_extract.ps1 starting (PSScriptRoot=$PSScriptRoot)"
+
 # -- Auto-discover SpecPath if not provided -------------------
 if (-not $SpecPath) {
     $gameDataDir = Join-Path (Split-Path (Split-Path $PSScriptRoot)) "game_data"
@@ -42,7 +46,7 @@ if (-not $SpecPath) {
         $SpecPath = $specs[0].FullName
         Write-Host "Auto-selected spec: $SpecPath" -ForegroundColor Cyan
     } else {
-        Write-Error "No SpecPath provided and no extract_regression.json5 found under $gameDataDir"
+        Write-Host "FAIL: No SpecPath provided and no extract_regression.json5 found under $gameDataDir" -ForegroundColor Red
         exit 1
     }
 }
@@ -55,7 +59,7 @@ $TEST_SET = 'regression_test'
 
 $_depBaseFile = Join-Path (Split-Path (Split-Path $PSScriptRoot)) 'dependency_base.txt'
 if (-not (Test-Path $_depBaseFile)) {
-    Write-Error "dependency_base.txt not found. Create it with a line containing the dependency dir path"
+    Write-Host "FAIL: dependency_base.txt not found. Create it with a line containing the dependency dir path" -ForegroundColor Red
     exit 1
 }
 $DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
@@ -213,7 +217,7 @@ function Get-RemoteFileSize {
 # -- Read spec ------------------------------------------------
 
 if (-not (Test-Path $SpecPath)) {
-    Write-Error "Spec file not found: $SpecPath"
+    Write-Host "FAIL: Spec file not found: $SpecPath" -ForegroundColor Red
     exit 1
 }
 
@@ -306,7 +310,7 @@ if ($spec.source_type -eq 'cd') {
     $extractedDir = Join-Path $specDir 'data_tracks'
     # Some CDs organize into subdirs (d1data, d2data)
     if (-not (Test-Path $extractedDir)) {
-        Write-Error "No data_tracks/ directory found at $specDir. Run extract_all_cds.ps1 first"
+        Write-Host "FAIL: No data_tracks/ directory found at $specDir. Run extract_all_cds.ps1 first" -ForegroundColor Red
         Exit-Test 1 'fail' 'source_missing'
     }
 } elseif ($spec.source_type -eq 'gog') {
@@ -315,7 +319,7 @@ if ($spec.source_type -eq 'cd') {
     $baseName = [System.IO.Path]::GetFileNameWithoutExtension($installerName)
     $extractedDir = Join-Path $specDir $baseName
     if (-not (Test-Path $extractedDir)) {
-        Write-Error "No extracted directory found at $extractedDir. Run extract_all_gog.ps1 first"
+        Write-Host "FAIL: No extracted directory found at $extractedDir. Run extract_all_gog.ps1 first" -ForegroundColor Red
         Exit-Test 1 'fail' 'source_missing'
     }
 }

@@ -46,7 +46,7 @@ $apkPath = "$androidDir\app\build\outputs\apk\debug\app-debug.apk"
 $scriptSource = "$androidDir\game_scripts\test_saf_basic.json5"
 $_depBaseFile = Join-Path $repoRoot "dependency_base.txt"
 if (-not (Test-Path $_depBaseFile)) {
-    Write-Error "dependency_base.txt not found at $_depBaseFile. Create it with a single line containing the path to your dependency directory (e.g. C:\local)."
+    Write-Host "FAIL: dependency_base.txt not found at $_depBaseFile" -ForegroundColor Red
     exit 1
 }
 $DEP_BASE = (Get-Content $_depBaseFile -First 1).Trim()
@@ -58,11 +58,15 @@ $SAF_DIR = "/data/local/tmp/test_saf"
 $TIMEOUT_SEC = 120
 
 if (!(Test-Path $adb)) {
-    Write-Error "adb not found at $adb"
+    Write-Host "FAIL: adb not found at $adb" -ForegroundColor Red
     exit 1
 }
 
-function Adb { & $adb @args 2>&1 }
+function Adb {
+    param([string[]]$AdbArgs)
+    if (-not $AdbArgs) { $AdbArgs = $args }
+    & $adb @AdbArgs 2>&1
+}
 
 # -- Preflight ----------------------------------------------------------
 Write-Host "=== SAF Archiver Test ===" -ForegroundColor Cyan
@@ -75,13 +79,13 @@ if ($devices -notmatch "emulator.*device") {
     $healthScript = Join-Path $androidDir "emu_health.ps1"
     & $healthScript -Restart -Wait -TimeoutSeconds 120
     if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 2) {
-        Write-Error "Could not start emulator (exit $LASTEXITCODE)"
+        Write-Host "FAIL: Could not start emulator (exit $LASTEXITCODE)" -ForegroundColor Red
         exit 1
     }
     Start-Sleep -Seconds 3
     $devices = (Adb devices) -join "`n"
     if ($devices -notmatch "emulator.*device") {
-        Write-Error "Emulator still not available after restart"
+        Write-Host "FAIL: Emulator still not available after restart" -ForegroundColor Red
         exit 1
     }
 }
@@ -89,7 +93,7 @@ Write-Host "[OK] Emulator connected" -ForegroundColor Green
 
 # Ensure game data is on device before running the SAF test
 if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
-    Write-Error "Could not resolve game data deps"
+    Write-Host "FAIL: Could not resolve game data deps" -ForegroundColor Red
     exit 1
 }
 
@@ -103,7 +107,7 @@ if (!$NoBuild) {
             Where-Object { $_ -match "BUILD |FAIL|error:" } |
             ForEach-Object { Write-Host "  $_" }
         if ($LASTEXITCODE -ne 0) {
-            Write-Error "Build failed"
+            Write-Host "FAIL: Build failed" -ForegroundColor Red
             exit 1
         }
         Write-Host "[OK] Build successful" -ForegroundColor Green
@@ -129,7 +133,7 @@ if ($installResult -match "Success") {
     Write-Host "[OK] APK installed" -ForegroundColor Green
 } else {
     Write-Host "  $installResult"
-    Write-Error "APK install failed"
+    Write-Host "FAIL: APK install failed" -ForegroundColor Red
     exit 1
 }
 
@@ -145,12 +149,15 @@ if (-not $sizeOutput -or $sizeOutput -match 'No such file') {
     # Re-push via the standard game data deps mechanism.
     Write-Host "  $TEST_FILE missing on device, re-pushing..." -ForegroundColor Yellow
     if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
-        Write-Error "Could not re-push game data deps"
+        Write-Host "FAIL: Could not re-push game data deps" -ForegroundColor Red
         exit 1
     }
     $sizeOutput = Adb shell "run-as $PACKAGE stat -c '%s' $GAME_DATA_DIR/$TEST_FILE"
     if (-not $sizeOutput -or $sizeOutput -match 'No such file') {
-        Write-Error "$TEST_FILE still not found after re-push"
+        # Diagnostic: list what's actually in the sets directory
+        Write-Host "  Diagnostic: contents of $GAME_DATA_DIR/" -ForegroundColor Yellow
+        Adb shell "run-as $PACKAGE ls -la $GAME_DATA_DIR/" | ForEach-Object { Write-Host "    $_" }
+        Write-Host "FAIL: $TEST_FILE still not found after re-push" -ForegroundColor Red
         exit 1
     }
 }
@@ -182,7 +189,7 @@ Start-Sleep -Seconds 1
 $copiedSize = Adb shell "stat -c '%s' $SAF_DIR/$TEST_FILE" 2>&1
 $copiedSize = [long]($copiedSize.ToString().Trim())
 if ($copiedSize -ne $fileSize) {
-    Write-Error "File copy failed: expected $fileSize bytes, got $copiedSize"
+    Write-Host "FAIL: File copy failed: expected $fileSize bytes, got $copiedSize" -ForegroundColor Red
     exit 1
 }
 Write-Host "  Copied to $SAF_DIR/$TEST_FILE ($copiedSize bytes)"
@@ -222,7 +229,7 @@ if ($manifestCheck -match "descent2.ham") {
     Write-Host "[OK] Manifest created with $TEST_FILE entry" -ForegroundColor Green
 } else {
     Write-Host "  Manifest content: $manifestCheck"
-    Write-Error "Manifest creation failed"
+    Write-Host "FAIL: Manifest creation failed" -ForegroundColor Red
     exit 1
 }
 

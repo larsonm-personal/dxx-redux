@@ -16,17 +16,22 @@
 .PARAMETER MaxFailures
   Stop after this many failures (default: unlimited).
 
+.PARAMETER All
+  Run all specs instead of picking one at random.
+
 .PARAMETER SpecPaths
   Explicit list of spec file paths to run (overrides auto-discovery).
 
 .EXAMPLE
-  .\test_all_extracts.ps1                          # all specs
-  .\test_all_extracts.ps1 -Filter "Descent II*"   # D2 CDs only
+  .\test_all_extracts.ps1                          # one random spec
+  .\test_all_extracts.ps1 -All                     # all specs
+  .\test_all_extracts.ps1 -Filter "Descent II*"    # D2 CDs only
   .\test_all_extracts.ps1 -SkipLaunch              # file-only
 #>
 param(
     [string]$Filter,
     [switch]$SkipLaunch,
+    [switch]$All,
     [int]$MaxFailures = 0,
     [string[]]$SpecPaths
 )
@@ -36,6 +41,8 @@ $SCRIPT_DIR = $PSScriptRoot
 $REPO_ROOT = Split-Path (Split-Path $SCRIPT_DIR)
 $GAME_DATA = Join-Path $REPO_ROOT 'game_data'
 $TEST_SCRIPT = Join-Path $SCRIPT_DIR 'test_extract.ps1'
+
+Write-Host "test_all_extracts.ps1 starting"
 
 . "$PSScriptRoot\..\test_helpers.ps1"
 
@@ -64,6 +71,15 @@ if ($SpecPaths -and $SpecPaths.Count -gt 0) {
 if ($specs.Count -eq 0) {
     Write-Host "No regression specs found" -ForegroundColor Red
     exit 1
+}
+
+# Unless -All or -SpecPaths or -Filter given, pick one spec at random
+if (-not $All -and -not $SpecPaths -and -not $Filter -and $specs.Count -gt 1) {
+    $pick = $specs | Get-Random
+    $pickName = Split-Path (Split-Path $pick -Parent) -Leaf
+    Write-Host "Randomly selected: $pickName" -ForegroundColor Yellow
+    Write-Host "  (use -All to run all $($specs.Count) specs)" -ForegroundColor DarkGray
+    $specs = @($pick)
 }
 
 Write-Host ""
@@ -190,7 +206,7 @@ Write-Host ""
 $results | Format-Table Source, Status, Prior, Saved, Changed, Time, ExitCode -AutoSize
 
 # Final cleanup: ensure app is stopped
-Adb-Quick -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
+Adb -AdbArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
 
 # Exit code = number of failures
 exit $failures

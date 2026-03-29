@@ -235,12 +235,20 @@ try {
     # Pre-create firewall rules to prevent UAC prompts during test
     Ensure-FirewallRules
 
-    # Kill any existing server on port 9000
-    $existingServer = Get-NetTCPConnection -LocalPort 9000 -ErrorAction SilentlyContinue |
-        Select-Object -First 1
-    if ($existingServer) {
-        Write-Status "Killing existing process on port 9000 (PID $($existingServer.OwningProcess))..."
-        Stop-Process -Id $existingServer.OwningProcess -Force -ErrorAction SilentlyContinue
+    # Kill any existing server on the ports we need (9000, 8080, 9001).
+    # run_all_tests.ps1 may have started its own server for the tier.
+    $serverPorts = @(9000, 8080, 9001)
+    $killedPids = @{}
+    foreach ($port in $serverPorts) {
+        $conn = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+        if ($conn -and -not $killedPids.ContainsKey($conn.OwningProcess)) {
+            Write-Status "Killing existing process on port $port (PID $($conn.OwningProcess))..."
+            Stop-Process -Id $conn.OwningProcess -Force -ErrorAction SilentlyContinue
+            $killedPids[$conn.OwningProcess] = $true
+        }
+    }
+    if ($killedPids.Count -gt 0) {
         Start-Sleep -Seconds 2
     }
 
