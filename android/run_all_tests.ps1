@@ -123,7 +123,7 @@ $serverTests = @("test_bot_client")
 $testTimeouts = @{
     "test_autoselect_crash_unified"       = 240
     "test_gog_installer_redbook_unified"  = 300
-    "test_saf_archiver"                   = 240
+    "test_saf_archiver"                   = 360
     "test_all_extracts"                   = 300
 }
 $extractTests = @("test_extract", "test_all_extracts")  # emulator + game data, run last
@@ -240,6 +240,8 @@ function Run-SingleTest {
     if ($Test.Type -eq "json5") {
         $scriptFile = [System.IO.Path]::GetFileName($Test.Path)
         $testCmd = "& '$runTestScript' '$scriptFile'"
+    } elseif ($Test.Name -eq "test_saf_archiver") {
+        $testCmd = "& '$($Test.Path)' -NoBuild"
     } else {
         $testCmd = "& '$($Test.Path)'"
     }

@@ -2428,19 +2428,20 @@ async fn test_two_client_discovery_join_chat() {
 // Phase C: Relay session cleanup
 // ---------------------------------------------------------------------------
 
-/// Relay sessions older than MAX_RELAY_SESSION_SECS are reaped by
-/// cleanup_stale_sessions.
+/// Relay sessions older than the cutoff are reaped by
+/// cleanup_sessions_older_than.
 #[tokio::test]
 async fn test_relay_cleanup_stale_sessions() {
     let server = TestServer::start().await;
 
-    // Manually insert a relay session with a very old created_at
+    // Insert a relay session created 3 seconds ago (will exceed our 1s cutoff)
+    let old_created_at = std::time::Instant::now() - std::time::Duration::from_secs(3);
     let old_session = dxx_matchmaking::relay::RelaySession {
         session_token: 99999,
         player_addrs: dashmap::DashMap::new(),
         expected_players: 2,
         allowed_ips: dashmap::DashSet::new(),
-        created_at: std::time::Instant::now() - std::time::Duration::from_secs(8000),
+        created_at: old_created_at,
     };
     server.state.relay_sessions.insert(99999, old_session);
 
@@ -2456,7 +2457,11 @@ async fn test_relay_cleanup_stale_sessions() {
 
     assert_eq!(server.state.relay_sessions.len(), 2);
 
-    let removed = dxx_matchmaking::relay::cleanup_stale_sessions(&server.state);
+    // Use a 1-second cutoff so the 3-second-old session is reaped
+    let removed = dxx_matchmaking::relay::cleanup_sessions_older_than(
+        &server.state,
+        std::time::Duration::from_secs(1),
+    );
     assert_eq!(removed, 1);
     assert_eq!(server.state.relay_sessions.len(), 1);
     assert!(server.state.relay_sessions.contains_key(&11111));

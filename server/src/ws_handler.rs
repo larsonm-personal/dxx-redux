@@ -1632,8 +1632,7 @@ async fn handle_authenticated_message(
                                         | crate::lobby::ConnectionType::Relay
                                 )
                             };
-                            let conn_type = if conn_type
-                                == crate::lobby::ConnectionType::DirectLan
+                            let conn_type = if conn_type == crate::lobby::ConnectionType::DirectLan
                                 && !relay_addr.is_empty()
                                 && !confirmed_direct(&lobby.players[i].connection_type)
                                 && !confirmed_direct(&lobby.players[j].connection_type)
@@ -1729,8 +1728,7 @@ async fn handle_authenticated_message(
                                         | crate::lobby::ConnectionType::Relay
                                 )
                             };
-                            let conn_type = if conn_type
-                                == crate::lobby::ConnectionType::DirectLan
+                            let conn_type = if conn_type == crate::lobby::ConnectionType::DirectLan
                                 && !relay_addr.is_empty()
                                 && !confirmed_direct(&lobby.players[my_slot].connection_type)
                                 && !confirmed_direct(&lobby.players[other_slot].connection_type)

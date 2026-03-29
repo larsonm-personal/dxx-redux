@@ -1123,7 +1123,19 @@ extern "C" void game_automate_tick(void)
 				}
 				/* else: keep navigating next frame */
 			} else if (g_select_phase == 2) {
-				/* Phase 2: press enter to confirm selection */
+				/* Phase 2: re-verify position, then press enter.
+				 * The cursor can drift between Phase 1 and 2 if the
+				 * game loop stalls (e.g. emulator lag). */
+				int target, current;
+				if (!select_find_item(s.select_text.c_str(), &target, &current)) {
+					stop_script_fail("SELECT: menu disappeared before confirm");
+					break;
+				}
+				if (target != current) {
+					LOGI("SELECT: cursor drifted to %d (target %d), re-navigating", current, target);
+					g_select_phase = 1;
+					break;
+				}
 				inject_key_tap("enter");
 				LOGI("SELECT: confirmed \"%s\"", s.select_text.c_str());
 				g_select_phase = 3;

@@ -29,6 +29,13 @@ param(
 
 $ErrorActionPreference = "Continue"
 
+# Flush helper -- ensures progress lines appear in captured output
+function Write-Progress-Flush {
+    param([string]$Message, [string]$Color = "White")
+    Write-Host $Message -ForegroundColor $Color
+    [Console]::Out.Flush()
+}
+
 # -- Shared env setup (JAVA_HOME, cmake, cargo) ----------------------------
 . "$PSScriptRoot\..\test_helpers.ps1"
 
@@ -55,7 +62,7 @@ $adb = "$DEP_BASE\android-sdk\platform-tools\adb.exe"
 $PACKAGE = "com.dxxredux.app"
 $TEST_FILE = "descent2.ham"
 $SAF_DIR = "/data/local/tmp/test_saf"
-$TIMEOUT_SEC = 120
+$TIMEOUT_SEC = 60
 
 if (!(Test-Path $adb)) {
     Write-Host "FAIL: adb not found at $adb" -ForegroundColor Red
@@ -116,7 +123,7 @@ if (!$NoBuild) {
             Write-Host "FAIL: Build failed" -ForegroundColor Red
             exit 1
         }
-        Write-Host "[OK] Build successful" -ForegroundColor Green
+        Write-Progress-Flush "[OK] Build successful" Green
     } finally {
         Pop-Location
     }
@@ -129,14 +136,14 @@ Write-Host ""
 Write-Host "Step 2: Stopping game..." -ForegroundColor Yellow
 Adb shell "am force-stop $PACKAGE" | Out-Null
 Start-Sleep -Seconds 2
-Write-Host "[OK] Game stopped" -ForegroundColor Green
+Write-Progress-Flush "[OK] Game stopped" Green
 
 # -- Step 3: Install APK -----------------------------------------------
 Write-Host ""
 Write-Host "Step 3: Installing debug APK..." -ForegroundColor Yellow
 $installResult = Adb install -r $apkPath
 if ($installResult -match "Success") {
-    Write-Host "[OK] APK installed" -ForegroundColor Green
+    Write-Progress-Flush "[OK] APK installed" Green
 } else {
     Write-Host "  $installResult"
     Write-Host "FAIL: APK install failed" -ForegroundColor Red
@@ -145,7 +152,7 @@ if ($installResult -match "Success") {
 
 # -- Step 4: Get file size and move to SAF location ---------------------
 Write-Host ""
-Write-Host "Step 4: Moving $TEST_FILE to SAF test location..." -ForegroundColor Yellow
+Write-Progress-Flush "Step 4: Moving $TEST_FILE to SAF test location..." Yellow
 
 # Get the file size (game data lives under sets/default/)
 $GAME_DATA_DIR = "files/sets/default"
@@ -206,7 +213,7 @@ Write-Host "  Removed from app game data dir"
 
 # -- Step 5: Create .saf_manifest.json ----------------------------------
 Write-Host ""
-Write-Host "Step 5: Creating .saf_manifest.json..." -ForegroundColor Yellow
+Write-Progress-Flush "Step 5: Creating .saf_manifest.json..." Yellow
 
 $manifestJson = @"
 {
@@ -241,7 +248,7 @@ if ($manifestCheck -match "descent2.ham") {
 
 # -- Step 6: Launch the game --------------------------------------------
 Write-Host ""
-Write-Host "Step 6: Launching game..." -ForegroundColor Yellow
+Write-Progress-Flush "Step 6: Launching game..." Yellow
 Adb shell "am start -n $PACKAGE/.SetupActivity" | Out-Null
 Write-Host "  Waiting for SetupActivity..."
 
@@ -307,7 +314,7 @@ if (!$gameStarted) {
 
 # -- Step 7: Push and run the test automation script --------------------
 Write-Host ""
-Write-Host "Step 7: Running test_saf_basic automation..." -ForegroundColor Yellow
+Write-Progress-Flush "Step 7: Running test_saf_basic automation..." Yellow
 
 $scriptBasename = "test_saf_basic.json5"
 $deviceTmp = "/data/local/tmp/$scriptBasename"

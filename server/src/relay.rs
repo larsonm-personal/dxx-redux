@@ -24,7 +24,15 @@ pub struct RelaySession {
 /// Remove relay sessions older than `MAX_RELAY_SESSION_SECS`.
 /// Returns the number of sessions removed.
 pub fn cleanup_stale_sessions(state: &ServerState) -> usize {
-    let cutoff = std::time::Duration::from_secs(MAX_RELAY_SESSION_SECS);
+    cleanup_sessions_older_than(
+        state,
+        std::time::Duration::from_secs(MAX_RELAY_SESSION_SECS),
+    )
+}
+
+/// Remove relay sessions older than `cutoff`.
+/// Returns the number of sessions removed.
+pub fn cleanup_sessions_older_than(state: &ServerState, cutoff: std::time::Duration) -> usize {
     let now = std::time::Instant::now();
     let mut removed = 0usize;
     state.relay_sessions.retain(|_token, session| {
