@@ -155,7 +155,8 @@ class CustomAudioSetManager(
             File(filesDir, PLAYLIST_FILE).delete()
             return null
         }
-        allFiles.sortBy { it.first }
+        // No global sort -- sets are sequential in their configured order,
+        // tracks within each set are already sorted alphabetically above
         val m3u = StringBuilder("# Custom audio playlist\n")
         for ((_, path) in allFiles) {
             m3u.appendLine(path)
@@ -195,7 +196,6 @@ class CustomAudioSetManager(
                 tracks.add(f to set.label)
             }
         }
-        tracks.sortBy { it.first.lowercase() }
         return tracks
     }
 

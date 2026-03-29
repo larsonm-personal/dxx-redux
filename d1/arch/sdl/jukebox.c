@@ -325,6 +325,22 @@ const char *jukebox_get_track_name(int index)
 {
 	if (!JukeboxSongs.list || index < 0 || index >= JukeboxSongs.num_songs)
 		return NULL;
-	return JukeboxSongs.list[index];
+	/* Try chromaprint-decoded name first */
+	const char *decoded = jukebox_names_lookup(JukeboxSongs.list[index]);
+	if (decoded && decoded[0])
+		return decoded;
+	/* Fallback: strip path and extension into static buffer */
+	{
+		static char namebuf[64];
+		const char *base = JukeboxSongs.list[index], *p;
+		for (p = base; *p; p++)
+			if (*p == '/' || *p == '\\')
+				base = p + 1;
+		strncpy(namebuf, base, sizeof(namebuf) - 1);
+		namebuf[sizeof(namebuf) - 1] = '\0';
+		p = strrchr(namebuf, '.');
+		if (p) namebuf[p - namebuf] = '\0';
+		return namebuf;
+	}
 }
 #endif

@@ -2251,6 +2251,7 @@ private fun SetupScreen(
     var audioImportUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
     var audioImporting by remember { mutableStateOf(false) }
     var zipArchiveUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    val audioCustomMgr = remember { CustomAudioSetManager(filesDir) }
 
     val filePickerLauncher =
         rememberLauncherForActivityResult(
@@ -2619,11 +2620,9 @@ private fun SetupScreen(
 
                 // ── Audio file auto-import dialog ──
                 if (audioImportUris.isNotEmpty()) {
-                    val customMgr = remember { CustomAudioSetManager(filesDir) }
-                    var customSets by remember { mutableStateOf(customMgr.getSets()) }
                     AddToSetDialog(
-                        existingSets = customSets,
-                        defaultName = "Set ${customSets.size + 1}",
+                        existingSets = audioCustomMgr.getSets(),
+                        defaultName = "Set ${audioCustomMgr.getSets().size + 1}",
                         selectedUris = audioImportUris,
                         onDismiss = { audioImportUris = emptyList() },
                         onConfirm = { targetSetId, newName, copyToStorage ->
@@ -2634,13 +2633,12 @@ private fun SetupScreen(
                                 importAudioFiles(
                                     context,
                                     filesDir,
-                                    customMgr,
+                                    audioCustomMgr,
                                     newName,
                                     uris,
                                     targetSetId,
                                     copyToStorage,
                                 )
-                                customSets = customMgr.getSets()
                                 audioImporting = false
                                 // Auto-switch music mode to "files"
                                 context
@@ -5510,8 +5508,9 @@ private fun DiscImportDialog(
                                         try {
                                             val audioCount = tracks!!.count { it.isAudio }
                                             // Copy CUE to filesDir (small file, needed for parsing)
-                                            val destCue = File(filesDir, cueName.lowercase())
-                                            tempCuePath?.let { File(it).copyTo(destCue, overwrite = true) }
+                                            // Use temp name; renamed to unique ${id}.cue after disc identification
+                                            val tmpDest = File(filesDir, cueName.lowercase())
+                                            tempCuePath?.let { File(it).copyTo(tmpDest, overwrite = true) }
 
                                             // Take persistable URI permissions on BIN files
                                             val binNames = mutableListOf<String>()
@@ -5558,9 +5557,11 @@ private fun DiscImportDialog(
                                                 Log.w("DXX-DiscImport", "Disc identification failed", e)
                                             }
 
-                                            // Get track names from database for known discs
+                                            // Rename CUE to unique name now that disc id is known
                                             val srcManager = AudioSourceManager(filesDir)
                                             val id = discId ?: "custom-${System.currentTimeMillis()}"
+                                            val destCue = File(filesDir, "$id.cue")
+                                            if (tmpDest.exists()) tmpDest.renameTo(destCue)
                                             var trackNames = emptyMap<Int, String>()
                                             try {
                                                 if (discId != null) {

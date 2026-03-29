@@ -501,6 +501,7 @@ data class GyroConfig(
 enum class DiagnosticType {
     GYRO,
     MUSIC,
+    MENU,
     ;
 
     /** Human-readable label for the editor UI. */
@@ -509,6 +510,7 @@ enum class DiagnosticType {
             when (this) {
                 GYRO -> "Gyro Display"
                 MUSIC -> "Music Controls"
+                MENU -> "Menu"
             }
 }
 

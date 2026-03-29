@@ -212,6 +212,9 @@ class TouchOverlayView
             var musicPrevPid = -1
             var musicNextPid = -1
             var musicLabelPid = -1
+
+            // Menu-type state
+            var menuPid = -1
         }
 
         private class AxisRegionState(
@@ -637,6 +640,11 @@ class TouchOverlayView
                         d.musicNextCX = d.musicPrevCX + r * 2 + base * 0.02f * d.control.sizeMult
                         d.musicLabelX = d.musicNextCX + r + base * 0.02f * d.control.sizeMult
                     }
+                    DiagnosticType.MENU -> {
+                        val r = base * 0.03f * d.control.sizeMult
+                        d.width = r * 2.5f
+                        d.height = r * 2.5f
+                    }
                 }
             }
 
@@ -934,6 +942,7 @@ class TouchOverlayView
             when (d.control.type) {
                 DiagnosticType.GYRO -> drawDiagnosticGyro(canvas, d, gAlpha)
                 DiagnosticType.MUSIC -> drawDiagnosticMusic(canvas, d, gAlpha)
+                DiagnosticType.MENU -> drawDiagnosticMenu(canvas, d, gAlpha)
             }
         }
 
@@ -1006,6 +1015,37 @@ class TouchOverlayView
                 }
             canvas.drawText(trackLabel, d.musicLabelX, y + labelPaint.textSize * 0.35f, labelPaint)
             paintBtnLabel.textSize = savedSize
+        }
+
+        private fun drawDiagnosticMenu(
+            canvas: Canvas,
+            d: DiagnosticState,
+            gAlpha: Float,
+        ) {
+            val eff = (gAlpha * d.control.opacity).coerceIn(0f, 1f)
+            val r = min(d.width, d.height) / 2f
+            val pressed = d.menuPid >= 0
+            val fill = if (pressed) paintBtnPressed else paintBtnIdle
+            fill.alpha = ((if (pressed) 0x66 else 0x33) * eff).toInt()
+            canvas.drawCircle(d.centerX, d.centerY, r, fill)
+            paintRing.alpha = (0x66 * eff).toInt()
+            canvas.drawCircle(d.centerX, d.centerY, r, paintRing)
+
+            // Three-bar hamburger icon
+            paintDiagText.alpha = (0xCC * eff).toInt()
+            val barW = r * 0.7f
+            val barH = r * 0.1f
+            val gap = r * 0.25f
+            for (i in -1..1) {
+                val by = d.centerY + i * gap
+                canvas.drawRect(
+                    d.centerX - barW,
+                    by - barH,
+                    d.centerX + barW,
+                    by + barH,
+                    paintDiagText,
+                )
+            }
         }
 
         /** Shared radial menu drawing — handles both trigger icon and open wheel. */
@@ -1511,6 +1551,21 @@ class TouchOverlayView
                         }
                     }
 
+                    // Try menu diagnostic button
+                    if (!handled) {
+                        for (d in diagnosticStates) {
+                            if (d.control.type != DiagnosticType.MENU) continue
+                            if (d.menuPid >= 0) continue
+                            val r = min(d.width, d.height) / 2f
+                            if (hypot(px - d.centerX, py - d.centerY) <= r * 1.3f) {
+                                d.menuPid = pid
+                                invalidate()
+                                handled = true
+                                break
+                            }
+                        }
+                    }
+
                     // Try admin tray tab
                     if (!handled && adminTrayTabRect.contains(px, py)) {
                         adminTrayOpen = true
@@ -1688,6 +1743,7 @@ class TouchOverlayView
                     releaseAllSliders()
                     releaseAllAxisRegions()
                     releaseAllMusicDiagnostics(fired)
+                    releaseAllMenuDiagnostics(fired)
                 }
                 MotionEvent.ACTION_POINTER_UP -> {
                     val pid = event.getPointerId(event.actionIndex)
@@ -1762,6 +1818,17 @@ class TouchOverlayView
                                     }
                                 }
                                 if (found) break
+                            }
+                        }
+                        // Check menu diagnostics
+                        if (!found) {
+                            for (d in diagnosticStates) {
+                                if (d.control.type != DiagnosticType.MENU) continue
+                                if (d.menuPid == pid) {
+                                    releaseMenuDiag(d, true)
+                                    found = true
+                                    break
+                                }
                             }
                         }
                     }
@@ -2330,6 +2397,7 @@ class TouchOverlayView
             releaseAllSliders()
             releaseAllAxisRegions()
             releaseAllMusicDiagnostics(false)
+            releaseAllMenuDiagnostics(false)
         }
 
         private fun releaseMusicPrev(
@@ -2370,6 +2438,27 @@ class TouchOverlayView
                 releaseMusicPrev(d, fired)
                 releaseMusicNext(d, fired)
                 releaseMusicLabel(d, fired)
+            }
+        }
+
+        private fun releaseMenuDiag(
+            d: DiagnosticState,
+            fired: Boolean,
+        ) {
+            if (d.menuPid >= 0) {
+                d.menuPid = -1
+                invalidate()
+                if (fired) {
+                    metaActionCallback?.invoke(TouchBindings.META_GAME_MENU, true)
+                    metaActionCallback?.invoke(TouchBindings.META_GAME_MENU, false)
+                }
+            }
+        }
+
+        private fun releaseAllMenuDiagnostics(fired: Boolean) {
+            for (d in diagnosticStates) {
+                if (d.control.type != DiagnosticType.MENU) continue
+                releaseMenuDiag(d, fired)
             }
         }
 

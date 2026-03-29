@@ -1772,7 +1772,7 @@ private fun RadialPropertiesPanel(
     onUpdate: (RadialMenuControl) -> Unit,
     onDelete: () -> Unit,
 ) {
-    val isPreset = radial.id in listOf("PriWpn", "SecWpn", "Guide")
+    val isPreset = radial.id in TouchBindings.RADIAL_PRESET_IDS
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -1781,6 +1781,49 @@ private fun RadialPropertiesPanel(
         Text("Radial: ${radial.id}", color = Color.White, fontSize = 14.sp)
         IconButton(onClick = onDelete) {
             Icon(Icons.Default.Delete, "Delete", tint = Color(0xFFEF5350))
+        }
+    }
+
+    // Preset selector
+    var presetExpanded by remember { mutableStateOf(false) }
+    val presetOptions =
+        buildList {
+            add("Custom" to "")
+            for ((id, label) in TouchBindings.RADIAL_PRESET_LABELS) {
+                if (id == "Guide" && gameVariant != "d2") continue
+                add(label to id)
+            }
+        }
+    val currentPresetLabel =
+        if (isPreset) {
+            TouchBindings.RADIAL_PRESET_LABELS[radial.id] ?: radial.id
+        } else {
+            "Custom"
+        }
+    Box {
+        TextButton(onClick = { presetExpanded = true }) {
+            Text("Preset: $currentPresetLabel", fontSize = 12.sp)
+        }
+        DropdownMenu(expanded = presetExpanded, onDismissRequest = { presetExpanded = false }) {
+            presetOptions.forEach { (label, id) ->
+                DropdownMenuItem(
+                    text = { Text(label) },
+                    onClick = {
+                        presetExpanded = false
+                        if (id.isEmpty()) return@DropdownMenuItem // already custom
+                        val segs = TouchBindings.RADIAL_PRESET_SEGMENTS[id] ?: return@DropdownMenuItem
+                        val center = TouchBindings.RADIAL_PRESET_CENTER[id]
+                        onUpdate(
+                            radial.copy(
+                                id = id,
+                                segments = segs,
+                                centerLabel = center?.first ?: "",
+                                centerBinding = center?.second ?: -1,
+                            ),
+                        )
+                    },
+                )
+            }
         }
     }
 
@@ -2603,7 +2646,7 @@ private fun AddControlDialog(
                                 onClick = { onAddDiagnostic(dt) },
                                 modifier = Modifier.fillMaxWidth().padding(start = 24.dp),
                             ) {
-                                Text(dt.label)
+                                Text("info: ${dt.label}")
                             }
                         }
                     }

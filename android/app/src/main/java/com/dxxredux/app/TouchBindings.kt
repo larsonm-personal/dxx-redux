@@ -171,6 +171,56 @@ object TouchBindings {
             META_DROP_MARKER,
         )
 
+    // --- Radial menu preset IDs and segment templates ---
+    val RADIAL_PRESET_IDS = listOf("PriWpn", "SecWpn", "Guide")
+
+    /** Segment templates for creating preset radial menus. Keyed by preset ID. */
+    val RADIAL_PRESET_SEGMENTS: Map<String, List<RadialSegment>> =
+        mapOf(
+            "PriWpn" to
+                listOf(
+                    RadialSegment("Laser", android.view.KeyEvent.KEYCODE_1, weaponIndex = 0),
+                    RadialSegment("Vulcan", android.view.KeyEvent.KEYCODE_2, weaponIndex = 1),
+                    RadialSegment("Spread", android.view.KeyEvent.KEYCODE_3, weaponIndex = 2),
+                    RadialSegment("Plasma", android.view.KeyEvent.KEYCODE_4, weaponIndex = 3),
+                    RadialSegment("Fusion", android.view.KeyEvent.KEYCODE_5, weaponIndex = 4),
+                ),
+            "SecWpn" to
+                listOf(
+                    RadialSegment("Concsn", android.view.KeyEvent.KEYCODE_6, weaponIndex = 0),
+                    RadialSegment("Homing", android.view.KeyEvent.KEYCODE_7, weaponIndex = 1),
+                    RadialSegment("Proxim", android.view.KeyEvent.KEYCODE_8, weaponIndex = 2),
+                    RadialSegment("Smart", android.view.KeyEvent.KEYCODE_9, weaponIndex = 3),
+                    RadialSegment("Mega", android.view.KeyEvent.KEYCODE_0, weaponIndex = 4),
+                ),
+            "Guide" to
+                listOf(
+                    RadialSegment("Energy", META_GUIDE_FIND_ENERGY),
+                    RadialSegment("Enrg Ctr", META_GUIDE_FIND_REACTOR),
+                    RadialSegment("Shield", META_GUIDE_FIND_SHIELD),
+                    RadialSegment("Powerup", META_GUIDE_FIND_POWERUP),
+                    RadialSegment("Robot", META_GUIDE_FIND_ROBOT),
+                    RadialSegment("Hostage", META_GUIDE_FIND_HOSTAGE),
+                    RadialSegment("Scram!", META_GUIDE_SCRAM),
+                    RadialSegment("Items", META_GUIDE_FIND_ITEMS),
+                    RadialSegment("Exit", META_GUIDE_FIND_EXIT),
+                ),
+        )
+
+    /** Center binding for preset radial menus (-1 = none). */
+    val RADIAL_PRESET_CENTER: Map<String, Pair<String, Int>> =
+        mapOf(
+            "Guide" to ("Clear" to META_GUIDE_CLEAR_GOAL),
+        )
+
+    /** Human-readable labels for preset IDs, for the editor UI. */
+    val RADIAL_PRESET_LABELS: Map<String, String> =
+        mapOf(
+            "PriWpn" to "Primary Weapons",
+            "SecWpn" to "Secondary Weapons",
+            "Guide" to "Guide Bot",
+        )
+
     /** Combined labels map for pickers that show all bindings (standard + extra). */
     val ALL_BUTTON_LABELS: Map<Int, String> = BUTTON_LABELS + META_BUTTON_LABELS
 
