@@ -385,11 +385,14 @@ function Resolve-GameDataDeps {
             $listing = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", "-la", "$target/") -Seconds 5
         }
         $deviceFiles = @{}  # lowercase filename -> size
+        $deviceOrigNames = @{}  # lowercase filename -> original cased name
         if ($listing) {
             foreach ($line in ($listing -split "`n")) {
                 # ls -la: perms links owner group SIZE date time filename
                 if ($line.Trim() -match '^\S+\s+\S+\s+\S+\s+\S+\s+(\d+)\s+\S+\s+\S+\s+(\S+)$') {
-                    $deviceFiles[$matches[2].Trim().ToLower()] = [long]$matches[1]
+                    $origName = $matches[2].Trim()
+                    $deviceFiles[$origName.ToLower()] = [long]$matches[1]
+                    $deviceOrigNames[$origName.ToLower()] = $origName
                 }
             }
         }
@@ -409,7 +412,18 @@ function Resolve-GameDataDeps {
                 }
             }
 
-            if (-not $needsPush) { continue }
+            if (-not $needsPush) {
+                # Rename if case doesn't match (ext4 is case-sensitive)
+                $origName = $deviceOrigNames[$fname]
+                if ($origName -cne $fname) {
+                    if ($isExternal) {
+                        & $script:ADB shell "mv '$target/$origName' '$target/$fname'" 2>&1 | Out-Null
+                    } else {
+                        & $script:ADB shell "run-as $($script:PACKAGE) mv '$target/$origName' '$target/$fname'" 2>&1 | Out-Null
+                    }
+                }
+                continue
+            }
 
             if (-not $localFile -or -not (Test-Path $localFile)) {
                 Write-Status "FAIL: Cannot resolve $($dep.file) (sha256: $($dep.sha256.Substring(0,12))...)" "Red"

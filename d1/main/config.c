@@ -33,6 +33,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "player.h"
 #include "mission.h"
 #include "physfsx.h"
+#ifdef ANDROID
+#include "playsave.h"
+#endif
 
 struct Cfg GameCfg;
 
@@ -65,6 +68,22 @@ static const char ClassicDepthStr[] ="ClassicDepth";
 static const char FPSIndicatorStr[] ="FPSIndicator";
 static const char GrabinputStr[] ="GrabInput";
 static const char BorderlessWindowStr[] ="BorderlessWindow";
+
+#ifdef ANDROID
+/*
+ * Apply initial settings for Android when the config file doesn't exist yet
+ * (first launch).  Mirrors d2/main/config.c android_apply_initial_defaults().
+ */
+static void android_apply_initial_defaults(void)
+{
+	/* Default to joystick control for the touch overlay */
+	PlayerCfg.ControlType = CONTROL_USING_JOYSTICK;
+
+	/* Enable free-flight automap so that pinch-to-thrust on the touch
+	 * screen translates through the level instead of just zooming */
+	PlayerCfg.AutomapFreeFlight = 1;
+}
+#endif
 
 int ReadConfigFile()
 {
@@ -119,6 +138,9 @@ int ReadConfigFile()
 	infile = PHYSFSX_openReadBuffered("descent.cfg");
 
 	if (infile == NULL) {
+#ifdef ANDROID
+		android_apply_initial_defaults();
+#endif
 		return 1;
 	}
 

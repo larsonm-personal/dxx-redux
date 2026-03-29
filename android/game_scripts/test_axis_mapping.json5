@@ -41,8 +41,8 @@
     {"_info": {
         "games": ["d1", "d2"],
         "vars": {
-            "d1": {"MISSION": "First Strike"},
-            "d2": {"MISSION": "Counterstrike"}
+            "d1": {"MISSION": "First Strike", "GAME_NUM": "1"},
+            "d2": {"MISSION": "Counterstrike", "GAME_NUM": "2"}
         },
         "_deps": [
             {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
@@ -58,8 +58,13 @@
             {"file": "descent.pig", "sha256": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe"}
         ]
     }},
-    {"action": "log", "message": "=== TEST: Axis Mapping Regression ==="},
 
+    // -- Launcher preamble --
+    {"action": "enter_launcher"},
+    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 1000},
+    {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
+
+    {"action": "log", "message": "=== TEST: Axis Mapping Regression ==="},
 
     // -- Create fresh pilot and launch into game --
     // The test runner deletes player.plr before launch, so the game
@@ -79,7 +84,8 @@
     {"action": "select", "text": "${MISSION}", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
-    {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "wait_ms", "ms": 500},
+    {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 10000},
 
     // Skip briefing (waits for level load, then escapes if briefing is showing)
     {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 100},
@@ -109,40 +115,40 @@
 
     // 2a: Axis 2 (RX) should cause turning
     {"action": "log", "message": "Phase 2a: Sending axis 2 (Turn R/L) = 0.5"},
-    {"action": "send_axis", "axis": 2, "axis_value": 0.5, "post_delay_ms": 500},
+    {"action": "send_axis", "axis": 2, "axis_value": 0.5, "post_delay_ms": 300},
     {"action": "assert", "expect": {
         "heading_time": {"ne": 0}
     }},
     {"action": "log", "message": "Phase 2a: PASS -- axis 2 drives heading"},
-    {"action": "send_axis", "axis": 2, "axis_value": 0.0, "post_delay_ms": 200},
+    {"action": "send_axis", "axis": 2, "axis_value": 0.0, "post_delay_ms": 100},
 
     // 2b: Axis 0 (LX) should cause sliding L/R, NOT turning
     {"action": "log", "message": "Phase 2b: Sending axis 0 (Slide L/R) = 0.5"},
-    {"action": "send_axis", "axis": 0, "axis_value": 0.5, "post_delay_ms": 500},
+    {"action": "send_axis", "axis": 0, "axis_value": 0.5, "post_delay_ms": 300},
     {"action": "assert", "expect": {
         "slide_lr_time": {"ne": 0},
         "heading_time":  "0"
     }},
     {"action": "log", "message": "Phase 2b: PASS -- axis 0 drives slide L/R, not turn"},
-    {"action": "send_axis", "axis": 0, "axis_value": 0.0, "post_delay_ms": 200},
+    {"action": "send_axis", "axis": 0, "axis_value": 0.0, "post_delay_ms": 100},
 
     // 2c: Axis 3 (RY) should cause pitching
     {"action": "log", "message": "Phase 2c: Sending axis 3 (Pitch U/D) = 0.5"},
-    {"action": "send_axis", "axis": 3, "axis_value": 0.5, "post_delay_ms": 500},
+    {"action": "send_axis", "axis": 3, "axis_value": 0.5, "post_delay_ms": 300},
     {"action": "assert", "expect": {
         "pitch_time": {"ne": 0}
     }},
     {"action": "log", "message": "Phase 2c: PASS -- axis 3 drives pitch"},
-    {"action": "send_axis", "axis": 3, "axis_value": 0.0, "post_delay_ms": 200},
+    {"action": "send_axis", "axis": 3, "axis_value": 0.0, "post_delay_ms": 100},
 
     // 2d: Axis 1 (LY) should cause forward/back thrust (throttle)
     {"action": "log", "message": "Phase 2d: Sending axis 1 (Throttle) = 0.5"},
-    {"action": "send_axis", "axis": 1, "axis_value": 0.5, "post_delay_ms": 500},
+    {"action": "send_axis", "axis": 1, "axis_value": 0.5, "post_delay_ms": 300},
     {"action": "assert", "expect": {
         "throttle_time": {"ne": 0}
     }},
     {"action": "log", "message": "Phase 2d: PASS -- axis 1 drives throttle"},
-    {"action": "send_axis", "axis": 1, "axis_value": 0.0, "post_delay_ms": 200},
+    {"action": "send_axis", "axis": 1, "axis_value": 0.0, "post_delay_ms": 100},
 
     // -- Phase 3: Negative tests --
     // These catch the specific regressions where axis 1 (LY) was
@@ -150,33 +156,33 @@
 
     // 3a: Axis 1 should NOT drive pitch (catches ControllerConfigPage bug)
     {"action": "log", "message": "Phase 3a: Verify axis 1 does NOT drive pitch"},
-    {"action": "send_axis", "axis": 1, "axis_value": 0.5, "post_delay_ms": 500},
+    {"action": "send_axis", "axis": 1, "axis_value": 0.5, "post_delay_ms": 300},
     {"action": "assert", "expect": {
         "pitch_time":    "0",
         "throttle_time": {"ne": 0}
     }},
     {"action": "log", "message": "Phase 3a: PASS -- axis 1 does not drive pitch"},
-    {"action": "send_axis", "axis": 1, "axis_value": 0.0, "post_delay_ms": 200},
+    {"action": "send_axis", "axis": 1, "axis_value": 0.0, "post_delay_ms": 100},
 
     // 3b: Axis 1 should NOT drive slide U/D (slide_ud is on axis 7 now)
     {"action": "log", "message": "Phase 3b: Verify axis 1 does NOT drive slide U/D"},
-    {"action": "send_axis", "axis": 1, "axis_value": 0.5, "post_delay_ms": 500},
+    {"action": "send_axis", "axis": 1, "axis_value": 0.5, "post_delay_ms": 300},
     {"action": "assert", "expect": {
         "slide_ud_time": "0",
         "throttle_time": {"ne": 0}
     }},
     {"action": "log", "message": "Phase 3b: PASS -- axis 1 does not drive slide U/D"},
-    {"action": "send_axis", "axis": 1, "axis_value": 0.0, "post_delay_ms": 200},
+    {"action": "send_axis", "axis": 1, "axis_value": 0.0, "post_delay_ms": 100},
 
     // 3c: Axis 3 should NOT drive throttle (only pitch)
     {"action": "log", "message": "Phase 3c: Verify axis 3 does NOT drive throttle"},
-    {"action": "send_axis", "axis": 3, "axis_value": 0.5, "post_delay_ms": 500},
+    {"action": "send_axis", "axis": 3, "axis_value": 0.5, "post_delay_ms": 300},
     {"action": "assert", "expect": {
         "throttle_time": "0",
         "pitch_time":    {"ne": 0}
     }},
     {"action": "log", "message": "Phase 3c: PASS -- axis 3 does not drive throttle"},
-    {"action": "send_axis", "axis": 3, "axis_value": 0.0, "post_delay_ms": 200},
+    {"action": "send_axis", "axis": 3, "axis_value": 0.0, "post_delay_ms": 100},
 
     // -- Phase 4: Meta action key sequence tests --
     // Meta actions (android_meta_actions.c) work by injecting SDL key
@@ -233,32 +239,32 @@
 
     // 5a: Axis 6 (Bank) should cause banking
     {"action": "log", "message": "Phase 5a: Sending axis 6 (Bank L/R) = 0.5"},
-    {"action": "send_axis", "axis": 6, "axis_value": 0.5, "post_delay_ms": 500},
+    {"action": "send_axis", "axis": 6, "axis_value": 0.5, "post_delay_ms": 300},
     {"action": "assert", "expect": {
         "bank_time": {"ne": 0}
     }},
     {"action": "log", "message": "Phase 5a: PASS -- axis 6 drives banking"},
-    {"action": "send_axis", "axis": 6, "axis_value": 0.0, "post_delay_ms": 200},
+    {"action": "send_axis", "axis": 6, "axis_value": 0.0, "post_delay_ms": 100},
 
     // 5b: Axis 7 (Slide U/D) should cause vertical thrust
     {"action": "log", "message": "Phase 5b: Sending axis 7 (Slide U/D) = 0.5"},
-    {"action": "send_axis", "axis": 7, "axis_value": 0.5, "post_delay_ms": 500},
+    {"action": "send_axis", "axis": 7, "axis_value": 0.5, "post_delay_ms": 300},
     {"action": "assert", "expect": {
         "slide_ud_time": {"ne": 0}
     }},
     {"action": "log", "message": "Phase 5b: PASS -- axis 7 drives slide U/D"},
-    {"action": "send_axis", "axis": 7, "axis_value": 0.0, "post_delay_ms": 200},
+    {"action": "send_axis", "axis": 7, "axis_value": 0.0, "post_delay_ms": 100},
 
     // 5c: Axis 6 should NOT drive heading or pitch
     {"action": "log", "message": "Phase 5c: Verify axis 6 does NOT drive heading or pitch"},
-    {"action": "send_axis", "axis": 6, "axis_value": 0.5, "post_delay_ms": 500},
+    {"action": "send_axis", "axis": 6, "axis_value": 0.5, "post_delay_ms": 300},
     {"action": "assert", "expect": {
         "heading_time": "0",
         "pitch_time":   "0",
         "bank_time":    {"ne": 0}
     }},
     {"action": "log", "message": "Phase 5c: PASS -- axis 6 only drives bank"},
-    {"action": "send_axis", "axis": 6, "axis_value": 0.0, "post_delay_ms": 200},
+    {"action": "send_axis", "axis": 6, "axis_value": 0.0, "post_delay_ms": 100},
 
     // -- Phase 6: Trigger analog axis tests (LT=4, RT=5) --
     // With the AXIS_CONTROLS addition of LT/RT, the controller config
@@ -272,7 +278,7 @@
 
     // 6a: RT axis (axis 5, value 0.8) should cause throttle via button
     {"action": "log", "message": "Phase 6a: RT trigger (axis 5) analog = 0.8"},
-    {"action": "send_axis", "axis": 5, "axis_value": 0.8, "post_delay_ms": 500},
+    {"action": "send_axis", "axis": 5, "axis_value": 0.8, "post_delay_ms": 300},
     {"action": "assert", "expect": {
         "throttle_time": {"ne": 0},
         "pitch_time":    "0",
@@ -281,11 +287,11 @@
         "bank_time":     "0"
     }},
     {"action": "log", "message": "Phase 6a: PASS -- RT drives only throttle"},
-    {"action": "send_axis", "axis": 5, "axis_value": 0.0, "post_delay_ms": 200},
+    {"action": "send_axis", "axis": 5, "axis_value": 0.0, "post_delay_ms": 100},
 
     // 6b: LT axis (axis 4, value 0.8) should cause throttle via button
     {"action": "log", "message": "Phase 6b: LT trigger (axis 4) analog = 0.8"},
-    {"action": "send_axis", "axis": 4, "axis_value": 0.8, "post_delay_ms": 500},
+    {"action": "send_axis", "axis": 4, "axis_value": 0.8, "post_delay_ms": 300},
     {"action": "assert", "expect": {
         "throttle_time": {"ne": 0},
         "pitch_time":    "0",
@@ -294,17 +300,17 @@
         "bank_time":     "0"
     }},
     {"action": "log", "message": "Phase 6b: PASS -- LT drives only throttle"},
-    {"action": "send_axis", "axis": 4, "axis_value": 0.0, "post_delay_ms": 200},
+    {"action": "send_axis", "axis": 4, "axis_value": 0.0, "post_delay_ms": 100},
 
     // 6c: RT axis at sub-threshold (0.1) should NOT fire axis-button
     {"action": "log", "message": "Phase 6c: RT sub-threshold (axis 5) = 0.1"},
-    {"action": "send_axis", "axis": 5, "axis_value": 0.1, "post_delay_ms": 500},
+    {"action": "send_axis", "axis": 5, "axis_value": 0.1, "post_delay_ms": 300},
     {"action": "assert", "expect": {
         "throttle_time": "0",
         "pitch_time":    "0"
     }},
     {"action": "log", "message": "Phase 6c: PASS -- sub-threshold RT fires nothing"},
-    {"action": "send_axis", "axis": 5, "axis_value": 0.0, "post_delay_ms": 200},
+    {"action": "send_axis", "axis": 5, "axis_value": 0.0, "post_delay_ms": 100},
 
     // -- Done --
     {"action": "log", "message": "=== TEST: Axis Mapping Regression -- ALL PHASES PASS ==="}

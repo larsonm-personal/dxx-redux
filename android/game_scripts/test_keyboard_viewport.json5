@@ -15,8 +15,8 @@
     {"_info": {
         "games": ["d1", "d2"],
         "vars": {
-            "d1": {"MISSION": "First Strike"},
-            "d2": {"MISSION": "Counterstrike"}
+            "d1": {"MISSION": "First Strike", "GAME_NUM": "1"},
+            "d2": {"MISSION": "Counterstrike", "GAME_NUM": "2"}
         },
         "_deps": [
             {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
@@ -32,8 +32,13 @@
             {"file": "descent.pig", "sha256": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe"}
         ]
     }},
-    {"action": "log", "message": "=== TEST: Keyboard Viewport Offset ==="},
 
+    // -- Launcher preamble --
+    {"action": "enter_launcher"},
+    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 1000},
+    {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
+
+    {"action": "log", "message": "=== TEST: Keyboard Viewport Offset ==="},
 
     // Fresh launch: pilot name entry screen appears (keyboard should open)
     // D1 shows title screens first (~9s), so use generous timeout

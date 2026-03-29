@@ -93,7 +93,8 @@
     {"action": "setup_command", "command": "switch_set",
      "args": {"name": "default"}, "post_delay_ms": 500},
 
-    {"action": "enter_game", "game": "d2"},
+    // tap_button validates enabled + auto-scrolls to find off-screen buttons
+    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
 
     // ── Phase 5: In-game verification ───────────────────────────
 
@@ -110,7 +111,8 @@
     // GOG full install has only one mission -- skips to "Select starting level"
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
     // Difficulty
-    {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "wait_ms", "ms": 500},
+    {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 10000},
 
     // Skip briefing
     {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 100},

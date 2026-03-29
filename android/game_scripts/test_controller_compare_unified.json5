@@ -12,8 +12,8 @@
     {"_info": {
         "games": ["d1", "d2"],
         "vars": {
-            "d1": {"GAME": "d1"},
-            "d2": {"GAME": "d2"}
+            "d1": {"GAME": "d1", "GAME_NUM": "1"},
+            "d2": {"GAME": "d2", "GAME_NUM": "2"}
         },
         "_deps": [
             {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
@@ -42,7 +42,8 @@
 
     // -- Phase 2: Game -- select pilot, introspect --
 
-    {"action": "enter_game", "game": "${GAME}"},
+    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 1000},
+    {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
     {"action": "log", "message": "=== Phase 2: In-game introspect (${GAME}) ==="},
 
     // D1 shows title screens (~9s) before menu. D2 goes straight to pilot list.

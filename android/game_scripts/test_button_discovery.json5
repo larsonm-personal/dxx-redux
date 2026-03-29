@@ -1,0 +1,23 @@
+[
+    {"_info": {
+        "description": "Verify button discovery and tap_button/assert_button actions",
+        "games": ["d2"],
+    }},
+
+    // Phase 1: enter launcher and verify button discovery
+    {"action": "enter_launcher"},
+    {"action": "wait_ms", "ms": 500},
+
+    // Verify always-visible buttons are discoverable
+    {"action": "assert_button", "text": "About"},
+    {"action": "assert_button", "text": "Define Controls"},
+
+    // Tap the About button -- it should be clickable
+    {"action": "tap_button", "text": "About", "post_delay_ms": 500},
+
+    // Verify tap_button auto-scrolls: "Advanced Settings" may be
+    // off-screen when game data is present, scroll should find it
+    {"action": "tap_button", "text": "Advanced Settings", "post_delay_ms": 300},
+
+    {"action": "log", "message": "Button discovery and tap test passed"},
+]

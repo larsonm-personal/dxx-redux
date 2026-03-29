@@ -6,14 +6,18 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.res.Configuration
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.provider.DocumentsContract
 import android.util.Log
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -132,6 +136,219 @@ class SetupActivity : ComponentActivity() {
     // Scripts can alternate between launcher and game phases via
     // enter_launcher / enter_game steps in a single JSON5 array.
     private var launcherExecutor: LauncherScriptExecutor? = null
+
+    /** Accessible button discovered by walking the Compose accessibility tree. */
+    data class ButtonInfo(
+        val text: String,
+        val enabled: Boolean,
+        val centerX: Float,
+        val centerY: Float,
+        val width: Float,
+        val height: Float,
+    )
+
+    /**
+     * Walk the Compose accessibility node provider to discover all interactive
+     * elements (buttons, chips, checkboxes) with their text, enabled state, and
+     * screen-pixel bounds. Zero annotation required -- Compose auto-generates
+     * accessibility nodes for every semantics-bearing composable.
+     *
+     * Compose assigns sequential integer IDs to semantics nodes starting from 1.
+     * We scan a range and collect nodes that are clickable or checkable with
+     * non-empty text and non-zero bounds.
+     */
+    fun collectAccessibleButtons(): List<ButtonInfo> {
+        val root = window.decorView
+        val composeView = findComposeView(root)
+        if (composeView == null) {
+            Log.w("DXX-Buttons", "No ComposeView found in view tree")
+            return emptyList()
+        }
+        val provider = composeView.accessibilityNodeProvider
+        if (provider == null) {
+            Log.w("DXX-Buttons", "ComposeView has no accessibility node provider")
+            return emptyList()
+        }
+
+        // Collect text-bearing nodes and clickable nodes separately,
+        // then match by spatial containment (text bounds inside clickable bounds).
+        // This avoids needing to traverse the accessibility tree's parent-child
+        // relationships, which can't be done without an AccessibilityService.
+        data class TextNode(
+            val text: String,
+            val bounds: Rect,
+        )
+
+        data class ClickableNode(
+            val enabled: Boolean,
+            val bounds: Rect,
+        )
+
+        val textNodes = mutableListOf<TextNode>()
+        val clickableNodes = mutableListOf<ClickableNode>()
+
+        // Compose assigns integer IDs to semantics nodes. IDs may have gaps
+        // (recomposition, layout changes) so we scan a large fixed range.
+        var maxId = -2
+        for (id in -1..16383) {
+            val info = provider.createAccessibilityNodeInfo(id) ?: continue
+            maxId = id
+            val bounds = Rect()
+            info.getBoundsInScreen(bounds)
+            if (bounds.width() > 0 && bounds.height() > 0) {
+                val text = info.text?.toString()
+                if (!text.isNullOrEmpty()) {
+                    textNodes.add(TextNode(text, Rect(bounds)))
+                }
+                if (info.isClickable || info.isCheckable) {
+                    clickableNodes.add(ClickableNode(info.isEnabled, Rect(bounds)))
+                }
+            }
+            info.recycle()
+        }
+
+        // Match: text belongs to the smallest clickable node that contains it
+        val buttons =
+            clickableNodes.mapNotNull { click ->
+                val contained = textNodes.filter { click.bounds.contains(it.bounds) }
+                if (contained.isEmpty()) return@mapNotNull null
+                val label = contained.joinToString(" ") { it.text }
+                ButtonInfo(
+                    text = label,
+                    enabled = click.enabled,
+                    centerX = (click.bounds.left + click.bounds.right) / 2f,
+                    centerY = (click.bounds.top + click.bounds.bottom) / 2f,
+                    width = click.bounds.width().toFloat(),
+                    height = click.bounds.height().toFloat(),
+                )
+            }
+        Log.i(
+            "DXX-Buttons",
+            "Scan: ${textNodes.size} text, ${clickableNodes.size} clickable, ${buttons.size} matched, maxId=$maxId",
+        )
+        return buttons
+    }
+
+    private fun findComposeView(view: View): View? {
+        if (view.accessibilityNodeProvider != null &&
+            view.javaClass.simpleName.contains("Compose")
+        ) {
+            return view
+        }
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                val result = findComposeView(view.getChildAt(i))
+                if (result != null) return result
+            }
+        }
+        return null
+    }
+
+    /** Find a button by case-insensitive substring match on its text. */
+    fun findButtonByText(text: String): ButtonInfo? {
+        val buttons = collectAccessibleButtons()
+        val lower = text.lowercase()
+        // Prefer exact match, fall back to substring
+        return buttons.find { it.text.lowercase() == lower }
+            ?: buttons.find { it.text.lowercase().contains(lower) }
+    }
+
+    /** Inject a real tap (ACTION_DOWN + delay + ACTION_UP) at screen coordinates. */
+    suspend fun injectTapAt(
+        screenX: Float,
+        screenY: Float,
+    ) {
+        withContext(kotlinx.coroutines.Dispatchers.Main) {
+            val decorView = window.decorView
+            val loc = IntArray(2)
+            decorView.getLocationOnScreen(loc)
+            val localX = screenX - loc[0]
+            val localY = screenY - loc[1]
+            val downTime = SystemClock.uptimeMillis()
+            val down =
+                MotionEvent.obtain(
+                    downTime,
+                    downTime,
+                    MotionEvent.ACTION_DOWN,
+                    localX,
+                    localY,
+                    0,
+                )
+            decorView.dispatchTouchEvent(down)
+            down.recycle()
+            kotlinx.coroutines.delay(50)
+            val upTime = SystemClock.uptimeMillis()
+            val up =
+                MotionEvent.obtain(
+                    downTime,
+                    upTime,
+                    MotionEvent.ACTION_UP,
+                    localX,
+                    localY,
+                    0,
+                )
+            decorView.dispatchTouchEvent(up)
+            up.recycle()
+        }
+    }
+
+    /** Inject a scroll-down swipe gesture (finger moves upward to scroll content down). */
+    suspend fun scrollDown() {
+        withContext(kotlinx.coroutines.Dispatchers.Main) {
+            val decorView = window.decorView
+            val centerX = decorView.width / 2f
+            val startY = decorView.height * 0.75f
+            val endY = decorView.height * 0.25f
+            val downTime = SystemClock.uptimeMillis()
+            val down =
+                MotionEvent.obtain(
+                    downTime,
+                    downTime,
+                    MotionEvent.ACTION_DOWN,
+                    centerX,
+                    startY,
+                    0,
+                )
+            decorView.dispatchTouchEvent(down)
+            down.recycle()
+            kotlinx.coroutines.delay(30)
+            val mid =
+                MotionEvent.obtain(
+                    downTime,
+                    SystemClock.uptimeMillis(),
+                    MotionEvent.ACTION_MOVE,
+                    centerX,
+                    (startY + endY) / 2f,
+                    0,
+                )
+            decorView.dispatchTouchEvent(mid)
+            mid.recycle()
+            kotlinx.coroutines.delay(30)
+            val end =
+                MotionEvent.obtain(
+                    downTime,
+                    SystemClock.uptimeMillis(),
+                    MotionEvent.ACTION_MOVE,
+                    centerX,
+                    endY,
+                    0,
+                )
+            decorView.dispatchTouchEvent(end)
+            end.recycle()
+            kotlinx.coroutines.delay(30)
+            val up =
+                MotionEvent.obtain(
+                    downTime,
+                    SystemClock.uptimeMillis(),
+                    MotionEvent.ACTION_UP,
+                    centerX,
+                    endY,
+                    0,
+                )
+            decorView.dispatchTouchEvent(up)
+            up.recycle()
+        }
+    }
 
     private val automateSetupReceiver =
         object : BroadcastReceiver() {
@@ -1079,6 +1296,20 @@ class SetupActivity : ComponentActivity() {
             }
             root.put("music_preview", musicPreview)
 
+            // All interactive UI elements (buttons, chips) with screen coordinates
+            val buttonsArr = JSONArray()
+            for (btn in collectAccessibleButtons()) {
+                val bo = JSONObject()
+                bo.put("text", btn.text)
+                bo.put("enabled", btn.enabled)
+                bo.put("x", btn.centerX.toInt())
+                bo.put("y", btn.centerY.toInt())
+                bo.put("w", btn.width.toInt())
+                bo.put("h", btn.height.toInt())
+                buttonsArr.put(bo)
+            }
+            root.put("buttons", buttonsArr)
+
             val outFile = File(dir, "setup_introspect.json")
             FileWriter(outFile).use { it.write(root.toString()) }
             Log.i("DXX-Setup", "Introspect written: ${outFile.absolutePath}")
@@ -1191,7 +1422,10 @@ class SetupActivity : ComponentActivity() {
                 axisGeneration = axisGeneration.intValue,
                 pressedButtons = pressedButtons,
                 onLaunchGame = { game ->
-                    if (gameRunning || isGameProcessAlive()) {
+                    val pending = launcherExecutor?.consumePendingLaunch()
+                    if (pending != null) {
+                        launchGameForAutomation(game, pending.scriptPath, pending.nextStep)
+                    } else if (gameRunning || isGameProcessAlive()) {
                         finish() // return to the already-running game
                     } else {
                         FileSetManager(filesDir).writeActiveSetPath()
@@ -1201,7 +1435,7 @@ class SetupActivity : ComponentActivity() {
                         val intent = Intent(this, MainActivity::class.java)
                         intent.putExtra("game", game)
                         startActivity(intent)
-                        // Don't finish() — stay in back stack so quitting
+                        // Don't finish() -- stay in back stack so quitting
                         // the game returns here instead of the launcher.
                     }
                 },

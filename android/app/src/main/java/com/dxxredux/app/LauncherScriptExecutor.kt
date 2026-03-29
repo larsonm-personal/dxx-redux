@@ -22,11 +22,29 @@ import java.io.FileWriter
  * LAUNCHER_CONTINUE.
  */
 class LauncherScriptExecutor(
-    private val context: Context,
+    private val activity: SetupActivity,
     private val launchGame: (game: String, scriptPath: String, startStep: Int) -> Unit,
 ) {
+    private val context: Context get() = activity
+
     companion object {
         private const val TAG = "DXX-LauncherScript"
+    }
+
+    /** Pending game launch set by tap_button with launches_game=true.
+     *  Consumed by SetupActivity.onLaunchGame to route through automation. */
+    data class PendingGameLaunch(
+        val scriptPath: String,
+        val nextStep: Int,
+    )
+
+    var pendingGameLaunch: PendingGameLaunch? = null
+        private set
+
+    fun consumePendingLaunch(): PendingGameLaunch? {
+        val p = pendingGameLaunch
+        pendingGameLaunch = null
+        return p
     }
 
     var scriptPath: String = ""
@@ -175,6 +193,83 @@ class LauncherScriptExecutor(
                         return
                     }
                     Log.i(TAG, "ASSERT_PASS: controller configs match")
+                    currentStep++
+                }
+                "tap_button" -> {
+                    val text = step.optString("text", "")
+                    val launchesGame = step.optBoolean("launches_game", false)
+                    val postDelay = step.optLong("post_delay_ms", 300)
+                    val timeoutMs = step.optLong("timeout_ms", 10000)
+                    if (text.isEmpty()) {
+                        fail("tap_button: missing 'text' field")
+                        return
+                    }
+                    // Poll for the button to appear (UI may still be rendering).
+                    // If not found, scroll down -- the button may be off-screen
+                    // in the scrollable setup layout.
+                    val deadline = System.currentTimeMillis() + timeoutMs
+                    var button: SetupActivity.ButtonInfo? = null
+                    var scrollAttempts = 0
+                    while (true) {
+                        button = activity.findButtonByText(text)
+                        if (button != null) break
+                        if (System.currentTimeMillis() > deadline) {
+                            val available =
+                                activity
+                                    .collectAccessibleButtons()
+                                    .joinToString(", ") { "\"${it.text}\"" }
+                            fail("tap_button: no button matching \"$text\" (available: $available)")
+                            return
+                        }
+                        if (scrollAttempts < 5) {
+                            activity.scrollDown()
+                            scrollAttempts++
+                            delay(400)
+                        } else {
+                            delay(500)
+                        }
+                    }
+                    if (!button.enabled) {
+                        fail("tap_button: button \"${button.text}\" is disabled")
+                        return
+                    }
+                    Log.i(TAG, "TAP: \"${button.text}\" at (${button.centerX}, ${button.centerY})")
+                    if (launchesGame) {
+                        pendingGameLaunch = PendingGameLaunch(scriptPath, currentStep + 1)
+                    }
+                    activity.injectTapAt(button.centerX, button.centerY)
+                    delay(postDelay)
+                    if (launchesGame) {
+                        running = false
+                        return // Suspend -- game launches via onClick -> onLaunchGame
+                    }
+                    currentStep++
+                }
+                "assert_button" -> {
+                    val text = step.optString("text", "")
+                    if (text.isEmpty()) {
+                        fail("assert_button: missing 'text' field")
+                        return
+                    }
+                    val button = activity.findButtonByText(text)
+                    if (button == null) {
+                        val available =
+                            activity
+                                .collectAccessibleButtons()
+                                .joinToString(", ") { "\"${it.text}\"" }
+                        fail("assert_button: no button matching \"$text\" (available: $available)")
+                        return
+                    }
+                    if (step.has("enabled")) {
+                        val expectEnabled = step.optBoolean("enabled", true)
+                        if (button.enabled != expectEnabled) {
+                            fail(
+                                "assert_button: \"${button.text}\" enabled=${button.enabled} (expected $expectEnabled)",
+                            )
+                            return
+                        }
+                    }
+                    Log.i(TAG, "ASSERT_PASS: button \"${button.text}\" enabled=${button.enabled}")
                     currentStep++
                 }
                 else -> {

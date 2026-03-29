@@ -171,22 +171,25 @@ static SDLKey lookup_key(const char *name)
 /* -- Step types ------------------------------------------------------- */
 
 enum step_type {
-	STEP_KEY,            /* inject key down+up, then delay */
-	STEP_WAIT_MS,        /* wait N milliseconds */
-	STEP_WAIT_FOR,       /* wait for a game state condition */
-	STEP_INTROSPECT,     /* trigger introspection dump */
-	STEP_LOG,            /* emit a logcat message */
-	STEP_ASSERT,         /* check introspection values, fail if mismatch */
-	STEP_SELECT,         /* find menu item by text and select it */
-	STEP_SEND_AXIS,      /* inject joystick axis event */
-	STEP_SEND_BUTTON,    /* inject joystick button press+release */
-	STEP_SKIP_BRIEFING,  /* escape only if a non-game window covers Game_wind */
-	STEP_ASSERT_OVERLAY, /* check overlay ring buffer for matching entry */
-	STEP_ENTER_LAUNCHER, /* yield back to launcher, write LAUNCHER_CONTINUE */
-	STEP_ENTER_GAME,     /* launcher-only: no-op in game engine (skip) */
-	STEP_SETUP_COMMAND,  /* launcher-only: no-op in game engine (skip) */
-	STEP_RESET_STATE,    /* launcher-only: no-op in game engine (skip) */
-	STEP_WRITE_CONFIG    /* launcher-only: no-op in game engine (skip) */
+	STEP_KEY,                    /* inject key down+up, then delay */
+	STEP_WAIT_MS,                /* wait N milliseconds */
+	STEP_WAIT_FOR,               /* wait for a game state condition */
+	STEP_INTROSPECT,             /* trigger introspection dump */
+	STEP_LOG,                    /* emit a logcat message */
+	STEP_ASSERT,                 /* check introspection values, fail if mismatch */
+	STEP_SELECT,                 /* find menu item by text and select it */
+	STEP_SEND_AXIS,              /* inject joystick axis event */
+	STEP_SEND_BUTTON,            /* inject joystick button press+release */
+	STEP_SKIP_BRIEFING,          /* escape only if a non-game window covers Game_wind */
+	STEP_ASSERT_OVERLAY,         /* check overlay ring buffer for matching entry */
+	STEP_ENTER_LAUNCHER,         /* yield back to launcher, write LAUNCHER_CONTINUE */
+	STEP_ENTER_GAME,             /* launcher-only: no-op in game engine (skip) */
+	STEP_SETUP_COMMAND,          /* launcher-only: no-op in game engine (skip) */
+	STEP_RESET_STATE,            /* launcher-only: no-op in game engine (skip) */
+	STEP_WRITE_CONFIG,           /* launcher-only: no-op in game engine (skip) */
+	STEP_TAP_BUTTON,             /* launcher-only: no-op in game engine (skip) */
+	STEP_ASSERT_BUTTON,          /* launcher-only: no-op in game engine (skip) */
+	STEP_ASSERT_CONTROLLER_MATCH /* launcher-only: no-op in game engine (skip) */
 };
 
 /* Key-value pair for STEP_ASSERT expectations.
@@ -260,6 +263,9 @@ static const char *step_type_name(step_type t)
 		case STEP_SETUP_COMMAND: return "setup_command";
 		case STEP_RESET_STATE: return "reset_state";
 		case STEP_WRITE_CONFIG: return "write_config";
+		case STEP_TAP_BUTTON: return "tap_button";
+		case STEP_ASSERT_BUTTON: return "assert_button";
+		case STEP_ASSERT_CONTROLLER_MATCH: return "assert_controller_match";
 		default: return "unknown";
 	}
 }
@@ -656,6 +662,9 @@ static int parse_script(const char *json_text)
 			else if (action == "setup_command") s.type = STEP_SETUP_COMMAND;
 			else if (action == "reset_state") s.type = STEP_RESET_STATE;
 			else if (action == "write_config") s.type = STEP_WRITE_CONFIG;
+			else if (action == "tap_button") s.type = STEP_TAP_BUTTON;
+			else if (action == "assert_button") s.type = STEP_ASSERT_BUTTON;
+			else if (action == "assert_controller_match") s.type = STEP_ASSERT_CONTROLLER_MATCH;
 			else {
 				LOGE("Unknown action: %s", action.c_str());
 				continue;
@@ -906,6 +915,30 @@ static std::string run_assertions(auto_step &s)
 			LOGI("ASSERT_PASS: %s", desc);
 		} else {
 			LOGE("ASSERT_FAIL: %s", desc);
+			/* Dump key diagnostic fields for post-mortem analysis */
+			auto dump_field = [&](const char *name) {
+				if (state.contains(name)) {
+					auto &v = state[name];
+					if (v.is_number_integer())
+						LOGE("  DIAG %s = %d", name, v.get<int>());
+					else if (v.is_string())
+						LOGE("  DIAG %s = \"%s\"", name, v.get<std::string>().c_str());
+				}
+			};
+			dump_field("control_type");
+			dump_field("heading_time");
+			dump_field("pitch_time");
+			dump_field("bank_time");
+			dump_field("slide_on_state");
+			dump_field("bank_on_state");
+			dump_field("screen_mode");
+			dump_field("in_game");
+			if (state.contains("raw_joy_axis") && state["raw_joy_axis"].is_array()) {
+				std::string axes;
+				for (auto &v : state["raw_joy_axis"])
+					axes += std::to_string(v.get<int>()) + " ";
+				LOGE("  DIAG raw_joy_axis = [%s]", axes.c_str());
+			}
 			return std::string(desc);
 		}
 	}
@@ -1286,6 +1319,9 @@ extern "C" void game_automate_tick(void)
 		case STEP_SETUP_COMMAND:
 		case STEP_RESET_STATE:
 		case STEP_WRITE_CONFIG:
+		case STEP_TAP_BUTTON:
+		case STEP_ASSERT_BUTTON:
+		case STEP_ASSERT_CONTROLLER_MATCH:
 			/* Launcher-only steps -- skip with a log when encountered
 			 * in the game engine (should not normally happen) */
 			LOGI("Skipping launcher-only step: %s", step_type_name(s.type));

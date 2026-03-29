@@ -25,8 +25,12 @@
             {"file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"}
         ]
     }},
-    {"action": "log", "message": "=== TEST: Fire Primary (brief press) ==="},
 
+    // -- Launcher preamble --
+    {"action": "enter_launcher"},
+    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
+
+    {"action": "log", "message": "=== TEST: Fire Primary (brief press) ==="},
 
     // Accept default pilot name
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
@@ -42,7 +46,8 @@
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Trainee difficulty (easiest, least enemy interference)
-    {"action": "select", "text": "Trainee", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "wait_ms", "ms": 500},
+    {"action": "select", "text": "Trainee", "post_delay_ms": 100, "timeout_ms": 10000},
 
     // Skip briefing
     {"action": "skip_briefing", "timeout_ms": 20000, "post_delay_ms": 100},

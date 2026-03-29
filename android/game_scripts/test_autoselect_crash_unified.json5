@@ -33,8 +33,7 @@
 
     {"action": "reset_state"},
 
-    {"action": "enter_game", "game": "d2"},
-
+    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
 
     // Accept default pilot name
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
@@ -61,7 +60,7 @@
 
     // ── Phase 3: Navigate nested menus (crash test) ─────────────
 
-    {"action": "enter_game", "game": "d2"},
+    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
 
     {"action": "log", "message": "=== Phase 3: Navigate menus with patched pilot ==="},
 

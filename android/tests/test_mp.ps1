@@ -328,7 +328,7 @@ try {
     Send-MpCommand -Serial $EMU2 -Command "connect" -Extras @("--es", "url", $testServerUrl)
 
     # Wait for both to be connected
-    $conn1 = Wait-ForCondition -Description "Player 1 ($CALLSIGN1) connected" -TimeoutSec 15 -PollMs 1500 -Condition {
+    $conn1 = Wait-ForCondition -Description "Player 1 ($CALLSIGN1) connected" -TimeoutSec 15 -PollMs 750 -Condition {
         $mp = Get-MpIntrospection -Serial $EMU1
         return ($mp -and $mp.status -eq "CONNECTED")
     }
@@ -339,7 +339,7 @@ try {
         Cleanup; exit 1
     }
 
-    $conn2 = Wait-ForCondition -Description "Player 2 ($CALLSIGN2) connected" -TimeoutSec 15 -PollMs 1500 -Condition {
+    $conn2 = Wait-ForCondition -Description "Player 2 ($CALLSIGN2) connected" -TimeoutSec 15 -PollMs 750 -Condition {
         $mp = Get-MpIntrospection -Serial $EMU2
         return ($mp -and $mp.status -eq "CONNECTED")
     }
@@ -360,7 +360,7 @@ try {
         "--ei", "max_players", "2"
     )
 
-    $lobbyCreated = Wait-ForCondition -Description "Player 1 in lobby" -TimeoutSec 10 -PollMs 1500 -Condition {
+    $lobbyCreated = Wait-ForCondition -Description "Player 1 in lobby" -TimeoutSec 10 -PollMs 750 -Condition {
         $mp = Get-MpIntrospection -Serial $EMU1
         return ($mp -and $mp.lobby -and $mp.lobby.is_host -eq $true)
     }
@@ -377,7 +377,7 @@ try {
     # Refresh lobby list on Player 2 first
     Send-MpCommand -Serial $EMU2 -Command "refresh_lobbies"
 
-    $lobbiesVisible = Wait-ForCondition -Description "Player 2 sees lobby" -TimeoutSec 10 -PollMs 1500 -Condition {
+    $lobbiesVisible = Wait-ForCondition -Description "Player 2 sees lobby" -TimeoutSec 10 -PollMs 750 -Condition {
         $mp = Get-MpIntrospection -Serial $EMU2
         return ($mp -and $mp.lobby_count -gt 0)
     }
@@ -388,7 +388,7 @@ try {
 
     Send-MpCommand -Serial $EMU2 -Command "join_first_lobby"
 
-    $joined = Wait-ForCondition -Description "Player 2 in lobby with 2 players" -TimeoutSec 10 -PollMs 1500 -Condition {
+    $joined = Wait-ForCondition -Description "Player 2 in lobby with 2 players" -TimeoutSec 10 -PollMs 750 -Condition {
         $mp = Get-MpIntrospection -Serial $EMU2
         return ($mp -and $mp.lobby -and $mp.lobby.player_count -eq 2)
     }
@@ -398,7 +398,7 @@ try {
     }
 
     # Verify Player 1 also sees 2 players
-    $host2Players = Wait-ForCondition -Description "Player 1 sees 2 players in lobby" -TimeoutSec 10 -PollMs 1500 -Condition {
+    $host2Players = Wait-ForCondition -Description "Player 1 sees 2 players in lobby" -TimeoutSec 10 -PollMs 750 -Condition {
         $mp = Get-MpIntrospection -Serial $EMU1
         return ($mp -and $mp.lobby -and $mp.lobby.player_count -eq 2)
     }
@@ -487,7 +487,7 @@ try {
     Send-MpCommand -Serial $EMU2 -Command "set_ready" -Extras @("--es", "ready", "true")
 
     # Verify both ready
-    $bothReady = Wait-ForCondition -Description "Both players ready" -TimeoutSec 10 -PollMs 1500 -Condition {
+    $bothReady = Wait-ForCondition -Description "Both players ready" -TimeoutSec 10 -PollMs 750 -Condition {
         $mp = Get-MpIntrospection -Serial $EMU1
         if (-not $mp -or -not $mp.lobby) { return $false }
         $allReady = $true

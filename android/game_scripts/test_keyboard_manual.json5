@@ -18,6 +18,12 @@
             {"file": "descent.pig", "sha256": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe"}
         ]
     }},
+
+    // -- Launcher preamble --
+    {"action": "enter_launcher"},
+    {"action": "tap_button", "text": "Descent 2", "post_delay_ms": 1000},
+    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
+
     {"action": "log", "message": "=== TEST: Keyboard Manual Navigation ==="},
 
     // Wait for pilot name entry (Reset-GameState deletes pilots, so fresh dialog appears)

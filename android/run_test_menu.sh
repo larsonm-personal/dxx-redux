@@ -60,51 +60,80 @@ print_success() {
 
 # -- Discover tests ----------------------------------------------------------
 
+TESTS_DIR="$SCRIPT_DIR/tests"
+
 print_header "DXX-Redux Regression Test Menu"
 echo
 
-# Find all test_*.json5 files using a glob (more portable than find+mapfile
-# across WSL, MSYS2, Git Bash, and native Linux)
-tests=()
+# Collect json5 game scripts
+test_names=()
+test_types=()
+test_relpath=()
 for f in "$GAME_SCRIPTS_DIR"/test_*.json5; do
-    [ -f "$f" ] && tests+=("$f")
+    [ -f "$f" ] || continue
+    name=$(basename "$f" .json5)
+    test_names+=("$name")
+    test_types+=("json5")
+    test_relpath+=("game_scripts/$(basename "$f")")
 done
-# Sort the array (bash 4+)
-mapfile -t tests < <(printf '%s\n' "${tests[@]}" | sort)
 
-if [ ${#tests[@]} -eq 0 ]; then
-    print_error "No test_*.json5 files found in $GAME_SCRIPTS_DIR"
-    print_error "  (resolved from SCRIPT_DIR=$SCRIPT_DIR)"
-    # Try to list what IS there for debugging
-    echo "  Contents of $(dirname "$GAME_SCRIPTS_DIR"):" >&2
-    find "$GAME_SCRIPTS_DIR" -maxdepth 1 -type f 2>/dev/null | head -10 >&2 || echo "  (directory not found)" >&2
+# Collect ps1 integration tests
+for f in "$TESTS_DIR"/test_*.ps1; do
+    [ -f "$f" ] || continue
+    name=$(basename "$f" .ps1)
+    test_names+=("$name")
+    test_types+=("ps1")
+    test_relpath+=("tests/$(basename "$f")")
+done
+
+# Sort all tests together by name
+mapfile -t sorted_indices < <(
+    for i in "${!test_names[@]}"; do
+        echo "$i ${test_names[$i]}"
+    done | sort -k2 | awk '{print $1}'
+)
+
+sorted_names=()
+sorted_types=()
+sorted_relpath=()
+for i in "${sorted_indices[@]}"; do
+    sorted_names+=("${test_names[$i]}")
+    sorted_types+=("${test_types[$i]}")
+    sorted_relpath+=("${test_relpath[$i]}")
+done
+test_names=("${sorted_names[@]}")
+test_types=("${sorted_types[@]}")
+test_relpath=("${sorted_relpath[@]}")
+
+if [ ${#test_names[@]} -eq 0 ]; then
+    print_error "No test files found in $GAME_SCRIPTS_DIR or $TESTS_DIR"
     exit 1
 fi
 
 # Display menu
 echo "Available tests:"
 echo
-for i in "${!tests[@]}"; do
-    test_file="${tests[$i]}"
-    test_name=$(basename "$test_file" .json5)
-    echo "  $((i + 1))) $test_name"
+for i in "${!test_names[@]}"; do
+    printf "  %2d) %-45s [%s]\n" "$((i + 1))" "${test_names[$i]}" "${test_types[$i]}"
 done
 echo
 
 # Read user input
-read -p "Select test (1-${#tests[@]}): " -r choice
+read -p "Select test (1-${#test_names[@]}): " -r choice
 
 # Validate input
-if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt ${#tests[@]} ]; then
+if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt ${#test_names[@]} ]; then
     print_error "Invalid selection"
     exit 1
 fi
 
-selected_test="${tests[$((choice - 1))]}"
-test_name=$(basename "$selected_test" .json5)
+idx=$((choice - 1))
+test_name="${test_names[$idx]}"
+test_type="${test_types[$idx]}"
+selected_relpath="${test_relpath[$idx]}"
 
 echo
-print_info "Selected: $test_name"
+print_info "Selected: $test_name  [$test_type]"
 echo
 
 # Ask about emulator prep
@@ -113,7 +142,6 @@ prep_emulator=${prep_emulator:-y}
 
 if [[ "$prep_emulator" == "y" || "$prep_emulator" == "Y" ]]; then
     print_info "Preparing emulator..."
-    # Clear game app state and restart
     "$ADB" shell am force-stop com.dxxredux.app 2>/dev/null || true
     sleep 1
     "$ADB" logcat -c
@@ -127,8 +155,18 @@ print_header "Running: $test_name"
 echo
 
 cd "$SCRIPT_DIR"
-bash ./run_automation.sh "$selected_test"
-exit_code=$?
+if [ "$test_type" = "json5" ]; then
+    # Use relative path to avoid MSYS/Git Bash path mangling with adb
+    bash ./run_automation.sh "$selected_relpath"
+    exit_code=$?
+elif [ "$test_type" = "ps1" ]; then
+    # ps1 tests run via PowerShell
+    pwsh -NoProfile -NonInteractive -File "$selected_relpath"
+    exit_code=$?
+else
+    print_error "Unknown test type: $test_type"
+    exit 1
+fi
 
 echo
 if [ $exit_code -eq 0 ]; then

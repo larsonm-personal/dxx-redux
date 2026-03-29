@@ -6,8 +6,8 @@
     {"_info": {
         "games": ["d1", "d2"],
         "vars": {
-            "d1": {"MISSION": "First Strike"},
-            "d2": {"MISSION": "Counterstrike"}
+            "d1": {"MISSION": "First Strike", "GAME_NUM": "1"},
+            "d2": {"MISSION": "Counterstrike", "GAME_NUM": "2"}
         },
         "_deps": [
             {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
@@ -23,8 +23,13 @@
             {"file": "descent.pig", "sha256": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe"}
         ]
     }},
-    {"action": "log", "message": "=== TEST: Launch + Background/Resume ==="},
 
+    // -- Launcher preamble --
+    {"action": "enter_launcher"},
+    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 1000},
+    {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
+
+    {"action": "log", "message": "=== TEST: Launch + Background/Resume ==="},
 
     // Accept default pilot name (fresh .plr deleted by runner)
     // D1 shows 3 title screens (3s each = 9s) before set_screen_mode(SCREEN_MENU).
@@ -41,8 +46,9 @@
     // accept default level 1
     {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
-    // difficulty
-    {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 5000},
+    // difficulty (wait for menu transition from level dialog)
+    {"action": "wait_ms", "ms": 500},
+    {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 10000},
 
     // Skip briefing (waits for level load, then escapes if briefing is showing)
     {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 100},

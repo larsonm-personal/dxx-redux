@@ -71,8 +71,34 @@ if (!(Test-Path $adb)) {
 
 function Adb {
     param([string[]]$AdbArgs)
-    if (-not $AdbArgs) { $AdbArgs = $args }
+    if ($args) { $AdbArgs = @($AdbArgs) + @($args) }
     & $adb @AdbArgs 2>&1
+}
+
+function Adb-WithTimeout {
+    # Run an adb command with a timeout; returns $null if it hangs
+    param([int]$Seconds = 10, [string[]]$AdbArgs)
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = $adb
+    $psi.Arguments = ($AdbArgs | ForEach-Object {
+            if ($_ -match '\s') { "`"$_`"" } else { $_ }
+        }) -join ' '
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    try {
+        $proc = [System.Diagnostics.Process]::Start($psi)
+        $stdoutTask = $proc.StandardOutput.ReadToEndAsync()
+        $stderrTask = $proc.StandardError.ReadToEndAsync()
+        if (-not $proc.WaitForExit($Seconds * 1000)) {
+            try { $proc.Kill() } catch {}
+            return $null
+        }
+        return $stdoutTask.GetAwaiter().GetResult()
+    } catch {
+        return $null
+    }
 }
 
 # -- Preflight ----------------------------------------------------------
@@ -134,14 +160,17 @@ if (!$NoBuild) {
 # -- Step 2: Stop the game if running -----------------------------------
 Write-Host ""
 Write-Host "Step 2: Stopping game..." -ForegroundColor Yellow
-Adb shell "am force-stop $PACKAGE" | Out-Null
+$stopResult = Adb-WithTimeout -Seconds 10 -AdbArgs "shell", "am force-stop $PACKAGE"
+if ($null -eq $stopResult) {
+    Write-Host "  [WARN] force-stop timed out, continuing anyway" -ForegroundColor Yellow
+}
 Start-Sleep -Seconds 2
 Write-Progress-Flush "[OK] Game stopped" Green
 
 # -- Step 3: Install APK -----------------------------------------------
 Write-Host ""
 Write-Host "Step 3: Installing debug APK..." -ForegroundColor Yellow
-$installResult = Adb install -r $apkPath
+$installResult = Adb -AdbArgs @("install", "-r", $apkPath)
 if ($installResult -match "Success") {
     Write-Progress-Flush "[OK] APK installed" Green
 } else {
@@ -403,7 +432,7 @@ if (!$NoCleanup) {
     Write-Host "Step 9: Cleaning up..." -ForegroundColor Yellow
 
     # Stop the game
-    Adb shell "am force-stop $PACKAGE" | Out-Null
+    Adb-WithTimeout -Seconds 10 -AdbArgs "shell", "am force-stop $PACKAGE" | Out-Null
     Start-Sleep -Seconds 1
 
     # Restore the file to app's files dir

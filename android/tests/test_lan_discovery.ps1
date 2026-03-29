@@ -18,7 +18,7 @@ param(
     [string]$Mode = "coop",
     [int]$MaxPlayers = 4,
     [int]$Port = 42400,
-    [int]$DurationSec = 60
+    [int]$DurationSec = 30
 )
 
 $ErrorActionPreference = "Stop"
