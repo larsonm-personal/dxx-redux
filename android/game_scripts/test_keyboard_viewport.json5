@@ -34,7 +34,6 @@
     }},
     {"action": "log", "message": "=== TEST: Keyboard Viewport Offset ==="},
 
-    {"action": "wait_ms", "ms": 2000},
 
     // Fresh launch: pilot name entry screen appears (keyboard should open)
     // D1 shows title screens first (~9s), so use generous timeout
@@ -42,24 +41,24 @@
 
     // We should now be on "Enter your callsign" with keyboard open.
     // Wait a moment to let the keyboard appear and blit offset activate.
-    {"action": "wait_ms", "ms": 2000},
+    {"action": "wait_ms", "ms": 1000},
     {"action": "introspect"},
     {"action": "log", "message": "Phase 1: On pilot name entry -- keyboard should be open"},
 
     // Type a pilot name to verify text input works with offset active
-    {"action": "key", "key": "t", "post_delay_ms": 200},
-    {"action": "key", "key": "e", "post_delay_ms": 200},
-    {"action": "key", "key": "s", "post_delay_ms": 200},
-    {"action": "key", "key": "t", "post_delay_ms": 500},
+    {"action": "key", "key": "t", "post_delay_ms": 100},
+    {"action": "key", "key": "e", "post_delay_ms": 100},
+    {"action": "key", "key": "s", "post_delay_ms": 100},
+    {"action": "key", "key": "t", "post_delay_ms": 100},
 
     // Wait another moment with keyboard open (offset still active)
-    {"action": "wait_ms", "ms": 1000},
+    {"action": "wait_ms", "ms": 500},
     {"action": "introspect"},
     {"action": "log", "message": "Phase 2: Typed 'test' -- accepting pilot name"},
 
     // Accept the pilot name
-    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 2000},
-    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 2000},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
 
     // Should now be on main menu (keyboard dismissed, offset cleared)
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},

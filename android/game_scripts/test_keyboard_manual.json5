@@ -21,20 +21,19 @@
     {"action": "log", "message": "=== TEST: Keyboard Manual Navigation ==="},
 
     // Wait for pilot name entry (Reset-GameState deletes pilots, so fresh dialog appears)
-    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 15000},
-    {"action": "wait_ms", "ms": 1000},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
 
     // Accept default pilot name to reach main menu
-    {"action": "select", "text": "Ok", "post_delay_ms": 2000},
+    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Now at main menu -- select "Change Pilots..."
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
-    {"action": "select", "text": "Change Pilots", "post_delay_ms": 2000},
+    {"action": "select", "text": "Change Pilots", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "introspect"},
     {"action": "log", "message": "Phase 1: On pilot selection listbox"},
 
     // Select "Create New Player" (first item in listbox)
-    {"action": "select", "text": "Create New Player", "post_delay_ms": 2000},
+    {"action": "select", "text": "Create New Player", "post_delay_ms": 100, "timeout_ms": 5000},
     {"action": "introspect"},
     {"action": "log", "message": "Phase 2: On pilot name entry -- keyboard should open"},
 
@@ -44,15 +43,15 @@
     {"action": "log", "message": "Phase 3: After 5s with keyboard open"},
 
     // Type a name
-    {"action": "key", "key": "x", "post_delay_ms": 200},
-    {"action": "key", "key": "y", "post_delay_ms": 200},
-    {"action": "key", "key": "z", "post_delay_ms": 500},
+    {"action": "key", "key": "x", "post_delay_ms": 100},
+    {"action": "key", "key": "y", "post_delay_ms": 100},
+    {"action": "key", "key": "z", "post_delay_ms": 100},
 
     // Accept
-    {"action": "select", "text": "Ok", "post_delay_ms": 2000},
+    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Should return to pilot selection, then back to main menu
-    {"action": "key", "key": "escape", "post_delay_ms": 1000},
+    {"action": "key", "key": "escape", "post_delay_ms": 100},
     {"action": "introspect"},
     {"action": "log", "message": "Phase 4: Back to main menu -- no crash"},
 

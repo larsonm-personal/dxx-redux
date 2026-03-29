@@ -122,8 +122,7 @@ foreach ($gameId in $gameList) {
         # -- Launcher script: launch SetupActivity + send SETUP_AUTOMATE -----
 
         Write-Status "Launcher script detected -- using SetupActivity flow"
-        Adb -AdbArgs @("shell", "am", "force-stop", $script:PACKAGE) | Out-Null
-        Start-Sleep -Seconds 2
+        Stop-AppAndWait
         Reset-GameState
         Adb -AdbArgs @("logcat", "-c") | Out-Null
         Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json") | Out-Null
@@ -168,7 +167,7 @@ foreach ($gameId in $gameList) {
             exit 1
         }
 
-        Start-Sleep -Seconds 2
+        Start-Sleep -Seconds 1
         Adb -AdbArgs @("logcat", "-c") | Out-Null
         Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_result.json") | Out-Null
         Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/automation_log.jsonl") | Out-Null
@@ -195,8 +194,7 @@ foreach ($gameId in $gameList) {
     if ($gameList.Count -gt 1) {
         Write-Status "PASS for $($gameId.ToUpper())" "Green"
         # Force-stop between game runs
-        Adb -AdbArgs @("shell", "am", "force-stop", $script:PACKAGE) | Out-Null
-        Start-Sleep -Seconds 2
+        Stop-AppAndWait
     }
 }
 

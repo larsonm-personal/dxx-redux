@@ -32,11 +32,10 @@
 
     {"action": "enter_game", "game": "d2"},
 
-    {"action": "wait_ms", "ms": 2000},
 
     // Accept default pilot name
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
-    {"action": "select", "text": "Ok", "post_delay_ms": 2000},
+    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Main menu -- game has initialized and set its render resolution
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
@@ -65,11 +64,10 @@
 
     {"action": "enter_game", "game": "d2"},
 
-    {"action": "wait_ms", "ms": 2000},
 
     // Accept default pilot name
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
-    {"action": "select", "text": "Ok", "post_delay_ms": 2000},
+    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Main menu -- verify resolution is 640x480
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},

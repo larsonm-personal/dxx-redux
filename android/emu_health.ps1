@@ -80,14 +80,14 @@ function Stop-Emulator {
     $job = Start-Job -ScriptBlock { param($a); & $a emu kill 2>&1 } -ArgumentList $ADB
     $job | Wait-Job -Timeout 3 | Out-Null
     Remove-Job $job -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Seconds 2
+    Start-Sleep -Seconds 1
     # Force-kill emulator processes
     Get-Process | Where-Object { $_.ProcessName -match 'qemu-system|emulator' -and $_.Path -like "*android*" } |
         Stop-Process -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Seconds 2
+    Start-Sleep -Seconds 1
     # Kill adb server to clear stale device entries
     try { & $ADB kill-server 2>&1 | Out-Null } catch {}
-    Start-Sleep -Seconds 2
+    Start-Sleep -Seconds 1
 }
 
 function Start-EmulatorFresh {
@@ -105,7 +105,7 @@ function Wait-EmulatorHealthy {
             return $true
         }
         Write-Host "  waiting... ($($status.Reason))"
-        Start-Sleep -Seconds 5
+        Start-Sleep -Seconds 2
     }
     Write-Host "ERROR: Emulator not healthy after ${Timeout}s"
     return $false

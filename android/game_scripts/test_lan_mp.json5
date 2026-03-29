@@ -27,10 +27,10 @@
 
     // Wait for game window to appear (level loading may take a while)
     {"action": "wait_for", "field": "screen_mode", "value": "game", "timeout_ms": 30000},
-    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 15000},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 20000},
 
     // Skip briefing if it appears
-    {"action": "skip_briefing", "timeout_ms": 5000, "post_delay_ms": 2000},
+    {"action": "skip_briefing", "timeout_ms": 5000, "post_delay_ms": 100},
 
     // Re-check in-game after briefing skip
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},

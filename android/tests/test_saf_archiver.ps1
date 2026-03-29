@@ -82,7 +82,13 @@ if ($devices -notmatch "emulator.*device") {
         Write-Host "FAIL: Could not start emulator (exit $LASTEXITCODE)" -ForegroundColor Red
         exit 1
     }
-    Start-Sleep -Seconds 3
+    # Poll for emulator to come online (replaces fixed sleep)
+    $emSw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($emSw.Elapsed.TotalSeconds -lt 30) {
+        $devices = (Adb devices) -join "`n"
+        if ($devices -match "emulator.*device") { break }
+        Start-Sleep -Seconds 1
+    }
     $devices = (Adb devices) -join "`n"
     if ($devices -notmatch "emulator.*device") {
         Write-Host "FAIL: Emulator still not available after restart" -ForegroundColor Red
@@ -275,7 +281,6 @@ if ($setupState -match '"can_launch"\s*:\s*true') {
 
 # Use correct broadcast extra key: "command" (not "action")
 Adb shell "am broadcast -a com.dxxredux.SETUP_COMMAND --es command launch" | Out-Null
-Start-Sleep -Seconds 5
 
 # Wait for the game process to be up and the native engine to start
 $retries = 0

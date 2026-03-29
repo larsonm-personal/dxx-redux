@@ -376,7 +376,6 @@ try {
 
     # Refresh lobby list on Player 2 first
     Send-MpCommand -Serial $EMU2 -Command "refresh_lobbies"
-    Start-Sleep -Seconds 2
 
     $lobbiesVisible = Wait-ForCondition -Description "Player 2 sees lobby" -TimeoutSec 10 -PollMs 1500 -Condition {
         $mp = Get-MpIntrospection -Serial $EMU2
@@ -486,7 +485,6 @@ try {
 
     Send-MpCommand -Serial $EMU1 -Command "set_ready" -Extras @("--es", "ready", "true")
     Send-MpCommand -Serial $EMU2 -Command "set_ready" -Extras @("--es", "ready", "true")
-    Start-Sleep -Seconds 2
 
     # Verify both ready
     $bothReady = Wait-ForCondition -Description "Both players ready" -TimeoutSec 10 -PollMs 1500 -Condition {
@@ -529,7 +527,11 @@ try {
     # Phase 8 waits for both players to actually enter the game.
     Write-Status "Player 1 starting game..."
     Send-MpCommand -Serial $EMU1 -Command "start_game"
-    Start-Sleep -Seconds 3  # give auto-launch time to fire
+    # Poll for game process on EMU1 (replaces fixed sleep)
+    $null = Wait-ForCondition -Description "EMU1 game process after start_game" -TimeoutSec 15 -PollMs 500 -Condition {
+        $gPid = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "pidof", "${PACKAGE}:game") -Seconds 5
+        return ($gPid -and $gPid -match '^\d+')
+    }
 
     # -- Step 8: Launch the actual game on both --
     # The game auto-launches from LobbyScreen's LaunchedEffect when GAME_STARTING
@@ -543,7 +545,11 @@ try {
     # Fallback: send launch_game in case the auto-launch from LaunchedEffect
     # didn't fire.  The guard in launchMultiplayerGame prevents double-launch.
     Send-MpCommand -Serial $EMU1 -Command "launch_game"
-    Start-Sleep -Seconds 5
+    # Poll for EMU1 game process before launching EMU2
+    $null = Wait-ForCondition -Description "EMU1 game process after launch_game" -TimeoutSec 15 -PollMs 500 -Condition {
+        $gPid = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "pidof", "${PACKAGE}:game") -Seconds 5
+        return ($gPid -and $gPid -match '^\d+')
+    }
     Send-MpCommand -Serial $EMU2 -Command "launch_game"
 
     # Wait for both to enter the game.
@@ -699,8 +705,11 @@ try {
         $gi2 = $null
     } else {
 
-        # Give the game a moment to fully sync
-        Start-Sleep -Seconds 5
+        # Give the game a moment to fully sync -- poll for introspection readiness
+        $null = Wait-ForCondition -Description "Introspection ready after game sync" -TimeoutSec 15 -PollMs 1000 -Condition {
+            $gi = Get-GameIntrospection -Serial $EMU1
+            return ($gi -and $gi.in_game -eq $true)
+        }
 
         $gi1 = Get-GameIntrospection -Serial $EMU1
         $gi2 = Get-GameIntrospection -Serial $EMU2

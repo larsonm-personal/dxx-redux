@@ -1077,13 +1077,19 @@ extern "C" void game_automate_tick(void)
 
 		case STEP_SELECT:
 			if (g_select_phase == 0) {
-				/* Phase 0: find the target item and compute navigation delta */
+				/* Phase 0: find the target item and compute navigation delta.
+				 * If timeout_ms is set, poll each frame until the item appears
+				 * instead of failing immediately. */
 				int target, current;
 				if (!select_find_item(s.select_text.c_str(), &target, &current)) {
+					if (s.timeout_ms > 0 && elapsed < (Uint32) s.timeout_ms) {
+						break; /* retry next frame */
+					}
 					char reason[256];
 					snprintf(reason, sizeof(reason),
-					         "SELECT: item \"%s\" not found in menu",
-					         s.select_text.c_str());
+					         "SELECT: item \"%s\" not found in menu%s",
+					         s.select_text.c_str(),
+					         s.timeout_ms > 0 ? " (timed out)" : "");
 					stop_script_fail(reason);
 					break;
 				}

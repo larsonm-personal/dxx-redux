@@ -101,9 +101,51 @@ function Ensure-EmulatorHealthy {
         Write-Status "FAIL: Emulator could not be restored (exit $emuExit)" "Red"
         exit 1
     }
-    Start-Sleep -Seconds 3
     Write-Status "Emulator healthy" "Green"
     return $true
+}
+
+function Wait-ProcessDead {
+    # Poll until the app process is gone (after force-stop). Returns $true
+    # when the process is confirmed dead, $false on timeout.
+    param([int]$TimeoutMs = 5000)
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw.ElapsedMilliseconds -lt $TimeoutMs) {
+        $procId = Adb-Timeout -AdbArgs @("shell", "pidof", $script:PACKAGE) -Seconds 3
+        if (-not $procId -or $procId -notmatch '^\d+') { return $true }
+        Start-Sleep -Milliseconds 200
+    }
+    return $false
+}
+
+function Stop-AppAndWait {
+    # Force-stop the app and wait for the process to actually die.
+    Adb -AdbArgs @("shell", "am", "force-stop", $script:PACKAGE) | Out-Null
+    Wait-ProcessDead | Out-Null
+}
+
+function Wait-SetupCondition {
+    # Poll setup_introspect.json until a condition is met. Returns $true if
+    # the predicate returns $true, $false on timeout.
+    # $Predicate receives the parsed JSON object and returns $true/$false.
+    param(
+        [Parameter(Mandatory)][scriptblock]$Predicate,
+        [int]$TimeoutSeconds = 15,
+        [int]$PollMs = 500
+    )
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
+        Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_INTROSPECT") | Out-Null
+        Start-Sleep -Milliseconds $PollMs
+        $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json") -Seconds 3
+        if ($json -and $json -match '^\s*\{') {
+            try {
+                $obj = $json | ConvertFrom-Json
+                if (& $Predicate $obj) { return $true }
+            } catch {}
+        }
+    }
+    return $false
 }
 
 function Write-Status {
@@ -202,7 +244,7 @@ function Start-EmulatorIfNeeded {
     Start-Process $emulatorExe -ArgumentList "-avd", $avd, "-no-snapshot-save", "-gpu", "host"
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt 60 -and -not (Test-DeviceOnline -Serial $Serial)) {
-        Start-Sleep -Seconds 2
+        Start-Sleep -Seconds 1
     }
     if (-not (Test-DeviceOnline -Serial $Serial)) {
         Write-Status "FAIL: $Serial did not appear in adb after 60s" "Red"; exit 1
@@ -216,7 +258,7 @@ function Start-EmulatorIfNeeded {
             Install-AppAndData -Serial $Serial
             return
         }
-        Start-Sleep -Seconds 2
+        Start-Sleep -Seconds 1
     }
     Write-Status "FAIL: $Serial did not boot within 240s" "Red"; exit 1
 }
@@ -244,17 +286,10 @@ function Wait-SetupActivityReady {
     # Returns $true if ready, $false if timed out.
     param([int]$TimeoutSeconds = 30)
     Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/setup_introspect.json") | Out-Null
-    $sw = [System.Diagnostics.Stopwatch]::StartNew()
-    while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
-        Start-Sleep -Seconds 2
-        Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_INTROSPECT") | Out-Null
-        Start-Sleep -Seconds 1
-        $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json") -Seconds 5
-        if ($null -ne $json -and $json -match '"screen"') {
-            return $true
-        }
-    }
-    return $false
+    return (Wait-SetupCondition -TimeoutSeconds $TimeoutSeconds -PollMs 800 -Predicate {
+            param($obj)
+            return ($null -ne $obj -and $obj.screen)
+        })
 }
 
 function Wait-GameStarted {
@@ -263,7 +298,7 @@ function Wait-GameStarted {
     param([int]$TimeoutSeconds = 30)
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
-        Start-Sleep -Seconds 2
+        Start-Sleep -Seconds 1
         $log = Adb-Timeout -AdbArgs @("logcat", "-d", "-s", "DXX-Automate:*") -Seconds 5
         if ($null -ne $log -and $log -match 'gameStarted=true') {
             return $true
@@ -511,8 +546,7 @@ function Start-GameWithRetry {
         }
 
         Write-Status "Force-stopping app..."
-        Adb -AdbArgs @("shell", "am", "force-stop", $script:PACKAGE) | Out-Null
-        Start-Sleep -Seconds 2
+        Stop-AppAndWait
 
         if ($PreLaunchScript) {
             & $PreLaunchScript
@@ -568,7 +602,7 @@ function Send-AutomationScript {
 
     if ($PushOnly) { return $true }
 
-    Start-Sleep -Seconds 2
+    Start-Sleep -Seconds 1
     Adb -AdbArgs @("logcat", "-c") | Out-Null
 
     # Remove stale result file so prior run cannot confuse monitoring
@@ -594,15 +628,15 @@ function Watch-AutomationResult {
     $launcherChecked = $false
 
     while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds -and -not $finished) {
-        Start-Sleep -Seconds 3
+        Start-Sleep -Milliseconds 1500
 
         $elapsed = [int]$sw.Elapsed.TotalSeconds
         if ($elapsed - $lastHealthCheck -ge 15) {
             if (-not (Test-EmulatorHealthy)) {
                 # Retry once -- adb can be slow under heavy game load (level loading,
                 # title screens) without the emulator actually being dead.
-                Write-Status "Health check failed, retrying in 5s..." "Yellow"
-                Start-Sleep -Seconds 5
+                Write-Status "Health check failed, retrying in 2s..." "Yellow"
+                Start-Sleep -Seconds 2
                 if (-not (Test-EmulatorHealthy)) {
                     Write-Status "FAIL: Emulator crashed during test (after ${elapsed}s)" "Red"
                     return $false
@@ -697,11 +731,11 @@ function Watch-AutomationResult {
                 } elseif ($line -match 'SCRIPT_BACKGROUND:' -and -not $backgroundHandled) {
                     $backgroundHandled = $true
                     Write-Status "Background marker detected -- cycling app to background" "Yellow"
-                    Start-Sleep -Seconds 2
+                    Start-Sleep -Seconds 1
                     # Press HOME to send app to background
                     Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_HOME") | Out-Null
-                    Write-Status "HOME pressed -- waiting 5s in background..."
-                    Start-Sleep -Seconds 5
+                    Write-Status "HOME pressed -- waiting 3s in background..."
+                    Start-Sleep -Seconds 3
                     # Bring app back to foreground via launcher intent (re-opens
                     # existing task with SetupActivity on top), then press BACK
                     # to get back to the running game's MainActivity, triggering
@@ -709,11 +743,11 @@ function Watch-AutomationResult {
                     Write-Status "Resuming app..."
                     Adb -AdbArgs @("shell", "monkey", "-p", $script:PACKAGE,
                         "-c", "android.intent.category.LAUNCHER", "1") | Out-Null
-                    Start-Sleep -Seconds 2
+                    Start-Sleep -Seconds 1
                     # BACK dismisses the new SetupActivity, revealing the
                     # running game's MainActivity underneath
                     Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_BACK") | Out-Null
-                    Start-Sleep -Seconds 3
+                    Start-Sleep -Seconds 2
                     Write-Status "App resumed -- continuing test monitoring" "Green"
                 } elseif ($line -match 'DXX-Automate' -and $line.Trim().Length -gt 0) {
                     Write-Host "  $($line.Trim())" -ForegroundColor Gray
@@ -762,7 +796,7 @@ function Watch-AutomationResult {
 function Get-GameIntrospection {
     # Request and return parsed game introspection JSON, or $null on failure.
     Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.INTROSPECT") | Out-Null
-    Start-Sleep -Seconds 2
+    Start-Sleep -Milliseconds 800
     $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/introspect.json") -Seconds 5
     if (-not $json -or $json -notmatch '^\s*\{') { return $null }
     try { return ($json | ConvertFrom-Json) } catch { return $null }
@@ -916,7 +950,7 @@ function Get-ScriptTimeoutSeconds {
 function Get-SetupIntrospection {
     # Request and return parsed setup introspection JSON, or $null on failure.
     Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_INTROSPECT") | Out-Null
-    Start-Sleep -Seconds 2
+    Start-Sleep -Milliseconds 800
     $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json") -Seconds 5
     if (-not $json -or $json -notmatch '^\s*\{') { return $null }
     try { return ($json | ConvertFrom-Json) } catch { return $null }
@@ -960,7 +994,7 @@ function Start-SecondEmulator {
     # Wait for it to appear in adb and boot
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt 180) {
-        Start-Sleep -Seconds 5
+        Start-Sleep -Seconds 2
         $devices = Adb-Timeout -AdbArgs @("devices") -Seconds 5
         if ($devices) {
             $m = [regex]::Matches($devices, "emulator-\d+\s+device")

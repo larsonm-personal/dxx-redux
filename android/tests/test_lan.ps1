@@ -271,8 +271,11 @@ try {
         "--es", "callsign", $CALLSIGN1
     )
 
-    # Give host time to start the engine and enter multiplayer hosting mode
-    Start-Sleep -Seconds 8
+    # Poll for host game process to appear (replaces fixed 5s sleep)
+    $null = Wait-ForCondition -Description "Host game process" -TimeoutSec 30 -PollMs 500 -Condition {
+        $gPid = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @("shell", "pidof", "${PACKAGE}:game") -Seconds 5
+        return ($gPid -and $gPid -match '^\d+')
+    }
 
     # Joiner (EMU2) - point at relay address (10.0.2.2 = host loopback from emulator)
     # Port 42600 is the UDP relay on the host machine, NOT the engine port.

@@ -41,18 +41,25 @@ function GetGamePid {
 # Clean state
 Log "=== Double-launch crash test (game=$Game) ==="
 Log "Force-stopping app..."
-Adb-Timeout -AdbArgs @("shell", "am", "force-stop", "com.dxxredux.app") -Seconds 10 | Out-Null
-Start-Sleep -Seconds 2
+Stop-AppAndWait
 Adb -AdbArgs @("logcat", "-c") | Out-Null
 
 # Phase 1: Start the game
 Log "Phase 1: Starting game..."
 Adb -AdbArgs @("shell", "am", "start-activity", "-n", "com.dxxredux.app/.SetupActivity") | Out-Null
-Start-Sleep -Seconds 4
+if (-not (Wait-SetupActivityReady)) {
+    Log "FAIL: SetupActivity not responding"; exit 1
+}
 Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND", "--es", "command", "launch", "--es", "game", $Game) | Out-Null
-Start-Sleep -Seconds 15
 
-$pid1 = GetGamePid
+# Poll for game process to appear (replaces fixed 8s sleep)
+$pid1 = ""
+$sw = [System.Diagnostics.Stopwatch]::StartNew()
+while ($sw.Elapsed.TotalSeconds -lt 30) {
+    $pid1 = GetGamePid
+    if ($pid1) { break }
+    Start-Sleep -Milliseconds 500
+}
 Log "Game PID after first launch: $pid1"
 
 if (-not $pid1) {
@@ -61,9 +68,14 @@ if (-not $pid1) {
 }
 
 # Verify game is on a menu screen
-Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.INTROSPECT") | Out-Null
-Start-Sleep -Seconds 1
-$json = Adb-Timeout -AdbArgs @("shell", "run-as", "com.dxxredux.app", "cat", "files/introspect.json") -Seconds 5
+$json = $null
+$swMenu = [System.Diagnostics.Stopwatch]::StartNew()
+while ($swMenu.Elapsed.TotalSeconds -lt 10) {
+    Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.INTROSPECT") | Out-Null
+    Start-Sleep -Milliseconds 500
+    $json = Adb-Timeout -AdbArgs @("shell", "run-as", "com.dxxredux.app", "cat", "files/introspect.json") -Seconds 5
+    if ($json -and $json -match 'screen_mode') { break }
+}
 $screenMode = if ($json -match '"screen_mode":"([^"]+)"') { $Matches[1] } else { "unknown" }
 Log "Game screen mode: $screenMode"
 
@@ -74,8 +86,8 @@ if ($screenMode -ne "menu") {
 # Phase 2: Press Home to background the game (NOT quit)
 Log "Phase 2: Pressing HOME to background game..."
 Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_HOME") | Out-Null
-Start-Sleep -Seconds 3
-
+# Poll until PID is confirmed still alive (replaces fixed 2s sleep)
+Start-Sleep -Milliseconds 500
 $pid2 = GetGamePid
 Log "Game PID after HOME: $pid2"
 if (-not $pid2) {
@@ -91,12 +103,14 @@ Log "OK: process stayed alive after HOME"
 # Phase 3: Simulate launcher autoselect edit
 Log "Phase 3: Writing autoselect orderings via broadcast..."
 Adb -AdbArgs @("shell", "am", "start-activity", "-n", "com.dxxredux.app/.SetupActivity") | Out-Null
-Start-Sleep -Seconds 3
+if (-not (Wait-SetupActivityReady -TimeoutSeconds 10)) {
+    Log "WARN: SetupActivity slow to respond for autoselect"
+}
 Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND",
     "--es", "command", "write_autoselect", "--es", "game", $Game,
     "--es", "primary", "8,9,7,6,5,4,3,2,1,0,255",
     "--es", "secondary", "9,8,4,3,1,5,0,255,7,6,2") | Out-Null
-Start-Sleep -Seconds 2
+Start-Sleep -Milliseconds 500
 
 $pid3 = GetGamePid
 Log "Game PID after autoselect write: $pid3"
@@ -108,8 +122,13 @@ if (-not $pid3) {
 # Phase 4: Attempt to re-launch game (should be blocked by guard)
 Log "Phase 4: Re-launching game via broadcast..."
 Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_COMMAND", "--es", "command", "launch", "--es", "game", $Game) | Out-Null
-Start-Sleep -Seconds 10
-
+# Poll to verify PID doesn't change (double-launch guard should block)
+$sw4 = [System.Diagnostics.Stopwatch]::StartNew()
+while ($sw4.Elapsed.TotalSeconds -lt 5) {
+    $pid4 = GetGamePid
+    if ($pid4 -and $pid4 -ne $pid1) { break }
+    Start-Sleep -Milliseconds 500
+}
 $pid4 = GetGamePid
 Log "Game PID after re-launch attempt: $pid4"
 
@@ -133,13 +152,17 @@ Log "Phase 5: Verifying game health..."
 # Bring the game back to foreground so introspection works
 Adb-Timeout -AdbArgs @("shell", "monkey", "-p", "com.dxxredux.app",
     "-c", "android.intent.category.LAUNCHER", "1") -Seconds 5 | Out-Null
-Start-Sleep -Seconds 2
+Start-Sleep -Milliseconds 500
 Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_BACK") | Out-Null
-Start-Sleep -Seconds 2
-
-Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.INTROSPECT") | Out-Null
-Start-Sleep -Seconds 1
-$json2 = Adb-Timeout -AdbArgs @("shell", "run-as", "com.dxxredux.app", "cat", "files/introspect.json") -Seconds 5
+# Poll introspection until responsive (replaces fixed 2s+1s sleep)
+$json2 = $null
+$sw5 = [System.Diagnostics.Stopwatch]::StartNew()
+while ($sw5.Elapsed.TotalSeconds -lt 10) {
+    Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.INTROSPECT") | Out-Null
+    Start-Sleep -Milliseconds 500
+    $json2 = Adb-Timeout -AdbArgs @("shell", "run-as", "com.dxxredux.app", "cat", "files/introspect.json") -Seconds 5
+    if ($json2 -and $json2 -match 'screen_mode') { break }
+}
 $screenMode2 = if ($json2 -match '"screen_mode":"([^"]+)"') { $Matches[1] } else { "unknown" }
 Log "Game screen mode after test: $screenMode2"
 

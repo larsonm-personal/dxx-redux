@@ -37,28 +37,24 @@
     }},
     {"action": "log", "message": "=== TEST: Keyboard Defaults Regression ==="},
 
-    {"action": "wait_ms", "ms": 2000},
 
     // -- Create fresh pilot and launch into game --
     // D1 shows 3 title screens (3s each = 9s) before set_screen_mode(SCREEN_MENU).
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
-    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 2000},
-    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 2000},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
 
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
-    {"action": "select", "text": "New game", "post_delay_ms": 1000},
+    {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Mission select (D2 only)
-    {"action": "wait_ms", "ms": 1000, "when": "d2"},
-    {"action": "select", "text": "${MISSION}", "when": "d2", "post_delay_ms": 1500},
-    {"action": "wait_ms", "ms": 500},
-    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 1500},
-    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 1500},
-    {"action": "wait_ms", "ms": 500},
-    {"action": "select", "text": "Rookie", "post_delay_ms": 1500},
+    {"action": "select", "text": "${MISSION}", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
+    {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Skip briefing
-    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 1000},
+    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 100},
 
     // Wait for in-game
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
@@ -67,14 +63,14 @@
     // -- Phase 1: TAB opens automap --
     {"action": "log", "message": "Phase 1: Press TAB to open automap"},
     {"action": "assert", "expect": {"automap_active": "false"}},
-    {"action": "key", "key": "tab", "post_delay_ms": 500},
+    {"action": "key", "key": "tab", "post_delay_ms": 100},
     {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 3000},
     {"action": "assert", "expect": {"automap_active": "true"}},
     {"action": "log", "message": "Phase 1: PASS -- TAB opened automap (keyboard defaults working)"},
 
     // -- Phase 2: Dismiss automap --
     {"action": "log", "message": "Phase 2: ESC closes automap"},
-    {"action": "key", "key": "esc", "post_delay_ms": 500},
+    {"action": "key", "key": "esc", "post_delay_ms": 100},
     {"action": "wait_for", "field": "automap_active", "value": "false", "timeout_ms": 3000},
     {"action": "assert", "expect": {
         "automap_active": "false",

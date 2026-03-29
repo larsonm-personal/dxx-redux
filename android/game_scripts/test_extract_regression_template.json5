@@ -13,29 +13,26 @@
     {"action": "log", "message": "=== Extraction regression test ==="},
 
     // Wait for pilot select
-    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 15000},
-    {"action": "select", "text": "player", "post_delay_ms": 2000},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "player", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Main menu - start new game
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
-    {"action": "select", "text": "New game", "post_delay_ms": 1000},
+    {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Mission select
-    {"action": "wait_ms", "ms": 1000},
-    {"action": "select", "text": "MISSION_NAME", "post_delay_ms": 1500},
+    {"action": "select", "text": "MISSION_NAME", "post_delay_ms": 100, "timeout_ms": 5000},
     // Accept default level 1
-    {"action": "wait_ms", "ms": 500},
-    {"action": "select", "text": "Ok", "post_delay_ms": 1500},
+    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
     // Difficulty
-    {"action": "wait_ms", "ms": 500},
-    {"action": "select", "text": "Rookie", "post_delay_ms": 1500},
+    {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Skip briefing/movie
-    {"action": "key", "key": "escape", "post_delay_ms": 1000},
-    {"action": "key", "key": "escape", "post_delay_ms": 1000},
+    {"action": "key", "key": "escape", "post_delay_ms": 100},
+    {"action": "key", "key": "escape", "post_delay_ms": 100},
 
     // Wait for game to load
-    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 15000},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 20000},
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
 
     // Verify level loaded correctly

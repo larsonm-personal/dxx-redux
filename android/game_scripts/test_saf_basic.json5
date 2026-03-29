@@ -25,31 +25,27 @@
     }},
     {"action": "log", "message": "=== TEST: SAF Archiver Basic ==="},
 
-    {"action": "wait_ms", "ms": 2000},
 
     // Accept default pilot name (fresh .plr deleted by runner)
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5028},
-    {"action": "select", "text": "Ok", "post_delay_ms": 2000},
+    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Main menu
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5024},
-    {"action": "select", "text": "New game", "post_delay_ms": 1000},
+    {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Mission select
-    {"action": "wait_ms", "ms": 1000},
-    {"action": "select", "text": "Counterstrike", "post_delay_ms": 1500},
+    {"action": "select", "text": "Counterstrike", "post_delay_ms": 100, "timeout_ms": 5000},
     // accept default level 1
-    {"action": "wait_ms", "ms": 500},
-    {"action": "select", "text": "Ok", "post_delay_ms": 1500},
+    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
     // difficulty
-    {"action": "wait_ms", "ms": 500},
-    {"action": "select", "text": "Rookie", "post_delay_ms": 1500},
+    {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Skip briefing (waits for level load, then escapes if briefing is showing)
-    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 1000},
+    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 100},
 
     // Wait for game and verify HAM loaded
-    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 5000},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
     {"action": "introspect"},
 

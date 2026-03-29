@@ -36,31 +36,30 @@
     {"action": "log", "message": "=== Phase 1: Patch pilots + controller introspect (${GAME}) ==="},
     {"action": "reset_state"},
     {"action": "setup_command", "command": "write_default_config", "post_delay_ms": 1000},
-    {"action": "setup_command", "command": "patch_pilots", "post_delay_ms": 2000},
+    {"action": "setup_command", "command": "patch_pilots", "post_delay_ms": 1000},
     {"action": "setup_command", "command": "controller_introspect",
-     "args": {"game": "${GAME}"}, "post_delay_ms": 2000},
+     "args": {"game": "${GAME}"}, "post_delay_ms": 1000},
 
     // -- Phase 2: Game -- select pilot, introspect --
 
     {"action": "enter_game", "game": "${GAME}"},
     {"action": "log", "message": "=== Phase 2: In-game introspect (${GAME}) ==="},
-    {"action": "wait_ms", "ms": 2000},
 
     // D1 shows title screens (~9s) before menu. D2 goes straight to pilot list.
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
     // Pilot listbox: press enter to accept the patched pilot
-    {"action": "key", "key": "enter", "post_delay_ms": 2000},
+    {"action": "key", "key": "enter", "post_delay_ms": 100},
 
     // At main menu -- introspect to capture joystick bindings
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
     {"action": "introspect"},
-    {"action": "wait_ms", "ms": 1000},
+    {"action": "wait_ms", "ms": 500},
 
     // -- Phase 3: Back to launcher for comparison --
 
     {"action": "enter_launcher"},
     {"action": "log", "message": "=== Phase 3: Comparing controller configs ==="},
-    {"action": "wait_ms", "ms": 1000},
+    {"action": "wait_ms", "ms": 500},
     {"action": "assert_controller_match"},
 
     {"action": "log", "message": "=== TEST: Controller Config Compare -- PASS ==="}

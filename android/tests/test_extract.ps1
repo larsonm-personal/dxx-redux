@@ -140,7 +140,7 @@ function Read-Json5 {
 
 function Get-SetupIntrospection {
     Adb -CmdArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_INTROSPECT') | Out-Null
-    Start-Sleep -Seconds 2
+    Start-Sleep -Milliseconds 800
     $json = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'cat', 'files/setup_introspect.json')
     if (-not $json -or $json -notmatch '^\s*\{') { return $null }
     try { return ($json | ConvertFrom-Json) } catch { return $null }
@@ -152,9 +152,9 @@ function Wait-SetupReady {
     Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', 'files/setup_introspect.json') | Out-Null
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
-        Start-Sleep -Seconds 2
-        Adb -CmdArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_INTROSPECT') | Out-Null
         Start-Sleep -Seconds 1
+        Adb -CmdArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_INTROSPECT') | Out-Null
+        Start-Sleep -Milliseconds 800
         $json = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'cat', 'files/setup_introspect.json')
         if ($json -and $json -match '"screen"') { return $true }
     }
@@ -163,7 +163,7 @@ function Wait-SetupReady {
 
 function Get-GameIntrospection {
     Adb -CmdArgs @('shell', 'am', 'broadcast', '-a', 'com.dxxredux.INTROSPECT') | Out-Null
-    Start-Sleep -Seconds 2
+    Start-Sleep -Milliseconds 800
     $json = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'cat', 'files/introspect.json')
     if (-not $json -or $json -notmatch '^\s*\{') {
         return [PSCustomObject]@{ screen_mode = 'loading'; menu = $null; in_game = $false }
@@ -389,7 +389,16 @@ if ($devices -notmatch 'emulator-\d+\s+device') {
     $healthScript = Join-Path $PSScriptRoot "..\emu_health.ps1"
     if (Test-Path $healthScript) {
         & $healthScript -Restart 2>&1 | Out-Null
-        Start-Sleep -Seconds 10
+        # Poll for emulator to come back online
+        $sw = [System.Diagnostics.Stopwatch]::StartNew()
+        while ($sw.Elapsed.TotalSeconds -lt 30) {
+            $devCheck = Adb -CmdArgs 'devices'
+            if ($devCheck -match 'emulator-\d+\s+device') {
+                $bootCheck = Adb -CmdArgs @('shell', 'getprop', 'sys.boot_completed')
+                if ($bootCheck.Trim() -eq '1') { break }
+            }
+            Start-Sleep -Seconds 1
+        }
         $devices = Adb -CmdArgs 'devices'
     }
     if ($devices -notmatch 'emulator-\d+\s+device') {
@@ -712,7 +721,13 @@ Start-Sleep -Seconds 1
 # Launch the game (pass game type from spec so the correct .so is loaded)
 $launchGame = if ($spec.game -match 'd1') { 'd1' } else { 'd2' }
 Send-SetupCommand 'launch' -Game $launchGame
-Start-Sleep -Seconds 8
+# Poll for game process to appear (replaces fixed sleep)
+$sw = [System.Diagnostics.Stopwatch]::StartNew()
+while ($sw.Elapsed.TotalSeconds -lt 30) {
+    $gPid = Adb -CmdArgs @('shell', 'pidof', "${PACKAGE}:game")
+    if ($gPid -and $gPid -match '^\d+') { break }
+    Start-Sleep -Milliseconds 500
+}
 
 # -- Step 9: Verify in-game state -----------------------------
 
@@ -746,7 +761,7 @@ for ($i = 0; $i -lt 15; $i++) {
         Adb -CmdArgs @('shell', 'input', 'keyevent', 'KEYCODE_ENTER') | Out-Null
         $escPressed++
     }
-    Start-Sleep -Seconds 3
+    Start-Sleep -Seconds 2
 }
 
 if (-not $menuReached) {
@@ -932,7 +947,7 @@ if (-not $KeepFiles) {
     Write-Status "Cleaning up test set..."
     # Need to re-launch SetupActivity for broadcast
     Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null
-    Start-Sleep -Seconds 3
+    Start-Sleep -Seconds 2
     Send-SetupCommand 'clear_set' -Name $TEST_SET
     Start-Sleep -Seconds 1
     Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null

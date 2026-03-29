@@ -25,31 +25,27 @@
     }},
     {"action": "log", "message": "=== TEST: Launch + Background/Resume ==="},
 
-    {"action": "wait_ms", "ms": 2000},
 
     // Accept default pilot name (fresh .plr deleted by runner)
     // D1 shows 3 title screens (3s each = 9s) before set_screen_mode(SCREEN_MENU).
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
-    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 2000},
-    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 2000},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
 
     // Main menu
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
-    {"action": "select", "text": "New game", "post_delay_ms": 1500},
+    {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Mission select (D2 only -- D1 has a single built-in mission)
-    {"action": "wait_ms", "ms": 1000, "when": "d2"},
-    {"action": "select", "text": "${MISSION}", "when": "d2", "post_delay_ms": 1500},
+    {"action": "select", "text": "${MISSION}", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
     // accept default level 1
-    {"action": "wait_ms", "ms": 500},
-    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 1500},
-    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 1500},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
     // difficulty
-    {"action": "wait_ms", "ms": 500},
-    {"action": "select", "text": "Rookie", "post_delay_ms": 1500},
+    {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Skip briefing (waits for level load, then escapes if briefing is showing)
-    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 2000},
+    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 100},
 
     // Wait for game
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
@@ -59,13 +55,13 @@
     {"action": "log", "message": "=== In-game verified -- testing automap ==="},
 
     // Open automap (TAB key)
-    {"action": "key", "key": "tab", "post_delay_ms": 500},
+    {"action": "key", "key": "tab", "post_delay_ms": 100},
     {"action": "wait_for", "field": "automap_active", "value": "true", "timeout_ms": 5000},
     {"action": "assert", "expect": {"automap_active": "true"}},
     {"action": "log", "message": "=== Automap opened successfully ==="},
 
     // Close automap (ESC)
-    {"action": "key", "key": "escape", "post_delay_ms": 500},
+    {"action": "key", "key": "escape", "post_delay_ms": 100},
     {"action": "wait_for", "field": "automap_active", "value": "false", "timeout_ms": 5000},
     {"action": "assert", "expect": {"automap_active": "false"}},
     {"action": "log", "message": "=== Automap closed -- testing background/resume ==="},
@@ -84,7 +80,7 @@
     {"action": "wait_for", "field": "egl_recreate_count", "value": "2", "timeout_ms": 30000},
 
     // Allow a moment for rendering to stabilize after resume
-    {"action": "wait_ms", "ms": 2000},
+    {"action": "wait_ms", "ms": 1000},
 
     // Verify the game is still running and rendering after resume
     {"action": "assert", "expect": {

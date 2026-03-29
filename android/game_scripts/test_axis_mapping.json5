@@ -60,7 +60,6 @@
     }},
     {"action": "log", "message": "=== TEST: Axis Mapping Regression ==="},
 
-    {"action": "wait_ms", "ms": 2000},
 
     // -- Create fresh pilot and launch into game --
     // The test runner deletes player.plr before launch, so the game
@@ -70,23 +69,20 @@
     // D1 shows 3 title screens (3s each = 9s) before set_screen_mode(SCREEN_MENU),
     // so we need a longer timeout here.
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
-    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 2000},
-    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 2000},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
 
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
-    {"action": "select", "text": "New game", "post_delay_ms": 1000},
+    {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Mission select (D2 only -- D1 has a single built-in mission)
-    {"action": "wait_ms", "ms": 1000, "when": "d2"},
-    {"action": "select", "text": "${MISSION}", "when": "d2", "post_delay_ms": 1500},
-    {"action": "wait_ms", "ms": 500},
-    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 1500},
-    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 1500},
-    {"action": "wait_ms", "ms": 500},
-    {"action": "select", "text": "Rookie", "post_delay_ms": 1500},
+    {"action": "select", "text": "${MISSION}", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select", "text": "Ok", "when": "d2", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "key", "key": "enter", "when": "d1", "post_delay_ms": 100},
+    {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 5000},
 
     // Skip briefing (waits for level load, then escapes if briefing is showing)
-    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 1000},
+    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 100},
 
     // Wait for in-game
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
@@ -205,7 +201,7 @@
     {"action": "log", "message": "Phase 4a: PASS -- ESC opened menu"},
     // Close the menu and return to game
     {"action": "key", "key": "esc", "post_delay_ms": 100},
-    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 3000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
     {"action": "log", "message": "Phase 4a: PASS -- menu closed, back in game"},
 
     // 4b: SHIFT+F4 opens Guide-Bot menu (D2 only)
@@ -228,7 +224,7 @@
     {"action": "log", "message": "Phase 4c: PASS -- F1 opened help menu with subtitle KEYS"},
     // Dismiss help
     {"action": "key", "key": "esc", "post_delay_ms": 100},
-    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 3000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
     {"action": "log", "message": "Phase 4c: PASS -- help menu dismissed"},
 
     // -- Phase 5: Virtual axis tests (Bank=6, Slide U/D=7) --
