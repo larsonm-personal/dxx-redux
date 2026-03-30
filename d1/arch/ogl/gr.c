@@ -667,6 +667,15 @@ const char *gl_vendor, *gl_renderer, *gl_version, *gl_extensions;
 
 void ogl_get_verinfo(void)
 {
+	/* Query max texture size -- works on both desktop GL and GLES.
+	 * Cap at 2048 to limit texbuf memory (2048^2*4 = 16 MB). */
+	{
+		GLint mts = 0;
+		glGetIntegerv(GL_MAX_TEXTURE_SIZE, &mts);
+		if (mts > 0)
+			ogl_max_texture_size = min(mts, 2048);
+		con_printf(CON_VERBOSE, "GL_MAX_TEXTURE_SIZE: %d, using: %d\n", mts, ogl_max_texture_size);
+	}
 #ifndef OGLES
 	gl_vendor = (const char *) glGetString (GL_VENDOR);
 	gl_renderer = (const char *) glGetString (GL_RENDERER);

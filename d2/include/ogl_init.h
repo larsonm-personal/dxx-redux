@@ -80,6 +80,7 @@ extern int gl_initialized;
 
 extern int active_texture_unit;
 extern GLfloat ogl_maxanisotropy;
+extern int ogl_max_texture_size;
 
 void ogl_setActiveTexture(int t);
 

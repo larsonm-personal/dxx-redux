@@ -90,6 +90,7 @@ int last_kb_off=0;
 int GL_TEXTURE_2D_enabled=-1;
 int GL_texclamp_enabled=-1;
 GLfloat ogl_maxanisotropy = 0;
+int ogl_max_texture_size = 1024;
 
 int r_texcount = 0, r_cachedtexcount = 0;
 #ifdef OGLES
@@ -1303,7 +1304,7 @@ void ogl_init_pixel_buffers(int w, int h)
 
 	if (texbuf)
 		d_free(texbuf);
-	texbuf = d_malloc(max(w, 1024)*max(h, 1024)*4);	// must also fit big font texture
+	texbuf = d_malloc(max(w, ogl_max_texture_size)*max(h, ogl_max_texture_size)*4);
 
 	if ((pixels == NULL) || (texbuf == NULL))
 		Error("Not enough memory for current resolution");
@@ -1319,8 +1320,8 @@ void ogl_filltexbuf(unsigned char *data, GLubyte *texp, int truewidth, int width
 {
 	int x,y,c,i;
 
-	if ((width > max(grd_curscreen->sc_w, 1024)) || (height > max(grd_curscreen->sc_h, 1024)))
-		Error("Texture is too big: %ix%i", width, height);
+	if (width > ogl_max_texture_size || height > ogl_max_texture_size)
+		Error("Texture is too big: %ix%i (limit %i)", width, height, ogl_max_texture_size);
 
 	if (data_format) { // true color bitmap?
 		if (width == truewidth && width == twidth) {
@@ -1580,12 +1581,11 @@ int ogl_loadtexture (unsigned char *data, int dxo, int dyo, ogl_texture *tex, in
 	tex->tw = pow2ize (tex->w);
 	tex->th = pow2ize (tex->h);//calculate smallest texture size that can accomodate us (must be multiples of 2)
 
-	/* android port: skip textures that exceed screen-based limits to avoid
-	 * GL hangs on software renderers (e.g. animated sprite strips from
-	 * hires texture DXAs can be very tall) */
-	if ((tex->tw > max(grd_curscreen->sc_w, 1024)) || (tex->th > max(grd_curscreen->sc_h, 1024))) {
-		con_printf(CON_URGENT, "Skipping oversized texture: %ix%i (pow2: %ix%i)\n",
-		           tex->w, tex->h, tex->tw, tex->th);
+	/* Skip textures that exceed GL_MAX_TEXTURE_SIZE to avoid GL errors
+	 * or hangs (e.g. animated sprite strips can be very tall) */
+	if (tex->tw > ogl_max_texture_size || tex->th > ogl_max_texture_size) {
+		con_printf(CON_URGENT, "Skipping oversized texture: %ix%i (pow2: %ix%i, limit %i)\n",
+		           tex->w, tex->h, tex->tw, tex->th, ogl_max_texture_size);
 		return 1;
 	}
 
