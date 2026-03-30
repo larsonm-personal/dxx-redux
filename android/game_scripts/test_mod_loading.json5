@@ -1,6 +1,7 @@
 // TEST: Mod Loading -- verifies DXA mod files are mounted via PhysFS
-// Pushes a hires sounds DXA to files/mods/, writes mod_manifest.json,
-// launches D2, and checks that introspection shows the mod in mounted_mods.
+// Pushes hires sounds + downscaled-to-64px textures DXA to files/mods/, writes
+// mod_manifest.json, launches D2, and checks that introspection shows
+// the mods mounted and hires textures applied.
 [
     {"_info": {
         "games": ["d2"],
@@ -17,14 +18,15 @@
             {"file": "fire.pig", "sha256": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156"},
             {"file": "ice.pig", "sha256": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1"},
             {"file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"},
-            {"file": "d2xxl-hires-sounds-d2.dxa", "sha256": "d31f331c843f803ccca5d01412bfb3cc566289ac3fd34e8ae1575494c6de408b", "target": "files/mods"}
+            {"file": "d2xxl-hires-sounds-d2.dxa", "sha256": "d31f331c843f803ccca5d01412bfb3cc566289ac3fd34e8ae1575494c6de408b", "target": "files/mods"},
+            {"file": "d2xxl-hires-textures-d2-64.dxa", "sha256": "bc8389c2dce136a8188661b214f1620fff15eb476f6df2cf034e6f536dad7ba1", "target": "files/mods"}
         ]
     }},
 
     // -- Write mod manifest so launcher's writeEnabledModPaths picks it up --
     {"action": "enter_launcher"},
     {"action": "write_config", "file": "mods/mod_manifest.json",
-     "content": "{\"mods\":[{\"filename\":\"d2xxl-hires-sounds-d2.dxa\",\"displayName\":\"D2XXL Hires Sounds D2\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":0}]}"},
+     "content": "{\"mods\":[{\"filename\":\"d2xxl-hires-sounds-d2.dxa\",\"displayName\":\"D2XXL Hires Sounds D2\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":0},{\"filename\":\"d2xxl-hires-textures-d2-64.dxa\",\"displayName\":\"D2XXL Hires Textures D2 64\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":1}]}"},
 
     // -- Launcher preamble --
     {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
@@ -48,18 +50,28 @@
     {"action": "wait_ms", "ms": 500},
     {"action": "select", "text": "Trainee", "post_delay_ms": 100, "timeout_ms": 10000},
 
-    // Skip briefing
-    {"action": "skip_briefing", "timeout_ms": 20000, "post_delay_ms": 100},
+    // Skip briefing (texture DXA loading can be slow on emulator)
+    {"action": "skip_briefing", "timeout_ms": 60000, "post_delay_ms": 100},
 
     // Wait for game to be running
-    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
-    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000},
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
 
-    // Verify the DXA mod is mounted via introspection
+    // Verify the DXA mods are mounted via introspection
     {"action": "introspect"},
     {"action": "assert", "expect": {"mounted_mods": {"contains": "d2xxl-hires-sounds-d2.dxa"}},
-     "_comment": "Hires sounds DXA should appear in the PhysFS search path"}, 
+     "_comment": "Hires sounds DXA should appear in the PhysFS search path"},
+    {"action": "assert", "expect": {"mounted_mods": {"contains": "d2xxl-hires-textures-d2-64.dxa"}},
+     "_comment": "Hires textures DXA should appear in the PhysFS search path"},
+
+    // Wait for textures to load (they're loaded on-demand during rendering)
+    {"action": "wait_ms", "ms": 5000},
+    {"action": "introspect"},
+    {"action": "assert", "expect": {"hires_textures.hires_count": {"gt": 0}},
+     "_comment": "At least some textures should be replaced by hires versions"},
+    {"action": "assert", "expect": {"hires_textures.max_hires_w": {"gte": 1}},
+     "_comment": "Hires textures should have non-zero width (64px max from downscaled DXA)"},
 
     {"action": "log", "message": "=== TEST: Mod Loading -- PASS ==="}
 ]

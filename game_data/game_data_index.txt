@@ -51,3 +51,4 @@ b30a164fa9c6dff05eda6d50f777777df843968d32053f5cc9453fe89d5bed19  game_data/mods
 3ef1bf1dbcb1be8c3dde121ed53b0fec8a22340320937735073353fd0a1a990c  game_data/mods/d1xr-mac-demo-sounds.dxa
 d31f331c843f803ccca5d01412bfb3cc566289ac3fd34e8ae1575494c6de408b  game_data/mods/d2xxl-hires-sounds-d2.dxa
 c8f14e7038298021be32d154266406167bd1b10eb6ab72145b48cc0b4662b94c  game_data/mods/d2xxl-hires-textures-d2.dxa
+bc8389c2dce136a8188661b214f1620fff15eb476f6df2cf034e6f536dad7ba1  game_data/mods/d2xxl-hires-textures-d2-64.dxa

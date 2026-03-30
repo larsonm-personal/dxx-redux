@@ -1858,21 +1858,35 @@ private fun detectD2FileList(
 
 private val D1_FILES =
     listOf(
-        // Required – core D1 files
+        // Required -- core D1 files
         GameFileInfo("descent.hog", "D1 game data", required = true),
         GameFileInfo("descent.pig", "D1 textures", required = true),
-        // Optional – downloadable extras
-        GameFileInfo(
+    )
+
+// Mods recommended for download (shown in ModsSection when not already installed)
+private data class RecommendedMod(
+    val filename: String,
+    val displayName: String,
+    val description: String,
+    val downloadUrl: String,
+    val game: String,
+)
+
+private val RECOMMENDED_MODS =
+    listOf(
+        RecommendedMod(
             "d1xr-mac-demo-sounds.dxa",
-            "Optional sound file",
-            required = false,
-            downloadUrl = "https://dxx-redux.com/dl/d1xr-mac-demo-sounds.dxa",
+            "D1 Mac Demo Sounds",
+            "Sound replacements from the Mac demo",
+            "https://dxx-redux.com/dl/d1xr-mac-demo-sounds.dxa",
+            "d1",
         ),
-        GameFileInfo(
+        RecommendedMod(
             "d1xr-hires.dxa",
-            "Optional D1 high-res file",
-            required = false,
-            downloadUrl = "https://dxx-redux.com/dl/d1xr-hires.dxa",
+            "D1 High-Res Pack",
+            "High-resolution textures for D1",
+            "https://dxx-redux.com/dl/d1xr-hires.dxa",
+            "d1",
         ),
     )
 
@@ -3673,6 +3687,8 @@ private fun ModsSection(
     var mods by remember { mutableStateOf(modManager.listMods()) }
     var expanded by remember { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<String?>(null) }
+    val modDownloadProgress = remember { mutableStateMapOf<String, Int>() }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(refreshTrigger) { mods = modManager.listMods() }
 
@@ -3691,13 +3707,12 @@ private fun ModsSection(
     if (expanded) {
         if (mods.isEmpty()) {
             Text(
-                "No mods installed. Use the file picker above to import .dxa files",
+                "No mods installed",
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
             )
         } else {
-            // Override the ready/status label with our custom summary
             Text(
                 summary,
                 fontSize = 12.sp,
@@ -3722,6 +3737,53 @@ private fun ModsSection(
                         mods = modManager.listMods()
                     },
                     onDelete = { deleteTarget = mod.filename },
+                )
+            }
+        }
+
+        // Recommended mods (show ones not already installed)
+        val installedNames = mods.map { it.filename.lowercase() }.toSet()
+        val uninstalled = RECOMMENDED_MODS.filter { it.filename.lowercase() !in installedNames }
+        if (uninstalled.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                "Recommended",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+            )
+            uninstalled.forEach { rec ->
+                RecommendedModRow(
+                    rec = rec,
+                    progress = modDownloadProgress[rec.filename],
+                    onDownload = {
+                        val modsDir = File(filesDir, "mods")
+                        scope.launch {
+                            downloadFile(
+                                url = rec.downloadUrl,
+                                destDir = modsDir,
+                                filename = rec.filename,
+                                onProgress = { pct ->
+                                    modDownloadProgress[rec.filename] = pct
+                                },
+                                onDone = { success ->
+                                    modDownloadProgress[rec.filename] =
+                                        if (success) -2 else -1
+                                    if (success) {
+                                        val file = File(modsDir, rec.filename)
+                                        modManager.importCompleted(
+                                            rec.filename,
+                                            rec.displayName,
+                                            file.length(),
+                                            rec.game,
+                                        )
+                                        mods = modManager.listMods()
+                                    }
+                                },
+                            )
+                        }
+                    },
                 )
             }
         }
@@ -3810,6 +3872,54 @@ private fun ModRow(
             modifier = Modifier.height(24.dp),
         ) {
             Text("\u2717", fontSize = 12.sp, color = Color(0xFFFF5252))
+        }
+    }
+}
+
+@Composable
+private fun RecommendedModRow(
+    rec: RecommendedMod,
+    progress: Int?, // null = not started, 0..100 = %, -1 = error, -2 = done
+    onDownload: () -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(start = 8.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(rec.displayName, fontSize = 12.sp)
+            Text(
+                "${rec.description} - ${rec.game.uppercase()}",
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        when (progress) {
+            null ->
+                Button(
+                    onClick = onDownload,
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                    modifier = Modifier.height(28.dp),
+                ) { Text("Download", fontSize = 11.sp) }
+            in 0..100 ->
+                Text(
+                    "$progress%",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.width(40.dp),
+                )
+            -1 -> Text("Error", fontSize = 12.sp, color = Color(0xFFF44336))
+            -2 ->
+                Text(
+                    "\u2713",
+                    fontSize = 14.sp,
+                    color = Color(0xFF4CAF50),
+                    fontWeight = FontWeight.Bold,
+                )
         }
     }
 }

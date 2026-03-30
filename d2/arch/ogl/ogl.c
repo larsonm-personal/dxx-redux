@@ -1580,6 +1580,15 @@ int ogl_loadtexture (unsigned char *data, int dxo, int dyo, ogl_texture *tex, in
 	tex->tw = pow2ize (tex->w);
 	tex->th = pow2ize (tex->h);//calculate smallest texture size that can accomodate us (must be multiples of 2)
 
+	/* android port: skip textures that exceed screen-based limits to avoid
+	 * GL hangs on software renderers (e.g. animated sprite strips from
+	 * hires texture DXAs can be very tall) */
+	if ((tex->tw > max(grd_curscreen->sc_w, 1024)) || (tex->th > max(grd_curscreen->sc_h, 1024))) {
+		con_printf(CON_URGENT, "Skipping oversized texture: %ix%i (pow2: %ix%i)\n",
+		           tex->w, tex->h, tex->tw, tex->th);
+		return 1;
+	}
+
 	//calculate u/v values that would make the resulting texture correctly sized
 	tex->u = (float) ((double) tex->w / (double) tex->tw);
 	tex->v = (float) ((double) tex->h / (double) tex->th);

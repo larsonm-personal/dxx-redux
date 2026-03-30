@@ -39,6 +39,8 @@ extern "C" {
 #include "kconfig.h"
 #include "gr.h"
 #include "multi.h"
+#include "ogl_init.h"
+#include "piggy.h"
 }
 
 /* D1 does not have SCREEN_MOVIE */
@@ -648,6 +650,29 @@ extern "C" char *game_introspect_get_state(void)
 			PHYSFS_freeList(list);
 		}
 		j["mounted_mods"] = std::move(mods);
+	}
+
+	/* -- Hi-res texture stats (count PNG/JPG replacements) ------------ */
+	if (Current_level_num != 0) {
+		int total = 0, replaced = 0;
+		int max_w = 0, max_h = 0;
+		for (int i = 0; i < Num_bitmap_files; i++) {
+			ogl_texture *t = GameBitmaps[i].gltexture;
+			if (!t || t->w == 0)
+				continue;
+			total++;
+			if (t->is_png) {
+				replaced++;
+				if (t->w > max_w) max_w = t->w;
+				if (t->h > max_h) max_h = t->h;
+			}
+		}
+		json tex;
+		tex["total_loaded"] = total;
+		tex["hires_count"] = replaced;
+		tex["max_hires_w"] = max_w;
+		tex["max_hires_h"] = max_h;
+		j["hires_textures"] = tex;
 	}
 
 	/* -- Recent console output (last 50 con_printf lines) ----------- */

@@ -105,6 +105,30 @@ class ModManager(
         return mod
     }
 
+    /** Register a mod file that was already downloaded directly into modsDir */
+    fun importCompleted(
+        filename: String,
+        displayName: String,
+        sizeBytes: Long,
+        game: String,
+    ) {
+        mods.removeAll { it.filename == filename }
+        val maxOrder = mods.maxOfOrNull { it.order } ?: -1
+        mods.add(
+            ModInfo(
+                filename = filename,
+                displayName = displayName,
+                enabled = true,
+                addedAt = System.currentTimeMillis(),
+                sizeBytes = sizeBytes,
+                game = game,
+                order = maxOrder + 1,
+            ),
+        )
+        save()
+        Log.i(TAG, "Registered downloaded mod: $displayName")
+    }
+
     /** Reorder: swap item at [index] with the one above it */
     fun moveUp(index: Int) {
         val sorted = mods.sortedBy { it.order }.toMutableList()
@@ -193,12 +217,18 @@ class ModManager(
                 (0 until arr.length())
                     .map { i ->
                         val obj = arr.getJSONObject(i)
+                        val filename = obj.getString("filename")
+                        var size = obj.optLong("sizeBytes", 0)
+                        if (size == 0L) {
+                            val f = File(modsDir, filename)
+                            if (f.exists()) size = f.length()
+                        }
                         ModInfo(
-                            filename = obj.getString("filename"),
+                            filename = filename,
                             displayName = obj.getString("displayName"),
                             enabled = obj.optBoolean("enabled", true),
                             addedAt = obj.optLong("addedAt", 0),
-                            sizeBytes = obj.optLong("sizeBytes", 0),
+                            sizeBytes = size,
                             game = obj.optString("game", "both"),
                             order = obj.optInt("order", i),
                         )
