@@ -367,7 +367,10 @@ function Resolve-GameDataDeps {
     # Group deps by target dir, list what's on device per target
     $byTarget = @{}
     foreach ($dep in $Deps) {
-        $t = if ($dep['target']) { $dep['target'] } else { $defaultTarget }
+        # Support both hashtable (from Get-StandardGameDataDeps) and
+        # PSCustomObject (from ConvertFrom-Json) -- use .target for both.
+        $depTarget = $dep.target
+        $t = if ($depTarget) { $depTarget } else { $defaultTarget }
         if (-not $byTarget.ContainsKey($t)) { $byTarget[$t] = @() }
         $byTarget[$t] += $dep
     }
@@ -382,6 +385,7 @@ function Resolve-GameDataDeps {
             Adb -AdbArgs @("shell", "mkdir", "-p", $target) | Out-Null
             $listing = Adb-Timeout -AdbArgs @("shell", "ls", "-la", "$target/") -Seconds 5
         } else {
+            Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "mkdir", "-p", $target) 2>&1 | Out-Null
             $listing = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", "-la", "$target/") -Seconds 5
         }
         $deviceFiles = @{}  # lowercase filename -> size

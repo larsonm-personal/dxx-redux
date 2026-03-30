@@ -112,6 +112,30 @@ void PHYSFSX_init(int argc, char *argv[])
 
 		PHYSFS_addToSearchPath(PHYSFS_getBaseDir(), 1);
 		PHYSFSX_addRelToSearchPath("data", 1);
+
+		/* Mod support: mount enabled .dxa files listed in .active_mod_paths.
+		 * These are prepended (priority 0) so mod content overrides base
+		 * game files.  Written by Kotlin ModManager before launch. */
+		if (pref)
+		{
+			char modpath[512];
+			snprintf(modpath, sizeof(modpath), "%sd2x-redux/.active_mod_paths", pref);
+			FILE *mf = fopen(modpath, "r");
+			if (mf) {
+				char line[512];
+				while (fgets(line, sizeof(line), mf)) {
+					char *nl = strchr(line, '\n');
+					if (nl) *nl = '\0';
+					if (strlen(line) > 0) {
+						if (PHYSFS_mount(line, NULL, 0))
+							con_printf(CON_DEBUG, "PHYSFS: Mounted mod %s\n", line);
+						else
+							con_printf(CON_DEBUG, "PHYSFS: Failed to mount mod %s\n", line);
+					}
+				}
+				fclose(mf);
+			}
+		}
 	}
 	/* Android has no real argv (argv[0] is a PhysFS struct, not a string),
 	 * and the full ReadCmdArgs() path changes several GameArg defaults in

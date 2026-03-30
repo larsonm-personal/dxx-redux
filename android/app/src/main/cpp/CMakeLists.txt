@@ -397,6 +397,24 @@ if(NOT EXISTS "${_DECODERS_DIR}/dr_flac.h")
         "${_DECODERS_DIR}/dr_flac.h"
     )
 endif()
+set(_stb_image_need_dl TRUE)
+if(EXISTS "${_DECODERS_DIR}/stb_image.h")
+    file(SIZE "${_DECODERS_DIR}/stb_image.h" _stb_image_size)
+    if(_stb_image_size GREATER 0)
+        set(_stb_image_need_dl FALSE)
+    endif()
+endif()
+if(_stb_image_need_dl)
+    file(DOWNLOAD
+        "https://raw.githubusercontent.com/nothings/stb/013ac3beddff3dbffafd5177e7972067cd2b5083/stb_image.h"
+        "${_DECODERS_DIR}/stb_image.h"
+        STATUS _stb_img_dl_status
+    )
+    list(GET _stb_img_dl_status 0 _stb_img_dl_code)
+    if(NOT _stb_img_dl_code EQUAL 0)
+        message(FATAL_ERROR "Failed to download stb_image.h: ${_stb_img_dl_status}")
+    endif()
+endif()
 
 # ──────────────────────────────────────────────────────────────
 # 3c. TinySoundFont shared library  (MIDI synth, linked by both games)
@@ -527,6 +545,7 @@ target_sources(dxx-redux-d1 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_preview.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_enumeration.c
     ${CMAKE_CURRENT_SOURCE_DIR}/jni_midi_preview.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/pngfile_stb.c
 )
 target_include_directories(dxx-redux-d1 PRIVATE
     ${D1_SRC}/arch/include
@@ -535,9 +554,10 @@ target_include_directories(dxx-redux-d1 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared
     ${CMAKE_CURRENT_SOURCE_DIR}/extract
     ${_TSF_DIR}
+    ${_DECODERS_DIR}
 )
 
-target_compile_definitions(dxx-redux-d1 PRIVATE INTROSPECT_ON)
+target_compile_definitions(dxx-redux-d1 PRIVATE INTROSPECT_ON HAVE_LIBPNG)
 target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE INTROSPECT_ON)
 target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared)
 
@@ -553,7 +573,7 @@ target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ANDROID)
 target_link_libraries(${DXX_TARGET_PREFIX}arch_sdl tsf)
 
 if(OPENGL)
-target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE ANDROID)
+target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE ANDROID HAVE_LIBPNG)
 target_link_libraries(${DXX_TARGET_PREFIX}arch_ogl PRIVATE EGL GLESv1_CM)
 target_include_directories(${DXX_TARGET_PREFIX}arch_ogl PRIVATE
     ${D1_SRC}/arch/include
@@ -612,6 +632,7 @@ target_sources(dxx-redux-d2 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_preview.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/midi_enumeration.c
     ${CMAKE_CURRENT_SOURCE_DIR}/jni_midi_preview.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/pngfile_stb.c
 )
 target_include_directories(dxx-redux-d2 PRIVATE
     ${D2_SRC}/arch/include
@@ -620,12 +641,13 @@ target_include_directories(dxx-redux-d2 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared
     ${CMAKE_CURRENT_SOURCE_DIR}/extract
     ${_TSF_DIR}
+    ${_DECODERS_DIR}
 )
 
 # Enable introspection API (AI-assisted testing, debug Android builds only).
 # The Kotlin layer gates adb access behind BuildConfig.DEBUG.
 # Must also be set on arch_sdl since window.c and event.c live there.
-target_compile_definitions(dxx-redux-d2 PRIVATE INTROSPECT_ON)
+target_compile_definitions(dxx-redux-d2 PRIVATE INTROSPECT_ON HAVE_LIBPNG)
 target_compile_definitions(dxx-redux-d2 PRIVATE DXX_BUILD_DESCENT_II)
 target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE INTROSPECT_ON)
 target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared)
@@ -646,7 +668,7 @@ target_link_libraries(${DXX_TARGET_PREFIX}arch_sdl tsf)
 # OpenGL ES 1.1: link EGL + GLESv1_CM into the arch_ogl static library,
 # and add Android-specific include paths.
 if(OPENGL)
-target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE ANDROID)
+target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE ANDROID HAVE_LIBPNG)
 target_link_libraries(${DXX_TARGET_PREFIX}arch_ogl PRIVATE EGL GLESv1_CM)
 target_include_directories(${DXX_TARGET_PREFIX}arch_ogl PRIVATE
     ${D2_SRC}/arch/include

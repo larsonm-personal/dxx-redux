@@ -15,7 +15,7 @@ $ScriptDir = $PSScriptRoot
 $RepoRoot  = Split-Path $ScriptDir
 $OutFile   = Join-Path $ScriptDir "game_data_index.txt"
 
-$GameExtensions = @(".hog", ".pig", ".ham", ".mvl", ".s11", ".s22", ".mn2", ".gog", ".inst", ".exe")
+$GameExtensions = @(".hog", ".pig", ".ham", ".mvl", ".s11", ".s22", ".mn2", ".gog", ".inst", ".exe", ".dxa")
 
 # Search directories in priority order (first match per hash wins)
 $SearchDirs = @(
@@ -26,7 +26,8 @@ $SearchDirs = @(
     (Join-Path $RepoRoot "game_data\extracted\d1 mac extracted"),
     (Join-Path $RepoRoot "game_data\extracted\d2_mac_demo"),
     (Join-Path $RepoRoot "game_data\extracted\descent 1 demo 1-4_extracted"),
-    (Join-Path $RepoRoot "game_data\extracted\descent 2 demo 1-0_extracted")
+    (Join-Path $RepoRoot "game_data\extracted\descent 2 demo 1-0_extracted"),
+    (Join-Path $RepoRoot "game_data\mods")
 )
 
 # hash -> relative path (first seen wins)

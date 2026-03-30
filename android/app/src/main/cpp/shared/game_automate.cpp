@@ -195,7 +195,8 @@ enum step_type {
 /* Key-value pair for STEP_ASSERT expectations.
  * Simple equality: {"key": "3"} or {"key": 3}
  * Comparison ops:  {"key": {"ne": 0}}, {"key": {"gt": 100}},
- *                  {"key": {"range": [10, 1000]}} */
+ *                  {"key": {"range": [10, 1000]}},
+ *                  {"key": {"contains": "substring"}} */
 struct assert_expect {
 	std::string key;
 	std::string value;     /* for simple equality (op=="eq") */
@@ -216,6 +217,7 @@ struct auto_step {
 	std::string message;                /* STEP_LOG: message text */
 	std::vector<assert_expect> expects; /* STEP_ASSERT: expected values */
 	std::string select_text;            /* STEP_SELECT: partial text to match */
+	bool optional = false;              /* STEP_SELECT: skip instead of fail on timeout */
 	int axis_id = -1;                   /* STEP_SEND_AXIS: axis number (0-5) */
 	float axis_value = 0.0f;            /* STEP_SEND_AXIS: value (-1.0 to 1.0) */
 	int button_id = -1;                 /* STEP_SEND_BUTTON: button index */
@@ -678,6 +680,7 @@ static int parse_script(const char *json_text)
 			s.timeout_ms = step_json.value("timeout_ms", 0);
 			s.message = step_json.value("message", "");
 			s.select_text = step_json.value("text", "");
+			s.optional = step_json.value("optional", false);
 			s.axis_id = step_json.value("axis", -1);
 			s.axis_value = step_json.value("axis_value", 0.0f);
 			s.button_id = step_json.value("button", -1);
@@ -906,6 +909,22 @@ static std::string run_assertions(auto_step &s)
 			pass = is_num && actual_num >= ae.range_min && actual_num <= ae.range_max;
 			snprintf(desc, sizeof(desc), "\"%s\" in [%.4g, %.4g] (got %s)",
 			         ae.key.c_str(), ae.range_min, ae.range_max, actual_str.c_str());
+		} else if (ae.op == "contains") {
+			/* For arrays: any element substring-matches ae.value.
+			 * For strings: substring match. */
+			if (val.is_array()) {
+				for (const auto &elem : val) {
+					std::string es = elem.is_string() ? elem.get<std::string>() : elem.dump();
+					if (icontains(es.c_str(), ae.value.c_str())) {
+						pass = true;
+						break;
+					}
+				}
+			} else {
+				pass = icontains(actual_str.c_str(), ae.value.c_str());
+			}
+			snprintf(desc, sizeof(desc), "\"%s\" contains \"%s\" (got %s)",
+			         ae.key.c_str(), ae.value.c_str(), actual_str.c_str());
 		} else {
 			snprintf(desc, sizeof(desc), "\"%s\": unknown op \"%s\"",
 			         ae.key.c_str(), ae.op.c_str());
@@ -1117,6 +1136,12 @@ extern "C" void game_automate_tick(void)
 				if (!select_find_item(s.select_text.c_str(), &target, &current)) {
 					if (s.timeout_ms > 0 && elapsed < (Uint32) s.timeout_ms) {
 						break; /* retry next frame */
+					}
+					if (s.optional) {
+						con_printf(CON_DEBUG, "SELECT: optional item \"%s\" not found, skipping",
+						           s.select_text.c_str());
+						advance_step();
+						break;
 					}
 					char reason[256];
 					snprintf(reason, sizeof(reason),

@@ -292,6 +292,57 @@ class SetupActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Perform a click on a Compose button via its accessibility node.
+     * More reliable than touch injection because it bypasses coordinate
+     * mapping and uses the semantic click action directly.
+     * Returns true if the click was performed.
+     */
+    fun performAccessibilityClick(buttonText: String): Boolean {
+        val root = window.decorView
+        val composeView = findComposeView(root) ?: return false
+        val provider = composeView.accessibilityNodeProvider ?: return false
+
+        data class TextNode(
+            val text: String,
+            val bounds: Rect,
+        )
+
+        data class ClickNode(
+            val id: Int,
+            val bounds: Rect,
+        )
+
+        val textNodes = mutableListOf<TextNode>()
+        val clickNodes = mutableListOf<ClickNode>()
+
+        for (id in -1..16383) {
+            val info = provider.createAccessibilityNodeInfo(id) ?: continue
+            val bounds = Rect()
+            info.getBoundsInScreen(bounds)
+            if (bounds.width() > 0 && bounds.height() > 0) {
+                val text = info.text?.toString()
+                if (!text.isNullOrEmpty()) textNodes.add(TextNode(text, Rect(bounds)))
+                if (info.isClickable) clickNodes.add(ClickNode(id, Rect(bounds)))
+            }
+            info.recycle()
+        }
+
+        val lower = buttonText.lowercase()
+        for (click in clickNodes) {
+            val contained = textNodes.filter { click.bounds.contains(it.bounds) }
+            val label = contained.joinToString(" ") { it.text }
+            if (label.lowercase() == lower || label.lowercase().contains(lower)) {
+                return provider.performAction(
+                    click.id,
+                    android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK,
+                    null,
+                )
+            }
+        }
+        return false
+    }
+
     /** Inject a scroll-down swipe gesture (finger moves upward to scroll content down). */
     suspend fun scrollDown() {
         withContext(kotlinx.coroutines.Dispatchers.Main) {
@@ -383,6 +434,7 @@ class SetupActivity : ComponentActivity() {
     ) {
         FileSetManager(filesDir).writeActiveSetPath()
         AudioSourceManager(filesDir).writePlaylist(contentResolver)
+        ModManager(filesDir).writeEnabledModPaths(game)
         writeInitialGameConfig()
         writeMusicConfigForLaunch()
         val intent = Intent(this, MainActivity::class.java)
@@ -407,6 +459,7 @@ class SetupActivity : ComponentActivity() {
                             val game = intent.getStringExtra("game") ?: "d2"
                             FileSetManager(filesDir).writeActiveSetPath()
                             AudioSourceManager(filesDir).writePlaylist(contentResolver)
+                            ModManager(filesDir).writeEnabledModPaths(game)
                             writeInitialGameConfig()
                             writeMusicConfigForLaunch()
                             val launchIntent = Intent(this@SetupActivity, MainActivity::class.java)
@@ -1046,6 +1099,7 @@ class SetupActivity : ComponentActivity() {
         }
         FileSetManager(filesDir).writeActiveSetPath()
         AudioSourceManager(filesDir).writePlaylist(contentResolver)
+        ModManager(filesDir).writeEnabledModPaths(info.game)
         writeInitialGameConfig()
         writeMusicConfigForLaunch()
         val mpIntent = Intent(this, MainActivity::class.java)
@@ -1430,6 +1484,7 @@ class SetupActivity : ComponentActivity() {
                     } else {
                         FileSetManager(filesDir).writeActiveSetPath()
                         AudioSourceManager(filesDir).writePlaylist(contentResolver)
+                        ModManager(filesDir).writeEnabledModPaths(game)
                         writeInitialGameConfig()
                         writeMusicConfigForLaunch()
                         val intent = Intent(this, MainActivity::class.java)
@@ -2253,6 +2308,9 @@ private fun SetupScreen(
     var zipArchiveUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
     val audioCustomMgr = remember { CustomAudioSetManager(filesDir) }
 
+    // ── DXA mod import state ────────────────────────────
+    val dxaImportUris = remember { mutableListOf<Pair<String, Uri>>() }
+
     val filePickerLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.OpenMultipleDocuments(),
@@ -2288,6 +2346,7 @@ private fun SetupScreen(
                                 lname in ALL_GAME_FILENAMES -> gameUris.add(FoundFile(name, uri))
                                 lname.endsWith(".mp3") || lname.endsWith(".ogg") || lname.endsWith(".flac") ->
                                     audioFileUris.add(uri)
+                                lname.endsWith(".dxa") -> dxaImportUris.add(name to uri)
                                 else -> unhandledFiles.add(name)
                             }
                         }
@@ -2345,6 +2404,15 @@ private fun SetupScreen(
                             sowImportUri = it.second
                         }
                         scanning = false
+                    }
+                    // Import .dxa mod files (simple copy to mods dir)
+                    if (dxaImportUris.isNotEmpty()) {
+                        val modMgr = ModManager(filesDir)
+                        for ((name, uri) in dxaImportUris) {
+                            modMgr.importMod(uri, name, context.contentResolver)
+                        }
+                        dxaImportUris.clear()
+                        withContext(Dispatchers.Main) { onRefresh() }
                     }
                     // Handle ZIP/7z files
                     if (zipUris.isNotEmpty()) {
@@ -3355,6 +3423,12 @@ private fun SetupScreen(
                             d2RequiredOk || d1RequiredOk,
                         onEditMusic = { showMusicPage = true },
                     )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    ModsSection(
+                        filesDir = filesDir,
+                        refreshTrigger = refreshTrigger,
+                    )
                 }
 
                 val controlsPane: @Composable ColumnScope.() -> Unit = {
@@ -3588,6 +3662,156 @@ private fun SectionHeader(title: String) {
         color = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.padding(bottom = 4.dp, top = 2.dp),
     )
+}
+
+@Composable
+private fun ModsSection(
+    filesDir: File,
+    refreshTrigger: Int,
+) {
+    val modManager = remember { ModManager(filesDir) }
+    var mods by remember { mutableStateOf(modManager.listMods()) }
+    var expanded by remember { mutableStateOf(false) }
+    var deleteTarget by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(refreshTrigger) { mods = modManager.listMods() }
+
+    val enabledCount = mods.count { it.enabled }
+    val totalCount = mods.size
+    val summary = if (totalCount == 0) "none" else "$enabledCount of $totalCount enabled"
+
+    GameSectionHeader(
+        title = "Mods",
+        ready = true,
+        expanded = expanded,
+        onToggle = { expanded = !expanded },
+        notReadyLabel = summary,
+    )
+
+    if (expanded) {
+        if (mods.isEmpty()) {
+            Text(
+                "No mods installed. Use the file picker above to import .dxa files",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
+            )
+        } else {
+            // Override the ready/status label with our custom summary
+            Text(
+                summary,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+            )
+            mods.forEachIndexed { index, mod ->
+                ModRow(
+                    mod = mod,
+                    isFirst = index == 0,
+                    isLast = index == mods.size - 1,
+                    onToggle = { enabled ->
+                        modManager.setEnabled(mod.filename, enabled)
+                        mods = modManager.listMods()
+                    },
+                    onMoveUp = {
+                        modManager.moveUp(index)
+                        mods = modManager.listMods()
+                    },
+                    onMoveDown = {
+                        modManager.moveDown(index)
+                        mods = modManager.listMods()
+                    },
+                    onDelete = { deleteTarget = mod.filename },
+                )
+            }
+        }
+    }
+
+    // Delete confirmation dialog
+    deleteTarget?.let { filename ->
+        AlertDialog(
+            onDismissRequest = { deleteTarget = null },
+            title = { Text("Delete Mod") },
+            text = { Text("Remove $filename? This cannot be undone") },
+            confirmButton = {
+                TextButton(onClick = {
+                    modManager.deleteMod(filename)
+                    mods = modManager.listMods()
+                    deleteTarget = null
+                }) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteTarget = null }) { Text("Cancel") }
+            },
+        )
+    }
+}
+
+@Composable
+private fun ModRow(
+    mod: ModManager.ModInfo,
+    isFirst: Boolean,
+    isLast: Boolean,
+    onToggle: (Boolean) -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(start = 8.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(
+            checked = mod.enabled,
+            onCheckedChange = onToggle,
+            modifier = Modifier.size(20.dp),
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = mod.displayName,
+                fontSize = 12.sp,
+                color =
+                    if (mod.enabled) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+            )
+            Text(
+                text = "${formatSize(mod.sizeBytes)} - ${mod.game.uppercase()}",
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        // Move up
+        if (!isFirst) {
+            IconButton(onClick = onMoveUp, modifier = Modifier.size(24.dp)) {
+                Icon(Icons.Filled.KeyboardArrowUp, "Move up", modifier = Modifier.size(16.dp))
+            }
+        } else {
+            Spacer(modifier = Modifier.size(24.dp))
+        }
+        // Move down
+        if (!isLast) {
+            IconButton(onClick = onMoveDown, modifier = Modifier.size(24.dp)) {
+                Icon(Icons.Filled.KeyboardArrowDown, "Move down", modifier = Modifier.size(16.dp))
+            }
+        } else {
+            Spacer(modifier = Modifier.size(24.dp))
+        }
+        // Delete
+        TextButton(
+            onClick = onDelete,
+            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+            modifier = Modifier.height(24.dp),
+        ) {
+            Text("\u2717", fontSize = 12.sp, color = Color(0xFFFF5252))
+        }
+    }
 }
 
 @Composable

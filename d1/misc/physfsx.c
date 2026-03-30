@@ -112,6 +112,30 @@ void PHYSFSX_init(int argc, char *argv[])
 
 		PHYSFS_addToSearchPath(PHYSFS_getBaseDir(), 1);
 		PHYSFSX_addRelToSearchPath("data", 1);
+
+		/* Mod support: mount enabled .dxa files listed in .active_mod_paths.
+		 * These are prepended (priority 0) so mod content overrides base
+		 * game files.  Written by Kotlin ModManager before launch. */
+		if (pref)
+		{
+			char modpath[512];
+			snprintf(modpath, sizeof(modpath), "%sd1x-redux/.active_mod_paths", pref);
+			FILE *mf = fopen(modpath, "r");
+			if (mf) {
+				char line[512];
+				while (fgets(line, sizeof(line), mf)) {
+					char *nl = strchr(line, '\n');
+					if (nl) *nl = '\0';
+					if (strlen(line) > 0) {
+						if (PHYSFS_mount(line, NULL, 0))
+							con_printf(CON_DEBUG, "PHYSFS: Mounted mod %s\n", line);
+						else
+							con_printf(CON_DEBUG, "PHYSFS: Failed to mount mod %s\n", line);
+					}
+				}
+				fclose(mf);
+			}
+		}
 	}
 	GameArg.SysUsePlayersDir = 1; /* pilots in Players/ subdir, isolates D1/D2 */
 	return;

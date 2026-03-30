@@ -95,6 +95,8 @@ int androidaud_get_audio_buf_frames(void);
 
 #include <SDL_mixer.h>
 
+#include <physfs.h>
+
 #include "console_ringbuf.h"
 #include "overlay_ringbuf.h"
 
@@ -630,6 +632,22 @@ extern "C" char *game_introspect_get_state(void)
 		kb["blit_y_offset"] = (int) g_blit_y_offset;
 		kb["scale_blit_active"] = (bool) g_menu_scale_active;
 		j["keyboard_viewport"] = kb;
+	}
+
+	/* -- Mounted mods (PhysFS search path .dxa entries) --------------- */
+	{
+		json mods = json::array();
+		char **list = PHYSFS_getSearchPath();
+		if (list) {
+			for (char **i = list; *i != NULL; i++) {
+				const char *path = *i;
+				size_t len = strlen(path);
+				if (len > 4 && strcmp(path + len - 4, ".dxa") == 0)
+					mods.push_back(std::string(path));
+			}
+			PHYSFS_freeList(list);
+		}
+		j["mounted_mods"] = std::move(mods);
 	}
 
 	/* -- Recent console output (last 50 con_printf lines) ----------- */

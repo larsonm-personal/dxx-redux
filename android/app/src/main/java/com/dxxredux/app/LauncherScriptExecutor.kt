@@ -182,7 +182,9 @@ class LauncherScriptExecutor(
                     }
                     Log.i(TAG, "Writing config: $fileName")
                     withContext(Dispatchers.IO) {
-                        FileWriter(File(context.filesDir, fileName)).use { it.write(content) }
+                        val outFile = File(context.filesDir, fileName)
+                        outFile.parentFile?.mkdirs()
+                        FileWriter(outFile).use { it.write(content) }
                     }
                     currentStep++
                 }
@@ -237,7 +239,10 @@ class LauncherScriptExecutor(
                     if (launchesGame) {
                         pendingGameLaunch = PendingGameLaunch(scriptPath, currentStep + 1)
                     }
-                    activity.injectTapAt(button.centerX, button.centerY)
+                    if (!activity.performAccessibilityClick(text)) {
+                        // Fallback to touch injection
+                        activity.injectTapAt(button.centerX, button.centerY)
+                    }
                     delay(postDelay)
                     if (launchesGame) {
                         running = false

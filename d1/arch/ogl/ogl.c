@@ -1690,9 +1690,23 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 	{
 		char filename[64];
 		png_data pdata;
+		int png_loaded = 0;
 
+#ifdef ANDROID
+		/* Try multiple extensions -- stb_image handles all formats */
+		{
+			static const char *exts[] = {".png", ".jpg", ".tga"};
+			int ei;
+			for (ei = 0; ei < 3 && !png_loaded; ei++) {
+				sprintf(filename, "%s%s", bitmapname, exts[ei]);
+				png_loaded = read_png(filename, &pdata);
+			}
+		}
+#else
 		sprintf(filename, /*"textures/"*/ "%s.png", bitmapname);
-		if (read_png(filename, &pdata))
+		png_loaded = read_png(filename, &pdata);
+#endif
+		if (png_loaded)
 		{
 			con_printf(CON_DEBUG,"%s: %ux%ux%i p=%i(%i) c=%i a=%i chans=%i\n", filename, pdata.width, pdata.height, pdata.depth, pdata.paletted, pdata.num_palette, pdata.color, pdata.alpha, pdata.channels);
 			if (pdata.depth == 8 && pdata.color)
