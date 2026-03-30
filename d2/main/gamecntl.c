@@ -429,6 +429,15 @@ int do_game_pause()
 
 int HandleEndlevelKey(int key)
 {
+	#ifdef __ANDROID__
+	/* android port: ignore stale ESC for a short window after endlevel starts */
+	static fix64 endlevel_started_at = 0;
+	if (Endlevel_sequence && !endlevel_started_at)
+		endlevel_started_at = timer_query();
+	if (!Endlevel_sequence)
+		endlevel_started_at = 0;
+	#endif
+
 	switch (key)
 	{
 		case KEY_COMMAND+KEY_P:
@@ -437,6 +446,10 @@ int HandleEndlevelKey(int key)
 			return 1;
 
 		case KEY_ESC:
+			#ifdef __ANDROID__
+			if (endlevel_started_at && timer_query() < endlevel_started_at + (F1_0 / 2))
+				return 1;
+			#endif
 			stop_endlevel_sequence();
 			last_drawn_cockpit=-1;
 			return 1;

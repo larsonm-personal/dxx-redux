@@ -3,6 +3,7 @@ package com.dxxredux.app
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.os.SystemClock
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
@@ -46,6 +47,7 @@ class SkipButtonView(
     private var cy = 0f
     private var radius = 0f
     private var pressed = false
+    private var armAtMs = 0L
 
     private val pressedBgPaint =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -76,6 +78,19 @@ class SkipButtonView(
         canvas.drawText(label, cx, textY, textPaint)
     }
 
+    override fun onVisibilityChanged(
+        changedView: View,
+        visibility: Int,
+    ) {
+        super.onVisibilityChanged(changedView, visibility)
+        if (changedView === this && visibility == VISIBLE) {
+            // Ignore stale touch-up events during state transitions
+            armAtMs = SystemClock.uptimeMillis() + ARM_DELAY_MS
+            pressed = false
+            invalidate()
+        }
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         val dx = event.x - cx
         val dy = event.y - cy
@@ -83,6 +98,9 @@ class SkipButtonView(
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
+                if (SystemClock.uptimeMillis() < armAtMs) {
+                    return false
+                }
                 if (inside) {
                     pressed = true
                     invalidate()
@@ -108,5 +126,9 @@ class SkipButtonView(
     private fun injectEscape() {
         keyCallback?.invoke(0, KeyEvent.KEYCODE_ESCAPE, 0)
         keyCallback?.invoke(1, KeyEvent.KEYCODE_ESCAPE, 0)
+    }
+
+    companion object {
+        private const val ARM_DELAY_MS = 500L
     }
 }

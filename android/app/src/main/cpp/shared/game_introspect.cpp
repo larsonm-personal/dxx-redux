@@ -670,6 +670,7 @@ extern "C" char *game_introspect_get_state(void)
 		json tex;
 		tex["total_loaded"] = total;
 		tex["hires_count"] = replaced;
+		tex["hires_pct"] = (total > 0) ? (replaced * 100 / total) : 0;
 		tex["max_hires_w"] = max_w;
 		tex["max_hires_h"] = max_h;
 		j["hires_textures"] = tex;

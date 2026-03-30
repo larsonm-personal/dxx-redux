@@ -172,7 +172,7 @@ class VideoInfoOverlay(
 
         // Max hires texture resolution
         canvas.drawText("Max res:", panelLeft + pad, y, labelPaint)
-        val resText = if (hiresCount > 0) "${maxHiresW}x${maxHiresH}" else "n/a"
+        val resText = if (hiresCount > 0) "%dx%d".format(maxHiresW, maxHiresH) else "n/a"
         canvas.drawText(resText, panelLeft + pad + baseTextSize * 6f, y, valuePaint)
         y += lineH
 

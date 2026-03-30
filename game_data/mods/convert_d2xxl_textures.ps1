@@ -44,7 +44,11 @@ param(
 
     [string]$OutputDir = "",
 
-    [string]$SevenZip = "C:\Program Files\7-Zip\7z.exe"
+    [string]$SevenZip = "C:\Program Files\7-Zip\7z.exe",
+
+    [string]$ReadmeText = "",
+
+    [string]$Magick = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -130,12 +134,40 @@ function Read-TGA {
     return $bmp
 }
 
+function Convert-WithMagick {
+    param(
+        [string]$InputPath,
+        [string]$OutputPath,
+        [int]$MaxDim,
+        [string]$MagickPath
+    )
+    # ImageMagick pipeline: sRGB -> linear -> Lanczos resize -> micro-sharpen -> sRGB
+    $magickArgs = @(
+        $InputPath,
+        '-colorspace', 'RGB',
+        '-filter', 'Lanczos',
+        '-resize', "${MaxDim}x${MaxDim}",
+        '-unsharp', '0x0.4',
+        '-colorspace', 'sRGB'
+    )
+    if ($OutputPath -match '\.jpg$') {
+        $magickArgs += @('-quality', '92')
+    }
+    $magickArgs += $OutputPath
+    & $MagickPath $magickArgs 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "ImageMagick conversion failed for $InputPath"
+    }
+}
+
 function Convert-GameTextures {
     param(
         [string]$GameId,  # "d1" or "d2"
         [string]$ArchivePath,
         [string]$OutDir,
-        [int]$MaxDim
+        [int]$MaxDim,
+        [string]$Readme,
+        [string]$MagickPath
     )
 
     if (-not (Test-Path $ArchivePath)) {
@@ -151,9 +183,16 @@ function Convert-GameTextures {
     $dxaName = "d2xxl-hires-textures-${GameId}-${sizeSuffix}.dxa"
     $dxaPath = Join-Path $OutDir $dxaName
 
+    $useMagick = $MagickPath -and $MaxDim -gt 0 -and (Test-Path $MagickPath)
+
     Write-Host "=== Converting $GameId textures ==="
     Write-Host "  Archive: $ArchivePath"
     Write-Host "  Output:  $dxaPath"
+    if ($useMagick) {
+        Write-Host "  Downscale: ImageMagick Lanczos (linear-light)"
+    } elseif ($MaxDim -gt 0) {
+        Write-Host "  Downscale: System.Drawing (fallback)"
+    }
 
     # Extract TGA files from 7z
     Write-Host "  Extracting archive..."
@@ -181,43 +220,65 @@ function Convert-GameTextures {
     $skipped = 0
     $errors = 0
 
+    $magickOutDir = $null
+    if ($useMagick) {
+        $magickOutDir = Join-Path $tempDir "magick_out"
+        New-Item -ItemType Directory -Path $magickOutDir -Force | Out-Null
+    }
+
     foreach ($tga in $tgaFiles) {
         $baseName = [System.IO.Path]::GetFileNameWithoutExtension($tga.Name)
 
         try {
-            $bmp = Read-TGA $tga.FullName
+            # Read TGA header to detect alpha (bpp 32 = RGBA)
+            $headerBytes = [System.IO.File]::ReadAllBytes($tga.FullName)
+            if ($headerBytes.Length -lt 18) { throw "TGA too small: $($tga.Name)" }
+            $bpp = $headerBytes[16]
+            $hasAlpha = $bpp -eq 32
+            $ext = if ($hasAlpha) { 'png' } else { 'jpg' }
+            $entryName = "$baseName.$ext"
 
-            # Downscale if requested
-            if ($MaxDim -gt 0 -and ($bmp.Width -gt $MaxDim -or $bmp.Height -gt $MaxDim)) {
-                $scale = [Math]::Min($MaxDim / $bmp.Width, $MaxDim / $bmp.Height)
-                $newW = [int]($bmp.Width * $scale)
-                $newH = [int]($bmp.Height * $scale)
-                $resized = [System.Drawing.Bitmap]::new($bmp, $newW, $newH)
-                $bmp.Dispose()
-                $bmp = $resized
-            }
-
-            # RGBA (32-bit with alpha) -> PNG, RGB (24-bit opaque) -> JPEG
-            $hasAlpha = $bmp.PixelFormat -eq [System.Drawing.Imaging.PixelFormat]::Format32bppArgb
-            if ($hasAlpha) {
-                $entryName = "$baseName.png"
+            if ($useMagick) {
+                # ImageMagick path: high-quality linear-light Lanczos downscale
+                $outFile = Join-Path $magickOutDir $entryName
+                Convert-WithMagick -InputPath $tga.FullName -OutputPath $outFile -MaxDim $MaxDim -MagickPath $MagickPath
                 $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
                 $stream = $entry.Open()
-                $bmp.Save($stream, [System.Drawing.Imaging.ImageFormat]::Png)
+                $fileBytes = [System.IO.File]::ReadAllBytes($outFile)
+                $stream.Write($fileBytes, 0, $fileBytes.Length)
+                $stream.Close()
+                Remove-Item $outFile -ErrorAction SilentlyContinue
             } else {
-                $entryName = "$baseName.jpg"
-                $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
-                $stream = $entry.Open()
-                $jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() |
-                    Where-Object { $_.MimeType -eq "image/jpeg" }
-                $encoderParams = [System.Drawing.Imaging.EncoderParameters]::new(1)
-                $encoderParams.Param[0] = [System.Drawing.Imaging.EncoderParameter]::new(
-                    [System.Drawing.Imaging.Encoder]::Quality, [long]92
-                )
-                $bmp.Save($stream, $jpegCodec, $encoderParams)
+                # System.Drawing path: direct TGA parse + optional resize
+                $bmp = Read-TGA $tga.FullName
+
+                if ($MaxDim -gt 0 -and ($bmp.Width -gt $MaxDim -or $bmp.Height -gt $MaxDim)) {
+                    $scale = [Math]::Min($MaxDim / $bmp.Width, $MaxDim / $bmp.Height)
+                    $newW = [Math]::Max(1, [int]($bmp.Width * $scale))
+                    $newH = [Math]::Max(1, [int]($bmp.Height * $scale))
+                    $resized = [System.Drawing.Bitmap]::new($bmp, $newW, $newH)
+                    $bmp.Dispose()
+                    $bmp = $resized
+                }
+
+                if ($hasAlpha) {
+                    $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
+                    $stream = $entry.Open()
+                    $bmp.Save($stream, [System.Drawing.Imaging.ImageFormat]::Png)
+                } else {
+                    $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
+                    $stream = $entry.Open()
+                    $jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() |
+                        Where-Object { $_.MimeType -eq "image/jpeg" }
+                    $encoderParams = [System.Drawing.Imaging.EncoderParameters]::new(1)
+                    $encoderParams.Param[0] = [System.Drawing.Imaging.EncoderParameter]::new(
+                        [System.Drawing.Imaging.Encoder]::Quality, [long]92
+                    )
+                    $bmp.Save($stream, $jpegCodec, $encoderParams)
+                }
+                $stream.Close()
+                $bmp.Dispose()
             }
-            $stream.Close()
-            $bmp.Dispose()
 
             $converted++
             if ($converted % 50 -eq 0) {
@@ -235,28 +296,39 @@ function Convert-GameTextures {
         $entryName = "$baseName.jpg"
 
         try {
-            $bmp = [System.Drawing.Bitmap]::new($jpg.FullName)
+            if ($useMagick) {
+                $outFile = Join-Path $magickOutDir $entryName
+                Convert-WithMagick -InputPath $jpg.FullName -OutputPath $outFile -MaxDim $MaxDim -MagickPath $MagickPath
+                $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
+                $stream = $entry.Open()
+                $fileBytes = [System.IO.File]::ReadAllBytes($outFile)
+                $stream.Write($fileBytes, 0, $fileBytes.Length)
+                $stream.Close()
+                Remove-Item $outFile -ErrorAction SilentlyContinue
+            } else {
+                $bmp = [System.Drawing.Bitmap]::new($jpg.FullName)
 
-            if ($MaxDim -gt 0 -and ($bmp.Width -gt $MaxDim -or $bmp.Height -gt $MaxDim)) {
-                $scale = [Math]::Min($MaxDim / $bmp.Width, $MaxDim / $bmp.Height)
-                $newW = [int]($bmp.Width * $scale)
-                $newH = [int]($bmp.Height * $scale)
-                $resized = [System.Drawing.Bitmap]::new($bmp, $newW, $newH)
+                if ($MaxDim -gt 0 -and ($bmp.Width -gt $MaxDim -or $bmp.Height -gt $MaxDim)) {
+                    $scale = [Math]::Min($MaxDim / $bmp.Width, $MaxDim / $bmp.Height)
+                    $newW = [Math]::Max(1, [int]($bmp.Width * $scale))
+                    $newH = [Math]::Max(1, [int]($bmp.Height * $scale))
+                    $resized = [System.Drawing.Bitmap]::new($bmp, $newW, $newH)
+                    $bmp.Dispose()
+                    $bmp = $resized
+                }
+
+                $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
+                $stream = $entry.Open()
+                $jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() |
+                    Where-Object { $_.MimeType -eq "image/jpeg" }
+                $encoderParams = [System.Drawing.Imaging.EncoderParameters]::new(1)
+                $encoderParams.Param[0] = [System.Drawing.Imaging.EncoderParameter]::new(
+                    [System.Drawing.Imaging.Encoder]::Quality, [long]92
+                )
+                $bmp.Save($stream, $jpegCodec, $encoderParams)
+                $stream.Close()
                 $bmp.Dispose()
-                $bmp = $resized
             }
-
-            $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
-            $stream = $entry.Open()
-            $jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() |
-                Where-Object { $_.MimeType -eq "image/jpeg" }
-            $encoderParams = [System.Drawing.Imaging.EncoderParameters]::new(1)
-            $encoderParams.Param[0] = [System.Drawing.Imaging.EncoderParameter]::new(
-                [System.Drawing.Imaging.Encoder]::Quality, [long]92
-            )
-            $bmp.Save($stream, $jpegCodec, $encoderParams)
-            $stream.Close()
-            $bmp.Dispose()
             $converted++
         } catch {
             Write-Host "  ERROR converting $($jpg.Name): $_"
@@ -264,9 +336,16 @@ function Convert-GameTextures {
         }
     }
 
-    $zip.Dispose()
+    # Add README.md if provided
+    if ($Readme) {
+        $readmeEntry = $zip.CreateEntry("README.md", [System.IO.Compression.CompressionLevel]::Optimal)
+        $readmeStream = $readmeEntry.Open()
+        $readmeBytes = [System.Text.Encoding]::UTF8.GetBytes($Readme)
+        $readmeStream.Write($readmeBytes, 0, $readmeBytes.Length)
+        $readmeStream.Close()
+    }
 
-    # Clean up temp
+    $zip.Dispose()
     Remove-Item -Recurse -Force $tempDir
 
     $dxaSize = (Get-Item $dxaPath).Length / 1MB
@@ -284,7 +363,7 @@ if (-not (Test-Path $SevenZip)) {
 $games = if ($Game -eq "both") { @("d1", "d2") } else { @($Game) }
 
 foreach ($g in $games) {
-    Convert-GameTextures -GameId $g -ArchivePath $archives[$g] -OutDir $OutputDir -MaxDim $MaxSize
+    Convert-GameTextures -GameId $g -ArchivePath $archives[$g] -OutDir $OutputDir -MaxDim $MaxSize -Readme $ReadmeText -MagickPath $Magick
 }
 
 Write-Host ""
