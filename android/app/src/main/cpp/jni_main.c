@@ -520,3 +520,52 @@ Java_com_dxxredux_app_MainActivity_nativeGetNetgameState(JNIEnv *env, jobject th
 		(*env)->SetIntArrayRegion(env, result, 0, NGS_SIZE, buf);
 	return result;
 }
+
+/* ── Video stats query for video info overlay ──────────────────
+ * Returns an int array:
+ *   [0] = g_current_fps   (frames per second, 1-second window)
+ *   [1] = total_loaded     (textures with a loaded GL texture)
+ *   [2] = hires_count      (hi-res PNG replacement textures)
+ *   [3] = max_hires_w      (max width among hi-res textures)
+ *   [4] = max_hires_h      (max height among hi-res textures)
+ *   [5] = ogl_max_texture_size (engine GL texture cap)
+ *
+ * android port: video diagnostics overlay
+ */
+#include "piggy.h"
+#include "ogl_init.h"
+JNIEXPORT jintArray JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz)
+{
+	extern int g_current_fps;
+	extern int ogl_max_texture_size;
+
+	enum { VS_SIZE = 6 };
+	jint buf[VS_SIZE];
+
+	buf[0] = (jint) g_current_fps;
+
+	/* Count hi-res textures (same logic as game_introspect.cpp) */
+	int total = 0, replaced = 0, max_w = 0, max_h = 0;
+	for (int i = 0; i < Num_bitmap_files; i++) {
+		ogl_texture *t = GameBitmaps[i].gltexture;
+		if (!t || t->w == 0)
+			continue;
+		total++;
+		if (t->is_png) {
+			replaced++;
+			if (t->w > max_w) max_w = t->w;
+			if (t->h > max_h) max_h = t->h;
+		}
+	}
+	buf[1] = (jint) total;
+	buf[2] = (jint) replaced;
+	buf[3] = (jint) max_w;
+	buf[4] = (jint) max_h;
+	buf[5] = (jint) ogl_max_texture_size;
+
+	jintArray result = (*env)->NewIntArray(env, VS_SIZE);
+	if (result)
+		(*env)->SetIntArrayRegion(env, result, 0, VS_SIZE, buf);
+	return result;
+}

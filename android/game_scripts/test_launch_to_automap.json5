@@ -106,5 +106,11 @@
         "resolution.display_height": {"gt": 0}
     }},
     {"action": "log", "message": "=== Resolution introspection verified ==="},
+
+    // Verify no hires textures in base game (no mods loaded)
+    {"action": "assert", "expect": {
+        "hires_textures.hires_count": "0"
+    }},
+    {"action": "log", "message": "=== Base game hires_count=0 verified ==="},
     {"action": "introspect"}
 ]

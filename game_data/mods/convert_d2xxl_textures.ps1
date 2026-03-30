@@ -1,0 +1,292 @@
+<#
+.SYNOPSIS
+    Converts d2x-xl high-res TGA texture packs into .dxa (ZIP) files
+    loadable by the DXX-Rebirth/Redux engine.
+
+.DESCRIPTION
+    Extracts TGA files from the d2x-xl 7z archives, converts them to
+    JPEG (RGB opaque) or PNG (RGBA with alpha), and packages them into
+    .dxa files (ZIP archives). The engine auto-mounts .dxa files and
+    the texture replacement system looks for {bitmapname}.{png,jpg,tga}
+    via PhysFS.
+
+    JPEG is used for opaque textures (3-5x smaller than PNG at quality 92).
+    PNG is kept for textures with alpha channels (JPEG can't store alpha).
+    ZIP entries use NoCompression since both formats are already compressed.
+
+    Requires: 7-Zip (7z.exe), PowerShell 5.1+ with System.Drawing
+
+.PARAMETER Game
+    Which game to convert: "d1", "d2", or "both" (default: "both")
+
+.PARAMETER MaxSize
+    Maximum texture dimension. Textures larger than this are downscaled.
+    Default: 0 (no limit). Useful values: 512, 1024
+
+.PARAMETER TexSize
+    Source archive texture size: 256 or 512. Default: 0 (use 512x512).
+    Selects between D{1,2}-textures-256x256.7z and D{1,2}-textures-512x512.7z
+
+.PARAMETER OutputDir
+    Output directory for .dxa files. Default: same directory as this script
+
+.PARAMETER SevenZip
+    Path to 7z.exe. Default: "C:\Program Files\7-Zip\7z.exe"
+#>
+param(
+    [ValidateSet("d1", "d2", "both")]
+    [string]$Game = "both",
+
+    [ValidateSet(0, 256, 512)]
+    [int]$TexSize = 0,
+
+    [int]$MaxSize = 0,
+
+    [string]$OutputDir = "",
+
+    [string]$SevenZip = "C:\Program Files\7-Zip\7z.exe"
+)
+
+$ErrorActionPreference = "Stop"
+Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (-not $OutputDir) { $OutputDir = $scriptDir }
+
+# TexSize 0 means use the 512x512 archives (original behavior)
+$actualTexSize = if ($TexSize -eq 0) { 512 } else { $TexSize }
+$archives = @{
+    d1 = Join-Path $scriptDir "d2x-xl\D1-textures-${actualTexSize}x${actualTexSize}.7z"
+    d2 = Join-Path $scriptDir "d2x-xl\D2-textures-${actualTexSize}x${actualTexSize}.7z"
+}
+
+function Read-TGA {
+    param([string]$Path)
+
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    if ($bytes.Length -lt 18) { throw "TGA too small: $Path" }
+
+    $identSize   = $bytes[0]
+    $colorMapType = $bytes[1]
+    $imageType   = $bytes[2]
+    # Color map spec: bytes 3-7
+    $cmapStart   = [BitConverter]::ToUInt16($bytes, 3)
+    $cmapLength  = [BitConverter]::ToUInt16($bytes, 5)
+    $cmapBits    = $bytes[7]
+    # Image spec: bytes 8-17
+    $xOrigin     = [BitConverter]::ToUInt16($bytes, 8)
+    $yOrigin     = [BitConverter]::ToUInt16($bytes, 10)
+    $width       = [BitConverter]::ToUInt16($bytes, 12)
+    $height      = [BitConverter]::ToUInt16($bytes, 14)
+    $bpp         = $bytes[16]
+    $descriptor  = $bytes[17]
+
+    if ($imageType -ne 2) {
+        throw "Unsupported TGA type $imageType (only uncompressed RGB/RGBA supported): $Path"
+    }
+    if ($bpp -ne 24 -and $bpp -ne 32) {
+        throw "Unsupported TGA bpp $bpp (only 24 or 32 supported): $Path"
+    }
+
+    $channels = $bpp / 8
+    $topToBottom = ($descriptor -band 0x20) -ne 0
+
+    # Skip ID field and color map
+    $dataOffset = 18 + $identSize
+    if ($colorMapType -eq 1) {
+        $dataOffset += $cmapLength * [Math]::Ceiling($cmapBits / 8)
+    }
+
+    $pixelFmt = if ($channels -eq 4) {
+        [System.Drawing.Imaging.PixelFormat]::Format32bppArgb
+    } else {
+        [System.Drawing.Imaging.PixelFormat]::Format24bppRgb
+    }
+
+    $bmp = [System.Drawing.Bitmap]::new($width, $height, $pixelFmt)
+    $bmpData = $bmp.LockBits(
+        [System.Drawing.Rectangle]::new(0, 0, $width, $height),
+        [System.Drawing.Imaging.ImageLockMode]::WriteOnly,
+        $pixelFmt
+    )
+
+    $stride = $bmpData.Stride
+    $scan0 = $bmpData.Scan0
+    $rowBytes = $width * $channels
+
+    for ($row = 0; $row -lt $height; $row++) {
+        # TGA default is bottom-to-top unless top-to-bottom flag is set
+        $srcRow = if ($topToBottom) { $row } else { $height - 1 - $row }
+        $srcOffset = $dataOffset + $srcRow * $rowBytes
+        # TGA stores BGR(A), System.Drawing also uses BGR(A), so direct copy works
+        [System.Runtime.InteropServices.Marshal]::Copy(
+            $bytes, $srcOffset, [IntPtr]::Add($scan0, $row * $stride), $rowBytes
+        )
+    }
+
+    $bmp.UnlockBits($bmpData)
+    return $bmp
+}
+
+function Convert-GameTextures {
+    param(
+        [string]$GameId,  # "d1" or "d2"
+        [string]$ArchivePath,
+        [string]$OutDir,
+        [int]$MaxDim
+    )
+
+    if (-not (Test-Path $ArchivePath)) {
+        Write-Host "Archive not found: $ArchivePath -- skipping $GameId"
+        return
+    }
+
+    $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "dxx_tex_convert_$GameId"
+    if (Test-Path $tempDir) { Remove-Item -Recurse -Force $tempDir }
+    New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+
+    $sizeSuffix = if ($MaxDim -gt 0 -and $MaxDim -lt $actualTexSize) { $MaxDim } else { $actualTexSize }
+    $dxaName = "d2xxl-hires-textures-${GameId}-${sizeSuffix}.dxa"
+    $dxaPath = Join-Path $OutDir $dxaName
+
+    Write-Host "=== Converting $GameId textures ==="
+    Write-Host "  Archive: $ArchivePath"
+    Write-Host "  Output:  $dxaPath"
+
+    # Extract TGA files from 7z
+    Write-Host "  Extracting archive..."
+    $extractDir = Join-Path $tempDir "extract"
+    & $SevenZip x "-o$extractDir" $ArchivePath -y 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "7z extraction failed" }
+
+    $tgaDir = Join-Path (Join-Path $extractDir "textures") $GameId
+    if (-not (Test-Path $tgaDir)) {
+        Write-Host "  No textures/$GameId directory found in archive -- skipping"
+        Remove-Item -Recurse -Force $tempDir
+        return
+    }
+
+    $tgaFiles = Get-ChildItem -Path $tgaDir -Filter "*.tga" -File
+    $jpgFiles = Get-ChildItem -Path $tgaDir -Filter "*.jpg" -File -ErrorAction SilentlyContinue
+    $total = $tgaFiles.Count + ($jpgFiles | Measure-Object).Count
+    Write-Host "  Found $total texture files"
+
+    # Create ZIP (dxa)
+    if (Test-Path $dxaPath) { Remove-Item $dxaPath }
+    $zip = [System.IO.Compression.ZipFile]::Open($dxaPath, [System.IO.Compression.ZipArchiveMode]::Create)
+
+    $converted = 0
+    $skipped = 0
+    $errors = 0
+
+    foreach ($tga in $tgaFiles) {
+        $baseName = [System.IO.Path]::GetFileNameWithoutExtension($tga.Name)
+
+        try {
+            $bmp = Read-TGA $tga.FullName
+
+            # Downscale if requested
+            if ($MaxDim -gt 0 -and ($bmp.Width -gt $MaxDim -or $bmp.Height -gt $MaxDim)) {
+                $scale = [Math]::Min($MaxDim / $bmp.Width, $MaxDim / $bmp.Height)
+                $newW = [int]($bmp.Width * $scale)
+                $newH = [int]($bmp.Height * $scale)
+                $resized = [System.Drawing.Bitmap]::new($bmp, $newW, $newH)
+                $bmp.Dispose()
+                $bmp = $resized
+            }
+
+            # RGBA (32-bit with alpha) -> PNG, RGB (24-bit opaque) -> JPEG
+            $hasAlpha = $bmp.PixelFormat -eq [System.Drawing.Imaging.PixelFormat]::Format32bppArgb
+            if ($hasAlpha) {
+                $entryName = "$baseName.png"
+                $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
+                $stream = $entry.Open()
+                $bmp.Save($stream, [System.Drawing.Imaging.ImageFormat]::Png)
+            } else {
+                $entryName = "$baseName.jpg"
+                $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
+                $stream = $entry.Open()
+                $jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() |
+                    Where-Object { $_.MimeType -eq "image/jpeg" }
+                $encoderParams = [System.Drawing.Imaging.EncoderParameters]::new(1)
+                $encoderParams.Param[0] = [System.Drawing.Imaging.EncoderParameter]::new(
+                    [System.Drawing.Imaging.Encoder]::Quality, [long]92
+                )
+                $bmp.Save($stream, $jpegCodec, $encoderParams)
+            }
+            $stream.Close()
+            $bmp.Dispose()
+
+            $converted++
+            if ($converted % 50 -eq 0) {
+                Write-Host "  Converted $converted / $total..."
+            }
+        } catch {
+            Write-Host "  ERROR converting $($tga.Name): $_"
+            $errors++
+        }
+    }
+
+    # Handle JPG files (keep as JPEG, just add to zip)
+    foreach ($jpg in $jpgFiles) {
+        $baseName = [System.IO.Path]::GetFileNameWithoutExtension($jpg.Name)
+        $entryName = "$baseName.jpg"
+
+        try {
+            $bmp = [System.Drawing.Bitmap]::new($jpg.FullName)
+
+            if ($MaxDim -gt 0 -and ($bmp.Width -gt $MaxDim -or $bmp.Height -gt $MaxDim)) {
+                $scale = [Math]::Min($MaxDim / $bmp.Width, $MaxDim / $bmp.Height)
+                $newW = [int]($bmp.Width * $scale)
+                $newH = [int]($bmp.Height * $scale)
+                $resized = [System.Drawing.Bitmap]::new($bmp, $newW, $newH)
+                $bmp.Dispose()
+                $bmp = $resized
+            }
+
+            $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
+            $stream = $entry.Open()
+            $jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() |
+                Where-Object { $_.MimeType -eq "image/jpeg" }
+            $encoderParams = [System.Drawing.Imaging.EncoderParameters]::new(1)
+            $encoderParams.Param[0] = [System.Drawing.Imaging.EncoderParameter]::new(
+                [System.Drawing.Imaging.Encoder]::Quality, [long]92
+            )
+            $bmp.Save($stream, $jpegCodec, $encoderParams)
+            $stream.Close()
+            $bmp.Dispose()
+            $converted++
+        } catch {
+            Write-Host "  ERROR converting $($jpg.Name): $_"
+            $errors++
+        }
+    }
+
+    $zip.Dispose()
+
+    # Clean up temp
+    Remove-Item -Recurse -Force $tempDir
+
+    $dxaSize = (Get-Item $dxaPath).Length / 1MB
+    Write-Host "  Done: $converted converted, $errors errors"
+    Write-Host "  Output: $dxaPath ($([Math]::Round($dxaSize, 1)) MB)"
+}
+
+# ── Main ──
+
+if (-not (Test-Path $SevenZip)) {
+    Write-Error "7-Zip not found at: $SevenZip"
+    exit 1
+}
+
+$games = if ($Game -eq "both") { @("d1", "d2") } else { @($Game) }
+
+foreach ($g in $games) {
+    Convert-GameTextures -GameId $g -ArchivePath $archives[$g] -OutDir $OutputDir -MaxDim $MaxSize
+}
+
+Write-Host ""
+Write-Host "Conversion complete. Place .dxa files in the game data directory"
+Write-Host "to enable hires textures (requires HAVE_LIBPNG / PNG build option)"

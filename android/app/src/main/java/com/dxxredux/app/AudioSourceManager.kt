@@ -100,6 +100,11 @@ class AudioSourceManager(
         save()
     }
 
+    fun clearAll() {
+        sources.clear()
+        save()
+    }
+
     /**
      * Remove sources whose BIN/CUE files no longer exist on disk.
      * Checks paths relative to filesDir with case-insensitive matching
@@ -177,15 +182,25 @@ class AudioSourceManager(
             val entry = JSONObject()
             entry.put("cue", src.cuePath)
             val bins = JSONArray()
-            if (src.binContentUri != null && resolver != null) {
-                // SAF source: open fd and use /proc/self/fd path
+            if (src.binContentUri != null) {
+                // SAF source (or test filesystem path): open fd and use /proc/self/fd path
                 try {
-                    val pfd = resolver.openFileDescriptor(Uri.parse(src.binContentUri), "r")
+                    val pfd = if (src.binContentUri.startsWith("/")) {
+                        // Test mode: direct filesystem path
+                        ParcelFileDescriptor.open(
+                            File(src.binContentUri),
+                            ParcelFileDescriptor.MODE_READ_ONLY,
+                        )
+                    } else if (resolver != null) {
+                        resolver.openFileDescriptor(Uri.parse(src.binContentUri), "r")
+                    } else {
+                        null
+                    }
                     if (pfd != null) {
                         activePfds.add(pfd)
                         bins.put("/proc/self/fd/${pfd.fd}")
                     } else {
-                        Log.w(TAG, "Could not open SAF URI for ${src.discLabel}")
+                        Log.w(TAG, "Could not open BIN for ${src.discLabel}")
                         src.binPaths.forEach { bins.put(it) }
                     }
                 } catch (e: Exception) {

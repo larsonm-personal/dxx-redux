@@ -1,0 +1,109 @@
+// TEST: SAF Redbook Audio Regression
+//
+// Verifies that BIN/CUE CD audio registered via SAF-style reference
+// (binContentUri) is playable in-game. The BIN is opened via fd in the
+// game process.
+//
+// Root cause of the original bug: MainActivity runs in :game process,
+// PFDs opened in the launcher process had fd numbers invalid in the
+// game process.
+//
+// Prerequisites (handled by PS1 wrapper):
+//   - test_disc.bin pushed to /data/local/tmp/test_disc.bin
+//   - test_disc.cue pushed to app filesDir
+[
+    {"_info": {
+        "games": ["d2"],
+        "_standalone": false,
+        "_deps": [
+            {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
+            {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
+            {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"},
+            {"file": "descent2.s22", "sha256": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728"},
+            {"file": "alien1.pig", "sha256": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233"},
+            {"file": "alien2.pig", "sha256": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055"},
+            {"file": "fire.pig", "sha256": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156"},
+            {"file": "ice.pig", "sha256": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1"},
+            {"file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"},
+            {"file": "descent.hog", "sha256": "83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052"},
+            {"file": "descent.pig", "sha256": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe"}
+        ]
+    }},
+
+    // ── Phase 1: Launcher setup ─────────────────────────────────
+
+    {"action": "enter_launcher"},
+    {"action": "log", "message": "=== SAF Redbook Audio Regression Test ==="},
+
+    // Clear any previous audio sources and mods
+    {"action": "setup_command", "command": "clear_audio_sources", "post_delay_ms": 500},
+    // Write empty mod manifest so no mods are loaded
+    {"action": "write_config", "file": "mods/mod_manifest.json",
+     "content": "{\"mods\":[]}"},
+
+    // Register test disc as a SAF-style source (BIN via filesystem path)
+    {"action": "setup_command", "command": "add_audio_source",
+     "args": {
+         "bin_path": "/data/local/tmp/test_disc.bin",
+         "cue_name": "test_disc.cue",
+         "label": "Test Disc",
+         "id": "test-saf-regression"
+     }, "post_delay_ms": 500},
+
+    // Verify audio source registered via setup introspection
+    {"action": "setup_introspect"},
+    {"action": "assert", "expect": {
+        "audio_sources[0].disc_id": "test-saf-regression"
+    }},
+    {"action": "log", "message": "Audio source registered with SAF-style BIN path"},
+
+    // ── Phase 2: Launch game ────────────────────────────────────
+
+    {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
+
+    // Accept default pilot name
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
+
+    // Main menu -> New game
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
+
+    // Mission select
+    {"action": "select", "text": "Counterstrike", "post_delay_ms": 100, "timeout_ms": 5000},
+    // Starting level
+    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
+    // Difficulty
+    {"action": "wait_ms", "ms": 500},
+    {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 10000},
+
+    // Skip briefing
+    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 100},
+
+    // Wait for game
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 20000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+
+    // Let music system initialize
+    {"action": "wait_ms", "ms": 2000},
+
+    // ── Phase 3: Verify redbook loaded ──────────────────────────
+
+    {"action": "introspect"},
+    {"action": "assert", "expect": {
+        "in_game": "true",
+        "screen_mode": "game",
+        "current_level_num": "1",
+        "redbook.enabled": "true",
+        "redbook.num_tracks": {"gte": 2}
+    }},
+    {"action": "log", "message": "Redbook enabled with tracks loaded via SAF fd path"},
+
+    // Verify no hires textures in base game (Task 2 coverage)
+    {"action": "assert", "expect": {
+        "hires_textures.hires_count": "0"
+    }},
+    {"action": "log", "message": "Confirmed hires_count=0 in base game (no mods)"},
+
+    {"action": "log", "message": "=== TEST: SAF Redbook Audio -- ALL CHECKS PASS ==="}
+]

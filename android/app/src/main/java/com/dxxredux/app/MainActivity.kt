@@ -203,6 +203,10 @@ class MainActivity :
     // android port: game state polling for matchmaking server updates
     external fun nativeGetNetgameState(): IntArray
 
+    // Video stats: [fps, total_loaded, hires_count, max_hires_w, max_hires_h, gl_max_tex_size]
+    // android port: video diagnostics overlay
+    external fun nativeGetVideoStats(): IntArray
+
     external fun nativeSetAutoJoin(
         hostAddr: String,
         hostPort: Int,
@@ -260,6 +264,7 @@ class MainActivity :
     private var musicPanel: MusicControlPanel? = null
     private var netStatsOverlay: com.dxxredux.app.multiplayer.MultiplayerStatsOverlay? = null
     private var netEventsOverlay: com.dxxredux.app.multiplayer.NetworkEventsOverlay? = null
+    private var videoInfoOverlay: VideoInfoOverlay? = null
     private var netEventsManualToggle = false
     private var isMultiplayerGame = false
     private var lastTrackNum = -1 // for detecting track changes in polling
@@ -315,6 +320,11 @@ class MainActivity :
         val libName = if (game == "d1") "dxx-redux-d1" else "dxx-redux-d2"
         System.loadLibrary(libName)
         Log.i("MainActivity", "Loaded native library: $libName")
+
+        // Rewrite audio playlist in the game process so SAF fds are valid.
+        // SetupActivity runs in the default process; this activity runs in
+        // :game.  PFDs opened there have fd numbers that don't exist here.
+        AudioSourceManager(filesDir).writePlaylist(contentResolver)
 
         // Check for multiplayer auto-join/host from the matchmaking lobby
         val mpMode = intent.getStringExtra("mp_mode")
@@ -487,6 +497,9 @@ class MainActivity :
                 }
                 TouchOverlayView.ADMIN_EXIT_LAUNCHER -> {
                     NativeMetaActions.nativeMetaAction(TouchBindings.META_RETURN_TO_LAUNCHER, 1)
+                }
+                TouchOverlayView.ADMIN_VIDEO_INFO -> {
+                    videoInfoOverlay?.toggle()
                 }
             }
         }
@@ -693,6 +706,27 @@ class MainActivity :
         netEventsOverlay = eventsOverlay
         frame.addView(
             eventsOverlay,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
+
+        // Video info overlay (hidden by default, toggled via admin tray)
+        val vidOverlay =
+            VideoInfoOverlay(this).apply {
+                visibility = View.GONE
+                statsProvider = {
+                    try {
+                        nativeGetVideoStats()
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
+            }
+        videoInfoOverlay = vidOverlay
+        frame.addView(
+            vidOverlay,
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -923,6 +957,7 @@ class MainActivity :
                             exitButton.visibility = if (shouldShow) View.GONE else View.VISIBLE
                             // Hide net stats overlay when returning to menus
                             if (!inGame) netStatsOverlay?.hide()
+                            if (!inGame) videoInfoOverlay?.hide()
                             // Show "START GAME" button when host is on player selection screen
                             val hostSelecting =
                                 try {
@@ -981,6 +1016,7 @@ class MainActivity :
                         acceptJoinButton.visibility = View.GONE
                         netStatsOverlay?.hide()
                         netEventsOverlay?.hide()
+                        videoInfoOverlay?.hide()
                         netEventsManualToggle = false
                     }
                     overlayPoller.postDelayed(this, 100)

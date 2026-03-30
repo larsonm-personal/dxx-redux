@@ -1,0 +1,9 @@
+FILE "test_disc.bin" BINARY
+  TRACK 01 MODE1/2352
+    INDEX 01 00:00:00
+  TRACK 02 AUDIO
+    TITLE "Test Track 2"
+    INDEX 01 00:00:10
+  TRACK 03 AUDIO
+    TITLE "Test Track 3"
+    INDEX 01 00:00:20

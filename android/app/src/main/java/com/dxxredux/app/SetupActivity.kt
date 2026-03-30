@@ -630,6 +630,38 @@ class SetupActivity : ComponentActivity() {
                         CdPreviewBridge.stop()
                         Log.i("DXX-Setup", "music_cd_stop: stopped")
                     }
+                    "add_audio_source" -> {
+                        // Test automation: register a BIN/CUE audio source.
+                        // bin_path: absolute filesystem path to the BIN file
+                        // cue_name: filename of the CUE file (in filesDir)
+                        // label: human-readable disc label
+                        val binPath = intent.getStringExtra("bin_path") ?: return
+                        val cueName = intent.getStringExtra("cue_name") ?: return
+                        val label = intent.getStringExtra("label") ?: "Test Disc"
+                        val id = intent.getStringExtra("id") ?: "test-${System.currentTimeMillis()}"
+                        val srcManager = AudioSourceManager(filesDir)
+                        srcManager.addSource(
+                            AudioSourceManager.AudioSource(
+                                id = id,
+                                cuePath = cueName,
+                                binPaths = listOf(cueName.replace(".cue", ".bin")),
+                                discLabel = label,
+                                discId = id,
+                                trackCount = 0,
+                                audioTrackCount = 0,
+                                legacyDiscId = 0,
+                                binContentUri = binPath,
+                            ),
+                        )
+                        enableRedbookInConfig(filesDir, this@SetupActivity)
+                        Log.i("DXX-Setup", "add_audio_source: id=$id bin=$binPath cue=$cueName")
+                    }
+                    "clear_audio_sources" -> {
+                        val srcManager = AudioSourceManager(filesDir)
+                        srcManager.clearAll()
+                        File(filesDir, "audio_playlist.json").delete()
+                        Log.i("DXX-Setup", "clear_audio_sources: cleared all")
+                    }
                     else -> Log.w("DXX-Setup", "Unknown command: $cmd")
                 }
             }
@@ -3688,9 +3720,27 @@ private fun ModsSection(
     var expanded by remember { mutableStateOf(false) }
     var deleteTarget by remember { mutableStateOf<String?>(null) }
     val modDownloadProgress = remember { mutableStateMapOf<String, Int>() }
+    // Cache DXA scan results per filename
+    val scanCache = remember { mutableStateMapOf<String, DxaTextureScanner.ScanResult?>() }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(refreshTrigger) { mods = modManager.listMods() }
+
+    // Scan texture DXAs once when section expands
+    LaunchedEffect(expanded) {
+        if (expanded) {
+            for (mod in mods) {
+                if (mod.filename !in scanCache &&
+                    mod.filename.contains("textur", ignoreCase = true)
+                ) {
+                    val file = File(filesDir, "mods/${mod.filename}")
+                    scanCache[mod.filename] = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        DxaTextureScanner.scan(file)
+                    }
+                }
+            }
+        }
+    }
 
     val enabledCount = mods.count { it.enabled }
     val totalCount = mods.size
@@ -3724,6 +3774,7 @@ private fun ModsSection(
                     mod = mod,
                     isFirst = index == 0,
                     isLast = index == mods.size - 1,
+                    scanResult = scanCache[mod.filename],
                     onToggle = { enabled ->
                         modManager.setEnabled(mod.filename, enabled)
                         mods = modManager.listMods()
@@ -3814,6 +3865,7 @@ private fun ModRow(
     mod: ModManager.ModInfo,
     isFirst: Boolean,
     isLast: Boolean,
+    scanResult: DxaTextureScanner.ScanResult? = null,
     onToggle: (Boolean) -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
@@ -3848,6 +3900,19 @@ private fun ModRow(
                 fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (scanResult != null && scanResult.oversizedCount > 0) {
+                Text(
+                    text = "${scanResult.oversizedCount} of ${scanResult.textureCount} textures exceed ${DxaTextureScanner.ENGINE_TEXTURE_CAP}px (max ${scanResult.maxWidth}x${scanResult.maxHeight}) -- will be skipped",
+                    fontSize = 10.sp,
+                    color = Color(0xFFF44336),
+                )
+            } else if (scanResult != null && scanResult.textureCount > 0) {
+                Text(
+                    text = "${scanResult.textureCount} textures, max ${scanResult.maxWidth}x${scanResult.maxHeight}",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         // Move up
         if (!isFirst) {

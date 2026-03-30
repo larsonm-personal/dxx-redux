@@ -391,6 +391,11 @@ void reset_time()
 	last_timer_value = timer_query();
 }
 
+#ifdef __ANDROID__
+/* android port: always-on FPS counter for video info overlay (JNI read) */
+int g_current_fps = 0;
+#endif
+
 void calc_frame_time()
 {
 	fix64 timer_value;
@@ -420,6 +425,20 @@ void calc_frame_time()
 
 	if (FrameTime < 0)				//if bogus frametime...
 		FrameTime = (last_frametime==0?1:last_frametime);		//...then use time from last frame
+
+#ifdef __ANDROID__
+	/* android port: update FPS counter for video info overlay */
+	{
+		static int fps_cnt = 0;
+		static fix64 fps_t = 0;
+		fps_cnt++;
+		if (timer_value >= fps_t + F1_0) {
+			g_current_fps = fps_cnt;
+			fps_cnt = 0;
+			fps_t = timer_value;
+		}
+	}
+#endif
 }
 
 void calc_game_time()
