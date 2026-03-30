@@ -185,17 +185,18 @@ class AudioSourceManager(
             if (src.binContentUri != null) {
                 // SAF source (or test filesystem path): open fd and use /proc/self/fd path
                 try {
-                    val pfd = if (src.binContentUri.startsWith("/")) {
-                        // Test mode: direct filesystem path
-                        ParcelFileDescriptor.open(
-                            File(src.binContentUri),
-                            ParcelFileDescriptor.MODE_READ_ONLY,
-                        )
-                    } else if (resolver != null) {
-                        resolver.openFileDescriptor(Uri.parse(src.binContentUri), "r")
-                    } else {
-                        null
-                    }
+                    val pfd =
+                        if (src.binContentUri.startsWith("/")) {
+                            // Test mode: direct filesystem path
+                            ParcelFileDescriptor.open(
+                                File(src.binContentUri),
+                                ParcelFileDescriptor.MODE_READ_ONLY,
+                            )
+                        } else if (resolver != null) {
+                            resolver.openFileDescriptor(Uri.parse(src.binContentUri), "r")
+                        } else {
+                            null
+                        }
                     if (pfd != null) {
                         activePfds.add(pfd)
                         bins.put("/proc/self/fd/${pfd.fd}")

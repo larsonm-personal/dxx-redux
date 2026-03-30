@@ -62,6 +62,7 @@
 #include <EGL/egl.h>
 #ifdef ANDROID
 #include <android/native_window.h>
+#include "gles3_shim.h"
 #else
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -375,12 +376,21 @@ int ogl_init_window(int x, int y)
 		EGL_BLUE_SIZE, 5,
 		EGL_DEPTH_SIZE, 16,
 		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+#ifdef ANDROID
+		EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
+#else
 		EGL_RENDERABLE_TYPE, EGL_OPENGL_ES_BIT,
+#endif
 		EGL_NONE, EGL_NONE
 	};
 
+#ifdef ANDROID
+	// Request an OpenGL ES 3.0 context on Android (GLES3 shim)
+        EGLint contextAttribs[] = { EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE, EGL_NONE };
+#else
 	// explicitely request an OpenGL ES 1.x context
         EGLint contextAttribs[] = { EGL_CONTEXT_CLIENT_VERSION, 1, EGL_NONE, EGL_NONE };
+#endif
 	// explicitely request a doublebuffering window
         EGLint winAttribs[] = { EGL_RENDER_BUFFER, EGL_BACK_BUFFER, EGL_NONE, EGL_NONE };
 
@@ -481,6 +491,8 @@ int ogl_init_window(int x, int y)
 		} else {
 			con_printf(CON_DEBUG, "EGL: made context current\n");
 		}
+
+		gles3_shim_init();
 	}
 
 #else /* !ANDROID OGLES path (RPI / X11) */

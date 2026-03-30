@@ -1,5 +1,5 @@
-// TEST: Mod Loading 128 -- verifies 128x128 texture DXA load coverage
-// Pushes hires sounds + 128x128 textures DXA to files/mods/, writes
+// TEST: Mod Loading 256 -- verifies 256x256 texture DXA load coverage
+// Pushes hires sounds + 256x256 textures DXA to files/mods/, writes
 // mod_manifest.json, launches D2, and checks hires replacement percent.
 [
     {"_info": {
@@ -18,16 +18,16 @@
             {"file": "ice.pig", "sha256": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1"},
             {"file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"},
             {"file": "d2xxl-hires-sounds-d2.dxa", "sha256": "d9cd5a3dd01effd264fda846379c53e40696e5b2aa2a856126333ba55f564307", "target": "files/mods"},
-            {"file": "d2xxl-hires-textures-d2-128.dxa", "sha256": "6c1ebe385ab76c52c520c68a14d275a37c5cf9cce1e2bd58b71780f5df781123", "target": "files/mods"}
+            {"file": "d2xxl-hires-textures-d2-256.dxa", "sha256": "dcb36008cb084869b73322502ece247a8c0cd10ceeab41de8877436b2d1ad528", "target": "files/mods"}
         ]
     }},
 
     {"action": "enter_launcher"},
     {"action": "write_config", "file": "mods/mod_manifest.json",
-     "content": "{\"mods\":[{\"filename\":\"d2xxl-hires-sounds-d2.dxa\",\"displayName\":\"D2XXL Hires Sounds D2\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":0},{\"filename\":\"d2xxl-hires-textures-d2-128.dxa\",\"displayName\":\"D2XXL Hires Textures D2 128\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":1}]}"},
+     "content": "{\"mods\":[{\"filename\":\"d2xxl-hires-sounds-d2.dxa\",\"displayName\":\"D2XXL Hires Sounds D2\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":0},{\"filename\":\"d2xxl-hires-textures-d2-256.dxa\",\"displayName\":\"D2XXL Hires Textures D2 256\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":1}]}"},
 
     {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
-    {"action": "log", "message": "=== TEST: Mod Loading 128 ==="},
+    {"action": "log", "message": "=== TEST: Mod Loading 256 ==="},
 
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
@@ -44,15 +44,15 @@
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
 
     {"action": "introspect"},
-    {"action": "assert", "expect": {"mounted_mods": {"contains": "d2xxl-hires-textures-d2-128.dxa"}}},
+    {"action": "assert", "expect": {"mounted_mods": {"contains": "d2xxl-hires-textures-d2-256.dxa"}}},
 
     // Wait for texture streaming then verify replacement coverage
     {"action": "wait_ms", "ms": 5000},
     {"action": "introspect"},
     {"action": "assert", "expect": {"hires_textures.hires_count": {"gt": 0}}},
-    {"action": "assert", "expect": {"hires_textures.max_hires_w": {"gte": 128}}},
+    {"action": "assert", "expect": {"hires_textures.max_hires_w": {"gte": 256}}},
     {"action": "assert", "expect": {"hires_textures.replacement_pct": {"gte": 90}},
      "_comment": "Replacement success rate: of PNG files found on disk, >= 90% should load"},
 
-    {"action": "log", "message": "=== TEST: Mod Loading 128 -- PASS ==="}
+    {"action": "log", "message": "=== TEST: Mod Loading 256 -- PASS ==="}
 ]

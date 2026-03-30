@@ -25,7 +25,12 @@ int ogl_init_load_library(void);
 # else
 #  define GL_GLEXT_PROTOTYPES
 #  ifdef OGLES
+#  ifdef ANDROID
+#  include <GLES3/gl3.h>
+#  include "gles3_shim.h"
+#  else
 #  include <GLES/gl.h>
+#  endif
 #  else
 #  include <GL/gl.h>
 #  endif

@@ -3734,9 +3734,10 @@ private fun ModsSection(
                     mod.filename.contains("textur", ignoreCase = true)
                 ) {
                     val file = File(filesDir, "mods/${mod.filename}")
-                    scanCache[mod.filename] = withContext(kotlinx.coroutines.Dispatchers.IO) {
-                        DxaTextureScanner.scan(file)
-                    }
+                    scanCache[mod.filename] =
+                        withContext(kotlinx.coroutines.Dispatchers.IO) {
+                            DxaTextureScanner.scan(file)
+                        }
                 }
             }
         }

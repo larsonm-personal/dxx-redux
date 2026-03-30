@@ -476,7 +476,7 @@ set(TRACKER    OFF CACHE BOOL "" FORCE)
 
 if(OPENGL)
 # Pre-set OpenGL/GLEW so find_package() in the D2 tree succeeds without
-# a system search.  Android NDK provides EGL + GLESv1_CM natively.
+# a system search.  Android NDK provides EGL + GLESv3 natively.
 set(OPENGL_FOUND      TRUE  CACHE BOOL   "" FORCE)
 set(OPENGL_LIBRARY     ""   CACHE STRING "" FORCE)   # linked explicitly below
 set(GLEW_FOUND         TRUE CACHE BOOL   "" FORCE)
@@ -498,6 +498,8 @@ list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_BINARY_DIR}/cmake_modules")
 # OGLES must be visible to ALL targets in the D2 tree (2d, 3d, main, etc.)
 # so that ogl_init.h correctly guards <GL/glew.h>.
 add_definitions(-DOGLES)
+# gles3_shim.h is included from ogl_init.h, so all targets need this path
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/shared)
 endif() # OPENGL
 
 # ──────────────────────────────────────────────────────────────
@@ -511,7 +513,7 @@ add_subdirectory("${D1_SRC}" "${CMAKE_CURRENT_BINARY_DIR}/d1")
 # ──────────────────────────────────────────────────────────────
 target_link_libraries(dxx-redux-d1 PRIVATE android log OpenSLES)
 if(OPENGL)
-    target_link_libraries(dxx-redux-d1 PRIVATE EGL GLESv1_CM)
+    target_link_libraries(dxx-redux-d1 PRIVATE EGL GLESv3)
 endif()
 target_sources(dxx-redux-d1 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/jni_main.c
@@ -574,11 +576,13 @@ target_link_libraries(${DXX_TARGET_PREFIX}arch_sdl tsf)
 
 if(OPENGL)
 target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE ANDROID HAVE_LIBPNG)
-target_link_libraries(${DXX_TARGET_PREFIX}arch_ogl PRIVATE EGL GLESv1_CM)
+target_link_libraries(${DXX_TARGET_PREFIX}arch_ogl PRIVATE EGL GLESv3)
+target_sources(${DXX_TARGET_PREFIX}arch_ogl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/gles3_shim.c ${CMAKE_CURRENT_SOURCE_DIR}/shared/etc2_compress.c)
 target_include_directories(${DXX_TARGET_PREFIX}arch_ogl PRIVATE
     ${D1_SRC}/arch/include
     ${D1_SRC}/main
     ${D1_SRC}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared
 )
 target_include_directories(${DXX_TARGET_PREFIX}xmodel PRIVATE ${PHYSFS_INCLUDE_DIR})
 endif() # OPENGL
@@ -598,7 +602,7 @@ add_subdirectory("${D2_SRC}" "${CMAKE_CURRENT_BINARY_DIR}/d2")
 # ──────────────────────────────────────────────────────────────
 target_link_libraries(dxx-redux-d2 PRIVATE android log OpenSLES)
 if(OPENGL)
-    target_link_libraries(dxx-redux-d2 PRIVATE EGL GLESv1_CM)
+    target_link_libraries(dxx-redux-d2 PRIVATE EGL GLESv3)
 endif()
 target_sources(dxx-redux-d2 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/jni_main.c
@@ -665,15 +669,17 @@ target_include_directories(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ${_TSF_DIR})
 target_compile_definitions(${DXX_TARGET_PREFIX}arch_sdl PRIVATE ANDROID)
 target_link_libraries(${DXX_TARGET_PREFIX}arch_sdl tsf)
 
-# OpenGL ES 1.1: link EGL + GLESv1_CM into the arch_ogl static library,
-# and add Android-specific include paths.
+# OpenGL ES 3.0: link EGL + GLESv3 into the arch_ogl static library,
+# and add Android-specific include paths + GLES3 shim.
 if(OPENGL)
 target_compile_definitions(${DXX_TARGET_PREFIX}arch_ogl PRIVATE ANDROID HAVE_LIBPNG)
-target_link_libraries(${DXX_TARGET_PREFIX}arch_ogl PRIVATE EGL GLESv1_CM)
+target_link_libraries(${DXX_TARGET_PREFIX}arch_ogl PRIVATE EGL GLESv3)
+target_sources(${DXX_TARGET_PREFIX}arch_ogl PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/shared/gles3_shim.c ${CMAKE_CURRENT_SOURCE_DIR}/shared/etc2_compress.c)
 target_include_directories(${DXX_TARGET_PREFIX}arch_ogl PRIVATE
     ${D2_SRC}/arch/include
     ${D2_SRC}/main
     ${D2_SRC}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared
 )
 
 # xmodel needs the PhysFS include path (not set by its own CMakeLists.txt).
