@@ -105,6 +105,7 @@ int androidaud_get_audio_buf_frames(void);
 
 #include "console_ringbuf.h"
 #include "overlay_ringbuf.h"
+#include "debug_tex_overlay.h"
 
 /* -- Helpers to identify front-window types --------------------------- */
 
@@ -388,6 +389,13 @@ extern "C" char *game_introspect_get_state(void)
 	/* -- Death state -------------------------------------------- */
 	j["player_dead"] = (bool) Player_is_dead;
 	j["player_exploded"] = (bool) Player_exploded;
+
+	/* -- Debug flags -------------------------------------------- */
+	{
+		json dbg;
+		dbg["tex_overlay"] = (bool) g_debug_tex_overlay_active;
+		j["debug_flags"] = std::move(dbg);
+	}
 
 	/* -- Endlevel sequence --------------------------------------- */
 	{

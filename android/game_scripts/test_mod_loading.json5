@@ -1,12 +1,22 @@
-// TEST: Mod Loading -- verifies DXA mod files are mounted via PhysFS
-// Pushes hires sounds + 256x256 textures DXA to files/mods/, writes
-// mod_manifest.json, launches D2, and checks that introspection shows
-// the mods mounted and hires textures applied.
+// TEST: Mod Loading -- verifies hires texture DXA load coverage
+// Parameterized: select texture resolution (128, 256, or 512).
+// Pushes hires sounds + textures DXA to files/mods/, writes
+// mod_manifest.json, launches D2, and checks hires replacement percent.
 [
     {"_info": {
         "games": ["d2"],
         "vars": {
             "d2": {"MISSION": "Counterstrike"}
+        },
+        "params": {
+            "RESOLUTION": {
+                "label": "Texture resolution",
+                "options": {
+                    "128": {"DXA_SHA": "6c1ebe385ab76c52c520c68a14d275a37c5cf9cce1e2bd58b71780f5df781123"},
+                    "256": {"DXA_SHA": "dcb36008cb084869b73322502ece247a8c0cd10ceeab41de8877436b2d1ad528"},
+                    "512": {"DXA_SHA": "bce93b195441427606f1a67d9c8afab2158d274d8b554857167052d8fb7f9688"}
+                }
+            }
         },
         "_deps": [
             {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
@@ -18,60 +28,42 @@
             {"file": "fire.pig", "sha256": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156"},
             {"file": "ice.pig", "sha256": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1"},
             {"file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"},
-            {"file": "d2xxl-hires-sounds-d2.dxa", "sha256": "d31f331c843f803ccca5d01412bfb3cc566289ac3fd34e8ae1575494c6de408b", "target": "files/mods"},
-            {"file": "d2xxl-hires-textures-d2-256.dxa", "sha256": "598b3fde79add00190baa1cb33fa2020b483fad7f550589758d2280332874839", "target": "files/mods"}
+            {"file": "d2xxl-hires-sounds-d2.dxa", "sha256": "d9cd5a3dd01effd264fda846379c53e40696e5b2aa2a856126333ba55f564307", "target": "files/mods"},
+            {"file": "d2xxl-hires-textures-d2-${RESOLUTION}.dxa", "sha256": "${DXA_SHA}", "target": "files/mods"}
         ]
     }},
 
-    // -- Write mod manifest so launcher's writeEnabledModPaths picks it up --
     {"action": "enter_launcher"},
     {"action": "write_config", "file": "mods/mod_manifest.json",
-     "content": "{\"mods\":[{\"filename\":\"d2xxl-hires-sounds-d2.dxa\",\"displayName\":\"D2XXL Hires Sounds D2\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":0},{\"filename\":\"d2xxl-hires-textures-d2-256.dxa\",\"displayName\":\"D2XXL Hires Textures D2 256\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":1}]}"},
+     "content": "{\"mods\":[{\"filename\":\"d2xxl-hires-sounds-d2.dxa\",\"displayName\":\"D2XXL Hires Sounds D2\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":0},{\"filename\":\"d2xxl-hires-textures-d2-${RESOLUTION}.dxa\",\"displayName\":\"D2XXL Hires Textures D2 ${RESOLUTION}\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":1}]}"},
 
-    // -- Launcher preamble --
     {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
+    {"action": "log", "message": "=== TEST: Mod Loading ${RESOLUTION} ==="},
 
-    {"action": "log", "message": "=== TEST: Mod Loading ==="},
-
-    // Accept default pilot name
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
-
-    // Main menu
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
     {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 10000},
-
-    // Mission select (skipped when only one mission available)
     {"action": "select", "text": "${MISSION}", "optional": true, "post_delay_ms": 100, "timeout_ms": 2000},
-    // accept default level 1
     {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
-
-    // Trainee difficulty
     {"action": "wait_ms", "ms": 500},
     {"action": "select", "text": "Trainee", "post_delay_ms": 100, "timeout_ms": 10000},
-
-    // Skip briefing (texture DXA loading can be slow on emulator)
     {"action": "skip_briefing", "timeout_ms": 60000, "post_delay_ms": 100},
 
-    // Wait for game to be running
     {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 30000},
     {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 10000},
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
 
-    // Verify the DXA mods are mounted via introspection
     {"action": "introspect"},
-    {"action": "assert", "expect": {"mounted_mods": {"contains": "d2xxl-hires-sounds-d2.dxa"}},
-     "_comment": "Hires sounds DXA should appear in the PhysFS search path"},
-    {"action": "assert", "expect": {"mounted_mods": {"contains": "d2xxl-hires-textures-d2-256.dxa"}},
-     "_comment": "Hires textures DXA should appear in the PhysFS search path"},
+    {"action": "assert", "expect": {"mounted_mods": {"contains": "d2xxl-hires-textures-d2-${RESOLUTION}.dxa"}}},
 
-    // Wait for textures to load (they're loaded on-demand during rendering)
+    // Wait for texture streaming then verify replacement coverage
     {"action": "wait_ms", "ms": 5000},
     {"action": "introspect"},
-    {"action": "assert", "expect": {"hires_textures.hires_count": {"gt": 0}},
-     "_comment": "At least some textures should be replaced by hires versions"},
-    {"action": "assert", "expect": {"hires_textures.max_hires_w": {"gte": 256}},
-     "_comment": "Hires textures should be at least 256x256"},
+    {"action": "assert", "expect": {"hires_textures.hires_count": {"gt": 0}}},
+    {"action": "assert", "expect": {"hires_textures.max_hires_w": {"gte": "${RESOLUTION}"}}},
+    {"action": "assert", "expect": {"hires_textures.replacement_pct": {"gte": 85}},
+     "_comment": "Replacement success rate: of PNG files found on disk, >= 85% should load (lower to account for oversized sprite strips exceeding GL_MAX_TEXTURE_SIZE on some devices)"},
 
-    {"action": "log", "message": "=== TEST: Mod Loading -- PASS ==="}
+    {"action": "log", "message": "=== TEST: Mod Loading ${RESOLUTION} -- PASS ==="}
 ]

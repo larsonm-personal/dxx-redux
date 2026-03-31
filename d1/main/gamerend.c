@@ -56,6 +56,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "ogl_init.h"
 #endif
 
+#ifdef ANDROID
+#include "debug_tex_overlay.h"
+#endif
+
 int netplayerinfo_on=0;
 
 #ifdef NETWORK
@@ -466,6 +470,10 @@ void update_cockpits();
 //render a frame for the game
 void game_render_frame_mono(int flip)
 {
+#ifdef ANDROID
+	g_debug_tex_label_count = 0;
+#endif
+
 	gr_set_current_canvas(&Screen_3d_window);
 	
 	render_frame(0);
@@ -492,6 +500,27 @@ void game_render_frame_mono(int flip)
 #ifdef NETWORK
 	if (netplayerinfo_on && Game_mode & GM_MULTI)
 		show_netplayerinfo();
+#endif
+
+#ifdef ANDROID
+	/* Debug texture overlay: draw accumulated labels from 3D rendering.
+	 * Green = hires PNG replacement, yellow = base game texture. */
+	if (g_debug_tex_overlay_active && g_debug_tex_label_count > 0)
+	{
+		int i;
+		gr_set_current_canvas(NULL);
+		gr_set_curfont(GAME_FONT);
+		for (i = 0; i < g_debug_tex_label_count; i++) {
+			struct debug_tex_label *lbl = &g_debug_tex_labels[i];
+			if (lbl->name[0] == '\0')
+				continue;
+			if (lbl->is_hires)
+				gr_set_fontcolor(BM_XRGB(0, 63, 0), -1);   /* green */
+			else
+				gr_set_fontcolor(BM_XRGB(63, 63, 0), -1);   /* yellow */
+			gr_printf(lbl->sx, lbl->sy, "%s", lbl->name);
+		}
+	}
 #endif
 }
 

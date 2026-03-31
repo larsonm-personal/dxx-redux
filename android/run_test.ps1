@@ -20,7 +20,8 @@ param(
     [switch]$Install,
     [int]$TimeoutSeconds = 300,
     [ValidateSet("d1", "d2")]
-    [string]$Game
+    [string]$Game,
+    [hashtable]$Params = @{}
 )
 
 $ErrorActionPreference = "Stop"
@@ -78,9 +79,37 @@ foreach ($gameId in $gameList) {
         Write-Host "============================================================" -ForegroundColor White
     }
 
+    # -- Resolve params: prompt for missing required params --------
+
+    $scriptParams = Get-ScriptParams -ScriptPath $scriptPath
+    $resolvedParams = @{} + $Params
+    if ($scriptParams) {
+        foreach ($prop in $scriptParams.PSObject.Properties) {
+            $pName = $prop.Name
+            if (-not $resolvedParams.ContainsKey($pName)) {
+                $pDef = $prop.Value
+                $optKeys = @($pDef.options.PSObject.Properties.Name)
+                $label = if ($pDef.label) { $pDef.label } else { $pName }
+                Write-Host ""
+                Write-Host "$label -- select a value:" -ForegroundColor White
+                for ($pi = 0; $pi -lt $optKeys.Count; $pi++) {
+                    Write-Host "  $($pi + 1)) $($optKeys[$pi])"
+                }
+                $pc = Read-Host "Select (1-$($optKeys.Count))"
+                $pci = 0
+                if ([int]::TryParse($pc, [ref]$pci) -and $pci -ge 1 -and $pci -le $optKeys.Count) {
+                    $resolvedParams[$pName] = $optKeys[$pci - 1]
+                } else {
+                    Write-Status "Invalid selection, defaulting to $($optKeys[0])" "Yellow"
+                    $resolvedParams[$pName] = $optKeys[0]
+                }
+            }
+        }
+    }
+
     # -- Resolve script (variable substitution + conditional filtering) --
 
-    $resolvedPath = Resolve-TestScript -ScriptPath $scriptPath -GameId $gameId
+    $resolvedPath = Resolve-TestScript -ScriptPath $scriptPath -GameId $gameId -Params $resolvedParams
     $pushName = $ScriptName
     if ($resolvedPath -ne $scriptPath) {
         # Push the resolved file instead, but keep the original name on device
@@ -94,8 +123,10 @@ foreach ($gameId in $gameList) {
 
     # -- Resolve declarative game data deps (if present) ----------
 
+    # Build vars for dep substitution (game vars + param vars)
+    $depVars = @{} + $resolvedParams
     $skipGameData = $false
-    $deps = Get-ScriptDeps -ScriptPath $scriptPath
+    $deps = Get-ScriptDeps -ScriptPath $scriptPath -Vars $depVars
     if ($deps) {
         Write-Status "Resolving $($deps.Count) declared game data deps..."
         if (-not (Resolve-GameDataDeps -Deps $deps)) {

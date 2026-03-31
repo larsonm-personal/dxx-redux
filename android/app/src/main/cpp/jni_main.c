@@ -19,6 +19,7 @@
 #include "game_introspect.h"
 #include "game_automate.h"
 #include "console_ringbuf.h"
+#include "debug_tex_overlay.h"
 #endif
 
 #define LOG_TAG   "DXX-Redux"
@@ -357,6 +358,19 @@ Java_com_dxxredux_app_MainActivity_nativeGetConsoleSince(JNIEnv *env, jobject th
 	free(json);
 	return result;
 }
+
+/* ── Debug flags: toggle debug overlays from adb/Kotlin ────────── */
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
+                                                      jstring jname, jint value)
+{
+	const char *name = (*env)->GetStringUTFChars(env, jname, NULL);
+	if (strcmp(name, "tex_overlay") == 0)
+		g_debug_tex_overlay_active = (int) value;
+	else
+		LOGE("nativeSetDebugFlag: unknown flag '%s'", name);
+	(*env)->ReleaseStringUTFChars(env, jname, name);
+}
 #endif /* INTROSPECT_ON */
 
 /* ── Auto-net: set up automatic join/host from the matchmaking lobby ── */
@@ -523,12 +537,17 @@ Java_com_dxxredux_app_MainActivity_nativeGetNetgameState(JNIEnv *env, jobject th
 
 /* ── Video stats query for video info overlay ──────────────────
  * Returns an int array:
- *   [0] = g_current_fps   (frames per second, 1-second window)
- *   [1] = total_loaded     (textures with a loaded GL texture)
- *   [2] = hires_count      (hi-res PNG replacement textures)
- *   [3] = max_hires_w      (max width among hi-res textures)
- *   [4] = max_hires_h      (max height among hi-res textures)
- *   [5] = ogl_max_texture_size (engine GL texture cap)
+ *   [0]  = g_current_fps   (frames per second, 1-second window)
+ *   [1]  = total_loaded     (textures with a loaded GL texture)
+ *   [2]  = hires_count      (hi-res PNG replacement textures)
+ *   [3]  = max_hires_w      (max width among hi-res textures)
+ *   [4]  = max_hires_h      (max height among hi-res textures)
+ *   [5]  = ogl_max_texture_size (engine GL texture cap)
+ *   [6]  = tex_memory_kb    (GPU texture memory in KB)
+ *   [7]  = render_w         (game render width)
+ *   [8]  = render_h         (game render height)
+ *   [9]  = display_w        (native display width)
+ *   [10] = display_h        (native display height)
  *
  * android port: video diagnostics overlay
  */
@@ -539,8 +558,13 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 {
 	extern int g_current_fps;
 	extern int ogl_max_texture_size;
+	int ogl_get_texture_bytes(void);
+	int android_surface_get_display_width(void);
+	int android_surface_get_display_height(void);
+	extern unsigned int grd_curscreen_w(void);
+	extern unsigned int grd_curscreen_h(void);
 
-	enum { VS_SIZE = 6 };
+	enum { VS_SIZE = 11 };
 	jint buf[VS_SIZE];
 
 	buf[0] = (jint) g_current_fps;
@@ -563,6 +587,11 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 	buf[3] = (jint) max_w;
 	buf[4] = (jint) max_h;
 	buf[5] = (jint) ogl_max_texture_size;
+	buf[6] = (jint) (ogl_get_texture_bytes() / 1024);
+	buf[7] = (jint) grd_curscreen_w();
+	buf[8] = (jint) grd_curscreen_h();
+	buf[9] = (jint) android_surface_get_display_width();
+	buf[10] = (jint) android_surface_get_display_height();
 
 	jintArray result = (*env)->NewIntArray(env, VS_SIZE);
 	if (result)

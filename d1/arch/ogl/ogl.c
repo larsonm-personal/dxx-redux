@@ -34,7 +34,7 @@
 
 #ifdef ANDROID
 #include <android/log.h>
-#include "etc2_compress.h"
+#include "debug_tex_overlay.h"
 #endif
 
 #include "3d.h"
@@ -110,6 +110,13 @@ GLfloat *secondary_lva[3]={NULL, NULL, NULL};
 int r_polyc,r_tpolyc,r_bitmapc,r_ubitbltc,r_upixelc;
 extern int linedotscale;
 #define f2glf(x) (f2fl(x))
+
+#ifdef ANDROID
+/* Debug texture overlay globals -- android port only */
+struct debug_tex_label g_debug_tex_labels[DEBUG_TEX_MAX_LABELS];
+int g_debug_tex_label_count = 0;
+volatile int g_debug_tex_overlay_active = 0;
+#endif
 
 #define OGL_BINDTEXTURE(a) glBindTexture(GL_TEXTURE_2D, a);
 
@@ -374,6 +381,18 @@ void ogl_bindbmtex(grs_bitmap *bm){
 	OGL_BINDTEXTURE(bm->gltexture->handle);
 	bm->gltexture->numrend++;
 }
+
+#ifdef ANDROID
+/* Return total GPU texture memory in use (bytes) */
+int ogl_get_texture_bytes(void)
+{
+	int total = 0, i;
+	for (i = 0; i < OGL_TEXTURE_LIST_SIZE; i++)
+		if (ogl_texture_list[i].handle > 0)
+			total += ogl_texture_list[i].bytes;
+	return total;
+}
+#endif
 
 //gltexture MUST be bound first
 void ogl_texwrap(ogl_texture *gltexture,int state)
@@ -871,6 +890,49 @@ bool g3_draw_tmap(int nv,g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb *light
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+#ifdef ANDROID
+	/* Debug texture label overlay: accumulate screen-space labels */
+	if (g_debug_tex_overlay_active && tmap_drawer_ptr == draw_tmap
+	    && g_debug_tex_label_count < DEBUG_TEX_MAX_LABELS && nv >= 3)
+	{
+		/* Compute centroid in view space */
+		fix cx = 0, cy = 0, cz = 0;
+		int i;
+		for (i = 0; i < nv; i++) {
+			cx += pointlist[i]->p3_vec.x / nv;
+			cy += pointlist[i]->p3_vec.y / nv;
+			cz += pointlist[i]->p3_vec.z / nv;
+		}
+		/* Project to screen (same formula as g3_project_point) */
+		if (cz > F1_0 / 4) { /* in front of camera */
+			fix sx_fix, sy_fix;
+			int checkmuldiv(fix *r, fix a, fix b, fix c);
+			if (checkmuldiv(&sx_fix, cx, Canv_w2, cz)
+			    && checkmuldiv(&sy_fix, cy, Canv_h2, cz))
+			{
+				int sx = f2i(Canv_w2 + sx_fix);
+				int sy = f2i(Canv_h2 - sy_fix);
+				int sw = grd_curcanv->cv_bitmap.bm_w;
+				int sh = grd_curcanv->cv_bitmap.bm_h;
+				if (sx >= 0 && sx < sw && sy >= 0 && sy < sh) {
+					struct debug_tex_label *lbl = &g_debug_tex_labels[g_debug_tex_label_count];
+					lbl->sx = sx;
+					lbl->sy = sy;
+					lbl->is_hires = (bm->gltexture && bm->gltexture->is_png) ? 1 : 0;
+					const char *bname = piggy_game_bitmap_name(bm);
+					if (bname) {
+						strncpy(lbl->name, bname, sizeof(lbl->name) - 1);
+						lbl->name[sizeof(lbl->name) - 1] = '\0';
+					} else {
+						lbl->name[0] = '\0';
+					}
+					g_debug_tex_label_count++;
+				}
+			}
+		}
+	}
+#endif
 
 	return 0;
 }
@@ -1700,91 +1762,6 @@ int ogl_loadtexture (unsigned char *data, int dxo, int dyo, ogl_texture *tex, in
 	else
 #endif
 	{
-#ifdef ANDROID
-		/* Try ETC2 compressed upload -- saves ~4x GPU memory.
-		 * GLES 3.0 guarantees ETC2 support on all devices. */
-		if (bufP && (tex->tw & 3) == 0 && (tex->th & 3) == 0
-		    && tex->tw >= 4 && tex->th >= 4)
-		{
-			int has_alpha = (tex->format == GL_RGBA);
-			int npix = tex->tw * tex->th;
-			GLenum gl_fmt = has_alpha ? GL_COMPRESSED_RGBA8_ETC2_EAC
-			                          : GL_COMPRESSED_RGB8_ETC2;
-			const uint8_t *rgba_in;
-			uint8_t *rgba_tmp = NULL;
-
-			/* Compressor needs RGBA -- pad RGB to RGBA if needed */
-			if (!has_alpha) {
-				rgba_tmp = (uint8_t *)malloc(npix * 4);
-				if (rgba_tmp) {
-					for (int i = 0; i < npix; i++) {
-						rgba_tmp[i*4+0] = bufP[i*3+0];
-						rgba_tmp[i*4+1] = bufP[i*3+1];
-						rgba_tmp[i*4+2] = bufP[i*3+2];
-						rgba_tmp[i*4+3] = 255;
-					}
-					rgba_in = rgba_tmp;
-				} else {
-					rgba_in = NULL;
-				}
-			} else {
-				rgba_in = bufP;
-			}
-
-			if (rgba_in) {
-				size_t comp_size;
-				uint8_t *comp = etc2_compress_rgba(rgba_in, tex->tw,
-				                                   tex->th, has_alpha,
-				                                   &comp_size);
-				if (comp) {
-					glCompressedTexImage2D(GL_TEXTURE_2D, 0, gl_fmt,
-					                       tex->tw, tex->th, 0,
-					                       (GLsizei)comp_size, comp);
-					/* Manual mip chain (glGenerateMipmap doesn't work
-					 * on compressed formats) */
-					if (texfilt) {
-						int mw = tex->tw, mh = tex->th, level = 1;
-						uint8_t *cur = (uint8_t *)malloc(mw * mh * 4);
-						memcpy(cur, rgba_in, mw * mh * 4);
-						while (mw > 4 && mh > 4) {
-							int nmw = mw / 2, nmh = mh / 2;
-							uint8_t *next = (uint8_t *)malloc(nmw * nmh * 4);
-							for (int y = 0; y < nmh; y++)
-								for (int x = 0; x < nmw; x++)
-									for (int c = 0; c < 4; c++) {
-										int v = cur[((y*2)*mw+x*2)*4+c]
-										      + cur[((y*2)*mw+x*2+1)*4+c]
-										      + cur[((y*2+1)*mw+x*2)*4+c]
-										      + cur[((y*2+1)*mw+x*2+1)*4+c];
-										next[(y*nmw+x)*4+c] = (uint8_t)((v+2)/4);
-									}
-							mw = nmw; mh = nmh;
-							free(cur); cur = next;
-							size_t mip_size;
-							uint8_t *mip = etc2_compress_rgba(cur, mw, mh,
-							                                  has_alpha,
-							                                  &mip_size);
-							if (mip) {
-								glCompressedTexImage2D(GL_TEXTURE_2D, level,
-								                       gl_fmt, mw, mh, 0,
-								                       (GLsizei)mip_size, mip);
-								free(mip);
-							}
-							level++;
-						}
-						free(cur);
-					}
-					free(comp);
-					if (rgba_tmp) free(rgba_tmp);
-					tex_set_size(tex);
-					r_texcount++;
-					return 0;
-				}
-			}
-			if (rgba_tmp) free(rgba_tmp);
-			/* Fall through to uncompressed upload */
-		}
-#endif
 		glTexImage2D (
 			GL_TEXTURE_2D, 0, tex->internalformat,
 			tex->tw, tex->th, 0, tex->format, // RGBA textures.
@@ -1849,6 +1826,61 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 		int png_loaded = 0;
 
 #ifdef ANDROID
+		/* Try pre-compressed ETC2 first (from .dxa texture packs) */
+		{
+			etc2_file_data edata;
+			sprintf(filename, "%s.etc2", bitmapname);
+			if (read_etc2_file(filename, &edata)) {
+				GLenum gl_fmt = edata.format
+					? GL_COMPRESSED_RGBA8_ETC2_EAC
+					: GL_COMPRESSED_RGB8_ETC2;
+				int flags = edata.format ? OGL_FLAG_ALPHA : 0;
+				if (bm->bm_flags & BM_FLAG_TRANSPARENT)
+					flags |= OGL_FLAG_ALPHA;
+				if (bm->gltexture == NULL)
+					ogl_init_texture(bm->gltexture = ogl_get_free_texture(),
+						edata.width, edata.height, flags);
+				bm->gltexture->tw = edata.width;
+				bm->gltexture->th = edata.height;
+				bm->gltexture->u = 1.0f;
+				bm->gltexture->v = 1.0f;
+				glGenTextures(1, &bm->gltexture->handle);
+				OGL_BINDTEXTURE(bm->gltexture->handle);
+				glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+				if (texfilt && edata.mip_count > 1) {
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+						texfilt >= 2 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR_MIPMAP_NEAREST);
+				} else if (texfilt) {
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				} else {
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				}
+				/* Upload each mip level from the .etc2 file */
+				unsigned char *p = edata.filedata;
+				unsigned char *end = p + edata.filedata_size;
+				int mw = edata.width, mh = edata.height;
+				for (int level = 0; level < edata.mip_count && p + 4 <= end; level++) {
+					unsigned int sz = p[0] | (p[1]<<8) | (p[2]<<16) | (p[3]<<24);
+					p += 4;
+					if (p + sz > end) break;
+					glCompressedTexImage2D(GL_TEXTURE_2D, level, gl_fmt,
+						mw, mh, 0, (GLsizei)sz, p);
+					p += sz;
+					if (mw > 1) mw /= 2;
+					if (mh > 1) mh /= 2;
+				}
+				free(edata.filedata);
+				bm->gltexture->is_png = 1;
+				tex_set_size(bm->gltexture);
+				r_texcount++;
+				r_hires_found++;
+				r_hires_loaded++;
+				return;
+			}
+		}
 		/* Try multiple extensions -- stb_image handles all formats */
 		{
 			static const char *exts[] = {".png", ".jpg", ".tga"};
@@ -1870,14 +1902,16 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 			con_printf(CON_DEBUG,"%s: %ux%ux%i p=%i(%i) c=%i a=%i chans=%i\n", filename, pdata.width, pdata.height, pdata.depth, pdata.paletted, pdata.num_palette, pdata.color, pdata.alpha, pdata.channels);
 			if (pdata.depth == 8 && pdata.color)
 			{
+				int df = pdata.paletted ? 0 : pdata.channels;
 				if (bm->gltexture == NULL)
 					ogl_init_texture(bm->gltexture = ogl_get_free_texture(), pdata.width, pdata.height, ((pdata.alpha || bm->bm_flags & BM_FLAG_TRANSPARENT) ? OGL_FLAG_ALPHA : 0));
-				if (ogl_loadtexture(pdata.data, 0, 0, bm->gltexture, bm->bm_flags, pdata.paletted ? 0 : pdata.channels, texfilt)) {
+				if (ogl_loadtexture(pdata.data, 0, 0, bm->gltexture, bm->bm_flags, df, texfilt)) {
 					/* Upload failed (e.g. oversized) -- reinit with bitmap dims so
 					 * the regular path can upload the original data. Set is_png=1
-					 * to skip PNG search on future calls (avoids per-frame retry) */
-					ogl_init_texture(bm->gltexture, bm->bm_w, bm->bm_h,
-						((bm->bm_flags & (BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT)) ? OGL_FLAG_ALPHA : 0));
+					 * to skip PNG search on future calls (avoids per-frame retry).
+					 * Always use OGL_FLAG_ALPHA: bm_flags may be BM_FLAG_PAGED_OUT
+					 * during cache pass, losing the real transparency flags. */
+					ogl_init_texture(bm->gltexture, bm->bm_w, bm->bm_h, OGL_FLAG_ALPHA);
 					bm->gltexture->is_png = 1;
 					free(pdata.data);
 					if (pdata.palette)

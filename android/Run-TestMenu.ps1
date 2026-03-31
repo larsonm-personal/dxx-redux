@@ -12,7 +12,9 @@
     .\Run-TestMenu.ps1
 #>
 
-param()
+param(
+    [switch]$NoBuild
+)
 
 $ErrorActionPreference = "Stop"
 
@@ -88,10 +90,24 @@ $selected = $allTests[$parsed - 1]
 Write-Host ""
 Write-Host "[*] Selected: $($selected.Name)  $($selected.Tag)" -ForegroundColor Green
 
+# -- Build fresh APK ---------------------------------------------------------
+
+if (-not $NoBuild) {
+    Write-Host ""
+    Write-Status "Building fresh APK..."
+    $env:JAVA_HOME = "C:\local\jdk-21"
+    & "$ScriptDir\gradlew.bat" assembleDebug --no-daemon 2>&1 | ForEach-Object { Write-Host $_ }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Status "Build failed" "Red"
+        exit 1
+    }
+    Write-Status "Build succeeded"
+}
+
 # -- Run the selected test ---------------------------------------------------
 
 if ($selected.Type -eq "json5") {
-    # json5: delegate to run_test.ps1 with optional game choice
+    # json5: delegate to run_test.ps1 with optional game choice and params
     $gameArg = @{}
     $games = $selected.Games
     if ($games -and $games.Count -gt 1) {
@@ -108,9 +124,39 @@ if ($selected.Type -eq "json5") {
             $gameArg = @{ Game = $games[$gc - 1] }
         }
     }
+
+    # Prompt for script params (e.g. texture resolution)
+    $paramArg = @{}
+    $scriptParams = Get-ScriptParams -ScriptPath $selected.Path
+    if ($scriptParams) {
+        $selectedParams = @{}
+        foreach ($prop in $scriptParams.PSObject.Properties) {
+            $pName = $prop.Name
+            $pDef = $prop.Value
+            $optKeys = @($pDef.options.PSObject.Properties.Name)
+            $label = if ($pDef.label) { $pDef.label } else { $pName }
+            Write-Host ""
+            Write-Host "${label}:" -ForegroundColor White
+            for ($pi = 0; $pi -lt $optKeys.Count; $pi++) {
+                Write-Host "  $($pi + 1)) $($optKeys[$pi])"
+            }
+            Write-Host ""
+            $pc = Read-Host "Select (1-$($optKeys.Count))"
+            $pci = 0
+            if ([int]::TryParse($pc, [ref]$pci) -and $pci -ge 1 -and $pci -le $optKeys.Count) {
+                $selectedParams[$pName] = $optKeys[$pci - 1]
+            } else {
+                Write-Host "  Defaulting to $($optKeys[0])" -ForegroundColor Yellow
+                $selectedParams[$pName] = $optKeys[0]
+            }
+        }
+        $paramArg = @{ Params = $selectedParams }
+    }
+
     Write-Host ""
     $scriptFile = [System.IO.Path]::GetFileName($selected.Path)
-    & $runTestScript $scriptFile @gameArg
+    $installArg = if (-not $NoBuild) { @{ Install = $true } } else { @{} }
+    & $runTestScript $scriptFile @gameArg @paramArg @installArg
     exit $LASTEXITCODE
 } else {
     # ps1: run directly

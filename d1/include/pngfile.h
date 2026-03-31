@@ -19,4 +19,18 @@ typedef struct _png_data {
 extern int read_png(const char *filename, png_data *pdata);
 extern int write_png(const char *filename, png_data *pdata);
 
+#ifdef ANDROID
+/* Pre-compressed ETC2 texture file (.etc2 format) */
+typedef struct _etc2_file_data {
+	unsigned int width;
+	unsigned int height;
+	unsigned char format;    /* 0 = RGB8_ETC2, 1 = RGBA8_ETC2_EAC */
+	unsigned char mip_count;
+	unsigned char *filedata; /* raw file contents after header */
+	unsigned int filedata_size;
+} etc2_file_data;
+
+extern int read_etc2_file(const char *filename, etc2_file_data *edata);
+#endif
+
 #endif

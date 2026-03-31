@@ -5,6 +5,7 @@
 2. "Hidden door too dark" with 256px pack
 3. Cache diagnostics invisible in logcat (con_printf goes to stdout, not logcat)
 4. Bogus hires metrics: `replacement_pct=100, max_hires_h=4608` when many textures actually failed
+5. After initial fix: garbled menus and very poor framerate due to per-frame PNG retry
 
 ## Root Cause Analysis
 
@@ -35,21 +36,26 @@
 - Added `n_png_fail` counter for textures where gltexture was allocated but handle stayed 0
 - "Skipping oversized" messages now also logged to logcat (ANDROID_LOG_WARN)
 
-### Phase 2: Fix unchecked ogl_loadtexture return [DONE]
-- d1/arch/ogl/ogl.c: in ogl_loadbmtexture_f(), check ogl_loadtexture() return value
-  - If non-zero: `ogl_reset_texture(bm->gltexture); bm->gltexture = NULL;`
-  - Free PNG data, fall through to original bitmap data path
-- d2/arch/ogl/ogl.c: same change
-- Flow on oversized PNG:
-  1. Cache pass: PNG found, upload fails, gltexture=NULL, hits paged-out check, returns
-  2. Rendering: PIGGY_PAGE_IN pages in data, ogl_bindbmtex retries
-  3. PNG fails again, falls through to bitmap data upload (not paged out now)
-  4. Original low-res texture created, handle>0, subsequent frames skip
+### Phase 2: Fix unchecked ogl_loadtexture return [DONE - revised]
+- d1/arch/ogl/ogl.c + d2/arch/ogl/ogl.c:
+  - Check ogl_loadtexture() return value in ogl_loadbmtexture_f()
+  - On failure: reinit gltexture with bitmap dimensions (not NULL), set is_png=1
+  - is_png=1 acts as "PNG was attempted, don't retry" flag
+  - Falls through to original bitmap data path
+- Added guard at PNG search: skip if `bm->gltexture && bm->gltexture->is_png`
+  - Prevents per-frame PNG decompression retry (the main perf killer)
+- **Reverted ogl_bindbmtex to original** (no early return guard)
+  - Early return caused garbled menus: callers drew geometry with stale textures
+  - gltexture is never NULL when ogl_bindbmtex is called (PIGGY_PAGE_IN runs first)
 
-### Phase 3: ogl_bindbmtex NULL safety [DONE]
-- d1/arch/ogl/ogl.c: added NULL check after ogl_loadbmtexture call
-- d2/arch/ogl/ogl.c: same change
-- Prevents crash when texture is unavailable (paged out + oversized PNG)
+- Flow on oversized PNG:
+  1. Cache pass: PNG found, decompressed, upload fails (oversized)
+  2. gltexture reinit'd with bitmap dims, is_png=1, handle=0
+  3. Falls through to paged-out check, returns (bitmap data not in memory)
+  4. Rendering: PIGGY_PAGE_IN pages in data, ogl_bindbmtex calls ogl_loadbmtexture
+  5. is_png=1 on gltexture -> PNG search SKIPPED (no I/O, no decompress)
+  6. gltexture already allocated (handle=0), bitmap data uploaded -> handle>0
+  7. Subsequent frames: handle>0 -> early return, no work
 
 ## Test Results
 - Build: PASS
@@ -57,10 +63,11 @@
 - Cache diagnostics visible in logcat:
   - `ogl_cache: starting, 2590 bitmaps, allow_png=1`
   - ~48 "Skipping oversized texture" warnings
-  - `ogl_cache: done. hires=418 already=0 bitmap=1217 skipped=955 png_fail=0`
-- Introspection metrics now accurate:
-  - Before: `hires_found=1353, hires_uploaded=1353, replacement_pct=100, max_hires_h=4608`
-  - After:  `hires_found=467,  hires_uploaded=419,  replacement_pct=89,  max_hires_h=2048`
+  - `ogl_cache: done. hires=418 already=0 bitmap=1191 skipped=933 png_fail=22`
+- Introspection metrics accurate:
+  - `hires_found=467, hires_uploaded=419, replacement_pct=89, max_hires_h=2048`
+- png_fail=22 are oversized sprite strips (gltexture allocated, is_png=1, handle=0)
+  - On first render, bitmap data uploaded directly (no PNG retry)
 
 ## Future Considerations
 - Sprite strip splitting: instead of falling back to 64x64, could split tall strips

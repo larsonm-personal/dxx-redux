@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.os.Handler
 import android.os.Looper
+import android.view.MotionEvent
 import android.view.View
 
 /**
@@ -23,6 +24,9 @@ class VideoInfoOverlay(
     /** Provider that calls nativeGetVideoStats(). */
     var statsProvider: (() -> IntArray?)? = null
 
+    /** Setter for C-side debug flags: (name, value) -> nativeSetDebugFlag. */
+    var debugFlagSetter: ((String, Int) -> Unit)? = null
+
     private val handler = Handler(Looper.getMainLooper())
     private var polling = false
 
@@ -33,6 +37,18 @@ class VideoInfoOverlay(
     private var maxHiresW = 0
     private var maxHiresH = 0
     private var glMaxTexSize = 0
+    private var texMemoryKb = 0
+    private var renderW = 0
+    private var renderH = 0
+    private var displayW = 0
+    private var displayH = 0
+
+    // Labels toggle state and hit region
+    private var labelsOn = false
+    private var labelsRowTop = 0f
+    private var labelsRowBottom = 0f
+    private var labelsRowLeft = 0f
+    private var labelsRowRight = 0f
 
     private val pollRunnable =
         object : Runnable {
@@ -40,13 +56,18 @@ class VideoInfoOverlay(
                 if (!polling) return
                 try {
                     val stats = statsProvider?.invoke()
-                    if (stats != null && stats.size >= 6) {
+                    if (stats != null && stats.size >= 11) {
                         fps = stats[0]
                         totalLoaded = stats[1]
                         hiresCount = stats[2]
                         maxHiresW = stats[3]
                         maxHiresH = stats[4]
                         glMaxTexSize = stats[5]
+                        texMemoryKb = stats[6]
+                        renderW = stats[7]
+                        renderH = stats[8]
+                        displayW = stats[9]
+                        displayH = stats[10]
                     }
                 } catch (_: Exception) {
                     // JNI not ready yet
@@ -127,9 +148,9 @@ class VideoInfoOverlay(
 
         val pad = 8f * density
         val lineH = baseTextSize * 1.5f
-        val numLines = 5 // title + fps + hires + max res + gl cap
+        val numLines = 8 // title + fps + tex mem + hires + max res + resolution + gl cap + labels
         val panelH = pad * 2 + lineH * numLines
-        val panelW = baseTextSize * 18f
+        val panelW = baseTextSize * 20f
 
         // Position: top-right corner
         val panelLeft = w - panelW - pad
@@ -159,6 +180,12 @@ class VideoInfoOverlay(
         canvas.drawText("FPS: $fps", panelLeft + pad, y, fpsPaint)
         y += lineH
 
+        // Texture memory
+        val texMb = texMemoryKb / 1024
+        canvas.drawText("Tex mem:", panelLeft + pad, y, labelPaint)
+        canvas.drawText("${texMb}MB", panelLeft + pad + baseTextSize * 6f, y, valuePaint)
+        y += lineH
+
         // Hi-res textures
         val pct = if (totalLoaded > 0) (hiresCount * 100 / totalLoaded) else 0
         canvas.drawText("Hires:", panelLeft + pad, y, labelPaint)
@@ -179,7 +206,44 @@ class VideoInfoOverlay(
         // GL texture cap
         canvas.drawText("GL cap:", panelLeft + pad, y, labelPaint)
         canvas.drawText("$glMaxTexSize" + "px", panelLeft + pad + baseTextSize * 6f, y, valuePaint)
+        y += lineH
+
+        // Render vs display resolution
+        canvas.drawText("Render:", panelLeft + pad, y, labelPaint)
+        canvas.drawText(
+            "${renderW}x$renderH / ${displayW}x$displayH",
+            panelLeft + pad + baseTextSize * 6f,
+            y,
+            valuePaint,
+        )
+        y += lineH
+
+        // Labels toggle (tappable)
+        val labelsText = if (labelsOn) "Labels: ON" else "Labels: OFF"
+        val labelTogglePaint = if (labelsOn) fpsGoodPaint else fpsWarnPaint
+        canvas.drawText(labelsText, panelLeft + pad, y, labelTogglePaint)
+        labelsRowTop = y - baseTextSize
+        labelsRowBottom = y + lineH * 0.3f
+        labelsRowLeft = panelLeft
+        labelsRowRight = panelLeft + panelW
     }
+
+    @Suppress("ClickableViewAccessibility")
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (event.action == MotionEvent.ACTION_UP &&
+            event.x in labelsRowLeft..labelsRowRight &&
+            event.y in labelsRowTop..labelsRowBottom
+        ) {
+            labelsOn = !labelsOn
+            debugFlagSetter?.invoke("tex_overlay", if (labelsOn) 1 else 0)
+            invalidate()
+            performClick()
+            return true
+        }
+        return super.onTouchEvent(event)
+    }
+
+    override fun performClick(): Boolean = super.performClick()
 
     companion object {
         private const val POLL_INTERVAL_MS = 500L

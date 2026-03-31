@@ -26,19 +26,31 @@
 param(
     [string]$OutputDir = "",
     [string]$SevenZip = "C:\Program Files\7-Zip\7z.exe",
-    [string]$Magick = ""
+    [string]$Magick = "",
+    [string]$Etc2Tool = ""
 )
 
 $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not $OutputDir) { $OutputDir = $scriptDir }
+$repoRoot = Split-Path (Split-Path $scriptDir)
+
+# Auto-locate etc2tool
+if (-not $Etc2Tool) {
+    $candidate = Join-Path $repoRoot "tools\etc2tool\build\Release\etc2tool.exe"
+    if (Test-Path $candidate) { $Etc2Tool = $candidate }
+}
+if (-not $Etc2Tool -or -not (Test-Path $Etc2Tool)) {
+    Write-Error "etc2tool not found. Build it first: cd tools/etc2tool && cmake -B build && cmake --build build --config Release"
+    exit 1
+}
+Write-Host "etc2tool: $Etc2Tool"
 
 $texScript = Join-Path $scriptDir "convert_d2xxl_textures.ps1"
 $sndScript = Join-Path $scriptDir "convert_d2xxl_sounds.ps1"
 
 # Auto-locate ImageMagick if not provided
 if (-not $Magick) {
-    $repoRoot = Split-Path (Split-Path $scriptDir)
     $depBaseFile = Join-Path $repoRoot "dependency_base.txt"
     if (Test-Path $depBaseFile) {
         $depBase = (Get-Content $depBaseFile -First 1).Trim()
@@ -111,13 +123,147 @@ foreach ($game in @("d1", "d2")) {
         $readme = Get-ReadmeText -GameId $game -Size $label -Downscaled $cfg.Downscaled
         $magickArg = if ($cfg.Downscaled -and $Magick) { $Magick } else { "" }
         Write-Host "--- Textures: $game ${label}x${label} ---"
-        & $texScript -Game $game -TexSize $sz -MaxSize $mx -OutputDir $OutputDir -SevenZip $SevenZip -ReadmeText $readme -Magick $magickArg
+        & $texScript -Game $game -TexSize $sz -MaxSize $mx -OutputDir $OutputDir -SevenZip $SevenZip -ReadmeText $readme -Magick $magickArg -Etc2Tool $Etc2Tool
         if ($LASTEXITCODE -ne 0) {
             Write-Host "WARNING: Texture conversion failed for $game $label"
         }
         Write-Host ""
     }
 }
+
+# ── Merge pass: equalize file counts across all three sizes ──
+# The 256 and 512 source archives contain different texture sets.
+# After the initial build, each pack only has textures from its source.
+# This pass fills gaps: textures only in 256 get added to 512+128,
+# textures only in 512 get downscaled and added to 256.
+
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+function Get-DxaEtc2Names {
+    param([string]$DxaPath)
+    if (-not (Test-Path $DxaPath)) { return @() }
+    $zip = [System.IO.Compression.ZipFile]::OpenRead($DxaPath)
+    $names = $zip.Entries | Where-Object { $_.Name -like '*.etc2' } |
+        ForEach-Object { [System.IO.Path]::GetFileNameWithoutExtension($_.Name) }
+    $zip.Dispose()
+    return @($names)
+}
+
+function Add-Etc2ToDxa {
+    param([string]$DxaPath, [string[]]$Etc2Files)
+    $zip = [System.IO.Compression.ZipFile]::Open($DxaPath, [System.IO.Compression.ZipArchiveMode]::Update)
+    foreach ($f in $Etc2Files) {
+        $entryName = [System.IO.Path]::GetFileName($f)
+        $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
+        $stream = $entry.Open()
+        $fileBytes = [System.IO.File]::ReadAllBytes($f)
+        $stream.Write($fileBytes, 0, $fileBytes.Length)
+        $stream.Close()
+    }
+    $zip.Dispose()
+}
+
+function Convert-AndAdd {
+    param(
+        [string]$GameId,
+        [string]$ArchivePath,     # source 7z to extract from
+        [string[]]$MissingNames,  # texture basenames to process
+        [hashtable[]]$Targets     # @{DxaPath, MaxDim} -- packs to add results to
+    )
+
+    $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "dxx_merge_${GameId}_$(Get-Random)"
+    New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+
+    Write-Host "  Extracting $(Split-Path $ArchivePath -Leaf)..."
+    $extractDir = Join-Path $tempDir "extract"
+    & $SevenZip x "-o$extractDir" $ArchivePath -y 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "7z extraction failed" }
+    $tgaDir = Join-Path (Join-Path $extractDir "textures") $GameId
+
+    foreach ($tgt in $Targets) {
+        $maxDim = $tgt.MaxDim
+        $dxaPath = $tgt.DxaPath
+        $label = if ($maxDim -gt 0) { $maxDim } else { "native" }
+        $outDir = Join-Path $tempDir "out_$label"
+        New-Item -ItemType Directory -Path $outDir -Force | Out-Null
+
+        $converted = 0
+        $etc2Files = @()
+        foreach ($name in $MissingNames) {
+            $src = Join-Path $tgaDir "$name.tga"
+            if (-not (Test-Path $src)) { $src = Join-Path $tgaDir "$name.jpg" }
+            if (-not (Test-Path $src)) { continue }
+
+            try {
+                $tempEtc2 = Join-Path $outDir "$name.etc2"
+                if ($maxDim -gt 0 -and $Magick) {
+                    $tempPng = Join-Path $outDir "$name.png"
+                    & $Magick $src '-colorspace' 'RGB' '-filter' 'Lanczos' `
+                        '-resize' "${maxDim}x${maxDim}" '-unsharp' '0x0.4' `
+                        '-colorspace' 'sRGB' $tempPng 2>&1 | Out-Null
+                    if ($LASTEXITCODE -ne 0) { throw "magick failed" }
+                    & $Etc2Tool $tempPng $tempEtc2 2>&1 | Out-Null
+                    Remove-Item $tempPng -ErrorAction SilentlyContinue
+                } else {
+                    & $Etc2Tool $src $tempEtc2 2>&1 | Out-Null
+                }
+                if ($LASTEXITCODE -ne 0) { throw "etc2tool failed" }
+                $etc2Files += $tempEtc2
+                $converted++
+            } catch {
+                Write-Host "    ERROR: $name -- $_"
+            }
+        }
+
+        if ($etc2Files.Count -gt 0) {
+            Write-Host "    Adding $converted textures to $(Split-Path $dxaPath -Leaf)"
+            Add-Etc2ToDxa -DxaPath $dxaPath -Etc2Files $etc2Files
+        }
+    }
+
+    Remove-Item -Recurse -Force $tempDir
+}
+
+Write-Host "--- Merge pass: equalizing texture counts ---"
+$archiveDirPath = Join-Path $scriptDir "d2x-xl"
+
+foreach ($game in @("d1", "d2")) {
+    $dxa128 = Join-Path $OutputDir "d2xxl-hires-textures-${game}-128.dxa"
+    $dxa256 = Join-Path $OutputDir "d2xxl-hires-textures-${game}-256.dxa"
+    $dxa512 = Join-Path $OutputDir "d2xxl-hires-textures-${game}-512.dxa"
+    $arch256 = Join-Path $archiveDirPath "$($game.ToUpper())-textures-256x256.7z"
+    $arch512 = Join-Path $archiveDirPath "$($game.ToUpper())-textures-512x512.7z"
+
+    $names256 = Get-DxaEtc2Names $dxa256
+    $names512 = Get-DxaEtc2Names $dxa512
+
+    # Textures in 256 source but not 512 -- add to 512 (at 256px) and 128 (downscaled)
+    $onlyIn256 = @($names256 | Where-Object { $_ -notin $names512 })
+    if ($onlyIn256.Count -gt 0) {
+        Write-Host "  $($game.ToUpper()): $($onlyIn256.Count) textures only in 256 source"
+        Convert-AndAdd -GameId $game -ArchivePath $arch256 -MissingNames $onlyIn256 -Targets @(
+            @{ DxaPath = $dxa512; MaxDim = 0 },
+            @{ DxaPath = $dxa128; MaxDim = 128 }
+        )
+    }
+
+    # Textures in 512 source but not 256 -- downscale to 256 and add
+    $onlyIn512 = @($names512 | Where-Object { $_ -notin $names256 })
+    if ($onlyIn512.Count -gt 0) {
+        Write-Host "  $($game.ToUpper()): $($onlyIn512.Count) textures only in 512 source"
+        Convert-AndAdd -GameId $game -ArchivePath $arch512 -MissingNames $onlyIn512 -Targets @(
+            @{ DxaPath = $dxa256; MaxDim = 256 }
+        )
+    }
+
+    # Verify
+    $f128 = (Get-DxaEtc2Names $dxa128).Count
+    $f256 = (Get-DxaEtc2Names $dxa256).Count
+    $f512 = (Get-DxaEtc2Names $dxa512).Count
+    Write-Host "  $($game.ToUpper()) final: 128=$f128 256=$f256 512=$f512"
+}
+Write-Host ""
 
 # Sounds: both games
 Write-Host "--- Sounds: d1 + d2 ---"

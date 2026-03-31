@@ -90,3 +90,65 @@ int write_png(const char *filename, png_data *pdata)
 	(void) pdata;
 	return 0;
 }
+
+/* Read a pre-compressed .etc2 file via PhysFS.
+ * Returns 1 on success, 0 on failure.
+ * On success, caller must free edata->filedata. */
+int read_etc2_file(const char *filename, etc2_file_data *edata)
+{
+	PHYSFS_File *fp;
+	PHYSFS_sint64 fsize;
+	unsigned char hdr[16];
+
+	if (!filename || !edata)
+		return 0;
+
+	fp = PHYSFS_openRead(filename);
+	if (!fp)
+		return 0;
+
+	fsize = PHYSFS_fileLength(fp);
+	if (fsize < 16 || fsize > 64 * 1024 * 1024) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+
+	/* Read and validate header */
+	if (PHYSFS_readBytes(fp, hdr, 16) != 16) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+	if (hdr[0] != 'E' || hdr[1] != 'T' || hdr[2] != 'C' || hdr[3] != '2') {
+		PHYSFS_close(fp);
+		return 0;
+	}
+
+	memset(edata, 0, sizeof(*edata));
+	edata->width = hdr[4] | ((unsigned int) hdr[5] << 8);
+	edata->height = hdr[6] | ((unsigned int) hdr[7] << 8);
+	edata->format = hdr[8];
+	edata->mip_count = hdr[9];
+
+	if (edata->mip_count == 0 || edata->format > 1) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+
+	/* Read remaining file data (mip entries) */
+	edata->filedata_size = (unsigned int) (fsize - 16);
+	edata->filedata = (unsigned char *) malloc(edata->filedata_size);
+	if (!edata->filedata) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+
+	if (PHYSFS_readBytes(fp, edata->filedata, edata->filedata_size) != (PHYSFS_sint64) edata->filedata_size) {
+		free(edata->filedata);
+		edata->filedata = NULL;
+		PHYSFS_close(fp);
+		return 0;
+	}
+
+	PHYSFS_close(fp);
+	return 1;
+}

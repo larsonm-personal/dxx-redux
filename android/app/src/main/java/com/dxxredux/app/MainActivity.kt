@@ -106,6 +106,11 @@ class MainActivity :
 
     external fun nativeGetConsoleSince(sinceSeq: Long): String
 
+    external fun nativeSetDebugFlag(
+        name: String,
+        value: Int,
+    )
+
     external fun nativeJoystickAxis(
         axis: Int,
         value: Float,
@@ -203,7 +208,8 @@ class MainActivity :
     // android port: game state polling for matchmaking server updates
     external fun nativeGetNetgameState(): IntArray
 
-    // Video stats: [fps, total_loaded, hires_count, max_hires_w, max_hires_h, gl_max_tex_size]
+    // Video stats: [fps, total_loaded, hires_count, max_hires_w, max_hires_h,
+    //   gl_max_tex_size, tex_memory_kb, render_w, render_h, display_w, display_h]
     // android port: video diagnostics overlay
     external fun nativeGetVideoStats(): IntArray
 
@@ -723,6 +729,13 @@ class MainActivity :
                         null
                     }
                 }
+                debugFlagSetter = { name, value ->
+                    try {
+                        nativeSetDebugFlag(name, value)
+                    } catch (_: Exception) {
+                        // JNI not ready yet
+                    }
+                }
             }
         videoInfoOverlay = vidOverlay
         frame.addView(
@@ -1096,6 +1109,12 @@ class MainActivity :
                         val n = intent.getIntExtra("value", 48)
                         Log.i("DXX-Command", "Setting max voices to $n")
                         nativeSetMusicVoices(n)
+                    }
+                    "debug" -> {
+                        val field = intent.getStringExtra("field") ?: ""
+                        val v = intent.getIntExtra("value", 0)
+                        Log.i("DXX-Command", "Setting debug flag $field = $v")
+                        nativeSetDebugFlag(field, v)
                     }
                     else -> Log.w("DXX-Command", "Unknown command: $cmd")
                 }

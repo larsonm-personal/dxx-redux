@@ -336,7 +336,11 @@ function Read-GameDataIndex {
 function Get-ScriptDeps {
     # Read a .json5 test script and return the _deps array from its _info element.
     # Returns array of dep objects ({file, sha256, target?}) or $null.
-    param([Parameter(Mandatory = $true)][string]$ScriptPath)
+    # When -Vars is provided, ${VAR} placeholders in file and sha256 fields are replaced.
+    param(
+        [Parameter(Mandatory = $true)][string]$ScriptPath,
+        [hashtable]$Vars = @{}
+    )
     if (-not (Test-Path $ScriptPath)) { return $null }
     $raw = Get-Content $ScriptPath -Raw
     $raw = [regex]::Replace($raw, '//.*', '')
@@ -344,7 +348,16 @@ function Get-ScriptDeps {
     try {
         $arr = $raw | ConvertFrom-Json
         if ($arr.Count -gt 0 -and $arr[0]._info -and $arr[0]._info._deps) {
-            return @($arr[0]._info._deps)
+            $deps = @($arr[0]._info._deps)
+            if ($Vars.Count -gt 0) {
+                foreach ($dep in $deps) {
+                    foreach ($k in $Vars.Keys) {
+                        if ($dep.file) { $dep.file = $dep.file.Replace("`${$k}", $Vars[$k]) }
+                        if ($dep.sha256) { $dep.sha256 = $dep.sha256.Replace("`${$k}", $Vars[$k]) }
+                    }
+                }
+            }
+            return $deps
         }
     } catch {}
     return $null
@@ -820,6 +833,24 @@ function Get-GameIntrospection {
     try { return ($json | ConvertFrom-Json) } catch { return $null }
 }
 
+function Get-ScriptParams {
+    # Read a .json5 test script and return the params dict from its _info element.
+    # Returns hashtable of {ParamName -> {label, options -> {value -> {var_overrides}}}}
+    # or $null if no params defined.
+    param([Parameter(Mandatory = $true)][string]$ScriptPath)
+    if (-not (Test-Path $ScriptPath)) { return $null }
+    $raw = Get-Content $ScriptPath -Raw
+    $raw = [regex]::Replace($raw, '//.*', '')
+    $raw = [regex]::Replace($raw, ',\s*([}\]])', '$1')
+    try {
+        $arr = $raw | ConvertFrom-Json
+        if ($arr.Count -gt 0 -and $arr[0]._info -and $arr[0]._info.params) {
+            return $arr[0]._info.params
+        }
+    } catch {}
+    return $null
+}
+
 function Get-ScriptGameInfo {
     # Read a .json5 test script and return the games array from its _info element.
     # Returns @("d1","d2"), @("d1"), @("d2"), or $null if no _info element.
@@ -878,15 +909,17 @@ function Get-ScriptIsLauncher {
 function Resolve-TestScript {
     # Preprocess a .json5 test script for a specific game:
     #   1. Read _info.vars.$GameId for variable substitution
-    #   2. Filter out steps where "when" doesn't match $GameId
-    #   3. Replace ${VAR} placeholders in all string values
-    #   4. Write resolved script to a temp file
+    #   2. Merge -Params option vars (from _info.params) into the vars dict
+    #   3. Filter out steps where "when" doesn't match $GameId
+    #   4. Replace ${VAR} placeholders in all string values
+    #   5. Write resolved script to a temp file
     # Returns the path to the resolved temp file, or $ScriptPath if no processing needed.
     param(
         [Parameter(Mandatory = $true)]
         [string]$ScriptPath,
         [Parameter(Mandatory = $true)]
-        [string]$GameId
+        [string]$GameId,
+        [hashtable]$Params = @{}
     )
     if (-not (Test-Path $ScriptPath)) { return $ScriptPath }
 
@@ -908,6 +941,20 @@ function Resolve-TestScript {
             $gameVars = $info.vars.$GameId
             foreach ($prop in $gameVars.PSObject.Properties) {
                 $vars[$prop.Name] = $prop.Value
+            }
+        }
+        # Merge param selections: add param value itself + per-option var overrides
+        if ($info.params -and $Params.Count -gt 0) {
+            foreach ($pName in $Params.Keys) {
+                $pValue = $Params[$pName]
+                $vars[$pName] = $pValue
+                $paramDef = $info.params.$pName
+                if ($paramDef -and $paramDef.options -and $paramDef.options.$pValue) {
+                    $optVars = $paramDef.options.$pValue
+                    foreach ($prop in $optVars.PSObject.Properties) {
+                        $vars[$prop.Name] = $prop.Value
+                    }
+                }
             }
         }
     }

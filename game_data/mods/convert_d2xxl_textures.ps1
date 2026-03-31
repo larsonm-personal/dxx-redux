@@ -4,17 +4,15 @@
     loadable by the DXX-Rebirth/Redux engine.
 
 .DESCRIPTION
-    Extracts TGA files from the d2x-xl 7z archives, converts them to
-    JPEG (RGB opaque) or PNG (RGBA with alpha), and packages them into
-    .dxa files (ZIP archives). The engine auto-mounts .dxa files and
-    the texture replacement system looks for {bitmapname}.{png,jpg,tga}
-    via PhysFS.
+    Extracts TGA files from the d2x-xl 7z archives, compresses them to
+    ETC2 format via etc2tool, and packages the .etc2 files into .dxa
+    files (ZIP archives). The engine auto-mounts .dxa files and loads
+    pre-compressed .etc2 textures directly to the GPU.
 
-    JPEG is used for opaque textures (3-5x smaller than PNG at quality 92).
-    PNG is kept for textures with alpha channels (JPEG can't store alpha).
-    ZIP entries use NoCompression since both formats are already compressed.
+    ZIP entries use NoCompression since ETC2 is already compressed.
 
-    Requires: 7-Zip (7z.exe), PowerShell 5.1+ with System.Drawing
+    Requires: 7-Zip (7z.exe), etc2tool (from tools/etc2tool/)
+    Optional: ImageMagick (for high-quality downscaling)
 
 .PARAMETER Game
     Which game to convert: "d1", "d2", or "both" (default: "both")
@@ -32,6 +30,9 @@
 
 .PARAMETER SevenZip
     Path to 7z.exe. Default: "C:\Program Files\7-Zip\7z.exe"
+
+.PARAMETER Etc2Tool
+    Path to etc2tool.exe. Default: auto-detect from tools/etc2tool/build/Release/
 #>
 param(
     [ValidateSet("d1", "d2", "both")]
@@ -48,7 +49,9 @@ param(
 
     [string]$ReadmeText = "",
 
-    [string]$Magick = ""
+    [string]$Magick = "",
+
+    [string]$Etc2Tool = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -58,6 +61,17 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not $OutputDir) { $OutputDir = $scriptDir }
+
+# Auto-detect etc2tool if not provided
+if (-not $Etc2Tool) {
+    $repoRoot = Split-Path (Split-Path $scriptDir)
+    $candidate = Join-Path $repoRoot "tools\etc2tool\build\Release\etc2tool.exe"
+    if (Test-Path $candidate) { $Etc2Tool = $candidate }
+}
+if (-not $Etc2Tool -or -not (Test-Path $Etc2Tool)) {
+    Write-Error "etc2tool not found. Build it first: cd tools/etc2tool && cmake -B build && cmake --build build --config Release"
+    exit 1
+}
 
 # TexSize 0 means use the 512x512 archives (original behavior)
 $actualTexSize = if ($TexSize -eq 0) { 512 } else { $TexSize }
@@ -167,7 +181,8 @@ function Convert-GameTextures {
         [string]$OutDir,
         [int]$MaxDim,
         [string]$Readme,
-        [string]$MagickPath
+        [string]$MagickPath,
+        [string]$Etc2ToolPath
     )
 
     if (-not (Test-Path $ArchivePath)) {
@@ -220,38 +235,20 @@ function Convert-GameTextures {
     $skipped = 0
     $errors = 0
 
-    $magickOutDir = $null
-    if ($useMagick) {
-        $magickOutDir = Join-Path $tempDir "magick_out"
-        New-Item -ItemType Directory -Path $magickOutDir -Force | Out-Null
-    }
-
     foreach ($tga in $tgaFiles) {
         $baseName = [System.IO.Path]::GetFileNameWithoutExtension($tga.Name)
 
         try {
-            # Read TGA header to detect alpha (bpp 32 = RGBA)
-            $headerBytes = [System.IO.File]::ReadAllBytes($tga.FullName)
-            if ($headerBytes.Length -lt 18) { throw "TGA too small: $($tga.Name)" }
-            $bpp = $headerBytes[16]
-            $hasAlpha = $bpp -eq 32
-            $ext = if ($hasAlpha) { 'png' } else { 'jpg' }
-            $entryName = "$baseName.$ext"
+            $entryName = "$baseName.etc2"
+            $tempPng = Join-Path $tempDir "$baseName.png"
+            $tempEtc2 = Join-Path $tempDir "$baseName.etc2"
 
-            if ($useMagick) {
-                # ImageMagick path: high-quality linear-light Lanczos downscale
-                $outFile = Join-Path $magickOutDir $entryName
-                Convert-WithMagick -InputPath $tga.FullName -OutputPath $outFile -MaxDim $MaxDim -MagickPath $MagickPath
-                $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
-                $stream = $entry.Open()
-                $fileBytes = [System.IO.File]::ReadAllBytes($outFile)
-                $stream.Write($fileBytes, 0, $fileBytes.Length)
-                $stream.Close()
-                Remove-Item $outFile -ErrorAction SilentlyContinue
+            if ($useMagick -and $MaxDim -gt 0) {
+                # ImageMagick path: high-quality linear-light Lanczos downscale -> temp PNG
+                Convert-WithMagick -InputPath $tga.FullName -OutputPath $tempPng -MaxDim $MaxDim -MagickPath $MagickPath
             } else {
-                # System.Drawing path: direct TGA parse + optional resize
+                # System.Drawing path: TGA parse + optional resize -> temp PNG
                 $bmp = Read-TGA $tga.FullName
-
                 if ($MaxDim -gt 0 -and ($bmp.Width -gt $MaxDim -or $bmp.Height -gt $MaxDim)) {
                     $scale = [Math]::Min($MaxDim / $bmp.Width, $MaxDim / $bmp.Height)
                     $newW = [Math]::Max(1, [int]($bmp.Width * $scale))
@@ -260,25 +257,20 @@ function Convert-GameTextures {
                     $bmp.Dispose()
                     $bmp = $resized
                 }
-
-                if ($hasAlpha) {
-                    $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
-                    $stream = $entry.Open()
-                    $bmp.Save($stream, [System.Drawing.Imaging.ImageFormat]::Png)
-                } else {
-                    $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
-                    $stream = $entry.Open()
-                    $jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() |
-                        Where-Object { $_.MimeType -eq "image/jpeg" }
-                    $encoderParams = [System.Drawing.Imaging.EncoderParameters]::new(1)
-                    $encoderParams.Param[0] = [System.Drawing.Imaging.EncoderParameter]::new(
-                        [System.Drawing.Imaging.Encoder]::Quality, [long]92
-                    )
-                    $bmp.Save($stream, $jpegCodec, $encoderParams)
-                }
-                $stream.Close()
+                $bmp.Save($tempPng, [System.Drawing.Imaging.ImageFormat]::Png)
                 $bmp.Dispose()
             }
+
+            # Run etc2tool to compress to ETC2
+            & $Etc2ToolPath $tempPng $tempEtc2 2>&1 | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "etc2tool failed for $baseName" }
+
+            $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
+            $stream = $entry.Open()
+            $fileBytes = [System.IO.File]::ReadAllBytes($tempEtc2)
+            $stream.Write($fileBytes, 0, $fileBytes.Length)
+            $stream.Close()
+            Remove-Item $tempPng, $tempEtc2 -ErrorAction SilentlyContinue
 
             $converted++
             if ($converted % 50 -eq 0) {
@@ -290,45 +282,30 @@ function Convert-GameTextures {
         }
     }
 
-    # Handle JPG files (keep as JPEG, just add to zip)
+    # Handle JPG files (convert through etc2tool too)
     foreach ($jpg in $jpgFiles) {
         $baseName = [System.IO.Path]::GetFileNameWithoutExtension($jpg.Name)
-        $entryName = "$baseName.jpg"
+        $entryName = "$baseName.etc2"
+        $tempEtc2 = Join-Path $tempDir "$baseName.etc2"
 
         try {
-            if ($useMagick) {
-                $outFile = Join-Path $magickOutDir $entryName
-                Convert-WithMagick -InputPath $jpg.FullName -OutputPath $outFile -MaxDim $MaxDim -MagickPath $MagickPath
-                $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
-                $stream = $entry.Open()
-                $fileBytes = [System.IO.File]::ReadAllBytes($outFile)
-                $stream.Write($fileBytes, 0, $fileBytes.Length)
-                $stream.Close()
-                Remove-Item $outFile -ErrorAction SilentlyContinue
+            if ($useMagick -and $MaxDim -gt 0) {
+                $tempPng = Join-Path $tempDir "$baseName.png"
+                Convert-WithMagick -InputPath $jpg.FullName -OutputPath $tempPng -MaxDim $MaxDim -MagickPath $MagickPath
+                & $Etc2ToolPath $tempPng $tempEtc2 2>&1 | Out-Null
+                Remove-Item $tempPng -ErrorAction SilentlyContinue
             } else {
-                $bmp = [System.Drawing.Bitmap]::new($jpg.FullName)
-
-                if ($MaxDim -gt 0 -and ($bmp.Width -gt $MaxDim -or $bmp.Height -gt $MaxDim)) {
-                    $scale = [Math]::Min($MaxDim / $bmp.Width, $MaxDim / $bmp.Height)
-                    $newW = [Math]::Max(1, [int]($bmp.Width * $scale))
-                    $newH = [Math]::Max(1, [int]($bmp.Height * $scale))
-                    $resized = [System.Drawing.Bitmap]::new($bmp, $newW, $newH)
-                    $bmp.Dispose()
-                    $bmp = $resized
-                }
-
-                $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
-                $stream = $entry.Open()
-                $jpegCodec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() |
-                    Where-Object { $_.MimeType -eq "image/jpeg" }
-                $encoderParams = [System.Drawing.Imaging.EncoderParameters]::new(1)
-                $encoderParams.Param[0] = [System.Drawing.Imaging.EncoderParameter]::new(
-                    [System.Drawing.Imaging.Encoder]::Quality, [long]92
-                )
-                $bmp.Save($stream, $jpegCodec, $encoderParams)
-                $stream.Close()
-                $bmp.Dispose()
+                # etc2tool reads JPG directly via stb_image
+                & $Etc2ToolPath $jpg.FullName $tempEtc2 2>&1 | Out-Null
             }
+            if ($LASTEXITCODE -ne 0) { throw "etc2tool failed for $baseName" }
+
+            $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
+            $stream = $entry.Open()
+            $fileBytes = [System.IO.File]::ReadAllBytes($tempEtc2)
+            $stream.Write($fileBytes, 0, $fileBytes.Length)
+            $stream.Close()
+            Remove-Item $tempEtc2 -ErrorAction SilentlyContinue
             $converted++
         } catch {
             Write-Host "  ERROR converting $($jpg.Name): $_"
@@ -363,9 +340,9 @@ if (-not (Test-Path $SevenZip)) {
 $games = if ($Game -eq "both") { @("d1", "d2") } else { @($Game) }
 
 foreach ($g in $games) {
-    Convert-GameTextures -GameId $g -ArchivePath $archives[$g] -OutDir $OutputDir -MaxDim $MaxSize -Readme $ReadmeText -MagickPath $Magick
+    Convert-GameTextures -GameId $g -ArchivePath $archives[$g] -OutDir $OutputDir -MaxDim $MaxSize -Readme $ReadmeText -MagickPath $Magick -Etc2ToolPath $Etc2Tool
 }
 
 Write-Host ""
 Write-Host "Conversion complete. Place .dxa files in the game data directory"
-Write-Host "to enable hires textures (requires HAVE_LIBPNG / PNG build option)"
+Write-Host "to enable hires textures (pre-compressed ETC2 format)"
