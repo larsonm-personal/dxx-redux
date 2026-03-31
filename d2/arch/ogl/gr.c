@@ -692,6 +692,19 @@ void ogl_get_verinfo(void)
 			ogl_max_texture_size = min(mts, 2048);
 		con_printf(CON_VERBOSE, "GL_MAX_TEXTURE_SIZE: %d, using: %d\n", mts, ogl_max_texture_size);
 	}
+#ifdef ANDROID
+	/* Detect broken ETC2 implementations (emulator GLES translator decodes to black) */
+	{
+		const char *renderer = (const char *) glGetString(GL_RENDERER);
+		extern int ogl_etc2_broken;
+		con_printf(CON_NORMAL, "GL_RENDERER: %s", renderer ? renderer : "(null)");
+		if (renderer && (strstr(renderer, "SwiftShader")
+		    || strstr(renderer, "Android Emulator"))) {
+			ogl_etc2_broken = 1;
+			con_printf(CON_NORMAL, "ETC2 disabled: emulator/software renderer detected");
+		}
+	}
+#endif
 #ifndef OGLES
 	gl_vendor = (const char *) glGetString (GL_VENDOR);
 	gl_renderer = (const char *) glGetString (GL_RENDERER);

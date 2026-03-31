@@ -123,8 +123,19 @@ foreach ($gameId in $gameList) {
 
     # -- Resolve declarative game data deps (if present) ----------
 
-    # Build vars for dep substitution (game vars + param vars)
+    # Build vars for dep substitution (game vars + param option vars)
     $depVars = @{} + $resolvedParams
+    if ($scriptParams -and $resolvedParams.Count -gt 0) {
+        foreach ($pName in $resolvedParams.Keys) {
+            $pValue = $resolvedParams[$pName]
+            $paramDef = $scriptParams.$pName
+            if ($paramDef -and $paramDef.options -and $paramDef.options.$pValue) {
+                foreach ($prop in $paramDef.options.$pValue.PSObject.Properties) {
+                    $depVars[$prop.Name] = $prop.Value
+                }
+            }
+        }
+    }
     $skipGameData = $false
     $deps = Get-ScriptDeps -ScriptPath $scriptPath -Vars $depVars
     if ($deps) {

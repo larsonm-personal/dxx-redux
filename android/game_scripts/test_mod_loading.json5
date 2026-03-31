@@ -12,9 +12,9 @@
             "RESOLUTION": {
                 "label": "Texture resolution",
                 "options": {
-                    "128": {"DXA_SHA": "6c1ebe385ab76c52c520c68a14d275a37c5cf9cce1e2bd58b71780f5df781123"},
-                    "256": {"DXA_SHA": "dcb36008cb084869b73322502ece247a8c0cd10ceeab41de8877436b2d1ad528"},
-                    "512": {"DXA_SHA": "bce93b195441427606f1a67d9c8afab2158d274d8b554857167052d8fb7f9688"}
+                    "128": {"DXA_SHA": "65b0da223b64e95f72904070e0a72ca81f9cb65912e92be3c6243546996f81ad"},
+                    "256": {"DXA_SHA": "b5b885f2331970a906ca8d467a45d76048789554299db477d7531d8a1dfb2676"},
+                    "512": {"DXA_SHA": "1bcc51fd896d3cbc2f0a0a58eb58260484088633dbb361eeab3da9e88b3d608c"}
                 }
             }
         },

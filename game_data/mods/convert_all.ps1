@@ -155,6 +155,8 @@ function Add-Etc2ToDxa {
     $zip = [System.IO.Compression.ZipFile]::Open($DxaPath, [System.IO.Compression.ZipArchiveMode]::Update)
     foreach ($f in $Etc2Files) {
         $entryName = [System.IO.Path]::GetFileName($f)
+        # Restore '#' from safe naming used during conversion
+        $entryName = $entryName -replace '_H_', '#'
         $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
         $stream = $entry.Open()
         $fileBytes = [System.IO.File]::ReadAllBytes($f)
@@ -181,6 +183,37 @@ function Convert-AndAdd {
     if ($LASTEXITCODE -ne 0) { throw "7z extraction failed" }
     $tgaDir = Join-Path (Join-Path $extractDir "textures") $GameId
 
+    # Pre-split animation strips so individual frames are available
+    if ($Magick -and (Test-Path $Magick)) {
+        foreach ($tga in (Get-ChildItem -Path $tgaDir -Filter "*#0*.tga" -File -ErrorAction SilentlyContinue)) {
+            $safeName = $tga.Name -replace '#', '__H__'
+            $safePath = Join-Path $tgaDir $safeName
+            Copy-Item $tga.FullName $safePath -Force
+            $dims = & $Magick identify -format "%w %h" $safePath 2>&1
+            if ($LASTEXITCODE -ne 0) { Remove-Item $safePath -Force; continue }
+            $parts = ("$dims" -split '\s+'); $w = [int]$parts[0]; $h = [int]$parts[1]
+            if ($h -le $w -or $h % $w -ne 0 -or ($h / $w) -le 1) {
+                Remove-Item $safePath -Force; continue
+            }
+            $bn = [IO.Path]::GetFileNameWithoutExtension($tga.Name)
+            $variant = ""; $nameBase = $bn
+            if ($bn -match '^(.+)#0(-\w+)$') { $nameBase = $Matches[1]; $variant = $Matches[2] }
+            else { $nameBase = $bn -replace '#0$', '' }
+            for ($i = 0; $i -lt ($h / $w); $i++) {
+                $frameName = "${nameBase}#${i}${variant}.tga"
+                $safeFrame = Join-Path $tgaDir ($frameName -replace '#', '__H__')
+                & $Magick $safePath -crop "${w}x${w}+0+$($i * $w)" +repage $safeFrame 2>&1 | Out-Null
+                if ($LASTEXITCODE -eq 0) {
+                    $realFrame = Join-Path $tgaDir $frameName
+                    if (Test-Path $realFrame) { Remove-Item $realFrame -Force }
+                    Rename-Item $safeFrame $frameName
+                }
+            }
+            Remove-Item $tga.FullName -Force
+            Remove-Item $safePath -Force -ErrorAction SilentlyContinue
+        }
+    }
+
     foreach ($tgt in $Targets) {
         $maxDim = $tgt.MaxDim
         $dxaPath = $tgt.DxaPath
@@ -196,15 +229,19 @@ function Convert-AndAdd {
             if (-not (Test-Path $src)) { continue }
 
             try {
-                $tempEtc2 = Join-Path $outDir "$name.etc2"
+                $safeName = $name -replace '#', '_H_'
+                $tempEtc2 = Join-Path $outDir "$safeName.etc2"
                 if ($maxDim -gt 0 -and $Magick) {
-                    $tempPng = Join-Path $outDir "$name.png"
-                    & $Magick $src '-colorspace' 'RGB' '-filter' 'Lanczos' `
+                    # Copy to safe name to avoid IM interpreting '#' as scene selector
+                    $safeSrc = Join-Path $outDir "${safeName}_src$([IO.Path]::GetExtension($src))"
+                    Copy-Item $src $safeSrc -Force
+                    $tempPng = Join-Path $outDir "$safeName.png"
+                    & $Magick $safeSrc '-colorspace' 'RGB' '-filter' 'Lanczos' `
                         '-resize' "${maxDim}x${maxDim}" '-unsharp' '0x0.4' `
                         '-colorspace' 'sRGB' $tempPng 2>&1 | Out-Null
                     if ($LASTEXITCODE -ne 0) { throw "magick failed" }
                     & $Etc2Tool $tempPng $tempEtc2 2>&1 | Out-Null
-                    Remove-Item $tempPng -ErrorAction SilentlyContinue
+                    Remove-Item $safeSrc, $tempPng -ErrorAction SilentlyContinue
                 } else {
                     & $Etc2Tool $src $tempEtc2 2>&1 | Out-Null
                 }

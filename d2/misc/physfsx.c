@@ -128,12 +128,14 @@ void PHYSFSX_init(int argc, char *argv[])
 					if (nl) *nl = '\0';
 					if (strlen(line) > 0) {
 						if (PHYSFS_mount(line, NULL, 0))
-							con_printf(CON_DEBUG, "PHYSFS: Mounted mod %s\n", line);
+							con_printf(CON_NORMAL, "PHYSFS: Mounted mod %s\n", line);
 						else
-							con_printf(CON_DEBUG, "PHYSFS: Failed to mount mod %s\n", line);
+							con_printf(CON_NORMAL, "PHYSFS: Failed to mount mod %s: %s\n", line, PHYSFS_getLastError());
 					}
 				}
 				fclose(mf);
+			} else {
+				con_printf(CON_NORMAL, "PHYSFS: No .active_mod_paths at %s\n", modpath);
 			}
 		}
 	}

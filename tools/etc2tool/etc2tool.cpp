@@ -11,7 +11,9 @@
  *     format:    uint8    0 = GL_COMPRESSED_RGB8_ETC2
  *                         1 = GL_COMPRESSED_RGBA8_ETC2_EAC
  *     mip_count: uint8    number of mip levels
- *     reserved:  6 bytes  zero
+ *     orig_w:   uint16   original image width (before pow2 padding)
+ *     orig_h:   uint16   original image height (before pow2 padding)
+ *     reserved:  2 bytes  zero
  *
  *   For each mip level (largest first):
  *     data_size: uint32   byte size of compressed data
@@ -218,8 +220,10 @@ int main(int argc, char **argv)
 	fwrite(&fmt_byte, 1, 1, out);
 	uint8_t mc = (uint8_t)mip_count;
 	fwrite(&mc, 1, 1, out);
-	uint8_t reserved[6] = {0};
-	fwrite(reserved, 1, 6, out);
+	write_u16(out, (uint16_t)w);  /* original width before pow2 padding */
+	write_u16(out, (uint16_t)h);  /* original height before pow2 padding */
+	uint8_t reserved[2] = {0};
+	fwrite(reserved, 1, 2, out);
 
 	/* Compress and write each mip level */
 	uint8_t *cur = rgba;

@@ -43,12 +43,11 @@ class VideoInfoOverlay(
     private var displayW = 0
     private var displayH = 0
 
-    // Labels toggle state and hit region
+    // Labels toggle button state and hit region
     private var labelsOn = false
-    private var labelsRowTop = 0f
-    private var labelsRowBottom = 0f
-    private var labelsRowLeft = 0f
-    private var labelsRowRight = 0f
+    private var buttonPressed = false
+    private val buttonRect = RectF()
+    private val panelBounds = RectF()
 
     private val pollRunnable =
         object : Runnable {
@@ -131,6 +130,16 @@ class VideoInfoOverlay(
             color = 0xFFFF4444u.toInt()
             typeface = android.graphics.Typeface.MONOSPACE
         }
+    private val btnNormalPaint =
+        Paint().apply {
+            color = 0x44FFFFFF
+            style = Paint.Style.FILL
+        }
+    private val btnPressedPaint =
+        Paint().apply {
+            color = 0x66FFFFFF
+            style = Paint.Style.FILL
+        }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
@@ -157,12 +166,8 @@ class VideoInfoOverlay(
         val panelTop = pad
 
         // Background
-        canvas.drawRoundRect(
-            RectF(panelLeft, panelTop, panelLeft + panelW, panelTop + panelH),
-            pad,
-            pad,
-            bgPaint,
-        )
+        panelBounds.set(panelLeft, panelTop, panelLeft + panelW, panelTop + panelH)
+        canvas.drawRoundRect(panelBounds, pad, pad, bgPaint)
 
         var y = panelTop + pad + titlePaint.textSize
 
@@ -218,27 +223,51 @@ class VideoInfoOverlay(
         )
         y += lineH
 
-        // Labels toggle (tappable)
+        // Labels toggle button (tappable, with background)
         val labelsText = if (labelsOn) "Labels: ON" else "Labels: OFF"
         val labelTogglePaint = if (labelsOn) fpsGoodPaint else fpsWarnPaint
+        buttonRect.set(
+            panelLeft + pad * 0.5f,
+            y - baseTextSize,
+            panelLeft + panelW - pad * 0.5f,
+            y + lineH * 0.3f,
+        )
+        val btnBg = if (buttonPressed) btnPressedPaint else btnNormalPaint
+        canvas.drawRoundRect(buttonRect, pad * 0.5f, pad * 0.5f, btnBg)
         canvas.drawText(labelsText, panelLeft + pad, y, labelTogglePaint)
-        labelsRowTop = y - baseTextSize
-        labelsRowBottom = y + lineH * 0.3f
-        labelsRowLeft = panelLeft
-        labelsRowRight = panelLeft + panelW
     }
 
     @Suppress("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (event.action == MotionEvent.ACTION_UP &&
-            event.x in labelsRowLeft..labelsRowRight &&
-            event.y in labelsRowTop..labelsRowBottom
-        ) {
-            labelsOn = !labelsOn
-            debugFlagSetter?.invoke("tex_overlay", if (labelsOn) 1 else 0)
-            invalidate()
-            performClick()
-            return true
+        if (visibility != VISIBLE) return super.onTouchEvent(event)
+        val inPanel = panelBounds.contains(event.x, event.y)
+        val inButton = buttonRect.contains(event.x, event.y)
+
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> {
+                if (inButton) {
+                    buttonPressed = true
+                    invalidate()
+                    return true
+                }
+                if (inPanel) return true
+            }
+            MotionEvent.ACTION_UP -> {
+                if (buttonPressed && inButton) {
+                    labelsOn = !labelsOn
+                    debugFlagSetter?.invoke("tex_overlay", if (labelsOn) 1 else 0)
+                    performClick()
+                }
+                if (buttonPressed || inPanel) {
+                    buttonPressed = false
+                    invalidate()
+                    return true
+                }
+            }
+            MotionEvent.ACTION_CANCEL -> {
+                buttonPressed = false
+                invalidate()
+            }
         }
         return super.onTouchEvent(event)
     }

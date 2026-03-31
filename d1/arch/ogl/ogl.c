@@ -96,6 +96,9 @@ int GL_TEXTURE_2D_enabled=-1;
 int GL_texclamp_enabled=-1;
 GLfloat ogl_maxanisotropy = 0;
 int ogl_max_texture_size = 1024;
+#ifdef ANDROID
+int ogl_etc2_broken = 0; /* set if GL_RENDERER indicates broken ETC2 (emulator) */
+#endif
 
 int r_texcount = 0, r_cachedtexcount = 0;
 #ifdef OGLES
@@ -1827,6 +1830,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 
 #ifdef ANDROID
 		/* Try pre-compressed ETC2 first (from .dxa texture packs) */
+		if (!ogl_etc2_broken)
 		{
 			etc2_file_data edata;
 			sprintf(filename, "%s.etc2", bitmapname);
@@ -1842,8 +1846,8 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 						edata.width, edata.height, flags);
 				bm->gltexture->tw = edata.width;
 				bm->gltexture->th = edata.height;
-				bm->gltexture->u = 1.0f;
-				bm->gltexture->v = 1.0f;
+				bm->gltexture->u = (float)edata.orig_width / (float)edata.width;
+				bm->gltexture->v = (float)edata.orig_height / (float)edata.height;
 				glGenTextures(1, &bm->gltexture->handle);
 				OGL_BINDTEXTURE(bm->gltexture->handle);
 				glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);

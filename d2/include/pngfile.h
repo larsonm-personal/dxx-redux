@@ -26,6 +26,8 @@ typedef struct _etc2_file_data {
 	unsigned int height;
 	unsigned char format;    /* 0 = RGB8_ETC2, 1 = RGBA8_ETC2_EAC */
 	unsigned char mip_count;
+	unsigned int orig_width;  /* pre-padding width (0 = same as width) */
+	unsigned int orig_height; /* pre-padding height (0 = same as height) */
 	unsigned char *filedata; /* raw file contents after header */
 	unsigned int filedata_size;
 } etc2_file_data;

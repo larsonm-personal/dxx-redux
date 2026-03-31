@@ -128,6 +128,11 @@ int read_etc2_file(const char *filename, etc2_file_data *edata)
 	edata->height = hdr[6] | ((unsigned int) hdr[7] << 8);
 	edata->format = hdr[8];
 	edata->mip_count = hdr[9];
+	/* Original (pre-padding) dimensions; 0 means same as padded */
+	edata->orig_width = hdr[10] | ((unsigned int) hdr[11] << 8);
+	edata->orig_height = hdr[12] | ((unsigned int) hdr[13] << 8);
+	if (edata->orig_width == 0) edata->orig_width = edata->width;
+	if (edata->orig_height == 0) edata->orig_height = edata->height;
 
 	if (edata->mip_count == 0 || edata->format > 1) {
 		PHYSFS_close(fp);

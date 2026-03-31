@@ -148,6 +148,67 @@ function Read-TGA {
     return $bmp
 }
 
+# Split animation strip TGAs into individual frame files.
+# d2x-xl stores animation frames as vertical strips: name#0.tga = WxNW (N frames).
+# The engine expects separate files: name#0, name#1, ..., name#(N-1).
+# Replaces strip TGAs with individual frame TGAs in-place.
+# Requires ImageMagick. Note: '#' in filenames is dangerous for IM -- uses safe temp names.
+function Split-StripTextures {
+    param([string]$TgaDir, [string]$MagickPath)
+    if (-not $MagickPath -or -not (Test-Path $MagickPath)) { return 0 }
+
+    $splitCount = 0
+    $tgaFiles = Get-ChildItem -Path $TgaDir -Filter "*.tga" -File
+    foreach ($tga in $tgaFiles) {
+        $bn = [IO.Path]::GetFileNameWithoutExtension($tga.Name)
+        # Only process files that are frame-0 of an animation (name#0)
+        if ($bn -notmatch '#0(-\w+)?$') { continue }
+
+        # Copy to safe name to avoid IM interpreting '#' as scene selector
+        $safeName = $tga.Name -replace '#', '__H__'
+        $safePath = Join-Path $TgaDir $safeName
+        Copy-Item $tga.FullName $safePath -Force
+
+        $dims = & $MagickPath identify -format "%w %h" $safePath 2>&1
+        if ($LASTEXITCODE -ne 0) { Remove-Item $safePath -Force; continue }
+        $parts = ("$dims" -split '\s+')
+        $w = [int]$parts[0]; $h = [int]$parts[1]
+        if ($h -le $w -or $h % $w -ne 0) { Remove-Item $safePath -Force; continue }
+
+        $nFrames = $h / $w
+        if ($nFrames -le 1) { Remove-Item $safePath -Force; continue }
+
+        # Extract the base name without the '#0' suffix (and optional variant like '-green')
+        $variant = ""
+        if ($bn -match '^(.+)#0(-\w+)$') {
+            $nameBase = $Matches[1]; $variant = $Matches[2]
+        } else {
+            $nameBase = $bn -replace '#0$', ''
+        }
+
+        # Crop each frame and save as individual TGA
+        for ($i = 0; $i -lt $nFrames; $i++) {
+            $frameName = "${nameBase}#${i}${variant}.tga"
+            $safeFrameName = $frameName -replace '#', '__H__'
+            $safeFramePath = Join-Path $TgaDir $safeFrameName
+            $y = $i * $w
+            & $MagickPath $safePath -crop "${w}x${w}+0+${y}" +repage $safeFramePath 2>&1 | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+                # Rename safe frame to real name
+                $realFramePath = Join-Path $TgaDir $frameName
+                if (Test-Path $realFramePath) { Remove-Item $realFramePath -Force }
+                Rename-Item $safeFramePath $frameName
+            }
+        }
+
+        # Remove the original strip TGA and safe copy
+        Remove-Item $tga.FullName -Force
+        Remove-Item $safePath -Force -ErrorAction SilentlyContinue
+        $splitCount++
+    }
+    return $splitCount
+}
+
 function Convert-WithMagick {
     param(
         [string]$InputPath,
@@ -155,9 +216,23 @@ function Convert-WithMagick {
         [int]$MaxDim,
         [string]$MagickPath
     )
+    # Copy to safe temp name if '#' present (IM interprets '#N' as scene selector)
+    $safeInput = $InputPath
+    if ($InputPath -match '#') {
+        $dir = Split-Path $InputPath
+        $ext = [IO.Path]::GetExtension($InputPath)
+        $safeInput = Join-Path $dir ("_safe_input_" + [IO.Path]::GetFileNameWithoutExtension($InputPath).Replace('#','_H_') + $ext)
+        Copy-Item $InputPath $safeInput -Force
+    }
+    $safeOutput = $OutputPath
+    if ($OutputPath -match '#') {
+        $dir = Split-Path $OutputPath
+        $ext = [IO.Path]::GetExtension($OutputPath)
+        $safeOutput = Join-Path $dir ("_safe_output_" + [IO.Path]::GetFileNameWithoutExtension($OutputPath).Replace('#','_H_') + $ext)
+    }
     # ImageMagick pipeline: sRGB -> linear -> Lanczos resize -> micro-sharpen -> sRGB
     $magickArgs = @(
-        $InputPath,
+        $safeInput,
         '-colorspace', 'RGB',
         '-filter', 'Lanczos',
         '-resize', "${MaxDim}x${MaxDim}",
@@ -167,8 +242,12 @@ function Convert-WithMagick {
     if ($OutputPath -match '\.jpg$') {
         $magickArgs += @('-quality', '92')
     }
-    $magickArgs += $OutputPath
+    $magickArgs += $safeOutput
     & $MagickPath $magickArgs 2>&1 | Out-Null
+    if ($safeInput -ne $InputPath) { Remove-Item $safeInput -Force -ErrorAction SilentlyContinue }
+    if ($safeOutput -ne $OutputPath -and (Test-Path $safeOutput)) {
+        Move-Item $safeOutput $OutputPath -Force
+    }
     if ($LASTEXITCODE -ne 0) {
         throw "ImageMagick conversion failed for $InputPath"
     }
@@ -220,6 +299,12 @@ function Convert-GameTextures {
         Write-Host "  No textures/$GameId directory found in archive -- skipping"
         Remove-Item -Recurse -Force $tempDir
         return
+    }
+
+    # Pre-split animation strips into individual frame files
+    $splitCount = Split-StripTextures -TgaDir $tgaDir -MagickPath $MagickPath
+    if ($splitCount -gt 0) {
+        Write-Host "  Split $splitCount animation strips into individual frames"
     }
 
     $tgaFiles = Get-ChildItem -Path $tgaDir -Filter "*.tga" -File
