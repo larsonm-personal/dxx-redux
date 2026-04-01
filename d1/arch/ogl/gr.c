@@ -689,15 +689,18 @@ void ogl_get_verinfo(void)
 		con_printf(CON_VERBOSE, "GL_MAX_TEXTURE_SIZE: %d, using: %d\n", mts, ogl_max_texture_size);
 	}
 #ifdef ANDROID
-	/* Detect broken ETC2 implementations (emulator GLES translator decodes to black) */
 	{
 		const char *renderer = (const char *) glGetString(GL_RENDERER);
-		extern int ogl_etc2_broken;
 		con_printf(CON_NORMAL, "GL_RENDERER: %s", renderer ? renderer : "(null)");
-		if (renderer && (strstr(renderer, "SwiftShader")
-		    || strstr(renderer, "Android Emulator"))) {
-			ogl_etc2_broken = 1;
-			con_printf(CON_NORMAL, "ETC2 disabled: emulator/software renderer detected");
+		/* android port: emulator GLES translator has broken ETC2 decoder --
+		 * glCompressedTexImage2D returns GL_NO_ERROR but textures are black */
+		{
+			extern int ogl_etc2_broken;
+			if (renderer && (strstr(renderer, "SwiftShader") ||
+			                 strstr(renderer, "Android Emulator"))) {
+				ogl_etc2_broken = 1;
+				con_printf(CON_NORMAL, "ETC2 disabled (emulator detected)");
+			}
 		}
 	}
 #endif

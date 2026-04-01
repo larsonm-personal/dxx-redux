@@ -126,10 +126,17 @@ try {
     Write-Host "APK: $apkOut ($apkSize MB)"
 
     # -- Install via adb --
+    $adbExe = Join-Path $DEP_BASE "android-sdk\platform-tools\adb.exe"
+    if (-not (Test-Path $adbExe)) { Write-Error "adb not found at $adbExe"; exit 1 }
     Write-Host ""
     Write-Host "Installing APK via adb..."
-    adb install -r $apkOut
-    if ($LASTEXITCODE -ne 0) { throw "adb install failed" }
+    & $adbExe install -r $apkOut
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Install failed -- uninstalling existing package and retrying..."
+        & $adbExe uninstall com.dxxredux.app
+        & $adbExe install $apkOut
+        if ($LASTEXITCODE -ne 0) { throw "adb install failed" }
+    }
 
     Write-Host ""
     Write-Host "Done. APK installed on device"

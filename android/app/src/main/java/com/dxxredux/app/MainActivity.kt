@@ -326,6 +326,7 @@ class MainActivity :
         val libName = if (game == "d1") "dxx-redux-d1" else "dxx-redux-d2"
         System.loadLibrary(libName)
         Log.i("MainActivity", "Loaded native library: $libName")
+        CrashLog.installNativeHandler(this)
 
         // Rewrite audio playlist in the game process so SAF fds are valid.
         // SetupActivity runs in the default process; this activity runs in

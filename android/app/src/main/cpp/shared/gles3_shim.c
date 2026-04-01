@@ -16,7 +16,9 @@
 
 #include <string.h>
 #include <math.h>
+#include <stdint.h>
 #include <android/log.h>
+#include "android_crash_handler.h"
 
 #define TAG       "gles3_shim"
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
@@ -173,6 +175,16 @@ static const void *ta_ptr;
 
 static int state_dirty = 1;
 static GLuint external_prog;
+static GLuint shim_vbo;
+
+static int gl_type_size(GLenum type)
+{
+	switch (type) {
+		case GL_BYTE: case GL_UNSIGNED_BYTE: return 1;
+		case GL_SHORT: case GL_UNSIGNED_SHORT: return 2;
+		default: return 4; /* GL_FLOAT, GL_INT, GL_UNSIGNED_INT */
+	}
+}
 
 /* ------------------------------------------------------------------ */
 /* Lifecycle                                                           */
@@ -234,11 +246,18 @@ void gles3_shim_init(void)
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
-	LOGI("GLES3 shim initialized (prog=%u, vao=%u)", shim_prog, vao);
+	/* VBO for streaming client-side vertex data (GLES 3.0 has no client arrays) */
+	glGenBuffers(1, &shim_vbo);
+
+	LOGI("GLES3 shim initialized (prog=%u, vao=%u, vbo=%u)", shim_prog, vao, shim_vbo);
 }
 
 void gles3_shim_shutdown(void)
 {
+	if (shim_vbo) {
+		glDeleteBuffers(1, &shim_vbo);
+		shim_vbo = 0;
+	}
 	if (shim_prog) {
 		glDeleteProgram(shim_prog);
 		shim_prog = 0;
@@ -511,28 +530,6 @@ void gles3_shim_flush_state(void)
 	glUniform1i(u_use_color_attr, color_array_enabled);
 	glUniform4fv(u_flat_color, 1, flat_color);
 
-	/* Bind vertex attribute arrays */
-	if (vertex_array_enabled && va_ptr) {
-		glVertexAttribPointer(ATTR_POS, va_size, va_type, GL_FALSE, va_stride, va_ptr);
-		glEnableVertexAttribArray(ATTR_POS);
-	} else {
-		glDisableVertexAttribArray(ATTR_POS);
-	}
-
-	if (color_array_enabled && ca_ptr) {
-		glVertexAttribPointer(ATTR_COLOR, ca_size, ca_type, GL_FALSE, ca_stride, ca_ptr);
-		glEnableVertexAttribArray(ATTR_COLOR);
-	} else {
-		glDisableVertexAttribArray(ATTR_COLOR);
-	}
-
-	if (texcoord_array_enabled && ta_ptr) {
-		glVertexAttribPointer(ATTR_TEXCOORD, ta_size, ta_type, GL_FALSE, ta_stride, ta_ptr);
-		glEnableVertexAttribArray(ATTR_TEXCOORD);
-	} else {
-		glDisableVertexAttribArray(ATTR_TEXCOORD);
-	}
-
 	state_dirty = 0;
 }
 
@@ -567,5 +564,57 @@ const float *gles3_shim_get_mvp(void)
 void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 {
 	gles3_shim_flush_state();
+
+	if (!external_prog) {
+		/* GLES 3.0 requires vertex data in buffer objects -- no client-side
+		 * arrays.  Upload the deferred client pointers to our streaming VBO. */
+		GLsizei nverts = first + count;
+		int va_row = va_stride ? va_stride : va_size * gl_type_size(va_type);
+		int ca_row = ca_stride ? ca_stride : ca_size * gl_type_size(ca_type);
+		int ta_row = ta_stride ? ta_stride : ta_size * gl_type_size(ta_type);
+		int va_bytes = (vertex_array_enabled && va_ptr) ? nverts * va_row : 0;
+		int ca_bytes = (color_array_enabled  && ca_ptr) ? nverts * ca_row : 0;
+		int ta_bytes = (texcoord_array_enabled && ta_ptr) ? nverts * ta_row : 0;
+		int total = va_bytes + ca_bytes + ta_bytes;
+		int off = 0;
+
+		glBindBuffer(GL_ARRAY_BUFFER, shim_vbo);
+		if (total > 0)
+			glBufferData(GL_ARRAY_BUFFER, total, NULL, GL_STREAM_DRAW);
+
+		if (va_bytes) {
+			glBufferSubData(GL_ARRAY_BUFFER, off, va_bytes, va_ptr);
+			glVertexAttribPointer(ATTR_POS, va_size, va_type, GL_FALSE,
+				va_stride, (const void *)(intptr_t)off);
+			glEnableVertexAttribArray(ATTR_POS);
+			off += va_bytes;
+		} else {
+			glDisableVertexAttribArray(ATTR_POS);
+		}
+
+		if (ca_bytes) {
+			glBufferSubData(GL_ARRAY_BUFFER, off, ca_bytes, ca_ptr);
+			glVertexAttribPointer(ATTR_COLOR, ca_size, ca_type, GL_FALSE,
+				ca_stride, (const void *)(intptr_t)off);
+			glEnableVertexAttribArray(ATTR_COLOR);
+			off += ca_bytes;
+		} else {
+			glDisableVertexAttribArray(ATTR_COLOR);
+		}
+
+		if (ta_bytes) {
+			glBufferSubData(GL_ARRAY_BUFFER, off, ta_bytes, ta_ptr);
+			glVertexAttribPointer(ATTR_TEXCOORD, ta_size, ta_type, GL_FALSE,
+				ta_stride, (const void *)(intptr_t)off);
+			glEnableVertexAttribArray(ATTR_TEXCOORD);
+			off += ta_bytes;
+		} else {
+			glDisableVertexAttribArray(ATTR_TEXCOORD);
+		}
+	}
+
 	glDrawArrays(mode, first, count);
+
+	if (!external_prog)
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 }

@@ -151,6 +151,20 @@ object CrashLog {
         }
     }
 
+    /**
+     * Install native signal handlers. Call after System.loadLibrary().
+     * Safe to call multiple times (native side is idempotent).
+     */
+    fun installNativeHandler(context: Context) {
+        try {
+            val crashDir = File(context.filesDir, DIR_NAME)
+            crashDir.mkdirs()
+            nativeInstallCrashHandler(crashDir.absolutePath)
+        } catch (e: UnsatisfiedLinkError) {
+            Log.w(TAG, "Native crash handler not available", e)
+        }
+    }
+
     // JNI declaration -- implemented in android_crash_handler.c
     private external fun nativeInstallCrashHandler(crashDir: String)
 }

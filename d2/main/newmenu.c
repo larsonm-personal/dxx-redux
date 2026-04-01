@@ -65,6 +65,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "ogl_init.h"
 #endif
 
+#ifdef ANDROID
+#include "android_crash_handler.h"
+#endif
+
 
 #define MAXDISPLAYABLEITEMS 14
 #define MAXDISPLAYABLEITEMSTINY 21
@@ -124,6 +128,9 @@ void newmenu_free_background()	{
 void nm_draw_background1(char * filename)
 {
 	int pcx_error;
+#ifdef ANDROID
+	crash_breadcrumb_v("nm_draw_bg1: %s", filename ? filename : "(null)");
+#endif
 
 	if (filename != NULL)
 	{

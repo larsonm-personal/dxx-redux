@@ -17,6 +17,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
 #include <time.h>
 #include <android/log.h>
 
@@ -33,6 +35,56 @@ static struct sigaction s_old_sigabrt;
 static struct sigaction s_old_sigbus;
 static struct sigaction s_old_sigfpe;
 static struct sigaction s_old_sigill;
+
+/* Breadcrumb ring buffer for crash diagnostics */
+#define CRUMB_COUNT 64
+#define CRUMB_LEN 128
+
+static char s_crumbs[CRUMB_COUNT][CRUMB_LEN];
+static volatile int s_crumb_next = 0;
+
+void crash_breadcrumb(const char *msg)
+{
+	int idx = s_crumb_next % CRUMB_COUNT;
+	strncpy(s_crumbs[idx], msg, CRUMB_LEN - 1);
+	s_crumbs[idx][CRUMB_LEN - 1] = '\0';
+	s_crumb_next++;
+	__android_log_print(ANDROID_LOG_DEBUG, "DXX-CRUMB", "%s", msg);
+}
+
+void crash_breadcrumb_v(const char *fmt, ...)
+{
+	char buf[CRUMB_LEN];
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(buf, sizeof(buf), fmt, ap);
+	va_end(ap);
+	crash_breadcrumb(buf);
+}
+
+/* Write all breadcrumbs to fd (async-signal-safe: only uses write + itoa_safe) */
+static char *itoa_safe(long val, char *buf, int buflen);
+
+static void dump_breadcrumbs(int fd)
+{
+	static const char hdr[] = "\nBreadcrumbs (oldest first):\n";
+	int total = s_crumb_next;
+	int start = (total > CRUMB_COUNT) ? total - CRUMB_COUNT : 0;
+	int i;
+	char numbuf[24];
+
+	if (total == 0) return;
+	write(fd, hdr, sizeof(hdr) - 1);
+	for (i = start; i < total; i++) {
+		int idx = i % CRUMB_COUNT;
+		const char *num = itoa_safe((long)i, numbuf, sizeof(numbuf));
+		write(fd, "  [", 3);
+		write(fd, num, strlen(num));
+		write(fd, "] ", 2);
+		write(fd, s_crumbs[idx], strlen(s_crumbs[idx]));
+		write(fd, "\n", 1);
+	}
+}
 
 /* Async-signal-safe integer-to-string (decimal). Returns pointer into buf. */
 static char *itoa_safe(long val, char *buf, int buflen)
@@ -172,6 +224,8 @@ static void crash_handler(int sig, siginfo_t *info, void *ucontext)
 			write(fd, num, strlen(num));
 			write(fd, "\n", 1);
 
+			dump_breadcrumbs(fd);
+
 			close(fd);
 		}
 	}
@@ -222,6 +276,11 @@ void android_crash_handler_init(const char *crash_dir)
 
 	__android_log_print(ANDROID_LOG_INFO, TAG,
 	                    "Native crash handler installed (dir=%s)", crash_dir);
+}
+
+const char *android_crash_handler_get_dir(void)
+{
+	return s_initialized ? s_crash_dir : NULL;
 }
 
 /* JNI entry point called from CrashLog.kt */

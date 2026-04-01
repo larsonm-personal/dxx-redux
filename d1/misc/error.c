@@ -20,6 +20,11 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#ifdef ANDROID
+#include <unistd.h>
+#include <fcntl.h>
+#include "android_crash_handler.h"
+#endif
 
 #include "pstypes.h"
 #include "console.h"
@@ -74,6 +79,26 @@ void Error(const char *fmt,...)
 	Int3();
 
 	print_exit_message(exit_message);
+
+#ifdef ANDROID
+	/* Android port: write error to crashlogs so it survives exit(1).
+	 * Signal handlers don't catch clean exits, so this is the only
+	 * way to get a crash file for Error() calls. */
+	{
+		const char *dir = android_crash_handler_get_dir();
+		if (dir) {
+			char path[600];
+			snprintf(path, sizeof(path), "%s/crash_error_%d.txt",
+			         dir, (int)getpid());
+			int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+			if (fd >= 0) {
+				write(fd, exit_message, strlen(exit_message));
+				write(fd, "\n", 1);
+				close(fd);
+			}
+		}
+	}
+#endif
 
 	exit(1);
 }

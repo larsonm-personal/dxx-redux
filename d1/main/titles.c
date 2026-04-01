@@ -52,6 +52,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef OGL
 #include "ogl_init.h"
 #endif
+#ifdef __ANDROID__
+#include "android_crash_handler.h"
+#endif
 
 #define MAX_BRIEFING_COLORS     7
 #define DEFAULT_BRIEFING_BKG		"brief03.pcx"
@@ -179,6 +182,9 @@ static int show_title_screen( char * filename, int allow_keys, int from_hog_only
 
 void show_titles(void)
 {
+#ifdef __ANDROID__
+	crash_breadcrumb("show_titles: enter");
+#endif
 	char    publisher[PATH_MAX];
 
 	songs_play_song( SONG_TITLE, 1 );

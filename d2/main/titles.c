@@ -52,6 +52,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef OGL
 #include "ogl_init.h"
 #endif
+#ifdef ANDROID
+#include "android_crash_handler.h"
+#endif
 
 extern unsigned RobSX,RobSY,RobDX,RobDY; // Robot movie coords
 
@@ -146,6 +149,9 @@ int show_title_screen( char * filename, int allow_keys, int from_hog_only )
 	window *wind;
 	int pcx_error;
 	char new_filename[PATH_MAX] = "";
+#ifdef ANDROID
+	crash_breadcrumb_v("show_title_screen: %s", filename ? filename : "(null)");
+#endif
 
 	MALLOC(ts, title_screen, 1);
 	if (!ts)
@@ -170,6 +176,9 @@ int show_title_screen( char * filename, int allow_keys, int from_hog_only )
 	ts->timer = timer_query() + i2f(3);
 
 	gr_palette_load( gr_palette );
+#ifdef ANDROID
+	crash_breadcrumb("show_title_screen: pcx loaded, creating window");
+#endif
 
 	wind = window_create(&grd_curscreen->sc_canvas, 0, 0, SWIDTH, SHEIGHT, (int (*)(window *, d_event *, void *))title_handler, ts);
 	if (!wind)
@@ -192,12 +201,18 @@ void show_titles(void)
 	char filename[PATH_MAX];
 	int played=MOVIE_NOT_PLAYED;    //default is not played
 	int song_playing = 0;
+#ifdef ANDROID
+	crash_breadcrumb("show_titles: enter");
+#endif
 
 #define MOVIE_REQUIRED 1	//(!is_D2_OEM && !is_SHAREWARE && !is_MAC_SHARE)	// causes segfault
 
 	{       //show bundler screens
 		played=MOVIE_NOT_PLAYED;        //default is not played
 
+#ifdef ANDROID
+		crash_breadcrumb("show_titles: pre PlayMovie pre_i");
+#endif
 		played = PlayMovie("pre_i.mve",0);
 
 		if (!played) {
@@ -211,6 +226,9 @@ void show_titles(void)
 		}
 	}
 
+#ifdef ANDROID
+	crash_breadcrumb("show_titles: pre PlayMovie intro");
+#endif
 	init_subtitles("intro.tex");
 	played = PlayMovie("intro.mve",MOVIE_REQUIRED);
 	close_subtitles();
@@ -220,6 +238,9 @@ void show_titles(void)
 	else
 	{                                               //didn't get intro movie, try titles
 
+#ifdef ANDROID
+		crash_breadcrumb("show_titles: pre PlayMovie titles");
+#endif
 		played = PlayMovie("titles.mve",MOVIE_REQUIRED);
 
 		if (played == MOVIE_NOT_PLAYED)
@@ -227,6 +248,9 @@ void show_titles(void)
 			con_printf( CON_DEBUG, "\nPlaying title song..." );
 			songs_play_song( SONG_TITLE, 1);
 			song_playing = 1;
+#ifdef ANDROID
+			crash_breadcrumb("show_titles: after song, checking logos");
+#endif
 			con_printf( CON_DEBUG, "\nShowing logo screens..." );
 
 			strcpy(filename, HIRESMODE?"iplogo1b.pcx":"iplogo1.pcx"); // OEM
@@ -235,7 +259,12 @@ void show_titles(void)
 			if (! PHYSFSX_exists(filename,1))
 				strcpy(filename, "mplogo.pcx"); // MAC SHAREWARE
 			if (PHYSFSX_exists(filename,1))
+			{
+#ifdef ANDROID
+				crash_breadcrumb_v("show_titles: logo1=%s", filename);
+#endif
 				show_title_screen(filename, 1, 1);
+			}
 
 			strcpy(filename, HIRESMODE?"logob.pcx":"logo.pcx"); // OEM
 			if (! PHYSFSX_exists(filename,1))
@@ -243,7 +272,12 @@ void show_titles(void)
 			if (! PHYSFSX_exists(filename,1))
 				strcpy(filename, "plogo.pcx"); // MAC SHAREWARE
 			if (PHYSFSX_exists(filename,1))
+			{
+#ifdef ANDROID
+				crash_breadcrumb_v("show_titles: logo2=%s", filename);
+#endif
 				show_title_screen(filename, 1, 1);
+			}
 		}
 	}
 
@@ -281,7 +315,15 @@ void show_titles(void)
 	con_printf( CON_DEBUG, "\nShowing logo screen..." );
 	strcpy(filename, HIRESMODE?"descentb.pcx":"descent.pcx");
 	if (PHYSFSX_exists(filename,1))
+	{
+#ifdef ANDROID
+		crash_breadcrumb_v("show_titles: descent=%s", filename);
+#endif
 		show_title_screen(filename, 1, 1);
+	}
+#ifdef ANDROID
+	crash_breadcrumb("show_titles: done");
+#endif
 }
 
 void show_order_form()

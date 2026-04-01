@@ -52,6 +52,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef OGL
 #include "ogl_init.h"
 #endif
+#ifdef ANDROID
+#include "android_crash_handler.h"
+#endif
 #include "args.h"
 
 extern char CDROM_dir[];
@@ -153,6 +156,9 @@ int PlayMovie(const char *filename, int must_have)
 	MVE_sndInit(!GameArg.SndNoSound ? 1 : -1);
 
 	ret = RunMovie(name, GameArg.GfxMovieHires, must_have, -1, -1);
+#ifdef ANDROID
+	crash_breadcrumb_v("PlayMovie: done %s ret=%d", name, ret);
+#endif
 
 	// MD2211: if using SDL_Mixer, we never reinit the sound system
 	if (!GameArg.SndNoSound

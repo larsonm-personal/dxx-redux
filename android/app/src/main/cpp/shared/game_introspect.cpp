@@ -691,6 +691,17 @@ extern "C" char *game_introspect_get_state(void)
 		j["hires_textures"] = tex;
 	}
 
+	/* -- Framebuffer pixel sample (android port: ETC2 debug) -------- */
+	{
+		extern volatile int g_fb_sample_r, g_fb_sample_g, g_fb_sample_b, g_fb_sample_a;
+		if (g_fb_sample_r >= 0) {
+			char buf[64];
+			snprintf(buf, sizeof(buf), "(%d,%d,%d,%d)",
+				g_fb_sample_r, g_fb_sample_g, g_fb_sample_b, g_fb_sample_a);
+			j["framebuffer_sample"] = std::string(buf);
+		}
+	}
+
 	/* -- Recent console output (last 50 con_printf lines) ----------- */
 	{
 		char *console_json = console_ringbuf_get_json(0, 50);

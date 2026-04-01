@@ -27,6 +27,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef OGL
 #include "ogl_init.h"
 #endif
+#ifdef ANDROID
+#include "android_crash_handler.h"
+#endif
 
 static int gr_bitblt_dest_step_shift = 0;
 static int gr_bitblt_double = 0;

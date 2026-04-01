@@ -36,6 +36,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #ifdef __ANDROID__
 #include "track_names.h"
+#include "android_crash_handler.h"
 #endif
 
 int Songs_initialized = 0;
@@ -308,6 +309,9 @@ int songs_play_file(char *filename, int repeat, void (*hook_finished_track)())
 
 int songs_play_song( int songnum, int repeat )
 {
+#ifdef __ANDROID__
+	crash_breadcrumb_v("songs_play_song: song=%d repeat=%d type=%d", songnum, repeat, GameCfg.MusicType);
+#endif
 	songs_init();
 	if (!Songs_initialized)
 		return 0;

@@ -2074,6 +2074,7 @@ private fun getDisplayName(
 private data class ZipExtractionResult(
     val files: List<ExtractedFile>,
     val hadAudioFiles: Boolean,
+    val error: String? = null,
 )
 
 private suspend fun extractZipContents(
@@ -2125,6 +2126,7 @@ private suspend fun extractZipContents(
             }
         } catch (e: Exception) {
             Log.e("DXX-Setup", "ZIP extraction failed", e)
+            return@withContext ZipExtractionResult(results, foundAudio, "ZIP extraction failed: ${e.message}")
         }
         ZipExtractionResult(results, foundAudio)
     }
@@ -2183,6 +2185,7 @@ private suspend fun extract7zContents(
             }
         } catch (e: Exception) {
             Log.e("DXX-Setup", "7z extraction failed", e)
+            return@withContext ZipExtractionResult(results, foundAudio, "7z extraction failed: ${e.message}")
         } finally {
             tmpArchive.delete()
         }
@@ -2454,11 +2457,35 @@ private fun SetupScreen(
                     // Import .dxa mod files (simple copy to mods dir)
                     if (dxaImportUris.isNotEmpty()) {
                         val modMgr = ModManager(filesDir)
+                        val dxaResults = mutableListOf<String>()
                         for ((name, uri) in dxaImportUris) {
-                            modMgr.importMod(uri, name, context.contentResolver)
+                            try {
+                                val mod = modMgr.importMod(uri, name, context.contentResolver)
+                                if (mod != null) {
+                                    dxaResults.add("Imported mod: ${mod.displayName}")
+                                    Log.i("DXX-Setup", "DXA import ok: $name (${mod.sizeBytes} bytes)")
+                                } else {
+                                    dxaResults.add("Failed to import $name")
+                                    Log.e("DXX-Setup", "DXA import returned null: $name")
+                                }
+                            } catch (e: Exception) {
+                                dxaResults.add("Failed to import $name: ${e.message}")
+                                Log.e("DXX-Setup", "DXA import exception: $name", e)
+                            }
                         }
                         dxaImportUris.clear()
-                        withContext(Dispatchers.Main) { onRefresh() }
+                        val failures = dxaResults.filter { it.startsWith("Failed") }
+                        withContext(Dispatchers.Main) {
+                            if (failures.isNotEmpty()) {
+                                for (f in failures) {
+                                    Toast.makeText(context, f, Toast.LENGTH_LONG).show()
+                                }
+                                importStatus = failures.joinToString("; ")
+                            } else {
+                                importStatus = dxaResults.joinToString("; ")
+                            }
+                            onRefresh()
+                        }
                     }
                     // Handle ZIP/7z files
                     if (zipUris.isNotEmpty()) {
@@ -2466,6 +2493,7 @@ private fun SetupScreen(
                         val tmpDir = File(filesDir, "tmp")
                         val allExtracted = mutableListOf<ExtractedFile>()
                         var anyAudio = false
+                        val archiveErrors = mutableListOf<String>()
                         for ((arcName, arcUri) in zipUris) {
                             val result =
                                 if (arcName.lowercase().endsWith(".7z")) {
@@ -2479,6 +2507,7 @@ private fun SetupScreen(
                                 }
                             allExtracted.addAll(result.files)
                             if (result.hadAudioFiles) anyAudio = true
+                            if (result.error != null) archiveErrors.add("$arcName: ${result.error}")
                         }
                         // Identify package
                         val fileHashes = allExtracted.associate { it.name to it.sha256 }
@@ -2490,6 +2519,11 @@ private fun SetupScreen(
                             zipArchiveUris = zipUris.map { it.second }
                             zipExtracting = false
                             zipProgressFile = ""
+                            if (archiveErrors.isNotEmpty()) {
+                                val msg = archiveErrors.joinToString("\n")
+                                importStatus = msg
+                                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                            }
                         }
                     }
                 } catch (e: Exception) {
@@ -3445,7 +3479,16 @@ private fun SetupScreen(
                                                     val code = if (success) -2 else -1
                                                     downloadProgress[status.info.filename] = code
                                                     onDownloadStateChanged(status.info.filename, code)
-                                                    if (success) onRefresh()
+                                                    if (success) {
+                                                        onRefresh()
+                                                    } else {
+                                                        Toast
+                                                            .makeText(
+                                                                context,
+                                                                "Download failed: ${status.info.filename}",
+                                                                Toast.LENGTH_LONG,
+                                                            ).show()
+                                                    }
                                                 },
                                             )
                                         }
@@ -3715,6 +3758,7 @@ private fun ModsSection(
     filesDir: File,
     refreshTrigger: Int,
 ) {
+    val context = LocalContext.current
     val modManager = remember { ModManager(filesDir) }
     var mods by remember { mutableStateOf(modManager.listMods()) }
     var expanded by remember { mutableStateOf(false) }
@@ -3724,7 +3768,10 @@ private fun ModsSection(
     val scanCache = remember { mutableStateMapOf<String, DxaTextureScanner.ScanResult?>() }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(refreshTrigger) { mods = modManager.listMods() }
+    LaunchedEffect(refreshTrigger) {
+        modManager.reload()
+        mods = modManager.listMods()
+    }
 
     // Scan texture DXAs once when section expands
     LaunchedEffect(expanded) {
@@ -3831,6 +3878,13 @@ private fun ModsSection(
                                             rec.game,
                                         )
                                         mods = modManager.listMods()
+                                    } else {
+                                        Toast
+                                            .makeText(
+                                                context,
+                                                "Download failed: ${rec.filename}",
+                                                Toast.LENGTH_LONG,
+                                            ).show()
                                     }
                                 },
                             )

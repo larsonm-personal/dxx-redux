@@ -39,7 +39,11 @@ char copyright[] = "DESCENT II  COPYRIGHT (C) 1994-1996 PARALLAX SOFTWARE CORPOR
 
 #ifdef ANDROID
 #include <android/log.h>
-#define CHECKPOINT(msg) __android_log_print(ANDROID_LOG_INFO, "DXX-Init", "CHECKPOINT: " msg)
+#include "android_crash_handler.h"
+#define CHECKPOINT(msg) do { \
+	__android_log_print(ANDROID_LOG_INFO, "DXX-Init", "CHECKPOINT: " msg); \
+	crash_breadcrumb("INIT: " msg); \
+} while(0)
 #else
 #define CHECKPOINT(msg) ((void)0)
 #endif
@@ -471,10 +475,14 @@ int main(int argc, char *argv[])
 	con_printf( CON_DEBUG, "\nInitializing texture caching system..." );
 	texmerge_init( 10 );		// 10 cache bitmaps
 
+	CHECKPOINT("piggy_init_pigfile start");
 	piggy_init_pigfile("groupa.pig");	//get correct pigfile
+	CHECKPOINT("piggy_init_pigfile done");
 
 	con_printf( CON_DEBUG, "\nRunning game...\n" );
+	CHECKPOINT("init_game start");
 	init_game();
+	CHECKPOINT("init_game done");
 
 	Players[Player_num].callsign[0] = '\0';
 

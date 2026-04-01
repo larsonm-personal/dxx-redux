@@ -70,6 +70,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #ifdef __ANDROID__
 #include "auto_net.h"
+#include "android_crash_handler.h"
 #endif
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -434,6 +435,9 @@ int main_menu_handler(newmenu *menu, d_event *event, int *menu_choice )
 	switch (event->type)
 	{
 		case EVENT_WINDOW_ACTIVATED:
+#ifdef __ANDROID__
+			crash_breadcrumb("main_menu: ACTIVATED");
+#endif
 			if ( Players[Player_num].callsign[0]==0 ) {
 #ifdef __ANDROID__
 				if (!auto_create_pilot())
@@ -532,6 +536,9 @@ void create_main_menu(newmenu_item *m, int *menu_choice, int *callers_num_option
 //returns number of item chosen
 int DoMenu()
 {
+#ifdef __ANDROID__
+	crash_breadcrumb("DoMenu: enter");
+#endif
 	int *menu_choice;
 	newmenu_item *m;
 	int num_options = 0;

@@ -98,6 +98,7 @@ grs_bitmap nm_background, nm_background1;
 grs_bitmap *nm_background_sub = NULL;
 #ifdef ANDROID
 static ubyte nm_background1_palette[768];  // saved palette from the background PCX
+#include "android_crash_handler.h"
 #endif
 
 newmenu *newmenu_do4( char * title, char * subtitle, int nitems, newmenu_item * item, int (*subfunction)(newmenu *menu, d_event *event, void *userdata), void *userdata, int citem, char * filename, int TinyMode, int TabsFlag );
@@ -119,6 +120,9 @@ void newmenu_free_background()	{
 // Draws the custom menu background pcx, if available
 void nm_draw_background1(char * filename)
 {
+#ifdef ANDROID
+	crash_breadcrumb_v("nm_draw_bg1: %s", filename ? filename : "(null)");
+#endif
 	int pcx_error;
 
 	if (filename != NULL)

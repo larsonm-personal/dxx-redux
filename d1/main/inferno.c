@@ -82,6 +82,11 @@ char copyright[] = "DESCENT   COPYRIGHT (C) 1994,1995 PARALLAX SOFTWARE CORPORAT
 #ifdef USE_UDP
 #include "net_udp.h"
 #endif
+#ifdef __ANDROID__
+#include <android/log.h>
+#include "android_crash_handler.h"
+#define CHECKPOINT(msg) do { __android_log_print(ANDROID_LOG_INFO, "DXX", "INIT: " msg); crash_breadcrumb("INIT: " msg); } while(0)
+#endif
 
 int Screen_mode=-1;					//game screen or editor screen?
 int descent_critical_error = 0;
@@ -430,7 +435,13 @@ int main(int argc, char *argv[])
 	texmerge_init( 10 );		// 10 cache bitmaps
 
 	con_printf( CON_DEBUG, "\nRunning game...\n" );
+#ifdef __ANDROID__
+	CHECKPOINT("init_game");
+#endif
 	init_game();
+#ifdef __ANDROID__
+	CHECKPOINT("init_game done");
+#endif
 
 	Players[Player_num].callsign[0] = '\0';
 

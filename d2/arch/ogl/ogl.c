@@ -35,6 +35,7 @@
 #ifdef ANDROID
 #include <android/log.h>
 #include "debug_tex_overlay.h"
+#include "android_crash_handler.h"
 #endif
 
 #include "3d.h"
@@ -97,7 +98,9 @@ int GL_texclamp_enabled=-1;
 GLfloat ogl_maxanisotropy = 0;
 int ogl_max_texture_size = 1024;
 #ifdef ANDROID
-int ogl_etc2_broken = 0; /* set if GL_RENDERER indicates broken ETC2 (emulator) */
+volatile int g_fb_sample_r = -1, g_fb_sample_g = -1, g_fb_sample_b = -1, g_fb_sample_a = -1;
+/* android port: emulator's GLES translator has a broken ETC2 decoder */
+int ogl_etc2_broken = 0;
 #endif
 
 int r_texcount = 0, r_cachedtexcount = 0;
@@ -381,6 +384,12 @@ void ogl_texture_stats(void)
 void ogl_bindbmtex(grs_bitmap *bm){
 	if (bm->gltexture==NULL || bm->gltexture->handle<=0)
 		ogl_loadbmtexture(bm);
+	if (bm->gltexture==NULL) {
+#ifdef ANDROID
+		crash_breadcrumb_v("ogl_bindbmtex: gltexture NULL after load, bm=%p flags=0x%x", (void*)bm, bm->bm_flags);
+#endif
+		return;
+	}
 	OGL_BINDTEXTURE(bm->gltexture->handle);
 	bm->gltexture->numrend++;
 }
@@ -432,6 +441,7 @@ void ogl_cache_level_textures(void)
 		ogl_smash_png_textures();
 
 #ifdef ANDROID
+	crash_breadcrumb_v("ogl_cache: starting, %i bitmaps", Num_bitmap_files);
 	__android_log_print(ANDROID_LOG_INFO, "DXX",
 	    "ogl_cache: starting, %i bitmaps, allow_png=%i",
 	    Num_bitmap_files, ogl_allow_png());
@@ -454,6 +464,7 @@ void ogl_cache_level_textures(void)
 					n_paged_skip++;
 			}
 		}
+		crash_breadcrumb("ogl_cache: done");
 		__android_log_print(ANDROID_LOG_INFO, "DXX",
 		    "ogl_cache: done. hires=%i already=%i bitmap=%i skipped=%i png_fail=%i",
 		    r_hires_loaded - before_hires, n_already, n_bm_upload, n_paged_skip, n_png_fail);
@@ -860,6 +871,8 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 		OGL_ENABLE(TEXTURE_2D);
 		ogl_bindbmtex(bm);
+		if (bm->gltexture == NULL)
+			return 0;
 		ogl_texwrap(bm->gltexture, GL_REPEAT);
 		r_tpolyc++;
 		color_alpha = (grd_curcanv->cv_fade_level >= GR_FADE_OFF)?1.0:(1.0 - (float)grd_curcanv->cv_fade_level / ((float)GR_FADE_LEVELS - 1.0));
@@ -978,13 +991,21 @@ bool g3_draw_tmap_2(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_
 	
 	OGL_ENABLE(TEXTURE_2D);
 	ogl_bindbmtex(bmovl);
+	if (bmovl->gltexture == NULL)
+		return 0;
 	ogl_texwrap(bmovl->gltexture,GL_REPEAT);
 #else
 	ogl_bindbmtex(bmbot);
+	if (bmbot->gltexture == NULL)
+		return 0;
 	ogl_texwrap(bmbot->gltexture,GL_REPEAT);
 
 	glActiveTexture(GL_TEXTURE1);
 	ogl_bindbmtex(bmovl);
+	if (bmovl->gltexture == NULL) {
+		glActiveTexture(GL_TEXTURE0);
+		return 0;
+	}
 	ogl_texwrap(bmovl->gltexture,GL_REPEAT);
 
 	if (super) {
@@ -1087,6 +1108,8 @@ bool g3_draw_bitmap_full(vms_vector *pos,fix width,fix height,grs_bitmap *bm,
 
 	OGL_ENABLE(TEXTURE_2D);
 	ogl_bindbmtex(bm);
+	if (bm->gltexture == NULL)
+		return 0;
 	ogl_texwrap(bm->gltexture,GL_CLAMP_TO_EDGE);
 
 	width = fixmul(width,Matrix_scale.x);
@@ -1350,10 +1373,33 @@ void ogl_end_frame(void){
 
 void gr_flip(void)
 {
+#ifdef ANDROID
+	{
+		static int s_flip_count = 0;
+		s_flip_count++;
+		if (s_flip_count <= 5 || (s_flip_count % 60) == 0)
+			crash_breadcrumb_v("gr_flip #%d", s_flip_count);
+	}
+#endif
 	if (GameArg.DbgRenderStats)
 		ogl_texture_stats();
 
 	ogl_do_palfx();
+	/* android port: sample framebuffer center pixel before swap for introspection */
+#ifdef ANDROID
+	{
+		extern volatile int g_fb_sample_r, g_fb_sample_g, g_fb_sample_b, g_fb_sample_a;
+		int w = grd_curscreen->sc_w, h = grd_curscreen->sc_h;
+		if (w > 0 && h > 0) {
+			unsigned char rgba[4] = {0};
+			glReadPixels(w/2, h/2, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+			g_fb_sample_r = rgba[0];
+			g_fb_sample_g = rgba[1];
+			g_fb_sample_b = rgba[2];
+			g_fb_sample_a = rgba[3];
+		}
+	}
+#endif
 	ogl_swap_buffers_internal();
 	glClear(GL_COLOR_BUFFER_BIT);
 #ifdef ANDROID
@@ -1845,60 +1891,63 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 		int png_loaded = 0;
 
 #ifdef ANDROID
-		/* Try pre-compressed ETC2 first (from .dxa texture packs) */
+		/* Try pre-compressed ETC2 first (from .dxa texture packs).
+		 * Skip on emulator -- its GLES translator decodes ETC2 as black. */
 		if (!ogl_etc2_broken)
 		{
 			etc2_file_data edata;
 			sprintf(filename, "%s.etc2", bitmapname);
 			if (read_etc2_file(filename, &edata)) {
-				GLenum gl_fmt = edata.format
-					? GL_COMPRESSED_RGBA8_ETC2_EAC
-					: GL_COMPRESSED_RGB8_ETC2;
 				int flags = edata.format ? OGL_FLAG_ALPHA : 0;
 				if (bm->bm_flags & BM_FLAG_TRANSPARENT)
 					flags |= OGL_FLAG_ALPHA;
 				if (bm->gltexture == NULL)
 					ogl_init_texture(bm->gltexture = ogl_get_free_texture(),
 						edata.width, edata.height, flags);
-				bm->gltexture->tw = edata.width;
-				bm->gltexture->th = edata.height;
-				bm->gltexture->u = (float)edata.orig_width / (float)edata.width;
-				bm->gltexture->v = (float)edata.orig_height / (float)edata.height;
-				glGenTextures(1, &bm->gltexture->handle);
-				OGL_BINDTEXTURE(bm->gltexture->handle);
-				glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-				if (texfilt && edata.mip_count > 1) {
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-						texfilt >= 2 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR_MIPMAP_NEAREST);
-				} else if (texfilt) {
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				} else {
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-				}
-				/* Upload each mip level from the .etc2 file */
+
+				/* Parse mip0 data */
 				unsigned char *p = edata.filedata;
 				unsigned char *end = p + edata.filedata_size;
 				int mw = edata.width, mh = edata.height;
-				for (int level = 0; level < edata.mip_count && p + 4 <= end; level++) {
+				int ok = 0;
+				if (p + 4 <= end) {
 					unsigned int sz = p[0] | (p[1]<<8) | (p[2]<<16) | (p[3]<<24);
 					p += 4;
-					if (p + sz > end) break;
-					glCompressedTexImage2D(GL_TEXTURE_2D, level, gl_fmt,
-						mw, mh, 0, (GLsizei)sz, p);
-					p += sz;
-					if (mw > 1) mw /= 2;
-					if (mh > 1) mh /= 2;
+					if (p + sz <= end) {
+						/* Hardware compressed upload */
+						glGenTextures(1, &bm->gltexture->handle);
+						OGL_BINDTEXTURE(bm->gltexture->handle);
+						glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+						if (texfilt) {
+							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+						} else {
+							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+						}
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+						{
+							GLenum gl_fmt = edata.format
+								? GL_COMPRESSED_RGBA8_ETC2_EAC
+								: GL_COMPRESSED_RGB8_ETC2;
+							glCompressedTexImage2D(GL_TEXTURE_2D, 0, gl_fmt,
+								mw, mh, 0, (GLsizei)sz, p);
+						}
+						tex_set_size(bm->gltexture);
+						r_texcount++;
+						ok = 1;
+					}
 				}
 				free(edata.filedata);
-				bm->gltexture->is_png = 1;
-				tex_set_size(bm->gltexture);
-				r_texcount++;
-				r_hires_found++;
-				r_hires_loaded++;
-				return;
+				if (ok) {
+					bm->gltexture->u = (float)edata.orig_width / (float)edata.width;
+					bm->gltexture->v = (float)edata.orig_height / (float)edata.height;
+					bm->gltexture->is_png = 1;
+					r_hires_found++;
+					r_hires_loaded++;
+					return;
+				}
+				/* Decode/upload failed -- fall through to try PNG */
 			}
 		}
 		/* Try multiple extensions -- stb_image handles all formats */
@@ -1962,9 +2011,19 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 	}
 #endif
 #ifdef ANDROID
-	/* Paged-out bitmap with no PNG replacement -- bm_data not in memory */
-	if (bm->bm_flags & BM_FLAG_PAGED_OUT)
-		return;
+	/* Paged-out bitmap with no PNG replacement -- page in on demand.
+	 * Desktop callers use PIGGY_PAGE_IN before rendering; on Android
+	 * some paths skip it. Page in here so gltexture is never left NULL,
+	 * which would cause SIGSEGV in ogl_bindbmtex. */
+	if (bm->bm_flags & BM_FLAG_PAGED_OUT) {
+		if (bm >= GameBitmaps && bm < &GameBitmaps[Num_bitmap_files]) {
+			bitmap_index bi;
+			bi.index = (unsigned short)(bm - GameBitmaps);
+			piggy_bitmap_page_in(bi);
+		} else {
+			return;
+		}
+	}
 #endif
 	if (bm->gltexture == NULL){
  		ogl_init_texture(bm->gltexture = ogl_get_free_texture(), bm->bm_w, bm->bm_h, ((bm->bm_flags & (BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT))? OGL_FLAG_ALPHA : 0));
@@ -2166,6 +2225,12 @@ bool ogl_ubitmapm_cs(int x, int y,int dw, int dh, grs_bitmap *bm,int c, int scal
 
 	OGL_ENABLE(TEXTURE_2D);
 	ogl_bindbmtex(bm);
+	if (bm->gltexture == NULL) {
+#ifdef ANDROID
+		crash_breadcrumb_v("ogl_ubitmapm_cs: NULL gltex bm=%p flags=0x%x", (void*)bm, bm->bm_flags);
+#endif
+		return 0;
+	}
 	ogl_texwrap(bm->gltexture,GL_CLAMP_TO_EDGE);
 	
 	if (bm->bm_x==0){

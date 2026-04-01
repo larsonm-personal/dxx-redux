@@ -72,6 +72,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #ifdef __ANDROID__
 #include "auto_net.h"
+#include "android_crash_handler.h"
 #endif
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -440,6 +441,9 @@ int main_menu_handler(newmenu *menu, d_event *event, int *menu_choice )
 	switch (event->type)
 	{
 		case EVENT_WINDOW_ACTIVATED:
+#ifdef __ANDROID__
+			crash_breadcrumb("main_menu: ACTIVATED");
+#endif
 			load_palette(MENU_PALETTE,0,1);		//get correct palette
 
 			if ( Players[Player_num].callsign[0]==0 ) {
@@ -562,6 +566,9 @@ int DoMenu()
 	int *menu_choice;
 	newmenu_item *m;
 	int num_options = 0;
+#ifdef __ANDROID__
+	crash_breadcrumb("DoMenu: enter");
+#endif
 
 	CALLOC(menu_choice, int, 25);
 	if (!menu_choice)

@@ -43,6 +43,11 @@ class ModManager(
 
     fun listMods(): List<ModInfo> = mods.sortedBy { it.order }
 
+    /** Re-read the manifest from disk, e.g. after another ModManager instance wrote it */
+    fun reload() {
+        load()
+    }
+
     fun setEnabled(
         filename: String,
         enabled: Boolean,
@@ -76,11 +81,18 @@ class ModManager(
                     input.copyTo(output, bufferSize = 65536)
                 }
             } ?: run {
-                Log.e(TAG, "Failed to open input stream for $displayName")
+                Log.e(TAG, "Failed to open input stream for $displayName (URI: $uri)")
                 return null
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to import $displayName: ${e.message}")
+            Log.e(TAG, "Failed to copy $displayName to ${dest.absolutePath}: ${e.message}", e)
+            dest.delete()
+            return null
+        }
+
+        val fileSize = dest.length()
+        if (fileSize == 0L) {
+            Log.e(TAG, "Import produced 0-byte file for $displayName (dest: ${dest.absolutePath})")
             dest.delete()
             return null
         }
@@ -180,11 +192,23 @@ class ModManager(
         if (enabled.isEmpty()) {
             pathFile.delete()
         } else {
-            pathFile.writeText(
-                enabled.joinToString("\n") { File(modsDir, it.filename).absolutePath },
-            )
+            val validPaths = mutableListOf<String>()
+            for (mod in enabled) {
+                val modFile = File(modsDir, mod.filename)
+                if (modFile.exists() && modFile.length() > 0) {
+                    validPaths.add(modFile.absolutePath)
+                } else {
+                    Log.e(TAG, "Mod file missing or empty: ${modFile.absolutePath} (${mod.displayName})")
+                }
+            }
+            if (validPaths.isEmpty()) {
+                pathFile.delete()
+                Log.w(TAG, "All enabled mods missing on disk, removed .active_mod_paths")
+            } else {
+                pathFile.writeText(validPaths.joinToString("\n"))
+            }
         }
-        Log.i(TAG, "Wrote ${enabled.size} mod paths for $game")
+        Log.i(TAG, "Wrote ${enabled.size} mod paths for $game to ${pathFile.absolutePath}")
     }
 
     private fun detectGame(filename: String): String {
