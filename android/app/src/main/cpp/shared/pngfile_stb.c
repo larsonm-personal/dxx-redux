@@ -11,10 +11,14 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <physfs.h>
 
 #include "pngfile.h"
 #include "pstypes.h"
+
+#define KHRONOS_STATIC
+#include <ktx.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_NO_STDIO  /* we use PhysFS, not fopen */
@@ -91,14 +95,16 @@ int write_png(const char *filename, png_data *pdata)
 	return 0;
 }
 
-/* Read a pre-compressed .etc2 file via PhysFS.
+/* Read a pre-compressed .ktx2 texture file via PhysFS.
  * Returns 1 on success, 0 on failure.
- * On success, caller must free edata->filedata. */
-int read_etc2_file(const char *filename, etc2_file_data *edata)
+ * On success, caller must free edata->filedata.
+ * Mip data is packed as [uint32_le size][data] per level, matching
+ * the layout that ogl.c expects for glCompressedTexImage2D uploads. */
+int read_ktx2_file(const char *filename, etc2_file_data *edata)
 {
 	PHYSFS_File *fp;
 	PHYSFS_sint64 fsize;
-	unsigned char hdr[16];
+	unsigned char *fbuf;
 
 	if (!filename || !edata)
 		return 0;
@@ -108,52 +114,100 @@ int read_etc2_file(const char *filename, etc2_file_data *edata)
 		return 0;
 
 	fsize = PHYSFS_fileLength(fp);
-	if (fsize < 16 || fsize > 64 * 1024 * 1024) {
+	if (fsize < 80 || fsize > 64 * 1024 * 1024) {
 		PHYSFS_close(fp);
 		return 0;
 	}
 
-	/* Read and validate header */
-	if (PHYSFS_readBytes(fp, hdr, 16) != 16) {
+	fbuf = (unsigned char *) malloc((size_t) fsize);
+	if (!fbuf) {
 		PHYSFS_close(fp);
 		return 0;
 	}
-	if (hdr[0] != 'E' || hdr[1] != 'T' || hdr[2] != 'C' || hdr[3] != '2') {
+
+	if (PHYSFS_readBytes(fp, fbuf, (PHYSFS_uint64) fsize) != fsize) {
+		free(fbuf);
 		PHYSFS_close(fp);
 		return 0;
 	}
+	PHYSFS_close(fp);
+
+	/* Parse KTX2 container */
+	ktxTexture2 *tex = NULL;
+	KTX_error_code kerr = ktxTexture2_CreateFromMemory(
+		fbuf, (ktx_size_t) fsize,
+		KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &tex);
+	free(fbuf);
+	if (kerr != KTX_SUCCESS)
+		return 0;
+
+	/* Map VkFormat to our format byte */
+	unsigned char fmt;
+	if (tex->vkFormat == 147)       /* VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK */
+		fmt = 0;
+	else if (tex->vkFormat == 151)  /* VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK */
+		fmt = 1;
+	else {
+		ktxTexture_Destroy(ktxTexture(tex));
+		return 0;
+	}
+
+	ktxTexture *base = ktxTexture(tex);
 
 	memset(edata, 0, sizeof(*edata));
-	edata->width = hdr[4] | ((unsigned int) hdr[5] << 8);
-	edata->height = hdr[6] | ((unsigned int) hdr[7] << 8);
-	edata->format = hdr[8];
-	edata->mip_count = hdr[9];
-	/* Original (pre-padding) dimensions; 0 means same as padded */
-	edata->orig_width = hdr[10] | ((unsigned int) hdr[11] << 8);
-	edata->orig_height = hdr[12] | ((unsigned int) hdr[13] << 8);
-	if (edata->orig_width == 0) edata->orig_width = edata->width;
-	if (edata->orig_height == 0) edata->orig_height = edata->height;
+	edata->width = base->baseWidth;
+	edata->height = base->baseHeight;
+	edata->format = fmt;
+	edata->mip_count = (unsigned char) base->numLevels;
 
-	if (edata->mip_count == 0 || edata->format > 1) {
-		PHYSFS_close(fp);
-		return 0;
+	/* Read original dimensions from KTX key-value metadata */
+	unsigned int vlen = 0;
+	void *vptr = NULL;
+	if (ktxHashList_FindValue(&base->kvDataHead, "OrigWidth",
+	                          &vlen, &vptr) == KTX_SUCCESS && vlen >= 2) {
+		uint16_t ow;
+		memcpy(&ow, vptr, 2);
+		edata->orig_width = ow;
+	} else {
+		edata->orig_width = edata->width;
+	}
+	if (ktxHashList_FindValue(&base->kvDataHead, "OrigHeight",
+	                          &vlen, &vptr) == KTX_SUCCESS && vlen >= 2) {
+		uint16_t oh;
+		memcpy(&oh, vptr, 2);
+		edata->orig_height = oh;
+	} else {
+		edata->orig_height = edata->height;
 	}
 
-	/* Read remaining file data (mip entries) */
-	edata->filedata_size = (unsigned int) (fsize - 16);
-	edata->filedata = (unsigned char *) malloc(edata->filedata_size);
+	/* Build [uint32_le size][data] buffer that ogl.c expects */
+	unsigned int total = 0;
+	ktx_uint32_t nlev = base->numLevels;
+	for (ktx_uint32_t lv = 0; lv < nlev; lv++)
+		total += 4 + (unsigned int) ktxTexture_GetImageSize(base, lv);
+
+	edata->filedata = (unsigned char *) malloc(total);
 	if (!edata->filedata) {
-		PHYSFS_close(fp);
+		ktxTexture_Destroy(base);
 		return 0;
 	}
+	edata->filedata_size = total;
 
-	if (PHYSFS_readBytes(fp, edata->filedata, edata->filedata_size) != (PHYSFS_sint64) edata->filedata_size) {
-		free(edata->filedata);
-		edata->filedata = NULL;
-		PHYSFS_close(fp);
-		return 0;
+	unsigned char *p = edata->filedata;
+	for (ktx_uint32_t lv = 0; lv < nlev; lv++) {
+		ktx_size_t offset = 0;
+		ktxTexture_GetImageOffset(base, lv, 0, 0, &offset);
+		ktx_size_t isz = ktxTexture_GetImageSize(base, lv);
+		/* uint32 LE size prefix */
+		p[0] = (unsigned char)(isz & 0xFF);
+		p[1] = (unsigned char)((isz >> 8) & 0xFF);
+		p[2] = (unsigned char)((isz >> 16) & 0xFF);
+		p[3] = (unsigned char)((isz >> 24) & 0xFF);
+		p += 4;
+		memcpy(p, base->pData + offset, isz);
+		p += isz;
 	}
 
-	PHYSFS_close(fp);
+	ktxTexture_Destroy(base);
 	return 1;
 }

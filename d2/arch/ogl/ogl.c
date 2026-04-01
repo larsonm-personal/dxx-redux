@@ -1896,8 +1896,8 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 		if (!ogl_etc2_broken)
 		{
 			etc2_file_data edata;
-			sprintf(filename, "%s.etc2", bitmapname);
-			if (read_etc2_file(filename, &edata)) {
+			sprintf(filename, "%s.ktx2", bitmapname);
+			if (read_ktx2_file(filename, &edata)) {
 				int flags = edata.format ? OGL_FLAG_ALPHA : 0;
 				if (bm->bm_flags & BM_FLAG_TRANSPARENT)
 					flags |= OGL_FLAG_ALPHA;

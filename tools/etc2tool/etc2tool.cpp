@@ -1,26 +1,14 @@
 /* etc2tool.cpp -- offline ETC2 texture compressor
  *
  * Reads PNG/JPG/TGA/BMP via stb_image, compresses to ETC2 via etc2comp
- * at effort 80 (out of 100), writes a .etc2 file with full mip chain.
+ * at effort 80 (out of 100), writes a KTX2 file with full mip chain.
  *
- * .etc2 file format:
- *   Header (16 bytes):
- *     magic:     4 bytes  "ETC2"
- *     width:     uint16   texture width (power-of-2 padded)
- *     height:    uint16   texture height (power-of-2 padded)
- *     format:    uint8    0 = GL_COMPRESSED_RGB8_ETC2
- *                         1 = GL_COMPRESSED_RGBA8_ETC2_EAC
- *     mip_count: uint8    number of mip levels
- *     orig_w:   uint16   original image width (before pow2 padding)
- *     orig_h:   uint16   original image height (before pow2 padding)
- *     reserved:  2 bytes  zero
- *
- *   For each mip level (largest first):
- *     data_size: uint32   byte size of compressed data
- *     data:      [bytes]  ETC2 block data
+ * Output is standard KTX2 viewable in any KTX-compatible tool.
+ * Original (pre-padding) image dimensions stored in KTX key-value
+ * metadata as "OrigWidth" and "OrigHeight" (uint16 LE each).
  *
  * Build: cmake -B build && cmake --build build --config Release
- * Usage: etc2tool input.png output.etc2 [--no-mips]
+ * Usage: etc2tool input.png output.ktx2 [--no-mips]
  */
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -30,11 +18,17 @@
 #define STBI_NO_GIF
 #include "stb_image.h"
 #include "Etc.h"
+#define KHRONOS_STATIC
+#include <ktx.h>
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <cstdint>
+
+/* VkFormat values for ETC2 */
+#define VK_FMT_ETC2_RGB8   147  /* VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK */
+#define VK_FMT_ETC2_RGBA8  151  /* VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK */
 
 /* Round up to next power of 2 */
 static int pow2ize(int v)
@@ -45,20 +39,6 @@ static int pow2ize(int v)
 	return p;
 }
 
-/* Write uint16 little-endian */
-static void write_u16(FILE *f, uint16_t v)
-{
-	uint8_t b[2] = {(uint8_t)(v & 0xFF), (uint8_t)(v >> 8)};
-	fwrite(b, 1, 2, f);
-}
-
-/* Write uint32 little-endian */
-static void write_u32(FILE *f, uint32_t v)
-{
-	uint8_t b[4] = {(uint8_t)(v & 0xFF), (uint8_t)((v >> 8) & 0xFF),
-	                (uint8_t)((v >> 16) & 0xFF), (uint8_t)(v >> 24)};
-	fwrite(b, 1, 4, f);
-}
 
 /* Box-filter downsample RGBA by 2x */
 static uint8_t *downsample_rgba(const uint8_t *src, int w, int h,
@@ -155,7 +135,7 @@ static uint8_t *pad_to_pow2(const uint8_t *src, int w, int h, int channels,
 int main(int argc, char **argv)
 {
 	if (argc < 3) {
-		fprintf(stderr, "Usage: etc2tool input.(png|jpg|tga) output.etc2 [--no-mips]\n");
+		fprintf(stderr, "Usage: etc2tool input.(png|jpg|tga) output.ktx2 [--no-mips]\n");
 		return 1;
 	}
 
@@ -204,45 +184,26 @@ int main(int argc, char **argv)
 		}
 	}
 
-	/* Open output */
-	FILE *out = fopen(output_path, "wb");
-	if (!out) {
-		fprintf(stderr, "Cannot open output: %s\n", output_path);
-		free(rgba);
-		return 1;
-	}
+	/* Compress all mip levels first (KTX2 needs all data before writing) */
+	struct mip_level {
+		unsigned char *data;
+		unsigned int size;
+	};
+	mip_level *mips = new mip_level[mip_count]();
 
-	/* Write header */
-	fwrite("ETC2", 1, 4, out);
-	write_u16(out, (uint16_t)tw);
-	write_u16(out, (uint16_t)th);
-	uint8_t fmt_byte = has_alpha ? 1 : 0;
-	fwrite(&fmt_byte, 1, 1, out);
-	uint8_t mc = (uint8_t)mip_count;
-	fwrite(&mc, 1, 1, out);
-	write_u16(out, (uint16_t)w);  /* original width before pow2 padding */
-	write_u16(out, (uint16_t)h);  /* original height before pow2 padding */
-	uint8_t reserved[2] = {0};
-	fwrite(reserved, 1, 2, out);
-
-	/* Compress and write each mip level */
 	uint8_t *cur = rgba;
 	int mw = tw, mh = th;
 	for (int level = 0; level < mip_count; level++) {
-		unsigned int comp_bytes = 0;
-		unsigned char *comp = compress_etc2(cur, mw, mh, has_alpha, &comp_bytes);
-		if (!comp) {
+		mips[level].data = compress_etc2(cur, mw, mh, has_alpha, &mips[level].size);
+		if (!mips[level].data) {
 			fprintf(stderr, "Compression failed at mip level %d (%dx%d)\n",
 			        level, mw, mh);
-			fclose(out);
-			free(cur == rgba ? rgba : cur);
+			for (int j = 0; j < level; j++) delete[] mips[j].data;
+			delete[] mips;
+			if (cur != rgba) free(cur);
+			free(rgba);
 			return 1;
 		}
-
-		write_u32(out, comp_bytes);
-		fwrite(comp, 1, comp_bytes, out);
-		delete[] comp; /* etc2comp allocates with new[] */
-
 		if (level + 1 < mip_count) {
 			int nmw, nmh;
 			uint8_t *next = downsample_rgba(cur, mw, mh, &nmw, &nmh);
@@ -252,10 +213,67 @@ int main(int argc, char **argv)
 			mh = nmh;
 		}
 	}
-
 	if (cur != rgba) free(cur);
 	free(rgba);
-	fclose(out);
+
+	/* Create KTX2 texture */
+	ktxTextureCreateInfo ci = {};
+	ci.vkFormat = has_alpha ? VK_FMT_ETC2_RGBA8 : VK_FMT_ETC2_RGB8;
+	ci.baseWidth = (ktx_uint32_t)tw;
+	ci.baseHeight = (ktx_uint32_t)th;
+	ci.baseDepth = 1;
+	ci.numDimensions = 2;
+	ci.numLevels = (ktx_uint32_t)mip_count;
+	ci.numLayers = 1;
+	ci.numFaces = 1;
+	ci.isArray = KTX_FALSE;
+	ci.generateMipmaps = KTX_FALSE;
+
+	ktxTexture2 *tex = NULL;
+	KTX_error_code err = ktxTexture2_Create(&ci,
+		KTX_TEXTURE_CREATE_ALLOC_STORAGE, &tex);
+	if (err != KTX_SUCCESS) {
+		fprintf(stderr, "ktxTexture2_Create: %s\n", ktxErrorString(err));
+		for (int i = 0; i < mip_count; i++) delete[] mips[i].data;
+		delete[] mips;
+		return 1;
+	}
+
+	/* Set compressed image data for each mip level */
+	for (int level = 0; level < mip_count; level++) {
+		err = ktxTexture_SetImageFromMemory(ktxTexture(tex),
+			(ktx_uint32_t)level, 0, 0,
+			mips[level].data, (ktx_size_t)mips[level].size);
+		if (err != KTX_SUCCESS) {
+			fprintf(stderr, "SetImageFromMemory mip %d: %s\n",
+			        level, ktxErrorString(err));
+			ktxTexture_Destroy(ktxTexture(tex));
+			for (int i = 0; i < mip_count; i++) delete[] mips[i].data;
+			delete[] mips;
+			return 1;
+		}
+	}
+
+	/* Store original (pre-padding) dimensions as key-value metadata */
+	uint16_t ow = (uint16_t)w, oh = (uint16_t)h;
+	ktxHashList_AddKVPair(&ktxTexture(tex)->kvDataHead,
+	                      "OrigWidth", sizeof(ow), &ow);
+	ktxHashList_AddKVPair(&ktxTexture(tex)->kvDataHead,
+	                      "OrigHeight", sizeof(oh), &oh);
+
+	/* Write KTX2 file */
+	err = ktxTexture_WriteToNamedFile(ktxTexture(tex), output_path);
+	if (err != KTX_SUCCESS) {
+		fprintf(stderr, "WriteToNamedFile: %s\n", ktxErrorString(err));
+		ktxTexture_Destroy(ktxTexture(tex));
+		for (int i = 0; i < mip_count; i++) delete[] mips[i].data;
+		delete[] mips;
+		return 1;
+	}
+
+	ktxTexture_Destroy(ktxTexture(tex));
+	for (int i = 0; i < mip_count; i++) delete[] mips[i].data;
+	delete[] mips;
 
 	printf("OK: %dx%d %s %d mips -> %s\n",
 	       tw, th, has_alpha ? "RGBA" : "RGB", mip_count, output_path);

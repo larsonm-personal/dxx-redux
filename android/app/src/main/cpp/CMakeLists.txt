@@ -417,6 +417,25 @@ if(_stb_image_need_dl)
 endif()
 
 # ──────────────────────────────────────────────────────────────
+# 3b-iv. KTX-Software  (KTX2 texture container reader, read-only static)
+# ──────────────────────────────────────────────────────────────
+set(KTX_FEATURE_STATIC_LIBRARY ON  CACHE BOOL "" FORCE)
+set(KTX_FEATURE_TOOLS          OFF CACHE BOOL "" FORCE)
+set(KTX_FEATURE_TESTS          OFF CACHE BOOL "" FORCE)
+set(KTX_FEATURE_DOC            OFF CACHE BOOL "" FORCE)
+set(KTX_FEATURE_JNI            OFF CACHE BOOL "" FORCE)
+set(KTX_FEATURE_GL_UPLOAD      OFF CACHE BOOL "" FORCE)
+set(KTX_FEATURE_VK_UPLOAD      OFF CACHE BOOL "" FORCE)
+set(KTX_FEATURE_LOADTEST_APPS  OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS          OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(ktx_software
+    GIT_REPOSITORY https://github.com/KhronosGroup/KTX-Software.git
+    GIT_TAG        v4.4.2
+    GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(ktx_software)
+
+# ──────────────────────────────────────────────────────────────
 # 3c. TinySoundFont shared library  (MIDI synth, linked by both games)
 # ──────────────────────────────────────────────────────────────
 add_library(tsf SHARED ${CMAKE_CURRENT_SOURCE_DIR}/shared/tsf_impl.c)
@@ -588,7 +607,8 @@ target_include_directories(${DXX_TARGET_PREFIX}xmodel PRIVATE ${PHYSFS_INCLUDE_D
 endif() # OPENGL
 
 target_link_libraries(dxx-redux-d1 PRIVATE nlohmann_json::nlohmann_json)
-target_link_libraries(dxx-redux-d1 PRIVATE lzma_sdk_c z dxx_fingerprint chromaprint)
+target_link_libraries(dxx-redux-d1 PRIVATE lzma_sdk_c z dxx_fingerprint chromaprint ktx)
+target_compile_definitions(dxx-redux-d1 PRIVATE KHRONOS_STATIC)
 set_property(TARGET dxx-redux-d1 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 # ──────────────────────────────────────────────────────────────
@@ -688,5 +708,6 @@ endif() # OPENGL
 
 # nlohmann/json — used by the introspection/automation C++ files
 target_link_libraries(dxx-redux-d2 PRIVATE nlohmann_json::nlohmann_json)
-target_link_libraries(dxx-redux-d2 PRIVATE lzma_sdk_c z dxx_fingerprint chromaprint)
+target_link_libraries(dxx-redux-d2 PRIVATE lzma_sdk_c z dxx_fingerprint chromaprint ktx)
+target_compile_definitions(dxx-redux-d2 PRIVATE KHRONOS_STATIC)
 set_property(TARGET dxx-redux-d2 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)

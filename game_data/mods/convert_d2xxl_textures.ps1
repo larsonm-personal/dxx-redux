@@ -5,9 +5,9 @@
 
 .DESCRIPTION
     Extracts TGA files from the d2x-xl 7z archives, compresses them to
-    ETC2 format via etc2tool, and packages the .etc2 files into .dxa
+    ETC2 format via etc2tool, and packages the .ktx2 files into .dxa
     files (ZIP archives). The engine auto-mounts .dxa files and loads
-    pre-compressed .etc2 textures directly to the GPU.
+    pre-compressed .ktx2 textures directly to the GPU.
 
     ZIP entries use NoCompression since ETC2 is already compressed.
 
@@ -324,9 +324,9 @@ function Convert-GameTextures {
         $baseName = [System.IO.Path]::GetFileNameWithoutExtension($tga.Name)
 
         try {
-            $entryName = "$baseName.etc2"
+            $entryName = "$baseName.ktx2"
             $tempPng = Join-Path $tempDir "$baseName.png"
-            $tempEtc2 = Join-Path $tempDir "$baseName.etc2"
+            $tempEtc2 = Join-Path $tempDir "$baseName.ktx2"
 
             if ($useMagick -and $MaxDim -gt 0) {
                 # ImageMagick path: high-quality linear-light Lanczos downscale -> temp PNG
@@ -370,8 +370,8 @@ function Convert-GameTextures {
     # Handle JPG files (convert through etc2tool too)
     foreach ($jpg in $jpgFiles) {
         $baseName = [System.IO.Path]::GetFileNameWithoutExtension($jpg.Name)
-        $entryName = "$baseName.etc2"
-        $tempEtc2 = Join-Path $tempDir "$baseName.etc2"
+        $entryName = "$baseName.ktx2"
+        $tempEtc2 = Join-Path $tempDir "$baseName.ktx2"
 
         try {
             if ($useMagick -and $MaxDim -gt 0) {

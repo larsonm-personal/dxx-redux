@@ -144,7 +144,7 @@ function Get-DxaEtc2Names {
     param([string]$DxaPath)
     if (-not (Test-Path $DxaPath)) { return @() }
     $zip = [System.IO.Compression.ZipFile]::OpenRead($DxaPath)
-    $names = $zip.Entries | Where-Object { $_.Name -like '*.etc2' } |
+    $names = $zip.Entries | Where-Object { $_.Name -like '*.ktx2' } |
         ForEach-Object { [System.IO.Path]::GetFileNameWithoutExtension($_.Name) }
     $zip.Dispose()
     return @($names)
@@ -230,7 +230,7 @@ function Convert-AndAdd {
 
             try {
                 $safeName = $name -replace '#', '_H_'
-                $tempEtc2 = Join-Path $outDir "$safeName.etc2"
+                $tempEtc2 = Join-Path $outDir "$safeName.ktx2"
                 if ($maxDim -gt 0 -and $Magick) {
                     # Copy to safe name to avoid IM interpreting '#' as scene selector
                     $safeSrc = Join-Path $outDir "${safeName}_src$([IO.Path]::GetExtension($src))"

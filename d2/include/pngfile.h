@@ -32,7 +32,7 @@ typedef struct _etc2_file_data {
 	unsigned int filedata_size;
 } etc2_file_data;
 
-extern int read_etc2_file(const char *filename, etc2_file_data *edata);
+extern int read_ktx2_file(const char *filename, etc2_file_data *edata);
 #endif
 
 #endif
