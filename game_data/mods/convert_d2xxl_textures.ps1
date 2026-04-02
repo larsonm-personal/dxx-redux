@@ -172,8 +172,10 @@ function Split-StripTextures {
         # Only process files that are frame-0 of an animation (name#0)
         if ($bn -notmatch '#0(-\w+)?$') { continue }
 
-        # Copy to safe name to avoid IM interpreting '#' as scene selector
-        $safeName = $tga.Name -replace '#', '__H__'
+        # Copy to safe name to avoid IM interpreting '#' as scene selector.
+        # Use __STRIP__ prefix so the strip source won't collide with
+        # frame 0's safe name (which uses __H__).
+        $safeName = "__STRIP__$($tga.Name -replace '#', '__H__')"
         $safePath = Join-Path $TgaDir $safeName
         Copy-Item $tga.FullName $safePath -Force
 
@@ -194,7 +196,10 @@ function Split-StripTextures {
             $nameBase = $bn -replace '#0$', ''
         }
 
-        # Crop each frame and save as individual TGA
+        # Crop each frame and save as individual TGA.
+        # Remove original strip first -- we have the safe copy, and frame 0
+        # will be written to the same filename as the original strip.
+        Remove-Item $tga.FullName -Force
         for ($i = 0; $i -lt $nFrames; $i++) {
             $frameName = "${nameBase}#${i}${variant}.tga"
             $safeFrameName = $frameName -replace '#', '__H__'
@@ -209,8 +214,7 @@ function Split-StripTextures {
             }
         }
 
-        # Remove the original strip TGA and safe copy
-        Remove-Item $tga.FullName -Force
+        # Remove the safe copy of the strip
         Remove-Item $safePath -Force -ErrorAction SilentlyContinue
         $splitCount++
     }
@@ -326,9 +330,9 @@ function Convert-WithMagick {
 # 7. BASE NAMES WITHOUT FRAME SUFFIX
 #    d2x-xl:  arw01.tga, door01.tga (no #N frame suffix)
 #    PIGfile: arw01#0, door01#0 (always has frame suffix for animated textures)
-#    These base files are animation strips that Split-StripTextures already
-#    splits into arw01#0, arw01#1, etc. The leftover base file (if not a
-#    strip) doesn't match any PIGfile entry.
+#    Rename-D2xxlTextures converts '!' to '#' first, then
+#    Split-StripTextures splits into arw01#0, arw01#1, etc.
+#    The leftover base file (if not a strip) doesn't match any PIGfile entry.
 #    No fix applied -- left in archive harmlessly (tiny disk overhead)
 #
 function Rename-D2xxlTextures {
@@ -432,16 +436,17 @@ function Convert-GameTextures {
         return
     }
 
+    # Rename d2x-xl files to DXX PIGfile names BEFORE splitting, because
+    # some archives use '!' instead of '#' for frame separators (e.g. arw01!0)
+    $fixups = Rename-D2xxlTextures -TgaDir $tgaDir -GameId $GameId
+    if ($fixups.Renamed -gt 0) {
+        Write-Host "  Name fixups: $($fixups.Renamed) renamed"
+    }
+
     # Pre-split animation strips into individual frame files
     $splitCount = Split-StripTextures -TgaDir $tgaDir -MagickPath $MagickPath
     if ($splitCount -gt 0) {
         Write-Host "  Split $splitCount animation strips into individual frames"
-    }
-
-    # Rename/remove d2x-xl files that don't match DXX PIGfile bitmap names
-    $fixups = Rename-D2xxlTextures -TgaDir $tgaDir -GameId $GameId
-    if ($fixups.Renamed -gt 0) {
-        Write-Host "  Name fixups: $($fixups.Renamed) renamed"
     }
 
     $tgaFiles = Get-ChildItem -Path $tgaDir -Filter "*.tga" -File

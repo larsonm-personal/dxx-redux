@@ -1088,6 +1088,48 @@ bool g3_draw_tmap_2(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+#ifdef ANDROID
+	/* Debug texture label overlay: accumulate label for overlay/tmap2 bitmap.
+	 * The bottom texture (tmap1) label is already handled by g3_draw_tmap above. */
+	if (g_debug_tex_overlay_active
+	    && g_debug_tex_label_count < DEBUG_TEX_MAX_LABELS && nv >= 3)
+	{
+		fix cx = 0, cy = 0, cz = 0;
+		int i;
+		for (i = 0; i < nv; i++) {
+			cx += pointlist[i]->p3_vec.x / nv;
+			cy += pointlist[i]->p3_vec.y / nv;
+			cz += pointlist[i]->p3_vec.z / nv;
+		}
+		if (cz > F1_0 / 4) {
+			fix sx_fix, sy_fix;
+			int checkmuldiv(fix *r, fix a, fix b, fix c);
+			if (checkmuldiv(&sx_fix, cx, Canv_w2, cz)
+			    && checkmuldiv(&sy_fix, cy, Canv_h2, cz))
+			{
+				int sx = f2i(Canv_w2 + sx_fix);
+				int sy = f2i(Canv_h2 - sy_fix) + 10; /* offset below tmap1 label */
+				int sw = grd_curcanv->cv_bitmap.bm_w;
+				int sh = grd_curcanv->cv_bitmap.bm_h;
+				if (sx >= 0 && sx < sw && sy >= 0 && sy < sh) {
+					struct debug_tex_label *lbl = &g_debug_tex_labels[g_debug_tex_label_count];
+					lbl->sx = sx;
+					lbl->sy = sy;
+					lbl->is_hires = (bmovl->gltexture && bmovl->gltexture->is_png) ? 1 : 0;
+					const char *bname = piggy_game_bitmap_name(bmovl);
+					if (bname) {
+						strncpy(lbl->name, bname, sizeof(lbl->name) - 1);
+						lbl->name[sizeof(lbl->name) - 1] = '\0';
+					} else {
+						lbl->name[0] = '\0';
+					}
+					g_debug_tex_label_count++;
+				}
+			}
+		}
+	}
+#endif
 #else
 	glUseProgram(super ? ogl_prog_tex2m : ogl_prog_tex2);
 

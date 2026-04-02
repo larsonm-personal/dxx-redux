@@ -126,7 +126,8 @@ foreach ($game in @("d1", "d2")) {
         $mx = $cfg.MaxSize
         $label = if ($mx -gt 0) { $mx } else { $sz }
         $readme = Get-ReadmeText -GameId $game -Size $label -Downscaled $cfg.Downscaled
-        $magickArg = if ($cfg.Downscaled -and $Magick) { $Magick } else { "" }
+        # Always pass ImageMagick: strip splitting needs it even without downscaling
+        $magickArg = if ($Magick) { $Magick } else { "" }
         Write-Host "--- Textures: $game ${label}x${label} ---"
         & $texScript -Game $game -TexSize $sz -MaxSize $mx -OutputDir $OutputDir -SevenZip $SevenZip -ReadmeText $readme -Magick $magickArg -Etc2Tool $Etc2Tool
         if ($LASTEXITCODE -ne 0) {
@@ -224,7 +225,8 @@ function Convert-AndAdd {
     # Pre-split animation strips so individual frames are available
     if ($Magick -and (Test-Path $Magick)) {
         foreach ($tga in (Get-ChildItem -Path $tgaDir -Filter "*#0*.tga" -File -ErrorAction SilentlyContinue)) {
-            $safeName = $tga.Name -replace '#', '__H__'
+            # Use __STRIP__ prefix so strip source won't collide with frame 0's safe name
+            $safeName = "__STRIP__$($tga.Name -replace '#', '__H__')"
             $safePath = Join-Path $tgaDir $safeName
             Copy-Item $tga.FullName $safePath -Force
             $dims = & $Magick identify -format "%w %h" $safePath 2>$null
@@ -237,6 +239,9 @@ function Convert-AndAdd {
             $variant = ""; $nameBase = $bn
             if ($bn -match '^(.+)#0(-\w+)$') { $nameBase = $Matches[1]; $variant = $Matches[2] }
             else { $nameBase = $bn -replace '#0$', '' }
+            # Remove original strip before splitting -- we work from the safe
+            # copy, and frame 0 gets the same filename as the original strip
+            Remove-Item $tga.FullName -Force
             for ($i = 0; $i -lt ($h / $w); $i++) {
                 $frameName = "${nameBase}#${i}${variant}.tga"
                 $safeFrame = Join-Path $tgaDir ($frameName -replace '#', '__H__')
@@ -247,7 +252,6 @@ function Convert-AndAdd {
                     Rename-Item $safeFrame $frameName
                 }
             }
-            Remove-Item $tga.FullName -Force
             Remove-Item $safePath -Force -ErrorAction SilentlyContinue
         }
     }
