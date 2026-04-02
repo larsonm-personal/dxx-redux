@@ -1,10 +1,16 @@
 package com.dxxredux.app
 
+import android.content.ContentValues
+import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,7 +29,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.dxxredux.app.multiplayer.NetLog
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -120,8 +125,8 @@ fun AdvancedSettingsPage(
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // -- Network Logging --
-                    NetworkLoggingSection()
+                    // -- Debug Logging --
+                    DebugLoggingSection()
 
                     Spacer(modifier = Modifier.height(16.dp))
                     HorizontalDivider()
@@ -251,33 +256,38 @@ fun AdvancedSettingsPage(
 }
 
 @Composable
-private fun NetworkLoggingSection() {
+private fun DebugLoggingSection() {
     val ctx = LocalContext.current
-    var loggingEnabled by remember { mutableStateOf(NetLog.isEnabled(ctx)) }
-    var logFiles by remember { mutableStateOf(NetLog.listLogFiles(ctx)) }
+    val categoryStates =
+        remember {
+            mutableStateListOf(*Array(DebugLogCategory.COUNT) { DebugLog.isCategoryEnabled(ctx, it) })
+        }
+    var logFiles by remember { mutableStateOf(DebugLog.listLogFiles(ctx)) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     val dateFmt = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US) }
 
-    Text("Network Logging", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    Text("Debug Logging", fontWeight = FontWeight.Bold, fontSize = 14.sp)
     Spacer(modifier = Modifier.height(4.dp))
     Text(
-        "Log network events (connections, lobbies, STUN, relay) to files for debugging.",
+        "Log categories to files for debugging. Enable only what you need.",
         fontSize = 12.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     Spacer(modifier = Modifier.height(8.dp))
 
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text("Enable Logging", fontSize = 13.sp)
-        Spacer(modifier = Modifier.weight(1f))
-        Switch(
-            checked = loggingEnabled,
-            onCheckedChange = { on ->
-                NetLog.setEnabled(ctx, on)
-                loggingEnabled = on
-                logFiles = NetLog.listLogFiles(ctx)
-            },
-        )
+    for (cat in 0 until DebugLogCategory.COUNT) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(DebugLogCategory.labels[cat], fontSize = 13.sp)
+            Spacer(modifier = Modifier.weight(1f))
+            Switch(
+                checked = categoryStates[cat],
+                onCheckedChange = { on ->
+                    DebugLog.setCategoryEnabled(ctx, cat, on)
+                    categoryStates[cat] = on
+                    logFiles = DebugLog.listLogFiles(ctx)
+                },
+            )
+        }
     }
 
     if (logFiles.isNotEmpty()) {
@@ -289,8 +299,10 @@ private fun NetworkLoggingSection() {
                 modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(file.name, fontSize = 11.sp)
+                Column(
+                    modifier = Modifier.weight(1f).clickable { openTextFile(ctx, file) },
+                ) {
+                    Text(file.name, fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
                     val sizeKb = file.length() / 1024
                     val date = dateFmt.format(Date(file.lastModified()))
                     Text(
@@ -300,11 +312,19 @@ private fun NetworkLoggingSection() {
                     )
                 }
                 OutlinedButton(
-                    onClick = { NetLog.shareLogFile(ctx, file) },
+                    onClick = { saveToDownloads(ctx, file) },
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                     modifier = Modifier.height(28.dp),
                 ) {
-                    Text("Export", fontSize = 11.sp)
+                    Text("Save", fontSize = 11.sp)
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+                OutlinedButton(
+                    onClick = { DebugLog.shareLogFile(ctx, file) },
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                    modifier = Modifier.height(28.dp),
+                ) {
+                    Text("Share", fontSize = 11.sp)
                 }
             }
         }
@@ -321,10 +341,10 @@ private fun NetworkLoggingSection() {
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
                 title = { Text("Delete All Logs") },
-                text = { Text("Delete all network log files? This cannot be undone.") },
+                text = { Text("Delete all debug log files? This cannot be undone.") },
                 confirmButton = {
                     TextButton(onClick = {
-                        NetLog.deleteAllLogs(ctx)
+                        DebugLog.deleteAllLogs(ctx)
                         logFiles = emptyList()
                         showDeleteDialog = false
                     }) {
@@ -363,8 +383,10 @@ private fun CrashReportsSection() {
                 modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(file.name, fontSize = 11.sp)
+                Column(
+                    modifier = Modifier.weight(1f).clickable { openTextFile(ctx, file) },
+                ) {
+                    Text(file.name, fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
                     val sizeKb = file.length() / 1024
                     val date = dateFmt.format(Date(file.lastModified()))
                     Text(
@@ -374,11 +396,19 @@ private fun CrashReportsSection() {
                     )
                 }
                 OutlinedButton(
+                    onClick = { saveToDownloads(ctx, file) },
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                    modifier = Modifier.height(28.dp),
+                ) {
+                    Text("Save", fontSize = 11.sp)
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+                OutlinedButton(
                     onClick = { CrashLog.shareCrashFile(ctx, file) },
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                     modifier = Modifier.height(28.dp),
                 ) {
-                    Text("Export", fontSize = 11.sp)
+                    Text("Share", fontSize = 11.sp)
                 }
             }
         }
@@ -730,5 +760,59 @@ private fun BoxScope.ScrollArrows(scrollState: ScrollState) {
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+private const val FILE_PROVIDER_AUTHORITY = "com.dxxredux.app.fileprovider"
+
+private fun openTextFile(
+    context: android.content.Context,
+    file: File,
+) {
+    try {
+        val viewDir = File(context.cacheDir, "file_view")
+        viewDir.mkdirs()
+        val copy = File(viewDir, file.name)
+        file.copyTo(copy, overwrite = true)
+        val uri =
+            androidx.core.content.FileProvider
+                .getUriForFile(context, FILE_PROVIDER_AUTHORITY, copy)
+        val intent =
+            Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "text/plain")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        context.startActivity(intent)
+    } catch (e: Exception) {
+        Toast.makeText(context, "No text viewer available", Toast.LENGTH_SHORT).show()
+    }
+}
+
+private fun saveToDownloads(
+    context: android.content.Context,
+    file: File,
+) {
+    try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val values =
+                ContentValues().apply {
+                    put(MediaStore.Downloads.DISPLAY_NAME, file.name)
+                    put(MediaStore.Downloads.MIME_TYPE, "text/plain")
+                }
+            val uri =
+                context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                    ?: throw Exception("MediaStore insert failed")
+            context.contentResolver.openOutputStream(uri)?.use { out ->
+                file.inputStream().use { it.copyTo(out) }
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            val dlDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            dlDir.mkdirs()
+            file.copyTo(File(dlDir, file.name), overwrite = true)
+        }
+        Toast.makeText(context, "Saved to Downloads/${file.name}", Toast.LENGTH_SHORT).show()
+    } catch (e: Exception) {
+        Toast.makeText(context, "Save failed: ${e.message}", Toast.LENGTH_SHORT).show()
     }
 }

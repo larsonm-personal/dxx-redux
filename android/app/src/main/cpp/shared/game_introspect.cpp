@@ -697,7 +697,7 @@ extern "C" char *game_introspect_get_state(void)
 		if (g_fb_sample_r >= 0) {
 			char buf[64];
 			snprintf(buf, sizeof(buf), "(%d,%d,%d,%d)",
-				g_fb_sample_r, g_fb_sample_g, g_fb_sample_b, g_fb_sample_a);
+			         g_fb_sample_r, g_fb_sample_g, g_fb_sample_b, g_fb_sample_a);
 			j["framebuffer_sample"] = std::string(buf);
 		}
 	}

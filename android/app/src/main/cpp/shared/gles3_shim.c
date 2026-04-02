@@ -83,6 +83,12 @@ static GLint u_alpha_test;
 static GLint u_alpha_ref;
 static GLint u_use_color_attr;
 static GLint u_flat_color;
+static GLint u_debug_mode;
+
+/* Debug visualization mode, settable from JNI.
+ * 0 = normal, 1 = show alpha, 2 = no texture (vertex color only),
+ * 3 = texcoord visualization */
+volatile int gles3_shim_debug_mode = 0;
 
 #define ATTR_POS      0 /* matches OGL_APOS */
 #define ATTR_COLOR    1 /* matches OGL_ACOLOR */
@@ -116,11 +122,26 @@ static const char *fs_src =
     "uniform int uTexEnabled;\n"
     "uniform int uAlphaTest;\n"
     "uniform float uAlphaRef;\n"
+    "uniform int uDebugMode;\n"
     "out vec4 fragColor;\n"
     "void main() {\n"
     "  vec4 c = vColor;\n"
+    "  vec4 tex = vec4(1.0);\n"
     "  if (uTexEnabled != 0)\n"
-    "    c *= texture(uTex, vTexCoord);\n"
+    "    tex = texture(uTex, vTexCoord);\n"
+    "  if (uDebugMode == 1) {\n"
+    "    fragColor = vec4(tex.aaa, 1.0);\n"
+    "    return;\n"
+    "  }\n"
+    "  if (uDebugMode == 2) {\n"
+    "    fragColor = vColor;\n"
+    "    return;\n"
+    "  }\n"
+    "  if (uDebugMode == 3) {\n"
+    "    fragColor = vec4(vTexCoord, 0.0, 1.0);\n"
+    "    return;\n"
+    "  }\n"
+    "  c *= tex;\n"
     "  if (uAlphaTest != 0 && c.a < uAlphaRef)\n"
     "    discard;\n"
     "  fragColor = c;\n"
@@ -180,8 +201,10 @@ static GLuint shim_vbo;
 static int gl_type_size(GLenum type)
 {
 	switch (type) {
-		case GL_BYTE: case GL_UNSIGNED_BYTE: return 1;
-		case GL_SHORT: case GL_UNSIGNED_SHORT: return 2;
+		case GL_BYTE:
+		case GL_UNSIGNED_BYTE: return 1;
+		case GL_SHORT:
+		case GL_UNSIGNED_SHORT: return 2;
 		default: return 4; /* GL_FLOAT, GL_INT, GL_UNSIGNED_INT */
 	}
 }
@@ -232,6 +255,7 @@ void gles3_shim_init(void)
 	u_alpha_ref = glGetUniformLocation(shim_prog, "uAlphaRef");
 	u_use_color_attr = glGetUniformLocation(shim_prog, "uUseColorAttr");
 	u_flat_color = glGetUniformLocation(shim_prog, "uFlatColor");
+	u_debug_mode = glGetUniformLocation(shim_prog, "uDebugMode");
 
 	glUseProgram(shim_prog);
 	glUniform1i(u_tex, 0);
@@ -529,6 +553,7 @@ void gles3_shim_flush_state(void)
 
 	glUniform1i(u_use_color_attr, color_array_enabled);
 	glUniform4fv(u_flat_color, 1, flat_color);
+	glUniform1i(u_debug_mode, gles3_shim_debug_mode);
 
 	state_dirty = 0;
 }
@@ -573,7 +598,7 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		int ca_row = ca_stride ? ca_stride : ca_size * gl_type_size(ca_type);
 		int ta_row = ta_stride ? ta_stride : ta_size * gl_type_size(ta_type);
 		int va_bytes = (vertex_array_enabled && va_ptr) ? nverts * va_row : 0;
-		int ca_bytes = (color_array_enabled  && ca_ptr) ? nverts * ca_row : 0;
+		int ca_bytes = (color_array_enabled && ca_ptr) ? nverts * ca_row : 0;
 		int ta_bytes = (texcoord_array_enabled && ta_ptr) ? nverts * ta_row : 0;
 		int total = va_bytes + ca_bytes + ta_bytes;
 		int off = 0;
@@ -585,7 +610,7 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		if (va_bytes) {
 			glBufferSubData(GL_ARRAY_BUFFER, off, va_bytes, va_ptr);
 			glVertexAttribPointer(ATTR_POS, va_size, va_type, GL_FALSE,
-				va_stride, (const void *)(intptr_t)off);
+			                      va_stride, (const void *) (intptr_t) off);
 			glEnableVertexAttribArray(ATTR_POS);
 			off += va_bytes;
 		} else {
@@ -595,7 +620,7 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		if (ca_bytes) {
 			glBufferSubData(GL_ARRAY_BUFFER, off, ca_bytes, ca_ptr);
 			glVertexAttribPointer(ATTR_COLOR, ca_size, ca_type, GL_FALSE,
-				ca_stride, (const void *)(intptr_t)off);
+			                      ca_stride, (const void *) (intptr_t) off);
 			glEnableVertexAttribArray(ATTR_COLOR);
 			off += ca_bytes;
 		} else {
@@ -605,7 +630,7 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		if (ta_bytes) {
 			glBufferSubData(GL_ARRAY_BUFFER, off, ta_bytes, ta_ptr);
 			glVertexAttribPointer(ATTR_TEXCOORD, ta_size, ta_type, GL_FALSE,
-				ta_stride, (const void *)(intptr_t)off);
+			                      ta_stride, (const void *) (intptr_t) off);
 			glEnableVertexAttribArray(ATTR_TEXCOORD);
 			off += ta_bytes;
 		} else {

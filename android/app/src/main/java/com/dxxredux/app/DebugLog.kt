@@ -1,0 +1,251 @@
+package com.dxxredux.app
+
+import android.content.Context
+import android.content.Intent
+import android.util.Log
+import androidx.core.content.FileProvider
+import java.io.BufferedWriter
+import java.io.File
+import java.io.FileWriter
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+/**
+ * Multi-category debug logger. Each category has an independent toggle stored
+ * in SharedPreferences. All enabled categories write to the same log file for
+ * chronological interleaving. Maintains at most [MAX_FILES] log files.
+ *
+ * Category IDs match [DebugLogCategory] (Kotlin) and debug_log_categories.h (C).
+ *
+ * Backward-compatible: network logging goes through this as category NETWORK.
+ */
+object DebugLog {
+    private const val TAG = "DebugLog"
+    private const val PREFS_NAME = "dxx_prefs"
+    private const val DIR_NAME = "debuglogs"
+    private const val MAX_FILES = 5
+    private const val AUTHORITY = "com.dxxredux.app.fileprovider"
+
+    private var writer: BufferedWriter? = null
+    private var currentFile: File? = null
+    private val enabledCategories = BooleanArray(DebugLogCategory.COUNT)
+    private val lock = Any()
+    private val tsFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US)
+
+    /** True if any category is enabled (controls file open/close). */
+    private fun anyEnabled(): Boolean = enabledCategories.any { it }
+
+    fun init(context: Context) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        for (i in 0 until DebugLogCategory.COUNT) {
+            enabledCategories[i] = prefs.getBoolean(DebugLogCategory.prefKey(i), false)
+        }
+
+        // Migrate old net_logging_enabled pref to new category system
+        if (prefs.contains("net_logging_enabled")) {
+            val wasEnabled = prefs.getBoolean("net_logging_enabled", false)
+            if (wasEnabled && !enabledCategories[DebugLogCategory.NETWORK]) {
+                enabledCategories[DebugLogCategory.NETWORK] = true
+                prefs
+                    .edit()
+                    .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.NETWORK), true)
+                    .remove("net_logging_enabled")
+                    .apply()
+            } else {
+                prefs.edit().remove("net_logging_enabled").apply()
+            }
+        }
+
+        if (anyEnabled()) openLog(context)
+    }
+
+    /** Open an existing log file for appending (used by :game process). */
+    fun initAppend(
+        context: Context,
+        filePath: String,
+    ) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        for (i in 0 until DebugLogCategory.COUNT) {
+            enabledCategories[i] = prefs.getBoolean(DebugLogCategory.prefKey(i), false)
+        }
+        if (!anyEnabled()) return
+        synchronized(lock) {
+            closeLog()
+            val file = File(filePath)
+            if (!file.exists()) {
+                openLog(context)
+                return
+            }
+            try {
+                writer = BufferedWriter(FileWriter(file, true))
+                currentFile = file
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to open log file for append", e)
+                writer = null
+            }
+        }
+    }
+
+    fun currentFilePath(): String? = synchronized(lock) { currentFile?.absolutePath }
+
+    fun setCategoryEnabled(
+        context: Context,
+        category: Int,
+        on: Boolean,
+    ) {
+        if (category < 0 || category >= DebugLogCategory.COUNT) return
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(DebugLogCategory.prefKey(category), on).apply()
+        synchronized(lock) {
+            enabledCategories[category] = on
+            if (on && writer == null) {
+                openLog(context)
+            } else if (!anyEnabled()) {
+                closeLog()
+            }
+        }
+    }
+
+    fun isCategoryEnabled(
+        context: Context,
+        category: Int,
+    ): Boolean {
+        if (category < 0 || category >= DebugLogCategory.COUNT) return false
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(DebugLogCategory.prefKey(category), false)
+    }
+
+    fun log(
+        category: Int,
+        message: String,
+    ) {
+        synchronized(lock) {
+            val w = writer ?: return
+            if (category < 0 || category >= DebugLogCategory.COUNT) return
+            if (!enabledCategories[category]) return
+            try {
+                val ts = tsFormat.format(Date())
+                val tag = DebugLogCategory.labels[category].uppercase()
+                w.write("$ts [$tag] ${message.trimEnd()}")
+                w.newLine()
+                w.flush()
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to write log line", e)
+            }
+        }
+    }
+
+    /** Backward-compatible: log with string category (used by NetLog bridge). */
+    fun logNetwork(
+        category: String,
+        message: String,
+    ) {
+        synchronized(lock) {
+            val w = writer ?: return
+            if (!enabledCategories[DebugLogCategory.NETWORK]) return
+            try {
+                val ts = tsFormat.format(Date())
+                w.write("$ts [$category] ${message.trimEnd()}")
+                w.newLine()
+                w.flush()
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to write log line", e)
+            }
+        }
+    }
+
+    fun listLogFiles(context: Context): List<File> {
+        val dir = File(context.filesDir, DIR_NAME)
+        if (!dir.isDirectory) return emptyList()
+        return dir
+            .listFiles()
+            ?.filter { it.isFile && it.name.startsWith("debuglog_") }
+            ?.sortedByDescending { it.lastModified() }
+            ?: emptyList()
+    }
+
+    fun shareLogFile(
+        context: Context,
+        file: File,
+    ): Boolean =
+        try {
+            val exportDir = File(context.cacheDir, "debuglog_exports")
+            exportDir.mkdirs()
+            val copy = File(exportDir, file.name)
+            file.copyTo(copy, overwrite = true)
+            val uri = FileProvider.getUriForFile(context, AUTHORITY, copy)
+            val intent =
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+            val chooser = Intent.createChooser(intent, "Share Debug Log")
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(chooser)
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to share log file", e)
+            false
+        }
+
+    fun deleteAllLogs(context: Context) {
+        synchronized(lock) {
+            val active = currentFile
+            val dir = File(context.filesDir, DIR_NAME)
+            dir.listFiles()?.forEach { f ->
+                if (active == null || f.absolutePath != active.absolutePath) f.delete()
+            }
+        }
+    }
+
+    private fun openLog(context: Context) {
+        closeLog()
+        val dir = File(context.filesDir, DIR_NAME)
+        dir.mkdirs()
+        pruneOldFiles(dir)
+        val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+        val file = File(dir, "debuglog_$stamp.txt")
+        try {
+            writer = BufferedWriter(FileWriter(file, true))
+            currentFile = file
+            // Write header with enabled categories
+            val enabled =
+                (0 until DebugLogCategory.COUNT)
+                    .filter { enabledCategories[it] }
+                    .joinToString(", ") { DebugLogCategory.labels[it] }
+            log(
+                DebugLogCategory.NETWORK,
+                "Log started -- build ${BuildInfo.GIT_COMMIT_COUNT}" +
+                    " (${BuildInfo.GIT_SHORT_HASH}) ${BuildInfo.BUILD_DATE}" +
+                    " ${BuildInfo.BUILD_TYPE} -- categories: $enabled",
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to open log file", e)
+            writer = null
+        }
+    }
+
+    private fun closeLog() {
+        try {
+            writer?.close()
+        } catch (_: Exception) {
+        }
+        writer = null
+        currentFile = null
+    }
+
+    private fun pruneOldFiles(dir: File) {
+        val files =
+            dir
+                .listFiles()
+                ?.filter { it.isFile && it.name.startsWith("debuglog_") }
+                ?.sortedBy { it.lastModified() }
+                ?: return
+        val toDelete = files.size - (MAX_FILES - 1)
+        if (toDelete > 0) {
+            files.take(toDelete).forEach { it.delete() }
+        }
+    }
+}

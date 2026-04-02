@@ -42,7 +42,6 @@ import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.dxxredux.app.multiplayer.MatchmakingService
-import com.dxxredux.app.multiplayer.NetLog
 import org.json.JSONObject
 import java.io.File
 
@@ -109,6 +108,11 @@ class MainActivity :
     external fun nativeSetDebugFlag(
         name: String,
         value: Int,
+    )
+
+    external fun nativeSetDebugLogEnabled(
+        category: Int,
+        on: Boolean,
     )
 
     external fun nativeJoystickAxis(
@@ -314,9 +318,9 @@ class MainActivity :
         // Append to the main-process log file if a path was passed, otherwise create new
         val netlogPath = intent.getStringExtra("netlog_path")
         if (netlogPath != null) {
-            NetLog.initAppend(this, netlogPath)
+            DebugLog.initAppend(this, netlogPath)
         } else {
-            NetLog.init(this)
+            DebugLog.init(this)
         }
         MatchmakingService.setActivity(this)
 
@@ -327,6 +331,11 @@ class MainActivity :
         System.loadLibrary(libName)
         Log.i("MainActivity", "Loaded native library: $libName")
         CrashLog.installNativeHandler(this)
+
+        // Sync C-side per-category enable flags with Kotlin prefs
+        for (cat in 0 until DebugLogCategory.COUNT) {
+            nativeSetDebugLogEnabled(cat, DebugLog.isCategoryEnabled(this, cat))
+        }
 
         // Rewrite audio playlist in the game process so SAF fds are valid.
         // SetupActivity runs in the default process; this activity runs in
@@ -1879,9 +1888,18 @@ class MainActivity :
         category: String,
         message: String,
     ) {
-        NetLog.log(category, message)
+        DebugLog.logNetwork(category, message)
         com.dxxredux.app.multiplayer.MatchmakingStateHolder
             .appendLog("[$category] $message")
+    }
+
+    // ── Debug log bridge (called from JNI on game thread) ──
+    @Suppress("unused")
+    fun debugLogFromNative(
+        category: Int,
+        message: String,
+    ) {
+        DebugLog.log(category, message)
     }
 
     // ── GameSurfaceView with InputConnection for soft keyboard ──

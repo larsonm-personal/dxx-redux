@@ -11,6 +11,10 @@
 
     ZIP entries use NoCompression since ETC2 is already compressed.
 
+    Name fixups are applied after extraction to correct d2x-xl naming
+    conventions that differ from the DXX engine's PIGfile bitmap names.
+    See Rename-D2xxlTextures for the full list of fixups.
+
     Requires: 7-Zip (7z.exe), etc2tool (from tools/etc2tool/)
     Optional: ImageMagick (for high-quality downscaling)
 
@@ -157,6 +161,10 @@ function Split-StripTextures {
     param([string]$TgaDir, [string]$MagickPath)
     if (-not $MagickPath -or -not (Test-Path $MagickPath)) { return 0 }
 
+    # IM writes warnings to stderr even on success; prevent $ErrorActionPreference
+    # from turning those into terminating errors (PS 5.1 quirk)
+    $ErrorActionPreference = 'Continue'
+
     $splitCount = 0
     $tgaFiles = Get-ChildItem -Path $TgaDir -Filter "*.tga" -File
     foreach ($tga in $tgaFiles) {
@@ -169,8 +177,8 @@ function Split-StripTextures {
         $safePath = Join-Path $TgaDir $safeName
         Copy-Item $tga.FullName $safePath -Force
 
-        $dims = & $MagickPath identify -format "%w %h" $safePath 2>&1
-        if ($LASTEXITCODE -ne 0) { Remove-Item $safePath -Force; continue }
+        $dims = & $MagickPath identify -format "%w %h" $safePath 2>$null
+        if ($LASTEXITCODE -ne 0 -or -not $dims) { Remove-Item $safePath -Force; continue }
         $parts = ("$dims" -split '\s+')
         $w = [int]$parts[0]; $h = [int]$parts[1]
         if ($h -le $w -or $h % $w -ne 0) { Remove-Item $safePath -Force; continue }
@@ -192,7 +200,7 @@ function Split-StripTextures {
             $safeFrameName = $frameName -replace '#', '__H__'
             $safeFramePath = Join-Path $TgaDir $safeFrameName
             $y = $i * $w
-            & $MagickPath $safePath -crop "${w}x${w}+0+${y}" +repage $safeFramePath 2>&1 | Out-Null
+            & $MagickPath $safePath -crop "${w}x${w}+0+${y}" +repage $safeFramePath 2>$null
             if ($LASTEXITCODE -eq 0) {
                 # Rename safe frame to real name
                 $realFramePath = Join-Path $TgaDir $frameName
@@ -216,6 +224,7 @@ function Convert-WithMagick {
         [int]$MaxDim,
         [string]$MagickPath
     )
+    $ErrorActionPreference = 'Continue'
     # Copy to safe temp name if '#' present (IM interprets '#N' as scene selector)
     $safeInput = $InputPath
     if ($InputPath -match '#') {
@@ -243,7 +252,7 @@ function Convert-WithMagick {
         $magickArgs += @('-quality', '92')
     }
     $magickArgs += $safeOutput
-    & $MagickPath $magickArgs 2>&1 | Out-Null
+    & $MagickPath $magickArgs 2>$null
     if ($safeInput -ne $InputPath) { Remove-Item $safeInput -Force -ErrorAction SilentlyContinue }
     if ($safeOutput -ne $OutputPath -and (Test-Path $safeOutput)) {
         Move-Item $safeOutput $OutputPath -Force
@@ -251,6 +260,128 @@ function Convert-WithMagick {
     if ($LASTEXITCODE -ne 0) {
         throw "ImageMagick conversion failed for $InputPath"
     }
+}
+
+# ── d2x-xl -> DXX-Rebirth name fixups ──
+#
+# The d2x-xl texture packs use naming conventions that differ from the
+# DXX engine's PIGfile bitmap names. The engine looks up hi-res textures
+# by calling piggy_game_bitmap_name(bm) and appending ".ktx2", so the
+# KTX2 entry names must match the PIGfile names exactly.
+#
+# NOTE: D1 has no naming convention mismatches. All D1 unmatched entries
+# are addon/expansion content not in the base PIGfile (high-numbered
+# rocks/doors/misc, CTF textures, lava variants, etc.). The fixups below
+# are D2-specific but harmlessly no-op on D1 archives.
+#
+# Categories of mismatches and their resolution:
+#
+# 1. BOSS ANIMATION FRAMES (512px archive only, D2)
+#    d2x-xl:  boss2_01.tga through boss2_15.tga  (underscore, 1-indexed)
+#    PIGfile: boss02#0     through boss02#14      (hash, 0-indexed)
+#    Fix: rename boss2_NN -> boss02#(NN-1)
+#
+# 2. ARROW EXCLAMATION SYNTAX (256px archive only, D2)
+#    d2x-xl:  arw01!0.tga  ('!' used as alternate frame separator)
+#    PIGfile: arw01#0      (engine only uses '#' for frame indexing)
+#    Fix: rename replacing '!' with '#'
+#    Note: arw01.tga (no frame suffix) also exists -- removed since the
+#    engine only references the individual frames arw01#0 through arw01#5
+#
+# 3. TARGETING RETICLE COLOR VARIANTS (both archives, D2)
+#    d2x-xl:  targ01b#0-green.tga, targ01b#0-red.tga, targ01b#0.tga
+#    PIGfile: targ01b#0  (color is applied via PlayerCfg.ReticleRGBA tinting)
+#    Fix: rename -green variants to the base name (overwriting the base).
+#    The green set matches the original game. -red variants are left as-is
+#    (unmatched, harmless in archive)
+#
+# 4. LAVA ZERO-PADDING (256px archive only, D2)
+#    d2x-xl:  lava6#0.tga
+#    PIGfile: lava06#0
+#    Note: the 512 archive has lava06 (correct). 256 has lava6 (wrong).
+#    Fix: not applied here -- the merge pass copies from 512 to 256. If
+#    the 256 pack is rebuilt alone, add: lava6 -> lava06
+#
+# 5. D1-ONLY TEXTURE NAMES IN D2 PACK (512px archive, D2)
+#    d2x-xl D2 pack includes: rock001, rock002, rock006, rock007, rock265,
+#    metl131, metl132, metl133, metl134, metl135
+#    These are Descent 1 PIGfile names. D2's PIGfile does not contain these
+#    names (it uses different numbers for equivalent textures).
+#    No fix applied -- left in archive harmlessly (no matching bitmap to bind to).
+#    They ARE valid in the D1 pack
+#
+# 6. NON-PIGFILE ADDON TEXTURES (256px archive, D2)
+#    blast, bubble, bullcase, bulletcase, corona, deadzone, fire, flare,
+#    glare, halfhalo, halo, joymouse, rboticon, shield, smoke, sparks,
+#    thrust2d, thrust3d
+#    Plus from 512: cockpitbx2, statusbx2, hires-cockpit, monsterball,
+#    mballmask, pwupicon
+#    These are d2x-xl addon bitmaps not registered in the PIGfile.
+#    piggy_game_bitmap_name() returns NULL for them, so KTX2 lookup is
+#    skipped entirely. Fixing this would require game code changes to add
+#    KTX2 lookup in each addon loading path.
+#    Fix: none currently -- left in pack harmlessly (tiny disk overhead)
+#    TODO: add engine-side KTX2 lookup for addon bitmaps if desired
+#
+# 7. BASE NAMES WITHOUT FRAME SUFFIX
+#    d2x-xl:  arw01.tga, door01.tga (no #N frame suffix)
+#    PIGfile: arw01#0, door01#0 (always has frame suffix for animated textures)
+#    These base files are animation strips that Split-StripTextures already
+#    splits into arw01#0, arw01#1, etc. The leftover base file (if not a
+#    strip) doesn't match any PIGfile entry.
+#    No fix applied -- left in archive harmlessly (tiny disk overhead)
+#
+function Rename-D2xxlTextures {
+    param(
+        [string]$TgaDir,
+        [string]$GameId
+    )
+
+    $renamed = 0
+
+    # --- Boss animation frames: boss2_NN -> boss02#(NN-1) ---
+    foreach ($f in (Get-ChildItem -Path $TgaDir -Filter "boss2_*.tga" -File -ErrorAction SilentlyContinue)) {
+        $bn = [IO.Path]::GetFileNameWithoutExtension($f.Name)
+        if ($bn -match '^boss2_(\d+)$') {
+            $frameIdx = [int]$Matches[1] - 1
+            $newName = "boss02#${frameIdx}.tga"
+            $newPath = Join-Path $TgaDir $newName
+            if (-not (Test-Path $newPath)) {
+                Rename-Item $f.FullName $newName
+                $renamed++
+            }
+            # If target already exists (from a strip split), leave original as-is
+        }
+    }
+
+    # --- Exclamation mark frame syntax: name!N -> name#N ---
+    foreach ($f in (Get-ChildItem -Path $TgaDir -Filter "*!*.tga" -File -ErrorAction SilentlyContinue)) {
+        $newName = $f.Name -replace '!', '#'
+        $newPath = Join-Path $TgaDir $newName
+        if (-not (Test-Path $newPath)) {
+            Rename-Item $f.FullName $newName
+            $renamed++
+        }
+        # If target already exists, leave original as-is
+    }
+
+    # --- Targeting reticle: rename -green variants to base name ---
+    # Green set has better visual quality; overwrite the base file.
+    # Red variants are left as-is (unmatched, harmless in archive).
+    foreach ($f in (Get-ChildItem -Path $TgaDir -Filter "targ*-green.tga" -File -ErrorAction SilentlyContinue)) {
+        $newName = $f.Name -replace '-green\.tga$', '.tga'
+        $newPath = Join-Path $TgaDir $newName
+        if (Test-Path $newPath) { Remove-Item $newPath -Force }
+        Rename-Item $f.FullName $newName
+        $renamed++
+    }
+
+    # D1-only names (rock001 etc) in D2 pack: left as-is (no matching D2 bitmap)
+    # Base names without frame suffix (arw01.tga etc): left as-is after strip split
+    # Non-PIGfile addon textures (blast, corona etc): left as-is
+    # See doc comments above for full list of unmatched-but-harmless entries
+
+    return @{ Renamed = $renamed }
 }
 
 function Convert-GameTextures {
@@ -274,7 +405,7 @@ function Convert-GameTextures {
     New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 
     $sizeSuffix = if ($MaxDim -gt 0 -and $MaxDim -lt $actualTexSize) { $MaxDim } else { $actualTexSize }
-    $dxaName = "d2xxl-hires-textures-${GameId}-${sizeSuffix}.dxa"
+    $dxaName = "${GameId}-hires-${sizeSuffix}-textures-ktx2.dxa"
     $dxaPath = Join-Path $OutDir $dxaName
 
     $useMagick = $MagickPath -and $MaxDim -gt 0 -and (Test-Path $MagickPath)
@@ -291,7 +422,7 @@ function Convert-GameTextures {
     # Extract TGA files from 7z
     Write-Host "  Extracting archive..."
     $extractDir = Join-Path $tempDir "extract"
-    & $SevenZip x "-o$extractDir" $ArchivePath -y 2>&1 | Out-Null
+    & $SevenZip x "-o$extractDir" $ArchivePath -y 2>$null
     if ($LASTEXITCODE -ne 0) { throw "7z extraction failed" }
 
     $tgaDir = Join-Path (Join-Path $extractDir "textures") $GameId
@@ -305,6 +436,12 @@ function Convert-GameTextures {
     $splitCount = Split-StripTextures -TgaDir $tgaDir -MagickPath $MagickPath
     if ($splitCount -gt 0) {
         Write-Host "  Split $splitCount animation strips into individual frames"
+    }
+
+    # Rename/remove d2x-xl files that don't match DXX PIGfile bitmap names
+    $fixups = Rename-D2xxlTextures -TgaDir $tgaDir -GameId $GameId
+    if ($fixups.Renamed -gt 0) {
+        Write-Host "  Name fixups: $($fixups.Renamed) renamed"
     }
 
     $tgaFiles = Get-ChildItem -Path $tgaDir -Filter "*.tga" -File
@@ -347,7 +484,7 @@ function Convert-GameTextures {
             }
 
             # Run etc2tool to compress to ETC2
-            & $Etc2ToolPath $tempPng $tempEtc2 2>&1 | Out-Null
+            & $Etc2ToolPath $tempPng $tempEtc2 2>$null
             if ($LASTEXITCODE -ne 0) { throw "etc2tool failed for $baseName" }
 
             $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
@@ -358,7 +495,7 @@ function Convert-GameTextures {
             Remove-Item $tempPng, $tempEtc2 -ErrorAction SilentlyContinue
 
             $converted++
-            if ($converted % 50 -eq 0) {
+            if ($converted % 10 -eq 0) {
                 Write-Host "  Converted $converted / $total..."
             }
         } catch {
@@ -377,11 +514,11 @@ function Convert-GameTextures {
             if ($useMagick -and $MaxDim -gt 0) {
                 $tempPng = Join-Path $tempDir "$baseName.png"
                 Convert-WithMagick -InputPath $jpg.FullName -OutputPath $tempPng -MaxDim $MaxDim -MagickPath $MagickPath
-                & $Etc2ToolPath $tempPng $tempEtc2 2>&1 | Out-Null
+                & $Etc2ToolPath $tempPng $tempEtc2 2>$null
                 Remove-Item $tempPng -ErrorAction SilentlyContinue
             } else {
                 # etc2tool reads JPG directly via stb_image
-                & $Etc2ToolPath $jpg.FullName $tempEtc2 2>&1 | Out-Null
+                & $Etc2ToolPath $jpg.FullName $tempEtc2 2>$null
             }
             if ($LASTEXITCODE -ne 0) { throw "etc2tool failed for $baseName" }
 

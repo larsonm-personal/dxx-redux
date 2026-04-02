@@ -18,13 +18,16 @@
 #define STBI_NO_GIF
 #include "stb_image.h"
 #include "Etc.h"
+#ifndef KHRONOS_STATIC
 #define KHRONOS_STATIC
+#endif
 #include <ktx.h>
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <cstdint>
+#include <chrono>
 
 /* VkFormat values for ETC2 */
 #define VK_FMT_ETC2_RGB8   147  /* VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK */
@@ -191,9 +194,15 @@ int main(int argc, char **argv)
 	};
 	mip_level *mips = new mip_level[mip_count]();
 
+	auto t_start = std::chrono::steady_clock::now();
+	printf("ETC2: %s %dx%d %s %d mips\n", input_path, tw, th,
+	       has_alpha ? "RGBA" : "RGB", mip_count);
+	fflush(stdout);
+
 	uint8_t *cur = rgba;
 	int mw = tw, mh = th;
 	for (int level = 0; level < mip_count; level++) {
+		auto mip_t0 = std::chrono::steady_clock::now();
 		mips[level].data = compress_etc2(cur, mw, mh, has_alpha, &mips[level].size);
 		if (!mips[level].data) {
 			fprintf(stderr, "Compression failed at mip level %d (%dx%d)\n",
@@ -204,6 +213,12 @@ int main(int argc, char **argv)
 			free(rgba);
 			return 1;
 		}
+		auto mip_t1 = std::chrono::steady_clock::now();
+		int mip_ms = (int)std::chrono::duration_cast<std::chrono::milliseconds>(
+			mip_t1 - mip_t0).count();
+		printf("  mip %d: %dx%d -> %u bytes (%d ms)\n",
+		       level, mw, mh, mips[level].size, mip_ms);
+		fflush(stdout);
 		if (level + 1 < mip_count) {
 			int nmw, nmh;
 			uint8_t *next = downsample_rgba(cur, mw, mh, &nmw, &nmh);
@@ -275,7 +290,11 @@ int main(int argc, char **argv)
 	for (int i = 0; i < mip_count; i++) delete[] mips[i].data;
 	delete[] mips;
 
-	printf("OK: %dx%d %s %d mips -> %s\n",
-	       tw, th, has_alpha ? "RGBA" : "RGB", mip_count, output_path);
+	auto t_end = std::chrono::steady_clock::now();
+	int total_ms = (int)std::chrono::duration_cast<std::chrono::milliseconds>(
+		t_end - t_start).count();
+	printf("OK: %dx%d %s %d mips -> %s (%d ms)\n",
+	       tw, th, has_alpha ? "RGBA" : "RGB", mip_count, output_path,
+	       total_ms);
 	return 0;
 }

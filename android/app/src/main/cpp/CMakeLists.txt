@@ -558,6 +558,7 @@ target_sources(dxx-redux-d1 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_jni_overlay.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_meta_actions.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_net_log.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/debug_log.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/track_names.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/cd_preview.c
@@ -648,6 +649,7 @@ target_sources(dxx-redux-d2 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_jni_overlay.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_meta_actions.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_net_log.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/debug_log.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/track_names.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/cd_preview.c

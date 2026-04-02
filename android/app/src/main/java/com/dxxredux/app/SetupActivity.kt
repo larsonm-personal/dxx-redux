@@ -457,7 +457,18 @@ class SetupActivity : ComponentActivity() {
                             finish()
                         } else {
                             val game = intent.getStringExtra("game") ?: "d2"
-                            FileSetManager(filesDir).writeActiveSetPath()
+                            val fsm = FileSetManager(filesDir)
+                            val setDir = fsm.getSetDir(fsm.getActive())
+                            val hogFile = if (game == "d1") "descent.hog" else "descent2.hog"
+                            val hasData =
+                                setDir.listFiles()?.any {
+                                    it.name.equals(hogFile, ignoreCase = true)
+                                } ?: false
+                            if (!hasData) {
+                                Log.e("DXX-Setup", "Cannot launch $game: $hogFile not found in ${setDir.absolutePath}")
+                                return
+                            }
+                            fsm.writeActiveSetPath()
                             AudioSourceManager(filesDir).writePlaylist(contentResolver)
                             ModManager(filesDir).writeEnabledModPaths(game)
                             writeInitialGameConfig()
@@ -1169,8 +1180,8 @@ class SetupActivity : ComponentActivity() {
             mpIntent.putExtra("mp_my_port", NetworkConstants.ENGINE_PORT)
         }
         if (info.isLan) mpIntent.putExtra("mp_is_lan", true)
-        // Pass current net log path so :game process appends to the same file
-        com.dxxredux.app.multiplayer.NetLog.currentFilePath()?.let {
+        // Pass current debug log path so :game process appends to the same file
+        DebugLog.currentFilePath()?.let {
             mpIntent.putExtra("netlog_path", it)
         }
         // Clear gameLaunchInfo after consumption to prevent stale re-launches

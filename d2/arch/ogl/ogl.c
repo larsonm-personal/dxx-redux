@@ -36,6 +36,7 @@
 #include <android/log.h>
 #include "debug_tex_overlay.h"
 #include "android_crash_handler.h"
+#include "debug_log.h"
 #endif
 
 #include "3d.h"
@@ -99,7 +100,7 @@ GLfloat ogl_maxanisotropy = 0;
 int ogl_max_texture_size = 1024;
 #ifdef ANDROID
 volatile int g_fb_sample_r = -1, g_fb_sample_g = -1, g_fb_sample_b = -1, g_fb_sample_a = -1;
-/* android port: emulator's GLES translator has a broken ETC2 decoder */
+/* android port: manual override to disable ETC2 texture loading */
 int ogl_etc2_broken = 0;
 #endif
 
@@ -237,6 +238,9 @@ void ogl_reset_texture(ogl_texture* t)
 /* Android port: track hires replacement coverage for introspection */
 int r_hires_found = 0; /* PNG files found on disk */
 int r_hires_loaded = 0; /* PNG textures successfully uploaded */
+int r_etc2_zero_data = 0; /* ETC2 textures with all-zero compressed payload */
+static int r_etc2_render_log_count = 0; /* limit per-frame render logging */
+
 #endif
 
 void ogl_reset_texture_stats_internal(void){
@@ -248,6 +252,8 @@ void ogl_reset_texture_stats_internal(void){
 #ifdef ANDROID
 	r_hires_found = 0;
 	r_hires_loaded = 0;
+	r_etc2_zero_data = 0;
+	r_etc2_render_log_count = 0;
 #endif
 }
 
@@ -288,6 +294,7 @@ void ogl_smash_texture_list_internal(void){
 			ogl_texture_list[i].handle=0;
 		}
 		ogl_texture_list[i].wrapstate = -1;
+		ogl_texture_list[i].is_png = 0;
 	}
 
 	xmodel_free_gl_all();
@@ -466,8 +473,9 @@ void ogl_cache_level_textures(void)
 		}
 		crash_breadcrumb("ogl_cache: done");
 		__android_log_print(ANDROID_LOG_INFO, "DXX",
-		    "ogl_cache: done. hires=%i already=%i bitmap=%i skipped=%i png_fail=%i",
-		    r_hires_loaded - before_hires, n_already, n_bm_upload, n_paged_skip, n_png_fail);
+		    "ogl_cache: done. hires=%i already=%i bitmap=%i skipped=%i png_fail=%i etc2_zero=%i",
+		    r_hires_loaded - before_hires, n_already, n_bm_upload, n_paged_skip, n_png_fail,
+		    r_etc2_zero_data);
 	}
 #else
 	for (i = 0; i < Num_bitmap_files; i++) {
@@ -875,6 +883,22 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 			return 0;
 		ogl_texwrap(bm->gltexture, GL_REPEAT);
 		r_tpolyc++;
+#ifdef ANDROID
+		/* android port: log first few 3D texture bindings per level for debugging */
+		if (r_etc2_render_log_count < 5) {
+			const char *bname = piggy_game_bitmap_name(bm);
+			GLint cur_min_filter = 0;
+			glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, &cur_min_filter);
+			__android_log_print(ANDROID_LOG_INFO, "DXX-TEX",
+			    "3D render bind #%d: %s handle=%u is_png=%d w=%d h=%d u=%.3f v=%.3f min_filter=0x%x",
+			    r_etc2_render_log_count, bname ? bname : "?",
+			    bm->gltexture->handle, bm->gltexture->is_png,
+			    bm->gltexture->w, bm->gltexture->h,
+			    bm->gltexture->u, bm->gltexture->v,
+			    cur_min_filter);
+			r_etc2_render_log_count++;
+		}
+#endif
 		color_alpha = (grd_curcanv->cv_fade_level >= GR_FADE_OFF)?1.0:(1.0 - (float)grd_curcanv->cv_fade_level / ((float)GR_FADE_LEVELS - 1.0));
 	} else if (tmap_drawer_ptr == draw_tmap_flat) {
 		OGL_DISABLE(TEXTURE_2D);
@@ -916,7 +940,7 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 	}
 	
 	glDrawArrays(GL_TRIANGLE_FAN, 0, nv);
-	
+
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -1891,13 +1915,24 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 		int png_loaded = 0;
 
 #ifdef ANDROID
-		/* Try pre-compressed ETC2 first (from .dxa texture packs).
-		 * Skip on emulator -- its GLES translator decodes ETC2 as black. */
+		/* Try pre-compressed ETC2 first (from .dxa texture packs). */
 		if (!ogl_etc2_broken)
 		{
 			etc2_file_data edata;
 			sprintf(filename, "%s.ktx2", bitmapname);
 			if (read_ktx2_file(filename, &edata)) {
+				/* android port: if bitmap needs transparency but KTX2 has
+				 * no alpha channel (RGB-only ETC2), skip it and fall back
+				 * to the base texture which correctly handles palette
+				 * transparency via ogl_filltexbuf */
+				int needs_alpha = (bm->bm_flags & (BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT));
+				if (needs_alpha && !edata.format) {
+					free(edata.filedata);
+					debug_log(DLOG_TEXTURE,
+						"ETC2 skip: %s needs alpha but KTX2 is RGB-only",
+						bitmapname);
+					goto skip_ktx2;
+				}
 				int flags = edata.format ? OGL_FLAG_ALPHA : 0;
 				if (bm->bm_flags & BM_FLAG_TRANSPARENT)
 					flags |= OGL_FLAG_ALPHA;
@@ -1932,6 +1967,38 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 								: GL_COMPRESSED_RGB8_ETC2;
 							glCompressedTexImage2D(GL_TEXTURE_2D, 0, gl_fmt,
 								mw, mh, 0, (GLsizei)sz, p);
+							/* android port: check for upload errors + data integrity */
+							{
+								GLenum gl_err = glGetError();
+								if (gl_err != GL_NO_ERROR) {
+									con_printf(CON_URGENT,
+										"ETC2 upload FAILED: %s %dx%d fmt=0x%x sz=%u err=0x%x\n",
+										bitmapname, mw, mh, gl_fmt, sz, gl_err);
+									__android_log_print(ANDROID_LOG_ERROR, "DXX-TEX",
+										"ETC2 upload FAILED: %s %dx%d fmt=0x%x sz=%u err=0x%x",
+										bitmapname, mw, mh, gl_fmt, sz, gl_err);
+								}
+								/* Check if compressed data is non-zero (all-zero = black) */
+								int nz64 = 0;
+								{
+									unsigned int check = sz < 64 ? sz : 64;
+									unsigned int ci;
+									for (ci = 0; ci < check; ci++)
+										if (p[ci] != 0) nz64++;
+								}
+								debug_log(DLOG_TEXTURE,
+									"ETC2 upload: %s %dx%d fmt=0x%x sz=%u handle=%u err=0x%x data0=%02x%02x%02x%02x nz64=%d",
+									bitmapname, mw, mh, gl_fmt, sz,
+									bm->gltexture->handle, gl_err,
+									sz >= 4 ? p[0] : 0, sz >= 4 ? p[1] : 0,
+									sz >= 4 ? p[2] : 0, sz >= 4 ? p[3] : 0, nz64);
+								if (nz64 == 0) {
+									__android_log_print(ANDROID_LOG_WARN, "DXX-TEX",
+										"ETC2 ALL-ZERO data: %s %dx%d sz=%u -- texture will be black",
+										bitmapname, mw, mh, sz);
+									r_etc2_zero_data++;
+								}
+							}
 						}
 						tex_set_size(bm->gltexture);
 						r_texcount++;
@@ -1945,11 +2012,78 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 					bm->gltexture->is_png = 1;
 					r_hires_found++;
 					r_hires_loaded++;
+					/* android port: one-shot self-test -- render from this
+					 * ETC2 texture and readback the center pixel via FBO.
+					 * Confirms whether the GPU actually decodes non-black. */
+					if (r_hires_loaded == 1) {
+						GLuint fbo = 0, rbo = 0;
+						glGenFramebuffers(1, &fbo);
+						glGenRenderbuffers(1, &rbo);
+						glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+						glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, 4, 4);
+						glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+						glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+						                          GL_RENDERBUFFER, rbo);
+						if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE) {
+							int was_tex2d = GL_TEXTURE_2D_enabled;
+							OGL_ENABLE(TEXTURE_2D);
+							glViewport(0, 0, 4, 4);
+							glDisable(GL_BLEND);
+							glDisable(GL_DEPTH_TEST);
+							glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+							/* White vertex color so GL_MODULATE shows texture color */
+							GLfloat verts[] = {-1,-1, 1,-1, 1,1, -1,1};
+							GLfloat uvs[] = {0.25f,0.25f, 0.75f,0.25f, 0.75f,0.75f, 0.25f,0.75f};
+							GLfloat cols[] = {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1};
+							glEnableClientState(GL_VERTEX_ARRAY);
+							glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+							glEnableClientState(GL_COLOR_ARRAY);
+							OGL_BINDTEXTURE(bm->gltexture->handle);
+							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+							glVertexPointer(2, GL_FLOAT, 0, verts);
+							glTexCoordPointer(2, GL_FLOAT, 0, uvs);
+							glColorPointer(4, GL_FLOAT, 0, cols);
+							glClearColor(0, 0, 0, 0);
+							glClear(GL_COLOR_BUFFER_BIT);
+							glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+							glDisableClientState(GL_VERTEX_ARRAY);
+							glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+							glDisableClientState(GL_COLOR_ARRAY);
+							glFinish();
+							unsigned char px[4] = {0};
+							glReadPixels(2, 2, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, px);
+							__android_log_print(ANDROID_LOG_WARN, "DXX-TEX",
+							    "ETC2 self-test: %s readback=(%d,%d,%d,%d) %s",
+							    bitmapname, px[0], px[1], px[2], px[3],
+							    (px[0] || px[1] || px[2]) ? "OK" : "BLACK -- GPU decodes to black");
+							if (!was_tex2d) OGL_DISABLE(TEXTURE_2D);
+						} else {
+							__android_log_print(ANDROID_LOG_WARN, "DXX-TEX",
+							    "ETC2 self-test: FBO incomplete, skipped");
+						}
+						glBindFramebuffer(GL_FRAMEBUFFER, 0);
+						glDeleteRenderbuffers(1, &rbo);
+						glDeleteFramebuffers(1, &fbo);
+						/* Drain any stale GL errors from the self-test so
+						 * they don't pollute the next upload's error check */
+						while (glGetError() != GL_NO_ERROR) {}
+						/* Re-bind the texture and restore sensible filter state */
+						OGL_BINDTEXTURE(bm->gltexture->handle);
+						if (texfilt) {
+							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+						} else {
+							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+						}
+					}
 					return;
 				}
 				/* Decode/upload failed -- fall through to try PNG */
 			}
 		}
+		skip_ktx2:
 		/* Try multiple extensions -- stb_image handles all formats */
 		{
 			static const char *exts[] = {".png", ".jpg", ".tga"};

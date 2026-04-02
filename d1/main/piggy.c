@@ -654,8 +654,10 @@ void piggy_bitmap_page_in( bitmap_index bitmap )
 				goto ReDoIt;
 			}
 
+#ifndef ANDROID
 			// GET JOHN NOW IF YOU GET THIS ASSERT!!!
 			Assert( Piggy_bitmap_cache_next+zsize < Piggy_bitmap_cache_size );
+#endif
 			if ( Piggy_bitmap_cache_next+zsize >= Piggy_bitmap_cache_size ) {
 				piggy_bitmap_page_out_all();
 				goto ReDoIt;
@@ -676,8 +678,10 @@ void piggy_bitmap_page_in( bitmap_index bitmap )
 			}
 			Piggy_bitmap_cache_next += zsize-4;
 		} else {
+#ifndef ANDROID
 			// GET JOHN NOW IF YOU GET THIS ASSERT!!!
 			Assert( Piggy_bitmap_cache_next+(bmp->bm_h*bmp->bm_w) < Piggy_bitmap_cache_size );
+#endif
 			if ( Piggy_bitmap_cache_next+(bmp->bm_h*bmp->bm_w) >= Piggy_bitmap_cache_size ) {
 				piggy_bitmap_page_out_all();
 				goto ReDoIt;

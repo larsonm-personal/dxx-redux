@@ -38,7 +38,7 @@ static struct sigaction s_old_sigill;
 
 /* Breadcrumb ring buffer for crash diagnostics */
 #define CRUMB_COUNT 64
-#define CRUMB_LEN 128
+#define CRUMB_LEN   128
 
 static char s_crumbs[CRUMB_COUNT][CRUMB_LEN];
 static volatile int s_crumb_next = 0;
@@ -77,7 +77,7 @@ static void dump_breadcrumbs(int fd)
 	write(fd, hdr, sizeof(hdr) - 1);
 	for (i = start; i < total; i++) {
 		int idx = i % CRUMB_COUNT;
-		const char *num = itoa_safe((long)i, numbuf, sizeof(numbuf));
+		const char *num = itoa_safe((long) i, numbuf, sizeof(numbuf));
 		write(fd, "  [", 3);
 		write(fd, num, strlen(num));
 		write(fd, "] ", 2);

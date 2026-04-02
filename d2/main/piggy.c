@@ -413,17 +413,29 @@ void piggy_init_pigfile(char *filename)
 	Piggy_fp = PHYSFSX_openReadBuffered(filename);
 	
 	//try pigfile for shareware
-	if (!Piggy_fp)
+	if (!Piggy_fp) {
+		con_printf(CON_NORMAL, "piggy_init_pigfile: '%s' not found, trying '%s'\n", filename, DEFAULT_PIGFILE_SHAREWARE);
 		Piggy_fp = PHYSFSX_openReadBuffered(DEFAULT_PIGFILE_SHAREWARE);
+	}
+
+	if (!Piggy_fp)
+		con_printf(CON_NORMAL, "piggy_init_pigfile: no pig file found at all\n");
 
 	if (Piggy_fp) {                         //make sure pig is valid type file & is up-to-date
 		int pig_id,pig_version;
-
-		pig_id = PHYSFSX_readInt(Piggy_fp);
-		pig_version = PHYSFSX_readInt(Piggy_fp);
-		if (pig_id != PIGFILE_ID || pig_version != PIGFILE_VERSION) {
-			PHYSFS_close(Piggy_fp);              //out of date pig
-			Piggy_fp = NULL;                        //..so pretend it's not here
+		PHYSFS_sint64 flen = PHYSFS_fileLength(Piggy_fp);
+		con_printf(CON_NORMAL, "piggy_init_pigfile: opened '%s', size=%lld\n", filename, (long long)flen);
+		if (flen < 8) {
+			con_printf(CON_CRITICAL, "piggy_init_pigfile: '%s' too small (%lld bytes), need at least 8\n", filename, (long long)flen);
+			PHYSFS_close(Piggy_fp);
+			Piggy_fp = NULL;
+		} else {
+			pig_id = PHYSFSX_readInt(Piggy_fp);
+			pig_version = PHYSFSX_readInt(Piggy_fp);
+			if (pig_id != PIGFILE_ID || pig_version != PIGFILE_VERSION) {
+				PHYSFS_close(Piggy_fp);              //out of date pig
+				Piggy_fp = NULL;                        //..so pretend it's not here
+			}
 		}
 	}
 
@@ -1182,8 +1194,10 @@ void piggy_bitmap_page_in( bitmap_index bitmap )
 
 		} else {
 			int pigsize = PHYSFS_fileLength(Piggy_fp);
+#ifndef ANDROID
 			// GET JOHN NOW IF YOU GET THIS ASSERT!!!
 			Assert( Piggy_bitmap_cache_next+(bmp->bm_h*bmp->bm_w) < Piggy_bitmap_cache_size );
+#endif
 			if ( Piggy_bitmap_cache_next+(bmp->bm_h*bmp->bm_w) >= Piggy_bitmap_cache_size ) {
 				piggy_bitmap_page_out_all();
 				goto ReDoIt;

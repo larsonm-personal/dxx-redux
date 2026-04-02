@@ -190,7 +190,7 @@ function Convert-GameSounds {
     if (Test-Path $tempDir) { Remove-Item -Recurse -Force $tempDir }
     New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 
-    $dxaName = "d2xxl-hires-sounds-$GameId.dxa"
+    $dxaName = "${GameId}-hires-sounds.dxa"
     $dxaPath = Join-Path $OutDir $dxaName
 
     Write-Host "=== Converting $GameId sounds ==="

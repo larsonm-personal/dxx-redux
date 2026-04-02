@@ -135,17 +135,17 @@ int read_ktx2_file(const char *filename, etc2_file_data *edata)
 	/* Parse KTX2 container */
 	ktxTexture2 *tex = NULL;
 	KTX_error_code kerr = ktxTexture2_CreateFromMemory(
-		fbuf, (ktx_size_t) fsize,
-		KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &tex);
+	    fbuf, (ktx_size_t) fsize,
+	    KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &tex);
 	free(fbuf);
 	if (kerr != KTX_SUCCESS)
 		return 0;
 
 	/* Map VkFormat to our format byte */
 	unsigned char fmt;
-	if (tex->vkFormat == 147)       /* VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK */
+	if (tex->vkFormat == 147) /* VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK */
 		fmt = 0;
-	else if (tex->vkFormat == 151)  /* VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK */
+	else if (tex->vkFormat == 151) /* VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK */
 		fmt = 1;
 	else {
 		ktxTexture_Destroy(ktxTexture(tex));
@@ -164,7 +164,8 @@ int read_ktx2_file(const char *filename, etc2_file_data *edata)
 	unsigned int vlen = 0;
 	void *vptr = NULL;
 	if (ktxHashList_FindValue(&base->kvDataHead, "OrigWidth",
-	                          &vlen, &vptr) == KTX_SUCCESS && vlen >= 2) {
+	                          &vlen, &vptr) == KTX_SUCCESS &&
+	    vlen >= 2) {
 		uint16_t ow;
 		memcpy(&ow, vptr, 2);
 		edata->orig_width = ow;
@@ -172,7 +173,8 @@ int read_ktx2_file(const char *filename, etc2_file_data *edata)
 		edata->orig_width = edata->width;
 	}
 	if (ktxHashList_FindValue(&base->kvDataHead, "OrigHeight",
-	                          &vlen, &vptr) == KTX_SUCCESS && vlen >= 2) {
+	                          &vlen, &vptr) == KTX_SUCCESS &&
+	    vlen >= 2) {
 		uint16_t oh;
 		memcpy(&oh, vptr, 2);
 		edata->orig_height = oh;
@@ -199,10 +201,10 @@ int read_ktx2_file(const char *filename, etc2_file_data *edata)
 		ktxTexture_GetImageOffset(base, lv, 0, 0, &offset);
 		ktx_size_t isz = ktxTexture_GetImageSize(base, lv);
 		/* uint32 LE size prefix */
-		p[0] = (unsigned char)(isz & 0xFF);
-		p[1] = (unsigned char)((isz >> 8) & 0xFF);
-		p[2] = (unsigned char)((isz >> 16) & 0xFF);
-		p[3] = (unsigned char)((isz >> 24) & 0xFF);
+		p[0] = (unsigned char) (isz & 0xFF);
+		p[1] = (unsigned char) ((isz >> 8) & 0xFF);
+		p[2] = (unsigned char) ((isz >> 16) & 0xFF);
+		p[3] = (unsigned char) ((isz >> 24) & 0xFF);
 		p += 4;
 		memcpy(p, base->pData + offset, isz);
 		p += isz;

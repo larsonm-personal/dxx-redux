@@ -8,14 +8,14 @@
     games. Produces 6 texture .dxa files and 2 sound .dxa files.
 
     Output files:
-      d2xxl-hires-textures-d1-128.dxa
-      d2xxl-hires-textures-d1-256.dxa
-      d2xxl-hires-textures-d1-512.dxa
-      d2xxl-hires-textures-d2-128.dxa
-      d2xxl-hires-textures-d2-256.dxa
-      d2xxl-hires-textures-d2-512.dxa
-      d2xxl-hires-sounds-d1.dxa
-      d2xxl-hires-sounds-d2.dxa
+      d1-hires-128-textures-ktx2.dxa
+      d1-hires-256-textures-ktx2.dxa
+      d1-hires-512-textures-ktx2.dxa
+      d2-hires-128-textures-ktx2.dxa
+      d2-hires-256-textures-ktx2.dxa
+      d2-hires-512-textures-ktx2.dxa
+      d1-hires-sounds.dxa
+      d2-hires-sounds.dxa
 
 .PARAMETER OutputDir
     Output directory for .dxa files. Default: same directory as this script
@@ -81,7 +81,8 @@ function Get-ReadmeText {
     param([string]$GameId, [int]$Size, [bool]$Downscaled)
     $credits = if ($GameId -eq "d2") { $creditsD2 } else { $creditsD1 }
     $gameName = if ($GameId -eq "d2") { "Descent 2" } else { "Descent 1" }
-    $packName = "d2xxl-hires-textures-${GameId}-${Size}"
+    $packName = "${GameId}-hires-${Size}-textures-ktx2"
+    $mobileNote = "Textures are ETC2-compressed in KTX2 containers for mobile/Android"
     if ($Downscaled) {
         @"
 # ${packName}
@@ -92,6 +93,8 @@ Downscaled from the 512x512 d2x-xl texture pack using ImageMagick
 with linear-light colorspace conversion, Lanczos resampling, and
 micro-sharpening to preserve detail at reduced resolution
 
+${mobileNote}
+
 Original textures from d2x-xl by ${credits}
 "@
     } else {
@@ -99,6 +102,8 @@ Original textures from d2x-xl by ${credits}
 # ${packName}
 
 ${Size}x${Size} high-resolution replacement textures for ${gameName}
+
+${mobileNote}
 
 Original textures from d2x-xl by ${credits}
 "@
@@ -174,14 +179,47 @@ function Convert-AndAdd {
         [hashtable[]]$Targets     # @{DxaPath, MaxDim} -- packs to add results to
     )
 
+    # IM writes warnings to stderr; prevent $ErrorActionPreference from
+    # turning those into terminating errors (PS 5.1 quirk)
+    $ErrorActionPreference = 'Continue'
+
     $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "dxx_merge_${GameId}_$(Get-Random)"
     New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 
     Write-Host "  Extracting $(Split-Path $ArchivePath -Leaf)..."
     $extractDir = Join-Path $tempDir "extract"
-    & $SevenZip x "-o$extractDir" $ArchivePath -y 2>&1 | Out-Null
+    & $SevenZip x "-o$extractDir" $ArchivePath -y 2>$null
     if ($LASTEXITCODE -ne 0) { throw "7z extraction failed" }
     $tgaDir = Join-Path (Join-Path $extractDir "textures") $GameId
+
+    # Apply d2x-xl -> DXX name fixups (same as convert_d2xxl_textures.ps1)
+    # Dot-source is impractical here, so apply the critical renames inline.
+    # See Rename-D2xxlTextures in convert_d2xxl_textures.ps1 for full docs.
+
+    # Boss animation frames: boss2_NN -> boss02#(NN-1) (512px D2 archive)
+    foreach ($f in (Get-ChildItem -Path $tgaDir -Filter "boss2_*.tga" -File -ErrorAction SilentlyContinue)) {
+        $bn = [IO.Path]::GetFileNameWithoutExtension($f.Name)
+        if ($bn -match '^boss2_(\d+)$') {
+            $newName = "boss02#$([int]$Matches[1] - 1).tga"
+            $newPath = Join-Path $tgaDir $newName
+            if (-not (Test-Path $newPath)) { Rename-Item $f.FullName $newName }
+        }
+    }
+    # Exclamation mark frame syntax: name!N -> name#N (256px D2 archive)
+    foreach ($f in (Get-ChildItem -Path $tgaDir -Filter "*!*.tga" -File -ErrorAction SilentlyContinue)) {
+        $newName = $f.Name -replace '!', '#'
+        $newPath = Join-Path $tgaDir $newName
+        if (-not (Test-Path $newPath)) { Rename-Item $f.FullName $newName }
+    }
+    # Targeting reticle: rename -green variants to base name, leave -red as-is
+    foreach ($f in (Get-ChildItem -Path $tgaDir -Filter "targ*-green.tga" -File -ErrorAction SilentlyContinue)) {
+        $newName = $f.Name -replace '-green\.tga$', '.tga'
+        $newPath = Join-Path $tgaDir $newName
+        if (Test-Path $newPath) { Remove-Item $newPath -Force }
+        Rename-Item $f.FullName $newName
+    }
+    # D1-only names, base names without frame suffix, addon textures:
+    # left as-is in archive (unmatched but harmless)
 
     # Pre-split animation strips so individual frames are available
     if ($Magick -and (Test-Path $Magick)) {
@@ -189,8 +227,8 @@ function Convert-AndAdd {
             $safeName = $tga.Name -replace '#', '__H__'
             $safePath = Join-Path $tgaDir $safeName
             Copy-Item $tga.FullName $safePath -Force
-            $dims = & $Magick identify -format "%w %h" $safePath 2>&1
-            if ($LASTEXITCODE -ne 0) { Remove-Item $safePath -Force; continue }
+            $dims = & $Magick identify -format "%w %h" $safePath 2>$null
+            if ($LASTEXITCODE -ne 0 -or -not $dims) { Remove-Item $safePath -Force; continue }
             $parts = ("$dims" -split '\s+'); $w = [int]$parts[0]; $h = [int]$parts[1]
             if ($h -le $w -or $h % $w -ne 0 -or ($h / $w) -le 1) {
                 Remove-Item $safePath -Force; continue
@@ -202,7 +240,7 @@ function Convert-AndAdd {
             for ($i = 0; $i -lt ($h / $w); $i++) {
                 $frameName = "${nameBase}#${i}${variant}.tga"
                 $safeFrame = Join-Path $tgaDir ($frameName -replace '#', '__H__')
-                & $Magick $safePath -crop "${w}x${w}+0+$($i * $w)" +repage $safeFrame 2>&1 | Out-Null
+                & $Magick $safePath -crop "${w}x${w}+0+$($i * $w)" +repage $safeFrame 2>$null
                 if ($LASTEXITCODE -eq 0) {
                     $realFrame = Join-Path $tgaDir $frameName
                     if (Test-Path $realFrame) { Remove-Item $realFrame -Force }
@@ -222,6 +260,7 @@ function Convert-AndAdd {
         New-Item -ItemType Directory -Path $outDir -Force | Out-Null
 
         $converted = 0
+        $mergeTotal = $MissingNames.Count
         $etc2Files = @()
         foreach ($name in $MissingNames) {
             $src = Join-Path $tgaDir "$name.tga"
@@ -238,16 +277,19 @@ function Convert-AndAdd {
                     $tempPng = Join-Path $outDir "$safeName.png"
                     & $Magick $safeSrc '-colorspace' 'RGB' '-filter' 'Lanczos' `
                         '-resize' "${maxDim}x${maxDim}" '-unsharp' '0x0.4' `
-                        '-colorspace' 'sRGB' $tempPng 2>&1 | Out-Null
+                        '-colorspace' 'sRGB' $tempPng 2>$null
                     if ($LASTEXITCODE -ne 0) { throw "magick failed" }
-                    & $Etc2Tool $tempPng $tempEtc2 2>&1 | Out-Null
+                    & $Etc2Tool $tempPng $tempEtc2 2>$null
                     Remove-Item $safeSrc, $tempPng -ErrorAction SilentlyContinue
                 } else {
-                    & $Etc2Tool $src $tempEtc2 2>&1 | Out-Null
+                    & $Etc2Tool $src $tempEtc2 2>$null
                 }
                 if ($LASTEXITCODE -ne 0) { throw "etc2tool failed" }
                 $etc2Files += $tempEtc2
                 $converted++
+                if ($converted % 10 -eq 0) {
+                    Write-Host "      Merge ${label}: $converted / $mergeTotal"
+                }
             } catch {
                 Write-Host "    ERROR: $name -- $_"
             }
@@ -266,9 +308,9 @@ Write-Host "--- Merge pass: equalizing texture counts ---"
 $archiveDirPath = Join-Path $scriptDir "d2x-xl"
 
 foreach ($game in @("d1", "d2")) {
-    $dxa128 = Join-Path $OutputDir "d2xxl-hires-textures-${game}-128.dxa"
-    $dxa256 = Join-Path $OutputDir "d2xxl-hires-textures-${game}-256.dxa"
-    $dxa512 = Join-Path $OutputDir "d2xxl-hires-textures-${game}-512.dxa"
+    $dxa128 = Join-Path $OutputDir "${game}-hires-128-textures-ktx2.dxa"
+    $dxa256 = Join-Path $OutputDir "${game}-hires-256-textures-ktx2.dxa"
+    $dxa512 = Join-Path $OutputDir "${game}-hires-512-textures-ktx2.dxa"
     $arch256 = Join-Path $archiveDirPath "$($game.ToUpper())-textures-256x256.7z"
     $arch512 = Join-Path $archiveDirPath "$($game.ToUpper())-textures-512x512.7z"
 
@@ -312,7 +354,7 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host ""
 Write-Host "=== All conversions complete ==="
 Write-Host "Output directory: $OutputDir"
-Get-ChildItem -Path $OutputDir -Filter "d2xxl-hires-*.dxa" | ForEach-Object {
+Get-ChildItem -Path $OutputDir -Filter "*-hires-*.dxa" | ForEach-Object {
     $sizeMB = [Math]::Round($_.Length / 1MB, 1)
     Write-Host "  $($_.Name) ($sizeMB MB)"
 }

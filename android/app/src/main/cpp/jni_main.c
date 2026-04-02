@@ -21,6 +21,7 @@
 #include "console_ringbuf.h"
 #include "debug_tex_overlay.h"
 #endif
+#include "debug_log.h"
 
 #define LOG_TAG   "DXX-Redux"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -360,6 +361,8 @@ Java_com_dxxredux_app_MainActivity_nativeGetConsoleSince(JNIEnv *env, jobject th
 }
 
 /* ── Debug flags: toggle debug overlays from adb/Kotlin ────────── */
+extern volatile int gles3_shim_debug_mode;
+
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
                                                       jstring jname, jint value)
@@ -367,11 +370,21 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
 	const char *name = (*env)->GetStringUTFChars(env, jname, NULL);
 	if (strcmp(name, "tex_overlay") == 0)
 		g_debug_tex_overlay_active = (int) value;
+	else if (strcmp(name, "gfx_mode") == 0)
+		gles3_shim_debug_mode = (int) value;
 	else
 		LOGE("nativeSetDebugFlag: unknown flag '%s'", name);
 	(*env)->ReleaseStringUTFChars(env, jname, name);
 }
 #endif /* INTROSPECT_ON */
+
+/* ── Debug logging: per-category enable/disable from Kotlin ────── */
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetDebugLogEnabled(JNIEnv *env, jobject thiz,
+                                                            jint category, jboolean on)
+{
+	debug_log_set_enabled((int) category, on ? 1 : 0);
+}
 
 /* ── Auto-net: set up automatic join/host from the matchmaking lobby ── */
 extern int auto_join_pending;

@@ -31,6 +31,11 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 void gr_set_bitmap_data (grs_bitmap *bm, unsigned char *data)
 {
 #ifdef OGL
+#ifdef ANDROID
+	/* android port: preserve hi-res ETC2/PNG textures -- they were loaded
+	 * from KTX2 files, not from bm_data, so page-in should not destroy them */
+	if (!(bm->gltexture && bm->gltexture->is_png && bm->gltexture->handle > 0))
+#endif
 	ogl_freebmtexture(bm);
 #endif
 	bm->bm_data = data;

@@ -28,14 +28,14 @@
             {"file": "fire.pig", "sha256": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156"},
             {"file": "ice.pig", "sha256": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1"},
             {"file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"},
-            {"file": "d2xxl-hires-sounds-d2.dxa", "sha256": "d9cd5a3dd01effd264fda846379c53e40696e5b2aa2a856126333ba55f564307", "target": "files/mods"},
-            {"file": "d2xxl-hires-textures-d2-${RESOLUTION}.dxa", "sha256": "${DXA_SHA}", "target": "files/mods"}
+            {"file": "d2-hires-sounds.dxa", "sha256": "d9cd5a3dd01effd264fda846379c53e40696e5b2aa2a856126333ba55f564307", "target": "files/mods"},
+            {"file": "d2-hires-${RESOLUTION}-textures-ktx2.dxa", "sha256": "${DXA_SHA}", "target": "files/mods"}
         ]
     }},
 
     {"action": "enter_launcher"},
     {"action": "write_config", "file": "mods/mod_manifest.json",
-     "content": "{\"mods\":[{\"filename\":\"d2xxl-hires-sounds-d2.dxa\",\"displayName\":\"D2XXL Hires Sounds D2\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":0},{\"filename\":\"d2xxl-hires-textures-d2-${RESOLUTION}.dxa\",\"displayName\":\"D2XXL Hires Textures D2 ${RESOLUTION}\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":1}]}"},
+     "content": "{\"mods\":[{\"filename\":\"d2-hires-sounds.dxa\",\"displayName\":\"D2 Hires Sounds\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":0},{\"filename\":\"d2-hires-${RESOLUTION}-textures-ktx2.dxa\",\"displayName\":\"D2 Hires ${RESOLUTION} Textures\",\"enabled\":true,\"addedAt\":0,\"sizeBytes\":0,\"game\":\"d2\",\"order\":1}]}"},
 
     {"action": "tap_button", "text": "Launch Descent 2", "launches_game": true},
     {"action": "log", "message": "=== TEST: Mod Loading ${RESOLUTION} ==="},
@@ -55,7 +55,7 @@
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
 
     {"action": "introspect"},
-    {"action": "assert", "expect": {"mounted_mods": {"contains": "d2xxl-hires-textures-d2-${RESOLUTION}.dxa"}}},
+    {"action": "assert", "expect": {"mounted_mods": {"contains": "d2-hires-${RESOLUTION}-textures-ktx2.dxa"}}},
 
     // Wait for texture streaming then verify replacement coverage
     {"action": "wait_ms", "ms": 5000},

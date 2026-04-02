@@ -165,7 +165,8 @@ static void ogl_android_recreate_egl_surface(void)
 		eglContext = eglCreateContext(eglDisplay, eglConfig, EGL_NO_CONTEXT, contextAttribs);
 		eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
 		ogl_smash_texture_list_internal();
-		con_printf(CON_DEBUG, "EGL: full re-init complete, textures invalidated\n");
+		ogl_cache_level_textures();
+		con_printf(CON_DEBUG, "EGL: full re-init complete, textures re-cached\n");
 	} else {
 		con_printf(CON_DEBUG, "EGL: surface recreated, context preserved\n");
 	}
@@ -692,16 +693,6 @@ void ogl_get_verinfo(void)
 	{
 		const char *renderer = (const char *) glGetString(GL_RENDERER);
 		con_printf(CON_NORMAL, "GL_RENDERER: %s", renderer ? renderer : "(null)");
-		/* android port: emulator GLES translator has broken ETC2 decoder --
-		 * glCompressedTexImage2D returns GL_NO_ERROR but textures are black */
-		{
-			extern int ogl_etc2_broken;
-			if (renderer && (strstr(renderer, "SwiftShader") ||
-			                 strstr(renderer, "Android Emulator"))) {
-				ogl_etc2_broken = 1;
-				con_printf(CON_NORMAL, "ETC2 disabled (emulator detected)");
-			}
-		}
 	}
 #endif
 #ifndef OGLES

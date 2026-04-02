@@ -2835,7 +2835,7 @@ class TouchOverlayView
                     interpolator = DecelerateInterpolator()
                     addUpdateListener {
                         adminTraySlide = it.animatedValue as Float
-                        if (adminTraySlide == 0f) adminTrayOpen = false
+                        if (!open && adminTraySlide == 0f) adminTrayOpen = false
                         invalidate()
                     }
                     start()
