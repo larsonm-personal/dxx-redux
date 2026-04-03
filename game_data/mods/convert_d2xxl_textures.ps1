@@ -84,6 +84,11 @@ $archives = @{
     d2 = Join-Path $scriptDir "d2x-xl\D2-textures-${actualTexSize}x${actualTexSize}.7z"
 }
 
+# Read a TGA and return a Bitmap with correct alpha handling.
+# Sets $script:lastKeyColorMask to a mask Bitmap (alpha=0 where key color,
+# alpha=255 elsewhere) when key color pixels are found, or $null otherwise.
+$script:lastKeyColorMask = $null
+
 function Read-TGA {
     param([string]$Path)
 
@@ -138,19 +143,22 @@ function Read-TGA {
     $scan0 = $bmpData.Scan0
     $rowBytes = $width * $channels
 
+    # Track key color for super-transparent mask generation
+    $hasKeyColor = $false
+    $maskBytes = $null
+    if ($channels -eq 4) {
+        # Pre-allocate mask: 4 bytes/pixel (BGRA), all white/opaque
+        $maskBytes = [byte[]]::new($height * $width * 4)
+        for ($mi = 0; $mi -lt $maskBytes.Length; $mi += 4) {
+            $maskBytes[$mi] = 255; $maskBytes[$mi+1] = 255
+            $maskBytes[$mi+2] = 255; $maskBytes[$mi+3] = 255
+        }
+    }
+
     for ($row = 0; $row -lt $height; $row++) {
         # TGA default is bottom-to-top unless top-to-bottom flag is set
         $srcRow = if ($topToBottom) { $row } else { $height - 1 - $row }
         $srcOffset = $dataOffset + $srcRow * $rowBytes
-        # For 32bpp TGA, convert super-transparent key color RGB(120,88,128)
-        # to RGBA(0,0,0,0). Uses per-channel tolerance of 13 (~5%) to
-        # catch anti-aliased edges. Zeroing RGB prevents ETC2 color
-        # bleeding at compressed block boundaries.
-        # Alpha handling: if the TGA declares alphaBits > 0, the alpha
-        # channel contains real per-pixel transparency data (used by
-        # many d2x-xl textures instead of or alongside key color).
-        # Preserve native alpha in that case. Only force alpha=255 for
-        # non-key pixels when alphaBits == 0 (truly undefined alpha).
         if ($channels -eq 4) {
             $alphaBits = $descriptor -band 0x0F
             for ($px = 0; $px -lt $rowBytes; $px += 4) {
@@ -162,6 +170,11 @@ function Read-TGA {
                 if ($dr -ge -13 -and $dr -le 13 -and $dg -ge -13 -and $dg -le 13 -and $db -ge -13 -and $db -le 13) {
                     $bytes[$idx] = 0; $bytes[$idx + 1] = 0
                     $bytes[$idx + 2] = 0; $bytes[$idx + 3] = 0
+                    # Mark as super-transparent in mask (alpha=0)
+                    $hasKeyColor = $true
+                    $mIdx = ($row * $width + $px / 4) * 4
+                    $maskBytes[$mIdx] = 0; $maskBytes[$mIdx+1] = 0
+                    $maskBytes[$mIdx+2] = 0; $maskBytes[$mIdx+3] = 0
                 } elseif ($alphaBits -gt 0) {
                     # Native alpha: zero RGB for fully transparent pixels
                     if ($bytes[$idx + 3] -eq 0) {
@@ -179,6 +192,27 @@ function Read-TGA {
     }
 
     $bmp.UnlockBits($bmpData)
+
+    # Generate mask bitmap if key color was found
+    $script:lastKeyColorMask = $null
+    if ($hasKeyColor -and $maskBytes) {
+        $maskBmp = [System.Drawing.Bitmap]::new($width, $height,
+            [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+        $maskData = $maskBmp.LockBits(z
+            [System.Drawing.Rectangle]::new(0, 0, $width, $height),
+            [System.Drawing.Imaging.ImageLockMode]::WriteOnly,
+            [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+        $maskStride = $maskData.Stride
+        for ($row = 0; $row -lt $height; $row++) {
+            [System.Runtime.InteropServices.Marshal]::Copy(
+                $maskBytes, $row * $width * 4,
+                [IntPtr]::Add($maskData.Scan0, $row * $maskStride),
+                $width * 4)
+        }
+        $maskBmp.UnlockBits($maskData)
+        $script:lastKeyColorMask = $maskBmp
+    }
+
     return $bmp
 }
 
@@ -198,11 +232,12 @@ function Split-StripTextures {
         if ($bn -notmatch '#0(-\w+)?$') { continue }
 
         $bmp = Read-TGA $tga.FullName
+        $maskBmp = $script:lastKeyColorMask
         $w = $bmp.Width; $h = $bmp.Height
-        if ($h -le $w -or $h % $w -ne 0) { $bmp.Dispose(); continue }
+        if ($h -le $w -or $h % $w -ne 0) { $bmp.Dispose(); if ($maskBmp) { $maskBmp.Dispose() }; continue }
 
         $nFrames = $h / $w
-        if ($nFrames -le 1) { $bmp.Dispose(); continue }
+        if ($nFrames -le 1) { $bmp.Dispose(); if ($maskBmp) { $maskBmp.Dispose() }; continue }
 
         # Extract the base name without the '#0' suffix (and optional variant like '-green')
         $variant = ""
@@ -226,9 +261,18 @@ function Split-StripTextures {
             $frame = $bmp.Clone($rect, $bmp.PixelFormat)
             $frame.Save($framePath, [System.Drawing.Imaging.ImageFormat]::Png)
             $frame.Dispose()
+            # Split mask frame if mask exists
+            if ($maskBmp) {
+                $maskFrameName = "${nameBase}#${i}${variant}_mask.png"
+                $maskFramePath = Join-Path $TgaDir $maskFrameName
+                $maskFrame = $maskBmp.Clone($rect, $maskBmp.PixelFormat)
+                $maskFrame.Save($maskFramePath, [System.Drawing.Imaging.ImageFormat]::Png)
+                $maskFrame.Dispose()
+            }
         }
 
         $bmp.Dispose()
+        if ($maskBmp) { $maskBmp.Dispose() }
         $splitCount++
     }
     return $splitCount
@@ -464,7 +508,8 @@ function Convert-GameTextures {
 
     # Collect all texture files: TGA (single frames), PNG (split frames), JPG
     $tgaFiles = Get-ChildItem -Path $tgaDir -Filter "*.tga" -File
-    $pngFiles = Get-ChildItem -Path $tgaDir -Filter "*.png" -File -ErrorAction SilentlyContinue
+    $pngFiles = Get-ChildItem -Path $tgaDir -Filter "*.png" -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -notlike '*_mask.png' }
     $jpgFiles = Get-ChildItem -Path $tgaDir -Filter "*.jpg" -File -ErrorAction SilentlyContinue
     $total = $tgaFiles.Count + ($pngFiles | Measure-Object).Count + ($jpgFiles | Measure-Object).Count
     Write-Host "  Found $total texture files"
@@ -489,14 +534,26 @@ function Convert-GameTextures {
             if ($isTga) {
                 # Read-TGA handles alpha preservation and key color
                 # correctly by reading raw TGA bytes (not ImageMagick).
+                # Also sets $script:lastKeyColorMask when key color is found.
                 $bmp = Read-TGA $tga.FullName
+                $maskBmp = $script:lastKeyColorMask
                 $prePng = Join-Path $tempDir "$baseName.pre.png"
                 $bmp.Save($prePng, [System.Drawing.Imaging.ImageFormat]::Png)
                 $bmp.Dispose()
                 $inputForResize = $prePng
+                # Save mask pre-resize PNG if present
+                $maskPrePng = $null
+                if ($maskBmp) {
+                    $maskPrePng = Join-Path $tempDir "${baseName}_mask.pre.png"
+                    $maskBmp.Save($maskPrePng, [System.Drawing.Imaging.ImageFormat]::Png)
+                    $maskBmp.Dispose()
+                }
             } else {
                 # PNG from strip splitter: already has correct alpha
                 $inputForResize = $tga.FullName
+                # Check for mask from strip splitter
+                $splitMaskPath = Join-Path (Split-Path $tga.FullName) "${baseName}_mask.png"
+                $maskPrePng = if (Test-Path $splitMaskPath) { $splitMaskPath } else { $null }
             }
 
             if ($useMagick -and $MaxDim -gt 0) {
@@ -529,6 +586,18 @@ function Convert-GameTextures {
                 Remove-Item $inputForResize -Force -ErrorAction SilentlyContinue
             }
 
+            # Resize mask alongside main texture if present
+            $tempMaskPng = $null
+            if ($maskPrePng -and (Test-Path $maskPrePng)) {
+                $tempMaskPng = Join-Path $tempDir "${baseName}_mask.png"
+                if ($useMagick -and $MaxDim -gt 0) {
+                    Convert-WithMagick -InputPath $maskPrePng -OutputPath $tempMaskPng -MaxDim $MaxDim -MagickPath $MagickPath
+                } else {
+                    Copy-Item $maskPrePng $tempMaskPng -Force
+                }
+                Remove-Item $maskPrePng -Force -ErrorAction SilentlyContinue
+            }
+
             # Run etc2tool to compress to ETC2
             & $Etc2ToolPath $tempPng $tempEtc2 2>$null
             if ($LASTEXITCODE -ne 0) { throw "etc2tool failed for $baseName" }
@@ -538,6 +607,18 @@ function Convert-GameTextures {
             $fileBytes = [System.IO.File]::ReadAllBytes($tempEtc2)
             $stream.Write($fileBytes, 0, $fileBytes.Length)
             $stream.Close()
+
+            # Add super-transparent mask if present
+            if ($tempMaskPng -and (Test-Path $tempMaskPng)) {
+                $maskEntryName = "${baseName}_mask.png"
+                $maskEntry = $zip.CreateEntry($maskEntryName, [System.IO.Compression.CompressionLevel]::Optimal)
+                $maskStream = $maskEntry.Open()
+                $maskFileBytes = [System.IO.File]::ReadAllBytes($tempMaskPng)
+                $maskStream.Write($maskFileBytes, 0, $maskFileBytes.Length)
+                $maskStream.Close()
+                Remove-Item $tempMaskPng -Force -ErrorAction SilentlyContinue
+            }
+
             Remove-Item $tempPng, $tempEtc2 -ErrorAction SilentlyContinue
 
             $converted++

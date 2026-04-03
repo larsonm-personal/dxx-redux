@@ -485,7 +485,7 @@ if(ANDROID_USE_OPENGL STREQUAL "true")
 else()
     set(OPENGL     OFF CACHE BOOL "" FORCE)
 endif()
-set(OPENGLMERGE OFF CACHE BOOL "" FORCE)   # no shader-based texmerge on GLES 1.1
+set(OPENGLMERGE ON  CACHE BOOL "" FORCE)   # shader-based texmerge for super-transparent
 set(SDLMIXER   ON  CACHE BOOL "" FORCE)
 set(PNG        OFF CACHE BOOL "" FORCE)
 set(ASM        OFF CACHE BOOL "" FORCE)

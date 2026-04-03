@@ -76,7 +76,7 @@ void ogl_init_prog() {
 		"\n  gl_Position = umat * vec4(apos, 1.0);"
 		"\n  vcolor = acolor; vtexcoord = atexcoord; vtexcoord2 = atexcoord2;"
 		"\n }",
-		//"precision mediump float;"
+		"precision mediump float;"
 		"\n varying vec2 vtexcoord;"
 		"\n varying vec2 vtexcoord2;"
 		"\n varying vec4 vcolor;"
@@ -85,7 +85,9 @@ void ogl_init_prog() {
 		"\n void main() {"
 		"\n  vec4 bot = texture2D(utex, vtexcoord), ovl = texture2D(utex2, vtexcoord2);"
 		"\n  vec4 c = vec4(mix(bot.rgb, ovl.rgb, ovl.a), bot.a + ovl.a - bot.a * ovl.a);" // same as 1 - (1 - bot.a) * (1 - ovl.a)
-		"\n  gl_FragColor = vcolor * c;"
+		"\n  vec4 f = vcolor * c;"
+		"\n  if (f.a < 0.02) discard;"
+		"\n  gl_FragColor = f;"
 		"\n }");
 
 	ogl_prog_tex2m = ogl_mk_prog("attribute vec3 apos;"
@@ -100,7 +102,7 @@ void ogl_init_prog() {
 		"\n  gl_Position = umat * vec4(apos, 1.0);"
 		"\n  vcolor = acolor; vtexcoord = atexcoord; vtexcoord2 = atexcoord2;"
 		"\n }",
-		//"precision mediump float;"
+		"precision mediump float;"
 		"\n varying vec2 vtexcoord;"
 		"\n varying vec2 vtexcoord2;"
 		"\n varying vec4 vcolor;"
@@ -111,7 +113,9 @@ void ogl_init_prog() {
 		"\n  vec4 bot = texture2D(utex, vtexcoord), ovl = texture2D(utex2, vtexcoord2);"
 		"\n  vec4 c = vec4(mix(bot.rgb, ovl.rgb, ovl.a), bot.a + ovl.a - bot.a * ovl.a);" // same as 1 - (1 - bot.a) * (1 - ovl.a)
 		"\n  vec4 mask = texture2D(utex2m, vtexcoord2);"
-		"\n  gl_FragColor = vcolor * vec4(c.rgb, c.a * mask.a);"
+		"\n  vec4 f = vcolor * vec4(c.rgb, c.a * mask.a);"
+		"\n  if (f.a < 0.02) discard;"
+		"\n  gl_FragColor = f;"
 		"\n }");
 
 	ogl_tex2_mat = glGetUniformLocation(ogl_prog_tex2, "umat");

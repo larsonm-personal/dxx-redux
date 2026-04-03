@@ -998,7 +998,7 @@ bool g3_draw_tmap_2(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_
 	GLfloat vertex_array[MAX_VERTS * 3], color_array[MAX_VERTS * 4], texcoordovl_array[MAX_VERTS * 2];
 #ifdef OGL_MERGE
 	GLfloat texcoordbot_array[MAX_VERTS * 2];
-	int super = bmovl->bm_flags & BM_FLAG_SUPER_TRANSPARENT;
+	int super = (bmovl->bm_flags & BM_FLAG_SUPER_TRANSPARENT) && bmovl->gltexture_mask;
 #endif
 
 	if (nv > MAX_VERTS)
@@ -1127,16 +1127,50 @@ bool g3_draw_tmap_2(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_
 	}
 #endif
 #else
-	glUseProgram(super ? ogl_prog_tex2m : ogl_prog_tex2);
+	GLuint prog = super ? ogl_prog_tex2m : ogl_prog_tex2;
+#ifdef ANDROID
+	gles3_shim_use_external(prog);
+#else
+	glUseProgram(prog);
+#endif
 
-	glVertexAttribPointer(OGL_APOS, 3, GL_FLOAT, GL_FALSE, 0, vertex_array);
 	glEnableVertexAttribArray(OGL_APOS);
-	glVertexAttribPointer(OGL_ACOLOR, 4, GL_FLOAT, GL_FALSE, 0, color_array);
 	glEnableVertexAttribArray(OGL_ACOLOR);
-	glVertexAttribPointer(OGL_ATEXCOORD, 2, GL_FLOAT, GL_FALSE, 0, texcoordbot_array);
 	glEnableVertexAttribArray(OGL_ATEXCOORD);
-	glVertexAttribPointer(OGL_ATEXCOORD2, 2, GL_FLOAT, GL_FALSE, 0, texcoordovl_array);
 	glEnableVertexAttribArray(OGL_ATEXCOORD2);
+
+#ifdef ANDROID
+	{
+		/* GLES 3.0 requires vertex data in buffer objects */
+		static GLuint merge_vbo = 0;
+		if (!merge_vbo)
+			glGenBuffers(1, &merge_vbo);
+		int vb = nv * 3 * (int)sizeof(GLfloat);
+		int cb = nv * 4 * (int)sizeof(GLfloat);
+		int tb = nv * 2 * (int)sizeof(GLfloat);
+		int t2b = nv * 2 * (int)sizeof(GLfloat);
+		int total = vb + cb + tb + t2b;
+		int off = 0;
+		glBindBuffer(GL_ARRAY_BUFFER, merge_vbo);
+		glBufferData(GL_ARRAY_BUFFER, total, NULL, GL_STREAM_DRAW);
+		glBufferSubData(GL_ARRAY_BUFFER, off, vb, vertex_array);
+		glVertexAttribPointer(OGL_APOS, 3, GL_FLOAT, GL_FALSE, 0, (const void *)(intptr_t)off);
+		off += vb;
+		glBufferSubData(GL_ARRAY_BUFFER, off, cb, color_array);
+		glVertexAttribPointer(OGL_ACOLOR, 4, GL_FLOAT, GL_FALSE, 0, (const void *)(intptr_t)off);
+		off += cb;
+		glBufferSubData(GL_ARRAY_BUFFER, off, tb, texcoordbot_array);
+		glVertexAttribPointer(OGL_ATEXCOORD, 2, GL_FLOAT, GL_FALSE, 0, (const void *)(intptr_t)off);
+		off += tb;
+		glBufferSubData(GL_ARRAY_BUFFER, off, t2b, texcoordovl_array);
+		glVertexAttribPointer(OGL_ATEXCOORD2, 2, GL_FLOAT, GL_FALSE, 0, (const void *)(intptr_t)off);
+	}
+#else
+	glVertexAttribPointer(OGL_APOS, 3, GL_FLOAT, GL_FALSE, 0, vertex_array);
+	glVertexAttribPointer(OGL_ACOLOR, 4, GL_FLOAT, GL_FALSE, 0, color_array);
+	glVertexAttribPointer(OGL_ATEXCOORD, 2, GL_FLOAT, GL_FALSE, 0, texcoordbot_array);
+	glVertexAttribPointer(OGL_ATEXCOORD2, 2, GL_FLOAT, GL_FALSE, 0, texcoordovl_array);
+#endif
 
 	glDrawArrays(GL_TRIANGLE_FAN, 0, nv);
 
@@ -1144,7 +1178,49 @@ bool g3_draw_tmap_2(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_
 	glDisableVertexAttribArray(OGL_ACOLOR);
 	glDisableVertexAttribArray(OGL_ATEXCOORD);
 	glDisableVertexAttribArray(OGL_ATEXCOORD2);
+#ifdef ANDROID
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	gles3_shim_use_external(0);
+
+	/* Debug texture label overlay for overlay/tmap2 bitmap */
+	if (g_debug_tex_overlay_active
+	    && g_debug_tex_label_count < DEBUG_TEX_MAX_LABELS && nv >= 3)
+	{
+		fix cx = 0, cy = 0, cz = 0;
+		int i;
+		for (i = 0; i < nv; i++) {
+			cx += pointlist[i]->p3_vec.x / nv;
+			cy += pointlist[i]->p3_vec.y / nv;
+			cz += pointlist[i]->p3_vec.z / nv;
+		}
+		if (cz > F1_0 / 4) {
+			fix sx_fix, sy_fix;
+			int checkmuldiv(fix *r, fix a, fix b, fix c);
+			if (checkmuldiv(&sx_fix, cx, Canv_w2, cz)
+			    && checkmuldiv(&sy_fix, cy, Canv_h2, cz))
+			{
+				int sx = f2i(Canv_w2 + sx_fix);
+				int sy = f2i(Canv_h2 - sy_fix) + 10;
+				int sw = grd_curcanv->cv_bitmap.bm_w;
+				int sh = grd_curcanv->cv_bitmap.bm_h;
+				if (sx >= 0 && sx < sw && sy >= 0 && sy < sh) {
+					struct debug_tex_label *lbl = &g_debug_tex_labels[g_debug_tex_label_count];
+					lbl->sx = sx;
+					lbl->sy = sy;
+					lbl->is_hires = (bmovl->gltexture && bmovl->gltexture->is_png) ? 1 : 0;
+					const char *bname = piggy_game_bitmap_name(bmovl);
+					if (bname) {
+						strncpy(lbl->name, bname, sizeof(lbl->name) - 1);
+						lbl->name[sizeof(lbl->name) - 1] = '\0';
+						g_debug_tex_label_count++;
+					}
+				}
+			}
+		}
+	}
+#else
 	glUseProgram(0);
+#endif
 #endif
 	r_tpolyc++;
 
@@ -1359,7 +1435,7 @@ void ogl_start_frame(void){
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-#ifndef OGL_MERGE
+#if defined(OGLES) || !defined(OGL_MERGE)
 	glEnable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_GEQUAL,0.02);
 #endif
@@ -1389,7 +1465,11 @@ void ogl_start_frame(void){
 		mat[14] = (GLfloat)(-2.0 * f * n / (f - n));
 		ogl_prog_set_matrix(mat);
 	}
-#else
+#endif
+#if defined(OGLES) || !defined(OGL_MERGE)
+	/* Set up fixed-function / shim projection matrix.
+	 * On OGLES with OGL_MERGE, the shim matrix is still needed for
+	 * single-texture draws (g3_draw_tmap) that use the shim shader. */
 	glShadeModel(GL_SMOOTH);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();//clear matrix
@@ -1933,17 +2013,63 @@ void ogl_loadpngmask(png_data *pdata, grs_bitmap *bm, int texfilt)
 	bm->gltexture_mask->is_png = 1;
 	d_free(mask);
 }
-#endif
+
+#ifdef ANDROID
+/* Load pre-generated super-transparent mask from DXA texture pack.
+ * The mask is a PNG with alpha=0 for super-transparent pixels. */
+static void ogl_load_dxa_mask(const char *bitmapname, grs_bitmap *bm, int texfilt)
+{
+	char maskname[256];
+	png_data mdata;
+	int loaded = 0;
+
+	sprintf(maskname, "%s_mask.png", bitmapname);
+	loaded = read_png(maskname, &mdata);
+	if (!loaded) {
+		__android_log_print(ANDROID_LOG_WARN, "DXX-MASK",
+			"Mask not found: %s", maskname);
+		return;
+	}
+	if (mdata.depth == 8 && mdata.color) {
+		int mdf = mdata.paletted ? 0 : mdata.channels;
+		if (bm->gltexture_mask == NULL)
+			ogl_init_texture(bm->gltexture_mask = ogl_get_free_texture(),
+				mdata.width, mdata.height, OGL_FLAG_ALPHA);
+		if (!ogl_loadtexture(mdata.data, 0, 0, bm->gltexture_mask, 0, mdf, texfilt))
+			bm->gltexture_mask->is_png = 1;
+		__android_log_print(ANDROID_LOG_INFO, "DXX-MASK",
+			"Loaded mask: %s %dx%d ch=%d", maskname,
+			mdata.width, mdata.height, mdata.channels);
+	} else {
+		__android_log_print(ANDROID_LOG_WARN, "DXX-MASK",
+			"Mask format unsupported: %s depth=%d color=%d",
+			maskname, mdata.depth, mdata.color);
+	}
+	free(mdata.data);
+	if (mdata.palette)
+		free(mdata.palette);
+}
+#endif /* ANDROID */
+#endif /* OGL_MERGE */
 
 void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 {
 	unsigned char *buf;
 	const char *bitmapname = piggy_game_bitmap_name(bm);
+	static int st_log_count = 0;
 
 	while (bm->bm_parent)
 		bm=bm->bm_parent;
 	if (bm->gltexture && bm->gltexture->handle > 0)
 		return;
+	/* android port: debug mask loading */
+	if ((bm->bm_flags & BM_FLAG_SUPER_TRANSPARENT) && st_log_count < 30) {
+		__android_log_print(ANDROID_LOG_INFO, "DXX-MASK",
+			"loadbmtexture: %s flags=0x%x super_trans=yes gltex=%p",
+			bitmapname ? bitmapname : "(null)", bm->bm_flags,
+			(void*)bm->gltexture);
+		st_log_count++;
+	}
 	buf=bm->bm_data;
 #ifdef HAVE_LIBPNG
 	if (ogl_allow_png() && bitmapname && !(bm->gltexture && bm->gltexture->is_png))
@@ -2116,6 +2242,13 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 						}
 					}
+#ifdef OGL_MERGE
+					if (bm->bm_flags & BM_FLAG_SUPER_TRANSPARENT) {
+						__android_log_print(ANDROID_LOG_INFO, "DXX-MASK",
+							"KTX2: loading mask for %s flags=0x%x", bitmapname, bm->bm_flags);
+						ogl_load_dxa_mask(bitmapname, bm, texfilt);
+					}
+#endif
 					return;
 				}
 				/* Decode/upload failed -- fall through to try PNG */
@@ -2159,8 +2292,13 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 						free(pdata.palette);
 				} else {
 				#ifdef OGL_MERGE
-				if (bm->bm_flags & BM_FLAG_SUPER_TRANSPARENT)
+				if (bm->bm_flags & BM_FLAG_SUPER_TRANSPARENT) {
+#ifdef ANDROID
+					ogl_load_dxa_mask(bitmapname, bm, texfilt);
+#else
 					ogl_loadpngmask(&pdata, bm, texfilt);
+#endif
+				}
 				#endif
 				free(pdata.data);
 				if (pdata.palette)
