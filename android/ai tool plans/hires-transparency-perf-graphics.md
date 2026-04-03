@@ -34,15 +34,13 @@ The door35 texture shows minor visual artifacts:
 
 **Mitigation options** (ordered by effort):
 
-- [ ] **A. Pipeline: nearest-neighbor mask resize**. Use `-filter Point` in ImageMagick for mask PNGs so the binary mask stays crisp at any resolution. This is the highest-impact fix for the fuzziness.
+- [x] **A. Pipeline: nearest-neighbor mask resize**. Use `-filter Point` in ImageMagick for mask PNGs so the binary mask stays crisp at any resolution. This is the highest-impact fix for the fuzziness.
 
-- [ ] **B. Pipeline: pre-multiply alpha**. After zeroing key-color pixels, flood-fill their RGB from neighboring non-key pixels so ETC2 block compression doesn't average against black. This reduces color fringing in the main texture.
+- [x] **B. Pipeline: edge color flood-fill**. After zeroing key-color pixels, flood-fill their RGB from neighboring non-key pixels so ETC2 block compression doesn't average against black. This is a standard generic technique -- no per-texture tuning needed. Reduces color fringing at transparency boundaries.
 
-- [ ] **C. Wider tolerance**: Increase from +/-13 to +/-20. Risk: may incorrectly classify near-key-color door/wall pixels. Should be tested per-texture.
+- ~~**C. Wider tolerance**~~: Skipped -- needs per-texture tuning, want to keep the d2x-xl->rebirth import generic.
 
-- [ ] **D. Accept as minor artifact**: The effect is subtle and only visible during the brief door open animation. The lores path has the same artifacts at lower resolution. Good enough for now and can revisit during a quality pass.
-
-**Recommendation**: Do (A) as a quick pipeline fix. Consider (B) as a later quality improvement. Skip (C) for now. (D) is the fallback.
+- ~~**D. Accept as minor artifact**~~: Not needed if A+B work.
 
 ---
 
@@ -61,20 +59,20 @@ Expose CPU frame time + GPU utilization metrics in the video overlay so the user
 ### What to add
 
 #### 2A. Frame timing (CPU-side)
-- [ ] Add `g_frame_time_us` (microseconds for last frame) alongside `g_current_fps`
-- [ ] Add `g_frame_time_avg_us` (rolling average over last 60 frames)
-- [ ] Add `g_frame_time_max_us` (max over last 60 frames) -- shows stutter/spikes
-- [ ] Track `g_cache_time_ms` (time spent in ogl_cache_level_textures)
-- [ ] Expose all via nativeGetVideoStats extended array
+- [x] Add `g_frame_time_us` (microseconds for last frame) alongside `g_current_fps`
+- [x] Add `g_frame_time_avg_us` (rolling average over last 60 frames)
+- [x] Add `g_frame_time_max_us` (max over last 60 frames) -- shows stutter/spikes
+- [x] Track `g_cache_time_ms` (time spent in ogl_cache_level_textures)
+- [x] Expose all via nativeGetVideoStats extended array (indices 11-17)
 
 Why microseconds: at 30fps a frame is 33ms. Per-frame timing at ms resolution is too coarse; us gives useful granularity for spotting 1-2ms differences between texture packs.
 
 #### 2B. Draw call and state change counters
-- [ ] Add counters already partially there: `r_polyc` (total polys), `r_tpolyc` (textured polys), `r_bitmapc` (bitmap draws)
-- [ ] Add `r_texbinds` (texture bind calls per frame) -- main indicator of state change overhead
+- [x] Add counters already partially there: `r_polyc` (total polys), `r_tpolyc` (textured polys), `r_bitmapc` (bitmap draws)
+- [x] Add `r_texbinds` (texture bind calls per frame) -- main indicator of state change overhead
+- [x] Expose via nativeGetVideoStats (r_polyc+r_tpolyc as draw polys)
 - [ ] Add `r_shader_switches` (program use calls per frame) -- currently only 2 programs so this should be low
 - [ ] Add `r_mask_draws` (super-transparent mask draws per frame) -- tracks mask overhead
-- [ ] Expose via nativeGetVideoStats
 
 #### 2C. GPU timing (GLES 3.0)
 - [ ] Use `EXT_disjoint_timer_query` (widely supported on real hardware, may not work on emulator)
@@ -84,15 +82,13 @@ Why microseconds: at 30fps a frame is 33ms. Per-frame timing at ms resolution is
 - [ ] Note: the emulator (swiftshader) may not support this extension. Test on real hardware
 
 #### 2D. Overlay enhancements
-- [ ] Add to VideoInfoOverlay: frame time (avg/max), draw calls, tex binds, GPU time
+- [x] Add to VideoInfoOverlay: frame time (avg/max), draw calls, tex binds, cache time
 - [ ] Add a "load bar" visual: green/yellow/red bar showing frame budget usage (33ms = 100% at 30fps)
 - [ ] Show texture pack name and size (from DXA filename)
 - [ ] Color-code metrics that are near budget limits
 
 #### 2E. Benchmark mode
-- [ ] Add an automation script that loads a level, flies a fixed path (or stands still for N seconds), and logs avg/min/max FPS + frame times to a file
-- [ ] Run with each texture pack size to get comparable numbers
-- [ ] Output a simple CSV or JSON for easy comparison
+Deferred -- will be built around demo file playback. User will create demo files; benchmarks captured automatically during demo playback as part of regression tests (verify enemies killed, etc.).
 
 ---
 
@@ -109,9 +105,9 @@ In `ogl_start_frame()` + `ogl_end_frame()`, several GL state changes happen ever
 
 #### 3B. Texture binding reduction
 Currently every polygon binds its texture individually. Profile to see if adjacent polygons often share textures:
-- [ ] Add a "last bound texture" cache: skip glBindTexture if same handle
-- [ ] Track cache hit rate in r_texbinds counter
-- [ ] This is the single most impactful optimization for fill-rate-limited devices
+- [x] Add a "last bound texture" cache: skip glBindTexture if same handle
+- [x] Track cache hit rate in r_texbinds counter
+- [x] This is the single most impactful optimization for fill-rate-limited devices
 
 #### 3C. Mipmap generation
 - [ ] Verify mipmaps are generated for hires textures (glGenerateMipmap)
@@ -196,8 +192,10 @@ Based on actual codebase analysis, here's what's practical vs aspirational:
 |---------|--------|---------|-------|
 | Anisotropic filtering | Low | High | Already half-wired. Tunnels benefit enormously |
 | MSAA | Medium | High | FBO approach well-understood. GLES 3.0 guarantees it |
-| Texture quality slider | Low | Medium | Already have multi-size DXA pipeline |
 | Gamma/brightness | Low | Medium | Simple post-process or glClearColor adjustment |
+
+*Texture quality slider: not needed -- users install whatever texture pack they want.*
+*Post-processing pipeline: deferred -- not needed as of now.*
 
 ### Achievable but significant effort
 | Feature | Effort | Benefit | Notes |
@@ -214,19 +212,18 @@ Based on actual codebase analysis, here's what's practical vs aspirational:
 | Uniform buffer objects | Low-Medium | Only 2 shaders, few uniforms. The overhead of per-draw uniform calls is negligible at current draw counts. Not worth the complexity |
 
 ### Summary
-The high-value path is: **anisotropic filtering -> MSAA -> performance counters -> texture quality slider -> post-processing (optional)**. Everything else is either too much work for the benefit or doesn't fit the "faithful port" aesthetic.
+The high-value path is: **pipeline edge fixes -> perf counters -> texture bind cache -> anisotropic filtering -> overlay enhancements -> MSAA**.
 
 ---
 
 ## Phase 6: Implementation order
 
-1. [ ] Phase 2A-2B: Frame timing + draw counters (foundation for everything else)
-2. [ ] Phase 3B: Texture bind cache (easy win, enables measurement)
-3. [ ] Phase 4A: Anisotropic filtering (already 80% wired)
-4. [ ] Phase 2D: Overlay enhancements (show the new metrics)
-5. [ ] Phase 4B: MSAA via FBO
-6. [ ] Phase 2C: GPU timing (real hardware only)
-7. [ ] Phase 4C-4D: Launcher settings + live overlay controls
-8. [ ] Phase 2E: Benchmark automation
-9. [ ] Phase 1 remaining: Pipeline fixes for edge artifacts (A, B)
-10. [ ] Phase 3A,3C-3F: Other optimizations as needed based on profiling data
+1. [x] Phase 1A+1B: Pipeline edge fixes (nearest-neighbor mask resize + edge color flood)
+2. [x] Phase 2A-2B: Frame timing + draw counters
+3. [x] Phase 3B: Texture bind cache (easy win, enables measurement)
+4. [ ] Phase 4A: Anisotropic filtering (already 80% wired)
+5. [x] Phase 2D: Overlay enhancements (basic metrics shown)
+6. [ ] Phase 4B: MSAA via FBO
+7. [ ] Phase 2C: GPU timing (real hardware only)
+8. [ ] Phase 4C-4D: Launcher settings + live overlay controls
+9. [ ] Phase 3A,3C-3F: Other optimizations as needed based on profiling data

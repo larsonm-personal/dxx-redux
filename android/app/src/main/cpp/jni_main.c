@@ -561,6 +561,13 @@ Java_com_dxxredux_app_MainActivity_nativeGetNetgameState(JNIEnv *env, jobject th
  *   [8]  = render_h         (game render height)
  *   [9]  = display_w        (native display width)
  *   [10] = display_h        (native display height)
+ *   [11] = frame_time_us    (last frame time in microseconds)
+ *   [12] = frame_time_avg   (rolling avg over 60 frames, us)
+ *   [13] = frame_time_max   (max over 60 frames, us)
+ *   [14] = tex_binds        (texture bind calls this frame)
+ *   [15] = tex_bind_reuse   (texture bind cache hits this frame)
+ *   [16] = draw_polys       (flat+textured polygons this frame)
+ *   [17] = cache_time_ms    (time spent in last ogl_cache_level_textures)
  *
  * android port: video diagnostics overlay
  */
@@ -570,6 +577,10 @@ JNIEXPORT jintArray JNICALL
 Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz)
 {
 	extern int g_current_fps;
+	extern int g_frame_time_us, g_frame_time_avg_us, g_frame_time_max_us;
+	extern int r_texbinds, r_texbind_reuse;
+	extern int r_polyc, r_tpolyc;
+	extern int g_cache_time_ms;
 	extern int ogl_max_texture_size;
 	int ogl_get_texture_bytes(void);
 	int android_surface_get_display_width(void);
@@ -577,7 +588,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 	extern unsigned int grd_curscreen_w(void);
 	extern unsigned int grd_curscreen_h(void);
 
-	enum { VS_SIZE = 11 };
+	enum { VS_SIZE = 18 };
 	jint buf[VS_SIZE];
 
 	buf[0] = (jint) g_current_fps;
@@ -605,6 +616,13 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 	buf[8] = (jint) grd_curscreen_h();
 	buf[9] = (jint) android_surface_get_display_width();
 	buf[10] = (jint) android_surface_get_display_height();
+	buf[11] = (jint) g_frame_time_us;
+	buf[12] = (jint) g_frame_time_avg_us;
+	buf[13] = (jint) g_frame_time_max_us;
+	buf[14] = (jint) r_texbinds;
+	buf[15] = (jint) r_texbind_reuse;
+	buf[16] = (jint) (r_polyc + r_tpolyc);
+	buf[17] = (jint) g_cache_time_ms;
 
 	jintArray result = (*env)->NewIntArray(env, VS_SIZE);
 	if (result)

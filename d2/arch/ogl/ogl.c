@@ -34,6 +34,7 @@
 
 #ifdef ANDROID
 #include <android/log.h>
+#include <time.h>
 #include "debug_tex_overlay.h"
 #include "android_crash_handler.h"
 #include "debug_log.h"
@@ -125,7 +126,21 @@ int g_debug_tex_label_count = 0;
 volatile int g_debug_tex_overlay_active = 0;
 #endif
 
+#ifdef ANDROID
+/* android port: per-frame texture bind counter + bind cache */
+int r_texbinds = 0;
+int r_texbind_reuse = 0;
+static GLuint ogl_last_bound_tex = 0;
+#define OGL_BINDTEXTURE(a) do { \
+	if ((GLuint)(a) != ogl_last_bound_tex) { \
+		glBindTexture(GL_TEXTURE_2D, a); \
+		ogl_last_bound_tex = (a); \
+		r_texbinds++; \
+	} else { r_texbind_reuse++; } \
+} while(0)
+#else
 #define OGL_BINDTEXTURE(a) glBindTexture(GL_TEXTURE_2D, a);
+#endif
 
 
 ogl_texture ogl_texture_list[OGL_TEXTURE_LIST_SIZE];
@@ -240,7 +255,7 @@ int r_hires_found = 0; /* PNG files found on disk */
 int r_hires_loaded = 0; /* PNG textures successfully uploaded */
 int r_etc2_zero_data = 0; /* ETC2 textures with all-zero compressed payload */
 static int r_etc2_render_log_count = 0; /* limit per-frame render logging */
-
+int g_cache_time_ms = 0; /* time spent in ogl_cache_level_textures */
 #endif
 
 void ogl_reset_texture_stats_internal(void){
@@ -441,6 +456,10 @@ void ogl_cache_polymodel_textures(int model_num)
 void ogl_cache_level_textures(void)
 {
 	int i;
+#ifdef ANDROID
+	struct timespec cache_start;
+	clock_gettime(CLOCK_MONOTONIC, &cache_start);
+#endif
 	
 	ogl_reset_texture_stats_internal();//loading a new lev should reset textures
 
@@ -484,6 +503,15 @@ void ogl_cache_level_textures(void)
 	for (i = 0; i < Num_bitmap_files; i++) {
 		if (!(GameBitmaps[i].bm_flags & BM_FLAG_PAGED_OUT))
 			ogl_loadbmtexture(&GameBitmaps[i]);
+	}
+#endif
+
+#ifdef ANDROID
+	{
+		struct timespec cache_end;
+		clock_gettime(CLOCK_MONOTONIC, &cache_end);
+		g_cache_time_ms = (int)((cache_end.tv_sec - cache_start.tv_sec) * 1000 +
+			(cache_end.tv_nsec - cache_start.tv_nsec) / 1000000);
 	}
 #endif
 
@@ -1424,6 +1452,9 @@ GLubyte *pixels = NULL;
 
 void ogl_start_frame(void){
 	r_polyc=0;r_tpolyc=0;r_bitmapc=0;r_ubitbltc=0;r_upixelc=0;
+#ifdef ANDROID
+	r_texbinds=0;r_texbind_reuse=0;ogl_last_bound_tex=0;
+#endif
 
 	OGL_VIEWPORT(grd_curcanv->cv_bitmap.bm_x,grd_curcanv->cv_bitmap.bm_y,Canvas_width,Canvas_height);
 #ifdef ANDROID

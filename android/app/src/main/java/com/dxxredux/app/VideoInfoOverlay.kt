@@ -42,6 +42,13 @@ class VideoInfoOverlay(
     private var renderH = 0
     private var displayW = 0
     private var displayH = 0
+    private var frameTimeUs = 0
+    private var frameTimeAvg = 0
+    private var frameTimeMax = 0
+    private var texBinds = 0
+    private var texBindReuse = 0
+    private var drawPolys = 0
+    private var cacheTimeMs = 0
 
     // Labels toggle button state and hit region
     private var labelsOn = false
@@ -67,6 +74,15 @@ class VideoInfoOverlay(
                         renderH = stats[8]
                         displayW = stats[9]
                         displayH = stats[10]
+                    }
+                    if (stats != null && stats.size >= 18) {
+                        frameTimeUs = stats[11]
+                        frameTimeAvg = stats[12]
+                        frameTimeMax = stats[13]
+                        texBinds = stats[14]
+                        texBindReuse = stats[15]
+                        drawPolys = stats[16]
+                        cacheTimeMs = stats[17]
                     }
                 } catch (_: Exception) {
                     // JNI not ready yet
@@ -157,7 +173,7 @@ class VideoInfoOverlay(
 
         val pad = 8f * density
         val lineH = baseTextSize * 1.5f
-        val numLines = 8 // title + fps + tex mem + hires + max res + resolution + gl cap + labels
+        val numLines = 12 // title fps frame texmem hires maxres render glcap binds polys cache labels
         val panelH = pad * 2 + lineH * numLines
         val panelW = baseTextSize * 20f
 
@@ -183,6 +199,13 @@ class VideoInfoOverlay(
                 else -> fpsBadPaint
             }
         canvas.drawText("FPS: $fps", panelLeft + pad, y, fpsPaint)
+        y += lineH
+
+        // Frame time avg / max
+        val avgMs = "%.1f".format(frameTimeAvg / 1000f)
+        val maxMs = "%.1f".format(frameTimeMax / 1000f)
+        canvas.drawText("Frame:", panelLeft + pad, y, labelPaint)
+        canvas.drawText("${avgMs}ms avg / ${maxMs}ms max", panelLeft + pad + baseTextSize * 6f, y, valuePaint)
         y += lineH
 
         // Texture memory
@@ -221,6 +244,23 @@ class VideoInfoOverlay(
             y,
             valuePaint,
         )
+        y += lineH
+
+        // Texture binds per frame
+        val bindTotal = texBinds + texBindReuse
+        val hitPct = if (bindTotal > 0) (texBindReuse * 100 / bindTotal) else 0
+        canvas.drawText("Binds:", panelLeft + pad, y, labelPaint)
+        canvas.drawText("$texBinds ($hitPct% cache)", panelLeft + pad + baseTextSize * 6f, y, valuePaint)
+        y += lineH
+
+        // Draw polygons
+        canvas.drawText("Polys:", panelLeft + pad, y, labelPaint)
+        canvas.drawText("$drawPolys", panelLeft + pad + baseTextSize * 6f, y, valuePaint)
+        y += lineH
+
+        // Level cache time
+        canvas.drawText("Cache:", panelLeft + pad, y, labelPaint)
+        canvas.drawText("${cacheTimeMs}ms", panelLeft + pad + baseTextSize * 6f, y, valuePaint)
         y += lineH
 
         // Labels toggle button (tappable, with background)

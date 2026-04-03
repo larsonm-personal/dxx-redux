@@ -193,12 +193,54 @@ function Read-TGA {
 
     $bmp.UnlockBits($bmpData)
 
+    # Edge color flood-fill: replace RGB of key-color-zeroed pixels with
+    # the average RGB of their non-transparent neighbors. This prevents
+    # ETC2 block compression from averaging black against opaque colors
+    # at transparency boundaries, which causes visible color fringing.
+    if ($hasKeyColor -and $channels -eq 4) {
+        $bmpData2 = $bmp.LockBits(
+            [System.Drawing.Rectangle]::new(0, 0, $width, $height),
+            [System.Drawing.Imaging.ImageLockMode]::ReadWrite,
+            [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+        $stride2 = $bmpData2.Stride
+        $pixBuf = [byte[]]::new($height * $stride2)
+        [System.Runtime.InteropServices.Marshal]::Copy($bmpData2.Scan0, $pixBuf, 0, $pixBuf.Length)
+
+        for ($y = 0; $y -lt $height; $y++) {
+            for ($x = 0; $x -lt $width; $x++) {
+                $pi = $y * $stride2 + $x * 4
+                if ($pixBuf[$pi + 3] -ne 0) { continue }  # skip opaque
+                # Average RGB from non-transparent neighbors
+                $sumB = 0; $sumG = 0; $sumR = 0; $cnt = 0
+                for ($dy = -1; $dy -le 1; $dy++) {
+                    for ($dx = -1; $dx -le 1; $dx++) {
+                        if ($dy -eq 0 -and $dx -eq 0) { continue }
+                        $nx = $x + $dx; $ny = $y + $dy
+                        if ($nx -lt 0 -or $nx -ge $width -or $ny -lt 0 -or $ny -ge $height) { continue }
+                        $ni = $ny * $stride2 + $nx * 4
+                        if ($pixBuf[$ni + 3] -eq 0) { continue }
+                        $sumB += $pixBuf[$ni]; $sumG += $pixBuf[$ni+1]; $sumR += $pixBuf[$ni+2]
+                        $cnt++
+                    }
+                }
+                if ($cnt -gt 0) {
+                    $pixBuf[$pi] = [byte]([Math]::Round($sumB / $cnt))
+                    $pixBuf[$pi+1] = [byte]([Math]::Round($sumG / $cnt))
+                    $pixBuf[$pi+2] = [byte]([Math]::Round($sumR / $cnt))
+                    # alpha stays 0
+                }
+            }
+        }
+        [System.Runtime.InteropServices.Marshal]::Copy($pixBuf, 0, $bmpData2.Scan0, $pixBuf.Length)
+        $bmp.UnlockBits($bmpData2)
+    }
+
     # Generate mask bitmap if key color was found
     $script:lastKeyColorMask = $null
     if ($hasKeyColor -and $maskBytes) {
         $maskBmp = [System.Drawing.Bitmap]::new($width, $height,
             [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
-        $maskData = $maskBmp.LockBits(z
+        $maskData = $maskBmp.LockBits(
             [System.Drawing.Rectangle]::new(0, 0, $width, $height),
             [System.Drawing.Imaging.ImageLockMode]::WriteOnly,
             [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
@@ -587,11 +629,30 @@ function Convert-GameTextures {
             }
 
             # Resize mask alongside main texture if present
+            # Use nearest-neighbor (Point) filter for masks to keep binary
+            # edges crisp -- Lanczos would anti-alias the mask boundaries
             $tempMaskPng = $null
             if ($maskPrePng -and (Test-Path $maskPrePng)) {
                 $tempMaskPng = Join-Path $tempDir "${baseName}_mask.png"
                 if ($useMagick -and $MaxDim -gt 0) {
-                    Convert-WithMagick -InputPath $maskPrePng -OutputPath $tempMaskPng -MaxDim $MaxDim -MagickPath $MagickPath
+                    $safeMaskIn = $maskPrePng
+                    if ($maskPrePng -match '#') {
+                        $dir = Split-Path $maskPrePng
+                        $ext = [IO.Path]::GetExtension($maskPrePng)
+                        $safeMaskIn = Join-Path $dir ("_safe_mask_" + [IO.Path]::GetFileNameWithoutExtension($maskPrePng).Replace('#','_H_') + $ext)
+                        Copy-Item $maskPrePng $safeMaskIn -Force
+                    }
+                    $safeMaskOut = $tempMaskPng
+                    if ($tempMaskPng -match '#') {
+                        $dir = Split-Path $tempMaskPng
+                        $ext = [IO.Path]::GetExtension($tempMaskPng)
+                        $safeMaskOut = Join-Path $dir ("_safe_mask_out_" + [IO.Path]::GetFileNameWithoutExtension($tempMaskPng).Replace('#','_H_') + $ext)
+                    }
+                    & $MagickPath $safeMaskIn -filter Point -resize "${MaxDim}x${MaxDim}" $safeMaskOut 2>$null
+                    if ($safeMaskIn -ne $maskPrePng) { Remove-Item $safeMaskIn -Force -ErrorAction SilentlyContinue }
+                    if ($safeMaskOut -ne $tempMaskPng -and (Test-Path $safeMaskOut)) {
+                        Move-Item $safeMaskOut $tempMaskPng -Force
+                    }
                 } else {
                     Copy-Item $maskPrePng $tempMaskPng -Force
                 }

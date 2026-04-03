@@ -392,8 +392,11 @@ void reset_time()
 }
 
 #ifdef __ANDROID__
-/* android port: always-on FPS counter for video info overlay (JNI read) */
+/* android port: always-on FPS counter + frame timing for video info overlay */
 int g_current_fps = 0;
+int g_frame_time_us = 0;      /* last frame time in microseconds */
+int g_frame_time_avg_us = 0;  /* rolling average over last 60 frames */
+int g_frame_time_max_us = 0;  /* max over last 60 frames */
 #endif
 
 void calc_frame_time()
@@ -427,15 +430,30 @@ void calc_frame_time()
 		FrameTime = (last_frametime==0?1:last_frametime);		//...then use time from last frame
 
 #ifdef __ANDROID__
-	/* android port: update FPS counter for video info overlay */
+	/* android port: update FPS counter + frame timing for video info overlay */
 	{
 		static int fps_cnt = 0;
 		static fix64 fps_t = 0;
+		/* rolling window for avg/max over last 60 frames */
+		static int ft_ring[60];
+		static int ft_idx = 0;
+		int ft_us = (int)((FrameTime * 15625LL) / 1024);
+		g_frame_time_us = ft_us;
+		ft_ring[ft_idx] = ft_us;
+		ft_idx = (ft_idx + 1) % 60;
 		fps_cnt++;
 		if (timer_value >= fps_t + F1_0) {
 			g_current_fps = fps_cnt;
 			fps_cnt = 0;
 			fps_t = timer_value;
+			/* compute avg and max over the ring */
+			int sum = 0, mx = 0;
+			for (int i = 0; i < 60; i++) {
+				sum += ft_ring[i];
+				if (ft_ring[i] > mx) mx = ft_ring[i];
+			}
+			g_frame_time_avg_us = sum / 60;
+			g_frame_time_max_us = mx;
 		}
 	}
 #endif
