@@ -1079,3 +1079,10 @@ char* piggy_game_bitmap_name(grs_bitmap *bmp)
 	}
 	return NULL;
 }
+
+int piggy_bitmap_get_flags(grs_bitmap *bmp)
+{
+	if (bmp >= GameBitmaps && bmp < &GameBitmaps[MAX_BITMAP_FILES])
+		return GameBitmapFlags[bmp - GameBitmaps];
+	return bmp->bm_flags;
+}

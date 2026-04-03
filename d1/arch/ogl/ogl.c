@@ -1993,13 +1993,25 @@ static void ogl_load_dxa_mask(const char *bitmapname, grs_bitmap *bm, int texfil
 	loaded = read_png(maskname, &mdata);
 	if (!loaded)
 		return;
-	if (mdata.depth == 8 && mdata.color) {
-		int mdf = mdata.paletted ? 0 : mdata.channels;
+	if (mdata.depth == 8) {
+		int size = mdata.width * mdata.height;
+		int ch = mdata.paletted ? 1 : mdata.channels;
+		unsigned char *mask;
+
+		MALLOC(mask, unsigned char, size);
+		/* Convert to single-byte mask matching ogl_loadpngmask convention:
+		 * 255 where super-transparent, 0 elsewhere.  Upload via palette
+		 * path with BM_FLAG_TRANSPARENT so 255->alpha=0, 0->alpha=1.
+		 * Mask PNGs have white=keep, black=super-transparent, so invert */
+		for (int i = 0; i < size; i++)
+			mask[i] = mdata.data[i * ch] > 128 ? 0 : 255;
+
 		if (bm->gltexture_mask == NULL)
 			ogl_init_texture(bm->gltexture_mask = ogl_get_free_texture(),
 				mdata.width, mdata.height, OGL_FLAG_ALPHA);
-		if (!ogl_loadtexture(mdata.data, 0, 0, bm->gltexture_mask, 0, mdf, texfilt))
-			bm->gltexture_mask->is_png = 1;
+		ogl_loadtexture(mask, 0, 0, bm->gltexture_mask, BM_FLAG_TRANSPARENT, 0, texfilt);
+		bm->gltexture_mask->is_png = 1;
+		d_free(mask);
 	}
 	free(mdata.data);
 	if (mdata.palette)
@@ -2017,6 +2029,9 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 		bm=bm->bm_parent;
 	if (bm->gltexture && bm->gltexture->handle > 0)
 		return;
+	/* During cache pass, bm_flags is BM_FLAG_PAGED_OUT; the real
+	 * transparency flags live in the pig file's GameBitmapFlags[] */
+	int real_flags = piggy_bitmap_get_flags(bm);
 	buf=bm->bm_data;
 #ifdef HAVE_LIBPNG
 	if (ogl_allow_png() && bitmapname && !(bm->gltexture && bm->gltexture->is_png))
@@ -2195,7 +2210,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 						}
 					}
 #ifdef OGL_MERGE
-					if (bm->bm_flags & BM_FLAG_SUPER_TRANSPARENT)
+					if (real_flags & BM_FLAG_SUPER_TRANSPARENT)
 						ogl_load_dxa_mask(bitmapname, bm, texfilt);
 #endif
 					return;
@@ -2241,7 +2256,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 						free(pdata.palette);
 				} else {
 				#ifdef OGL_MERGE
-				if (bm->bm_flags & BM_FLAG_SUPER_TRANSPARENT) {
+				if (real_flags & BM_FLAG_SUPER_TRANSPARENT) {
 #ifdef ANDROID
 					ogl_load_dxa_mask(bitmapname, bm, texfilt);
 #else

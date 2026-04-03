@@ -216,6 +216,16 @@ char* piggy_game_bitmap_name(grs_bitmap *bmp)
 	return NULL;
 }
 
+/* Return the stored bitmap flags for a GameBitmaps[] entry.
+ * During cache pass bm_flags is BM_FLAG_PAGED_OUT; the real flags
+ * (TRANSPARENT, SUPER_TRANSPARENT, etc) live in GameBitmapFlags[] */
+int piggy_bitmap_get_flags(grs_bitmap *bmp)
+{
+	if (bmp >= GameBitmaps && bmp < &GameBitmaps[MAX_BITMAP_FILES])
+		return GameBitmapFlags[bmp - GameBitmaps];
+	return bmp->bm_flags;
+}
+
 bitmap_index piggy_register_bitmap( grs_bitmap * bmp, char * name, int in_file )
 {
 	bitmap_index temp;

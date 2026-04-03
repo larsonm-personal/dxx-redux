@@ -136,6 +136,7 @@ int bitmap_index_read_n(bitmap_index *bi, int n, PHYSFS_file *fp);
 #define REMOVE_DOTS(s)  	remove_char((s),'.')
 
 char* piggy_game_bitmap_name(grs_bitmap *bmp);
+int piggy_bitmap_get_flags(grs_bitmap *bmp);
 
 #endif // _PIGGY_H
 

@@ -455,6 +455,7 @@ void ogl_cache_level_textures(void)
 	{
 		int before_hires = r_hires_loaded;
 		int n_already = 0, n_paged_skip = 0, n_bm_upload = 0, n_png_fail = 0;
+		int n_masks = 0;
 		for (i = 0; i < Num_bitmap_files; i++) {
 			grs_bitmap *bm = &GameBitmaps[i];
 			int had_tex = (bm->gltexture && bm->gltexture->handle > 0);
@@ -470,11 +471,13 @@ void ogl_cache_level_textures(void)
 				else
 					n_paged_skip++;
 			}
+			if (bm->gltexture_mask && bm->gltexture_mask->handle > 0)
+				n_masks++;
 		}
 		crash_breadcrumb("ogl_cache: done");
 		__android_log_print(ANDROID_LOG_INFO, "DXX",
-		    "ogl_cache: done. hires=%i already=%i bitmap=%i skipped=%i png_fail=%i etc2_zero=%i",
-		    r_hires_loaded - before_hires, n_already, n_bm_upload, n_paged_skip, n_png_fail,
+		    "ogl_cache: done. hires=%i masks=%i already=%i bitmap=%i skipped=%i png_fail=%i etc2_zero=%i",
+		    r_hires_loaded - before_hires, n_masks, n_already, n_bm_upload, n_paged_skip, n_png_fail,
 		    r_etc2_zero_data);
 	}
 #else
@@ -2026,23 +2029,33 @@ static void ogl_load_dxa_mask(const char *bitmapname, grs_bitmap *bm, int texfil
 	sprintf(maskname, "%s_mask.png", bitmapname);
 	loaded = read_png(maskname, &mdata);
 	if (!loaded) {
-		__android_log_print(ANDROID_LOG_WARN, "DXX-MASK",
-			"Mask not found: %s", maskname);
+		debug_log(DLOG_TEXTURE, "Mask not found: %s", maskname);
 		return;
 	}
-	if (mdata.depth == 8 && mdata.color) {
-		int mdf = mdata.paletted ? 0 : mdata.channels;
+	if (mdata.depth == 8) {
+		int size = mdata.width * mdata.height;
+		int ch = mdata.paletted ? 1 : mdata.channels;
+		unsigned char *mask;
+
+		MALLOC(mask, unsigned char, size);
+		/* Convert to single-byte mask matching ogl_loadpngmask convention:
+		 * 255 where super-transparent, 0 elsewhere.  Upload via palette
+		 * path with BM_FLAG_TRANSPARENT so 255->alpha=0, 0->alpha=1.
+		 * Mask PNGs have white=keep, black=super-transparent, so invert */
+		for (int i = 0; i < size; i++)
+			mask[i] = mdata.data[i * ch] > 128 ? 0 : 255;
+
 		if (bm->gltexture_mask == NULL)
 			ogl_init_texture(bm->gltexture_mask = ogl_get_free_texture(),
 				mdata.width, mdata.height, OGL_FLAG_ALPHA);
-		if (!ogl_loadtexture(mdata.data, 0, 0, bm->gltexture_mask, 0, mdf, texfilt))
-			bm->gltexture_mask->is_png = 1;
-		__android_log_print(ANDROID_LOG_INFO, "DXX-MASK",
-			"Loaded mask: %s %dx%d ch=%d", maskname,
-			mdata.width, mdata.height, mdata.channels);
+		ogl_loadtexture(mask, 0, 0, bm->gltexture_mask, BM_FLAG_TRANSPARENT, 0, texfilt);
+		bm->gltexture_mask->is_png = 1;
+		d_free(mask);
+
+		debug_log(DLOG_TEXTURE, "Loaded mask: %s %dx%d ch=%d",
+			maskname, mdata.width, mdata.height, ch);
 	} else {
-		__android_log_print(ANDROID_LOG_WARN, "DXX-MASK",
-			"Mask format unsupported: %s depth=%d color=%d",
+		debug_log(DLOG_TEXTURE, "Mask format unsupported: %s depth=%d color=%d",
 			maskname, mdata.depth, mdata.color);
 	}
 	free(mdata.data);
@@ -2056,20 +2069,14 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 {
 	unsigned char *buf;
 	const char *bitmapname = piggy_game_bitmap_name(bm);
-	static int st_log_count = 0;
 
 	while (bm->bm_parent)
 		bm=bm->bm_parent;
 	if (bm->gltexture && bm->gltexture->handle > 0)
 		return;
-	/* android port: debug mask loading */
-	if ((bm->bm_flags & BM_FLAG_SUPER_TRANSPARENT) && st_log_count < 30) {
-		__android_log_print(ANDROID_LOG_INFO, "DXX-MASK",
-			"loadbmtexture: %s flags=0x%x super_trans=yes gltex=%p",
-			bitmapname ? bitmapname : "(null)", bm->bm_flags,
-			(void*)bm->gltexture);
-		st_log_count++;
-	}
+	/* During cache pass, bm_flags is BM_FLAG_PAGED_OUT; the real
+	 * transparency flags live in the pig file's GameBitmapFlags[] */
+	int real_flags = piggy_bitmap_get_flags(bm);
 	buf=bm->bm_data;
 #ifdef HAVE_LIBPNG
 	if (ogl_allow_png() && bitmapname && !(bm->gltexture && bm->gltexture->is_png))
@@ -2243,11 +2250,8 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 						}
 					}
 #ifdef OGL_MERGE
-					if (bm->bm_flags & BM_FLAG_SUPER_TRANSPARENT) {
-						__android_log_print(ANDROID_LOG_INFO, "DXX-MASK",
-							"KTX2: loading mask for %s flags=0x%x", bitmapname, bm->bm_flags);
+					if (real_flags & BM_FLAG_SUPER_TRANSPARENT)
 						ogl_load_dxa_mask(bitmapname, bm, texfilt);
-					}
 #endif
 					return;
 				}
@@ -2292,7 +2296,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 						free(pdata.palette);
 				} else {
 				#ifdef OGL_MERGE
-				if (bm->bm_flags & BM_FLAG_SUPER_TRANSPARENT) {
+				if (real_flags & BM_FLAG_SUPER_TRANSPARENT) {
 #ifdef ANDROID
 					ogl_load_dxa_mask(bitmapname, bm, texfilt);
 #else
