@@ -2029,9 +2029,11 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 		bm=bm->bm_parent;
 	if (bm->gltexture && bm->gltexture->handle > 0)
 		return;
+#ifdef OGL_MERGE
 	/* During cache pass, bm_flags is BM_FLAG_PAGED_OUT; the real
 	 * transparency flags live in the pig file's GameBitmapFlags[] */
 	int real_flags = piggy_bitmap_get_flags(bm);
+#endif
 	buf=bm->bm_data;
 #ifdef HAVE_LIBPNG
 	if (ogl_allow_png() && bitmapname && !(bm->gltexture && bm->gltexture->is_png))
