@@ -54,6 +54,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef OGL
 #include "ogl_init.h"
 #endif
+#ifdef ANDROID
+#include "debug_tex_overlay.h"
+#endif
 #include "args.h"
 
 #define INITIAL_LOCAL_LIGHT (F1_0/4)    // local light value in segment of occurence (of light emission)
@@ -215,12 +218,6 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 			bm2 = &GameBitmaps[Textures[tmap2&0x3FFF].index];
 			PIGGY_PAGE_IN(Textures[tmap1]); // in case textures just got flushed
 		}
-#ifndef OGL_MERGE
-		if (bm2 && (bm2->bm_flags&BM_FLAG_SUPER_TRANSPARENT)){
-			bm = texmerge_get_cached_bitmap( tmap1, tmap2 );
-			bm2 = NULL;
-		}
-#endif
 	}else
 #endif
 		// New code for overlapping textures...
@@ -303,6 +300,56 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 			g3_draw_tmap(nv,pointlist,uvl_copy,dyn_light,bm);
 		}
 	}
+
+#ifdef ANDROID
+	/* Debug texture labels for texmerge'd faces. bm2==NULL means texmerge
+	 * merged both textures into a 64x64 bitmap, so g3_draw_tmap can't label
+	 * either (the merged bitmap isn't in GameBitmaps[]). Look up both
+	 * originals for names, but always mark as non-hires since texmerge
+	 * output is 64x64 regardless of whether originals have DXA replacements. */
+	if (g_debug_tex_overlay_active && tmap2 != 0 && bm2 == NULL
+	    && g_debug_tex_label_count + 1 < DEBUG_TEX_MAX_LABELS && nv >= 3)
+	{
+		int sx_sum = 0, sy_sum = 0, projected = 0;
+		for (i = 0; i < nv; i++) {
+			if (pointlist[i]->p3_flags & PF_PROJECTED) {
+				sx_sum += f2i(pointlist[i]->p3_sx);
+				sy_sum += f2i(pointlist[i]->p3_sy);
+				projected++;
+			}
+		}
+		if (projected > 0) {
+			int sx = sx_sum / projected;
+			int sy = sy_sum / projected;
+			int sw = grd_curcanv->cv_bitmap.bm_w;
+			int sh = grd_curcanv->cv_bitmap.bm_h;
+			if (sx >= 0 && sx < sw && sy >= 0 && sy < sh) {
+				grs_bitmap *bm1_orig = &GameBitmaps[Textures[tmap1].index];
+				const char *name1 = piggy_game_bitmap_name(bm1_orig);
+				if (name1) {
+					struct debug_tex_label *lbl = &g_debug_tex_labels[g_debug_tex_label_count];
+					lbl->sx = sx;
+					lbl->sy = sy;
+					lbl->is_hires = 0; /* texmerge always 64x64 */
+					strncpy(lbl->name, name1, sizeof(lbl->name) - 1);
+					lbl->name[sizeof(lbl->name) - 1] = '\0';
+					g_debug_tex_label_count++;
+				}
+				grs_bitmap *bm2_orig = &GameBitmaps[Textures[tmap2 & 0x3FFF].index];
+				const char *name2 = piggy_game_bitmap_name(bm2_orig);
+				if (name2 && g_debug_tex_label_count < DEBUG_TEX_MAX_LABELS) {
+					struct debug_tex_label *lbl = &g_debug_tex_labels[g_debug_tex_label_count];
+					lbl->sx = sx;
+					lbl->sy = sy + 10;
+					lbl->is_hires = 0; /* texmerge always 64x64 */
+					strncpy(lbl->name, name2, sizeof(lbl->name) - 1);
+					lbl->name[sizeof(lbl->name) - 1] = '\0';
+					g_debug_tex_label_count++;
+				}
+			}
+		}
+	}
+#endif
 
 	gr_settransblend(GR_FADE_OFF, GR_BLEND_NORMAL); // revert any transparency/blending setting back to normal
 

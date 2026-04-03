@@ -140,6 +140,7 @@ void PHYSFSX_init(int argc, char *argv[])
 		}
 	}
 	GameArg.SysUsePlayersDir = 1; /* pilots in Players/ subdir, isolates D1/D2 */
+	GameArg.DbgAltTexMerge = 1; /* GPU two-pass tmap2 overlay (skip 64x64 texmerge) */
 	return;
 #endif
 

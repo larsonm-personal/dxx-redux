@@ -978,10 +978,8 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 					if (bname) {
 						strncpy(lbl->name, bname, sizeof(lbl->name) - 1);
 						lbl->name[sizeof(lbl->name) - 1] = '\0';
-					} else {
-						lbl->name[0] = '\0';
+						g_debug_tex_label_count++;
 					}
-					g_debug_tex_label_count++;
 				}
 			}
 		}
@@ -1121,10 +1119,8 @@ bool g3_draw_tmap_2(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_
 					if (bname) {
 						strncpy(lbl->name, bname, sizeof(lbl->name) - 1);
 						lbl->name[sizeof(lbl->name) - 1] = '\0';
-					} else {
-						lbl->name[0] = '\0';
+						g_debug_tex_label_count++;
 					}
-					g_debug_tex_label_count++;
 				}
 			}
 		}

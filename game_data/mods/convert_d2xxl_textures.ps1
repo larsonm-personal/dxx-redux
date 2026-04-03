@@ -142,6 +142,36 @@ function Read-TGA {
         # TGA default is bottom-to-top unless top-to-bottom flag is set
         $srcRow = if ($topToBottom) { $row } else { $height - 1 - $row }
         $srcOffset = $dataOffset + $srcRow * $rowBytes
+        # For 32bpp TGA, convert super-transparent key color RGB(120,88,128)
+        # to RGBA(0,0,0,0). Uses per-channel tolerance of 13 (~5%) to
+        # catch anti-aliased edges. Zeroing RGB prevents ETC2 color
+        # bleeding at compressed block boundaries.
+        # Alpha handling: if the TGA declares alphaBits > 0, the alpha
+        # channel contains real per-pixel transparency data (used by
+        # many d2x-xl textures instead of or alongside key color).
+        # Preserve native alpha in that case. Only force alpha=255 for
+        # non-key pixels when alphaBits == 0 (truly undefined alpha).
+        if ($channels -eq 4) {
+            $alphaBits = $descriptor -band 0x0F
+            for ($px = 0; $px -lt $rowBytes; $px += 4) {
+                $idx = $srcOffset + $px
+                # BGRA byte order: B=$bytes[idx], G=[idx+1], R=[idx+2], A=[idx+3]
+                $db = [int]$bytes[$idx] - 128
+                $dg = [int]$bytes[$idx + 1] - 88
+                $dr = [int]$bytes[$idx + 2] - 120
+                if ($dr -ge -13 -and $dr -le 13 -and $dg -ge -13 -and $dg -le 13 -and $db -ge -13 -and $db -le 13) {
+                    $bytes[$idx] = 0; $bytes[$idx + 1] = 0
+                    $bytes[$idx + 2] = 0; $bytes[$idx + 3] = 0
+                } elseif ($alphaBits -gt 0) {
+                    # Native alpha: zero RGB for fully transparent pixels
+                    if ($bytes[$idx + 3] -eq 0) {
+                        $bytes[$idx] = 0; $bytes[$idx + 1] = 0; $bytes[$idx + 2] = 0
+                    }
+                } else {
+                    $bytes[$idx + 3] = 255
+                }
+            }
+        }
         # TGA stores BGR(A), System.Drawing also uses BGR(A), so direct copy works
         [System.Runtime.InteropServices.Marshal]::Copy(
             $bytes, $srcOffset, [IntPtr]::Add($scan0, $row * $stride), $rowBytes
@@ -155,15 +185,10 @@ function Read-TGA {
 # Split animation strip TGAs into individual frame files.
 # d2x-xl stores animation frames as vertical strips: name#0.tga = WxNW (N frames).
 # The engine expects separate files: name#0, name#1, ..., name#(N-1).
-# Replaces strip TGAs with individual frame TGAs in-place.
-# Requires ImageMagick. Note: '#' in filenames is dangerous for IM -- uses safe temp names.
+# Uses Read-TGA for correct alpha preservation and key color handling,
+# then saves each frame as PNG. Replaces strip TGAs in-place.
 function Split-StripTextures {
     param([string]$TgaDir, [string]$MagickPath)
-    if (-not $MagickPath -or -not (Test-Path $MagickPath)) { return 0 }
-
-    # IM writes warnings to stderr even on success; prevent $ErrorActionPreference
-    # from turning those into terminating errors (PS 5.1 quirk)
-    $ErrorActionPreference = 'Continue'
 
     $splitCount = 0
     $tgaFiles = Get-ChildItem -Path $TgaDir -Filter "*.tga" -File
@@ -172,21 +197,12 @@ function Split-StripTextures {
         # Only process files that are frame-0 of an animation (name#0)
         if ($bn -notmatch '#0(-\w+)?$') { continue }
 
-        # Copy to safe name to avoid IM interpreting '#' as scene selector.
-        # Use __STRIP__ prefix so the strip source won't collide with
-        # frame 0's safe name (which uses __H__).
-        $safeName = "__STRIP__$($tga.Name -replace '#', '__H__')"
-        $safePath = Join-Path $TgaDir $safeName
-        Copy-Item $tga.FullName $safePath -Force
-
-        $dims = & $MagickPath identify -format "%w %h" $safePath 2>$null
-        if ($LASTEXITCODE -ne 0 -or -not $dims) { Remove-Item $safePath -Force; continue }
-        $parts = ("$dims" -split '\s+')
-        $w = [int]$parts[0]; $h = [int]$parts[1]
-        if ($h -le $w -or $h % $w -ne 0) { Remove-Item $safePath -Force; continue }
+        $bmp = Read-TGA $tga.FullName
+        $w = $bmp.Width; $h = $bmp.Height
+        if ($h -le $w -or $h % $w -ne 0) { $bmp.Dispose(); continue }
 
         $nFrames = $h / $w
-        if ($nFrames -le 1) { Remove-Item $safePath -Force; continue }
+        if ($nFrames -le 1) { $bmp.Dispose(); continue }
 
         # Extract the base name without the '#0' suffix (and optional variant like '-green')
         $variant = ""
@@ -196,26 +212,23 @@ function Split-StripTextures {
             $nameBase = $bn -replace '#0$', ''
         }
 
-        # Crop each frame and save as individual TGA.
-        # Remove original strip first -- we have the safe copy, and frame 0
-        # will be written to the same filename as the original strip.
+        # Remove original strip TGA
         Remove-Item $tga.FullName -Force
+
+        # Crop each frame via Bitmap.Clone and save as PNG.
+        # Read-TGA already handled alpha + key color, so the PNG
+        # has correct transparency data.
         for ($i = 0; $i -lt $nFrames; $i++) {
-            $frameName = "${nameBase}#${i}${variant}.tga"
-            $safeFrameName = $frameName -replace '#', '__H__'
-            $safeFramePath = Join-Path $TgaDir $safeFrameName
+            $frameName = "${nameBase}#${i}${variant}.png"
+            $framePath = Join-Path $TgaDir $frameName
             $y = $i * $w
-            & $MagickPath $safePath -crop "${w}x${w}+0+${y}" +repage $safeFramePath 2>$null
-            if ($LASTEXITCODE -eq 0) {
-                # Rename safe frame to real name
-                $realFramePath = Join-Path $TgaDir $frameName
-                if (Test-Path $realFramePath) { Remove-Item $realFramePath -Force }
-                Rename-Item $safeFramePath $frameName
-            }
+            $rect = [System.Drawing.Rectangle]::new(0, $y, $w, $w)
+            $frame = $bmp.Clone($rect, $bmp.PixelFormat)
+            $frame.Save($framePath, [System.Drawing.Imaging.ImageFormat]::Png)
+            $frame.Dispose()
         }
 
-        # Remove the safe copy of the strip
-        Remove-Item $safePath -Force -ErrorAction SilentlyContinue
+        $bmp.Dispose()
         $splitCount++
     }
     return $splitCount
@@ -449,9 +462,11 @@ function Convert-GameTextures {
         Write-Host "  Split $splitCount animation strips into individual frames"
     }
 
+    # Collect all texture files: TGA (single frames), PNG (split frames), JPG
     $tgaFiles = Get-ChildItem -Path $tgaDir -Filter "*.tga" -File
+    $pngFiles = Get-ChildItem -Path $tgaDir -Filter "*.png" -File -ErrorAction SilentlyContinue
     $jpgFiles = Get-ChildItem -Path $tgaDir -Filter "*.jpg" -File -ErrorAction SilentlyContinue
-    $total = $tgaFiles.Count + ($jpgFiles | Measure-Object).Count
+    $total = $tgaFiles.Count + ($pngFiles | Measure-Object).Count + ($jpgFiles | Measure-Object).Count
     Write-Host "  Found $total texture files"
 
     # Create ZIP (dxa)
@@ -462,30 +477,56 @@ function Convert-GameTextures {
     $skipped = 0
     $errors = 0
 
-    foreach ($tga in $tgaFiles) {
+    foreach ($tga in @($tgaFiles) + @($pngFiles)) {
         $baseName = [System.IO.Path]::GetFileNameWithoutExtension($tga.Name)
+        $isTga = $tga.Extension -eq '.tga'
 
         try {
             $entryName = "$baseName.ktx2"
             $tempPng = Join-Path $tempDir "$baseName.png"
             $tempEtc2 = Join-Path $tempDir "$baseName.ktx2"
 
-            if ($useMagick -and $MaxDim -gt 0) {
-                # ImageMagick path: high-quality linear-light Lanczos downscale -> temp PNG
-                Convert-WithMagick -InputPath $tga.FullName -OutputPath $tempPng -MaxDim $MaxDim -MagickPath $MagickPath
-            } else {
-                # System.Drawing path: TGA parse + optional resize -> temp PNG
+            if ($isTga) {
+                # Read-TGA handles alpha preservation and key color
+                # correctly by reading raw TGA bytes (not ImageMagick).
                 $bmp = Read-TGA $tga.FullName
-                if ($MaxDim -gt 0 -and ($bmp.Width -gt $MaxDim -or $bmp.Height -gt $MaxDim)) {
-                    $scale = [Math]::Min($MaxDim / $bmp.Width, $MaxDim / $bmp.Height)
-                    $newW = [Math]::Max(1, [int]($bmp.Width * $scale))
-                    $newH = [Math]::Max(1, [int]($bmp.Height * $scale))
-                    $resized = [System.Drawing.Bitmap]::new($bmp, $newW, $newH)
-                    $bmp.Dispose()
-                    $bmp = $resized
-                }
-                $bmp.Save($tempPng, [System.Drawing.Imaging.ImageFormat]::Png)
+                $prePng = Join-Path $tempDir "$baseName.pre.png"
+                $bmp.Save($prePng, [System.Drawing.Imaging.ImageFormat]::Png)
                 $bmp.Dispose()
+                $inputForResize = $prePng
+            } else {
+                # PNG from strip splitter: already has correct alpha
+                $inputForResize = $tga.FullName
+            }
+
+            if ($useMagick -and $MaxDim -gt 0) {
+                # ImageMagick path: high-quality linear-light Lanczos downscale
+                Convert-WithMagick -InputPath $inputForResize -OutputPath $tempPng -MaxDim $MaxDim -MagickPath $MagickPath
+            } elseif ($isTga) {
+                # Non-ImageMagick path: pre-PNG already created, just resize
+                if ($MaxDim -gt 0) {
+                    $bmp = [System.Drawing.Bitmap]::new($inputForResize)
+                    if ($bmp.Width -gt $MaxDim -or $bmp.Height -gt $MaxDim) {
+                        $scale = [Math]::Min($MaxDim / $bmp.Width, $MaxDim / $bmp.Height)
+                        $newW = [Math]::Max(1, [int]($bmp.Width * $scale))
+                        $newH = [Math]::Max(1, [int]($bmp.Height * $scale))
+                        $resized = [System.Drawing.Bitmap]::new($bmp, $newW, $newH)
+                        $bmp.Dispose()
+                        $bmp = $resized
+                    }
+                    $bmp.Save($tempPng, [System.Drawing.Imaging.ImageFormat]::Png)
+                    $bmp.Dispose()
+                } else {
+                    Copy-Item $inputForResize $tempPng -Force
+                }
+            } else {
+                # PNG input, no ImageMagick, no resize: just copy
+                Copy-Item $inputForResize $tempPng -Force
+            }
+
+            # Clean up pre-processed intermediate
+            if ($isTga -and (Test-Path $inputForResize)) {
+                Remove-Item $inputForResize -Force -ErrorAction SilentlyContinue
             }
 
             # Run etc2tool to compress to ETC2
