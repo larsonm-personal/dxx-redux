@@ -150,6 +150,10 @@ extern int linedotscale;
 struct debug_tex_label g_debug_tex_labels[DEBUG_TEX_MAX_LABELS];
 int g_debug_tex_label_count = 0;
 volatile int g_debug_tex_overlay_active = 0;
+/* Direct RGB font color: bypasses palette round-trip for bright overlay text */
+float g_font_rgb_override[3] = {-1.f, -1.f, -1.f}; /* negative = use palette */
+/* Render context: 0=menu, 1=3D world, 2=HUD -- used for selective filtering */
+int g_ogl_render_context = 0;
 #endif
 
 #ifdef ANDROID
@@ -441,6 +445,19 @@ void ogl_bindbmtex(grs_bitmap *bm){
 		return;
 	}
 	OGL_BINDTEXTURE(bm->gltexture->handle);
+#ifdef ANDROID
+	/* Override texture filtering for menu/HUD contexts when their filtering
+	 * is disabled. Context 0=menu, 1=3D, 2=HUD. Menu and HUD can independently
+	 * force nearest-neighbor regardless of the world TexFilt setting. */
+	if (g_ogl_render_context != 1) {
+		int use_nearest = (g_ogl_render_context == 0 && !GameCfg.MenuTexFilt)
+		               || (g_ogl_render_context == 2 && !GameCfg.HudTexFilt);
+		if (use_nearest && GameCfg.TexFilt > 0) {
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		}
+	}
+#endif
 	bm->gltexture->numrend++;
 }
 
@@ -1583,7 +1600,7 @@ void ogl_start_frame(void){
 #ifdef ANDROID
 	r_texbinds=0;r_texbind_reuse=0;ogl_last_bound_tex=0;
 	r_shader_switches=0;r_mask_draws=0;
-	g_texfilt_level = GameCfg.TexFilt;
+	g_ogl_render_context = 1; /* 3D world */
 	if (g_aniso_pending_apply) {
 		g_aniso_pending_apply = 0;
 		if (ogl_aniso_level > 0) {
@@ -1635,6 +1652,7 @@ void ogl_start_frame(void){
 		if (flushed)
 			con_printf(CON_DEBUG, "texfilt: flushed %d textures for reload (TexFilt=%d)", flushed, GameCfg.TexFilt);
 	}
+	g_texfilt_level = GameCfg.TexFilt;
 	if (g_msaa_pending_apply) {
 		g_msaa_pending_apply = 0;
 		ogl_msaa_destroy_fbo(); /* recreate on next check below */
@@ -1854,6 +1872,7 @@ void gr_flip(void)
 	ogl_swap_buffers_internal();
 	glClear(GL_COLOR_BUFFER_BIT);
 #ifdef ANDROID
+	g_ogl_render_context = 0; /* reset to menu context for next frame */
 	{
 		extern volatile int g_blit_y_offset;
 		int koff = android_get_keyboard_y_offset(grd_curscreen->sc_canvas.cv_bitmap.bm_h);
@@ -2897,9 +2916,18 @@ bool ogl_ubitmapm_cs(int x, int y,int dw, int dh, grs_bitmap *bm,int c, int scal
 		color_g = 1.0;
 		color_b = 1.0;
 	} else {
-		color_r = CPAL2Tr(c);
-		color_g = CPAL2Tg(c);
-		color_b = CPAL2Tb(c);
+#ifdef ANDROID
+		if (g_font_rgb_override[0] >= 0.f) {
+			color_r = g_font_rgb_override[0];
+			color_g = g_font_rgb_override[1];
+			color_b = g_font_rgb_override[2];
+		} else
+#endif
+		{
+			color_r = CPAL2Tr(c);
+			color_g = CPAL2Tg(c);
+			color_b = CPAL2Tb(c);
+		}
 	}  
 
 	color_array[0] = color_array[4] = color_array[8] = color_array[12] = color_r;

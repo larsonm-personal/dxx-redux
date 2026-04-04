@@ -62,6 +62,8 @@ static const char AspectXStr[] ="AspectX";
 static const char AspectYStr[] ="AspectY";
 static const char WindowModeStr[] ="WindowMode";
 static const char TexFiltStr[] ="TexFilt";
+static const char MenuTexFiltStr[] ="MenuTexFilt";
+static const char HudTexFiltStr[] ="HudTexFilt";
 static const char VSyncStr[] ="VSync";
 static const char MultisampleStr[] ="Multisample";
 static const char ClassicDepthStr[] ="ClassicDepth";
@@ -129,6 +131,8 @@ int ReadConfigFile()
 	GameCfg.AspectY = 4;
 	GameCfg.WindowMode = 0;
 	GameCfg.TexFilt = 0;
+	GameCfg.MenuTexFilt = 0;
+	GameCfg.HudTexFilt = 1;
 	GameCfg.VSync = 0;
 	GameCfg.Multisample = 0;
 	GameCfg.ClassicDepth = 0;
@@ -240,6 +244,10 @@ int ReadConfigFile()
 				GameCfg.WindowMode = strtol(value, NULL, 10);
 			else if (!strcmp(token, TexFiltStr))
 				GameCfg.TexFilt = strtol(value, NULL, 10);
+			else if (!strcmp(token, MenuTexFiltStr))
+				GameCfg.MenuTexFilt = strtol(value, NULL, 10);
+			else if (!strcmp(token, HudTexFiltStr))
+				GameCfg.HudTexFilt = strtol(value, NULL, 10);
 			else if (!strcmp(token, VSyncStr))
 				GameCfg.VSync = strtol(value, NULL, 10);
 			else if (!strcmp(token, MultisampleStr))
@@ -304,6 +312,8 @@ int WriteConfigFile()
 	PHYSFSX_printf(infile, "%s=%i\n", AspectYStr, GameCfg.AspectY);
 	PHYSFSX_printf(infile, "%s=%i\n", WindowModeStr, GameCfg.WindowMode);
 	PHYSFSX_printf(infile, "%s=%i\n", TexFiltStr, GameCfg.TexFilt);
+	PHYSFSX_printf(infile, "%s=%i\n", MenuTexFiltStr, GameCfg.MenuTexFilt);
+	PHYSFSX_printf(infile, "%s=%i\n", HudTexFiltStr, GameCfg.HudTexFilt);
 	PHYSFSX_printf(infile, "%s=%i\n", VSyncStr, GameCfg.VSync);
 	PHYSFSX_printf(infile, "%s=%i\n", MultisampleStr, GameCfg.Multisample);
 	PHYSFSX_printf(infile, "%s=%i\n", ClassicDepthStr, GameCfg.ClassicDepth);

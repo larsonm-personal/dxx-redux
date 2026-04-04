@@ -289,7 +289,13 @@ class VideoInfoOverlay(
         // GPU time (moved up near load metrics)
         val gpuText =
             if (gpuTimerAvailable != 0) {
-                "GPU: ${gpuTimeUs / 1000}.${(gpuTimeUs % 1000) / 100}ms"
+                when {
+                    gpuTimeUs >= 10000 -> "GPU: ${gpuTimeUs / 1000}ms"
+                    gpuTimeUs >= 1000 -> "GPU: ${gpuTimeUs / 1000}.${(gpuTimeUs % 1000) / 100}ms"
+                    gpuTimeUs >= 100 -> "GPU: 0.${"%02d".format(gpuTimeUs / 10)}ms"
+                    gpuTimeUs >= 10 -> "GPU: 0.0${gpuTimeUs / 10}ms"
+                    else -> "GPU: <0.01ms"
+                }
             } else {
                 "GPU: n/a"
             }
@@ -345,7 +351,24 @@ class VideoInfoOverlay(
         )
         y += lineH
 
-        // Color depth (split from render line)
+        // Texture binds per frame
+        val bindTotal = texBinds + texBindReuse
+        val hitPct = if (bindTotal > 0) (texBindReuse * 100 / bindTotal) else 0
+        canvas.drawText("Binds:", panelLeft + pad, y, labelPaint)
+        canvas.drawText("$texBinds ($hitPct% cache)", valCol, y, valuePaint)
+        y += lineH
+
+        // Draw polygons + shader/mask stats
+        canvas.drawText("Polys:", panelLeft + pad, y, labelPaint)
+        canvas.drawText(
+            "$drawPolys  shd:$shaderSwitches  mask:$maskDraws",
+            valCol,
+            y,
+            valuePaint,
+        )
+        y += lineH
+
+        // Color depth
         val cdLabel = if (colorDepth >= 24) "RGB888" else "RGB565"
         canvas.drawText("Color:", panelLeft + pad, y, labelPaint)
         canvas.drawText(cdLabel, valCol, y, valuePaint)
@@ -369,23 +392,6 @@ class VideoInfoOverlay(
         val tfBg = if (texFiltPressed) btnPressedPaint else btnNormalPaint
         canvas.drawRoundRect(texFiltRect, pad * 0.5f, pad * 0.5f, tfBg)
         canvas.drawText(tfText, panelLeft + pad, y, tfPaint)
-        y += lineH
-
-        // Texture binds per frame
-        val bindTotal = texBinds + texBindReuse
-        val hitPct = if (bindTotal > 0) (texBindReuse * 100 / bindTotal) else 0
-        canvas.drawText("Binds:", panelLeft + pad, y, labelPaint)
-        canvas.drawText("$texBinds ($hitPct% cache)", valCol, y, valuePaint)
-        y += lineH
-
-        // Draw polygons + shader/mask stats
-        canvas.drawText("Polys:", panelLeft + pad, y, labelPaint)
-        canvas.drawText(
-            "$drawPolys  shd:$shaderSwitches  mask:$maskDraws",
-            valCol,
-            y,
-            valuePaint,
-        )
         y += lineH
 
         // Anisotropic filtering cycle button

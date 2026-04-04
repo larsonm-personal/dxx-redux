@@ -389,6 +389,7 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
 #endif /* INTROSPECT_ON */
 
 /* ── Graphics options: set MSAA/AF from Kotlin (all builds) ────── */
+#include "config.h"
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetGraphicsOption(JNIEnv *env, jobject thiz,
                                                            jstring jname, jint value)
@@ -415,6 +416,14 @@ Java_com_dxxredux_app_MainActivity_nativeSetGraphicsOption(JNIEnv *env, jobject 
 		LOGI("graphics option: tex_filt=%d", clamped);
 		g_texfilt_level = clamped;
 		g_texfilt_pending_apply = 1;
+	} else if (strcmp(name, "menu_tex_filt") == 0) {
+		extern struct Cfg GameCfg;
+		LOGI("graphics option: menu_tex_filt=%d", (int) value);
+		GameCfg.MenuTexFilt = value ? 1 : 0;
+	} else if (strcmp(name, "hud_tex_filt") == 0) {
+		extern struct Cfg GameCfg;
+		LOGI("graphics option: hud_tex_filt=%d", (int) value);
+		GameCfg.HudTexFilt = value ? 1 : 0;
 	} else
 		LOGE("nativeSetGraphicsOption: unknown option '%s'", name);
 	(*env)->ReleaseStringUTFChars(env, jname, name);
@@ -744,7 +753,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 	extern unsigned int grd_curscreen_w(void);
 	extern unsigned int grd_curscreen_h(void);
 
-	enum { VS_SIZE = 28 };
+	enum { VS_SIZE = 30 };
 	jint buf[VS_SIZE];
 
 	buf[0] = (jint) g_current_fps;
@@ -789,6 +798,8 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 	buf[25] = (jint) r_mask_draws;
 	buf[26] = (jint) ogl_color_depth;
 	buf[27] = (jint) g_texfilt_level;
+	buf[28] = (jint) GameCfg.MenuTexFilt;
+	buf[29] = (jint) GameCfg.HudTexFilt;
 
 	jintArray result = (*env)->NewIntArray(env, VS_SIZE);
 	if (result)

@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,54 +59,66 @@ fun GraphicsSettingsPage(
                 )
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(3.dp))
 
             Box(modifier = Modifier.weight(1f)) {
-                Column(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .verticalScroll(scrollState),
+                @OptIn(ExperimentalMaterial3Api::class)
+                CompositionLocalProvider(
+                    LocalMinimumInteractiveComponentSize provides 0.dp,
                 ) {
-                    // -- Render Resolution --
-                    ResolutionSection(filesDir = filesDir, prefs = prefs)
+                    Column(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .verticalScroll(scrollState),
+                    ) {
+                        // -- Render Resolution --
+                        ResolutionSection(filesDir = filesDir, prefs = prefs)
 
-                    Spacer(modifier = Modifier.height(6.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(3.dp))
 
-                    // -- Texture Filtering --
-                    TexFilterSection(filesDir = filesDir)
+                        // -- Texture Filtering --
+                        TexFilterSection(filesDir = filesDir)
 
-                    Spacer(modifier = Modifier.height(6.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(3.dp))
 
-                    // -- Color Depth --
-                    ColorDepthSection(filesDir = filesDir)
+                        // -- Color Depth --
+                        ColorDepthSection(filesDir = filesDir)
 
-                    Spacer(modifier = Modifier.height(6.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(3.dp))
 
-                    // -- Anti-Aliasing (MSAA) --
-                    MsaaSection(prefs = prefs)
+                        // -- Anti-Aliasing (MSAA) --
+                        MsaaSection(prefs = prefs)
 
-                    Spacer(modifier = Modifier.height(6.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(3.dp))
 
-                    // -- Anisotropic Filtering --
-                    AnisoSection(prefs = prefs)
+                        // -- Anisotropic Filtering --
+                        AnisoSection(prefs = prefs)
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(3.dp))
 
-                    Text(
-                        "MSAA and AF take effect on next launch",
-                        fontSize = 9.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
+                        // -- Selective Filtering (menu/HUD) --
+                        SelectiveFilterSection(filesDir = filesDir)
+
+                        Spacer(modifier = Modifier.height(3.dp))
+
+                        Text(
+                            "MSAA and AF take effect on next launch",
+                            fontSize = 9.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
                 ScrollArrows(scrollState)
             }
@@ -119,7 +132,7 @@ private fun ResolutionSection(
     prefs: SharedPreferences,
 ) {
     Text("Render Resolution", fontWeight = FontWeight.Bold, fontSize = 11.sp)
-    Spacer(modifier = Modifier.height(2.dp))
+    Spacer(modifier = Modifier.height(1.dp))
 
     val ctx = LocalContext.current
     val options = remember { computeResolutionOptions(ctx) }
@@ -132,7 +145,7 @@ private fun ResolutionSection(
     options.forEach { (value, label) ->
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 0.dp),
         ) {
             RadioButton(
                 selected = selected == value,
@@ -156,11 +169,11 @@ private fun TexFilterSection(filesDir: File) {
     }
 
     Text("Texture Filtering", fontWeight = FontWeight.Bold, fontSize = 11.sp)
-    Spacer(modifier = Modifier.height(2.dp))
+    Spacer(modifier = Modifier.height(1.dp))
     texFilterOptions.forEach { (label, value) ->
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 0.dp),
         ) {
             RadioButton(
                 selected = texFilter == value,
@@ -183,11 +196,11 @@ private fun ColorDepthSection(filesDir: File) {
     }
 
     Text("Color Depth", fontWeight = FontWeight.Bold, fontSize = 11.sp)
-    Spacer(modifier = Modifier.height(2.dp))
+    Spacer(modifier = Modifier.height(1.dp))
     colorDepthOptions.forEach { (label, value) ->
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 0.dp),
         ) {
             RadioButton(
                 selected = colorDepth == value,
@@ -219,11 +232,11 @@ private fun MsaaSection(prefs: SharedPreferences) {
     var msaaLevel by remember { mutableIntStateOf(prefs.getInt("msaa_level", 0)) }
 
     Text("Anti-Aliasing (MSAA)", fontWeight = FontWeight.Bold, fontSize = 11.sp)
-    Spacer(modifier = Modifier.height(2.dp))
+    Spacer(modifier = Modifier.height(1.dp))
     MSAA_OPTIONS.forEach { (label, value) ->
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 0.dp),
         ) {
             RadioButton(
                 selected = msaaLevel == value,
@@ -242,11 +255,11 @@ private fun AnisoSection(prefs: SharedPreferences) {
     var anisoLevel by remember { mutableIntStateOf(prefs.getInt("aniso_level", 0)) }
 
     Text("Anisotropic Filtering (AF)", fontWeight = FontWeight.Bold, fontSize = 11.sp)
-    Spacer(modifier = Modifier.height(2.dp))
+    Spacer(modifier = Modifier.height(1.dp))
     ANISO_OPTIONS.forEach { (label, value) ->
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 0.dp),
         ) {
             RadioButton(
                 selected = anisoLevel == value,
@@ -258,6 +271,62 @@ private fun AnisoSection(prefs: SharedPreferences) {
             Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
         }
     }
+}
+
+// Shared constant: selective filtering config keys
+// Must match config.c string constants for MenuTexFilt / HudTexFilt
+@Composable
+private fun SelectiveFilterSection(filesDir: File) {
+    var menuFilt by remember {
+        mutableStateOf((readConfigValue(filesDir, "MenuTexFilt") ?: "0") != "0")
+    }
+    var hudFilt by remember {
+        mutableStateOf((readConfigValue(filesDir, "HudTexFilt") ?: "1") != "0")
+    }
+
+    Text("Filter by Context", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+    Spacer(modifier = Modifier.height(1.dp))
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 0.dp),
+    ) {
+        Switch(
+            checked = menuFilt,
+            onCheckedChange = {
+                menuFilt = it
+                updateAllConfigFiles(filesDir, listOf("MenuTexFilt" to if (it) "1" else "0"))
+            },
+            modifier = Modifier.height(24.dp),
+        )
+        Text(
+            text = "Menus / briefings / videos",
+            fontSize = 10.sp,
+            modifier = Modifier.padding(start = 8.dp),
+        )
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 0.dp),
+    ) {
+        Switch(
+            checked = hudFilt,
+            onCheckedChange = {
+                hudFilt = it
+                updateAllConfigFiles(filesDir, listOf("HudTexFilt" to if (it) "1" else "0"))
+            },
+            modifier = Modifier.height(24.dp),
+        )
+        Text(
+            text = "Ship HUD / gauges",
+            fontSize = 10.sp,
+            modifier = Modifier.padding(start = 8.dp),
+        )
+    }
+    Text(
+        "When off, these use nearest-neighbor (pixelated) regardless of texture filter above",
+        fontSize = 9.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable

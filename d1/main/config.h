@@ -44,6 +44,8 @@ typedef struct Cfg
 	int AspectY;
 	int WindowMode;
 	int TexFilt;
+	int MenuTexFilt;  /* 0=nearest (default), 1=use world TexFilt */
+	int HudTexFilt;   /* 0=nearest, 1=use world TexFilt (default) */
 	int VSync;
 	int Multisample;
 	int FPSIndicator;

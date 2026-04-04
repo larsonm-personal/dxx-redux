@@ -45,6 +45,8 @@ typedef struct Cfg
 	int WindowMode;
 	int TexFilt;
 	int MovieTexFilt;
+	int MenuTexFilt;  /* 0=nearest (default), 1=use world TexFilt */
+	int HudTexFilt;   /* 0=nearest, 1=use world TexFilt (default) */
 	int MovieSubtitles;
 	int VSync;
 	int Multisample;
