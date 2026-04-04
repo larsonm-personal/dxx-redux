@@ -47,18 +47,18 @@ fun GraphicsSettingsPage(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 TextButton(onClick = onBack) {
-                    Text("< Back", fontSize = 14.sp)
+                    Text("< Back", fontSize = 12.sp)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     "Graphics",
-                    fontSize = 20.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Box(modifier = Modifier.weight(1f)) {
                 Column(
@@ -70,39 +70,39 @@ fun GraphicsSettingsPage(
                     // -- Render Resolution --
                     ResolutionSection(filesDir = filesDir, prefs = prefs)
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     HorizontalDivider()
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
                     // -- Texture Filtering --
                     TexFilterSection(filesDir = filesDir)
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     HorizontalDivider()
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
                     // -- Color Depth --
                     ColorDepthSection(filesDir = filesDir)
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     HorizontalDivider()
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
                     // -- Anti-Aliasing (MSAA) --
                     MsaaSection(prefs = prefs)
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     HorizontalDivider()
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
                     // -- Anisotropic Filtering --
                     AnisoSection(prefs = prefs)
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
                         "MSAA and AF take effect on next launch",
-                        fontSize = 11.sp,
+                        fontSize = 9.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -118,8 +118,8 @@ private fun ResolutionSection(
     filesDir: File,
     prefs: SharedPreferences,
 ) {
-    Text("Render Resolution", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-    Spacer(modifier = Modifier.height(4.dp))
+    Text("Render Resolution", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+    Spacer(modifier = Modifier.height(2.dp))
 
     val ctx = LocalContext.current
     val options = remember { computeResolutionOptions(ctx) }
@@ -142,7 +142,7 @@ private fun ResolutionSection(
                     updateDescentCfgResolution(filesDir, value)
                 },
             )
-            Text(text = label, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp))
+            Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
         }
     }
 }
@@ -155,8 +155,8 @@ private fun TexFilterSection(filesDir: File) {
         mutableStateOf(if (texFilterOptions.any { it.second == cur }) cur else "0")
     }
 
-    Text("Texture Filtering", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-    Spacer(modifier = Modifier.height(4.dp))
+    Text("Texture Filtering", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+    Spacer(modifier = Modifier.height(2.dp))
     texFilterOptions.forEach { (label, value) ->
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -169,7 +169,7 @@ private fun TexFilterSection(filesDir: File) {
                     updateAllConfigFiles(filesDir, listOf("TexFilt" to value))
                 },
             )
-            Text(text = label, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp))
+            Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
         }
     }
 }
@@ -182,8 +182,8 @@ private fun ColorDepthSection(filesDir: File) {
         mutableStateOf(if (colorDepthOptions.any { it.second == cur }) cur else "0")
     }
 
-    Text("Color Depth", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-    Spacer(modifier = Modifier.height(4.dp))
+    Text("Color Depth", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+    Spacer(modifier = Modifier.height(2.dp))
     colorDepthOptions.forEach { (label, value) ->
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -196,12 +196,12 @@ private fun ColorDepthSection(filesDir: File) {
                     updateAllConfigFiles(filesDir, listOf("ColorDepth" to value))
                 },
             )
-            Text(text = label, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp))
+            Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
         }
     }
     Text(
         "Takes effect on next launch",
-        fontSize = 11.sp,
+        fontSize = 9.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
@@ -218,8 +218,8 @@ private val ANISO_OPTIONS = listOf("Off" to 0, "2x" to 2, "4x" to 4, "8x" to 8, 
 private fun MsaaSection(prefs: SharedPreferences) {
     var msaaLevel by remember { mutableIntStateOf(prefs.getInt("msaa_level", 0)) }
 
-    Text("Anti-Aliasing (MSAA)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-    Spacer(modifier = Modifier.height(4.dp))
+    Text("Anti-Aliasing (MSAA)", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+    Spacer(modifier = Modifier.height(2.dp))
     MSAA_OPTIONS.forEach { (label, value) ->
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -232,7 +232,7 @@ private fun MsaaSection(prefs: SharedPreferences) {
                     prefs.edit().putInt("msaa_level", value).apply()
                 },
             )
-            Text(text = label, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp))
+            Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
         }
     }
 }
@@ -241,8 +241,8 @@ private fun MsaaSection(prefs: SharedPreferences) {
 private fun AnisoSection(prefs: SharedPreferences) {
     var anisoLevel by remember { mutableIntStateOf(prefs.getInt("aniso_level", 0)) }
 
-    Text("Anisotropic Filtering (AF)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-    Spacer(modifier = Modifier.height(4.dp))
+    Text("Anisotropic Filtering (AF)", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+    Spacer(modifier = Modifier.height(2.dp))
     ANISO_OPTIONS.forEach { (label, value) ->
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -255,7 +255,7 @@ private fun AnisoSection(prefs: SharedPreferences) {
                     prefs.edit().putInt("aniso_level", value).apply()
                 },
             )
-            Text(text = label, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp))
+            Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
         }
     }
 }

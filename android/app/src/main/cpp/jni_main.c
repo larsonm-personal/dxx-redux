@@ -377,14 +377,12 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
 		extern volatile int g_aniso_pending_apply;
 		ogl_aniso_level = (int) value;
 		g_aniso_pending_apply = 1;
-	}
-	else if (strcmp(name, "msaa_level") == 0) {
+	} else if (strcmp(name, "msaa_level") == 0) {
 		extern int ogl_msaa_samples;
 		extern volatile int g_msaa_pending_apply;
 		ogl_msaa_samples = (int) value;
 		g_msaa_pending_apply = 1;
-	}
-	else
+	} else
 		LOGE("nativeSetDebugFlag: unknown flag '%s'", name);
 	(*env)->ReleaseStringUTFChars(env, jname, name);
 }
@@ -402,15 +400,13 @@ Java_com_dxxredux_app_MainActivity_nativeSetGraphicsOption(JNIEnv *env, jobject 
 		LOGI("graphics option: aniso_level=%d", (int) value);
 		ogl_aniso_level = (int) value;
 		g_aniso_pending_apply = 1;
-	}
-	else if (strcmp(name, "msaa_level") == 0) {
+	} else if (strcmp(name, "msaa_level") == 0) {
 		extern int ogl_msaa_samples;
 		extern volatile int g_msaa_pending_apply;
 		LOGI("graphics option: msaa_level=%d", (int) value);
 		ogl_msaa_samples = (int) value;
 		g_msaa_pending_apply = 1;
-	}
-	else
+	} else
 		LOGE("nativeSetGraphicsOption: unknown option '%s'", name);
 	(*env)->ReleaseStringUTFChars(env, jname, name);
 }
@@ -631,7 +627,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetCoopRobotStats(JNIEnv *env, jobject 
 	buf[4] = (jint) Player_num;
 
 	for (i = 0; i < MAX_PLAYERS; i++) {
-		buf[5 + i * 2]     = (jint) Coop_kill_stats[i].robots_killed;
+		buf[5 + i * 2] = (jint) Coop_kill_stats[i].robots_killed;
 		buf[5 + i * 2 + 1] = (jint) Coop_kill_stats[i].score_earned;
 	}
 
@@ -674,7 +670,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetTeammateStatus(JNIEnv *env, jobject 
 	int i;
 	for (i = 0; i < MAX_PLAYERS; i++) {
 		int base = 3 + i * TS_FIELDS;
-		buf[base]     = (jint) Players[i].connected;
+		buf[base] = (jint) Players[i].connected;
 		/* Convert fix shields/energy to percentage: F1_0 = 100% */
 		buf[base + 1] = (jint) (Players[i].shields * 100 / F1_0);
 		buf[base + 2] = (jint) (Players[i].energy * 100 / F1_0);

@@ -206,14 +206,13 @@ class VideoInfoOverlay(
         titlePaint.textSize = baseTextSize * 1.1f
         labelPaint.textSize = baseTextSize
         valuePaint.textSize = baseTextSize
-        fpsGoodPaint.textSize = baseTextSize * 1.3f
-        fpsWarnPaint.textSize = baseTextSize * 1.3f
-        fpsBadPaint.textSize = baseTextSize * 1.3f
+        fpsGoodPaint.textSize = baseTextSize
+        fpsWarnPaint.textSize = baseTextSize
+        fpsBadPaint.textSize = baseTextSize
 
         val pad = 8f * density
         val lineH = baseTextSize * 1.5f
-        // fps frame texmem hires maxres render glcap binds polys cache aniso msaa labels (+ title + gap)
-        val numLines = 17
+        val numLines = 16
         val panelH = pad * 2 + lineH * numLines
         val panelW = baseTextSize * 20f
 
@@ -225,33 +224,31 @@ class VideoInfoOverlay(
         panelBounds.set(panelLeft, panelTop, panelLeft + panelW, panelTop + panelH)
         canvas.drawRoundRect(panelBounds, pad, pad, bgPaint)
 
+        val valCol = panelLeft + pad + baseTextSize * 5f
         var y = panelTop + pad + titlePaint.textSize
 
-        // Title
+        // Title + FPS on same line
         canvas.drawText("VIDEO", panelLeft + pad, y, titlePaint)
-        y += lineH
-
-        // FPS with color coding (target 25fps)
         val fpsPaint =
             when {
                 fps >= 23 -> fpsGoodPaint
                 fps >= 18 -> fpsWarnPaint
                 else -> fpsBadPaint
             }
-        canvas.drawText("FPS: $fps", panelLeft + pad, y, fpsPaint)
+        canvas.drawText("${fps}fps", panelLeft + pad + baseTextSize * 5f, y, fpsPaint)
         y += lineH
 
-        // Frame time avg / max with color coding
-        val avgMs = "%.1f".format(frameTimeAvg / 1000f)
-        val maxMs = "%.1f".format(frameTimeMax / 1000f)
+        // Frame time avg / max (integer ms)
+        val avgMs = frameTimeAvg / 1000
+        val maxMs = frameTimeMax / 1000
         val frameTimePaint =
             when {
                 frameTimeAvg <= 45000 -> fpsGoodPaint
                 frameTimeAvg <= 55000 -> fpsWarnPaint
                 else -> fpsBadPaint
             }
-        canvas.drawText("Frame:", panelLeft + pad, y, labelPaint)
-        canvas.drawText("${avgMs}ms avg / ${maxMs}ms max", panelLeft + pad + baseTextSize * 6f, y, frameTimePaint)
+        canvas.drawText("frame", panelLeft + pad, y, labelPaint)
+        canvas.drawText("${avgMs}ms avg / ${maxMs}ms max", valCol, y, frameTimePaint)
         y += lineH
 
         // Frame budget load bar (40ms = 100% at 25fps)
@@ -264,9 +261,9 @@ class VideoInfoOverlay(
             val pctFill = (frameTimeAvg / 40000f).coerceIn(0f, 1.5f) / 1.5f
             val barColor =
                 when {
-                    frameTimeAvg <= 45000 -> 0xFF00CC00.toInt() // green: at or under 25fps budget
-                    frameTimeAvg <= 55000 -> 0xFFCCCC00.toInt() // yellow: over budget
-                    else -> 0xFFCC0000.toInt() // red: severe
+                    frameTimeAvg <= 45000 -> 0xFF00CC00.toInt()
+                    frameTimeAvg <= 55000 -> 0xFFCCCC00.toInt()
+                    else -> 0xFFCC0000.toInt()
                 }
             val barBg =
                 Paint().apply {
@@ -283,63 +280,17 @@ class VideoInfoOverlay(
         }
         y += lineH
 
-        // Texture memory
-        val texMb = texMemoryKb / 1024
-        canvas.drawText("Tex mem:", panelLeft + pad, y, labelPaint)
-        canvas.drawText("${texMb}MB", panelLeft + pad + baseTextSize * 6f, y, valuePaint)
+        // GPU time (moved up near load metrics)
+        val gpuText =
+            if (gpuTimerAvailable != 0) {
+                "GPU: ${gpuTimeUs / 1000}.${(gpuTimeUs % 1000) / 100}ms"
+            } else {
+                "GPU: n/a"
+            }
+        canvas.drawText(gpuText, panelLeft + pad, y, valuePaint)
         y += lineH
 
-        // Hi-res textures
-        val pct = if (totalLoaded > 0) (hiresCount * 100 / totalLoaded) else 0
-        canvas.drawText("Hires:", panelLeft + pad, y, labelPaint)
-        canvas.drawText(
-            "$hiresCount/$totalLoaded ($pct%)",
-            panelLeft + pad + baseTextSize * 6f,
-            y,
-            valuePaint,
-        )
-        y += lineH
-
-        // Max hires texture resolution
-        canvas.drawText("Max res:", panelLeft + pad, y, labelPaint)
-        val resText = if (hiresCount > 0) "%dx%d".format(maxHiresW, maxHiresH) else "n/a"
-        canvas.drawText(resText, panelLeft + pad + baseTextSize * 6f, y, valuePaint)
-        y += lineH
-
-        // GL texture cap
-        canvas.drawText("GL cap:", panelLeft + pad, y, labelPaint)
-        canvas.drawText("$glMaxTexSize" + "px", panelLeft + pad + baseTextSize * 6f, y, valuePaint)
-        y += lineH
-
-        // Render vs display resolution + color depth
-        val cdLabel = if (colorDepth >= 24) "RGB888" else "RGB565"
-        canvas.drawText("Render:", panelLeft + pad, y, labelPaint)
-        canvas.drawText(
-            "${renderW}x$renderH / ${displayW}x$displayH  $cdLabel",
-            panelLeft + pad + baseTextSize * 6f,
-            y,
-            valuePaint,
-        )
-        y += lineH
-
-        // Texture binds per frame
-        val bindTotal = texBinds + texBindReuse
-        val hitPct = if (bindTotal > 0) (texBindReuse * 100 / bindTotal) else 0
-        canvas.drawText("Binds:", panelLeft + pad, y, labelPaint)
-        canvas.drawText("$texBinds ($hitPct% cache)", panelLeft + pad + baseTextSize * 6f, y, valuePaint)
-        y += lineH
-
-        // Draw polygons + shader/mask stats
-        canvas.drawText("Polys:", panelLeft + pad, y, labelPaint)
-        canvas.drawText(
-            "$drawPolys  shd:$shaderSwitches  mask:$maskDraws",
-            panelLeft + pad + baseTextSize * 6f,
-            y,
-            valuePaint,
-        )
-        y += lineH
-
-        // Level cache time (color-coded: >500ms = warn, >2000ms = bad)
+        // Level cache time (color-coded)
         val cachePaint =
             when {
                 cacheTimeMs <= 500 -> valuePaint
@@ -347,7 +298,68 @@ class VideoInfoOverlay(
                 else -> fpsBadPaint
             }
         canvas.drawText("Cache:", panelLeft + pad, y, labelPaint)
-        canvas.drawText("${cacheTimeMs}ms", panelLeft + pad + baseTextSize * 6f, y, cachePaint)
+        canvas.drawText("${cacheTimeMs}ms", valCol, y, cachePaint)
+        y += lineH
+
+        // Texture memory
+        val texMb = texMemoryKb / 1024
+        canvas.drawText("Tex:", panelLeft + pad, y, labelPaint)
+        canvas.drawText("${texMb}MB", valCol, y, valuePaint)
+        y += lineH
+
+        // Hi-res textures
+        val pct = if (totalLoaded > 0) (hiresCount * 100 / totalLoaded) else 0
+        canvas.drawText("Hires:", panelLeft + pad, y, labelPaint)
+        canvas.drawText(
+            "$hiresCount/$totalLoaded ($pct%)",
+            valCol,
+            y,
+            valuePaint,
+        )
+        y += lineH
+
+        // Max hires texture resolution
+        canvas.drawText("Max:", panelLeft + pad, y, labelPaint)
+        val resText = if (hiresCount > 0) "%dx%d".format(maxHiresW, maxHiresH) else "n/a"
+        canvas.drawText(resText, valCol, y, valuePaint)
+        y += lineH
+
+        // GL texture cap
+        canvas.drawText("GL cap:", panelLeft + pad, y, labelPaint)
+        canvas.drawText("${glMaxTexSize}px", valCol, y, valuePaint)
+        y += lineH
+
+        // Render resolution
+        canvas.drawText("Render:", panelLeft + pad, y, labelPaint)
+        canvas.drawText(
+            "${renderW}x$renderH / ${displayW}x$displayH",
+            valCol,
+            y,
+            valuePaint,
+        )
+        y += lineH
+
+        // Color depth (split from render line)
+        val cdLabel = if (colorDepth >= 24) "RGB888" else "RGB565"
+        canvas.drawText("Color:", panelLeft + pad, y, labelPaint)
+        canvas.drawText(cdLabel, valCol, y, valuePaint)
+        y += lineH
+
+        // Texture binds per frame
+        val bindTotal = texBinds + texBindReuse
+        val hitPct = if (bindTotal > 0) (texBindReuse * 100 / bindTotal) else 0
+        canvas.drawText("Binds:", panelLeft + pad, y, labelPaint)
+        canvas.drawText("$texBinds ($hitPct% cache)", valCol, y, valuePaint)
+        y += lineH
+
+        // Draw polygons + shader/mask stats
+        canvas.drawText("Polys:", panelLeft + pad, y, labelPaint)
+        canvas.drawText(
+            "$drawPolys  shd:$shaderSwitches  mask:$maskDraws",
+            valCol,
+            y,
+            valuePaint,
+        )
         y += lineH
 
         // Anisotropic filtering cycle button
@@ -380,19 +392,7 @@ class VideoInfoOverlay(
         canvas.drawText(msaaText + msaaMaxText, panelLeft + pad, y, msaaPaint)
         y += lineH
 
-        // GPU time
-        val gpuText =
-            if (gpuTimerAvailable !=
-                0
-            ) {
-                "GPU: ${gpuTimeUs / 1000}.${(gpuTimeUs % 1000) / 100}ms"
-            } else {
-                "GPU: n/a"
-            }
-        canvas.drawText(gpuText, panelLeft + pad, y, valuePaint)
-        y += lineH
-
-        // Labels toggle button (tappable, with background)
+        // Labels toggle button
         val labelsText = if (labelsOn) "Labels: ON" else "Labels: OFF"
         val labelTogglePaint = if (labelsOn) fpsGoodPaint else fpsWarnPaint
         buttonRect.set(

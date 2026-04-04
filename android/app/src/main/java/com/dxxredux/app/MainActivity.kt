@@ -769,7 +769,7 @@ class MainActivity :
                     getSharedPreferences("dxx_prefs", MODE_PRIVATE)
                         .edit()
                         .putInt(name, value)
-                        .apply()
+                        .commit()
                 }
             }
         videoInfoOverlay = vidOverlay
