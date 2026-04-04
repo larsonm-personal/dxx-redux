@@ -222,6 +222,12 @@ class MainActivity :
     // android port: video diagnostics overlay
     external fun nativeGetVideoStats(): IntArray
 
+    // android port: coop QoL overlay -- robot kill stats per player
+    external fun nativeGetCoopRobotStats(): IntArray
+
+    // android port: coop QoL overlay -- teammate shields/energy/secondary
+    external fun nativeGetTeammateStatus(): IntArray
+
     external fun nativeSetAutoJoin(
         hostAddr: String,
         hostPort: Int,
@@ -280,6 +286,7 @@ class MainActivity :
     private var netStatsOverlay: com.dxxredux.app.multiplayer.MultiplayerStatsOverlay? = null
     private var netEventsOverlay: com.dxxredux.app.multiplayer.NetworkEventsOverlay? = null
     private var videoInfoOverlay: VideoInfoOverlay? = null
+    private var coopStatsOverlay: CoopStatsOverlay? = null
     private var netEventsManualToggle = false
     private var isMultiplayerGame = false
     private var lastTrackNum = -1 // for detecting track changes in polling
@@ -753,12 +760,42 @@ class MainActivity :
                 }
                 settingsSaver = { name, value ->
                     getSharedPreferences("dxx_prefs", MODE_PRIVATE)
-                        .edit().putInt(name, value).apply()
+                        .edit()
+                        .putInt(name, value)
+                        .apply()
                 }
             }
         videoInfoOverlay = vidOverlay
         frame.addView(
             vidOverlay,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
+
+        // android port: coop QoL overlay -- robot kill stats + teammate status
+        val coopOverlay =
+            CoopStatsOverlay(this).apply {
+                visibility = View.GONE
+                robotStatsProvider = {
+                    try {
+                        nativeGetCoopRobotStats()
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
+                teammateStatusProvider = {
+                    try {
+                        nativeGetTeammateStatus()
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
+            }
+        coopStatsOverlay = coopOverlay
+        frame.addView(
+            coopOverlay,
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -870,6 +907,9 @@ class MainActivity :
             Thread {
                 startGame()
             }.start()
+
+            // android port: coop QoL -- begin polling (auto-shows in coop)
+            coopStatsOverlay?.startPolling()
         }
     }
 
@@ -1056,6 +1096,7 @@ class MainActivity :
                         netStatsOverlay?.hide()
                         netEventsOverlay?.hide()
                         videoInfoOverlay?.hide()
+                        coopStatsOverlay?.hide()
                         netEventsManualToggle = false
                     }
                     overlayPoller.postDelayed(this, 100)

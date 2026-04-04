@@ -240,11 +240,12 @@ class VideoInfoOverlay(
         // Frame time avg / max with color coding
         val avgMs = "%.1f".format(frameTimeAvg / 1000f)
         val maxMs = "%.1f".format(frameTimeMax / 1000f)
-        val frameTimePaint = when {
-            frameTimeAvg <= 45000 -> fpsGoodPaint
-            frameTimeAvg <= 55000 -> fpsWarnPaint
-            else -> fpsBadPaint
-        }
+        val frameTimePaint =
+            when {
+                frameTimeAvg <= 45000 -> fpsGoodPaint
+                frameTimeAvg <= 55000 -> fpsWarnPaint
+                else -> fpsBadPaint
+            }
         canvas.drawText("Frame:", panelLeft + pad, y, labelPaint)
         canvas.drawText("${avgMs}ms avg / ${maxMs}ms max", panelLeft + pad + baseTextSize * 6f, y, frameTimePaint)
         y += lineH
@@ -257,13 +258,22 @@ class VideoInfoOverlay(
             val barBot = y + lineH * 0.1f
             val barW = barRight - barLeft
             val pctFill = (frameTimeAvg / 40000f).coerceIn(0f, 1.5f) / 1.5f
-            val barColor = when {
-                frameTimeAvg <= 45000 -> 0xFF00CC00.toInt()  // green: at or under 25fps budget
-                frameTimeAvg <= 55000 -> 0xFFCCCC00.toInt()  // yellow: over budget
-                else -> 0xFFCC0000.toInt()                   // red: severe
-            }
-            val barBg = Paint().apply { color = 0xFF333333.toInt(); style = Paint.Style.FILL }
-            val barFg = Paint().apply { color = barColor; style = Paint.Style.FILL }
+            val barColor =
+                when {
+                    frameTimeAvg <= 45000 -> 0xFF00CC00.toInt() // green: at or under 25fps budget
+                    frameTimeAvg <= 55000 -> 0xFFCCCC00.toInt() // yellow: over budget
+                    else -> 0xFFCC0000.toInt() // red: severe
+                }
+            val barBg =
+                Paint().apply {
+                    color = 0xFF333333.toInt()
+                    style = Paint.Style.FILL
+                }
+            val barFg =
+                Paint().apply {
+                    color = barColor
+                    style = Paint.Style.FILL
+                }
             canvas.drawRoundRect(barLeft, barTop, barRight, barBot, 2f, 2f, barBg)
             canvas.drawRoundRect(barLeft, barTop, barLeft + barW * pctFill, barBot, 2f, 2f, barFg)
         }
@@ -317,15 +327,21 @@ class VideoInfoOverlay(
 
         // Draw polygons + shader/mask stats
         canvas.drawText("Polys:", panelLeft + pad, y, labelPaint)
-        canvas.drawText("$drawPolys  shd:$shaderSwitches  mask:$maskDraws", panelLeft + pad + baseTextSize * 6f, y, valuePaint)
+        canvas.drawText(
+            "$drawPolys  shd:$shaderSwitches  mask:$maskDraws",
+            panelLeft + pad + baseTextSize * 6f,
+            y,
+            valuePaint,
+        )
         y += lineH
 
         // Level cache time (color-coded: >500ms = warn, >2000ms = bad)
-        val cachePaint = when {
-            cacheTimeMs <= 500 -> valuePaint
-            cacheTimeMs <= 2000 -> fpsWarnPaint
-            else -> fpsBadPaint
-        }
+        val cachePaint =
+            when {
+                cacheTimeMs <= 500 -> valuePaint
+                cacheTimeMs <= 2000 -> fpsWarnPaint
+                else -> fpsBadPaint
+            }
         canvas.drawText("Cache:", panelLeft + pad, y, labelPaint)
         canvas.drawText("${cacheTimeMs}ms", panelLeft + pad + baseTextSize * 6f, y, cachePaint)
         y += lineH
@@ -361,7 +377,14 @@ class VideoInfoOverlay(
         y += lineH
 
         // GPU time
-        val gpuText = if (gpuTimerAvailable != 0) "GPU: ${gpuTimeUs / 1000}.${(gpuTimeUs % 1000) / 100}ms" else "GPU: n/a"
+        val gpuText =
+            if (gpuTimerAvailable !=
+                0
+            ) {
+                "GPU: ${gpuTimeUs / 1000}.${(gpuTimeUs % 1000) / 100}ms"
+            } else {
+                "GPU: n/a"
+            }
         canvas.drawText(gpuText, panelLeft + pad, y, valuePaint)
         y += lineH
 

@@ -4460,7 +4460,10 @@ internal fun updateDescentCfgResolution(
  * Read a key from descent.cfg. Checks d2x-redux/ first, then d1x-redux/, then root.
  * Returns null if not found.
  */
-internal fun readConfigValue(filesDir: File, key: String): String? {
+internal fun readConfigValue(
+    filesDir: File,
+    key: String,
+): String? {
     for (sub in listOf("d2x-redux", "d1x-redux", "")) {
         val cfgFile = if (sub.isEmpty()) File(filesDir, "descent.cfg") else File(File(filesDir, sub), "descent.cfg")
         if (!cfgFile.exists()) continue

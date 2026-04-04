@@ -583,6 +583,109 @@ Java_com_dxxredux_app_MainActivity_nativeGetNetgameState(JNIEnv *env, jobject th
 	return result;
 }
 
+/* ── Coop robot kill stats for coop QoL overlay ──────────────────
+ * Returns an int array:
+ *   [0]  = total robots killed (sum across all players)
+ *   [1]  = num_robots_level (current denominator, grows with matcen spawns)
+ *   [2]  = Coop_total_robot_score (total score value of all robots at level start)
+ *   [3]  = N_players
+ *   [4]  = Player_num (local player index)
+ *   [5..5+2*MAX_PLAYERS-1] = per-player pairs: [kills, score_earned] x MAX_PLAYERS
+ *
+ * Shared constant: MAX_PLAYERS = 8 (duplicated in CoopStatsOverlay.kt)
+ *
+ * android port: coop QoL overlay
+ */
+#include "robot.h"
+#include "game.h"
+JNIEXPORT jintArray JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetCoopRobotStats(JNIEnv *env, jobject thiz)
+{
+	extern int Player_num;
+	extern int N_players;
+	extern int Game_mode;
+
+	enum { CS_SIZE = 5 + 2 * MAX_PLAYERS }; /* 5 header + 16 per-player */
+	jint buf[CS_SIZE];
+	memset(buf, 0, sizeof(buf));
+
+	if (!(Game_mode & GM_MULTI_COOP)) {
+		/* Not in coop -- return zeros */
+		jintArray result = (*env)->NewIntArray(env, CS_SIZE);
+		if (result)
+			(*env)->SetIntArrayRegion(env, result, 0, CS_SIZE, buf);
+		return result;
+	}
+
+	int total_killed = 0;
+	int i;
+	for (i = 0; i < MAX_PLAYERS; i++)
+		total_killed += Coop_kill_stats[i].robots_killed;
+
+	buf[0] = (jint) total_killed;
+	buf[1] = (jint) Players[Player_num].num_robots_level;
+	buf[2] = (jint) Coop_total_robot_score;
+	buf[3] = (jint) N_players;
+	buf[4] = (jint) Player_num;
+
+	for (i = 0; i < MAX_PLAYERS; i++) {
+		buf[5 + i * 2]     = (jint) Coop_kill_stats[i].robots_killed;
+		buf[5 + i * 2 + 1] = (jint) Coop_kill_stats[i].score_earned;
+	}
+
+	jintArray result = (*env)->NewIntArray(env, CS_SIZE);
+	if (result)
+		(*env)->SetIntArrayRegion(env, result, 0, CS_SIZE, buf);
+	return result;
+}
+
+/* ── Teammate status for coop QoL overlay ──────────────────
+ * Returns an int array:
+ *   [0]  = N_players
+ *   [1]  = Player_num
+ *   [2]  = Game_mode
+ *   [3..3+5*MAX_PLAYERS-1] = per-player groups of 5:
+ *       [connected, shields_pct, energy_pct, secondary_weapon, secondary_ammo]
+ *
+ * Shields/energy as percentage (0-200, can exceed 100 from powerups)
+ *
+ * Shared constant: MAX_PLAYERS = 8 (duplicated in CoopStatsOverlay.kt)
+ *
+ * android port: coop QoL overlay
+ */
+JNIEXPORT jintArray JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetTeammateStatus(JNIEnv *env, jobject thiz)
+{
+	extern int Player_num;
+	extern int N_players;
+	extern int Game_mode;
+
+	enum { TS_FIELDS = 5 };
+	enum { TS_SIZE = 3 + TS_FIELDS * MAX_PLAYERS };
+	jint buf[TS_SIZE];
+	memset(buf, 0, sizeof(buf));
+
+	buf[0] = (jint) N_players;
+	buf[1] = (jint) Player_num;
+	buf[2] = (jint) Game_mode;
+
+	int i;
+	for (i = 0; i < MAX_PLAYERS; i++) {
+		int base = 3 + i * TS_FIELDS;
+		buf[base]     = (jint) Players[i].connected;
+		/* Convert fix shields/energy to percentage: F1_0 = 100% */
+		buf[base + 1] = (jint) (Players[i].shields * 100 / F1_0);
+		buf[base + 2] = (jint) (Players[i].energy * 100 / F1_0);
+		buf[base + 3] = (jint) Players[i].secondary_weapon;
+		buf[base + 4] = (jint) Players[i].secondary_ammo[Players[i].secondary_weapon];
+	}
+
+	jintArray result = (*env)->NewIntArray(env, TS_SIZE);
+	if (result)
+		(*env)->SetIntArrayRegion(env, result, 0, TS_SIZE, buf);
+	return result;
+}
+
 /* ── Video stats query for video info overlay ──────────────────
  * Returns an int array:
  *   [0]  = g_current_fps   (frames per second, 1-second window)

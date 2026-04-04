@@ -894,6 +894,13 @@ multi_do_robot_explode(const ubyte *buf)
 	if (killer == Players[Player_num].objnum)
 		add_points_to_score(Robot_info[Objects[botnum].id].score_value);
 
+	// android port: coop QoL -- track per-player robot kills on all clients
+	{
+		int kpnum = coop_killer_to_pnum(killer);
+		if (kpnum >= 0)
+			coop_record_robot_kill(kpnum, Robot_info[Objects[botnum].id].score_value);
+	}
+
 	if(multi_i_am_master() && (Game_mode & GM_MULTI_ROBOTS)) {
 		kill_respawnable_robot(Objects + botnum);
 	}

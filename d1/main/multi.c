@@ -59,6 +59,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "strutil.h"
 #include "u_mem.h"
 #include "state.h"
+#include "robot.h"
 #ifdef USE_UDP
 #include "net_udp.h"
 #endif
@@ -5673,4 +5674,50 @@ multi_do_create_explosion2(const ubyte *buf)
 	type = GET_INTEL_INT(buf + count); count += 4;
 
 	object_create_explosion(segnum, &new_pos, size, type);
+}
+
+// -- Coop kill stats (android port: coop QoL overlay) --
+
+coop_player_kill_stats Coop_kill_stats[MAX_PLAYERS];
+int Coop_total_robot_score = 0;
+
+void coop_record_robot_kill(int pnum, int score_value)
+{
+	if (pnum < 0 || pnum >= MAX_PLAYERS)
+		return;
+	Coop_kill_stats[pnum].robots_killed++;
+	Coop_kill_stats[pnum].score_earned += score_value;
+}
+
+void coop_reset_kill_stats(void)
+{
+	memset(Coop_kill_stats, 0, sizeof(Coop_kill_stats));
+	Coop_total_robot_score = 0;
+}
+
+int coop_compute_total_robot_score(void)
+{
+	int total = 0;
+	int i;
+	for (i = 0; i <= Highest_object_index; i++) {
+		if (Objects[i].type == OBJ_ROBOT)
+			total += Robot_info[Objects[i].id].score_value;
+	}
+	return total;
+}
+
+// Resolve a killer objnum to a player index, or -1 if not a player kill
+int coop_killer_to_pnum(int killer_objnum)
+{
+	if (killer_objnum < 0 || killer_objnum > Highest_object_index)
+		return -1;
+	if (Objects[killer_objnum].type == OBJ_PLAYER)
+		return Objects[killer_objnum].id;
+	if (Objects[killer_objnum].type == OBJ_WEAPON) {
+		int parent = Objects[killer_objnum].ctype.laser_info.parent_num;
+		if (parent >= 0 && parent <= Highest_object_index &&
+		    Objects[parent].type == OBJ_PLAYER)
+			return Objects[parent].id;
+	}
+	return -1;
 }

@@ -745,4 +745,26 @@ void reset_observatory_stats();
 #define NUM_OBS_MODES 4
 extern const char* Obs_mode_names[NUM_OBS_MODES];
 
+// -- Coop kill stats (android port: coop QoL overlay) --
+// Per-player robot kill tracking for coop score overlay
+typedef struct coop_player_kill_stats {
+	int robots_killed;
+	int score_earned;
+} coop_player_kill_stats;
+
+extern coop_player_kill_stats Coop_kill_stats[MAX_PLAYERS];
+extern int Coop_total_robot_score;  // sum of score_value for all robots at level start
+
+// Call when a robot is killed: pnum = player who got the kill
+void coop_record_robot_kill(int pnum, int score_value);
+
+// Reset stats for a new level
+void coop_reset_kill_stats(void);
+
+// Compute total robot score value by iterating all OBJ_ROBOT in the level
+int coop_compute_total_robot_score(void);
+
+// Resolve a killer objnum to a player index, or -1 if not a player kill
+int coop_killer_to_pnum(int killer_objnum);
+
 #endif /* _MULTI_H */

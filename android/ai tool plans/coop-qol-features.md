@@ -340,12 +340,17 @@ Enhanced end-of-level screen showing per-player robot kill contributions.
 ## Implementation Phases
 
 ### Phase 1: Robot Kill Stats + Teammate Status Overlay
-- [ ] Add `coop_kill_stats[MAX_PLAYERS]` tracking in d2/main (collide.c, multibot.c, gameseq.c)
-- [ ] Compute `total_robot_score_value` at level start
-- [ ] Hook `multi_do_robot_explode()` for per-player attribution on all clients
-- [ ] JNI export: `nativeGetCoopRobotStats()`, `nativeGetTeammateStatus()`
-- [ ] Kotlin `CoopStatsOverlay` class
-- [ ] Duplicate all C hooks in d1/main
+- [x] Add `coop_kill_stats[MAX_PLAYERS]` tracking in d2/main (multi.c, multi.h)
+- [x] Add `coop_record_robot_kill()`, `coop_reset_kill_stats()`, `coop_compute_total_robot_score()`, `coop_killer_to_pnum()` in multi.c
+- [x] Hook `multi_do_robot_explode()` for per-player attribution on all clients (multibot.c)
+- [x] Hook 3 `add_points_to_score` calls in collide.c for local player kills
+- [x] Hook `add_points_to_score` in fireball.c for explosion splash kills
+- [x] Compute `Coop_total_robot_score` and reset stats in `init_player_stats_level()` (gameseq.c)
+- [x] JNI export: `nativeGetCoopRobotStats()`, `nativeGetTeammateStatus()` (jni_main.c)
+- [x] Kotlin `CoopStatsOverlay` class (auto-shows in coop, polls at 1Hz)
+- [x] Integrate overlay in MainActivity.kt (creation, polling start/stop)
+- [x] Duplicate all C hooks in d1/main (multi.h, multi.c, multibot.c, collide.c, fireball.c, gameseq.c)
+- [x] Build passes (Android debug APK, both d1 and d2)
 - [ ] Test with 2 emulators in coop
 
 ### Phase 2: Client Identity + Save File Metadata Extension

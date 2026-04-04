@@ -130,8 +130,11 @@ object *object_create_explosion_sub(object *objp, short segnum, vms_vector * pos
 								}
 								if ( obj0p->shields >= 0 ) {
 									if (apply_damage_to_robot(obj0p, damage, parent))
-										if ((objp != NULL) && (parent == Players[Player_num].objnum))
+										if ((objp != NULL) && (parent == Players[Player_num].objnum)) {
 											add_points_to_score(Robot_info[obj0p->id].score_value);
+											// android port: coop QoL -- track local player robot kill
+											coop_record_robot_kill(Player_num, Robot_info[obj0p->id].score_value);
+										}
 								}
 								break;
 							case OBJ_CNTRLCEN:

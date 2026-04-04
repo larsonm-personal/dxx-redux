@@ -22,8 +22,9 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-# Source shared env setup (JAVA_HOME, cmake, cargo)
+# Source shared env setup (JAVA_HOME, cmake, cargo) and test helpers
 . "$PSScriptRoot\..\test_env.ps1"
+. "$PSScriptRoot\..\test_helpers.ps1"
 
 $REPO_ROOT = Split-Path (Split-Path $PSScriptRoot)
 $DEP_BASE = (Get-Content (Join-Path $REPO_ROOT "dependency_base.txt") -First 1).Trim()
@@ -282,32 +283,8 @@ foreach ($serial in @($EMU1_SERIAL, $EMU2_SERIAL)) {
 if (-not $NoData) {
     Write-Status ""
     Write-Status "--- Pushing game data to both emulators ---" "White"
-
-    $pushScript = Join-Path $ANDROID_DIR "push_game_data.sh"
-    $gameDataDir = Join-Path $REPO_ROOT "game_data_to_copy_to_emulator"
-    $hasData = (Test-Path (Join-Path $gameDataDir "data")) -or (Test-Path (Join-Path $gameDataDir "download"))
-
-    if ($hasData -and (Test-Path $pushScript)) {
-        foreach ($serial in @($EMU1_SERIAL, $EMU2_SERIAL)) {
-            Write-Status "  Pushing data to $serial..."
-            $env:ANDROID_SERIAL = $serial
-            $env:CALLED_FROM_SCRIPT = "1"
-            # Use bash (Git Bash) to run the push script
-            $bashExe = "bash"
-            if (Test-Path "$DEP_BASE\git\bin\bash.exe") { $bashExe = "$DEP_BASE\git\bin\bash.exe" }
-            $pushOut = & $bashExe $pushScript 2>&1 | Out-String
-            $pushExit = $LASTEXITCODE
-            if ($pushExit -ne 0) {
-                Write-Status "  WARNING: push_game_data.sh failed for $serial (exit $pushExit)" "Yellow"
-                Write-Status ($pushOut | Select-Object -Last 10) "Gray"
-            } else {
-                Write-Status "  ${serial}: data pushed" "Green"
-            }
-        }
-        Remove-Item Env:\ANDROID_SERIAL -ErrorAction SilentlyContinue
-        Remove-Item Env:\CALLED_FROM_SCRIPT -ErrorAction SilentlyContinue
-    } else {
-        Write-Status "  No game data to push (place files in game_data_to_copy_to_emulator/)" "Yellow"
+    foreach ($serial in @($EMU1_SERIAL, $EMU2_SERIAL)) {
+        Install-AppAndData -Serial $serial
     }
 }
 
@@ -333,6 +310,25 @@ if (-not $NoServer) {
         Write-Status "  Server built" "Green"
     }
 
+    # Generate a self-signed TLS cert so the server can serve wss://
+    # (the Android client always connects via wss:// to private IPs)
+    $tlsDir = Join-Path $REPO_ROOT "temp\tls"
+    New-Item -Path $tlsDir -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
+    $tlsCert = Join-Path $tlsDir "server.crt"
+    $tlsKey = Join-Path $tlsDir "server.key"
+    if (-not (Test-Path $tlsCert) -or -not (Test-Path $tlsKey)) {
+        Write-Status "  Generating self-signed TLS certificate..."
+        $opensslExe = "openssl"
+        if (Test-Path "$DEP_BASE\git\usr\bin\openssl.exe") { $opensslExe = "$DEP_BASE\git\usr\bin\openssl.exe" }
+        & $opensslExe req -x509 -newkey rsa:2048 -keyout $tlsKey -out $tlsCert `
+            -days 365 -nodes -subj "/CN=localhost" 2>&1 | Out-Null
+        if (-not (Test-Path $tlsCert) -or -not (Test-Path $tlsKey)) {
+            Write-Status "  WARNING: Failed to generate TLS cert, server will run without TLS" "Yellow"
+        } else {
+            Write-Status "  TLS cert generated" "Green"
+        }
+    }
+
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $serverBin
     $psi.WorkingDirectory = $serverDir
@@ -342,6 +338,10 @@ if (-not $NoServer) {
     $psi.CreateNoWindow = $true
     $psi.EnvironmentVariables["SKIP_GPGS_VERIFY"] = "true"
     $psi.EnvironmentVariables["RUST_LOG"] = "info"
+    if ((Test-Path $tlsCert) -and (Test-Path $tlsKey)) {
+        $psi.EnvironmentVariables["TLS_CERT_PATH"] = $tlsCert
+        $psi.EnvironmentVariables["TLS_KEY_PATH"] = $tlsKey
+    }
     $script:serverProcess = [System.Diagnostics.Process]::Start($psi)
     Write-Status "  Server PID: $($script:serverProcess.Id)"
 
@@ -432,24 +432,33 @@ if (-not $NoServer) {
 Write-Status "  UDP relay: port 42600 (PID $($script:relayProc.Id))"
 Write-Status "  EMU1 redir: host:42500 -> EMU1:42424"
 Write-Status ""
-Write-Status "Quick test commands:" "White"
-Write-Status '  # Connect both to server:' "Gray"
-Write-Status "  adb -s $EMU1_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command set_callsign --es callsign Host" "Gray"
-Write-Status "  adb -s $EMU1_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command connect" "Gray"
-Write-Status "  adb -s $EMU2_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command set_callsign --es callsign Join" "Gray"
-Write-Status "  adb -s $EMU2_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command connect" "Gray"
-Write-Status '  # Create lobby + join:' "Gray"
-Write-Status "  adb -s $EMU1_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command create_lobby --es game d2 --es mission d2 --es mode anarchy" "Gray"
-Write-Status "  adb -s $EMU2_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command refresh_lobbies" "Gray"
-Write-Status "  adb -s $EMU2_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command join_first_lobby" "Gray"
-Write-Status '  # Set join target for relay + start game:' "Gray"
-Write-Status "  adb -s $EMU2_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command set_join_target --es host_addr 10.0.2.2 --ei host_port 42600" "Gray"
-Write-Status "  adb -s $EMU1_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command start_game" "Gray"
+if ($NoServer) {
+    Write-Status "LAN manual connection:" "White"
+    Write-Status "  EMU1: Start New Multiplayer Game (host)" "Gray"
+    Write-Status "  EMU2: Join Game > enter address 10.0.2.2 port 42600" "Gray"
+    Write-Status ""
+    Write-Status "  The UDP relay bridges the emulators' isolated networks" "Gray"
+    Write-Status "  LAN broadcast/scan won't work across emulators -- use manual IP" "Gray"
+} else {
+    Write-Status "Quick test commands:" "White"
+    Write-Status '  # Connect both to server:' "Gray"
+    Write-Status "  adb -s $EMU1_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command set_callsign --es callsign Host" "Gray"
+    Write-Status "  adb -s $EMU1_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command connect" "Gray"
+    Write-Status "  adb -s $EMU2_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command set_callsign --es callsign Join" "Gray"
+    Write-Status "  adb -s $EMU2_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command connect" "Gray"
+    Write-Status '  # Create lobby + join:' "Gray"
+    Write-Status "  adb -s $EMU1_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command create_lobby --es game d2 --es mission d2 --es mode anarchy" "Gray"
+    Write-Status "  adb -s $EMU2_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command refresh_lobbies" "Gray"
+    Write-Status "  adb -s $EMU2_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command join_first_lobby" "Gray"
+    Write-Status '  # Set join target for relay + start game:' "Gray"
+    Write-Status "  adb -s $EMU2_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command set_join_target --es host_addr 10.0.2.2 --ei host_port 42600" "Gray"
+    Write-Status "  adb -s $EMU1_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command start_game" "Gray"
+    Write-Status ""
+    Write-Status '  # Run existing multiplayer test:' "Gray"
+    Write-Status "  .\test_mp.ps1 -SkipBuild" "Gray"
+}
 Write-Status ""
-Write-Status '  # Run existing multiplayer test:' "Gray"
-Write-Status "  .\test_mp.ps1 -SkipBuild" "Gray"
-Write-Status ""
-Write-Status "Press Ctrl+C or Enter to shut down server and relay" "Yellow"
+Write-Status "Press Ctrl+C or Enter to shut down relay$(if (-not $NoServer) {' and server'})" "Yellow"
 
 try {
     Read-Host "Press Enter to exit"

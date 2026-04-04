@@ -109,6 +109,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "segment.h"
 #include "gameseg.h"
 #include "multibot.h"
+#include "multi.h"
 
 
 void StartNewLevelSecret(int level_num, int page_in_textures);
@@ -358,6 +359,10 @@ void init_player_stats_level(int secret_flag)
 	Players[Player_num].num_kills_level = 0;
 	Players[Player_num].num_robots_level = count_number_of_robots();
 	Players[Player_num].num_robots_total += Players[Player_num].num_robots_level;
+
+	// android port: coop QoL -- reset and compute per-player kill stats
+	coop_reset_kill_stats();
+	Coop_total_robot_score = coop_compute_total_robot_score();
 
 	Players[Player_num].hostages_level = count_number_of_hostages();
 	Players[Player_num].hostages_total += Players[Player_num].hostages_level;

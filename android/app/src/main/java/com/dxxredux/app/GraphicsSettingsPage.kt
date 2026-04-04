@@ -114,7 +114,10 @@ fun GraphicsSettingsPage(
 }
 
 @Composable
-private fun ResolutionSection(filesDir: File, prefs: SharedPreferences) {
+private fun ResolutionSection(
+    filesDir: File,
+    prefs: SharedPreferences,
+) {
     Text("Render Resolution", fontWeight = FontWeight.Bold, fontSize = 14.sp)
     Spacer(modifier = Modifier.height(4.dp))
 
