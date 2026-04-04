@@ -100,6 +100,8 @@ int GL_texclamp_enabled=-1;
 GLfloat ogl_maxanisotropy = 0;
 int ogl_aniso_level = 0; /* 0=off, 2/4/8/16 for anisotropic filtering */
 volatile int g_aniso_pending_apply = 0; /* set from JNI, consumed by GL thread */
+volatile int g_texfilt_pending_apply = 0; /* set from JNI, consumed by GL thread */
+int g_texfilt_level = 0; /* desired TexFilt value from overlay */
 int ogl_max_texture_size = 1024;
 #ifdef ANDROID
 /* android port: MSAA via FBO -- runtime-toggleable anti-aliasing */
@@ -114,9 +116,12 @@ int g_msaa_fbo_bound = 0;       /* 1 while rendering to MSAA FBO */
 #define GL_GPU_DISJOINT_EXT  0x8FBB
 int ogl_gpu_timer_available = 0;
 int g_gpu_time_us = 0;          /* last completed GPU frame time in microseconds */
-static GLuint ogl_gpu_queries[2] = {0, 0};
-static int ogl_gpu_query_idx = 0;
-static int ogl_gpu_query_active = 0; /* 1 while a query is in-flight */
+/* Triple-buffered queries: write_idx advances each frame, read oldest completed */
+#define GPU_QUERY_COUNT 3
+static GLuint ogl_gpu_queries[GPU_QUERY_COUNT] = {0, 0, 0};
+static int ogl_gpu_query_write = 0;  /* next slot to begin a query in */
+static int ogl_gpu_query_count = 0;  /* number of in-flight + completed queries */
+static int ogl_gpu_query_in_flight = 0; /* 1 while a query is between begin/end */
 int ogl_color_depth = 16; /* actual framebuffer color depth: 16=RGB565, 32=RGBA8888 */
 #endif
 #ifdef ANDROID
@@ -1578,6 +1583,7 @@ void ogl_start_frame(void){
 #ifdef ANDROID
 	r_texbinds=0;r_texbind_reuse=0;ogl_last_bound_tex=0;
 	r_shader_switches=0;r_mask_draws=0;
+	g_texfilt_level = GameCfg.TexFilt;
 	if (g_aniso_pending_apply) {
 		g_aniso_pending_apply = 0;
 		if (ogl_aniso_level > 0) {
@@ -1612,6 +1618,23 @@ void ogl_start_frame(void){
 		}
 		ogl_apply_anisotropy_all();
 	}
+	if (g_texfilt_pending_apply) {
+		g_texfilt_pending_apply = 0;
+		GameCfg.TexFilt = g_texfilt_level;
+		/* Flush all loaded textures so they reload with new TexFilt value */
+		int flushed = 0;
+		for (int i = 0; i < OGL_TEXTURE_LIST_SIZE; i++) {
+			if (ogl_texture_list[i].handle > 0) {
+				glDeleteTextures(1, &ogl_texture_list[i].handle);
+				ogl_texture_list[i].handle = 0;
+				ogl_texture_list[i].has_mipmaps = 0;
+				ogl_texture_list[i].wrapstate = -1;
+				flushed++;
+			}
+		}
+		if (flushed)
+			con_printf(CON_DEBUG, "texfilt: flushed %d textures for reload (TexFilt=%d)", flushed, GameCfg.TexFilt);
+	}
 	if (g_msaa_pending_apply) {
 		g_msaa_pending_apply = 0;
 		ogl_msaa_destroy_fbo(); /* recreate on next check below */
@@ -1626,27 +1649,44 @@ void ogl_start_frame(void){
 			g_msaa_fbo_bound = 1;
 		}
 	}
-	/* GPU timer: read previous result, begin new query */
+	/* GPU timer: read oldest completed query, begin new query */
 	if (ogl_gpu_timer_available) {
-		if (ogl_gpu_query_active) {
-			int prev = 1 - ogl_gpu_query_idx;
+		if (!ogl_gpu_queries[0])
+			glGenQueries(GPU_QUERY_COUNT, ogl_gpu_queries);
+		/* Try to read the oldest completed query */
+		if (ogl_gpu_query_count > 0) {
+			int read_idx = (ogl_gpu_query_write - ogl_gpu_query_count + GPU_QUERY_COUNT) % GPU_QUERY_COUNT;
 			GLuint avail = 0;
-			glGetQueryObjectuiv(ogl_gpu_queries[prev],
+			glGetQueryObjectuiv(ogl_gpu_queries[read_idx],
 			    GL_QUERY_RESULT_AVAILABLE, &avail);
 			if (avail) {
 				GLuint ns = 0;
-				glGetQueryObjectuiv(ogl_gpu_queries[prev],
+				glGetQueryObjectuiv(ogl_gpu_queries[read_idx],
 				    GL_QUERY_RESULT, &ns);
 				GLint disjoint = 0;
 				glGetIntegerv(GL_GPU_DISJOINT_EXT, &disjoint);
 				if (!disjoint)
 					g_gpu_time_us = (int)(ns / 1000);
+				/* else: keep last valid reading */
+				ogl_gpu_query_count--;
+			} else if (ogl_gpu_query_count >= GPU_QUERY_COUNT - 1) {
+				/* All slots full and oldest still not ready: blocking read
+				 * to avoid stalling the pipeline */
+				GLuint ns = 0;
+				glGetQueryObjectuiv(ogl_gpu_queries[read_idx],
+				    GL_QUERY_RESULT, &ns);
+				GLint disjoint = 0;
+				glGetIntegerv(GL_GPU_DISJOINT_EXT, &disjoint);
+				if (!disjoint)
+					g_gpu_time_us = (int)(ns / 1000);
+				ogl_gpu_query_count--;
 			}
 		}
-		if (!ogl_gpu_queries[0])
-			glGenQueries(2, ogl_gpu_queries);
-		glBeginQuery(GL_TIME_ELAPSED_EXT, ogl_gpu_queries[ogl_gpu_query_idx]);
-		ogl_gpu_query_active = 1;
+		/* Begin new query if we have a free slot */
+		if (ogl_gpu_query_count < GPU_QUERY_COUNT) {
+			glBeginQuery(GL_TIME_ELAPSED_EXT, ogl_gpu_queries[ogl_gpu_query_write]);
+			ogl_gpu_query_in_flight = 1;
+		}
 	}
 #endif
 
@@ -1759,10 +1799,11 @@ void gr_flip(void)
 	ogl_do_palfx();
 	/* android port: end GPU timer query before resolve/swap */
 #ifdef ANDROID
-	if (ogl_gpu_query_active) {
+	if (ogl_gpu_query_in_flight) {
 		glEndQuery(GL_TIME_ELAPSED_EXT);
-		ogl_gpu_query_idx = 1 - ogl_gpu_query_idx;
-		ogl_gpu_query_active = 0;
+		ogl_gpu_query_write = (ogl_gpu_query_write + 1) % GPU_QUERY_COUNT;
+		ogl_gpu_query_count++;
+		ogl_gpu_query_in_flight = 0;
 	}
 #endif
 	/* android port: resolve MSAA FBO to default framebuffer before swap */

@@ -406,6 +406,15 @@ Java_com_dxxredux_app_MainActivity_nativeSetGraphicsOption(JNIEnv *env, jobject 
 		LOGI("graphics option: msaa_level=%d", (int) value);
 		ogl_msaa_samples = (int) value;
 		g_msaa_pending_apply = 1;
+	} else if (strcmp(name, "tex_filt") == 0) {
+		extern int g_texfilt_level;
+		extern volatile int g_texfilt_pending_apply;
+		int clamped = (int) value;
+		if (clamped < 0) clamped = 0;
+		if (clamped > 2) clamped = 2;
+		LOGI("graphics option: tex_filt=%d", clamped);
+		g_texfilt_level = clamped;
+		g_texfilt_pending_apply = 1;
 	} else
 		LOGE("nativeSetGraphicsOption: unknown option '%s'", name);
 	(*env)->ReleaseStringUTFChars(env, jname, name);
@@ -728,13 +737,14 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 	extern int ogl_gpu_timer_available;
 	extern int g_gpu_time_us;
 	extern int ogl_color_depth;
+	extern int g_texfilt_level;
 	int ogl_get_texture_bytes(void);
 	int android_surface_get_display_width(void);
 	int android_surface_get_display_height(void);
 	extern unsigned int grd_curscreen_w(void);
 	extern unsigned int grd_curscreen_h(void);
 
-	enum { VS_SIZE = 27 };
+	enum { VS_SIZE = 28 };
 	jint buf[VS_SIZE];
 
 	buf[0] = (jint) g_current_fps;
@@ -778,6 +788,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 	buf[24] = (jint) r_shader_switches;
 	buf[25] = (jint) r_mask_draws;
 	buf[26] = (jint) ogl_color_depth;
+	buf[27] = (jint) g_texfilt_level;
 
 	jintArray result = (*env)->NewIntArray(env, VS_SIZE);
 	if (result)

@@ -1,6 +1,6 @@
 # Overlay + Launcher Graphics Settings Improvements
 
-## Status: PHASES 1, 3, 6, 7 DONE
+## Status: PHASES 1, 2, 3, 5, 6, 7 DONE
 
 ## Summary
 Seven areas of work related to graphics settings persistence, display, and usability.
@@ -125,53 +125,26 @@ No additional work needed beyond Phases 1-2.
 
 ---
 
-## Phase 5: GPU timer showing 0.0ms on real device (S25)
+## Phase 5: GPU timer showing 0.0ms on real device (S25) -- DONE
 
-### Root cause analysis
-The implementation uses `GL_EXT_disjoint_timer_query` with double-buffered queries:
-1. Frame N: `glBeginQuery(GL_TIME_ELAPSED_EXT, queries[idx])`
-2. End of frame N (gr_flip): `glEndQuery(GL_TIME_ELAPSED_EXT)`
-3. Frame N+1 (ogl_start_frame): check `GL_QUERY_RESULT_AVAILABLE` on queries[prev]
+### Root cause (actual)
+The double-buffer code had a logic bug: `gr_flip()` cleared `ogl_gpu_query_active = 0`
+after ending each query, but `ogl_start_frame()` gated result-reading on
+`ogl_gpu_query_active != 0`. Since gr_flip always runs before ogl_start_frame, the flag
+was ALWAYS 0 when checked -- results were NEVER read. `g_gpu_time_us` stayed at 0 forever.
 
-**Problem on real GPUs**: The query result from the previous frame may not be immediately
-available because the GPU runs asynchronously. With double-buffering (only 2 query objects),
-if GPU latency is >1 frame, the result from `queries[prev]` isn't ready yet and
-`g_gpu_time_us` stays 0.
+### Fix applied (Options A+B)
+- Triple-buffered queries (GPU_QUERY_COUNT=3) with separate tracking variables:
+  `ogl_gpu_query_write`, `ogl_gpu_query_count`, `ogl_gpu_query_in_flight`
+- Non-blocking check with blocking fallback when all slots full
+- Keep last valid reading on disjoint (don't zero out)
+- Applied to both d1/arch/ogl/ogl.c and d2/arch/ogl/ogl.c
 
-**Also**: `GL_GPU_DISJOINT_EXT` checking is too aggressive. On mobile GPUs, thermal
-throttling or DVFS changes set the disjoint flag frequently, discarding valid results.
-
-### Possible fixes (ordered by preference)
-
-**Option A: Triple-buffer queries + poll previous-previous frame**
-Use 3 query objects instead of 2. Poll queries[N-2] which has had a full frame to complete.
-Most GPU drivers complete within 2 frames.
-
-**Option B: Blocking read with GL_QUERY_RESULT (no AVAILABLE check)**
-When `GL_QUERY_RESULT_AVAILABLE` is false, just read `GL_QUERY_RESULT` directly -- this
-blocks the CPU until the GPU finishes the query. This adds a sync point but gives accurate
-timing. Acceptable for a debug overlay.
-
-**Option C: Use EGL_ANDROID_get_frame_timestamps if available**
-This is a newer Android API that gives per-frame GPU composition timestamps without
-query objects. Only available on Android 8+ with supporting drivers. More complex to
-integrate and doesn't give fine-grained shader/raster time.
-
-**Option D: Frame delta heuristic**
-Compare wall-clock frame time with CPU-measured frame time. The difference is approximately
-GPU time. Very rough but works everywhere.
-
-**Recommendation: Option A (triple-buffer)** -- minimal code change, no sync point, reliable
-on most hardware. Fall back to Option B if result still isn't available after 2 frames.
-Also: relax the disjoint check -- only discard if disjoint is set, but don't accumulate
-zero; instead keep the last valid reading.
-
-### Changes
-- `d2/arch/ogl/ogl.c`: Change query array from [2] to [3], adjust index cycling, poll N-2
-  with blocking fallback. Keep last valid g_gpu_time_us on disjoint.
-- `d1/arch/ogl/ogl.c`: Mirror
-- Possibly add a "gpu_time_stale" flag to stats so the overlay can show an aged value
-  differently
+### Option C assessment
+EGL_ANDROID_get_frame_timestamps measures display composition timestamps, not GPU render
+time -- wrong metric entirely. glFenceSync doesn't provide timestamps either. Both dropped.
+On devices without GL_EXT_disjoint_timer_query (emulator/SwiftShader), overlay correctly
+shows "GPU: n/a".
 
 ### Test
 - Run on real S25 device, check GPU line shows non-zero values.

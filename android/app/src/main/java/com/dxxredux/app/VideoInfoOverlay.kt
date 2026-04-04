@@ -65,15 +65,18 @@ class VideoInfoOverlay(
     private var shaderSwitches = 0
     private var maskDraws = 0
     private var colorDepth = 16
+    private var texFiltLevel = 0
 
     // Labels toggle button state and hit region
     private var labelsOn = false
     private var buttonPressed = false
     private var anisoPressed = false
     private var msaaPressed = false
+    private var texFiltPressed = false
     private val buttonRect = RectF()
     private val anisoRect = RectF()
     private val msaaRect = RectF()
+    private val texFiltRect = RectF()
     private val panelBounds = RectF()
 
     private val pollRunnable =
@@ -122,6 +125,9 @@ class VideoInfoOverlay(
                     }
                     if (stats != null && stats.size >= 27) {
                         colorDepth = stats[26]
+                    }
+                    if (stats != null && stats.size >= 28) {
+                        texFiltLevel = stats[27]
                     }
                 } catch (_: Exception) {
                     // JNI not ready yet
@@ -212,7 +218,7 @@ class VideoInfoOverlay(
 
         val pad = 8f * density
         val lineH = baseTextSize * 1.5f
-        val numLines = 16
+        val numLines = 17
         val panelH = pad * 2 + lineH * numLines
         val panelW = baseTextSize * 20f
 
@@ -345,6 +351,26 @@ class VideoInfoOverlay(
         canvas.drawText(cdLabel, valCol, y, valuePaint)
         y += lineH
 
+        // Texture filtering cycle button
+        val tfLabel =
+            when (texFiltLevel) {
+                0 -> "OFF"
+                1 -> "Bilinear"
+                else -> "Trilinear"
+            }
+        val tfText = "TexFilt: $tfLabel"
+        val tfPaint = if (texFiltLevel > 0) fpsGoodPaint else fpsWarnPaint
+        texFiltRect.set(
+            panelLeft + pad * 0.5f,
+            y - baseTextSize,
+            panelLeft + panelW - pad * 0.5f,
+            y + lineH * 0.3f,
+        )
+        val tfBg = if (texFiltPressed) btnPressedPaint else btnNormalPaint
+        canvas.drawRoundRect(texFiltRect, pad * 0.5f, pad * 0.5f, tfBg)
+        canvas.drawText(tfText, panelLeft + pad, y, tfPaint)
+        y += lineH
+
         // Texture binds per frame
         val bindTotal = texBinds + texBindReuse
         val hitPct = if (bindTotal > 0) (texBindReuse * 100 / bindTotal) else 0
@@ -413,6 +439,7 @@ class VideoInfoOverlay(
         val inButton = buttonRect.contains(event.x, event.y)
         val inAniso = anisoRect.contains(event.x, event.y)
         val inMsaa = msaaRect.contains(event.x, event.y)
+        val inTexFilt = texFiltRect.contains(event.x, event.y)
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
@@ -428,6 +455,11 @@ class VideoInfoOverlay(
                 }
                 if (inMsaa) {
                     msaaPressed = true
+                    invalidate()
+                    return true
+                }
+                if (inTexFilt) {
+                    texFiltPressed = true
                     invalidate()
                     return true
                 }
@@ -447,10 +479,15 @@ class VideoInfoOverlay(
                     cycleMsaa()
                     performClick()
                 }
-                if (buttonPressed || anisoPressed || msaaPressed || inPanel) {
+                if (texFiltPressed && inTexFilt) {
+                    cycleTexFilt()
+                    performClick()
+                }
+                if (buttonPressed || anisoPressed || msaaPressed || texFiltPressed || inPanel) {
                     buttonPressed = false
                     anisoPressed = false
                     msaaPressed = false
+                    texFiltPressed = false
                     invalidate()
                     return true
                 }
@@ -459,6 +496,7 @@ class VideoInfoOverlay(
                 buttonPressed = false
                 anisoPressed = false
                 msaaPressed = false
+                texFiltPressed = false
                 invalidate()
             }
         }
@@ -485,6 +523,13 @@ class VideoInfoOverlay(
         msaaLevel = next
         graphicsOptionSetter?.invoke("msaa_level", next)
         settingsSaver?.invoke("msaa_level", next)
+    }
+
+    private fun cycleTexFilt() {
+        // Cycle: 0 (nearest) -> 1 (bilinear) -> 2 (trilinear) -> 0
+        val next = (texFiltLevel + 1) % 3
+        texFiltLevel = next
+        graphicsOptionSetter?.invoke("tex_filt", next)
     }
 
     companion object {
