@@ -2552,6 +2552,7 @@ private fun SetupScreen(
     var showControllerPage by remember { mutableStateOf(false) }
     var showTouchEditorPage by remember { mutableStateOf(false) }
     var showAdvancedPage by remember { mutableStateOf(false) }
+    var showGraphicsPage by remember { mutableStateOf(false) }
     var showMultiplayerPage by remember { mutableStateOf(false) }
     var showAutoselectPage by remember { mutableStateOf(false) }
     var showMusicPage by remember { mutableStateOf(false) }
@@ -2580,6 +2581,13 @@ private fun SetupScreen(
                 filesDir = filesDir,
                 fileSetManager = fileSetManager,
                 onBack = { showAdvancedPage = false },
+            )
+            return@MaterialTheme
+        }
+        if (showGraphicsPage) {
+            GraphicsSettingsPage(
+                filesDir = filesDir,
+                onBack = { showGraphicsPage = false },
             )
             return@MaterialTheme
         }
@@ -3543,6 +3551,7 @@ private fun SetupScreen(
                         onDefineControls = { showControllerPage = true },
                         onEditTouchLayout = { showTouchEditorPage = true },
                         onAdvancedSettings = { showAdvancedPage = true },
+                        onGraphicsSettings = { showGraphicsPage = true },
                         onEditAutoselect = { showAutoselectPage = true },
                     )
 
@@ -4444,29 +4453,22 @@ internal fun updateDescentCfgResolution(
     val parts = resolution.split("x")
     val w = parts.getOrNull(0)?.toIntOrNull() ?: return
     val h = parts.getOrNull(1)?.toIntOrNull() ?: return
-    val cfgFile = File(filesDir, "descent.cfg")
+    updateAllConfigFiles(filesDir, listOf("ResolutionX" to "$w", "ResolutionY" to "$h"))
+}
 
-    if (cfgFile.exists()) {
-        var text = cfgFile.readText()
-        val rxRegex = Regex("^ResolutionX=.*$", RegexOption.MULTILINE)
-        val ryRegex = Regex("^ResolutionY=.*$", RegexOption.MULTILINE)
-        text =
-            if (rxRegex.containsMatchIn(text)) {
-                rxRegex.replace(text, "ResolutionX=$w")
-            } else {
-                text.trimEnd() + "\nResolutionX=$w\n"
-            }
-        text =
-            if (ryRegex.containsMatchIn(text)) {
-                ryRegex.replace(text, "ResolutionY=$h")
-            } else {
-                text.trimEnd() + "\nResolutionY=$h\n"
-            }
-        cfgFile.writeText(text)
-    } else {
-        cfgFile.writeText("ResolutionX=$w\nResolutionY=$h\n")
+/**
+ * Read a key from descent.cfg. Checks d2x-redux/ first, then d1x-redux/, then root.
+ * Returns null if not found.
+ */
+internal fun readConfigValue(filesDir: File, key: String): String? {
+    for (sub in listOf("d2x-redux", "d1x-redux", "")) {
+        val cfgFile = if (sub.isEmpty()) File(filesDir, "descent.cfg") else File(File(filesDir, sub), "descent.cfg")
+        if (!cfgFile.exists()) continue
+        val regex = Regex("^$key=(.*)$", RegexOption.MULTILINE)
+        val match = regex.find(cfgFile.readText()) ?: continue
+        return match.groupValues[1].trim()
     }
-    Log.i("DXX-Setup", "Updated descent.cfg: ResolutionX=$w ResolutionY=$h")
+    return null
 }
 
 /**
@@ -4474,7 +4476,7 @@ internal fun updateDescentCfgResolution(
  * d1x-redux/ and d2x-redux/ (per-game configs created after first run).
  * Each game's PHYSFS reads only its own subdir config, so we must write to all.
  */
-private fun updateAllConfigFiles(
+internal fun updateAllConfigFiles(
     filesDir: File,
     settings: List<Pair<String, String>>,
 ) {
@@ -4618,6 +4620,7 @@ private fun ControllerSection(
     onDefineControls: () -> Unit = {},
     onEditTouchLayout: () -> Unit = {},
     onAdvancedSettings: () -> Unit = {},
+    onGraphicsSettings: () -> Unit = {},
     onEditAutoselect: () -> Unit = {},
 ) {
     // Poll for controller connect/disconnect every 1 second
@@ -4784,7 +4787,7 @@ private fun ControllerSection(
         }
     }
 
-    // ── Weapon Autoselect / Advanced ──
+    // ── Weapon Autoselect / Graphics / Advanced ──
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedButton(
             onClick = onEditAutoselect,
@@ -4794,11 +4797,18 @@ private fun ControllerSection(
             Text("Weapon Autoselect", fontSize = 12.sp)
         }
         OutlinedButton(
+            onClick = onGraphicsSettings,
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+            modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
+        ) {
+            Text("Graphics", fontSize = 12.sp)
+        }
+        OutlinedButton(
             onClick = onAdvancedSettings,
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
             modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
         ) {
-            Text("Advanced Settings", fontSize = 12.sp)
+            Text("Advanced", fontSize = 12.sp)
         }
     }
 

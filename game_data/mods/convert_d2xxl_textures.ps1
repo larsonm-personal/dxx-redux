@@ -564,9 +564,18 @@ function Convert-GameTextures {
     $skipped = 0
     $errors = 0
 
+    # Textures that should never be downscaled: full-screen cockpit overlays
+    # and targeting reticles are HUD elements drawn at screen resolution
+    $noDownscalePattern = '^(cockpit|hires-cockpit)'
+
     foreach ($tga in @($tgaFiles) + @($pngFiles)) {
         $baseName = [System.IO.Path]::GetFileNameWithoutExtension($tga.Name)
         $isTga = $tga.Extension -eq '.tga'
+
+        # Skip downscaling for HUD/cockpit textures
+        $skipDownscale = $MaxDim -gt 0 -and $baseName -match $noDownscalePattern
+        $effectiveMaxDim = if ($skipDownscale) { 0 } else { $MaxDim }
+        $effectiveUseMagick = $MagickPath -and $effectiveMaxDim -gt 0 -and (Test-Path $MagickPath)
 
         try {
             $entryName = "$baseName.ktx2"
@@ -598,15 +607,15 @@ function Convert-GameTextures {
                 $maskPrePng = if (Test-Path $splitMaskPath) { $splitMaskPath } else { $null }
             }
 
-            if ($useMagick -and $MaxDim -gt 0) {
+            if ($effectiveUseMagick -and $effectiveMaxDim -gt 0) {
                 # ImageMagick path: high-quality linear-light Lanczos downscale
-                Convert-WithMagick -InputPath $inputForResize -OutputPath $tempPng -MaxDim $MaxDim -MagickPath $MagickPath
+                Convert-WithMagick -InputPath $inputForResize -OutputPath $tempPng -MaxDim $effectiveMaxDim -MagickPath $MagickPath
             } elseif ($isTga) {
                 # Non-ImageMagick path: pre-PNG already created, just resize
-                if ($MaxDim -gt 0) {
+                if ($effectiveMaxDim -gt 0) {
                     $bmp = [System.Drawing.Bitmap]::new($inputForResize)
-                    if ($bmp.Width -gt $MaxDim -or $bmp.Height -gt $MaxDim) {
-                        $scale = [Math]::Min($MaxDim / $bmp.Width, $MaxDim / $bmp.Height)
+                    if ($bmp.Width -gt $effectiveMaxDim -or $bmp.Height -gt $effectiveMaxDim) {
+                        $scale = [Math]::Min($effectiveMaxDim / $bmp.Width, $effectiveMaxDim / $bmp.Height)
                         $newW = [Math]::Max(1, [int]($bmp.Width * $scale))
                         $newH = [Math]::Max(1, [int]($bmp.Height * $scale))
                         $resized = [System.Drawing.Bitmap]::new($bmp, $newW, $newH)
@@ -634,7 +643,7 @@ function Convert-GameTextures {
             $tempMaskPng = $null
             if ($maskPrePng -and (Test-Path $maskPrePng)) {
                 $tempMaskPng = Join-Path $tempDir "${baseName}_mask.png"
-                if ($useMagick -and $MaxDim -gt 0) {
+                if ($effectiveUseMagick -and $effectiveMaxDim -gt 0) {
                     $safeMaskIn = $maskPrePng
                     if ($maskPrePng -match '#') {
                         $dir = Split-Path $maskPrePng
@@ -648,7 +657,7 @@ function Convert-GameTextures {
                         $ext = [IO.Path]::GetExtension($tempMaskPng)
                         $safeMaskOut = Join-Path $dir ("_safe_mask_out_" + [IO.Path]::GetFileNameWithoutExtension($tempMaskPng).Replace('#','_H_') + $ext)
                     }
-                    & $MagickPath $safeMaskIn -filter Point -resize "${MaxDim}x${MaxDim}" $safeMaskOut 2>$null
+                    & $MagickPath $safeMaskIn -filter Point -resize "${effectiveMaxDim}x${effectiveMaxDim}" $safeMaskOut 2>$null
                     if ($safeMaskIn -ne $maskPrePng) { Remove-Item $safeMaskIn -Force -ErrorAction SilentlyContinue }
                     if ($safeMaskOut -ne $tempMaskPng -and (Test-Path $safeMaskOut)) {
                         Move-Item $safeMaskOut $tempMaskPng -Force
@@ -698,10 +707,15 @@ function Convert-GameTextures {
         $entryName = "$baseName.ktx2"
         $tempEtc2 = Join-Path $tempDir "$baseName.ktx2"
 
+        # Skip downscaling for HUD/cockpit textures
+        $skipDownscale = $MaxDim -gt 0 -and $baseName -match $noDownscalePattern
+        $effectiveMaxDim = if ($skipDownscale) { 0 } else { $MaxDim }
+        $effectiveUseMagick = $MagickPath -and $effectiveMaxDim -gt 0 -and (Test-Path $MagickPath)
+
         try {
-            if ($useMagick -and $MaxDim -gt 0) {
+            if ($effectiveUseMagick -and $effectiveMaxDim -gt 0) {
                 $tempPng = Join-Path $tempDir "$baseName.png"
-                Convert-WithMagick -InputPath $jpg.FullName -OutputPath $tempPng -MaxDim $MaxDim -MagickPath $MagickPath
+                Convert-WithMagick -InputPath $jpg.FullName -OutputPath $tempPng -MaxDim $effectiveMaxDim -MagickPath $MagickPath
                 & $Etc2ToolPath $tempPng $tempEtc2 2>$null
                 Remove-Item $tempPng -ErrorAction SilentlyContinue
             } else {

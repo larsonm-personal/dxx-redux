@@ -98,7 +98,27 @@ int last_kb_off=0;
 int GL_TEXTURE_2D_enabled=-1;
 int GL_texclamp_enabled=-1;
 GLfloat ogl_maxanisotropy = 0;
+int ogl_aniso_level = 0; /* 0=off, 2/4/8/16 for anisotropic filtering */
+volatile int g_aniso_pending_apply = 0; /* set from JNI, consumed by GL thread */
 int ogl_max_texture_size = 1024;
+#ifdef ANDROID
+/* android port: MSAA via FBO -- runtime-toggleable anti-aliasing */
+int ogl_msaa_samples = 0;       /* desired sample count: 0/2/4 */
+int ogl_msaa_max_samples = 0;   /* queried from GL_MAX_SAMPLES */
+volatile int g_msaa_pending_apply = 0;
+static GLuint ogl_msaa_fbo = 0, ogl_msaa_color_rbo = 0, ogl_msaa_depth_rbo = 0;
+static int ogl_msaa_w = 0, ogl_msaa_h = 0;
+int g_msaa_fbo_bound = 0;       /* 1 while rendering to MSAA FBO */
+/* android port: GPU timer via EXT_disjoint_timer_query */
+#define GL_TIME_ELAPSED_EXT  0x88BF
+#define GL_GPU_DISJOINT_EXT  0x8FBB
+int ogl_gpu_timer_available = 0;
+int g_gpu_time_us = 0;          /* last completed GPU frame time in microseconds */
+static GLuint ogl_gpu_queries[2] = {0, 0};
+static int ogl_gpu_query_idx = 0;
+static int ogl_gpu_query_active = 0; /* 1 while a query is in-flight */
+int ogl_color_depth = 16; /* actual framebuffer color depth: 16=RGB565, 32=RGBA8888 */
+#endif
 #ifdef ANDROID
 volatile int g_fb_sample_r = -1, g_fb_sample_g = -1, g_fb_sample_b = -1, g_fb_sample_a = -1;
 /* android port: manual override to disable ETC2 texture loading */
@@ -130,6 +150,8 @@ volatile int g_debug_tex_overlay_active = 0;
 /* android port: per-frame texture bind counter + bind cache */
 int r_texbinds = 0;
 int r_texbind_reuse = 0;
+int r_shader_switches = 0;
+int r_mask_draws = 0;
 static GLuint ogl_last_bound_tex = 0;
 #define OGL_BINDTEXTURE(a) do { \
 	if ((GLuint)(a) != ogl_last_bound_tex) { \
@@ -425,6 +447,103 @@ int ogl_get_texture_bytes(void)
 		if (ogl_texture_list[i].handle > 0)
 			total += ogl_texture_list[i].bytes;
 	return total;
+}
+
+/* Re-apply anisotropic filtering to all loaded textures */
+void ogl_apply_anisotropy_all(void)
+{
+	int i, count = 0;
+	GLfloat level = (ogl_aniso_level > 1 && ogl_maxanisotropy > 1.0f)
+		? (GLfloat)(ogl_aniso_level < ogl_maxanisotropy ? ogl_aniso_level : (int)ogl_maxanisotropy)
+		: 1.0f;
+	for (i = 0; i < OGL_TEXTURE_LIST_SIZE; i++) {
+		if (ogl_texture_list[i].handle > 0) {
+			glBindTexture(GL_TEXTURE_2D, ogl_texture_list[i].handle);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, level);
+			count++;
+		}
+	}
+	ogl_last_bound_tex = 0; /* invalidate bind cache */
+	__android_log_print(ANDROID_LOG_INFO, "DXX",
+	    "anisotropy: applied level %.0f to %i textures", level, count);
+}
+
+/* android port: MSAA via FBO -- create/destroy/resolve helpers */
+static void ogl_msaa_destroy_fbo(void)
+{
+	if (ogl_msaa_fbo) {
+		glDeleteFramebuffers(1, &ogl_msaa_fbo);
+		ogl_msaa_fbo = 0;
+	}
+	if (ogl_msaa_color_rbo) {
+		glDeleteRenderbuffers(1, &ogl_msaa_color_rbo);
+		ogl_msaa_color_rbo = 0;
+	}
+	if (ogl_msaa_depth_rbo) {
+		glDeleteRenderbuffers(1, &ogl_msaa_depth_rbo);
+		ogl_msaa_depth_rbo = 0;
+	}
+	ogl_msaa_w = ogl_msaa_h = 0;
+	g_msaa_fbo_bound = 0;
+}
+
+static int ogl_msaa_create_fbo(int samples, int w, int h)
+{
+	ogl_msaa_destroy_fbo();
+
+	/* Query default framebuffer bit depths to match format for glBlitFramebuffer.
+	 * GLES 3.0 requires identical formats for multisample resolve */
+	GLenum color_fmt;
+	{
+		GLint rb = 0, gb = 0, bb = 0, ab = 0;
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glGetIntegerv(GL_RED_BITS, &rb);
+		glGetIntegerv(GL_GREEN_BITS, &gb);
+		glGetIntegerv(GL_BLUE_BITS, &bb);
+		glGetIntegerv(GL_ALPHA_BITS, &ab);
+		if (rb <= 5 && gb <= 6 && bb <= 5 && ab == 0)
+			color_fmt = 0x8D62; /* GL_RGB565 */
+		else if (ab > 0)
+			color_fmt = GL_RGBA8;
+		else
+			color_fmt = GL_RGB8;
+		__android_log_print(ANDROID_LOG_INFO, "DXX",
+		    "MSAA: default FB bits r=%d g=%d b=%d a=%d -> fmt=0x%x",
+		    rb, gb, bb, ab, color_fmt);
+	}
+
+	glGenFramebuffers(1, &ogl_msaa_fbo);
+	glGenRenderbuffers(1, &ogl_msaa_color_rbo);
+	glGenRenderbuffers(1, &ogl_msaa_depth_rbo);
+
+	glBindRenderbuffer(GL_RENDERBUFFER, ogl_msaa_color_rbo);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, color_fmt, w, h);
+
+	glBindRenderbuffer(GL_RENDERBUFFER, ogl_msaa_depth_rbo);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH_COMPONENT16, w, h);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, ogl_msaa_fbo);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+	    GL_RENDERBUFFER, ogl_msaa_color_rbo);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+	    GL_RENDERBUFFER, ogl_msaa_depth_rbo);
+
+	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (status != GL_FRAMEBUFFER_COMPLETE) {
+		__android_log_print(ANDROID_LOG_ERROR, "DXX",
+		    "MSAA FBO incomplete: status=0x%x samples=%d %dx%d fmt=0x%x",
+		    status, samples, w, h, color_fmt);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		ogl_msaa_destroy_fbo();
+		return 0;
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	ogl_msaa_w = w;
+	ogl_msaa_h = h;
+	__android_log_print(ANDROID_LOG_INFO, "DXX",
+	    "MSAA FBO created: %dx samples, %dx%d fmt=0x%x", samples, w, h, color_fmt);
+	return 1;
 }
 #endif
 
@@ -1010,7 +1129,7 @@ bool g3_draw_tmap_2(int nv, g3s_point **pointlist, g3s_uvl *uvl_list, g3s_lrgb *
 	GLfloat vertex_array[MAX_VERTS * 3], color_array[MAX_VERTS * 4], texcoordovl_array[MAX_VERTS * 2];
 #ifdef OGL_MERGE
 	GLfloat texcoordbot_array[MAX_VERTS * 2];
-	int super = (bmovl->bm_flags & BM_FLAG_SUPER_TRANSPARENT) && bmovl->gltexture_mask;
+	int super;
 #endif
 
 	if (nv > MAX_VERTS)
@@ -1041,6 +1160,11 @@ bool g3_draw_tmap_2(int nv, g3s_point **pointlist, g3s_uvl *uvl_list, g3s_lrgb *
 		return 0;
 	}
 	ogl_texwrap(bmovl->gltexture,GL_REPEAT);
+
+	/* Compute super after bindbmtex -- on first encounter bm_flags may be
+	 * BM_FLAG_PAGED_OUT (no SUPER_TRANSPARENT) and gltexture_mask NULL.
+	 * bindbmtex pages in the bitmap and generates the mask. */
+	super = (bmovl->bm_flags & BM_FLAG_SUPER_TRANSPARENT) && bmovl->gltexture_mask;
 
 	if (super) {
 		glActiveTexture(GL_TEXTURE2);
@@ -1142,6 +1266,8 @@ bool g3_draw_tmap_2(int nv, g3s_point **pointlist, g3s_uvl *uvl_list, g3s_lrgb *
 	GLuint prog = super ? ogl_prog_tex2m : ogl_prog_tex2;
 #ifdef ANDROID
 	gles3_shim_use_external(prog);
+	r_shader_switches++;
+	if (super) r_mask_draws++;
 #else
 	glUseProgram(prog);
 #endif
@@ -1412,8 +1538,17 @@ void ogl_toggle_depth_test(int enable)
 /* 
  * set blending function
  */
+#ifdef ANDROID
+static int ogl_last_blend_mode = -1; /* blend func cache; reset in ogl_start_frame */
+#endif
 void ogl_set_blending()
 {
+#ifdef ANDROID
+	/* android port: skip redundant glBlendFunc calls */
+	int cur = grd_curcanv->cv_blend_func;
+	if (cur == ogl_last_blend_mode) return;
+	ogl_last_blend_mode = cur;
+#endif
 	switch ( grd_curcanv->cv_blend_func )
 	{
 		case GR_BLEND_ADDITIVE_A:
@@ -1435,6 +1570,47 @@ void ogl_start_frame(void){
 	r_polyc=0;r_tpolyc=0;r_bitmapc=0;r_ubitbltc=0;r_upixelc=0;
 #ifdef ANDROID
 	r_texbinds=0;r_texbind_reuse=0;ogl_last_bound_tex=0;
+	r_shader_switches=0;r_mask_draws=0;
+	if (g_aniso_pending_apply) {
+		g_aniso_pending_apply = 0;
+		ogl_apply_anisotropy_all();
+	}
+	if (g_msaa_pending_apply) {
+		g_msaa_pending_apply = 0;
+		ogl_msaa_destroy_fbo(); /* recreate on next check below */
+	}
+	/* Bind MSAA FBO if enabled; create/resize as needed */
+	if (ogl_msaa_samples > 0) {
+		int w = grd_curscreen->sc_w, h = grd_curscreen->sc_h;
+		if (!ogl_msaa_fbo || ogl_msaa_w != w || ogl_msaa_h != h)
+			ogl_msaa_create_fbo(ogl_msaa_samples, w, h);
+		if (ogl_msaa_fbo) {
+			glBindFramebuffer(GL_FRAMEBUFFER, ogl_msaa_fbo);
+			g_msaa_fbo_bound = 1;
+		}
+	}
+	/* GPU timer: read previous result, begin new query */
+	if (ogl_gpu_timer_available) {
+		if (ogl_gpu_query_active) {
+			int prev = 1 - ogl_gpu_query_idx;
+			GLuint avail = 0;
+			glGetQueryObjectuiv(ogl_gpu_queries[prev],
+			    GL_QUERY_RESULT_AVAILABLE, &avail);
+			if (avail) {
+				GLuint ns = 0;
+				glGetQueryObjectuiv(ogl_gpu_queries[prev],
+				    GL_QUERY_RESULT, &ns);
+				GLint disjoint = 0;
+				glGetIntegerv(GL_GPU_DISJOINT_EXT, &disjoint);
+				if (!disjoint)
+					g_gpu_time_us = (int)(ns / 1000);
+			}
+		}
+		if (!ogl_gpu_queries[0])
+			glGenQueries(2, ogl_gpu_queries);
+		glBeginQuery(GL_TIME_ELAPSED_EXT, ogl_gpu_queries[ogl_gpu_query_idx]);
+		ogl_gpu_query_active = 1;
+	}
 #endif
 
 	OGL_VIEWPORT(grd_curcanv->cv_bitmap.bm_x,grd_curcanv->cv_bitmap.bm_y,Canvas_width,Canvas_height);
@@ -1449,6 +1625,9 @@ void ogl_start_frame(void){
 	glLineWidth(linedotscale);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+#ifdef ANDROID
+	ogl_last_blend_mode = -1; /* invalidate cache; ogl_do_palfx changes blend directly */
+#endif
 
 #if defined(OGLES) || !defined(OGL_MERGE)
 	glEnable(GL_ALPHA_TEST);
@@ -1457,7 +1636,7 @@ void ogl_start_frame(void){
 
 	if (!GameCfg.ClassicDepth || (Game_mode & GM_MULTI))
 		glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
+	/* glDepthFunc(GL_LEQUAL) moved to ogl_init_state -- never changes */
 
 	glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -1541,6 +1720,32 @@ void gr_flip(void)
 		ogl_texture_stats();
 
 	ogl_do_palfx();
+	/* android port: end GPU timer query before resolve/swap */
+#ifdef ANDROID
+	if (ogl_gpu_query_active) {
+		glEndQuery(GL_TIME_ELAPSED_EXT);
+		ogl_gpu_query_idx = 1 - ogl_gpu_query_idx;
+		ogl_gpu_query_active = 0;
+	}
+#endif
+	/* android port: resolve MSAA FBO to default framebuffer before swap */
+#ifdef ANDROID
+	if (g_msaa_fbo_bound) {
+		int w = grd_curscreen->sc_w, h = grd_curscreen->sc_h;
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, ogl_msaa_fbo);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		glBlitFramebuffer(0, 0, w, h, 0, 0, w, h,
+		    GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		{
+			GLenum err = glGetError();
+			if (err != GL_NO_ERROR)
+				__android_log_print(ANDROID_LOG_ERROR, "DXX",
+				    "MSAA resolve error: 0x%x", err);
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		g_msaa_fbo_bound = 0;
+	}
+#endif
 	ogl_swap_buffers_internal();
 	glClear(GL_COLOR_BUFFER_BIT);
 #ifdef ANDROID
@@ -1944,7 +2149,11 @@ int ogl_loadtexture (unsigned char *data, int dxo, int dyo, ogl_texture *tex, in
 #endif
 		glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (texfilt>=2?GL_LINEAR_MIPMAP_LINEAR:GL_LINEAR_MIPMAP_NEAREST));
-#ifndef OGLES
+#ifdef ANDROID
+		if (ogl_aniso_level > 1 && ogl_maxanisotropy > 1.0)
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
+				(GLfloat)(ogl_aniso_level < ogl_maxanisotropy ? ogl_aniso_level : (int)ogl_maxanisotropy));
+#elif !defined(OGLES)
 		if (texfilt >= 3 && ogl_maxanisotropy > 1.0)
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, ogl_maxanisotropy);
 #endif
@@ -2120,6 +2329,11 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
 								texfilt >= 2 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR_MIPMAP_NEAREST);
+							if (ogl_maxanisotropy > 0 && ogl_aniso_level > 0) {
+								int af = ogl_aniso_level;
+								if (af > (int)ogl_maxanisotropy) af = (int)ogl_maxanisotropy;
+								glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, (float)af);
+							}
 						} else if (texfilt) {
 							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -2127,6 +2341,8 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 						}
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL,
+							edata.mip_count > 1 ? edata.mip_count - 1 : 0);
 						/* Upload each mip level from the .etc2 file */
 						for (int level = 0; level < edata.mip_count && p + 4 <= end; level++) {
 							if (level > 0) {

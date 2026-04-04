@@ -85,13 +85,19 @@ extern int gl_initialized;
 
 extern int active_texture_unit;
 extern GLfloat ogl_maxanisotropy;
+extern int ogl_aniso_level;
+extern int ogl_msaa_samples;
+extern int ogl_msaa_max_samples;
+extern int g_msaa_fbo_bound;
+extern int ogl_gpu_timer_available;
+extern int g_gpu_time_us;
+extern int ogl_color_depth;
 extern int ogl_max_texture_size;
 
 void ogl_setActiveTexture(int t);
 
 int ogl_init_window(int x, int y);//create a window/switch modes/etc
 
-#define OGL_FLAG_MIPMAP (1 << 0)
 #define OGL_FLAG_NOCOLOR (1 << 1)
 #define OGL_FLAG_ALPHA (1 << 31) // not required for ogl_loadbmtexture, since it uses the BM_FLAG_TRANSPARENT, but is needed for ogl_init_texture.
 void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt);

@@ -43,7 +43,6 @@ fun AdvancedSettingsPage(
     BackHandler(onBack = onBack)
 
     val ctx = LocalContext.current
-    val prefs = ctx.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
     val scrollState = rememberScrollState()
 
     Surface(
@@ -83,13 +82,6 @@ fun AdvancedSettingsPage(
                             .fillMaxSize()
                             .verticalScroll(scrollState),
                 ) {
-                    // -- Render Resolution --
-                    ResolutionPickerAdvanced(prefs = prefs, filesDir = filesDir)
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(16.dp))
-
                     // -- Export / Import configs --
                     Text("Config Management", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(8.dp))
@@ -448,51 +440,6 @@ private fun CrashReportsSection() {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
-}
-
-@Composable
-private fun ResolutionPickerAdvanced(
-    prefs: android.content.SharedPreferences,
-    filesDir: File,
-) {
-    val ctx = LocalContext.current
-    val options =
-        remember {
-            computeResolutionOptions(ctx)
-        }
-    val validValues = remember(options) { options.map { it.first }.toSet() }
-    val defaultValue = remember(options) { options.firstOrNull()?.first ?: "640x480" }
-    var selected by remember {
-        val stored = prefs.getString("render_resolution", null) ?: ""
-        mutableStateOf(if (stored in validValues) stored else defaultValue)
-    }
-
-    Text("Render Resolution", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-    Spacer(modifier = Modifier.height(4.dp))
-    options.forEach { (value, label) ->
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 2.dp),
-        ) {
-            RadioButton(
-                selected = selected == value,
-                onClick = {
-                    selected = value
-                    prefs.edit().putString("render_resolution", value).apply()
-                    updateDescentCfgResolution(filesDir, value)
-                },
-            )
-            Text(text = label, fontSize = 13.sp, modifier = Modifier.padding(start = 4.dp))
-        }
-    }
-    Text(
-        "Takes effect on next launch",
-        fontSize = 11.sp,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
 }
 
 /** Compute resolution options as fractions of the device's real screen size. */

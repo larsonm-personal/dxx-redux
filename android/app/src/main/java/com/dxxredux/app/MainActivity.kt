@@ -110,6 +110,11 @@ class MainActivity :
         value: Int,
     )
 
+    external fun nativeSetGraphicsOption(
+        name: String,
+        value: Int,
+    )
+
     external fun nativeSetDebugLogEnabled(
         category: Int,
         on: Boolean,
@@ -746,6 +751,10 @@ class MainActivity :
                         // JNI not ready yet
                     }
                 }
+                settingsSaver = { name, value ->
+                    getSharedPreferences("dxx_prefs", MODE_PRIVATE)
+                        .edit().putInt(name, value).apply()
+                }
             }
         videoInfoOverlay = vidOverlay
         frame.addView(
@@ -850,6 +859,13 @@ class MainActivity :
                     nativeLoadAutomationScript(resolved)
                 }
             }
+
+            // Apply saved MSAA/AF graphics settings before starting engine
+            val prefs = getSharedPreferences("dxx_prefs", MODE_PRIVATE)
+            val msaa = prefs.getInt("msaa_level", 0)
+            val aniso = prefs.getInt("aniso_level", 0)
+            if (msaa > 0) nativeSetGraphicsOption("msaa_level", msaa)
+            if (aniso > 0) nativeSetGraphicsOption("aniso_level", aniso)
 
             Thread {
                 startGame()

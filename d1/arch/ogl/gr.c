@@ -55,6 +55,10 @@
 #include "pngfile.h"
 #include "oglprog.h"
 
+#ifdef ANDROID
+#include <android/log.h>
+#endif
+
 #if defined(__APPLE__) && defined(__MACH__)
 #include <OpenGL/glu.h>
 #else
@@ -386,6 +390,12 @@ int ogl_init_window(int x, int y)
 	};
 
 #ifdef ANDROID
+	/* android port: RGBA8888 framebuffer when ColorDepth=1 in descent.cfg */
+	if (GameCfg.ColorDepth == 1) {
+		configAttribs[1] = 8; /* RED */
+		configAttribs[3] = 8; /* GREEN */
+		configAttribs[5] = 8; /* BLUE */
+	}
 	// Request an OpenGL ES 3.0 context on Android (GLES3 shim)
         EGLint contextAttribs[] = { EGL_CONTEXT_CLIENT_VERSION, 3, EGL_NONE, EGL_NONE };
 #else
@@ -460,6 +470,14 @@ int ogl_init_window(int x, int y)
 			con_printf(CON_URGENT, "EGL: Error choosing config\n");
 		} else {
 			con_printf(CON_DEBUG, "EGL: config chosen\n");
+			/* android port: query actual color depth from chosen config */
+			extern int ogl_color_depth;
+			EGLint r = 0, g = 0, b = 0;
+			eglGetConfigAttrib(eglDisplay, eglConfig, EGL_RED_SIZE, &r);
+			eglGetConfigAttrib(eglDisplay, eglConfig, EGL_GREEN_SIZE, &g);
+			eglGetConfigAttrib(eglDisplay, eglConfig, EGL_BLUE_SIZE, &b);
+			ogl_color_depth = r + g + b;
+			con_printf(CON_DEBUG, "EGL: color depth R%d G%d B%d (%d-bit)\n", r, g, b, ogl_color_depth);
 		}
 
 		if (win) {
@@ -663,6 +681,7 @@ static void ogl_init_state(void)
 	glLoadIdentity();//clear matrix
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthFunc(GL_LEQUAL);
 	gr_palette_step_up(0,0,0);//in case its left over from in game
 
 	ogl_init_pixel_buffers(grd_curscreen->sc_w, grd_curscreen->sc_h);
@@ -739,6 +758,29 @@ void ogl_get_verinfo(void)
 	}
 	else if (GameCfg.TexFilt >= 3)
 		GameCfg.TexFilt = 2;
+#endif
+#ifdef ANDROID
+	/* android port: query anisotropic filtering support on GLES 3.0 */
+	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &ogl_maxanisotropy);
+	__android_log_print(ANDROID_LOG_INFO, "DXX",
+	    "anisotropy: max=%.0f", ogl_maxanisotropy);
+	/* android port: query max MSAA sample count */
+	{
+		extern int ogl_msaa_max_samples;
+		GLint max_s = 0;
+		glGetIntegerv(0x8D57, &max_s); /* GL_MAX_SAMPLES */
+		ogl_msaa_max_samples = (int)max_s;
+		__android_log_print(ANDROID_LOG_INFO, "DXX",
+		    "msaa: max_samples=%d", ogl_msaa_max_samples);
+	}
+	/* android port: check for GPU timer extension */
+	{
+		extern int ogl_gpu_timer_available;
+		const char *exts = (const char *)glGetString(GL_EXTENSIONS);
+		ogl_gpu_timer_available = (exts && strstr(exts, "GL_EXT_disjoint_timer_query")) ? 1 : 0;
+		__android_log_print(ANDROID_LOG_INFO, "DXX",
+		    "gpu_timer: %s", ogl_gpu_timer_available ? "available" : "not available");
+	}
 #endif
 }
 

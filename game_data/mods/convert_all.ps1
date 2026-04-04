@@ -256,6 +256,9 @@ function Convert-AndAdd {
         }
     }
 
+    # Textures that should never be downscaled: full-screen cockpit overlays
+    $noDownscalePattern = '^(cockpit|hires-cockpit)'
+
     foreach ($tgt in $Targets) {
         $maxDim = $tgt.MaxDim
         $dxaPath = $tgt.DxaPath
@@ -274,13 +277,15 @@ function Convert-AndAdd {
             try {
                 $safeName = $name -replace '#', '_H_'
                 $tempEtc2 = Join-Path $outDir "$safeName.ktx2"
-                if ($maxDim -gt 0 -and $Magick) {
+                # Skip downscaling for HUD/cockpit textures
+                $effectiveMaxDim = if ($maxDim -gt 0 -and $name -match $noDownscalePattern) { 0 } else { $maxDim }
+                if ($effectiveMaxDim -gt 0 -and $Magick) {
                     # Copy to safe name to avoid IM interpreting '#' as scene selector
                     $safeSrc = Join-Path $outDir "${safeName}_src$([IO.Path]::GetExtension($src))"
                     Copy-Item $src $safeSrc -Force
                     $tempPng = Join-Path $outDir "$safeName.png"
                     & $Magick $safeSrc '-colorspace' 'RGB' '-filter' 'Lanczos' `
-                        '-resize' "${maxDim}x${maxDim}" '-unsharp' '0x0.4' `
+                        '-resize' "${effectiveMaxDim}x${effectiveMaxDim}" '-unsharp' '0x0.4' `
                         '-colorspace' 'sRGB' $tempPng 2>$null
                     if ($LASTEXITCODE -ne 0) { throw "magick failed" }
                     & $Etc2Tool $tempPng $tempEtc2 2>$null

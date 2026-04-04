@@ -71,21 +71,21 @@ Why microseconds: at 30fps a frame is 33ms. Per-frame timing at ms resolution is
 - [x] Add counters already partially there: `r_polyc` (total polys), `r_tpolyc` (textured polys), `r_bitmapc` (bitmap draws)
 - [x] Add `r_texbinds` (texture bind calls per frame) -- main indicator of state change overhead
 - [x] Expose via nativeGetVideoStats (r_polyc+r_tpolyc as draw polys)
-- [ ] Add `r_shader_switches` (program use calls per frame) -- currently only 2 programs so this should be low
-- [ ] Add `r_mask_draws` (super-transparent mask draws per frame) -- tracks mask overhead
+- [x] Add `r_shader_switches` (program use calls per frame) -- currently only 2 programs so this should be low
+- [x] Add `r_mask_draws` (super-transparent mask draws per frame) -- tracks mask overhead
 
 #### 2C. GPU timing (GLES 3.0)
-- [ ] Use `EXT_disjoint_timer_query` (widely supported on real hardware, may not work on emulator)
-- [ ] Measure GPU time for the main render pass (ogl_start_frame to ogl_end_frame)
-- [ ] Display as "GPU: Xms" in overlay
-- [ ] Fallback: if extension not available, show "GPU: n/a"
-- [ ] Note: the emulator (swiftshader) may not support this extension. Test on real hardware
+- [x] Use `EXT_disjoint_timer_query` (widely supported on real hardware, may not work on emulator)
+- [x] Measure GPU time for the main render pass (ogl_start_frame to ogl_end_frame)
+- [x] Display as "GPU: Xms" in overlay
+- [x] Fallback: if extension not available, show "GPU: n/a"
+- [x] Note: emulator (swiftshader) reports "not available" as expected. On real HW with extension, overlay shows GPU time
 
 #### 2D. Overlay enhancements
 - [x] Add to VideoInfoOverlay: frame time (avg/max), draw calls, tex binds, cache time
-- [ ] Add a "load bar" visual: green/yellow/red bar showing frame budget usage (33ms = 100% at 30fps)
-- [ ] Show texture pack name and size (from DXA filename)
-- [ ] Color-code metrics that are near budget limits
+- [x] Add a "load bar" visual: green/yellow/red bar showing frame budget usage (33ms = 100% at 30fps)
+- [ ] Show texture pack name and size (from DXA filename) -- deferred, needs DXA name exposed
+- [x] Color-code metrics that are near budget limits (frame time, cache time)
 
 #### 2E. Benchmark mode
 Deferred -- will be built around demo file playback. User will create demo files; benchmarks captured automatically during demo playback as part of regression tests (verify enemies killed, etc.).
@@ -98,10 +98,9 @@ Deferred -- will be built around demo file playback. User will create demo files
 
 #### 3A. Redundant GL state changes
 In `ogl_start_frame()` + `ogl_end_frame()`, several GL state changes happen every frame that could be set-once:
-- [ ] `glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)` -- set once at init unless changed
-- [ ] `glEnable(GL_BLEND)` -- set once if never disabled
-- [ ] `glCullFace(GL_FRONT)` -- set once
-- [ ] Audit which GL state actually changes frame-to-frame vs is just re-set
+- [x] `glDepthFunc(GL_LEQUAL)` -- moved to `ogl_init_state()`, never changes at runtime
+- [x] `glBlendFunc` -- added blend func cache in `ogl_set_blending()` to skip redundant per-draw calls; cache invalidated at frame start since `ogl_do_palfx` changes blend directly
+- [x] Audit: `glEnable(GL_BLEND)`, `glBlendFunc` reset, `GL_CULL_FACE` toggle are all needed per-frame (mid-frame functions change them)
 
 #### 3B. Texture binding reduction
 Currently every polygon binds its texture individually. Profile to see if adjacent polygons often share textures:
@@ -110,20 +109,24 @@ Currently every polygon binds its texture individually. Profile to see if adjace
 - [x] This is the single most impactful optimization for fill-rate-limited devices
 
 #### 3C. Mipmap generation
-- [ ] Verify mipmaps are generated for hires textures (glGenerateMipmap)
-- [ ] With 512px textures, missing mipmaps = massive overshading on distant surfaces
-- [ ] Check if `ogl_loadtexture` calls `glGenerateMipmap` for PNG/KTX2 paths
+- [x] Verify mipmaps are generated for hires textures (glGenerateMipmap) -- YES for PNG/standard textures
+- [x] KTX2/ETC2 compressed textures have NO mipmaps: `GL_TEXTURE_MAX_LEVEL=0`, `GL_LINEAR` only. `glGenerateMipmap` can't work on compressed formats
+- [ ] Fix: pre-generate mip levels in KTX2 files at build time (see 3D below)
+- [ ] `OGL_FLAG_MIPMAP` was dead code -- removed
 
 #### 3D. KTX2 mipmap chain
-- [ ] etc2tool currently generates single-level KTX2 (no mip chain)
-- [ ] For 512px textures, pre-generating mip levels in the .ktx2 would avoid runtime `glGenerateMipmap` cost
-- [ ] This is a pipeline improvement, not a runtime change
+- [x] etc2tool already generates full mip chain by default (box-filter downsampling to 4x4)
+- [x] KTX2 reader (`pngfile_stb.c`) already parses all mip levels into `edata.mip_count` + packed buffer
+- [x] Upload code updated to loop over all mip levels with `glCompressedTexImage2D` per level
+- [x] `GL_TEXTURE_MAX_LEVEL` set to `mip_count - 1`, min filter uses `GL_LINEAR_MIPMAP_LINEAR/NEAREST`
+- [x] Anisotropic filtering applied to ETC2 textures when enabled
 
 #### 3E. Framebuffer format
-- [ ] Currently using RGB565 (16-bit): `EGL_RED_SIZE 5, GREEN 6, BLUE 5`
-- [ ] RGB565 is fast but may cause banding with some textures
-- [ ] For quality mode: consider RGBA8888. Adds bandwidth cost but improves color accuracy
-- [ ] Make this a setting
+- [x] Default RGB565 (16-bit): `EGL_RED_SIZE 5, GREEN 6, BLUE 5`
+- [x] RGBA8888 (24-bit color) available via `ColorDepth=1` in `descent.cfg`
+- [x] EGL config modified at init based on `GameCfg.ColorDepth` (read before EGL init)
+- [x] Actual color depth queried from EGL config, exposed as `ogl_color_depth` global
+- [x] Shown in overlay on Render line as RGB565 or RGB888
 
 #### 3F. Shader efficiency
 - [ ] Two shaders only (tex2, tex2m). Both are simple -- no obvious inefficiency
@@ -137,49 +140,50 @@ Currently every polygon binds its texture individually. Profile to see if adjace
 ### 4A. Anisotropic filtering (easy, high impact)
 Already partially wired: `ogl_maxanisotropy` exists, `glTexParameterf(GL_TEXTURE_MAX_ANISOTROPY_EXT)` is called in ogl_loadtexture.
 
-- [ ] Query `GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT` at init, store max supported level
-- [ ] Add a setting: Off / 2x / 4x / 8x / 16x (capped by device max)
-- [ ] Apply to all textures during ogl_loadtexture
+- [x] Query `GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT` at init, store max supported level
+- [x] Add a setting: Off / 2x / 4x / 8x / 16x (capped by device max)
+- [x] Apply to all textures during ogl_loadtexture
 - [ ] Add to launcher advanced settings
-- [ ] Add cycle button in video overlay
+- [x] Add cycle button in video overlay
 
 Note: this is essentially free on modern GPUs for Descent's rendering complexity. Very high impact for long tunnel views.
 
 ### 4B. MSAA (medium effort, high visual impact)
 
 Implementation plan:
-- [ ] Create MSAA renderbuffer at EGL config time: add `EGL_SAMPLES, N` to config attributes
-- [ ] Alternatively, create an MSAA FBO and resolve to default framebuffer (more control)
-- [ ] Settings: Off / 2x / 4x / 8x (query `GL_MAX_SAMPLES`)
-- [ ] EGL approach is simpler but less flexible; FBO approach allows runtime toggle
-- [ ] Recommend: FBO approach so users can change MSAA without restarting
+- [x] Create MSAA FBO and resolve to default framebuffer (runtime toggle, no restart)
+- [x] Settings: Off / 2x / 4x (query `GL_MAX_SAMPLES` -- emulator reports max=4)
+- [x] FBO approach: create/destroy on demand, bind in ogl_start_frame, resolve in gr_flip
 
-FBO MSAA steps:
+FBO MSAA steps (all implemented):
 1. Create color renderbuffer with `glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA8, w, h)`
 2. Create depth renderbuffer with `glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH_COMPONENT16, w, h)`
 3. Attach both to FBO
-4. Render scene to MSAA FBO
-5. `glBlitFramebuffer` to resolve to default framebuffer
+4. Render scene to MSAA FBO (bound in ogl_start_frame)
+5. `glBlitFramebuffer` to resolve to default framebuffer (in gr_flip before readpixels/swap)
 6. Display
 
 - [ ] Add to launcher advanced settings
-- [ ] Add cycle button in video overlay
-- [ ] Track performance impact via frame time counters
+- [x] Add cycle button in video overlay
+- [x] Track performance impact via frame time counters
 
 ### 4C. Launcher advanced settings UI
-- [ ] Add "Graphics" section to advanced settings page
-- [ ] Anti-aliasing dropdown: Off / 2x / 4x / 8x MSAA
-- [ ] Texture filtering dropdown: Bilinear / Trilinear / 2x AF / 4x / 8x / 16x AF
-- [ ] Settings written to game config file, read by engine at startup
-- [ ] Live controls: cycle buttons in video overlay for AA and AF
+- [x] Add "Graphics" section to advanced settings page
+- [x] Graphics promoted to its own top-level launcher page (GraphicsSettingsPage.kt)
+- [x] Anti-aliasing selector: Off / 2x / 4x MSAA (SharedPreferences, applied via nativeSetGraphicsOption JNI at startup)
+- [x] Anisotropic filtering selector: Off / 2x / 4x / 8x / 16x AF (SharedPreferences, applied via JNI)
+- [x] Texture filtering: None / Bilinear / Trilinear (TexFilt in descent.cfg)
+- [x] Color depth: 16-bit / 24-bit (ColorDepth in descent.cfg)
+- [x] Resolution picker (SharedPreferences + descent.cfg)
+- [x] Settings applied at engine startup; TexFilter/ColorDepth/Resolution via descent.cfg, MSAA/AF via JNI
 
 ### 4D. Live overlay controls
-- [ ] Add touchable cycle buttons to VideoInfoOverlay for:
-  - AA level (cycle through supported MSAA levels)
-  - AF level (cycle through supported anisotropy levels)
-  - Texture pack (if multiple installed)
-- [ ] Show current setting + performance impact in real time
-- [ ] Changes take effect immediately (AF is per-texture-bind, MSAA requires FBO resize)
+- [x] Cycle buttons in VideoInfoOverlay for AA (MSAA) and AF (anisotropy)
+- [x] Show current setting + max supported level in overlay
+- [x] Changes take effect immediately (AF per-texture-bind, MSAA via FBO recreate)
+- [x] In-game overlay changes persist to SharedPreferences via settingsSaver callback
+- [x] Bidirectional: launcher page reads prefs, overlay writes prefs, startup applies prefs
+- [ ] Texture pack selector (deferred -- needs multiple packs installed)
 
 ---
 
@@ -221,9 +225,11 @@ The high-value path is: **pipeline edge fixes -> perf counters -> texture bind c
 1. [x] Phase 1A+1B: Pipeline edge fixes (nearest-neighbor mask resize + edge color flood)
 2. [x] Phase 2A-2B: Frame timing + draw counters
 3. [x] Phase 3B: Texture bind cache (easy win, enables measurement)
-4. [ ] Phase 4A: Anisotropic filtering (already 80% wired)
+4. [x] Phase 4A: Anisotropic filtering (query, apply, cycle, d1 mirror)
 5. [x] Phase 2D: Overlay enhancements (basic metrics shown)
-6. [ ] Phase 4B: MSAA via FBO
-7. [ ] Phase 2C: GPU timing (real hardware only)
-8. [ ] Phase 4C-4D: Launcher settings + live overlay controls
-9. [ ] Phase 3A,3C-3F: Other optimizations as needed based on profiling data
+7. [x] Phase 4B: MSAA via FBO (create/destroy, bind/resolve, cycle button, d1 mirror)
+7. [x] Phase 2C: GPU timing (EXT_disjoint_timer_query, overlay display, d1 mirror)
+8. [x] Phase 3A: GL state optimization (blend func cache, glDepthFunc to init, d1 mirror)
+9. [x] Phase 3D: KTX2 mipmap chain upload (all levels, proper filtering, AF)
+10. [x] Phase 3E: Framebuffer format (RGB565 default, RGBA8888 via ColorDepth=1)
+11. [x] Phase 4C-4D: Launcher settings + live overlay controls
