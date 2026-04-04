@@ -115,6 +115,10 @@ position)
 console)
     extract_key console "$JSON"
     ;;
+framebuffer)
+    echo "center: $(echo "$JSON" | grep -o '"framebuffer_sample":"[^"]*"' | head -1)"
+    echo "avg:    $(echo "$JSON" | grep -o '"framebuffer_avg":"[^"]*"' | head -1)"
+    ;;
 autolog)
     # Dump automation step log (file-based, no introspection needed)
     ALOG=$("$ADB" shell run-as "$PACKAGE" cat files/automation_log.jsonl 2>/dev/null) || {

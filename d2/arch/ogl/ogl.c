@@ -121,6 +121,7 @@ int ogl_color_depth = 16; /* actual framebuffer color depth: 16=RGB565, 32=RGBA8
 #endif
 #ifdef ANDROID
 volatile int g_fb_sample_r = -1, g_fb_sample_g = -1, g_fb_sample_b = -1, g_fb_sample_a = -1;
+volatile int g_fb_avg_r = -1, g_fb_avg_g = -1, g_fb_avg_b = -1, g_fb_avg_a = -1;
 /* android port: manual override to disable ETC2 texture loading */
 int ogl_etc2_broken = 0;
 #endif
@@ -1803,10 +1804,11 @@ void gr_flip(void)
 		g_msaa_fbo_bound = 0;
 	}
 #endif
-	/* android port: sample framebuffer center pixel before swap for introspection */
+	/* android port: sample framebuffer for introspection (center pixel + 4x4 grid average) */
 #ifdef ANDROID
 	{
 		extern volatile int g_fb_sample_r, g_fb_sample_g, g_fb_sample_b, g_fb_sample_a;
+		extern volatile int g_fb_avg_r, g_fb_avg_g, g_fb_avg_b, g_fb_avg_a;
 		int w = grd_curscreen->sc_w, h = grd_curscreen->sc_h;
 		if (w > 0 && h > 0) {
 			unsigned char rgba[4] = {0};
@@ -1815,6 +1817,18 @@ void gr_flip(void)
 			g_fb_sample_g = rgba[1];
 			g_fb_sample_b = rgba[2];
 			g_fb_sample_a = rgba[3];
+			/* 4x4 grid average across the framebuffer */
+			int sr = 0, sg = 0, sb = 0, sa = 0, n = 0;
+			for (int gy = 1; gy <= 4; gy++) {
+				for (int gx = 1; gx <= 4; gx++) {
+					int px = w * gx / 5, py = h * gy / 5;
+					glReadPixels(px, py, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+					sr += rgba[0]; sg += rgba[1]; sb += rgba[2]; sa += rgba[3];
+					n++;
+				}
+			}
+			g_fb_avg_r = sr / n; g_fb_avg_g = sg / n;
+			g_fb_avg_b = sb / n; g_fb_avg_a = sa / n;
 		}
 	}
 #endif
