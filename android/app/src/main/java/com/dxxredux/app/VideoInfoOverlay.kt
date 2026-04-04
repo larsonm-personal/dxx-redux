@@ -27,6 +27,10 @@ class VideoInfoOverlay(
     /** Setter for C-side debug flags: (name, value) -> nativeSetDebugFlag. */
     var debugFlagSetter: ((String, Int) -> Unit)? = null
 
+    /** Setter for C-side graphics options: (name, value) -> nativeSetGraphicsOption.
+     *  Works in all builds (not gated by INTROSPECT_ON). */
+    var graphicsOptionSetter: ((String, Int) -> Unit)? = null
+
     /** Persists graphics option changes: (name, value) -> save to SharedPreferences. */
     var settingsSaver: ((String, Int) -> Unit)? = null
 
@@ -469,7 +473,7 @@ class VideoInfoOverlay(
         val idx = levels.indexOf(anisoLevel)
         val next = levels[(idx + 1) % levels.size]
         anisoLevel = next
-        debugFlagSetter?.invoke("aniso_level", next)
+        graphicsOptionSetter?.invoke("aniso_level", next)
         settingsSaver?.invoke("aniso_level", next)
     }
 
@@ -479,7 +483,7 @@ class VideoInfoOverlay(
         val idx = levels.indexOf(msaaLevel)
         val next = levels[(idx + 1) % levels.size]
         msaaLevel = next
-        debugFlagSetter?.invoke("msaa_level", next)
+        graphicsOptionSetter?.invoke("msaa_level", next)
         settingsSaver?.invoke("msaa_level", next)
     }
 

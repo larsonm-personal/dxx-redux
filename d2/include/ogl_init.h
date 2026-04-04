@@ -71,6 +71,7 @@ typedef struct _ogl_texture {
 	int wrapstate;
 	unsigned long numrend;
 	int is_png;
+	int has_mipmaps;
 } ogl_texture;
 
 extern ogl_texture* ogl_get_free_texture();

@@ -758,6 +758,13 @@ class MainActivity :
                         // JNI not ready yet
                     }
                 }
+                graphicsOptionSetter = { name, value ->
+                    try {
+                        nativeSetGraphicsOption(name, value)
+                    } catch (_: Exception) {
+                        // JNI not ready yet
+                    }
+                }
                 settingsSaver = { name, value ->
                     getSharedPreferences("dxx_prefs", MODE_PRIVATE)
                         .edit()

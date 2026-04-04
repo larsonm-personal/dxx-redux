@@ -449,23 +449,25 @@ int ogl_get_texture_bytes(void)
 	return total;
 }
 
-/* Re-apply anisotropic filtering to all loaded textures */
+/* Re-apply anisotropic filtering to all loaded textures that have mipmaps.
+ * Adreno GPUs ignore AF on textures without a complete mipmap chain. */
 void ogl_apply_anisotropy_all(void)
 {
-	int i, count = 0;
+	int i, count = 0, total = 0;
 	GLfloat level = (ogl_aniso_level > 1 && ogl_maxanisotropy > 1.0f)
 		? (GLfloat)(ogl_aniso_level < ogl_maxanisotropy ? ogl_aniso_level : (int)ogl_maxanisotropy)
 		: 1.0f;
 	for (i = 0; i < OGL_TEXTURE_LIST_SIZE; i++) {
-		if (ogl_texture_list[i].handle > 0) {
+		if (ogl_texture_list[i].handle > 0 && ogl_texture_list[i].has_mipmaps) {
 			glBindTexture(GL_TEXTURE_2D, ogl_texture_list[i].handle);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, level);
 			count++;
 		}
+		if (ogl_texture_list[i].handle > 0) total++;
 	}
 	ogl_last_bound_tex = 0; /* invalidate bind cache */
 	__android_log_print(ANDROID_LOG_INFO, "DXX",
-	    "anisotropy: applied level %.0f to %i textures", level, count);
+	    "anisotropy: applied level %.0f to %d/%d mipmapped textures", level, count, total);
 }
 
 /* android port: MSAA via FBO -- create/destroy/resolve helpers */
@@ -490,6 +492,11 @@ static void ogl_msaa_destroy_fbo(void)
 static int ogl_msaa_create_fbo(int samples, int w, int h)
 {
 	ogl_msaa_destroy_fbo();
+
+	/* Clamp to hardware max -- exceeding it can crash some drivers */
+	if (ogl_msaa_max_samples > 0 && samples > ogl_msaa_max_samples)
+		samples = ogl_msaa_max_samples;
+	if (samples < 2) return 0;
 
 	/* Query default framebuffer bit depths to match format for glBlitFramebuffer.
 	 * GLES 3.0 requires identical formats for multisample resolve */
@@ -1592,6 +1599,36 @@ void ogl_start_frame(void){
 	r_shader_switches=0;r_mask_draws=0;
 	if (g_aniso_pending_apply) {
 		g_aniso_pending_apply = 0;
+		if (ogl_aniso_level > 0) {
+			/* AF on: flush textures that lack mipmaps so they reload with
+			 * mipmaps (ogl_loadbmtexture_f upgrades texfilt when AF is on) */
+			int flushed = 0;
+			for (int i = 0; i < OGL_TEXTURE_LIST_SIZE; i++) {
+				if (ogl_texture_list[i].handle > 0 && !ogl_texture_list[i].has_mipmaps) {
+					glDeleteTextures(1, &ogl_texture_list[i].handle);
+					ogl_texture_list[i].handle = 0;
+					ogl_texture_list[i].wrapstate = -1;
+					flushed++;
+				}
+			}
+			if (flushed)
+				con_printf(CON_DEBUG, "anisotropy: flushed %d non-mipmapped textures for reload", flushed);
+		} else {
+			/* AF off: flush mipmapped textures so they revert to base texfilt
+			 * (the texfilt upgrade only applies when ogl_aniso_level > 0) */
+			int flushed = 0;
+			for (int i = 0; i < OGL_TEXTURE_LIST_SIZE; i++) {
+				if (ogl_texture_list[i].handle > 0 && ogl_texture_list[i].has_mipmaps) {
+					glDeleteTextures(1, &ogl_texture_list[i].handle);
+					ogl_texture_list[i].handle = 0;
+					ogl_texture_list[i].has_mipmaps = 0;
+					ogl_texture_list[i].wrapstate = -1;
+					flushed++;
+				}
+			}
+			if (flushed)
+				con_printf(CON_DEBUG, "anisotropy: flushed %d mipmapped textures for downgrade", flushed);
+		}
 		ogl_apply_anisotropy_all();
 	}
 	if (g_msaa_pending_apply) {
@@ -2187,13 +2224,11 @@ int ogl_loadtexture (unsigned char *data, int dxo, int dyo, ogl_texture *tex, in
 #endif
 		glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (texfilt>=2?GL_LINEAR_MIPMAP_LINEAR:GL_LINEAR_MIPMAP_NEAREST));
-#ifdef ANDROID
-		if (ogl_aniso_level > 1 && ogl_maxanisotropy > 1.0)
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-				(GLfloat)(ogl_aniso_level < ogl_maxanisotropy ? ogl_aniso_level : (int)ogl_maxanisotropy));
-#elif !defined(OGLES)
+#ifndef ANDROID
+#ifndef OGLES
 		if (texfilt >= 3 && ogl_maxanisotropy > 1.0)
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, ogl_maxanisotropy);
+#endif
 #endif
 	}
 	else
@@ -2220,8 +2255,15 @@ int ogl_loadtexture (unsigned char *data, int dxo, int dyo, ogl_texture *tex, in
 			GL_UNSIGNED_BYTE, // imageData is a GLubyte pointer.
 			bufP);
 #ifdef ANDROID
-		if (texfilt)
+		if (texfilt) {
 			glGenerateMipmap(GL_TEXTURE_2D);
+			tex->has_mipmaps = 1;
+			/* Set AF after mipmaps exist -- Adreno ignores AF on textures
+			 * without a complete mipmap chain */
+			if (ogl_aniso_level > 1 && ogl_maxanisotropy > 1.0)
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
+					(GLfloat)(ogl_aniso_level < ogl_maxanisotropy ? ogl_aniso_level : (int)ogl_maxanisotropy));
+		}
 #endif
 	}
 
@@ -2310,6 +2352,13 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 	unsigned char *buf;
 	const char *bitmapname = piggy_game_bitmap_name(bm);
 
+#ifdef ANDROID
+	/* AF requires mipmap filtering to have any effect on real hardware.
+	 * If AF is on but texfilt is too low, upgrade to trilinear */
+	if (ogl_aniso_level > 0 && texfilt < 2)
+		texfilt = 2;
+#endif
+
 	while (bm->bm_parent)
 		bm=bm->bm_parent;
 	if (bm->gltexture && bm->gltexture->handle > 0)
@@ -2374,11 +2423,6 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
 								(texfilt >= 2 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR_MIPMAP_NEAREST));
-							if (ogl_maxanisotropy > 0 && ogl_aniso_level > 0) {
-								int af = ogl_aniso_level;
-								if (af > (int)ogl_maxanisotropy) af = (int)ogl_maxanisotropy;
-								glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, (float)af);
-							}
 						} else if (texfilt) {
 							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 							glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -2438,6 +2482,16 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 							}
 						tex_set_size(bm->gltexture);
 						r_texcount++;
+						/* Set AF after all mip levels are uploaded -- Adreno
+						 * ignores AF on textures without complete mipmap data */
+						if (texfilt && mips > 1) {
+							bm->gltexture->has_mipmaps = 1;
+							if (ogl_aniso_level > 0 && ogl_maxanisotropy > 0) {
+								int af = ogl_aniso_level;
+								if (af > (int)ogl_maxanisotropy) af = (int)ogl_maxanisotropy;
+								glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, (float)af);
+							}
+						}
 						ok = 1;
 					}
 				}
