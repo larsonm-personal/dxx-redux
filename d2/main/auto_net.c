@@ -28,6 +28,7 @@ int  auto_host_level_num   = 1;
 int  auto_host_difficulty  = 1;
 
 char auto_net_callsign[10] = "";
+char auto_net_client_id[AUTO_NET_CLIENT_ID_LEN] = "";
 
 /* Implemented in net_udp.c - has access to UDP_MyPort and other statics. */
 extern int net_udp_auto_join(const char *host_addr, int host_port, int my_port);

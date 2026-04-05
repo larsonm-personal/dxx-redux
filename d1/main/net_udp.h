@@ -56,7 +56,7 @@ int net_udp_auto_host(int my_port, const char *mission, int mode,
 #define UPID_GAME_INFO_REQ_SIZE			 13
 #define UPID_GAME_INFO_LITE_REQ_SIZE		 11
 #define UPID_GAME_INFO				  3 // Packet containing all info about a netgame.
-#define UPID_GAME_INFO_SIZE			(5 + 4*2 + 368 + (NETGAME_NAME_LEN+1) + (MISSION_NAME_LEN+1) + ((MAX_PLAYERS+4)*(CALLSIGN_LEN+1+1)) + 18*12)
+#define UPID_GAME_INFO_SIZE			(5 + 4*2 + 368 + (NETGAME_NAME_LEN+1) + (MISSION_NAME_LEN+1) + ((MAX_PLAYERS+4)*(CALLSIGN_LEN+1+1+37)) + 18*12)
 #define UPID_GAME_INFO_LITE_REQ			  4 // Requesting lite info about a netgame. Used for discovering games.
 #define UPID_GAME_INFO_LITE			  5 // Packet containing lite netgame info.
 #define UPID_GAME_INFO_LITE_SIZE		 (31 + (NETGAME_NAME_LEN+1) + (MISSION_NAME_LEN+1))
@@ -81,7 +81,7 @@ int net_udp_auto_host(int my_port, const char *mission, int mode,
 #define UPID_MDATA_PNORM			 17 // Packet containing multi buffer from a player. Priority 0,1 - no ACK needed.
 #define UPID_MDATA_PNEEDACK			 18 // Packet containing multi buffer from a player. Priority 2 - ACK needed. Also contains pkt_num
 #define UPID_MDATA_ACK				 19 // ACK packet for UPID_MDATA_P1.
-#define UPID_MAX_SIZE			       1024 // Max size for a packet
+#define UPID_MAX_SIZE			       2048 // Max size for a packet
 #define UPID_MDATA_BUF_SIZE			454
 #ifdef USE_TRACKER
 #  define UPID_TRACKER_VERIFY			 21 // The tracker has successfully gotten a hold of us

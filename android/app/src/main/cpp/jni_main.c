@@ -455,6 +455,7 @@ extern int auto_host_max_players;
 extern int auto_host_level_num;
 extern int auto_host_difficulty;
 extern char auto_net_callsign[];
+extern char auto_net_client_id[];
 
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetCallsign(JNIEnv *env, jobject thiz,
@@ -465,6 +466,17 @@ Java_com_dxxredux_app_MainActivity_nativeSetCallsign(JNIEnv *env, jobject thiz,
 	auto_net_callsign[9] = '\0';
 	(*env)->ReleaseStringUTFChars(env, jCallsign, cs);
 	LOGI("nativeSetCallsign: %s", auto_net_callsign);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetClientId(JNIEnv *env, jobject thiz,
+                                                     jstring jClientId)
+{
+	const char *cid = (*env)->GetStringUTFChars(env, jClientId, NULL);
+	strncpy(auto_net_client_id, cid, 36);
+	auto_net_client_id[36] = '\0';
+	(*env)->ReleaseStringUTFChars(env, jClientId, cid);
+	LOGI("nativeSetClientId: %s", auto_net_client_id);
 }
 
 JNIEXPORT void JNICALL
@@ -809,4 +821,62 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 	if (result)
 		(*env)->SetIntArrayRegion(env, result, 0, VS_SIZE, buf);
 	return result;
+}
+
+/* ── Coop warp-to-player status + trigger ──────────────────────
+ * nativeGetCoopWarpStatus() returns an int array:
+ *   [0] = available       (1 if warp button should show)
+ *   [1] = target_pnum     (player index of target)
+ *   [2] = cooldown_secs   (seconds left on cooldown, 0 = ready)
+ *   [3] = engaged         (1 if recently engaged with robots)
+ *
+ * nativeCoopWarpExecute() triggers the warp, returns 1 on success
+ * nativeCoopWarpCycleTarget() advances to the next eligible target
+ *
+ * android port: coop QoL warp system
+ */
+#include "coop_warp.h"
+
+JNIEXPORT jintArray JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetCoopWarpStatus(JNIEnv *env, jobject thiz)
+{
+	enum { WS_SIZE = 4 };
+	jint buf[WS_SIZE];
+	memset(buf, 0, sizeof(buf));
+
+	coop_warp_status st;
+	coop_warp_get_status(&st);
+
+	buf[0] = (jint) st.available;
+	buf[1] = (jint) st.target_pnum;
+	buf[2] = (jint) st.cooldown_secs_left;
+	buf[3] = (jint) st.engaged;
+
+	jintArray result = (*env)->NewIntArray(env, WS_SIZE);
+	if (result)
+		(*env)->SetIntArrayRegion(env, result, 0, WS_SIZE, buf);
+	return result;
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetCoopWarpTargetName(JNIEnv *env, jobject thiz)
+{
+	coop_warp_status st;
+	coop_warp_get_status(&st);
+
+	if (st.available)
+		return (*env)->NewStringUTF(env, st.target_callsign);
+	return (*env)->NewStringUTF(env, "");
+}
+
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_MainActivity_nativeCoopWarpExecute(JNIEnv *env, jobject thiz)
+{
+	return (jint) coop_warp_execute();
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeCoopWarpCycleTarget(JNIEnv *env, jobject thiz)
+{
+	coop_warp_cycle_target();
 }

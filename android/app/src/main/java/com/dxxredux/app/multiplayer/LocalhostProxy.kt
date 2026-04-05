@@ -68,17 +68,19 @@ class LocalhostProxy(
 
     init {
         if (sharedRealSocket != null) {
-            jobs.add(scope.launch(Dispatchers.IO) {
-                try {
-                    sharedReceiveLoop()
-                    Log.w(TAG, "sharedReceiveLoop returned normally")
-                } catch (e: kotlinx.coroutines.CancellationException) {
-                    Log.w(TAG, "sharedReceiveLoop cancelled")
-                    throw e
-                } catch (e: Exception) {
-                    Log.e(TAG, "sharedReceiveLoop CRASHED: ${e.javaClass.simpleName}: ${e.message}", e)
-                }
-            })
+            jobs.add(
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        sharedReceiveLoop()
+                        Log.w(TAG, "sharedReceiveLoop returned normally")
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        Log.w(TAG, "sharedReceiveLoop cancelled")
+                        throw e
+                    } catch (e: Exception) {
+                        Log.e(TAG, "sharedReceiveLoop CRASHED: ${e.javaClass.simpleName}: ${e.message}", e)
+                    }
+                },
+            )
         }
     }
 
@@ -113,17 +115,23 @@ class LocalhostProxy(
             }
         }
 
-        jobs.add(scope.launch(Dispatchers.IO) {
-            try {
-                proxy.run()
-                Log.w(TAG, "proxy.run() returned normally for slot=${peerConfig.peerSlot}")
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                Log.w(TAG, "proxy.run() cancelled for slot=${peerConfig.peerSlot}")
-                throw e
-            } catch (e: Exception) {
-                Log.e(TAG, "proxy.run() CRASHED for slot=${peerConfig.peerSlot}: ${e.javaClass.simpleName}: ${e.message}", e)
-            }
-        })
+        jobs.add(
+            scope.launch(Dispatchers.IO) {
+                try {
+                    proxy.run()
+                    Log.w(TAG, "proxy.run() returned normally for slot=${peerConfig.peerSlot}")
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    Log.w(TAG, "proxy.run() cancelled for slot=${peerConfig.peerSlot}")
+                    throw e
+                } catch (e: Exception) {
+                    Log.e(
+                        TAG,
+                        "proxy.run() CRASHED for slot=${peerConfig.peerSlot}: ${e.javaClass.simpleName}: ${e.message}",
+                        e,
+                    )
+                }
+            },
+        )
         Log.i(
             TAG,
             "Added peer proxy: slot=${peerConfig.peerSlot} " +
@@ -205,7 +213,10 @@ class LocalhostProxy(
                 Log.w(TAG, "Shared receive error: ${e.message}")
             }
         }
-        Log.w(TAG, "sharedReceiveLoop: while-loop exited (job.isActive=${kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive})")
+        Log.w(
+            TAG,
+            "sharedReceiveLoop: while-loop exited (job.isActive=${kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive})",
+        )
     }
 
     fun getStats(): List<PeerProxyStats> = peerProxies.map { it.getStats() }
@@ -331,7 +342,10 @@ private class PeerProxy(
             localSocket.send(DatagramPacket(payload, payloadLen, InetSocketAddress(loopback, ENGINE_PORT)))
             packetsReceived++
             bytesReceived += payloadLen
-            if (packetsReceived <= 5 || (packetsReceived <= 100 && packetsReceived % 20 == 0L) || packetsReceived % 500 == 0L) {
+            if (packetsReceived <= 5 ||
+                (packetsReceived <= 100 && packetsReceived % 20 == 0L) ||
+                packetsReceived % 500 == 0L
+            ) {
                 Log.i(
                     TAG,
                     "real->local slot=${config.peerSlot} #$packetsReceived ${payloadLen}b relay=${config.isRelay}",
@@ -378,7 +392,10 @@ private class PeerProxy(
                 if ("closed" in msg || "EPERM" in msg || "Operation not permitted" in msg) break
                 Log.w(TAG, "local->real error: $msg")
             } catch (e: Exception) {
-                Log.e(TAG, "local->real UNEXPECTED slot=${config.peerSlot} #$packetsSent: ${e.javaClass.simpleName}: ${e.message}")
+                Log.e(
+                    TAG,
+                    "local->real UNEXPECTED slot=${config.peerSlot} #$packetsSent: ${e.javaClass.simpleName}: ${e.message}",
+                )
             }
         }
         Log.w(TAG, "forwardLocalToReal EXITED slot=${config.peerSlot} sent=$packetsSent")

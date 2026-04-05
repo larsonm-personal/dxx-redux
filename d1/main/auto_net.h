@@ -42,6 +42,9 @@ extern int auto_host_difficulty;
 /* Callsign for auto-created pilot (shared by host and join paths).
  * When non-empty and no pilot exists, a pilot with this name is created
  * automatically before the network action starts. */
+#define AUTO_NET_CLIENT_ID_LEN 37
+extern char auto_net_client_id[AUTO_NET_CLIENT_ID_LEN];
+
 extern char auto_net_callsign[10];
 
 /* Auto-create a pilot with auto_net_callsign if no pilot exists.

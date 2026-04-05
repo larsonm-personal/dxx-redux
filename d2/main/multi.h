@@ -60,7 +60,7 @@ extern int multi_protocol; // set and determinate used protocol
 #define MULTI_PROTO_UDP 1 // UDP protocol
 
 // What version of the multiplayer protocol is this? Increment each time something drastic changes in Multiplayer without the version number changes. Can be reset to 0 each time the version of the game changes
-#define MULTI_PROTO_VERSION 30006 // Redux 1.2
+#define MULTI_PROTO_VERSION 30007 // Redux 1.2 + coop client_id
 
 // PROTOCOL VARIABLES AND DEFINES - END
 
@@ -146,6 +146,7 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_REPAIR               , 11)  \
 	VALUE(MULTI_SHIP_STATUS          , 43)  \
 	VALUE(MULTI_CREATE_EXPLOSION2    , 24)  \
+	VALUE(MULTI_WARP_TO_PLAYER       , 17)  \
 	AFTER
 for_each_multiplayer_command(enum {, define_multiplayer_command, });
 
@@ -335,6 +336,9 @@ int get_team_size(int team_num);
 int multi_maybe_disable_friendly_fire(object *killer);
 void multi_initiate_save_game();
 void multi_initiate_restore_game();
+void multi_send_restore_game(ubyte slot, uint id);
+void multi_restore_game(ubyte slot, uint id);
+int multi_all_players_alive(void);
 void multi_disconnect_player(int pnum);
 void multi_object_to_object_rw(object *obj, object_rw *obj_rw);
 void multi_object_rw_to_object(object_rw *obj_rw, object *obj);
@@ -480,6 +484,7 @@ typedef struct netplayer_info
 	} protocol;	
 #endif
 	char						callsign[CALLSIGN_LEN+1];
+	char						client_id[37]; // installation UUID for save matching
 	sbyte						connected;
 	ubyte						rank;
 	ubyte						color;

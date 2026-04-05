@@ -69,6 +69,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #include "collide.h"
 #include "multibot.h"
+#ifdef __ANDROID__
+#include "coop_warp.h"
+#endif
 
 #define WALL_DAMAGE_SCALE (128) // Was 32 before 8:55 am on Thursday, September 15, changed by MK, walls were hurting me more than robots!
 #define WALL_DAMAGE_THRESHOLD (F1_0/3)
@@ -892,6 +895,14 @@ int apply_damage_to_robot(object *robot, fix damage, int killer_objnum)
 
 	robot->shields -= damage;
 
+#ifdef __ANDROID__
+	/* android port: coop QoL -- track engagement for warp availability */
+	if (killer_objnum >= 0 && killer_objnum <= Highest_object_index &&
+	    Objects[killer_objnum].type == OBJ_PLAYER &&
+	    Objects[killer_objnum].id == Player_num)
+		coop_warp_record_engagement();
+#endif
+
 	if (robot->shields < 0) {
 		Players[Player_num].num_kills_level++;
 		Players[Player_num].num_kills_total++;
@@ -1357,6 +1368,11 @@ void apply_damage_to_player(object *player, object *killer, fix damage, ubyte po
 
 
 	if (player->id == Player_num) {		//is this the local player?
+#ifdef __ANDROID__
+		/* android port: coop QoL -- track engagement for warp availability */
+		if (killer && killer->type == OBJ_ROBOT)
+			coop_warp_record_engagement();
+#endif
 		Players[Player_num].shields -= damage;
 		PALETTE_FLASH_ADD(f2i(damage)*4,-f2i(damage/2),-f2i(damage/2));	//flash red
 

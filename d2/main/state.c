@@ -67,6 +67,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "ogl_init.h"
 #endif
 #include "physfsx.h"
+#ifdef __ANDROID__
+#include "coop_save.h"
+#endif
 
 #define STATE_VERSION 22
 #define STATE_COMPATIBLE_VERSION 20
@@ -1133,6 +1136,10 @@ int state_save_all_sub(char *filename, char *desc)
 		PHYSFS_write(fp, &Netgame.level_time, sizeof(int), 1);
 	}
 
+#ifdef __ANDROID__
+	coop_write_save_metadata(fp);
+#endif
+
 	PHYSFS_close(fp);
 	
 	start_time();
@@ -1740,9 +1747,23 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		special_reset_objects(); // since we juggeled around with objects to remap coop players rebuild the index of free objects
 	}
 
+#ifdef __ANDROID__
+	{
+		PHYSFS_sint64 pos_after_base = PHYSFS_tell(fp);
+		PHYSFS_sint64 file_len = PHYSFS_fileLength(fp);
+		coop_save_metadata coop_meta;
+		if (coop_read_save_metadata(fp, pos_after_base, &coop_meta))
+			con_printf(CON_DEBUG, "coop_save: restored metadata (%d active, %d absent)",
+				coop_meta.num_active_players, coop_meta.num_absent_players);
+		else if (pos_after_base != file_len)
+			con_printf(CON_URGENT, "savegame not completely read, might be corrupt! (cur %d, size %d)",
+				(int)pos_after_base, (int)file_len);
+	}
+#else
 	if (PHYSFS_tell(fp) != PHYSFS_fileLength(fp))
 		con_printf(CON_URGENT, "savegame not completely read, might be corrupt! (cur %d, size %d)",
 			(int)PHYSFS_tell(fp), (int)PHYSFS_fileLength(fp));
+#endif
 
 	PHYSFS_close(fp);
 

@@ -206,8 +206,10 @@ class MainActivity :
 
     external fun nativeIsAudioTrack(track: Int): Boolean
 
-    // ── Matchmaking auto-join/host (jni_main.c) ─────────────────────
+    // -- Matchmaking auto-join/host (jni_main.c) --
     external fun nativeSetCallsign(callsign: String)
+
+    external fun nativeSetClientId(clientId: String)
 
     external fun nativeGetMultiplayerPings(): IntArray
 
@@ -227,6 +229,15 @@ class MainActivity :
 
     // android port: coop QoL overlay -- teammate shields/energy/secondary
     external fun nativeGetTeammateStatus(): IntArray
+
+    // android port: coop QoL -- warp to player
+    external fun nativeGetCoopWarpStatus(): IntArray
+
+    external fun nativeGetCoopWarpTargetName(): String
+
+    external fun nativeCoopWarpExecute(): Int
+
+    external fun nativeCoopWarpCycleTarget()
 
     external fun nativeSetAutoJoin(
         hostAddr: String,
@@ -287,6 +298,7 @@ class MainActivity :
     private var netEventsOverlay: com.dxxredux.app.multiplayer.NetworkEventsOverlay? = null
     private var videoInfoOverlay: VideoInfoOverlay? = null
     private var coopStatsOverlay: CoopStatsOverlay? = null
+    private var warpButtonOverlay: WarpButtonOverlay? = null
     private var netEventsManualToggle = false
     private var isMultiplayerGame = false
     private var lastTrackNum = -1 // for detecting track changes in polling
@@ -368,6 +380,10 @@ class MainActivity :
             if (callsign.isNotEmpty()) {
                 nativeSetCallsign(callsign)
             }
+            nativeSetClientId(
+                com.dxxredux.app.multiplayer.ClientIdentity
+                    .getInstallationId(this),
+            )
         }
         if (mpMode == "join") {
             val hostAddr = intent.getStringExtra("mp_host_addr") ?: "127.0.0.1"
@@ -803,6 +819,47 @@ class MainActivity :
             ),
         )
 
+        // android port: coop QoL -- warp-to-player button overlay
+        val warpOverlay =
+            WarpButtonOverlay(this).apply {
+                visibility = View.GONE
+                warpStatusProvider = {
+                    try {
+                        nativeGetCoopWarpStatus()
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
+                warpTargetNameProvider = {
+                    try {
+                        nativeGetCoopWarpTargetName()
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
+                warpExecuteCallback = {
+                    try {
+                        nativeCoopWarpExecute()
+                    } catch (_: Exception) {
+                        0
+                    }
+                }
+                warpCycleCallback = {
+                    try {
+                        nativeCoopWarpCycleTarget()
+                    } catch (_: Exception) {
+                    }
+                }
+            }
+        warpButtonOverlay = warpOverlay
+        frame.addView(
+            warpOverlay,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
+
         setContentView(frame)
 
         // Hide system bars after content view is set
@@ -907,6 +964,7 @@ class MainActivity :
 
             // android port: coop QoL -- begin polling (auto-shows in coop)
             coopStatsOverlay?.startPolling()
+            warpButtonOverlay?.startPolling()
         }
     }
 
@@ -1094,6 +1152,7 @@ class MainActivity :
                         netEventsOverlay?.hide()
                         videoInfoOverlay?.hide()
                         coopStatsOverlay?.hide()
+                        warpButtonOverlay?.stopPolling()
                         netEventsManualToggle = false
                     }
                     overlayPoller.postDelayed(this, 100)

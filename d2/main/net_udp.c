@@ -1730,6 +1730,9 @@ void net_udp_init()
 	net_udp_noloss_init_mdata_queue();
 	UDP_Seq.type = UPID_REQUEST;
 	memcpy(UDP_Seq.player.callsign, Players[Player_num].callsign, CALLSIGN_LEN+1);
+#ifdef __ANDROID__
+	memcpy(UDP_Seq.player.client_id, auto_net_client_id, sizeof(UDP_Seq.player.client_id));
+#endif
 
 	UDP_Seq.player.rank=GetMyNetRanking();	
 	UDP_Seq.player.color = PlayerCfg.ShipColor;
@@ -2714,6 +2717,7 @@ void net_udp_add_player(UDP_sequence_packet *p)
 
 	ClipRank (&p->player.rank);
 	memcpy( Netgame.players[N_players].callsign, p->player.callsign, CALLSIGN_LEN+1 );
+	memcpy( Netgame.players[N_players].client_id, p->player.client_id, sizeof(Netgame.players[N_players].client_id) );
 	if(Netgame.AllowPreferredColors) {
 		Netgame.players[N_players].color = p->player.color;
 		if(Netgame.players[N_players].color > 7) { Netgame.players[N_players].color = N_players; }
@@ -3062,6 +3066,7 @@ void net_udp_send_game_info(struct _sockaddr sender_addr, ubyte info_upid, ubyte
 			buf[len] = Netgame.players[i].rank;					len++;
 			buf[len] = Netgame.players[i].color;                 len++; 
 			buf[len] = Netgame.players[i].missilecolor;				len++;
+			memcpy(&buf[len], Netgame.players[i].client_id, 37);			len += 37;
 			if (!memcmp((struct _sockaddr *)&sender_addr, (struct _sockaddr *)&Netgame.players[i].protocol.udp.addr, sizeof(struct _sockaddr))) {
 				buf[len] = 1; len++; 
 				to_player = i; 
@@ -3321,6 +3326,7 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 			Netgame.players[i].rank = data[len];					len++;
 			Netgame.players[i].color = data[len];                   len++; 
 			Netgame.players[i].missilecolor = data[len];					len++;
+			memcpy(Netgame.players[i].client_id, &data[len], 37);			len += 37;
 			Netgame.players[i].protocol.udp.isyou = data[len];			len++;
 			if(is_sync && Netgame.RetroProtocol) {
 				if(i != 0) { // Don't ever overwrite host addr
@@ -7212,15 +7218,6 @@ void net_udp_process_pdata ( ubyte *data, int data_len, struct _sockaddr sender_
 	UDP_frame_info pd;
 	int len = 0, i = 0;
 
-#ifdef __ANDROID__
-	{
-		static int pdata_entry_count = 0;
-		pdata_entry_count++;
-		if (pdata_entry_count <= 3 || pdata_entry_count % 500 == 0)
-			MPDIAG("pdata_entry: count=%d netstat=%d gm=%d len=%d\n", pdata_entry_count, Network_status, Game_mode, data_len);
-	}
-#endif
-
 	if ( !( Game_mode & GM_NETWORK && ( Network_status == NETSTAT_PLAYING || Network_status == NETSTAT_ENDLEVEL ||  Network_status==NETSTAT_WAITING ) ) )
 		return;
 
@@ -7408,15 +7405,6 @@ void net_udp_read_pdata_packet(UDP_frame_info *pd)
 
 	TheirObj = &Objects[TheirObjnum];
 	Netgame.players[TheirPlayernum].LastPacketTime = timer_query();
-
-#ifdef __ANDROID__
-	{
-		static int pdata_rx_count[MAX_PLAYERS] = {0};
-		pdata_rx_count[TheirPlayernum]++;
-		if (pdata_rx_count[TheirPlayernum] <= 3 || pdata_rx_count[TheirPlayernum] % 500 == 0)
-			MPDIAG("pdata_rx: from p%d count=%d\n", TheirPlayernum, pdata_rx_count[TheirPlayernum]);
-	}
-#endif
 
 	//------------ Read the player's ship's object info ----------------------
 

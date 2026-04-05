@@ -105,7 +105,7 @@ endif()
 if(UDP)
     target_sources(dxx-redux-d2 PRIVATE net_udp.c)
     if(ANDROID)
-        target_sources(dxx-redux-d2 PRIVATE auto_net.c)
+        target_sources(dxx-redux-d2 PRIVATE auto_net.c coop_save.c coop_warp.c)
     endif()
 endif()
 

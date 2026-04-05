@@ -1741,6 +1741,13 @@ void net_udp_init()
 	UDP_Seq.player.rank=GetMyNetRanking();	
 	UDP_Seq.player.color = PlayerCfg.ShipColor; 
 	UDP_Seq.player.missilecolor = PlayerCfg.MissileColor; 
+#ifdef __ANDROID__
+	{
+		extern char auto_net_client_id[];
+		memcpy(UDP_Seq.player.client_id, auto_net_client_id, sizeof(UDP_Seq.player.client_id) - 1);
+		UDP_Seq.player.client_id[sizeof(UDP_Seq.player.client_id) - 1] = '\0';
+	}
+#endif
 
 	multi_new_game();
 	net_udp_reset_connection_statuses();
@@ -2708,6 +2715,7 @@ void net_udp_add_player(UDP_sequence_packet *p)
 
 	ClipRank (&p->player.rank);
 	memcpy( Netgame.players[N_players].callsign, p->player.callsign, CALLSIGN_LEN+1 );
+	memcpy( Netgame.players[N_players].client_id, p->player.client_id, sizeof(Netgame.players[N_players].client_id) );
 	if(Netgame.AllowPreferredColors) {
 		Netgame.players[N_players].color = p->player.color;
 		if(Netgame.players[N_players].color > 7) { Netgame.players[N_players].color = N_players; }
@@ -3036,6 +3044,7 @@ void net_udp_send_game_info(struct _sockaddr sender_addr, ubyte info_upid, ubyte
 			buf[len] = Netgame.players[i].rank;					len++;
 			buf[len] = Netgame.players[i].color;				len++; 
 			buf[len] = Netgame.players[i].missilecolor;				len++;
+			memcpy(&buf[len], Netgame.players[i].client_id, 37);		len += 37;
 			if (!memcmp((struct _sockaddr *)&sender_addr, (struct _sockaddr *)&Netgame.players[i].protocol.udp.addr, sizeof(struct _sockaddr))) {
 				buf[len] = 1; len++; 
 			} else {
@@ -3273,6 +3282,7 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 			Netgame.players[i].rank = data[len];					len++;
 			Netgame.players[i].color = data[len];					len++;
 			Netgame.players[i].missilecolor = data[len];					len++;
+			memcpy(Netgame.players[i].client_id, &data[len], 37);			len += 37;
 			Netgame.players[i].protocol.udp.isyou = data[len];			len++;
 
 			if(is_sync && Netgame.RetroProtocol) {

@@ -44,6 +44,8 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import org.json.JSONObject
+import java.io.File
 
 @Composable
 fun MultiplayerScreen(
@@ -438,6 +440,60 @@ private fun LobbyCodeDialog(
     )
 }
 
+/**
+ * Read coop_autosave_info.json from the game's data directory.
+ * Returns the save level if the file exists and matches the given mission,
+ * or null otherwise. The game writes this file when an auto-save occurs.
+ */
+private fun readCoopAutosaveInfo(
+    filesDir: File,
+    game: String,
+    mission: String?,
+): Int? {
+    if (mission == null) return null
+    val subdir = if (game == "d1") "d1x-redux" else "d2x-redux"
+    val file = File(filesDir, "$subdir/coop_autosave_info.json")
+    if (!file.exists()) return null
+    return try {
+        val json = JSONObject(file.readText())
+        val fileMission = json.optString("mission", "")
+        if (fileMission.equals(mission, ignoreCase = true)) {
+            json.optInt("level", 0).takeIf { it > 0 }
+        } else {
+            null
+        }
+    } catch (_: Exception) {
+        null
+    }
+}
+
+/**
+ * Read coop_progress.json from the game's data directory.
+ * Returns the last completed level if the file exists and matches the given mission,
+ * or null otherwise. The game writes this file at the end of each coop level.
+ */
+private fun readCoopProgress(
+    filesDir: File,
+    game: String,
+    mission: String?,
+): Int? {
+    if (mission == null) return null
+    val subdir = if (game == "d1") "d1x-redux" else "d2x-redux"
+    val file = File(filesDir, "$subdir/coop_progress.json")
+    if (!file.exists()) return null
+    return try {
+        val json = JSONObject(file.readText())
+        val fileMission = json.optString("mission", "")
+        if (fileMission.equals(mission, ignoreCase = true)) {
+            json.optInt("last_completed_level", 0).takeIf { it > 0 }
+        } else {
+            null
+        }
+    } catch (_: Exception) {
+        null
+    }
+}
+
 @Composable
 private fun CreateLobbyDialog(
     onCreate: (game: String, maxPlayers: Int, gameInfo: JsonObject) -> Unit,
@@ -451,6 +507,28 @@ private fun CreateLobbyDialog(
     var maxPlayersText by remember { mutableStateOf(defaults.maxPlayers.toString()) }
     var difficulty by remember { mutableStateOf(defaults.difficulty) }
     var levelNumText by remember { mutableStateOf(defaults.levelNum.toString()) }
+
+    // Check for coop auto-save and progress to suggest resume
+    val coopAutosaveLevel =
+        if (mode == "coop") {
+            readCoopAutosaveInfo(context.filesDir, game, mission)
+        } else {
+            null
+        }
+
+    val coopResumeLevel =
+        if (mode == "coop" && coopAutosaveLevel == null) {
+            readCoopProgress(context.filesDir, game, mission)
+        } else {
+            null
+        }
+
+    // Auto-populate level from progress on first load (only for level-only resume)
+    LaunchedEffect(coopResumeLevel) {
+        if (coopResumeLevel != null && coopResumeLevel > 0) {
+            levelNumText = (coopResumeLevel + 1).toString()
+        }
+    }
 
     val difficultyNames = listOf("Trainee", "Rookie", "Hotshot", "Ace", "Insane")
 
@@ -532,6 +610,19 @@ private fun CreateLobbyDialog(
                         label = { Text("Max Players") },
                         singleLine = true,
                         modifier = Modifier.weight(1f),
+                    )
+                }
+                if (coopAutosaveLevel != null) {
+                    Text(
+                        "Will restore save from Level $coopAutosaveLevel",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                } else if (coopResumeLevel != null) {
+                    Text(
+                        "Last completed: Level $coopResumeLevel",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
             }

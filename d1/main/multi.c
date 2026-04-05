@@ -64,6 +64,10 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "net_udp.h"
 #endif
 #include "args.h"
+#ifdef __ANDROID__
+#include "coop_save.h"
+#include "coop_warp.h"
+#endif
 
 //
 // Local macros and prototypes
@@ -888,6 +892,11 @@ multi_new_game(void)
 	game_disable_cheats();
 	multi_received_objects = 0; 
 
+#ifdef __ANDROID__
+	/* android port: reset auto-restore state for new game */
+	coop_disarm_auto_restore();
+#endif
+
 	// The observatory stats reset
 	reset_observatory_stats();
 	for (i = 0; i < MAX_PLAYERS; i++) {
@@ -1362,6 +1371,12 @@ void multi_do_frame(void)
 		Int3();
 		return;
 	}
+
+#ifdef __ANDROID__
+	/* android port: auto-restore from coop auto-save (Phase 4) */
+	coop_arm_auto_restore();
+	coop_try_auto_restore();
+#endif
 
 	if ((Game_mode & GM_NETWORK) && Netgame.PlayTimeAllowed && lasttime!=f2i (ThisLevelTime))
 	{
@@ -2620,6 +2635,11 @@ void multi_disconnect_player(int pnum)
 		if (Newdemo_state == ND_STATE_RECORDING)
 			newdemo_record_multi_disconnect(pnum);
 
+#ifdef __ANDROID__
+		/* Snapshot the player's inventory before their slot is cleared */
+		coop_track_absent_player(pnum);
+#endif
+
 		// Bounty target left - select a new one
 		if( Game_mode & GM_BOUNTY && pnum == Bounty_target && multi_i_am_master() )
 		{
@@ -2682,6 +2702,10 @@ void multi_disconnect_player(int pnum)
 		{
 			HUD_init_message_literal(HM_MULTI, "You are the only person remaining in this netgame");
 		}
+#ifdef __ANDROID__
+		if (Game_mode & GM_MULTI_COOP)
+			coop_autosave();
+#endif
 	}
 }
 
@@ -3503,6 +3527,10 @@ multi_send_reappear()
 
 	multi_send_data(multibuf, 4, 2);
 	PKilledFlags[Player_num]=0;
+#ifdef __ANDROID__
+	/* android port: coop QoL -- shorter warp engagement timeout after respawn */
+	coop_warp_note_respawn();
+#endif
 }
 
 void
@@ -5295,6 +5323,10 @@ multi_process_data(const ubyte *buf, int len)
 			multi_do_ship_status(buf); break;
 		case MULTI_CREATE_EXPLOSION2:
 			multi_do_create_explosion2(buf); break;
+#ifdef __ANDROID__
+		case MULTI_WARP_TO_PLAYER:
+			coop_warp_do_packet(buf); break;
+#endif
 		default:
 			Int3();
 	}

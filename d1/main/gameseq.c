@@ -100,6 +100,10 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "segment.h"
 #include "gameseg.h"
 #include "multibot.h"
+#ifdef __ANDROID__
+#include "coop_save.h"
+#include "coop_warp.h"
+#endif
 
 void init_player_stats_new_ship(ubyte pnum);
 void copy_defaults_to_robot_all(void);
@@ -335,6 +339,8 @@ void init_player_stats_level(int secret_flag)
 	// android port: coop QoL -- reset and compute per-player kill stats
 	coop_reset_kill_stats();
 	Coop_total_robot_score = coop_compute_total_robot_score();
+	// android port: coop QoL -- reset warp engagement timer
+	coop_warp_reset();
 
 	Players[Player_num].hostages_level = count_number_of_hostages();
 	Players[Player_num].hostages_total += Players[Player_num].hostages_level;
@@ -745,6 +751,11 @@ void DoEndLevelScoreGlitz(int network)
 	int				i,c;
 	char				title[128];
 	int				is_last_level;
+
+#ifdef __ANDROID__
+	/* Android port: record coop level completion for session resume */
+	coop_write_progress_json();
+#endif
 
 	gr_palette_load( gr_palette );
 

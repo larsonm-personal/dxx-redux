@@ -351,54 +351,64 @@ Enhanced end-of-level screen showing per-player robot kill contributions.
 - [x] Integrate overlay in MainActivity.kt (creation, polling start/stop)
 - [x] Duplicate all C hooks in d1/main (multi.h, multi.c, multibot.c, collide.c, fireball.c, gameseq.c)
 - [x] Build passes (Android debug APK, both d1 and d2)
-- [ ] Test with 2 emulators in coop
+- [x] Test with 2 emulators in coop
 
 ### Phase 2: Client Identity + Save File Metadata Extension
-- [ ] Generate persistent installation UUID in SharedPreferences on first app launch (`ClientIdentity.kt`)
+- [x] Generate persistent installation UUID in SharedPreferences on first app launch (`ClientIdentity.kt`)
 - [ ] Return GPGS player_id from server to client (or use installation UUID as fallback)
-- [ ] Extend `netplayer_info` with `client_id` field + bump `MULTI_PROTO_VERSION`
-- [ ] Pass client_id through join handshake (extend UPID_REQUEST/UPID_SYNC)
-- [ ] Define `coop_save_metadata` and `coop_player_record` structs
-- [ ] Write metadata trailer in `state_save_all_sub()`, including absent player records
-- [ ] Read metadata in new `state_read_coop_metadata()`, handle missing tag gracefully
-- [ ] Implement `find_player_in_metadata()` with client_id-first, callsign-fallback matching
+- [x] Extend `netplayer_info` with `client_id` field + bump `MULTI_PROTO_VERSION`
+- [x] Pass client_id through join handshake (extend UPID_REQUEST/UPID_SYNC)
+- [x] Fix `UPID_GAME_INFO_SIZE` buffer overflow: add (MAX_PLAYERS+4)*37 for client_id; bump `UPID_MAX_SIZE` 1024->2048
+- [x] Define `coop_save_metadata` and `coop_player_record` structs
+- [x] Write metadata trailer in `state_save_all_sub()`, including absent player records
+- [x] Read metadata in new `state_read_coop_metadata()`, handle missing tag gracefully
+- [x] Implement `find_player_in_metadata()` with client_id-first, callsign-fallback matching
 - [ ] Callsign/client_id-to-inventory remapping in `multi_restore_game()`
-- [ ] Absent player tracking: snapshot inventory on disconnect, carry forward at level transition
+- [x] Absent player tracking: snapshot inventory on disconnect, carry forward at level transition
 - [ ] Absent player rejoin: restore inventory, spawn at mine entrance
-- [ ] Duplicate in d1
+- [x] Duplicate in d1
 - [ ] Test: save with 2 players, restore with swapped join order -- verify correct inventories
 - [ ] Test: player disconnects, reconnects next session -- verify inventory preserved
 
 ### Phase 3: Auto-Save on Disconnect / Last in Mine
-- [ ] Hook `multi_do_quit()` / disconnect path to trigger auto-save to slot 9
-- [ ] Bypass "all alive" / "host only" constraints for auto-save
-- [ ] Detect "last in mine" (`count_connected_players() == 1`) and save + notify
-- [ ] Include coop metadata in auto-saves
-- [ ] Duplicate in d1
+- [x] Hook `multi_do_quit()` / disconnect path to trigger auto-save to slot 9
+- [x] Bypass "all alive" / "host only" constraints for auto-save
+- [x] Detect "last in mine" (`count_connected_players() == 1`) and save + notify
+- [x] Include coop metadata in auto-saves
+- [x] Duplicate in d1
 - [ ] Test: player disconnect mid-level, verify save file created with correct metadata
 
 ### Phase 4: Level Completion Checkpoint + Session Resume
-- [ ] Write `coop_progress.json` at level-end in coop
-- [ ] New `MULTI_COOP_SAVE_INFO` packet for lobby phase
-- [ ] Host-side logic: scan saves, match player sets, pick newest
-- [ ] Lobby UI: suggest save file and/or starting level
-- [ ] On accept: host triggers `MULTI_RESTORE_GAME` with callsign remapping
-- [ ] Duplicate in d1
+- [x] Write `coop_progress.json` at level-end in coop
+- [x] Kotlin lobby: read coop_progress.json, auto-suggest resume level in CreateLobbyDialog
+- [x] Write `coop_autosave_info.json` sidecar alongside auto-save
+- [x] Kotlin lobby: read autosave info, show "Will restore save from Level X" hint
+- [x] Auto-restore framework: `coop_arm_auto_restore()` / `coop_try_auto_restore()` / `coop_disarm_auto_restore()`
+- [x] Hook auto-restore in `multi_do_frame()` and `multi_new_game()` (d1+d2)
+- [ ] New `MULTI_COOP_SAVE_INFO` packet for lobby phase (deferred)
+- [ ] Host-side logic: scan saves, match player sets, pick newest (deferred)
+- [ ] On accept: host triggers `MULTI_RESTORE_GAME` with callsign remapping (deferred)
+- [x] Duplicate in d1
+- [x] Test: coop multiplayer test passes (ALL CHECKS PASSED)
 - [ ] Test: full flow -- play 2 levels, disconnect, reconnect, verify resume suggestion
 
 ### Phase 5: Warp to Player
-- [ ] Add engagement tracking (`last_robot_engagement_time`) in collide.c
-- [ ] BFS reachability check using `create_bfs_list()` / `segment_is_reachable()`
-- [ ] Coop-aware key check wrapper (union of all players' keys)
-- [ ] Warp target cycling for >2 players (`coop_warp_target_idx`)
-- [ ] Warp spawn point finder with 30 retries
-- [ ] `MULTI_WARP_TO_PLAYER` network packet
-- [ ] Cooldown timer
-- [ ] Android popup button via touch overlay (cycles targets on repeated press)
-- [ ] F1 menu entry for coop
-- [ ] Duplicate in d1
-- [ ] Test: 2 emulators, verify warp works and locked door constraint
-- [ ] Test: 3+ players scenario (if feasible) -- verify target cycling
+- [x] Add engagement tracking (`last_robot_engagement_time`) in collide.c (d1+d2)
+- [x] Custom BFS reachability in `coop_warp.c` (works for both d1 and d2, d1 has no escort.c)
+- [x] Coop key check (keys are shared in coop, local player flags already have all keys)
+- [x] Warp target cycling for >2 players (`coop_warp_target_idx`, `coop_warp_cycle_target()`)
+- [x] Warp spawn point finder with 30 retries (random offset from target position)
+- [x] `MULTI_WARP_TO_PLAYER` network packet (17 bytes)
+- [x] Cooldown timer (60s), engagement timeout (20s normal, 5s after respawn)
+- [x] Android popup button via `WarpButtonOverlay.kt` (long-press cycles targets)
+- [ ] F1 menu entry for coop (deferred)
+- [x] JNI exports: `nativeGetCoopWarpStatus`, `nativeGetCoopWarpTargetName`, `nativeCoopWarpExecute`, `nativeCoopWarpCycleTarget`
+- [x] Respawn tracking with shorter engagement timeout
+- [x] Duplicate in d1
+- [x] Build passes, lint passes
+- [x] Test: coop multiplayer test passes (ALL CHECKS PASSED)
+- [ ] Test: 2 emulators, verify warp works when far from teammate
+- [ ] Test: verify locked door constraint blocks warp
 
 ### Phase 6: End-of-Level Score Breakdown
 - [ ] Modify `DoEndLevelScoreGlitz()` to show per-player stats

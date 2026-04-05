@@ -94,6 +94,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gamemine.h"
 #ifdef ANDROID
 #include "track_names.h"
+#include "coop_save.h"
+#include "coop_warp.h"
 #endif
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -363,6 +365,8 @@ void init_player_stats_level(int secret_flag)
 	// android port: coop QoL -- reset and compute per-player kill stats
 	coop_reset_kill_stats();
 	Coop_total_robot_score = coop_compute_total_robot_score();
+	// android port: coop QoL -- reset warp engagement timer
+	coop_warp_reset();
 
 	Players[Player_num].hostages_level = count_number_of_hostages();
 	Players[Player_num].hostages_total += Players[Player_num].hostages_level;
@@ -871,6 +875,11 @@ void DoEndLevelScoreGlitz(int network)
 	char				title[128];
 	int				is_last_level;
 	int				mine_level;
+
+#ifdef __ANDROID__
+	/* Android port: record coop level completion for session resume */
+	coop_write_progress_json();
+#endif
 
 	//	Compute level player is on, deal with secret levels (negative numbers)
 	mine_level = Players[Player_num].level;

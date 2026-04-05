@@ -44,6 +44,12 @@ extern int auto_host_difficulty;
  * automatically before the network action starts. */
 extern char auto_net_callsign[10];
 
+/* Client identity UUID (36 chars + null).  Set by JNI from
+ * ClientIdentity.getInstallationId() or the server's player_id.
+ * Used for save-file player matching across sessions. */
+#define AUTO_NET_CLIENT_ID_LEN 37
+extern char auto_net_client_id[AUTO_NET_CLIENT_ID_LEN];
+
 /* Auto-create a pilot with auto_net_callsign if no pilot exists.
  * Called from main_menu_handler before check_auto_net(). */
 int auto_create_pilot(void);

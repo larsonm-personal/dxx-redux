@@ -27,6 +27,8 @@ int  auto_host_max_players = 4;
 int  auto_host_level_num   = 1;
 int  auto_host_difficulty  = 1;
 
+char auto_net_client_id[AUTO_NET_CLIENT_ID_LEN] = "";
+
 char auto_net_callsign[10] = "";
 
 /* Implemented in net_udp.c - has access to UDP_MyPort and other statics. */
