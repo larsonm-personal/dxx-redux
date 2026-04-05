@@ -4928,6 +4928,13 @@ void net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr send
 		}
 	}
 
+	// Reset timeout counters for all remote players after level sync.
+	// During sync, PDATA is dropped (wrong Network_status), so LastPacketTime
+	// goes stale and timeout_check would fire immediately.
+	for (int i = 0; i < N_players; i++)
+		if (i != Player_num)
+			Netgame.players[i].LastPacketTime = timer_query();
+
 	Network_status = NETSTAT_PLAYING;
 	multi_sort_kill_list();
 }
@@ -7358,8 +7365,9 @@ void net_udp_process_p2p_ping(ubyte *data, struct _sockaddr sender_addr, int dat
 		return;
 	}
 
-	// Since the host doesn't send packets as an observer, ensure that clients don't disconnect thinking the host is dead.
-	if (from_player == 0 && Netgame.host_is_obs) {
+	// Prevent clients from timing out the host during level sync or other
+	// periods when PDATA isn't flowing. Pings prove the host is reachable.
+	if (from_player == 0) {
 		Netgame.players[0].LastPacketTime = timer_query();
 	}
 	
@@ -7665,10 +7673,9 @@ void net_udp_process_ping(ubyte *data, int data_len, struct _sockaddr sender_add
 		Netgame.players[i].ping = GET_INTEL_INT(&(data[len]));		len += 4;
 	}
 
-	// Since the host doesn't send packets as an observer, ensure that clients don't disconnect thinking the host is dead.
-	if (Netgame.host_is_obs) {
-		Netgame.players[0].LastPacketTime = timer_query();
-	}
+	// Prevent clients from timing out the host during level sync or other
+	// periods when PDATA isn't flowing. Pings prove the host is reachable.
+	Netgame.players[0].LastPacketTime = timer_query();
 	
 	buf[0] = UPID_PONG;
 	buf[1] = Player_num;

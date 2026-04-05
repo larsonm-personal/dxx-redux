@@ -10,9 +10,10 @@ import android.os.Build
 import android.os.IBinder
 
 /**
- * Foreground service that keeps the :game process alive during multiplayer
- * sessions.  Without this, Android may kill the process when the user
- * switches apps, dropping the network game.
+ * Foreground service that keeps the main process alive during multiplayer.
+ * The main process hosts MatchmakingService and the UDP relay proxy; without
+ * a FGS, Android's process freezer halts it ~80s after the game activity
+ * (in the :game process) takes the foreground.
  *
  * Start with [start] when entering a multiplayer game, stop with [stop]
  * when leaving.

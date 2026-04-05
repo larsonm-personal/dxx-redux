@@ -19,6 +19,8 @@ pub struct RelaySession {
     /// D12: IPs allowed to participate (pre-registered from WS peer addresses).
     pub allowed_ips: DashSet<IpAddr>,
     pub created_at: std::time::Instant,
+    /// Packet counter for diagnostic logging (first N packets logged at info).
+    pub packets_forwarded: std::sync::atomic::AtomicU64,
 }
 
 /// Remove relay sessions older than `MAX_RELAY_SESSION_SECS`.
@@ -84,6 +86,7 @@ pub async fn run(
         let dest_player = buf[4];
 
         let Some(session) = state.relay_sessions.get(&token) else {
+            // Log at info for first unknown token to aid debugging
             debug!(%src, token, "unknown relay session token");
             continue;
         };
@@ -98,32 +101,46 @@ pub async fn run(
         let from_player = match from_player {
             Some(p) => p,
             None => {
-                // Address learning: if there are unregistered slots, try to
-                // infer the sender. The sender is sending to dest_player,
-                // so the sender must be some OTHER slot.
-                let registered: std::collections::HashSet<u8> =
-                    session.player_addrs.iter().map(|e| *e.key()).collect();
-                let free_slot = (0..session.expected_players)
-                    .find(|s| !registered.contains(s) && *s != dest_player);
-                if let Some(slot) = free_slot {
-                    // D12: only learn addresses from allowed IPs
+                // Check if this is a NAT rebind: a known slot sending from a
+                // new source address. In a 2-player session, the sender must
+                // be the slot that ISN'T dest_player.
+                let candidate_slot = (0..session.expected_players)
+                    .find(|s| *s != dest_player && session.player_addrs.contains_key(s));
+                if let Some(slot) = candidate_slot {
                     if !session.allowed_ips.is_empty() && !session.allowed_ips.contains(&src.ip()) {
-                        warn!(%src, token, "relay address learning rejected: IP not allowed");
+                        warn!(%src, token, "relay address update rejected: IP not allowed");
                         continue;
                     }
-                    session.player_addrs.insert(slot, src);
-                    debug!(%src, slot, token, "auto-registered relay source address");
+                    let old_addr = session.player_addrs.insert(slot, src);
+                    tracing::info!(%src, ?old_addr, slot, token, "relay: updated address for slot (NAT rebind)");
                     slot
                 } else {
-                    warn!(%src, token, "relay packet from unregistered address");
-                    continue;
+                    // Address learning: if there are unregistered slots, try to
+                    // infer the sender.
+                    let registered: std::collections::HashSet<u8> =
+                        session.player_addrs.iter().map(|e| *e.key()).collect();
+                    let free_slot = (0..session.expected_players)
+                        .find(|s| !registered.contains(s) && *s != dest_player);
+                    if let Some(slot) = free_slot {
+                        // D12: only learn addresses from allowed IPs
+                        if !session.allowed_ips.is_empty() && !session.allowed_ips.contains(&src.ip()) {
+                            warn!(%src, token, "relay address learning rejected: IP not allowed");
+                            continue;
+                        }
+                        session.player_addrs.insert(slot, src);
+                        tracing::info!(%src, slot, token, "relay: learned address for slot");
+                        slot
+                    } else {
+                        warn!(%src, token, "relay packet from unregistered address");
+                        continue;
+                    }
                 }
             }
         };
 
         // Look up destination address
         let Some(dest_addr) = session.player_addrs.get(&dest_player).map(|r| *r.value()) else {
-            debug!(token, dest_player, "relay dest player not found in session");
+            debug!(token, dest_player, from_player, "relay dest slot not yet known, dropping");
             continue;
         };
 
@@ -133,8 +150,18 @@ pub async fn run(
         fwd.push(from_player); // from_player (replaces dest)
         fwd.extend_from_slice(&buf[RELAY_HEADER_LEN..len]); // payload
 
+        let count = session
+            .packets_forwarded
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        if count < 5 || (count < 100 && count % 20 == 0) || count % 500 == 0 {
+            tracing::info!(
+                token, from_player, dest_player, %src, %dest_addr,
+                len, count, "relay: forwarded packet"
+            );
+        }
+
         if let Err(e) = socket.send_to(&fwd, dest_addr).await {
-            debug!(%e, %dest_addr, "relay forward failed");
+            tracing::info!(%e, %dest_addr, from_player, dest_player, "relay forward failed");
         }
     }
 }

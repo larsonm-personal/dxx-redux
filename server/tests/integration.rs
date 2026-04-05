@@ -2442,6 +2442,7 @@ async fn test_relay_cleanup_stale_sessions() {
         expected_players: 2,
         allowed_ips: dashmap::DashSet::new(),
         created_at: old_created_at,
+        packets_forwarded: std::sync::atomic::AtomicU64::new(0),
     };
     server.state.relay_sessions.insert(99999, old_session);
 
@@ -2452,6 +2453,7 @@ async fn test_relay_cleanup_stale_sessions() {
         expected_players: 2,
         allowed_ips: dashmap::DashSet::new(),
         created_at: std::time::Instant::now(),
+        packets_forwarded: std::sync::atomic::AtomicU64::new(0),
     };
     server.state.relay_sessions.insert(11111, fresh_session);
 

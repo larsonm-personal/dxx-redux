@@ -68,7 +68,17 @@ class LocalhostProxy(
 
     init {
         if (sharedRealSocket != null) {
-            jobs.add(scope.launch(Dispatchers.IO) { sharedReceiveLoop() })
+            jobs.add(scope.launch(Dispatchers.IO) {
+                try {
+                    sharedReceiveLoop()
+                    Log.w(TAG, "sharedReceiveLoop returned normally")
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    Log.w(TAG, "sharedReceiveLoop cancelled")
+                    throw e
+                } catch (e: Exception) {
+                    Log.e(TAG, "sharedReceiveLoop CRASHED: ${e.javaClass.simpleName}: ${e.message}", e)
+                }
+            })
         }
     }
 
@@ -103,7 +113,17 @@ class LocalhostProxy(
             }
         }
 
-        jobs.add(scope.launch(Dispatchers.IO) { proxy.run() })
+        jobs.add(scope.launch(Dispatchers.IO) {
+            try {
+                proxy.run()
+                Log.w(TAG, "proxy.run() returned normally for slot=${peerConfig.peerSlot}")
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                Log.w(TAG, "proxy.run() cancelled for slot=${peerConfig.peerSlot}")
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "proxy.run() CRASHED for slot=${peerConfig.peerSlot}: ${e.javaClass.simpleName}: ${e.message}", e)
+            }
+        })
         Log.i(
             TAG,
             "Added peer proxy: slot=${peerConfig.peerSlot} " +
@@ -169,15 +189,23 @@ class LocalhostProxy(
                     }
                 }
                 // Unmatched: stale probe, connectivity echo, or unknown sender
+                Log.w(
+                    TAG,
+                    "Unmatched packet from $senderKey len=${pkt.length} relaySlots=${relayPeersBySlot.keys} directAddrs=${directPeersByAddr.keys}",
+                )
             } catch (_: java.net.SocketTimeoutException) {
                 // Socket may have a residual soTimeout from STUN/connectivity
                 // probing. Just continue; the socket is still usable.
                 continue
             } catch (e: java.net.SocketException) {
-                if (e.message?.contains("closed") == true) break
+                if (e.message?.contains("closed") == true) {
+                    Log.w(TAG, "sharedReceiveLoop: socket closed, exiting")
+                    break
+                }
                 Log.w(TAG, "Shared receive error: ${e.message}")
             }
         }
+        Log.w(TAG, "sharedReceiveLoop: while-loop exited (job.isActive=${kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive})")
     }
 
     fun getStats(): List<PeerProxyStats> = peerProxies.map { it.getStats() }
@@ -214,6 +242,8 @@ class LocalhostProxy(
     }
 
     fun shutdown() {
+        val trace = Throwable("shutdown caller").stackTraceToString()
+        Log.w(TAG, "Proxy shutdown called, peers=${peerProxies.size} jobs=${jobs.size}\n$trace")
         // C10: close sockets first to unblock receive() calls, then cancel jobs
         for (proxy in peerProxies) proxy.close()
         sharedRealSocket?.close()
@@ -301,6 +331,12 @@ private class PeerProxy(
             localSocket.send(DatagramPacket(payload, payloadLen, InetSocketAddress(loopback, ENGINE_PORT)))
             packetsReceived++
             bytesReceived += payloadLen
+            if (packetsReceived <= 5 || (packetsReceived <= 100 && packetsReceived % 20 == 0L) || packetsReceived % 500 == 0L) {
+                Log.i(
+                    TAG,
+                    "real->local slot=${config.peerSlot} #$packetsReceived ${payloadLen}b relay=${config.isRelay}",
+                )
+            }
         } catch (e: java.net.SocketException) {
             if (e.message?.contains("closed") != true) {
                 Log.w(TAG, "deliverIncoming error slot=${config.peerSlot}: ${e.message}")
@@ -316,6 +352,12 @@ private class PeerProxy(
                 localSocket.receive(pkt)
                 packetsSent++
                 bytesSent += pkt.length
+                if (packetsSent <= 5 || (packetsSent <= 100 && packetsSent % 20 == 0L) || packetsSent % 500 == 0L) {
+                    Log.i(
+                        TAG,
+                        "local->real slot=${config.peerSlot} #$packetsSent ${pkt.length}b -> ${config.realAddr} relay=${config.isRelay}",
+                    )
+                }
                 if (config.isRelay) {
                     // Wrap: [token:4LE][dest_slot:1][payload]
                     val wrapped =
@@ -335,8 +377,11 @@ private class PeerProxy(
                 val msg = e.message ?: ""
                 if ("closed" in msg || "EPERM" in msg || "Operation not permitted" in msg) break
                 Log.w(TAG, "local->real error: $msg")
+            } catch (e: Exception) {
+                Log.e(TAG, "local->real UNEXPECTED slot=${config.peerSlot} #$packetsSent: ${e.javaClass.simpleName}: ${e.message}")
             }
         }
+        Log.w(TAG, "forwardLocalToReal EXITED slot=${config.peerSlot} sent=$packetsSent")
     }
 
     private suspend fun forwardRealToLocal() {
@@ -383,16 +428,23 @@ private class PeerProxy(
             } else {
                 byteArrayOf(0)
             }
+        var keepaliveCount = 0L
         while (kotlinx.coroutines.currentCoroutineContext()[Job]?.isActive == true) {
             try {
                 kotlinx.coroutines.delay(KEEPALIVE_INTERVAL_MS)
                 realSocket.send(DatagramPacket(ping, ping.size, config.realAddr))
+                keepaliveCount++
+                Log.i(TAG, "keepalive slot=${config.peerSlot} #$keepaliveCount sent=$packetsSent recv=$packetsReceived")
             } catch (e: java.net.SocketException) {
                 val msg = e.message ?: ""
-                if ("closed" in msg || "EPERM" in msg || "Operation not permitted" in msg) break
+                if ("closed" in msg || "EPERM" in msg || "Operation not permitted" in msg) {
+                    Log.w(TAG, "keepalive slot=${config.peerSlot} socket closed after #$keepaliveCount")
+                    break
+                }
                 Log.w(TAG, "keepalive error: $msg")
             }
         }
+        Log.w(TAG, "keepalive loop EXITED slot=${config.peerSlot} count=$keepaliveCount")
     }
 
     fun close() {

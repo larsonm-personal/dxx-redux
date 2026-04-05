@@ -329,21 +329,32 @@ if (-not $NoServer) {
         }
     }
 
-    $psi = New-Object System.Diagnostics.ProcessStartInfo
-    $psi.FileName = $serverBin
-    $psi.WorkingDirectory = $serverDir
-    $psi.RedirectStandardOutput = $true
-    $psi.RedirectStandardError = $true
-    $psi.UseShellExecute = $false
-    $psi.CreateNoWindow = $true
-    $psi.EnvironmentVariables["SKIP_GPGS_VERIFY"] = "true"
-    $psi.EnvironmentVariables["RUST_LOG"] = "info"
-    if ((Test-Path $tlsCert) -and (Test-Path $tlsKey)) {
-        $psi.EnvironmentVariables["TLS_CERT_PATH"] = $tlsCert
-        $psi.EnvironmentVariables["TLS_KEY_PATH"] = $tlsKey
+    $serverLog = Join-Path $REPO_ROOT "temp\server.log"
+    $serverErr = Join-Path $REPO_ROOT "temp\server_err.log"
+    $serverEnv = @{
+        SKIP_GPGS_VERIFY  = "true"
+        RUST_LOG          = "info"
+        # Emulators access host at 10.0.2.2; relay listens on 0.0.0.0:9001
+        RELAY_PUBLIC_ADDR = "10.0.2.2:9001"
+        LOG_DIR           = (Join-Path $REPO_ROOT "temp")
     }
-    $script:serverProcess = [System.Diagnostics.Process]::Start($psi)
-    Write-Status "  Server PID: $($script:serverProcess.Id)"
+    if ((Test-Path $tlsCert) -and (Test-Path $tlsKey)) {
+        $serverEnv["TLS_CERT_PATH"] = $tlsCert
+        $serverEnv["TLS_KEY_PATH"] = $tlsKey
+    }
+    # Launch server binary directly -- do NOT wrap in pwsh.  PowerShell's
+    # internal pipe handling deadlocks when the native process's stderr
+    # output fills the internal buffer (same class of bug as the
+    # ProcessStartInfo pipe deadlock, just one level deeper).
+    foreach ($kv in $serverEnv.GetEnumerator()) {
+        [System.Environment]::SetEnvironmentVariable($kv.Key, $kv.Value, "Process")
+    }
+    $script:serverProcess = Start-Process -FilePath $serverBin `
+        -WorkingDirectory $serverDir `
+        -PassThru -NoNewWindow `
+        -RedirectStandardOutput $serverLog `
+        -RedirectStandardError $serverErr
+    Write-Status "  Server PID: $($script:serverProcess.Id) (log: temp\server.log)"
 
     # Wait for server to be ready
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
@@ -428,6 +439,8 @@ Write-Status ""
 Write-Status "Network:" "White"
 if (-not $NoServer) {
     Write-Status "  Matchmaking server: ws://10.0.2.2:9000/ws (PID $($script:serverProcess.Id))"
+    Write-Status "  Server relay: 10.0.2.2:9001 (UDP)"
+    Write-Status "  Server log: temp\server.log / temp\server_err.log"
 }
 Write-Status "  UDP relay: port 42600 (PID $($script:relayProc.Id))"
 Write-Status "  EMU1 redir: host:42500 -> EMU1:42424"
@@ -450,8 +463,7 @@ if ($NoServer) {
     Write-Status "  adb -s $EMU1_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command create_lobby --es game d2 --es mission d2 --es mode anarchy" "Gray"
     Write-Status "  adb -s $EMU2_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command refresh_lobbies" "Gray"
     Write-Status "  adb -s $EMU2_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command join_first_lobby" "Gray"
-    Write-Status '  # Set join target for relay + start game:' "Gray"
-    Write-Status "  adb -s $EMU2_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command set_join_target --es host_addr 10.0.2.2 --ei host_port 42600" "Gray"
+    Write-Status '  # Start game (server relay on port 9001 handles routing):' "Gray"
     Write-Status "  adb -s $EMU1_SERIAL shell am broadcast -a com.dxxredux.MP_COMMAND --es command start_game" "Gray"
     Write-Status ""
     Write-Status '  # Run existing multiplayer test:' "Gray"

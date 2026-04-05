@@ -1164,6 +1164,7 @@ fn allocate_relay_session(state: &ServerState, relay_addr: &str, pair: &RelayPai
             expected_players: 2,
             allowed_ips,
             created_at: std::time::Instant::now(),
+            packets_forwarded: std::sync::atomic::AtomicU64::new(0),
         },
     );
     info!(token, pid_a = %pair.pid_a, pid_b = %pair.pid_b, "relay session allocated");

@@ -24,7 +24,9 @@
 
 param(
     [string]$Game = "d2",
+    [string]$Mode = "anarchy",
     [switch]$SkipBuild,
+    [switch]$Tls,
     [int]$TimeoutSeconds = 180
 )
 
@@ -50,7 +52,7 @@ $CALLSIGN1 = "HostPlt"
 $CALLSIGN2 = "JoinPlt"
 
 $MISSION = if ($Game -eq "d1") { "descent" } else { "d2" }
-$MODE = "anarchy"
+$MODE = $Mode
 
 $serverProcess = $null
 $testPassed = $false
@@ -281,6 +283,26 @@ try {
     $env:RELAY_LISTEN_ADDR = "127.0.0.1:9001"
     $env:RELAY_PUBLIC_ADDR = "10.0.2.2:9001"
     $env:LOG_DIR = (Join-Path $REPO_ROOT "temp")
+    if ($Tls) {
+        $tlsDir = Join-Path $REPO_ROOT "temp\tls"
+        New-Item -Path $tlsDir -ItemType Directory -Force -ErrorAction SilentlyContinue | Out-Null
+        $tlsCert = Join-Path $tlsDir "server.crt"
+        $tlsKey = Join-Path $tlsDir "server.key"
+        if (-not (Test-Path $tlsCert) -or -not (Test-Path $tlsKey)) {
+            Write-Status "  Generating self-signed TLS certificate..."
+            $opensslExe = "openssl"
+            if (Test-Path "$DEP_BASE\git\usr\bin\openssl.exe") { $opensslExe = "$DEP_BASE\git\usr\bin\openssl.exe" }
+            & $opensslExe req -x509 -newkey rsa:2048 -keyout $tlsKey -out $tlsCert `
+                -days 365 -nodes -subj "/CN=localhost" 2>&1 | Out-Null
+        }
+        if ((Test-Path $tlsCert) -and (Test-Path $tlsKey)) {
+            $env:TLS_CERT_PATH = $tlsCert
+            $env:TLS_KEY_PATH = $tlsKey
+            Write-Status "  TLS enabled"
+        } else {
+            Write-Status "  WARNING: TLS cert generation failed, falling back to plain WS" "Yellow"
+        }
+    }
     $script:serverLogPath = Join-Path $REPO_ROOT "temp\matchmaking_server.log"
     $serverProcess = Start-Process -FilePath $serverBin -WorkingDirectory $serverDir `
         -NoNewWindow -PassThru `
@@ -322,8 +344,9 @@ try {
     Send-MpCommand -Serial $EMU2 -Command "set_callsign" -Extras @("--es", "callsign", $CALLSIGN2)
     Start-Sleep -Seconds 1
 
-    # Use ws:// (plain WebSocket) for local test server (no TLS configured)
-    $testServerUrl = "ws://10.0.2.2:9000/ws"
+    # Use ws:// (plain WebSocket) unless -Tls is specified (matches manual test setup)
+    $testServerUrl = if ($Tls) { "wss://10.0.2.2:9000/ws" } else { "ws://10.0.2.2:9000/ws" }
+    Write-Status "Connecting via $testServerUrl"
     Send-MpCommand -Serial $EMU1 -Command "connect" -Extras @("--es", "url", $testServerUrl)
     Send-MpCommand -Serial $EMU2 -Command "connect" -Extras @("--es", "url", $testServerUrl)
 
@@ -518,8 +541,8 @@ try {
     & $ADB -s $EMU2 logcat -c 2>&1 | Out-Null
     $logcatFile1 = Join-Path $REPO_ROOT "temp\emu1_logcat_phase8.txt"
     $logcatFile2 = Join-Path $REPO_ROOT "temp\emu2_logcat_phase8.txt"
-    $logcatProc1 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU1, "logcat", "-s", "DXX-MP:*", "DXX-Redux:*", "dxxredux:*", "MatchmakingService:*", "DEBUG:*", "AndroidRuntime:*", "libc:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile1 -RedirectStandardError (Join-Path $REPO_ROOT "temp\emu1_logcat_err.txt")
-    $logcatProc2 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU2, "logcat", "-s", "DXX-MP:*", "DXX-Redux:*", "dxxredux:*", "MatchmakingService:*", "DEBUG:*", "AndroidRuntime:*", "libc:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile2 -RedirectStandardError (Join-Path $REPO_ROOT "temp\emu2_logcat_err.txt")
+    $logcatProc1 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU1, "logcat", "-s", "DXX-MP:*", "DXX-Redux:*", "dxxredux:*", "MatchmakingService:*", "LocalhostProxy:*", "DEBUG:*", "AndroidRuntime:*", "libc:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile1 -RedirectStandardError (Join-Path $REPO_ROOT "temp\emu1_logcat_err.txt")
+    $logcatProc2 = Start-Process -FilePath $ADB -ArgumentList "-s", $EMU2, "logcat", "-s", "DXX-MP:*", "DXX-Redux:*", "dxxredux:*", "MatchmakingService:*", "LocalhostProxy:*", "DEBUG:*", "AndroidRuntime:*", "libc:*" -PassThru -NoNewWindow -RedirectStandardOutput $logcatFile2 -RedirectStandardError (Join-Path $REPO_ROOT "temp\emu2_logcat_err.txt")
 
     # Player 1 (host) starts the game.  The server sends GAME_STARTING to both
     # players, which triggers auto-launch via LobbyScreen's LaunchedEffect.
@@ -733,7 +756,11 @@ try {
             Write-Status "  mission=$($mp1state.mission_title) level=$($mp1state.level_num)"
 
             if ($mp1state.num_players -lt 2) { $failures += "Player 1 sees $($mp1state.num_players) players (expected 2+)" }
-            if ($mp1state.gamemode_name -ne $MODE) { $failures += "Player 1 gamemode: $($mp1state.gamemode_name) (expected $MODE)" }
+            # Engine reports full name (e.g. "cooperative") while lobby uses short name ("coop")
+            $modeAliases = @{ "coop" = "cooperative"; "ctf" = "capture_flag" }
+            $expectedModes = @($MODE)
+            if ($modeAliases.ContainsKey($MODE)) { $expectedModes += $modeAliases[$MODE] }
+            if ($mp1state.gamemode_name -notin $expectedModes) { $failures += "Player 1 gamemode: $($mp1state.gamemode_name) (expected $MODE)" }
 
             # Check callsigns
             $p1Callsigns = ($mp1state.players | ForEach-Object { $_.callsign }) -join ", "
@@ -764,6 +791,100 @@ try {
         }
 
     } # end non-fallback Phase 9 block
+
+    # -- Phase 10: Sustained connectivity check (90s, crosses 3 WS ping intervals) --
+    if ($failures.Count -eq 0 -and -not $script:p8UsedFallback) {
+        Write-Status ""
+        Write-Status "--- Phase 10: Sustained connectivity check (90s) ---" "White"
+        $sustainStart = [System.Diagnostics.Stopwatch]::StartNew()
+        $sustainFailed = $false
+        $prevState = @{}  # track per-player state changes
+        while ($sustainStart.Elapsed.TotalSeconds -lt 90 -and -not $sustainFailed) {
+            Start-Sleep -Seconds 5
+            $elapsed = [int]$sustainStart.Elapsed.TotalSeconds
+            $sg1 = Get-GameIntrospection -Serial $EMU1
+            $sg2 = Get-GameIntrospection -Serial $EMU2
+            foreach ($entry in @(@{Tag="EMU1"; S=$sg1; Num=1}, @{Tag="EMU2"; S=$sg2; Num=2})) {
+                $tag = $entry.Tag; $sg = $entry.S; $pNum = $entry.Num
+                if (-not $sg) { continue }
+                try {
+
+                # Check for disconnect messagebox: game_window_is_front=false
+                # while in_game=true means a modal is on top (e.g. "Host left the game!")
+                $gwFront = $sg.game_window_is_front
+                $menuSub = ""
+                if ($sg.PSObject.Properties['menu'] -and $sg.menu -and
+                    $sg.menu.PSObject.Properties['subtitle'] -and $sg.menu.subtitle) {
+                    $menuSub = $sg.menu.subtitle
+                }
+
+                # Check connected status of all players
+                $disconnectedPeers = @()
+                if ($sg.PSObject.Properties['multiplayer'] -and $sg.multiplayer -and
+                    $sg.multiplayer.PSObject.Properties['players'] -and $sg.multiplayer.players) {
+                    foreach ($p in $sg.multiplayer.players) {
+                        if (-not $p.is_me -and $p.connected -eq 0) {
+                            $disconnectedPeers += $p.callsign
+                        }
+                    }
+                }
+
+                if ($sg.in_game -and -not $gwFront) {
+                    # A modal is covering the game -- likely a disconnect notice
+                    $failures += "Player $pNum has disconnect modal at ${elapsed}s (menu='$menuSub')"
+                    $sustainFailed = $true
+                    Write-Status "  [${elapsed}s] ${tag}: DISCONNECT MODAL: '$menuSub'" "Red"
+                    if ($sg.console) {
+                        Write-Status "  $tag console:" "Gray"
+                        foreach ($c in ($sg.console.lines | Select-Object -Last 20)) {
+                            Write-Status "    $($c.text)" "Yellow"
+                        }
+                    }
+                    # Dump logcat for both emulators to catch proxy lifecycle events
+                    Write-Status "  --- Logcat dump (last 80 lines, proxy/WS tags) ---" "Gray"
+                    foreach ($emuEntry in @(@{Tag="EMU1"; Serial=$EMU1}, @{Tag="EMU2"; Serial=$EMU2})) {
+                        $lcOut = & $ADB -s $emuEntry.Serial logcat -d -s "LocalhostProxy:*" "MatchmakingService:*" 2>&1 | Out-String
+                        Write-Status "  $($emuEntry.Tag) proxy/WS logcat:" "Gray"
+                        foreach ($lcLine in ($lcOut -split "`n" | Select-Object -Last 40)) {
+                            if ($lcLine.Trim()) { Write-Status "    $($lcLine.Trim())" "Yellow" }
+                        }
+                    }
+                } elseif ($disconnectedPeers.Count -gt 0) {
+                    $failures += "Player $pNum peer disconnected at ${elapsed}s ($($disconnectedPeers -join ', '))"
+                    $sustainFailed = $true
+                    Write-Status "  [${elapsed}s] ${tag}: PEER DISCONNECTED: $($disconnectedPeers -join ', ')" "Red"
+                } elseif ($sg.in_game -and $sg.multiplayer) {
+                    $np = $sg.multiplayer.num_players
+                    $mp = $sg.multiplayer
+                    $myNum = $mp.my_player_num
+                    # Build per-player state summary using slot index to avoid callsign confusion
+                    $pSummary = ""
+                    if ($mp.players) {
+                        $parts = @()
+                        foreach ($p in $mp.players) {
+                            $me = ""; if ($p.is_me) { $me = "*" }
+                            $parts += "p$($p.slot)${me}=$($p.callsign):s=$([int]$p.shields)/e=$([int]$p.energy)/sc=$($p.score)/c=$($p.connected)"
+                        }
+                        $pSummary = " [$($parts -join ', ')]"
+                    }
+                    Write-Status "  [${elapsed}s] ${tag}: gw_front=$gwFront np=$np my=$myNum$pSummary" "Gray"
+                    if ($np -lt 2) {
+                        $failures += "Player $pNum lost peer at ${elapsed}s (num_players=$np)"
+                        $sustainFailed = $true
+                    }
+                } elseif (-not $sg.in_game) {
+                    $failures += "Player $pNum left game at ${elapsed}s (screen=$($sg.screen_mode))"
+                    $sustainFailed = $true
+                }
+                } catch {
+                    Write-Status "  [${elapsed}s] ${tag}: introspect parse error: $_" "Yellow"
+                }
+            }
+        }
+        if (-not $sustainFailed) {
+            Write-Status "  Connection sustained for 90s" "Green"
+        }
+    }
 
     # -- Results --
     Write-Status ""

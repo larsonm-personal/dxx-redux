@@ -381,8 +381,11 @@ function Resolve-GameDataDeps {
     $byTarget = @{}
     foreach ($dep in $Deps) {
         # Support both hashtable (from Get-StandardGameDataDeps) and
-        # PSCustomObject (from ConvertFrom-Json) -- use .target for both.
-        $depTarget = $dep.target
+        # PSCustomObject (from ConvertFrom-Json). Use ContainsKey for
+        # hashtables to avoid StrictMode errors on missing keys.
+        $depTarget = if ($dep -is [hashtable]) {
+            if ($dep.ContainsKey('target')) { $dep['target'] } else { $null }
+        } else { $dep.target }
         $t = if ($depTarget) { $depTarget } else { $defaultTarget }
         if (-not $byTarget.ContainsKey($t)) { $byTarget[$t] = @() }
         $byTarget[$t] += $dep

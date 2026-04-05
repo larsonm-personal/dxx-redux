@@ -55,11 +55,11 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- Foreground service keeps the :game process alive during
-             multiplayer so backgrounding doesn't drop the network session -->
+        <!-- Foreground service keeps the main process (which hosts the UDP
+             proxy and MatchmakingService) alive during multiplayer so
+             Android's process freezer doesn't halt relay traffic -->
         <service
             android:name=".multiplayer.MultiplayerForegroundService"
-            android:process=":game"
             android:exported="false"
             android:foregroundServiceType="connectedDevice" />
     </application>

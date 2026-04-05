@@ -75,16 +75,23 @@ if (-not (Test-ServerReachable)) {
         $serverBin = Join-Path $serverDir "target\release\dxx-matchmaking.exe"
     }
     if (Test-Path $serverBin) {
-        $psi = New-Object System.Diagnostics.ProcessStartInfo
-        $psi.FileName = $serverBin
-        $psi.WorkingDirectory = $serverDir
-        $psi.RedirectStandardOutput = $true
-        $psi.RedirectStandardError = $true
-        $psi.UseShellExecute = $false
-        $psi.CreateNoWindow = $true
-        $psi.EnvironmentVariables["SKIP_GPGS_VERIFY"] = "true"
-        $psi.EnvironmentVariables["RUST_LOG"] = "info"
-        $script:autoServerProc = [System.Diagnostics.Process]::Start($psi)
+        $botServerLog = Join-Path $REPO_ROOT "temp\bot_server.log"
+        $botServerErr = Join-Path $REPO_ROOT "temp\bot_server_err.log"
+        # Launch server binary directly -- do NOT wrap in pwsh.
+        # PowerShell's internal pipe handling deadlocks when stderr fills.
+        $botEnvVars = @{
+            SKIP_GPGS_VERIFY = "true"
+            RUST_LOG         = "info"
+            LOG_DIR          = (Join-Path $REPO_ROOT "temp")
+        }
+        foreach ($kv in $botEnvVars.GetEnumerator()) {
+            [System.Environment]::SetEnvironmentVariable($kv.Key, $kv.Value, "Process")
+        }
+        $script:autoServerProc = Start-Process -FilePath $serverBin `
+            -WorkingDirectory $serverDir `
+            -PassThru -NoNewWindow `
+            -RedirectStandardOutput $botServerLog `
+            -RedirectStandardError $botServerErr
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
         while ($sw.Elapsed.TotalSeconds -lt 10) {
             if (Test-ServerReachable) { break }

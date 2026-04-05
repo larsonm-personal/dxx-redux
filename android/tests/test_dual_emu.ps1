@@ -424,16 +424,25 @@ if (-not $NoBuild -or -not (Test-Path $serverBin)) {
     Write-Status "  Server built" "Green"
 }
 
-$psi = New-Object System.Diagnostics.ProcessStartInfo
-$psi.FileName = $serverBin
-$psi.WorkingDirectory = $serverDir
-$psi.RedirectStandardOutput = $true
-$psi.RedirectStandardError = $true
-$psi.UseShellExecute = $false
-$psi.CreateNoWindow = $true
-$psi.EnvironmentVariables["SKIP_GPGS_VERIFY"] = "true"
-$psi.EnvironmentVariables["RUST_LOG"] = "info"
-$script:serverProcess = [System.Diagnostics.Process]::Start($psi)
+$serverLog = Join-Path $REPO_ROOT "temp\server.log"
+$serverErr = Join-Path $REPO_ROOT "temp\server_err.log"
+# Launch server binary directly -- do NOT wrap in pwsh.  PowerShell's
+# internal pipe handling deadlocks when the native process's stderr
+# output fills the internal buffer.
+$serverEnvVars = @{
+    SKIP_GPGS_VERIFY  = "true"
+    RUST_LOG          = "info"
+    RELAY_PUBLIC_ADDR = "10.0.2.2:9001"
+    LOG_DIR           = (Join-Path $REPO_ROOT "temp")
+}
+foreach ($kv in $serverEnvVars.GetEnumerator()) {
+    [System.Environment]::SetEnvironmentVariable($kv.Key, $kv.Value, "Process")
+}
+$script:serverProcess = Start-Process -FilePath $serverBin `
+    -WorkingDirectory $serverDir `
+    -PassThru -NoNewWindow `
+    -RedirectStandardOutput $serverLog `
+    -RedirectStandardError $serverErr
 Write-Status "  Server PID: $($script:serverProcess.Id)"
 
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
