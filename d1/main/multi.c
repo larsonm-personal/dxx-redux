@@ -1408,6 +1408,17 @@ void multi_do_frame(void)
 
 	multi_do_protocol_frame(0, 1);
 
+#ifdef __ANDROID__
+	/* android port: broadcast coop status once per second for QoL overlay */
+	{
+		static fix64 last_coop_status_time = 0;
+		if ((Game_mode & GM_MULTI_COOP) && timer_query() >= last_coop_status_time + F1_0) {
+			coop_send_peer_status();
+			last_coop_status_time = timer_query();
+		}
+	}
+#endif
+
 	if (multi_quit_game)
 	{
 		multi_quit_game = 0;
@@ -4655,8 +4666,15 @@ void multi_send_damage(fix damage, fix shields, ubyte killer_type, ubyte killer_
 {
 	if (is_observer()) { return; }
 
-	// Sending damage to the host isn't interesting if there cannot be any observers.
-	if (Netgame.max_numobservers == 0 && !Netgame.host_is_obs) { return; }
+#ifdef __ANDROID__
+	/* android port: in coop, broadcast damage to all peers for QoL overlay */
+	int coop_broadcast = (Game_mode & GM_MULTI_COOP) != 0;
+	if (!coop_broadcast)
+#endif
+	{
+		// Sending damage to the host isn't interesting if there cannot be any observers.
+		if (Netgame.max_numobservers == 0 && !Netgame.host_is_obs) { return; }
+	}
 
 	if (Player_is_dead || ConsoleObject->flags & OF_SHOULD_BE_DEAD) { return; }
 
@@ -4687,7 +4705,12 @@ void multi_send_damage(fix damage, fix shields, ubyte killer_type, ubyte killer_
 		multibuf[13] = 0;
 	}
 
-	multi_send_data_direct( multibuf, 14, multi_who_is_master(), 2 );
+#ifdef __ANDROID__
+	if (coop_broadcast)
+		multi_send_data(multibuf, 14, 2);
+	else
+#endif
+		multi_send_data_direct( multibuf, 14, multi_who_is_master(), 2 );
 }
 
 void multi_do_damage( const ubyte *buf )
@@ -4714,14 +4737,29 @@ void multi_do_damage( const ubyte *buf )
 			add_observatory_damage_stat(buf[1], shields_delta, new_shields, old_shields, buf[10], buf[11], buf[12], buf[13]);
 		}
 	}
+#ifdef __ANDROID__
+	else if ((Game_mode & GM_MULTI_COOP) && buf[1] != Player_num)
+	{
+		/* android port: update remote player shields for coop QoL overlay */
+		fix new_shields = GET_INTEL_INT(buf + 6);
+		Players[buf[1]].shields = (new_shields > 0) ? new_shields : 0;
+	}
+#endif
 }
 
 void multi_send_repair(fix repair, fix shields, ubyte sourcetype)
 {
 	if (is_observer()) { return; }
 
-	// Sending repairs to the host isn't interesting if there cannot be any observers.
-	if (Netgame.max_numobservers == 0 && !Netgame.host_is_obs) { return; }
+#ifdef __ANDROID__
+	/* android port: in coop, broadcast repair to all peers for QoL overlay */
+	int coop_broadcast = (Game_mode & GM_MULTI_COOP) != 0;
+	if (!coop_broadcast)
+#endif
+	{
+		// Sending repairs to the host isn't interesting if there cannot be any observers.
+		if (Netgame.max_numobservers == 0 && !Netgame.host_is_obs) { return; }
+	}
 
 	// Calculate new shields amount.
 	if (shields + repair > MAX_SHIELDS)
@@ -4736,7 +4774,12 @@ void multi_send_repair(fix repair, fix shields, ubyte sourcetype)
 	PUT_INTEL_INT(multibuf + 6, shields);
 	multibuf[10] = sourcetype;
 
-	multi_send_data_direct( multibuf, 11, multi_who_is_master(), 2);
+#ifdef __ANDROID__
+	if (coop_broadcast)
+		multi_send_data(multibuf, 11, 2);
+	else
+#endif
+		multi_send_data_direct( multibuf, 11, multi_who_is_master(), 2);
 }
 
 void multi_do_repair( const ubyte *buf )
@@ -4765,14 +4808,28 @@ void multi_do_repair( const ubyte *buf )
 			add_observatory_damage_stat(buf[1], shields_delta, new_shields, old_shields, 0, 0, DAMAGE_SHIELD, 0);
 		}
 	}
+#ifdef __ANDROID__
+	else if ((Game_mode & GM_MULTI_COOP) && buf[1] != Player_num)
+	{
+		/* android port: update remote player shields for coop QoL overlay */
+		fix new_shields = GET_INTEL_INT(buf + 6);
+		Players[buf[1]].shields = (new_shields > 0) ? new_shields : 0;
+	}
+#endif
 }
 
 void multi_send_ship_status()
 {
 	if (is_observer()) { return; }
 
-	// Sending ship status to the host isn't interesting if there cannot be any observers.
-	if (Netgame.max_numobservers == 0 && !Netgame.host_is_obs) { return; }
+#ifdef __ANDROID__
+	/* android port: in coop, allow ship status for QoL overlay */
+	if (!(Game_mode & GM_MULTI_COOP))
+#endif
+	{
+		// Sending ship status to the host isn't interesting if there cannot be any observers.
+		if (Netgame.max_numobservers == 0 && !Netgame.host_is_obs) { return; }
+	}
 
 	Send_ship_status = 1;
 }
@@ -4797,7 +4854,13 @@ void multi_send_ship_status_for_frame()
 	PUT_INTEL_INT(multibuf + 21, Players[Player_num].energy);
 	PUT_INTEL_INT(multibuf + 25, Players[Player_num].homing_object_dist);
 
-	multi_send_data_direct( multibuf, 29, multi_who_is_master(), 2);
+#ifdef __ANDROID__
+	/* android port: in coop, broadcast to all peers for QoL overlay */
+	if (Game_mode & GM_MULTI_COOP)
+		multi_send_data(multibuf, 29, 2);
+	else
+#endif
+		multi_send_data_direct( multibuf, 29, multi_who_is_master(), 2);
 }
 
 void multi_do_ship_status( const ubyte *buf )
@@ -4819,6 +4882,21 @@ void multi_do_ship_status( const ubyte *buf )
 		Players[buf[1]].energy = GET_INTEL_INT(buf + 21);
 		Players[buf[1]].homing_object_dist = GET_INTEL_INT(buf + 25);
 	}
+#ifdef __ANDROID__
+	else if ((Game_mode & GM_MULTI_COOP) && buf[1] != Player_num)
+	{
+		/* android port: update remote player equipment for coop QoL overlay */
+		Players[buf[1]].laser_level = buf[2];
+		Players[buf[1]].primary_weapon_flags = buf[7];
+		Players[buf[1]].primary_weapon = (sbyte)buf[8];
+		Players[buf[1]].secondary_weapon_flags = buf[19];
+		Players[buf[1]].secondary_weapon = (sbyte)buf[20];
+		Players[buf[1]].energy = GET_INTEL_INT(buf + 21);
+		int i;
+		for (i = 0; i < MAX_SECONDARY_WEAPONS; i++)
+			Players[buf[1]].secondary_ammo[i] = GET_INTEL_SHORT(buf + 9 + i * 2);
+	}
+#endif
 }
 
 bool is_observing_player() {
@@ -5326,6 +5404,8 @@ multi_process_data(const ubyte *buf, int len)
 #ifdef __ANDROID__
 		case MULTI_WARP_TO_PLAYER:
 			coop_warp_do_packet(buf); break;
+		case MULTI_COOP_PEER_STATUS:
+			coop_do_peer_status(buf); break;
 #endif
 		default:
 			Int3();
@@ -5753,3 +5833,25 @@ int coop_killer_to_pnum(int killer_objnum)
 	}
 	return -1;
 }
+
+#ifdef __ANDROID__
+/* android port: periodic coop kill stats broadcast (shields/energy/weapons use
+ * existing MULTI_DAMAGE/MULTI_REPAIR/MULTI_SHIP_STATUS packets instead) */
+void coop_send_peer_status(void)
+{
+	multibuf[0] = MULTI_COOP_PEER_STATUS;
+	multibuf[1] = Player_num;
+	PUT_INTEL_SHORT(multibuf + 2, Coop_kill_stats[Player_num].robots_killed);
+	PUT_INTEL_INT(multibuf + 4, Coop_kill_stats[Player_num].score_earned);
+	multi_send_data(multibuf, 8, 0);
+}
+
+void coop_do_peer_status(const ubyte *buf)
+{
+	int pnum = buf[1];
+	if (pnum < 0 || pnum >= MAX_PLAYERS || pnum == Player_num)
+		return;
+	Coop_kill_stats[pnum].robots_killed = GET_INTEL_SHORT(buf + 2);
+	Coop_kill_stats[pnum].score_earned = GET_INTEL_INT(buf + 4);
+}
+#endif

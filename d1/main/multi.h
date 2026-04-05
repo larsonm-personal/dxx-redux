@@ -126,6 +126,7 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_SHIP_STATUS          , 29)  \
 	VALUE(MULTI_CREATE_EXPLOSION2    , 24)  \
 	VALUE(MULTI_WARP_TO_PLAYER       , 17)  \
+	VALUE(MULTI_COOP_PEER_STATUS     , 8)   \
 	AFTER
 for_each_multiplayer_command(enum {, define_multiplayer_command, });
 
@@ -707,5 +708,9 @@ int coop_compute_total_robot_score(void);
 
 // Resolve a killer objnum to a player index, or -1 if not a player kill
 int coop_killer_to_pnum(int killer_objnum);
+
+// Periodic coop status broadcast (android port: coop QoL overlay)
+void coop_send_peer_status(void);
+void coop_do_peer_status(const ubyte *buf);
 
 #endif /* _MULTI_H */
