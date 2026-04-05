@@ -94,14 +94,14 @@ fun GraphicsSettingsPage(
                         Spacer(modifier = Modifier.height(3.dp))
 
                         // -- Anti-Aliasing (MSAA) --
-                        MsaaSection(prefs = prefs)
+                        MsaaSection(filesDir = filesDir)
 
                         Spacer(modifier = Modifier.height(3.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(3.dp))
 
                         // -- Anisotropic Filtering --
-                        AnisoSection(prefs = prefs)
+                        AnisoSection(filesDir = filesDir)
 
                         Spacer(modifier = Modifier.height(3.dp))
                         HorizontalDivider()
@@ -228,8 +228,10 @@ private val MSAA_OPTIONS = listOf("Off" to 0, "2x" to 2, "4x" to 4)
 private val ANISO_OPTIONS = listOf("Off" to 0, "2x" to 2, "4x" to 4, "8x" to 8, "16x" to 16)
 
 @Composable
-private fun MsaaSection(prefs: SharedPreferences) {
-    var msaaLevel by remember { mutableIntStateOf(prefs.getInt("msaa_level", 0)) }
+private fun MsaaSection(filesDir: File) {
+    var msaaLevel by remember {
+        mutableIntStateOf((readConfigValue(filesDir, "MsaaLevel") ?: "0").toIntOrNull() ?: 0)
+    }
 
     Text("Anti-Aliasing (MSAA)", fontWeight = FontWeight.Bold, fontSize = 11.sp)
     Spacer(modifier = Modifier.height(1.dp))
@@ -242,7 +244,7 @@ private fun MsaaSection(prefs: SharedPreferences) {
                 selected = msaaLevel == value,
                 onClick = {
                     msaaLevel = value
-                    prefs.edit().putInt("msaa_level", value).apply()
+                    updateAllConfigFiles(filesDir, listOf("MsaaLevel" to value.toString()))
                 },
             )
             Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
@@ -251,8 +253,10 @@ private fun MsaaSection(prefs: SharedPreferences) {
 }
 
 @Composable
-private fun AnisoSection(prefs: SharedPreferences) {
-    var anisoLevel by remember { mutableIntStateOf(prefs.getInt("aniso_level", 0)) }
+private fun AnisoSection(filesDir: File) {
+    var anisoLevel by remember {
+        mutableIntStateOf((readConfigValue(filesDir, "AnisoLevel") ?: "0").toIntOrNull() ?: 0)
+    }
 
     Text("Anisotropic Filtering (AF)", fontWeight = FontWeight.Bold, fontSize = 11.sp)
     Spacer(modifier = Modifier.height(1.dp))
@@ -265,7 +269,7 @@ private fun AnisoSection(prefs: SharedPreferences) {
                 selected = anisoLevel == value,
                 onClick = {
                     anisoLevel = value
-                    prefs.edit().putInt("aniso_level", value).apply()
+                    updateAllConfigFiles(filesDir, listOf("AnisoLevel" to value.toString()))
                 },
             )
             Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
@@ -285,10 +289,10 @@ private fun SelectiveFilterSection(filesDir: File) {
     }
 
     Text("Filter by Context", fontWeight = FontWeight.Bold, fontSize = 11.sp)
-    Spacer(modifier = Modifier.height(1.dp))
+    Spacer(modifier = Modifier.height(2.dp))
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 0.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
     ) {
         Switch(
             checked = menuFilt,
@@ -306,7 +310,7 @@ private fun SelectiveFilterSection(filesDir: File) {
     }
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 0.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
     ) {
         Switch(
             checked = hudFilt,

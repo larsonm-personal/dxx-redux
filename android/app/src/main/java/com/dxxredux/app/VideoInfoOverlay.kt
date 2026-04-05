@@ -31,9 +31,6 @@ class VideoInfoOverlay(
      *  Works in all builds (not gated by INTROSPECT_ON). */
     var graphicsOptionSetter: ((String, Int) -> Unit)? = null
 
-    /** Persists graphics option changes: (name, value) -> save to SharedPreferences. */
-    var settingsSaver: ((String, Int) -> Unit)? = null
-
     private val handler = Handler(Looper.getMainLooper())
     private var polling = false
 
@@ -518,7 +515,6 @@ class VideoInfoOverlay(
         val next = levels[(idx + 1) % levels.size]
         anisoLevel = next
         graphicsOptionSetter?.invoke("aniso_level", next)
-        settingsSaver?.invoke("aniso_level", next)
     }
 
     private fun cycleMsaa() {
@@ -528,7 +524,6 @@ class VideoInfoOverlay(
         val next = levels[(idx + 1) % levels.size]
         msaaLevel = next
         graphicsOptionSetter?.invoke("msaa_level", next)
-        settingsSaver?.invoke("msaa_level", next)
     }
 
     private fun cycleTexFilt() {

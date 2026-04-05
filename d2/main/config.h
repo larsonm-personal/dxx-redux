@@ -50,6 +50,8 @@ typedef struct Cfg
 	int MovieSubtitles;
 	int VSync;
 	int Multisample;
+	int AnisoLevel;
+	int MsaaLevel;
 	int FPSIndicator;
 	int Grabinput;
 	int ClassicDepth;

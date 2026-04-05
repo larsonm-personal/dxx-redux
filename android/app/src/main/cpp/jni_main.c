@@ -398,14 +398,18 @@ Java_com_dxxredux_app_MainActivity_nativeSetGraphicsOption(JNIEnv *env, jobject 
 	if (strcmp(name, "aniso_level") == 0) {
 		extern int ogl_aniso_level;
 		extern volatile int g_aniso_pending_apply;
+		extern struct Cfg GameCfg;
 		LOGI("graphics option: aniso_level=%d", (int) value);
 		ogl_aniso_level = (int) value;
+		GameCfg.AnisoLevel = (int) value;
 		g_aniso_pending_apply = 1;
 	} else if (strcmp(name, "msaa_level") == 0) {
 		extern int ogl_msaa_samples;
 		extern volatile int g_msaa_pending_apply;
+		extern struct Cfg GameCfg;
 		LOGI("graphics option: msaa_level=%d", (int) value);
 		ogl_msaa_samples = (int) value;
+		GameCfg.MsaaLevel = (int) value;
 		g_msaa_pending_apply = 1;
 	} else if (strcmp(name, "tex_filt") == 0) {
 		extern int g_texfilt_level;

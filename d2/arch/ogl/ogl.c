@@ -447,15 +447,26 @@ void ogl_bindbmtex(grs_bitmap *bm){
 	}
 	OGL_BINDTEXTURE(bm->gltexture->handle);
 #ifdef ANDROID
-	/* Override texture filtering for menu/HUD contexts when their filtering
-	 * is disabled. Context 0=menu, 1=3D, 2=HUD. Menu and HUD can independently
-	 * force nearest-neighbor regardless of the world TexFilt setting. */
-	if (g_ogl_render_context != 1) {
-		int use_nearest = (g_ogl_render_context == 0 && !GameCfg.MenuTexFilt)
-		               || (g_ogl_render_context == 2 && !GameCfg.HudTexFilt);
-		if (use_nearest && GameCfg.TexFilt > 0) {
+	/* Selective filtering: set the correct texture filter for the current
+	 * render context. Must be bidirectional -- if a prior context set
+	 * GL_NEAREST on this texture object, we must restore the original
+	 * mipmap filter when returning to a context that wants filtering.
+	 * Only touch textures that have mipmaps; non-mipmap textures keep
+	 * their original GL_NEAREST/GL_LINEAR from ogl_loadtexture. */
+	if (GameCfg.TexFilt > 0 && bm->gltexture->has_mipmaps) {
+		int use_nearest = 0;
+		if (g_ogl_render_context == 0 && !GameCfg.MenuTexFilt)
+			use_nearest = 1;
+		else if (g_ogl_render_context == 2 && !GameCfg.HudTexFilt)
+			use_nearest = 1;
+		if (use_nearest) {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		} else {
+			GLenum min_f = GameCfg.TexFilt >= 2
+				? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR_MIPMAP_NEAREST;
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_f);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		}
 	}
 #endif

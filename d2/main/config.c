@@ -68,6 +68,8 @@ static const char HudTexFiltStr[] ="HudTexFilt";
 static const char MovieSubtitlesStr[] ="MovieSubtitles";
 static const char VSyncStr[] ="VSync";
 static const char MultisampleStr[] ="Multisample";
+static const char AnisoLevelStr[] ="AnisoLevel";
+static const char MsaaLevelStr[] ="MsaaLevel";
 static const char ClassicDepthStr[] ="ClassicDepth";
 static const char FPSIndicatorStr[] ="FPSIndicator";
 static const char GrabinputStr[] ="GrabInput";
@@ -153,6 +155,8 @@ int ReadConfigFile()
 	GameCfg.MovieSubtitles = 0;
 	GameCfg.VSync = 0;
 	GameCfg.Multisample = 0;
+	GameCfg.AnisoLevel = 0;
+	GameCfg.MsaaLevel = 0;
 	GameCfg.ClassicDepth = 0;
 	GameCfg.FPSIndicator = 0;
 	GameCfg.Grabinput = 1;
@@ -273,6 +277,10 @@ int ReadConfigFile()
 				GameCfg.VSync = strtol(value, NULL, 10);
 			else if (!strcmp(token, MultisampleStr))
 				GameCfg.Multisample = strtol(value, NULL, 10);
+			else if (!strcmp(token, AnisoLevelStr))
+				GameCfg.AnisoLevel = strtol(value, NULL, 10);
+			else if (!strcmp(token, MsaaLevelStr))
+				GameCfg.MsaaLevel = strtol(value, NULL, 10);
 			else if (!strcmp(token, ClassicDepthStr))
 				GameCfg.ClassicDepth = strtol(value, NULL, 10);
 			else if (!strcmp(token, FPSIndicatorStr))
@@ -294,6 +302,16 @@ int ReadConfigFile()
 
 	if (GameCfg.ResolutionX >= 320 && GameCfg.ResolutionY >= 200)
 		Game_screen_mode = SM(GameCfg.ResolutionX,GameCfg.ResolutionY);
+
+#ifdef ANDROID
+	/* android port: sync config AF/MSAA to runtime OGL globals */
+	{
+		extern int ogl_aniso_level;
+		extern int ogl_msaa_samples;
+		ogl_aniso_level = GameCfg.AnisoLevel;
+		ogl_msaa_samples = GameCfg.MsaaLevel;
+	}
+#endif
 
 	return 0;
 }
@@ -339,6 +357,8 @@ int WriteConfigFile()
 	PHYSFSX_printf(infile, "%s=%i\n", MovieSubtitlesStr, GameCfg.MovieSubtitles);
 	PHYSFSX_printf(infile, "%s=%i\n", VSyncStr, GameCfg.VSync);
 	PHYSFSX_printf(infile, "%s=%i\n", MultisampleStr, GameCfg.Multisample);
+	PHYSFSX_printf(infile, "%s=%i\n", AnisoLevelStr, GameCfg.AnisoLevel);
+	PHYSFSX_printf(infile, "%s=%i\n", MsaaLevelStr, GameCfg.MsaaLevel);
 	PHYSFSX_printf(infile, "%s=%i\n", ClassicDepthStr, GameCfg.ClassicDepth);
 	PHYSFSX_printf(infile, "%s=%i\n", FPSIndicatorStr, GameCfg.FPSIndicator);
 	PHYSFSX_printf(infile, "%s=%i\n", GrabinputStr, GameCfg.Grabinput);

@@ -48,6 +48,8 @@ typedef struct Cfg
 	int HudTexFilt;   /* 0=nearest, 1=use world TexFilt (default) */
 	int VSync;
 	int Multisample;
+	int AnisoLevel;
+	int MsaaLevel;
 	int FPSIndicator;
 	int Grabinput;
 	int ClassicDepth;
