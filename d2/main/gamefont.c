@@ -114,17 +114,11 @@ void gamefont_choose_game_font(int scrx,int scry){
 #ifdef OGL
 	if (!GameArg.OglFixedFont)
 	{
-		// if there's no texture filtering, scale by int
-		if (!GameCfg.TexFilt)
-		{
-			FNTScaleX = (int)scrx/font_conf[gf].font[m].x;
-			FNTScaleY = (int)scry/font_conf[gf].font[m].y;
-		}
-		else
-		{
-			FNTScaleX = (float)scrx/font_conf[gf].font[m].x;
-			FNTScaleY = (float)scry/font_conf[gf].font[m].y;
-		}
+		/* android port: always use integer scaling for consistent menu
+		 * layout regardless of TexFilt setting. Float scaling caused
+		 * menus to appear at different sizes when toggling filtering. */
+		FNTScaleX = (int)scrx/font_conf[gf].font[m].x;
+		FNTScaleY = (int)scry/font_conf[gf].font[m].y;
 
 		// keep proportions
 		if (FNTScaleY*100 < FNTScaleX*100)

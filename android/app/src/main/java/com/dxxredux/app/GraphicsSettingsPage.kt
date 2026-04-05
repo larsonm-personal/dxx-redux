@@ -303,7 +303,7 @@ private fun SelectiveFilterSection(filesDir: File) {
             modifier = Modifier.height(24.dp),
         )
         Text(
-            text = "Menus / briefings / videos",
+            text = "Menus / briefings / videos / text / reticle",
             fontSize = 10.sp,
             modifier = Modifier.padding(start = 8.dp),
         )

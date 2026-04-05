@@ -274,6 +274,7 @@ void ogl_init_texture(ogl_texture* t, int w, int h, int flags)
 	t->h = h;
 	ogl_init_texture_stats(t);
 	t->is_png = 0;
+	t->flags = flags;
 }
 
 void ogl_reset_texture(ogl_texture* t)
@@ -450,22 +451,36 @@ void ogl_bindbmtex(grs_bitmap *bm){
 	 * render context. Must be bidirectional -- if a prior context set
 	 * GL_NEAREST on this texture object, we must restore the original
 	 * mipmap filter when returning to a context that wants filtering.
-	 * Only touch textures that have mipmaps; non-mipmap textures keep
-	 * their original GL_NEAREST/GL_LINEAR from ogl_loadtexture. */
-	if (GameCfg.TexFilt > 0 && bm->gltexture->has_mipmaps) {
-		int use_nearest = 0;
-		if (g_ogl_render_context == 0 && !GameCfg.MenuTexFilt)
-			use_nearest = 1;
-		else if (g_ogl_render_context == 2 && !GameCfg.HudTexFilt)
-			use_nearest = 1;
-		if (use_nearest) {
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		} else {
-			GLenum min_f = GameCfg.TexFilt >= 2
-				? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR_MIPMAP_NEAREST;
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_f);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	 *
+	 * Font/text textures (OGL_FLAG_NOCOLOR) never have mipmaps -- they
+	 * use MenuTexFilt regardless of render context so that text filtering
+	 * is grouped with menus/briefings/videos/reticle (default off). */
+	if (GameCfg.TexFilt > 0) {
+		if (bm->gltexture->flags & OGL_FLAG_NOCOLOR) {
+			/* Font texture: filter controlled by MenuTexFilt in all contexts */
+			if (GameCfg.MenuTexFilt) {
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			} else {
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			}
+		} else if (bm->gltexture->has_mipmaps) {
+			/* World/HUD texture with mipmaps */
+			int use_nearest = 0;
+			if (g_ogl_render_context == 0 && !GameCfg.MenuTexFilt)
+				use_nearest = 1;
+			else if (g_ogl_render_context == 2 && !GameCfg.HudTexFilt)
+				use_nearest = 1;
+			if (use_nearest) {
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			} else {
+				GLenum min_f = GameCfg.TexFilt >= 2
+					? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR_MIPMAP_NEAREST;
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_f);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			}
 		}
 	}
 #endif
@@ -1615,11 +1630,14 @@ void ogl_start_frame(void){
 	if (g_aniso_pending_apply) {
 		g_aniso_pending_apply = 0;
 		if (ogl_aniso_level > 0) {
-			/* AF on: flush textures that lack mipmaps so they reload with
-			 * mipmaps (ogl_loadbmtexture_f upgrades texfilt when AF is on) */
+			/* AF on: flush non-font textures that lack mipmaps so they
+			 * reload with mipmaps (ogl_loadbmtexture_f upgrades texfilt
+			 * when AF is on). Skip NOCOLOR font textures -- they must
+			 * never be flushed since they don't need mipmaps */
 			int flushed = 0;
 			for (int i = 0; i < OGL_TEXTURE_LIST_SIZE; i++) {
-				if (ogl_texture_list[i].handle > 0 && !ogl_texture_list[i].has_mipmaps) {
+				if (ogl_texture_list[i].handle > 0 && !ogl_texture_list[i].has_mipmaps
+					&& !(ogl_texture_list[i].flags & OGL_FLAG_NOCOLOR)) {
 					glDeleteTextures(1, &ogl_texture_list[i].handle);
 					ogl_texture_list[i].handle = 0;
 					ogl_texture_list[i].wrapstate = -1;
@@ -1649,10 +1667,13 @@ void ogl_start_frame(void){
 	if (g_texfilt_pending_apply) {
 		g_texfilt_pending_apply = 0;
 		GameCfg.TexFilt = g_texfilt_level;
-		/* Flush all loaded textures so they reload with new TexFilt value */
+		/* Flush all loaded textures so they reload with new TexFilt value.
+		 * Skip NOCOLOR font textures -- they never need filtering changes
+		 * and flushing them causes text to disappear at reload */
 		int flushed = 0;
 		for (int i = 0; i < OGL_TEXTURE_LIST_SIZE; i++) {
-			if (ogl_texture_list[i].handle > 0) {
+			if (ogl_texture_list[i].handle > 0
+				&& !(ogl_texture_list[i].flags & OGL_FLAG_NOCOLOR)) {
 				glDeleteTextures(1, &ogl_texture_list[i].handle);
 				ogl_texture_list[i].handle = 0;
 				ogl_texture_list[i].has_mipmaps = 0;
@@ -2238,10 +2259,22 @@ int ogl_loadtexture (unsigned char *data, int dxo, int dyo, ogl_texture *tex, in
 	tex->v = (float) ((double) tex->h / (double) tex->th);
 
 	if (data) {
-		if (bm_flags >= 0)
+		if (bm_flags >= 0) {
 			ogl_filltexbuf (data, texbuf, tex->lw, tex->w, tex->h, dxo, dyo, tex->tw, tex->th, 
 								 tex->format, bm_flags, data_format);
-		else {
+#ifdef ANDROID
+			/* On OGLES, NOCOLOR font textures use GL_RGBA instead of
+			 * GL_LUMINANCE. Palette lookup produces near-white (252,252,252)
+			 * due to 6-bit to 8-bit scaling (*4). Force pure white so
+			 * vertex color tinting (yellow labels, green HUD) is exact */
+			if ((tex->flags & OGL_FLAG_NOCOLOR) && tex->format == GL_RGBA) {
+				int npixels = tex->tw * tex->th;
+				GLubyte *p = texbuf;
+				for (int pi = 0; pi < npixels; pi++, p += 4)
+					if (p[3] > 0) { p[0] = p[1] = p[2] = 255; }
+			}
+#endif
+		} else {
 			if (!dxo && !dyo && (tex->w == tex->tw) && (tex->h == tex->th))
 				bufP = data;
 			else {
@@ -2274,7 +2307,15 @@ int ogl_loadtexture (unsigned char *data, int dxo, int dyo, ogl_texture *tex, in
 	OGL_BINDTEXTURE(tex->handle);
 	glTexEnvi (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-	if (texfilt)
+	if (texfilt
+#ifdef ANDROID
+		/* android port: never mipmap font textures (OGL_FLAG_NOCOLOR).
+		 * Font atlases are sparse RGBA with thin glyph strokes --
+		 * mipmapping averages them with surrounding transparent pixels,
+		 * destroying alpha at lower mip levels and making text invisible */
+		&& !(tex->flags & OGL_FLAG_NOCOLOR)
+#endif
+	)
 	{
 #ifdef OGLES
 #ifndef ANDROID
@@ -2313,7 +2354,7 @@ int ogl_loadtexture (unsigned char *data, int dxo, int dyo, ogl_texture *tex, in
 			GL_UNSIGNED_BYTE, // imageData is a GLubyte pointer.
 			bufP);
 #ifdef ANDROID
-		if (texfilt) {
+		if (texfilt && !(tex->flags & OGL_FLAG_NOCOLOR)) {
 			glGenerateMipmap(GL_TEXTURE_2D);
 			tex->has_mipmaps = 1;
 			if (ogl_aniso_level > 1 && ogl_maxanisotropy > 1.0)
