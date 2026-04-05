@@ -745,9 +745,13 @@ void DoEndLevelScoreGlitz(int network)
 	int	endgame_points;
 	char	all_hostage_text[64];
 	char	endgame_text[64];
+#ifdef __ANDROID__
+	#define N_GLITZITEMS 19 /* base 9 + blank + up to 8 player kill rows + 1 header */
+#else
 	#define N_GLITZITEMS 9
+#endif
 	char				m_str[N_GLITZITEMS][30];
-	newmenu_item	m[9];
+	newmenu_item	m[N_GLITZITEMS];
 	int				i,c;
 	char				title[128];
 	int				is_last_level;
@@ -808,6 +812,25 @@ void DoEndLevelScoreGlitz(int network)
 
 	sprintf(m_str[c++], "%s%i\n", TXT_TOTAL_BONUS, shield_points+energy_points+hostage_points+skill_points+all_hostage_points+endgame_points);
 	sprintf(m_str[c++], "%s%i", TXT_TOTAL_SCORE, Players[Player_num].score);
+
+#ifdef __ANDROID__
+	/* Android port: per-player kill breakdown in coop */
+	if (Game_mode & GM_MULTI_COOP) {
+		int total_kills = 0;
+		for (i = 0; i < N_players; i++)
+			total_kills += Coop_kill_stats[i].robots_killed;
+		sprintf(m_str[c++], " ");
+		for (i = 0; i < N_players; i++) {
+			int pct = total_kills > 0
+				? (Coop_kill_stats[i].robots_killed * 100 / total_kills) : 0;
+			snprintf(m_str[c], sizeof(m_str[c]),
+				"  %s: %d kills %d%%",
+				Players[i].callsign,
+				Coop_kill_stats[i].robots_killed, pct);
+			c++;
+		}
+	}
+#endif
 
 	for (i=0; i<c; i++) {
 		m[i].type = NM_TYPE_TEXT;

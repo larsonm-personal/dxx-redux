@@ -25,7 +25,9 @@
 #define COOP_CLIENT_ID_LEN           36  /* UUID without null */
 #define COOP_SAVE_MAX_WEAPONS        10  /* max(d1=5, d2=10) */
 #define COOP_CALLSIGN_LEN            8   /* matches CALLSIGN_LEN */
-#define COOP_AUTOSAVE_SLOT           9
+#define COOP_AUTOSAVE_SLOT           9   /* legacy single slot */
+#define COOP_AUTOSAVE_SLOT_FIRST     5   /* first rotating autosave slot */
+#define COOP_AUTOSAVE_SLOT_COUNT     5   /* slots 5,6,7,8,9 */
 
 /* --- per-player record stored in the trailer --- */
 typedef struct coop_player_record {

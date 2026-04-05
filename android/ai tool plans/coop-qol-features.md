@@ -411,8 +411,9 @@ Enhanced end-of-level screen showing per-player robot kill contributions.
 - [ ] Test: verify locked door constraint blocks warp
 
 ### Phase 6: End-of-Level Score Breakdown
-- [ ] Modify `DoEndLevelScoreGlitz()` to show per-player stats
-- [ ] Duplicate in d1
+- [x] Modify `DoEndLevelScoreGlitz()` to show per-player stats
+- [x] Duplicate in d1
+- [x] Build passes, lint passes
 - [ ] Test: finish a coop level, verify breakdown display
 
 ### Phase 7: 3D Player Locator HUD + Follow Line (future)

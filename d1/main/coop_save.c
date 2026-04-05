@@ -21,6 +21,11 @@
 #include "gameseq.h"
 #include "mission.h"
 
+/* --- forward declarations for static helpers --- */
+static void coop_write_autosave_history(int slot, int n_connected);
+static void coop_append_other_slots(char *buf, int *off, int buf_size,
+	const char *old_json, int exclude_slot);
+
 /* --- absent player tracking --- */
 
 static coop_player_record coop_absent_list[COOP_MAX_REMEMBERED_PLAYERS];
@@ -218,12 +223,15 @@ const coop_player_record *coop_get_absent_players(void)
 
 /* --- auto-save --- */
 
+/* Track which rotating slot to use next */
+static int coop_autosave_next_slot = 0;
+
 int coop_autosave(void)
 {
 	char filename[PATH_MAX];
 	char desc[20];
 	int n_connected = 0;
-	int i;
+	int i, slot;
 
 	if (!(Game_mode & GM_MULTI_COOP))
 		return 0;
@@ -234,20 +242,105 @@ int coop_autosave(void)
 		if (Players[i].connected == CONNECT_PLAYING)
 			n_connected++;
 
+	/* Pick next rotating slot */
+	slot = COOP_AUTOSAVE_SLOT_FIRST +
+		(coop_autosave_next_slot % COOP_AUTOSAVE_SLOT_COUNT);
+	coop_autosave_next_slot++;
+
 	snprintf(filename, PATH_MAX,
 		GameArg.SysUsePlayersDir ? "Players/%s.mg%d" : "%s.mg%d",
-		Players[Player_num].callsign, COOP_AUTOSAVE_SLOT);
-	snprintf(desc, 20, "Auto L%d %dp %dpts",
+		Players[Player_num].callsign, slot);
+	snprintf(desc, sizeof(desc), "Auto L%d %dp %dpts",
 		Current_level_num, n_connected, Players[Player_num].score);
 
 	con_printf(CON_NORMAL, "coop_save: auto-saving to slot %d: %s\n",
-		COOP_AUTOSAVE_SLOT, desc);
+		slot, desc);
 
 	stop_time();
 	state_save_all_sub(filename, desc);
 	/* start_time() is called inside state_save_all_sub */
 
-	/* Write a JSON sidecar so the Kotlin lobby can detect this save */
+	/* Write/update history JSON with this save and up to 4 previous ones */
+	coop_write_autosave_history(slot, n_connected);
+
+	return 1;
+}
+
+/* Write coop_autosave_history.json with up to COOP_AUTOSAVE_SLOT_COUNT entries.
+ * Reads existing history first, appends the new entry, prunes to limit. */
+static void coop_write_autosave_history(int slot, int n_connected)
+{
+	PHYSFS_file *fp;
+	char buf[2048];
+	int off = 0;
+	int i;
+	unsigned now = (unsigned)time(NULL);
+
+	/* Build player arrays for this save entry */
+	char callsigns_json[512];
+	char client_ids_json[512];
+	int cs_off = 0, ci_off = 0;
+	int n = 0;
+
+	for (i = 0; i < N_players; i++) {
+		if (Players[i].connected != CONNECT_PLAYING)
+			continue;
+		if (n > 0) {
+			cs_off += snprintf(callsigns_json + cs_off,
+				sizeof(callsigns_json) - cs_off, ", ");
+			ci_off += snprintf(client_ids_json + ci_off,
+				sizeof(client_ids_json) - ci_off, ", ");
+		}
+		cs_off += snprintf(callsigns_json + cs_off,
+			sizeof(callsigns_json) - cs_off,
+			"\"%s\"", Players[i].callsign);
+		ci_off += snprintf(client_ids_json + ci_off,
+			sizeof(client_ids_json) - ci_off,
+			"\"%.36s\"", Netgame.players[i].client_id);
+		n++;
+	}
+
+	off += snprintf(buf + off, sizeof(buf) - off,
+		"[\n  {\n"
+		"    \"slot\": %d,\n"
+		"    \"mission\": \"%s\",\n"
+		"    \"level\": %d,\n"
+		"    \"timestamp\": %u,\n"
+		"    \"num_players\": %d,\n"
+		"    \"callsigns\": [%s],\n"
+		"    \"client_ids\": [%s]\n"
+		"  }\n",
+		slot, Current_mission_filename, Current_level_num,
+		now, n, callsigns_json, client_ids_json);
+
+	/* Append entries from the old history for OTHER slots */
+	{
+		PHYSFS_file *old_fp;
+		char old_buf[2048];
+		PHYSFS_sint64 old_len;
+
+		old_fp = PHYSFS_openRead("coop_autosave_history.json");
+		if (old_fp) {
+			old_len = PHYSFS_fileLength(old_fp);
+			if (old_len > 0 && old_len < (PHYSFS_sint64)sizeof(old_buf) - 1) {
+				PHYSFS_read(old_fp, old_buf, old_len, 1);
+				old_buf[old_len] = '\0';
+				coop_append_other_slots(buf, &off, sizeof(buf),
+					old_buf, slot);
+			}
+			PHYSFS_close(old_fp);
+		}
+	}
+
+	off += snprintf(buf + off, sizeof(buf) - off, "]\n");
+
+	fp = PHYSFS_openWrite("coop_autosave_history.json");
+	if (fp) {
+		PHYSFS_write(fp, buf, strlen(buf), 1);
+		PHYSFS_close(fp);
+	}
+
+	/* Also write legacy sidecar for backward compat */
 	{
 		PHYSFS_file *jfp;
 		char jbuf[256];
@@ -260,9 +353,7 @@ int coop_autosave(void)
 			"  \"num_players\": %d\n"
 			"}\n",
 			Current_mission_filename,
-			Current_level_num,
-			(unsigned)time(NULL),
-			n_connected);
+			Current_level_num, now, n_connected);
 
 		jfp = PHYSFS_openWrite("coop_autosave_info.json");
 		if (jfp) {
@@ -270,8 +361,52 @@ int coop_autosave(void)
 			PHYSFS_close(jfp);
 		}
 	}
+}
 
-	return 1;
+/* Helper: scan old_json for entry objects with a "slot" != exclude_slot,
+ * append them (up to COOP_AUTOSAVE_SLOT_COUNT-1 total) to buf. */
+static void coop_append_other_slots(char *buf, int *off, int buf_size,
+	const char *old_json, int exclude_slot)
+{
+	const char *p = old_json;
+	int count = 0;
+
+	/* Walk through looking for '"slot":' patterns */
+	while (*p && count < COOP_AUTOSAVE_SLOT_COUNT - 1) {
+		const char *entry_start = strstr(p, "{");
+		if (!entry_start)
+			break;
+
+		const char *slot_key = strstr(entry_start, "\"slot\":");
+		if (!slot_key || slot_key > entry_start + 20)
+			break;
+
+		/* Parse the slot number */
+		const char *num_start = slot_key + 7;
+		while (*num_start == ' ')
+			num_start++;
+		int entry_slot = atoi(num_start);
+
+		/* Find the closing brace for this entry */
+		const char *entry_end = strstr(entry_start, "}");
+		if (!entry_end)
+			break;
+		entry_end++; /* include the '}' */
+
+		if (entry_slot != exclude_slot) {
+			int entry_len = (int)(entry_end - entry_start);
+			if (*off + entry_len + 10 < buf_size) {
+				*off += snprintf(buf + *off, buf_size - *off,
+					",\n  ");
+				memcpy(buf + *off, entry_start, entry_len);
+				*off += entry_len;
+				buf[*off] = '\0';
+				count++;
+			}
+		}
+
+		p = entry_end;
+	}
 }
 
 /* --- progress tracking --- */
@@ -331,16 +466,51 @@ void coop_write_progress_json(void)
 
 static int coop_auto_restore_armed = 0;
 static uint coop_auto_restore_game_id = 0;
+static int coop_auto_restore_slot = COOP_AUTOSAVE_SLOT;
 static int coop_auto_restore_frames_waited = 0;
 static int coop_auto_restore_attempted = 0;
+
+/* Try to read a slot number from coop_restore_slot.txt (written by Kotlin lobby).
+ * Returns the slot number, or -1 if the file doesn't exist or is invalid.
+ * Deletes the file after reading so it doesn't affect future sessions. */
+static int coop_read_restore_slot_file(void)
+{
+	PHYSFS_file *fp;
+	char buf[16];
+	PHYSFS_sint64 len;
+	int slot;
+
+	fp = PHYSFS_openRead("coop_restore_slot.txt");
+	if (!fp)
+		return -1;
+
+	len = PHYSFS_fileLength(fp);
+	if (len <= 0 || len >= (PHYSFS_sint64)sizeof(buf)) {
+		PHYSFS_close(fp);
+		PHYSFS_delete("coop_restore_slot.txt");
+		return -1;
+	}
+
+	PHYSFS_read(fp, buf, len, 1);
+	PHYSFS_close(fp);
+	PHYSFS_delete("coop_restore_slot.txt");
+
+	buf[len] = '\0';
+	slot = atoi(buf);
+	if (slot < 0 || slot > 9)
+		return -1;
+	return slot;
+}
 
 void coop_arm_auto_restore(void)
 {
 	char filename[PATH_MAX];
 	uint gid;
+	int slot, i;
 
 	coop_auto_restore_armed = 0;
 	coop_auto_restore_game_id = 0;
+	coop_auto_restore_slot = COOP_AUTOSAVE_SLOT;
 	coop_auto_restore_frames_waited = 0;
 
 	if (coop_auto_restore_attempted)
@@ -352,19 +522,42 @@ void coop_arm_auto_restore(void)
 	if (!multi_i_am_master())
 		return;
 
-	snprintf(filename, PATH_MAX,
-		GameArg.SysUsePlayersDir ? "Players/%s.mg%d" : "%s.mg%d",
-		Players[Player_num].callsign, COOP_AUTOSAVE_SLOT);
-
-	gid = state_get_game_id(filename);
-	if (!gid) {
-		con_printf(CON_NORMAL, "coop_save: no viable auto-save for restore\n");
-		return;
+	/* Check for a user-selected slot from the lobby UI */
+	slot = coop_read_restore_slot_file();
+	if (slot >= 0) {
+		snprintf(filename, PATH_MAX,
+			GameArg.SysUsePlayersDir ? "Players/%s.mg%d" : "%s.mg%d",
+			Players[Player_num].callsign, slot);
+		gid = state_get_game_id(filename);
+		if (gid) {
+			coop_auto_restore_slot = slot;
+			coop_auto_restore_game_id = gid;
+			coop_auto_restore_armed = 1;
+			con_printf(CON_NORMAL, "coop_save: auto-restore armed from selected slot %d (game_id=%u)\n",
+				slot, gid);
+			return;
+		}
+		con_printf(CON_NORMAL, "coop_save: selected slot %d not viable, scanning others\n", slot);
 	}
 
-	coop_auto_restore_game_id = gid;
-	coop_auto_restore_armed = 1;
-	con_printf(CON_NORMAL, "coop_save: auto-restore armed (game_id=%u)\n", gid);
+	/* Fallback: scan all autosave slots for any viable save */
+	for (i = COOP_AUTOSAVE_SLOT_COUNT - 1; i >= 0; i--) {
+		slot = COOP_AUTOSAVE_SLOT_FIRST + i;
+		snprintf(filename, PATH_MAX,
+			GameArg.SysUsePlayersDir ? "Players/%s.mg%d" : "%s.mg%d",
+			Players[Player_num].callsign, slot);
+		gid = state_get_game_id(filename);
+		if (gid) {
+			coop_auto_restore_slot = slot;
+			coop_auto_restore_game_id = gid;
+			coop_auto_restore_armed = 1;
+			con_printf(CON_NORMAL, "coop_save: auto-restore armed from slot %d (game_id=%u)\n",
+				slot, gid);
+			return;
+		}
+	}
+
+	con_printf(CON_NORMAL, "coop_save: no viable auto-save for restore\n");
 }
 
 void coop_try_auto_restore(void)
@@ -389,10 +582,10 @@ void coop_try_auto_restore(void)
 		goto disarm;
 
 	con_printf(CON_NORMAL, "coop_save: triggering auto-restore from slot %d (game_id=%u)\n",
-		COOP_AUTOSAVE_SLOT, coop_auto_restore_game_id);
+		coop_auto_restore_slot, coop_auto_restore_game_id);
 
-	multi_send_restore_game(COOP_AUTOSAVE_SLOT, coop_auto_restore_game_id);
-	multi_restore_game(COOP_AUTOSAVE_SLOT, coop_auto_restore_game_id);
+	multi_send_restore_game(coop_auto_restore_slot, coop_auto_restore_game_id);
+	multi_restore_game(coop_auto_restore_slot, coop_auto_restore_game_id);
 
 disarm:
 	coop_auto_restore_armed = 0;

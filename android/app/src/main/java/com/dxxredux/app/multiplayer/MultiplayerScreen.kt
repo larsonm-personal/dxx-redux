@@ -44,6 +44,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 
@@ -440,30 +441,96 @@ private fun LobbyCodeDialog(
     )
 }
 
+/** A single entry from coop_autosave_history.json, filtered to match the lobby's mission. */
+private data class CoopSaveEntry(
+    val slot: Int,
+    val level: Int,
+    val timestamp: Long,
+    val numPlayers: Int,
+    val callsigns: List<String>,
+)
+
+/** Format a unix timestamp as a relative time string like "5 min ago". */
+private fun formatTimeAgo(timestampSec: Long): String {
+    val now = System.currentTimeMillis() / 1000
+    val delta = now - timestampSec
+    return when {
+        delta < 60 -> "just now"
+        delta < 3600 -> "${delta / 60} min ago"
+        delta < 86400 -> "${delta / 3600}h ago"
+        else -> "${delta / 86400}d ago"
+    }
+}
+
 /**
- * Read coop_autosave_info.json from the game's data directory.
- * Returns the save level if the file exists and matches the given mission,
- * or null otherwise. The game writes this file when an auto-save occurs.
+ * Read coop_autosave_history.json and return entries matching the given mission
+ * where the current player's client_id is among the save's participants.
+ * Returns newest first (sorted by timestamp descending).
  */
-private fun readCoopAutosaveInfo(
+private fun readCoopAutosaveHistory(
     filesDir: File,
     game: String,
     mission: String?,
-): Int? {
-    if (mission == null) return null
+    context: android.content.Context,
+): List<CoopSaveEntry> {
+    if (mission == null) return emptyList()
     val subdir = if (game == "d1") "d1x-redux" else "d2x-redux"
-    val file = File(filesDir, "$subdir/coop_autosave_info.json")
-    if (!file.exists()) return null
+    val file = File(filesDir, "$subdir/coop_autosave_history.json")
+    if (!file.exists()) return emptyList()
+    val myClientId = ClientIdentity.getInstallationId(context)
     return try {
-        val json = JSONObject(file.readText())
-        val fileMission = json.optString("mission", "")
-        if (fileMission.equals(mission, ignoreCase = true)) {
-            json.optInt("level", 0).takeIf { it > 0 }
-        } else {
-            null
+        val arr = JSONArray(file.readText())
+        val entries = mutableListOf<CoopSaveEntry>()
+        for (i in 0 until arr.length()) {
+            val obj = arr.getJSONObject(i)
+            val fileMission = obj.optString("mission", "")
+            if (!fileMission.equals(mission, ignoreCase = true)) continue
+            // Check if our client_id is in this save's participants
+            val ids = obj.optJSONArray("client_ids")
+            var matched = false
+            if (ids != null) {
+                for (j in 0 until ids.length()) {
+                    if (ids.optString(j) == myClientId) {
+                        matched = true
+                        break
+                    }
+                }
+            }
+            if (!matched) continue
+            val callsigns = mutableListOf<String>()
+            val names = obj.optJSONArray("callsigns")
+            if (names != null) {
+                for (j in 0 until names.length()) callsigns.add(names.optString(j, "?"))
+            }
+            entries.add(
+                CoopSaveEntry(
+                    slot = obj.optInt("slot", -1),
+                    level = obj.optInt("level", 0),
+                    timestamp = obj.optLong("timestamp", 0),
+                    numPlayers = obj.optInt("num_players", 0),
+                    callsigns = callsigns,
+                ),
+            )
         }
+        entries.sortedByDescending { it.timestamp }
     } catch (_: Exception) {
-        null
+        emptyList()
+    }
+}
+
+/** Write the selected restore slot for the C engine to pick up on launch. */
+private fun writeCoopRestoreSlot(
+    filesDir: File,
+    game: String,
+    slot: Int?,
+) {
+    val subdir = if (game == "d1") "d1x-redux" else "d2x-redux"
+    val file = File(filesDir, "$subdir/coop_restore_slot.txt")
+    if (slot != null) {
+        file.parentFile?.mkdirs()
+        file.writeText(slot.toString())
+    } else {
+        file.delete()
     }
 }
 
@@ -508,16 +575,19 @@ private fun CreateLobbyDialog(
     var difficulty by remember { mutableStateOf(defaults.difficulty) }
     var levelNumText by remember { mutableStateOf(defaults.levelNum.toString()) }
 
-    // Check for coop auto-save and progress to suggest resume
-    val coopAutosaveLevel =
+    // Check for coop auto-saves and progress to suggest resume
+    val coopSaves =
         if (mode == "coop") {
-            readCoopAutosaveInfo(context.filesDir, game, mission)
+            readCoopAutosaveHistory(context.filesDir, game, mission, context)
         } else {
-            null
+            emptyList()
         }
+    var selectedSave by remember(coopSaves) {
+        mutableStateOf(coopSaves.firstOrNull())
+    }
 
     val coopResumeLevel =
-        if (mode == "coop" && coopAutosaveLevel == null) {
+        if (mode == "coop" && coopSaves.isEmpty()) {
             readCoopProgress(context.filesDir, game, mission)
         } else {
             null
@@ -612,12 +682,40 @@ private fun CreateLobbyDialog(
                         modifier = Modifier.weight(1f),
                     )
                 }
-                if (coopAutosaveLevel != null) {
-                    Text(
-                        "Will restore save from Level $coopAutosaveLevel",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
+                if (coopSaves.isNotEmpty()) {
+                    Text("Restore from save:", style = MaterialTheme.typography.labelMedium)
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        // "No save" option
+                        val noSaveSelected = selectedSave == null
+                        if (noSaveSelected) {
+                            Button(
+                                onClick = { selectedSave = null },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) { Text("Start fresh (no restore)") }
+                        } else {
+                            OutlinedButton(
+                                onClick = { selectedSave = null },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) { Text("Start fresh (no restore)") }
+                        }
+                        coopSaves.forEach { save ->
+                            val label =
+                                "L${save.level} - ${save.numPlayers}p" +
+                                    " - ${save.callsigns.joinToString()}" +
+                                    " - ${formatTimeAgo(save.timestamp)}"
+                            if (selectedSave == save) {
+                                Button(
+                                    onClick = {},
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) { Text(label, fontSize = 11.sp, maxLines = 2) }
+                            } else {
+                                OutlinedButton(
+                                    onClick = { selectedSave = save },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) { Text(label, fontSize = 11.sp, maxLines = 2) }
+                            }
+                        }
+                    }
                 } else if (coopResumeLevel != null) {
                     Text(
                         "Last completed: Level $coopResumeLevel",
@@ -643,6 +741,8 @@ private fun CreateLobbyDialog(
                             maxPlayers = maxPlayers,
                         ),
                     )
+                    // Write restore slot for the C engine to pick up
+                    writeCoopRestoreSlot(context.filesDir, game, selectedSave?.slot)
                     val gameInfo =
                         JsonObject(
                             mapOf(
