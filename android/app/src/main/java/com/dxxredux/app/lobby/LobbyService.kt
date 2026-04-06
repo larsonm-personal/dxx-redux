@@ -84,8 +84,8 @@ object LobbyService {
     val joinedLobby: StateFlow<JoinedLobbyInfo?> = _joinedLobby.asStateFlow()
 
     // Diagnostic counters
-    private val packetsSent = AtomicLong(0)
-    private val packetsReceived = AtomicLong(0)
+    internal val packetsSent = AtomicLong(0)
+    internal val packetsReceived = AtomicLong(0)
     private val _diagnostics = MutableStateFlow("")
     val diagnostics: StateFlow<String> = _diagnostics.asStateFlow()
     private val _broadcastFailing = MutableStateFlow(false)

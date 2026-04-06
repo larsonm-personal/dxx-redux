@@ -826,6 +826,52 @@ class SetupActivity : ComponentActivity() {
                         )
                         launchMultiplayerGame(info)
                     }
+                    "lan_host_lobby" -> {
+                        val callsign = intent.getStringExtra("callsign") ?: "TestHost"
+                        val game = intent.getStringExtra("game") ?: "d2"
+                        val mission = intent.getStringExtra("mission") ?: "Counterstrike!"
+                        val mode = intent.getStringExtra("mode") ?: "coop"
+                        val maxPlayers = intent.getIntExtra("max_players", 4)
+                        mpCallsign = callsign
+                        com.dxxredux.app.lobby.LobbyService
+                            .startDiscovery(this@SetupActivity, callsign)
+                        com.dxxredux.app.lobby.LobbyService
+                            .hostLobby(callsign, game, mission, mode, maxPlayers)
+                        Log.i("DXX-MP", "lan_host_lobby: hosting as $callsign ($game/$mission/$mode)")
+                    }
+                    "lan_stop_lobby" -> {
+                        com.dxxredux.app.lobby.LobbyService
+                            .stopDiscovery()
+                        Log.i("DXX-MP", "lan_stop_lobby: stopped")
+                    }
+                    "lan_discover" -> {
+                        val callsign = intent.getStringExtra("callsign") ?: "TestJoin"
+                        mpCallsign = callsign
+                        com.dxxredux.app.lobby.LobbyService
+                            .startDiscovery(this@SetupActivity, callsign)
+                        Log.i("DXX-MP", "lan_discover: started discovery as $callsign")
+                    }
+                    "lan_discover_status" -> {
+                        val lobbies = com.dxxredux.app.lobby.LobbyService.discoveredLobbies.value
+                        val hosting = com.dxxredux.app.lobby.LobbyService.isHosting.value
+                        val diag = com.dxxredux.app.lobby.LobbyService.diagnostics.value
+                        val tx =
+                            com.dxxredux.app.lobby.LobbyService.packetsSent
+                                .get()
+                        val rx =
+                            com.dxxredux.app.lobby.LobbyService.packetsReceived
+                                .get()
+                        Log.i(
+                            "DXX-MP",
+                            "lan_discover_status: lobbies=${lobbies.size} hosting=$hosting tx=$tx rx=$rx diag=$diag",
+                        )
+                        for (l in lobbies) {
+                            Log.i(
+                                "DXX-MP",
+                                "  lobby: ${l.announce.callsign} ${l.announce.game}/${l.announce.mission} from ${l.announce.hostAddress}",
+                            )
+                        }
+                    }
                     else -> Log.w("DXX-MP", "Unknown MP command: $cmd")
                 }
             }

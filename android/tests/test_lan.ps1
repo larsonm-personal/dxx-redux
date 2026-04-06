@@ -3,7 +3,12 @@
 #
 # Uses the lan_launch MP_COMMAND to bypass the launcher lobby UI entirely,
 # launching the game engine directly in host/join mode on two emulators.
-# A UDP relay bridges the two emulators' separate SLIRP NATs.
+#
+# Modes:
+#   -DirectLan  (default) Uses emulator 36.5+ shared Wi-Fi. The joiner
+#               connects to the host's wlan0 IP directly. No relay needed.
+#   -UseRelay   Legacy mode: a UDP relay bridges two emulators' separate
+#               SLIRP NATs (pre-36.5 emulators).
 #
 # Prerequisites:
 #   - Two emulators running (emulator-5554 and emulator-5556)
@@ -13,11 +18,13 @@
 # Usage:
 #   .\test_lan.ps1
 #   .\test_lan.ps1 -Game d1
+#   .\test_lan.ps1 -UseRelay
 #   .\test_lan.ps1 -SkipBuild
 
 param(
     [string]$Game = "d2",
     [switch]$SkipBuild,
+    [switch]$UseRelay,
     [int]$TimeoutSeconds = 120
 )
 
@@ -216,34 +223,48 @@ try {
     }
     Write-Status "SetupActivity ready on both emulators" "Green"
 
-    # -- Step 2: Set up UDP relay for cross-emulator engine traffic --
+    # -- Step 2: Set up networking (relay or direct LAN) --
     Write-Status ""
-    Write-Status "--- Phase 2: Set up UDP relay ---" "White"
+    if ($UseRelay) {
+        Write-Status "--- Phase 2: Set up UDP relay (legacy mode) ---" "White"
 
-    # Pre-create firewall rules to prevent UAC prompts during test
-    Ensure-FirewallRules
+        # Pre-create firewall rules to prevent UAC prompts during test
+        Ensure-FirewallRules
 
-    # EMU1 redir: host:42500 -> EMU1:42424 (relay -> host game inbound)
-    $r1del = Setup-EmulatorRedir -ConsolePort 5554 -RedirSpec "del udp:42500"
-    Write-Status "  EMU1 redir cleanup: $r1del" "Gray"
-    $r1 = Setup-EmulatorRedir -ConsolePort 5554 -RedirSpec "add udp:42500:42424"
-    Write-Status "  EMU1 redir add: $r1" "Gray"
+        # EMU1 redir: host:42500 -> EMU1:42424 (relay -> host game inbound)
+        $r1del = Setup-EmulatorRedir -ConsolePort 5554 -RedirSpec "del udp:42500"
+        Write-Status "  EMU1 redir cleanup: $r1del" "Gray"
+        $r1 = Setup-EmulatorRedir -ConsolePort 5554 -RedirSpec "add udp:42500:42424"
+        Write-Status "  EMU1 redir add: $r1" "Gray"
 
-    # EMU2: remove stale redir
-    $r2del = Setup-EmulatorRedir -ConsolePort 5556 -RedirSpec "del udp:42501"
-    Write-Status "  EMU2 redir cleanup: $r2del" "Gray"
+        # EMU2: remove stale redir
+        $r2del = Setup-EmulatorRedir -ConsolePort 5556 -RedirSpec "del udp:42501"
+        Write-Status "  EMU2 redir cleanup: $r2del" "Gray"
 
-    # Start UDP relay
-    $relayScript = Join-Path $PSScriptRoot "..\udp_relay.ps1"
-    if (-not (Test-Path $relayScript)) {
-        Write-Status "FAIL: udp_relay.ps1 not found at $relayScript" "Red"; exit 1
+        # Start UDP relay
+        $relayScript = Join-Path $PSScriptRoot "..\udp_relay.ps1"
+        if (-not (Test-Path $relayScript)) {
+            Write-Status "FAIL: udp_relay.ps1 not found at $relayScript" "Red"; exit 1
+        }
+        $relayProc = Start-Process pwsh -ArgumentList "-File", $relayScript, "-Bind", "127.0.0.1" -PassThru -NoNewWindow `
+            -RedirectStandardOutput (Join-Path $REPO_ROOT "temp\udp_relay.log") `
+            -RedirectStandardError (Join-Path $REPO_ROOT "temp\udp_relay_err.log")
+        $script:relayProc = $relayProc
+        Write-Status "UDP relay started (PID $($relayProc.Id))" "Green"
+        Start-Sleep -Seconds 1
+    } else {
+        Write-Status "--- Phase 2: Direct LAN (emulator 36.5+ shared Wi-Fi) ---" "White"
+        # Get host emulator's wlan0 IP for direct connection
+        $hostIpRaw = Adb-Dev-Timeout -Serial $EMU1 -AdbArgs @(
+            "shell", "ip", "addr", "show", "wlan0"
+        ) -Seconds 5
+        $script:DirectHostIp = ($hostIpRaw | Select-String -Pattern 'inet (\d+\.\d+\.\d+\.\d+)' | ForEach-Object { $_.Matches[0].Groups[1].Value })
+        if (-not $script:DirectHostIp) {
+            Write-Status "FAIL: Could not get wlan0 IP from $EMU1 -- is emulator 36.5+?" "Red"
+            exit 1
+        }
+        Write-Status "Host wlan0 IP: $($script:DirectHostIp)" "Green"
     }
-    $relayProc = Start-Process pwsh -ArgumentList "-File", $relayScript, "-Bind", "127.0.0.1" -PassThru -NoNewWindow `
-        -RedirectStandardOutput (Join-Path $REPO_ROOT "temp\udp_relay.log") `
-        -RedirectStandardError (Join-Path $REPO_ROOT "temp\udp_relay_err.log")
-    $script:relayProc = $relayProc
-    Write-Status "UDP relay started (PID $($relayProc.Id))" "Green"
-    Start-Sleep -Seconds 1
 
     # -- Step 3: Launch game on both emulators via lan_launch --
     Write-Status ""
@@ -277,10 +298,9 @@ try {
         return ($gPid -and $gPid -match '^\d+')
     }
 
-    # Joiner (EMU2) - point at relay address (10.0.2.2 = host loopback from emulator)
-    # Port 42600 is the UDP relay on the host machine, NOT the engine port.
+    # Joiner (EMU2)
     Write-Status "Sending lan_launch join to $EMU2..."
-    Send-MpCommand -Serial $EMU2 -Command "lan_launch" -Extras @(
+    $joinExtras = @(
         "--es", "game", $Game,
         "--es", "mp_mode", "join",
         "--es", "mission", $MISSION,
@@ -288,10 +308,18 @@ try {
         "--ei", "max_players", "2",
         "--ei", "level_num", "1",
         "--ei", "difficulty", "1",
-        "--es", "callsign", $CALLSIGN2,
-        "--es", "host_addr", "10.0.2.2",
-        "--ei", "host_port", "42600"
+        "--es", "callsign", $CALLSIGN2
     )
+    if ($UseRelay) {
+        # Relay mode: 10.0.2.2 = host loopback from emulator, port 42600 = relay
+        $joinExtras += @("--es", "host_addr", "10.0.2.2", "--ei", "host_port", "42600")
+        Write-Status "  Joiner target: 10.0.2.2:42600 (via relay)"
+    } else {
+        # Direct LAN: use host's wlan0 IP on the engine port
+        $joinExtras += @("--es", "host_addr", $script:DirectHostIp, "--ei", "host_port", "42424")
+        Write-Status "  Joiner target: $($script:DirectHostIp):42424 (direct LAN)"
+    }
+    Send-MpCommand -Serial $EMU2 -Command "lan_launch" -Extras $joinExtras
 
     # -- Step 4: Verify multiplayer sync via MPDIAG logcat --
     #
@@ -299,9 +327,10 @@ try {
     #   1) Both players added (add_player ... N_players now 2)
     #   2) Level sync completed (send_sync ... sending SYNC to all)
     #
-    # This proves the full LAN networking path works:
+    # In direct LAN mode, traffic goes:
+    #   EMU2 -> LAN proxy -> host wlan0 IP -> host engine
+    # In relay mode:
     #   EMU2 -> LAN proxy -> relay -> EMU1 redir -> host engine
-    #   and back.
     #
     # We do NOT require both emulators to survive the level load phase
     # (GPU rendering on swiftshader_indirect can crash the emulator).
@@ -309,8 +338,8 @@ try {
     Write-Status ""
     Write-Status "--- Phase 4: Wait for multiplayer sync ---" "White"
 
-    # Quick diagnostic: is relay still alive?
-    if ($script:relayProc.HasExited) {
+    # Quick diagnostic: is relay still alive? (relay mode only)
+    if ($UseRelay -and $script:relayProc -and $script:relayProc.HasExited) {
         Write-Status "WARN: UDP relay exited early (code $($script:relayProc.ExitCode))" "Yellow"
         $errLog = Join-Path $REPO_ROOT "temp\udp_relay_err.log"
         if (Test-Path $errLog) {
@@ -365,15 +394,19 @@ try {
     Write-Status ""
     Write-Status "--- Phase 5: Verify networking ---" "White"
 
-    # Check that relay forwarded traffic in both directions
-    $relayLog = Join-Path $REPO_ROOT "temp\udp_relay.log"
-    $relayLines = @()
-    if (Test-Path $relayLog) {
-        $relayLines = Get-Content $relayLog -ErrorAction SilentlyContinue
+    # Check relay traffic (relay mode only)
+    if ($UseRelay) {
+        $relayLog = Join-Path $REPO_ROOT "temp\udp_relay.log"
+        $relayLines = @()
+        if (Test-Path $relayLog) {
+            $relayLines = Get-Content $relayLog -ErrorAction SilentlyContinue
+        }
+        $emu1ToEmu2 = @($relayLines | Where-Object { $_ -match 'EMU1->EMU2' }).Count
+        $emu2ToEmu1 = @($relayLines | Where-Object { $_ -match 'EMU2->EMU1' }).Count
+        Write-Status "Relay traffic: EMU1->EMU2: $emu1ToEmu2 packets, EMU2->EMU1: $emu2ToEmu1 packets"
+    } else {
+        Write-Status "Direct LAN mode -- no relay traffic to verify"
     }
-    $emu1ToEmu2 = @($relayLines | Where-Object { $_ -match 'EMU1->EMU2' }).Count
-    $emu2ToEmu1 = @($relayLines | Where-Object { $_ -match 'EMU2->EMU1' }).Count
-    Write-Status "Relay traffic: EMU1->EMU2: $emu1ToEmu2 packets, EMU2->EMU1: $emu2ToEmu1 packets"
 
     # Check MPDIAG details from host logcat
     $hostLines = Get-Content $logcatFile1 -ErrorAction SilentlyContinue | Where-Object { $_ -match 'MPDIAG' }
@@ -384,7 +417,7 @@ try {
 
     $testPassed = $true
 
-    if ($emu1ToEmu2 -eq 0 -or $emu2ToEmu1 -eq 0) {
+    if ($UseRelay -and ($emu1ToEmu2 -eq 0 -or $emu2ToEmu1 -eq 0)) {
         Write-Status "FAIL: Relay did not forward traffic in both directions" "Red"
         $testPassed = $false
     }
