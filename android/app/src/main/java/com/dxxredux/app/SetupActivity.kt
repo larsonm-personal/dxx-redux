@@ -556,8 +556,14 @@ class SetupActivity : ComponentActivity() {
                         val setDir = fsm.getSetDir(fsm.getActive())
                         val src = File(path)
                         if (src.isFile) {
-                            src.copyTo(File(setDir, src.name), overwrite = true)
-                            Log.i("DXX-Setup", "import_files: copied ${src.name} to ${setDir.name}")
+                            val destDir =
+                                if (src.name.lowercase().endsWith(".dem")) {
+                                    File(setDir, "demos").also { it.mkdirs() }
+                                } else {
+                                    setDir
+                                }
+                            src.copyTo(File(destDir, src.name), overwrite = true)
+                            Log.i("DXX-Setup", "import_files: copied ${src.name} to ${destDir.name}")
                         } else {
                             Log.w("DXX-Setup", "import_files: not a file: $path")
                         }
@@ -1814,6 +1820,7 @@ private val EXTENSION_TYPES =
         "inst" to ".inst \u2014 GOG CD cue sheet",
         "bin" to ".bin \u2014 CD disc image (BIN/CUE)",
         "cue" to ".cue \u2014 CD cue sheet (BIN/CUE)",
+        "dem" to ".dem \u2014 game demo recording",
     )
 
 // ── File definitions ────────────────────────────────────────────────────────
@@ -2023,7 +2030,9 @@ private fun scanTreeForGameFiles(
 
                 if (mimeType == DocumentsContract.Document.MIME_TYPE_DIR) {
                     queue.add(childId)
-                } else if (displayName.lowercase() in ALL_GAME_FILENAMES) {
+                } else if (displayName.lowercase() in ALL_GAME_FILENAMES ||
+                    displayName.lowercase().endsWith(".dem")
+                ) {
                     val fileUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, childId)
                     results.add(FoundFile(displayName, fileUri))
                 }
@@ -2045,7 +2054,13 @@ private fun importFile(
     try {
         // Use lowercase canonical name so the engine finds it
         val canonicalName = source.name.lowercase()
-        val destFile = File(destDir, canonicalName)
+        val actualDestDir =
+            if (canonicalName.endsWith(".dem")) {
+                File(destDir, "demos").also { it.mkdirs() }
+            } else {
+                destDir
+            }
+        val destFile = File(actualDestDir, canonicalName)
         context.contentResolver.openInputStream(source.uri)?.use { input ->
             FileOutputStream(destFile).use { output ->
                 input.copyTo(output, bufferSize = 8192)
@@ -2403,6 +2418,7 @@ private fun SetupScreen(
                                 lname.endsWith(".bin") -> binUris.add(name to uri)
                                 lname.endsWith(".exe") || lname.endsWith(".pkg") -> gogUri = name to uri
                                 lname.endsWith(".sow") -> sowUri = name to uri
+                                lname.endsWith(".dem") -> gameUris.add(FoundFile(name, uri))
                                 lname in ALL_GAME_FILENAMES -> gameUris.add(FoundFile(name, uri))
                                 lname.endsWith(".mp3") || lname.endsWith(".ogg") || lname.endsWith(".flac") ->
                                     audioFileUris.add(uri)
@@ -3179,7 +3195,12 @@ private fun SetupScreen(
                                                             hashingFile = f.name
                                                             hashingProgress = 0f
                                                             val canonicalName = f.name.lowercase()
-                                                            val destFile = File(setDir, canonicalName)
+                                                            val destFile =
+                                                                if (canonicalName.endsWith(".dem")) {
+                                                                    File(File(setDir, "demos"), canonicalName)
+                                                                } else {
+                                                                    File(setDir, canonicalName)
+                                                                }
                                                             // Determine track: native data-dir vs external
                                                             val existedBefore = destFile.exists()
                                                             val existingEntry = manifest.getEntry(canonicalName)
@@ -5519,6 +5540,19 @@ private fun GogImportDialog(
                     Button(
                         onClick = {
                             scope.launch {
+                                // Check disk space before extraction
+                                val totalNeeded =
+                                    fileList!!.sumOf { f ->
+                                        if (!includeAudio && GogImportBridge.isAudioFile(f.name)) 0L else f.size
+                                    }
+                                val available = setDir.usableSpace
+                                // Need total + 50MB headroom for temp files and OS overhead
+                                if (available < totalNeeded + 50 * 1024 * 1024) {
+                                    val needMB = (totalNeeded + 50 * 1024 * 1024) / (1024 * 1024)
+                                    val availMB = available / (1024 * 1024)
+                                    status = "Not enough disk space: need ~${needMB}MB, have ${availMB}MB free"
+                                    return@launch
+                                }
                                 processing = true
                                 status = "Extracting game files\u2026"
                                 progressFile = ""

@@ -98,9 +98,10 @@ void Error(const char *fmt,...)
 			}
 		}
 	}
-#endif
-
+	android_finish_and_exit();
+#else
 	exit(1);
+#endif
 }
 
 //print out warning message to user

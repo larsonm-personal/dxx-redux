@@ -12,12 +12,14 @@
     .\Run-Emulator.ps1
     .\Run-Emulator.ps1 -NoBuild
     .\Run-Emulator.ps1 -NoData
+    .\Run-Emulator.ps1 -Rebuild
     .\Run-Emulator.ps1 -NoBuild -NoData
 #>
 
 param(
     [switch]$NoBuild,
-    [switch]$NoData
+    [switch]$NoData,
+    [switch]$Rebuild
 )
 
 $ErrorActionPreference = "Stop"
@@ -80,11 +82,18 @@ if (-not $NoBuild) {
     $needsBuild = $true
     if (Test-Path $APK) {
         $apkTime = (Get-Item $APK).LastWriteTime
-        # Check if any source file is newer than the APK
+        # Check if any source or build-config file is newer than the APK
         $srcDirs = @(
             (Join-Path $ScriptDir "app\src"),
             (Join-Path $RepoRoot "d1"),
-            (Join-Path $RepoRoot "d2")
+            (Join-Path $RepoRoot "d2"),
+            (Join-Path $RepoRoot "cmake")
+        )
+        $buildFiles = @(
+            (Join-Path $ScriptDir "build.gradle"),
+            (Join-Path $ScriptDir "settings.gradle"),
+            (Join-Path $ScriptDir "gradle.properties"),
+            (Join-Path $ScriptDir "app\build.gradle")
         )
         $newerFiles = foreach ($dir in $srcDirs) {
             if (Test-Path $dir) {
@@ -94,7 +103,15 @@ if (-not $NoBuild) {
             }
         }
         if (-not $newerFiles) {
-            Write-Host "APK is up to date, skipping build"
+            # Also check individual build config files
+            $newerFiles = foreach ($f in $buildFiles) {
+                if ((Test-Path $f) -and (Get-Item $f).LastWriteTime -gt $apkTime) {
+                    Get-Item $f
+                }
+            }
+        }
+        if (-not $newerFiles) {
+            Write-Host "APK is up to date, skipping build (APK: $apkTime)"
             $needsBuild = $false
         }
     }
@@ -117,6 +134,41 @@ if (-not (Test-Path $APK)) {
 }
 
 # -- 2. Launch emulator (if not already running) -----------------------------
+
+# -- 2a. Rebuild AVD if requested -------------------------------------------
+if (-not $Rebuild) {
+    $answer = Read-Host "Delete and rebuild emulator AVD? (y/N)"
+    if ($answer -eq 'y' -or $answer -eq 'Y') {
+        $Rebuild = $true
+    }
+}
+
+if ($Rebuild) {
+    Write-Host "=== Rebuilding AVD ($AVD_NAME) ==="
+    # Kill running emulator first
+    $running = & $ADB devices 2>$null | Select-String "emulator-"
+    if ($running) {
+        Write-Host "Stopping running emulator"
+        & $ADB emu kill 2>$null
+        Start-Sleep -Seconds 3
+        # Force-kill any lingering emulator/qemu processes
+        Get-Process -Name "qemu-system*", "emulator*" -ErrorAction SilentlyContinue | Stop-Process -Force
+        Start-Sleep -Seconds 2
+    }
+    $createScript = Join-Path $ScriptDir "get_deps\create_light_avds.ps1"
+    if (Test-Path $createScript) {
+        & $createScript -Force
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "ERROR: AVD recreation failed" -ForegroundColor Red
+            exit 1
+        }
+        Write-Host "AVD rebuilt successfully"
+    } else {
+        Write-Host "ERROR: create_light_avds.ps1 not found at $createScript" -ForegroundColor Red
+        exit 1
+    }
+}
+
 Write-Host "=== Launching emulator ($AVD_NAME) ==="
 
 $running = & $ADB devices 2>$null | Select-String "emulator-"

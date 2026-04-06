@@ -59,6 +59,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -219,6 +220,9 @@ private fun LanDiscoveryView(
     var showJoinByIpDialog by remember { mutableStateOf(false) }
     var showJoinLobbyByIpDialog by remember { mutableStateOf(false) }
     var hostedLevelCount by remember { mutableStateOf(30) }
+    var hostedGame by remember { mutableStateOf("d2") }
+    var hostedMode by remember { mutableStateOf("coop") }
+    var hostedMission by remember { mutableStateOf<String?>(null) }
     val recentIps = remember { mutableStateOf(LanIpsPrefs.load(context)) }
     var permissionGranted by remember {
         mutableStateOf(
@@ -443,6 +447,13 @@ private fun LanDiscoveryView(
                 }
             }
             Spacer(Modifier.height(8.dp))
+            if (hostedMode == "coop") {
+                LanCoopSaveOffer(
+                    game = hostedGame,
+                    mission = hostedMission,
+                    playerCallsigns = hostedPlayers.map { it.callsign },
+                )
+            }
             Button(
                 onClick = { showStartGameDialog = true },
                 modifier = Modifier.fillMaxWidth(),
@@ -513,6 +524,9 @@ private fun LanDiscoveryView(
             onHost = { game, mission, mode, maxPlayers, levelCount ->
                 showHostDialog = false
                 hostedLevelCount = if (levelCount > 0) levelCount else 30
+                hostedGame = game
+                hostedMode = mode
+                hostedMission = mission
                 LobbyService.hostLobby(callsign, game, mission, mode, maxPlayers)
             },
             onDismiss = { showHostDialog = false },
@@ -846,6 +860,88 @@ private fun StartLanGameDialog(
             TextButton(onClick = onDismiss) { Text("Cancel") }
         },
     )
+}
+
+/**
+ * Coop save auto-offer for LAN lobby host, matching the online lobby's CoopSaveOffer.
+ * Shows matching saves based on player callsigns in the lobby.
+ */
+@Composable
+private fun LanCoopSaveOffer(
+    game: String,
+    mission: String?,
+    playerCallsigns: List<String>,
+) {
+    val context = LocalContext.current
+    val filesDir = context.filesDir
+
+    val saves =
+        remember(game, mission) {
+            readCoopAutosaveHistory(filesDir, game, mission, context)
+        }
+    if (saves.isEmpty()) return
+
+    val lobbyCallsigns =
+        remember(playerCallsigns) {
+            playerCallsigns.map { it.lowercase() }.toSet()
+        }
+
+    val bestMatch =
+        remember(saves, lobbyCallsigns) {
+            saves
+                .mapNotNull { save ->
+                    val matchCount =
+                        save.callsigns.count { it.lowercase() in lobbyCallsigns }
+                    if (matchCount > 0) Triple(save, matchCount, save.timestamp) else null
+                }.sortedWith(
+                    compareByDescending<Triple<CoopSaveEntry, Int, Long>> {
+                        it.second
+                    }.thenByDescending { it.third },
+                ).firstOrNull()
+                ?.first
+        } ?: return
+
+    var useRestore by remember { mutableStateOf(true) }
+
+    LaunchedEffect(bestMatch) { useRestore = true }
+
+    LaunchedEffect(useRestore, bestMatch) {
+        writeCoopRestoreSlot(filesDir, game, if (useRestore) bestMatch.slot else null)
+    }
+
+    val label =
+        "L${bestMatch.level} - ${bestMatch.numPlayers}p" +
+            " - ${bestMatch.callsigns.joinToString()}" +
+            " - ${formatTimeAgo(bestMatch.timestamp)}"
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text("Save found: $label", style = MaterialTheme.typography.bodySmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (useRestore) {
+                    Button(onClick = {}, modifier = Modifier.weight(1f)) {
+                        Text("Restore", fontSize = 12.sp)
+                    }
+                    OutlinedButton(
+                        onClick = { useRestore = false },
+                        modifier = Modifier.weight(1f),
+                    ) { Text("Start fresh", fontSize = 12.sp) }
+                } else {
+                    OutlinedButton(
+                        onClick = { useRestore = true },
+                        modifier = Modifier.weight(1f),
+                    ) { Text("Restore", fontSize = 12.sp) }
+                    Button(onClick = {}, modifier = Modifier.weight(1f)) {
+                        Text("Start fresh", fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+    }
+    Spacer(Modifier.height(4.dp))
 }
 
 @Composable

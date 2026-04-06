@@ -21,6 +21,11 @@ const char *android_crash_handler_get_dir(void);
  * thread is stopped. */
 void crash_breadcrumb(const char *msg);
 void crash_breadcrumb_v(const char *fmt, ...);
+
+/* Clean fatal exit: finish the Activity via JNI, then _exit(1).
+ * Called by Error() instead of raw exit(1) so the Activity doesn't
+ * freeze on the last rendered frame. */
+void android_finish_and_exit(void);
 #endif
 
 #endif /* ANDROID_CRASH_HANDLER_H */

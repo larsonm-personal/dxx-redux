@@ -71,10 +71,47 @@ function Test-EmulatorHealth {
         return @{ Healthy = $false; Reason = "shell command failed: $_" }
     }
 
+    # Step 3: Check disk space on /data (warn if <500MB free)
+    try {
+        $dfJob = Start-Job -ScriptBlock {
+            param($adb)
+            & $adb shell "df /data" 2>&1 | Out-String
+        } -ArgumentList $ADB
+        $dfCompleted = $dfJob | Wait-Job -Timeout 5
+        if ($dfCompleted) {
+            $dfOutput = Receive-Job $dfJob
+            Remove-Job $dfJob -Force -ErrorAction SilentlyContinue
+            # Parse df output: header line then data line with 1K-blocks
+            $lines = ($dfOutput -split "`n") | Where-Object { $_ -match '/data' }
+            if ($lines) {
+                # df columns: Filesystem 1K-blocks Used Available Use% Mounted
+                $parts = ($lines[0].Trim() -split '\s+')
+                if ($parts.Count -ge 4) {
+                    $availKB = 0
+                    if ([int64]::TryParse($parts[3], [ref]$availKB)) {
+                        $availMB = [math]::Floor($availKB / 1024)
+                        if ($availMB -lt 500) {
+                            return @{ Healthy = $false; Reason = "low disk space on /data: ${availMB}MB free (need 500MB)" }
+                        }
+                    }
+                }
+            }
+        } else {
+            Remove-Job $dfJob -Force -ErrorAction SilentlyContinue
+            # Non-fatal: if df times out, don't fail the health check
+        }
+    } catch {
+        # Non-fatal disk space check
+    }
+
     return @{ Healthy = $true; Reason = "ok" }
 }
 
 function Stop-Emulator {
+    Write-Host "Cleaning up /data/local/tmp..."
+    try {
+        & $ADB shell "rm -rf /data/local/tmp/*" 2>$null
+    } catch {}
     Write-Host "Killing emulator..."
     # Try graceful kill (may hang if emulator is frozen, so use a timeout)
     $job = Start-Job -ScriptBlock { param($a); & $a emu kill 2>&1 } -ArgumentList $ADB

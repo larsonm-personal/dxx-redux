@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <unistd.h>
 #include <android/log.h>
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
@@ -22,6 +23,7 @@
 #include "debug_tex_overlay.h"
 #endif
 #include "debug_log.h"
+#include "android_crash_handler.h"
 
 #define LOG_TAG   "DXX-Redux"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -193,6 +195,47 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 	jmethodID killProc = (*env)->GetStaticMethodID(env, processCls, "killProcess", "(I)V");
 	jint pid = (*env)->CallStaticIntMethod(env, processCls, myPid);
 	(*env)->CallStaticVoidMethod(env, processCls, killProc, pid);
+}
+
+/*
+ * android_finish_and_exit -- clean fatal exit for Error() calls.
+ *
+ * Error() normally calls exit(1), but on Android that kills the process
+ * without finishing the Activity, leaving a frozen splash screen.
+ * This function attaches to the JVM, calls Activity.finish(), then
+ * _exit(1) to skip atexit handlers (which can hang in SDL cleanup).
+ */
+void android_finish_and_exit(void)
+{
+	LOGE("android_finish_and_exit: fatal error, cleaning up");
+	g_game_running = 0;
+
+	if (g_jvm && g_activity) {
+		JNIEnv *env = NULL;
+		int attached = 0;
+		if ((*g_jvm)->GetEnv(g_jvm, (void **) &env, JNI_VERSION_1_6) != JNI_OK) {
+			if ((*g_jvm)->AttachCurrentThread(g_jvm, &env, NULL) == JNI_OK) {
+				attached = 1;
+			}
+		}
+		if (env) {
+			jclass cls = (*env)->GetObjectClass(env, g_activity);
+			jmethodID mid = (*env)->GetMethodID(env, cls, "finish", "()V");
+			if (mid)
+				(*env)->CallVoidMethod(env, g_activity, mid);
+
+			jclass processCls = (*env)->FindClass(env, "android/os/Process");
+			jmethodID myPid = (*env)->GetStaticMethodID(env, processCls, "myPid", "()I");
+			jmethodID killProc = (*env)->GetStaticMethodID(env, processCls, "killProcess", "(I)V");
+			jint pid = (*env)->CallStaticIntMethod(env, processCls, myPid);
+			(*env)->CallStaticVoidMethod(env, processCls, killProc, pid);
+
+			if (attached)
+				(*g_jvm)->DetachCurrentThread(g_jvm);
+		}
+	}
+	/* Fallback if JNI cleanup didn't kill the process */
+	_exit(1);
 }
 
 JNIEXPORT jint JNICALL

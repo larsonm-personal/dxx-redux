@@ -101,7 +101,7 @@ foreach ($avd in $avds) {
         "hw.keyboard"                = "yes"
         "hw.sdCard"                  = "yes"
         "sdcard.size"                = "4096M"
-        "disk.dataPartition.size"    = "4G"
+        "disk.dataPartition.size"    = "8G"
         "showDeviceFrame"            = "no"
         "hw.audioInput"              = "no"
         "hw.audioOutput"             = "yes"

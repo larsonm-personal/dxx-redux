@@ -613,7 +613,13 @@ class MainActivity :
         exitButton =
             ExitButtonView(this).apply {
                 exitCallback = {
-                    NativeMetaActions.nativeMetaAction(TouchBindings.META_RETURN_TO_LAUNCHER, 1)
+                    try {
+                        NativeMetaActions.nativeMetaAction(TouchBindings.META_RETURN_TO_LAUNCHER, 1)
+                    } catch (_: Exception) {
+                        // Native side is dead or dying (e.g. Error() was called during init).
+                        // Kill the process directly so the user isn't stuck on a frozen screen.
+                        android.os.Process.killProcess(android.os.Process.myPid())
+                    }
                 }
             }
 

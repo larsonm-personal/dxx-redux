@@ -804,78 +804,78 @@ try {
             $elapsed = [int]$sustainStart.Elapsed.TotalSeconds
             $sg1 = Get-GameIntrospection -Serial $EMU1
             $sg2 = Get-GameIntrospection -Serial $EMU2
-            foreach ($entry in @(@{Tag="EMU1"; S=$sg1; Num=1}, @{Tag="EMU2"; S=$sg2; Num=2})) {
+            foreach ($entry in @(@{Tag = "EMU1"; S = $sg1; Num = 1 }, @{Tag = "EMU2"; S = $sg2; Num = 2 })) {
                 $tag = $entry.Tag; $sg = $entry.S; $pNum = $entry.Num
                 if (-not $sg) { continue }
                 try {
 
-                # Check for disconnect messagebox: game_window_is_front=false
-                # while in_game=true means a modal is on top (e.g. "Host left the game!")
-                $gwFront = $sg.game_window_is_front
-                $menuSub = ""
-                if ($sg.PSObject.Properties['menu'] -and $sg.menu -and
-                    $sg.menu.PSObject.Properties['subtitle'] -and $sg.menu.subtitle) {
-                    $menuSub = $sg.menu.subtitle
-                }
+                    # Check for disconnect messagebox: game_window_is_front=false
+                    # while in_game=true means a modal is on top (e.g. "Host left the game!")
+                    $gwFront = $sg.game_window_is_front
+                    $menuSub = ""
+                    if ($sg.PSObject.Properties['menu'] -and $sg.menu -and
+                        $sg.menu.PSObject.Properties['subtitle'] -and $sg.menu.subtitle) {
+                        $menuSub = $sg.menu.subtitle
+                    }
 
-                # Check connected status of all players
-                $disconnectedPeers = @()
-                if ($sg.PSObject.Properties['multiplayer'] -and $sg.multiplayer -and
-                    $sg.multiplayer.PSObject.Properties['players'] -and $sg.multiplayer.players) {
-                    foreach ($p in $sg.multiplayer.players) {
-                        if (-not $p.is_me -and $p.connected -eq 0) {
-                            $disconnectedPeers += $p.callsign
+                    # Check connected status of all players
+                    $disconnectedPeers = @()
+                    if ($sg.PSObject.Properties['multiplayer'] -and $sg.multiplayer -and
+                        $sg.multiplayer.PSObject.Properties['players'] -and $sg.multiplayer.players) {
+                        foreach ($p in $sg.multiplayer.players) {
+                            if (-not $p.is_me -and $p.connected -eq 0) {
+                                $disconnectedPeers += $p.callsign
+                            }
                         }
                     }
-                }
 
-                if ($sg.in_game -and -not $gwFront) {
-                    # A modal is covering the game -- likely a disconnect notice
-                    $failures += "Player $pNum has disconnect modal at ${elapsed}s (menu='$menuSub')"
-                    $sustainFailed = $true
-                    Write-Status "  [${elapsed}s] ${tag}: DISCONNECT MODAL: '$menuSub'" "Red"
-                    if ($sg.console) {
-                        Write-Status "  $tag console:" "Gray"
-                        foreach ($c in ($sg.console.lines | Select-Object -Last 20)) {
-                            Write-Status "    $($c.text)" "Yellow"
+                    if ($sg.in_game -and -not $gwFront) {
+                        # A modal is covering the game -- likely a disconnect notice
+                        $failures += "Player $pNum has disconnect modal at ${elapsed}s (menu='$menuSub')"
+                        $sustainFailed = $true
+                        Write-Status "  [${elapsed}s] ${tag}: DISCONNECT MODAL: '$menuSub'" "Red"
+                        if ($sg.console) {
+                            Write-Status "  $tag console:" "Gray"
+                            foreach ($c in ($sg.console.lines | Select-Object -Last 20)) {
+                                Write-Status "    $($c.text)" "Yellow"
+                            }
                         }
-                    }
-                    # Dump logcat for both emulators to catch proxy lifecycle events
-                    Write-Status "  --- Logcat dump (last 80 lines, proxy/WS tags) ---" "Gray"
-                    foreach ($emuEntry in @(@{Tag="EMU1"; Serial=$EMU1}, @{Tag="EMU2"; Serial=$EMU2})) {
-                        $lcOut = & $ADB -s $emuEntry.Serial logcat -d -s "LocalhostProxy:*" "MatchmakingService:*" 2>&1 | Out-String
-                        Write-Status "  $($emuEntry.Tag) proxy/WS logcat:" "Gray"
-                        foreach ($lcLine in ($lcOut -split "`n" | Select-Object -Last 40)) {
-                            if ($lcLine.Trim()) { Write-Status "    $($lcLine.Trim())" "Yellow" }
+                        # Dump logcat for both emulators to catch proxy lifecycle events
+                        Write-Status "  --- Logcat dump (last 80 lines, proxy/WS tags) ---" "Gray"
+                        foreach ($emuEntry in @(@{Tag = "EMU1"; Serial = $EMU1 }, @{Tag = "EMU2"; Serial = $EMU2 })) {
+                            $lcOut = & $ADB -s $emuEntry.Serial logcat -d -s "LocalhostProxy:*" "MatchmakingService:*" 2>&1 | Out-String
+                            Write-Status "  $($emuEntry.Tag) proxy/WS logcat:" "Gray"
+                            foreach ($lcLine in ($lcOut -split "`n" | Select-Object -Last 40)) {
+                                if ($lcLine.Trim()) { Write-Status "    $($lcLine.Trim())" "Yellow" }
+                            }
                         }
-                    }
-                } elseif ($disconnectedPeers.Count -gt 0) {
-                    $failures += "Player $pNum peer disconnected at ${elapsed}s ($($disconnectedPeers -join ', '))"
-                    $sustainFailed = $true
-                    Write-Status "  [${elapsed}s] ${tag}: PEER DISCONNECTED: $($disconnectedPeers -join ', ')" "Red"
-                } elseif ($sg.in_game -and $sg.multiplayer) {
-                    $np = $sg.multiplayer.num_players
-                    $mp = $sg.multiplayer
-                    $myNum = $mp.my_player_num
-                    # Build per-player state summary using slot index to avoid callsign confusion
-                    $pSummary = ""
-                    if ($mp.players) {
-                        $parts = @()
-                        foreach ($p in $mp.players) {
-                            $me = ""; if ($p.is_me) { $me = "*" }
-                            $parts += "p$($p.slot)${me}=$($p.callsign):s=$([int]$p.shields)/e=$([int]$p.energy)/sc=$($p.score)/c=$($p.connected)"
+                    } elseif ($disconnectedPeers.Count -gt 0) {
+                        $failures += "Player $pNum peer disconnected at ${elapsed}s ($($disconnectedPeers -join ', '))"
+                        $sustainFailed = $true
+                        Write-Status "  [${elapsed}s] ${tag}: PEER DISCONNECTED: $($disconnectedPeers -join ', ')" "Red"
+                    } elseif ($sg.in_game -and $sg.multiplayer) {
+                        $np = $sg.multiplayer.num_players
+                        $mp = $sg.multiplayer
+                        $myNum = $mp.my_player_num
+                        # Build per-player state summary using slot index to avoid callsign confusion
+                        $pSummary = ""
+                        if ($mp.players) {
+                            $parts = @()
+                            foreach ($p in $mp.players) {
+                                $me = ""; if ($p.is_me) { $me = "*" }
+                                $parts += "p$($p.slot)${me}=$($p.callsign):s=$([int]$p.shields)/e=$([int]$p.energy)/sc=$($p.score)/c=$($p.connected)"
+                            }
+                            $pSummary = " [$($parts -join ', ')]"
                         }
-                        $pSummary = " [$($parts -join ', ')]"
-                    }
-                    Write-Status "  [${elapsed}s] ${tag}: gw_front=$gwFront np=$np my=$myNum$pSummary" "Gray"
-                    if ($np -lt 2) {
-                        $failures += "Player $pNum lost peer at ${elapsed}s (num_players=$np)"
+                        Write-Status "  [${elapsed}s] ${tag}: gw_front=$gwFront np=$np my=$myNum$pSummary" "Gray"
+                        if ($np -lt 2) {
+                            $failures += "Player $pNum lost peer at ${elapsed}s (num_players=$np)"
+                            $sustainFailed = $true
+                        }
+                    } elseif (-not $sg.in_game) {
+                        $failures += "Player $pNum left game at ${elapsed}s (screen=$($sg.screen_mode))"
                         $sustainFailed = $true
                     }
-                } elseif (-not $sg.in_game) {
-                    $failures += "Player $pNum left game at ${elapsed}s (screen=$($sg.screen_mode))"
-                    $sustainFailed = $true
-                }
                 } catch {
                     Write-Status "  [${elapsed}s] ${tag}: introspect parse error: $_" "Yellow"
                 }

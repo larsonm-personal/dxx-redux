@@ -426,6 +426,9 @@ Enhanced end-of-level screen showing per-player robot kill contributions.
 - [x] Removed C engine fallback slot scanning -- lobby is sole driver of restore
 - [x] Auto-set level field in lobby when save selected/deselected
 - [x] Fix: shield/energy overlay always showing full -- JNI had `* 100 / F1_0` instead of `/ F1_0`
+- [x] CoopSaveOffer composable in online lobby (LobbyScreen.kt)
+- [x] LAN lobby save picker: LanCoopSaveOffer in LanDiscoveryTab.kt (same auto-match by callsign)
+- [x] Track hostedGame/hostedMode/hostedMission from HostLanGameDialog for save matching
 - [x] Build passes, lint passes (both d1 and d2)
 
 ### Phase 8: 3D Player Locator HUD + Follow Line (future)
