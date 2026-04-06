@@ -9,41 +9,25 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -53,6 +37,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,8 +49,10 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.dxxredux.app.BuildInfo
-import com.dxxredux.app.FileSetManager
 import com.dxxredux.app.lobby.LobbyService
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.net.Inet4Address
 import java.net.NetworkInterface
 
@@ -112,6 +99,8 @@ private fun LanJoinedLobbyView(
     val joinedLobby by LobbyService.joinedLobby.collectAsState()
     val players by LobbyService.hostedLobbyPlayers.collectAsState()
     val lanLaunchEvent by LobbyService.lanLaunchEvent.collectAsState()
+    val isHosting by LobbyService.isHosting.collectAsState()
+    val chatMessages by LobbyService.chatMessages.collectAsState()
     val info = joinedLobby ?: return
 
     // Consume LAN launch events
@@ -157,10 +146,11 @@ private fun LanJoinedLobbyView(
             style = MaterialTheme.typography.titleSmall,
         )
         Spacer(Modifier.height(4.dp))
-        LazyColumn(modifier = Modifier.weight(1f)) {
+        LazyColumn(modifier = Modifier.weight(0.5f)) {
             items(players, key = { it.callsign }) { player ->
+                val isSelf = player.callsign == callsign
                 val displayName =
-                    if (player.callsign == callsign) "${player.callsign} (self)" else player.callsign
+                    if (isSelf) "${player.callsign} (self)" else player.callsign
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -181,11 +171,27 @@ private fun LanJoinedLobbyView(
                                     MaterialTheme.colorScheme.onSurfaceVariant
                                 },
                         )
+                        if (isHosting && !isSelf) {
+                            Spacer(Modifier.width(8.dp))
+                            TextButton(
+                                onClick = { LobbyService.kickPlayer(player.callsign) },
+                            ) {
+                                Text("Kick", fontSize = 12.sp)
+                            }
+                        }
                     }
                 }
                 Spacer(Modifier.height(4.dp))
             }
         }
+
+        // Chat
+        ChatArea(
+            messages = chatMessages,
+            onSend = { LobbyService.sendChat(callsign, it) },
+            modifier = Modifier.weight(0.5f),
+        )
+
         Spacer(Modifier.height(8.dp))
 
         // Ready toggle
@@ -216,13 +222,12 @@ private fun LanDiscoveryView(
     val broadcastFailing by LobbyService.broadcastFailing.collectAsState()
 
     var showHostDialog by remember { mutableStateOf(false) }
-    var showStartGameDialog by remember { mutableStateOf(false) }
     var showJoinByIpDialog by remember { mutableStateOf(false) }
-    var showJoinLobbyByIpDialog by remember { mutableStateOf(false) }
-    var hostedLevelCount by remember { mutableStateOf(30) }
     var hostedGame by remember { mutableStateOf("d2") }
     var hostedMode by remember { mutableStateOf("coop") }
     var hostedMission by remember { mutableStateOf<String?>(null) }
+    var hostedDifficulty by remember { mutableStateOf(1) }
+    var hostedLevelNum by remember { mutableStateOf(1) }
     val recentIps = remember { mutableStateOf(LanIpsPrefs.load(context)) }
     var permissionGranted by remember {
         mutableStateOf(
@@ -383,13 +388,8 @@ private fun LanDiscoveryView(
 
         if (!isHosting && isDiscovering) {
             Spacer(Modifier.height(4.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { showJoinLobbyByIpDialog = true }) {
-                    Text("Join Lobby by IP")
-                }
-                OutlinedButton(onClick = { showJoinByIpDialog = true }) {
-                    Text("Join Game by IP")
-                }
+            OutlinedButton(onClick = { showJoinByIpDialog = true }) {
+                Text("Join by IP")
             }
         }
 
@@ -455,7 +455,7 @@ private fun LanDiscoveryView(
                 )
             }
             Button(
-                onClick = { showStartGameDialog = true },
+                onClick = { LobbyService.startGame(hostedDifficulty, hostedLevelNum) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = hostedPlayers.size >= 2,
             ) {
@@ -520,69 +520,55 @@ private fun LanDiscoveryView(
     }
 
     if (showHostDialog) {
-        HostLanGameDialog(
-            onHost = { game, mission, mode, maxPlayers, levelCount ->
+        CreateGameDialog(
+            title = "Host LAN Game",
+            confirmLabel = "Host",
+            onCreate = { game, mission, mode, maxPlayers, difficulty, levelNum ->
                 showHostDialog = false
-                hostedLevelCount = if (levelCount > 0) levelCount else 30
                 hostedGame = game
                 hostedMode = mode
                 hostedMission = mission
-                LobbyService.hostLobby(callsign, game, mission, mode, maxPlayers)
+                hostedDifficulty = difficulty
+                hostedLevelNum = levelNum
+                LobbyService.hostLobby(callsign, game, mission ?: "", mode, maxPlayers)
             },
             onDismiss = { showHostDialog = false },
         )
     }
 
-    if (showStartGameDialog) {
-        StartLanGameDialog(
-            levelCount = hostedLevelCount,
-            onStart = { difficulty, levelNum ->
-                showStartGameDialog = false
-                LobbyService.startGame(difficulty, levelNum)
-            },
-            onDismiss = { showStartGameDialog = false },
-        )
-    }
-
     if (showJoinByIpDialog) {
+        val coroutineScope = rememberCoroutineScope()
         JoinByIpDialog(
             recentIps = recentIps.value,
             onJoin = { hostAddr, game ->
                 showJoinByIpDialog = false
                 LanIpsPrefs.add(context, hostAddr)
                 recentIps.value = LanIpsPrefs.load(context)
-                // Direct LAN join: launch game as joiner pointed at the given IP
-                onLaunchGame(
-                    GameLaunchInfo(
-                        game = game,
-                        mission = "",
-                        mode = "coop",
-                        difficulty = 1,
-                        levelNum = 1,
-                        maxPlayers = 4,
-                        yourSlot = 1,
-                        isHost = false,
-                        peers = emptyList(),
-                        lanHostAddr = hostAddr,
-                        isLan = true,
-                    ),
-                )
+                // Try lobby join first (1s probe), fall back to direct game engine join
+                coroutineScope.launch(Dispatchers.IO) {
+                    val foundLobby = LobbyService.tryJoinLobbyByIp(hostAddr, callsign)
+                    if (!foundLobby) {
+                        withContext(Dispatchers.Main) {
+                            onLaunchGame(
+                                GameLaunchInfo(
+                                    game = game,
+                                    mission = "",
+                                    mode = "coop",
+                                    difficulty = 1,
+                                    levelNum = 1,
+                                    maxPlayers = 4,
+                                    yourSlot = 1,
+                                    isHost = false,
+                                    peers = emptyList(),
+                                    lanHostAddr = hostAddr,
+                                    isLan = true,
+                                ),
+                            )
+                        }
+                    }
+                }
             },
             onDismiss = { showJoinByIpDialog = false },
-        )
-    }
-
-    if (showJoinLobbyByIpDialog) {
-        JoinLobbyByIpDialog(
-            recentIps = recentIps.value,
-            onJoin = { hostAddr ->
-                showJoinLobbyByIpDialog = false
-                LanIpsPrefs.add(context, hostAddr)
-                recentIps.value = LanIpsPrefs.load(context)
-                // Send a lobby-protocol JOIN to the given IP (use empty lobbyId; host will respond)
-                LobbyService.joinLobbyByIp(hostAddr, callsign)
-            },
-            onDismiss = { showJoinLobbyByIpDialog = false },
         )
     }
 }
@@ -672,194 +658,6 @@ private fun LanLobbyCard(
             }
         }
     }
-}
-
-@Composable
-private fun HostLanGameDialog(
-    onHost: (game: String, mission: String, mode: String, maxPlayers: Int, levelCount: Int) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val context = LocalContext.current
-    val defaults = remember { HostGameDefaults.load(context) }
-    val fsm = remember { FileSetManager(context.filesDir) }
-    val setDir = remember(fsm) { fsm.getSetDir(fsm.getActive()) }
-    var game by remember { mutableStateOf(defaults.game) }
-    var mission by remember { mutableStateOf(defaults.mission) }
-    var mode by remember { mutableStateOf(defaults.mode) }
-    var maxPlayersText by remember { mutableStateOf(defaults.maxPlayers.toString()) }
-    val missions = remember(game, setDir) { MissionScanner.scan(setDir, game) }
-    val selectedLevelCount =
-        remember(mission, missions) {
-            missions.find { it.filename == mission }?.levelCount ?: 0
-        }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Host LAN Game") },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("d1", "d2").forEach { g ->
-                        if (g == game) {
-                            Button(onClick = {}) { Text(g.uppercase()) }
-                        } else {
-                            OutlinedButton(onClick = {
-                                game = g
-                                val saved = HostGameDefaults.load(context)
-                                mission =
-                                    if (saved.game == g) {
-                                        saved.mission
-                                    } else {
-                                        HostGameDefaults.Defaults(game = g).mission
-                                    }
-                            }) { Text(g.uppercase()) }
-                        }
-                    }
-                }
-                MissionPickerField(
-                    selectedFilename = mission,
-                    game = game,
-                    onSelect = { mission = it },
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("anarchy", "coop").forEach { m ->
-                        if (m == mode) {
-                            Button(onClick = {}) {
-                                Text(m.replaceFirstChar { it.uppercase() })
-                            }
-                        } else {
-                            OutlinedButton(onClick = { mode = m }) {
-                                Text(m.replaceFirstChar { it.uppercase() })
-                            }
-                        }
-                    }
-                }
-                OutlinedTextField(
-                    value = maxPlayersText,
-                    onValueChange = { maxPlayersText = it.filter { c -> c.isDigit() } },
-                    label = { Text("Max Players") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        },
-        confirmButton = {
-            val maxPlayers = maxPlayersText.toIntOrNull() ?: 0
-            TextButton(
-                onClick = {
-                    HostGameDefaults.save(
-                        context,
-                        HostGameDefaults.Defaults(
-                            game = game,
-                            mission = mission,
-                            mode = mode,
-                            maxPlayers = maxPlayers,
-                        ),
-                    )
-                    onHost(game, mission ?: "", mode, maxPlayers, selectedLevelCount)
-                },
-                enabled = mission != null && maxPlayers in 2..8,
-            ) {
-                Text("Host")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        },
-    )
-}
-
-@Composable
-private fun StartLanGameDialog(
-    levelCount: Int,
-    onStart: (difficulty: Int, levelNum: Int) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val maxLevel = if (levelCount > 0) levelCount else 30
-    val difficulties = listOf("Trainee", "Rookie", "Hotshot", "Ace", "Insane")
-    var difficulty by remember { mutableStateOf(1) }
-    var selectedLevel by remember { mutableStateOf(1) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Start Game") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Difficulty", style = MaterialTheme.typography.bodyMedium)
-                var diffDropdownExpanded by remember { mutableStateOf(false) }
-                Box {
-                    OutlinedButton(
-                        onClick = { diffDropdownExpanded = true },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(
-                            difficulties[difficulty],
-                            modifier = Modifier.weight(1f),
-                        )
-                        Icon(Icons.Default.KeyboardArrowDown, "Expand", Modifier.size(16.dp))
-                    }
-                    DropdownMenu(
-                        expanded = diffDropdownExpanded,
-                        onDismissRequest = { diffDropdownExpanded = false },
-                    ) {
-                        difficulties.forEachIndexed { idx, name ->
-                            DropdownMenuItem(
-                                text = { Text(name) },
-                                onClick = {
-                                    difficulty = idx
-                                    diffDropdownExpanded = false
-                                },
-                            )
-                        }
-                    }
-                }
-                Text("Starting Level", style = MaterialTheme.typography.bodyMedium)
-                val listState = rememberLazyListState()
-                Box(modifier = Modifier.heightIn(max = 200.dp)) {
-                    LazyColumn(state = listState) {
-                        items(maxLevel) { idx ->
-                            val level = idx + 1
-                            Text(
-                                "Level $level",
-                                style =
-                                    if (level == selectedLevel) {
-                                        MaterialTheme.typography.bodyLarge
-                                    } else {
-                                        MaterialTheme.typography.bodyMedium
-                                    },
-                                color =
-                                    if (level == selectedLevel) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurface
-                                    },
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .clickable { selectedLevel = level }
-                                        .padding(vertical = 6.dp, horizontal = 4.dp),
-                            )
-                        }
-                    }
-                    LazyListScrollArrows(listState)
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onStart(difficulty, selectedLevel) },
-                enabled = selectedLevel in 1..maxLevel,
-            ) {
-                Text("Start")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        },
-    )
 }
 
 /**
@@ -956,11 +754,11 @@ private fun JoinByIpDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Join Game by IP") },
+        title = { Text("Join by IP") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    "Enter the host's IP address to connect directly.",
+                    "Enter the host's IP address. Will try lobby join first, then direct connect.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 OutlinedTextField(
@@ -1002,50 +800,6 @@ private fun JoinByIpDialog(
     )
 }
 
-@Composable
-private fun JoinLobbyByIpDialog(
-    recentIps: List<String>,
-    onJoin: (hostAddr: String) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    var hostIp by remember { mutableStateOf(getDefaultIpPrefix()) }
-    val isValidIp = isValidIpAddress(hostIp)
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Join Lobby by IP") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    "Enter the host's IP to join their lobby directly (bypasses broadcast discovery).",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                OutlinedTextField(
-                    value = hostIp,
-                    onValueChange = { hostIp = it.trim() },
-                    label = { Text("Host IP Address") },
-                    placeholder = { Text("192.168.1.100") },
-                    singleLine = true,
-                    isError = hostIp.isNotBlank() && !isValidIp,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                RecentSuggestions(recentIps) { hostIp = it }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onJoin(hostIp) },
-                enabled = isValidIp,
-            ) {
-                Text("Join")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        },
-    )
-}
-
 // RecentIpSuggestions replaced by shared RecentSuggestions in RecentAddressPrefs.kt
 
 private val ipPattern = Regex("""^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$""")
@@ -1064,37 +818,3 @@ private fun getLocalIpAddresses(): List<String> =
     } catch (_: Exception) {
         emptyList()
     }
-
-@Composable
-private fun BoxScope.LazyListScrollArrows(listState: LazyListState) {
-    if (listState.canScrollBackward) {
-        Surface(
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = 4.dp),
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
-            shadowElevation = 2.dp,
-        ) {
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowUp,
-                contentDescription = "Scroll up",
-                modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-    if (listState.canScrollForward) {
-        Surface(
-            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp),
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
-            shadowElevation = 2.dp,
-        ) {
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowDown,
-                contentDescription = "Scroll down",
-                modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}

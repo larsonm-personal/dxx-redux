@@ -91,6 +91,11 @@ object LobbyService {
     private val _broadcastFailing = MutableStateFlow(false)
     val broadcastFailing: StateFlow<Boolean> = _broadcastFailing.asStateFlow()
 
+    private val _chatMessages =
+        MutableStateFlow<List<com.dxxredux.app.multiplayer.ChatMessage>>(emptyList())
+    val chatMessages: StateFlow<List<com.dxxredux.app.multiplayer.ChatMessage>> =
+        _chatMessages.asStateFlow()
+
     /** Clear the launch event after it has been consumed. */
     fun clearLaunchEvent() {
         _lanLaunchEvent.value = null
@@ -217,6 +222,7 @@ object LobbyService {
         announceJob = null
         hostedLobbyId = null
         _hostedLobbyPlayers.value = emptyList()
+        _chatMessages.value = emptyList()
         Log.i(TAG, "Stopped hosting LAN lobby")
     }
 
@@ -286,6 +292,34 @@ object LobbyService {
             }
     }
 
+    /**
+     * Quick lobby probe: send one QUERY and wait up to [timeoutMs] for an ANNOUNCE.
+     * If a lobby is found, auto-join it and return true. Otherwise return false.
+     * Runs on the caller's coroutine context (should be called from Dispatchers.IO).
+     */
+    suspend fun tryJoinLobbyByIp(
+        hostAddress: String,
+        callsign: String,
+        timeoutMs: Long = 1000L,
+    ): Boolean {
+        Log.i(TAG, "tryJoinLobbyByIp: probing $hostAddress (timeout=${timeoutMs}ms)")
+        val query = buildQuery()
+        sendTo(query, hostAddress)
+        // Poll for an ANNOUNCE response at 100ms intervals
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            val lobby = _discoveredLobbies.value.find { it.announce.hostAddress == hostAddress }
+            if (lobby != null) {
+                Log.i(TAG, "tryJoinLobbyByIp: found lobby ${lobby.announce.lobbyId}, joining")
+                joinLobby(lobby.announce.lobbyId, hostAddress, callsign)
+                return true
+            }
+            delay(100)
+        }
+        Log.i(TAG, "tryJoinLobbyByIp: no lobby found at $hostAddress within ${timeoutMs}ms")
+        return false
+    }
+
     /** Leave the LAN lobby we've joined (as a joiner). */
     fun leaveLanLobby(callsign: String) {
         val info = _joinedLobby.value ?: return
@@ -300,6 +334,7 @@ object LobbyService {
         }
         _joinedLobby.value = null
         _hostedLobbyPlayers.value = emptyList()
+        _chatMessages.value = emptyList()
         lastHostSeenMs = 0L
         Log.i(TAG, "Left LAN lobby ${info.lobbyId}")
     }
@@ -324,6 +359,76 @@ object LobbyService {
     ) {
         val data = buildReady(lobbyId, callsign, ready)
         scope?.launch(Dispatchers.IO) { sendTo(data, hostAddress) }
+    }
+
+    /** Send a chat message in the LAN lobby. Clients send to host, host relays to all. */
+    fun sendChat(
+        callsign: String,
+        text: String,
+    ) {
+        val trimmed = text.take(200).trim()
+        if (trimmed.isEmpty()) return
+        val lid = hostedLobbyId ?: _joinedLobby.value?.lobbyId ?: return
+        val data = buildChat(lid, callsign, trimmed)
+        if (_isHosting.value) {
+            // Host: add locally and relay to all joiners
+            appendChatMessage(
+                com.dxxredux.app.multiplayer
+                    .ChatMessage(callsign, trimmed, isMe = true),
+            )
+            broadcastToJoiners(data)
+        } else {
+            // Joiner: send to host (host will relay back)
+            val hostAddr = _joinedLobby.value?.hostAddr ?: return
+            appendChatMessage(
+                com.dxxredux.app.multiplayer
+                    .ChatMessage(callsign, trimmed, isMe = true),
+            )
+            scope?.launch(Dispatchers.IO) { sendTo(data, hostAddr) }
+        }
+    }
+
+    /** Kick a player from the hosted LAN lobby (host only). */
+    fun kickPlayer(callsign: String) {
+        if (!_isHosting.value) return
+        val lid = hostedLobbyId ?: return
+        val player = _hostedLobbyPlayers.value.find { it.callsign == callsign } ?: return
+        // Send KICK to the player
+        val data = buildKick(lid, callsign)
+        scope?.launch(Dispatchers.IO) {
+            repeat(2) { attempt ->
+                sendTo(data, player.address)
+                if (attempt < 1) delay(100)
+            }
+        }
+        // Remove from player list
+        _hostedLobbyPlayers.value = _hostedLobbyPlayers.value.filter { it.callsign != callsign }
+        broadcastPlayerList()
+        appendChatMessage(
+            com.dxxredux.app.multiplayer
+                .ChatMessage("System", "$callsign was kicked"),
+        )
+        Log.i(TAG, "Kicked player $callsign from lobby $lid")
+    }
+
+    /** Clear chat messages (called when leaving/stopping a lobby). */
+    fun clearChat() {
+        _chatMessages.value = emptyList()
+    }
+
+    private fun appendChatMessage(msg: com.dxxredux.app.multiplayer.ChatMessage) {
+        val current = _chatMessages.value
+        // Keep last 100 messages
+        _chatMessages.value = if (current.size >= 100) current.drop(1) + msg else current + msg
+    }
+
+    /** Send data to all joiners (host only, skips self). */
+    private fun broadcastToJoiners(data: ByteArray) {
+        for (p in _hostedLobbyPlayers.value) {
+            if (p.address != "127.0.0.1") {
+                sendTo(data, p.address)
+            }
+        }
     }
 
     // ------------------------------------------------------------------
@@ -441,6 +546,8 @@ object LobbyService {
             MSG_JOIN_ACK -> handleJoinAck(json, senderAddr)
             MSG_JOIN_REJECT -> handleJoinReject(json)
             MSG_QUERY -> handleQuery(senderAddr)
+            MSG_CHAT -> handleChat(json, senderAddr)
+            MSG_KICK -> handleKick(json)
             else -> Log.w(TAG, "Unknown packet type '$type' from $senderAddr")
         }
     }
@@ -834,6 +941,48 @@ object LobbyService {
         Log.i(TAG, "handleQuery: sent ANNOUNCE to $senderAddr for lobby $lid")
     }
 
+    private fun handleChat(
+        json: JSONObject,
+        senderAddr: String,
+    ) {
+        val callsign = json.optString("callsign", "")
+        val text = json.optString("text", "").take(200)
+        if (callsign.isEmpty() || text.isEmpty()) return
+
+        if (_isHosting.value) {
+            // Host received chat from a joiner -- add and relay to all joiners
+            appendChatMessage(
+                com.dxxredux.app.multiplayer
+                    .ChatMessage(callsign, text),
+            )
+            val lid = hostedLobbyId ?: return
+            val relay = buildChat(lid, callsign, text)
+            // Relay to all joiners except the sender
+            for (p in _hostedLobbyPlayers.value) {
+                if (p.address != "127.0.0.1" && p.address != senderAddr) {
+                    sendTo(relay, p.address)
+                }
+            }
+        } else {
+            // Joiner received relayed chat from host
+            appendChatMessage(
+                com.dxxredux.app.multiplayer
+                    .ChatMessage(callsign, text),
+            )
+        }
+    }
+
+    private fun handleKick(json: JSONObject) {
+        // Joiners receive KICK from host -- leave the lobby
+        val joined = _joinedLobby.value ?: return
+        _joinedLobby.value = null
+        _hostedLobbyPlayers.value = emptyList()
+        _chatMessages.value = emptyList()
+        lastHostSeenMs = 0L
+        _diagnostics.value = "Kicked from lobby by host"
+        Log.i(TAG, "Kicked from lobby ${joined.lobbyId}")
+    }
+
     private fun broadcastAnnounce() {
         val lid = hostedLobbyId ?: return
         val data =
@@ -855,12 +1004,7 @@ object LobbyService {
     private fun broadcastPlayerList() {
         val lid = hostedLobbyId ?: return
         val data = buildPlayerList(lid, _hostedLobbyPlayers.value)
-        // Send to each joiner (not ourselves)
-        for (p in _hostedLobbyPlayers.value) {
-            if (p.address != "127.0.0.1") {
-                sendTo(data, p.address)
-            }
-        }
+        broadcastToJoiners(data)
     }
 
     @Volatile private var consecutiveBroadcastFailures: Int = 0

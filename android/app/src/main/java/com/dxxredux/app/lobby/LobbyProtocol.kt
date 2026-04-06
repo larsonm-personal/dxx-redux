@@ -21,6 +21,8 @@ const val MSG_PONG = "PONG"
 const val MSG_JOIN_ACK = "JOIN_ACK"
 const val MSG_JOIN_REJECT = "JOIN_REJECT"
 const val MSG_QUERY = "QUERY" // ask a host what lobby they're running; host replies with ANNOUNCE
+const val MSG_CHAT = "CHAT" // lobby chat message (relayed through host)
+const val MSG_KICK = "KICK" // host kicks a player from the lobby
 
 /** A single player in a LAN lobby. */
 data class LanPlayer(
@@ -216,6 +218,34 @@ fun buildPong(
 fun buildQuery(): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_QUERY)
+    return json.toString().toByteArray(Charsets.UTF_8)
+}
+
+/** Build a CHAT packet (client sends to host; host relays to all). */
+fun buildChat(
+    lobbyId: String,
+    callsign: String,
+    text: String,
+): ByteArray {
+    val json = JSONObject()
+    json.put("type", MSG_CHAT)
+    json.put("lobby_id", lobbyId)
+    json.put("callsign", callsign)
+    json.put("text", text)
+    return json.toString().toByteArray(Charsets.UTF_8)
+}
+
+/** Build a KICK packet (sent by host to a player). */
+fun buildKick(
+    lobbyId: String,
+    callsign: String,
+    reason: String = "",
+): ByteArray {
+    val json = JSONObject()
+    json.put("type", MSG_KICK)
+    json.put("lobby_id", lobbyId)
+    json.put("callsign", callsign)
+    if (reason.isNotEmpty()) json.put("reason", reason)
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 

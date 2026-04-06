@@ -12,14 +12,12 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -163,7 +161,11 @@ fun LobbyScreen(onLaunchGame: (GameLaunchInfo) -> Unit) {
         Spacer(Modifier.height(8.dp))
 
         // -- Chat --
-        LobbyChatArea(state.chatMessages, modifier = Modifier.weight(0.3f))
+        ChatArea(
+            messages = state.chatMessages,
+            onSend = { MatchmakingService.sendLobbyChat(it) },
+            modifier = Modifier.weight(0.3f),
+        )
 
         Spacer(Modifier.height(8.dp))
 
@@ -340,64 +342,4 @@ private fun CoopSaveOffer(
         }
     }
     Spacer(Modifier.height(4.dp))
-}
-
-@Composable
-private fun LobbyChatArea(
-    messages: List<ChatMessage>,
-    modifier: Modifier = Modifier,
-) {
-    var text by remember { mutableStateOf("") }
-
-    Column(modifier = modifier) {
-        Text("Chat", style = MaterialTheme.typography.titleSmall)
-        val chatListState = rememberLazyListState()
-        LaunchedEffect(messages.size) {
-            if (messages.isNotEmpty()) {
-                chatListState.animateScrollToItem(messages.size - 1)
-            }
-        }
-        LazyColumn(
-            state = chatListState,
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-        ) {
-            items(messages) { msg ->
-                val prefix = if (msg.isMe) "You" else msg.fromCallsign
-                Text(
-                    "$prefix: ${msg.text}",
-                    fontSize = 12.sp,
-                    color =
-                        if (msg.isMe) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        },
-                )
-            }
-        }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
-                placeholder = { Text("Message...") },
-                singleLine = true,
-                modifier = Modifier.weight(1f),
-            )
-            Spacer(Modifier.width(4.dp))
-            Button(
-                onClick = {
-                    if (text.isNotBlank()) {
-                        MatchmakingService.sendLobbyChat(text.trim())
-                        text = ""
-                    }
-                },
-                enabled = text.isNotBlank(),
-            ) {
-                Text("Send")
-            }
-        }
-    }
 }

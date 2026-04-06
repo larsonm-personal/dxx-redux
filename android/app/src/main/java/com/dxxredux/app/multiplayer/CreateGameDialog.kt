@@ -1,0 +1,234 @@
+package com.dxxredux.app.multiplayer
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+/**
+ * Shared dialog for creating a game/lobby, used by both LAN hosting and
+ * matchmaking lobby creation. Includes all settings: game, mission, mode,
+ * difficulty, level, max players, and coop save restore.
+ */
+@Composable
+internal fun CreateGameDialog(
+    title: String = "Create Game",
+    confirmLabel: String = "Create",
+    onCreate: (game: String, mission: String?, mode: String, maxPlayers: Int, difficulty: Int, levelNum: Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val context = LocalContext.current
+    val defaults = remember { HostGameDefaults.load(context) }
+    var game by remember { mutableStateOf(defaults.game) }
+    var mission by remember { mutableStateOf(defaults.mission) }
+    var mode by remember { mutableStateOf(defaults.mode) }
+    var maxPlayersText by remember { mutableStateOf(defaults.maxPlayers.toString()) }
+    var difficulty by remember { mutableStateOf(defaults.difficulty) }
+    var levelNumText by remember { mutableStateOf(defaults.levelNum.toString()) }
+
+    // Coop auto-saves and progress
+    val coopSaves =
+        if (mode == "coop") {
+            readCoopAutosaveHistory(context.filesDir, game, mission, context)
+        } else {
+            emptyList()
+        }
+    var selectedSave by remember(coopSaves) {
+        mutableStateOf(coopSaves.firstOrNull())
+    }
+
+    val coopResumeLevel =
+        if (mode == "coop" && coopSaves.isEmpty()) {
+            readCoopProgress(context.filesDir, game, mission)
+        } else {
+            null
+        }
+
+    // When a save is selected, auto-set the level to match
+    LaunchedEffect(selectedSave) {
+        val save = selectedSave
+        if (save != null && save.level > 0) {
+            levelNumText = save.level.toString()
+        } else if (save == null && coopSaves.isNotEmpty()) {
+            val fallback = coopResumeLevel?.let { it + 1 } ?: defaults.levelNum
+            levelNumText = fallback.toString()
+        }
+    }
+
+    LaunchedEffect(coopResumeLevel) {
+        if (coopResumeLevel != null && coopResumeLevel > 0) {
+            levelNumText = (coopResumeLevel + 1).toString()
+        }
+    }
+
+    val difficultyNames = listOf("Trainee", "Rookie", "Hotshot", "Ace", "Insane")
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+            ) {
+                // Game selector
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("d1", "d2").forEach { g ->
+                        if (g == game) {
+                            Button(onClick = {}) { Text(g.uppercase()) }
+                        } else {
+                            OutlinedButton(onClick = {
+                                game = g
+                                val saved = HostGameDefaults.load(context)
+                                mission =
+                                    if (saved.game == g) {
+                                        saved.mission
+                                    } else {
+                                        HostGameDefaults.Defaults(game = g).mission
+                                    }
+                            }) { Text(g.uppercase()) }
+                        }
+                    }
+                }
+                MissionPickerField(
+                    selectedFilename = mission,
+                    game = game,
+                    onSelect = { mission = it },
+                )
+                // Mode selector
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("anarchy", "coop").forEach { m ->
+                        if (m == mode) {
+                            Button(onClick = {}) { Text(m.replaceFirstChar { it.uppercase() }) }
+                        } else {
+                            OutlinedButton(onClick = { mode = m }) {
+                                Text(m.replaceFirstChar { it.uppercase() })
+                            }
+                        }
+                    }
+                }
+                // Difficulty selector
+                Text("Difficulty", style = MaterialTheme.typography.labelMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    difficultyNames.forEachIndexed { idx, name ->
+                        if (idx == difficulty) {
+                            Button(onClick = {}, modifier = Modifier.weight(1f)) {
+                                Text(name, maxLines = 1, fontSize = 10.sp)
+                            }
+                        } else {
+                            OutlinedButton(
+                                onClick = { difficulty = idx },
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text(name, maxLines = 1, fontSize = 10.sp)
+                            }
+                        }
+                    }
+                }
+                // Level number + Max players on same row
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = levelNumText,
+                        onValueChange = { levelNumText = it.filter { c -> c.isDigit() } },
+                        label = { Text("Level") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedTextField(
+                        value = maxPlayersText,
+                        onValueChange = { maxPlayersText = it.filter { c -> c.isDigit() } },
+                        label = { Text("Max Players") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (coopSaves.isNotEmpty()) {
+                    Text("Restore from save:", style = MaterialTheme.typography.labelMedium)
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        val noSaveSelected = selectedSave == null
+                        if (noSaveSelected) {
+                            Button(
+                                onClick = { selectedSave = null },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) { Text("Start fresh (no restore)") }
+                        } else {
+                            OutlinedButton(
+                                onClick = { selectedSave = null },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) { Text("Start fresh (no restore)") }
+                        }
+                        coopSaves.forEach { save ->
+                            val label =
+                                "L${save.level} - ${save.numPlayers}p" +
+                                    " - ${save.callsigns.joinToString()}" +
+                                    " - ${formatTimeAgo(save.timestamp)}"
+                            if (selectedSave == save) {
+                                Button(
+                                    onClick = {},
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) { Text(label, fontSize = 11.sp, maxLines = 2) }
+                            } else {
+                                OutlinedButton(
+                                    onClick = { selectedSave = save },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) { Text(label, fontSize = 11.sp, maxLines = 2) }
+                            }
+                        }
+                    }
+                } else if (coopResumeLevel != null) {
+                    Text(
+                        "Last completed: Level $coopResumeLevel",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            val maxPlayers = maxPlayersText.toIntOrNull() ?: 0
+            val levelNum = levelNumText.toIntOrNull() ?: 1
+            TextButton(
+                onClick = {
+                    HostGameDefaults.save(
+                        context,
+                        HostGameDefaults.Defaults(
+                            game = game,
+                            mission = mission,
+                            mode = mode,
+                            difficulty = difficulty,
+                            levelNum = levelNum,
+                            maxPlayers = maxPlayers,
+                        ),
+                    )
+                    writeCoopRestoreSlot(context.filesDir, game, selectedSave?.slot)
+                    onCreate(game, mission, mode, maxPlayers, difficulty, levelNum)
+                },
+                enabled = mission != null && maxPlayers in 2..8 && levelNum >= 1,
+            ) {
+                Text(confirmLabel)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
+}
