@@ -150,7 +150,11 @@ function Wait-SetupCondition {
 
 function Write-Status {
     param([string]$Msg, [string]$Color = "Cyan")
-    Write-Host "[$([DateTime]::Now.ToString('HH:mm:ss'))] $Msg" -ForegroundColor $Color
+    $line = "[$([DateTime]::Now.ToString('HH:mm:ss'))] $Msg"
+    Write-Host $line -ForegroundColor $Color
+    if ($script:LogFile) {
+        $line | Add-Content -Path $script:LogFile -Encoding utf8
+    }
 }
 
 # -- Multi-device helpers (for dual-emulator tests like test_mp, test_lan) --
@@ -199,6 +203,100 @@ function Test-DeviceOnline {
     param([string]$Serial)
     $devices = & $script:ADB devices 2>&1 | Out-String
     return $devices -match "$Serial\s+device"
+}
+
+function Send-MpCommand {
+    # Send an MP_COMMAND broadcast to a specific emulator.
+    param([string]$Serial, [string]$Command, [string[]]$Extras = @())
+    $args_ = @("shell", "am", "broadcast", "-a", "com.dxxredux.MP_COMMAND",
+        "--es", "command", $Command) + $Extras
+    Adb-Dev-Timeout -Serial $Serial -AdbArgs $args_ -Seconds 10 | Out-Null
+}
+
+function Wait-ForCondition {
+    # Poll until a condition is met, with configurable timeout and interval.
+    param(
+        [string]$Description,
+        [scriptblock]$Condition,
+        [int]$TimeoutSec = 30,
+        [int]$PollMs = 1000
+    )
+    Write-Status "Waiting: $Description (timeout: ${TimeoutSec}s)"
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($sw.Elapsed.TotalSeconds -lt $TimeoutSec) {
+        $result = & $Condition
+        if ($result) {
+            Write-Status "  OK: $Description" "Green"
+            return $true
+        }
+        Start-Sleep -Milliseconds $PollMs
+    }
+    Write-Status "  TIMEOUT: $Description" "Red"
+    return $false
+}
+
+function Wait-SetupReady {
+    # Wait for SetupActivity to be ready on a specific device (multi-emulator).
+    param([string]$Serial, [int]$TimeoutSec = 30)
+    Adb-Dev -Serial $Serial -AdbArgs @(
+        "shell", "run-as", $script:PACKAGE, "rm", "-f", "files/setup_introspect.json"
+    ) | Out-Null
+    return Wait-ForCondition -Description "SetupActivity ready on $Serial" -TimeoutSec $TimeoutSec -PollMs 2000 -Condition {
+        Adb-Dev -Serial $Serial -AdbArgs @(
+            "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_INTROSPECT"
+        ) | Out-Null
+        Start-Sleep -Milliseconds 500
+        $json = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+            "shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json"
+        ) -Seconds 5
+        return ($json -and $json -match '"screen"')
+    }
+}
+
+function Start-SetupActivity {
+    # Force-stop, clear logcat, and launch SetupActivity on a specific device.
+    # Returns $true if SetupActivity becomes responsive, $false on timeout.
+    param([string]$Serial)
+    Write-Status "Force-stopping app on $Serial..."
+    Adb-Dev -Serial $Serial -AdbArgs @("shell", "am", "force-stop", $script:PACKAGE) | Out-Null
+    Start-Sleep -Seconds 2
+    Adb-Dev -Serial $Serial -AdbArgs @("logcat", "-c") | Out-Null
+    Write-Status "Launching SetupActivity on $Serial..."
+    Adb-Dev -Serial $Serial -AdbArgs @(
+        "shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)"
+    ) | Out-Null
+    return Wait-SetupReady -Serial $Serial -TimeoutSec 30
+}
+
+function Setup-EmulatorRedir {
+    # Send an emulator console redir command (e.g. "add udp:42500:42424").
+    param([int]$ConsolePort, [string]$RedirSpec)
+    $tokenPath = Join-Path $env:USERPROFILE ".emulator_console_auth_token"
+    if (-not (Test-Path $tokenPath)) {
+        Write-Status "  WARNING: No emulator auth token at $tokenPath" "Yellow"
+        return "ERROR: no auth token"
+    }
+    $token = (Get-Content $tokenPath).Trim()
+    try {
+        $c = New-Object System.Net.Sockets.TcpClient("127.0.0.1", $ConsolePort)
+        $s = $c.GetStream()
+        $b = New-Object byte[] 4096
+        Start-Sleep -Milliseconds 500
+        if ($s.DataAvailable) { $s.Read($b, 0, 4096) | Out-Null }
+        $w = [System.Text.Encoding]::ASCII.GetBytes("auth $token`r`n")
+        $s.Write($w, 0, $w.Length)
+        Start-Sleep -Milliseconds 300
+        if ($s.DataAvailable) { $s.Read($b, 0, 4096) | Out-Null }
+        $w = [System.Text.Encoding]::ASCII.GetBytes("redir $RedirSpec`r`n")
+        $s.Write($w, 0, $w.Length)
+        Start-Sleep -Milliseconds 300
+        $result = ""
+        if ($s.DataAvailable) { $n = $s.Read($b, 0, 4096); $result = [System.Text.Encoding]::ASCII.GetString($b, 0, $n) }
+        $c.Close()
+        return $result.Trim()
+    } catch {
+        return "ERROR: $($_.Exception.Message)"
+    }
 }
 
 function Install-AppAndData {
@@ -829,9 +927,21 @@ function Watch-AutomationResult {
 
 function Get-GameIntrospection {
     # Request and return parsed game introspection JSON, or $null on failure.
-    Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.INTROSPECT") | Out-Null
-    Start-Sleep -Milliseconds 800
-    $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/introspect.json") -Seconds 5
+    # If -Serial is provided, targets a specific device (multi-emulator tests).
+    param([string]$Serial)
+    if ($Serial) {
+        Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+            "shell", "am", "broadcast", "-a", "com.dxxredux.INTROSPECT"
+        ) -Seconds 10 | Out-Null
+        Start-Sleep -Milliseconds 800
+        $json = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
+            "shell", "run-as", $script:PACKAGE, "cat", "files/introspect.json"
+        ) -Seconds 5
+    } else {
+        Adb -AdbArgs @("shell", "am", "broadcast", "-a", "com.dxxredux.INTROSPECT") | Out-Null
+        Start-Sleep -Milliseconds 800
+        $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/introspect.json") -Seconds 5
+    }
     if (-not $json -or $json -notmatch '^\s*\{') { return $null }
     try { return ($json | ConvertFrom-Json) } catch { return $null }
 }

@@ -61,20 +61,6 @@ $script:LogFile = Join-Path $REPO_ROOT "temp\mp_test_log.txt"
 try { if (Test-Path $script:LogFile) { Remove-Item $script:LogFile -Force -ErrorAction SilentlyContinue } } catch { }
 "" | Set-Content -Path $script:LogFile -Encoding utf8 -ErrorAction SilentlyContinue
 
-function Write-Status {
-    param([string]$Msg, [string]$Color = "Cyan")
-    $line = "[$([DateTime]::Now.ToString('HH:mm:ss'))] $Msg"
-    Write-Host $line -ForegroundColor $Color
-    $line | Add-Content -Path $script:LogFile -Encoding utf8
-}
-
-function Send-MpCommand {
-    param([string]$Serial, [string]$Command, [string[]]$Extras = @())
-    $args_ = @("shell", "am", "broadcast", "-a", "com.dxxredux.MP_COMMAND",
-        "--es", "command", $Command) + $Extras
-    Adb-Dev-Timeout -Serial $Serial -AdbArgs $args_ -Seconds 10 | Out-Null
-}
-
 function Get-MpIntrospection {
     param([string]$Serial)
     # Request introspection, wait, read
@@ -91,78 +77,6 @@ function Get-MpIntrospection {
         }
     }
     return $null
-}
-
-function Get-GameIntrospection {
-    param([string]$Serial)
-    # Use timeout on broadcast -- Adb-Dev has no timeout and can hang when
-    # the emulator is under heavy load (3D game loop).
-    Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
-        "shell", "am", "broadcast", "-a", "com.dxxredux.INTROSPECT"
-    ) -Seconds 10 | Out-Null
-    Start-Sleep -Milliseconds 800
-    $json = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
-        "shell", "run-as", $PACKAGE, "cat", "files/introspect.json"
-    ) -Seconds 5
-    if ($json -and $json -match '"screen_mode"') {
-        try {
-            return $json | ConvertFrom-Json
-        } catch {
-            return $null
-        }
-    }
-    return $null
-}
-
-function Wait-ForCondition {
-    param(
-        [string]$Description,
-        [scriptblock]$Condition,
-        [int]$TimeoutSec = 30,
-        [int]$PollMs = 1000
-    )
-    Write-Status "Waiting: $Description (timeout: ${TimeoutSec}s)"
-    $sw = [System.Diagnostics.Stopwatch]::StartNew()
-    while ($sw.Elapsed.TotalSeconds -lt $TimeoutSec) {
-        $result = & $Condition
-        if ($result) {
-            Write-Status "  OK: $Description" "Green"
-            return $true
-        }
-        Start-Sleep -Milliseconds $PollMs
-    }
-    Write-Status "  TIMEOUT: $Description" "Red"
-    return $false
-}
-
-function Wait-SetupReady {
-    param([string]$Serial, [int]$TimeoutSec = 30)
-    Adb-Dev -Serial $Serial -AdbArgs @(
-        "shell", "run-as", $PACKAGE, "rm", "-f", "files/setup_introspect.json"
-    ) | Out-Null
-    return Wait-ForCondition -Description "SetupActivity ready on $Serial" -TimeoutSec $TimeoutSec -PollMs 2000 -Condition {
-        Adb-Dev -Serial $Serial -AdbArgs @(
-            "shell", "am", "broadcast", "-a", "com.dxxredux.SETUP_INTROSPECT"
-        ) | Out-Null
-        Start-Sleep -Milliseconds 500
-        $json = Adb-Dev-Timeout -Serial $Serial -AdbArgs @(
-            "shell", "run-as", $PACKAGE, "cat", "files/setup_introspect.json"
-        ) -Seconds 5
-        return ($json -and $json -match '"screen"')
-    }
-}
-
-function Start-SetupActivity {
-    param([string]$Serial)
-    Write-Status "Force-stopping app on $Serial..."
-    Adb-Dev -Serial $Serial -AdbArgs @("shell", "am", "force-stop", $PACKAGE) | Out-Null
-    Start-Sleep -Seconds 2
-    Adb-Dev -Serial $Serial -AdbArgs @("logcat", "-c") | Out-Null
-    Write-Status "Launching SetupActivity on $Serial..."
-    Adb-Dev -Serial $Serial -AdbArgs @(
-        "shell", "am", "start", "-n", "$PACKAGE/$ACTIVITY"
-    ) | Out-Null
-    return Wait-SetupReady -Serial $Serial -TimeoutSec 30
 }
 
 function Cleanup {

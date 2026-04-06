@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env pwsh
+#!/usr/bin/env pwsh
 # test_dual_emu.ps1 -- Interactive dual-emulator multiplayer test setup.
 #
 # Launches two emulators, installs APK + game data, starts the matchmaking
@@ -123,46 +123,16 @@ function Show-NatMenu {
 
 function Setup-DockerNat {
     param([string]$NatA, [string]$NatB)
-    $composeDir = Join-Path $REPO_ROOT "docker\nat-testbed"
-    if (-not (Test-Path (Join-Path $composeDir "docker-compose.yml"))) {
-        Write-Status "FAIL: docker/nat-testbed/docker-compose.yml not found" "Red"
-        return $false
-    }
-
-    Write-Status "Checking Docker..."
-    $dockerVer = docker version --format '{{.Server.Version}}' 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Write-Status "FAIL: Docker not running. Start Docker Desktop first" "Red"
-        return $false
-    }
-    Write-Status "Docker running (v$dockerVer)" "Green"
-
-    Write-Status "Starting NAT containers: A=$NatA, B=$NatB"
-    $env:NAT_A = $NatA
-    $env:NAT_B = $NatB
-    Push-Location $composeDir
-    docker compose down 2>&1 | Out-Null
-    docker compose up -d --build 2>&1 | ForEach-Object { Write-Status "  $_" "Gray" }
-    $rc = $LASTEXITCODE
-    Pop-Location
-    Remove-Item Env:\NAT_A -ErrorAction SilentlyContinue
-    Remove-Item Env:\NAT_B -ErrorAction SilentlyContinue
-
-    if ($rc -ne 0) {
-        Write-Status "FAIL: docker compose up failed" "Red"
-        return $false
-    }
-    Start-Sleep -Seconds 2
+    $natOk = Start-DockerNat -NatA $NatA -NatB $NatB
+    if (-not $natOk) { return $false }
 
     # Send STUN overrides to emulators
     Write-Status "Sending STUN overrides..."
-    # EMU1 -> NAT A (13478/13479)
     Send-MpCommand -Serial $EMU1_SERIAL -Command "stun_override" -Extras @(
         "--es", "addrs", "10.0.2.2:13478,10.0.2.2:13479"
     )
     Write-Status "  ${EMU1_SERIAL}: STUN -> NAT A ($NatA) on 13478/13479" "Green"
 
-    # EMU2 -> NAT B (23478/23479)
     Send-MpCommand -Serial $EMU2_SERIAL -Command "stun_override" -Extras @(
         "--es", "addrs", "10.0.2.2:23478,10.0.2.2:23479"
     )
@@ -285,7 +255,7 @@ if (-not $NoData) {
     }
 }
 
-# ── Phase E: Server + networking ────────────────────────────────────────
+# ── Phase E: Server ─────────────────────────────────────────────────────
 
 Write-Status ""
 Write-Status "--- Starting matchmaking server ---" "White"
@@ -308,9 +278,6 @@ if (-not $NoBuild -or -not (Test-Path $serverBin)) {
 
 $serverLog = Join-Path $REPO_ROOT "temp\server.log"
 $serverErr = Join-Path $REPO_ROOT "temp\server_err.log"
-# Launch server binary directly -- do NOT wrap in pwsh.  PowerShell's
-# internal pipe handling deadlocks when the native process's stderr
-# output fills the internal buffer.
 $serverEnvVars = @{
     SKIP_GPGS_VERIFY  = "true"
     RUST_LOG          = "info"

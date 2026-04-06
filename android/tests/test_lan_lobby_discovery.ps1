@@ -35,20 +35,6 @@ $script:LogFile = Join-Path $REPO_ROOT "temp\lan_discovery_test_log.txt"
 try { if (Test-Path $script:LogFile) { Remove-Item $script:LogFile -Force -ErrorAction SilentlyContinue } } catch { }
 "" | Set-Content -Path $script:LogFile -Encoding utf8 -ErrorAction SilentlyContinue
 
-function Write-Status {
-    param([string]$Msg, [string]$Color = "Cyan")
-    $line = "[$([DateTime]::Now.ToString('HH:mm:ss'))] $Msg"
-    Write-Host $line -ForegroundColor $Color
-    $line | Add-Content -Path $script:LogFile -Encoding utf8
-}
-
-function Send-MpCommand {
-    param([string]$Serial, [string]$Command, [string[]]$Extras = @())
-    $args_ = @("shell", "am", "broadcast", "-a", "com.dxxredux.MP_COMMAND",
-        "--es", "command", $Command) + $Extras
-    Adb-Dev-Timeout -Serial $Serial -AdbArgs $args_ -Seconds 10 | Out-Null
-}
-
 try {
     Write-Status "=== LAN Lobby Discovery Test ===" "White"
 

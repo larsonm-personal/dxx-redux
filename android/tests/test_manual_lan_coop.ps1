@@ -1,10 +1,10 @@
 #!/usr/bin/env pwsh
 # test_manual_lan_coop.ps1 -- Launch two emulators for by-hand LAN coop testing
-# via direct UDP relay (no matchmaking server).
+# (no matchmaking server).
 #
-# A UDP relay bridges the two emulators' isolated networks so they can
-# communicate. EMU1 hosts a game normally. EMU2 joins via manual IP entry
-# in the Join Game menu: address 10.0.2.2, port 42600.
+# Uses emulator 36.5+ shared Wi-Fi for direct LAN connectivity.
+# EMU1 hosts a game normally. EMU2 joins via LAN scan or manual IP entry
+# in the Join Game menu using the host's wlan0 IP.
 #
 # Usage:
 #   .\test_manual_lan_coop.ps1
