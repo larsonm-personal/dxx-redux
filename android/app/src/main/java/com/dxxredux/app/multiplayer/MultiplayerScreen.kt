@@ -442,7 +442,7 @@ private fun LobbyCodeDialog(
 }
 
 /** A single entry from coop_autosave_history.json, filtered to match the lobby's mission. */
-private data class CoopSaveEntry(
+internal data class CoopSaveEntry(
     val slot: Int,
     val level: Int,
     val timestamp: Long,
@@ -451,7 +451,7 @@ private data class CoopSaveEntry(
 )
 
 /** Format a unix timestamp as a relative time string like "5 min ago". */
-private fun formatTimeAgo(timestampSec: Long): String {
+internal fun formatTimeAgo(timestampSec: Long): String {
     val now = System.currentTimeMillis() / 1000
     val delta = now - timestampSec
     return when {
@@ -467,7 +467,7 @@ private fun formatTimeAgo(timestampSec: Long): String {
  * where the current player's client_id is among the save's participants.
  * Returns newest first (sorted by timestamp descending).
  */
-private fun readCoopAutosaveHistory(
+internal fun readCoopAutosaveHistory(
     filesDir: File,
     game: String,
     mission: String?,
@@ -519,7 +519,7 @@ private fun readCoopAutosaveHistory(
 }
 
 /** Write the selected restore slot for the C engine to pick up on launch. */
-private fun writeCoopRestoreSlot(
+internal fun writeCoopRestoreSlot(
     filesDir: File,
     game: String,
     slot: Int?,
@@ -592,6 +592,19 @@ private fun CreateLobbyDialog(
         } else {
             null
         }
+
+    // When a save is selected, auto-set the level to match;
+    // when deselected ("Start fresh"), restore the default level
+    LaunchedEffect(selectedSave) {
+        val save = selectedSave
+        if (save != null && save.level > 0) {
+            levelNumText = save.level.toString()
+        } else if (save == null && coopSaves.isNotEmpty()) {
+            // Deselected save -- fall back to progress or default
+            val fallback = coopResumeLevel?.let { it + 1 } ?: defaults.levelNum
+            levelNumText = fallback.toString()
+        }
+    }
 
     // Auto-populate level from progress on first load (only for level-only resume)
     LaunchedEffect(coopResumeLevel) {
@@ -746,6 +759,7 @@ private fun CreateLobbyDialog(
                     val gameInfo =
                         JsonObject(
                             mapOf(
+                                "game" to JsonPrimitive(game),
                                 "mission" to JsonPrimitive(mission ?: ""),
                                 "mode" to JsonPrimitive(mode),
                                 "difficulty" to JsonPrimitive(difficulty),

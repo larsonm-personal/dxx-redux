@@ -385,9 +385,11 @@ Enhanced end-of-level screen showing per-player robot kill contributions.
 - [x] Kotlin lobby: read autosave info, show "Will restore save from Level X" hint
 - [x] Auto-restore framework: `coop_arm_auto_restore()` / `coop_try_auto_restore()` / `coop_disarm_auto_restore()`
 - [x] Hook auto-restore in `multi_do_frame()` and `multi_new_game()` (d1+d2)
-- [ ] New `MULTI_COOP_SAVE_INFO` packet for lobby phase (deferred)
-- [ ] Host-side logic: scan saves, match player sets, pick newest (deferred)
-- [ ] On accept: host triggers `MULTI_RESTORE_GAME` with callsign remapping (deferred)
+- [x] ~~MULTI_COOP_SAVE_INFO packet~~ -- not needed; host matches locally from coop_autosave_history.json
+- [x] Host-side logic: scan saves, match player sets by callsign, auto-select best match in LobbyScreen
+- [x] On accept: host triggers MULTI_RESTORE_GAME with callsign remapping (already works via coop_restore_slot.txt -> coop_arm_auto_restore)
+- [x] Added `game` field to lobby gameInfo so LobbyScreen knows d1/d2
+- [x] CoopSaveOffer composable in LobbyScreen (auto-selects best match, host can toggle restore/fresh)
 - [x] Duplicate in d1
 - [x] Test: coop multiplayer test passes (ALL CHECKS PASSED)
 - [ ] Test: full flow -- play 2 levels, disconnect, reconnect, verify resume suggestion
@@ -416,7 +418,17 @@ Enhanced end-of-level screen showing per-player robot kill contributions.
 - [x] Build passes, lint passes
 - [ ] Test: finish a coop level, verify breakdown display
 
-### Phase 7: 3D Player Locator HUD + Follow Line (future)
+### Phase 7: Multi-Slot Autosave + Lobby Resume (completed)
+- [x] Rotating autosave slots 5-9 (`coop_autosave_next_slot` counter)
+- [x] `coop_autosave_history.json` with slot/mission/level/timestamp/callsigns/client_ids
+- [x] Kotlin lobby save picker in `CreateLobbyDialog` (filtered by mission + client_id)
+- [x] `coop_restore_slot.txt` mechanism: Kotlin writes slot, C reads and deletes
+- [x] Removed C engine fallback slot scanning -- lobby is sole driver of restore
+- [x] Auto-set level field in lobby when save selected/deselected
+- [x] Fix: shield/energy overlay always showing full -- JNI had `* 100 / F1_0` instead of `/ F1_0`
+- [x] Build passes, lint passes (both d1 and d2)
+
+### Phase 8: 3D Player Locator HUD + Follow Line (future)
 - [ ] 3D arrow/icon rendering in gamerend.c
 - [ ] Off-screen edge indicator
 - [ ] "Follow me" path line using AI pathfinding

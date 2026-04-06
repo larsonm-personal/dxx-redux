@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.serialization.json.intOrNull
@@ -137,6 +138,10 @@ fun LobbyScreen(onLaunchGame: (GameLaunchInfo) -> Unit) {
 
         if (lobby.isHost) {
             Spacer(Modifier.height(8.dp))
+            if (mode == "coop") {
+                val game = gi["game"]?.jsonPrimitive?.content ?: "d2"
+                CoopSaveOffer(game = game, mission = mission, lobby = lobby)
+            }
             val allReady = lobby.players.all { it.ready }
             val enoughPlayers = lobby.players.size >= 2
             Button(
@@ -246,6 +251,95 @@ private fun PlayerCard(
             }
         }
     }
+}
+
+/**
+ * Auto-offer matching coop saves to the host based on lobby player callsigns.
+ * Matches saves from coop_autosave_history.json where the most current lobby
+ * players appear in the save's callsign list. Auto-selects the best match;
+ * the host can dismiss to "start fresh".
+ */
+@Composable
+private fun CoopSaveOffer(
+    game: String,
+    mission: String,
+    lobby: CurrentLobbyState,
+) {
+    val context = LocalContext.current
+    val filesDir = context.filesDir
+
+    val saves =
+        remember(game, mission) {
+            readCoopAutosaveHistory(filesDir, game, mission, context)
+        }
+    if (saves.isEmpty()) return
+
+    val lobbyCallsigns =
+        remember(lobby.players) {
+            lobby.players.map { it.callsign.lowercase() }.toSet()
+        }
+
+    // Score each save: prefer more matching callsigns, then newest
+    val bestMatch =
+        remember(saves, lobbyCallsigns) {
+            saves
+                .mapNotNull { save ->
+                    val matchCount =
+                        save.callsigns.count {
+                            it.lowercase() in lobbyCallsigns
+                        }
+                    if (matchCount > 0) Triple(save, matchCount, save.timestamp) else null
+                }.sortedWith(
+                    compareByDescending<Triple<CoopSaveEntry, Int, Long>> {
+                        it.second
+                    }.thenByDescending { it.third },
+                ).firstOrNull()
+                ?.first
+        } ?: return
+
+    var useRestore by remember { mutableStateOf(true) }
+
+    // When the best match changes (players join/leave), re-select it
+    LaunchedEffect(bestMatch) { useRestore = true }
+
+    // Write/delete coop_restore_slot.txt based on current selection
+    LaunchedEffect(useRestore, bestMatch) {
+        writeCoopRestoreSlot(filesDir, game, if (useRestore) bestMatch.slot else null)
+    }
+
+    val label =
+        "L${bestMatch.level} - ${bestMatch.numPlayers}p" +
+            " - ${bestMatch.callsigns.joinToString()}" +
+            " - ${formatTimeAgo(bestMatch.timestamp)}"
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text("Save found: $label", style = MaterialTheme.typography.bodySmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (useRestore) {
+                    Button(onClick = {}, modifier = Modifier.weight(1f)) {
+                        Text("Restore", fontSize = 12.sp)
+                    }
+                    OutlinedButton(
+                        onClick = { useRestore = false },
+                        modifier = Modifier.weight(1f),
+                    ) { Text("Start fresh", fontSize = 12.sp) }
+                } else {
+                    OutlinedButton(
+                        onClick = { useRestore = true },
+                        modifier = Modifier.weight(1f),
+                    ) { Text("Restore", fontSize = 12.sp) }
+                    Button(onClick = {}, modifier = Modifier.weight(1f)) {
+                        Text("Start fresh", fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+    }
+    Spacer(Modifier.height(4.dp))
 }
 
 @Composable

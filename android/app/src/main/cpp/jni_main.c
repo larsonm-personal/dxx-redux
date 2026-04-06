@@ -705,9 +705,9 @@ Java_com_dxxredux_app_MainActivity_nativeGetTeammateStatus(JNIEnv *env, jobject 
 	for (i = 0; i < MAX_PLAYERS; i++) {
 		int base = 3 + i * TS_FIELDS;
 		buf[base] = (jint) Players[i].connected;
-		/* Convert fix shields/energy to percentage: F1_0 = 100% */
-		buf[base + 1] = (jint) (Players[i].shields * 100 / F1_0);
-		buf[base + 2] = (jint) (Players[i].energy * 100 / F1_0);
+		/* Convert fix shields/energy to integer value (0-200 range) */
+		buf[base + 1] = (jint) (Players[i].shields / F1_0);
+		buf[base + 2] = (jint) (Players[i].energy / F1_0);
 		buf[base + 3] = (jint) Players[i].secondary_weapon;
 		buf[base + 4] = (jint) Players[i].secondary_ammo[Players[i].secondary_weapon];
 	}

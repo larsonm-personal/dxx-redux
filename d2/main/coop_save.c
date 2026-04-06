@@ -518,7 +518,7 @@ void coop_arm_auto_restore(void)
 {
 	char filename[PATH_MAX];
 	uint gid;
-	int slot, i;
+	int slot;
 
 	coop_auto_restore_armed = 0;
 	coop_auto_restore_game_id = 0;
@@ -534,42 +534,27 @@ void coop_arm_auto_restore(void)
 	if (!multi_i_am_master())
 		return;
 
-	/* Check for a user-selected slot from the lobby UI */
+	/* Only restore if the lobby explicitly selected a save slot */
 	slot = coop_read_restore_slot_file();
-	if (slot >= 0) {
-		snprintf(filename, PATH_MAX,
-			GameArg.SysUsePlayersDir ? "Players/%s.mg%d" : "%s.mg%d",
-			Players[Player_num].callsign, slot);
-		gid = state_get_game_id(filename);
-		if (gid) {
-			coop_auto_restore_slot = slot;
-			coop_auto_restore_game_id = gid;
-			coop_auto_restore_armed = 1;
-			con_printf(CON_NORMAL, "coop_save: auto-restore armed from selected slot %d (game_id=%u)\n",
-				slot, gid);
-			return;
-		}
-		con_printf(CON_NORMAL, "coop_save: selected slot %d not viable, scanning others\n", slot);
+	if (slot < 0) {
+		con_printf(CON_NORMAL, "coop_save: no restore slot selected from lobby\n");
+		return;
 	}
 
-	/* Fallback: scan all autosave slots for any viable save */
-	for (i = COOP_AUTOSAVE_SLOT_COUNT - 1; i >= 0; i--) {
-		slot = COOP_AUTOSAVE_SLOT_FIRST + i;
-		snprintf(filename, PATH_MAX,
-			GameArg.SysUsePlayersDir ? "Players/%s.mg%d" : "%s.mg%d",
-			Players[Player_num].callsign, slot);
-		gid = state_get_game_id(filename);
-		if (gid) {
-			coop_auto_restore_slot = slot;
-			coop_auto_restore_game_id = gid;
-			coop_auto_restore_armed = 1;
-			con_printf(CON_NORMAL, "coop_save: auto-restore armed from slot %d (game_id=%u)\n",
-				slot, gid);
-			return;
-		}
+	snprintf(filename, PATH_MAX,
+		GameArg.SysUsePlayersDir ? "Players/%s.mg%d" : "%s.mg%d",
+		Players[Player_num].callsign, slot);
+	gid = state_get_game_id(filename);
+	if (!gid) {
+		con_printf(CON_NORMAL, "coop_save: selected slot %d not viable\n", slot);
+		return;
 	}
 
-	con_printf(CON_NORMAL, "coop_save: no viable auto-save for restore\n");
+	coop_auto_restore_slot = slot;
+	coop_auto_restore_game_id = gid;
+	coop_auto_restore_armed = 1;
+	con_printf(CON_NORMAL, "coop_save: auto-restore armed from lobby-selected slot %d (game_id=%u)\n",
+		slot, gid);
 }
 
 void coop_try_auto_restore(void)
