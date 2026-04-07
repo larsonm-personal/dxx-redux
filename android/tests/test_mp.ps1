@@ -80,6 +80,14 @@ function Get-MpIntrospection {
 
 function Cleanup {
     Write-Status "Cleaning up..."
+    # Force-stop the app on both emulators BEFORE killing the server.
+    # Otherwise the relay dies first, the game detects a timeout ~15s later,
+    # and shows "Host left the game!" dialogs.
+    foreach ($emu in @($EMU1, $EMU2)) {
+        try {
+            & $ADB -s $emu shell am force-stop $PACKAGE 2>&1 | Out-Null
+        } catch {}
+    }
     if ($script:serverProcess -and -not $script:serverProcess.HasExited) {
         Write-Status "Stopping matchmaking server (PID $($script:serverProcess.Id))..."
         try { $script:serverProcess.Kill() } catch {}
@@ -784,6 +792,20 @@ try {
         }
         if (-not $sustainFailed) {
             Write-Status "  Connection sustained for 90s" "Green"
+
+            # Final assertion: verify no disconnect dialog appeared in the last moments
+            foreach ($entry in @(@{Tag = "EMU1"; Serial = $EMU1; Num = 1 }, @{Tag = "EMU2"; Serial = $EMU2; Num = 2 })) {
+                $sg = Get-GameIntrospection -Serial $entry.Serial
+                if ($sg -and $sg.in_game -and -not $sg.game_window_is_front) {
+                    $menuSub = ""
+                    if ($sg.PSObject.Properties['menu'] -and $sg.menu -and
+                        $sg.menu.PSObject.Properties['subtitle'] -and $sg.menu.subtitle) {
+                        $menuSub = $sg.menu.subtitle
+                    }
+                    $failures += "Player $($entry.Num) has disconnect modal at end (menu='$menuSub')"
+                    Write-Status "  $($entry.Tag): DISCONNECT MODAL at end: '$menuSub'" "Red"
+                }
+            }
         }
     }
 
@@ -808,7 +830,9 @@ try {
     }
 
 } finally {
-    Cleanup
+    if (-not $testPassed) {
+        Cleanup
+    }
     if ($testPassed) {
         exit 0
     } else {

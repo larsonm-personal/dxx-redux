@@ -339,7 +339,7 @@ try {
     }
 
 } finally {
-    Cleanup
+    if (-not $testPassed) { Cleanup }
 }
 
 exit $(if ($testPassed) { 0 } else { 1 })

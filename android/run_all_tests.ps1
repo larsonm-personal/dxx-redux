@@ -574,12 +574,8 @@ if ($script:startedDocker) {
     Stop-DockerNat
 }
 
-if ($script:autoServerProc -and -not $script:autoServerProc.HasExited) {
-    Write-Host "Stopping matchmaking server (PID $($script:autoServerProc.Id))..." -ForegroundColor Yellow
-    try { $script:autoServerProc.Kill(); $script:autoServerProc.WaitForExit(5000) } catch {}
-}
-
-# Note: we do NOT stop emulators we started -- they're useful for the next run
-# and stopping them is slow. The user can stop them manually if desired.
+# Note: we do NOT stop emulators or matchmaking servers -- they're useful for
+# by-hand testing after the run. Each MP test kills/restarts the server as
+# needed in its own Phase 1.
 
 if ($failCount -gt 0) { exit 1 } else { exit 0 }

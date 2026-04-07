@@ -112,10 +112,6 @@ try {
         }
     }
 
-    # Cleanup
-    Send-MpCommand -Serial $EMU1 -Command "lan_stop_lobby"
-    Send-MpCommand -Serial $EMU2 -Command "lan_stop_lobby"
-
     if ($found) {
         Write-Status ""
         Write-Status "=== LAN LOBBY DISCOVERY TEST PASSED ===" "Green"
@@ -132,7 +128,9 @@ try {
         exit 1
     }
 } finally {
-    # Ensure lobby services are stopped
-    try { & $ADB -s $EMU1 shell "am broadcast -a com.dxxredux.MP_COMMAND --es command lan_stop_lobby" 2>&1 | Out-Null } catch {}
-    try { & $ADB -s $EMU2 shell "am broadcast -a com.dxxredux.MP_COMMAND --es command lan_stop_lobby" 2>&1 | Out-Null } catch {}
+    if (-not $found) {
+        # Stop lobby services on failure only; on success leave them running for by-hand testing
+        try { & $ADB -s $EMU1 shell "am broadcast -a com.dxxredux.MP_COMMAND --es command lan_stop_lobby" 2>&1 | Out-Null } catch {}
+        try { & $ADB -s $EMU2 shell "am broadcast -a com.dxxredux.MP_COMMAND --es command lan_stop_lobby" 2>&1 | Out-Null } catch {}
+    }
 }
