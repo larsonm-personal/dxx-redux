@@ -28,6 +28,9 @@ class CoopStatsOverlay(
     /** Provider that calls nativeGetTeammateStatus(). */
     var teammateStatusProvider: (() -> IntArray?)? = null
 
+    /** Provider that calls nativeGetEscortOwnerPlayer(). */
+    var escortOwnerProvider: (() -> Int)? = null
+
     private val handler = Handler(Looper.getMainLooper())
     private var polling = false
 
@@ -47,6 +50,9 @@ class CoopStatsOverlay(
     private var energyPct = IntArray(MAX_PLAYERS)
     private var secondaryWeapon = IntArray(MAX_PLAYERS)
     private var secondaryAmmo = IntArray(MAX_PLAYERS)
+
+    // Escort (Guide-Bot) owner from last poll (-1 = none)
+    private var escortOwnerPlayer = -1
 
     private val pollRunnable =
         object : Runnable {
@@ -80,6 +86,12 @@ class CoopStatsOverlay(
                     }
                 } catch (_: Exception) {
                     // JNI not ready yet
+                }
+                // Poll escort owner
+                try {
+                    escortOwnerPlayer = escortOwnerProvider?.invoke() ?: -1
+                } catch (_: Exception) {
+                    escortOwnerPlayer = -1
                 }
                 // Auto-hide if not in coop
                 if (gameMode and GM_MULTI_COOP == 0) {
@@ -199,8 +211,9 @@ class CoopStatsOverlay(
         }
         if (activePlayers < 1) activePlayers = 1
 
-        // Lines: title + kill count + per-player (2 lines each: score + bars)
-        val numLines = 2 + activePlayers * 2
+        // Lines: title + kill count + per-player (2 lines each: score + bars) + escort owner
+        val hasEscort = escortOwnerPlayer >= 0
+        val numLines = 2 + activePlayers * 2 + if (hasEscort) 1 else 0
         val panelH = pad * 2 + lineH * numLines
         val panelW = baseTextSize * 16f
 
@@ -265,6 +278,13 @@ class CoopStatsOverlay(
             val secPaint = if (secondaryAmmo[i] > 0) goodPaint else badPaint
             canvas.drawText(secStr, enLeft, y - barH - 2f * density, secPaint)
 
+            y += lineH
+        }
+
+        // Escort (Guide-Bot) owner line
+        if (hasEscort) {
+            val ownerLabel = if (escortOwnerPlayer == localPlayerNum) "You" else "P$escortOwnerPlayer"
+            canvas.drawText("Guide-Bot: $ownerLabel", panelLeft + pad, y, labelPaint)
             y += lineH
         }
     }

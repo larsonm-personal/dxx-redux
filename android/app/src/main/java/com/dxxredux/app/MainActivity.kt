@@ -239,6 +239,11 @@ class MainActivity :
 
     external fun nativeCoopWarpCycleTarget()
 
+    // android port: coop guidebot multiplayer support
+    external fun nativeGetEscortOwnerPlayer(): Int
+
+    external fun nativeIsEscortOwner(): Boolean
+
     external fun nativeSetAutoJoin(
         hostAddr: String,
         hostPort: Int,
@@ -506,6 +511,13 @@ class MainActivity :
             nativeKeyEvent(action, keyCode, unicode)
         }
         touchOverlay.gameVariant = game
+        touchOverlay.isEscortOwnerProvider = {
+            try {
+                nativeIsEscortOwner()
+            } catch (_: Exception) {
+                true // default to showing Guide controls
+            }
+        }
         touchOverlay.cheatCodeCallback = { code ->
             for (ch in code) nativeTextInput(ch.code)
         }
@@ -813,6 +825,13 @@ class MainActivity :
                         nativeGetTeammateStatus()
                     } catch (_: Exception) {
                         null
+                    }
+                }
+                escortOwnerProvider = {
+                    try {
+                        nativeGetEscortOwnerPlayer()
+                    } catch (_: Exception) {
+                        -1
                     }
                 }
             }

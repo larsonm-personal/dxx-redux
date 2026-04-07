@@ -1633,7 +1633,11 @@ async fn handle_authenticated_message(
                                         | crate::lobby::ConnectionType::Relay
                                 )
                             };
-                            let conn_type = if conn_type == crate::lobby::ConnectionType::DirectLan
+                            let conn_type = if state.config.force_relay
+                                && !relay_addr.is_empty()
+                            {
+                                crate::lobby::ConnectionType::Relay
+                            } else if conn_type == crate::lobby::ConnectionType::DirectLan
                                 && !relay_addr.is_empty()
                                 && !confirmed_direct(&lobby.players[i].connection_type)
                                 && !confirmed_direct(&lobby.players[j].connection_type)
@@ -1715,6 +1719,15 @@ async fn handle_authenticated_message(
                                 &lobby.players[my_slot],
                                 &lobby.players[other_slot],
                             );
+
+                            // Force relay when configured (e.g. emulator testing)
+                            let conn_type = if state.config.force_relay
+                                && !relay_addr.is_empty()
+                            {
+                                crate::lobby::ConnectionType::Relay
+                            } else {
+                                conn_type
+                            };
 
                             // Downgrade unconfirmed DirectLan to Relay when relay
                             // is available. "Same public IP" is a heuristic that

@@ -83,6 +83,8 @@ foreach ($gameId in $gameList) {
 
     $scriptParams = Get-ScriptParams -ScriptPath $scriptPath
     $resolvedParams = @{} + $Params
+    $isInteractive = [Environment]::UserInteractive -and
+    -not ([Environment]::GetCommandLineArgs() -match '-NonInteractive')
     if ($scriptParams) {
         foreach ($prop in $scriptParams.PSObject.Properties) {
             $pName = $prop.Name
@@ -90,17 +92,22 @@ foreach ($gameId in $gameList) {
                 $pDef = $prop.Value
                 $optKeys = @($pDef.options.PSObject.Properties.Name)
                 $label = if ($pDef.label) { $pDef.label } else { $pName }
-                Write-Host ""
-                Write-Host "$label -- select a value:" -ForegroundColor White
-                for ($pi = 0; $pi -lt $optKeys.Count; $pi++) {
-                    Write-Host "  $($pi + 1)) $($optKeys[$pi])"
-                }
-                $pc = Read-Host "Select (1-$($optKeys.Count))"
-                $pci = 0
-                if ([int]::TryParse($pc, [ref]$pci) -and $pci -ge 1 -and $pci -le $optKeys.Count) {
-                    $resolvedParams[$pName] = $optKeys[$pci - 1]
+                if ($isInteractive) {
+                    Write-Host ""
+                    Write-Host "$label -- select a value:" -ForegroundColor White
+                    for ($pi = 0; $pi -lt $optKeys.Count; $pi++) {
+                        Write-Host "  $($pi + 1)) $($optKeys[$pi])"
+                    }
+                    $pc = Read-Host "Select (1-$($optKeys.Count))"
+                    $pci = 0
+                    if ([int]::TryParse($pc, [ref]$pci) -and $pci -ge 1 -and $pci -le $optKeys.Count) {
+                        $resolvedParams[$pName] = $optKeys[$pci - 1]
+                    } else {
+                        Write-Status "Invalid selection, defaulting to $($optKeys[0])" "Yellow"
+                        $resolvedParams[$pName] = $optKeys[0]
+                    }
                 } else {
-                    Write-Status "Invalid selection, defaulting to $($optKeys[0])" "Yellow"
+                    Write-Status "Non-interactive: defaulting $label to $($optKeys[0])" "Yellow"
                     $resolvedParams[$pName] = $optKeys[0]
                 }
             }
@@ -141,6 +148,10 @@ foreach ($gameId in $gameList) {
     if ($deps) {
         Write-Status "Resolving $($deps.Count) declared game data deps..."
         if (-not (Resolve-GameDataDeps -Deps $deps)) {
+            if (-not $isInteractive) {
+                Write-Status "SKIP: deps unavailable in non-interactive mode" "Yellow"
+                exit 0
+            }
             $allPassed = $false
             if ($gameList.Count -gt 1) { Write-Status "FAIL for $($gameId.ToUpper())" "Red"; continue }
             exit 1

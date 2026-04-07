@@ -45,6 +45,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "physics.h" 
 #include "byteswap.h"
 #include "wall.h"
+#include "escort.h"
 
 
 
@@ -105,6 +106,12 @@ multi_can_move_robot(int objnum, int agitation)
 #endif
 
 	else if ((Robot_info[Objects[objnum].id].boss_flag) && (Boss_dying == 1))
+		return 0;
+
+	// android port: companion ownership is locked to the escort owner in coop
+	else if (Robot_info[Objects[objnum].id].companion &&
+	         Objects[objnum].ctype.ai_info.REMOTE_OWNER != -1 &&
+	         Objects[objnum].ctype.ai_info.REMOTE_OWNER != Player_num)
 		return 0;
 
 	else if (Objects[objnum].ctype.ai_info.REMOTE_OWNER == Player_num) // Already my robot!
@@ -647,6 +654,9 @@ multi_do_claim_robot(const ubyte *buf)
 	
 	if (Objects[botnum].ctype.ai_info.REMOTE_OWNER != -1)
 	{
+		// android port: companion ownership is permanent in coop
+		if (Robot_info[Objects[botnum].id].companion)
+			return;
 		if (MULTI_ROBOT_PRIORITY(remote_botnum, pnum) <= MULTI_ROBOT_PRIORITY(remote_botnum, Objects[botnum].ctype.ai_info.REMOTE_OWNER))
 			return;
 	}

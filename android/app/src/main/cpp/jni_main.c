@@ -923,3 +923,44 @@ Java_com_dxxredux_app_MainActivity_nativeCoopWarpCycleTarget(JNIEnv *env, jobjec
 {
 	coop_warp_cycle_target();
 }
+
+/* -- Escort (Guide-Bot) owner status for coop overlay --
+ * Returns the escort owner player index, or -1 if no guidebot / not yet freed.
+ *
+ * android port: coop guidebot multiplayer support
+ */
+#ifdef DXX_BUILD_DESCENT_II
+#include "escort.h"
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetEscortOwnerPlayer(JNIEnv *env, jobject thiz)
+{
+	extern int Game_mode;
+	extern int Player_num;
+	if (!(Game_mode & GM_MULTI_COOP))
+		return (jint) -1;
+	return (jint) Escort_owner_player;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeIsEscortOwner(JNIEnv *env, jobject thiz)
+{
+	extern int Game_mode;
+	extern int Player_num;
+	if (!(Game_mode & GM_MULTI_COOP))
+		return JNI_FALSE;
+	return (Escort_owner_player == Player_num) ? JNI_TRUE : JNI_FALSE;
+}
+#else
+/* D1 has no Guide-Bot */
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetEscortOwnerPlayer(JNIEnv *env, jobject thiz)
+{
+	return (jint) -1;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeIsEscortOwner(JNIEnv *env, jobject thiz)
+{
+	return JNI_FALSE;
+}
+#endif

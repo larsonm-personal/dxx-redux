@@ -71,6 +71,9 @@ class TouchOverlayView
         /** "d1" or "d2" — determines which cheat list to show. Set by MainActivity. */
         var gameVariant: String = "d2"
 
+        /** Returns true if local player owns the Guide-Bot in coop. Set by MainActivity. */
+        var isEscortOwnerProvider: (() -> Boolean)? = null
+
         /** Returns current weapon state for weapon wheels. Set by MainActivity. */
         var weaponStateProvider: (() -> WeaponState?)? = null
 
@@ -700,7 +703,11 @@ class TouchOverlayView
             // Poll weapon state to update quiescent labels
             val ws = weaponStateProvider?.invoke()
             for (rm in radialStates) {
-                if (rm.control.id == "Guide" && gameVariant == "d1") continue
+                if (rm.control.id == "Guide" &&
+                    (gameVariant == "d1" || isEscortOwnerProvider?.invoke() == false)
+                ) {
+                    continue
+                }
                 if (!rm.isOpen && ws != null && (rm.control.id == "PriWpn" || rm.control.id == "SecWpn")) {
                     val isPrimary = rm.control.id == "PriWpn"
                     val curIdx = if (isPrimary) ws.currentPrimary else ws.currentSecondary
@@ -1482,8 +1489,12 @@ class TouchOverlayView
                     if (!handled) {
                         for (rm in radialStates) {
                             if (rm.pointerId >= 0) continue
-                            // D1 has no Guide-Bot — skip the guidebot wheel entirely
-                            if (rm.control.id == "Guide" && gameVariant == "d1") continue
+                            // D1 has no Guide-Bot; in coop, only owner sees it
+                            if (rm.control.id == "Guide" &&
+                                (gameVariant == "d1" || isEscortOwnerProvider?.invoke() == false)
+                            ) {
+                                continue
+                            }
                             if (hypot(px - rm.triggerX, py - rm.triggerY) <= rm.triggerRadius * 1.3f) {
                                 rm.pointerId = pid
                                 rm.isOpen = true

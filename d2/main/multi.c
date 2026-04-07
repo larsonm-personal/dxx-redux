@@ -70,6 +70,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #include "automap.h"
 #include "robot.h"
+#include "escort.h"
 #ifdef USE_UDP
 #include "net_udp.h"
 #endif
@@ -1012,6 +1013,10 @@ multi_make_player_ghost(int playernum)
 
 	if (Game_mode & GM_MULTI_ROBOTS)
 		multi_strip_robots(playernum);
+
+	// android port: transfer guidebot ownership if the departing player owned it
+	if (Game_mode & GM_MULTI_COOP)
+		escort_transfer_ownership_on_disconnect(playernum);
 }
 
 void
@@ -7188,6 +7193,8 @@ multi_process_data(const ubyte *buf, int len)
 		case MULTI_COOP_PEER_STATUS:
 			coop_do_peer_status(buf); break;
 #endif
+		case MULTI_ESCORT_OWNER:
+			if (!Endlevel_sequence) multi_do_escort_owner(buf); break;
 		default:
 			Int3();
 	}

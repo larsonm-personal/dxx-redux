@@ -172,8 +172,6 @@ class SetupActivity : ComponentActivity() {
 
         // Collect text-bearing nodes and clickable nodes separately,
         // then match by spatial containment (text bounds inside clickable bounds).
-        // This avoids needing to traverse the accessibility tree's parent-child
-        // relationships, which can't be done without an AccessibilityService.
         data class TextNode(
             val text: String,
             val bounds: Rect,
@@ -187,18 +185,24 @@ class SetupActivity : ComponentActivity() {
         val textNodes = mutableListOf<TextNode>()
         val clickableNodes = mutableListOf<ClickableNode>()
 
-        // Compose assigns integer IDs to semantics nodes. IDs may have gaps
-        // (recomposition, layout changes) so we scan a large fixed range.
-        var maxId = -2
-        for (id in -1..16383) {
+        // Use the Compose semantics tree to find the ID range, then do a
+        // sequential scan from 0 to max+500. This catches everything
+        // including LazyColumn items and their child text nodes, while
+        // being much faster than the full 0..16383 scan.
+        val semanticsIds = collectSemanticsNodeIds(composeView)
+        val maxScanId =
+            if (semanticsIds.isNotEmpty()) {
+                semanticsIds.max() + 500
+            } else {
+                16383
+            }
+        for (id in -1..maxScanId) {
             val info = provider.createAccessibilityNodeInfo(id) ?: continue
-            maxId = id
             val bounds = Rect()
             info.getBoundsInScreen(bounds)
             if (bounds.width() > 0 && bounds.height() > 0) {
-                val text = info.text?.toString()
-                if (!text.isNullOrEmpty()) {
-                    textNodes.add(TextNode(text, Rect(bounds)))
+                info.text?.toString()?.let { t ->
+                    if (t.isNotEmpty()) textNodes.add(TextNode(t, Rect(bounds)))
                 }
                 if (info.isClickable || info.isCheckable) {
                     clickableNodes.add(ClickableNode(info.isEnabled, Rect(bounds)))
@@ -224,7 +228,7 @@ class SetupActivity : ComponentActivity() {
             }
         Log.i(
             "DXX-Buttons",
-            "Scan: ${textNodes.size} text, ${clickableNodes.size} clickable, ${buttons.size} matched, maxId=$maxId",
+            "Scan: ${textNodes.size} text, ${clickableNodes.size} clickable, ${buttons.size} matched, range=0..$maxScanId (semantics=${semanticsIds.size})",
         )
         return buttons
     }
@@ -242,6 +246,35 @@ class SetupActivity : ComponentActivity() {
             }
         }
         return null
+    }
+
+    // Collect all semantics node IDs from the Compose semantic tree via
+    // reflection on Jetpack library classes (not restricted by hidden API).
+    // This discovers LazyColumn items that sequential ID scanning misses,
+    // because lazy items can have IDs well above the 0..16383 scan range.
+    private fun collectSemanticsNodeIds(composeView: View): Set<Int> {
+        return try {
+            val getOwner = composeView.javaClass.getMethod("getSemanticsOwner")
+            val owner = getOwner.invoke(composeView) ?: return emptySet()
+            val getRoot = owner.javaClass.getMethod("getRootSemanticsNode")
+            val rootNode = getRoot.invoke(owner) ?: return emptySet()
+            val getId = rootNode.javaClass.getMethod("getId")
+            val getChildren = rootNode.javaClass.getMethod("getChildren")
+            val ids = mutableSetOf<Int>()
+            val stack = ArrayDeque<Any>()
+            stack.add(rootNode)
+            while (stack.isNotEmpty()) {
+                val node = stack.removeFirst()
+                ids.add(getId.invoke(node) as Int)
+                @Suppress("UNCHECKED_CAST")
+                val children = getChildren.invoke(node) as? List<Any> ?: emptyList()
+                stack.addAll(children)
+            }
+            ids
+        } catch (e: Exception) {
+            Log.w("DXX-Buttons", "collectSemanticsNodeIds: ${e.message}")
+            emptySet()
+        }
     }
 
     /** Find a button by case-insensitive substring match on its text. */
@@ -316,13 +349,21 @@ class SetupActivity : ComponentActivity() {
         val textNodes = mutableListOf<TextNode>()
         val clickNodes = mutableListOf<ClickNode>()
 
-        for (id in -1..16383) {
+        val semanticsIds = collectSemanticsNodeIds(composeView)
+        val maxScanId =
+            if (semanticsIds.isNotEmpty()) {
+                semanticsIds.max() + 500
+            } else {
+                16383
+            }
+        for (id in -1..maxScanId) {
             val info = provider.createAccessibilityNodeInfo(id) ?: continue
             val bounds = Rect()
             info.getBoundsInScreen(bounds)
             if (bounds.width() > 0 && bounds.height() > 0) {
-                val text = info.text?.toString()
-                if (!text.isNullOrEmpty()) textNodes.add(TextNode(text, Rect(bounds)))
+                info.text?.toString()?.let { t ->
+                    if (t.isNotEmpty()) textNodes.add(TextNode(t, Rect(bounds)))
+                }
                 if (info.isClickable) clickNodes.add(ClickNode(id, Rect(bounds)))
             }
             info.recycle()
@@ -341,6 +382,15 @@ class SetupActivity : ComponentActivity() {
             }
         }
         return false
+    }
+
+    /** Hide the soft keyboard if it's showing. */
+    private fun dismissKeyboard() {
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+        val focused = currentFocus ?: window.decorView
+        imm?.hideSoftInputFromWindow(focused.windowToken, 0)
+        // Clear focus so the keyboard doesn't reappear on next recomposition
+        focused.clearFocus()
     }
 
     /** Inject a scroll-down swipe gesture (finger moves upward to scroll content down). */
@@ -696,6 +746,8 @@ class SetupActivity : ComponentActivity() {
     //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command set_callsign --es callsign "Player1"
     //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command stun_override --es addrs "10.0.2.2:13478,10.0.2.2:13479"
     //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command stun_override_clear
+    //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command tap_button --es text "Multiplayer"
+    //   adb shell am broadcast -a com.dxxredux.MP_COMMAND --es command dismiss_keyboard
     private var mpCallsign: String = "Player"
     private var mpJoinHostAddrOverride: String? = null
     private var mpJoinHostPortOverride: Int? = null
@@ -870,6 +922,44 @@ class SetupActivity : ComponentActivity() {
                                 "DXX-MP",
                                 "  lobby: ${l.announce.callsign} ${l.announce.game}/${l.announce.mission} from ${l.announce.hostAddress}",
                             )
+                        }
+                    }
+                    "dismiss_keyboard" -> {
+                        dismissKeyboard()
+                        Log.i("DXX-MP", "dismiss_keyboard: done")
+                    }
+                    "tap_button" -> {
+                        val text =
+                            intent.getStringExtra("text") ?: run {
+                                Log.w("DXX-MP", "tap_button: missing 'text'")
+                                return
+                            }
+                        // Dismiss soft keyboard first -- it can cover buttons
+                        dismissKeyboard()
+                        // Launch coroutine so we can scroll if needed
+                        kotlinx.coroutines.MainScope().launch {
+                            // Brief delay after keyboard dismiss for layout to settle
+                            kotlinx.coroutines.delay(200)
+                            var scrollAttempts = 0
+                            val deadline = System.currentTimeMillis() + 5000
+                            while (true) {
+                                if (performAccessibilityClick(text)) {
+                                    Log.i("DXX-MP", "tap_button: tapped \"$text\"")
+                                    return@launch
+                                }
+                                if (System.currentTimeMillis() > deadline) break
+                                if (scrollAttempts < 5) {
+                                    scrollDown()
+                                    scrollAttempts++
+                                    kotlinx.coroutines.delay(400)
+                                } else {
+                                    kotlinx.coroutines.delay(500)
+                                }
+                            }
+                            val available =
+                                collectAccessibleButtons()
+                                    .joinToString(", ") { "\"${it.text}\"" }
+                            Log.w("DXX-MP", "tap_button: \"$text\" not found (available: $available)")
                         }
                     }
                     else -> Log.w("DXX-MP", "Unknown MP command: $cmd")
@@ -4044,7 +4134,10 @@ private fun ModRow(
             )
             if (scanResult != null && scanResult.oversizedCount > 0) {
                 Text(
-                    text = "${scanResult.oversizedCount} of ${scanResult.textureCount} textures exceed ${DxaTextureScanner.ENGINE_TEXTURE_CAP}px (max ${scanResult.maxWidth}x${scanResult.maxHeight}) -- will be skipped",
+                    text =
+                        "${scanResult.oversizedCount} of ${scanResult.textureCount} textures exceed " +
+                            "${DxaTextureScanner.ENGINE_TEXTURE_CAP}px " +
+                            "(max ${scanResult.maxWidth}x${scanResult.maxHeight}) -- will be skipped",
                     fontSize = 10.sp,
                     color = Color(0xFFF44336),
                 )

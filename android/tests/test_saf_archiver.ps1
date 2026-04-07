@@ -72,12 +72,21 @@ if (!(Test-Path $adb)) {
 function Adb {
     param([string[]]$AdbArgs)
     if ($args) { $AdbArgs = @($AdbArgs) + @($args) }
+    # Inject -s $Serial when a target device is known, so commands
+    # don't fail with "more than one device/emulator"
+    if ($script:Serial -and $AdbArgs[0] -ne "-s") {
+        $AdbArgs = @("-s", $script:Serial) + @($AdbArgs)
+    }
     & $adb @AdbArgs 2>&1
 }
 
 function Adb-WithTimeout {
     # Run an adb command with a timeout; returns $null if it hangs
     param([int]$Seconds = 10, [string[]]$AdbArgs)
+    # Inject -s $Serial when a target device is known
+    if ($script:Serial -and $AdbArgs[0] -ne "-s") {
+        $AdbArgs = @("-s", $script:Serial) + @($AdbArgs)
+    }
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $adb
     $psi.Arguments = ($AdbArgs | ForEach-Object {
@@ -106,6 +115,7 @@ Write-Host "=== SAF Archiver Test ===" -ForegroundColor Cyan
 Write-Host ""
 
 # Check emulator -- auto-start if needed
+$script:Serial = $null
 $devices = (Adb devices) -join "`n"
 if ($devices -notmatch "emulator.*device") {
     Write-Host "Emulator not found -- attempting start..." -ForegroundColor Yellow
@@ -129,6 +139,13 @@ if ($devices -notmatch "emulator.*device") {
     }
 }
 Write-Host "[OK] Emulator connected" -ForegroundColor Green
+
+# Extract the first emulator serial for -s targeting
+$emuMatch = [regex]::Match($devices, "(emulator-\d+)\s+device")
+if ($emuMatch.Success) {
+    $script:Serial = $emuMatch.Groups[1].Value
+    Write-Host "  Target device: $($script:Serial)"
+}
 
 # Ensure game data is on device before running the SAF test
 if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {

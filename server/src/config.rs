@@ -53,6 +53,10 @@ pub struct ServerConfig {
     /// When set, admin routes are served on this port and the main HTTP port
     /// serves only public routes. When None, all routes are on the main port.
     pub admin_http_listen_addr: Option<SocketAddr>,
+    /// Force all game connections through the relay, ignoring connectivity
+    /// check results. Useful for testing where peers share a NAT gateway
+    /// (e.g. two Android emulators on the same host).
+    pub force_relay: bool,
 }
 
 /// JSON5 config file schema. All fields optional; env vars override file values.
@@ -80,6 +84,7 @@ struct ConfigFile {
     max_relay_sessions: Option<usize>,
     max_connections: Option<usize>,
     admin_http_listen_addr: Option<String>,
+    force_relay: Option<bool>,
 }
 
 impl ServerConfig {
@@ -196,6 +201,13 @@ impl ServerConfig {
                     Some(raw.parse().unwrap_or_else(|e| {
                         panic!("ADMIN_HTTP_LISTEN_ADDR is not a valid socket address: {e}");
                     }))
+                }
+            },
+            force_relay: {
+                let env_val = std::env::var("FORCE_RELAY").ok();
+                match &env_val {
+                    Some(v) => v == "true",
+                    None => file_cfg.force_relay.unwrap_or(false),
                 }
             },
         }

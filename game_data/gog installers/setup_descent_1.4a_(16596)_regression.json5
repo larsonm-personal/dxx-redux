@@ -20,9 +20,9 @@
     "total_extracted":  7
 ,
     "last_test_result": {
-        "status": "fail",
-        "failure_step": "crash",
-        "level_reached": null,
+        "status": "pass",
+        "failure_step": null,
+        "level_reached": "Lunar Outpost",
         "files_verified": 2,
         "classification_confirmed": true,
         "test_mode": "full"

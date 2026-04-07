@@ -57,6 +57,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "laser.h"
 #include "escort.h"
 
+#ifdef NETWORK
+#include "multi.h"
+#endif
+
 #ifdef EDITOR
 #include "editor/editor.h"
 #endif
@@ -104,6 +108,9 @@ fix64	Buddy_sorry_time;
 int	Buddy_objnum, Buddy_allowed_to_talk;
 int	Looking_for_marker;
 int	Last_buddy_key;
+#ifdef NETWORK
+int	Escort_owner_player = -1;
+#endif
 
 fix64	Last_buddy_message_time;
 
@@ -117,6 +124,9 @@ void init_buddy_for_level(void)
 	Escort_special_goal = -1;
 	Escort_goal_index = -1;
 	Buddy_messages_suppressed = 0;
+#ifdef NETWORK
+	Escort_owner_player = -1;
+#endif
 
 	for (i=0; i<=Highest_object_index; i++)
 		if (Robot_info[Objects[i].id].companion)
@@ -289,6 +299,15 @@ int ok_for_buddy_to_talk(void)
 	}
 
 	Buddy_allowed_to_talk = 1;
+
+#ifdef NETWORK
+	// android port: first player to free the guidebot becomes its owner in coop
+	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player == -1) {
+		Escort_owner_player = Player_num;
+		multi_send_escort_owner(Player_num);
+	}
+#endif
+
 	return 1;
 }
 
@@ -396,8 +415,12 @@ void buddy_message(char * format, ... )
 	if (Buddy_messages_suppressed)
 		return;
 
-	if (Game_mode & GM_MULTI)
+#ifdef NETWORK
+	if ((Game_mode & GM_MULTI) && !(Game_mode & GM_MULTI_COOP))
 		return;
+	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player != Player_num)
+		return;
+#endif
 
 	if (Last_buddy_message_time + F1_0 < GameTime64) {
 		if (ok_for_buddy_to_talk()) {
@@ -1598,7 +1621,7 @@ void init_thief_for_level(void)
 
 	Assert (MAX_STOLEN_ITEMS >= 3*2);	//	Oops!  Loop below will overwrite memory!
   
-   if (!(Game_mode & GM_MULTI))    
+   if (!(Game_mode & GM_MULTI) || (Game_mode & GM_MULTI_COOP))
 		for (i=0; i<3; i++) {
 			Stolen_items[2*i] = POW_SHIELD_BOOST;
 			Stolen_items[2*i+1] = POW_ENERGY;
@@ -1722,8 +1745,19 @@ void do_escort_menu(void)
 	window *wind;
 
 	if (Game_mode & GM_MULTI) {
+#ifdef NETWORK
+		if (!(Game_mode & GM_MULTI_COOP)) {
+			HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot in Multiplayer!");
+			return;
+		}
+		if (Escort_owner_player != Player_num) {
+			HUD_init_message_literal(HM_DEFAULT, "Guide-Bot is controlled by another player");
+			return;
+		}
+#else
 		HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot in Multiplayer!");
 		return;
+#endif
 	}
 
 	for (i=0; i<=Highest_object_index; i++) {
@@ -1861,3 +1895,47 @@ void show_escort_menu(char *msg)
 
 	reset_cockpit();
 }
+
+#ifdef NETWORK
+// android port: multiplayer coop guidebot support
+void multi_send_escort_owner(int owner_pnum)
+{
+	multibuf[0] = MULTI_ESCORT_OWNER;
+	multibuf[1] = (ubyte)Player_num;
+	multibuf[2] = (ubyte)owner_pnum;
+	multi_send_data(multibuf, 3, 2);
+}
+
+void multi_do_escort_owner(const ubyte *buf)
+{
+	int new_owner = (int)buf[2];
+	if (new_owner < 0 || new_owner >= MAX_PLAYERS)
+		return;
+	Escort_owner_player = new_owner;
+	if (new_owner == Player_num)
+		HUD_init_message_literal(HM_DEFAULT, "Guide-Bot is now following you");
+}
+
+void escort_transfer_ownership_on_disconnect(int gone_pnum)
+{
+	if (Escort_owner_player != gone_pnum)
+		return;
+	if (Buddy_objnum < 0)
+		return;
+
+	// Pick lowest-numbered connected player as new owner
+	int new_owner = -1;
+	for (int i = 0; i < N_players; i++) {
+		if (i == gone_pnum)
+			continue;
+		if (Players[i].connected == CONNECT_PLAYING) {
+			new_owner = i;
+			break;
+		}
+	}
+
+	Escort_owner_player = new_owner;
+	if (new_owner >= 0)
+		multi_send_escort_owner(new_owner);
+}
+#endif

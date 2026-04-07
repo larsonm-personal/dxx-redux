@@ -213,6 +213,34 @@ function Send-MpCommand {
     Adb-Dev-Timeout -Serial $Serial -AdbArgs $args_ -Seconds 10 | Out-Null
 }
 
+function Send-TapButton {
+    # Tap a launcher button via accessibility click (MP_COMMAND tap_button).
+    # The Kotlin handler dismisses the keyboard and scrolls down automatically.
+    # Returns $true if the tap was acknowledged in logcat.
+    param([string]$Serial, [string]$Text, [int]$PollMs = 2000, [int]$TimeoutSec = 15)
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    $shownAvailable = $false
+    while ($sw.Elapsed.TotalSeconds -lt $TimeoutSec) {
+        & $script:ADB -s $Serial logcat -c 2>&1 | Out-Null
+        Send-MpCommand -Serial $Serial -Command "tap_button" -Extras @("--es", "text", $Text)
+        Start-Sleep -Milliseconds $PollMs
+        $log = & $script:ADB -s $Serial logcat -d -t 20 -s "DXX-MP:*" 2>&1 | Out-String
+        if ($log -match "tap_button: tapped") { return $true }
+        if ($log -match 'tap_button:.*not found \(available: ([^)]*)\)') {
+            if (-not $shownAvailable) {
+                Write-Status "  tap_button: '$Text' not found (available: $($Matches[1]))" "Gray"
+                $shownAvailable = $true
+            } else {
+                Write-Status "  tap_button: '$Text' not found, retrying..." "Gray"
+            }
+        } elseif ($log -match "tap_button:.*not found") {
+            Write-Status "  tap_button: '$Text' not found, retrying..." "Gray"
+        }
+    }
+    Write-Status "  tap_button: '$Text' timed out after ${TimeoutSec}s" "Yellow"
+    return $false
+}
+
 function Wait-ForCondition {
     # Poll until a condition is met, with configurable timeout and interval.
     param(

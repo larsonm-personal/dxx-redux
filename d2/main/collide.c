@@ -1336,8 +1336,11 @@ int apply_damage_to_robot(object *robot, fix damage, int killer_objnum)
 
 	//	Buddy invulnerable on level 24 so he can give you his important messages.  Bah.
 	//	Also invulnerable if his cheat for firing weapons is in effect.
+	//	android port: companion is invulnerable in all coop levels (can't respawn)
 	if (Robot_info[robot->id].companion) {
 #ifdef NETWORK
+		if (Game_mode & GM_MULTI_COOP)
+			return 0;
 		if (PLAYING_BUILTIN_MISSION && Current_level_num == Last_level)
 			return 0;
 #endif
@@ -2335,6 +2338,14 @@ void collide_player_and_weapon( object * playerobj, object * weapon, vms_vector 
 	if (object_is_observer(playerobj)) {
 		return;
 	}
+
+	// android port: companion flares should never damage players in coop
+	if (weapon->ctype.laser_info.parent_type == OBJ_ROBOT &&
+	    weapon->ctype.laser_info.parent_num >= 0 &&
+	    weapon->ctype.laser_info.parent_num <= Highest_object_index &&
+	    Objects[weapon->ctype.laser_info.parent_num].type == OBJ_ROBOT &&
+	    Robot_info[Objects[weapon->ctype.laser_info.parent_num].id].companion)
+		return;
 
 	if (weapon->id == OMEGA_ID) {
 		if (!ok_to_do_omega_damage(weapon)) // see comment in laser.c

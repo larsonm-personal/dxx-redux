@@ -50,6 +50,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "multibot.h"
 #ifdef NETWORK
 #include "multi.h"
+#include "escort.h"
 #endif
 #include "gameseq.h"
 #include "key.h"
@@ -747,6 +748,12 @@ _exit_cheat:
 	if (robptr->companion) {
 
 		compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
+
+#ifdef NETWORK
+		// android port: only the escort owner runs companion AI in coop;
+		// non-owners receive position via MULTI_ROBOT_POSITION
+		if (!(Game_mode & GM_MULTI_COOP) || Escort_owner_player == Player_num)
+#endif
 		do_escort_frame(obj, dist_to_player, player_visibility);
 
 		if (obj->ctype.ai_info.danger_laser_num != -1) {

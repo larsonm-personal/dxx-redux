@@ -15,9 +15,9 @@
     // Tap the About button -- it should be clickable
     {"action": "tap_button", "text": "About", "post_delay_ms": 500},
 
-    // Verify tap_button auto-scrolls: "Advanced Settings" may be
+    // Verify tap_button auto-scrolls: "Advanced" may be
     // off-screen when game data is present, scroll should find it
-    {"action": "tap_button", "text": "Advanced Settings", "post_delay_ms": 300},
+    {"action": "tap_button", "text": "Advanced", "post_delay_ms": 300},
 
     {"action": "log", "message": "Button discovery and tap test passed"},
 ]

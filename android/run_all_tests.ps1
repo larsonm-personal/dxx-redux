@@ -116,7 +116,7 @@ $manualTests = @(
 )
 
 # Infrastructure requirement classification
-$twoEmuTests = @("test_mp", "test_lan", "test_lan_discovery")
+$twoEmuTests = @("test_mp", "test_lan", "test_lan_discovery", "test_lan_broadcast", "test_lan_lobby_discovery")
 $serverTests = @("test_bot_client")
 
 # Per-test timeout overrides (seconds) for multi-phase tests
@@ -125,6 +125,7 @@ $testTimeouts = @{
     "test_gog_installer_redbook_unified"  = 300
     "test_saf_archiver"                   = 360
     "test_all_extracts"                   = 300
+    "test_mp"                             = 240
 }
 $extractTests = @("test_extract", "test_all_extracts")  # emulator + game data, run last
 $noInfraTests = @("test_cue_iso", "test_server_integration")
