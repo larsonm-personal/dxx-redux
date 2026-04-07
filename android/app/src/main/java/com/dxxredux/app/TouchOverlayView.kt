@@ -394,6 +394,13 @@ class TouchOverlayView
             const val ADMIN_NET_STATS = 8
             const val ADMIN_VIDEO_INFO = 9
 
+            // Gamepad-only items (appended when no touchscreen)
+            const val ADMIN_AUTOMAP = 10
+            const val ADMIN_HEADLIGHT = 11
+            const val ADMIN_WARP = 12
+            const val ADMIN_MUSIC = 13
+            const val ADMIN_ACCEPT_JOIN = 14
+
             // Cockpit mode constants (match C CM_* defines)
             private const val CM_FULL_COCKPIT = 0
             private const val CM_STATUS_BAR = 2
@@ -512,6 +519,16 @@ class TouchOverlayView
         // Provider for dynamic labels (auto-leveling state, cockpit mode)
         var adminTrayAutoLevelingProvider: (() -> Boolean)? = null
         var adminTrayCockpitModeProvider: (() -> Int)? = null
+
+        // Gamepad-only mode: no touchscreen, admin tray gets extra items + D-pad nav
+        var gamepadOnlyMode = false
+
+        // Providers for dynamic gamepad-only labels
+        var adminTrayWarpLabelProvider: (() -> String)? = null
+        var adminTrayAcceptLabelProvider: (() -> String)? = null
+
+        // D-pad selection index (-1 = no selection, used in gamepad mode)
+        private var adminTraySelectedIndex = -1
 
         init {
             rebuildStates()
@@ -735,10 +752,11 @@ class TouchOverlayView
 
             // ── Admin tray tab (visible) or panel (when open) ───
             // Hide default tab when a MENU diagnostic is configured (it replaces the tab)
+            // In gamepad-only mode, no tab is drawn (Start button opens the tray)
             val hasMenuDiag = diagnosticStates.any { it.control.type == DiagnosticType.MENU }
             if (adminTrayOpen) {
                 drawAdminTrayPanel(canvas)
-            } else if (!cheatsOverlayOpen && !hasMenuDiag) {
+            } else if (!gamepadOnlyMode && !cheatsOverlayOpen && !hasMenuDiag) {
                 drawAdminTrayTab(canvas)
             }
         }
@@ -2724,6 +2742,11 @@ class TouchOverlayView
                 ADMIN_EXIT_LAUNCHER -> "Exit"
                 ADMIN_NET_EVENTS -> "Net Events"
                 ADMIN_VIDEO_INFO -> "Video Info"
+                ADMIN_AUTOMAP -> "Automap"
+                ADMIN_HEADLIGHT -> "Headlight"
+                ADMIN_WARP -> adminTrayWarpLabelProvider?.invoke() ?: "Warp: --"
+                ADMIN_MUSIC -> "Music"
+                ADMIN_ACCEPT_JOIN -> adminTrayAcceptLabelProvider?.invoke() ?: "Accept: --"
                 else -> ""
             }
 
@@ -2755,17 +2778,19 @@ class TouchOverlayView
             )
         }
 
+        private fun adminTrayItemCount(): Int = if (gamepadOnlyMode) 15 else 10
+
         private fun drawAdminTrayPanel(canvas: Canvas) {
             val w = width.toFloat()
             val h = height.toFloat()
 
-            val itemCount = 10
+            val itemCount = adminTrayItemCount()
             val cols = 3
             val rows = (itemCount + cols - 1) / cols
             val divider = 1f // 1px divider between cells
             val panelW = w * 0.7f
             val cellH = h * 0.08f
-            val handleH = h * 0.02f
+            val handleH = if (gamepadOnlyMode) 0f else h * 0.02f
             val panelH = rows * cellH + (rows - 1) * divider + handleH
             val panelLeft = (w - panelW) / 2f
             // Bottom-anchored, offset by slide progress (1 = fully visible)
@@ -2790,20 +2815,37 @@ class TouchOverlayView
             paintRing.alpha = 0x66
             canvas.drawRoundRect(panelRect, cornerR, cornerR, paintRing)
 
-            // Drag handle bar at top of panel
-            val handlePaint =
-                Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                    style = Paint.Style.FILL
-                    color = 0x66FFFFFF.toInt()
-                }
-            val barW = panelW * 0.15f
-            val barH = handleH * 0.25f
-            val barLeft = panelLeft + (panelW - barW) / 2f
-            val barTop = panelTop + handleH * 0.375f
-            canvas.drawRoundRect(barLeft, barTop, barLeft + barW, barTop + barH, barH / 2, barH / 2, handlePaint)
+            // Drag handle bar at top of panel (touch mode only)
+            if (!gamepadOnlyMode) {
+                val handlePaint =
+                    Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                        style = Paint.Style.FILL
+                        color = 0x66FFFFFF.toInt()
+                    }
+                val barW = panelW * 0.15f
+                val barH = handleH * 0.25f
+                val barLeft = panelLeft + (panelW - barW) / 2f
+                val barTop = panelTop + handleH * 0.375f
+                canvas.drawRoundRect(
+                    barLeft,
+                    barTop,
+                    barLeft + barW,
+                    barTop + barH,
+                    barH / 2,
+                    barH / 2,
+                    handlePaint,
+                )
+            }
 
             val cellW = (panelW - (cols - 1) * divider) / cols
             val gridTop = panelTop + handleH
+
+            val selectPaint =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.STROKE
+                    color = 0xFF00CCFF.toInt()
+                    strokeWidth = 3f
+                }
 
             for (i in 0 until itemCount) {
                 val col = i % cols
@@ -2816,6 +2858,11 @@ class TouchOverlayView
                 val bg = if (i == adminTrayPressedIndex) paintBtnPressed else paintBtnIdle
                 bg.alpha = if (i == adminTrayPressedIndex) 0xAA else 0x55
                 canvas.drawRect(rect, bg)
+
+                // D-pad selection highlight (gamepad mode)
+                if (gamepadOnlyMode && i == adminTraySelectedIndex) {
+                    canvas.drawRect(rect, selectPaint)
+                }
 
                 // Draw divider lines
                 if (col > 0) {
@@ -2846,11 +2893,96 @@ class TouchOverlayView
                     interpolator = DecelerateInterpolator()
                     addUpdateListener {
                         adminTraySlide = it.animatedValue as Float
-                        if (!open && adminTraySlide == 0f) adminTrayOpen = false
+                        if (!open && adminTraySlide == 0f) {
+                            adminTrayOpen = false
+                            adminTraySelectedIndex = -1
+                        }
                         invalidate()
                     }
                     start()
                 }
+        }
+
+        /** Toggle the admin tray open/closed (for gamepad Start button). */
+        fun toggleAdminTray() {
+            if (adminTrayOpen) {
+                animateAdminTray(false)
+            } else {
+                adminTrayOpen = true
+                if (gamepadOnlyMode) {
+                    // Default selection: middle of last row (ADMIN_MUSIC = index 13)
+                    adminTraySelectedIndex = adminTrayItemCount() - 2
+                }
+                animateAdminTray(true)
+            }
+        }
+
+        /** Whether the admin tray is currently open. */
+        fun isAdminTrayOpen(): Boolean = adminTrayOpen
+
+        /**
+         * Handle a gamepad key event while the admin tray is open.
+         * Returns true if consumed. Called from MainActivity for D-pad/A/B routing.
+         * [action]: 0 = down, 1 = up.
+         */
+        fun handleAdminTrayGamepadKey(
+            keyCode: Int,
+            action: Int,
+        ): Boolean {
+            if (!adminTrayOpen) return false
+            if (action != 0) return true // consume up events but only act on down
+            val cols = 3
+            val count = adminTrayItemCount()
+            when (keyCode) {
+                android.view.KeyEvent.KEYCODE_DPAD_UP -> {
+                    if (adminTraySelectedIndex >= cols) {
+                        adminTraySelectedIndex -= cols
+                    }
+                    invalidate()
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_DPAD_DOWN -> {
+                    if (adminTraySelectedIndex + cols < count) {
+                        adminTraySelectedIndex += cols
+                    }
+                    invalidate()
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_DPAD_LEFT -> {
+                    if (adminTraySelectedIndex % cols > 0) {
+                        adminTraySelectedIndex--
+                    }
+                    invalidate()
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                    if (adminTraySelectedIndex % cols < cols - 1 &&
+                        adminTraySelectedIndex + 1 < count
+                    ) {
+                        adminTraySelectedIndex++
+                    }
+                    invalidate()
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_BUTTON_A,
+                android.view.KeyEvent.KEYCODE_DPAD_CENTER,
+                -> {
+                    if (adminTraySelectedIndex in 0 until count) {
+                        adminTrayCallback?.invoke(adminTraySelectedIndex)
+                        performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    }
+                    animateAdminTray(false)
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_BUTTON_B,
+                android.view.KeyEvent.KEYCODE_BACK,
+                -> {
+                    animateAdminTray(false)
+                    return true
+                }
+            }
+            // Consume all other buttons while tray is open (prevent game input)
+            return true
         }
 
         private fun handleAdminTrayTouch(event: MotionEvent): Boolean {
@@ -2900,7 +3032,7 @@ class TouchOverlayView
                     if (adminTrayDragging) {
                         // Compute panel height for slide ratio
                         val h = height.toFloat()
-                        val itemCount = 10
+                        val itemCount = adminTrayItemCount()
                         val cols = 3
                         val rows = (itemCount + cols - 1) / cols
                         val cellH = h * 0.08f

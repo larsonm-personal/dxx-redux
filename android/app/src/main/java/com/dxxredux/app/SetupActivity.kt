@@ -20,6 +20,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -984,6 +985,9 @@ class SetupActivity : ComponentActivity() {
     /** Currently pressed gamepad buttons (name strings). */
     internal val pressedButtons = mutableStateListOf<String>()
 
+    /** Set to true when the controller config page is shown (needs all button events). */
+    internal var controllerConfigActive = false
+
     override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
         if (event.source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK &&
             event.action == MotionEvent.ACTION_MOVE
@@ -1031,7 +1035,30 @@ class SetupActivity : ComponentActivity() {
             } else if (event.action == KeyEvent.ACTION_UP) {
                 pressedButtons.remove(name)
             }
-            return true
+            // Controller config page needs all button events consumed for its
+            // test visualization. Other pages let D-pad and A/B flow through
+            // so Compose's focus system can handle navigation.
+            if (controllerConfigActive) return true
+            // Map B button to system Back for page navigation
+            if (event.keyCode == KeyEvent.KEYCODE_BUTTON_B) {
+                if (event.action == KeyEvent.ACTION_UP) onBackPressedDispatcher.onBackPressed()
+                return true
+            }
+            // Map A button to DPAD_CENTER so it activates focused elements
+            if (event.keyCode == KeyEvent.KEYCODE_BUTTON_A) {
+                val center = KeyEvent(event.action, KeyEvent.KEYCODE_DPAD_CENTER)
+                return super.dispatchKeyEvent(center)
+            }
+            val navigable =
+                event.keyCode in
+                    intArrayOf(
+                        KeyEvent.KEYCODE_DPAD_UP,
+                        KeyEvent.KEYCODE_DPAD_DOWN,
+                        KeyEvent.KEYCODE_DPAD_LEFT,
+                        KeyEvent.KEYCODE_DPAD_RIGHT,
+                        KeyEvent.KEYCODE_DPAD_CENTER,
+                    )
+            if (!navigable) return true
         }
         return super.dispatchKeyEvent(event)
     }
@@ -2711,6 +2738,12 @@ private fun SetupScreen(
 
     MaterialTheme(colorScheme = darkColorScheme()) {
         if (showControllerPage) {
+            val activity = LocalContext.current as SetupActivity
+            DisposableEffect(Unit) {
+                activity.controllerConfigActive = true
+                onDispose { activity.controllerConfigActive = false }
+            }
+            BackHandler { showControllerPage = false }
             ControllerConfigPage(
                 axes = controllerAxes,
                 dpadAxes = dpadAxes,
@@ -2722,6 +2755,7 @@ private fun SetupScreen(
             return@MaterialTheme
         }
         if (showTouchEditorPage) {
+            BackHandler { showTouchEditorPage = false }
             TouchEditorPage(
                 gameVariant = selectedGame,
                 onBack = { showTouchEditorPage = false },
@@ -2729,6 +2763,7 @@ private fun SetupScreen(
             return@MaterialTheme
         }
         if (showAdvancedPage) {
+            BackHandler { showAdvancedPage = false }
             AdvancedSettingsPage(
                 filesDir = filesDir,
                 fileSetManager = fileSetManager,
@@ -2737,6 +2772,7 @@ private fun SetupScreen(
             return@MaterialTheme
         }
         if (showGraphicsPage) {
+            BackHandler { showGraphicsPage = false }
             GraphicsSettingsPage(
                 filesDir = filesDir,
                 onBack = { showGraphicsPage = false },
@@ -2744,6 +2780,7 @@ private fun SetupScreen(
             return@MaterialTheme
         }
         if (showMultiplayerPage) {
+            BackHandler { showMultiplayerPage = false }
             com.dxxredux.app.multiplayer.MultiplayerScreen(
                 onBack = { showMultiplayerPage = false },
                 onLaunchGame = onMultiplayerLaunch,
@@ -2751,6 +2788,7 @@ private fun SetupScreen(
             return@MaterialTheme
         }
         if (showAutoselectPage) {
+            BackHandler { showAutoselectPage = false }
             AutoselectEditorPage(
                 gameVariant = selectedGame,
                 filesDir = filesDir.absolutePath,
@@ -2759,6 +2797,7 @@ private fun SetupScreen(
             return@MaterialTheme
         }
         if (showMusicPage) {
+            BackHandler { showMusicPage = false }
             MusicPickerPage(
                 filesDir = filesDir,
                 onBack = { showMusicPage = false },

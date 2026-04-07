@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android TV banner placeholder (320dp x 180dp = 16:9 aspect ratio)
+     Replace with a proper 1280x720 PNG bitmap for production -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#1a1a2e" />
+        </shape>
+    </item>
+    <item android:gravity="center">
+        <shape android:shape="rectangle">
+            <size android:width="280dp" android:height="60dp" />
+            <solid android:color="#00000000" />
+        </shape>
+    </item>
+</layer-list>

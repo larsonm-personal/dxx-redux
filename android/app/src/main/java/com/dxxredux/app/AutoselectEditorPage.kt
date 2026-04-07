@@ -1,6 +1,8 @@
 package com.dxxredux.app
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
@@ -42,14 +44,23 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -226,7 +237,7 @@ fun AutoselectEditorPage(
 
                 // Instructions
                 Text(
-                    "Long press + drag to reorder",
+                    "Long press + drag, or select + D-pad to reorder",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     modifier = Modifier.padding(bottom = 8.dp),
@@ -332,6 +343,9 @@ fun AutoselectEditorPage(
  * near the top or bottom edge auto-scrolls the list so items can be
  * moved beyond the visible viewport.
  *
+ * D-pad / controller: press A on a focused item to grab it, then
+ * D-pad up/down to move it, A again to drop it.
+ *
  * Uses value-based keys so the dragged composable (and its gesture
  * handler) survives list mutations.
  */
@@ -352,6 +366,13 @@ private fun DragReorderList(
     var draggedValue by remember { mutableStateOf<Int?>(null) }
     var dragOffsetY by remember { mutableStateOf(0f) }
     var overscrollSpeed by remember { mutableStateOf(0f) }
+
+    // D-pad grab-and-move: index of the grabbed item, or -1
+    var grabbedIndex by remember { mutableIntStateOf(-1) }
+    // Track which index is focused for key handling
+    var focusedIndex by remember { mutableIntStateOf(-1) }
+    // FocusRequesters so we can move focus after a reorder
+    val focusRequesters = remember(items.size) { List(items.size) { FocusRequester() } }
 
     // Auto-scroll while dragging near viewport edges.
     LaunchedEffect(draggedValue) {
@@ -385,8 +406,10 @@ private fun DragReorderList(
         ) {
             itemsIndexed(items, key = { _, value -> value }) { index, value ->
                 val isDragging = value == draggedValue
+                val isGrabbed = index == grabbedIndex
                 val isSeparator = value == NativeAutoselectPatcher.SEPARATOR
                 val name = nameResolver(value)
+                val focusReq = focusRequesters.getOrNull(index)
 
                 Box(
                     modifier =
@@ -404,11 +427,56 @@ private fun DragReorderList(
                                 },
                             ).background(
                                 when {
-                                    isDragging -> MaterialTheme.colorScheme.primaryContainer
+                                    isDragging || isGrabbed -> MaterialTheme.colorScheme.primaryContainer
                                     isSeparator -> MaterialTheme.colorScheme.surfaceVariant
                                     else -> Color.Transparent
                                 },
-                            ).pointerInput(value) {
+                            ).then(
+                                if (isGrabbed) {
+                                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary)
+                                } else {
+                                    Modifier
+                                },
+                            ).onFocusChanged { state ->
+                                if (state.isFocused) focusedIndex = index
+                            }.onKeyEvent { keyEvent ->
+                                if (keyEvent.type != KeyEventType.KeyDown) return@onKeyEvent false
+                                val k = keyEvent.key
+                                if (k == Key.DirectionCenter || k == Key.Enter) {
+                                    if (grabbedIndex < 0) {
+                                        // Grab this item
+                                        grabbedIndex = index
+                                    } else {
+                                        // Drop
+                                        grabbedIndex = -1
+                                    }
+                                    return@onKeyEvent true
+                                }
+                                if (grabbedIndex >= 0) {
+                                    val target =
+                                        when (k) {
+                                            Key.DirectionUp -> (grabbedIndex - 1).coerceAtLeast(0)
+                                            Key.DirectionDown -> (grabbedIndex + 1).coerceAtMost(items.size - 1)
+                                            else -> return@onKeyEvent false
+                                        }
+                                    if (target != grabbedIndex) {
+                                        onReorder(grabbedIndex, target)
+                                        val newReq = focusRequesters.getOrNull(target)
+                                        grabbedIndex = target
+                                        // Move focus to follow the item
+                                        newReq?.requestFocus()
+                                    }
+                                    return@onKeyEvent true
+                                }
+                                false
+                            }.then(
+                                if (focusReq != null) {
+                                    Modifier.focusRequester(focusReq)
+                                } else {
+                                    Modifier
+                                },
+                            ).focusable()
+                            .pointerInput(value) {
                                 detectDragGesturesAfterLongPress(
                                     onDragStart = {
                                         draggedValue = value

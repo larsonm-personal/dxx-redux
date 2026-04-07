@@ -310,7 +310,10 @@ class MainActivity :
     private var gyroManager: GyroInputManager? = null
     private var gameVariantId = "d2" // "d1" or "d2", set in onCreate
 
-    // Controller meta-action bindings: SDL button index → meta action ID
+    // True when no touchscreen is available (Android TV / gamepad-only)
+    private var gamepadOnlyMode = false
+
+    // Controller meta-action bindings: SDL button index -> meta action ID
     private var buttonMetaBindings = mapOf<Int, Int>()
 
     // D-pad meta-action bindings: DPAD keycode → meta action ID
@@ -356,6 +359,10 @@ class MainActivity :
         // Load the correct game library based on the launcher's selection
         val game = intent.getStringExtra("game") ?: "d2"
         gameVariantId = game
+        gamepadOnlyMode =
+            !packageManager.hasSystemFeature(
+                android.content.pm.PackageManager.FEATURE_TOUCHSCREEN,
+            )
         val libName = if (game == "d1") "dxx-redux-d1" else "dxx-redux-d2"
         System.loadLibrary(libName)
         Log.i("MainActivity", "Loaded native library: $libName")
@@ -511,6 +518,7 @@ class MainActivity :
             nativeKeyEvent(action, keyCode, unicode)
         }
         touchOverlay.gameVariant = game
+        touchOverlay.gamepadOnlyMode = gamepadOnlyMode
         touchOverlay.isEscortOwnerProvider = {
             try {
                 nativeIsEscortOwner()
@@ -557,6 +565,27 @@ class MainActivity :
                 TouchOverlayView.ADMIN_VIDEO_INFO -> {
                     videoInfoOverlay?.toggle()
                 }
+                TouchOverlayView.ADMIN_AUTOMAP -> {
+                    nativeKeyEvent(0, KeyEvent.KEYCODE_TAB, '\t'.code)
+                    nativeKeyEvent(1, KeyEvent.KEYCODE_TAB, 0)
+                }
+                TouchOverlayView.ADMIN_HEADLIGHT -> {
+                    nativeKeyEvent(0, KeyEvent.KEYCODE_H, 'h'.code)
+                    nativeKeyEvent(1, KeyEvent.KEYCODE_H, 0)
+                }
+                TouchOverlayView.ADMIN_WARP -> {
+                    try {
+                        nativeCoopWarpExecute()
+                    } catch (_: Exception) {
+                    }
+                }
+                TouchOverlayView.ADMIN_MUSIC -> showMusicPanel()
+                TouchOverlayView.ADMIN_ACCEPT_JOIN -> {
+                    try {
+                        nativeAcceptJoinRequest()
+                    } catch (_: Exception) {
+                    }
+                }
             }
         }
         touchOverlay.adminTrayAutoLevelingProvider = {
@@ -571,6 +600,29 @@ class MainActivity :
                 nativeGetCockpitMode()
             } catch (_: Throwable) {
                 -1
+            }
+        }
+        if (gamepadOnlyMode) {
+            touchOverlay.adminTrayWarpLabelProvider = {
+                try {
+                    val st = nativeGetCoopWarpStatus()
+                    if (st.isNotEmpty() && st[0] != 0) {
+                        val name = nativeGetCoopWarpTargetName()
+                        if (name.isNotEmpty()) "Warp: $name" else "Warp"
+                    } else {
+                        "Warp: --"
+                    }
+                } catch (_: Exception) {
+                    "Warp: --"
+                }
+            }
+            touchOverlay.adminTrayAcceptLabelProvider = {
+                try {
+                    val cs = nativeGetJoinRequest()
+                    if (cs.isNotEmpty()) "Accept: $cs" else "Accept: --"
+                } catch (_: Exception) {
+                    "Accept: --"
+                }
             }
         }
         touchOverlay.weaponStateProvider = {
@@ -711,13 +763,16 @@ class MainActivity :
                 FrameLayout.LayoutParams.MATCH_PARENT,
             ),
         )
-        frame.addView(
-            acceptJoinButton,
-            FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT,
-            ),
-        )
+        // In gamepad-only mode, accept/warp are handled via admin tray items
+        if (!gamepadOnlyMode) {
+            frame.addView(
+                acceptJoinButton,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                ),
+            )
+        }
         frame.addView(overlayContainer, overlayLp)
 
         // Network stats overlay (hidden by default, toggled via admin tray)
@@ -877,13 +932,15 @@ class MainActivity :
                 }
             }
         warpButtonOverlay = warpOverlay
-        frame.addView(
-            warpOverlay,
-            FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT,
-            ),
-        )
+        if (!gamepadOnlyMode) {
+            frame.addView(
+                warpOverlay,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                ),
+            )
+        }
 
         setContentView(frame)
 
@@ -1708,7 +1765,25 @@ class MainActivity :
             return super.onKeyDown(keyCode, event)
         }
 
-        // Gamepad face / shoulder buttons → mixer or meta action
+        // Gamepad-only: route D-pad/A/B to admin tray when open
+        if (gamepadOnlyMode && touchOverlay.isAdminTrayOpen()) {
+            if (touchOverlay.handleAdminTrayGamepadKey(keyCode, 0)) return true
+        }
+
+        // Gamepad-only: Start toggles admin tray, Select sends ESC (game menu)
+        if (gamepadOnlyMode) {
+            if (keyCode == KeyEvent.KEYCODE_BUTTON_START) {
+                touchOverlay.toggleAdminTray()
+                return true
+            }
+            if (keyCode == KeyEvent.KEYCODE_BUTTON_SELECT) {
+                nativeKeyEvent(0, KeyEvent.KEYCODE_ESCAPE, 0)
+                nativeKeyEvent(1, KeyEvent.KEYCODE_ESCAPE, 0)
+                return true
+            }
+        }
+
+        // Gamepad face / shoulder buttons -> mixer or meta action
         val joyBtn = gamepadButtonIndex(keyCode)
         if (joyBtn >= 0) {
             val metaId = buttonMetaBindings[joyBtn]
@@ -1743,6 +1818,21 @@ class MainActivity :
     ): Boolean {
         if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
             return super.onKeyUp(keyCode, event)
+        }
+
+        // Gamepad-only: consume events while admin tray is open
+        if (gamepadOnlyMode && touchOverlay.isAdminTrayOpen()) {
+            if (touchOverlay.handleAdminTrayGamepadKey(keyCode, 1)) return true
+        }
+
+        // Gamepad-only: consume Start/Select up events
+        if (gamepadOnlyMode &&
+            (
+                keyCode == KeyEvent.KEYCODE_BUTTON_START ||
+                    keyCode == KeyEvent.KEYCODE_BUTTON_SELECT
+            )
+        ) {
+            return true
         }
 
         val joyBtn = gamepadButtonIndex(keyCode)
