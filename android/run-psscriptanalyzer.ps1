@@ -23,9 +23,9 @@ if (-not (Test-Path $settingsFile)) {
 }
 
 # --- Gather .ps1 files ---
-# Exclude build outputs and gradle wrapper
+# Exclude build outputs, gradle wrapper, and NDK cmake cache
 $files = Get-ChildItem -Path $PSScriptRoot -Recurse -Include "*.ps1" |
-    Where-Object { $_.FullName -notmatch '[\\/]build[\\/]' }
+    Where-Object { $_.FullName -notmatch '[\\/](build|\.cxx)[\\/]' }
 
 if ($files.Count -eq 0) {
     Write-Host "No PowerShell files found"

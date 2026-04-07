@@ -68,10 +68,10 @@ package com.dxxredux.app
  */
 object BuildInfo {
     const val GIT_COMMIT_COUNT = "$versionCode"
-    const val GIT_SHORT_HASH   = "$gitHash"
-    const val BUILD_DATE       = "$buildDate"
-    const val BUILD_TIME       = "$buildTime PST"
-    const val BUILD_TYPE       = "$($variant.ToLower())"
+    const val GIT_SHORT_HASH = "$gitHash"
+    const val BUILD_DATE = "$buildDate"
+    const val BUILD_TIME = "$buildTime PST"
+    const val BUILD_TYPE = "$($variant.ToLower())"
 }
 "@
     Set-Content -Path $buildInfoPath -Value $buildInfoContent -Encoding UTF8

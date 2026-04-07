@@ -13,5 +13,26 @@
       "path": "C:\\local\\jdk-21", // absolute path won't be right for most
       "default": true
     }
-  ]
+  ],
+
+    // --- Exclusions for performance (286K -> ~20K indexed files) ---
+    // files.exclude hides from explorer AND all indexing (C/C++, Java, search)
+    "files.exclude": {
+        "android/app/.cxx/": true,
+        "android/app/build/": true,
+        "android/.gradle/": true,
+        "android/.kotlin/": true,
+        "android/build/": true,
+        "server/target/": true,
+        "tools/etc2tool/build/": true,
+        "build/": true,
+        "buildd2/": true,
+        "d2/build/": true,
+        "temp/": true
+    },
+    // search.exclude adds to files.exclude for search; keep game_data searchable in explorer
+    "search.exclude": {
+        "game_data/": true,
+        "game_data_to_copy_to_emulator/": true
+    }
 }

@@ -48,10 +48,10 @@ package com.dxxredux.app
  */
 object BuildInfo {
     const val GIT_COMMIT_COUNT = "$VERSION_CODE"
-    const val GIT_SHORT_HASH   = "$GIT_HASH"
-    const val BUILD_DATE       = "$BUILD_DATE"
-    const val BUILD_TIME       = "$BUILD_TIME PST"
-    const val BUILD_TYPE       = "$VARIANT"
+    const val GIT_SHORT_HASH = "$GIT_HASH"
+    const val BUILD_DATE = "$BUILD_DATE"
+    const val BUILD_TIME = "$BUILD_TIME PST"
+    const val BUILD_TYPE = "$VARIANT"
 }
 EOF
 echo "Generated: $BUILD_INFO"
