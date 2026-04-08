@@ -96,6 +96,10 @@ tasks.register('generateBuildInfo') {
     outputs.upToDateWhen { false }  // always run so dev builds get a fresh timestamp
 
     doLast {
+        if (project.hasProperty('skipBuildInfo')) {
+            logger.lifecycle("Skipping BuildInfo.kt generation (skipBuildInfo set by build script)")
+            return
+        }
         if (buildInfoFile.exists()) {
             def content = buildInfoFile.text
             // If the file was written by a release build script, overwrite with dev defaults

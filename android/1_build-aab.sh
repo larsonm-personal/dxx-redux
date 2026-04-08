@@ -65,7 +65,7 @@ fi
 echo ""
 echo "Building AAB ($VARIANT) for armeabi-v7a, arm64-v8a, x86_64..."
 echo ""
-./gradlew "$TASK"
+./gradlew "$TASK" -PskipBuildInfo
 
 # Find the AAB
 AAB_DIR="app/build/outputs/bundle/$VARIANT"

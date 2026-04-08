@@ -93,7 +93,7 @@ object BuildInfo {
     Write-Host ""
     Write-Host "Building AAB ($variant) for armeabi-v7a, arm64-v8a, x86_64..."
     Write-Host ""
-    & .\gradlew.bat $task
+    & .\gradlew.bat $task -PskipBuildInfo
     if ($LASTEXITCODE -ne 0) { throw "Gradle build failed with exit code $LASTEXITCODE" }
 
     # Find the AAB
