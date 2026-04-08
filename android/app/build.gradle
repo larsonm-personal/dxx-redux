@@ -100,11 +100,9 @@ tasks.register('generateBuildInfo') {
             def content = buildInfoFile.text
             // If the file was written by a release build script, overwrite with dev defaults
             // so local dev builds are clearly distinguishable
-            if (!content.contains('"release"')) {
-                logger.lifecycle("BuildInfo.kt already present with dev values -- skipping generation")
-                return
+            if (content.contains('"release"')) {
+                logger.lifecycle("BuildInfo.kt has release values -- overwriting with dev defaults")
             }
-            logger.lifecycle("BuildInfo.kt has release values -- overwriting with dev defaults")
         }
         def now = new Date()
         def dateStr = now.format('yyyy-MM-dd')

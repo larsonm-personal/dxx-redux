@@ -445,6 +445,7 @@ Java_com_dxxredux_app_MainActivity_nativeSetGraphicsOption(JNIEnv *env, jobject 
 		LOGI("graphics option: aniso_level=%d", (int) value);
 		ogl_aniso_level = (int) value;
 		GameCfg.AnisoLevel = (int) value;
+		__sync_synchronize(); /* ensure values visible before flag */
 		g_aniso_pending_apply = 1;
 	} else if (strcmp(name, "msaa_level") == 0) {
 		extern int ogl_msaa_samples;
@@ -453,6 +454,7 @@ Java_com_dxxredux_app_MainActivity_nativeSetGraphicsOption(JNIEnv *env, jobject 
 		LOGI("graphics option: msaa_level=%d", (int) value);
 		ogl_msaa_samples = (int) value;
 		GameCfg.MsaaLevel = (int) value;
+		__sync_synchronize(); /* ensure values visible before flag */
 		g_msaa_pending_apply = 1;
 	} else if (strcmp(name, "tex_filt") == 0) {
 		extern int g_texfilt_level;
@@ -462,6 +464,7 @@ Java_com_dxxredux_app_MainActivity_nativeSetGraphicsOption(JNIEnv *env, jobject 
 		if (clamped > 2) clamped = 2;
 		LOGI("graphics option: tex_filt=%d", clamped);
 		g_texfilt_level = clamped;
+		__sync_synchronize(); /* ensure value visible before flag */
 		g_texfilt_pending_apply = 1;
 	} else if (strcmp(name, "menu_tex_filt") == 0) {
 		extern struct Cfg GameCfg;

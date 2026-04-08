@@ -302,218 +302,224 @@ private fun LanDiscoveryView(
         onLaunchGame(info)
     }
 
-    Column(
+    LazyColumn(
         modifier = Modifier.fillMaxSize(),
     ) {
         if (!permissionGranted) {
-            // Permission request card
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        "LAN discovery requires the Nearby Wi-Fi Devices permission.",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    if (permissionPermanentlyDenied) {
+            item {
+                // Permission request card
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            "Permission was denied. Please enable it in app settings.",
-                            style = MaterialTheme.typography.bodySmall,
+                            "LAN discovery requires the Nearby Wi-Fi Devices permission.",
+                            style = MaterialTheme.typography.bodyMedium,
                         )
                         Spacer(Modifier.height(8.dp))
-                        Button(
-                            onClick = {
-                                val intent =
-                                    Intent(
-                                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                        Uri.fromParts("package", context.packageName, null),
-                                    )
-                                context.startActivity(intent)
-                            },
-                        ) {
-                            Text("Open Settings")
-                        }
-                    } else {
-                        Button(
-                            onClick = {
-                                if (Build.VERSION.SDK_INT >= 33) {
-                                    permissionLauncher.launch(
-                                        Manifest.permission.NEARBY_WIFI_DEVICES,
-                                    )
-                                }
-                            },
-                        ) {
-                            Text("Grant Permission")
+                        if (permissionPermanentlyDenied) {
+                            Text(
+                                "Permission was denied. Please enable it in app settings.",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Button(
+                                onClick = {
+                                    val intent =
+                                        Intent(
+                                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                            Uri.fromParts("package", context.packageName, null),
+                                        )
+                                    context.startActivity(intent)
+                                },
+                            ) {
+                                Text("Open Settings")
+                            }
+                        } else {
+                            Button(
+                                onClick = {
+                                    if (Build.VERSION.SDK_INT >= 33) {
+                                        permissionLauncher.launch(
+                                            Manifest.permission.NEARBY_WIFI_DEVICES,
+                                        )
+                                    }
+                                },
+                            ) {
+                                Text("Grant Permission")
+                            }
                         }
                     }
                 }
+                Spacer(Modifier.height(8.dp))
             }
-            Spacer(Modifier.height(8.dp))
         }
 
         // -- Action buttons --
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            if (!isDiscovering) {
-                Button(
-                    onClick = {
-                        if (permissionGranted) {
-                            LobbyService.startDiscovery(context, callsign)
-                        } else if (Build.VERSION.SDK_INT >= 33) {
-                            permissionLauncher.launch(
-                                Manifest.permission.NEARBY_WIFI_DEVICES,
-                            )
-                        }
-                    },
-                ) {
-                    Text("Start Scanning")
-                }
-            } else {
-                OutlinedButton(onClick = { LobbyService.stopDiscovery() }) {
-                    Text("Stop Scanning")
-                }
-            }
-
-            if (!isHosting && isDiscovering) {
-                Button(onClick = { showHostDialog = true }) {
-                    Text("Host LAN Game")
-                }
-            } else if (isHosting) {
-                OutlinedButton(onClick = { LobbyService.stopHosting() }) {
-                    Text("Stop Hosting")
-                }
-            }
-        }
-
-        if (!isHosting && isDiscovering) {
-            Spacer(Modifier.height(4.dp))
-            OutlinedButton(onClick = { showJoinByIpDialog = true }) {
-                Text("Join by IP")
-            }
-        }
-
-        // Show local IP address for direct-connect reference
-        val localIps = remember { getLocalIpAddresses() }
-        if (localIps.isNotEmpty()) {
-            Spacer(Modifier.height(4.dp))
-            Text(
-                if (localIps.size == 1) {
-                    "Your IP: ${localIps[0]}"
+        item {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                if (!isDiscovering) {
+                    Button(
+                        onClick = {
+                            if (permissionGranted) {
+                                LobbyService.startDiscovery(context, callsign)
+                            } else if (Build.VERSION.SDK_INT >= 33) {
+                                permissionLauncher.launch(
+                                    Manifest.permission.NEARBY_WIFI_DEVICES,
+                                )
+                            }
+                        },
+                    ) {
+                        Text("Start Scanning")
+                    }
                 } else {
-                    "Your IPs: ${localIps.joinToString(", ")}"
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+                    OutlinedButton(onClick = { LobbyService.stopDiscovery() }) {
+                        Text("Stop Scanning")
+                    }
+                }
 
-        Spacer(Modifier.height(12.dp))
-
-        // -- Hosted lobby info --
-        if (isHosting) {
-            Text("Your Hosted Lobby", style = MaterialTheme.typography.titleSmall)
-            Spacer(Modifier.height(4.dp))
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Text(
-                        "Players (${hostedPlayers.size}):",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    for (p in hostedPlayers) {
-                        val displayName =
-                            if (p.callsign == callsign) "${p.callsign} (self)" else p.callsign
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(vertical = 2.dp),
-                        ) {
-                            Text(
-                                displayName,
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.weight(1f),
-                            )
-                            Text(
-                                if (p.ready) "Ready" else "Not Ready",
-                                style = MaterialTheme.typography.bodySmall,
-                                color =
-                                    if (p.ready) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                    },
-                            )
-                        }
+                if (!isHosting && isDiscovering) {
+                    Button(onClick = { showHostDialog = true }) {
+                        Text("Host LAN Game")
+                    }
+                    OutlinedButton(onClick = { showJoinByIpDialog = true }) {
+                        Text("Join by IP")
+                    }
+                } else if (isHosting) {
+                    OutlinedButton(onClick = { LobbyService.stopHosting() }) {
+                        Text("Stop Hosting")
                     }
                 }
             }
-            Spacer(Modifier.height(8.dp))
-            if (hostedMode == "coop") {
-                LanCoopSaveOffer(
-                    game = hostedGame,
-                    mission = hostedMission,
-                    playerCallsigns = hostedPlayers.map { it.callsign },
+
+            // Show local IP address for direct-connect reference
+            val localIps = remember { getLocalIpAddresses() }
+            if (localIps.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    if (localIps.size == 1) {
+                        "Your IP: ${localIps[0]}"
+                    } else {
+                        "Your IPs: ${localIps.joinToString(", ")}"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Button(
-                onClick = { LobbyService.startGame(hostedDifficulty, hostedLevelNum) },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = hostedPlayers.size >= 2,
-            ) {
-                Text("Start Game")
-            }
+
             Spacer(Modifier.height(12.dp))
-            HorizontalDivider()
-            Spacer(Modifier.height(8.dp))
+        }
+
+        // -- Hosted lobby info --
+        if (isHosting) {
+            item {
+                Text("Your Hosted Lobby", style = MaterialTheme.typography.titleSmall)
+                Spacer(Modifier.height(4.dp))
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            "Players (${hostedPlayers.size}):",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        for (p in hostedPlayers) {
+                            val displayName =
+                                if (p.callsign == callsign) "${p.callsign} (self)" else p.callsign
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(vertical = 2.dp),
+                            ) {
+                                Text(
+                                    displayName,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Text(
+                                    if (p.ready) "Ready" else "Not Ready",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color =
+                                        if (p.ready) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        },
+                                )
+                            }
+                        }
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                if (hostedMode == "coop") {
+                    LanCoopSaveOffer(
+                        game = hostedGame,
+                        mission = hostedMission,
+                        playerCallsigns = hostedPlayers.map { it.callsign },
+                    )
+                }
+                Button(
+                    onClick = { LobbyService.startGame(hostedDifficulty, hostedLevelNum) },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = hostedPlayers.size >= 2,
+                ) {
+                    Text("Start Game")
+                }
+                Spacer(Modifier.height(12.dp))
+                HorizontalDivider()
+                Spacer(Modifier.height(8.dp))
+            }
         }
 
         // -- Discovered lobbies --
         if (isDiscovering) {
-            Text(
-                "Local Network Games (${discoveredLobbies.size})",
-                style = MaterialTheme.typography.titleSmall,
-            )
-            Spacer(Modifier.height(4.dp))
+            item {
+                Text(
+                    "Local Network Games (${discoveredLobbies.size})",
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Spacer(Modifier.height(4.dp))
+            }
 
             if (discoveredLobbies.isEmpty()) {
-                Text(
-                    "Scanning for LAN games...",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                item {
+                    Text(
+                        "Scanning for LAN games...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             } else {
-                LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(
-                        discoveredLobbies,
-                        key = { it.announce.lobbyId },
-                    ) { lobby ->
-                        LanLobbyCard(lobby, callsign, onJoinInGame = onLaunchGame)
-                        Spacer(Modifier.height(4.dp))
-                    }
+                items(
+                    discoveredLobbies,
+                    key = { it.announce.lobbyId },
+                ) { lobby ->
+                    LanLobbyCard(lobby, callsign, onJoinInGame = onLaunchGame)
+                    Spacer(Modifier.height(4.dp))
                 }
             }
         }
 
         // Diagnostics status line
         if (diagnostics.isNotEmpty()) {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                diagnostics,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
-            )
-            if (broadcastFailing) {
-                Spacer(Modifier.height(4.dp))
-                OutlinedButton(
-                    onClick = {
-                        val intent =
-                            Intent(
-                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                Uri.fromParts("package", context.packageName, null),
-                            )
-                        context.startActivity(intent)
-                    },
-                ) {
-                    Text("Open App Settings")
+            item {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    diagnostics,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+                if (broadcastFailing) {
+                    Spacer(Modifier.height(4.dp))
+                    OutlinedButton(
+                        onClick = {
+                            val intent =
+                                Intent(
+                                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                    Uri.fromParts("package", context.packageName, null),
+                                )
+                            context.startActivity(intent)
+                        },
+                    ) {
+                        Text("Open App Settings")
+                    }
                 }
             }
         }

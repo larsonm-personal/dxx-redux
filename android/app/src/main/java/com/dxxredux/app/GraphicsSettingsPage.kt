@@ -15,6 +15,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -31,6 +33,8 @@ fun GraphicsSettingsPage(
     val ctx = LocalContext.current
     val prefs = ctx.getSharedPreferences("dxx_prefs", android.content.Context.MODE_PRIVATE)
     val scrollState = rememberScrollState()
+    val initialFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { initialFocus.requestFocus() }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -47,7 +51,7 @@ fun GraphicsSettingsPage(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = onBack) {
+                TextButton(onClick = onBack, modifier = Modifier.focusRequester(initialFocus)) {
                     Text("< Back", fontSize = 12.sp)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
@@ -110,13 +114,6 @@ fun GraphicsSettingsPage(
                         // -- Selective Filtering (menu/HUD) --
                         SelectiveFilterSection(filesDir = filesDir)
 
-                        Spacer(modifier = Modifier.height(3.dp))
-
-                        Text(
-                            "MSAA and AF take effect on next launch",
-                            fontSize = 9.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
                         Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
@@ -212,11 +209,6 @@ private fun ColorDepthSection(filesDir: File) {
             Text(text = label, fontSize = 10.sp, modifier = Modifier.padding(start = 4.dp))
         }
     }
-    Text(
-        "Takes effect on next launch",
-        fontSize = 9.sp,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
 }
 
 // Shared constant: must match levels in VideoInfoOverlay.cycleMsaa()
@@ -288,7 +280,7 @@ private fun SelectiveFilterSection(filesDir: File) {
         mutableStateOf((readConfigValue(filesDir, "HudTexFilt") ?: "1") != "0")
     }
 
-    Text("Filter by Context", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+    Text("Enable filters for...", fontWeight = FontWeight.Bold, fontSize = 11.sp)
     Spacer(modifier = Modifier.height(2.dp))
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -308,6 +300,7 @@ private fun SelectiveFilterSection(filesDir: File) {
             modifier = Modifier.padding(start = 8.dp),
         )
     }
+    Spacer(modifier = Modifier.height(4.dp))
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -326,11 +319,6 @@ private fun SelectiveFilterSection(filesDir: File) {
             modifier = Modifier.padding(start = 8.dp),
         )
     }
-    Text(
-        "When off, these use nearest-neighbor (pixelated) regardless of texture filter above",
-        fontSize = 9.sp,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
 }
 
 @Composable

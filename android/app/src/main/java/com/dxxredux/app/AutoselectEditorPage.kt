@@ -157,11 +157,33 @@ fun AutoselectEditorPage(
             secondaryOrder.toList() != savedSecondary
     }
 
+    val isLandscape =
+        android.content.res.Configuration.ORIENTATION_LANDSCAPE ==
+            androidx.compose.ui.platform.LocalConfiguration.current.orientation
+    val initialFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { initialFocus.requestFocus() }
+
     MaterialTheme(colorScheme = darkColorScheme()) {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Weapon Autoselect") },
+                    title = {
+                        if (isLandscape) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                Text("Weapon Autoselect")
+                                Text(
+                                    "Long press + drag, or select + D-pad to reorder",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 9.sp,
+                                )
+                            }
+                        } else {
+                            Text("Weapon Autoselect")
+                        }
+                    },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
@@ -184,12 +206,12 @@ fun AutoselectEditorPage(
                 // Game selector (only show if we might have both)
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(vertical = 8.dp),
+                    modifier = Modifier.padding(vertical = 2.dp),
                 ) {
                     OutlinedButton(
                         onClick = { activeGame = "d1" },
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 1.dp),
+                        modifier = Modifier.weight(1f).focusRequester(initialFocus),
                         border =
                             if (activeGame == "d1") {
                                 androidx.compose.foundation.BorderStroke(
@@ -207,7 +229,7 @@ fun AutoselectEditorPage(
                     }
                     OutlinedButton(
                         onClick = { activeGame = "d2" },
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 1.dp),
                         modifier = Modifier.weight(1f),
                         border =
                             if (activeGame == "d2") {
@@ -235,13 +257,15 @@ fun AutoselectEditorPage(
                     )
                 }
 
-                // Instructions
-                Text(
-                    "Long press + drag, or select + D-pad to reorder",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
+                // Instructions (portrait only; landscape shows in TopAppBar)
+                if (!isLandscape) {
+                    Text(
+                        "Long press + drag, or select + D-pad to reorder",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 9.sp,
+                        modifier = Modifier.padding(bottom = 8.dp),
+                    )
+                }
 
                 // Two weapon lists side by side in landscape, stacked in portrait
                 Row(
@@ -294,7 +318,7 @@ fun AutoselectEditorPage(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp),
+                            .padding(vertical = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     OutlinedButton(
@@ -305,9 +329,10 @@ fun AutoselectEditorPage(
                             secondaryOrder.addAll(secondaryNameMap.keys)
                             checkChanges()
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).height(28.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                     ) {
-                        Text("Reset to Defaults")
+                        Text("Reset to Defaults", fontSize = 12.sp)
                     }
 
                     Button(
@@ -325,9 +350,10 @@ fun AutoselectEditorPage(
                             statusMessage = "Saved to $count pilot file(s)"
                         },
                         enabled = hasChanges,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).height(28.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                     ) {
-                        Text("Save")
+                        Text("Save", fontSize = 12.sp)
                     }
                 }
             }
@@ -556,7 +582,8 @@ private fun DragReorderList(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = name,
-                            fontSize = 13.sp,
+                            fontSize = if (isSeparator) 11.sp else 13.sp,
+                            lineHeight = if (isSeparator) 12.sp else 16.sp,
                             fontStyle = if (isSeparator) FontStyle.Italic else FontStyle.Normal,
                             color =
                                 if (isSeparator) {

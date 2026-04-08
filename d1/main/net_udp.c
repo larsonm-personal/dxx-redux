@@ -1997,11 +1997,16 @@ void net_udp_welcome_player(UDP_sequence_packet *their)
 	int player_num;
 	int i;
 
+	MPDIAG("welcome_player: '%s' connected=%d Current_level_num=%d N_players=%d\n",
+	       their->player.callsign, their->player.connected, Current_level_num, N_players);
+
 	// Don't accept new players if we're ending this level.  Its safe to
 	// ignore since they'll request again later
 
 	if ((Endlevel_sequence) || (Control_center_destroyed))
 	{
+		MPDIAG("welcome_player: REJECTED endlevel (Endlevel_sequence=%d CC_destroyed=%d)\n",
+		       Endlevel_sequence, Control_center_destroyed);
 		net_log_comment("new player dumped due to endlevel sequence");
 		net_udp_dump_player(their->player.protocol.udp.addr, their->token, DUMP_ENDLEVEL);
 		return; 
@@ -2012,12 +2017,16 @@ void net_udp_welcome_player(UDP_sequence_packet *their)
 		// Ignore silently, we're already responding to someone and we can't
 		// do more than one person at a time.  If we don't dump them they will
 		// re-request in a few seconds.
+		MPDIAG("welcome_player: IGNORED busy (send_objects=%d sending_extras=%d)\n",
+		       Network_send_objects, Network_sending_extras);
 		net_log_comment("new player ignored due to player already joining");
 		return;
 	}
 
 	if (their->player.connected != Current_level_num)
 	{
+		MPDIAG("welcome_player: REJECTED level mismatch (their=%d mine=%d)\n",
+		       their->player.connected, Current_level_num);
 		net_log_comment("new player dumped due to wrong level number");
 		net_udp_dump_player(their->player.protocol.udp.addr, their->token, DUMP_LEVEL);
 		return;
@@ -2443,8 +2452,11 @@ int net_udp_verify_objects(int remote, int local)
 {
 	int i, nplayers = 0;
 
-	if ((remote-local) > 10)
+	if ((remote-local) > 10) {
+		MPDIAG("verify_objects: FAIL packet_loss remote=%d local=%d diff=%d\n",
+		       remote, local, remote - local);
 		return(2);
+	}
 
 	for (i = 0; i <= Highest_object_index; i++)
 	{
@@ -2452,9 +2464,14 @@ int net_udp_verify_objects(int remote, int local)
 			nplayers++;
 	}
 
+	MPDIAG("verify_objects: remote=%d local=%d nplayers=%d max_numplayers=%d Highest_object_index=%d\n",
+	       remote, local, nplayers, Netgame.max_numplayers, Highest_object_index);
+
 	if (Netgame.max_numplayers<=nplayers)
 		return(0);
 
+	MPDIAG("verify_objects: FAIL missing_players (need %d, have %d)\n",
+	       Netgame.max_numplayers, nplayers);
 	return(1);
 }
 
@@ -2494,12 +2511,15 @@ void net_udp_read_object_packet( ubyte *data )
 				special_reset_objects();
 				mode = 0;
 			}
+			MPDIAG("read_object_packet: end marker remote_objnum=%d object_count=%d\n",
+			       remote_objnum, object_count);
 			if (remote_objnum != object_count) {
 				Int3();
 			}
 			if (net_udp_verify_objects(remote_objnum, object_count))
 			{
 				// Failed to sync up 
+				MPDIAG("read_object_packet: SYNC FAILED, showing error dialog\n");
 				nm_messagebox(NULL, 1, TXT_OK, TXT_NET_SYNC_FAILED);
 				Network_status = NETSTAT_MENU;                          
 				return;
@@ -7724,6 +7744,9 @@ void net_udp_do_refuse_stuff (UDP_sequence_packet *their)
 	int i,new_player_num;
 
 	ClipRank (&their->player.rank);
+
+	MPDIAG("refuse_stuff: '%s' connected=%d WaitForRefuse=%d RefuseThisPlayer=%d\n",
+	       their->player.callsign, their->player.connected, WaitForRefuseAnswer, RefuseThisPlayer);
 	
 	if(their->player.observer) {
 		if(Netgame.numobservers < Netgame.max_numobservers) {
@@ -7738,6 +7761,8 @@ void net_udp_do_refuse_stuff (UDP_sequence_packet *their)
 	{
 		if ((!d_stricmp(Players[i].callsign, their->player.callsign )) && !memcmp((struct _sockaddr *)&their->player.protocol.udp.addr, (struct _sockaddr *)&Netgame.players[i].protocol.udp.addr, sizeof(struct _sockaddr)))
 		{
+			MPDIAG("refuse_stuff: '%s' matches existing player %d, welcoming\n",
+			       their->player.callsign, i);
 			net_udp_welcome_player(their);
 			return;
 		}
@@ -7780,11 +7805,15 @@ void net_udp_do_refuse_stuff (UDP_sequence_packet *their)
 				HUD_init_message(HM_MULTI, "%s wants to join (accept: F6)",their->player.callsign);
 			}
 		
+			MPDIAG("refuse_stuff: prompting for '%s', setting WaitForRefuseAnswer=1\n",
+			       their->player.callsign);
 			strcpy (RefusePlayerName,their->player.callsign);
 			RefuseTimeLimit=timer_query();
 			RefuseThisPlayer=0;
 			WaitForRefuseAnswer=1;
 		} else {			
+			MPDIAG("refuse_stuff: REJECTED full (active=%d max=%d)\n",
+			       activeplayers, Netgame.max_numplayers);
 			net_udp_dump_player(their->player.protocol.udp.addr, their->token, DUMP_FULL);
 		}
 	}
@@ -7804,6 +7833,8 @@ void net_udp_do_refuse_stuff (UDP_sequence_packet *their)
 	
 		if (RefuseThisPlayer)
 		{
+			MPDIAG("refuse_stuff: ACCEPTED '%s' (RefuseThisPlayer=1)\n",
+			       their->player.callsign);
 			RefuseTimeLimit=0;
 			RefuseThisPlayer=0;
 			WaitForRefuseAnswer=0;
@@ -7829,6 +7860,8 @@ void net_udp_do_refuse_stuff (UDP_sequence_packet *their)
 
 		if ((timer_query()) > RefuseTimeLimit+REFUSE_INTERVAL)
 		{
+			MPDIAG("refuse_stuff: TIMEOUT for '%s', dumping\n",
+			       their->player.callsign);
 			RefuseTimeLimit=0;
 			RefuseThisPlayer=0;
 			WaitForRefuseAnswer=0;

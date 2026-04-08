@@ -43,6 +43,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -130,6 +132,9 @@ class SetupActivity : ComponentActivity() {
      *  rapid startActivity calls create two MainActivity instances in the
      *  :game process, causing a FORTIFY pthread_mutex crash. */
     private var mpGameLaunching = false
+
+    /** True if LAN discovery was active before game launch; used to auto-resume on return */
+    private var wasLanDiscoveringBeforeLaunch = false
 
     // ── Launcher script automation (debug builds only) ──────────────────
     //   adb shell am broadcast -a com.dxxredux.SETUP_AUTOMATE \
@@ -1040,6 +1045,7 @@ class SetupActivity : ComponentActivity() {
             // so Compose's focus system can handle navigation.
             if (controllerConfigActive) return true
             // Map B button to system Back for page navigation
+            Log.d("DXX-Focus", "Gamepad key: $name action=${event.action}")
             if (event.keyCode == KeyEvent.KEYCODE_BUTTON_B) {
                 if (event.action == KeyEvent.ACTION_UP) onBackPressedDispatcher.onBackPressed()
                 return true
@@ -1303,6 +1309,7 @@ class SetupActivity : ComponentActivity() {
         mpGameLaunching = true
         // For LAN hosts, keep the announce broadcast alive so the game
         // remains discoverable; for everyone else, shut down fully
+        wasLanDiscoveringBeforeLaunch = com.dxxredux.app.lobby.LobbyService.isDiscovering.value
         if (info.isLan && info.isHost) {
             // stopInGameBroadcast will be called when the game exits
         } else {
@@ -1816,6 +1823,14 @@ class SetupActivity : ComponentActivity() {
         // If a LAN host was broadcasting in-game, stop now
         com.dxxredux.app.lobby.LobbyService
             .stopInGameBroadcast()
+        // Auto-resume LAN discovery if it was active before game launch
+        if (wasLanDiscoveringBeforeLaunch &&
+            !com.dxxredux.app.lobby.LobbyService.isDiscovering.value
+        ) {
+            com.dxxredux.app.lobby.LobbyService
+                .startDiscovery(this, mpCallsign)
+        }
+        wasLanDiscoveringBeforeLaunch = false
         refreshTrigger.intValue++
         // If the host returns from a game, signal the server to reset the lobby
         val mpState =
@@ -2549,6 +2564,10 @@ private fun SetupScreen(
     // ── DXA mod import state ────────────────────────────
     val dxaImportUris = remember { mutableListOf<Pair<String, Uri>>() }
 
+    // ── Config JSON import state ────────────────────────
+    var configImportUri by remember { mutableStateOf<Uri?>(null) }
+    var configImportName by remember { mutableStateOf<String?>(null) }
+
     val filePickerLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.OpenMultipleDocuments(),
@@ -2569,6 +2588,7 @@ private fun SetupScreen(
                     var instDiscUri: Pair<String, Uri>? = null // .inst CUE sheet
                     val unhandledFiles = mutableListOf<String>()
                     val audioFileUris = mutableListOf<Uri>()
+                    var jsonConfigUri: Pair<String, Uri>? = null
                     for (uri in uris) {
                         val name = getDisplayName(context, uri)
                         if (name != null) {
@@ -2586,6 +2606,33 @@ private fun SetupScreen(
                                 lname.endsWith(".mp3") || lname.endsWith(".ogg") || lname.endsWith(".flac") ->
                                     audioFileUris.add(uri)
                                 lname.endsWith(".dxa") -> dxaImportUris.add(name to uri)
+                                lname.endsWith(".json") -> {
+                                    // Detect game config JSON (only when picked alone)
+                                    if (uris.size == 1) {
+                                        try {
+                                            val text =
+                                                context.contentResolver
+                                                    .openInputStream(uri)
+                                                    ?.bufferedReader()
+                                                    ?.use { it.readText() }
+                                            if (text != null) {
+                                                val json = org.json.JSONObject(text)
+                                                val cfgType = HumanReadableConfig.detectConfigType(json)
+                                                if (cfgType != "unknown") {
+                                                    jsonConfigUri = name to uri
+                                                } else {
+                                                    unhandledFiles.add(name)
+                                                }
+                                            } else {
+                                                unhandledFiles.add(name)
+                                            }
+                                        } catch (_: Exception) {
+                                            unhandledFiles.add(name)
+                                        }
+                                    } else {
+                                        unhandledFiles.add(name)
+                                    }
+                                }
                                 else -> unhandledFiles.add(name)
                             }
                         }
@@ -2641,6 +2688,11 @@ private fun SetupScreen(
                         sowUri?.let {
                             sowImportName = it.first
                             sowImportUri = it.second
+                        }
+                        // Trigger config import dialog if single JSON config picked
+                        jsonConfigUri?.let {
+                            configImportName = it.first
+                            configImportUri = it.second
                         }
                         scanning = false
                     }
@@ -2727,6 +2779,9 @@ private fun SetupScreen(
             }
         }
 
+    // ── Initial focus for D-pad/keyboard navigation ─────
+    val initialFocus = remember { FocusRequester() }
+
     // ── Page navigation state ────────────────────────────
     var showControllerPage by remember { mutableStateOf(false) }
     var showTouchEditorPage by remember { mutableStateOf(false) }
@@ -2735,6 +2790,19 @@ private fun SetupScreen(
     var showMultiplayerPage by remember { mutableStateOf(false) }
     var showAutoselectPage by remember { mutableStateOf(false) }
     var showMusicPage by remember { mutableStateOf(false) }
+
+    // Re-establish focus when returning from any sub-page
+    val anySubPageOpen =
+        showControllerPage ||
+            showTouchEditorPage ||
+            showAdvancedPage ||
+            showGraphicsPage ||
+            showMultiplayerPage ||
+            showAutoselectPage ||
+            showMusicPage
+    LaunchedEffect(anySubPageOpen) {
+        if (!anySubPageOpen) initialFocus.requestFocus()
+    }
 
     MaterialTheme(colorScheme = darkColorScheme()) {
         if (showControllerPage) {
@@ -2845,10 +2913,16 @@ private fun SetupScreen(
                         title = { Text("DXX-Redux") },
                         text = {
                             val arch = Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown"
+                            val buildLine =
+                                if (BuildInfo.BUILD_TYPE == "dev") {
+                                    "Dev Build"
+                                } else {
+                                    "Build ${BuildInfo.GIT_COMMIT_COUNT}" +
+                                        " (${BuildInfo.GIT_SHORT_HASH})" +
+                                        " ${BuildInfo.BUILD_TYPE}"
+                                }
                             Text(
-                                "Build ${BuildInfo.GIT_COMMIT_COUNT}" +
-                                    " (${BuildInfo.GIT_SHORT_HASH})" +
-                                    " ${BuildInfo.BUILD_TYPE}\n" +
+                                "$buildLine\n" +
                                     "Date: ${BuildInfo.BUILD_DATE}" +
                                     " ${BuildInfo.BUILD_TIME}\n" +
                                     "Arch: $arch\n" +
@@ -2972,6 +3046,37 @@ private fun SetupScreen(
                         onDismiss = {
                             sowImportUri = null
                             sowImportName = null
+                        },
+                    )
+                }
+
+                // ── Config JSON import dialog ──
+                if (configImportUri != null) {
+                    AlertDialog(
+                        onDismissRequest = {
+                            configImportUri = null
+                            configImportName = null
+                        },
+                        title = { Text("Import Game Config?") },
+                        text = {
+                            Text(
+                                "Import settings from ${configImportName ?: "config file"}? This will overwrite your current touch layout, controller config, and/or weapon ordering",
+                            )
+                        },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                val uri = configImportUri!!
+                                configImportUri = null
+                                configImportName = null
+                                val result = ConfigImportExport.importFromUri(context, uri)
+                                Toast.makeText(context, result, Toast.LENGTH_LONG).show()
+                            }) { Text("Import") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = {
+                                configImportUri = null
+                                configImportName = null
+                            }) { Text("Cancel") }
                         },
                     )
                 }
@@ -3301,7 +3406,7 @@ private fun SetupScreen(
                                 } else {
                                     "\uD83D\uDCC2 Select Game Files or Archive to Import"
                                 },
-                            fontSize = 14.sp,
+                            fontSize = 11.sp,
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
@@ -3733,6 +3838,12 @@ private fun SetupScreen(
                         filesDir = filesDir,
                         refreshTrigger = refreshTrigger,
                     )
+
+                    DemosSection(
+                        setDir = setDir,
+                        refreshTrigger = refreshTrigger,
+                        onRefresh = onRefresh,
+                    )
                 }
 
                 val controlsPane: @Composable ColumnScope.() -> Unit = {
@@ -3785,11 +3896,23 @@ private fun SetupScreen(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .height(40.dp),
+                                .height(40.dp)
+                                .focusRequester(initialFocus),
+                        enabled = canLaunch,
                         colors =
                             ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                containerColor =
+                                    if (!canLaunch) {
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    } else {
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    },
+                                contentColor =
+                                    if (!canLaunch) {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    } else {
+                                        MaterialTheme.colorScheme.onSecondaryContainer
+                                    },
                             ),
                     ) {
                         Text("Multiplayer", fontSize = 14.sp)
@@ -4126,6 +4249,148 @@ private fun ModsSection(
             },
             dismissButton = {
                 TextButton(onClick = { deleteTarget = null }) { Text("Cancel") }
+            },
+        )
+    }
+}
+
+@Composable
+private fun DemosSection(
+    setDir: File,
+    refreshTrigger: Int,
+    onRefresh: () -> Unit,
+) {
+    val demosDir = File(setDir, "demos")
+    var demoFiles by remember { mutableStateOf(emptyList<File>()) }
+    var expanded by remember { mutableStateOf(false) }
+    var deleteAllConfirm by remember { mutableStateOf(false) }
+    var deleteSingleTarget by remember { mutableStateOf<File?>(null) }
+
+    LaunchedEffect(refreshTrigger) {
+        demoFiles =
+            (
+                demosDir.listFiles()?.filter {
+                    it.isFile && it.name.lowercase().endsWith(".dem")
+                } ?: emptyList()
+            ).sortedBy { it.name.lowercase() }
+    }
+
+    if (demoFiles.isEmpty()) return
+
+    val totalSize = demoFiles.sumOf { it.length() }
+    val summary = "${demoFiles.size} demos, ${formatSize(totalSize)}"
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // Header row with title, summary, expand toggle, and delete-all X
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "Demos",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = summary,
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        TextButton(
+            onClick = { expanded = !expanded },
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+            modifier = Modifier.height(28.dp),
+        ) {
+            Text(
+                text = if (expanded) "Hide" else "Show",
+                fontSize = 12.sp,
+            )
+        }
+        TextButton(
+            onClick = { deleteAllConfirm = true },
+            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+            modifier = Modifier.height(24.dp),
+        ) {
+            Text("\u2717", fontSize = 12.sp, color = Color(0xFFFF5252))
+        }
+    }
+    HorizontalDivider(
+        color = MaterialTheme.colorScheme.outlineVariant,
+        modifier = Modifier.padding(bottom = 4.dp),
+    )
+
+    if (expanded) {
+        demoFiles.forEach { file ->
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = 8.dp, bottom = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = file.name,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = formatSize(file.length()),
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                TextButton(
+                    onClick = { deleteSingleTarget = file },
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                    modifier = Modifier.height(24.dp),
+                ) {
+                    Text("\u2717", fontSize = 12.sp, color = Color(0xFFFF5252))
+                }
+            }
+        }
+    }
+
+    // Delete all confirmation
+    if (deleteAllConfirm) {
+        AlertDialog(
+            onDismissRequest = { deleteAllConfirm = false },
+            title = { Text("Delete All Demos") },
+            text = { Text("Remove all ${demoFiles.size} demo files? This cannot be undone") },
+            confirmButton = {
+                TextButton(onClick = {
+                    demoFiles.forEach { it.delete() }
+                    deleteAllConfirm = false
+                    onRefresh()
+                }) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteAllConfirm = false }) { Text("Cancel") }
+            },
+        )
+    }
+
+    // Delete single confirmation
+    deleteSingleTarget?.let { file ->
+        AlertDialog(
+            onDismissRequest = { deleteSingleTarget = null },
+            title = { Text("Delete Demo") },
+            text = { Text("Remove ${file.name}? This cannot be undone") },
+            confirmButton = {
+                TextButton(onClick = {
+                    file.delete()
+                    deleteSingleTarget = null
+                    onRefresh()
+                }) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteSingleTarget = null }) { Text("Cancel") }
             },
         )
     }

@@ -1650,58 +1650,61 @@ void ogl_start_frame(void){
 	g_ogl_render_context = 1; /* 3D world */
 	if (g_aniso_pending_apply) {
 		g_aniso_pending_apply = 0;
+		__sync_synchronize(); /* ensure we read values written before flag */
 		if (ogl_aniso_level > 0) {
-			/* AF on: flush textures that lack mipmaps so they reload with
-			 * mipmaps (ogl_loadbmtexture_f upgrades texfilt when AF is on).
-			 * Skip font textures (NOCOLOR) -- they never need mipmaps */
-			int flushed = 0;
+			/* AF on: generate mipmaps in-place for textures that lack them
+			 * (needed for AF to have any effect). Skip font textures
+			 * (NOCOLOR) -- they never need mipmaps */
+			int upgraded = 0;
 			for (int i = 0; i < OGL_TEXTURE_LIST_SIZE; i++) {
 				if (ogl_texture_list[i].handle > 0 && !ogl_texture_list[i].has_mipmaps
 				    && !(ogl_texture_list[i].flags & OGL_FLAG_NOCOLOR)) {
-					glDeleteTextures(1, &ogl_texture_list[i].handle);
-					ogl_texture_list[i].handle = 0;
-					ogl_texture_list[i].wrapstate = -1;
-					flushed++;
+					glBindTexture(GL_TEXTURE_2D, ogl_texture_list[i].handle);
+					glGenerateMipmap(GL_TEXTURE_2D);
+					ogl_texture_list[i].has_mipmaps = 1;
+					upgraded++;
 				}
 			}
-			if (flushed)
-				con_printf(CON_DEBUG, "anisotropy: flushed %d non-mipmapped textures for reload", flushed);
-		} else {
-			/* AF off: flush mipmapped textures so they revert to base texfilt
-			 * (the texfilt upgrade only applies when ogl_aniso_level > 0) */
-			int flushed = 0;
-			for (int i = 0; i < OGL_TEXTURE_LIST_SIZE; i++) {
-				if (ogl_texture_list[i].handle > 0 && ogl_texture_list[i].has_mipmaps) {
-					glDeleteTextures(1, &ogl_texture_list[i].handle);
-					ogl_texture_list[i].handle = 0;
-					ogl_texture_list[i].has_mipmaps = 0;
-					ogl_texture_list[i].wrapstate = -1;
-					flushed++;
-				}
-			}
-			if (flushed)
-				con_printf(CON_DEBUG, "anisotropy: flushed %d mipmapped textures for downgrade", flushed);
+			ogl_last_bound_tex = 0;
+			if (upgraded)
+				con_printf(CON_DEBUG, "anisotropy: generated mipmaps for %d textures", upgraded);
 		}
+		/* AF off: mipmaps are harmless, just update the aniso parameter.
+		 * ogl_bindbmtex will use the correct filter at bind time */
 		ogl_apply_anisotropy_all();
 	}
 	if (g_texfilt_pending_apply) {
 		g_texfilt_pending_apply = 0;
+		__sync_synchronize(); /* ensure we read values written before flag */
 		GameCfg.TexFilt = g_texfilt_level;
-		/* Flush all loaded textures so they reload with new TexFilt value.
-		 * Skip font textures (NOCOLOR) -- their filter is set at bind time */
-		int flushed = 0;
+		/* Update filter parameters in-place instead of flushing textures.
+		 * Deleting and recreating textures causes driver-level corruption
+		 * on some mobile GPUs (Adreno, Mali) due to stale cached state */
+		int updated = 0;
 		for (int i = 0; i < OGL_TEXTURE_LIST_SIZE; i++) {
-			if (ogl_texture_list[i].handle > 0
-			    && !(ogl_texture_list[i].flags & OGL_FLAG_NOCOLOR)) {
-				glDeleteTextures(1, &ogl_texture_list[i].handle);
-				ogl_texture_list[i].handle = 0;
-				ogl_texture_list[i].has_mipmaps = 0;
-				ogl_texture_list[i].wrapstate = -1;
-				flushed++;
+			if (ogl_texture_list[i].handle <= 0)
+				continue;
+			if (ogl_texture_list[i].flags & OGL_FLAG_NOCOLOR)
+				continue; /* font: filter set at bind time */
+			glBindTexture(GL_TEXTURE_2D, ogl_texture_list[i].handle);
+			if (GameCfg.TexFilt > 0) {
+				if (!ogl_texture_list[i].has_mipmaps) {
+					glGenerateMipmap(GL_TEXTURE_2D);
+					ogl_texture_list[i].has_mipmaps = 1;
+				}
+				GLenum min_f = GameCfg.TexFilt >= 2
+					? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR_MIPMAP_NEAREST;
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_f);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			} else {
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			}
+			updated++;
 		}
-		if (flushed)
-			con_printf(CON_DEBUG, "texfilt: flushed %d textures for reload (TexFilt=%d)", flushed, GameCfg.TexFilt);
+		ogl_last_bound_tex = 0;
+		if (updated)
+			con_printf(CON_DEBUG, "texfilt: updated %d textures in-place (TexFilt=%d)", updated, GameCfg.TexFilt);
 	}
 	g_texfilt_level = GameCfg.TexFilt;
 	if (g_msaa_pending_apply) {

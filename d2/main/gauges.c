@@ -4564,7 +4564,17 @@ void draw_hud()
 			}
 
 			if (PlayerCfg.CurrentCockpitMode != CM_LETTERBOX)
+			{
+#ifdef ANDROID
+				extern int g_ogl_render_context;
+				int saved_ctx = g_ogl_render_context;
+				g_ogl_render_context = 0; /* menu context: reticle uses MenuTexFilt */
+#endif
 				show_reticle(PlayerCfg.ReticleType, 1);
+#ifdef ANDROID
+				g_ogl_render_context = saved_ctx;
+#endif
+			}
 			if (PlayerCfg.CurrentCockpitMode != CM_LETTERBOX && Newdemo_state != ND_STATE_PLAYBACK && (PlayerCfg.MouseControlStyle == MOUSE_CONTROL_FLIGHT_SIM) && PlayerCfg.MouseFSIndicator)
 				show_mousefs_indicator(Controls.raw_mouse_axis[0], Controls.raw_mouse_axis[1], Controls.raw_mouse_axis[2], GWIDTH / 2, GHEIGHT / 2, GHEIGHT / 4);
 		}
@@ -4573,9 +4583,6 @@ void draw_hud()
 	}
 
 	if (PlayerCfg.HudMode==3) // no hud, "immersion mode"
-		return;
-
-	// Cruise speed
 	if ( Player_num > -1 && Viewer->type==OBJ_PLAYER && Viewer->id==Player_num && PlayerCfg.CurrentCockpitMode != CM_REAR_VIEW)	{
 		int	x = FSPACX(1);
 		int	y = grd_curcanv->cv_bitmap.bm_h;
@@ -4654,7 +4661,17 @@ void draw_hud()
 		if (Game_mode&GM_MULTI && Show_kill_list)
 			hud_show_kill_list();
 		if (PlayerCfg.CurrentCockpitMode != CM_LETTERBOX)
+		{
+#ifdef ANDROID
+			extern int g_ogl_render_context;
+			int saved_ctx = g_ogl_render_context;
+			g_ogl_render_context = 0; /* menu context: reticle uses MenuTexFilt */
+#endif
 			show_reticle(PlayerCfg.ReticleType, 1);
+#ifdef ANDROID
+			g_ogl_render_context = saved_ctx;
+#endif
+		}
 		if (PlayerCfg.CurrentCockpitMode != CM_LETTERBOX && Newdemo_state != ND_STATE_PLAYBACK && (PlayerCfg.MouseControlStyle == MOUSE_CONTROL_FLIGHT_SIM) && PlayerCfg.MouseFSIndicator)
 			show_mousefs_indicator(Controls.raw_mouse_axis[0], Controls.raw_mouse_axis[1], Controls.raw_mouse_axis[2], GWIDTH/2, GHEIGHT/2, GHEIGHT/4);
 		if (Game_mode & GM_MULTI && PlayerCfg.ObsShowObs[get_observer_game_mode()])
@@ -4884,7 +4901,17 @@ void do_cockpit_window_view(int win,object *viewer,int rear_view_flag,int user,c
 	}
 
 	if (user == WBU_GUIDED)
+	{
+#ifdef ANDROID
+		extern int g_ogl_render_context;
+		int saved_ctx = g_ogl_render_context;
+		g_ogl_render_context = 0; /* menu context: reticle uses MenuTexFilt */
+#endif
 		show_reticle(RET_TYPE_CROSS_V1, 0);
+#ifdef ANDROID
+		g_ogl_render_context = saved_ctx;
+#endif
+	}
 
 	if (PlayerCfg.CurrentCockpitMode == CM_FULL_SCREEN) {
 		int small_window_bottom,big_window_bottom,extra_part_h;

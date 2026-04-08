@@ -609,8 +609,21 @@ object LobbyService {
             return
         }
         if (gameStarted) {
-            Log.d(TAG, "handleJoin: game already started, rejecting JOIN from $senderAddr")
-            sendTo(buildJoinReject(hostedLobbyId ?: "", "game already started"), senderAddr)
+            // Allow mid-game joins: send ACK with in-game info so the
+            // joiner's C engine can negotiate via UPID_REQUEST/NETSTAT_PLAYING
+            Log.i(TAG, "handleJoin: game in progress, allowing mid-game join from $senderAddr")
+            val callsign = json.optString("callsign", "Player")
+            sendTo(
+                buildJoinAck(
+                    hostedLobbyId ?: "",
+                    hostedGame,
+                    hostedMission,
+                    hostedMode,
+                    hostedMaxPlayers,
+                ),
+                senderAddr,
+            )
+            NetLog.log("LAN", "Mid-game JOIN_ACK sent to $callsign at $senderAddr")
             return
         }
         val lobbyId = json.optString("lobby_id", "")
@@ -858,13 +871,25 @@ object LobbyService {
         }
     }
 
-    /** Stop the in-game announce loop when the game exits back to setup */
+    /** Stop the in-game announce loop when the game exits back to setup.
+     *  If still hosting, restart lobby-mode announces so the lobby remains
+     *  discoverable for new joins. */
     fun stopInGameBroadcast() {
         announceJob?.cancel()
         announceJob = null
         gameStarted = false
         inGameDifficulty = -1
         inGameLevelNum = -1
+        // Restart lobby announces if we're still hosting
+        if (_isHosting.value && _isDiscovering.value) {
+            announceJob =
+                scope?.launch(Dispatchers.IO) {
+                    while (isActive && _isHosting.value) {
+                        broadcastAnnounce()
+                        delay(NetworkConstants.LAN_ANNOUNCE_INTERVAL_MS)
+                    }
+                }
+        }
     }
 
     private fun handleStart(

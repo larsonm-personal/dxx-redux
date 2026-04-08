@@ -532,7 +532,6 @@ class MainActivity :
         touchOverlay.adminTrayCallback = { action ->
             when (action) {
                 TouchOverlayView.ADMIN_INCREASE_VIEW -> nativeCycleCockpit(1)
-                TouchOverlayView.ADMIN_DECREASE_VIEW -> nativeCycleCockpit(-1)
                 TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL -> nativeToggleAutoLeveling()
                 TouchOverlayView.ADMIN_QUICK_SAVE -> {
                     // Alt+F2

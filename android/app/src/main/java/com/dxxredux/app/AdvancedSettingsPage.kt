@@ -24,6 +24,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +46,8 @@ fun AdvancedSettingsPage(
 
     val ctx = LocalContext.current
     val scrollState = rememberScrollState()
+    val initialFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { initialFocus.requestFocus() }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -61,7 +65,7 @@ fun AdvancedSettingsPage(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = onBack) {
+                TextButton(onClick = onBack, modifier = Modifier.focusRequester(initialFocus)) {
                     Text("< Back", fontSize = 14.sp)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
@@ -258,13 +262,7 @@ private fun DebugLoggingSection() {
     var showDeleteDialog by remember { mutableStateOf(false) }
     val dateFmt = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US) }
 
-    Text("Debug Logging", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-    Spacer(modifier = Modifier.height(4.dp))
-    Text(
-        "Log categories to files for debugging. Enable only what you need.",
-        fontSize = 12.sp,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
+    Text("Debug Logging Categories", fontWeight = FontWeight.Bold, fontSize = 14.sp)
     Spacer(modifier = Modifier.height(8.dp))
 
     for (cat in 0 until DebugLogCategory.COUNT) {
@@ -510,7 +508,7 @@ private fun StorageInspectorSection(filesDir: File) {
     }
 
     if (showFilesDialog) {
-        val fileEntries =
+        val allFiles =
             remember {
                 filesDir
                     .walkTopDown()
@@ -519,21 +517,57 @@ private fun StorageInspectorSection(filesDir: File) {
                         val rel = f.relativeTo(filesDir).path
                         val size = f.length()
                         rel to size
-                    }.sortedBy { it.first }
-                    .toList()
+                    }.toList()
             }
-        val totalSize = remember(fileEntries) { fileEntries.sumOf { it.second } }
+        var sortBySize by remember { mutableStateOf(false) }
+        val fileEntries =
+            remember(allFiles, sortBySize) {
+                if (sortBySize) {
+                    allFiles.sortedByDescending { it.second }
+                } else {
+                    allFiles.sortedBy { it.first }
+                }
+            }
+        val totalSize = remember(allFiles) { allFiles.sumOf { it.second } }
 
         AlertDialog(
             onDismissRequest = { showFilesDialog = false },
             title = { Text("App Storage Files (${fileEntries.size})") },
             text = {
                 Column {
-                    Text(
-                        "Total: ${formatSize(totalSize)}",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "Total: ${formatSize(totalSize)}",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        OutlinedButton(
+                            onClick = { sortBySize = false },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                            modifier = Modifier.height(28.dp),
+                            border =
+                                if (!sortBySize) {
+                                    androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                                } else {
+                                    null
+                                },
+                        ) { Text("Name", fontSize = 10.sp) }
+                        OutlinedButton(
+                            onClick = { sortBySize = true },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                            modifier = Modifier.height(28.dp),
+                            border =
+                                if (sortBySize) {
+                                    androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                                } else {
+                                    null
+                                },
+                        ) { Text("Size", fontSize = 10.sp) }
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
                     LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
                         items(fileEntries) { (path, size) ->

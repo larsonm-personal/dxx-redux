@@ -1632,19 +1632,23 @@ fun ControllerConfigPage(
     }
 
     val infoAndButtons: @Composable ColumnScope.() -> Unit = {
-        Text(
-            text = "Controller Layout",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(
-            text = "Tap any control to assign a function",
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(modifier = Modifier.height(6.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = "Controller Layout",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = "Tap to assign",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
 
         if (allUnassigned.isNotEmpty()) {
             Text(
@@ -1688,7 +1692,7 @@ fun ControllerConfigPage(
                     "\u2717 Not detected"
                 },
             color = if (hasController) Color(0xFF4CAF50) else Color(0xFFF44336),
-            fontSize = 13.sp,
+            fontSize = 11.sp,
             fontWeight = FontWeight.SemiBold,
         )
         Spacer(modifier = Modifier.height(4.dp))
@@ -1724,9 +1728,9 @@ fun ControllerConfigPage(
         ) {
             OutlinedButton(
                 onClick = onBack,
-                modifier = Modifier.weight(1f).height(48.dp),
+                modifier = Modifier.weight(1f).height(38.dp),
             ) {
-                Text("Cancel", fontSize = 14.sp)
+                Text("Cancel", fontSize = 13.sp)
             }
             Button(
                 onClick = {
@@ -1734,8 +1738,8 @@ fun ControllerConfigPage(
                     Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
                     onBack()
                 },
-                modifier = Modifier.weight(1f).height(48.dp),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                modifier = Modifier.weight(1f).height(38.dp),
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                 colors =
                     ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,

@@ -4218,7 +4218,17 @@ void draw_hud()
 			}
 
 			if (PlayerCfg.CurrentCockpitMode != CM_LETTERBOX)
+			{
+#ifdef ANDROID
+				extern int g_ogl_render_context;
+				int saved_ctx = g_ogl_render_context;
+				g_ogl_render_context = 0; /* menu context: reticle uses MenuTexFilt */
+#endif
 				show_reticle(PlayerCfg.ReticleType, 1);
+#ifdef ANDROID
+				g_ogl_render_context = saved_ctx;
+#endif
+			}
 			if (PlayerCfg.CurrentCockpitMode != CM_LETTERBOX && Newdemo_state != ND_STATE_PLAYBACK && (PlayerCfg.MouseControlStyle == MOUSE_CONTROL_FLIGHT_SIM) && PlayerCfg.MouseFSIndicator) /* Old School Mouse */
 				show_mousefs_indicator(Controls.raw_mouse_axis[0], Controls.raw_mouse_axis[1], Controls.raw_mouse_axis[2], GWIDTH/2, GHEIGHT/2, GHEIGHT/4);
 		}
@@ -4301,7 +4311,17 @@ void draw_hud()
 		if (Game_mode&GM_MULTI && Show_kill_list)
 			hud_show_kill_list();
 		if (PlayerCfg.CurrentCockpitMode != CM_LETTERBOX)
+		{
+#ifdef ANDROID
+			extern int g_ogl_render_context;
+			int saved_ctx = g_ogl_render_context;
+			g_ogl_render_context = 0; /* menu context: reticle uses MenuTexFilt */
+#endif
 			show_reticle(PlayerCfg.ReticleType, 1);
+#ifdef ANDROID
+			g_ogl_render_context = saved_ctx;
+#endif
+		}
 		if (PlayerCfg.CurrentCockpitMode != CM_LETTERBOX && Newdemo_state != ND_STATE_PLAYBACK && (PlayerCfg.MouseControlStyle == MOUSE_CONTROL_FLIGHT_SIM) && PlayerCfg.MouseFSIndicator) /* Old School Mouse */
 			show_mousefs_indicator(Controls.raw_mouse_axis[0], Controls.raw_mouse_axis[1], Controls.raw_mouse_axis[2], GWIDTH/2, GHEIGHT/2, GHEIGHT/4);
 		if (Game_mode & GM_MULTI && PlayerCfg.ObsShowObs[get_observer_game_mode()])

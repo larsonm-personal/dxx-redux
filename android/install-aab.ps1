@@ -61,6 +61,64 @@ try {
         if (Test-Path $gradleDebug) {
             $candidates += Get-ChildItem "$gradleDebug\*.aab" -ErrorAction SilentlyContinue
         }
+
+        # Check if the newest AAB is stale compared to source files
+        $needsBuild = $false
+        if ($candidates.Count -eq 0) {
+            $needsBuild = $true
+        } else {
+            $newest = $candidates | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+            $aabTime = $newest.LastWriteTime
+            $repoRoot = Split-Path $PSScriptRoot
+            $srcDirs = @(
+                (Join-Path $PSScriptRoot "app\src"),
+                (Join-Path $repoRoot "d1"),
+                (Join-Path $repoRoot "d2"),
+                (Join-Path $repoRoot "cmake")
+            )
+            $buildFiles = @(
+                (Join-Path $PSScriptRoot "build.gradle"),
+                (Join-Path $PSScriptRoot "settings.gradle"),
+                (Join-Path $PSScriptRoot "gradle.properties"),
+                (Join-Path $PSScriptRoot "app\build.gradle")
+            )
+            $newerFiles = foreach ($dir in $srcDirs) {
+                if (Test-Path $dir) {
+                    Get-ChildItem -Path $dir -Recurse -File -ErrorAction SilentlyContinue |
+                        Where-Object { $_.LastWriteTime -gt $aabTime } |
+                        Select-Object -First 1
+                }
+            }
+            if (-not $newerFiles) {
+                $newerFiles = foreach ($f in $buildFiles) {
+                    if ((Test-Path $f) -and (Get-Item $f).LastWriteTime -gt $aabTime) {
+                        Get-Item $f
+                    }
+                }
+            }
+            if ($newerFiles) {
+                $needsBuild = $true
+                Write-Host "AAB is stale (modified: $aabTime)"
+            }
+        }
+
+        if ($needsBuild) {
+            Write-Host "Building fresh AAB..."
+            & (Join-Path $PSScriptRoot "1_build-aab.ps1") -BuildType "1"
+            if ($LASTEXITCODE -ne 0) { throw "AAB build failed" }
+            # Re-scan candidates after build
+            $candidates = @()
+            if (Test-Path $boDir) {
+                $candidates += Get-ChildItem "$boDir\*.aab" -ErrorAction SilentlyContinue
+            }
+            if (Test-Path $gradleRelease) {
+                $candidates += Get-ChildItem "$gradleRelease\*.aab" -ErrorAction SilentlyContinue
+            }
+            if (Test-Path $gradleDebug) {
+                $candidates += Get-ChildItem "$gradleDebug\*.aab" -ErrorAction SilentlyContinue
+            }
+        }
+
         if ($candidates.Count -eq 0) {
             Write-Error "No .aab files found. Build first with .\1_build-aab.ps1"
             exit 1

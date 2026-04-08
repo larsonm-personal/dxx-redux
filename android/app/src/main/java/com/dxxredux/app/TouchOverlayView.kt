@@ -384,22 +384,21 @@ class TouchOverlayView
 
             // Admin tray action indices dispatched via adminTrayCallback
             const val ADMIN_INCREASE_VIEW = 0
-            const val ADMIN_DECREASE_VIEW = 1
-            const val ADMIN_TOGGLE_AUTOLEVEL = 2
-            const val ADMIN_QUICK_SAVE = 3
-            const val ADMIN_QUICK_LOAD = 4
-            const val ADMIN_OPEN_MENU = 5
-            const val ADMIN_NET_EVENTS = 6
-            const val ADMIN_EXIT_LAUNCHER = 7
-            const val ADMIN_NET_STATS = 8
-            const val ADMIN_VIDEO_INFO = 9
+            const val ADMIN_TOGGLE_AUTOLEVEL = 1
+            const val ADMIN_QUICK_SAVE = 2
+            const val ADMIN_QUICK_LOAD = 3
+            const val ADMIN_OPEN_MENU = 4
+            const val ADMIN_NET_EVENTS = 5
+            const val ADMIN_EXIT_LAUNCHER = 6
+            const val ADMIN_NET_STATS = 7
+            const val ADMIN_VIDEO_INFO = 8
 
             // Gamepad-only items (appended when no touchscreen)
-            const val ADMIN_AUTOMAP = 10
-            const val ADMIN_HEADLIGHT = 11
-            const val ADMIN_WARP = 12
-            const val ADMIN_MUSIC = 13
-            const val ADMIN_ACCEPT_JOIN = 14
+            const val ADMIN_AUTOMAP = 9
+            const val ADMIN_HEADLIGHT = 10
+            const val ADMIN_WARP = 11
+            const val ADMIN_MUSIC = 12
+            const val ADMIN_ACCEPT_JOIN = 13
 
             // Cockpit mode constants (match C CM_* defines)
             private const val CM_FULL_COCKPIT = 0
@@ -2728,9 +2727,8 @@ class TouchOverlayView
                             CM_FULL_SCREEN -> " [Full]"
                             else -> ""
                         }
-                    "View +$suffix"
+                    "Cycle View$suffix"
                 }
-                ADMIN_DECREASE_VIEW -> "View -"
                 ADMIN_TOGGLE_AUTOLEVEL -> {
                     val on = adminTrayAutoLevelingProvider?.invoke() ?: true
                     if (on) "AutoLevel: ON" else "AutoLevel: OFF"
@@ -2778,7 +2776,7 @@ class TouchOverlayView
             )
         }
 
-        private fun adminTrayItemCount(): Int = if (gamepadOnlyMode) 15 else 10
+        private fun adminTrayItemCount(): Int = if (gamepadOnlyMode) 14 else 9
 
         private fun drawAdminTrayPanel(canvas: Canvas) {
             val w = width.toFloat()

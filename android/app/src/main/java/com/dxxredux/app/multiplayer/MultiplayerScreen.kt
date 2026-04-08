@@ -32,6 +32,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
@@ -96,6 +99,8 @@ private fun ServerBrowserContent(
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
+    val initialFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { initialFocus.requestFocus() }
     val recentUrls = remember { mutableStateOf(RecentAddressPrefs.SERVER_URLS.load(context)) }
     var serverUrl by remember { mutableStateOf(recentUrls.value.firstOrNull() ?: state.serverUrl) }
     var callsign by remember { mutableStateOf(state.callsign) }
@@ -112,6 +117,9 @@ private fun ServerBrowserContent(
         }
     }
 
+    val isLandscape =
+        LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+
     Column(
         modifier =
             Modifier
@@ -123,7 +131,7 @@ private fun ServerBrowserContent(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Multiplayer", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.weight(1f))
-            OutlinedButton(onClick = onBack) { Text("Back") }
+            OutlinedButton(onClick = onBack, modifier = Modifier.focusRequester(initialFocus)) { Text("Back") }
         }
         Spacer(Modifier.height(8.dp))
 
@@ -158,50 +166,106 @@ private fun ServerBrowserContent(
                 state.status == ConnectionStatus.AUTHENTICATING ||
                 state.status == ConnectionStatus.RECONNECTING
         if (state.status == ConnectionStatus.DISCONNECTED || isConnecting) {
-            OutlinedTextField(
-                value = serverUrl,
-                onValueChange = { serverUrl = it },
-                label = { Text("Server URL") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            RecentSuggestions(recentUrls.value) { serverUrl = it }
-            Spacer(Modifier.height(4.dp))
-            OutlinedTextField(
-                value = callsign,
-                onValueChange = { callsign = it.take(CallsignPrefs.MAX_LEN) },
-                label = { Text("Callsign") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    onClick = {
-                        CallsignPrefs.save(context, callsign)
-                        RecentAddressPrefs.SERVER_URLS.add(context, serverUrl)
-                        recentUrls.value = RecentAddressPrefs.SERVER_URLS.load(context)
-                        MatchmakingService.connect(serverUrl, callsign)
-                    },
-                    enabled = !isConnecting,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text("Connect")
-                }
-                if (isConnecting) {
-                    OutlinedButton(onClick = { MatchmakingService.disconnect() }) {
-                        Text("Cancel")
+            if (isLandscape) {
+                OutlinedTextField(
+                    value = serverUrl,
+                    onValueChange = { serverUrl = it },
+                    label = { Text("Matchmaking Server URL") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                RecentSuggestions(recentUrls.value) { serverUrl = it }
+                Spacer(Modifier.height(4.dp))
+                OutlinedTextField(
+                    value = callsign,
+                    onValueChange = { callsign = it.take(CallsignPrefs.MAX_LEN) },
+                    label = { Text("Callsign") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = {
+                            CallsignPrefs.save(context, callsign)
+                            RecentAddressPrefs.SERVER_URLS.add(context, serverUrl)
+                            recentUrls.value = RecentAddressPrefs.SERVER_URLS.load(context)
+                            MatchmakingService.connect(serverUrl, callsign)
+                        },
+                        enabled = !isConnecting,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Connect")
+                    }
+                    if (isConnecting) {
+                        OutlinedButton(onClick = { MatchmakingService.disconnect() }) {
+                            Text("Cancel")
+                        }
+                    }
+                    Button(
+                        onClick = {
+                            CallsignPrefs.save(context, callsign)
+                            MatchmakingStateHolder.update { it.copy(callsign = callsign) }
+                            MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.LAN) }
+                        },
+                        enabled = !isConnecting,
+                    ) {
+                        Text("LAN")
                     }
                 }
-                Button(
-                    onClick = {
-                        CallsignPrefs.save(context, callsign)
-                        MatchmakingStateHolder.update { it.copy(callsign = callsign) }
-                        MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.LAN) }
-                    },
-                    enabled = !isConnecting,
+            } else {
+                // Portrait: URL + Connect on one row, Callsign + LAN on the next
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text("LAN")
+                    OutlinedTextField(
+                        value = serverUrl,
+                        onValueChange = { serverUrl = it },
+                        label = { Text("Server URL") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Button(
+                        onClick = {
+                            CallsignPrefs.save(context, callsign)
+                            RecentAddressPrefs.SERVER_URLS.add(context, serverUrl)
+                            recentUrls.value = RecentAddressPrefs.SERVER_URLS.load(context)
+                            MatchmakingService.connect(serverUrl, callsign)
+                        },
+                        enabled = !isConnecting,
+                    ) {
+                        Text("Connect")
+                    }
+                    if (isConnecting) {
+                        OutlinedButton(onClick = { MatchmakingService.disconnect() }) {
+                            Text("Cancel")
+                        }
+                    }
+                }
+                RecentSuggestions(recentUrls.value) { serverUrl = it }
+                Spacer(Modifier.height(4.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedTextField(
+                        value = callsign,
+                        onValueChange = { callsign = it.take(CallsignPrefs.MAX_LEN) },
+                        label = { Text("Callsign") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Button(
+                        onClick = {
+                            CallsignPrefs.save(context, callsign)
+                            MatchmakingStateHolder.update { it.copy(callsign = callsign) }
+                            MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.LAN) }
+                        },
+                        enabled = !isConnecting,
+                    ) {
+                        Text("LAN")
+                    }
                 }
             }
         } else {
@@ -577,6 +641,8 @@ private fun LanContent(
     onBack: () -> Unit,
     onLaunchGame: (GameLaunchInfo) -> Unit,
 ) {
+    val lanFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { lanFocus.requestFocus() }
     Column(
         modifier =
             Modifier
@@ -587,10 +653,12 @@ private fun LanContent(
         Text("LAN Games", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(4.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = {
-                MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
-            }) { Text("Back to Lobbies") }
-            OutlinedButton(onClick = onBack) { Text("Back") }
+            OutlinedButton(
+                onClick = {
+                    MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
+                },
+                modifier = Modifier.focusRequester(lanFocus),
+            ) { Text("Back") }
         }
         Spacer(Modifier.height(8.dp))
 
@@ -603,6 +671,8 @@ private fun FriendsContent(
     state: MatchmakingState,
     onBack: () -> Unit,
 ) {
+    val friendsFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { friendsFocus.requestFocus() }
     Column(
         modifier =
             Modifier
@@ -613,9 +683,12 @@ private fun FriendsContent(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Friends", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.weight(1f))
-            OutlinedButton(onClick = {
-                MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
-            }) { Text("Back to Lobbies") }
+            OutlinedButton(
+                onClick = {
+                    MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
+                },
+                modifier = Modifier.focusRequester(friendsFocus),
+            ) { Text("Back to Lobbies") }
             Spacer(Modifier.width(8.dp))
             OutlinedButton(onClick = onBack) { Text("Back") }
         }

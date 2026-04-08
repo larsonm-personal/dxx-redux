@@ -28,6 +28,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,6 +41,8 @@ fun LobbyScreen(onLaunchGame: (GameLaunchInfo) -> Unit) {
     val state by MatchmakingStateHolder.state.collectAsState()
     val lobby = state.currentLobby ?: return
     val myId = state.playerId
+    val lobbyFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { lobbyFocus.requestFocus() }
 
     // Launch the game when gameLaunchInfo becomes available
     val launchInfo = state.gameLaunchInfo
@@ -59,7 +63,10 @@ fun LobbyScreen(onLaunchGame: (GameLaunchInfo) -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Lobby", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.weight(1f))
-            OutlinedButton(onClick = { MatchmakingService.leaveLobby() }) {
+            OutlinedButton(
+                onClick = { MatchmakingService.leaveLobby() },
+                modifier = Modifier.focusRequester(lobbyFocus),
+            ) {
                 Text("Leave")
             }
         }

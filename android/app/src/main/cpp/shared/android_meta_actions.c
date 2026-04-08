@@ -107,10 +107,11 @@ int meta_action_dispatch(int action_id, int pressed)
 	const meta_action_entry_t *entry = NULL;
 	int i;
 
-	/* Special case: return to launcher.  Inject ESC first so that the
-	 * current menu (if any) closes immediately in the same event_poll
-	 * pass; SDL_QUIT then cascades through the Quitting mechanism to
-	 * close any remaining windows and exit the game loop. */
+	/* Special case: return to launcher.  SDL_QUIT cascades through
+	 * the Quitting mechanism to close all windows and exit the game
+	 * loop.  android_force_quit tells standard_handler to skip the
+	 * "Abort Game?" dialog.  No ESC injection -- that would open
+	 * the game menu when Game_wind is the front window. */
 	if (action_id == META_RETURN_TO_LAUNCHER) {
 		if (pressed) {
 			SDL_Event ev;
@@ -118,14 +119,10 @@ int meta_action_dispatch(int action_id, int pressed)
 			/* Tell standard_handler to skip the "Abort Game?" dialog */
 			android_force_quit = 1;
 
-			/* ESC key press+release -- closes the frontmost menu */
-			inject_sdl_key(SDLK_ESCAPE, 1);
-			inject_sdl_key(SDLK_ESCAPE, 0);
-
 			memset(&ev, 0, sizeof(ev));
 			ev.type = SDL_QUIT;
 			SDL_PushEvent(&ev);
-			LOGI("meta_action_dispatch: ESC + SDL_QUIT pushed (return to launcher)");
+			LOGI("meta_action_dispatch: SDL_QUIT pushed (return to launcher)");
 		}
 		return 0;
 	}
