@@ -2420,6 +2420,17 @@ void net_udp_send_objects(void)
 		{
 			Assert(Network_send_object_mode == 1); 
 
+			// Count player/ghost objects on host for diagnostic comparison
+			{
+				int pg_count = 0;
+				int hi;
+				for (hi = 0; hi <= Highest_object_index; hi++)
+					if (Objects[hi].type == OBJ_PLAYER || Objects[hi].type == OBJ_GHOST)
+						pg_count++;
+				MPDIAG("send_objects: finished, obj_count=%d player_ghost_on_host=%d Highest=%d\n",
+				       obj_count, pg_count, Highest_object_index);
+			}
+
 			// Send count so other side can make sure he got them all
 			object_buffer[0] = UPID_OBJECT_DATA;
 			PUT_INTEL_INT(object_buffer+5, 1);
@@ -2458,11 +2469,23 @@ int net_udp_verify_objects(int remote, int local)
 		return(2);
 	}
 
+	// Detailed type census for debugging rejoin sync failures
+	int type_counts[16] = {0};
+	int none_count = 0;
 	for (i = 0; i <= Highest_object_index; i++)
 	{
+		int t = Objects[i].type;
+		if (t == OBJ_NONE) none_count++;
+		else if (t >= 0 && t < 16) type_counts[t]++;
 		if ((Objects[i].type == OBJ_PLAYER) || (Objects[i].type == OBJ_GHOST))
 			nplayers++;
 	}
+	MPDIAG("verify_objects: type_census NONE=%d ROBOT=%d HOSTAGE=%d PLAYER=%d POWERUP=%d CNTRLCEN=%d GHOST=%d COOP=%d other=%d\n",
+	       none_count, type_counts[OBJ_ROBOT], type_counts[OBJ_HOSTAGE], type_counts[OBJ_PLAYER],
+	       type_counts[OBJ_POWERUP], type_counts[OBJ_CNTRLCEN], type_counts[OBJ_GHOST], type_counts[OBJ_COOP],
+	       type_counts[OBJ_WALL] + type_counts[OBJ_FIREBALL] + type_counts[OBJ_WEAPON] +
+	       type_counts[OBJ_CAMERA] + type_counts[OBJ_DEBRIS] + type_counts[OBJ_FLARE] +
+	       type_counts[OBJ_CLUTTER] + type_counts[OBJ_LIGHT]);
 
 	MPDIAG("verify_objects: remote=%d local=%d nplayers=%d max_numplayers=%d Highest_object_index=%d\n",
 	       remote, local, nplayers, Netgame.max_numplayers, Highest_object_index);
@@ -2553,6 +2576,10 @@ void net_udp_read_object_packet( ubyte *data )
 #endif
 				multi_object_rw_to_object((object_rw *)&data[loc], obj);
 				loc += sizeof(object_rw);
+				if (obj->type == OBJ_PLAYER || obj->type == OBJ_GHOST)
+					MPDIAG("read_object_packet: placed %s id=%d at idx=%d owner=%d remote=%d mode=%d\n",
+					       obj->type == OBJ_PLAYER ? "PLAYER" : "GHOST",
+					       obj->id, objnum, obj_owner, remote_objnum, mode);
 				segnum = obj->segnum;
 				obj->next = obj->prev = obj->segnum = -1;
 				obj->attached_obj = -1;
