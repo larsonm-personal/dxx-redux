@@ -2364,6 +2364,8 @@ void net_udp_send_objects(void)
 	{
 		obj_count = 0;
 		Network_send_object_mode = 0;
+		MPDIAG("send_objects: INIT player_num=%d Highest=%d\n",
+		       player_num, Highest_object_index);
 		PUT_INTEL_INT(object_buffer+loc, -1);                       loc += 4;
 		object_buffer[loc] = player_num;                            loc += 1;
 		/* Placeholder for remote_objnum, not used here */          loc += 4;
@@ -2391,6 +2393,10 @@ void net_udp_send_objects(void)
 
 		remote_objnum = objnum_local_to_remote(i, &owner);
 		Assert(owner == object_owner[i]);
+
+		MPDIAG("send_objects: obj[%d] type=%d id=%d owner=%d remote=%d seg=%d\n",
+		       i, Objects[i].type, Objects[i].id, owner, remote_objnum,
+		       Objects[i].segnum);
 
 		PUT_INTEL_INT(object_buffer+loc, i);                        loc += 4;
 		object_buffer[loc] = owner;                                 loc += 1;
@@ -2514,6 +2520,8 @@ void net_udp_read_object_packet( ubyte *data )
 	int i = 0, segnum = 0, objnum = 0, remote_objnum = 0, nobj = 0, loc = 9;
 	
 	nobj = GET_INTEL_INT(data + 5);
+	MPDIAG("read_object_packet: nobj=%d mode=%d object_count=%d\n",
+	       nobj, mode, object_count);
 
 	for (i = 0; i < nobj; i++)
 	{
@@ -2524,6 +2532,7 @@ void net_udp_read_object_packet( ubyte *data )
 		if (objnum == -1) 
 		{
 			// Clear object array
+			MPDIAG("read_object_packet: INIT marker, calling init_objects()\n");
 			init_objects();
 			Network_rejoined = 1;
 			my_pnum = obj_owner;
@@ -2536,7 +2545,18 @@ void net_udp_read_object_packet( ubyte *data )
 			// End of object sync -- rebuild free list from final object state
 			if (mode == 1)
 			{
+				// Dump all non-NONE objects BEFORE special_reset_objects
+				MPDIAG("read_object_packet: PRE-RESET object dump (object_count=%d):\n",
+				       object_count);
+				for (int di = 0; di <= MAX_OBJECTS - 1; di++) {
+					if (Objects[di].type != OBJ_NONE)
+						MPDIAG("  obj[%d] type=%d id=%d seg=%d\n",
+						       di, Objects[di].type, Objects[di].id,
+						       Objects[di].segnum);
+				}
 				special_reset_objects();
+				MPDIAG("read_object_packet: POST-RESET Highest=%d num_objects=%d\n",
+				       Highest_object_index, num_objects);
 				mode = 0;
 			}
 			MPDIAG("read_object_packet: end marker remote_objnum=%d object_count=%d\n",
@@ -2563,6 +2583,8 @@ void net_udp_read_object_packet( ubyte *data )
 				objnum = remote_objnum;
 			}
 			else {
+				MPDIAG("read_object_packet: MODE0 branch owner=%d my_pnum=%d, calling obj_allocate\n",
+				       obj_owner, my_pnum);
 				if (mode == 1)
 				{
 					special_reset_objects();
@@ -2572,6 +2594,9 @@ void net_udp_read_object_packet( ubyte *data )
 			}
 			if (objnum != -1) {
 				obj = &Objects[objnum];
+				if (obj->type != OBJ_NONE && obj->type != OBJ_PLAYER)
+					MPDIAG("read_object_packet: WARNING overwriting obj[%d] type=%d with new data\n",
+					       objnum, obj->type);
 				if (obj->segnum != -1)
 					obj_unlink(objnum);
 				Assert(obj->segnum == -1);
@@ -2581,10 +2606,9 @@ void net_udp_read_object_packet( ubyte *data )
 #endif
 				multi_object_rw_to_object((object_rw *)&data[loc], obj);
 				loc += sizeof(object_rw);
-				if (obj->type == OBJ_PLAYER || obj->type == OBJ_GHOST)
-					MPDIAG("read_object_packet: placed %s id=%d at idx=%d owner=%d remote=%d\n",
-					       obj->type == OBJ_PLAYER ? "PLAYER" : "GHOST",
-					       obj->id, objnum, obj_owner, remote_objnum);
+				MPDIAG("read_object_packet: placed type=%d id=%d at idx=%d owner=%d remote=%d seg=%d\n",
+				       obj->type, obj->id, objnum, obj_owner, remote_objnum,
+				       obj->segnum);
 				segnum = obj->segnum;
 				obj->next = obj->prev = obj->segnum = -1;
 				obj->attached_obj = -1;
