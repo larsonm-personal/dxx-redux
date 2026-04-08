@@ -2529,8 +2529,11 @@ void net_udp_read_object_packet( ubyte *data )
 		else if (objnum == -2)
 		{
 			// End of object sync -- rebuild free list from final object state
-			special_reset_objects();
-			mode = 0;
+			if (mode == 1)
+			{
+				special_reset_objects();
+				mode = 0;
+			}
 			MPDIAG("read_object_packet: end marker remote_objnum=%d object_count=%d\n",
 			       remote_objnum, object_count);
 			if (remote_objnum != object_count) {
@@ -2548,8 +2551,20 @@ void net_udp_read_object_packet( ubyte *data )
 		else 
 		{
 			object_count++;
-			if (obj_owner == my_pnum)
+			if ((obj_owner == my_pnum) || (obj_owner == -1))
+			{
+				if (mode != 1)
+					Int3(); // SEE ROB
 				objnum = remote_objnum;
+			}
+			else {
+				if (mode == 1)
+				{
+					special_reset_objects();
+					mode = 0;
+				}
+				objnum = obj_allocate();
+			}
 			if (objnum != -1) {
 				obj = &Objects[objnum];
 				if (obj->segnum != -1)
@@ -6728,7 +6743,7 @@ void net_udp_process_mdata (ubyte *data, int data_len, struct _sockaddr sender_a
 	}
 
 	// Check if we are in correct state to process the packet
-	if (!((Network_status == NETSTAT_PLAYING)||(Network_status == NETSTAT_ENDLEVEL) || Network_status==NETSTAT_WAITING))
+	if (!((Network_status == NETSTAT_PLAYING)||(Network_status == NETSTAT_ENDLEVEL)))
 		return;
 
 	// Process
@@ -6769,7 +6784,7 @@ void net_udp_process_obs_data (ubyte *data, int data_len, struct _sockaddr sende
     }
 
 	// Check if we are in correct state to process the packet
-	if (!((Network_status == NETSTAT_PLAYING)||(Network_status == NETSTAT_ENDLEVEL) || Network_status==NETSTAT_WAITING))
+	if (!((Network_status == NETSTAT_PLAYING)||(Network_status == NETSTAT_ENDLEVEL)))
 		return;
 
 	// Process
@@ -7090,7 +7105,7 @@ void net_udp_process_pdata ( ubyte *data, int data_len, struct _sockaddr sender_
 	UDP_frame_info pd;
 	int len = 0, i = 0;
 
-	if ( !( Game_mode & GM_NETWORK && ( Network_status == NETSTAT_PLAYING || Network_status == NETSTAT_ENDLEVEL ||  Network_status==NETSTAT_WAITING ) ) )
+	if ( !( Game_mode & GM_NETWORK && ( Network_status == NETSTAT_PLAYING || Network_status == NETSTAT_ENDLEVEL ) ) )
 		return;
 
 	len++;
