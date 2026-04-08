@@ -2533,12 +2533,9 @@ void net_udp_read_object_packet( ubyte *data )
 		}
 		else if (objnum == -2)
 		{
-			// Special debug checksum marker for entire send
-			if (mode == 1)
-			{
-				special_reset_objects();
-				mode = 0;
-			}
+			// End of object sync -- rebuild free list from final object state
+			special_reset_objects();
+			mode = 0;
 			MPDIAG("read_object_packet: end marker remote_objnum=%d object_count=%d\n",
 			       remote_objnum, object_count);
 			if (remote_objnum != object_count) {
@@ -2556,20 +2553,7 @@ void net_udp_read_object_packet( ubyte *data )
 		else 
 		{
 			object_count++;
-			if ((obj_owner == my_pnum) || (obj_owner == -1)) 
-			{
-				if (mode != 1)
-					Int3(); // SEE ROB
-				objnum = remote_objnum;
-			}
-			else {
-				if (mode == 1)
-				{
-					special_reset_objects();
-					mode = 0;
-				}
-				objnum = obj_allocate();
-			}
+			objnum = remote_objnum;
 			if (objnum != -1) {
 				obj = &Objects[objnum];
 				if (obj->segnum != -1)
@@ -2582,9 +2566,9 @@ void net_udp_read_object_packet( ubyte *data )
 				multi_object_rw_to_object((object_rw *)&data[loc], obj);
 				loc += sizeof(object_rw);
 				if (obj->type == OBJ_PLAYER || obj->type == OBJ_GHOST)
-					MPDIAG("read_object_packet: placed %s id=%d at idx=%d owner=%d remote=%d mode=%d\n",
+					MPDIAG("read_object_packet: placed %s id=%d at idx=%d owner=%d remote=%d\n",
 					       obj->type == OBJ_PLAYER ? "PLAYER" : "GHOST",
-					       obj->id, objnum, obj_owner, remote_objnum, mode);
+					       obj->id, objnum, obj_owner, remote_objnum);
 				segnum = obj->segnum;
 				obj->next = obj->prev = obj->segnum = -1;
 				obj->attached_obj = -1;
