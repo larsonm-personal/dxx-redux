@@ -2548,7 +2548,8 @@ void net_udp_read_object_packet( ubyte *data )
 		else 
 		{
 			object_count++;
-			objnum = remote_objnum;
+			if (obj_owner == my_pnum)
+				objnum = remote_objnum;
 			if (objnum != -1) {
 				obj = &Objects[objnum];
 				if (obj->segnum != -1)
