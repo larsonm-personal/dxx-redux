@@ -33,13 +33,16 @@ try {
         Write-Host "Select build type:"
         Write-Host "  1) Debug"
         Write-Host "  2) Release (signed, for Play Console)"
+        Write-Host "  3) Internal (debug + release signing, for Play internal testing)"
         Write-Host ""
-        $BuildType = Read-Host "Enter choice [2]"
+        $BuildType = Read-Host "Enter choice [3]"
     }
-    if (-not $BuildType) { $BuildType = "2" }
+    if (-not $BuildType) { $BuildType = "3" }
 
     if ($BuildType -eq '1') {
         $variant = "Debug"
+    } elseif ($BuildType -eq '3') {
+        $variant = "Internal"
     } else {
         $variant = "Release"
     }

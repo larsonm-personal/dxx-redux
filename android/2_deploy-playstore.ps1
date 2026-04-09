@@ -43,8 +43,10 @@ if (-not $AabPath) {
     if (-not $aab) {
         # Fall back to Gradle output
         $releaseAab = Join-Path $PSScriptRoot "app\build\outputs\bundle\release\app-release.aab"
+        $internalAab = Join-Path $PSScriptRoot "app\build\outputs\bundle\internal\app-internal.aab"
         $debugAab = Join-Path $PSScriptRoot "app\build\outputs\bundle\debug\app-debug.aab"
         if (Test-Path $releaseAab) { $aab = Get-Item $releaseAab }
+        elseif (Test-Path $internalAab) { $aab = Get-Item $internalAab }
         elseif (Test-Path $debugAab) { $aab = Get-Item $debugAab }
     }
     if (-not $aab) {

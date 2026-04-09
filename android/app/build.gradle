@@ -198,6 +198,15 @@ android {
                 signingConfig signingConfigs.release
             }
         }
+        // Debug build signed with the upload key for Play internal testing.
+        // Keeps debuggable=true, asserts, INTROSPECT_ON, etc.
+        internal {
+            initWith debug
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
+            matchingFallbacks = ['debug']
+        }
     }
 
     externalNativeBuild {

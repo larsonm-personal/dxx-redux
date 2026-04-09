@@ -3000,6 +3000,30 @@ multi_reset_stuff(void)
 	reset_rear_view();
 }
 
+// android port: diagnostic helper for assert crash investigation
+static const char *obj_type_name(int type)
+{
+	switch (type) {
+		case OBJ_NONE:     return "NONE";
+		case OBJ_WALL:     return "WALL";
+		case OBJ_FIREBALL: return "FIREBALL";
+		case OBJ_ROBOT:    return "ROBOT";
+		case OBJ_HOSTAGE:  return "HOSTAGE";
+		case OBJ_PLAYER:   return "PLAYER";
+		case OBJ_WEAPON:   return "WEAPON";
+		case OBJ_CAMERA:   return "CAMERA";
+		case OBJ_POWERUP:  return "POWERUP";
+		case OBJ_DEBRIS:   return "DEBRIS";
+		case OBJ_CNTRLCEN: return "CNTRLCEN";
+		case OBJ_FLARE:    return "FLARE";
+		case OBJ_CLUTTER:  return "CLUTTER";
+		case OBJ_GHOST:    return "GHOST";
+		case OBJ_LIGHT:    return "LIGHT";
+		case OBJ_COOP:     return "COOP";
+		default:           return "UNKNOWN";
+	}
+}
+
 void
 multi_reset_player_object(object *objp)
 {
@@ -3009,6 +3033,11 @@ multi_reset_player_object(object *objp)
 
 	Assert(objp >= Objects);
 	Assert(objp <= Objects+Highest_object_index);
+	if ((objp->type != OBJ_PLAYER) && (objp->type != OBJ_GHOST)) {
+		int idx = (int)(objp - Objects);
+		con_printf(CON_URGENT, "multi_reset_player_object: ASSERT WILL FIRE obj[%d] type=%d(%s) seg=%d id=%d\n",
+		           idx, objp->type, obj_type_name(objp->type), objp->segnum, objp->id);
+	}
 	Assert((objp->type == OBJ_PLAYER) || (objp->type == OBJ_GHOST));
 
 	vm_vec_zero(&objp->mtype.phys_info.velocity);
@@ -4061,6 +4090,17 @@ multi_prep_level(void)
 
 	for (i = 0; i < NumNetPlayerPositions; i++)
 	{
+		int objnum = Players[i].objnum;
+		// android port: diagnostics for type assert crash investigation
+		if (objnum < 0 || objnum > Highest_object_index) {
+			con_printf(CON_URGENT, "multi_prep_level: player %d objnum=%d OUT OF RANGE (Highest=%d)\n",
+			           i, objnum, Highest_object_index);
+		} else {
+			int t = Objects[objnum].type;
+			if (t != OBJ_PLAYER && t != OBJ_GHOST)
+				con_printf(CON_URGENT, "multi_prep_level: player %d objnum=%d type=%d(%s) -- UNEXPECTED\n",
+				           i, objnum, t, obj_type_name(t));
+		}
 		if (i != Player_num)
 			Objects[Players[i].objnum].control_type = CT_REMOTE;
 		Objects[Players[i].objnum].movement_type = MT_PHYSICS;

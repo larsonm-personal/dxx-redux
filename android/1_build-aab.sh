@@ -11,13 +11,16 @@ echo ""
 echo "Select build type:"
 echo "  1) Debug"
 echo "  2) Release (signed, for Play Console)"
+echo "  3) Internal (debug + release signing, for Play internal testing)"
 echo ""
-printf "Enter choice [2]: "
+printf "Enter choice [3]: "
 read -r CHOICE
 if [ "$CHOICE" = "1" ]; then
     VARIANT="debug"
-else
+elif [ "$CHOICE" = "2" ]; then
     VARIANT="release"
+else
+    VARIANT="internal"
 fi
 
 # Source environment variables

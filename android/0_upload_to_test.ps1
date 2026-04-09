@@ -1,16 +1,16 @@
 ﻿# upload_to_test.ps1 -- Automated AAB build, sign, and Play Store upload
 #
 # Usage:
-#   .\0_upload_to_test.ps1                     # Build (Release) and upload to production track
+#   .\0_upload_to_test.ps1                     # Build (Internal) and upload to internal track
 #   .\0_upload_to_test.ps1 -BuildType "1"     # Build Debug instead
+#   .\0_upload_to_test.ps1 -BuildType "2"     # Build Release instead
 #   .\0_upload_to_test.ps1 -TrackIndex "2"    # Upload to alpha track instead (1=internal, 2=alpha, 3=beta, 4=production)
-#   .\0_upload_to_test.ps1 -BuildType "2" -TrackIndex "3"  # Both options
 
 param(
     # these might not have a fixed order but for now that's what these are
     # maybe need to match based on strings in the future
-    [string]$BuildType = "2",        # Default: Release
-    [int]$TrackIndex = 4             # Default: internal (1=production, 2=beta, 3=alpha, 4=internal)
+    [string]$BuildType = "3",        # Default: Internal (debug + release signing)
+    [int]$TrackIndex = 1             # Default: internal track
 )
 
 $ErrorActionPreference = "Stop"

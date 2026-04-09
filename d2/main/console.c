@@ -23,6 +23,9 @@
 #ifdef INTROSPECT_ON
 #include "console_ringbuf.h"
 #endif
+#ifdef __ANDROID__
+#include <android/log.h>
+#endif
 
 static PHYSFS_file *gamelog_fp=NULL;
 static struct console_buffer con_buffer[CON_LINES_MAX];
@@ -88,6 +91,21 @@ void con_printf(int priority, const char *fmt, ...)
 
 		/* Print output to stdout */
 		printf("%s",buffer);
+
+#ifdef __ANDROID__
+		{
+			int android_prio;
+			switch (priority) {
+				case CON_CRITICAL: android_prio = ANDROID_LOG_ERROR; break;
+				case CON_URGENT:   android_prio = ANDROID_LOG_WARN;  break;
+				case CON_NORMAL:   android_prio = ANDROID_LOG_INFO;  break;
+				case CON_VERBOSE:  android_prio = ANDROID_LOG_VERBOSE; break;
+				case CON_DEBUG:    android_prio = ANDROID_LOG_DEBUG; break;
+				default:           android_prio = ANDROID_LOG_INFO;  break;
+			}
+			__android_log_print(android_prio, "DXX", "%s", buffer);
+		}
+#endif
 
 #ifdef INTROSPECT_ON
 		console_ringbuf_add(buffer);

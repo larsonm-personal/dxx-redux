@@ -63,6 +63,7 @@
 #ifdef __ANDROID__
 #include "auto_net.h"
 #include "android_net_log.h"
+#include "android_crash_handler.h"
 #include <android/log.h>
 #define MPDIAG(fmt, ...) do { \
 	char _mpdiag_buf[256]; \
@@ -71,6 +72,19 @@
 	__android_log_print(ANDROID_LOG_INFO, "DXX-MP", "MPDIAG: %s", _mpdiag_buf); \
 	android_net_log("MPDIAG", _mpdiag_buf); \
 } while(0)
+/* Dump entire packet as one hex string via a single android_net_log call.
+ * Max packet is ~1929 bytes -> 3858 hex chars + header. */
+static void mpdiag_pkt_dump(const char *label, const ubyte *buf, int len)
+{
+	static char msg[4096];
+	crash_breadcrumb_v("pktdump: %s len=%d", label, len);
+	int pos = snprintf(msg, sizeof(msg), "%s len=%d ", label, len);
+	for (int i = 0; i < len && pos + 2 < (int)sizeof(msg); i++)
+		pos += snprintf(msg + pos, sizeof(msg) - pos, "%02x", buf[i]);
+	crash_breadcrumb("pktdump: hex done, calling net_log");
+	android_net_log("PKTDUMP", msg);
+	crash_breadcrumb("pktdump: done");
+}
 /* Set in net_udp_select_players from auto_host_pending; checked by
  * net_udp_start_poll to auto-close menu when enough players join.
  * Kept separate from auto_host_pending to avoid re-entry when the
@@ -121,7 +135,7 @@ void net_udp_send_game_info(struct _sockaddr sender_addr, ubyte info_upid, ubyte
 void net_udp_send_netgame_update();
 void net_udp_do_refuse_stuff (UDP_sequence_packet *their);
 void net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr sender_addr );
-void net_udp_read_object_packet( ubyte *data );
+void net_udp_read_object_packet( ubyte *data, int data_len );
 void net_udp_ping_frame(fix64 time);
 void net_udp_p2p_ping_frame(fix64 time); 
 void net_udp_process_ping(ubyte *data, int data_len, struct _sockaddr sender_addr);
@@ -212,6 +226,18 @@ struct _sockaddr TrackerSocket;
 int iTrackerVerified = 0;
 #endif
 extern obj_position Player_init[MAX_PLAYERS];
+
+// Compare only the IP address portion of two sockaddrs (ignoring port).
+// Used for reconnection matching -- a reconnecting client will have a new
+// ephemeral port, but the same IP.
+static int sockaddr_ip_equal(const struct _sockaddr *a, const struct _sockaddr *b)
+{
+#ifdef IPv6
+	return memcmp(&a->sin6_addr, &b->sin6_addr, sizeof(a->sin6_addr)) == 0;
+#else
+	return a->sin_addr.s_addr == b->sin_addr.s_addr;
+#endif
+}
 
 uint netgame_token = 0; 
 uint my_player_token = 0; 
@@ -2070,7 +2096,7 @@ void net_udp_welcome_player(UDP_sequence_packet *their)
 
 	for (i = 0; i < N_players; i++)
 	{
-		if ((!d_stricmp(Players[i].callsign, their->player.callsign )) && !memcmp((struct _sockaddr *)&their->player.protocol.udp.addr, (struct _sockaddr *)&Netgame.players[i].protocol.udp.addr, sizeof(struct _sockaddr)))
+		if ((!d_stricmp(Players[i].callsign, their->player.callsign )) && sockaddr_ip_equal((struct _sockaddr *)&their->player.protocol.udp.addr, (struct _sockaddr *)&Netgame.players[i].protocol.udp.addr))
 		{
 			player_num = i;
 			break;
@@ -2164,6 +2190,9 @@ void net_udp_welcome_player(UDP_sequence_packet *their)
 		multi_send_score();
 
 		net_udp_noloss_clear_mdata_got(player_num);
+
+		// Update stored address -- the reconnecting client likely has a new port
+		update_address_for_player(player_num, their->player.protocol.udp.addr);
 	}
 
 	Players[player_num].KillGoalCount=0;
@@ -2416,6 +2445,10 @@ void net_udp_send_objects(void)
 
 		Assert(loc <= UPID_MAX_SIZE);
 
+#ifdef __ANDROID__
+		crash_breadcrumb_v("send_objects: TX loc=%d nobj=%d", loc, obj_count_frame);
+		mpdiag_pkt_dump("TX", object_buffer, loc);
+#endif
 		dxx_sendto (UDP_Socket[0], object_buffer, loc, 0, (struct sockaddr *)&UDP_sync_player.player.protocol.udp.addr, sizeof(struct _sockaddr));
 	}
 
@@ -2509,7 +2542,7 @@ int net_udp_verify_objects(int remote, int local)
 	return(1);
 }
 
-void net_udp_read_object_packet( ubyte *data )
+void net_udp_read_object_packet( ubyte *data, int data_len )
 {
 	multi_received_objects = 1; 
 
@@ -2517,14 +2550,25 @@ void net_udp_read_object_packet( ubyte *data )
 	object *obj;
 	sbyte obj_owner;
 	static int mode = 0, object_count = 0, my_pnum = 0;
+	static int sync_retries = 0;
 	int i = 0, segnum = 0, objnum = 0, remote_objnum = 0, nobj = 0, loc = 9;
 	
 	nobj = GET_INTEL_INT(data + 5);
-	MPDIAG("read_object_packet: nobj=%d mode=%d object_count=%d\n",
-	       nobj, mode, object_count);
+	MPDIAG("read_object_packet: nobj=%d mode=%d object_count=%d data_len=%d\n",
+	       nobj, mode, object_count, data_len);
+#ifdef __ANDROID__
+	crash_breadcrumb_v("read_obj_pkt: nobj=%d len=%d", nobj, data_len);
+	mpdiag_pkt_dump("RX", data, data_len);
+#endif
 
 	for (i = 0; i < nobj; i++)
 	{
+		// Bounds check: need 9 bytes for per-object header (4+1+4)
+		if (loc + 9 > data_len) {
+			MPDIAG("read_object_packet: TRUNCATED at header %d/%d, loc=%d data_len=%d\n",
+			       i, nobj, loc, data_len);
+			break;
+		}
 		objnum = GET_INTEL_INT(data + loc);                         loc += 4;
 		obj_owner = data[loc];                                      loc += 1;
 		remote_objnum = GET_INTEL_INT(data + loc);                  loc += 4;
@@ -2532,7 +2576,7 @@ void net_udp_read_object_packet( ubyte *data )
 		if (objnum == -1) 
 		{
 			// Clear object array
-			MPDIAG("read_object_packet: INIT marker, calling init_objects()\n");
+			MPDIAG("read_object_packet: INIT marker, calling init_objects() retry=%d\n", sync_retries);
 			init_objects();
 			Network_rejoined = 1;
 			my_pnum = obj_owner;
@@ -2542,12 +2586,11 @@ void net_udp_read_object_packet( ubyte *data )
 		}
 		else if (objnum == -2)
 		{
-			// End of object sync -- rebuild free list from final object state
-			if (mode == 1)
+			// End of object sync -- always rebuild free list from final state
 			{
 				// Dump all non-NONE objects BEFORE special_reset_objects
-				MPDIAG("read_object_packet: PRE-RESET object dump (object_count=%d):\n",
-				       object_count);
+				MPDIAG("read_object_packet: PRE-RESET object dump (object_count=%d mode=%d):\n",
+				       object_count, mode);
 				for (int di = 0; di <= MAX_OBJECTS - 1; di++) {
 					if (Objects[di].type != OBJ_NONE)
 						MPDIAG("  obj[%d] type=%d id=%d seg=%d\n",
@@ -2566,12 +2609,24 @@ void net_udp_read_object_packet( ubyte *data )
 			}
 			if (net_udp_verify_objects(remote_objnum, object_count))
 			{
-				// Failed to sync up 
-				MPDIAG("read_object_packet: SYNC FAILED, showing error dialog\n");
+				sync_retries++;
+				if (sync_retries <= 3)
+				{
+					// Retry: reset state so sync_poll re-requests from host
+					MPDIAG("read_object_packet: SYNC FAILED, retry %d/3\n", sync_retries);
+					Network_rejoined = 0;
+					object_count = 0;
+					mode = 0;
+					return;
+				}
+				// Exhausted retries
+				MPDIAG("read_object_packet: SYNC FAILED after %d retries\n", sync_retries);
+				sync_retries = 0;
 				nm_messagebox(NULL, 1, TXT_OK, TXT_NET_SYNC_FAILED);
 				Network_status = NETSTAT_MENU;                          
 				return;
 			}
+			sync_retries = 0;
 		}
 		else 
 		{
@@ -2581,6 +2636,8 @@ void net_udp_read_object_packet( ubyte *data )
 				if (mode != 1)
 					Int3(); // SEE ROB
 				objnum = remote_objnum;
+				if (objnum > Highest_object_index)
+					Highest_object_index = objnum;
 			}
 			else {
 				MPDIAG("read_object_packet: MODE0 branch owner=%d my_pnum=%d, calling obj_allocate\n",
@@ -2601,6 +2658,12 @@ void net_udp_read_object_packet( ubyte *data )
 					obj_unlink(objnum);
 				Assert(obj->segnum == -1);
 				Assert(objnum < MAX_OBJECTS);
+				// Bounds check: need sizeof(object_rw) for body
+				if (loc + (int)sizeof(object_rw) > data_len) {
+					MPDIAG("read_object_packet: TRUNCATED at body %d/%d, loc=%d need=%d data_len=%d\n",
+					       i, nobj, loc, (int)(loc + sizeof(object_rw)), data_len);
+					break;
+				}
 #ifdef WORDS_BIGENDIAN
 				object_rw_swap((object_rw *)&data[loc], 1);
 #endif
@@ -3731,7 +3794,7 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 			break;
 
 		case UPID_OBJECT_DATA:
-			net_udp_read_object_packet(data);
+			net_udp_read_object_packet(data, length);
 			break;
 
 		case UPID_PING:
@@ -8000,7 +8063,7 @@ void net_udp_do_refuse_stuff (UDP_sequence_packet *their)
 
 	for (i=0;i<MAX_PLAYERS;i++)
 	{
-		if ((!d_stricmp(Players[i].callsign, their->player.callsign )) && !memcmp((struct _sockaddr *)&their->player.protocol.udp.addr, (struct _sockaddr *)&Netgame.players[i].protocol.udp.addr, sizeof(struct _sockaddr)))
+		if ((!d_stricmp(Players[i].callsign, their->player.callsign )) && sockaddr_ip_equal((struct _sockaddr *)&their->player.protocol.udp.addr, (struct _sockaddr *)&Netgame.players[i].protocol.udp.addr))
 		{
 			MPDIAG("refuse_stuff: '%s' matches existing player %d, welcoming\n",
 			       their->player.callsign, i);
@@ -8020,7 +8083,7 @@ void net_udp_do_refuse_stuff (UDP_sequence_packet *their)
 
 			for (i=0;i<MAX_PLAYERS;i++)
 			{
-				if ((!d_stricmp(Players[i].callsign, their->player.callsign )) && !memcmp((struct _sockaddr *)&their->player.protocol.udp.addr, (struct _sockaddr *)&Netgame.players[i].protocol.udp.addr, sizeof(struct _sockaddr)))
+				if ((!d_stricmp(Players[i].callsign, their->player.callsign )) && sockaddr_ip_equal((struct _sockaddr *)&their->player.protocol.udp.addr, (struct _sockaddr *)&Netgame.players[i].protocol.udp.addr))
 				{
 					net_udp_welcome_player(their);
 					return;
@@ -8062,7 +8125,7 @@ void net_udp_do_refuse_stuff (UDP_sequence_packet *their)
 	{
 		for (i=0;i<MAX_PLAYERS;i++)
 		{
-			if ((!d_stricmp(Players[i].callsign, their->player.callsign )) && !memcmp((struct _sockaddr *)&their->player.protocol.udp.addr, (struct _sockaddr *)&Netgame.players[i].protocol.udp.addr, sizeof(struct _sockaddr)))
+			if ((!d_stricmp(Players[i].callsign, their->player.callsign )) && sockaddr_ip_equal((struct _sockaddr *)&their->player.protocol.udp.addr, (struct _sockaddr *)&Netgame.players[i].protocol.udp.addr))
 			{
 				net_udp_welcome_player(their);
 				return;
