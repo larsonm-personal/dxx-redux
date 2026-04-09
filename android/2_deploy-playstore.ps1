@@ -4,7 +4,8 @@
 #   .\deploy-playstore.ps1                              # auto-finds latest AAB in build-outputs/
 #   .\deploy-playstore.ps1 -AabPath path\to\app.aab     # explicit AAB
 #   .\deploy-playstore.ps1 -CredentialsPath creds.json  # non-default credentials
-#   .\deploy-playstore.ps1 -TrackIndex 4                # select track by index (1=internal, 2=alpha, 3=beta, 4=production)
+#   .\deploy-playstore.ps1 -TrackName internal                   # select track by name
+#   .\deploy-playstore.ps1 -TrackIndex 4                # select track by index (order varies -- prefer -TrackName)
 #
 # Prerequisites:
 #   - play-store-credentials.json in the android/ directory
@@ -13,7 +14,8 @@
 param(
     [string]$AabPath,
     [string]$CredentialsPath,
-    [int]$TrackIndex
+    [int]$TrackIndex,
+    [string]$TrackName
 )
 
 $ErrorActionPreference = "Stop"
@@ -246,8 +248,20 @@ for ($j = 0; $j -lt $trackNames.Count; $j++) {
 }
 $defaultNum = $defaultIdx + 1
 
-# Use TrackIndex parameter if provided, otherwise prompt
-if ($TrackIndex -gt 0) {
+# Use TrackName if provided, then TrackIndex, otherwise prompt
+if ($TrackName) {
+    $found = $false
+    for ($k = 0; $k -lt $trackNames.Count; $k++) {
+        if ($trackNames[$k] -eq $TrackName) {
+            $choice = "$($k + 1)"
+            $found = $true
+            break
+        }
+    }
+    if (-not $found) {
+        Write-Error "Track '$TrackName' not found. Available: $($trackNames -join ', ')"
+    }
+} elseif ($TrackIndex -gt 0) {
     $choice = "$TrackIndex"
 } else {
     Write-Host ""

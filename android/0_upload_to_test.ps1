@@ -10,7 +10,7 @@ param(
     # these might not have a fixed order but for now that's what these are
     # maybe need to match based on strings in the future
     [string]$BuildType = "3",        # Default: Internal (debug + release signing)
-    [int]$TrackIndex = 1             # Default: internal track
+    [string]$TrackName = "internal"   # Default: internal track
 )
 
 $ErrorActionPreference = "Stop"
@@ -35,7 +35,7 @@ try {
     Write-Host ""
     Write-Host "Step 2: Uploading to Play Store..."
     Write-Host ""
-    & .\2_deploy-playstore.ps1 -TrackIndex $TrackIndex
+    & .\2_deploy-playstore.ps1 -TrackName $TrackName
     if ($LASTEXITCODE -ne 0) {
         throw "Deploy failed with exit code $LASTEXITCODE"
     }
