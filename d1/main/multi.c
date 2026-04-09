@@ -67,6 +67,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef __ANDROID__
 #include "coop_save.h"
 #include "coop_warp.h"
+#include "android_crash_handler.h"
 #endif
 
 //
@@ -2689,8 +2690,54 @@ void multi_disconnect_player(int pnum)
 			break;
 	}
 
-	if (pnum == multi_who_is_master()) // Host has left - Quit game!
+	if (pnum == multi_who_is_master()) // Host has left
 	{
+#ifdef __ANDROID__
+		/* android port: host migration for coop games */
+		if (Game_mode & GM_MULTI_COOP) {
+			int new_master = -1;
+			for (i = 0; i < N_players; i++) {
+				if (i != pnum && Players[i].connected == CONNECT_PLAYING) {
+					new_master = i;
+					break;
+				}
+			}
+			if (new_master >= 0) {
+				Multi_master_playernum = new_master;
+				con_printf(CON_NORMAL, "host migration: player %d is now master\n", new_master);
+				if (new_master == Player_num) {
+					PHYSFS_file *mfp;
+					HUD_init_message_literal(HM_MULTI, "You are now the game host");
+					memset(object_owner, -1, sizeof(sbyte) * MAX_OBJECTS);
+					multi_powcap_count_powerups_in_mine();
+					/* Write migration info for Kotlin LAN broadcast */
+					mfp = PHYSFS_openWrite("host_migration.json");
+					if (mfp) {
+						char mbuf[512];
+						int mlen = snprintf(mbuf, sizeof(mbuf),
+							"{\n"
+							"  \"callsign\": \"%s\",\n"
+							"  \"game\": \"d1\",\n"
+							"  \"mission\": \"%s\",\n"
+							"  \"mode\": \"coop\",\n"
+							"  \"difficulty\": %d,\n"
+							"  \"level_num\": %d,\n"
+							"  \"max_players\": %d\n"
+							"}\n",
+							Players[Player_num].callsign,
+							Netgame.mission_name,
+							Netgame.difficulty,
+							Current_level_num,
+							Netgame.max_numplayers);
+						PHYSFS_write(mfp, mbuf, mlen, 1);
+						PHYSFS_close(mfp);
+					}
+					android_notify_host_migration();
+				}
+				goto after_host_check;
+			}
+		}
+#endif
 		if (Network_status==NETSTAT_PLAYING)
 			multi_leave_game();
 		if (Game_wind)
@@ -2704,6 +2751,7 @@ void multi_disconnect_player(int pnum)
 		return;
 	}
 
+after_host_check:
 	if (is_observer()) {
 		multi_obs_check_all_escaped();
 	} else {
@@ -2998,6 +3046,7 @@ multi_reset_stuff(void)
 	dead_player_end();
 	Players[Player_num].homing_object_dist = -F1_0; // Turn off homing sound.
 	reset_rear_view();
+	Multi_master_playernum = 0;  // android port: reset dynamic master on game end
 }
 
 // android port: diagnostic helper for assert crash investigation
@@ -4412,15 +4461,17 @@ int multi_delete_extra_objects()
 }
 
 // Returns 1 if player is Master/Host of this game
+int Multi_master_playernum = 0;  // android port: dynamic master for host migration
+
 int multi_i_am_master(void)
 {
-	return (Player_num == 0);
+	return (Player_num == Multi_master_playernum);
 }
 
 // Returns the Player_num of Master/Host of this game
 int multi_who_is_master(void)
 {
-	return 0;
+	return Multi_master_playernum;
 }
 
 void change_playernum_to( int new_Player_num )

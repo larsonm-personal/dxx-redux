@@ -441,6 +441,7 @@ extern int multi_received_objects;
 extern ubyte Send_ship_status; // Whether we owe observers a ship status packet.
 extern fix64 Next_ship_status_time; // The next time we are allowed to send a ship status.
 
+extern int Multi_master_playernum;  // android port: dynamic master for host migration
 int multi_i_am_master(void);
 int multi_who_is_master(void);
 void change_playernum_to(int new_pnum);

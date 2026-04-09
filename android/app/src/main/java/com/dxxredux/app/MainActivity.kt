@@ -244,6 +244,8 @@ class MainActivity :
 
     external fun nativeIsEscortOwner(): Boolean
 
+    external fun nativeGetEscortOwnerCallsign(): String
+
     external fun nativeSetAutoJoin(
         hostAddr: String,
         hostPort: Int,
@@ -524,6 +526,13 @@ class MainActivity :
                 nativeIsEscortOwner()
             } catch (_: Exception) {
                 true // default to showing Guide controls
+            }
+        }
+        touchOverlay.escortOwnerCallsignProvider = {
+            try {
+                nativeGetEscortOwnerCallsign()
+            } catch (_: Exception) {
+                ""
             }
         }
         touchOverlay.cheatCodeCallback = { code ->
@@ -2107,6 +2116,18 @@ class MainActivity :
     @Suppress("unused")
     fun showLevelName(name: String) {
         showOverlayLine(name)
+    }
+
+    // ── Host migration notification (called from JNI on game thread) ──
+    // android port: when this client becomes the new host after the original
+    // host disconnects, send a cross-process broadcast so SetupActivity's
+    // LobbyService can start LAN broadcasting for the migrated game.
+    @Suppress("unused")
+    fun onHostMigration() {
+        Log.i("DXX-MP", "Host migration: notifying SetupActivity to resume LAN broadcast")
+        val intent = android.content.Intent("com.dxxredux.HOST_MIGRATION")
+        intent.setPackage(packageName)
+        sendBroadcast(intent)
     }
 
     // ── Native net-log bridge (called from JNI on game thread) ──

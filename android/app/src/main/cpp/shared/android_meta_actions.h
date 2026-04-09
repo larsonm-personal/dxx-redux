@@ -16,35 +16,36 @@
 /* Action IDs -- must match TouchBindings.kt META_* constants */
 #define META_ACTION_OFFSET 1000
 
-#define META_QUICK_SAVE         1000
-#define META_QUICK_LOAD         1001
-#define META_GAME_MENU          1002
-#define META_GUIDE_BOT_MENU     1003
-#define META_GUIDE_FIND_ENERGY  1004
-#define META_GUIDE_FIND_REACTOR 1005
-#define META_GUIDE_FIND_SHIELD  1006
-#define META_GUIDE_FIND_POWERUP 1007
-#define META_GUIDE_FIND_ROBOT   1008
-#define META_GUIDE_FIND_HOSTAGE 1009
-#define META_GUIDE_SCRAM        1010
-#define META_GUIDE_FIND_ITEMS   1011
-#define META_GUIDE_FIND_EXIT    1012
-#define META_GUIDE_CLEAR_GOAL   1013
-#define META_MULTIPLAYER_HUD    1014
-#define META_DROP_FLAG          1015
-#define META_DROP_MARKER        1016
-#define META_WEAPON_1           1020
-#define META_WEAPON_2           1021
-#define META_WEAPON_3           1022
-#define META_WEAPON_4           1023
-#define META_WEAPON_5           1024
-#define META_WEAPON_6           1025
-#define META_WEAPON_7           1026
-#define META_WEAPON_8           1027
-#define META_WEAPON_9           1028
-#define META_WEAPON_10          1029
-#define META_PAUSE              1030
-#define META_RETURN_TO_LAUNCHER 1031
+#define META_QUICK_SAVE            1000
+#define META_QUICK_LOAD            1001
+#define META_GAME_MENU             1002
+#define META_GUIDE_BOT_MENU        1003
+#define META_GUIDE_FIND_ENERGY     1004
+#define META_GUIDE_FIND_REACTOR    1005
+#define META_GUIDE_FIND_SHIELD     1006
+#define META_GUIDE_FIND_POWERUP    1007
+#define META_GUIDE_FIND_ROBOT      1008
+#define META_GUIDE_FIND_HOSTAGE    1009
+#define META_GUIDE_SCRAM           1010
+#define META_GUIDE_FIND_ITEMS      1011
+#define META_GUIDE_FIND_EXIT       1012
+#define META_GUIDE_CLEAR_GOAL      1013
+#define META_MULTIPLAYER_HUD       1014
+#define META_DROP_FLAG             1015
+#define META_DROP_MARKER           1016
+#define META_WEAPON_1              1020
+#define META_WEAPON_2              1021
+#define META_WEAPON_3              1022
+#define META_WEAPON_4              1023
+#define META_WEAPON_5              1024
+#define META_WEAPON_6              1025
+#define META_WEAPON_7              1026
+#define META_WEAPON_8              1027
+#define META_WEAPON_9              1028
+#define META_WEAPON_10             1029
+#define META_PAUSE                 1030
+#define META_RETURN_TO_LAUNCHER    1031
+#define META_GUIDE_RELEASE_CONTROL 1032
 
 /* Flags for dispatch table entries */
 #define META_FLAG_INSTANT 1 /* inject full press+release on button down, ignore up */
@@ -54,6 +55,10 @@
  * Declared volatile because it is set on the UI thread (JNI) and
  * read on the game thread. */
 extern volatile int android_force_quit;
+
+/* Set on UI thread by META_GUIDE_RELEASE_CONTROL, consumed on game thread
+ * in gamecntl.c to call escort_release_control() */
+extern volatile int android_escort_release_pending;
 
 /*
  * Dispatch a meta action.  Called from JNI (UI thread).

@@ -26,6 +26,11 @@ void crash_breadcrumb_v(const char *fmt, ...);
  * Called by Error() instead of raw exit(1) so the Activity doesn't
  * freeze on the last rendered frame. */
 void android_finish_and_exit(void);
+
+/* android port: notify Kotlin layer that this client has become the new host
+ * after the original host disconnected.  Starts LAN broadcasting so the
+ * old host can find and rejoin the migrated game. */
+void android_notify_host_migration(void);
 #endif
 
 #endif /* ANDROID_CRASH_HANDLER_H */

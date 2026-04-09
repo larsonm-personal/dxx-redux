@@ -69,6 +69,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "physfsx.h"
 #ifdef __ANDROID__
 #include "coop_save.h"
+#include "escort.h"
 #endif
 
 #define STATE_VERSION 22
@@ -1752,10 +1753,21 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		PHYSFS_sint64 pos_after_base = PHYSFS_tell(fp);
 		PHYSFS_sint64 file_len = PHYSFS_fileLength(fp);
 		coop_save_metadata coop_meta;
-		if (coop_read_save_metadata(fp, pos_after_base, &coop_meta))
+		if (coop_read_save_metadata(fp, pos_after_base, &coop_meta)) {
 			con_printf(CON_DEBUG, "coop_save: restored metadata (%d active, %d absent)",
 				coop_meta.num_active_players, coop_meta.num_absent_players);
-		else if (pos_after_base != file_len)
+			/* Restore guidebot ownership state (v2+) */
+			if (coop_meta.version >= 2 && (Game_mode & GM_MULTI_COOP)) {
+				Buddy_allowed_to_talk = coop_meta.buddy_allowed_to_talk;
+				Escort_owner_player = coop_meta.escort_owner_player;
+				if (Escort_owner_player >= 0 && Escort_owner_player < MAX_PLAYERS) {
+					if (Escort_owner_player == Player_num)
+						HUD_init_message_literal(HM_DEFAULT, "Guide-Bot: you have control");
+					else
+						HUD_init_message(HM_DEFAULT, "Guide-Bot: %s has control", Players[Escort_owner_player].callsign);
+				}
+			}
+		} else if (pos_after_base != file_len)
 			con_printf(CON_URGENT, "savegame not completely read, might be corrupt! (cur %d, size %d)",
 				(int)pos_after_base, (int)file_len);
 	}

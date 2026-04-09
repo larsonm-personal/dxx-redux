@@ -229,8 +229,8 @@ gameseq_init_network_players()
 			j++;
 		}
 
-		if ((Objects[i].type==OBJ_ROBOT) && (Robot_info[Objects[i].id].companion) && (Game_mode & GM_MULTI))
-			obj_delete(i);		//kill the buddy in netgames
+		if ((Objects[i].type==OBJ_ROBOT) && (Robot_info[Objects[i].id].companion) && (Game_mode & GM_MULTI) && !(Game_mode & GM_MULTI_COOP))
+			obj_delete(i);		//kill the buddy in non-coop netgames
 
 	}
 	NumNetPlayerPositions = k;

@@ -19,6 +19,7 @@
 #include "android_meta_actions.h"
 
 volatile int android_force_quit = 0;
+volatile int android_escort_release_pending = 0;
 
 #define LOG_TAG   "DXX-MetaAction"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -106,6 +107,14 @@ int meta_action_dispatch(int action_id, int pressed)
 {
 	const meta_action_entry_t *entry = NULL;
 	int i;
+
+	/* Special case: release guide-bot control (no key equivalent).
+	 * Set a flag for the game thread to consume in gamecntl.c. */
+	if (action_id == META_GUIDE_RELEASE_CONTROL) {
+		if (pressed)
+			android_escort_release_pending = 1;
+		return 0;
+	}
 
 	/* Special case: return to launcher.  SDL_QUIT cascades through
 	 * the Quitting mechanism to close all windows and exit the game

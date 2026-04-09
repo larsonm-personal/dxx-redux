@@ -166,7 +166,7 @@ fun AdvancedSettingsPage(
                                         "- Touch layout (positions, sizes, bindings)\n" +
                                         "- Physical controller mappings\n" +
                                         "- In-game keyboard, joystick, and mouse settings for every pilot\n\n" +
-                                        "The app will restart after reset.",
+                                        "The app will restart after rese.",
                                     fontSize = 13.sp,
                                 )
                             },
@@ -210,7 +210,7 @@ fun AdvancedSettingsPage(
                                         "effects (.eff), new game plus (.ngp), and saved games " +
                                         "(.sg*, .mg*) for both Descent 1 and Descent 2 across all " +
                                         "file sets.\n\nThis cannot be undone.\n\n" +
-                                        "The app will restart after deletion.",
+                                        "The app will restart after deletion",
                                     fontSize = 13.sp,
                                 )
                             },
@@ -331,7 +331,7 @@ private fun DebugLoggingSection() {
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
                 title = { Text("Delete All Logs") },
-                text = { Text("Delete all debug log files? This cannot be undone.") },
+                text = { Text("Delete all debug log files? This cannot be undone") },
                 confirmButton = {
                     TextButton(onClick = {
                         DebugLog.deleteAllLogs(ctx)
@@ -359,7 +359,7 @@ private fun CrashReportsSection() {
     Text("Crash Reports", fontWeight = FontWeight.Bold, fontSize = 14.sp)
     Spacer(modifier = Modifier.height(4.dp))
     Text(
-        "Crash reports are captured automatically when the app or game crashes.",
+        "Crash reports are captured automatically when the launcher or game crashes",
         fontSize = 12.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -415,7 +415,7 @@ private fun CrashReportsSection() {
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
                 title = { Text("Delete All Crash Reports") },
-                text = { Text("Delete all crash report files? This cannot be undone.") },
+                text = { Text("Delete all crash report files? This cannot be undone") },
                 confirmButton = {
                     TextButton(onClick = {
                         CrashLog.deleteAllCrashFiles(ctx)
@@ -433,7 +433,7 @@ private fun CrashReportsSection() {
     } else {
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            "No crash reports.",
+            "No crash reports",
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

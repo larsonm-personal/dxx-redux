@@ -74,6 +74,9 @@ class TouchOverlayView
         /** Returns true if local player owns the Guide-Bot in coop. Set by MainActivity. */
         var isEscortOwnerProvider: (() -> Boolean)? = null
 
+        /** Returns owning player's callsign for Guide wheel non-owner display. */
+        var escortOwnerCallsignProvider: (() -> String)? = null
+
         /** Returns current weapon state for weapon wheels. Set by MainActivity. */
         var weaponStateProvider: (() -> WeaponState?)? = null
 
@@ -719,10 +722,12 @@ class TouchOverlayView
             // Poll weapon state to update quiescent labels
             val ws = weaponStateProvider?.invoke()
             for (rm in radialStates) {
-                if (rm.control.id == "Guide" &&
-                    (gameVariant == "d1" || isEscortOwnerProvider?.invoke() == false)
-                ) {
+                if (rm.control.id == "Guide" && gameVariant == "d1") {
                     continue
+                }
+                if (rm.control.id == "Guide" && isEscortOwnerProvider?.invoke() == false) {
+                    val owner = escortOwnerCallsignProvider?.invoke().orEmpty()
+                    rm.quiescentLabel = if (owner.isNotEmpty()) owner else "Locked"
                 }
                 if (!rm.isOpen && ws != null && (rm.control.id == "PriWpn" || rm.control.id == "SecWpn")) {
                     val isPrimary = rm.control.id == "PriWpn"
@@ -1506,7 +1511,7 @@ class TouchOverlayView
                     if (!handled) {
                         for (rm in radialStates) {
                             if (rm.pointerId >= 0) continue
-                            // D1 has no Guide-Bot; in coop, only owner sees it
+                            // D1 has no Guide-Bot; in coop, only owner can open wheel
                             if (rm.control.id == "Guide" &&
                                 (gameVariant == "d1" || isEscortOwnerProvider?.invoke() == false)
                             ) {

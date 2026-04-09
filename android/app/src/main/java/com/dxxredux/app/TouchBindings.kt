@@ -118,6 +118,7 @@ object TouchBindings {
     const val META_WEAPON_10 = 1029
     const val META_PAUSE = 1030
     const val META_RETURN_TO_LAUNCHER = 1031
+    const val META_GUIDE_RELEASE_CONTROL = 1032
 
     /** Labels for meta actions, used in Extra button pickers. */
     val META_BUTTON_LABELS: Map<Int, String> =
@@ -136,6 +137,7 @@ object TouchBindings {
             META_GUIDE_FIND_ITEMS to "GB: Find Items",
             META_GUIDE_FIND_EXIT to "GB: Find Exit",
             META_GUIDE_CLEAR_GOAL to "GB: Clear Goal",
+            META_GUIDE_RELEASE_CONTROL to "GB: Release Control",
             META_MULTIPLAYER_HUD to "Multiplayer HUD",
             META_DROP_FLAG to "Drop Flag",
             META_DROP_MARKER to "Drop Marker",
@@ -167,6 +169,7 @@ object TouchBindings {
             META_GUIDE_FIND_ITEMS,
             META_GUIDE_FIND_EXIT,
             META_GUIDE_CLEAR_GOAL,
+            META_GUIDE_RELEASE_CONTROL,
             META_DROP_FLAG,
             META_DROP_MARKER,
         )
@@ -204,6 +207,7 @@ object TouchBindings {
                     RadialSegment("Scram!", META_GUIDE_SCRAM),
                     RadialSegment("Items", META_GUIDE_FIND_ITEMS),
                     RadialSegment("Exit", META_GUIDE_FIND_EXIT),
+                    RadialSegment("Release", META_GUIDE_RELEASE_CONTROL),
                 ),
         )
 

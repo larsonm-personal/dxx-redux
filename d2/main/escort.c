@@ -305,6 +305,7 @@ int ok_for_buddy_to_talk(void)
 	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player == -1) {
 		Escort_owner_player = Player_num;
 		multi_send_escort_owner(Player_num);
+		HUD_init_message_literal(HM_DEFAULT, "Guide-Bot: you have control");
 	}
 #endif
 
@@ -1913,7 +1914,9 @@ void multi_do_escort_owner(const ubyte *buf)
 		return;
 	Escort_owner_player = new_owner;
 	if (new_owner == Player_num)
-		HUD_init_message_literal(HM_DEFAULT, "Guide-Bot is now following you");
+		HUD_init_message_literal(HM_DEFAULT, "Guide-Bot: you have control");
+	else
+		HUD_init_message(HM_DEFAULT, "Guide-Bot: %s has control", Players[new_owner].callsign);
 }
 
 void escort_transfer_ownership_on_disconnect(int gone_pnum)
@@ -1937,5 +1940,29 @@ void escort_transfer_ownership_on_disconnect(int gone_pnum)
 	Escort_owner_player = new_owner;
 	if (new_owner >= 0)
 		multi_send_escort_owner(new_owner);
+}
+
+void escort_release_control(void)
+{
+	int candidates[MAX_PLAYERS];
+	int n = 0;
+	int i, new_owner;
+
+	if (Escort_owner_player != Player_num)
+		return;
+	if (!(Game_mode & GM_MULTI_COOP))
+		return;
+
+	for (i = 0; i < N_players; i++) {
+		if (i != Player_num && Players[i].connected == CONNECT_PLAYING)
+			candidates[n++] = i;
+	}
+	if (n == 0)
+		return;
+
+	new_owner = candidates[d_rand() % n];
+	Escort_owner_player = new_owner;
+	multi_send_escort_owner(new_owner);
+	HUD_init_message_literal(HM_DEFAULT, "Guide-Bot control released");
 }
 #endif

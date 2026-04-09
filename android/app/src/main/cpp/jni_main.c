@@ -927,6 +927,37 @@ Java_com_dxxredux_app_MainActivity_nativeCoopWarpCycleTarget(JNIEnv *env, jobjec
 	coop_warp_cycle_target();
 }
 
+/* -- Host migration notification --
+ * Called from multi_disconnect_player() when the surviving player becomes
+ * the new host.  Calls MainActivity.onHostMigration() so the Kotlin layer
+ * can resume LAN broadcasting for the migrated game.
+ *
+ * android port: coop host migration support
+ */
+void android_notify_host_migration(void)
+{
+	JNIEnv *env = NULL;
+	int attached = 0;
+
+	if (!g_jvm || !g_activity)
+		return;
+
+	if ((*g_jvm)->GetEnv(g_jvm, (void **) &env, JNI_VERSION_1_6) != JNI_OK) {
+		if ((*g_jvm)->AttachCurrentThread(g_jvm, &env, NULL) == JNI_OK)
+			attached = 1;
+		else
+			return;
+	}
+
+	jclass cls = (*env)->GetObjectClass(env, g_activity);
+	jmethodID mid = (*env)->GetMethodID(env, cls, "onHostMigration", "()V");
+	if (mid)
+		(*env)->CallVoidMethod(env, g_activity, mid);
+
+	if (attached)
+		(*g_jvm)->DetachCurrentThread(g_jvm);
+}
+
 /* -- Escort (Guide-Bot) owner status for coop overlay --
  * Returns the escort owner player index, or -1 if no guidebot / not yet freed.
  *
@@ -967,3 +998,16 @@ Java_com_dxxredux_app_MainActivity_nativeIsEscortOwner(JNIEnv *env, jobject thiz
 	return JNI_FALSE;
 }
 #endif
+
+/* Returns the callsign of the current escort owner, or empty string if none */
+JNIEXPORT jstring JNICALL
+Java_com_dxxredux_app_MainActivity_nativeGetEscortOwnerCallsign(JNIEnv *env, jobject thiz)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	extern int Game_mode;
+	if ((Game_mode & GM_MULTI_COOP) &&
+	    Escort_owner_player >= 0 && Escort_owner_player < MAX_PLAYERS)
+		return (*env)->NewStringUTF(env, Players[Escort_owner_player].callsign);
+#endif
+	return (*env)->NewStringUTF(env, "");
+}

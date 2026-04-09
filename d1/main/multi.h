@@ -380,6 +380,7 @@ extern char *RankStrings[];
 #define NETPLAYER_ORIG_SIZE	22
 #define NETPLAYER_D1X_SIZE	22 /* D1X version removes last char from callsign */
 
+extern int Multi_master_playernum;  // android port: dynamic master for host migration
 int multi_i_am_master(void);
 int multi_who_is_master(void);
 void change_playernum_to(int new_pnum);

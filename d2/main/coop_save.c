@@ -10,6 +10,7 @@
 #include "coop_save.h"
 #include "player.h"
 #include "multi.h"
+#include "escort.h"
 #include "config.h"
 #include "console.h"
 #include "weapon.h"
@@ -71,6 +72,8 @@ void coop_write_save_metadata(void *fp)
 	strncpy(meta.mission_name, Netgame.mission_name, 8);
 	meta.mission_name[8] = '\0';
 	meta.difficulty = Netgame.difficulty;
+	meta.escort_owner_player = (int8_t)Escort_owner_player;
+	meta.buddy_allowed_to_talk = Buddy_allowed_to_talk ? 1 : 0;
 
 	meta.num_active_players = 0;
 	for (i = 0; i < MAX_PLAYERS; i++) {

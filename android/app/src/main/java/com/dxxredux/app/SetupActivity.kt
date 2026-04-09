@@ -62,6 +62,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.apache.commons.compress.archivers.sevenz.SevenZFile
 import org.json.JSONArray
@@ -973,6 +975,62 @@ class SetupActivity : ComponentActivity() {
             }
         }
 
+    // ── Host migration receiver ────────────────────────────────────────
+    // When the game process detects host departure in coop and elects this
+    // client as new master, it writes host_migration.json via PhysFS and
+    // sends a HOST_MIGRATION broadcast.  Read that file and start LAN
+    // broadcasting so new joiners can discover the migrated game.
+    private val hostMigrationReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(
+                ctx: Context?,
+                intent: Intent?,
+            ) {
+                val context = ctx ?: return
+                // PhysFS write dir is filesDir/d2x-redux/ or d1x-redux/
+                val d2File = java.io.File(context.filesDir, "d2x-redux/host_migration.json")
+                val d1File = java.io.File(context.filesDir, "d1x-redux/host_migration.json")
+                val file =
+                    when {
+                        d2File.exists() && d1File.exists() ->
+                            if (d2File.lastModified() >= d1File.lastModified()) d2File else d1File
+                        d2File.exists() -> d2File
+                        d1File.exists() -> d1File
+                        else -> {
+                            Log.w("DXX-MP", "host_migration.json not found in d1 or d2 dirs")
+                            return
+                        }
+                    }
+                try {
+                    val json =
+                        kotlinx.serialization.json.Json
+                            .parseToJsonElement(file.readText())
+                            .jsonObject
+                    val callsign = json["callsign"]?.jsonPrimitive?.content ?: "Player"
+                    val game = json["game"]?.jsonPrimitive?.content ?: "d2"
+                    val mission = json["mission"]?.jsonPrimitive?.content ?: ""
+                    val mode = json["mode"]?.jsonPrimitive?.content ?: "coop"
+                    val difficulty = json["difficulty"]?.jsonPrimitive?.int ?: 1
+                    val levelNum = json["level_num"]?.jsonPrimitive?.int ?: 1
+                    val maxPlayers = json["max_players"]?.jsonPrimitive?.int ?: 4
+                    Log.i(
+                        "DXX-MP",
+                        "Host migration: resuming LAN broadcast as $callsign ($game/$mission lvl=$levelNum)",
+                    )
+                    com.dxxredux.app.lobby.LobbyService
+                        .startDiscovery(context, callsign)
+                    com.dxxredux.app.lobby.LobbyService
+                        .hostLobby(callsign, game, mission, mode, maxPlayers)
+                    com.dxxredux.app.lobby.LobbyService
+                        .startGame(difficulty, levelNum)
+                    // Clean up the migration file
+                    file.delete()
+                } catch (e: Exception) {
+                    Log.e("DXX-MP", "Failed to process host_migration.json", e)
+                }
+            }
+        }
+
     /** Active download progress visible to introspection. */
     internal val downloadStates = mutableMapOf<String, Int>()
 
@@ -1671,6 +1729,14 @@ class SetupActivity : ComponentActivity() {
             registerReceiver(mpCommandReceiver, mpFilter)
         }
 
+        // Register host migration receiver (coop host takeover)
+        val hmFilter = IntentFilter("com.dxxredux.HOST_MIGRATION")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(hostMigrationReceiver, hmFilter, RECEIVER_EXPORTED)
+        } else {
+            registerReceiver(hostMigrationReceiver, hmFilter)
+        }
+
         // Register automation receiver (debug only)
         if (BuildConfig.DEBUG) {
             val autoFilter = IntentFilter("com.dxxredux.SETUP_AUTOMATE")
@@ -1874,6 +1940,10 @@ class SetupActivity : ComponentActivity() {
         }
         try {
             unregisterReceiver(mpCommandReceiver)
+        } catch (_: Exception) {
+        }
+        try {
+            unregisterReceiver(hostMigrationReceiver)
         } catch (_: Exception) {
         }
         try {

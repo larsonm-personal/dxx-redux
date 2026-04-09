@@ -98,6 +98,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include <SDL.h>
 
+#ifdef __ANDROID__
+#include "android_meta_actions.h"
+#endif
+
 extern void object_goto_prev_viewer(void);
 
 // Global Variables -----------------------------------------------------------
@@ -1020,6 +1024,14 @@ int HandleGameKey(int key)
 {
 	int new_obs = Current_obs_player;
 
+#ifdef __ANDROID__
+	/* android port: consume guide-bot release flag set from touch wheel */
+	if (android_escort_release_pending) {
+		android_escort_release_pending = 0;
+		escort_release_control();
+	}
+#endif
+
 	switch (key) {
 
 		case KEY_1 + KEY_SHIFTED:
@@ -1034,10 +1046,15 @@ int HandleGameKey(int key)
 		case KEY_0 + KEY_SHIFTED:
 			if (PlayerCfg.EscortHotKeys)
 			{
-				if (!(Game_mode & GM_MULTI))
+				if (!(Game_mode & GM_MULTI)) {
 					set_escort_special_goal(key);
-				else
+				} else if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player == Player_num) {
+					set_escort_special_goal(key);
+				} else if (Game_mode & GM_MULTI_COOP) {
+					HUD_init_message_literal(HM_DEFAULT, "Guide-Bot is controlled by another player");
+				} else {
 					HUD_init_message_literal(HM_DEFAULT, "No Guide-Bot in Multiplayer!");
+				}
 				game_flush_inputs();
 				return 1;
 			}

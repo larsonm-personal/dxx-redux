@@ -20,7 +20,7 @@
 
 /* --- constants --- */
 #define COOP_SAVE_META_TAG           0x434F4F50  /* "COOP" */
-#define COOP_SAVE_META_VER           1
+#define COOP_SAVE_META_VER           2
 #define COOP_MAX_REMEMBERED_PLAYERS  16
 #define COOP_CLIENT_ID_LEN           36  /* UUID without null */
 #define COOP_SAVE_MAX_WEAPONS        10  /* max(d1=5, d2=10) */
@@ -55,6 +55,8 @@ typedef struct coop_save_metadata {
 	uint8_t  difficulty;
 	uint8_t  num_active_players;
 	uint8_t  num_absent_players;
+	int8_t   escort_owner_player; /* v2: Escort_owner_player (-1 = unowned) */
+	uint8_t  buddy_allowed_to_talk; /* v2: Buddy_allowed_to_talk */
 	coop_player_record active_players[8];  /* MAX_PLAYERS */
 	coop_player_record absent_players[COOP_MAX_REMEMBERED_PLAYERS];
 } coop_save_metadata;
