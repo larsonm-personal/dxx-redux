@@ -198,14 +198,22 @@ android {
                 signingConfig signingConfigs.release
             }
         }
-        // Debug build signed with the upload key for Play internal testing.
-        // Keeps debuggable=true, asserts, INTROSPECT_ON, etc.
+        // Debug-like build signed with the upload key for Play internal testing.
+        // Keeps asserts, INTROSPECT_ON, etc. but debuggable=false so Play accepts it.
+        // Force CMake Debug build type so NDEBUG is not defined (otherwise Assert
+        // references variables that only exist in debug builds).
         internal {
             initWith debug
+            debuggable false
             if (keystorePropertiesFile.exists()) {
                 signingConfig signingConfigs.release
             }
             matchingFallbacks = ['debug']
+            externalNativeBuild {
+                cmake {
+                    arguments '-DCMAKE_BUILD_TYPE=Debug'
+                }
+            }
         }
     }
 
