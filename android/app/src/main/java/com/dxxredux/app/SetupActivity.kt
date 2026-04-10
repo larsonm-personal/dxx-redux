@@ -991,6 +991,11 @@ class SetupActivity : ComponentActivity() {
                 intent: Intent?,
             ) {
                 val context = ctx ?: return
+                // This player is now the host -- shut down the loopback
+                // proxy so port 42430 is released cleanly before any
+                // future rejoin creates a fresh proxy
+                com.dxxredux.app.multiplayer.MatchmakingService
+                    .shutdownLanProxy()
                 // PhysFS write dir is filesDir/d2x-redux/ or d1x-redux/
                 val d2File = java.io.File(context.filesDir, "d2x-redux/host_migration.json")
                 val d1File = java.io.File(context.filesDir, "d1x-redux/host_migration.json")

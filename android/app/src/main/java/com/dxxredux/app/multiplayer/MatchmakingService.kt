@@ -179,6 +179,12 @@ object MatchmakingService {
         stunOverrideAddrs = addrs
     }
 
+    /** Shut down any running proxy (e.g. when this player becomes host). */
+    fun shutdownLanProxy() {
+        localhostProxy?.shutdown()
+        localhostProxy = null
+    }
+
     /** Create a simple proxy for LAN joiner (one peer = the host). */
     fun createLanProxy(
         hostAddr: String,

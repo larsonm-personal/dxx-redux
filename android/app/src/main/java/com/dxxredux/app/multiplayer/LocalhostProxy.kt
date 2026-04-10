@@ -306,6 +306,12 @@ private class PeerProxy(
     @Volatile
     var bytesReceived: Long = 0L
 
+    @Volatile
+    var pdataForwarded: Long = 0L
+
+    @Volatile
+    var mdataForwarded: Long = 0L
+
     fun getStats() = PeerProxyStats(config.peerSlot, packetsSent, packetsReceived, bytesSent, bytesReceived)
 
     suspend fun run() {
@@ -343,13 +349,22 @@ private class PeerProxy(
             localSocket.send(DatagramPacket(payload, payloadLen, InetSocketAddress(loopback, ENGINE_PORT)))
             packetsReceived++
             bytesReceived += payloadLen
+            if (payloadLen > 0) {
+                val upid = payload[0].toInt() and 0xFF
+                if (upid == 0x22) {
+                    pdataForwarded++
+                } else if (upid == 0x25 || upid == 0x26) {
+                    mdataForwarded++
+                }
+            }
             if (packetsReceived <= 5 ||
                 (packetsReceived <= 100 && packetsReceived % 20 == 0L) ||
                 packetsReceived % 500 == 0L
             ) {
                 Log.i(
                     TAG,
-                    "real->local slot=${config.peerSlot} #$packetsReceived ${payloadLen}b relay=${config.isRelay}",
+                    "real->local slot=${config.peerSlot} #$packetsReceived ${payloadLen}b" +
+                        " pdata=$pdataForwarded mdata=$mdataForwarded relay=${config.isRelay}",
                 )
             }
         } catch (e: java.net.SocketException) {
@@ -423,6 +438,21 @@ private class PeerProxy(
                 localSocket.send(DatagramPacket(payload, payloadLen, engineAddr))
                 packetsReceived++
                 bytesReceived += payloadLen
+                // Log UPID breakdown periodically to diagnose selective forwarding issues
+                if (payloadLen > 0) {
+                    val upid = payload[0].toInt() and 0xFF
+                    if (upid == 0x22) {
+                        pdataForwarded++
+                    } else if (upid == 0x25 || upid == 0x26) {
+                        mdataForwarded++
+                    }
+                }
+                if (packetsReceived % 500 == 0L) {
+                    Log.i(
+                        TAG,
+                        "real->local slot=${config.peerSlot} total=$packetsReceived pdata=$pdataForwarded mdata=$mdataForwarded",
+                    )
+                }
             } catch (e: java.net.SocketException) {
                 val msg = e.message ?: ""
                 if ("closed" in msg || "EPERM" in msg || "Operation not permitted" in msg) break

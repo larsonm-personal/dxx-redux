@@ -692,7 +692,7 @@ int net_udp_rebind_for_hosting(void)
 		MPDIAG("rebind_for_hosting: FAILED to reopen socket on port %d", port);
 		return -1;
 	}
-	MPDIAG("rebind_for_hosting: socket=%d now on 0.0.0.0:%d", UDP_Socket[0], port);
+	MPDIAG("rebind_for_hosting: socket=%d now on 0.0.0.0:%d token=%u", UDP_Socket[0], port, netgame_token);
 	return 0;
 }
 #endif
@@ -1100,6 +1100,19 @@ int valid_token(ubyte *data, int data_len, struct _sockaddr sender_addr) {
 			if(! rv) {				
 				sprintf(err_mess, "token %d != %d", GET_INTEL_INT(data + 1), netgame_token );
 				drop_rx_packet(data, err_mess);
+#ifdef __ANDROID__
+				/* android port: diagnose host-migration PDATA loss */
+				if (pid == UPID_PDATA || pid == UPID_MDATA_PNORM) {
+					static fix64 last_tok_log = 0;
+					fix64 now = timer_query();
+					if (now > last_tok_log + F1_0*3) {
+						MPDIAG("valid_token: DROP %s pkt_token=%u local_token=%u",
+						       pid == UPID_PDATA ? "PDATA" : "MDATA",
+						       (uint)GET_INTEL_INT(data + 1), netgame_token);
+						last_tok_log = now;
+					}
+				}
+#endif
 			}
 			return rv; 
 
@@ -3650,10 +3663,16 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 			if(my_token == my_player_token || is_observer()) {
 				netgame_token = GET_INTEL_INT(data + len); len += 4;
 				con_printf(CON_DEBUG, "Set token %d in net_udp_process_game_info\n", netgame_token);
+#ifdef __ANDROID__
+				MPDIAG("sync_token: set netgame_token=%u (from SYNC, my_player_token=%u)", netgame_token, my_player_token);
+#endif
 			} else {
 				char err_mess[200];
 				snprintf(err_mess, 200, "player token incorrect; received %u, expected %u",  my_token, my_player_token);
 				drop_rx_packet(data, err_mess); 
+#ifdef __ANDROID__
+				MPDIAG("sync_token: MISMATCH received=%u expected=%u", my_token, my_player_token);
+#endif
 				return 0; 
 			}
 		}
@@ -3661,6 +3680,9 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 		if (data[0] == UPID_GAME_INFO) {
 			netgame_token = my_player_token = GET_INTEL_INT(data + len); len += 4;
 			con_printf(CON_DEBUG, "Set token %d for UPID_GAME_INFO in net_udp_process_game_info\n", netgame_token);
+#ifdef __ANDROID__
+			MPDIAG("game_info_token: set netgame_token=%u my_player_token=%u (from GAME_INFO)", netgame_token, my_player_token);
+#endif
 		}
 
 		if (len > data_len) {
@@ -5268,8 +5290,8 @@ void net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr send
 
 #ifdef __ANDROID__
 	/* android port: diagnose host-migration PDATA loss -- log stored addresses */
-	MPDIAG("read_sync: PLAYING Player_num=%d master=%d N_players=%d RetroProto=%d ShortPkt=%d",
-	       Player_num, Multi_master_playernum, N_players, Netgame.RetroProtocol, Netgame.ShortPackets);
+	MPDIAG("read_sync: PLAYING Player_num=%d master=%d N_players=%d RetroProto=%d ShortPkt=%d token=%u",
+	       Player_num, Multi_master_playernum, N_players, Netgame.RetroProtocol, Netgame.ShortPackets, netgame_token);
 	for (int i = 0; i < N_players; i++) {
 		MPDIAG("read_sync: player[%d] addr=%s:%u connected=%d%s",
 		       i, ip_from_sockaddr(Netgame.players[i].protocol.udp.addr),
@@ -6335,6 +6357,10 @@ void net_udp_listen()
 #ifdef __ANDROID__
 	/* android port: diagnose host-migration PDATA loss -- track packet rx */
 	static int rx_total = 0;
+	static int rx_pdata = 0;
+	static int rx_mdata = 0;
+	static int rx_ping = 0;
+	static int rx_other = 0;
 	static fix64 last_rx_heartbeat = 0;
 	int rx_this_call = 0;
 #endif
@@ -6345,6 +6371,14 @@ void net_udp_listen()
 		while ( size > 0 )	{
 #ifdef __ANDROID__
 			rx_this_call++;
+			if (size > 0) {
+				switch (packet[0]) {
+					case UPID_PDATA: rx_pdata++; break;
+					case UPID_MDATA_PNORM: case UPID_MDATA_PNEEDACK: rx_mdata++; break;
+					case UPID_PING: case UPID_PONG: case UPID_P2P_PING: case UPID_P2P_PONG: rx_ping++; break;
+					default: rx_other++; break;
+				}
+			}
 #endif
 			net_udp_process_packet( packet, sender_addr, size, 0 );
 			size = udp_receive_packet( 0, packet, UPID_MAX_SIZE, &sender_addr );
@@ -6357,6 +6391,14 @@ void net_udp_listen()
 		while ( size > 0 )	{
 #ifdef __ANDROID__
 			rx_this_call++;
+			if (size > 0) {
+				switch (packet[0]) {
+					case UPID_PDATA: rx_pdata++; break;
+					case UPID_MDATA_PNORM: case UPID_MDATA_PNEEDACK: rx_mdata++; break;
+					case UPID_PING: case UPID_PONG: case UPID_P2P_PING: case UPID_P2P_PONG: rx_ping++; break;
+					default: rx_other++; break;
+				}
+			}
 #endif
 			net_udp_process_packet( packet, sender_addr, size, 0 );
 			size = udp_receive_packet( 1, packet, UPID_MAX_SIZE, &sender_addr );
@@ -6379,9 +6421,23 @@ void net_udp_listen()
 	{
 		fix64 now = timer_query();
 		if (now > last_rx_heartbeat + F1_0*5) {
-			MPDIAG("listen: rx_total=%d Network_status=%d master=%d socket=%d",
-			       rx_total, Network_status, multi_i_am_master(), UDP_Socket[0]);
+			MPDIAG("listen: rx_total=%d pdata=%d mdata=%d ping=%d other=%d Network_status=%d master=%d socket=%d token=%u",
+			       rx_total, rx_pdata, rx_mdata, rx_ping, rx_other,
+			       Network_status, multi_i_am_master(), UDP_Socket[0], netgame_token);
+			/* Warn when receiving mdata but no pdata -- proxy forwarding issue */
+			if (rx_pdata == 0 && rx_mdata > 0 && !multi_i_am_master() &&
+			    Network_status == NETSTAT_PLAYING) {
+				MPDIAG("listen: WARNING pdata=0 mdata=%d -- possible proxy issue. host_addr=%s:%u bind_loopback=%d",
+				       rx_mdata,
+				       ip_from_sockaddr(Netgame.players[multi_who_is_master()].protocol.udp.addr),
+				       port_from_sockaddr(Netgame.players[multi_who_is_master()].protocol.udp.addr),
+				       udp_bind_loopback);
+			}
 			rx_total = 0;
+			rx_pdata = 0;
+			rx_mdata = 0;
+			rx_ping = 0;
+			rx_other = 0;
 			last_rx_heartbeat = now;
 		}
 	}
@@ -7407,6 +7463,25 @@ void net_udp_send_pdata()
 				net_udp_send_to_player(buf, len, i); 
 			}
 		}
+#ifdef __ANDROID__
+		/* android port: diagnose host-migration PDATA loss */
+		{
+			static int retro_tx_count = 0;
+			retro_tx_count++;
+			if (retro_tx_count <= 3 || retro_tx_count % 300 == 0) {
+				MPDIAG("send_pdata: RETRO TX #%d from P%d token=%u len=%d",
+				       retro_tx_count, Player_num, netgame_token, len);
+				/* Log destination address for each connected player */
+				for (int j = 0; j < MAX_PLAYERS; j++) {
+					if (Players[j].connected && j != Player_num)
+						MPDIAG("  send_pdata: -> P%d addr=%s:%u conntype=%d",
+						       j, ip_from_sockaddr(Netgame.players[j].protocol.udp.addr),
+						       port_from_sockaddr(Netgame.players[j].protocol.udp.addr),
+						       connection_statuses[j].type);
+				}
+			}
+		}
+#endif
 
 		if(multi_i_am_master()) {
 			forward_to_observers(buf, len, 0); 
@@ -7619,6 +7694,18 @@ void net_udp_process_pdata ( ubyte *data, int data_len, struct _sockaddr sender_
 	pd.Player_num = data[len];									len++;
 	pd.connected = data[len];									len++;
 
+#ifdef __ANDROID__
+	/* android port: diagnose host-migration PDATA loss */
+	{
+		static int pdata_rx_count = 0;
+		if (++pdata_rx_count <= 3 || pdata_rx_count % 300 == 0)
+			MPDIAG("process_pdata: RX #%d from P%d connected=%d len=%d retro=%d sender=%s:%u",
+			       pdata_rx_count, pd.Player_num, pd.connected, data_len,
+			       Netgame.RetroProtocol,
+			       ip_from_sockaddr(sender_addr), port_from_sockaddr(sender_addr));
+	}
+#endif
+
 
 	// No remote control, please
 	if(pd.Player_num == Player_num) {
@@ -7772,7 +7859,21 @@ void net_udp_read_pdata_packet(UDP_frame_info *pd)
 	}
 
 	if (Players[TheirPlayernum].connected != CONNECT_PLAYING || TheirPlayernum == Player_num)
+	{
+#ifdef __ANDROID__
+		/* android port: diagnose host-migration PDATA loss */
+		{
+			static fix64 last_skip_log = 0;
+			fix64 now = timer_query();
+			if (now > last_skip_log + F1_0*3) {
+				MPDIAG("read_pdata: SKIP P%d connected=%d Player_num=%d",
+				       TheirPlayernum, Players[TheirPlayernum].connected, Player_num);
+				last_skip_log = now;
+			}
+		}
+#endif
 		return;
+	}
 
 	if (!multi_quit_game && (TheirPlayernum >= N_players))
 	{
