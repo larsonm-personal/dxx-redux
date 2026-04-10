@@ -178,6 +178,11 @@ void update_address_for_player(int pnum, struct _sockaddr new_addr);
 void net_udp_send_p2p_reattempt_direct (int to_player, int connect_to_player);
 void net_udp_process_p2p_reattempt_direct (ubyte *data, struct _sockaddr sender_addr, int data_len);
 void drop_rx_packet(ubyte  *data, char* reason); 
+char* ip_from_sockaddr(struct _sockaddr addr);
+ushort port_from_sockaddr(struct _sockaddr addr);
+#ifdef __ANDROID__
+static int sockaddr_equal(const struct _sockaddr *a, const struct _sockaddr *b);
+#endif
 
 void forward_to_observers(ubyte *data, int data_len, int needack);
 void check_observers(fix64 now);
@@ -3682,7 +3687,11 @@ void net_udp_process_dump(ubyte *data, int len, struct _sockaddr sender_addr)
 	}
 #endif
 
+#ifdef __ANDROID__
+	if (!sockaddr_equal(&sender_addr, &Netgame.players[multi_who_is_master()].protocol.udp.addr))
+#else
 	if (memcmp((struct _sockaddr *)&sender_addr,(struct _sockaddr *)&Netgame.players[multi_who_is_master()].protocol.udp.addr,sizeof(struct _sockaddr)))
+#endif
 		return;
 
 	switch (data[5])
@@ -5257,6 +5266,19 @@ void net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr send
 		if (i != Player_num)
 			Netgame.players[i].LastPacketTime = timer_query();
 
+#ifdef __ANDROID__
+	/* android port: diagnose host-migration PDATA loss -- log stored addresses */
+	MPDIAG("read_sync: PLAYING Player_num=%d master=%d N_players=%d RetroProto=%d ShortPkt=%d",
+	       Player_num, Multi_master_playernum, N_players, Netgame.RetroProtocol, Netgame.ShortPackets);
+	for (int i = 0; i < N_players; i++) {
+		MPDIAG("read_sync: player[%d] addr=%s:%u connected=%d%s",
+		       i, ip_from_sockaddr(Netgame.players[i].protocol.udp.addr),
+		       port_from_sockaddr(Netgame.players[i].protocol.udp.addr),
+		       Players[i].connected,
+		       i == Player_num ? " (me)" : "");
+	}
+#endif
+
 	Network_status = NETSTAT_PLAYING;
 	multi_sort_kill_list();
 }
@@ -6310,11 +6332,20 @@ void net_udp_listen()
 	int size;
 	ubyte packet[UPID_MAX_SIZE];
 	struct _sockaddr sender_addr;
+#ifdef __ANDROID__
+	/* android port: diagnose host-migration PDATA loss -- track packet rx */
+	static int rx_total = 0;
+	static fix64 last_rx_heartbeat = 0;
+	int rx_this_call = 0;
+#endif
 
 	if (UDP_Socket[0] != -1)
 	{
 		size = udp_receive_packet( 0, packet, UPID_MAX_SIZE, &sender_addr );
 		while ( size > 0 )	{
+#ifdef __ANDROID__
+			rx_this_call++;
+#endif
 			net_udp_process_packet( packet, sender_addr, size, 0 );
 			size = udp_receive_packet( 0, packet, UPID_MAX_SIZE, &sender_addr );
 		}
@@ -6324,6 +6355,9 @@ void net_udp_listen()
 	{
 		size = udp_receive_packet( 1, packet, UPID_MAX_SIZE, &sender_addr );
 		while ( size > 0 )	{
+#ifdef __ANDROID__
+			rx_this_call++;
+#endif
 			net_udp_process_packet( packet, sender_addr, size, 0 );
 			size = udp_receive_packet( 1, packet, UPID_MAX_SIZE, &sender_addr );
 		}
@@ -6336,6 +6370,19 @@ void net_udp_listen()
 		while ( size > 0 )	{
 			net_udp_process_packet( packet, sender_addr, size, 0 );
 			size = udp_receive_packet( 2, packet, UPID_MAX_SIZE, &sender_addr );
+		}
+	}
+#endif
+
+#ifdef __ANDROID__
+	rx_total += rx_this_call;
+	{
+		fix64 now = timer_query();
+		if (now > last_rx_heartbeat + F1_0*5) {
+			MPDIAG("listen: rx_total=%d Network_status=%d master=%d socket=%d",
+			       rx_total, Network_status, multi_i_am_master(), UDP_Socket[0]);
+			rx_total = 0;
+			last_rx_heartbeat = now;
 		}
 	}
 #endif
@@ -7369,11 +7416,33 @@ void net_udp_send_pdata()
 		{
 			for (i = 1; i < MAX_PLAYERS; i++)
 				if (Players[i].connected != CONNECT_DISCONNECTED) {
+#ifdef __ANDROID__
+					/* android port: diagnose host-migration PDATA loss */
+					{
+						static int pdata_tx_count = 0;
+						if (++pdata_tx_count <= 3 || pdata_tx_count % 300 == 0)
+							MPDIAG("send_pdata: TX #%d to player[%d] at %s:%u",
+							       pdata_tx_count, i,
+							       ip_from_sockaddr(Netgame.players[i].protocol.udp.addr),
+							       port_from_sockaddr(Netgame.players[i].protocol.udp.addr));
+					}
+#endif
 					dxx_sendto (UDP_Socket[0], buf, len, 0, (struct sockaddr *)&Netgame.players[i].protocol.udp.addr, sizeof(struct _sockaddr));
 				}
 		}
 		else
 		{
+#ifdef __ANDROID__
+			/* android port: diagnose host-migration PDATA loss */
+			{
+				static int pdata_tx_count = 0;
+				if (++pdata_tx_count <= 3 || pdata_tx_count % 300 == 0)
+					MPDIAG("send_pdata: TX #%d to master[%d] at %s:%u",
+					       pdata_tx_count, multi_who_is_master(),
+					       ip_from_sockaddr(Netgame.players[multi_who_is_master()].protocol.udp.addr),
+					       port_from_sockaddr(Netgame.players[multi_who_is_master()].protocol.udp.addr));
+			}
+#endif
 			dxx_sendto (UDP_Socket[0], buf, len, 0, (struct sockaddr *)&Netgame.players[multi_who_is_master()].protocol.udp.addr, sizeof(struct _sockaddr));
 		}
 	}
@@ -7486,17 +7555,65 @@ void net_udp_process_pdata ( ubyte *data, int data_len, struct _sockaddr sender_
 	int len = 0, i = 0;
 
 	if ( !( Game_mode & GM_NETWORK && ( Network_status == NETSTAT_PLAYING || Network_status == NETSTAT_ENDLEVEL ) ) )
+	{
+#ifdef __ANDROID__
+		/* android port: diagnose host-migration PDATA loss */
+		{
+			static fix64 last_drop_log = 0;
+			fix64 now = timer_query();
+			if (now > last_drop_log + F1_0*3) {
+				MPDIAG("process_pdata: DROP status (Network_status=%d Game_mode=0x%x)", Network_status, Game_mode);
+				last_drop_log = now;
+			}
+		}
+#endif
 		return;
+	}
 
 	len++;
 	len += 4; // token 
 
 	if(! Netgame.RetroProtocol ) {
 		if ((Netgame.ShortPackets && data_len != UPID_PDATA_S_SIZE) || (!Netgame.ShortPackets && data_len != UPID_PDATA_Q_SIZE))
+		{
+#ifdef __ANDROID__
+			MPDIAG("process_pdata: DROP size (got=%d short=%d expected=%d)",
+			       data_len, Netgame.ShortPackets,
+			       Netgame.ShortPackets ? UPID_PDATA_S_SIZE : UPID_PDATA_Q_SIZE);
+#endif
 			return;
+		}
 
-		if (memcmp((struct _sockaddr *)&sender_addr, (struct _sockaddr *)&Netgame.players[((multi_i_am_master())?(data[len]):(0))].protocol.udp.addr, sizeof(struct _sockaddr)))
+		{
+			int cmp_slot = multi_i_am_master() ? data[len] : 0;
+#ifdef __ANDROID__
+			/* android port: use IP+port comparison instead of full memcmp.
+			 * After socket rebind cycles (host migration), padding bytes in
+			 * struct _sockaddr can differ between getaddrinfo and recvfrom,
+			 * causing the full memcmp to fail even when IP+port match. */
+			if (!sockaddr_equal(&sender_addr, &Netgame.players[cmp_slot].protocol.udp.addr))
+#else
+			if (memcmp((struct _sockaddr *)&sender_addr, (struct _sockaddr *)&Netgame.players[cmp_slot].protocol.udp.addr, sizeof(struct _sockaddr)))
+#endif
+		{
+#ifdef __ANDROID__
+			/* android port: diagnose host-migration PDATA loss */
+			{
+				static fix64 last_addr_log = 0;
+				fix64 now = timer_query();
+				if (now > last_addr_log + F1_0*3) {
+					MPDIAG("process_pdata: DROP addr (slot=%d sender=%s:%u expected=%s:%u)",
+					       cmp_slot,
+					       ip_from_sockaddr(sender_addr), port_from_sockaddr(sender_addr),
+					       ip_from_sockaddr(Netgame.players[cmp_slot].protocol.udp.addr),
+					       port_from_sockaddr(Netgame.players[cmp_slot].protocol.udp.addr));
+					last_addr_log = now;
+				}
+			}
+#endif
 			return;
+		}
+		}
 	}
 
 	pd.Player_num = data[len];									len++;
@@ -7802,6 +7919,19 @@ ushort port_from_sockaddr(struct _sockaddr addr) {
 	struct sockaddr_in *addrin = (struct sockaddr_in*) &addr;
 	return SWAPSHORT(addrin->sin_port);
 }
+
+#ifdef __ANDROID__
+/* android port: compare sockaddrs by IP+port only, ignoring padding bytes.
+ * The full memcmp on struct _sockaddr can fail after socket rebind cycles
+ * because getaddrinfo and recvfrom may fill padding bytes differently. */
+static int sockaddr_equal(const struct _sockaddr *a, const struct _sockaddr *b)
+{
+	const struct sockaddr_in *sa = (const struct sockaddr_in *)a;
+	const struct sockaddr_in *sb = (const struct sockaddr_in *)b;
+	return sa->sin_addr.s_addr == sb->sin_addr.s_addr &&
+	       sa->sin_port == sb->sin_port;
+}
+#endif
 
 
 void net_udp_process_p2p_ping(ubyte *data, struct _sockaddr sender_addr, int data_len) {
