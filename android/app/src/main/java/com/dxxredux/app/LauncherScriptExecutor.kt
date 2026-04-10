@@ -96,6 +96,17 @@ class LauncherScriptExecutor(
     }
 
     private suspend fun runSteps() {
+        try {
+            runStepsInner()
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e // Don't swallow cancellation
+        } catch (e: Exception) {
+            Log.e(TAG, "Uncaught exception in runSteps", e)
+            fail("uncaught exception: ${e.javaClass.simpleName}: ${e.message}")
+        }
+    }
+
+    private suspend fun runStepsInner() {
         while (currentStep < totalSteps) {
             val step = steps.getJSONObject(currentStep)
             val action = step.optString("action", "")
@@ -206,34 +217,35 @@ class LauncherScriptExecutor(
                         fail("tap_button: missing 'text' field")
                         return
                     }
-                    // Poll for the button to appear (UI may still be rendering).
-                    // If not found, scroll down -- the button may be off-screen
-                    // in the scrollable setup layout.
+                    // Poll for the button to appear AND be enabled.
+                    // If not found, scroll down -- the button may be off-screen.
+                    // If found but disabled, keep polling (Compose may be recomposing
+                    // after file detection or import).
                     val deadline = System.currentTimeMillis() + timeoutMs
                     var button: SetupActivity.ButtonInfo? = null
                     var scrollAttempts = 0
                     while (true) {
                         button = activity.findButtonByText(text)
-                        if (button != null) break
+                        if (button != null && button.enabled) break
                         if (System.currentTimeMillis() > deadline) {
-                            val available =
-                                activity
-                                    .collectAccessibleButtons()
-                                    .joinToString(", ") { "\"${it.text}\"" }
-                            fail("tap_button: no button matching \"$text\" (available: $available)")
+                            if (button != null && !button.enabled) {
+                                fail("tap_button: button \"${button.text}\" is disabled")
+                            } else {
+                                val available =
+                                    activity
+                                        .collectAccessibleButtons()
+                                        .joinToString(", ") { "\"${it.text}\"" }
+                                fail("tap_button: no button matching \"$text\" (available: $available)")
+                            }
                             return
                         }
-                        if (scrollAttempts < 5) {
+                        if (button == null && scrollAttempts < 5) {
                             activity.scrollDown()
                             scrollAttempts++
                             delay(400)
                         } else {
                             delay(500)
                         }
-                    }
-                    if (!button.enabled) {
-                        fail("tap_button: button \"${button.text}\" is disabled")
-                        return
                     }
                     Log.i(TAG, "TAP: \"${button.text}\" at (${button.centerX}, ${button.centerY})")
                     if (launchesGame) {

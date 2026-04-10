@@ -2278,17 +2278,10 @@ void hud_show_kill_list()
 
 	x0 = FSPACX(1); x1 = FSPACX(43);
 
-	if ((Game_mode & GM_MULTI_COOP) || (Game_mode & GM_MULTI_ROBOTS))
-		x1 = FSPACX(31);
-
 	save_y = y = grd_curcanv->cv_bitmap.bm_h - n_left*(LINE_SPACING);
 
 	if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT) {
 		save_y = y -= FSPACX(6);
-		if ((Game_mode & GM_MULTI_COOP) || (Game_mode & GM_MULTI_ROBOTS))
-			x1 = FSPACX(33);
-		else
-			x1 = FSPACX(43);
 	}
 
 	int ox1 = x1;
@@ -2315,9 +2308,6 @@ void hud_show_kill_list()
 				x0 = grd_curcanv->cv_bitmap.bm_w - FSPACX(53);
 			else
 				x0 = grd_curcanv->cv_bitmap.bm_w - FSPACX(60);
-			if ((Game_mode & GM_MULTI_COOP) || (Game_mode & GM_MULTI_ROBOTS))
-				x1 = grd_curcanv->cv_bitmap.bm_w - FSPACX(27);
-			else
 				x1 = grd_curcanv->cv_bitmap.bm_w - FSPACX(15);  // Right edge of name, change this for width problems
 			if (i==n_left)
 				y = save_y;

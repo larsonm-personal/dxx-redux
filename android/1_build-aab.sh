@@ -28,12 +28,14 @@ source "$SCRIPT_DIR/set_vars.sh"
 
 TASK="bundle${VARIANT^}"
 
-VERSION_CODE=$(git rev-list --count HEAD)
+COMMIT_COUNT=$(git rev-list --count HEAD)
+VERSION_CODE=${VERSION_CODE_OVERRIDE:-$((COMMIT_COUNT * 10))}
 GIT_HASH=$(git rev-parse --short HEAD)
 BUILD_DATE=$(date +"%Y-%m-%d")
 BUILD_TIME=$(TZ='America/Los_Angeles' date +"%H:%M")
 echo ""
-echo "versionCode: $VERSION_CODE (# of git commits)"
+echo "commitCount: $COMMIT_COUNT (# of git commits)"
+echo "versionCode: $VERSION_CODE (commitCount*10 + rev)"
 echo "gitHash:     $GIT_HASH"
 echo "buildDate:   $BUILD_DATE"
 echo "buildTime:   $BUILD_TIME PST"
@@ -68,7 +70,7 @@ fi
 echo ""
 echo "Building AAB ($VARIANT) for armeabi-v7a, arm64-v8a, x86_64..."
 echo ""
-./gradlew "$TASK" -PskipBuildInfo
+./gradlew "$TASK" -PskipBuildInfo -PversionCodeOverride="$VERSION_CODE"
 
 # Find the AAB
 AAB_DIR="app/build/outputs/bundle/$VARIANT"

@@ -2829,6 +2829,10 @@ void multi_disconnect_player(int pnum)
 					/* Bootstrap master state */
 					memset(object_owner, -1, sizeof(sbyte) * MAX_OBJECTS);
 					multi_powcap_count_powerups_in_mine();
+					/* Rebind socket to INADDR_ANY so rejoin packets from
+					 * the network interface can reach the engine (socket
+					 * may be bound to loopback from the original join) */
+					net_udp_rebind_for_hosting();
 					/* Write migration info for Kotlin LAN broadcast */
 					mfp = PHYSFS_openWrite("host_migration.json");
 					if (mfp) {
@@ -6814,6 +6818,21 @@ void multi_restore_game(ubyte slot, uint id)
 		return;
 
 	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir? "Players/%s.mg%d" : "%s.mg%d", Players[Player_num].callsign, slot);
+#ifdef __ANDROID__
+	/* Autosaves use COOP_AUTOSAVE_CALLSIGN -- try that if the normal
+	 * filename doesn't exist or fails the game_id check */
+	if (!PHYSFSX_exists(filename, 0) &&
+	    slot >= COOP_AUTOSAVE_SLOT_FIRST && slot < COOP_AUTOSAVE_SLOT_FIRST + COOP_AUTOSAVE_SLOT_COUNT) {
+		snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir ? "Players/%s.mg%d" : "%s.mg%d",
+			COOP_AUTOSAVE_CALLSIGN, slot);
+	}
+	/* If still missing (peer doesn't have autosave), skip gracefully --
+	 * the host will sync us through normal multiplayer sync */
+	if (!PHYSFSX_exists(filename, 0)) {
+		con_printf(CON_NORMAL, "multi_restore_game: save file missing, skipping restore (peer)");
+		return;
+	}
+#endif
    
 	for (i = 0; i < N_players; i++)
 		multi_strip_robots(i);
@@ -6828,7 +6847,13 @@ void multi_restore_game(ubyte slot, uint id)
 			}
    
 	thisid=state_get_game_id(filename);
+#ifdef __ANDROID__
+	/* Autosaves use COOP_AUTOSAVE_GAME_ID as a sentinel -- accept it
+	 * regardless of the current session's game_id */
+	if (thisid!=id && thisid != (int)COOP_AUTOSAVE_GAME_ID)
+#else
 	if (thisid!=id)
+#endif
 	{
 		nm_messagebox(NULL, 1, TXT_OK, "A multi-save game was restored\nthat you are missing or does not\nmatch that of the others.\nYou must rejoin if you wish to\ncontinue.");
 		return;

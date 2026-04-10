@@ -82,6 +82,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "state.h"
 #include "piggy.h"
 #include "multibot.h"
+#ifdef __ANDROID__
+#include "coop_save.h"
+#endif
 #include "fvi.h"
 #include "ai.h"
 #include "robot.h"
@@ -1534,6 +1537,18 @@ void GameProcessFrame(void)
 			(Automap_active && ((Player_is_dead != player_was_dead) || (Players[Player_num].shields<=0 && player_shields>0))) ) // close autmap when dying ...
 			game_leave_menus();
 	}
+
+#ifdef __ANDROID__
+	/* Periodic coop autosave -- host only, every 30 seconds of level time */
+	{
+		static fix64 last_coop_autosave_time = 0;
+		if ((Game_mode & GM_MULTI_COOP) && multi_i_am_master() &&
+		    GameTime64 >= last_coop_autosave_time + F1_0 * 30) {
+			last_coop_autosave_time = GameTime64;
+			coop_autosave();
+		}
+	}
+#endif
 }
 
 //!!extern int Goal_blue_segnum,Goal_red_segnum;

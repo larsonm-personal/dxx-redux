@@ -751,8 +751,9 @@ _exit_cheat:
 
 #ifdef NETWORK
 		// android port: only the escort owner runs companion AI in coop;
-		// non-owners receive position via MULTI_ROBOT_POSITION
-		if (!(Game_mode & GM_MULTI_COOP) || Escort_owner_player == Player_num)
+		// non-owners receive position via MULTI_ROBOT_POSITION.
+		// Allow unowned (-1) so ok_for_buddy_to_talk() can claim ownership.
+		if (!(Game_mode & GM_MULTI_COOP) || Escort_owner_player == -1 || Escort_owner_player == Player_num)
 #endif
 		do_escort_frame(obj, dist_to_player, player_visibility);
 

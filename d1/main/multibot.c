@@ -709,9 +709,6 @@ multi_do_robot_position(const ubyte *buf)
 		}
 	}
 
-	set_thrust_from_velocity(&Objects[botnum]); // Try to smooth out movement
-//	Objects[botnum].phys_info.drag = Robot_info[Objects[botnum].id].drag >> 4; // Set drag to low
-
 #ifndef WORDS_BIGENDIAN
 	extract_shortpos(&Objects[botnum], (shortpos *)(buf+loc), 0);
 #else
@@ -719,6 +716,8 @@ multi_do_robot_position(const ubyte *buf)
 	memcpy((ubyte *)&(sp.xo), (ubyte *)(buf + loc), 14);
 	extract_shortpos(&Objects[botnum], &sp, 1);
 #endif
+
+	set_thrust_from_velocity(&Objects[botnum]); // Smooth movement using updated velocity
 }
 
 void

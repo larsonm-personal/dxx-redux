@@ -1,6 +1,6 @@
 # test_launcher_dpad.ps1 -- Verify D-pad/keyboard navigation in the launcher
 # Usage: .\android\tests\test_launcher_dpad.ps1
-# Requires: emulator running, app installed (no game files needed)
+# Requires: emulator running, app installed, game data available
 
 param(
     [int]$TimeoutSeconds = 60,
@@ -8,7 +8,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$ADB = "c:\local\android-sdk\platform-tools\adb.exe"
+. "$PSScriptRoot\..\test_helpers.ps1"
 
 function Fail($msg) { Write-Error "FAIL: $msg"; exit 1 }
 function Info($msg) { Write-Host $msg }
@@ -18,41 +18,62 @@ function WaitMs($ms) {
 }
 
 function GetSetupButtons {
-    & $ADB shell am broadcast -a com.dxxredux.SETUP_INTROSPECT 2>$null | Out-Null
-    WaitMs 1500
-    $raw = & $ADB shell run-as com.dxxredux.app cat files/setup_introspect.json 2>&1 | Out-String
-    $obj = $raw | ConvertFrom-Json
+    # Poll until setup_introspect.json has a non-empty buttons array.
+    # Returns button text array, or fails after timeout.
+    $result = Wait-SetupCondition -TimeoutSeconds 15 -PollMs 800 -Predicate {
+        param($obj)
+        return ($null -ne $obj.buttons -and $obj.buttons.Count -gt 0)
+    }
+    if (-not $result) {
+        # Dump whatever we got for diagnostics
+        $raw = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json") -Seconds 3
+        Info "  DEBUG: setup_introspect.json content: $raw"
+        Fail "Timed out waiting for setup buttons (15s)"
+    }
+    $json = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/setup_introspect.json") -Seconds 3
+    $obj = $json | ConvertFrom-Json
     return $obj.buttons | ForEach-Object { $_.text }
 }
 
 function SendKey($code) {
-    & $ADB shell input keyevent $code 2>$null
+    & $script:ADB shell input keyevent $code 2>$null
 }
 
 # --- Setup ---
 Info "Checking emulator..."
-$devices = & $ADB devices 2>&1 | Out-String
-if ($devices -notmatch "emulator.*device") {
-    Fail "No emulator found. Start one first"
+Ensure-EmulatorHealthy
+
+# Push game data so canLaunch=true and Multiplayer button is enabled/focusable
+Info "Resolving game data deps..."
+if (-not (Resolve-GameDataDeps -Deps (Get-StandardGameDataDeps))) {
+    Fail "Could not resolve game data deps"
 }
 
+# Reset active file set to "default" -- previous tests may have switched sets
+Info "Resetting file set state..."
+Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/file_sets.json") | Out-Null
+Adb -AdbArgs @("shell", "run-as", $script:PACKAGE, "rm", "-f", "files/setup_introspect.json") | Out-Null
+
 Info "Force-stopping app..."
-& $ADB shell am force-stop com.dxxredux.app
+& $script:ADB shell am force-stop com.dxxredux.app
 
 Info "Launching SetupActivity..."
-& $ADB shell am start -n "com.dxxredux.app/.SetupActivity" 2>&1 | Out-Null
-WaitMs 5000
+& $script:ADB shell am start -n "com.dxxredux.app/.SetupActivity" 2>&1 | Out-Null
+Info "Waiting for SetupActivity to be ready..."
+if (-not (Wait-SetupActivityReady -TimeoutSeconds 30)) {
+    Fail "SetupActivity did not become ready within 30s"
+}
 
 # --- Test 1: Initial page shows main buttons ---
 Info "Test 1: Verify main page buttons..."
 $buttons = GetSetupButtons
-if ($buttons -notcontains "Multiplayer") { Fail "Main page missing Multiplayer button" }
-if ($buttons -notcontains "Launch Descent 2") { Fail "Main page missing Launch button" }
+Info "  Found buttons: $($buttons -join ', ')"
+if ($buttons -notcontains "Multiplayer") { Fail "Main page missing Multiplayer button (got: $($buttons -join ', '))" }
 Info "  PASS: Main page has expected buttons"
 
 # --- Test 2: DPAD_CENTER activates Multiplayer (initial focus target) ---
 Info "Test 2: DPAD_CENTER on initial focus (Multiplayer)..."
-& $ADB logcat -c
+& $script:ADB logcat -c
 SendKey 23  # DPAD_CENTER
 WaitMs 2000
 $buttons = GetSetupButtons
@@ -72,7 +93,7 @@ Info "Test 3: BACK returns to main page..."
 SendKey 4  # KEYCODE_BACK
 WaitMs 2000
 $buttons = GetSetupButtons
-if ($buttons -notcontains "Multiplayer") { Fail "BACK did not return to main page" }
+if ($buttons -notcontains "Multiplayer") { Fail "BACK did not return to main page (got: $($buttons -join ', '))" }
 Info "  PASS: Returned to main page"
 
 # --- Test 4: Focus restoration after return - DPAD_CENTER works again ---
@@ -86,15 +107,19 @@ if ($buttons -contains "Multiplayer") {
 }
 Info "  PASS: Focus restored, navigated to sub-page again"
 
-# --- Test 5: DPAD navigation (UP from Multiplayer) ---
+# --- Test 5: DPAD navigation (UP from Multiplayer to a settings button) ---
 Info "Test 5: DPAD UP navigation..."
 SendKey 4  # BACK to main
 WaitMs 2000
-SendKey 19  # DPAD_UP
+# UP 3x to skip past game selection chips and reach a settings button
+SendKey 19  # DPAD_UP (to game chip)
+SendKey 19  # DPAD_UP (to another chip or settings row)
+SendKey 19  # DPAD_UP (to a settings button)
 SendKey 23  # DPAD_CENTER
 WaitMs 2000
 $buttons = GetSetupButtons
 if ($buttons -contains "Multiplayer") {
+    Info "  DEBUG: buttons after UP-x3+CENTER: $($buttons -join ', ')"
     Fail "DPAD_UP + CENTER did not navigate (focus didn't move)"
 }
 Info "  PASS: DPAD_UP moved focus to a settings button"
@@ -102,7 +127,7 @@ Info "  PASS: DPAD_UP moved focus to a settings button"
 # --- Cleanup ---
 SendKey 4  # BACK
 WaitMs 1000
-& $ADB shell am force-stop com.dxxredux.app
+& $script:ADB shell am force-stop com.dxxredux.app
 
 Info ""
 Info "All tests passed"

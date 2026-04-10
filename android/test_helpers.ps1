@@ -870,8 +870,9 @@ function Watch-AutomationResult {
             }
         }
 
-        # Fallback: check logcat
-        $log = Adb-Timeout -AdbArgs @("logcat", "-d", "-s", "DXX-Automate:*") -Seconds 5
+        # Fallback: check logcat (include LauncherScript tag for launcher tests)
+        $logFilter = if ($IsLauncherScript) { "DXX-Automate:* DXX-LauncherScript:*" } else { "DXX-Automate:*" }
+        $log = Adb-Timeout -AdbArgs @("logcat", "-d", "-s", $logFilter) -Seconds 5
         if ($null -eq $log) {
             Write-Status "Warning: logcat not responding" "Yellow"
             continue

@@ -316,8 +316,11 @@ private fun CoopSaveOffer(
         writeCoopRestoreSlot(filesDir, game, if (useRestore) bestMatch.slot else null)
     }
 
+    val mins = bestMatch.levelTimeSeconds / 60
+    val secs = bestMatch.levelTimeSeconds % 60
     val label =
-        "L${bestMatch.level} - ${bestMatch.numPlayers}p" +
+        "${bestMatch.numPlayers}p, level ${bestMatch.level}" +
+            ", $mins:%02d played".format(secs) +
             " - ${bestMatch.callsigns.joinToString()}" +
             " - ${formatTimeAgo(bestMatch.timestamp)}"
 

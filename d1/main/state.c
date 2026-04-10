@@ -588,6 +588,16 @@ int state_get_savegame_filename(char * fname, char * dsc, char * caption, int bl
 		snprintf( filename[i], PATH_MAX, GameArg.SysUsePlayersDir? "Players/%s.%sg%x" : "%s.%sg%x", Players[Player_num].callsign, (Game_mode & GM_MULTI_COOP)?"m":"s", i );
 		valid = 0;
 		fp = PHYSFSX_openReadBuffered(filename[i]);
+#ifdef __ANDROID__
+		/* Autosave slots use COOP_AUTOSAVE_CALLSIGN instead of the
+		 * player's callsign so they survive callsign changes */
+		if (!fp && (Game_mode & GM_MULTI_COOP) &&
+		    i >= COOP_AUTOSAVE_SLOT_FIRST && i < COOP_AUTOSAVE_SLOT_FIRST + COOP_AUTOSAVE_SLOT_COUNT) {
+			snprintf(filename[i], PATH_MAX, GameArg.SysUsePlayersDir ? "Players/%s.mg%x" : "%s.mg%x",
+				COOP_AUTOSAVE_CALLSIGN, i);
+			fp = PHYSFSX_openReadBuffered(filename[i]);
+		}
+#endif
 		if ( fp ) {
 			//Read id
 			PHYSFS_read(fp, id, sizeof(char) * 4, 1);
@@ -1178,7 +1188,12 @@ int state_restore_all_sub(char *filename)
 		char saved_callsign[CALLSIGN_LEN+1];
 		state_game_id = PHYSFSX_readSXE32(fp, swap);
 		PHYSFS_read(fp, &saved_callsign, sizeof(char)*CALLSIGN_LEN+1, 1);
-		if (strcmp(saved_callsign, Players[Player_num].callsign)) // check the callsign of the player who saved this state. It MUST match. If we transferred this savegame from pilot A to pilot B, others won't be able to restore us. So bail out here if this is the case.
+#ifdef __ANDROID__
+		if (strcmp(saved_callsign, Players[Player_num].callsign) &&
+		    strcmp(saved_callsign, COOP_AUTOSAVE_CALLSIGN))
+#else
+		if (strcmp(saved_callsign, Players[Player_num].callsign))
+#endif
 		{
 			PHYSFS_close(fp);
 			return 0;
@@ -1469,7 +1484,11 @@ RetryObjectLoading:
 			for (j = 0; j < MAX_PLAYERS; j++)
 			{
 				// map stored players to current players depending on their unique (which we made sure) callsign
+#ifdef __ANDROID__
+				if ((Players[i].connected == CONNECT_PLAYING || Players[i].connected == CONNECT_WAITING) && restore_players[j].connected == CONNECT_PLAYING && !strcmp(Players[i].callsign, restore_players[j].callsign))
+#else
 				if (Players[i].connected == CONNECT_PLAYING && restore_players[j].connected == CONNECT_PLAYING && !strcmp(Players[i].callsign, restore_players[j].callsign))
+#endif
 				{
 					object *obj;
 					int sav_objnum = Players[i].objnum;
@@ -1510,15 +1529,33 @@ RetryObjectLoading:
 		PHYSFS_read(fp, &Netgame.max_numplayers, sizeof(ubyte), 1);
 		PHYSFS_read(fp, &Netgame.numconnected, sizeof(ubyte), 1);
 		Netgame.level_time = PHYSFSX_readSXE32(fp, swap);
+#ifdef __ANDROID__
+		{
+			int live_n = 0;
+			for (i = 0; i < MAX_PLAYERS; i++)
+				if (Players[i].connected == CONNECT_PLAYING ||
+				    Players[i].connected == CONNECT_WAITING)
+					live_n++;
+			if (live_n > Netgame.numplayers)
+				Netgame.numplayers = live_n;
+			if (live_n > Netgame.max_numplayers)
+				Netgame.max_numplayers = live_n;
+			Netgame.numconnected = live_n;
+		}
+#endif
 		for (i = 0; i < MAX_PLAYERS; i++)
 		{
 			Netgame.killed[i] = Players[i].net_killed_total;
 			Netgame.player_score[i] = Players[i].score;
 			Netgame.player_flags[i] = Players[i].flags;
 		}
+#ifdef __ANDROID__
+		(void)0;
+#else
 		for (i = 0; i < MAX_PLAYERS; i++) // Disconnect connected players not available in this Savegame
 			if (!coop_player_got[i] && Players[i].connected == CONNECT_PLAYING)
 				multi_disconnect_player(i);
+#endif
 		Viewer = ConsoleObject = &Objects[Players[Player_num].objnum]; // make sure Viewer and ConsoleObject are set up (which we skipped by not using InitPlayerObject but we need since objects changed while loading)
 		special_reset_objects(); // since we juggeled around with objects to remap coop players rebuild the index of free objects
 	}
@@ -1593,8 +1630,14 @@ int state_get_game_id(char *filename)
 // Read Coop state_game_id to validate the savegame we are about to load matches the others
 	state_game_id = PHYSFSX_readSXE32(fp, swap);
 	PHYSFS_read(fp, &saved_callsign, sizeof(char)*CALLSIGN_LEN+1, 1);
-	if (strcmp(saved_callsign, Players[Player_num].callsign)) // check the callsign of the player who saved this state. It MUST match. If we transferred this savegame from pilot A to pilot B, others won't be able to restore us. So bail out here if this is the case.
+#ifdef __ANDROID__
+	if (strcmp(saved_callsign, Players[Player_num].callsign) &&
+	    strcmp(saved_callsign, COOP_AUTOSAVE_CALLSIGN))
 		return 0;
+#else
+	if (strcmp(saved_callsign, Players[Player_num].callsign))
+		return 0;
+#endif
 
 	return state_game_id;
 }

@@ -21,6 +21,8 @@
 #include "gameseq.h"
 #include "mission.h"
 
+extern fix ThisLevelTime;
+
 /* --- forward declarations for static helpers --- */
 static void coop_write_autosave_history(int slot, int n_connected);
 static void coop_append_other_slots(char *buf, int *off, int buf_size,
@@ -230,7 +232,6 @@ int coop_autosave(void)
 {
 	char filename[PATH_MAX];
 	char desc[20];
-	int n_connected = 0;
 	int i, slot;
 
 	if (!(Game_mode & GM_MULTI_COOP))
@@ -238,9 +239,9 @@ int coop_autosave(void)
 	if (Endlevel_sequence || Control_center_destroyed)
 		return 0;
 
-	for (i = 0; i < N_players; i++)
-		if (Players[i].connected == CONNECT_PLAYING)
-			n_connected++;
+	/* Use N_players (all allocated slots) rather than counting connected
+	 * players.  When triggered by a disconnect, the leaving player is
+	 * already marked not-CONNECT_PLAYING, which would under-count. */
 
 	/* Pick next rotating slot */
 	slot = COOP_AUTOSAVE_SLOT_FIRST +
@@ -249,19 +250,33 @@ int coop_autosave(void)
 
 	snprintf(filename, PATH_MAX,
 		GameArg.SysUsePlayersDir ? "Players/%s.mg%d" : "%s.mg%d",
-		Players[Player_num].callsign, slot);
+		COOP_AUTOSAVE_CALLSIGN, slot);
 	snprintf(desc, sizeof(desc), "Auto L%d %dp %dpts",
-		Current_level_num, n_connected, Players[Player_num].score);
+		Current_level_num, N_players, Players[Player_num].score);
 
 	con_printf(CON_NORMAL, "coop_save: auto-saving to slot %d: %s\n",
 		slot, desc);
 
-	stop_time();
-	state_save_all_sub(filename, desc);
-	/* start_time() is called inside state_save_all_sub */
+	/* Use sentinel game_id and stable callsign so autosaves are loadable
+	 * across sessions with different random callsigns */
+	{
+		uint saved_game_id = state_game_id;
+		char saved_callsign[CALLSIGN_LEN + 1];
+		memcpy(saved_callsign, Players[Player_num].callsign, CALLSIGN_LEN + 1);
+
+		state_game_id = COOP_AUTOSAVE_GAME_ID;
+		strncpy(Players[Player_num].callsign, COOP_AUTOSAVE_CALLSIGN, CALLSIGN_LEN + 1);
+
+		stop_time();
+		state_save_all_sub(filename, desc);
+		/* start_time() is called inside state_save_all_sub */
+
+		state_game_id = saved_game_id;
+		memcpy(Players[Player_num].callsign, saved_callsign, CALLSIGN_LEN + 1);
+	}
 
 	/* Write/update history JSON with this save and up to 4 previous ones */
-	coop_write_autosave_history(slot, n_connected);
+	coop_write_autosave_history(slot, N_players);
 
 	return 1;
 }
@@ -306,12 +321,13 @@ static void coop_write_autosave_history(int slot, int n_connected)
 		"    \"mission\": \"%s\",\n"
 		"    \"level\": %d,\n"
 		"    \"timestamp\": %u,\n"
+		"    \"level_time_seconds\": %d,\n"
 		"    \"num_players\": %d,\n"
 		"    \"callsigns\": [%s],\n"
 		"    \"client_ids\": [%s]\n"
 		"  }\n",
 		slot, Current_mission_filename, Current_level_num,
-		now, n, callsigns_json, client_ids_json);
+		now, f2i(ThisLevelTime), n, callsigns_json, client_ids_json);
 
 	/* Append entries from the old history for OTHER slots */
 	{

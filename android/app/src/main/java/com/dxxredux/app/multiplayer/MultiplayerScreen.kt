@@ -522,6 +522,7 @@ internal data class CoopSaveEntry(
     val timestamp: Long,
     val numPlayers: Int,
     val callsigns: List<String>,
+    val levelTimeSeconds: Int = 0,
 )
 
 /** Format a unix timestamp as a relative time string like "5 min ago". */
@@ -583,6 +584,7 @@ internal fun readCoopAutosaveHistory(
                     timestamp = obj.optLong("timestamp", 0),
                     numPlayers = obj.optInt("num_players", 0),
                     callsigns = callsigns,
+                    levelTimeSeconds = obj.optInt("level_time_seconds", 0),
                 ),
             )
         }

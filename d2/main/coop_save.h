@@ -28,6 +28,8 @@
 #define COOP_AUTOSAVE_SLOT           9   /* legacy single slot */
 #define COOP_AUTOSAVE_SLOT_FIRST     5   /* first rotating autosave slot */
 #define COOP_AUTOSAVE_SLOT_COUNT     5   /* slots 5,6,7,8,9 */
+#define COOP_AUTOSAVE_GAME_ID        0x434F4F50  /* sentinel state_game_id for autosaves */
+#define COOP_AUTOSAVE_CALLSIGN       "coopsave"  /* stable 8-char filename prefix */
 
 /* --- per-player record stored in the trailer --- */
 typedef struct coop_player_record {

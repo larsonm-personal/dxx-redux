@@ -138,12 +138,13 @@ foreach ($specPath in $specs) {
     Start-Sleep -Seconds 1
 
     $testStart = Get-Date
-    $testParams = @{ SpecPath = $specPath }
-    if ($SkipLaunch) { $testParams['SkipLaunch'] = $true }
+    # Run test_extract as a child process so its `exit` call doesn't kill us
+    $testArgs = @("-NoProfile", "-NonInteractive", "-File", $TEST_SCRIPT, "-SpecPath", $specPath)
+    if ($SkipLaunch) { $testArgs += "-SkipLaunch" }
 
     $exitCode = 0
     try {
-        & $TEST_SCRIPT @testParams
+        pwsh @testArgs
         $exitCode = $LASTEXITCODE
     } catch {
         Write-Host "  EXCEPTION: $_" -ForegroundColor Red

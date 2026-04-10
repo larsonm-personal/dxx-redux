@@ -33,14 +33,23 @@ if (authConfigFile.exists()) {
     logger.lifecycle("auth_config.json5 not found — GPGS sign-in will be disabled (dev token fallback)")
 }
 
-// Derive versionCode from git commit count
+// Derive versionCode from git commit count * 10 (rev 0).
+// Build scripts may override via -PversionCodeOverride=N for rev>0.
 def gitVersionCode = {
+    if (project.hasProperty('versionCodeOverride')) {
+        def vc = project.property('versionCodeOverride').toString().trim()
+        if (vc.isInteger()) {
+            logger.lifecycle("Using versionCodeOverride=${vc}")
+            return vc.toInteger()
+        }
+        logger.warn("versionCodeOverride '${vc}' is not an integer, falling back to git")
+    }
     try {
         def proc = ['git', 'rev-list', '--count', 'HEAD'].execute(null, rootProject.projectDir.parentFile)
         proc.waitFor()
         def result = proc.text.trim()
         if (result && result.isInteger()) {
-            return result.toInteger()
+            return result.toInteger() * 10
         }
         logger.warn("git rev-list output was not an integer: '${result}', stderr: '${proc.err.text}'")
         return 1
@@ -261,6 +270,10 @@ dependencies {
 
     // Google Play Games Services (GPGS v2) for player identity
     implementation "com.google.android.gms:play-services-games-v2:${toolVersions['PLAY_SERVICES_GAMES_VERSION']}"
+
+    // Play Store In-App Update check
+    implementation "com.google.android.play:app-update:${toolVersions['APP_UPDATE_VERSION']}"
+    implementation "com.google.android.play:app-update-ktx:${toolVersions['APP_UPDATE_VERSION']}"
 
     // 7z archive support (for music packs distributed as .7z)
     implementation "org.apache.commons:commons-compress:${toolVersions['COMMONS_COMPRESS_VERSION']}"

@@ -380,6 +380,20 @@ multi_send_robot_frame(int sent)
 	int i;
 	int rval = 0;
 
+#ifdef __ANDROID__
+	/* Always send companion position updates first so the guidebot
+	 * doesn't jitter from round-robin starvation */
+	for (i = 0; i < MAX_ROBOTS_CONTROLLED; i++) {
+		if (robot_controlled[i] != -1 &&
+		    Robot_info[Objects[robot_controlled[i]].id].companion &&
+		    robot_send_pending[i]) {
+			multi_send_robot_position_sub(robot_controlled[i], 1);
+			robot_send_pending[i] = 0;
+			rval++;
+		}
+	}
+#endif
+
 	for (i = 0; i < MAX_ROBOTS_CONTROLLED; i++)
 	{
 		int sending = (last_sent+1+i)%MAX_ROBOTS_CONTROLLED;
@@ -746,9 +760,6 @@ multi_do_robot_position(const ubyte *buf)
 		}
 	}
 
-	set_thrust_from_velocity(&Objects[botnum]); // Try to smooth out movement
-//	Objects[botnum].phys_info.drag = Robot_info[Objects[botnum].id].drag >> 4; // Set drag to low
-
 #ifndef WORDS_BIGENDIAN
 	extract_shortpos(&Objects[botnum], (shortpos *)(buf+loc), 0);
 #else
@@ -756,6 +767,8 @@ multi_do_robot_position(const ubyte *buf)
 	memcpy((ubyte *)&(sp.xo), (ubyte *)(buf + loc), 14);
 	extract_shortpos(&Objects[botnum], &sp, 1);
 #endif
+
+	set_thrust_from_velocity(&Objects[botnum]); // Smooth movement using updated velocity
 }
 
 void

@@ -3,7 +3,8 @@
 #        .\build-aab.ps1 -BuildType "2"     # Release (for Play Console)
 
 param(
-    [string]$BuildType
+    [string]$BuildType,
+    [string]$VersionCode   # Override version code (commit_count*10+rev). Default: commit_count*10
 )
 
 $ErrorActionPreference = "Stop"
@@ -48,12 +49,18 @@ try {
     }
     $task = "bundle$variant"
 
-    $versionCode = (git rev-list --count HEAD).Trim()
+    $commitCount = (git rev-list --count HEAD).Trim()
+    if ($VersionCode) {
+        $versionCode = $VersionCode
+    } else {
+        $versionCode = [int]$commitCount * 10
+    }
     $gitHash = (git rev-parse --short HEAD).Trim()
     $buildDate = Get-Date -Format "yyyy-MM-dd"
     $buildTime = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId((Get-Date), 'Pacific Standard Time').ToString('HH:mm')
     Write-Host ""
-    Write-Host "versionCode: $versionCode (# of git commits)"
+    Write-Host "commitCount: $commitCount (# of git commits)"
+    Write-Host "versionCode: $versionCode (commitCount*10 + rev)"
     Write-Host "gitHash:     $gitHash"
     Write-Host "buildDate:   $buildDate"
     Write-Host "buildTime:   $buildTime PST"
@@ -96,7 +103,7 @@ object BuildInfo {
     Write-Host ""
     Write-Host "Building AAB ($variant) for armeabi-v7a, arm64-v8a, x86_64..."
     Write-Host ""
-    & .\gradlew.bat $task -PskipBuildInfo
+    & .\gradlew.bat $task "-PskipBuildInfo" "-PversionCodeOverride=$versionCode"
     if ($LASTEXITCODE -ne 0) { throw "Gradle build failed with exit code $LASTEXITCODE" }
 
     # Find the AAB

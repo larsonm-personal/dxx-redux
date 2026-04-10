@@ -480,7 +480,11 @@ class SetupActivity : ComponentActivity() {
                     }
                 launcherExecutor = executor
                 kotlinx.coroutines.MainScope().launch {
-                    executor.execute(resolved, 0)
+                    try {
+                        executor.execute(resolved, 0)
+                    } catch (e: Exception) {
+                        Log.e("DXX-Setup", "Launcher automation failed: ${e.message}", e)
+                    }
                 }
             }
         }
@@ -2973,6 +2977,8 @@ private fun SetupScreen(
                     }
                 }
                 if (!isLandscape) Spacer(modifier = Modifier.height(8.dp))
+
+                UpdateBanner()
 
                 if (showAbout) {
                     AlertDialog(

@@ -61,6 +61,13 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "multi.h"
 #endif
 
+#ifdef __ANDROID__
+#include <android/log.h>
+#define ESCORT_DIAG(fmt, ...) __android_log_print(ANDROID_LOG_INFO, "DXX-ESCORT", fmt, ##__VA_ARGS__)
+#else
+#define ESCORT_DIAG(fmt, ...) ((void)0)
+#endif
+
 #ifdef EDITOR
 #include "editor/editor.h"
 #endif
@@ -304,8 +311,11 @@ int ok_for_buddy_to_talk(void)
 	// android port: first player to free the guidebot becomes its owner in coop
 	if ((Game_mode & GM_MULTI_COOP) && Escort_owner_player == -1) {
 		Escort_owner_player = Player_num;
+		if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index)
+			Objects[Buddy_objnum].ctype.ai_info.REMOTE_OWNER = (sbyte)Player_num;
 		multi_send_escort_owner(Player_num);
 		HUD_init_message_literal(HM_DEFAULT, "Guide-Bot: you have control");
+		ESCORT_DIAG("ownership claimed by player %d", Player_num);
 	}
 #endif
 
@@ -1912,7 +1922,10 @@ void multi_do_escort_owner(const ubyte *buf)
 	int new_owner = (int)buf[2];
 	if (new_owner < 0 || new_owner >= MAX_PLAYERS)
 		return;
+	ESCORT_DIAG("rx escort_owner: new_owner=%d (was %d)", new_owner, Escort_owner_player);
 	Escort_owner_player = new_owner;
+	if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index)
+		Objects[Buddy_objnum].ctype.ai_info.REMOTE_OWNER = (sbyte)new_owner;
 	if (new_owner == Player_num)
 		HUD_init_message_literal(HM_DEFAULT, "Guide-Bot: you have control");
 	else
@@ -1937,7 +1950,10 @@ void escort_transfer_ownership_on_disconnect(int gone_pnum)
 		}
 	}
 
+	ESCORT_DIAG("transfer_ownership: gone=%d new_owner=%d", gone_pnum, new_owner);
 	Escort_owner_player = new_owner;
+	if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index)
+		Objects[Buddy_objnum].ctype.ai_info.REMOTE_OWNER = (new_owner >= 0) ? (sbyte)new_owner : -1;
 	if (new_owner >= 0)
 		multi_send_escort_owner(new_owner);
 }
@@ -1962,6 +1978,8 @@ void escort_release_control(void)
 
 	new_owner = candidates[d_rand() % n];
 	Escort_owner_player = new_owner;
+	if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index)
+		Objects[Buddy_objnum].ctype.ai_info.REMOTE_OWNER = (sbyte)new_owner;
 	multi_send_escort_owner(new_owner);
 	HUD_init_message_literal(HM_DEFAULT, "Guide-Bot control released");
 }
