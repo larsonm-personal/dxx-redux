@@ -24,12 +24,19 @@ object TouchLayoutRepository {
 
     fun load(context: Context): TouchLayout {
         val file = File(context.filesDir, FILENAME)
-        if (!file.exists()) return defaultLayout(context)
+        if (!file.exists()) {
+            val layout = defaultLayout(context)
+            save(context, layout)
+            return layout
+        }
         return try {
             val layout = TouchLayout.fromJson(JSONObject(file.readText()))
             migrate(layout)
         } catch (_: Exception) {
-            defaultLayout(context)
+            Log.w(TAG, "Failed to parse $FILENAME, resetting to default")
+            val layout = defaultLayout(context)
+            save(context, layout)
+            layout
         }
     }
 

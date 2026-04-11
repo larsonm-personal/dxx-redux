@@ -1635,7 +1635,10 @@ RetryObjectLoading:
 		{
 			Netgame.killed[i] = Players[i].net_killed_total;
 			Netgame.player_score[i] = Players[i].score;
-			Netgame.player_flags[i] = Players[i].flags;
+			/* Strip transient flags (invulnerable/cloaked) so they don't
+			 * persist across save/load -- gameseq.c OR's these back */
+			Netgame.player_flags[i] = Players[i].flags &
+				~(PLAYER_FLAGS_INVULNERABLE | PLAYER_FLAGS_CLOAKED);
 		}
 #ifdef __ANDROID__
 		(void)0;

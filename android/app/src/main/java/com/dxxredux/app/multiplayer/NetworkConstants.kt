@@ -28,6 +28,7 @@ object NetworkConstants {
     // Game engine UDP ports (keep in sync with d1/d2 net_udp.h UDP_PORT_DEFAULT)
     const val ENGINE_PORT: Int = 42424
     const val PROXY_PORT_BASE: Int = 42430
+
     // Port for host-mode proxy after host migration (avoids conflict with engine on loopback)
     const val HOST_PROXY_PORT: Int = 42425
 

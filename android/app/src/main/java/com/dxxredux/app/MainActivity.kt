@@ -246,6 +246,8 @@ class MainActivity :
 
     external fun nativeGetEscortOwnerCallsign(): String
 
+    external fun nativeIsBuddyReleased(): Boolean
+
     external fun nativeSetAutoJoin(
         hostAddr: String,
         hostPort: Int,
@@ -533,6 +535,13 @@ class MainActivity :
                 nativeGetEscortOwnerCallsign()
             } catch (_: Exception) {
                 ""
+            }
+        }
+        touchOverlay.isBuddyReleasedProvider = {
+            try {
+                nativeIsBuddyReleased()
+            } catch (_: Exception) {
+                true // default to showing Guide controls
             }
         }
         touchOverlay.cheatCodeCallback = { code ->

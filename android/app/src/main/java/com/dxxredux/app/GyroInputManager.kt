@@ -133,9 +133,9 @@ class GyroInputManager(
         // ABSOLUTE mode: reference stays fixed, output proportional to tilt angle
 
         // Apply deadzone (convert fraction-of-maxAngle to radians per axis)
-        val dzRadX = config.deadzone * config.maxAngleX
-        val dzRadY = config.deadzone * config.maxAngleY
-        val dzRadZ = config.deadzone * config.maxAngleZ
+        val dzRadX = config.deadzoneX * config.maxAngleX
+        val dzRadY = config.deadzoneY * config.maxAngleY
+        val dzRadZ = config.deadzoneZ * config.maxAngleZ
         dYaw = applyDeadzone(dYaw, dzRadX)
         dPitch = applyDeadzone(dPitch, dzRadY)
         dRoll = applyDeadzone(dRoll, dzRadZ)

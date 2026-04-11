@@ -2523,8 +2523,37 @@ private fun SetupScreen(
     var hashingProgress by remember { mutableFloatStateOf(0f) }
     val isHashing = hashingFile != null
 
-    // ── Startup: hash any stale/new files ───────────────────
+    val d2RequiredOk = d2Statuses.filter { it.info.required }.all { it.found }
+    val d1RequiredOk = d1Statuses.filter { it.info.required }.all { it.found }
+    val canLaunch = d2RequiredOk || d1RequiredOk
+
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    // ── Startup: prune stale entries, then hash new/changed files ──
+    var prunedSourceNames by remember { mutableStateOf<List<String>>(emptyList()) }
+    var prunedDataFiles by remember { mutableStateOf<List<String>>(emptyList()) }
     LaunchedEffect(activeSetName) {
+        // 1. Prune audio sources
+        val srcManager = AudioSourceManager(filesDir)
+        val prunedSrc = srcManager.pruneMissingSources(setDir)
+        if (prunedSrc.isNotEmpty()) {
+            prunedSourceNames = prunedSrc
+        }
+
+        // 2. Prune stale manifest entries (before hashing, so hashing
+        //    doesn't race against pruning on the same manifest file)
+        val prunedAssets = manifest.pruneStaleEntries()
+        val prunedSaf = safManifest.pruneStaleEntries(context)
+        // Only report files that are truly gone from disk
+        val allPruned =
+            (prunedAssets + prunedSaf).filter { name ->
+                !File(setDir, name).exists()
+            }
+        if (allPruned.isNotEmpty()) {
+            prunedDataFiles = allPruned
+        }
+
+        // 3. Hash files on disk that are missing manifest entries (or size changed)
         val allGameNames = ALL_GAME_FILENAMES
         val staleFiles = manifest.findStaleFiles(allGameNames)
         if (staleFiles.isNotEmpty()) {
@@ -2540,34 +2569,9 @@ private fun SetupScreen(
                 manifest.upsert(file.name, sha256, file.length())
             }
             hashingFile = null
-            onRefresh()
         }
-    }
 
-    val d2RequiredOk = d2Statuses.filter { it.info.required }.all { it.found }
-    val d1RequiredOk = d1Statuses.filter { it.info.required }.all { it.found }
-    val canLaunch = d2RequiredOk || d1RequiredOk
-
-    val context = androidx.compose.ui.platform.LocalContext.current
-
-    // ── Startup: prune audio sources whose files are gone ───
-    var prunedSourceNames by remember { mutableStateOf<List<String>>(emptyList()) }
-    var prunedDataFiles by remember { mutableStateOf<List<String>>(emptyList()) }
-    LaunchedEffect(activeSetName) {
-        val srcManager = AudioSourceManager(filesDir)
-        val pruned = srcManager.pruneMissingSources(setDir)
-        if (pruned.isNotEmpty()) {
-            prunedSourceNames = pruned
-        }
-        // Prune stale asset manifest entries
-        val prunedAssets = manifest.pruneStaleEntries()
-        // Prune stale SAF manifest entries
-        val prunedSaf = safManifest.pruneStaleEntries(context)
-        val allPrunedData = prunedAssets + prunedSaf
-        if (allPrunedData.isNotEmpty()) {
-            prunedDataFiles = allPrunedData
-        }
-        if (pruned.isNotEmpty() || allPrunedData.isNotEmpty()) {
+        if (prunedSrc.isNotEmpty() || allPruned.isNotEmpty() || staleFiles.isNotEmpty()) {
             onRefresh()
         }
     }

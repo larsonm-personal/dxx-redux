@@ -245,7 +245,7 @@ object TouchBindings {
     const val AXIS_BANK = 6 // Virtual axis: Bank L/R (gyro roll mode)
     const val AXIS_SLIDE_UD = 7 // Virtual axis: Slide U/D (gyro roll mode)
 
-    /** Axis labels for UI pickers — show game function (default mapping). */
+    /** Axis labels for UI pickers -- show game function (default mapping). */
     val AXIS_LABELS =
         mapOf(
             AXIS_LEFT_X to "Slide L/R",
@@ -256,6 +256,16 @@ object TouchBindings {
             AXIS_RTRIGGER to "R Trigger",
             AXIS_BANK to "Bank L/R",
             AXIS_SLIDE_UD to "Slide U/D",
+        )
+
+    /** Gyro-specific axis labels: no triggers, reordered for gyro use. */
+    val GYRO_AXIS_LABELS =
+        linkedMapOf(
+            AXIS_LEFT_X to "Slide L/R",
+            AXIS_SLIDE_UD to "Slide U/D",
+            AXIS_BANK to "Bank L/R",
+            AXIS_RIGHT_X to "Turn L/R",
+            AXIS_LEFT_Y to "Fwd/Back",
         )
 
     // --- Human-readable axis names for config export/import ---

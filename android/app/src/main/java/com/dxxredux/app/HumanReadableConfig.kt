@@ -407,10 +407,14 @@ object HumanReadableConfig {
         val rawDz = j.optDouble("deadzone", 0.1).toFloat()
         val deadzone =
             if (rawDz <= 0.1f && rawDz > 0f) {
-                (rawDz / 0.436f).coerceIn(0f, 0.3f)
+                (rawDz / 0.436f).coerceIn(0f, 0.6f)
             } else {
                 rawDz
             }
+        // Per-axis deadzones: fall back to migrated single value if absent
+        val dzX = if (j.has("deadzoneX")) j.optDouble("deadzoneX").toFloat() else deadzone
+        val dzY = if (j.has("deadzoneY")) j.optDouble("deadzoneY").toFloat() else deadzone
+        val dzZ = if (j.has("deadzoneZ")) j.optDouble("deadzoneZ").toFloat() else (deadzone * 3f).coerceAtMost(0.6f)
         return GyroConfig(
             enabled = j.optBoolean("enabled"),
             activation = GyroActivation.valueOf(j.optString("activation", "ALWAYS")),
@@ -422,6 +426,9 @@ object HumanReadableConfig {
             axisY = axisY,
             axisZ = axisZ,
             deadzone = deadzone,
+            deadzoneX = dzX,
+            deadzoneY = dzY,
+            deadzoneZ = dzZ,
             maxAngleX = j.optDouble("maxAngleX", j.optDouble("maxAngle", 0.436)).toFloat(),
             maxAngleY = j.optDouble("maxAngleY", j.optDouble("maxAngle", 0.436)).toFloat(),
             maxAngleZ = j.optDouble("maxAngleZ", j.optDouble("maxAngle", 0.436)).toFloat(),

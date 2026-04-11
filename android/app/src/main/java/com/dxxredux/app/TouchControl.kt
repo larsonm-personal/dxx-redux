@@ -433,7 +433,10 @@ data class GyroConfig(
     val axisX: Int = TouchBindings.AXIS_RIGHT_X,
     val axisY: Int = TouchBindings.AXIS_RIGHT_Y,
     val axisZ: Int = -1, // -1 = disabled (roll not mapped by default)
-    val deadzone: Float = 0.1f, // fraction of maxAngle (0.0-0.3 = 0%-30%)
+    val deadzone: Float = 0.1f, // legacy single deadzone, kept for migration
+    val deadzoneX: Float = 0.1f, // per-axis: yaw
+    val deadzoneY: Float = 0.1f, // per-axis: roll
+    val deadzoneZ: Float = 0.3f, // per-axis: pitch (typically needs larger deadzone)
     val maxAngleX: Float = 0.436f, // ~25 degrees
     val maxAngleY: Float = 0.436f,
     val maxAngleZ: Float = 0.436f,
@@ -453,7 +456,10 @@ data class GyroConfig(
             put("axisX", axisX)
             put("axisY", axisY)
             put("axisZ", axisZ)
-            put("deadzone", deadzone.toDouble())
+            put("deadzone", deadzoneX.toDouble()) // write deadzoneX as legacy "deadzone" for compat
+            put("deadzoneX", deadzoneX.toDouble())
+            put("deadzoneY", deadzoneY.toDouble())
+            put("deadzoneZ", deadzoneZ.toDouble())
             put("maxAngleX", maxAngleX.toDouble())
             put("maxAngleY", maxAngleY.toDouble())
             put("maxAngleZ", maxAngleZ.toDouble())
@@ -465,10 +471,10 @@ data class GyroConfig(
     companion object {
         /** Migrate old raw-radian deadzone (<=0.1) to fraction-of-maxAngle. */
         private fun migrateDeadzone(raw: Float): Float {
-            // Old format: radians (0.0-0.1). New format: fraction (0.0-0.3).
+            // Old format: radians (0.0-0.1). New format: fraction (0.0-0.6).
             // Old default was 0.02 rad with maxAngle 0.436 -> 0.02/0.436 ~= 0.046.
             // Values <= 0.1 are clearly old-format radians; convert to fraction.
-            if (raw <= 0.1f && raw > 0f) return (raw / 0.436f).coerceIn(0f, 0.3f)
+            if (raw <= 0.1f && raw > 0f) return (raw / 0.436f).coerceIn(0f, 0.6f)
             return raw
         }
 
@@ -476,6 +482,19 @@ data class GyroConfig(
             // Migration: old configs have single maxAngle; new have maxAngleX/Y/Z
             val legacyAngle = j.optDouble("maxAngle", 0.436).toFloat()
             val rawDz = j.optDouble("deadzone", 0.1).toFloat()
+            val migratedDz = migrateDeadzone(rawDz)
+            // Per-axis deadzones: fall back to migrated single value if absent
+            val dzX = if (j.has("deadzoneX")) j.optDouble("deadzoneX").toFloat() else migratedDz
+            val dzY = if (j.has("deadzoneY")) j.optDouble("deadzoneY").toFloat() else migratedDz
+            val dzZ =
+                if (j.has(
+                        "deadzoneZ",
+                    )
+                ) {
+                    j.optDouble("deadzoneZ").toFloat()
+                } else {
+                    (migratedDz * 3f).coerceAtMost(0.6f)
+                }
             return GyroConfig(
                 enabled = j.optBoolean("enabled"),
                 activation = GyroActivation.valueOf(j.optString("activation", "ALWAYS")),
@@ -486,7 +505,10 @@ data class GyroConfig(
                 axisX = j.optInt("axisX", TouchBindings.AXIS_RIGHT_X),
                 axisY = j.optInt("axisY", TouchBindings.AXIS_RIGHT_Y),
                 axisZ = j.optInt("axisZ", -1),
-                deadzone = migrateDeadzone(rawDz),
+                deadzone = migratedDz,
+                deadzoneX = dzX,
+                deadzoneY = dzY,
+                deadzoneZ = dzZ,
                 maxAngleX = j.optDouble("maxAngleX", legacyAngle.toDouble()).toFloat(),
                 maxAngleY = j.optDouble("maxAngleY", legacyAngle.toDouble()).toFloat(),
                 maxAngleZ = j.optDouble("maxAngleZ", legacyAngle.toDouble()).toFloat(),

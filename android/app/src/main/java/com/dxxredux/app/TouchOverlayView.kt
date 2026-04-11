@@ -77,6 +77,9 @@ class TouchOverlayView
         /** Returns owning player's callsign for Guide wheel non-owner display. */
         var escortOwnerCallsignProvider: (() -> String)? = null
 
+        /** Returns true when guidebot has been released (cage walls destroyed). */
+        var isBuddyReleasedProvider: (() -> Boolean)? = null
+
         /** Returns current weapon state for weapon wheels. Set by MainActivity. */
         var weaponStateProvider: (() -> WeaponState?)? = null
 
@@ -651,17 +654,13 @@ class TouchOverlayView
                         val r = base * 0.03f * d.control.sizeMult
                         d.musicBtnR = r
                         d.musicBtnY = d.centerY
-                        d.musicPrevCX = d.centerX - d.width / 2 + r + diagTextSize * 0.5f
+                        // Left-align: centerX is the left edge of the control
+                        d.musicPrevCX = d.centerX + r + diagTextSize * 0.5f
                         d.musicNextCX = d.musicPrevCX + r * 2 + base * 0.02f * d.control.sizeMult
                         d.musicLabelX = d.musicNextCX + r + base * 0.02f * d.control.sizeMult
-                        // Size to fit buttons + reasonable label space
-                        d.width = (d.musicLabelX - d.musicPrevCX + r) +
+                        d.width = (d.musicLabelX - d.centerX) +
                             paintDiagText.measureText("Track 00/00: xxxxxxxx") + diagTextSize
                         d.height = r * 3f
-                        // Recompute button positions now that width is known
-                        d.musicPrevCX = d.centerX - d.width / 2 + r + diagTextSize * 0.5f
-                        d.musicNextCX = d.musicPrevCX + r * 2 + base * 0.02f * d.control.sizeMult
-                        d.musicLabelX = d.musicNextCX + r + base * 0.02f * d.control.sizeMult
                     }
                     DiagnosticType.MENU -> {
                         val r = base * 0.03f * d.control.sizeMult
@@ -725,9 +724,14 @@ class TouchOverlayView
                 if (rm.control.id == "Guide" && gameVariant == "d1") {
                     continue
                 }
-                if (rm.control.id == "Guide" && isEscortOwnerProvider?.invoke() == false) {
-                    val owner = escortOwnerCallsignProvider?.invoke().orEmpty()
-                    rm.quiescentLabel = if (owner.isNotEmpty()) owner else "Locked"
+                if (rm.control.id == "Guide") {
+                    val released = isBuddyReleasedProvider?.invoke() != false
+                    if (!released) {
+                        rm.quiescentLabel = "Locked"
+                    } else if (isEscortOwnerProvider?.invoke() == false) {
+                        val owner = escortOwnerCallsignProvider?.invoke().orEmpty()
+                        rm.quiescentLabel = if (owner.isNotEmpty()) owner else "Guide"
+                    }
                 }
                 if (!rm.isOpen && ws != null && (rm.control.id == "PriWpn" || rm.control.id == "SecWpn")) {
                     val isPrimary = rm.control.id == "PriWpn"
@@ -1326,12 +1330,13 @@ class TouchOverlayView
                 }
             }
 
-            // MAP button (top-right, same position as normal overlay)
+            // MAP button (top-right, enlarged to match automap overlay buttons)
+            val mapR = maxOf(mapBtnRadius, automapBtnSize)
             val fillMap = if (mapBtnPointerId >= 0) paintBtnPressed else paintBtnIdle
-            canvas.drawCircle(mapBtnCenterX, mapBtnCenterY, mapBtnRadius, fillMap)
-            canvas.drawCircle(mapBtnCenterX, mapBtnCenterY, mapBtnRadius, paintRing)
+            canvas.drawCircle(mapBtnCenterX, mapBtnCenterY, mapR, fillMap)
+            canvas.drawCircle(mapBtnCenterX, mapBtnCenterY, mapR, paintRing)
             val savedSize = paintBtnLabel.textSize
-            paintBtnLabel.textSize = mapBtnRadius * 0.65f
+            paintBtnLabel.textSize = mapR * 0.65f
             canvas.drawText("MAP", mapBtnCenterX, mapBtnCenterY + paintBtnLabel.textSize * 0.35f, paintBtnLabel)
             paintBtnLabel.textSize = savedSize
 
@@ -1511,9 +1516,9 @@ class TouchOverlayView
                     if (!handled) {
                         for (rm in radialStates) {
                             if (rm.pointerId >= 0) continue
-                            // D1 has no Guide-Bot; in coop, only owner can open wheel
+                            // D1 has no Guide-Bot; block if buddy not released
                             if (rm.control.id == "Guide" &&
-                                (gameVariant == "d1" || isEscortOwnerProvider?.invoke() == false)
+                                (gameVariant == "d1" || isBuddyReleasedProvider?.invoke() == false)
                             ) {
                                 continue
                             }
@@ -1882,11 +1887,12 @@ class TouchOverlayView
                     val py = event.getY(idx)
                     val pid = event.getPointerId(idx)
 
-                    // Check MAP button (top-right)
+                    // Check MAP button (top-right, enlarged to match automap buttons)
                     if (mapBtnPointerId < 0) {
+                        val mapR = maxOf(mapBtnRadius, automapBtnSize)
                         val dx = px - mapBtnCenterX
                         val dy = py - mapBtnCenterY
-                        if (dx * dx + dy * dy <= mapBtnRadius * mapBtnRadius * 4) {
+                        if (dx * dx + dy * dy <= mapR * mapR * 4) {
                             mapBtnPointerId = pid
                             invalidate()
                             return true

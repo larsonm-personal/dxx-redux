@@ -103,7 +103,7 @@
       "id": "map",
       "x": 50.0,
       "y": 5.0,
-      "size": 0.7,
+      "size": 1.4,
       "opacity": 0.7,
       "binding": "Automap",
       "label": "MAP",

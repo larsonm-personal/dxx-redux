@@ -62,6 +62,32 @@ static int seg_is_visible(int segnum)
 	return 0;
 }
 
+/* Check whether a target object is directly visible on the player's screen.
+ * Returns 1 if the target's segment is in the render list AND the target
+ * position projects to within the 3D viewport.  Used to suppress indicator
+ * lines when the player can already see the target. */
+static int target_is_on_screen(int objnum)
+{
+	/* globvars.h is a private 3d/ header not on our include path */
+	extern int Canvas_width, Canvas_height;
+	g3s_point pt;
+	if (objnum < 0 || objnum > Highest_object_index)
+		return 0;
+	if (!seg_is_visible(Objects[objnum].segnum))
+		return 0;
+	g3_rotate_point(&pt, &Objects[objnum].pos);
+	if (pt.p3_codes & CC_BEHIND)
+		return 0;
+	g3_project_point(&pt);
+	if (pt.p3_flags & PF_OVERFLOW)
+		return 0;
+	if (pt.p3_sx < 0 || pt.p3_sx > i2f(Canvas_width))
+		return 0;
+	if (pt.p3_sy < 0 || pt.p3_sy > i2f(Canvas_height))
+		return 0;
+	return 1;
+}
+
 /* Find the nearest connected coop player. Returns player index or -1 */
 static int find_nearest_player(void)
 {
@@ -155,9 +181,8 @@ static void update_paths(void)
 	}
 
 #ifdef DXX_BUILD_DESCENT_II
-	/* guidebot path -- only show after guidebot has been released */
-	if (Buddy_allowed_to_talk &&
-	    Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index &&
+	/* guidebot path -- show whenever companion robot exists (even if caged) */
+	if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index &&
 	    Objects[Buddy_objnum].type == OBJ_ROBOT) {
 		s_buddy_path.target_objnum = Buddy_objnum;
 		compute_path(&s_buddy_path, my_seg, Objects[Buddy_objnum].segnum);
@@ -200,8 +225,8 @@ static void draw_path_lines(const indicator_path *path, int color)
 		if (!seg_is_visible(seg_a) && !seg_is_visible(seg_b))
 			continue;
 
-		da = vm_vec_dist_quick(&ConsoleObject->pos, a);
-		db = vm_vec_dist_quick(&ConsoleObject->pos, b);
+		da = vm_vec_dist_quick(&ConsoleObject->pos, (vms_vector *) a);
+		db = vm_vec_dist_quick(&ConsoleObject->pos, (vms_vector *) b);
 		a_in = (da < keepout_r);
 		b_in = (db < keepout_r);
 
@@ -266,13 +291,32 @@ static int coop_qol_active(void)
 void coop_indicator_lines_render(void)
 {
 	int color_green, color_blue;
+	int is_coop = coop_qol_active();
 
-	if (!coop_qol_active())
+#ifdef DXX_BUILD_DESCENT_II
+	/* buddy path line works in single player and coop */
+	int show_buddy = Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index &&
+	                 Objects[Buddy_objnum].type == OBJ_ROBOT;
+#else
+	int show_buddy = 0;
+#endif
+
+	if (!is_coop && !show_buddy)
 		return;
 
 	/* throttled path update */
 	if (s_frame_counter <= 0) {
-		update_paths();
+		if (is_coop)
+			update_paths();
+#ifdef DXX_BUILD_DESCENT_II
+		else if (show_buddy) {
+			/* single-player: only update buddy path */
+			int my_seg = ConsoleObject->segnum;
+			s_buddy_path.target_objnum = Buddy_objnum;
+			compute_path(&s_buddy_path, my_seg, Objects[Buddy_objnum].segnum);
+			s_player_path.count = 0;
+		}
+#endif
 		s_frame_counter = PATH_UPDATE_INTERVAL;
 	}
 	s_frame_counter--;
@@ -314,10 +358,13 @@ void coop_indicator_lines_render(void)
 	color_green = BM_XRGB(10, 31, 10);
 	color_blue = BM_XRGB(10, 10, 31);
 
-	draw_path_lines(&s_player_path, color_green);
+	/* Skip path line when the target is directly visible on screen */
+	if (!target_is_on_screen(s_player_path.target_objnum))
+		draw_path_lines(&s_player_path, color_green);
 
 #ifdef DXX_BUILD_DESCENT_II
-	draw_path_lines(&s_buddy_path, color_blue);
+	if (!target_is_on_screen(s_buddy_path.target_objnum))
+		draw_path_lines(&s_buddy_path, color_blue);
 #endif
 }
 

@@ -111,6 +111,7 @@ volatile int g_msaa_pending_apply = 0;
 static GLuint ogl_msaa_fbo = 0, ogl_msaa_color_rbo = 0, ogl_msaa_depth_rbo = 0;
 static int ogl_msaa_w = 0, ogl_msaa_h = 0;
 int g_msaa_fbo_bound = 0;       /* 1 while rendering to MSAA FBO */
+static int g_msaa_frame_depth = 0; /* nesting depth: >0 = sub-window render */
 /* android port: GPU timer via EXT_disjoint_timer_query */
 #define GL_TIME_ELAPSED_EXT  0x88BF
 #define GL_GPU_DISJOINT_EXT  0x8FBB
@@ -1711,8 +1712,10 @@ void ogl_start_frame(void){
 		g_msaa_pending_apply = 0;
 		ogl_msaa_destroy_fbo(); /* recreate on next check below */
 	}
-	/* Bind MSAA FBO if enabled; create/resize as needed */
-	if (ogl_msaa_samples > 0) {
+	/* Bind MSAA FBO if enabled; create/resize as needed.
+	 * Skip for sub-window renders (missile cam, rear view) -- they draw
+	 * into the already-bound FBO without clearing it. */
+	if (ogl_msaa_samples > 0 && g_msaa_frame_depth == 0) {
 		int w = grd_curscreen->sc_w, h = grd_curscreen->sc_h;
 		if (!ogl_msaa_fbo || ogl_msaa_w != w || ogl_msaa_h != h)
 			ogl_msaa_create_fbo(ogl_msaa_samples, w, h);
@@ -1721,6 +1724,7 @@ void ogl_start_frame(void){
 			g_msaa_fbo_bound = 1;
 		}
 	}
+	g_msaa_frame_depth++;
 	/* GPU timer: read oldest completed query, begin new query */
 	if (ogl_gpu_timer_available) {
 		if (!ogl_gpu_queries[0])
@@ -1787,7 +1791,10 @@ void ogl_start_frame(void){
 		glEnable(GL_DEPTH_TEST);
 	/* glDepthFunc(GL_LEQUAL) moved to ogl_init_state -- never changes */
 
-	glClear(GL_DEPTH_BUFFER_BIT);
+	/* Clear depth always; clear color only for the main view (depth==1)
+	 * when MSAA FBO is bound, so stale color data doesn't survive */
+	glClear(GL_DEPTH_BUFFER_BIT |
+	        ((g_msaa_fbo_bound && g_msaa_frame_depth <= 1) ? GL_COLOR_BUFFER_BIT : 0));
 
 	glEnable(GL_CULL_FACE);
 	glFrontFace(GL_CW);
@@ -1879,9 +1886,13 @@ void gr_flip(void)
 		ogl_gpu_query_in_flight = 0;
 	}
 #endif
-	/* android port: resolve MSAA FBO to default framebuffer before readback */
+	/* android port: resolve MSAA FBO to default framebuffer before readback.
+	 * Only resolve on the outermost end_frame (depth==1); sub-window renders
+	 * just decrement depth and leave the FBO bound for the main resolve. */
 #ifdef ANDROID
-	if (g_msaa_fbo_bound) {
+	if (g_msaa_frame_depth > 0)
+		g_msaa_frame_depth--;
+	if (g_msaa_fbo_bound && g_msaa_frame_depth == 0) {
 		int w = grd_curscreen->sc_w, h = grd_curscreen->sc_h;
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, ogl_msaa_fbo);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);

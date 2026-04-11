@@ -15,6 +15,27 @@ object ConfigImportExport {
     private const val EXPORT_DIR = "config_exports"
     private const val MIME_JSON = "application/json"
 
+    // SharedPreferences keys that should be included in config export.
+    // Excludes debug/session/device-specific keys like selected_game, host_*, debug_log_*.
+    private val EXPORTED_PREF_KEYS =
+        listOf(
+            "render_resolution",
+            "game_orientation",
+            "music_mode",
+            "touch_overlay_enabled",
+        )
+
+    // descent.cfg keys managed through the launcher UI
+    private val EXPORTED_CFG_KEYS =
+        listOf(
+            "TexFilt",
+            "ColorDepth",
+            "MsaaLevel",
+            "AnisoLevel",
+            "MenuTexFilt",
+            "HudTexFilt",
+        )
+
     // ── Export ───────────────────────────────────────────────────────────────
 
     /** Export current touch layout as human-readable JSON via share sheet. */
@@ -79,6 +100,28 @@ object ConfigImportExport {
                 // Native lib may not be loaded in all contexts; skip quietly
             }
         }
+
+        // App settings: SharedPreferences + descent.cfg graphics keys
+        val appSettings = JSONObject()
+        val prefs = context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
+        val allPrefs = prefs.all
+        for (key in EXPORTED_PREF_KEYS) {
+            if (allPrefs.containsKey(key)) {
+                when (val v = allPrefs[key]) {
+                    is Boolean -> appSettings.put(key, v)
+                    is Int -> appSettings.put(key, v)
+                    is Float -> appSettings.put(key, v.toDouble())
+                    is String -> appSettings.put(key, v)
+                }
+            }
+        }
+        val cfgObj = JSONObject()
+        for (key in EXPORTED_CFG_KEYS) {
+            val v = readConfigValue(context.filesDir, key)
+            if (v != null) cfgObj.put(key, v)
+        }
+        if (cfgObj.length() > 0) appSettings.put("descent_cfg", cfgObj)
+        if (appSettings.length() > 0) combined.put("app_settings", appSettings)
 
         return shareJson(context, combined, "dxx_redux_config.json", "Share Config")
     }
@@ -212,8 +255,49 @@ object ConfigImportExport {
                 }
             }
         }
+        // App settings: SharedPreferences + descent.cfg
+        if (json.has("app_settings")) {
+            results.add(importAppSettings(context, json.getJSONObject("app_settings")))
+        }
         if (results.isEmpty()) return "Combined config had no recognizable sections."
         return results.joinToString("\n")
+    }
+
+    // ── App settings ───────────────────────────────────────────────────────
+
+    private fun importAppSettings(
+        context: Context,
+        json: JSONObject,
+    ): String {
+        var count = 0
+        val editor = context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE).edit()
+        for (key in EXPORTED_PREF_KEYS) {
+            if (!json.has(key)) continue
+            when (key) {
+                "touch_overlay_enabled" -> editor.putBoolean(key, json.getBoolean(key))
+                else -> editor.putString(key, json.getString(key))
+            }
+            count++
+        }
+        editor.apply()
+
+        // descent.cfg graphics settings
+        if (json.has("descent_cfg")) {
+            val cfgObj = json.getJSONObject("descent_cfg")
+            val pairs = mutableListOf<Pair<String, String>>()
+            for (key in EXPORTED_CFG_KEYS) {
+                if (cfgObj.has(key)) pairs.add(key to cfgObj.getString(key))
+            }
+            if (pairs.isNotEmpty()) {
+                updateAllConfigFiles(context.filesDir, pairs)
+                count += pairs.size
+            }
+            // Resolution is stored in SharedPreferences, applied to cfg via helper
+            if (json.has("render_resolution")) {
+                updateDescentCfgResolution(context.filesDir, json.getString("render_resolution"))
+            }
+        }
+        return "App settings: imported $count setting(s)"
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────

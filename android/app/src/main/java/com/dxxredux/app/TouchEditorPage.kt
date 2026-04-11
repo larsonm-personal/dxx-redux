@@ -1061,11 +1061,13 @@ private fun drawAllControls(
         )
         val lineStyle = TextStyle(fontSize = 7.sp, color = cButtonLabel.copy(alpha = alpha))
         if (d.type == DiagnosticType.MUSIC) {
-            // Music control preview: prev/next buttons and track label
-            val btnR = baseScale * 0.015f * d.sizeMult
+            // Music control preview -- match in-game TouchOverlayView formulas
+            val musicBase = min(w, h)
+            val btnR = musicBase * 0.03f * d.sizeMult
+            val diagTs = musicBase * 0.025f
             val btnY = cy
-            val prevCX = cx - boxW / 2 + btnR + 4f
-            val nextCX = prevCX + btnR * 2 + 4f
+            val prevCX = cx + btnR + diagTs * 0.5f
+            val nextCX = prevCX + btnR * 2 + musicBase * 0.02f * d.sizeMult
             scope.drawCircle(
                 color = cButton.copy(alpha = alpha * 0.5f),
                 radius = btnR,
@@ -1096,7 +1098,8 @@ private fun drawAllControls(
                     ),
             )
             val trackLabel = textMeasurer.measure("\u266B Track Name", style = lineStyle)
-            scope.drawText(trackLabel, topLeft = Offset(nextCX + btnR + 4f, btnY - trackLabel.size.height / 2f))
+            val labelX = nextCX + btnR + musicBase * 0.02f * d.sizeMult
+            scope.drawText(trackLabel, topLeft = Offset(labelX, btnY - trackLabel.size.height / 2f))
         } else if (d.type == DiagnosticType.MENU) {
             // Settings grid icon: draw a small 3x3 dot grid
             val dotR = baseScale * 0.004f * d.sizeMult
@@ -2716,7 +2719,14 @@ private fun GyroAxisPicker(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val currentLabel =
-        if (current < 0) "Disabled" else (TouchBindings.AXIS_LABELS[current] ?: "Axis $current")
+        if (current < 0) {
+            "Disabled"
+        } else {
+            (
+                TouchBindings.GYRO_AXIS_LABELS[current]
+                    ?: TouchBindings.AXIS_LABELS[current] ?: "Axis $current"
+            )
+        }
 
     Column(modifier = modifier) {
         Text(label, color = Color.Gray, fontSize = 11.sp)
@@ -2732,7 +2742,7 @@ private fun GyroAxisPicker(
                         expanded = false
                     },
                 )
-                TouchBindings.AXIS_LABELS.forEach { (idx, name) ->
+                TouchBindings.GYRO_AXIS_LABELS.forEach { (idx, name) ->
                     DropdownMenuItem(
                         text = { Text(name, fontSize = 12.sp) },
                         onClick = {
@@ -2760,6 +2770,9 @@ private fun GyroSettingsDialog(
     var invertY by remember { mutableStateOf(gyro.invertY) }
     var invertZ by remember { mutableStateOf(gyro.invertZ) }
     var deadzone by remember { mutableFloatStateOf(gyro.deadzone) }
+    var deadzoneX by remember { mutableFloatStateOf(gyro.deadzoneX) }
+    var deadzoneY by remember { mutableFloatStateOf(gyro.deadzoneY) }
+    var deadzoneZ by remember { mutableFloatStateOf(gyro.deadzoneZ) }
     var maxAngleX by remember { mutableFloatStateOf(gyro.maxAngleX) }
     var maxAngleY by remember { mutableFloatStateOf(gyro.maxAngleY) }
     var maxAngleZ by remember { mutableFloatStateOf(gyro.maxAngleZ) }
@@ -2855,8 +2868,18 @@ private fun GyroSettingsDialog(
                             }
                         }
 
-                        val dzPct = "%.0f".format(deadzone * 100f)
-                        LabeledSlider("Deadzone ($dzPct%)", deadzone, 0f, 0.3f) { deadzone = it }
+                        if (axisX >= 0) {
+                            val dzXPct = "%.0f".format(deadzoneX * 100f)
+                            LabeledSlider("Deadzone Yaw ($dzXPct%)", deadzoneX, 0f, 0.6f) { deadzoneX = it }
+                        }
+                        if (axisY >= 0) {
+                            val dzYPct = "%.0f".format(deadzoneY * 100f)
+                            LabeledSlider("Deadzone Roll ($dzYPct%)", deadzoneY, 0f, 0.6f) { deadzoneY = it }
+                        }
+                        if (axisZ >= 0) {
+                            val dzZPct = "%.0f".format(deadzoneZ * 100f)
+                            LabeledSlider("Deadzone Pitch ($dzZPct%)", deadzoneZ, 0f, 0.6f) { deadzoneZ = it }
+                        }
 
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                             if (axisX >= 0) LabeledToggle("Inv Yaw", invertX) { invertX = it }
@@ -2895,7 +2918,10 @@ private fun GyroSettingsDialog(
                         invertX = invertX,
                         invertY = invertY,
                         invertZ = invertZ,
-                        deadzone = deadzone,
+                        deadzone = deadzoneX, // legacy field tracks yaw for compat
+                        deadzoneX = deadzoneX,
+                        deadzoneY = deadzoneY,
+                        deadzoneZ = deadzoneZ,
                         maxAngleX = maxAngleX,
                         maxAngleY = maxAngleY,
                         maxAngleZ = maxAngleZ,
