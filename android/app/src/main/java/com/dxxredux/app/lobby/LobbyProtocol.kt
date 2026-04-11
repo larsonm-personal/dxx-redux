@@ -47,6 +47,9 @@ data class LanLobbyAnnounce(
     val status: String = "lobby",
     val difficulty: Int = -1,
     val levelNum: Int = -1,
+    // Game engine port the host is listening on (default ENGINE_PORT;
+    // HOST_PROXY_PORT after host migration with proxy)
+    val hostPort: Int = com.dxxredux.app.multiplayer.NetworkConstants.ENGINE_PORT,
 )
 
 /** Build a JSON ANNOUNCE packet for broadcasting. */
@@ -61,6 +64,7 @@ fun buildAnnounce(
     status: String = "lobby",
     difficulty: Int = -1,
     levelNum: Int = -1,
+    hostPort: Int = com.dxxredux.app.multiplayer.NetworkConstants.ENGINE_PORT,
 ): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_ANNOUNCE)
@@ -75,6 +79,7 @@ fun buildAnnounce(
     json.put("status", status)
     if (difficulty >= 0) json.put("difficulty", difficulty)
     if (levelNum >= 0) json.put("level_num", levelNum)
+    if (hostPort != com.dxxredux.app.multiplayer.NetworkConstants.ENGINE_PORT) json.put("host_port", hostPort)
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 

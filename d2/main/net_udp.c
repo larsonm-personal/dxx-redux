@@ -1100,19 +1100,7 @@ int valid_token(ubyte *data, int data_len, struct _sockaddr sender_addr) {
 			if(! rv) {				
 				sprintf(err_mess, "token %d != %d", GET_INTEL_INT(data + 1), netgame_token );
 				drop_rx_packet(data, err_mess);
-#ifdef __ANDROID__
-				/* android port: diagnose host-migration PDATA loss */
-				if (pid == UPID_PDATA || pid == UPID_MDATA_PNORM) {
-					static fix64 last_tok_log = 0;
-					fix64 now = timer_query();
-					if (now > last_tok_log + F1_0*3) {
-						MPDIAG("valid_token: DROP %s pkt_token=%u local_token=%u",
-						       pid == UPID_PDATA ? "PDATA" : "MDATA",
-						       (uint)GET_INTEL_INT(data + 1), netgame_token);
-						last_tok_log = now;
-					}
-				}
-#endif
+
 			}
 			return rv; 
 
@@ -2036,9 +2024,15 @@ net_udp_new_player(UDP_sequence_packet *their)
 	update_address_for_player(pnum, their->player.protocol.udp.addr);
 
 	if(multi_i_am_master()) {
+#ifdef __ANDROID__
+		MPDIAG("CONNTYPE[new_player]: P%d %d->DIRECT (master)", pnum, connection_statuses[pnum].type);
+#endif
 		connection_statuses[pnum].type = CONNT_DIRECT;
 		Netgame.players[pnum].ping = 0; 
 	} else {
+#ifdef __ANDROID__
+		MPDIAG("CONNTYPE[new_player]: P%d %d->PROXY (client)", pnum, connection_statuses[pnum].type);
+#endif
 		connection_statuses[pnum].type = CONNT_PROXY;
 		connection_statuses[pnum].proxy_through = 0; // host
 		connection_statuses[pnum].holepunch_attempts = 0;
@@ -2257,6 +2251,17 @@ void net_udp_welcome_player(UDP_sequence_packet *their)
 
 		// Update stored address -- the reconnecting client likely has a new port
 		update_address_for_player(player_num, their->player.protocol.udp.addr);
+#ifdef __ANDROID__
+		// Reset connection type for the returning player -- it may be stale
+		// CONNT_PROXY from a previous session where this node was a client.
+		// The master always uses CONNT_DIRECT for all connected clients
+		// (engine-level CONNT_PROXY is for routing through an intermediary
+		// player, which is unrelated to the Kotlin LocalhostProxy)
+		if (multi_i_am_master()) {
+			MPDIAG("CONNTYPE[welcome_reconnect]: P%d %d->DIRECT (master)", player_num, connection_statuses[player_num].type);
+			connection_statuses[player_num].type = CONNT_DIRECT;
+		}
+#endif
 	}
 
 	Players[player_num].KillGoalCount=0;
@@ -2549,6 +2554,12 @@ void net_udp_send_objects(void)
 
 			// Send sync packet which tells the player who he is and to start!
 			net_udp_send_rejoin_sync(player_num);
+
+#ifdef __ANDROID__
+			/* android port: restore cached inventory for returning coop players */
+			if (Game_mode & GM_MULTI_COOP)
+				coop_send_restore_inventory(player_num);
+#endif
 
 			// Turn off send object mode
 			Network_send_objnum = -1;
@@ -4261,6 +4272,9 @@ static int opt_remote_hit_spark;
 static int opt_allow_custom_models_textures;
 static int opt_reduced_flash;
 static int opt_disable_gauss_splash;
+#ifdef __ANDROID__
+static int opt_coop_qol;
+#endif
 
 #ifdef USE_TRACKER
 static int opt_tracker;
@@ -4459,6 +4473,12 @@ void net_udp_more_game_options ()
 	opt_disable_gauss_splash=opt;
 	m[opt].type = NM_TYPE_CHECK; m[opt].text = "Disable Gauss Splash"; m[opt].value = Netgame.DisableGaussSplash; opt++;
 
+#ifdef __ANDROID__
+	/* android port: coop QoL enhancements toggle */
+	opt_coop_qol=opt;
+	m[opt].type = NM_TYPE_CHECK; m[opt].text = "Coop QoL (guidebot, arrows, warp)"; m[opt].value=(Netgame.game_flags & NETGAME_FLAG_COOP_QOL) != 0; opt++;
+#endif
+
 	Assert(opt <= SDL_arraysize(m));
 
 menu:
@@ -4503,6 +4523,13 @@ menu:
 		Netgame.game_flags |= NETGAME_FLAG_SHOW_MAP;
 	else
 		Netgame.game_flags &= ~NETGAME_FLAG_SHOW_MAP;
+#ifdef __ANDROID__
+	/* android port: coop QoL enhancements toggle */
+	if (m[opt_coop_qol].value)
+		Netgame.game_flags |= NETGAME_FLAG_COOP_QOL;
+	else
+		Netgame.game_flags &= ~NETGAME_FLAG_COOP_QOL;
+#endif
 	Netgame.NoFriendlyFire = m[opt_ffire].value;
 	
 #ifdef USE_TRACKER
@@ -4806,6 +4833,9 @@ void netgame_set_defaults()
 	Netgame.obs_min = 0;
 	Netgame.host_is_obs = 0;
 	Netgame.game_flags = 0;
+#ifdef __ANDROID__
+	Netgame.game_flags |= NETGAME_FLAG_COOP_QOL;  /* android port: coop QoL on by default */
+#endif
 	Netgame.control_invul_time = 0;
 	Netgame.KillGoal=0;
 	Netgame.PlayTimeAllowed=0;
@@ -5223,12 +5253,30 @@ void net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr send
 			kill_matrix[i][j] = Netgame.kills[i][j];
 		}
 
+#ifdef __ANDROID__
+		/* android port: use Player_num instead of isyou to identify
+		 * non-self slots. The proxy maps all peers to 127.0.0.1:4243x
+		 * and after host migration the new host's own stale proxy
+		 * address can collide with a client's, making isyou=1 for
+		 * ALL slots. Player_num is set by callsign match above. */
+		if(i != Player_num) {
+#else
 		if(! Netgame.players[i].protocol.udp.isyou) {
+#endif
 			if(multi_i_am_master()) {
+#ifdef __ANDROID__
+				MPDIAG("CONNTYPE[read_sync]: P%d %d->DIRECT (master)", i, connection_statuses[i].type);
+#endif
 				connection_statuses[i].type = CONNT_DIRECT;
 			} else if (i == multi_who_is_master()) {
+#ifdef __ANDROID__
+				MPDIAG("CONNTYPE[read_sync]: P%d %d->DIRECT (is-master-slot)", i, connection_statuses[i].type);
+#endif
 				connection_statuses[i].type = CONNT_DIRECT;
 			} else {
+#ifdef __ANDROID__
+				MPDIAG("CONNTYPE[read_sync]: P%d %d->PROXY (other)", i, connection_statuses[i].type);
+#endif
 				connection_statuses[i].type = CONNT_PROXY;
 				connection_statuses[i].proxy_through = 0;
 				connection_statuses[i].holepunch_attempts = 0;
@@ -5387,6 +5435,9 @@ int net_udp_send_sync(void)
 		net_log_comment(logbuf);
 #endif
 		net_udp_send_game_info(Netgame.players[i].protocol.udp.addr, UPID_SYNC, 0, player_tokens[i]);
+#ifdef __ANDROID__
+		MPDIAG("CONNTYPE[send_sync]: P%d %d->DIRECT", i, connection_statuses[i].type);
+#endif
 		connection_statuses[i].type = CONNT_DIRECT;
 	}
 
@@ -6497,6 +6548,9 @@ void net_udp_timeout_check(fix64 time)
 						multi_disconnect_player(i);
 					} else {
 						if(connection_statuses[i].type == CONNT_DIRECT) {
+#ifdef __ANDROID__
+							MPDIAG("CONNTYPE[timeout]: P%d DIRECT->PROXY", i);
+#endif
 							connection_statuses[i].type = CONNT_PROXY;
 							connection_statuses[i].proxy_through = 0;  // Start looking for efficient proxy?
 						}
@@ -7463,25 +7517,6 @@ void net_udp_send_pdata()
 				net_udp_send_to_player(buf, len, i); 
 			}
 		}
-#ifdef __ANDROID__
-		/* android port: diagnose host-migration PDATA loss */
-		{
-			static int retro_tx_count = 0;
-			retro_tx_count++;
-			if (retro_tx_count <= 3 || retro_tx_count % 300 == 0) {
-				MPDIAG("send_pdata: RETRO TX #%d from P%d token=%u len=%d",
-				       retro_tx_count, Player_num, netgame_token, len);
-				/* Log destination address for each connected player */
-				for (int j = 0; j < MAX_PLAYERS; j++) {
-					if (Players[j].connected && j != Player_num)
-						MPDIAG("  send_pdata: -> P%d addr=%s:%u conntype=%d",
-						       j, ip_from_sockaddr(Netgame.players[j].protocol.udp.addr),
-						       port_from_sockaddr(Netgame.players[j].protocol.udp.addr),
-						       connection_statuses[j].type);
-				}
-			}
-		}
-#endif
 
 		if(multi_i_am_master()) {
 			forward_to_observers(buf, len, 0); 
@@ -7491,33 +7526,11 @@ void net_udp_send_pdata()
 		{
 			for (i = 1; i < MAX_PLAYERS; i++)
 				if (Players[i].connected != CONNECT_DISCONNECTED) {
-#ifdef __ANDROID__
-					/* android port: diagnose host-migration PDATA loss */
-					{
-						static int pdata_tx_count = 0;
-						if (++pdata_tx_count <= 3 || pdata_tx_count % 300 == 0)
-							MPDIAG("send_pdata: TX #%d to player[%d] at %s:%u",
-							       pdata_tx_count, i,
-							       ip_from_sockaddr(Netgame.players[i].protocol.udp.addr),
-							       port_from_sockaddr(Netgame.players[i].protocol.udp.addr));
-					}
-#endif
 					dxx_sendto (UDP_Socket[0], buf, len, 0, (struct sockaddr *)&Netgame.players[i].protocol.udp.addr, sizeof(struct _sockaddr));
 				}
 		}
 		else
 		{
-#ifdef __ANDROID__
-			/* android port: diagnose host-migration PDATA loss */
-			{
-				static int pdata_tx_count = 0;
-				if (++pdata_tx_count <= 3 || pdata_tx_count % 300 == 0)
-					MPDIAG("send_pdata: TX #%d to master[%d] at %s:%u",
-					       pdata_tx_count, multi_who_is_master(),
-					       ip_from_sockaddr(Netgame.players[multi_who_is_master()].protocol.udp.addr),
-					       port_from_sockaddr(Netgame.players[multi_who_is_master()].protocol.udp.addr));
-			}
-#endif
 			dxx_sendto (UDP_Socket[0], buf, len, 0, (struct sockaddr *)&Netgame.players[multi_who_is_master()].protocol.udp.addr, sizeof(struct _sockaddr));
 		}
 	}
@@ -7631,17 +7644,6 @@ void net_udp_process_pdata ( ubyte *data, int data_len, struct _sockaddr sender_
 
 	if ( !( Game_mode & GM_NETWORK && ( Network_status == NETSTAT_PLAYING || Network_status == NETSTAT_ENDLEVEL ) ) )
 	{
-#ifdef __ANDROID__
-		/* android port: diagnose host-migration PDATA loss */
-		{
-			static fix64 last_drop_log = 0;
-			fix64 now = timer_query();
-			if (now > last_drop_log + F1_0*3) {
-				MPDIAG("process_pdata: DROP status (Network_status=%d Game_mode=0x%x)", Network_status, Game_mode);
-				last_drop_log = now;
-			}
-		}
-#endif
 		return;
 	}
 
@@ -7651,11 +7653,6 @@ void net_udp_process_pdata ( ubyte *data, int data_len, struct _sockaddr sender_
 	if(! Netgame.RetroProtocol ) {
 		if ((Netgame.ShortPackets && data_len != UPID_PDATA_S_SIZE) || (!Netgame.ShortPackets && data_len != UPID_PDATA_Q_SIZE))
 		{
-#ifdef __ANDROID__
-			MPDIAG("process_pdata: DROP size (got=%d short=%d expected=%d)",
-			       data_len, Netgame.ShortPackets,
-			       Netgame.ShortPackets ? UPID_PDATA_S_SIZE : UPID_PDATA_Q_SIZE);
-#endif
 			return;
 		}
 
@@ -7671,21 +7668,6 @@ void net_udp_process_pdata ( ubyte *data, int data_len, struct _sockaddr sender_
 			if (memcmp((struct _sockaddr *)&sender_addr, (struct _sockaddr *)&Netgame.players[cmp_slot].protocol.udp.addr, sizeof(struct _sockaddr)))
 #endif
 		{
-#ifdef __ANDROID__
-			/* android port: diagnose host-migration PDATA loss */
-			{
-				static fix64 last_addr_log = 0;
-				fix64 now = timer_query();
-				if (now > last_addr_log + F1_0*3) {
-					MPDIAG("process_pdata: DROP addr (slot=%d sender=%s:%u expected=%s:%u)",
-					       cmp_slot,
-					       ip_from_sockaddr(sender_addr), port_from_sockaddr(sender_addr),
-					       ip_from_sockaddr(Netgame.players[cmp_slot].protocol.udp.addr),
-					       port_from_sockaddr(Netgame.players[cmp_slot].protocol.udp.addr));
-					last_addr_log = now;
-				}
-			}
-#endif
 			return;
 		}
 		}
@@ -7693,19 +7675,6 @@ void net_udp_process_pdata ( ubyte *data, int data_len, struct _sockaddr sender_
 
 	pd.Player_num = data[len];									len++;
 	pd.connected = data[len];									len++;
-
-#ifdef __ANDROID__
-	/* android port: diagnose host-migration PDATA loss */
-	{
-		static int pdata_rx_count = 0;
-		if (++pdata_rx_count <= 3 || pdata_rx_count % 300 == 0)
-			MPDIAG("process_pdata: RX #%d from P%d connected=%d len=%d retro=%d sender=%s:%u",
-			       pdata_rx_count, pd.Player_num, pd.connected, data_len,
-			       Netgame.RetroProtocol,
-			       ip_from_sockaddr(sender_addr), port_from_sockaddr(sender_addr));
-	}
-#endif
-
 
 	// No remote control, please
 	if(pd.Player_num == Player_num) {
@@ -7860,18 +7829,6 @@ void net_udp_read_pdata_packet(UDP_frame_info *pd)
 
 	if (Players[TheirPlayernum].connected != CONNECT_PLAYING || TheirPlayernum == Player_num)
 	{
-#ifdef __ANDROID__
-		/* android port: diagnose host-migration PDATA loss */
-		{
-			static fix64 last_skip_log = 0;
-			fix64 now = timer_query();
-			if (now > last_skip_log + F1_0*3) {
-				MPDIAG("read_pdata: SKIP P%d connected=%d Player_num=%d",
-				       TheirPlayernum, Players[TheirPlayernum].connected, Player_num);
-				last_skip_log = now;
-			}
-		}
-#endif
 		return;
 	}
 
@@ -8150,6 +8107,9 @@ void net_udp_process_p2p_pong(ubyte *data, struct _sockaddr sender_addr, int dat
 		}
 
 		connection_statuses[from_player].last_direct_pong = timer_query(); 
+#ifdef __ANDROID__
+		MPDIAG("CONNTYPE[p2p_pong]: P%d %d->DIRECT", from_player, connection_statuses[from_player].type);
+#endif
 		connection_statuses[from_player].type = CONNT_DIRECT;
 
 	    if(memcmp(&Netgame.players[from_player].protocol.udp.addr, &sender_addr, sizeof(struct _sockaddr))) {
@@ -8189,6 +8149,9 @@ void resetProxy(int pnum) {
 	if(pnum == multi_who_is_master()) return;
 	if(multi_i_am_master()) return;
 
+#ifdef __ANDROID__
+	MPDIAG("CONNTYPE[resetProxy]: P%d %d->PROXY", pnum, connection_statuses[pnum].type);
+#endif
 	connection_statuses[pnum].type = CONNT_PROXY;
 	connection_statuses[pnum].proxy_through = 0;
 

@@ -332,6 +332,26 @@ private fun ServerBrowserContent(
         HorizontalDivider()
         Spacer(Modifier.height(8.dp))
 
+        // -- Recent coop saves (scan both d1 and d2) --
+        if (state.status == ConnectionStatus.CONNECTED) {
+            RecentCoopGames(onCreateWithSave = { entry ->
+                // Pre-fill CreateGameDialog via defaults and open it
+                HostGameDefaults.save(
+                    context,
+                    HostGameDefaults.Defaults(
+                        game = entry.game,
+                        mission = entry.mission,
+                        mode = "coop",
+                        levelNum = entry.level,
+                    ),
+                )
+                if (entry.slot >= 0) {
+                    writeCoopRestoreSlot(context.filesDir, entry.game, entry.slot)
+                }
+                showCreateDialog = true
+            })
+        }
+
         // -- Lobby list + active games --
         if (state.lobbies.isNotEmpty() || activeGames.isNotEmpty()) {
             LazyColumn(modifier = Modifier.weight(1f)) {
@@ -403,6 +423,84 @@ private fun ServerBrowserContent(
             onDismiss = { showCreateDialog = false },
         )
     }
+}
+
+/**
+ * Show up to 5 recent coop saves across both d1 and d2.
+ * Tapping an entry opens CreateGameDialog pre-filled with the save's settings.
+ */
+@Composable
+private fun RecentCoopGames(onCreateWithSave: (CoopSaveEntry) -> Unit) {
+    val context = LocalContext.current
+    val filesDir = context.filesDir
+
+    val recentSaves =
+        remember {
+            val allSaves = mutableListOf<CoopSaveEntry>()
+            for (g in listOf("d1", "d2")) {
+                val subdir = if (g == "d1") "d1x-redux" else "d2x-redux"
+                val file = File(filesDir, "$subdir/coop_autosave_history.json")
+                if (!file.exists()) continue
+                try {
+                    val myClientId = ClientIdentity.getInstallationId(context)
+                    val arr = JSONArray(file.readText())
+                    for (i in 0 until arr.length()) {
+                        val obj = arr.getJSONObject(i)
+                        val ids = obj.optJSONArray("client_ids")
+                        var matched = false
+                        if (ids != null) {
+                            for (j in 0 until ids.length()) {
+                                if (ids.optString(j) == myClientId) {
+                                    matched = true
+                                    break
+                                }
+                            }
+                        }
+                        if (!matched) continue
+                        val callsigns = mutableListOf<String>()
+                        val names = obj.optJSONArray("callsigns")
+                        if (names != null) {
+                            for (j in 0 until names.length()) callsigns.add(names.optString(j, "?"))
+                        }
+                        allSaves.add(
+                            CoopSaveEntry(
+                                slot = obj.optInt("slot", -1),
+                                level = obj.optInt("level", 0),
+                                timestamp = obj.optLong("timestamp", 0),
+                                numPlayers = obj.optInt("num_players", 0),
+                                callsigns = callsigns,
+                                levelTimeSeconds = obj.optInt("level_time_seconds", 0),
+                                type = obj.optString("type", "full_save"),
+                                totalScore = obj.optInt("total_score", 0),
+                                mission = obj.optString("mission", ""),
+                                game = g,
+                            ),
+                        )
+                    }
+                } catch (_: Exception) {
+                    // skip corrupt files
+                }
+            }
+            allSaves.sortedByDescending { it.timestamp }.take(5)
+        }
+
+    if (recentSaves.isEmpty()) return
+
+    Text("Recent Coop", style = MaterialTheme.typography.titleSmall)
+    recentSaves.forEach { save ->
+        val scoreStr = if (save.totalScore > 0) " ${save.totalScore}pts" else ""
+        val label =
+            "${save.game.uppercase()} ${save.mission} L${save.level}" +
+                " - ${save.numPlayers}p - ${save.callsigns.joinToString()}" +
+                "$scoreStr - ${formatTimeAgo(save.timestamp)}"
+        OutlinedButton(
+            onClick = { onCreateWithSave(save) },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(label, fontSize = 11.sp, maxLines = 2)
+        }
+    }
+    Spacer(Modifier.height(8.dp))
 }
 
 @Composable
@@ -522,7 +620,12 @@ internal data class CoopSaveEntry(
     val timestamp: Long,
     val numPlayers: Int,
     val callsigns: List<String>,
+    val clientIds: List<String> = emptyList(),
     val levelTimeSeconds: Int = 0,
+    val type: String = "full_save", // "full_save" or "checkpoint"
+    val totalScore: Int = 0,
+    val mission: String = "",
+    val game: String = "", // "d1" or "d2", used for recent games display
 )
 
 /** Format a unix timestamp as a relative time string like "5 min ago". */
@@ -563,12 +666,12 @@ internal fun readCoopAutosaveHistory(
             // Check if our client_id is in this save's participants
             val ids = obj.optJSONArray("client_ids")
             var matched = false
+            val clientIdList = mutableListOf<String>()
             if (ids != null) {
                 for (j in 0 until ids.length()) {
-                    if (ids.optString(j) == myClientId) {
-                        matched = true
-                        break
-                    }
+                    val cid = ids.optString(j, "")
+                    clientIdList.add(cid)
+                    if (cid == myClientId) matched = true
                 }
             }
             if (!matched) continue
@@ -584,7 +687,12 @@ internal fun readCoopAutosaveHistory(
                     timestamp = obj.optLong("timestamp", 0),
                     numPlayers = obj.optInt("num_players", 0),
                     callsigns = callsigns,
+                    clientIds = clientIdList,
                     levelTimeSeconds = obj.optInt("level_time_seconds", 0),
+                    type = obj.optString("type", "full_save"),
+                    totalScore = obj.optInt("total_score", 0),
+                    mission = fileMission,
+                    game = game,
                 ),
             )
         }
@@ -607,6 +715,74 @@ internal fun writeCoopRestoreSlot(
         file.writeText(slot.toString())
     } else {
         file.delete()
+    }
+}
+
+/** Read the currently written restore slot, or null if none. */
+internal fun readCoopRestoreSlot(
+    filesDir: File,
+    game: String,
+): Int? {
+    val subdir = if (game == "d1") "d1x-redux" else "d2x-redux"
+    val file = File(filesDir, "$subdir/coop_restore_slot.txt")
+    return try {
+        if (file.exists()) file.readText().trim().toIntOrNull() else null
+    } catch (_: Exception) {
+        null
+    }
+}
+
+/**
+ * Read coop_progress.json and return a CoopSaveEntry of type "checkpoint".
+ * Returns null if no progress file exists, mission doesn't match, or level <= 0.
+ */
+internal fun readCoopProgressAsEntry(
+    filesDir: File,
+    game: String,
+    mission: String?,
+    context: android.content.Context,
+): CoopSaveEntry? {
+    if (mission == null) return null
+    val subdir = if (game == "d1") "d1x-redux" else "d2x-redux"
+    val file = File(filesDir, "$subdir/coop_progress.json")
+    if (!file.exists()) return null
+    val myClientId = ClientIdentity.getInstallationId(context)
+    return try {
+        val json = JSONObject(file.readText())
+        val fileMission = json.optString("mission", "")
+        if (!fileMission.equals(mission, ignoreCase = true)) return null
+        val level = json.optInt("last_completed_level", 0)
+        if (level <= 0) return null
+        // Check if our client_id is in the progress participants
+        val ids = json.optJSONArray("client_ids")
+        var matched = ids == null // if no client_ids field, accept (old format)
+        val clientIdList = mutableListOf<String>()
+        if (ids != null) {
+            for (j in 0 until ids.length()) {
+                val cid = ids.optString(j, "")
+                clientIdList.add(cid)
+                if (cid == myClientId) matched = true
+            }
+        }
+        if (!matched) return null
+        val callsigns = mutableListOf<String>()
+        val names = json.optJSONArray("players")
+        if (names != null) {
+            for (j in 0 until names.length()) callsigns.add(names.optString(j, "?"))
+        }
+        CoopSaveEntry(
+            slot = -1,
+            level = level,
+            timestamp = json.optLong("timestamp", 0),
+            numPlayers = json.optInt("num_players", 0),
+            callsigns = callsigns,
+            clientIds = clientIdList,
+            type = "checkpoint",
+            mission = fileMission,
+            game = game,
+        )
+    } catch (_: Exception) {
+        null
     }
 }
 

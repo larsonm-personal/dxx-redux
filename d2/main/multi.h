@@ -144,11 +144,12 @@ extern int multi_protocol; // set and determinate used protocol
 	VALUE(MULTI_OBS_UPDATE           , 4 + 8*MAX_OBSERVERS)	\
 	VALUE(MULTI_DAMAGE               , 14)  \
 	VALUE(MULTI_REPAIR               , 11)  \
-	VALUE(MULTI_SHIP_STATUS          , 43)  \
+	VALUE(MULTI_SHIP_STATUS          , 69)  \
 	VALUE(MULTI_CREATE_EXPLOSION2    , 24)  \
 	VALUE(MULTI_WARP_TO_PLAYER       , 17)  \
 	VALUE(MULTI_COOP_PEER_STATUS     , 8)   \
 	VALUE(MULTI_ESCORT_OWNER         , 3)   \
+	VALUE(MULTI_COOP_RESTORE_INV     , 78)  \
 	AFTER
 for_each_multiplayer_command(enum {, define_multiplayer_command, });
 
@@ -429,6 +430,7 @@ extern fix64 RefuseTimeLimit;
 #define NETGAME_FLAG_TEAM_HOARD         16
 #define NETGAME_FLAG_REALLY_ENDLEVEL    32
 #define NETGAME_FLAG_REALLY_FORMING     64
+#define NETGAME_FLAG_COOP_QOL           128  /* android port: server-wide coop QoL enhancements toggle */
 
 #define NETGAME_NAME_LEN                15
 #define NETGAME_AUX_SIZE                20  // Amount of extra data for the network protocol to store in the netgame packet
@@ -778,5 +780,9 @@ int coop_killer_to_pnum(int killer_objnum);
 // Periodic coop status broadcast (android port: coop QoL overlay)
 void coop_send_peer_status(void);
 void coop_do_peer_status(const ubyte *buf);
+
+// Send/receive cached inventory to a rejoining coop player
+void coop_send_restore_inventory(int pnum);
+void coop_do_restore_inventory(const ubyte *buf);
 
 #endif /* _MULTI_H */

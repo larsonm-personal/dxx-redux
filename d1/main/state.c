@@ -1565,10 +1565,13 @@ RetryObjectLoading:
 		PHYSFS_sint64 pos_after_base = PHYSFS_tell(fp);
 		PHYSFS_sint64 file_len = PHYSFS_fileLength(fp);
 		coop_save_metadata coop_meta;
-		if (coop_read_save_metadata(fp, pos_after_base, &coop_meta))
+		if (coop_read_save_metadata(fp, pos_after_base, &coop_meta)) {
 			con_printf(CON_DEBUG, "coop_save: restored metadata (%d active, %d absent)",
 				coop_meta.num_active_players, coop_meta.num_absent_players);
-		else if (pos_after_base != file_len)
+			/* Repopulate the absent player list so returning players get inventory back */
+			if (Game_mode & GM_MULTI_COOP)
+				coop_load_absent_from_metadata(&coop_meta);
+		} else if (pos_after_base != file_len)
 			con_printf(CON_URGENT, "savegame not completely read, might be corrupt! (cur %d, size %d)",
 				(int)pos_after_base, (int)file_len);
 	}

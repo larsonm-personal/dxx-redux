@@ -62,16 +62,18 @@ internal fun CreateGameDialog(
     // Coop auto-saves and progress
     val coopSaves =
         if (mode == "coop") {
-            readCoopAutosaveHistory(context.filesDir, game, mission, context)
+            val saves = readCoopAutosaveHistory(context.filesDir, game, mission, context)
+            val checkpoint = readCoopProgressAsEntry(context.filesDir, game, mission, context)
+            if (checkpoint != null) saves + checkpoint else saves
         } else {
             emptyList()
         }
     var selectedSave by remember(coopSaves) {
-        mutableStateOf(coopSaves.firstOrNull())
+        mutableStateOf(coopSaves.firstOrNull { it.type == "full_save" })
     }
 
     val coopResumeLevel =
-        if (mode == "coop" && coopSaves.isEmpty()) {
+        if (mode == "coop" && coopSaves.none { it.type == "full_save" }) {
             readCoopProgress(context.filesDir, game, mission)
         } else {
             null
@@ -210,10 +212,12 @@ internal fun CreateGameDialog(
                                 ) { Text("Start fresh (no restore)") }
                             }
                             coopSaves.forEach { save ->
+                                val typeTag = if (save.type == "checkpoint") "[Chk]" else "[Save]"
+                                val scoreStr = if (save.totalScore > 0) " ${save.totalScore}pts" else ""
                                 val label =
-                                    "L${save.level} - ${save.numPlayers}p" +
+                                    "$typeTag L${save.level} - ${save.numPlayers}p" +
                                         " - ${save.callsigns.joinToString()}" +
-                                        " - ${formatTimeAgo(save.timestamp)}"
+                                        "$scoreStr - ${formatTimeAgo(save.timestamp)}"
                                 if (selectedSave == save) {
                                     Button(
                                         onClick = {},
@@ -254,7 +258,9 @@ internal fun CreateGameDialog(
                             maxPlayers = maxPlayers,
                         ),
                     )
-                    writeCoopRestoreSlot(context.filesDir, game, selectedSave?.slot)
+                    // slot = -1 for checkpoint entries (no save file to load)
+                    val restoreSlot = selectedSave?.slot?.takeIf { it >= 0 }
+                    writeCoopRestoreSlot(context.filesDir, game, restoreSlot)
                     onCreate(game, mission, mode, maxPlayers, difficulty, levelNum)
                 },
                 enabled = mission != null && maxPlayers in 2..8 && levelNum >= 1,

@@ -56,6 +56,12 @@ void coop_snapshot_player(int pnum, coop_player_record *rec)
 	for (i = 0; i < MAX_SECONDARY_WEAPONS && i < COOP_SAVE_MAX_WEAPONS; i++)
 		rec->secondary_ammo[i] = p->secondary_ammo[i];
 	rec->flags = p->flags;
+	rec->net_kills_total = p->net_kills_total;
+	rec->net_killed_total = p->net_killed_total;
+	rec->num_kills_total = p->num_kills_total;
+	rec->hostages_rescued_total = p->hostages_rescued_total;
+	rec->time_total = p->time_total;
+	rec->hours_total = p->hours_total;
 }
 
 void coop_write_save_metadata(void *fp)
@@ -226,6 +232,90 @@ const coop_player_record *coop_get_absent_players(void)
 	return coop_absent_list;
 }
 
+const coop_player_record *coop_find_absent_player(const char *callsign,
+                                                   const char *client_id)
+{
+	int i;
+
+	/* Prefer client_id match */
+	if (client_id && client_id[0]) {
+		for (i = 0; i < coop_num_absent; i++)
+			if (strncmp(coop_absent_list[i].client_id, client_id, COOP_CLIENT_ID_LEN) == 0)
+				return &coop_absent_list[i];
+	}
+
+	/* Fallback: callsign match */
+	if (callsign && callsign[0]) {
+		for (i = 0; i < coop_num_absent; i++)
+			if (strncasecmp(coop_absent_list[i].callsign, callsign, COOP_CALLSIGN_LEN) == 0)
+				return &coop_absent_list[i];
+	}
+
+	return NULL;
+}
+
+void coop_load_absent_from_metadata(const coop_save_metadata *meta)
+{
+	int i, n;
+
+	coop_clear_absent_players();
+	n = meta->num_absent_players;
+	if (n > COOP_MAX_REMEMBERED_PLAYERS)
+		n = COOP_MAX_REMEMBERED_PLAYERS;
+	for (i = 0; i < n; i++)
+		memcpy(&coop_absent_list[i], &meta->absent_players[i], sizeof(coop_player_record));
+	coop_num_absent = n;
+	con_printf(CON_NORMAL, "coop_save: loaded %d absent players from save metadata\n", n);
+}
+
+/* --- inventory application helper --- */
+
+/* Durable powerup flags that survive disconnect/rejoin.
+ * Duplicated constant: also defined in multi.c (COOP_RESTORE_FLAGS_DURABLE).
+ * d2 has more powerup flags than d1. */
+#define COOP_RESTORE_FLAGS_DURABLE ( \
+	PLAYER_FLAGS_QUAD_LASERS | PLAYER_FLAGS_MAP_ALL | \
+	PLAYER_FLAGS_AMMO_RACK | PLAYER_FLAGS_CONVERTER | \
+	PLAYER_FLAGS_AFTERBURNER | PLAYER_FLAGS_HEADLIGHT)
+#define COOP_RESTORE_FLAGS_KEYS ( \
+	PLAYER_FLAGS_BLUE_KEY | PLAYER_FLAGS_RED_KEY | PLAYER_FLAGS_GOLD_KEY)
+
+void coop_apply_record_to_player(int pnum, const coop_player_record *rec,
+                                 int same_level)
+{
+	int i;
+	player *p = &Players[pnum];
+
+	p->energy = rec->energy;
+	p->shields = rec->shields;
+	p->score = rec->score;
+	p->laser_level = rec->laser_level;
+	p->primary_weapon_flags = rec->primary_weapon_flags;
+	p->secondary_weapon_flags = rec->secondary_weapon_flags;
+	for (i = 0; i < MAX_PRIMARY_WEAPONS && i < COOP_SAVE_MAX_WEAPONS; i++)
+		p->primary_ammo[i] = rec->primary_ammo[i];
+	for (i = 0; i < MAX_SECONDARY_WEAPONS && i < COOP_SAVE_MAX_WEAPONS; i++)
+		p->secondary_ammo[i] = rec->secondary_ammo[i];
+
+	p->flags |= (rec->flags & COOP_RESTORE_FLAGS_DURABLE);
+	if (same_level)
+		p->flags |= (rec->flags & COOP_RESTORE_FLAGS_KEYS);
+
+	p->net_kills_total = rec->net_kills_total;
+	p->net_killed_total = rec->net_killed_total;
+	p->num_kills_total = rec->num_kills_total;
+	p->hostages_rescued_total = rec->hostages_rescued_total;
+	p->time_total = rec->time_total;
+	p->hours_total = rec->hours_total;
+
+	if (pnum == Player_num)
+		Objects[p->objnum].shields = p->shields;
+
+	con_printf(CON_NORMAL, "coop_save: applied record to P%d '%s' (shields=%d energy=%d laser=%d score=%d)\n",
+		pnum, p->callsign, f2i(p->shields), f2i(p->energy),
+		p->laser_level, p->score);
+}
+
 /* --- auto-save --- */
 
 /* Track which rotating slot to use next */
@@ -328,19 +418,28 @@ static void coop_write_autosave_history(int slot, int n_connected)
 	 * also has, but in a format the lobby can read without parsing the
 	 * binary save file. */
 
+	/* Compute total score across all connected players */
+	int total_score = 0;
+	for (i = 0; i < N_players; i++)
+		if (Players[i].connected == CONNECT_PLAYING)
+			total_score += Players[i].score;
+
 	off += snprintf(buf + off, sizeof(buf) - off,
 		"[\n  {\n"
 		"    \"slot\": %d,\n"
+		"    \"type\": \"full_save\",\n"
 		"    \"mission\": \"%s\",\n"
 		"    \"level\": %d,\n"
 		"    \"timestamp\": %u,\n"
 		"    \"level_time_seconds\": %d,\n"
 		"    \"num_players\": %d,\n"
+		"    \"total_score\": %d,\n"
 		"    \"callsigns\": [%s],\n"
 		"    \"client_ids\": [%s]\n"
 		"  }\n",
 		slot, Current_mission_filename, Current_level_num,
-		now, f2i(ThisLevelTime), n, callsigns_json, client_ids_json);
+		now, f2i(ThisLevelTime), n, total_score,
+		callsigns_json, client_ids_json);
 
 	/* Append entries from the old history for OTHER slots */
 	{
@@ -442,26 +541,177 @@ static void coop_append_other_slots(char *buf, int *off, int buf_size,
 
 /* --- progress tracking --- */
 
+/* Binary sidecar for progress inventory.
+ * Layout: tag(4) + version(2) + mission(9) + level(2) + num_players(1)
+ *         + coop_player_record[num_players] */
+#define COOP_PROGRESS_INV_TAG  0x43505249  /* "CPRI" */
+#define COOP_PROGRESS_INV_VER  1
+#define COOP_PROGRESS_INV_HDR  18  /* 4+2+9+2+1 */
+
+static void coop_write_progress_inventory(void)
+{
+	PHYSFS_file *fp;
+	coop_player_record rec;
+	uint32_t tag = COOP_PROGRESS_INV_TAG;
+	uint16_t ver = COOP_PROGRESS_INV_VER;
+	int16_t level = (int16_t)Current_level_num;
+	uint8_t num = 0;
+	char mission[9];
+	int i;
+
+	fp = PHYSFS_openWrite("coop_progress_inventory.bin");
+	if (!fp) {
+		con_printf(CON_URGENT, "coop_save: failed to write progress inventory\n");
+		return;
+	}
+
+	memset(mission, 0, sizeof(mission));
+	strncpy(mission, Current_mission_filename, 8);
+
+	/* Count connected players first */
+	for (i = 0; i < N_players; i++)
+		if (Players[i].connected == CONNECT_PLAYING)
+			num++;
+
+	PHYSFS_write(fp, &tag, 4, 1);
+	PHYSFS_write(fp, &ver, 2, 1);
+	PHYSFS_write(fp, mission, 9, 1);
+	PHYSFS_write(fp, &level, 2, 1);
+	PHYSFS_write(fp, &num, 1, 1);
+
+	for (i = 0; i < N_players; i++) {
+		if (Players[i].connected != CONNECT_PLAYING)
+			continue;
+		coop_snapshot_player(i, &rec);
+		PHYSFS_write(fp, &rec, sizeof(rec), 1);
+	}
+
+	PHYSFS_close(fp);
+	con_printf(CON_NORMAL, "coop_save: wrote progress inventory (L%d, %d players)\n",
+		Current_level_num, num);
+}
+
+static int coop_progress_restore_attempted = 0;
+
+int coop_load_progress_inventory(void)
+{
+	PHYSFS_file *fp;
+	uint32_t tag;
+	uint16_t ver;
+	char mission[9];
+	int16_t level;
+	uint8_t num;
+	coop_player_record rec;
+	int i;
+	const char *host_callsign;
+	const char *host_client_id;
+	int host_restored = 0;
+
+	if (coop_progress_restore_attempted)
+		return 0;
+	coop_progress_restore_attempted = 1;
+
+	if (!(Game_mode & GM_MULTI_COOP))
+		return 0;
+	if (!multi_i_am_master())
+		return 0;
+
+	fp = PHYSFS_openRead("coop_progress_inventory.bin");
+	if (!fp)
+		return 0;
+
+	if (PHYSFS_read(fp, &tag, 4, 1) != 1 || tag != COOP_PROGRESS_INV_TAG) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+	if (PHYSFS_read(fp, &ver, 2, 1) != 1 || ver != COOP_PROGRESS_INV_VER) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+	if (PHYSFS_read(fp, mission, 9, 1) != 1) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+	if (PHYSFS_read(fp, &level, 2, 1) != 1) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+	if (PHYSFS_read(fp, &num, 1, 1) != 1 || num == 0 || num > MAX_PLAYERS) {
+		PHYSFS_close(fp);
+		return 0;
+	}
+
+	/* Validate: mission must match and level must be one behind current */
+	if (strncasecmp(mission, Current_mission_filename, 8) != 0) {
+		con_printf(CON_NORMAL, "coop_save: progress inventory mission mismatch ('%s' vs '%s')\n",
+			mission, Current_mission_filename);
+		PHYSFS_close(fp);
+		return 0;
+	}
+	if (level != Current_level_num - 1) {
+		con_printf(CON_NORMAL, "coop_save: progress inventory level mismatch (L%d vs current L%d)\n",
+			level, Current_level_num);
+		PHYSFS_close(fp);
+		return 0;
+	}
+
+	host_callsign = Players[Player_num].callsign;
+	host_client_id = Netgame.players[Player_num].client_id;
+
+	for (i = 0; i < num; i++) {
+		if (PHYSFS_read(fp, &rec, sizeof(rec), 1) != 1)
+			break;
+
+		/* Check if this record matches the host */
+		if (!host_restored &&
+		    ((host_client_id[0] && strncmp(rec.client_id, host_client_id, COOP_CLIENT_ID_LEN) == 0) ||
+		     strncasecmp(rec.callsign, host_callsign, COOP_CALLSIGN_LEN) == 0)) {
+			/* Apply directly to host; never restore keys across levels */
+			coop_apply_record_to_player(Player_num, &rec, 0);
+			host_restored = 1;
+			continue;
+		}
+
+		/* Add to absent list for other players to pick up on connect */
+		if (coop_num_absent < COOP_MAX_REMEMBERED_PLAYERS) {
+			rec.was_connected = 0;
+			memcpy(&coop_absent_list[coop_num_absent], &rec, sizeof(rec));
+			coop_num_absent++;
+		}
+	}
+
+	PHYSFS_close(fp);
+	con_printf(CON_NORMAL, "coop_save: loaded progress inventory (L%d, %d records, host_restored=%d, %d absent)\n",
+		level, (int)num, host_restored, coop_num_absent);
+	return 1;
+}
+
 void coop_write_progress_json(void)
 {
 	PHYSFS_file *fp;
-	char buf[512];
+	char buf[1024];
 	char players[256];
-	int i, n, off;
+	char client_ids[512];
+	int i, n, p_off, c_off;
 
 	if (!(Game_mode & GM_MULTI_COOP))
 		return;
 
-	/* Build JSON array of connected player callsigns */
-	off = 0;
+	/* Build JSON arrays of connected player callsigns and client_ids */
+	p_off = 0;
+	c_off = 0;
 	n = 0;
 	for (i = 0; i < N_players; i++) {
 		if (Players[i].connected != CONNECT_PLAYING)
 			continue;
-		if (n > 0)
-			off += snprintf(players + off, sizeof(players) - off, ", ");
-		off += snprintf(players + off, sizeof(players) - off,
+		if (n > 0) {
+			p_off += snprintf(players + p_off, sizeof(players) - p_off, ", ");
+			c_off += snprintf(client_ids + c_off, sizeof(client_ids) - c_off, ", ");
+		}
+		p_off += snprintf(players + p_off, sizeof(players) - p_off,
 			"\"%s\"", Players[i].callsign);
+		c_off += snprintf(client_ids + c_off, sizeof(client_ids) - c_off,
+			"\"%.36s\"", Netgame.players[i].client_id);
 		n++;
 	}
 
@@ -472,14 +722,16 @@ void coop_write_progress_json(void)
 		"  \"timestamp\": %u,\n"
 		"  \"difficulty\": %d,\n"
 		"  \"num_players\": %d,\n"
-		"  \"players\": [%s]\n"
+		"  \"players\": [%s],\n"
+		"  \"client_ids\": [%s]\n"
 		"}\n",
 		Current_mission_filename,
 		Current_level_num,
 		(unsigned)time(NULL),
 		Difficulty_level,
 		n,
-		players);
+		players,
+		client_ids);
 
 	fp = PHYSFS_openWrite("coop_progress.json");
 	if (!fp) {
@@ -491,6 +743,9 @@ void coop_write_progress_json(void)
 
 	con_printf(CON_NORMAL, "coop_save: wrote coop_progress.json (L%d, %d players)\n",
 		Current_level_num, n);
+
+	/* Write binary sidecar with per-player inventory */
+	coop_write_progress_inventory();
 }
 
 /* --- auto-restore --- */
@@ -564,6 +819,15 @@ void coop_arm_auto_restore(void)
 		GameArg.SysUsePlayersDir ? "Players/%s.mg%d" : "%s.mg%d",
 		Players[Player_num].callsign, slot);
 	gid = state_get_game_id(filename);
+	/* Autosaves use COOP_AUTOSAVE_CALLSIGN -- try that if the normal
+	 * filename doesn't work (same fallback as multi_restore_game) */
+	if (!gid &&
+	    slot >= COOP_AUTOSAVE_SLOT_FIRST && slot < COOP_AUTOSAVE_SLOT_FIRST + COOP_AUTOSAVE_SLOT_COUNT) {
+		snprintf(filename, PATH_MAX,
+			GameArg.SysUsePlayersDir ? "Players/%s.mg%d" : "%s.mg%d",
+			COOP_AUTOSAVE_CALLSIGN, slot);
+		gid = state_get_game_id(filename);
+	}
 	if (!gid) {
 		con_printf(CON_NORMAL, "coop_save: selected slot %d not viable\n", slot);
 		return;
@@ -611,4 +875,5 @@ void coop_disarm_auto_restore(void)
 {
 	coop_auto_restore_armed = 0;
 	coop_auto_restore_attempted = 0;
+	coop_progress_restore_attempted = 0;
 }

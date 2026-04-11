@@ -18,6 +18,7 @@ import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import java.lang.ref.WeakReference
+import java.net.DatagramSocket
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.security.SecureRandom
@@ -179,28 +180,55 @@ object MatchmakingService {
         stunOverrideAddrs = addrs
     }
 
-    /** Shut down any running proxy (e.g. when this player becomes host). */
-    fun shutdownLanProxy() {
+    fun shutdownProxy() {
         localhostProxy?.shutdown()
         localhostProxy = null
     }
 
-    /** Create a simple proxy for LAN joiner (one peer = the host). */
-    fun createLanProxy(
-        hostAddr: String,
-        hostPort: Int,
+    /**
+     * Create a proxy between the game engine (loopback) and the network.
+     * Used for both client-side (joining) and host-side (after migration)
+     * proxying -- the same system, just different configuration.
+     *
+     * @param listenPort if non-null, bind a shared socket on this port and
+     *                   accept dynamic peers (host/listening mode)
+     * @param peerAddr   if non-null, add an initial peer at this address
+     *                   (client/joining mode)
+     * @param peerPort   port for the initial peer (ignored if peerAddr is null)
+     */
+    fun createProxy(
+        listenPort: Int? = null,
+        peerAddr: String? = null,
+        peerPort: Int = NetworkConstants.ENGINE_PORT,
     ) {
         localhostProxy?.shutdown()
-        val proxy = LocalhostProxy(scope)
-        proxy.addPeer(
-            PeerProxyConfig(
-                peerSlot = 0,
-                localPort = NetworkConstants.PROXY_PORT_BASE,
-                realAddr = InetSocketAddress(hostAddr, hostPort),
-                isRelay = false,
-            ),
-        )
+        val sharedSocket =
+            if (listenPort != null) {
+                DatagramSocket(null).apply {
+                    reuseAddress = true
+                    bind(InetSocketAddress(listenPort))
+                }
+            } else {
+                null
+            }
+        val proxy =
+            LocalhostProxy(
+                scope,
+                sharedRealSocket = sharedSocket,
+                allowDynamicPeers = (listenPort != null),
+            )
+        if (peerAddr != null) {
+            proxy.addPeer(
+                PeerProxyConfig(
+                    peerSlot = 0,
+                    localPort = NetworkConstants.PROXY_PORT_BASE,
+                    realAddr = InetSocketAddress(peerAddr, peerPort),
+                    isRelay = false,
+                ),
+            )
+        }
         localhostProxy = proxy
+        Log.i("DXX-MP", "Proxy created: listen=${listenPort ?: "none"} peer=${peerAddr ?: "dynamic"}")
     }
 
     // Unique per app process -- ensures two emulators/devices get different player IDs

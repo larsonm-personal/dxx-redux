@@ -265,8 +265,8 @@ private fun PlayerCard(
 /**
  * Auto-offer matching coop saves to the host based on lobby player callsigns.
  * Matches saves from coop_autosave_history.json where the most current lobby
- * players appear in the save's callsign list. Auto-selects the best match;
- * the host can dismiss to "start fresh".
+ * players appear in the save's callsign list. Respects the restore slot
+ * already written by CreateGameDialog; the host can toggle restore/fresh.
  */
 @Composable
 private fun CoopSaveOffer(
@@ -289,7 +289,7 @@ private fun CoopSaveOffer(
         }
 
     // Score each save: prefer more matching callsigns, then newest
-    val bestMatch =
+    val scored =
         remember(saves, lobbyCallsigns) {
             saves
                 .mapNotNull { save ->
@@ -297,19 +297,24 @@ private fun CoopSaveOffer(
                         save.callsigns.count {
                             it.lowercase() in lobbyCallsigns
                         }
-                    if (matchCount > 0) Triple(save, matchCount, save.timestamp) else null
+                    if (matchCount > 0) Pair(save, matchCount) else null
                 }.sortedWith(
-                    compareByDescending<Triple<CoopSaveEntry, Int, Long>> {
+                    compareByDescending<Pair<CoopSaveEntry, Int>> {
                         it.second
-                    }.thenByDescending { it.third },
-                ).firstOrNull()
-                ?.first
-        } ?: return
+                    }.thenByDescending { it.first.timestamp },
+                )
+        }
+    val bestMatch = scored.firstOrNull()?.first ?: return
+    val bestMatchCount = scored.firstOrNull()?.second ?: 0
 
-    var useRestore by remember { mutableStateOf(true) }
+    // Initialize from existing restore slot (written by CreateGameDialog)
+    val existingSlot = remember(game) { readCoopRestoreSlot(filesDir, game) }
+    var useRestore by remember { mutableStateOf(existingSlot != null) }
 
-    // When the best match changes (players join/leave), re-select it
-    LaunchedEffect(bestMatch) { useRestore = true }
+    // When the best match changes (players join/leave), re-select if no slot was set
+    LaunchedEffect(bestMatch) {
+        if (existingSlot == null) useRestore = true
+    }
 
     // Write/delete coop_restore_slot.txt based on current selection
     LaunchedEffect(useRestore, bestMatch) {
@@ -318,18 +323,24 @@ private fun CoopSaveOffer(
 
     val mins = bestMatch.levelTimeSeconds / 60
     val secs = bestMatch.levelTimeSeconds % 60
+    val scoreStr = if (bestMatch.totalScore > 0) ", ${bestMatch.totalScore}pts" else ""
+    val matchStr = "$bestMatchCount/${bestMatch.numPlayers} match"
     val label =
-        "${bestMatch.numPlayers}p, level ${bestMatch.level}" +
+        "[Save] $matchStr: L${bestMatch.level}, ${bestMatch.numPlayers}p" +
             ", $mins:%02d played".format(secs) +
-            " - ${bestMatch.callsigns.joinToString()}" +
-            " - ${formatTimeAgo(bestMatch.timestamp)}"
+            "$scoreStr - ${formatTimeAgo(bestMatch.timestamp)}"
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Text("Save found: $label", style = MaterialTheme.typography.bodySmall)
+            Text(label, style = MaterialTheme.typography.bodySmall)
+            Text(
+                bestMatch.callsigns.joinToString(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (useRestore) {
                     Button(onClick = {}, modifier = Modifier.weight(1f)) {

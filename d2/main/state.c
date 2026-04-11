@@ -1800,6 +1800,9 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		if (coop_read_save_metadata(fp, pos_after_base, &coop_meta)) {
 			con_printf(CON_DEBUG, "coop_save: restored metadata (%d active, %d absent)",
 				coop_meta.num_active_players, coop_meta.num_absent_players);
+			/* Repopulate the absent player list so returning players get inventory back */
+			if (Game_mode & GM_MULTI_COOP)
+				coop_load_absent_from_metadata(&coop_meta);
 			/* Restore guidebot ownership state (v2+) */
 			if (coop_meta.version >= 2 && (Game_mode & GM_MULTI_COOP)) {
 				Buddy_allowed_to_talk = coop_meta.buddy_allowed_to_talk;

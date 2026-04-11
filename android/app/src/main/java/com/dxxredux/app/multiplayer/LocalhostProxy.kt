@@ -55,6 +55,7 @@ data class PeerProxyStats(
 class LocalhostProxy(
     private val scope: CoroutineScope,
     private val sharedRealSocket: DatagramSocket? = null,
+    private val allowDynamicPeers: Boolean = false,
 ) {
     private val peerProxies = mutableListOf<PeerProxy>()
     private val jobs = mutableListOf<Job>()
@@ -62,6 +63,10 @@ class LocalhostProxy(
     // Demux maps for shared-socket mode (concurrent for thread safety with receiver)
     private val directPeersByAddr = ConcurrentHashMap<String, PeerProxy>()
     private val relayPeersBySlot = ConcurrentHashMap<Int, PeerProxy>()
+
+    // Next slot for dynamic peer allocation when allowDynamicPeers is set
+    private var nextDynamicSlot = 0
+    private val maxDynamicPeers = 8
 
     // When active, the shared receive loop echoes DXPC probe requests from
     // unknown senders (for late-join NAT holepunching).
@@ -142,6 +147,46 @@ class LocalhostProxy(
     }
 
     /**
+     * Host mode: dynamically register a PeerProxy for a new source address.
+     * Called from sharedReceiveLoop when an unknown sender is detected.
+     * Returns the new PeerProxy or null on failure.
+     */
+    private fun addDynamicPeer(realAddr: InetSocketAddress): PeerProxy? {
+        val slot = nextDynamicSlot++
+        val localPort = NetworkConstants.PROXY_PORT_BASE + slot
+        val config =
+            PeerProxyConfig(
+                peerSlot = slot,
+                localPort = localPort,
+                realAddr = realAddr,
+                isRelay = false,
+            )
+        val proxy =
+            try {
+                PeerProxy(config, sharedRealSocket!!, ownsRealSocket = false)
+            } catch (e: java.net.BindException) {
+                Log.e(TAG, "Host-mode: failed to bind port $localPort for dynamic peer $realAddr: ${e.message}")
+                return null
+            }
+        peerProxies.add(proxy)
+        val addrKey = "${realAddr.address.hostAddress}:${realAddr.port}"
+        directPeersByAddr[addrKey] = proxy
+        // Start the local->real forwarding coroutine
+        jobs.add(
+            scope.launch(Dispatchers.IO) {
+                try {
+                    proxy.run()
+                } catch (_: kotlinx.coroutines.CancellationException) {
+                } catch (e: Exception) {
+                    Log.e(TAG, "Dynamic peer CRASHED slot=$slot: ${e.message}")
+                }
+            },
+        )
+        Log.i(TAG, "Host-mode: dynamic peer slot=$slot local=127.0.0.1:$localPort -> $addrKey")
+        return proxy
+    }
+
+    /**
      * Single receive loop for shared-socket mode. Reads all incoming packets
      * and dispatches to the correct PeerProxy by source address (direct) or
      * relay header from_slot (relay).
@@ -197,6 +242,16 @@ class LocalhostProxy(
                         }
                     }
                 }
+
+                // Dynamically create a PeerProxy for unknown senders
+                if (allowDynamicPeers && peerProxies.size < maxDynamicPeers) {
+                    val peer = addDynamicPeer(InetSocketAddress(pkt.address, pkt.port))
+                    if (peer != null) {
+                        peer.deliverIncoming(pkt.data, pkt.length)
+                        continue
+                    }
+                }
+
                 // Unmatched: stale probe, connectivity echo, or unknown sender
                 Log.w(
                     TAG,

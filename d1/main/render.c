@@ -1478,6 +1478,14 @@ void render_frame(fix eye_offset)
 
 	render_mine(start_seg_num,eye_offset);
 
+#ifdef __ANDROID__
+	/* android port: coop path indicator lines */
+	{
+		extern void coop_indicator_lines_render(void);
+		coop_indicator_lines_render();
+	}
+#endif
+
 	g3_end_frame();
 }
 

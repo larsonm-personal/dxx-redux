@@ -1377,6 +1377,8 @@ void multi_do_frame(void)
 	/* android port: auto-restore from coop auto-save (Phase 4) */
 	coop_arm_auto_restore();
 	coop_try_auto_restore();
+	/* android port: restore inventory from progress checkpoint (Track B) */
+	coop_load_progress_inventory();
 #endif
 
 	if ((Game_mode & GM_NETWORK) && Netgame.PlayTimeAllowed && lasttime!=f2i (ThisLevelTime))
@@ -1413,9 +1415,17 @@ void multi_do_frame(void)
 	/* android port: broadcast coop status once per second for QoL overlay */
 	{
 		static fix64 last_coop_status_time = 0;
+		static fix64 last_coop_autosave_time = 0;
 		if ((Game_mode & GM_MULTI_COOP) && timer_query() >= last_coop_status_time + F1_0) {
 			coop_send_peer_status();
 			last_coop_status_time = timer_query();
+		}
+		/* Periodic autosave every 30 seconds (host only, coop only) */
+		if ((Game_mode & GM_MULTI_COOP) && multi_i_am_master() &&
+		    !Endlevel_sequence && !Control_center_destroyed &&
+		    timer_query() >= last_coop_autosave_time + F1_0 * 30) {
+			coop_autosave();
+			last_coop_autosave_time = timer_query();
 		}
 	}
 #endif
@@ -2710,9 +2720,9 @@ void multi_disconnect_player(int pnum)
 					HUD_init_message_literal(HM_MULTI, "You are now the game host");
 					memset(object_owner, -1, sizeof(sbyte) * MAX_OBJECTS);
 					multi_powcap_count_powerups_in_mine();
-					/* Rebind socket to INADDR_ANY so rejoin packets from
-					 * the network interface can reach the engine */
-					net_udp_rebind_for_hosting();
+					/* Engine stays on loopback -- Kotlin host-mode proxy
+					 * will accept incoming connections on the network port
+					 * and forward to the engine via loopback */
 					/* Write migration info for Kotlin LAN broadcast */
 					mfp = PHYSFS_openWrite("host_migration.json");
 					if (mfp) {
@@ -3052,30 +3062,6 @@ multi_reset_stuff(void)
 	Multi_master_playernum = 0;  // android port: reset dynamic master on game end
 }
 
-// android port: diagnostic helper for assert crash investigation
-static const char *obj_type_name(int type)
-{
-	switch (type) {
-		case OBJ_NONE:     return "NONE";
-		case OBJ_WALL:     return "WALL";
-		case OBJ_FIREBALL: return "FIREBALL";
-		case OBJ_ROBOT:    return "ROBOT";
-		case OBJ_HOSTAGE:  return "HOSTAGE";
-		case OBJ_PLAYER:   return "PLAYER";
-		case OBJ_WEAPON:   return "WEAPON";
-		case OBJ_CAMERA:   return "CAMERA";
-		case OBJ_POWERUP:  return "POWERUP";
-		case OBJ_DEBRIS:   return "DEBRIS";
-		case OBJ_CNTRLCEN: return "CNTRLCEN";
-		case OBJ_FLARE:    return "FLARE";
-		case OBJ_CLUTTER:  return "CLUTTER";
-		case OBJ_GHOST:    return "GHOST";
-		case OBJ_LIGHT:    return "LIGHT";
-		case OBJ_COOP:     return "COOP";
-		default:           return "UNKNOWN";
-	}
-}
-
 void
 multi_reset_player_object(object *objp)
 {
@@ -3085,11 +3071,6 @@ multi_reset_player_object(object *objp)
 
 	Assert(objp >= Objects);
 	Assert(objp <= Objects+Highest_object_index);
-	if ((objp->type != OBJ_PLAYER) && (objp->type != OBJ_GHOST)) {
-		int idx = (int)(objp - Objects);
-		con_printf(CON_URGENT, "multi_reset_player_object: ASSERT WILL FIRE obj[%d] type=%d(%s) seg=%d id=%d\n",
-		           idx, objp->type, obj_type_name(objp->type), objp->segnum, objp->id);
-	}
 	Assert((objp->type == OBJ_PLAYER) || (objp->type == OBJ_GHOST));
 
 	vm_vec_zero(&objp->mtype.phys_info.velocity);
@@ -4143,16 +4124,6 @@ multi_prep_level(void)
 	for (i = 0; i < NumNetPlayerPositions; i++)
 	{
 		int objnum = Players[i].objnum;
-		// android port: diagnostics for type assert crash investigation
-		if (objnum < 0 || objnum > Highest_object_index) {
-			con_printf(CON_URGENT, "multi_prep_level: player %d objnum=%d OUT OF RANGE (Highest=%d)\n",
-			           i, objnum, Highest_object_index);
-		} else {
-			int t = Objects[objnum].type;
-			if (t != OBJ_PLAYER && t != OBJ_GHOST)
-				con_printf(CON_URGENT, "multi_prep_level: player %d objnum=%d type=%d(%s) -- UNEXPECTED\n",
-				           i, objnum, t, obj_type_name(t));
-		}
 		if (i != Player_num)
 			Objects[Players[i].objnum].control_type = CT_REMOTE;
 		Objects[Players[i].objnum].movement_type = MT_PHYSICS;
@@ -4947,14 +4918,21 @@ void multi_send_ship_status_for_frame()
 	multibuf[20] = (ubyte)Players[Player_num].secondary_weapon;
 	PUT_INTEL_INT(multibuf + 21, Players[Player_num].energy);
 	PUT_INTEL_INT(multibuf + 25, Players[Player_num].homing_object_dist);
+	/* android port: extended fields for coop inventory caching */
+	PUT_INTEL_INT(multibuf + 29, Players[Player_num].shields);
+	PUT_INTEL_INT(multibuf + 33, Players[Player_num].score);
+	PUT_INTEL_SHORT(multibuf + 37, Players[Player_num].primary_ammo[0]);
+	PUT_INTEL_SHORT(multibuf + 39, Players[Player_num].primary_ammo[2]);
+	PUT_INTEL_SHORT(multibuf + 41, Players[Player_num].primary_ammo[3]);
+	PUT_INTEL_SHORT(multibuf + 43, Players[Player_num].primary_ammo[4]);
 
 #ifdef __ANDROID__
 	/* android port: in coop, broadcast to all peers for QoL overlay */
 	if (Game_mode & GM_MULTI_COOP)
-		multi_send_data(multibuf, 29, 2);
+		multi_send_data(multibuf, 45, 2);
 	else
 #endif
-		multi_send_data_direct( multibuf, 29, multi_who_is_master(), 2);
+		multi_send_data_direct( multibuf, 45, multi_who_is_master(), 2);
 }
 
 void multi_do_ship_status( const ubyte *buf )
@@ -4975,20 +4953,35 @@ void multi_do_ship_status( const ubyte *buf )
 		Players[buf[1]].secondary_weapon = (sbyte)buf[20];
 		Players[buf[1]].energy = GET_INTEL_INT(buf + 21);
 		Players[buf[1]].homing_object_dist = GET_INTEL_INT(buf + 25);
+		Players[buf[1]].shields = GET_INTEL_INT(buf + 29);
+		Players[buf[1]].score = GET_INTEL_INT(buf + 33);
+		Players[buf[1]].primary_ammo[0] = GET_INTEL_SHORT(buf + 37);
+		Players[buf[1]].primary_ammo[2] = GET_INTEL_SHORT(buf + 39);
+		Players[buf[1]].primary_ammo[3] = GET_INTEL_SHORT(buf + 41);
+		Players[buf[1]].primary_ammo[4] = GET_INTEL_SHORT(buf + 43);
 	}
 #ifdef __ANDROID__
 	else if ((Game_mode & GM_MULTI_COOP) && buf[1] != Player_num)
 	{
-		/* android port: update remote player equipment for coop QoL overlay */
-		Players[buf[1]].laser_level = buf[2];
-		Players[buf[1]].primary_weapon_flags = buf[7];
-		Players[buf[1]].primary_weapon = (sbyte)buf[8];
-		Players[buf[1]].secondary_weapon_flags = buf[19];
-		Players[buf[1]].secondary_weapon = (sbyte)buf[20];
-		Players[buf[1]].energy = GET_INTEL_INT(buf + 21);
+		/* android port: update all remote player fields for coop caching */
+		int pnum = buf[1];
+		Players[pnum].laser_level = buf[2];
+		Players[pnum].flags = GET_INTEL_SHORT(buf + 3);
+		Players[pnum].primary_ammo[1] = GET_INTEL_SHORT(buf + 5);
+		Players[pnum].primary_weapon_flags = buf[7];
+		Players[pnum].primary_weapon = (sbyte)buf[8];
+		Players[pnum].secondary_weapon_flags = buf[19];
+		Players[pnum].secondary_weapon = (sbyte)buf[20];
+		Players[pnum].energy = GET_INTEL_INT(buf + 21);
+		Players[pnum].shields = GET_INTEL_INT(buf + 29);
+		Players[pnum].score = GET_INTEL_INT(buf + 33);
+		Players[pnum].primary_ammo[0] = GET_INTEL_SHORT(buf + 37);
+		Players[pnum].primary_ammo[2] = GET_INTEL_SHORT(buf + 39);
+		Players[pnum].primary_ammo[3] = GET_INTEL_SHORT(buf + 41);
+		Players[pnum].primary_ammo[4] = GET_INTEL_SHORT(buf + 43);
 		int i;
 		for (i = 0; i < MAX_SECONDARY_WEAPONS; i++)
-			Players[buf[1]].secondary_ammo[i] = GET_INTEL_SHORT(buf + 9 + i * 2);
+			Players[pnum].secondary_ammo[i] = GET_INTEL_SHORT(buf + 9 + i * 2);
 	}
 #endif
 }
@@ -5515,6 +5508,8 @@ multi_process_data(const ubyte *buf, int len)
 			coop_warp_do_packet(buf); break;
 		case MULTI_COOP_PEER_STATUS:
 			coop_do_peer_status(buf); break;
+		case MULTI_COOP_RESTORE_INV:
+			coop_do_restore_inventory(buf); break;
 #endif
 		default:
 			Int3();
@@ -5962,5 +5957,86 @@ void coop_do_peer_status(const ubyte *buf)
 		return;
 	Coop_kill_stats[pnum].robots_killed = GET_INTEL_SHORT(buf + 2);
 	Coop_kill_stats[pnum].score_earned = GET_INTEL_INT(buf + 4);
+}
+
+void coop_send_restore_inventory(int pnum)
+{
+	const coop_player_record *rec;
+	int i;
+
+	if (!(Game_mode & GM_MULTI_COOP))
+		return;
+	if (!multi_i_am_master())
+		return;
+
+	rec = coop_find_absent_player(Players[pnum].callsign,
+	                              Netgame.players[pnum].client_id);
+	if (!rec) {
+		con_printf(CON_NORMAL, "coop_restore: no cached inventory for '%s'\n",
+			Players[pnum].callsign);
+		return;
+	}
+
+	con_printf(CON_NORMAL, "coop_restore: sending inventory to P%d '%s' (shields=%d energy=%d laser=%d)\n",
+		pnum, rec->callsign, f2i(rec->shields), f2i(rec->energy), rec->laser_level);
+
+	multibuf[0] = MULTI_COOP_RESTORE_INV;
+	multibuf[1] = (ubyte)pnum;
+	PUT_INTEL_INT(multibuf + 2, rec->energy);
+	PUT_INTEL_INT(multibuf + 6, rec->shields);
+	PUT_INTEL_INT(multibuf + 10, rec->score);
+	multibuf[14] = rec->laser_level;
+	PUT_INTEL_SHORT(multibuf + 15, rec->primary_weapon_flags);
+	PUT_INTEL_SHORT(multibuf + 17, rec->secondary_weapon_flags);
+	for (i = 0; i < COOP_SAVE_MAX_WEAPONS; i++)
+		PUT_INTEL_SHORT(multibuf + 19 + i * 2, rec->primary_ammo[i]);
+	for (i = 0; i < COOP_SAVE_MAX_WEAPONS; i++)
+		PUT_INTEL_SHORT(multibuf + 39 + i * 2, rec->secondary_ammo[i]);
+	PUT_INTEL_INT(multibuf + 59, rec->flags);
+	PUT_INTEL_SHORT(multibuf + 63, rec->net_kills_total);
+	PUT_INTEL_SHORT(multibuf + 65, rec->net_killed_total);
+	PUT_INTEL_SHORT(multibuf + 67, rec->num_kills_total);
+	PUT_INTEL_SHORT(multibuf + 69, rec->hostages_rescued_total);
+	PUT_INTEL_INT(multibuf + 71, rec->time_total);
+	multibuf[75] = (ubyte)rec->hours_total;
+	PUT_INTEL_SHORT(multibuf + 76, Current_level_num);
+
+	multi_send_data(multibuf, 78, 2);
+}
+
+void coop_do_restore_inventory(const ubyte *buf)
+{
+	int pnum = buf[1];
+	int i;
+	coop_player_record rec;
+	int16_t saved_level;
+
+	if (pnum != Player_num)
+		return;
+	if (!(Game_mode & GM_MULTI_COOP))
+		return;
+
+	/* Unpack the network packet into a coop_player_record */
+	memset(&rec, 0, sizeof(rec));
+	rec.energy = GET_INTEL_INT(buf + 2);
+	rec.shields = GET_INTEL_INT(buf + 6);
+	rec.score = GET_INTEL_INT(buf + 10);
+	rec.laser_level = buf[14];
+	rec.primary_weapon_flags = GET_INTEL_SHORT(buf + 15);
+	rec.secondary_weapon_flags = GET_INTEL_SHORT(buf + 17);
+	for (i = 0; i < COOP_SAVE_MAX_WEAPONS; i++)
+		rec.primary_ammo[i] = GET_INTEL_SHORT(buf + 19 + i * 2);
+	for (i = 0; i < COOP_SAVE_MAX_WEAPONS; i++)
+		rec.secondary_ammo[i] = GET_INTEL_SHORT(buf + 39 + i * 2);
+	rec.flags = GET_INTEL_INT(buf + 59);
+	rec.net_kills_total = GET_INTEL_SHORT(buf + 63);
+	rec.net_killed_total = GET_INTEL_SHORT(buf + 65);
+	rec.num_kills_total = GET_INTEL_SHORT(buf + 67);
+	rec.hostages_rescued_total = GET_INTEL_SHORT(buf + 69);
+	rec.time_total = GET_INTEL_INT(buf + 71);
+	rec.hours_total = buf[75];
+
+	saved_level = GET_INTEL_SHORT(buf + 76);
+	coop_apply_record_to_player(pnum, &rec, saved_level == Current_level_num);
 }
 #endif

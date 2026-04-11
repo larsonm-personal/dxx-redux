@@ -991,11 +991,14 @@ class SetupActivity : ComponentActivity() {
                 intent: Intent?,
             ) {
                 val context = ctx ?: return
-                // This player is now the host -- shut down the loopback
-                // proxy so port 42430 is released cleanly before any
-                // future rejoin creates a fresh proxy
+                // This player is now the host. Replace the old client-mode
+                // proxy with a host-mode proxy that accepts incoming
+                // connections from the network while keeping the engine
+                // on loopback
+                val proxyPort =
+                    com.dxxredux.app.multiplayer.NetworkConstants.HOST_PROXY_PORT
                 com.dxxredux.app.multiplayer.MatchmakingService
-                    .shutdownLanProxy()
+                    .createProxy(listenPort = proxyPort)
                 // PhysFS write dir is filesDir/d2x-redux/ or d1x-redux/
                 val d2File = java.io.File(context.filesDir, "d2x-redux/host_migration.json")
                 val d1File = java.io.File(context.filesDir, "d1x-redux/host_migration.json")
@@ -1024,14 +1027,14 @@ class SetupActivity : ComponentActivity() {
                     val maxPlayers = json["max_players"]?.jsonPrimitive?.int ?: 4
                     Log.i(
                         "DXX-MP",
-                        "Host migration: resuming LAN broadcast as $callsign ($game/$mission lvl=$levelNum)",
+                        "Host migration: proxy on :$proxyPort, LAN broadcast as $callsign ($game/$mission lvl=$levelNum)",
                     )
                     com.dxxredux.app.lobby.LobbyService
                         .startDiscovery(context, callsign)
                     com.dxxredux.app.lobby.LobbyService
                         .hostLobby(callsign, game, mission, mode, maxPlayers)
                     com.dxxredux.app.lobby.LobbyService
-                        .startGame(difficulty, levelNum)
+                        .startGame(difficulty, levelNum, proxyPort)
                     // Clean up the migration file
                     file.delete()
                 } catch (e: Exception) {
@@ -1403,9 +1406,9 @@ class SetupActivity : ComponentActivity() {
             mpIntent.putExtra("mp_mode", "join")
             if (info.lanHostAddr != null) {
                 // LAN joiner: route through proxy for packet stats
-                com.dxxredux.app.multiplayer.MatchmakingService.createLanProxy(
-                    info.lanHostAddr,
-                    info.lanHostPort,
+                com.dxxredux.app.multiplayer.MatchmakingService.createProxy(
+                    peerAddr = info.lanHostAddr,
+                    peerPort = info.lanHostPort,
                 )
                 mpIntent.putExtra("mp_host_addr", "127.0.0.1")
                 mpIntent.putExtra("mp_host_port", NetworkConstants.PROXY_PORT_BASE)

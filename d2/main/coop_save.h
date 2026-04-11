@@ -20,7 +20,7 @@
 
 /* --- constants --- */
 #define COOP_SAVE_META_TAG           0x434F4F50  /* "COOP" */
-#define COOP_SAVE_META_VER           2
+#define COOP_SAVE_META_VER           3
 #define COOP_MAX_REMEMBERED_PLAYERS  16
 #define COOP_CLIENT_ID_LEN           36  /* UUID without null */
 #define COOP_SAVE_MAX_WEAPONS        10  /* max(d1=5, d2=10) */
@@ -45,6 +45,13 @@ typedef struct coop_player_record {
 	uint16_t primary_ammo[COOP_SAVE_MAX_WEAPONS];
 	uint16_t secondary_ammo[COOP_SAVE_MAX_WEAPONS];
 	uint32_t flags;               /* player flags (keys, powerups) */
+	/* v3 stats fields */
+	int16_t  net_kills_total;
+	int16_t  net_killed_total;
+	int16_t  num_kills_total;
+	uint16_t hostages_rescued_total;
+	fix      time_total;
+	int8_t   hours_total;
 } coop_player_record;
 
 /* --- trailer appended after existing coop save data --- */
@@ -102,17 +109,42 @@ void coop_clear_absent_players(void);
 int coop_get_num_absent_players(void);
 const coop_player_record *coop_get_absent_players(void);
 
+/* Find an absent player by client_id (preferred) or callsign (fallback).
+ * Returns pointer to the record, or NULL if not found. */
+const coop_player_record *coop_find_absent_player(const char *callsign,
+                                                   const char *client_id);
+
+/* Repopulate the absent player list from save metadata.
+ * Called after state_restore_all_sub() loads a coop save. */
+void coop_load_absent_from_metadata(const coop_save_metadata *meta);
+
 /* --- auto-save (Phase 3) --- */
 
 /* Trigger a coop auto-save to slot COOP_AUTOSAVE_SLOT.
  * Returns 1 on success, 0 if conditions prevent saving. */
 int coop_autosave(void);
 
+/* --- inventory application helper --- */
+
+/* Apply a saved player record to a live player slot.
+ * If same_level is true, key flags (blue/red/gold) are also restored.
+ * Updates ConsoleObject shields when pnum == Player_num. */
+void coop_apply_record_to_player(int pnum, const coop_player_record *rec,
+                                 int same_level);
+
 /* --- progress tracking (Phase 4) --- */
 
 /* Write coop_progress.json recording the last completed level.
- * Called at the end of each coop level (DoEndLevelScoreGlitz). */
+ * Called at the end of each coop level (DoEndLevelScoreGlitz).
+ * Also writes coop_progress_inventory.bin as a binary sidecar. */
 void coop_write_progress_json(void);
+
+/* Load progress inventory from coop_progress_inventory.bin.
+ * Populates the absent list for other players; directly restores the
+ * host's own inventory.  Returns 1 if inventory was loaded, 0 otherwise.
+ * Only loads if the mission matches and level_num == Current_level_num - 1.
+ * Called once at coop game start (one-shot gate). */
+int coop_load_progress_inventory(void);
 
 /* --- auto-restore (Phase 4) --- */
 

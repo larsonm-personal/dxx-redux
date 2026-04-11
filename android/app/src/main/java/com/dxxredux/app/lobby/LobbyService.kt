@@ -135,6 +135,9 @@ object LobbyService {
 
     @Volatile private var inGameLevelNum: Int = -1
 
+    // Host proxy port override (non-zero after host migration with proxy)
+    @Volatile private var hostedHostPort: Int = NetworkConstants.ENGINE_PORT
+
     /**
      * Start discovery mode. Acquires multicast lock, opens the UDP socket,
      * and begins listening for ANNOUNCE packets.
@@ -172,6 +175,7 @@ object LobbyService {
         _diagnostics.value = ""
         _broadcastFailing.value = false
         consecutiveBroadcastFailures = 0
+        hostedHostPort = NetworkConstants.ENGINE_PORT
         closeSocket()
         NetLog.log("LAN", "Discovery stopped")
         Log.i(TAG, "LAN discovery stopped")
@@ -591,6 +595,7 @@ object LobbyService {
                 status = json.optString("status", "lobby"),
                 difficulty = json.optInt("difficulty", -1),
                 levelNum = json.optInt("level_num", -1),
+                hostPort = json.optInt("host_port", NetworkConstants.ENGINE_PORT),
             )
         lobbies[lobbyId] = DiscoveredLobby(announce = announce)
         publishLobbies()
@@ -803,17 +808,19 @@ object LobbyService {
     fun startGame(
         difficulty: Int,
         levelNum: Int,
+        hostPort: Int = NetworkConstants.ENGINE_PORT,
     ) {
         if (!_isHosting.value) return
         val lid = hostedLobbyId ?: return
         val players = _hostedLobbyPlayers.value
+        hostedHostPort = hostPort
 
         // Send START to every joiner (redundant sends for reliability)
         val data =
             buildStart(
                 lobbyId = lid,
                 hostAddress = "0.0.0.0", // joiners use senderAddr
-                hostPort = NetworkConstants.ENGINE_PORT,
+                hostPort = hostPort,
                 game = hostedGame,
                 mission = hostedMission,
                 mode = hostedMode,
@@ -932,6 +939,7 @@ object LobbyService {
                 isHost = false,
                 peers = emptyList(),
                 lanHostAddr = senderAddr,
+                lanHostPort = hostPort,
                 isLan = true,
             )
         NetLog.log("LAN", "Launch event emitted for joiner: game=$game host=$senderAddr")
@@ -1022,6 +1030,7 @@ object LobbyService {
                 status = if (gameStarted) "in_game" else "lobby",
                 difficulty = inGameDifficulty,
                 levelNum = inGameLevelNum,
+                hostPort = hostedHostPort,
             )
         sendBroadcast(data)
     }

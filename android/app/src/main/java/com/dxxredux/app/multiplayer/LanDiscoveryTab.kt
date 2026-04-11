@@ -640,6 +640,7 @@ private fun LanLobbyCard(
                                 isHost = false,
                                 peers = emptyList(),
                                 lanHostAddr = lobby.announce.hostAddress,
+                                lanHostPort = lobby.announce.hostPort,
                                 isLan = true,
                             ),
                         )
