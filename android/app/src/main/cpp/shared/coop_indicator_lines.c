@@ -22,6 +22,9 @@
 #include "kconfig.h"
 #include "window.h"
 #include "android_net_log.h"
+#include "wall.h"
+#include "switch.h"
+#include "cntrlcen.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "escort.h"
 #endif
@@ -85,6 +88,25 @@ static int find_nearest_player(void)
 	return best;
 }
 
+/* Find the segment containing the mine exit trigger, or -1 */
+static int find_exit_segment(void)
+{
+	int i, j;
+	for (i = 0; i < Num_triggers; i++) {
+#ifdef DXX_BUILD_DESCENT_II
+		if (Triggers[i].type != TT_EXIT)
+			continue;
+#else
+		if (!(Triggers[i].flags & TRIGGER_EXIT))
+			continue;
+#endif
+		for (j = 0; j < Num_walls; j++)
+			if (Walls[j].trigger == i)
+				return Walls[j].segnum;
+	}
+	return -1;
+}
+
 /* Compute a segment path between two segments into dst.
  * Overwrites the first waypoint with the player's actual position so
  * the line originates from the ship rather than a segment center. */
@@ -109,13 +131,23 @@ static void update_paths(void)
 {
 	int my_seg = ConsoleObject->segnum;
 
-	/* nearest player path */
+	/* nearest player path -- fall back to exit when reactor blown and
+	 * no other players are in the mine */
 	{
 		int pi = find_nearest_player();
 		if (pi >= 0) {
 			object *pobj = &Objects[Players[pi].objnum];
 			s_player_path.target_objnum = Players[pi].objnum;
 			compute_path(&s_player_path, my_seg, pobj->segnum);
+		} else if (Control_center_destroyed) {
+			int exit_seg = find_exit_segment();
+			if (exit_seg >= 0) {
+				s_player_path.target_objnum = -1;
+				compute_path(&s_player_path, my_seg, exit_seg);
+			} else {
+				s_player_path.count = 0;
+				s_player_path.target_objnum = -1;
+			}
 		} else {
 			s_player_path.count = 0;
 			s_player_path.target_objnum = -1;
@@ -123,12 +155,12 @@ static void update_paths(void)
 	}
 
 #ifdef DXX_BUILD_DESCENT_II
-	/* guidebot path -- always compute from player to guidebot */
-	if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index &&
+	/* guidebot path -- only show after guidebot has been released */
+	if (Buddy_allowed_to_talk &&
+	    Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index &&
 	    Objects[Buddy_objnum].type == OBJ_ROBOT) {
-		object *buddy = &Objects[Buddy_objnum];
 		s_buddy_path.target_objnum = Buddy_objnum;
-		compute_path(&s_buddy_path, my_seg, buddy->segnum);
+		compute_path(&s_buddy_path, my_seg, Objects[Buddy_objnum].segnum);
 	} else {
 		s_buddy_path.count = 0;
 		s_buddy_path.target_objnum = -1;
@@ -138,80 +170,73 @@ static void update_paths(void)
 
 /* -- drawing --------------------------------------------------------- */
 
-/* Check if a target object is currently visible on screen (its segment
- * is in the portal-rendered set). If so, no path line needed. */
-static int target_is_on_screen(int objnum)
-{
-	if (objnum < 0 || objnum > Highest_object_index)
-		return 0;
-	return seg_is_visible(Objects[objnum].segnum);
-}
-
-/* Draw a faint 3D path for visible segments, clipping lines against
- * a keep-out sphere around the player ship so the near-ship area
- * stays clear. */
+/* Draw a 3D path, clipping each line segment independently against
+ * a keep-out sphere (3x ship radius) centered on the player ship.
+ * For each segment A->B:
+ *   both outside sphere: draw full segment
+ *   A inside, B outside: clip A to sphere boundary, draw clipped->B
+ *   A outside, B inside: clip B to sphere boundary, draw A->clipped
+ *   both inside: skip */
 static void draw_path_lines(const indicator_path *path, int color)
 {
 	int i;
-	g3s_point prev_pt, cur_pt;
-	int prev_visible, cur_visible;
-	int prev_valid = 0;
-	int prev_in_keepout = 0;
-	int past_keepout = 0; /* once we exit the sphere, stay out */
-	fix prev_dist = 0;
 	fix keepout_r = ConsoleObject->size * KEEPOUT_RADIUS_MULT;
 
 	if (path->count < 2)
 		return;
 
-	/* skip if the target is already visible on screen */
-	if (target_is_on_screen(path->target_objnum))
-		return;
-
 	gr_setcolor(color);
 	gr_settransblend(LINE_FADE_LEVEL, GR_BLEND_ADDITIVE_A);
 
-	for (i = 0; i < path->count; i++) {
-		fix dist = vm_vec_dist_quick(&ConsoleObject->pos,
-		                             &path->segs[i].point);
-		/* Only apply keepout near the start of the path; once clear
-		 * of the sphere, don't re-enter (mid-path segments can be
-		 * geographically close through walls) */
-		int in_keepout = (!past_keepout && dist < keepout_r);
-		if (!in_keepout && !past_keepout && prev_valid)
-			past_keepout = 1;
+	for (i = 0; i < path->count - 1; i++) {
+		const vms_vector *a = &path->segs[i].point;
+		const vms_vector *b = &path->segs[i + 1].point;
+		int seg_a = path->segs[i].segnum;
+		int seg_b = path->segs[i + 1].segnum;
+		fix da, db;
+		int a_in, b_in;
 
-		cur_visible = seg_is_visible(path->segs[i].segnum);
-		g3_rotate_point(&cur_pt, &path->segs[i].point);
+		/* only draw if at least one endpoint's segment is visible */
+		if (!seg_is_visible(seg_a) && !seg_is_visible(seg_b))
+			continue;
 
-		if (prev_valid && (prev_visible || cur_visible)) {
-			if (!prev_in_keepout && !in_keepout) {
-				/* both outside sphere -- draw full segment */
-				g3_draw_line(&prev_pt, &cur_pt);
-			} else if (prev_in_keepout && !in_keepout) {
-				/* crossing OUT of sphere: clip start to sphere boundary */
-				fix t_den = dist - prev_dist;
-				if (t_den > 0) {
-					vms_vector delta, clipped;
-					g3s_point clipped_pt;
-					fix t = fixdiv(keepout_r - prev_dist, t_den);
-					vm_vec_sub(&delta, &path->segs[i].point,
-					           &path->segs[i - 1].point);
-					vm_vec_scale_add(&clipped,
-					                 &path->segs[i - 1].point,
-					                 &delta, t);
-					g3_rotate_point(&clipped_pt, &clipped);
-					g3_draw_line(&clipped_pt, &cur_pt);
-				}
+		da = vm_vec_dist_quick(&ConsoleObject->pos, a);
+		db = vm_vec_dist_quick(&ConsoleObject->pos, b);
+		a_in = (da < keepout_r);
+		b_in = (db < keepout_r);
+
+		if (a_in && b_in)
+			continue; /* both inside sphere */
+
+		if (!a_in && !b_in) {
+			/* both outside -- draw full segment */
+			g3s_point pa, pb;
+			g3_rotate_point(&pa, a);
+			g3_rotate_point(&pb, b);
+			g3_draw_line(&pa, &pb);
+		} else {
+			/* one inside, one outside -- clip to sphere boundary */
+			fix t_den = db - da;
+			if (t_den == 0)
+				continue;
+			/* t is the fractional position along A->B where the sphere
+			 * boundary is crossed: dist(lerp(A,B,t)) == keepout_r */
+			fix t = fixdiv(keepout_r - da, t_den);
+			vms_vector delta, clipped;
+			g3s_point p_out, p_clip;
+			vm_vec_sub(&delta, b, a);
+			vm_vec_scale_add(&clipped, a, &delta, t);
+			g3_rotate_point(&p_clip, &clipped);
+			if (a_in) {
+				/* A inside, B outside: draw clipped->B */
+				g3_rotate_point(&p_out, b);
+				g3_draw_line(&p_clip, &p_out);
+			} else {
+				/* A outside, B inside: draw A->clipped */
+				g3_rotate_point(&p_out, a);
+				g3_draw_line(&p_out, &p_clip);
 			}
-			/* no INTO-sphere or both-inside cases after past_keepout */
 		}
-
-		prev_pt = cur_pt;
-		prev_visible = cur_visible;
-		prev_in_keepout = in_keepout;
-		prev_dist = dist;
-		prev_valid = 1;
 	}
 
 	gr_settransblend(GR_FADE_OFF, GR_BLEND_NORMAL);
@@ -285,15 +310,6 @@ void coop_indicator_lines_render(void)
 			android_net_log("COOP", _diag_buf);
 		}
 	}
-
-	/* re-anchor first waypoint to current player position every frame
-	 * so the keepout-sphere distance for point 0 is always 0 */
-	if (s_player_path.count > 0)
-		s_player_path.segs[0].point = ConsoleObject->pos;
-#ifdef DXX_BUILD_DESCENT_II
-	if (s_buddy_path.count > 0)
-		s_buddy_path.segs[0].point = ConsoleObject->pos;
-#endif
 
 	color_green = BM_XRGB(10, 31, 10);
 	color_blue = BM_XRGB(10, 10, 31);

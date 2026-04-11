@@ -850,8 +850,15 @@ void coop_try_auto_restore(void)
 	con_printf(CON_NORMAL, "coop_save: triggering auto-restore from slot %d (game_id=%u)\n",
 		coop_auto_restore_slot, coop_auto_restore_game_id);
 
+	/* Disarm BEFORE triggering restore -- multi_restore_game may open a
+	 * modal dialog or call state_restore_all_sub which runs game frames,
+	 * re-entering this function.  With armed still set, that caused
+	 * consecutive restore attempts per frame until timeout */
+	coop_auto_restore_armed = 0;
+
 	multi_send_restore_game(coop_auto_restore_slot, coop_auto_restore_game_id);
 	multi_restore_game(coop_auto_restore_slot, coop_auto_restore_game_id);
+	return;
 
 disarm:
 	coop_auto_restore_armed = 0;

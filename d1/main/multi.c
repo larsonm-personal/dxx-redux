@@ -5330,10 +5330,21 @@ void multi_restore_game(ubyte slot, uint id)
 
 	snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir? "Players/%s.mg%d" : "%s.mg%d", Players[Player_num].callsign, slot);
 #ifdef __ANDROID__
-	if (!PHYSFSX_exists(filename, 0) &&
-	    slot >= COOP_AUTOSAVE_SLOT_FIRST && slot < COOP_AUTOSAVE_SLOT_FIRST + COOP_AUTOSAVE_SLOT_COUNT) {
-		snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir ? "Players/%s.mg%d" : "%s.mg%d",
-			COOP_AUTOSAVE_CALLSIGN, slot);
+	/* Autosaves use COOP_AUTOSAVE_CALLSIGN -- try that if the normal
+	 * filename doesn't exist OR exists but has the wrong game_id.
+	 * coop_arm_auto_restore already does this fallback when arming;
+	 * multi_restore_game must mirror it or it picks up an old callsign
+	 * save with the wrong game_id and shows the "you must rejoin" dialog */
+	if (slot >= COOP_AUTOSAVE_SLOT_FIRST && slot < COOP_AUTOSAVE_SLOT_FIRST + COOP_AUTOSAVE_SLOT_COUNT) {
+		int need_fallback = !PHYSFSX_exists(filename, 0);
+		if (!need_fallback) {
+			int fid = state_get_game_id(filename);
+			if (fid != (int)id && fid != (int)COOP_AUTOSAVE_GAME_ID)
+				need_fallback = 1;
+		}
+		if (need_fallback)
+			snprintf(filename, PATH_MAX, GameArg.SysUsePlayersDir ? "Players/%s.mg%d" : "%s.mg%d",
+				COOP_AUTOSAVE_CALLSIGN, slot);
 	}
 	if (!PHYSFSX_exists(filename, 0)) {
 		con_printf(CON_NORMAL, "multi_restore_game: save file missing, skipping restore (peer)");
