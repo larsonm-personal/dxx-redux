@@ -52,6 +52,7 @@ typedef struct coop_player_record {
 	uint16_t hostages_rescued_total;
 	fix      time_total;
 	int8_t   hours_total;
+	uint8_t  original_slot;        /* player slot index at save time */
 } coop_player_record;
 
 /* --- trailer appended after existing coop save data --- */

@@ -67,7 +67,16 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef __ANDROID__
 #include "coop_save.h"
 #include "coop_warp.h"
+#include "coop_indicator_lines.h"
 #include "android_crash_handler.h"
+#include "android_net_log.h"
+#include <android/log.h>
+#define COOPLOG(fmt, ...) do { \
+	char _cl_buf[256]; \
+	snprintf(_cl_buf, sizeof(_cl_buf), fmt, ##__VA_ARGS__); \
+	con_printf(CON_NORMAL, "%s", _cl_buf); \
+	android_net_log("COOP", _cl_buf); \
+} while(0)
 #endif
 #include "automap.h"
 #include "robot.h"
@@ -1425,6 +1434,31 @@ void multi_do_frame(void)
 	coop_try_auto_restore();
 	/* android port: restore inventory from progress checkpoint (Track B) */
 	coop_load_progress_inventory();
+	/* android port: dump control state at coop start for debugging.
+	 * Runs for the first 60 frames of each coop level, logging every 10. */
+	if (Game_mode & GM_MULTI_COOP) {
+		static int coop_diag_level = -1;
+		static int coop_diag_remaining = 0;
+		if (Current_level_num != coop_diag_level) {
+			coop_diag_level = Current_level_num;
+			coop_diag_remaining = 60;
+		}
+		if (coop_diag_remaining > 0) {
+			coop_diag_remaining--;
+			if (coop_diag_remaining % 10 == 0) {
+				extern int Player_is_dead;
+				COOPLOG("start[%d]: ct=%d mt=%d pf=0x%x dead=%d objtype=%d objid=%d Pnum=%d",
+					coop_diag_remaining,
+					ConsoleObject->control_type,
+					ConsoleObject->movement_type,
+					ConsoleObject->mtype.phys_info.flags,
+					Player_is_dead,
+					ConsoleObject->type,
+					ConsoleObject->id,
+					Player_num);
+			}
+		}
+	}
 #endif
 
 	if ((Game_mode & GM_NETWORK) && Netgame.PlayTimeAllowed && lasttime!=f2i (ThisLevelTime))
@@ -6836,9 +6870,10 @@ void multi_restore_game(ubyte slot, uint id)
 	/* If still missing (peer doesn't have autosave), skip gracefully --
 	 * the host will sync us through normal multiplayer sync */
 	if (!PHYSFSX_exists(filename, 0)) {
-		con_printf(CON_NORMAL, "multi_restore_game: save file missing, skipping restore (peer)");
+		COOPLOG("multi_restore_game: file missing '%s', skipping (peer)", filename);
 		return;
 	}
+	COOPLOG("multi_restore_game: file='%s' slot=%d id=%u", filename, slot, id);
 #endif
    
 	for (i = 0; i < N_players; i++)

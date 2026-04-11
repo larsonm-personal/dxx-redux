@@ -293,7 +293,11 @@ static json serialize_position()
 		/* Forward vector -- lets tests detect orientation changes */
 		{ "fvec_x", f2fl(ConsoleObject->orient.fvec.x) },
 		{ "fvec_y", f2fl(ConsoleObject->orient.fvec.y) },
-		{ "fvec_z", f2fl(ConsoleObject->orient.fvec.z) }
+		{ "fvec_z", f2fl(ConsoleObject->orient.fvec.z) },
+		/* Object state -- for diagnosing stuck controls after coop restore */
+		{ "control_type", (int) ConsoleObject->control_type },
+		{ "movement_type", (int) ConsoleObject->movement_type },
+		{ "physics_flags", (unsigned) ConsoleObject->mtype.phys_info.flags }
 	};
 	return pos;
 }

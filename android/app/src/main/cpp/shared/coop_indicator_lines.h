@@ -9,5 +9,8 @@
  * Handles both path update (throttled) and drawing. */
 void coop_indicator_lines_render(void);
 
+/* Trigger per-frame diagnostic logging after a coop restore */
+void coop_indicator_diag_trigger(void);
+
 #endif /* __ANDROID__ */
 #endif /* COOP_INDICATOR_LINES_H */

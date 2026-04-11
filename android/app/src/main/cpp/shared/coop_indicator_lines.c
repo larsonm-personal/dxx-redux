@@ -18,6 +18,10 @@
 #include "render.h"
 #include "ai.h"
 #include "aistruct.h"
+#include "console.h"
+#include "kconfig.h"
+#include "window.h"
+#include "android_net_log.h"
 #ifdef DXX_BUILD_DESCENT_II
 #include "escort.h"
 #endif
@@ -143,8 +147,9 @@ static int target_is_on_screen(int objnum)
 	return seg_is_visible(Objects[objnum].segnum);
 }
 
-/* Draw a faint 3D path for visible segments, skipping lines inside
- * a keep-out sphere around the player ship. */
+/* Draw a faint 3D path for visible segments, clipping lines against
+ * a keep-out sphere around the player ship so the near-ship area
+ * stays clear. */
 static void draw_path_lines(const indicator_path *path, int color)
 {
 	int i;
@@ -152,6 +157,8 @@ static void draw_path_lines(const indicator_path *path, int color)
 	int prev_visible, cur_visible;
 	int prev_valid = 0;
 	int prev_in_keepout = 0;
+	int past_keepout = 0; /* once we exit the sphere, stay out */
+	fix prev_dist = 0;
 	fix keepout_r = ConsoleObject->size * KEEPOUT_RADIUS_MULT;
 
 	if (path->count < 2)
@@ -167,37 +174,55 @@ static void draw_path_lines(const indicator_path *path, int color)
 	for (i = 0; i < path->count; i++) {
 		fix dist = vm_vec_dist_quick(&ConsoleObject->pos,
 		                             &path->segs[i].point);
-		int in_keepout = (dist < keepout_r);
+		/* Only apply keepout near the start of the path; once clear
+		 * of the sphere, don't re-enter (mid-path segments can be
+		 * geographically close through walls) */
+		int in_keepout = (!past_keepout && dist < keepout_r);
+		if (!in_keepout && !past_keepout && prev_valid)
+			past_keepout = 1;
 
 		cur_visible = seg_is_visible(path->segs[i].segnum);
 		g3_rotate_point(&cur_pt, &path->segs[i].point);
 
 		if (prev_valid && (prev_visible || cur_visible)) {
 			if (!prev_in_keepout && !in_keepout) {
-				/* both outside sphere, draw normally */
+				/* both outside sphere -- draw full segment */
 				g3_draw_line(&prev_pt, &cur_pt);
 			} else if (prev_in_keepout && !in_keepout) {
-				/* crossing out of sphere: clip start to boundary */
-				vms_vector from_player, clipped;
-				g3s_point clipped_pt;
-				vm_vec_sub(&from_player, &path->segs[i].point,
-				           &ConsoleObject->pos);
-				vm_vec_normalize_quick(&from_player);
-				vm_vec_scale_add(&clipped, &ConsoleObject->pos,
-				                 &from_player, keepout_r);
-				g3_rotate_point(&clipped_pt, &clipped);
-				g3_draw_line(&clipped_pt, &cur_pt);
+				/* crossing OUT of sphere: clip start to sphere boundary */
+				fix t_den = dist - prev_dist;
+				if (t_den > 0) {
+					vms_vector delta, clipped;
+					g3s_point clipped_pt;
+					fix t = fixdiv(keepout_r - prev_dist, t_den);
+					vm_vec_sub(&delta, &path->segs[i].point,
+					           &path->segs[i - 1].point);
+					vm_vec_scale_add(&clipped,
+					                 &path->segs[i - 1].point,
+					                 &delta, t);
+					g3_rotate_point(&clipped_pt, &clipped);
+					g3_draw_line(&clipped_pt, &cur_pt);
+				}
 			}
-			/* both inside or crossing into sphere: skip */
+			/* no INTO-sphere or both-inside cases after past_keepout */
 		}
 
 		prev_pt = cur_pt;
 		prev_visible = cur_visible;
 		prev_in_keepout = in_keepout;
+		prev_dist = dist;
 		prev_valid = 1;
 	}
 
 	gr_settransblend(GR_FADE_OFF, GR_BLEND_NORMAL);
+}
+
+/* -- post-restore diagnostics ---------------------------------------- */
+static int s_diag_frames;
+
+void coop_indicator_diag_trigger(void)
+{
+	s_diag_frames = 120; /* ~4 seconds, logged every 10th frame */
 }
 
 /* -- common coop check ----------------------------------------------- */
@@ -226,6 +251,49 @@ void coop_indicator_lines_render(void)
 		s_frame_counter = PATH_UPDATE_INTERVAL;
 	}
 	s_frame_counter--;
+
+	/* per-frame diagnostics after coop restore (every 10th frame) */
+	if (s_diag_frames > 0) {
+		s_diag_frames--;
+		if (s_diag_frames % 10 == 0) {
+			extern int Player_is_dead;
+			extern window *Game_wind;
+			char _diag_buf[512];
+			int gw_front = (Game_wind && Game_wind == window_get_front());
+			snprintf(_diag_buf, sizeof(_diag_buf),
+			         "diag[%d]: ct=%d mt=%d pf=0x%x dead=%d"
+			         " vel=%d,%d,%d thrust=%d,%d,%d"
+			         " fwd=%d pitch=%d hdg=%d side=%d"
+			         " gw_front=%d",
+			         s_diag_frames,
+			         ConsoleObject->control_type,
+			         ConsoleObject->movement_type,
+			         ConsoleObject->mtype.phys_info.flags,
+			         Player_is_dead,
+			         ConsoleObject->mtype.phys_info.velocity.x,
+			         ConsoleObject->mtype.phys_info.velocity.y,
+			         ConsoleObject->mtype.phys_info.velocity.z,
+			         ConsoleObject->mtype.phys_info.thrust.x,
+			         ConsoleObject->mtype.phys_info.thrust.y,
+			         ConsoleObject->mtype.phys_info.thrust.z,
+			         Controls.forward_thrust_time,
+			         Controls.pitch_time,
+			         Controls.heading_time,
+			         Controls.sideways_thrust_time,
+			         gw_front);
+			con_printf(CON_NORMAL, "%s", _diag_buf);
+			android_net_log("COOP", _diag_buf);
+		}
+	}
+
+	/* re-anchor first waypoint to current player position every frame
+	 * so the keepout-sphere distance for point 0 is always 0 */
+	if (s_player_path.count > 0)
+		s_player_path.segs[0].point = ConsoleObject->pos;
+#ifdef DXX_BUILD_DESCENT_II
+	if (s_buddy_path.count > 0)
+		s_buddy_path.segs[0].point = ConsoleObject->pos;
+#endif
 
 	color_green = BM_XRGB(10, 31, 10);
 	color_blue = BM_XRGB(10, 10, 31);

@@ -61,6 +61,7 @@ void coop_snapshot_player(int pnum, coop_player_record *rec)
 	rec->hostages_rescued_total = p->hostages_rescued_total;
 	rec->time_total = p->time_total;
 	rec->hours_total = p->hours_total;
+	rec->original_slot = (uint8_t)pnum;
 }
 
 void coop_write_save_metadata(void *fp)
@@ -777,14 +778,16 @@ void coop_arm_auto_restore(void)
 	uint gid;
 	int slot;
 
+	/* Only attempt once per level -- if already attempted (or armed),
+	 * don't reset the state variables */
+	if (coop_auto_restore_attempted)
+		return;
+	coop_auto_restore_attempted = 1;
+
 	coop_auto_restore_armed = 0;
 	coop_auto_restore_game_id = 0;
 	coop_auto_restore_slot = COOP_AUTOSAVE_SLOT;
 	coop_auto_restore_frames_waited = 0;
-
-	if (coop_auto_restore_attempted)
-		return;
-	coop_auto_restore_attempted = 1;
 
 	if (!(Game_mode & GM_MULTI_COOP))
 		return;
