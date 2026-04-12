@@ -29,10 +29,17 @@
 
 #include "cue_parser.h"
 #include "hfs_reader.h"
+#include "mac_hfs_extract.h"
 #include "sti2_extract.h"
 
 #define PRIMARY_CUE_PATH   "../../../../../../game_data/CD images/Descent - Mac macplay/Descent - Mac macplay.cue"
 #define PRIMARY_OUTPUT_DIR "../../../../../../game_data/CD images/Descent - Mac macplay/data_tracks"
+
+#ifdef _WIN32
+#define remove_dir _rmdir
+#else
+#define remove_dir rmdir
+#endif
 
 static int tests_run;
 static int tests_passed;
@@ -290,6 +297,19 @@ static int files_match_exact(const char *actual_path, const char *expected_path)
 	return 1;
 }
 
+static void cleanup_test_output_dir(const char *dir, const char *const *files, int count)
+{
+	int i;
+
+	for (i = 0; i < count; i++) {
+		char path[1024];
+
+		path_join(path, sizeof(path), dir, files[i]);
+		remove(path);
+	}
+	remove_dir(dir);
+}
+
 static int run_header_reject_test(void)
 {
 	unsigned char bogus[STI2_PATH_LEN];
@@ -488,6 +508,72 @@ static int run_real_archive_extract_test(void)
 	return 1;
 }
 
+static int run_real_native_mac_extract_test(void)
+{
+	static const char *expected_names[] = {
+		"CHAOS.MSN",
+		"CHAOS.HOG",
+		"Descent",
+		"demo1.dem",
+		"descent.hog",
+		"descent.pig",
+		"watchme.dem",
+		"yep9.dem"
+	};
+	const char *output_dir = "test_sti2_native_extract";
+	cue_data_track_t track;
+	int extracted;
+	int i;
+
+	TEST("real_primary_macplay_native_extract_matches_oracles");
+	if (!file_exists(PRIMARY_CUE_PATH)) {
+		SKIP("sample media not present");
+		return 1;
+	}
+
+	cleanup_test_output_dir(output_dir, expected_names,
+	                        (int) (sizeof(expected_names) / sizeof(expected_names[0])));
+	if (open_cue_data_track(PRIMARY_CUE_PATH, &track) < 0) {
+		FAIL("could not open MacPlay data track");
+		return 0;
+	}
+
+	extracted = mac_extract_files_from_hfs_track(track.fd,
+	                                             track.track_start_sector,
+	                                             track.track_num_sectors,
+	                                             output_dir,
+	                                             NULL,
+	                                             NULL,
+	                                             NULL,
+	                                             NULL);
+	close_cue_data_track(&track);
+	if (extracted != (int) (sizeof(expected_names) / sizeof(expected_names[0]))) {
+		cleanup_test_output_dir(output_dir, expected_names,
+		                        (int) (sizeof(expected_names) / sizeof(expected_names[0])));
+		FAIL("unexpected extracted count");
+		return 0;
+	}
+
+	for (i = 0; i < (int) (sizeof(expected_names) / sizeof(expected_names[0])); i++) {
+		char actual_path[1024];
+		char expected_path[1024];
+
+		path_join(actual_path, sizeof(actual_path), output_dir, expected_names[i]);
+		path_join(expected_path, sizeof(expected_path), PRIMARY_OUTPUT_DIR, expected_names[i]);
+		if (!file_exists(actual_path) || !files_match_exact(actual_path, expected_path)) {
+			cleanup_test_output_dir(output_dir, expected_names,
+			                        (int) (sizeof(expected_names) / sizeof(expected_names[0])));
+			FAIL("native extraction output mismatch");
+			return 0;
+		}
+	}
+
+	cleanup_test_output_dir(output_dir, expected_names,
+	                        (int) (sizeof(expected_names) / sizeof(expected_names[0])));
+	PASS();
+	return 1;
+}
+
 int main(void)
 {
 	int ok = 1;
@@ -499,6 +585,8 @@ int main(void)
 	if (!run_real_archive_listing_test())
 		ok = 0;
 	if (!run_real_archive_extract_test())
+		ok = 0;
+	if (!run_real_native_mac_extract_test())
 		ok = 0;
 
 	printf("\nSummary: %d passed, %d skipped, %d total\n",

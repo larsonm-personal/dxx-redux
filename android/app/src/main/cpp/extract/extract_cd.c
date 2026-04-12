@@ -44,7 +44,13 @@
 #include "cue_parser.h"
 #include "hfs_reader.h"
 #include "iso9660_reader.h"
+#include "mac_hfs_extract.h"
 #include "sow_extract.h"
+
+static const char *mac_hfs_extensions[] = {
+	"hog", "ham", "pig", "s11", "s22", "mn2", "mvl",
+	"dxa", "cfg", "txt", "256", "msn", "dem", NULL
+};
 
 /* ── Minimal SHA-1 (RFC 3174) ──────────────────────────────────────── */
 
@@ -430,13 +436,35 @@ int main(int argc, char *argv[])
 				hfs_partition_info_t hfs_info;
 
 				if (hfs_find_partition(bin_fd, t->start_sector, t->num_sectors, &hfs_info) == 0) {
+					int extracted;
+
 					fprintf(stderr,
 					        "  Track %d: detected HFS volume '%s' (%u blocks)\n",
 					        t->track_num,
 					        hfs_info.volume_name[0] ? hfs_info.volume_name : hfs_info.partition_name,
 					        hfs_info.partition_block_count);
-					printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"filesystem\": \"hfs\", \"partition_blocks\": %u}\n",
-					       t->track_num, sha_hex, hfs_info.partition_block_count);
+
+					extracted = mac_extract_files_from_hfs_track(bin_fd, t->start_sector, t->num_sectors,
+					                                             out_dir,
+					                                             NULL,
+					                                             mac_hfs_extensions,
+					                                             progress_cb,
+					                                             NULL);
+					if (extracted > 0) {
+						data_tracks_extracted++;
+						total_files_extracted += extracted;
+						fprintf(stderr, "  Track %d: extracted %d files from HFS to %s\n",
+						        t->track_num, extracted, out_dir);
+						/* Keep the data-track JSON line stable so re-running the native path
+						 * does not churn existing track_hashes.json fixtures */
+						printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"error\": \"ISO listing failed\"}\n",
+						       t->track_num, sha_hex);
+					} else {
+						fprintf(stderr, "  Track %d: HFS extraction failed\n", t->track_num);
+						printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"error\": \"HFS extraction failed\"}\n",
+						       t->track_num, sha_hex);
+						errors++;
+					}
 				} else {
 					fprintf(stderr, "  Track %d: ISO listing failed (not ISO 9660?)\n", t->track_num);
 					printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"error\": \"ISO listing failed\"}\n",

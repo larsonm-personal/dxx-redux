@@ -182,6 +182,67 @@ function Send-SetupCommand {
     Adb -CmdArgs $args_ | Out-Null
 }
 
+function Send-SetupCdImport {
+    param(
+        [string]$CuePath,
+        [string]$BinPath,
+        [bool]$IncludeAudio = $true
+    )
+
+    $args_ = @(
+        'shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+        '--es', 'command', 'import_cd',
+        '--es', 'cue_path', $CuePath,
+        '--es', 'bin_path', $BinPath,
+        '--ez', 'include_audio', $(if ($IncludeAudio) { 'true' } else { 'false' })
+    )
+    Adb -CmdArgs $args_ | Out-Null
+}
+
+function Ensure-AppPrivateFile {
+    param(
+        [string]$LocalPath,
+        [string]$RemoteRelativePath,
+        [int]$TimeoutSeconds = 900
+    )
+
+    $RemoteRelativePath = $RemoteRelativePath -replace '\\', '/'
+    $localItem = Get-Item $LocalPath
+    $remoteSize = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'stat', '-c', '%s', $RemoteRelativePath)
+    if ($remoteSize -match '^\d+$' -and [long]$remoteSize -eq $localItem.Length) {
+        Write-Status "  Reusing staged source: $RemoteRelativePath" 'Gray'
+        return
+    }
+
+    $stagingName = [System.IO.Path]::GetFileName($RemoteRelativePath)
+    $stagingPath = "/data/local/tmp/$stagingName"
+    $remoteDir = (Split-Path $RemoteRelativePath -Parent) -replace '\\', '/'
+    Write-Status "  Pushing $(Split-Path $LocalPath -Leaf) -> $RemoteRelativePath" 'Gray'
+    Adb -CmdArgs @('push', $LocalPath, $stagingPath) -Timeout $TimeoutSeconds | Out-Null
+    Adb -CmdArgs @('shell', 'chmod', '644', $stagingPath) | Out-Null
+    Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'mkdir', '-p', $remoteDir) | Out-Null
+
+    $psi = [System.Diagnostics.ProcessStartInfo]::new()
+    $psi.FileName = $ADB
+    $psi.Arguments = "shell run-as $PACKAGE sh -c 'cat $stagingPath > $RemoteRelativePath'"
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $proc = [System.Diagnostics.Process]::Start($psi)
+    $null = $proc.StandardError.ReadToEndAsync()
+    $null = $proc.StandardOutput.ReadToEnd()
+    $proc.WaitForExit(($TimeoutSeconds * 1000)) | Out-Null
+    if (-not $proc.HasExited) { try { $proc.Kill() } catch {} }
+    $proc.Dispose()
+    Adb -CmdArgs @('shell', 'rm', '-f', $stagingPath) | Out-Null
+
+    $remoteSize = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'stat', '-c', '%s', $RemoteRelativePath)
+    if ($remoteSize -notmatch '^\d+$' -or [long]$remoteSize -ne $localItem.Length) {
+        throw "App-private staging failed for $RemoteRelativePath"
+    }
+}
+
 function Push-FileToSet {
     # Push a local file to the active set dir via staging.
     param([string]$LocalPath, [string]$RemoteName)
@@ -224,6 +285,7 @@ if (-not (Test-Path $SpecPath)) {
 $spec = Read-Json5 $SpecPath
 $specDir = Split-Path (Resolve-Path $SpecPath) -Parent
 $sourceName = (Split-Path $specDir -Leaf)
+$useDirectCdImport = $spec.import_mode -eq 'setup_cd'
 
 # -- Result tracking ------------------------------------------
 # Track test result in script-scope vars. Exit-Test writes them to the spec file.
@@ -308,7 +370,13 @@ if (-not $canLaunch) {
 # -- Locate extracted files -----------------------------------
 
 $extractedDir = $null
-if ($spec.source_type -eq 'cd') {
+$filesToPush = @()
+if ($useDirectCdImport) {
+    if ($spec.source_type -ne 'cd') {
+        Write-Host "FAIL: import_mode=setup_cd only supports source_type=cd" -ForegroundColor Red
+        Exit-Test 1 'fail' 'source_missing'
+    }
+} elseif ($spec.source_type -eq 'cd') {
     $extractedDir = Join-Path $specDir 'data_tracks'
     # Some CDs organize into subdirs (d1data, d2data)
     if (-not (Test-Path $extractedDir)) {
@@ -326,32 +394,34 @@ if ($spec.source_type -eq 'cd') {
     }
 }
 
-# Collect all game files to push (recurse into subdirs, flatten).
-# Filter out 1-byte stubs (some ISO9660 extractions create case-variant symlinks).
-# Skip large optional files (MVLs, SOWs) to speed up testing.
-# Also deduplicate by lowercase name, preferring the larger file.
-$allGameFiles = Get-ChildItem $extractedDir -Recurse -File |
-    Where-Object {
-        $ext = $_.Extension.ToLower()
-        $GAME_EXTENSIONS -contains $ext -and $_.Length -gt 1 -and
-        $SKIP_LARGE_EXTENSIONS -notcontains $ext
+if (-not $useDirectCdImport) {
+    # Collect all game files to push (recurse into subdirs, flatten).
+    # Filter out 1-byte stubs (some ISO9660 extractions create case-variant symlinks).
+    # Skip large optional files (MVLs, SOWs) to speed up testing.
+    # Also deduplicate by lowercase name, preferring the larger file.
+    $allGameFiles = Get-ChildItem $extractedDir -Recurse -File |
+        Where-Object {
+            $ext = $_.Extension.ToLower()
+            $GAME_EXTENSIONS -contains $ext -and $_.Length -gt 1 -and
+            $SKIP_LARGE_EXTENSIONS -notcontains $ext
+        }
+
+    # Deduplicate: if both DESCENT2.HOG and descent2.hog exist, keep the larger one
+    $dedup = @{}
+    foreach ($f in $allGameFiles) {
+        $key = $f.Name.ToLower()
+        if (-not $dedup.ContainsKey($key) -or $f.Length -gt $dedup[$key].Length) {
+            $dedup[$key] = $f
+        }
     }
+    $filesToPush = $dedup.Values | Sort-Object Name
 
-# Deduplicate: if both DESCENT2.HOG and descent2.hog exist, keep the larger one
-$dedup = @{}
-foreach ($f in $allGameFiles) {
-    $key = $f.Name.ToLower()
-    if (-not $dedup.ContainsKey($key) -or $f.Length -gt $dedup[$key].Length) {
-        $dedup[$key] = $f
+    Write-Status "Found $($filesToPush.Count) game files to push from $extractedDir"
+
+    if ($filesToPush.Count -eq 0) {
+        Write-Status "FAIL: No game files found to push" 'Red'
+        Exit-Test 1 'fail' 'file_push_failed'
     }
-}
-$filesToPush = $dedup.Values | Sort-Object Name
-
-Write-Status "Found $($filesToPush.Count) game files to push from $extractedDir"
-
-if ($filesToPush.Count -eq 0) {
-    Write-Status "FAIL: No game files found to push" 'Red'
-    Exit-Test 1 'fail' 'file_push_failed'
 }
 
 # -- Compute demo set hashes for canary check -----------------
@@ -461,6 +531,9 @@ foreach ($df in $defaultFiles) {
     Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'rm', '-f', "files/sets/default/$df") | Out-Null
 }
 
+Send-SetupCommand 'clear_audio_sources'
+Start-Sleep -Milliseconds 500
+
 # Clean filesDir root of any game files (belt-and-suspenders for legacy setups)
 Write-Status "Cleaning filesDir root of game files..."
 $filesDir = "/data/data/$PACKAGE/files"
@@ -542,38 +615,103 @@ Write-Status "Canary PASSED - device is clean, game cannot launch" 'Green'
 
 # -- Step 4: Push extracted files to test set -----------------
 
-Write-Status "Pushing $($filesToPush.Count) files to set '$TEST_SET'..."
-$pushErrors = 0
-$pushCount = 0
-
-foreach ($file in $filesToPush) {
-    $remoteName = $file.Name.ToLower()
-    $sizeKB = [math]::Round($file.Length / 1024)
-    Write-Host "  $($file.Name) -> $remoteName  (${sizeKB} KB)" -ForegroundColor Gray
-    try {
-        Push-FileToSet -LocalPath $file.FullName -RemoteName $remoteName
-        $pushCount++
-    } catch {
-        Write-Status "  ERROR pushing $($file.Name): $_" 'Red'
-        $pushErrors++
+if ($useDirectCdImport) {
+    $cueSpec = $spec.source_files | Where-Object { $_.name -match '\.cue$' } | Select-Object -First 1
+    $binSpec = $spec.source_files | Where-Object { $_.name -match '\.bin$' } | Select-Object -First 1
+    if (-not $cueSpec -or -not $binSpec) {
+        Write-Status 'FAIL: import_mode=setup_cd requires .cue and .bin source_files' 'Red'
+        Exit-Test 1 'fail' 'source_missing'
     }
-}
 
-if ($pushErrors -gt 0) {
-    Write-Status "FAIL: $pushErrors file(s) failed to push" 'Red'
-    Exit-Test 1 'fail' 'file_push_failed'
-}
-Write-Status "Pushed $pushCount files" 'Green'
+    $localCuePath = Join-Path $specDir $cueSpec.name
+    $localBinPath = Join-Path $specDir $binSpec.name
+    if (-not (Test-Path $localCuePath) -or -not (Test-Path $localBinPath)) {
+        Write-Status 'FAIL: Local cue/bin source files are missing for direct import' 'Red'
+        Exit-Test 1 'fail' 'source_missing'
+    }
 
-# Restart the app so Java's File.listFiles() sees externally-created files.
-# Without this, the JVM within the running process won't see files added by
-# adb shell cat redirect.
-Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
-Start-Sleep -Seconds 1
-Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null
-if (-not (Wait-SetupReady)) {
-    Write-Status 'FAIL: SetupActivity not responding after file push' 'Red'
-    Exit-Test 1 'fail' 'setup_timeout'
+    $deviceDirName = ($sourceName -replace '[^A-Za-z0-9._-]', '_')
+    $appSourceRelDir = "files/tmp_import/$deviceDirName"
+    $appCueRelPath = "$appSourceRelDir/source.cue"
+    $appBinRelPath = "$appSourceRelDir/source.bin"
+    $deviceCuePath = "/data/user/0/$PACKAGE/$appCueRelPath"
+    $deviceBinPath = "/data/user/0/$PACKAGE/$appBinRelPath"
+
+    Write-Status "Staging CD source files for direct import..."
+    Ensure-AppPrivateFile -LocalPath $localCuePath -RemoteRelativePath $appCueRelPath -TimeoutSeconds 120
+    Ensure-AppPrivateFile -LocalPath $localBinPath -RemoteRelativePath $appBinRelPath -TimeoutSeconds 1800
+
+    Write-Status "Triggering setup-command CD import..."
+    Send-SetupCdImport -CuePath $deviceCuePath -BinPath $deviceBinPath -IncludeAudio $true
+
+    $importReady = $false
+    $importTimeoutSeconds = 300
+    $importSw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($importSw.Elapsed.TotalSeconds -lt $importTimeoutSeconds) {
+        Start-Sleep -Seconds 2
+        $state = Get-SetupIntrospection
+        if (-not $state) { continue }
+        $remoteFiles = @($state.set_files | Where-Object { $_ })
+        $expectedFiles = @()
+        if ($spec.expected_files -is [array]) { $expectedFiles = $spec.expected_files }
+        $haveExpected = $true
+        foreach ($ef in $expectedFiles) {
+            if (-not ($remoteFiles | Where-Object { $_.ToLower() -eq $ef.ToLower() })) {
+                $haveExpected = $false
+                break
+            }
+        }
+        $haveTotal = $true
+        if ($spec.total_extracted) {
+            $haveTotal = $remoteFiles.Count -ge [int]$spec.total_extracted
+        }
+        if ($haveExpected -and $haveTotal) {
+            $importReady = $true
+            break
+        }
+    }
+
+    if (-not $importReady) {
+        Write-Status "FAIL: Timed out waiting for direct CD import to finish" 'Red'
+        Exit-Test 1 'fail' 'file_push_failed'
+    }
+
+    $pushCount = @($state.set_files | Where-Object { $_ }).Count
+    Write-Status "Direct import completed with $pushCount file(s) visible in '$TEST_SET'" 'Green'
+} else {
+    Write-Status "Pushing $($filesToPush.Count) files to set '$TEST_SET'..."
+    $pushErrors = 0
+    $pushCount = 0
+
+    foreach ($file in $filesToPush) {
+        $remoteName = $file.Name.ToLower()
+        $sizeKB = [math]::Round($file.Length / 1024)
+        Write-Host "  $($file.Name) -> $remoteName  (${sizeKB} KB)" -ForegroundColor Gray
+        try {
+            Push-FileToSet -LocalPath $file.FullName -RemoteName $remoteName
+            $pushCount++
+        } catch {
+            Write-Status "  ERROR pushing $($file.Name): $_" 'Red'
+            $pushErrors++
+        }
+    }
+
+    if ($pushErrors -gt 0) {
+        Write-Status "FAIL: $pushErrors file(s) failed to push" 'Red'
+        Exit-Test 1 'fail' 'file_push_failed'
+    }
+    Write-Status "Pushed $pushCount files" 'Green'
+
+    # Restart the app so Java's File.listFiles() sees externally-created files.
+    # Without this, the JVM within the running process won't see files added by
+    # adb shell cat redirect.
+    Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
+    Start-Sleep -Seconds 1
+    Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null
+    if (-not (Wait-SetupReady)) {
+        Write-Status 'FAIL: SetupActivity not responding after file push' 'Red'
+        Exit-Test 1 'fail' 'setup_timeout'
+    }
 }
 
 # -- Step 5: Verify files on device ---------------------------
@@ -951,6 +1089,7 @@ if (-not $KeepFiles) {
     Adb -CmdArgs @('shell', 'am', 'start', '-n', "$PACKAGE/$ACTIVITY") | Out-Null
     Start-Sleep -Seconds 2
     Send-SetupCommand 'clear_set' -Name $TEST_SET
+    Send-SetupCommand 'clear_audio_sources'
     Start-Sleep -Seconds 1
     Adb -CmdArgs @('shell', 'am', 'force-stop', $PACKAGE) | Out-Null
 }

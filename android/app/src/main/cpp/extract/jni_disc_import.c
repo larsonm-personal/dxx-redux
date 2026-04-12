@@ -16,6 +16,7 @@
 #include "cue_parser.h"
 #include "hfs_reader.h"
 #include "iso9660_reader.h"
+#include "mac_hfs_extract.h"
 #include "sti2_extract.h"
 #include "sow_extract.h"
 
@@ -281,171 +282,6 @@ static int extract_progress_cb(const char *current_file,
 	return (int) cancel;
 }
 
-static const char *path_basename(const char *path)
-{
-	const char *last = path;
-
-	while (*path) {
-		if (*path == '/' || *path == '\\')
-			last = path + 1;
-		path++;
-	}
-
-	return last;
-}
-
-static int str_equals_ignore_case(const char *a, const char *b)
-{
-	while (*a && *b) {
-		char ca = *a;
-		char cb = *b;
-
-		if (ca >= 'A' && ca <= 'Z') ca = (char) (ca - 'A' + 'a');
-		if (cb >= 'A' && cb <= 'Z') cb = (char) (cb - 'A' + 'a');
-		if (ca != cb)
-			return 0;
-		a++;
-		b++;
-	}
-
-	return *a == '\0' && *b == '\0';
-}
-
-static int ext_matches(const char *filename, const char **extensions)
-{
-	const char *dot;
-
-	if (!extensions)
-		return 1;
-
-	dot = strrchr(filename, '.');
-	if (!dot || !dot[1])
-		return 0;
-	dot++;
-
-	while (*extensions) {
-		if (str_equals_ignore_case(dot, *extensions))
-			return 1;
-		extensions++;
-	}
-
-	return 0;
-}
-
-static int read_file_to_buffer(const char *path, unsigned char **out_data, size_t *out_size)
-{
-	FILE *f;
-	long len;
-	unsigned char *data;
-
-	if (!out_data || !out_size)
-		return -1;
-	*out_data = NULL;
-	*out_size = 0;
-
-	f = fopen(path, "rb");
-	if (!f)
-		return -1;
-	if (fseek(f, 0, SEEK_END) != 0) {
-		fclose(f);
-		return -1;
-	}
-	len = ftell(f);
-	if (len < 0 || fseek(f, 0, SEEK_SET) != 0) {
-		fclose(f);
-		return -1;
-	}
-	data = (unsigned char *) malloc((size_t) len);
-	if (!data && len != 0) {
-		fclose(f);
-		return -1;
-	}
-	if ((size_t) len != 0 && fread(data, 1, (size_t) len, f) != (size_t) len) {
-		free(data);
-		fclose(f);
-		return -1;
-	}
-	if (fclose(f) != 0) {
-		free(data);
-		return -1;
-	}
-
-	*out_data = data;
-	*out_size = (size_t) len;
-	return 0;
-}
-
-static int extract_sti2_from_hfs(int bin_fd, int track_start, int track_sectors,
-                                 const char *output_dir, extract_ctx_t *ctx)
-{
-	char archive_path[1024];
-	unsigned char *archive_data = NULL;
-	size_t archive_size = 0;
-	int extracted;
-
-	snprintf(archive_path, sizeof(archive_path), "%s/.install_descent.sti2", output_dir);
-	if (hfs_extract_file(bin_fd, track_start, track_sectors,
-	                     "Install Descent", archive_path) < 0)
-		return -1;
-	if (read_file_to_buffer(archive_path, &archive_data, &archive_size) < 0) {
-		unlink(archive_path);
-		return -1;
-	}
-	unlink(archive_path);
-	if (!sti2_is_archive(archive_data, archive_size)) {
-		free(archive_data);
-		return -1;
-	}
-
-	extracted = sti2_extract_matching(archive_data, archive_size,
-	                                  mac_game_extensions, output_dir,
-	                                  ctx && ctx->callback ? extract_progress_cb : NULL,
-	                                  ctx);
-	free(archive_data);
-	return extracted;
-}
-
-static int extract_hfs_matching_files(int bin_fd, int track_start, int track_sectors,
-                                      const char *output_dir, extract_ctx_t *ctx)
-{
-	hfs_file_list_t list;
-	long long total_bytes = 0;
-	long long done_bytes = 0;
-	int extracted = 0;
-	int i;
-
-	if (hfs_list_files(bin_fd, track_start, track_sectors, &list) < 0)
-		return -1;
-
-	for (i = 0; i < list.num_files; i++) {
-		if (!list.files[i].is_dir &&
-		    ext_matches(path_basename(list.files[i].path), mac_game_extensions))
-			total_bytes += list.files[i].data_size;
-	}
-
-	for (i = 0; i < list.num_files; i++) {
-		char output_path[1024];
-		int written;
-
-		if (list.files[i].is_dir ||
-		    !ext_matches(path_basename(list.files[i].path), mac_game_extensions))
-			continue;
-
-		snprintf(output_path, sizeof(output_path), "%s/%s", output_dir, list.files[i].path);
-		written = hfs_extract_file(bin_fd, track_start, track_sectors,
-		                           list.files[i].path, output_path);
-		if (written < 0)
-			return -1;
-		done_bytes += written;
-		extracted++;
-		if (ctx && ctx->callback &&
-		    extract_progress_cb(list.files[i].path, done_bytes, total_bytes, ctx) != 0)
-			return -1;
-	}
-
-	return extracted;
-}
-
 /*
  * Extract game files from an ISO 9660 data track.
  *
@@ -604,9 +440,12 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractMacFiles(
 		return -1;
 	}
 
-	extracted = extract_sti2_from_hfs(binFd, trackStart, trackSectors, out_dir, &ctx);
-	if (extracted <= 0)
-		extracted = extract_hfs_matching_files(binFd, trackStart, trackSectors, out_dir, &ctx);
+	extracted = mac_extract_files_from_hfs_track(binFd, trackStart, trackSectors,
+	                                             out_dir,
+	                                             mac_game_extensions,
+	                                             mac_game_extensions,
+	                                             progress ? extract_progress_cb : NULL,
+	                                             &ctx);
 
 	LOGI("Mac import extracted %d files from HFS volume '%s'", extracted,
 	     hfs_info.volume_name[0] ? hfs_info.volume_name : hfs_info.partition_name);

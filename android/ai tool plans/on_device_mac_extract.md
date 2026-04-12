@@ -1,10 +1,10 @@
 # On-Device Mac CD Extraction (Android)
 
-Status: Planning expanded on 2026-04-11. Five implementation tranches are now
+Status: Planning expanded on 2026-04-11. Six implementation tranches are now
 in: HFS/APM detection, HFS catalog plus root-file extraction, STi2 entry
-listing, STi2 method 13 extraction, and JNI plus launcher fallback
-integration. File-based emulator regression coverage is now in; direct
-on-device disc-import validation and the secondary-disc pass are still pending.
+listing, STi2 method 13 extraction, JNI plus launcher fallback
+integration, and setup-command direct disc-import regression coverage.
+The remaining gaps are the full SAF picker UI path and the secondary-disc pass.
 
 ## Goal
 
@@ -547,8 +547,12 @@ Kotlin or Android UI work. Get desktop-native extraction right first.
          expectations
       - `android/tests/test_extract.ps1` now passes against that spec on the
          emulator and reaches `Lunar Outpost`
-      - remaining gap: this regression currently validates the extracted-file
-         result, not the full BIN/CUE import UI flow from content URIs
+      - the current launcher import path extracts the 7 gameplay files and
+         intentionally skips copying the downstream `Descent` executable
+      - setup-command direct disc-import regression coverage can now exercise
+         the launcher-side BIN/CUE import path from on-device file paths
+      - remaining gap: this still does not cover the full SAF picker UI path
+         from content URIs
 
 9. Secondary-disc compatibility pass
     - rerun the same native code on `d1 mac 2nd bin+cue`

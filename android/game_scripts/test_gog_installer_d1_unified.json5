@@ -1,0 +1,133 @@
+// TEST: D1 GOG Installer Regression (unified launcher + game)
+//
+// Exercises the full D1 GOG import pipeline:
+//   1. (Launcher) Clear game data, import the selected D1 GOG installer
+//   2. (Launcher) Verify D1 readiness, expected extracted files, and D1 launch button state
+//   3. (Game) Create pilot, start level 1
+//   4. (Game) Verify D1 level load completed successfully
+//
+// Supported D1 installer variants:
+//   - Windows: game_data\gog installers\setup_descent_1.4a_(16596).exe
+//   - Mac: game_data\gog installers\descent_enUS_1_0_35122.pkg
+//
+// Reference D2 coverage paths kept nearby so the D1 and D2 companion tests
+// stay aligned:
+//   - Windows: game_data\gog installers\setup_descent_2_1.1_(16596).exe
+//   - Mac: game_data\gog installers\descent_2_enUS_1_0_51877.pkg
+//
+// Note: The Mac and PC GOG installers appear to carry the same PC game data.
+// The Mac package seems to wrap the DOS build via DOSBox-style tooling rather
+// than ship original Mac-specific assets, which keeps the exe/pkg test paths
+// unified here. D1 GOG installers also do not include .gog/.inst redbook
+// audio assets, so this regression stays focused on import and launch rather
+// than music-source verification.
+//
+// Prerequisites (handled by PS1 wrapper):
+//   - Selected D1 installer pushed to ${INSTALLER_DEVICE_PATH}
+//
+// Run via: android/tests/test_gog_installer_d1_unified.ps1
+[
+    {"_info": {
+        "games": ["d1"],
+        "_standalone": false,
+        "params": {
+            "INSTALLER_VARIANT": {
+                "label": "D1 GOG installer variant",
+                "options": {
+                    "d1_windows_exe": {
+                        "INSTALLER_DEVICE_PATH": "/data/local/tmp/setup_descent_1.4a_(16596).exe",
+                        "INSTALLER_LABEL": "D1 Windows GOG .exe"
+                    },
+                    "d1_mac_pkg": {
+                        "INSTALLER_DEVICE_PATH": "/data/local/tmp/descent_enUS_1_0_35122.pkg",
+                        "INSTALLER_LABEL": "D1 Mac GOG .pkg"
+                    }
+                }
+            }
+        }
+    }},
+
+    // ── Phase 1: Launcher setup ─────────────────────────────────
+
+    {"action": "enter_launcher"},
+    {"action": "log", "message": "=== D1 GOG Installer: Launcher Phase ==="},
+
+    {"action": "reset_state"},
+
+    // Clear any existing game data set
+    {"action": "setup_command", "command": "clear_set",
+     "args": {"name": "default"}, "post_delay_ms": 1000},
+
+    {"action": "log", "message": "Importing ${INSTALLER_LABEL}"},
+
+    // Import selected D1 GOG installer. D1 GOG releases have no .gog/.inst
+    // audio pair, so include_audio has no effect beyond keeping parity with D2.
+    {"action": "setup_command", "command": "import_gog",
+     "args": {
+         "path": "${INSTALLER_DEVICE_PATH}",
+         "include_audio": true
+     }},
+
+    // D1 installers are much smaller than D2, but still run asynchronously.
+    {"action": "wait_for", "field": "can_launch", "value": "true", "timeout_ms": 120000},
+    {"action": "log", "message": "Import complete, can_launch=true"},
+
+    // Verify D1 readiness and the expected 7-file GOG import set.
+    {"action": "assert", "expect": {
+        "d1.ready": "true",
+        "set_files[0]": "CHAOS.HOG",
+        "set_files[1]": "CHAOS.MSN",
+        "set_files[2]": "DESCENT.DEM",
+        "set_files[3]": "DESCENT.HOG",
+        "set_files[4]": "DESCENT.PIG",
+        "set_files[5]": "LEVEL18.DEM",
+        "set_files[6]": "MINIBOSS.DEM"
+    }},
+
+    // The launcher should auto-switch to D1 when only D1 data is present.
+    {"action": "assert_button", "text": "Launch Descent 1", "enabled": true},
+    {"action": "log", "message": "D1 files verified -- switching to game"},
+
+    // Ensure default set is still active before launch.
+    {"action": "setup_command", "command": "switch_set",
+     "args": {"name": "default"}, "post_delay_ms": 500},
+
+    {"action": "tap_button", "text": "Launch Descent 1", "launches_game": true, "timeout_ms": 60000},
+
+    // ── Phase 2: In-game verification ──────────────────────────
+
+    {"action": "log", "message": "=== D1 GOG Installer: In-Game Phase ==="},
+
+    // Accept default pilot name. D1 uses the title-screen / default-name path,
+    // so a plain Enter is more reliable than selecting an explicit menu item.
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "key", "key": "enter", "post_delay_ms": 100},
+
+    // Main menu -> New game.
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
+
+    // D1 GOG full install has a single built-in mission. Accept default level 1.
+    {"action": "key", "key": "enter", "post_delay_ms": 100},
+
+    // Difficulty
+    {"action": "wait_ms", "ms": 500},
+    {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 10000},
+
+    // Skip briefing if present
+    {"action": "skip_briefing", "timeout_ms": 10000, "post_delay_ms": 100},
+
+    // Wait for game
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 20000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+    {"action": "wait_ms", "ms": 2000},
+
+    {"action": "introspect"},
+    {"action": "assert", "expect": {
+        "in_game": "true",
+        "screen_mode": "game",
+        "current_level_num": "1"
+    }},
+
+    {"action": "log", "message": "=== TEST: D1 GOG Installer -- ALL CHECKS PASS ==="}
+]

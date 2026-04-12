@@ -544,6 +544,7 @@ target_sources(dxx-redux-d1 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/extract/cue_parser.c
     ${CMAKE_CURRENT_SOURCE_DIR}/extract/hfs_reader.c
     ${CMAKE_CURRENT_SOURCE_DIR}/extract/iso9660_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/mac_hfs_extract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/extract/sti2_extract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/extract/sow_extract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_disc_import.c
@@ -637,6 +638,7 @@ target_sources(dxx-redux-d2 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/extract/cue_parser.c
     ${CMAKE_CURRENT_SOURCE_DIR}/extract/hfs_reader.c
     ${CMAKE_CURRENT_SOURCE_DIR}/extract/iso9660_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/extract/mac_hfs_extract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/extract/sti2_extract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/extract/sow_extract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/extract/jni_disc_import.c

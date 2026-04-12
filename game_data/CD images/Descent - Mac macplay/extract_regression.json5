@@ -15,6 +15,7 @@
     ],
     "game": "d1",
     "classification": "d1_full",
+    "import_mode": "setup_cd",
     "expected_mission": "Descent: First Strike",
     "expected_level1": "Lunar Outpost",
     "expected_files": [
@@ -23,7 +24,7 @@
         "chaos.msn"
     ],
     "audio_tracks": 13,
-    "total_extracted": 8
+    "total_extracted": 7
 ,
     "last_test_result": {
         "status": "pass",

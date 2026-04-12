@@ -192,24 +192,29 @@ class AssetManifest(
         suspend fun computeSha256(
             file: File,
             onProgress: ((bytesRead: Long, totalBytes: Long) -> Unit)? = null,
-        ): String =
+        ): String? =
             withContext(Dispatchers.IO) {
-                val digest = MessageDigest.getInstance("SHA-256")
-                val totalBytes = file.length()
-                var bytesRead = 0L
-                val buffer = ByteArray(8192)
+                try {
+                    val digest = MessageDigest.getInstance("SHA-256")
+                    val totalBytes = file.length()
+                    var bytesRead = 0L
+                    val buffer = ByteArray(8192)
 
-                FileInputStream(file).use { input ->
-                    while (true) {
-                        val n = input.read(buffer)
-                        if (n <= 0) break
-                        digest.update(buffer, 0, n)
-                        bytesRead += n
-                        onProgress?.invoke(bytesRead, totalBytes)
+                    FileInputStream(file).use { input ->
+                        while (true) {
+                            val n = input.read(buffer)
+                            if (n <= 0) break
+                            digest.update(buffer, 0, n)
+                            bytesRead += n
+                            onProgress?.invoke(bytesRead, totalBytes)
+                        }
                     }
-                }
 
-                digest.digest().joinToString("") { "%02x".format(it) }
+                    digest.digest().joinToString("") { "%02x".format(it) }
+                } catch (e: Exception) {
+                    Log.w("AssetManifest", "Failed to hash ${file.absolutePath}", e)
+                    null
+                }
             }
     }
 }

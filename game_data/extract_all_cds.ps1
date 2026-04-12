@@ -2,11 +2,14 @@
 #
 # For each subfolder in game_data/CD images/:
 #   1. Find the .cue file
-#   2. Run extract_cd.exe to extract data track files and compute track SHA-1s
+#   2. Run extract_cd.exe to extract ISO 9660 or Mac HFS data track files and
+#      compute track SHA-1s
 #   3. Save track hashes to <folder>/track_hashes.json
 #
 # Idempotent: skips folders with existing data_tracks/ unless -Force.
 # Reports errors for non-BIN/CUE formats (e.g., CloneCD .ccd/.img).
+# The legacy game_data/extract_mac_cd.ps1 path remains available only for
+# regression oracle creation.
 #
 # Usage: .\extract_all_cds.ps1 [-Force] [-SkipBuild]
 param(
@@ -117,30 +120,7 @@ foreach ($folder in $folders) {
         }
 
         if ($exitCode -ne 0) {
-            # Check if the failure is an ISO listing error (e.g. Mac HFS disc)
-            $isoFailed = $jsonLines | Where-Object { $_ -match '"error":\s*"ISO listing failed"' }
-            if ($isoFailed) {
-                Write-Host "  ISO listing failed -- trying Mac (HFS) extraction..." -ForegroundColor Yellow
-                $macScript = Join-Path $ScriptDir "extract_mac_cd.ps1"
-                if (Test-Path $macScript) {
-                    try {
-                        & $macScript -CdFolder $folder.FullName -Force
-                        if ($LASTEXITCODE -eq 0 -and (Test-Path $dataTracksDir) -and
-                            (Get-ChildItem $dataTracksDir -File).Count -gt 0) {
-                            Write-Host "  Mac extraction OK" -ForegroundColor Green
-                            $successes += $name
-                        } else {
-                            $failures += @{ Name = $name; Error = "Mac extraction produced no files" }
-                        }
-                    } catch {
-                        $failures += @{ Name = $name; Error = "Mac extraction failed: $($_.Exception.Message)" }
-                    }
-                } else {
-                    $failures += @{ Name = $name; Error = "extract_cd returned $exitCode (ISO failed, no Mac extractor found)"; Details = ($stderrLines -join "`n") }
-                }
-            } else {
-                $failures += @{ Name = $name; Error = "extract_cd returned $exitCode"; Details = ($stderrLines -join "`n") }
-            }
+            $failures += @{ Name = $name; Error = "extract_cd returned $exitCode"; Details = ($stderrLines -join "`n") }
         } else {
             $successes += $name
         }

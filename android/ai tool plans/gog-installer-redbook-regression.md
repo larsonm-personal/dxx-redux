@@ -8,10 +8,24 @@ verify redbook audio was registered with chromaprint-resolved track names, launc
 D2, enter level 1, and verify overlay messages (level name + track name) via a new
 overlay ring buffer in the introspection API.
 
-### Source file
-`game_data/gog installers/setup_descent_2_1.1_(16596).exe`
-SHA256: `58ccb37ecd54c73b0ddbde8d9051a0a6498911fbe66cd025179da681e13559cd`
-Size: 563 MB
+### Installer coverage set
+- D2 Windows: `game_data/gog installers/setup_descent_2_1.1_(16596).exe`
+- D2 Mac: `game_data/gog installers/descent_2_enUS_1_0_51877.pkg`
+- D1 Windows: `game_data/gog installers/setup_descent_1.4a_(16596).exe`
+- D1 Mac: `game_data/gog installers/descent_enUS_1_0_35122.pkg`
+
+### Primary D2 source files for this redbook test
+- Windows default: `setup_descent_2_1.1_(16596).exe`
+  - SHA256: `58ccb37ecd54c73b0ddbde8d9051a0a6498911fbe66cd025179da681e13559cd`
+  - Size: 563 MB
+- Mac alternative: `descent_2_enUS_1_0_51877.pkg`
+  - Size: 587 MB
+
+### Shared-data note
+The Mac and PC GOG installers appear to carry the same PC game data. The Mac
+package seems to wrap the DOS build rather than ship original Mac-specific
+assets, which should keep the exe/pkg test paths mostly unified here and in the
+future D1 companion test.
 
 ### Expected verification data (from known_discs.json5, disc "d2-gog-v1.2")
 - 9 tracks total (1 data + 8 audio)
@@ -32,7 +46,7 @@ Existing tests use `_deps` to push game data files into the app's private data d
 `run_test.ps1` launches the game and sends the automation broadcast.
 
 This test is fundamentally different:
-1. The GOG .exe must go to `/sdcard/Download/` (NOT the app's private dir)
+1. The selected GOG installer must go to `/sdcard/Download/` (NOT the app's private dir)
 2. The import must happen on the **SetupActivity** screen, BEFORE game launch
 3. Import runs on a background thread -- we must wait for it and verify results
 4. Only THEN do we launch the game and run the in-game automation script
@@ -62,14 +76,14 @@ only works for the app's private data dir. For targets like `/sdcard/Download`:
   - For those: use `adb shell mkdir -p` without `run-as` to create target dir
 - [ ] The `_deps` entry in the test script will be:
   ```json5
-  {"file": "setup_descent_2_1.1_(16596).exe",
-   "sha256": "58ccb37ecd54c73b0ddbde8d9051a0a6498911fbe66cd025179da681e13559cd",
+  {"file": "${INSTALLER_FILE}",
+   "sha256": "${INSTALLER_SHA256}",
    "target": "/sdcard/Download"}
   ```
 
 ### 1c. Verify file placement
 - [ ] Run the deps resolution manually and confirm via:
-  `adb shell ls -la /sdcard/Download/setup_descent_2_1.1_\(16596\).exe`
+  `adb shell ls -la /sdcard/Download/${INSTALLER_FILE}`
 - [ ] Confirm the file is NOT in the app's private data dir
 - [ ] Note: 563 MB file -- push timeout needs to be generous (10+ minutes)
 
@@ -186,7 +200,7 @@ Create `android/tests/test_gog_installer_redbook.ps1` (or similar name).
 ### 5a. Pre-game phase (PowerShell orchestration)
 - [ ] Source test_helpers.ps1
 - [ ] Ensure emulator healthy
-- [ ] Push GOG .exe to /sdcard/Download via _deps resolution
+- [ ] Push the selected D2 installer to /sdcard/Download via _deps resolution
 - [ ] Force-stop app, clear game data (blank slate)
 - [ ] Launch SetupActivity
 - [ ] Wait for SetupActivity ready (Wait-SetupActivityReady)
@@ -195,7 +209,7 @@ Create `android/tests/test_gog_installer_redbook.ps1` (or similar name).
   ```
   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND
     --es command import_gog
-    --es path "/sdcard/Download/setup_descent_2_1.1_(16596).exe"
+    --es path "/sdcard/Download/${INSTALLER_FILE}"
     --ez include_audio true
   ```
 - [ ] Poll setup_introspect until:

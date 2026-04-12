@@ -1,4 +1,4 @@
-# extract_mac_cd.ps1 -- Extract game data from a Mac (HFS) CD image.
+# extract_mac_cd.ps1 -- Legacy reference extractor for a Mac (HFS) CD image.
 #
 # Pipeline:
 #   1. Strip Mode1/2352 raw sector headers -> raw 2048-byte user data
@@ -7,6 +7,9 @@
 #   4. Read HFS volume with Python machfs library
 #   5. Extract StuffIt Installer archive (STi2) with unar
 #   6. Copy game data files (.hog, .pig, .msn, .dem) to output directory
+#
+# Normal desktop extraction should use extract_cd.exe. This script remains for
+# legacy oracle generation when the external-tool reference path is needed.
 #
 # Prerequisites:
 #   - Python 3 with 'machfs' package: pip install machfs

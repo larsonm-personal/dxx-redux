@@ -91,7 +91,9 @@ set(EXTRACT_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
     ${CMAKE_CURRENT_SOURCE_DIR}/hfs_reader.c
     ${CMAKE_CURRENT_SOURCE_DIR}/iso9660_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/mac_hfs_extract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/sow_extract.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c
 )
 
 # ── test_cue_iso ─────────────────────────────────────────────────────
@@ -129,6 +131,7 @@ add_executable(test_sti2
     ${CMAKE_CURRENT_SOURCE_DIR}/test_sti2.c
     ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
     ${CMAKE_CURRENT_SOURCE_DIR}/hfs_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/mac_hfs_extract.c
     ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c
 )
 target_include_directories(test_sti2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

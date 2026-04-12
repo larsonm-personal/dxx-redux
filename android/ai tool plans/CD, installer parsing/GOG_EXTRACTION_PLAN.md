@@ -220,7 +220,9 @@ Verified GOG import pipeline on Android emulator (Pixel_6_API_34, x86_64).
 | Test | Result | Details |
 |------|--------|---------|
 | D1 GOG import (.exe) | PASS | `setup_descent_1.4a_(16596).exe` → 7 files (InnoSetup 5.6.2 unicode) |
+| D1 GOG import (.pkg) | PASS | `descent_enUS_1_0_35122.pkg` → 7 files (XAR + gzip + cpio odc) |
 | D2 GOG import (.exe) | PASS | `setup_descent_2_1.1_(16596).exe` → 21 files (InnoSetup 5.5.7 unicode) |
+| D2 GOG import (.pkg) | PASS | `descent_2_enUS_1_0_51877.pkg` → 15 files (XAR + gzip + cpio odc) |
 | Set management | PASS | create_set, switch_set, clear_set all work via broadcast |
 | Setup introspection | PASS | sets array, set_files, has_legacy_gog_audio, audio_sources all correct |
 | D2 game launch (GOG set) | PASS | HOG files found, level "Ahayweh Gate" loaded, player shields=100 |

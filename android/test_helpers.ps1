@@ -1058,7 +1058,8 @@ function Resolve-TestScript {
     # Preprocess a .json5 test script for a specific game:
     #   1. Read _info.vars.$GameId for variable substitution
     #   2. Merge -Params option vars (from _info.params) into the vars dict
-    #   3. Filter out steps where "when" doesn't match $GameId
+    #   3. Filter out steps where "when" (after param substitution) doesn't
+    #      match $GameId
     #   4. Replace ${VAR} placeholders in all string values
     #   5. Write resolved script to a temp file
     # Returns the path to the resolved temp file, or $ScriptPath if no processing needed.
@@ -1118,6 +1119,11 @@ function Resolve-TestScript {
     foreach ($step in $arr) {
         if ($step._info) { continue }
         $whenVal = $step.when
+        if ($whenVal -is [string] -and $vars.Count -gt 0) {
+            foreach ($k in $vars.Keys) {
+                $whenVal = $whenVal.Replace("`${$k}", $vars[$k])
+            }
+        }
         if ($whenVal -and $whenVal -ne $GameId) { continue }
         # Remove the "when" property from output
         if ($whenVal) {

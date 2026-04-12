@@ -112,6 +112,7 @@ class SetupActivity : ComponentActivity() {
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command clear_set --es name "default"
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --es path /sdcard/setup_descent2.exe
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_sow --es path /sdcard/descent2.sow
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_cd --es cue_path /sdcard/disc.cue --es bin_path /sdcard/disc.bin
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_files --es path /sdcard/DESCENT2.HOG
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_default_config
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_autoselect --es game d2 --es primary "8,9,7,6,5,4,3,2,1,0,255" --es secondary "9,8,4,3,1,5,0,255,7,6,2"
@@ -506,6 +507,10 @@ class SetupActivity : ComponentActivity() {
         startActivity(intent)
     }
 
+    private fun requestSetupRefresh() {
+        runOnUiThread { refreshTrigger.intValue++ }
+    }
+
     private val commandReceiver =
         object : BroadcastReceiver() {
             override fun onReceive(
@@ -570,6 +575,7 @@ class SetupActivity : ComponentActivity() {
                         try {
                             val dir = fsm.createSet(name)
                             Log.i("DXX-Setup", "create_set '$name': ${dir.absolutePath}")
+                            requestSetupRefresh()
                         } catch (e: IllegalArgumentException) {
                             Log.i("DXX-Setup", "create_set '$name': already exists")
                         }
@@ -580,6 +586,7 @@ class SetupActivity : ComponentActivity() {
                         fsm.setActive(name)
                         fsm.writeActiveSetPath()
                         Log.i("DXX-Setup", "switch_set '$name': ok")
+                        requestSetupRefresh()
                     }
                     "clear_set" -> {
                         val name = intent.getStringExtra("name") ?: return
@@ -587,6 +594,7 @@ class SetupActivity : ComponentActivity() {
                         val dir = fsm.getSetDir(name)
                         val count = dir.listFiles()?.count { it.isFile && it.delete() } ?: 0
                         Log.i("DXX-Setup", "clear_set '$name': deleted $count file(s)")
+                        requestSetupRefresh()
                     }
                     "import_gog" -> {
                         val path = intent.getStringExtra("path") ?: return
@@ -601,6 +609,7 @@ class SetupActivity : ComponentActivity() {
                                 registerGogAudioSource(srcManager, filesDir, setDir, this@SetupActivity)
                             }
                             Log.i("DXX-Setup", "import_gog '$path' -> $count file(s) to ${setDir.name} (audio=$audio)")
+                            requestSetupRefresh()
                         }.start()
                     }
                     "import_sow" -> {
@@ -610,6 +619,30 @@ class SetupActivity : ComponentActivity() {
                             val setDir = fsm.getSetDir(fsm.getActive())
                             val count = DiscImportBridge.extractSowFiles(path, setDir.absolutePath, null)
                             Log.i("DXX-Setup", "import_sow '$path' -> $count file(s) to ${setDir.name}")
+                            requestSetupRefresh()
+                        }.start()
+                    }
+                    "import_cd" -> {
+                        val cuePath = intent.getStringExtra("cue_path") ?: return
+                        val binPath = intent.getStringExtra("bin_path") ?: return
+                        val audio = intent.getBooleanExtra("include_audio", true)
+                        Thread {
+                            val fsm = FileSetManager(filesDir)
+                            val setDir = fsm.getSetDir(fsm.getActive())
+                            val count =
+                                importDiscImageFromPath(
+                                    filesDir = filesDir,
+                                    setDir = setDir,
+                                    context = this@SetupActivity,
+                                    cuePath = cuePath,
+                                    binPath = binPath,
+                                    includeAudio = audio,
+                                )
+                            Log.i(
+                                "DXX-Setup",
+                                "import_cd cue='$cuePath' bin='$binPath' -> $count file(s) to ${setDir.name} (audio=$audio)",
+                            )
+                            requestSetupRefresh()
                         }.start()
                     }
                     "import_files" -> {
@@ -2684,7 +2717,11 @@ private fun SetupScreen(
                     AssetManifest.computeSha256(file) { bytesRead, totalBytes ->
                         if (totalBytes > 0) hashingProgress = bytesRead.toFloat() / totalBytes
                     }
-                manifest.upsert(file.name, sha256, file.length())
+                if (sha256 != null) {
+                    manifest.upsert(file.name, sha256, file.length())
+                } else {
+                    Log.w("DXX-Setup", "Skipping manifest update for ${file.name}: file disappeared during hashing")
+                }
             }
             hashingFile = null
         }
@@ -3712,24 +3749,31 @@ private fun SetupScreen(
                                                                                 bytesRead.toFloat() / totalBytes
                                                                         }
                                                                     }
-                                                                // Data-dir track: file existed on disk without a sourceUri
-                                                                val sourceUri =
-                                                                    if (existedBefore &&
-                                                                        (
-                                                                            existingEntry == null ||
-                                                                                !existingEntry.isExternal
-                                                                        )
-                                                                    ) {
-                                                                        null
-                                                                    } else {
-                                                                        f.uri.toString()
-                                                                    }
-                                                                manifest.upsert(
-                                                                    destFile.name,
-                                                                    sha256,
-                                                                    destFile.length(),
-                                                                    sourceUri,
-                                                                )
+                                                                if (sha256 != null) {
+                                                                    // Data-dir track: file existed on disk without a sourceUri
+                                                                    val sourceUri =
+                                                                        if (existedBefore &&
+                                                                            (
+                                                                                existingEntry == null ||
+                                                                                    !existingEntry.isExternal
+                                                                            )
+                                                                        ) {
+                                                                            null
+                                                                        } else {
+                                                                            f.uri.toString()
+                                                                        }
+                                                                    manifest.upsert(
+                                                                        destFile.name,
+                                                                        sha256,
+                                                                        destFile.length(),
+                                                                        sourceUri,
+                                                                    )
+                                                                } else {
+                                                                    Log.w(
+                                                                        "DXX-Setup",
+                                                                        "Import completed but hashing failed for ${destFile.name}",
+                                                                    )
+                                                                }
                                                             }
                                                         }
                                                         hashingFile = null
@@ -5248,6 +5292,154 @@ private fun registerGogAudioSource(
             trackNames = trackNames,
         ),
     )
+}
+
+private fun registerDiscAudioSourceFromPath(
+    srcManager: AudioSourceManager,
+    filesDir: File,
+    context: Context,
+    cuePath: String,
+    binPath: String,
+    tracks: List<DiscImportBridge.CueTrack>,
+) {
+    var discLabel: String? = null
+    var discId: String? = null
+    var legacyDiscId = 0L
+    val firstAudio = tracks.firstOrNull { it.isAudio }
+    val trackNames = mutableMapOf<Int, String>()
+
+    if (firstAudio != null) {
+        try {
+            val identifier = DiscIdentifier(context)
+            val trackOffset = firstAudio.startSector.toLong() * 2352L
+            val trackBytes = firstAudio.numSectors.toLong() * 2352L
+            File(binPath).inputStream().use { input ->
+                input.channel.position(trackOffset)
+                val sha1 = DiscIdentifier.sha1Hash(input, trackBytes)
+                val match = identifier.identify(mapOf(firstAudio.trackNum to sha1))
+                if (match.matched) {
+                    discLabel = match.label
+                    discId = match.disc?.id
+                    match.disc?.legacyDiscId?.let {
+                        legacyDiscId = java.lang.Long.decode(it)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.w("DXX-DiscImport", "Disc identification failed for $cuePath", e)
+        }
+    }
+
+    try {
+        if (discId != null) {
+            trackNames.putAll(FingerprintBridge.lookupTrackNames(context, discId!!))
+        }
+        if (trackNames.isEmpty() && tracks.any { it.isAudio }) {
+            trackNames.putAll(FingerprintBridge.fingerprintAndMatchDisc(context, binPath, tracks))
+        }
+    } catch (e: Exception) {
+        Log.w("DXX-DiscImport", "Track name identification failed for $cuePath", e)
+    }
+
+    val id = discId ?: "custom-${System.currentTimeMillis()}"
+    val destCue = File(filesDir, "$id.cue")
+    File(cuePath).copyTo(destCue, overwrite = true)
+    srcManager.addSource(
+        AudioSourceManager.AudioSource(
+            id = id,
+            cuePath = destCue.name,
+            binPaths = listOf(File(binPath).name.lowercase()),
+            discLabel = discLabel ?: File(cuePath).nameWithoutExtension,
+            discId = discId ?: "unknown",
+            trackCount = tracks.size,
+            audioTrackCount = tracks.count { it.isAudio },
+            legacyDiscId = legacyDiscId,
+            trackNames = trackNames,
+            binContentUri = binPath,
+        ),
+    )
+}
+
+private fun importDiscImageFromPath(
+    filesDir: File,
+    setDir: File,
+    context: Context,
+    cuePath: String,
+    binPath: String,
+    includeAudio: Boolean,
+): Int {
+    val cueFile = File(cuePath)
+    val binFile = File(binPath)
+
+    if (!cueFile.isFile || !binFile.isFile) {
+        Log.w("DXX-DiscImport", "importDiscImageFromPath: missing cue/bin ($cuePath, $binPath)")
+        return -1
+    }
+
+    val tracks = DiscImportBridge.parseCue(cueFile.absolutePath, longArrayOf(binFile.length()))
+    if (tracks.isNullOrEmpty()) {
+        Log.w("DXX-DiscImport", "importDiscImageFromPath: parseCue failed for $cuePath")
+        return -1
+    }
+
+    val dataTrack = tracks.firstOrNull { it.isData }
+    if (dataTrack == null || dataTrack.fileIndex != 0) {
+        Log.w(
+            "DXX-DiscImport",
+            "importDiscImageFromPath: unsupported data track mapping for $cuePath (fileIndex=${dataTrack?.fileIndex})",
+        )
+        return -1
+    }
+
+    val isoExtracted =
+        DiscImportBridge.extractIsoFiles(
+            binFile.absolutePath,
+            dataTrack.startSector,
+            dataTrack.numSectors,
+            setDir.absolutePath,
+            null,
+        )
+    val macExtracted =
+        if (isoExtracted > 0) {
+            0
+        } else {
+            DiscImportBridge.extractMacFiles(
+                binFile.absolutePath,
+                dataTrack.startSector,
+                dataTrack.numSectors,
+                setDir.absolutePath,
+                null,
+            )
+        }
+
+    var sowExtracted = 0
+    if (isoExtracted > 0) {
+        val sowFiles = DiscImportBridge.scanSowFiles(setDir.absolutePath)
+        if (sowFiles != null) {
+            for (sow in sowFiles) {
+                sowExtracted += DiscImportBridge.extractSowFiles(sow, setDir.absolutePath, null).coerceAtLeast(0)
+            }
+        }
+    }
+
+    val extracted = if (isoExtracted > 0) isoExtracted else macExtracted.coerceAtLeast(0)
+    if (includeAudio && extracted > 0 && tracks.any { it.isAudio }) {
+        registerDiscAudioSourceFromPath(
+            srcManager = AudioSourceManager(filesDir),
+            filesDir = filesDir,
+            context = context,
+            cuePath = cueFile.absolutePath,
+            binPath = binFile.absolutePath,
+            tracks = tracks,
+        )
+        enableRedbookInConfig(filesDir, context)
+    }
+
+    Log.i(
+        "DXX-DiscImport",
+        "importDiscImageFromPath: cue=$cuePath iso=$isoExtracted mac=$macExtracted sow=$sowExtracted audio=$includeAudio",
+    )
+    return extracted + sowExtracted
 }
 
 /**
