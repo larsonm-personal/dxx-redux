@@ -9,10 +9,11 @@ object DebugLogCategory {
     const val GRAPHICS = 1
     const val TEXTURE = 2
     const val GAME = 3
-    const val COUNT = 4
+    const val LAUNCHER = 4
+    const val COUNT = 5
 
     /** Human-readable labels for UI checkboxes, indexed by category ID. */
-    val labels = arrayOf("Network", "Graphics", "Texture", "Game Logs")
+    val labels = arrayOf("Network", "Graphics", "Texture", "Game Logs", "Launcher")
 
     /** SharedPreferences key for each category toggle. */
     fun prefKey(category: Int): String = "dlog_${labels[category].lowercase()}_enabled"

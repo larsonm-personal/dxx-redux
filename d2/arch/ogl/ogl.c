@@ -1646,6 +1646,7 @@ GLubyte *pixels = NULL;
 void ogl_start_frame(void){
 	r_polyc=0;r_tpolyc=0;r_bitmapc=0;r_ubitbltc=0;r_upixelc=0;
 #ifdef ANDROID
+	int msaa_color_clear = 0;
 	r_texbinds=0;r_texbind_reuse=0;ogl_last_bound_tex=0;
 	r_shader_switches=0;r_mask_draws=0;
 	g_ogl_render_context = 1; /* 3D world */
@@ -1713,13 +1714,15 @@ void ogl_start_frame(void){
 		ogl_msaa_destroy_fbo(); /* recreate on next check below */
 	}
 	/* Bind MSAA FBO if enabled; create/resize as needed.
-	 * Skip for sub-window renders (missile cam, rear view) -- they draw
-	 * into the already-bound FBO without clearing it. */
+	 * Only the outermost active 3D pass binds here. ogl_end_frame balances
+	 * the depth counter, so later cockpit subviews in the same game frame can
+	 * rebind safely before the final resolve in gr_flip. */
 	if (ogl_msaa_samples > 0 && g_msaa_frame_depth == 0) {
 		int w = grd_curscreen->sc_w, h = grd_curscreen->sc_h;
 		if (!ogl_msaa_fbo || ogl_msaa_w != w || ogl_msaa_h != h)
 			ogl_msaa_create_fbo(ogl_msaa_samples, w, h);
 		if (ogl_msaa_fbo) {
+			msaa_color_clear = !g_msaa_fbo_bound;
 			glBindFramebuffer(GL_FRAMEBUFFER, ogl_msaa_fbo);
 			g_msaa_fbo_bound = 1;
 		}
@@ -1791,10 +1794,11 @@ void ogl_start_frame(void){
 		glEnable(GL_DEPTH_TEST);
 	/* glDepthFunc(GL_LEQUAL) moved to ogl_init_state -- never changes */
 
-	/* Clear depth always; clear color only for the main view (depth==1)
-	 * when MSAA FBO is bound, so stale color data doesn't survive */
+	/* Clear depth every 3D pass. Clear color only on the first MSAA-backed
+	 * pass of the frame, otherwise cockpit missile / rear-view subrenders wipe
+	 * the already-rendered main scene in the shared MSAA FBO. */
 	glClear(GL_DEPTH_BUFFER_BIT |
-	        ((g_msaa_fbo_bound && g_msaa_frame_depth <= 1) ? GL_COLOR_BUFFER_BIT : 0));
+	        (msaa_color_clear ? GL_COLOR_BUFFER_BIT : 0));
 
 	glEnable(GL_CULL_FACE);
 	glFrontFace(GL_CW);
@@ -1836,6 +1840,8 @@ void ogl_start_frame(void){
 void ogl_end_frame(void){
 	OGL_VIEWPORT(0,0,grd_curscreen->sc_w,grd_curscreen->sc_h);
 #ifdef ANDROID
+	if (g_msaa_frame_depth > 0)
+		g_msaa_frame_depth--;
 	{
 		extern volatile int g_blit_y_offset;
 		int direct_off = android_get_keyboard_y_offset(grd_curscreen->sc_canvas.cv_bitmap.bm_h);
@@ -1887,11 +1893,10 @@ void gr_flip(void)
 	}
 #endif
 	/* android port: resolve MSAA FBO to default framebuffer before readback.
-	 * Only resolve on the outermost end_frame (depth==1); sub-window renders
-	 * just decrement depth and leave the FBO bound for the main resolve. */
+	 * Frame depth is balanced in ogl_start_frame/ogl_end_frame for every 3D
+	 * render pass, including cockpit subviews. Resolve only after all passes
+	 * for the frame have unwound back to depth 0. */
 #ifdef ANDROID
-	if (g_msaa_frame_depth > 0)
-		g_msaa_frame_depth--;
 	if (g_msaa_fbo_bound && g_msaa_frame_depth == 0) {
 		int w = grd_curscreen->sc_w, h = grd_curscreen->sc_h;
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, ogl_msaa_fbo);

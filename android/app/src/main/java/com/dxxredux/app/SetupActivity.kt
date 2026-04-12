@@ -1986,6 +1986,92 @@ private data class FileStatus(
     val safSizeBytes: Long = 0,
 )
 
+private fun launcherDumpDirectoryState(
+    prefix: String,
+    dir: File,
+) {
+    val entries = dir.listFiles()?.sortedBy { it.name.lowercase() } ?: emptyArray<File>().toList()
+    LauncherDebugLog.log("$prefix dir=${dir.absolutePath} count=${entries.size}")
+    if (entries.isEmpty()) {
+        LauncherDebugLog.log("$prefix entry=<none>")
+        return
+    }
+    for (entry in entries) {
+        val kind = if (entry.isDirectory) "dir" else "file"
+        val size = if (entry.isFile) entry.length() else -1L
+        LauncherDebugLog.log(
+            "$prefix entry kind=$kind name=${entry.name} size=$size path=${entry.absolutePath}",
+        )
+    }
+}
+
+private fun launcherDumpStatusList(
+    prefix: String,
+    statuses: List<FileStatus>,
+) {
+    LauncherDebugLog.log("$prefix status_count=${statuses.size}")
+    for (status in statuses) {
+        val alternatives =
+            if (status.info.alternatives.isEmpty()) "-" else status.info.alternatives.joinToString("|")
+        LauncherDebugLog.log(
+            "$prefix filename=${status.info.filename} required=${status.info.required} found=${status.found} found_name=${status.foundName ?: "-"} manifest_filename=${status.manifestEntry?.filename ?: "-"} manifest_source_uri=${status.manifestEntry?.sourceUri ?: "-"} saf_uri=${status.safUri ?: "-"} saf_size=${status.safSizeBytes} alternatives=$alternatives",
+        )
+    }
+}
+
+private fun launcherDumpFileTable(
+    reason: String,
+    filesDir: File,
+    activeSetName: String,
+    setDir: File,
+    manifest: AssetManifest,
+    safManifest: SafManifest,
+) {
+    LauncherDebugLog.log(
+        "launcher-file-dump reason=$reason active_set=$activeSetName set_dir=${setDir.absolutePath}",
+    )
+    launcherDumpDirectoryState("launcher-root-files", filesDir)
+    launcherDumpDirectoryState("launcher-set-files", setDir)
+
+    val assetEntries = manifest.load().sortedBy { it.filename }
+    val assetsPath = File(setDir, "assets.json")
+    LauncherDebugLog.log(
+        "launcher-asset-manifest file=${assetsPath.absolutePath} exists=${assetsPath.exists()} count=${assetEntries.size}",
+    )
+    if (assetEntries.isEmpty()) {
+        LauncherDebugLog.log("launcher-asset-entry <none>")
+    } else {
+        for (entry in assetEntries) {
+            val matchedName = findFile(setDir, entry.filename)
+            val path = matchedName?.let { File(setDir, it) } ?: File(setDir, entry.filename)
+            LauncherDebugLog.log(
+                "launcher-asset-entry filename=${entry.filename} matched_name=${matchedName ?: "-"} path=${path.absolutePath} exists=${path.exists()} size=${entry.sizeBytes} source_uri=${entry.sourceUri ?: "-"} version=${entry.versionName ?: "-"}",
+            )
+        }
+    }
+
+    val safEntries = safManifest.read().sortedBy { it.filename }
+    val safPath = File(setDir, SafManifest.FILENAME)
+    LauncherDebugLog.log(
+        "launcher-saf-manifest file=${safPath.absolutePath} exists=${safPath.exists()} count=${safEntries.size}",
+    )
+    if (safEntries.isEmpty()) {
+        LauncherDebugLog.log("launcher-saf-entry <none>")
+    } else {
+        for (entry in safEntries) {
+            LauncherDebugLog.log(
+                "launcher-saf-entry filename=${entry.filename} uri=${entry.contentUri} size=${entry.sizeBytes}",
+            )
+        }
+    }
+
+    val d2FileList = detectD2FileList(setDir, safManifest)
+    val d2Statuses = checkFiles(setDir, d2FileList, manifest, safManifest)
+    val d1Statuses = checkFiles(setDir, D1_FILES, manifest, safManifest)
+    launcherDumpStatusList("launcher-d2-status", d2Statuses)
+    launcherDumpStatusList("launcher-d1-status", d1Statuses)
+}
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Case-insensitive file lookup (Android ext4 is case-sensitive). */
@@ -2533,6 +2619,17 @@ private fun SetupScreen(
     var prunedSourceNames by remember { mutableStateOf<List<String>>(emptyList()) }
     var prunedDataFiles by remember { mutableStateOf<List<String>>(emptyList()) }
     LaunchedEffect(activeSetName) {
+        if (LauncherDebugLog.isEnabled(context)) {
+            launcherDumpFileTable(
+                reason = "startup-before-prune",
+                filesDir = filesDir,
+                activeSetName = activeSetName,
+                setDir = setDir,
+                manifest = manifest,
+                safManifest = safManifest,
+            )
+        }
+
         // 1. Prune audio sources
         val srcManager = AudioSourceManager(filesDir)
         val prunedSrc = srcManager.pruneMissingSources(setDir)
@@ -2547,9 +2644,30 @@ private fun SetupScreen(
         // Only report files that are truly gone from disk
         val allPruned =
             (prunedAssets + prunedSaf).filter { name ->
-                !File(setDir, name).exists()
+                findFile(setDir, name) == null
             }
+        if (prunedAssets.isNotEmpty() || prunedSaf.isNotEmpty()) {
+            val prunedAssetsText = if (prunedAssets.isEmpty()) "-" else prunedAssets.joinToString(",")
+            val prunedSafText = if (prunedSaf.isEmpty()) "-" else prunedSaf.joinToString(",")
+            val popupFilesText = if (allPruned.isEmpty()) "-" else allPruned.joinToString(",")
+            LauncherDebugLog.log(
+                "launcher-prune-summary active_set=$activeSetName pruned_assets=$prunedAssetsText pruned_saf=$prunedSafText popup_files=$popupFilesText",
+            )
+        }
         if (allPruned.isNotEmpty()) {
+            LauncherDebugLog.log(
+                "launcher-prune-popup active_set=$activeSetName files=${allPruned.joinToString(",")}",
+            )
+            if (LauncherDebugLog.isEnabled(context)) {
+                launcherDumpFileTable(
+                    reason = "popup-after-prune",
+                    filesDir = filesDir,
+                    activeSetName = activeSetName,
+                    setDir = setDir,
+                    manifest = manifest,
+                    safManifest = safManifest,
+                )
+            }
             prunedDataFiles = allPruned
         }
 
@@ -3039,7 +3157,12 @@ private fun SetupScreen(
                                 status.found && status.manifestEntry != null -> {
                                     {
                                         val entry = status.manifestEntry
-                                        File(setDir, entry.filename).delete()
+                                        val actualName = findFile(setDir, entry.filename)
+                                        if (actualName != null) {
+                                            File(setDir, actualName).delete()
+                                        } else {
+                                            File(setDir, entry.filename).delete()
+                                        }
                                         manifest.remove(entry.filename)
                                         detailStatus = null
                                         onRefresh()

@@ -12,6 +12,7 @@
 #define DLOG_GRAPHICS 1
 #define DLOG_TEXTURE  2
 #define DLOG_GAME     3
-#define DLOG_COUNT    4
+#define DLOG_LAUNCHER 4
+#define DLOG_COUNT    5
 
 #endif /* DEBUG_LOG_CATEGORIES_H */

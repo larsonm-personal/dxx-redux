@@ -27,6 +27,7 @@ static const char *category_tags[DLOG_COUNT] = {
 	"GRAPHICS",
 	"TEXTURE",
 	"GAME",
+	"LAUNCHER",
 };
 
 void debug_log_set_enabled(int category, int on)

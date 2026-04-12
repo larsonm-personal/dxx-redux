@@ -83,19 +83,32 @@ class SafManifest(
      */
     fun pruneStaleEntries(context: android.content.Context): List<String> {
         val entries = read()
-        val stale =
-            entries.filter { entry ->
-                try {
-                    val uri = android.net.Uri.parse(entry.contentUri)
-                    context.contentResolver.openInputStream(uri)?.close()
-                    false // accessible
-                } catch (_: Exception) {
-                    true // stale
-                }
+        val stale = mutableListOf<SafFileEntry>()
+        val staleReasons = linkedMapOf<String, String>()
+        for (entry in entries) {
+            try {
+                val uri = android.net.Uri.parse(entry.contentUri)
+                context.contentResolver.openInputStream(uri)?.close()
+            } catch (e: Exception) {
+                stale += entry
+                staleReasons[entry.filename] =
+                    "${e::class.java.simpleName}:${e.message ?: "<no-message>"}"
             }
+        }
         if (stale.isEmpty()) return emptyList()
+        LauncherDebugLog.log(
+            "saf-manifest prune start manifest=${manifestFile.absolutePath} stale_count=${stale.size}",
+        )
+        for (entry in stale.sortedBy { it.filename }) {
+            LauncherDebugLog.log(
+                "saf-manifest stale filename=${entry.filename} uri=${entry.contentUri} size=${entry.sizeBytes} reason=${staleReasons[entry.filename] ?: "unknown"}",
+            )
+        }
         val pruned = stale.map { it.filename }
         write(entries.filterNot { e -> stale.any { it.filename == e.filename } })
+        LauncherDebugLog.log(
+            "saf-manifest prune complete manifest=${manifestFile.absolutePath} kept_count=${entries.size - stale.size}",
+        )
         for (name in pruned) {
             Log.i(TAG, "Pruned stale SAF entry: $name")
         }

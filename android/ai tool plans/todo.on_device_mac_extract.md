@@ -1,165 +1,483 @@
 # On-Device Mac CD Extraction (Android)
 
-Status: Future work -- not started
+Status: Planning expanded on 2026-04-11. Source media, hashes, reference
+outputs, and likely attribution sources are collected. Native implementation is
+not started.
 
 ## Goal
 
-Enable Android users to import game files directly from a Mac (HFS) CD image
-on-device, without needing a PC extraction step. The Mac Descent CD (MacPlay)
-uses an HFS filesystem containing a StuffIt Installer v2 (STi2) archive that
-holds descent.hog, descent.pig, CHAOS.HOG, CHAOS.MSN, and demo files.
+Enable Android users to import game files directly from a Mac HFS CD image
+on-device, without needing a PC extraction step. The first target is the
+Descent 1 MacPlay CD. The native path should stay generic enough to support
+later Mac HFS discs too.
 
-## Architecture
+## Planning tranche complete
 
-Follow the existing Android extraction pipeline pattern:
+- [x] Identify the real source media already present in `game_data/`
+- [x] Record source-media hashes for the primary MacPlay disc and the known
+   second Mac BIN/CUE variant
+- [x] Record the known-good extracted MacPlay output hashes already present in
+   `data_tracks/`
+- [x] Cross-check nearby solved GOG installer paths that can serve as JNI and
+   test-pattern references
+- [x] Decide which upstream codebases are the most likely inspiration sources
+   for future AI-generated files, and what attribution policy should follow
+
+## Current state
+
+- Desktop reference extractor already works: `game_data/extract_mac_cd.ps1`
+- Android already has adjacent import paths we can mirror:
+   - BIN/CUE ISO 9660: `cue_parser.c`, `iso9660_reader.c`, `jni_disc_import.c`
+   - GOG `.exe` and `.pkg`: `inno_reader.c`, `pkg_reader.c`, `jni_gog_import.c`,
+      `extract_gog.c`
+- `known_discs.json5` already contains both Mac D1 disc variants:
+   - `descent-mac-macplay`
+   - `d1-mac-2nd-bincue`
+- `known_versions.json5` already contains D1 Mac (MacPlay) hashes for:
+   - `demo1.dem`
+   - `descent.hog`
+   - `descent.pig`
+   - `watchme.dem`
+   - `yep9.dem`
+- `hash_assets.ps1` already maps folder name `Descent - Mac macplay` to
+   version `D1 Mac (MacPlay)`
+- Gap to close during implementation:
+   - Mac `CHAOS.MSN` hash is known, but `.msn` is not currently included in the
+      `hash_assets.ps1` extension list
+
+## Verified source media
+
+### Primary implementation target: Descent - Mac macplay
+
+| Artifact | Location | Size | SHA256 |
+|---|---|---:|---|
+| BIN | `game_data/CD images/Descent - Mac macplay/Descent - Mac macplay.bin` | 718912320 | `38393a12630bbdfdd2e2efac138da463c242586a42c889b91054fabf6ba7b925` |
+| CUE | `game_data/CD images/Descent - Mac macplay/Descent - Mac macplay.cue` | 1125 | `b8127c0ce27a4573b596c5cfb78af0f0e7ce58e1dbe130e1424f3ede09d4446d` |
+
+Verified disc facts:
+- Folder: `game_data/CD images/Descent - Mac macplay/`
+- `track_hashes.json` already exists
+- Known disc id: `descent-mac-macplay`
+- Data track SHA1: `fd32cb88782068aab7bc98b8920672e36637da80`
+- Track layout: 1 data track (Mode1/2352) + 13 redbook audio tracks
+- Desktop probe already confirmed why the normal ISO path fails:
+   track 1 reports `ISO listing failed`, which is correct for an HFS data track
+- HFS/APM details already observed by the desktop investigation:
+   - DDR block size 512
+   - partition map contains `Apple_partition_map` and `Apple_HFS`
+   - HFS volume name `Descent`
+   - Apple_HFS partition length 319989 blocks
+
+### Secondary compatibility target: d1 mac 2nd bin+cue
+
+| Artifact | Location | Size | SHA256 |
+|---|---|---:|---|
+| BIN | `game_data/CD images/d1 mac 2nd bin+cue/Descent [Mac].BIN` | 718912320 | `3f921a15abc3dc656d98408096d344414e434dca52f1a7e124fd310987716030` |
+| CUE | `game_data/CD images/d1 mac 2nd bin+cue/Descent [Mac].CUE` | 612 | `0717b611f4ea8da1140d7ad9a53605ffaf62362148e81e7a91705e78bb8de9b0` |
+
+Verified disc facts:
+- Folder: `game_data/CD images/d1 mac 2nd bin+cue/`
+- `track_hashes.json` already exists
+- Known disc id: `d1-mac-2nd-bincue`
+- Data track SHA1: `527579d7c267f070abeafd1e9d0efc7d945b446d`
+- This should be treated as a follow-up compatibility target, not a first-pass
+   blocker. First implementation should lock onto the primary MacPlay disc.
+
+### Nearby solved installer inputs worth mirroring
+
+These are not the target input for this feature, but they are the closest
+existing examples of the current Android import style and test flow.
+
+| Artifact | Location | Size | SHA256 | Why it matters |
+|---|---|---:|---|---|
+| D1 Mac GOG `.pkg` | `game_data/gog installers/descent_enUS_1_0_35122.pkg` | 22251081 | `d0720e12b95cfaee95e133ae08249ef05fcec17c6e9ca362bd54d8efb96f2293` | Existing solved Mac installer path via `pkg_reader.c` |
+| D1 Windows GOG `.exe` | `game_data/gog installers/setup_descent_1.4a_(16596).exe` | 26384096 | `cd754293de928f73a3772630a85d274b22940c857b1aab80078afa962a5492a7` | Existing solved Windows installer path via `inno_reader.c` |
+
+Both of those solved paths already extract the same standard 7-file D1 full set
+under their `extracted/` folders, so they are good JNI and regression-pattern
+references, but not good asset-hash oracles for MacPlay because MacPlay uses
+different core assets.
+
+## Verified expected outputs for the primary disc
+
+Current known-good desktop output folder:
+`game_data/CD images/Descent - Mac macplay/data_tracks/`
+
+Current expected files and hashes:
+
+| File | Size | SHA256 | Why it matters |
+|---|---:|---|---|
+| `Descent` | 638827 | `027398a8ee53fbcc4956a8308d075a729e58034a3ff8aa6dfeaaae57ebbb4145` | Direct HFS file, no STi2 needed. Best first proof that catalog traversal and data-fork extraction work |
+| `CHAOS.HOG` | 174751 | `0c5fb0684443c0b9c4dbb2769db65b8460bdad4ca80d58a943396fd07c001ba4` | Small STi2 output. Byte-identical to PC D1 v1.0 `chaos.hog` |
+| `CHAOS.MSN` | 299 | `be614df3ab4d35350f1033fc4acd7f18f779883273cdbf1db1d976df4be11d02` | Smallest Mac-specific STi2 output. Good early decompressor oracle |
+| `demo1.dem` | 1244458 | `182b0f6e209f6e4b5d34fe7c1cbe9222425f3295f6dfe50917fb0bc0cf6cde6a` | Medium-sized STi2 output already present in `known_versions.json5` |
+| `descent.hog` | 7456179 | `d0ab72fda672ac9d751d24899f96ac14eb1720386cf2b0226a5add71543c4339` | Required final game asset |
+| `descent.pig` | 3975533 | `9eb232c9da830309b2d3a1de75713f6155c62215cd867f4570536180af31f299` | Required final game asset |
+| `watchme.dem` | 1015201 | `a1d8fd365022a0ca56026d6a9325a6dbd41e483f76e6ec8c13d844a13ce24c87` | Medium-sized STi2 output already present in `known_versions.json5` |
+| `yep9.dem` | 906688 | `20ee0e297f114b1ded6c1156db7247479866d30556598992dfd9ae245deee49b` | Medium-sized STi2 output already present in `known_versions.json5` |
+
+Important comparisons against the already-solved D1 GOG outputs in
+`game_data/gog installers/setup_descent_1.4a_(16596)/extracted/` and
+`game_data/gog installers/descent_enUS_1_0_35122/extracted/`:
+
+- `CHAOS.HOG` matches exactly across MacPlay and the PC/GOG set
+- `CHAOS.MSN` does not match:
+   - MacPlay: 299 bytes, `be614df3ab4d35350f1033fc4acd7f18f779883273cdbf1db1d976df4be11d02`
+   - PC/GOG: 309 bytes, `9f6ed0de3b9c5aea3f609598fc8cd3ae959594a1399d38714b5fd3d9522de819`
+- `descent.hog` and `descent.pig` are different asset versions from the PC/GOG set
+- The demo set is different too:
+   - MacPlay: `demo1.dem`, `watchme.dem`, `yep9.dem`
+   - PC/GOG: `DESCENT.DEM`, `LEVEL18.DEM`, `MINIBOSS.DEM`
+
+Output casing to preserve, because the desktop oracle already established it:
+- `CHAOS.HOG`
+- `CHAOS.MSN`
+- `demo1.dem`
+- `Descent`
+- `descent.hog`
+- `descent.pig`
+- `watchme.dem`
+- `yep9.dem`
+
+Note:
+- `Descent` is useful as an HFS-reader validation target and for provenance,
+   but it is not required for launcher readiness. The Android production import
+   path may decide to skip copying it into the set directory after the HFS
+   reader is proven.
+
+## Desktop oracle to mirror in native code
+
+Working reference pipeline today: `game_data/extract_mac_cd.ps1`
+
+Stage boundaries and intermediate files are already clear:
+1. Parse CUE and find the data track
+2. Strip Mode1/2352 sectors into `_mac_extract_temp/data_track_raw.img`
+3. Parse the Apple Partition Map
+4. Copy the HFS partition into `_mac_extract_temp/hfs_partition.img`
+5. Use `machfs` to dump the HFS volume into `_mac_extract_temp/hfs_files/`
+6. Find the `Install Descent` data fork and pass it to `unar` into
+    `_mac_extract_temp/unar_output/`
+7. Copy matching game files into `data_tracks/`
+
+Important behavior to keep in mind when translating this to native Android:
+- the desktop script reads the HFS image into Python memory in one shot via
+   `machfs`; the Android C path should stay streaming or chunked
+- the desktop script supports both assets directly on HFS and assets inside the
+   STi2 archive; this matters because later Mac discs such as D2 Mac may put
+   some files directly on HFS outside the installer
+- the desktop script searches for `Install Descent` by common names first, then
+   falls back to STi2 magic scanning; the native path should do the same
+
+## Planned native files and touch points
+
+Likely new files:
+- `android/app/src/main/cpp/extract/hfs_reader.c`
+- `android/app/src/main/cpp/extract/hfs_reader.h`
+- `android/app/src/main/cpp/extract/sti2_extract.c`
+- `android/app/src/main/cpp/extract/sti2_extract.h`
+- `android/app/src/main/cpp/extract/test_hfs.c`
+- `android/app/src/main/cpp/extract/test_sti2.c` or equivalent extension of the
+   existing extract test harness
+- `game_data/CD images/Descent - Mac macplay/extract_regression.json5`
+
+Likely existing files to touch:
+- `android/app/src/main/cpp/extract/CMakeLists.txt`
+- `android/app/src/main/cpp/CMakeLists.txt`
+- `android/app/src/main/cpp/extract/jni_disc_import.c`
+- `android/app/src/main/java/com/dxxredux/app/DiscImportBridge.kt`
+- `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt`
+
+Likely existing test entry points to reuse:
+- `android/tests/test_extract.ps1`
+- `game_data/generate_regression_specs.ps1`
+
+## Native architecture
+
+Follow the existing Android extraction pattern, but add a Mac-specific HFS and
+STi2 branch:
 
 ```
 Kotlin SetupActivity
-  -> DiscImportBridge.kt (new: nativeExtractMacCd)
-    -> jni_disc_import.c
-      -> cue_parser.c (existing -- CUE parsing, sector geometry)
-      -> hfs_reader.c (NEW -- Apple Partition Map + HFS catalog reader)
-      -> sti2_extract.c (NEW -- StuffIt Installer v2 decompressor)
+   -> DiscImportBridge.kt
+      -> jni_disc_import.c
+         -> cue_parser.c (existing)
+         -> hfs_reader.c (new)
+         -> sti2_extract.c (new)
 ```
 
-## Components
+The Kotlin bridge should ideally mirror the current ISO and GOG UX:
+- a detection/listing path so the launcher can preview what will be imported
+- an extraction path with progress callbacks
 
-### A. HFS Reader (hfs_reader.c / hfs_reader.h) -- FEASIBLE
+At minimum, new bridge methods will likely be:
+- `nativeListMacCdFiles(...)`
+- `nativeExtractMacCd(...)`
 
-~500-700 lines C. Parses Apple Partition Map, reads HFS Master Directory Block,
-traverses Catalog B-tree, extracts data forks.
+Detection rule in `SetupActivity.kt`:
+- if ISO listing fails, check for Apple DDR signature `0x4552` on the data track
+- if that is present, route through the Mac HFS path instead of treating the
+   disc as a normal ISO failure
+
+## Component plan
+
+### A. HFS reader (read-only) -- feasible
+
+Scope:
+- Apple Partition Map detection
+- HFS Master Directory Block parsing
+- catalog B-tree traversal
+- data-fork extraction
+- enough path handling to find `Descent`, `Install Descent`, and future direct
+   HFS game assets
 
 Structures to parse:
-1. Apple Partition Map (APM): DDR at block 0 (sig 0x4552), PM entries at
-   blocks 1+ (sig "PM"). Each 512 bytes. Find the "Apple_HFS" partition.
-2. HFS Master Directory Block (MDB): At byte 1024 from partition start.
-   Sig 0x4244. Contains allocation block size, catalog B-tree location.
-3. Catalog B-tree: Standard B-tree with node descriptors, header node,
-   leaf nodes containing file/folder thread records. File records have
-   extent descriptors (start block + length) for the data fork.
-4. Extent Overflow B-tree: Only needed for files with >3 extent runs
-   (fragmented files). Unlikely needed for a pressed CD.
+1. Apple Partition Map (APM): DDR at block 0 (sig `0x4552`), PM entries at
+    blocks 1+ (sig `PM`), 512 bytes each, find `Apple_HFS`
+2. HFS Master Directory Block (MDB): byte 1024 from partition start,
+    sig `0x4244`
+3. Catalog B-tree: node descriptors, header node, leaf nodes, thread records,
+    file records, extents for data forks
+4. Extents Overflow B-tree: probably unnecessary for the known pressed disc,
+    but do not hardwire that assumption too deeply
 
-API (following iso9660_reader.h pattern):
+Preferred API shape, more granular than the original rough sketch because it
+supports easiest-first testing better:
+
 ```c
 int hfs_find_partition(int bin_fd, int track_start_sector,
-                       int *hfs_start_sector_out, int *hfs_num_sectors_out);
+                                  int *hfs_start_sector_out, int *hfs_num_sectors_out);
 
 int hfs_list_files(int bin_fd, int hfs_start_sector, int hfs_num_sectors,
-                   hfs_file_list_t *out);
+                            hfs_file_list_t *out);
 
-int hfs_extract_files(int bin_fd, int hfs_start_sector, int hfs_num_sectors,
-                      const hfs_file_list_t *file_list, const char *output_dir,
-                      const char **extensions,
-                      hfs_progress_fn progress, void *user_data);
+int hfs_extract_file(int bin_fd, int hfs_start_sector, int hfs_num_sectors,
+                               const char *hfs_path, const char *output_path);
+
+int hfs_extract_matching(int bin_fd, int hfs_start_sector, int hfs_num_sectors,
+                                     const char **extensions, const char *output_dir,
+                                     hfs_progress_fn progress, void *user_data);
 ```
-
-Sector I/O reuses the Mode1/2352 raw sector access pattern from iso9660_reader.c.
 
 References:
-- temp/parse_apm.ps1 (APM algorithm, proven)
-- Python machfs library (HFS reading reference)
-- Apple "Inside Macintosh: Files" (public spec)
-- libhfs source (~2000 LOC for full read-write HFS)
+- `temp/parse_apm.ps1` for the already-proven APM algorithm
+- Apple `Inside Macintosh: Files` for structure definitions
+- `machfs` for high-level HFS catalog/B-tree behavior
+- `hfsutils/libhfs` only if the public specs plus `machfs` leave holes
 
-### B. STi2 Extractor (sti2_extract.c / sti2_extract.h) -- HARD BUT FEASIBLE
+### B. STi2 extractor (scope-limited) -- hard but feasible
 
-~500-800 lines C (scope-limited to known archive).
+Scope:
+- STi2 container parsing
+- entry listing
+- extraction of only the methods actually used by the known archive
+- resource forks can be skipped for the Android use case
 
-The Mac Descent installer uses StuffIt Installer v2 format:
-- Magic: "STi2" at offset 0
-- File entries at known offsets (descent.hog at 0x7E76A, descent.pig at 0x456263)
-- Each entry: Pascal string name, file metadata, compressed data
-- Compression: likely StuffIt method 13 (LZ77+Huffman)
+Known archive facts already established:
+- archive magic: `STi2`
+- likely entry offsets in the known archive:
+   - `CHAOS.HOG` at `0x69399`
+   - `descent.hog` at `0x7E76A`
+   - `descent.pig` at `0x456263`
+- likely compression set is small, with method 13 the main suspect
 
-Recommended approach:
-1. Study XADMaster source (Objective-C, LGPL 2.1 -- license-compatible with GPL)
-   for STi2 format specification
-2. Implement only compression methods used by the known archive:
-   - Method 13 (LZ77+Huffman) -- ~300 LOC
-   - Method 0 (store) -- trivial
-3. Skip resource forks (not needed for game data)
+Preferred API shape:
 
-API:
 ```c
-int sti2_extract(const uint8_t *archive_data, size_t archive_size,
-                 const char *output_dir, const char **extensions,
-                 sti2_progress_fn progress, void *user_data);
+int sti2_list_entries(const uint8_t *archive_data, size_t archive_size,
+                                 sti2_entry_list_t *out);
+
+int sti2_extract_entry(const uint8_t *archive_data, size_t archive_size,
+                                  const sti2_entry_t *entry, const char *output_path);
+
+int sti2_extract_matching(const uint8_t *archive_data, size_t archive_size,
+                                       const char **extensions, const char *output_dir,
+                                       sti2_progress_fn progress, void *user_data);
 ```
 
-Why NOT use existing tools on Android:
-- stuffit Rust crate: does NOT handle STi2 (only SIT 1.x/5.0) -- tested/confirmed
-- unar/XADMaster: Objective-C + GNUstep -- not portable to Android NDK
-- Rust->Android: no Rust toolchain in the project, high friction
+Why not use existing tools on Android:
+- `stuffit-rs` targets classic `.sit`, not STi2 installer archives
+- `unar`/XADMaster are not portable to the Android NDK stack used here
+- bringing Rust into the Android app just for this would add friction the rest
+   of the repo currently avoids
 
-### tricks
-1. implement the extract code as a standalone utility for PC use, as was done with the PC CD extraction paths, and initially test with that
-2. we have working extract code on PC, so we have known-good extracted files. leverage that to check a re-implemented extract utility
-3. decompiling the mac binary may give some insights
-
-### existing implementations
-1. there are minimal test stuffit files here: https://github.com/ssokolow/stuffit-test-files
-2. a C expander library that might be useful: https://github.com/idolpx/munbox/tree/main/lib/layers
-3. objective C library: https://github.com/MacPaw/XADMaster
-4. rust library: https://github.com/benletchford/stuffit-rs
-5. slop library in C: https://github.com/pappadf/peeler
-
-### C. JNI Integration
+### C. JNI and launcher integration
 
 Changes needed:
-- jni_disc_import.c: new nativeExtractMacCd function
-  Flow: parse CUE -> find data track -> hfs_find_partition -> hfs_extract_files
-  (extract STi2 to temp) -> sti2_extract -> copy game files
-- DiscImportBridge.kt: new JNI declaration + wrapper
-- SetupActivity.kt: after ISO extraction fails, try Mac CD extraction
-  (detect Apple DDR signature 0x4552)
-- CMakeLists.txt: add extract/hfs_reader.c and extract/sti2_extract.c
+- `jni_disc_import.c`
+   - add new Mac HFS/STi2 list/extract entry points
+   - reuse the same progress callback style used by ISO/GOG importers
+- `DiscImportBridge.kt`
+   - add JNI declarations and Kotlin wrappers
+- `SetupActivity.kt`
+   - after ISO extraction fails, try Mac CD detection and Mac extraction
+- `CMakeLists.txt`
+   - add `hfs_reader.c` and `sti2_extract.c`
 
-## Risk Assessment
+## Easiest-to-hardest implementation order
+
+The correct order here is to isolate one subsystem at a time. Do not start with
+Kotlin or Android UI work. Get desktop-native extraction right first.
+
+1. HFS partition detection only
+    - Implement `hfs_find_partition()`
+    - Validate against both known Mac D1 discs
+    - Success criteria:
+       - primary disc resolves as HFS, not ISO
+       - secondary disc resolves too
+
+2. HFS catalog walk and direct-file extraction
+    - Implement enough catalog/B-tree support to list files and extract data forks
+    - First exact hash target: `Descent`
+    - Success criteria:
+       - extracted `Descent` hash matches
+          `027398a8ee53fbcc4956a8308d075a729e58034a3ff8aa6dfeaaae57ebbb4145`
+       - `Install Descent` data fork can be opened and starts with `STi2`
+
+3. STi2 entry parser with no decompression yet
+    - Parse header and enumerate entries
+    - Record entry name, output size, compression method, compressed offset
+    - Success criteria:
+       - known member offsets are confirmed for the primary archive
+       - we know exactly which compression methods are actually present before
+          writing a decompressor
+
+4. Stored entries first, if any
+    - Implement method 0 only if the archive uses it
+    - If nothing is stored, keep this phase as parser/assertion coverage and move on
+
+5. Smallest compressed outputs first
+    - `CHAOS.MSN` first, because it is tiny and Mac-specific
+    - `CHAOS.HOG` second, because it is small and should match the existing D1
+       v1.0 hash exactly
+    - then the three Mac demo files
+    - Success criteria:
+       - `CHAOS.MSN` hash matches
+          `be614df3ab4d35350f1033fc4acd7f18f779883273cdbf1db1d976df4be11d02`
+       - `CHAOS.HOG` hash matches
+          `0c5fb0684443c0b9c4dbb2769db65b8460bdad4ca80d58a943396fd07c001ba4`
+
+6. Large required members last
+    - `descent.hog`
+    - `descent.pig`
+    - Success criteria:
+       - `descent.hog` hash matches
+          `d0ab72fda672ac9d751d24899f96ac14eb1720386cf2b0226a5add71543c4339`
+       - `descent.pig` hash matches
+          `9eb232c9da830309b2d3a1de75713f6155c62215cd867f4570536180af31f299`
+
+7. JNI and Kotlin integration only after desktop-native success
+    - wire `jni_disc_import.c`
+    - add `DiscImportBridge.kt` wrappers
+    - add Mac fallback in `SetupActivity.kt`
+
+8. Regression coverage and emulator validation
+    - create `game_data/CD images/Descent - Mac macplay/extract_regression.json5`
+    - run `android/tests/test_extract.ps1` against that new spec
+    - run an emulator import test using the Mac disc image
+    - validate the imported D1 set launches and reaches `Lunar Outpost`
+
+9. Secondary-disc compatibility pass
+    - rerun the same native code on `d1 mac 2nd bin+cue`
+    - fix only if the second disc exposes a real compatibility issue rather than
+       unnecessary over-generalization
+
+## Planned regression spec details
+
+When the native path is working, add:
+`game_data/CD images/Descent - Mac macplay/extract_regression.json5`
+
+Expected core fields:
+- `source_type`: `cd`
+- `source_files`:
+   - cue SHA256 `b8127c0ce27a4573b596c5cfb78af0f0e7ce58e1dbe130e1424f3ede09d4446d`
+   - bin SHA256 `38393a12630bbdfdd2e2efac138da463c242586a42c889b91054fabf6ba7b925`
+- `game`: `d1`
+- `classification`: `d1_full`
+- `expected_mission`: `Descent: First Strike`
+- `expected_level1`: `Lunar Outpost`
+- `expected_files`: `descent.hog`, `descent.pig`
+- `audio_tracks`: 13
+- `total_extracted`: 8 if we keep `Descent` in the extracted set, otherwise 7
+
+## AI-generated file attribution plan
+
+The repo already has a precedent for this in `inno_reader.c` and `inno_reader.h`:
+when one upstream codebase is the dominant inspiration, keep an explicit file
+header that says so and include the upstream license notice.
+
+### `hfs_reader.c` / `hfs_reader.h`
+
+Expected inspiration order:
+1. public HFS/APM specs
+2. `temp/parse_apm.ps1`
+3. `machfs` (MIT)
+4. `hfsutils/libhfs` (GPL-2.0) only if the earlier sources are not enough
+
+Plan:
+- Prefer the public specs plus `machfs` first, because that keeps the likely
+   dominant inspiration MIT-licensed and the implementation simpler
+- If the final code ends up following `machfs` structure closely, add a file
+   header that explicitly cites `machfs` and keeps the MIT notice pattern
+- If the final code instead leans heavily on `hfsutils/libhfs`, switch to a
+   GPL-2.0-style attribution header for those files instead
+- Do not silently mix multiple upstreams in one file without calling that out
+
+### `sti2_extract.c` / `sti2_extract.h`
+
+Expected inspiration order:
+1. `XADMaster` STi2 and StuffIt code (LGPL-2.1)
+2. `stuffit-rs` for method 13 ideas or tests (MIT or Apache-2.0)
+
+Plan:
+- The most likely dominant inspiration for the parser itself is `XADMaster`,
+   because it is the only clearly relevant codebase here that actually knows
+   about StuffIt-family parsing at the needed level
+- If `XADMaster` is the dominant inspiration, add an LGPL-2.1 attribution
+   header from the start, in the same spirit as the current `innoextract`
+   attribution on `inno_reader.c`
+- If method 13 decompression logic ends up taking more from `stuffit-rs` than
+   from `XADMaster`, call that out explicitly and include the MIT/Apache notice
+   that matches the final dominant source
+
+### Test tools and JNI glue
+
+Expected inspiration:
+- mostly repo-native patterns from `extract_cd.c`, `pkg_reader.c`,
+   `jni_disc_import.c`, and the existing extract tests
+
+Plan:
+- no external attribution header unless a single external codebase becomes the
+   dominant source for a specific file
+
+### Lower-priority references
+
+These are interesting but should not be treated as planned primary sources yet:
+- `munbox`
+- `peeler`
+
+Reason:
+- fit is not proven yet
+- license handling has not been verified enough to plan around them today
+
+## Risks and mitigations
 
 | Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| STi2 format underdocumented | HIGH | HIGH | Study XADMaster source (LGPL) |
-| Compression method unknown | MEDIUM | HIGH | Method 13 likely; stuffit-rs has reference impl |
-| HFS B-tree complexity | LOW | MEDIUM | Pressed CDs: simple, unfragmented layout |
-| Memory on Android | LOW | LOW | Stream-based, same as ISO flow |
-| Multiple Mac CD variants | MEDIUM | MEDIUM | Design API generically, test with known disc |
-
-## Implementation Phases
-
-### Phase A -- HFS Reader (independent, lower risk)
-1. Write hfs_reader.c / hfs_reader.h in android/app/src/main/cpp/extract/
-2. Desktop test: test_hfs.c against Mac macplay bin
-3. JNI wrapper for hfs_find_partition + hfs_extract_files
-
-### Phase B -- STi2 Extractor (needs format research first)
-1. Study XADMaster source for STi2 format specification
-2. get minimal test archives from the repo for that
-3. study other repos for context, but most are not able to do sti2 (see repos section)
-4. Analyze "Install Descent" binary (identify compression methods per entry)
-5. Write sti2_extract.c / sti2_extract.h
-6. test with minimal test archives
-7. Desktop test against "Install Descent" archive
-8. JNI wrapper
-
-### Phase C -- End-to-end (depends on A + B)
-1. Wire nativeExtractMacCd in jni_disc_import.c
-2. Kotlin bridge + SetupActivity UI flow
-3. Android emulator test with Mac CD image
-
-## Pre-requisite
-
-Phase B requires a focused research session analyzing:
-- XADMaster's XADStuffItParser.m (format parsing)
-- XADMaster's compression method implementations
-- The "Install Descent" binary itself (to identify exact methods per entry)
-
-This research should happen before committing to the full C implementation.
+|---|---|---|---|
+| STi2 format details are underdocumented | High | High | Do the entry-table-only phase first and decide compression support from real archive data, not guesses |
+| Compression method assumptions are wrong | Medium | High | Confirm actual per-entry methods before writing the decompressor |
+| HFS B-tree work grows past the expected simple case | Low | Medium | Keep the first pass read-only and disc-focused; only add overflow/extents complexity if the known discs force it |
+| AI-generated code draws from mixed upstreams and attribution becomes unclear | Medium | Medium | Pick one dominant inspiration source per new file before coding and keep the header aligned with that choice |
+| Multiple Mac disc variants differ more than expected | Medium | Medium | Treat the second disc as a follow-up compatibility pass after the primary disc works |
+| Memory use on Android balloons if we copy the desktop approach too literally | Low | Medium | Keep the native path streaming and chunked; do not mirror the desktop Python in-memory behavior |
 
 ## Notes
 
-- CHAOS.HOG (Mac) is byte-identical to chaos.hog (D1 v1.0 PC) -- same SHA-256
-- CHAOS.MSN differs between Mac and PC but .msn not in hash extensions list
-- descent.hog and descent.pig are Mac-specific (unique hashes)
-- The desktop extraction pipeline (extract_mac_cd.ps1) uses Python machfs + unar
-  as a working reference implementation
+- `CHAOS.HOG` is byte-identical to PC D1 v1.0 / GOG `CHAOS.HOG`
+- `CHAOS.MSN` is not identical to the PC/GOG file and should be treated as its
+   own Mac-specific known version
+- `descent.hog` and `descent.pig` are Mac-specific versions and are already in
+   `known_versions.json5`
+- The existing desktop extractor is the oracle. The Android native path should
+   not try to be cleverer than the desktop script until the hashes above match
+- Redbook audio is not the blocker here. `known_discs.json5` and the track
+   fingerprints already exist. First implementation only needs game-data import

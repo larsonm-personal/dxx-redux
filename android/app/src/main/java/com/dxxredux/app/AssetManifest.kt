@@ -40,6 +40,9 @@ class AssetManifest(
 
     private val manifestFile get() = File(filesDir, "assets.json")
 
+    private fun findDiskFile(filename: String): File? =
+        filesDir.listFiles()?.firstOrNull { it.name.equals(filename, ignoreCase = true) }
+
     /**
      * Load the manifest from disk. Returns empty list if file doesn't exist or is corrupt.
      */
@@ -135,11 +138,23 @@ class AssetManifest(
      */
     fun pruneStaleEntries(): List<String> {
         val entries = load()
-        val stale = entries.filter { !File(filesDir, it.filename).exists() }
+        val stale = entries.filter { findDiskFile(it.filename) == null }
         if (stale.isEmpty()) return emptyList()
+        LauncherDebugLog.log(
+            "asset-manifest prune start manifest=${manifestFile.absolutePath} stale_count=${stale.size}",
+        )
+        for (entry in stale.sortedBy { it.filename }) {
+            val file = findDiskFile(entry.filename) ?: File(filesDir, entry.filename)
+            LauncherDebugLog.log(
+                "asset-manifest stale filename=${entry.filename} path=${file.absolutePath} exists=${file.exists()} manifest_size=${entry.sizeBytes} source_uri=${entry.sourceUri ?: "-"} version=${entry.versionName ?: "-"}",
+            )
+        }
         val pruned = stale.map { it.filename }
-        val kept = entries.filterNot { !File(filesDir, it.filename).exists() }
+        val kept = entries.filterNot { findDiskFile(it.filename) == null }
         save(kept)
+        LauncherDebugLog.log(
+            "asset-manifest prune complete manifest=${manifestFile.absolutePath} kept_count=${kept.size}",
+        )
         for (name in pruned) {
             Log.i("AssetManifest", "Pruned stale entry: $name")
         }
