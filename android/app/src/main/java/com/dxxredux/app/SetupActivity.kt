@@ -6596,7 +6596,7 @@ private fun DiscImportDialog(
                             onClick = {
                                 scope.launch {
                                     processing = true
-                                    status = "Extracting game files\u2026"
+                                    status = "Extracting game files..."
                                     withContext(Dispatchers.IO) {
                                         try {
                                             val dataTrack = tracks!!.first { it.isData }
@@ -6604,23 +6604,58 @@ private fun DiscImportDialog(
                                             val binUri = binUris[dataTrack.fileIndex].second
                                             val pfd = context.contentResolver.openFileDescriptor(binUri, "r")
                                             if (pfd != null) {
+                                                val progress =
+                                                    object : DiscImportBridge.ExtractProgress {
+                                                        override fun onProgress(
+                                                            currentFile: String,
+                                                            bytesDone: Long,
+                                                            bytesTotal: Long,
+                                                        ): Int {
+                                                            val pct =
+                                                                if (bytesTotal > 0L) {
+                                                                    ((bytesDone * 100L) / bytesTotal).toInt()
+                                                                } else {
+                                                                    0
+                                                                }
+                                                            status = "Extracting $currentFile ($pct%)"
+                                                            return 0
+                                                        }
+                                                    }
+                                                val isoExtracted: Int
+                                                var macExtracted = 0
                                                 val extracted =
                                                     pfd.use {
-                                                        DiscImportBridge.extractIsoFiles(
-                                                            it.fd,
-                                                            dataTrack.startSector,
-                                                            dataTrack.numSectors,
-                                                            setDir.absolutePath,
-                                                        )
+                                                        isoExtracted =
+                                                            DiscImportBridge.extractIsoFiles(
+                                                                it.fd,
+                                                                dataTrack.startSector,
+                                                                dataTrack.numSectors,
+                                                                setDir.absolutePath,
+                                                                progress,
+                                                            )
+                                                        if (isoExtracted > 0) {
+                                                            isoExtracted
+                                                        } else {
+                                                            status = "Trying Mac HFS installer..."
+                                                            macExtracted =
+                                                                DiscImportBridge.extractMacFiles(
+                                                                    it.fd,
+                                                                    dataTrack.startSector,
+                                                                    dataTrack.numSectors,
+                                                                    setDir.absolutePath,
+                                                                    progress,
+                                                                )
+                                                            macExtracted
+                                                        }
                                                     }
                                                 // SOW decompression: scan for .sow files and extract them
                                                 var sowExtracted = 0
-                                                if (extracted > 0) {
+                                                if (isoExtracted > 0) {
                                                     val sowFiles = DiscImportBridge.scanSowFiles(setDir.absolutePath)
                                                     if (sowFiles != null && sowFiles.isNotEmpty()) {
                                                         withContext(Dispatchers.Main) {
                                                             status =
-                                                                "Decompressing ${sowFiles.size} .sow archive(s)\u2026"
+                                                                "Decompressing ${sowFiles.size} .sow archive(s)..."
                                                         }
                                                         for (sow in sowFiles) {
                                                             sowExtracted +=
@@ -6634,15 +6669,21 @@ private fun DiscImportDialog(
                                                     }
                                                 }
                                                 withContext(Dispatchers.Main) {
-                                                    dataExtracted = extracted + sowExtracted
+                                                    dataExtracted = extracted.coerceAtLeast(0) + sowExtracted
                                                     status =
                                                         when {
-                                                            extracted > 0 && sowExtracted > 0 ->
-                                                                "Extracted $extracted file(s) + $sowExtracted from .sow archives"
-                                                            extracted > 0 ->
-                                                                "Extracted $extracted game file(s)"
-                                                            else -> "No game files found on data track"
+                                                            isoExtracted > 0 && sowExtracted > 0 ->
+                                                                "Extracted $isoExtracted file(s) + $sowExtracted from .sow archives"
+                                                            isoExtracted > 0 ->
+                                                                "Extracted $isoExtracted game file(s)"
+                                                            macExtracted > 0 ->
+                                                                "Extracted $macExtracted file(s) from Mac HFS installer"
+                                                            else -> "No supported game files found on data track"
                                                         }
+                                                }
+                                            } else {
+                                                withContext(Dispatchers.Main) {
+                                                    status = "Could not open BIN file"
                                                 }
                                             }
                                         } catch (e: Exception) {

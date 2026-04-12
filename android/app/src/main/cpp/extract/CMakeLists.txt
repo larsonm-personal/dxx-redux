@@ -4,7 +4,8 @@
 #   cmake -S android/app/src/main/cpp/extract -B android/tests/build
 #   cmake --build android/tests/build
 #
-# Produces: test_cue_iso, extract_cd, test_sow_direct, extract_gog
+# Produces: test_cue_iso, extract_cd, test_sow_direct, test_hfs, test_sti2,
+#           test_stuffit_corpus, extract_gog
 # Output location: android/tests/build/
 
 cmake_minimum_required(VERSION 3.16)
@@ -58,6 +59,33 @@ if(NOT TARGET ZLIB::ZLIB)
         ${zlib_dep_SOURCE_DIR} ${zlib_dep_BINARY_DIR})
 endif()
 
+# ── nlohmann/json (header-only for manifest-driven desktop tests) ─────
+if(NOT TARGET nlohmann_json::nlohmann_json)
+    FetchContent_Declare(
+        nlohmann_json
+        GIT_REPOSITORY https://github.com/nlohmann/json.git
+        GIT_TAG        v3.11.3
+        GIT_SHALLOW    TRUE
+    )
+    set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
+    set(JSON_Install OFF CACHE BOOL "" FORCE)
+    set(JSON_MultipleHeaders OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(nlohmann_json)
+endif()
+
+# ── StuffIt corpus (desktop regression only) ─────────────────────────
+FetchContent_Declare(
+    stuffit_test_files
+    GIT_REPOSITORY https://github.com/ssokolow/stuffit-test-files.git
+    GIT_TAG        b523c64337867aee5cc07ad3a6bbfc8e06e4b3c0
+    GIT_SHALLOW    TRUE
+)
+FetchContent_GetProperties(stuffit_test_files)
+if(NOT stuffit_test_files_POPULATED)
+    FetchContent_Populate(stuffit_test_files)
+endif()
+file(TO_CMAKE_PATH "${stuffit_test_files_SOURCE_DIR}" STUFFIT_TEST_FILES_DIR)
+
 # ── Library sources (shared by all test executables) ─────────────────
 set(EXTRACT_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
@@ -96,12 +124,38 @@ add_executable(test_hfs
 )
 target_include_directories(test_hfs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
+# ── test_sti2 ──────────────────────────────────────────────────────
+add_executable(test_sti2
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_sti2.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/hfs_reader.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c
+)
+target_include_directories(test_sti2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+# ── test_stuffit_corpus ────────────────────────────────────────────
+add_executable(test_stuffit_corpus
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_stuffit_corpus.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/sti2_extract.c
+)
+target_include_directories(test_stuffit_corpus PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_features(test_stuffit_corpus PRIVATE cxx_std_11)
+target_compile_definitions(test_stuffit_corpus PRIVATE
+    STUFFIT_TEST_FILES_DIR="${STUFFIT_TEST_FILES_DIR}"
+    STUFFIT_MANIFEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/test_fixtures/stuffit_manifests"
+)
+target_link_libraries(test_stuffit_corpus PRIVATE nlohmann_json::nlohmann_json)
+
 # ── CTest integration ───────────────────────────────────────────────
 enable_testing()
 add_test(NAME cue_iso_tests COMMAND test_cue_iso)
 set_tests_properties(cue_iso_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME hfs_tests COMMAND test_hfs)
 set_tests_properties(hfs_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME sti2_tests COMMAND test_sti2)
+set_tests_properties(sti2_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME stuffit_corpus_tests COMMAND test_stuffit_corpus)
+set_tests_properties(stuffit_corpus_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 # ── extract_gog ─────────────────────────────────────────────────────
 add_executable(extract_gog

@@ -1,0 +1,19 @@
+{
+  "schema_version": 2,
+  "archive_name": "testfile.stuffit651_dlx.mac9.sit",
+  "tool_name": "unar",
+  "tool_version": "v1.8.1",
+  "tool_package_url": "https://cdn.theunarchiver.com/downloads/unarWindows.zip",
+  "tool_package_sha256": "61a6b299606282f72f51c278801eac11d3dccfac83e2d68bccce33539912e0dd",
+  "entries": [
+    {"path":"Test Image","kind":"resource","size":9134,"sha256":"509d9f821b8ee991b8c1fbe29c6c0fc132668b98a16e857fea7ffa953e06e091","method":15,"archive_data_offset":222,"archive_data_length":248},
+    {"path":"Test Text","kind":"resource","size":332,"sha256":"96450ad1572f29580f5c96bf6baaad3b3550b52da1042d26b8bc0455f9a6d3ed","method":15,"archive_data_offset":577,"archive_data_length":62},
+    {"path":"Test Text","kind":"file","size":11,"sha256":"9734aef6d3788ba985e78f7b3785dc4817e770be92a4e5e57e64a92cc9c2fc25","method":0,"archive_data_offset":639,"archive_data_length":11},
+    {"path":"testfile.jpg","kind":"file","size":220,"sha256":"e514232511df1a4f4221a75c27523518c3c62a2fe6470fa56e430364428eecd1","method":0,"archive_data_offset":746,"archive_data_length":220},
+    {"path":"testfile.PICT","kind":"resource","size":44549,"sha256":"792ac10d8900d9354d5c1253f94b0a73058f57b0f6b05713e5169378d08298bb","method":15,"archive_data_offset":1077,"archive_data_length":929},
+    {"path":"testfile.PICT","kind":"file","size":2694,"sha256":"318d71cd4d027c6bec6917af3ddc3b7df0ec8b07031045a9cdd9052b94c7782e","method":15,"archive_data_offset":2006,"archive_data_length":401},
+    {"path":"testfile.png","kind":"file","size":87,"sha256":"fdda20984cc1591419ec4583e24e72e4dba39d0b96608253f853a2dfb238ad1a","method":0,"archive_data_offset":2503,"archive_data_length":87},
+    {"path":"testfile.txt","kind":"resource","size":332,"sha256":"f928e3b2d09bff5556c12b350f5dd057f09bc3d72078d10cc0e4760b6bdd3a50","method":15,"archive_data_offset":2700,"archive_data_length":64},
+    {"path":"testfile.txt","kind":"file","size":12,"sha256":"b645efee0ed710034959eae942277a750d08687c30bcf0e9ec6ea7641527462f","method":0,"archive_data_offset":2764,"archive_data_length":12}
+  ]
+}

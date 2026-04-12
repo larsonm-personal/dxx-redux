@@ -132,10 +132,10 @@ package com.dxxredux.app
  */
 object BuildInfo {
     const val GIT_COMMIT_COUNT = "dev"
-    const val GIT_SHORT_HASH   = "dev"
-    const val BUILD_DATE       = "${dateStr}"
-    const val BUILD_TIME       = "${timeStr}"
-    const val BUILD_TYPE       = "dev"
+    const val GIT_SHORT_HASH = "dev"
+    const val BUILD_DATE = "${dateStr}"
+    const val BUILD_TIME = "${timeStr}"
+    const val BUILD_TYPE = "dev"
 }
 """
         logger.lifecycle("Generated BuildInfo.kt with dev defaults (${dateStr} ${timeStr})")

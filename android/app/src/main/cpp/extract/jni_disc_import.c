@@ -7,18 +7,31 @@
  */
 
 #include <jni.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <android/log.h>
 
 #include "cue_parser.h"
+#include "hfs_reader.h"
 #include "iso9660_reader.h"
+#include "sti2_extract.h"
 #include "sow_extract.h"
 
 #define TAG       "DXX-DiscImport"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
+
+static const char *game_extensions[] = {
+	"hog", "ham", "pig", "s11", "s22", "mn2", "mvl",
+	"dxa", "cfg", "txt", "256", NULL
+};
+
+static const char *mac_game_extensions[] = {
+	"hog", "ham", "pig", "s11", "s22", "mn2", "mvl",
+	"dxa", "cfg", "txt", "256", "msn", "dem", NULL
+};
 
 /* ── CUE parsing ─────────────────────────────────────────────────────── */
 
@@ -237,6 +250,20 @@ typedef struct {
 	jmethodID on_progress;
 } extract_ctx_t;
 
+static void init_extract_ctx(JNIEnv *env, jobject progress, extract_ctx_t *ctx)
+{
+	memset(ctx, 0, sizeof(*ctx));
+	ctx->env = env;
+	if (progress) {
+		jclass cls;
+
+		ctx->callback = progress;
+		cls = (*env)->GetObjectClass(env, progress);
+		ctx->on_progress = (*env)->GetMethodID(env, cls,
+		                                       "onProgress", "(Ljava/lang/String;JJ)I");
+	}
+}
+
 static int extract_progress_cb(const char *current_file,
                                long long bytes_done, long long bytes_total,
                                void *user_data)
@@ -252,6 +279,171 @@ static int extract_progress_cb(const char *current_file,
 	                                         (jlong) bytes_total);
 	(*ctx->env)->DeleteLocalRef(ctx->env, jfile);
 	return (int) cancel;
+}
+
+static const char *path_basename(const char *path)
+{
+	const char *last = path;
+
+	while (*path) {
+		if (*path == '/' || *path == '\\')
+			last = path + 1;
+		path++;
+	}
+
+	return last;
+}
+
+static int str_equals_ignore_case(const char *a, const char *b)
+{
+	while (*a && *b) {
+		char ca = *a;
+		char cb = *b;
+
+		if (ca >= 'A' && ca <= 'Z') ca = (char) (ca - 'A' + 'a');
+		if (cb >= 'A' && cb <= 'Z') cb = (char) (cb - 'A' + 'a');
+		if (ca != cb)
+			return 0;
+		a++;
+		b++;
+	}
+
+	return *a == '\0' && *b == '\0';
+}
+
+static int ext_matches(const char *filename, const char **extensions)
+{
+	const char *dot;
+
+	if (!extensions)
+		return 1;
+
+	dot = strrchr(filename, '.');
+	if (!dot || !dot[1])
+		return 0;
+	dot++;
+
+	while (*extensions) {
+		if (str_equals_ignore_case(dot, *extensions))
+			return 1;
+		extensions++;
+	}
+
+	return 0;
+}
+
+static int read_file_to_buffer(const char *path, unsigned char **out_data, size_t *out_size)
+{
+	FILE *f;
+	long len;
+	unsigned char *data;
+
+	if (!out_data || !out_size)
+		return -1;
+	*out_data = NULL;
+	*out_size = 0;
+
+	f = fopen(path, "rb");
+	if (!f)
+		return -1;
+	if (fseek(f, 0, SEEK_END) != 0) {
+		fclose(f);
+		return -1;
+	}
+	len = ftell(f);
+	if (len < 0 || fseek(f, 0, SEEK_SET) != 0) {
+		fclose(f);
+		return -1;
+	}
+	data = (unsigned char *) malloc((size_t) len);
+	if (!data && len != 0) {
+		fclose(f);
+		return -1;
+	}
+	if ((size_t) len != 0 && fread(data, 1, (size_t) len, f) != (size_t) len) {
+		free(data);
+		fclose(f);
+		return -1;
+	}
+	if (fclose(f) != 0) {
+		free(data);
+		return -1;
+	}
+
+	*out_data = data;
+	*out_size = (size_t) len;
+	return 0;
+}
+
+static int extract_sti2_from_hfs(int bin_fd, int track_start, int track_sectors,
+                                 const char *output_dir, extract_ctx_t *ctx)
+{
+	char archive_path[1024];
+	unsigned char *archive_data = NULL;
+	size_t archive_size = 0;
+	int extracted;
+
+	snprintf(archive_path, sizeof(archive_path), "%s/.install_descent.sti2", output_dir);
+	if (hfs_extract_file(bin_fd, track_start, track_sectors,
+	                     "Install Descent", archive_path) < 0)
+		return -1;
+	if (read_file_to_buffer(archive_path, &archive_data, &archive_size) < 0) {
+		unlink(archive_path);
+		return -1;
+	}
+	unlink(archive_path);
+	if (!sti2_is_archive(archive_data, archive_size)) {
+		free(archive_data);
+		return -1;
+	}
+
+	extracted = sti2_extract_matching(archive_data, archive_size,
+	                                  mac_game_extensions, output_dir,
+	                                  ctx && ctx->callback ? extract_progress_cb : NULL,
+	                                  ctx);
+	free(archive_data);
+	return extracted;
+}
+
+static int extract_hfs_matching_files(int bin_fd, int track_start, int track_sectors,
+                                      const char *output_dir, extract_ctx_t *ctx)
+{
+	hfs_file_list_t list;
+	long long total_bytes = 0;
+	long long done_bytes = 0;
+	int extracted = 0;
+	int i;
+
+	if (hfs_list_files(bin_fd, track_start, track_sectors, &list) < 0)
+		return -1;
+
+	for (i = 0; i < list.num_files; i++) {
+		if (!list.files[i].is_dir &&
+		    ext_matches(path_basename(list.files[i].path), mac_game_extensions))
+			total_bytes += list.files[i].data_size;
+	}
+
+	for (i = 0; i < list.num_files; i++) {
+		char output_path[1024];
+		int written;
+
+		if (list.files[i].is_dir ||
+		    !ext_matches(path_basename(list.files[i].path), mac_game_extensions))
+			continue;
+
+		snprintf(output_path, sizeof(output_path), "%s/%s", output_dir, list.files[i].path);
+		written = hfs_extract_file(bin_fd, track_start, track_sectors,
+		                           list.files[i].path, output_path);
+		if (written < 0)
+			return -1;
+		done_bytes += written;
+		extracted++;
+		if (ctx && ctx->callback &&
+		    extract_progress_cb(list.files[i].path, done_bytes, total_bytes, ctx) != 0)
+			return -1;
+	}
+
+	return extracted;
 }
 
 /*
@@ -279,12 +471,6 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoFiles(
 	const char *out_dir = (*env)->GetStringUTFChars(env, outputDir, NULL);
 	if (!out_dir) return -1;
 
-	/* Game file extensions to extract */
-	static const char *extensions[] = {
-		"hog", "ham", "pig", "s11", "s22", "mn2", "mvl",
-		"dxa", "cfg", "txt", "256", NULL
-	};
-
 	/* List files first */
 	iso_file_list_t list;
 	memset(&list, 0, sizeof(list));
@@ -295,16 +481,11 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoFiles(
 	}
 
 	/* Set up progress callback */
-	extract_ctx_t ctx = { env, NULL, NULL };
-	if (progress) {
-		ctx.callback = progress;
-		jclass cls = (*env)->GetObjectClass(env, progress);
-		ctx.on_progress = (*env)->GetMethodID(env, cls,
-		                                      "onProgress", "(Ljava/lang/String;JJ)I");
-	}
+	extract_ctx_t ctx;
+	init_extract_ctx(env, progress, &ctx);
 
 	int extracted = iso_extract_files(binFd, trackStart, trackSectors,
-	                                  &list, out_dir, extensions,
+	                                  &list, out_dir, game_extensions,
 	                                  progress ? extract_progress_cb : NULL,
 	                                  &ctx);
 
@@ -382,27 +563,54 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractSowFiles(
 		return -1;
 	}
 
-	/* Game file extensions to extract */
-	static const char *extensions[] = {
-		"hog", "ham", "pig", "s11", "s22", "mn2", "mvl",
-		"dxa", "cfg", "txt", "256", NULL
-	};
-
 	/* Set up progress callback */
-	extract_ctx_t ctx = { env, NULL, NULL };
-	if (progress) {
-		ctx.callback = progress;
-		jclass cls = (*env)->GetObjectClass(env, progress);
-		ctx.on_progress = (*env)->GetMethodID(env, cls,
-		                                      "onProgress", "(Ljava/lang/String;JJ)I");
-	}
+	extract_ctx_t ctx;
+	init_extract_ctx(env, progress, &ctx);
 
-	int extracted = sow_extract(sow, out_dir, extensions,
+	int extracted = sow_extract(sow, out_dir, game_extensions,
 	                            progress ? extract_progress_cb : NULL, &ctx);
+	LOGI("SOW extracted %d files from %s", extracted, sow);
 
 	(*env)->ReleaseStringUTFChars(env, sowPath, sow);
 	(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);
+	return extracted;
+}
 
-	LOGI("SOW extracted %d files from %s", extracted, sow);
+/* ── Mac HFS/STi2 extraction ─────────────────────────────────────────── */
+
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_DiscImportBridge_nativeExtractMacFiles(
+    JNIEnv *env, jclass clazz,
+    jint binFd, jint trackStart, jint trackSectors,
+    jstring outputDir, jobject progress)
+{
+	extract_ctx_t ctx;
+	hfs_partition_info_t hfs_info;
+	const char *out_dir;
+	int extracted;
+
+	if (binFd < 0) {
+		LOGE("nativeExtractMacFiles: invalid binFd %d", binFd);
+		return -1;
+	}
+
+	out_dir = (*env)->GetStringUTFChars(env, outputDir, NULL);
+	if (!out_dir)
+		return -1;
+	init_extract_ctx(env, progress, &ctx);
+
+	if (hfs_find_partition(binFd, trackStart, trackSectors, &hfs_info) < 0) {
+		(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);
+		return -1;
+	}
+
+	extracted = extract_sti2_from_hfs(binFd, trackStart, trackSectors, out_dir, &ctx);
+	if (extracted <= 0)
+		extracted = extract_hfs_matching_files(binFd, trackStart, trackSectors, out_dir, &ctx);
+
+	LOGI("Mac import extracted %d files from HFS volume '%s'", extracted,
+	     hfs_info.volume_name[0] ? hfs_info.volume_name : hfs_info.partition_name);
+
+	(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);
 	return extracted;
 }

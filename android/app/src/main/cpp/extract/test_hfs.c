@@ -35,6 +35,9 @@
 #define USER_DATA_OFFSET 16
 #define USER_DATA_SIZE   2048
 
+#define PRIMARY_CUE_PATH   "../../../../../../game_data/CD images/Descent - Mac macplay/Descent - Mac macplay.cue"
+#define SECONDARY_CUE_PATH "../../../../../../game_data/CD images/d1 mac 2nd bin+cue/Descent [Mac].CUE"
+
 static int tests_run;
 static int tests_passed;
 static int tests_skipped;
@@ -163,6 +166,196 @@ static void path_dir(const char *path, char *dir, int dir_len)
 static void path_join(char *out, int out_len, const char *a, const char *b)
 {
 	snprintf(out, out_len, "%s/%s", a, b);
+}
+
+static const char *basename_only(const char *path)
+{
+	const char *last = path;
+	const char *p;
+
+	for (p = path; *p; p++) {
+		if (*p == '/' || *p == '\\')
+			last = p + 1;
+	}
+
+	return last;
+}
+
+static int str_equal_ignore_case(const char *a, const char *b)
+{
+	while (*a && *b) {
+		char ca = *a;
+		char cb = *b;
+
+		if (ca >= 'A' && ca <= 'Z') ca = (char) (ca - 'A' + 'a');
+		if (cb >= 'A' && cb <= 'Z') cb = (char) (cb - 'A' + 'a');
+		if (ca != cb)
+			return 0;
+		a++;
+		b++;
+	}
+
+	return *a == '\0' && *b == '\0';
+}
+
+static int read_file_prefix(const char *path, unsigned char *buf, int len)
+{
+	FILE *f;
+	int n;
+
+	f = fopen(path, "rb");
+	if (!f)
+		return -1;
+	n = (int) fread(buf, 1, (size_t) len, f);
+	fclose(f);
+	return n;
+}
+
+typedef struct {
+	int fd;
+	int track_start_sector;
+	int track_num_sectors;
+} cue_data_track_t;
+
+static int open_cue_data_track(const char *cue_path, cue_data_track_t *out)
+{
+	char cue_dir[1024];
+	char bin_path[1024];
+	char *cue_text;
+	long long bin_sizes[CUE_MAX_FILES];
+	cue_disc_t disc;
+	int data_track_index = -1;
+	int i;
+
+	if (!out)
+		return -1;
+	memset(out, 0, sizeof(*out));
+	out->fd = -1;
+
+	if (!file_exists(cue_path))
+		return -2;
+
+	cue_text = read_text_file(cue_path);
+	if (!cue_text)
+		return -1;
+
+	memset(&disc, 0, sizeof(disc));
+	if (cue_parse(cue_text, NULL, 0, &disc) <= 0) {
+		free(cue_text);
+		return -1;
+	}
+
+	path_dir(cue_path, cue_dir, sizeof(cue_dir));
+	for (i = 0; i < disc.num_files; i++) {
+		path_join(bin_path, sizeof(bin_path), cue_dir, disc.files[i].filename);
+		bin_sizes[i] = file_size(bin_path);
+		if (bin_sizes[i] < 0) {
+			free(cue_text);
+			return -1;
+		}
+	}
+
+	memset(&disc, 0, sizeof(disc));
+	if (cue_parse(cue_text, bin_sizes, CUE_MAX_FILES, &disc) <= 0) {
+		free(cue_text);
+		return -1;
+	}
+	free(cue_text);
+
+	for (i = 0; i < disc.num_tracks; i++) {
+		if (disc.tracks[i].type == CUE_TRACK_DATA) {
+			data_track_index = i;
+			break;
+		}
+	}
+	if (data_track_index < 0)
+		return -1;
+
+	path_join(bin_path, sizeof(bin_path), cue_dir, disc.files[disc.tracks[data_track_index].file_index].filename);
+	out->fd = open_bin(bin_path);
+	if (out->fd < 0)
+		return -1;
+
+	out->track_start_sector = disc.tracks[data_track_index].start_sector;
+	out->track_num_sectors = disc.tracks[data_track_index].num_sectors;
+	return 0;
+}
+
+static void close_cue_data_track(cue_data_track_t *track)
+{
+	if (track && track->fd >= 0) {
+		close_fd(track->fd);
+		track->fd = -1;
+	}
+}
+
+static int load_hfs_list_from_cue(const char *cue_path,
+                                  hfs_partition_info_t *info,
+                                  hfs_file_list_t *list)
+{
+	cue_data_track_t track;
+	int rc;
+
+	rc = open_cue_data_track(cue_path, &track);
+	if (rc < 0)
+		return rc;
+
+	if (info && hfs_find_partition(track.fd, track.track_start_sector, track.track_num_sectors, info) < 0) {
+		close_cue_data_track(&track);
+		return -1;
+	}
+
+	rc = hfs_list_files(track.fd, track.track_start_sector, track.track_num_sectors, list);
+	close_cue_data_track(&track);
+	return rc;
+}
+
+static int extract_hfs_file_from_cue(const char *cue_path, const char *hfs_path, const char *output_path)
+{
+	cue_data_track_t track;
+	int rc;
+
+	rc = open_cue_data_track(cue_path, &track);
+	if (rc < 0)
+		return rc;
+
+	rc = hfs_extract_file(track.fd, track.track_start_sector, track.track_num_sectors,
+	                      hfs_path, output_path);
+	close_cue_data_track(&track);
+	return rc;
+}
+
+static const hfs_file_entry_t *find_entry_by_path(const hfs_file_list_t *list,
+                                                  const char *path,
+                                                  int is_dir)
+{
+	int i;
+
+	for (i = 0; i < list->num_files; i++) {
+		if (list->files[i].is_dir == is_dir && str_equal_ignore_case(list->files[i].path, path))
+			return &list->files[i];
+	}
+
+	return NULL;
+}
+
+static const hfs_file_entry_t *find_entry_by_name_size(const hfs_file_list_t *list,
+                                                       const char *name,
+                                                       unsigned int size,
+                                                       int is_dir)
+{
+	int i;
+
+	for (i = 0; i < list->num_files; i++) {
+		if (list->files[i].is_dir != is_dir)
+			continue;
+		if (size && list->files[i].data_size != size)
+			continue;
+		if (str_equal_ignore_case(basename_only(list->files[i].path), name))
+			return &list->files[i];
+	}
+
+	return NULL;
 }
 
 static int build_synthetic_hfs_probe(void)
@@ -333,6 +526,61 @@ static int run_real_disc_test(const char *label, const char *cue_path,
 	return 1;
 }
 
+static int run_primary_catalog_test(void)
+{
+	hfs_partition_info_t info;
+	hfs_file_list_t list;
+	const hfs_file_entry_t *install_entry;
+	const hfs_file_entry_t *demos_dir;
+
+	TEST("real_primary_macplay_catalog_listing");
+	if (!file_exists(PRIMARY_CUE_PATH)) {
+		SKIP("sample media not present");
+		return 1;
+	}
+	if (load_hfs_list_from_cue(PRIMARY_CUE_PATH, &info, &list) < 0) {
+		FAIL("listing failed");
+		return 0;
+	}
+	if (info.physical_block_size != 512 || strcmp(info.volume_name, "Descent") != 0) {
+		FAIL("unexpected HFS volume metadata");
+		return 0;
+	}
+	install_entry = find_entry_by_path(&list, "Install Descent", 0);
+	demos_dir = find_entry_by_path(&list, "MacPlay Demos", 1);
+	if (!install_entry || !demos_dir || list.num_files < 100) {
+		FAIL("expected catalog entries missing");
+		return 0;
+	}
+	PASS();
+	return 1;
+}
+
+static int run_primary_extract_tests(void)
+{
+	unsigned char prefix[8];
+	int bytes;
+	const char *install_out = "test_hfs_install_descent.bin";
+
+	TEST("real_primary_install_descent_extract");
+	if (!file_exists(PRIMARY_CUE_PATH)) {
+		SKIP("sample media not present");
+		return 1;
+	}
+	if (extract_hfs_file_from_cue(PRIMARY_CUE_PATH, "Install Descent", install_out) < 0) {
+		FAIL("extract failed");
+		return 0;
+	}
+	bytes = read_file_prefix(install_out, prefix, 4);
+	remove(install_out);
+	if (bytes != 4 || memcmp(prefix, "STi2", 4) != 0) {
+		FAIL("missing STi2 magic");
+		return 0;
+	}
+	PASS();
+	return 1;
+}
+
 int main(void)
 {
 	int ok = 1;
@@ -375,14 +623,20 @@ int main(void)
 
 	if (!run_real_disc_test(
 	        "real_primary_macplay_disc",
-	        "../../../../../../game_data/CD images/Descent - Mac macplay/Descent - Mac macplay.cue",
+	        PRIMARY_CUE_PATH,
 	        "Descent",
 	        319989))
 		ok = 0;
 
+	if (!run_primary_catalog_test())
+		ok = 0;
+
+	if (!run_primary_extract_tests())
+		ok = 0;
+
 	if (!run_real_disc_test(
 	        "real_secondary_mac_disc",
-	        "../../../../../../game_data/CD images/d1 mac 2nd bin+cue/Descent [Mac].CUE",
+	        SECONDARY_CUE_PATH,
 	        NULL,
 	        319989))
 		ok = 0;

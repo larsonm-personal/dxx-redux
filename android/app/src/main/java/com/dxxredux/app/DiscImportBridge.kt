@@ -161,6 +161,46 @@ object DiscImportBridge {
         }
     }
 
+    /**
+     * Extract game files from a Mac HFS track or STi2 installer archive.
+     *
+     * @param binFd        Open file descriptor for the BIN file
+     * @param trackStart   Start sector of the data track
+     * @param trackSectors Number of sectors in the data track
+     * @param outputDir    Directory to extract files into
+     * @param progress     Optional progress callback
+     * @return Number of files extracted, or -1 on error
+     */
+    fun extractMacFiles(
+        binFd: Int,
+        trackStart: Int,
+        trackSectors: Int,
+        outputDir: String,
+        progress: ExtractProgress? = null,
+    ): Int = nativeExtractMacFiles(binFd, trackStart, trackSectors, outputDir, progress)
+
+    /**
+     * Extract from a BIN file path (opens the fd internally).
+     */
+    fun extractMacFiles(
+        binPath: String,
+        trackStart: Int,
+        trackSectors: Int,
+        outputDir: String,
+        progress: ExtractProgress? = null,
+    ): Int {
+        val pfd =
+            ParcelFileDescriptor.open(
+                File(binPath),
+                ParcelFileDescriptor.MODE_READ_ONLY,
+            )
+        return try {
+            extractMacFiles(pfd.fd, trackStart, trackSectors, outputDir, progress)
+        } finally {
+            pfd.close()
+        }
+    }
+
     // ── SOW (ARJ) archive operations ──────────────────────────────
 
     /**
@@ -208,6 +248,14 @@ object DiscImportBridge {
     ): Array<String>?
 
     private external fun nativeExtractIsoFiles(
+        binFd: Int,
+        trackStart: Int,
+        trackSectors: Int,
+        outputDir: String,
+        progress: ExtractProgress?,
+    ): Int
+
+    private external fun nativeExtractMacFiles(
         binFd: Int,
         trackStart: Int,
         trackSectors: Int,

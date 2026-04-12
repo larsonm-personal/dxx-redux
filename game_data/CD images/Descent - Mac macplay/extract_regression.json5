@@ -1,0 +1,36 @@
+// Regression spec for: Descent - Mac macplay
+// Added for Android Mac HFS/STi2 import coverage
+{
+    "source_type": "cd",
+    "disc_id": "descent-mac-macplay",
+    "source_files": [
+        {
+            "sha256": "b8127c0ce27a4573b596c5cfb78af0f0e7ce58e1dbe130e1424f3ede09d4446d",
+            "name": "Descent - Mac macplay.cue"
+        },
+        {
+            "sha256": "38393a12630bbdfdd2e2efac138da463c242586a42c889b91054fabf6ba7b925",
+            "name": "Descent - Mac macplay.bin"
+        }
+    ],
+    "game": "d1",
+    "classification": "d1_full",
+    "expected_mission": "Descent: First Strike",
+    "expected_level1": "Lunar Outpost",
+    "expected_files": [
+        "descent.hog",
+        "descent.pig",
+        "chaos.msn"
+    ],
+    "audio_tracks": 13,
+    "total_extracted": 8
+,
+    "last_test_result": {
+        "status": "pass",
+        "failure_step": null,
+        "level_reached": "Lunar Outpost",
+        "files_verified": 3,
+        "classification_confirmed": true,
+        "test_mode": "full"
+    }
+}
