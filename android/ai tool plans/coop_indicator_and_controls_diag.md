@@ -26,7 +26,7 @@ The previous fly_init + PF flags fix did not resolve the issue. Added:
 ### 3. Coop save not restoring at game start -- INSTRUCTIONS
 No special launcher-advanced log settings needed. The coop_save diagnostic messages
 use con_printf which goes to:
-- gamelog.txt (always written)
+- debug log files (when Game Logs category enabled)
 - logcat tag "DXX" (INFO level)
 - introspection ring buffer (last 50 lines)
 
@@ -37,13 +37,12 @@ use con_printf which goes to:
 2. Note if "Coop restore: controls reinit" appears on screen
 3. Run: `./android/introspect.sh console` -- shows last 50 con_printf lines
 4. Run: `./android/introspect.sh` -- position block now includes control_type/movement_type/physics_flags
-5. Check gamelog.txt: `adb shell run-as com.dxxredux.app cat files/gamelog.txt | grep coop_`
+5. Check debug logs: enable "Game Logs" in Advanced Settings, then export from launcher
 
 ### Coop save at game start
 1. Start a coop game with a save file selected
 2. After it fails to restore, run:
    - `./android/introspect.sh console`
-   - `adb shell run-as com.dxxredux.app cat files/gamelog.txt | grep coop_save`
 3. Look for lines starting with `coop_save:` which trace the auto-restore flow
 
 ## Files modified

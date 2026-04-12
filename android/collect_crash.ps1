@@ -5,7 +5,7 @@
     Clears logcat, waits for you to reproduce the crash, then collects:
     - logcat output
     - native tombstone (stack trace)
-    - gamelog.txt from the engine
+    - debug log files from the engine
     - last introspection dump
     - git commit hash
     All output goes to temp\crash_report\.
@@ -79,9 +79,16 @@ if ($latestTomb) {
     adb bugreport (Join-Path $reportDir "bugreport.zip") 2>$null
 }
 
-# Game log
-$gamelogFile = Join-Path $reportDir "crash_gamelog.txt"
-adb shell "run-as $PACKAGE cat files/gamelog.txt" 2>$null | Out-File $gamelogFile -Encoding utf8
+# Debug log files
+$debugLogDir = Join-Path $reportDir "debuglogs"
+New-Item -ItemType Directory -Path $debugLogDir -Force | Out-Null
+$debugLogList = adb shell "run-as $PACKAGE ls files/debuglogs/" 2>$null
+if ($debugLogList) {
+    foreach ($logFile in ($debugLogList -split "`n" | Where-Object { $_.Trim() })) {
+        $trimmed = $logFile.Trim()
+        adb shell "run-as $PACKAGE cat files/debuglogs/$trimmed" 2>$null | Out-File (Join-Path $debugLogDir $trimmed) -Encoding utf8
+    }
+}
 
 # Introspection dump
 $introFile = Join-Path $reportDir "crash_introspect.json"

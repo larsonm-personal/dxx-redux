@@ -52,7 +52,7 @@ object NetLog {
         message: String,
     ) {
         com.dxxredux.app.DebugLog
-            .logNetwork(category, message)
+            .log(com.dxxredux.app.DebugLogCategory.NETWORK, "[$category] $message")
     }
 
     fun listLogFiles(context: Context): List<File> =

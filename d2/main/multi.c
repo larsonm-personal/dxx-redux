@@ -69,14 +69,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "coop_warp.h"
 #include "coop_indicator_lines.h"
 #include "android_crash_handler.h"
-#include "android_net_log.h"
+#include "android_log.h"
 #include <android/log.h>
-#define COOPLOG(fmt, ...) do { \
-	char _cl_buf[256]; \
-	snprintf(_cl_buf, sizeof(_cl_buf), fmt, ##__VA_ARGS__); \
-	con_printf(CON_NORMAL, "%s", _cl_buf); \
-	android_net_log("COOP", _cl_buf); \
-} while(0)
 #endif
 #include "automap.h"
 #include "robot.h"

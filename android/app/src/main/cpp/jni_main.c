@@ -22,7 +22,7 @@
 #include "console_ringbuf.h"
 #include "debug_tex_overlay.h"
 #endif
-#include "debug_log.h"
+#include "android_log.h"
 #include "android_crash_handler.h"
 
 #define LOG_TAG   "DXX-Redux"

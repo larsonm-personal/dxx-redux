@@ -62,17 +62,16 @@
 #include "vers_id.h"
 #ifdef __ANDROID__
 #include "auto_net.h"
-#include "android_net_log.h"
+#include "android_log.h"
 #include "android_crash_handler.h"
 #include <android/log.h>
 #define MPDIAG(fmt, ...) do { \
 	char _mpdiag_buf[256]; \
 	snprintf(_mpdiag_buf, sizeof(_mpdiag_buf), fmt, ##__VA_ARGS__); \
 	con_printf(CON_NORMAL, "MPDIAG: %s", _mpdiag_buf); \
-	__android_log_print(ANDROID_LOG_INFO, "DXX-MP", "MPDIAG: %s", _mpdiag_buf); \
-	android_net_log("MPDIAG", _mpdiag_buf); \
+	debug_log(DLOG_NETWORK, "[MPDIAG] %s", _mpdiag_buf); \
 } while(0)
-/* Dump entire packet as one hex string via a single android_net_log call.
+/* Dump entire packet as one hex string via a single debug_log call.
  * Max packet is ~1929 bytes -> 3858 hex chars + header. */
 static void mpdiag_pkt_dump(const char *label, const ubyte *buf, int len)
 {
@@ -81,8 +80,8 @@ static void mpdiag_pkt_dump(const char *label, const ubyte *buf, int len)
 	int pos = snprintf(msg, sizeof(msg), "%s len=%d ", label, len);
 	for (int i = 0; i < len && pos + 2 < (int)sizeof(msg); i++)
 		pos += snprintf(msg + pos, sizeof(msg) - pos, "%02x", buf[i]);
-	crash_breadcrumb("pktdump: hex done, calling net_log");
-	android_net_log("PKTDUMP", msg);
+	crash_breadcrumb("pktdump: hex done, calling debug_log");
+	debug_log(DLOG_NETWORK, "[PKTDUMP] %s", msg);
 	crash_breadcrumb("pktdump: done");
 }
 /* Set in net_udp_select_players from auto_host_pending; checked by
@@ -426,10 +425,10 @@ void net_log_comment(char* comment) {
 	if(! GameArg.LogNetTraffic) { return; }
 
 #ifdef __ANDROID__
-	/* Bridge to Kotlin overlay + NetLog. This sits after the LogNetTraffic
+	/* Bridge to Kotlin debug log. This sits after the LogNetTraffic
 	 * guard, but on Android GameArg.LogNetTraffic is hardcoded to 1
 	 * (see args.c) so it always executes. */
-	android_net_log("NETLOG", comment);
+	debug_log(DLOG_NETWORK, "[NETLOG] %s", comment);
 #endif
 
 	net_log_init();

@@ -36,7 +36,7 @@ Files: game_automate.cpp only. All behind `#ifdef INTROSPECT_ON` (already presen
    Fall back to logcat only if file not found.
 
 5. **Dump diagnostics on timeout/failure** -- on failure, cat
-   `automation_log.jsonl` and `gamelog.txt`, print last 30 lines of each.
+   `automation_log.jsonl` and debug log files, print last 30 lines of each.
 
 6. **Delete stale result file before broadcast** -- in `Start-AutomationScript`,
    `rm -f files/automation_result.json` before sending the AUTOMATE broadcast.
@@ -46,7 +46,8 @@ Files: test_helpers.ps1 only.
 ### Phase 3: Console Ring Buffer via Introspection
 
 `con_printf` is the engine's workhorse logger. On Android, its `printf()` goes to
-invisible stdout; its `gamelog.txt` is buffered and never read by tests. A ring buffer
+invisible stdout; on Android, con_printf output is routed to the debug log
+system (DLOG_GAME category) instead of writing a log file. A ring buffer
 makes this output queryable through the existing introspection system.
 
 7. **Create `console_ringbuf.cpp` / `.h`** in android/app/src/main/cpp/shared/.
@@ -136,7 +137,7 @@ including console output:
 
 After a test failure, the runner's diagnostic dump shows:
 1. Last 30 lines of automation_log.jsonl (what the script was doing)
-2. Last 30 lines of gamelog.txt (what the engine was doing)
+2. Last 30 lines of debug log files (what the engine was doing)
 3. These are files, not logcat, so they survive buffer overflow and emulator issues.
 
 ## Verification

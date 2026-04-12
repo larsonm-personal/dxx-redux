@@ -23,7 +23,7 @@ Files modified:
 ## Problem 2: No C-level logs in exportable debug logs
 
 ### Root Cause
-MPDIAG and net_log_comment write to logcat/gamelog.txt/netlog.txt. The user's
+MPDIAG and net_log_comment write to logcat/debug log files. The user's
 "exportable debug log" is the Kotlin `NetLog` system (`filesDir/netlogs/netlog_*.txt`).
 There is no JNI bridge from C to Kotlin NetLog.
 

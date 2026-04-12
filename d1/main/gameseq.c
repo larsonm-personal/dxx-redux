@@ -1176,6 +1176,7 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 		last_drawn_cockpit = -1;
 	}
 
+#ifndef __ANDROID__
 	if (GameArg.GameLogSplit) {
 		// Include the mission name, level number and timestamp in the log filename
 		char log_filename[PATH_MAX];
@@ -1186,6 +1187,7 @@ void StartNewLevelSub(int level_num, int page_in_textures, int secret_flag)
 
 		con_switch_log(log_filename);
 	}
+#endif
 
 	if (Newdemo_state == ND_STATE_PAUSED)
 		Newdemo_state = ND_STATE_RECORDING;

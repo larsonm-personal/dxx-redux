@@ -71,7 +71,7 @@ This script:
 1. Clears logcat
 2. Reminds you to reproduce the crash
 3. Waits for you to press Enter after the crash
-4. Collects logcat, tombstones, introspection state, and gamelog.txt
+4. Collects logcat, tombstones, introspection state, and debug log files
 5. Writes everything to `temp\crash_report\`
 
 ### Method 2: Manual collection
@@ -95,8 +95,10 @@ adb shell "ls -t /data/tombstones/ | head -1" | ForEach-Object {
 # If permission denied, try:
 adb bugreport temp\bugreport.zip
 
-# 2. Game log (engine-side logging)
-adb shell run-as com.dxxredux.app cat files/gamelog.txt > temp\crash_gamelog.txt
+# 2. Debug log files (engine-side logging -- enable "Game Logs" in Advanced Settings)
+adb shell run-as com.dxxredux.app ls files/debuglogs/
+# then cat each file, e.g.:
+# adb shell run-as com.dxxredux.app cat files/debuglogs/debuglog_TIMESTAMP.txt > temp\crash_debuglog.txt
 
 # 3. Last introspection dump (if available)
 adb shell run-as com.dxxredux.app cat files/introspect.json > temp\crash_introspect.json
@@ -109,7 +111,7 @@ adb shell run-as com.dxxredux.app cat files/introspect.json > temp\crash_introsp
 Bundle these files and provide them back:
 - `crash_logcat.txt` -- full logcat from before the crash
 - `crash_tombstone.txt` -- native crash tombstone (has the stack trace)
-- `crash_gamelog.txt` -- engine log
+- debug log files from `debuglogs/` -- engine log (enable "Game Logs" category)
 - `crash_introspect.json` -- last game state before crash (may be stale)
 - The APK commit hash (run `git rev-parse --short HEAD`)
 

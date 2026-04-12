@@ -21,7 +21,7 @@
 #include "console.h"
 #include "kconfig.h"
 #include "window.h"
-#include "android_net_log.h"
+#include "android_log.h"
 #include "wall.h"
 #include "switch.h"
 #include "cntrlcen.h"
@@ -181,8 +181,9 @@ static void update_paths(void)
 	}
 
 #ifdef DXX_BUILD_DESCENT_II
-	/* guidebot path -- show whenever companion robot exists (even if caged) */
-	if (Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index &&
+	/* guidebot path -- only show after guidebot has been released */
+	if (Buddy_allowed_to_talk &&
+	    Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index &&
 	    Objects[Buddy_objnum].type == OBJ_ROBOT) {
 		s_buddy_path.target_objnum = Buddy_objnum;
 		compute_path(&s_buddy_path, my_seg, Objects[Buddy_objnum].segnum);
@@ -295,7 +296,8 @@ void coop_indicator_lines_render(void)
 
 #ifdef DXX_BUILD_DESCENT_II
 	/* buddy path line works in single player and coop */
-	int show_buddy = Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index &&
+	int show_buddy = Buddy_allowed_to_talk &&
+	                 Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index &&
 	                 Objects[Buddy_objnum].type == OBJ_ROBOT;
 #else
 	int show_buddy = 0;
@@ -351,7 +353,7 @@ void coop_indicator_lines_render(void)
 			         Controls.sideways_thrust_time,
 			         gw_front);
 			con_printf(CON_NORMAL, "%s", _diag_buf);
-			android_net_log("COOP", _diag_buf);
+			debug_log(DLOG_NETWORK, "[COOP] %s", _diag_buf);
 		}
 	}
 

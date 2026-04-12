@@ -1,13 +1,17 @@
 /*
- * debug_log.c -- per-category debug logging via JNI
+ * android_log.c -- centralized per-category debug logging via JNI
  *
  * Sends formatted log lines to DebugLog.kt via MainActivity.debugLogFromNative().
  * Each category has an independent enable flag toggled from the UI.
+ *
+ * This is the single entry point for all launcher-visible debug logging.
+ * Previous separate paths (android_net_log / netLogFromNative) have been
+ * merged into debug_log() with integer category IDs.
  */
 
 #ifdef ANDROID
 
-#include "debug_log.h"
+#include "android_log.h"
 #include <jni.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -22,6 +26,7 @@ static const char *category_tags[DLOG_COUNT] = {
 	"NETWORK",
 	"GRAPHICS",
 	"TEXTURE",
+	"GAME",
 };
 
 void debug_log_set_enabled(int category, int on)

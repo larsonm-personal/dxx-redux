@@ -25,9 +25,12 @@
 #endif
 #ifdef __ANDROID__
 #include <android/log.h>
+#include "android_log.h"
 #endif
 
+#ifndef __ANDROID__
 static PHYSFS_file *gamelog_fp=NULL;
+#endif
 static struct console_buffer con_buffer[CON_LINES_MAX];
 static int con_state = CON_STATE_CLOSED, con_scroll_offset = 0, con_size = 0;
 extern void game_flush_inputs();
@@ -111,6 +114,9 @@ void con_printf(int priority, const char *fmt, ...)
 		console_ringbuf_add(buffer);
 #endif
 
+#ifdef __ANDROID__
+		debug_log(DLOG_GAME, "%s", buffer);
+#else
 		/* Print output to gamelog.txt */
 		if (gamelog_fp)
 		{
@@ -128,6 +134,7 @@ void con_printf(int priority, const char *fmt, ...)
 #endif
 			PHYSFSX_printf(gamelog_fp,"%s",buffer);
 		}
+#endif
 	}
 }
 
@@ -287,21 +294,26 @@ void con_showup(void)
 
 static void con_close(void)
 {
+#ifndef __ANDROID__
 	if (gamelog_fp)
 		PHYSFS_close(gamelog_fp);
 	
 	gamelog_fp = NULL;
+#endif
 }
 
 void con_init(void)
 {
 	memset(con_buffer,0,sizeof(con_buffer));
 
+#ifndef __ANDROID__
 	con_switch_log(NULL);
+#endif
 
 	atexit(con_close);
 }
 
+#ifndef __ANDROID__
 void con_switch_log(const char* filename)
 {
 	char filenameBuffer[PATH_MAX];
@@ -327,3 +339,4 @@ void con_switch_log(const char* filename)
 	else
 		gamelog_fp = PHYSFSX_openWriteBuffered(filenameToUse);
 }
+#endif

@@ -32,7 +32,9 @@ typedef struct console_buffer
 void con_init(void);
 void con_printf(int level, const char *fmt, ...);
 void con_showup(void);
+#ifndef __ANDROID__
 void con_switch_log(const char* filename);
+#endif
 
 #endif /* _CONSOLE_H_ */
 

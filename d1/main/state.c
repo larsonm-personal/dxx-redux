@@ -67,14 +67,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef __ANDROID__
 #include "coop_save.h"
 #include "coop_indicator_lines.h"
-#include "android_net_log.h"
-
-#define COOPLOG(fmt, ...) do { \
-	char _cl_buf[256]; \
-	snprintf(_cl_buf, sizeof(_cl_buf), fmt, ##__VA_ARGS__); \
-	con_printf(CON_NORMAL, "%s", _cl_buf); \
-	android_net_log("COOP", _cl_buf); \
-} while(0)
+#include "android_log.h"
 #endif
 
 
@@ -1635,10 +1628,7 @@ RetryObjectLoading:
 		{
 			Netgame.killed[i] = Players[i].net_killed_total;
 			Netgame.player_score[i] = Players[i].score;
-			/* Strip transient flags (invulnerable/cloaked) so they don't
-			 * persist across save/load -- gameseq.c OR's these back */
-			Netgame.player_flags[i] = Players[i].flags &
-				~(PLAYER_FLAGS_INVULNERABLE | PLAYER_FLAGS_CLOAKED);
+			Netgame.player_flags[i] = Players[i].flags;
 		}
 #ifdef __ANDROID__
 		(void)0;
@@ -1650,18 +1640,20 @@ RetryObjectLoading:
 		Viewer = ConsoleObject = &Objects[Players[Player_num].objnum]; // make sure Viewer and ConsoleObject are set up (which we skipped by not using InitPlayerObject but we need since objects changed while loading)
 		special_reset_objects(); // since we juggeled around with objects to remap coop players rebuild the index of free objects
 #ifdef __ANDROID__
-		/* android port: coop restore -- multi_reset_player_object clears
-		 * PF_TURNROLL|PF_LEVELLING|PF_WIGGLE and doesn't set CT_FLYING.
-		 * Re-init the console player's object so controls work. */
+		/* android port: coop restore -- if matching failed the console
+		 * object is still OBJ_GHOST from Phase 1.  multi_reset_player_object
+		 * also clears PF_TURNROLL|PF_LEVELLING|PF_WIGGLE and doesn't set
+		 * CT_FLYING.  Fix all of it so controls work. */
 		{
 			extern int Player_is_dead;
 			Player_is_dead = 0;
 		}
+		ConsoleObject->type = OBJ_PLAYER;
 		fly_init(ConsoleObject);
 		ConsoleObject->mtype.phys_info.flags |= PF_TURNROLL | PF_LEVELLING | PF_WIGGLE | PF_USES_THRUST;
 		HUD_init_message_literal(HM_DEFAULT, "Coop restore: controls reinit");
-		COOPLOG("fly_init applied: ct=%d mt=%d pf=0x%x obj_flags=0x%x dead=%d",
-			ConsoleObject->control_type, ConsoleObject->movement_type,
+		COOPLOG("fly_init applied: type=%d ct=%d mt=%d pf=0x%x obj_flags=0x%x dead=%d",
+			ConsoleObject->type, ConsoleObject->control_type, ConsoleObject->movement_type,
 			ConsoleObject->mtype.phys_info.flags, ConsoleObject->flags, Player_is_dead);
 		coop_indicator_diag_trigger();
 #endif

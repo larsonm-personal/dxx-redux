@@ -62,6 +62,10 @@
 - sometimes on windows cl.exe becomes a zombie. kill it before starting cmake builds
 - don't run builds until 100 errors (the msbuild default). stop around 10 (`/errorlimit:10`). later errors are often useless anyway
 
+## debugging
+- on non-Android platforms, the d1/d2 source logs to "gamelog.txt" or the console. on Android, con_printf output is routed through the debug_log() system under the "Game Logs" category (DLOG_GAME) instead of writing gamelog.txt. for manual debugging on a phone, use the debug log system that writes to files exportable from the "advanced" tab in the launcher. all debug logging is centralized in `android_log.c` / `android_log.h`, which provides `debug_log(int category, const char *fmt, ...)`. categories are defined in `debug_log_categories.h` (DLOG_NETWORK, DLOG_GRAPHICS, DLOG_TEXTURE, DLOG_GAME). convenience macros like COOPLOG are in `android_log.h`. the C code calls through JNI to the kotlin DebugLog class, which writes to files in the app's private storage. these files can be accessed via adb or exported through the launcher UI. for automated testing, we have an introspection API that dumps game state to JSON on demand, which is more efficient than parsing log files or screenshots
+- do *not* rely on gamelog.txt for by-hand debugging, or suggest using it, it does not exist on Android. for any log entries that are needed to solve some problem, add them to the debug_log() system under a new category if needed, and then read them from the debug log files
+
 ## automated testing
 - use the introspection API (added specifically for AI tool debug access) to find out the current game state such as menu items, current level, ship position, etc. - do *not* rely on printing things to PNG and analyzing images. if you get stuck having to do that, extend the introspection API instead and re-run
 - use the automation api to drive the game into a desired state for testing. when using the automation api, save new automation scripts to android/game_scripts/*.json5 so they can be maintained and committed to git. eventually they'll be used for regression testing
@@ -175,7 +179,7 @@ The automation system writes durable files alongside logcat. These survive logca
 - `files/automation_log.jsonl` -- one JSON line per step event: `{seq, step, total, action, status, elapsed_ms, detail}`
 - Read directly: `adb shell run-as com.dxxredux.app cat files/automation_result.json`
 - Or via helper: `./android/introspect.sh autoresult` / `./android/introspect.sh autolog`
-- On test timeout/failure, the runner automatically dumps `automation_log.jsonl` and `gamelog.txt` for diagnostics
+- On test timeout/failure, the runner automatically dumps `automation_log.jsonl` and debug log files for diagnostics
 
 ### extending the API
 The introspection code lives in `d2/introspect/game_introspect.c`. To add new fields:

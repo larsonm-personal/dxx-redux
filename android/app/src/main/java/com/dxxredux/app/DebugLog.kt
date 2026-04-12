@@ -136,25 +136,6 @@ object DebugLog {
         }
     }
 
-    /** Backward-compatible: log with string category (used by NetLog bridge). */
-    fun logNetwork(
-        category: String,
-        message: String,
-    ) {
-        synchronized(lock) {
-            val w = writer ?: return
-            if (!enabledCategories[DebugLogCategory.NETWORK]) return
-            try {
-                val ts = tsFormat.format(Date())
-                w.write("$ts [$category] ${message.trimEnd()}")
-                w.newLine()
-                w.flush()
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to write log line", e)
-            }
-        }
-    }
-
     fun listLogFiles(context: Context): List<File> {
         val dir = File(context.filesDir, DIR_NAME)
         if (!dir.isDirectory) return emptyList()

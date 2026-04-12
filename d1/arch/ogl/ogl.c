@@ -37,7 +37,7 @@
 #include <time.h>
 #include "debug_tex_overlay.h"
 #include "android_crash_handler.h"
-#include "debug_log.h"
+#include "android_log.h"
 #endif
 
 #include "3d.h"

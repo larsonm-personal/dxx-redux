@@ -2139,17 +2139,6 @@ class MainActivity :
         sendBroadcast(intent)
     }
 
-    // ── Native net-log bridge (called from JNI on game thread) ──
-    @Suppress("unused")
-    fun netLogFromNative(
-        category: String,
-        message: String,
-    ) {
-        DebugLog.logNetwork(category, message)
-        com.dxxredux.app.multiplayer.MatchmakingStateHolder
-            .appendLog("[$category] $message")
-    }
-
     // ── Debug log bridge (called from JNI on game thread) ──
     @Suppress("unused")
     fun debugLogFromNative(
@@ -2157,6 +2146,10 @@ class MainActivity :
         message: String,
     ) {
         DebugLog.log(category, message)
+        if (category == DebugLogCategory.NETWORK) {
+            com.dxxredux.app.multiplayer.MatchmakingStateHolder
+                .appendLog(message)
+        }
     }
 
     // ── GameSurfaceView with InputConnection for soft keyboard ──

@@ -13,16 +13,7 @@
 #include "escort.h"
 #include "config.h"
 #include "console.h"
-#include "android_net_log.h"
-
-/* Log to both con_printf (gamelog.txt/logcat) and DebugLog files (user-visible) */
-#define COOPLOG(fmt, ...)                                       \
-	do {                                                        \
-		char _cl_buf[256];                                      \
-		snprintf(_cl_buf, sizeof(_cl_buf), fmt, ##__VA_ARGS__); \
-		con_printf(CON_NORMAL, "%s", _cl_buf);                  \
-		android_net_log("COOP", _cl_buf);                       \
-	} while (0)
+#include "android_log.h"
 #include "weapon.h"
 #include "state.h"
 #include "args.h"

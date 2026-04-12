@@ -927,12 +927,18 @@ function Watch-AutomationResult {
         } else {
             Write-Host "  (not available)" -ForegroundColor Gray
         }
-        Write-Status "--- gamelog.txt (last 30 lines) ---" "Yellow"
-        $gameLog = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/gamelog.txt") -Seconds 3
-        if ($gameLog) {
-            ($gameLog -split "`n") | Select-Object -Last 30 | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
+        Write-Status "--- debug log files (last 30 lines each) ---" "Yellow"
+        $debugLogs = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "ls", "files/debuglogs/") -Seconds 3
+        if ($debugLogs) {
+            foreach ($logFile in ($debugLogs -split "`n" | Where-Object { $_.Trim() })) {
+                Write-Host "  -- $logFile --" -ForegroundColor DarkYellow
+                $content = Adb-Timeout -AdbArgs @("shell", "run-as", $script:PACKAGE, "cat", "files/debuglogs/$($logFile.Trim())") -Seconds 3
+                if ($content) {
+                    ($content -split "`n") | Select-Object -Last 30 | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
+                }
+            }
         } else {
-            Write-Host "  (not available)" -ForegroundColor Gray
+            Write-Host "  (no debug log files)" -ForegroundColor Gray
         }
         Write-Status "--- logcat DXX-Automate (last 30 lines) ---" "Yellow"
         $log = Adb-Timeout -AdbArgs @("logcat", "-d", "-s", "DXX-Automate:*") -Seconds 5
