@@ -1,8 +1,9 @@
 # On-Device Mac CD Extraction (Android)
 
-Status: Planning expanded on 2026-04-11. Source media, hashes, reference
-outputs, and likely attribution sources are collected. Native implementation is
-not started.
+Status: Planning expanded on 2026-04-11. First native implementation tranche
+landed on 2026-04-12: HFS/APM detection is implemented and verified against
+both known Mac D1 discs. Direct HFS file extraction, STi2 parsing, and
+JNI/launcher integration are still pending.
 
 ## Goal
 
@@ -44,6 +45,37 @@ later Mac HFS discs too.
 - Gap to close during implementation:
    - Mac `CHAOS.MSN` hash is known, but `.msn` is not currently included in the
       `hash_assets.ps1` extension list
+- Initial native HFS tranche now exists:
+   - `android/app/src/main/cpp/extract/hfs_reader.c`
+   - `android/app/src/main/cpp/extract/hfs_reader.h`
+   - `android/app/src/main/cpp/extract/test_hfs.c`
+   - `extract_cd.c` now reports HFS tracks as HFS instead of a generic ISO
+      failure when `Apple_HFS` is detected
+
+## 2026-04-12 implementation findings
+
+- `hfs_find_partition()` is implemented and currently covers:
+   - Apple driver descriptor record detection
+   - Apple partition map scanning
+   - `Apple_HFS` partition identification
+   - HFS MDB parsing for volume name and basic sizing fields
+- `test_hfs` now validates:
+   - a synthetic non-ISO, non-sector-aligned HFS partition case
+   - primary MacPlay disc detection
+   - secondary Mac BIN/CUE variant detection
+- Verified on both real D1 Mac discs:
+   - partition map entry count: 2
+   - HFS partition block count: 319989
+   - physical block size: 512
+- Verified on the primary MacPlay disc:
+   - `extract_cd.exe` now emits
+      `{"filesystem": "hfs", "partition_blocks": 319989}`
+     for track 1 instead of an ISO error
+- Still not implemented in native code:
+   - HFS catalog B-tree walking
+   - direct file extraction from HFS data forks
+   - STi2 archive parsing or decompression
+   - JNI and Kotlin integration
 
 ## Verified source media
 
@@ -222,6 +254,14 @@ Detection rule in `SetupActivity.kt`:
 
 ### A. HFS reader (read-only) -- feasible
 
+Implementation status after tranche 1:
+- [x] Apple Partition Map detection
+- [x] `Apple_HFS` partition discovery
+- [x] HFS MDB parsing for volume name and sizing metadata
+- [x] standalone regression coverage in `test_hfs.c`
+- [ ] catalog B-tree traversal
+- [ ] data-fork extraction
+
 Scope:
 - Apple Partition Map detection
 - HFS Master Directory Block parsing
@@ -324,6 +364,9 @@ Kotlin or Android UI work. Get desktop-native extraction right first.
     - Success criteria:
        - primary disc resolves as HFS, not ISO
        - secondary disc resolves too
+   - Status:
+      - done on 2026-04-12 via `hfs_reader.c` + `test_hfs.c`
+      - `extract_cd.c` now reports HFS instead of surfacing a false ISO error
 
 2. HFS catalog walk and direct-file extraction
     - Implement enough catalog/B-tree support to list files and extract data forks
@@ -406,6 +449,15 @@ when one upstream codebase is the dominant inspiration, keep an explicit file
 header that says so and include the upstream license notice.
 
 ### `hfs_reader.c` / `hfs_reader.h`
+
+Current status after the first implementation tranche:
+- the current `hfs_reader` code was written from public APM/HFS structure docs,
+   the repo's existing notes, and the already-verified field offsets from the
+   desktop investigation
+- no single external codebase was directly followed closely enough in this
+   tranche to justify a copied external license notice yet
+- if the next tranche's catalog/B-tree code ends up leaning heavily on
+   `machfs`, revisit this and add explicit MIT-style attribution at that time
 
 Expected inspiration order:
 1. public HFS/APM specs

@@ -61,6 +61,7 @@ endif()
 # ── Library sources (shared by all test executables) ─────────────────
 set(EXTRACT_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/hfs_reader.c
     ${CMAKE_CURRENT_SOURCE_DIR}/iso9660_reader.c
     ${CMAKE_CURRENT_SOURCE_DIR}/sow_extract.c
 )
@@ -87,10 +88,20 @@ add_executable(test_sow_direct
 )
 target_include_directories(test_sow_direct PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
+# ── test_hfs ───────────────────────────────────────────────────────
+add_executable(test_hfs
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_hfs.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/hfs_reader.c
+)
+target_include_directories(test_hfs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
 # ── CTest integration ───────────────────────────────────────────────
 enable_testing()
 add_test(NAME cue_iso_tests COMMAND test_cue_iso)
 set_tests_properties(cue_iso_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME hfs_tests COMMAND test_hfs)
+set_tests_properties(hfs_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 # ── extract_gog ─────────────────────────────────────────────────────
 add_executable(extract_gog

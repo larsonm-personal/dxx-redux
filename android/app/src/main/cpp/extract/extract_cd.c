@@ -42,6 +42,7 @@
 #endif
 
 #include "cue_parser.h"
+#include "hfs_reader.h"
 #include "iso9660_reader.h"
 #include "sow_extract.h"
 
@@ -426,10 +427,22 @@ int main(int argc, char *argv[])
 				printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"files_extracted\": 0}\n",
 				       t->track_num, sha_hex);
 			} else {
-				fprintf(stderr, "  Track %d: ISO listing failed (not ISO 9660?)\n", t->track_num);
-				printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"error\": \"ISO listing failed\"}\n",
-				       t->track_num, sha_hex);
-				errors++;
+				hfs_partition_info_t hfs_info;
+
+				if (hfs_find_partition(bin_fd, t->start_sector, t->num_sectors, &hfs_info) == 0) {
+					fprintf(stderr,
+					        "  Track %d: detected HFS volume '%s' (%u blocks)\n",
+					        t->track_num,
+					        hfs_info.volume_name[0] ? hfs_info.volume_name : hfs_info.partition_name,
+					        hfs_info.partition_block_count);
+					printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"filesystem\": \"hfs\", \"partition_blocks\": %u}\n",
+					       t->track_num, sha_hex, hfs_info.partition_block_count);
+				} else {
+					fprintf(stderr, "  Track %d: ISO listing failed (not ISO 9660?)\n", t->track_num);
+					printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"error\": \"ISO listing failed\"}\n",
+					       t->track_num, sha_hex);
+					errors++;
+				}
 			}
 		} else {
 			/* Audio track — just output the hash */
