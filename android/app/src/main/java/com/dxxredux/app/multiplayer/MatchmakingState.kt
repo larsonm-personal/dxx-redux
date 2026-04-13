@@ -87,6 +87,7 @@ data class GameLaunchInfo(
     val lanHostAddr: String? = null,
     val lanHostPort: Int = NetworkConstants.ENGINE_PORT,
     val isLan: Boolean = false,
+    val coopQol: Boolean = true,
 )
 
 data class MatchmakingState(
@@ -170,6 +171,8 @@ object HostGameDefaults {
     // Default missions: d2="d2" (Counterstrike!), d1="" (First Strike)
     private val DEFAULT_MISSION = mapOf("d1" to "", "d2" to "d2")
 
+    fun defaultMissionForGame(game: String): String? = DEFAULT_MISSION[game]
+
     data class Defaults(
         val game: String = "d2",
         val mission: String? = null,
@@ -177,6 +180,7 @@ object HostGameDefaults {
         val difficulty: Int = 1, // Rookie
         val levelNum: Int = 1,
         val maxPlayers: Int = 4,
+        val coopQol: Boolean = true,
     )
 
     fun load(context: Context): Defaults {
@@ -184,11 +188,12 @@ object HostGameDefaults {
         val game = prefs.getString("host_game", "d2") ?: "d2"
         return Defaults(
             game = game,
-            mission = prefs.getString("host_mission_$game", DEFAULT_MISSION[game]),
+            mission = prefs.getString("host_mission_$game", defaultMissionForGame(game)),
             mode = prefs.getString("host_mode", "coop") ?: "coop",
             difficulty = prefs.getInt("host_difficulty", 1),
             levelNum = prefs.getInt("host_level_num", 1),
             maxPlayers = prefs.getInt("host_max_players", 4),
+            coopQol = prefs.getBoolean("host_coop_qol", true),
         )
     }
 
@@ -205,6 +210,7 @@ object HostGameDefaults {
             .putInt("host_difficulty", d.difficulty)
             .putInt("host_level_num", d.levelNum)
             .putInt("host_max_players", d.maxPlayers)
+            .putBoolean("host_coop_qol", d.coopQol)
             .apply()
     }
 }

@@ -1073,6 +1073,11 @@ object MatchmakingService {
                             yourSlot = gs.yourSlot,
                             isHost = isHost,
                             peers = gs.peers,
+                            coopQol =
+                                gs.gameInfo["coop_qol"]
+                                    ?.jsonPrimitive
+                                    ?.content
+                                    ?.toBooleanStrictOrNull() ?: true,
                         )
                     state.update { it.copy(gameLaunchInfo = launchInfo) }
                     // Host sends periodic game state updates to the matchmaking server

@@ -183,6 +183,7 @@ fun buildStart(
     difficulty: Int,
     levelNum: Int = 1,
     maxPlayers: Int = 4,
+    coopQol: Boolean = true,
 ): ByteArray {
     val json = JSONObject()
     json.put("type", MSG_START)
@@ -195,6 +196,7 @@ fun buildStart(
     json.put("difficulty", difficulty)
     json.put("level_num", levelNum)
     json.put("max_players", maxPlayers)
+    json.put("coop_qol", coopQol)
     return json.toString().toByteArray(Charsets.UTF_8)
 }
 

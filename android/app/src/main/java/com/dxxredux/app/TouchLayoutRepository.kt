@@ -18,7 +18,7 @@ import java.io.File
 object TouchLayoutRepository {
     private const val TAG = "TouchLayoutRepository"
     private const val FILENAME = "touch_layout.json"
-    private const val CURRENT_VERSION = 1
+    private const val CURRENT_VERSION = 2
     private const val BUNDLED_DIR = "configs/touch"
     private const val USER_DIR = "configs/touch"
 
@@ -26,24 +26,45 @@ object TouchLayoutRepository {
         val file = File(context.filesDir, FILENAME)
         if (!file.exists()) return defaultLayout(context)
         return try {
-            val layout = TouchLayout.fromJson(JSONObject(file.readText()))
-            migrate(layout)
+            migrateForCurrentVersion(TouchLayout.fromJson(JSONObject(file.readText())))
         } catch (_: Exception) {
             defaultLayout(context)
         }
     }
 
     /** Apply migrations from older layout versions to CURRENT_VERSION. */
-    private fun migrate(layout: TouchLayout): TouchLayout {
-        if (layout.version >= CURRENT_VERSION) return layout
-        return layout.copy(version = CURRENT_VERSION)
+    internal fun migrateForCurrentVersion(layout: TouchLayout): TouchLayout {
+        var migrated = layout
+        if (migrated.version < 2) {
+            migrated =
+                migrated.copy(
+                    version = 2,
+                    buttons =
+                        migrated.buttons.map { button ->
+                            if (button.binding == TouchBindings.BTN_GYRO_RECENTER &&
+                                !button.longPressEnabled &&
+                                button.longPressBinding < 0
+                            ) {
+                                button.copy(
+                                    longPressEnabled = true,
+                                    longPressBinding = TouchBindings.META_GYRO_TOGGLE,
+                                    longPressDurationMs = TouchBindings.DEFAULT_LONG_PRESS_DURATION_MS,
+                                )
+                            } else {
+                                button
+                            }
+                        },
+                )
+        }
+        if (migrated.version >= CURRENT_VERSION) return migrated
+        return migrated.copy(version = CURRENT_VERSION)
     }
 
     fun save(
         context: Context,
         layout: TouchLayout,
     ) {
-        File(context.filesDir, FILENAME).writeText(layout.toJson().toString(2))
+        File(context.filesDir, FILENAME).writeText(migrateForCurrentVersion(layout).toJson().toString(2))
     }
 
     /** Default layout: first bundled preset, or a minimal hard-coded fallback. */
@@ -85,7 +106,7 @@ object TouchLayoutRepository {
             if (result.warnings.isNotEmpty()) {
                 Log.w(TAG, "Warnings loading $filename: ${result.warnings}")
             }
-            result.value
+            result.value?.let { migrateForCurrentVersion(it) }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load bundled preset $filename", e)
             null
@@ -108,7 +129,7 @@ object TouchLayoutRepository {
                     if (result.warnings.isNotEmpty()) {
                         Log.w(TAG, "Warnings loading ${file.name}: ${result.warnings}")
                     }
-                    result.value
+                    result.value?.let { migrateForCurrentVersion(it) }
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to load user preset ${file.name}", e)
                     null

@@ -119,6 +119,7 @@ object TouchBindings {
     const val META_PAUSE = 1030
     const val META_RETURN_TO_LAUNCHER = 1031
     const val META_GUIDE_RELEASE_CONTROL = 1032
+    const val META_GYRO_TOGGLE = 1033
 
     /** Labels for meta actions, used in Extra button pickers. */
     val META_BUTTON_LABELS: Map<Int, String> =
@@ -152,6 +153,7 @@ object TouchBindings {
             META_WEAPON_9 to "Weapon 9",
             META_WEAPON_10 to "Weapon 10",
             META_PAUSE to "Pause",
+            META_GYRO_TOGGLE to "Gyro On/Off",
             META_RETURN_TO_LAUNCHER to "Exit to Launcher",
         )
 
@@ -367,6 +369,9 @@ object TouchBindings {
     const val MIN_GLOBAL_OPACITY = 0.2f
     const val MAX_GLOBAL_OPACITY = 1.0f
     const val DEFAULT_GLOBAL_OPACITY = 0.7f
+    const val MIN_LONG_PRESS_DURATION_MS = 200
+    const val MAX_LONG_PRESS_DURATION_MS = 2000
+    const val DEFAULT_LONG_PRESS_DURATION_MS = 500
 
     // --- Cheat code definitions (from gamecntl.c cheat_codes[]) ---
     // Keep in sync with cheat_codes[] in d2/main/gamecntl.c and d1/main/gamecntl.c

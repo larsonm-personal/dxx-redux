@@ -823,11 +823,13 @@ class SetupActivity : ComponentActivity() {
                         val mission = intent.getStringExtra("mission") ?: "counterstrike!"
                         val mode = intent.getStringExtra("mode") ?: "anarchy"
                         val maxPlayers = intent.getIntExtra("max_players", 4)
+                        val coopQol = intent.getBooleanExtra("coop_qol", true)
                         val gameInfo =
                             JsonObject(
                                 mapOf(
                                     "mission" to JsonPrimitive(mission),
                                     "mode" to JsonPrimitive(mode),
+                                    "coop_qol" to JsonPrimitive(coopQol),
                                 ),
                             )
                         MatchmakingService.createLobby(game, maxPlayers, gameInfo)
@@ -898,6 +900,7 @@ class SetupActivity : ComponentActivity() {
                         val maxPlayers = intent.getIntExtra("max_players", 4)
                         val levelNum = intent.getIntExtra("level_num", 1)
                         val difficulty = intent.getIntExtra("difficulty", 1)
+                        val coopQol = intent.getBooleanExtra("coop_qol", true)
                         val hostAddr = intent.getStringExtra("host_addr")
                         val hostPort = intent.getIntExtra("host_port", NetworkConstants.ENGINE_PORT)
                         intent.getStringExtra("callsign")?.let { mpCallsign = it }
@@ -916,6 +919,7 @@ class SetupActivity : ComponentActivity() {
                                 lanHostAddr = if (!isHost) hostAddr else null,
                                 lanHostPort = hostPort,
                                 isLan = true,
+                                coopQol = coopQol,
                             )
                         Log.i(
                             "DXX-MP",
@@ -1058,6 +1062,7 @@ class SetupActivity : ComponentActivity() {
                     val difficulty = json["difficulty"]?.jsonPrimitive?.int ?: 1
                     val levelNum = json["level_num"]?.jsonPrimitive?.int ?: 1
                     val maxPlayers = json["max_players"]?.jsonPrimitive?.int ?: 4
+                    val coopQol = json["coop_qol"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: true
                     Log.i(
                         "DXX-MP",
                         "Host migration: proxy on :$proxyPort, LAN broadcast as $callsign ($game/$mission lvl=$levelNum)",
@@ -1067,7 +1072,7 @@ class SetupActivity : ComponentActivity() {
                     com.dxxredux.app.lobby.LobbyService
                         .hostLobby(callsign, game, mission, mode, maxPlayers)
                     com.dxxredux.app.lobby.LobbyService
-                        .startGame(difficulty, levelNum, proxyPort)
+                        .startGame(difficulty, levelNum, coopQol = coopQol, hostPort = proxyPort)
                     // Clean up the migration file
                     file.delete()
                 } catch (e: Exception) {
@@ -1435,6 +1440,7 @@ class SetupActivity : ComponentActivity() {
             mpIntent.putExtra("mp_max_players", info.maxPlayers)
             mpIntent.putExtra("mp_level_num", info.levelNum)
             mpIntent.putExtra("mp_difficulty", info.difficulty)
+            mpIntent.putExtra("mp_coop_qol", info.coopQol)
         } else {
             mpIntent.putExtra("mp_mode", "join")
             if (info.lanHostAddr != null) {
@@ -3028,6 +3034,7 @@ private fun SetupScreen(
     var showTouchEditorPage by remember { mutableStateOf(false) }
     var showAdvancedPage by remember { mutableStateOf(false) }
     var showGraphicsPage by remember { mutableStateOf(false) }
+    var showEnginePrefsPage by remember { mutableStateOf(false) }
     var showMultiplayerPage by remember { mutableStateOf(false) }
     var showAutoselectPage by remember { mutableStateOf(false) }
     var showMusicPage by remember { mutableStateOf(false) }
@@ -3038,6 +3045,7 @@ private fun SetupScreen(
             showTouchEditorPage ||
             showAdvancedPage ||
             showGraphicsPage ||
+            showEnginePrefsPage ||
             showMultiplayerPage ||
             showAutoselectPage ||
             showMusicPage
@@ -3085,6 +3093,15 @@ private fun SetupScreen(
             GraphicsSettingsPage(
                 filesDir = filesDir,
                 onBack = { showGraphicsPage = false },
+            )
+            return@MaterialTheme
+        }
+        if (showEnginePrefsPage) {
+            BackHandler { showEnginePrefsPage = false }
+            EnginePreferencesPage(
+                gameVariant = selectedGame,
+                filesDir = filesDir,
+                onBack = { showEnginePrefsPage = false },
             )
             return@MaterialTheme
         }
@@ -4114,6 +4131,7 @@ private fun SetupScreen(
                         onEditTouchLayout = { showTouchEditorPage = true },
                         onAdvancedSettings = { showAdvancedPage = true },
                         onGraphicsSettings = { showGraphicsPage = true },
+                        onEnginePreferences = { showEnginePrefsPage = true },
                         onEditAutoselect = { showAutoselectPage = true },
                     )
 
@@ -5491,6 +5509,7 @@ private fun ControllerSection(
     onEditTouchLayout: () -> Unit = {},
     onAdvancedSettings: () -> Unit = {},
     onGraphicsSettings: () -> Unit = {},
+    onEnginePreferences: () -> Unit = {},
     onEditAutoselect: () -> Unit = {},
 ) {
     // Poll for controller connect/disconnect every 1 second
@@ -5657,7 +5676,7 @@ private fun ControllerSection(
         }
     }
 
-    // ── Weapon Autoselect / Graphics / Advanced ──
+    // ── Weapon Autoselect / Game Preferences / Graphics / Advanced ──
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedButton(
             onClick = onEditAutoselect,
@@ -5666,6 +5685,15 @@ private fun ControllerSection(
         ) {
             Text("Weapon Autoselect", fontSize = 12.sp)
         }
+        OutlinedButton(
+            onClick = onEnginePreferences,
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+            modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
+        ) {
+            Text("Game Preferences", fontSize = 12.sp)
+        }
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedButton(
             onClick = onGraphicsSettings,
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),

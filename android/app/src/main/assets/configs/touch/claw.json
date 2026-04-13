@@ -1,6 +1,6 @@
 {
   "type": "touch_layout",
-  "version": 1,
+  "version": 2,
   "name": "Claw",
   "globalOpacity": 0.7,
   "sticks": [
@@ -119,6 +119,9 @@
       "size": 0.7,
       "opacity": 0.7,
       "binding": "Gyro Recenter",
+      "longPressEnabled": true,
+      "longPressBinding": "Meta: Gyro On/Off",
+      "longPressDurationMs": 500,
       "label": "GR",
       "shape": "CIRCLE",
       "toggle": false,

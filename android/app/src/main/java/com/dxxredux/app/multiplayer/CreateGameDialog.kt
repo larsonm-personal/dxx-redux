@@ -24,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -47,7 +48,15 @@ import androidx.compose.ui.unit.sp
 internal fun CreateGameDialog(
     title: String = "Create Game",
     confirmLabel: String = "Create",
-    onCreate: (game: String, mission: String?, mode: String, maxPlayers: Int, difficulty: Int, levelNum: Int) -> Unit,
+    onCreate: (
+        game: String,
+        mission: String?,
+        mode: String,
+        maxPlayers: Int,
+        difficulty: Int,
+        levelNum: Int,
+        coopQol: Boolean,
+    ) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -58,6 +67,7 @@ internal fun CreateGameDialog(
     var maxPlayersText by remember { mutableStateOf(defaults.maxPlayers.toString()) }
     var difficulty by remember { mutableStateOf(defaults.difficulty) }
     var levelNumText by remember { mutableStateOf(defaults.levelNum.toString()) }
+    var coopQol by remember { mutableStateOf(defaults.coopQol) }
 
     // Coop auto-saves and progress
     val coopSaves =
@@ -129,7 +139,7 @@ internal fun CreateGameDialog(
                                         if (saved.game == g) {
                                             saved.mission
                                         } else {
-                                            HostGameDefaults.Defaults(game = g).mission
+                                            HostGameDefaults.defaultMissionForGame(g)
                                         }
                                 }) { Text(g.uppercase()) }
                             }
@@ -149,6 +159,29 @@ internal fun CreateGameDialog(
                                 OutlinedButton(onClick = { mode = m }) {
                                     Text(m.replaceFirstChar { it.uppercase() })
                                 }
+                            }
+                        }
+                    }
+                    if (mode == "coop") {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Switch(
+                                checked = coopQol,
+                                onCheckedChange = { coopQol = it },
+                            )
+                            Column {
+                                Text(
+                                    "Coop QoL (guidebot, arrows, warp)",
+                                    style = MaterialTheme.typography.labelMedium,
+                                )
+                                Text(
+                                    "Host-side coop helper features for this session",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
                         }
                     }
@@ -256,12 +289,13 @@ internal fun CreateGameDialog(
                             difficulty = difficulty,
                             levelNum = levelNum,
                             maxPlayers = maxPlayers,
+                            coopQol = coopQol,
                         ),
                     )
                     // slot = -1 for checkpoint entries (no save file to load)
                     val restoreSlot = selectedSave?.slot?.takeIf { it >= 0 }
                     writeCoopRestoreSlot(context.filesDir, game, restoreSlot)
-                    onCreate(game, mission, mode, maxPlayers, difficulty, levelNum)
+                    onCreate(game, mission, mode, maxPlayers, difficulty, levelNum, coopQol)
                 },
                 enabled = mission != null && maxPlayers in 2..8 && levelNum >= 1,
             ) {

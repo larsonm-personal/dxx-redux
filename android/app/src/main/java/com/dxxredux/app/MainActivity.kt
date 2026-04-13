@@ -45,6 +45,18 @@ import com.dxxredux.app.multiplayer.MatchmakingService
 import org.json.JSONObject
 import java.io.File
 
+internal fun shouldShowTouchOverlay(
+    inGame: Boolean,
+    overlayEnabled: Boolean,
+    playerDead: Boolean,
+    endlevel: Boolean,
+    automap: Boolean,
+    settingsTrayVisible: Boolean,
+): Boolean {
+    val gameplayOverlay = overlayEnabled && !playerDead && !endlevel && (inGame || settingsTrayVisible)
+    return gameplayOverlay || automap
+}
+
 class MainActivity :
     Activity(),
     SurfaceHolder.Callback {
@@ -113,6 +125,11 @@ class MainActivity :
     external fun nativeSetGraphicsOption(
         name: String,
         value: Int,
+    )
+
+    external fun nativeSetCoopIndicatorOptions(
+        showNearestPlayerLine: Boolean,
+        showGuidebotLine: Boolean,
     )
 
     external fun nativeSetDebugLogEnabled(
@@ -189,6 +206,12 @@ class MainActivity :
 
     external fun nativeGetCockpitMode(): Int
 
+    external fun nativeOpenSinglePlayerPauseIfSafe(): Boolean
+
+    external fun nativeClosePauseIfFront(): Boolean
+
+    external fun nativeOpenGameMenuIfSafe(): Boolean
+
     // ── Music track control (jni_music_control.c) ────────────────────
     external fun nativeNextTrack(): Int
 
@@ -261,6 +284,7 @@ class MainActivity :
         maxPlayers: Int,
         levelNum: Int,
         difficulty: Int,
+        coopQol: Boolean,
     )
 
     external fun nativeGetCurrentTrackInfo(): String
@@ -309,9 +333,12 @@ class MainActivity :
     private var coopStatsOverlay: CoopStatsOverlay? = null
     private var warpButtonOverlay: WarpButtonOverlay? = null
     private var netEventsManualToggle = false
+    private var adminTrayPausedGame = false
     private var isMultiplayerGame = false
     private var lastTrackNum = -1 // for detecting track changes in polling
     private var gyroManager: GyroInputManager? = null
+    private var activeTouchLayout = TouchLayoutRepository.defaultLayout()
+    private var isActivityResumed = false
     private var gameVariantId = "d2" // "d1" or "d2", set in onCreate
 
     // True when no touchscreen is available (Android TV / gamepad-only)
@@ -413,7 +440,8 @@ class MainActivity :
             val maxPlayers = intent.getIntExtra("mp_max_players", 4)
             val levelNum = intent.getIntExtra("mp_level_num", 1)
             val difficulty = intent.getIntExtra("mp_difficulty", 1)
-            nativeSetAutoHost(myPort, mission, mode, maxPlayers, levelNum, difficulty)
+            val coopQol = intent.getBooleanExtra("mp_coop_qol", true)
+            nativeSetAutoHost(myPort, mission, mode, maxPlayers, levelNum, difficulty, coopQol)
         }
 
         // Start foreground service during multiplayer to prevent process kill
@@ -436,6 +464,7 @@ class MainActivity :
             } else {
                 android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             }
+        applyCoopIndicatorPrefs(prefs)
 
         // Allow rendering into the display cutout (notch) area
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -486,8 +515,8 @@ class MainActivity :
 
         // Touch overlay
         touchOverlay = TouchOverlayView(this)
-        val layout = TouchLayoutRepository.load(this)
-        touchOverlay.setLayout(layout)
+        activeTouchLayout = TouchLayoutRepository.load(this)
+        touchOverlay.setLayout(activeTouchLayout)
 
         // Input mixer: combines button/axis inputs from touch, controller, gyro
         inputMixer =
@@ -502,21 +531,9 @@ class MainActivity :
             inputMixer.setAxis(axis, "touch", value)
         }
 
-        // Gyro aiming
-        if (layout.gyro.enabled) {
-            val gm = GyroInputManager(this)
-            gm.setConfig(layout.gyro)
-            gm.axisCallback = { axis, value ->
-                inputMixer.setAxis(axis, "gyro", value)
-            }
-            gm.diagnosticCallback = { yaw, pitch, roll ->
-                touchOverlay.updateGyroDiagnostic(yaw, pitch, roll)
-            }
-            touchOverlay.gyroManager = gm
-            gyroManager = gm
-        }
+        applyGyroConfig(activeTouchLayout.gyro)
         touchOverlay.metaActionCallback = { actionId, pressed ->
-            NativeMetaActions.nativeMetaAction(actionId, if (pressed) 1 else 0)
+            dispatchMetaAction(actionId, pressed)
         }
         touchOverlay.keyCallback = { action, keyCode, unicode ->
             nativeKeyEvent(action, keyCode, unicode)
@@ -547,6 +564,16 @@ class MainActivity :
         touchOverlay.cheatCodeCallback = { code ->
             for (ch in code) nativeTextInput(ch.code)
         }
+        touchOverlay.adminTrayOpenedCallback = { syncAdminTrayPause(open = true) }
+        touchOverlay.adminTrayClosedCallback = { syncAdminTrayPause(open = false) }
+        touchOverlay.adminTrayToggleStateProvider = { action ->
+            when (action) {
+                TouchOverlayView.ADMIN_NET_STATS -> netStatsOverlay?.visibility == View.VISIBLE
+                TouchOverlayView.ADMIN_NET_EVENTS -> netEventsManualToggle
+                TouchOverlayView.ADMIN_VIDEO_INFO -> videoInfoOverlay?.visibility == View.VISIBLE
+                else -> false
+            }
+        }
         touchOverlay.adminTrayCallback = { action ->
             when (action) {
                 TouchOverlayView.ADMIN_INCREASE_VIEW -> nativeCycleCockpit(1)
@@ -566,8 +593,7 @@ class MainActivity :
                     nativeKeyEvent(1, KeyEvent.KEYCODE_ALT_LEFT, 0)
                 }
                 TouchOverlayView.ADMIN_OPEN_MENU -> {
-                    nativeKeyEvent(0, KeyEvent.KEYCODE_ESCAPE, 0)
-                    nativeKeyEvent(1, KeyEvent.KEYCODE_ESCAPE, 0)
+                    openGameMenuSafely()
                 }
                 TouchOverlayView.ADMIN_NET_STATS -> {
                     netStatsOverlay?.toggle()
@@ -1083,6 +1109,7 @@ class MainActivity :
     // ── Lifecycle ────────────────────────────────────────────
     override fun onStop() {
         super.onStop()
+        isActivityResumed = false
         gyroManager?.pause()
         overlayPoller.removeCallbacksAndMessages(null)
         // Inject Escape so the engine opens its pause / game menu.
@@ -1094,6 +1121,7 @@ class MainActivity :
 
     override fun onResume() {
         super.onResume()
+        isActivityResumed = true
         gyroManager?.resume()
         // Resume music that was paused when backgrounded
         if (gameStarted) {
@@ -1110,8 +1138,60 @@ class MainActivity :
                     src and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
             }
         overlayEnabled = prefs.getBoolean("touch_overlay_enabled", !hasController)
+        applyCoopIndicatorPrefs(prefs)
         // Start polling in-game state to show/hide overlay
         startOverlayPolling()
+    }
+
+    private fun applyCoopIndicatorPrefs(prefs: android.content.SharedPreferences) {
+        try {
+            nativeSetCoopIndicatorOptions(
+                prefs.getBoolean(PREF_NEAREST_PLAYER_LINE, true),
+                prefs.getBoolean(PREF_GUIDEBOT_HELPER_LINE, true),
+            )
+        } catch (_: Exception) {
+            // JNI may not be ready yet when the activity is first coming up
+        }
+    }
+
+    private fun syncAdminTrayPause(open: Boolean) {
+        if (open) {
+            if (adminTrayPausedGame) return
+            adminTrayPausedGame =
+                try {
+                    nativeOpenSinglePlayerPauseIfSafe()
+                } catch (_: Exception) {
+                    false
+                }
+            return
+        }
+
+        if (!adminTrayPausedGame) return
+        try {
+            nativeClosePauseIfFront()
+        } catch (_: Exception) {
+        }
+        adminTrayPausedGame = false
+    }
+
+    private fun openGameMenuSafely() {
+        if (adminTrayPausedGame) {
+            try {
+                nativeClosePauseIfFront()
+            } catch (_: Exception) {
+            }
+            adminTrayPausedGame = false
+        }
+        val opened =
+            try {
+                nativeOpenGameMenuIfSafe()
+            } catch (_: Exception) {
+                false
+            }
+        if (!opened) {
+            nativeKeyEvent(0, KeyEvent.KEYCODE_ESCAPE, 0)
+            nativeKeyEvent(1, KeyEvent.KEYCODE_ESCAPE, 0)
+        }
     }
 
     private fun startOverlayPolling() {
@@ -1152,10 +1232,19 @@ class MainActivity :
                                 } catch (_: Exception) {
                                     false
                                 }
+                            val settingsTrayVisible = touchOverlay.isAdminTrayOpen() || adminTrayPausedGame
                             // During death or endlevel, show skip/continue button instead of controls
                             val showCutsceneButton = playerDead || endlevel || skippable
-                            // Show overlay when in-game with overlay enabled, or when automap is active
-                            val shouldShow = (inGame && overlayEnabled && !playerDead && !endlevel) || automap
+                            // Keep the overlay visible while the settings tray owns the pause state.
+                            val shouldShow =
+                                shouldShowTouchOverlay(
+                                    inGame = inGame,
+                                    overlayEnabled = overlayEnabled,
+                                    playerDead = playerDead,
+                                    endlevel = endlevel,
+                                    automap = automap,
+                                    settingsTrayVisible = settingsTrayVisible,
+                                )
                             val wasActive = touchOverlay.isActive
                             touchOverlay.isActive = shouldShow
                             touchOverlay.automapActive = automap
@@ -1208,9 +1297,10 @@ class MainActivity :
                                     ""
                                 }
                             if (joinCallsign.isNotEmpty()) {
-                                acceptJoinButton.callsign = joinCallsign
-                                acceptJoinButton.visibility = View.VISIBLE
-                            } else {
+                                // Hide standalone overlays when returning to menus, but keep them while
+                                // the settings tray has paused single-player gameplay.
+                                if (!inGame && !settingsTrayVisible) netStatsOverlay?.hide()
+                                if (!inGame && !settingsTrayVisible) videoInfoOverlay?.hide()
                                 acceptJoinButton.visibility = View.GONE
                             }
                             // Auto-show/hide network events overlay during MP phases
@@ -1712,6 +1802,51 @@ class MainActivity :
         }
     }
 
+    private fun ensureGyroManager(): GyroInputManager {
+        gyroManager?.let { return it }
+        val manager = GyroInputManager(this)
+        manager.axisCallback = { axis, value ->
+            inputMixer.setAxis(axis, "gyro", value)
+        }
+        manager.diagnosticCallback = { yaw, pitch, roll ->
+            touchOverlay.updateGyroDiagnostic(yaw, pitch, roll)
+        }
+        touchOverlay.gyroManager = manager
+        gyroManager = manager
+        return manager
+    }
+
+    private fun applyGyroConfig(config: GyroConfig) {
+        val manager = ensureGyroManager()
+        manager.setConfig(config)
+        touchOverlay.updateGyroEnabled(config.enabled)
+        if (isActivityResumed) {
+            if (config.enabled) {
+                manager.resume()
+            } else {
+                manager.pause()
+            }
+        }
+    }
+
+    private fun setGyroEnabled(enabled: Boolean) {
+        if (activeTouchLayout.gyro.enabled == enabled) return
+        activeTouchLayout = activeTouchLayout.copy(gyro = activeTouchLayout.gyro.copy(enabled = enabled))
+        TouchLayoutRepository.save(this, activeTouchLayout)
+        applyGyroConfig(activeTouchLayout.gyro)
+    }
+
+    private fun dispatchMetaAction(
+        actionId: Int,
+        pressed: Boolean,
+    ) {
+        if (actionId == TouchBindings.META_GYRO_TOGGLE) {
+            if (pressed) setGyroEnabled(!activeTouchLayout.gyro.enabled)
+            return
+        }
+        NativeMetaActions.nativeMetaAction(actionId, if (pressed) 1 else 0)
+    }
+
     /** Map d-pad control ID from config to Android KeyEvent keycode. */
     private fun dpadControlToKeyCode(controlId: String): Int =
         when (controlId) {
@@ -1732,7 +1867,7 @@ class MainActivity :
         val pressed = action == 0
         val metaId = dpadMetaBindings[keyCode]
         if (metaId != null) {
-            NativeMetaActions.nativeMetaAction(metaId, if (pressed) 1 else 0)
+            dispatchMetaAction(metaId, pressed)
         } else {
             val btnIdx = dpadKeyCodeToJoyButton(keyCode)
             if (btnIdx >= 0) {
@@ -1794,8 +1929,7 @@ class MainActivity :
                 return true
             }
             if (keyCode == KeyEvent.KEYCODE_BUTTON_SELECT) {
-                nativeKeyEvent(0, KeyEvent.KEYCODE_ESCAPE, 0)
-                nativeKeyEvent(1, KeyEvent.KEYCODE_ESCAPE, 0)
+                openGameMenuSafely()
                 return true
             }
         }
@@ -1805,7 +1939,7 @@ class MainActivity :
         if (joyBtn >= 0) {
             val metaId = buttonMetaBindings[joyBtn]
             if (metaId != null) {
-                NativeMetaActions.nativeMetaAction(metaId, 1)
+                dispatchMetaAction(metaId, true)
             } else {
                 val tag = "ctrl:btn$joyBtn"
                 val kcIndices = mixerButtonMap[joyBtn]
@@ -1856,7 +1990,7 @@ class MainActivity :
         if (joyBtn >= 0) {
             val metaId = buttonMetaBindings[joyBtn]
             if (metaId != null) {
-                NativeMetaActions.nativeMetaAction(metaId, 0)
+                dispatchMetaAction(metaId, false)
             } else {
                 val tag = "ctrl:btn$joyBtn"
                 val kcIndices = mixerButtonMap[joyBtn]

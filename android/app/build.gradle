@@ -277,4 +277,6 @@ dependencies {
 
     // 7z archive support (for music packs distributed as .7z)
     implementation "org.apache.commons:commons-compress:${toolVersions['COMMONS_COMPRESS_VERSION']}"
+
+    testImplementation "junit:junit:${toolVersions['JUNIT_VERSION']}"
 }

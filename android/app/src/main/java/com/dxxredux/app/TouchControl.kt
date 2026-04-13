@@ -199,6 +199,12 @@ data class AnalogStickControl(
     }
 }
 
+internal fun normalizeButtonLongPressDurationMs(durationMs: Int): Int =
+    durationMs.coerceIn(
+        TouchBindings.MIN_LONG_PRESS_DURATION_MS,
+        TouchBindings.MAX_LONG_PRESS_DURATION_MS,
+    )
+
 data class ButtonControl(
     val id: String,
     val xPct: Float,
@@ -210,6 +216,9 @@ data class ButtonControl(
     val shape: ButtonShape = ButtonShape.CIRCLE,
     val toggle: Boolean = false,
     val hapticFeedback: Boolean = true,
+    val longPressEnabled: Boolean = false,
+    val longPressBinding: Int = -1,
+    val longPressDurationMs: Int = TouchBindings.DEFAULT_LONG_PRESS_DURATION_MS,
 ) {
     fun toJson() =
         JSONObject().apply {
@@ -224,6 +233,14 @@ data class ButtonControl(
             put("shape", shape.name)
             put("toggle", toggle)
             put("haptic", hapticFeedback)
+            if (longPressEnabled ||
+                longPressBinding >= 0 ||
+                longPressDurationMs != TouchBindings.DEFAULT_LONG_PRESS_DURATION_MS
+            ) {
+                put("longPressEnabled", longPressEnabled)
+                put("longPressBinding", longPressBinding)
+                put("longPressDurationMs", longPressDurationMs)
+            }
         }
 
     companion object {
@@ -239,6 +256,15 @@ data class ButtonControl(
                 shape = ButtonShape.valueOf(j.optString("shape", "CIRCLE")),
                 toggle = j.optBoolean("toggle"),
                 hapticFeedback = j.optBoolean("haptic", true),
+                longPressEnabled = j.optBoolean("longPressEnabled"),
+                longPressBinding = j.optInt("longPressBinding", -1),
+                longPressDurationMs =
+                    normalizeButtonLongPressDurationMs(
+                        j.optInt(
+                            "longPressDurationMs",
+                            TouchBindings.DEFAULT_LONG_PRESS_DURATION_MS,
+                        ),
+                    ),
             )
     }
 }
@@ -523,7 +549,7 @@ data class GyroConfig(
 enum class DiagnosticType {
     GYRO,
     MUSIC,
-    MENU,
+    SETTINGS,
     ;
 
     /** Human-readable label for the editor UI. */
@@ -532,7 +558,7 @@ enum class DiagnosticType {
             when (this) {
                 GYRO -> "Gyro Display"
                 MUSIC -> "Music Controls"
-                MENU -> "Menu"
+                SETTINGS -> "Settings"
             }
 }
 
@@ -610,7 +636,7 @@ data class AxisRegionControl(
 }
 
 data class TouchLayout(
-    val version: Int = 1,
+    val version: Int = 2,
     val name: String = "Default",
     val globalOpacity: Float = TouchBindings.DEFAULT_GLOBAL_OPACITY,
     val sticks: List<AnalogStickControl> = emptyList(),

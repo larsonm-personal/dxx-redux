@@ -2882,13 +2882,15 @@ void multi_disconnect_player(int pnum)
 							"  \"mode\": \"coop\",\n"
 							"  \"difficulty\": %d,\n"
 							"  \"level_num\": %d,\n"
-							"  \"max_players\": %d\n"
+							"  \"max_players\": %d,\n"
+							"  \"coop_qol\": %s\n"
 							"}\n",
 							Players[Player_num].callsign,
 							Netgame.mission_name,
 							Netgame.difficulty,
 							Current_level_num,
-							Netgame.max_numplayers);
+							Netgame.max_numplayers,
+							(Netgame.game_flags & NETGAME_FLAG_COOP_QOL) ? "true" : "false");
 						PHYSFS_write(mfp, mbuf, mlen, 1);
 						PHYSFS_close(mfp);
 					}

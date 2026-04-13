@@ -26,6 +26,7 @@ int  auto_host_mode        = 0;
 int  auto_host_max_players = 4;
 int  auto_host_level_num   = 1;
 int  auto_host_difficulty  = 1;
+int  auto_host_coop_qol    = 1;
 
 char auto_net_callsign[10] = "";
 char auto_net_client_id[AUTO_NET_CLIENT_ID_LEN] = "";
@@ -33,7 +34,8 @@ char auto_net_client_id[AUTO_NET_CLIENT_ID_LEN] = "";
 /* Implemented in net_udp.c - has access to UDP_MyPort and other statics. */
 extern int net_udp_auto_join(const char *host_addr, int host_port, int my_port);
 extern int net_udp_auto_host(int my_port, const char *mission, int mode,
-                             int difficulty, int max_players, int level_num);
+							 int difficulty, int max_players, int level_num,
+							 int coop_qol);
 
 int auto_create_pilot(void)
 {
@@ -77,13 +79,14 @@ int check_auto_net(void)
 		 * This prevents re-entry when the select-players menu closes and
 		 * EVENT_WINDOW_ACTIVATED re-fires on the main menu. */
 		con_printf(CON_NORMAL, "auto_net: starting auto-host on port %d "
-		           "(mission=%s mode=%d diff=%d max=%d lvl=%d)\n",
+		           "(mission=%s mode=%d diff=%d max=%d lvl=%d qol=%d)\n",
 		           auto_host_my_port, auto_host_mission, auto_host_mode,
 		           auto_host_difficulty, auto_host_max_players,
-		           auto_host_level_num);
+		           auto_host_level_num, auto_host_coop_qol);
 		net_udp_auto_host(auto_host_my_port, auto_host_mission,
 		                  auto_host_mode, auto_host_difficulty,
-		                  auto_host_max_players, auto_host_level_num);
+		                  auto_host_max_players, auto_host_level_num,
+		                  auto_host_coop_qol);
 		return 1;
 	}
 

@@ -65,6 +65,9 @@ object HumanReadableConfig {
     private fun buttonToHuman(b: ButtonControl): JSONObject {
         val j = b.toJson()
         j.put("binding", TouchBindings.bindingToName(b.binding))
+        if (b.longPressBinding >= 0) {
+            j.put("longPressBinding", TouchBindings.bindingToName(b.longPressBinding))
+        }
         return j
     }
 
@@ -278,6 +281,12 @@ object HumanReadableConfig {
     ): ButtonControl? {
         val id = j.optString("id", "")
         val binding = resolveBinding(j, "binding", warnings, "button '$id'") ?: return null
+        val longPressBinding =
+            if (j.has("longPressBinding")) {
+                resolveBinding(j, "longPressBinding", warnings, "button '$id' long press") ?: -1
+            } else {
+                -1
+            }
         return ButtonControl(
             id = id,
             xPct = j.getDouble("x").toFloat(),
@@ -289,6 +298,15 @@ object HumanReadableConfig {
             shape = ButtonShape.valueOf(j.optString("shape", "CIRCLE")),
             toggle = j.optBoolean("toggle"),
             hapticFeedback = j.optBoolean("haptic", true),
+            longPressEnabled = j.optBoolean("longPressEnabled"),
+            longPressBinding = longPressBinding,
+            longPressDurationMs =
+                normalizeButtonLongPressDurationMs(
+                    j.optInt(
+                        "longPressDurationMs",
+                        TouchBindings.DEFAULT_LONG_PRESS_DURATION_MS,
+                    ),
+                ),
         )
     }
 

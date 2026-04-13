@@ -43,6 +43,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.min
+import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 import androidx.compose.ui.geometry.Size as ComposeSize
@@ -1100,7 +1101,7 @@ private fun drawAllControls(
             val trackLabel = textMeasurer.measure("\u266B Track Name", style = lineStyle)
             val labelX = nextCX + btnR + musicBase * 0.02f * d.sizeMult
             scope.drawText(trackLabel, topLeft = Offset(labelX, btnY - trackLabel.size.height / 2f))
-        } else if (d.type == DiagnosticType.MENU) {
+        } else if (d.type == DiagnosticType.SETTINGS) {
             // Settings grid icon: draw a small 3x3 dot grid
             val dotR = baseScale * 0.004f * d.sizeMult
             val dotGap = baseScale * 0.015f * d.sizeMult
@@ -1713,6 +1714,13 @@ private fun ButtonPropertiesPanel(
     onUpdate: (ButtonControl) -> Unit,
     onDelete: () -> Unit,
 ) {
+    val longPressBinding =
+        if (button.longPressBinding >= 0) {
+            button.longPressBinding
+        } else {
+            TouchBindings.META_GYRO_TOGGLE
+        }
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -1760,6 +1768,40 @@ private fun ButtonPropertiesPanel(
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         LabeledToggle("Latch", button.toggle) { onUpdate(button.copy(toggle = it)) }
         LabeledToggle("Haptic", button.hapticFeedback) { onUpdate(button.copy(hapticFeedback = it)) }
+    }
+
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        LabeledToggle("Long Press", button.longPressEnabled) { enabled ->
+            onUpdate(
+                button.copy(
+                    longPressEnabled = enabled,
+                    longPressBinding =
+                        if (enabled && button.longPressBinding < 0) {
+                            TouchBindings.META_GYRO_TOGGLE
+                        } else {
+                            button.longPressBinding
+                        },
+                    longPressDurationMs = normalizeButtonLongPressDurationMs(button.longPressDurationMs),
+                ),
+            )
+        }
+    }
+
+    if (button.longPressEnabled) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ButtonBindingPicker("Long-Press Binding", longPressBinding, Modifier.weight(1f), gameVariant) {
+                onUpdate(button.copy(longPressBinding = it))
+            }
+            LabeledIntSlider(
+                "Hold ms",
+                button.longPressDurationMs,
+                TouchBindings.MIN_LONG_PRESS_DURATION_MS,
+                TouchBindings.MAX_LONG_PRESS_DURATION_MS,
+                Modifier.weight(1f),
+            ) {
+                onUpdate(button.copy(longPressDurationMs = it))
+            }
+        }
     }
 
     // Shape
@@ -2196,6 +2238,26 @@ private fun LabeledSlider(
             value = value,
             onValueChange = onChange,
             valueRange = min..max,
+            modifier = Modifier.height(28.dp),
+        )
+    }
+}
+
+@Composable
+private fun LabeledIntSlider(
+    label: String,
+    value: Int,
+    min: Int,
+    max: Int,
+    modifier: Modifier = Modifier,
+    onChange: (Int) -> Unit,
+) {
+    Column(modifier = modifier) {
+        Text("$label: $value", color = Color.Gray, fontSize = 11.sp)
+        Slider(
+            value = value.toFloat(),
+            onValueChange = { onChange(it.roundToInt().coerceIn(min, max)) },
+            valueRange = min.toFloat()..max.toFloat(),
             modifier = Modifier.height(28.dp),
         )
     }

@@ -49,6 +49,8 @@ static indicator_path s_player_path;
 static indicator_path s_buddy_path;
 #endif
 static int s_frame_counter;
+static int s_show_nearest_player = 1;
+static int s_show_guidebot = 1;
 
 /* -- helpers --------------------------------------------------------- */
 
@@ -159,7 +161,7 @@ static void update_paths(void)
 
 	/* nearest player path -- fall back to exit when reactor blown and
 	 * no other players are in the mine */
-	{
+	if (s_show_nearest_player) {
 		int pi = find_nearest_player();
 		if (pi >= 0) {
 			object *pobj = &Objects[Players[pi].objnum];
@@ -178,11 +180,15 @@ static void update_paths(void)
 			s_player_path.count = 0;
 			s_player_path.target_objnum = -1;
 		}
+	} else {
+		s_player_path.count = 0;
+		s_player_path.target_objnum = -1;
 	}
 
 #ifdef DXX_BUILD_DESCENT_II
 	/* guidebot path -- only show after guidebot has been released */
-	if (Buddy_allowed_to_talk &&
+	if (s_show_guidebot &&
+	    Buddy_allowed_to_talk &&
 	    Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index &&
 	    Objects[Buddy_objnum].type == OBJ_ROBOT) {
 		s_buddy_path.target_objnum = Buddy_objnum;
@@ -286,6 +292,23 @@ static int coop_qol_active(void)
 	return 1;
 }
 
+void coop_indicator_lines_set_options(int show_nearest_player, int show_guidebot)
+{
+	s_show_nearest_player = show_nearest_player ? 1 : 0;
+	s_show_guidebot = show_guidebot ? 1 : 0;
+	s_frame_counter = 0;
+	if (!s_show_nearest_player) {
+		s_player_path.count = 0;
+		s_player_path.target_objnum = -1;
+	}
+#ifdef DXX_BUILD_DESCENT_II
+	if (!s_show_guidebot) {
+		s_buddy_path.count = 0;
+		s_buddy_path.target_objnum = -1;
+	}
+#endif
+}
+
 /* -- public API ------------------------------------------------------ */
 
 /* 3D path lines -- call from render.c between render_mine/g3_end_frame */
@@ -293,32 +316,25 @@ void coop_indicator_lines_render(void)
 {
 	int color_green, color_blue;
 	int is_coop = coop_qol_active();
+	int want_player_line = is_coop && s_show_nearest_player;
 
 #ifdef DXX_BUILD_DESCENT_II
 	/* buddy path line works in single player and coop */
-	int show_buddy = Buddy_allowed_to_talk &&
+	int show_buddy = s_show_guidebot &&
+	                 Buddy_allowed_to_talk &&
 	                 Buddy_objnum >= 0 && Buddy_objnum <= Highest_object_index &&
 	                 Objects[Buddy_objnum].type == OBJ_ROBOT;
 #else
 	int show_buddy = 0;
 #endif
 
-	if (!is_coop && !show_buddy)
+	if (!want_player_line && !show_buddy)
 		return;
 
 	/* throttled path update */
 	if (s_frame_counter <= 0) {
-		if (is_coop)
+		if (want_player_line || show_buddy)
 			update_paths();
-#ifdef DXX_BUILD_DESCENT_II
-		else if (show_buddy) {
-			/* single-player: only update buddy path */
-			int my_seg = ConsoleObject->segnum;
-			s_buddy_path.target_objnum = Buddy_objnum;
-			compute_path(&s_buddy_path, my_seg, Objects[Buddy_objnum].segnum);
-			s_player_path.count = 0;
-		}
-#endif
 		s_frame_counter = PATH_UPDATE_INTERVAL;
 	}
 	s_frame_counter--;
@@ -361,7 +377,7 @@ void coop_indicator_lines_render(void)
 	color_blue = BM_XRGB(10, 10, 31);
 
 	/* Skip path line when the target is directly visible on screen */
-	if (!target_is_on_screen(s_player_path.target_objnum))
+	if (want_player_line && !target_is_on_screen(s_player_path.target_objnum))
 		draw_path_lines(&s_player_path, color_green);
 
 #ifdef DXX_BUILD_DESCENT_II

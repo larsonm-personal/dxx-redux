@@ -1279,6 +1279,94 @@ int plr_patch_keysettings(const char *path,
 	return 1;
 }
 
+void android_get_default_pilot_prefs(int *cockpit_mode, int *auto_leveling)
+{
+	if (cockpit_mode)
+		*cockpit_mode = CM_FULL_COCKPIT;
+	if (auto_leveling)
+		*auto_leveling = 1;
+}
+
+/*
+ * Read cockpit mode and AutoLeveling from a D2 .plr file.
+ * Returns 1 on success, 0 on failure.
+ */
+int plr_read_cockpit_autolevel(const char *path,
+	                           int *cockpit_mode,
+	                           int *auto_leveling)
+{
+	unsigned char buf[4];
+	unsigned int id;
+	int ver;
+	FILE *f;
+
+	f = fopen(path, "rb");
+	if (!f) return 0;
+
+	if (fread(buf, 1, 4, f) != 4) { fclose(f); return 0; }
+	id = (unsigned)buf[0] | ((unsigned)buf[1] << 8) |
+	     ((unsigned)buf[2] << 16) | ((unsigned)buf[3] << 24);
+	if (id != (unsigned)SAVE_FILE_ID) { fclose(f); return 0; }
+
+	if (fread(buf, 1, 2, f) != 2) { fclose(f); return 0; }
+	ver = buf[0] | (buf[1] << 8);
+	if (ver < COMPATIBLE_PLAYER_FILE_VERSION) { fclose(f); return 0; }
+
+	if (fseek(f, 11, SEEK_SET) != 0) { fclose(f); return 0; }
+	*auto_leveling = fgetc(f);
+	if (*auto_leveling == EOF) { fclose(f); return 0; }
+
+	if (fseek(f, 13, SEEK_SET) != 0) { fclose(f); return 0; }
+	*cockpit_mode = fgetc(f);
+	if (*cockpit_mode == EOF) { fclose(f); return 0; }
+
+	fclose(f);
+	return 1;
+}
+
+/*
+ * Patch cockpit mode and AutoLeveling in a D2 .plr file.
+ * Returns 1 on success, 0 on failure.
+ */
+int plr_patch_cockpit_autolevel(const char *path,
+	                            int cockpit_mode,
+	                            int auto_leveling)
+{
+	unsigned char buf[4];
+	unsigned int id;
+	int ver;
+	FILE *f;
+
+	f = fopen(path, "r+b");
+	if (!f) return 0;
+
+	if (fread(buf, 1, 4, f) != 4) { fclose(f); return 0; }
+	id = (unsigned)buf[0] | ((unsigned)buf[1] << 8) |
+	     ((unsigned)buf[2] << 16) | ((unsigned)buf[3] << 24);
+	if (id != (unsigned)SAVE_FILE_ID) { fclose(f); return 0; }
+
+	if (fread(buf, 1, 2, f) != 2) { fclose(f); return 0; }
+	ver = buf[0] | (buf[1] << 8);
+	if (ver < COMPATIBLE_PLAYER_FILE_VERSION) { fclose(f); return 0; }
+
+	if (fseek(f, 11, SEEK_SET) != 0 ||
+	    fputc(auto_leveling ? 1 : 0, f) == EOF) {
+		fclose(f);
+		return 0;
+	}
+
+	if (fseek(f, 13, SEEK_SET) != 0 ||
+	    fputc(cockpit_mode, f) == EOF) {
+		fclose(f);
+		return 0;
+	}
+
+	fflush(f);
+	fsync(fileno(f));
+	fclose(f);
+	return 1;
+}
+
 /*
  * Compute the file offset past key settings to where weapon ordering starts.
  * Returns offset on success, -1 on failure.  Leaves file position undefined.

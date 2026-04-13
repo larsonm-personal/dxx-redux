@@ -349,57 +349,63 @@ Risk:
 - [x] Record likely implementation order and risks
 
 ### Phase 1 - Native bridge for player-backed preferences
-- [ ] Add or confirm thin native helpers for cockpit mode and auto-level get/set
-- [ ] Make those helpers callable from the launcher without duplicating player-file details
-- [ ] Apply the same shape to both D1 and D2
+- [x] Add or confirm thin native helpers for cockpit mode and auto-level get/set
+- [x] Make those helpers callable from the launcher without duplicating player-file details
+- [x] Apply the same shape to both D1 and D2
 
 ### Phase 2 - Launcher engine preferences page
-- [ ] Add a launcher page entry near Graphics/Advanced
-- [ ] Wire cockpit mode and auto-level to the new native helper layer
-- [ ] Add local toggle storage for guidebot line and nearest-player line
-- [ ] Feed local visual toggles into the native coop-line renderer path
+- [x] Add a launcher page entry near Graphics/Advanced
+- [x] Wire cockpit mode and auto-level to the new native helper layer
+- [x] Apply the engine preference edits to D1 and D2 pilot files together without an in-page game picker
+- [x] Add local toggle storage for guidebot line and nearest-player line
+- [x] Feed local visual toggles into the native coop-line renderer path
 
 ### Phase 3 - Export/import coverage
-- [ ] Extend `ConfigImportExport.kt` for the new engine/host/local visual settings
-- [ ] Extend `HostGameDefaults` for coop QoL and any confirmed missing host selection
-- [ ] Add migration/default handling for older exports that lack the new keys
+- [x] Extend `ConfigImportExport.kt` for the new engine/host/local visual settings
+- [x] Extend `HostGameDefaults` for coop QoL and any confirmed missing host selection
+- [x] Add migration/default handling for older exports that lack the new keys
 
 ### Phase 4 - Settings button migration
-- [ ] Decide final representation: dedicated button binding, meta action, or hybrid compatibility layer
-- [ ] Add layout migration from `DiagnosticType.MENU` if needed
-- [ ] Update editor UI and preview
-- [ ] Preserve fallback tray tab behavior
+- [x] Use an `Info` control category named `Settings` with no compatibility layer for the old menu diagnostic name
+- [x] Update editor UI and preview
+- [x] Preserve fallback tray tab behavior and allow a visible `Settings` button to close the tray
 
 ### Phase 5 - Tray behavior cleanup
-- [ ] Add explicit pause ownership for tray open/close in single-player
-- [ ] Use safer native pause/menu helpers instead of blind Escape toggles where practical
-- [ ] Change overlay-style tray items from action buttons to checkbox-style toggles
-- [ ] Keep gamepad-only tray navigation consistent
+- [x] Add explicit pause ownership for tray open/close in single-player
+- [x] Use safer native pause/menu helpers instead of blind Escape toggles where practical
+- [x] Change overlay-style tray items from action buttons to checkbox-style toggles
+- [x] Keep gamepad-only tray navigation consistent
+- [x] Keep the settings tray and launcher-side overlays visible while tray-owned pause is active
+- [x] Keep AutoLevel toggles from closing the settings tray
 
 ### Phase 6 - Mouse mode tuning
-- [ ] Replace or blend origin-distance exponential scaling with recent-motion-rate scaling
+- [x] Replace or blend origin-distance exponential scaling with recent-motion-rate scaling
 - [ ] Validate on emulator first, then real device if possible
-- [ ] Only expose new tuning controls if existing config is insufficient
+- [x] Only expose new tuning controls if existing config is insufficient
+- Refined the multiplier trigger into a short-history fine-aim grace band so tiny drags stay unboosted even when event timing is uneven; tactile emulator/device validation is still pending
 
 ### Phase 7 - Gyro recenter UX upgrade
-- [ ] Add long-press detection for gyro recenter button
-- [ ] Toggle `gyro.enabled` on long press and persist it
-- [ ] Add red disabled-state rendering and matching editor preview
+- [x] add a long-press option for *all* touch buttons that can be configured for a 2nd binding. when turned on (have a checkbox), a slider should appear with a minimum duration, from 200ms to 2s, with default 500ms
+- [x] add a binding option for touch buttons and controller buttons that turns gyro on or off, and save the last setting immediately in the active touch layout
+- [x] Toggle `gyro.enabled` on long press and persist it
+- [x] route gyro on or off through the normal Android-side binding path, with only the touch-button tint remaining as a special case
+- [x] add the red off state special case
+- existing layouts now migrate gyro recenter buttons to long-press gyro toggle by default, and bundled advanced and claw presets declare the same behavior directly
 
 ### Phase 8 - Tests, build, and quality
-- [ ] Add at least one integration-level check for config round-trip or launcher preference persistence
-- [ ] Add/extend automation scripts under `android/game_scripts/` for cockpit and auto-level verification if practical
+- [ ] Add at least one integration-level check for config round-trip or launcher preference persistence. make every attempt to add this as an additional verification for an existing json-based test
+- [ ] Add/extend automation scripts under `android/game_scripts/` for cockpit and auto-level verification if practical. extend if at all possible
 - [ ] If automation needs more visibility, extend introspection to report cockpit mode and auto-level state
-- [ ] Run `android/run-code-quality.ps1 --fix`
-- [ ] Run a successful CMake build
-- [ ] Run targeted tests and fix regressions
+- [x] Run `android/run-code-quality.ps1 -Fix`
+- [x] Run a successful CMake build
+- [x] Run targeted tests and fix regressions
 
 ## Suggested test focus
 
 ### Low-risk automated tests
 - Config export/import round-trip for new Android-side keys
 - `HostGameDefaults` load/save round-trip with new fields
-- Touch-layout migration test from old MENU diagnostic to the new representation if that path is taken
+- Touch-layout round-trip for `Info: Settings` and fallback tray behavior when no settings control is present
 
 ### Good Android automation candidates
 - Launch into gameplay, change cockpit mode, restart or reload, verify persisted mode
@@ -421,11 +427,11 @@ Risk:
 
 ## Status
 - [x] Research complete
-- [ ] Phase 1: Native bridge for player-backed preferences
-- [ ] Phase 2: Launcher engine preferences page
-- [ ] Phase 3: Export/import coverage
-- [ ] Phase 4: Settings button migration
-- [ ] Phase 5: Tray behavior cleanup
+- [x] Phase 1: Native bridge for player-backed preferences
+- [x] Phase 2: Launcher engine preferences page
+- [x] Phase 3: Export/import coverage
+- [x] Phase 4: Settings button migration
+- [x] Phase 5: Tray behavior cleanup
 - [ ] Phase 6: Mouse mode tuning
-- [ ] Phase 7: Gyro recenter UX upgrade
+- [x] Phase 7: Gyro recenter UX upgrade
 - [ ] Phase 8: Tests, build, and quality

@@ -28,7 +28,8 @@ void net_udp_send_obs_quit();
 #ifdef __ANDROID__
 int net_udp_auto_join(const char *host_addr, int host_port, int my_port);
 int net_udp_auto_host(int my_port, const char *mission, int mode,
-                      int difficulty, int max_players, int level_num);
+					  int difficulty, int max_players, int level_num,
+					  int coop_qol);
 int net_udp_rebind_for_hosting(void);
 #endif
 

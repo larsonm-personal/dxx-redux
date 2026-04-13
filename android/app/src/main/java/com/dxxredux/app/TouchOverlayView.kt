@@ -20,8 +20,79 @@ import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.min
+import kotlin.math.pow
 import kotlin.math.sign
 import kotlin.math.sin
+
+internal fun adminTrayUsesCheckbox(actionIndex: Int): Boolean =
+    when (actionIndex) {
+        TouchOverlayView.ADMIN_NET_EVENTS,
+        TouchOverlayView.ADMIN_NET_STATS,
+        TouchOverlayView.ADMIN_VIDEO_INFO,
+        -> true
+        else -> false
+    }
+
+internal fun adminTrayClosesAfterActivate(actionIndex: Int): Boolean =
+    when (actionIndex) {
+        TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL -> false
+        else -> !adminTrayUsesCheckbox(actionIndex)
+    }
+
+internal fun buttonUsesGyroToggleIndicator(button: ButtonControl): Boolean =
+    button.binding == TouchBindings.META_GYRO_TOGGLE ||
+        (button.longPressEnabled && button.longPressBinding == TouchBindings.META_GYRO_TOGGLE)
+
+private const val MOUSE_HISTORY_WINDOW_MS = 16f
+private const val MOUSE_HISTORY_DECAY_PER_WINDOW = 0.75f
+private const val MOUSE_NO_ACCEL_DISTANCE_PER_WINDOW = 8f
+private const val MOUSE_EXCESS_DISTANCE_REFERENCE = 18f
+private const val MOUSE_DISTANCE_FALLBACK_START = 24f
+private const val MOUSE_DISTANCE_FALLBACK_WEIGHT = 0.2f
+
+internal data class MouseAccelerationHistory(
+    val recentDistancePx: Float,
+    val recentGracePx: Float,
+)
+
+internal fun updateMouseAccelerationHistory(
+    previousDistancePx: Float,
+    previousGracePx: Float,
+    stepDistancePx: Float,
+    dtMs: Long,
+): MouseAccelerationHistory {
+    val windowCount = (dtMs.coerceAtLeast(1L).toFloat() / MOUSE_HISTORY_WINDOW_MS).coerceIn(1f, 6f)
+    val decay = MOUSE_HISTORY_DECAY_PER_WINDOW.pow(windowCount)
+    return MouseAccelerationHistory(
+        recentDistancePx = previousDistancePx * decay + stepDistancePx,
+        recentGracePx = previousGracePx * decay + MOUSE_NO_ACCEL_DISTANCE_PER_WINDOW * windowCount,
+    )
+}
+
+internal fun mouseAccelerationMultiplier(
+    enabled: Boolean,
+    maxMultiplier: Float,
+    recentDistancePx: Float,
+    recentGracePx: Float,
+    distancePx: Float,
+    viewportHeightPx: Float,
+): Float {
+    if (!enabled) return 1f
+    val clampedMax = maxMultiplier.coerceAtLeast(1f)
+    val historyRatio =
+        ((recentDistancePx - recentGracePx).coerceAtLeast(0f) / MOUSE_EXCESS_DISTANCE_REFERENCE).coerceIn(0f, 1f)
+    val distanceRatio =
+        if (viewportHeightPx > 1f) {
+            ((distancePx - MOUSE_DISTANCE_FALLBACK_START).coerceAtLeast(0f) / (viewportHeightPx * 0.5f)).coerceIn(
+                0f,
+                1f,
+            ) * MOUSE_DISTANCE_FALLBACK_WEIGHT
+        } else {
+            0f
+        }
+    val ratio = maxOf(historyRatio, distanceRatio)
+    return 1f + (clampedMax - 1f) * ratio
+}
 
 /**
  * Semi-transparent touch overlay drawn on top of the game SurfaceView.
@@ -149,9 +220,12 @@ class TouchOverlayView
             var mousePendingX = 0f
             var mousePendingY = 0f
 
-            // Mouse mode: touch-down origin for exponential scaling
+            // Mouse mode: drag-start anchor and recent motion state
             var mouseOriginX = 0f
             var mouseOriginY = 0f
+            var mouseLastSampleTimeMs = 0L
+            var mouseRecentDistancePx = 0f
+            var mouseRecentGracePx = 0f
 
             // Button mode: direction press tracking
             var xNegPressed = false
@@ -173,6 +247,8 @@ class TouchOverlayView
             var radius = 0f
             var pointerId = -1
             var toggled = false
+            var longPressTriggered = false
+            var longPressRunnable: Runnable? = null
         }
 
         private class RadialMenuState(
@@ -222,7 +298,7 @@ class TouchOverlayView
             var musicNextPid = -1
             var musicLabelPid = -1
 
-            // Menu-type state
+            // Settings-type state
             var menuPid = -1
         }
 
@@ -266,6 +342,40 @@ class TouchOverlayView
                 return
             }
             inputMixer?.setButton(binding, sourceTag, pressed)
+        }
+
+        private fun buttonSourceTag(b: ButtonState): String = "touch:btn${buttonStates.indexOf(b)}"
+
+        private fun buttonLongPressTag(b: ButtonState): String = "${buttonSourceTag(b)}:long"
+
+        private fun pressLayoutButtonBinding(
+            binding: Int,
+            sourceTag: String,
+        ) {
+            when (binding) {
+                TouchBindings.BTN_CHEATS_MENU -> cheatsOverlayOpen = !cheatsOverlayOpen
+                TouchBindings.BTN_GYRO_RECENTER -> gyroManager?.calibrate()
+                TouchBindings.BTN_AUTOMAP -> Unit
+                else -> dispatchTouchButton(binding, true, sourceTag)
+            }
+        }
+
+        private fun releaseLayoutButtonBinding(
+            binding: Int,
+            fired: Boolean,
+            sourceTag: String,
+        ) {
+            when (binding) {
+                TouchBindings.BTN_CHEATS_MENU,
+                TouchBindings.BTN_GYRO_RECENTER,
+                -> Unit
+
+                TouchBindings.BTN_AUTOMAP -> {
+                    if (fired) mapButtonCallback?.invoke()
+                }
+
+                else -> dispatchTouchButton(binding, false, sourceTag)
+            }
         }
 
         // Gyro diagnostic values (updated in real time via GyroInputManager)
@@ -322,6 +432,28 @@ class TouchOverlayView
                 axisCallback?.invoke(s.control.axisX, outX.coerceIn(-1f, 1f))
                 axisCallback?.invoke(s.control.axisY, outY.coerceIn(-1f, 1f))
             }
+        }
+
+        private fun beginMouseDrag(
+            s: StickState,
+            pointerId: Int,
+            px: Float,
+            py: Float,
+            originX: Float = px,
+            originY: Float = py,
+        ) {
+            s.pointerId = pointerId
+            s.mouseLastX = px
+            s.mouseLastY = py
+            s.mouseOriginX = originX
+            s.mouseOriginY = originY
+            s.mousePendingX = 0f
+            s.mousePendingY = 0f
+            s.mouseLastSampleTimeMs = android.os.SystemClock.uptimeMillis()
+            s.mouseRecentDistancePx = 0f
+            s.mouseRecentGracePx = 0f
+            s.floatingActive = true
+            startMouseDrain()
         }
 
         // ── MAP button geometry (kept for automap overlay compat) ──
@@ -446,12 +578,27 @@ class TouchOverlayView
         private val paintBtnLatched =
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.FILL
-                color = 0x1A4CAF50.toInt() // Material Green at ~10% opacity
+                color = 0x1A4CAF50 // Material Green at ~10% opacity
+            }
+        private val paintBtnIdleDisabled =
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.FILL
+                color = 0x33FF5A5A
+            }
+        private val paintBtnPressedDisabled =
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.FILL
+                color = 0x66FF5A5A
+            }
+        private val paintBtnLatchedDisabled =
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.FILL
+                color = 0x33FF5A5A
             }
         private val paintBtnLabel =
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.FILL
-                color = 0xAAFFFFFF.toInt()
+                color = -0x55000001
                 textAlign = Paint.Align.CENTER
             }
         private val paintAutomapHelpText =
@@ -520,10 +667,13 @@ class TouchOverlayView
         // 0=Increase View, 1=Decrease View, 2=Toggle Auto-Leveling,
         // 3=Quick Save, 4=Quick Load, 5=Open Game Menu
         var adminTrayCallback: ((Int) -> Unit)? = null
+        var adminTrayOpenedCallback: (() -> Unit)? = null
+        var adminTrayClosedCallback: (() -> Unit)? = null
 
         // Provider for dynamic labels (auto-leveling state, cockpit mode)
         var adminTrayAutoLevelingProvider: (() -> Boolean)? = null
         var adminTrayCockpitModeProvider: (() -> Int)? = null
+        var adminTrayToggleStateProvider: ((Int) -> Boolean)? = null
 
         // Gamepad-only mode: no touchscreen, admin tray gets extra items + D-pad nav
         var gamepadOnlyMode = false
@@ -544,6 +694,12 @@ class TouchOverlayView
             layout = newLayout
             rebuildStates()
             if (width > 0 && height > 0) computeGeometry(width, height)
+            invalidate()
+        }
+
+        fun updateGyroEnabled(enabled: Boolean) {
+            if (layout.gyro.enabled == enabled) return
+            layout = layout.copy(gyro = layout.gyro.copy(enabled = enabled))
             invalidate()
         }
 
@@ -662,7 +818,7 @@ class TouchOverlayView
                             paintDiagText.measureText("Track 00/00: xxxxxxxx") + diagTextSize
                         d.height = r * 3f
                     }
-                    DiagnosticType.MENU -> {
+                    DiagnosticType.SETTINGS -> {
                         val r = base * 0.03f * d.control.sizeMult
                         d.width = r * 2.5f
                         d.height = r * 2.5f
@@ -753,18 +909,27 @@ class TouchOverlayView
             }
 
             // ── Diagnostic overlays ─────────────────────────────
-            for (d in diagnosticStates) drawDiagnostic(canvas, d, gAlpha)
+            val adminTrayPanelRect = if (adminTrayOpen) computeAdminTrayPanelRect() else null
+            for (d in diagnosticStates) {
+                if (d.control.type == DiagnosticType.SETTINGS &&
+                    adminTrayPanelRect != null &&
+                    settingsDiagnosticOccludedByTray(d, adminTrayPanelRect)
+                ) {
+                    continue
+                }
+                drawDiagnostic(canvas, d, gAlpha)
+            }
 
             // ── Cheats overlay (drawn last, on top of everything) ──
             if (cheatsOverlayOpen) drawCheatsOverlay(canvas)
 
             // ── Admin tray tab (visible) or panel (when open) ───
-            // Hide default tab when a MENU diagnostic is configured (it replaces the tab)
+            // Hide default tab when a settings diagnostic is configured (it replaces the tab)
             // In gamepad-only mode, no tab is drawn (Start button opens the tray)
-            val hasMenuDiag = diagnosticStates.any { it.control.type == DiagnosticType.MENU }
+            val hasSettingsDiag = diagnosticStates.any { it.control.type == DiagnosticType.SETTINGS }
             if (adminTrayOpen) {
                 drawAdminTrayPanel(canvas)
-            } else if (!gamepadOnlyMode && !cheatsOverlayOpen && !hasMenuDiag) {
+            } else if (!gamepadOnlyMode && !cheatsOverlayOpen && !hasSettingsDiag) {
                 drawAdminTrayTab(canvas)
             }
         }
@@ -820,13 +985,14 @@ class TouchOverlayView
             val eff = (gAlpha * b.control.opacity).coerceIn(0f, 1f)
             val pressed = b.pointerId >= 0 || b.toggled
             val latched = b.toggled && b.control.toggle && b.pointerId < 0
+            val disabledGyroButton = buttonUsesGyroToggleIndicator(b.control) && !layout.gyro.enabled
             val fill =
                 if (latched) {
-                    paintBtnLatched
+                    if (disabledGyroButton) paintBtnLatchedDisabled else paintBtnLatched
                 } else if (pressed) {
-                    paintBtnPressed
+                    if (disabledGyroButton) paintBtnPressedDisabled else paintBtnPressed
                 } else {
-                    paintBtnIdle
+                    if (disabledGyroButton) paintBtnIdleDisabled else paintBtnIdle
                 }
             val fillAlpha =
                 if (latched) {
@@ -978,7 +1144,7 @@ class TouchOverlayView
             when (d.control.type) {
                 DiagnosticType.GYRO -> drawDiagnosticGyro(canvas, d, gAlpha)
                 DiagnosticType.MUSIC -> drawDiagnosticMusic(canvas, d, gAlpha)
-                DiagnosticType.MENU -> drawDiagnosticMenu(canvas, d, gAlpha)
+                DiagnosticType.SETTINGS -> drawDiagnosticSettings(canvas, d, gAlpha)
             }
         }
 
@@ -1053,7 +1219,7 @@ class TouchOverlayView
             paintBtnLabel.textSize = savedSize
         }
 
-        private fun drawDiagnosticMenu(
+        private fun drawDiagnosticSettings(
             canvas: Canvas,
             d: DiagnosticState,
             gAlpha: Float,
@@ -1363,8 +1529,12 @@ class TouchOverlayView
             // When cheats overlay is open, it consumes all touches
             if (cheatsOverlayOpen) return handleCheatsOverlayTouch(event)
 
-            // When admin tray panel is open, it consumes all touches
-            if (adminTrayOpen) return handleAdminTrayTouch(event)
+            // When admin tray panel is open, a visible settings button may close it;
+            // otherwise the tray consumes all touches.
+            if (adminTrayOpen) {
+                if (handleSettingsDiagnosticWhileTrayOpen(event)) return true
+                return handleAdminTrayTouch(event)
+            }
 
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
@@ -1374,18 +1544,13 @@ class TouchOverlayView
                     val pid = event.getPointerId(idx)
                     var handled = false
 
-                    // Settings menu button takes top priority over all controls
+                    // Settings button takes top priority over all controls
                     if (!handled) {
-                        for (d in diagnosticStates) {
-                            if (d.control.type != DiagnosticType.MENU) continue
-                            if (d.menuPid >= 0) continue
-                            val r = min(d.width, d.height) / 2f
-                            if (hypot(px - d.centerX, py - d.centerY) <= r * 1.3f) {
-                                d.menuPid = pid
-                                invalidate()
-                                handled = true
-                                break
-                            }
+                        val settingsDiag = findSettingsDiagnosticAt(px, py)
+                        if (settingsDiag != null && settingsDiag.menuPid < 0) {
+                            settingsDiag.menuPid = pid
+                            invalidate()
+                            handled = true
                         }
                     }
 
@@ -1423,15 +1588,7 @@ class TouchOverlayView
                                     handleSingleTapRelease(s)
                                 }
                                 s.lastTapTime = now
-                                s.pointerId = pid
-                                s.mouseLastX = px
-                                s.mouseLastY = py
-                                s.mouseOriginX = px
-                                s.mouseOriginY = py
-                                s.mousePendingX = 0f
-                                s.mousePendingY = 0f
-                                s.floatingActive = true
-                                startMouseDrain()
+                                beginMouseDrag(s, pid, px, py)
                                 handled = true
                                 break
                             }
@@ -1483,24 +1640,35 @@ class TouchOverlayView
                             if (b.pointerId >= 0) continue
                             if (hypot(px - b.centerX, py - b.centerY) <= b.radius * 1.3f) {
                                 b.pointerId = pid
-                                if (b.control.binding == TouchBindings.BTN_CHEATS_MENU) {
-                                    cheatsOverlayOpen = !cheatsOverlayOpen
-                                } else if (b.control.binding == TouchBindings.BTN_GYRO_RECENTER) {
-                                    gyroManager?.calibrate()
+                                b.longPressTriggered = false
+                                if (b.control.binding == TouchBindings.BTN_CHEATS_MENU ||
+                                    b.control.binding == TouchBindings.BTN_GYRO_RECENTER
+                                ) {
+                                    pressLayoutButtonBinding(b.control.binding, buttonSourceTag(b))
                                 } else if (b.control.toggle) {
                                     b.toggled = !b.toggled
                                     if (b.control.binding == TouchBindings.BTN_AUTOMAP) {
                                         if (b.toggled) mapButtonCallback?.invoke()
                                     } else {
-                                        val tag = "touch:btn${buttonStates.indexOf(b)}"
-                                        dispatchTouchButton(b.control.binding, b.toggled, tag)
+                                        dispatchTouchButton(b.control.binding, b.toggled, buttonSourceTag(b))
                                     }
                                 } else {
-                                    // Non-toggle: press on down (MAP fires on release only)
-                                    if (b.control.binding != TouchBindings.BTN_AUTOMAP) {
-                                        val tag = "touch:btn${buttonStates.indexOf(b)}"
-                                        dispatchTouchButton(b.control.binding, true, tag)
-                                    }
+                                    pressLayoutButtonBinding(b.control.binding, buttonSourceTag(b))
+                                }
+                                if (b.control.longPressEnabled && b.control.longPressBinding >= 0) {
+                                    val longPressRunnable =
+                                        Runnable {
+                                            if (b.pointerId < 0) return@Runnable
+                                            b.longPressRunnable = null
+                                            b.longPressTriggered = true
+                                            pressLayoutButtonBinding(b.control.longPressBinding, buttonLongPressTag(b))
+                                            if (b.control.hapticFeedback) {
+                                                performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                                            }
+                                            invalidate()
+                                        }
+                                    b.longPressRunnable = longPressRunnable
+                                    mainHandler.postDelayed(longPressRunnable, b.control.longPressDurationMs.toLong())
                                 }
                                 if (b.control.hapticFeedback) {
                                     performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
@@ -1606,11 +1774,10 @@ class TouchOverlayView
                         }
                     }
 
-                    // Try admin tray tab (hidden when MENU diagnostic replaces it)
-                    val hasMenuDiag = diagnosticStates.any { it.control.type == DiagnosticType.MENU }
-                    if (!handled && !hasMenuDiag && adminTrayTabRect.contains(px, py)) {
-                        adminTrayOpen = true
-                        animateAdminTray(true)
+                    // Try admin tray tab (hidden when a settings diagnostic replaces it)
+                    val hasSettingsDiag = diagnosticStates.any { it.control.type == DiagnosticType.SETTINGS }
+                    if (!handled && !hasSettingsDiag && adminTrayTabRect.contains(px, py)) {
+                        openAdminTray()
                         handled = true
                     }
 
@@ -1670,13 +1837,7 @@ class TouchOverlayView
                                     src.floatingCY = ar.savedStickCY
                                     src.floatingActive = true
                                     if (src.control.mouseMode) {
-                                        src.mouseLastX = ax
-                                        src.mouseLastY = ay
-                                        src.mouseOriginX = ar.savedStickCX
-                                        src.mouseOriginY = ar.savedStickCY
-                                        src.mousePendingX = 0f
-                                        src.mousePendingY = 0f
-                                        startMouseDrain()
+                                        beginMouseDrag(src, ar.pointerId, ax, ay, ar.savedStickCX, ar.savedStickCY)
                                     }
                                 }
                                 // Release the region
@@ -1705,22 +1866,16 @@ class TouchOverlayView
                                                 hypot(ax - s.centerX, ay - s.centerY) <= s.radius
                                         }
                                     if (inZone) {
-                                        s.pointerId = ar.pointerId
                                         if (s.control.mouseMode) {
-                                            s.mouseLastX = ax
-                                            s.mouseLastY = ay
-                                            s.mouseOriginX = ax
-                                            s.mouseOriginY = ay
-                                            s.mousePendingX = 0f
-                                            s.mousePendingY = 0f
-                                            s.floatingActive = true
-                                            startMouseDrain()
+                                            beginMouseDrag(s, ar.pointerId, ax, ay)
                                         } else if (s.control.floating) {
+                                            s.pointerId = ar.pointerId
                                             s.floatingCX = ax
                                             s.floatingCY = ay
                                             s.floatingActive = true
                                             s.pos.set(0f, 0f)
                                         } else {
+                                            s.pointerId = ar.pointerId
                                             updateStickFromTouch(s, ax, ay)
                                         }
                                         ar.pointerId = -1
@@ -1861,10 +2016,10 @@ class TouchOverlayView
                                 if (found) break
                             }
                         }
-                        // Check menu diagnostics
+                        // Check settings diagnostics
                         if (!found) {
                             for (d in diagnosticStates) {
-                                if (d.control.type != DiagnosticType.MENU) continue
+                                if (d.control.type != DiagnosticType.SETTINGS) continue
                                 if (d.menuPid == pid) {
                                     releaseMenuDiag(d, true)
                                     found = true
@@ -1994,23 +2149,33 @@ class TouchOverlayView
         ) {
             val dx = px - s.mouseLastX
             val dy = py - s.mouseLastY
+            val stepDistance = hypot(dx, dy)
+            val now = android.os.SystemClock.uptimeMillis()
+            val history =
+                updateMouseAccelerationHistory(
+                    s.mouseRecentDistancePx,
+                    s.mouseRecentGracePx,
+                    stepDistance,
+                    now - s.mouseLastSampleTimeMs,
+                )
+            s.mouseRecentDistancePx = history.recentDistancePx
+            s.mouseRecentGracePx = history.recentGracePx
+            s.mouseLastSampleTimeMs = now
             s.mouseLastX = px
             s.mouseLastY = py
             // Convert pixel delta to axis-space and accumulate
             val baseScale = MOUSE_SENSITIVITY_MULTIPLIER * MOUSE_BASE_MULTIPLIER / MOUSE_REFERENCE_DISTANCE
             val scaleX = s.control.sensitivityX * baseScale
             val scaleY = s.control.sensitivityY * baseScale
-            // Exponential scaling: ramp multiplier from 1.0 to max based on
-            // distance from the touch-down origin (half-screen as reference)
             val multiplier =
-                if (s.control.mouseExponential) {
-                    val dist = hypot(px - s.mouseOriginX, py - s.mouseOriginY)
-                    val halfScreen = (height / 2f).coerceAtLeast(1f)
-                    val ratio = (dist / halfScreen).coerceIn(0f, 1f)
-                    1f + (s.control.mouseExponentialMax - 1f) * ratio
-                } else {
-                    1f
-                }
+                mouseAccelerationMultiplier(
+                    s.control.mouseExponential,
+                    s.control.mouseExponentialMax,
+                    s.mouseRecentDistancePx,
+                    s.mouseRecentGracePx,
+                    hypot(px - s.mouseOriginX, py - s.mouseOriginY),
+                    height.toFloat(),
+                )
             s.mousePendingX += dx * scaleX * multiplier
             s.mousePendingY += dy * scaleY * multiplier
         }
@@ -2199,6 +2364,9 @@ class TouchOverlayView
             if (s.control.mouseMode) {
                 s.mousePendingX = 0f
                 s.mousePendingY = 0f
+                s.mouseLastSampleTimeMs = 0L
+                s.mouseRecentDistancePx = 0f
+                s.mouseRecentGracePx = 0f
             }
             s.pointerId = -1
             s.pos.set(0f, 0f)
@@ -2310,19 +2478,16 @@ class TouchOverlayView
             fired: Boolean,
         ) {
             if (b.pointerId >= 0) {
+                b.longPressRunnable?.let { mainHandler.removeCallbacks(it) }
+                b.longPressRunnable = null
                 b.pointerId = -1
-                if (b.control.binding == TouchBindings.BTN_CHEATS_MENU ||
-                    b.control.binding == TouchBindings.BTN_GYRO_RECENTER
-                ) {
-                    // handled on press, no release action
-                } else if (!b.control.toggle) {
-                    if (b.control.binding == TouchBindings.BTN_AUTOMAP) {
-                        if (fired) mapButtonCallback?.invoke()
-                    } else {
-                        val tag = "touch:btn${buttonStates.indexOf(b)}"
-                        dispatchTouchButton(b.control.binding, false, tag)
-                    }
+                if (!b.control.toggle) {
+                    releaseLayoutButtonBinding(b.control.binding, fired, buttonSourceTag(b))
                 }
+                if (b.longPressTriggered) {
+                    releaseLayoutButtonBinding(b.control.longPressBinding, fired, buttonLongPressTag(b))
+                }
+                b.longPressTriggered = false
                 invalidate()
             }
         }
@@ -2491,17 +2656,103 @@ class TouchOverlayView
                 d.menuPid = -1
                 invalidate()
                 if (fired) {
-                    adminTrayOpen = true
-                    animateAdminTray(true)
+                    toggleAdminTray()
                 }
             }
         }
 
         private fun releaseAllMenuDiagnostics(fired: Boolean) {
             for (d in diagnosticStates) {
-                if (d.control.type != DiagnosticType.MENU) continue
+                if (d.control.type != DiagnosticType.SETTINGS) continue
                 releaseMenuDiag(d, fired)
             }
+        }
+
+        private fun computeAdminTrayPanelRect(): RectF {
+            val w = width.toFloat()
+            val h = height.toFloat()
+            if (w <= 0f || h <= 0f || adminTraySlide <= 0f) return RectF()
+
+            val itemCount = adminTrayItemCount()
+            val cols = 3
+            val rows = (itemCount + cols - 1) / cols
+            val divider = 1f
+            val panelW = w * 0.7f
+            val cellH = h * 0.08f
+            val handleH = if (gamepadOnlyMode) 0f else h * 0.02f
+            val panelH = rows * cellH + (rows - 1) * divider + handleH
+            val panelLeft = (w - panelW) / 2f
+            val panelTop = h - panelH * adminTraySlide
+            return RectF(panelLeft, panelTop, panelLeft + panelW, panelTop + panelH)
+        }
+
+        private fun settingsDiagnosticBounds(d: DiagnosticState): RectF {
+            val r = min(d.width, d.height) / 2f
+            return RectF(d.centerX - r, d.centerY - r, d.centerX + r, d.centerY + r)
+        }
+
+        private fun settingsDiagnosticOccludedByTray(
+            d: DiagnosticState,
+            panelRect: RectF = computeAdminTrayPanelRect(),
+        ): Boolean {
+            if (!adminTrayOpen || panelRect.isEmpty) return false
+            return RectF.intersects(panelRect, settingsDiagnosticBounds(d))
+        }
+
+        private fun settingsDiagnosticHit(
+            d: DiagnosticState,
+            px: Float,
+            py: Float,
+        ): Boolean {
+            val r = min(d.width, d.height) / 2f
+            return hypot(px - d.centerX, py - d.centerY) <= r * 1.3f
+        }
+
+        private fun findSettingsDiagnosticAt(
+            px: Float,
+            py: Float,
+            visibleOnlyWhileTrayOpen: Boolean = false,
+        ): DiagnosticState? {
+            val panelRect = if (visibleOnlyWhileTrayOpen) computeAdminTrayPanelRect() else RectF()
+            for (d in diagnosticStates) {
+                if (d.control.type != DiagnosticType.SETTINGS) continue
+                if (visibleOnlyWhileTrayOpen && settingsDiagnosticOccludedByTray(d, panelRect)) continue
+                if (settingsDiagnosticHit(d, px, py)) return d
+            }
+            return null
+        }
+
+        private fun handleSettingsDiagnosticWhileTrayOpen(event: MotionEvent): Boolean {
+            val idx = event.actionIndex
+            val px = event.getX(idx)
+            val py = event.getY(idx)
+            val pid = event.getPointerId(idx)
+
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
+                    val settingsDiag = findSettingsDiagnosticAt(px, py, visibleOnlyWhileTrayOpen = true)
+                    if (settingsDiag != null && settingsDiag.menuPid < 0) {
+                        settingsDiag.menuPid = pid
+                        invalidate()
+                        return true
+                    }
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
+                    for (d in diagnosticStates) {
+                        if (d.control.type != DiagnosticType.SETTINGS || d.menuPid != pid) continue
+                        releaseMenuDiag(d, findSettingsDiagnosticAt(px, py, visibleOnlyWhileTrayOpen = true) == d)
+                        return true
+                    }
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    for (d in diagnosticStates) {
+                        if (d.control.type != DiagnosticType.SETTINGS || d.menuPid != pid) continue
+                        releaseMenuDiag(d, false)
+                        return true
+                    }
+                }
+            }
+            return false
         }
 
         private fun releaseMapButton(fired: Boolean) {
@@ -2829,7 +3080,7 @@ class TouchOverlayView
                 val handlePaint =
                     Paint(Paint.ANTI_ALIAS_FLAG).apply {
                         style = Paint.Style.FILL
-                        color = 0x66FFFFFF.toInt()
+                        color = 0x66FFFFFF
                     }
                 val barW = panelW * 0.15f
                 val barH = handleH * 0.25f
@@ -2856,6 +3107,26 @@ class TouchOverlayView
                     strokeWidth = 3f
                 }
 
+            val checkboxFill =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.FILL
+                    color = 0x22000000
+                }
+            val checkboxStroke =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.STROKE
+                    color = 0xAAFFFFFF.toInt()
+                    strokeWidth = 2f
+                }
+            val checkboxCheck =
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.STROKE
+                    color = 0xFF4CAF50.toInt()
+                    strokeWidth = 4f
+                    strokeCap = Paint.Cap.ROUND
+                    strokeJoin = Paint.Join.ROUND
+                }
+
             for (i in 0 until itemCount) {
                 val col = i % cols
                 val row = i / cols
@@ -2875,21 +3146,64 @@ class TouchOverlayView
 
                 // Draw divider lines
                 if (col > 0) {
-                    val divPaint = Paint().apply { color = 0x33FFFFFF.toInt() }
+                    val divPaint = Paint().apply { color = 0x33FFFFFF }
                     canvas.drawRect(left - divider, top, left, top + cellH, divPaint)
                 }
                 if (row > 0) {
-                    val divPaint = Paint().apply { color = 0x33FFFFFF.toInt() }
+                    val divPaint = Paint().apply { color = 0x33FFFFFF }
                     canvas.drawRect(left, top - divider, left + cellW, top, divPaint)
                 }
 
                 textPaint.alpha = 0xDD
-                canvas.drawText(
-                    adminTrayLabel(i),
-                    rect.centerX(),
-                    rect.centerY() + textPaint.textSize * 0.35f,
-                    textPaint,
-                )
+                if (adminTrayUsesCheckbox(i)) {
+                    val checkboxSize = min(cellH * 0.26f, cellW * 0.18f)
+                    val checkboxLeft = rect.left + cellW * 0.12f
+                    val checkboxTop = rect.centerY() - checkboxSize / 2f
+                    val checkboxRect =
+                        RectF(
+                            checkboxLeft,
+                            checkboxTop,
+                            checkboxLeft + checkboxSize,
+                            checkboxTop + checkboxSize,
+                        )
+                    val checked = adminTrayToggleStateProvider?.invoke(i) == true
+                    canvas.drawRect(checkboxRect, checkboxFill)
+                    canvas.drawRect(checkboxRect, checkboxStroke)
+                    if (checked) {
+                        val left = checkboxRect.left
+                        val top = checkboxRect.top
+                        val size = checkboxRect.width()
+                        canvas.drawLine(
+                            left + size * 0.2f,
+                            top + size * 0.55f,
+                            left + size * 0.43f,
+                            top + size * 0.78f,
+                            checkboxCheck,
+                        )
+                        canvas.drawLine(
+                            left + size * 0.43f,
+                            top + size * 0.78f,
+                            left + size * 0.82f,
+                            top + size * 0.22f,
+                            checkboxCheck,
+                        )
+                    }
+                    textPaint.textAlign = Paint.Align.LEFT
+                    canvas.drawText(
+                        adminTrayLabel(i),
+                        checkboxRect.right + cellW * 0.08f,
+                        rect.centerY() + textPaint.textSize * 0.35f,
+                        textPaint,
+                    )
+                    textPaint.textAlign = Paint.Align.CENTER
+                } else {
+                    canvas.drawText(
+                        adminTrayLabel(i),
+                        rect.centerX(),
+                        rect.centerY() + textPaint.textSize * 0.35f,
+                        textPaint,
+                    )
+                }
             }
         }
 
@@ -2903,6 +3217,9 @@ class TouchOverlayView
                     addUpdateListener {
                         adminTraySlide = it.animatedValue as Float
                         if (!open && adminTraySlide == 0f) {
+                            if (adminTrayOpen) {
+                                adminTrayClosedCallback?.invoke()
+                            }
                             adminTrayOpen = false
                             adminTraySelectedIndex = -1
                         }
@@ -2915,15 +3232,26 @@ class TouchOverlayView
         /** Toggle the admin tray open/closed (for gamepad Start button). */
         fun toggleAdminTray() {
             if (adminTrayOpen) {
-                animateAdminTray(false)
+                closeAdminTray()
             } else {
-                adminTrayOpen = true
-                if (gamepadOnlyMode) {
-                    // Default selection: middle of last row (ADMIN_MUSIC = index 13)
-                    adminTraySelectedIndex = adminTrayItemCount() - 2
-                }
-                animateAdminTray(true)
+                openAdminTray()
             }
+        }
+
+        private fun openAdminTray() {
+            if (adminTrayOpen) return
+            adminTrayOpen = true
+            if (gamepadOnlyMode) {
+                // Default selection: middle of last row (ADMIN_MUSIC = index 13)
+                adminTraySelectedIndex = adminTrayItemCount() - 2
+            }
+            adminTrayOpenedCallback?.invoke()
+            animateAdminTray(true)
+        }
+
+        private fun closeAdminTray() {
+            if (!adminTrayOpen && adminTraySlide <= 0f) return
+            animateAdminTray(false)
         }
 
         /** Whether the admin tray is currently open. */
@@ -2979,14 +3307,18 @@ class TouchOverlayView
                     if (adminTraySelectedIndex in 0 until count) {
                         adminTrayCallback?.invoke(adminTraySelectedIndex)
                         performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                        if (adminTrayClosesAfterActivate(adminTraySelectedIndex)) {
+                            closeAdminTray()
+                        } else {
+                            invalidate()
+                        }
                     }
-                    animateAdminTray(false)
                     return true
                 }
                 android.view.KeyEvent.KEYCODE_BUTTON_B,
                 android.view.KeyEvent.KEYCODE_BACK,
                 -> {
-                    animateAdminTray(false)
+                    closeAdminTray()
                     return true
                 }
             }
@@ -3013,14 +3345,9 @@ class TouchOverlayView
                         }
                     }
                     // Tap outside panel closes it
-                    val panelTop =
-                        if (adminTrayRects.isNotEmpty()) {
-                            adminTrayRects[0].top - height * 0.02f // above first row
-                        } else {
-                            height.toFloat()
-                        }
+                    val panelTop = computeAdminTrayPanelRect().top
                     if (py < panelTop) {
-                        animateAdminTray(false)
+                        closeAdminTray()
                         adminTrayPressedIndex = -1
                         adminTrayPointerId = -1
                         return true
@@ -3055,13 +3382,20 @@ class TouchOverlayView
                     if (event.getPointerId(idx) == adminTrayPointerId) {
                         if (adminTrayDragging) {
                             // If dragged past 30% threshold, close; otherwise snap open
-                            animateAdminTray(adminTraySlide > 0.7f)
+                            if (adminTraySlide > 0.7f) {
+                                animateAdminTray(true)
+                            } else {
+                                closeAdminTray()
+                            }
                         } else if (adminTrayPressedIndex >= 0 &&
                             adminTrayPressedIndex < adminTrayRects.size &&
                             adminTrayRects[adminTrayPressedIndex].contains(px, py)
                         ) {
                             adminTrayCallback?.invoke(adminTrayPressedIndex)
                             performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                            if (adminTrayClosesAfterActivate(adminTrayPressedIndex)) {
+                                closeAdminTray()
+                            }
                             invalidate()
                         }
                         adminTrayPressedIndex = -1
@@ -3071,7 +3405,13 @@ class TouchOverlayView
                     return true
                 }
                 MotionEvent.ACTION_CANCEL -> {
-                    if (adminTrayDragging) animateAdminTray(adminTraySlide > 0.7f)
+                    if (adminTrayDragging) {
+                        if (adminTraySlide > 0.7f) {
+                            animateAdminTray(true)
+                        } else {
+                            closeAdminTray()
+                        }
+                    }
                     adminTrayPressedIndex = -1
                     adminTrayPointerId = -1
                     adminTrayDragging = false

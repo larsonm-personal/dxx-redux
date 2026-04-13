@@ -1652,6 +1652,207 @@ int plr_patch_keysettings(const char *path,
 	return 1;
 }
 
+void android_get_default_pilot_prefs(int *cockpit_mode, int *auto_leveling)
+{
+	if (cockpit_mode)
+		*cockpit_mode = CM_FULL_COCKPIT;
+	if (auto_leveling)
+		*auto_leveling = 1;
+}
+
+/*
+ * Read AutoLeveling from the D1 binary .plr file.
+ * Returns 1 on success, 0 on failure.
+ */
+int plr_read_autoleveling(const char *path, int *auto_leveling)
+{
+	unsigned char buf[4];
+	unsigned int id;
+	int saved_game_version, player_struct_version;
+	FILE *f;
+
+	f = fopen(path, "rb");
+	if (!f) return 0;
+
+	if (fread(buf, 1, 4, f) != 4) { fclose(f); return 0; }
+	id = (unsigned)buf[0] | ((unsigned)buf[1] << 8) |
+	     ((unsigned)buf[2] << 16) | ((unsigned)buf[3] << 24);
+	if (id != (unsigned)SAVE_FILE_ID) { fclose(f); return 0; }
+
+	if (fread(buf, 1, 2, f) != 2) { fclose(f); return 0; }
+	saved_game_version = buf[0] | (buf[1] << 8);
+	if (fread(buf, 1, 2, f) != 2) { fclose(f); return 0; }
+	player_struct_version = buf[0] | (buf[1] << 8);
+	if (saved_game_version < COMPATIBLE_SAVED_GAME_VERSION ||
+	    player_struct_version < COMPATIBLE_PLAYER_STRUCT_VERSION) {
+		fclose(f);
+		return 0;
+	}
+
+	if (fseek(f, 16, SEEK_SET) != 0 || fread(buf, 1, 4, f) != 4) {
+		fclose(f);
+		return 0;
+	}
+	*auto_leveling = (int)((unsigned)buf[0] | ((unsigned)buf[1] << 8) |
+	                      ((unsigned)buf[2] << 16) | ((unsigned)buf[3] << 24));
+
+	fclose(f);
+	return 1;
+}
+
+/*
+ * Patch AutoLeveling in the D1 binary .plr file.
+ * Returns 1 on success, 0 on failure.
+ */
+int plr_patch_autoleveling(const char *path, int auto_leveling)
+{
+	unsigned char buf[4];
+	unsigned int id;
+	int saved_game_version, player_struct_version;
+	FILE *f;
+
+	f = fopen(path, "r+b");
+	if (!f) return 0;
+
+	if (fread(buf, 1, 4, f) != 4) { fclose(f); return 0; }
+	id = (unsigned)buf[0] | ((unsigned)buf[1] << 8) |
+	     ((unsigned)buf[2] << 16) | ((unsigned)buf[3] << 24);
+	if (id != (unsigned)SAVE_FILE_ID) { fclose(f); return 0; }
+
+	if (fread(buf, 1, 2, f) != 2) { fclose(f); return 0; }
+	saved_game_version = buf[0] | (buf[1] << 8);
+	if (fread(buf, 1, 2, f) != 2) { fclose(f); return 0; }
+	player_struct_version = buf[0] | (buf[1] << 8);
+	if (saved_game_version < COMPATIBLE_SAVED_GAME_VERSION ||
+	    player_struct_version < COMPATIBLE_PLAYER_STRUCT_VERSION) {
+		fclose(f);
+		return 0;
+	}
+
+	if (fseek(f, 16, SEEK_SET) != 0) { fclose(f); return 0; }
+	buf[0] = (unsigned char)(auto_leveling & 0xFF);
+	buf[1] = (unsigned char)((auto_leveling >> 8) & 0xFF);
+	buf[2] = (unsigned char)((auto_leveling >> 16) & 0xFF);
+	buf[3] = (unsigned char)((auto_leveling >> 24) & 0xFF);
+	if (fwrite(buf, 1, 4, f) != 4) { fclose(f); return 0; }
+
+	fflush(f);
+	fsync(fileno(f));
+	fclose(f);
+	return 1;
+}
+
+/*
+ * Read cockpit mode from the D1 text .plx file.
+ * Returns 1 when a mode entry is found, 0 otherwise.
+ */
+int plx_read_cockpit_mode(const char *path, int *cockpit_mode)
+{
+	FILE *f = fopen(path, "r");
+	char line[256];
+	int in_cockpit = 0;
+
+	if (!f) return 0;
+
+	while (fgets(line, sizeof(line), f)) {
+		if (!in_cockpit) {
+			if (!d_strnicmp(line, "[cockpit]", 9))
+				in_cockpit = 1;
+			continue;
+		}
+		if (!d_strnicmp(line, "[end]", 5))
+			break;
+		if (!d_strnicmp(line, "mode=", 5)) {
+			*cockpit_mode = atoi(line + 5);
+			fclose(f);
+			return 1;
+		}
+	}
+
+	fclose(f);
+	return 0;
+}
+
+/*
+ * Write cockpit mode to the D1 text .plx file.
+ * Preserves the rest of the file and updates or appends the [cockpit] section.
+ * Returns 1 on success, 0 on failure.
+ */
+int plx_write_cockpit_mode(const char *path, int cockpit_mode)
+{
+	FILE *f = fopen(path, "r");
+	char buf[4096];
+	int buf_len = 0;
+	int in_cockpit = 0;
+	int found_cockpit = 0;
+	int wrote_mode = 0;
+	char tmp[64];
+
+#define PLX_BUF_APPEND(s) do { \
+		int _slen = (int)strlen(s); \
+		if (buf_len + _slen < (int)sizeof(buf)) { \
+			memcpy(buf + buf_len, s, _slen); \
+			buf_len += _slen; \
+		} \
+	} while (0)
+
+#define PLX_APPEND_MODE() do { \
+		snprintf(tmp, sizeof(tmp), "mode=%i\n", cockpit_mode); \
+		PLX_BUF_APPEND(tmp); \
+		wrote_mode = 1; \
+	} while (0)
+
+	if (f) {
+		char line[256];
+		while (fgets(line, sizeof(line), f)) {
+			if (!in_cockpit && !d_strnicmp(line, "[cockpit]", 9)) {
+				found_cockpit = 1;
+				in_cockpit = 1;
+				PLX_BUF_APPEND(line);
+				continue;
+			}
+			if (in_cockpit && !d_strnicmp(line, "[end]", 5)) {
+				if (!wrote_mode)
+					PLX_APPEND_MODE();
+				PLX_BUF_APPEND(line);
+				in_cockpit = 0;
+				continue;
+			}
+			if (in_cockpit && !d_strnicmp(line, "mode=", 5)) {
+				PLX_APPEND_MODE();
+				continue;
+			}
+			PLX_BUF_APPEND(line);
+		}
+		fclose(f);
+	}
+
+	if (in_cockpit) {
+		if (!wrote_mode)
+			PLX_APPEND_MODE();
+		PLX_BUF_APPEND("[end]\n");
+	}
+
+	if (!found_cockpit) {
+		if (buf_len == 0)
+			PLX_BUF_APPEND("[D1X Options]\n");
+		PLX_BUF_APPEND("[cockpit]\n");
+		PLX_APPEND_MODE();
+		PLX_BUF_APPEND("[end]\n");
+	}
+
+#undef PLX_BUF_APPEND
+#undef PLX_APPEND_MODE
+
+	f = fopen(path, "w");
+	if (!f) return 0;
+	fwrite(buf, 1, buf_len, f);
+	fflush(f);
+	fsync(fileno(f));
+	fclose(f);
+	return 1;
+}
+
 /*
  * Read weapon ordering from a D1 .plx text file.
  * Parses the [weapon reorder] INI section.

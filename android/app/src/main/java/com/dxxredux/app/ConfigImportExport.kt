@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.core.content.FileProvider
+import com.dxxredux.app.multiplayer.HostGameDefaults
 import org.json.JSONObject
 import java.io.File
 
@@ -14,6 +15,7 @@ object ConfigImportExport {
     private const val AUTHORITY = "com.dxxredux.app.fileprovider"
     private const val EXPORT_DIR = "config_exports"
     private const val MIME_JSON = "application/json"
+    private const val COMBINED_CONFIG_VERSION = 2
 
     // SharedPreferences keys that should be included in config export.
     // Excludes debug/session/device-specific keys like selected_game, host_*, debug_log_*.
@@ -23,6 +25,8 @@ object ConfigImportExport {
             "game_orientation",
             "music_mode",
             "touch_overlay_enabled",
+            PREF_GUIDEBOT_HELPER_LINE,
+            PREF_NEAREST_PLAYER_LINE,
         )
 
     // descent.cfg keys managed through the launcher UI
@@ -67,7 +71,7 @@ object ConfigImportExport {
     fun exportAll(context: Context): Boolean {
         val combined = JSONObject()
         combined.put("type", "combined_config")
-        combined.put("version", 1)
+        combined.put("version", COMBINED_CONFIG_VERSION)
 
         val layout = TouchLayoutRepository.load(context)
         combined.put("touch_layout", HumanReadableConfig.touchLayoutToHumanJson(layout))
@@ -122,6 +126,11 @@ object ConfigImportExport {
         }
         if (cfgObj.length() > 0) appSettings.put("descent_cfg", cfgObj)
         if (appSettings.length() > 0) combined.put("app_settings", appSettings)
+
+        val enginePrefs = exportEnginePrefs(context.filesDir)
+        if (enginePrefs.length() > 0) combined.put("engine_prefs", enginePrefs)
+
+        combined.put("host_defaults", exportHostDefaults(context))
 
         return shareJson(context, combined, "dxx_redux_config.json", "Share Config")
     }
@@ -259,6 +268,12 @@ object ConfigImportExport {
         if (json.has("app_settings")) {
             results.add(importAppSettings(context, json.getJSONObject("app_settings")))
         }
+        if (json.has("engine_prefs")) {
+            results.add(importEnginePrefs(context, json.getJSONObject("engine_prefs")))
+        }
+        if (json.has("host_defaults")) {
+            results.add(importHostDefaults(context, json.getJSONObject("host_defaults")))
+        }
         if (results.isEmpty()) return "Combined config had no recognizable sections."
         return results.joinToString("\n")
     }
@@ -274,7 +289,9 @@ object ConfigImportExport {
         for (key in EXPORTED_PREF_KEYS) {
             if (!json.has(key)) continue
             when (key) {
-                "touch_overlay_enabled" -> editor.putBoolean(key, json.getBoolean(key))
+                "touch_overlay_enabled", PREF_GUIDEBOT_HELPER_LINE, PREF_NEAREST_PLAYER_LINE -> {
+                    editor.putBoolean(key, json.getBoolean(key))
+                }
                 else -> editor.putString(key, json.getString(key))
             }
             count++
@@ -298,6 +315,118 @@ object ConfigImportExport {
             }
         }
         return "App settings: imported $count setting(s)"
+    }
+
+    private fun exportEnginePrefs(filesDir: File): JSONObject {
+        val json = JSONObject()
+        for (game in listOf("d1", "d2")) {
+            try {
+                val prefs = NativePilotPreferences.readEnginePrefs(game, filesDir.absolutePath)
+                if (!prefs.hasPilotFile) continue
+                json.put(
+                    game,
+                    JSONObject().apply {
+                        put("cockpit_mode", prefs.cockpitMode)
+                        put("auto_leveling", prefs.autoLeveling)
+                    },
+                )
+            } catch (_: Exception) {
+                // Native libs are not always available in every context.
+            }
+        }
+        return json
+    }
+
+    private fun importEnginePrefs(
+        context: Context,
+        json: JSONObject,
+    ): String {
+        val results = mutableListOf<String>()
+        for (game in listOf("d1", "d2")) {
+            val obj = json.optJSONObject(game) ?: continue
+            if (!obj.has("cockpit_mode") || !obj.has("auto_leveling")) continue
+            try {
+                val count =
+                    NativePilotPreferences.writeEnginePrefs(
+                        game,
+                        context.filesDir.absolutePath,
+                        obj.getInt("cockpit_mode"),
+                        obj.getBoolean("auto_leveling"),
+                    )
+                results.add(
+                    if (count > 0) {
+                        "Engine prefs ($game): patched $count file(s)"
+                    } else {
+                        "Engine prefs ($game): no pilot files found"
+                    },
+                )
+            } catch (e: Exception) {
+                results.add("Engine prefs ($game) import failed: ${e.message}")
+            }
+        }
+        return if (results.isNotEmpty()) results.joinToString("\n") else "Engine prefs: no recognized settings"
+    }
+
+    private fun exportHostDefaults(context: Context): JSONObject {
+        val prefs = context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
+        return JSONObject().apply {
+            put("game", prefs.getString("host_game", "d2") ?: "d2")
+            put("mode", prefs.getString("host_mode", "coop") ?: "coop")
+            put("difficulty", prefs.getInt("host_difficulty", 1))
+            put("level_num", prefs.getInt("host_level_num", 1))
+            put("max_players", prefs.getInt("host_max_players", 4))
+            put("coop_qol", prefs.getBoolean("host_coop_qol", true))
+            put(
+                "mission_d1",
+                prefs.getString("host_mission_d1", HostGameDefaults.defaultMissionForGame("d1")) ?: "",
+            )
+            put(
+                "mission_d2",
+                prefs.getString("host_mission_d2", HostGameDefaults.defaultMissionForGame("d2")) ?: "d2",
+            )
+        }
+    }
+
+    private fun importHostDefaults(
+        context: Context,
+        json: JSONObject,
+    ): String {
+        val editor = context.getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE).edit()
+        var count = 0
+        if (json.has("game")) {
+            editor.putString("host_game", json.getString("game"))
+            count++
+        }
+        if (json.has("mode")) {
+            editor.putString("host_mode", json.getString("mode"))
+            count++
+        }
+        if (json.has("difficulty")) {
+            editor.putInt("host_difficulty", json.getInt("difficulty"))
+            count++
+        }
+        if (json.has("level_num")) {
+            editor.putInt("host_level_num", json.getInt("level_num"))
+            count++
+        }
+        if (json.has("max_players")) {
+            editor.putInt("host_max_players", json.getInt("max_players"))
+            count++
+        }
+        if (json.has("coop_qol")) {
+            editor.putBoolean("host_coop_qol", json.getBoolean("coop_qol"))
+            count++
+        }
+        if (json.has("mission_d1")) {
+            editor.putString("host_mission_d1", json.getString("mission_d1"))
+            count++
+        }
+        if (json.has("mission_d2")) {
+            editor.putString("host_mission_d2", json.getString("mission_d2"))
+            count++
+        }
+        editor.apply()
+        return "Host defaults: imported $count setting(s)"
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────

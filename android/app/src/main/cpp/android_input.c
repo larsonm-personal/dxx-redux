@@ -19,6 +19,7 @@
 #include <android/keycodes.h>
 #include "fix.h"
 #include "gr.h"
+#include "window.h"
 
 /* Automap_active is defined in automap.c; we only need the extern. */
 extern int Automap_active;
@@ -375,6 +376,44 @@ extern int RBAResume(void);
 extern void android_surface_pause(void);
 extern void android_surface_resume(void);
 
+/* window_get_callback() is defined for all builds, but its declaration is
+ * currently hidden behind INTROSPECT_ON in window.h. */
+extern int (*window_get_callback(window *wind))(window *, d_event *, void *);
+extern int pause_handler(window *wind, d_event *event, char *msg);
+
+static void inject_key_tap(SDLKey sym)
+{
+	SDL_Event ev;
+	memset(&ev, 0, sizeof(ev));
+	ev.type = SDL_KEYDOWN;
+	ev.key.state = SDL_PRESSED;
+	ev.key.keysym.sym = sym;
+	ev.key.keysym.mod = KMOD_NONE;
+	ev.key.keysym.unicode = 0;
+	SDL_PushEvent(&ev);
+
+	memset(&ev, 0, sizeof(ev));
+	ev.type = SDL_KEYUP;
+	ev.key.state = SDL_RELEASED;
+	ev.key.keysym.sym = sym;
+	ev.key.keysym.mod = KMOD_NONE;
+	ev.key.keysym.unicode = 0;
+	SDL_PushEvent(&ev);
+}
+
+static int is_pause_window_front(void)
+{
+	window *front;
+	int (*callback)(window *, d_event *, void *);
+
+	front = window_get_front();
+	if (!front || front == Game_wind)
+		return 0;
+
+	callback = window_get_callback(front);
+	return callback == (int (*)(window *, d_event *, void *)) pause_handler;
+}
+
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeOnResume(JNIEnv *env, jobject thiz)
 {
@@ -425,26 +464,46 @@ Java_com_dxxredux_app_MainActivity_nativeOnPause(JNIEnv *env, jobject thiz)
 	}
 
 	LOGI("nativeOnPause — injecting Escape key");
+	inject_key_tap(SDLK_ESCAPE);
+}
 
-	SDL_Event ev;
-	memset(&ev, 0, sizeof(ev));
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeOpenSinglePlayerPauseIfSafe(JNIEnv *env, jobject thiz)
+{
+	if (!Game_wind || Screen_mode != SCREEN_GAME) {
+		LOGI("nativeOpenSinglePlayerPauseIfSafe: not in live gameplay");
+		return JNI_FALSE;
+	}
+	if (Game_mode & GM_MULTI) {
+		LOGI("nativeOpenSinglePlayerPauseIfSafe: multiplayer active");
+		return JNI_FALSE;
+	}
+	if (window_get_front() != Game_wind) {
+		LOGI("nativeOpenSinglePlayerPauseIfSafe: menu already open");
+		return JNI_FALSE;
+	}
+	inject_key_tap(SDLK_PAUSE);
+	return JNI_TRUE;
+}
 
-	/* Key-down */
-	ev.type = SDL_KEYDOWN;
-	ev.key.state = SDL_PRESSED;
-	ev.key.keysym.sym = SDLK_ESCAPE;
-	ev.key.keysym.mod = KMOD_NONE;
-	ev.key.keysym.unicode = 0;
-	SDL_PushEvent(&ev);
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeClosePauseIfFront(JNIEnv *env, jobject thiz)
+{
+	if (!Game_wind || (Game_mode & GM_MULTI) || !is_pause_window_front())
+		return JNI_FALSE;
 
-	/* Key-up */
-	memset(&ev, 0, sizeof(ev));
-	ev.type = SDL_KEYUP;
-	ev.key.state = SDL_RELEASED;
-	ev.key.keysym.sym = SDLK_ESCAPE;
-	ev.key.keysym.mod = KMOD_NONE;
-	ev.key.keysym.unicode = 0;
-	SDL_PushEvent(&ev);
+	inject_key_tap(SDLK_PAUSE);
+	return JNI_TRUE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeOpenGameMenuIfSafe(JNIEnv *env, jobject thiz)
+{
+	if (!Game_wind || Screen_mode != SCREEN_GAME || window_get_front() != Game_wind)
+		return JNI_FALSE;
+
+	inject_key_tap(SDLK_ESCAPE);
+	return JNI_TRUE;
 }
 
 /* ── In-game query ──────────────────────────────────────────

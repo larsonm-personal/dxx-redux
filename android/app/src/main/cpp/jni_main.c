@@ -433,6 +433,7 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
 
 /* ── Graphics options: set MSAA/AF from Kotlin (all builds) ────── */
 #include "config.h"
+#include "shared/coop_indicator_lines.h"
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetGraphicsOption(JNIEnv *env, jobject thiz,
                                                            jstring jname, jint value)
@@ -479,6 +480,19 @@ Java_com_dxxredux_app_MainActivity_nativeSetGraphicsOption(JNIEnv *env, jobject 
 	(*env)->ReleaseStringUTFChars(env, jname, name);
 }
 
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetCoopIndicatorOptions(JNIEnv *env,
+                                                                 jobject thiz,
+                                                                 jboolean showNearestPlayerLine,
+                                                                 jboolean showGuidebotLine)
+{
+	LOGI("coop indicator options: nearest=%d guidebot=%d",
+	     showNearestPlayerLine ? 1 : 0,
+	     showGuidebotLine ? 1 : 0);
+	coop_indicator_lines_set_options(showNearestPlayerLine ? 1 : 0,
+	                                 showGuidebotLine ? 1 : 0);
+}
+
 /* ── Debug logging: per-category enable/disable from Kotlin ────── */
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetDebugLogEnabled(JNIEnv *env, jobject thiz,
@@ -500,6 +514,7 @@ extern int auto_host_mode;
 extern int auto_host_max_players;
 extern int auto_host_level_num;
 extern int auto_host_difficulty;
+extern int auto_host_coop_qol;
 extern char auto_net_callsign[];
 extern char auto_net_client_id[];
 
@@ -543,7 +558,8 @@ Java_com_dxxredux_app_MainActivity_nativeSetAutoJoin(JNIEnv *env, jobject thiz,
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetAutoHost(JNIEnv *env, jobject thiz,
                                                      jint myPort, jstring jMission, jint mode,
-                                                     jint maxPlayers, jint levelNum, jint difficulty)
+                                                     jint maxPlayers, jint levelNum, jint difficulty,
+                                                     jboolean coopQol)
 {
 	const char *mission = (*env)->GetStringUTFChars(env, jMission, NULL);
 	strncpy(auto_host_mission, mission, 63);
@@ -555,10 +571,12 @@ Java_com_dxxredux_app_MainActivity_nativeSetAutoHost(JNIEnv *env, jobject thiz,
 	auto_host_max_players = (int) maxPlayers;
 	auto_host_level_num = (int) levelNum;
 	auto_host_difficulty = (int) difficulty;
+	auto_host_coop_qol = coopQol ? 1 : 0;
 	auto_host_pending = 1;
-	LOGI("nativeSetAutoHost: port=%d mission=%s mode=%d max=%d lvl=%d diff=%d",
+	LOGI("nativeSetAutoHost: port=%d mission=%s mode=%d max=%d lvl=%d diff=%d coop_qol=%d",
 	     auto_host_my_port, auto_host_mission, auto_host_mode,
-	     auto_host_max_players, auto_host_level_num, auto_host_difficulty);
+	     auto_host_max_players, auto_host_level_num, auto_host_difficulty,
+	     auto_host_coop_qol);
 }
 
 /* ── Multiplayer ping query for network stats overlay ────────────
