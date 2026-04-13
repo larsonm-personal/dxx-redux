@@ -6,6 +6,35 @@ import org.junit.Test
 
 class OverlayVisibilityPolicyTest {
     @Test
+    fun netEventsControlRequiresMultiplayerOrPendingLaunch() {
+        assertFalse(
+            shouldEnableNetEventsControl(
+                isMultiplayerGame = false,
+                hasPendingLaunchInfo = false,
+            ),
+        )
+        assertTrue(
+            shouldEnableNetEventsControl(
+                isMultiplayerGame = true,
+                hasPendingLaunchInfo = false,
+            ),
+        )
+        assertTrue(
+            shouldEnableNetEventsControl(
+                isMultiplayerGame = false,
+                hasPendingLaunchInfo = true,
+            ),
+        )
+    }
+
+    @Test
+    fun standaloneAdminOverlaysHideOnlyAfterLeavingGameplayWithoutTray() {
+        assertFalse(shouldHideStandaloneAdminOverlays(inGame = true, settingsTrayVisible = false))
+        assertFalse(shouldHideStandaloneAdminOverlays(inGame = false, settingsTrayVisible = true))
+        assertTrue(shouldHideStandaloneAdminOverlays(inGame = false, settingsTrayVisible = false))
+    }
+
+    @Test
     fun settingsTrayKeepsOverlayVisibleWhilePauseWindowIsFront() {
         assertTrue(
             shouldShowTouchOverlay(

@@ -57,6 +57,16 @@ internal fun shouldShowTouchOverlay(
     return gameplayOverlay || automap
 }
 
+internal fun shouldHideStandaloneAdminOverlays(
+    inGame: Boolean,
+    settingsTrayVisible: Boolean,
+): Boolean = !inGame && !settingsTrayVisible
+
+internal fun shouldEnableNetEventsControl(
+    isMultiplayerGame: Boolean,
+    hasPendingLaunchInfo: Boolean,
+): Boolean = isMultiplayerGame || hasPendingLaunchInfo
+
 class MainActivity :
     Activity(),
     SurfaceHolder.Callback {
@@ -412,6 +422,7 @@ class MainActivity :
         // Check for multiplayer auto-join/host from the matchmaking lobby
         val mpMode = intent.getStringExtra("mp_mode")
         isMultiplayerGame = mpMode != null
+        resetSinglePlayerNetEventsIfNeeded()
         // Seed game-process MatchmakingStateHolder so overlay shows "CONNECTED" not "DISCONNECTED"
         if (mpMode != null) {
             com.dxxredux.app.multiplayer.MatchmakingStateHolder.update {
@@ -574,24 +585,18 @@ class MainActivity :
                 else -> false
             }
         }
+        touchOverlay.adminTrayEnabledStateProvider = { action ->
+            when (action) {
+                TouchOverlayView.ADMIN_NET_EVENTS -> isNetEventsControlEnabled()
+                else -> true
+            }
+        }
         touchOverlay.adminTrayCallback = { action ->
             when (action) {
                 TouchOverlayView.ADMIN_INCREASE_VIEW -> nativeCycleCockpit(1)
                 TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL -> nativeToggleAutoLeveling()
-                TouchOverlayView.ADMIN_QUICK_SAVE -> {
-                    // Alt+F2
-                    nativeKeyEvent(0, KeyEvent.KEYCODE_ALT_LEFT, 0)
-                    nativeKeyEvent(0, KeyEvent.KEYCODE_F2, 0)
-                    nativeKeyEvent(1, KeyEvent.KEYCODE_F2, 0)
-                    nativeKeyEvent(1, KeyEvent.KEYCODE_ALT_LEFT, 0)
-                }
-                TouchOverlayView.ADMIN_QUICK_LOAD -> {
-                    // Alt+F3
-                    nativeKeyEvent(0, KeyEvent.KEYCODE_ALT_LEFT, 0)
-                    nativeKeyEvent(0, KeyEvent.KEYCODE_F3, 0)
-                    nativeKeyEvent(1, KeyEvent.KEYCODE_F3, 0)
-                    nativeKeyEvent(1, KeyEvent.KEYCODE_ALT_LEFT, 0)
-                }
+                TouchOverlayView.ADMIN_QUICK_SAVE -> openSaveLoadMenu(KeyEvent.KEYCODE_F2)
+                TouchOverlayView.ADMIN_QUICK_LOAD -> openSaveLoadMenu(KeyEvent.KEYCODE_F3)
                 TouchOverlayView.ADMIN_OPEN_MENU -> {
                     openGameMenuSafely()
                 }
@@ -599,8 +604,12 @@ class MainActivity :
                     netStatsOverlay?.toggle()
                 }
                 TouchOverlayView.ADMIN_NET_EVENTS -> {
-                    netEventsManualToggle = !netEventsManualToggle
-                    if (netEventsManualToggle) netEventsOverlay?.show() else netEventsOverlay?.hide()
+                    if (!isNetEventsControlEnabled()) {
+                        resetSinglePlayerNetEventsIfNeeded()
+                    } else {
+                        netEventsManualToggle = !netEventsManualToggle
+                        if (netEventsManualToggle) netEventsOverlay?.show() else netEventsOverlay?.hide()
+                    }
                 }
                 TouchOverlayView.ADMIN_EXIT_LAUNCHER -> {
                     NativeMetaActions.nativeMetaAction(TouchBindings.META_RETURN_TO_LAUNCHER, 1)
@@ -1174,6 +1183,38 @@ class MainActivity :
         adminTrayPausedGame = false
     }
 
+    private fun isNetEventsControlEnabled(): Boolean {
+        val mpState = com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value
+        return shouldEnableNetEventsControl(
+            isMultiplayerGame = isMultiplayerGame,
+            hasPendingLaunchInfo = mpState.gameLaunchInfo != null,
+        )
+    }
+
+    private fun resetSinglePlayerNetEventsIfNeeded() {
+        if (isNetEventsControlEnabled()) return
+        netEventsManualToggle = false
+        netEventsOverlay?.hide()
+    }
+
+    private fun injectAltFunctionKey(functionKeyCode: Int) {
+        nativeKeyEvent(0, KeyEvent.KEYCODE_ALT_LEFT, 0)
+        nativeKeyEvent(0, functionKeyCode, 0)
+        nativeKeyEvent(1, functionKeyCode, 0)
+        nativeKeyEvent(1, KeyEvent.KEYCODE_ALT_LEFT, 0)
+    }
+
+    private fun openSaveLoadMenu(functionKeyCode: Int) {
+        if (adminTrayPausedGame) {
+            try {
+                nativeClosePauseIfFront()
+            } catch (_: Exception) {
+            }
+            adminTrayPausedGame = false
+        }
+        injectAltFunctionKey(functionKeyCode)
+    }
+
     private fun openGameMenuSafely() {
         if (adminTrayPausedGame) {
             try {
@@ -1277,9 +1318,10 @@ class MainActivity :
                             if (shouldShow && !automap) pollTrackLabel()
                             // Hide standalone exit when touch overlay is active (admin tray has Exit)
                             exitButton.visibility = if (shouldShow) View.GONE else View.VISIBLE
-                            // Hide net stats overlay when returning to menus
-                            if (!inGame) netStatsOverlay?.hide()
-                            if (!inGame) videoInfoOverlay?.hide()
+                            if (shouldHideStandaloneAdminOverlays(inGame, settingsTrayVisible)) {
+                                netStatsOverlay?.hide()
+                                videoInfoOverlay?.hide()
+                            }
                             // Show "START GAME" button when host is on player selection screen
                             val hostSelecting =
                                 try {
@@ -1297,23 +1339,28 @@ class MainActivity :
                                     ""
                                 }
                             if (joinCallsign.isNotEmpty()) {
-                                // Hide standalone overlays when returning to menus, but keep them while
-                                // the settings tray has paused single-player gameplay.
-                                if (!inGame && !settingsTrayVisible) netStatsOverlay?.hide()
-                                if (!inGame && !settingsTrayVisible) videoInfoOverlay?.hide()
                                 acceptJoinButton.visibility = View.GONE
                             }
                             // Auto-show/hide network events overlay during MP phases
                             val mpState = com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value
-                            val showNetEvents =
-                                netEventsManualToggle ||
-                                    hostSelecting ||
-                                    (isMultiplayerGame && !inGame) ||
-                                    (mpState.gameLaunchInfo != null && !inGame)
-                            if (showNetEvents) {
-                                netEventsOverlay?.show()
+                            val netEventsEnabled =
+                                shouldEnableNetEventsControl(
+                                    isMultiplayerGame = isMultiplayerGame,
+                                    hasPendingLaunchInfo = mpState.gameLaunchInfo != null,
+                                )
+                            if (!netEventsEnabled) {
+                                resetSinglePlayerNetEventsIfNeeded()
                             } else {
-                                netEventsOverlay?.hide()
+                                val showNetEvents =
+                                    netEventsManualToggle ||
+                                        hostSelecting ||
+                                        (isMultiplayerGame && !inGame) ||
+                                        (mpState.gameLaunchInfo != null && !inGame)
+                                if (showNetEvents) {
+                                    netEventsOverlay?.show()
+                                } else {
+                                    netEventsOverlay?.hide()
+                                }
                             }
                         } catch (_: Exception) {
                             touchOverlay.isActive = false

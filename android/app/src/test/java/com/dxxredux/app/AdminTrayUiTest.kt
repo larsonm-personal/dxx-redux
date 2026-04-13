@@ -1,10 +1,30 @@
 package com.dxxredux.app
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AdminTrayUiTest {
+    @Test
+    fun adminTrayActionsDefaultToEnabled() {
+        assertTrue(adminTrayActionEnabled(TouchOverlayView.ADMIN_NET_EVENTS, null))
+    }
+
+    @Test
+    fun adminTrayEnabledProviderCanDisableSpecificAction() {
+        assertFalse(
+            adminTrayActionEnabled(TouchOverlayView.ADMIN_NET_EVENTS) { action ->
+                action != TouchOverlayView.ADMIN_NET_EVENTS
+            },
+        )
+        assertTrue(
+            adminTrayActionEnabled(TouchOverlayView.ADMIN_NET_STATS) { action ->
+                action != TouchOverlayView.ADMIN_NET_EVENTS
+            },
+        )
+    }
+
     @Test
     fun overlayTogglesUseCheckboxesAndStayOpen() {
         assertTrue(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_NET_STATS))
@@ -18,13 +38,11 @@ class AdminTrayUiTest {
 
     @Test
     fun oneShotActionsStillCloseTheTray() {
-        assertFalse(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_INCREASE_VIEW))
         assertFalse(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL))
         assertFalse(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_QUICK_SAVE))
         assertFalse(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_OPEN_MENU))
         assertFalse(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_MUSIC))
 
-        assertTrue(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_INCREASE_VIEW))
         assertTrue(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_QUICK_SAVE))
         assertTrue(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_OPEN_MENU))
         assertTrue(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_MUSIC))
@@ -33,5 +51,18 @@ class AdminTrayUiTest {
     @Test
     fun autoLevelToggleStaysOpen() {
         assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL))
+    }
+
+    @Test
+    fun cycleViewStaysOpen() {
+        assertFalse(adminTrayUsesCheckbox(TouchOverlayView.ADMIN_INCREASE_VIEW))
+        assertFalse(adminTrayClosesAfterActivate(TouchOverlayView.ADMIN_INCREASE_VIEW))
+    }
+
+    @Test
+    fun overlayTogglesOccupyRightColumnSlots() {
+        assertEquals(2, TouchOverlayView.ADMIN_NET_STATS)
+        assertEquals(5, TouchOverlayView.ADMIN_NET_EVENTS)
+        assertEquals(8, TouchOverlayView.ADMIN_VIDEO_INFO)
     }
 }

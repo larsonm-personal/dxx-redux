@@ -35,9 +35,16 @@ internal fun adminTrayUsesCheckbox(actionIndex: Int): Boolean =
 
 internal fun adminTrayClosesAfterActivate(actionIndex: Int): Boolean =
     when (actionIndex) {
-        TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL -> false
+        TouchOverlayView.ADMIN_INCREASE_VIEW,
+        TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL,
+        -> false
         else -> !adminTrayUsesCheckbox(actionIndex)
     }
+
+internal fun adminTrayActionEnabled(
+    actionIndex: Int,
+    enabledProvider: ((Int) -> Boolean)? = null,
+): Boolean = enabledProvider?.invoke(actionIndex) != false
 
 internal fun buttonUsesGyroToggleIndicator(button: ButtonControl): Boolean =
     button.binding == TouchBindings.META_GYRO_TOGGLE ||
@@ -523,12 +530,12 @@ class TouchOverlayView
             // Admin tray action indices dispatched via adminTrayCallback
             const val ADMIN_INCREASE_VIEW = 0
             const val ADMIN_TOGGLE_AUTOLEVEL = 1
-            const val ADMIN_QUICK_SAVE = 2
+            const val ADMIN_NET_STATS = 2
             const val ADMIN_QUICK_LOAD = 3
             const val ADMIN_OPEN_MENU = 4
             const val ADMIN_NET_EVENTS = 5
             const val ADMIN_EXIT_LAUNCHER = 6
-            const val ADMIN_NET_STATS = 7
+            const val ADMIN_QUICK_SAVE = 7
             const val ADMIN_VIDEO_INFO = 8
 
             // Gamepad-only items (appended when no touchscreen)
@@ -583,17 +590,17 @@ class TouchOverlayView
         private val paintBtnIdleDisabled =
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.FILL
-                color = 0x33FF5A5A
+                color = 0x334A4A4A
             }
         private val paintBtnPressedDisabled =
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.FILL
-                color = 0x66FF5A5A
+                color = 0x665E5E5E
             }
         private val paintBtnLatchedDisabled =
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.FILL
-                color = 0x33FF5A5A
+                color = 0x334A4A4A
             }
         private val paintBtnLabel =
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -674,6 +681,7 @@ class TouchOverlayView
         var adminTrayAutoLevelingProvider: (() -> Boolean)? = null
         var adminTrayCockpitModeProvider: (() -> Int)? = null
         var adminTrayToggleStateProvider: ((Int) -> Boolean)? = null
+        var adminTrayEnabledStateProvider: ((Int) -> Boolean)? = null
 
         // Gamepad-only mode: no touchscreen, admin tray gets extra items + D-pad nav
         var gamepadOnlyMode = false
@@ -3135,7 +3143,25 @@ class TouchOverlayView
                 val rect = RectF(left, top, left + cellW, top + cellH)
                 adminTrayRects.add(rect)
 
-                val bg = if (i == adminTrayPressedIndex) paintBtnPressed else paintBtnIdle
+                val enabled = adminTrayActionEnabled(i, adminTrayEnabledStateProvider)
+                val checked = adminTrayToggleStateProvider?.invoke(i) == true
+
+                val bg =
+                    if (!enabled) {
+                        if (checked && adminTrayUsesCheckbox(i)) {
+                            paintBtnLatchedDisabled
+                        } else if (i == adminTrayPressedIndex) {
+                            paintBtnPressedDisabled
+                        } else {
+                            paintBtnIdleDisabled
+                        }
+                    } else if (i == adminTrayPressedIndex) {
+                        paintBtnPressed
+                    } else if (checked && adminTrayUsesCheckbox(i)) {
+                        paintBtnLatched
+                    } else {
+                        paintBtnIdle
+                    }
                 bg.alpha = if (i == adminTrayPressedIndex) 0xAA else 0x55
                 canvas.drawRect(rect, bg)
 
@@ -3154,7 +3180,7 @@ class TouchOverlayView
                     canvas.drawRect(left, top - divider, left + cellW, top, divPaint)
                 }
 
-                textPaint.alpha = 0xDD
+                textPaint.alpha = if (enabled) 0xDD else 0x66
                 if (adminTrayUsesCheckbox(i)) {
                     val checkboxSize = min(cellH * 0.26f, cellW * 0.18f)
                     val checkboxLeft = rect.left + cellW * 0.12f
@@ -3166,7 +3192,9 @@ class TouchOverlayView
                             checkboxLeft + checkboxSize,
                             checkboxTop + checkboxSize,
                         )
-                    val checked = adminTrayToggleStateProvider?.invoke(i) == true
+                    checkboxFill.alpha = if (enabled) 0xAA else 0x44
+                    checkboxStroke.alpha = if (enabled) 0xCC else 0x66
+                    checkboxCheck.alpha = if (enabled) 0xFF else 0x66
                     canvas.drawRect(checkboxRect, checkboxFill)
                     canvas.drawRect(checkboxRect, checkboxStroke)
                     if (checked) {
@@ -3304,7 +3332,9 @@ class TouchOverlayView
                 android.view.KeyEvent.KEYCODE_BUTTON_A,
                 android.view.KeyEvent.KEYCODE_DPAD_CENTER,
                 -> {
-                    if (adminTraySelectedIndex in 0 until count) {
+                    if (adminTraySelectedIndex in 0 until count &&
+                        adminTrayActionEnabled(adminTraySelectedIndex, adminTrayEnabledStateProvider)
+                    ) {
                         adminTrayCallback?.invoke(adminTraySelectedIndex)
                         performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                         if (adminTrayClosesAfterActivate(adminTraySelectedIndex)) {
@@ -3389,7 +3419,8 @@ class TouchOverlayView
                             }
                         } else if (adminTrayPressedIndex >= 0 &&
                             adminTrayPressedIndex < adminTrayRects.size &&
-                            adminTrayRects[adminTrayPressedIndex].contains(px, py)
+                            adminTrayRects[adminTrayPressedIndex].contains(px, py) &&
+                            adminTrayActionEnabled(adminTrayPressedIndex, adminTrayEnabledStateProvider)
                         ) {
                             adminTrayCallback?.invoke(adminTrayPressedIndex)
                             performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
