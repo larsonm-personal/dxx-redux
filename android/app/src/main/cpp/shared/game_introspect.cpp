@@ -613,6 +613,9 @@ extern "C" char *game_introspect_get_state(void)
 		j["slide_on_state"] = (int) Controls.slide_on_state;
 		j["bank_on_state"] = (int) Controls.bank_on_state;
 		j["control_type"] = (int) PlayerCfg.ControlType;
+		j["cockpit_mode"] = (int) PlayerCfg.PreferredCockpitMode;
+		j["current_cockpit_mode"] = (int) PlayerCfg.CurrentCockpitMode;
+		j["auto_leveling"] = (bool) PlayerCfg.AutoLeveling;
 		{
 			auto &rja = j["raw_joy_axis"];
 			for (int a = 0; a < 8; a++)

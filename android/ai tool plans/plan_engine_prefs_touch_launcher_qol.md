@@ -393,9 +393,9 @@ Risk:
 - existing layouts now migrate gyro recenter buttons to long-press gyro toggle by default, and bundled advanced and claw presets declare the same behavior directly
 
 ### Phase 8 - Tests, build, and quality
-- [ ] Add at least one integration-level check for config round-trip or launcher preference persistence. make every attempt to add this as an additional verification for an existing json-based test
-- [ ] Add/extend automation scripts under `android/game_scripts/` for cockpit and auto-level verification if practical. extend if at all possible
-- [ ] If automation needs more visibility, extend introspection to report cockpit mode and auto-level state
+- [x] Add at least one integration-level check for config round-trip or launcher preference persistence. added `test_engine_prefs_unified.json5` to create a pilot, write engine prefs through the launcher path, relaunch, and verify them in-game for d1 and d2
+- [x] Add/extend automation scripts under `android/game_scripts/` for cockpit and auto-level verification if practical. added a unified launcher/game automation script covering cockpit mode and auto-level verification
+- [x] If automation needs more visibility, extend introspection to report cockpit mode and auto-level state
 - [x] Run `android/run-code-quality.ps1 -Fix`
 - [x] Run a successful CMake build
 - [x] Run targeted tests and fix regressions
@@ -434,4 +434,4 @@ Risk:
 - [x] Phase 5: Tray behavior cleanup
 - [ ] Phase 6: Mouse mode tuning
 - [x] Phase 7: Gyro recenter UX upgrade
-- [ ] Phase 8: Tests, build, and quality
+- [x] Phase 8: Tests, build, and quality

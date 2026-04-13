@@ -116,6 +116,7 @@ class SetupActivity : ComponentActivity() {
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_files --es path /sdcard/DESCENT2.HOG
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_default_config
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_autoselect --es game d2 --es primary "8,9,7,6,5,4,3,2,1,0,255" --es secondary "9,8,4,3,1,5,0,255,7,6,2"
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_engine_prefs --ei cockpit_mode 2 --ez auto_leveling false
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command music_midi_play --ei source 0 --ei track 2
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command music_midi_stop
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command music_cd_play --ei source 0 --ei track 2
@@ -568,6 +569,20 @@ class SetupActivity : ComponentActivity() {
                     "write_default_config" -> {
                         File(filesDir, "controller_config.json").delete()
                         writeDefaultControllerConfig()
+                    }
+                    "write_engine_prefs" -> {
+                        val cockpitMode = intent.getIntExtra("cockpit_mode", 0)
+                        val autoLeveling = intent.getBooleanExtra("auto_leveling", true)
+                        val n =
+                            NativePilotPreferences.writeEnginePrefsToAll(
+                                filesDir.absolutePath,
+                                cockpitMode,
+                                autoLeveling,
+                            )
+                        Log.i(
+                            "DXX-Setup",
+                            "write_engine_prefs: patched $n file(s) (cockpit_mode=$cockpitMode auto_leveling=$autoLeveling)",
+                        )
                     }
                     "create_set" -> {
                         val name = intent.getStringExtra("name") ?: return
