@@ -37,6 +37,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dxxredux.app.lobby.LobbyService
@@ -820,7 +821,10 @@ private fun LanContent(
     onBack: () -> Unit,
     onLaunchGame: (GameLaunchInfo) -> Unit,
 ) {
+    val isLandscape =
+        LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
     val lanFocus = remember { FocusRequester() }
+    val localIpLabel = remember { getLocalIpLabel() }
     LaunchedEffect(Unit) { lanFocus.requestFocus() }
     Column(
         modifier =
@@ -829,15 +833,54 @@ private fun LanContent(
                 .safeDrawingPadding()
                 .padding(16.dp),
     ) {
-        Text("LAN Games", style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(4.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(
-                onClick = {
-                    MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
-                },
-                modifier = Modifier.focusRequester(lanFocus),
-            ) { Text("Back") }
+        if (isLandscape) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "LAN Games",
+                    style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                OutlinedButton(
+                    onClick = {
+                        MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
+                    },
+                    modifier = Modifier.focusRequester(lanFocus),
+                ) { Text("Back") }
+            }
+            localIpLabel?.let {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        } else {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("LAN Games", style = MaterialTheme.typography.headlineMedium)
+                if (localIpLabel != null) {
+                    Text(
+                        localIpLabel,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                } else {
+                    Spacer(Modifier.weight(1f))
+                }
+                OutlinedButton(
+                    onClick = {
+                        MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
+                    },
+                    modifier = Modifier.focusRequester(lanFocus),
+                ) { Text("Back") }
+            }
         }
         Spacer(Modifier.height(8.dp))
 

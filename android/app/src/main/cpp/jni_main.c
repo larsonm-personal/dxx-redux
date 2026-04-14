@@ -406,6 +406,34 @@ Java_com_dxxredux_app_MainActivity_nativeGetConsoleSince(JNIEnv *env, jobject th
 /* ── Debug flags: toggle debug overlays from adb/Kotlin ────────── */
 extern volatile int gles3_shim_debug_mode;
 
+static const char *metl154_debug_mode_name(int mode)
+{
+	switch (mode) {
+		case METL154_DEBUG_OVERLAY_ALPHA:
+			return "alpha";
+		case METL154_DEBUG_OVERLAY_RGB:
+			return "rgb";
+		default:
+			return "off";
+	}
+}
+
+static const char *metl154_experiment_name(int mode)
+{
+	switch (mode) {
+		case METL154_EXPERIMENT_KTX2_NOMIP:
+			return "ktx2_nomip";
+		case METL154_EXPERIMENT_RGBA:
+			return "rgba";
+		case METL154_EXPERIMENT_RGBA_NOMIP:
+			return "rgba_nomip";
+		case METL154_EXPERIMENT_STOCK:
+			return "stock";
+		default:
+			return "default";
+	}
+}
+
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
                                                       jstring jname, jint value)
@@ -413,7 +441,41 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
 	const char *name = (*env)->GetStringUTFChars(env, jname, NULL);
 	if (strcmp(name, "tex_overlay") == 0)
 		g_debug_tex_overlay_active = (int) value;
-	else if (strcmp(name, "gfx_mode") == 0)
+	else if (strcmp(name, "metl154_mode") == 0) {
+		int clamped = (int) value;
+		int old = (int) g_metl154_debug_mode;
+
+		if (clamped < METL154_DEBUG_NONE)
+			clamped = METL154_DEBUG_NONE;
+		if (clamped > METL154_DEBUG_OVERLAY_RGB)
+			clamped = METL154_DEBUG_OVERLAY_RGB;
+		LOGI("debug flag: metl154_mode %d(%s) -> %d(%s)",
+		     old, metl154_debug_mode_name(old),
+		     clamped, metl154_debug_mode_name(clamped));
+		debug_log(DLOG_TEXTURE,
+		          "[metl154mode] toggle: old=%d(%s) new=%d(%s)",
+		          old, metl154_debug_mode_name(old),
+		          clamped, metl154_debug_mode_name(clamped));
+		g_metl154_debug_mode = clamped;
+	} else if (strcmp(name, "metl154_experiment") == 0) {
+		int clamped = (int) value;
+		int old = (int) g_metl154_experiment_mode;
+
+		if (clamped < METL154_EXPERIMENT_DEFAULT)
+			clamped = METL154_EXPERIMENT_DEFAULT;
+		if (clamped > METL154_EXPERIMENT_STOCK)
+			clamped = METL154_EXPERIMENT_STOCK;
+		LOGI("debug flag: metl154_experiment %d(%s) -> %d(%s)",
+		     old, metl154_experiment_name(old),
+		     clamped, metl154_experiment_name(clamped));
+		debug_log(DLOG_TEXTURE,
+		          "[metl154exp] toggle: old=%d(%s) new=%d(%s)",
+		          old, metl154_experiment_name(old),
+		          clamped, metl154_experiment_name(clamped));
+		g_metl154_experiment_mode = clamped;
+		__sync_synchronize();
+		g_metl154_experiment_pending_apply = 1;
+	} else if (strcmp(name, "gfx_mode") == 0)
 		gles3_shim_debug_mode = (int) value;
 	else if (strcmp(name, "aniso_level") == 0) {
 		extern int ogl_aniso_level;
@@ -804,6 +866,8 @@ Java_com_dxxredux_app_MainActivity_nativeGetTeammateStatus(JNIEnv *env, jobject 
  *   [17] = cache_time_ms    (time spent in last ogl_cache_level_textures)
  *   [18] = aniso_level       (current anisotropic filtering level, 0=off)
  *   [19] = aniso_max         (max aniso level supported by GPU)
+ *   [30] = metl154_mode      (OFF/Alpha/RGB debug view)
+ *   [31] = metl154_experiment (default/no-mip/rgba/stock experiment mode)
  *
  * android port: video diagnostics overlay
  */
@@ -833,7 +897,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 	extern unsigned int grd_curscreen_w(void);
 	extern unsigned int grd_curscreen_h(void);
 
-	enum { VS_SIZE = 30 };
+	enum { VS_SIZE = 32 };
 	jint buf[VS_SIZE];
 
 	buf[0] = (jint) g_current_fps;
@@ -880,6 +944,13 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 	buf[27] = (jint) g_texfilt_level;
 	buf[28] = (jint) GameCfg.MenuTexFilt;
 	buf[29] = (jint) GameCfg.HudTexFilt;
+#ifdef INTROSPECT_ON
+	buf[30] = (jint) g_metl154_debug_mode;
+	buf[31] = (jint) g_metl154_experiment_mode;
+#else
+	buf[30] = 0;
+	buf[31] = 0;
+#endif
 
 	jintArray result = (*env)->NewIntArray(env, VS_SIZE);
 	if (result)

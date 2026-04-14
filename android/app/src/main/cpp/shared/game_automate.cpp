@@ -1360,7 +1360,13 @@ extern "C" void game_automate_tick(void)
 		case STEP_SET_DEBUG:
 			if (s.field == "tex_overlay")
 				g_debug_tex_overlay_active = (int) std::stod(s.value);
-			else
+			else if (s.field == "metl154_mode")
+				g_metl154_debug_mode = (int) std::stod(s.value);
+			else if (s.field == "metl154_experiment") {
+				g_metl154_experiment_mode = (int) std::stod(s.value);
+				__sync_synchronize();
+				g_metl154_experiment_pending_apply = 1;
+			} else
 				LOGE("set_debug: unknown field '%s'", s.field.c_str());
 			LOGI("set_debug: %s = %s", s.field.c_str(), s.value.c_str());
 			advance_step();

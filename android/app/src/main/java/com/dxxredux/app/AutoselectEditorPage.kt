@@ -203,10 +203,20 @@ fun AutoselectEditorPage(
                         .padding(padding)
                         .padding(horizontal = 16.dp),
             ) {
+                // Instructions (portrait only; landscape shows in TopAppBar)
+                if (!isLandscape) {
+                    Text(
+                        "Long press + drag, or select + D-pad to reorder",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 9.sp,
+                        modifier = Modifier.padding(top = 2.dp, bottom = 4.dp),
+                    )
+                }
+
                 // Game selector (only show if we might have both)
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(vertical = 2.dp),
+                    modifier = Modifier.padding(bottom = 2.dp),
                 ) {
                     OutlinedButton(
                         onClick = { activeGame = "d1" },
@@ -254,16 +264,6 @@ fun AutoselectEditorPage(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         modifier = Modifier.padding(bottom = 4.dp),
-                    )
-                }
-
-                // Instructions (portrait only; landscape shows in TopAppBar)
-                if (!isLandscape) {
-                    Text(
-                        "Long press + drag, or select + D-pad to reorder",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 9.sp,
-                        modifier = Modifier.padding(bottom = 8.dp),
                     )
                 }
 

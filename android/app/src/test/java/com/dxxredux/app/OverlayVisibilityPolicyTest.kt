@@ -28,6 +28,28 @@ class OverlayVisibilityPolicyTest {
     }
 
     @Test
+    fun netStatsControlRequiresMultiplayerOrPendingLaunch() {
+        assertFalse(
+            shouldEnableNetStatsControl(
+                isMultiplayerGame = false,
+                hasPendingLaunchInfo = false,
+            ),
+        )
+        assertTrue(
+            shouldEnableNetStatsControl(
+                isMultiplayerGame = true,
+                hasPendingLaunchInfo = false,
+            ),
+        )
+        assertTrue(
+            shouldEnableNetStatsControl(
+                isMultiplayerGame = false,
+                hasPendingLaunchInfo = true,
+            ),
+        )
+    }
+
+    @Test
     fun standaloneAdminOverlaysHideOnlyAfterLeavingGameplayWithoutTray() {
         assertFalse(shouldHideStandaloneAdminOverlays(inGame = true, settingsTrayVisible = false))
         assertFalse(shouldHideStandaloneAdminOverlays(inGame = false, settingsTrayVisible = true))

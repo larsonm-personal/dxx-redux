@@ -66,14 +66,20 @@ class VideoInfoOverlay(
 
     // Labels toggle button state and hit region
     private var labelsOn = false
+    private var metl154Mode = 0
+    private var metl154ExperimentMode = 0
     private var buttonPressed = false
     private var anisoPressed = false
     private var msaaPressed = false
     private var texFiltPressed = false
+    private var metl154Pressed = false
+    private var metl154ExperimentPressed = false
     private val buttonRect = RectF()
     private val anisoRect = RectF()
     private val msaaRect = RectF()
     private val texFiltRect = RectF()
+    private val metl154Rect = RectF()
+    private val metl154ExperimentRect = RectF()
     private val panelBounds = RectF()
 
     private val pollRunnable =
@@ -125,6 +131,10 @@ class VideoInfoOverlay(
                     }
                     if (stats != null && stats.size >= 28) {
                         texFiltLevel = stats[27]
+                    }
+                    if (stats != null && stats.size >= 32) {
+                        metl154Mode = stats[30]
+                        metl154ExperimentMode = stats[31]
                     }
                 } catch (_: Exception) {
                     // JNI not ready yet
@@ -215,7 +225,7 @@ class VideoInfoOverlay(
 
         val pad = 8f * density
         val lineH = baseTextSize * 1.5f
-        val numLines = 17
+        val numLines = 19
         val panelH = pad * 2 + lineH * numLines
         val panelW = baseTextSize * 20f
 
@@ -421,6 +431,46 @@ class VideoInfoOverlay(
         canvas.drawText(msaaText + msaaMaxText, panelLeft + pad, y, msaaPaint)
         y += lineH
 
+        // metl154 shader debug cycle button
+        val metl154Text =
+            when (metl154Mode) {
+                1 -> "metl154: Alpha"
+                2 -> "metl154: RGB"
+                else -> "metl154: OFF"
+            }
+        val metl154Paint = if (metl154Mode == 0) fpsWarnPaint else fpsGoodPaint
+        metl154Rect.set(
+            panelLeft + pad * 0.5f,
+            y - baseTextSize,
+            panelLeft + panelW - pad * 0.5f,
+            y + lineH * 0.3f,
+        )
+        val metl154Bg = if (metl154Pressed) btnPressedPaint else btnNormalPaint
+        canvas.drawRoundRect(metl154Rect, pad * 0.5f, pad * 0.5f, metl154Bg)
+        canvas.drawText(metl154Text, panelLeft + pad, y, metl154Paint)
+        y += lineH
+
+        // Keep labels in sync with METL154_EXPERIMENT_* in debug_tex_overlay.h.
+        val metl154ExperimentText =
+            when (metl154ExperimentMode) {
+                1 -> "m154 exp: NoMips"
+                2 -> "m154 exp: RGBA"
+                3 -> "m154 exp: RGBA1"
+                4 -> "m154 exp: Stock"
+                else -> "m154 exp: Default"
+            }
+        val metl154ExperimentPaint = if (metl154ExperimentMode == 0) fpsWarnPaint else fpsGoodPaint
+        metl154ExperimentRect.set(
+            panelLeft + pad * 0.5f,
+            y - baseTextSize,
+            panelLeft + panelW - pad * 0.5f,
+            y + lineH * 0.3f,
+        )
+        val metl154ExperimentBg = if (metl154ExperimentPressed) btnPressedPaint else btnNormalPaint
+        canvas.drawRoundRect(metl154ExperimentRect, pad * 0.5f, pad * 0.5f, metl154ExperimentBg)
+        canvas.drawText(metl154ExperimentText, panelLeft + pad, y, metl154ExperimentPaint)
+        y += lineH
+
         // Labels toggle button
         val labelsText = if (labelsOn) "Labels: ON" else "Labels: OFF"
         val labelTogglePaint = if (labelsOn) fpsGoodPaint else fpsWarnPaint
@@ -443,6 +493,8 @@ class VideoInfoOverlay(
         val inAniso = anisoRect.contains(event.x, event.y)
         val inMsaa = msaaRect.contains(event.x, event.y)
         val inTexFilt = texFiltRect.contains(event.x, event.y)
+        val inMetl154 = metl154Rect.contains(event.x, event.y)
+        val inMetl154Experiment = metl154ExperimentRect.contains(event.x, event.y)
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
@@ -466,6 +518,16 @@ class VideoInfoOverlay(
                     invalidate()
                     return true
                 }
+                if (inMetl154) {
+                    metl154Pressed = true
+                    invalidate()
+                    return true
+                }
+                if (inMetl154Experiment) {
+                    metl154ExperimentPressed = true
+                    invalidate()
+                    return true
+                }
                 if (inPanel) return true
             }
             MotionEvent.ACTION_UP -> {
@@ -486,11 +548,28 @@ class VideoInfoOverlay(
                     cycleTexFilt()
                     performClick()
                 }
-                if (buttonPressed || anisoPressed || msaaPressed || texFiltPressed || inPanel) {
+                if (metl154Pressed && inMetl154) {
+                    cycleMetl154Mode()
+                    performClick()
+                }
+                if (metl154ExperimentPressed && inMetl154Experiment) {
+                    cycleMetl154Experiment()
+                    performClick()
+                }
+                if (buttonPressed ||
+                    anisoPressed ||
+                    msaaPressed ||
+                    texFiltPressed ||
+                    metl154Pressed ||
+                    metl154ExperimentPressed ||
+                    inPanel
+                ) {
                     buttonPressed = false
                     anisoPressed = false
                     msaaPressed = false
                     texFiltPressed = false
+                    metl154Pressed = false
+                    metl154ExperimentPressed = false
                     invalidate()
                     return true
                 }
@@ -500,6 +579,8 @@ class VideoInfoOverlay(
                 anisoPressed = false
                 msaaPressed = false
                 texFiltPressed = false
+                metl154Pressed = false
+                metl154ExperimentPressed = false
                 invalidate()
             }
         }
@@ -531,6 +612,18 @@ class VideoInfoOverlay(
         val next = (texFiltLevel + 1) % 3
         texFiltLevel = next
         graphicsOptionSetter?.invoke("tex_filt", next)
+    }
+
+    private fun cycleMetl154Mode() {
+        val next = (metl154Mode + 1) % 3
+        metl154Mode = next
+        debugFlagSetter?.invoke("metl154_mode", next)
+    }
+
+    private fun cycleMetl154Experiment() {
+        val next = (metl154ExperimentMode + 1) % 5
+        metl154ExperimentMode = next
+        debugFlagSetter?.invoke("metl154_experiment", next)
     }
 
     companion object {

@@ -56,6 +56,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #ifdef ANDROID
 #include "debug_tex_overlay.h"
+#include "android_log.h"
 #endif
 #include "args.h"
 
@@ -84,6 +85,56 @@ int	Clear_window=2;	// 1 = Clear whole background window, 2 = clear view portals
 
 int framecount=-1;
 short Rotated_last[MAX_VERTICES];
+
+#ifdef ANDROID
+static int render_tmap2_is_metl154(int tmap2)
+{
+	int overlay = tmap2 & 0x3FFF;
+	grs_bitmap *bm;
+	const char *name;
+
+	if (!tmap2 || overlay >= NumTextures)
+		return 0;
+	bm = &GameBitmaps[Textures[overlay].index];
+	name = piggy_game_bitmap_name(bm);
+	return name && !d_stricmp(name, "metl154");
+}
+
+static void render_log_metl154_face(segment *segp, int sidenum, int tmap1, int tmap2,
+	int wid_flags, fix dot, int nv, int face_index)
+{
+	int overlay = tmap2 & 0x3FFF;
+	grs_bitmap *bmbot, *bmovl;
+	const char *botname, *ovlname;
+
+	if (!render_tmap2_is_metl154(tmap2) || tmap1 >= NumTextures || overlay >= NumTextures)
+		return;
+
+	g_metl154_draw_seq++;
+	bmbot = &GameBitmaps[Textures[tmap1].index];
+	bmovl = &GameBitmaps[Textures[overlay].index];
+	botname = piggy_game_bitmap_name(bmbot);
+	ovlname = piggy_game_bitmap_name(bmovl);
+	debug_log(DLOG_TEXTURE,
+		"[metl154face] frame=%d pass=%d seq=%d seg=%d side=%d face=%d child=%d side_type=%d nv=%d wid=%d dot=%.4f tmap1=%d tmap2=0x%x orient=%d bot=%s ovl=%s",
+		g_metl154_frame_id,
+		g_metl154_render_pass,
+		g_metl154_draw_seq,
+		(int)(segp - Segments),
+		sidenum,
+		face_index,
+		segp->children[sidenum],
+		segp->sides[sidenum].type,
+		nv,
+		wid_flags,
+		f2fl(dot),
+		tmap1,
+		tmap2,
+		(tmap2 >> 14) & 3,
+		botname ? botname : "<none>",
+		ovlname ? ovlname : "<none>");
+}
+#endif
 
 // When any render function needs to know what's looking at it, it should 
 // access Viewer members.
@@ -434,7 +485,9 @@ void render_side(segment *segp, int sidenum)
 	fix		min_dot, max_dot;
 	vms_vector	normals[2];
 
-	if (!(WALL_IS_DOORWAY(segp,sidenum) & WID_RENDER_FLAG))		//if (WALL_IS_DOORWAY(segp, sidenum) == WID_NO_WALL)
+	int wid_flags = WALL_IS_DOORWAY(segp,sidenum);
+
+	if (!(wid_flags & WID_RENDER_FLAG))		//if (WALL_IS_DOORWAY(segp, sidenum) == WID_NO_WALL)
 		return;
 
 	#ifdef COMPACT_SEGS	
@@ -458,6 +511,10 @@ void render_side(segment *segp, int sidenum)
 
 	if (sidep->type == SIDE_IS_QUAD) {
 		if (v_dot_n0 >= 0) {
+#ifdef ANDROID
+			render_log_metl154_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
+				wid_flags, v_dot_n0, 4, 0);
+#endif
 			render_face(segp-Segments, sidenum, 4, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls, &normals[0]);
 			#ifdef EDITOR
 			check_face(segp-Segments, sidenum, 0, 4, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls);
@@ -488,6 +545,10 @@ void render_side(segment *segp, int sidenum)
 				goto im_so_ashamed;
 			}
 
+#ifdef ANDROID
+			render_log_metl154_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
+				wid_flags, min_dot, 4, 0);
+#endif
 			render_face(segp-Segments, sidenum, 4, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls, &normals[0]);
 			#ifdef EDITOR
 			check_face(segp-Segments, sidenum, 0, 4, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls);
@@ -496,6 +557,10 @@ void render_side(segment *segp, int sidenum)
 im_so_ashamed: ;
 			if (sidep->type == SIDE_IS_TRI_02) {
 				if (v_dot_n0 >= 0) {
+#ifdef ANDROID
+					render_log_metl154_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
+						wid_flags, v_dot_n0, 3, 0);
+#endif
 					render_face(segp-Segments, sidenum, 3, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls, &normals[0]);
 					#ifdef EDITOR
 					check_face(segp-Segments, sidenum, 0, 3, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls);
@@ -505,6 +570,10 @@ im_so_ashamed: ;
 				if (v_dot_n1 >= 0) {
 					temp_uvls[0] = sidep->uvls[0];		temp_uvls[1] = sidep->uvls[2];		temp_uvls[2] = sidep->uvls[3];
 					vertnum_list[1] = vertnum_list[2];	vertnum_list[2] = vertnum_list[3];	// want to render from vertices 0, 2, 3 on side
+#ifdef ANDROID
+					render_log_metl154_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
+						wid_flags, v_dot_n1, 3, 1);
+#endif
 					render_face(segp-Segments, sidenum, 3, &vertnum_list[0], sidep->tmap_num, sidep->tmap_num2, temp_uvls, &normals[1]);
 					#ifdef EDITOR
 					check_face(segp-Segments, sidenum, 1, 3, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls);
@@ -512,6 +581,10 @@ im_so_ashamed: ;
 				}
 			} else if (sidep->type == SIDE_IS_TRI_13) {
 				if (v_dot_n1 >= 0) {
+#ifdef ANDROID
+					render_log_metl154_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
+						wid_flags, v_dot_n1, 3, 1);
+#endif
 					render_face(segp-Segments, sidenum, 3, &vertnum_list[1], sidep->tmap_num, sidep->tmap_num2, &sidep->uvls[1], &normals[1]);	// rendering 1,2,3, so just skip 0
 					#ifdef EDITOR
 					check_face(segp-Segments, sidenum, 1, 3, &vertnum_list[1], sidep->tmap_num, sidep->tmap_num2, sidep->uvls);
@@ -521,6 +594,10 @@ im_so_ashamed: ;
 				if (v_dot_n0 >= 0) {
 					temp_uvls[0] = sidep->uvls[0];		temp_uvls[1] = sidep->uvls[1];		temp_uvls[2] = sidep->uvls[3];
 					vertnum_list[2] = vertnum_list[3];		// want to render from vertices 0,1,3
+#ifdef ANDROID
+					render_log_metl154_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
+						wid_flags, v_dot_n0, 3, 0);
+#endif
 					render_face(segp-Segments, sidenum, 3, vertnum_list, sidep->tmap_num, sidep->tmap_num2, temp_uvls, &normals[0]);
 					#ifdef EDITOR
 					check_face(segp-Segments, sidenum, 0, 3, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls);
@@ -1711,6 +1788,11 @@ void render_mine(int start_seg_num,fix eye_offset)
 	//set up for rendering
 
 	render_start_frame();
+#ifdef ANDROID
+	g_metl154_frame_id++;
+	g_metl154_render_pass = 0;
+	g_metl154_draw_seq = 0;
+#endif
 
 
 	#if defined(EDITOR) && !defined(NDEUBG)
@@ -1786,6 +1868,9 @@ void render_mine(int start_seg_num,fix eye_offset)
 
 #ifdef OGL
 	if (GameCfg.ClassicDepth && !(Game_mode & GM_MULTI)) {
+#ifdef ANDROID
+		g_metl154_render_pass = 1;
+#endif
 #endif
 	for (nn=N_render_segs;nn--;) {
 		int segnum;
@@ -1850,6 +1935,9 @@ void render_mine(int start_seg_num,fix eye_offset)
 	} else {
 	// Sorting elements for Alpha - 3 passes
 	// First Pass: render opaque level geometry + transculent level geometry with high Alpha-Test func
+#ifdef ANDROID
+	g_metl154_render_pass = 1;
+#endif
 	for (nn=N_render_segs;nn--;)
 	{
 		int segnum;
@@ -1898,6 +1986,9 @@ void render_mine(int start_seg_num,fix eye_offset)
 	memset(visited, 0, sizeof(visited[0])*(Highest_segment_index+1));
 	
 	// Second Pass: Objects
+#ifdef ANDROID
+	g_metl154_render_pass = 2;
+#endif
 	for (nn=N_render_segs;nn--;)
 	{
 		int segnum;
@@ -1954,6 +2045,9 @@ void render_mine(int start_seg_num,fix eye_offset)
 	memset(visited, 0, sizeof(visited[0])*(Highest_segment_index+1));
 	
 	// Third Pass - Render Transculent level geometry with normal Alpha-Func
+#ifdef ANDROID
+	g_metl154_render_pass = 3;
+#endif
 	for (nn=N_render_segs;nn--;)
 	{
 		int segnum;

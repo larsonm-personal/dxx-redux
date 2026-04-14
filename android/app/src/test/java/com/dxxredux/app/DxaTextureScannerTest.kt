@@ -20,7 +20,7 @@ class DxaTextureScannerTest {
             zip.write(makePngHeader(width = 640, height = 480))
             zip.closeEntry()
 
-            zip.putNextEntry(ZipEntry("statusbx2_mask.png"))
+            zip.putNextEntry(ZipEntry("statusbx2.png"))
             zip.write(makePngHeader(width = 2560, height = 3072))
             zip.closeEntry()
 
@@ -38,9 +38,38 @@ class DxaTextureScannerTest {
         assertEquals(2, result.textureCount)
         assertEquals(1, result.oversizedCount)
         assertEquals(1, result.oversizedEntries.size)
-        assertEquals("statusbx2_mask.png", result.oversizedEntries[0].name)
+        assertEquals("statusbx2.png", result.oversizedEntries[0].name)
         assertEquals(4096, result.oversizedEntries[0].pow2Width)
         assertEquals(4096, result.oversizedEntries[0].pow2Height)
+    }
+
+    @Test
+    fun scanCountsKtx2TexturesAndIgnoresMaskSidecars() {
+        val zipFile = File.createTempFile("dxa-scan-ktx2", ".dxa")
+        zipFile.deleteOnExit()
+
+        ZipOutputStream(zipFile.outputStream()).use { zip ->
+            zip.putNextEntry(ZipEntry("rock001.ktx2"))
+            zip.write(makeKtx2Header(width = 512, height = 512))
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("statusb.ktx2"))
+            zip.write(makeKtx2Header(width = 2048, height = 256))
+            zip.closeEntry()
+
+            zip.putNextEntry(ZipEntry("statusb_mask.png"))
+            zip.write(makePngHeader(width = 2048, height = 256))
+            zip.closeEntry()
+        }
+
+        val result = DxaTextureScanner.scan(zipFile)
+
+        assertNotNull(result)
+        result!!
+        assertEquals(2048, result.maxWidth)
+        assertEquals(512, result.maxHeight)
+        assertEquals(2, result.textureCount)
+        assertEquals(0, result.oversizedCount)
     }
 
     private fun makePngHeader(
@@ -64,6 +93,34 @@ class DxaTextureScannerTest {
         sizeBytes.putInt(width)
         sizeBytes.putInt(height)
         System.arraycopy(sizeBytes.array(), 0, bytes, 16, 8)
+        return bytes
+    }
+
+    private fun makeKtx2Header(
+        width: Int,
+        height: Int,
+    ): ByteArray {
+        val bytes = ByteArray(28)
+        val identifier =
+            byteArrayOf(
+                0xAB.toByte(),
+                0x4B,
+                0x54,
+                0x58,
+                0x20,
+                0x32,
+                0x30,
+                0xBB.toByte(),
+                0x0D,
+                0x0A,
+                0x1A,
+                0x0A,
+            )
+        System.arraycopy(identifier, 0, bytes, 0, identifier.size)
+        val sizeBytes = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN)
+        sizeBytes.putInt(width)
+        sizeBytes.putInt(height)
+        System.arraycopy(sizeBytes.array(), 0, bytes, 20, 8)
         return bytes
     }
 }

@@ -398,6 +398,8 @@ extern "C" char *game_introspect_get_state(void)
 	{
 		json dbg;
 		dbg["tex_overlay"] = (bool) g_debug_tex_overlay_active;
+		dbg["metl154_mode"] = (int) g_metl154_debug_mode;
+		dbg["metl154_experiment"] = (int) g_metl154_experiment_mode;
 		j["debug_flags"] = std::move(dbg);
 	}
 

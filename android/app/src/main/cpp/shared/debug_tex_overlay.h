@@ -24,5 +24,22 @@ extern struct debug_tex_label g_debug_tex_labels[DEBUG_TEX_MAX_LABELS];
 extern int g_debug_tex_label_count;
 extern volatile int g_debug_tex_overlay_active;
 
+#define METL154_DEBUG_NONE          0
+#define METL154_DEBUG_OVERLAY_ALPHA 1
+#define METL154_DEBUG_OVERLAY_RGB   2
+
+#define METL154_EXPERIMENT_DEFAULT    0
+#define METL154_EXPERIMENT_KTX2_NOMIP 1
+#define METL154_EXPERIMENT_RGBA       2
+#define METL154_EXPERIMENT_RGBA_NOMIP 3
+#define METL154_EXPERIMENT_STOCK      4
+
+extern volatile int g_metl154_debug_mode;
+extern volatile int g_metl154_experiment_mode;
+extern volatile int g_metl154_experiment_pending_apply;
+extern volatile int g_metl154_render_pass;
+extern volatile int g_metl154_frame_id;
+extern volatile int g_metl154_draw_seq;
+
 #endif /* ANDROID */
 #endif /* DEBUG_TEX_OVERLAY_H */

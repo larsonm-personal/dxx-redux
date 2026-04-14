@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <android/log.h>
 #include "android_crash_handler.h"
+#include "android_log.h"
 
 #define TAG       "gles3_shim"
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
@@ -149,15 +150,30 @@ static const char *fs_src =
 
 static GLuint compile_shader(GLenum type, const char *src)
 {
+	char buf[512];
 	GLuint s = glCreateShader(type);
 	glShaderSource(s, 1, &src, NULL);
 	glCompileShader(s);
 	GLint ok = 0;
 	glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
-	if (!ok) {
-		char buf[512];
-		glGetShaderInfoLog(s, sizeof(buf), NULL, buf);
-		LOGE("shader compile: %s", buf);
+	buf[0] = '\0';
+	{
+		GLint log_len = 0;
+		glGetShaderiv(s, GL_INFO_LOG_LENGTH, &log_len);
+		if (log_len > 1) {
+			const char *label = type == GL_VERTEX_SHADER ? "gles3-shim vertex" : "gles3-shim fragment";
+			glGetShaderInfoLog(s, sizeof(buf), NULL, buf);
+			if (ok)
+				LOGI("%s: %s", label, buf);
+			else
+				LOGE("%s: %s", label, buf);
+			debug_log(DLOG_GRAPHICS, "%s: %s", label, buf);
+		}
+	}
+	if (!ok && !buf[0]) {
+		const char *label = type == GL_VERTEX_SHADER ? "gles3-shim vertex" : "gles3-shim fragment";
+		LOGE("%s: compile failed with no info log", label);
+		debug_log(DLOG_GRAPHICS, "%s: compile failed with no info log", label);
 	}
 	return s;
 }
@@ -240,10 +256,23 @@ void gles3_shim_init(void)
 	glLinkProgram(shim_prog);
 	GLint ok = 0;
 	glGetProgramiv(shim_prog, GL_LINK_STATUS, &ok);
-	if (!ok) {
+	{
 		char buf[512];
-		glGetProgramInfoLog(shim_prog, sizeof(buf), NULL, buf);
-		LOGE("program link: %s", buf);
+		GLint log_len = 0;
+		buf[0] = '\0';
+		glGetProgramiv(shim_prog, GL_INFO_LOG_LENGTH, &log_len);
+		if (log_len > 1) {
+			glGetProgramInfoLog(shim_prog, sizeof(buf), NULL, buf);
+			if (ok)
+				LOGI("gles3-shim link: %s", buf);
+			else
+				LOGE("gles3-shim link: %s", buf);
+			debug_log(DLOG_GRAPHICS, "gles3-shim link: %s", buf);
+		}
+		if (!ok && !buf[0]) {
+			LOGE("gles3-shim link: failed with no info log");
+			debug_log(DLOG_GRAPHICS, "gles3-shim link: failed with no info log");
+		}
 	}
 	glDeleteShader(vs);
 	glDeleteShader(fs);

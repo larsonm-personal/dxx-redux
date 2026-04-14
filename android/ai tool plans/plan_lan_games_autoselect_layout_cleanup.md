@@ -87,6 +87,12 @@
 - Run `android\run-code-quality.ps1 -Fix`
 - Run a targeted Android build such as `android\gradlew.bat :app:compileDebugKotlin` or `android\gradlew.bat assembleDebug`
 
+### Validation result
+
+- [x] `android\run-code-quality.ps1 -Fix`
+- [x] `android\gradlew.bat :app:testDebugUnitTest :app:assembleDebug` with `JAVA_HOME=c:\local\jdk-21`
+- [ ] Manual portrait and landscape validation still pending
+
 ### Manual validation
 
 - Open LAN Games in portrait and verify the header row, action-row order, and discovered-list heading order
@@ -104,6 +110,6 @@
 
 - [x] Studied current layout ownership and button gating
 - [x] Mapped the requested portrait and landscape row targets to existing Compose code
-- [ ] Implement the LAN header and action-row cleanup
-- [ ] Implement the Weapon Autoselect portrait spacing cleanup
-- [ ] Run code quality, build, and manual orientation checks
+- [x] Implement the LAN header and action-row cleanup
+- [x] Implement the Weapon Autoselect portrait spacing cleanup
+- [ ] Run manual orientation checks

@@ -62,10 +62,15 @@ internal fun shouldHideStandaloneAdminOverlays(
     settingsTrayVisible: Boolean,
 ): Boolean = !inGame && !settingsTrayVisible
 
-internal fun shouldEnableNetEventsControl(
+internal fun shouldEnableNetStatsControl(
     isMultiplayerGame: Boolean,
     hasPendingLaunchInfo: Boolean,
 ): Boolean = isMultiplayerGame || hasPendingLaunchInfo
+
+internal fun shouldEnableNetEventsControl(
+    isMultiplayerGame: Boolean,
+    hasPendingLaunchInfo: Boolean,
+): Boolean = shouldEnableNetStatsControl(isMultiplayerGame, hasPendingLaunchInfo)
 
 class MainActivity :
     Activity(),
@@ -591,6 +596,7 @@ class MainActivity :
         }
         touchOverlay.adminTrayEnabledStateProvider = { action ->
             when (action) {
+                TouchOverlayView.ADMIN_NET_STATS -> isNetStatsControlEnabled()
                 TouchOverlayView.ADMIN_NET_EVENTS -> isNetEventsControlEnabled()
                 else -> true
             }
@@ -605,7 +611,11 @@ class MainActivity :
                     openGameMenuSafely()
                 }
                 TouchOverlayView.ADMIN_NET_STATS -> {
-                    netStatsOverlay?.toggle()
+                    if (!isNetStatsControlEnabled()) {
+                        resetSinglePlayerNetStatsIfNeeded()
+                    } else {
+                        netStatsOverlay?.toggle()
+                    }
                 }
                 TouchOverlayView.ADMIN_NET_EVENTS -> {
                     if (!isNetEventsControlEnabled()) {
@@ -1195,6 +1205,19 @@ class MainActivity :
         )
     }
 
+    private fun isNetStatsControlEnabled(): Boolean {
+        val mpState = com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value
+        return shouldEnableNetStatsControl(
+            isMultiplayerGame = isMultiplayerGame,
+            hasPendingLaunchInfo = mpState.gameLaunchInfo != null,
+        )
+    }
+
+    private fun resetSinglePlayerNetStatsIfNeeded() {
+        if (isNetStatsControlEnabled()) return
+        netStatsOverlay?.hide()
+    }
+
     private fun resetSinglePlayerNetEventsIfNeeded() {
         if (isNetEventsControlEnabled()) return
         netEventsManualToggle = false
@@ -1318,6 +1341,7 @@ class MainActivity :
                                 netStatsOverlay?.hide()
                                 videoInfoOverlay?.hide()
                             }
+                            resetSinglePlayerNetStatsIfNeeded()
                             // Show "START GAME" button when host is on player selection screen
                             val hostSelecting =
                                 try {

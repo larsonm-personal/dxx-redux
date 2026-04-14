@@ -41,6 +41,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
@@ -213,6 +214,8 @@ private fun LanDiscoveryView(
     onLaunchGame: (GameLaunchInfo) -> Unit,
 ) {
     val context = LocalContext.current
+    val isLandscape =
+        LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
     val discoveredLobbies by LobbyService.discoveredLobbies.collectAsState()
     val isHosting by LobbyService.isHosting.collectAsState()
     val isDiscovering by LobbyService.isDiscovering.collectAsState()
@@ -355,57 +358,119 @@ private fun LanDiscoveryView(
 
         // -- Action buttons --
         item {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                if (!isDiscovering) {
+            if (isHosting) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    OutlinedButton(
+                        onClick = { LobbyService.stopHosting() },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Stop Hosting")
+                    }
+                }
+            } else if (isLandscape) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
                     Button(
                         onClick = {
-                            if (permissionGranted) {
-                                LobbyService.startDiscovery(context, callsign)
-                            } else if (Build.VERSION.SDK_INT >= 33) {
+                            if (permissionGranted || Build.VERSION.SDK_INT < 33) {
+                                showHostDialog = true
+                            } else {
                                 permissionLauncher.launch(
                                     Manifest.permission.NEARBY_WIFI_DEVICES,
                                 )
                             }
                         },
+                        modifier = Modifier.weight(1f),
                     ) {
-                        Text("Start Scanning")
-                    }
-                } else {
-                    OutlinedButton(onClick = { LobbyService.stopDiscovery() }) {
-                        Text("Stop Scanning")
-                    }
-                }
-
-                if (!isHosting && isDiscovering) {
-                    Button(onClick = { showHostDialog = true }) {
                         Text("Host LAN Game")
                     }
-                    OutlinedButton(onClick = { showJoinByIpDialog = true }) {
-                        Text("Join by IP")
-                    }
-                } else if (isHosting) {
-                    OutlinedButton(onClick = { LobbyService.stopHosting() }) {
-                        Text("Stop Hosting")
+                    if (!isDiscovering) {
+                        Button(
+                            onClick = {
+                                if (permissionGranted) {
+                                    LobbyService.startDiscovery(context, callsign)
+                                } else if (Build.VERSION.SDK_INT >= 33) {
+                                    permissionLauncher.launch(
+                                        Manifest.permission.NEARBY_WIFI_DEVICES,
+                                    )
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text("Start Scanning")
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = { LobbyService.stopDiscovery() },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text("Stop Scanning")
+                        }
                     }
                 }
-            }
-
-            // Show local IP address for direct-connect reference
-            val localIps = remember { getLocalIpAddresses() }
-            if (localIps.isNotEmpty()) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    if (localIps.size == 1) {
-                        "Your IP: ${localIps[0]}"
+                Spacer(Modifier.height(8.dp))
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(
+                        onClick = { showJoinByIpDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Join by IP")
+                    }
+                }
+            } else {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Button(
+                        onClick = {
+                            if (permissionGranted || Build.VERSION.SDK_INT < 33) {
+                                showHostDialog = true
+                            } else {
+                                permissionLauncher.launch(
+                                    Manifest.permission.NEARBY_WIFI_DEVICES,
+                                )
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Host LAN Game")
+                    }
+                    if (!isDiscovering) {
+                        Button(
+                            onClick = {
+                                if (permissionGranted) {
+                                    LobbyService.startDiscovery(context, callsign)
+                                } else if (Build.VERSION.SDK_INT >= 33) {
+                                    permissionLauncher.launch(
+                                        Manifest.permission.NEARBY_WIFI_DEVICES,
+                                    )
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text("Start Scanning")
+                        }
                     } else {
-                        "Your IPs: ${localIps.joinToString(", ")}"
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                        OutlinedButton(
+                            onClick = { LobbyService.stopDiscovery() },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text("Stop Scanning")
+                        }
+                    }
+                    OutlinedButton(
+                        onClick = { showJoinByIpDialog = true },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Join by IP")
+                    }
+                }
             }
 
             Spacer(Modifier.height(12.dp))
@@ -473,21 +538,19 @@ private fun LanDiscoveryView(
         if (isDiscovering) {
             item {
                 Text(
+                    "Scanning for LAN games...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
                     "Local Network Games (${discoveredLobbies.size})",
                     style = MaterialTheme.typography.titleSmall,
                 )
                 Spacer(Modifier.height(4.dp))
             }
 
-            if (discoveredLobbies.isEmpty()) {
-                item {
-                    Text(
-                        "Scanning for LAN games...",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            } else {
+            if (discoveredLobbies.isNotEmpty()) {
                 items(
                     discoveredLobbies,
                     key = { it.announce.lobbyId },
@@ -818,6 +881,16 @@ private val ipPattern = Regex("""^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$""")
 
 private fun isValidIpAddress(ip: String): Boolean =
     ip.matches(ipPattern) && ip.split(".").all { it.toIntOrNull() in 0..255 }
+
+internal fun getLocalIpLabel(): String? {
+    val localIps = getLocalIpAddresses()
+    if (localIps.isEmpty()) return null
+    return if (localIps.size == 1) {
+        "Your IP: ${localIps[0]}"
+    } else {
+        "Your IPs: ${localIps.joinToString(", ")}"
+    }
+}
 
 private fun getLocalIpAddresses(): List<String> =
     try {

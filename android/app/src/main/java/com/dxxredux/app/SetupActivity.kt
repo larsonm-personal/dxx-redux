@@ -502,11 +502,17 @@ class SetupActivity : ComponentActivity() {
         ModManager(filesDir).writeEnabledModPaths(game)
         writeInitialGameConfig()
         writeMusicConfigForLaunch()
-        val intent = Intent(this, MainActivity::class.java)
-        intent.putExtra("game", game)
+        val intent = createGameLaunchIntent(game)
         intent.putExtra("automation_script", scriptPath)
         intent.putExtra("automation_start_step", startStep)
         startActivity(intent)
+    }
+
+    private fun createGameLaunchIntent(game: String): Intent {
+        val intent = Intent(this, MainActivity::class.java)
+        intent.putExtra("game", game)
+        DebugLog.currentFilePath()?.let { intent.putExtra("netlog_path", it) }
+        return intent
     }
 
     private fun requestSetupRefresh() {
@@ -1458,8 +1464,7 @@ class SetupActivity : ComponentActivity() {
         ModManager(filesDir).writeEnabledModPaths(info.game)
         writeInitialGameConfig()
         writeMusicConfigForLaunch()
-        val mpIntent = Intent(this, MainActivity::class.java)
-        mpIntent.putExtra("game", info.game)
+        val mpIntent = createGameLaunchIntent(info.game)
         mpIntent.putExtra("mp_callsign", mpCallsign)
         if (info.isHost) {
             mpIntent.putExtra("mp_mode", "host")
@@ -1494,10 +1499,6 @@ class SetupActivity : ComponentActivity() {
             mpIntent.putExtra("mp_my_port", NetworkConstants.ENGINE_PORT)
         }
         if (info.isLan) mpIntent.putExtra("mp_is_lan", true)
-        // Pass current debug log path so :game process appends to the same file
-        DebugLog.currentFilePath()?.let {
-            mpIntent.putExtra("netlog_path", it)
-        }
         // Clear gameLaunchInfo after consumption to prevent stale re-launches
         MatchmakingStateHolder.update { it.copy(gameLaunchInfo = null) }
         startActivity(mpIntent)
@@ -1852,8 +1853,7 @@ class SetupActivity : ComponentActivity() {
                         ModManager(filesDir).writeEnabledModPaths(game)
                         writeInitialGameConfig()
                         writeMusicConfigForLaunch()
-                        val intent = Intent(this, MainActivity::class.java)
-                        intent.putExtra("game", game)
+                        val intent = createGameLaunchIntent(game)
                         startActivity(intent)
                         // Don't finish() -- stay in back stack so quitting
                         // the game returns here instead of the launcher.
@@ -4444,21 +4444,24 @@ private fun ModsSection(
     val scanCache = remember { mutableStateMapOf<String, DxaTextureScanner.ScanResult?>() }
     val scope = rememberCoroutineScope()
 
-    fun logOversizedTextureScan(
+    fun logTextureScan(
         mod: ModManager.ModInfo,
         file: File,
         scanResult: DxaTextureScanner.ScanResult,
     ) {
-        if (scanResult.oversizedEntries.isEmpty()) return
+        val summary =
+            "mod-dxa-scan file=${mod.filename} bytes=${file.length()} " +
+                "textures=${scanResult.textureCount} oversized=${scanResult.oversizedCount} " +
+                "max=${scanResult.maxWidth}x${scanResult.maxHeight}"
+        if (scanResult.oversizedEntries.isEmpty()) {
+            LauncherDebugLog.log(summary)
+            return
+        }
         val details =
             scanResult.oversizedEntries.joinToString(" | ") {
                 "${it.name} ${it.width}x${it.height} pow2=${it.pow2Width}x${it.pow2Height}"
             }
-        LauncherDebugLog.log(
-            "mod-dxa-oversized file=${mod.filename} bytes=${file.length()} " +
-                "textures=${scanResult.textureCount} oversized=${scanResult.oversizedCount} " +
-                "max=${scanResult.maxWidth}x${scanResult.maxHeight} entries=$details",
-        )
+        LauncherDebugLog.log("$summary entries=$details")
     }
 
     LaunchedEffect(refreshTrigger) {
@@ -4478,8 +4481,8 @@ private fun ModsSection(
                         withContext(kotlinx.coroutines.Dispatchers.IO) {
                             DxaTextureScanner.scan(file)
                         }
-                    if (scanResult != null && scanResult.oversizedCount > 0) {
-                        logOversizedTextureScan(mod, file, scanResult)
+                    if (scanResult != null) {
+                        logTextureScan(mod, file, scanResult)
                     }
                     scanCache[mod.filename] = scanResult
                 }
