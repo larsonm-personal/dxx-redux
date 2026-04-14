@@ -150,19 +150,29 @@ extern int linedotscale;
 
 #if defined(ANDROID) && defined(OGL_MERGE)
 static unsigned int metl154_source_log_mask = 0;
+#define METL154_VSLICE_SAMPLES 5
+
+static grs_bitmap *ogl_get_metl154_source_bitmap(grs_bitmap *bm)
+{
+	grs_bitmap *src = bm;
+
+	if (src->bm_flags & BM_FLAG_RLE)
+		src = rle_expand_texture(src);
+	if (!src || !src->bm_data || src->bm_w <= 0 || src->bm_h <= 0)
+		return NULL;
+	return src;
+}
 
 static void ogl_get_metl154_palette_counts(grs_bitmap *bm, int *idx254, int *idx255, int *real_flags)
 {
-	grs_bitmap *src = bm;
+	grs_bitmap *src = ogl_get_metl154_source_bitmap(bm);
 	int total, i;
 
 	*idx254 = 0;
 	*idx255 = 0;
 	*real_flags = piggy_bitmap_get_flags(bm);
 
-	if (src->bm_flags & BM_FLAG_RLE)
-		src = rle_expand_texture(src);
-	if (!src || !src->bm_data || src->bm_w <= 0 || src->bm_h <= 0)
+	if (!src)
 		return;
 
 	total = src->bm_w * src->bm_h;
@@ -172,6 +182,96 @@ static void ogl_get_metl154_palette_counts(grs_bitmap *bm, int *idx254, int *idx
 		else if (src->bm_data[i] == 255)
 			(*idx255)++;
 	}
+}
+
+static void ogl_get_metl154_source_sample(grs_bitmap *bm, GLfloat *texcoordovl_array, int nv,
+	GLfloat *avg_u, GLfloat *avg_v, int *sample_x, int *sample_y, int *sample_idx)
+{
+	grs_bitmap *src = ogl_get_metl154_source_bitmap(bm);
+	GLfloat sum_u = 0.0f, sum_v = 0.0f;
+	GLfloat wrapped_u, wrapped_v;
+	int i;
+
+	*avg_u = 0.0f;
+	*avg_v = 0.0f;
+	*sample_x = -1;
+	*sample_y = -1;
+	*sample_idx = -1;
+
+	if (!src || nv <= 0)
+		return;
+
+	for (i = 0; i < nv; i++) {
+		sum_u += texcoordovl_array[i * 2];
+		sum_v += texcoordovl_array[i * 2 + 1];
+	}
+	*avg_u = sum_u / nv;
+	*avg_v = sum_v / nv;
+	wrapped_u = *avg_u - floorf(*avg_u);
+	wrapped_v = *avg_v - floorf(*avg_v);
+	if (wrapped_u < 0.0f)
+		wrapped_u += 1.0f;
+	if (wrapped_v < 0.0f)
+		wrapped_v += 1.0f;
+
+	*sample_x = (int)(wrapped_u * src->bm_w);
+	*sample_y = (int)(wrapped_v * src->bm_h);
+	if (*sample_x >= src->bm_w)
+		*sample_x = src->bm_w - 1;
+	if (*sample_y >= src->bm_h)
+		*sample_y = src->bm_h - 1;
+	*sample_idx = src->bm_data[*sample_y * src->bm_w + *sample_x];
+}
+
+static void ogl_get_metl154_source_vslice(grs_bitmap *bm, GLfloat sample_u,
+	GLfloat min_v, GLfloat max_v, int *sample_rows, int *sample_idxs, int nsamples)
+{
+	grs_bitmap *src = ogl_get_metl154_source_bitmap(bm);
+	GLfloat wrapped_u, span_v;
+	int sample_x, i;
+
+	for (i = 0; i < nsamples; i++) {
+		sample_rows[i] = -1;
+		sample_idxs[i] = -1;
+	}
+	if (!src || nsamples <= 0)
+		return;
+
+	wrapped_u = sample_u - floorf(sample_u);
+	if (wrapped_u < 0.0f)
+		wrapped_u += 1.0f;
+	sample_x = (int)(wrapped_u * src->bm_w);
+	if (sample_x >= src->bm_w)
+		sample_x = src->bm_w - 1;
+	span_v = max_v - min_v;
+
+	for (i = 0; i < nsamples; i++) {
+		GLfloat sample_v = min_v + span_v * ((i + 0.5f) / nsamples);
+		GLfloat wrapped_v = sample_v - floorf(sample_v);
+		int sample_y;
+
+		if (wrapped_v < 0.0f)
+			wrapped_v += 1.0f;
+		sample_y = (int)(wrapped_v * src->bm_h);
+		if (sample_y >= src->bm_h)
+			sample_y = src->bm_h - 1;
+		sample_rows[i] = sample_y;
+		sample_idxs[i] = src->bm_data[sample_y * src->bm_w + sample_x];
+	}
+}
+
+static void ogl_get_metl154_filter_state(ogl_texture *tex, GLint *min_filter, GLint *mag_filter)
+{
+	*min_filter = -1;
+	*mag_filter = -1;
+	if (!tex || tex->handle <= 0)
+		return;
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, tex->handle);
+	glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter);
+	glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter);
+	glActiveTexture(GL_TEXTURE0);
 }
 
 static int ogl_mark_metl154_source_log(const char *bitmapname, unsigned int bit)
@@ -250,7 +350,11 @@ static void ogl_log_metl154_diag(grs_bitmap *bmbot, grs_bitmap *bmovl,
 	const char *botname;
 	fix min_u, max_u, min_v, max_v;
 	GLfloat min_ou, max_ou, min_ov, max_ov;
+	GLfloat avg_ou, avg_ov;
 	int src254, src255, real_flags;
+	int sample_x, sample_y, sample_idx;
+	int vslice_rows[METL154_VSLICE_SAMPLES], vslice_idxs[METL154_VSLICE_SAMPLES];
+	GLint min_filter, mag_filter;
 	int i;
 
 	if (!ovlname || d_stricmp(ovlname, "metl154") || nv <= 0)
@@ -278,8 +382,13 @@ static void ogl_log_metl154_diag(grs_bitmap *bmbot, grs_bitmap *bmovl,
 
 	botname = piggy_game_bitmap_name(bmbot);
 	ogl_get_metl154_palette_counts(bmovl, &src254, &src255, &real_flags);
+	ogl_get_metl154_source_sample(bmovl, texcoordovl_array, nv, &avg_ou, &avg_ov,
+		&sample_x, &sample_y, &sample_idx);
+	ogl_get_metl154_source_vslice(bmovl, avg_ou, min_ov, max_ov,
+		vslice_rows, vslice_idxs, METL154_VSLICE_SAMPLES);
+	ogl_get_metl154_filter_state(bmovl->gltexture, &min_filter, &mag_filter);
 	debug_log(DLOG_TEXTURE,
-		"[metl154diag] orient=%d shader=%s bot=%s raw_uv=%.3f..%.3f/%.3f..%.3f ovl_uv=%.3f..%.3f/%.3f..%.3f flags=0x%x real_flags=0x%x src254=%d src255=%d ovl_png=%d ovl_wh=%dx%d tex_wh=%dx%d tex_p2=%dx%d tex_uv=%.3f/%.3f mask=%u",
+		"[metl154diag] orient=%d shader=%s bot=%s raw_uv=%.3f..%.3f/%.3f..%.3f ovl_uv=%.3f..%.3f/%.3f..%.3f flags=0x%x real_flags=0x%x src254=%d src255=%d sample_uv=%.3f/%.3f sample_xy=%d/%d sample_idx=%d vslice_y=%d/%d/%d/%d/%d vslice_idx=%d/%d/%d/%d/%d filt=%d/%d mips=%d ovl_png=%d ovl_wh=%dx%d tex_wh=%dx%d tex_p2=%dx%d tex_uv=%.3f/%.3f mask=%u",
 		orient,
 		super ? "mask" : "plain",
 		botname ? botname : "<none>",
@@ -289,6 +398,24 @@ static void ogl_log_metl154_diag(grs_bitmap *bmbot, grs_bitmap *bmovl,
 		real_flags,
 		src254,
 		src255,
+		avg_ou,
+		avg_ov,
+		sample_x,
+		sample_y,
+		sample_idx,
+		vslice_rows[0],
+		vslice_rows[1],
+		vslice_rows[2],
+		vslice_rows[3],
+		vslice_rows[4],
+		vslice_idxs[0],
+		vslice_idxs[1],
+		vslice_idxs[2],
+		vslice_idxs[3],
+		vslice_idxs[4],
+		min_filter,
+		mag_filter,
+		bmovl->gltexture ? bmovl->gltexture->has_mipmaps : -1,
 		bmovl->gltexture ? bmovl->gltexture->is_png : -1,
 		bmovl->bm_w, bmovl->bm_h,
 		bmovl->gltexture ? bmovl->gltexture->w : 0,
@@ -1391,10 +1518,6 @@ bool g3_draw_tmap_2(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_
 		glActiveTexture(GL_TEXTURE0);
 		return 0;
 	}
-	if (bmovl->bm_flags & BM_FLAG_TRANSPARENT) {
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	}
 	ogl_texwrap(bmovl->gltexture,GL_REPEAT);
 
 	/* Compute super after bindbmtex -- on first encounter bm_flags may be
@@ -1512,7 +1635,7 @@ bool g3_draw_tmap_2(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_
 	glUseProgram(prog);
 #endif
 	if (!super)
-		ogl_prog_set_tex2_alpha_cutoff((bmovl->bm_flags & BM_FLAG_TRANSPARENT) ? 0.5f : 0.0f);
+		ogl_prog_set_tex2_alpha_cutoff(0.0f);
 
 	glEnableVertexAttribArray(OGL_APOS);
 	glEnableVertexAttribArray(OGL_ACOLOR);

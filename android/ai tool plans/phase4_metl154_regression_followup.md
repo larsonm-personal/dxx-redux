@@ -65,3 +65,31 @@
 - to remove that blind spot, the existing `[metl154diag]` render-time line now also reports `real_flags`, `src254`, and `src255` by expanding the bitmap on demand and counting the original palette indices at draw time
 - that makes the next capture self-contained: it will show the runtime path, the stored bitmap flags, and whether the original `metl154` source actually contains transparent palette pixels in the same line
 - Android validation passed again for that follow-up diagnostic build with `:app:assembleDebug`, `:app:testDebugUnitTest`, and `android\run-code-quality.ps1 -Fix`
+
+### Latest Diagnostic Extension
+- the latest log evidence answered the source-data question directly: `real_flags=0x9`, `src254=0`, and `src255=1914` prove `metl154` carries ordinary transparent palette pixels at draw time but no supertransparent pixels
+- that rules out "missing source transparency" as the remaining theory, so the next branch to separate is runtime sampling location versus alpha loss after sampling
+- the current `[metl154diag]` line now also reports a representative wrapped source sample from the average overlay UVs: `sample_uv`, `sample_xy`, and `sample_idx`
+- it also reports the live GL texture state for the overlay: `filt=min/mag` and `mips`, so the next capture can confirm whether the transparent overlay is still hitting filtered or mipmapped sampling on device
+- the first build attempt after adding that helper failed because `OGL_BINDTEXTURE` is defined later in the file; the helper now uses plain `glBindTexture`, which keeps the diagnostic correct without moving the macro block
+- Android validation passed for the updated diagnostic build with `:app:assembleDebug`, `:app:testDebugUnitTest`, and `android\run-code-quality.ps1 -Fix`
+
+### Review Of The New 2050xx Logs
+- `debuglog_20260413_205053.txt` mounted `d2-hires-512-textures-ktx2.dxa` and `debuglog_20260413_205119.txt` ran with no active mod path, so the new capture again covers both the 512 pack and stock assets
+- both runs now agree on the new runtime fields: `sample_idx=255`, `filt=9728/9728`, and `mips=1`, which means the representative source texel was transparent and the live min/mag filters were both `GL_NEAREST`
+- that is enough to rule out the earlier "still linearly filtering on Android" theory for this path, and it also shows the sample was not taken from the texture edge; the logged point is the center row (`sample_y=31`), not the top row
+- however, the user's objection is still correct in substance: the current helper only samples one horizontal stripe through the texture, and `metl154` is a horizontal-bar texture, so one center-row sample is not strong enough to represent the full face
+- the diagnostic therefore now logs a five-point vertical slice at the wrapped average U across the current overlay V span: `vslice_y` and `vslice_idx`
+- the next capture should answer the row-coverage question directly: if those five samples contain a mix of opaque and transparent palette indices, then the face really does cover bar rows and the remaining bug is after source lookup; if they are all transparent, then the current bad face is mostly landing in gap rows
+- Android validation passed again for that follow-up diagnostic build with `:app:assembleDebug`, `:app:testDebugUnitTest`, and `android\run-code-quality.ps1 -Fix`
+
+### Review Of The New 2108xx Logs
+- `debuglog_20260413_210834.txt` and `debuglog_20260413_210857.txt` answered the vertical-coverage question directly for stock and 512-pack runs
+- both runs show the same mixed vertical slice: the current face covers opaque bar rows at the top and bottom (`vslice_idx` values like `193/.../22`, `34/.../34`, `210/.../37`) and transparent rows through the middle (`255/255/255`)
+- that means the texture lookup itself is no longer the weak point in the theory; the bad view is not sampling only gap rows, and the source data is still present on both stock and replacement paths
+- the user report that the bars sometimes appear and sometimes disappear while the rock remains fully opaque now matches the runtime path closely: `metl154` is an ordinary transparent tmap2 overlay, so the rock base stays opaque by design, while the overlay contribution can flicker if the renderer forces it into binary nearest-sampled behavior
+- the previous Android-only plain-path override was doing exactly that: it forced `BM_FLAG_TRANSPARENT` overlays to `GL_NEAREST` min/mag filtering and also forced a `0.5` shader alpha cutoff in the plain merge path
+- for a thin horizontal-bar overlay, that turns perspective/minification into a row-selection problem where samples jump between opaque bar rows and transparent gap rows, which explains why the bars pop in and out on top of an always-opaque rock base
+- the current fix removes that Android-only nearest-filter override for plain transparent overlays and restores ordinary alpha blending in the plain merge shader by setting the secondary alpha cutoff back to `0.0`
+- the masked supertransparent path remains unchanged, so door-mask behavior is still isolated to the `BM_FLAG_SUPER_TRANSPARENT` route
+- Android validation passed for the updated build with `:app:assembleDebug`, `:app:testDebugUnitTest`, and `android\run-code-quality.ps1 -Fix`
