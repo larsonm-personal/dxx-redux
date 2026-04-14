@@ -12,6 +12,16 @@ import java.io.File
 object DiscImportBridge {
     private const val TAG = "DXX-DiscImport"
 
+    private fun parseIsoEntries(raw: Array<String>): List<IsoFile> =
+        raw.mapNotNull { entry ->
+            val parts = entry.split("|", limit = 2)
+            if (parts.size == 2) {
+                IsoFile(parts[0], parts[1].toLongOrNull() ?: 0L)
+            } else {
+                null
+            }
+        }
+
     init {
         System.loadLibrary("dxx-redux-d2")
     }
@@ -79,14 +89,7 @@ object DiscImportBridge {
         trackSectors: Int,
     ): List<IsoFile>? {
         val raw = nativeListIsoFiles(binFd, trackStart, trackSectors) ?: return null
-        return raw.mapNotNull { entry ->
-            val parts = entry.split("|", limit = 2)
-            if (parts.size == 2) {
-                IsoFile(parts[0], parts[1].toLongOrNull() ?: 0L)
-            } else {
-                null
-            }
-        }
+        return parseIsoEntries(raw)
     }
 
     /**
@@ -104,6 +107,30 @@ object DiscImportBridge {
             )
         return try {
             listIsoFiles(pfd.fd, trackStart, trackSectors)
+        } finally {
+            pfd.close()
+        }
+    }
+
+    /**
+     * List files from a standalone ISO image.
+     */
+    fun listIsoImageFiles(isoFd: Int): List<IsoFile>? {
+        val raw = nativeListIsoImageFiles(isoFd) ?: return null
+        return parseIsoEntries(raw)
+    }
+
+    /**
+     * List files from an ISO file path (opens the fd internally).
+     */
+    fun listIsoImageFiles(isoPath: String): List<IsoFile>? {
+        val pfd =
+            ParcelFileDescriptor.open(
+                File(isoPath),
+                ParcelFileDescriptor.MODE_READ_ONLY,
+            )
+        return try {
+            listIsoImageFiles(pfd.fd)
         } finally {
             pfd.close()
         }
@@ -156,6 +183,35 @@ object DiscImportBridge {
             )
         return try {
             extractIsoFiles(pfd.fd, trackStart, trackSectors, outputDir, progress)
+        } finally {
+            pfd.close()
+        }
+    }
+
+    /**
+     * Extract game files from a standalone ISO image.
+     */
+    fun extractIsoImageFiles(
+        isoFd: Int,
+        outputDir: String,
+        progress: ExtractProgress? = null,
+    ): Int = nativeExtractIsoImageFiles(isoFd, outputDir, progress)
+
+    /**
+     * Extract from an ISO file path (opens the fd internally).
+     */
+    fun extractIsoImageFiles(
+        isoPath: String,
+        outputDir: String,
+        progress: ExtractProgress? = null,
+    ): Int {
+        val pfd =
+            ParcelFileDescriptor.open(
+                File(isoPath),
+                ParcelFileDescriptor.MODE_READ_ONLY,
+            )
+        return try {
+            extractIsoImageFiles(pfd.fd, outputDir, progress)
         } finally {
             pfd.close()
         }
@@ -247,10 +303,18 @@ object DiscImportBridge {
         trackSectors: Int,
     ): Array<String>?
 
+    private external fun nativeListIsoImageFiles(isoFd: Int): Array<String>?
+
     private external fun nativeExtractIsoFiles(
         binFd: Int,
         trackStart: Int,
         trackSectors: Int,
+        outputDir: String,
+        progress: ExtractProgress?,
+    ): Int
+
+    private external fun nativeExtractIsoImageFiles(
+        isoFd: Int,
         outputDir: String,
         progress: ExtractProgress?,
     ): Int

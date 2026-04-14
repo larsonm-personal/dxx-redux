@@ -286,7 +286,7 @@ $corpusBuildDir = if ($CorpusDir) {
 }
 
 if ([string]::IsNullOrWhiteSpace($OutputDir)) {
-    $OutputDir = Join-Path $PSScriptRoot 'app\src\main\cpp\extract\test_fixtures\stuffit_manifests'
+    $OutputDir = Join-Path $PSScriptRoot 'app\src\main\cpp\extract\test\data\stuffit_manifests'
 }
 
 $tools = Resolve-ToolPaths -CandidateToolDir $ToolDir

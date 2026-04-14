@@ -1,5 +1,7 @@
-// Known disc database for BIN/CUE CD image identification.
-// Per-track SHA1 hashes match redump convention (hash of full raw 2352-byte sectors).
+// Known disc database for CD image identification.
+// Most entries use BIN/CUE per-track SHA1 hashes that match redump convention
+// (hash of full raw 2352-byte sectors). Standalone ISO images appear as a
+// single data track and may include source_format: "iso".
 // Disc matching: compare SHA1s in order from track 1; the disc with the most
 // consecutive matches from the beginning wins.
 //
@@ -1149,6 +1151,34 @@
       "label": "Descent Maximum (ps1) mp3",
       "type": "album",
       "tracks": [
+      ]
+    },
+
+    // -- Descent Anniversary (ISO)
+    {
+      "id": "descent-anniversary-iso",
+      "label": "Descent Anniversary (ISO)",
+      "game": "d1",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "cc63e0eeb180678eb154b2d5f10ee6b8e25b9e4b", "source_format": "iso"}
+      ]
+    },
+
+    // -- Descent II Infinite Abyss
+    {
+      "id": "descent-ii-infinite-abyss",
+      "label": "Descent II Infinite Abyss",
+      "game": "d2",
+      "tracks": [
+        {"track": 1, "type": "data", "sha1": "1ee705d8cfd6636dec3d55002927bde3fc9d980e"},
+        {"track": 2, "type": "audio", "sha1": "9c0669a9495407536e440468764f0b6b3dac2269"},
+        {"track": 3, "type": "audio", "sha1": "5f12db79a989be1d943e5836fbf86ef3477bf22b"},
+        {"track": 4, "type": "audio", "sha1": "66555820ad01298554f84701ce32b5172dcd853d"},
+        {"track": 5, "type": "audio", "sha1": "55d9a77f0e843b246da4804ea84aae71211f8f0a"},
+        {"track": 6, "type": "audio", "sha1": "57ff56b7c46cc22b9bab75279f5ddbdcd97c297f"},
+        {"track": 7, "type": "audio", "sha1": "8154446835d16525ff3b2ea5dee5ec614d163bf1"},
+        {"track": 8, "type": "audio", "sha1": "0de82a7c3412223db93658710248664c42d76fec"},
+        {"track": 9, "type": "audio", "sha1": "24df677d84b3c063f904fd9b88c8f3ce1ee6e15f"}
       ]
     }
   ]

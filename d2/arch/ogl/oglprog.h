@@ -8,3 +8,4 @@ extern GLfloat ogl_mat_ortho[];
 void ogl_init_prog();
 void ogl_done_prog();
 void ogl_prog_set_matrix(GLfloat *mat);
+void ogl_prog_set_tex2_alpha_cutoff(GLfloat cutoff);

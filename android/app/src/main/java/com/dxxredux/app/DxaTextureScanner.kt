@@ -18,11 +18,20 @@ object DxaTextureScanner {
     // Shared constant: must match min(..., 2048) in d2/arch/ogl/gr.c
     const val ENGINE_TEXTURE_CAP = 2048
 
+    data class OversizedTexture(
+        val name: String,
+        val width: Int,
+        val height: Int,
+        val pow2Width: Int,
+        val pow2Height: Int,
+    )
+
     data class ScanResult(
         val maxWidth: Int,
         val maxHeight: Int,
         val textureCount: Int,
         val oversizedCount: Int,
+        val oversizedEntries: List<OversizedTexture>,
     )
 
     /** Scan a DXA file and return the max texture dimensions found. */
@@ -34,6 +43,7 @@ object DxaTextureScanner {
                 var maxH = 0
                 var count = 0
                 var oversized = 0
+                val oversizedEntries = mutableListOf<OversizedTexture>()
                 for (entry in zip.entries()) {
                     val name = entry.name.lowercase()
                     if (entry.isDirectory) continue
@@ -49,10 +59,20 @@ object DxaTextureScanner {
                         if (dims.second > maxH) maxH = dims.second
                         val pow2w = pow2ize(dims.first)
                         val pow2h = pow2ize(dims.second)
-                        if (pow2w > ENGINE_TEXTURE_CAP || pow2h > ENGINE_TEXTURE_CAP) oversized++
+                        if (pow2w > ENGINE_TEXTURE_CAP || pow2h > ENGINE_TEXTURE_CAP) {
+                            oversized++
+                            oversizedEntries +=
+                                OversizedTexture(
+                                    name = entry.name,
+                                    width = dims.first,
+                                    height = dims.second,
+                                    pow2Width = pow2w,
+                                    pow2Height = pow2h,
+                                )
+                        }
                     }
                 }
-                ScanResult(maxW, maxH, count, oversized)
+                ScanResult(maxW, maxH, count, oversized, oversizedEntries)
             }
         } catch (e: Exception) {
             Log.w(TAG, "Failed to scan ${dxaFile.name}", e)

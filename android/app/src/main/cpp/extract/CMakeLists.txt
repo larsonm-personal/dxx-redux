@@ -145,7 +145,7 @@ target_include_directories(test_stuffit_corpus PRIVATE ${CMAKE_CURRENT_SOURCE_DI
 target_compile_features(test_stuffit_corpus PRIVATE cxx_std_11)
 target_compile_definitions(test_stuffit_corpus PRIVATE
     STUFFIT_TEST_FILES_DIR="${STUFFIT_TEST_FILES_DIR}"
-    STUFFIT_MANIFEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/test_fixtures/stuffit_manifests"
+    STUFFIT_MANIFEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/test/data/stuffit_manifests"
 )
 target_link_libraries(test_stuffit_corpus PRIVATE nlohmann_json::nlohmann_json)
 

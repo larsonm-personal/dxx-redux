@@ -1,7 +1,7 @@
 # extract_all_cds.ps1 -- Build extract_cd.exe and run it on all CD image folders.
 #
 # For each subfolder in game_data/CD images/:
-#   1. Find the .cue file
+#   1. Find the .cue or .iso source file
 #   2. Run extract_cd.exe to extract ISO 9660 or Mac HFS data track files and
 #      compute track SHA-1s
 #   3. Save track hashes to <folder>/track_hashes.json
@@ -78,16 +78,26 @@ foreach ($folder in $folders) {
         if (Test-Path $hashFile) { Remove-Item -Force -Confirm:$false $hashFile }
     }
 
-    # Find .cue file
+    # Find .cue or .iso source file
     $cueFiles = Get-ChildItem -Path $folder.FullName -Filter "*.cue" -File
-    if ($cueFiles.Count -eq 0) {
-        $failures += @{ Name = $name; Error = "No .cue file found" }
+    $isoFiles = Get-ChildItem -Path $folder.FullName -Filter "*.iso" -File
+    if ($cueFiles.Count -gt 0) {
+        $sourceFile = $cueFiles[0].FullName
+        $sourceLabel = "CUE"
+        $sourceName = $cueFiles[0].Name
+    }
+    elseif ($isoFiles.Count -gt 0) {
+        $sourceFile = $isoFiles[0].FullName
+        $sourceLabel = "ISO"
+        $sourceName = $isoFiles[0].Name
+    }
+    else {
+        $failures += @{ Name = $name; Error = "No .cue or .iso file found" }
         continue
     }
-    $cueFile = $cueFiles[0].FullName
 
     Write-Host "`n=== $name ===" -ForegroundColor Cyan
-    Write-Host "  CUE: $($cueFiles[0].Name)"
+    Write-Host "  ${sourceLabel}: $sourceName"
 
     # Run extract_cd.exe
     $outDir = $dataTracksDir
@@ -95,7 +105,7 @@ foreach ($folder in $folders) {
         # Run with $ErrorActionPreference relaxed so stderr doesn't throw
         $prevEAP = $ErrorActionPreference
         $ErrorActionPreference = "Continue"
-        $output = & $ExePath $cueFile $outDir 2>&1
+        $output = & $ExePath $sourceFile $outDir 2>&1
         $exitCode = $LASTEXITCODE
         $ErrorActionPreference = $prevEAP
 

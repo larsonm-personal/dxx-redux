@@ -60,6 +60,16 @@ int iso_list_files(int bin_fd, int track_start_sector, int track_num_sectors,
                    iso_file_list_t *out);
 
 /*
+ * List files from a standalone ISO image file.
+ *
+ * iso_fd          : open file descriptor for the ISO file (read access)
+ * out             : receives the file listing
+ *
+ * Returns number of files found, or -1 on error.
+ */
+int iso_list_image_files(int iso_fd, iso_file_list_t *out);
+
+/*
  * Extract files from an ISO 9660 data track to an output directory.
  *
  * bin_fd          : open file descriptor for the BIN file
@@ -79,6 +89,25 @@ int iso_extract_files(int bin_fd, int track_start_sector, int track_num_sectors,
                       const char *output_dir,
                       const char **extensions,
                       iso_progress_fn progress, void *user_data);
+
+/*
+ * Extract files from a standalone ISO image file to an output directory.
+ *
+ * iso_fd          : open file descriptor for the ISO file
+ * file_list       : file listing from iso_list_image_files()
+ * output_dir      : directory to extract files into (must exist)
+ * extensions      : NULL-terminated array of lowercase extensions to extract
+ *                   (NULL = extract all)
+ * progress        : optional progress callback (may be NULL)
+ * user_data       : passed to progress callback
+ *
+ * Returns number of files extracted, or -1 on error.
+ */
+int iso_extract_image_files(int iso_fd,
+                            const iso_file_list_t *file_list,
+                            const char *output_dir,
+                            const char **extensions,
+                            iso_progress_fn progress, void *user_data);
 
 #ifdef __cplusplus
 }

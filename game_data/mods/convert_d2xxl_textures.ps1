@@ -65,6 +65,12 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not $OutputDir) { $OutputDir = $scriptDir }
+$progressHelperScript = Join-Path $scriptDir "convert_progress_helpers.ps1"
+if (-not (Test-Path $progressHelperScript)) {
+    Write-Error "Missing helper script: $progressHelperScript"
+    exit 1
+}
+. $progressHelperScript
 
 # Auto-detect etc2tool if not provided
 if (-not $Etc2Tool) {
@@ -85,9 +91,30 @@ $archives = @{
 }
 
 # Read a TGA and return a Bitmap with correct alpha handling.
-# Sets $script:lastKeyColorMask to a mask Bitmap (alpha=0 where key color,
-# alpha=255 elsewhere) when key color pixels are found, or $null otherwise.
-$script:lastKeyColorMask = $null
+# Sets $script:lastTransparencyMask to a mask Bitmap (alpha=0 where the
+# texture should fully punch through, alpha=255 elsewhere) for exact
+# D2X-XL supertransparent key-color textures, or $null otherwise.
+$script:lastTransparencyMask = $null
+
+# D2X-XL uses the exact supertransparent key color RGB(120, 88, 128) in its
+# TGA loader (`superTranspKeys` in gameio/tga.cpp) and mask creation path.
+# Keep the converter exact as well so keyed overlays like door frames do not
+# grow their masked region beyond what upstream treats as supertransparent.
+$script:superTransparentKeyRed = 120
+$script:superTransparentKeyGreen = 88
+$script:superTransparentKeyBlue = 128
+
+function Test-IsSuperTransparentColor {
+    param(
+        [byte]$Blue,
+        [byte]$Green,
+        [byte]$Red
+    )
+
+    return $Blue -eq $script:superTransparentKeyBlue -and
+        $Green -eq $script:superTransparentKeyGreen -and
+        $Red -eq $script:superTransparentKeyRed
+}
 
 function Read-TGA {
     param([string]$Path)
@@ -126,11 +153,23 @@ function Read-TGA {
         $dataOffset += $cmapLength * [Math]::Ceiling($cmapBits / 8)
     }
 
-    $pixelFmt = if ($channels -eq 4) {
+    $hasKeyColor = $false
+    if ($channels -eq 3) {
+        for ($idx = $dataOffset; $idx -le $bytes.Length - 3; $idx += 3) {
+            if (Test-IsSuperTransparentColor -Blue $bytes[$idx] -Green $bytes[$idx + 1] -Red $bytes[$idx + 2]) {
+                $hasKeyColor = $true
+                break
+            }
+        }
+    }
+
+    $useArgb = ($channels -eq 4) -or $hasKeyColor
+    $pixelFmt = if ($useArgb) {
         [System.Drawing.Imaging.PixelFormat]::Format32bppArgb
     } else {
         [System.Drawing.Imaging.PixelFormat]::Format24bppRgb
     }
+    $outputChannels = if ($useArgb) { 4 } else { 3 }
 
     $bmp = [System.Drawing.Bitmap]::new($width, $height, $pixelFmt)
     $bmpData = $bmp.LockBits(
@@ -142,11 +181,14 @@ function Read-TGA {
     $stride = $bmpData.Stride
     $scan0 = $bmpData.Scan0
     $rowBytes = $width * $channels
+    $copyRowBytes = $width * $outputChannels
+    $alphaBits = if ($channels -eq 4) { $descriptor -band 0x0F } else { 0 }
 
-    # Track key color for super-transparent mask generation
-    $hasKeyColor = $false
+    # Track binary cutout information for super-transparent mask generation
+    $hasTransparentPixels = $false
+    $partialAlphaPixelCount = 0
     $maskBytes = $null
-    if ($channels -eq 4) {
+    if ($useArgb) {
         # Pre-allocate mask: 4 bytes/pixel (BGRA), all white/opaque
         $maskBytes = [byte[]]::new($height * $width * 4)
         for ($mi = 0; $mi -lt $maskBytes.Length; $mi += 4) {
@@ -160,44 +202,71 @@ function Read-TGA {
         $srcRow = if ($topToBottom) { $row } else { $height - 1 - $row }
         $srcOffset = $dataOffset + $srcRow * $rowBytes
         if ($channels -eq 4) {
-            $alphaBits = $descriptor -band 0x0F
             for ($px = 0; $px -lt $rowBytes; $px += 4) {
                 $idx = $srcOffset + $px
                 # BGRA byte order: B=$bytes[idx], G=[idx+1], R=[idx+2], A=[idx+3]
-                $db = [int]$bytes[$idx] - 128
-                $dg = [int]$bytes[$idx + 1] - 88
-                $dr = [int]$bytes[$idx + 2] - 120
-                if ($dr -ge -13 -and $dr -le 13 -and $dg -ge -13 -and $dg -le 13 -and $db -ge -13 -and $db -le 13) {
+                if (Test-IsSuperTransparentColor -Blue $bytes[$idx] -Green $bytes[$idx + 1] -Red $bytes[$idx + 2]) {
                     $bytes[$idx] = 0; $bytes[$idx + 1] = 0
                     $bytes[$idx + 2] = 0; $bytes[$idx + 3] = 0
-                    # Mark as super-transparent in mask (alpha=0)
                     $hasKeyColor = $true
+                    $hasTransparentPixels = $true
                     $mIdx = ($row * $width + $px / 4) * 4
                     $maskBytes[$mIdx] = 0; $maskBytes[$mIdx+1] = 0
                     $maskBytes[$mIdx+2] = 0; $maskBytes[$mIdx+3] = 0
                 } elseif ($alphaBits -gt 0) {
-                    # Native alpha: zero RGB for fully transparent pixels
                     if ($bytes[$idx + 3] -eq 0) {
                         $bytes[$idx] = 0; $bytes[$idx + 1] = 0; $bytes[$idx + 2] = 0
+                        $hasTransparentPixels = $true
+                    } elseif ($bytes[$idx + 3] -lt 255) {
+                        $partialAlphaPixelCount++
                     }
                 } else {
                     $bytes[$idx + 3] = 255
                 }
             }
+            # TGA stores BGR(A), System.Drawing also uses BGR(A), so direct copy works
+            [System.Runtime.InteropServices.Marshal]::Copy(
+                $bytes, $srcOffset, [IntPtr]::Add($scan0, $row * $stride), $copyRowBytes
+            )
+        } elseif ($useArgb) {
+            $rowBuffer = [byte[]]::new($copyRowBytes)
+            for ($px = 0; $px -lt $rowBytes; $px += 3) {
+                $idx = $srcOffset + $px
+                $dst = ($px / 3) * 4
+                if (Test-IsSuperTransparentColor -Blue $bytes[$idx] -Green $bytes[$idx + 1] -Red $bytes[$idx + 2]) {
+                    $hasTransparentPixels = $true
+                    $mIdx = ($row * $width + $px / 3) * 4
+                    $maskBytes[$mIdx] = 0; $maskBytes[$mIdx+1] = 0
+                    $maskBytes[$mIdx+2] = 0; $maskBytes[$mIdx+3] = 0
+                    $rowBuffer[$dst] = 0; $rowBuffer[$dst+1] = 0
+                    $rowBuffer[$dst+2] = 0; $rowBuffer[$dst+3] = 0
+                } else {
+                    $rowBuffer[$dst] = $bytes[$idx]
+                    $rowBuffer[$dst+1] = $bytes[$idx + 1]
+                    $rowBuffer[$dst+2] = $bytes[$idx + 2]
+                    $rowBuffer[$dst+3] = 255
+                }
+            }
+            [System.Runtime.InteropServices.Marshal]::Copy(
+                $rowBuffer, 0, [IntPtr]::Add($scan0, $row * $stride), $copyRowBytes
+            )
+        } else {
+            [System.Runtime.InteropServices.Marshal]::Copy(
+                $bytes, $srcOffset, [IntPtr]::Add($scan0, $row * $stride), $rowBytes
+            )
         }
-        # TGA stores BGR(A), System.Drawing also uses BGR(A), so direct copy works
-        [System.Runtime.InteropServices.Marshal]::Copy(
-            $bytes, $srcOffset, [IntPtr]::Add($scan0, $row * $stride), $rowBytes
-        )
     }
 
     $bmp.UnlockBits($bmpData)
 
-    # Edge color flood-fill: replace RGB of key-color-zeroed pixels with
+    $binaryCutoutPartialAlphaLimit = [Math]::Max(64, [int][Math]::Ceiling(($width * $height) / 200.0))
+    $hasBinaryCutout = $hasTransparentPixels -and ($partialAlphaPixelCount -le $binaryCutoutPartialAlphaLimit)
+
+    # Edge color flood-fill: replace RGB of fully transparent pixels with
     # the average RGB of their non-transparent neighbors. This prevents
     # ETC2 block compression from averaging black against opaque colors
     # at transparency boundaries, which causes visible color fringing.
-    if ($hasKeyColor -and $channels -eq 4) {
+    if ($hasBinaryCutout -and $useArgb) {
         $bmpData2 = $bmp.LockBits(
             [System.Drawing.Rectangle]::new(0, 0, $width, $height),
             [System.Drawing.Imaging.ImageLockMode]::ReadWrite,
@@ -235,8 +304,11 @@ function Read-TGA {
         $bmp.UnlockBits($bmpData2)
     }
 
-    # Generate mask bitmap if key color was found
-    $script:lastKeyColorMask = $null
+    # Generate mask bitmap only for exact key-color textures. Plain alpha-cutout
+    # replacements like metl154 still benefit from the edge-bleed fix above,
+    # but they should keep ordinary alpha semantics instead of being promoted
+    # into supertransparency.
+    $script:lastTransparencyMask = $null
     if ($hasKeyColor -and $maskBytes) {
         $maskBmp = [System.Drawing.Bitmap]::new($width, $height,
             [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
@@ -252,7 +324,7 @@ function Read-TGA {
                 $width * 4)
         }
         $maskBmp.UnlockBits($maskData)
-        $script:lastKeyColorMask = $maskBmp
+            $script:lastTransparencyMask = $maskBmp
     }
 
     return $bmp
@@ -274,7 +346,7 @@ function Split-StripTextures {
         if ($bn -notmatch '#0(-\w+)?$') { continue }
 
         $bmp = Read-TGA $tga.FullName
-        $maskBmp = $script:lastKeyColorMask
+        $maskBmp = $script:lastTransparencyMask
         $w = $bmp.Width; $h = $bmp.Height
         if ($h -le $w -or $h % $w -ne 0) { $bmp.Dispose(); if ($maskBmp) { $maskBmp.Dispose() }; continue }
 
@@ -510,6 +582,7 @@ function Convert-GameTextures {
     $sizeSuffix = if ($MaxDim -gt 0 -and $MaxDim -lt $actualTexSize) { $MaxDim } else { $actualTexSize }
     $dxaName = "${GameId}-hires-${sizeSuffix}-textures-ktx2.dxa"
     $dxaPath = Join-Path $OutDir $dxaName
+    $totalStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
     $useMagick = $MagickPath -and $MaxDim -gt 0 -and (Test-Path $MagickPath)
 
@@ -523,10 +596,8 @@ function Convert-GameTextures {
     }
 
     # Extract TGA files from 7z
-    Write-Host "  Extracting archive..."
     $extractDir = Join-Path $tempDir "extract"
-    & $SevenZip x "-o$extractDir" $ArchivePath -y 2>$null
-    if ($LASTEXITCODE -ne 0) { throw "7z extraction failed" }
+    Invoke-7ZipExtract -SevenZipPath $SevenZip -ArchivePath $ArchivePath -ExtractDir $extractDir
 
     $tgaDir = Join-Path (Join-Path $extractDir "textures") $GameId
     if (-not (Test-Path $tgaDir)) {
@@ -537,38 +608,44 @@ function Convert-GameTextures {
 
     # Rename d2x-xl files to DXX PIGfile names BEFORE splitting, because
     # some archives use '!' instead of '#' for frame separators (e.g. arw01!0)
+    $fixupStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    Write-Host "  Scanning texture name fixups"
     $fixups = Rename-D2xxlTextures -TgaDir $tgaDir -GameId $GameId
-    if ($fixups.Renamed -gt 0) {
-        Write-Host "  Name fixups: $($fixups.Renamed) renamed"
-    }
+    Write-Host "  Name fixup scan complete: $($fixups.Renamed) renamed in $(Format-ElapsedText $fixupStopwatch.Elapsed)"
 
     # Pre-split animation strips into individual frame files
+    $splitStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    Write-Host "  Scanning animation strips"
     $splitCount = Split-StripTextures -TgaDir $tgaDir -MagickPath $MagickPath
-    if ($splitCount -gt 0) {
-        Write-Host "  Split $splitCount animation strips into individual frames"
-    }
+    Write-Host "  Animation strip scan complete: $splitCount split in $(Format-ElapsedText $splitStopwatch.Elapsed)"
 
     # Collect all texture files: TGA (single frames), PNG (split frames), JPG
+    $inventoryStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $tgaFiles = Get-ChildItem -Path $tgaDir -Filter "*.tga" -File
     $pngFiles = Get-ChildItem -Path $tgaDir -Filter "*.png" -File -ErrorAction SilentlyContinue |
         Where-Object { $_.Name -notlike '*_mask.png' }
     $jpgFiles = Get-ChildItem -Path $tgaDir -Filter "*.jpg" -File -ErrorAction SilentlyContinue
     $total = $tgaFiles.Count + ($pngFiles | Measure-Object).Count + ($jpgFiles | Measure-Object).Count
-    Write-Host "  Found $total texture files"
+    Write-Host "  Inventory complete: TGA=$($tgaFiles.Count) PNG=$($pngFiles.Count) JPG=$($jpgFiles.Count) total=$total in $(Format-ElapsedText $inventoryStopwatch.Elapsed)"
 
     # Create ZIP (dxa)
     if (Test-Path $dxaPath) { Remove-Item $dxaPath }
+    Write-Host "  Creating DXA container: $dxaName"
     $zip = [System.IO.Compression.ZipFile]::Open($dxaPath, [System.IO.Compression.ZipArchiveMode]::Create)
+    $conversionStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
     $converted = 0
     $skipped = 0
     $errors = 0
+    $processed = 0
 
     # Textures that should never be downscaled: full-screen cockpit overlays
     # and targeting reticles are HUD elements drawn at screen resolution
     $noDownscalePattern = '^(cockpit|hires-cockpit)'
 
     foreach ($tga in @($tgaFiles) + @($pngFiles)) {
+        $processed++
+        Write-ItemStartLine -Stopwatch $conversionStopwatch -Index $processed -Total $total -ItemName $tga.Name
         $baseName = [System.IO.Path]::GetFileNameWithoutExtension($tga.Name)
         $isTga = $tga.Extension -eq '.tga'
 
@@ -585,9 +662,10 @@ function Convert-GameTextures {
             if ($isTga) {
                 # Read-TGA handles alpha preservation and key color
                 # correctly by reading raw TGA bytes (not ImageMagick).
-                # Also sets $script:lastKeyColorMask when key color is found.
+                # Also sets $script:lastTransparencyMask for exact-key
+                # supertransparent textures.
                 $bmp = Read-TGA $tga.FullName
-                $maskBmp = $script:lastKeyColorMask
+                $maskBmp = $script:lastTransparencyMask
                 $prePng = Join-Path $tempDir "$baseName.pre.png"
                 $bmp.Save($prePng, [System.Drawing.Imaging.ImageFormat]::Png)
                 $bmp.Dispose()
@@ -692,17 +770,20 @@ function Convert-GameTextures {
             Remove-Item $tempPng, $tempEtc2 -ErrorAction SilentlyContinue
 
             $converted++
-            if ($converted % 10 -eq 0) {
-                Write-Host "  Converted $converted / $total..."
+            if ($processed -le 3 -or $processed % 10 -eq 0 -or $processed -eq $total) {
+                Write-ProgressSummaryLine -Stopwatch $conversionStopwatch -Processed $processed -Total $total -ItemName $tga.Name -Succeeded $converted -Errors $errors
             }
         } catch {
             Write-Host "  ERROR converting $($tga.Name): $_"
             $errors++
+            Write-ProgressSummaryLine -Stopwatch $conversionStopwatch -Processed $processed -Total $total -ItemName $tga.Name -Succeeded $converted -Errors $errors
         }
     }
 
     # Handle JPG files (convert through etc2tool too)
     foreach ($jpg in $jpgFiles) {
+        $processed++
+        Write-ItemStartLine -Stopwatch $conversionStopwatch -Index $processed -Total $total -ItemName $jpg.Name
         $baseName = [System.IO.Path]::GetFileNameWithoutExtension($jpg.Name)
         $entryName = "$baseName.ktx2"
         $tempEtc2 = Join-Path $tempDir "$baseName.ktx2"
@@ -731,9 +812,13 @@ function Convert-GameTextures {
             $stream.Close()
             Remove-Item $tempEtc2 -ErrorAction SilentlyContinue
             $converted++
+            if ($processed -le 3 -or $processed % 10 -eq 0 -or $processed -eq $total) {
+                Write-ProgressSummaryLine -Stopwatch $conversionStopwatch -Processed $processed -Total $total -ItemName $jpg.Name -Succeeded $converted -Errors $errors
+            }
         } catch {
             Write-Host "  ERROR converting $($jpg.Name): $_"
             $errors++
+            Write-ProgressSummaryLine -Stopwatch $conversionStopwatch -Processed $processed -Total $total -ItemName $jpg.Name -Succeeded $converted -Errors $errors
         }
     }
 
@@ -746,11 +831,14 @@ function Convert-GameTextures {
         $readmeStream.Close()
     }
 
+    $finalizeStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    Write-Host "  Finalizing archive: $dxaName"
     $zip.Dispose()
+    Write-Host "  Archive finalized in $(Format-ElapsedText $finalizeStopwatch.Elapsed)"
     Remove-Item -Recurse -Force $tempDir
 
     $dxaSize = (Get-Item $dxaPath).Length / 1MB
-    Write-Host "  Done: $converted converted, $errors errors"
+    Write-Host "  Done: processed $processed / $total, converted $converted, errors $errors in $(Format-ElapsedText $totalStopwatch.Elapsed)"
     Write-Host "  Output: $dxaPath ($([Math]::Round($dxaSize, 1)) MB)"
 }
 

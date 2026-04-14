@@ -113,6 +113,7 @@ class SetupActivity : ComponentActivity() {
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_gog --es path /sdcard/setup_descent2.exe
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_sow --es path /sdcard/descent2.sow
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_cd --es cue_path /sdcard/disc.cue --es bin_path /sdcard/disc.bin
+    //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_iso --es iso_path /sdcard/disc.iso
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command import_files --es path /sdcard/DESCENT2.HOG
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_default_config
     //   adb shell am broadcast -a com.dxxredux.SETUP_COMMAND --es command write_autoselect --es game d2 --es primary "8,9,7,6,5,4,3,2,1,0,255" --es secondary "9,8,4,3,1,5,0,255,7,6,2"
@@ -656,6 +657,19 @@ class SetupActivity : ComponentActivity() {
                             Log.i(
                                 "DXX-Setup",
                                 "import_cd cue='$cuePath' bin='$binPath' -> $count file(s) to ${setDir.name} (audio=$audio)",
+                            )
+                            requestSetupRefresh()
+                        }.start()
+                    }
+                    "import_iso" -> {
+                        val path = intent.getStringExtra("iso_path") ?: return
+                        Thread {
+                            val fsm = FileSetManager(filesDir)
+                            val setDir = fsm.getSetDir(fsm.getActive())
+                            val count = importIsoImageFromPath(setDir, path)
+                            Log.i(
+                                "DXX-Setup",
+                                "import_iso iso='$path' -> $count file(s) to ${setDir.name}",
                             )
                             requestSetupRefresh()
                         }.start()
@@ -2809,6 +2823,10 @@ private fun SetupScreen(
     var discImportCueUri by remember { mutableStateOf<Uri?>(null) }
     var discImportBins by remember { mutableStateOf<List<Pair<String, Uri>>>(emptyList()) }
 
+    // ── ISO disc import state ───────────────────────────
+    var isoImportName by remember { mutableStateOf<String?>(null) }
+    var isoImportUri by remember { mutableStateOf<Uri?>(null) }
+
     // ── GOG installer import state ──────────────────────
     var gogImportUri by remember { mutableStateOf<Uri?>(null) }
     var gogImportName by remember { mutableStateOf<String?>(null) }
@@ -2843,6 +2861,7 @@ private fun SetupScreen(
                     val gameUris = mutableListOf<FoundFile>()
                     val cueUris = mutableListOf<Pair<String, Uri>>()
                     val binUris = mutableListOf<Pair<String, Uri>>()
+                    val isoUris = mutableListOf<Pair<String, Uri>>()
                     var gogUri: Pair<String, Uri>? = null
                     var sowUri: Pair<String, Uri>? = null
                     // Track raw .gog/.inst pairs (GOG CD images picked directly)
@@ -2858,6 +2877,7 @@ private fun SetupScreen(
                             when {
                                 lname.endsWith(".zip") || lname.endsWith(".7z") -> zipUris.add(name to uri)
                                 lname.endsWith(".cue") -> cueUris.add(name to uri)
+                                lname.endsWith(".iso") -> isoUris.add(name to uri)
                                 lname.endsWith(".inst") -> instDiscUri = name to uri
                                 lname.endsWith(".gog") -> gogDiscUri = name to uri
                                 lname.endsWith(".bin") -> binUris.add(name to uri)
@@ -2920,6 +2940,12 @@ private fun SetupScreen(
                     if (cueUris.isNotEmpty() && binUris.isEmpty()) {
                         for (c in cueUris) warnings.add("${c.first} requires a matching BIN file")
                     }
+                    if (isoUris.size > 1) {
+                        warnings.add("Only one ISO image can be imported at a time")
+                    }
+                    if (isoUris.isNotEmpty() && cueUris.isNotEmpty() && binUris.isNotEmpty()) {
+                        warnings.add("Select either a standalone ISO or a CUE/BIN set")
+                    }
                     for (f in unhandledFiles) {
                         warnings.add("$f: file type not recognized")
                     }
@@ -2940,6 +2966,9 @@ private fun SetupScreen(
                             discImportCueName = cueUris.first().first
                             discImportCueUri = cueUris.first().second
                             discImportBins = binUris
+                        } else if (isoUris.isNotEmpty()) {
+                            isoImportName = isoUris.first().first
+                            isoImportUri = isoUris.first().second
                         }
                         // Trigger GOG import dialog if .exe/.pkg found
                         gogUri?.let {
@@ -3284,6 +3313,26 @@ private fun SetupScreen(
                             discImportCueUri = null
                             discImportCueName = null
                             discImportBins = emptyList()
+                            onRefresh()
+                        },
+                    )
+                }
+
+                // ── ISO disc import dialog ──
+                if (isoImportUri != null) {
+                    IsoImportDialog(
+                        isoName = isoImportName ?: "unknown.iso",
+                        isoUri = isoImportUri!!,
+                        setDir = setDir,
+                        context = context,
+                        onImported = {
+                            isoImportUri = null
+                            isoImportName = null
+                            onRefresh()
+                        },
+                        onDismiss = {
+                            isoImportUri = null
+                            isoImportName = null
                             onRefresh()
                         },
                     )
@@ -4395,6 +4444,23 @@ private fun ModsSection(
     val scanCache = remember { mutableStateMapOf<String, DxaTextureScanner.ScanResult?>() }
     val scope = rememberCoroutineScope()
 
+    fun logOversizedTextureScan(
+        mod: ModManager.ModInfo,
+        file: File,
+        scanResult: DxaTextureScanner.ScanResult,
+    ) {
+        if (scanResult.oversizedEntries.isEmpty()) return
+        val details =
+            scanResult.oversizedEntries.joinToString(" | ") {
+                "${it.name} ${it.width}x${it.height} pow2=${it.pow2Width}x${it.pow2Height}"
+            }
+        LauncherDebugLog.log(
+            "mod-dxa-oversized file=${mod.filename} bytes=${file.length()} " +
+                "textures=${scanResult.textureCount} oversized=${scanResult.oversizedCount} " +
+                "max=${scanResult.maxWidth}x${scanResult.maxHeight} entries=$details",
+        )
+    }
+
     LaunchedEffect(refreshTrigger) {
         modManager.reload()
         mods = modManager.listMods()
@@ -4408,10 +4474,14 @@ private fun ModsSection(
                     mod.filename.contains("textur", ignoreCase = true)
                 ) {
                     val file = File(filesDir, "mods/${mod.filename}")
-                    scanCache[mod.filename] =
+                    val scanResult =
                         withContext(kotlinx.coroutines.Dispatchers.IO) {
                             DxaTextureScanner.scan(file)
                         }
+                    if (scanResult != null && scanResult.oversizedCount > 0) {
+                        logOversizedTextureScan(mod, file, scanResult)
+                    }
+                    scanCache[mod.filename] = scanResult
                 }
             }
         }
@@ -5327,6 +5397,15 @@ private fun registerGogAudioSource(
     )
 }
 
+private fun extractSowArchives(setDir: File): Int {
+    val sowFiles = DiscImportBridge.scanSowFiles(setDir.absolutePath) ?: return 0
+    var sowExtracted = 0
+    for (sow in sowFiles) {
+        sowExtracted += DiscImportBridge.extractSowFiles(sow, setDir.absolutePath, null).coerceAtLeast(0)
+    }
+    return sowExtracted
+}
+
 private fun registerDiscAudioSourceFromPath(
     srcManager: AudioSourceManager,
     filesDir: File,
@@ -5447,12 +5526,7 @@ private fun importDiscImageFromPath(
 
     var sowExtracted = 0
     if (isoExtracted > 0) {
-        val sowFiles = DiscImportBridge.scanSowFiles(setDir.absolutePath)
-        if (sowFiles != null) {
-            for (sow in sowFiles) {
-                sowExtracted += DiscImportBridge.extractSowFiles(sow, setDir.absolutePath, null).coerceAtLeast(0)
-            }
-        }
+        sowExtracted = extractSowArchives(setDir)
     }
 
     val extracted = if (isoExtracted > 0) isoExtracted else macExtracted.coerceAtLeast(0)
@@ -5473,6 +5547,27 @@ private fun importDiscImageFromPath(
         "importDiscImageFromPath: cue=$cuePath iso=$isoExtracted mac=$macExtracted sow=$sowExtracted audio=$includeAudio",
     )
     return extracted + sowExtracted
+}
+
+private fun importIsoImageFromPath(
+    setDir: File,
+    isoPath: String,
+): Int {
+    val isoFile = File(isoPath)
+
+    if (!isoFile.isFile) {
+        Log.w("DXX-DiscImport", "importIsoImageFromPath: missing iso ($isoPath)")
+        return -1
+    }
+
+    val isoExtracted = DiscImportBridge.extractIsoImageFiles(isoFile.absolutePath, setDir.absolutePath, null)
+    val sowExtracted = if (isoExtracted > 0) extractSowArchives(setDir) else 0
+
+    Log.i(
+        "DXX-DiscImport",
+        "importIsoImageFromPath: iso=$isoPath files=$isoExtracted sow=$sowExtracted",
+    )
+    return if (isoExtracted < 0) isoExtracted else isoExtracted + sowExtracted
 }
 
 /**
@@ -7081,6 +7176,186 @@ private fun DiscImportDialog(
                         ) {
                             Text("Done", fontSize = 13.sp)
                         }
+                    }
+                }
+
+                if (processing) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+            }
+        },
+    )
+}
+
+@Composable
+private fun IsoImportDialog(
+    isoName: String,
+    isoUri: Uri,
+    setDir: File,
+    context: Context,
+    onImported: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    var status by remember { mutableStateOf("Ready to process") }
+    var fileList by remember { mutableStateOf<List<DiscImportBridge.IsoFile>?>(null) }
+    var processing by remember { mutableStateOf(false) }
+    var extractedCount by remember { mutableIntStateOf(0) }
+
+    LaunchedEffect(isoUri) {
+        withContext(Dispatchers.IO) {
+            try {
+                val pfd = context.contentResolver.openFileDescriptor(isoUri, "r")
+                if (pfd == null) {
+                    withContext(Dispatchers.Main) {
+                        status = "Could not open ISO image"
+                    }
+                    return@withContext
+                }
+
+                val listed =
+                    pfd.use {
+                        DiscImportBridge.listIsoImageFiles(it.fd)
+                    }
+                withContext(Dispatchers.Main) {
+                    fileList = listed
+                    status =
+                        if (listed != null) {
+                            "Found ${listed.size} file(s) in ISO image"
+                        } else {
+                            "Failed to read ISO image"
+                        }
+                }
+            } catch (e: Exception) {
+                Log.e("DXX-DiscImport", "ISO scan failed", e)
+                withContext(Dispatchers.Main) {
+                    status = "Error: ${e.message}"
+                }
+            }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = { if (!processing) onDismiss() },
+        confirmButton = {
+            if (!processing) {
+                TextButton(onClick = onDismiss) { Text("Close") }
+            }
+        },
+        title = { Text("Import ISO Image", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Text(isoName, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "Standalone ISO import extracts game data only. CD audio requires a CUE/BIN image.",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    status,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                fileList?.let { entries ->
+                    if (entries.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        entries.take(12).forEach { entry ->
+                            Text(
+                                "${entry.path} (${formatSize(entry.size)})",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        if (entries.size > 12) {
+                            Text(
+                                "...and ${entries.size - 12} more",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+
+                if (fileList != null && !processing && extractedCount == 0) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                processing = true
+                                status = "Extracting game files..."
+                                withContext(Dispatchers.IO) {
+                                    try {
+                                        val pfd = context.contentResolver.openFileDescriptor(isoUri, "r")
+                                        if (pfd != null) {
+                                            val progress =
+                                                object : DiscImportBridge.ExtractProgress {
+                                                    override fun onProgress(
+                                                        currentFile: String,
+                                                        bytesDone: Long,
+                                                        bytesTotal: Long,
+                                                    ): Int {
+                                                        val pct =
+                                                            if (bytesTotal > 0L) {
+                                                                ((bytesDone * 100L) / bytesTotal).toInt()
+                                                            } else {
+                                                                0
+                                                            }
+                                                        status = "Extracting $currentFile ($pct%)"
+                                                        return 0
+                                                    }
+                                                }
+                                            val isoExtracted =
+                                                pfd.use {
+                                                    DiscImportBridge.extractIsoImageFiles(
+                                                        it.fd,
+                                                        setDir.absolutePath,
+                                                        progress,
+                                                    )
+                                                }
+                                            val sowExtracted = if (isoExtracted > 0) extractSowArchives(setDir) else 0
+                                            withContext(Dispatchers.Main) {
+                                                extractedCount = isoExtracted.coerceAtLeast(0) + sowExtracted
+                                                status =
+                                                    when {
+                                                        isoExtracted > 0 && sowExtracted > 0 ->
+                                                            "Extracted $isoExtracted file(s) + $sowExtracted from .sow archives"
+                                                        isoExtracted > 0 ->
+                                                            "Extracted $isoExtracted game file(s)"
+                                                        else -> "No supported game files found in ISO image"
+                                                    }
+                                            }
+                                        } else {
+                                            withContext(Dispatchers.Main) {
+                                                status = "Could not open ISO image"
+                                            }
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.e("DXX-DiscImport", "ISO extract failed", e)
+                                        withContext(Dispatchers.Main) {
+                                            status = "Extract error: ${e.message}"
+                                        }
+                                    }
+                                }
+                                processing = false
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Extract Game Files", fontSize = 13.sp)
+                    }
+                }
+
+                if (extractedCount > 0) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = onImported,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Done", fontSize = 13.sp)
                     }
                 }
 

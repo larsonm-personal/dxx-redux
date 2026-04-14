@@ -1,10 +1,10 @@
 <#
 .SYNOPSIS
-  Generates extract_regression.json5 specs for each CD image and GOG installer.
+    Generates extract_regression.json5 specs for each CD image, ISO image, and GOG installer.
 .DESCRIPTION
   Walks game_data/CD images/ and game_data/gog installers/ to create regression
-  test specs. Uses known_discs.json5 for disc identification and tracks extracted
-  files to populate expected_files lists.
+    test specs. Uses known_discs.json5 for disc identification and tracks extracted
+    files to populate expected_files lists.
 .PARAMETER Force
   Overwrite existing extract_regression.json5 files.
 #>
@@ -188,23 +188,32 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
     $hashFile = Join-Path $dir.FullName 'track_hashes.json'
     $dataTracksDir = Join-Path $dir.FullName 'data_tracks'
 
-    # Find source .cue file
-    $cueFiles = Get-ChildItem $dir.FullName -Filter '*.cue' -File
-    if (-not $cueFiles) {
-        Write-Host "  SKIP $($dir.Name): no .cue file" -ForegroundColor Yellow
+    # Find source .cue or .iso file
+    $cueFiles = Get-ChildItem $dir.FullName -Filter '*.cue' -File | Sort-Object Name
+    $isoFiles = Get-ChildItem $dir.FullName -Filter '*.iso' -File | Sort-Object Name
+    if (-not $cueFiles -and -not $isoFiles) {
+        Write-Host "  SKIP $($dir.Name): no .cue or .iso file" -ForegroundColor Yellow
         continue
     }
 
+    $discImageType = if ($cueFiles) { 'cue_bin' } else { 'iso' }
+
     # Get source file hashes
     $sourceFiles = @()
-    foreach ($cue in $cueFiles) {
-        $hash = (Get-FileHash $cue.FullName -Algorithm SHA256).Hash.ToLower()
-        $sourceFiles += @{ name = $cue.Name; sha256 = $hash }
-    }
-    # Also hash .bin files
-    foreach ($bin in (Get-ChildItem $dir.FullName -Filter '*.bin' -File)) {
-        $hash = (Get-FileHash $bin.FullName -Algorithm SHA256).Hash.ToLower()
-        $sourceFiles += @{ name = $bin.Name; sha256 = $hash }
+    if ($discImageType -eq 'cue_bin') {
+        foreach ($cue in $cueFiles) {
+            $hash = (Get-FileHash -LiteralPath $cue.FullName -Algorithm SHA256).Hash.ToLower()
+            $sourceFiles += @{ name = $cue.Name; sha256 = $hash }
+        }
+        foreach ($bin in (Get-ChildItem $dir.FullName -Filter '*.bin' -File | Sort-Object Name)) {
+            $hash = (Get-FileHash -LiteralPath $bin.FullName -Algorithm SHA256).Hash.ToLower()
+            $sourceFiles += @{ name = $bin.Name; sha256 = $hash }
+        }
+    } else {
+        foreach ($iso in $isoFiles) {
+            $hash = (Get-FileHash -LiteralPath $iso.FullName -Algorithm SHA256).Hash.ToLower()
+            $sourceFiles += @{ name = $iso.Name; sha256 = $hash }
+        }
     }
 
     # Look up disc in known_discs via track_hashes.json
@@ -242,6 +251,7 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
     # Build spec
     $spec = [ordered]@{
         source_type = 'cd'
+        disc_image_type = $discImageType
         disc_id = $discId
         source_files = $sourceFiles
         game = if ($game) { $game } else { 'unknown' }
@@ -251,6 +261,11 @@ foreach ($dir in (Get-ChildItem $cdDir -Directory | Sort-Object Name)) {
         expected_files = ($classification.min_files | Sort-Object)
         audio_tracks = $audioTracks
         total_extracted = $extractedFiles.Count
+    }
+    if ($discImageType -eq 'iso') {
+        $spec.import_mode = 'setup_iso'
+    } elseif ($discId -eq 'descent-mac-macplay') {
+        $spec.import_mode = 'setup_cd'
     }
 
     # Write as json5 (just JSON with a comment header)
@@ -283,7 +298,7 @@ $gogInstallers = @(
 
 foreach ($gog in $gogInstallers) {
     $installerPath = Join-Path $gogDir $gog.file
-    if (-not (Test-Path $installerPath)) {
+    if (-not (Test-Path -LiteralPath $installerPath)) {
         Write-Host "  SKIP $($gog.file): not found" -ForegroundColor Yellow
         continue
     }
@@ -296,13 +311,13 @@ foreach ($gog in $gogInstallers) {
     }
 
     # Hash installer
-    $hash = (Get-FileHash $installerPath -Algorithm SHA256).Hash.ToLower()
+    $hash = (Get-FileHash -LiteralPath $installerPath -Algorithm SHA256).Hash.ToLower()
 
     # Get extracted files from the pre-extracted directory
     $extractedDir = Join-Path $gogDir ([System.IO.Path]::GetFileNameWithoutExtension($gog.file))
     $extractedFiles = @()
     $extractedCount = 0
-    if (Test-Path $extractedDir) {
+    if (Test-Path -LiteralPath $extractedDir) {
         $extractedFiles = Get-ChildItem $extractedDir -Recurse -File | Select-Object -ExpandProperty Name | Sort-Object
         $extractedCount = $extractedFiles.Count
     }

@@ -68,6 +68,8 @@
 #include "gauges.h"
 #include "playsave.h"
 #include "args.h"
+#include "timer.h"
+#include "strutil.h"
 #include "xmodel.h"
 #include "oglprog.h"
 
@@ -145,6 +147,159 @@ GLfloat *secondary_lva[3]={NULL, NULL, NULL};
 int r_polyc,r_tpolyc,r_bitmapc,r_ubitbltc,r_upixelc;
 extern int linedotscale;
 #define f2glf(x) (f2fl(x))
+
+#if defined(ANDROID) && defined(OGL_MERGE)
+static unsigned int metl154_source_log_mask = 0;
+
+static void ogl_get_metl154_palette_counts(grs_bitmap *bm, int *idx254, int *idx255, int *real_flags)
+{
+	grs_bitmap *src = bm;
+	int total, i;
+
+	*idx254 = 0;
+	*idx255 = 0;
+	*real_flags = piggy_bitmap_get_flags(bm);
+
+	if (src->bm_flags & BM_FLAG_RLE)
+		src = rle_expand_texture(src);
+	if (!src || !src->bm_data || src->bm_w <= 0 || src->bm_h <= 0)
+		return;
+
+	total = src->bm_w * src->bm_h;
+	for (i = 0; i < total; i++) {
+		if (src->bm_data[i] == 254)
+			(*idx254)++;
+		else if (src->bm_data[i] == 255)
+			(*idx255)++;
+	}
+}
+
+static int ogl_mark_metl154_source_log(const char *bitmapname, unsigned int bit)
+{
+	if (!bitmapname || d_stricmp(bitmapname, "metl154"))
+		return 0;
+	if (metl154_source_log_mask & bit)
+		return 0;
+	metl154_source_log_mask |= bit;
+	return 1;
+}
+
+static void ogl_log_metl154_palette_source(const char *bitmapname, const unsigned char *data,
+	int width, int height, int bm_flags, unsigned int bit, const char *source)
+{
+	int total, idx254, idx255, i;
+
+	if (!data || width <= 0 || height <= 0 || !ogl_mark_metl154_source_log(bitmapname, bit))
+		return;
+
+	total = width * height;
+	idx254 = 0;
+	idx255 = 0;
+	for (i = 0; i < total; i++) {
+		if (data[i] == 254)
+			idx254++;
+		else if (data[i] == 255)
+			idx255++;
+	}
+
+	debug_log(DLOG_TEXTURE,
+		"[metl154src] source=%s kind=palette flags=0x%x size=%dx%d idx254=%d idx255=%d opaque=%d",
+		source, bm_flags, width, height, idx254, idx255, total - idx254 - idx255);
+}
+
+static void ogl_log_metl154_alpha_source(const char *bitmapname, const unsigned char *data,
+	int width, int height, int channels, int bm_flags, unsigned int bit, const char *source)
+{
+	int total, alpha0, alpha255, alpha_partial, i;
+
+	if (!data || width <= 0 || height <= 0 || !ogl_mark_metl154_source_log(bitmapname, bit))
+		return;
+
+	if (channels < 4) {
+		debug_log(DLOG_TEXTURE,
+			"[metl154src] source=%s kind=rgb flags=0x%x size=%dx%d channels=%d",
+			source, bm_flags, width, height, channels);
+		return;
+	}
+
+	total = width * height;
+	alpha0 = 0;
+	alpha255 = 0;
+	alpha_partial = 0;
+	for (i = 0; i < total; i++) {
+		unsigned char alpha = data[i * channels + 3];
+		if (!alpha)
+			alpha0++;
+		else if (alpha == 255)
+			alpha255++;
+		else
+			alpha_partial++;
+	}
+
+	debug_log(DLOG_TEXTURE,
+		"[metl154src] source=%s kind=rgba flags=0x%x size=%dx%d alpha0=%d alpha255=%d alpha_partial=%d",
+		source, bm_flags, width, height, alpha0, alpha255, alpha_partial);
+}
+
+static void ogl_log_metl154_diag(grs_bitmap *bmbot, grs_bitmap *bmovl,
+	g3s_uvl *uvl_list, GLfloat *texcoordovl_array, int nv, int orient, int super)
+{
+	static fix64 last_log_time = 0;
+	fix64 now;
+	const char *ovlname = piggy_game_bitmap_name(bmovl);
+	const char *botname;
+	fix min_u, max_u, min_v, max_v;
+	GLfloat min_ou, max_ou, min_ov, max_ov;
+	int src254, src255, real_flags;
+	int i;
+
+	if (!ovlname || d_stricmp(ovlname, "metl154") || nv <= 0)
+		return;
+
+	now = timer_query();
+	if (now <= last_log_time + F1_0)
+		return;
+	last_log_time = now;
+
+	min_u = max_u = uvl_list[0].u;
+	min_v = max_v = uvl_list[0].v;
+	min_ou = max_ou = texcoordovl_array[0];
+	min_ov = max_ov = texcoordovl_array[1];
+	for (i = 1; i < nv; i++) {
+		if (uvl_list[i].u < min_u) min_u = uvl_list[i].u;
+		if (uvl_list[i].u > max_u) max_u = uvl_list[i].u;
+		if (uvl_list[i].v < min_v) min_v = uvl_list[i].v;
+		if (uvl_list[i].v > max_v) max_v = uvl_list[i].v;
+		if (texcoordovl_array[i * 2] < min_ou) min_ou = texcoordovl_array[i * 2];
+		if (texcoordovl_array[i * 2] > max_ou) max_ou = texcoordovl_array[i * 2];
+		if (texcoordovl_array[i * 2 + 1] < min_ov) min_ov = texcoordovl_array[i * 2 + 1];
+		if (texcoordovl_array[i * 2 + 1] > max_ov) max_ov = texcoordovl_array[i * 2 + 1];
+	}
+
+	botname = piggy_game_bitmap_name(bmbot);
+	ogl_get_metl154_palette_counts(bmovl, &src254, &src255, &real_flags);
+	debug_log(DLOG_TEXTURE,
+		"[metl154diag] orient=%d shader=%s bot=%s raw_uv=%.3f..%.3f/%.3f..%.3f ovl_uv=%.3f..%.3f/%.3f..%.3f flags=0x%x real_flags=0x%x src254=%d src255=%d ovl_png=%d ovl_wh=%dx%d tex_wh=%dx%d tex_p2=%dx%d tex_uv=%.3f/%.3f mask=%u",
+		orient,
+		super ? "mask" : "plain",
+		botname ? botname : "<none>",
+		f2fl(min_u), f2fl(max_u), f2fl(min_v), f2fl(max_v),
+		min_ou, max_ou, min_ov, max_ov,
+		bmovl->bm_flags,
+		real_flags,
+		src254,
+		src255,
+		bmovl->gltexture ? bmovl->gltexture->is_png : -1,
+		bmovl->bm_w, bmovl->bm_h,
+		bmovl->gltexture ? bmovl->gltexture->w : 0,
+		bmovl->gltexture ? bmovl->gltexture->h : 0,
+		bmovl->gltexture ? bmovl->gltexture->tw : 0,
+		bmovl->gltexture ? bmovl->gltexture->th : 0,
+		bmovl->gltexture ? bmovl->gltexture->u : 0.0f,
+		bmovl->gltexture ? bmovl->gltexture->v : 0.0f,
+		bmovl->gltexture_mask ? bmovl->gltexture_mask->handle : 0);
+}
+#endif
 
 #ifdef ANDROID
 /* Debug texture overlay globals -- android port only */
@@ -1236,6 +1391,10 @@ bool g3_draw_tmap_2(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_
 		glActiveTexture(GL_TEXTURE0);
 		return 0;
 	}
+	if (bmovl->bm_flags & BM_FLAG_TRANSPARENT) {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	}
 	ogl_texwrap(bmovl->gltexture,GL_REPEAT);
 
 	/* Compute super after bindbmtex -- on first encounter bm_flags may be
@@ -1290,6 +1449,10 @@ bool g3_draw_tmap_2(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_
 		vertex_array[index3+1]   = f2glf(pointlist[c]->p3_vec.y);
 		vertex_array[index3+2]   = -f2glf(pointlist[c]->p3_vec.z);
 	}
+
+#if defined(ANDROID) && defined(OGL_MERGE)
+	ogl_log_metl154_diag(bmbot, bmovl, uvl_list, texcoordovl_array, nv, orient, super);
+#endif
 	
 #ifndef OGL_MERGE
 	glVertexPointer(3, GL_FLOAT, 0, vertex_array);
@@ -1348,6 +1511,8 @@ bool g3_draw_tmap_2(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_
 #else
 	glUseProgram(prog);
 #endif
+	if (!super)
+		ogl_prog_set_tex2_alpha_cutoff((bmovl->bm_flags & BM_FLAG_TRANSPARENT) ? 0.5f : 0.0f);
 
 	glEnableVertexAttribArray(OGL_APOS);
 	glEnableVertexAttribArray(OGL_ACOLOR);
@@ -2744,6 +2909,14 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 			if (pdata.depth == 8 && pdata.color)
 			{
 				int df = pdata.paletted ? 0 : pdata.channels;
+				if (!df)
+					ogl_log_metl154_palette_source(bitmapname, pdata.data,
+						pdata.width, pdata.height, bm->bm_flags, 1u << 1, "png-pal");
+				else
+					ogl_log_metl154_alpha_source(bitmapname, pdata.data,
+						pdata.width, pdata.height, df, bm->bm_flags,
+						df >= 4 ? 1u << 2 : 1u << 3,
+						df >= 4 ? "png-rgba" : "png-rgb");
 				if (bm->gltexture == NULL)
 					ogl_init_texture(bm->gltexture = ogl_get_free_texture(), pdata.width, pdata.height, ((pdata.alpha || bm->bm_flags & BM_FLAG_TRANSPARENT) ? OGL_FLAG_ALPHA : 0));
 				if (ogl_loadtexture(pdata.data, 0, 0, bm->gltexture, bm->bm_flags, df, texfilt)) {
@@ -2767,6 +2940,8 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 #endif
 				}
 				#endif
+					ogl_log_metl154_palette_source(bitmapname, buf, bm->bm_w, bm->bm_h,
+						bm->bm_flags, 1u << 0, "stock-pal");
 				free(pdata.data);
 				if (pdata.palette)
 					free(pdata.palette);

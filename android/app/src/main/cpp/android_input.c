@@ -60,6 +60,11 @@ volatile int g_host_selecting_players = 0;
  * Kotlin shows a "NEXT" overlay button (upper-right). */
 volatile int g_levelcomplete_active = 0;
 
+/* Set by JNI on the UI thread when the admin tray requests save/load.
+ * The game thread consumes these in d1/d2 gamecntl.c. */
+volatile int g_android_open_save_menu = 0;
+volatile int g_android_open_load_menu = 0;
+
 /* Forward declaration — defined later in this file, written by the blit path. */
 extern volatile int g_blit_y_offset;
 
@@ -414,6 +419,26 @@ static int is_pause_window_front(void)
 	return callback == (int (*)(window *, d_event *, void *)) pause_handler;
 }
 
+static jboolean queue_android_saveload_request(int save_request)
+{
+	window *front;
+
+	if (!Game_wind) {
+		LOGI("nativeOpen%sMenuIfSafe: not in gameplay", save_request ? "Save" : "Load");
+		return JNI_FALSE;
+	}
+
+	front = window_get_front();
+	if (front != Game_wind && !is_pause_window_front()) {
+		LOGI("nativeOpen%sMenuIfSafe: unsupported front window", save_request ? "Save" : "Load");
+		return JNI_FALSE;
+	}
+
+	g_android_open_save_menu = save_request ? 1 : 0;
+	g_android_open_load_menu = save_request ? 0 : 1;
+	return JNI_TRUE;
+}
+
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeOnResume(JNIEnv *env, jobject thiz)
 {
@@ -494,6 +519,18 @@ Java_com_dxxredux_app_MainActivity_nativeClosePauseIfFront(JNIEnv *env, jobject 
 
 	inject_key_tap(SDLK_PAUSE);
 	return JNI_TRUE;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeOpenSaveMenuIfSafe(JNIEnv *env, jobject thiz)
+{
+	return queue_android_saveload_request(1);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeOpenLoadMenuIfSafe(JNIEnv *env, jobject thiz)
+{
+	return queue_android_saveload_request(0);
 }
 
 JNIEXPORT jboolean JNICALL

@@ -4,6 +4,7 @@
 
 GLuint ogl_prog_tex2, ogl_prog_tex2m;
 GLuint ogl_tex2_mat, ogl_tex2m_mat;
+GLint ogl_tex2_alpha_cutoff = -1;
 
 GLfloat ogl_mat_ortho[16] = {
 	1, 0, 0, 0,
@@ -82,9 +83,13 @@ void ogl_init_prog() {
 		"\n varying vec4 vcolor;"
 		"\n uniform sampler2D utex;"
 		"\n uniform sampler2D utex2;"
+		"\n uniform float utex2alpha_cutoff;"
 		"\n void main() {"
 		"\n  vec4 bot = texture2D(utex, vtexcoord), ovl = texture2D(utex2, vtexcoord2);"
-		"\n  vec4 c = vec4(mix(bot.rgb, ovl.rgb, ovl.a), bot.a + ovl.a - bot.a * ovl.a);" // same as 1 - (1 - bot.a) * (1 - ovl.a)
+		"\n  float ovla = ovl.a;"
+		"\n  if (utex2alpha_cutoff > 0.0)"
+		"\n   ovla = ovl.a >= utex2alpha_cutoff ? 1.0 : 0.0;"
+		"\n  vec4 c = vec4(mix(bot.rgb, ovl.rgb, ovla), bot.a + ovla - bot.a * ovla);" // same as 1 - (1 - bot.a) * (1 - ovl.a)
 		"\n  vec4 f = vcolor * c;"
 		"\n  if (f.a < 0.02) discard;"
 		"\n  gl_FragColor = f;"
@@ -120,10 +125,12 @@ void ogl_init_prog() {
 
 	ogl_tex2_mat = glGetUniformLocation(ogl_prog_tex2, "umat");
 	ogl_tex2m_mat = glGetUniformLocation(ogl_prog_tex2m, "umat");
+	ogl_tex2_alpha_cutoff = glGetUniformLocation(ogl_prog_tex2, "utex2alpha_cutoff");
 
 	glUseProgram(ogl_prog_tex2);
 	glUniform1i(glGetUniformLocation(ogl_prog_tex2, "utex"), 0);
 	glUniform1i(glGetUniformLocation(ogl_prog_tex2, "utex2"), 1);
+	glUniform1f(ogl_tex2_alpha_cutoff, 0.0f);
 
 	glUseProgram(ogl_prog_tex2m);
 	glUniform1i(glGetUniformLocation(ogl_prog_tex2m, "utex"), 0);
@@ -131,6 +138,11 @@ void ogl_init_prog() {
 	glUniform1i(glGetUniformLocation(ogl_prog_tex2m, "utex2m"), 2);
 
 	glUseProgram(0);
+}
+
+void ogl_prog_set_tex2_alpha_cutoff(GLfloat cutoff) {
+	if (ogl_tex2_alpha_cutoff >= 0)
+		glUniform1f(ogl_tex2_alpha_cutoff, cutoff);
 }
 
 void ogl_done_prog() {

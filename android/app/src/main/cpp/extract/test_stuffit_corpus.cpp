@@ -38,7 +38,7 @@ using json = nlohmann::json;
 #endif
 
 #ifndef STUFFIT_MANIFEST_DIR
-#define STUFFIT_MANIFEST_DIR "test_fixtures/stuffit_manifests"
+#define STUFFIT_MANIFEST_DIR "test/data/stuffit_manifests"
 #endif
 
 #define STUFFIT_BUILD_DIR            STUFFIT_TEST_FILES_DIR "/build"

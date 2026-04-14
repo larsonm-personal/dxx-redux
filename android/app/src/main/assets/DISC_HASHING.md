@@ -1,7 +1,7 @@
 # Disc Hashing Strategy
 
 ## Overview
-`known_discs.json` identifies BIN/CUE disc images by comparing per-track SHA1 hashes against a database of known Descent II and Descent I disc releases.
+`known_discs.json` identifies disc images by comparing SHA1 hashes against a database of known Descent II and Descent I releases. Most entries are BIN/CUE images matched by raw per-track hashes. Standalone `.iso` images are stored as a single data-only track using the whole ISO file SHA1.
 
 ## Why SHA1?
 - **Redump convention**: The disc preservation community (redump.org) uses SHA1 hashes of full raw 2352-byte sector data per track as the standard fingerprint. By matching this convention, our hashes can be cross-referenced against redump's verified dumps.
@@ -14,11 +14,18 @@ Each track in a BIN/CUE image is hashed independently:
 - The CUE sheet tells us where each track starts and how large it is. We hash exactly the byte range `[start_sector * 2352, (start_sector + num_sectors) * 2352)` from the BIN file.
 - Data tracks and audio tracks are both hashed the same way.
 
+Standalone ISO images are handled as a special data-only case:
+- The whole `.iso` file is hashed as a single synthetic `track: 1` data track.
+- These entries may include `source_format: "iso"` in `track_hashes.json` and `known_discs.json5`.
+- They identify data extraction sources only. Redbook audio still requires BIN/CUE input.
+
 ## Per-track vs. whole-disc hashing
 We hash per-track rather than hashing the entire BIN file because:
 1. **Partial matching**: GOG and other distributors sometimes ship truncated images (e.g., fewer audio tracks than the original retail CD). Per-track hashing lets us match the tracks that *are* present.
 2. **Multi-file BIN/CUE**: Some rips split each track into a separate .bin file. Per-track hashing works with both single-file and multi-file layouts.
 3. **Disc variants**: Different pressings of the same game may have identical data tracks but different audio mastering. Per-track hashing reveals exactly which tracks differ.
+
+Standalone ISO inputs do not have separate Redbook tracks, so the database stores them as a single data-only fingerprint instead of pretending they have raw 2352-byte track structure.
 
 ## Matching algorithm
 For each known disc in the database, we compare SHA1s in order starting from track 1:

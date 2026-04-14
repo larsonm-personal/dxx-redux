@@ -346,6 +346,58 @@ void format_time(char *str, int secs_int)
 
 extern int netplayerinfo_on;
 
+#ifdef __ANDROID__
+extern volatile int g_android_open_save_menu;
+extern volatile int g_android_open_load_menu;
+
+static void android_clear_saveload_requests(void)
+{
+	g_android_open_save_menu = 0;
+	g_android_open_load_menu = 0;
+}
+
+static int android_handle_pause_saveload_request(window *wind)
+{
+	if (!g_android_open_save_menu && !g_android_open_load_menu)
+		return 0;
+
+	if (g_android_open_save_menu) {
+		if (Player_is_dead) {
+			android_clear_saveload_requests();
+			return 0;
+		}
+	} else if ((Game_mode & GM_MULTI) && !(Game_mode & GM_MULTI_COOP)) {
+		android_clear_saveload_requests();
+		return 0;
+	}
+
+	window_close(wind);
+	return 1;
+}
+
+static int android_handle_ingame_saveload_request(void)
+{
+	if (g_android_open_save_menu) {
+		android_clear_saveload_requests();
+		if (!Player_is_dead) {
+			state_save_all(0, NULL, 0);
+			return 1;
+		}
+		return 0;
+	}
+
+	if (g_android_open_load_menu) {
+		android_clear_saveload_requests();
+		if (!((Game_mode & GM_MULTI) && !(Game_mode & GM_MULTI_COOP))) {
+			state_restore_all(1, 0, NULL);
+			return 1;
+		}
+	}
+
+	return 0;
+}
+#endif
+
 //Process selected keys until game unpaused
 int pause_handler(window *wind, d_event *event, char *msg)
 {
@@ -379,6 +431,10 @@ int pause_handler(window *wind, d_event *event, char *msg)
 			break;
 
 		case EVENT_IDLE:
+			#ifdef __ANDROID__
+			if (android_handle_pause_saveload_request(wind))
+				return 1;
+			#endif
 			timer_delay2(50);
 			break;
 
@@ -2003,6 +2059,11 @@ int ReadControls(d_event *event)
 
 	if (Newdemo_state == ND_STATE_PLAYBACK)
 		update_vcr_state();
+
+	#ifdef __ANDROID__
+	if (event->type == EVENT_IDLE && android_handle_ingame_saveload_request())
+		return 1;
+	#endif
 
 	if (event->type == EVENT_KEY_COMMAND)
 	{

@@ -22,6 +22,7 @@
 #include <io.h>
 #include <fcntl.h>
 #include <direct.h>
+#define strcasecmp         _stricmp
 #define open_bin(p)        _open(p, _O_RDONLY | _O_BINARY)
 #define close_fd(fd)       _close(fd)
 #define read_fd(fd, b, n)  _read(fd, b, (unsigned int) (n))
@@ -282,6 +283,119 @@ static void path_join(char *out, int out_len, const char *a, const char *b)
 	snprintf(out, out_len, "%s/%s", a, b);
 }
 
+static int path_has_extension(const char *path, const char *ext)
+{
+	const char *dot = strrchr(path, '.');
+
+	if (!dot || !ext) return 0;
+	return strcasecmp(dot, ext) == 0;
+}
+
+static int progress_cb(const char *filename, long long done, long long total, void *ud);
+
+static int hash_file_bytes(const char *path, char sha_hex[41])
+{
+	SHA1_CTX sha_ctx;
+	unsigned char sha_digest[20];
+	unsigned char buf[64 * 1024];
+	int fd, n;
+
+	fd = open_bin(path);
+	if (fd < 0)
+		return -1;
+
+	sha1_init(&sha_ctx);
+	for (;;) {
+		n = read_fd(fd, buf, sizeof(buf));
+		if (n < 0) {
+			close_fd(fd);
+			return -1;
+		}
+		if (n == 0)
+			break;
+		sha1_update(&sha_ctx, buf, (unsigned int) n);
+	}
+	close_fd(fd);
+
+	sha1_final(sha_digest, &sha_ctx);
+	sha1_hex(sha_digest, sha_hex);
+	return 0;
+}
+
+static void print_iso_json_line(const char *sha_hex, int files_extracted, const char *error)
+{
+	if (error) {
+		if (sha_hex && *sha_hex) {
+			printf("{\"track\": 1, \"type\": \"data\", \"sha1\": \"%s\", \"source_format\": \"iso\", \"error\": \"%s\"}\n",
+			       sha_hex, error);
+		} else {
+			printf("{\"track\": 1, \"type\": \"data\", \"source_format\": \"iso\", \"error\": \"%s\"}\n",
+			       error);
+		}
+		return;
+	}
+
+	printf("{\"track\": 1, \"type\": \"data\", \"sha1\": \"%s\", \"files_extracted\": %d, \"source_format\": \"iso\"}\n",
+	       sha_hex, files_extracted);
+}
+
+static void extract_iso_image(const char *iso_path,
+                              const char *out_dir,
+                              int *data_tracks_extracted,
+                              int *total_files_extracted,
+                              int *errors)
+{
+	char sha_hex[41] = "";
+	iso_file_list_t file_list;
+	int iso_fd, nf;
+
+	if (hash_file_bytes(iso_path, sha_hex) < 0) {
+		fprintf(stderr, "ERROR: Cannot hash ISO: %s\n", iso_path);
+		print_iso_json_line(NULL, 0, "cannot hash ISO");
+		(*errors)++;
+		return;
+	}
+
+	iso_fd = open_bin(iso_path);
+	if (iso_fd < 0) {
+		fprintf(stderr, "ERROR: Cannot open ISO: %s\n", iso_path);
+		print_iso_json_line(sha_hex, 0, "cannot open ISO");
+		(*errors)++;
+		return;
+	}
+
+	nf = iso_list_image_files(iso_fd, &file_list);
+	if (nf > 0) {
+		int extracted;
+
+		mkdir_p(out_dir);
+		extracted = iso_extract_image_files(iso_fd, &file_list, out_dir,
+		                                    NULL, progress_cb, NULL);
+		if (extracted >= 0) {
+			if (extracted > 0) {
+				(*data_tracks_extracted)++;
+				(*total_files_extracted) += extracted;
+			}
+			fprintf(stderr, "  ISO image: extracted %d files to %s\n",
+			        extracted, out_dir);
+			print_iso_json_line(sha_hex, extracted, NULL);
+		} else {
+			fprintf(stderr, "  ISO image: extraction failed\n");
+			print_iso_json_line(sha_hex, 0, "ISO extraction failed");
+			(*errors)++;
+		}
+	} else if (nf == 0) {
+		fprintf(stderr, "  ISO image: no files found\n");
+		print_iso_json_line(sha_hex, 0, NULL);
+	} else {
+		fprintf(stderr, "  ISO image: listing failed\n");
+		print_iso_json_line(sha_hex, 0, "ISO listing failed");
+		(*errors)++;
+	}
+
+	close_fd(iso_fd);
+}
+
 /* ── Main ────────────────────────────────────────────────────────────── */
 
 static int progress_cb(const char *filename, long long done, long long total, void *ud)
@@ -295,190 +409,201 @@ static int progress_cb(const char *filename, long long done, long long total, vo
 
 int main(int argc, char *argv[])
 {
-	char cue_dir[1024], out_dir[1024];
+	char source_dir[1024], out_dir[1024];
 	char *cue_text;
 	cue_disc_t disc;
 	long long bin_sizes[CUE_MAX_FILES];
 	int i, num_tracks, data_tracks_extracted = 0, total_files_extracted = 0;
 	int errors = 0;
+	int is_iso;
 
 	if (argc < 2) {
-		fprintf(stderr, "Usage: extract_cd <cue_file> [output_dir]\n");
+		fprintf(stderr, "Usage: extract_cd <cue_or_iso_file> [output_dir]\n");
 		return 1;
 	}
 
-	/* Read CUE sheet */
-	cue_text = read_text_file(argv[1]);
-	if (!cue_text) {
-		fprintf(stderr, "ERROR: Cannot read CUE file: %s\n", argv[1]);
-		return 1;
-	}
-
-	path_dir(argv[1], cue_dir, sizeof(cue_dir));
+	is_iso = path_has_extension(argv[1], ".iso");
+	path_dir(argv[1], source_dir, sizeof(source_dir));
 
 	/* Determine output directory */
 	if (argc >= 3) {
 		snprintf(out_dir, sizeof(out_dir), "%s", argv[2]);
 	} else {
-		path_join(out_dir, sizeof(out_dir), cue_dir, "data_tracks");
+		path_join(out_dir, sizeof(out_dir), source_dir, "data_tracks");
 	}
 
-	/* First pass: parse without sizes to get file count and filenames */
-	memset(&disc, 0, sizeof(disc));
-	num_tracks = cue_parse(cue_text, NULL, 0, &disc);
-	if (num_tracks <= 0) {
-		fprintf(stderr, "ERROR: Failed to parse CUE file: %s\n", argv[1]);
-		free(cue_text);
-		return 1;
-	}
+	if (is_iso) {
+		fprintf(stderr, "Processing ISO image: %s\n", argv[1]);
+		extract_iso_image(argv[1], out_dir,
+		                  &data_tracks_extracted,
+		                  &total_files_extracted,
+		                  &errors);
+	} else {
 
-	/* Get BIN file sizes */
-	{
-		int nfiles = disc.num_files;
-		for (i = 0; i < nfiles; i++) {
-			char bin_path[1024];
-			path_join(bin_path, sizeof(bin_path), cue_dir, disc.files[i].filename);
-			bin_sizes[i] = file_size(bin_path);
-			if (bin_sizes[i] < 0) {
-				fprintf(stderr, "ERROR: Cannot stat BIN file: %s\n", bin_path);
-				free(cue_text);
-				return 1;
-			}
+		/* Read CUE sheet */
+		cue_text = read_text_file(argv[1]);
+		if (!cue_text) {
+			fprintf(stderr, "ERROR: Cannot read CUE file: %s\n", argv[1]);
+			return 1;
 		}
 
-		/* Re-parse with sizes for correct sector counts */
+		/* First pass: parse without sizes to get file count and filenames */
 		memset(&disc, 0, sizeof(disc));
-		num_tracks = cue_parse(cue_text, bin_sizes, nfiles, &disc);
-	}
-	free(cue_text);
-
-	fprintf(stderr, "Parsed %d tracks from %d file(s)\n", num_tracks, disc.num_files);
-
-	/* Process each track */
-	for (i = 0; i < disc.num_tracks; i++) {
-		cue_track_info_t *t = &disc.tracks[i];
-		char bin_path[1024];
-		int bin_fd;
-		SHA1_CTX sha_ctx;
-		unsigned char sha_digest[20];
-		char sha_hex[41];
-		unsigned char sector_buf[CUE_SECTOR_SIZE];
-		int s;
-
-		path_join(bin_path, sizeof(bin_path), cue_dir, disc.files[t->file_index].filename);
-		bin_fd = open_bin(bin_path);
-		if (bin_fd < 0) {
-			fprintf(stderr, "ERROR: Cannot open BIN: %s\n", bin_path);
-			errors++;
-			printf("{\"track\": %d, \"type\": \"%s\", \"error\": \"cannot open BIN\"}\n",
-			       t->track_num, t->type == CUE_TRACK_AUDIO ? "audio" : "data");
-			continue;
+		num_tracks = cue_parse(cue_text, NULL, 0, &disc);
+		if (num_tracks <= 0) {
+			fprintf(stderr, "ERROR: Failed to parse CUE file: %s\n", argv[1]);
+			free(cue_text);
+			return 1;
 		}
 
-		/* Hash the full raw sectors for this track (redump convention) */
-		sha1_init(&sha_ctx);
-
-		/* Seek to track start */
-		lseek_fd(bin_fd, (long long) t->start_sector * CUE_SECTOR_SIZE, SEEK_SET);
-
-		for (s = 0; s < t->num_sectors; s++) {
-			int n = read_fd(bin_fd, sector_buf, CUE_SECTOR_SIZE);
-			if (n != CUE_SECTOR_SIZE) {
-				fprintf(stderr, "WARNING: Short read on track %d sector %d (got %d)\n",
-				        t->track_num, s, n);
-				break;
+		/* Get BIN file sizes */
+		{
+			int nfiles = disc.num_files;
+			for (i = 0; i < nfiles; i++) {
+				char bin_path[1024];
+				path_join(bin_path, sizeof(bin_path), source_dir, disc.files[i].filename);
+				bin_sizes[i] = file_size(bin_path);
+				if (bin_sizes[i] < 0) {
+					fprintf(stderr, "ERROR: Cannot stat BIN file: %s\n", bin_path);
+					free(cue_text);
+					return 1;
+				}
 			}
-			sha1_update(&sha_ctx, sector_buf, CUE_SECTOR_SIZE);
+
+			/* Re-parse with sizes for correct sector counts */
+			memset(&disc, 0, sizeof(disc));
+			num_tracks = cue_parse(cue_text, bin_sizes, nfiles, &disc);
 		}
+		free(cue_text);
 
-		sha1_final(sha_digest, &sha_ctx);
-		sha1_hex(sha_digest, sha_hex);
+		fprintf(stderr, "Parsed %d tracks from %d file(s)\n", num_tracks, disc.num_files);
 
-		/* Extract ISO files from data tracks */
-		if (t->type == CUE_TRACK_DATA) {
-			iso_file_list_t file_list;
-			int nf;
+		/* Process each track */
+		for (i = 0; i < disc.num_tracks; i++) {
+			cue_track_info_t *t = &disc.tracks[i];
+			char bin_path[1024];
+			int bin_fd;
+			SHA1_CTX sha_ctx;
+			unsigned char sha_digest[20];
+			char sha_hex[41];
+			unsigned char sector_buf[CUE_SECTOR_SIZE];
+			int s;
 
-			/* Reopen for ISO reader (it uses its own seeking) */
-			close_fd(bin_fd);
+			path_join(bin_path, sizeof(bin_path), source_dir, disc.files[t->file_index].filename);
 			bin_fd = open_bin(bin_path);
 			if (bin_fd < 0) {
-				fprintf(stderr, "ERROR: Cannot reopen BIN for ISO: %s\n", bin_path);
+				fprintf(stderr, "ERROR: Cannot open BIN: %s\n", bin_path);
 				errors++;
-				printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"error\": \"cannot reopen for ISO\"}\n",
-				       t->track_num, sha_hex);
+				printf("{\"track\": %d, \"type\": \"%s\", \"error\": \"cannot open BIN\"}\n",
+				       t->track_num, t->type == CUE_TRACK_AUDIO ? "audio" : "data");
 				continue;
 			}
 
-			nf = iso_list_files(bin_fd, t->start_sector, t->num_sectors, &file_list);
-			if (nf > 0) {
-				int extracted;
-				mkdir_p(out_dir);
-				extracted = iso_extract_files(bin_fd, t->start_sector, t->num_sectors,
-				                              &file_list, out_dir, NULL, progress_cb, NULL);
-				if (extracted > 0) {
-					data_tracks_extracted++;
-					total_files_extracted += extracted;
-					fprintf(stderr, "  Track %d: extracted %d files to %s\n",
-					        t->track_num, extracted, out_dir);
-					printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"files_extracted\": %d}\n",
-					       t->track_num, sha_hex, extracted);
-				} else {
-					fprintf(stderr, "  Track %d: ISO extraction failed\n", t->track_num);
-					printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"files_extracted\": 0}\n",
-					       t->track_num, sha_hex);
+			/* Hash the full raw sectors for this track (redump convention) */
+			sha1_init(&sha_ctx);
+
+			/* Seek to track start */
+			lseek_fd(bin_fd, (long long) t->start_sector * CUE_SECTOR_SIZE, SEEK_SET);
+
+			for (s = 0; s < t->num_sectors; s++) {
+				int n = read_fd(bin_fd, sector_buf, CUE_SECTOR_SIZE);
+				if (n != CUE_SECTOR_SIZE) {
+					fprintf(stderr, "WARNING: Short read on track %d sector %d (got %d)\n",
+					        t->track_num, s, n);
+					break;
 				}
-			} else if (nf == 0) {
-				fprintf(stderr, "  Track %d: no files found in ISO\n", t->track_num);
-				printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"files_extracted\": 0}\n",
-				       t->track_num, sha_hex);
-			} else {
-				hfs_partition_info_t hfs_info;
+				sha1_update(&sha_ctx, sector_buf, CUE_SECTOR_SIZE);
+			}
 
-				if (hfs_find_partition(bin_fd, t->start_sector, t->num_sectors, &hfs_info) == 0) {
+			sha1_final(sha_digest, &sha_ctx);
+			sha1_hex(sha_digest, sha_hex);
+
+			/* Extract ISO files from data tracks */
+			if (t->type == CUE_TRACK_DATA) {
+				iso_file_list_t file_list;
+				int nf;
+
+				/* Reopen for ISO reader (it uses its own seeking) */
+				close_fd(bin_fd);
+				bin_fd = open_bin(bin_path);
+				if (bin_fd < 0) {
+					fprintf(stderr, "ERROR: Cannot reopen BIN for ISO: %s\n", bin_path);
+					errors++;
+					printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"error\": \"cannot reopen for ISO\"}\n",
+					       t->track_num, sha_hex);
+					continue;
+				}
+
+				nf = iso_list_files(bin_fd, t->start_sector, t->num_sectors, &file_list);
+				if (nf > 0) {
 					int extracted;
-
-					fprintf(stderr,
-					        "  Track %d: detected HFS volume '%s' (%u blocks)\n",
-					        t->track_num,
-					        hfs_info.volume_name[0] ? hfs_info.volume_name : hfs_info.partition_name,
-					        hfs_info.partition_block_count);
-
-					extracted = mac_extract_files_from_hfs_track(bin_fd, t->start_sector, t->num_sectors,
-					                                             out_dir,
-					                                             NULL,
-					                                             mac_hfs_extensions,
-					                                             progress_cb,
-					                                             NULL);
+					mkdir_p(out_dir);
+					extracted = iso_extract_files(bin_fd, t->start_sector, t->num_sectors,
+					                              &file_list, out_dir, NULL, progress_cb, NULL);
 					if (extracted > 0) {
 						data_tracks_extracted++;
 						total_files_extracted += extracted;
-						fprintf(stderr, "  Track %d: extracted %d files from HFS to %s\n",
+						fprintf(stderr, "  Track %d: extracted %d files to %s\n",
 						        t->track_num, extracted, out_dir);
-						/* Keep the data-track JSON line stable so re-running the native path
-						 * does not churn existing track_hashes.json fixtures */
-						printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"error\": \"ISO listing failed\"}\n",
-						       t->track_num, sha_hex);
+						printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"files_extracted\": %d}\n",
+						       t->track_num, sha_hex, extracted);
 					} else {
-						fprintf(stderr, "  Track %d: HFS extraction failed\n", t->track_num);
-						printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"error\": \"HFS extraction failed\"}\n",
+						fprintf(stderr, "  Track %d: ISO extraction failed\n", t->track_num);
+						printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"files_extracted\": 0}\n",
+						       t->track_num, sha_hex);
+					}
+				} else if (nf == 0) {
+					fprintf(stderr, "  Track %d: no files found in ISO\n", t->track_num);
+					printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"files_extracted\": 0}\n",
+					       t->track_num, sha_hex);
+				} else {
+					hfs_partition_info_t hfs_info;
+
+					if (hfs_find_partition(bin_fd, t->start_sector, t->num_sectors, &hfs_info) == 0) {
+						int extracted;
+
+						fprintf(stderr,
+						        "  Track %d: detected HFS volume '%s' (%u blocks)\n",
+						        t->track_num,
+						        hfs_info.volume_name[0] ? hfs_info.volume_name : hfs_info.partition_name,
+						        hfs_info.partition_block_count);
+
+						extracted = mac_extract_files_from_hfs_track(bin_fd, t->start_sector, t->num_sectors,
+						                                             out_dir,
+						                                             NULL,
+						                                             mac_hfs_extensions,
+						                                             progress_cb,
+						                                             NULL);
+						if (extracted > 0) {
+							data_tracks_extracted++;
+							total_files_extracted += extracted;
+							fprintf(stderr, "  Track %d: extracted %d files from HFS to %s\n",
+							        t->track_num, extracted, out_dir);
+							/* Keep the data-track JSON line stable so re-running the native path
+							 * does not churn existing track_hashes.json fixtures */
+							printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"error\": \"ISO listing failed\"}\n",
+							       t->track_num, sha_hex);
+						} else {
+							fprintf(stderr, "  Track %d: HFS extraction failed\n", t->track_num);
+							printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"error\": \"HFS extraction failed\"}\n",
+							       t->track_num, sha_hex);
+							errors++;
+						}
+					} else {
+						fprintf(stderr, "  Track %d: ISO listing failed (not ISO 9660?)\n", t->track_num);
+						printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"error\": \"ISO listing failed\"}\n",
 						       t->track_num, sha_hex);
 						errors++;
 					}
-				} else {
-					fprintf(stderr, "  Track %d: ISO listing failed (not ISO 9660?)\n", t->track_num);
-					printf("{\"track\": %d, \"type\": \"data\", \"sha1\": \"%s\", \"error\": \"ISO listing failed\"}\n",
-					       t->track_num, sha_hex);
-					errors++;
 				}
+			} else {
+				/* Audio track — just output the hash */
+				printf("{\"track\": %d, \"type\": \"audio\", \"sha1\": \"%s\"}\n",
+				       t->track_num, sha_hex);
 			}
-		} else {
-			/* Audio track — just output the hash */
-			printf("{\"track\": %d, \"type\": \"audio\", \"sha1\": \"%s\"}\n",
-			       t->track_num, sha_hex);
-		}
 
-		close_fd(bin_fd);
+			close_fd(bin_fd);
+		}
 	}
 
 	fprintf(stderr, "\nDone: %d data tracks extracted, %d total files, %d errors\n",

@@ -220,6 +220,10 @@ class MainActivity :
 
     external fun nativeClosePauseIfFront(): Boolean
 
+    external fun nativeOpenSaveMenuIfSafe(): Boolean
+
+    external fun nativeOpenLoadMenuIfSafe(): Boolean
+
     external fun nativeOpenGameMenuIfSafe(): Boolean
 
     // ── Music track control (jni_music_control.c) ────────────────────
@@ -595,8 +599,8 @@ class MainActivity :
             when (action) {
                 TouchOverlayView.ADMIN_INCREASE_VIEW -> nativeCycleCockpit(1)
                 TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL -> nativeToggleAutoLeveling()
-                TouchOverlayView.ADMIN_QUICK_SAVE -> openSaveLoadMenu(KeyEvent.KEYCODE_F2)
-                TouchOverlayView.ADMIN_QUICK_LOAD -> openSaveLoadMenu(KeyEvent.KEYCODE_F3)
+                TouchOverlayView.ADMIN_QUICK_SAVE -> openSaveLoadMenu(openSave = true)
+                TouchOverlayView.ADMIN_QUICK_LOAD -> openSaveLoadMenu(openSave = false)
                 TouchOverlayView.ADMIN_OPEN_MENU -> {
                     openGameMenuSafely()
                 }
@@ -1197,22 +1201,14 @@ class MainActivity :
         netEventsOverlay?.hide()
     }
 
-    private fun injectAltFunctionKey(functionKeyCode: Int) {
-        nativeKeyEvent(0, KeyEvent.KEYCODE_ALT_LEFT, 0)
-        nativeKeyEvent(0, functionKeyCode, 0)
-        nativeKeyEvent(1, functionKeyCode, 0)
-        nativeKeyEvent(1, KeyEvent.KEYCODE_ALT_LEFT, 0)
-    }
-
-    private fun openSaveLoadMenu(functionKeyCode: Int) {
-        if (adminTrayPausedGame) {
+    private fun openSaveLoadMenu(openSave: Boolean) {
+        val opened =
             try {
-                nativeClosePauseIfFront()
+                if (openSave) nativeOpenSaveMenuIfSafe() else nativeOpenLoadMenuIfSafe()
             } catch (_: Exception) {
+                false
             }
-            adminTrayPausedGame = false
-        }
-        injectAltFunctionKey(functionKeyCode)
+        if (opened) adminTrayPausedGame = false
     }
 
     private fun openGameMenuSafely() {

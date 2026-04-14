@@ -34,6 +34,32 @@ static const char *mac_game_extensions[] = {
 	"dxa", "cfg", "txt", "256", "msn", "dem", NULL
 };
 
+static jobjectArray build_iso_listing_array(JNIEnv *env, const iso_file_list_t *list)
+{
+	jclass strClass;
+	jobjectArray result;
+	int file_count = 0;
+	int idx = 0;
+
+	for (int i = 0; i < list->num_files; i++)
+		if (!list->files[i].is_dir) file_count++;
+
+	strClass = (*env)->FindClass(env, "java/lang/String");
+	result = (*env)->NewObjectArray(env, file_count, strClass, NULL);
+	for (int i = 0; i < list->num_files; i++) {
+		char buf[ISO_PATH_LEN + 32];
+		jstring s;
+
+		if (list->files[i].is_dir) continue;
+		snprintf(buf, sizeof(buf), "%s|%u", list->files[i].path, list->files[i].size);
+		s = (*env)->NewStringUTF(env, buf);
+		(*env)->SetObjectArrayElement(env, result, idx++, s);
+		(*env)->DeleteLocalRef(env, s);
+	}
+
+	return result;
+}
+
 /* ── CUE parsing ─────────────────────────────────────────────────────── */
 
 /*
@@ -221,25 +247,33 @@ Java_com_dxxredux_app_DiscImportBridge_nativeListIsoFiles(
 		return NULL;
 	}
 
-	/* Filter to non-directory entries only */
-	jclass strClass = (*env)->FindClass(env, "java/lang/String");
-	int file_count = 0;
-	for (int i = 0; i < list.num_files; i++)
-		if (!list.files[i].is_dir) file_count++;
+	jobjectArray result = build_iso_listing_array(env, &list);
+	LOGI("Listed %d ISO entries from BIN track", n);
+	return result;
+}
 
-	jobjectArray result = (*env)->NewObjectArray(env, file_count, strClass, NULL);
-	int idx = 0;
-	for (int i = 0; i < list.num_files; i++) {
-		if (list.files[i].is_dir) continue;
-		char buf[ISO_PATH_LEN + 32];
-		snprintf(buf, sizeof(buf), "%s|%u", list.files[i].path, list.files[i].size);
-		jstring s = (*env)->NewStringUTF(env, buf);
-		(*env)->SetObjectArrayElement(env, result, idx++, s);
-		(*env)->DeleteLocalRef(env, s);
+JNIEXPORT jobjectArray JNICALL
+Java_com_dxxredux_app_DiscImportBridge_nativeListIsoImageFiles(
+    JNIEnv *env, jclass clazz,
+    jint isoFd)
+{
+	iso_file_list_t list;
+	int n;
+
+	if (isoFd < 0) {
+		LOGE("nativeListIsoImageFiles: invalid isoFd %d", isoFd);
+		return NULL;
 	}
 
-	LOGI("Listed %d files from ISO", file_count);
-	return result;
+	memset(&list, 0, sizeof(list));
+	n = iso_list_image_files(isoFd, &list);
+	if (n < 0) {
+		LOGE("iso_list_image_files failed");
+		return NULL;
+	}
+
+	LOGI("Listed %d files from ISO image", n);
+	return build_iso_listing_array(env, &list);
 }
 
 /* ── ISO 9660 extraction ─────────────────────────────────────────────── */
@@ -327,6 +361,43 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoFiles(
 
 	(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);
 	LOGI("Extracted %d files", extracted);
+	return extracted;
+}
+
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoImageFiles(
+    JNIEnv *env, jclass clazz,
+    jint isoFd,
+    jstring outputDir, jobject progress)
+{
+	const char *out_dir;
+	iso_file_list_t list;
+	int n;
+	extract_ctx_t ctx;
+	int extracted;
+
+	if (isoFd < 0) {
+		LOGE("nativeExtractIsoImageFiles: invalid isoFd %d", isoFd);
+		return -1;
+	}
+
+	out_dir = (*env)->GetStringUTFChars(env, outputDir, NULL);
+	if (!out_dir) return -1;
+
+	memset(&list, 0, sizeof(list));
+	n = iso_list_image_files(isoFd, &list);
+	if (n < 0) {
+		(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);
+		return -1;
+	}
+
+	init_extract_ctx(env, progress, &ctx);
+	extracted = iso_extract_image_files(isoFd, &list, out_dir, game_extensions,
+	                                    progress ? extract_progress_cb : NULL,
+	                                    &ctx);
+
+	(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);
+	LOGI("Extracted %d files from ISO image", extracted);
 	return extracted;
 }
 

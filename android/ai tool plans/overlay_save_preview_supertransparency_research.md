@@ -38,9 +38,11 @@
 - The base engine meaning of supertransparency is orientation-aware texmerge: `merge_textures_super_xparent()` rotates the overlay per side orientation and converts palette index 254 into transparency while preserving the bottom texture
 - The Android hires path is different: it uses `OGL_MERGE` plus one pre-generated mask PNG per bitmap name, loaded by `ogl_load_dxa_mask()` and sampled in the merge shader
 - Older repo notes flagged `metl154` as skipped in some packs when ETC2 was RGB-only, but temp conversion logs now show the 256px and 512px `metl154.ktx2` being generated as RGBA, so the current 512px issue is probably not the old no-alpha skip
-- The likely class of failure is now mismatch between the generic mask-based hires pipeline and orientation-specific overlay semantics, especially when the same super-transparent overlay bitmap is used with multiple `tmap2` orientations in D2 level 1
-- The strongest evidence points to a gap in the generalized mask-orientation pipeline, not a METL154-only special case
-- Likely touch points: `game_data/mods/convert_d2xxl_textures.ps1`, `d2/arch/ogl/ogl.c`, `d2/arch/ogl/oglprog.c`, `d2/main/render.c`, `d2/main/texmerge.c`, and the D1 equivalents for shared fixes
+- D2X-XL source shows that super-transparent replacement TGAs are not uniformly raw `#785880` key-color files: some, including `metl154.tga` in the 512 pack, are 32-bit alpha-cutout images with no key-color pixels at all
+- The source `metl154.tga` is overwhelmingly binary alpha (`121010` fully transparent pixels, `140610` fully opaque pixels, only `784` partial-alpha pixels), but still has no exact key-color pixels, so it should not get a D2X-XL-style supertransparent mask
+- Follow-up door analysis showed the converter-side tolerance was broadening keyed masks on textures like `door04#0.tga` while still doing nothing for `metl154`
+- The corrected Android rule is narrower: keep exact-key `*_mask.png` generation for true D2X-XL supertransparent assets, keep transparent-edge color bleed for alpha-cutout TGAs before ETC2 compression, and do not synthesize `metl154_mask.png`
+- Likely touch points remain `game_data/mods/convert_d2xxl_textures.ps1` first, with runtime OGL merge changes only if later emulator testing still shows a separate alpha/compression issue after the regression rollback
 
 ### Implementation plan
 
@@ -51,23 +53,26 @@
 - [x] Add JVM tests covering disabled tray state and single-player reset behavior
 
 #### Phase 2. Add direct save/load menu entry points
-- Add Android JNI helpers for "open save menu if safe" and "open load menu if safe"
-- Implement those helpers in D1 and D2 by routing directly to the same engine save/load functions used by the in-game Escape menu, while explicitly handling the pause window front case
-- Replace Kotlin Alt+F2 / Alt+F3 injection for admin tray actions with the new native calls
-- Verify with a targeted emulator/manual test that the tray can open save/load menus from paused gameplay without collapsing back to gameplay
+- [x] Add Android JNI helpers for "open save menu if safe" and "open load menu if safe"
+- [x] Implement those helpers in D1 and D2 by routing directly to the same engine save/load functions used by the in-game Escape menu, while explicitly handling the pause window front case
+- [x] Replace Kotlin Alt+F2 / Alt+F3 injection for admin tray actions with the new native calls
+- [ ] Verify with a targeted emulator/manual test that the tray can open save/load menus from paused gameplay without collapsing back to gameplay
 
 #### Phase 3. Fix save preview rendering
 - Reproduce in D1 and D2 separately so the bug is not treated as one problem if it is actually format-specific
 - Do not change save formats unless a future investigation proves there is no compatible alternative
-- For D2 first, inspect the post-remap preview draw path (`state_callback`, scaling, and OGL blit) before touching thumbnail serialization
+- [x] For D2 first, inspect the post-remap preview draw path (`state_callback`, scaling, and OGL blit) before touching thumbnail serialization
+- [x] D2 fix implemented: `state_callback` now uses the transient OGL indexed blit path so remapped thumbnails upload against `gr_current_pal` instead of the cached bitmap uploader's default palette
 - If the garble is D1-only, prefer a compatible runtime fix or fallback draw-path investigation before considering any save-format change
 - If D2 is also affected, inspect the saved palette/readback path and add temporary diagnostics around thumbnail bytes and palette remap
 - Add a focused regression check around save preview generation if practical
 
 #### Phase 4. Build a unified supertransparency validation pass
 - Audit the converter output for every `BM_FLAG_SUPER_TRANSPARENT` texture: KTX2 format, mask existence, mask dimensions, and naming consistency
-- Confirm at runtime whether `metl154_mask.png` is present in the 512px DXA and whether `ogl_load_dxa_mask()` loads it on both failing and working faces
-- If the mask exists but one orientation still fails, adjust the hires merge pipeline so mask sampling matches orientation semantics generically instead of patching METL154 by name
+- [x] Compare DXX-Redux conversion/runtime assumptions against D2X-XL source instead of assuming all super-transparent textures stay as raw key-color masks
+- [x] Confirm that `metl154.tga` in the 512px D2X-XL pack is a 32-bit near-binary alpha cutout, not a raw key-color texture, and that the current generated Android pack omits `metl154_mask.png`
+- [x] Update the converter so it keeps exact-key masks for true supertransparent TGAs, keeps transparent-edge color fill for alpha cutouts before ETC2 compression, and does not emit synthetic `metl154`-style masks that broaden door borders
+- If emulator testing still shows an orientation-only failure after the converter fix, adjust the hires merge pipeline so overlay sampling matches orientation semantics generically instead of patching METL154 by name
 - Prefer a converter or load-path rule that applies to all super-transparent textures, with validation against the actual bitmap-flag set, rather than accumulating texture-specific exceptions
 - Verify against D2 level 1 METL154 plus a representative set of doors and other super-transparent overlays
 
@@ -75,9 +80,21 @@
 - JVM tests for tray enabled-state and single-player Net Events reset
 - Emulator/manual test for direct save/load menu opens from the admin tray
 - Save preview reproduction in both D1 and D2 using known fresh save files
-- Runtime texture logging for `metl154` KTX2 format, mask presence, and `tmap2` orientation on D2 level 1 faces
+- Runtime texture logging for `metl154` KTX2 format, alpha-mask presence, and `tmap2` orientation on D2 level 1 faces
+- Direct converter checks against extracted D2X-XL source TGAs so Phase 4 can be validated even when a full pack rebuild is too slow for one session
 
 ### Phase 1 verification
 - `android\run-code-quality.ps1 --fix` passed after the tray and activity changes
 - `gradlew.bat -p android :app:testDebugUnitTest --tests com.dxxredux.app.AdminTrayUiTest --tests com.dxxredux.app.OverlayVisibilityPolicyTest --rerun-tasks --console=plain` passed
 - `gradlew.bat -p android :app:assembleDebug --console=plain` passed
+
+### Phase 2 verification
+- `android\run-code-quality.ps1 --fix` passed after the direct save/load request changes
+- `gradlew.bat -p android :app:testDebugUnitTest --tests com.dxxredux.app.AdminTrayUiTest --tests com.dxxredux.app.OverlayVisibilityPolicyTest :app:assembleDebug --rerun-tasks --console=plain` passed
+- Focused emulator/manual verification is still pending because no `adb` device was connected in this session
+
+### Phase 3 verification
+- `android\run-code-quality.ps1 --fix` passed after the D2 preview render-path change
+- `gradlew.bat -p android :app:assembleDebug --rerun-tasks --console=plain` passed
+- Focused visual verification of the D2 load preview is still pending because no `adb` device was connected in this session
+- Desktop CMake verification is still pending in this session because the local environment is missing `cl.exe` on `PATH` and has no configured `VCPKG_ROOT`

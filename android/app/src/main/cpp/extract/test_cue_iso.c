@@ -270,6 +270,25 @@ static unsigned char *build_minimal_iso(const char *file_name,
 	return img;
 }
 
+static unsigned char *build_minimal_iso_image(const char *file_name,
+                                              const unsigned char *file_data,
+                                              int file_len,
+                                              int *out_sectors)
+{
+	int sectors;
+	unsigned char *raw = build_minimal_iso(file_name, file_data, file_len, &sectors);
+	unsigned char *img = (unsigned char *) malloc((size_t) sectors * USER_DATA_SIZE);
+
+	for (int i = 0; i < sectors; i++)
+		memcpy(img + i * USER_DATA_SIZE,
+		       raw + i * SECTOR_SIZE + 16,
+		       USER_DATA_SIZE);
+
+	free(raw);
+	*out_sectors = sectors;
+	return img;
+}
+
 /* Build sectors of raw audio (just filled with a pattern) */
 static unsigned char *build_audio_sectors(int num_sectors)
 {
@@ -746,6 +765,74 @@ static void test_iso_reader(void)
 		}
 		PASS();
 	}
+
+	TEST(iso_image_list_files_valid);
+	{
+		int iso_sectors;
+		unsigned char *iso_img = build_minimal_iso_image(
+		    "DIRECT.HOG",
+		    (const unsigned char *) file_content,
+		    (int) strlen(file_content),
+		    &iso_sectors);
+		char iso_path[512];
+		snprintf(iso_path, sizeof(iso_path), "%s/test_iso_image.iso", TEST_DIR);
+		FILE *iso_file = fopen(iso_path, "wb");
+		if (!iso_file) {
+			FAIL("cannot create test ISO image");
+			free(iso_img);
+			return;
+		}
+		fwrite(iso_img, USER_DATA_SIZE, iso_sectors, iso_file);
+		fclose(iso_file);
+		free(iso_img);
+
+		int fd = open_bin(iso_path);
+		if (fd < 0) {
+			FAIL("cannot open test ISO image");
+			return;
+		}
+
+		iso_file_list_t list;
+		int rc = iso_list_image_files(fd, &list);
+		if (rc < 0) {
+			FAIL("iso_list_image_files returned error");
+			close_fd(fd);
+			return;
+		}
+
+		int found = 0;
+		for (int i = 0; i < list.num_files; i++) {
+			if (!list.files[i].is_dir && strcmp(list.files[i].path, "direct.hog") == 0)
+				found = 1;
+		}
+		close_fd(fd);
+		if (!found) {
+			FAIL("direct.hog not found in ISO image listing");
+			return;
+		}
+		PASS();
+	}
+
+	TEST(iso_image_list_files_invalid_fd);
+	{
+		iso_file_list_t list;
+		int rc = iso_list_image_files(-1, &list);
+		if (rc != -1) {
+			FAIL("should fail with invalid ISO image fd");
+			return;
+		}
+		PASS();
+	}
+
+	TEST(iso_image_list_files_null_output);
+	{
+		int rc = iso_list_image_files(0, NULL);
+		if (rc != -1) {
+			FAIL("should fail with null ISO image output");
+			return;
+		}
+		PASS();
+	}
 }
 
 /* ── Test: ISO extraction ────────────────────────────────────────────── */
@@ -807,6 +894,71 @@ static void test_iso_extraction(void)
 		fclose(check);
 		if (nr != strlen(content) || memcmp(buf, content, nr) != 0) {
 			FAIL("extracted content mismatch");
+			return;
+		}
+		PASS();
+	}
+
+	TEST(iso_image_extract_files_valid);
+	{
+		int iso_sectors;
+		const char *iso_content = "iso direct payload";
+		unsigned char *iso_img = build_minimal_iso_image(
+		    "IMAGE.HOG",
+		    (const unsigned char *) iso_content,
+		    (int) strlen(iso_content),
+		    &iso_sectors);
+		char iso_path[512];
+		char out_dir[512];
+		snprintf(iso_path, sizeof(iso_path), "%s/test_extract.iso", TEST_DIR);
+		FILE *iso_file = fopen(iso_path, "wb");
+		if (!iso_file) {
+			FAIL("cannot create ISO image for extraction");
+			free(iso_img);
+			return;
+		}
+		fwrite(iso_img, USER_DATA_SIZE, iso_sectors, iso_file);
+		fclose(iso_file);
+		free(iso_img);
+
+		snprintf(out_dir, sizeof(out_dir), "%s/extracted_iso_image", TEST_DIR);
+		mkdir_p(out_dir);
+
+		int fd = open_bin(iso_path);
+		if (fd < 0) {
+			FAIL("cannot open ISO image for extraction");
+			return;
+		}
+
+		iso_file_list_t list;
+		int listed = iso_list_image_files(fd, &list);
+		if (listed < 0) {
+			FAIL("iso_list_image_files failed before extraction");
+			close_fd(fd);
+			return;
+		}
+
+		static const char *exts[] = { "hog", NULL };
+		int extracted = iso_extract_image_files(fd, &list, out_dir,
+		                                        exts, NULL, NULL);
+		close_fd(fd);
+		if (extracted != 1) {
+			FAIL("should extract 1 file from ISO image");
+			return;
+		}
+
+		char check_path[512];
+		snprintf(check_path, sizeof(check_path), "%s/image.hog", out_dir);
+		FILE *check = fopen(check_path, "rb");
+		if (!check) {
+			FAIL("ISO image extracted file not found");
+			return;
+		}
+		char buf[64];
+		size_t nr = fread(buf, 1, sizeof(buf), check);
+		fclose(check);
+		if (nr != strlen(iso_content) || memcmp(buf, iso_content, nr) != 0) {
+			FAIL("ISO image extracted content mismatch");
 			return;
 		}
 		PASS();

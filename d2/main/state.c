@@ -554,22 +554,31 @@ int state_callback(newmenu *menu, d_event *event, grs_bitmap *sc_bmp[])
 	if ( (citem > 0) && (event->type == EVENT_NEWMENU_DRAW) )
 	{
 		if ( sc_bmp[citem-1] )	{
+			int preview_x = (grd_curcanv->cv_bitmap.bm_w/2)-FSPACX(THUMBNAIL_W/2);
+
+		#ifndef OGL
 			grs_canvas *save_canv = grd_curcanv;
-#ifndef OGL
 			grs_canvas *temp_canv = gr_create_canvas(FSPACX(THUMBNAIL_W),FSPACY(THUMBNAIL_H));
-#else
-			grs_canvas *temp_canv = gr_create_canvas(THUMBNAIL_W*2,(THUMBNAIL_H*24/10));
-#endif
+		#else
+			int preview_y = items[0].y-FSPACY(3);
+			int preview_w = FSPACX(THUMBNAIL_W);
+			int preview_h = FSPACY(THUMBNAIL_H);
+
+			/* D2 thumbnails are already remapped into the current palette when loaded.
+			 * Upload them with the transient indexed blit path so OGL uses gr_current_pal
+			 * instead of the cached bitmap uploader's default palette. */
+			ogl_ubitblt_i(preview_w, preview_h, preview_x, preview_y,
+				THUMBNAIL_W, THUMBNAIL_H, 0, 0, sc_bmp[citem-1], &grd_curcanv->cv_bitmap, 1);
+		#endif
+
+		#ifndef OGL
 			grs_point vertbuf[3] = {{0,0}, {0,0}, {i2f(THUMBNAIL_W*2),i2f(THUMBNAIL_H*24/10)} };
 			gr_set_current_canvas(temp_canv);
 			scale_bitmap(sc_bmp[citem-1], vertbuf, 0);
 			gr_set_current_canvas( save_canv );
-#ifndef OGL
-			gr_bitmap( (grd_curcanv->cv_bitmap.bm_w/2)-FSPACX(THUMBNAIL_W/2),items[0].y-3, &temp_canv->cv_bitmap);
-#else
-			ogl_ubitmapm_cs((grd_curcanv->cv_bitmap.bm_w/2)-FSPACX(THUMBNAIL_W/2),items[0].y-FSPACY(3),FSPACX(THUMBNAIL_W),FSPACY(THUMBNAIL_H),&temp_canv->cv_bitmap,-1,F1_0);
-#endif
+			gr_bitmap( preview_x, items[0].y-3, &temp_canv->cv_bitmap);
 			gr_free_canvas(temp_canv);
+		#endif
 		}
 		
 		return 1;

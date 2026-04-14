@@ -33,6 +33,12 @@ param(
 $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not $OutputDir) { $OutputDir = $scriptDir }
+$progressHelperScript = Join-Path $scriptDir "convert_progress_helpers.ps1"
+if (-not (Test-Path $progressHelperScript)) {
+    Write-Error "Missing helper script: $progressHelperScript"
+    exit 1
+}
+. $progressHelperScript
 $repoRoot = Split-Path (Split-Path $scriptDir)
 
 # Auto-locate etc2tool
@@ -125,6 +131,7 @@ foreach ($game in @("d1", "d2")) {
         $sz = $cfg.TexSize
         $mx = $cfg.MaxSize
         $label = if ($mx -gt 0) { $mx } else { $sz }
+        $packStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
         $readme = Get-ReadmeText -GameId $game -Size $label -Downscaled $cfg.Downscaled
         # Always pass ImageMagick: strip splitting needs it even without downscaling
         $magickArg = if ($Magick) { $Magick } else { "" }
@@ -132,6 +139,8 @@ foreach ($game in @("d1", "d2")) {
         & $texScript -Game $game -TexSize $sz -MaxSize $mx -OutputDir $OutputDir -SevenZip $SevenZip -ReadmeText $readme -Magick $magickArg -Etc2Tool $Etc2Tool
         if ($LASTEXITCODE -ne 0) {
             Write-Host "WARNING: Texture conversion failed for $game $label"
+        } else {
+            Write-Host "--- Textures complete: $game ${label}x${label} in $(Format-ElapsedText $packStopwatch.Elapsed) ---"
         }
         Write-Host ""
     }
@@ -157,12 +166,24 @@ function Get-DxaEtc2Names {
 }
 
 function Add-Etc2ToDxa {
-    param([string]$DxaPath, [string[]]$Etc2Files)
+    param(
+        [string]$DxaPath,
+        [string[]]$Etc2Files,
+        [string]$Indent = "    "
+    )
+
+    $updateStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    Write-Host "${Indent}Updating $(Split-Path $DxaPath -Leaf) with $($Etc2Files.Count) files"
     $zip = [System.IO.Compression.ZipFile]::Open($DxaPath, [System.IO.Compression.ZipArchiveMode]::Update)
+    $fileIndex = 0
     foreach ($f in $Etc2Files) {
+        $fileIndex++
         $entryName = [System.IO.Path]::GetFileName($f)
         # Restore '#' from safe naming used during conversion
         $entryName = $entryName -replace '_H_', '#'
+        if ($fileIndex -le 3 -or $fileIndex % 25 -eq 0 -or $fileIndex -eq $Etc2Files.Count) {
+            Write-Host "${Indent}[$((Format-ElapsedText $updateStopwatch.Elapsed))] Adding $fileIndex / $($Etc2Files.Count): $entryName"
+        }
         $entry = $zip.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::NoCompression)
         $stream = $entry.Open()
         $fileBytes = [System.IO.File]::ReadAllBytes($f)
@@ -170,6 +191,7 @@ function Add-Etc2ToDxa {
         $stream.Close()
     }
     $zip.Dispose()
+    Write-Host "${Indent}Archive update complete in $(Format-ElapsedText $updateStopwatch.Elapsed)"
 }
 
 function Convert-AndAdd {
@@ -183,19 +205,21 @@ function Convert-AndAdd {
     # IM writes warnings to stderr; prevent $ErrorActionPreference from
     # turning those into terminating errors (PS 5.1 quirk)
     $ErrorActionPreference = 'Continue'
+    $totalStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
     $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) "dxx_merge_${GameId}_$(Get-Random)"
     New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 
-    Write-Host "  Extracting $(Split-Path $ArchivePath -Leaf)..."
     $extractDir = Join-Path $tempDir "extract"
-    & $SevenZip x "-o$extractDir" $ArchivePath -y 2>$null
-    if ($LASTEXITCODE -ne 0) { throw "7z extraction failed" }
+    Invoke-7ZipExtract -SevenZipPath $SevenZip -ArchivePath $ArchivePath -ExtractDir $extractDir -Indent "  "
     $tgaDir = Join-Path (Join-Path $extractDir "textures") $GameId
 
     # Apply d2x-xl -> DXX name fixups (same as convert_d2xxl_textures.ps1)
     # Dot-source is impractical here, so apply the critical renames inline.
     # See Rename-D2xxlTextures in convert_d2xxl_textures.ps1 for full docs.
+    $fixupStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    Write-Host "  Scanning merge texture name fixups"
+    $renamed = 0
 
     # Boss animation frames: boss2_NN -> boss02#(NN-1) (512px D2 archive)
     foreach ($f in (Get-ChildItem -Path $tgaDir -Filter "boss2_*.tga" -File -ErrorAction SilentlyContinue)) {
@@ -203,14 +227,20 @@ function Convert-AndAdd {
         if ($bn -match '^boss2_(\d+)$') {
             $newName = "boss02#$([int]$Matches[1] - 1).tga"
             $newPath = Join-Path $tgaDir $newName
-            if (-not (Test-Path $newPath)) { Rename-Item $f.FullName $newName }
+            if (-not (Test-Path $newPath)) {
+                Rename-Item $f.FullName $newName
+                $renamed++
+            }
         }
     }
     # Exclamation mark frame syntax: name!N -> name#N (256px D2 archive)
     foreach ($f in (Get-ChildItem -Path $tgaDir -Filter "*!*.tga" -File -ErrorAction SilentlyContinue)) {
         $newName = $f.Name -replace '!', '#'
         $newPath = Join-Path $tgaDir $newName
-        if (-not (Test-Path $newPath)) { Rename-Item $f.FullName $newName }
+        if (-not (Test-Path $newPath)) {
+            Rename-Item $f.FullName $newName
+            $renamed++
+        }
     }
     # Targeting reticle: rename -green variants to base name, leave -red as-is
     foreach ($f in (Get-ChildItem -Path $tgaDir -Filter "targ*-green.tga" -File -ErrorAction SilentlyContinue)) {
@@ -218,11 +248,16 @@ function Convert-AndAdd {
         $newPath = Join-Path $tgaDir $newName
         if (Test-Path $newPath) { Remove-Item $newPath -Force }
         Rename-Item $f.FullName $newName
+        $renamed++
     }
     # D1-only names, base names without frame suffix, addon textures:
     # left as-is in archive (unmatched but harmless)
+    Write-Host "  Merge name fixup scan complete: $renamed renamed in $(Format-ElapsedText $fixupStopwatch.Elapsed)"
 
     # Pre-split animation strips so individual frames are available
+    $splitStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    Write-Host "  Scanning merge animation strips"
+    $splitCount = 0
     if ($Magick -and (Test-Path $Magick)) {
         foreach ($tga in (Get-ChildItem -Path $tgaDir -Filter "*#0*.tga" -File -ErrorAction SilentlyContinue)) {
             # Use __STRIP__ prefix so strip source won't collide with frame 0's safe name
@@ -242,6 +277,7 @@ function Convert-AndAdd {
             # Remove original strip before splitting -- we work from the safe
             # copy, and frame 0 gets the same filename as the original strip
             Remove-Item $tga.FullName -Force
+            $splitCount++
             for ($i = 0; $i -lt ($h / $w); $i++) {
                 $frameName = "${nameBase}#${i}${variant}.tga"
                 $safeFrame = Join-Path $tgaDir ($frameName -replace '#', '__H__')
@@ -255,11 +291,13 @@ function Convert-AndAdd {
             Remove-Item $safePath -Force -ErrorAction SilentlyContinue
         }
     }
+    Write-Host "  Merge animation strip scan complete: $splitCount split in $(Format-ElapsedText $splitStopwatch.Elapsed)"
 
     # Textures that should never be downscaled: full-screen cockpit overlays
     $noDownscalePattern = '^(cockpit|hires-cockpit)'
 
     foreach ($tgt in $Targets) {
+        $targetStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
         $maxDim = $tgt.MaxDim
         $dxaPath = $tgt.DxaPath
         $label = if ($maxDim -gt 0) { $maxDim } else { "native" }
@@ -267,12 +305,22 @@ function Convert-AndAdd {
         New-Item -ItemType Directory -Path $outDir -Force | Out-Null
 
         $converted = 0
+        $errors = 0
+        $processed = 0
         $mergeTotal = $MissingNames.Count
         $etc2Files = @()
+        Write-Host "    Target $label: processing $mergeTotal textures"
         foreach ($name in $MissingNames) {
+            $processed++
+            Write-ItemStartLine -Stopwatch $targetStopwatch -Index $processed -Total $mergeTotal -ItemName $name -Indent "      "
             $src = Join-Path $tgaDir "$name.tga"
             if (-not (Test-Path $src)) { $src = Join-Path $tgaDir "$name.jpg" }
-            if (-not (Test-Path $src)) { continue }
+            if (-not (Test-Path $src)) {
+                $errors++
+                Write-Host "      Missing source for $name"
+                Write-ProgressSummaryLine -Stopwatch $targetStopwatch -Processed $processed -Total $mergeTotal -ItemName $name -Succeeded $converted -Errors $errors -Indent "      "
+                continue
+            }
 
             try {
                 $safeName = $name -replace '#', '_H_'
@@ -296,21 +344,28 @@ function Convert-AndAdd {
                 if ($LASTEXITCODE -ne 0) { throw "etc2tool failed" }
                 $etc2Files += $tempEtc2
                 $converted++
-                if ($converted % 10 -eq 0) {
-                    Write-Host "      Merge ${label}: $converted / $mergeTotal"
+                if ($processed -le 3 -or $processed % 10 -eq 0 -or $processed -eq $mergeTotal) {
+                    Write-ProgressSummaryLine -Stopwatch $targetStopwatch -Processed $processed -Total $mergeTotal -ItemName $name -Succeeded $converted -Errors $errors -Indent "      "
                 }
             } catch {
                 Write-Host "    ERROR: $name -- $_"
+                $errors++
+                Write-ProgressSummaryLine -Stopwatch $targetStopwatch -Processed $processed -Total $mergeTotal -ItemName $name -Succeeded $converted -Errors $errors -Indent "      "
             }
         }
 
         if ($etc2Files.Count -gt 0) {
             Write-Host "    Adding $converted textures to $(Split-Path $dxaPath -Leaf)"
-            Add-Etc2ToDxa -DxaPath $dxaPath -Etc2Files $etc2Files
+            Add-Etc2ToDxa -DxaPath $dxaPath -Etc2Files $etc2Files -Indent "      "
+        } else {
+            Write-Host "    No converted textures for $(Split-Path $dxaPath -Leaf)"
         }
+
+        Write-Host "    Target $label complete: processed $processed / $mergeTotal, converted $converted, errors $errors in $(Format-ElapsedText $targetStopwatch.Elapsed)"
     }
 
     Remove-Item -Recurse -Force $tempDir
+    Write-Host "  Merge source $GameId complete in $(Format-ElapsedText $totalStopwatch.Elapsed)"
 }
 
 Write-Host "--- Merge pass: equalizing texture counts ---"
@@ -355,9 +410,12 @@ Write-Host ""
 
 # Sounds: both games
 Write-Host "--- Sounds: d1 + d2 ---"
+$soundStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 & $sndScript -Game both -OutputDir $OutputDir -SevenZip $SevenZip
 if ($LASTEXITCODE -ne 0) {
     Write-Host "WARNING: Sound conversion failed"
+} else {
+    Write-Host "--- Sounds complete in $(Format-ElapsedText $soundStopwatch.Elapsed) ---"
 }
 
 Write-Host ""

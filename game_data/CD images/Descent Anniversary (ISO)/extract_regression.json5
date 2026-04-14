@@ -1,0 +1,24 @@
+﻿// Auto-generated regression spec for: Descent Anniversary (ISO)
+// Generated: 2026-04-12 23:36:44
+{
+  "source_type": "cd",
+  "disc_image_type": "iso",
+  "disc_id": "descent-anniversary-iso",
+  "source_files": [
+    {
+      "sha256": "cc1d57ca05827821dd1298fa059f5b23e4b4cfb093d0692847cc6391bca951b2",
+      "name": "descent_anniversary.iso"
+    }
+  ],
+  "game": "d1",
+  "classification": "d1_full",
+  "expected_mission": "Descent: First Strike",
+  "expected_level1": "Lunar Outpost",
+  "expected_files": [
+    "descent.hog",
+    "descent.pig"
+  ],
+  "audio_tracks": 0,
+  "total_extracted": 233,
+  "import_mode": "setup_iso"
+}

@@ -78,7 +78,11 @@ foreach ($folder in $folders) {
     $trackEntries = @()
     foreach ($t in $tracks) {
         if ($null -ne $t.track -and $null -ne $t.type -and $null -ne $t.sha1) {
-            $trackEntries += [ordered]@{ track = $t.track; type = $t.type; sha1 = $t.sha1 }
+            $trackEntry = [ordered]@{ track = $t.track; type = $t.type; sha1 = $t.sha1 }
+            if ($null -ne $t.PSObject.Properties['source_format'] -and $t.source_format) {
+                $trackEntry.source_format = $t.source_format
+            }
+            $trackEntries += $trackEntry
         }
     }
 
@@ -203,7 +207,15 @@ function Format-DiscEntry($disc) {
     for ($i = 0; $i -lt $disc.tracks.Count; $i++) {
         $t = $disc.tracks[$i]
         $comma = if ($i -lt $disc.tracks.Count - 1) { "," } else { "" }
-        $lines += "        {`"track`": $($t.track), `"type`": `"$($t.type)`", `"sha1`": `"$($t.sha1)`"}$comma"
+        $fields = @(
+            "`"track`": $($t['track'])",
+            "`"type`": `"$($t['type'])`"",
+            "`"sha1`": `"$($t['sha1'])`""
+        )
+        if ($t.Contains('source_format')) {
+            $fields += "`"source_format`": `"$($t['source_format'])`""
+        }
+        $lines += "        {$($fields -join ', ')}$comma"
     }
     $lines += "      ]"
     $lines += "    }"

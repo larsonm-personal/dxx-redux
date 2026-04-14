@@ -199,6 +199,17 @@ function Send-SetupCdImport {
     Adb -CmdArgs $args_ | Out-Null
 }
 
+function Send-SetupIsoImport {
+    param([string]$IsoPath)
+
+    $args_ = @(
+        'shell', 'am', 'broadcast', '-a', 'com.dxxredux.SETUP_COMMAND',
+        '--es', 'command', 'import_iso',
+        '--es', 'iso_path', $IsoPath
+    )
+    Adb -CmdArgs $args_ | Out-Null
+}
+
 function Ensure-AppPrivateFile {
     param(
         [string]$LocalPath,
@@ -207,7 +218,7 @@ function Ensure-AppPrivateFile {
     )
 
     $RemoteRelativePath = $RemoteRelativePath -replace '\\', '/'
-    $localItem = Get-Item $LocalPath
+    $localItem = Get-Item -LiteralPath $LocalPath
     $remoteSize = Adb -CmdArgs @('shell', 'run-as', $PACKAGE, 'stat', '-c', '%s', $RemoteRelativePath)
     if ($remoteSize -match '^\d+$' -and [long]$remoteSize -eq $localItem.Length) {
         Write-Status "  Reusing staged source: $RemoteRelativePath" 'Gray'
@@ -277,7 +288,7 @@ function Get-RemoteFileSize {
 
 # -- Read spec ------------------------------------------------
 
-if (-not (Test-Path $SpecPath)) {
+if (-not (Test-Path -LiteralPath $SpecPath)) {
     Write-Host "FAIL: Spec file not found: $SpecPath" -ForegroundColor Red
     exit 1
 }
@@ -286,6 +297,8 @@ $spec = Read-Json5 $SpecPath
 $specDir = Split-Path (Resolve-Path $SpecPath) -Parent
 $sourceName = (Split-Path $specDir -Leaf)
 $useDirectCdImport = $spec.import_mode -eq 'setup_cd'
+$useDirectIsoImport = $spec.import_mode -eq 'setup_iso'
+$useDirectSetupImport = $useDirectCdImport -or $useDirectIsoImport
 
 # -- Result tracking ------------------------------------------
 # Track test result in script-scope vars. Exit-Test writes them to the spec file.
@@ -371,9 +384,9 @@ if (-not $canLaunch) {
 
 $extractedDir = $null
 $filesToPush = @()
-if ($useDirectCdImport) {
+if ($useDirectSetupImport) {
     if ($spec.source_type -ne 'cd') {
-        Write-Host "FAIL: import_mode=setup_cd only supports source_type=cd" -ForegroundColor Red
+        Write-Host "FAIL: setup import modes only support source_type=cd" -ForegroundColor Red
         Exit-Test 1 'fail' 'source_missing'
     }
 } elseif ($spec.source_type -eq 'cd') {
@@ -394,7 +407,7 @@ if ($useDirectCdImport) {
     }
 }
 
-if (-not $useDirectCdImport) {
+if (-not $useDirectSetupImport) {
     # Collect all game files to push (recurse into subdirs, flatten).
     # Filter out 1-byte stubs (some ISO9660 extractions create case-variant symlinks).
     # Skip large optional files (MVLs, SOWs) to speed up testing.
@@ -625,7 +638,7 @@ if ($useDirectCdImport) {
 
     $localCuePath = Join-Path $specDir $cueSpec.name
     $localBinPath = Join-Path $specDir $binSpec.name
-    if (-not (Test-Path $localCuePath) -or -not (Test-Path $localBinPath)) {
+    if (-not (Test-Path -LiteralPath $localCuePath) -or -not (Test-Path -LiteralPath $localBinPath)) {
         Write-Status 'FAIL: Local cue/bin source files are missing for direct import' 'Red'
         Exit-Test 1 'fail' 'source_missing'
     }
@@ -673,6 +686,64 @@ if ($useDirectCdImport) {
 
     if (-not $importReady) {
         Write-Status "FAIL: Timed out waiting for direct CD import to finish" 'Red'
+        Exit-Test 1 'fail' 'file_push_failed'
+    }
+
+    $pushCount = @($state.set_files | Where-Object { $_ }).Count
+    Write-Status "Direct import completed with $pushCount file(s) visible in '$TEST_SET'" 'Green'
+} elseif ($useDirectIsoImport) {
+    $isoSpec = $spec.source_files | Where-Object { $_.name -match '\.iso$' } | Select-Object -First 1
+    if (-not $isoSpec) {
+        Write-Status 'FAIL: import_mode=setup_iso requires an .iso source file' 'Red'
+        Exit-Test 1 'fail' 'source_missing'
+    }
+
+    $localIsoPath = Join-Path $specDir $isoSpec.name
+    if (-not (Test-Path -LiteralPath $localIsoPath)) {
+        Write-Status 'FAIL: Local ISO source file is missing for direct import' 'Red'
+        Exit-Test 1 'fail' 'source_missing'
+    }
+
+    $deviceDirName = ($sourceName -replace '[^A-Za-z0-9._-]', '_')
+    $appSourceRelDir = "files/tmp_import/$deviceDirName"
+    $appIsoRelPath = "$appSourceRelDir/source.iso"
+    $deviceIsoPath = "/data/user/0/$PACKAGE/$appIsoRelPath"
+
+    Write-Status "Staging ISO source file for direct import..."
+    Ensure-AppPrivateFile -LocalPath $localIsoPath -RemoteRelativePath $appIsoRelPath -TimeoutSeconds 1800
+
+    Write-Status "Triggering setup-command ISO import..."
+    Send-SetupIsoImport -IsoPath $deviceIsoPath
+
+    $importReady = $false
+    $importTimeoutSeconds = 300
+    $importSw = [System.Diagnostics.Stopwatch]::StartNew()
+    while ($importSw.Elapsed.TotalSeconds -lt $importTimeoutSeconds) {
+        Start-Sleep -Seconds 2
+        $state = Get-SetupIntrospection
+        if (-not $state) { continue }
+        $remoteFiles = @($state.set_files | Where-Object { $_ })
+        $expectedFiles = @()
+        if ($spec.expected_files -is [array]) { $expectedFiles = $spec.expected_files }
+        $haveExpected = $true
+        foreach ($ef in $expectedFiles) {
+            if (-not ($remoteFiles | Where-Object { $_.ToLower() -eq $ef.ToLower() })) {
+                $haveExpected = $false
+                break
+            }
+        }
+        $haveTotal = $true
+        if ($spec.total_extracted) {
+            $haveTotal = $remoteFiles.Count -ge [int]$spec.total_extracted
+        }
+        if ($haveExpected -and $haveTotal) {
+            $importReady = $true
+            break
+        }
+    }
+
+    if (-not $importReady) {
+        Write-Status "FAIL: Timed out waiting for direct ISO import to finish" 'Red'
         Exit-Test 1 'fail' 'file_push_failed'
     }
 

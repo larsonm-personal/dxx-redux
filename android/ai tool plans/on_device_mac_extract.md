@@ -637,7 +637,7 @@ Plan:
    - [x] keep the current applicable subset explicit in the manifests so unsupported method 15 members stay documented but do not become false-positive extraction requirements
    - Current landed path:
       - manifest generation uses Windows `unar.exe` plus `lsar.exe` from The Unarchiver package, pinned by SHA-256 `61a6b299606282f72f51c278801eac11d3dccfac83e2d68bccce33539912e0dd`
-      - `android/generate-stuffit-corpus-manifests.ps1` regenerates committed JSON fixtures under `android/app/src/main/cpp/extract/test_fixtures/stuffit_manifests/`
+      - `android/generate-stuffit-corpus-manifests.ps1` regenerates committed JSON fixtures under `android/app/src/main/cpp/extract/test/data/stuffit_manifests/`
       - `test_stuffit_corpus.cpp` now compares our listing and supported data-fork extraction results against those committed manifests instead of the upstream repo `sources/` tree
 - [x] inspect `https://github.com/ssokolow/stuffit-test-files`
 - [x] pin the desktop-test fetch to commit `b523c64337867aee5cc07ad3a6bbfc8e06e4b3c0`

@@ -740,10 +740,6 @@ int32_t CTGA::Shrink (int32_t xFactor, int32_t yFactor, int32_t bRealloc)
 
 	static uint8_t superTranspKeys [3] = {120,88,128};
 
-#if DBG
-if (strstr (m_pBm->Name (), "door"))
-	BRP;
-#endif
 if (!m_pBm->Buffer ())
 	return 0;
 if ((xFactor < 1) || (yFactor < 1))

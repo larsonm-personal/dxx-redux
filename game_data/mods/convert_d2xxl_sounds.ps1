@@ -42,6 +42,12 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not $OutputDir) { $OutputDir = $scriptDir }
+$progressHelperScript = Join-Path $scriptDir "convert_progress_helpers.ps1"
+if (-not (Test-Path $progressHelperScript)) {
+    Write-Error "Missing helper script: $progressHelperScript"
+    exit 1
+}
+. $progressHelperScript
 
 $archivePath = Join-Path $scriptDir "d2x-xl\hires-sounds.7z"
 
@@ -76,8 +82,6 @@ function Read-WavData {
             $audioFormat   = [BitConverter]::ToUInt16($bytes, $pos + 8)
             $numChannels   = [BitConverter]::ToUInt16($bytes, $pos + 10)
             $sampleRate    = [BitConverter]::ToInt32($bytes, $pos + 12)
-            $byteRate      = [BitConverter]::ToInt32($bytes, $pos + 16)
-            $blockAlign    = [BitConverter]::ToUInt16($bytes, $pos + 20)
             $bitsPerSample = [BitConverter]::ToUInt16($bytes, $pos + 22)
 
             if ($audioFormat -ne 1) { throw "Not PCM format (format=$audioFormat): $Path" }
@@ -192,16 +196,15 @@ function Convert-GameSounds {
 
     $dxaName = "${GameId}-hires-sounds.dxa"
     $dxaPath = Join-Path $OutDir $dxaName
+    $totalStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
     Write-Host "=== Converting $GameId sounds ==="
     Write-Host "  Archive: $ArchivePath"
     Write-Host "  Output:  $dxaPath"
 
     # Extract
-    Write-Host "  Extracting archive..."
     $extractDir = Join-Path $tempDir "extract"
-    & $SevenZip x "-o$extractDir" $ArchivePath -y 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw "7z extraction failed" }
+    Invoke-7ZipExtract -SevenZipPath $SevenZip -ArchivePath $ArchivePath -ExtractDir $extractDir
 
     # Find the right source directory
     if ($GameId -eq "d2") {
@@ -220,18 +223,24 @@ function Convert-GameSounds {
         return
     }
 
+    $inventoryStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $wavFiles = Get-ChildItem -Path $wavDir -Filter "*.wav" -File
     $total = $wavFiles.Count
-    Write-Host "  Found $total WAV files"
+    Write-Host "  Inventory complete: WAV=$total in $(Format-ElapsedText $inventoryStopwatch.Elapsed)"
 
     # Create ZIP (dxa)
     if (Test-Path $dxaPath) { Remove-Item $dxaPath }
+    Write-Host "  Creating DXA container: $dxaName"
     $zip = [System.IO.Compression.ZipFile]::Open($dxaPath, [System.IO.Compression.ZipArchiveMode]::Create)
+    $conversionStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
     $converted = 0
     $errors = 0
+    $processed = 0
 
     foreach ($wav in $wavFiles) {
+        $processed++
+        Write-ItemStartLine -Stopwatch $conversionStopwatch -Index $processed -Total $total -ItemName $wav.Name
         $baseName = [System.IO.Path]::GetFileNameWithoutExtension($wav.Name)
         # Sound files go in Sounds/ subdirectory with .r22 extension
         $r22Name = "Sounds/$baseName.r22"
@@ -246,22 +255,26 @@ function Convert-GameSounds {
             $stream.Close()
 
             $converted++
-            if ($converted % 25 -eq 0) {
-                Write-Host "  Converted $converted / $total..."
+            if ($processed -le 3 -or $processed % 25 -eq 0 -or $processed -eq $total) {
+                Write-ProgressSummaryLine -Stopwatch $conversionStopwatch -Processed $processed -Total $total -ItemName $wav.Name -Succeeded $converted -Errors $errors
             }
         } catch {
             Write-Host "  ERROR converting $($wav.Name): $_"
             $errors++
+            Write-ProgressSummaryLine -Stopwatch $conversionStopwatch -Processed $processed -Total $total -ItemName $wav.Name -Succeeded $converted -Errors $errors
         }
     }
 
+    $finalizeStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    Write-Host "  Finalizing archive: $dxaName"
     $zip.Dispose()
+    Write-Host "  Archive finalized in $(Format-ElapsedText $finalizeStopwatch.Elapsed)"
 
     # Clean up temp
     Remove-Item -Recurse -Force $tempDir
 
     $dxaSize = (Get-Item $dxaPath).Length / 1MB
-    Write-Host "  Done: $converted converted, $errors errors"
+    Write-Host "  Done: processed $processed / $total, converted $converted, errors $errors in $(Format-ElapsedText $totalStopwatch.Elapsed)"
     Write-Host "  Output: $dxaPath ($([Math]::Round($dxaSize, 1)) MB)"
 }
 

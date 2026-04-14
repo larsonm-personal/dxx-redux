@@ -66,20 +66,88 @@
 /* Directory record flag bits */
 #define DR_FLAG_DIRECTORY 0x02
 
+typedef struct {
+	int fd;
+	long long base_offset;
+	int sector_stride;
+	int user_data_offset;
+	int num_logical_sectors;
+} iso_reader_source_t;
+
 /* ── Helpers ─────────────────────────────────────────────────────────── */
 
-/* Read the 2048-byte user-data portion of a raw Mode 1 sector.
- * logical_sector is relative to the data track start.
- * Returns 0 on success, -1 on error. */
-static int read_user_sector(int fd, int track_start_sector,
-                            int logical_sector, unsigned char *buf)
+/* Get the byte length of an open file descriptor.
+ * Returns -1 on error.
+ */
+static long long fd_length(int fd)
 {
-	off_t offset = (off_t) (track_start_sector + logical_sector) * RAW_SECTOR_SIZE + USER_DATA_OFFSET;
+	if (fd < 0)
+		return -1;
+
 #ifdef _WIN32
-	if (_lseeki64(fd, offset, SEEK_SET) != offset) return -1;
-	int n = _read(fd, buf, USER_DATA_SIZE);
+	__int64 cur = _lseeki64(fd, 0, SEEK_CUR);
+	__int64 end;
+
+	if (cur < 0) cur = 0;
+	end = _lseeki64(fd, 0, SEEK_END);
+	_lseeki64(fd, cur, SEEK_SET);
+	return end < 0 ? -1 : (long long) end;
 #else
-	ssize_t n = pread(fd, buf, USER_DATA_SIZE, offset);
+	off_t cur = lseek(fd, 0, SEEK_CUR);
+	off_t end;
+
+	if (cur < 0) cur = 0;
+	end = lseek(fd, 0, SEEK_END);
+	lseek(fd, cur, SEEK_SET);
+	return end < 0 ? -1 : (long long) end;
+#endif
+}
+
+static void init_raw_track_source(iso_reader_source_t *src,
+                                  int fd,
+                                  int track_start_sector,
+                                  int track_num_sectors)
+{
+	memset(src, 0, sizeof(*src));
+	src->fd = fd;
+	src->base_offset = (long long) track_start_sector * RAW_SECTOR_SIZE;
+	src->sector_stride = RAW_SECTOR_SIZE;
+	src->user_data_offset = USER_DATA_OFFSET;
+	src->num_logical_sectors = track_num_sectors;
+}
+
+static void init_iso_image_source(iso_reader_source_t *src, int fd)
+{
+	long long len;
+
+	memset(src, 0, sizeof(*src));
+	src->fd = fd;
+	src->sector_stride = USER_DATA_SIZE;
+	src->user_data_offset = 0;
+	len = fd_length(fd);
+	if (len > 0 && (len / USER_DATA_SIZE) <= 0x7fffffffLL)
+		src->num_logical_sectors = (int) (len / USER_DATA_SIZE);
+}
+
+/* Read the 2048-byte logical sector from a source.
+ * Returns 0 on success, -1 on error. */
+static int read_user_sector(const iso_reader_source_t *src,
+                            int logical_sector,
+                            unsigned char *buf)
+{
+	long long offset;
+
+	if (!src || src->fd < 0 || !buf || logical_sector < 0)
+		return -1;
+	if (src->num_logical_sectors > 0 && logical_sector >= src->num_logical_sectors)
+		return -1;
+
+	offset = src->base_offset + (long long) logical_sector * src->sector_stride + src->user_data_offset;
+#ifdef _WIN32
+	if (_lseeki64(src->fd, offset, SEEK_SET) != offset) return -1;
+	int n = _read(src->fd, buf, USER_DATA_SIZE);
+#else
+	ssize_t n = pread(src->fd, buf, USER_DATA_SIZE, (off_t) offset);
 #endif
 	if (n != USER_DATA_SIZE) return -1;
 	return 0;
@@ -157,7 +225,7 @@ static int ext_matches(const char *filename, const char **extensions)
  * dir_size: size of the directory extent in bytes
  * prefix  : path prefix (e.g., "" for root, "MISSIONS/" for subdir)
  * depth   : current recursion depth (0 at root) */
-static int walk_directory(int fd, int track_start,
+static int walk_directory(const iso_reader_source_t *src,
                           unsigned int dir_lba, unsigned int dir_size,
                           const char *prefix,
                           iso_file_list_t *out,
@@ -178,7 +246,7 @@ static int walk_directory(int fd, int track_start,
 	while (sector_idx < sectors_needed && bytes_read < dir_size) {
 		unsigned int pos = 0;
 
-		if (read_user_sector(fd, track_start, (int) (dir_lba + sector_idx), sector) < 0) {
+		if (read_user_sector(src, (int) (dir_lba + sector_idx), sector) < 0) {
 			ISO_LOG("Failed to read directory sector at LBA %u", dir_lba + sector_idx);
 			return -1;
 		}
@@ -238,7 +306,7 @@ static int walk_directory(int fd, int track_start,
 					e->is_dir = 1;
 					out->num_files++;
 				}
-				walk_directory(fd, track_start, extent_lba, data_size,
+				walk_directory(src, extent_lba, data_size,
 				               full_path, out, depth + 1);
 			} else {
 				/* Regular file */
@@ -266,28 +334,26 @@ static int walk_directory(int fd, int track_start,
 
 /* ── Public API ──────────────────────────────────────────────────────── */
 
-int iso_list_files(int bin_fd, int track_start_sector, int track_num_sectors,
-                   iso_file_list_t *out)
+static int iso_list_files_from_source(const iso_reader_source_t *src,
+                                      iso_file_list_t *out)
 {
 	unsigned char pvd[USER_DATA_SIZE];
 	unsigned int root_lba, root_size;
 
-	(void) track_num_sectors; /* used for bounds checking if needed later */
-
-	if (bin_fd < 0 || !out) return -1;
+	if (!src || src->fd < 0 || !out) return -1;
 
 	memset(out, 0, sizeof(*out));
 
 	/* Read Primary Volume Descriptor at logical sector 16 */
-	if (read_user_sector(bin_fd, track_start_sector, PVD_SECTOR, pvd) < 0) {
-		ISO_LOG("Failed to read PVD at sector %d+16", track_start_sector);
+	if (read_user_sector(src, PVD_SECTOR, pvd) < 0) {
+		ISO_LOG("Failed to read PVD at logical sector %d", PVD_SECTOR);
 		return -1;
 	}
 
 	/* Validate: byte 0 = type (1 = primary), bytes 1-5 = "CD001" */
 	if (pvd[0] != VD_PRIMARY ||
 	    memcmp(&pvd[1], "CD001", 5) != 0) {
-		ISO_LOG("Invalid PVD signature at sector %d+16", track_start_sector);
+		ISO_LOG("Invalid PVD signature at logical sector %d", PVD_SECTOR);
 		return -1;
 	}
 
@@ -300,26 +366,25 @@ int iso_list_files(int bin_fd, int track_start_sector, int track_num_sectors,
 	ISO_LOG("Root directory: LBA=%u  size=%u", root_lba, root_size);
 
 	/* Walk the directory tree */
-	if (walk_directory(bin_fd, track_start_sector, root_lba, root_size, "", out, 0) < 0)
+	if (walk_directory(src, root_lba, root_size, "", out, 0) < 0)
 		return -1;
 
 	ISO_LOG("Listed %d entries total", out->num_files);
 	return out->num_files;
 }
 
-int iso_extract_files(int bin_fd, int track_start_sector, int track_num_sectors,
-                      const iso_file_list_t *file_list,
-                      const char *output_dir,
-                      const char **extensions,
-                      iso_progress_fn progress, void *user_data)
+static int iso_extract_files_from_source(const iso_reader_source_t *src,
+                                         const iso_file_list_t *file_list,
+                                         const char *output_dir,
+                                         const char **extensions,
+                                         iso_progress_fn progress,
+                                         void *user_data)
 {
 	int i, extracted = 0;
 	long long total_bytes = 0, done_bytes = 0;
 	unsigned char sector[USER_DATA_SIZE];
 
-	(void) track_num_sectors;
-
-	if (bin_fd < 0 || !file_list || !output_dir) return -1;
+	if (!src || src->fd < 0 || !file_list || !output_dir) return -1;
 
 	/* Calculate total bytes for progress */
 	for (i = 0; i < file_list->num_files; i++) {
@@ -372,7 +437,7 @@ int iso_extract_files(int bin_fd, int track_start_sector, int track_num_sectors,
 			while (remaining > 0) {
 				int to_write = (remaining > USER_DATA_SIZE) ? USER_DATA_SIZE : (int) remaining;
 
-				if (read_user_sector(bin_fd, track_start_sector, (int) lba, sector) < 0) {
+				if (read_user_sector(src, (int) lba, sector) < 0) {
 					ISO_LOG("Read error at LBA %u for %s", lba, entry->path);
 					break;
 				}
@@ -403,4 +468,52 @@ int iso_extract_files(int bin_fd, int track_start_sector, int track_num_sectors,
 
 	ISO_LOG("Extracted %d files", extracted);
 	return extracted;
+}
+
+int iso_list_files(int bin_fd, int track_start_sector, int track_num_sectors,
+                   iso_file_list_t *out)
+{
+	iso_reader_source_t src;
+
+	init_raw_track_source(&src, bin_fd, track_start_sector, track_num_sectors);
+	return iso_list_files_from_source(&src, out);
+}
+
+int iso_list_image_files(int iso_fd, iso_file_list_t *out)
+{
+	iso_reader_source_t src;
+
+	if (iso_fd < 0 || !out) return -1;
+
+	init_iso_image_source(&src, iso_fd);
+	return iso_list_files_from_source(&src, out);
+}
+
+int iso_extract_files(int bin_fd, int track_start_sector, int track_num_sectors,
+                      const iso_file_list_t *file_list,
+                      const char *output_dir,
+                      const char **extensions,
+                      iso_progress_fn progress, void *user_data)
+{
+	iso_reader_source_t src;
+
+	init_raw_track_source(&src, bin_fd, track_start_sector, track_num_sectors);
+	return iso_extract_files_from_source(&src, file_list, output_dir, extensions,
+	                                     progress, user_data);
+}
+
+int iso_extract_image_files(int iso_fd,
+                            const iso_file_list_t *file_list,
+                            const char *output_dir,
+                            const char **extensions,
+                            iso_progress_fn progress,
+                            void *user_data)
+{
+	iso_reader_source_t src;
+
+	if (iso_fd < 0 || !file_list || !output_dir) return -1;
+
+	init_iso_image_source(&src, iso_fd);
+	return iso_extract_files_from_source(&src, file_list, output_dir, extensions,
+	                                     progress, user_data);
 }
