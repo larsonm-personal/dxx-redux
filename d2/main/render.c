@@ -100,12 +100,42 @@ static int render_tmap2_is_metl154(int tmap2)
 	return name && !d_stricmp(name, "metl154");
 }
 
+static void render_set_android_draw_face_context(segment *segp, int sidenum,
+	int tmap1, int tmap2, int wid_flags, int nv, int face_index)
+{
+	g_android_draw_face_ctx.valid = 1;
+	g_android_draw_face_ctx.seg = (int)(segp - Segments);
+	g_android_draw_face_ctx.side = sidenum;
+	g_android_draw_face_ctx.face = face_index;
+	g_android_draw_face_ctx.child = segp->children[sidenum];
+	g_android_draw_face_ctx.side_type = segp->sides[sidenum].type;
+	g_android_draw_face_ctx.nv = nv;
+	g_android_draw_face_ctx.wid_flags = wid_flags;
+	g_android_draw_face_ctx.tmap1 = tmap1;
+	g_android_draw_face_ctx.tmap2 = tmap2;
+}
+
+static void render_clear_android_draw_face_context(void)
+{
+	memset(&g_android_draw_face_ctx, 0, sizeof(g_android_draw_face_ctx));
+	g_android_draw_face_ctx.seg = -1;
+	g_android_draw_face_ctx.side = -1;
+	g_android_draw_face_ctx.face = -1;
+	g_android_draw_face_ctx.child = -1;
+	g_android_draw_face_ctx.side_type = -1;
+	g_android_draw_face_ctx.tmap1 = -1;
+}
+
 static void render_log_metl154_face(segment *segp, int sidenum, int tmap1, int tmap2,
 	int wid_flags, fix dot, int nv, int face_index)
 {
 	int overlay = tmap2 & 0x3FFF;
 	grs_bitmap *bmbot, *bmovl;
 	const char *botname, *ovlname;
+	const char *merge_path;
+	int bot_real_flags, ovl_real_flags;
+	int wall_num = segp->sides[sidenum].wall_num;
+	int wall_type = -1, wall_state = -1, wall_flags = 0;
 
 	if (!render_tmap2_is_metl154(tmap2) || tmap1 >= NumTextures || overlay >= NumTextures)
 		return;
@@ -115,6 +145,22 @@ static void render_log_metl154_face(segment *segp, int sidenum, int tmap1, int t
 	bmovl = &GameBitmaps[Textures[overlay].index];
 	botname = piggy_game_bitmap_name(bmbot);
 	ovlname = piggy_game_bitmap_name(bmovl);
+	bot_real_flags = piggy_bitmap_get_flags(bmbot);
+	ovl_real_flags = piggy_bitmap_get_flags(bmovl);
+	if (wall_num >= 0) {
+		wall_type = Walls[wall_num].type;
+		wall_state = Walls[wall_num].state;
+		wall_flags = Walls[wall_num].flags;
+	}
+	if (ovl_real_flags & BM_FLAG_SUPER_TRANSPARENT)
+		merge_path = "super_mask";
+	else if ((int)g_metl154_experiment_mode == METL154_EXPERIMENT_OVERLAY_ONLY
+		&& (ovl_real_flags & BM_FLAG_TRANSPARENT))
+		merge_path = "overlay_only_scene";
+	else if (ovl_real_flags & BM_FLAG_TRANSPARENT)
+		merge_path = "plain_alpha_underlay";
+	else
+		merge_path = "opaque_overlay";
 	debug_log(DLOG_TEXTURE,
 		"[metl154face] frame=%d pass=%d seq=%d seg=%d side=%d face=%d child=%d side_type=%d nv=%d wid=%d dot=%.4f tmap1=%d tmap2=0x%x orient=%d bot=%s ovl=%s",
 		g_metl154_frame_id,
@@ -133,6 +179,25 @@ static void render_log_metl154_face(segment *segp, int sidenum, int tmap1, int t
 		(tmap2 >> 14) & 3,
 		botname ? botname : "<none>",
 		ovlname ? ovlname : "<none>");
+	debug_log(DLOG_TEXTURE,
+		"[metl154wall] frame=%d pass=%d seq=%d wid=%d render=%d rendpast=%d fly=%d child=%d wall_num=%d wall_type=%d wall_state=%d wall_flags=0x%x bot_real=0x%x ovl_real=0x%x ovl_trans=%d ovl_super=%d path=%s",
+		g_metl154_frame_id,
+		g_metl154_render_pass,
+		g_metl154_draw_seq,
+		wid_flags,
+		(wid_flags & WID_RENDER_FLAG) != 0,
+		(wid_flags & WID_RENDPAST_FLAG) != 0,
+		(wid_flags & WID_FLY_FLAG) != 0,
+		segp->children[sidenum],
+		wall_num,
+		wall_type,
+		wall_state,
+		wall_flags,
+		bot_real_flags,
+		ovl_real_flags,
+		!!(ovl_real_flags & BM_FLAG_TRANSPARENT),
+		!!(ovl_real_flags & BM_FLAG_SUPER_TRANSPARENT),
+		merge_path);
 }
 #endif
 
@@ -283,6 +348,10 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 
 		gr_settransblend(GR_FADE_OFF, GR_BLEND_NORMAL);
 
+#ifdef ANDROID
+		render_clear_android_draw_face_context();
+#endif
+
 		return;
 	}
 
@@ -410,6 +479,7 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 					lbl->sx = sx;
 					lbl->sy = sy;
 					lbl->is_hires = 0; /* texmerge always 64x64 */
+					DEBUG_TEX_LABEL_SET_FACE(lbl, &g_android_draw_face_ctx);
 					strncpy(lbl->name, name1, sizeof(lbl->name) - 1);
 					lbl->name[sizeof(lbl->name) - 1] = '\0';
 					g_debug_tex_label_count++;
@@ -421,6 +491,7 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 					lbl->sx = sx;
 					lbl->sy = sy + 10;
 					lbl->is_hires = 0; /* texmerge always 64x64 */
+					DEBUG_TEX_LABEL_SET_FACE(lbl, &g_android_draw_face_ctx);
 					strncpy(lbl->name, name2, sizeof(lbl->name) - 1);
 					lbl->name[sizeof(lbl->name) - 1] = '\0';
 					g_debug_tex_label_count++;
@@ -434,6 +505,10 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 
 #ifndef NDEBUG
 	if (Outline_mode) draw_outline(nv, pointlist);
+#endif
+
+#ifdef ANDROID
+	render_clear_android_draw_face_context();
 #endif
 }
 
@@ -587,6 +662,8 @@ void render_side(segment *segp, int sidenum)
 
 		if (v_dot_n0 >= 0) {
 #ifdef ANDROID
+			render_set_android_draw_face_context(segp, sidenum, sidep->tmap_num,
+				sidep->tmap_num2, wid_flags, 4, 0);
 			render_log_metl154_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
 				wid_flags, v_dot_n0, 4, 0);
 #endif
@@ -633,6 +710,8 @@ void render_side(segment *segp, int sidenum)
 				goto im_so_ashamed;
 
 #ifdef ANDROID
+			render_set_android_draw_face_context(segp, sidenum, sidep->tmap_num,
+				sidep->tmap_num2, wid_flags, 4, 0);
 			render_log_metl154_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
 				wid_flags, min_dot, 4, 0);
 #endif
@@ -645,6 +724,8 @@ im_so_ashamed: ;
 			if (sidep->type == SIDE_IS_TRI_02) {
 				if (v_dot_n0 >= 0) {
 #ifdef ANDROID
+					render_set_android_draw_face_context(segp, sidenum, sidep->tmap_num,
+						sidep->tmap_num2, wid_flags, 3, 0);
 					render_log_metl154_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
 						wid_flags, v_dot_n0, 3, 0);
 #endif
@@ -658,6 +739,8 @@ im_so_ashamed: ;
 					temp_uvls[0] = sidep->uvls[0];		temp_uvls[1] = sidep->uvls[2];		temp_uvls[2] = sidep->uvls[3];
 					vertnum_list[1] = vertnum_list[2];	vertnum_list[2] = vertnum_list[3];	// want to render from vertices 0, 2, 3 on side
 #ifdef ANDROID
+					render_set_android_draw_face_context(segp, sidenum, sidep->tmap_num,
+						sidep->tmap_num2, wid_flags, 3, 1);
 					render_log_metl154_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
 						wid_flags, v_dot_n1, 3, 1);
 #endif
@@ -669,6 +752,8 @@ im_so_ashamed: ;
 			} else if (sidep->type ==  SIDE_IS_TRI_13) {
 				if (v_dot_n1 >= 0) {
 #ifdef ANDROID
+					render_set_android_draw_face_context(segp, sidenum, sidep->tmap_num,
+						sidep->tmap_num2, wid_flags, 3, 1);
 					render_log_metl154_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
 						wid_flags, v_dot_n1, 3, 1);
 #endif
@@ -682,6 +767,8 @@ im_so_ashamed: ;
 					temp_uvls[0] = sidep->uvls[0];		temp_uvls[1] = sidep->uvls[1];		temp_uvls[2] = sidep->uvls[3];
 					vertnum_list[2] = vertnum_list[3];		// want to render from vertices 0,1,3
 #ifdef ANDROID
+					render_set_android_draw_face_context(segp, sidenum, sidep->tmap_num,
+						sidep->tmap_num2, wid_flags, 3, 0);
 					render_log_metl154_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
 						wid_flags, v_dot_n0, 3, 0);
 #endif

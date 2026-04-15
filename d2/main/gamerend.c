@@ -912,7 +912,11 @@ void game_render_frame_mono(int flip)
 				g_font_rgb_override[1] = 1.f;
 				g_font_rgb_override[2] = 0.f;
 			}
-			gr_printf(lbl->sx, lbl->sy, "%s", lbl->name);
+			if (lbl->seg >= 0 && lbl->side >= 0 && lbl->face >= 0)
+				gr_printf(lbl->sx, lbl->sy, "%s [%d/%d/%d]",
+					lbl->name, lbl->seg, lbl->side, lbl->face);
+			else
+				gr_printf(lbl->sx, lbl->sy, "%s", lbl->name);
 		}
 		g_font_rgb_override[0] = -1.f;
 	}

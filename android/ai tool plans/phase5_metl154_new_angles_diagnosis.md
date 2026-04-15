@@ -150,6 +150,65 @@ phases 1-4.
 - Revalidated after the latest source/filter diagnostics with
   `android\run-code-quality.ps1 -Fix` and
   `android\gradlew.bat externalNativeBuildDebug`
+- Implemented in D1 and D2: new `[metl154clip]` logging on the Android plain
+  metl154 merge-clip path plus screen-space `[metl154coverbox]` overlap
+  logging for later draws that do not hit the exact-vertex `[metl154cover]`
+  path
+- New stock log `android\temp_game_logs\debuglog_20260414_185644.txt` keeps
+  the no-mod stock path and still exercises `alpha_raw`; the first repeated
+  overlap signal is `cover_bot=rock296` on `metl_seq=1`, while later camera
+  positions also produce `rock346`, `rock331`, and even later `metl154`
+  overlaps
+- Implemented in D1 and D2: a shared Android wall-draw context now flows from
+  `render_side()` into OGL metl154 tracking so `[metl154cover]` and
+  `[metl154coverbox]` can log both the tracked metl154 face and the later
+  covering face by segment, side, and face instead of only by bitmap name
+- Revalidated after the context-rich overlap follow-up with
+  `android\run-code-quality.ps1 -Fix`, `android\gradlew.bat bundleDebug`, and
+  `android\gradlew.bat testDebugUnitTest`
+- Launch smoke validation is still blocked in this session because
+  `C:\local\android-sdk\platform-tools\adb.exe devices` returned no attached
+  emulator or device
+- New stock log `android\temp_game_logs\debuglog_20260414_193658.txt` keeps
+  the no-mod stock path, still exercises stock `alpha_raw`, and shows the
+  same clip pattern as the prior capture: `seq=1` and `seq=3` survive
+  `stage=clip` while `seq=2`, `seq=4`, and `seq=9` repeatedly die as
+  `stage=culled` with `behind=1`
+- That same `193658` log is the first capture where the context-rich
+  `[metl154coverbox]` lines isolate stable later cover faces instead of only
+  cover bitmap names. The repeated early pair is metl `seg=32 side=0 face=0`
+  covered by `seg=30 side=2 face=0` with `cover_bot=rock296`, and the later
+  repeated pair is metl `seg=83 side=1 face=0` covered by
+  `seg=83 side=2 face=0` with `cover_bot=rock346`
+- Implemented in D1 and D2: a new Android-only `cover_skip` experiment that
+  suppresses only those two later cover faces, and only when the matching
+  metl154 face was tracked earlier in the same frame. The experiment is wired
+  through JNI and the Video Info overlay as `m154 exp: CoverSkip`
+- Revalidated after the `cover_skip` follow-up with
+  `android\run-code-quality.ps1 -Fix`, `android\gradlew.bat bundleDebug`, and
+  `android\gradlew.bat testDebugUnitTest`
+- New stock log `android\temp_game_logs\debuglog_20260414_203139.txt` keeps
+  the no-mod stock path, exercises the full experiment cycle through
+  `cover_skip`, and shows the same clip pattern as `193658`: `seq=1` and
+  `seq=3` survive `stage=clip` while `seq=2`, `seq=4`, and `seq=9` repeatedly
+  die as `stage=culled` with `behind=1`
+- That same `203139` log confirms that `cover_skip` is active and working for
+  the original two pairs. The repeated `[metl154exp] cover_skip ...` hits are
+  still `metl 32/0/0 -> cover 30/2/0` (`rock296`) and
+  `metl 83/1/0 -> cover 83/2/0` (`rock346`), and those exact later faces no
+  longer reappear as `[metl154coverbox]` overlaps after the toggle
+- The same `203139` capture also shows a second stable later-cover family that
+  survives beyond the original pair list: `metl 32/2/0 -> cover 82/1/0`
+  (`rock331`), `metl 28/2/0 -> cover 82/3/0` (`rock331`),
+  `metl 29/2/0 -> cover 82/4/0` (`metl154`), and
+  `metl 28/0/0 -> cover 28/1/0` (`rock346`)
+- Implemented in D1 and D2: a second Android-only `cover_skip2` experiment
+  that keeps the original `cover_skip` pair list intact and adds that broader
+  stable later-cover family. The experiment is wired through JNI and the Video
+  Info overlay as `m154 exp: CoverSkip2`
+- Revalidated after the `cover_skip2` follow-up with
+  `android\run-code-quality.ps1 -Fix`, `android\gradlew.bat bundleDebug`, and
+  `android\gradlew.bat testDebugUnitTest`
 
 ### Latest Direction
 
@@ -199,6 +258,27 @@ phases 1-4.
 - The next step should be a targeted fix experiment rather than another broad
   logging round: clip/split texmerge quads before `g3_draw_tmap_2` submits
   them, or otherwise route merged walls through the same software clipping path
+
+### Transparent Wall Semantics Check
+
+- `wall_is_doorway()` in both D1 and D2 already classifies wall sides as
+  `WID_TRANSPARENT_WALL` or `WID_TRANSILLUSORY_WALL` based on bitmap
+  transparency and wall type, so the engine does have an explicit
+  transparent/pass-through wall semantic instead of relying on visual guesses
+- `find_vector_intersection()` only traverses those sides when callers set
+  `FQ_TRANSWALL` or `FQ_TRANSPOINT`, and `FQ_TRANSPOINT` samples the actual hit
+  texel via `check_trans_wall()` using the merged wall bitmap UVs. This fits
+  the user report that shots already pass through the bar holes even while the
+  Android renderer still shows rock behind them
+- The D1 and D2 renderers also treat those same sides specially in the OGL
+  three-pass wall draw, which confirms that the transparent-wall
+  classification is not limited to collision logic
+- The Android diagnostics already have a stable face identity. `render.c`
+  populates `g_android_draw_face_ctx.seg/side/face` for every rendered face,
+  including split triangles, and the existing metl154 logs already print that
+  triple. The missing piece is user-visible surfacing, so the overlay should
+  display that same `seg/side/face` identifier for direct correlation with the
+  logs
   as normal tmap draws so the GPU does not have to resolve unstable fan
   triangulation at the near plane
 - That first fix experiment is now implemented for Android plain `metl154`
@@ -241,6 +321,123 @@ phases 1-4.
 - Logging should stay additive for the rest of this diagnosis phase. The goal
   now is to keep the current metl154 instrumentation set and build on it until
   the root cause is confirmed
+- New log `android\temp_game_logs\debuglog_20260414_185644.txt` makes the
+  broader overlap signal concrete. `[metl154clip]` shows visible `seq=1` and
+  `seq=3` draws surviving clip while `seq=2`, `seq=4`, and `seq=9` often die
+  as `stage=culled` with `behind=1`, so the Android metl154 clip helper is
+  active and also identifies which recurring candidates never reach the draw
+  body
+- The repeated early `[metl154coverbox]` hits are not one-off noise. In the
+  stock session the same `metl_seq=1` face is overlapped for hundreds of
+  frames by a later `cover_shader=single cover_bot=rock296` draw, and later
+  views repeat the pattern with other later covers such as `rock346`,
+  `rock331`, and `metl154`
+- That still does not isolate the root cause by itself because the old
+  overlap log only names the covering bitmap. It cannot distinguish whether
+  one bitmap comes from one wall face or several different later faces
+- The next capture should use the new context-rich overlap logging now in the
+  tree. `[metl154cover]` and `[metl154coverbox]` will now emit both the
+  metl154 face identity and the later covering face identity, which should let
+  the next stock run answer whether a specific segment, side, and face is
+  consistently drawing over the bad metl154 wall
+- New log `android\temp_game_logs\debuglog_20260414_193658.txt` answers that
+  question. The repeated early overlap is not just another `rock296` draw in
+  the abstract; it is specifically `metl seg=32 side=0 face=0` being covered
+  by `cover seg=30 side=2 face=0`. The later repeated overlap is likewise
+  stable: `metl seg=83 side=1 face=0` is being covered by
+  `cover seg=83 side=2 face=0` with `rock346`
+- Those stable pairs are specific enough to move from logging to a narrow
+  behavior experiment. The new `cover_skip` mode now suppresses only those
+  identified later cover draws, and only when the matching metl154 face was
+  tracked earlier in the same frame, so the next device run can answer the
+  practical question directly: do the bars return when those exact later cover
+  faces are skipped
+- New log `android\temp_game_logs\debuglog_20260414_203139.txt` shows that
+  the answer is "partly". `cover_skip` definitely runs and suppresses the two
+  originally targeted later faces, but the broader view still accumulates a
+  second stable cover family around `seg=82` plus the local
+  `28/0/0 -> 28/1/0` `rock346` overlap
+- The next useful comparison is no longer default versus `cover_skip`; it is
+  `cover_skip` versus a broader same-frame suppression list. The new
+  `cover_skip2` mode now keeps the original two pairs and also suppresses the
+  `82/1/0`, `82/3/0`, `82/4/0`, and `28/1/0` later covers so the next capture
+  can answer whether those remaining stable faces account for the rest of the
+  visual failure
+- The `203139` runtime evidence also exposes a more direct same-draw question
+  than the later-cover branch. The recurring bad faces are all solid-wall
+  faces with `child=-1`, `wid=2`, `tmap1=rock313`, `tmap2=metl154`, and
+  draw-time `super=0`, which means `rock313` is the same face's bottom
+  texture in the ordinary plain-alpha merge path rather than a child-segment
+  render-past surface
+- The next logging tranche should therefore pivot from later-cover suppression
+  to wall classification and merge semantics: log exactly why those metl154
+  faces are staying on the non-super path and whether the representative
+  overlay alpha sample would intentionally expose the same-face bottom texture
+  inside the plain `tex2` shader
+- New log `android\temp_game_logs\debuglog_20260414_233303.txt` corrects one
+  process assumption from the previous tranche: it is not a stock-only capture.
+  The run starts in `default`, then cycles through the full experiment ladder
+  up to `overlay_only`, so the same file now contains an in-log before/after
+  comparison instead of only another stock snapshot
+- The user also clarified the scene semantics for that run: most visible
+  `metl154` overlays sitting on rocks are correct and should continue showing
+  rock beneath them. Only one visible case is wrong and should instead show a
+  transparent no-rock opening, which makes any global "remove same-face bottom
+  underlay everywhere" fix too risky
+- The strongest new discriminator in `233303` is not wall metadata by itself.
+  On the stock path, `seg=32 side=0 face=0` and `seg=28 side=0 face=0` both
+  repeatedly log `sample_alpha=0.000` with `bottom_mix=1.000`, while
+  `seg=83 side=1 face=0/1` stay opaque and `seg=83 side=3 face=0/1` only drop
+  into the transparent-underlay path at some viewpoints. Those repeated faces
+  still share the same broad `child=-1`, `wid=2`, ordinary-transparent wall
+  classification, so the bad case is not isolated by those fields alone
+- The useful distinction shows up only when the log is read in frame-matched
+  windows with `coverbox` context. Around overlay-only frames `400-403`,
+  `seg=28 side=0 face=0` is later re-covered by `cover seg=24 side=0 face=0`
+  with `cover_bot=rock313`, while `seg=32 side=0 face=0` is not. In the later
+  overlay-only window around frames `437-441`, the repeated coverbox hits move
+  to `seg=83 side=1 face=0 -> cover_bot=rock346` and
+  `seg=83 side=1 face=1 -> cover_bot=rock296`, while neither
+  `seg=28 side=0 face=0` nor `seg=32 side=0 face=0` receives a later coverbox
+  hit in that view
+- The current best lead is therefore scene coverage context rather than wall
+  flags: some faces that look identical in the stock plain-alpha logs can still
+  end up visually backed by other scene draws, while others cannot. The next
+  safe step is to map the user's one semantically wrong scene element to a
+  specific logged face before adding another experiment or making a code fix
+
+### Software Renderer Semantics Check
+
+- A classic-renderer pass through `wall.c`, `fvi.c`, `texmerge.c`,
+  `ntmap.c`, `scanline.c`, `render.c`, `laser.c`, and `physics.c` narrows the
+  engine-intent question further than the Android OGL logs alone
+- In the software path, walls with `tmap2 != 0` do not render as two live
+  layers. `render.c` calls `texmerge_get_cached_bitmap(tmap1, tmap2)`, so the
+  visible result comes from a premerged bitmap rather than a separate overlay
+  pass
+- `merge_textures_new()` handles ordinary transparent overlay pixels by
+  copying the bottom texture pixel into the merged bitmap. In other words,
+  normal transparent `metl154` texels are explicitly defined to show the same
+  face's `tmap1` rock underlay in the classic renderer
+- `merge_textures_super_xparent()` is the distinct hole path. It preserves
+  true `TRANSPARENCY_COLOR` pixels in the merged bitmap, and the software
+  scanline code only skips draw on those surviving transparent pixels
+- `wall.c` lines up with that split: for `tmap2` overlays, the wall is only
+  classified as `WID_TRANSPARENT_WALL` when the overlay bitmap is
+  `BM_FLAG_SUPER_TRANSPARENT`. `fvi.c` then uses the merged bitmap through
+  `check_trans_wall()`, and moving weapon objects include `FQ_TRANSPOINT`, so
+  projectile pass-through behavior follows the same true-hole semantics rather
+  than the ordinary transparent-underlay semantics
+- That means the broad guess "maybe this face is just marked to hide the
+  rock" is only plausible in the narrow super-transparent sense. The classic
+  renderer does have a built-in way to make a wall overlay behave like a real
+  hole, but ordinary transparent overlay pixels are not that mechanism
+- This leaves one important contradiction to reconcile with the earlier
+  Android captures: the runtime metl154 logs reported `ovl_super=0` and
+  ordinary transparent behavior, while the user reports that shots pass
+  through the visible opening. Either the semantically wrong visible case is
+  not the exact face those earlier samples represented, or there is still a
+  remaining identification or asset-flag detail missing from the current logs
 
 ### Current Tranche Plan
 
@@ -253,12 +450,86 @@ phases 1-4.
   changes force a live reload without flushing unrelated textures
 - [x] Add additive metl154 experiment-path logging covering KTX2,
   decoded-RGBA, no-mipmap, and stock-fallback paths
-- [ ] Revalidate Android code quality, debug build, unit tests, and an
+- [x] Revalidate Android code quality, debug build, unit tests, and an
   existing launch smoke test after the patch
 - [x] Add metl154 projected quad-split diagnostics in D1 and D2 OGL helpers
 - [x] Log fan-vs-alternate triangle signed areas beside the existing state log
 - [x] Revalidate Android code quality, build, unit tests, and emulator smoke
-  test after the patch
+- [x] Review `debuglog_20260414_160646.txt` across both highres and stock
+  sessions and compare the actual metl154 load path chosen for each
+  experiment mode
+- [x] If the current experiments are visually inert, add one narrower
+  metl154-only experiment that changes runtime sampling behavior rather than
+  only the texture source path, then log it alongside the existing toggles
+  Current choice: add an `alpha_raw` mode that keeps the same source path but
+  disables the metl154 plain-pass `0.5` alpha cutoff so device testing can
+  isolate shader-side alpha interpretation from texture-source selection
+- [x] Analyze `android\temp_game_logs\debuglog_20260414_181819.txt` and
+  confirm that stock-path runs still exercised `alpha_raw`, while the
+  metl154 state and quad-split traces stayed stable and no exact
+  `[metl154cover]` overwrite hits appeared
+- [x] If the `alpha_raw` stock run is still visually inert, zoom out to other
+  parts of the draw path and add broader metl154 logging there
+  Current choice: log clipped merge routing in `ogl_clip_and_draw_metl154_merge`
+  and add a new `[metl154coverbox]` screen-overlap log so later draws that do
+  not match the exact vertex set can still be correlated against a tracked
+  metl154 face
+- [x] Analyze `android\temp_game_logs\debuglog_20260414_185644.txt` and
+  confirm whether the broader clip and overlap logs isolate a stable later
+  cover candidate
+  Findings: the run is still stock/no-mod and still exercises stock
+  `alpha_raw`; early frames repeatedly log `cover_bot=rock296` over
+  `metl_seq=1`, while later views also surface `rock346`, `rock331`, and
+  `metl154` overlaps
+- [x] If the broader overlap logs are still too coarse, carry exact wall draw
+  context into the metl154 tracking records and cover logs
+  Current choice: add a shared `android_draw_face_context` in the D1 and D2
+  render and OGL code so the next `[metl154cover]` and `[metl154coverbox]`
+  lines include both metl and cover segment, side, face, child, side type,
+  and tmap identity
+- [x] Analyze `android\temp_game_logs\debuglog_20260414_233303.txt` and
+  compare the recurring metl faces across the stock/default and overlay-only
+  windows in the same capture
+  Findings: `233303` cycles through all experiment modes up to
+  `overlay_only`; `seg=32 side=0 face=0` and `seg=28 side=0 face=0` both stay
+  `sample_alpha=0.000 bottom_mix=1.000` on the stock path, but frame-matched
+  `coverbox` lines show that `28/0/0` gains later rock cover in some windows
+  while `32/0/0` does not, and later windows shift the stable cover hits to
+  `83/1/0` and `83/1/1`
+- [ ] Correlate the user's one semantically wrong visible scene element with a
+  specific logged face before adding another experiment or attempting a code
+  fix
+- [x] Review the classic software renderer and collision paths for how
+  transparent versus super-transparent wall overlays are meant to behave
+  Findings: ordinary transparent texels in `texmerge` reveal the same face's
+  bottom texture, while only super-transparent texels survive as true holes
+  for software rendering and `FQ_TRANSPOINT` traversal
+- [ ] Revalidate Android code quality, debug build, unit tests, and the
+  launch smoke path after any follow-up experiment patch
+  2026-04-14 follow-up status: `android\run-code-quality.ps1 -Fix`,
+  `gradlew.bat bundleDebug`, and `gradlew.bat testDebugUnitTest` all passed;
+  the launch smoke path is still pending because `adb devices` returned no
+  connected emulator or device in this session
+  2026-04-14 broader-logging status: `android\run-code-quality.ps1 -Fix`,
+  `gradlew.bat bundleDebug`, and `gradlew.bat testDebugUnitTest` all passed
+  again after the clip/coverbox logging patch; the launch smoke path remains
+  pending because the SDK-configured `adb.exe devices` output showed no
+  attached emulator or device in this session
+  2026-04-14 context-rich overlap status: `android\run-code-quality.ps1 -Fix`,
+  `gradlew.bat bundleDebug`, and `gradlew.bat testDebugUnitTest` all passed
+  after the wall-context follow-up; the launch smoke path remains pending
+  because `C:\local\android-sdk\platform-tools\adb.exe devices` showed no
+  attached emulator or device in this session
+  2026-04-14 cover-skip status: `android\run-code-quality.ps1 -Fix`,
+  `gradlew.bat bundleDebug`, and `gradlew.bat testDebugUnitTest` all passed
+  after the targeted cover suppression follow-up; the launch smoke path
+  remains pending because `C:\local\android-sdk\platform-tools\adb.exe`
+  `devices` again showed no attached emulator or device in this session
+  2026-04-14 cover-skip2 status: `android\run-code-quality.ps1 -Fix`,
+  `gradlew.bat bundleDebug`, and `gradlew.bat testDebugUnitTest` all passed
+  after the broader stable-pair suppression follow-up; the launch smoke path
+  remains pending because `C:\local\android-sdk\platform-tools\adb.exe`
+  `devices` still showed no attached emulator or device in this session
 - [x] Analyze `android\temp_game_logs\debuglog_20260414_084106.txt` across
   stock and 512 sessions
 - [x] Confirm whether the new split logs isolate texture content vs geometry
@@ -270,6 +541,69 @@ phases 1-4.
   D1 and D2
 - [ ] Capture a fresh stock run with the new `[metl154src]` and
   `[metl154alpha]` lines enabled
+- [x] Capture a fresh stock run with the new `[metl154clip]` and
+  `[metl154coverbox]` lines enabled
+- [x] Capture a fresh stock run with the new context-rich `[metl154cover]`
+  and `[metl154coverbox]` lines enabled
+- [x] Analyze `android\temp_game_logs\debuglog_20260414_193658.txt` and
+  confirm whether the context-rich cover logs isolate stable later cover
+  faces
+  Findings: the run is still stock/no-mod and still exercises stock
+  `alpha_raw`; the repeated early pair is `metl 32/0/0 -> cover 30/2/0`
+  (`rock296`), while the later repeated pair is `metl 83/1/0 -> cover 83/2/0`
+  (`rock346`)
+- [x] If the new context-rich cover logs isolate stable later faces, add one
+  narrow runtime experiment that suppresses only those later cover draws
+  Current choice: add `cover_skip`, a same-frame face-pair experiment that
+  skips only the identified `30/2/0` and `83/2/0` cover draws after their
+  matching metl154 faces were tracked earlier in the frame
+- [x] Capture a fresh stock run with the new `cover_skip` experiment enabled
+  Findings: `android\temp_game_logs\debuglog_20260414_203139.txt` is still
+  stock/no-mod, still exercises the full experiment cycle, and confirms that
+  `cover_skip` suppresses the original `30/2/0` and `83/2/0` later cover
+  faces while a broader stable cover family remains around `seg=82` and
+  `cover 28/1/0`
+- [x] If `cover_skip` removes only the original two later faces, add one
+  broader same-frame suppression experiment without replacing the narrower
+  mode
+  Current choice: add `cover_skip2`, which keeps the original
+  `32/0/0 -> 30/2/0` and `83/1/0 -> 83/2/0` pairs and also skips
+  `32/2/0 -> 82/1/0`, `28/2/0 -> 82/3/0`, `29/2/0 -> 82/4/0`, and
+  `28/0/0 -> 28/1/0`
+- [ ] Capture a fresh stock run with the new `cover_skip2` experiment enabled
+  2026-04-14 runtime status: blocked in this session because
+  `C:\local\android-sdk\platform-tools\adb.exe devices` returned no
+  attached emulator or device
+- [x] Re-evaluate the repeated `203139` metl154 faces against wall
+  classification and merge-path semantics instead of only later covers
+  Findings: the bad faces are solid-wall `child=-1` / `wid=2` draws with
+  `tmap1=rock313`, `tmap2=metl154`, and draw-time `super=0`, so the visible
+  rock is coming from the same merged face rather than only from a later
+  render-past cover draw
+- [x] Add targeted D1/D2 logging for metl154 wall classification and
+  plain-vs-super merge behavior
+  Current choice: add caller-side `[metl154wall]` lines that explain why a
+  face stayed on the ordinary wall path, plus draw-side `[metl154mix]` lines
+  that interpret the representative overlay alpha sample as same-face bottom
+  exposure versus masked final-alpha control
+- [x] Analyze `android\temp_game_logs\debuglog_20260414_213343.txt` from a
+  second phone against the new wall/mix logs
+  Findings: the second phone reproduces the same stock-path behavior. The
+  bad metl154 faces are still solid `wid=2` / `child=-1` wall draws with
+  `ovl_real=0x9`, `ovl_super=0`, and `[metl154mix] path=plain_alpha_cutoff`
+  showing `sample_alpha=0.000` and `bottom_mix=1.000`. The same log also
+  cycled through `alpha_raw` and `cover_skip2`, and neither changes the core
+  diagnosis because transparent metl pixels still expose the same-face
+  `rock313` underlay whenever the sampled alpha lands at zero
+- [x] Add one narrow runtime experiment that removes same-face bottom mixing
+  for metl154 without changing the texture source path
+  Current choice: add `overlay_only`, which keeps the stock metl154 source
+  and alpha cutoff behavior but renders the overlay as scene-through-alpha
+  instead of mixing `tmap1` underneath transparent metl pixels
+- [ ] Capture a fresh stock run with the new `overlay_only` experiment enabled
+  Goal: confirm whether removing same-face underlay contribution also removes
+  the visible rock in the full-view bad case, which would make the remaining
+  issue a semantics mismatch rather than a later-cover overlap problem
 
 ---
 

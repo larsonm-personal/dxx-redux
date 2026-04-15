@@ -141,6 +141,12 @@ void ogl_init_prog() {
 		"\n  float ovla = ovl.a;"
 		"\n  if (utex2alpha_cutoff > 0.0)"
 		"\n   ovla = ovl.a >= utex2alpha_cutoff ? 1.0 : 0.0;"
+		"\n  if (utex2_debug == 3) {"
+		"\n   vec4 f = vcolor * vec4(ovl.rgb, ovla);"
+		"\n   if (f.a < 0.02) discard;"
+		"\n   gl_FragColor = f;"
+		"\n   return;"
+		"\n  }"
 		"\n  vec4 c = vec4(mix(bot.rgb, ovl.rgb, ovla), bot.a + ovla - bot.a * ovla);" // same as 1 - (1 - bot.a) * (1 - ovl.a)
 		"\n  vec4 f = vcolor * c;"
 		"\n  if (f.a < 0.02) discard;"
