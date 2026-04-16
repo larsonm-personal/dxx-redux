@@ -100,6 +100,117 @@ static int render_tmap2_is_metl154(int tmap2)
 	return name && !d_stricmp(name, "metl154");
 }
 
+#define METL154_TRACK_SIDE_COUNT 3
+
+struct metl154_track_side {
+	short segnum;
+	sbyte sidenum;
+	const char *label;
+};
+
+static const struct metl154_track_side metl154_track_sides[METL154_TRACK_SIDE_COUNT] = {
+	{82, 4, "portal82"},
+	{83, 4, "portal83"},
+	{29, 2, "rock29"}
+};
+
+static int g_metl154_tracked_side_snapshot_pending = 1;
+
+static const char *render_metl154_texture_name_or_none(int tmap_num)
+{
+	int texnum;
+	grs_bitmap *bm;
+	const char *name;
+
+	if (!tmap_num)
+		return "<none>";
+	texnum = tmap_num & 0x3FFF;
+	if (texnum < 0 || texnum >= NumTextures)
+		return "<bad>";
+	bm = &GameBitmaps[Textures[texnum].index];
+	name = piggy_game_bitmap_name(bm);
+	return name ? name : "<unnamed>";
+}
+
+static unsigned int render_metl154_side_sig_mix(unsigned int sig, unsigned int value)
+{
+	return (sig ^ value) * 16777619u;
+}
+
+static unsigned int render_metl154_side_signature(segment *segp, int sidenum)
+{
+	side *sidep = &segp->sides[sidenum];
+	unsigned int sig = 2166136261u;
+	int i;
+
+	sig = render_metl154_side_sig_mix(sig, (unsigned short)segp->children[sidenum]);
+	sig = render_metl154_side_sig_mix(sig, (unsigned short)sidep->type);
+	sig = render_metl154_side_sig_mix(sig, (unsigned short)sidep->wall_num);
+	sig = render_metl154_side_sig_mix(sig, (unsigned short)sidep->tmap_num);
+	sig = render_metl154_side_sig_mix(sig, (unsigned short)sidep->tmap_num2);
+	for (i = 0; i < 4; ++i) {
+		sig = render_metl154_side_sig_mix(sig, (unsigned int)sidep->uvls[i].u);
+		sig = render_metl154_side_sig_mix(sig, (unsigned int)sidep->uvls[i].v);
+		sig = render_metl154_side_sig_mix(sig, (unsigned int)sidep->uvls[i].l);
+	}
+	return sig;
+}
+
+static void render_log_metl154_tracked_side(const struct metl154_track_side *track,
+	const char *stage, int frame_id)
+{
+	segment *segp;
+	side *sidep;
+	int child, conn_side = -1, wid;
+
+	if (track->segnum < 0 || track->segnum > Highest_segment_index)
+		return;
+	segp = &Segments[track->segnum];
+	sidep = &segp->sides[track->sidenum];
+	child = segp->children[track->sidenum];
+	if (child >= 0 && child <= Highest_segment_index)
+		conn_side = find_connect_side(segp, &Segments[child]);
+	wid = WALL_IS_DOORWAY(segp, track->sidenum);
+	debug_log(DLOG_TEXTURE,
+		"[metl154side] frame=%d stage=%s label=%s seg=%d side=%d child=%d conn_side=%d side_type=%d wall_num=%d wid=%d tmap1=%d tmap2=0x%x bot=%s ovl=%s sig=0x%x",
+		frame_id,
+		stage ? stage : "<null>",
+		track->label,
+		track->segnum,
+		track->sidenum,
+		child,
+		conn_side,
+		sidep->type,
+		sidep->wall_num,
+		wid,
+		sidep->tmap_num,
+		sidep->tmap_num2,
+		render_metl154_texture_name_or_none(sidep->tmap_num),
+		render_metl154_texture_name_or_none(sidep->tmap_num2),
+		render_metl154_side_signature(segp, track->sidenum));
+}
+
+void render_log_android_tracked_side_snapshot(const char *stage, int frame_id)
+{
+	int i;
+
+	for (i = 0; i < METL154_TRACK_SIDE_COUNT; ++i)
+		render_log_metl154_tracked_side(&metl154_track_sides[i], stage, frame_id);
+}
+
+void render_reset_android_tracked_side_snapshot(void)
+{
+	g_metl154_tracked_side_snapshot_pending = 1;
+}
+
+static void render_log_android_tracked_side_snapshot_if_pending(void)
+{
+	if (!g_metl154_tracked_side_snapshot_pending)
+		return;
+	render_log_android_tracked_side_snapshot("render_preframe", g_metl154_frame_id);
+	g_metl154_tracked_side_snapshot_pending = 0;
+}
+
 static void render_set_android_draw_face_context(segment *segp, int sidenum,
 	int tmap1, int tmap2, int wid_flags, int nv, int face_index)
 {
@@ -1905,6 +2016,63 @@ void render_frame(fix eye_offset, int window_num)
 
 int first_terminal_seg;
 
+#ifdef ANDROID
+#define METL154_TRACK_RENDER_SEG_COUNT 5
+
+static const short metl154_track_render_segs[METL154_TRACK_RENDER_SEG_COUNT] = {
+	82, 83, 29, 28, 32
+};
+
+static int render_metl154_track_render_seg(int segnum)
+{
+	int i;
+
+	for (i = 0; i < METL154_TRACK_RENDER_SEG_COUNT; ++i)
+		if (metl154_track_render_segs[i] == segnum)
+			return 1;
+	return 0;
+}
+
+static int render_metl154_track_portal_side(int segnum, int sidenum)
+{
+	return sidenum == 4 && (segnum == 82 || segnum == 83);
+}
+
+static int render_metl154_seg_pos_or_minus1(int segnum)
+{
+	if (segnum < 0 || segnum > Highest_segment_index)
+		return -1;
+	return render_pos[segnum];
+}
+
+static int render_metl154_seg_depth_or_minus1(int segnum)
+{
+	int pos = render_metl154_seg_pos_or_minus1(segnum);
+
+	return pos >= 0 ? Seg_depth[pos] : -1;
+}
+
+static void render_log_metl154_render_list_summary(int start_seg_num, int window_num)
+{
+	debug_log(DLOG_TEXTURE,
+		"[metl154list] frame=%d event=summary start=%d window=%d n=%d first_terminal=%d s82=%d/%d s83=%d/%d s29=%d/%d s28=%d/%d s32=%d/%d",
+		g_metl154_frame_id,
+		start_seg_num,
+		window_num,
+		N_render_segs,
+		first_terminal_seg,
+		render_metl154_seg_pos_or_minus1(82),
+		render_metl154_seg_depth_or_minus1(82),
+		render_metl154_seg_pos_or_minus1(83),
+		render_metl154_seg_depth_or_minus1(83),
+		render_metl154_seg_pos_or_minus1(29),
+		render_metl154_seg_depth_or_minus1(29),
+		render_metl154_seg_pos_or_minus1(28),
+		render_metl154_seg_depth_or_minus1(28),
+		render_metl154_seg_pos_or_minus1(32),
+		render_metl154_seg_depth_or_minus1(32));
+}
+#endif
 void update_rendered_data(int window_num, object *viewer, int rear_view_flag, int user)
 {
 	Assert(window_num < MAX_RENDERED_WINDOWS);
@@ -1997,11 +2165,50 @@ void build_segment_list(int start_seg_num, int window_num)
 						for (i=0;i<4;i++)
 							codes_and &= Segment_points[seg->verts[sv[i]]].p3_codes;
 
-						if (codes_and & CC_BEHIND) continue;
+						if (codes_and & CC_BEHIND) {
+#ifdef ANDROID
+							if (render_metl154_track_portal_side(segnum, c))
+								debug_log(DLOG_TEXTURE,
+									"[metl154list] frame=%d event=childlist_skip_behind parent=%d side=%d child=%d depth=%d wid=%d codes=0x%x",
+									g_metl154_frame_id,
+									segnum,
+									c,
+									ch,
+									l,
+									wid,
+									codes_and);
+#endif
+							continue;
+						}
 					}
 
 					child_list[n_children++] = c;
+					#ifdef ANDROID
+					if (render_metl154_track_portal_side(segnum, c))
+						debug_log(DLOG_TEXTURE,
+							"[metl154list] frame=%d event=childlist_add parent=%d side=%d child=%d depth=%d wid=%d obs=%d slot=%d",
+							g_metl154_frame_id,
+							segnum,
+							c,
+							ch,
+							l,
+							wid,
+							obs,
+							n_children - 1);
+#endif
 				}
+#ifdef ANDROID
+				else if (render_metl154_track_portal_side(segnum, c))
+					debug_log(DLOG_TEXTURE,
+						"[metl154list] frame=%d event=childlist_block parent=%d side=%d child=%d depth=%d wid=%d obs=%d",
+						g_metl154_frame_id,
+						segnum,
+						c,
+						ch,
+						l,
+						wid,
+						obs);
+#endif
 			}
 
 			//now order the sides in some magical way
@@ -2034,7 +2241,7 @@ void build_segment_list(int start_seg_num, int window_num)
 						int p = seg->verts[Side_to_verts[siden][i]];
 						g3s_point *pnt = &Segment_points[p];
 
-						if (! (pnt->p3_flags&PF_PROJECTED)) {no_proj_flag=1; break;}
+						if (!(pnt->p3_flags&PF_PROJECTED)) {no_proj_flag=1; break;}
 
 						_x = f2i(pnt->p3_sx);
 						_y = f2i(pnt->p3_sy);
@@ -2047,7 +2254,6 @@ void build_segment_list(int start_seg_num, int window_num)
 
 						if (_y < min_y) min_y = _y;
 						if (_y > max_y) max_y = _y;
-
 					}
 
 					if (obs || no_proj_flag || (!codes_and_3d && !codes_and_2d)) {	//maybe add this segment
@@ -2069,6 +2275,25 @@ void build_segment_list(int start_seg_num, int window_num)
 									new_w->top < render_windows[rp].top ||
 									new_w->right > render_windows[rp].right ||
 									new_w->bot > render_windows[rp].bot) {
+#ifdef ANDROID
+								if (render_metl154_track_portal_side(segnum, siden) || render_metl154_track_render_seg(ch))
+									debug_log(DLOG_TEXTURE,
+										"[metl154list] frame=%d event=expand parent=%d side=%d child=%d depth=%d rp=%d obs=%d no_proj=%d codes3d=0x%x codes2d=0x%x proj=%d..%d/%d..%d",
+										g_metl154_frame_id,
+										segnum,
+										siden,
+										ch,
+										l,
+										rp,
+										obs,
+										no_proj_flag,
+										codes_and_3d,
+										codes_and_2d,
+										min_x,
+										max_x,
+										min_y,
+										max_y);
+#endif
 
 								new_w->left = min(new_w->left, render_windows[rp].left);
 								new_w->right = max(new_w->right, render_windows[rp].right);
@@ -2076,11 +2301,29 @@ void build_segment_list(int start_seg_num, int window_num)
 								new_w->bot = max(new_w->bot, render_windows[rp].bot);
 
 								Render_list[lcnt] = -1;
-
 								render_windows[rp] = *new_w;		//get updated window
 								processed[rp] = 0;		//force reprocess
 								reprocess = 1;
 							}
+#ifdef ANDROID
+							else if (render_metl154_track_portal_side(segnum, siden))
+								debug_log(DLOG_TEXTURE,
+									"[metl154list] frame=%d event=already_visible parent=%d side=%d child=%d depth=%d rp=%d obs=%d no_proj=%d codes3d=0x%x codes2d=0x%x proj=%d..%d/%d..%d",
+									g_metl154_frame_id,
+									segnum,
+									siden,
+									ch,
+									l,
+									rp,
+									obs,
+									no_proj_flag,
+									codes_and_3d,
+									codes_and_2d,
+									min_x,
+									max_x,
+									min_y,
+									max_y);
+#endif
 
 							goto no_add;
 						}
@@ -2091,9 +2334,46 @@ void build_segment_list(int start_seg_num, int window_num)
 						lcnt++;
 						if (lcnt >= MAX_RENDER_SEGS) { goto done_list; }
 						visited[ch] = 1;
+#ifdef ANDROID
+						if (render_metl154_track_portal_side(segnum, siden) || render_metl154_track_render_seg(ch))
+							debug_log(DLOG_TEXTURE,
+								"[metl154list] frame=%d event=enqueue parent=%d side=%d child=%d depth=%d pos=%d obs=%d no_proj=%d codes3d=0x%x codes2d=0x%x proj=%d..%d/%d..%d",
+								g_metl154_frame_id,
+								segnum,
+								siden,
+								ch,
+								l,
+								lcnt - 1,
+								obs,
+								no_proj_flag,
+								codes_and_3d,
+								codes_and_2d,
+								min_x,
+								max_x,
+								min_y,
+								max_y);
+#endif
 no_add:
 	;
 					}
+#ifdef ANDROID
+					else if (render_metl154_track_portal_side(segnum, siden))
+						debug_log(DLOG_TEXTURE,
+							"[metl154list] frame=%d event=portal_window_skip parent=%d side=%d child=%d depth=%d obs=%d no_proj=%d codes3d=0x%x codes2d=0x%x proj=%d..%d/%d..%d",
+							g_metl154_frame_id,
+							segnum,
+							siden,
+							ch,
+							l,
+							obs,
+							no_proj_flag,
+							codes_and_3d,
+							codes_and_2d,
+							min_x,
+							max_x,
+							min_y,
+							max_y);
+#endif
 				}
 			}
 		}
@@ -2138,6 +2418,7 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 	g_metl154_frame_id++;
 	g_metl154_render_pass = 0;
 	g_metl154_draw_seq = 0;
+	render_log_android_tracked_side_snapshot_if_pending();
 #endif
 
 
@@ -2159,6 +2440,9 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 	#endif
 		//NOTE LINK TO ABOVE!!
 		build_segment_list(start_seg_num, window_num);		//fills in Render_list & N_render_segs
+#ifdef ANDROID
+	render_log_metl154_render_list_summary(start_seg_num, window_num);
+#endif
 
 	//render away
 

@@ -54,6 +54,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "text.h"
 #include "gamefont.h"
 #include "gamesave.h"
+#include "render.h"
 #include "textures.h"
 #include "multi.h"
 #include "makesig.h"
@@ -1200,6 +1201,10 @@ int load_level(const char * filename_passed)
 	//======================== CLOSE FILE =============================
 
 	PHYSFS_close( LoadFile );
+	#ifdef ANDROID
+	render_log_android_tracked_side_snapshot("load_level", -1);
+	render_reset_android_tracked_side_snapshot();
+	#endif
 
 	#if 0	//def EDITOR
 	#ifndef RELEASE

@@ -101,4 +101,9 @@ extern void render_mine(int start_seg_num, fix eye_offset, int window_num);
 
 extern void update_rendered_data(int window_num, object *viewer, int rear_view_flag, int user);
 
+#ifdef ANDROID
+void render_log_android_tracked_side_snapshot(const char *stage, int frame_id);
+void render_reset_android_tracked_side_snapshot(void);
+#endif
+
 #endif /* _RENDER_H */

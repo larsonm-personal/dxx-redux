@@ -74,12 +74,15 @@ class VideoInfoOverlay(
     private var texFiltPressed = false
     private var metl154Pressed = false
     private var metl154ExperimentPressed = false
+    private var metl154SnapshotPressed = false
+    private var metl154SnapshotFlashUntilMs = 0L
     private val buttonRect = RectF()
     private val anisoRect = RectF()
     private val msaaRect = RectF()
     private val texFiltRect = RectF()
     private val metl154Rect = RectF()
     private val metl154ExperimentRect = RectF()
+    private val metl154SnapshotRect = RectF()
     private val panelBounds = RectF()
 
     private val pollRunnable =
@@ -225,7 +228,7 @@ class VideoInfoOverlay(
 
         val pad = 8f * density
         val lineH = baseTextSize * 1.5f
-        val numLines = 19
+        val numLines = 20
         val panelH = pad * 2 + lineH * numLines
         val panelW = baseTextSize * 20f
 
@@ -475,6 +478,20 @@ class VideoInfoOverlay(
         canvas.drawText(metl154ExperimentText, panelLeft + pad, y, metl154ExperimentPaint)
         y += lineH
 
+        val snapshotActive = android.os.SystemClock.uptimeMillis() < metl154SnapshotFlashUntilMs
+        val metl154SnapshotText = if (snapshotActive) "m154 snap: Sent" else "m154 snap: Tap"
+        val metl154SnapshotPaint = if (snapshotActive) fpsGoodPaint else valuePaint
+        metl154SnapshotRect.set(
+            panelLeft + pad * 0.5f,
+            y - baseTextSize,
+            panelLeft + panelW - pad * 0.5f,
+            y + lineH * 0.3f,
+        )
+        val metl154SnapshotBg = if (metl154SnapshotPressed) btnPressedPaint else btnNormalPaint
+        canvas.drawRoundRect(metl154SnapshotRect, pad * 0.5f, pad * 0.5f, metl154SnapshotBg)
+        canvas.drawText(metl154SnapshotText, panelLeft + pad, y, metl154SnapshotPaint)
+        y += lineH
+
         // Labels toggle button
         val labelsText = if (labelsOn) "Labels: ON" else "Labels: OFF"
         val labelTogglePaint = if (labelsOn) fpsGoodPaint else fpsWarnPaint
@@ -499,6 +516,7 @@ class VideoInfoOverlay(
         val inTexFilt = texFiltRect.contains(event.x, event.y)
         val inMetl154 = metl154Rect.contains(event.x, event.y)
         val inMetl154Experiment = metl154ExperimentRect.contains(event.x, event.y)
+        val inMetl154Snapshot = metl154SnapshotRect.contains(event.x, event.y)
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
@@ -532,6 +550,11 @@ class VideoInfoOverlay(
                     invalidate()
                     return true
                 }
+                if (inMetl154Snapshot) {
+                    metl154SnapshotPressed = true
+                    invalidate()
+                    return true
+                }
                 if (inPanel) return true
             }
             MotionEvent.ACTION_UP -> {
@@ -560,12 +583,17 @@ class VideoInfoOverlay(
                     cycleMetl154Experiment()
                     performClick()
                 }
+                if (metl154SnapshotPressed && inMetl154Snapshot) {
+                    triggerMetl154Snapshot()
+                    performClick()
+                }
                 if (buttonPressed ||
                     anisoPressed ||
                     msaaPressed ||
                     texFiltPressed ||
                     metl154Pressed ||
                     metl154ExperimentPressed ||
+                    metl154SnapshotPressed ||
                     inPanel
                 ) {
                     buttonPressed = false
@@ -574,6 +602,7 @@ class VideoInfoOverlay(
                     texFiltPressed = false
                     metl154Pressed = false
                     metl154ExperimentPressed = false
+                    metl154SnapshotPressed = false
                     invalidate()
                     return true
                 }
@@ -585,6 +614,7 @@ class VideoInfoOverlay(
                 texFiltPressed = false
                 metl154Pressed = false
                 metl154ExperimentPressed = false
+                metl154SnapshotPressed = false
                 invalidate()
             }
         }
@@ -630,7 +660,18 @@ class VideoInfoOverlay(
         debugFlagSetter?.invoke("metl154_experiment", next)
     }
 
+    private fun triggerMetl154Snapshot() {
+        debugFlagSetter?.invoke("metl154_snapshot", 1)
+        metl154SnapshotFlashUntilMs = android.os.SystemClock.uptimeMillis() + SNAPSHOT_FLASH_MS
+        invalidate()
+        handler.postDelayed(
+            { if (visibility == VISIBLE) invalidate() },
+            SNAPSHOT_FLASH_MS,
+        )
+    }
+
     companion object {
         private const val POLL_INTERVAL_MS = 500L
+        private const val SNAPSHOT_FLASH_MS = 900L
     }
 }

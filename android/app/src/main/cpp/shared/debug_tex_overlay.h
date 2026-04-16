@@ -64,6 +64,8 @@ struct android_draw_face_context {
 extern volatile int g_metl154_debug_mode;
 extern volatile int g_metl154_experiment_mode;
 extern volatile int g_metl154_experiment_pending_apply;
+extern volatile int g_metl154_snapshot_pending;
+extern volatile int g_metl154_snapshot_request_frame;
 extern volatile int g_metl154_render_pass;
 extern volatile int g_metl154_frame_id;
 extern volatile int g_metl154_draw_seq;

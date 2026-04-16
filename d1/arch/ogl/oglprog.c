@@ -8,6 +8,12 @@ GLuint ogl_tex2_mat, ogl_tex2m_mat;
 GLint ogl_tex2_alpha_cutoff = -1;
 GLint ogl_tex2_debug_mode = -1;
 
+#ifdef ANDROID
+#define OGL_TEX2_FLOAT_PRECISION "precision highp float;"
+#else
+#define OGL_TEX2_FLOAT_PRECISION "precision mediump float;"
+#endif
+
 GLfloat ogl_mat_ortho[16] = {
 	1, 0, 0, 0,
     0, 1, 0, 0,
@@ -120,7 +126,7 @@ void ogl_init_prog() {
 		"\n  gl_Position = umat * vec4(apos, 1.0);"
 		"\n  vcolor = acolor; vtexcoord = atexcoord; vtexcoord2 = atexcoord2;"
 		"\n }",
-		"precision mediump float;"
+		OGL_TEX2_FLOAT_PRECISION
 		"\n varying vec2 vtexcoord;"
 		"\n varying vec2 vtexcoord2;"
 		"\n varying vec4 vcolor;"
@@ -165,7 +171,7 @@ void ogl_init_prog() {
 		"\n  gl_Position = umat * vec4(apos, 1.0);"
 		"\n  vcolor = acolor; vtexcoord = atexcoord; vtexcoord2 = atexcoord2;"
 		"\n }",
-		"precision mediump float;"
+		OGL_TEX2_FLOAT_PRECISION
 		"\n varying vec2 vtexcoord;"
 		"\n varying vec2 vtexcoord2;"
 		"\n varying vec4 vcolor;"
@@ -233,4 +239,17 @@ void ogl_prog_set_matrix(GLfloat *mat) {
 	}
 
 	glUseProgram(0);
+}
+
+void ogl_prog_set_tex2_current_matrix(const GLfloat *mat, int super)
+{
+	if (!mat)
+		return;
+	if (super) {
+		if (ogl_prog_tex2m)
+			glUniformMatrix4fv(ogl_tex2m_mat, 1, GL_FALSE, mat);
+	} else {
+		if (ogl_prog_tex2)
+			glUniformMatrix4fv(ogl_tex2_mat, 1, GL_FALSE, mat);
+	}
 }

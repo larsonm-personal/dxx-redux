@@ -32,6 +32,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gameseg.h"
 #include "game.h"
 #include "bm.h"
+#include "piggy.h"
 #include "vclip.h"
 #include "player.h"
 #include "gauges.h"
@@ -100,17 +101,15 @@ void kill_stuck_objects(int wallnum);
 //		0 = NO
 int check_transparency( segment * seg, int side )
 {
-	if ( (seg->sides[side].tmap_num2 & 0x3FFF) == 0) {
-		if (GameBitmaps[Textures[seg->sides[side].tmap_num].index].bm_flags & BM_FLAG_TRANSPARENT )
-			return 1;
-		else
-			return 0;
-		}
+	grs_bitmap *bm;
 
-	if (GameBitmaps[Textures[seg->sides[side].tmap_num2 & 0x3FFF ].index].bm_flags & BM_FLAG_SUPER_TRANSPARENT )
-		return 1;
-	else
-		return 0;
+	if ((seg->sides[side].tmap_num2 & 0x3FFF) == 0) {
+		bm = &GameBitmaps[Textures[seg->sides[side].tmap_num].index];
+		return (piggy_bitmap_get_flags(bm) & BM_FLAG_TRANSPARENT) != 0;
+	}
+
+	bm = &GameBitmaps[Textures[seg->sides[side].tmap_num2 & 0x3FFF].index];
+	return (piggy_bitmap_get_flags(bm) & BM_FLAG_SUPER_TRANSPARENT) != 0;
 }
 
 //-----------------------------------------------------------------

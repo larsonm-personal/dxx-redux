@@ -483,6 +483,20 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
 		g_metl154_experiment_mode = clamped;
 		__sync_synchronize();
 		g_metl154_experiment_pending_apply = 1;
+	} else if (strcmp(name, "metl154_snapshot") == 0) {
+		if (value) {
+			g_metl154_snapshot_request_frame = g_metl154_frame_id;
+			__sync_synchronize();
+			g_metl154_snapshot_pending = 1;
+			LOGI("debug flag: metl154_snapshot requested at frame=%d",
+			     (int) g_metl154_snapshot_request_frame);
+			debug_log(DLOG_TEXTURE,
+			          "[metl154snap] request: request_frame=%d frame=%d pass=%d seq=%d",
+			          (int) g_metl154_snapshot_request_frame,
+			          (int) g_metl154_frame_id,
+			          (int) g_metl154_render_pass,
+			          (int) g_metl154_draw_seq);
+		}
 	} else if (strcmp(name, "gfx_mode") == 0)
 		gles3_shim_debug_mode = (int) value;
 	else if (strcmp(name, "aniso_level") == 0) {

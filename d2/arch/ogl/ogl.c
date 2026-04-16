@@ -38,6 +38,7 @@
 #include "debug_tex_overlay.h"
 #include "android_crash_handler.h"
 #include "android_log.h"
+#include "gles3_shim.h"
 #endif
 
 #include "3d.h"
@@ -55,8 +56,10 @@
 #endif
 
 #include "segment.h"
+#include "gameseg.h"
 #include "textures.h"
 #include "texmerge.h"
+#include "wall.h"
 #include "effects.h"
 #include "weapon.h"
 #include "powerup.h"
@@ -159,9 +162,13 @@ static GLuint metl154_first_gl_handle = 0;
 #define METL154_VSLICE_SAMPLES 5
 #define METL154_LOG_PT_COUNT 4
 #define METL154_TRACKED_FACE_MAX 32
+#define METL154_SNAPSHOT_COVER_MAX 64
+#define METL154_SNAPSHOT_SELECT_MAX 6
 #define METL154_COVER_SKIP_BASE_PAIR_COUNT 2
 #define METL154_COVER_SKIP_PAIR_COUNT 6
 #define METL154_TEX2_OVERLAY_ONLY 3
+#define METL154_SNAPSHOT_COVER_EXACT 1
+#define METL154_SNAPSHOT_COVER_BBOX  2
 
 struct metl154_cover_skip_pair {
 	int metl_seg;
@@ -181,6 +188,28 @@ static const struct metl154_cover_skip_pair metl154_cover_skip_pairs[METL154_COV
 	{28, 0, 0, 28, 1, 0},
 };
 
+#define METL154_FOCUS_FACE_COUNT 5
+#define METL154_FOCUS_PORTAL82 0
+#define METL154_FOCUS_PORTAL83 1
+#define METL154_FOCUS_ROCK8330 2
+#define METL154_FOCUS_ROCK8331 3
+#define METL154_FOCUS_ROCK2920 4
+
+struct metl154_focus_face {
+	const char *tag;
+	int seg;
+	int side;
+	int face;
+};
+
+static const struct metl154_focus_face metl154_focus_faces[METL154_FOCUS_FACE_COUNT] = {
+	{"portal82", 82, 4, 0},
+	{"portal83", 83, 4, 0},
+	{"rock8330", 83, 3, 0},
+	{"rock8331", 83, 3, 1},
+	{"rock2920", 29, 2, 0},
+};
+
 struct metl154_tracked_face {
 	int metl_pass;
 	int metl_seq;
@@ -198,10 +227,72 @@ struct metl154_tracked_face {
 	fix pts[METL154_LOG_PT_COUNT][3];
 };
 
+struct metl154_focus_draw_cache {
+	int valid;
+	int draw_order;
+	int nv;
+	int bbox_valid;
+	int has_ovl_uv;
+	struct android_draw_face_context draw_ctx;
+	GLfloat min_sx;
+	GLfloat max_sx;
+	GLfloat min_sy;
+	GLfloat max_sy;
+	GLfloat sx[METL154_LOG_PT_COUNT];
+	GLfloat sy[METL154_LOG_PT_COUNT];
+	GLfloat vz[METL154_LOG_PT_COUNT];
+	GLfloat ovl_u[METL154_LOG_PT_COUNT];
+	GLfloat ovl_v[METL154_LOG_PT_COUNT];
+};
+
+struct metl154_snapshot_cover_event {
+	int kind;
+	int metl_index;
+	int cover_order;
+	int ordered;
+	struct android_draw_face_context cover_ctx;
+	int cover_bbox_valid;
+	GLfloat cover_min_sx;
+	GLfloat cover_max_sx;
+	GLfloat cover_min_sy;
+	GLfloat cover_max_sy;
+	GLfloat overlap_area;
+	char cover_shader[16];
+	char cover_bot[24];
+	char cover_ovl[24];
+};
+
 static struct metl154_tracked_face metl154_tracked_faces[METL154_TRACKED_FACE_MAX];
+static struct metl154_snapshot_cover_event metl154_snapshot_cover_events[METL154_SNAPSHOT_COVER_MAX];
 static int metl154_tracked_face_count = 0;
 static int metl154_tracked_frame_id = -1;
 static int metl154_draw_order = 0;
+static int metl154_focus_frame_id = -1;
+static int metl154_snapshot_frame_id = -1;
+static int metl154_snapshot_cover_event_count = 0;
+static unsigned char metl154_focus_logged[METL154_FOCUS_FACE_COUNT];
+static struct metl154_focus_draw_cache metl154_focus_draws[METL154_FOCUS_FACE_COUNT];
+static int metl154_single_clip_active = 0;
+
+static int ogl_get_metl154_screen_bbox(const g3s_point **pointlist, int nv,
+	GLfloat *min_sx, GLfloat *max_sx, GLfloat *min_sy, GLfloat *max_sy);
+static void ogl_get_metl154_source_filter_sample(grs_bitmap *bm, GLfloat sample_u,
+	GLfloat sample_v, int *idx00, int *idx10, int *idx01, int *idx11,
+	GLfloat *alpha, int *wrap_u, int *wrap_v);
+static bool ogl_clip_and_draw_metl154_single(int nv, const g3s_point **pointlist,
+	g3s_uvl *uvl_list, g3s_lrgb *light_rgb, grs_bitmap *bm);
+
+static int ogl_metl154_single_clip_matches_wid(int wid_flags)
+{
+	if (wid_flags == WID_TRANSPARENT_WALL
+		|| wid_flags == WID_TRANSILLUSORY_WALL)
+		return 1;
+#ifdef WID_CLOAKED_FLAG
+	if (wid_flags & WID_CLOAKED_FLAG)
+		return 1;
+#endif
+	return 0;
+}
 
 static void ogl_metl154_begin_frame_tracking(void)
 {
@@ -217,6 +308,238 @@ static int ogl_metl154_next_draw_order(void)
 	ogl_metl154_begin_frame_tracking();
 	return ++metl154_draw_order;
 }
+
+static void ogl_metl154_begin_focus_logging(void)
+{
+	if (metl154_focus_frame_id == g_metl154_frame_id)
+		return;
+	metl154_focus_frame_id = g_metl154_frame_id;
+	memset(metl154_focus_logged, 0, sizeof(metl154_focus_logged));
+	memset(metl154_focus_draws, 0, sizeof(metl154_focus_draws));
+}
+
+static void ogl_metl154_begin_snapshot_events(void)
+{
+	if (metl154_snapshot_frame_id == g_metl154_frame_id)
+		return;
+	metl154_snapshot_frame_id = g_metl154_frame_id;
+	metl154_snapshot_cover_event_count = 0;
+}
+
+static void ogl_metl154_snapshot_copy_name(char *dst, unsigned int dst_size,
+	const char *src)
+{
+	if (!dst || dst_size == 0)
+		return;
+	if (!src)
+		src = "<none>";
+	strncpy(dst, src, dst_size - 1);
+	dst[dst_size - 1] = '\0';
+}
+
+static int ogl_metl154_bbox_contains_point(GLfloat px, GLfloat py,
+	GLfloat min_sx, GLfloat max_sx, GLfloat min_sy, GLfloat max_sy)
+{
+	return px >= min_sx && px <= max_sx && py >= min_sy && py <= max_sy;
+}
+
+static GLfloat ogl_metl154_bbox_distance_sq(GLfloat px, GLfloat py,
+	GLfloat min_sx, GLfloat max_sx, GLfloat min_sy, GLfloat max_sy)
+{
+	GLfloat dx = 0.0f, dy = 0.0f;
+
+	if (px < min_sx)
+		dx = min_sx - px;
+	else if (px > max_sx)
+		dx = px - max_sx;
+	if (py < min_sy)
+		dy = min_sy - py;
+	else if (py > max_sy)
+		dy = py - max_sy;
+	return dx * dx + dy * dy;
+}
+
+static GLfloat ogl_metl154_bbox_overlap_area(GLfloat min0_sx, GLfloat max0_sx,
+	GLfloat min0_sy, GLfloat max0_sy, GLfloat min1_sx, GLfloat max1_sx,
+	GLfloat min1_sy, GLfloat max1_sy)
+{
+	GLfloat overlap_min_sx = min0_sx > min1_sx ? min0_sx : min1_sx;
+	GLfloat overlap_max_sx = max0_sx < max1_sx ? max0_sx : max1_sx;
+	GLfloat overlap_min_sy = min0_sy > min1_sy ? min0_sy : min1_sy;
+	GLfloat overlap_max_sy = max0_sy < max1_sy ? max0_sy : max1_sy;
+	GLfloat overlap_w = overlap_max_sx - overlap_min_sx;
+	GLfloat overlap_h = overlap_max_sy - overlap_min_sy;
+
+	if (overlap_w <= 0.0f || overlap_h <= 0.0f)
+		return 0.0f;
+	return overlap_w * overlap_h;
+}
+
+static void ogl_store_metl154_focus_draw(int focus_index,
+	const struct android_draw_face_context *focus_ctx,
+	const g3s_point **pointlist, int nv, const GLfloat *texcoordovl_array,
+	int draw_order)
+{
+	struct metl154_focus_draw_cache *cache;
+	int i;
+
+	if (focus_index < 0 || focus_index >= METL154_FOCUS_FACE_COUNT
+	    || !focus_ctx || !focus_ctx->valid || !pointlist
+	    || nv < 3 || nv > METL154_LOG_PT_COUNT)
+		return;
+
+	cache = &metl154_focus_draws[focus_index];
+	memset(cache, 0, sizeof(*cache));
+	cache->valid = 1;
+	cache->draw_order = draw_order;
+	cache->nv = nv;
+	cache->draw_ctx = *focus_ctx;
+	cache->has_ovl_uv = texcoordovl_array ? 1 : 0;
+	cache->bbox_valid = ogl_get_metl154_screen_bbox(pointlist, nv,
+		&cache->min_sx, &cache->max_sx, &cache->min_sy, &cache->max_sy);
+
+	for (i = 0; i < nv; i++) {
+		if (!(pointlist[i]->p3_flags & PF_PROJECTED)) {
+			cache->valid = 0;
+			return;
+		}
+		cache->sx[i] = f2fl(pointlist[i]->p3_sx);
+		cache->sy[i] = f2fl(pointlist[i]->p3_sy);
+		cache->vz[i] = f2fl(pointlist[i]->p3_vec.z);
+		if (texcoordovl_array) {
+			cache->ovl_u[i] = texcoordovl_array[i * 2];
+			cache->ovl_v[i] = texcoordovl_array[i * 2 + 1];
+		}
+	}
+}
+
+static int ogl_metl154_sample_focus_triangle(
+	const struct metl154_focus_draw_cache *cache, int i1, int i2,
+	GLfloat px, GLfloat py, GLfloat *w0, GLfloat *w1, GLfloat *w2)
+{
+	GLfloat x0, y0, x1, y1, x2, y2, denom;
+	const GLfloat eps = 0.001f;
+
+	x0 = cache->sx[0];
+	y0 = cache->sy[0];
+	x1 = cache->sx[i1];
+	y1 = cache->sy[i1];
+	x2 = cache->sx[i2];
+	y2 = cache->sy[i2];
+	denom = (y1 - y2) * (x0 - x2) + (x2 - x1) * (y0 - y2);
+	if (fabsf(denom) < 0.001f)
+		return 0;
+
+	*w0 = ((y1 - y2) * (px - x2) + (x2 - x1) * (py - y2)) / denom;
+	*w1 = ((y2 - y0) * (px - x2) + (x0 - x2) * (py - y2)) / denom;
+	*w2 = 1.0f - *w0 - *w1;
+	return *w0 >= -eps && *w1 >= -eps && *w2 >= -eps;
+}
+
+static int ogl_metl154_sample_focus_draw(
+	const struct metl154_focus_draw_cache *cache, GLfloat px, GLfloat py,
+	GLfloat *sample_z, GLfloat *sample_u, GLfloat *sample_v)
+{
+	int i;
+
+	if (!cache || !cache->valid || cache->nv < 3)
+		return 0;
+
+	for (i = 1; i < cache->nv - 1; i++) {
+		GLfloat w0, w1, w2;
+
+		if (!ogl_metl154_sample_focus_triangle(cache, i, i + 1, px, py,
+			&w0, &w1, &w2))
+			continue;
+		if (sample_z) {
+			*sample_z = cache->vz[0] * w0
+				+ cache->vz[i] * w1
+				+ cache->vz[i + 1] * w2;
+		}
+		if (sample_u && sample_v && cache->has_ovl_uv) {
+			*sample_u = cache->ovl_u[0] * w0
+				+ cache->ovl_u[i] * w1
+				+ cache->ovl_u[i + 1] * w2;
+			*sample_v = cache->ovl_v[0] * w0
+				+ cache->ovl_v[i] * w1
+				+ cache->ovl_v[i + 1] * w2;
+		}
+		return 1;
+	}
+
+	return 0;
+}
+
+static int ogl_find_metl154_focus_overlap_point(
+	const struct metl154_focus_draw_cache *a,
+	const struct metl154_focus_draw_cache *b,
+	GLfloat *sample_sx, GLfloat *sample_sy, GLfloat *overlap_area)
+{
+	static const int sample_order[5] = {2, 1, 3, 0, 4};
+	GLfloat min_sx, max_sx, min_sy, max_sy;
+	int yi, xi;
+
+	*sample_sx = 0.0f;
+	*sample_sy = 0.0f;
+	*overlap_area = 0.0f;
+	if (!a || !b || !a->valid || !b->valid || !a->bbox_valid || !b->bbox_valid)
+		return 0;
+
+	min_sx = a->min_sx > b->min_sx ? a->min_sx : b->min_sx;
+	max_sx = a->max_sx < b->max_sx ? a->max_sx : b->max_sx;
+	min_sy = a->min_sy > b->min_sy ? a->min_sy : b->min_sy;
+	max_sy = a->max_sy < b->max_sy ? a->max_sy : b->max_sy;
+	*overlap_area = ogl_metl154_bbox_overlap_area(a->min_sx, a->max_sx,
+		a->min_sy, a->max_sy, b->min_sx, b->max_sx, b->min_sy, b->max_sy);
+	if (max_sx <= min_sx || max_sy <= min_sy)
+		return 0;
+
+	for (yi = 0; yi < 5; yi++) {
+		for (xi = 0; xi < 5; xi++) {
+			GLfloat px = min_sx + (max_sx - min_sx)
+				* ((GLfloat)sample_order[xi] + 0.5f) / 5.0f;
+			GLfloat py = min_sy + (max_sy - min_sy)
+				* ((GLfloat)sample_order[yi] + 0.5f) / 5.0f;
+
+			if (!ogl_metl154_sample_focus_draw(a, px, py, NULL, NULL, NULL))
+				continue;
+			if (!ogl_metl154_sample_focus_draw(b, px, py, NULL, NULL, NULL))
+				continue;
+			*sample_sx = px;
+			*sample_sy = py;
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+static const struct metl154_focus_face *ogl_find_metl154_focus_face(
+	const struct android_draw_face_context *ctx, int *focus_index)
+{
+	int i;
+
+	if (focus_index)
+		*focus_index = -1;
+	if (!ctx || !ctx->valid)
+		return NULL;
+
+	for (i = 0; i < METL154_FOCUS_FACE_COUNT; i++) {
+		const struct metl154_focus_face *focus = &metl154_focus_faces[i];
+
+		if (ctx->seg == focus->seg
+		    && ctx->side == focus->side
+		    && ctx->face == focus->face) {
+			if (focus_index)
+				*focus_index = i;
+			return focus;
+		}
+	}
+
+	return NULL;
+}
+
+static void ogl_log_metl154_snapshot_focus_overlap(void);
 
 static int ogl_metl154_cover_skip_pair_count(int mode)
 {
@@ -417,6 +740,196 @@ static int ogl_metl154_face_matches(const struct metl154_tracked_face *track,
 	return 1;
 }
 
+struct metl154_portal_debug_info {
+	int wall_num;
+	int wall_type;
+	int wall_state;
+	int wall_clip;
+	int wall_keys;
+	unsigned int wall_flags;
+	int conn_seg;
+	int conn_side;
+	int conn_child;
+	int conn_side_type;
+	int conn_wid;
+	int conn_tmap1;
+	int conn_tmap2;
+	int conn_wall_num;
+	int conn_wall_type;
+	int conn_wall_state;
+	int conn_wall_clip;
+	int conn_wall_keys;
+	unsigned int conn_wall_flags;
+};
+
+static void ogl_init_metl154_portal_debug_info(struct metl154_portal_debug_info *info)
+{
+	memset(info, 0, sizeof(*info));
+	info->wall_num = -1;
+	info->wall_type = -1;
+	info->wall_state = -1;
+	info->wall_clip = -1;
+	info->wall_keys = -1;
+	info->conn_seg = -1;
+	info->conn_side = -1;
+	info->conn_child = -1;
+	info->conn_side_type = -1;
+	info->conn_wid = -1;
+	info->conn_tmap1 = -1;
+	info->conn_tmap2 = 0;
+	info->conn_wall_num = -1;
+	info->conn_wall_type = -1;
+	info->conn_wall_state = -1;
+	info->conn_wall_clip = -1;
+	info->conn_wall_keys = -1;
+}
+
+static void ogl_fill_metl154_portal_debug_info(const struct android_draw_face_context *ctx,
+	struct metl154_portal_debug_info *info)
+{
+	segment *segp, *conn_seg;
+	int side, wall_num, conn_side, conn_wall_num;
+
+	ogl_init_metl154_portal_debug_info(info);
+	if (!ctx || !ctx->valid || ctx->seg < 0 || ctx->seg > Highest_segment_index)
+		return;
+	side = ctx->side;
+	if (side < 0 || side >= MAX_SIDES_PER_SEGMENT)
+		return;
+
+	segp = &Segments[ctx->seg];
+	wall_num = segp->sides[side].wall_num;
+	if (wall_num >= 0 && wall_num < Num_walls) {
+		wall *wallp = &Walls[wall_num];
+
+		info->wall_num = wall_num;
+		info->wall_type = wallp->type;
+		info->wall_state = wallp->state;
+		info->wall_clip = wallp->clip_num;
+		info->wall_keys = wallp->keys;
+		info->wall_flags = wallp->flags;
+	}
+
+	if (ctx->child < 0 || ctx->child > Highest_segment_index)
+		return;
+
+	conn_seg = &Segments[ctx->child];
+	info->conn_seg = ctx->child;
+	conn_side = find_connect_side(conn_seg, segp);
+	info->conn_side = conn_side;
+	if (conn_side < 0 || conn_side >= MAX_SIDES_PER_SEGMENT)
+		return;
+
+	info->conn_child = conn_seg->children[conn_side];
+	info->conn_side_type = conn_seg->sides[conn_side].type;
+	info->conn_wid = WALL_IS_DOORWAY(conn_seg, conn_side);
+	info->conn_tmap1 = conn_seg->sides[conn_side].tmap_num;
+	info->conn_tmap2 = conn_seg->sides[conn_side].tmap_num2;
+
+	conn_wall_num = conn_seg->sides[conn_side].wall_num;
+	if (conn_wall_num >= 0 && conn_wall_num < Num_walls) {
+		wall *wallp = &Walls[conn_wall_num];
+
+		info->conn_wall_num = conn_wall_num;
+		info->conn_wall_type = wallp->type;
+		info->conn_wall_state = wallp->state;
+		info->conn_wall_clip = wallp->clip_num;
+		info->conn_wall_keys = wallp->keys;
+		info->conn_wall_flags = wallp->flags;
+	}
+}
+
+static void ogl_log_metl154_portal(const char *tag,
+	const struct android_draw_face_context *ctx)
+{
+	struct metl154_portal_debug_info info;
+
+	if (!ctx || !ctx->valid)
+		return;
+	ogl_fill_metl154_portal_debug_info(ctx, &info);
+	if (info.wall_num < 0 && info.conn_side < 0)
+		return;
+
+	debug_log(DLOG_TEXTURE,
+		"[metl154portal] tag=%s seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x wall_num=%d wall_type=%d wall_state=%d wall_flags=0x%x wall_clip=%d wall_keys=%d conn_seg=%d conn_side=%d conn_child=%d conn_side_type=%d conn_wid=%d conn_tmap1=%d conn_tmap2=0x%x conn_wall_num=%d conn_wall_type=%d conn_wall_state=%d conn_wall_flags=0x%x conn_wall_clip=%d conn_wall_keys=%d",
+		tag ? tag : "<none>",
+		ctx->seg,
+		ctx->side,
+		ctx->face,
+		ctx->child,
+		ctx->wid_flags,
+		ctx->tmap1,
+		ctx->tmap2,
+		info.wall_num,
+		info.wall_type,
+		info.wall_state,
+		info.wall_flags,
+		info.wall_clip,
+		info.wall_keys,
+		info.conn_seg,
+		info.conn_side,
+		info.conn_child,
+		info.conn_side_type,
+		info.conn_wid,
+		info.conn_tmap1,
+		info.conn_tmap2,
+		info.conn_wall_num,
+		info.conn_wall_type,
+		info.conn_wall_state,
+		info.conn_wall_flags,
+		info.conn_wall_clip,
+		info.conn_wall_keys);
+}
+
+static void ogl_log_metl154_focus_draw(const char *shader_kind,
+	const char *botname, const char *ovlname, const g3s_point **pointlist,
+	const GLfloat *texcoordovl_array, int nv, int draw_order)
+{
+	struct android_draw_face_context focus_ctx = g_android_draw_face_ctx;
+	const struct metl154_focus_face *focus;
+	GLfloat min_sx = 0.0f, max_sx = 0.0f;
+	GLfloat min_sy = 0.0f, max_sy = 0.0f;
+	int bbox_valid = 0;
+	int focus_index;
+
+	focus = ogl_find_metl154_focus_face(&focus_ctx, &focus_index);
+	if (!focus)
+		return;
+
+	ogl_metl154_begin_focus_logging();
+	if (focus_index >= 0 && metl154_focus_logged[focus_index])
+		return;
+	if (focus_index >= 0)
+		metl154_focus_logged[focus_index] = 1;
+	ogl_store_metl154_focus_draw(focus_index, &focus_ctx, pointlist, nv,
+		texcoordovl_array, draw_order);
+
+	bbox_valid = ogl_get_metl154_screen_bbox(pointlist, nv,
+		&min_sx, &max_sx, &min_sy, &max_sy);
+	debug_log(DLOG_TEXTURE,
+		"[metl154focus] frame=%d order=%d focus=%s shader=%s bot=%s ovl=%s seg=%d side=%d face=%d child=%d side_type=%d wid=%d tmap1=%d tmap2=0x%x bbox_valid=%d box=%.1f..%.1f/%.1f..%.1f",
+		g_metl154_frame_id,
+		draw_order,
+		focus->tag,
+		shader_kind ? shader_kind : "<none>",
+		botname ? botname : "<none>",
+		ovlname ? ovlname : "<none>",
+		focus_ctx.seg,
+		focus_ctx.side,
+		focus_ctx.face,
+		focus_ctx.child,
+		focus_ctx.side_type,
+		focus_ctx.wid_flags,
+		focus_ctx.tmap1,
+		focus_ctx.tmap2,
+		bbox_valid,
+		(double)min_sx,
+		(double)max_sx,
+		(double)min_sy,
+		(double)max_sy);
+	ogl_log_metl154_portal("focus", &focus_ctx);
+}
+
 static void ogl_log_metl154_cover(const char *shader_kind, const char *botname,
 	const char *ovlname, const g3s_point **pointlist, int nv, int draw_order)
 {
@@ -441,6 +954,37 @@ static void ogl_log_metl154_cover(const char *shader_kind, const char *botname,
 			continue;
 
 		track->cover_logged = 1;
+		if (g_metl154_snapshot_pending) {
+			struct metl154_snapshot_cover_event *event;
+
+			ogl_metl154_begin_snapshot_events();
+			if (metl154_snapshot_cover_event_count < METL154_SNAPSHOT_COVER_MAX) {
+				event = &metl154_snapshot_cover_events[metl154_snapshot_cover_event_count++];
+				memset(event, 0, sizeof(*event));
+				event->kind = METL154_SNAPSHOT_COVER_EXACT;
+				event->metl_index = i;
+				event->cover_order = draw_order;
+				event->ordered = ordered;
+				event->cover_ctx = cover_ctx;
+				event->cover_bbox_valid = cover_bbox_valid;
+				event->cover_min_sx = cover_min_sx;
+				event->cover_max_sx = cover_max_sx;
+				event->cover_min_sy = cover_min_sy;
+				event->cover_max_sy = cover_max_sy;
+				event->overlap_area = cover_bbox_valid && track->bbox_valid
+					? ogl_metl154_bbox_overlap_area(track->min_sx, track->max_sx,
+						track->min_sy, track->max_sy,
+						cover_min_sx, cover_max_sx,
+						cover_min_sy, cover_max_sy)
+					: 0.0f;
+				ogl_metl154_snapshot_copy_name(event->cover_shader,
+					sizeof(event->cover_shader), shader_kind);
+				ogl_metl154_snapshot_copy_name(event->cover_bot,
+					sizeof(event->cover_bot), botname);
+				ogl_metl154_snapshot_copy_name(event->cover_ovl,
+					sizeof(event->cover_ovl), ovlname);
+			}
+		}
 		debug_log(DLOG_TEXTURE,
 			"[metl154cover] frame=%d metl_pass=%d metl_seq=%d metl_order=%d cover_order=%d cover_shader=%s cover_bot=%s cover_ovl=%s ordered=%d metl_seg=%d metl_side=%d metl_face=%d metl_child=%d metl_side_type=%d metl_wid=%d metl_tmap1=%d metl_tmap2=0x%x cover_seg=%d cover_side=%d cover_face=%d cover_child=%d cover_side_type=%d cover_wid=%d cover_tmap1=%d cover_tmap2=0x%x",
 			g_metl154_frame_id,
@@ -468,6 +1012,8 @@ static void ogl_log_metl154_cover(const char *shader_kind, const char *botname,
 			cover_ctx.valid ? cover_ctx.wid_flags : 0,
 			cover_ctx.valid ? cover_ctx.tmap1 : -1,
 			cover_ctx.valid ? cover_ctx.tmap2 : 0);
+		ogl_log_metl154_portal("metl", &track->draw_ctx);
+		ogl_log_metl154_portal("cover", &cover_ctx);
 		return;
 	}
 
@@ -500,6 +1046,32 @@ static void ogl_log_metl154_cover(const char *shader_kind, const char *botname,
 			continue;
 
 		track->coverbox_logged = 1;
+		if (g_metl154_snapshot_pending) {
+			struct metl154_snapshot_cover_event *event;
+
+			ogl_metl154_begin_snapshot_events();
+			if (metl154_snapshot_cover_event_count < METL154_SNAPSHOT_COVER_MAX) {
+				event = &metl154_snapshot_cover_events[metl154_snapshot_cover_event_count++];
+				memset(event, 0, sizeof(*event));
+				event->kind = METL154_SNAPSHOT_COVER_BBOX;
+				event->metl_index = i;
+				event->cover_order = draw_order;
+				event->ordered = 0;
+				event->cover_ctx = cover_ctx;
+				event->cover_bbox_valid = cover_bbox_valid;
+				event->cover_min_sx = cover_min_sx;
+				event->cover_max_sx = cover_max_sx;
+				event->cover_min_sy = cover_min_sy;
+				event->cover_max_sy = cover_max_sy;
+				event->overlap_area = overlap_area;
+				ogl_metl154_snapshot_copy_name(event->cover_shader,
+					sizeof(event->cover_shader), shader_kind);
+				ogl_metl154_snapshot_copy_name(event->cover_bot,
+					sizeof(event->cover_bot), botname);
+				ogl_metl154_snapshot_copy_name(event->cover_ovl,
+					sizeof(event->cover_ovl), ovlname);
+			}
+		}
 		debug_log(DLOG_TEXTURE,
 			"[metl154coverbox] frame=%d metl_pass=%d metl_seq=%d metl_order=%d cover_order=%d cover_shader=%s cover_bot=%s cover_ovl=%s metl_seg=%d metl_side=%d metl_face=%d metl_child=%d metl_side_type=%d metl_wid=%d metl_tmap1=%d metl_tmap2=0x%x cover_seg=%d cover_side=%d cover_face=%d cover_child=%d cover_side_type=%d cover_wid=%d cover_tmap1=%d cover_tmap2=0x%x overlap=%.1f metl_box=%.1f..%.1f/%.1f..%.1f cover_box=%.1f..%.1f/%.1f..%.1f",
 			g_metl154_frame_id,
@@ -535,8 +1107,268 @@ static void ogl_log_metl154_cover(const char *shader_kind, const char *botname,
 			(double)cover_max_sx,
 			(double)cover_min_sy,
 			(double)cover_max_sy);
+		ogl_log_metl154_portal("metl", &track->draw_ctx);
+		ogl_log_metl154_portal("cover", &cover_ctx);
 		return;
 	}
+}
+
+static int ogl_metl154_snapshot_face_is_selected(const int *selected,
+	int selected_count, int track_index)
+{
+	int i;
+
+	for (i = 0; i < selected_count; i++) {
+		if (selected[i] == track_index)
+			return 1;
+	}
+	return 0;
+}
+
+static int ogl_metl154_snapshot_selected_rank(const int *selected,
+	int selected_count, int track_index)
+{
+	int i;
+
+	for (i = 0; i < selected_count; i++) {
+		if (selected[i] == track_index)
+			return i;
+	}
+	return -1;
+}
+
+static void ogl_log_metl154_snapshot_if_pending(int screen_w, int screen_h,
+	int sample_r, int sample_g, int sample_b, int sample_a,
+	int avg_r, int avg_g, int avg_b, int avg_a)
+{
+	GLfloat center_x = screen_w > 0 ? (GLfloat)screen_w * 0.5f : 0.0f;
+	GLfloat center_y = screen_h > 0 ? (GLfloat)screen_h * 0.5f : 0.0f;
+	int selected[METL154_SNAPSHOT_SELECT_MAX];
+	int selected_count = 0;
+	int center_hit_count = 0;
+	int relevant_cover_logs = 0;
+	int omitted_cover_logs = 0;
+	int i, pass;
+
+	if (!g_metl154_snapshot_pending)
+		return;
+	if (g_metl154_frame_id == g_metl154_snapshot_request_frame)
+		return;
+
+	ogl_metl154_begin_snapshot_events();
+	for (i = 0; i < METL154_SNAPSHOT_SELECT_MAX; i++)
+		selected[i] = -1;
+	for (i = 0; i < metl154_tracked_face_count; i++) {
+		const struct metl154_tracked_face *track = &metl154_tracked_faces[i];
+
+		if (!track->bbox_valid)
+			continue;
+		if (ogl_metl154_bbox_contains_point(center_x, center_y,
+			track->min_sx, track->max_sx, track->min_sy, track->max_sy))
+			center_hit_count++;
+	}
+
+	__sync_synchronize();
+	g_metl154_snapshot_pending = 0;
+	debug_log(DLOG_TEXTURE,
+		"[metl154snap] stage=frame frame=%d center=%.1f/%.1f fb_rgba=%d/%d/%d/%d fb_avg=%d/%d/%d/%d tracked=%d center_hits=%d cover_events=%d",
+		g_metl154_frame_id,
+		(double)center_x,
+		(double)center_y,
+		sample_r,
+		sample_g,
+		sample_b,
+		sample_a,
+		avg_r,
+		avg_g,
+		avg_b,
+		avg_a,
+		metl154_tracked_frame_id == g_metl154_frame_id ? metl154_tracked_face_count : 0,
+		center_hit_count,
+		metl154_snapshot_cover_event_count);
+
+	if (metl154_tracked_frame_id != g_metl154_frame_id || metl154_tracked_face_count <= 0) {
+		debug_log(DLOG_TEXTURE,
+			"[metl154snap] no_tracked_metl154_faces frame=%d request_frame=%d",
+			g_metl154_frame_id,
+			g_metl154_snapshot_request_frame);
+		return;
+	}
+
+	for (pass = 0; pass < 2 && selected_count < METL154_SNAPSHOT_SELECT_MAX; pass++) {
+		for (;;) {
+			int best_index = -1;
+			GLfloat best_dist2 = 0.0f;
+
+			for (i = 0; i < metl154_tracked_face_count; i++) {
+				const struct metl154_tracked_face *track = &metl154_tracked_faces[i];
+				int contains_center;
+				GLfloat dist2;
+
+				if (!track->bbox_valid
+				    || ogl_metl154_snapshot_face_is_selected(selected, selected_count, i))
+					continue;
+				contains_center = ogl_metl154_bbox_contains_point(center_x, center_y,
+					track->min_sx, track->max_sx, track->min_sy, track->max_sy);
+				if (pass == 0 && !contains_center)
+					continue;
+				if (pass == 1 && contains_center)
+					continue;
+				dist2 = ogl_metl154_bbox_distance_sq(center_x, center_y,
+					track->min_sx, track->max_sx, track->min_sy, track->max_sy);
+				if (best_index < 0
+				    || dist2 < best_dist2 - 0.5f
+				    || (dist2 <= best_dist2 + 0.5f
+				        && (track->draw_order > metl154_tracked_faces[best_index].draw_order
+				            || (track->draw_order == metl154_tracked_faces[best_index].draw_order
+				                && track->bbox_area > metl154_tracked_faces[best_index].bbox_area)))) {
+					best_index = i;
+					best_dist2 = dist2;
+				}
+			}
+
+			if (best_index < 0)
+				break;
+			selected[selected_count++] = best_index;
+			if (selected_count >= METL154_SNAPSHOT_SELECT_MAX)
+				break;
+		}
+	}
+
+	if (selected_count <= 0) {
+		debug_log(DLOG_TEXTURE,
+			"[metl154snap] no_projected_metl154_faces frame=%d",
+			g_metl154_frame_id);
+		return;
+	}
+
+	for (i = 0; i < selected_count; i++) {
+		const struct metl154_tracked_face *track = &metl154_tracked_faces[selected[i]];
+		const struct metl154_focus_face *focus = ogl_find_metl154_focus_face(&track->draw_ctx, NULL);
+		GLfloat dist2 = ogl_metl154_bbox_distance_sq(center_x, center_y,
+			track->min_sx, track->max_sx, track->min_sy, track->max_sy);
+		int center_hit = ogl_metl154_bbox_contains_point(center_x, center_y,
+			track->min_sx, track->max_sx, track->min_sy, track->max_sy);
+
+		debug_log(DLOG_TEXTURE,
+			"[metl154snapface] rank=%d focus=%s center_hit=%d dist2=%.1f frame=%d metl_pass=%d metl_seq=%d order=%d seg=%d side=%d face=%d child=%d side_type=%d wid=%d tmap1=%d tmap2=0x%x box=%.1f..%.1f/%.1f..%.1f area=%.1f",
+			i + 1,
+			focus ? focus->tag : "<none>",
+			center_hit,
+			(double)dist2,
+			g_metl154_frame_id,
+			track->metl_pass,
+			track->metl_seq,
+			track->draw_order,
+			track->draw_ctx.valid ? track->draw_ctx.seg : -1,
+			track->draw_ctx.valid ? track->draw_ctx.side : -1,
+			track->draw_ctx.valid ? track->draw_ctx.face : -1,
+			track->draw_ctx.valid ? track->draw_ctx.child : -1,
+			track->draw_ctx.valid ? track->draw_ctx.side_type : -1,
+			track->draw_ctx.valid ? track->draw_ctx.wid_flags : 0,
+			track->draw_ctx.valid ? track->draw_ctx.tmap1 : -1,
+			track->draw_ctx.valid ? track->draw_ctx.tmap2 : 0,
+			(double)track->min_sx,
+			(double)track->max_sx,
+			(double)track->min_sy,
+			(double)track->max_sy,
+			(double)track->bbox_area);
+		ogl_log_metl154_portal("snap_face", &track->draw_ctx);
+	}
+	ogl_log_metl154_snapshot_focus_overlap();
+
+	for (i = 0; i < metl154_snapshot_cover_event_count; i++) {
+		const struct metl154_snapshot_cover_event *event = &metl154_snapshot_cover_events[i];
+		const struct metl154_tracked_face *track;
+		GLfloat overlap_area = 0.0f;
+		int rank;
+		int center_metl;
+		int center_cover = 0;
+		int center_overlap = 0;
+
+		if (event->metl_index < 0 || event->metl_index >= metl154_tracked_face_count)
+			continue;
+		track = &metl154_tracked_faces[event->metl_index];
+		if (!track->bbox_valid)
+			continue;
+
+		rank = ogl_metl154_snapshot_selected_rank(selected, selected_count,
+			event->metl_index);
+		center_metl = ogl_metl154_bbox_contains_point(center_x, center_y,
+			track->min_sx, track->max_sx, track->min_sy, track->max_sy);
+		if (event->cover_bbox_valid) {
+			GLfloat overlap_min_sx = track->min_sx > event->cover_min_sx
+				? track->min_sx : event->cover_min_sx;
+			GLfloat overlap_max_sx = track->max_sx < event->cover_max_sx
+				? track->max_sx : event->cover_max_sx;
+			GLfloat overlap_min_sy = track->min_sy > event->cover_min_sy
+				? track->min_sy : event->cover_min_sy;
+			GLfloat overlap_max_sy = track->max_sy < event->cover_max_sy
+				? track->max_sy : event->cover_max_sy;
+
+			center_cover = ogl_metl154_bbox_contains_point(center_x, center_y,
+				event->cover_min_sx, event->cover_max_sx,
+				event->cover_min_sy, event->cover_max_sy);
+			overlap_area = ogl_metl154_bbox_overlap_area(track->min_sx, track->max_sx,
+				track->min_sy, track->max_sy,
+				event->cover_min_sx, event->cover_max_sx,
+				event->cover_min_sy, event->cover_max_sy);
+			if (overlap_area > 0.0f
+			    && ogl_metl154_bbox_contains_point(center_x, center_y,
+			    overlap_min_sx, overlap_max_sx, overlap_min_sy, overlap_max_sy))
+				center_overlap = 1;
+		}
+		if (event->overlap_area > overlap_area)
+			overlap_area = event->overlap_area;
+
+		if (rank < 0 && !center_cover && !center_overlap)
+			continue;
+		if (relevant_cover_logs >= 12) {
+			omitted_cover_logs++;
+			continue;
+		}
+
+		debug_log(DLOG_TEXTURE,
+			"[metl154snapcover] kind=%s rank=%d center_metl=%d center_cover=%d center_overlap=%d overlap=%.1f ordered=%d frame=%d metl_pass=%d metl_seq=%d metl_order=%d cover_order=%d cover_shader=%s cover_bot=%s cover_ovl=%s metl_seg=%d metl_side=%d metl_face=%d metl_child=%d metl_wid=%d cover_seg=%d cover_side=%d cover_face=%d cover_child=%d cover_wid=%d",
+			event->kind == METL154_SNAPSHOT_COVER_EXACT ? "exact" : "bbox",
+			rank >= 0 ? rank + 1 : 0,
+			center_metl,
+			center_cover,
+			center_overlap,
+			(double)overlap_area,
+			event->ordered,
+			g_metl154_frame_id,
+			track->metl_pass,
+			track->metl_seq,
+			track->draw_order,
+			event->cover_order,
+			event->cover_shader,
+			event->cover_bot,
+			event->cover_ovl,
+			track->draw_ctx.valid ? track->draw_ctx.seg : -1,
+			track->draw_ctx.valid ? track->draw_ctx.side : -1,
+			track->draw_ctx.valid ? track->draw_ctx.face : -1,
+			track->draw_ctx.valid ? track->draw_ctx.child : -1,
+			track->draw_ctx.valid ? track->draw_ctx.wid_flags : 0,
+			event->cover_ctx.valid ? event->cover_ctx.seg : -1,
+			event->cover_ctx.valid ? event->cover_ctx.side : -1,
+			event->cover_ctx.valid ? event->cover_ctx.face : -1,
+			event->cover_ctx.valid ? event->cover_ctx.child : -1,
+			event->cover_ctx.valid ? event->cover_ctx.wid_flags : 0);
+		ogl_log_metl154_portal("snap_metl", &track->draw_ctx);
+		ogl_log_metl154_portal("snap_cover", &event->cover_ctx);
+		relevant_cover_logs++;
+	}
+
+	if (!relevant_cover_logs)
+		debug_log(DLOG_TEXTURE,
+			"[metl154snap] no_relevant_cover_events frame=%d",
+			g_metl154_frame_id);
+	else if (omitted_cover_logs > 0)
+		debug_log(DLOG_TEXTURE,
+			"[metl154snap] omitted_cover_events=%d frame=%d",
+			omitted_cover_logs,
+			g_metl154_frame_id);
 }
 
 static int ogl_is_metl154_bitmap(grs_bitmap *bm)
@@ -660,6 +1492,93 @@ static int ogl_get_metl154_alpha_class(unsigned char idx)
 static GLfloat ogl_get_metl154_alpha_value(unsigned char idx)
 {
 	return idx == 255 ? 0.0f : 1.0f;
+}
+
+static grs_bitmap *ogl_get_metl154_overlay_bitmap_from_ctx(
+	const struct android_draw_face_context *ctx)
+{
+	int texnum;
+
+	if (!ctx || !ctx->valid || !ctx->tmap2)
+		return NULL;
+	texnum = ctx->tmap2 & 0x3fff;
+	if (texnum < 0 || texnum >= NumTextures)
+		return NULL;
+	return &GameBitmaps[Textures[texnum].index];
+}
+
+static void ogl_log_metl154_snapshot_focus_overlap(void)
+{
+	const struct metl154_focus_draw_cache *portal = &metl154_focus_draws[METL154_FOCUS_PORTAL83];
+	static const int rock_indices[2] = {METL154_FOCUS_ROCK8330, METL154_FOCUS_ROCK8331};
+	int i;
+
+	if (!portal->valid)
+		return;
+
+	for (i = 0; i < 2; i++) {
+		const struct metl154_focus_draw_cache *rock = &metl154_focus_draws[rock_indices[i]];
+		grs_bitmap *overlay_bm;
+		GLfloat sample_sx, sample_sy, overlap_area;
+		GLfloat rock_z, portal_z, rock_u = 0.0f, rock_v = 0.0f;
+		GLfloat sample_alpha = -1.0f, alpha_cutoff, sample_post_alpha, bottom_mix;
+		int bilerp00, bilerp10, bilerp01, bilerp11, wrap_u, wrap_v;
+
+		if (!rock->valid || !rock->has_ovl_uv)
+			continue;
+		if (!ogl_find_metl154_focus_overlap_point(rock, portal,
+			&sample_sx, &sample_sy, &overlap_area)) {
+			debug_log(DLOG_TEXTURE,
+				"[metl154snapoverlap] focus=%s portal=portal83 frame=%d overlap=%.1f sample=none",
+				metl154_focus_faces[rock_indices[i]].tag,
+				g_metl154_frame_id,
+				(double)overlap_area);
+			continue;
+		}
+		if (!ogl_metl154_sample_focus_draw(rock, sample_sx, sample_sy,
+			&rock_z, &rock_u, &rock_v))
+			continue;
+		if (!ogl_metl154_sample_focus_draw(portal, sample_sx, sample_sy,
+			&portal_z, NULL, NULL))
+			continue;
+
+		overlay_bm = ogl_get_metl154_overlay_bitmap_from_ctx(&rock->draw_ctx);
+		bilerp00 = bilerp10 = bilerp01 = bilerp11 = -1;
+		wrap_u = wrap_v = 0;
+		if (overlay_bm) {
+			ogl_get_metl154_source_filter_sample(overlay_bm, rock_u, rock_v,
+				&bilerp00, &bilerp10, &bilerp01, &bilerp11,
+				&sample_alpha, &wrap_u, &wrap_v);
+		}
+		alpha_cutoff = ogl_metl154_alpha_cutoff((int)g_metl154_experiment_mode);
+		sample_post_alpha = sample_alpha;
+		if (sample_alpha >= 0.0f && alpha_cutoff > 0.0f)
+			sample_post_alpha = sample_alpha >= alpha_cutoff ? 1.0f : 0.0f;
+		bottom_mix = sample_alpha >= 0.0f ? (1.0f - sample_post_alpha) : -1.0f;
+		debug_log(DLOG_TEXTURE,
+			"[metl154snapoverlap] focus=%s portal=portal83 frame=%d sample=%.1f/%.1f overlap=%.1f rock_order=%d portal_order=%d rock_z=%.3f portal_z=%.3f rock_uv=%.3f/%.3f bilerp=%d/%d/%d/%d alpha=%.3f cutoff=%.2f post_alpha=%.3f bottom_mix=%.3f wrap=%d/%d",
+			metl154_focus_faces[rock_indices[i]].tag,
+			g_metl154_frame_id,
+			(double)sample_sx,
+			(double)sample_sy,
+			(double)overlap_area,
+			rock->draw_order,
+			portal->draw_order,
+			(double)rock_z,
+			(double)portal_z,
+			(double)rock_u,
+			(double)rock_v,
+			bilerp00,
+			bilerp10,
+			bilerp01,
+			bilerp11,
+			(double)sample_alpha,
+			(double)alpha_cutoff,
+			(double)sample_post_alpha,
+			(double)bottom_mix,
+			wrap_u,
+			wrap_v);
+	}
 }
 
 static void ogl_get_metl154_source_sample(grs_bitmap *bm, GLfloat *texcoordovl_array, int nv,
@@ -1270,6 +2189,8 @@ volatile int g_debug_tex_overlay_active = 0;
 volatile int g_metl154_debug_mode = 0;
 volatile int g_metl154_experiment_mode = 0;
 volatile int g_metl154_experiment_pending_apply = 0;
+volatile int g_metl154_snapshot_pending = 0;
+volatile int g_metl154_snapshot_request_frame = -1;
 volatile int g_metl154_render_pass = 0;
 volatile int g_metl154_frame_id = 0;
 volatile int g_metl154_draw_seq = 0;
@@ -2214,6 +3135,15 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 	GLfloat vertex_array[MAX_VERTS * 3], color_array[MAX_VERTS * 4], texcoord_array[MAX_VERTS * 2];
 	GLfloat color_alpha = 1.0;
 #if defined(ANDROID) && defined(OGL_MERGE)
+	if (!metl154_single_clip_active
+		&& tmap_drawer_ptr == draw_tmap
+		&& ogl_is_metl154_bitmap(bm)
+		&& g_android_draw_face_ctx.valid
+		&& ogl_metl154_single_clip_matches_wid(g_android_draw_face_ctx.wid_flags))
+		return ogl_clip_and_draw_metl154_single(nv, pointlist, uvl_list,
+			light_rgb, bm);
+#endif
+#if defined(ANDROID) && defined(OGL_MERGE)
 	int draw_order = ogl_metl154_next_draw_order();
 	const char *cover_shader = NULL;
 	int skip_metl154_cover_draw = 0;
@@ -2307,9 +3237,12 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
 #if defined(ANDROID) && defined(OGL_MERGE)
-	if (!skip_metl154_cover_draw)
+	if (!skip_metl154_cover_draw) {
+		ogl_log_metl154_focus_draw(cover_shader, piggy_game_bitmap_name(bm), NULL,
+			pointlist, NULL, nv, draw_order);
 		ogl_log_metl154_cover(cover_shader, piggy_game_bitmap_name(bm), NULL,
 			pointlist, nv, draw_order);
+	}
 #endif
 
 #ifdef ANDROID
@@ -2543,6 +3476,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	#endif
 #ifdef ANDROID
 	gles3_shim_use_external(prog);
+	ogl_prog_set_tex2_current_matrix(gles3_shim_get_mvp(), super);
 	r_shader_switches++;
 	if (super) r_mask_draws++;
 #else
@@ -2646,6 +3580,9 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 		glPolygonOffset(0.0f, 0.0f);
 		glDisable(GL_POLYGON_OFFSET_FILL);
 		ogl_metl154_track_face(pointlist, nv, draw_order);
+		ogl_log_metl154_focus_draw(super ? "mask" : "plain",
+			piggy_game_bitmap_name(bmbot), piggy_game_bitmap_name(bmovl),
+			pointlist, texcoordovl_array, nv, draw_order);
 	} else if (!skip_metl154_cover_draw) {
 		ogl_log_metl154_cover(super ? "mask" : "plain",
 			piggy_game_bitmap_name(bmbot), piggy_game_bitmap_name(bmovl),
@@ -2709,6 +3646,115 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 }
 
 #if defined(ANDROID) && defined(OGL_MERGE)
+static bool ogl_clip_and_draw_metl154_single(int nv, const g3s_point **pointlist,
+	g3s_uvl *uvl_list, g3s_lrgb *light_rgb, grs_bitmap *bm)
+{
+	g3s_point *clip_src[MAX_POINTS_IN_POLY], *clip_dest[MAX_POINTS_IN_POLY];
+	const g3s_point *draw_points[MAX_POINTS_IN_POLY];
+	g3s_uvl clipped_uvl[MAX_POINTS_IN_POLY];
+	g3s_lrgb clipped_light[MAX_POINTS_IN_POLY];
+	g3s_point **bufptr;
+	g3s_codes cc;
+	int clipped_nv = nv, i;
+	bool result = 0;
+
+	if (nv < 3 || nv > MAX_POINTS_IN_POLY) {
+		metl154_single_clip_active = 1;
+		result = g3_draw_tmap(nv, pointlist, uvl_list, light_rgb, bm);
+		metl154_single_clip_active = 0;
+		return result;
+	}
+
+	cc.uor = 0;
+	cc.uand = 0xff;
+	for (i = 0; i < nv; i++) {
+		g3s_point *p = clip_src[i] = (g3s_point *)pointlist[i];
+
+		cc.uand &= p->p3_codes;
+		cc.uor |= p->p3_codes;
+		p->p3_u = uvl_list[i].u;
+		p->p3_v = uvl_list[i].v;
+		p->p3_l = (light_rgb[i].r + light_rgb[i].g + light_rgb[i].b) / 3;
+		p->p3_flags |= PF_UVS + PF_LS;
+	}
+
+	if (cc.uand)
+	{
+		debug_log(DLOG_TEXTURE,
+			"[metl154clip] frame=%d pass=%d seq=%d kind=single stage=culled orig_nv=%d clipped_nv=0 uor=0x%x uand=0x%x behind=%d",
+			g_metl154_frame_id,
+			g_metl154_render_pass,
+			g_metl154_draw_seq,
+			nv,
+			cc.uor,
+			cc.uand,
+			(cc.uor & CC_BEHIND) != 0);
+		return 1;
+	}
+
+	if (!cc.uor) {
+		metl154_single_clip_active = 1;
+		result = g3_draw_tmap(nv, pointlist, uvl_list, light_rgb, bm);
+		metl154_single_clip_active = 0;
+		return result;
+	}
+
+	bufptr = clip_polygon(clip_src, clip_dest, &clipped_nv, &cc);
+	debug_log(DLOG_TEXTURE,
+		"[metl154clip] frame=%d pass=%d seq=%d kind=single stage=clip orig_nv=%d clipped_nv=%d uor=0x%x uand=0x%x behind=%d",
+		g_metl154_frame_id,
+		g_metl154_render_pass,
+		g_metl154_draw_seq,
+		nv,
+		clipped_nv,
+		cc.uor,
+		cc.uand,
+		(cc.uor & CC_BEHIND) != 0);
+	if (clipped_nv && !(cc.uor & CC_BEHIND) && !cc.uand) {
+		for (i = 0; i < clipped_nv; i++) {
+			g3s_point *p = bufptr[i];
+
+			if (!(p->p3_flags & PF_PROJECTED))
+				g3_project_point(p);
+
+			if (p->p3_flags & PF_OVERFLOW)
+			{
+				debug_log(DLOG_TEXTURE,
+					"[metl154clip] frame=%d pass=%d seq=%d kind=single stage=overflow orig_nv=%d clipped_nv=%d uor=0x%x uand=0x%x behind=%d",
+					g_metl154_frame_id,
+					g_metl154_render_pass,
+					g_metl154_draw_seq,
+					nv,
+					clipped_nv,
+					cc.uor,
+					cc.uand,
+					(cc.uor & CC_BEHIND) != 0);
+				goto free_points;
+			}
+
+			draw_points[i] = p;
+			clipped_uvl[i].u = p->p3_u;
+			clipped_uvl[i].v = p->p3_v;
+			clipped_uvl[i].l = p->p3_l;
+			clipped_light[i].r = p->p3_l;
+			clipped_light[i].g = p->p3_l;
+			clipped_light[i].b = p->p3_l;
+		}
+
+		metl154_single_clip_active = 1;
+		result = g3_draw_tmap(clipped_nv, draw_points, clipped_uvl,
+			clipped_light, bm);
+		metl154_single_clip_active = 0;
+	}
+
+free_points:
+	for (i = 0; i < clipped_nv; i++)
+		if (bufptr[i]->p3_flags & PF_TEMP_POINT)
+			free_temp_point(bufptr[i]);
+
+	return result;
+}
+
 static bool ogl_clip_and_draw_metl154_merge(int nv, const g3s_point **pointlist,
 	g3s_uvl *uvl_list, g3s_lrgb *light_rgb, grs_bitmap *bmbot,
 	grs_bitmap *bmovl, int orient)
@@ -3339,6 +4385,9 @@ void gr_flip(void)
 			g_fb_avg_r = sr / n; g_fb_avg_g = sg / n;
 			g_fb_avg_b = sb / n; g_fb_avg_a = sa / n;
 		}
+		ogl_log_metl154_snapshot_if_pending(w, h,
+			g_fb_sample_r, g_fb_sample_g, g_fb_sample_b, g_fb_sample_a,
+			g_fb_avg_r, g_fb_avg_g, g_fb_avg_b, g_fb_avg_a);
 	}
 #endif
 	ogl_swap_buffers_internal();

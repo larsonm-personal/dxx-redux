@@ -209,8 +209,121 @@ phases 1-4.
 - Revalidated after the `cover_skip2` follow-up with
   `android\run-code-quality.ps1 -Fix`, `android\gradlew.bat bundleDebug`, and
   `android\gradlew.bat testDebugUnitTest`
+- Implemented in D1 and D2: new `[metl154portal]` logging emitted alongside
+  `[metl154cover]` and `[metl154coverbox]`. For both the tracked metl face and
+  the later covering face, the OGL logger now records the current side's wall
+  record plus the connected segment side discovered by `find_connect_side()`,
+  including doorway classification, wall record, and both sides' `tmap`
+  values
+- Revalidated after the portal-record follow-up with
+  `android\run-code-quality.ps1 -Fix`, `android\gradlew.bat bundleDebug`, and
+  `android\gradlew.bat testDebugUnitTest`
+- Implemented in D1 and D2: new one-shot `[metl154side]` tracked-side
+  snapshots for `82/4`, `83/4`, and `29/2`. The logger now records
+  `load_level`, `restore_pre_apply`, `restore_post_apply`, and first
+  `render_preframe` state with child/connected side info, doorway flags,
+  live `tmap` values, texture names, and a compact side signature so the next
+  Android capture can distinguish authored level data, restored save-state
+  data, and the first live render-time state for the same tracked sides
+- Revalidated after the tracked-side snapshot follow-up with
+  `android\run-code-quality.ps1 -Fix` and
+  `android\gradlew.bat bundleDebug testDebugUnitTest`
+- Standalone desktop `cmake` verification remains blocked in this workspace.
+  Both cached Ninja trees (`build` and `buildd2`) are missing `build.ninja`,
+  and regenerating `build` with the pinned SDK `cmake.exe` still fails before
+  compilation because `vcpkg` is absent and `SDL_mixer` cannot be found
+- Android launch smoke validation is also still blocked in this session
+  because `C:\local\android-sdk\platform-tools\adb.exe devices` returned no
+  attached emulator or device
+- New log `android\temp_game_logs\debuglog_20260415_084635.txt` resolves the
+  exact portal pairing: `82/4/0 <-> 83/4/0`. Both sides log reciprocal
+  `[metl154portal]` records with `wid=6`, `tmap1=269`, `tmap2=0x0`, and wall
+  records `wall_num=3` / `wall_num=2`, confirming that this metl154 surface is
+  already a transparent-wall portal in runtime semantics rather than an opaque
+  `rock313 + metl154` merge
+- That same `084635` log also separates the nearby solid metl154-bearing faces
+  from the portal: `83/1/0` and `83/1/1` repeatedly log as `child=-1`,
+  `wid=2`, `tmap1=158`, `tmap2=0x10d`, `bot=rock313`, `ovl=metl154`, so the
+  earlier ambiguity is now reduced to two different metl154 surfaces in the
+  same area, not an unresolved `83/?` partner for `82/4/0`
+- Implemented in D1 and D2: new `[metl154focus]` logging for the resolved
+  `82/4/0` and `83/4/0` portal faces plus nearby `83/1/0`, `83/1/1`, and
+  `83/2/0`. The logger fires once per frame per focus face and records draw
+  order, shader path, texture names, face identity, and screen-space box,
+  then emits the existing portal record for the same face so the next capture
+  can compare local draw order directly instead of inferring it only from
+  cover overlaps
+- New log `android\temp_game_logs\debuglog_20260415_101052.txt` rules out the
+  simplest local-overpaint theory from the bad `83` side. `portal83`
+  (`83/4/0`) is present every frame and draws after the nearby tracked faces
+  `83/1/0`, `83/1/1`, and `83/2/0`
+- That same `101052` log shows no later `[metl154coverbox]` hits against
+  `portal83`, which means the current evidence no longer supports
+  "`83/1/*` or `83/2/0` simply paint over the portal later in the frame" as
+  the main explanation
+- The later `82`-side portion of the same capture adds a stronger lead:
+  `portal82` (`82/4/0`) repeatedly overlaps `seg=29 side=2 face=0`, which
+  points the next investigation toward render-list traversal and what geometry
+  exists behind the portal rather than only local face order around `83/4/0`
 
 ### Latest Direction
+
+- The current best lead has shifted again. The strongest remaining question is
+  no longer whether a nearby `83`-side face simply overdraws `portal83`, but
+  whether the renderer builds a different child-segment scene behind the same
+  `82/4 <-> 83/4` portal depending on viewpoint
+- The next concrete proof step is to inspect the runtime level data directly
+  from Android instead of inferring it only from draw logs. The shared
+  `game_introspect.cpp` path is the cleanest place to dump segment-side data
+  for tracked segments `82`, `83`, and `29`, including side textures,
+  doorway classification, connected side, and face vertices so the runtime
+  geometry can be compared against the level editor view
+- The next instrumentation tranche should move up one level from per-face draw
+  logs into `build_segment_list()` and the render-list flow. The goal is to
+  log whether `82`, `83`, `29`, `28`, and `32` enter `Render_list`, plus the
+  explicit portal-side decisions for `82/4` and `83/4`, so the next capture
+  can prove whether the asymmetry is direct portal-child traversal failure or
+  deeper visibility ordering behind a successfully traversed portal
+- That traversal logger is now implemented in both D1 and D2 as
+  `[metl154list]`. It records `childlist_add` / `childlist_block` /
+  `childlist_skip_behind` for the tracked portal sides, then logs
+  `expand`, `already_visible`, `enqueue`, and `portal_window_skip` as the
+  child segments move through `build_segment_list()`. Each frame also emits a
+  summary of the tracked segments `82`, `83`, `29`, `28`, and `32` with their
+  `Render_list` slot and depth
+- New log `android\temp_game_logs\debuglog_20260415_113937.txt` confirms
+  that the portal traversal itself is succeeding. In the early `29`-start
+  frames the logger shows `29 -> 83 -> 82`, and in the later `81`-start
+  frames it shows `81 -> 82 -> 83 -> 29`, with `childlist_add` and `enqueue`
+  records for both `83/4 -> 82` and `82/4 -> 83`
+- That same `113937` log isolates the strongest visible rock source to a
+  separate face, not a hidden portal merge. The repeated large-overlap pair is
+  `metl_seg=29 side=2 face=0` covered later by `cover_seg=82 side=4 face=0`,
+  while `29/2/0` itself logs as `tmap1=158`, `tmap2=0x10d`,
+  `bot=rock313`, `ovl=metl154`
+- The draw-time diagnostics on that `29/2/0` face also explain why the user
+  sees rock through the portal. In the later `82`-side frames the face logs
+  `sample_alpha=0.000` and `bottom_mix=1.000`, so at the representative sample
+  point its own metl overlay is fully transparent and the rock base is the
+  visible contribution behind the portal's metl holes
+- The new capture therefore weakens the remaining "hidden same-face rock on
+  82/4 or 83/4" theory substantially. The current best model is a separate
+  `29/2/0` rock+metl wall seen through the `82/4 <-> 83/4` transparent portal,
+  with a near-coincident screen-space footprint that makes it look attached to
+  the portal face
+- A quick follow-up code check also weakens the simple GL wrap-state theory.
+  The relevant draw paths in `d1/arch/ogl/ogl.c` and `d2/arch/ogl/ogl.c`
+  still call `ogl_texwrap(..., GL_REPEAT)` for the normal wall bottom and
+  overlay textures, so the current evidence points more toward portal-scene
+  composition and sampled overlay alpha than a `GL_CLAMP_TO_EDGE` mistake on
+  these faces
+- Revalidated after the traversal-logger follow-up with
+  `android\run-code-quality.ps1 -Fix`, `android\gradlew.bat bundleDebug`, and
+  `android\gradlew.bat testDebugUnitTest`
+- Standalone desktop `cmake` verification is still environment-blocked in this
+  session. Reconfiguring `d2` with the pinned SDK `cmake.exe` fails before the
+  build starts because `vcpkg` is not installed here, which leaves
+  `SDL_mixer` unresolved for the desktop path
 
 - The current best theory is no longer "exact later draw reuses the same face
   geometry" by itself. The stronger lead is that the Android plain metl154
@@ -405,6 +518,25 @@ phases 1-4.
   end up visually backed by other scene draws, while others cannot. The next
   safe step is to map the user's one semantically wrong scene element to a
   specific logged face before adding another experiment or making a code fix
+- New user-correlated runtime evidence narrows that mapping further. In
+  `debuglog_20260415_075843.txt`, the reported working side `82/4/0` does not
+  appear as another `rock313 + metl154 overlay` face. Instead,
+  `[metl154coverbox]` logs it as `cover_seg=82 cover_side=4 cover_face=0`
+  with `cover_child=83`, `cover_wid=6`, `cover_tmap1=269`,
+  `cover_tmap2=0x0`, and `cover_bot=metl154`
+- That means the covering face the engine is drawing there is already a
+  transparent-wall portal using primary-texture `metl154`, not just a later
+  solid rock face or another same-face overlay mix. `wid=6` is
+  `WID_TRANSPARENT_WALL`, which fits the user's gameplay observation that the
+  opening is shoot-through from both sides
+- The remaining ambiguity is the exact paired side in segment `83`. Nearby
+  `metl154face` lines in the same frame window show `seg=83 side=1 face=0/1`
+  rather than `83/4/0`, so the new logging patch now dumps the actual wall
+  record and `find_connect_side()` result for any tracked portal face. The
+  next device log should confirm whether `82/4` pairs to `83/1`, `83/2`, or
+  something else, and whether the portal's level data differs from the
+  neighboring `rock313 + metl154 overlay` walls only by wall record and
+  primary texture
 
 ### Software Renderer Semantics Check
 
@@ -499,13 +631,85 @@ phases 1-4.
 - [ ] Correlate the user's one semantically wrong visible scene element with a
   specific logged face before adding another experiment or attempting a code
   fix
+- [x] Correlate the user's working-side report with a specific runtime cover
+  face from `debuglog_20260415_075843.txt`
+  Findings: the reported working side matches `cover_seg=82 side=4 face=0`,
+  which is logged as `wid=6`, `child=83`, `tmap1=269`, `tmap2=0x0`, and
+  `cover_bot=metl154`, so it is already a transparent-wall portal using
+  primary `metl154`
+- [x] Add one narrow D1/D2 logging follow-up for tracked portal faces so
+  `metl154cover` and `metl154coverbox` also emit the actual wall record and
+  the `find_connect_side()` result for the connected segment side
+  Findings: new `[metl154portal]` lines now log both the tracked and cover
+  faces' wall records, connected-side lookup, doorway classification, and the
+  opposite side's `tmap1`/`tmap2`, so the next capture can settle the exact
+  `82/4 <-> 83/?` pairing directly from runtime logs
 - [x] Review the classic software renderer and collision paths for how
   transparent versus super-transparent wall overlays are meant to behave
   Findings: ordinary transparent texels in `texmerge` reveal the same face's
   bottom texture, while only super-transparent texels survive as true holes
   for software rendering and `FQ_TRANSPOINT` traversal
+- [x] Add one narrow D1/D2 draw-order logger for the resolved
+  `82/4/0 <-> 83/4/0` portal plus the nearby `83/1/0`, `83/1/1`, and
+  `83/2/0` faces so the next capture can compare which scene faces actually
+  draw, in what order, and with what screen coverage
+- [x] Analyze a fresh log with the new `[metl154focus]` lines and compare the
+  `83/4/0` portal draw order against the nearby `83/1/*` and `83/2/0` faces
+- [x] Add one narrow D1/D2 render-list traversal logger for `82/4`, `83/4`,
+  and tracked segments `82`, `83`, `29`, `28`, and `32`
+  Findings: new `[metl154list]` lines now log the tracked portal-side child
+  list decisions plus `Render_list` expansion and enqueue behavior, with a
+  per-frame summary for the tracked segments so the next capture can prove
+  whether the asymmetry is a traversal failure or deeper visibility ordering
+- [x] Capture and analyze a fresh device log with the new `[metl154list]`
+  traversal lines enabled
+  Findings: `debuglog_20260415_121959.txt` again shows the steady-state
+  `82/4/0 <-> 83/4/0` transparent portal pair and repeated
+  `portal82`-over-`29/2/0` coverbox overlap, so the visible rock still comes
+  from the separate `29/2/0` rock+metl wall behind the portal rather than from
+  a hidden merge on the portal face itself; the new frame-1-only
+  `childlist_block parent=83 side=4 child=82 wid=2` mismatch is explained by
+  `check_transparency()` consulting paged-out `GameBitmaps[].bm_flags` before
+  the first `metl154` draw pages the texture in, after which the same side
+  logs and draws as `wid=6`
+- [x] Patch D1/D2 transparent-wall classification so paged-out primary or
+  overlay textures still report their stored transparency flags during
+  `check_transparency()`
+  Findings: both `d1/main/wall.c` and `d2/main/wall.c` now use
+  `piggy_bitmap_get_flags()` instead of raw `GameBitmaps[].bm_flags`, which
+  keeps `WALL_IS_DOORWAY()` consistent for transparent-wall portals even
+  before the first draw pages the relevant texture in
+- [x] Extend Android introspection with tracked segment geometry for `82`,
+  `83`, and `29`, then use that dump to compare the portal faces against the
+  separate `29/2/0` rock+metl wall
+  Findings: shared Android `game_introspect.cpp` now emits a
+  `metl154_geometry` block with tracked segments `82`, `83`, and `29`, each
+  side's `tmap1`/`tmap2`, doorway classification, wall record, connected side,
+  side UVs, side vertices, and per-face absolute vertices so runtime geometry
+  can be compared directly against the level editor and the draw logs
 - [ ] Revalidate Android code quality, debug build, unit tests, and the
   launch smoke path after any follow-up experiment patch
+  2026-04-15 paged-out-transparency fix status:
+  `android\run-code-quality.ps1 -Fix` passed and
+  `android\gradlew.bat bundleDebug testDebugUnitTest` passed; a desktop
+  validation attempt with the pinned SDK `cmake.exe` could not complete in
+  this workspace because `build\CMakeCache.txt` exists but the corresponding
+  `build.ninja` file is missing, so `cmake --build build` fails before any
+  compilation starts
+  2026-04-15 geometry-introspection status:
+  `android\run-code-quality.ps1 -Fix` passed,
+  `android\gradlew.bat bundleDebug testDebugUnitTest` passed, and
+  `C:\local\android-sdk\platform-tools\adb.exe devices` still showed no
+  attached emulator or device for a smoke run
+  2026-04-15 traversal-logger status: `android\run-code-quality.ps1 -Fix`
+  passed, `android\gradlew.bat bundleDebug` passed,
+  `android\gradlew.bat testDebugUnitTest` passed, and standalone desktop
+  `cmake -S d2 -B build -G Ninja` is blocked in this environment because
+  `vcpkg` is missing and `SDL_mixer` cannot be found
+  2026-04-15 focus-logger status: `android\run-code-quality.ps1 -Fix` passed,
+  `android\gradlew.bat bundleDebug testDebugUnitTest` passed, and
+  `C:\local\android-sdk\platform-tools\adb.exe devices` still showed no
+  attached emulator or device for a smoke run
   2026-04-14 follow-up status: `android\run-code-quality.ps1 -Fix`,
   `gradlew.bat bundleDebug`, and `gradlew.bat testDebugUnitTest` all passed;
   the launch smoke path is still pending because `adb devices` returned no
@@ -554,9 +758,75 @@ phases 1-4.
   (`rock346`)
 - [x] If the new context-rich cover logs isolate stable later faces, add one
   narrow runtime experiment that suppresses only those later cover draws
-  Current choice: add `cover_skip`, a same-frame face-pair experiment that
-  skips only the identified `30/2/0` and `83/2/0` cover draws after their
-  matching metl154 faces were tracked earlier in the frame
+
+### 2026-04-15 Overlay Snapshot Tranche
+
+- Implemented in Android UI: the in-game Video Info overlay now has a third
+  metl154 control, `m154 snap`, which sends a one-shot snapshot request from
+  the phone UI and briefly flips to `Sent` for immediate local feedback
+- Implemented in Android native plumbing: `nativeSetDebugFlag()` now accepts a
+  one-shot `metl154_snapshot` request and latches the current
+  `g_metl154_frame_id` as the request frame so the snapshot is consumed on the
+  next completed 3D frame rather than on the same UI-tap frame or a later
+  menu-only `gr_flip()`
+- Implemented in D1 and D2: new on-demand `[metl154snap]`,
+  `[metl154snapface]`, and `[metl154snapcover]` logging now runs from
+  `gr_flip()` after framebuffer sampling. Each snapshot ranks tracked metl154
+  faces around the crosshair center, logs their draw order and portal data,
+  and then filters the same-frame later-cover events down to the selected or
+  center-overlapping faces
+- Implemented in D1 and D2: the standing focus-face list is now retargeted to
+  the current strongest suspects around the portal pair,
+  `82/4/0`, `83/4/0`, `83/3/0`, `83/3/1`, and `29/2/0`, so the always-on
+  focus logs stay aligned with the latest evidence instead of the earlier
+  `83/1/*` and `83/2/0` neighborhood
+- [x] Revalidate Android code quality, debug build, and unit tests after the
+  overlay snapshot tranche
+  Status: `android\run-code-quality.ps1 -Fix` passed and
+  `android\gradlew.bat bundleDebug testDebugUnitTest` passed after the
+  overlay snapshot patch; `C:\local\android-sdk\platform-tools\adb.exe`
+  `devices` still showed no attached emulator or device for a launch smoke run
+
+### 2026-04-15 Android Tex2 Regression Follow-up
+
+- Re-analyzed the user-provided two-snapshot capture with the newer goal of
+  explaining why `83/3/0` itself looks wrong, rather than only naming the
+  scene visible behind the portal
+- The `SIDE_IS_TRI_13` split path in `d1/main/render.c` and `d2/main/render.c`
+  remains long-standing pre-Android logic, which weakens the theory that a
+  recent engine-side triangle split or `tmap2` rotation regression created the
+  bad `83/3/0` face placement
+- Two Android-only tex2-path changes inside the user-called-out regression
+  window are stronger suspects than the old split logic: the April 2 external
+  shader/VBO merge path in `arch/ogl/ogl.c`, and the April 2
+  `precision mediump float;` fragment precision in `arch/ogl/oglprog.c`
+- Implemented in D1 and D2: Android tex2 draws now refresh the active tex2
+  program's `umat` from `gles3_shim_get_mvp()` immediately after
+  `gles3_shim_use_external(prog)`, closing a real bug where the external tex2
+  shader path switched programs without re-uploading the current shim MVP
+- Implemented in D1 and D2: Android tex2 and tex2m fragment shaders now use
+  `precision highp float;` instead of `mediump`, narrowing the most plausible
+  shader-side UV and alpha precision regression from the April 2 hires-texture
+  work while leaving non-Android shader text unchanged
+- [x] Revalidate Android code quality, debug build, and unit tests after the
+  tex2 follow-up
+  Status: `android\run-code-quality.ps1 -Fix` passed and
+  `android\gradlew.bat bundleDebug testDebugUnitTest` passed after the tex2
+  follow-up; standalone desktop `cmake` validation is still environment-
+  blocked in this workspace because the cached Ninja files are missing and a
+  fresh configure stops early without `vcpkg` / `SDL_mixer`
+- [x] Capture and analyze a fresh Android run from the same bad views after
+  the tex2 follow-up
+  Findings: `android\temp_game_logs\debuglog_20260415_150842.txt` still
+  shows the same visible defect. The three user taps land on snapshot frames
+  `217`, `279`, and `585`, and all three `[metl154snap]` snapshots report
+  `center_hits=0`, so the ranking is nearest-face ranking rather than proof
+  that the crosshair center belongs to `83/3/0` or `83/3/1`. The tap-2 and
+  tap-3 frames still show stable ordinary tex2 state on `83/3/0` and
+  `83/3/1`, and none of the three taps logs a later-cover event for
+  `83/3/*`, which weakens both the tex2-state regression theory and the
+  local later-overdraw theory as direct explanations for the steady-state
+  artifact
 - [x] Capture a fresh stock run with the new `cover_skip` experiment enabled
   Findings: `android\temp_game_logs\debuglog_20260414_203139.txt` is still
   stock/no-mod, still exercises the full experiment cycle, and confirms that
@@ -604,6 +874,37 @@ phases 1-4.
   Goal: confirm whether removing same-face underlay contribution also removes
   the visible rock in the full-view bad case, which would make the remaining
   issue a semantics mismatch rather than a later-cover overlap problem
+
+### 2026-04-15 Overlap Strip Follow-up
+
+- Reinterpreted the earlier `bottom_mix` swings on `83/3/0` and `83/3/1`
+  after comparing the older clipped frames against the new three-tap capture.
+  The strongest flips were heavily affected by the representative sample point
+  moving as the polygon clipped near the screen edge, so those one-point
+  samples are no longer strong proof of the exact visible overlap patch
+- Implemented in D1 and D2: new `[metl154snapoverlap]` logging caches the
+  projected draw geometry for `portal82`, `portal83`, `rock8330`,
+  `rock8331`, and `rock2920`, then searches for a sample point inside the
+  actual overlap between `portal83` and each `83/3/*` rock face on snapshot
+  frames
+- The new overlap logger records the overlap area, sample screen point, rock
+  draw order versus portal draw order, interpolated rock depth versus portal
+  depth, interpolated rock overlay UV, bilinear source alpha, cutoff,
+  post-cutoff alpha, and resulting `bottom_mix` at that exact overlap sample
+  instead of using a generic face-average representative point
+- [x] Revalidate Android code quality, debug build, and unit tests after the
+  overlap-strip logger follow-up
+  Status: `android\run-code-quality.ps1 -Fix` passed and
+  `android\gradlew.bat bundleDebug testDebugUnitTest` passed after the new
+  overlap logger patch; standalone desktop `cmake` validation remains blocked
+  in this workspace because the cached Ninja files are missing and a fresh
+  configure still stops early without `vcpkg` / `SDL_mixer`
+- [ ] Capture a fresh Android run from the same bad views with the new
+  `[metl154snapoverlap]` lines enabled and compare whether `83/3/0` or
+  `83/3/1` is actually in front of `portal83` at the sampled overlap strip
+  Goal: settle whether the visible rock comes from the rock face itself being
+  in front with transparent metl texels at the overlap point, or from a
+  deeper depth or raster ordering fault that still needs a renderer fix
 
 ---
 

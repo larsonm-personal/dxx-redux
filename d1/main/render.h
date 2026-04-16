@@ -96,5 +96,10 @@ void project_list(int nv, int *pointnumlist);
 
 void render_mine(int start_seg_num,fix eye_offset);
 
+#ifdef ANDROID
+void render_log_android_tracked_side_snapshot(const char *stage, int frame_id);
+void render_reset_android_tracked_side_snapshot(void);
+#endif
+
 #endif
 

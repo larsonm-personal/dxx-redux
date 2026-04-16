@@ -29,18 +29,22 @@ extern "C" {
 #include "player.h"
 #include "game.h"
 #include "gameseq.h"
+#include "gameseg.h"
 #include "inferno.h"
 #include "screens.h"
 #include "maths.h"
 #include "vecmat.h"
 #include "weapon.h"
 #include "automap.h"
+#include "segment.h"
 #include "playsave.h"
 #include "kconfig.h"
 #include "gr.h"
 #include "multi.h"
 #include "ogl_init.h"
 #include "piggy.h"
+#include "textures.h"
+#include "wall.h"
 
 /* Android port: hires texture tracking counters from ogl.c */
 extern int r_hires_found;
@@ -300,6 +304,278 @@ static json serialize_position()
 		{ "physics_flags", (unsigned) ConsoleObject->mtype.phys_info.flags }
 	};
 	return pos;
+}
+
+#define METL154_GEOMETRY_SEGMENT_COUNT 3
+
+static const int metl154_geometry_segments[METL154_GEOMETRY_SEGMENT_COUNT] = {
+	82, 83, 29
+};
+
+static const char *side_type_name(int type)
+{
+	switch (type) {
+		case SIDE_IS_QUAD: return "quad";
+		case SIDE_IS_TRI_02: return "tri_02";
+		case SIDE_IS_TRI_13: return "tri_13";
+		default: return "unknown";
+	}
+}
+
+static const char *doorway_name(int wid)
+{
+	switch (wid) {
+		case WID_WALL: return "wall";
+		case WID_TRANSPARENT_WALL: return "transparent_wall";
+		case WID_ILLUSORY_WALL: return "illusory_wall";
+		case WID_TRANSILLUSORY_WALL: return "transparent_illusory_wall";
+		case WID_NO_WALL: return "no_wall";
+		case WID_EXTERNAL: return "external";
+		default: return "other";
+	}
+}
+
+static const char *wall_type_name(int type)
+{
+	switch (type) {
+		case WALL_NORMAL: return "normal";
+		case WALL_BLASTABLE: return "blastable";
+		case WALL_DOOR: return "door";
+		case WALL_ILLUSION: return "illusion";
+		case WALL_OPEN: return "open";
+		case WALL_CLOSED: return "closed";
+#ifdef WALL_OVERLAY
+		case WALL_OVERLAY: return "overlay";
+#endif
+#ifdef WALL_CLOAKED
+		case WALL_CLOAKED: return "cloaked";
+#endif
+		default: return "unknown";
+	}
+}
+
+static const char *wall_state_name(int state)
+{
+	switch (state) {
+		case WALL_DOOR_CLOSED: return "closed";
+		case WALL_DOOR_OPENING: return "opening";
+		case WALL_DOOR_WAITING: return "waiting";
+		case WALL_DOOR_CLOSING: return "closing";
+#ifdef WALL_DOOR_OPEN
+		case WALL_DOOR_OPEN: return "open";
+#endif
+#ifdef WALL_DOOR_CLOAKING
+		case WALL_DOOR_CLOAKING: return "cloaking";
+#endif
+#ifdef WALL_DOOR_DECLOAKING
+		case WALL_DOOR_DECLOAKING: return "decloaking";
+#endif
+		default: return "unknown";
+	}
+}
+
+static const char *texture_name_for_tmap(int tmap_num)
+{
+	int bitmap_index_num;
+	grs_bitmap *bm;
+
+	if (tmap_num < 0 || tmap_num >= NumTextures)
+		return NULL;
+
+	bitmap_index_num = Textures[tmap_num].index;
+	if (bitmap_index_num < 0 || bitmap_index_num >= MAX_BITMAP_FILES)
+		return NULL;
+
+	bm = &GameBitmaps[bitmap_index_num];
+	return piggy_game_bitmap_name(bm);
+}
+
+static json serialize_vertex(int vertex_num)
+{
+	json vertex = {
+		{ "vertex", vertex_num }
+	};
+
+	if (vertex_num >= 0 && vertex_num <= Highest_vertex_index) {
+		vertex["x"] = f2fl(Vertices[vertex_num].x);
+		vertex["y"] = f2fl(Vertices[vertex_num].y);
+		vertex["z"] = f2fl(Vertices[vertex_num].z);
+	}
+
+	return vertex;
+}
+
+static json serialize_uvl(const uvl *uvl_value)
+{
+	return {
+		{ "u", f2fl(uvl_value->u) },
+		{ "v", f2fl(uvl_value->v) },
+		{ "l", f2fl(uvl_value->l) }
+	};
+}
+
+static json serialize_wall_info(int wall_num)
+{
+	if (wall_num < 0 || wall_num >= Num_walls)
+		return nullptr;
+
+	wall *wallp = &Walls[wall_num];
+	return {
+		{ "wall_num", wall_num },
+		{ "segment", wallp->segnum },
+		{ "side", wallp->sidenum },
+		{ "type", (int) wallp->type },
+		{ "type_name", wall_type_name(wallp->type) },
+		{ "state", (int) wallp->state },
+		{ "state_name", wall_state_name(wallp->state) },
+		{ "flags", (unsigned) wallp->flags },
+		{ "keys", (int) wallp->keys },
+		{ "clip_num", (int) wallp->clip_num },
+		{ "trigger", (int) wallp->trigger },
+		{ "linked_wall", wallp->linked_wall }
+	};
+}
+
+static json serialize_connected_side(int child_segnum, int conn_side)
+{
+	segment *child_seg;
+	side *child_side;
+	int conn_wid;
+	const char *tmap1_name;
+	const char *tmap2_name;
+
+	if (child_segnum < 0 || child_segnum > Highest_segment_index || conn_side < 0 || conn_side >= MAX_SIDES_PER_SEGMENT)
+		return nullptr;
+
+	child_seg = &Segments[child_segnum];
+	child_side = &child_seg->sides[conn_side];
+	conn_wid = WALL_IS_DOORWAY(child_seg, conn_side);
+	tmap1_name = texture_name_for_tmap(child_side->tmap_num);
+	tmap2_name = child_side->tmap_num2 ? texture_name_for_tmap(child_side->tmap_num2 & 0x3fff) : NULL;
+
+	return {
+		{ "segment", child_segnum },
+		{ "side", conn_side },
+		{ "child", child_seg->children[conn_side] },
+		{ "type", (int) child_side->type },
+		{ "type_name", side_type_name(child_side->type) },
+		{ "doorway", conn_wid },
+		{ "doorway_name", doorway_name(conn_wid) },
+		{ "tmap1", child_side->tmap_num },
+		{ "tmap1_name", tmap1_name ? tmap1_name : "" },
+		{ "tmap2", child_side->tmap_num2 },
+		{ "tmap2_base", child_side->tmap_num2 ? (child_side->tmap_num2 & 0x3fff) : 0 },
+		{ "tmap2_orient", child_side->tmap_num2 ? ((unsigned) child_side->tmap_num2 >> 14) : 0 },
+		{ "tmap2_name", tmap2_name ? tmap2_name : "" },
+		{ "wall", serialize_wall_info(child_side->wall_num) }
+	};
+}
+
+static json serialize_segment_side_geometry(int segnum, int sidenum)
+{
+	segment *seg;
+	side *sidep;
+	int side_verts[4];
+	int face_verts[6];
+	int num_faces;
+	int child_segnum;
+	int conn_side;
+	int wid;
+	const char *tmap1_name;
+	const char *tmap2_name;
+	json side_vertices = json::array();
+	json side_faces = json::array();
+	json uvls = json::array();
+
+	seg = &Segments[segnum];
+	sidep = &seg->sides[sidenum];
+	get_side_verts(side_verts, segnum, sidenum);
+	create_abs_vertex_lists(&num_faces, face_verts, segnum, sidenum, const_cast<char *>(__FILE__), __LINE__);
+	child_segnum = seg->children[sidenum];
+	conn_side = (child_segnum >= 0 && child_segnum <= Highest_segment_index) ? find_connect_side(&Segments[child_segnum], seg) : -1;
+	wid = WALL_IS_DOORWAY(seg, sidenum);
+	tmap1_name = texture_name_for_tmap(sidep->tmap_num);
+	tmap2_name = sidep->tmap_num2 ? texture_name_for_tmap(sidep->tmap_num2 & 0x3fff) : NULL;
+
+	for (int i = 0; i < 4; ++i) {
+		side_vertices.push_back(serialize_vertex(side_verts[i]));
+		uvls.push_back(serialize_uvl(&sidep->uvls[i]));
+	}
+
+	for (int face = 0; face < num_faces; ++face) {
+		json face_vertices = json::array();
+		int face_stride = (num_faces == 1) ? 4 : 3;
+		int face_start = face * face_stride;
+
+		for (int i = 0; i < face_stride; ++i)
+			face_vertices.push_back(serialize_vertex(face_verts[face_start + i]));
+
+		side_faces.push_back({ { "face", face },
+		                       { "vertices", std::move(face_vertices) } });
+	}
+
+	return {
+		{ "side", sidenum },
+		{ "child", child_segnum },
+		{ "type", (int) sidep->type },
+		{ "type_name", side_type_name(sidep->type) },
+		{ "num_faces", num_faces },
+		{ "doorway", wid },
+		{ "doorway_name", doorway_name(wid) },
+		{ "wall_num", sidep->wall_num },
+		{ "wall", serialize_wall_info(sidep->wall_num) },
+		{ "tmap1", sidep->tmap_num },
+		{ "tmap1_name", tmap1_name ? tmap1_name : "" },
+		{ "tmap2", sidep->tmap_num2 },
+		{ "tmap2_base", sidep->tmap_num2 ? (sidep->tmap_num2 & 0x3fff) : 0 },
+		{ "tmap2_orient", sidep->tmap_num2 ? ((unsigned) sidep->tmap_num2 >> 14) : 0 },
+		{ "tmap2_name", tmap2_name ? tmap2_name : "" },
+		{ "uvls", std::move(uvls) },
+		{ "side_vertices", std::move(side_vertices) },
+		{ "faces", std::move(side_faces) },
+		{ "connected", serialize_connected_side(child_segnum, conn_side) }
+	};
+}
+
+static json serialize_segment_geometry(int segnum)
+{
+	json seg_vertices = json::array();
+	json sides = json::array();
+	json children = json::array();
+
+	if (segnum < 0 || segnum > Highest_segment_index)
+		return nullptr;
+
+	for (int i = 0; i < MAX_VERTICES_PER_SEGMENT; ++i)
+		seg_vertices.push_back(serialize_vertex(Segments[segnum].verts[i]));
+
+	for (int i = 0; i < MAX_SIDES_PER_SEGMENT; ++i) {
+		children.push_back((int) Segments[segnum].children[i]);
+		sides.push_back(serialize_segment_side_geometry(segnum, i));
+	}
+
+	return {
+		{ "segment", segnum },
+		{ "special", (int) Segments[segnum].special },
+		{ "matcen_num", (int) Segments[segnum].matcen_num },
+		{ "value", (int) Segments[segnum].value },
+		{ "children", std::move(children) },
+		{ "segment_vertices", std::move(seg_vertices) },
+		{ "sides", std::move(sides) }
+	};
+}
+
+static json serialize_metl154_geometry()
+{
+	json tracked_segments = json::array();
+
+	for (int i = 0; i < METL154_GEOMETRY_SEGMENT_COUNT; ++i)
+		tracked_segments.push_back(serialize_segment_geometry(metl154_geometry_segments[i]));
+
+	return {
+		{ "player_segment", ConsoleObject ? (int) ConsoleObject->segnum : -1 },
+		{ "tracked_segments", std::move(tracked_segments) }
+	};
 }
 
 /* -- Main entry point ------------------------------------------------- */
@@ -629,6 +905,7 @@ extern "C" char *game_introspect_get_state(void)
 	if (Current_level_num != 0) {
 		j["player"] = serialize_player();
 		j["position"] = serialize_position();
+		j["metl154_geometry"] = serialize_metl154_geometry();
 
 		/* Flat weapon keys for easy assertion */
 		player *p = &Players[Player_num];
@@ -637,6 +914,7 @@ extern "C" char *game_introspect_get_state(void)
 	} else {
 		j["player"] = nullptr;
 		j["position"] = nullptr;
+		j["metl154_geometry"] = nullptr;
 	}
 
 	/* -- Keyboard viewport offset state -------------------------- */
