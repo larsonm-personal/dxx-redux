@@ -343,6 +343,9 @@ static void render_log_android_tracked_side_snapshot_if_pending(void)
 static void render_set_android_draw_face_context(segment *segp, int sidenum,
 	int tmap1, int tmap2, int wid_flags, int nv, int face_index)
 {
+	if (tmap2 != 0 && (render_tmap2_is_metl154(tmap2)
+		|| (int)g_metl154_experiment_mode == METL154_EXPERIMENT_CLIP_ALL))
+		g_metl154_draw_seq++;
 	g_android_draw_face_ctx.valid = 1;
 	g_android_draw_face_ctx.seg = (int)(segp - Segments);
 	g_android_draw_face_ctx.side = sidenum;
@@ -379,8 +382,6 @@ static void render_log_metl154_face(segment *segp, int sidenum, int tmap1, int t
 
 	if (!render_tmap2_is_metl154(tmap2) || tmap1 >= NumTextures || overlay >= NumTextures)
 		return;
-
-	g_metl154_draw_seq++;
 	bmbot = &GameBitmaps[Textures[tmap1].index];
 	bmovl = &GameBitmaps[Textures[overlay].index];
 	botname = piggy_game_bitmap_name(bmbot);

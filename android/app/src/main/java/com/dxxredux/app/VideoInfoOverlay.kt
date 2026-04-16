@@ -464,6 +464,7 @@ class VideoInfoOverlay(
                 6 -> "m154 exp: CoverSkip"
                 7 -> "m154 exp: CoverSkip2"
                 8 -> "m154 exp: OvlOnly"
+                9 -> "m154 exp: ClipAll"
                 else -> "m154 exp: Default"
             }
         val metl154ExperimentPaint = if (metl154ExperimentMode == 0) fpsWarnPaint else fpsGoodPaint
@@ -655,7 +656,7 @@ class VideoInfoOverlay(
     }
 
     private fun cycleMetl154Experiment() {
-        val next = (metl154ExperimentMode + 1) % 9
+        val next = (metl154ExperimentMode + 1) % 10
         metl154ExperimentMode = next
         debugFlagSetter?.invoke("metl154_experiment", next)
     }
