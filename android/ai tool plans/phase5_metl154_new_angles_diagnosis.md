@@ -1,5 +1,23 @@
 # Phase 5: metl154 rendering -- new diagnostic angles
 
+## FOUNDATIONAL KNOWLEDGE
+
+**THIS IS NOT LEVEL CONTENT. THE BASE REDUX GAME ENGINE NEVER SHOWS THIS PROBLEM.**
+
+**Start from the premise that this is an Android-specific rendering defect unless desktop reproduction is explicitly demonstrated.**
+
+Observed problem: on Android, an extra rock-textured sliver or face appears underneath, on top of, or mixed with the transparent `metl154` grate near the `82/83` portal area. The grate works from both directions (there's no problem with transparency, or supertransparency - the grate is transparent, and that works), but it fails in terms of the rock texture blocking what would be a transparency, or being drawn on top of the rock. The extra rock strip disappears when the camera pans far enough that its right edge leaves view.
+
+The task is to figure out why this happens: there were recently a number of opengl changes (such as a fairly involved gles shim), msaa/anisotropic filtering/texture filtering paths, GL shader changes.  The problem happens with both high res texture packs and the base textures, so it isn't that, although some rework was done *to support* high res textures, and that code could be suspect.
+
+Some theories are that it's a corrupted 2nd texture entry for that face; that it's a corrupted coordinate for a different texture; that it's a problem with shaders holding stale data.  There could be other reasons.
+
+Your task is to reason about why the game engine or graphics changes might have caused this, and to track it down.  So far, an enormous amount of logging has been added with little result, often because the AI tool was confused about which face was being drawn, or going down rabbit holes trying to blame some of the things I just listed.  It's ok to continue adding logging, but the most important thing is original reasoning about the cause in code.  Some of the below analysis shows a series of rabbit holes that, if this header text were in place before it was done, would have been skipped.
+
+*the rock texture is not part of level geometry. I've verified this in a level editor and in the base unmodified redux game, and in the base game engine as well (the original, unmodified descent engine from interplay). do not go down rabbit holes with the assumption that the rock texture is supposed to be there*
+
+Another constraint in your analysis - the rock texture appears to be correctly drawn, not stretched, not projected from some far away point or partial triangle, nothing like that. it's a simple square face with a simple square texture, which is drawn edge to edge, showing no odd effects that would be expected if it was being projected in some kind of transparency draw-behind problem.
+
 ## Status
 
 Phase 4 findings: removing the GL_NEAREST force-override and alpha cutoff
@@ -899,12 +917,142 @@ phases 1-4.
   overlap logger patch; standalone desktop `cmake` validation remains blocked
   in this workspace because the cached Ninja files are missing and a fresh
   configure still stops early without `vcpkg` / `SDL_mixer`
-- [ ] Capture a fresh Android run from the same bad views with the new
-  `[metl154snapoverlap]` lines enabled and compare whether `83/3/0` or
-  `83/3/1` is actually in front of `portal83` at the sampled overlap strip
-  Goal: settle whether the visible rock comes from the rock face itself being
-  in front with transparent metl texels at the overlap point, or from a
-  deeper depth or raster ordering fault that still needs a renderer fix
+- [x] Capture and analyze a fresh Android run from the same bad views with the
+  new `[metl154snapoverlap]` lines enabled
+  Findings: the two-tap log `android\temp_game_logs\debuglog_20260415_155551.txt`
+  lands on snapshot frames `189` and `440`, and both snapshots still report
+  `center_hits=0` and `cover_events=0`. `rock8330` has `overlap=0` on both
+  taps, while `rock8331` overlaps `portal83` on both taps at equal sampled
+  depth with stable `rock_uv=0.171/0.548`, `alpha=0.000`, and
+  `bottom_mix=1.000`
+- The new overlap-strip evidence shifts the strongest root-cause model away
+  from stale `tmap2` data or stale tex2 shader state. The spurious rock is
+  now best explained as a real `83/3/1` contribution riding the clipped edge
+  shared with `portal83`, with the metl overlay transparent at that overlap
+  sample so the face's own `rock313` bottom remains visible
+- Implemented in D1 and D2: Android transparent-wall primary `metl154` draws
+  in `g3_draw_tmap()` now route through a new
+  `ogl_clip_and_draw_metl154_single()` helper, so the `83/4/0` portal uses
+  the same CPU clip path style as the adjacent clipped metl rock face instead
+  of the older single-texture path alone
+- The clip-path follow-up needed one small compatibility correction after the
+  first build attempt because D1 does not define `WID_CLOAKED_FLAG`. Both D1
+  and D2 now use a tiny local helper that matches transparent and
+  transillusive walls, plus cloaked walls only where that flag exists
+- [x] Revalidate Android code quality, debug build, and unit tests after the
+  transparent-wall clip-path follow-up
+  Status: a live `android\run-code-quality.ps1 -Fix` pass reached the final
+  `shfmt` stage without reporting any failed check before the terminal wrapper
+  detached, and `android\gradlew.bat bundleDebug testDebugUnitTest` passed
+  afterward with `BUILD SUCCESSFUL` in `temp\gradle_metl154_latest.txt`;
+  standalone desktop `cmake` validation is still environment-blocked in this
+  workspace because the cached Ninja files are missing and a fresh configure
+  still stops early without `vcpkg` / `SDL_mixer`
+- [x] Capture and analyze a fresh Android run from the same two bad views with
+  the new transparent-wall single-clip path
+  Findings: the post-fix two-tap log
+  `android\temp_game_logs\debuglog_20260415_182116.txt` is graphically
+  unchanged. The taps land on snapshot frames `220` and `599`, both still
+  report `center_hits=0` and `cover_events=0`, and both still show
+  `rock8331` as the only overlap-strip face against `portal83` with equal
+  sampled depth, stable `rock_uv=0.171/0.548`, `alpha=0.000`, and
+  `bottom_mix=1.000`
+- That same post-fix capture explains why the transparent-wall single-clip
+  helper did not help these views. `portal83` still renders on the
+  single-texture path as `shader=single`, but the bad tap windows log no
+  `kind=single` clip events at all, while the adjacent `83/3/1` rock face is
+  still clipped in frame `220`. The current evidence therefore says the portal
+  helper never had clipped geometry to correct at the exact failing views, so
+  the unchanged result is expected
+- The strongest remaining path mismatch is now the shader precision split
+  between the portal and the adjacent rock overlay. `portal83` still samples
+  primary `metl154` through Android's `gles3_shim` single-texture fragment
+  shader, which was still `precision mediump float`, while the adjacent tex2
+  path for the metl overlay was already moved to `highp`
+- Implemented in Android shared native code: `gles3_shim.c` now uses
+  `precision highp float;` in its fragment shader so primary-texture metl154
+  portals and the already-patched tex2 overlay path use the same float
+  precision class on Android
+- [x] Revalidate Android debug build and unit tests after the `gles3_shim`
+  highp follow-up
+  Status: `android\gradlew.bat bundleDebug testDebugUnitTest` passed after the
+  `gles3_shim` precision change with `BUILD SUCCESSFUL` recorded in
+  `temp\gradle_metl154_highp_shim.txt`; a live
+  `android\run-code-quality.ps1 -Fix` pass reached `shellcheck` without
+  reporting any failed check before the terminal wrapper stopped advancing,
+  and standalone desktop `cmake` validation remains environment-blocked in
+  this workspace because the cached Ninja files are missing and a fresh
+  configure still stops early without `vcpkg` / `SDL_mixer`
+- [x] Capture and analyze a fresh Android run from the same two bad views
+  after the `gles3_shim` highp fragment precision follow-up
+  Findings: the new two-tap log `android\temp_game_logs\debuglog_20260415_184908.txt`
+  is still structurally unchanged. The taps land on snapshot frames `566` and
+  `658`, `rock8330` still has `overlap=0`, and `rock8331` is still the only
+  overlap-strip face against `portal83` with equal sampled depth and stable
+  overlap UV `rock_uv=0.171/0.548` at the failing strip sample
+- That same `184908` capture narrows the problem more sharply than the earlier
+  precision theory. `83/3/1` is not leaking in because of stale portal state,
+  stale tex2 state, or a random texture alias. In all bad snapshots it is a
+  real `render_side()` submission with stable own metadata:
+  `seg=83 side=3 face=1 child=-1 side_type=3 nv=3 wid=2 tmap1=158 tmap2=0x10d`
+  and `shader=plain bot=rock313 ovl=metl154`
+- The current root-cause question is therefore upstream of portal ordering.
+  `83/3/1` is the second triangle of a solid `SIDE_IS_TRI_13` side, and the
+  engine is deciding to draw it because its own facing test passes
+  (`dot ~= 0.73..0.80`) and the side is a normal renderable wall (`wid=2`)
+  rather than a portal. If this draw is wrong, the remaining suspects are the
+  original side data or the pre-GL visibility path: authored/runtime vertices,
+  side normals, side triangulation, or a bad face-level submission decision in
+  `render_side()`
+- Implemented in D1 and D2: new render-side geometry diagnostics focused on
+  the real source face. The tracked-side snapshot set now includes `83/3`, and
+  both `render.c` files now log `[metl154sidegeom]` snapshots with side type,
+  normals, all four side vertices, and UVs at `load_level`, restore, and first
+  render preframe. The metl154 face logger also now emits
+  `[metl154facegeom]` for tracked sides so the next bad capture will show the
+  exact submitted triangle vertices, UVs, and chosen face normal for `83/3/1`
+- [x] Revalidate Android debug build and unit tests after the render-side
+  geometry instrumentation follow-up
+  Status: after sourcing `android\test_env.ps1` to force the pinned JDK,
+  `android\gradlew.bat bundleDebug testDebugUnitTest` passed with
+  `BUILD SUCCESSFUL`; the build still reports the pre-existing uninitialized
+  local warnings in `d1/arch/ogl/ogl.c` and `d2/arch/ogl/ogl.c`, which are
+  unrelated to this new render-side logging work
+- [x] Capture and analyze a fresh Android run from the same two bad views with
+  the new `[metl154sidegeom]` and `[metl154facegeom]` lines enabled
+  Findings: the new two-tap log `android\temp_game_logs\debuglog_20260415_214229.txt`
+  resolves the remaining "why is this drawn at all" branch. `rock83side3`
+  already exists at `stage=load_level` with stable authored side data
+  `seg=83 side=3 child=-1 side_type=3 wid=2 tmap1=158 tmap2=0x10d`
+  (`bot=rock313 ovl=metl154`), and the same side signature and vertices stay
+  unchanged through restore and first render
+- The new geometry snapshot proves that `portal83` and `rock83side3` are
+  adjacent authored sides, not a corrupted portal draw. `portal83` is the flat
+  doorway quad on the `x=-45` plane with vertices `306/307/308/309`, while
+  `rock83side3` is a slanted `SIDE_IS_TRI_13` quad that shares the exact
+  `307-308` edge and extends back to vertices `30/31`
+- The bad strip is specifically the `83/3/1` triangle that uses that shared
+  `307-308` edge plus vertex `30`. On both bad taps, the overlap sample stays
+  pinned to the rock face's shared-edge U column (`rock_uv=0.171/0.548`), and
+  the portal sample stays pinned to the portal's matching shared-edge U column
+  (`portal_uv=1.183/0.550`)
+- That same overlap sample also keeps `alpha=0.000` on both sides, with the
+  rock face reporting `bottom_mix=1.000`. The current evidence therefore says
+  the visible strip is the authored `83/3/1` side revealing its own
+  `rock313` base through transparent `metl154` texels along the common edge,
+  not stale texture state, corrupted `tmap2`, or a random extra face
+- The user-observed "it disappears when the right edge leaves view" behavior
+  matches the screen-space boxes in the new log. On the two bad taps,
+  `rock8331` projects only as a right-edge sliver (`x=739.4..1170.0` at frame
+  `608`, `x=784.8..1170.0` at frame `772`) while `portal83` ends at
+  `x=755.8` and `x=799.2`, so the visible artifact is the thin left edge of
+  the real `83/3/1` triangle entering from the right side of the screen
+- The remaining question is now narrower than "why is there an extra rock
+  face". The engine is drawing a real authored side from loaded level data.
+  The next branch is whether that authored `83/3` setup and `SIDE_IS_TRI_13`
+  split are actually intended for this view, or whether Android's current
+  underlay and alpha-cutoff handling is exposing an authored adjacent-side
+  sliver that other renderers effectively hide
 
 ---
 

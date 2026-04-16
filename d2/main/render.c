@@ -100,7 +100,7 @@ static int render_tmap2_is_metl154(int tmap2)
 	return name && !d_stricmp(name, "metl154");
 }
 
-#define METL154_TRACK_SIDE_COUNT 3
+#define METL154_TRACK_SIDE_COUNT 4
 
 struct metl154_track_side {
 	short segnum;
@@ -111,6 +111,7 @@ struct metl154_track_side {
 static const struct metl154_track_side metl154_track_sides[METL154_TRACK_SIDE_COUNT] = {
 	{82, 4, "portal82"},
 	{83, 4, "portal83"},
+	{83, 3, "rock83side3"},
 	{29, 2, "rock29"}
 };
 
@@ -156,6 +157,133 @@ static unsigned int render_metl154_side_signature(segment *segp, int sidenum)
 	return sig;
 }
 
+static int render_is_metl154_tracked_side(int segnum, int sidenum)
+{
+	int i;
+
+	for (i = 0; i < METL154_TRACK_SIDE_COUNT; ++i) {
+		if (metl154_track_sides[i].segnum == segnum
+			&& metl154_track_sides[i].sidenum == sidenum)
+			return 1;
+	}
+	return 0;
+}
+
+static void render_log_metl154_side_geom(segment *segp, int sidenum,
+	const char *stage, int frame_id, const char *label)
+{
+	int vertnum_list[4];
+	side *sidep = &segp->sides[sidenum];
+
+	get_side_verts(vertnum_list, (int)(segp - Segments), sidenum);
+	debug_log(DLOG_TEXTURE,
+		"[metl154sidegeom] frame=%d stage=%s label=%s seg=%d side=%d type=%d n0=%.4f/%.4f/%.4f n1=%.4f/%.4f/%.4f v0=%d:%.1f/%.1f/%.1f uv0=%.3f/%.3f v1=%d:%.1f/%.1f/%.1f uv1=%.3f/%.3f v2=%d:%.1f/%.1f/%.1f uv2=%.3f/%.3f v3=%d:%.1f/%.1f/%.1f uv3=%.3f/%.3f",
+		frame_id,
+		stage ? stage : "<null>",
+		label ? label : "<none>",
+		(int)(segp - Segments),
+		sidenum,
+		sidep->type,
+		f2fl(sidep->normals[0].x), f2fl(sidep->normals[0].y), f2fl(sidep->normals[0].z),
+		f2fl(sidep->normals[1].x), f2fl(sidep->normals[1].y), f2fl(sidep->normals[1].z),
+		vertnum_list[0], f2fl(Vertices[vertnum_list[0]].x), f2fl(Vertices[vertnum_list[0]].y), f2fl(Vertices[vertnum_list[0]].z), f2fl(sidep->uvls[0].u), f2fl(sidep->uvls[0].v),
+		vertnum_list[1], f2fl(Vertices[vertnum_list[1]].x), f2fl(Vertices[vertnum_list[1]].y), f2fl(Vertices[vertnum_list[1]].z), f2fl(sidep->uvls[1].u), f2fl(sidep->uvls[1].v),
+		vertnum_list[2], f2fl(Vertices[vertnum_list[2]].x), f2fl(Vertices[vertnum_list[2]].y), f2fl(Vertices[vertnum_list[2]].z), f2fl(sidep->uvls[2].u), f2fl(sidep->uvls[2].v),
+		vertnum_list[3], f2fl(Vertices[vertnum_list[3]].x), f2fl(Vertices[vertnum_list[3]].y), f2fl(Vertices[vertnum_list[3]].z), f2fl(sidep->uvls[3].u), f2fl(sidep->uvls[3].v));
+}
+
+static void render_log_metl154_face_geom(segment *segp, int sidenum, int face_index,
+	fix dot)
+{
+	side *sidep = &segp->sides[sidenum];
+	int vertnum_list[4];
+	int tri_verts[4];
+	int uv_idx[4];
+	int tri_count, normal_index;
+
+	if (!render_is_metl154_tracked_side((int)(segp - Segments), sidenum))
+		return;
+
+	get_side_verts(vertnum_list, (int)(segp - Segments), sidenum);
+	tri_count = 0;
+	normal_index = 0;
+	if (sidep->type == SIDE_IS_QUAD) {
+		tri_count = 4;
+		tri_verts[0] = vertnum_list[0];
+		tri_verts[1] = vertnum_list[1];
+		tri_verts[2] = vertnum_list[2];
+		tri_verts[3] = vertnum_list[3];
+		uv_idx[0] = 0;
+		uv_idx[1] = 1;
+		uv_idx[2] = 2;
+		uv_idx[3] = 3;
+	} else if (sidep->type == SIDE_IS_TRI_02) {
+		tri_count = 3;
+		if (face_index == 0) {
+			tri_verts[0] = vertnum_list[0];
+			tri_verts[1] = vertnum_list[1];
+			tri_verts[2] = vertnum_list[2];
+			uv_idx[0] = 0;
+			uv_idx[1] = 1;
+			uv_idx[2] = 2;
+			normal_index = 0;
+		} else {
+			tri_verts[0] = vertnum_list[0];
+			tri_verts[1] = vertnum_list[2];
+			tri_verts[2] = vertnum_list[3];
+			uv_idx[0] = 0;
+			uv_idx[1] = 2;
+			uv_idx[2] = 3;
+			normal_index = 1;
+		}
+	} else if (sidep->type == SIDE_IS_TRI_13) {
+		tri_count = 3;
+		if (face_index == 1) {
+			tri_verts[0] = vertnum_list[1];
+			tri_verts[1] = vertnum_list[2];
+			tri_verts[2] = vertnum_list[3];
+			uv_idx[0] = 1;
+			uv_idx[1] = 2;
+			uv_idx[2] = 3;
+			normal_index = 1;
+		} else {
+			tri_verts[0] = vertnum_list[0];
+			tri_verts[1] = vertnum_list[1];
+			tri_verts[2] = vertnum_list[3];
+			uv_idx[0] = 0;
+			uv_idx[1] = 1;
+			uv_idx[2] = 3;
+			normal_index = 0;
+		}
+	} else {
+		return;
+	}
+
+	debug_log(DLOG_TEXTURE,
+		"[metl154facegeom] frame=%d pass=%d seq=%d seg=%d side=%d face=%d type=%d dot=%.4f n=%.4f/%.4f/%.4f tri=%d v0=%d:%.1f/%.1f/%.1f uv0=%.3f/%.3f v1=%d:%.1f/%.1f/%.1f uv1=%.3f/%.3f v2=%d:%.1f/%.1f/%.1f uv2=%.3f/%.3f v3=%d:%.1f/%.1f/%.1f uv3=%.3f/%.3f",
+		g_metl154_frame_id,
+		g_metl154_render_pass,
+		g_metl154_draw_seq,
+		(int)(segp - Segments),
+		sidenum,
+		face_index,
+		sidep->type,
+		f2fl(dot),
+		f2fl(sidep->normals[normal_index].x),
+		f2fl(sidep->normals[normal_index].y),
+		f2fl(sidep->normals[normal_index].z),
+		tri_count,
+		tri_verts[0], f2fl(Vertices[tri_verts[0]].x), f2fl(Vertices[tri_verts[0]].y), f2fl(Vertices[tri_verts[0]].z), f2fl(sidep->uvls[uv_idx[0]].u), f2fl(sidep->uvls[uv_idx[0]].v),
+		tri_verts[1], f2fl(Vertices[tri_verts[1]].x), f2fl(Vertices[tri_verts[1]].y), f2fl(Vertices[tri_verts[1]].z), f2fl(sidep->uvls[uv_idx[1]].u), f2fl(sidep->uvls[uv_idx[1]].v),
+		tri_verts[2], f2fl(Vertices[tri_verts[2]].x), f2fl(Vertices[tri_verts[2]].y), f2fl(Vertices[tri_verts[2]].z), f2fl(sidep->uvls[uv_idx[2]].u), f2fl(sidep->uvls[uv_idx[2]].v),
+		tri_count > 3 ? tri_verts[3] : -1,
+		tri_count > 3 ? f2fl(Vertices[tri_verts[3]].x) : 0.0,
+		tri_count > 3 ? f2fl(Vertices[tri_verts[3]].y) : 0.0,
+		tri_count > 3 ? f2fl(Vertices[tri_verts[3]].z) : 0.0,
+		tri_count > 3 ? f2fl(sidep->uvls[uv_idx[3]].u) : 0.0,
+		tri_count > 3 ? f2fl(sidep->uvls[uv_idx[3]].v) : 0.0);
+}
+
 static void render_log_metl154_tracked_side(const struct metl154_track_side *track,
 	const char *stage, int frame_id)
 {
@@ -188,6 +316,7 @@ static void render_log_metl154_tracked_side(const struct metl154_track_side *tra
 		render_metl154_texture_name_or_none(sidep->tmap_num),
 		render_metl154_texture_name_or_none(sidep->tmap_num2),
 		render_metl154_side_signature(segp, track->sidenum));
+	render_log_metl154_side_geom(segp, track->sidenum, stage, frame_id, track->label);
 }
 
 void render_log_android_tracked_side_snapshot(const char *stage, int frame_id)
@@ -309,6 +438,7 @@ static void render_log_metl154_face(segment *segp, int sidenum, int tmap1, int t
 		!!(ovl_real_flags & BM_FLAG_TRANSPARENT),
 		!!(ovl_real_flags & BM_FLAG_SUPER_TRANSPARENT),
 		merge_path);
+	render_log_metl154_face_geom(segp, sidenum, face_index, dot);
 }
 #endif
 

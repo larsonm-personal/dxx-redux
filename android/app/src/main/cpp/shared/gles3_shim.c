@@ -116,7 +116,7 @@ static const char *vs_src =
 /* Fragment shader */
 static const char *fs_src =
     "#version 300 es\n"
-    "precision mediump float;\n"
+    "precision highp float;\n"
     "in vec4 vColor;\n"
     "in vec2 vTexCoord;\n"
     "uniform sampler2D uTex;\n"

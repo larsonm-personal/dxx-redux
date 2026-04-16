@@ -147,6 +147,7 @@ void PHYSFSX_init(int argc, char *argv[])
 	 * are verified on Android. */
 	GameArg.SndDigiSampleRate = 22050; /* SAMPLE_RATE_22K, avoid digi.h include */
 	GameArg.SysUsePlayersDir = 1; /* pilots in Players/ subdir, isolates D1/D2 */
+	GameArg.GfxMovieHires = 1; /* match desktop default unless -lowresmovies is set */
 	GameArg.DbgAltTexMerge = 1; /* GPU two-pass tmap2 overlay (skip 64x64 texmerge) */
 	return;
 #endif
