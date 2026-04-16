@@ -1021,38 +1021,103 @@ phases 1-4.
 - [x] Capture and analyze a fresh Android run from the same two bad views with
   the new `[metl154sidegeom]` and `[metl154facegeom]` lines enabled
   Findings: the new two-tap log `android\temp_game_logs\debuglog_20260415_214229.txt`
-  resolves the remaining "why is this drawn at all" branch. `rock83side3`
-  already exists at `stage=load_level` with stable authored side data
+  should NOT be interpreted as evidence that the rock strip is intended level
+  content. With the foundational constraint above, the correct reading is that
+  the log identifies the source side whose pixels Android is leaking, while
+  also ruling out several corruption theories
+- `rock83side3` already exists at `stage=load_level` with stable side data
   `seg=83 side=3 child=-1 side_type=3 wid=2 tmap1=158 tmap2=0x10d`
-  (`bot=rock313 ovl=metl154`), and the same side signature and vertices stay
-  unchanged through restore and first render
-- The new geometry snapshot proves that `portal83` and `rock83side3` are
-  adjacent authored sides, not a corrupted portal draw. `portal83` is the flat
-  doorway quad on the `x=-45` plane with vertices `306/307/308/309`, while
-  `rock83side3` is a slanted `SIDE_IS_TRI_13` quad that shares the exact
-  `307-308` edge and extends back to vertices `30/31`
-- The bad strip is specifically the `83/3/1` triangle that uses that shared
-  `307-308` edge plus vertex `30`. On both bad taps, the overlap sample stays
-  pinned to the rock face's shared-edge U column (`rock_uv=0.171/0.548`), and
-  the portal sample stays pinned to the portal's matching shared-edge U column
+  (`bot=rock313 ovl=metl154`), and the same signature, vertices, and UVs stay
+  unchanged through restore and first render. That rules out mutated runtime
+  side data, stale `tmap2` assignment, and random texture aliasing as the root
+  cause of the Android-only artifact
+- The geometry snapshot shows why the Android artifact is so stable.
+  `portal83` is the flat doorway quad on the `x=-45` plane with vertices
+  `306/307/308/309`, while `rock83side3` is a slanted `SIDE_IS_TRI_13` quad
+  that shares the exact `307-308` edge and extends back to vertices `30/31`.
+  Treat this as the source side of leaked pixels, not as proof the rock is
+  supposed to be visible in the final image
+- The bad strip is specifically the clipped `83/3/1` triangle that uses the
+  shared `307-308` edge plus vertex `30`. On both bad taps, the overlap sample
+  stays pinned to the rock face's shared-edge U column (`rock_uv=0.171/0.548`)
+  while the portal sample stays pinned to the portal's matching edge column
   (`portal_uv=1.183/0.550`)
-- That same overlap sample also keeps `alpha=0.000` on both sides, with the
-  rock face reporting `bottom_mix=1.000`. The current evidence therefore says
-  the visible strip is the authored `83/3/1` side revealing its own
-  `rock313` base through transparent `metl154` texels along the common edge,
-  not stale texture state, corrupted `tmap2`, or a random extra face
+- The important Android-side clue is the blend result at that exact sample.
+  The bad overlap keeps `alpha=0.000` on both sides, and the rock face reports
+  `bottom_mix=1.000` while the face logger classifies it as
+  `merge_path=plain_alpha_underlay`. Given the foundational constraint that
+  desktop and the original engine do not show this artifact, the correct
+  conclusion is not "the level wants rock here" but "Android is incorrectly
+  exposing the bottom layer of `83/3/1` along the shared portal edge"
 - The user-observed "it disappears when the right edge leaves view" behavior
-  matches the screen-space boxes in the new log. On the two bad taps,
-  `rock8331` projects only as a right-edge sliver (`x=739.4..1170.0` at frame
-  `608`, `x=784.8..1170.0` at frame `772`) while `portal83` ends at
-  `x=755.8` and `x=799.2`, so the visible artifact is the thin left edge of
-  the real `83/3/1` triangle entering from the right side of the screen
-- The remaining question is now narrower than "why is there an extra rock
-  face". The engine is drawing a real authored side from loaded level data.
-  The next branch is whether that authored `83/3` setup and `SIDE_IS_TRI_13`
-  split are actually intended for this view, or whether Android's current
-  underlay and alpha-cutoff handling is exposing an authored adjacent-side
-  sliver that other renderers effectively hide
+  matches a clipped shared-edge leak. On the two bad taps, `rock8331`
+  projects only as a right-edge sliver (`x=739.4..1170.0` at frame `608`,
+  `x=784.8..1170.0` at frame `772`) while `portal83` ends at `x=755.8` and
+  `x=799.2`. This fits an Android clip/raster/shared-edge problem in the draw
+  of the real `83/3/1` triangle, not a content problem in the level file
+- Revised next-fix path: focus on why Android's render path lets that clipped
+  `83/3/1` underlay contribute visible pixels beside or through `portal83`.
+  The highest-value branches are Android OGL/GLES clip behavior, shared-edge
+  rasterization, and bottom-layer handling for `plain_alpha_underlay` on the
+  clipped `g3_draw_tmap_2` path. Future analysis should treat `83/3` as the
+  leaked source face, but should not treat its presence in side data as the
+  cause of the bug
+- Additional code-grounded next-step expansion after reviewing the outside note
+  against the actual D1/D2 Android path:
+- On Android, `d1/d2/misc/physfsx.c` force `GameArg.DbgAltTexMerge = 1`, and
+  `d1/d2/main/render.c` route `tmap2` walls to `g3_draw_tmap_2()` when that
+  flag is on. For the reproduced default Android runs, this keeps the main
+  branch on the GPU two-texture merge path, not on the old cached 64x64
+  texmerge path
+- `d1/d2/main/texmerge.c` already keys the old texmerge cache on bottom bitmap,
+  top bitmap, and `orient`. That cache-owner theory is still worth keeping as a
+  control branch, but it is lower priority unless the artifact can be
+  reproduced with `-gl_oldtexmerge` or another unexpected fallback to the old
+  texmerge cache
+- `d1/d2/arch/ogl/ogl.c` uploads fresh vertex/color/base-UV/overlay-UV arrays
+  into a streamed `merge_vbo` for each Android `g3_draw_tmap_2()` call, then
+  submits the result as `GL_TRIANGLE_FAN`. That makes "stale texmerge slot" or
+  "stale VBO region" a weaker fit than "shared-edge clipped polygon handed to
+  GLES fan triangulation", although one upload-ID log can still disprove stale
+  data cleanly
+- The outside note's first branch, clipped merged-wall geometry plus Android
+  fan triangulation, matches the current code much better than its later
+  texmerge-slot theory. Keep the cache branch as a control experiment, not the
+  main line of work
+- The existing Android-only helper `ogl_clip_and_draw_metl154_merge()` already
+  proves that software clipping can be inserted ahead of `ogl_draw_tmap_2`
+  without rewriting the rest of the renderer. The remaining asymmetry is that
+  even the clipped helper still ends in `ogl_draw_tmap_2_internal()`, which
+  still hands a `GL_TRIANGLE_FAN` to GLES
+- [ ] Generalize the metl154-only software clip helper into a debug-gated
+  Android path for all `tmap2` walls, while preserving base/overlay UVs and
+  per-vertex lighting closely enough to compare against desktop behavior
+- [ ] Add pre-draw polygon diagnostics for the clipped merge path: clipped
+  vertex count, repeated projected vertices, near-plane and overflow cases,
+  both possible quad diagonals, and signed triangle areas after projection.
+  This should confirm whether the bad frames still hand GLES a numerically
+  unstable fan
+- [ ] Add an explicit CPU triangulation experiment for clipped `tmap2` draws.
+  For quads, pick a deterministic diagonal and submit `GL_TRIANGLES` instead of
+  `GL_TRIANGLE_FAN`; for larger clipped polygons, tessellate on the CPU or at
+  least log the exact fan that GLES would receive
+- [ ] Add a per-draw upload ID log around Android `merge_vbo` submission,
+  including seg/side/face context, `nv`, and byte counts/offsets, to fully rule
+  out stale streamed-array or attribute-pointer reuse
+- [ ] When logging bad overlap draws, always print both face identity and the
+  sampled texture path (`tmap1`, `tmap2`, merge path, bottom/overlay names, and
+  GL handles if available) so future notes do not accidentally conflate leaked
+  source-face pixels with authored level content
+- [ ] Run a control experiment with `-gl_oldtexmerge` or `DbgAltTexMerge = 0`
+  on Android. If the artifact disappears there, the bug is confined to the GPU
+  merge path and texmerge cache-owner logging becomes only a confirmation step;
+  if it survives, revisit source-bitmap or cache contamination theories with
+  slot-owner logs
+- [ ] If more visual separation is needed, extend the existing
+  `g_metl154_debug_mode` and `METL154_TEX2_OVERLAY_ONLY` path instead of
+  building a second one-off debug renderer. A bottom-only or tinted split mode
+  would be enough to show whether the leak is underlay fill or wrong overlay
+  sampling
 
 ---
 
