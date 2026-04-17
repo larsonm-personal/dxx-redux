@@ -2612,6 +2612,7 @@ void ogl_loadbmtexture(grs_bitmap *bm);
 int ogl_loadtexture(unsigned char *data, int dxo, int dyo, ogl_texture *tex, int bm_flags, int data_format, int texfilt);
 void ogl_freetexture(ogl_texture *gltexture);
 void ogl_freebmtexture(grs_bitmap *bm);
+void tex_set_size(ogl_texture *tex);
 
 #ifdef OGLES
 // Replacement for gluPerspective
@@ -2714,6 +2715,26 @@ static int r_etc2_render_log_count = 0; /* limit per-frame render logging */
 int g_cache_time_ms = 0; /* time spent in ogl_cache_level_textures */
 #endif
 
+#if defined(ANDROID) && defined(OGL_MERGE)
+#define OGL_ANDROID_TEXMERGE_CACHE_SIZE 32
+
+typedef struct ogl_android_texmerge_cache_entry {
+	grs_bitmap bitmap;
+	ogl_texture *texture;
+	grs_bitmap *bottom_bmp;
+	grs_bitmap *top_bmp;
+	int orient;
+	int width;
+	int height;
+	fix64 last_time_used;
+} ogl_android_texmerge_cache_entry;
+
+static ogl_android_texmerge_cache_entry ogl_android_texmerge_cache[OGL_ANDROID_TEXMERGE_CACHE_SIZE];
+static int ogl_android_texmerge_cache_initialized = 0;
+
+static void ogl_android_texmerge_cache_clear(void);
+#endif
+
 void ogl_reset_texture_stats_internal(void){
 	int i;
 	for (i=0;i<OGL_TEXTURE_LIST_SIZE;i++)
@@ -2733,6 +2754,9 @@ void ogl_init_texture_list_internal(void){
 	ogl_texture_list_cur=0;
 	for (i=0;i<OGL_TEXTURE_LIST_SIZE;i++)
 		ogl_reset_texture(&ogl_texture_list[i]);
+#if defined(ANDROID) && defined(OGL_MERGE)
+	ogl_android_texmerge_cache_clear();
+#endif
 }
 
 void ogl_smash_texture_list_internal(void){
@@ -2752,6 +2776,11 @@ void ogl_smash_texture_list_internal(void){
 		d_free(disk_va);
 		disk_va = NULL;
 	}
+
+#if defined(ANDROID) && defined(OGL_MERGE)
+	ogl_android_texmerge_cache_clear();
+#endif
+
 	for(i = 0; i < 3; i++) {
 		if (secondary_lva[i] != NULL)
 		{
@@ -2787,6 +2816,9 @@ void ogl_smash_png_textures(void){
 			ogl_texture_list[i].handle=0;
 		}
 	}
+#if defined(ANDROID) && defined(OGL_MERGE)
+	ogl_android_texmerge_cache_clear();
+#endif
 }
 
 ogl_texture* ogl_get_free_texture(void){
@@ -3035,6 +3067,348 @@ void ogl_texwrap(ogl_texture *gltexture,int state)
 		gltexture->wrapstate = state;
 	}
 }
+
+#if defined(ANDROID) && defined(OGL_MERGE)
+static void ogl_android_texmerge_reset_entry(ogl_android_texmerge_cache_entry *entry)
+{
+	memset(&entry->bitmap, 0, sizeof(entry->bitmap));
+	entry->texture = NULL;
+	entry->bottom_bmp = NULL;
+	entry->top_bmp = NULL;
+	entry->orient = -1;
+	entry->width = 0;
+	entry->height = 0;
+	entry->last_time_used = -1;
+}
+
+static void ogl_android_texmerge_cache_clear(void)
+{
+	int i;
+
+	for (i = 0; i < OGL_ANDROID_TEXMERGE_CACHE_SIZE; ++i)
+		ogl_android_texmerge_reset_entry(&ogl_android_texmerge_cache[i]);
+	ogl_android_texmerge_cache_initialized = 1;
+}
+
+static int ogl_android_texmerge_visible_dim(const ogl_texture *tex, int use_width)
+{
+	int size;
+	GLfloat scale;
+
+	if (!tex)
+		return 0;
+	size = use_width ? tex->w : tex->h;
+	scale = use_width ? tex->u : tex->v;
+	if (size < 1)
+		return 0;
+	if (scale > 0.0f && scale < 1.0f)
+		return (int)floorf((float)size * scale + 0.5f);
+	return size;
+}
+
+static void ogl_android_texmerge_init_bitmap(grs_bitmap *bm, ogl_texture *tex,
+	int flags, ubyte avg_color, int w, int h)
+{
+	memset(bm, 0, sizeof(*bm));
+	bm->bm_w = (short)w;
+	bm->bm_h = (short)h;
+	bm->bm_rowsize = (short)w;
+	bm->bm_flags = (sbyte)flags;
+	bm->avg_color = avg_color;
+	bm->gltexture = tex;
+	bm->gltexture_mask = NULL;
+}
+
+static void ogl_android_texmerge_log(const char *event, grs_bitmap *bmbot,
+	grs_bitmap *bmovl, int orient, int width, int height, GLuint handle)
+{
+	const char *botname;
+	const char *ovlname;
+
+	if (!ogl_is_metl154_bitmap(bmovl))
+		return;
+	botname = piggy_game_bitmap_name(bmbot);
+	ovlname = piggy_game_bitmap_name(bmovl);
+	debug_log(DLOG_TEXTURE,
+		"[metl154cache] event=%s frame=%d pass=%d seq=%d seg=%d side=%d face=%d orient=%d size=%dx%d handle=%u bot=%s ovl=%s",
+		event ? event : "unknown",
+		g_metl154_frame_id,
+		g_metl154_render_pass,
+		g_metl154_draw_seq,
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+		orient,
+		width,
+		height,
+		handle,
+		botname ? botname : "<none>",
+		ovlname ? ovlname : "<none>");
+}
+
+static void ogl_android_texmerge_build_uvs(GLfloat *bot_uv, GLfloat *ovl_uv,
+	GLfloat bot_u_max, GLfloat bot_v_max, GLfloat ovl_u_max,
+	GLfloat ovl_v_max, int orient)
+{
+	static const GLfloat base_u[4] = {0.0f, 1.0f, 1.0f, 0.0f};
+	static const GLfloat base_v[4] = {0.0f, 0.0f, 1.0f, 1.0f};
+	int i;
+
+	for (i = 0; i < 4; ++i) {
+		const GLfloat u = base_u[i];
+		const GLfloat v = base_v[i];
+
+		bot_uv[i * 2] = bot_u_max * u;
+		bot_uv[i * 2 + 1] = bot_v_max * v;
+
+		switch (orient) {
+			case 1:
+				ovl_uv[i * 2] = ovl_u_max * (1.0f - v);
+				ovl_uv[i * 2 + 1] = ovl_v_max * u;
+				break;
+			case 2:
+				ovl_uv[i * 2] = ovl_u_max * (1.0f - u);
+				ovl_uv[i * 2 + 1] = ovl_v_max * (1.0f - v);
+				break;
+			case 3:
+				ovl_uv[i * 2] = ovl_u_max * v;
+				ovl_uv[i * 2 + 1] = ovl_v_max * (1.0f - u);
+				break;
+			default:
+				ovl_uv[i * 2] = ovl_u_max * u;
+				ovl_uv[i * 2 + 1] = ovl_v_max * v;
+				break;
+		}
+	}
+}
+
+static grs_bitmap *ogl_android_get_cached_plain_texmerge_bitmap(grs_bitmap *bmbot,
+	grs_bitmap *bmovl, int orient)
+{
+	static const GLfloat identity[16] = {
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f
+	};
+	static const GLfloat vertex_array[12] = {
+		-1.0f,  1.0f, 0.0f,
+		 1.0f,  1.0f, 0.0f,
+		 1.0f, -1.0f, 0.0f,
+		-1.0f, -1.0f, 0.0f
+	};
+	static const GLfloat color_array[16] = {
+		1.0f, 1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f, 1.0f
+	};
+	ogl_android_texmerge_cache_entry *entry;
+	GLfloat bot_uv[8], ovl_uv[8];
+	GLfloat bot_u_max, bot_v_max, ovl_u_max, ovl_v_max;
+	GLint old_fbo = 0, old_viewport[4] = {0}, old_active_tex = GL_TEXTURE0;
+	GLboolean old_depth_mask = GL_TRUE, old_color_mask[4] = {GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE};
+	GLboolean had_blend, had_depth, had_cull;
+	GLuint fbo = 0;
+	int width, height;
+	int i, slot, tex_flags;
+	fix64 lowest_time;
+
+	if (!ogl_android_texmerge_cache_initialized)
+		ogl_android_texmerge_cache_clear();
+	if (!bmbot || !bmovl || !bmbot->gltexture || !bmovl->gltexture)
+		return NULL;
+	if (bmbot->gltexture->handle <= 0 || bmovl->gltexture->handle <= 0)
+		return NULL;
+
+	for (i = 0; i < OGL_ANDROID_TEXMERGE_CACHE_SIZE; ++i) {
+		entry = &ogl_android_texmerge_cache[i];
+		if (entry->texture && entry->texture->handle > 0
+			&& entry->bottom_bmp == bmbot
+			&& entry->top_bmp == bmovl
+			&& entry->orient == orient) {
+			entry->last_time_used = timer_query();
+			ogl_android_texmerge_log("reuse", bmbot, bmovl, orient,
+				entry->width, entry->height, entry->texture->handle);
+			return &entry->bitmap;
+		}
+	}
+
+	width = ogl_android_texmerge_visible_dim(bmbot->gltexture, 1);
+	height = ogl_android_texmerge_visible_dim(bmbot->gltexture, 0);
+	i = ogl_android_texmerge_visible_dim(bmovl->gltexture, 1);
+	if (i > width)
+		width = i;
+	i = ogl_android_texmerge_visible_dim(bmovl->gltexture, 0);
+	if (i > height)
+		height = i;
+	if (width < 1)
+		width = bmbot->gltexture->w;
+	if (height < 1)
+		height = bmbot->gltexture->h;
+	if (width < 1 || height < 1)
+		return NULL;
+	if (width > ogl_max_texture_size || height > ogl_max_texture_size)
+		return NULL;
+
+	slot = 0;
+	lowest_time = ogl_android_texmerge_cache[0].last_time_used;
+	for (i = 0; i < OGL_ANDROID_TEXMERGE_CACHE_SIZE; ++i) {
+		entry = &ogl_android_texmerge_cache[i];
+		if (!entry->texture || entry->last_time_used < 0) {
+			slot = i;
+			break;
+		}
+		if (entry->last_time_used < lowest_time) {
+			lowest_time = entry->last_time_used;
+			slot = i;
+		}
+	}
+	entry = &ogl_android_texmerge_cache[slot];
+	if (entry->texture)
+		ogl_freetexture(entry->texture);
+	ogl_android_texmerge_reset_entry(entry);
+
+	tex_flags = OGL_FLAG_ALPHA;
+	entry->texture = ogl_get_free_texture();
+	ogl_init_texture(entry->texture, width, height, tex_flags);
+	entry->texture->w = entry->texture->tw = entry->texture->lw = width;
+	entry->texture->h = entry->texture->th = height;
+	entry->texture->u = 1.0f;
+	entry->texture->v = 1.0f;
+	entry->texture->is_png = 1;
+	entry->texture->has_mipmaps = 0;
+	entry->texture->flags = tex_flags;
+
+	glGenTextures(1, &entry->texture->handle);
+	OGL_BINDTEXTURE(entry->texture->handle);
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	if (GameCfg.TexFilt > 0) {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	} else {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	}
+	glTexImage2D(GL_TEXTURE_2D, 0, entry->texture->internalformat,
+		width, height, 0, entry->texture->format, GL_UNSIGNED_BYTE, NULL);
+	tex_set_size(entry->texture);
+	r_texcount++;
+
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &old_fbo);
+	glGetIntegerv(GL_VIEWPORT, old_viewport);
+	glGetIntegerv(GL_ACTIVE_TEXTURE, &old_active_tex);
+	had_blend = glIsEnabled(GL_BLEND);
+	had_depth = glIsEnabled(GL_DEPTH_TEST);
+	had_cull = glIsEnabled(GL_CULL_FACE);
+	glGetBooleanv(GL_DEPTH_WRITEMASK, &old_depth_mask);
+	glGetBooleanv(GL_COLOR_WRITEMASK, old_color_mask);
+
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+		GL_TEXTURE_2D, entry->texture->handle, 0);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		glBindFramebuffer(GL_FRAMEBUFFER, old_fbo);
+		glDeleteFramebuffers(1, &fbo);
+		ogl_freetexture(entry->texture);
+		ogl_android_texmerge_reset_entry(entry);
+		return NULL;
+	}
+
+	glViewport(0, 0, width, height);
+	if (had_blend)
+		glDisable(GL_BLEND);
+	if (had_depth)
+		glDisable(GL_DEPTH_TEST);
+	if (had_cull)
+		glDisable(GL_CULL_FACE);
+	glDepthMask(GL_FALSE);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	bot_u_max = bmbot->gltexture->u > 0.0f ? bmbot->gltexture->u : 1.0f;
+	bot_v_max = bmbot->gltexture->v > 0.0f ? bmbot->gltexture->v : 1.0f;
+	ovl_u_max = bmovl->gltexture->u > 0.0f ? bmovl->gltexture->u : 1.0f;
+	ovl_v_max = bmovl->gltexture->v > 0.0f ? bmovl->gltexture->v : 1.0f;
+	ogl_android_texmerge_build_uvs(bot_uv, ovl_uv, bot_u_max, bot_v_max,
+		ovl_u_max, ovl_v_max, orient);
+
+	OGL_ENABLE(TEXTURE_2D);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_COLOR_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	ogl_texwrap(bmbot->gltexture, GL_CLAMP_TO_EDGE);
+	ogl_texwrap(bmovl->gltexture, GL_CLAMP_TO_EDGE);
+	glActiveTexture(GL_TEXTURE0);
+	OGL_BINDTEXTURE(bmbot->gltexture->handle);
+	glActiveTexture(GL_TEXTURE1);
+	OGL_BINDTEXTURE(bmovl->gltexture->handle);
+	glActiveTexture(GL_TEXTURE0);
+	gles3_shim_use_external(ogl_prog_tex2);
+	ogl_prog_set_tex2_current_matrix(identity, 0);
+	ogl_prog_set_tex2_debug_mode(0);
+	ogl_prog_set_tex2_alpha_cutoff((bmovl->bm_flags & BM_FLAG_TRANSPARENT) ? 0.5f : 0.0f);
+	glVertexPointer(3, GL_FLOAT, 0, vertex_array);
+	glColorPointer(4, GL_FLOAT, 0, color_array);
+	glTexCoordPointer(2, GL_FLOAT, 0, bot_uv);
+	gles3_shim_external_texcoord2_pointer(2, GL_FLOAT, 0, ovl_uv);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+	gles3_shim_external_texcoord2_pointer(0, GL_FLOAT, 0, NULL);
+	gles3_shim_use_external(0);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_COLOR_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	ogl_texwrap(bmbot->gltexture, GL_REPEAT);
+	ogl_texwrap(bmovl->gltexture, GL_REPEAT);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, old_fbo);
+	glDeleteFramebuffers(1, &fbo);
+	OGL_BINDTEXTURE(entry->texture->handle);
+	if (GameCfg.TexFilt > 0) {
+		glGenerateMipmap(GL_TEXTURE_2D);
+		entry->texture->has_mipmaps = 1;
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+			GameCfg.TexFilt >= 2 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR_MIPMAP_NEAREST);
+		if (ogl_aniso_level > 1 && ogl_maxanisotropy > 1.0f) {
+			int af = ogl_aniso_level;
+			if (af > (int)ogl_maxanisotropy)
+				af = (int)ogl_maxanisotropy;
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, (GLfloat)af);
+		}
+	} else {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	}
+	glColorMask(old_color_mask[0], old_color_mask[1], old_color_mask[2], old_color_mask[3]);
+	glDepthMask(old_depth_mask);
+	if (had_blend)
+		glEnable(GL_BLEND);
+	if (had_depth)
+		glEnable(GL_DEPTH_TEST);
+	if (had_cull)
+		glEnable(GL_CULL_FACE);
+	glViewport(old_viewport[0], old_viewport[1], old_viewport[2], old_viewport[3]);
+	glActiveTexture(old_active_tex);
+
+	entry->bottom_bmp = bmbot;
+	entry->top_bmp = bmovl;
+	entry->orient = orient;
+	entry->width = width;
+	entry->height = height;
+	entry->last_time_used = timer_query();
+	ogl_android_texmerge_init_bitmap(&entry->bitmap, entry->texture,
+		bmbot->bm_flags & (~BM_FLAG_RLE), bmbot->avg_color, width, height);
+	ogl_android_texmerge_log("create", bmbot, bmovl, orient, width, height,
+		entry->texture->handle);
+	return &entry->bitmap;
+}
+#endif
 
 void ogl_cache_level_textures(void)
 {
@@ -3723,6 +4097,33 @@ static bool ogl_draw_tmap_2_internal(int nv, g3s_point **pointlist, g3s_uvl *uvl
 	}
 
 	glActiveTexture(GL_TEXTURE0);
+	if (!super && (bmovl->bm_flags & BM_FLAG_TRANSPARENT)) {
+		grs_bitmap *merged = ogl_android_get_cached_plain_texmerge_bitmap(bmbot,
+			bmovl, orient);
+		if (merged) {
+			if (ogl_is_metl154_bitmap(bmovl)) {
+				const char *botname = piggy_game_bitmap_name(bmbot);
+				const char *ovlname = piggy_game_bitmap_name(bmovl);
+				debug_log(DLOG_TEXTURE,
+					"[metl154clip] frame=%d pass=%d seq=%d stage=route route=merge_cached merge_impl=gpu_cached_single seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orig_nv=%d orient=%d super=0 bot=%s ovl=%s",
+					g_metl154_frame_id,
+					g_metl154_render_pass,
+					g_metl154_draw_seq,
+					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
+					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
+					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1,
+					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
+					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap1 : -1,
+					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap2 : 0,
+					nv,
+					orient,
+					botname ? botname : "<none>",
+					ovlname ? ovlname : "<none>");
+			}
+			return g3_draw_tmap(nv, pointlist, uvl_list, light_rgb, merged);
+		}
+	}
 #endif
 	
 	for (c=0; c<nv; c++) {

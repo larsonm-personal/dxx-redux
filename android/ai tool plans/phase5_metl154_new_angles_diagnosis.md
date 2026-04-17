@@ -227,6 +227,197 @@ legacy CPU texmerge on this metl154 shared-edge case.
   `[metl154snapoverlap]` fields show shader-picked texels diverging from or now
   matching `legacy_merge_idx`
 
+## Tranche Update (2026-04-17, post-fix capture reanalysis)
+
+Capture: `android\temp_game_logs\debuglog_20260416_202239.txt` (17 MB).
+User confirms the rock strip remained through modes 0..9 and disappeared only
+in mode 10 (`old_merge`). The shim-stream upload-path unification from the
+previous tranche did NOT fix the defect.
+
+### What the capture actually shows
+
+- `[metl154upload] upload_impl=shim_stream` fires consistently; the new
+  unified upload path is active and stable. 3600+ uploads, no GL errors, no
+  provenance mismatches. So the merge_vbo-vs-shim_stream upload divergence
+  was a real cleanup but not the bug.
+- `[metl154diag]` consistently shows `filt=9728/9728 mips=0 texfilt=0
+  aniso=0 tex_wh=64x64 tex_p2=64x64 tex_handle=301 handle_changed=0
+  flags=0x9 real_flags=0x9 ovl_png=0`. Overlay metl154 is bound GL_NEAREST,
+  no mipmaps, no anisotropy, native 64x64 palette texture. This kills the
+  bilinear-alpha-boundary theory.
+- Face `83/3/1` geometry and UVs are byte-identical before and after the
+  mode 9->10 toggle: `uv0=0.171/1.048 uv1=0.172/0.048 uv2=1.615/0.000`,
+  same vertex positions, same normal, same `tmap1=158 tmap2=0x10d orient=0`,
+  same `bot=rock313 ovl=metl154`, same `wid=2 child=-1`, same `nv=3`.
+- The only thing that changes across the toggle is the draw path:
+  `merge_impl=gpu_two_pass -> old_texmerge` and
+  `shader=plain -> shader=single`. Texmerge reuses cache slot 1 from
+  create_frame=593.
+- `[metl154mix]` lines around face 83/3/1 report `sample_alpha=1.000
+  bottom_mix=0.000`, i.e. the centroid sample on the shader path resolves to
+  opaque overlay. Adjacent faces sample at very different UVs but route the
+  same way. So the defect is not a wholesale per-face misclassification at
+  the centroid.
+
+### Refined root-cause theory
+
+The shader `tex2` path and the legacy CPU merge path should be texel-identical
+on 64x64 stock textures bound GL_NEAREST with `alpha_cutoff=0.5`. The fragment
+shader does:
+
+```
+ovla = (ovl.a >= 0.5) ? 1 : 0;
+c.rgb = mix(bot.rgb, ovl.rgb, ovla);
+c.a   = bot.a + ovla - bot.a * ovla;   // = 1 for rock (bot.a == 1)
+if (f.a < 0.02) discard;
+```
+
+Because rock has `bm_flags=0` and decodes to `alpha=1` everywhere, the shader
+NEVER discards a fragment where the overlay is transparent. Instead it paints
+ROCK into the framebuffer at that pixel, with `c.a == 1`. The legacy path
+paints the same rock-or-metl image from the pre-merged 64x64 bitmap. Sampling
+is GL_NEAREST both ways. So pixel color output should match.
+
+This means the visible difference is NOT in what the merged pixel "looks
+like" at this face in isolation. It has to be in what this face's draw does
+to the depth buffer, or what draws around it do, because that is the only
+remaining dimension where the two paths differ:
+
+- Shader path writes depth for every non-discarded fragment. Because rock
+  keeps `c.a=1` through transparent overlay gaps, EVERY pixel of face 83/3/1
+  writes depth on the shader path.
+- Legacy path draws the merged bitmap via `g3_draw_tmap` (single texture).
+  The merged bitmap is fully opaque (no transparency flag), so it also writes
+  depth on every pixel. Superficially the same.
+
+BUT the relevant difference is this: on Android the shader path additionally
+applies `glPolygonOffset(-1.0f, -1.0f) + GL_POLYGON_OFFSET_FILL` for all
+`is_metl154_plain` draws (see `ogl_draw_tmap_2_internal()`), whereas the
+legacy single-texture path does NOT. Polygon offset was added to paper over
+an earlier z-fighting symptom, but it also pulls the face geometrically
+forward by one depth unit. On an Android GPU with a 16-bit or reduced
+precision depth buffer, one polygon-offset unit can be large enough to push
+`83/3/1` in front of an occluder that would otherwise cover it, producing
+the visible rock-plus-grate strip.
+
+The user earlier rejected the April-14 polygon-offset debug code as the
+cause because the defect predates that debug addition. That rejection
+referred to an earlier POLY-OFFSET-BASED diagnostic experiment, not to the
+`is_metl154_plain` polygon-offset call that is still live in the shader
+path. Two different code paths, same symptom. The live polygon-offset call
+is still a differentiator between shader path and legacy path and therefore
+remains a candidate for the mode-9-vs-mode-10 visual difference observed in
+this capture.
+
+Even if polygon offset is NOT the final mechanism, the architectural point
+stands: the Android shader merged-wall path is an Android-only divergence
+that introduces multiple subtle differences (extra shader variant, extra
+depth-bias call, extra set of GL state toggles around the draw) versus the
+legacy CPU-merge + single-texture path that has been robust on all other
+platforms for decades. Any one of these differences can be the mechanism,
+and empirically the combined path is buggy.
+
+### Proposed permanent fix
+
+Stop forcing `GameArg.DbgAltTexMerge = 1` on Android for the general case.
+Scope the Android forced-shader merge ONLY to the cases that actually need
+it: mismatched bottom/overlay resolutions (from `android/ai tool plans/
+overlay-rendering-four-cases.md`, cases 2, 3, 4). For the all-stock case
+(case 1), use the legacy texmerge path, matching every other platform.
+
+- `d1/misc/physfsx.c` and `d2/misc/physfsx.c` currently hard-force
+  `GameArg.DbgAltTexMerge = 1` on Android. Replace with a runtime branch in
+  `d1/main/render.c` and `d2/main/render.c` `render_face()` where
+  `use_alt_texmerge` is chosen per-face based on bottom and overlay bitmap
+  sizes:
+  - if both are native 64x64 palette: use legacy CPU texmerge
+  - if either is high-res / mismatched: use shader tex2 path
+- Keep the current experiment controls (`METL154_EXPERIMENT_OLD_MERGE`) for
+  diagnostics, but make legacy the default for the stock 64x64 case rather
+  than a debug-only override
+- Remove the `glPolygonOffset(-1.0f, -1.0f) + GL_POLYGON_OFFSET_FILL`
+  unconditional call from `is_metl154_plain` draws, or gate it behind an
+  explicit experiment flag. This call is currently always-on for plain
+  metl154 shader draws and is a latent depth-precision landmine on any
+  Android GPU
+- Add an Android-only integration test that renders the metl154 portal
+  scene with the default settings and checks via introspection that the
+  legacy path was taken for that face
+
+### Why this is "clean"
+
+- Restores the cross-platform default draw path. All non-Android platforms
+  already use legacy texmerge for stock textures. This eliminates the
+  Android-only divergence at the source rather than papering over it
+- Keeps the shader texmerge path available where it provides real value
+  (high-res packs with size-mismatched bottom/overlay)
+- Makes the selection criterion explicit and data-driven (bitmap sizes) so
+  future regressions are easier to reason about
+- Removes the unconditional polygon-offset on plain metl154 draws, which
+  was a band-aid for an earlier z-fighting symptom that the shader path
+  itself likely caused
+
+## Tranche Update (2026-04-17, on-device fallback implementation)
+
+- Follow-up history check: the live Android `glPolygonOffset(-1,-1)` block in
+  `ogl_draw_tmap_2_internal()` blames to `43092f31` (`opengl debugging`,
+  2026-04-14). That means it is part of the later debug tranche the user
+  already rejected as the original cause, so this fix does NOT depend on
+  removing or changing that block
+- Implemented in D1 and D2 `render_face()`: Android now auto-routes only the
+  `SIDE_IS_TRI_13` metl154 wall path to legacy CPU texmerge in the normal
+  default mode. A follow-up tightening then reduced that further to only face
+  1 of the tracked `SIDE_IS_TRI_13` submission, because prior geometry logs
+  identified the actual leak as the clipped `83/3/1` triangle rather than the
+  whole side
+- Detection is runtime and data-driven rather than filename-only: the new
+  helper pages in both bitmaps, calls `ogl_bindbmtex()`, and checks
+  `gltexture->is_png` plus the loaded GL `w/h` to distinguish stock 64x64
+  from hires-backed paths. The fallback log reports which case was active
+- Scope is intentionally narrow for this tranche: only metl154 gets the
+  automatic fallback, and within metl154 only face 1 of
+  `SIDE_IS_TRI_13` falls back. Other `tmap2` overlays remain on the GPU
+  two-pass path
+- New on-device proof line: `[metl154exp] ... merge_impl=auto_old_texmerge
+	reason=tri13_face1_stock_64x64 ...` or
+	`[metl154exp] ... merge_impl=auto_old_texmerge reason=metl154_tri13_face1_fallback ...`
+  appears when the default path now auto-falls back without entering special
+  mode `old_merge`
+- Validation: `android\run-code-quality.ps1 -Fix` passed after the render
+  changes
+- Validation: `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest`
+  passed with `JAVA_HOME=c:\local\jdk-21`
+
+### On-device check for this tranche
+
+- Reproduce the bad portal scene in the normal default mode. Do NOT switch to
+  special mode `old_merge`
+- Export or read the debug log and confirm the new line
+	`merge_impl=auto_old_texmerge` appears for face `83/3/1`, but not for
+	`83/3/0` or unrelated metl154 quads such as `29/2/0` or `32/0/0`.
+	`reason=tri13_face1_stock_64x64` means both textures were native 64x64;
+	`reason=metl154_tri13_face1_fallback` means the runtime textures were
+	hires-backed
+- Success condition: the rock strip is gone before entering `old_merge`, and
+  the log shows the automatic fallback firing in the default mode
+
+## Tranche Update (2026-04-17, face-1-only refinement)
+
+- Fresh log `android\temp_game_logs\debuglog_20260416_220050.txt` shows the
+  narrowed `auto_old_texmerge` path was still only hitting the original
+  `83/3/*` pair. No unrelated metl154 quads were on the fallback path
+- The earlier geometry investigation already pinned the actual leaked strip to
+  the clipped `83/3/1` triangle specifically, not to the whole `83/3` side.
+  That justified tightening the runtime fallback again from all
+  `SIDE_IS_TRI_13` faces to only face 1
+- The same fresh log also shows the user's reported lava is not using this
+  fallback path. Nearby lava textures upload as 512x512 hires assets and never
+  emit `merge_impl=auto_old_texmerge`, so any remaining lava look difference is
+  outside this metl154 fallback rule
+- Validation target for the next on-device run: confirm the rock strip still
+  disappears in default mode, while `83/3/0` returns to the hires GPU path and
+  only `83/3/1` logs the new face-1-only fallback reason string
+
 ## Literal Next Steps
 
 ### Execution Rules For This Tranche

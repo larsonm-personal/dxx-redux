@@ -57,6 +57,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef ANDROID
 #include "debug_tex_overlay.h"
 #include "android_log.h"
+
+void ogl_bindbmtex(grs_bitmap *bm);
 #endif
 #include "args.h"
 
@@ -98,6 +100,39 @@ static int render_tmap2_is_metl154(int tmap2)
 	bm = &GameBitmaps[Textures[overlay].index];
 	name = piggy_game_bitmap_name(bm);
 	return name && !d_stricmp(name, "metl154");
+}
+
+static int render_android_can_auto_oldmerge_tmap2(int tmap1, int tmap2,
+	grs_bitmap **out_bmbot, grs_bitmap **out_bmovl)
+{
+	int overlay = tmap2 & 0x3FFF;
+	grs_bitmap *bmbot;
+	grs_bitmap *bmovl;
+
+	if (!gl_initialized || !tmap2 || tmap1 >= NumTextures || overlay >= NumTextures)
+		return 0;
+
+	PIGGY_PAGE_IN(Textures[tmap1]);
+	PIGGY_PAGE_IN(Textures[overlay]);
+	bmbot = &GameBitmaps[Textures[tmap1].index];
+	bmovl = &GameBitmaps[Textures[overlay].index];
+	ogl_bindbmtex(bmbot);
+	ogl_bindbmtex(bmovl);
+
+	if (out_bmbot)
+		*out_bmbot = bmbot;
+	if (out_bmovl)
+		*out_bmovl = bmovl;
+
+	if (!bmbot->gltexture || !bmovl->gltexture)
+		return 0;
+
+	return !bmbot->gltexture->is_png
+		&& !bmovl->gltexture->is_png
+		&& bmbot->gltexture->w == 64
+		&& bmbot->gltexture->h == 64
+		&& bmovl->gltexture->w == 64
+		&& bmovl->gltexture->h == 64;
 }
 
 #define METL154_TRACK_SIDE_COUNT 4
@@ -607,8 +642,41 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 #ifdef OGL
 	int use_alt_texmerge = GameArg.DbgAltTexMerge;
 #ifdef ANDROID
+	grs_bitmap *android_bmbot = NULL;
+	grs_bitmap *android_bmovl = NULL;
+	int auto_oldmerge_stock = 0;
 	if (tmap2 != 0 && (int)g_metl154_experiment_mode == METL154_EXPERIMENT_OLD_MERGE)
 		use_alt_texmerge = 0;
+	else if (use_alt_texmerge && render_tmap2_is_metl154(tmap2)
+		&& Segments[segnum].sides[sidenum].type == SIDE_IS_TRI_13
+		&& g_android_draw_face_ctx.valid
+		&& g_android_draw_face_ctx.face == 1) {
+		auto_oldmerge_stock = render_android_can_auto_oldmerge_tmap2(tmap1, tmap2,
+			&android_bmbot, &android_bmovl);
+		use_alt_texmerge = 0;
+		debug_log(DLOG_TEXTURE,
+			"[metl154exp] frame=%d pass=%d seq=%d mode=%d merge_impl=auto_old_texmerge reason=%s seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x bot=%s ovl=%s bot_hires=%d ovl_hires=%d bot_gl=%dx%d ovl_gl=%dx%d",
+			g_metl154_frame_id,
+			g_metl154_render_pass,
+			g_metl154_draw_seq,
+			(int)g_metl154_experiment_mode,
+			auto_oldmerge_stock ? "tri13_face1_stock_64x64" : "metl154_tri13_face1_fallback",
+			g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
+			g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
+			g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+			g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1,
+			g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
+			tmap1,
+			tmap2,
+			piggy_game_bitmap_name(android_bmbot) ? piggy_game_bitmap_name(android_bmbot) : "<none>",
+			piggy_game_bitmap_name(android_bmovl) ? piggy_game_bitmap_name(android_bmovl) : "<none>",
+			android_bmbot && android_bmbot->gltexture ? android_bmbot->gltexture->is_png : -1,
+			android_bmovl && android_bmovl->gltexture ? android_bmovl->gltexture->is_png : -1,
+			android_bmbot && android_bmbot->gltexture ? android_bmbot->gltexture->w : 0,
+			android_bmbot && android_bmbot->gltexture ? android_bmbot->gltexture->h : 0,
+			android_bmovl && android_bmovl->gltexture ? android_bmovl->gltexture->w : 0,
+			android_bmovl && android_bmovl->gltexture ? android_bmovl->gltexture->h : 0);
+	}
 #endif
 	if (use_alt_texmerge){
 		PIGGY_PAGE_IN(Textures[tmap1]);
