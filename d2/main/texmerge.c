@@ -19,6 +19,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include <stdio.h>
 
+#ifdef ANDROID
+#include <string.h>
+#endif
+
 #include "gr.h"
 #include "dxxerror.h"
 #include "game.h"
@@ -26,6 +30,11 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "rle.h"
 #include "piggy.h"
 #include "timer.h"
+
+#ifdef ANDROID
+#include "debug_tex_overlay.h"
+#include "android_log.h"
+#endif
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -42,6 +51,16 @@ typedef struct	{
 	grs_bitmap * top_bmp;
 	int 		orient;
 	fix64		last_time_used;
+#ifdef ANDROID
+	int first_owner_seg;
+	int first_owner_side;
+	int first_owner_face;
+	int last_owner_seg;
+	int last_owner_side;
+	int last_owner_face;
+	int creation_frame;
+	int last_use_frame;
+#endif
 } TEXTURE_CACHE;
 
 static TEXTURE_CACHE Cache[MAX_NUM_CACHE_BITMAPS];
@@ -50,6 +69,90 @@ static int num_cache_entries = 0;
 
 static int cache_hits = 0;
 static int cache_misses = 0;
+
+#ifdef ANDROID
+static void texmerge_reset_owner(TEXTURE_CACHE *entry)
+{
+	entry->first_owner_seg = -1;
+	entry->first_owner_side = -1;
+	entry->first_owner_face = -1;
+	entry->last_owner_seg = -1;
+	entry->last_owner_side = -1;
+	entry->last_owner_face = -1;
+	entry->creation_frame = -1;
+	entry->last_use_frame = -1;
+}
+
+static int texmerge_metl154_overlay(grs_bitmap *bm)
+{
+	const char *name = piggy_game_bitmap_name(bm);
+
+	return name && strcmp(name, "metl154") == 0;
+}
+
+static int texmerge_should_log(grs_bitmap *top_bmp)
+{
+	return (int)g_metl154_experiment_mode == METL154_EXPERIMENT_OLD_MERGE
+		|| texmerge_metl154_overlay(top_bmp);
+}
+
+static void texmerge_set_owner(TEXTURE_CACHE *entry)
+{
+	int seg = g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1;
+	int side = g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1;
+	int face = g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1;
+
+	if (entry->creation_frame < 0) {
+		entry->first_owner_seg = seg;
+		entry->first_owner_side = side;
+		entry->first_owner_face = face;
+		entry->creation_frame = g_metl154_frame_id;
+	}
+	entry->last_owner_seg = seg;
+	entry->last_owner_side = side;
+	entry->last_owner_face = face;
+	entry->last_use_frame = g_metl154_frame_id;
+}
+
+static void texmerge_log_event(const char *event, int slot, int tmap_bottom,
+	int tmap_top, grs_bitmap *bitmap_bottom, grs_bitmap *bitmap_top, int orient)
+{
+	const char *botname;
+	const char *ovlname;
+	TEXTURE_CACHE *entry;
+
+	if (!texmerge_should_log(bitmap_top))
+		return;
+	entry = &Cache[slot];
+	botname = piggy_game_bitmap_name(bitmap_bottom);
+	ovlname = piggy_game_bitmap_name(bitmap_top);
+	debug_log(DLOG_TEXTURE,
+		"[metl154texmerge] event=%s frame=%d pass=%d seq=%d slot=%d seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orient=%d bot=%s ovl=%s first_owner=%d/%d/%d create_frame=%d last_owner=%d/%d/%d last_use_frame=%d",
+		event,
+		g_metl154_frame_id,
+		g_metl154_render_pass,
+		g_metl154_draw_seq,
+		slot,
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1,
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
+		tmap_bottom,
+		tmap_top,
+		orient,
+		botname ? botname : "<none>",
+		ovlname ? ovlname : "<none>",
+		entry->first_owner_seg,
+		entry->first_owner_side,
+		entry->first_owner_face,
+		entry->creation_frame,
+		entry->last_owner_seg,
+		entry->last_owner_side,
+		entry->last_owner_face,
+		entry->last_use_frame);
+}
+#endif
 
 void texmerge_close();
 void merge_textures_super_xparent(int type, grs_bitmap *bottom_bmp, grs_bitmap *top_bmp,
@@ -74,6 +177,9 @@ int texmerge_init(int num_cached_textures)
 		Cache[i].top_bmp = NULL;
 		Cache[i].bottom_bmp = NULL;
 		Cache[i].orient = -1;
+#ifdef ANDROID
+		texmerge_reset_owner(&Cache[i]);
+#endif
 	}
 
 	return 1;
@@ -88,6 +194,9 @@ void texmerge_flush()
 		Cache[i].top_bmp = NULL;
 		Cache[i].bottom_bmp = NULL;
 		Cache[i].orient = -1;
+#ifdef ANDROID
+		texmerge_reset_owner(&Cache[i]);
+#endif
 	}
 }
 
@@ -125,6 +234,11 @@ grs_bitmap * texmerge_get_cached_bitmap( int tmap_bottom, int tmap_top )
 		if ( (Cache[i].last_time_used > -1) && (Cache[i].top_bmp==bitmap_top) && (Cache[i].bottom_bmp==bitmap_bottom) && (Cache[i].orient==orient ))	{
 			cache_hits++;
 			Cache[i].last_time_used = timer_query();
+#ifdef ANDROID
+			texmerge_set_owner(&Cache[i]);
+			texmerge_log_event("reuse", i, tmap_bottom, tmap_top, bitmap_bottom,
+				bitmap_top, orient);
+#endif
 			return Cache[i].bitmap;
 		}	
 		if ( Cache[i].last_time_used < lowest_time_used )	{
@@ -174,6 +288,12 @@ grs_bitmap * texmerge_get_cached_bitmap( int tmap_bottom, int tmap_top )
 	Cache[least_recently_used].bottom_bmp = bitmap_bottom;
 	Cache[least_recently_used].last_time_used = timer_query();
 	Cache[least_recently_used].orient = orient;
+#ifdef ANDROID
+	texmerge_reset_owner(&Cache[least_recently_used]);
+	texmerge_set_owner(&Cache[least_recently_used]);
+	texmerge_log_event("create", least_recently_used, tmap_bottom, tmap_top,
+		bitmap_bottom, bitmap_top, orient);
+#endif
 
 	return Cache[least_recently_used].bitmap;
 }

@@ -578,6 +578,8 @@ static const struct metl154_focus_face *ogl_find_metl154_focus_face(
 }
 
 static void ogl_log_metl154_snapshot_focus_overlap(void);
+static int ogl_get_metl154_source_nearest_index(grs_bitmap *bm, GLfloat sample_u,
+	GLfloat sample_v);
 
 static int ogl_metl154_cover_skip_pair_count(int mode)
 {
@@ -1438,6 +1440,8 @@ static const char *ogl_metl154_experiment_name(int mode)
 			return "overlay_only";
 		case METL154_EXPERIMENT_CLIP_ALL:
 			return "clip_all";
+		case METL154_EXPERIMENT_OLD_MERGE:
+			return "old_merge";
 		default:
 			return "default";
 	}
@@ -1593,7 +1597,7 @@ static void ogl_log_metl154_upload(grs_bitmap *bmbot, grs_bitmap *bmovl,
 
 	metl154_tmap2_submit_ctx.upload_id = upload_id;
 	debug_log(DLOG_TEXTURE,
-		"[metl154upload] frame=%d pass=%d seq=%d upload_id=%u route=%s merge_impl=gpu_two_pass seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orient=%d bot=%s ovl=%s base_handle=%u overlay_handle=%u prog=%u vbo=%u nv=%d vb=%d cb=%d tb=%d t2b=%d total=%d off_v=0 off_c=%d off_t=%d off_t2=%d",
+		"[metl154upload] frame=%d pass=%d seq=%d upload_id=%u route=%s merge_impl=gpu_two_pass upload_impl=shim_stream seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orient=%d bot=%s ovl=%s base_handle=%u overlay_handle=%u prog=%u vbo=%u nv=%d vb=%d cb=%d tb=%d t2b=%d total=%d off_v=0 off_c=%d off_t=%d off_t2=%d",
 		g_metl154_frame_id,
 		g_metl154_render_pass,
 		g_metl154_draw_seq,
@@ -1728,13 +1732,14 @@ static void ogl_log_metl154_snapshot_focus_overlap(void)
 		const struct metl154_focus_draw_cache *rock = &metl154_focus_draws[rock_indices[i]];
 		grs_bitmap *overlay_bm, *portal_bm;
 		GLfloat sample_sx, sample_sy, overlap_area;
-		GLfloat rock_z, portal_z, rock_u = 0.0f, rock_v = 0.0f;
+		GLfloat rock_z, portal_z, rock_base_u = 0.0f, rock_base_v = 0.0f, rock_u = 0.0f, rock_v = 0.0f;
 		GLfloat portal_u = 0.0f, portal_v = 0.0f;
 		GLfloat sample_alpha = -1.0f, alpha_cutoff, sample_post_alpha, bottom_mix;
 		GLfloat portal_alpha = -1.0f, portal_post_alpha;
 		int bilerp00, bilerp10, bilerp01, bilerp11, wrap_u, wrap_v;
 		int portal_bilerp00, portal_bilerp10, portal_bilerp01, portal_bilerp11;
 		int portal_wrap_u, portal_wrap_v;
+		int rock_bot_idx = -1, rock_ovl_idx = -1, legacy_merge_idx = -1, portal_idx = -1;
 
 		if (!rock->valid || !rock->has_ovl_uv || !portal->has_base_uv)
 			continue;
@@ -1748,7 +1753,7 @@ static void ogl_log_metl154_snapshot_focus_overlap(void)
 			continue;
 		}
 		if (!ogl_metl154_sample_focus_draw(rock, sample_sx, sample_sy,
-			&rock_z, NULL, NULL, &rock_u, &rock_v))
+			&rock_z, &rock_base_u, &rock_base_v, &rock_u, &rock_v))
 			continue;
 		if (!ogl_metl154_sample_focus_draw(portal, sample_sx, sample_sy,
 			&portal_z, &portal_u, &portal_v, NULL, NULL))
@@ -1771,6 +1776,14 @@ static void ogl_log_metl154_snapshot_focus_overlap(void)
 				&portal_bilerp01, &portal_bilerp11,
 				&portal_alpha, &portal_wrap_u, &portal_wrap_v);
 		}
+		if (rock->draw_ctx.tmap1 >= 0 && rock->draw_ctx.tmap1 < NumTextures) {
+			grs_bitmap *rock_bot_bm = &GameBitmaps[Textures[rock->draw_ctx.tmap1].index];
+			rock_bot_idx = ogl_get_metl154_source_nearest_index(rock_bot_bm, rock_base_u, rock_base_v);
+		}
+		rock_ovl_idx = ogl_get_metl154_source_nearest_index(overlay_bm, rock_u, rock_v);
+		portal_idx = ogl_get_metl154_source_nearest_index(portal_bm, portal_u, portal_v);
+		if (rock_bot_idx >= 0 && rock_ovl_idx >= 0)
+			legacy_merge_idx = rock_ovl_idx == TRANSPARENCY_COLOR ? rock_bot_idx : rock_ovl_idx;
 		alpha_cutoff = ogl_metl154_alpha_cutoff((int)g_metl154_experiment_mode);
 		sample_post_alpha = sample_alpha;
 		if (sample_alpha >= 0.0f && alpha_cutoff > 0.0f)
@@ -1780,7 +1793,7 @@ static void ogl_log_metl154_snapshot_focus_overlap(void)
 			portal_post_alpha = portal_alpha >= alpha_cutoff ? 1.0f : 0.0f;
 		bottom_mix = sample_alpha >= 0.0f ? (1.0f - sample_post_alpha) : -1.0f;
 		debug_log(DLOG_TEXTURE,
-			"[metl154snapoverlap] focus=%s portal=portal83 frame=%d sample=%.1f/%.1f overlap=%.1f rock_order=%d portal_order=%d rock_z=%.3f portal_z=%.3f rock_uv=%.3f/%.3f bilerp=%d/%d/%d/%d alpha=%.3f cutoff=%.2f post_alpha=%.3f bottom_mix=%.3f wrap=%d/%d portal_uv=%.3f/%.3f portal_bilerp=%d/%d/%d/%d portal_alpha=%.3f portal_post_alpha=%.3f portal_wrap=%d/%d",
+			"[metl154snapoverlap] focus=%s portal=portal83 frame=%d sample=%.1f/%.1f overlap=%.1f rock_order=%d portal_order=%d rock_z=%.3f portal_z=%.3f rock_base_uv=%.3f/%.3f rock_uv=%.3f/%.3f bilerp=%d/%d/%d/%d alpha=%.3f cutoff=%.2f post_alpha=%.3f bottom_mix=%.3f wrap=%d/%d rock_bot_idx=%d rock_ovl_idx=%d legacy_merge_idx=%d portal_uv=%.3f/%.3f portal_bilerp=%d/%d/%d/%d portal_alpha=%.3f portal_post_alpha=%.3f portal_wrap=%d/%d portal_idx=%d",
 			metl154_focus_faces[rock_indices[i]].tag,
 			g_metl154_frame_id,
 			(double)sample_sx,
@@ -1790,6 +1803,8 @@ static void ogl_log_metl154_snapshot_focus_overlap(void)
 			portal->draw_order,
 			(double)rock_z,
 			(double)portal_z,
+			(double)rock_base_u,
+			(double)rock_base_v,
 			(double)rock_u,
 			(double)rock_v,
 			bilerp00,
@@ -1802,6 +1817,9 @@ static void ogl_log_metl154_snapshot_focus_overlap(void)
 			(double)bottom_mix,
 			wrap_u,
 			wrap_v,
+			rock_bot_idx,
+			rock_ovl_idx,
+			legacy_merge_idx,
 			(double)portal_u,
 			(double)portal_v,
 			portal_bilerp00,
@@ -1811,8 +1829,35 @@ static void ogl_log_metl154_snapshot_focus_overlap(void)
 			(double)portal_alpha,
 			(double)portal_post_alpha,
 			portal_wrap_u,
-			portal_wrap_v);
+			portal_wrap_v,
+			portal_idx);
 	}
+}
+
+static int ogl_get_metl154_source_nearest_index(grs_bitmap *bm, GLfloat sample_u,
+	GLfloat sample_v)
+{
+	grs_bitmap *src = ogl_get_metl154_source_bitmap(bm);
+	GLfloat wrapped_u, wrapped_v, tex_u, tex_v;
+	int x, y;
+
+	if (!src || src->bm_w <= 0 || src->bm_h <= 0)
+		return -1;
+
+	wrapped_u = sample_u - floorf(sample_u);
+	wrapped_v = sample_v - floorf(sample_v);
+	if (wrapped_u < 0.0f)
+		wrapped_u += 1.0f;
+	if (wrapped_v < 0.0f)
+		wrapped_v += 1.0f;
+
+	tex_u = wrapped_u * src->bm_w - 0.5f;
+	tex_v = wrapped_v * src->bm_h - 0.5f;
+	x = (int)floorf(tex_u + 0.5f);
+	y = (int)floorf(tex_v + 0.5f);
+	x = ((x % src->bm_w) + src->bm_w) % src->bm_w;
+	y = ((y % src->bm_h) + src->bm_h) % src->bm_h;
+	return src->bm_data[y * src->bm_w + x];
 }
 
 static void ogl_get_metl154_source_sample(grs_bitmap *bm, GLfloat *texcoordovl_array, int nv,
@@ -2040,8 +2085,11 @@ static void ogl_log_metl154_submit(g3s_point **pointlist, int nv)
 	GLfloat sx[6], sy[6];
 	unsigned int codes[6], flags[6], post_uor = 0, post_uand = 0xff;
 	const char *route = metl154_tmap2_submit_ctx.route;
+	char fan_order[96];
 	int orig_nv = metl154_tmap2_submit_ctx.orig_nv > 0 ? metl154_tmap2_submit_ctx.orig_nv : nv;
 	int i, j, dup_pairs = 0, zero_count = 0, post_behind = 0;
+	int fan_tris = nv >= 3 ? nv - 2 : 0;
+	int fan_written = 0;
 	int overflow = 0, temp_points = 0, projected = 0;
 	int extra = nv > 6 ? nv - 6 : 0;
 
@@ -2052,6 +2100,21 @@ static void ogl_log_metl154_submit(g3s_point **pointlist, int nv)
 		sy[i] = -9999.0f;
 		codes[i] = 0;
 		flags[i] = 0;
+	}
+	fan_order[0] = '\0';
+	for (i = 1; i < nv - 1 && i < 6; i++) {
+		int n = snprintf(fan_order + fan_written,
+			sizeof(fan_order) - fan_written,
+			"%s0-%d-%d",
+			fan_written ? "|" : "",
+			i,
+			i + 1);
+
+		if (n < 0 || n >= (int)(sizeof(fan_order) - fan_written)) {
+			fan_order[sizeof(fan_order) - 1] = '\0';
+			break;
+		}
+		fan_written += n;
 	}
 	for (i = 0; i < nv; i++) {
 		g3s_point *p = pointlist[i];
@@ -2082,7 +2145,7 @@ static void ogl_log_metl154_submit(g3s_point **pointlist, int nv)
 				dup_pairs++;
 
 	debug_log(DLOG_TEXTURE,
-		"[metl154submit] frame=%d pass=%d seq=%d route=%s clip=%d orig_nv=%d submit_nv=%d orig_uor=0x%x orig_uand=0x%x input_behind=%d temp_created=%d post_uor=0x%x post_uand=0x%x post_behind=%d overflow=%d temp=%d projected=%d dup=%d zero=%d extra=%d sx=%.1f/%.1f/%.1f/%.1f/%.1f/%.1f sy=%.1f/%.1f/%.1f/%.1f/%.1f/%.1f codes=0x%x/0x%x/0x%x/0x%x/0x%x/0x%x flags=0x%x/0x%x/0x%x/0x%x/0x%x/0x%x",
+		"[metl154submit] frame=%d pass=%d seq=%d route=%s clip=%d orig_nv=%d submit_nv=%d fan_tris=%d fan_head=%s orig_uor=0x%x orig_uand=0x%x input_behind=%d temp_created=%d post_uor=0x%x post_uand=0x%x post_behind=%d overflow=%d temp=%d projected=%d dup=%d zero=%d extra=%d sx=%.1f/%.1f/%.1f/%.1f/%.1f/%.1f sy=%.1f/%.1f/%.1f/%.1f/%.1f/%.1f codes=0x%x/0x%x/0x%x/0x%x/0x%x/0x%x flags=0x%x/0x%x/0x%x/0x%x/0x%x/0x%x",
 		g_metl154_frame_id,
 		g_metl154_render_pass,
 		g_metl154_draw_seq,
@@ -2090,6 +2153,8 @@ static void ogl_log_metl154_submit(g3s_point **pointlist, int nv)
 		metl154_tmap2_submit_ctx.clip_applied,
 		orig_nv,
 		nv,
+		fan_tris,
+		fan_order[0] ? fan_order : "<none>",
 		metl154_tmap2_submit_ctx.orig_uor,
 		metl154_tmap2_submit_ctx.orig_uand,
 		metl154_tmap2_submit_ctx.input_behind,
@@ -3801,41 +3866,25 @@ static bool ogl_draw_tmap_2_internal(int nv, g3s_point **pointlist, g3s_uvl *uvl
 	}
 #endif
 
-	glEnableVertexAttribArray(OGL_APOS);
-	glEnableVertexAttribArray(OGL_ACOLOR);
-	glEnableVertexAttribArray(OGL_ATEXCOORD);
-	glEnableVertexAttribArray(OGL_ATEXCOORD2);
-
 #ifdef ANDROID
 	{
-		/* GLES 3.0 requires vertex data in buffer objects */
-		static GLuint merge_vbo = 0;
-		if (!merge_vbo)
-			glGenBuffers(1, &merge_vbo);
 		int vb = nv * 3 * (int)sizeof(GLfloat);
 		int cb = nv * 4 * (int)sizeof(GLfloat);
 		int tb = nv * 2 * (int)sizeof(GLfloat);
 		int t2b = nv * 2 * (int)sizeof(GLfloat);
-		int total = vb + cb + tb + t2b;
-		int off = 0;
 		if (log_tmap2_geometry)
-			ogl_log_metl154_upload(bmbot, bmovl, prog, merge_vbo, nv, orient,
+			ogl_log_metl154_upload(bmbot, bmovl, prog, gles3_shim_get_stream_vbo(), nv, orient,
 				vb, cb, tb, t2b);
-		glBindBuffer(GL_ARRAY_BUFFER, merge_vbo);
-		glBufferData(GL_ARRAY_BUFFER, total, NULL, GL_STREAM_DRAW);
-		glBufferSubData(GL_ARRAY_BUFFER, off, vb, vertex_array);
-		glVertexAttribPointer(OGL_APOS, 3, GL_FLOAT, GL_FALSE, 0, (const void *)(intptr_t)off);
-		off += vb;
-		glBufferSubData(GL_ARRAY_BUFFER, off, cb, color_array);
-		glVertexAttribPointer(OGL_ACOLOR, 4, GL_FLOAT, GL_FALSE, 0, (const void *)(intptr_t)off);
-		off += cb;
-		glBufferSubData(GL_ARRAY_BUFFER, off, tb, texcoordbot_array);
-		glVertexAttribPointer(OGL_ATEXCOORD, 2, GL_FLOAT, GL_FALSE, 0, (const void *)(intptr_t)off);
-		off += tb;
-		glBufferSubData(GL_ARRAY_BUFFER, off, t2b, texcoordovl_array);
-		glVertexAttribPointer(OGL_ATEXCOORD2, 2, GL_FLOAT, GL_FALSE, 0, (const void *)(intptr_t)off);
+		glVertexPointer(3, GL_FLOAT, 0, vertex_array);
+		glColorPointer(4, GL_FLOAT, 0, color_array);
+		glTexCoordPointer(2, GL_FLOAT, 0, texcoordbot_array);
+		gles3_shim_external_texcoord2_pointer(2, GL_FLOAT, 0, texcoordovl_array);
 	}
 #else
+	glEnableVertexAttribArray(OGL_APOS);
+	glEnableVertexAttribArray(OGL_ACOLOR);
+	glEnableVertexAttribArray(OGL_ATEXCOORD);
+	glEnableVertexAttribArray(OGL_ATEXCOORD2);
 	glVertexAttribPointer(OGL_APOS, 3, GL_FLOAT, GL_FALSE, 0, vertex_array);
 	glVertexAttribPointer(OGL_ACOLOR, 4, GL_FLOAT, GL_FALSE, 0, color_array);
 	glVertexAttribPointer(OGL_ATEXCOORD, 2, GL_FLOAT, GL_FALSE, 0, texcoordbot_array);
@@ -3868,6 +3917,7 @@ static bool ogl_draw_tmap_2_internal(int nv, g3s_point **pointlist, g3s_uvl *uvl
 		glDrawArrays(GL_TRIANGLE_FAN, 0, nv);
 
 #if defined(ANDROID)
+		gles3_shim_external_texcoord2_pointer(0, GL_FLOAT, 0, NULL);
 	if (is_metl154_plain) {
 		if (metl154_force_depth_off) {
 			glDepthMask(metl154_depth_writemask);

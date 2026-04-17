@@ -210,6 +210,11 @@ static GLenum ta_type;
 static GLsizei ta_stride;
 static const void *ta_ptr;
 
+static GLint ta2_size;
+static GLenum ta2_type;
+static GLsizei ta2_stride;
+static const void *ta2_ptr;
+
 static int state_dirty = 1;
 static GLuint external_prog;
 static GLuint shim_vbo;
@@ -247,6 +252,10 @@ void gles3_shim_init(void)
 	vertex_array_enabled = 0;
 	color_array_enabled = 0;
 	texcoord_array_enabled = 0;
+	ta2_size = 0;
+	ta2_type = GL_FLOAT;
+	ta2_stride = 0;
+	ta2_ptr = NULL;
 
 	GLuint vs = compile_shader(GL_VERTEX_SHADER, vs_src);
 	GLuint fs = compile_shader(GL_FRAGMENT_SHADER, fs_src);
@@ -504,6 +513,14 @@ void gles3_shim_texcoord_pointer(GLint size, GLenum type, GLsizei stride, const 
 	ta_ptr = ptr;
 }
 
+void gles3_shim_external_texcoord2_pointer(GLint size, GLenum type, GLsizei stride, const void *ptr)
+{
+	ta2_size = size;
+	ta2_type = type;
+	ta2_stride = stride;
+	ta2_ptr = ptr;
+}
+
 /* ------------------------------------------------------------------ */
 /* Fixed-function state                                                */
 /* ------------------------------------------------------------------ */
@@ -600,6 +617,10 @@ void gles3_shim_use_external(GLuint prog)
 		if (mvp_dirty) compute_mvp();
 	} else {
 		external_prog = 0;
+		ta2_ptr = NULL;
+		ta2_size = 0;
+		ta2_stride = 0;
+		ta2_type = GL_FLOAT;
 		state_dirty = 1;
 	}
 }
@@ -611,13 +632,19 @@ const float *gles3_shim_get_mvp(void)
 	return mvp;
 }
 
+GLuint gles3_shim_get_stream_vbo(void)
+{
+	return shim_vbo;
+}
+
 /* ------------------------------------------------------------------ */
 /* Draw wrapper                                                        */
 /* ------------------------------------------------------------------ */
 
 void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 {
-	gles3_shim_flush_state();
+	if (!external_prog)
+		gles3_shim_flush_state();
 
 	if (!external_prog) {
 		/* GLES 3.0 requires vertex data in buffer objects -- no client-side
@@ -665,10 +692,67 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count)
 		} else {
 			glDisableVertexAttribArray(ATTR_TEXCOORD);
 		}
+	} else {
+		GLsizei nverts = first + count;
+		int va_row = va_stride ? va_stride : va_size * gl_type_size(va_type);
+		int ca_row = ca_stride ? ca_stride : ca_size * gl_type_size(ca_type);
+		int ta_row = ta_stride ? ta_stride : ta_size * gl_type_size(ta_type);
+		int ta2_row = ta2_stride ? ta2_stride : ta2_size * gl_type_size(ta2_type);
+		int va_bytes = va_ptr ? nverts * va_row : 0;
+		int ca_bytes = ca_ptr ? nverts * ca_row : 0;
+		int ta_bytes = ta_ptr ? nverts * ta_row : 0;
+		int ta2_bytes = ta2_ptr ? nverts * ta2_row : 0;
+		int total = va_bytes + ca_bytes + ta_bytes + ta2_bytes;
+		int off = 0;
+
+		glBindBuffer(GL_ARRAY_BUFFER, shim_vbo);
+		if (total > 0)
+			glBufferData(GL_ARRAY_BUFFER, total, NULL, GL_STREAM_DRAW);
+
+		if (va_bytes) {
+			glBufferSubData(GL_ARRAY_BUFFER, off, va_bytes, va_ptr);
+			glVertexAttribPointer(ATTR_POS, va_size, va_type, GL_FALSE,
+			                      va_stride, (const void *) (intptr_t) off);
+			glEnableVertexAttribArray(ATTR_POS);
+			off += va_bytes;
+		} else {
+			glDisableVertexAttribArray(ATTR_POS);
+		}
+
+		if (ca_bytes) {
+			glBufferSubData(GL_ARRAY_BUFFER, off, ca_bytes, ca_ptr);
+			glVertexAttribPointer(ATTR_COLOR, ca_size, ca_type, GL_FALSE,
+			                      ca_stride, (const void *) (intptr_t) off);
+			glEnableVertexAttribArray(ATTR_COLOR);
+			off += ca_bytes;
+		} else {
+			glDisableVertexAttribArray(ATTR_COLOR);
+		}
+
+		if (ta_bytes) {
+			glBufferSubData(GL_ARRAY_BUFFER, off, ta_bytes, ta_ptr);
+			glVertexAttribPointer(ATTR_TEXCOORD, ta_size, ta_type, GL_FALSE,
+			                      ta_stride, (const void *) (intptr_t) off);
+			glEnableVertexAttribArray(ATTR_TEXCOORD);
+			off += ta_bytes;
+		} else {
+			glDisableVertexAttribArray(ATTR_TEXCOORD);
+		}
+
+		if (ta2_bytes) {
+			glBufferSubData(GL_ARRAY_BUFFER, off, ta2_bytes, ta2_ptr);
+			glVertexAttribPointer(3, ta2_size, ta2_type, GL_FALSE,
+			                      ta2_stride, (const void *) (intptr_t) off);
+			glEnableVertexAttribArray(3);
+			off += ta2_bytes;
+		} else {
+			glDisableVertexAttribArray(3);
+		}
 	}
 
 	glDrawArrays(mode, first, count);
 
-	if (!external_prog)
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	if (external_prog)
+		glDisableVertexAttribArray(3);
 }

@@ -439,6 +439,8 @@ static const char *metl154_experiment_name(int mode)
 			return "overlay_only";
 		case METL154_EXPERIMENT_CLIP_ALL:
 			return "clip_all";
+		case METL154_EXPERIMENT_OLD_MERGE:
+			return "old_merge";
 		default:
 			return "default";
 	}
@@ -473,8 +475,8 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
 
 		if (clamped < METL154_EXPERIMENT_DEFAULT)
 			clamped = METL154_EXPERIMENT_DEFAULT;
-		if (clamped > METL154_EXPERIMENT_CLIP_ALL)
-			clamped = METL154_EXPERIMENT_CLIP_ALL;
+		if (clamped > METL154_EXPERIMENT_OLD_MERGE)
+			clamped = METL154_EXPERIMENT_OLD_MERGE;
 		LOGI("debug flag: metl154_experiment %d(%s) -> %d(%s)",
 		     old, metl154_experiment_name(old),
 		     clamped, metl154_experiment_name(clamped));
@@ -891,7 +893,7 @@ Java_com_dxxredux_app_MainActivity_nativeGetTeammateStatus(JNIEnv *env, jobject 
  *   [18] = aniso_level       (current anisotropic filtering level, 0=off)
  *   [19] = aniso_max         (max aniso level supported by GPU)
  *   [30] = metl154_mode      (OFF/Alpha/RGB debug view)
- *   [31] = metl154_experiment (default/no-mip/rgba/stock/alpha/cover-skip/cover-skip2/overlay-only/clip-all experiment mode)
+ *   [31] = metl154_experiment (default/no-mip/rgba/stock/alpha/cover-skip/cover-skip2/overlay-only/clip-all/old-merge experiment mode)
  *
  * android port: video diagnostics overlay
  */

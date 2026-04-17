@@ -63,6 +63,11 @@ void gles3_shim_use_external(GLuint prog);
 /* Expose the computed MVP for external programs (e.g. OGL_MERGE) */
 const float *gles3_shim_get_mvp(void);
 
+/* External program helpers for Android OGL_MERGE draws that want to reuse the
+ * shim's streaming VBO / VAO path instead of maintaining a second upload path. */
+void gles3_shim_external_texcoord2_pointer(GLint size, GLenum type, GLsizei stride, const void *ptr);
+GLuint gles3_shim_get_stream_vbo(void);
+
 /* ---------- redirect macros ---------- */
 
 /* Matrix stack */

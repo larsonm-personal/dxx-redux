@@ -41,6 +41,7 @@ extern volatile int g_debug_tex_overlay_active;
 #define METL154_EXPERIMENT_COVER_SKIP2  7
 #define METL154_EXPERIMENT_OVERLAY_ONLY 8
 #define METL154_EXPERIMENT_CLIP_ALL     9
+#define METL154_EXPERIMENT_OLD_MERGE    10
 
 struct android_draw_face_context {
 	int valid;

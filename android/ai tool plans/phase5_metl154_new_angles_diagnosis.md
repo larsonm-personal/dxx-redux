@@ -80,6 +80,153 @@ Another constraint in your analysis - the rock texture appears to be correctly d
   instead of pruning them early. That means doing the geometry-path work first,
   but also doing the texmerge/cache and upload provenance control branches
 
+## Tranche Update (2026-04-16)
+
+- Implemented in D1 and D2: new `METL154_EXPERIMENT_CLIP_ALL` branch for
+  generic `tmap2` clip-path testing in `g3_draw_tmap_2()`, with Android UI and
+  JNI wiring (`m154 exp: ClipAll`)
+- Implemented in D1 and D2: merged-wall clip helper generalized to
+  route-aware `tmap2` diagnostics instead of metl154-only logging
+- Implemented in D1 and D2: new pre-GPU submission diagnostics
+  `[metl154submit]` including route, pre/post clip code summary, repeated
+  projected vertices, collapsed `0,0` counts, and per-vertex `sx/sy/codes/flags`
+- Implemented in D1 and D2: deterministic fan-order summary in submit logs
+  (`fan_tris` and `fan_head`) so clipped `nv > 4` captures show exact fan
+  triangle submission order before any CPU triangulation rewrite
+- Implemented in D1 and D2: new Android merge VBO upload diagnostics
+  `[metl154upload]` with monotonic `upload_id`, buffer sizes/offsets, face
+  identity, texture identity, and GL handles
+- Implemented in D1 and D2: `g_metl154_draw_seq` now advances from
+  `render_set_android_draw_face_context()` for metl154 faces and clip-all
+  experiment faces so route and submit logs have stable `frame/pass/seq`
+  identity
+- Implemented in D1 and D2: new `METL154_EXPERIMENT_OLD_MERGE` control branch
+  forces the old cached texmerge render path from Android experiment controls
+  instead of relying on startup args only
+- Implemented in D1 and D2: explicit old-path provenance line
+  `[metl154exp] ... merge_impl=old_texmerge ...` on metl154 faces while
+  `METL154_EXPERIMENT_OLD_MERGE` is active
+- Implemented in Android shared controls: JNI clamp/name wiring and Video Info
+  overlay cycling now include `m154 exp: OldMerge`
+- Implemented in D1 and D2: texmerge cache slot-owner provenance in
+  `texmerge.c` with Android-only metadata for first-owner, last-owner,
+  creation frame, and last-use frame
+- Implemented in D1 and D2: explicit texmerge cache lifecycle logs
+  `[metl154texmerge] event=create|reuse ...` including slot index, face
+  identity, texture identity, orient, owner lineage, and frame markers
+- Validation: `android\run-code-quality.ps1 -Fix` passed
+- Validation: `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest`
+  passed
+- Validation detail: Android unit test suites currently report zero failures
+  and zero errors
+- Validation note: Gradle requires JDK 17+ in-shell. One attempted run failed
+  under JVM 8 until `JAVA_HOME` and `PATH` were pointed to
+  `c:\local\jdk-21`; subsequent runs passed
+- Integration smoke test status: blocked in this session because `adb devices`
+  returned no connected or authorized emulator/device
+
+## Current Best-Fit Root Cause (2026-04-16, post-log reanalysis)
+
+The earlier April 14 polygon-offset hypothesis was incorrect. This defect
+predates the debug instrumentation and the logs point back to the older
+Android-only shader texmerge path.
+
+### What old_merge actually changes
+
+`METL154_EXPERIMENT_OLD_MERGE` moves the bad face from the Android
+shader-based `g3_draw_tmap_2()` path back to the legacy CPU
+`texmerge_get_cached_bitmap()` path followed by single-texture
+`g3_draw_tmap()`. That is the key pre-debug branch difference.
+
+### Why this now fits better than the April 14 theory
+
+- The tracked leaking face is `83/3/1`, which is already a triangle with
+  `clip=0`, so the bug is not explained by later quad fan-order diagnostics
+  or near-plane clip rewriting
+- The failing draw in the captured log is `texfilt=0`, `mips=0`, and
+  `aniso=0`, so the current capture does not point to AF or trilinear mip
+  behavior as the primary cause
+- The bad face draws as `shader=plain` on the custom texmerge program while
+  `portal83` draws as `shader=single` on the normal single-texture GLES3 shim
+  path
+- old_merge fixes the defect by moving only the rock-plus-metl face back to
+  the legacy single-texture path. That strongly implicates the older shader
+  texmerge path, not the later debug-only code
+
+### Strongest pre-debug regression chain
+
+- `1abf956` introduced the Android GLES3 shim and the separate external
+  shader path used by `g3_draw_tmap_2()` on Android
+- `2a83533` then forced `GameArg.DbgAltTexMerge = 1` on Android in
+  `d1/d2 misc/physfsx.c`, making the shader texmerge path the reproduced
+  default instead of the legacy CPU texmerge path
+- `00c37b5` further reworked this Android texmerge path for hires and mask
+  handling, but the important regression is that Android stopped using the
+  legacy texmerge path by default
+
+### Current best-fit mechanism
+
+The best fit is that Android shader texmerge is not texel-identical to the
+legacy CPU texmerge on this metl154 shared-edge case.
+
+- `texmerge_get_cached_bitmap()` resolves the overlay in software texel space
+  first, using exact palette-index transparency rules in `merge_textures_new()`
+- The shader path instead samples base and overlay textures separately in
+  hardware and resolves transparency after those lookups
+- On the tracked pair, the shared-edge metl154 UVs are close but not identical
+  modulo repeat: the portal edge is about `u=1.183` and the leaking rock face
+  edge is about `u=0.171`, which is roughly a 0.012 wrapped offset
+- On a 64x64 stock texture, that is about 0.7 texel, enough for nearest-sample
+  hardware lookup to choose a different grate texel than the legacy CPU
+  texmerge resolves on the rock face edge
+- That produces the visible rock strip: the shader texmerge path resolves one
+  or more edge texels to bottom rock where the legacy texmerge path resolves a
+  metl bar or otherwise does not expose the rock in the same way
+
+### Practical fix direction
+
+- Treat the root cause as the Android-only forced shader texmerge default, not
+  the April 14 debug code
+- Short-term safe fix: stop forcing `DbgAltTexMerge = 1` on Android, or add an
+  Android-only fallback to the old texmerge path for plain transparent stock
+  `tmap2` walls such as metl154 until the shader path is made texel-identical
+- Longer-term fix: audit the shader texmerge path for exact texel-center and
+  wrap behavior versus `merge_textures_new()`, especially on repeated UVs near
+  0/1 boundaries on side_type=3 faces
+
+## Tranche Update (2026-04-17, permanent-fix implementation)
+
+- Implemented in Android shared GLES3 shim: external-program draws can now
+  reuse the shim streaming VBO path instead of maintaining a separate merge-only
+  VBO upload path
+- Implemented in D1 and D2: Android `g3_draw_tmap_2()` merged-wall draws now
+  feed position, color, base UV, and overlay UV through the shared shim stream
+  upload path, with `[metl154upload]` logging `upload_impl=shim_stream`
+- Implemented in D1 and D2: overlap snapshot logging now includes the sampled
+  rock base UV, nearest rock base palette index, nearest overlay palette index,
+  computed legacy CPU texmerge index, and nearest portal palette index so a
+  fresh Android capture can directly compare shader sampling against legacy
+  texmerge semantics at the exact shared overlap point
+- Rationale for this tranche: old_merge changes both texmerge semantics and the
+  Android draw/upload path. Unifying the upload path removes one Android-only
+  divergence before any broader texmerge fallback is considered
+- Validation: `android\run-code-quality.ps1 -Fix` passed
+- Validation: `android\gradlew.bat assembleDebug` passed with `JAVA_HOME`
+  set to `c:\local\jdk-21`
+- Validation: `android\gradlew.bat testDebugUnitTest` passed with 22 tests
+  across 5 suites and zero failures
+- Desktop validation status: blocked by machine environment, not by the code in
+  this tranche. Fresh Windows CMake configure attempts for both D1 and D2 fail
+  before build due to missing desktop dependency setup:
+  - `vcpkg` is not installed or configured (`VCPKG_ROOT` and
+    `VCPKG_INSTALLATION_ROOT` unset, no standard install path present)
+  - Visual Studio generator configure with `SDLMIXER=OFF` still fails on
+    missing `PhysFS`
+- Remaining proof step for root-cause closure: run a fresh Android capture on
+  the bad scene and inspect whether the visible leak is gone and whether the new
+  `[metl154snapoverlap]` fields show shader-picked texels diverging from or now
+  matching `legacy_merge_idx`
+
 ## Literal Next Steps
 
 ### Execution Rules For This Tranche

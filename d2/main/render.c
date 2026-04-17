@@ -605,7 +605,12 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 	}
 
 #ifdef OGL
-	if (GameArg.DbgAltTexMerge){
+	int use_alt_texmerge = GameArg.DbgAltTexMerge;
+#ifdef ANDROID
+	if (tmap2 != 0 && (int)g_metl154_experiment_mode == METL154_EXPERIMENT_OLD_MERGE)
+		use_alt_texmerge = 0;
+#endif
+	if (use_alt_texmerge){
 		PIGGY_PAGE_IN(Textures[tmap1]);
 		bm = &GameBitmaps[Textures[tmap1].index];
 		if (tmap2){
@@ -619,6 +624,24 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 		// New code for overlapping textures...
 		if (tmap2 != 0) {
 			bm = texmerge_get_cached_bitmap( tmap1, tmap2 );
+	#ifdef ANDROID
+			if ((int)g_metl154_experiment_mode == METL154_EXPERIMENT_OLD_MERGE
+				&& render_tmap2_is_metl154(tmap2))
+				debug_log(DLOG_TEXTURE,
+					"[metl154exp] frame=%d pass=%d seq=%d mode=%d(%s) merge_impl=old_texmerge seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x",
+					g_metl154_frame_id,
+					g_metl154_render_pass,
+					g_metl154_draw_seq,
+					(int)g_metl154_experiment_mode,
+					"old_merge",
+					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
+					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
+					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1,
+					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
+					tmap1,
+					tmap2);
+	#endif
 		} else {
 			bm = &GameBitmaps[Textures[tmap1].index];
 			PIGGY_PAGE_IN(Textures[tmap1]);
