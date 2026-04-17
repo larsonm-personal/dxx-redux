@@ -148,7 +148,7 @@ void PHYSFSX_init(int argc, char *argv[])
 	GameArg.SndDigiSampleRate = 22050; /* SAMPLE_RATE_22K, avoid digi.h include */
 	GameArg.SysUsePlayersDir = 1; /* pilots in Players/ subdir, isolates D1/D2 */
 	GameArg.GfxMovieHires = 1; /* match desktop default unless -lowresmovies is set */
-	GameArg.DbgAltTexMerge = 1; /* prefer GPU two-pass tmap2 overlay; render.c may auto-fallback per face */
+	GameArg.DbgAltTexMerge = 1; /* prefer GPU tmap2 overlay path; Android OGL may internally premerge transparent overlays */
 	return;
 #endif
 

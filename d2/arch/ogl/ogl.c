@@ -2577,6 +2577,81 @@ float g_font_rgb_override[3] = {-1.f, -1.f, -1.f}; /* negative = use palette */
 /* Render context for selective texture filtering.
  * 0 = MENU (menus/briefings, default), 1 = 3D world, 2 = HUD */
 int g_ogl_render_context = 0;
+
+static int ogl_get_texture_label_anchor(const g3s_point **pointlist, int nv,
+	int *sx, int *sy)
+{
+	fix cx = 0, cy = 0, cz = 0;
+	int i;
+	int sw = grd_curcanv->cv_bitmap.bm_w;
+	int sh = grd_curcanv->cv_bitmap.bm_h;
+	int checkmuldiv(fix *r, fix a, fix b, fix c);
+
+	if (!pointlist || nv < 3 || !sx || !sy)
+		return 0;
+
+	for (i = 0; i < nv; i++) {
+		cx += pointlist[i]->p3_vec.x / nv;
+		cy += pointlist[i]->p3_vec.y / nv;
+		cz += pointlist[i]->p3_vec.z / nv;
+	}
+
+	if (cz <= F1_0 / 4)
+		return 0;
+
+	{
+		fix sx_fix, sy_fix;
+
+		if (!checkmuldiv(&sx_fix, cx, Canv_w2, cz)
+			|| !checkmuldiv(&sy_fix, cy, Canv_h2, cz))
+			return 0;
+
+		*sx = f2i(Canv_w2 + sx_fix);
+		*sy = f2i(Canv_h2 - sy_fix);
+	}
+
+	if (*sx < 0 || *sx >= sw || *sy < 0 || *sy >= sh)
+		return 0;
+
+	return 1;
+}
+
+static void ogl_add_joined_texture_labels(const g3s_point **pointlist, int nv,
+	grs_bitmap *bmbot, grs_bitmap *bmovl)
+{
+	const char *botname = piggy_game_bitmap_name(bmbot);
+	const char *ovlname = piggy_game_bitmap_name(bmovl);
+	int sx, sy;
+
+	if (!g_debug_tex_overlay_active || nv < 3
+		|| (!botname && !ovlname))
+		return;
+
+	if (!ogl_get_texture_label_anchor(pointlist, nv, &sx, &sy))
+		return;
+
+	if (botname && g_debug_tex_label_count < DEBUG_TEX_MAX_LABELS) {
+		struct debug_tex_label *lbl = &g_debug_tex_labels[g_debug_tex_label_count];
+		lbl->sx = sx;
+		lbl->sy = sy;
+		lbl->is_hires = (bmbot->gltexture && bmbot->gltexture->is_png) ? 1 : 0;
+		DEBUG_TEX_LABEL_SET_FACE(lbl, &g_android_draw_face_ctx);
+		strncpy(lbl->name, botname, sizeof(lbl->name) - 1);
+		lbl->name[sizeof(lbl->name) - 1] = '\0';
+		g_debug_tex_label_count++;
+	}
+
+	if (ovlname && g_debug_tex_label_count < DEBUG_TEX_MAX_LABELS) {
+		struct debug_tex_label *lbl = &g_debug_tex_labels[g_debug_tex_label_count];
+		lbl->sx = sx;
+		lbl->sy = sy + 10;
+		lbl->is_hires = (bmovl->gltexture && bmovl->gltexture->is_png) ? 1 : 0;
+		DEBUG_TEX_LABEL_SET_FACE(lbl, &g_android_draw_face_ctx);
+		strncpy(lbl->name, ovlname, sizeof(lbl->name) - 1);
+		lbl->name[sizeof(lbl->name) - 1] = '\0';
+		g_debug_tex_label_count++;
+	}
+}
 #endif
 
 #ifdef ANDROID
@@ -4027,6 +4102,8 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 					lbl->sx = sx;
 					lbl->sy = sy;
 					lbl->is_hires = (bm->gltexture && bm->gltexture->is_png) ? 1 : 0;
+					lbl->anchor_group = 0;
+					lbl->anchor_samples = 1;
 					DEBUG_TEX_LABEL_SET_FACE(lbl, &g_android_draw_face_ctx);
 					const char *bname = piggy_game_bitmap_name(bm);
 					if (bname) {
@@ -4046,7 +4123,7 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 /*
  * Everything texturemapped with secondary texture (walls with secondary texture)
  */
-static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_lrgb *light_rgb, grs_bitmap *bmbot, grs_bitmap *bmovl, int orient)
+static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_lrgb *light_rgb, grs_bitmap *bmbot, grs_bitmap *bmovl, int orient, int label_nv, const g3s_point **label_pointlist)
 {
 	int c, index2, index3, index4;
 	GLfloat vertex_array[MAX_VERTS * 3], color_array[MAX_VERTS * 4], texcoordovl_array[MAX_VERTS * 2];
@@ -4064,6 +4141,11 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	GLfloat metl154_screen_area = 0.0f;
 #endif
 #endif
+
+	if (!label_pointlist || label_nv < 3) {
+		label_pointlist = pointlist;
+		label_nv = nv;
+	}
 
 	if (nv > MAX_VERTS)
 		Error("Too many vertices: %d", nv);
@@ -4122,6 +4204,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 		grs_bitmap *merged = ogl_android_get_cached_plain_texmerge_bitmap(bmbot,
 			bmovl, orient);
 		if (merged) {
+			ogl_add_joined_texture_labels(label_pointlist, label_nv, bmbot, bmovl);
 			if (ogl_is_metl154_bitmap(bmovl)) {
 				const char *botname = piggy_game_bitmap_name(bmbot);
 				const char *ovlname = piggy_game_bitmap_name(bmovl);
@@ -4137,7 +4220,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
 					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap1 : -1,
 					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap2 : 0,
-					nv,
+					label_nv,
 					orient,
 					botname ? botname : "<none>",
 					ovlname ? ovlname : "<none>");
@@ -4207,38 +4290,23 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	/* Debug texture label overlay: accumulate label for overlay/tmap2 bitmap.
 	 * The bottom texture (tmap1) label is already handled by g3_draw_tmap above. */
 	if (g_debug_tex_overlay_active
-	    && g_debug_tex_label_count < DEBUG_TEX_MAX_LABELS && nv >= 3)
+	    && g_debug_tex_label_count < DEBUG_TEX_MAX_LABELS)
 	{
-		fix cx = 0, cy = 0, cz = 0;
-		int i;
-		for (i = 0; i < nv; i++) {
-			cx += pointlist[i]->p3_vec.x / nv;
-			cy += pointlist[i]->p3_vec.y / nv;
-			cz += pointlist[i]->p3_vec.z / nv;
-		}
-		if (cz > F1_0 / 4) {
-			fix sx_fix, sy_fix;
-			int checkmuldiv(fix *r, fix a, fix b, fix c);
-			if (checkmuldiv(&sx_fix, cx, Canv_w2, cz)
-			    && checkmuldiv(&sy_fix, cy, Canv_h2, cz))
-			{
-				int sx = f2i(Canv_w2 + sx_fix);
-				int sy = f2i(Canv_h2 - sy_fix) + 10; /* offset below tmap1 label */
-				int sw = grd_curcanv->cv_bitmap.bm_w;
-				int sh = grd_curcanv->cv_bitmap.bm_h;
-				if (sx >= 0 && sx < sw && sy >= 0 && sy < sh) {
-					struct debug_tex_label *lbl = &g_debug_tex_labels[g_debug_tex_label_count];
-					lbl->sx = sx;
-					lbl->sy = sy;
-					lbl->is_hires = (bmovl->gltexture && bmovl->gltexture->is_png) ? 1 : 0;
-					DEBUG_TEX_LABEL_SET_FACE(lbl, &g_android_draw_face_ctx);
-					const char *bname = piggy_game_bitmap_name(bmovl);
-					if (bname) {
-						strncpy(lbl->name, bname, sizeof(lbl->name) - 1);
-						lbl->name[sizeof(lbl->name) - 1] = '\0';
-						g_debug_tex_label_count++;
-					}
-				}
+		int sx, sy;
+		if (ogl_get_texture_label_anchor(label_pointlist, label_nv, &sx, &sy)) {
+			struct debug_tex_label *lbl = &g_debug_tex_labels[g_debug_tex_label_count];
+			const char *bname = piggy_game_bitmap_name(bmovl);
+
+			if (bname) {
+				lbl->sx = sx;
+				lbl->sy = sy + 10; /* offset below tmap1 label */
+				lbl->is_hires = (bmovl->gltexture && bmovl->gltexture->is_png) ? 1 : 0;
+				lbl->anchor_group = 0;
+				lbl->anchor_samples = 1;
+				DEBUG_TEX_LABEL_SET_FACE(lbl, &g_android_draw_face_ctx);
+				strncpy(lbl->name, bname, sizeof(lbl->name) - 1);
+				lbl->name[sizeof(lbl->name) - 1] = '\0';
+				g_debug_tex_label_count++;
 			}
 		}
 	}
@@ -4372,38 +4440,23 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	/* Debug texture label overlay for overlay/tmap2 bitmap */
 	if (g_debug_tex_overlay_active
 	    && !skip_metl154_cover_draw
-	    && g_debug_tex_label_count < DEBUG_TEX_MAX_LABELS && nv >= 3)
+	    && g_debug_tex_label_count < DEBUG_TEX_MAX_LABELS)
 	{
-		fix cx = 0, cy = 0, cz = 0;
-		int i;
-		for (i = 0; i < nv; i++) {
-			cx += pointlist[i]->p3_vec.x / nv;
-			cy += pointlist[i]->p3_vec.y / nv;
-			cz += pointlist[i]->p3_vec.z / nv;
-		}
-		if (cz > F1_0 / 4) {
-			fix sx_fix, sy_fix;
-			int checkmuldiv(fix *r, fix a, fix b, fix c);
-			if (checkmuldiv(&sx_fix, cx, Canv_w2, cz)
-			    && checkmuldiv(&sy_fix, cy, Canv_h2, cz))
-			{
-				int sx = f2i(Canv_w2 + sx_fix);
-				int sy = f2i(Canv_h2 - sy_fix) + 10;
-				int sw = grd_curcanv->cv_bitmap.bm_w;
-				int sh = grd_curcanv->cv_bitmap.bm_h;
-				if (sx >= 0 && sx < sw && sy >= 0 && sy < sh) {
-					struct debug_tex_label *lbl = &g_debug_tex_labels[g_debug_tex_label_count];
-					lbl->sx = sx;
-					lbl->sy = sy;
-					lbl->is_hires = (bmovl->gltexture && bmovl->gltexture->is_png) ? 1 : 0;
-					DEBUG_TEX_LABEL_SET_FACE(lbl, &g_android_draw_face_ctx);
-					const char *bname = piggy_game_bitmap_name(bmovl);
-					if (bname) {
-						strncpy(lbl->name, bname, sizeof(lbl->name) - 1);
-						lbl->name[sizeof(lbl->name) - 1] = '\0';
-						g_debug_tex_label_count++;
-					}
-				}
+		int sx, sy;
+		if (ogl_get_texture_label_anchor(label_pointlist, label_nv, &sx, &sy)) {
+			struct debug_tex_label *lbl = &g_debug_tex_labels[g_debug_tex_label_count];
+			const char *bname = piggy_game_bitmap_name(bmovl);
+
+			if (bname) {
+				lbl->sx = sx;
+				lbl->sy = sy + 10;
+				lbl->is_hires = (bmovl->gltexture && bmovl->gltexture->is_png) ? 1 : 0;
+				lbl->anchor_group = 0;
+				lbl->anchor_samples = 1;
+				DEBUG_TEX_LABEL_SET_FACE(lbl, &g_android_draw_face_ctx);
+				strncpy(lbl->name, bname, sizeof(lbl->name) - 1);
+				lbl->name[sizeof(lbl->name) - 1] = '\0';
+				g_debug_tex_label_count++;
 			}
 		}
 	}
@@ -4545,7 +4598,7 @@ static bool ogl_clip_and_draw_tmap2_merge(int nv, const g3s_point **pointlist,
 	if (nv < 3 || nv > MAX_POINTS_IN_POLY) {
 		ogl_set_metl154_tmap2_submit_context(route_name, nv, NULL, 0, 0, 0);
 		result = ogl_draw_tmap_2_internal(nv, pointlist, uvl_list, light_rgb,
-			bmbot, bmovl, orient);
+			bmbot, bmovl, orient, nv, pointlist);
 		ogl_reset_metl154_tmap2_submit_context();
 		return result;
 	}
@@ -4583,7 +4636,7 @@ static bool ogl_clip_and_draw_tmap2_merge(int nv, const g3s_point **pointlist,
 	if (!cc.uor) {
 		ogl_set_metl154_tmap2_submit_context(route_name, nv, &cc, input_behind, 0, 0);
 		result = ogl_draw_tmap_2_internal(nv, pointlist, uvl_list, light_rgb,
-			bmbot, bmovl, orient);
+			bmbot, bmovl, orient, nv, pointlist);
 		ogl_reset_metl154_tmap2_submit_context();
 		return result;
 	}
@@ -4647,7 +4700,7 @@ static bool ogl_clip_and_draw_tmap2_merge(int nv, const g3s_point **pointlist,
 		ogl_set_metl154_tmap2_submit_context(route_name, nv, &cc, input_behind,
 			temp_points, 1);
 		result = ogl_draw_tmap_2_internal(clipped_nv, draw_points, clipped_uvl,
-			clipped_light, bmbot, bmovl, orient);
+			clipped_light, bmbot, bmovl, orient, nv, pointlist);
 		ogl_reset_metl154_tmap2_submit_context();
 	}
 
@@ -4686,7 +4739,7 @@ bool g3_draw_tmap_2(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_
 			input_behind, 0, 0);
 		{
 			bool result = ogl_draw_tmap_2_internal(nv, pointlist, uvl_list,
-				light_rgb, bmbot, bmovl, orient);
+				light_rgb, bmbot, bmovl, orient, nv, pointlist);
 			ogl_reset_metl154_tmap2_submit_context();
 			return result;
 		}
@@ -4694,7 +4747,7 @@ bool g3_draw_tmap_2(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_
 #endif
 
 	return ogl_draw_tmap_2_internal(nv, pointlist, uvl_list, light_rgb,
-		bmbot, bmovl, orient);
+		bmbot, bmovl, orient, nv, pointlist);
 }
 
 /*

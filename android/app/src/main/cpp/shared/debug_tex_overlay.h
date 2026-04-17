@@ -20,7 +20,9 @@ struct debug_tex_label {
 	int seg;
 	int side;
 	int face;
-	char name[24]; /* truncated texture name */
+	int anchor_group;   /* 0 = normal label, >0 = merged label line */
+	int anchor_samples; /* contributors accumulated into this anchor */
+	char name[24];      /* truncated texture name */
 };
 
 extern struct debug_tex_label g_debug_tex_labels[DEBUG_TEX_MAX_LABELS];
