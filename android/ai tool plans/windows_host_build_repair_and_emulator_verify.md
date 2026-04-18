@@ -8,8 +8,8 @@
 
 ## Plan
 
-- [ ] confirm the intended Windows build entrypoint and local toolchain assumptions
-- [ ] diagnose why the current local host build directories fail
-- [ ] repair the Windows host build path with the smallest repo or environment-facing change needed
-- [ ] run a successful Windows host build command and record the exact working invocation
-- [ ] end with an emulator verification run for the metl154 wall
+- [x] confirm the intended Windows build entrypoint and local toolchain assumptions
+- [x] diagnose why the current local host build directories fail
+- [x] repair the Windows host build path with the smallest repo or environment-facing change needed
+- [x] run a successful Windows host build command and record the exact working invocation
+- [x] end with an emulator verification run for the metl154 wall

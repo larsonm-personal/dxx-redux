@@ -2555,6 +2555,7 @@ bool g3_draw_tmap(int nv,g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb *light
 	int c, index2, index3, index4;
 	GLfloat vertex_array[MAX_VERTS * 3], color_array[MAX_VERTS * 4], texcoord_array[MAX_VERTS * 2];
 	GLfloat color_alpha = 1.0;
+	int skip_metl154_cover_draw = 0;
 #if defined(ANDROID) && defined(OGL_MERGE)
 	if (!metl154_single_clip_active
 		&& tmap_drawer_ptr == draw_tmap
@@ -2567,7 +2568,6 @@ bool g3_draw_tmap(int nv,g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb *light
 #if defined(ANDROID) && defined(OGL_MERGE)
 	int draw_order = ogl_merged_wall_next_draw_order();
 	const char *cover_shader = NULL;
-	int skip_metl154_cover_draw = 0;
 #endif
 
 	if (nv > MAX_VERTS)
@@ -2714,13 +2714,13 @@ static bool ogl_draw_tmap_2_internal(int nv, g3s_point **pointlist, g3s_uvl *uvl
 {
 	int c, index2, index3, index4;
 	GLfloat vertex_array[MAX_VERTS * 3], color_array[MAX_VERTS * 4], texcoordovl_array[MAX_VERTS * 2];
+	int skip_metl154_cover_draw = 0;
 #ifdef OGL_MERGE
 	GLfloat texcoordbot_array[MAX_VERTS * 2];
 	int super;
 #if defined(ANDROID)
 	int draw_order = ogl_merged_wall_next_draw_order();
 	int is_metl154_plain = 0;
-	int skip_metl154_cover_draw = 0;
 	int metl154_force_two_pass = 0, metl154_force_cull_off = 0, metl154_force_depth_off = 0, metl154_force_polygon_offset = 0;
 	GLint metl154_depth_enabled = 0, metl154_blend_enabled = 0, metl154_cull_enabled = 0;
 	GLint metl154_depth_func = 0, metl154_front_face = 0, metl154_cull_mode = 0, metl154_polygon_offset_enabled = 0, metl154_draw_fbo = 0;
@@ -2789,6 +2789,7 @@ static bool ogl_draw_tmap_2_internal(int nv, g3s_point **pointlist, g3s_uvl *uvl
 	}
 
 	glActiveTexture(GL_TEXTURE0);
+	#if defined(ANDROID)
 	if (!super && (bmovl->bm_flags & BM_FLAG_TRANSPARENT)) {
 		if (metl154_force_two_pass) {
 			const char *botname = piggy_game_bitmap_name(bmbot);
@@ -2842,6 +2843,7 @@ static bool ogl_draw_tmap_2_internal(int nv, g3s_point **pointlist, g3s_uvl *uvl
 			}
 		}
 	}
+	#endif
 #endif
 	
 	for (c=0; c<nv; c++) {
@@ -2919,10 +2921,10 @@ static bool ogl_draw_tmap_2_internal(int nv, g3s_point **pointlist, g3s_uvl *uvl
 #endif
 #else
 	GLuint prog = super ? ogl_prog_tex2m : ogl_prog_tex2;
+	GLfloat tex2_alpha_cutoff = 0.5f;
 	#ifdef ANDROID
 	int log_tmap2_geometry = !super && ogl_is_metl154_bitmap(bmovl);
 	int tex2_debug_mode = (!super && ogl_is_metl154_bitmap(bmovl)) ? g_metl154_debug_mode : METL154_DEBUG_NONE;
-	GLfloat tex2_alpha_cutoff = 0.5f;
 	#else
 	int tex2_debug_mode = 0;
 	#endif
@@ -3713,11 +3715,15 @@ void ogl_start_frame(void){
 		glEnable(GL_DEPTH_TEST);
 	/* glDepthFunc(GL_LEQUAL) moved to ogl_init_state -- never changes */
 
-	/* Clear depth every 3D pass. Clear color only on the first MSAA-backed
-	 * pass of the frame, otherwise cockpit missile / rear-view subrenders wipe
-	 * the already-rendered main scene in the shared MSAA FBO. */
+	/* Clear depth every 3D pass. On Android with MSAA, clear color only on the
+	 * first MSAA-backed pass of the frame so cockpit missile / rear-view
+	 * subrenders do not wipe the already-rendered main scene in the shared FBO. */
+#ifdef ANDROID
 	glClear(GL_DEPTH_BUFFER_BIT |
 	        (msaa_color_clear ? GL_COLOR_BUFFER_BIT : 0));
+#else
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+#endif
 
 	glEnable(GL_CULL_FACE);
 	glFrontFace(GL_CW);
@@ -4682,6 +4688,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 			if (pdata.depth == 8 && pdata.color)
 			{
 				int df = pdata.paletted ? 0 : pdata.channels;
+				#if defined(ANDROID) && defined(OGL_MERGE)
 				if (!df)
 					ogl_log_metl154_palette_source(bitmapname, pdata.data,
 						pdata.width, pdata.height, bm->bm_flags, 1u << 1, "png-pal");
@@ -4690,6 +4697,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 						pdata.width, pdata.height, df, bm->bm_flags,
 						df >= 4 ? 1u << 2 : 1u << 3,
 						df >= 4 ? "png-rgba" : "png-rgb");
+				#endif
 				if (bm->gltexture == NULL)
 					ogl_init_texture(bm->gltexture = ogl_get_free_texture(), pdata.width, pdata.height, ((pdata.alpha || bm->bm_flags & BM_FLAG_TRANSPARENT) ? OGL_FLAG_ALPHA : 0));
 				if (ogl_loadtexture(pdata.data, 0, 0, bm->gltexture, bm->bm_flags, df, load_texfilt)) {
@@ -4712,6 +4720,10 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 					ogl_loadpngmask(&pdata, bm, texfilt);
 #endif
 				}
+				#endif
+				#if defined(ANDROID) && defined(OGL_MERGE)
+					ogl_log_metl154_palette_source(bitmapname, buf, bm->bm_w, bm->bm_h,
+						bm->bm_flags, 1u << 0, "stock-pal");
 				#endif
 				free(pdata.data);
 				if (pdata.palette)
@@ -4862,17 +4874,23 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 		}
 
 	}
+	#if defined(ANDROID) && defined(OGL_MERGE)
 	ogl_log_metl154_palette_source(bitmapname, buf, bm->bm_w, bm->bm_h,
 		bm->bm_flags, 1u << 0, "stock-pal");
+	#endif
 	ogl_loadtexture(buf, 0, 0, bm->gltexture, bm->bm_flags, 0, load_texfilt);
+	#if defined(ANDROID) && defined(OGL_MERGE)
 	ogl_log_metl154_palette_source(bitmapname, buf, bm->bm_w, bm->bm_h,
 		bm->bm_flags, 1u << 4, "stock-native");
+	#endif
 
-#ifdef OGL_MERGE
+#if defined(ANDROID) && defined(OGL_MERGE)
 	debug_log(DLOG_TEXTURE,
 		"Stock mask check: %s bm_flags=0x%x real_flags=0x%x super=%d",
 		bitmapname ? bitmapname : "<null>", bm->bm_flags, real_flags,
 		!!(bm->bm_flags & BM_FLAG_SUPER_TRANSPARENT));
+#endif
+#ifdef OGL_MERGE
 	if (bm->bm_flags & BM_FLAG_SUPER_TRANSPARENT) {
 		unsigned char *mask;
 		int size = bm->bm_w * bm->bm_h;

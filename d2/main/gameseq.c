@@ -365,8 +365,10 @@ void init_player_stats_level(int secret_flag)
 	// android port: coop QoL -- reset and compute per-player kill stats
 	coop_reset_kill_stats();
 	Coop_total_robot_score = coop_compute_total_robot_score();
+	#ifdef ANDROID
 	// android port: coop QoL -- reset warp engagement timer
 	coop_warp_reset();
+	#endif
 
 	Players[Player_num].hostages_level = count_number_of_hostages();
 	Players[Player_num].hostages_total += Players[Player_num].hostages_level;

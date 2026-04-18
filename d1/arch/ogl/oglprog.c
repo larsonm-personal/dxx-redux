@@ -1,7 +1,9 @@
 #include "ogl_init.h"
 #include "oglprog.h"
 #include "dxxerror.h"
+#ifdef ANDROID
 #include "android_log.h"
+#endif
 
 GLuint ogl_prog_tex2, ogl_prog_tex2m;
 GLuint ogl_tex2_mat, ogl_tex2m_mat;
