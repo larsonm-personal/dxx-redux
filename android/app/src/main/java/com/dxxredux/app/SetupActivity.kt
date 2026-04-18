@@ -591,6 +591,13 @@ class SetupActivity : ComponentActivity() {
                             "write_engine_prefs: patched $n file(s) (cockpit_mode=$cockpitMode auto_leveling=$autoLeveling)",
                         )
                     }
+                    "write_bool_pref" -> {
+                        val key = intent.getStringExtra("key") ?: return
+                        val value = intent.getBooleanExtra("value", false)
+                        getSharedPreferences("dxx_prefs", MODE_PRIVATE).edit().putBoolean(key, value).apply()
+                        Log.i("DXX-Setup", "write_bool_pref: $key=$value")
+                        requestSetupRefresh()
+                    }
                     "create_set" -> {
                         val name = intent.getStringExtra("name") ?: return
                         val fsm = FileSetManager(filesDir)
@@ -1601,6 +1608,23 @@ class SetupActivity : ComponentActivity() {
             root.put("set_files", JSONArray(setFiles))
             root.put("active_set_path", setDir.absolutePath)
 
+            val prefs = getSharedPreferences("dxx_prefs", MODE_PRIVATE)
+            val graphicsLogEnabled = prefs.getBoolean(DebugLogCategory.prefKey(DebugLogCategory.GRAPHICS), false)
+            val textureLogEnabled = prefs.getBoolean(DebugLogCategory.prefKey(DebugLogCategory.TEXTURE), false)
+            val debugPrefs = JSONObject()
+            debugPrefs.put(
+                "show_video_info_debug_options",
+                prefs.getBoolean(PREF_SHOW_VIDEO_INFO_DEBUG_OPTIONS, false),
+            )
+            debugPrefs.put(
+                "force_legacy_merged_wall_texmerge",
+                prefs.getBoolean(PREF_FORCE_LEGACY_MERGED_WALL_TEXMERGE, false),
+            )
+            debugPrefs.put("graphics_log_enabled", graphicsLogEnabled)
+            debugPrefs.put("texture_log_enabled", textureLogEnabled)
+            debugPrefs.put("graphics_debug_logging", graphicsLogEnabled && textureLogEnabled)
+            root.put("debug_prefs", debugPrefs)
+
             // D2 section
             val d2 = JSONObject()
             d2.put("ready", d2Ready)
@@ -1988,23 +2012,44 @@ class SetupActivity : ComponentActivity() {
                 .endGame()
         }
         // Check if game exited with LAUNCHER_CONTINUE for automation
-        val executor = launcherExecutor
-        if (executor != null) {
-            val resultFile = File(filesDir, "automation_result.json")
-            if (resultFile.exists()) {
-                try {
-                    val json = org.json.JSONObject(resultFile.readText())
-                    if (json.optString("result") == "LAUNCHER_CONTINUE") {
-                        val nextStep = json.getInt("next_step")
-                        Log.i("DXX-Setup", "LAUNCHER_CONTINUE: resuming at step $nextStep")
-                        resultFile.delete()
-                        kotlinx.coroutines.MainScope().launch {
+        val resultFile = File(filesDir, "automation_result.json")
+        if (resultFile.exists()) {
+            try {
+                val json = org.json.JSONObject(resultFile.readText())
+                if (json.optString("result") == "LAUNCHER_CONTINUE") {
+                    val nextStep = json.getInt("next_step")
+                    val resultScriptPath =
+                        json.optString("script_path", "").takeIf { it.isNotEmpty() }?.let { path ->
+                            if (path.startsWith("/")) path else filesDir.absolutePath + "/" + path
+                        }
+                    val existingExecutor = launcherExecutor
+                    val executor =
+                        existingExecutor
+                            ?: LauncherScriptExecutor(this) { game, path, startStep ->
+                                launchGameForAutomation(game, path, startStep)
+                            }.also { launcherExecutor = it }
+
+                    Log.i(
+                        "DXX-Setup",
+                        if (existingExecutor != null) {
+                            "LAUNCHER_CONTINUE: resuming at step $nextStep"
+                        } else {
+                            "LAUNCHER_CONTINUE: recreating executor at step $nextStep"
+                        },
+                    )
+                    resultFile.delete()
+                    kotlinx.coroutines.MainScope().launch {
+                        if (existingExecutor != null) {
                             executor.resume(nextStep)
+                        } else if (resultScriptPath != null) {
+                            executor.execute(resultScriptPath, nextStep)
+                        } else {
+                            Log.e("DXX-Setup", "LAUNCHER_CONTINUE missing script_path for recovery")
                         }
                     }
-                } catch (e: Exception) {
-                    Log.e("DXX-Setup", "Error reading automation result", e)
                 }
+            } catch (e: Exception) {
+                Log.e("DXX-Setup", "Error reading automation result", e)
             }
         }
     }

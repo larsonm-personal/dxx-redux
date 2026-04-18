@@ -786,6 +786,7 @@ function Watch-AutomationResult {
     $passed = $false
     $backgroundHandled = $false
     $launcherChecked = $false
+    $launcherResumeHandled = $false
 
     while ($sw.Elapsed.TotalSeconds -lt $TimeoutSeconds -and -not $finished) {
         Start-Sleep -Milliseconds 1500
@@ -863,7 +864,20 @@ function Watch-AutomationResult {
                     # The launcher's onResume will pick this up, delete the file,
                     # and continue running steps. Just keep polling.
                     $nextStep = $resultObj.next_step
-                    Write-Status "LAUNCHER_CONTINUE at step $nextStep -- waiting for launcher to resume" "Yellow"
+                    if ($IsLauncherScript -and -not $launcherResumeHandled) {
+                        $launcherResumeHandled = $true
+                        Write-Status "LAUNCHER_CONTINUE at step $nextStep -- bringing launcher to foreground" "Yellow"
+                        Adb -AdbArgs @("shell", "monkey", "-p", $script:PACKAGE,
+                            "-c", "android.intent.category.LAUNCHER", "1") | Out-Null
+                        Start-Sleep -Seconds 1
+                        if (Wait-SetupActivityReady -TimeoutSeconds 15) {
+                            Write-Status "Launcher resumed -- continuing test monitoring" "Green"
+                        } else {
+                            Write-Status "Launcher did not become ready after LAUNCHER_CONTINUE" "Yellow"
+                        }
+                    } else {
+                        Write-Status "LAUNCHER_CONTINUE at step $nextStep -- waiting for launcher to resume" "Yellow"
+                    }
                 }
             } catch {
                 # Parse failed -- fall through to logcat

@@ -41,6 +41,7 @@ extern "C" {
 #include "game_introspect.h"
 #include "overlay_ringbuf.h"
 #include "android_log.h"
+#include "android_meta_actions.h"
 #include "debug_tex_overlay.h"
 #include "merged_wall_debug.h"
 #include "game.h"
@@ -351,9 +352,9 @@ static void write_result_file_continue(int next_step)
 	fprintf(f,
 	        "{\"result\":\"LAUNCHER_CONTINUE\",\"next_step\":%d,"
 	        "\"steps_completed\":%d,\"total_steps\":%d,"
-	        "\"elapsed_ms\":%u}\n",
+	        "\"elapsed_ms\":%u,\"script_path\":\"%s\"}\n",
 	        next_step, g_current_step + 1, (int) g_steps.size(),
-	        (unsigned) elapsed);
+	        (unsigned) elapsed, g_pending_script);
 	fclose(f);
 }
 
@@ -1612,9 +1613,14 @@ extern "C" void game_automate_tick(void)
 			}
 			g_active = 0;
 
-			/* Trigger graceful game exit so the launcher regains foreground */
+			/* Use the same Android force-exit path as the Exit to Launcher control so
+			 * the engine does not stall in a quit confirmation/menu unwind state. */
+#ifdef ANDROID
+			meta_action_dispatch(META_RETURN_TO_LAUNCHER, 1);
+#else
 			extern int Quitting;
 			Quitting = 1;
+#endif
 			break;
 		}
 

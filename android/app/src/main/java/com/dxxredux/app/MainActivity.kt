@@ -57,6 +57,12 @@ internal fun shouldShowTouchOverlay(
     return gameplayOverlay || automap
 }
 
+internal fun settingsTrayVisibleForOverlay(
+    adminTrayOpen: Boolean,
+    adminTrayPausedGame: Boolean,
+    adminTrayCloseGraceActive: Boolean,
+): Boolean = adminTrayOpen || adminTrayPausedGame || adminTrayCloseGraceActive
+
 internal fun shouldHideStandaloneAdminOverlays(
     inGame: Boolean,
     settingsTrayVisible: Boolean,
@@ -76,6 +82,8 @@ class MainActivity :
     Activity(),
     SurfaceHolder.Callback {
     companion object {
+        private const val ADMIN_TRAY_CLOSE_GRACE_MS = 400L
+
         // Library is loaded dynamically in onCreate based on intent extra
 
         /** First virtual joystick button index for D-pad directions (Up=+0, Down=+1, Left=+2, Right=+3).
@@ -353,6 +361,7 @@ class MainActivity :
     private var warpButtonOverlay: WarpButtonOverlay? = null
     private var netEventsManualToggle = false
     private var adminTrayPausedGame = false
+    private var adminTrayCloseGraceUntilMs = 0L
     private var isMultiplayerGame = false
     private var lastTrackNum = -1 // for detecting track changes in polling
     private var gyroManager: GyroInputManager? = null
@@ -1204,6 +1213,7 @@ class MainActivity :
 
     private fun syncAdminTrayPause(open: Boolean) {
         if (open) {
+            adminTrayCloseGraceUntilMs = 0L
             if (adminTrayPausedGame) return
             adminTrayPausedGame =
                 try {
@@ -1220,7 +1230,11 @@ class MainActivity :
         } catch (_: Exception) {
         }
         adminTrayPausedGame = false
+        adminTrayCloseGraceUntilMs = android.os.SystemClock.uptimeMillis() + ADMIN_TRAY_CLOSE_GRACE_MS
     }
+
+    private fun isAdminTrayCloseGraceActive(nowMs: Long = android.os.SystemClock.uptimeMillis()): Boolean =
+        nowMs < adminTrayCloseGraceUntilMs
 
     private fun isNetEventsControlEnabled(): Boolean {
         val mpState = com.dxxredux.app.multiplayer.MatchmakingStateHolder.state.value
@@ -1317,10 +1331,17 @@ class MainActivity :
                                 } catch (_: Exception) {
                                     false
                                 }
-                            val settingsTrayVisible = touchOverlay.isAdminTrayOpen() || adminTrayPausedGame
+                            val nowMs = android.os.SystemClock.uptimeMillis()
+                            val settingsTrayVisible =
+                                settingsTrayVisibleForOverlay(
+                                    adminTrayOpen = touchOverlay.isAdminTrayOpen(),
+                                    adminTrayPausedGame = adminTrayPausedGame,
+                                    adminTrayCloseGraceActive = isAdminTrayCloseGraceActive(nowMs),
+                                )
                             // During death or endlevel, show skip/continue button instead of controls
                             val showCutsceneButton = playerDead || endlevel || skippable
-                            // Keep the overlay visible while the settings tray owns the pause state.
+                            // Keep the overlay visible while the settings tray owns, or is still
+                            // unwinding, its pause state so standalone overlays do not flicker off.
                             val shouldShow =
                                 shouldShowTouchOverlay(
                                     inGame = inGame,

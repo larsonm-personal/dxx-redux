@@ -6,6 +6,38 @@ import org.junit.Test
 
 class OverlayVisibilityPolicyTest {
     @Test
+    fun trayVisibilityIncludesCloseGraceWhilePauseIsUnwinding() {
+        assertTrue(
+            settingsTrayVisibleForOverlay(
+                adminTrayOpen = false,
+                adminTrayPausedGame = false,
+                adminTrayCloseGraceActive = true,
+            ),
+        )
+        assertTrue(
+            settingsTrayVisibleForOverlay(
+                adminTrayOpen = false,
+                adminTrayPausedGame = true,
+                adminTrayCloseGraceActive = false,
+            ),
+        )
+        assertTrue(
+            settingsTrayVisibleForOverlay(
+                adminTrayOpen = true,
+                adminTrayPausedGame = false,
+                adminTrayCloseGraceActive = false,
+            ),
+        )
+        assertFalse(
+            settingsTrayVisibleForOverlay(
+                adminTrayOpen = false,
+                adminTrayPausedGame = false,
+                adminTrayCloseGraceActive = false,
+            ),
+        )
+    }
+
+    @Test
     fun netEventsControlRequiresMultiplayerOrPendingLaunch() {
         assertFalse(
             shouldEnableNetEventsControl(
@@ -54,6 +86,23 @@ class OverlayVisibilityPolicyTest {
         assertFalse(shouldHideStandaloneAdminOverlays(inGame = true, settingsTrayVisible = false))
         assertFalse(shouldHideStandaloneAdminOverlays(inGame = false, settingsTrayVisible = true))
         assertTrue(shouldHideStandaloneAdminOverlays(inGame = false, settingsTrayVisible = false))
+    }
+
+    @Test
+    fun closeGracePreventsStandaloneOverlayHideDuringTrayDismissTransition() {
+        val settingsTrayVisible =
+            settingsTrayVisibleForOverlay(
+                adminTrayOpen = false,
+                adminTrayPausedGame = false,
+                adminTrayCloseGraceActive = true,
+            )
+
+        assertFalse(
+            shouldHideStandaloneAdminOverlays(
+                inGame = false,
+                settingsTrayVisible = settingsTrayVisible,
+            ),
+        )
     }
 
     @Test
