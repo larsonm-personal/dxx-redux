@@ -114,6 +114,13 @@ fun GraphicsSettingsPage(
                         // -- Selective Filtering (menu/HUD) --
                         SelectiveFilterSection(filesDir = filesDir)
 
+                        Spacer(modifier = Modifier.height(3.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(3.dp))
+
+                        // -- Debug options --
+                        DebugOptionsSection(prefs = prefs)
+
                         Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
@@ -318,6 +325,84 @@ private fun SelectiveFilterSection(filesDir: File) {
             fontSize = 10.sp,
             modifier = Modifier.padding(start = 8.dp),
         )
+    }
+}
+
+@Composable
+private fun DebugOptionsSection(prefs: SharedPreferences) {
+    val ctx = LocalContext.current
+    var showVideoInfoDebugOptions by remember {
+        mutableStateOf(prefs.getBoolean(PREF_SHOW_VIDEO_INFO_DEBUG_OPTIONS, false))
+    }
+    var graphicsDebugLogging by remember {
+        mutableStateOf(
+            DebugLog.isCategoryEnabled(ctx, DebugLogCategory.GRAPHICS) ||
+                DebugLog.isCategoryEnabled(ctx, DebugLogCategory.TEXTURE),
+        )
+    }
+    var forceLegacyTexmerge by remember {
+        mutableStateOf(prefs.getBoolean(PREF_FORCE_LEGACY_MERGED_WALL_TEXMERGE, false))
+    }
+
+    Text("Debug Options", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+    Spacer(modifier = Modifier.height(2.dp))
+
+    DebugOptionRow(
+        checked = showVideoInfoDebugOptions,
+        title = "Show debug options in Video Info",
+        detail = "Adds merged-wall controls to the in-game Video Info overlay",
+        onCheckedChange = {
+            showVideoInfoDebugOptions = it
+            prefs.edit().putBoolean(PREF_SHOW_VIDEO_INFO_DEBUG_OPTIONS, it).apply()
+        },
+    )
+
+    Spacer(modifier = Modifier.height(4.dp))
+
+    DebugOptionRow(
+        checked = graphicsDebugLogging,
+        title = "Graphics / merged-wall debug logging",
+        detail = "Enables the Graphics and Texture log categories used by merged-wall diagnostics",
+        onCheckedChange = {
+            graphicsDebugLogging = it
+            DebugLog.setCategoryEnabled(ctx, DebugLogCategory.GRAPHICS, it)
+            DebugLog.setCategoryEnabled(ctx, DebugLogCategory.TEXTURE, it)
+        },
+    )
+
+    Spacer(modifier = Modifier.height(4.dp))
+
+    DebugOptionRow(
+        checked = forceLegacyTexmerge,
+        title = "Force legacy CPU texmerge",
+        detail = "Applies the merged-wall legacy texmerge experiment on launch or resume",
+        onCheckedChange = {
+            forceLegacyTexmerge = it
+            prefs.edit().putBoolean(PREF_FORCE_LEGACY_MERGED_WALL_TEXMERGE, it).apply()
+        },
+    )
+}
+
+@Composable
+private fun DebugOptionRow(
+    checked: Boolean,
+    title: String,
+    detail: String,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+    ) {
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            modifier = Modifier.height(24.dp),
+        )
+        Column(modifier = Modifier.padding(start = 8.dp)) {
+            Text(text = title, fontSize = 10.sp)
+            Text(text = detail, fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 

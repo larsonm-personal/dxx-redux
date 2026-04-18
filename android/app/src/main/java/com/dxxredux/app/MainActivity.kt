@@ -419,9 +419,7 @@ class MainActivity :
         CrashLog.installNativeHandler(this)
 
         // Sync C-side per-category enable flags with Kotlin prefs
-        for (cat in 0 until DebugLogCategory.COUNT) {
-            nativeSetDebugLogEnabled(cat, DebugLog.isCategoryEnabled(this, cat))
-        }
+        syncDebugLogPrefs()
 
         // Rewrite audio playlist in the game process so SAF fds are valid.
         // SetupActivity runs in the default process; this activity runs in
@@ -929,6 +927,7 @@ class MainActivity :
                 FrameLayout.LayoutParams.MATCH_PARENT,
             ),
         )
+        applyGraphicsDebugPrefs(prefs)
 
         // android port: coop QoL overlay -- robot kill stats + teammate status
         val coopOverlay =
@@ -1161,9 +1160,35 @@ class MainActivity :
                     src and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
             }
         overlayEnabled = prefs.getBoolean("touch_overlay_enabled", !hasController)
+        syncDebugLogPrefs()
         applyCoopIndicatorPrefs(prefs)
+        applyGraphicsDebugPrefs(prefs)
         // Start polling in-game state to show/hide overlay
         startOverlayPolling()
+    }
+
+    private fun syncDebugLogPrefs() {
+        for (cat in 0 until DebugLogCategory.COUNT) {
+            val enabled = DebugLog.isCategoryEnabled(this, cat)
+            DebugLog.setCategoryEnabled(this, cat, enabled)
+            nativeSetDebugLogEnabled(cat, enabled)
+        }
+    }
+
+    private fun applyGraphicsDebugPrefs(prefs: android.content.SharedPreferences) {
+        videoInfoOverlay?.applyLauncherPrefs(prefs)
+        try {
+            nativeSetDebugFlag(
+                "merged_wall_experiment",
+                if (prefs.getBoolean(PREF_FORCE_LEGACY_MERGED_WALL_TEXMERGE, false)) {
+                    MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE_VALUE
+                } else {
+                    0
+                },
+            )
+        } catch (_: Exception) {
+            // JNI may not be ready yet when the activity is first coming up
+        }
     }
 
     private fun applyCoopIndicatorPrefs(prefs: android.content.SharedPreferences) {

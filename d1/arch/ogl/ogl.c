@@ -2955,12 +2955,6 @@ static bool ogl_draw_tmap_2_internal(int nv, g3s_point **pointlist, g3s_uvl *uvl
 			&metl154_polygon_offset_factor, &metl154_polygon_offset_units, metl154_color_mask,
 			&metl154_draw_fbo);
 		metl154_screen_area = ogl_get_metl154_screen_area(pointlist, nv);
-		if (tex2_debug_mode != METL154_DEBUG_NONE) {
-			if (metl154_depth_enabled)
-				glDisable(GL_DEPTH_TEST);
-			glDepthMask(GL_FALSE);
-			metl154_force_depth_off = 1;
-		}
 	}
 #endif
 
@@ -3012,11 +3006,6 @@ static bool ogl_draw_tmap_2_internal(int nv, g3s_point **pointlist, g3s_uvl *uvl
 #if defined(ANDROID)
 		gles3_shim_external_texcoord2_pointer(0, GL_FLOAT, 0, NULL);
 	if (is_metl154_plain) {
-		if (metl154_force_depth_off) {
-			glDepthMask(metl154_depth_writemask);
-			if (metl154_depth_enabled)
-				glEnable(GL_DEPTH_TEST);
-		}
 		ogl_merged_wall_track_face(pointlist, nv, draw_order,
 			metl154_tmap2_submit_ctx.route, "gpu_two_pass");
 	} else if (!skip_metl154_cover_draw) {

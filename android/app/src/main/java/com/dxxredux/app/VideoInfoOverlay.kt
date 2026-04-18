@@ -1,6 +1,7 @@
 package com.dxxredux.app
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -68,6 +69,7 @@ class VideoInfoOverlay(
     private var labelsOn = false
     private var mergedWallMode = 0
     private var mergedWallExperimentMode = 0
+    private var showDebugControls = false
     private var buttonPressed = false
     private var anisoPressed = false
     private var msaaPressed = false
@@ -165,6 +167,11 @@ class VideoInfoOverlay(
         if (visibility == VISIBLE) hide() else show()
     }
 
+    fun applyLauncherPrefs(prefs: SharedPreferences) {
+        showDebugControls = prefs.getBoolean(PREF_SHOW_VIDEO_INFO_DEBUG_OPTIONS, false)
+        invalidate()
+    }
+
     // Paints
     private val bgPaint =
         Paint().apply {
@@ -228,7 +235,7 @@ class VideoInfoOverlay(
 
         val pad = 8f * density
         val lineH = baseTextSize * 1.5f
-        val numLines = 20
+        val numLines = if (showDebugControls) 20 else 16
         val panelH = pad * 2 + lineH * numLines
         val panelW = baseTextSize * 20f
 
@@ -434,70 +441,77 @@ class VideoInfoOverlay(
         canvas.drawText(msaaText + msaaMaxText, panelLeft + pad, y, msaaPaint)
         y += lineH
 
-        // Merged-wall overlay debug cycle button
-        val mergedWallText =
-            when (mergedWallMode) {
-                1 -> "overlay: Alpha"
-                2 -> "overlay: RGB"
-                else -> "overlay: OFF"
-            }
-        val mergedWallPaint = if (mergedWallMode == 0) fpsWarnPaint else fpsGoodPaint
-        mergedWallRect.set(
-            panelLeft + pad * 0.5f,
-            y - baseTextSize,
-            panelLeft + panelW - pad * 0.5f,
-            y + lineH * 0.3f,
-        )
-        val mergedWallBg = if (mergedWallPressed) btnPressedPaint else btnNormalPaint
-        canvas.drawRoundRect(mergedWallRect, pad * 0.5f, pad * 0.5f, mergedWallBg)
-        canvas.drawText(mergedWallText, panelLeft + pad, y, mergedWallPaint)
-        y += lineH
+        if (showDebugControls) {
+            // Merged-wall overlay debug cycle button
+            val mergedWallText =
+                when (mergedWallMode) {
+                    1 -> "overlay: Alpha"
+                    2 -> "overlay: RGB"
+                    else -> "overlay: OFF"
+                }
+            val mergedWallPaint = if (mergedWallMode == 0) fpsWarnPaint else fpsGoodPaint
+            mergedWallRect.set(
+                panelLeft + pad * 0.5f,
+                y - baseTextSize,
+                panelLeft + panelW - pad * 0.5f,
+                y + lineH * 0.3f,
+            )
+            val mergedWallBg = if (mergedWallPressed) btnPressedPaint else btnNormalPaint
+            canvas.drawRoundRect(mergedWallRect, pad * 0.5f, pad * 0.5f, mergedWallBg)
+            canvas.drawText(mergedWallText, panelLeft + pad, y, mergedWallPaint)
+            y += lineH
 
-        // Only the default and force-legacy experiment modes remain surfaced.
-        val mergedWallExperimentText =
-            when (mergedWallExperimentMode) {
-                10 -> "mwall exp: Legacy"
-                0 -> "mwall exp: Default"
-                else -> "mwall exp: Compat $mergedWallExperimentMode"
-            }
-        val mergedWallExperimentPaint = if (mergedWallExperimentMode == 0) fpsWarnPaint else fpsGoodPaint
-        mergedWallExperimentRect.set(
-            panelLeft + pad * 0.5f,
-            y - baseTextSize,
-            panelLeft + panelW - pad * 0.5f,
-            y + lineH * 0.3f,
-        )
-        val mergedWallExperimentBg = if (mergedWallExperimentPressed) btnPressedPaint else btnNormalPaint
-        canvas.drawRoundRect(mergedWallExperimentRect, pad * 0.5f, pad * 0.5f, mergedWallExperimentBg)
-        canvas.drawText(mergedWallExperimentText, panelLeft + pad, y, mergedWallExperimentPaint)
-        y += lineH
+            // Only the default and force-legacy experiment modes remain surfaced.
+            val mergedWallExperimentText =
+                when (mergedWallExperimentMode) {
+                    10 -> "mwall exp: Legacy"
+                    0 -> "mwall exp: Default"
+                    else -> "mwall exp: Compat $mergedWallExperimentMode"
+                }
+            val mergedWallExperimentPaint = if (mergedWallExperimentMode == 0) fpsWarnPaint else fpsGoodPaint
+            mergedWallExperimentRect.set(
+                panelLeft + pad * 0.5f,
+                y - baseTextSize,
+                panelLeft + panelW - pad * 0.5f,
+                y + lineH * 0.3f,
+            )
+            val mergedWallExperimentBg = if (mergedWallExperimentPressed) btnPressedPaint else btnNormalPaint
+            canvas.drawRoundRect(mergedWallExperimentRect, pad * 0.5f, pad * 0.5f, mergedWallExperimentBg)
+            canvas.drawText(mergedWallExperimentText, panelLeft + pad, y, mergedWallExperimentPaint)
+            y += lineH
 
-        val snapshotActive = android.os.SystemClock.uptimeMillis() < mergedWallSnapshotFlashUntilMs
-        val mergedWallSnapshotText = if (snapshotActive) "mwall snap: Sent" else "mwall snap: Tap"
-        val mergedWallSnapshotPaint = if (snapshotActive) fpsGoodPaint else valuePaint
-        mergedWallSnapshotRect.set(
-            panelLeft + pad * 0.5f,
-            y - baseTextSize,
-            panelLeft + panelW - pad * 0.5f,
-            y + lineH * 0.3f,
-        )
-        val mergedWallSnapshotBg = if (mergedWallSnapshotPressed) btnPressedPaint else btnNormalPaint
-        canvas.drawRoundRect(mergedWallSnapshotRect, pad * 0.5f, pad * 0.5f, mergedWallSnapshotBg)
-        canvas.drawText(mergedWallSnapshotText, panelLeft + pad, y, mergedWallSnapshotPaint)
-        y += lineH
+            val snapshotActive = android.os.SystemClock.uptimeMillis() < mergedWallSnapshotFlashUntilMs
+            val mergedWallSnapshotText = if (snapshotActive) "mwall snap: Sent" else "mwall snap: Tap"
+            val mergedWallSnapshotPaint = if (snapshotActive) fpsGoodPaint else valuePaint
+            mergedWallSnapshotRect.set(
+                panelLeft + pad * 0.5f,
+                y - baseTextSize,
+                panelLeft + panelW - pad * 0.5f,
+                y + lineH * 0.3f,
+            )
+            val mergedWallSnapshotBg = if (mergedWallSnapshotPressed) btnPressedPaint else btnNormalPaint
+            canvas.drawRoundRect(mergedWallSnapshotRect, pad * 0.5f, pad * 0.5f, mergedWallSnapshotBg)
+            canvas.drawText(mergedWallSnapshotText, panelLeft + pad, y, mergedWallSnapshotPaint)
+            y += lineH
 
-        // Labels toggle button
-        val labelsText = if (labelsOn) "Labels: ON" else "Labels: OFF"
-        val labelTogglePaint = if (labelsOn) fpsGoodPaint else fpsWarnPaint
-        buttonRect.set(
-            panelLeft + pad * 0.5f,
-            y - baseTextSize,
-            panelLeft + panelW - pad * 0.5f,
-            y + lineH * 0.3f,
-        )
-        val btnBg = if (buttonPressed) btnPressedPaint else btnNormalPaint
-        canvas.drawRoundRect(buttonRect, pad * 0.5f, pad * 0.5f, btnBg)
-        canvas.drawText(labelsText, panelLeft + pad, y, labelTogglePaint)
+            // Labels toggle button
+            val labelsText = if (labelsOn) "Labels: ON" else "Labels: OFF"
+            val labelTogglePaint = if (labelsOn) fpsGoodPaint else fpsWarnPaint
+            buttonRect.set(
+                panelLeft + pad * 0.5f,
+                y - baseTextSize,
+                panelLeft + panelW - pad * 0.5f,
+                y + lineH * 0.3f,
+            )
+            val btnBg = if (buttonPressed) btnPressedPaint else btnNormalPaint
+            canvas.drawRoundRect(buttonRect, pad * 0.5f, pad * 0.5f, btnBg)
+            canvas.drawText(labelsText, panelLeft + pad, y, labelTogglePaint)
+        } else {
+            mergedWallRect.setEmpty()
+            mergedWallExperimentRect.setEmpty()
+            mergedWallSnapshotRect.setEmpty()
+            buttonRect.setEmpty()
+        }
     }
 
     @Suppress("ClickableViewAccessibility")
