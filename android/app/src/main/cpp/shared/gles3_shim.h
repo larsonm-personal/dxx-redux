@@ -60,6 +60,9 @@ void gles3_shim_draw_arrays(GLenum mode, GLint first, GLsizei count);
  * gles3_shim_use_external(prog) saves current state; passing 0 restores. */
 void gles3_shim_use_external(GLuint prog);
 
+/* Avoid redundant glUseProgram calls on the Android hot path. */
+void gles3_shim_bind_program(GLuint prog);
+
 /* Expose the computed MVP for external programs (e.g. OGL_MERGE) */
 const float *gles3_shim_get_mvp(void);
 

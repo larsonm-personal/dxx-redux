@@ -36,6 +36,15 @@ static void ogl_log_shader_info(const char *prog_name, const char *stage, GLint 
 #endif
 }
 
+static void ogl_use_program(GLuint prog)
+{
+#ifdef ANDROID
+	gles3_shim_bind_program(prog);
+#else
+	glUseProgram(prog);
+#endif
+}
+
 static void ogl_read_shader_info_log(GLuint shader, const char *prog_name, const char *stage,
 	GLint ok, char *msg, int msg_size)
 {
@@ -194,18 +203,18 @@ void ogl_init_prog() {
 	ogl_tex2_alpha_cutoff = glGetUniformLocation(ogl_prog_tex2, "utex2alpha_cutoff");
 	ogl_tex2_debug_mode = glGetUniformLocation(ogl_prog_tex2, "utex2_debug");
 
-	glUseProgram(ogl_prog_tex2);
+	ogl_use_program(ogl_prog_tex2);
 	glUniform1i(glGetUniformLocation(ogl_prog_tex2, "utex"), 0);
 	glUniform1i(glGetUniformLocation(ogl_prog_tex2, "utex2"), 1);
 	glUniform1i(ogl_tex2_debug_mode, 0);
 	glUniform1f(ogl_tex2_alpha_cutoff, 0.0f);
 
-	glUseProgram(ogl_prog_tex2m);
+	ogl_use_program(ogl_prog_tex2m);
 	glUniform1i(glGetUniformLocation(ogl_prog_tex2m, "utex"), 0);
 	glUniform1i(glGetUniformLocation(ogl_prog_tex2m, "utex2"), 1);
 	glUniform1i(glGetUniformLocation(ogl_prog_tex2m, "utex2m"), 2);
 
-	glUseProgram(0);
+	ogl_use_program(0);
 }
 
 void ogl_prog_set_tex2_alpha_cutoff(GLfloat cutoff) {
@@ -231,16 +240,16 @@ void ogl_done_prog() {
 
 void ogl_prog_set_matrix(GLfloat *mat) {
 	if (ogl_prog_tex2) {
-		glUseProgram(ogl_prog_tex2);
+		ogl_use_program(ogl_prog_tex2);
 		glUniformMatrix4fv(ogl_tex2_mat, 1, GL_FALSE, mat);
 	}
 
 	if (ogl_prog_tex2m) {
-		glUseProgram(ogl_prog_tex2m);
+		ogl_use_program(ogl_prog_tex2m);
 		glUniformMatrix4fv(ogl_tex2m_mat, 1, GL_FALSE, mat);
 	}
 
-	glUseProgram(0);
+	ogl_use_program(0);
 }
 
 void ogl_prog_set_tex2_current_matrix(const GLfloat *mat, int super)

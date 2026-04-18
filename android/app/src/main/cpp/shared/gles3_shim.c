@@ -217,6 +217,7 @@ static const void *ta2_ptr;
 
 static int state_dirty = 1;
 static GLuint external_prog;
+static GLuint current_prog;
 static GLuint shim_vbo;
 
 static int gl_type_size(GLenum type)
@@ -228,6 +229,14 @@ static int gl_type_size(GLenum type)
 		case GL_UNSIGNED_SHORT: return 2;
 		default: return 4; /* GL_FLOAT, GL_INT, GL_UNSIGNED_INT */
 	}
+}
+
+void gles3_shim_bind_program(GLuint prog)
+{
+	if (current_prog == prog)
+		return;
+	glUseProgram(prog);
+	current_prog = prog;
 }
 
 /* ------------------------------------------------------------------ */
@@ -243,6 +252,7 @@ void gles3_shim_init(void)
 	mvp_dirty = 1;
 	state_dirty = 1;
 	external_prog = 0;
+	current_prog = 0;
 
 	tex2d_enabled = 0;
 	alpha_test_enabled = 0;
@@ -295,7 +305,7 @@ void gles3_shim_init(void)
 	u_flat_color = glGetUniformLocation(shim_prog, "uFlatColor");
 	u_debug_mode = glGetUniformLocation(shim_prog, "uDebugMode");
 
-	glUseProgram(shim_prog);
+	gles3_shim_bind_program(shim_prog);
 	glUniform1i(u_tex, 0);
 	glUniform1i(u_tex_enabled, 0);
 	glUniform1i(u_alpha_test, 0);
@@ -324,6 +334,9 @@ void gles3_shim_shutdown(void)
 		glDeleteProgram(shim_prog);
 		shim_prog = 0;
 	}
+	current_prog = 0;
+	external_prog = 0;
+	state_dirty = 1;
 }
 
 /* ------------------------------------------------------------------ */
@@ -588,7 +601,7 @@ void gles3_shim_flush_state(void)
 {
 	if (external_prog) return; /* external shader is active */
 
-	glUseProgram(shim_prog);
+	gles3_shim_bind_program(shim_prog);
 
 	if (mvp_dirty) compute_mvp();
 	glUniformMatrix4fv(u_mvp, 1, GL_FALSE, mvp);
@@ -612,7 +625,7 @@ void gles3_shim_use_external(GLuint prog)
 {
 	if (prog) {
 		external_prog = prog;
-		glUseProgram(prog);
+		gles3_shim_bind_program(prog);
 		/* Update MVP for the external program */
 		if (mvp_dirty) compute_mvp();
 	} else {
