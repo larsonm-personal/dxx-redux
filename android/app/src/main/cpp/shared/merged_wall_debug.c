@@ -8,6 +8,7 @@
 #include "gameseg.h"
 #include "inferno.h"
 #include "object.h"
+#include "ogl_init.h"
 #include "piggy.h"
 #include "segment.h"
 #include "textures.h"
@@ -111,6 +112,28 @@ static int merged_wall_tracked_frame_id = -1;
 static int merged_wall_draw_order = 0;
 static int merged_wall_cover_frame_id = -1;
 static int merged_wall_cover_event_count = 0;
+
+static const char *merged_wall_debug_mode_name_local(int mode)
+{
+	switch (mode) {
+		case MERGED_WALL_DEBUG_OVERLAY_ALPHA:
+			return "alpha";
+		case MERGED_WALL_DEBUG_OVERLAY_RGB:
+			return "rgb";
+		default:
+			return "off";
+	}
+}
+
+static const char *merged_wall_experiment_name_local(int mode)
+{
+	switch (mode) {
+		case MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE:
+			return "force_legacy_texmerge";
+		default:
+			return "default";
+	}
+}
 
 static void merged_wall_copy_string(char *dst, unsigned int dst_size, const char *src)
 {
@@ -417,6 +440,122 @@ static void merged_wall_fill_portal_debug_info(const struct android_draw_face_co
 		info->conn_wall_keys = wallp->keys;
 		info->conn_wall_flags = wallp->flags;
 	}
+}
+
+static void merged_wall_log_texture_detail(const char *tag, int rank,
+                                           const struct android_draw_face_context *ctx,
+                                           int tex_num, const char *layer)
+{
+	grs_bitmap *bitmap;
+	ogl_texture *texture;
+	const char *name;
+	int real_flags;
+	unsigned int mask_handle = 0;
+
+	if (tex_num < 0 || tex_num >= NumTextures)
+		return;
+	bitmap = &GameBitmaps[Textures[tex_num].index];
+	texture = bitmap ? bitmap->gltexture : NULL;
+	name = piggy_game_bitmap_name(bitmap);
+	real_flags = piggy_bitmap_get_flags(bitmap);
+	if (bitmap && bitmap->gltexture_mask)
+		mask_handle = bitmap->gltexture_mask->handle;
+
+	debug_log(DLOG_TEXTURE,
+	          "[mwall_tex] tag=%s rank=%d seg=%d side=%d face=%d layer=%s tex=%d name=%s real_flags=0x%x bm_flags=0x%x handle=%u is_png=%d w=%d h=%d tw=%d th=%d lw=%d bytes=%d mip=%d wrap=%d u=%.3f v=%.3f mask_handle=%u",
+	          tag ? tag : "",
+	          rank,
+	          ctx && ctx->valid ? ctx->seg : -1,
+	          ctx && ctx->valid ? ctx->side : -1,
+	          ctx && ctx->valid ? ctx->face : -1,
+	          layer ? layer : "",
+	          tex_num,
+	          name ? name : "<none>",
+	          real_flags,
+	          bitmap ? bitmap->bm_flags : 0,
+	          texture ? texture->handle : 0,
+	          texture ? texture->is_png : -1,
+	          texture ? texture->w : 0,
+	          texture ? texture->h : 0,
+	          texture ? texture->tw : 0,
+	          texture ? texture->th : 0,
+	          texture ? texture->lw : 0,
+	          texture ? texture->bytes : 0,
+	          texture ? texture->has_mipmaps : -1,
+	          texture ? texture->wrapstate : -1,
+	          texture ? texture->u : 0.0f,
+	          texture ? texture->v : 0.0f,
+	          mask_handle);
+}
+
+static void merged_wall_log_face_textures(const char *tag, int rank,
+                                          const struct android_draw_face_context *ctx)
+{
+	if (!ctx || !ctx->valid)
+		return;
+	merged_wall_log_texture_detail(tag, rank, ctx, ctx->tmap1, "base");
+	merged_wall_log_texture_detail(tag, rank, ctx, merged_wall_overlay_index(ctx->tmap2), "overlay");
+}
+
+static void merged_wall_log_snapshot_pose(void)
+{
+	vms_angvec angles = { 0, 0, 0 };
+	int seg = -1;
+	float pos_x = 0.0f, pos_y = 0.0f, pos_z = 0.0f;
+
+	if (ConsoleObject) {
+		seg = ConsoleObject->segnum;
+		pos_x = f2fl(ConsoleObject->pos.x);
+		pos_y = f2fl(ConsoleObject->pos.y);
+		pos_z = f2fl(ConsoleObject->pos.z);
+		vm_extract_angles_matrix(&angles, &ConsoleObject->orient);
+	}
+
+	debug_log(DLOG_TEXTURE,
+	          "[mwall_snap_pose] replay={\"action\":\"pose_view\",\"segment\":%d,\"x\":%.6f,\"y\":%.6f,\"z\":%.6f,\"pitch\":%d,\"bank\":%d,\"heading\":%d}",
+	          seg,
+	          pos_x,
+	          pos_y,
+	          pos_z,
+	          (int) angles.p,
+	          (int) angles.b,
+	          (int) angles.h);
+}
+
+static void merged_wall_log_snapshot_last_draw(void)
+{
+	if (!g_merged_wall_last_draw_state.valid)
+		return;
+
+	debug_log(DLOG_TEXTURE,
+	          "[mwall_snap_last] frame=%d pass=%d seq=%d seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x route=%s merge_impl=%s depth=%d blend=%d cull=%d poly_off=%d poly_factor=%.3f poly_units=%.3f depth_mask=%d depth_func=%d front_face=%d cull_mode=%d fbo=%d area=%.1f force_cull=%d force_poly=%d force_depth=%d",
+	          g_merged_wall_last_draw_state.frame_id,
+	          g_merged_wall_last_draw_state.render_pass,
+	          g_merged_wall_last_draw_state.draw_seq,
+	          g_merged_wall_last_draw_state.seg,
+	          g_merged_wall_last_draw_state.side,
+	          g_merged_wall_last_draw_state.face,
+	          g_merged_wall_last_draw_state.child,
+	          g_merged_wall_last_draw_state.wid_flags,
+	          g_merged_wall_last_draw_state.tmap1,
+	          g_merged_wall_last_draw_state.tmap2,
+	          g_merged_wall_last_draw_state.route,
+	          g_merged_wall_last_draw_state.merge_impl,
+	          g_merged_wall_last_draw_state.depth_enabled,
+	          g_merged_wall_last_draw_state.blend_enabled,
+	          g_merged_wall_last_draw_state.cull_enabled,
+	          g_merged_wall_last_draw_state.polygon_offset_enabled,
+	          g_merged_wall_last_draw_state.polygon_offset_factor,
+	          g_merged_wall_last_draw_state.polygon_offset_units,
+	          g_merged_wall_last_draw_state.depth_writemask,
+	          g_merged_wall_last_draw_state.depth_func,
+	          g_merged_wall_last_draw_state.front_face,
+	          g_merged_wall_last_draw_state.cull_mode,
+	          g_merged_wall_last_draw_state.draw_fbo,
+	          g_merged_wall_last_draw_state.screen_area,
+	          g_merged_wall_last_draw_state.force_cull_off,
+	          g_merged_wall_last_draw_state.force_polygon_offset,
+	          g_merged_wall_last_draw_state.force_depth_off);
 }
 
 static void merged_wall_log_portal(const char *tag,
@@ -789,6 +928,19 @@ void android_merged_wall_request_snapshot(void)
 	                        sizeof(g_merged_wall_snapshot_result.status), "pending");
 	g_merged_wall_snapshot_result.request_frame = g_merged_wall_frame_id;
 	g_merged_wall_snapshot_request_frame = g_merged_wall_frame_id;
+	debug_log(DLOG_TEXTURE,
+	          "[mwall_snap] request: request_frame=%d frame=%d pass=%d seq=%d mode=%d(%s) experiment=%d(%s) two_pass=%d",
+	          (int) g_merged_wall_snapshot_request_frame,
+	          (int) g_merged_wall_frame_id,
+	          (int) g_merged_wall_render_pass,
+	          (int) g_merged_wall_draw_seq,
+	          (int) g_merged_wall_debug_mode,
+	          merged_wall_debug_mode_name_local((int) g_merged_wall_debug_mode),
+	          (int) g_merged_wall_experiment_mode,
+	          merged_wall_experiment_name_local((int) g_merged_wall_experiment_mode),
+	          (int) g_merged_wall_force_two_pass);
+	merged_wall_log_snapshot_pose();
+	merged_wall_log_snapshot_last_draw();
 	__sync_synchronize();
 	g_merged_wall_snapshot_pending = 1;
 }
@@ -1009,6 +1161,7 @@ void android_merged_wall_finish_snapshot(int screen_w, int screen_h,
 		          out->cull_sensitive,
 		          out->preferred_split);
 		merged_wall_log_portal("snapshot_face", &track->draw_ctx);
+		merged_wall_log_face_textures("snapshot_face", out->rank, &track->draw_ctx);
 	}
 
 	for (i = 0; i < merged_wall_cover_event_count; i++) {

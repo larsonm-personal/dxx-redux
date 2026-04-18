@@ -469,17 +469,9 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
 		g_merged_wall_experiment_pending_apply = 1;
 	} else if (strcmp(name, "merged_wall_snapshot") == 0) {
 		if (value) {
-			g_merged_wall_snapshot_request_frame = g_merged_wall_frame_id;
-			__sync_synchronize();
-			g_merged_wall_snapshot_pending = 1;
+			android_merged_wall_request_snapshot();
 			LOGI("debug flag: merged_wall_snapshot requested at frame=%d",
 			     (int) g_merged_wall_snapshot_request_frame);
-			debug_log(DLOG_TEXTURE,
-			          "[mwall_snap] request: request_frame=%d frame=%d pass=%d seq=%d",
-			          (int) g_merged_wall_snapshot_request_frame,
-			          (int) g_merged_wall_frame_id,
-			          (int) g_merged_wall_render_pass,
-			          (int) g_merged_wall_draw_seq);
 		}
 	} else if (strcmp(name, "gfx_mode") == 0)
 		gles3_shim_debug_mode = (int) value;

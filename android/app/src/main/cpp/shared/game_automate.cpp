@@ -188,6 +188,7 @@ enum step_type {
 	STEP_SKIP_BRIEFING,           /* escape only if a non-game window covers Game_wind */
 	STEP_ASSERT_OVERLAY,          /* check overlay ring buffer for matching entry */
 	STEP_FACE_VIEW,               /* move player inside a segment and face a wall */
+	STEP_POSE_VIEW,               /* move player to an exact position and orientation */
 	STEP_ENTER_LAUNCHER,          /* yield back to launcher, write LAUNCHER_CONTINUE */
 	STEP_ENTER_GAME,              /* launcher-only: no-op in game engine (skip) */
 	STEP_SETUP_COMMAND,           /* launcher-only: no-op in game engine (skip) */
@@ -234,6 +235,12 @@ struct auto_step {
 	int side = -1;                      /* STEP_FACE_VIEW: target side */
 	int face = 0;                       /* STEP_FACE_VIEW: target face on side */
 	float distance = 4.0f;              /* STEP_FACE_VIEW: distance inside segment */
+	float pos_x = 0.0f;                 /* STEP_POSE_VIEW: target X position */
+	float pos_y = 0.0f;                 /* STEP_POSE_VIEW: target Y position */
+	float pos_z = 0.0f;                 /* STEP_POSE_VIEW: target Z position */
+	int pitch = 0;                      /* STEP_POSE_VIEW: exact pitch */
+	int bank = 0;                       /* STEP_POSE_VIEW: exact bank */
+	int heading = 0;                    /* STEP_POSE_VIEW: exact heading */
 };
 
 /* -- Script state ----------------------------------------------------- */
@@ -272,6 +279,7 @@ static const char *step_type_name(step_type t)
 		case STEP_SKIP_BRIEFING: return "skip_briefing";
 		case STEP_ASSERT_OVERLAY: return "assert_overlay";
 		case STEP_FACE_VIEW: return "face_view";
+		case STEP_POSE_VIEW: return "pose_view";
 		case STEP_ENTER_LAUNCHER: return "enter_launcher";
 		case STEP_ENTER_GAME: return "enter_game";
 		case STEP_SETUP_COMMAND: return "setup_command";
@@ -804,6 +812,61 @@ static int move_player_to_face_view(const auto_step &s, char *reason, size_t rea
 	return 1;
 }
 
+static int move_player_to_pose(const auto_step &s, char *reason, size_t reason_size)
+{
+	vms_vector new_pos;
+	vms_angvec angles;
+	int search_seg, new_seg;
+
+	if (Screen_mode != SCREEN_GAME || Game_wind == NULL || ConsoleObject == NULL) {
+		snprintf(reason, reason_size, "pose_view: game window is not active");
+		return 0;
+	}
+
+	new_pos.x = fl2f(s.pos_x);
+	new_pos.y = fl2f(s.pos_y);
+	new_pos.z = fl2f(s.pos_z);
+	search_seg = s.segment >= 0 ? s.segment : ConsoleObject->segnum;
+	if (search_seg < 0 || search_seg > Highest_segment_index)
+		search_seg = ConsoleObject->segnum;
+	new_seg = find_point_seg(&new_pos, search_seg);
+	if (new_seg < 0) {
+		snprintf(reason, reason_size,
+		         "pose_view: point not in mine for seg=%d pos=(%.6f, %.6f, %.6f)",
+		         search_seg,
+		         s.pos_x,
+		         s.pos_y,
+		         s.pos_z);
+		return 0;
+	}
+
+	ConsoleObject->pos = new_pos;
+	ConsoleObject->last_pos = new_pos;
+	if (ConsoleObject->segnum != new_seg)
+		obj_relink((int) (ConsoleObject - Objects), new_seg);
+	else
+		ConsoleObject->segnum = new_seg;
+
+	angles.p = (fixang) s.pitch;
+	angles.b = (fixang) s.bank;
+	angles.h = (fixang) s.heading;
+	vm_angles_2_matrix(&ConsoleObject->orient, &angles);
+	vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
+	vm_vec_zero(&ConsoleObject->mtype.phys_info.rotvel);
+	vm_vec_zero(&ConsoleObject->mtype.phys_info.thrust);
+	vm_vec_zero(&ConsoleObject->mtype.phys_info.rotthrust);
+
+	LOGI("pose_view: seg=%d pos=(%.6f, %.6f, %.6f) pitch=%d bank=%d heading=%d",
+	     new_seg,
+	     s.pos_x,
+	     s.pos_y,
+	     s.pos_z,
+	     s.pitch,
+	     s.bank,
+	     s.heading);
+	return 1;
+}
+
 static int clear_level_robots(char *reason, size_t reason_size)
 {
 	int removed = 0;
@@ -916,6 +979,7 @@ static int parse_script(const char *json_text)
 			else if (action == "skip_briefing") s.type = STEP_SKIP_BRIEFING;
 			else if (action == "assert_overlay") s.type = STEP_ASSERT_OVERLAY;
 			else if (action == "face_view") s.type = STEP_FACE_VIEW;
+			else if (action == "pose_view") s.type = STEP_POSE_VIEW;
 			else if (action == "enter_launcher") s.type = STEP_ENTER_LAUNCHER;
 			else if (action == "enter_game") s.type = STEP_ENTER_GAME;
 			else if (action == "setup_command") s.type = STEP_SETUP_COMMAND;
@@ -948,6 +1012,12 @@ static int parse_script(const char *json_text)
 			s.side = step_json.value("side", -1);
 			s.face = step_json.value("face", 0);
 			s.distance = step_json.value("distance", 4.0f);
+			s.pos_x = step_json.value("x", 0.0f);
+			s.pos_y = step_json.value("y", 0.0f);
+			s.pos_z = step_json.value("z", 0.0f);
+			s.pitch = step_json.value("pitch", 0);
+			s.bank = step_json.value("bank", 0);
+			s.heading = step_json.value("heading", 0);
 
 			/* Parse "expect" object for STEP_ASSERT */
 			if (step_json.contains("expect") && step_json["expect"].is_object()) {
@@ -1591,6 +1661,23 @@ extern "C" void game_automate_tick(void)
 					break;
 				}
 				log_append("face_view", "done", "");
+				g_key_phase = 1;
+				g_step_start = now;
+			} else if (elapsed >= (Uint32) s.post_delay_ms) {
+				advance_step();
+			}
+			break;
+
+		case STEP_POSE_VIEW:
+			if (g_key_phase == 0) {
+				char reason[256];
+
+				if (!move_player_to_pose(s, reason, sizeof(reason))) {
+					log_append("pose_view", "fail", reason);
+					stop_script_fail(reason);
+					break;
+				}
+				log_append("pose_view", "done", "");
 				g_key_phase = 1;
 				g_step_start = now;
 			} else if (elapsed >= (Uint32) s.post_delay_ms) {
