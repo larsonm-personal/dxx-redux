@@ -1,6 +1,7 @@
 // TEST: Merged wall snapshot route regression
 // Verifies the Counterstrike L1 metl154 wall stays on the Android
-// auto-old-texmerge escape hatch for the stock 64x64 asset set.
+// auto-old-texmerge escape hatch for the stock 64x64 asset set,
+// from a backed-off view that also exposes the rock331 behind-face cover.
 [
     {"_info": {
         "games": ["d2"],
@@ -44,7 +45,7 @@
     {"action": "set_debug", "field": "merged_wall_mode", "value": "0"},
     {"action": "set_debug", "field": "merged_wall_experiment", "value": "0"},
     {"action": "set_debug", "field": "merged_wall_force_two_pass", "value": "0"},
-    {"action": "face_view", "segment": 83, "side": 3, "face": 1, "distance": 4.0, "post_delay_ms": 250},
+    {"action": "face_view", "segment": 83, "side": 3, "face": 1, "distance": 12.0, "post_delay_ms": 250},
     {"action": "set_debug", "field": "merged_wall_snapshot", "value": "1"},
     {"action": "wait_ms", "ms": 250},
     {"action": "introspect"},
@@ -52,7 +53,8 @@
     {"action": "assert", "expect": {
         "debug_flags.merged_wall_force_two_pass": "0",
         "merged_wall_snapshot.status": "ok",
-        "merged_wall_snapshot.selected_count": {"gte": 1},
+        "merged_wall_snapshot.selected_count": {"gte": 3},
+        "merged_wall_snapshot.covers": {"contains": "rock331"}, // this is the green rock type that's in the tunnel behind the transparent metl texture - with the bug, the green tunnel wouldn't be visible
         "merged_wall_snapshot.faces[0].seg": "83",
         "merged_wall_snapshot.faces[0].side": "3",
         "merged_wall_snapshot.faces[0].face": "1",
