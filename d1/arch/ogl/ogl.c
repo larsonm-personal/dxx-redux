@@ -2955,20 +2955,12 @@ static bool ogl_draw_tmap_2_internal(int nv, g3s_point **pointlist, g3s_uvl *uvl
 			&metl154_polygon_offset_factor, &metl154_polygon_offset_units, metl154_color_mask,
 			&metl154_draw_fbo);
 		metl154_screen_area = ogl_get_metl154_screen_area(pointlist, nv);
-		if (metl154_cull_enabled) {
-			glDisable(GL_CULL_FACE);
-			metl154_force_cull_off = 1;
-		}
 		if (tex2_debug_mode != METL154_DEBUG_NONE) {
 			if (metl154_depth_enabled)
 				glDisable(GL_DEPTH_TEST);
 			glDepthMask(GL_FALSE);
 			metl154_force_depth_off = 1;
 		}
-		if (!metl154_polygon_offset_enabled)
-			glEnable(GL_POLYGON_OFFSET_FILL);
-		glPolygonOffset(-1.0f, -1.0f);
-		metl154_force_polygon_offset = 1;
 	}
 #endif
 
@@ -3024,13 +3016,6 @@ static bool ogl_draw_tmap_2_internal(int nv, g3s_point **pointlist, g3s_uvl *uvl
 			glDepthMask(metl154_depth_writemask);
 			if (metl154_depth_enabled)
 				glEnable(GL_DEPTH_TEST);
-		}
-		if (metl154_force_cull_off)
-			glEnable(GL_CULL_FACE);
-		if (metl154_force_polygon_offset) {
-			glPolygonOffset(metl154_polygon_offset_factor, metl154_polygon_offset_units);
-			if (!metl154_polygon_offset_enabled)
-				glDisable(GL_POLYGON_OFFSET_FILL);
 		}
 		ogl_merged_wall_track_face(pointlist, nv, draw_order,
 			metl154_tmap2_submit_ctx.route, "gpu_two_pass");

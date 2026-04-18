@@ -68,8 +68,8 @@
         "merged_wall_snapshot.faces[1].submit_nv": "3",
         "merged_wall_last_draw_state.route": "force_two_pass",
         "merged_wall_last_draw_state.merge_impl": "gpu_two_pass",
-        "merged_wall_last_draw_state.force_cull_off": "true",
-        "merged_wall_last_draw_state.force_polygon_offset": "true",
+        "merged_wall_last_draw_state.force_cull_off": "false",
+        "merged_wall_last_draw_state.force_polygon_offset": "false",
         "merged_wall_last_draw_state.force_depth_off": "false"
     }},
 
