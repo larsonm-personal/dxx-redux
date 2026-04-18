@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include "3d.h"
 #include "gameseg.h"
@@ -15,7 +16,7 @@
 #include "android_log.h"
 #include "merged_wall_debug.h"
 
-#define MERGED_WALL_LOG_PT_COUNT         4
+#define MERGED_WALL_LOG_PT_COUNT         16
 #define MERGED_WALL_TRACKED_FACE_MAX     32
 #define MERGED_WALL_COVER_EVENT_MAX      64
 #define MERGED_WALL_SNAPSHOT_COVER_EXACT 1
@@ -35,9 +36,20 @@ struct merged_wall_tracked_face {
 	float min_sy;
 	float max_sy;
 	float bbox_area;
+	float fan_area_012;
+	float fan_area_023;
+	float alt_area_013;
+	float alt_area_123;
+	int fan_flip;
+	int alt_flip;
+	int fan_flat;
+	int alt_flat;
+	int cull_sensitive;
+	char preferred_split[8];
 	fix pts[MERGED_WALL_LOG_PT_COUNT][3];
 	char route[24];
 	char merge_impl[24];
+	char decision_reason[40];
 };
 
 struct merged_wall_snapshot_cover_event {
@@ -87,8 +99,10 @@ volatile int g_merged_wall_snapshot_request_frame = -1;
 volatile int g_merged_wall_render_pass = 0;
 volatile int g_merged_wall_frame_id = 0;
 volatile int g_merged_wall_draw_seq = 0;
+volatile int g_merged_wall_force_two_pass = 0;
 struct android_draw_face_context g_android_draw_face_ctx = { 0 };
 struct merged_wall_snapshot_result g_merged_wall_snapshot_result = { 0 };
+struct merged_wall_last_draw_state g_merged_wall_last_draw_state = { 0 };
 
 static struct merged_wall_tracked_face merged_wall_tracked_faces[MERGED_WALL_TRACKED_FACE_MAX];
 static struct merged_wall_snapshot_cover_event merged_wall_cover_events[MERGED_WALL_COVER_EVENT_MAX];
@@ -203,6 +217,49 @@ static int merged_wall_bbox_contains_point(float px, float py,
 	return px >= min_sx && px <= max_sx && py >= min_sy && py <= max_sy;
 }
 
+static float merged_wall_projected_triangle_area(const struct g3s_point *a,
+                                                 const struct g3s_point *b, const struct g3s_point *c)
+{
+	float ax = f2fl(a->p3_sx), ay = f2fl(a->p3_sy);
+	float bx = f2fl(b->p3_sx), by = f2fl(b->p3_sy);
+	float cx = f2fl(c->p3_sx), cy = f2fl(c->p3_sy);
+
+	return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+}
+
+static void merged_wall_track_split_geometry(struct merged_wall_tracked_face *track,
+                                             const struct g3s_point **pointlist, int nv)
+{
+	const char *pick = "same";
+
+	if (!track)
+		return;
+	track->fan_area_012 = 0.0f;
+	track->fan_area_023 = 0.0f;
+	track->alt_area_013 = 0.0f;
+	track->alt_area_123 = 0.0f;
+	track->fan_flip = 0;
+	track->alt_flip = 0;
+	track->fan_flat = 0;
+	track->alt_flat = 0;
+	track->cull_sensitive = 0;
+	merged_wall_copy_string(track->preferred_split, sizeof(track->preferred_split), pick);
+	if (!pointlist || nv != 4)
+		return;
+	track->fan_area_012 = merged_wall_projected_triangle_area(pointlist[0], pointlist[1], pointlist[2]);
+	track->fan_area_023 = merged_wall_projected_triangle_area(pointlist[0], pointlist[2], pointlist[3]);
+	track->alt_area_013 = merged_wall_projected_triangle_area(pointlist[0], pointlist[1], pointlist[3]);
+	track->alt_area_123 = merged_wall_projected_triangle_area(pointlist[1], pointlist[2], pointlist[3]);
+	track->fan_flip = (track->fan_area_012 < 0.0f && track->fan_area_023 > 0.0f) || (track->fan_area_012 > 0.0f && track->fan_area_023 < 0.0f);
+	track->alt_flip = (track->alt_area_013 < 0.0f && track->alt_area_123 > 0.0f) || (track->alt_area_013 > 0.0f && track->alt_area_123 < 0.0f);
+	track->fan_flat = fabsf(track->fan_area_012) < 0.5f || fabsf(track->fan_area_023) < 0.5f;
+	track->alt_flat = fabsf(track->alt_area_013) < 0.5f || fabsf(track->alt_area_123) < 0.5f;
+	track->cull_sensitive = track->fan_flip || track->fan_flat;
+	if ((track->fan_flip || track->fan_flat) != (track->alt_flip || track->alt_flat))
+		pick = (track->fan_flip || track->fan_flat) ? "alt" : "fan";
+	merged_wall_copy_string(track->preferred_split, sizeof(track->preferred_split), pick);
+}
+
 static float merged_wall_bbox_distance_sq(float px, float py,
                                           float min_sx, float max_sx, float min_sy, float max_sy)
 {
@@ -256,7 +313,7 @@ static int merged_wall_face_matches(const struct merged_wall_tracked_face *track
                                     const struct g3s_point **pointlist, int nv, int *ordered)
 {
 	int i, j;
-	int used[MERGED_WALL_LOG_PT_COUNT] = { 0, 0, 0, 0 };
+	int used[MERGED_WALL_LOG_PT_COUNT] = { 0 };
 
 	if (track->nv != nv || nv <= 0 || nv > MERGED_WALL_LOG_PT_COUNT)
 		return 0;
@@ -480,10 +537,11 @@ int android_merged_wall_next_draw_order(void)
 }
 
 void android_merged_wall_track_face(const struct g3s_point **pointlist, int nv,
-                                    int draw_order, const char *route, const char *merge_impl)
+                                    int draw_order, const char *route, const char *merge_impl,
+                                    const char *decision_reason)
 {
 	struct merged_wall_tracked_face *track;
-	int i;
+	int i, projected = 0;
 
 	if (!g_android_draw_face_ctx.valid || g_android_draw_face_ctx.tmap2 == 0)
 		return;
@@ -503,13 +561,37 @@ void android_merged_wall_track_face(const struct g3s_point **pointlist, int nv,
 	track->bbox_area = track->bbox_valid
 	                       ? (track->max_sx - track->min_sx) * (track->max_sy - track->min_sy)
 	                       : 0.0f;
+	merged_wall_track_split_geometry(track, pointlist, nv);
 	merged_wall_copy_string(track->route, sizeof(track->route), route);
 	merged_wall_copy_string(track->merge_impl, sizeof(track->merge_impl), merge_impl);
+	merged_wall_copy_string(track->decision_reason, sizeof(track->decision_reason), decision_reason);
 	for (i = 0; i < nv; i++) {
+		if (pointlist[i]->p3_flags & PF_PROJECTED)
+			projected++;
 		track->pts[i][0] = pointlist[i]->p3_vec.x;
 		track->pts[i][1] = pointlist[i]->p3_vec.y;
 		track->pts[i][2] = pointlist[i]->p3_vec.z;
 	}
+	debug_log(DLOG_TEXTURE,
+	          "[mwall_track] frame=%d pass=%d seq=%d order=%d seg=%d side=%d face=%d child=%d nv=%d projected=%d bbox_valid=%d box=%.1f..%.1f/%.1f..%.1f area=%.1f route=%s merge_impl=%s",
+	          g_merged_wall_frame_id,
+	          g_merged_wall_render_pass,
+	          g_merged_wall_draw_seq,
+	          draw_order,
+	          track->draw_ctx.valid ? track->draw_ctx.seg : -1,
+	          track->draw_ctx.valid ? track->draw_ctx.side : -1,
+	          track->draw_ctx.valid ? track->draw_ctx.face : -1,
+	          track->draw_ctx.valid ? track->draw_ctx.child : -1,
+	          nv,
+	          projected,
+	          track->bbox_valid,
+	          track->min_sx,
+	          track->max_sx,
+	          track->min_sy,
+	          track->max_sy,
+	          track->bbox_area,
+	          track->route,
+	          track->merge_impl);
 }
 
 void android_merged_wall_log_cover(const char *shader_kind, const char *botname,
@@ -812,7 +894,13 @@ void android_merged_wall_finish_snapshot(int screen_w, int screen_h,
 					continue;
 				dist2 = merged_wall_bbox_distance_sq(center_x, center_y,
 				                                     track->min_sx, track->max_sx, track->min_sy, track->max_sy);
-				if (best_index < 0 || dist2 < best_dist2 - 0.5f || (dist2 <= best_dist2 + 0.5f && (track->draw_order > merged_wall_tracked_faces[best_index].draw_order || (track->draw_order == merged_wall_tracked_faces[best_index].draw_order && track->bbox_area > merged_wall_tracked_faces[best_index].bbox_area)))) {
+				if (best_index < 0 || dist2 < best_dist2 - 0.5f ||
+				    (dist2 <= best_dist2 + 0.5f &&
+				     (track->bbox_area > merged_wall_tracked_faces[best_index].bbox_area + 0.5f ||
+				      (track->bbox_area >= merged_wall_tracked_faces[best_index].bbox_area - 0.5f &&
+				       (track->draw_order > merged_wall_tracked_faces[best_index].draw_order ||
+				        (track->draw_order == merged_wall_tracked_faces[best_index].draw_order &&
+				         track->draw_seq > merged_wall_tracked_faces[best_index].draw_seq)))))) {
 					best_index = i;
 					best_dist2 = dist2;
 				}
@@ -870,10 +958,22 @@ void android_merged_wall_finish_snapshot(int screen_w, int screen_h,
 		out->min_sy = track->min_sy;
 		out->max_sy = track->max_sy;
 		out->bbox_area = track->bbox_area;
+		out->fan_area_012 = track->fan_area_012;
+		out->fan_area_023 = track->fan_area_023;
+		out->alt_area_013 = track->alt_area_013;
+		out->alt_area_123 = track->alt_area_123;
+		out->fan_flip = track->fan_flip;
+		out->alt_flip = track->alt_flip;
+		out->fan_flat = track->fan_flat;
+		out->alt_flat = track->alt_flat;
+		out->cull_sensitive = track->cull_sensitive;
+		out->submit_nv = track->nv;
+		merged_wall_copy_string(out->preferred_split, sizeof(out->preferred_split), track->preferred_split);
 		merged_wall_copy_string(out->route, sizeof(out->route), track->route);
 		merged_wall_copy_string(out->merge_impl, sizeof(out->merge_impl), track->merge_impl);
+		merged_wall_copy_string(out->decision_reason, sizeof(out->decision_reason), track->decision_reason);
 		debug_log(DLOG_TEXTURE,
-		          "[mwall_snapshot_face] rank=%d center_hit=%d dist2=%.1f frame=%d pass=%d seq=%d order=%d seg=%d side=%d face=%d child=%d side_type=%d wid=%d tmap1=%d tmap2=0x%x route=%s merge_impl=%s box=%.1f..%.1f/%.1f..%.1f area=%.1f",
+		          "[mwall_snapshot_face] rank=%d center_hit=%d dist2=%.1f frame=%d pass=%d seq=%d order=%d seg=%d side=%d face=%d child=%d side_type=%d wid=%d tmap1=%d tmap2=0x%x route=%s merge_impl=%s reason=%s box=%.1f..%.1f/%.1f..%.1f area=%.1f submit_nv=%d fan=%.1f/%.1f alt=%.1f/%.1f fan_flip=%d alt_flip=%d fan_flat=%d alt_flat=%d cull_sensitive=%d pick=%s",
 		          out->rank,
 		          center_hit,
 		          dist2,
@@ -891,11 +991,23 @@ void android_merged_wall_finish_snapshot(int screen_w, int screen_h,
 		          out->tmap2,
 		          out->route,
 		          out->merge_impl,
+		          out->decision_reason,
 		          out->min_sx,
 		          out->max_sx,
 		          out->min_sy,
 		          out->max_sy,
-		          out->bbox_area);
+		          out->bbox_area,
+		          out->submit_nv,
+		          out->fan_area_012,
+		          out->fan_area_023,
+		          out->alt_area_013,
+		          out->alt_area_123,
+		          out->fan_flip,
+		          out->alt_flip,
+		          out->fan_flat,
+		          out->alt_flat,
+		          out->cull_sensitive,
+		          out->preferred_split);
 		merged_wall_log_portal("snapshot_face", &track->draw_ctx);
 	}
 

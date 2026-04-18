@@ -8,6 +8,8 @@
 struct segment;
 struct g3s_point;
 
+extern volatile int g_merged_wall_force_two_pass;
+
 int android_merged_wall_is_logging_target_tmap2(int tmap2);
 void android_merged_wall_set_draw_face_context(struct segment *segp, int sidenum,
                                                int tmap1, int tmap2, int wid_flags, int nv, int face_index);
@@ -16,7 +18,8 @@ void android_merged_wall_log_face(struct segment *segp, int sidenum, int tmap1,
                                   int tmap2, int wid_flags, float dot, int nv, int face_index);
 int android_merged_wall_next_draw_order(void);
 void android_merged_wall_track_face(const struct g3s_point **pointlist, int nv,
-                                    int draw_order, const char *route, const char *merge_impl);
+                                    int draw_order, const char *route, const char *merge_impl,
+                                    const char *decision_reason);
 void android_merged_wall_log_cover(const char *shader_kind, const char *botname,
                                    const char *ovlname, const struct g3s_point **pointlist, int nv,
                                    int draw_order);

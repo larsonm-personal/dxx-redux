@@ -215,7 +215,7 @@ static int ogl_merged_wall_next_draw_order(void)
 static void ogl_merged_wall_track_face(const g3s_point **pointlist, int nv,
 	int draw_order, const char *route, const char *merge_impl)
 {
-	android_merged_wall_track_face(pointlist, nv, draw_order, route, merge_impl);
+	android_merged_wall_track_face(pointlist, nv, draw_order, route, merge_impl, NULL);
 }
 
 static void ogl_log_merged_wall_cover(const char *shader_kind, const char *botname,
@@ -627,7 +627,9 @@ static void ogl_get_metl154_draw_state(ogl_texture *tex, GLint *active_prog,
 
 static void ogl_get_metl154_gl_state(GLint *depth_enabled, GLint *blend_enabled,
 	GLint *cull_enabled, GLboolean *depth_writemask, GLint *depth_func,
-	GLint *front_face, GLint *cull_mode, GLboolean color_mask[4], GLint *draw_fbo)
+	GLint *front_face, GLint *cull_mode, GLint *polygon_offset_enabled,
+	GLfloat *polygon_offset_factor, GLfloat *polygon_offset_units,
+	GLboolean color_mask[4], GLint *draw_fbo)
 {
 	*depth_enabled = glIsEnabled(GL_DEPTH_TEST);
 	*blend_enabled = glIsEnabled(GL_BLEND);
@@ -636,6 +638,9 @@ static void ogl_get_metl154_gl_state(GLint *depth_enabled, GLint *blend_enabled,
 	glGetIntegerv(GL_DEPTH_FUNC, depth_func);
 	glGetIntegerv(GL_FRONT_FACE, front_face);
 	glGetIntegerv(GL_CULL_FACE_MODE, cull_mode);
+	*polygon_offset_enabled = glIsEnabled(GL_POLYGON_OFFSET_FILL);
+	glGetFloatv(GL_POLYGON_OFFSET_FACTOR, polygon_offset_factor);
+	glGetFloatv(GL_POLYGON_OFFSET_UNITS, polygon_offset_units);
 	glGetBooleanv(GL_COLOR_WRITEMASK, color_mask);
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING, draw_fbo);
 }
@@ -1114,11 +1119,13 @@ static void ogl_log_metl154_diag(grs_bitmap *bmbot, grs_bitmap *bmovl,
 static void ogl_log_metl154_state(GLfloat screen_area,
 	GLint depth_enabled, GLint blend_enabled, GLint cull_enabled,
 	GLboolean depth_writemask, GLint depth_func, GLint front_face,
-	GLint cull_mode, const GLboolean color_mask[4], GLint draw_fbo,
-	int force_cull_off, int force_depth_off)
+	GLint cull_mode, GLint polygon_offset_enabled,
+	GLfloat polygon_offset_factor, GLfloat polygon_offset_units,
+	const GLboolean color_mask[4], GLint draw_fbo,
+	int force_cull_off, int force_polygon_offset, int force_depth_off)
 {
 	debug_log(DLOG_TEXTURE,
-		"[metl154state] frame=%d pass=%d seq=%d depth=%d depthmask=%d depthfunc=0x%x blend=%d cull=%d front=0x%x cullmode=0x%x colormask=%d%d%d%d fbo=%d area=%.1f force_cull_off=%d force_depth_off=%d",
+		"[metl154state] frame=%d pass=%d seq=%d depth=%d depthmask=%d depthfunc=0x%x blend=%d cull=%d front=0x%x cullmode=0x%x polyoff=%d polyfactor=%.1f polyunits=%.1f colormask=%d%d%d%d fbo=%d area=%.1f force_cull_off=%d force_poly_offset=%d force_depth_off=%d",
 		g_metl154_frame_id,
 		g_metl154_render_pass,
 		g_metl154_draw_seq,
@@ -1129,6 +1136,9 @@ static void ogl_log_metl154_state(GLfloat screen_area,
 		cull_enabled,
 		front_face,
 		cull_mode,
+		polygon_offset_enabled,
+		polygon_offset_factor,
+		polygon_offset_units,
 		color_mask[0] ? 1 : 0,
 		color_mask[1] ? 1 : 0,
 		color_mask[2] ? 1 : 0,
@@ -1136,7 +1146,38 @@ static void ogl_log_metl154_state(GLfloat screen_area,
 		draw_fbo,
 		screen_area,
 		force_cull_off,
+		force_polygon_offset,
 		force_depth_off);
+	g_merged_wall_last_draw_state.valid = 1;
+	g_merged_wall_last_draw_state.frame_id = g_metl154_frame_id;
+	g_merged_wall_last_draw_state.render_pass = g_metl154_render_pass;
+	g_merged_wall_last_draw_state.draw_seq = g_metl154_draw_seq;
+	g_merged_wall_last_draw_state.seg = g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1;
+	g_merged_wall_last_draw_state.side = g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1;
+	g_merged_wall_last_draw_state.face = g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1;
+	g_merged_wall_last_draw_state.child = g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1;
+	g_merged_wall_last_draw_state.wid_flags = g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1;
+	g_merged_wall_last_draw_state.tmap1 = g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap1 : -1;
+	g_merged_wall_last_draw_state.tmap2 = g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap2 : 0;
+	g_merged_wall_last_draw_state.depth_enabled = depth_enabled;
+	g_merged_wall_last_draw_state.blend_enabled = blend_enabled;
+	g_merged_wall_last_draw_state.cull_enabled = cull_enabled;
+	g_merged_wall_last_draw_state.polygon_offset_enabled = polygon_offset_enabled;
+	g_merged_wall_last_draw_state.polygon_offset_factor = polygon_offset_factor;
+	g_merged_wall_last_draw_state.polygon_offset_units = polygon_offset_units;
+	g_merged_wall_last_draw_state.depth_writemask = depth_writemask;
+	g_merged_wall_last_draw_state.depth_func = depth_func;
+	g_merged_wall_last_draw_state.front_face = front_face;
+	g_merged_wall_last_draw_state.cull_mode = cull_mode;
+	g_merged_wall_last_draw_state.draw_fbo = draw_fbo;
+	g_merged_wall_last_draw_state.screen_area = screen_area;
+	g_merged_wall_last_draw_state.force_cull_off = force_cull_off;
+	g_merged_wall_last_draw_state.force_polygon_offset = force_polygon_offset;
+	g_merged_wall_last_draw_state.force_depth_off = force_depth_off;
+	strncpy(g_merged_wall_last_draw_state.route, metl154_tmap2_submit_ctx.route ? metl154_tmap2_submit_ctx.route : "", sizeof(g_merged_wall_last_draw_state.route) - 1);
+	g_merged_wall_last_draw_state.route[sizeof(g_merged_wall_last_draw_state.route) - 1] = '\0';
+	strncpy(g_merged_wall_last_draw_state.merge_impl, "gpu_two_pass", sizeof(g_merged_wall_last_draw_state.merge_impl) - 1);
+	g_merged_wall_last_draw_state.merge_impl[sizeof(g_merged_wall_last_draw_state.merge_impl) - 1] = '\0';
 }
 #endif
 
@@ -2700,9 +2741,10 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	int draw_order = ogl_merged_wall_next_draw_order();
 	int is_metl154_plain = 0;
 	int skip_metl154_cover_draw = 0;
-	int metl154_force_cull_off = 0, metl154_force_depth_off = 0;
+	int metl154_force_two_pass = 0, metl154_force_cull_off = 0, metl154_force_depth_off = 0, metl154_force_polygon_offset = 0;
 	GLint metl154_depth_enabled = 0, metl154_blend_enabled = 0, metl154_cull_enabled = 0;
-	GLint metl154_depth_func = 0, metl154_front_face = 0, metl154_cull_mode = 0, metl154_draw_fbo = 0;
+	GLint metl154_depth_func = 0, metl154_front_face = 0, metl154_cull_mode = 0, metl154_polygon_offset_enabled = 0, metl154_draw_fbo = 0;
+	GLfloat metl154_polygon_offset_factor = 0.0f, metl154_polygon_offset_units = 0.0f;
 	GLboolean metl154_depth_writemask = GL_TRUE, metl154_color_mask[4] = {GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE};
 	GLfloat metl154_screen_area = 0.0f;
 #endif
@@ -2748,6 +2790,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	super = (bmovl->bm_flags & BM_FLAG_SUPER_TRANSPARENT) && bmovl->gltexture_mask;
 	#if defined(ANDROID)
 	is_metl154_plain = !super && ogl_is_metl154_bitmap(bmovl);
+	metl154_force_two_pass = is_metl154_plain && g_merged_wall_force_two_pass;
 	if (ogl_is_metl154_bitmap(bmovl))
 		debug_log(DLOG_TEXTURE,
 			"[metl154super] idx=%d bm_flags=0x%x real=0x%x mask=%p mask_h=%u super=%d",
@@ -2767,33 +2810,56 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 
 	glActiveTexture(GL_TEXTURE0);
 	if (!super && (bmovl->bm_flags & BM_FLAG_TRANSPARENT)) {
-		grs_bitmap *merged = ogl_android_get_cached_plain_texmerge_bitmap(bmbot,
-			bmovl, orient);
-		if (merged) {
-			ogl_add_joined_texture_labels(label_pointlist, label_nv, bmbot, bmovl);
-			if (ogl_is_metl154_bitmap(bmovl)) {
-				const char *botname = piggy_game_bitmap_name(bmbot);
-				const char *ovlname = piggy_game_bitmap_name(bmovl);
-				debug_log(DLOG_TEXTURE,
-					"[metl154clip] frame=%d pass=%d seq=%d stage=route route=merge_cached merge_impl=gpu_cached_single seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orig_nv=%d orient=%d super=0 bot=%s ovl=%s",
-					g_metl154_frame_id,
-					g_metl154_render_pass,
-					g_metl154_draw_seq,
-					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
-					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
-					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
-					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1,
-					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
-					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap1 : -1,
-					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap2 : 0,
-					label_nv,
-					orient,
-					botname ? botname : "<none>",
-					ovlname ? ovlname : "<none>");
+		if (metl154_force_two_pass) {
+			const char *botname = piggy_game_bitmap_name(bmbot);
+			const char *ovlname = piggy_game_bitmap_name(bmovl);
+
+			debug_log(DLOG_TEXTURE,
+				"[metl154clip] frame=%d pass=%d seq=%d stage=route route=force_two_pass merge_impl=gpu_two_pass seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orig_nv=%d orient=%d super=0 bot=%s ovl=%s",
+				g_metl154_frame_id,
+				g_metl154_render_pass,
+				g_metl154_draw_seq,
+				g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
+				g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
+				g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+				g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1,
+				g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
+				g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap1 : -1,
+				g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap2 : 0,
+				label_nv,
+				orient,
+				botname ? botname : "<none>",
+				ovlname ? ovlname : "<none>");
+			metl154_tmap2_submit_ctx.route = "force_two_pass";
+		} else {
+			grs_bitmap *merged = ogl_android_get_cached_plain_texmerge_bitmap(bmbot,
+				bmovl, orient);
+			if (merged) {
+				ogl_add_joined_texture_labels(label_pointlist, label_nv, bmbot, bmovl);
+				if (ogl_is_metl154_bitmap(bmovl)) {
+					const char *botname = piggy_game_bitmap_name(bmbot);
+					const char *ovlname = piggy_game_bitmap_name(bmovl);
+					debug_log(DLOG_TEXTURE,
+						"[metl154clip] frame=%d pass=%d seq=%d stage=route route=merge_cached merge_impl=gpu_cached_single seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orig_nv=%d orient=%d super=0 bot=%s ovl=%s",
+						g_metl154_frame_id,
+						g_metl154_render_pass,
+						g_metl154_draw_seq,
+						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
+						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
+						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1,
+						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
+						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap1 : -1,
+						g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap2 : 0,
+						label_nv,
+						orient,
+						botname ? botname : "<none>",
+						ovlname ? ovlname : "<none>");
+				}
+				ogl_merged_wall_track_face(pointlist, nv, draw_order,
+					"merge_cached", "gpu_cached_single");
+				return g3_draw_tmap(nv, pointlist, uvl_list, light_rgb, merged);
 			}
-			ogl_merged_wall_track_face(pointlist, nv, draw_order,
-				"merge_cached", "gpu_cached_single");
-			return g3_draw_tmap(nv, pointlist, uvl_list, light_rgb, merged);
 		}
 	}
 #endif
@@ -2904,7 +2970,8 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	if (is_metl154_plain) {
 		ogl_get_metl154_gl_state(&metl154_depth_enabled, &metl154_blend_enabled,
 			&metl154_cull_enabled, &metl154_depth_writemask, &metl154_depth_func,
-			&metl154_front_face, &metl154_cull_mode, metl154_color_mask,
+			&metl154_front_face, &metl154_cull_mode, &metl154_polygon_offset_enabled,
+			&metl154_polygon_offset_factor, &metl154_polygon_offset_units, metl154_color_mask,
 			&metl154_draw_fbo);
 		metl154_screen_area = ogl_get_metl154_screen_area(pointlist, nv);
 		if (metl154_cull_enabled) {
@@ -2917,8 +2984,10 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 			glDepthMask(GL_FALSE);
 			metl154_force_depth_off = 1;
 		}
-		glEnable(GL_POLYGON_OFFSET_FILL);
+		if (!metl154_polygon_offset_enabled)
+			glEnable(GL_POLYGON_OFFSET_FILL);
 		glPolygonOffset(-1.0f, -1.0f);
+		metl154_force_polygon_offset = 1;
 	}
 #endif
 
@@ -2956,8 +3025,10 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 		ogl_log_metl154_state(metl154_screen_area,
 			metl154_depth_enabled, metl154_blend_enabled, metl154_cull_enabled,
 			metl154_depth_writemask, metl154_depth_func, metl154_front_face,
-			metl154_cull_mode, metl154_color_mask, metl154_draw_fbo,
-			metl154_force_cull_off, metl154_force_depth_off);
+			metl154_cull_mode, metl154_polygon_offset_enabled,
+			metl154_polygon_offset_factor, metl154_polygon_offset_units,
+			metl154_color_mask, metl154_draw_fbo,
+			metl154_force_cull_off, metl154_force_polygon_offset, metl154_force_depth_off);
 	if (log_tmap2_geometry)
 		ogl_log_metl154_split(pointlist, nv);
 #endif
@@ -2974,8 +3045,11 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 		}
 		if (metl154_force_cull_off)
 			glEnable(GL_CULL_FACE);
-		glPolygonOffset(0.0f, 0.0f);
-		glDisable(GL_POLYGON_OFFSET_FILL);
+		if (metl154_force_polygon_offset) {
+			glPolygonOffset(metl154_polygon_offset_factor, metl154_polygon_offset_units);
+			if (!metl154_polygon_offset_enabled)
+				glDisable(GL_POLYGON_OFFSET_FILL);
+		}
 		ogl_merged_wall_track_face(pointlist, nv, draw_order,
 			metl154_tmap2_submit_ctx.route, "gpu_two_pass");
 	} else if (!skip_metl154_cover_draw) {

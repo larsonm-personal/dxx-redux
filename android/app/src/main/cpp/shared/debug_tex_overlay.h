@@ -73,8 +73,20 @@ struct merged_wall_snapshot_face {
 	float min_sy;
 	float max_sy;
 	float bbox_area;
+	float fan_area_012;
+	float fan_area_023;
+	float alt_area_013;
+	float alt_area_123;
+	int fan_flip;
+	int alt_flip;
+	int fan_flat;
+	int alt_flat;
+	int cull_sensitive;
+	int submit_nv;
+	char preferred_split[8];
 	char route[24];
 	char merge_impl[24];
+	char decision_reason[40];
 };
 
 struct merged_wall_snapshot_cover {
@@ -132,6 +144,37 @@ struct merged_wall_snapshot_result {
 	struct merged_wall_snapshot_cover covers[MERGED_WALL_SNAPSHOT_COVER_MAX];
 };
 
+struct merged_wall_last_draw_state {
+	int valid;
+	int frame_id;
+	int render_pass;
+	int draw_seq;
+	int seg;
+	int side;
+	int face;
+	int child;
+	int wid_flags;
+	int tmap1;
+	int tmap2;
+	int depth_enabled;
+	int blend_enabled;
+	int cull_enabled;
+	int polygon_offset_enabled;
+	float polygon_offset_factor;
+	float polygon_offset_units;
+	int depth_writemask;
+	int depth_func;
+	int front_face;
+	int cull_mode;
+	int draw_fbo;
+	float screen_area;
+	int force_cull_off;
+	int force_polygon_offset;
+	int force_depth_off;
+	char route[24];
+	char merge_impl[24];
+};
+
 #define DEBUG_TEX_LABEL_SET_FACE(lbl, ctxptr)                              \
 	do {                                                                   \
 		(lbl)->seg = ((ctxptr) && (ctxptr)->valid) ? (ctxptr)->seg : -1;   \
@@ -149,6 +192,7 @@ extern volatile int g_merged_wall_frame_id;
 extern volatile int g_merged_wall_draw_seq;
 extern struct android_draw_face_context g_android_draw_face_ctx;
 extern struct merged_wall_snapshot_result g_merged_wall_snapshot_result;
+extern struct merged_wall_last_draw_state g_merged_wall_last_draw_state;
 
 void android_merged_wall_request_snapshot(void);
 

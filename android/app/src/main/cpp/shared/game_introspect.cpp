@@ -108,8 +108,10 @@ int androidaud_get_audio_buf_frames(void);
 #include <physfs.h>
 
 #include "console_ringbuf.h"
+#include "android_log.h"
 #include "overlay_ringbuf.h"
 #include "debug_tex_overlay.h"
+#include "merged_wall_debug.h"
 
 /* -- Helpers to identify front-window types --------------------------- */
 
@@ -600,8 +602,20 @@ static json serialize_merged_wall_snapshot()
 		                  { "min_sy", face.min_sy },
 		                  { "max_sy", face.max_sy },
 		                  { "bbox_area", face.bbox_area },
+		                  { "fan_area_012", face.fan_area_012 },
+		                  { "fan_area_023", face.fan_area_023 },
+		                  { "alt_area_013", face.alt_area_013 },
+		                  { "alt_area_123", face.alt_area_123 },
+		                  { "fan_flip", (bool) face.fan_flip },
+		                  { "alt_flip", (bool) face.alt_flip },
+		                  { "fan_flat", (bool) face.fan_flat },
+		                  { "alt_flat", (bool) face.alt_flat },
+		                  { "cull_sensitive", (bool) face.cull_sensitive },
+		                  { "submit_nv", face.submit_nv },
+		                  { "preferred_split", std::string(face.preferred_split) },
 		                  { "route", std::string(face.route) },
-		                  { "merge_impl", std::string(face.merge_impl) } });
+		                  { "merge_impl", std::string(face.merge_impl) },
+		                  { "decision_reason", std::string(face.decision_reason) } });
 	}
 
 	for (int i = 0; i < MERGED_WALL_SNAPSHOT_COVER_MAX; ++i) {
@@ -654,6 +668,44 @@ static json serialize_merged_wall_snapshot()
 		{ "omitted_cover_count", snap.omitted_cover_count },
 		{ "faces", std::move(faces) },
 		{ "covers", std::move(covers) }
+	};
+}
+
+static json serialize_merged_wall_last_draw_state()
+{
+	const merged_wall_last_draw_state &state = g_merged_wall_last_draw_state;
+
+	if (!state.valid)
+		return nullptr;
+
+	return {
+		{ "frame_id", state.frame_id },
+		{ "render_pass", state.render_pass },
+		{ "draw_seq", state.draw_seq },
+		{ "seg", state.seg },
+		{ "side", state.side },
+		{ "face", state.face },
+		{ "child", state.child },
+		{ "wid_flags", state.wid_flags },
+		{ "tmap1", state.tmap1 },
+		{ "tmap2", state.tmap2 },
+		{ "depth_enabled", (bool) state.depth_enabled },
+		{ "blend_enabled", (bool) state.blend_enabled },
+		{ "cull_enabled", (bool) state.cull_enabled },
+		{ "polygon_offset_enabled", (bool) state.polygon_offset_enabled },
+		{ "polygon_offset_factor", state.polygon_offset_factor },
+		{ "polygon_offset_units", state.polygon_offset_units },
+		{ "depth_writemask", (bool) state.depth_writemask },
+		{ "depth_func", state.depth_func },
+		{ "front_face", state.front_face },
+		{ "cull_mode", state.cull_mode },
+		{ "draw_fbo", state.draw_fbo },
+		{ "screen_area", state.screen_area },
+		{ "force_cull_off", (bool) state.force_cull_off },
+		{ "force_polygon_offset", (bool) state.force_polygon_offset },
+		{ "force_depth_off", (bool) state.force_depth_off },
+		{ "route", std::string(state.route) },
+		{ "merge_impl", std::string(state.merge_impl) }
 	};
 }
 
@@ -753,10 +805,13 @@ extern "C" char *game_introspect_get_state(void)
 	{
 		json dbg;
 		dbg["tex_overlay"] = (bool) g_debug_tex_overlay_active;
+		dbg["texture_log"] = (bool) debug_log_enabled[DLOG_TEXTURE];
 		dbg["merged_wall_mode"] = (int) g_merged_wall_debug_mode;
 		dbg["merged_wall_experiment"] = (int) g_merged_wall_experiment_mode;
+		dbg["merged_wall_force_two_pass"] = (int) g_merged_wall_force_two_pass;
 		j["debug_flags"] = std::move(dbg);
 	}
+	j["merged_wall_last_draw_state"] = serialize_merged_wall_last_draw_state();
 
 	/* -- Endlevel sequence --------------------------------------- */
 	{

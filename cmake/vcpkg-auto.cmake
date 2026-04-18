@@ -7,7 +7,7 @@
 #   1. VCPKG_ROOT environment variable (standard vcpkg convention)
 #   2. VCPKG_INSTALLATION_ROOT environment variable (GitHub Actions / VS Dev Shell)
 #   3. Visual Studio bundled vcpkg (all editions, all versions)
-#   4. Common user install locations (C:/vcpkg, ~/vcpkg, etc.)
+#   4. Common user install locations (C:/vcpkg, C:/local/vcpkg, ~/vcpkg, etc.)
 #   5. vcpkg on PATH (find_program fallback)
 #
 # Once found, includes vcpkg.cmake transparently. If not found, issues a
@@ -62,6 +62,7 @@ if(NOT _VCPKG_ROOT)
     if(WIN32)
         _vcpkg_try_root("C:/vcpkg" _VCPKG_ROOT)
         _vcpkg_try_root("C:/src/vcpkg" _VCPKG_ROOT)
+        _vcpkg_try_root("C:/local/vcpkg" _VCPKG_ROOT)
         if(DEFINED ENV{USERPROFILE})
             _vcpkg_try_root("$ENV{USERPROFILE}/vcpkg" _VCPKG_ROOT)
         endif()
@@ -101,7 +102,7 @@ else()
     message(WARNING
         "vcpkg-auto: vcpkg not found. Install vcpkg and either:\n"
         "  - set the VCPKG_ROOT environment variable, or\n"
-        "  - install to a standard location (C:/vcpkg, ~/vcpkg, etc.)\n"
+        "  - install to a standard location (C:/vcpkg, C:/local/vcpkg, ~/vcpkg, etc.)\n"
         "Continuing without vcpkg — find_package calls may fail."
     )
 endif()
