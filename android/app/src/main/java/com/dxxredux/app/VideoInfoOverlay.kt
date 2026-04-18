@@ -66,23 +66,23 @@ class VideoInfoOverlay(
 
     // Labels toggle button state and hit region
     private var labelsOn = false
-    private var metl154Mode = 0
-    private var metl154ExperimentMode = 0
+    private var mergedWallMode = 0
+    private var mergedWallExperimentMode = 0
     private var buttonPressed = false
     private var anisoPressed = false
     private var msaaPressed = false
     private var texFiltPressed = false
-    private var metl154Pressed = false
-    private var metl154ExperimentPressed = false
-    private var metl154SnapshotPressed = false
-    private var metl154SnapshotFlashUntilMs = 0L
+    private var mergedWallPressed = false
+    private var mergedWallExperimentPressed = false
+    private var mergedWallSnapshotPressed = false
+    private var mergedWallSnapshotFlashUntilMs = 0L
     private val buttonRect = RectF()
     private val anisoRect = RectF()
     private val msaaRect = RectF()
     private val texFiltRect = RectF()
-    private val metl154Rect = RectF()
-    private val metl154ExperimentRect = RectF()
-    private val metl154SnapshotRect = RectF()
+    private val mergedWallRect = RectF()
+    private val mergedWallExperimentRect = RectF()
+    private val mergedWallSnapshotRect = RectF()
     private val panelBounds = RectF()
 
     private val pollRunnable =
@@ -136,8 +136,8 @@ class VideoInfoOverlay(
                         texFiltLevel = stats[27]
                     }
                     if (stats != null && stats.size >= 32) {
-                        metl154Mode = stats[30]
-                        metl154ExperimentMode = stats[31]
+                        mergedWallMode = stats[30]
+                        mergedWallExperimentMode = stats[31]
                     }
                 } catch (_: Exception) {
                     // JNI not ready yet
@@ -434,64 +434,56 @@ class VideoInfoOverlay(
         canvas.drawText(msaaText + msaaMaxText, panelLeft + pad, y, msaaPaint)
         y += lineH
 
-        // metl154 shader debug cycle button
-        val metl154Text =
-            when (metl154Mode) {
-                1 -> "metl154: Alpha"
-                2 -> "metl154: RGB"
-                else -> "metl154: OFF"
+        // Merged-wall overlay debug cycle button
+        val mergedWallText =
+            when (mergedWallMode) {
+                1 -> "overlay: Alpha"
+                2 -> "overlay: RGB"
+                else -> "overlay: OFF"
             }
-        val metl154Paint = if (metl154Mode == 0) fpsWarnPaint else fpsGoodPaint
-        metl154Rect.set(
+        val mergedWallPaint = if (mergedWallMode == 0) fpsWarnPaint else fpsGoodPaint
+        mergedWallRect.set(
             panelLeft + pad * 0.5f,
             y - baseTextSize,
             panelLeft + panelW - pad * 0.5f,
             y + lineH * 0.3f,
         )
-        val metl154Bg = if (metl154Pressed) btnPressedPaint else btnNormalPaint
-        canvas.drawRoundRect(metl154Rect, pad * 0.5f, pad * 0.5f, metl154Bg)
-        canvas.drawText(metl154Text, panelLeft + pad, y, metl154Paint)
+        val mergedWallBg = if (mergedWallPressed) btnPressedPaint else btnNormalPaint
+        canvas.drawRoundRect(mergedWallRect, pad * 0.5f, pad * 0.5f, mergedWallBg)
+        canvas.drawText(mergedWallText, panelLeft + pad, y, mergedWallPaint)
         y += lineH
 
-        // Keep labels in sync with METL154_EXPERIMENT_* in debug_tex_overlay.h.
-        val metl154ExperimentText =
-            when (metl154ExperimentMode) {
-                1 -> "m154 exp: NoMips"
-                2 -> "m154 exp: RGBA"
-                3 -> "m154 exp: RGBA1"
-                4 -> "m154 exp: Stock"
-                5 -> "m154 exp: AlphaRaw"
-                6 -> "m154 exp: CoverSkip"
-                7 -> "m154 exp: CoverSkip2"
-                8 -> "m154 exp: OvlOnly"
-                9 -> "m154 exp: ClipAll"
-                10 -> "m154 exp: OldMerge"
-                else -> "m154 exp: Default"
+        // Only the default and force-legacy experiment modes remain surfaced.
+        val mergedWallExperimentText =
+            when (mergedWallExperimentMode) {
+                10 -> "mwall exp: Legacy"
+                0 -> "mwall exp: Default"
+                else -> "mwall exp: Compat $mergedWallExperimentMode"
             }
-        val metl154ExperimentPaint = if (metl154ExperimentMode == 0) fpsWarnPaint else fpsGoodPaint
-        metl154ExperimentRect.set(
+        val mergedWallExperimentPaint = if (mergedWallExperimentMode == 0) fpsWarnPaint else fpsGoodPaint
+        mergedWallExperimentRect.set(
             panelLeft + pad * 0.5f,
             y - baseTextSize,
             panelLeft + panelW - pad * 0.5f,
             y + lineH * 0.3f,
         )
-        val metl154ExperimentBg = if (metl154ExperimentPressed) btnPressedPaint else btnNormalPaint
-        canvas.drawRoundRect(metl154ExperimentRect, pad * 0.5f, pad * 0.5f, metl154ExperimentBg)
-        canvas.drawText(metl154ExperimentText, panelLeft + pad, y, metl154ExperimentPaint)
+        val mergedWallExperimentBg = if (mergedWallExperimentPressed) btnPressedPaint else btnNormalPaint
+        canvas.drawRoundRect(mergedWallExperimentRect, pad * 0.5f, pad * 0.5f, mergedWallExperimentBg)
+        canvas.drawText(mergedWallExperimentText, panelLeft + pad, y, mergedWallExperimentPaint)
         y += lineH
 
-        val snapshotActive = android.os.SystemClock.uptimeMillis() < metl154SnapshotFlashUntilMs
-        val metl154SnapshotText = if (snapshotActive) "m154 snap: Sent" else "m154 snap: Tap"
-        val metl154SnapshotPaint = if (snapshotActive) fpsGoodPaint else valuePaint
-        metl154SnapshotRect.set(
+        val snapshotActive = android.os.SystemClock.uptimeMillis() < mergedWallSnapshotFlashUntilMs
+        val mergedWallSnapshotText = if (snapshotActive) "mwall snap: Sent" else "mwall snap: Tap"
+        val mergedWallSnapshotPaint = if (snapshotActive) fpsGoodPaint else valuePaint
+        mergedWallSnapshotRect.set(
             panelLeft + pad * 0.5f,
             y - baseTextSize,
             panelLeft + panelW - pad * 0.5f,
             y + lineH * 0.3f,
         )
-        val metl154SnapshotBg = if (metl154SnapshotPressed) btnPressedPaint else btnNormalPaint
-        canvas.drawRoundRect(metl154SnapshotRect, pad * 0.5f, pad * 0.5f, metl154SnapshotBg)
-        canvas.drawText(metl154SnapshotText, panelLeft + pad, y, metl154SnapshotPaint)
+        val mergedWallSnapshotBg = if (mergedWallSnapshotPressed) btnPressedPaint else btnNormalPaint
+        canvas.drawRoundRect(mergedWallSnapshotRect, pad * 0.5f, pad * 0.5f, mergedWallSnapshotBg)
+        canvas.drawText(mergedWallSnapshotText, panelLeft + pad, y, mergedWallSnapshotPaint)
         y += lineH
 
         // Labels toggle button
@@ -516,9 +508,9 @@ class VideoInfoOverlay(
         val inAniso = anisoRect.contains(event.x, event.y)
         val inMsaa = msaaRect.contains(event.x, event.y)
         val inTexFilt = texFiltRect.contains(event.x, event.y)
-        val inMetl154 = metl154Rect.contains(event.x, event.y)
-        val inMetl154Experiment = metl154ExperimentRect.contains(event.x, event.y)
-        val inMetl154Snapshot = metl154SnapshotRect.contains(event.x, event.y)
+        val inMergedWall = mergedWallRect.contains(event.x, event.y)
+        val inMergedWallExperiment = mergedWallExperimentRect.contains(event.x, event.y)
+        val inMergedWallSnapshot = mergedWallSnapshotRect.contains(event.x, event.y)
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
@@ -542,18 +534,18 @@ class VideoInfoOverlay(
                     invalidate()
                     return true
                 }
-                if (inMetl154) {
-                    metl154Pressed = true
+                if (inMergedWall) {
+                    mergedWallPressed = true
                     invalidate()
                     return true
                 }
-                if (inMetl154Experiment) {
-                    metl154ExperimentPressed = true
+                if (inMergedWallExperiment) {
+                    mergedWallExperimentPressed = true
                     invalidate()
                     return true
                 }
-                if (inMetl154Snapshot) {
-                    metl154SnapshotPressed = true
+                if (inMergedWallSnapshot) {
+                    mergedWallSnapshotPressed = true
                     invalidate()
                     return true
                 }
@@ -577,34 +569,34 @@ class VideoInfoOverlay(
                     cycleTexFilt()
                     performClick()
                 }
-                if (metl154Pressed && inMetl154) {
-                    cycleMetl154Mode()
+                if (mergedWallPressed && inMergedWall) {
+                    cycleMergedWallMode()
                     performClick()
                 }
-                if (metl154ExperimentPressed && inMetl154Experiment) {
-                    cycleMetl154Experiment()
+                if (mergedWallExperimentPressed && inMergedWallExperiment) {
+                    cycleMergedWallExperiment()
                     performClick()
                 }
-                if (metl154SnapshotPressed && inMetl154Snapshot) {
-                    triggerMetl154Snapshot()
+                if (mergedWallSnapshotPressed && inMergedWallSnapshot) {
+                    triggerMergedWallSnapshot()
                     performClick()
                 }
                 if (buttonPressed ||
                     anisoPressed ||
                     msaaPressed ||
                     texFiltPressed ||
-                    metl154Pressed ||
-                    metl154ExperimentPressed ||
-                    metl154SnapshotPressed ||
+                    mergedWallPressed ||
+                    mergedWallExperimentPressed ||
+                    mergedWallSnapshotPressed ||
                     inPanel
                 ) {
                     buttonPressed = false
                     anisoPressed = false
                     msaaPressed = false
                     texFiltPressed = false
-                    metl154Pressed = false
-                    metl154ExperimentPressed = false
-                    metl154SnapshotPressed = false
+                    mergedWallPressed = false
+                    mergedWallExperimentPressed = false
+                    mergedWallSnapshotPressed = false
                     invalidate()
                     return true
                 }
@@ -614,9 +606,9 @@ class VideoInfoOverlay(
                 anisoPressed = false
                 msaaPressed = false
                 texFiltPressed = false
-                metl154Pressed = false
-                metl154ExperimentPressed = false
-                metl154SnapshotPressed = false
+                mergedWallPressed = false
+                mergedWallExperimentPressed = false
+                mergedWallSnapshotPressed = false
                 invalidate()
             }
         }
@@ -650,21 +642,21 @@ class VideoInfoOverlay(
         graphicsOptionSetter?.invoke("tex_filt", next)
     }
 
-    private fun cycleMetl154Mode() {
-        val next = (metl154Mode + 1) % 3
-        metl154Mode = next
-        debugFlagSetter?.invoke("metl154_mode", next)
+    private fun cycleMergedWallMode() {
+        val next = (mergedWallMode + 1) % 3
+        mergedWallMode = next
+        debugFlagSetter?.invoke("merged_wall_mode", next)
     }
 
-    private fun cycleMetl154Experiment() {
-        val next = (metl154ExperimentMode + 1) % 11
-        metl154ExperimentMode = next
-        debugFlagSetter?.invoke("metl154_experiment", next)
+    private fun cycleMergedWallExperiment() {
+        val next = if (mergedWallExperimentMode == 0) 10 else 0
+        mergedWallExperimentMode = next
+        debugFlagSetter?.invoke("merged_wall_experiment", next)
     }
 
-    private fun triggerMetl154Snapshot() {
-        debugFlagSetter?.invoke("metl154_snapshot", 1)
-        metl154SnapshotFlashUntilMs = android.os.SystemClock.uptimeMillis() + SNAPSHOT_FLASH_MS
+    private fun triggerMergedWallSnapshot() {
+        debugFlagSetter?.invoke("merged_wall_snapshot", 1)
+        mergedWallSnapshotFlashUntilMs = android.os.SystemClock.uptimeMillis() + SNAPSHOT_FLASH_MS
         invalidate()
         handler.postDelayed(
             { if (visibility == VISIBLE) invalidate() },

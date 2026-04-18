@@ -92,7 +92,7 @@ static int texmerge_metl154_overlay(grs_bitmap *bm)
 
 static int texmerge_should_log(grs_bitmap *top_bmp)
 {
-	return (int)g_metl154_experiment_mode == METL154_EXPERIMENT_OLD_MERGE
+	return (int)g_merged_wall_experiment_mode == MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE
 		|| texmerge_metl154_overlay(top_bmp);
 }
 
@@ -106,12 +106,12 @@ static void texmerge_set_owner(TEXTURE_CACHE *entry)
 		entry->first_owner_seg = seg;
 		entry->first_owner_side = side;
 		entry->first_owner_face = face;
-		entry->creation_frame = g_metl154_frame_id;
+		entry->creation_frame = g_merged_wall_frame_id;
 	}
 	entry->last_owner_seg = seg;
 	entry->last_owner_side = side;
 	entry->last_owner_face = face;
-	entry->last_use_frame = g_metl154_frame_id;
+	entry->last_use_frame = g_merged_wall_frame_id;
 }
 
 static void texmerge_log_event(const char *event, int slot, int tmap_bottom,
@@ -129,9 +129,9 @@ static void texmerge_log_event(const char *event, int slot, int tmap_bottom,
 	debug_log(DLOG_TEXTURE,
 		"[metl154texmerge] event=%s frame=%d pass=%d seq=%d slot=%d seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orient=%d bot=%s ovl=%s first_owner=%d/%d/%d create_frame=%d last_owner=%d/%d/%d last_use_frame=%d",
 		event,
-		g_metl154_frame_id,
-		g_metl154_render_pass,
-		g_metl154_draw_seq,
+		g_merged_wall_frame_id,
+		g_merged_wall_render_pass,
+		g_merged_wall_draw_seq,
 		slot,
 		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
 		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,

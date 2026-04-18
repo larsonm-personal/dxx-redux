@@ -56,6 +56,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 #ifdef ANDROID
 #include "debug_tex_overlay.h"
+#include "merged_wall_debug.h"
 #include "android_log.h"
 
 void ogl_bindbmtex(grs_bitmap *bm);
@@ -87,363 +88,6 @@ int	Clear_window=2;	// 1 = Clear whole background window, 2 = clear view portals
 
 int framecount=-1;
 short Rotated_last[MAX_VERTICES];
-
-#ifdef ANDROID
-static int render_tmap2_is_metl154(int tmap2)
-{
-	int overlay = tmap2 & 0x3FFF;
-	grs_bitmap *bm;
-	const char *name;
-
-	if (!tmap2 || overlay >= NumTextures)
-		return 0;
-	bm = &GameBitmaps[Textures[overlay].index];
-	name = piggy_game_bitmap_name(bm);
-	return name && !d_stricmp(name, "metl154");
-}
-
-#define METL154_TRACK_SIDE_COUNT 4
-
-struct metl154_track_side {
-	short segnum;
-	sbyte sidenum;
-	const char *label;
-};
-
-static const struct metl154_track_side metl154_track_sides[METL154_TRACK_SIDE_COUNT] = {
-	{82, 4, "portal82"},
-	{83, 4, "portal83"},
-	{83, 3, "rock83side3"},
-	{29, 2, "rock29"}
-};
-
-static int g_metl154_tracked_side_snapshot_pending = 1;
-
-static const char *render_metl154_texture_name_or_none(int tmap_num)
-{
-	int texnum;
-	grs_bitmap *bm;
-	const char *name;
-
-	if (!tmap_num)
-		return "<none>";
-	texnum = tmap_num & 0x3FFF;
-	if (texnum < 0 || texnum >= NumTextures)
-		return "<bad>";
-	bm = &GameBitmaps[Textures[texnum].index];
-	name = piggy_game_bitmap_name(bm);
-	return name ? name : "<unnamed>";
-}
-
-static unsigned int render_metl154_side_sig_mix(unsigned int sig, unsigned int value)
-{
-	return (sig ^ value) * 16777619u;
-}
-
-static unsigned int render_metl154_side_signature(segment *segp, int sidenum)
-{
-	side *sidep = &segp->sides[sidenum];
-	unsigned int sig = 2166136261u;
-	int i;
-
-	sig = render_metl154_side_sig_mix(sig, (unsigned short)segp->children[sidenum]);
-	sig = render_metl154_side_sig_mix(sig, (unsigned short)sidep->type);
-	sig = render_metl154_side_sig_mix(sig, (unsigned short)sidep->wall_num);
-	sig = render_metl154_side_sig_mix(sig, (unsigned short)sidep->tmap_num);
-	sig = render_metl154_side_sig_mix(sig, (unsigned short)sidep->tmap_num2);
-	for (i = 0; i < 4; ++i) {
-		sig = render_metl154_side_sig_mix(sig, (unsigned int)sidep->uvls[i].u);
-		sig = render_metl154_side_sig_mix(sig, (unsigned int)sidep->uvls[i].v);
-		sig = render_metl154_side_sig_mix(sig, (unsigned int)sidep->uvls[i].l);
-	}
-	return sig;
-}
-
-static int render_is_metl154_tracked_side(int segnum, int sidenum)
-{
-	int i;
-
-	for (i = 0; i < METL154_TRACK_SIDE_COUNT; ++i) {
-		if (metl154_track_sides[i].segnum == segnum
-			&& metl154_track_sides[i].sidenum == sidenum)
-			return 1;
-	}
-	return 0;
-}
-
-static void render_log_metl154_side_geom(segment *segp, int sidenum,
-	const char *stage, int frame_id, const char *label)
-{
-	int vertnum_list[4];
-	side *sidep = &segp->sides[sidenum];
-
-	get_side_verts(vertnum_list, (int)(segp - Segments), sidenum);
-	debug_log(DLOG_TEXTURE,
-		"[metl154sidegeom] frame=%d stage=%s label=%s seg=%d side=%d type=%d n0=%.4f/%.4f/%.4f n1=%.4f/%.4f/%.4f v0=%d:%.1f/%.1f/%.1f uv0=%.3f/%.3f v1=%d:%.1f/%.1f/%.1f uv1=%.3f/%.3f v2=%d:%.1f/%.1f/%.1f uv2=%.3f/%.3f v3=%d:%.1f/%.1f/%.1f uv3=%.3f/%.3f",
-		frame_id,
-		stage ? stage : "<null>",
-		label ? label : "<none>",
-		(int)(segp - Segments),
-		sidenum,
-		sidep->type,
-		f2fl(sidep->normals[0].x), f2fl(sidep->normals[0].y), f2fl(sidep->normals[0].z),
-		f2fl(sidep->normals[1].x), f2fl(sidep->normals[1].y), f2fl(sidep->normals[1].z),
-		vertnum_list[0], f2fl(Vertices[vertnum_list[0]].x), f2fl(Vertices[vertnum_list[0]].y), f2fl(Vertices[vertnum_list[0]].z), f2fl(sidep->uvls[0].u), f2fl(sidep->uvls[0].v),
-		vertnum_list[1], f2fl(Vertices[vertnum_list[1]].x), f2fl(Vertices[vertnum_list[1]].y), f2fl(Vertices[vertnum_list[1]].z), f2fl(sidep->uvls[1].u), f2fl(sidep->uvls[1].v),
-		vertnum_list[2], f2fl(Vertices[vertnum_list[2]].x), f2fl(Vertices[vertnum_list[2]].y), f2fl(Vertices[vertnum_list[2]].z), f2fl(sidep->uvls[2].u), f2fl(sidep->uvls[2].v),
-		vertnum_list[3], f2fl(Vertices[vertnum_list[3]].x), f2fl(Vertices[vertnum_list[3]].y), f2fl(Vertices[vertnum_list[3]].z), f2fl(sidep->uvls[3].u), f2fl(sidep->uvls[3].v));
-}
-
-static void render_log_metl154_face_geom(segment *segp, int sidenum, int face_index,
-	fix dot)
-{
-	side *sidep = &segp->sides[sidenum];
-	int vertnum_list[4];
-	int tri_verts[4];
-	int uv_idx[4];
-	int tri_count, normal_index;
-
-	if (!render_is_metl154_tracked_side((int)(segp - Segments), sidenum))
-		return;
-
-	get_side_verts(vertnum_list, (int)(segp - Segments), sidenum);
-	tri_count = 0;
-	normal_index = 0;
-	if (sidep->type == SIDE_IS_QUAD) {
-		tri_count = 4;
-		tri_verts[0] = vertnum_list[0];
-		tri_verts[1] = vertnum_list[1];
-		tri_verts[2] = vertnum_list[2];
-		tri_verts[3] = vertnum_list[3];
-		uv_idx[0] = 0;
-		uv_idx[1] = 1;
-		uv_idx[2] = 2;
-		uv_idx[3] = 3;
-	} else if (sidep->type == SIDE_IS_TRI_02) {
-		tri_count = 3;
-		if (face_index == 0) {
-			tri_verts[0] = vertnum_list[0];
-			tri_verts[1] = vertnum_list[1];
-			tri_verts[2] = vertnum_list[2];
-			uv_idx[0] = 0;
-			uv_idx[1] = 1;
-			uv_idx[2] = 2;
-			normal_index = 0;
-		} else {
-			tri_verts[0] = vertnum_list[0];
-			tri_verts[1] = vertnum_list[2];
-			tri_verts[2] = vertnum_list[3];
-			uv_idx[0] = 0;
-			uv_idx[1] = 2;
-			uv_idx[2] = 3;
-			normal_index = 1;
-		}
-	} else if (sidep->type == SIDE_IS_TRI_13) {
-		tri_count = 3;
-		if (face_index == 1) {
-			tri_verts[0] = vertnum_list[1];
-			tri_verts[1] = vertnum_list[2];
-			tri_verts[2] = vertnum_list[3];
-			uv_idx[0] = 1;
-			uv_idx[1] = 2;
-			uv_idx[2] = 3;
-			normal_index = 1;
-		} else {
-			tri_verts[0] = vertnum_list[0];
-			tri_verts[1] = vertnum_list[1];
-			tri_verts[2] = vertnum_list[3];
-			uv_idx[0] = 0;
-			uv_idx[1] = 1;
-			uv_idx[2] = 3;
-			normal_index = 0;
-		}
-	} else {
-		return;
-	}
-
-	debug_log(DLOG_TEXTURE,
-		"[metl154facegeom] frame=%d pass=%d seq=%d seg=%d side=%d face=%d type=%d dot=%.4f n=%.4f/%.4f/%.4f tri=%d v0=%d:%.1f/%.1f/%.1f uv0=%.3f/%.3f v1=%d:%.1f/%.1f/%.1f uv1=%.3f/%.3f v2=%d:%.1f/%.1f/%.1f uv2=%.3f/%.3f v3=%d:%.1f/%.1f/%.1f uv3=%.3f/%.3f",
-		g_metl154_frame_id,
-		g_metl154_render_pass,
-		g_metl154_draw_seq,
-		(int)(segp - Segments),
-		sidenum,
-		face_index,
-		sidep->type,
-		f2fl(dot),
-		f2fl(sidep->normals[normal_index].x),
-		f2fl(sidep->normals[normal_index].y),
-		f2fl(sidep->normals[normal_index].z),
-		tri_count,
-		tri_verts[0], f2fl(Vertices[tri_verts[0]].x), f2fl(Vertices[tri_verts[0]].y), f2fl(Vertices[tri_verts[0]].z), f2fl(sidep->uvls[uv_idx[0]].u), f2fl(sidep->uvls[uv_idx[0]].v),
-		tri_verts[1], f2fl(Vertices[tri_verts[1]].x), f2fl(Vertices[tri_verts[1]].y), f2fl(Vertices[tri_verts[1]].z), f2fl(sidep->uvls[uv_idx[1]].u), f2fl(sidep->uvls[uv_idx[1]].v),
-		tri_verts[2], f2fl(Vertices[tri_verts[2]].x), f2fl(Vertices[tri_verts[2]].y), f2fl(Vertices[tri_verts[2]].z), f2fl(sidep->uvls[uv_idx[2]].u), f2fl(sidep->uvls[uv_idx[2]].v),
-		tri_count > 3 ? tri_verts[3] : -1,
-		tri_count > 3 ? f2fl(Vertices[tri_verts[3]].x) : 0.0,
-		tri_count > 3 ? f2fl(Vertices[tri_verts[3]].y) : 0.0,
-		tri_count > 3 ? f2fl(Vertices[tri_verts[3]].z) : 0.0,
-		tri_count > 3 ? f2fl(sidep->uvls[uv_idx[3]].u) : 0.0,
-		tri_count > 3 ? f2fl(sidep->uvls[uv_idx[3]].v) : 0.0);
-}
-
-static void render_log_metl154_tracked_side(const struct metl154_track_side *track,
-	const char *stage, int frame_id)
-{
-	segment *segp;
-	side *sidep;
-	int child, conn_side = -1, wid;
-
-	if (track->segnum < 0 || track->segnum > Highest_segment_index)
-		return;
-	segp = &Segments[track->segnum];
-	sidep = &segp->sides[track->sidenum];
-	child = segp->children[track->sidenum];
-	if (child >= 0 && child <= Highest_segment_index)
-		conn_side = find_connect_side(segp, &Segments[child]);
-	wid = WALL_IS_DOORWAY(segp, track->sidenum);
-	debug_log(DLOG_TEXTURE,
-		"[metl154side] frame=%d stage=%s label=%s seg=%d side=%d child=%d conn_side=%d side_type=%d wall_num=%d wid=%d tmap1=%d tmap2=0x%x bot=%s ovl=%s sig=0x%x",
-		frame_id,
-		stage ? stage : "<null>",
-		track->label,
-		track->segnum,
-		track->sidenum,
-		child,
-		conn_side,
-		sidep->type,
-		sidep->wall_num,
-		wid,
-		sidep->tmap_num,
-		sidep->tmap_num2,
-		render_metl154_texture_name_or_none(sidep->tmap_num),
-		render_metl154_texture_name_or_none(sidep->tmap_num2),
-		render_metl154_side_signature(segp, track->sidenum));
-	render_log_metl154_side_geom(segp, track->sidenum, stage, frame_id, track->label);
-}
-
-void render_log_android_tracked_side_snapshot(const char *stage, int frame_id)
-{
-	int i;
-
-	for (i = 0; i < METL154_TRACK_SIDE_COUNT; ++i)
-		render_log_metl154_tracked_side(&metl154_track_sides[i], stage, frame_id);
-}
-
-void render_reset_android_tracked_side_snapshot(void)
-{
-	g_metl154_tracked_side_snapshot_pending = 1;
-}
-
-static void render_log_android_tracked_side_snapshot_if_pending(void)
-{
-	if (!g_metl154_tracked_side_snapshot_pending)
-		return;
-	render_log_android_tracked_side_snapshot("render_preframe", g_metl154_frame_id);
-	g_metl154_tracked_side_snapshot_pending = 0;
-}
-
-static void render_set_android_draw_face_context(segment *segp, int sidenum,
-	int tmap1, int tmap2, int wid_flags, int nv, int face_index)
-{
-	if (tmap2 != 0 && (render_tmap2_is_metl154(tmap2)
-		|| (int)g_metl154_experiment_mode == METL154_EXPERIMENT_CLIP_ALL))
-		g_metl154_draw_seq++;
-	g_android_draw_face_ctx.valid = 1;
-	g_android_draw_face_ctx.seg = (int)(segp - Segments);
-	g_android_draw_face_ctx.side = sidenum;
-	g_android_draw_face_ctx.face = face_index;
-	g_android_draw_face_ctx.child = segp->children[sidenum];
-	g_android_draw_face_ctx.side_type = segp->sides[sidenum].type;
-	g_android_draw_face_ctx.nv = nv;
-	g_android_draw_face_ctx.wid_flags = wid_flags;
-	g_android_draw_face_ctx.tmap1 = tmap1;
-	g_android_draw_face_ctx.tmap2 = tmap2;
-}
-
-static void render_clear_android_draw_face_context(void)
-{
-	memset(&g_android_draw_face_ctx, 0, sizeof(g_android_draw_face_ctx));
-	g_android_draw_face_ctx.seg = -1;
-	g_android_draw_face_ctx.side = -1;
-	g_android_draw_face_ctx.face = -1;
-	g_android_draw_face_ctx.child = -1;
-	g_android_draw_face_ctx.side_type = -1;
-	g_android_draw_face_ctx.tmap1 = -1;
-}
-
-static void render_log_metl154_face(segment *segp, int sidenum, int tmap1, int tmap2,
-	int wid_flags, fix dot, int nv, int face_index)
-{
-	int overlay = tmap2 & 0x3FFF;
-	grs_bitmap *bmbot, *bmovl;
-	const char *botname, *ovlname;
-	const char *merge_path;
-	int bot_real_flags, ovl_real_flags;
-	int wall_num = segp->sides[sidenum].wall_num;
-	int wall_type = -1, wall_state = -1, wall_flags = 0;
-
-	if (!render_tmap2_is_metl154(tmap2) || tmap1 >= NumTextures || overlay >= NumTextures)
-		return;
-	bmbot = &GameBitmaps[Textures[tmap1].index];
-	bmovl = &GameBitmaps[Textures[overlay].index];
-	botname = piggy_game_bitmap_name(bmbot);
-	ovlname = piggy_game_bitmap_name(bmovl);
-	bot_real_flags = piggy_bitmap_get_flags(bmbot);
-	ovl_real_flags = piggy_bitmap_get_flags(bmovl);
-	if (wall_num >= 0) {
-		wall_type = Walls[wall_num].type;
-		wall_state = Walls[wall_num].state;
-		wall_flags = Walls[wall_num].flags;
-	}
-	if (ovl_real_flags & BM_FLAG_SUPER_TRANSPARENT)
-		merge_path = "super_mask";
-	else if ((int)g_metl154_experiment_mode == METL154_EXPERIMENT_OVERLAY_ONLY
-		&& (ovl_real_flags & BM_FLAG_TRANSPARENT))
-		merge_path = "overlay_only_scene";
-	else if (ovl_real_flags & BM_FLAG_TRANSPARENT)
-		merge_path = "plain_alpha_underlay";
-	else
-		merge_path = "opaque_overlay";
-	debug_log(DLOG_TEXTURE,
-		"[metl154face] frame=%d pass=%d seq=%d seg=%d side=%d face=%d child=%d side_type=%d nv=%d wid=%d dot=%.4f tmap1=%d tmap2=0x%x orient=%d bot=%s ovl=%s",
-		g_metl154_frame_id,
-		g_metl154_render_pass,
-		g_metl154_draw_seq,
-		(int)(segp - Segments),
-		sidenum,
-		face_index,
-		segp->children[sidenum],
-		segp->sides[sidenum].type,
-		nv,
-		wid_flags,
-		f2fl(dot),
-		tmap1,
-		tmap2,
-		(tmap2 >> 14) & 3,
-		botname ? botname : "<none>",
-		ovlname ? ovlname : "<none>");
-	debug_log(DLOG_TEXTURE,
-		"[metl154wall] frame=%d pass=%d seq=%d wid=%d render=%d rendpast=%d fly=%d child=%d wall_num=%d wall_type=%d wall_state=%d wall_flags=0x%x bot_real=0x%x ovl_real=0x%x ovl_trans=%d ovl_super=%d path=%s",
-		g_metl154_frame_id,
-		g_metl154_render_pass,
-		g_metl154_draw_seq,
-		wid_flags,
-		(wid_flags & WID_RENDER_FLAG) != 0,
-		(wid_flags & WID_RENDPAST_FLAG) != 0,
-		(wid_flags & WID_FLY_FLAG) != 0,
-		segp->children[sidenum],
-		wall_num,
-		wall_type,
-		wall_state,
-		wall_flags,
-		bot_real_flags,
-		ovl_real_flags,
-		!!(ovl_real_flags & BM_FLAG_TRANSPARENT),
-		!!(ovl_real_flags & BM_FLAG_SUPER_TRANSPARENT),
-		merge_path);
-	render_log_metl154_face_geom(segp, sidenum, face_index, dot);
-}
-#endif
 
 // When any render function needs to know what's looking at it, it should 
 // access Viewer members.
@@ -572,7 +216,7 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 #ifdef OGL
 	int use_alt_texmerge = GameArg.DbgAltTexMerge;
 #ifdef ANDROID
-	if (tmap2 != 0 && (int)g_metl154_experiment_mode == METL154_EXPERIMENT_OLD_MERGE)
+	if (tmap2 != 0 && (int)g_merged_wall_experiment_mode == MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE)
 		use_alt_texmerge = 0;
 #endif
 	if (use_alt_texmerge){
@@ -589,15 +233,15 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 		if (tmap2 != 0) {
 			bm = texmerge_get_cached_bitmap( tmap1, tmap2 );
 	#ifdef ANDROID
-			if ((int)g_metl154_experiment_mode == METL154_EXPERIMENT_OLD_MERGE
-				&& render_tmap2_is_metl154(tmap2))
+			if ((int)g_merged_wall_experiment_mode == MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE
+				&& android_merged_wall_is_logging_target_tmap2(tmap2))
 				debug_log(DLOG_TEXTURE,
-					"[metl154exp] frame=%d pass=%d seq=%d mode=%d(%s) merge_impl=old_texmerge seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x",
-					g_metl154_frame_id,
-					g_metl154_render_pass,
-					g_metl154_draw_seq,
-					(int)g_metl154_experiment_mode,
-					"old_merge",
+					"[mwall_exp] frame=%d pass=%d seq=%d mode=%d(%s) merge_impl=old_texmerge seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x",
+					g_merged_wall_frame_id,
+					g_merged_wall_render_pass,
+					g_merged_wall_draw_seq,
+					(int)g_merged_wall_experiment_mode,
+					"force_legacy_texmerge",
 					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
 					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
 					g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
@@ -747,7 +391,7 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 #endif
 
 #ifdef ANDROID
-	render_clear_android_draw_face_context();
+	android_merged_wall_clear_draw_face_context();
 #endif
 }
 
@@ -833,7 +477,7 @@ void render_side(segment *segp, int sidenum)
 		return;
 
 	#ifdef COMPACT_SEGS	
-		get_side_normals(segp, sidenum, &normals[0], &normals[1] );
+		get_side_normals_local(segp, sidenum, &normals[0], &normals[1] );
 	#else
 		normals[0] = segp->sides[sidenum].normals[0];
 		normals[1] = segp->sides[sidenum].normals[1];
@@ -854,10 +498,10 @@ void render_side(segment *segp, int sidenum)
 	if (sidep->type == SIDE_IS_QUAD) {
 		if (v_dot_n0 >= 0) {
 #ifdef ANDROID
-			render_set_android_draw_face_context(segp, sidenum, sidep->tmap_num,
+			android_merged_wall_set_draw_face_context(segp, sidenum, sidep->tmap_num,
 				sidep->tmap_num2, wid_flags, 4, 0);
-			render_log_metl154_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
-				wid_flags, v_dot_n0, 4, 0);
+			android_merged_wall_log_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
+				wid_flags, f2fl(v_dot_n0), 4, 0);
 #endif
 			render_face(segp-Segments, sidenum, 4, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls, &normals[0]);
 			#ifdef EDITOR
@@ -890,10 +534,10 @@ void render_side(segment *segp, int sidenum)
 			}
 
 #ifdef ANDROID
-			render_set_android_draw_face_context(segp, sidenum, sidep->tmap_num,
+			android_merged_wall_set_draw_face_context(segp, sidenum, sidep->tmap_num,
 				sidep->tmap_num2, wid_flags, 4, 0);
-			render_log_metl154_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
-				wid_flags, min_dot, 4, 0);
+			android_merged_wall_log_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
+				wid_flags, f2fl(min_dot), 4, 0);
 #endif
 			render_face(segp-Segments, sidenum, 4, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls, &normals[0]);
 			#ifdef EDITOR
@@ -904,10 +548,10 @@ im_so_ashamed: ;
 			if (sidep->type == SIDE_IS_TRI_02) {
 				if (v_dot_n0 >= 0) {
 #ifdef ANDROID
-					render_set_android_draw_face_context(segp, sidenum, sidep->tmap_num,
+					android_merged_wall_set_draw_face_context(segp, sidenum, sidep->tmap_num,
 						sidep->tmap_num2, wid_flags, 3, 0);
-					render_log_metl154_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
-						wid_flags, v_dot_n0, 3, 0);
+					android_merged_wall_log_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
+						wid_flags, f2fl(v_dot_n0), 3, 0);
 #endif
 					render_face(segp-Segments, sidenum, 3, vertnum_list, sidep->tmap_num, sidep->tmap_num2, sidep->uvls, &normals[0]);
 					#ifdef EDITOR
@@ -919,10 +563,10 @@ im_so_ashamed: ;
 					temp_uvls[0] = sidep->uvls[0];		temp_uvls[1] = sidep->uvls[2];		temp_uvls[2] = sidep->uvls[3];
 					vertnum_list[1] = vertnum_list[2];	vertnum_list[2] = vertnum_list[3];	// want to render from vertices 0, 2, 3 on side
 #ifdef ANDROID
-					render_set_android_draw_face_context(segp, sidenum, sidep->tmap_num,
+					android_merged_wall_set_draw_face_context(segp, sidenum, sidep->tmap_num,
 						sidep->tmap_num2, wid_flags, 3, 1);
-					render_log_metl154_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
-						wid_flags, v_dot_n1, 3, 1);
+					android_merged_wall_log_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
+						wid_flags, f2fl(v_dot_n1), 3, 1);
 #endif
 					render_face(segp-Segments, sidenum, 3, &vertnum_list[0], sidep->tmap_num, sidep->tmap_num2, temp_uvls, &normals[1]);
 					#ifdef EDITOR
@@ -932,10 +576,10 @@ im_so_ashamed: ;
 			} else if (sidep->type == SIDE_IS_TRI_13) {
 				if (v_dot_n1 >= 0) {
 #ifdef ANDROID
-					render_set_android_draw_face_context(segp, sidenum, sidep->tmap_num,
+					android_merged_wall_set_draw_face_context(segp, sidenum, sidep->tmap_num,
 						sidep->tmap_num2, wid_flags, 3, 1);
-					render_log_metl154_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
-						wid_flags, v_dot_n1, 3, 1);
+					android_merged_wall_log_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
+						wid_flags, f2fl(v_dot_n1), 3, 1);
 #endif
 					render_face(segp-Segments, sidenum, 3, &vertnum_list[1], sidep->tmap_num, sidep->tmap_num2, &sidep->uvls[1], &normals[1]);	// rendering 1,2,3, so just skip 0
 					#ifdef EDITOR
@@ -947,10 +591,10 @@ im_so_ashamed: ;
 					temp_uvls[0] = sidep->uvls[0];		temp_uvls[1] = sidep->uvls[1];		temp_uvls[2] = sidep->uvls[3];
 					vertnum_list[2] = vertnum_list[3];		// want to render from vertices 0,1,3
 #ifdef ANDROID
-					render_set_android_draw_face_context(segp, sidenum, sidep->tmap_num,
+					android_merged_wall_set_draw_face_context(segp, sidenum, sidep->tmap_num,
 						sidep->tmap_num2, wid_flags, 3, 0);
-					render_log_metl154_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
-						wid_flags, v_dot_n0, 3, 0);
+					android_merged_wall_log_face(segp, sidenum, sidep->tmap_num, sidep->tmap_num2,
+						wid_flags, f2fl(v_dot_n0), 3, 0);
 #endif
 					render_face(segp-Segments, sidenum, 3, vertnum_list, sidep->tmap_num, sidep->tmap_num2, temp_uvls, &normals[0]);
 					#ifdef EDITOR
@@ -1511,8 +1155,8 @@ int find_joining_side_norms(vms_vector *norm0_0,vms_vector *norm0_1,vms_vector *
 //		return 0;
 
 	#ifdef COMPACT_SEGS
-		get_side_normals(seg0, edgeside0, norm0_0, norm0_1 );
-		get_side_normals(seg1, edgeside1, norm1_0, norm1_1 );
+		get_side_normals_local(seg0, edgeside0, norm0_0, norm0_1 );
+		get_side_normals_local(seg1, edgeside1, norm1_0, norm1_1 );
 	#else 
 		*norm0_0 = seg0->sides[edgeside0].normals[0];
 		*norm0_1 = seg0->sides[edgeside0].normals[1];
@@ -1962,7 +1606,7 @@ static void render_log_metl154_render_list_summary(int start_seg_num)
 {
 	debug_log(DLOG_TEXTURE,
 		"[metl154list] frame=%d event=summary start=%d window=%d n=%d first_terminal=%d s82=%d/%d s83=%d/%d s29=%d/%d s28=%d/%d s32=%d/%d",
-		g_metl154_frame_id,
+		g_merged_wall_frame_id,
 		start_seg_num,
 		-1,
 		N_render_segs,
@@ -2067,7 +1711,7 @@ void build_segment_list(int start_seg_num)
 							if (render_metl154_track_portal_side(segnum, c))
 								debug_log(DLOG_TEXTURE,
 									"[metl154list] frame=%d event=childlist_skip_behind parent=%d side=%d child=%d depth=%d wid=%d codes=0x%x",
-									g_metl154_frame_id,
+									g_merged_wall_frame_id,
 									segnum,
 									c,
 									ch,
@@ -2084,7 +1728,7 @@ void build_segment_list(int start_seg_num)
 					if (render_metl154_track_portal_side(segnum, c))
 						debug_log(DLOG_TEXTURE,
 							"[metl154list] frame=%d event=childlist_add parent=%d side=%d child=%d depth=%d wid=%d obs=%d slot=%d",
-							g_metl154_frame_id,
+							g_merged_wall_frame_id,
 							segnum,
 							c,
 							ch,
@@ -2098,7 +1742,7 @@ void build_segment_list(int start_seg_num)
 				else if (render_metl154_track_portal_side(segnum, c))
 					debug_log(DLOG_TEXTURE,
 						"[metl154list] frame=%d event=childlist_block parent=%d side=%d child=%d depth=%d wid=%d obs=%d",
-						g_metl154_frame_id,
+						g_merged_wall_frame_id,
 						segnum,
 						c,
 						ch,
@@ -2176,7 +1820,7 @@ void build_segment_list(int start_seg_num)
 								if (render_metl154_track_portal_side(segnum, siden) || render_metl154_track_render_seg(ch))
 									debug_log(DLOG_TEXTURE,
 										"[metl154list] frame=%d event=expand parent=%d side=%d child=%d depth=%d rp=%d obs=%d no_proj=%d codes3d=0x%x codes2d=0x%x proj=%d..%d/%d..%d",
-										g_metl154_frame_id,
+										g_merged_wall_frame_id,
 										segnum,
 										siden,
 										ch,
@@ -2206,7 +1850,7 @@ void build_segment_list(int start_seg_num)
 							else if (render_metl154_track_portal_side(segnum, siden))
 								debug_log(DLOG_TEXTURE,
 									"[metl154list] frame=%d event=already_visible parent=%d side=%d child=%d depth=%d rp=%d obs=%d no_proj=%d codes3d=0x%x codes2d=0x%x proj=%d..%d/%d..%d",
-									g_metl154_frame_id,
+									g_merged_wall_frame_id,
 									segnum,
 									siden,
 									ch,
@@ -2235,7 +1879,7 @@ void build_segment_list(int start_seg_num)
 						if (render_metl154_track_portal_side(segnum, siden) || render_metl154_track_render_seg(ch))
 							debug_log(DLOG_TEXTURE,
 								"[metl154list] frame=%d event=enqueue parent=%d side=%d child=%d depth=%d pos=%d obs=%d no_proj=%d codes3d=0x%x codes2d=0x%x proj=%d..%d/%d..%d",
-								g_metl154_frame_id,
+								g_merged_wall_frame_id,
 								segnum,
 								siden,
 								ch,
@@ -2257,7 +1901,7 @@ no_add:
 					else if (render_metl154_track_portal_side(segnum, siden))
 						debug_log(DLOG_TEXTURE,
 							"[metl154list] frame=%d event=portal_window_skip parent=%d side=%d child=%d depth=%d obs=%d no_proj=%d codes3d=0x%x codes2d=0x%x proj=%d..%d/%d..%d",
-							g_metl154_frame_id,
+							g_merged_wall_frame_id,
 							segnum,
 							siden,
 							ch,
@@ -2313,10 +1957,9 @@ void render_mine(int start_seg_num,fix eye_offset)
 
 	render_start_frame();
 #ifdef ANDROID
-	g_metl154_frame_id++;
-	g_metl154_render_pass = 0;
-	g_metl154_draw_seq = 0;
-	render_log_android_tracked_side_snapshot_if_pending();
+	g_merged_wall_frame_id++;
+	g_merged_wall_render_pass = 0;
+	g_merged_wall_draw_seq = 0;
 #endif
 
 
@@ -2397,7 +2040,7 @@ void render_mine(int start_seg_num,fix eye_offset)
 #ifdef OGL
 	if (GameCfg.ClassicDepth && !(Game_mode & GM_MULTI)) {
 #ifdef ANDROID
-		g_metl154_render_pass = 1;
+		g_merged_wall_render_pass = 1;
 #endif
 #endif
 	for (nn=N_render_segs;nn--;) {
@@ -2464,7 +2107,7 @@ void render_mine(int start_seg_num,fix eye_offset)
 	// Sorting elements for Alpha - 3 passes
 	// First Pass: render opaque level geometry + transculent level geometry with high Alpha-Test func
 #ifdef ANDROID
-	g_metl154_render_pass = 1;
+	g_merged_wall_render_pass = 1;
 #endif
 	for (nn=N_render_segs;nn--;)
 	{
@@ -2515,7 +2158,7 @@ void render_mine(int start_seg_num,fix eye_offset)
 	
 	// Second Pass: Objects
 #ifdef ANDROID
-	g_metl154_render_pass = 2;
+	g_merged_wall_render_pass = 2;
 #endif
 	for (nn=N_render_segs;nn--;)
 	{
@@ -2574,7 +2217,7 @@ void render_mine(int start_seg_num,fix eye_offset)
 	
 	// Third Pass - Render Transculent level geometry with normal Alpha-Func
 #ifdef ANDROID
-	g_metl154_render_pass = 3;
+	g_merged_wall_render_pass = 3;
 #endif
 	for (nn=N_render_segs;nn--;)
 	{

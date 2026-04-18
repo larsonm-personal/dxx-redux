@@ -406,41 +406,23 @@ Java_com_dxxredux_app_MainActivity_nativeGetConsoleSince(JNIEnv *env, jobject th
 /* ── Debug flags: toggle debug overlays from adb/Kotlin ────────── */
 extern volatile int gles3_shim_debug_mode;
 
-static const char *metl154_debug_mode_name(int mode)
+static const char *merged_wall_debug_mode_name(int mode)
 {
 	switch (mode) {
-		case METL154_DEBUG_OVERLAY_ALPHA:
+		case MERGED_WALL_DEBUG_OVERLAY_ALPHA:
 			return "alpha";
-		case METL154_DEBUG_OVERLAY_RGB:
+		case MERGED_WALL_DEBUG_OVERLAY_RGB:
 			return "rgb";
 		default:
 			return "off";
 	}
 }
 
-static const char *metl154_experiment_name(int mode)
+static const char *merged_wall_experiment_name(int mode)
 {
 	switch (mode) {
-		case METL154_EXPERIMENT_KTX2_NOMIP:
-			return "ktx2_nomip";
-		case METL154_EXPERIMENT_RGBA:
-			return "rgba";
-		case METL154_EXPERIMENT_RGBA_NOMIP:
-			return "rgba_nomip";
-		case METL154_EXPERIMENT_STOCK:
-			return "stock";
-		case METL154_EXPERIMENT_ALPHA_RAW:
-			return "alpha_raw";
-		case METL154_EXPERIMENT_COVER_SKIP:
-			return "cover_skip";
-		case METL154_EXPERIMENT_COVER_SKIP2:
-			return "cover_skip2";
-		case METL154_EXPERIMENT_OVERLAY_ONLY:
-			return "overlay_only";
-		case METL154_EXPERIMENT_CLIP_ALL:
-			return "clip_all";
-		case METL154_EXPERIMENT_OLD_MERGE:
-			return "old_merge";
+		case MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE:
+			return "force_legacy_texmerge";
 		default:
 			return "default";
 	}
@@ -453,53 +435,51 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
 	const char *name = (*env)->GetStringUTFChars(env, jname, NULL);
 	if (strcmp(name, "tex_overlay") == 0)
 		g_debug_tex_overlay_active = (int) value;
-	else if (strcmp(name, "metl154_mode") == 0) {
+	else if (strcmp(name, "merged_wall_mode") == 0) {
 		int clamped = (int) value;
-		int old = (int) g_metl154_debug_mode;
+		int old = (int) g_merged_wall_debug_mode;
 
-		if (clamped < METL154_DEBUG_NONE)
-			clamped = METL154_DEBUG_NONE;
-		if (clamped > METL154_DEBUG_OVERLAY_RGB)
-			clamped = METL154_DEBUG_OVERLAY_RGB;
-		LOGI("debug flag: metl154_mode %d(%s) -> %d(%s)",
-		     old, metl154_debug_mode_name(old),
-		     clamped, metl154_debug_mode_name(clamped));
+		if (clamped < MERGED_WALL_DEBUG_NONE)
+			clamped = MERGED_WALL_DEBUG_NONE;
+		if (clamped > MERGED_WALL_DEBUG_OVERLAY_RGB)
+			clamped = MERGED_WALL_DEBUG_OVERLAY_RGB;
+		LOGI("debug flag: merged_wall_mode %d(%s) -> %d(%s)",
+		     old, merged_wall_debug_mode_name(old),
+		     clamped, merged_wall_debug_mode_name(clamped));
 		debug_log(DLOG_TEXTURE,
-		          "[metl154mode] toggle: old=%d(%s) new=%d(%s)",
-		          old, metl154_debug_mode_name(old),
-		          clamped, metl154_debug_mode_name(clamped));
-		g_metl154_debug_mode = clamped;
-	} else if (strcmp(name, "metl154_experiment") == 0) {
-		int clamped = (int) value;
-		int old = (int) g_metl154_experiment_mode;
+		          "[mwall_mode] toggle: old=%d(%s) new=%d(%s)",
+		          old, merged_wall_debug_mode_name(old),
+		          clamped, merged_wall_debug_mode_name(clamped));
+		g_merged_wall_debug_mode = clamped;
+	} else if (strcmp(name, "merged_wall_experiment") == 0) {
+		int old = (int) g_merged_wall_experiment_mode;
+		int clamped = (int) value == MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE
+		                  ? MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE
+		                  : MERGED_WALL_EXPERIMENT_DEFAULT;
 
-		if (clamped < METL154_EXPERIMENT_DEFAULT)
-			clamped = METL154_EXPERIMENT_DEFAULT;
-		if (clamped > METL154_EXPERIMENT_OLD_MERGE)
-			clamped = METL154_EXPERIMENT_OLD_MERGE;
-		LOGI("debug flag: metl154_experiment %d(%s) -> %d(%s)",
-		     old, metl154_experiment_name(old),
-		     clamped, metl154_experiment_name(clamped));
+		LOGI("debug flag: merged_wall_experiment %d(%s) -> %d(%s)",
+		     old, merged_wall_experiment_name(old),
+		     clamped, merged_wall_experiment_name(clamped));
 		debug_log(DLOG_TEXTURE,
-		          "[metl154exp] toggle: old=%d(%s) new=%d(%s)",
-		          old, metl154_experiment_name(old),
-		          clamped, metl154_experiment_name(clamped));
-		g_metl154_experiment_mode = clamped;
+		          "[mwall_exp] toggle: old=%d(%s) new=%d(%s)",
+		          old, merged_wall_experiment_name(old),
+		          clamped, merged_wall_experiment_name(clamped));
+		g_merged_wall_experiment_mode = clamped;
 		__sync_synchronize();
-		g_metl154_experiment_pending_apply = 1;
-	} else if (strcmp(name, "metl154_snapshot") == 0) {
+		g_merged_wall_experiment_pending_apply = 1;
+	} else if (strcmp(name, "merged_wall_snapshot") == 0) {
 		if (value) {
-			g_metl154_snapshot_request_frame = g_metl154_frame_id;
+			g_merged_wall_snapshot_request_frame = g_merged_wall_frame_id;
 			__sync_synchronize();
-			g_metl154_snapshot_pending = 1;
-			LOGI("debug flag: metl154_snapshot requested at frame=%d",
-			     (int) g_metl154_snapshot_request_frame);
+			g_merged_wall_snapshot_pending = 1;
+			LOGI("debug flag: merged_wall_snapshot requested at frame=%d",
+			     (int) g_merged_wall_snapshot_request_frame);
 			debug_log(DLOG_TEXTURE,
-			          "[metl154snap] request: request_frame=%d frame=%d pass=%d seq=%d",
-			          (int) g_metl154_snapshot_request_frame,
-			          (int) g_metl154_frame_id,
-			          (int) g_metl154_render_pass,
-			          (int) g_metl154_draw_seq);
+			          "[mwall_snap] request: request_frame=%d frame=%d pass=%d seq=%d",
+			          (int) g_merged_wall_snapshot_request_frame,
+			          (int) g_merged_wall_frame_id,
+			          (int) g_merged_wall_render_pass,
+			          (int) g_merged_wall_draw_seq);
 		}
 	} else if (strcmp(name, "gfx_mode") == 0)
 		gles3_shim_debug_mode = (int) value;
@@ -892,8 +872,8 @@ Java_com_dxxredux_app_MainActivity_nativeGetTeammateStatus(JNIEnv *env, jobject 
  *   [17] = cache_time_ms    (time spent in last ogl_cache_level_textures)
  *   [18] = aniso_level       (current anisotropic filtering level, 0=off)
  *   [19] = aniso_max         (max aniso level supported by GPU)
- *   [30] = metl154_mode      (OFF/Alpha/RGB debug view)
- *   [31] = metl154_experiment (default/no-mip/rgba/stock/alpha/cover-skip/cover-skip2/overlay-only/clip-all/old-merge experiment mode)
+ *   [30] = merged_wall_mode      (OFF/Alpha/RGB debug view)
+ *   [31] = merged_wall_experiment (default/force-legacy-texmerge surfaced mode)
  *
  * android port: video diagnostics overlay
  */
@@ -971,8 +951,8 @@ Java_com_dxxredux_app_MainActivity_nativeGetVideoStats(JNIEnv *env, jobject thiz
 	buf[28] = (jint) GameCfg.MenuTexFilt;
 	buf[29] = (jint) GameCfg.HudTexFilt;
 #ifdef INTROSPECT_ON
-	buf[30] = (jint) g_metl154_debug_mode;
-	buf[31] = (jint) g_metl154_experiment_mode;
+	buf[30] = (jint) g_merged_wall_debug_mode;
+	buf[31] = (jint) g_merged_wall_experiment_mode;
 #else
 	buf[30] = 0;
 	buf[31] = 0;

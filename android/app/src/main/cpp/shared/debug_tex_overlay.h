@@ -29,21 +29,12 @@ extern struct debug_tex_label g_debug_tex_labels[DEBUG_TEX_MAX_LABELS];
 extern int g_debug_tex_label_count;
 extern volatile int g_debug_tex_overlay_active;
 
-#define METL154_DEBUG_NONE          0
-#define METL154_DEBUG_OVERLAY_ALPHA 1
-#define METL154_DEBUG_OVERLAY_RGB   2
+#define MERGED_WALL_DEBUG_NONE          0
+#define MERGED_WALL_DEBUG_OVERLAY_ALPHA 1
+#define MERGED_WALL_DEBUG_OVERLAY_RGB   2
 
-#define METL154_EXPERIMENT_DEFAULT      0
-#define METL154_EXPERIMENT_KTX2_NOMIP   1
-#define METL154_EXPERIMENT_RGBA         2
-#define METL154_EXPERIMENT_RGBA_NOMIP   3
-#define METL154_EXPERIMENT_STOCK        4
-#define METL154_EXPERIMENT_ALPHA_RAW    5
-#define METL154_EXPERIMENT_COVER_SKIP   6
-#define METL154_EXPERIMENT_COVER_SKIP2  7
-#define METL154_EXPERIMENT_OVERLAY_ONLY 8
-#define METL154_EXPERIMENT_CLIP_ALL     9
-#define METL154_EXPERIMENT_OLD_MERGE    10
+#define MERGED_WALL_EXPERIMENT_DEFAULT               0
+#define MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE 10
 
 struct android_draw_face_context {
 	int valid;
@@ -58,6 +49,89 @@ struct android_draw_face_context {
 	int tmap2;
 };
 
+#define MERGED_WALL_SNAPSHOT_FACE_MAX  6
+#define MERGED_WALL_SNAPSHOT_COVER_MAX 12
+
+struct merged_wall_snapshot_face {
+	int valid;
+	int rank;
+	int center_hit;
+	float dist2;
+	int render_pass;
+	int draw_seq;
+	int draw_order;
+	int seg;
+	int side;
+	int face;
+	int child;
+	int side_type;
+	int wid_flags;
+	int tmap1;
+	int tmap2;
+	float min_sx;
+	float max_sx;
+	float min_sy;
+	float max_sy;
+	float bbox_area;
+	char route[24];
+	char merge_impl[24];
+};
+
+struct merged_wall_snapshot_cover {
+	int valid;
+	int kind;
+	int rank;
+	int center_face;
+	int center_cover;
+	int center_overlap;
+	float overlap_area;
+	int ordered;
+	int render_pass;
+	int draw_seq;
+	int draw_order;
+	int cover_order;
+	int seg;
+	int side;
+	int face;
+	int child;
+	int wid_flags;
+	int cover_seg;
+	int cover_side;
+	int cover_face;
+	int cover_child;
+	int cover_wid_flags;
+	char cover_shader[16];
+	char cover_bot[24];
+	char cover_ovl[24];
+};
+
+struct merged_wall_snapshot_result {
+	int valid;
+	char status[24];
+	int frame_id;
+	int request_frame;
+	int screen_w;
+	int screen_h;
+	float center_x;
+	float center_y;
+	int sample_r;
+	int sample_g;
+	int sample_b;
+	int sample_a;
+	int avg_r;
+	int avg_g;
+	int avg_b;
+	int avg_a;
+	int tracked_count;
+	int center_hit_count;
+	int cover_event_count;
+	int selected_count;
+	int relevant_cover_count;
+	int omitted_cover_count;
+	struct merged_wall_snapshot_face faces[MERGED_WALL_SNAPSHOT_FACE_MAX];
+	struct merged_wall_snapshot_cover covers[MERGED_WALL_SNAPSHOT_COVER_MAX];
+};
+
 #define DEBUG_TEX_LABEL_SET_FACE(lbl, ctxptr)                              \
 	do {                                                                   \
 		(lbl)->seg = ((ctxptr) && (ctxptr)->valid) ? (ctxptr)->seg : -1;   \
@@ -65,15 +139,18 @@ struct android_draw_face_context {
 		(lbl)->face = ((ctxptr) && (ctxptr)->valid) ? (ctxptr)->face : -1; \
 	} while (0)
 
-extern volatile int g_metl154_debug_mode;
-extern volatile int g_metl154_experiment_mode;
-extern volatile int g_metl154_experiment_pending_apply;
-extern volatile int g_metl154_snapshot_pending;
-extern volatile int g_metl154_snapshot_request_frame;
-extern volatile int g_metl154_render_pass;
-extern volatile int g_metl154_frame_id;
-extern volatile int g_metl154_draw_seq;
+extern volatile int g_merged_wall_debug_mode;
+extern volatile int g_merged_wall_experiment_mode;
+extern volatile int g_merged_wall_experiment_pending_apply;
+extern volatile int g_merged_wall_snapshot_pending;
+extern volatile int g_merged_wall_snapshot_request_frame;
+extern volatile int g_merged_wall_render_pass;
+extern volatile int g_merged_wall_frame_id;
+extern volatile int g_merged_wall_draw_seq;
 extern struct android_draw_face_context g_android_draw_face_ctx;
+extern struct merged_wall_snapshot_result g_merged_wall_snapshot_result;
+
+void android_merged_wall_request_snapshot(void);
 
 #endif /* ANDROID */
 #endif /* DEBUG_TEX_OVERLAY_H */

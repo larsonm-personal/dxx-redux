@@ -1385,10 +1385,6 @@ int load_level(const char * filename_passed)
 	//======================== CLOSE FILE =============================
 
 	PHYSFS_close( LoadFile );
-	#ifdef ANDROID
-	render_log_android_tracked_side_snapshot("load_level", -1);
-	render_reset_android_tracked_side_snapshot();
-	#endif
 
 	set_ambient_sound_flags();
 

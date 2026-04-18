@@ -46,6 +46,7 @@ extern "C" {
 #include "inferno.h"
 #include "window.h"
 #include "newmenu.h"
+#include "gameseg.h"
 #include "object.h"
 }
 
@@ -183,6 +184,7 @@ enum step_type {
 	STEP_SEND_BUTTON,             /* inject joystick button press+release */
 	STEP_SKIP_BRIEFING,           /* escape only if a non-game window covers Game_wind */
 	STEP_ASSERT_OVERLAY,          /* check overlay ring buffer for matching entry */
+	STEP_FACE_VIEW,               /* move player inside a segment and face a wall */
 	STEP_ENTER_LAUNCHER,          /* yield back to launcher, write LAUNCHER_CONTINUE */
 	STEP_ENTER_GAME,              /* launcher-only: no-op in game engine (skip) */
 	STEP_SETUP_COMMAND,           /* launcher-only: no-op in game engine (skip) */
@@ -225,6 +227,10 @@ struct auto_step {
 	int button_id = -1;                 /* STEP_SEND_BUTTON: button index */
 	int button_held = 0;                /* STEP_SEND_BUTTON: 1 = hold (no release) */
 	int button_pressed = 1;             /* STEP_SEND_BUTTON: 0 = release only */
+	int segment = -1;                   /* STEP_FACE_VIEW: target segment */
+	int side = -1;                      /* STEP_FACE_VIEW: target side */
+	int face = 0;                       /* STEP_FACE_VIEW: target face on side */
+	float distance = 4.0f;              /* STEP_FACE_VIEW: distance inside segment */
 };
 
 /* -- Script state ----------------------------------------------------- */
@@ -262,6 +268,7 @@ static const char *step_type_name(step_type t)
 		case STEP_SEND_BUTTON: return "send_button";
 		case STEP_SKIP_BRIEFING: return "skip_briefing";
 		case STEP_ASSERT_OVERLAY: return "assert_overlay";
+		case STEP_FACE_VIEW: return "face_view";
 		case STEP_ENTER_LAUNCHER: return "enter_launcher";
 		case STEP_ENTER_GAME: return "enter_game";
 		case STEP_SETUP_COMMAND: return "setup_command";
@@ -571,6 +578,249 @@ static bool select_find_item(const char *text, int *out_target, int *out_current
 	}
 }
 
+static void average_three_vectors(vms_vector *dest, const vms_vector *a, const vms_vector *b, const vms_vector *c)
+{
+	dest->x = (a->x + b->x + c->x) / 3;
+	dest->y = (a->y + b->y + c->y) / 3;
+	dest->z = (a->z + b->z + c->z) / 3;
+}
+
+static int compute_face_view_center(int segnum, int sidenum, int face, vms_vector *center, char *reason, size_t reason_size)
+{
+	segment *segp;
+	side *sidep;
+	int side_verts[4];
+	const vms_vector *verts[4];
+
+	if (segnum < 0 || segnum > Highest_segment_index) {
+		snprintf(reason, reason_size, "face_view: invalid segment %d", segnum);
+		return 0;
+	}
+	if (sidenum < 0 || sidenum >= MAX_SIDES_PER_SEGMENT) {
+		snprintf(reason, reason_size, "face_view: invalid side %d", sidenum);
+		return 0;
+	}
+
+	segp = &Segments[segnum];
+	sidep = &segp->sides[sidenum];
+	get_side_verts(side_verts, segnum, sidenum);
+	for (int i = 0; i < 4; ++i)
+		verts[i] = &Vertices[side_verts[i]];
+
+	switch (sidep->type) {
+		case SIDE_IS_QUAD:
+			if (face != 0) {
+				snprintf(reason, reason_size, "face_view: quad side %d face must be 0, got %d", sidenum, face);
+				return 0;
+			}
+			vm_vec_avg4(center, verts[0], verts[1], verts[2], verts[3]);
+			return 1;
+
+		case SIDE_IS_TRI_02:
+			if (face == 0)
+				average_three_vectors(center, verts[0], verts[1], verts[2]);
+			else if (face == 1)
+				average_three_vectors(center, verts[0], verts[2], verts[3]);
+			else {
+				snprintf(reason, reason_size, "face_view: tri_02 side %d face must be 0 or 1, got %d", sidenum, face);
+				return 0;
+			}
+			return 1;
+
+		case SIDE_IS_TRI_13:
+			if (face == 0)
+				average_three_vectors(center, verts[0], verts[1], verts[3]);
+			else if (face == 1)
+				average_three_vectors(center, verts[1], verts[2], verts[3]);
+			else {
+				snprintf(reason, reason_size, "face_view: tri_13 side %d face must be 0 or 1, got %d", sidenum, face);
+				return 0;
+			}
+			return 1;
+
+		default:
+			snprintf(reason, reason_size, "face_view: unsupported side type %d", sidep->type);
+			return 0;
+	}
+}
+
+static int compute_face_view_normal(int segnum, int sidenum, int face, vms_vector *normal, char *reason, size_t reason_size)
+{
+	segment *segp;
+	side *sidep;
+	int side_verts[4];
+
+	if (segnum < 0 || segnum > Highest_segment_index) {
+		snprintf(reason, reason_size, "face_view: invalid segment %d", segnum);
+		return 0;
+	}
+	if (sidenum < 0 || sidenum >= MAX_SIDES_PER_SEGMENT) {
+		snprintf(reason, reason_size, "face_view: invalid side %d", sidenum);
+		return 0;
+	}
+
+	segp = &Segments[segnum];
+	sidep = &segp->sides[sidenum];
+	get_side_verts(side_verts, segnum, sidenum);
+
+	switch (sidep->type) {
+		case SIDE_IS_QUAD:
+			if (face != 0) {
+				snprintf(reason, reason_size, "face_view: quad side %d face must be 0, got %d", sidenum, face);
+				return 0;
+			}
+			vm_vec_normal(normal, &Vertices[side_verts[0]], &Vertices[side_verts[1]], &Vertices[side_verts[2]]);
+			return 1;
+
+		case SIDE_IS_TRI_02:
+			if (face == 0)
+				vm_vec_normal(normal, &Vertices[side_verts[0]], &Vertices[side_verts[1]], &Vertices[side_verts[2]]);
+			else if (face == 1)
+				vm_vec_normal(normal, &Vertices[side_verts[0]], &Vertices[side_verts[2]], &Vertices[side_verts[3]]);
+			else {
+				snprintf(reason, reason_size, "face_view: tri_02 side %d face must be 0 or 1, got %d", sidenum, face);
+				return 0;
+			}
+			return 1;
+
+		case SIDE_IS_TRI_13:
+			if (face == 0)
+				vm_vec_normal(normal, &Vertices[side_verts[0]], &Vertices[side_verts[1]], &Vertices[side_verts[3]]);
+			else if (face == 1)
+				vm_vec_normal(normal, &Vertices[side_verts[1]], &Vertices[side_verts[2]], &Vertices[side_verts[3]]);
+			else {
+				snprintf(reason, reason_size, "face_view: tri_13 side %d face must be 0 or 1, got %d", sidenum, face);
+				return 0;
+			}
+			return 1;
+
+		default:
+			snprintf(reason, reason_size, "face_view: unsupported side type %d", sidep->type);
+			return 0;
+	}
+}
+
+static int move_player_to_face_view(const auto_step &s, char *reason, size_t reason_size)
+{
+	vms_vector face_center, segment_center, to_segment, inward, forward, new_pos;
+	fix inward_len, travel;
+	int new_seg;
+
+	if (Screen_mode != SCREEN_GAME || Game_wind == NULL) {
+		snprintf(reason, reason_size, "face_view: game window is not active");
+		return 0;
+	}
+	if (ConsoleObject == NULL) {
+		snprintf(reason, reason_size, "face_view: no player object");
+		return 0;
+	}
+	if (!compute_face_view_center(s.segment, s.side, s.face, &face_center, reason, reason_size))
+		return 0;
+
+	compute_segment_center(&segment_center, &Segments[s.segment]);
+	vm_vec_sub(&to_segment, &segment_center, &face_center);
+	inward_len = vm_vec_normalize_quick(&to_segment);
+	if (inward_len <= 0) {
+		snprintf(reason, reason_size, "face_view: zero inward vector for seg=%d side=%d face=%d",
+		         s.segment, s.side, s.face);
+		return 0;
+	}
+
+	if (!compute_face_view_normal(s.segment, s.side, s.face, &inward, reason, reason_size))
+		return 0;
+	if (vm_vec_dot(&inward, &to_segment) < 0)
+		vm_vec_negate(&inward);
+	if (vm_vec_normalize_quick(&inward) <= 0) {
+		snprintf(reason, reason_size, "face_view: zero side normal for seg=%d side=%d face=%d",
+		         s.segment, s.side, s.face);
+		return 0;
+	}
+
+	travel = fl2f(s.distance > 0.0f ? s.distance : 4.0f);
+	if (travel <= 0)
+		travel = inward_len / 2;
+	if (travel >= inward_len)
+		travel = inward_len / 2;
+	if (travel <= 0) {
+		snprintf(reason, reason_size, "face_view: invalid travel distance for seg=%d side=%d face=%d",
+		         s.segment, s.side, s.face);
+		return 0;
+	}
+
+	vm_vec_scale(&inward, travel);
+	vm_vec_add(&new_pos, &face_center, &inward);
+	new_seg = find_point_seg(&new_pos, s.segment);
+	if (new_seg < 0) {
+		vms_vector inside_pos = segment_center;
+		vms_vector outside_pos = new_pos;
+		int inside_seg = find_point_seg(&inside_pos, s.segment);
+
+		if (inside_seg < 0)
+			inside_seg = s.segment;
+		for (int i = 0; i < 8; ++i) {
+			vms_vector mid_pos;
+			int mid_seg;
+
+			mid_pos.x = (inside_pos.x + outside_pos.x) / 2;
+			mid_pos.y = (inside_pos.y + outside_pos.y) / 2;
+			mid_pos.z = (inside_pos.z + outside_pos.z) / 2;
+			mid_seg = find_point_seg(&mid_pos, s.segment);
+			if (mid_seg >= 0) {
+				inside_pos = mid_pos;
+				inside_seg = mid_seg;
+			} else {
+				outside_pos = mid_pos;
+			}
+		}
+		new_pos = inside_pos;
+		new_seg = inside_seg;
+	}
+
+	ConsoleObject->pos = new_pos;
+	ConsoleObject->last_pos = new_pos;
+	if (ConsoleObject->segnum != new_seg)
+		obj_relink((int) (ConsoleObject - Objects), new_seg);
+	else
+		ConsoleObject->segnum = new_seg;
+
+	vm_vec_sub(&forward, &face_center, &ConsoleObject->pos);
+	if (vm_vec_normalize_quick(&forward) <= 0) {
+		snprintf(reason, reason_size, "face_view: zero forward vector for seg=%d side=%d face=%d",
+		         s.segment, s.side, s.face);
+		return 0;
+	}
+	vm_vector_2_matrix(&ConsoleObject->orient, &forward, NULL, NULL);
+	vm_vec_zero(&ConsoleObject->mtype.phys_info.velocity);
+	vm_vec_zero(&ConsoleObject->mtype.phys_info.rotvel);
+	vm_vec_zero(&ConsoleObject->mtype.phys_info.thrust);
+	vm_vec_zero(&ConsoleObject->mtype.phys_info.rotthrust);
+
+	LOGI("face_view: seg=%d side=%d face=%d pos=(%.2f, %.2f, %.2f)",
+	     s.segment, s.side, s.face,
+	     f2fl(ConsoleObject->pos.x), f2fl(ConsoleObject->pos.y), f2fl(ConsoleObject->pos.z));
+	return 1;
+}
+
+static int clear_level_robots(char *reason, size_t reason_size)
+{
+	int removed = 0;
+
+	if (Screen_mode != SCREEN_GAME || Game_wind == NULL) {
+		snprintf(reason, reason_size, "clear_robots: game window is not active");
+		return 0;
+	}
+
+	for (int objnum = Highest_object_index; objnum >= 0; --objnum) {
+		if (Objects[objnum].type != OBJ_ROBOT)
+			continue;
+		obj_delete(objnum);
+		removed++;
+	}
+
+	LOGI("clear_robots: removed=%d", removed);
+	return 1;
+}
+
 /* -- Condition checking ----------------------------------------------- */
 
 extern "C" window *Game_wind;
@@ -662,6 +912,7 @@ static int parse_script(const char *json_text)
 			else if (action == "send_button") s.type = STEP_SEND_BUTTON;
 			else if (action == "skip_briefing") s.type = STEP_SKIP_BRIEFING;
 			else if (action == "assert_overlay") s.type = STEP_ASSERT_OVERLAY;
+			else if (action == "face_view") s.type = STEP_FACE_VIEW;
 			else if (action == "enter_launcher") s.type = STEP_ENTER_LAUNCHER;
 			else if (action == "enter_game") s.type = STEP_ENTER_GAME;
 			else if (action == "setup_command") s.type = STEP_SETUP_COMMAND;
@@ -690,6 +941,10 @@ static int parse_script(const char *json_text)
 			s.button_id = step_json.value("button", -1);
 			s.button_held = step_json.value("held", 0);
 			s.button_pressed = step_json.value("pressed", 1);
+			s.segment = step_json.value("segment", -1);
+			s.side = step_json.value("side", -1);
+			s.face = step_json.value("face", 0);
+			s.distance = step_json.value("distance", 4.0f);
 
 			/* Parse "expect" object for STEP_ASSERT */
 			if (step_json.contains("expect") && step_json["expect"].is_object()) {
@@ -1323,6 +1578,23 @@ extern "C" void game_automate_tick(void)
 			break;
 		}
 
+		case STEP_FACE_VIEW:
+			if (g_key_phase == 0) {
+				char reason[256];
+
+				if (!move_player_to_face_view(s, reason, sizeof(reason))) {
+					log_append("face_view", "fail", reason);
+					stop_script_fail(reason);
+					break;
+				}
+				log_append("face_view", "done", "");
+				g_key_phase = 1;
+				g_step_start = now;
+			} else if (elapsed >= (Uint32) s.post_delay_ms) {
+				advance_step();
+			}
+			break;
+
 		case STEP_ENTER_LAUNCHER: {
 			/* Yield control back to the launcher (Kotlin).
 			 * Write LAUNCHER_CONTINUE with the next step index so the
@@ -1360,12 +1632,27 @@ extern "C" void game_automate_tick(void)
 		case STEP_SET_DEBUG:
 			if (s.field == "tex_overlay")
 				g_debug_tex_overlay_active = (int) std::stod(s.value);
-			else if (s.field == "metl154_mode")
-				g_metl154_debug_mode = (int) std::stod(s.value);
-			else if (s.field == "metl154_experiment") {
-				g_metl154_experiment_mode = (int) std::stod(s.value);
+			else if (s.field == "merged_wall_mode")
+				g_merged_wall_debug_mode = (int) std::stod(s.value);
+			else if (s.field == "clear_robots") {
+				if (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) {
+					char reason[128];
+					if (!clear_level_robots(reason, sizeof(reason))) {
+						log_append("set_debug", "fail", reason);
+						stop_script_fail(reason);
+						break;
+					}
+				}
+			} else if (s.field == "merged_wall_snapshot") {
+				if (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0)
+					android_merged_wall_request_snapshot();
+			} else if (s.field == "merged_wall_experiment") {
+				g_merged_wall_experiment_mode =
+				    (int) std::stod(s.value) == MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE
+				        ? MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE
+				        : MERGED_WALL_EXPERIMENT_DEFAULT;
 				__sync_synchronize();
-				g_metl154_experiment_pending_apply = 1;
+				g_merged_wall_experiment_pending_apply = 1;
 			} else
 				LOGE("set_debug: unknown field '%s'", s.field.c_str());
 			LOGI("set_debug: %s = %s", s.field.c_str(), s.value.c_str());

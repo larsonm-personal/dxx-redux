@@ -1659,9 +1659,6 @@ int state_restore_all_sub(char *filename, int secret_restore)
 		for (i=0; i<=Highest_segment_index; i++)
 			Light_subtracted[i] = 0;
 	}
-	#ifdef ANDROID
-	render_log_android_tracked_side_snapshot("restore_pre_apply", -1);
-	#endif
 
 	// static_light should now be computed - now actually set tmap info
 	for (i=0; i<=Highest_segment_index; i++ )	{
@@ -1670,10 +1667,6 @@ int state_restore_all_sub(char *filename, int secret_restore)
 			Segments[i].sides[j].tmap_num2=TempTmapNum2[i][j];
 		}
 	}
-	#ifdef ANDROID
-	render_log_android_tracked_side_snapshot("restore_post_apply", -1);
-	render_reset_android_tracked_side_snapshot();
-	#endif
 
 	if (!secret_restore) {
 		if (version >= 20) {

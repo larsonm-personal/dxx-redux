@@ -1386,9 +1386,6 @@ RetryObjectLoading:
 	//Restore trigger info
 	Num_triggers = PHYSFSX_readSXE32(fp, swap);
 	trigger_read_n_swap(Triggers, Num_triggers, swap, fp);
-	#ifdef ANDROID
-	render_log_android_tracked_side_snapshot("restore_pre_apply", -1);
-	#endif
 
 	//Restore tmap info
 	for (i=0; i<=Highest_segment_index; i++ )	{
@@ -1398,10 +1395,6 @@ RetryObjectLoading:
 			Segments[i].sides[j].tmap_num2 = PHYSFSX_readSXE16(fp, swap);
 		}
 	}
-	#ifdef ANDROID
-	render_log_android_tracked_side_snapshot("restore_post_apply", -1);
-	render_reset_android_tracked_side_snapshot();
-	#endif
 
 	//Restore the fuelcen info
 	Control_center_destroyed = PHYSFSX_readSXE32(fp, swap);

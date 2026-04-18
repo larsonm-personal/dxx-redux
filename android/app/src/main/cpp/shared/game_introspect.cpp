@@ -305,13 +305,6 @@ static json serialize_position()
 	};
 	return pos;
 }
-
-#define METL154_GEOMETRY_SEGMENT_COUNT 3
-
-static const int metl154_geometry_segments[METL154_GEOMETRY_SEGMENT_COUNT] = {
-	82, 83, 29
-};
-
 static const char *side_type_name(int type)
 {
 	switch (type) {
@@ -565,16 +558,102 @@ static json serialize_segment_geometry(int segnum)
 	};
 }
 
-static json serialize_metl154_geometry()
+static const char *merged_wall_snapshot_cover_kind_name(int kind)
 {
-	json tracked_segments = json::array();
+	switch (kind) {
+		case 1: return "exact";
+		case 2: return "bbox";
+		default: return "unknown";
+	}
+}
 
-	for (int i = 0; i < METL154_GEOMETRY_SEGMENT_COUNT; ++i)
-		tracked_segments.push_back(serialize_segment_geometry(metl154_geometry_segments[i]));
+static json serialize_merged_wall_snapshot()
+{
+	const merged_wall_snapshot_result &snap = g_merged_wall_snapshot_result;
+	json faces = json::array();
+	json covers = json::array();
+
+	if (!snap.valid)
+		return nullptr;
+
+	for (int i = 0; i < MERGED_WALL_SNAPSHOT_FACE_MAX; ++i) {
+		const merged_wall_snapshot_face &face = snap.faces[i];
+
+		if (!face.valid)
+			continue;
+		faces.push_back({ { "rank", face.rank },
+		                  { "center_hit", (bool) face.center_hit },
+		                  { "dist2", face.dist2 },
+		                  { "render_pass", face.render_pass },
+		                  { "draw_seq", face.draw_seq },
+		                  { "draw_order", face.draw_order },
+		                  { "seg", face.seg },
+		                  { "side", face.side },
+		                  { "face", face.face },
+		                  { "child", face.child },
+		                  { "side_type", face.side_type },
+		                  { "wid_flags", face.wid_flags },
+		                  { "tmap1", face.tmap1 },
+		                  { "tmap2", face.tmap2 },
+		                  { "min_sx", face.min_sx },
+		                  { "max_sx", face.max_sx },
+		                  { "min_sy", face.min_sy },
+		                  { "max_sy", face.max_sy },
+		                  { "bbox_area", face.bbox_area },
+		                  { "route", std::string(face.route) },
+		                  { "merge_impl", std::string(face.merge_impl) } });
+	}
+
+	for (int i = 0; i < MERGED_WALL_SNAPSHOT_COVER_MAX; ++i) {
+		const merged_wall_snapshot_cover &cover = snap.covers[i];
+
+		if (!cover.valid)
+			continue;
+		covers.push_back({ { "kind", cover.kind },
+		                   { "kind_name", merged_wall_snapshot_cover_kind_name(cover.kind) },
+		                   { "rank", cover.rank },
+		                   { "center_face", (bool) cover.center_face },
+		                   { "center_cover", (bool) cover.center_cover },
+		                   { "center_overlap", (bool) cover.center_overlap },
+		                   { "overlap_area", cover.overlap_area },
+		                   { "ordered", (bool) cover.ordered },
+		                   { "render_pass", cover.render_pass },
+		                   { "draw_seq", cover.draw_seq },
+		                   { "draw_order", cover.draw_order },
+		                   { "cover_order", cover.cover_order },
+		                   { "seg", cover.seg },
+		                   { "side", cover.side },
+		                   { "face", cover.face },
+		                   { "child", cover.child },
+		                   { "wid_flags", cover.wid_flags },
+		                   { "cover_seg", cover.cover_seg },
+		                   { "cover_side", cover.cover_side },
+		                   { "cover_face", cover.cover_face },
+		                   { "cover_child", cover.cover_child },
+		                   { "cover_wid_flags", cover.cover_wid_flags },
+		                   { "cover_shader", std::string(cover.cover_shader) },
+		                   { "cover_bot", std::string(cover.cover_bot) },
+		                   { "cover_ovl", std::string(cover.cover_ovl) } });
+	}
 
 	return {
-		{ "player_segment", ConsoleObject ? (int) ConsoleObject->segnum : -1 },
-		{ "tracked_segments", std::move(tracked_segments) }
+		{ "status", std::string(snap.status) },
+		{ "frame_id", snap.frame_id },
+		{ "request_frame", snap.request_frame },
+		{ "screen_w", snap.screen_w },
+		{ "screen_h", snap.screen_h },
+		{ "center_x", snap.center_x },
+		{ "center_y", snap.center_y },
+		{ "sample_rgba", { snap.sample_r, snap.sample_g, snap.sample_b, snap.sample_a } },
+		{ "avg_rgba", { snap.avg_r, snap.avg_g, snap.avg_b, snap.avg_a } },
+		{ "tracked_count", snap.tracked_count },
+		{ "center_hit_count", snap.center_hit_count },
+		{ "cover_event_count", snap.cover_event_count },
+		{ "selected_count", snap.selected_count },
+		{ "relevant_cover_count", snap.relevant_cover_count },
+		{ "omitted_cover_count", snap.omitted_cover_count },
+		{ "faces", std::move(faces) },
+		{ "covers", std::move(covers) }
 	};
 }
 
@@ -674,8 +753,8 @@ extern "C" char *game_introspect_get_state(void)
 	{
 		json dbg;
 		dbg["tex_overlay"] = (bool) g_debug_tex_overlay_active;
-		dbg["metl154_mode"] = (int) g_metl154_debug_mode;
-		dbg["metl154_experiment"] = (int) g_metl154_experiment_mode;
+		dbg["merged_wall_mode"] = (int) g_merged_wall_debug_mode;
+		dbg["merged_wall_experiment"] = (int) g_merged_wall_experiment_mode;
 		j["debug_flags"] = std::move(dbg);
 	}
 
@@ -905,7 +984,7 @@ extern "C" char *game_introspect_get_state(void)
 	if (Current_level_num != 0) {
 		j["player"] = serialize_player();
 		j["position"] = serialize_position();
-		j["metl154_geometry"] = serialize_metl154_geometry();
+		j["merged_wall_snapshot"] = serialize_merged_wall_snapshot();
 
 		/* Flat weapon keys for easy assertion */
 		player *p = &Players[Player_num];
@@ -914,7 +993,7 @@ extern "C" char *game_introspect_get_state(void)
 	} else {
 		j["player"] = nullptr;
 		j["position"] = nullptr;
-		j["metl154_geometry"] = nullptr;
+		j["merged_wall_snapshot"] = nullptr;
 	}
 
 	/* -- Keyboard viewport offset state -------------------------- */
