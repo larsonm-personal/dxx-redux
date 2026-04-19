@@ -1,6 +1,6 @@
 # plan_door45_paged_out_buf_stale
 
-Status: in progress. Phase 1 probes and the Phase 2 `buf` refresh are landed in D1/D2 OGL, Android validation passed, and the on-device door45 repro now confirms the fix. Remaining work is regression coverage and cleanup of the temporary load-state probes.
+Status: in progress. Phase 1 probes and the Phase 2 `buf` refresh are landed in D1/D2 OGL, Android validation passed, the on-device door45 repro confirms the fix, and the new emulator regression now passes. Remaining work is the Phase 5 cleanup/consolidation pass and optional manual visual confirmation.
 
 ## New evidence
 
@@ -85,8 +85,17 @@ Equivalent alternative: move the original `buf = bm->bm_data;` assignment to jus
   - [x] Grep for other `buf = bm->bm_data;` or equivalent captures before PAGED_OUT handling in d1/d2 ogl paths that might have the same stale-capture pattern. Result: only the two `ogl_loadbmtexture_f` copies had this exact bug shape.
   - [x] Re-evaluate whether `ogl_loadtexture` should `memset(texbuf, 0, ...)` when `data == NULL`. Current recommendation: do not add it for now. There are no intentional `ogl_loadtexture(NULL, ...)` call sites in d1/d2 OGL, and a zero-fill fallback would mask future logic bugs instead of surfacing them.
 - [ ] Phase 4: regression test.
-  - [ ] Extend an automation script (or add a new one under `android/game_scripts/`) that drives into level 1, taps to trigger the closed-cover draw, requests an introspection dump, and asserts via the introspection API or a new automation hook that the cover texture GPU readback does not round to near-black (`gpu_avg > ~30/30/30`). Land with `run_test.ps1` passing.
-  - [ ] Remove or gate-off the temporary `[mwall_loadbmtex_entry]`/`[mwall_loadbmtex_post_pagein]` probes once the fix and regression test are in place. Keep `[mwall_upload_src]`, `[mwall_upload_cpu]`, `[mwall_cover_gpu]` since they are the long-term diagnostics.
+  - [x] Land `android/game_scripts/test_door45_cover_gpu_regression.json5` to drive to the known seg-80 pose, request `merged_wall_snapshot`, and assert the focused target-cover GPU stats for the closed `door45#0` frame.
+  - [x] Extend `merged_wall_snapshot` with a shared-Android `target_cover_gpu` object populated from the existing `[mwall_cover_gpu]` readback path so the script can assert the real fixed condition without scraping log files.
+  - [x] Note for the final script: the closed-door pose can legitimately yield `merged_wall_snapshot.status=no_projected_faces` and `selected_count=0` while still producing a valid `target_cover_gpu` object. The regression keys off `cover_event_count` and `target_cover_gpu`, not the older face-selection count.
+  - [x] Validate with `android/run_test.ps1 -ScriptName test_door45_cover_gpu_regression.json5 -Game d2 -Install` on the working emulator, keeping the output in `temp/` per the harness guidance.
+  - [x] Emulator result on 2026-04-19: PASS (file-based, 29/28 steps, 9115ms, TEST_EXIT=0). Final introspection still reported `merged_wall_snapshot.status=no_projected_faces` and `selected_count=0`, but `target_cover_gpu.valid=true` for `door45#0` with `src_hash_hex=272e5021`, `gpu_hash_hex=5aa172e1`, `gpu_avg_r/g/b=42/62/59`, `gpu_black=0`, and overlap about `189.33`.
+- [ ] Phase 5: cleanup and framework consolidation.
+  - [ ] Remove or gate-off the temporary `[mwall_loadbmtex_entry]`/`[mwall_loadbmtex_post_pagein]` probes once the regression test is green. These were root-cause probes only.
+  - [ ] Keep `[mwall_upload_src]`, `[mwall_upload_cpu]`, `[mwall_mip_upload]`, and `[mwall_cover_gpu]` as the permanent texture-integrity diagnostics. They directly prove source bytes, expanded upload bytes, mip policy, and GPU storage.
+  - [ ] Move the duplicated `door45#` upload-diagnostic helpers out of `d1/arch/ogl/ogl.c` and `d2/arch/ogl/ogl.c` into a shared Android-side texture debug helper, following the `merged_wall_debug.c` pattern, so future targeted texture probes do not require mirrored D1/D2 helper bodies.
+  - [ ] Replace the hard-coded `door45#` name gate with a runtime-selectable Android debug target once the shared helper exists, so future regressions can reuse the framework without another engine-source edit.
+  - [ ] Leave the actual `buf = bm->bm_data;` refresh mirrored in D1/D2. That fix belongs in the engine copies because it corrects real texture loading behavior, not just debug instrumentation.
 
 ## Open questions / alternative theories still worth disproving
 

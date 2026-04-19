@@ -569,11 +569,20 @@ static const char *merged_wall_snapshot_cover_kind_name(int kind)
 	}
 }
 
+static std::string hex32_string(unsigned int value)
+{
+	char buf[9];
+
+	snprintf(buf, sizeof(buf), "%08x", value);
+	return std::string(buf);
+}
+
 static json serialize_merged_wall_snapshot()
 {
 	const merged_wall_snapshot_result &snap = g_merged_wall_snapshot_result;
 	json faces = json::array();
 	json covers = json::array();
+	json target_cover_gpu = nullptr;
 
 	if (!snap.valid)
 		return nullptr;
@@ -650,6 +659,54 @@ static json serialize_merged_wall_snapshot()
 		                   { "cover_ovl", std::string(cover.cover_ovl) } });
 	}
 
+	if (snap.target_cover_gpu.valid) {
+		const merged_wall_snapshot_target_cover &target = snap.target_cover_gpu;
+
+		target_cover_gpu = {
+			{ "valid", true },
+			{ "ordered", (bool) target.ordered },
+			{ "render_pass", target.render_pass },
+			{ "draw_seq", target.draw_seq },
+			{ "draw_order", target.draw_order },
+			{ "cover_order", target.cover_order },
+			{ "seg", target.seg },
+			{ "side", target.side },
+			{ "face", target.face },
+			{ "child", target.child },
+			{ "wid_flags", target.wid_flags },
+			{ "cover_seg", target.cover_seg },
+			{ "cover_side", target.cover_side },
+			{ "cover_face", target.cover_face },
+			{ "cover_child", target.cover_child },
+			{ "cover_wid_flags", target.cover_wid_flags },
+			{ "tmap1", target.tmap1 },
+			{ "tex_w", target.tex_w },
+			{ "tex_h", target.tex_h },
+			{ "src_hash_hex", hex32_string(target.src_hash) },
+			{ "gpu_hash_hex", hex32_string(target.gpu_hash) },
+			{ "src_idx254", target.src_idx254 },
+			{ "src_idx255", target.src_idx255 },
+			{ "gpu_avg_r", target.gpu_avg_r },
+			{ "gpu_avg_g", target.gpu_avg_g },
+			{ "gpu_avg_b", target.gpu_avg_b },
+			{ "gpu_avg_a", target.gpu_avg_a },
+			{ "gpu_black", target.gpu_black },
+			{ "p0_r", target.p0_r },
+			{ "p0_g", target.p0_g },
+			{ "p0_b", target.p0_b },
+			{ "p0_a", target.p0_a },
+			{ "center_r", target.center_r },
+			{ "center_g", target.center_g },
+			{ "center_b", target.center_b },
+			{ "center_a", target.center_a },
+			{ "overlap_area", target.overlap_area },
+			{ "kind_name", std::string(target.kind_name) },
+			{ "face_box", std::string(target.face_box) },
+			{ "cover_shader", std::string(target.cover_shader) },
+			{ "cover_bot", std::string(target.cover_bot) }
+		};
+	}
+
 	return {
 		{ "status", std::string(snap.status) },
 		{ "frame_id", snap.frame_id },
@@ -666,6 +723,7 @@ static json serialize_merged_wall_snapshot()
 		{ "selected_count", snap.selected_count },
 		{ "relevant_cover_count", snap.relevant_cover_count },
 		{ "omitted_cover_count", snap.omitted_cover_count },
+		{ "target_cover_gpu", std::move(target_cover_gpu) },
 		{ "faces", std::move(faces) },
 		{ "covers", std::move(covers) }
 	};

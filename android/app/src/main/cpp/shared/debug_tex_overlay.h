@@ -118,6 +118,50 @@ struct merged_wall_snapshot_cover {
 	char cover_ovl[24];
 };
 
+struct merged_wall_snapshot_target_cover {
+	int valid;
+	int ordered;
+	int render_pass;
+	int draw_seq;
+	int draw_order;
+	int cover_order;
+	int seg;
+	int side;
+	int face;
+	int child;
+	int wid_flags;
+	int cover_seg;
+	int cover_side;
+	int cover_face;
+	int cover_child;
+	int cover_wid_flags;
+	int tmap1;
+	int tex_w;
+	int tex_h;
+	unsigned int src_hash;
+	unsigned int gpu_hash;
+	int src_idx254;
+	int src_idx255;
+	int gpu_avg_r;
+	int gpu_avg_g;
+	int gpu_avg_b;
+	int gpu_avg_a;
+	int gpu_black;
+	int p0_r;
+	int p0_g;
+	int p0_b;
+	int p0_a;
+	int center_r;
+	int center_g;
+	int center_b;
+	int center_a;
+	float overlap_area;
+	char kind_name[8];
+	char face_box[16];
+	char cover_shader[16];
+	char cover_bot[24];
+};
+
 struct merged_wall_snapshot_result {
 	int valid;
 	char status[24];
@@ -141,6 +185,7 @@ struct merged_wall_snapshot_result {
 	int selected_count;
 	int relevant_cover_count;
 	int omitted_cover_count;
+	struct merged_wall_snapshot_target_cover target_cover_gpu;
 	struct merged_wall_snapshot_face faces[MERGED_WALL_SNAPSHOT_FACE_MAX];
 	struct merged_wall_snapshot_cover covers[MERGED_WALL_SNAPSHOT_COVER_MAX];
 };

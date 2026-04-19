@@ -156,6 +156,7 @@ volatile int g_merged_wall_force_two_pass = 0;
 struct android_draw_face_context g_android_draw_face_ctx = { 0 };
 struct merged_wall_snapshot_result g_merged_wall_snapshot_result = { 0 };
 struct merged_wall_last_draw_state g_merged_wall_last_draw_state = { 0 };
+static struct merged_wall_snapshot_target_cover merged_wall_snapshot_target_cover = { 0 };
 
 static struct merged_wall_tracked_face merged_wall_tracked_faces[MERGED_WALL_TRACKED_FACE_MAX];
 static struct merged_wall_snapshot_cover_event merged_wall_cover_events[MERGED_WALL_COVER_EVENT_MAX];
@@ -783,6 +784,25 @@ static void merged_wall_reset_cover_gpu_readbacks(void)
 	merged_wall_readback_cover_texture_count = 0;
 }
 
+static void merged_wall_reset_snapshot_target_cover(void)
+{
+	memset(&merged_wall_snapshot_target_cover, 0, sizeof(merged_wall_snapshot_target_cover));
+}
+
+static int merged_wall_snapshot_target_cover_better(float overlap_area,
+                                                    int ordered, int draw_order)
+{
+	if (!merged_wall_snapshot_target_cover.valid)
+		return 1;
+	if (ordered != merged_wall_snapshot_target_cover.ordered)
+		return ordered > merged_wall_snapshot_target_cover.ordered;
+	if (overlap_area > merged_wall_snapshot_target_cover.overlap_area + 0.01f)
+		return 1;
+	if (overlap_area + 0.01f < merged_wall_snapshot_target_cover.overlap_area)
+		return 0;
+	return draw_order > merged_wall_snapshot_target_cover.draw_order;
+}
+
 static int merged_wall_note_cover_bitmap_dump(int tex_num)
 {
 	int i;
@@ -1317,6 +1337,57 @@ static void merged_wall_log_cover_gpu_readback(const char *kind,
 	       sizeof(center));
 	free(rgba);
 	while (glGetError() != GL_NO_ERROR) {}
+
+	if (merged_wall_snapshot_target_cover_better(overlap_area, ordered, draw_order)) {
+		struct merged_wall_snapshot_target_cover *target = &merged_wall_snapshot_target_cover;
+
+		memset(target, 0, sizeof(*target));
+		target->valid = 1;
+		target->ordered = ordered;
+		target->render_pass = g_merged_wall_render_pass;
+		target->draw_seq = g_merged_wall_draw_seq;
+		target->draw_order = face_order;
+		target->cover_order = draw_order;
+		target->seg = face_ctx && face_ctx->valid ? face_ctx->seg : -1;
+		target->side = face_ctx && face_ctx->valid ? face_ctx->side : -1;
+		target->face = face_ctx && face_ctx->valid ? face_ctx->face : -1;
+		target->child = face_ctx && face_ctx->valid ? face_ctx->child : -1;
+		target->wid_flags = face_ctx && face_ctx->valid ? face_ctx->wid_flags : 0;
+		target->cover_seg = cover_ctx->seg;
+		target->cover_side = cover_ctx->side;
+		target->cover_face = cover_ctx->face;
+		target->cover_child = cover_ctx->child;
+		target->cover_wid_flags = cover_ctx->wid_flags;
+		target->tmap1 = cover_ctx->tmap1;
+		target->tex_w = read_w;
+		target->tex_h = read_h;
+		target->src_hash = src_hash;
+		target->gpu_hash = gpu_hash;
+		target->src_idx254 = src_idx254;
+		target->src_idx255 = src_idx255;
+		target->gpu_avg_r = avg_r;
+		target->gpu_avg_g = avg_g;
+		target->gpu_avg_b = avg_b;
+		target->gpu_avg_a = avg_a;
+		target->gpu_black = black_rgb;
+		target->p0_r = p0[0];
+		target->p0_g = p0[1];
+		target->p0_b = p0[2];
+		target->p0_a = p0[3];
+		target->center_r = center[0];
+		target->center_g = center[1];
+		target->center_b = center[2];
+		target->center_a = center[3];
+		target->overlap_area = overlap_area;
+		merged_wall_copy_string(target->kind_name, sizeof(target->kind_name),
+		                        kind ? kind : "");
+		merged_wall_copy_string(target->face_box, sizeof(target->face_box),
+		                        track_box_kind ? track_box_kind : "exact");
+		merged_wall_copy_string(target->cover_shader, sizeof(target->cover_shader),
+		                        shader_kind ? shader_kind : "");
+		merged_wall_copy_string(target->cover_bot, sizeof(target->cover_bot),
+		                        name ? name : "");
+	}
 
 	debug_log(DLOG_TEXTURE,
 	          "[mwall_cover_gpu] kind=%s shader=%s frame=%d pass=%d seq=%d face_pass=%d face_seq=%d face_order=%d cover_order=%d ordered=%d face_seg=%d face_side=%d face_face=%d face_child=%d face_wid=%d face_tmap1=%d face_tmap2=0x%x seg=%d side=%d face=%d child=%d wid=%d tmap1=%d name=%s handle=%u tex=%dx%d src_hash=0x%08x src_idx254=%d src_idx255=%d gpu_hash=0x%08x gpu_avg=%d/%d/%d/%d gpu_black=%d p0=%d/%d/%d/%d center=%d/%d/%d/%d overlap=%.1f face_box=%s",
@@ -2619,6 +2690,7 @@ void android_merged_wall_request_snapshot(void)
 	memset(&g_merged_wall_snapshot_result, 0, sizeof(g_merged_wall_snapshot_result));
 	merged_wall_reset_cover_bitmap_dumps();
 	merged_wall_reset_cover_gpu_readbacks();
+	merged_wall_reset_snapshot_target_cover();
 	merged_wall_copy_string(g_merged_wall_snapshot_result.status,
 	                        sizeof(g_merged_wall_snapshot_result.status), "pending");
 	g_merged_wall_snapshot_result.request_frame = g_merged_wall_frame_id;
@@ -2698,6 +2770,7 @@ void android_merged_wall_finish_snapshot(int screen_w, int screen_h,
 	g_merged_wall_snapshot_result.tracked_count =
 	    merged_wall_tracked_frame_id == g_merged_wall_frame_id ? merged_wall_tracked_face_count : 0;
 	g_merged_wall_snapshot_result.cover_event_count = merged_wall_cover_event_count;
+	g_merged_wall_snapshot_result.target_cover_gpu = merged_wall_snapshot_target_cover;
 
 	for (i = 0; i < MERGED_WALL_SNAPSHOT_FACE_MAX; i++)
 		selected[i] = -1;
