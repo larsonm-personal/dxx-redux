@@ -81,6 +81,24 @@ struct merged_wall_snapshot_cover_event {
 	char cover_ovl[24];
 };
 
+struct merged_wall_snapshot_focus_cover {
+	int valid;
+	int event_index;
+	int face_rank;
+	int partial_rank;
+	int center_face;
+	int center_cover;
+	int center_overlap;
+	int focus_bucket;
+	float focus_dist2;
+	float face_dist2;
+	float cover_dist2;
+	float overlap_area;
+	int draw_order;
+	int cover_order;
+	const char *track_box_kind;
+};
+
 struct merged_wall_portal_debug_info {
 	int wall_num;
 	int wall_type;
@@ -406,6 +424,44 @@ static int merged_wall_get_track_overlap_box(const struct merged_wall_tracked_fa
 	return 0;
 }
 
+static const char *merged_wall_snapshot_focus_bucket_name(int bucket)
+{
+	switch (bucket) {
+		case 0:
+			return "center_overlap";
+		case 1:
+			return "center_cover";
+		case 2:
+			return "center_face";
+		default:
+			return "nearby";
+	}
+}
+
+static int merged_wall_snapshot_focus_cover_better(const struct merged_wall_snapshot_focus_cover *candidate,
+                                                   const struct merged_wall_snapshot_focus_cover *current_best)
+{
+	if (!candidate || !candidate->valid)
+		return 0;
+	if (!current_best || !current_best->valid)
+		return 1;
+	if (candidate->focus_bucket != current_best->focus_bucket)
+		return candidate->focus_bucket < current_best->focus_bucket;
+	if (candidate->focus_dist2 < current_best->focus_dist2 - 0.5f)
+		return 1;
+	if (candidate->focus_dist2 > current_best->focus_dist2 + 0.5f)
+		return 0;
+	if (candidate->overlap_area > current_best->overlap_area + 0.5f)
+		return 1;
+	if (candidate->overlap_area < current_best->overlap_area - 0.5f)
+		return 0;
+	if (candidate->cover_order != current_best->cover_order)
+		return candidate->cover_order > current_best->cover_order;
+	if (candidate->draw_order != current_best->draw_order)
+		return candidate->draw_order > current_best->draw_order;
+	return candidate->event_index < current_best->event_index;
+}
+
 static void merged_wall_begin_frame_tracking(void)
 {
 	if (merged_wall_tracked_frame_id == g_merged_wall_frame_id)
@@ -717,6 +773,34 @@ static float merged_wall_log2_ratio(float numer, float denom)
 	return logf(numer / denom) / logf(2.0f);
 }
 
+static void merged_wall_log_cover_bitmap_skip(const char *reason,
+                                              const char *kind,
+                                              const char *shader_kind,
+                                              const struct android_draw_face_context *cover_ctx,
+                                              grs_bitmap *cover_bitmap)
+{
+	const char *name;
+
+	if (!g_merged_wall_snapshot_pending || !cover_ctx || !cover_ctx->valid)
+		return;
+	name = cover_bitmap ? piggy_game_bitmap_name(cover_bitmap) : NULL;
+	debug_log(DLOG_TEXTURE,
+	          "[mwall_cover_src_skip] reason=%s kind=%s shader=%s seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x name=%s has_bitmap=%d has_gl=%d",
+	          reason ? reason : "",
+	          kind ? kind : "",
+	          shader_kind ? shader_kind : "",
+	          cover_ctx->seg,
+	          cover_ctx->side,
+	          cover_ctx->face,
+	          cover_ctx->child,
+	          cover_ctx->wid_flags,
+	          cover_ctx->tmap1,
+	          cover_ctx->tmap2,
+	          name ? name : "<none>",
+	          cover_bitmap != NULL,
+	          cover_bitmap && cover_bitmap->gltexture != NULL);
+}
+
 static void merged_wall_log_cover_bitmap_dump(const char *kind,
                                               const char *shader_kind, float overlap_area, const char *track_box_kind,
                                               const struct android_draw_face_context *cover_ctx, grs_bitmap *cover_bitmap)
@@ -796,10 +880,16 @@ static void merged_wall_log_cover_bitmap_dump(const char *kind,
 
 	if (!g_merged_wall_snapshot_pending)
 		return;
-	if (src->bm_w > MERGED_WALL_BITMAP_DUMP_WIDTH || src->bm_h > MERGED_WALL_BITMAP_DUMP_WIDTH)
+	if (src->bm_w > MERGED_WALL_BITMAP_DUMP_WIDTH || src->bm_h > MERGED_WALL_BITMAP_DUMP_WIDTH) {
+		merged_wall_log_cover_bitmap_skip("oversize_bitmap", kind, shader_kind,
+		                                  cover_ctx, cover_bitmap);
 		return;
-	if (!merged_wall_note_cover_bitmap_dump(cover_ctx->tmap1))
+	}
+	if (!merged_wall_note_cover_bitmap_dump(cover_ctx->tmap1)) {
+		merged_wall_log_cover_bitmap_skip("duplicate_tmap1", kind, shader_kind,
+		                                  cover_ctx, cover_bitmap);
 		return;
+	}
 
 	for (y = 0; y < src->bm_h; y++) {
 		char hex_row[MERGED_WALL_BITMAP_DUMP_WIDTH * 2 + 1];
@@ -817,8 +907,12 @@ static void merged_wall_log_cover_bitmap_dump(const char *kind,
 }
 
 static void merged_wall_log_live_cover_state(const char *kind,
-                                             const char *shader_kind, int draw_order, int ordered, float overlap_area,
-                                             const char *track_box_kind, const struct android_draw_face_context *cover_ctx,
+                                             const char *shader_kind,
+                                             int face_pass, int face_seq, int face_order,
+                                             int draw_order, int ordered, float overlap_area,
+                                             const char *track_box_kind,
+                                             const struct android_draw_face_context *face_ctx,
+                                             const struct android_draw_face_context *cover_ctx,
                                              grs_bitmap *cover_bitmap,
                                              const struct g3s_point **pointlist,
                                              const g3s_uvl *uvl_list, int nv,
@@ -850,12 +944,23 @@ static void merged_wall_log_live_cover_state(const char *kind,
 	float lod_u = -99.0f, lod_v = -99.0f, lod_max = -99.0f;
 	int bbox_valid = 0, uv_valid = 0;
 
-	if (!cover_ctx || !cover_ctx->valid || !cover_bitmap || !cover_bitmap->gltexture)
+	if (!cover_ctx || !cover_ctx->valid)
 		return;
-	if (!shader_kind || strcmp(shader_kind, "single"))
+	if (!cover_bitmap || !cover_bitmap->gltexture) {
+		merged_wall_log_cover_bitmap_skip("missing_bitmap", kind, shader_kind,
+		                                  cover_ctx, cover_bitmap);
 		return;
-	if (cover_ctx->tmap2 != 0)
+	}
+	if (!shader_kind || strcmp(shader_kind, "single")) {
+		merged_wall_log_cover_bitmap_skip("non_single_shader", kind, shader_kind,
+		                                  cover_ctx, cover_bitmap);
 		return;
+	}
+	if (cover_ctx->tmap2 != 0) {
+		merged_wall_log_cover_bitmap_skip("cover_has_tmap2", kind, shader_kind,
+		                                  cover_ctx, cover_bitmap);
+		return;
+	}
 
 	texture = cover_bitmap->gltexture;
 	name = piggy_game_bitmap_name(cover_bitmap);
@@ -921,14 +1026,24 @@ static void merged_wall_log_live_cover_state(const char *kind,
 	}
 
 	debug_log(DLOG_TEXTURE,
-	          "[mwall_cover_live] kind=%s shader=%s frame=%d pass=%d seq=%d cover_order=%d ordered=%d seg=%d side=%d face=%d child=%d wid=%d tmap1=%d name=%s expected=%u program=%d active_tex=0x%x tex0=%d tex1=%d tex2=%d tex_min=0x%x tex_mag=0x%x wrap_s=0x%x wrap_t=0x%x base=%d max=%d depth=%d blend=%d cull=%d scissor=%d depth_mask=%d depth_func=0x%x blend_src_rgb=0x%x blend_dst_rgb=0x%x blend_src_a=0x%x blend_dst_a=0x%x blend_eq_rgb=0x%x blend_eq_a=0x%x front_face=0x%x cull_mode=0x%x poly=%d poly_factor=%.3f poly_units=%.3f color_mask=%d%d%d%d fbo=%d viewport=%d,%d,%d,%d scissor_box=%d,%d,%d,%d overlap=%.1f face_box=%s",
+	          "[mwall_cover_live] kind=%s shader=%s frame=%d pass=%d seq=%d face_pass=%d face_seq=%d face_order=%d cover_order=%d ordered=%d face_seg=%d face_side=%d face_face=%d face_child=%d face_wid=%d face_tmap1=%d face_tmap2=0x%x seg=%d side=%d face=%d child=%d wid=%d tmap1=%d name=%s expected=%u program=%d active_tex=0x%x tex0=%d tex1=%d tex2=%d tex_min=0x%x tex_mag=0x%x wrap_s=0x%x wrap_t=0x%x base=%d max=%d depth=%d blend=%d cull=%d scissor=%d depth_mask=%d depth_func=0x%x blend_src_rgb=0x%x blend_dst_rgb=0x%x blend_src_a=0x%x blend_dst_a=0x%x blend_eq_rgb=0x%x blend_eq_a=0x%x front_face=0x%x cull_mode=0x%x poly=%d poly_factor=%.3f poly_units=%.3f color_mask=%d%d%d%d fbo=%d viewport=%d,%d,%d,%d scissor_box=%d,%d,%d,%d overlap=%.1f face_box=%s",
 	          kind ? kind : "",
 	          shader_kind ? shader_kind : "",
 	          g_merged_wall_frame_id,
 	          g_merged_wall_render_pass,
 	          g_merged_wall_draw_seq,
+	          face_pass,
+	          face_seq,
+	          face_order,
 	          draw_order,
 	          ordered,
+	          face_ctx && face_ctx->valid ? face_ctx->seg : -1,
+	          face_ctx && face_ctx->valid ? face_ctx->side : -1,
+	          face_ctx && face_ctx->valid ? face_ctx->face : -1,
+	          face_ctx && face_ctx->valid ? face_ctx->child : -1,
+	          face_ctx && face_ctx->valid ? face_ctx->wid_flags : 0,
+	          face_ctx && face_ctx->valid ? face_ctx->tmap1 : -1,
+	          face_ctx && face_ctx->valid ? face_ctx->tmap2 : 0,
 	          cover_ctx->seg,
 	          cover_ctx->side,
 	          cover_ctx->face,
@@ -981,9 +1096,19 @@ static void merged_wall_log_live_cover_state(const char *kind,
 	          overlap_area,
 	          track_box_kind ? track_box_kind : "exact");
 	debug_log(DLOG_TEXTURE,
-	          "[mwall_cover_lod] kind=%s shader=%s seg=%d side=%d face=%d child=%d wid=%d tmap1=%d name=%s has_mips=%d cfg_texfilt=%d cfg_menu_texfilt=%d cfg_hud_texfilt=%d aniso=%d bbox_valid=%d uv_valid=%d screen=%.1fx%.1f uv=%.3f..%.3f/%.3f..%.3f texels=%.1fx%.1f lod_u=%.2f lod_v=%.2f lod_max=%.2f overlap=%.1f face_box=%s",
+	          "[mwall_cover_lod] kind=%s shader=%s face_pass=%d face_seq=%d face_order=%d face_seg=%d face_side=%d face_face=%d face_child=%d face_wid=%d face_tmap1=%d face_tmap2=0x%x seg=%d side=%d face=%d child=%d wid=%d tmap1=%d name=%s has_mips=%d cfg_texfilt=%d cfg_menu_texfilt=%d cfg_hud_texfilt=%d aniso=%d bbox_valid=%d uv_valid=%d screen=%.1fx%.1f uv=%.3f..%.3f/%.3f..%.3f texels=%.1fx%.1f lod_u=%.2f lod_v=%.2f lod_max=%.2f overlap=%.1f face_box=%s",
 	          kind ? kind : "",
 	          shader_kind ? shader_kind : "",
+	          face_pass,
+	          face_seq,
+	          face_order,
+	          face_ctx && face_ctx->valid ? face_ctx->seg : -1,
+	          face_ctx && face_ctx->valid ? face_ctx->side : -1,
+	          face_ctx && face_ctx->valid ? face_ctx->face : -1,
+	          face_ctx && face_ctx->valid ? face_ctx->child : -1,
+	          face_ctx && face_ctx->valid ? face_ctx->wid_flags : 0,
+	          face_ctx && face_ctx->valid ? face_ctx->tmap1 : -1,
+	          face_ctx && face_ctx->valid ? face_ctx->tmap2 : 0,
 	          cover_ctx->seg,
 	          cover_ctx->side,
 	          cover_ctx->face,
@@ -1324,8 +1449,10 @@ void android_merged_wall_log_cover(const char *shader_kind, const char *botname,
 				merged_wall_copy_string(event->cover_ovl,
 				                        sizeof(event->cover_ovl), ovlname);
 			}
-			merged_wall_log_live_cover_state("exact", shader_kind, draw_order,
-			                                 ordered, overlap_area, "exact", &cover_ctx, cover_bitmap,
+			merged_wall_log_live_cover_state("exact", shader_kind,
+			                                 track->render_pass, track->draw_seq, track->draw_order,
+			                                 draw_order,
+			                                 ordered, overlap_area, "exact", &track->draw_ctx, &cover_ctx, cover_bitmap,
 			                                 pointlist, uvl_list, nv, texfilt_level,
 			                                 menu_texfilt, hud_texfilt, aniso_level);
 		}
@@ -1447,8 +1574,10 @@ void android_merged_wall_log_cover(const char *shader_kind, const char *botname,
 		merged_wall_log_portal("cover", &cover_ctx);
 		if (g_merged_wall_snapshot_pending) {
 			merged_wall_log_face_textures("snapshot_coverbox_cover", 0, &cover_ctx);
-			merged_wall_log_live_cover_state("bbox", shader_kind, draw_order,
-			                                 -1, overlap_area, track_box_kind, &cover_ctx, cover_bitmap,
+			merged_wall_log_live_cover_state("bbox", shader_kind,
+			                                 track->render_pass, track->draw_seq, track->draw_order,
+			                                 draw_order,
+			                                 -1, overlap_area, track_box_kind, &track->draw_ctx, &cover_ctx, cover_bitmap,
 			                                 pointlist, uvl_list, nv, texfilt_level,
 			                                 menu_texfilt, hud_texfilt, aniso_level);
 		}
@@ -1476,6 +1605,190 @@ static int merged_wall_selected_rank(const int *selected, int selected_count,
 		if (selected[i] == track_index)
 			return i;
 	return -1;
+}
+
+static void merged_wall_log_snapshot_focus_covers(float center_x, float center_y,
+                                                  const int *selected, int selected_count,
+                                                  const int *partial_selected, int partial_selected_count)
+{
+	struct merged_wall_snapshot_focus_cover focus[MERGED_WALL_COVER_EVENT_MAX];
+	int candidate_count = 0;
+	int logged_count = 0;
+	int omitted_count = 0;
+	int i;
+
+	memset(focus, 0, sizeof(focus));
+	for (i = 0; i < merged_wall_cover_event_count && candidate_count < MERGED_WALL_COVER_EVENT_MAX; i++) {
+		const struct merged_wall_snapshot_cover_event *event = &merged_wall_cover_events[i];
+		const struct merged_wall_tracked_face *track;
+		struct merged_wall_snapshot_focus_cover *candidate = &focus[candidate_count];
+		float track_min_sx = 0.0f, track_max_sx = 0.0f;
+		float track_min_sy = 0.0f, track_max_sy = 0.0f;
+		float track_bbox_area = 0.0f;
+		float overlap_area = 0.0f;
+		const char *track_box_kind = "none";
+		int have_track_box;
+
+		if (event->face_index < 0 || event->face_index >= merged_wall_tracked_face_count)
+			continue;
+		track = &merged_wall_tracked_faces[event->face_index];
+		have_track_box = merged_wall_get_track_overlap_box(track,
+		                                                   &track_min_sx, &track_max_sx,
+		                                                   &track_min_sy, &track_max_sy,
+		                                                   &track_bbox_area, &track_box_kind);
+		if (!have_track_box && !event->cover_bbox_valid)
+			continue;
+
+		candidate->valid = 1;
+		candidate->event_index = i;
+		candidate->draw_order = track->draw_order;
+		candidate->cover_order = event->cover_order;
+		candidate->track_box_kind = track_box_kind;
+		if (have_track_box) {
+			candidate->center_face = merged_wall_bbox_contains_point(center_x, center_y,
+			                                                         track_min_sx, track_max_sx,
+			                                                         track_min_sy, track_max_sy);
+			candidate->face_dist2 = merged_wall_bbox_distance_sq(center_x, center_y,
+			                                                     track_min_sx, track_max_sx,
+			                                                     track_min_sy, track_max_sy);
+		}
+		if (event->cover_bbox_valid) {
+			candidate->center_cover = merged_wall_bbox_contains_point(center_x, center_y,
+			                                                          event->cover_min_sx, event->cover_max_sx,
+			                                                          event->cover_min_sy, event->cover_max_sy);
+			candidate->cover_dist2 = merged_wall_bbox_distance_sq(center_x, center_y,
+			                                                      event->cover_min_sx, event->cover_max_sx,
+			                                                      event->cover_min_sy, event->cover_max_sy);
+		} else {
+			candidate->cover_dist2 = candidate->face_dist2;
+		}
+		if (have_track_box && event->cover_bbox_valid) {
+			float overlap_min_sx = track_min_sx > event->cover_min_sx ? track_min_sx : event->cover_min_sx;
+			float overlap_max_sx = track_max_sx < event->cover_max_sx ? track_max_sx : event->cover_max_sx;
+			float overlap_min_sy = track_min_sy > event->cover_min_sy ? track_min_sy : event->cover_min_sy;
+			float overlap_max_sy = track_max_sy < event->cover_max_sy ? track_max_sy : event->cover_max_sy;
+
+			overlap_area = merged_wall_bbox_overlap_area(track_min_sx, track_max_sx,
+			                                             track_min_sy, track_max_sy,
+			                                             event->cover_min_sx, event->cover_max_sx,
+			                                             event->cover_min_sy, event->cover_max_sy);
+			if (overlap_area > 0.0f && merged_wall_bbox_contains_point(center_x, center_y,
+			                                                           overlap_min_sx, overlap_max_sx,
+			                                                           overlap_min_sy, overlap_max_sy))
+				candidate->center_overlap = 1;
+		}
+		if (event->overlap_area > overlap_area)
+			overlap_area = event->overlap_area;
+		candidate->overlap_area = overlap_area;
+		candidate->face_rank = merged_wall_selected_rank(selected, selected_count, event->face_index);
+		if (candidate->face_rank >= 0)
+			candidate->face_rank++;
+		else
+			candidate->face_rank = 0;
+		candidate->partial_rank = 0;
+		if (candidate->face_rank <= 0) {
+			candidate->partial_rank = merged_wall_selected_rank(partial_selected, partial_selected_count,
+			                                                    event->face_index);
+			if (candidate->partial_rank >= 0)
+				candidate->partial_rank++;
+			else
+				candidate->partial_rank = 0;
+		}
+		candidate->focus_bucket = candidate->center_overlap ? 0 : candidate->center_cover ? 1
+		                                                      : candidate->center_face    ? 2
+		                                                                                  : 3;
+		candidate->focus_dist2 = candidate->center_overlap || candidate->center_cover || candidate->center_face
+		                             ? 0.0f
+		                             : (event->cover_bbox_valid ? candidate->cover_dist2 : candidate->face_dist2);
+		candidate_count++;
+	}
+
+	if (candidate_count <= 0) {
+		debug_log(DLOG_TEXTURE,
+		          "[mwall_snapshot] no_focus_cover_candidates frame=%d request_frame=%d",
+		          g_merged_wall_frame_id,
+		          g_merged_wall_snapshot_request_frame);
+		return;
+	}
+
+	for (;;) {
+		int best_index = -1;
+
+		for (i = 0; i < candidate_count; i++) {
+			if (!focus[i].valid)
+				continue;
+			if (best_index < 0 || merged_wall_snapshot_focus_cover_better(&focus[i], &focus[best_index]))
+				best_index = i;
+		}
+		if (best_index < 0)
+			break;
+		if (logged_count >= MERGED_WALL_SNAPSHOT_COVER_MAX) {
+			omitted_count++;
+			focus[best_index].valid = 0;
+			continue;
+		}
+		logged_count++;
+		focus[best_index].valid = 0;
+		{
+			const struct merged_wall_snapshot_focus_cover *candidate = &focus[best_index];
+			const struct merged_wall_snapshot_cover_event *event = &merged_wall_cover_events[candidate->event_index];
+			const struct merged_wall_tracked_face *track = &merged_wall_tracked_faces[event->face_index];
+			const char *rank_source = candidate->face_rank > 0 ? "face" : candidate->partial_rank > 0 ? "partial"
+			                                                                                          : "none";
+			int rank_value = candidate->face_rank > 0 ? candidate->face_rank : candidate->partial_rank;
+
+			debug_log(DLOG_TEXTURE,
+			          "[mwall_snapshot_focus_cover] focus_rank=%d focus=%s kind=%s face_rank=%d rank_source=%s center_face=%d center_cover=%d center_overlap=%d dist2=%.1f face_dist2=%.1f cover_dist2=%.1f overlap=%.1f box=%s ordered=%d frame=%d pass=%d seq=%d draw_order=%d cover_order=%d cover_shader=%s cover_bot=%s cover_ovl=%s seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x cover_seg=%d cover_side=%d cover_face=%d cover_child=%d cover_wid=%d cover_tmap1=%d cover_tmap2=0x%x",
+			          logged_count,
+			          merged_wall_snapshot_focus_bucket_name(candidate->focus_bucket),
+			          event->kind == MERGED_WALL_SNAPSHOT_COVER_EXACT ? "exact" : "bbox",
+			          rank_value,
+			          rank_source,
+			          candidate->center_face,
+			          candidate->center_cover,
+			          candidate->center_overlap,
+			          candidate->focus_dist2,
+			          candidate->face_dist2,
+			          candidate->cover_dist2,
+			          candidate->overlap_area,
+			          candidate->track_box_kind ? candidate->track_box_kind : "none",
+			          event->ordered,
+			          g_merged_wall_frame_id,
+			          track->render_pass,
+			          track->draw_seq,
+			          track->draw_order,
+			          event->cover_order,
+			          event->cover_shader,
+			          event->cover_bot,
+			          event->cover_ovl,
+			          track->draw_ctx.valid ? track->draw_ctx.seg : -1,
+			          track->draw_ctx.valid ? track->draw_ctx.side : -1,
+			          track->draw_ctx.valid ? track->draw_ctx.face : -1,
+			          track->draw_ctx.valid ? track->draw_ctx.child : -1,
+			          track->draw_ctx.valid ? track->draw_ctx.wid_flags : 0,
+			          track->draw_ctx.valid ? track->draw_ctx.tmap1 : -1,
+			          track->draw_ctx.valid ? track->draw_ctx.tmap2 : 0,
+			          event->cover_ctx.valid ? event->cover_ctx.seg : -1,
+			          event->cover_ctx.valid ? event->cover_ctx.side : -1,
+			          event->cover_ctx.valid ? event->cover_ctx.face : -1,
+			          event->cover_ctx.valid ? event->cover_ctx.child : -1,
+			          event->cover_ctx.valid ? event->cover_ctx.wid_flags : 0,
+			          event->cover_ctx.valid ? event->cover_ctx.tmap1 : -1,
+			          event->cover_ctx.valid ? event->cover_ctx.tmap2 : 0);
+			merged_wall_log_portal("snapshot_focus_face", &track->draw_ctx);
+			merged_wall_log_portal("snapshot_focus_cover", &event->cover_ctx);
+			merged_wall_log_face_textures("snapshot_focus_face", logged_count, &track->draw_ctx);
+			merged_wall_log_face_textures("snapshot_focus_cover", logged_count, &event->cover_ctx);
+		}
+	}
+
+	debug_log(DLOG_TEXTURE,
+	          "[mwall_snapshot] focus_cover_candidates=%d focus_cover_logged=%d focus_cover_omitted=%d frame=%d request_frame=%d",
+	          candidate_count,
+	          logged_count,
+	          omitted_count,
+	          g_merged_wall_frame_id,
+	          g_merged_wall_snapshot_request_frame);
 }
 
 void android_merged_wall_request_snapshot(void)
@@ -1691,7 +2004,13 @@ void android_merged_wall_finish_snapshot(int screen_w, int screen_h,
 					break;
 			}
 		}
+	}
 
+	merged_wall_log_snapshot_focus_covers(center_x, center_y,
+	                                      selected, selected_count,
+	                                      partial_selected, partial_selected_count);
+
+	if (selected_count <= 0) {
 		merged_wall_copy_string(g_merged_wall_snapshot_result.status,
 		                        sizeof(g_merged_wall_snapshot_result.status), "no_projected_faces");
 		g_merged_wall_snapshot_result.valid = 1;

@@ -27,6 +27,9 @@ Use the new phone log to determine whether the door45 corruption is already diag
 - [x] The newest phone log `debuglog_20260418_212930.txt` confirms the same centered `door45#0` capture on the actual device, with matching source hash `0x272e5021` and live cover state showing the correct texture bound on `tex0`
 - [x] The phone draw differs from the prior emulator baseline mainly in filtering state: `tex_min=0x2701` / `tex_mag=0x2601`, which means the texture object is configured for mipmapped linear minification even though that alone does not prove the sampler chose a lower mip level for this pixel
 - [x] The phone snapshot geometry is still heavily minified in one axis despite the camera being close: the centered `door45#0` bbox spans roughly `599x1.6` screen pixels, so mip selection remains plausible for an edge-on door unless deeper logging proves the draw is clamped to level 0
+- [x] The later level-2 tap in `debuglog_20260418_212930.txt` is not evidence of a second-tap `mwall_cover_src_row` bug. That snapshot selects the exact merged front face `rock322 + ceil025`, and the row-dump path intentionally skips covers with `tmap2 != 0`, so no source-row dump is expected there
+- [x] Added explicit `mwall_cover_src_skip` reasons in the current code so future logs can distinguish `cover_has_tmap2`, `non_single_shader`, `missing_bitmap`, `duplicate_tmap1`, and `oversize_bitmap` from a true dump failure
+- [x] The snapshot path now emits center-focused cover ranking lines that do not depend on the front-face selection winning. The validated emulator repro writes `mwall_snapshot_focus_cover` and `focus_cover_candidates` for `door45#0`, with `focus=center_cover`, `rank_source=partial`, and the matching `face_seg/side` identifiers on `mwall_cover_live` / `mwall_cover_lod`
 
 ## Work Items
 - [x] Add a D2 Counterstrike level 1 automation script that uses `pose_view` with the logged pose
@@ -44,7 +47,9 @@ Use the new phone log to determine whether the door45 corruption is already diag
 - [x] Rebuild the Android debug APK and rerun the canonical bare `run_test.ps1 -ScriptName test_door45_pose_repro.json5 -Game d2` validation to confirm the new `mwall_cover_live`, `mwall_cover_src`, and `mwall_cover_src_row` markers appear in the exported debug log
 - [x] Add focused mip diagnostics for `door45#0` / `door45#9` upload paths so the logs distinguish stock `glGenerateMipmap`, prebuilt KTX2 mip uploads, and any anisotropy-driven filter upgrade from the user's explicit TexFilt setting
 - [x] Extend the live cover logger with the active graphics settings and an approximate screen-space LOD estimate from the actual door UV span and projected bbox so the next phone/emulator comparison can tell whether mip selection is expected or unlikely
-- [ ] Rebuild and rerun the canonical door45 repro to confirm the new `mwall_mip_upload` / `mwall_cover_lod` markers appear in the exported debug log
+- [x] Add explicit skip logging for cover bitmap dumps so later taps that snapshot merged faces do not look like `mwall_cover_src_row` regressions
+- [x] Add center-focused snapshot cover ranking so a user tap logs the cover candidate nearest the screen center even when the front merged face remains the selected snapshot face
+- [x] Rebuild and rerun the canonical door45 repro to confirm the new `mwall_mip_upload` / `mwall_cover_lod` markers appear in the exported debug log
 
 ## Validation Target
 - The new script should reliably launch D2 level 1 and fail unless it lands at segment 80 near the snapped replay coordinates without manual steering
