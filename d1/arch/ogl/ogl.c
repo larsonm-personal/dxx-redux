@@ -415,6 +415,27 @@ static void ogl_log_door45_upload_expanded(const char *bitmapname,
 		center_a);
 }
 
+static void ogl_log_door45_loadbmtexture_state(const char *tag,
+	const char *bitmapname, grs_bitmap *bm)
+{
+	int bitmap_index = -1;
+
+	if (!ogl_is_door45_mip_diag_bitmap(bitmapname) || !bm)
+		return;
+	if (bm >= GameBitmaps && bm < &GameBitmaps[Num_bitmap_files])
+		bitmap_index = (int)(bm - GameBitmaps);
+	debug_log(DLOG_TEXTURE,
+		"[%s] name=%s idx=%d bm_flags=0x%x data_null=%d w=%d h=%d gltex=%p",
+		tag ? tag : "mwall_loadbmtex",
+		bitmapname ? bitmapname : "<none>",
+		bitmap_index,
+		bm->bm_flags,
+		bm->bm_data == NULL,
+		bm->bm_w,
+		bm->bm_h,
+		(void *)bm->gltexture);
+}
+
 static int ogl_count_mip_levels(int width, int height)
 {
 	int levels = 0;
@@ -4831,6 +4852,9 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 #endif
 #endif
 	buf=bm->bm_data;
+#ifdef ANDROID
+	ogl_log_door45_loadbmtexture_state("mwall_loadbmtex_entry", bitmapname, bm);
+#endif
 #ifdef HAVE_LIBPNG
 	if (ogl_allow_png() && bitmapname && !(bm->gltexture && bm->gltexture->is_png)
 	)
@@ -5130,6 +5154,8 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 			return;
 		}
 	}
+	buf = bm->bm_data;
+	ogl_log_door45_loadbmtexture_state("mwall_loadbmtex_post_pagein", bitmapname, bm);
 #endif
 	if (bm->gltexture == NULL){
  		ogl_init_texture(bm->gltexture = ogl_get_free_texture(), bm->bm_w, bm->bm_h, ((bm->bm_flags & (BM_FLAG_TRANSPARENT | BM_FLAG_SUPER_TRANSPARENT))? OGL_FLAG_ALPHA : 0));
