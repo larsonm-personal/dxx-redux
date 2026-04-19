@@ -11,6 +11,7 @@
 #include "object.h"
 #include "ogl_init.h"
 #include "piggy.h"
+#include "rle.h"
 #include "segment.h"
 #include "textures.h"
 #include "wall.h"
@@ -23,6 +24,8 @@
 #define MERGED_WALL_COVER_EVENT_MAX      64
 #define MERGED_WALL_SNAPSHOT_COVER_EXACT 1
 #define MERGED_WALL_SNAPSHOT_COVER_BBOX  2
+#define MERGED_WALL_BITMAP_DUMP_MAX      16
+#define MERGED_WALL_BITMAP_DUMP_WIDTH    64
 
 struct merged_wall_tracked_face {
 	int render_pass;
@@ -118,6 +121,8 @@ static struct merged_wall_snapshot_cover_event merged_wall_cover_events[MERGED_W
 static int merged_wall_tracked_face_count = 0;
 static int merged_wall_tracked_frame_id = -1;
 static int merged_wall_draw_order = 0;
+static int merged_wall_dumped_cover_textures[MERGED_WALL_BITMAP_DUMP_MAX];
+static int merged_wall_dumped_cover_texture_count = 0;
 static int merged_wall_cover_frame_id = -1;
 static int merged_wall_cover_event_count = 0;
 
@@ -369,6 +374,38 @@ static float merged_wall_bbox_overlap_area(float min0_sx, float max0_sx,
 	return overlap_w * overlap_h;
 }
 
+static int merged_wall_get_track_overlap_box(const struct merged_wall_tracked_face *track,
+                                             float *min_sx, float *max_sx,
+                                             float *min_sy, float *max_sy,
+                                             float *bbox_area, const char **box_kind)
+{
+	if (box_kind)
+		*box_kind = "none";
+	if (!track)
+		return 0;
+	if (track->bbox_valid && track->bbox_area > 0.0f) {
+		*min_sx = track->min_sx;
+		*max_sx = track->max_sx;
+		*min_sy = track->min_sy;
+		*max_sy = track->max_sy;
+		*bbox_area = track->bbox_area;
+		if (box_kind)
+			*box_kind = "full";
+		return 1;
+	}
+	if (track->projected_bbox_valid && track->projected_bbox_area > 0.0f) {
+		*min_sx = track->projected_min_sx;
+		*max_sx = track->projected_max_sx;
+		*min_sy = track->projected_min_sy;
+		*max_sy = track->projected_max_sy;
+		*bbox_area = track->projected_bbox_area;
+		if (box_kind)
+			*box_kind = "projected";
+		return 1;
+	}
+	return 0;
+}
+
 static void merged_wall_begin_frame_tracking(void)
 {
 	if (merged_wall_tracked_frame_id == g_merged_wall_frame_id)
@@ -579,7 +616,403 @@ static void merged_wall_log_face_textures(const char *tag, int rank,
 	if (!ctx || !ctx->valid)
 		return;
 	merged_wall_log_texture_detail(tag, rank, ctx, ctx->tmap1, "base");
-	merged_wall_log_texture_detail(tag, rank, ctx, merged_wall_overlay_index(ctx->tmap2), "overlay");
+	if (ctx->tmap2 != 0)
+		merged_wall_log_texture_detail(tag, rank, ctx, merged_wall_overlay_index(ctx->tmap2), "overlay");
+}
+
+static void merged_wall_reset_cover_bitmap_dumps(void)
+{
+	merged_wall_dumped_cover_texture_count = 0;
+}
+
+static int merged_wall_note_cover_bitmap_dump(int tex_num)
+{
+	int i;
+
+	for (i = 0; i < merged_wall_dumped_cover_texture_count; i++)
+		if (merged_wall_dumped_cover_textures[i] == tex_num)
+			return 0;
+	if (merged_wall_dumped_cover_texture_count < MERGED_WALL_BITMAP_DUMP_MAX)
+		merged_wall_dumped_cover_textures[merged_wall_dumped_cover_texture_count++] = tex_num;
+	return 1;
+}
+
+static unsigned int merged_wall_fnv1a_append(unsigned int hash,
+                                             const unsigned char *data, int len)
+{
+	int i;
+
+	for (i = 0; i < len; i++) {
+		hash ^= (unsigned int) data[i];
+		hash *= 16777619u;
+	}
+	return hash;
+}
+
+static grs_bitmap *merged_wall_get_source_bitmap(grs_bitmap *bitmap)
+{
+	grs_bitmap *src = bitmap;
+
+	if (!src)
+		return NULL;
+	if (src->bm_flags & BM_FLAG_RLE)
+		src = rle_expand_texture(src);
+	if (!src || !src->bm_data || src->bm_w <= 0 || src->bm_h <= 0)
+		return NULL;
+	return src;
+}
+
+static void merged_wall_bytes_to_hex(char *out, int out_size,
+                                     const unsigned char *data, int len)
+{
+	static const char hex[] = "0123456789abcdef";
+	int i, pos = 0;
+
+	if (!out || out_size <= 0)
+		return;
+	for (i = 0; i < len && pos + 2 < out_size; i++) {
+		out[pos++] = hex[(data[i] >> 4) & 0xf];
+		out[pos++] = hex[data[i] & 0xf];
+	}
+	out[pos] = '\0';
+}
+
+static int merged_wall_get_uv_bbox(const g3s_uvl *uvl_list, int nv,
+                                   float *min_u, float *max_u,
+                                   float *min_v, float *max_v)
+{
+	float local_min_u = 0.0f, local_max_u = 0.0f;
+	float local_min_v = 0.0f, local_max_v = 0.0f;
+	int i;
+
+	if (!uvl_list || nv <= 0)
+		return 0;
+
+	for (i = 0; i < nv; i++) {
+		float u = f2fl(uvl_list[i].u);
+		float v = f2fl(uvl_list[i].v);
+
+		if (i == 0) {
+			local_min_u = local_max_u = u;
+			local_min_v = local_max_v = v;
+		} else {
+			if (u < local_min_u) local_min_u = u;
+			if (u > local_max_u) local_max_u = u;
+			if (v < local_min_v) local_min_v = v;
+			if (v > local_max_v) local_max_v = v;
+		}
+	}
+
+	if (min_u) *min_u = local_min_u;
+	if (max_u) *max_u = local_max_u;
+	if (min_v) *min_v = local_min_v;
+	if (max_v) *max_v = local_max_v;
+	return 1;
+}
+
+static float merged_wall_log2_ratio(float numer, float denom)
+{
+	if (numer <= 0.0f || denom <= 0.0f)
+		return -99.0f;
+	return logf(numer / denom) / logf(2.0f);
+}
+
+static void merged_wall_log_cover_bitmap_dump(const char *kind,
+                                              const char *shader_kind, float overlap_area, const char *track_box_kind,
+                                              const struct android_draw_face_context *cover_ctx, grs_bitmap *cover_bitmap)
+{
+	grs_bitmap *src;
+	const char *name;
+	unsigned int hash = 2166136261u;
+	int real_flags;
+	int idx254 = 0, idx255 = 0;
+	int row_stride;
+	int row_bytes;
+	int total_bytes;
+	int x, y;
+
+	if (!cover_ctx || !cover_ctx->valid || !cover_bitmap)
+		return;
+	src = merged_wall_get_source_bitmap(cover_bitmap);
+	name = piggy_game_bitmap_name(cover_bitmap);
+	real_flags = piggy_bitmap_get_flags(cover_bitmap);
+	if (!src) {
+		debug_log(DLOG_TEXTURE,
+		          "[mwall_cover_src] kind=%s shader=%s seg=%d side=%d face=%d child=%d wid=%d tmap1=%d name=%s handle=%u state=missing overlap=%.1f face_box=%s",
+		          kind ? kind : "",
+		          shader_kind ? shader_kind : "",
+		          cover_ctx->seg,
+		          cover_ctx->side,
+		          cover_ctx->face,
+		          cover_ctx->child,
+		          cover_ctx->wid_flags,
+		          cover_ctx->tmap1,
+		          name ? name : "<none>",
+		          cover_bitmap->bm_handle,
+		          overlap_area,
+		          track_box_kind ? track_box_kind : "exact");
+		return;
+	}
+
+	row_stride = src->bm_rowsize > 0 ? src->bm_rowsize : src->bm_w;
+	row_bytes = src->bm_w;
+	total_bytes = src->bm_w * src->bm_h;
+	for (y = 0; y < src->bm_h; y++) {
+		const unsigned char *row = src->bm_data + y * row_stride;
+
+		hash = merged_wall_fnv1a_append(hash, row, row_bytes);
+		for (x = 0; x < row_bytes; x++) {
+			if (row[x] == 254)
+				idx254++;
+			if (row[x] == 255)
+				idx255++;
+		}
+	}
+
+	debug_log(DLOG_TEXTURE,
+	          "[mwall_cover_src] kind=%s shader=%s seg=%d side=%d face=%d child=%d wid=%d tmap1=%d name=%s handle=%u real_flags=0x%x bm_flags=0x%x expanded=%d w=%d h=%d rowsize=%d bytes=%d idx254=%d idx255=%d hash=0x%08x overlap=%.1f face_box=%s",
+	          kind ? kind : "",
+	          shader_kind ? shader_kind : "",
+	          cover_ctx->seg,
+	          cover_ctx->side,
+	          cover_ctx->face,
+	          cover_ctx->child,
+	          cover_ctx->wid_flags,
+	          cover_ctx->tmap1,
+	          name ? name : "<none>",
+	          cover_bitmap->bm_handle,
+	          real_flags,
+	          cover_bitmap->bm_flags,
+	          src != cover_bitmap,
+	          src->bm_w,
+	          src->bm_h,
+	          row_stride,
+	          total_bytes,
+	          idx254,
+	          idx255,
+	          hash,
+	          overlap_area,
+	          track_box_kind ? track_box_kind : "exact");
+
+	if (!g_merged_wall_snapshot_pending)
+		return;
+	if (src->bm_w > MERGED_WALL_BITMAP_DUMP_WIDTH || src->bm_h > MERGED_WALL_BITMAP_DUMP_WIDTH)
+		return;
+	if (!merged_wall_note_cover_bitmap_dump(cover_ctx->tmap1))
+		return;
+
+	for (y = 0; y < src->bm_h; y++) {
+		char hex_row[MERGED_WALL_BITMAP_DUMP_WIDTH * 2 + 1];
+		const unsigned char *row = src->bm_data + y * row_stride;
+
+		merged_wall_bytes_to_hex(hex_row, sizeof(hex_row), row, row_bytes);
+		debug_log(DLOG_TEXTURE,
+		          "[mwall_cover_src_row] kind=%s tmap1=%d name=%s row=%d data=%s",
+		          kind ? kind : "",
+		          cover_ctx->tmap1,
+		          name ? name : "<none>",
+		          y,
+		          hex_row);
+	}
+}
+
+static void merged_wall_log_live_cover_state(const char *kind,
+                                             const char *shader_kind, int draw_order, int ordered, float overlap_area,
+                                             const char *track_box_kind, const struct android_draw_face_context *cover_ctx,
+                                             grs_bitmap *cover_bitmap,
+                                             const struct g3s_point **pointlist,
+                                             const g3s_uvl *uvl_list, int nv,
+                                             int texfilt_level, int menu_texfilt,
+                                             int hud_texfilt, int aniso_level)
+{
+	grs_bitmap *src_bitmap = NULL;
+	ogl_texture *texture;
+	const char *name;
+	GLint program = 0, active_tex = GL_TEXTURE0;
+	GLint bound_tex0 = 0, bound_tex1 = 0, bound_tex2 = 0;
+	GLint depth_enabled = 0, blend_enabled = 0, cull_enabled = 0, scissor_enabled = 0;
+	GLboolean depth_writemask = GL_TRUE, color_mask[4] = { GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE };
+	GLint depth_func = 0, front_face = 0, cull_mode = 0, draw_fbo = 0;
+	GLint blend_src_rgb = 0, blend_dst_rgb = 0, blend_src_alpha = 0, blend_dst_alpha = 0;
+	GLint blend_eq_rgb = 0, blend_eq_alpha = 0;
+	GLint polygon_offset_enabled = 0;
+	GLfloat polygon_offset_factor = 0.0f, polygon_offset_units = 0.0f;
+	GLint viewport[4] = { 0, 0, 0, 0 };
+	GLint scissor_box[4] = { 0, 0, 0, 0 };
+	GLint tex_min = 0, tex_mag = 0, tex_wrap_s = 0, tex_wrap_t = 0;
+	GLint tex_base_level = -1, tex_max_level = -1;
+	float bbox_min_sx = 0.0f, bbox_max_sx = 0.0f;
+	float bbox_min_sy = 0.0f, bbox_max_sy = 0.0f;
+	float screen_w = 0.0f, screen_h = 0.0f;
+	float uv_min_u = 0.0f, uv_max_u = 0.0f;
+	float uv_min_v = 0.0f, uv_max_v = 0.0f;
+	float texel_span_u = 0.0f, texel_span_v = 0.0f;
+	float lod_u = -99.0f, lod_v = -99.0f, lod_max = -99.0f;
+	int bbox_valid = 0, uv_valid = 0;
+
+	if (!cover_ctx || !cover_ctx->valid || !cover_bitmap || !cover_bitmap->gltexture)
+		return;
+	if (!shader_kind || strcmp(shader_kind, "single"))
+		return;
+	if (cover_ctx->tmap2 != 0)
+		return;
+
+	texture = cover_bitmap->gltexture;
+	name = piggy_game_bitmap_name(cover_bitmap);
+	depth_enabled = glIsEnabled(GL_DEPTH_TEST);
+	blend_enabled = glIsEnabled(GL_BLEND);
+	cull_enabled = glIsEnabled(GL_CULL_FACE);
+	scissor_enabled = glIsEnabled(GL_SCISSOR_TEST);
+	glGetBooleanv(GL_DEPTH_WRITEMASK, &depth_writemask);
+	glGetBooleanv(GL_COLOR_WRITEMASK, color_mask);
+	glGetIntegerv(GL_CURRENT_PROGRAM, &program);
+	glGetIntegerv(GL_DEPTH_FUNC, &depth_func);
+	glGetIntegerv(GL_FRONT_FACE, &front_face);
+	glGetIntegerv(GL_CULL_FACE_MODE, &cull_mode);
+	glGetIntegerv(GL_BLEND_SRC_RGB, &blend_src_rgb);
+	glGetIntegerv(GL_BLEND_DST_RGB, &blend_dst_rgb);
+	glGetIntegerv(GL_BLEND_SRC_ALPHA, &blend_src_alpha);
+	glGetIntegerv(GL_BLEND_DST_ALPHA, &blend_dst_alpha);
+	glGetIntegerv(GL_BLEND_EQUATION_RGB, &blend_eq_rgb);
+	glGetIntegerv(GL_BLEND_EQUATION_ALPHA, &blend_eq_alpha);
+	glGetFloatv(GL_POLYGON_OFFSET_FACTOR, &polygon_offset_factor);
+	glGetFloatv(GL_POLYGON_OFFSET_UNITS, &polygon_offset_units);
+	polygon_offset_enabled = glIsEnabled(GL_POLYGON_OFFSET_FILL);
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &draw_fbo);
+	glGetIntegerv(GL_VIEWPORT, viewport);
+	glGetIntegerv(GL_SCISSOR_BOX, scissor_box);
+	glGetIntegerv(GL_ACTIVE_TEXTURE, &active_tex);
+	glActiveTexture(GL_TEXTURE0);
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &bound_tex0);
+	if (bound_tex0 > 0) {
+		glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, &tex_min);
+		glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, &tex_mag);
+		glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, &tex_wrap_s);
+		glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, &tex_wrap_t);
+#ifdef GL_TEXTURE_BASE_LEVEL
+		glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, &tex_base_level);
+#endif
+#ifdef GL_TEXTURE_MAX_LEVEL
+		glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, &tex_max_level);
+#endif
+	}
+	glActiveTexture(GL_TEXTURE1);
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &bound_tex1);
+	glActiveTexture(GL_TEXTURE2);
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &bound_tex2);
+	glActiveTexture((GLenum) active_tex);
+	bbox_valid = merged_wall_get_screen_bbox(pointlist, nv,
+	                                         &bbox_min_sx, &bbox_max_sx,
+	                                         &bbox_min_sy, &bbox_max_sy);
+	if (bbox_valid) {
+		screen_w = bbox_max_sx - bbox_min_sx;
+		screen_h = bbox_max_sy - bbox_min_sy;
+	}
+	uv_valid = merged_wall_get_uv_bbox(uvl_list, nv,
+	                                   &uv_min_u, &uv_max_u,
+	                                   &uv_min_v, &uv_max_v);
+	src_bitmap = merged_wall_get_source_bitmap(cover_bitmap);
+	if (src_bitmap && uv_valid) {
+		texel_span_u = fabsf(uv_max_u - uv_min_u) * src_bitmap->bm_w;
+		texel_span_v = fabsf(uv_max_v - uv_min_v) * src_bitmap->bm_h;
+		lod_u = merged_wall_log2_ratio(texel_span_u, screen_w);
+		lod_v = merged_wall_log2_ratio(texel_span_v, screen_h);
+		lod_max = lod_u > lod_v ? lod_u : lod_v;
+	}
+
+	debug_log(DLOG_TEXTURE,
+	          "[mwall_cover_live] kind=%s shader=%s frame=%d pass=%d seq=%d cover_order=%d ordered=%d seg=%d side=%d face=%d child=%d wid=%d tmap1=%d name=%s expected=%u program=%d active_tex=0x%x tex0=%d tex1=%d tex2=%d tex_min=0x%x tex_mag=0x%x wrap_s=0x%x wrap_t=0x%x base=%d max=%d depth=%d blend=%d cull=%d scissor=%d depth_mask=%d depth_func=0x%x blend_src_rgb=0x%x blend_dst_rgb=0x%x blend_src_a=0x%x blend_dst_a=0x%x blend_eq_rgb=0x%x blend_eq_a=0x%x front_face=0x%x cull_mode=0x%x poly=%d poly_factor=%.3f poly_units=%.3f color_mask=%d%d%d%d fbo=%d viewport=%d,%d,%d,%d scissor_box=%d,%d,%d,%d overlap=%.1f face_box=%s",
+	          kind ? kind : "",
+	          shader_kind ? shader_kind : "",
+	          g_merged_wall_frame_id,
+	          g_merged_wall_render_pass,
+	          g_merged_wall_draw_seq,
+	          draw_order,
+	          ordered,
+	          cover_ctx->seg,
+	          cover_ctx->side,
+	          cover_ctx->face,
+	          cover_ctx->child,
+	          cover_ctx->wid_flags,
+	          cover_ctx->tmap1,
+	          name ? name : "<none>",
+	          texture->handle,
+	          program,
+	          active_tex,
+	          bound_tex0,
+	          bound_tex1,
+	          bound_tex2,
+	          tex_min,
+	          tex_mag,
+	          tex_wrap_s,
+	          tex_wrap_t,
+	          tex_base_level,
+	          tex_max_level,
+	          depth_enabled,
+	          blend_enabled,
+	          cull_enabled,
+	          scissor_enabled,
+	          depth_writemask,
+	          depth_func,
+	          blend_src_rgb,
+	          blend_dst_rgb,
+	          blend_src_alpha,
+	          blend_dst_alpha,
+	          blend_eq_rgb,
+	          blend_eq_alpha,
+	          front_face,
+	          cull_mode,
+	          polygon_offset_enabled,
+	          polygon_offset_factor,
+	          polygon_offset_units,
+	          color_mask[0],
+	          color_mask[1],
+	          color_mask[2],
+	          color_mask[3],
+	          draw_fbo,
+	          viewport[0],
+	          viewport[1],
+	          viewport[2],
+	          viewport[3],
+	          scissor_box[0],
+	          scissor_box[1],
+	          scissor_box[2],
+	          scissor_box[3],
+	          overlap_area,
+	          track_box_kind ? track_box_kind : "exact");
+	debug_log(DLOG_TEXTURE,
+	          "[mwall_cover_lod] kind=%s shader=%s seg=%d side=%d face=%d child=%d wid=%d tmap1=%d name=%s has_mips=%d cfg_texfilt=%d cfg_menu_texfilt=%d cfg_hud_texfilt=%d aniso=%d bbox_valid=%d uv_valid=%d screen=%.1fx%.1f uv=%.3f..%.3f/%.3f..%.3f texels=%.1fx%.1f lod_u=%.2f lod_v=%.2f lod_max=%.2f overlap=%.1f face_box=%s",
+	          kind ? kind : "",
+	          shader_kind ? shader_kind : "",
+	          cover_ctx->seg,
+	          cover_ctx->side,
+	          cover_ctx->face,
+	          cover_ctx->child,
+	          cover_ctx->wid_flags,
+	          cover_ctx->tmap1,
+	          name ? name : "<none>",
+	          texture ? texture->has_mipmaps : -1,
+	          texfilt_level,
+	          menu_texfilt,
+	          hud_texfilt,
+	          aniso_level,
+	          bbox_valid,
+	          uv_valid,
+	          screen_w,
+	          screen_h,
+	          uv_min_u,
+	          uv_max_u,
+	          uv_min_v,
+	          uv_max_v,
+	          texel_span_u,
+	          texel_span_v,
+	          lod_u,
+	          lod_v,
+	          lod_max,
+	          overlap_area,
+	          track_box_kind ? track_box_kind : "exact");
+	merged_wall_log_cover_bitmap_dump(kind, shader_kind, overlap_area,
+	                                  track_box_kind, cover_ctx, cover_bitmap);
 }
 
 static void merged_wall_log_snapshot_pose(void)
@@ -835,7 +1268,9 @@ void android_merged_wall_track_face(const struct g3s_point **pointlist, int nv,
 
 void android_merged_wall_log_cover(const char *shader_kind, const char *botname,
                                    const char *ovlname, const struct g3s_point **pointlist, int nv,
-                                   int draw_order)
+                                   const g3s_uvl *uvl_list, int draw_order, grs_bitmap *cover_bitmap,
+                                   int texfilt_level, int menu_texfilt, int hud_texfilt,
+                                   int aniso_level)
 {
 	struct android_draw_face_context cover_ctx = g_android_draw_face_ctx;
 	float cover_min_sx = 0.0f, cover_max_sx = 0.0f;
@@ -860,6 +1295,12 @@ void android_merged_wall_log_cover(const char *shader_kind, const char *botname,
 		track->cover_logged = 1;
 		if (g_merged_wall_snapshot_pending) {
 			struct merged_wall_snapshot_cover_event *event;
+			float overlap_area = cover_bbox_valid && track->bbox_valid
+			                         ? merged_wall_bbox_overlap_area(track->min_sx, track->max_sx,
+			                                                         track->min_sy, track->max_sy,
+			                                                         cover_min_sx, cover_max_sx,
+			                                                         cover_min_sy, cover_max_sy)
+			                         : 0.0f;
 
 			merged_wall_begin_cover_events();
 			if (merged_wall_cover_event_count < MERGED_WALL_COVER_EVENT_MAX) {
@@ -875,12 +1316,7 @@ void android_merged_wall_log_cover(const char *shader_kind, const char *botname,
 				event->cover_max_sx = cover_max_sx;
 				event->cover_min_sy = cover_min_sy;
 				event->cover_max_sy = cover_max_sy;
-				event->overlap_area = cover_bbox_valid && track->bbox_valid
-				                          ? merged_wall_bbox_overlap_area(track->min_sx, track->max_sx,
-				                                                          track->min_sy, track->max_sy,
-				                                                          cover_min_sx, cover_max_sx,
-				                                                          cover_min_sy, cover_max_sy)
-				                          : 0.0f;
+				event->overlap_area = overlap_area;
 				merged_wall_copy_string(event->cover_shader,
 				                        sizeof(event->cover_shader), shader_kind);
 				merged_wall_copy_string(event->cover_bot,
@@ -888,6 +1324,10 @@ void android_merged_wall_log_cover(const char *shader_kind, const char *botname,
 				merged_wall_copy_string(event->cover_ovl,
 				                        sizeof(event->cover_ovl), ovlname);
 			}
+			merged_wall_log_live_cover_state("exact", shader_kind, draw_order,
+			                                 ordered, overlap_area, "exact", &cover_ctx, cover_bitmap,
+			                                 pointlist, uvl_list, nv, texfilt_level,
+			                                 menu_texfilt, hud_texfilt, aniso_level);
 		}
 		debug_log(DLOG_TEXTURE,
 		          "[mwall_cover] frame=%d face_pass=%d face_seq=%d face_order=%d cover_order=%d cover_shader=%s cover_bot=%s cover_ovl=%s ordered=%d seg=%d side=%d face=%d child=%d side_type=%d wid=%d tmap1=%d tmap2=0x%x cover_seg=%d cover_side=%d cover_face=%d cover_child=%d cover_side_type=%d cover_wid=%d cover_tmap1=%d cover_tmap2=0x%x",
@@ -926,18 +1366,27 @@ void android_merged_wall_log_cover(const char *shader_kind, const char *botname,
 
 	for (i = 0; i < merged_wall_tracked_face_count; i++) {
 		float overlap_area;
+		float track_min_sx = 0.0f, track_max_sx = 0.0f;
+		float track_min_sy = 0.0f, track_max_sy = 0.0f;
+		float track_bbox_area = 0.0f;
+		const char *track_box_kind = "none";
 		struct merged_wall_tracked_face *track = &merged_wall_tracked_faces[i];
 
-		if (track->coverbox_logged || draw_order <= track->draw_order || !track->bbox_valid || track->bbox_area <= 0.0f)
+		if (track->coverbox_logged || draw_order <= track->draw_order)
+			continue;
+		if (!merged_wall_get_track_overlap_box(track,
+		                                       &track_min_sx, &track_max_sx,
+		                                       &track_min_sy, &track_max_sy,
+		                                       &track_bbox_area, &track_box_kind))
 			continue;
 
-		overlap_area = merged_wall_bbox_overlap_area(track->min_sx, track->max_sx,
-		                                             track->min_sy, track->max_sy,
+		overlap_area = merged_wall_bbox_overlap_area(track_min_sx, track_max_sx,
+		                                             track_min_sy, track_max_sy,
 		                                             cover_min_sx, cover_max_sx,
 		                                             cover_min_sy, cover_max_sy);
 		if (overlap_area < 64.0f)
 			continue;
-		if (overlap_area < track->bbox_area * 0.20f && overlap_area < cover_bbox_area * 0.20f)
+		if (overlap_area < track_bbox_area * 0.20f && overlap_area < cover_bbox_area * 0.20f)
 			continue;
 
 		track->coverbox_logged = 1;
@@ -967,7 +1416,7 @@ void android_merged_wall_log_cover(const char *shader_kind, const char *botname,
 			}
 		}
 		debug_log(DLOG_TEXTURE,
-		          "[mwall_coverbox] frame=%d face_pass=%d face_seq=%d face_order=%d cover_order=%d cover_shader=%s cover_bot=%s cover_ovl=%s seg=%d side=%d face=%d child=%d side_type=%d wid=%d tmap1=%d tmap2=0x%x cover_seg=%d cover_side=%d cover_face=%d cover_child=%d cover_side_type=%d cover_wid=%d cover_tmap1=%d cover_tmap2=0x%x overlap=%.1f",
+		          "[mwall_coverbox] frame=%d face_pass=%d face_seq=%d face_order=%d cover_order=%d cover_shader=%s cover_bot=%s cover_ovl=%s seg=%d side=%d face=%d child=%d side_type=%d wid=%d tmap1=%d tmap2=0x%x cover_seg=%d cover_side=%d cover_face=%d cover_child=%d cover_side_type=%d cover_wid=%d cover_tmap1=%d cover_tmap2=0x%x face_box=%s overlap=%.1f",
 		          g_merged_wall_frame_id,
 		          track->render_pass,
 		          track->draw_seq,
@@ -992,9 +1441,17 @@ void android_merged_wall_log_cover(const char *shader_kind, const char *botname,
 		          cover_ctx.valid ? cover_ctx.wid_flags : 0,
 		          cover_ctx.valid ? cover_ctx.tmap1 : -1,
 		          cover_ctx.valid ? cover_ctx.tmap2 : 0,
+		          track_box_kind,
 		          overlap_area);
 		merged_wall_log_portal("face", &track->draw_ctx);
 		merged_wall_log_portal("cover", &cover_ctx);
+		if (g_merged_wall_snapshot_pending) {
+			merged_wall_log_face_textures("snapshot_coverbox_cover", 0, &cover_ctx);
+			merged_wall_log_live_cover_state("bbox", shader_kind, draw_order,
+			                                 -1, overlap_area, track_box_kind, &cover_ctx, cover_bitmap,
+			                                 pointlist, uvl_list, nv, texfilt_level,
+			                                 menu_texfilt, hud_texfilt, aniso_level);
+		}
 		return;
 	}
 }
@@ -1026,6 +1483,7 @@ void android_merged_wall_request_snapshot(void)
 	const char *level_name = Current_level_name[0] ? Current_level_name : "<none>";
 
 	memset(&g_merged_wall_snapshot_result, 0, sizeof(g_merged_wall_snapshot_result));
+	merged_wall_reset_cover_bitmap_dumps();
 	merged_wall_copy_string(g_merged_wall_snapshot_result.status,
 	                        sizeof(g_merged_wall_snapshot_result.status), "pending");
 	g_merged_wall_snapshot_result.request_frame = g_merged_wall_frame_id;

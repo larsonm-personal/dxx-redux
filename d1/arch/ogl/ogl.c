@@ -219,11 +219,96 @@ static void ogl_merged_wall_track_face(g3s_point **pointlist, int nv,
 		draw_order, route, merge_impl, NULL);
 }
 
+static int ogl_is_door45_mip_diag_bitmap(const char *bitmapname)
+{
+	if (!bitmapname)
+		return 0;
+	return !d_stricmp(bitmapname, "door45#0") || !d_stricmp(bitmapname, "door45#9");
+}
+
+static int ogl_count_mip_levels(int width, int height)
+{
+	int levels = 0;
+	int dim = width > height ? width : height;
+
+	while (dim > 0) {
+		levels++;
+		dim >>= 1;
+	}
+	return levels;
+}
+
+static void ogl_log_door45_mip_upload(const char *bitmapname, const char *path,
+	grs_bitmap *bm, int texfilt, int load_texfilt, int source_levels,
+	int uploaded_levels, int generated_mips, int compressed_upload)
+{
+	ogl_texture *tex;
+	GLint active_tex = GL_TEXTURE0, prev_bind = 0;
+	GLint min_filter = -1, mag_filter = -1, base_level = -1, max_level = -1;
+	int expected_levels;
+
+	if (!ogl_is_door45_mip_diag_bitmap(bitmapname) || !bm || !bm->gltexture
+		|| bm->gltexture->handle <= 0)
+		return;
+
+	tex = bm->gltexture;
+	expected_levels = ogl_count_mip_levels(tex->tw, tex->th);
+	glGetIntegerv(GL_ACTIVE_TEXTURE, &active_tex);
+	glActiveTexture(GL_TEXTURE0);
+	glGetIntegerv(GL_TEXTURE_BINDING_2D, &prev_bind);
+	if ((GLuint)prev_bind != tex->handle)
+		glBindTexture(GL_TEXTURE_2D, tex->handle);
+	glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, &min_filter);
+	glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, &mag_filter);
+#ifdef GL_TEXTURE_BASE_LEVEL
+	glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, &base_level);
+#endif
+#ifdef GL_TEXTURE_MAX_LEVEL
+	glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, &max_level);
+#endif
+	if ((GLuint)prev_bind != tex->handle)
+		glBindTexture(GL_TEXTURE_2D, (GLuint)prev_bind);
+	glActiveTexture((GLenum)active_tex);
+
+	debug_log(DLOG_TEXTURE,
+		"[mwall_mip_upload] name=%s path=%s texfilt=%d load_texfilt=%d upgrade=%d aniso=%d source_levels=%d uploaded_levels=%d generated=%d compressed=%d expected_full=%d handle=%u has_mips=%d min=0x%x mag=0x%x base=%d max=%d src=%dx%d tex=%dx%d p2=%dx%d bytes=%d is_png=%d bm_flags=0x%x real_flags=0x%x",
+		bitmapname ? bitmapname : "<none>",
+		path ? path : "",
+		texfilt,
+		load_texfilt,
+		load_texfilt != texfilt,
+		ogl_aniso_level,
+		source_levels,
+		uploaded_levels,
+		generated_mips,
+		compressed_upload,
+		expected_levels,
+		tex->handle,
+		tex->has_mipmaps,
+		min_filter,
+		mag_filter,
+		base_level,
+		max_level,
+		bm->bm_w,
+		bm->bm_h,
+		tex->w,
+		tex->h,
+		tex->tw,
+		tex->th,
+		tex->bytes,
+		tex->is_png,
+		bm->bm_flags,
+		piggy_bitmap_get_flags(bm));
+}
+
 static void ogl_log_merged_wall_cover(const char *shader_kind, const char *botname,
-	const char *ovlname, g3s_point **pointlist, int nv, int draw_order)
+	const char *ovlname, g3s_point **pointlist, int nv, const g3s_uvl *uvl_list,
+	int draw_order, grs_bitmap *cover_bitmap)
 {
 	android_merged_wall_log_cover(shader_kind, botname, ovlname,
-		(const struct g3s_point **)pointlist, nv, draw_order);
+		(const struct g3s_point **)pointlist, nv, uvl_list, draw_order, cover_bitmap,
+		GameCfg.TexFilt, GameCfg.MenuTexFilt, GameCfg.HudTexFilt,
+		ogl_aniso_level);
 }
 
 static void ogl_log_merged_wall_snapshot_if_pending(int screen_w, int screen_h,
@@ -2677,7 +2762,7 @@ bool g3_draw_tmap(int nv,g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb *light
 #if defined(ANDROID) && defined(OGL_MERGE)
 	if (!skip_metl154_cover_draw)
 		ogl_log_merged_wall_cover(cover_shader, piggy_game_bitmap_name(bm), NULL,
-			pointlist, nv, draw_order);
+			pointlist, nv, uvl_list, draw_order, bm);
 #endif
 
 #ifdef ANDROID
@@ -3032,7 +3117,7 @@ static bool ogl_draw_tmap_2_internal(int nv, g3s_point **pointlist, g3s_uvl *uvl
 	} else if (!skip_metl154_cover_draw) {
 		ogl_log_merged_wall_cover(super ? "mask" : "plain",
 			piggy_game_bitmap_name(bmbot), piggy_game_bitmap_name(bmovl),
-			pointlist, nv, draw_order);
+			pointlist, nv, uvl_list, draw_order, bmbot);
 	}
 #endif
 
@@ -4502,6 +4587,8 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 				unsigned char *end = p + edata.filedata_size;
 				int mw = edata.width, mh = edata.height;
 				int ok = 0;
+				int mips = edata.mip_count > 1 ? edata.mip_count : 1;
+				int uploaded_levels = 0;
 				if (p + 4 <= end) {
 					unsigned int sz = p[0] | (p[1]<<8) | (p[2]<<16) | (p[3]<<24);
 					p += 4;
@@ -4510,7 +4597,6 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 						GLenum gl_fmt = edata.format
 							? GL_COMPRESSED_RGBA8_ETC2_EAC
 							: GL_COMPRESSED_RGB8_ETC2;
-						int mips = edata.mip_count > 1 ? edata.mip_count : 1;
 						int upload_mips = mips;
 						glGenTextures(1, &bm->gltexture->handle);
 						OGL_BINDTEXTURE(bm->gltexture->handle);
@@ -4536,6 +4622,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 							}
 							glCompressedTexImage2D(GL_TEXTURE_2D, level, gl_fmt,
 								mw, mh, 0, (GLsizei)sz, p);
+							uploaded_levels++;
 							{
 								GLenum gl_err = glGetError();
 								if (gl_err != GL_NO_ERROR) {
@@ -4586,6 +4673,8 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 					bm->gltexture->u = (float)edata.orig_width / (float)edata.width;
 					bm->gltexture->v = (float)edata.orig_height / (float)edata.height;
 					bm->gltexture->is_png = 1;
+					ogl_log_door45_mip_upload(bitmapname, "ktx2", bm,
+						texfilt, load_texfilt, mips, uploaded_levels, 0, 1);
 					r_hires_found++;
 					r_hires_loaded++;
 					/* android port: one-shot self-test -- render from this
@@ -4724,6 +4813,9 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 				if (pdata.palette)
 					free(pdata.palette);
 				bm->gltexture->is_png = 1;
+				ogl_log_door45_mip_upload(bitmapname, "png", bm,
+					texfilt, load_texfilt, 1, 1,
+					load_texfilt > 0 && !(bm->gltexture->flags & OGL_FLAG_NOCOLOR), 0);
 #ifdef ANDROID
 				r_hires_loaded++;
 #endif
@@ -4874,6 +4966,9 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 		bm->bm_flags, 1u << 0, "stock-pal");
 	#endif
 	ogl_loadtexture(buf, 0, 0, bm->gltexture, bm->bm_flags, 0, load_texfilt);
+	ogl_log_door45_mip_upload(bitmapname, "stock", bm,
+		texfilt, load_texfilt, 1, 1,
+		load_texfilt > 0 && !(bm->gltexture->flags & OGL_FLAG_NOCOLOR), 0);
 	#if defined(ANDROID) && defined(OGL_MERGE)
 	ogl_log_metl154_palette_source(bitmapname, buf, bm->bm_w, bm->bm_h,
 		bm->bm_flags, 1u << 4, "stock-native");
