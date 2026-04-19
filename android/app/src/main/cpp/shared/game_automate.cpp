@@ -1748,10 +1748,17 @@ extern "C" void game_automate_tick(void)
 				if (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0)
 					android_merged_wall_request_snapshot();
 			} else if (s.field == "merged_wall_experiment") {
-				g_merged_wall_experiment_mode =
-				    (int) std::stod(s.value) == MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE
-				        ? MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE
-				        : MERGED_WALL_EXPERIMENT_DEFAULT;
+				int experiment = (int) std::stod(s.value);
+
+				switch (experiment) {
+					case MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE:
+					case MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE:
+						g_merged_wall_experiment_mode = experiment;
+						break;
+					default:
+						g_merged_wall_experiment_mode = MERGED_WALL_EXPERIMENT_DEFAULT;
+						break;
+				}
 				__sync_synchronize();
 				g_merged_wall_experiment_pending_apply = 1;
 			} else

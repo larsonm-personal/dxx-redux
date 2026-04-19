@@ -461,10 +461,11 @@ class VideoInfoOverlay(
             canvas.drawText(mergedWallText, panelLeft + pad, y, mergedWallPaint)
             y += lineH
 
-            // Only the default and force-legacy experiment modes remain surfaced.
+            // Surface the small set of explicit merged-wall experiment modes.
             val mergedWallExperimentText =
                 when (mergedWallExperimentMode) {
-                    10 -> "mwall exp: Legacy"
+                    MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE_VALUE -> "mwall exp: Legacy"
+                    MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE_VALUE -> "mwall exp: Clear TU1/2"
                     0 -> "mwall exp: Default"
                     else -> "mwall exp: Compat $mergedWallExperimentMode"
                 }
@@ -663,7 +664,14 @@ class VideoInfoOverlay(
     }
 
     private fun cycleMergedWallExperiment() {
-        val next = if (mergedWallExperimentMode == 0) 10 else 0
+        val levels =
+            intArrayOf(
+                0,
+                MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE_VALUE,
+                MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE_VALUE,
+            )
+        val idx = levels.indexOf(mergedWallExperimentMode).let { if (it >= 0) it else 0 }
+        val next = levels[(idx + 1) % levels.size]
         mergedWallExperimentMode = next
         debugFlagSetter?.invoke("merged_wall_experiment", next)
     }

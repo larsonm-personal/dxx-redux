@@ -163,6 +163,7 @@ static int metl154_single_clip_active = 0;
 #define METL154_DEBUG_NONE MERGED_WALL_DEBUG_NONE
 #define METL154_EXPERIMENT_DEFAULT MERGED_WALL_EXPERIMENT_DEFAULT
 #define METL154_EXPERIMENT_OLD_MERGE MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE
+#define METL154_EXPERIMENT_CLEAR_SINGLE_UNITS MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE
 #define g_metl154_debug_mode g_merged_wall_debug_mode
 #define g_metl154_experiment_mode g_merged_wall_experiment_mode
 #define g_metl154_experiment_pending_apply g_merged_wall_experiment_pending_apply
@@ -709,6 +710,60 @@ static void ogl_get_metl154_draw_state(ogl_texture *tex, GLint *active_prog,
 	if (tex && tex->handle > 0)
 		*mip1_w = tex->has_mipmaps ? (tex->tw > 1 ? tex->tw / 2 : 1) : 0;
 	glActiveTexture((GLenum)active_tex);
+}
+
+static int ogl_should_clear_metl154_secondary_units_for_single(grs_bitmap *bm)
+{
+	if ((int)g_metl154_experiment_mode != METL154_EXPERIMENT_CLEAR_SINGLE_UNITS)
+		return 0;
+	if (!bm || !bm->gltexture || !g_android_draw_face_ctx.valid || g_android_draw_face_ctx.tmap2)
+		return 0;
+	return ogl_is_metl154_bitmap(bm);
+}
+
+static void ogl_clear_metl154_secondary_units_for_single(grs_bitmap *bm)
+{
+	GLint before_prog = -1, after_prog = -1;
+	GLint before_tex0 = -1, before_tex1 = -1, before_tex2 = -1;
+	GLint after_tex0 = -1, after_tex1 = -1, after_tex2 = -1;
+	GLint mip1_w = -1;
+	const char *bm_name;
+
+	if (!ogl_should_clear_metl154_secondary_units_for_single(bm))
+		return;
+
+	bm_name = piggy_game_bitmap_name(bm);
+	ogl_get_metl154_draw_state(bm->gltexture, &before_prog,
+		&before_tex0, &before_tex1, &before_tex2, &mip1_w);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture(GL_TEXTURE0);
+	ogl_get_metl154_draw_state(bm->gltexture, &after_prog,
+		&after_tex0, &after_tex1, &after_tex2, &mip1_w);
+	debug_log(DLOG_TEXTURE,
+		"[mwall_texexp] frame=%d pass=%d seq=%d mode=%d kind=single_clear_units bm=%s seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x prog=%d/%d before=%d/%d/%d after=%d/%d/%d",
+		g_metl154_frame_id,
+		g_metl154_render_pass,
+		g_metl154_draw_seq,
+		(int)g_metl154_experiment_mode,
+		bm_name ? bm_name : "",
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1,
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : 0,
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap1 : -1,
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap2 : 0,
+		before_prog,
+		after_prog,
+		before_tex0,
+		before_tex1,
+		before_tex2,
+		after_tex0,
+		after_tex1,
+		after_tex2);
 }
 
 static void ogl_get_metl154_gl_state(GLint *depth_enabled, GLint *blend_enabled,
@@ -2689,6 +2744,7 @@ bool g3_draw_tmap(int nv,g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb *light
 		if (bm->gltexture == NULL)
 			return 0;
 		ogl_texwrap(bm->gltexture, GL_REPEAT);
+		ogl_clear_metl154_secondary_units_for_single(bm);
 		r_tpolyc++;
 #ifdef ANDROID
 		/* android port: log first few 3D texture bindings per level for debugging */

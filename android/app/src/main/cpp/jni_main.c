@@ -423,8 +423,21 @@ static const char *merged_wall_experiment_name(int mode)
 	switch (mode) {
 		case MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE:
 			return "force_legacy_texmerge";
+		case MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE:
+			return "clear_secondary_units_single";
 		default:
 			return "default";
+	}
+}
+
+static int merged_wall_clamp_experiment_mode(int mode)
+{
+	switch (mode) {
+		case MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE:
+		case MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE:
+			return mode;
+		default:
+			return MERGED_WALL_EXPERIMENT_DEFAULT;
 	}
 }
 
@@ -453,9 +466,7 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
 		g_merged_wall_debug_mode = clamped;
 	} else if (strcmp(name, "merged_wall_experiment") == 0) {
 		int old = (int) g_merged_wall_experiment_mode;
-		int clamped = (int) value == MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE
-		                  ? MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE
-		                  : MERGED_WALL_EXPERIMENT_DEFAULT;
+		int clamped = merged_wall_clamp_experiment_mode((int) value);
 
 		LOGI("debug flag: merged_wall_experiment %d(%s) -> %d(%s)",
 		     old, merged_wall_experiment_name(old),

@@ -33,8 +33,9 @@ extern volatile int g_debug_tex_overlay_active;
 #define MERGED_WALL_DEBUG_OVERLAY_ALPHA 1
 #define MERGED_WALL_DEBUG_OVERLAY_RGB   2
 
-#define MERGED_WALL_EXPERIMENT_DEFAULT               0
-#define MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE 10
+#define MERGED_WALL_EXPERIMENT_DEFAULT                      0
+#define MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE        10
+#define MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE 11
 
 struct android_draw_face_context {
 	int valid;
