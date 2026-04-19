@@ -208,6 +208,16 @@ static int ogl_merged_wall_single_clip_matches_wid(int wid_flags)
 	return 0;
 }
 
+static int ogl_merged_wall_single_clear_matches_face_context(void)
+{
+	return g_android_draw_face_ctx.valid && g_android_draw_face_ctx.tmap2 != 0;
+}
+
+static int ogl_merged_wall_single_draw_needs_state_reset(void)
+{
+	return g_android_draw_face_ctx.valid && g_android_draw_face_ctx.tmap2 != 0;
+}
+
 static int ogl_merged_wall_next_draw_order(void)
 {
 	return android_merged_wall_next_draw_order();
@@ -223,7 +233,185 @@ static int ogl_is_door45_mip_diag_bitmap(const char *bitmapname)
 {
 	if (!bitmapname)
 		return 0;
-	return !d_stricmp(bitmapname, "door45#0") || !d_stricmp(bitmapname, "door45#9");
+	if (d_strnicmp(bitmapname, "door45#", 7))
+		return 0;
+	return bitmapname[7] >= '0' && bitmapname[7] <= '9' && bitmapname[8] == '\0';
+}
+
+static unsigned int ogl_diag_fnv1a_append(unsigned int hash,
+	const unsigned char *data, int len)
+{
+	int i;
+
+	for (i = 0; i < len; i++) {
+		hash ^= (unsigned int)data[i];
+		hash *= 16777619u;
+	}
+	return hash;
+}
+
+static int ogl_diag_texture_channels(GLenum format)
+{
+	switch (format) {
+		case GL_LUMINANCE:
+			return 1;
+		case GL_LUMINANCE_ALPHA:
+			return 2;
+		case GL_RGB:
+			return 3;
+		case GL_RGBA:
+			return 4;
+		default:
+			return 0;
+	}
+}
+
+static void ogl_diag_unpack_pixel(const unsigned char *src, int channels,
+	int *r, int *g, int *b, int *a)
+{
+	if (!src || channels <= 0) {
+		*r = *g = *b = 0;
+		*a = 255;
+		return;
+	}
+
+	switch (channels) {
+		case 1:
+			*r = *g = *b = src[0];
+			*a = 255;
+			break;
+		case 2:
+			*r = *g = *b = src[0];
+			*a = src[1];
+			break;
+		case 3:
+			*r = src[0];
+			*g = src[1];
+			*b = src[2];
+			*a = 255;
+			break;
+		default:
+			*r = src[0];
+			*g = src[1];
+			*b = src[2];
+			*a = src[3];
+			break;
+	}
+}
+
+static void ogl_log_door45_upload_source(const char *bitmapname,
+	const char *path, const char *source_name, const unsigned char *data,
+	int width, int height, int row_stride, int bm_flags, int real_flags)
+{
+	unsigned int hash = 2166136261u;
+	int idx254 = 0, idx255 = 0;
+	int x, y;
+
+	if (!ogl_is_door45_mip_diag_bitmap(bitmapname) || !data || width <= 0 || height <= 0)
+		return;
+	if (row_stride <= 0)
+		row_stride = width;
+
+	for (y = 0; y < height; y++) {
+		const unsigned char *row = data + y * row_stride;
+
+		hash = ogl_diag_fnv1a_append(hash, row, width);
+		for (x = 0; x < width; x++) {
+			if (row[x] == 254)
+				idx254++;
+			else if (row[x] == 255)
+				idx255++;
+		}
+	}
+
+	debug_log(DLOG_TEXTURE,
+		"[mwall_upload_src] name=%s path=%s source=%s w=%d h=%d rowsize=%d bytes=%d bm_flags=0x%x real_flags=0x%x idx254=%d idx255=%d hash=0x%08x",
+		bitmapname ? bitmapname : "<none>",
+		path ? path : "",
+		source_name ? source_name : "",
+		width,
+		height,
+		row_stride,
+		width * height,
+		bm_flags,
+		real_flags,
+		idx254,
+		idx255,
+		hash);
+}
+
+static void ogl_log_door45_upload_expanded(const char *bitmapname,
+	const char *path, ogl_texture *tex, const unsigned char *data,
+	int bm_flags, int data_format)
+{
+	unsigned int hash;
+	unsigned int sum_r = 0, sum_g = 0, sum_b = 0, sum_a = 0;
+	int channels, pixel_count, black_rgb = 0;
+	int alpha0 = 0, alpha255 = 0, alpha_partial = 0;
+	int p0_r = 0, p0_g = 0, p0_b = 0, p0_a = 255;
+	int center_r = 0, center_g = 0, center_b = 0, center_a = 255;
+	int i;
+
+	if (!ogl_is_door45_mip_diag_bitmap(bitmapname) || !tex || !data)
+		return;
+	channels = ogl_diag_texture_channels(tex->format);
+	if (!channels || tex->tw <= 0 || tex->th <= 0)
+		return;
+
+	pixel_count = tex->tw * tex->th;
+	hash = ogl_diag_fnv1a_append(2166136261u, data, pixel_count * channels);
+	for (i = 0; i < pixel_count; i++) {
+		int r, g, b, a;
+
+		ogl_diag_unpack_pixel(data + i * channels, channels, &r, &g, &b, &a);
+		sum_r += (unsigned int)r;
+		sum_g += (unsigned int)g;
+		sum_b += (unsigned int)b;
+		sum_a += (unsigned int)a;
+		if (r == 0 && g == 0 && b == 0)
+			black_rgb++;
+		if (a == 0)
+			alpha0++;
+		else if (a == 255)
+			alpha255++;
+		else
+			alpha_partial++;
+	}
+	ogl_diag_unpack_pixel(data, channels, &p0_r, &p0_g, &p0_b, &p0_a);
+	ogl_diag_unpack_pixel(data + (((tex->th / 2) * tex->tw + (tex->tw / 2)) * channels),
+		channels, &center_r, &center_g, &center_b, &center_a);
+
+	debug_log(DLOG_TEXTURE,
+		"[mwall_upload_cpu] name=%s path=%s format=0x%x internal=0x%x channels=%d bm_flags=0x%x data_format=%d tex=%dx%d p2=%dx%d bytes=%d hash=0x%08x avg=%d/%d/%d/%d black=%d alpha0=%d alpha255=%d alpha_partial=%d p0=%d/%d/%d/%d center=%d/%d/%d/%d",
+		bitmapname ? bitmapname : "<none>",
+		path ? path : "",
+		tex->format,
+		tex->internalformat,
+		channels,
+		bm_flags,
+		data_format,
+		tex->w,
+		tex->h,
+		tex->tw,
+		tex->th,
+		pixel_count * channels,
+		hash,
+		(int)(sum_r / (unsigned int)pixel_count),
+		(int)(sum_g / (unsigned int)pixel_count),
+		(int)(sum_b / (unsigned int)pixel_count),
+		(int)(sum_a / (unsigned int)pixel_count),
+		black_rgb,
+		alpha0,
+		alpha255,
+		alpha_partial,
+		p0_r,
+		p0_g,
+		p0_b,
+		p0_a,
+		center_r,
+		center_g,
+		center_b,
+		center_a);
 }
 
 static int ogl_count_mip_levels(int width, int height)
@@ -303,10 +491,11 @@ static void ogl_log_door45_mip_upload(const char *bitmapname, const char *path,
 
 static void ogl_log_merged_wall_cover(const char *shader_kind, const char *botname,
 	const char *ovlname, const g3s_point **pointlist, int nv, const g3s_uvl *uvl_list,
+	const GLfloat *color_array,
 	int draw_order, grs_bitmap *cover_bitmap)
 {
 	android_merged_wall_log_cover(shader_kind, botname, ovlname, pointlist,
-		nv, uvl_list, draw_order, cover_bitmap,
+		nv, uvl_list, color_array, draw_order, cover_bitmap,
 		GameCfg.TexFilt, GameCfg.MenuTexFilt, GameCfg.HudTexFilt,
 		ogl_aniso_level);
 }
@@ -332,6 +521,8 @@ static const char *ogl_metl154_experiment_name(int mode)
 	switch (mode) {
 		case METL154_EXPERIMENT_OLD_MERGE:
 			return "force_legacy_texmerge";
+		case METL154_EXPERIMENT_CLEAR_SINGLE_UNITS:
+			return "clear_secondary_units_single";
 		default:
 			return "default";
 	}
@@ -713,11 +904,37 @@ static void ogl_get_metl154_draw_state(ogl_texture *tex, GLint *active_prog,
 
 static int ogl_should_clear_metl154_secondary_units_for_single(grs_bitmap *bm)
 {
+	const char *bm_name = bm ? piggy_game_bitmap_name(bm) : NULL;
+	const char *skip_reason = NULL;
+
 	if ((int)g_metl154_experiment_mode != METL154_EXPERIMENT_CLEAR_SINGLE_UNITS)
 		return 0;
-	if (!bm || !bm->gltexture || !g_android_draw_face_ctx.valid || g_android_draw_face_ctx.tmap2)
-		return 0;
-	return ogl_is_metl154_bitmap(bm);
+	if (!bm)
+		skip_reason = "no_bitmap";
+	else if (!bm->gltexture)
+		skip_reason = "no_gltexture";
+	else if (!g_android_draw_face_ctx.valid)
+		skip_reason = "no_face_ctx";
+	else if (!ogl_merged_wall_single_clear_matches_face_context())
+		skip_reason = "face_tmap2_zero";
+	if (!skip_reason)
+		return 1;
+	debug_log(DLOG_TEXTURE,
+		"[mwall_texexp_skip] frame=%d pass=%d seq=%d mode=%d reason=%s bm=%s seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x",
+		g_metl154_frame_id,
+		g_metl154_render_pass,
+		g_metl154_draw_seq,
+		(int)g_metl154_experiment_mode,
+		skip_reason,
+		bm_name ? bm_name : "",
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1,
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap1 : -1,
+		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap2 : 0);
+	return 0;
 }
 
 static void ogl_clear_metl154_secondary_units_for_single(grs_bitmap *bm)
@@ -1439,7 +1656,7 @@ extern GLubyte *pixels;
 extern GLubyte *texbuf;
 void ogl_filltexbuf(unsigned char *data, GLubyte *texp, int truewidth, int width, int height, int dxo, int dyo, int twidth, int theight, int type, int bm_flags, int data_format);
 void ogl_loadbmtexture(grs_bitmap *bm);
-int ogl_loadtexture(unsigned char *data, int dxo, int dyo, ogl_texture *tex, int bm_flags, int data_format, int texfilt);
+int ogl_loadtexture(unsigned char *data, int dxo, int dyo, ogl_texture *tex, int bm_flags, int data_format, int texfilt, const char *bitmapname, const char *diag_path);
 void ogl_freetexture(ogl_texture *gltexture);
 void ogl_freebmtexture(grs_bitmap *bm);
 void tex_set_size(ogl_texture *tex);
@@ -2760,6 +2977,12 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 	if (tmap_drawer_ptr == draw_tmap) {
 		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 		OGL_ENABLE(TEXTURE_2D);
+	#if defined(ANDROID) && defined(OGL_MERGE)
+		if (ogl_merged_wall_single_draw_needs_state_reset()) {
+			gles3_shim_use_external(0);
+			glActiveTexture(GL_TEXTURE0);
+		}
+	#endif
 		ogl_bindbmtex(bm);
 		if (bm->gltexture == NULL)
 			return 0;
@@ -2838,7 +3061,7 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 #if defined(ANDROID) && defined(OGL_MERGE)
 	if (!skip_metl154_cover_draw)
 		ogl_log_merged_wall_cover(cover_shader, piggy_game_bitmap_name(bm), NULL,
-			pointlist, nv, uvl_list, draw_order, bm);
+			pointlist, nv, uvl_list, color_array, draw_order, bm);
 #endif
 
 #ifdef ANDROID
@@ -3193,7 +3416,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	} else if (!skip_metl154_cover_draw) {
 		ogl_log_merged_wall_cover(super ? "mask" : "plain",
 			piggy_game_bitmap_name(bmbot), piggy_game_bitmap_name(bmovl),
-			pointlist, nv, uvl_list, draw_order, bmbot);
+			pointlist, nv, uvl_list, color_array, draw_order, bmbot);
 	}
 #endif
 
@@ -3630,7 +3853,7 @@ bool ogl_ubitblt_i(int dw,int dh,int dx,int dy, int sw, int sh, int sx, int sy, 
 	OGL_ENABLE(TEXTURE_2D);
 	
 	ogl_pal=gr_current_pal;
-	ogl_loadtexture(src->bm_data, sx, sy, &tex, src->bm_flags, 0, texfilt);
+	ogl_loadtexture(src->bm_data, sx, sy, &tex, src->bm_flags, 0, texfilt, NULL, NULL);
 	ogl_pal=gr_palette;
 	OGL_BINDTEXTURE(tex.handle);
 	
@@ -4362,7 +4585,7 @@ void tex_set_size(ogl_texture *tex){
 //In theory this could be a problem for repeating textures, but all real
 //textures (not sprites, etc) in descent are 64x64, so we are ok.
 //stores OpenGL textured id in *texid and u/v values required to get only the real data in *u/*v
-int ogl_loadtexture (unsigned char *data, int dxo, int dyo, ogl_texture *tex, int bm_flags, int data_format, int texfilt)
+int ogl_loadtexture (unsigned char *data, int dxo, int dyo, ogl_texture *tex, int bm_flags, int data_format, int texfilt, const char *bitmapname, const char *diag_path)
 {
 	GLubyte	*bufP = texbuf;
 	tex->tw = pow2ize (tex->w);
@@ -4401,6 +4624,8 @@ int ogl_loadtexture (unsigned char *data, int dxo, int dyo, ogl_texture *tex, in
 					if (p[3] > 0) { p[0] = p[1] = p[2] = 255; }
 			}
 #endif
+			ogl_log_door45_upload_expanded(bitmapname, diag_path, tex, texbuf,
+				bm_flags, data_format);
 		} else {
 			if (!dxo && !dyo && (tex->w == tex->tw) && (tex->h == tex->th))
 				bufP = data;
@@ -4540,7 +4765,7 @@ void ogl_loadpngmask(png_data *pdata, grs_bitmap *bm, int texfilt)
 	else
 		for (int i = 0; i < size; i++)
 			mask[i] = buf[i * 3] == 120 && buf[i * 3 + 1] == 88 && buf[i * 3 + 2] == 128 ? 255 : 0;
-	ogl_loadtexture(mask, 0, 0, bm->gltexture_mask, BM_FLAG_TRANSPARENT, 0, texfilt);
+	ogl_loadtexture(mask, 0, 0, bm->gltexture_mask, BM_FLAG_TRANSPARENT, 0, texfilt, NULL, NULL);
 	bm->gltexture_mask->is_png = 1;
 	d_free(mask);
 }
@@ -4576,7 +4801,7 @@ static void ogl_load_dxa_mask(const char *bitmapname, grs_bitmap *bm, int texfil
 		if (bm->gltexture_mask == NULL)
 			ogl_init_texture(bm->gltexture_mask = ogl_get_free_texture(),
 				mdata.width, mdata.height, OGL_FLAG_ALPHA);
-		ogl_loadtexture(mask, 0, 0, bm->gltexture_mask, BM_FLAG_TRANSPARENT, 0, texfilt);
+		ogl_loadtexture(mask, 0, 0, bm->gltexture_mask, BM_FLAG_TRANSPARENT, 0, texfilt, NULL, NULL);
 		bm->gltexture_mask->is_png = 1;
 		d_free(mask);
 
@@ -4892,7 +5117,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 				#endif
 				if (bm->gltexture == NULL)
 					ogl_init_texture(bm->gltexture = ogl_get_free_texture(), pdata.width, pdata.height, ((pdata.alpha || bm->bm_flags & BM_FLAG_TRANSPARENT) ? OGL_FLAG_ALPHA : 0));
-				if (ogl_loadtexture(pdata.data, 0, 0, bm->gltexture, bm->bm_flags, df, load_texfilt)) {
+				if (ogl_loadtexture(pdata.data, 0, 0, bm->gltexture, bm->bm_flags, df, load_texfilt, bitmapname, "png")) {
 					/* Upload failed (e.g. oversized) -- reinit with bitmap dims so
 					 * the regular path can upload the original data. Set is_png=1
 					 * to skip PNG search on future calls (avoids per-frame retry).
@@ -5071,7 +5296,16 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 			}
 		}
 	}
-	ogl_loadtexture(buf, 0, 0, bm->gltexture, bm->bm_flags, 0, load_texfilt);
+	ogl_log_door45_upload_source(bitmapname, "stock",
+		buf == decodebuf ? "decodebuf" : "bm_data",
+		buf,
+		bm->bm_w,
+		bm->bm_h,
+		buf == decodebuf ? bm->bm_w : (bm->bm_rowsize > 0 ? bm->bm_rowsize : bm->bm_w),
+		bm->bm_flags,
+		piggy_bitmap_get_flags(bm));
+	ogl_loadtexture(buf, 0, 0, bm->gltexture, bm->bm_flags, 0, load_texfilt,
+		bitmapname, "stock");
 	ogl_log_door45_mip_upload(bitmapname, "stock", bm,
 		texfilt, load_texfilt, 1, 1,
 		load_texfilt > 0 && !(bm->gltexture->flags & OGL_FLAG_NOCOLOR), 0);
@@ -5097,7 +5331,8 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 		MALLOC(mask, unsigned char, size);
 		for (int i = 0; i < size; i++)
 			mask[i] = buf[i] == 254 ? 255 : 0;
-		ogl_loadtexture(mask, 0, 0, bm->gltexture_mask, BM_FLAG_TRANSPARENT, 0, texfilt);
+		ogl_loadtexture(mask, 0, 0, bm->gltexture_mask, BM_FLAG_TRANSPARENT, 0,
+			texfilt, NULL, NULL);
 		d_free(mask);
 	}
 #endif
