@@ -1413,6 +1413,7 @@ typedef struct ogl_android_texmerge_cache_entry {
 	ogl_texture *texture;
 	grs_bitmap *bottom_bmp;
 	grs_bitmap *top_bmp;
+	int slot;
 	int orient;
 	int width;
 	int height;
@@ -1766,6 +1767,7 @@ static void ogl_android_texmerge_reset_entry(ogl_android_texmerge_cache_entry *e
 	entry->texture = NULL;
 	entry->bottom_bmp = NULL;
 	entry->top_bmp = NULL;
+	entry->slot = -1;
 	entry->orient = -1;
 	entry->width = 0;
 	entry->height = 0;
@@ -1811,17 +1813,22 @@ static void ogl_android_texmerge_init_bitmap(grs_bitmap *bm, ogl_texture *tex,
 }
 
 static void ogl_android_texmerge_log(const char *event, grs_bitmap *bmbot,
-	grs_bitmap *bmovl, int orient, int width, int height, GLuint handle)
+	grs_bitmap *bmovl, int orient, int width, int height, GLuint handle,
+	int slot, const ogl_texture *texture)
 {
 	const char *botname;
 	const char *ovlname;
+	GLuint base_handle;
+	GLuint overlay_handle;
 
-	if (!ogl_is_metl154_bitmap(bmovl))
+	if (!g_merged_wall_snapshot_pending && !ogl_is_metl154_bitmap(bmovl))
 		return;
 	botname = piggy_game_bitmap_name(bmbot);
 	ovlname = piggy_game_bitmap_name(bmovl);
+	base_handle = bmbot && bmbot->gltexture ? bmbot->gltexture->handle : 0;
+	overlay_handle = bmovl && bmovl->gltexture ? bmovl->gltexture->handle : 0;
 	debug_log(DLOG_TEXTURE,
-		"[metl154cache] event=%s frame=%d pass=%d seq=%d seg=%d side=%d face=%d orient=%d size=%dx%d handle=%u bot=%s ovl=%s",
+		"[mwall_cache] event=%s frame=%d pass=%d seq=%d seg=%d side=%d face=%d slot=%d orient=%d route=merge_cached merge_impl=gpu_cached_single size=%dx%d handle=%u base_handle=%u overlay_handle=%u internal=0x%x format=0x%x bytes=%d bytesu=%d wrap=%d mip=%d is_png=%d numrend=%lu tex_flags=0x%x bot=%s ovl=%s",
 		event ? event : "unknown",
 		g_metl154_frame_id,
 		g_metl154_render_pass,
@@ -1829,10 +1836,22 @@ static void ogl_android_texmerge_log(const char *event, grs_bitmap *bmbot,
 		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
 		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
 		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+		slot,
 		orient,
 		width,
 		height,
 		handle,
+		base_handle,
+		overlay_handle,
+		texture ? texture->internalformat : 0,
+		texture ? (unsigned int) texture->format : 0,
+		texture ? texture->bytes : 0,
+		texture ? texture->bytesu : 0,
+		texture ? texture->wrapstate : -1,
+		texture ? texture->has_mipmaps : -1,
+		texture ? texture->is_png : -1,
+		texture ? texture->numrend : 0,
+		texture ? texture->flags : 0,
 		botname ? botname : "<none>",
 		ovlname ? ovlname : "<none>");
 }
@@ -1920,7 +1939,8 @@ static grs_bitmap *ogl_android_get_cached_plain_texmerge_bitmap(grs_bitmap *bmbo
 			&& entry->orient == orient) {
 			entry->last_time_used = timer_query();
 			ogl_android_texmerge_log("reuse", bmbot, bmovl, orient,
-				entry->width, entry->height, entry->texture->handle);
+				entry->width, entry->height, entry->texture->handle,
+				entry->slot, entry->texture);
 			return &entry->bitmap;
 		}
 	}
@@ -1959,6 +1979,7 @@ static grs_bitmap *ogl_android_get_cached_plain_texmerge_bitmap(grs_bitmap *bmbo
 	if (entry->texture)
 		ogl_freetexture(entry->texture);
 	ogl_android_texmerge_reset_entry(entry);
+	entry->slot = slot;
 
 	tex_flags = OGL_FLAG_ALPHA;
 	entry->texture = ogl_get_free_texture();
@@ -2096,7 +2117,7 @@ static grs_bitmap *ogl_android_get_cached_plain_texmerge_bitmap(grs_bitmap *bmbo
 	ogl_android_texmerge_init_bitmap(&entry->bitmap, entry->texture,
 		bmbot->bm_flags & (~BM_FLAG_RLE), bmbot->avg_color, width, height);
 	ogl_android_texmerge_log("create", bmbot, bmovl, orient, width, height,
-		entry->texture->handle);
+		entry->texture->handle, entry->slot, entry->texture);
 	return &entry->bitmap;
 }
 #endif

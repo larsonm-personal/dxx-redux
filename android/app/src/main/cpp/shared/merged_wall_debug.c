@@ -6,6 +6,7 @@
 
 #include "3d.h"
 #include "gameseg.h"
+#include "gameseq.h"
 #include "inferno.h"
 #include "object.h"
 #include "ogl_init.h"
@@ -28,15 +29,22 @@ struct merged_wall_tracked_face {
 	int draw_seq;
 	int draw_order;
 	int nv;
+	int projected_count;
 	struct android_draw_face_context draw_ctx;
 	int cover_logged;
 	int coverbox_logged;
 	int bbox_valid;
+	int projected_bbox_valid;
 	float min_sx;
 	float max_sx;
 	float min_sy;
 	float max_sy;
 	float bbox_area;
+	float projected_min_sx;
+	float projected_max_sx;
+	float projected_min_sy;
+	float projected_max_sy;
+	float projected_bbox_area;
 	float fan_area_012;
 	float fan_area_023;
 	float alt_area_013;
@@ -226,6 +234,52 @@ static int merged_wall_get_screen_bbox(const struct g3s_point **pointlist, int n
 			if (sy > local_max_sy) local_max_sy = sy;
 		}
 	}
+
+	*min_sx = local_min_sx;
+	*max_sx = local_max_sx;
+	*min_sy = local_min_sy;
+	*max_sy = local_max_sy;
+	return 1;
+}
+
+static int merged_wall_get_projected_bbox(const struct g3s_point **pointlist, int nv,
+                                          int *projected_count,
+                                          float *min_sx, float *max_sx,
+                                          float *min_sy, float *max_sy)
+{
+	float local_min_sx = 0.0f, local_max_sx = 0.0f;
+	float local_min_sy = 0.0f, local_max_sy = 0.0f;
+	int count = 0;
+	int i;
+
+	if (projected_count)
+		*projected_count = 0;
+	if (!pointlist || nv <= 0)
+		return 0;
+
+	for (i = 0; i < nv; i++) {
+		float sx, sy;
+
+		if (!(pointlist[i]->p3_flags & PF_PROJECTED))
+			continue;
+		sx = f2fl(pointlist[i]->p3_sx);
+		sy = f2fl(pointlist[i]->p3_sy);
+		if (count == 0) {
+			local_min_sx = local_max_sx = sx;
+			local_min_sy = local_max_sy = sy;
+		} else {
+			if (sx < local_min_sx) local_min_sx = sx;
+			if (sx > local_max_sx) local_max_sx = sx;
+			if (sy < local_min_sy) local_min_sy = sy;
+			if (sy > local_max_sy) local_max_sy = sy;
+		}
+		count++;
+	}
+
+	if (projected_count)
+		*projected_count = count;
+	if (count <= 0)
+		return 0;
 
 	*min_sx = local_min_sx;
 	*max_sx = local_max_sx;
@@ -451,6 +505,15 @@ static void merged_wall_log_texture_detail(const char *tag, int rank,
 	const char *name;
 	int real_flags;
 	unsigned int mask_handle = 0;
+	unsigned int bm_handle = 0;
+	int avg_color = 0;
+	int rowsize = 0;
+	int internalformat = 0;
+	unsigned int format = 0;
+	int bytesu = 0;
+	float prio = 0.0f;
+	unsigned long numrend = 0;
+	int tex_flags = 0;
 
 	if (tex_num < 0 || tex_num >= NumTextures)
 		return;
@@ -460,9 +523,22 @@ static void merged_wall_log_texture_detail(const char *tag, int rank,
 	real_flags = piggy_bitmap_get_flags(bitmap);
 	if (bitmap && bitmap->gltexture_mask)
 		mask_handle = bitmap->gltexture_mask->handle;
+	if (bitmap) {
+		bm_handle = bitmap->bm_handle;
+		avg_color = bitmap->avg_color;
+		rowsize = bitmap->bm_rowsize;
+	}
+	if (texture) {
+		internalformat = texture->internalformat;
+		format = (unsigned int) texture->format;
+		bytesu = texture->bytesu;
+		prio = texture->prio;
+		numrend = texture->numrend;
+		tex_flags = texture->flags;
+	}
 
 	debug_log(DLOG_TEXTURE,
-	          "[mwall_tex] tag=%s rank=%d seg=%d side=%d face=%d layer=%s tex=%d name=%s real_flags=0x%x bm_flags=0x%x handle=%u is_png=%d w=%d h=%d tw=%d th=%d lw=%d bytes=%d mip=%d wrap=%d u=%.3f v=%.3f mask_handle=%u",
+	          "[mwall_tex] tag=%s rank=%d seg=%d side=%d face=%d layer=%s tex=%d name=%s real_flags=0x%x bm_flags=0x%x bm_handle=%u avg=%d rowsize=%d handle=%u is_png=%d w=%d h=%d tw=%d th=%d lw=%d bytes=%d bytesu=%d mip=%d wrap=%d u=%.3f v=%.3f internal=0x%x format=0x%x prio=%.3f numrend=%lu tex_flags=0x%x mask_handle=%u",
 	          tag ? tag : "",
 	          rank,
 	          ctx && ctx->valid ? ctx->seg : -1,
@@ -473,6 +549,9 @@ static void merged_wall_log_texture_detail(const char *tag, int rank,
 	          name ? name : "<none>",
 	          real_flags,
 	          bitmap ? bitmap->bm_flags : 0,
+	          bm_handle,
+	          avg_color,
+	          rowsize,
 	          texture ? texture->handle : 0,
 	          texture ? texture->is_png : -1,
 	          texture ? texture->w : 0,
@@ -481,10 +560,16 @@ static void merged_wall_log_texture_detail(const char *tag, int rank,
 	          texture ? texture->th : 0,
 	          texture ? texture->lw : 0,
 	          texture ? texture->bytes : 0,
+	          bytesu,
 	          texture ? texture->has_mipmaps : -1,
 	          texture ? texture->wrapstate : -1,
 	          texture ? texture->u : 0.0f,
 	          texture ? texture->v : 0.0f,
+	          internalformat,
+	          format,
+	          prio,
+	          numrend,
+	          tex_flags,
 	          mask_handle);
 }
 
@@ -700,19 +785,28 @@ void android_merged_wall_track_face(const struct g3s_point **pointlist, int nv,
 	track->bbox_area = track->bbox_valid
 	                       ? (track->max_sx - track->min_sx) * (track->max_sy - track->min_sy)
 	                       : 0.0f;
+	track->projected_bbox_valid = merged_wall_get_projected_bbox(pointlist, nv,
+	                                                             &track->projected_count,
+	                                                             &track->projected_min_sx,
+	                                                             &track->projected_max_sx,
+	                                                             &track->projected_min_sy,
+	                                                             &track->projected_max_sy);
+	track->projected_bbox_area = track->projected_bbox_valid
+	                                 ? (track->projected_max_sx - track->projected_min_sx) *
+	                                       (track->projected_max_sy - track->projected_min_sy)
+	                                 : 0.0f;
 	merged_wall_track_split_geometry(track, pointlist, nv);
 	merged_wall_copy_string(track->route, sizeof(track->route), route);
 	merged_wall_copy_string(track->merge_impl, sizeof(track->merge_impl), merge_impl);
 	merged_wall_copy_string(track->decision_reason, sizeof(track->decision_reason), decision_reason);
 	for (i = 0; i < nv; i++) {
-		if (pointlist[i]->p3_flags & PF_PROJECTED)
-			projected++;
 		track->pts[i][0] = pointlist[i]->p3_vec.x;
 		track->pts[i][1] = pointlist[i]->p3_vec.y;
 		track->pts[i][2] = pointlist[i]->p3_vec.z;
 	}
+	projected = track->projected_count;
 	debug_log(DLOG_TEXTURE,
-	          "[mwall_track] frame=%d pass=%d seq=%d order=%d seg=%d side=%d face=%d child=%d nv=%d projected=%d bbox_valid=%d box=%.1f..%.1f/%.1f..%.1f area=%.1f route=%s merge_impl=%s",
+	          "[mwall_track] frame=%d pass=%d seq=%d order=%d seg=%d side=%d face=%d child=%d nv=%d projected=%d bbox_valid=%d proj_box_valid=%d box=%.1f..%.1f/%.1f..%.1f area=%.1f proj_box=%.1f..%.1f/%.1f..%.1f proj_area=%.1f route=%s merge_impl=%s",
 	          g_merged_wall_frame_id,
 	          g_merged_wall_render_pass,
 	          g_merged_wall_draw_seq,
@@ -724,11 +818,17 @@ void android_merged_wall_track_face(const struct g3s_point **pointlist, int nv,
 	          nv,
 	          projected,
 	          track->bbox_valid,
+	          track->projected_bbox_valid,
 	          track->min_sx,
 	          track->max_sx,
 	          track->min_sy,
 	          track->max_sy,
 	          track->bbox_area,
+	          track->projected_min_sx,
+	          track->projected_max_sx,
+	          track->projected_min_sy,
+	          track->projected_max_sy,
+	          track->projected_bbox_area,
 	          track->route,
 	          track->merge_impl);
 }
@@ -923,17 +1023,21 @@ static int merged_wall_selected_rank(const int *selected, int selected_count,
 
 void android_merged_wall_request_snapshot(void)
 {
+	const char *level_name = Current_level_name[0] ? Current_level_name : "<none>";
+
 	memset(&g_merged_wall_snapshot_result, 0, sizeof(g_merged_wall_snapshot_result));
 	merged_wall_copy_string(g_merged_wall_snapshot_result.status,
 	                        sizeof(g_merged_wall_snapshot_result.status), "pending");
 	g_merged_wall_snapshot_result.request_frame = g_merged_wall_frame_id;
 	g_merged_wall_snapshot_request_frame = g_merged_wall_frame_id;
 	debug_log(DLOG_TEXTURE,
-	          "[mwall_snap] request: request_frame=%d frame=%d pass=%d seq=%d mode=%d(%s) experiment=%d(%s) two_pass=%d",
+	          "[mwall_snap] request: request_frame=%d frame=%d pass=%d seq=%d level=%d name=%s mode=%d(%s) experiment=%d(%s) two_pass=%d",
 	          (int) g_merged_wall_snapshot_request_frame,
 	          (int) g_merged_wall_frame_id,
 	          (int) g_merged_wall_render_pass,
 	          (int) g_merged_wall_draw_seq,
+	          Current_level_num,
+	          level_name,
 	          (int) g_merged_wall_debug_mode,
 	          merged_wall_debug_mode_name_local((int) g_merged_wall_debug_mode),
 	          (int) g_merged_wall_experiment_mode,
@@ -952,10 +1056,14 @@ void android_merged_wall_finish_snapshot(int screen_w, int screen_h,
 	float center_x = screen_w > 0 ? (float) screen_w * 0.5f : 0.0f;
 	float center_y = screen_h > 0 ? (float) screen_h * 0.5f : 0.0f;
 	int selected[MERGED_WALL_SNAPSHOT_FACE_MAX];
+	int partial_selected[MERGED_WALL_SNAPSHOT_FACE_MAX];
 	int selected_count = 0;
+	int partial_selected_count = 0;
 	int center_hit_count = 0;
 	int relevant_cover_logs = 0;
 	int omitted_cover_logs = 0;
+	int partial_face_count = 0;
+	const char *level_name = Current_level_name[0] ? Current_level_name : "<none>";
 	int i, pass;
 
 	if (!g_merged_wall_snapshot_pending)
@@ -985,9 +1093,13 @@ void android_merged_wall_finish_snapshot(int screen_w, int screen_h,
 
 	for (i = 0; i < MERGED_WALL_SNAPSHOT_FACE_MAX; i++)
 		selected[i] = -1;
+	for (i = 0; i < MERGED_WALL_SNAPSHOT_FACE_MAX; i++)
+		partial_selected[i] = -1;
 	for (i = 0; i < merged_wall_tracked_face_count; i++) {
 		const struct merged_wall_tracked_face *track = &merged_wall_tracked_faces[i];
 
+		if (!track->bbox_valid && track->projected_bbox_valid)
+			partial_face_count++;
 		if (!track->bbox_valid)
 			continue;
 		if (merged_wall_bbox_contains_point(center_x, center_y,
@@ -999,8 +1111,11 @@ void android_merged_wall_finish_snapshot(int screen_w, int screen_h,
 	__sync_synchronize();
 	g_merged_wall_snapshot_pending = 0;
 	debug_log(DLOG_TEXTURE,
-	          "[mwall_snapshot] stage=frame frame=%d center=%.1f/%.1f fb_rgba=%d/%d/%d/%d fb_avg=%d/%d/%d/%d tracked=%d center_hits=%d cover_events=%d",
+	          "[mwall_snapshot] stage=frame frame=%d request_frame=%d level=%d name=%s center=%.1f/%.1f fb_rgba=%d/%d/%d/%d fb_avg=%d/%d/%d/%d tracked=%d partial=%d center_hits=%d cover_events=%d",
 	          g_merged_wall_frame_id,
+	          g_merged_wall_snapshot_request_frame,
+	          Current_level_num,
+	          level_name,
 	          center_x,
 	          center_y,
 	          sample_r,
@@ -1012,6 +1127,7 @@ void android_merged_wall_finish_snapshot(int screen_w, int screen_h,
 	          avg_b,
 	          avg_a,
 	          g_merged_wall_snapshot_result.tracked_count,
+	          partial_face_count,
 	          center_hit_count,
 	          merged_wall_cover_event_count);
 
@@ -1020,9 +1136,11 @@ void android_merged_wall_finish_snapshot(int screen_w, int screen_h,
 		                        sizeof(g_merged_wall_snapshot_result.status), "no_tracked_faces");
 		g_merged_wall_snapshot_result.valid = 1;
 		debug_log(DLOG_TEXTURE,
-		          "[mwall_snapshot] no_tracked_faces frame=%d request_frame=%d",
+		          "[mwall_snapshot] no_tracked_faces frame=%d request_frame=%d level=%d name=%s",
 		          g_merged_wall_frame_id,
-		          g_merged_wall_snapshot_request_frame);
+		          g_merged_wall_snapshot_request_frame,
+		          Current_level_num,
+		          level_name);
 		return;
 	}
 
@@ -1067,12 +1185,194 @@ void android_merged_wall_finish_snapshot(int screen_w, int screen_h,
 	}
 
 	if (selected_count <= 0) {
+		for (pass = 0; pass < 2 && partial_selected_count < MERGED_WALL_SNAPSHOT_FACE_MAX; pass++) {
+			for (;;) {
+				int best_index = -1;
+				float best_dist2 = 0.0f;
+
+				for (i = 0; i < merged_wall_tracked_face_count; i++) {
+					const struct merged_wall_tracked_face *track = &merged_wall_tracked_faces[i];
+					int contains_center;
+					float dist2;
+
+					if (track->bbox_valid || !track->projected_bbox_valid || track->projected_count <= 0 ||
+					    merged_wall_face_is_selected(partial_selected, partial_selected_count, i))
+						continue;
+					contains_center = merged_wall_bbox_contains_point(center_x, center_y,
+					                                                  track->projected_min_sx,
+					                                                  track->projected_max_sx,
+					                                                  track->projected_min_sy,
+					                                                  track->projected_max_sy);
+					if (pass == 0 && !contains_center)
+						continue;
+					if (pass == 1 && contains_center)
+						continue;
+					dist2 = merged_wall_bbox_distance_sq(center_x, center_y,
+					                                     track->projected_min_sx,
+					                                     track->projected_max_sx,
+					                                     track->projected_min_sy,
+					                                     track->projected_max_sy);
+					if (best_index < 0 || dist2 < best_dist2 - 0.5f ||
+					    (dist2 <= best_dist2 + 0.5f &&
+					     (track->projected_count > merged_wall_tracked_faces[best_index].projected_count ||
+					      (track->projected_count == merged_wall_tracked_faces[best_index].projected_count &&
+					       (track->projected_bbox_area > merged_wall_tracked_faces[best_index].projected_bbox_area + 0.5f ||
+					        (track->projected_bbox_area >= merged_wall_tracked_faces[best_index].projected_bbox_area - 0.5f &&
+					         (track->draw_order > merged_wall_tracked_faces[best_index].draw_order ||
+					          (track->draw_order == merged_wall_tracked_faces[best_index].draw_order &&
+					           track->draw_seq > merged_wall_tracked_faces[best_index].draw_seq)))))))) {
+						best_index = i;
+						best_dist2 = dist2;
+					}
+				}
+
+				if (best_index < 0)
+					break;
+				partial_selected[partial_selected_count++] = best_index;
+				if (partial_selected_count >= MERGED_WALL_SNAPSHOT_FACE_MAX)
+					break;
+			}
+		}
+
 		merged_wall_copy_string(g_merged_wall_snapshot_result.status,
 		                        sizeof(g_merged_wall_snapshot_result.status), "no_projected_faces");
 		g_merged_wall_snapshot_result.valid = 1;
 		debug_log(DLOG_TEXTURE,
-		          "[mwall_snapshot] no_projected_faces frame=%d",
-		          g_merged_wall_frame_id);
+		          "[mwall_snapshot] no_projected_faces frame=%d request_frame=%d level=%d name=%s partial_candidates=%d",
+		          g_merged_wall_frame_id,
+		          g_merged_wall_snapshot_request_frame,
+		          Current_level_num,
+		          level_name,
+		          partial_selected_count);
+		for (i = 0; i < partial_selected_count; i++) {
+			const struct merged_wall_tracked_face *track = &merged_wall_tracked_faces[partial_selected[i]];
+			int center_hit = merged_wall_bbox_contains_point(center_x, center_y,
+			                                                 track->projected_min_sx,
+			                                                 track->projected_max_sx,
+			                                                 track->projected_min_sy,
+			                                                 track->projected_max_sy);
+			float dist2 = merged_wall_bbox_distance_sq(center_x, center_y,
+			                                           track->projected_min_sx,
+			                                           track->projected_max_sx,
+			                                           track->projected_min_sy,
+			                                           track->projected_max_sy);
+
+			debug_log(DLOG_TEXTURE,
+			          "[mwall_snapshot_partial] rank=%d center_hit=%d dist2=%.1f frame=%d pass=%d seq=%d order=%d seg=%d side=%d face=%d child=%d side_type=%d wid=%d tmap1=%d tmap2=0x%x nv=%d projected=%d route=%s merge_impl=%s reason=%s full_box_valid=%d full_area=%.1f proj_box=%.1f..%.1f/%.1f..%.1f proj_area=%.1f submit_nv=%d fan=%.1f/%.1f alt=%.1f/%.1f fan_flip=%d alt_flip=%d fan_flat=%d alt_flat=%d cull_sensitive=%d pick=%s",
+			          i + 1,
+			          center_hit,
+			          dist2,
+			          g_merged_wall_frame_id,
+			          track->render_pass,
+			          track->draw_seq,
+			          track->draw_order,
+			          track->draw_ctx.valid ? track->draw_ctx.seg : -1,
+			          track->draw_ctx.valid ? track->draw_ctx.side : -1,
+			          track->draw_ctx.valid ? track->draw_ctx.face : -1,
+			          track->draw_ctx.valid ? track->draw_ctx.child : -1,
+			          track->draw_ctx.valid ? track->draw_ctx.side_type : -1,
+			          track->draw_ctx.valid ? track->draw_ctx.wid_flags : 0,
+			          track->draw_ctx.valid ? track->draw_ctx.tmap1 : -1,
+			          track->draw_ctx.valid ? track->draw_ctx.tmap2 : 0,
+			          track->nv,
+			          track->projected_count,
+			          track->route,
+			          track->merge_impl,
+			          track->decision_reason,
+			          track->bbox_valid,
+			          track->bbox_area,
+			          track->projected_min_sx,
+			          track->projected_max_sx,
+			          track->projected_min_sy,
+			          track->projected_max_sy,
+			          track->projected_bbox_area,
+			          track->nv,
+			          track->fan_area_012,
+			          track->fan_area_023,
+			          track->alt_area_013,
+			          track->alt_area_123,
+			          track->fan_flip,
+			          track->alt_flip,
+			          track->fan_flat,
+			          track->alt_flat,
+			          track->cull_sensitive,
+			          track->preferred_split);
+			merged_wall_log_portal("snapshot_partial", &track->draw_ctx);
+			merged_wall_log_face_textures("snapshot_partial", i + 1, &track->draw_ctx);
+		}
+		for (i = 0; i < merged_wall_cover_event_count; i++) {
+			const struct merged_wall_snapshot_cover_event *event = &merged_wall_cover_events[i];
+			const struct merged_wall_tracked_face *track;
+			float overlap_area = 0.0f;
+			int rank;
+			int center_face;
+			int center_cover = 0;
+			int center_overlap = 0;
+
+			if (event->face_index < 0 || event->face_index >= merged_wall_tracked_face_count)
+				continue;
+			track = &merged_wall_tracked_faces[event->face_index];
+			if (track->bbox_valid || !track->projected_bbox_valid)
+				continue;
+			rank = merged_wall_selected_rank(partial_selected, partial_selected_count, event->face_index);
+			if (rank < 0)
+				continue;
+			center_face = merged_wall_bbox_contains_point(center_x, center_y,
+			                                              track->projected_min_sx,
+			                                              track->projected_max_sx,
+			                                              track->projected_min_sy,
+			                                              track->projected_max_sy);
+			if (event->cover_bbox_valid) {
+				float overlap_min_sx = track->projected_min_sx > event->cover_min_sx ? track->projected_min_sx : event->cover_min_sx;
+				float overlap_max_sx = track->projected_max_sx < event->cover_max_sx ? track->projected_max_sx : event->cover_max_sx;
+				float overlap_min_sy = track->projected_min_sy > event->cover_min_sy ? track->projected_min_sy : event->cover_min_sy;
+				float overlap_max_sy = track->projected_max_sy < event->cover_max_sy ? track->projected_max_sy : event->cover_max_sy;
+
+				center_cover = merged_wall_bbox_contains_point(center_x, center_y,
+				                                               event->cover_min_sx, event->cover_max_sx,
+				                                               event->cover_min_sy, event->cover_max_sy);
+				overlap_area = merged_wall_bbox_overlap_area(track->projected_min_sx, track->projected_max_sx,
+				                                             track->projected_min_sy, track->projected_max_sy,
+				                                             event->cover_min_sx, event->cover_max_sx,
+				                                             event->cover_min_sy, event->cover_max_sy);
+				if (overlap_area > 0.0f && merged_wall_bbox_contains_point(center_x, center_y,
+				                                                           overlap_min_sx, overlap_max_sx,
+				                                                           overlap_min_sy, overlap_max_sy))
+					center_overlap = 1;
+			}
+			if (event->overlap_area > overlap_area)
+				overlap_area = event->overlap_area;
+			debug_log(DLOG_TEXTURE,
+			          "[mwall_snapshot_partial_cover] kind=%s rank=%d center_face=%d center_cover=%d center_overlap=%d overlap=%.1f ordered=%d frame=%d pass=%d seq=%d draw_order=%d cover_order=%d cover_shader=%s cover_bot=%s cover_ovl=%s seg=%d side=%d face=%d child=%d wid=%d cover_seg=%d cover_side=%d cover_face=%d cover_child=%d cover_wid=%d",
+			          event->kind == MERGED_WALL_SNAPSHOT_COVER_EXACT ? "exact" : "bbox",
+			          rank + 1,
+			          center_face,
+			          center_cover,
+			          center_overlap,
+			          overlap_area,
+			          event->ordered,
+			          g_merged_wall_frame_id,
+			          track->render_pass,
+			          track->draw_seq,
+			          track->draw_order,
+			          event->cover_order,
+			          event->cover_shader,
+			          event->cover_bot,
+			          event->cover_ovl,
+			          track->draw_ctx.valid ? track->draw_ctx.seg : -1,
+			          track->draw_ctx.valid ? track->draw_ctx.side : -1,
+			          track->draw_ctx.valid ? track->draw_ctx.face : -1,
+			          track->draw_ctx.valid ? track->draw_ctx.child : -1,
+			          track->draw_ctx.valid ? track->draw_ctx.wid_flags : 0,
+			          event->cover_ctx.valid ? event->cover_ctx.seg : -1,
+			          event->cover_ctx.valid ? event->cover_ctx.side : -1,
+			          event->cover_ctx.valid ? event->cover_ctx.face : -1,
+			          event->cover_ctx.valid ? event->cover_ctx.child : -1,
+			          event->cover_ctx.valid ? event->cover_ctx.wid_flags : 0);
+			merged_wall_log_portal("snapshot_partial", &track->draw_ctx);
+			merged_wall_log_portal("snapshot_partial_cover", &event->cover_ctx);
+			merged_wall_log_face_textures("snapshot_cover", rank + 1, &event->cover_ctx);
+		}
 		return;
 	}
 
@@ -1266,6 +1566,7 @@ void android_merged_wall_finish_snapshot(int screen_w, int screen_h,
 		          out->cover_wid_flags);
 		merged_wall_log_portal("snapshot_face", &track->draw_ctx);
 		merged_wall_log_portal("snapshot_cover", &event->cover_ctx);
+		merged_wall_log_face_textures("snapshot_cover", out->rank > 0 ? out->rank : 0, &event->cover_ctx);
 	}
 
 	g_merged_wall_snapshot_result.relevant_cover_count = relevant_cover_logs;
