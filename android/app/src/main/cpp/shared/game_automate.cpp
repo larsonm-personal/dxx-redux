@@ -61,6 +61,7 @@ extern "C" {
 
 /* Automap_active is defined in automap.c; we just need the extern. */
 extern "C" int Automap_active;
+extern "C" volatile int g_intro_active;
 
 /* -- Key name -> SDLKey mapping ---------------------------------------- */
 
@@ -186,6 +187,7 @@ enum step_type {
 	STEP_SELECT,                  /* find menu item by text and select it */
 	STEP_SEND_AXIS,               /* inject joystick axis event */
 	STEP_SEND_BUTTON,             /* inject joystick button press+release */
+	STEP_SKIP_INTRO,              /* repeatedly dismiss launch intro with touch or button */
 	STEP_SKIP_BRIEFING,           /* escape only if a non-game window covers Game_wind */
 	STEP_ASSERT_OVERLAY,          /* check overlay ring buffer for matching entry */
 	STEP_FACE_VIEW,               /* move player inside a segment and face a wall */
@@ -252,6 +254,7 @@ static int g_active = 0;
 static int g_failed = 0;        /* set to 1 on assert/timeout failure */
 static Uint32 g_step_start = 0; /* SDL_GetTicks() when step began */
 static int g_key_phase = 0;     /* 0=not sent, 1=down sent, 2=done */
+static Uint32 g_repeat_start = 0;
 
 /* -- STEP_SELECT state (multi-frame navigation) ----------------------- */
 static int g_select_phase = 0; /* 0=init, 1=navigating, 2=enter sent */
@@ -277,6 +280,7 @@ static const char *step_type_name(step_type t)
 		case STEP_SELECT: return "select";
 		case STEP_SEND_AXIS: return "send_axis";
 		case STEP_SEND_BUTTON: return "send_button";
+		case STEP_SKIP_INTRO: return "skip_intro";
 		case STEP_SKIP_BRIEFING: return "skip_briefing";
 		case STEP_ASSERT_OVERLAY: return "assert_overlay";
 		case STEP_FACE_VIEW: return "face_view";
@@ -492,6 +496,27 @@ static void inject_button(int button, int pressed)
 	ev.jbutton.state = pressed ? SDL_PRESSED : SDL_RELEASED;
 	SDL_PushEvent(&ev);
 	LOGI("Injecting button %d %s", button, pressed ? "DOWN" : "UP");
+}
+
+static void inject_mouse_tap(void)
+{
+	SDL_Event ev;
+	memset(&ev, 0, sizeof(ev));
+	ev.type = SDL_MOUSEBUTTONDOWN;
+	ev.button.button = SDL_BUTTON_LEFT;
+	ev.button.state = SDL_PRESSED;
+	ev.button.x = 1;
+	ev.button.y = 1;
+	SDL_PushEvent(&ev);
+
+	memset(&ev, 0, sizeof(ev));
+	ev.type = SDL_MOUSEBUTTONUP;
+	ev.button.button = SDL_BUTTON_LEFT;
+	ev.button.state = SDL_RELEASED;
+	ev.button.x = 1;
+	ev.button.y = 1;
+	SDL_PushEvent(&ev);
+	LOGI("Injecting mouse tap");
 }
 
 /* -- Menu item search for STEP_SELECT --------------------------------- */
@@ -977,6 +1002,7 @@ static int parse_script(const char *json_text)
 			else if (action == "select") s.type = STEP_SELECT;
 			else if (action == "send_axis") s.type = STEP_SEND_AXIS;
 			else if (action == "send_button") s.type = STEP_SEND_BUTTON;
+			else if (action == "skip_intro") s.type = STEP_SKIP_INTRO;
 			else if (action == "skip_briefing") s.type = STEP_SKIP_BRIEFING;
 			else if (action == "assert_overlay") s.type = STEP_ASSERT_OVERLAY;
 			else if (action == "face_view") s.type = STEP_FACE_VIEW;
@@ -1319,6 +1345,7 @@ static void advance_step(void)
 	g_current_step++;
 	g_step_start = SDL_GetTicks();
 	g_key_phase = 0;
+	g_repeat_start = 0;
 	g_select_phase = 0;
 	g_select_delta = 0;
 	g_inject_axis_logged = 0;
@@ -1568,6 +1595,30 @@ extern "C" void game_automate_tick(void)
 						inject_button(s.button_id, 0); /* release */
 					advance_step();
 				}
+			}
+			break;
+
+		case STEP_SKIP_INTRO:
+			if (!g_intro_active) {
+				LOGI("skip_intro: intro inactive, done");
+				advance_step();
+				break;
+			}
+			if (s.timeout_ms > 0 && elapsed >= (Uint32) s.timeout_ms) {
+				log_append("skip_intro", "timeout", "intro_active");
+				stop_script_fail("skip_intro: timed out waiting for intro to clear");
+				break;
+			}
+			if (g_key_phase == 0) {
+				if (s.button_id >= 0) {
+					inject_button(s.button_id, 1);
+					inject_button(s.button_id, 0);
+				} else
+					inject_mouse_tap();
+				g_key_phase = 1;
+				g_repeat_start = now;
+			} else if (now - g_repeat_start >= (Uint32) s.post_delay_ms) {
+				g_key_phase = 0;
 			}
 			break;
 

@@ -311,6 +311,14 @@ int MovieHandler(window *wind, d_event *event, movie *m)
 			MVE_rmHoldMovie();
 			break;
 
+#ifdef ANDROID
+		case EVENT_MOUSE_BUTTON_DOWN:
+		case EVENT_JOYSTICK_BUTTON_DOWN:
+			m->result = m->aborted = 1;
+			window_close(wind);
+			return 1;
+#endif
+
 		case EVENT_KEY_COMMAND:
 			key = event_key_get(event);
 

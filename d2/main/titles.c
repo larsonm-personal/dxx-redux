@@ -188,8 +188,15 @@ int show_title_screen( char * filename, int allow_keys, int from_hog_only )
 		return 0;
 	}
 
+#ifdef ANDROID
+	extern volatile int g_skippable_active;
+	g_skippable_active = 1;
+#endif
 	while (window_exists(wind))
 		event_process();
+#ifdef ANDROID
+	g_skippable_active = 0;
+#endif
 
 	return 0;
 }
@@ -203,6 +210,10 @@ void show_titles(void)
 	int song_playing = 0;
 #ifdef ANDROID
 	crash_breadcrumb("show_titles: enter");
+	extern volatile int g_intro_active;
+	extern volatile int g_skip_intro_pref;
+	extern volatile int g_intro_skip_applied;
+	g_intro_skip_applied = 0;
 #endif
 
 #define MOVIE_REQUIRED 1	//(!is_D2_OEM && !is_SHAREWARE && !is_MAC_SHARE)	// causes segfault
@@ -228,58 +239,80 @@ void show_titles(void)
 
 #ifdef ANDROID
 	crash_breadcrumb("show_titles: pre PlayMovie intro");
+	g_intro_active = 1;
 #endif
-	init_subtitles("intro.tex");
-	played = PlayMovie("intro.mve",MOVIE_REQUIRED);
-	close_subtitles();
+	if (
+#ifdef ANDROID
+		!g_skip_intro_pref
+#else
+		1
+#endif
+	)
+	{
+		init_subtitles("intro.tex");
+		played = PlayMovie("intro.mve",MOVIE_REQUIRED);
+		close_subtitles();
 
-	if (played != MOVIE_NOT_PLAYED)
-		intro_played = 1;
-	else
-	{                                               //didn't get intro movie, try titles
+		if (played != MOVIE_NOT_PLAYED)
+			intro_played = 1;
+		else
+		{                                               //didn't get intro movie, try titles
 
 #ifdef ANDROID
-		crash_breadcrumb("show_titles: pre PlayMovie titles");
+			crash_breadcrumb("show_titles: pre PlayMovie titles");
 #endif
-		played = PlayMovie("titles.mve",MOVIE_REQUIRED);
+			played = PlayMovie("titles.mve",MOVIE_REQUIRED);
 
-		if (played == MOVIE_NOT_PLAYED)
-		{
-			con_printf( CON_DEBUG, "\nPlaying title song..." );
-			songs_play_song( SONG_TITLE, 1);
-			song_playing = 1;
-#ifdef ANDROID
-			crash_breadcrumb("show_titles: after song, checking logos");
-#endif
-			con_printf( CON_DEBUG, "\nShowing logo screens..." );
-
-			strcpy(filename, HIRESMODE?"iplogo1b.pcx":"iplogo1.pcx"); // OEM
-			if (! PHYSFSX_exists(filename,1))
-				strcpy(filename, "iplogo1.pcx"); // SHAREWARE
-			if (! PHYSFSX_exists(filename,1))
-				strcpy(filename, "mplogo.pcx"); // MAC SHAREWARE
-			if (PHYSFSX_exists(filename,1))
+			if (played == MOVIE_NOT_PLAYED)
 			{
+				con_printf( CON_DEBUG, "\nPlaying title song..." );
+				songs_play_song( SONG_TITLE, 1);
+				song_playing = 1;
 #ifdef ANDROID
-				crash_breadcrumb_v("show_titles: logo1=%s", filename);
+				crash_breadcrumb("show_titles: after song, checking logos");
 #endif
-				show_title_screen(filename, 1, 1);
-			}
+				con_printf( CON_DEBUG, "\nShowing logo screens..." );
 
-			strcpy(filename, HIRESMODE?"logob.pcx":"logo.pcx"); // OEM
-			if (! PHYSFSX_exists(filename,1))
-				strcpy(filename, "logo.pcx"); // SHAREWARE
-			if (! PHYSFSX_exists(filename,1))
-				strcpy(filename, "plogo.pcx"); // MAC SHAREWARE
-			if (PHYSFSX_exists(filename,1))
-			{
+				strcpy(filename, HIRESMODE?"iplogo1b.pcx":"iplogo1.pcx"); // OEM
+				if (! PHYSFSX_exists(filename,1))
+					strcpy(filename, "iplogo1.pcx"); // SHAREWARE
+				if (! PHYSFSX_exists(filename,1))
+					strcpy(filename, "mplogo.pcx"); // MAC SHAREWARE
+				if (PHYSFSX_exists(filename,1))
+				{
 #ifdef ANDROID
-				crash_breadcrumb_v("show_titles: logo2=%s", filename);
+					crash_breadcrumb_v("show_titles: logo1=%s", filename);
 #endif
-				show_title_screen(filename, 1, 1);
+					show_title_screen(filename, 1, 1);
+				}
+
+				strcpy(filename, HIRESMODE?"logob.pcx":"logo.pcx"); // OEM
+				if (! PHYSFSX_exists(filename,1))
+					strcpy(filename, "logo.pcx"); // SHAREWARE
+				if (! PHYSFSX_exists(filename,1))
+					strcpy(filename, "plogo.pcx"); // MAC SHAREWARE
+				if (PHYSFSX_exists(filename,1))
+				{
+#ifdef ANDROID
+					crash_breadcrumb_v("show_titles: logo2=%s", filename);
+#endif
+					show_title_screen(filename, 1, 1);
+				}
 			}
 		}
 	}
+	else
+	{
+
+#ifdef ANDROID
+		g_intro_skip_applied = 1;
+#endif
+		intro_played = 1;
+	}
+
+#ifdef ANDROID
+	g_intro_active = 0;
+#endif
 
 	{       //show bundler movie or screens
 		PHYSFS_file *movie_handle;

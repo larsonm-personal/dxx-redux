@@ -2731,7 +2731,9 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 		if (bm->gltexture == NULL)
 			return 0;
 		ogl_texwrap(bm->gltexture, GL_REPEAT);
+	#if defined(ANDROID) && defined(OGL_MERGE)
 		ogl_clear_metl154_secondary_units_for_single(bm);
+	#endif
 		r_tpolyc++;
 #ifdef ANDROID
 		/* android port: log first few 3D texture bindings per level for debugging */

@@ -178,6 +178,10 @@ class MainActivity :
 
     external fun nativeIsSkippableScreen(): Boolean
 
+    external fun nativeIsIntroActive(): Boolean
+
+    external fun nativeSetSkipIntroMovie(enabled: Boolean)
+
     external fun nativeIsSaveLoadMenuActive(): Boolean
 
     external fun nativeIsPlayerDead(): Boolean
@@ -491,6 +495,7 @@ class MainActivity :
             } else {
                 android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             }
+        applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)
 
         // Allow rendering into the display cutout (notch) area
@@ -743,6 +748,13 @@ class MainActivity :
         skipButton =
             SkipButtonView(this).apply {
                 keyCallback = { action, keyCode, unicode -> nativeKeyEvent(action, keyCode, unicode) }
+                skipEveryLaunchCallback = {
+                    getSharedPreferences("dxx_prefs", MODE_PRIVATE)
+                        .edit()
+                        .putBoolean(PREF_SKIP_INTRO_MOVIE, true)
+                        .apply()
+                    nativeSetSkipIntroMovie(true)
+                }
                 visibility = View.GONE
             }
 
@@ -1170,6 +1182,7 @@ class MainActivity :
             }
         overlayEnabled = prefs.getBoolean("touch_overlay_enabled", !hasController)
         syncDebugLogPrefs()
+        applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)
         applyGraphicsDebugPrefs(prefs)
         // Start polling in-game state to show/hide overlay
@@ -1195,6 +1208,14 @@ class MainActivity :
                     0
                 },
             )
+        } catch (_: Exception) {
+            // JNI may not be ready yet when the activity is first coming up
+        }
+    }
+
+    private fun applySkipIntroPref(prefs: android.content.SharedPreferences) {
+        try {
+            nativeSetSkipIntroMovie(prefs.getBoolean(PREF_SKIP_INTRO_MOVIE, false))
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up
         }
@@ -1313,6 +1334,12 @@ class MainActivity :
                                 } catch (_: Exception) {
                                     false
                                 }
+                            val introActive =
+                                try {
+                                    nativeIsIntroActive()
+                                } catch (_: Exception) {
+                                    false
+                                }
                             val playerDead =
                                 try {
                                     nativeIsPlayerDead()
@@ -1362,15 +1389,23 @@ class MainActivity :
                                     false
                                 }
                             if (saveloadMenu) {
+                                skipButton.bigLabel = false
                                 skipButton.label = "BACK"
                                 skipButton.visibility = View.VISIBLE
                             } else if (levelComplete) {
+                                skipButton.bigLabel = false
                                 skipButton.label = "NEXT"
                                 skipButton.visibility = View.VISIBLE
+                            } else if (introActive) {
+                                skipButton.bigLabel = true
+                                skipButton.label = "Skip every launch"
+                                skipButton.visibility = View.VISIBLE
                             } else if (showCutsceneButton && !shouldShow) {
+                                skipButton.bigLabel = false
                                 skipButton.label = if (playerDead) "CONTINUE" else "SKIP"
                                 skipButton.visibility = View.VISIBLE
                             } else {
+                                skipButton.bigLabel = false
                                 skipButton.visibility = View.GONE
                             }
                             // Enable/disable joystick input when overlay state changes

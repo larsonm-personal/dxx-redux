@@ -59,6 +59,10 @@ extern int r_hires_loaded;
 /* -- EGL surface recreation counter (defined in arch/ogl/gr.c) -- */
 extern "C" int ogl_get_egl_recreate_count(void);
 
+/* -- Android intro tracking globals (defined in android_input.c) -- */
+extern "C" volatile int g_intro_active;
+extern "C" volatile int g_intro_skip_applied;
+
 /* -- Display surface dimensions (defined in android_surface.c) -- */
 extern "C" int android_surface_get_display_width(void);
 extern "C" int android_surface_get_display_height(void);
@@ -778,6 +782,8 @@ extern "C" char *game_introspect_get_state(void)
 	j["screen_mode"] = screen_mode_name(Screen_mode);
 	j["game_mode"] = Game_mode;
 	j["quitting"] = (bool) Quitting;
+	j["intro_active"] = (bool) g_intro_active;
+	j["intro_skip_applied"] = (bool) g_intro_skip_applied;
 	j["difficulty"] = Difficulty_level;
 	j["current_level_num"] = Current_level_num;
 	j["current_level_name"] = Current_level_name;

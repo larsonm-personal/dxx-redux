@@ -1,8 +1,9 @@
 // TEST: Engine prefs launcher persistence (unified launcher + game)
 //
 // Phase 1: create a pilot from a clean state
-// Phase 2: write cockpit mode and auto-level through the launcher path
-// Phase 3: relaunch and verify the running game reports those values
+// Phase 2: verify the app-level intro auto-skip launcher pref
+// Phase 3: write cockpit mode and auto-level through the launcher path
+// Phase 4: relaunch and verify the running game reports those values
 [
     {"_info": {
         "games": ["d1", "d2"],
@@ -38,16 +39,33 @@
     {"action": "log", "message": "Pilot created, returning to launcher"},
     {"action": "enter_launcher"},
 
-    // -- Phase 2: Write pilot-backed engine prefs through launcher path --
+    // -- Phase 2: Verify app-level intro auto-skip launcher pref --
     {"action": "enter_launcher"},
-    {"action": "log", "message": "=== Phase 2: Write engine prefs (${GAME}) ==="},
+    {"action": "log", "message": "=== Phase 2: Verify intro auto-skip pref (${GAME}) ==="},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "skip_intro_movie", "value": true}, "post_delay_ms": 250},
+    {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 1000},
+    {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "assert", "expect": {
+        "intro_active": "false",
+        "intro_skip_applied": "true",
+        "screen_mode": "menu"
+    }},
+    {"action": "enter_launcher"},
+    {"action": "setup_command", "command": "write_bool_pref",
+     "args": {"key": "skip_intro_movie", "value": false}, "post_delay_ms": 250},
+
+    // -- Phase 3: Write pilot-backed engine prefs through launcher path --
+    {"action": "enter_launcher"},
+    {"action": "log", "message": "=== Phase 3: Write engine prefs (${GAME}) ==="},
     {"action": "setup_command", "command": "write_engine_prefs",
      "args": {"cockpit_mode": 2, "auto_leveling": false}, "post_delay_ms": 1000},
     {"action": "tap_button", "text": "Descent ${GAME_NUM}", "post_delay_ms": 1000},
     {"action": "tap_button", "text": "Launch Descent ${GAME_NUM}", "launches_game": true},
 
-    // -- Phase 3: Verify running game sees saved prefs --
-    {"action": "log", "message": "=== Phase 3: Verify engine prefs in game (${GAME}) ==="},
+    // -- Phase 4: Verify running game sees saved prefs --
+    {"action": "log", "message": "=== Phase 4: Verify engine prefs in game (${GAME}) ==="},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
     {"action": "key", "key": "enter", "post_delay_ms": 100},
     {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},

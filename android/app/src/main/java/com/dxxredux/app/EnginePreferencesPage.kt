@@ -42,6 +42,7 @@ import java.io.File
 
 internal const val PREF_GUIDEBOT_HELPER_LINE = "guidebot_helper_line_enabled"
 internal const val PREF_NEAREST_PLAYER_LINE = "nearest_player_line_enabled"
+internal const val PREF_SKIP_INTRO_MOVIE = "skip_intro_movie"
 
 private const val CM_FULL_COCKPIT = 0
 private const val CM_STATUS_BAR = 2
@@ -80,6 +81,9 @@ fun EnginePreferencesPage(
     }
     var showNearestPlayerLine by remember {
         mutableStateOf(prefs.getBoolean(PREF_NEAREST_PLAYER_LINE, true))
+    }
+    var skipIntroMovie by remember {
+        mutableStateOf(prefs.getBoolean(PREF_SKIP_INTRO_MOVIE, false))
     }
 
     val hasChanges = cockpitMode != savedCockpitMode || autoLeveling != savedAutoLeveling
@@ -231,6 +235,41 @@ fun EnginePreferencesPage(
                         fontSize = 9.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("Launch Intro", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    "Applies to the launch intro only. Other movies stay tap-to-skip",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Switch(
+                        checked = skipIntroMovie,
+                        onCheckedChange = { checked ->
+                            skipIntroMovie = checked
+                            prefs.edit().putBoolean(PREF_SKIP_INTRO_MOVIE, checked).apply()
+                        },
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text("Skip intro movie on launch", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Skips the D1/D2 startup intro sequence, but leaves other movies skippable by tap",
+                            fontSize = 9.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))

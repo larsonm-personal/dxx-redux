@@ -49,6 +49,20 @@ volatile int g_automap_center = 0;
  */
 volatile int g_skippable_active = 0;
 
+/* Set to 1 while the launch intro/title sequence is active.
+ * Kotlin uses this to swap the Skip overlay to a larger
+ * "Skip every launch" button. */
+volatile int g_intro_active = 0;
+
+/* Shared launcher preference: auto-skip the launch intro/title sequence.
+ * Written by JNI from Kotlin, read by d1/d2 titles.c. */
+volatile int g_skip_intro_pref = 0;
+
+/* Set to 1 when the current launch actually bypassed the intro/title segment
+ * because the launcher preference requested it.  Exposed via introspection for
+ * automation checks. */
+volatile int g_intro_skip_applied = 0;
+
 /* Set to 1 while save/load menu is open.  Kotlin shows a BACK button. */
 volatile int g_saveload_menu_active = 0;
 
@@ -570,6 +584,22 @@ JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MainActivity_nativeIsSkippableScreen(JNIEnv *env, jobject thiz)
 {
 	return g_skippable_active ? JNI_TRUE : JNI_FALSE;
+}
+
+extern volatile int g_intro_active;
+
+JNIEXPORT jboolean JNICALL
+Java_com_dxxredux_app_MainActivity_nativeIsIntroActive(JNIEnv *env, jobject thiz)
+{
+	return g_intro_active ? JNI_TRUE : JNI_FALSE;
+}
+
+extern volatile int g_skip_intro_pref;
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeSetSkipIntroMovie(JNIEnv *env, jobject thiz, jboolean enabled)
+{
+	g_skip_intro_pref = enabled ? 1 : 0;
 }
 
 extern volatile int g_saveload_menu_active;

@@ -59,6 +59,7 @@
 ## building
 - standard cmake commands (`mkdir build`, `cd build`, `cmake ..`, `cmake --build .`)
 - see .github\workflows\package-msvc.yml for specific cmake commands
+- for Windows host-build verification, run `run-windows-build.ps1` from repo root instead of calling existing `buildd1`/`buildd2` directories directly. it imports the MSVC environment and finds cmake/ninja for you
 - sometimes on windows cl.exe becomes a zombie. kill it before starting cmake builds
 - don't run builds until 100 errors (the msbuild default). stop around 10 (`/errorlimit:10`). later errors are often useless anyway
 
