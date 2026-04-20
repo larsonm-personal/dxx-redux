@@ -480,7 +480,9 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
 		g_merged_wall_experiment_pending_apply = 1;
 	} else if (strcmp(name, "merged_wall_snapshot") == 0) {
 		if (value) {
-			android_merged_wall_request_snapshot();
+			android_merged_wall_request_snapshot(
+			    value == MERGED_WALL_REQUEST_PROBE ? MERGED_WALL_REQUEST_PROBE
+			                                       : MERGED_WALL_REQUEST_SNAPSHOT);
 			LOGI("debug flag: merged_wall_snapshot requested at frame=%d",
 			     (int) g_merged_wall_snapshot_request_frame);
 		}

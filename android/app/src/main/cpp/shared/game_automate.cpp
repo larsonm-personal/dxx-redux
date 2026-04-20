@@ -61,6 +61,7 @@ extern "C" {
 
 /* Automap_active is defined in automap.c; we just need the extern. */
 extern "C" int Automap_active;
+extern "C" int Current_level_num;
 extern "C" volatile int g_intro_active;
 
 /* -- Key name -> SDLKey mapping ---------------------------------------- */
@@ -191,7 +192,10 @@ enum step_type {
 	STEP_SKIP_BRIEFING,           /* escape only if a non-game window covers Game_wind */
 	STEP_ASSERT_OVERLAY,          /* check overlay ring buffer for matching entry */
 	STEP_FACE_VIEW,               /* move player inside a segment and face a wall */
+	STEP_FACE_FIRST_MERGED,       /* move player to the first merged face on the level */
 	STEP_POSE_VIEW,               /* move player to an exact position and orientation */
+	STEP_PROBE_CROSSHAIR,         /* request merged-wall crosshair probe and wait */
+	STEP_ASSERT_PROBE_MATCH,      /* compare two stored probe results */
 	STEP_ENTER_LAUNCHER,          /* yield back to launcher, write LAUNCHER_CONTINUE */
 	STEP_ENTER_GAME,              /* launcher-only: no-op in game engine (skip) */
 	STEP_SETUP_COMMAND,           /* launcher-only: no-op in game engine (skip) */
@@ -226,6 +230,7 @@ struct auto_step {
 	std::string value;                  /* STEP_WAIT_FOR: expected value */
 	int timeout_ms = 0;                 /* STEP_WAIT_FOR: timeout (0 = infinite) */
 	std::string message;                /* STEP_LOG: message text */
+	std::string label;                  /* STEP_PROBE_CROSSHAIR: log label */
 	std::vector<assert_expect> expects; /* STEP_ASSERT: expected values */
 	std::string select_text;            /* STEP_SELECT: partial text to match */
 	bool optional = false;              /* STEP_SELECT: skip instead of fail on timeout */
@@ -244,6 +249,12 @@ struct auto_step {
 	int pitch = 0;                      /* STEP_POSE_VIEW: exact pitch */
 	int bank = 0;                       /* STEP_POSE_VIEW: exact bank */
 	int heading = 0;                    /* STEP_POSE_VIEW: exact heading */
+	int request_frame = -1;             /* STEP_PROBE_CROSSHAIR: request frame */
+	std::string match_label_a;          /* STEP_ASSERT_PROBE_MATCH: first label */
+	std::string match_label_b;          /* STEP_ASSERT_PROBE_MATCH: second label */
+	float hot_xy_tolerance = 0.02f;     /* STEP_ASSERT_PROBE_MATCH: max L-inf distance */
+	int require_hash_match = 0;         /* STEP_ASSERT_PROBE_MATCH: also require render_hash equal */
+	float max_mean_luma_diff = 0.0f;    /* STEP_ASSERT_PROBE_MATCH: 0 disables SAD check */
 };
 
 /* -- Script state ----------------------------------------------------- */
@@ -268,6 +279,58 @@ static Uint32 g_script_start = 0; /* SDL_GetTicks() when script began */
 static FILE *g_log_fp = NULL;     /* automation_log.jsonl file handle */
 static int g_log_seq = 0;         /* monotonic sequence for log lines */
 
+/* -- Probe result store for assert_probe_match ------------------------ */
+struct stored_probe {
+	std::string label;
+	int valid = 0;
+	int render_sample_valid = 0;
+	float hot_x = 0.0f;
+	float hot_y = 0.0f;
+	unsigned int render_hash = 0;
+	int orient = -1;
+	int seg = -1;
+	int side = -1;
+	int face = -1;
+	unsigned char luma[MERGED_WALL_PROBE_RENDER_SAMPLE_COUNT] = {};
+	unsigned char mask[MERGED_WALL_PROBE_RENDER_SAMPLE_COUNT] = {};
+};
+static std::vector<stored_probe> g_stored_probes;
+
+static const stored_probe *find_stored_probe(const std::string &label)
+{
+	for (const auto &sp : g_stored_probes) {
+		if (sp.label == label)
+			return &sp;
+	}
+	return NULL;
+}
+
+static void store_probe_result(const std::string &label)
+{
+	if (label.empty())
+		return;
+	stored_probe sp;
+	sp.label = label;
+	sp.valid = 1;
+	sp.render_sample_valid = g_merged_wall_probe_result.render_sample_valid;
+	sp.hot_x = g_merged_wall_probe_result.render_hot_x;
+	sp.hot_y = g_merged_wall_probe_result.render_hot_y;
+	sp.render_hash = g_merged_wall_probe_result.render_hash;
+	sp.orient = g_merged_wall_probe_result.orient;
+	sp.seg = g_merged_wall_probe_result.seg;
+	sp.side = g_merged_wall_probe_result.side;
+	sp.face = g_merged_wall_probe_result.face;
+	memcpy(sp.luma, g_merged_wall_probe_result.render_sample_luma, sizeof(sp.luma));
+	memcpy(sp.mask, g_merged_wall_probe_result.render_sample_mask, sizeof(sp.mask));
+	for (auto &existing : g_stored_probes) {
+		if (existing.label == label) {
+			existing = sp;
+			return;
+		}
+	}
+	g_stored_probes.push_back(sp);
+}
+
 static const char *step_type_name(step_type t)
 {
 	switch (t) {
@@ -284,7 +347,10 @@ static const char *step_type_name(step_type t)
 		case STEP_SKIP_BRIEFING: return "skip_briefing";
 		case STEP_ASSERT_OVERLAY: return "assert_overlay";
 		case STEP_FACE_VIEW: return "face_view";
+		case STEP_FACE_FIRST_MERGED: return "face_first_merged";
 		case STEP_POSE_VIEW: return "pose_view";
+		case STEP_PROBE_CROSSHAIR: return "probe_crosshair";
+		case STEP_ASSERT_PROBE_MATCH: return "assert_probe_match";
 		case STEP_ENTER_LAUNCHER: return "enter_launcher";
 		case STEP_ENTER_GAME: return "enter_game";
 		case STEP_SETUP_COMMAND: return "setup_command";
@@ -838,6 +904,40 @@ static int move_player_to_face_view(const auto_step &s, char *reason, size_t rea
 	return 1;
 }
 
+static int move_player_to_first_merged_face(auto_step &s, char *reason, size_t reason_size)
+{
+	auto_step attempt = s;
+
+	for (int segnum = 0; segnum <= Highest_segment_index; ++segnum) {
+		segment *segp = &Segments[segnum];
+
+		for (int sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; ++sidenum) {
+			side *sidep = &segp->sides[sidenum];
+			int face_count;
+
+			if (sidep->tmap_num2 == 0)
+				continue;
+			face_count = sidep->type == SIDE_IS_QUAD ? 1 : 2;
+			for (int face = 0; face < face_count; ++face) {
+				attempt.segment = segnum;
+				attempt.side = sidenum;
+				attempt.face = face;
+				if (!move_player_to_face_view(attempt, reason, reason_size))
+					continue;
+				s.segment = segnum;
+				s.side = sidenum;
+				s.face = face;
+				LOGI("face_first_merged: seg=%d side=%d face=%d tmap1=%d tmap2=0x%x",
+				     segnum, sidenum, face, sidep->tmap_num, sidep->tmap_num2);
+				return 1;
+			}
+		}
+	}
+
+	snprintf(reason, reason_size, "face_first_merged: no merged faces on level %d", Current_level_num);
+	return 0;
+}
+
 static int move_player_to_pose(const auto_step &s, char *reason, size_t reason_size)
 {
 	vms_vector new_pos;
@@ -1006,7 +1106,10 @@ static int parse_script(const char *json_text)
 			else if (action == "skip_briefing") s.type = STEP_SKIP_BRIEFING;
 			else if (action == "assert_overlay") s.type = STEP_ASSERT_OVERLAY;
 			else if (action == "face_view") s.type = STEP_FACE_VIEW;
+			else if (action == "face_first_merged") s.type = STEP_FACE_FIRST_MERGED;
 			else if (action == "pose_view") s.type = STEP_POSE_VIEW;
+			else if (action == "probe_crosshair") s.type = STEP_PROBE_CROSSHAIR;
+			else if (action == "assert_probe_match") s.type = STEP_ASSERT_PROBE_MATCH;
 			else if (action == "enter_launcher") s.type = STEP_ENTER_LAUNCHER;
 			else if (action == "enter_game") s.type = STEP_ENTER_GAME;
 			else if (action == "setup_command") s.type = STEP_SETUP_COMMAND;
@@ -1028,6 +1131,7 @@ static int parse_script(const char *json_text)
 			s.value = step_json.value("value", "");
 			s.timeout_ms = step_json.value("timeout_ms", 0);
 			s.message = step_json.value("message", "");
+			s.label = step_json.value("label", "");
 			s.select_text = step_json.value("text", "");
 			s.optional = step_json.value("optional", false);
 			s.axis_id = step_json.value("axis", -1);
@@ -1045,6 +1149,16 @@ static int parse_script(const char *json_text)
 			s.pitch = step_json.value("pitch", 0);
 			s.bank = step_json.value("bank", 0);
 			s.heading = step_json.value("heading", 0);
+			s.hot_xy_tolerance = step_json.value("hot_xy_tolerance", 0.02f);
+			s.require_hash_match = step_json.value("require_hash_match", 0);
+			s.max_mean_luma_diff = step_json.value("max_mean_luma_diff", 0.0f);
+
+			/* STEP_ASSERT_PROBE_MATCH: two labels to compare */
+			if (step_json.contains("labels") && step_json["labels"].is_array() &&
+			    step_json["labels"].size() >= 2) {
+				s.match_label_a = step_json["labels"][0].get<std::string>();
+				s.match_label_b = step_json["labels"][1].get<std::string>();
+			}
 
 			/* Parse "expect" object for STEP_ASSERT */
 			if (step_json.contains("expect") && step_json["expect"].is_object()) {
@@ -1720,6 +1834,23 @@ extern "C" void game_automate_tick(void)
 			}
 			break;
 
+		case STEP_FACE_FIRST_MERGED:
+			if (g_key_phase == 0) {
+				char reason[256];
+
+				if (!move_player_to_first_merged_face(s, reason, sizeof(reason))) {
+					log_append("face_first_merged", "fail", reason);
+					stop_script_fail(reason);
+					break;
+				}
+				log_append("face_first_merged", "done", "");
+				g_key_phase = 1;
+				g_step_start = now;
+			} else if (elapsed >= (Uint32) s.post_delay_ms) {
+				advance_step();
+			}
+			break;
+
 		case STEP_POSE_VIEW:
 			if (g_key_phase == 0) {
 				char reason[256];
@@ -1736,6 +1867,146 @@ extern "C" void game_automate_tick(void)
 				advance_step();
 			}
 			break;
+
+		case STEP_PROBE_CROSSHAIR: {
+			const Uint32 timeout = (Uint32) (s.timeout_ms > 0 ? s.timeout_ms : 2000);
+
+			if (g_key_phase == 0) {
+				char detail[192];
+
+				android_merged_wall_request_snapshot(MERGED_WALL_REQUEST_PROBE);
+				s.request_frame = g_merged_wall_frame_id;
+				g_key_phase = 1;
+				g_step_start = now;
+				if (!s.label.empty())
+					snprintf(detail, sizeof(detail), "label=%s request_frame=%d",
+					         s.label.c_str(), s.request_frame);
+				else
+					snprintf(detail, sizeof(detail), "request_frame=%d", s.request_frame);
+				log_append("probe_crosshair", "start", detail);
+			} else if (g_merged_wall_probe_result.valid &&
+			           g_merged_wall_probe_result.request_frame == s.request_frame &&
+			           strcmp(g_merged_wall_probe_result.status, "pending") != 0) {
+				char detail[640];
+
+				if (!strcmp(g_merged_wall_probe_result.status, "ok")) {
+					snprintf(detail, sizeof(detail),
+					         "status=ok seg=%d side=%d face=%d orient=%d route=%s merge_impl=%s flip=%s screen_axis=%s u_shift=%.6f v_shift=%.6f u_span=%.6f v_span=%.6f cached_anchor=%.6f/%.6f legacy_anchor=%.6f/%.6f route_agree=%d render_valid=%d render_hot=%d render_hash=0x%08x render_luma=%d..%d render_hot_xy=%.3f/%.3f",
+					         g_merged_wall_probe_result.seg,
+					         g_merged_wall_probe_result.side,
+					         g_merged_wall_probe_result.face,
+					         g_merged_wall_probe_result.orient,
+					         g_merged_wall_probe_result.route,
+					         g_merged_wall_probe_result.merge_impl,
+					         g_merged_wall_probe_result.ovl_flip_axis,
+					         g_merged_wall_probe_result.flip_screen_axis,
+					         g_merged_wall_probe_result.u_shift_hint,
+					         g_merged_wall_probe_result.v_shift_hint,
+					         g_merged_wall_probe_result.u_span,
+					         g_merged_wall_probe_result.v_span,
+					         g_merged_wall_probe_result.cached_anchor_u,
+					         g_merged_wall_probe_result.cached_anchor_v,
+					         g_merged_wall_probe_result.legacy_anchor_u,
+					         g_merged_wall_probe_result.legacy_anchor_v,
+					         g_merged_wall_probe_result.route_agree,
+					         g_merged_wall_probe_result.render_valid_cells,
+					         g_merged_wall_probe_result.render_hot_cells,
+					         g_merged_wall_probe_result.render_hash,
+					         g_merged_wall_probe_result.render_luma_min,
+					         g_merged_wall_probe_result.render_luma_max,
+					         g_merged_wall_probe_result.render_hot_x,
+					         g_merged_wall_probe_result.render_hot_y);
+					log_append("probe_crosshair", "done", detail);
+					store_probe_result(s.label);
+					advance_step();
+				} else {
+					char reason[256];
+
+					if (!s.label.empty())
+						snprintf(reason, sizeof(reason), "probe_crosshair[%s]: %s",
+						         s.label.c_str(), g_merged_wall_probe_result.status);
+					else
+						snprintf(reason, sizeof(reason), "probe_crosshair: %s",
+						         g_merged_wall_probe_result.status);
+					log_append("probe_crosshair", "fail", reason);
+					stop_script_fail(reason);
+				}
+			} else if (elapsed >= timeout) {
+				char reason[256];
+
+				if (!s.label.empty())
+					snprintf(reason, sizeof(reason), "probe_crosshair[%s]: timed out after %u ms",
+					         s.label.c_str(), (unsigned) timeout);
+				else
+					snprintf(reason, sizeof(reason), "probe_crosshair: timed out after %u ms",
+					         (unsigned) timeout);
+				log_append("probe_crosshair", "fail", reason);
+				stop_script_fail(reason);
+			}
+			break;
+		}
+
+		case STEP_ASSERT_PROBE_MATCH: {
+			char detail[512];
+			const stored_probe *a = find_stored_probe(s.match_label_a);
+			const stored_probe *b = find_stored_probe(s.match_label_b);
+
+			if (!a || !b) {
+				snprintf(detail, sizeof(detail),
+				         "assert_probe_match: missing probe label (%s:%s %s:%s)",
+				         s.match_label_a.c_str(), a ? "ok" : "missing",
+				         s.match_label_b.c_str(), b ? "ok" : "missing");
+				log_append("assert_probe_match", "fail", detail);
+				stop_script_fail(detail);
+				break;
+			}
+			if (!a->render_sample_valid || !b->render_sample_valid) {
+				snprintf(detail, sizeof(detail),
+				         "assert_probe_match[%s vs %s]: render_sample not valid (a=%d b=%d)",
+				         s.match_label_a.c_str(), s.match_label_b.c_str(),
+				         a->render_sample_valid, b->render_sample_valid);
+				log_append("assert_probe_match", "fail", detail);
+				stop_script_fail(detail);
+				break;
+			}
+			float dx = a->hot_x - b->hot_x;
+			float dy = a->hot_y - b->hot_y;
+			float adx = dx < 0 ? -dx : dx;
+			float ady = dy < 0 ? -dy : dy;
+			int hash_eq = (a->render_hash == b->render_hash);
+			/* Per-cell SAD across cells valid in BOTH probes. Catches
+			 * pixel-level mirror/flip even when the centroid of hot cells
+			 * happens to land in the same place on symmetric overlays. */
+			long sad_sum = 0;
+			int sad_count = 0;
+			for (int i = 0; i < MERGED_WALL_PROBE_RENDER_SAMPLE_COUNT; i++) {
+				if (!a->mask[i] || !b->mask[i])
+					continue;
+				int d = (int) a->luma[i] - (int) b->luma[i];
+				sad_sum += (d < 0 ? -d : d);
+				sad_count++;
+			}
+			float mean_luma_diff = sad_count > 0 ? (float) sad_sum / (float) sad_count : 0.0f;
+			int sad_ok = 1;
+			if (s.max_mean_luma_diff > 0.0f && sad_count > 0)
+				sad_ok = (mean_luma_diff <= s.max_mean_luma_diff);
+			snprintf(detail, sizeof(detail),
+			         "a=%s(seg=%d/%d/%d hash=0x%08x hot=%.3f/%.3f) b=%s(seg=%d/%d/%d hash=0x%08x hot=%.3f/%.3f) dxy=%.3f/%.3f tol=%.3f hash_eq=%d require_hash=%d sad_mean=%.1f sad_cells=%d sad_max=%.1f",
+			         s.match_label_a.c_str(), a->seg, a->side, a->face, a->render_hash,
+			         a->hot_x, a->hot_y,
+			         s.match_label_b.c_str(), b->seg, b->side, b->face, b->render_hash,
+			         b->hot_x, b->hot_y,
+			         adx, ady, s.hot_xy_tolerance, hash_eq, s.require_hash_match,
+			         mean_luma_diff, sad_count, s.max_mean_luma_diff);
+			if (!hot_ok || (s.require_hash_match && !hash_eq) || !sad_ok) {
+				log_append("assert_probe_match", "fail", detail);
+				stop_script_fail(detail);
+				break;
+			}
+			log_append("assert_probe_match", "done", detail);
+			advance_step();
+			break;
+		}
 
 		case STEP_ENTER_LAUNCHER: {
 			/* Yield control back to the launcher (Kotlin).
@@ -1799,8 +2070,14 @@ extern "C" void game_automate_tick(void)
 					}
 				}
 			} else if (s.field == "merged_wall_snapshot") {
-				if (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0)
-					android_merged_wall_request_snapshot();
+				int request_mode = (int) strtol(s.value.c_str(), NULL, 10);
+
+				if (strcasecmp(s.value.c_str(), "true") == 0)
+					request_mode = MERGED_WALL_REQUEST_SNAPSHOT;
+				if (request_mode != 0)
+					android_merged_wall_request_snapshot(
+					    request_mode == MERGED_WALL_REQUEST_PROBE ? MERGED_WALL_REQUEST_PROBE
+					                                              : MERGED_WALL_REQUEST_SNAPSHOT);
 			} else if (s.field == "merged_wall_experiment") {
 				int experiment = (int) std::stod(s.value);
 

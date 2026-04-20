@@ -228,10 +228,13 @@ static int ogl_merged_wall_next_draw_order(void)
 }
 
 static void ogl_merged_wall_track_face(g3s_point **pointlist, int nv,
-	int draw_order, const char *route, const char *merge_impl)
+	const g3s_uvl *uvl_list, int orient, int draw_order,
+	const char *route, const char *merge_impl,
+	grs_bitmap *merged_bitmap, int merged_slot)
 {
 	android_merged_wall_track_face((const struct g3s_point **)pointlist, nv,
-		draw_order, route, merge_impl, NULL);
+		uvl_list, orient, draw_order, route, merge_impl, NULL,
+		merged_bitmap, merged_slot);
 }
 
 static void ogl_log_merged_wall_cover(const char *shader_kind, const char *botname,
@@ -1960,7 +1963,15 @@ static void ogl_android_texmerge_build_uvs(GLfloat *bot_uv, GLfloat *ovl_uv,
 	GLfloat ovl_v_max, int orient)
 {
 	static const GLfloat base_u[4] = {0.0f, 1.0f, 1.0f, 0.0f};
-	static const GLfloat base_v[4] = {0.0f, 0.0f, 1.0f, 1.0f};
+	/* ANDROID: base_v inverted to match GL ES FBO orientation.
+	 * The cached-texmerge quad draws at NDC y corners {+1,+1,-1,-1} with
+	 * glViewport(0,0,w,h). NDC y=-1 lands at framebuffer pixel y=0, which
+	 * reads back as texture v=0. Pairing NDC y=-1 with base_v=1 (not 0)
+	 * keeps the cached composite's texture-space V aligned with the CPU
+	 * merge_textures_new reference; without this inversion the cached
+	 * overlay is Y-flipped, which appears as a U-mirror on orient 1/3
+	 * faces and a V-flip on orient 0/2 faces. */
+	static const GLfloat base_v[4] = {1.0f, 1.0f, 0.0f, 0.0f};
 	int i;
 
 	for (i = 0; i < 4; ++i) {
@@ -1992,7 +2003,7 @@ static void ogl_android_texmerge_build_uvs(GLfloat *bot_uv, GLfloat *ovl_uv,
 }
 
 static grs_bitmap *ogl_android_get_cached_plain_texmerge_bitmap(grs_bitmap *bmbot,
-	grs_bitmap *bmovl, int orient)
+	grs_bitmap *bmovl, int orient, int *out_slot)
 {
 	static const GLfloat identity[16] = {
 		1.0f, 0.0f, 0.0f, 0.0f,
@@ -2023,6 +2034,9 @@ static grs_bitmap *ogl_android_get_cached_plain_texmerge_bitmap(grs_bitmap *bmbo
 	int i, slot, tex_flags;
 	fix64 lowest_time;
 
+	if (out_slot)
+		*out_slot = -1;
+
 	if (!ogl_android_texmerge_cache_initialized)
 		ogl_android_texmerge_cache_clear();
 	if (!bmbot || !bmovl || !bmbot->gltexture || !bmovl->gltexture)
@@ -2037,6 +2051,8 @@ static grs_bitmap *ogl_android_get_cached_plain_texmerge_bitmap(grs_bitmap *bmbo
 			&& entry->top_bmp == bmovl
 			&& entry->orient == orient) {
 			entry->last_time_used = timer_query();
+			if (out_slot)
+				*out_slot = entry->slot;
 			ogl_android_texmerge_log("reuse", bmbot, bmovl, orient,
 				entry->width, entry->height, entry->texture->handle,
 				entry->slot, entry->texture);
@@ -2215,6 +2231,8 @@ static grs_bitmap *ogl_android_get_cached_plain_texmerge_bitmap(grs_bitmap *bmbo
 	entry->last_time_used = timer_query();
 	ogl_android_texmerge_init_bitmap(&entry->bitmap, entry->texture,
 		bmbot->bm_flags & (~BM_FLAG_RLE), bmbot->avg_color, width, height);
+	if (out_slot)
+		*out_slot = entry->slot;
 	ogl_android_texmerge_log("create", bmbot, bmovl, orient, width, height,
 		entry->texture->handle, entry->slot, entry->texture);
 	return &entry->bitmap;
@@ -2943,8 +2961,9 @@ static bool ogl_draw_tmap_2_internal(int nv, g3s_point **pointlist, g3s_uvl *uvl
 				ovlname ? ovlname : "<none>");
 			metl154_tmap2_submit_ctx.route = "force_two_pass";
 		} else {
+			int merged_slot = -1;
 			grs_bitmap *merged = ogl_android_get_cached_plain_texmerge_bitmap(bmbot,
-				bmovl, orient);
+				bmovl, orient, &merged_slot);
 			if (merged) {
 				ogl_add_joined_texture_labels(label_pointlist, label_nv, bmbot, bmovl);
 				if (ogl_is_metl154_bitmap(bmovl)) {
@@ -2967,8 +2986,8 @@ static bool ogl_draw_tmap_2_internal(int nv, g3s_point **pointlist, g3s_uvl *uvl
 						botname ? botname : "<none>",
 						ovlname ? ovlname : "<none>");
 				}
-				ogl_merged_wall_track_face(pointlist, nv, draw_order,
-					"merge_cached", "gpu_cached_single");
+				ogl_merged_wall_track_face(pointlist, nv, uvl_list, orient, draw_order,
+					"merge_cached", "gpu_cached_single", merged, merged_slot);
 				return g3_draw_tmap(nv, pointlist, uvl_list, light_rgb, merged);
 			}
 		}
@@ -3135,10 +3154,11 @@ static bool ogl_draw_tmap_2_internal(int nv, g3s_point **pointlist, g3s_uvl *uvl
 
 #if defined(ANDROID)
 		gles3_shim_external_texcoord2_pointer(0, GL_FLOAT, 0, NULL);
-	if (is_metl154_plain) {
-		ogl_merged_wall_track_face(pointlist, nv, draw_order,
-			metl154_tmap2_submit_ctx.route, "gpu_two_pass");
-	} else if (!skip_metl154_cover_draw) {
+	if (g_android_draw_face_ctx.valid && g_android_draw_face_ctx.tmap2 != 0) {
+		ogl_merged_wall_track_face(pointlist, nv, uvl_list, orient, draw_order,
+			metl154_tmap2_submit_ctx.route, "gpu_two_pass", NULL, -1);
+	}
+	if (!is_metl154_plain && !skip_metl154_cover_draw) {
 		ogl_log_merged_wall_cover(super ? "mask" : "plain",
 			piggy_game_bitmap_name(bmbot), piggy_game_bitmap_name(bmovl),
 			pointlist, nv, uvl_list, color_array, draw_order, bmbot);

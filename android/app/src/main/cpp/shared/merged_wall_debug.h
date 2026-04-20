@@ -20,8 +20,10 @@ void android_merged_wall_log_face(struct segment *segp, int sidenum, int tmap1,
                                   int tmap2, int wid_flags, float dot, int nv, int face_index);
 int android_merged_wall_next_draw_order(void);
 void android_merged_wall_track_face(const struct g3s_point **pointlist, int nv,
+                                    const g3s_uvl *uvl_list, int orient,
                                     int draw_order, const char *route, const char *merge_impl,
-                                    const char *decision_reason);
+                                    const char *decision_reason, grs_bitmap *merged_bitmap,
+                                    int merged_slot);
 void android_merged_wall_log_cover(const char *shader_kind, const char *botname,
                                    const char *ovlname, const struct g3s_point **pointlist, int nv,
                                    const g3s_uvl *uvl_list, const float *color_array,

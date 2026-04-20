@@ -167,7 +167,10 @@ class SkipButtonView(
         return handlePointerEvent(localX, localY, event.actionMasked, skipEveryLaunch = true)
     }
 
-    fun handleIntroTouch(event: MotionEvent, hostView: View): Boolean {
+    fun handleIntroTouch(
+        event: MotionEvent,
+        hostView: View,
+    ): Boolean {
         if (hostView.width <= 0 || hostView.height <= 0) {
             return false
         }

@@ -884,9 +884,13 @@ function Watch-AutomationResult {
             }
         }
 
-        # Fallback: check logcat (include LauncherScript tag for launcher tests)
-        $logFilter = if ($IsLauncherScript) { "DXX-Automate:* DXX-LauncherScript:*" } else { "DXX-Automate:*" }
-        $log = Adb-Timeout -AdbArgs @("logcat", "-d", "-s", $logFilter) -Seconds 5
+        # Fallback: check logcat (include launcher/setup tags for launcher tests)
+        $logArgs = if ($IsLauncherScript) {
+            @("logcat", "-d", "-s", "DXX-Automate:*", "DXX-LauncherScript:*", "DXX-Setup:*")
+        } else {
+            @("logcat", "-d", "-s", "DXX-Automate:*")
+        }
+        $log = Adb-Timeout -AdbArgs $logArgs -Seconds 5
         if ($null -eq $log) {
             Write-Status "Warning: logcat not responding" "Yellow"
             continue
@@ -924,7 +928,12 @@ function Watch-AutomationResult {
                     Adb -AdbArgs @("shell", "input", "keyevent", "KEYCODE_BACK") | Out-Null
                     Start-Sleep -Seconds 2
                     Write-Status "App resumed -- continuing test monitoring" "Green"
-                } elseif ($line -match 'DXX-Automate' -and $line.Trim().Length -gt 0) {
+                } elseif (
+                    $line.Trim().Length -gt 0 -and (
+                        $line -match 'DXX-Automate' -or
+                        ($IsLauncherScript -and ($line -match 'DXX-LauncherScript' -or $line -match 'DXX-Setup'))
+                    )
+                ) {
                     Write-Host "  $($line.Trim())" -ForegroundColor Gray
                 }
             }

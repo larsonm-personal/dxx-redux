@@ -76,15 +76,15 @@ class VideoInfoOverlay(
     private var texFiltPressed = false
     private var mergedWallPressed = false
     private var mergedWallExperimentPressed = false
-    private var mergedWallSnapshotPressed = false
-    private var mergedWallSnapshotFlashUntilMs = 0L
+    private var mergedWallTapPressed = false
+    private var mergedWallTapFlashUntilMs = 0L
     private val buttonRect = RectF()
     private val anisoRect = RectF()
     private val msaaRect = RectF()
     private val texFiltRect = RectF()
     private val mergedWallRect = RectF()
     private val mergedWallExperimentRect = RectF()
-    private val mergedWallSnapshotRect = RectF()
+    private val mergedWallTapRect = RectF()
     private val panelBounds = RectF()
 
     private val pollRunnable =
@@ -481,18 +481,18 @@ class VideoInfoOverlay(
             canvas.drawText(mergedWallExperimentText, panelLeft + pad, y, mergedWallExperimentPaint)
             y += lineH
 
-            val snapshotActive = android.os.SystemClock.uptimeMillis() < mergedWallSnapshotFlashUntilMs
-            val mergedWallSnapshotText = if (snapshotActive) "mwall snap: Sent" else "mwall snap: Tap"
-            val mergedWallSnapshotPaint = if (snapshotActive) fpsGoodPaint else valuePaint
-            mergedWallSnapshotRect.set(
+            val tapActive = android.os.SystemClock.uptimeMillis() < mergedWallTapFlashUntilMs
+            val mergedWallTapText = if (tapActive) "mwall tap: Sent" else "mwall tap: Tap"
+            val mergedWallTapPaint = if (tapActive) fpsGoodPaint else valuePaint
+            mergedWallTapRect.set(
                 panelLeft + pad * 0.5f,
                 y - baseTextSize,
                 panelLeft + panelW - pad * 0.5f,
                 y + lineH * 0.3f,
             )
-            val mergedWallSnapshotBg = if (mergedWallSnapshotPressed) btnPressedPaint else btnNormalPaint
-            canvas.drawRoundRect(mergedWallSnapshotRect, pad * 0.5f, pad * 0.5f, mergedWallSnapshotBg)
-            canvas.drawText(mergedWallSnapshotText, panelLeft + pad, y, mergedWallSnapshotPaint)
+            val mergedWallTapBg = if (mergedWallTapPressed) btnPressedPaint else btnNormalPaint
+            canvas.drawRoundRect(mergedWallTapRect, pad * 0.5f, pad * 0.5f, mergedWallTapBg)
+            canvas.drawText(mergedWallTapText, mergedWallTapRect.left + pad * 0.5f, y, mergedWallTapPaint)
             y += lineH
 
             // Labels toggle button
@@ -510,7 +510,7 @@ class VideoInfoOverlay(
         } else {
             mergedWallRect.setEmpty()
             mergedWallExperimentRect.setEmpty()
-            mergedWallSnapshotRect.setEmpty()
+            mergedWallTapRect.setEmpty()
             buttonRect.setEmpty()
         }
     }
@@ -525,7 +525,7 @@ class VideoInfoOverlay(
         val inTexFilt = texFiltRect.contains(event.x, event.y)
         val inMergedWall = mergedWallRect.contains(event.x, event.y)
         val inMergedWallExperiment = mergedWallExperimentRect.contains(event.x, event.y)
-        val inMergedWallSnapshot = mergedWallSnapshotRect.contains(event.x, event.y)
+        val inMergedWallTap = mergedWallTapRect.contains(event.x, event.y)
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
@@ -559,8 +559,8 @@ class VideoInfoOverlay(
                     invalidate()
                     return true
                 }
-                if (inMergedWallSnapshot) {
-                    mergedWallSnapshotPressed = true
+                if (inMergedWallTap) {
+                    mergedWallTapPressed = true
                     invalidate()
                     return true
                 }
@@ -592,8 +592,8 @@ class VideoInfoOverlay(
                     cycleMergedWallExperiment()
                     performClick()
                 }
-                if (mergedWallSnapshotPressed && inMergedWallSnapshot) {
-                    triggerMergedWallSnapshot()
+                if (mergedWallTapPressed && inMergedWallTap) {
+                    triggerMergedWallTap()
                     performClick()
                 }
                 if (buttonPressed ||
@@ -602,7 +602,7 @@ class VideoInfoOverlay(
                     texFiltPressed ||
                     mergedWallPressed ||
                     mergedWallExperimentPressed ||
-                    mergedWallSnapshotPressed ||
+                    mergedWallTapPressed ||
                     inPanel
                 ) {
                     buttonPressed = false
@@ -611,7 +611,7 @@ class VideoInfoOverlay(
                     texFiltPressed = false
                     mergedWallPressed = false
                     mergedWallExperimentPressed = false
-                    mergedWallSnapshotPressed = false
+                    mergedWallTapPressed = false
                     invalidate()
                     return true
                 }
@@ -623,7 +623,7 @@ class VideoInfoOverlay(
                 texFiltPressed = false
                 mergedWallPressed = false
                 mergedWallExperimentPressed = false
-                mergedWallSnapshotPressed = false
+                mergedWallTapPressed = false
                 invalidate()
             }
         }
@@ -676,9 +676,9 @@ class VideoInfoOverlay(
         debugFlagSetter?.invoke("merged_wall_experiment", next)
     }
 
-    private fun triggerMergedWallSnapshot() {
-        debugFlagSetter?.invoke("merged_wall_snapshot", 1)
-        mergedWallSnapshotFlashUntilMs = android.os.SystemClock.uptimeMillis() + SNAPSHOT_FLASH_MS
+    private fun triggerMergedWallTap() {
+        debugFlagSetter?.invoke("merged_wall_snapshot", MERGED_WALL_REQUEST_CAPTURE_VALUE)
+        mergedWallTapFlashUntilMs = android.os.SystemClock.uptimeMillis() + SNAPSHOT_FLASH_MS
         invalidate()
         handler.postDelayed(
             { if (visibility == VISIBLE) invalidate() },
@@ -689,5 +689,6 @@ class VideoInfoOverlay(
     companion object {
         private const val POLL_INTERVAL_MS = 500L
         private const val SNAPSHOT_FLASH_MS = 900L
+        private const val MERGED_WALL_REQUEST_CAPTURE_VALUE = 2
     }
 }

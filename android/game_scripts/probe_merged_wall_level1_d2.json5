@@ -1,0 +1,74 @@
+// TEST: D2 level 1 merged wall probe
+// Exercises the known Counterstrike L1 merged wall through the default,
+// forced two-pass, and forced legacy routes so probe logs can be diffed
+// across merge implementations.
+[
+    {"_info": {
+        "games": ["d2"],
+        "vars": {
+            "d2": {"MISSION": "Counterstrike"}
+        },
+        "_deps": [
+            {"file": "descent2.hog", "sha256": "f1abf516512739c97b43e2e93611a2398fc9f8bc7a014095ebc2b6b2fd21b703"},
+            {"file": "descent2.ham", "sha256": "5233242206c677d65db7f075dd61f2b0a1b7bbe8cd65f56d769efaee1cc38b4d"},
+            {"file": "groupa.pig", "sha256": "facdde6cf8a2cab99ea39ba06931872a1fe5636fe211e61fb58c57d706bf627b"},
+            {"file": "descent2.s22", "sha256": "4f10632dd4efcbffe532c35b6763edd22817135442bbcc4171381706f3893728"},
+            {"file": "alien1.pig", "sha256": "811fc58caa3e2a72cdfa07d7530b2bb0ca71836a6a2d8a3cb401e4284949c233"},
+            {"file": "alien2.pig", "sha256": "75ef8fa0cba03410c61ad1b58f57dcb1481f1f302985828aab0af90639926055"},
+            {"file": "fire.pig", "sha256": "26a5a5f4e91456abf31f79578d0922e7bc3348b6aa92489a84033de83f358156"},
+            {"file": "ice.pig", "sha256": "ae6152ef69502b00e51a98d8f04b21f2855a332cd2988ecceb3b909a49fa26a1"},
+            {"file": "water.pig", "sha256": "de88ead87dcb32f16936b3e2a08b81a2248440f29e6f8be0c4c3a5f9fe4b63c1"}
+        ]
+    }},
+
+    {"action": "enter_launcher"},
+    {"action": "log", "message": "=== TEST: D2 level 1 merged wall probe ==="},
+
+    {"action": "setup_command", "command": "write_probe_debug_prefs",
+     "args": {"enabled": true}, "post_delay_ms": 250},
+    {"action": "assert", "expect": {
+        "debug_prefs.show_video_info_debug_options": "true",
+        "debug_prefs.network_log_enabled": "true",
+        "debug_prefs.graphics_log_enabled": "true",
+        "debug_prefs.texture_log_enabled": "true",
+        "debug_prefs.game_log_enabled": "true",
+        "debug_prefs.launcher_log_enabled": "true",
+        "debug_prefs.graphics_debug_logging": "true"
+    }},
+    {"action": "enter_game", "game": "d2"},
+
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
+
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 10000},
+    {"action": "select", "text": "${MISSION}", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "select", "text": "Ok", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "wait_ms", "ms": 500},
+    {"action": "select", "text": "Trainee", "post_delay_ms": 100, "timeout_ms": 10000},
+    {"action": "skip_briefing", "timeout_ms": 20000, "post_delay_ms": 100},
+
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+    {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
+
+    {"action": "set_debug", "field": "clear_robots", "value": "1"},
+    {"action": "set_debug", "field": "texture_log", "value": "1"},
+    {"action": "set_debug", "field": "merged_wall_mode", "value": "0"},
+    {"action": "set_debug", "field": "merged_wall_experiment", "value": "0"},
+    {"action": "set_debug", "field": "merged_wall_force_two_pass", "value": "0"},
+    {"action": "face_view", "segment": 83, "side": 3, "face": 1, "distance": 12.0, "post_delay_ms": 250},
+    {"action": "probe_crosshair", "label": "d2_default", "timeout_ms": 2000},
+
+    {"action": "set_debug", "field": "merged_wall_force_two_pass", "value": "1"},
+    {"action": "face_view", "segment": 83, "side": 3, "face": 1, "distance": 4.0, "post_delay_ms": 250},
+    {"action": "probe_crosshair", "label": "d2_two_pass", "timeout_ms": 2000},
+
+    {"action": "set_debug", "field": "merged_wall_force_two_pass", "value": "0"},
+    {"action": "set_debug", "field": "merged_wall_experiment", "value": "10"},
+    {"action": "face_view", "segment": 83, "side": 3, "face": 1, "distance": 12.0, "post_delay_ms": 250},
+    {"action": "probe_crosshair", "label": "d2_forced_legacy", "timeout_ms": 2000},
+
+    {"action": "log", "message": "=== TEST: D2 level 1 merged wall probe -- PASS ==="},
+    {"action": "introspect"}
+]

@@ -30,6 +30,13 @@
 #define MERGED_WALL_SNAPSHOT_OVERDRAW_MAX 6
 #define MERGED_WALL_BITMAP_DUMP_MAX       16
 #define MERGED_WALL_BITMAP_DUMP_WIDTH     64
+#define MERGED_WALL_PROBE_HIT_NONE        0
+#define MERGED_WALL_PROBE_HIT_BBOX        1
+#define MERGED_WALL_PROBE_HIT_POLYGON     2
+#define MERGED_WALL_PROBE_HIT_PROJECTED   3
+#define MERGED_WALL_RENDER_SAMPLE_COLS    MERGED_WALL_PROBE_RENDER_SAMPLE_COLS
+#define MERGED_WALL_RENDER_SAMPLE_ROWS    MERGED_WALL_PROBE_RENDER_SAMPLE_ROWS
+#define MERGED_WALL_RENDER_SAMPLE_COUNT   MERGED_WALL_PROBE_RENDER_SAMPLE_COUNT
 
 struct merged_wall_tracked_face {
 	int render_pass;
@@ -69,6 +76,10 @@ struct merged_wall_tracked_face {
 	char route[24];
 	char merge_impl[24];
 	char decision_reason[40];
+	int orient;
+	g3s_uvl uvl[MERGED_WALL_LOG_PT_COUNT];
+	grs_bitmap *merged_bitmap;
+	int merged_slot;
 };
 
 struct merged_wall_snapshot_cover_event {
@@ -150,12 +161,14 @@ volatile int g_merged_wall_experiment_mode = 0;
 volatile int g_merged_wall_experiment_pending_apply = 0;
 volatile int g_merged_wall_snapshot_pending = 0;
 volatile int g_merged_wall_snapshot_request_frame = -1;
+volatile int g_merged_wall_snapshot_request_mode = 0;
 volatile int g_merged_wall_render_pass = 0;
 volatile int g_merged_wall_frame_id = 0;
 volatile int g_merged_wall_draw_seq = 0;
 volatile int g_merged_wall_force_two_pass = 0;
 struct android_draw_face_context g_android_draw_face_ctx = { 0 };
 struct merged_wall_snapshot_result g_merged_wall_snapshot_result = { 0 };
+struct merged_wall_probe_result g_merged_wall_probe_result = { 0 };
 struct merged_wall_last_draw_state g_merged_wall_last_draw_state = { 0 };
 static struct merged_wall_snapshot_target_cover merged_wall_snapshot_target_cover = { 0 };
 
@@ -195,6 +208,31 @@ static const char *merged_wall_experiment_name_local(int mode)
 	}
 }
 
+static const char *merged_wall_request_mode_name_local(int mode)
+{
+	switch (mode) {
+		case MERGED_WALL_REQUEST_PROBE:
+			return "probe";
+		case MERGED_WALL_REQUEST_SNAPSHOT:
+		default:
+			return "snapshot";
+	}
+}
+
+static const char *merged_wall_probe_hit_kind_name_local(int kind)
+{
+	switch (kind) {
+		case MERGED_WALL_PROBE_HIT_POLYGON:
+			return "polygon";
+		case MERGED_WALL_PROBE_HIT_BBOX:
+			return "bbox";
+		case MERGED_WALL_PROBE_HIT_PROJECTED:
+			return "projected";
+		default:
+			return "none";
+	}
+}
+
 static void merged_wall_copy_string(char *dst, unsigned int dst_size, const char *src)
 {
 	if (!dst || dst_size == 0)
@@ -203,6 +241,49 @@ static void merged_wall_copy_string(char *dst, unsigned int dst_size, const char
 		src = "";
 	strncpy(dst, src, dst_size - 1);
 	dst[dst_size - 1] = '\0';
+}
+
+static void merged_wall_reset_probe_result(void)
+{
+	memset(&g_merged_wall_probe_result, 0, sizeof(g_merged_wall_probe_result));
+	g_merged_wall_probe_result.seg = -1;
+	g_merged_wall_probe_result.side = -1;
+	g_merged_wall_probe_result.face = -1;
+	g_merged_wall_probe_result.child = -1;
+	g_merged_wall_probe_result.tmap1 = -1;
+	g_merged_wall_probe_result.tmap2 = 0;
+	g_merged_wall_probe_result.orient = 0;
+	merged_wall_copy_string(g_merged_wall_probe_result.status,
+	                        sizeof(g_merged_wall_probe_result.status), "idle");
+	merged_wall_copy_string(g_merged_wall_probe_result.route,
+	                        sizeof(g_merged_wall_probe_result.route), "");
+	merged_wall_copy_string(g_merged_wall_probe_result.merge_impl,
+	                        sizeof(g_merged_wall_probe_result.merge_impl), "");
+	merged_wall_copy_string(g_merged_wall_probe_result.ovl_flip_axis,
+	                        sizeof(g_merged_wall_probe_result.ovl_flip_axis), "none");
+	merged_wall_copy_string(g_merged_wall_probe_result.flip_screen_axis,
+	                        sizeof(g_merged_wall_probe_result.flip_screen_axis), "none");
+	g_merged_wall_probe_result.u_span = 0.0f;
+	g_merged_wall_probe_result.v_span = 0.0f;
+	g_merged_wall_probe_result.u_shift_hint = 0.0f;
+	g_merged_wall_probe_result.v_shift_hint = 0.0f;
+	g_merged_wall_probe_result.cached_anchor_u = 0.0f;
+	g_merged_wall_probe_result.cached_anchor_v = 0.0f;
+	g_merged_wall_probe_result.legacy_anchor_u = 0.0f;
+	g_merged_wall_probe_result.legacy_anchor_v = 0.0f;
+	g_merged_wall_probe_result.route_agree = 0;
+	g_merged_wall_probe_result.render_sample_valid = 0;
+	g_merged_wall_probe_result.render_valid_cells = 0;
+	g_merged_wall_probe_result.render_hot_cells = 0;
+	g_merged_wall_probe_result.render_hash = 0;
+	g_merged_wall_probe_result.render_luma_min = 0;
+	g_merged_wall_probe_result.render_luma_max = 0;
+	g_merged_wall_probe_result.render_hot_x = -1.0f;
+	g_merged_wall_probe_result.render_hot_y = -1.0f;
+	memset(g_merged_wall_probe_result.render_sample_luma, 0,
+	       sizeof(g_merged_wall_probe_result.render_sample_luma));
+	memset(g_merged_wall_probe_result.render_sample_mask, 0,
+	       sizeof(g_merged_wall_probe_result.render_sample_mask));
 }
 
 static int merged_wall_overlay_index(int tmap2)
@@ -996,6 +1077,235 @@ static unsigned int merged_wall_fnv1a_append(unsigned int hash,
 		hash *= 16777619u;
 	}
 	return hash;
+}
+
+static unsigned char merged_wall_probe_luma(const unsigned char *rgba)
+{
+	if (!rgba)
+		return 0;
+	return (unsigned char) ((54u * (unsigned int) rgba[0] +
+	                         183u * (unsigned int) rgba[1] +
+	                         19u * (unsigned int) rgba[2] + 128u) >>
+	                        8);
+}
+
+static char merged_wall_probe_luma_hex(unsigned char luma)
+{
+	static const char hex[] = "0123456789abcdef";
+
+	return hex[(luma >> 4) & 0x0f];
+}
+
+static int merged_wall_probe_read_framebuffer_pixel(float sx, float sy,
+                                                    int screen_w, int screen_h,
+                                                    unsigned char *rgba)
+{
+	int px;
+	int py;
+
+	if (!rgba || screen_w <= 0 || screen_h <= 0)
+		return 0;
+	px = (int) floorf(sx + 0.5f);
+	py = screen_h - 1 - (int) floorf(sy + 0.5f);
+	if (px < 0 || px >= screen_w || py < 0 || py >= screen_h)
+		return 0;
+	glReadPixels(px, py, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+	return 1;
+}
+
+static void merged_wall_probe_capture_render_sample(const struct merged_wall_tracked_face *track,
+                                                    int screen_w, int screen_h)
+{
+	unsigned char sample_luma[MERGED_WALL_RENDER_SAMPLE_COUNT];
+	unsigned char sample_valid[MERGED_WALL_RENDER_SAMPLE_COUNT];
+	char row_buf[MERGED_WALL_RENDER_SAMPLE_COLS + 1];
+	float min_sx = 0.0f, max_sx = 0.0f;
+	float min_sy = 0.0f, max_sy = 0.0f;
+	float bbox_area = 0.0f;
+	const char *box_kind = "none";
+	unsigned int hash = 2166136261u;
+	int polygon_valid;
+	int valid_cells = 0;
+	int hot_cells = 0;
+	int luma_min = 255;
+	int luma_max = 0;
+	int hot_threshold = 0;
+	float hot_sum = 0.0f;
+	float hot_sum_x = 0.0f;
+	float hot_sum_y = 0.0f;
+	float hot_x = -1.0f;
+	float hot_y = -1.0f;
+	GLenum gl_err = GL_NO_ERROR;
+	int row;
+	int col;
+
+	if (!track)
+		return;
+	if (!merged_wall_get_track_overlap_box(track,
+	                                       &min_sx, &max_sx,
+	                                       &min_sy, &max_sy,
+	                                       &bbox_area, &box_kind))
+		return;
+	if (screen_w <= 0 || screen_h <= 0 || bbox_area <= 0.5f ||
+	    max_sx <= min_sx + 0.5f || max_sy <= min_sy + 0.5f)
+		return;
+
+	memset(sample_luma, 0, sizeof(sample_luma));
+	memset(sample_valid, 0, sizeof(sample_valid));
+	polygon_valid = merged_wall_projected_polygon_valid(track->nv, track->projected_count);
+	while (glGetError() != GL_NO_ERROR) {}
+
+	for (row = 0; row < MERGED_WALL_RENDER_SAMPLE_ROWS; row++) {
+		for (col = 0; col < MERGED_WALL_RENDER_SAMPLE_COLS; col++) {
+			unsigned char rgba[4] = { 0, 0, 0, 0 };
+			unsigned char sample_byte = 0xff;
+			float sx = min_sx + (max_sx - min_sx) * ((float) col + 0.5f) /
+			                        (float) MERGED_WALL_RENDER_SAMPLE_COLS;
+			float sy = min_sy + (max_sy - min_sy) * ((float) row + 0.5f) /
+			                        (float) MERGED_WALL_RENDER_SAMPLE_ROWS;
+			int index = row * MERGED_WALL_RENDER_SAMPLE_COLS + col;
+
+			row_buf[col] = '.';
+			if (polygon_valid &&
+			    !merged_wall_projected_polygon_contains_point(track->nv,
+			                                                  track->pt_projected,
+			                                                  track->pt_sx,
+			                                                  track->pt_sy,
+			                                                  sx,
+			                                                  sy)) {
+				hash = merged_wall_fnv1a_append(hash, &sample_byte, 1);
+				continue;
+			}
+			if (!merged_wall_probe_read_framebuffer_pixel(sx, sy, screen_w, screen_h, rgba)) {
+				sample_byte = 0xfe;
+				row_buf[col] = '!';
+				hash = merged_wall_fnv1a_append(hash, &sample_byte, 1);
+				continue;
+			}
+			sample_byte = merged_wall_probe_luma(rgba);
+			sample_valid[index] = 1;
+			sample_luma[index] = sample_byte;
+			valid_cells++;
+			if ((int) sample_byte < luma_min)
+				luma_min = (int) sample_byte;
+			if ((int) sample_byte > luma_max)
+				luma_max = (int) sample_byte;
+			row_buf[col] = merged_wall_probe_luma_hex(sample_byte);
+			hash = merged_wall_fnv1a_append(hash, &sample_byte, 1);
+		}
+		row_buf[MERGED_WALL_RENDER_SAMPLE_COLS] = '\0';
+		debug_log(DLOG_TEXTURE,
+		          "[mwall_tap_probe] kind=render_row frame=%d request_frame=%d seg=%d side=%d face=%d box=%s row=%d grid=%s",
+		          g_merged_wall_frame_id,
+		          g_merged_wall_snapshot_request_frame,
+		          track->draw_ctx.valid ? track->draw_ctx.seg : -1,
+		          track->draw_ctx.valid ? track->draw_ctx.side : -1,
+		          track->draw_ctx.valid ? track->draw_ctx.face : -1,
+		          box_kind,
+		          row,
+		          row_buf);
+	}
+
+	gl_err = glGetError();
+	if (gl_err != GL_NO_ERROR) {
+		debug_log(DLOG_TEXTURE,
+		          "[mwall_tap_probe] kind=render status=gl_error frame=%d request_frame=%d seg=%d side=%d face=%d err=0x%x",
+		          g_merged_wall_frame_id,
+		          g_merged_wall_snapshot_request_frame,
+		          track->draw_ctx.valid ? track->draw_ctx.seg : -1,
+		          track->draw_ctx.valid ? track->draw_ctx.side : -1,
+		          track->draw_ctx.valid ? track->draw_ctx.face : -1,
+		          (unsigned int) gl_err);
+		return;
+	}
+	if (valid_cells <= 0) {
+		debug_log(DLOG_TEXTURE,
+		          "[mwall_tap_probe] kind=render status=no_valid_cells frame=%d request_frame=%d seg=%d side=%d face=%d box=%s",
+		          g_merged_wall_frame_id,
+		          g_merged_wall_snapshot_request_frame,
+		          track->draw_ctx.valid ? track->draw_ctx.seg : -1,
+		          track->draw_ctx.valid ? track->draw_ctx.side : -1,
+		          track->draw_ctx.valid ? track->draw_ctx.face : -1,
+		          box_kind);
+		return;
+	}
+
+	hot_threshold = luma_min + ((luma_max - luma_min) * 3) / 4;
+	if (luma_max > luma_min && hot_threshold <= luma_min)
+		hot_threshold = luma_min + (luma_max - luma_min + 1) / 2;
+	for (row = 0; row < MERGED_WALL_RENDER_SAMPLE_ROWS; row++) {
+		for (col = 0; col < MERGED_WALL_RENDER_SAMPLE_COLS; col++) {
+			float weight;
+			int index = row * MERGED_WALL_RENDER_SAMPLE_COLS + col;
+
+			if (!sample_valid[index] || (int) sample_luma[index] < hot_threshold)
+				continue;
+			weight = 1.0f + (float) ((int) sample_luma[index] - hot_threshold);
+			hot_sum += weight;
+			hot_sum_x += weight * (((float) col + 0.5f) /
+			                       (float) MERGED_WALL_RENDER_SAMPLE_COLS);
+			hot_sum_y += weight * (((float) row + 0.5f) /
+			                       (float) MERGED_WALL_RENDER_SAMPLE_ROWS);
+			hot_cells++;
+		}
+	}
+	if (hot_sum <= 0.0f && luma_max > luma_min) {
+		for (row = 0; row < MERGED_WALL_RENDER_SAMPLE_ROWS; row++) {
+			for (col = 0; col < MERGED_WALL_RENDER_SAMPLE_COLS; col++) {
+				float weight;
+				int index = row * MERGED_WALL_RENDER_SAMPLE_COLS + col;
+
+				if (!sample_valid[index] || sample_luma[index] <= luma_min)
+					continue;
+				weight = (float) ((int) sample_luma[index] - luma_min);
+				hot_sum += weight;
+				hot_sum_x += weight * (((float) col + 0.5f) /
+				                       (float) MERGED_WALL_RENDER_SAMPLE_COLS);
+				hot_sum_y += weight * (((float) row + 0.5f) /
+				                       (float) MERGED_WALL_RENDER_SAMPLE_ROWS);
+				hot_cells++;
+			}
+		}
+	}
+	if (hot_sum > 0.0f) {
+		hot_x = hot_sum_x / hot_sum;
+		hot_y = hot_sum_y / hot_sum;
+	}
+
+	g_merged_wall_probe_result.render_sample_valid = 1;
+	g_merged_wall_probe_result.render_valid_cells = valid_cells;
+	g_merged_wall_probe_result.render_hot_cells = hot_cells;
+	g_merged_wall_probe_result.render_hash = hash;
+	g_merged_wall_probe_result.render_luma_min = luma_min;
+	g_merged_wall_probe_result.render_luma_max = luma_max;
+	g_merged_wall_probe_result.render_hot_x = hot_x;
+	g_merged_wall_probe_result.render_hot_y = hot_y;
+	memcpy(g_merged_wall_probe_result.render_sample_luma, sample_luma,
+	       sizeof(g_merged_wall_probe_result.render_sample_luma));
+	memcpy(g_merged_wall_probe_result.render_sample_mask, sample_valid,
+	       sizeof(g_merged_wall_probe_result.render_sample_mask));
+	debug_log(DLOG_TEXTURE,
+	          "[mwall_tap_probe] kind=render frame=%d request_frame=%d seg=%d side=%d face=%d box=%s screen=%dx%d bbox=%.1f..%.1f/%.1f..%.1f valid_cells=%d hash=0x%08x luma_min=%d luma_max=%d hot_threshold=%d hot_cells=%d hot_xy=%.3f/%.3f",
+	          g_merged_wall_frame_id,
+	          g_merged_wall_snapshot_request_frame,
+	          track->draw_ctx.valid ? track->draw_ctx.seg : -1,
+	          track->draw_ctx.valid ? track->draw_ctx.side : -1,
+	          track->draw_ctx.valid ? track->draw_ctx.face : -1,
+	          box_kind,
+	          screen_w,
+	          screen_h,
+	          min_sx,
+	          max_sx,
+	          min_sy,
+	          max_sy,
+	          valid_cells,
+	          hash,
+	          luma_min,
+	          luma_max,
+	          hot_threshold,
+	          hot_cells,
+	          hot_x,
+	          hot_y);
 }
 
 static grs_bitmap *merged_wall_get_source_bitmap(grs_bitmap *bitmap)
@@ -2009,8 +2319,10 @@ int android_merged_wall_next_draw_order(void)
 }
 
 void android_merged_wall_track_face(const struct g3s_point **pointlist, int nv,
+                                    const g3s_uvl *uvl_list, int orient,
                                     int draw_order, const char *route, const char *merge_impl,
-                                    const char *decision_reason)
+                                    const char *decision_reason, grs_bitmap *merged_bitmap,
+                                    int merged_slot)
 {
 	struct merged_wall_tracked_face *track;
 	int i, projected = 0;
@@ -2047,6 +2359,9 @@ void android_merged_wall_track_face(const struct g3s_point **pointlist, int nv,
 	merged_wall_copy_string(track->route, sizeof(track->route), route);
 	merged_wall_copy_string(track->merge_impl, sizeof(track->merge_impl), merge_impl);
 	merged_wall_copy_string(track->decision_reason, sizeof(track->decision_reason), decision_reason);
+	track->orient = orient;
+	track->merged_bitmap = merged_bitmap;
+	track->merged_slot = merged_slot;
 	track->projected_count = merged_wall_store_projected_points(pointlist, nv,
 	                                                            track->pt_projected,
 	                                                            track->pt_sx,
@@ -2055,10 +2370,14 @@ void android_merged_wall_track_face(const struct g3s_point **pointlist, int nv,
 		track->pts[i][0] = pointlist[i]->p3_vec.x;
 		track->pts[i][1] = pointlist[i]->p3_vec.y;
 		track->pts[i][2] = pointlist[i]->p3_vec.z;
+		if (uvl_list)
+			track->uvl[i] = uvl_list[i];
+		else
+			memset(&track->uvl[i], 0, sizeof(track->uvl[i]));
 	}
 	projected = track->projected_count;
 	debug_log(DLOG_TEXTURE,
-	          "[mwall_track] frame=%d pass=%d seq=%d order=%d seg=%d side=%d face=%d child=%d nv=%d projected=%d bbox_valid=%d proj_box_valid=%d box=%.1f..%.1f/%.1f..%.1f area=%.1f proj_box=%.1f..%.1f/%.1f..%.1f proj_area=%.1f route=%s merge_impl=%s",
+	          "[mwall_track] frame=%d pass=%d seq=%d order=%d seg=%d side=%d face=%d child=%d nv=%d projected=%d bbox_valid=%d proj_box_valid=%d box=%.1f..%.1f/%.1f..%.1f area=%.1f proj_box=%.1f..%.1f/%.1f..%.1f proj_area=%.1f route=%s merge_impl=%s orient=%d merged=%p slot=%d",
 	          g_merged_wall_frame_id,
 	          g_merged_wall_render_pass,
 	          g_merged_wall_draw_seq,
@@ -2082,7 +2401,10 @@ void android_merged_wall_track_face(const struct g3s_point **pointlist, int nv,
 	          track->projected_max_sy,
 	          track->projected_bbox_area,
 	          track->route,
-	          track->merge_impl);
+	          track->merge_impl,
+	          track->orient,
+	          (void *) track->merged_bitmap,
+	          track->merged_slot);
 }
 
 void android_merged_wall_log_cover(const char *shader_kind, const char *botname,
@@ -2862,11 +3184,618 @@ static void merged_wall_log_snapshot_focus_covers(float center_x, float center_y
 	          g_merged_wall_snapshot_request_frame);
 }
 
-void android_merged_wall_request_snapshot(void)
+static float merged_wall_wrap_unit(float value)
+{
+	float wrapped = fmodf(value, 1.0f);
+
+	if (wrapped < 0.0f)
+		wrapped += 1.0f;
+	return wrapped;
+}
+
+static void merged_wall_probe_map_overlay_uv(int orient, float u, float v,
+                                             float *out_u, float *out_v)
+{
+	float mapped_u = u;
+	float mapped_v = v;
+
+	switch (orient) {
+		case 1:
+			mapped_u = 1.0f - v;
+			mapped_v = u;
+			break;
+		case 2:
+			mapped_u = 1.0f - u;
+			mapped_v = 1.0f - v;
+			break;
+		case 3:
+			mapped_u = v;
+			mapped_v = 1.0f - u;
+			break;
+		default:
+			break;
+	}
+	if (out_u)
+		*out_u = mapped_u;
+	if (out_v)
+		*out_v = mapped_v;
+}
+
+static void merged_wall_probe_sample_path(const char *route, int orient,
+                                          char *dst, unsigned int dst_size)
+{
+	const char *branch = "B1";
+
+	if (route && !strcmp(route, "merge_cached"))
+		branch = "B2";
+	else if (route && strstr(route, "old_texmerge"))
+		branch = "B3";
+	if (!dst || dst_size == 0)
+		return;
+	snprintf(dst, dst_size, "%s_orient%d", branch, orient);
+	dst[dst_size - 1] = '\0';
+}
+
+static void merged_wall_probe_flip_axis(const char *route, int orient,
+                                        char *dst, unsigned int dst_size)
+{
+	/* After the base_v FBO-orientation fix in ogl_android_texmerge_build_uvs,
+	 * merge_cached no longer Y-flips the composite relative to the CPU
+	 * merge_textures_new reference, so no route currently produces an
+	 * intrinsic per-orient flip. This function is kept as a model hook so
+	 * future route variants can advertise a flip without touching call
+	 * sites. */
+	(void) route;
+	(void) orient;
+	merged_wall_copy_string(dst, dst_size, "none");
+}
+
+static void merged_wall_probe_map_overlay_uv_for_route(const char *route, int orient,
+                                                       float u, float v,
+                                                       float *out_u, float *out_v)
+{
+	float mapped_u = 0.0f;
+	float mapped_v = 0.0f;
+	char flip_axis[8];
+
+	merged_wall_probe_map_overlay_uv(orient, u, v, &mapped_u, &mapped_v);
+	merged_wall_probe_flip_axis(route, orient, flip_axis, sizeof(flip_axis));
+	if (!strcmp(flip_axis, "U"))
+		mapped_u = 1.0f - mapped_u;
+	else if (!strcmp(flip_axis, "V"))
+		mapped_v = 1.0f - mapped_v;
+	if (out_u)
+		*out_u = mapped_u;
+	if (out_v)
+		*out_v = mapped_v;
+}
+
+static const char *merged_wall_probe_screen_axis_name(float dx, float dy)
+{
+	float adx = fabsf(dx);
+	float ady = fabsf(dy);
+
+	if (adx < 1.0f && ady < 1.0f)
+		return "unknown";
+	if (adx > ady * 1.25f)
+		return "horizontal";
+	if (ady > adx * 1.25f)
+		return "vertical";
+	return "diagonal";
+}
+
+static void merged_wall_probe_uv_axis_name(const struct merged_wall_tracked_face *track,
+                                           int use_u, char *dst, unsigned int dst_size)
+{
+	float best_delta = 0.0f;
+	float best_dx = 0.0f, best_dy = 0.0f;
+	int i, j;
+
+	merged_wall_copy_string(dst, dst_size, "unknown");
+	if (!track)
+		return;
+	for (i = 0; i < track->nv; i++) {
+		if (!track->pt_projected[i])
+			continue;
+		for (j = i + 1; j < track->nv; j++) {
+			float delta;
+			float dx;
+			float dy;
+
+			if (!track->pt_projected[j])
+				continue;
+			delta = use_u
+			            ? fabsf((float) f2fl(track->uvl[j].u - track->uvl[i].u))
+			            : fabsf((float) f2fl(track->uvl[j].v - track->uvl[i].v));
+			if (delta <= best_delta + 0.0001f)
+				continue;
+			dx = track->pt_sx[j] - track->pt_sx[i];
+			dy = track->pt_sy[j] - track->pt_sy[i];
+			best_delta = delta;
+			best_dx = dx;
+			best_dy = dy;
+		}
+	}
+	merged_wall_copy_string(dst, dst_size,
+	                        merged_wall_probe_screen_axis_name(best_dx, best_dy));
+}
+
+static const char *merged_wall_probe_corner_tag(const struct merged_wall_tracked_face *track,
+                                                int index)
+{
+	float mid_x;
+	float mid_y;
+
+	if (!track || index < 0 || index >= track->nv || !track->bbox_valid || !track->pt_projected[index])
+		return "NA";
+	mid_x = (track->min_sx + track->max_sx) * 0.5f;
+	mid_y = (track->min_sy + track->max_sy) * 0.5f;
+	if (track->pt_sx[index] <= mid_x)
+		return track->pt_sy[index] <= mid_y ? "LT" : "LB";
+	return track->pt_sy[index] <= mid_y ? "RT" : "RB";
+}
+
+static void merged_wall_probe_log_layer_bitmap(const char *layer,
+                                               const struct merged_wall_tracked_face *track,
+                                               int tex_num)
+{
+	grs_bitmap *bitmap;
+	ogl_texture *texture;
+	const char *name;
+	int real_flags;
+	unsigned int mask_handle = 0;
+	unsigned int bm_handle = 0;
+	int avg_color = 0;
+	int rowsize = 0;
+	int internalformat = 0;
+	unsigned int format = 0;
+	int bytesu = 0;
+	float prio = 0.0f;
+	unsigned long numrend = 0;
+	int tex_flags = 0;
+
+	if (!track || tex_num < 0 || tex_num >= NumTextures)
+		return;
+	bitmap = &GameBitmaps[Textures[tex_num].index];
+	texture = bitmap ? bitmap->gltexture : NULL;
+	name = piggy_game_bitmap_name(bitmap);
+	real_flags = piggy_bitmap_get_flags(bitmap);
+	if (bitmap && bitmap->gltexture_mask)
+		mask_handle = bitmap->gltexture_mask->handle;
+	if (bitmap) {
+		bm_handle = bitmap->bm_handle;
+		avg_color = bitmap->avg_color;
+		rowsize = bitmap->bm_rowsize;
+	}
+	if (texture) {
+		internalformat = texture->internalformat;
+		format = (unsigned int) texture->format;
+		bytesu = texture->bytesu;
+		prio = texture->prio;
+		numrend = texture->numrend;
+		tex_flags = texture->flags;
+	}
+	debug_log(DLOG_TEXTURE,
+	          "[mwall_tap_probe] kind=tex frame=%d request_frame=%d seg=%d side=%d face=%d layer=%s tex=%d name=%s real_flags=0x%x bm_flags=0x%x bm_handle=%u avg=%d rowsize=%d bitmap_ptr=%p texture_ptr=%p handle=%u is_png=%d w=%d h=%d tw=%d th=%d lw=%d bytes=%d bytesu=%d mip=%d wrap=%d u=%.3f v=%.3f internal=0x%x format=0x%x prio=%.3f numrend=%lu tex_flags=0x%x mask_handle=%u",
+	          g_merged_wall_frame_id,
+	          g_merged_wall_snapshot_request_frame,
+	          track->draw_ctx.valid ? track->draw_ctx.seg : -1,
+	          track->draw_ctx.valid ? track->draw_ctx.side : -1,
+	          track->draw_ctx.valid ? track->draw_ctx.face : -1,
+	          layer ? layer : "",
+	          tex_num,
+	          name ? name : "<none>",
+	          real_flags,
+	          bitmap ? bitmap->bm_flags : 0,
+	          bm_handle,
+	          avg_color,
+	          rowsize,
+	          (void *) bitmap,
+	          texture ? (void *) texture : NULL,
+	          texture ? texture->handle : 0,
+	          texture ? texture->is_png : -1,
+	          texture ? texture->w : 0,
+	          texture ? texture->h : 0,
+	          texture ? texture->tw : 0,
+	          texture ? texture->th : 0,
+	          texture ? texture->lw : 0,
+	          texture ? texture->bytes : 0,
+	          bytesu,
+	          texture ? texture->has_mipmaps : -1,
+	          texture ? texture->wrapstate : -1,
+	          texture ? texture->u : 0.0f,
+	          texture ? texture->v : 0.0f,
+	          internalformat,
+	          format,
+	          prio,
+	          numrend,
+	          tex_flags,
+	          mask_handle);
+}
+
+static void merged_wall_probe_log_merged_bitmap(const struct merged_wall_tracked_face *track)
+{
+	grs_bitmap *bitmap;
+	ogl_texture *texture;
+	grs_bitmap *source_bot = NULL;
+	grs_bitmap *source_ovl = NULL;
+	int internalformat = 0;
+	unsigned int format = 0;
+	int bytesu = 0;
+	int tex_flags = 0;
+
+	if (!track || !track->merged_bitmap)
+		return;
+	bitmap = track->merged_bitmap;
+	texture = bitmap->gltexture;
+	if (track->draw_ctx.valid && track->draw_ctx.tmap1 >= 0 && track->draw_ctx.tmap1 < NumTextures)
+		source_bot = &GameBitmaps[Textures[track->draw_ctx.tmap1].index];
+	if (track->draw_ctx.valid && track->draw_ctx.tmap2 != 0) {
+		int overlay = merged_wall_overlay_index(track->draw_ctx.tmap2);
+		if (overlay >= 0 && overlay < NumTextures)
+			source_ovl = &GameBitmaps[Textures[overlay].index];
+	}
+	if (texture) {
+		internalformat = texture->internalformat;
+		format = (unsigned int) texture->format;
+		bytesu = texture->bytesu;
+		tex_flags = texture->flags;
+	}
+	debug_log(DLOG_TEXTURE,
+	          "[mwall_tap_probe] kind=merged frame=%d request_frame=%d seg=%d side=%d face=%d route=%s merge_impl=%s slot=%d bitmap_ptr=%p texture_ptr=%p source_bot_ptr=%p source_ovl_ptr=%p handle=%u is_png=%d w=%d h=%d tw=%d th=%d lw=%d bytes=%d bytesu=%d mip=%d wrap=%d u=%.3f v=%.3f internal=0x%x format=0x%x tex_flags=0x%x",
+	          g_merged_wall_frame_id,
+	          g_merged_wall_snapshot_request_frame,
+	          track->draw_ctx.valid ? track->draw_ctx.seg : -1,
+	          track->draw_ctx.valid ? track->draw_ctx.side : -1,
+	          track->draw_ctx.valid ? track->draw_ctx.face : -1,
+	          track->route,
+	          track->merge_impl,
+	          track->merged_slot,
+	          (void *) bitmap,
+	          texture ? (void *) texture : NULL,
+	          (void *) source_bot,
+	          (void *) source_ovl,
+	          texture ? texture->handle : 0,
+	          texture ? texture->is_png : -1,
+	          texture ? texture->w : 0,
+	          texture ? texture->h : 0,
+	          texture ? texture->tw : 0,
+	          texture ? texture->th : 0,
+	          texture ? texture->lw : 0,
+	          texture ? texture->bytes : 0,
+	          bytesu,
+	          texture ? texture->has_mipmaps : -1,
+	          texture ? texture->wrapstate : -1,
+	          texture ? texture->u : 0.0f,
+	          texture ? texture->v : 0.0f,
+	          internalformat,
+	          format,
+	          tex_flags);
+}
+
+struct merged_wall_probe_candidate {
+	int valid;
+	int index;
+	int hit_kind;
+	int polygon_hit;
+	int bbox_hit;
+	float dist2;
+	float box_area;
+	int draw_order;
+	int draw_seq;
+};
+
+static int merged_wall_probe_candidate_better(const struct merged_wall_probe_candidate *candidate,
+                                              const struct merged_wall_probe_candidate *best)
+{
+	if (!candidate || !candidate->valid)
+		return 0;
+	if (!best || !best->valid)
+		return 1;
+	if (candidate->hit_kind != best->hit_kind)
+		return candidate->hit_kind > best->hit_kind;
+	if (candidate->draw_order != best->draw_order)
+		return candidate->draw_order > best->draw_order;
+	if (candidate->draw_seq != best->draw_seq)
+		return candidate->draw_seq > best->draw_seq;
+	if (candidate->dist2 < best->dist2 - 0.5f)
+		return 1;
+	if (candidate->dist2 > best->dist2 + 0.5f)
+		return 0;
+	if (candidate->box_area < best->box_area - 0.5f)
+		return 1;
+	if (candidate->box_area > best->box_area + 0.5f)
+		return 0;
+	return candidate->index < best->index;
+}
+
+static void merged_wall_log_tap_probe(float canvas_center_x, float canvas_center_y,
+                                      int canvas_x, int canvas_y, int canvas_w, int canvas_h,
+                                      int screen_w, int screen_h,
+                                      const int *selected, int selected_count)
+{
+	struct merged_wall_probe_candidate best = { 0 };
+	const char *level_name = Current_level_name[0] ? Current_level_name : "<none>";
+	int i;
+
+	for (i = 0; i < merged_wall_tracked_face_count; i++) {
+		const struct merged_wall_tracked_face *track = &merged_wall_tracked_faces[i];
+		struct merged_wall_probe_candidate candidate = { 0 };
+		int polygon_hit = merged_wall_projected_polygon_valid(track->nv, track->projected_count) &&
+		                  merged_wall_projected_polygon_contains_point(track->nv,
+		                                                               track->pt_projected,
+		                                                               track->pt_sx,
+		                                                               track->pt_sy,
+		                                                               canvas_center_x,
+		                                                               canvas_center_y);
+		int bbox_hit = track->bbox_valid &&
+		               merged_wall_bbox_contains_point(canvas_center_x, canvas_center_y,
+		                                               track->min_sx, track->max_sx,
+		                                               track->min_sy, track->max_sy);
+		int projected_hit = !bbox_hit && track->projected_bbox_valid &&
+		                    merged_wall_bbox_contains_point(canvas_center_x, canvas_center_y,
+		                                                    track->projected_min_sx, track->projected_max_sx,
+		                                                    track->projected_min_sy, track->projected_max_sy);
+
+		if (!polygon_hit && !bbox_hit && !projected_hit)
+			continue;
+		candidate.valid = 1;
+		candidate.index = i;
+		candidate.polygon_hit = polygon_hit;
+		candidate.bbox_hit = bbox_hit;
+		candidate.hit_kind = polygon_hit ? MERGED_WALL_PROBE_HIT_POLYGON
+		                                 : (bbox_hit ? MERGED_WALL_PROBE_HIT_BBOX : MERGED_WALL_PROBE_HIT_PROJECTED);
+		if (track->bbox_valid) {
+			candidate.dist2 = merged_wall_bbox_distance_sq(canvas_center_x, canvas_center_y,
+			                                               track->min_sx, track->max_sx,
+			                                               track->min_sy, track->max_sy);
+			candidate.box_area = track->bbox_area;
+		} else {
+			candidate.dist2 = merged_wall_bbox_distance_sq(canvas_center_x, canvas_center_y,
+			                                               track->projected_min_sx, track->projected_max_sx,
+			                                               track->projected_min_sy, track->projected_max_sy);
+			candidate.box_area = track->projected_bbox_area;
+		}
+		candidate.draw_order = track->draw_order;
+		candidate.draw_seq = track->draw_seq;
+		if (merged_wall_probe_candidate_better(&candidate, &best))
+			best = candidate;
+	}
+
+	g_merged_wall_probe_result.valid = 1;
+	g_merged_wall_probe_result.frame_id = g_merged_wall_frame_id;
+	g_merged_wall_probe_result.request_frame = g_merged_wall_snapshot_request_frame;
+	if (!best.valid) {
+		merged_wall_copy_string(g_merged_wall_probe_result.status,
+		                        sizeof(g_merged_wall_probe_result.status), "no_crosshair_face");
+		merged_wall_copy_string(g_merged_wall_probe_result.route,
+		                        sizeof(g_merged_wall_probe_result.route), "");
+		merged_wall_copy_string(g_merged_wall_probe_result.merge_impl,
+		                        sizeof(g_merged_wall_probe_result.merge_impl), "");
+		merged_wall_copy_string(g_merged_wall_probe_result.ovl_flip_axis,
+		                        sizeof(g_merged_wall_probe_result.ovl_flip_axis), "none");
+		merged_wall_copy_string(g_merged_wall_probe_result.flip_screen_axis,
+		                        sizeof(g_merged_wall_probe_result.flip_screen_axis), "none");
+		debug_log(DLOG_TEXTURE,
+		          "[mwall_tap_probe] kind=face status=no_crosshair_face frame=%d request_frame=%d level=%d name=%s canvas=%d,%d,%d,%d canvas_center=%.1f/%.1f tracked=%d selected=%d",
+		          g_merged_wall_frame_id,
+		          g_merged_wall_snapshot_request_frame,
+		          Current_level_num,
+		          level_name,
+		          canvas_x,
+		          canvas_y,
+		          canvas_w,
+		          canvas_h,
+		          canvas_center_x,
+		          canvas_center_y,
+		          merged_wall_tracked_face_count,
+		          selected_count);
+		return;
+	}
+
+	{
+		const struct merged_wall_tracked_face *track = &merged_wall_tracked_faces[best.index];
+		grs_bitmap *base_bitmap = NULL;
+		int base_tex_num = -1;
+		int overlay_tex_num = -1;
+		int rank = merged_wall_selected_rank(selected, selected_count, best.index);
+		float u_min = 0.0f, u_max = 0.0f, v_min = 0.0f, v_max = 0.0f;
+		float u_span;
+		float v_span;
+		float u_shift_hint;
+		float v_shift_hint;
+		float cached_anchor_u = 0.0f, cached_anchor_v = 0.0f;
+		float legacy_anchor_u = 0.0f, legacy_anchor_v = 0.0f;
+		float active_anchor_u = 0.0f, active_anchor_v = 0.0f;
+		float active_anchor_w = 64.0f, active_anchor_h = 64.0f;
+		int route_agree;
+		char sample_path[24];
+		char flip_axis[8];
+		char u_axis[16];
+		char v_axis[16];
+		char flip_screen_axis[16];
+
+		if (track->draw_ctx.valid && track->draw_ctx.tmap1 >= 0 && track->draw_ctx.tmap1 < NumTextures) {
+			base_tex_num = track->draw_ctx.tmap1;
+			base_bitmap = &GameBitmaps[Textures[base_tex_num].index];
+		}
+		if (track->draw_ctx.valid && track->draw_ctx.tmap2 != 0)
+			overlay_tex_num = merged_wall_overlay_index(track->draw_ctx.tmap2);
+		for (i = 0; i < track->nv; i++) {
+			float u = f2fl(track->uvl[i].u);
+			float v = f2fl(track->uvl[i].v);
+
+			if (i == 0) {
+				u_min = u_max = u;
+				v_min = v_max = v;
+			} else {
+				if (u < u_min) u_min = u;
+				if (u > u_max) u_max = u;
+				if (v < v_min) v_min = v;
+				if (v > v_max) v_max = v;
+			}
+		}
+		u_span = u_max - u_min;
+		v_span = v_max - v_min;
+		u_shift_hint = merged_wall_wrap_unit(u_min);
+		v_shift_hint = merged_wall_wrap_unit(v_min);
+		merged_wall_probe_map_overlay_uv_for_route("merge_cached", track->orient,
+		                                           u_shift_hint, v_shift_hint,
+		                                           &cached_anchor_u, &cached_anchor_v);
+		merged_wall_probe_map_overlay_uv_for_route("old_texmerge", track->orient,
+		                                           u_shift_hint, v_shift_hint,
+		                                           &legacy_anchor_u, &legacy_anchor_v);
+		merged_wall_probe_map_overlay_uv_for_route(track->route, track->orient,
+		                                           u_shift_hint, v_shift_hint,
+		                                           &active_anchor_u, &active_anchor_v);
+		if (track->merged_bitmap && track->merged_bitmap->gltexture) {
+			active_anchor_w = (float) (track->merged_bitmap->gltexture->w > 0 ? track->merged_bitmap->gltexture->w : track->merged_bitmap->gltexture->tw);
+			active_anchor_h = (float) (track->merged_bitmap->gltexture->h > 0 ? track->merged_bitmap->gltexture->h : track->merged_bitmap->gltexture->th);
+		} else if (base_bitmap && base_bitmap->gltexture) {
+			active_anchor_w = (float) (base_bitmap->gltexture->w > 0 ? base_bitmap->gltexture->w : base_bitmap->gltexture->tw);
+			active_anchor_h = (float) (base_bitmap->gltexture->h > 0 ? base_bitmap->gltexture->h : base_bitmap->gltexture->th);
+		}
+		route_agree = fabsf(cached_anchor_u - legacy_anchor_u) < 0.0001f &&
+		              fabsf(cached_anchor_v - legacy_anchor_v) < 0.0001f;
+		merged_wall_probe_sample_path(track->route, track->orient,
+		                              sample_path, sizeof(sample_path));
+		merged_wall_probe_flip_axis(track->route, track->orient,
+		                            flip_axis, sizeof(flip_axis));
+		merged_wall_probe_uv_axis_name(track, 1, u_axis, sizeof(u_axis));
+		merged_wall_probe_uv_axis_name(track, 0, v_axis, sizeof(v_axis));
+		if (!strcmp(flip_axis, "U"))
+			merged_wall_copy_string(flip_screen_axis, sizeof(flip_screen_axis), u_axis);
+		else if (!strcmp(flip_axis, "V"))
+			merged_wall_copy_string(flip_screen_axis, sizeof(flip_screen_axis), v_axis);
+		else
+			merged_wall_copy_string(flip_screen_axis, sizeof(flip_screen_axis), "none");
+
+		merged_wall_copy_string(g_merged_wall_probe_result.status,
+		                        sizeof(g_merged_wall_probe_result.status), "ok");
+		g_merged_wall_probe_result.hit_kind = best.hit_kind;
+		g_merged_wall_probe_result.center_polygon_hit = best.polygon_hit;
+		g_merged_wall_probe_result.center_bbox_hit = best.bbox_hit;
+		g_merged_wall_probe_result.seg = track->draw_ctx.valid ? track->draw_ctx.seg : -1;
+		g_merged_wall_probe_result.side = track->draw_ctx.valid ? track->draw_ctx.side : -1;
+		g_merged_wall_probe_result.face = track->draw_ctx.valid ? track->draw_ctx.face : -1;
+		g_merged_wall_probe_result.child = track->draw_ctx.valid ? track->draw_ctx.child : -1;
+		g_merged_wall_probe_result.wid_flags = track->draw_ctx.valid ? track->draw_ctx.wid_flags : 0;
+		g_merged_wall_probe_result.tmap1 = track->draw_ctx.valid ? track->draw_ctx.tmap1 : -1;
+		g_merged_wall_probe_result.tmap2 = track->draw_ctx.valid ? track->draw_ctx.tmap2 : 0;
+		g_merged_wall_probe_result.orient = track->orient;
+		merged_wall_copy_string(g_merged_wall_probe_result.route,
+		                        sizeof(g_merged_wall_probe_result.route), track->route);
+		merged_wall_copy_string(g_merged_wall_probe_result.merge_impl,
+		                        sizeof(g_merged_wall_probe_result.merge_impl), track->merge_impl);
+		merged_wall_copy_string(g_merged_wall_probe_result.ovl_flip_axis,
+		                        sizeof(g_merged_wall_probe_result.ovl_flip_axis), flip_axis);
+		merged_wall_copy_string(g_merged_wall_probe_result.flip_screen_axis,
+		                        sizeof(g_merged_wall_probe_result.flip_screen_axis), flip_screen_axis);
+		g_merged_wall_probe_result.u_span = u_span;
+		g_merged_wall_probe_result.v_span = v_span;
+		g_merged_wall_probe_result.u_shift_hint = u_shift_hint;
+		g_merged_wall_probe_result.v_shift_hint = v_shift_hint;
+		g_merged_wall_probe_result.cached_anchor_u = cached_anchor_u;
+		g_merged_wall_probe_result.cached_anchor_v = cached_anchor_v;
+		g_merged_wall_probe_result.legacy_anchor_u = legacy_anchor_u;
+		g_merged_wall_probe_result.legacy_anchor_v = legacy_anchor_v;
+		g_merged_wall_probe_result.route_agree = route_agree;
+		merged_wall_probe_capture_render_sample(track, screen_w, screen_h);
+
+		debug_log(DLOG_TEXTURE,
+		          "[mwall_tap_probe] kind=face status=ok request=crosshair hit=%s rank=%d frame=%d request_frame=%d level=%d name=%s canvas=%d,%d,%d,%d canvas_center=%.1f/%.1f polygon_hit=%d bbox_hit=%d seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orient=%d route=%s merge_impl=%s ovl_sample_path=%s ovl_flip_axis=%s flip_screen_axis=%s",
+		          merged_wall_probe_hit_kind_name_local(best.hit_kind),
+		          rank >= 0 ? rank + 1 : 0,
+		          g_merged_wall_frame_id,
+		          g_merged_wall_snapshot_request_frame,
+		          Current_level_num,
+		          level_name,
+		          canvas_x,
+		          canvas_y,
+		          canvas_w,
+		          canvas_h,
+		          canvas_center_x,
+		          canvas_center_y,
+		          best.polygon_hit,
+		          best.bbox_hit,
+		          g_merged_wall_probe_result.seg,
+		          g_merged_wall_probe_result.side,
+		          g_merged_wall_probe_result.face,
+		          g_merged_wall_probe_result.child,
+		          g_merged_wall_probe_result.wid_flags,
+		          g_merged_wall_probe_result.tmap1,
+		          g_merged_wall_probe_result.tmap2,
+		          track->orient,
+		          track->route,
+		          track->merge_impl,
+		          sample_path,
+		          flip_axis,
+		          flip_screen_axis);
+		debug_log(DLOG_TEXTURE,
+		          "[mwall_tap_probe] kind=derived frame=%d request_frame=%d seg=%d side=%d face=%d u_min=%.6f u_max=%.6f v_min=%.6f v_max=%.6f u_span=%.6f v_span=%.6f u_shift_hint=%.6f v_shift_hint=%.6f u_screen_axis=%s v_screen_axis=%s cached_anchor_uv=%.6f/%.6f legacy_anchor_uv=%.6f/%.6f active_anchor_px=%.3f/%.3f route_agree=%d",
+		          g_merged_wall_frame_id,
+		          g_merged_wall_snapshot_request_frame,
+		          g_merged_wall_probe_result.seg,
+		          g_merged_wall_probe_result.side,
+		          g_merged_wall_probe_result.face,
+		          u_min,
+		          u_max,
+		          v_min,
+		          v_max,
+		          u_span,
+		          v_span,
+		          u_shift_hint,
+		          v_shift_hint,
+		          u_axis,
+		          v_axis,
+		          cached_anchor_u,
+		          cached_anchor_v,
+		          legacy_anchor_u,
+		          legacy_anchor_v,
+		          active_anchor_u * active_anchor_w,
+		          active_anchor_v * active_anchor_h,
+		          route_agree);
+		for (i = 0; i < track->nv; i++) {
+			debug_log(DLOG_TEXTURE,
+			          "[mwall_tap_probe] kind=vertex frame=%d request_frame=%d seg=%d side=%d face=%d idx=%d corner=%s projected=%d sx=%.3f sy=%.3f x=%d y=%d z=%d u_fix=%d v_fix=%d u=%.6f v=%.6f",
+			          g_merged_wall_frame_id,
+			          g_merged_wall_snapshot_request_frame,
+			          g_merged_wall_probe_result.seg,
+			          g_merged_wall_probe_result.side,
+			          g_merged_wall_probe_result.face,
+			          i,
+			          merged_wall_probe_corner_tag(track, i),
+			          track->pt_projected[i],
+			          track->pt_sx[i],
+			          track->pt_sy[i],
+			          (int) track->pts[i][0],
+			          (int) track->pts[i][1],
+			          (int) track->pts[i][2],
+			          (int) track->uvl[i].u,
+			          (int) track->uvl[i].v,
+			          f2fl(track->uvl[i].u),
+			          f2fl(track->uvl[i].v));
+		}
+		merged_wall_probe_log_layer_bitmap("base", track, base_tex_num);
+		merged_wall_probe_log_layer_bitmap("overlay", track, overlay_tex_num);
+		merged_wall_probe_log_merged_bitmap(track);
+	}
+}
+
+void android_merged_wall_request_snapshot(int request_mode)
 {
 	const char *level_name = Current_level_name[0] ? Current_level_name : "<none>";
 
+	if (request_mode != MERGED_WALL_REQUEST_PROBE)
+		request_mode = MERGED_WALL_REQUEST_SNAPSHOT;
+
 	memset(&g_merged_wall_snapshot_result, 0, sizeof(g_merged_wall_snapshot_result));
+	if (request_mode == MERGED_WALL_REQUEST_PROBE) {
+		merged_wall_reset_probe_result();
+		merged_wall_copy_string(g_merged_wall_probe_result.status,
+		                        sizeof(g_merged_wall_probe_result.status), "pending");
+		g_merged_wall_probe_result.request_frame = g_merged_wall_frame_id;
+	}
 	merged_wall_reset_cover_bitmap_dumps();
 	merged_wall_reset_cover_gpu_readbacks();
 	merged_wall_reset_snapshot_target_cover();
@@ -2874,8 +3803,10 @@ void android_merged_wall_request_snapshot(void)
 	                        sizeof(g_merged_wall_snapshot_result.status), "pending");
 	g_merged_wall_snapshot_result.request_frame = g_merged_wall_frame_id;
 	g_merged_wall_snapshot_request_frame = g_merged_wall_frame_id;
+	g_merged_wall_snapshot_request_mode = request_mode;
 	debug_log(DLOG_TEXTURE,
-	          "[mwall_snap] request: request_frame=%d frame=%d pass=%d seq=%d level=%d name=%s mode=%d(%s) experiment=%d(%s) two_pass=%d",
+	          "[mwall_snap] request: request=%s request_frame=%d frame=%d pass=%d seq=%d level=%d name=%s mode=%d(%s) experiment=%d(%s) two_pass=%d",
+	          merged_wall_request_mode_name_local(request_mode),
 	          (int) g_merged_wall_snapshot_request_frame,
 	          (int) g_merged_wall_frame_id,
 	          (int) g_merged_wall_render_pass,
@@ -3001,12 +3932,21 @@ void android_merged_wall_finish_snapshot(int screen_w, int screen_h,
 		merged_wall_copy_string(g_merged_wall_snapshot_result.status,
 		                        sizeof(g_merged_wall_snapshot_result.status), "no_tracked_faces");
 		g_merged_wall_snapshot_result.valid = 1;
+		if (g_merged_wall_snapshot_request_mode == MERGED_WALL_REQUEST_PROBE) {
+			merged_wall_reset_probe_result();
+			g_merged_wall_probe_result.valid = 1;
+			g_merged_wall_probe_result.frame_id = g_merged_wall_frame_id;
+			g_merged_wall_probe_result.request_frame = g_merged_wall_snapshot_request_frame;
+			merged_wall_copy_string(g_merged_wall_probe_result.status,
+			                        sizeof(g_merged_wall_probe_result.status), "no_tracked_faces");
+		}
 		debug_log(DLOG_TEXTURE,
 		          "[mwall_snapshot] no_tracked_faces frame=%d request_frame=%d level=%d name=%s",
 		          g_merged_wall_frame_id,
 		          g_merged_wall_snapshot_request_frame,
 		          Current_level_num,
 		          level_name);
+		g_merged_wall_snapshot_request_mode = 0;
 		return;
 	}
 
@@ -3110,6 +4050,11 @@ void android_merged_wall_finish_snapshot(int screen_w, int screen_h,
 		merged_wall_copy_string(g_merged_wall_snapshot_result.status,
 		                        sizeof(g_merged_wall_snapshot_result.status), "no_projected_faces");
 		g_merged_wall_snapshot_result.valid = 1;
+		if (g_merged_wall_snapshot_request_mode == MERGED_WALL_REQUEST_PROBE)
+			merged_wall_log_tap_probe(canvas_center_x, canvas_center_y,
+			                          canvas_x, canvas_y, canvas_w, canvas_h,
+			                          screen_w, screen_h,
+			                          selected, selected_count);
 		debug_log(DLOG_TEXTURE,
 		          "[mwall_snapshot] no_projected_faces frame=%d request_frame=%d level=%d name=%s partial_candidates=%d",
 		          g_merged_wall_frame_id,
@@ -3246,6 +4191,7 @@ void android_merged_wall_finish_snapshot(int screen_w, int screen_h,
 			merged_wall_log_portal("snapshot_partial_cover", &event->cover_ctx);
 			merged_wall_log_face_textures("snapshot_cover", rank + 1, &event->cover_ctx);
 		}
+		g_merged_wall_snapshot_request_mode = 0;
 		return;
 	}
 
@@ -3453,6 +4399,12 @@ void android_merged_wall_finish_snapshot(int screen_w, int screen_h,
 		          "[mwall_snapshot] omitted_cover_events=%d frame=%d",
 		          omitted_cover_logs,
 		          g_merged_wall_frame_id);
+	if (g_merged_wall_snapshot_request_mode == MERGED_WALL_REQUEST_PROBE)
+		merged_wall_log_tap_probe(canvas_center_x, canvas_center_y,
+		                          canvas_x, canvas_y, canvas_w, canvas_h,
+		                          screen_w, screen_h,
+		                          selected, selected_count);
+	g_merged_wall_snapshot_request_mode = 0;
 }
 
 #endif /* ANDROID */

@@ -598,6 +598,21 @@ class SetupActivity : ComponentActivity() {
                         Log.i("DXX-Setup", "write_bool_pref: $key=$value")
                         requestSetupRefresh()
                     }
+                    "write_probe_debug_prefs" -> {
+                        val enabled = intent.getBooleanExtra("enabled", true)
+                        val prefs = getSharedPreferences("dxx_prefs", MODE_PRIVATE)
+                        prefs
+                            .edit()
+                            .putBoolean(PREF_SHOW_VIDEO_INFO_DEBUG_OPTIONS, enabled)
+                            .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.NETWORK), enabled)
+                            .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.GRAPHICS), enabled)
+                            .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.TEXTURE), enabled)
+                            .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.GAME), enabled)
+                            .putBoolean(DebugLogCategory.prefKey(DebugLogCategory.LAUNCHER), enabled)
+                            .commit()
+                        Log.i("DXX-Setup", "write_probe_debug_prefs: enabled=$enabled")
+                        requestSetupRefresh()
+                    }
                     "create_set" -> {
                         val name = intent.getStringExtra("name") ?: return
                         val fsm = FileSetManager(filesDir)
@@ -1609,8 +1624,11 @@ class SetupActivity : ComponentActivity() {
             root.put("active_set_path", setDir.absolutePath)
 
             val prefs = getSharedPreferences("dxx_prefs", MODE_PRIVATE)
+            val networkLogEnabled = prefs.getBoolean(DebugLogCategory.prefKey(DebugLogCategory.NETWORK), false)
             val graphicsLogEnabled = prefs.getBoolean(DebugLogCategory.prefKey(DebugLogCategory.GRAPHICS), false)
             val textureLogEnabled = prefs.getBoolean(DebugLogCategory.prefKey(DebugLogCategory.TEXTURE), false)
+            val gameLogEnabled = prefs.getBoolean(DebugLogCategory.prefKey(DebugLogCategory.GAME), false)
+            val launcherLogEnabled = prefs.getBoolean(DebugLogCategory.prefKey(DebugLogCategory.LAUNCHER), false)
             val debugPrefs = JSONObject()
             debugPrefs.put(
                 "show_video_info_debug_options",
@@ -1620,8 +1638,11 @@ class SetupActivity : ComponentActivity() {
                 "force_legacy_merged_wall_texmerge",
                 prefs.getBoolean(PREF_FORCE_LEGACY_MERGED_WALL_TEXMERGE, false),
             )
+            debugPrefs.put("network_log_enabled", networkLogEnabled)
             debugPrefs.put("graphics_log_enabled", graphicsLogEnabled)
             debugPrefs.put("texture_log_enabled", textureLogEnabled)
+            debugPrefs.put("game_log_enabled", gameLogEnabled)
+            debugPrefs.put("launcher_log_enabled", launcherLogEnabled)
             debugPrefs.put("graphics_debug_logging", graphicsLogEnabled && textureLogEnabled)
             root.put("debug_prefs", debugPrefs)
 

@@ -1,0 +1,67 @@
+// TEST: D1 level 1 merged wall phone-pose probe
+// Replays the exact 2026-04-20 phone-exported light+rock and broken-panel
+// poses, then probes each under default and forced-legacy routes so the
+// route, flip, and shift values can be compared at equal camera positions.
+[
+    {"_info": {
+        "games": ["d1"],
+        "_deps": [
+            {"file": "descent.hog", "sha256": "83d76ff0c46bb2e7348a49bdd287ad764abeda0d851bfb16b42c1ede93b21052"},
+            {"file": "descent.pig", "sha256": "093f9cc029200e9d71d5e14f2f06e5e876a658dd64dc664d6911c5d24d7b64fe"}
+        ]
+    }},
+
+    {"action": "enter_launcher"},
+    {"action": "log", "message": "=== TEST: D1 level 1 merged wall phone poses ==="},
+
+    {"action": "setup_command", "command": "write_probe_debug_prefs",
+     "args": {"enabled": true}, "post_delay_ms": 250},
+    {"action": "assert", "expect": {
+        "debug_prefs.show_video_info_debug_options": "true",
+        "debug_prefs.network_log_enabled": "true",
+        "debug_prefs.graphics_log_enabled": "true",
+        "debug_prefs.texture_log_enabled": "true",
+        "debug_prefs.game_log_enabled": "true",
+        "debug_prefs.launcher_log_enabled": "true",
+        "debug_prefs.graphics_debug_logging": "true"
+    }},
+    {"action": "enter_game", "game": "d1"},
+
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 20000},
+    {"action": "key", "key": "enter", "post_delay_ms": 100},
+
+    {"action": "wait_for", "field": "screen_mode", "value": "menu", "timeout_ms": 5000},
+    {"action": "select", "text": "New game", "post_delay_ms": 100, "timeout_ms": 5000},
+    {"action": "key", "key": "enter", "post_delay_ms": 100},
+    {"action": "wait_ms", "ms": 500},
+    {"action": "select", "text": "Rookie", "post_delay_ms": 100, "timeout_ms": 10000},
+    {"action": "skip_briefing", "timeout_ms": 20000, "post_delay_ms": 100},
+
+    {"action": "wait_for", "field": "in_game", "value": "true", "timeout_ms": 10000},
+    {"action": "wait_for", "field": "game_window_is_front", "value": "true", "timeout_ms": 5000},
+    {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
+
+    {"action": "set_debug", "field": "clear_robots", "value": "1"},
+    {"action": "set_debug", "field": "texture_log", "value": "1"},
+    {"action": "set_debug", "field": "merged_wall_mode", "value": "0"},
+    {"action": "set_debug", "field": "merged_wall_force_two_pass", "value": "0"},
+    {"action": "set_debug", "field": "merged_wall_experiment", "value": "0"},
+
+    {"action": "pose_view", "segment": 80, "x": -136.005890, "y": -135.121704, "z": 185.405533, "pitch": 1204, "bank": 671, "heading": -17523, "post_delay_ms": 250},
+    {"action": "probe_crosshair", "label": "d1_phone_light_default", "timeout_ms": 2000},
+
+    {"action": "set_debug", "field": "merged_wall_experiment", "value": "10"},
+    {"action": "pose_view", "segment": 80, "x": -136.005890, "y": -135.121704, "z": 185.405533, "pitch": 1204, "bank": 671, "heading": -17523, "post_delay_ms": 250},
+    {"action": "probe_crosshair", "label": "d1_phone_light_forced_legacy", "timeout_ms": 2000},
+
+    {"action": "set_debug", "field": "merged_wall_experiment", "value": "0"},
+    {"action": "pose_view", "segment": 94, "x": -210.244385, "y": -141.217422, "z": 239.031479, "pitch": 2161, "bank": 1207, "heading": 3694, "post_delay_ms": 250},
+    {"action": "probe_crosshair", "label": "d1_phone_panel_default", "timeout_ms": 2000},
+
+    {"action": "set_debug", "field": "merged_wall_experiment", "value": "10"},
+    {"action": "pose_view", "segment": 94, "x": -210.244385, "y": -141.217422, "z": 239.031479, "pitch": 2161, "bank": 1207, "heading": 3694, "post_delay_ms": 250},
+    {"action": "probe_crosshair", "label": "d1_phone_panel_forced_legacy", "timeout_ms": 2000},
+
+    {"action": "log", "message": "=== TEST: D1 level 1 merged wall phone poses -- PASS ==="},
+    {"action": "introspect"}
+]

@@ -433,10 +433,11 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 #endif
 		{
 #ifdef ANDROID
-			if (tmap2 != 0 && android_oldmerge_impl && android_merged_wall_is_logging_target_tmap2(tmap2))
+			if (tmap2 != 0 && android_oldmerge_impl)
 				android_merged_wall_track_face((const struct g3s_point **)pointlist, nv,
+					uvl_copy, ((tmap2 & 0xC000) >> 14) & 3,
 					android_merged_wall_next_draw_order(), "old_texmerge",
-					android_oldmerge_impl, android_oldmerge_reason);
+					android_oldmerge_impl, android_oldmerge_reason, bm, -1);
 #endif
 			g3_draw_tmap(nv,pointlist,uvl_copy,dyn_light,bm);
 		}

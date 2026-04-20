@@ -4,9 +4,9 @@
     Interactive menu for running DXX-Redux regression tests
 
 .DESCRIPTION
-    Discovers both test_*.json5 game-automation scripts (run via run_test.ps1)
-    and test_*.ps1 PowerShell integration tests (in tests/ dir), and presents
-    a unified menu.
+    Discovers .json5 game-automation scripts (run via run_test.ps1) from
+    game_scripts/ and test_*.ps1 PowerShell integration tests (in tests/ dir),
+    and presents a unified menu.
 
 .EXAMPLE
     .\Run-TestMenu.ps1
@@ -41,7 +41,7 @@ Write-Host ""
 $allTests = @()
 
 # json5 game-automation scripts
-$json5Tests = @(Get-ChildItem -Path $GameScriptsDir -Filter "test_*.json5" -File -ErrorAction SilentlyContinue | Sort-Object Name)
+$json5Tests = @(Get-ChildItem -Path $GameScriptsDir -Filter "*.json5" -File -ErrorAction SilentlyContinue | Sort-Object Name)
 foreach ($t in $json5Tests) {
     $games = Get-ScriptGameInfo -ScriptPath $t.FullName
     $standalone = Get-ScriptStandalone -ScriptPath $t.FullName

@@ -37,6 +37,18 @@ extern volatile int g_debug_tex_overlay_active;
 #define MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE        10
 #define MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE 11
 
+#define MERGED_WALL_REQUEST_SNAPSHOT 1
+#define MERGED_WALL_REQUEST_PROBE    2
+
+/* Render-sample grid exposed from merged_wall_debug for probe consumers.
+ * Kept in this header so the probe result struct can embed fixed-size
+ * luma/valid arrays and downstream tools (game_automate) can compare
+ * samples byte-for-byte. */
+#define MERGED_WALL_PROBE_RENDER_SAMPLE_COLS  8
+#define MERGED_WALL_PROBE_RENDER_SAMPLE_ROWS  8
+#define MERGED_WALL_PROBE_RENDER_SAMPLE_COUNT \
+	(MERGED_WALL_PROBE_RENDER_SAMPLE_COLS * MERGED_WALL_PROBE_RENDER_SAMPLE_ROWS)
+
 struct android_draw_face_context {
 	int valid;
 	int seg;
@@ -190,6 +202,47 @@ struct merged_wall_snapshot_result {
 	struct merged_wall_snapshot_cover covers[MERGED_WALL_SNAPSHOT_COVER_MAX];
 };
 
+struct merged_wall_probe_result {
+	int valid;
+	char status[24];
+	int frame_id;
+	int request_frame;
+	int hit_kind;
+	int center_polygon_hit;
+	int center_bbox_hit;
+	int seg;
+	int side;
+	int face;
+	int child;
+	int wid_flags;
+	int tmap1;
+	int tmap2;
+	int orient;
+	char route[24];
+	char merge_impl[24];
+	char ovl_flip_axis[8];
+	char flip_screen_axis[16];
+	float u_span;
+	float v_span;
+	float u_shift_hint;
+	float v_shift_hint;
+	float cached_anchor_u;
+	float cached_anchor_v;
+	float legacy_anchor_u;
+	float legacy_anchor_v;
+	int route_agree;
+	int render_sample_valid;
+	int render_valid_cells;
+	int render_hot_cells;
+	unsigned int render_hash;
+	int render_luma_min;
+	int render_luma_max;
+	float render_hot_x;
+	float render_hot_y;
+	unsigned char render_sample_luma[MERGED_WALL_PROBE_RENDER_SAMPLE_COUNT];
+	unsigned char render_sample_mask[MERGED_WALL_PROBE_RENDER_SAMPLE_COUNT];
+};
+
 struct merged_wall_last_draw_state {
 	int valid;
 	int frame_id;
@@ -233,14 +286,16 @@ extern volatile int g_merged_wall_experiment_mode;
 extern volatile int g_merged_wall_experiment_pending_apply;
 extern volatile int g_merged_wall_snapshot_pending;
 extern volatile int g_merged_wall_snapshot_request_frame;
+extern volatile int g_merged_wall_snapshot_request_mode;
 extern volatile int g_merged_wall_render_pass;
 extern volatile int g_merged_wall_frame_id;
 extern volatile int g_merged_wall_draw_seq;
 extern struct android_draw_face_context g_android_draw_face_ctx;
 extern struct merged_wall_snapshot_result g_merged_wall_snapshot_result;
+extern struct merged_wall_probe_result g_merged_wall_probe_result;
 extern struct merged_wall_last_draw_state g_merged_wall_last_draw_state;
 
-void android_merged_wall_request_snapshot(void);
+void android_merged_wall_request_snapshot(int request_mode);
 
 #endif /* ANDROID */
 #endif /* DEBUG_TEX_OVERLAY_H */
