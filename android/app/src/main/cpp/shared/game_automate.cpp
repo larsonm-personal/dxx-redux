@@ -41,6 +41,7 @@ extern "C" {
 #include "game_introspect.h"
 #include "overlay_ringbuf.h"
 #include "android_log.h"
+#include "android_texture_debug.h"
 #include "android_meta_actions.h"
 #include "debug_tex_overlay.h"
 #include "merged_wall_debug.h"
@@ -1727,6 +1728,8 @@ extern "C" void game_automate_tick(void)
 		case STEP_SET_DEBUG:
 			if (s.field == "tex_overlay")
 				g_debug_tex_overlay_active = (int) std::stod(s.value);
+			else if (s.field == "texture_target")
+				android_texture_debug_set_target(s.value.c_str());
 			else if (s.field == "texture_log")
 				debug_log_set_enabled(DLOG_TEXTURE,
 				                      (strcasecmp(s.value.c_str(), "true") == 0 || strtol(s.value.c_str(), NULL, 10) != 0) ? 1 : 0);

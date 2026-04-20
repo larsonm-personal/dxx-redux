@@ -109,6 +109,7 @@ int androidaud_get_audio_buf_frames(void);
 
 #include "console_ringbuf.h"
 #include "android_log.h"
+#include "android_texture_debug.h"
 #include "overlay_ringbuf.h"
 #include "debug_tex_overlay.h"
 #include "merged_wall_debug.h"
@@ -863,6 +864,7 @@ extern "C" char *game_introspect_get_state(void)
 	{
 		json dbg;
 		dbg["tex_overlay"] = (bool) g_debug_tex_overlay_active;
+		dbg["texture_target"] = android_texture_debug_get_target_display();
 		dbg["texture_log"] = (bool) debug_log_enabled[DLOG_TEXTURE];
 		dbg["merged_wall_mode"] = (int) g_merged_wall_debug_mode;
 		dbg["merged_wall_experiment"] = (int) g_merged_wall_experiment_mode;

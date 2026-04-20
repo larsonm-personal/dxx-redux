@@ -41,6 +41,7 @@
     {"action": "assert", "expect": {"in_game": "true", "screen_mode": "game", "current_level_num": "1"}},
 
     {"action": "set_debug", "field": "clear_robots", "value": "1"},
+    {"action": "set_debug", "field": "texture_target", "value": "door45#0"},
     {"action": "set_debug", "field": "texture_log", "value": "1"},
     {"action": "set_debug", "field": "merged_wall_mode", "value": "0"},
     {"action": "set_debug", "field": "merged_wall_experiment", "value": "0"},
@@ -57,6 +58,7 @@
         "screen_mode": "game",
         "game_window_is_front": "true",
         "current_level_num": "1",
+        "debug_flags.texture_target": "door45#0",
         "position.segment": {"eq": "80"},
         "position.x": {"range": [-108.5, -107.0]},
         "position.y": {"range": [-74.25, -71.5]},
