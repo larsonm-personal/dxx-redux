@@ -258,7 +258,7 @@ fun EnginePreferencesPage(
                         checked = skipIntroMovie,
                         onCheckedChange = { checked ->
                             skipIntroMovie = checked
-                            prefs.edit().putBoolean(PREF_SKIP_INTRO_MOVIE, checked).apply()
+                            prefs.edit().putBoolean(PREF_SKIP_INTRO_MOVIE, checked).commit()
                         },
                     )
                     Spacer(modifier = Modifier.width(8.dp))

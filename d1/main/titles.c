@@ -195,10 +195,14 @@ void show_titles(void)
 	extern volatile int g_skip_intro_pref;
 	extern volatile int g_intro_skip_applied;
 	g_intro_skip_applied = 0;
-	if (g_skip_intro_pref) {
-		g_intro_skip_applied = 1;
-		return;
-	}
+#define RETURN_IF_SKIP_INTRO_PREF() \
+	do { \
+		if (g_skip_intro_pref) { \
+			g_intro_skip_applied = 1; \
+			goto done; \
+		} \
+	} while (0)
+	RETURN_IF_SKIP_INTRO_PREF();
 #endif
 	char    publisher[PATH_MAX];
 
@@ -218,10 +222,18 @@ void show_titles(void)
 		strcpy(publisher, "iplogo1.pcx");	// PC. Only down here because it's lowres ;-)
 
 	show_title_screen( publisher, 1, 1 );
+	#ifdef __ANDROID__
+	RETURN_IF_SKIP_INTRO_PREF();
+	#endif
 	show_title_screen( (((SWIDTH>=640&&SHEIGHT>=480) && PHYSFSX_exists("logoh.pcx",1))?"logoh.pcx":"logo.pcx"), 1, 1 );
+	#ifdef __ANDROID__
+	RETURN_IF_SKIP_INTRO_PREF();
+	#endif
 	show_title_screen( (((SWIDTH>=640&&SHEIGHT>=480) && PHYSFSX_exists("descenth.pcx",1))?"descenth.pcx":"descent.pcx"), 1, 1 );
 #ifdef __ANDROID__
+done:
 	g_intro_active = 0;
+	#undef RETURN_IF_SKIP_INTRO_PREF
 #endif
 }
 

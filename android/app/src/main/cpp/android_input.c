@@ -96,6 +96,31 @@ static int g_last_touch_x = -1;
 static int g_last_touch_y = -1;
 static int g_touch_active = 0; /* is a finger currently down? */
 static int g_input_count = 0;  /* debug counter */
+static int g_intro_skip_touch_pressed = 0;
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeKeyEvent(JNIEnv *env, jobject thiz,
+                                                  jint action, jint androidKeyCode,
+                                                  jint unicodeChar);
+
+static int android_intro_skip_touch_inside(jfloat normX, jfloat normY, int screenW, int screenH)
+{
+	const float h_over_w = (screenW > 0) ? ((float) screenH / (float) screenW) : 1.0f;
+	const float pill_left = 1.0f - 0.245f * h_over_w;
+	const float pill_top = 0.019f;
+	const float pill_bottom = 0.075f;
+	return normX >= pill_left && normX <= 1.0f && normY >= pill_top && normY <= pill_bottom;
+}
+
+static void android_persist_skip_intro_pref(JNIEnv *env, jobject thiz)
+{
+	jclass cls = (*env)->GetObjectClass(env, thiz);
+	if (!cls)
+		return;
+	jmethodID mid = (*env)->GetMethodID(env, cls, "persistSkipIntroMovieFromNative", "()V");
+	if (mid)
+		(*env)->CallVoidMethod(env, thiz, mid);
+}
 
 /*
  * nativeTouchEvent(action, normX, normY)
@@ -144,6 +169,36 @@ Java_com_dxxredux_app_MainActivity_nativeTouchEvent(JNIEnv *env, jobject thiz,
 	 * (from descent.cfg via grd_curscreen). */
 	int screenW = grd_curscreen ? grd_curscreen->sc_w : 640;
 	int screenH = grd_curscreen ? grd_curscreen->sc_h : 480;
+	if (g_intro_active) {
+		const int inside_intro_skip = android_intro_skip_touch_inside(normX, normY, screenW, screenH);
+		switch (action) {
+			case 0: /* ACTION_DOWN */
+				if (inside_intro_skip) {
+					g_intro_skip_touch_pressed = 1;
+					return;
+				}
+				break;
+
+			case 1: /* ACTION_MOVE */
+				if (g_intro_skip_touch_pressed)
+					return;
+				break;
+
+			case 2: /* ACTION_UP */
+				if (g_intro_skip_touch_pressed) {
+					g_intro_skip_touch_pressed = 0;
+					if (inside_intro_skip) {
+						g_skip_intro_pref = 1;
+						android_persist_skip_intro_pref(env, thiz);
+						Java_com_dxxredux_app_MainActivity_nativeKeyEvent(env, thiz, 0, AKEYCODE_ESCAPE, 0);
+						Java_com_dxxredux_app_MainActivity_nativeKeyEvent(env, thiz, 1, AKEYCODE_ESCAPE, 0);
+						return;
+					}
+					return;
+				}
+				break;
+		}
+	}
 	jint gameX = (jint) (normX * screenW);
 	jint gameY = (jint) (normY * screenH);
 	if (gameX < 0) gameX = 0;

@@ -594,7 +594,7 @@ class SetupActivity : ComponentActivity() {
                     "write_bool_pref" -> {
                         val key = intent.getStringExtra("key") ?: return
                         val value = intent.getBooleanExtra("value", false)
-                        getSharedPreferences("dxx_prefs", MODE_PRIVATE).edit().putBoolean(key, value).apply()
+                        getSharedPreferences("dxx_prefs", MODE_PRIVATE).edit().putBoolean(key, value).commit()
                         Log.i("DXX-Setup", "write_bool_pref: $key=$value")
                         requestSetupRefresh()
                     }

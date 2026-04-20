@@ -243,6 +243,9 @@ void show_titles(void)
 			while (PHYSFSX_exists(filename,0))
 			{
 				show_title_screen( filename, 1, 0 );
+#ifdef ANDROID
+				RETURN_IF_SKIP_INTRO_PREF();
+#endif
 				filename[5]++;
 			}
 		}
@@ -288,6 +291,9 @@ void show_titles(void)
 					crash_breadcrumb_v("show_titles: logo1=%s", filename);
 #endif
 					show_title_screen(filename, 1, 1);
+#ifdef ANDROID
+					RETURN_IF_SKIP_INTRO_PREF();
+#endif
 				}
 
 				strcpy(filename, HIRESMODE?"logob.pcx":"logo.pcx"); // OEM
@@ -301,6 +307,9 @@ void show_titles(void)
 					crash_breadcrumb_v("show_titles: logo2=%s", filename);
 #endif
 					show_title_screen(filename, 1, 1);
+#ifdef ANDROID
+					RETURN_IF_SKIP_INTRO_PREF();
+#endif
 				}
 			}
 		}
@@ -331,6 +340,9 @@ void show_titles(void)
 			while (PHYSFSX_exists(filename,0))
 			{
 				show_title_screen( filename, 1, 0 );
+#ifdef ANDROID
+				RETURN_IF_SKIP_INTRO_PREF();
+#endif
 				filename[3]++;
 			}
 		}

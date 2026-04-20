@@ -224,6 +224,13 @@ class MainActivity :
 
     external fun nativeGetWeaponState(): IntArray
 
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        if (::skipButton.isInitialized && skipButton.handleGlobalTouch(event)) {
+            return true
+        }
+        return super.dispatchTouchEvent(event)
+    }
+
     // ── Admin tray (android_input.c) ────────────────────────────────
     external fun nativeCycleCockpit(direction: Int)
 
@@ -749,10 +756,7 @@ class MainActivity :
             SkipButtonView(this).apply {
                 keyCallback = { action, keyCode, unicode -> nativeKeyEvent(action, keyCode, unicode) }
                 skipEveryLaunchCallback = {
-                    getSharedPreferences("dxx_prefs", MODE_PRIVATE)
-                        .edit()
-                        .putBoolean(PREF_SKIP_INTRO_MOVIE, true)
-                        .apply()
+                    persistSkipIntroMoviePreference()
                     nativeSetSkipIntroMovie(true)
                 }
                 visibility = View.GONE
@@ -1668,6 +1672,25 @@ class MainActivity :
             return true
         }
 
+        val introActive =
+            if (gameStarted) {
+                try {
+                    nativeIsIntroActive()
+                } catch (_: Exception) {
+                    false
+                }
+            } else {
+                false
+            }
+
+        if (introActive && skipButton.handleIntroTouch(event, window.decorView)) {
+            return true
+        }
+
+        if (skipButton.handleSurfaceFallbackTouch(event)) {
+            return true
+        }
+
         // ── Automap gesture handling (when overlay is off) ────
         // When the automap is showing, all non-edge touches become
         // pan/tilt (drag) or forward/reverse (pinch).
@@ -2419,6 +2442,26 @@ class MainActivity :
         val intent = android.content.Intent("com.dxxredux.HOST_MIGRATION")
         intent.setPackage(packageName)
         sendBroadcast(intent)
+    }
+
+    @Suppress("unused")
+    fun persistSkipIntroMovieFromNative() {
+        persistSkipIntroMoviePreference()
+    }
+
+    private fun persistSkipIntroMoviePreference() {
+        Log.i("DXX-Setup", "Skip every launch tapped")
+        getSharedPreferences("dxx_prefs", MODE_PRIVATE)
+            .edit()
+            .putBoolean(PREF_SKIP_INTRO_MOVIE, true)
+            .commit()
+        sendBroadcast(
+            Intent("com.dxxredux.SETUP_COMMAND")
+                .setPackage(packageName)
+                .putExtra("command", "write_bool_pref")
+                .putExtra("key", PREF_SKIP_INTRO_MOVIE)
+                .putExtra("value", true),
+        )
     }
 
     // ── Debug log bridge (called from JNI on game thread) ──
