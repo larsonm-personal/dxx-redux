@@ -861,15 +861,15 @@ function Watch-AutomationResult {
                     continue
                 } elseif ($resultObj.result -eq "LAUNCHER_CONTINUE") {
                     # Unified script: game exited, launcher resumes execution.
-                    # The launcher's onResume will pick this up, delete the file,
-                    # and continue running steps. Just keep polling.
+                    # Force-stop first so the next launcher phase starts from a
+                    # clean process. SetupActivity recreates the executor from
+                    # automation_result.json's script_path on resume.
                     $nextStep = $resultObj.next_step
                     if ($IsLauncherScript -and -not $launcherResumeHandled) {
                         $launcherResumeHandled = $true
-                        Write-Status "LAUNCHER_CONTINUE at step $nextStep -- bringing launcher to foreground" "Yellow"
-                        Adb -AdbArgs @("shell", "monkey", "-p", $script:PACKAGE,
-                            "-c", "android.intent.category.LAUNCHER", "1") | Out-Null
-                        Start-Sleep -Seconds 1
+                        Write-Status "LAUNCHER_CONTINUE at step $nextStep -- restarting launcher cleanly" "Yellow"
+                        Stop-AppAndWait
+                        Adb -AdbArgs @("shell", "am", "start", "-n", "$($script:PACKAGE)/$($script:ACTIVITY)") | Out-Null
                         if (Wait-SetupActivityReady -TimeoutSeconds 15) {
                             Write-Status "Launcher resumed -- continuing test monitoring" "Green"
                         } else {

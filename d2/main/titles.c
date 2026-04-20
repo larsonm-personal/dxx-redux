@@ -214,6 +214,17 @@ void show_titles(void)
 	extern volatile int g_skip_intro_pref;
 	extern volatile int g_intro_skip_applied;
 	g_intro_skip_applied = 0;
+#define RETURN_IF_SKIP_INTRO_PREF() \
+	do { \
+		if (g_skip_intro_pref) \
+		{ \
+			g_intro_skip_applied = 1; \
+			intro_played = 1; \
+			goto done; \
+		} \
+	} while (0)
+	RETURN_IF_SKIP_INTRO_PREF();
+	g_intro_active = 1;
 #endif
 
 #define MOVIE_REQUIRED 1	//(!is_D2_OEM && !is_SHAREWARE && !is_MAC_SHARE)	// causes segfault
@@ -238,16 +249,9 @@ void show_titles(void)
 	}
 
 #ifdef ANDROID
+	RETURN_IF_SKIP_INTRO_PREF();
 	crash_breadcrumb("show_titles: pre PlayMovie intro");
-	g_intro_active = 1;
 #endif
-	if (
-#ifdef ANDROID
-		!g_skip_intro_pref
-#else
-		1
-#endif
-	)
 	{
 		init_subtitles("intro.tex");
 		played = PlayMovie("intro.mve",MOVIE_REQUIRED);
@@ -301,17 +305,9 @@ void show_titles(void)
 			}
 		}
 	}
-	else
-	{
 
 #ifdef ANDROID
-		g_intro_skip_applied = 1;
-#endif
-		intro_played = 1;
-	}
-
-#ifdef ANDROID
-	g_intro_active = 0;
+	RETURN_IF_SKIP_INTRO_PREF();
 #endif
 
 	{       //show bundler movie or screens
@@ -340,6 +336,10 @@ void show_titles(void)
 		}
 	}
 
+#ifdef ANDROID
+	RETURN_IF_SKIP_INTRO_PREF();
+#endif
+
 	if (!song_playing)
 	{
 		con_printf( CON_DEBUG, "\nPlaying title song..." );
@@ -354,6 +354,12 @@ void show_titles(void)
 #endif
 		show_title_screen(filename, 1, 1);
 	}
+
+#ifdef ANDROID
+done:
+	g_intro_active = 0;
+	#undef RETURN_IF_SKIP_INTRO_PREF
+#endif
 #ifdef ANDROID
 	crash_breadcrumb("show_titles: done");
 #endif
