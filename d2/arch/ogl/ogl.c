@@ -177,8 +177,6 @@ static struct merged_wall_tmap2_submit_context merged_wall_tmap2_submit_ctx = {
 	"merge_raw", 0, 0, 0xff, 0, 0, 0, 0
 };
 
-static unsigned int merged_wall_tmap2_upload_seq = 0;
-
 static void ogl_get_metl154_source_filter_sample(grs_bitmap *bm, GLfloat sample_u,
 	GLfloat sample_v, int *idx00, int *idx10, int *idx01, int *idx11,
 	GLfloat *alpha, int *wrap_u, int *wrap_v);
@@ -248,18 +246,6 @@ static int ogl_is_merged_wall_logging_target_bitmap(grs_bitmap *bm)
 }
 
 #ifdef ANDROID
-static const char *ogl_merged_wall_experiment_name(int mode)
-{
-	switch (mode) {
-		case MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE:
-			return "force_legacy_texmerge";
-		case MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE:
-			return "clear_secondary_units_single";
-		default:
-			return "default";
-	}
-}
-
 static void ogl_reset_merged_wall_tmap2_submit_context(void)
 {
 	android_merged_wall_reset_tmap2_submit_context(&merged_wall_tmap2_submit_ctx);
@@ -286,259 +272,38 @@ static void ogl_get_merged_wall_point_code_summary(g3s_point **pointlist, int nv
 		behind_count, temp_points);
 }
 
-static void ogl_log_merged_wall_tmap2_route(const char *route, grs_bitmap *bmbot,
-	grs_bitmap *bmovl, int nv, int orient)
-{
-	const char *botname = piggy_game_bitmap_name(bmbot);
-	const char *ovlname = piggy_game_bitmap_name(bmovl);
-
-	if (!ogl_is_merged_wall_logging_target_bitmap(bmovl))
-		return;
-	debug_log(DLOG_TEXTURE,
-		"[metl154clip] frame=%d pass=%d seq=%d stage=route route=%s merge_impl=gpu_two_pass seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orig_nv=%d orient=%d super=%d bot=%s ovl=%s",
-		g_metl154_frame_id,
-		g_metl154_render_pass,
-		g_metl154_draw_seq,
-		route ? route : "merge_raw",
-		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
-		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
-		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
-		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1,
-		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
-		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap1 : -1,
-		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap2 : 0,
-		nv,
-		orient,
-		!!(bmovl->bm_flags & BM_FLAG_SUPER_TRANSPARENT),
-		botname ? botname : "<none>",
-		ovlname ? ovlname : "<none>");
-}
-
-static void ogl_log_merged_wall_upload(grs_bitmap *bmbot, grs_bitmap *bmovl,
-	GLuint prog, GLuint merge_vbo, int nv, int orient, int vb, int cb, int tb,
-	int t2b)
-{
-	const char *route = merged_wall_tmap2_submit_ctx.route;
-	const char *botname = piggy_game_bitmap_name(bmbot);
-	const char *ovlname = piggy_game_bitmap_name(bmovl);
-	GLuint base_handle = bmbot->gltexture ? bmbot->gltexture->handle : 0;
-	GLuint overlay_handle = bmovl->gltexture ? bmovl->gltexture->handle : 0;
-	int color_off = vb;
-	int tex_off = vb + cb;
-	int tex2_off = vb + cb + tb;
-	int total = vb + cb + tb + t2b;
-	unsigned int upload_id = ++merged_wall_tmap2_upload_seq;
-
-	merged_wall_tmap2_submit_ctx.upload_id = upload_id;
-	debug_log(DLOG_TEXTURE,
-		"[metl154upload] frame=%d pass=%d seq=%d upload_id=%u route=%s merge_impl=gpu_two_pass upload_impl=shim_stream seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orient=%d bot=%s ovl=%s base_handle=%u overlay_handle=%u prog=%u vbo=%u nv=%d vb=%d cb=%d tb=%d t2b=%d total=%d off_v=0 off_c=%d off_t=%d off_t2=%d",
-		g_metl154_frame_id,
-		g_metl154_render_pass,
-		g_metl154_draw_seq,
-		upload_id,
-		route ? route : "merge_raw",
-		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
-		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
-		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
-		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.child : -1,
-		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.wid_flags : -1,
-		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap1 : -1,
-		g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.tmap2 : 0,
-		orient,
-		botname ? botname : "<none>",
-		ovlname ? ovlname : "<none>",
-		(unsigned int)base_handle,
-		(unsigned int)overlay_handle,
-		(unsigned int)prog,
-		(unsigned int)merge_vbo,
-		nv,
-		vb,
-		cb,
-		tb,
-		t2b,
-		total,
-		color_off,
-		tex_off,
-		tex2_off);
-}
-
 #endif
-
-static grs_bitmap *ogl_get_metl154_source_bitmap(grs_bitmap *bm)
-{
-	grs_bitmap *src = bm;
-
-	if (src->bm_flags & BM_FLAG_RLE)
-		src = rle_expand_texture(src);
-	if (!src || !src->bm_data || src->bm_w <= 0 || src->bm_h <= 0)
-		return NULL;
-	return src;
-}
 
 static void ogl_get_metl154_palette_counts(grs_bitmap *bm, int *idx254, int *idx255, int *real_flags)
 {
-	grs_bitmap *src = ogl_get_metl154_source_bitmap(bm);
-	int total, i;
-
-	*idx254 = 0;
-	*idx255 = 0;
-	*real_flags = piggy_bitmap_get_flags(bm);
-
-	if (!src)
-		return;
-
-	total = src->bm_w * src->bm_h;
-	for (i = 0; i < total; i++) {
-		if (src->bm_data[i] == 254)
-			(*idx254)++;
-		else if (src->bm_data[i] == 255)
-			(*idx255)++;
-	}
+	android_merged_wall_get_source_palette_counts(bm, idx254, idx255, real_flags);
 }
 
 static int ogl_get_metl154_alpha_class(unsigned char idx)
 {
-	if (idx == 255)
-		return 0;
-	if (idx == 254)
-		return 2;
-	return 1;
-}
-
-static GLfloat ogl_get_metl154_alpha_value(unsigned char idx)
-{
-	return idx == 255 ? 0.0f : 1.0f;
+	return android_merged_wall_get_source_alpha_class(idx);
 }
 
 static void ogl_get_metl154_source_sample(grs_bitmap *bm, GLfloat *texcoordovl_array, int nv,
 	GLfloat *avg_u, GLfloat *avg_v, int *sample_x, int *sample_y, int *sample_idx)
 {
-	grs_bitmap *src = ogl_get_metl154_source_bitmap(bm);
-	GLfloat sum_u = 0.0f, sum_v = 0.0f;
-	GLfloat wrapped_u, wrapped_v;
-	int i;
-
-	*avg_u = 0.0f;
-	*avg_v = 0.0f;
-	*sample_x = -1;
-	*sample_y = -1;
-	*sample_idx = -1;
-
-	if (!src || nv <= 0)
-		return;
-
-	for (i = 0; i < nv; i++) {
-		sum_u += texcoordovl_array[i * 2];
-		sum_v += texcoordovl_array[i * 2 + 1];
-	}
-	*avg_u = sum_u / nv;
-	*avg_v = sum_v / nv;
-	wrapped_u = *avg_u - floorf(*avg_u);
-	wrapped_v = *avg_v - floorf(*avg_v);
-	if (wrapped_u < 0.0f)
-		wrapped_u += 1.0f;
-	if (wrapped_v < 0.0f)
-		wrapped_v += 1.0f;
-
-	*sample_x = (int)(wrapped_u * src->bm_w);
-	*sample_y = (int)(wrapped_v * src->bm_h);
-	if (*sample_x >= src->bm_w)
-		*sample_x = src->bm_w - 1;
-	if (*sample_y >= src->bm_h)
-		*sample_y = src->bm_h - 1;
-	*sample_idx = src->bm_data[*sample_y * src->bm_w + *sample_x];
+	android_merged_wall_get_source_sample(bm, texcoordovl_array, nv,
+		avg_u, avg_v, sample_x, sample_y, sample_idx);
 }
 
 static void ogl_get_metl154_source_filter_sample(grs_bitmap *bm, GLfloat sample_u,
 	GLfloat sample_v, int *idx00, int *idx10, int *idx01, int *idx11,
 	GLfloat *alpha, int *wrap_u, int *wrap_v)
 {
-	grs_bitmap *src = ogl_get_metl154_source_bitmap(bm);
-	GLfloat wrapped_u, wrapped_v, tex_u, tex_v, frac_u, frac_v, alpha0, alpha1;
-	int x0, x1, y0, y1;
-
-	*idx00 = -1;
-	*idx10 = -1;
-	*idx01 = -1;
-	*idx11 = -1;
-	*alpha = -1.0f;
-	*wrap_u = 0;
-	*wrap_v = 0;
-
-	if (!src || src->bm_w <= 0 || src->bm_h <= 0)
-		return;
-
-	wrapped_u = sample_u - floorf(sample_u);
-	wrapped_v = sample_v - floorf(sample_v);
-	if (wrapped_u < 0.0f)
-		wrapped_u += 1.0f;
-	if (wrapped_v < 0.0f)
-		wrapped_v += 1.0f;
-
-	tex_u = wrapped_u * src->bm_w - 0.5f;
-	tex_v = wrapped_v * src->bm_h - 0.5f;
-	x0 = (int)floorf(tex_u);
-	y0 = (int)floorf(tex_v);
-	frac_u = tex_u - floorf(tex_u);
-	frac_v = tex_v - floorf(tex_v);
-	x1 = x0 + 1;
-	y1 = y0 + 1;
-
-	*wrap_u = (x0 < 0 || x1 >= src->bm_w);
-	*wrap_v = (y0 < 0 || y1 >= src->bm_h);
-
-	x0 = ((x0 % src->bm_w) + src->bm_w) % src->bm_w;
-	x1 = ((x1 % src->bm_w) + src->bm_w) % src->bm_w;
-	y0 = ((y0 % src->bm_h) + src->bm_h) % src->bm_h;
-	y1 = ((y1 % src->bm_h) + src->bm_h) % src->bm_h;
-
-	*idx00 = src->bm_data[y0 * src->bm_w + x0];
-	*idx10 = src->bm_data[y0 * src->bm_w + x1];
-	*idx01 = src->bm_data[y1 * src->bm_w + x0];
-	*idx11 = src->bm_data[y1 * src->bm_w + x1];
-
-	alpha0 = ogl_get_metl154_alpha_value((unsigned char)*idx00) * (1.0f - frac_u)
-		+ ogl_get_metl154_alpha_value((unsigned char)*idx10) * frac_u;
-	alpha1 = ogl_get_metl154_alpha_value((unsigned char)*idx01) * (1.0f - frac_u)
-		+ ogl_get_metl154_alpha_value((unsigned char)*idx11) * frac_u;
-	*alpha = alpha0 * (1.0f - frac_v) + alpha1 * frac_v;
+	android_merged_wall_get_source_filter_sample(bm, sample_u, sample_v,
+		idx00, idx10, idx01, idx11, alpha, wrap_u, wrap_v);
 }
 
 static void ogl_get_metl154_source_vslice(grs_bitmap *bm, GLfloat sample_u,
 	GLfloat min_v, GLfloat max_v, int *sample_rows, int *sample_idxs, int nsamples)
 {
-	grs_bitmap *src = ogl_get_metl154_source_bitmap(bm);
-	GLfloat wrapped_u, span_v;
-	int sample_x, i;
-
-	for (i = 0; i < nsamples; i++) {
-		sample_rows[i] = -1;
-		sample_idxs[i] = -1;
-	}
-	if (!src || nsamples <= 0)
-		return;
-
-	wrapped_u = sample_u - floorf(sample_u);
-	if (wrapped_u < 0.0f)
-		wrapped_u += 1.0f;
-	sample_x = (int)(wrapped_u * src->bm_w);
-	if (sample_x >= src->bm_w)
-		sample_x = src->bm_w - 1;
-	span_v = max_v - min_v;
-
-	for (i = 0; i < nsamples; i++) {
-		GLfloat sample_v = min_v + span_v * ((i + 0.5f) / nsamples);
-		GLfloat wrapped_v = sample_v - floorf(sample_v);
-		int sample_y;
-
-		if (wrapped_v < 0.0f)
-			wrapped_v += 1.0f;
-		sample_y = (int)(wrapped_v * src->bm_h);
-		if (sample_y >= src->bm_h)
-			sample_y = src->bm_h - 1;
-		sample_rows[i] = sample_y;
-		sample_idxs[i] = src->bm_data[sample_y * src->bm_w + sample_x];
-	}
+	android_merged_wall_get_source_vslice(bm, sample_u, min_v, max_v,
+		sample_rows, sample_idxs, nsamples);
 }
 
 static void ogl_get_metl154_filter_state(ogl_texture *tex, GLint *min_filter, GLint *mag_filter)
@@ -3062,7 +2827,9 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 		int tb = nv * 2 * (int)sizeof(GLfloat);
 		int t2b = nv * 2 * (int)sizeof(GLfloat);
 		if (log_tmap2_geometry)
-			ogl_log_merged_wall_upload(bmbot, bmovl, prog, gles3_shim_get_stream_vbo(), nv, orient,
+			android_merged_wall_log_upload(&merged_wall_tmap2_submit_ctx,
+				bmbot, bmovl, (unsigned int)prog,
+				(unsigned int)gles3_shim_get_stream_vbo(), nv, orient,
 				vb, cb, tb, t2b);
 		glVertexPointer(3, GL_FLOAT, 0, vertex_array);
 		glColorPointer(4, GL_FLOAT, 0, color_array);
@@ -3403,12 +3170,12 @@ bool g3_draw_tmap_2(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_
 	int input_behind = 0;
 	if (ogl_is_merged_wall_logging_target_bitmap(bmovl)
 		&& !(bmovl->bm_flags & BM_FLAG_SUPER_TRANSPARENT)) {
-		ogl_log_merged_wall_tmap2_route("clip_metl154", bmbot, bmovl, nv, orient);
+		android_merged_wall_log_tmap2_route("clip_metl154", bmbot, bmovl, nv, orient);
 		return ogl_clip_and_draw_tmap2_merge(nv, pointlist, uvl_list,
 			light_rgb, bmbot, bmovl, orient, "clip_metl154");
 	}
 	if (ogl_is_merged_wall_logging_target_bitmap(bmovl))
-		ogl_log_merged_wall_tmap2_route("merge_raw", bmbot, bmovl, nv, orient);
+		android_merged_wall_log_tmap2_route("merge_raw", bmbot, bmovl, nv, orient);
 	if (ogl_is_merged_wall_logging_target_bitmap(bmovl)) {
 		ogl_get_merged_wall_input_codes(pointlist, nv, &cc, &input_behind);
 		ogl_set_merged_wall_tmap2_submit_context("merge_raw", nv, &cc,
@@ -3640,7 +3407,7 @@ void ogl_start_frame(void){
 		debug_log(DLOG_TEXTURE,
 			"[mwall_exp] apply: mode=%d(%s) texture_reload=0",
 			(int)g_metl154_experiment_mode,
-			ogl_merged_wall_experiment_name((int)g_metl154_experiment_mode));
+			android_merged_wall_experiment_name((int)g_metl154_experiment_mode));
 	}
 	if (g_aniso_pending_apply) {
 		g_aniso_pending_apply = 0;

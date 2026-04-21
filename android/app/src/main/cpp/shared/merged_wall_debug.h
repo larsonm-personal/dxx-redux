@@ -23,6 +23,7 @@ struct merged_wall_tmap2_submit_context {
 
 extern volatile int g_merged_wall_force_two_pass;
 
+const char *android_merged_wall_experiment_name(int mode);
 int android_merged_wall_is_logging_target_bitmap(grs_bitmap *bm);
 int android_merged_wall_is_logging_target_tmap2(int tmap2);
 void android_merged_wall_reset_tmap2_submit_context(struct merged_wall_tmap2_submit_context *ctx);
@@ -30,6 +31,31 @@ void android_merged_wall_set_tmap2_submit_context(struct merged_wall_tmap2_submi
                                                   const char *route, int orig_nv,
                                                   const g3s_codes *cc, int input_behind,
                                                   int temp_points, int clip_applied);
+void android_merged_wall_log_tmap2_route(const char *route, grs_bitmap *bmbot,
+                                         grs_bitmap *bmovl, int nv, int orient);
+void android_merged_wall_log_upload(struct merged_wall_tmap2_submit_context *ctx,
+                                    grs_bitmap *bmbot, grs_bitmap *bmovl,
+                                    unsigned int prog, unsigned int merge_vbo,
+                                    int nv, int orient, int vb, int cb, int tb,
+                                    int t2b);
+void android_merged_wall_get_source_palette_counts(grs_bitmap *bm, int *idx254,
+                                                   int *idx255, int *real_flags);
+int android_merged_wall_get_source_alpha_class(unsigned char idx);
+float android_merged_wall_get_source_alpha_value(unsigned char idx);
+void android_merged_wall_get_source_sample(grs_bitmap *bm,
+                                           const float *texcoordovl_array, int nv,
+                                           float *avg_u, float *avg_v,
+                                           int *sample_x, int *sample_y,
+                                           int *sample_idx);
+void android_merged_wall_get_source_filter_sample(grs_bitmap *bm, float sample_u,
+                                                  float sample_v, int *idx00,
+                                                  int *idx10, int *idx01,
+                                                  int *idx11, float *alpha,
+                                                  int *wrap_u, int *wrap_v);
+void android_merged_wall_get_source_vslice(grs_bitmap *bm, float sample_u,
+                                           float min_v, float max_v,
+                                           int *sample_rows, int *sample_idxs,
+                                           int nsamples);
 void android_merged_wall_get_input_codes(const struct g3s_point *const *pointlist,
                                          int nv, g3s_codes *cc, int *input_behind);
 void android_merged_wall_get_point_code_summary(const struct g3s_point *const *pointlist,
