@@ -291,6 +291,102 @@ static int merged_wall_overlay_index(int tmap2)
 	return tmap2 & 0x3fff;
 }
 
+void android_merged_wall_reset_tmap2_submit_context(struct merged_wall_tmap2_submit_context *ctx)
+{
+	if (!ctx)
+		return;
+	memset(ctx, 0, sizeof(*ctx));
+	ctx->route = "merge_raw";
+	ctx->orig_uand = 0xff;
+}
+
+void android_merged_wall_set_tmap2_submit_context(struct merged_wall_tmap2_submit_context *ctx,
+                                                  const char *route, int orig_nv, const g3s_codes *cc, int input_behind,
+                                                  int temp_points, int clip_applied)
+{
+	if (!ctx)
+		return;
+	android_merged_wall_reset_tmap2_submit_context(ctx);
+	ctx->route = route ? route : "merge_raw";
+	ctx->orig_nv = orig_nv;
+	if (cc) {
+		ctx->orig_uor = cc->uor;
+		ctx->orig_uand = cc->uand;
+	}
+	ctx->input_behind = input_behind;
+	ctx->temp_points = temp_points;
+	ctx->clip_applied = clip_applied;
+}
+
+void android_merged_wall_get_input_codes(const struct g3s_point *const *pointlist,
+                                         int nv, g3s_codes *cc, int *input_behind)
+{
+	int i;
+
+	if (cc) {
+		cc->uor = 0;
+		cc->uand = 0xff;
+	}
+	if (input_behind)
+		*input_behind = 0;
+	for (i = 0; i < nv; i++) {
+		const struct g3s_point *p = pointlist[i];
+
+		if (cc) {
+			cc->uand &= p->p3_codes;
+			cc->uor |= p->p3_codes;
+		}
+		if (input_behind && (p->p3_codes & CC_BEHIND))
+			(*input_behind)++;
+	}
+}
+
+void android_merged_wall_get_point_code_summary(const struct g3s_point *const *pointlist,
+                                                int nv, unsigned int *uor, unsigned int *uand, int *behind_count,
+                                                int *temp_points)
+{
+	int i;
+
+	if (uor)
+		*uor = 0;
+	if (uand)
+		*uand = 0xff;
+	if (behind_count)
+		*behind_count = 0;
+	if (temp_points)
+		*temp_points = 0;
+	for (i = 0; i < nv; i++) {
+		const struct g3s_point *p = pointlist[i];
+
+		if (uor)
+			*uor |= p->p3_codes;
+		if (uand)
+			*uand &= p->p3_codes;
+		if (behind_count && (p->p3_codes & CC_BEHIND))
+			(*behind_count)++;
+		if (temp_points && (p->p3_flags & PF_TEMP_POINT))
+			(*temp_points)++;
+	}
+}
+
+float android_merged_wall_get_screen_area(const struct g3s_point *const *pointlist,
+                                          int nv)
+{
+	double area = 0.0;
+	int i;
+
+	if (!pointlist || nv < 3)
+		return 0.0f;
+
+	for (i = 0; i < nv; i++) {
+		int j = (i + 1) % nv;
+
+		area += (double) f2fl(pointlist[i]->p3_sx) * (double) f2fl(pointlist[j]->p3_sy) - (double) f2fl(pointlist[j]->p3_sx) * (double) f2fl(pointlist[i]->p3_sy);
+	}
+
+	return (float) (area * 0.5);
+}
+
 static int merged_wall_is_logging_target_name(const char *name)
 {
 	return name && !d_stricmp(name, "metl154");

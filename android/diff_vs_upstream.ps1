@@ -22,7 +22,7 @@ $tempDir = Join-Path $repoRoot "temp"
 if (-not (Test-Path $tempDir)) { New-Item -ItemType Directory -Path $tempDir | Out-Null }
 
 $numstatPath = Join-Path $tempDir "d1d2_diff_numstat.txt"
-$sortedPath  = Join-Path $tempDir "d1d2_diff_sorted.txt"
+$sortedPath = Join-Path $tempDir "d1d2_diff_sorted.txt"
 $summaryPath = Join-Path $tempDir "d1d2_diff_summary.txt"
 
 Write-Host "Base: $Base"
@@ -51,9 +51,9 @@ $rows = foreach ($line in $numstat) {
 $sorted = $rows | Sort-Object Total -Descending
 $sorted | Format-Table -AutoSize | Out-String | Set-Content -Encoding utf8 $sortedPath
 
-$totalAdded   = ($rows | Measure-Object Added   -Sum).Sum
+$totalAdded = ($rows | Measure-Object Added   -Sum).Sum
 $totalRemoved = ($rows | Measure-Object Removed -Sum).Sum
-$fileCount    = $rows.Count
+$fileCount = $rows.Count
 
 $d1Files = $rows | Where-Object { $_.Path -like "d1/*" }
 $d2Files = $rows | Where-Object { $_.Path -like "d2/*" }
@@ -67,7 +67,7 @@ $summary += "  +added:  $totalAdded"
 $summary += "  -removed: $totalRemoved"
 $summary += ""
 $summary += "Top $Top by total churn:"
-$summary += ($sorted | Select-Object -First $Top | Format-Table Added,Removed,Total,Path -AutoSize | Out-String).TrimEnd()
+$summary += ($sorted | Select-Object -First $Top | Format-Table Added, Removed, Total, Path -AutoSize | Out-String).TrimEnd()
 $summary | Set-Content -Encoding utf8 $summaryPath
 
 Write-Host ""

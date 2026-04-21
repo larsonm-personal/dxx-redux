@@ -119,7 +119,7 @@ void show_framerate()
 void set_font_present() { gr_set_fontcolor(BM_XRGB(25,25,25),-1); }
 void set_font_absent() { gr_set_fontcolor(BM_XRGB(12,12,12),-1); }
 void set_font_newline() { gr_set_fontcolor(255,-1); }
-void draw_flag(char* string, int present, int x, int y) {
+void draw_flag(const char *string, int present, int x, int y) {
 	if(present) { set_font_present(); }
 	else        { set_font_absent();  }
 

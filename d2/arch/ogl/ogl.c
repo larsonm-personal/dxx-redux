@@ -173,22 +173,11 @@ static int metl154_single_clip_active = 0;
 #define g_metl154_frame_id g_merged_wall_frame_id
 #define g_metl154_draw_seq g_merged_wall_draw_seq
 
-struct metl154_tmap2_submit_context {
-	const char *route;
-	int orig_nv;
-	unsigned int orig_uor;
-	unsigned int orig_uand;
-	int input_behind;
-	int temp_points;
-	int clip_applied;
-	unsigned int upload_id;
-};
-
-static struct metl154_tmap2_submit_context metl154_tmap2_submit_ctx = {
+static struct merged_wall_tmap2_submit_context merged_wall_tmap2_submit_ctx = {
 	"merge_raw", 0, 0, 0xff, 0, 0, 0, 0
 };
 
-static unsigned int metl154_tmap2_upload_seq = 0;
+static unsigned int merged_wall_tmap2_upload_seq = 0;
 
 static void ogl_get_metl154_source_filter_sample(grs_bitmap *bm, GLfloat sample_u,
 	GLfloat sample_v, int *idx00, int *idx10, int *idx01, int *idx11,
@@ -253,10 +242,9 @@ static void ogl_log_merged_wall_snapshot_if_pending(int screen_w, int screen_h,
 		avg_r, avg_g, avg_b, avg_a);
 }
 
-static int ogl_is_metl154_bitmap(grs_bitmap *bm)
+static int ogl_is_merged_wall_logging_target_bitmap(grs_bitmap *bm)
 {
-	const char *name = bm ? piggy_game_bitmap_name(bm) : NULL;
-	return name && !d_stricmp(name, "metl154");
+	return android_merged_wall_is_logging_target_bitmap(bm);
 }
 
 #ifdef ANDROID
@@ -272,85 +260,39 @@ static const char *ogl_merged_wall_experiment_name(int mode)
 	}
 }
 
-static void ogl_reset_metl154_tmap2_submit_context(void)
+static void ogl_reset_merged_wall_tmap2_submit_context(void)
 {
-	memset(&metl154_tmap2_submit_ctx, 0, sizeof(metl154_tmap2_submit_ctx));
-	metl154_tmap2_submit_ctx.route = "merge_raw";
-	metl154_tmap2_submit_ctx.orig_uand = 0xff;
+	android_merged_wall_reset_tmap2_submit_context(&merged_wall_tmap2_submit_ctx);
 }
 
-static void ogl_set_metl154_tmap2_submit_context(const char *route, int orig_nv,
+static void ogl_set_merged_wall_tmap2_submit_context(const char *route, int orig_nv,
 	const g3s_codes *cc, int input_behind, int temp_points, int clip_applied)
 {
-	ogl_reset_metl154_tmap2_submit_context();
-	metl154_tmap2_submit_ctx.route = route ? route : "merge_raw";
-	metl154_tmap2_submit_ctx.orig_nv = orig_nv;
-	if (cc) {
-		metl154_tmap2_submit_ctx.orig_uor = cc->uor;
-		metl154_tmap2_submit_ctx.orig_uand = cc->uand;
-	}
-	metl154_tmap2_submit_ctx.input_behind = input_behind;
-	metl154_tmap2_submit_ctx.temp_points = temp_points;
-	metl154_tmap2_submit_ctx.clip_applied = clip_applied;
+	android_merged_wall_set_tmap2_submit_context(&merged_wall_tmap2_submit_ctx,
+		route, orig_nv, cc, input_behind, temp_points, clip_applied);
 }
 
-static void ogl_get_metl154_input_codes(const g3s_point **pointlist, int nv,
+static void ogl_get_merged_wall_input_codes(const g3s_point **pointlist, int nv,
 	g3s_codes *cc, int *input_behind)
 {
-	int i;
-
-	if (cc) {
-		cc->uor = 0;
-		cc->uand = 0xff;
-	}
-	if (input_behind)
-		*input_behind = 0;
-	for (i = 0; i < nv; i++) {
-		const g3s_point *p = pointlist[i];
-
-		if (cc) {
-			cc->uand &= p->p3_codes;
-			cc->uor |= p->p3_codes;
-		}
-		if (input_behind && (p->p3_codes & CC_BEHIND))
-			(*input_behind)++;
-	}
+	android_merged_wall_get_input_codes(pointlist, nv, cc, input_behind);
 }
 
-static void ogl_get_metl154_point_code_summary(g3s_point **pointlist, int nv,
+static void ogl_get_merged_wall_point_code_summary(g3s_point **pointlist, int nv,
 	unsigned int *uor, unsigned int *uand, int *behind_count, int *temp_points)
 {
-	int i;
-
-	if (uor)
-		*uor = 0;
-	if (uand)
-		*uand = 0xff;
-	if (behind_count)
-		*behind_count = 0;
-	if (temp_points)
-		*temp_points = 0;
-	for (i = 0; i < nv; i++) {
-		g3s_point *p = pointlist[i];
-
-		if (uor)
-			*uor |= p->p3_codes;
-		if (uand)
-			*uand &= p->p3_codes;
-		if (behind_count && (p->p3_codes & CC_BEHIND))
-			(*behind_count)++;
-		if (temp_points && (p->p3_flags & PF_TEMP_POINT))
-			(*temp_points)++;
-	}
+	android_merged_wall_get_point_code_summary(
+		(const struct g3s_point *const *)pointlist, nv, uor, uand,
+		behind_count, temp_points);
 }
 
-static void ogl_log_metl154_tmap2_route(const char *route, grs_bitmap *bmbot,
+static void ogl_log_merged_wall_tmap2_route(const char *route, grs_bitmap *bmbot,
 	grs_bitmap *bmovl, int nv, int orient)
 {
 	const char *botname = piggy_game_bitmap_name(bmbot);
 	const char *ovlname = piggy_game_bitmap_name(bmovl);
 
-	if (!ogl_is_metl154_bitmap(bmovl))
+	if (!ogl_is_merged_wall_logging_target_bitmap(bmovl))
 		return;
 	debug_log(DLOG_TEXTURE,
 		"[metl154clip] frame=%d pass=%d seq=%d stage=route route=%s merge_impl=gpu_two_pass seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orig_nv=%d orient=%d super=%d bot=%s ovl=%s",
@@ -372,11 +314,11 @@ static void ogl_log_metl154_tmap2_route(const char *route, grs_bitmap *bmbot,
 		ovlname ? ovlname : "<none>");
 }
 
-static void ogl_log_metl154_upload(grs_bitmap *bmbot, grs_bitmap *bmovl,
+static void ogl_log_merged_wall_upload(grs_bitmap *bmbot, grs_bitmap *bmovl,
 	GLuint prog, GLuint merge_vbo, int nv, int orient, int vb, int cb, int tb,
 	int t2b)
 {
-	const char *route = metl154_tmap2_submit_ctx.route;
+	const char *route = merged_wall_tmap2_submit_ctx.route;
 	const char *botname = piggy_game_bitmap_name(bmbot);
 	const char *ovlname = piggy_game_bitmap_name(bmovl);
 	GLuint base_handle = bmbot->gltexture ? bmbot->gltexture->handle : 0;
@@ -385,9 +327,9 @@ static void ogl_log_metl154_upload(grs_bitmap *bmbot, grs_bitmap *bmovl,
 	int tex_off = vb + cb;
 	int tex2_off = vb + cb + tb;
 	int total = vb + cb + tb + t2b;
-	unsigned int upload_id = ++metl154_tmap2_upload_seq;
+	unsigned int upload_id = ++merged_wall_tmap2_upload_seq;
 
-	metl154_tmap2_submit_ctx.upload_id = upload_id;
+	merged_wall_tmap2_submit_ctx.upload_id = upload_id;
 	debug_log(DLOG_TEXTURE,
 		"[metl154upload] frame=%d pass=%d seq=%d upload_id=%u route=%s merge_impl=gpu_two_pass upload_impl=shim_stream seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orient=%d bot=%s ovl=%s base_handle=%u overlay_handle=%u prog=%u vbo=%u nv=%d vb=%d cb=%d tb=%d t2b=%d total=%d off_v=0 off_c=%d off_t=%d off_t2=%d",
 		g_metl154_frame_id,
@@ -746,21 +688,9 @@ static void ogl_get_metl154_gl_state(GLint *depth_enabled, GLint *blend_enabled,
 	glGetIntegerv(GL_FRAMEBUFFER_BINDING, draw_fbo);
 }
 
-static GLfloat ogl_get_metl154_screen_area(const g3s_point **pointlist, int nv)
+static GLfloat ogl_get_merged_wall_screen_area(const g3s_point **pointlist, int nv)
 {
-	double area = 0.0;
-	int i;
-
-	if (!pointlist || nv < 3)
-		return 0.0f;
-
-	for (i = 0; i < nv; i++) {
-		int j = (i + 1) % nv;
-		area += (double)f2fl(pointlist[i]->p3_sx) * (double)f2fl(pointlist[j]->p3_sy)
-			- (double)f2fl(pointlist[j]->p3_sx) * (double)f2fl(pointlist[i]->p3_sy);
-	}
-
-	return (GLfloat)(area * 0.5);
+	return (GLfloat)android_merged_wall_get_screen_area(pointlist, nv);
 }
 
 static GLfloat ogl_get_metl154_triangle_area(const g3s_point *p0,
@@ -777,9 +707,9 @@ static void ogl_log_metl154_submit(const g3s_point **pointlist, int nv)
 {
 	GLfloat sx[6], sy[6];
 	unsigned int codes[6], flags[6], post_uor = 0, post_uand = 0xff;
-	const char *route = metl154_tmap2_submit_ctx.route;
+	const char *route = merged_wall_tmap2_submit_ctx.route;
 	char fan_order[96];
-	int orig_nv = metl154_tmap2_submit_ctx.orig_nv > 0 ? metl154_tmap2_submit_ctx.orig_nv : nv;
+	int orig_nv = merged_wall_tmap2_submit_ctx.orig_nv > 0 ? merged_wall_tmap2_submit_ctx.orig_nv : nv;
 	int i, j, dup_pairs = 0, zero_count = 0, post_behind = 0;
 	int fan_tris = nv >= 3 ? nv - 2 : 0;
 	int fan_written = 0;
@@ -843,15 +773,15 @@ static void ogl_log_metl154_submit(const g3s_point **pointlist, int nv)
 		g_metl154_render_pass,
 		g_metl154_draw_seq,
 		route ? route : "merge_raw",
-		metl154_tmap2_submit_ctx.clip_applied,
+		merged_wall_tmap2_submit_ctx.clip_applied,
 		orig_nv,
 		nv,
 		fan_tris,
 		fan_order[0] ? fan_order : "<none>",
-		metl154_tmap2_submit_ctx.orig_uor,
-		metl154_tmap2_submit_ctx.orig_uand,
-		metl154_tmap2_submit_ctx.input_behind,
-		metl154_tmap2_submit_ctx.temp_points,
+		merged_wall_tmap2_submit_ctx.orig_uor,
+		merged_wall_tmap2_submit_ctx.orig_uand,
+		merged_wall_tmap2_submit_ctx.input_behind,
+		merged_wall_tmap2_submit_ctx.temp_points,
 		post_uor,
 		post_uand,
 		post_behind,
@@ -872,8 +802,8 @@ static void ogl_log_metl154_split(const g3s_point **pointlist, int nv)
 	GLfloat sx[4], sy[4];
 	GLfloat fan012, fan023, alt013, alt123;
 	const char *pick = "same";
-	const char *route = metl154_tmap2_submit_ctx.route;
-	int orig_nv = metl154_tmap2_submit_ctx.orig_nv > 0 ? metl154_tmap2_submit_ctx.orig_nv : nv;
+	const char *route = merged_wall_tmap2_submit_ctx.route;
+	int orig_nv = merged_wall_tmap2_submit_ctx.orig_nv > 0 ? merged_wall_tmap2_submit_ctx.orig_nv : nv;
 	int i, fan_flip, alt_flip, fan_flat, alt_flat;
 
 	if (!pointlist || nv != 4)
@@ -1056,7 +986,7 @@ static void ogl_log_metl154_diag(grs_bitmap *bmbot, grs_bitmap *bmovl,
 	GLuint tex0_expected, tex1_expected, tex2_expected, current_handle;
 	int i;
 
-	if (!ogl_is_metl154_bitmap(bmovl) || nv <= 0)
+	if (!ogl_is_merged_wall_logging_target_bitmap(bmovl) || nv <= 0)
 		return;
 
 	min_u = max_u = uvl_list[0].u;
@@ -1275,7 +1205,7 @@ static void ogl_log_metl154_state(GLfloat screen_area,
 	g_merged_wall_last_draw_state.force_cull_off = force_cull_off;
 	g_merged_wall_last_draw_state.force_polygon_offset = force_polygon_offset;
 	g_merged_wall_last_draw_state.force_depth_off = force_depth_off;
-	strncpy(g_merged_wall_last_draw_state.route, metl154_tmap2_submit_ctx.route ? metl154_tmap2_submit_ctx.route : "", sizeof(g_merged_wall_last_draw_state.route) - 1);
+	strncpy(g_merged_wall_last_draw_state.route, merged_wall_tmap2_submit_ctx.route ? merged_wall_tmap2_submit_ctx.route : "", sizeof(g_merged_wall_last_draw_state.route) - 1);
 	g_merged_wall_last_draw_state.route[sizeof(g_merged_wall_last_draw_state.route) - 1] = '\0';
 	strncpy(g_merged_wall_last_draw_state.merge_impl, "gpu_two_pass", sizeof(g_merged_wall_last_draw_state.merge_impl) - 1);
 	g_merged_wall_last_draw_state.merge_impl[sizeof(g_merged_wall_last_draw_state.merge_impl) - 1] = '\0';
@@ -1629,7 +1559,7 @@ void ogl_texture_stats(void)
 	int used = 0, usedother = 0, usedidx = 0, usedrgb = 0, usedrgba = 0;
 	int databytes = 0, truebytes = 0, datatexel = 0, truetexel = 0, i;
 	int prio0=0,prio1=0,prio2=0,prio3=0,prioh=0;
-	GLint idx, r, g, b, a, dbl, depth;
+	GLint idx = 0, r = 0, g = 0, b = 0, a = 0, dbl = 0, depth = 0;
 	int res, colorsize, depthsize;
 	ogl_texture* t;
 
@@ -1922,7 +1852,7 @@ static void ogl_android_texmerge_log(const char *event, grs_bitmap *bmbot,
 	GLuint base_handle;
 	GLuint overlay_handle;
 
-	if (!g_merged_wall_snapshot_pending && !ogl_is_metl154_bitmap(bmovl))
+	if (!g_merged_wall_snapshot_pending && !ogl_is_merged_wall_logging_target_bitmap(bmovl))
 		return;
 	botname = piggy_game_bitmap_name(bmbot);
 	ovlname = piggy_game_bitmap_name(bmovl);
@@ -2712,11 +2642,11 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 	int c, index2, index3, index4;
 	GLfloat vertex_array[MAX_VERTS * 3], color_array[MAX_VERTS * 4], texcoord_array[MAX_VERTS * 2];
 	GLfloat color_alpha = 1.0;
-	int skip_metl154_cover_draw = 0;
+	int skip_merged_wall_cover_draw = 0;
 #if defined(ANDROID) && defined(OGL_MERGE)
 	if (!metl154_single_clip_active
 		&& tmap_drawer_ptr == draw_tmap
-		&& ogl_is_metl154_bitmap(bm)
+		&& ogl_is_merged_wall_logging_target_bitmap(bm)
 		&& g_android_draw_face_ctx.valid
 		&& ogl_merged_wall_single_clip_matches_wid(g_android_draw_face_ctx.wid_flags))
 		return ogl_clip_and_draw_metl154_single(nv, pointlist, uvl_list,
@@ -2812,7 +2742,7 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 		glTexCoordPointer(2, GL_FLOAT, 0, texcoord_array);  
 	}
 
-	if (!skip_metl154_cover_draw)
+	if (!skip_merged_wall_cover_draw)
 		glDrawArrays(GL_TRIANGLE_FAN, 0, nv);
 
 	glDisableClientState(GL_VERTEX_ARRAY);
@@ -2820,7 +2750,7 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
 #if defined(ANDROID) && defined(OGL_MERGE)
-	if (!skip_metl154_cover_draw)
+	if (!skip_merged_wall_cover_draw)
 		ogl_log_merged_wall_cover(cover_shader, piggy_game_bitmap_name(bm), NULL,
 			pointlist, nv, uvl_list, color_array, draw_order, bm);
 #endif
@@ -2828,7 +2758,7 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 #ifdef ANDROID
 	/* Debug texture label overlay: accumulate screen-space labels */
 	if (g_debug_tex_overlay_active && tmap_drawer_ptr == draw_tmap
-	    && !skip_metl154_cover_draw
+	    && !skip_merged_wall_cover_draw
 	    && g_debug_tex_label_count < DEBUG_TEX_MAX_LABELS && nv >= 3)
 	{
 		/* Compute centroid in view space */
@@ -2880,22 +2810,21 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 {
 	int c, index2, index3, index4;
 	GLfloat vertex_array[MAX_VERTS * 3], color_array[MAX_VERTS * 4], texcoordovl_array[MAX_VERTS * 2];
-	int skip_metl154_cover_draw = 0;
+	int skip_merged_wall_cover_draw = 0;
 #ifdef OGL_MERGE
 	GLfloat texcoordbot_array[MAX_VERTS * 2];
 	int super;
 #if defined(ANDROID)
 	int draw_order = ogl_merged_wall_next_draw_order();
-	int is_metl154_plain = 0;
-	int metl154_force_two_pass = 0, metl154_force_cull_off = 0, metl154_force_depth_off = 0, metl154_force_polygon_offset = 0;
-	GLint metl154_depth_enabled = 0, metl154_blend_enabled = 0, metl154_cull_enabled = 0;
-	GLint metl154_depth_func = 0, metl154_front_face = 0, metl154_cull_mode = 0, metl154_polygon_offset_enabled = 0, metl154_draw_fbo = 0;
-	GLfloat metl154_polygon_offset_factor = 0.0f, metl154_polygon_offset_units = 0.0f;
-	GLboolean metl154_depth_writemask = GL_TRUE, metl154_color_mask[4] = {GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE};
-	GLfloat metl154_screen_area = 0.0f;
+	int is_logging_target_plain = 0;
+	int merged_wall_force_two_pass = 0, merged_wall_force_cull_off = 0, merged_wall_force_depth_off = 0, merged_wall_force_polygon_offset = 0;
+	GLint merged_wall_depth_enabled = 0, merged_wall_blend_enabled = 0, merged_wall_cull_enabled = 0;
+	GLint merged_wall_depth_func = 0, merged_wall_front_face = 0, merged_wall_cull_mode = 0, merged_wall_polygon_offset_enabled = 0, merged_wall_draw_fbo = 0;
+	GLfloat merged_wall_polygon_offset_factor = 0.0f, merged_wall_polygon_offset_units = 0.0f;
+	GLboolean merged_wall_depth_writemask = GL_TRUE, merged_wall_color_mask[4] = {GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE};
+	GLfloat merged_wall_screen_area = 0.0f;
 #endif
 #endif
-
 	if (!label_pointlist || label_nv < 3) {
 		label_pointlist = pointlist;
 		label_nv = nv;
@@ -2935,9 +2864,9 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	 * bindbmtex pages in the bitmap and generates the mask. */
 	super = (bmovl->bm_flags & BM_FLAG_SUPER_TRANSPARENT) && bmovl->gltexture_mask;
 	#if defined(ANDROID)
-	is_metl154_plain = !super && ogl_is_metl154_bitmap(bmovl);
-	metl154_force_two_pass = is_metl154_plain && g_merged_wall_force_two_pass;
-	if (ogl_is_metl154_bitmap(bmovl))
+	is_logging_target_plain = !super && ogl_is_merged_wall_logging_target_bitmap(bmovl);
+	merged_wall_force_two_pass = is_logging_target_plain && g_merged_wall_force_two_pass;
+	if (ogl_is_merged_wall_logging_target_bitmap(bmovl))
 		debug_log(DLOG_TEXTURE,
 			"[metl154super] idx=%d bm_flags=0x%x real=0x%x mask=%p mask_h=%u super=%d",
 			(int)(bmovl - GameBitmaps),
@@ -2957,7 +2886,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	glActiveTexture(GL_TEXTURE0);
 	#if defined(ANDROID)
 	if (!super && (bmovl->bm_flags & BM_FLAG_TRANSPARENT)) {
-		if (metl154_force_two_pass) {
+		if (merged_wall_force_two_pass) {
 			const char *botname = piggy_game_bitmap_name(bmbot);
 			const char *ovlname = piggy_game_bitmap_name(bmovl);
 
@@ -2977,14 +2906,14 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 				orient,
 				botname ? botname : "<none>",
 				ovlname ? ovlname : "<none>");
-			metl154_tmap2_submit_ctx.route = "force_two_pass";
+			merged_wall_tmap2_submit_ctx.route = "force_two_pass";
 		} else {
 			int merged_slot = -1;
 			grs_bitmap *merged = ogl_android_get_cached_plain_texmerge_bitmap(bmbot,
 				bmovl, orient, &merged_slot);
 			if (merged) {
 				ogl_add_joined_texture_labels(label_pointlist, label_nv, bmbot, bmovl);
-				if (ogl_is_metl154_bitmap(bmovl)) {
+				if (ogl_is_merged_wall_logging_target_bitmap(bmovl)) {
 					const char *botname = piggy_game_bitmap_name(bmbot);
 					const char *ovlname = piggy_game_bitmap_name(bmovl);
 					debug_log(DLOG_TEXTURE,
@@ -3056,7 +2985,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	glVertexPointer(3, GL_FLOAT, 0, vertex_array);
 	glColorPointer(4, GL_FLOAT, 0, color_array);
 	glTexCoordPointer(2, GL_FLOAT, 0, texcoordovl_array);
-	if (!skip_metl154_cover_draw)
+	if (!skip_merged_wall_cover_draw)
 		glDrawArrays(GL_TRIANGLE_FAN, 0, nv);
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_COLOR_ARRAY);
@@ -3091,8 +3020,8 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	GLuint prog = super ? ogl_prog_tex2m : ogl_prog_tex2;
 	GLfloat tex2_alpha_cutoff = 0.5f;
 	#ifdef ANDROID
-	int log_tmap2_geometry = !super && ogl_is_metl154_bitmap(bmovl);
-	int tex2_debug_mode = (!super && ogl_is_metl154_bitmap(bmovl)) ? g_metl154_debug_mode : MERGED_WALL_DEBUG_NONE;
+	int log_tmap2_geometry = !super && ogl_is_merged_wall_logging_target_bitmap(bmovl);
+	int tex2_debug_mode = (!super && ogl_is_merged_wall_logging_target_bitmap(bmovl)) ? g_metl154_debug_mode : MERGED_WALL_DEBUG_NONE;
 	#else
 	int tex2_debug_mode = 0;
 	#endif
@@ -3116,13 +3045,13 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	}
 
 #if defined(ANDROID)
-	if (is_metl154_plain) {
-		ogl_get_metl154_gl_state(&metl154_depth_enabled, &metl154_blend_enabled,
-			&metl154_cull_enabled, &metl154_depth_writemask, &metl154_depth_func,
-			&metl154_front_face, &metl154_cull_mode, &metl154_polygon_offset_enabled,
-			&metl154_polygon_offset_factor, &metl154_polygon_offset_units, metl154_color_mask,
-			&metl154_draw_fbo);
-		metl154_screen_area = ogl_get_metl154_screen_area(pointlist, nv);
+	if (is_logging_target_plain) {
+		ogl_get_metl154_gl_state(&merged_wall_depth_enabled, &merged_wall_blend_enabled,
+			&merged_wall_cull_enabled, &merged_wall_depth_writemask, &merged_wall_depth_func,
+			&merged_wall_front_face, &merged_wall_cull_mode, &merged_wall_polygon_offset_enabled,
+			&merged_wall_polygon_offset_factor, &merged_wall_polygon_offset_units, merged_wall_color_mask,
+			&merged_wall_draw_fbo);
+		merged_wall_screen_area = ogl_get_merged_wall_screen_area(pointlist, nv);
 	}
 #endif
 
@@ -3133,7 +3062,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 		int tb = nv * 2 * (int)sizeof(GLfloat);
 		int t2b = nv * 2 * (int)sizeof(GLfloat);
 		if (log_tmap2_geometry)
-			ogl_log_metl154_upload(bmbot, bmovl, prog, gles3_shim_get_stream_vbo(), nv, orient,
+			ogl_log_merged_wall_upload(bmbot, bmovl, prog, gles3_shim_get_stream_vbo(), nv, orient,
 				vb, cb, tb, t2b);
 		glVertexPointer(3, GL_FLOAT, 0, vertex_array);
 		glColorPointer(4, GL_FLOAT, 0, color_array);
@@ -3156,27 +3085,28 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 		prog, tex2_debug_mode);
 	if (log_tmap2_geometry)
 		ogl_log_metl154_submit(pointlist, nv);
-	if (is_metl154_plain)
-		ogl_log_metl154_state(metl154_screen_area,
-			metl154_depth_enabled, metl154_blend_enabled, metl154_cull_enabled,
-			metl154_depth_writemask, metl154_depth_func, metl154_front_face,
-			metl154_cull_mode, metl154_polygon_offset_enabled,
-			metl154_polygon_offset_factor, metl154_polygon_offset_units,
-			metl154_color_mask, metl154_draw_fbo,
-			metl154_force_cull_off, metl154_force_polygon_offset, metl154_force_depth_off);
+	if (is_logging_target_plain)
+		ogl_log_metl154_state(merged_wall_screen_area,
+			merged_wall_depth_enabled, merged_wall_blend_enabled, merged_wall_cull_enabled,
+			merged_wall_depth_writemask, merged_wall_depth_func, merged_wall_front_face,
+			merged_wall_cull_mode, merged_wall_polygon_offset_enabled,
+			merged_wall_polygon_offset_factor, merged_wall_polygon_offset_units,
+			merged_wall_color_mask, merged_wall_draw_fbo,
+			merged_wall_force_cull_off, merged_wall_force_polygon_offset, merged_wall_force_depth_off);
 	if (log_tmap2_geometry)
 		ogl_log_metl154_split(pointlist, nv);
 #endif
 
-	glDrawArrays(GL_TRIANGLE_FAN, 0, nv);
+	if (!skip_merged_wall_cover_draw)
+		glDrawArrays(GL_TRIANGLE_FAN, 0, nv);
 
 #if defined(ANDROID)
 	gles3_shim_external_texcoord2_pointer(0, GL_FLOAT, 0, NULL);
 	if (g_android_draw_face_ctx.valid && g_android_draw_face_ctx.tmap2 != 0) {
 		ogl_merged_wall_track_face(pointlist, nv, uvl_list, orient, draw_order,
-			metl154_tmap2_submit_ctx.route, "gpu_two_pass", NULL, -1);
+			merged_wall_tmap2_submit_ctx.route, "gpu_two_pass", NULL, -1);
 	}
-	if (!is_metl154_plain && !skip_metl154_cover_draw) {
+	if (!is_logging_target_plain && !skip_merged_wall_cover_draw) {
 		ogl_log_merged_wall_cover(super ? "mask" : "plain",
 			piggy_game_bitmap_name(bmbot), piggy_game_bitmap_name(bmovl),
 			pointlist, nv, uvl_list, color_array, draw_order, bmbot);
@@ -3193,7 +3123,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 
 	/* Debug texture label overlay for overlay/tmap2 bitmap */
 	if (g_debug_tex_overlay_active
-	    && !skip_metl154_cover_draw
+	    && !skip_merged_wall_cover_draw
 	    && g_debug_tex_label_count < DEBUG_TEX_MAX_LABELS)
 	{
 		int sx, sy;
@@ -3269,7 +3199,6 @@ static bool ogl_clip_and_draw_metl154_single(int nv, const g3s_point **pointlist
 			(cc.uor & CC_BEHIND) != 0);
 		return 1;
 	}
-
 	if (!cc.uor) {
 		metl154_single_clip_active = 1;
 		result = g3_draw_tmap(nv, pointlist, uvl_list, light_rgb, bm);
@@ -3350,14 +3279,14 @@ static bool ogl_clip_and_draw_tmap2_merge(int nv, const g3s_point **pointlist,
 	bool result = 0;
 
 	if (nv < 3 || nv > MAX_POINTS_IN_POLY) {
-		ogl_set_metl154_tmap2_submit_context(route_name, nv, NULL, 0, 0, 0);
+		ogl_set_merged_wall_tmap2_submit_context(route_name, nv, NULL, 0, 0, 0);
 		result = ogl_draw_tmap_2_internal(nv, pointlist, uvl_list, light_rgb,
 			bmbot, bmovl, orient, nv, pointlist);
-		ogl_reset_metl154_tmap2_submit_context();
+		ogl_reset_merged_wall_tmap2_submit_context();
 		return result;
 	}
 
-	ogl_get_metl154_input_codes(pointlist, nv, &cc, &input_behind);
+	ogl_get_merged_wall_input_codes(pointlist, nv, &cc, &input_behind);
 	for (i = 0; i < nv; i++) {
 		g3s_point *p = clip_src[i] = (g3s_point *)pointlist[i];
 
@@ -3388,15 +3317,15 @@ static bool ogl_clip_and_draw_tmap2_merge(int nv, const g3s_point **pointlist,
 	}
 
 	if (!cc.uor) {
-		ogl_set_metl154_tmap2_submit_context(route_name, nv, &cc, input_behind, 0, 0);
+		ogl_set_merged_wall_tmap2_submit_context(route_name, nv, &cc, input_behind, 0, 0);
 		result = ogl_draw_tmap_2_internal(nv, pointlist, uvl_list, light_rgb,
 			bmbot, bmovl, orient, nv, pointlist);
-		ogl_reset_metl154_tmap2_submit_context();
+		ogl_reset_merged_wall_tmap2_submit_context();
 		return result;
 	}
 
 	bufptr = clip_polygon(clip_src, clip_dest, &clipped_nv, &cc);
-	ogl_get_metl154_point_code_summary(bufptr, clipped_nv, &post_uor, &post_uand,
+	ogl_get_merged_wall_point_code_summary(bufptr, clipped_nv, &post_uor, &post_uand,
 		&post_behind, &temp_points);
 	debug_log(DLOG_TEXTURE,
 		"[metl154clip] frame=%d pass=%d seq=%d stage=clip kind=merge route=%s orig_nv=%d clipped_nv=%d uor=0x%x uand=0x%x behind=%d input_behind=%d temp=%d post_uor=0x%x post_uand=0x%x post_behind=%d",
@@ -3451,11 +3380,11 @@ static bool ogl_clip_and_draw_tmap2_merge(int nv, const g3s_point **pointlist,
 			clipped_light[i].b = p->p3_l;
 		}
 
-		ogl_set_metl154_tmap2_submit_context(route_name, nv, &cc, input_behind,
+		ogl_set_merged_wall_tmap2_submit_context(route_name, nv, &cc, input_behind,
 			temp_points, 1);
 		result = ogl_draw_tmap_2_internal(clipped_nv, draw_points, clipped_uvl,
 			clipped_light, bmbot, bmovl, orient, nv, pointlist);
-		ogl_reset_metl154_tmap2_submit_context();
+		ogl_reset_merged_wall_tmap2_submit_context();
 	}
 
 free_points:
@@ -3472,22 +3401,22 @@ bool g3_draw_tmap_2(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_
 #if defined(ANDROID) && defined(OGL_MERGE)
 	g3s_codes cc;
 	int input_behind = 0;
-	if (ogl_is_metl154_bitmap(bmovl)
+	if (ogl_is_merged_wall_logging_target_bitmap(bmovl)
 		&& !(bmovl->bm_flags & BM_FLAG_SUPER_TRANSPARENT)) {
-		ogl_log_metl154_tmap2_route("clip_metl154", bmbot, bmovl, nv, orient);
+		ogl_log_merged_wall_tmap2_route("clip_metl154", bmbot, bmovl, nv, orient);
 		return ogl_clip_and_draw_tmap2_merge(nv, pointlist, uvl_list,
 			light_rgb, bmbot, bmovl, orient, "clip_metl154");
 	}
-	if (ogl_is_metl154_bitmap(bmovl))
-		ogl_log_metl154_tmap2_route("merge_raw", bmbot, bmovl, nv, orient);
-	if (ogl_is_metl154_bitmap(bmovl)) {
-		ogl_get_metl154_input_codes(pointlist, nv, &cc, &input_behind);
-		ogl_set_metl154_tmap2_submit_context("merge_raw", nv, &cc,
+	if (ogl_is_merged_wall_logging_target_bitmap(bmovl))
+		ogl_log_merged_wall_tmap2_route("merge_raw", bmbot, bmovl, nv, orient);
+	if (ogl_is_merged_wall_logging_target_bitmap(bmovl)) {
+		ogl_get_merged_wall_input_codes(pointlist, nv, &cc, &input_behind);
+		ogl_set_merged_wall_tmap2_submit_context("merge_raw", nv, &cc,
 			input_behind, 0, 0);
 		{
 			bool result = ogl_draw_tmap_2_internal(nv, pointlist, uvl_list,
 				light_rgb, bmbot, bmovl, orient, nv, pointlist);
-			ogl_reset_metl154_tmap2_submit_context();
+			ogl_reset_merged_wall_tmap2_submit_context();
 			return result;
 		}
 	}
@@ -4489,24 +4418,6 @@ int ogl_loadtexture (unsigned char *data, int dxo, int dyo, ogl_texture *tex, in
 	r_texcount++;
 	return 0;
 }
-
-#ifdef ANDROID
-static void ogl_apply_nomip_filter(ogl_texture *tex, int texfilt)
-{
-	if (!tex || tex->handle <= 0)
-		return;
-	OGL_BINDTEXTURE(tex->handle);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
-	if (texfilt > 0) {
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	} else {
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	}
-	tex->has_mipmaps = 0;
-}
-#endif
 
 unsigned char decodebuf[1024*1024];
 

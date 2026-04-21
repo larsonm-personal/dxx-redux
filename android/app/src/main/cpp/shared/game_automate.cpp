@@ -1973,6 +1973,7 @@ extern "C" void game_automate_tick(void)
 			float dy = a->hot_y - b->hot_y;
 			float adx = dx < 0 ? -dx : dx;
 			float ady = dy < 0 ? -dy : dy;
+			int hot_ok = (adx <= s.hot_xy_tolerance) && (ady <= s.hot_xy_tolerance);
 			int hash_eq = (a->render_hash == b->render_hash);
 			/* Per-cell SAD across cells valid in BOTH probes. Catches
 			 * pixel-level mirror/flip even when the centroid of hot cells

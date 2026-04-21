@@ -219,7 +219,6 @@ class SetupActivity : ComponentActivity() {
                     clickableNodes.add(ClickableNode(info.isEnabled, Rect(bounds)))
                 }
             }
-            info.recycle()
         }
 
         // Match: text belongs to the smallest clickable node that contains it
@@ -377,7 +376,6 @@ class SetupActivity : ComponentActivity() {
                 }
                 if (info.isClickable) clickNodes.add(ClickNode(id, Rect(bounds)))
             }
-            info.recycle()
         }
 
         val lower = buttonText.lowercase()
@@ -5512,8 +5510,8 @@ private fun registerDiscAudioSourceFromPath(
     }
 
     try {
-        if (discId != null) {
-            trackNames.putAll(FingerprintBridge.lookupTrackNames(context, discId!!))
+        discId?.let { resolvedDiscId ->
+            trackNames.putAll(FingerprintBridge.lookupTrackNames(context, resolvedDiscId))
         }
         if (trackNames.isEmpty() && tracks.any { it.isAudio }) {
             trackNames.putAll(FingerprintBridge.fingerprintAndMatchDisc(context, binPath, tracks))
@@ -7170,11 +7168,15 @@ private fun DiscImportDialog(
                                             if (tmpDest.exists()) tmpDest.renameTo(destCue)
                                             var trackNames = emptyMap<Int, String>()
                                             try {
-                                                if (discId != null) {
-                                                    trackNames = FingerprintBridge.lookupTrackNames(context, discId!!)
+                                                discId?.let { resolvedDiscId ->
+                                                    trackNames =
+                                                        FingerprintBridge.lookupTrackNames(
+                                                            context,
+                                                            resolvedDiscId,
+                                                        )
                                                     Log.i(
                                                         "DXX-DiscImport",
-                                                        "Looked up ${trackNames.size} track names for $discId",
+                                                        "Looked up ${trackNames.size} track names for $resolvedDiscId",
                                                     )
                                                 }
                                                 // Fingerprint matching for unknown discs via SAF fd

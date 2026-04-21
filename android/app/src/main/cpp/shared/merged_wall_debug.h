@@ -10,10 +10,35 @@
 struct segment;
 struct g3s_point;
 
+struct merged_wall_tmap2_submit_context {
+	const char *route;
+	int orig_nv;
+	unsigned int orig_uor;
+	unsigned int orig_uand;
+	int input_behind;
+	int temp_points;
+	int clip_applied;
+	unsigned int upload_id;
+};
+
 extern volatile int g_merged_wall_force_two_pass;
 
 int android_merged_wall_is_logging_target_bitmap(grs_bitmap *bm);
 int android_merged_wall_is_logging_target_tmap2(int tmap2);
+void android_merged_wall_reset_tmap2_submit_context(struct merged_wall_tmap2_submit_context *ctx);
+void android_merged_wall_set_tmap2_submit_context(struct merged_wall_tmap2_submit_context *ctx,
+                                                  const char *route, int orig_nv,
+                                                  const g3s_codes *cc, int input_behind,
+                                                  int temp_points, int clip_applied);
+void android_merged_wall_get_input_codes(const struct g3s_point *const *pointlist,
+                                         int nv, g3s_codes *cc, int *input_behind);
+void android_merged_wall_get_point_code_summary(const struct g3s_point *const *pointlist,
+                                                int nv, unsigned int *uor,
+                                                unsigned int *uand,
+                                                int *behind_count,
+                                                int *temp_points);
+float android_merged_wall_get_screen_area(const struct g3s_point *const *pointlist,
+                                          int nv);
 void android_merged_wall_set_draw_face_context(struct segment *segp, int sidenum,
                                                int tmap1, int tmap2, int wid_flags, int nv, int face_index);
 void android_merged_wall_clear_draw_face_context(void);

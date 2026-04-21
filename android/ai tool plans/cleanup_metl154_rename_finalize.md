@@ -35,9 +35,9 @@ Out of scope:
   `d2/main/texmerge.c`
 - [x] Rename shared name-gated helpers to neutral merged-wall wording where
   the code is already generic
-- [ ] Remove or reduce the `g_metl154_*` / `METL154_*` alias bridge in
-      both `ogl.c` files where the replacement is mechanical and safe
-- [ ] Update this file with results and validation
+- [x] Remove or reduce the `g_metl154_*` / `METL154_*` alias bridge in
+  both `ogl.c` files where the replacement is mechanical and safe
+- [x] Update this file with results and validation
 
 ## Notes
 
@@ -61,15 +61,34 @@ Out of scope:
   `METL154_DEBUG_*` and `METL154_EXPERIMENT_*` compatibility defines and by
   renaming `ogl_metl154_experiment_name()` to
   `ogl_merged_wall_experiment_name()` in both games
+- Renamed the generic OGL logging-target bitmap helper in both games from
+  `ogl_is_metl154_bitmap()` to
+  `ogl_is_merged_wall_logging_target_bitmap()` and routed it through the
+  shared `android_merged_wall_is_logging_target_bitmap()` helper
+- Renamed the generic `skip_*`, `is_*_plain`, `*_force_*`, `*_state`, and
+  screen-area locals in the main OGL draw path to merged-wall wording in
+  both games without changing route selection or log behavior
+- Renamed the generic OGL submit-context struct, state variables, route/upload
+  helpers, and input-summary helpers in both games to merged-wall wording
+- Fixed the follow-on Android build break in `d2/arch/ogl/ogl.c` by restoring
+  the intended merged-wall local-state prologue after the rename pass
+- Fixed the Android launcher Kotlin build error by replacing delegated-property
+  smart-cast sites with `discId?.let { resolvedDiscId -> ... }` in
+  `SetupActivity.kt`
+- Removed now-unused Android introspection geometry helpers after the cleanup
+  work so the native build runs without the new helper warnings introduced
+  during this tranche
 - Remaining `metl154` surface in `d1/` and `d2/` is now concentrated in just
   two files: `d1/arch/ogl/ogl.c` and `d2/arch/ogl/ogl.c`
-- Remaining `metl154` line matches in `d1/` + `d2/`: 587
+- Remaining `metl154` line matches in `d1/` + `d2/`: 403
+- Remaining `metl154` line matches in `d1/arch/ogl/ogl.c` /
+  `d2/arch/ogl/ogl.c`: `202` / `201`
 - `./android/diff_vs_upstream.ps1 -Top 20` totals moved from `+21018/-791`
-  to `+20654/-793`
+  to `+20620/-801`
 - `d1/main/render.c` churn moved from `430` total lines to `259`
 - `d2/main/render.c` churn moved from `429` total lines to `258`
-- `d1/arch/ogl/ogl.c` churn moved from `3365` total lines to `3361`
-- `d2/arch/ogl/ogl.c` churn moved from `3399` total lines to `3395`
+- `d1/arch/ogl/ogl.c` churn moved from `3365` total lines to `3346`
+- `d2/arch/ogl/ogl.c` churn moved from `3399` total lines to `3379`
 
 ## Validation so far
 
@@ -79,11 +98,13 @@ Out of scope:
 - `get_errors` on `d2/arch/ogl/ogl.c`: blocked by missing local include-path
   configuration in the editor (`SDL_types.h`, `physfs.h`, `GL/glew.h`), not by
   a syntax error introduced in this tranche
-- `./android/run-code-quality.ps1 -Fix`: not run yet
-- `./android/gradlew.bat :app:assembleDebug :app:testDebugUnitTest`: not run yet
+- `./android/run-code-quality.ps1 -Fix`: passed
+- `./android/gradlew.bat :app:assembleDebug :app:testDebugUnitTest`: passed
+  after fixing the D2 OGL local-state regression and the delegated-property
+  Kotlin lookup sites
 - smoke test: not run yet
 
 ## Status
 
 - [x] In progress
-- [ ] Validation complete
+- [x] Validation complete

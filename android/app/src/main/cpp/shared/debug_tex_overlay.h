@@ -44,8 +44,8 @@ extern volatile int g_debug_tex_overlay_active;
  * Kept in this header so the probe result struct can embed fixed-size
  * luma/valid arrays and downstream tools (game_automate) can compare
  * samples byte-for-byte. */
-#define MERGED_WALL_PROBE_RENDER_SAMPLE_COLS  8
-#define MERGED_WALL_PROBE_RENDER_SAMPLE_ROWS  8
+#define MERGED_WALL_PROBE_RENDER_SAMPLE_COLS 8
+#define MERGED_WALL_PROBE_RENDER_SAMPLE_ROWS 8
 #define MERGED_WALL_PROBE_RENDER_SAMPLE_COUNT \
 	(MERGED_WALL_PROBE_RENDER_SAMPLE_COLS * MERGED_WALL_PROBE_RENDER_SAMPLE_ROWS)
 
