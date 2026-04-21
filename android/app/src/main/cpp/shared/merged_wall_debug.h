@@ -9,6 +9,7 @@
 
 struct segment;
 struct g3s_point;
+struct _ogl_texture;
 
 struct merged_wall_tmap2_submit_context {
 	const char *route;
@@ -56,6 +57,63 @@ void android_merged_wall_get_source_vslice(grs_bitmap *bm, float sample_u,
                                            float min_v, float max_v,
                                            int *sample_rows, int *sample_idxs,
                                            int nsamples);
+void android_merged_wall_get_filter_state(const struct _ogl_texture *tex,
+                                          int *min_filter, int *mag_filter);
+void android_merged_wall_get_draw_state(const struct _ogl_texture *tex,
+                                        int *active_prog, int *bound_tex0,
+                                        int *bound_tex1, int *bound_tex2,
+                                        int *mip1_w);
+void android_merged_wall_get_gl_state(int *depth_enabled, int *blend_enabled,
+                                      int *cull_enabled,
+                                      unsigned char *depth_writemask,
+                                      int *depth_func, int *front_face,
+                                      int *cull_mode,
+                                      int *polygon_offset_enabled,
+                                      float *polygon_offset_factor,
+                                      float *polygon_offset_units,
+                                      unsigned char color_mask[4],
+                                      int *draw_fbo);
+float android_merged_wall_get_triangle_area(const struct g3s_point *p0,
+                                            const struct g3s_point *p1,
+                                            const struct g3s_point *p2);
+void android_merged_wall_get_uv_points(const g3s_uvl *uvl_list,
+                                       const float *texcoordovl_array,
+                                       int nv, float *raw_pts,
+                                       float *ovl_pts, int max_points,
+                                       int *uv_bad);
+void android_merged_wall_log_palette_source(const char *bitmapname,
+                                            const unsigned char *data,
+                                            int width, int height,
+                                            int bm_flags,
+                                            unsigned int bit,
+                                            const char *source);
+void android_merged_wall_log_alpha_source(const char *bitmapname,
+                                          const unsigned char *data,
+                                          int width, int height,
+                                          int channels, int bm_flags,
+                                          unsigned int bit,
+                                          const char *source);
+void android_merged_wall_log_submit(
+    const struct merged_wall_tmap2_submit_context *ctx,
+    const struct g3s_point *const *pointlist, int nv);
+void android_merged_wall_log_split(
+    const struct merged_wall_tmap2_submit_context *ctx,
+    const struct g3s_point *const *pointlist, int nv);
+void android_merged_wall_log_diag(grs_bitmap *bmbot, grs_bitmap *bmovl,
+                                  const g3s_uvl *uvl_list,
+                                  const float *texcoordovl_array, int nv,
+                                  int orient, int super,
+                                  unsigned int prog, int tex2_debug_mode,
+                                  int texfilt_level, int aniso_level);
+void android_merged_wall_log_state(
+    const struct merged_wall_tmap2_submit_context *ctx,
+    float screen_area, int depth_enabled, int blend_enabled,
+    int cull_enabled, unsigned char depth_writemask, int depth_func,
+    int front_face, int cull_mode, int polygon_offset_enabled,
+    float polygon_offset_factor, float polygon_offset_units,
+    const unsigned char color_mask[4], int draw_fbo,
+    int force_cull_off, int force_polygon_offset, int force_depth_off);
+void android_merged_wall_clear_secondary_units_for_single(grs_bitmap *bm);
 void android_merged_wall_get_input_codes(const struct g3s_point *const *pointlist,
                                          int nv, g3s_codes *cc, int *input_behind);
 void android_merged_wall_get_point_code_summary(const struct g3s_point *const *pointlist,
