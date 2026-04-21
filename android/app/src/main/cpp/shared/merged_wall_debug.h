@@ -12,6 +12,7 @@ struct g3s_point;
 
 extern volatile int g_merged_wall_force_two_pass;
 
+int android_merged_wall_is_logging_target_bitmap(grs_bitmap *bm);
 int android_merged_wall_is_logging_target_tmap2(int tmap2);
 void android_merged_wall_set_draw_face_context(struct segment *segp, int sidenum,
                                                int tmap1, int tmap2, int wid_flags, int nv, int face_index);

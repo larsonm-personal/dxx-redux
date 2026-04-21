@@ -164,10 +164,6 @@ static GLuint metl154_first_gl_handle = 0;
 #define METL154_LOG_PT_COUNT 4
 static int metl154_single_clip_active = 0;
 
-#define METL154_DEBUG_NONE MERGED_WALL_DEBUG_NONE
-#define METL154_EXPERIMENT_DEFAULT MERGED_WALL_EXPERIMENT_DEFAULT
-#define METL154_EXPERIMENT_OLD_MERGE MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE
-#define METL154_EXPERIMENT_CLEAR_SINGLE_UNITS MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE
 #define g_metl154_debug_mode g_merged_wall_debug_mode
 #define g_metl154_experiment_mode g_merged_wall_experiment_mode
 #define g_metl154_experiment_pending_apply g_merged_wall_experiment_pending_apply
@@ -264,12 +260,12 @@ static int ogl_is_metl154_bitmap(grs_bitmap *bm)
 }
 
 #ifdef ANDROID
-static const char *ogl_metl154_experiment_name(int mode)
+static const char *ogl_merged_wall_experiment_name(int mode)
 {
 	switch (mode) {
-		case METL154_EXPERIMENT_OLD_MERGE:
+		case MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE:
 			return "force_legacy_texmerge";
-		case METL154_EXPERIMENT_CLEAR_SINGLE_UNITS:
+		case MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE:
 			return "clear_secondary_units_single";
 		default:
 			return "default";
@@ -655,7 +651,7 @@ static int ogl_should_clear_metl154_secondary_units_for_single(grs_bitmap *bm)
 	const char *bm_name = bm ? piggy_game_bitmap_name(bm) : NULL;
 	const char *skip_reason = NULL;
 
-	if ((int)g_metl154_experiment_mode != METL154_EXPERIMENT_CLEAR_SINGLE_UNITS)
+	if ((int)g_metl154_experiment_mode != MERGED_WALL_EXPERIMENT_CLEAR_SECONDARY_UNITS_SINGLE)
 		return 0;
 	if (!bm)
 		skip_reason = "no_bitmap";
@@ -3096,7 +3092,7 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	GLfloat tex2_alpha_cutoff = 0.5f;
 	#ifdef ANDROID
 	int log_tmap2_geometry = !super && ogl_is_metl154_bitmap(bmovl);
-	int tex2_debug_mode = (!super && ogl_is_metl154_bitmap(bmovl)) ? g_metl154_debug_mode : METL154_DEBUG_NONE;
+	int tex2_debug_mode = (!super && ogl_is_metl154_bitmap(bmovl)) ? g_metl154_debug_mode : MERGED_WALL_DEBUG_NONE;
 	#else
 	int tex2_debug_mode = 0;
 	#endif
@@ -3713,9 +3709,9 @@ void ogl_start_frame(void){
 		g_metl154_experiment_pending_apply = 0;
 		__sync_synchronize();
 		debug_log(DLOG_TEXTURE,
-			"[metl154exp] apply: mode=%d(%s) texture_reload=0",
+			"[mwall_exp] apply: mode=%d(%s) texture_reload=0",
 			(int)g_metl154_experiment_mode,
-			ogl_metl154_experiment_name((int)g_metl154_experiment_mode));
+			ogl_merged_wall_experiment_name((int)g_metl154_experiment_mode));
 	}
 	if (g_aniso_pending_apply) {
 		g_aniso_pending_apply = 0;

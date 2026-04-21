@@ -35,6 +35,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef ANDROID
 #include "debug_tex_overlay.h"
 #include "android_log.h"
+#include "merged_wall_debug.h"
 #endif
 
 //resending textures into video ram is very slow, so cache more (worst case, the ogl driver will swap out some itself, probably doing a better job) -MM
@@ -88,17 +89,10 @@ static void texmerge_reset_owner(TEXTURE_CACHE *entry)
 	entry->last_use_frame = -1;
 }
 
-static int texmerge_metl154_overlay(grs_bitmap *bm)
-{
-	const char *name = piggy_game_bitmap_name(bm);
-
-	return name && strcmp(name, "metl154") == 0;
-}
-
 static int texmerge_should_log(grs_bitmap *top_bmp)
 {
 	return (int)g_merged_wall_experiment_mode == MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE
-		|| texmerge_metl154_overlay(top_bmp);
+		|| android_merged_wall_is_logging_target_bitmap(top_bmp);
 }
 
 static void texmerge_set_owner(TEXTURE_CACHE *entry)
@@ -132,7 +126,7 @@ static void texmerge_log_event(const char *event, int slot, int tmap_bottom,
 	botname = piggy_game_bitmap_name(bitmap_bottom);
 	ovlname = piggy_game_bitmap_name(bitmap_top);
 	debug_log(DLOG_TEXTURE,
-		"[metl154texmerge] event=%s frame=%d pass=%d seq=%d slot=%d seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orient=%d bot=%s ovl=%s first_owner=%d/%d/%d create_frame=%d last_owner=%d/%d/%d last_use_frame=%d",
+		"[mwall_texmerge] event=%s frame=%d pass=%d seq=%d slot=%d seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x orient=%d bot=%s ovl=%s first_owner=%d/%d/%d create_frame=%d last_owner=%d/%d/%d last_use_frame=%d",
 		event,
 		g_merged_wall_frame_id,
 		g_merged_wall_render_pass,

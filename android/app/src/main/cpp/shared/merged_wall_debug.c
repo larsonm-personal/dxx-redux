@@ -291,24 +291,30 @@ static int merged_wall_overlay_index(int tmap2)
 	return tmap2 & 0x3fff;
 }
 
-static int merged_wall_is_named_overlay(int tmap2, const char *name)
+static int merged_wall_is_logging_target_name(const char *name)
 {
-	int overlay = merged_wall_overlay_index(tmap2);
-	grs_bitmap *bm;
+	return name && !d_stricmp(name, "metl154");
+}
+
+int android_merged_wall_is_logging_target_bitmap(grs_bitmap *bm)
+{
 	const char *bm_name;
 
-	if (!tmap2 || overlay < 0 || overlay >= NumTextures)
+	if (!bm)
 		return 0;
-	bm = &GameBitmaps[Textures[overlay].index];
 	bm_name = piggy_game_bitmap_name(bm);
-	return bm_name && !d_stricmp(bm_name, name);
+	return merged_wall_is_logging_target_name(bm_name);
 }
 
 int android_merged_wall_is_logging_target_tmap2(int tmap2)
 {
-	if (!tmap2)
+	int overlay = merged_wall_overlay_index(tmap2);
+	grs_bitmap *bm;
+
+	if (!tmap2 || overlay < 0 || overlay >= NumTextures)
 		return 0;
-	return merged_wall_is_named_overlay(tmap2, "metl154");
+	bm = &GameBitmaps[Textures[overlay].index];
+	return android_merged_wall_is_logging_target_bitmap(bm);
 }
 
 void android_merged_wall_set_draw_face_context(struct segment *segp, int sidenum,

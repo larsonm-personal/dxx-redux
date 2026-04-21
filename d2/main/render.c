@@ -288,12 +288,12 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 #ifdef ANDROID
 	const char *android_oldmerge_impl = NULL;
 	const char *android_oldmerge_reason = NULL;
-	int android_is_metl154_target = 0;
+	int android_is_logging_target = 0;
 	int android_can_auto_oldmerge = 0;
 
 	if (tmap2 != 0)
-		android_is_metl154_target = android_merged_wall_is_logging_target_tmap2(tmap2);
-	if (use_alt_texmerge && android_is_metl154_target)
+		android_is_logging_target = android_merged_wall_is_logging_target_tmap2(tmap2);
+	if (use_alt_texmerge && android_is_logging_target)
 		android_can_auto_oldmerge = render_android_can_auto_oldmerge_tmap2(tmap1, tmap2, NULL, NULL);
 	if (tmap2 != 0 && (int)g_merged_wall_experiment_mode == MERGED_WALL_EXPERIMENT_FORCE_LEGACY_TEXMERGE)
 	{
@@ -303,7 +303,7 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 	}
 	else if (use_alt_texmerge
 		&& !g_merged_wall_force_two_pass
-		&& android_is_metl154_target
+		&& android_is_logging_target
 		&& Segments[segnum].sides[sidenum].type == SIDE_IS_TRI_13
 		&& g_android_draw_face_ctx.valid
 		&& g_android_draw_face_ctx.face == 1)
@@ -311,10 +311,10 @@ void render_face(int segnum, int sidenum, int nv, int *vp, int tmap1, int tmap2,
 		android_oldmerge_impl = "auto_old_texmerge";
 		android_oldmerge_reason = android_can_auto_oldmerge
 			? "tri13_face1_stock_64x64"
-			: "metl154_tri13_face1_fallback";
+			: "merged_wall_tri13_face1_fallback";
 		use_alt_texmerge = 0;
 		debug_log(DLOG_TEXTURE,
-			"[metl154exp] frame=%d pass=%d seq=%d merge_impl=%s reason=%s seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x",
+			"[mwall_exp] frame=%d pass=%d seq=%d merge_impl=%s reason=%s seg=%d side=%d face=%d child=%d wid=%d tmap1=%d tmap2=0x%x",
 			g_merged_wall_frame_id,
 			g_merged_wall_render_pass,
 			g_merged_wall_draw_seq,
@@ -1902,63 +1902,6 @@ void render_frame(fix eye_offset, int window_num)
 
 int first_terminal_seg;
 
-#ifdef ANDROID
-#define METL154_TRACK_RENDER_SEG_COUNT 5
-
-static const short metl154_track_render_segs[METL154_TRACK_RENDER_SEG_COUNT] = {
-	82, 83, 29, 28, 32
-};
-
-static int render_metl154_track_render_seg(int segnum)
-{
-	int i;
-
-	for (i = 0; i < METL154_TRACK_RENDER_SEG_COUNT; ++i)
-		if (metl154_track_render_segs[i] == segnum)
-			return 1;
-	return 0;
-}
-
-static int render_metl154_track_portal_side(int segnum, int sidenum)
-{
-	return sidenum == 4 && (segnum == 82 || segnum == 83);
-}
-
-static int render_metl154_seg_pos_or_minus1(int segnum)
-{
-	if (segnum < 0 || segnum > Highest_segment_index)
-		return -1;
-	return render_pos[segnum];
-}
-
-static int render_metl154_seg_depth_or_minus1(int segnum)
-{
-	int pos = render_metl154_seg_pos_or_minus1(segnum);
-
-	return pos >= 0 ? Seg_depth[pos] : -1;
-}
-
-static void render_log_metl154_render_list_summary(int start_seg_num, int window_num)
-{
-	debug_log(DLOG_TEXTURE,
-		"[metl154list] frame=%d event=summary start=%d window=%d n=%d first_terminal=%d s82=%d/%d s83=%d/%d s29=%d/%d s28=%d/%d s32=%d/%d",
-		g_merged_wall_frame_id,
-		start_seg_num,
-		window_num,
-		N_render_segs,
-		first_terminal_seg,
-		render_metl154_seg_pos_or_minus1(82),
-		render_metl154_seg_depth_or_minus1(82),
-		render_metl154_seg_pos_or_minus1(83),
-		render_metl154_seg_depth_or_minus1(83),
-		render_metl154_seg_pos_or_minus1(29),
-		render_metl154_seg_depth_or_minus1(29),
-		render_metl154_seg_pos_or_minus1(28),
-		render_metl154_seg_depth_or_minus1(28),
-		render_metl154_seg_pos_or_minus1(32),
-		render_metl154_seg_depth_or_minus1(32));
-}
-#endif
 void update_rendered_data(int window_num, object *viewer, int rear_view_flag, int user)
 {
 	Assert(window_num < MAX_RENDERED_WINDOWS);
@@ -2052,49 +1995,12 @@ void build_segment_list(int start_seg_num, int window_num)
 							codes_and &= Segment_points[seg->verts[sv[i]]].p3_codes;
 
 						if (codes_and & CC_BEHIND) {
-#ifdef ANDROID
-							if (render_metl154_track_portal_side(segnum, c))
-								debug_log(DLOG_TEXTURE,
-									"[metl154list] frame=%d event=childlist_skip_behind parent=%d side=%d child=%d depth=%d wid=%d codes=0x%x",
-									g_merged_wall_frame_id,
-									segnum,
-									c,
-									ch,
-									l,
-									wid,
-									codes_and);
-#endif
 							continue;
 						}
 					}
 
 					child_list[n_children++] = c;
-					#ifdef ANDROID
-					if (render_metl154_track_portal_side(segnum, c))
-						debug_log(DLOG_TEXTURE,
-							"[metl154list] frame=%d event=childlist_add parent=%d side=%d child=%d depth=%d wid=%d obs=%d slot=%d",
-							g_merged_wall_frame_id,
-							segnum,
-							c,
-							ch,
-							l,
-							wid,
-							obs,
-							n_children - 1);
-#endif
 				}
-#ifdef ANDROID
-				else if (render_metl154_track_portal_side(segnum, c))
-					debug_log(DLOG_TEXTURE,
-						"[metl154list] frame=%d event=childlist_block parent=%d side=%d child=%d depth=%d wid=%d obs=%d",
-						g_merged_wall_frame_id,
-						segnum,
-						c,
-						ch,
-						l,
-						wid,
-						obs);
-#endif
 			}
 
 			//now order the sides in some magical way
@@ -2161,26 +2067,6 @@ void build_segment_list(int start_seg_num, int window_num)
 									new_w->top < render_windows[rp].top ||
 									new_w->right > render_windows[rp].right ||
 									new_w->bot > render_windows[rp].bot) {
-#ifdef ANDROID
-								if (render_metl154_track_portal_side(segnum, siden) || render_metl154_track_render_seg(ch))
-									debug_log(DLOG_TEXTURE,
-										"[metl154list] frame=%d event=expand parent=%d side=%d child=%d depth=%d rp=%d obs=%d no_proj=%d codes3d=0x%x codes2d=0x%x proj=%d..%d/%d..%d",
-										g_merged_wall_frame_id,
-										segnum,
-										siden,
-										ch,
-										l,
-										rp,
-										obs,
-										no_proj_flag,
-										codes_and_3d,
-										codes_and_2d,
-										min_x,
-										max_x,
-										min_y,
-										max_y);
-#endif
-
 								new_w->left = min(new_w->left, render_windows[rp].left);
 								new_w->right = max(new_w->right, render_windows[rp].right);
 								new_w->top = min(new_w->top, render_windows[rp].top);
@@ -2191,25 +2077,6 @@ void build_segment_list(int start_seg_num, int window_num)
 								processed[rp] = 0;		//force reprocess
 								reprocess = 1;
 							}
-#ifdef ANDROID
-							else if (render_metl154_track_portal_side(segnum, siden))
-								debug_log(DLOG_TEXTURE,
-									"[metl154list] frame=%d event=already_visible parent=%d side=%d child=%d depth=%d rp=%d obs=%d no_proj=%d codes3d=0x%x codes2d=0x%x proj=%d..%d/%d..%d",
-									g_merged_wall_frame_id,
-									segnum,
-									siden,
-									ch,
-									l,
-									rp,
-									obs,
-									no_proj_flag,
-									codes_and_3d,
-									codes_and_2d,
-									min_x,
-									max_x,
-									min_y,
-									max_y);
-#endif
 
 							goto no_add;
 						}
@@ -2220,46 +2087,9 @@ void build_segment_list(int start_seg_num, int window_num)
 						lcnt++;
 						if (lcnt >= MAX_RENDER_SEGS) { goto done_list; }
 						visited[ch] = 1;
-#ifdef ANDROID
-						if (render_metl154_track_portal_side(segnum, siden) || render_metl154_track_render_seg(ch))
-							debug_log(DLOG_TEXTURE,
-								"[metl154list] frame=%d event=enqueue parent=%d side=%d child=%d depth=%d pos=%d obs=%d no_proj=%d codes3d=0x%x codes2d=0x%x proj=%d..%d/%d..%d",
-								g_merged_wall_frame_id,
-								segnum,
-								siden,
-								ch,
-								l,
-								lcnt - 1,
-								obs,
-								no_proj_flag,
-								codes_and_3d,
-								codes_and_2d,
-								min_x,
-								max_x,
-								min_y,
-								max_y);
-#endif
 no_add:
 	;
 					}
-#ifdef ANDROID
-					else if (render_metl154_track_portal_side(segnum, siden))
-						debug_log(DLOG_TEXTURE,
-							"[metl154list] frame=%d event=portal_window_skip parent=%d side=%d child=%d depth=%d obs=%d no_proj=%d codes3d=0x%x codes2d=0x%x proj=%d..%d/%d..%d",
-							g_merged_wall_frame_id,
-							segnum,
-							siden,
-							ch,
-							l,
-							obs,
-							no_proj_flag,
-							codes_and_3d,
-							codes_and_2d,
-							min_x,
-							max_x,
-							min_y,
-							max_y);
-#endif
 				}
 			}
 		}
@@ -2325,9 +2155,6 @@ void render_mine(int start_seg_num,fix eye_offset, int window_num)
 	#endif
 		//NOTE LINK TO ABOVE!!
 		build_segment_list(start_seg_num, window_num);		//fills in Render_list & N_render_segs
-#ifdef ANDROID
-	render_log_metl154_render_list_summary(start_seg_num, window_num);
-#endif
 
 	//render away
 
