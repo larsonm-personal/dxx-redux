@@ -1,6 +1,6 @@
 # d1/d2 diff shrink -- phase 2 remaining + phase 3 candidates
 
-Status: phase 2 complete through phase 36; phase 3 survey active. This is the follow-on to
+Status: phase 2 complete through phase 36; phase 3 started with validated `coop_warp` extraction in `cleanup_coop_files_move.md`. This is the follow-on to
 `d1d2_diff_shrink_study.md` and the 31 completed
 `ogl_shared_helper_extraction_phase*.md` tranches.
 
