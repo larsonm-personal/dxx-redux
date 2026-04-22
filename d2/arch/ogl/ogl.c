@@ -6,7 +6,7 @@
 
 //#include <stdio.h>
 #ifdef _WIN32
-#include <winsock2.h>
+ #include <winsock2.h>
 #include <windows.h>
 #include <stddef.h>
 #endif
@@ -417,6 +417,7 @@ void ogl_smash_png_textures(void){
 			ogl_texture_list[i].handle=0;
 		}
 	}
+
 #if defined(ANDROID) && defined(OGL_MERGE)
 	ogl_android_texmerge_cache_clear();
 #endif
@@ -669,96 +670,6 @@ void ogl_texwrap(ogl_texture *gltexture,int state)
 		gltexture->wrapstate = state;
 	}
 }
-void ogl_cache_polymodel_textures(int model_num)
-{
-        polymodel *po;
-        int i;
-
-        if (model_num < 0)
-                return;
-        po = &Polygon_models[model_num];
-        for (i=0;i<po->n_textures;i++)  {
-                PIGGY_PAGE_IN(ObjBitmaps[ObjBitmapPtrs[po->first_texture + i]]);
-                ogl_loadbmtexture(&GameBitmaps[ObjBitmaps[ObjBitmapPtrs[po->first_texture + i]].index]);
-        }
-}
-
-void ogl_cache_level_textures(void)
-{
-	int i;
-#ifdef ANDROID
-	struct timespec cache_start;
-	clock_gettime(CLOCK_MONOTONIC, &cache_start);
-#endif
-	
-	ogl_reset_texture_stats_internal();//loading a new lev should reset textures
-
-	if (!ogl_allow_png())
-		ogl_smash_png_textures();
-
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "DXX",
-	    "ogl_cache: starting, %i bitmaps, allow_png=%i",
-	    Num_bitmap_files, ogl_allow_png());
-	{
-		int before_hires = r_hires_loaded;
-		int n_already = 0, n_paged_skip = 0, n_bm_upload = 0, n_png_fail = 0;
-		for (i = 0; i < Num_bitmap_files; i++) {
-			grs_bitmap *bm = &GameBitmaps[i];
-			const char *cname = piggy_game_bitmap_name(bm);
-			if (cname && !d_stricmp(cname, "metl154"))
-				debug_log(DLOG_TEXTURE,
-					"[metl154cache] pre-load: i=%d bm_flags=0x%x GameBitmapFlags=0x%x gltex=%p mask=%p",
-					i, bm->bm_flags,
-					piggy_bitmap_get_flags(bm),
-					(void *)bm->gltexture,
-					(void *)bm->gltexture_mask);
-			int had_tex = (bm->gltexture && bm->gltexture->handle > 0);
-			ogl_loadbmtexture(bm);
-			if (cname && !d_stricmp(cname, "metl154"))
-				debug_log(DLOG_TEXTURE,
-					"[metl154cache] post-load: i=%d bm_flags=0x%x gltex=%p mask=%p",
-					i, bm->bm_flags,
-					(void *)bm->gltexture,
-					(void *)bm->gltexture_mask);
-			if (had_tex)
-				n_already++;
-			else if (bm->gltexture && bm->gltexture->handle > 0) {
-				if (!bm->gltexture->is_png)
-					n_bm_upload++;
-			} else {
-				if (bm->gltexture && bm->gltexture->handle <= 0)
-					n_png_fail++;
-				else
-					n_paged_skip++;
-			}
-		}
-		__android_log_print(ANDROID_LOG_INFO, "DXX",
-		    "ogl_cache: done. hires=%i already=%i bitmap=%i skipped=%i png_fail=%i etc2_zero=%i",
-		    r_hires_loaded - before_hires, n_already, n_bm_upload, n_paged_skip, n_png_fail,
-		    r_etc2_zero_data);
-	}
-#else
-	for (i = 0; i < Num_bitmap_files; i++) {
-		if (!(GameBitmaps[i].bm_flags & BM_FLAG_PAGED_OUT))
-			ogl_loadbmtexture(&GameBitmaps[i]);
-	}
-#endif
-
-#ifdef ANDROID
-	{
-		struct timespec cache_end;
-		clock_gettime(CLOCK_MONOTONIC, &cache_end);
-		g_cache_time_ms = (int)((cache_end.tv_sec - cache_start.tv_sec) * 1000 +
-			(cache_end.tv_nsec - cache_start.tv_nsec) / 1000000);
-	}
-#endif
-
-	xmodel_load_gl_all();
-	glmprintf((0,"finished caching\n"));
-	r_cachedtexcount = r_texcount;
-}
-
 
 #if defined(ANDROID) && defined(OGL_MERGE)
 static void ogl_android_texmerge_reset_entry(ogl_android_texmerge_cache_entry *entry)
@@ -867,6 +778,95 @@ static grs_bitmap *ogl_android_get_cached_plain_texmerge_bitmap(grs_bitmap *bmbo
 	return &entry->bitmap;
 }
 #endif
+void ogl_cache_polymodel_textures(int model_num)
+{
+	polymodel *po;
+	int i;
+
+	if (model_num < 0)
+		return;
+	po = &Polygon_models[model_num];
+	for (i=0;i<po->n_textures;i++)  {
+		PIGGY_PAGE_IN(ObjBitmaps[ObjBitmapPtrs[po->first_texture + i]]);
+		ogl_loadbmtexture(&GameBitmaps[ObjBitmaps[ObjBitmapPtrs[po->first_texture + i]].index]);
+	}
+}
+
+void ogl_cache_level_textures(void)
+{
+	int i;
+#ifdef ANDROID
+	struct timespec cache_start;
+	clock_gettime(CLOCK_MONOTONIC, &cache_start);
+#endif
+	
+	ogl_reset_texture_stats_internal();//loading a new lev should reset textures
+
+	if (!ogl_allow_png())
+		ogl_smash_png_textures();
+
+#ifdef ANDROID
+	__android_log_print(ANDROID_LOG_INFO, "DXX",
+	    "ogl_cache: starting, %i bitmaps, allow_png=%i",
+	    Num_bitmap_files, ogl_allow_png());
+	{
+		int before_hires = r_hires_loaded;
+		int n_already = 0, n_paged_skip = 0, n_bm_upload = 0, n_png_fail = 0;
+		for (i = 0; i < Num_bitmap_files; i++) {
+			grs_bitmap *bm = &GameBitmaps[i];
+			const char *cname = piggy_game_bitmap_name(bm);
+			if (cname && !d_stricmp(cname, "metl154"))
+				debug_log(DLOG_TEXTURE,
+					"[metl154cache] pre-load: i=%d bm_flags=0x%x GameBitmapFlags=0x%x gltex=%p mask=%p",
+					i, bm->bm_flags,
+					piggy_bitmap_get_flags(bm),
+					(void *)bm->gltexture,
+					(void *)bm->gltexture_mask);
+			int had_tex = (bm->gltexture && bm->gltexture->handle > 0);
+			ogl_loadbmtexture(bm);
+			if (cname && !d_stricmp(cname, "metl154"))
+				debug_log(DLOG_TEXTURE,
+					"[metl154cache] post-load: i=%d bm_flags=0x%x gltex=%p mask=%p",
+					i, bm->bm_flags,
+					(void *)bm->gltexture,
+					(void *)bm->gltexture_mask);
+			if (had_tex)
+				n_already++;
+			else if (bm->gltexture && bm->gltexture->handle > 0) {
+				if (!bm->gltexture->is_png)
+					n_bm_upload++;
+			} else {
+				if (bm->gltexture && bm->gltexture->handle <= 0)
+					n_png_fail++;
+				else
+					n_paged_skip++;
+			}
+		}
+		__android_log_print(ANDROID_LOG_INFO, "DXX",
+		    "ogl_cache: done. hires=%i already=%i bitmap=%i skipped=%i png_fail=%i etc2_zero=%i",
+		    r_hires_loaded - before_hires, n_already, n_bm_upload, n_paged_skip, n_png_fail,
+		    r_etc2_zero_data);
+	}
+#else
+	for (i = 0; i < Num_bitmap_files; i++) {
+		if (!(GameBitmaps[i].bm_flags & BM_FLAG_PAGED_OUT))
+			ogl_loadbmtexture(&GameBitmaps[i]);
+	}
+#endif
+
+#ifdef ANDROID
+	{
+		struct timespec cache_end;
+		clock_gettime(CLOCK_MONOTONIC, &cache_end);
+		g_cache_time_ms = (int)((cache_end.tv_sec - cache_start.tv_sec) * 1000 +
+			(cache_end.tv_nsec - cache_start.tv_nsec) / 1000000);
+	}
+#endif
+
+	xmodel_load_gl_all();
+	glmprintf((0,"finished caching\n"));
+	r_cachedtexcount = r_texcount;
+}
 
 bool g3_draw_line(const g3s_point *p0,const g3s_point *p1)
 {
@@ -1362,15 +1362,15 @@ bool g3_draw_tmap(int nv,const g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb 
 #if defined(ANDROID) && defined(OGL_MERGE)
 	if (!skip_merged_wall_cover_draw)
 		android_merged_wall_log_cover(cover_shader, piggy_game_bitmap_name(bm), NULL,
-			pointlist, nv, uvl_list, color_array, draw_order, bm,
-			GameCfg.TexFilt, GameCfg.MenuTexFilt, GameCfg.HudTexFilt,
-			ogl_aniso_level);
+			(const struct g3s_point **)pointlist, nv, uvl_list, color_array,
+			draw_order, bm, GameCfg.TexFilt, GameCfg.MenuTexFilt,
+			GameCfg.HudTexFilt, ogl_aniso_level);
 #endif
 
 #ifdef ANDROID
   if (tmap_drawer_ptr == draw_tmap
       && !skip_merged_wall_cover_draw)
-          android_texture_debug_add_overlay_label(pointlist, nv, bm, 0);
+          android_texture_debug_add_overlay_label((const g3s_point *const *)pointlist, nv, bm, 0);
 #endif
 
 	return 0;
@@ -1485,7 +1485,8 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 			grs_bitmap *merged = ogl_android_get_cached_plain_texmerge_bitmap(bmbot,
 				bmovl, orient, &merged_slot);
 			if (merged) {
-                          android_texture_debug_add_joined_labels(label_pointlist, label_nv, bmbot, bmovl);
+				android_texture_debug_add_joined_labels((const g3s_point *const *)label_pointlist,
+					label_nv, bmbot, bmovl);
 				if (android_merged_wall_is_logging_target_bitmap(bmovl)) {
 					const char *botname = piggy_game_bitmap_name(bmbot);
 					const char *ovlname = piggy_game_bitmap_name(bmovl);
@@ -1506,9 +1507,10 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 						botname ? botname : "<none>",
 						ovlname ? ovlname : "<none>");
 				}
-				android_merged_wall_track_face(pointlist, nv, uvl_list, orient,
-					draw_order, "merge_cached", "gpu_cached_single", NULL,
-					merged, merged_slot);
+				android_merged_wall_track_face(
+				(const struct g3s_point **)pointlist, nv, uvl_list, orient,
+				draw_order, "merge_cached", "gpu_cached_single", NULL,
+				merged, merged_slot);
 				return g3_draw_tmap(nv, pointlist, uvl_list, light_rgb, merged);
 			}
 		}
@@ -1566,7 +1568,14 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 
 #ifdef ANDROID
-  android_texture_debug_add_overlay_label(label_pointlist, label_nv, bmovl, 10);
+	/* Debug texture label overlay: accumulate label for overlay/tmap2 bitmap.
+	 * The bottom texture (tmap1) label is already handled by g3_draw_tmap above. */
+	if (g_debug_tex_overlay_active
+	    && g_debug_tex_label_count < DEBUG_TEX_MAX_LABELS)
+	{
+		android_texture_debug_add_overlay_label(
+			(const g3s_point *const *)label_pointlist, label_nv, bmovl, 10);
+	}
 #endif
 #else
 	GLuint prog = super ? ogl_prog_tex2m : ogl_prog_tex2;
@@ -1603,7 +1612,8 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 			&merged_wall_front_face, &merged_wall_cull_mode, &merged_wall_polygon_offset_enabled,
 			&merged_wall_polygon_offset_factor, &merged_wall_polygon_offset_units, merged_wall_color_mask,
 			&merged_wall_draw_fbo);
-		merged_wall_screen_area = (GLfloat)android_merged_wall_get_screen_area(pointlist, nv);
+		merged_wall_screen_area = (GLfloat)android_merged_wall_get_screen_area(
+			(const struct g3s_point *const *)pointlist, nv);
 	}
 #endif
 
@@ -1639,7 +1649,8 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 		nv, orient, super, prog, tex2_debug_mode, GameCfg.TexFilt,
 		ogl_aniso_level);
 	if (log_tmap2_geometry)
-		android_merged_wall_log_submit(&merged_wall_tmap2_submit_ctx, pointlist, nv);
+		android_merged_wall_log_submit(&merged_wall_tmap2_submit_ctx,
+			(const struct g3s_point *const *)pointlist, nv);
 	if (is_logging_target_plain)
 		android_merged_wall_log_state(&merged_wall_tmap2_submit_ctx,
 			merged_wall_screen_area,
@@ -1650,7 +1661,8 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 			(const unsigned char *) merged_wall_color_mask, merged_wall_draw_fbo,
 			merged_wall_force_cull_off, merged_wall_force_polygon_offset, merged_wall_force_depth_off);
 	if (log_tmap2_geometry)
-		android_merged_wall_log_split(&merged_wall_tmap2_submit_ctx, pointlist, nv);
+		android_merged_wall_log_split(&merged_wall_tmap2_submit_ctx,
+			(const struct g3s_point *const *)pointlist, nv);
 #endif
 
 	if (!skip_merged_wall_cover_draw)
@@ -1659,9 +1671,10 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 #if defined(ANDROID)
 	gles3_shim_external_texcoord2_pointer(0, GL_FLOAT, 0, NULL);
 	if (g_android_draw_face_ctx.valid && g_android_draw_face_ctx.tmap2 != 0) {
-		android_merged_wall_track_face(pointlist, nv, uvl_list, orient,
-			draw_order, merged_wall_tmap2_submit_ctx.route, "gpu_two_pass",
-			NULL, NULL, -1);
+		android_merged_wall_track_face((const struct g3s_point **)pointlist,
+			nv, uvl_list, orient, draw_order,
+			merged_wall_tmap2_submit_ctx.route, "gpu_two_pass", NULL, NULL,
+			-1);
 	}
 	if (!is_logging_target_plain && !skip_merged_wall_cover_draw) {
 		android_merged_wall_log_cover(super ? "mask" : "plain",
@@ -1680,8 +1693,14 @@ static bool ogl_draw_tmap_2_internal(int nv, const g3s_point **pointlist, g3s_uv
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	gles3_shim_use_external(0);
 
-  if (!skip_merged_wall_cover_draw)
-          android_texture_debug_add_overlay_label(label_pointlist, label_nv, bmovl, 10);
+	/* Debug texture label overlay for overlay/tmap2 bitmap */
+	if (g_debug_tex_overlay_active
+	    && !skip_merged_wall_cover_draw
+	    && g_debug_tex_label_count < DEBUG_TEX_MAX_LABELS)
+	{
+		android_texture_debug_add_overlay_label(
+			(const g3s_point *const *)label_pointlist, label_nv, bmovl, 10);
+	}
 #else
 	glUseProgram(0);
 #endif
@@ -1825,9 +1844,10 @@ static bool ogl_clip_and_draw_tmap2_merge(int nv, const g3s_point **pointlist,
 		return result;
 	}
 
-	android_merged_wall_get_input_codes(pointlist, nv, &cc, &input_behind);
+	android_merged_wall_get_input_codes((const struct g3s_point *const *)pointlist,
+	nv, &cc, &input_behind);
 	for (i = 0; i < nv; i++) {
-		g3s_point *p = clip_src[i] = (g3s_point *)pointlist[i];
+	g3s_point *p = clip_src[i] = (g3s_point *)pointlist[i];
 
 		p->p3_u = uvl_list[i].u;
 		p->p3_v = uvl_list[i].v;
@@ -1951,7 +1971,8 @@ bool g3_draw_tmap_2(int nv, const g3s_point **pointlist, g3s_uvl *uvl_list, g3s_
 	if (android_merged_wall_is_logging_target_bitmap(bmovl))
 		android_merged_wall_log_tmap2_route("merge_raw", bmbot, bmovl, nv, orient);
 	if (android_merged_wall_is_logging_target_bitmap(bmovl)) {
-		android_merged_wall_get_input_codes(pointlist, nv, &cc, &input_behind);
+	android_merged_wall_get_input_codes((const struct g3s_point *const *)pointlist,
+	nv, &cc, &input_behind);
 		android_merged_wall_set_tmap2_submit_context(&merged_wall_tmap2_submit_ctx,
 			"merge_raw", nv, &cc, input_behind, 0, 0);
 		{
@@ -2086,7 +2107,8 @@ bool ogl_ubitblt_i(int dw,int dh,int dx,int dy, int sw, int sh, int sx, int sy, 
 	OGL_ENABLE(TEXTURE_2D);
 	
 	ogl_pal=gr_current_pal;
-	ogl_loadtexture(src->bm_data, sx, sy, &tex, src->bm_flags, 0, texfilt, NULL);
+	ogl_loadtexture(src->bm_data, sx, sy, &tex, src->bm_flags, 0, texfilt,
+		NULL);
 	ogl_pal=gr_palette;
 	OGL_BINDTEXTURE(tex.handle);
 	
@@ -2947,7 +2969,8 @@ void ogl_loadpngmask(png_data *pdata, grs_bitmap *bm, int texfilt)
 	else
 		for (int i = 0; i < size; i++)
 			mask[i] = buf[i * 3] == 120 && buf[i * 3 + 1] == 88 && buf[i * 3 + 2] == 128 ? 255 : 0;
-	ogl_loadtexture(mask, 0, 0, bm->gltexture_mask, BM_FLAG_TRANSPARENT, 0, texfilt, NULL);
+	ogl_loadtexture(mask, 0, 0, bm->gltexture_mask, BM_FLAG_TRANSPARENT, 0,
+	texfilt, NULL);
 	bm->gltexture_mask->is_png = 1;
 	d_free(mask);
 }
@@ -3435,7 +3458,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 
 void ogl_loadbmtexture(grs_bitmap *bm)
 {
-	ogl_loadbmtexture_f(bm, GameCfg.TexFilt);
+ogl_loadbmtexture_f(bm, GameCfg.TexFilt);
 }
 
 void ogl_freetexture(ogl_texture *gltexture)
