@@ -55,6 +55,9 @@
 - for d1/ and d2/ edits, take extra care to match existing style in detail. for example, many string constants are in headers. don't add a new string constant in a source file right next to an existing header-included string constant - instead, add a header constant in the same style
 - new code should be as free of compiler warnings as possible. -werror isn't enabled, but do a 2nd pass to remove warnings when building to check
 - new code should have formatting linters run on it: `android\run-code-quality.ps1 --fix`
+- `android\run-code-quality.ps1 --fix` is file-mutating and can take several minutes. do not treat it as done until the process has fully exited in its terminal
+- before starting another cleanup or validation pass after any timeout, interrupted agent run, or "file is newer" popup, list stale formatter tasks with `android\stop-stale-formatters.ps1` and kill them with `android\stop-stale-formatters.ps1 -Kill` if needed
+- `android\run-code-quality.ps1` now uses `android\temp\run-code-quality.lock.json` to fail fast if another cleanup pass is still active. if that lock is stale, kill the old formatter task and rerun instead of forcing saves over newer edits
 
 ## building
 - standard cmake commands (`mkdir build`, `cd build`, `cmake ..`, `cmake --build .`)
