@@ -2037,6 +2037,9 @@ class MainActivity :
     ) {
         val pressed = action == 0
         val metaId = dpadMetaBindings[keyCode]
+        logGamepadInput(
+            "dispatchDpad kc=$keyCode action=${if (pressed) "down" else "up"} meta=${metaId ?: -1}",
+        )
         if (metaId != null) {
             dispatchMetaAction(metaId, pressed)
         } else {
@@ -2079,10 +2082,28 @@ class MainActivity :
             else -> -1
         }
 
+    private fun isControllerSource(source: Int): Boolean =
+        source and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD ||
+            source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK ||
+            source and InputDevice.SOURCE_DPAD == InputDevice.SOURCE_DPAD
+
+    private fun logGamepadInput(message: String) {
+        DebugLog.log(DebugLogCategory.GAME, message)
+        Log.d("DXX-Input", message)
+    }
+
     override fun onKeyDown(
         keyCode: Int,
         event: KeyEvent,
     ): Boolean {
+        if (isControllerSource(event.source) ||
+            dpadKeyCodeToJoyButton(keyCode) >= 0 ||
+            gamepadButtonIndex(keyCode) >= 0
+        ) {
+            logGamepadInput(
+                "onKeyDown kc=$keyCode src=${event.source} repeat=${event.repeatCount} admin=${touchOverlay.isAdminTrayOpen()} focus=${gameSurfaceView.hasFocus()}",
+            )
+        }
         // Let the system handle volume keys
         if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
             return super.onKeyDown(keyCode, event)
@@ -2138,6 +2159,14 @@ class MainActivity :
         keyCode: Int,
         event: KeyEvent,
     ): Boolean {
+        if (isControllerSource(event.source) ||
+            dpadKeyCodeToJoyButton(keyCode) >= 0 ||
+            gamepadButtonIndex(keyCode) >= 0
+        ) {
+            logGamepadInput(
+                "onKeyUp kc=$keyCode src=${event.source} admin=${touchOverlay.isAdminTrayOpen()} focus=${gameSurfaceView.hasFocus()}",
+            )
+        }
         if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
             return super.onKeyUp(keyCode, event)
         }
@@ -2231,6 +2260,9 @@ class MainActivity :
                 } else {
                     0
                 }
+            if (newHatX != hatXState || newHatY != hatYState) {
+                logGamepadInput("hat hx=$hx hy=$hy old=($hatXState,$hatYState) new=($newHatX,$newHatY)")
+            }
             if (newHatX != hatXState) {
                 if (hatXState == -1) dispatchDpad(KeyEvent.KEYCODE_DPAD_LEFT, 1)
                 if (hatXState == 1) dispatchDpad(KeyEvent.KEYCODE_DPAD_RIGHT, 1)

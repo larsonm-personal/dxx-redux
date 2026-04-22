@@ -1147,6 +1147,10 @@ class SetupActivity : ComponentActivity() {
     /** D-Pad HAT axis values (hatX, hatY). */
     internal val dpadAxes = FloatArray(2)
 
+    /** Last synthesized HAT-axis directions so launcher focus sees edge changes only. */
+    private var hatXState = 0
+    private var hatYState = 0
+
     /** Compose-observable axis update counter (increment triggers recompose). */
     internal val axisGeneration = mutableIntStateOf(0)
 
@@ -1155,6 +1159,34 @@ class SetupActivity : ComponentActivity() {
 
     /** Set to true when the controller config page is shown (needs all button events). */
     internal var controllerConfigActive = false
+
+    private fun hatAxisDirection(value: Float): Int =
+        when {
+            value < -0.5f -> -1
+            value > 0.5f -> 1
+            else -> 0
+        }
+
+    private fun synthesizeDpadKeyEvent(
+        keyCode: Int,
+        action: Int,
+    ) {
+        val eventTime = SystemClock.uptimeMillis()
+        super.dispatchKeyEvent(KeyEvent(eventTime, eventTime, action, keyCode, 0))
+    }
+
+    private fun synthesizeHatTransition(
+        oldDirection: Int,
+        newDirection: Int,
+        negativeKeyCode: Int,
+        positiveKeyCode: Int,
+    ) {
+        if (oldDirection == newDirection) return
+        if (oldDirection == -1) synthesizeDpadKeyEvent(negativeKeyCode, KeyEvent.ACTION_UP)
+        if (oldDirection == 1) synthesizeDpadKeyEvent(positiveKeyCode, KeyEvent.ACTION_UP)
+        if (newDirection == -1) synthesizeDpadKeyEvent(negativeKeyCode, KeyEvent.ACTION_DOWN)
+        if (newDirection == 1) synthesizeDpadKeyEvent(positiveKeyCode, KeyEvent.ACTION_DOWN)
+    }
 
     override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
         if (event.source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK &&
@@ -1169,6 +1201,25 @@ class SetupActivity : ComponentActivity() {
             dpadAxes[0] = event.getAxisValue(MotionEvent.AXIS_HAT_X)
             dpadAxes[1] = event.getAxisValue(MotionEvent.AXIS_HAT_Y)
             axisGeneration.intValue++
+
+            if (!controllerConfigActive) {
+                val newHatX = hatAxisDirection(dpadAxes[0])
+                val newHatY = hatAxisDirection(dpadAxes[1])
+                synthesizeHatTransition(
+                    hatXState,
+                    newHatX,
+                    KeyEvent.KEYCODE_DPAD_LEFT,
+                    KeyEvent.KEYCODE_DPAD_RIGHT,
+                )
+                synthesizeHatTransition(
+                    hatYState,
+                    newHatY,
+                    KeyEvent.KEYCODE_DPAD_UP,
+                    KeyEvent.KEYCODE_DPAD_DOWN,
+                )
+                hatXState = newHatX
+                hatYState = newHatY
+            }
             return true
         }
         return super.dispatchGenericMotionEvent(event)
@@ -3445,6 +3496,10 @@ private fun SetupScreen(
 
                 // ── Config JSON import dialog ──
                 if (configImportUri != null) {
+                    val configImportFocus = remember { FocusRequester() }
+                    LaunchedEffect(configImportUri) {
+                        if (configImportUri != null) configImportFocus.requestFocus()
+                    }
                     AlertDialog(
                         onDismissRequest = {
                             configImportUri = null
@@ -3457,13 +3512,16 @@ private fun SetupScreen(
                             )
                         },
                         confirmButton = {
-                            TextButton(onClick = {
-                                val uri = configImportUri!!
-                                configImportUri = null
-                                configImportName = null
-                                val result = ConfigImportExport.importFromUri(context, uri)
-                                Toast.makeText(context, result, Toast.LENGTH_LONG).show()
-                            }) { Text("Import") }
+                            TextButton(
+                                onClick = {
+                                    val uri = configImportUri!!
+                                    configImportUri = null
+                                    configImportName = null
+                                    val result = ConfigImportExport.importFromUri(context, uri)
+                                    Toast.makeText(context, result, Toast.LENGTH_LONG).show()
+                                },
+                                modifier = Modifier.focusRequester(configImportFocus),
+                            ) { Text("Import") }
                         },
                         dismissButton = {
                             TextButton(onClick = {
@@ -3815,6 +3873,7 @@ private fun SetupScreen(
                     // ── Scan results / import card ──────────────
                     if (scanResults != null) {
                         val found = scanResults!!
+                        val importAllFocus = remember(found) { FocusRequester() }
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors =
@@ -3845,6 +3904,9 @@ private fun SetupScreen(
                                         color = MaterialTheme.colorScheme.onErrorContainer,
                                     )
                                 } else {
+                                    LaunchedEffect(found) {
+                                        importAllFocus.requestFocus()
+                                    }
                                     Text(
                                         text = "Found ${found.size} game file(s): ${found.joinToString(
                                             ", ",
@@ -3934,6 +3996,7 @@ private fun SetupScreen(
                                                     }
                                                 }
                                             },
+                                            modifier = Modifier.focusRequester(importAllFocus),
                                         ) {
                                             Text("Import All", fontSize = 13.sp)
                                         }
@@ -3996,6 +4059,7 @@ private fun SetupScreen(
                     // ── ZIP results card ───────────────────────
                     if (zipExtracted != null) {
                         val extracted = zipExtracted!!
+                        val zipImportFocus = remember(extracted) { FocusRequester() }
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors =
@@ -4044,6 +4108,9 @@ private fun SetupScreen(
                                         }
                                     }
                                 } else {
+                                    LaunchedEffect(extracted) {
+                                        zipImportFocus.requestFocus()
+                                    }
                                     if (zipPackageName != null) {
                                         Text(
                                             text = "\u2705 Recognized: $zipPackageName",
@@ -4109,6 +4176,7 @@ private fun SetupScreen(
                                                     onRefresh()
                                                 }
                                             },
+                                            modifier = Modifier.focusRequester(zipImportFocus),
                                         ) {
                                             Text("Import to Current Set", fontSize = 13.sp)
                                         }
@@ -6423,6 +6491,15 @@ private fun GogImportDialog(
     var tempPath by remember { mutableStateOf<String?>(null) }
     var errorMsg by remember { mutableStateOf<String?>(null) }
     var includeAudio by remember { mutableStateOf(true) }
+    val extractFocus = remember { FocusRequester() }
+    val doneFocus = remember { FocusRequester() }
+
+    LaunchedEffect(fileList, processing, extractedCount) {
+        when {
+            extractedCount > 0 -> doneFocus.requestFocus()
+            fileList != null && fileList!!.isNotEmpty() && !processing -> extractFocus.requestFocus()
+        }
+    }
 
     // Copy installer to temp + detect format + list files
     LaunchedEffect(installerUri) {
@@ -6675,7 +6752,7 @@ private fun GogImportDialog(
                                 processing = false
                             }
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().focusRequester(extractFocus),
                     ) {
                         Text("Extract to \u201c${setDir.name}\u201d", fontSize = 13.sp)
                     }
@@ -6690,7 +6767,7 @@ private fun GogImportDialog(
                             cleanupTmpDir(filesDir)
                             onImported()
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().focusRequester(doneFocus),
                     ) {
                         Text("Done", fontSize = 13.sp)
                     }
@@ -6734,6 +6811,15 @@ private fun SowImportDialog(
     var processing by remember { mutableStateOf(false) }
     var extractedCount by remember { mutableIntStateOf(0) }
     var tempPath by remember { mutableStateOf<String?>(null) }
+    val extractFocus = remember { FocusRequester() }
+    val doneFocus = remember { FocusRequester() }
+
+    LaunchedEffect(tempPath, processing, extractedCount) {
+        when {
+            extractedCount > 0 -> doneFocus.requestFocus()
+            tempPath != null && !processing -> extractFocus.requestFocus()
+        }
+    }
 
     // Copy SOW to temp
     LaunchedEffect(sowUri) {
@@ -6809,7 +6895,7 @@ private fun SowImportDialog(
                                 processing = false
                             }
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().focusRequester(extractFocus),
                     ) {
                         Text("Extract to \u201c${setDir.name}\u201d", fontSize = 13.sp)
                     }
@@ -6824,7 +6910,7 @@ private fun SowImportDialog(
                             cleanupTmpDir(filesDir)
                             onImported()
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().focusRequester(doneFocus),
                     ) {
                         Text("Done", fontSize = 13.sp)
                     }
@@ -6874,6 +6960,19 @@ private fun DiscImportDialog(
     var legacyDiscId by remember { mutableStateOf(0L) }
     // Temp CUE path for native parsing
     var tempCuePath by remember { mutableStateOf<String?>(null) }
+    val extractFocus = remember { FocusRequester() }
+    val addAudioFocus = remember { FocusRequester() }
+    val doneFocus = remember { FocusRequester() }
+
+    LaunchedEffect(tracks, processing, dataExtracted, audioRegistered) {
+        val hasDataTrack = tracks?.any { it.isData } == true
+        val hasAudioTracks = tracks?.any { it.isAudio } == true
+        when {
+            dataExtracted > 0 || audioRegistered -> doneFocus.requestFocus()
+            !processing && hasDataTrack && dataExtracted == 0 -> extractFocus.requestFocus()
+            !processing && hasAudioTracks && !audioRegistered -> addAudioFocus.requestFocus()
+        }
+    }
 
     // Copy CUE + parse tracks on first composition
     LaunchedEffect(cueUri) {
@@ -7093,7 +7192,7 @@ private fun DiscImportDialog(
                                     processing = false
                                 }
                             },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().focusRequester(extractFocus),
                         ) {
                             Text("Extract Game Files", fontSize = 13.sp)
                         }
@@ -7232,7 +7331,7 @@ private fun DiscImportDialog(
                                     processing = false
                                 }
                             },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().focusRequester(addAudioFocus),
                         ) {
                             Text("Add as Audio Source", fontSize = 13.sp)
                         }
@@ -7243,7 +7342,7 @@ private fun DiscImportDialog(
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(
                             onClick = onImported,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().focusRequester(doneFocus),
                         ) {
                             Text("Done", fontSize = 13.sp)
                         }
@@ -7273,6 +7372,15 @@ private fun IsoImportDialog(
     var fileList by remember { mutableStateOf<List<DiscImportBridge.IsoFile>?>(null) }
     var processing by remember { mutableStateOf(false) }
     var extractedCount by remember { mutableIntStateOf(0) }
+    val extractFocus = remember { FocusRequester() }
+    val doneFocus = remember { FocusRequester() }
+
+    LaunchedEffect(fileList, processing, extractedCount) {
+        when {
+            extractedCount > 0 -> doneFocus.requestFocus()
+            fileList != null && !processing -> extractFocus.requestFocus()
+        }
+    }
 
     LaunchedEffect(isoUri) {
         withContext(Dispatchers.IO) {
@@ -7414,7 +7522,7 @@ private fun IsoImportDialog(
                                 processing = false
                             }
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().focusRequester(extractFocus),
                     ) {
                         Text("Extract Game Files", fontSize = 13.sp)
                     }
@@ -7424,7 +7532,7 @@ private fun IsoImportDialog(
                     Spacer(modifier = Modifier.height(8.dp))
                     Button(
                         onClick = onImported,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().focusRequester(doneFocus),
                     ) {
                         Text("Done", fontSize = 13.sp)
                     }

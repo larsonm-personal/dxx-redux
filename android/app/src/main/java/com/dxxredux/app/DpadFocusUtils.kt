@@ -14,7 +14,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 /** Bright border shown on focused elements for TV/controller navigation. */
-private val focusBorderColor = Color(0xFF64B5F6)
+val tvFocusBorderColor = Color(0xFF00E676)
+private val tvFocusBorderShape = RoundedCornerShape(6.dp)
+private val tvFocusBorderWidth = 3.dp
+
+/** Adds the shared bright TV focus border to any composable. */
+fun Modifier.tvFocusBorder(): Modifier =
+    composed {
+        var focused by remember { mutableStateOf(false) }
+        this
+            .onFocusChanged { focused = it.isFocused }
+            .then(
+                if (focused) {
+                    Modifier.border(tvFocusBorderWidth, tvFocusBorderColor, tvFocusBorderShape)
+                } else {
+                    Modifier
+                },
+            )
+    }
 
 /**
  * Makes a composable focusable with a visible highlight border when focused.
@@ -28,7 +45,7 @@ fun Modifier.tvFocusable(): Modifier =
             .onFocusChanged { focused = it.isFocused }
             .then(
                 if (focused) {
-                    Modifier.border(2.dp, focusBorderColor, RoundedCornerShape(4.dp))
+                    Modifier.border(tvFocusBorderWidth, tvFocusBorderColor, tvFocusBorderShape)
                 } else {
                     Modifier
                 },
