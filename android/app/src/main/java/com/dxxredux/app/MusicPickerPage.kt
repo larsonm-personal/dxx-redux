@@ -135,19 +135,19 @@ fun MusicPickerPage(
                     selected = musicMode == MUSIC_MODE_MIDI,
                     onClick = { saveMusicMode(MUSIC_MODE_MIDI) },
                     label = { Text("MIDI") },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).tvFocusBorder(),
                 )
                 FilterChip(
                     selected = musicMode == MUSIC_MODE_CD,
                     onClick = { saveMusicMode(MUSIC_MODE_CD) },
                     label = { Text("CD Audio") },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).tvFocusBorder(),
                 )
                 FilterChip(
                     selected = musicMode == MUSIC_MODE_FILES,
                     onClick = { saveMusicMode(MUSIC_MODE_FILES) },
                     label = { Text("Audio Files") },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).tvFocusBorder(),
                 )
             }
 

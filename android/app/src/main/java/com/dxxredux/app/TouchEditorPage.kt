@@ -2238,7 +2238,7 @@ private fun LabeledSlider(
             value = value,
             onValueChange = onChange,
             valueRange = min..max,
-            modifier = Modifier.height(28.dp),
+            modifier = Modifier.height(28.dp).tvFocusBorder(),
         )
     }
 }
@@ -2258,7 +2258,7 @@ private fun LabeledIntSlider(
             value = value.toFloat(),
             onValueChange = { onChange(it.roundToInt().coerceIn(min, max)) },
             valueRange = min.toFloat()..max.toFloat(),
-            modifier = Modifier.height(28.dp),
+            modifier = Modifier.height(28.dp).tvFocusBorder(),
         )
     }
 }

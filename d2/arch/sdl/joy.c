@@ -76,15 +76,15 @@ void joy_button_handler(SDL_JoyButtonEvent *jbe)
 	d_event_joystickbutton event;
 
 #ifdef ANDROID
-	/* InputMixer sends button = MIXER_BTN_BASE + kc_index (100-155).
-	 * button_map[] only has valid entries for physical indices 0-25,
-	 * so bypass the mapping for mixer buttons -- they are already
-	 * the final button value. */
-	if (jbe->button >= MIXER_BTN_BASE)
-		button = jbe->button;
-	else
-#endif
+	/* Android uses a virtual joystick: button indices 0-25 and mixer
+	 * buttons (100+) are already the final button value. button_map[]
+	 * is never populated because no physical SDL_Joystick is opened,
+	 * so identity pass-through is correct. Before this, D-pad buttons
+	 * 22-25 and axis-buttons 10-21 all mapped to button 0 (Enter). */
+	button = jbe->button;
+#else
 	button = SDL_Joysticks[jbe->which].button_map[jbe->button];
+#endif
 
 	Joystick.button_state[button] = jbe->state;
 
@@ -137,7 +137,13 @@ int joy_axis_handler(SDL_JoyAxisEvent *jae)
 	int axis;
 	d_event_joystick_moved event;
 
+#ifdef ANDROID
+	/* Android: virtual joystick, axis_map[] is not populated. Identity
+	 * pass-through; see comment in joy_button_handler. */
+	axis = jae->axis;
+#else
 	axis = SDL_Joysticks[jae->which].axis_map[jae->axis];
+#endif
 
 	// inaccurate stick is inaccurate. SDL might send SDL_JoyAxisEvent even if the value is the same as before.
 	if (Joystick.axis_value[axis] == jae->value/256)

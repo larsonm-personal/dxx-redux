@@ -56,7 +56,7 @@ private fun getInstalledVersionCode(context: Context): Int =
         0
     }
 
-private fun openPlayStorePage(context: Context) {
+fun openPlayStorePage(context: Context) {
     val pkg = context.packageName
     try {
         context.startActivity(

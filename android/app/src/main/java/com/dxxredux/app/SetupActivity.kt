@@ -3324,10 +3324,16 @@ private fun SetupScreen(
                 UpdateBanner()
 
                 if (showAbout) {
+                    val context = LocalContext.current
                     AlertDialog(
                         onDismissRequest = { showAbout = false },
                         confirmButton = {
                             TextButton(onClick = { showAbout = false }) { Text("OK") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { openPlayStorePage(context) }) {
+                                Text("Store page")
+                            }
                         },
                         title = { Text("DXX-Redux") },
                         text = {

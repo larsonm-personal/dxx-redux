@@ -2171,7 +2171,7 @@ private fun ButtonFunctionPickerDialog(
                             onValueChange = { onThresholdChange(it.toInt()) },
                             valueRange = 5f..95f,
                             steps = 17,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().tvFocusBorder(),
                         )
                         AxisThresholdBar(axisValue ?: 0f, threshold)
                     }
@@ -2261,7 +2261,7 @@ private fun StickPickerDialog(
                                 onValueChange = { onXThresholdChange(it.toInt()) },
                                 valueRange = 5f..95f,
                                 steps = 17,
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().tvFocusBorder(),
                             )
                             AxisThresholdBar(xAxisValue, xThreshold)
                         }
@@ -2306,7 +2306,7 @@ private fun StickPickerDialog(
                                 onValueChange = { onYThresholdChange(it.toInt()) },
                                 valueRange = 5f..95f,
                                 steps = 17,
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().tvFocusBorder(),
                             )
                             AxisThresholdBar(yAxisValue, yThreshold)
                         }

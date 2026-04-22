@@ -141,11 +141,28 @@ static unsigned int read_le32(const unsigned char *p)
  * Keep in sync with d2/utilities/hogextract.c format assumptions.
  */
 
+/* Sanity limit: HMP/MIDI tracks in descent HOGs are at most a few hundred
+ * KB. Cap well above that to reject obviously corrupt or non-HOG data
+ * without preventing legitimate large entries. */
+#define HOG_ENTRY_MAX_BYTES (64 * 1024 * 1024)
+
+static long hog_file_size(FILE *fp)
+{
+	long cur = ftell(fp);
+	if (cur < 0 || fseek(fp, 0, SEEK_END) != 0) return -1;
+	long end = ftell(fp);
+	fseek(fp, cur, SEEK_SET);
+	return end;
+}
+
 int hog_read_entry(const char *hog_path, const char *entry_name,
                    unsigned char **out_data, int *out_len)
 {
+	if (!hog_path || !entry_name || !out_data || !out_len) return 0;
 	FILE *fp = fopen(hog_path, "rb");
 	if (!fp) return 0;
+
+	long file_size = hog_file_size(fp);
 
 	char magic[3];
 	if (fread(magic, 1, 3, fp) != 3 || memcmp(magic, "DHF", 3) != 0) {
@@ -160,6 +177,16 @@ int hog_read_entry(const char *hog_path, const char *entry_name,
 		if (fread(name, 1, 13, fp) != 13) break;
 		if (fread(len_bytes, 1, 4, fp) != 4) break;
 		unsigned int entry_len = read_le32(len_bytes);
+
+		/* Reject unreasonable sizes (corrupt HOG or non-HOG file that
+		 * happened to start with DHF). Android: a bogus 4GB malloc here
+		 * causes a silent SIGSEGV with no Java crash report. */
+		if (entry_len > HOG_ENTRY_MAX_BYTES ||
+		    (file_size >= 0 && (long) entry_len > file_size)) {
+			LOGI("hog_read_entry: rejecting entry '%s' with bogus length %u", name, entry_len);
+			fclose(fp);
+			return 0;
+		}
 
 		if (strncasecmp(name, entry_name, 13) == 0) {
 			unsigned char *data = (unsigned char *) malloc(entry_len);
@@ -177,7 +204,7 @@ int hog_read_entry(const char *hog_path, const char *entry_name,
 			*out_len = (int) entry_len;
 			return 1;
 		}
-		fseek(fp, (long) entry_len, SEEK_CUR);
+		if (fseek(fp, (long) entry_len, SEEK_CUR) != 0) break;
 	}
 	fclose(fp);
 	return 0;
@@ -199,6 +226,7 @@ int hog_list_entries(const char *hog_path, const char *ext,
 		return 0;
 	}
 
+	long file_size = hog_file_size(fp);
 	int count = 0;
 	int ext_len = ext ? (int) strlen(ext) : 0;
 	while (!feof(fp) && count < max_entries) {
@@ -208,6 +236,13 @@ int hog_list_entries(const char *hog_path, const char *ext,
 		if (fread(name, 1, 13, fp) != 13) break;
 		if (fread(len_bytes, 1, 4, fp) != 4) break;
 		unsigned int entry_len = read_le32(len_bytes);
+
+		/* Same sanity guard as hog_read_entry. */
+		if (entry_len > HOG_ENTRY_MAX_BYTES ||
+		    (file_size >= 0 && (long) entry_len > file_size)) {
+			LOGI("hog_list_entries: rejecting entry '%s' with bogus length %u", name, entry_len);
+			break;
+		}
 
 		if (ext && ext_len > 0) {
 			int nlen = (int) strlen(name);
@@ -224,7 +259,7 @@ int hog_list_entries(const char *hog_path, const char *ext,
 			if (sizes) sizes[count] = (int) entry_len;
 			count++;
 		}
-		fseek(fp, (long) entry_len, SEEK_CUR);
+		if (fseek(fp, (long) entry_len, SEEK_CUR) != 0) break;
 	}
 	fclose(fp);
 	return count;
