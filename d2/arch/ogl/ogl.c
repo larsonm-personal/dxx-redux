@@ -41,6 +41,8 @@
 #include <time.h>
 #include "debug_tex_overlay.h"
 #include "merged_wall_debug.h"
+#include "ogl_gpu_timer_android.h"
+#include "ogl_texture_android.h"
 #include "android_crash_handler.h"
 #include "android_log.h"
 #include "gles3_shim.h"
@@ -2230,6 +2232,17 @@ void ogl_start_frame(void){
 		 * ogl_bindbmtex will use the correct filter at bind time */
 		ogl_apply_anisotropy_all();
 	}
+	if (g_texfilt_pending_apply) {
+		struct android_ogl_texture_texfilt_state texfilt_state = {
+			{ ogl_texture_list, OGL_TEXTURE_LIST_SIZE },
+			&ogl_last_bound_tex,
+			&g_texfilt_pending_apply,
+			&g_texfilt_level,
+			&GameCfg.TexFilt
+		};
+
+		android_ogl_apply_texfilt_all(&texfilt_state);
+	}
 	g_texfilt_level = GameCfg.TexFilt;
 	if (g_msaa_pending_apply) {
 		g_msaa_pending_apply = 0;
@@ -2252,42 +2265,16 @@ void ogl_start_frame(void){
 	g_msaa_frame_depth++;
 	/* GPU timer: read oldest completed query, begin new query */
 	if (ogl_gpu_timer_available) {
-		if (!ogl_gpu_queries[0])
-			glGenQueries(GPU_QUERY_COUNT, ogl_gpu_queries);
-		/* Try to read the oldest completed query */
-		if (ogl_gpu_query_count > 0) {
-			int read_idx = (ogl_gpu_query_write - ogl_gpu_query_count + GPU_QUERY_COUNT) % GPU_QUERY_COUNT;
-			GLuint avail = 0;
-			glGetQueryObjectuiv(ogl_gpu_queries[read_idx],
-			    GL_QUERY_RESULT_AVAILABLE, &avail);
-			if (avail) {
-				GLuint ns = 0;
-				glGetQueryObjectuiv(ogl_gpu_queries[read_idx],
-				    GL_QUERY_RESULT, &ns);
-				GLint disjoint = 0;
-				glGetIntegerv(GL_GPU_DISJOINT_EXT, &disjoint);
-				if (!disjoint)
-					g_gpu_time_us = (int)(ns / 1000);
-				/* else: keep last valid reading */
-				ogl_gpu_query_count--;
-			} else if (ogl_gpu_query_count >= GPU_QUERY_COUNT - 1) {
-				/* All slots full and oldest still not ready: blocking read
-				 * to avoid stalling the pipeline */
-				GLuint ns = 0;
-				glGetQueryObjectuiv(ogl_gpu_queries[read_idx],
-				    GL_QUERY_RESULT, &ns);
-				GLint disjoint = 0;
-				glGetIntegerv(GL_GPU_DISJOINT_EXT, &disjoint);
-				if (!disjoint)
-					g_gpu_time_us = (int)(ns / 1000);
-				ogl_gpu_query_count--;
-			}
-		}
-		/* Begin new query if we have a free slot */
-		if (ogl_gpu_query_count < GPU_QUERY_COUNT) {
-			glBeginQuery(GL_TIME_ELAPSED_EXT, ogl_gpu_queries[ogl_gpu_query_write]);
-			ogl_gpu_query_in_flight = 1;
-		}
+		struct android_ogl_gpu_timer_state gpu_timer_state = {
+			ogl_gpu_queries,
+			GPU_QUERY_COUNT,
+			&ogl_gpu_query_write,
+			&ogl_gpu_query_count,
+			&ogl_gpu_query_in_flight,
+			&g_gpu_time_us
+		};
+
+		android_ogl_gpu_timer_begin_frame(&gpu_timer_state);
 	}
 #endif
 
@@ -2411,11 +2398,17 @@ void gr_flip(void)
 	ogl_do_palfx();
 	/* android port: end GPU timer query before resolve/swap */
 #ifdef ANDROID
-	if (ogl_gpu_query_in_flight) {
-		glEndQuery(GL_TIME_ELAPSED_EXT);
-		ogl_gpu_query_write = (ogl_gpu_query_write + 1) % GPU_QUERY_COUNT;
-		ogl_gpu_query_count++;
-		ogl_gpu_query_in_flight = 0;
+	{
+		struct android_ogl_gpu_timer_state gpu_timer_state = {
+			ogl_gpu_queries,
+			GPU_QUERY_COUNT,
+			&ogl_gpu_query_write,
+			&ogl_gpu_query_count,
+			&ogl_gpu_query_in_flight,
+			&g_gpu_time_us
+		};
+
+		android_ogl_gpu_timer_end_frame(&gpu_timer_state);
 	}
 #endif
 	/* android port: resolve MSAA FBO to default framebuffer before readback.
