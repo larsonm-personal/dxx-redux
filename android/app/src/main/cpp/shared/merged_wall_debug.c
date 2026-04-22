@@ -38,14 +38,18 @@ void ogl_prog_set_tex2_alpha_cutoff(GLfloat alpha_cutoff);
 #define MERGED_WALL_BITMAP_DUMP_MAX       16
 #define MERGED_WALL_BITMAP_DUMP_WIDTH     64
 #define MERGED_WALL_PROBE_HIT_NONE        0
-#define MERGED_WALL_PROBE_HIT_BBOX        1
-#define MERGED_WALL_PROBE_HIT_POLYGON     2
-#define MERGED_WALL_PROBE_HIT_PROJECTED   3
-#define MERGED_WALL_RENDER_SAMPLE_COLS    MERGED_WALL_PROBE_RENDER_SAMPLE_COLS
-#define MERGED_WALL_RENDER_SAMPLE_ROWS    MERGED_WALL_PROBE_RENDER_SAMPLE_ROWS
-#define MERGED_WALL_RENDER_SAMPLE_COUNT   MERGED_WALL_PROBE_RENDER_SAMPLE_COUNT
-#define MERGED_WALL_DIAG_VSLICE_SAMPLES   5
-#define MERGED_WALL_DIAG_LOG_PT_COUNT     4
+#define MERGED_WALL_CACHED_TEXMERGE_COUNT 32
+
+static struct merged_wall_cached_texmerge_entry g_merged_wall_cached_texmerge[MERGED_WALL_CACHED_TEXMERGE_COUNT];
+static int g_merged_wall_cached_texmerge_initialized = 0;
+#define MERGED_WALL_PROBE_HIT_BBOX      1
+#define MERGED_WALL_PROBE_HIT_POLYGON   2
+#define MERGED_WALL_PROBE_HIT_PROJECTED 3
+#define MERGED_WALL_RENDER_SAMPLE_COLS  MERGED_WALL_PROBE_RENDER_SAMPLE_COLS
+#define MERGED_WALL_RENDER_SAMPLE_ROWS  MERGED_WALL_PROBE_RENDER_SAMPLE_ROWS
+#define MERGED_WALL_RENDER_SAMPLE_COUNT MERGED_WALL_PROBE_RENDER_SAMPLE_COUNT
+#define MERGED_WALL_DIAG_VSLICE_SAMPLES 5
+#define MERGED_WALL_DIAG_LOG_PT_COUNT   4
 
 struct merged_wall_tracked_face {
 	int render_pass;
@@ -392,6 +396,13 @@ void android_merged_wall_cached_texmerge_clear(
 		android_merged_wall_cached_texmerge_reset_entry(&entries[i]);
 }
 
+void android_merged_wall_cached_texmerge_clear_cache(void)
+{
+	android_merged_wall_cached_texmerge_clear(g_merged_wall_cached_texmerge,
+	                                          MERGED_WALL_CACHED_TEXMERGE_COUNT);
+	g_merged_wall_cached_texmerge_initialized = 1;
+}
+
 int android_merged_wall_cached_texmerge_choose_size(
     const struct _ogl_texture *bottom_tex,
     const struct _ogl_texture *overlay_tex,
@@ -522,6 +533,18 @@ grs_bitmap *android_merged_wall_cached_texmerge_try_reuse(
 		}
 	}
 	return NULL;
+}
+
+grs_bitmap *android_merged_wall_cached_texmerge_try_reuse_cache(
+    grs_bitmap *bottom_bmp, grs_bitmap *overlay_bmp, int orient,
+    int *out_slot)
+{
+	if (!g_merged_wall_cached_texmerge_initialized)
+		android_merged_wall_cached_texmerge_clear_cache();
+	return android_merged_wall_cached_texmerge_try_reuse(
+	    g_merged_wall_cached_texmerge,
+	    MERGED_WALL_CACHED_TEXMERGE_COUNT,
+	    bottom_bmp, overlay_bmp, orient, out_slot);
 }
 
 void android_merged_wall_cached_texmerge_commit_entry(
@@ -797,6 +820,18 @@ android_merged_wall_cached_texmerge_reserve_entry(
 	android_merged_wall_cached_texmerge_reset_entry(entry);
 	entry->slot = slot;
 	return entry;
+}
+
+struct merged_wall_cached_texmerge_entry *
+android_merged_wall_cached_texmerge_reserve_cache_entry(
+    void (*free_texture)(struct _ogl_texture *))
+{
+	if (!g_merged_wall_cached_texmerge_initialized)
+		android_merged_wall_cached_texmerge_clear_cache();
+	return android_merged_wall_cached_texmerge_reserve_entry(
+	    g_merged_wall_cached_texmerge,
+	    MERGED_WALL_CACHED_TEXMERGE_COUNT,
+	    free_texture);
 }
 
 static void merged_wall_reset_probe_result(void)
@@ -5517,6 +5552,63 @@ void android_merged_wall_request_snapshot(int request_mode)
 	merged_wall_log_snapshot_last_draw();
 	__sync_synchronize();
 	g_merged_wall_snapshot_pending = 1;
+}
+
+static int android_merged_wall_snapshot_value(const volatile int *value)
+{
+	return value ? *value : -1;
+}
+
+void android_merged_wall_sample_snapshot_framebuffer(
+    int screen_w, int screen_h,
+    volatile int *sample_r, volatile int *sample_g, volatile int *sample_b, volatile int *sample_a,
+    volatile int *avg_r, volatile int *avg_g, volatile int *avg_b, volatile int *avg_a)
+{
+	if (screen_w > 0 && screen_h > 0) {
+		unsigned char rgba[4] = { 0 };
+		int sr = 0, sg = 0, sb = 0, sa = 0, n = 0;
+
+		glReadPixels(screen_w / 2, screen_h / 2, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+		if (sample_r)
+			*sample_r = rgba[0];
+		if (sample_g)
+			*sample_g = rgba[1];
+		if (sample_b)
+			*sample_b = rgba[2];
+		if (sample_a)
+			*sample_a = rgba[3];
+		for (int gy = 1; gy <= 4; gy++) {
+			for (int gx = 1; gx <= 4; gx++) {
+				int px = screen_w * gx / 5;
+				int py = screen_h * gy / 5;
+
+				glReadPixels(px, py, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+				sr += rgba[0];
+				sg += rgba[1];
+				sb += rgba[2];
+				sa += rgba[3];
+				n++;
+			}
+		}
+		if (avg_r)
+			*avg_r = sr / n;
+		if (avg_g)
+			*avg_g = sg / n;
+		if (avg_b)
+			*avg_b = sb / n;
+		if (avg_a)
+			*avg_a = sa / n;
+	}
+
+	android_merged_wall_finish_snapshot(screen_w, screen_h,
+	                                    android_merged_wall_snapshot_value(sample_r),
+	                                    android_merged_wall_snapshot_value(sample_g),
+	                                    android_merged_wall_snapshot_value(sample_b),
+	                                    android_merged_wall_snapshot_value(sample_a),
+	                                    android_merged_wall_snapshot_value(avg_r),
+	                                    android_merged_wall_snapshot_value(avg_g),
+	                                    android_merged_wall_snapshot_value(avg_b),
+	                                    android_merged_wall_snapshot_value(avg_a));
 }
 
 void android_merged_wall_finish_snapshot(int screen_w, int screen_h,

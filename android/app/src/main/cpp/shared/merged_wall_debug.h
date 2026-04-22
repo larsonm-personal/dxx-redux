@@ -72,6 +72,7 @@ void android_merged_wall_cached_texmerge_build_uvs(
 void android_merged_wall_cached_texmerge_clear(
     struct merged_wall_cached_texmerge_entry *entries,
     int count);
+void android_merged_wall_cached_texmerge_clear_cache(void);
 int android_merged_wall_cached_texmerge_choose_size(
     const struct _ogl_texture *bottom_tex,
     const struct _ogl_texture *overlay_tex,
@@ -83,6 +84,9 @@ void android_merged_wall_cached_texmerge_reset_entry(
         *entry);
 grs_bitmap *android_merged_wall_cached_texmerge_try_reuse(
     struct merged_wall_cached_texmerge_entry *entries, int count,
+    grs_bitmap *bottom_bmp, grs_bitmap *overlay_bmp, int orient,
+    int *out_slot);
+grs_bitmap *android_merged_wall_cached_texmerge_try_reuse_cache(
     grs_bitmap *bottom_bmp, grs_bitmap *overlay_bmp, int orient,
     int *out_slot);
 void android_merged_wall_cached_texmerge_commit_entry(
@@ -115,6 +119,9 @@ int android_merged_wall_cached_texmerge_finalize_entry(
 struct merged_wall_cached_texmerge_entry *
 android_merged_wall_cached_texmerge_reserve_entry(
     struct merged_wall_cached_texmerge_entry *entries, int count,
+    void (*free_texture)(struct _ogl_texture *));
+struct merged_wall_cached_texmerge_entry *
+android_merged_wall_cached_texmerge_reserve_cache_entry(
     void (*free_texture)(struct _ogl_texture *));
 int android_merged_wall_is_logging_target_bitmap(
     grs_bitmap *bm);
@@ -236,6 +243,10 @@ void android_merged_wall_log_cover(const char *shader_kind, const char *botname,
 void android_merged_wall_finish_snapshot(int screen_w, int screen_h,
                                          int sample_r, int sample_g, int sample_b, int sample_a,
                                          int avg_r, int avg_g, int avg_b, int avg_a);
+void android_merged_wall_sample_snapshot_framebuffer(
+    int screen_w, int screen_h,
+    volatile int *sample_r, volatile int *sample_g, volatile int *sample_b, volatile int *sample_a,
+    volatile int *avg_r, volatile int *avg_g, volatile int *avg_b, volatile int *avg_a);
 
 #endif /* ANDROID */
 

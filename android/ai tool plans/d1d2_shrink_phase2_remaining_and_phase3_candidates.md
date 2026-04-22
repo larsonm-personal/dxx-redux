@@ -1,6 +1,6 @@
 # d1/d2 diff shrink -- phase 2 remaining + phase 3 candidates
 
-Status: active survey, not yet work-in-progress. This is the follow-on to
+Status: phase 2 complete through phase 36; phase 3 survey active. This is the follow-on to
 `d1d2_diff_shrink_study.md` and the 31 completed
 `ogl_shared_helper_extraction_phase*.md` tranches.
 
@@ -9,6 +9,11 @@ Anchor numbers after phase 31:
 - `d1/arch/ogl/ogl.c`: `+1672 -50 total 1722`
 - `d2/arch/ogl/ogl.c`: `+1696 -49 total 1745`
 
+Update after phase 36:
+- phases 32 through 36 completed and validated
+- `d1/arch/ogl/ogl.c`: `+1508 -50 total 1558`
+- `d2/arch/ogl/ogl.c`: `+1590 -49 total 1639`
+
 Purpose of this file: enumerate the concrete next-tranche candidates, ranked by
 expected per-file line shrink, with enough detail to start each one without
 re-surveying. Phase 2 = still inside the two ogl.c files. Phase 3 = everything
@@ -16,7 +21,7 @@ else in d1/ and d2/.
 
 ---
 
-## Phase 2 remaining -- candidates inside `d1/d2 arch/ogl/ogl.c`
+## Phase 2 complete -- historical candidates inside `d1/d2 arch/ogl/ogl.c`
 
 Prior phases 15-31 mostly drained category 4.a (metl154 / merged-wall
 diagnostic) and 4.b (cached-texmerge plain-transparent cache). What is still
@@ -105,9 +110,9 @@ inline in ogl.c now:
 - Expected shrink: N/A (skip for now)
 
 ### Phase 2 remaining -- summary
-Combining 2.a through 2.f, realistic phase-2 shrink per file is **~220-240
-lines**, bringing ogl.c to roughly `+1450 / -50`. Beyond that, phase 2 should
-be declared done and attention shifts to phase 3.
+Combining 2.a through 2.f, realistic phase-2 shrink per file was **~220-240
+lines**, bringing ogl.c to roughly `+1450 / -50`. With phase 36 validated,
+phase 2 is complete and attention shifts to phase 3.
 
 Order of execution (best first):
 1. **phase 32** -- 2.a + 2.e (dxa mask + small logging blocks). Short, low risk.

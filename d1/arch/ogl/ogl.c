@@ -317,27 +317,6 @@ static int r_etc2_render_log_count = 0; /* limit per-frame render logging */
 int g_cache_time_ms = 0; /* time spent in ogl_cache_level_textures */
 #endif
 
-#if defined(ANDROID) && defined(OGL_MERGE)
-#define OGL_ANDROID_TEXMERGE_CACHE_SIZE 32
-
-typedef struct ogl_android_texmerge_cache_entry {
-	grs_bitmap bitmap;
-	ogl_texture *texture;
-	grs_bitmap *bottom_bmp;
-	grs_bitmap *top_bmp;
-	int slot;
-	int orient;
-	int width;
-	int height;
-	fix64 last_time_used;
-} ogl_android_texmerge_cache_entry;
-
-static ogl_android_texmerge_cache_entry ogl_android_texmerge_cache[OGL_ANDROID_TEXMERGE_CACHE_SIZE];
-static int ogl_android_texmerge_cache_initialized = 0;
-
-static void ogl_android_texmerge_cache_clear(void);
-#endif
-
 void ogl_reset_texture_stats_internal(void){
 	int i;
 	for (i=0;i<OGL_TEXTURE_LIST_SIZE;i++)
@@ -358,7 +337,7 @@ void ogl_init_texture_list_internal(void){
 	for (i=0;i<OGL_TEXTURE_LIST_SIZE;i++)
 		ogl_reset_texture(&ogl_texture_list[i]);
 #if defined(ANDROID) && defined(OGL_MERGE)
-	ogl_android_texmerge_cache_clear();
+	android_merged_wall_cached_texmerge_clear_cache();
 #endif
 }
 
@@ -381,7 +360,7 @@ void ogl_smash_texture_list_internal(void){
 	}
 
 #if defined(ANDROID) && defined(OGL_MERGE)
-	ogl_android_texmerge_cache_clear();
+	android_merged_wall_cached_texmerge_clear_cache();
 #endif
 
 	for(i = 0; i < 3; i++) {
@@ -420,7 +399,7 @@ void ogl_smash_png_textures(void){
 		}
 	}
 #if defined(ANDROID) && defined(OGL_MERGE)
-	ogl_android_texmerge_cache_clear();
+	android_merged_wall_cached_texmerge_clear_cache();
 #endif
 }
 
@@ -671,90 +650,33 @@ void ogl_texwrap(ogl_texture *gltexture,int state)
 }
 
 #if defined(ANDROID) && defined(OGL_MERGE)
-static void ogl_android_texmerge_reset_entry(ogl_android_texmerge_cache_entry *entry)
-{
-	memset(&entry->bitmap, 0, sizeof(entry->bitmap));
-	entry->texture = NULL;
-	entry->bottom_bmp = NULL;
-	entry->top_bmp = NULL;
-	entry->slot = -1;
-	entry->orient = -1;
-	entry->width = 0;
-	entry->height = 0;
-	entry->last_time_used = -1;
-}
-
-static void ogl_android_texmerge_cache_clear(void)
-{
-	int i;
-
-	for (i = 0; i < OGL_ANDROID_TEXMERGE_CACHE_SIZE; ++i)
-		ogl_android_texmerge_reset_entry(&ogl_android_texmerge_cache[i]);
-	ogl_android_texmerge_cache_initialized = 1;
-}
-
-static int ogl_android_texmerge_visible_dim(const ogl_texture *tex, int use_width)
-{
-	int size;
-	GLfloat scale;
-
-	if (!tex)
-		return 0;
-	size = use_width ? tex->w : tex->h;
-	scale = use_width ? tex->u : tex->v;
-	if (size < 1)
-		return 0;
-	if (scale > 0.0f && scale < 1.0f)
-		return (int)floorf((float)size * scale + 0.5f);
-	return size;
-	}
-
-
 static grs_bitmap *ogl_android_get_cached_plain_texmerge_bitmap(grs_bitmap *bmbot,
 	grs_bitmap *bmovl, int orient, int *out_slot)
 {
-	ogl_android_texmerge_cache_entry *entry;
-	int i, tex_flags;
+	struct merged_wall_cached_texmerge_entry *entry;
+	grs_bitmap *cached_bitmap;
+	int tex_flags;
 	int width, height;
 
 	if (out_slot)
 		*out_slot = -1;
 
-	if (!ogl_android_texmerge_cache_initialized)
-		ogl_android_texmerge_cache_clear();
 	if (!bmbot || !bmovl || !bmbot->gltexture || !bmovl->gltexture)
 		return NULL;
 	if (bmbot->gltexture->handle <= 0 || bmovl->gltexture->handle <= 0)
 		return NULL;
 
-	entry = (ogl_android_texmerge_cache_entry *)
-		android_merged_wall_cached_texmerge_try_reuse((struct merged_wall_cached_texmerge_entry *)ogl_android_texmerge_cache,
-			OGL_ANDROID_TEXMERGE_CACHE_SIZE, bmbot, bmovl, orient,
-			out_slot);
-	if (entry)
-		return &entry->bitmap;
+	cached_bitmap = android_merged_wall_cached_texmerge_try_reuse_cache(bmbot, bmovl,
+		orient, out_slot);
+	if (cached_bitmap)
+		return cached_bitmap;
 
-	width = ogl_android_texmerge_visible_dim(bmbot->gltexture, 1);
-	height = ogl_android_texmerge_visible_dim(bmbot->gltexture, 0);
-	i = ogl_android_texmerge_visible_dim(bmovl->gltexture, 1);
-	if (i > width)
-		width = i;
-	i = ogl_android_texmerge_visible_dim(bmovl->gltexture, 0);
-	if (i > height)
-		height = i;
-	if (width < 1)
-		width = bmbot->gltexture->w;
-	if (height < 1)
-		height = bmbot->gltexture->h;
-	if (width < 1 || height < 1)
-		return NULL;
-	if (width > ogl_max_texture_size || height > ogl_max_texture_size)
+	if (!android_merged_wall_cached_texmerge_choose_size(bmbot->gltexture,
+		bmovl->gltexture, ogl_max_texture_size, &width, &height))
 		return NULL;
 
-	entry = (ogl_android_texmerge_cache_entry *)
-		android_merged_wall_cached_texmerge_reserve_entry(
-			(struct merged_wall_cached_texmerge_entry *)ogl_android_texmerge_cache, OGL_ANDROID_TEXMERGE_CACHE_SIZE,
-			ogl_freetexture);
+	entry = android_merged_wall_cached_texmerge_reserve_cache_entry(
+		ogl_freetexture);
 	if (!entry)
 		return NULL;
 
@@ -769,7 +691,7 @@ static grs_bitmap *ogl_android_get_cached_plain_texmerge_bitmap(grs_bitmap *bmbo
 		width, height, tex_flags, GameCfg.TexFilt, &tex_runtime_state);
 	tex_set_size(entry->texture);
 	r_texcount++;
-	if (!android_merged_wall_cached_texmerge_finalize_entry((struct merged_wall_cached_texmerge_entry *)entry, bmbot,
+	if (!android_merged_wall_cached_texmerge_finalize_entry(entry, bmbot,
 		bmovl, orient, width, height, GameCfg.TexFilt, ogl_aniso_level,
 		ogl_maxanisotropy, bmbot->bm_flags & (~BM_FLAG_RLE),
 		bmbot->avg_color, &tex_runtime_state, out_slot, ogl_freetexture))
@@ -2412,31 +2334,11 @@ void gr_flip(void)
 	/* android port: sample framebuffer for introspection (center pixel + 4x4 grid average) */
 #ifdef ANDROID
 	{
-		extern volatile int g_fb_sample_r, g_fb_sample_g, g_fb_sample_b, g_fb_sample_a;
-		extern volatile int g_fb_avg_r, g_fb_avg_g, g_fb_avg_b, g_fb_avg_a;
 		int w = grd_curscreen->sc_w, h = grd_curscreen->sc_h;
-		if (w > 0 && h > 0) {
-			unsigned char rgba[4] = {0};
-			glReadPixels(w/2, h/2, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
-			g_fb_sample_r = rgba[0];
-			g_fb_sample_g = rgba[1];
-			g_fb_sample_b = rgba[2];
-			g_fb_sample_a = rgba[3];
-			int sr = 0, sg = 0, sb = 0, sa = 0, n = 0;
-			for (int gy = 1; gy <= 4; gy++) {
-				for (int gx = 1; gx <= 4; gx++) {
-					int px = w * gx / 5, py = h * gy / 5;
-					glReadPixels(px, py, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
-					sr += rgba[0]; sg += rgba[1]; sb += rgba[2]; sa += rgba[3];
-					n++;
-				}
-			}
-			g_fb_avg_r = sr / n; g_fb_avg_g = sg / n;
-			g_fb_avg_b = sb / n; g_fb_avg_a = sa / n;
-		}
-		android_merged_wall_finish_snapshot(w, h,
-			g_fb_sample_r, g_fb_sample_g, g_fb_sample_b, g_fb_sample_a,
-			g_fb_avg_r, g_fb_avg_g, g_fb_avg_b, g_fb_avg_a);
+		android_merged_wall_sample_snapshot_framebuffer(
+			w, h,
+			&g_fb_sample_r, &g_fb_sample_g, &g_fb_sample_b, &g_fb_sample_a,
+			&g_fb_avg_r, &g_fb_avg_g, &g_fb_avg_b, &g_fb_avg_a);
 	}
 #endif
 	ogl_swap_buffers_internal();
