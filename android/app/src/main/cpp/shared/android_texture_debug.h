@@ -18,7 +18,6 @@ extern "C" {
 
 extern float g_font_rgb_override[3];
 extern int g_ogl_render_context;
-
 void android_texture_debug_set_target(const char *value);
 const char *android_texture_debug_get_target_display(void);
 int android_texture_debug_target_is_crosshair(void);
@@ -31,6 +30,8 @@ void android_texture_debug_add_overlay_label(const g3s_point *const *pointlist,
 void android_texture_debug_add_joined_labels(const g3s_point *const *pointlist,
                                              int nv, grs_bitmap *bmbot,
                                              grs_bitmap *bmovl);
+void android_texture_debug_log_render_bind(int *render_log_count,
+                                           grs_bitmap *bm);
 
 void android_texture_debug_log_upload_source(const char *bitmapname,
                                              const char *path, const char *source_name, const unsigned char *data,

@@ -242,7 +242,6 @@ void android_merged_wall_consume_experiment_pending_apply(void)
 {
 	if (!g_merged_wall_experiment_pending_apply)
 		return;
-
 	g_merged_wall_experiment_pending_apply = 0;
 	__sync_synchronize();
 	debug_log(DLOG_TEXTURE,
@@ -252,31 +251,29 @@ void android_merged_wall_consume_experiment_pending_apply(void)
 }
 
 void android_merged_wall_log_cached_texmerge(const char *event,
-	                                            grs_bitmap *bottom_bmp,
-	                                            grs_bitmap *overlay_bmp,
-	                                            int orient,
-	                                            int width,
-	                                            int height,
-	                                            GLuint handle,
-	                                            int slot,
-	                                            const struct _ogl_texture *texture)
+                                             grs_bitmap *bottom_bmp,
+                                             grs_bitmap *overlay_bmp,
+                                             int orient,
+                                             int width,
+                                             int height,
+                                             GLuint handle,
+                                             int slot,
+                                             const struct _ogl_texture *texture)
 {
 	const char *bottom_name;
 	const char *overlay_name;
 	GLuint bottom_handle;
 	GLuint overlay_handle;
-
 	if (!g_merged_wall_snapshot_pending && !android_merged_wall_is_logging_target_bitmap(overlay_bmp))
 		return;
-
 	bottom_name = piggy_game_bitmap_name(bottom_bmp);
 	overlay_name = piggy_game_bitmap_name(overlay_bmp);
 	bottom_handle = bottom_bmp && bottom_bmp->gltexture
-					? bottom_bmp->gltexture->handle
-					: 0;
+	                    ? bottom_bmp->gltexture->handle
+	                    : 0;
 	overlay_handle = overlay_bmp && overlay_bmp->gltexture
-				     ? overlay_bmp->gltexture->handle
-				     : 0;
+	                     ? overlay_bmp->gltexture->handle
+	                     : 0;
 	debug_log(DLOG_TEXTURE,
 	          "[mwall_cache] event=%s frame=%d pass=%d seq=%d seg=%d side=%d face=%d slot=%d orient=%d route=merge_cached merge_impl=gpu_cached_single size=%dx%d handle=%u base_handle=%u overlay_handle=%u internal=0x%x format=0x%x bytes=%d bytesu=%d wrap=%d mip=%d is_png=%d numrend=%lu tex_flags=0x%x bot=%s ovl=%s",
 	          event ? event : "unknown",
@@ -307,11 +304,10 @@ void android_merged_wall_log_cached_texmerge(const char *event,
 }
 
 int android_merged_wall_cached_texmerge_visible_dim(const struct _ogl_texture *tex,
-	                                                  int use_width)
+                                                    int use_width)
 {
 	int size;
 	GLfloat scale;
-
 	if (!tex)
 		return 0;
 	size = use_width ? tex->w : tex->h;
@@ -324,11 +320,11 @@ int android_merged_wall_cached_texmerge_visible_dim(const struct _ogl_texture *t
 }
 
 void android_merged_wall_cached_texmerge_init_bitmap(grs_bitmap *bm,
-	                                                  struct _ogl_texture *tex,
-	                                                  int flags,
-	                                                  unsigned char avg_color,
-	                                                  int width,
-	                                                  int height)
+                                                     struct _ogl_texture *tex,
+                                                     int flags,
+                                                     unsigned char avg_color,
+                                                     int width,
+                                                     int height)
 {
 	memset(bm, 0, sizeof(*bm));
 	bm->bm_w = (short) width;
@@ -341,12 +337,12 @@ void android_merged_wall_cached_texmerge_init_bitmap(grs_bitmap *bm,
 }
 
 void android_merged_wall_cached_texmerge_build_uvs(GLfloat *bottom_uv,
-	                                                 GLfloat *overlay_uv,
-	                                                 GLfloat bottom_u_max,
-	                                                 GLfloat bottom_v_max,
-	                                                 GLfloat overlay_u_max,
-	                                                 GLfloat overlay_v_max,
-	                                                 int orient)
+                                                   GLfloat *overlay_uv,
+                                                   GLfloat bottom_u_max,
+                                                   GLfloat bottom_v_max,
+                                                   GLfloat overlay_u_max,
+                                                   GLfloat overlay_v_max,
+                                                   int orient)
 {
 	static const GLfloat base_u[4] = { 0.0f, 1.0f, 1.0f, 0.0f };
 	/* ANDROID: base_v inverted to match GL ES FBO orientation.
@@ -359,14 +355,11 @@ void android_merged_wall_cached_texmerge_build_uvs(GLfloat *bottom_uv,
 	 * faces and a V-flip on orient 0/2 faces. */
 	static const GLfloat base_v[4] = { 1.0f, 1.0f, 0.0f, 0.0f };
 	int i;
-
 	for (i = 0; i < 4; ++i) {
 		const GLfloat u = base_u[i];
 		const GLfloat v = base_v[i];
-
 		bottom_uv[i * 2] = bottom_u_max * u;
 		bottom_uv[i * 2 + 1] = bottom_v_max * v;
-
 		switch (orient) {
 			case 1:
 				overlay_uv[i * 2] = overlay_u_max * (1.0f - v);
@@ -389,29 +382,26 @@ void android_merged_wall_cached_texmerge_build_uvs(GLfloat *bottom_uv,
 }
 
 void android_merged_wall_cached_texmerge_clear(
-	struct merged_wall_cached_texmerge_entry *entries,
-	int count)
+    struct merged_wall_cached_texmerge_entry *entries,
+    int count)
 {
 	int i;
-
 	if (!entries || count <= 0)
 		return;
-
 	for (i = 0; i < count; ++i)
 		android_merged_wall_cached_texmerge_reset_entry(&entries[i]);
 }
 
 int android_merged_wall_cached_texmerge_choose_size(
-	const struct _ogl_texture *bottom_tex,
-	const struct _ogl_texture *overlay_tex,
-	int max_texture_size,
-	int *width,
-	int *height)
+    const struct _ogl_texture *bottom_tex,
+    const struct _ogl_texture *overlay_tex,
+    int max_texture_size,
+    int *width,
+    int *height)
 {
 	int result_width;
 	int result_height;
 	int candidate;
-
 	if (!width || !height)
 		return 0;
 
@@ -429,10 +419,8 @@ int android_merged_wall_cached_texmerge_choose_size(
 		result_height = bottom_tex ? bottom_tex->h : 0;
 	if (result_width < 1 || result_height < 1)
 		return 0;
-	if (max_texture_size > 0
-		&& (result_width > max_texture_size || result_height > max_texture_size))
+	if (max_texture_size > 0 && (result_width > max_texture_size || result_height > max_texture_size))
 		return 0;
-
 	*width = result_width;
 	*height = result_height;
 	return 1;
@@ -496,10 +484,8 @@ static int android_merged_wall_cached_texmerge_choose_slot(
 	int i;
 	int slot;
 	fix64 lowest_time;
-
 	if (!entries || count <= 0)
 		return -1;
-
 	slot = 0;
 	lowest_time = entries[0].last_time_used;
 	for (i = 0; i < count; ++i) {
@@ -510,7 +496,6 @@ static int android_merged_wall_cached_texmerge_choose_slot(
 			slot = i;
 		}
 	}
-
 	return slot;
 }
 
@@ -520,15 +505,12 @@ grs_bitmap *android_merged_wall_cached_texmerge_try_reuse(
     int *out_slot)
 {
 	int i;
-
 	if (out_slot)
 		*out_slot = -1;
 	if (!entries || count <= 0)
 		return NULL;
-
 	for (i = 0; i < count; ++i) {
 		struct merged_wall_cached_texmerge_entry *entry = &entries[i];
-
 		if (entry->texture && entry->texture->handle > 0 && entry->bottom_bmp == bottom_bmp && entry->top_bmp == overlay_bmp && entry->orient == orient) {
 			entry->last_time_used = timer_query();
 			if (out_slot)
@@ -539,7 +521,6 @@ grs_bitmap *android_merged_wall_cached_texmerge_try_reuse(
 			return &entry->bitmap;
 		}
 	}
-
 	return NULL;
 }
 

@@ -41,6 +41,7 @@
 #include <time.h>
 #include "debug_tex_overlay.h"
 #include "merged_wall_debug.h"
+#include "ogl_texture_android.h"
 #include "android_crash_handler.h"
 #include "android_log.h"
 #include "gles3_shim.h"
@@ -1288,20 +1289,7 @@ bool g3_draw_tmap(int nv,g3s_point **pointlist,g3s_uvl *uvl_list,g3s_lrgb *light
 	#endif
 		r_tpolyc++;
 #ifdef ANDROID
-		/* android port: log first few 3D texture bindings per level for debugging */
-		if (r_etc2_render_log_count < 5) {
-			const char *bname = piggy_game_bitmap_name(bm);
-			GLint cur_min_filter = 0;
-			glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, &cur_min_filter);
-			__android_log_print(ANDROID_LOG_INFO, "DXX-TEX",
-			    "3D render bind #%d: %s handle=%u is_png=%d w=%d h=%d u=%.3f v=%.3f min_filter=0x%x",
-			    r_etc2_render_log_count, bname ? bname : "?",
-			    bm->gltexture->handle, bm->gltexture->is_png,
-			    bm->gltexture->w, bm->gltexture->h,
-			    bm->gltexture->u, bm->gltexture->v,
-			    cur_min_filter);
-			r_etc2_render_log_count++;
-		}
+		android_texture_debug_log_render_bind(&r_etc2_render_log_count, bm);
 #endif
 		color_alpha = (grd_curcanv->cv_fade_level >= GR_FADE_OFF)?1.0:(1.0 - (float)grd_curcanv->cv_fade_level / ((float)GR_FADE_LEVELS - 1.0));
 #if defined(ANDROID) && defined(OGL_MERGE)
@@ -2195,14 +2183,7 @@ void ogl_start_frame(void){
 	r_texbinds=0;r_texbind_reuse=0;ogl_last_bound_tex=0;
 	r_shader_switches=0;r_mask_draws=0;
 	g_ogl_render_context = 1; /* 3D world */
-	if (g_metl154_experiment_pending_apply) {
-		g_metl154_experiment_pending_apply = 0;
-		__sync_synchronize();
-		debug_log(DLOG_TEXTURE,
-			"[mwall_exp] apply: mode=%d(%s) texture_reload=0",
-			(int)g_metl154_experiment_mode,
-			android_merged_wall_experiment_name((int)g_metl154_experiment_mode));
-	}
+	android_merged_wall_consume_experiment_pending_apply();
 	if (g_aniso_pending_apply) {
 		g_aniso_pending_apply = 0;
 		__sync_synchronize(); /* ensure we read values written before flag */
@@ -2964,45 +2945,6 @@ void ogl_loadpngmask(png_data *pdata, grs_bitmap *bm, int texfilt)
 	d_free(mask);
 }
 
-#ifdef ANDROID
-/* Load pre-generated super-transparent mask from DXA texture pack.
- * The mask is a PNG with alpha=0 for super-transparent pixels. */
-static void ogl_load_dxa_mask(const char *bitmapname, grs_bitmap *bm, int texfilt)
-{
-	char maskname[256];
-	png_data mdata;
-	int loaded = 0;
-
-	sprintf(maskname, "%s_mask.png", bitmapname);
-	loaded = read_png(maskname, &mdata);
-	if (!loaded)
-		return;
-	if (mdata.depth == 8) {
-		int size = mdata.width * mdata.height;
-		int ch = mdata.paletted ? 1 : mdata.channels;
-		unsigned char *mask;
-
-		MALLOC(mask, unsigned char, size);
-		/* Convert to single-byte mask matching ogl_loadpngmask convention:
-		 * 255 where super-transparent, 0 elsewhere.  Upload via palette
-		 * path with BM_FLAG_TRANSPARENT so 255->alpha=0, 0->alpha=1.
-		 * Mask PNGs have white=keep, black=super-transparent, so invert */
-		for (int i = 0; i < size; i++)
-			mask[i] = mdata.data[i * ch] > 128 ? 0 : 255;
-
-		if (bm->gltexture_mask == NULL)
-			ogl_init_texture(bm->gltexture_mask = ogl_get_free_texture(),
-				mdata.width, mdata.height, OGL_FLAG_ALPHA);
-		ogl_loadtexture(mask, 0, 0, bm->gltexture_mask, BM_FLAG_TRANSPARENT, 0,
-			texfilt, NULL);
-		bm->gltexture_mask->is_png = 1;
-		d_free(mask);
-	}
-	free(mdata.data);
-	if (mdata.palette)
-		free(mdata.palette);
-}
-#endif /* ANDROID */
 #endif /* OGL_MERGE */
 
 void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
@@ -3192,7 +3134,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 					}
 #ifdef OGL_MERGE
 					if (real_flags & BM_FLAG_SUPER_TRANSPARENT)
-						ogl_load_dxa_mask(bitmapname, bm, texfilt);
+						android_ogl_load_dxa_mask(bitmapname, bm, texfilt);
 #endif
 					return;
 				}
@@ -3240,7 +3182,7 @@ void ogl_loadbmtexture_f(grs_bitmap *bm, int texfilt)
 				#ifdef OGL_MERGE
 				if (real_flags & BM_FLAG_SUPER_TRANSPARENT) {
 #ifdef ANDROID
-					ogl_load_dxa_mask(bitmapname, bm, texfilt);
+					android_ogl_load_dxa_mask(bitmapname, bm, texfilt);
 #else
 					ogl_loadpngmask(&pdata, bm, texfilt);
 #endif

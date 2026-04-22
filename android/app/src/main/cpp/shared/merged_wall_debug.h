@@ -37,8 +37,10 @@ struct merged_wall_tmap2_submit_context {
 
 extern volatile int g_merged_wall_force_two_pass;
 
-const char *android_merged_wall_experiment_name(int mode);
-void android_merged_wall_consume_experiment_pending_apply(void);
+const char *android_merged_wall_experiment_name(
+    int mode);
+void android_merged_wall_consume_experiment_pending_apply(
+    void);
 void android_merged_wall_log_cached_texmerge(
     const char *event,
     grs_bitmap *bottom_bmp,
@@ -77,7 +79,8 @@ int android_merged_wall_cached_texmerge_choose_size(
     int *width,
     int *height);
 void android_merged_wall_cached_texmerge_reset_entry(
-    struct merged_wall_cached_texmerge_entry *entry);
+    struct merged_wall_cached_texmerge_entry
+        *entry);
 grs_bitmap *android_merged_wall_cached_texmerge_try_reuse(
     struct merged_wall_cached_texmerge_entry *entries, int count,
     grs_bitmap *bottom_bmp, grs_bitmap *overlay_bmp, int orient,
@@ -88,7 +91,8 @@ void android_merged_wall_cached_texmerge_commit_entry(
     int width, int height, int bitmap_flags, unsigned char avg_color,
     int *out_slot);
 void android_merged_wall_cached_texmerge_set_render_filters(
-    struct _ogl_texture *tex, int texfilt_level);
+    struct _ogl_texture *tex,
+    int texfilt_level);
 void android_merged_wall_cached_texmerge_finalize_filters(
     struct _ogl_texture *tex, int texfilt_level, int aniso_level,
     float max_anisotropy);
@@ -112,8 +116,10 @@ struct merged_wall_cached_texmerge_entry *
 android_merged_wall_cached_texmerge_reserve_entry(
     struct merged_wall_cached_texmerge_entry *entries, int count,
     void (*free_texture)(struct _ogl_texture *));
-int android_merged_wall_is_logging_target_bitmap(grs_bitmap *bm);
-int android_merged_wall_is_logging_target_tmap2(int tmap2);
+int android_merged_wall_is_logging_target_bitmap(
+    grs_bitmap *bm);
+int android_merged_wall_is_logging_target_tmap2(
+    int tmap2);
 void android_merged_wall_reset_tmap2_submit_context(struct merged_wall_tmap2_submit_context *ctx);
 void android_merged_wall_set_tmap2_submit_context(struct merged_wall_tmap2_submit_context *ctx,
                                                   const char *route, int orig_nv,

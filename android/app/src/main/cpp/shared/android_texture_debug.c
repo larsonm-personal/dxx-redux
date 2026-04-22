@@ -1,5 +1,6 @@
 #ifdef ANDROID
 
+#include <android/log.h>
 #include <string.h>
 
 #include "3d.h"
@@ -17,7 +18,6 @@ int g_debug_tex_label_count = 0;
 volatile int g_debug_tex_overlay_active = 0;
 float g_font_rgb_override[3] = { -1.f, -1.f, -1.f };
 int g_ogl_render_context = 0;
-
 static char g_android_texture_debug_target_name[ANDROID_TEXTURE_DEBUG_TARGET_NAME_MAX] = { 0 };
 volatile int g_android_texture_debug_target_mode = ANDROID_TEXTURE_DEBUG_TARGET_CROSSHAIR;
 
@@ -90,25 +90,20 @@ int android_texture_debug_get_label_anchor(const g3s_point *const *pointlist,
 	int sh = grd_curcanv->cv_bitmap.bm_h;
 	int checkmuldiv(fix * r, fix a, fix b, fix c);
 	extern fix Canv_w2, Canv_h2;
-
 	if (!pointlist || nv < 3 || !sx || !sy)
 		return 0;
-
 	for (i = 0; i < nv; i++) {
 		cx += pointlist[i]->p3_vec.x / nv;
 		cy += pointlist[i]->p3_vec.y / nv;
 		cz += pointlist[i]->p3_vec.z / nv;
 	}
-
 	if (cz <= F1_0 / 4)
 		return 0;
-
 	{
 		fix sx_fix, sy_fix;
 
 		if (!checkmuldiv(&sx_fix, cx, Canv_w2, cz) || !checkmuldiv(&sy_fix, cy, Canv_h2, cz))
 			return 0;
-
 		*sx = f2i(Canv_w2 + sx_fix);
 		*sy = f2i(Canv_h2 - sy_fix);
 	}
@@ -176,6 +171,27 @@ void android_texture_debug_add_joined_labels(const g3s_point *const *pointlist,
 		android_texture_debug_append_label(sx, sy, bmbot, botname);
 	if (ovlname)
 		android_texture_debug_append_label(sx, sy + 10, bmovl, ovlname);
+}
+
+void android_texture_debug_log_render_bind(int *render_log_count,
+                                           grs_bitmap *bm)
+{
+	const char *bitmapname;
+	GLint min_filter = 0;
+
+	if (!render_log_count || *render_log_count >= 5 || !bm || !bm->gltexture)
+		return;
+
+	bitmapname = piggy_game_bitmap_name(bm);
+	glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, &min_filter);
+	__android_log_print(ANDROID_LOG_INFO, "DXX-TEX",
+	                    "3D render bind #%d: %s handle=%u is_png=%d w=%d h=%d u=%.3f v=%.3f min_filter=0x%x",
+	                    *render_log_count, bitmapname ? bitmapname : "?",
+	                    bm->gltexture->handle, bm->gltexture->is_png,
+	                    bm->gltexture->w, bm->gltexture->h,
+	                    bm->gltexture->u, bm->gltexture->v,
+	                    min_filter);
+	(*render_log_count)++;
 }
 
 static unsigned int android_texture_debug_fnv1a_append(unsigned int hash,
