@@ -36,6 +36,10 @@ paths.
 - The first 3.2 helper extraction is now validated on Android and Windows host builds
 - The shared header had to include the real `_sockaddr` owner context, and the host targets had to expose `${CMAKE_CURRENT_SOURCE_DIR}` so the shared source could include `multi.h`, `player.h`, and `net_udp.h`
 - The final shared helper keeps the original Android fallback behavior exactly by preserving the `!connected` check from the D1 and D2 local implementations
+- On the current branch, most of the originally cataloged Category A PDATA TX/RX counter blocks were already gone before this pass, so the next real low-risk logging slice was narrower than the candidate note suggested
+- The follow-up 3.2 logging trim removed the per-player `read_sync` address dump and the generic `net_udp_listen` heartbeat summary while keeping the lower-volume `pdata=0 / mdata>0` warning path intact
+- The next follow-up 3.2 logging trim removed the success-path `[ANDROID]` sync and level-transition `net_log_comment(...)` lines in `wait_for_sync`, `send_sync`, `request_poll`, and `level_sync` while keeping failure and warning paths intact
+- That trim briefly left a stale D2 `send_sync` `logbuf` declaration behind; removing it restored the slice to the same warning profile as the surrounding branch state
 
 ## Validation
 
@@ -47,7 +51,18 @@ paths.
 - `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
 - `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
 - `run-windows-build.ps1 -Target both`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- `android\stop-stale-formatters.ps1`
+- `android\run-code-quality.ps1 -Fix`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- `run-windows-build.ps1 -Target both`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- `android\stop-stale-formatters.ps1`
+- `android\run-code-quality.ps1 -Fix`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- `run-windows-build.ps1 -Target both`
 
 ## Next sub-tranche
 
-- Next narrow 3.2 step: remove the concluded Android-only Category A PDATA diagnostics in `net_udp.c` while leaving the lower-volume warning and error paths from Category B in place
+- Next narrow 3.2 step: extract `mpdiag_pkt_dump` into `shared/net` with thin D1 and D2 wrappers, then revalidate before touching host-rebind or any broader log-wrapper work

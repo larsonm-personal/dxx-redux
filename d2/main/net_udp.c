@@ -5312,16 +5312,8 @@ void net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr send
 			Netgame.players[i].LastPacketTime = timer_query();
 
 #ifdef __ANDROID__
-	/* android port: diagnose host-migration PDATA loss -- log stored addresses */
 	MPDIAG("read_sync: PLAYING Player_num=%d master=%d N_players=%d RetroProto=%d ShortPkt=%d token=%u",
 	       Player_num, Multi_master_playernum, N_players, Netgame.RetroProtocol, Netgame.ShortPackets, netgame_token);
-	for (int i = 0; i < N_players; i++) {
-		MPDIAG("read_sync: player[%d] addr=%s:%u connected=%d%s",
-		       i, ip_from_sockaddr(Netgame.players[i].protocol.udp.addr),
-		       port_from_sockaddr(Netgame.players[i].protocol.udp.addr),
-		       Players[i].connected,
-		       i == Player_num ? " (me)" : "");
-	}
 #endif
 
 	Network_status = NETSTAT_PLAYING;
@@ -5331,9 +5323,6 @@ void net_udp_read_sync_packet( ubyte * data, int data_len, struct _sockaddr send
 int net_udp_send_sync(void)
 {
 	int i, j, np;
-#ifdef __ANDROID__
-	char logbuf[256];
-#endif
 
 	// Check if there are enough starting positions
 	if (NumNetPlayerPositions < Netgame.max_numplayers)
@@ -5354,11 +5343,6 @@ int net_udp_send_sync(void)
 		net_udp_broadcast_game_info(UPID_GAME_INFO_LITE);
 		return -1;
 	}
-
-#ifdef __ANDROID__
-	snprintf(logbuf, sizeof(logbuf), "[ANDROID] send_sync: N_players=%d, sending SYNC to all clients", N_players);
-	net_log_comment(logbuf);
-#endif
 	// Randomize their starting locations...
 	d_srand( (fix)timer_query() );
 	for (i=0; i<NumNetPlayerPositions; i++ )        
@@ -5404,27 +5388,14 @@ int net_udp_send_sync(void)
 
 		MPDIAG("send_sync: sending SYNC to player %d connected=%d\n", i, Players[i].connected);
 		con_printf(CON_DEBUG, "send_sync: sending SYNC to player %d\n", i);
-#ifdef __ANDROID__
-		snprintf(logbuf, sizeof(logbuf), "[ANDROID] send_sync: sending SYNC to player %d (%s)", 
-			i, Netgame.players[i].callsign);
-		net_log_comment(logbuf);
-#endif
 		net_udp_send_game_info(Netgame.players[i].protocol.udp.addr, UPID_SYNC, 0, player_tokens[i]);
 #ifdef __ANDROID__
 		MPDIAG("CONNTYPE[send_sync]: P%d %d->DIRECT", i, connection_statuses[i].type);
 #endif
 		connection_statuses[i].type = CONNT_DIRECT;
 	}
-
-#ifdef __ANDROID__
-	net_log_comment("[ANDROID] send_sync: sent sync to all clients, processing own copy");
-#endif
 	net_udp_read_sync_packet(NULL, 0, Netgame.players[Player_num].protocol.udp.addr); // Read it myself, as if I had sent it
 	con_printf(CON_DEBUG, "send_sync: completed, entering game\n");
-
-#ifdef __ANDROID__
-	net_log_comment("[ANDROID] send_sync: completed successfully");
-#endif
 	return 0;
 }
 
@@ -5974,16 +5945,9 @@ int net_udp_wait_for_sync(void)
 	char text[60];
 	newmenu_item m[2];
 	int i, choice=0;
-#ifdef __ANDROID__
-	char logbuf[256];
-#endif
 	
 	Network_status = NETSTAT_WAITING;
 	con_printf(CON_DEBUG, "wait_for_sync: entering, master=%d\n", multi_i_am_master());
-
-#ifdef __ANDROID__
-	net_log_comment("[ANDROID] wait_for_sync START: sending initial request to host");
-#endif
 	m[0].type=NM_TYPE_TEXT; m[0].text = text;
 	m[1].type=NM_TYPE_TEXT; m[1].text = TXT_NET_LEAVE;
 	
@@ -5998,11 +5962,6 @@ int net_udp_wait_for_sync(void)
 	}
 
 	sprintf( m[0].text, "%s\n'%s' %s", TXT_NET_WAITING, Netgame.players[i].callsign, TXT_NET_TO_ENTER );
-
-#ifdef __ANDROID__
-	snprintf(logbuf, sizeof(logbuf), "[ANDROID] wait_for_sync: entering menu loop, waiting for sync from host");
-	net_log_comment(logbuf);
-#endif
 	while (choice > -1)
 	{
 		timer_update();
@@ -6010,12 +5969,6 @@ int net_udp_wait_for_sync(void)
 	}
 
 	con_printf(CON_DEBUG, "wait_for_sync: exited loop, Network_status=%d\n", Network_status);
-
-#ifdef __ANDROID__
-	snprintf(logbuf, sizeof(logbuf), "[ANDROID] wait_for_sync: menu exited with Network_status=%d (NETSTAT_PLAYING=%d)",
-			Network_status, NETSTAT_PLAYING);
-	net_log_comment(logbuf);
-#endif
 	if (Network_status != NETSTAT_PLAYING)
 	{
 		UDP_sequence_packet me;
@@ -6033,9 +5986,6 @@ int net_udp_wait_for_sync(void)
 		Game_mode = GM_GAME_OVER;
 		return(-1);     // they cancelled
 	}
-#ifdef __ANDROID__
-	net_log_comment("[ANDROID] wait_for_sync OK: sync received and Network_status is PLAYING");
-#endif
 	return(0);
 }
 
@@ -6046,7 +5996,6 @@ int net_udp_request_poll( newmenu *menu, d_event *event, void *userdata )
 	int i = 0;
 	int num_ready = 0;
 #ifdef __ANDROID__
-	char logbuf[256];
 	extern int Quitting;
 	if (Quitting)
 		return -2;
@@ -6074,21 +6023,8 @@ int net_udp_request_poll( newmenu *menu, d_event *event, void *userdata )
 			num_ready++;
 	}
 
-#ifdef __ANDROID__
-	static fix64 last_log_time = 0;
-	if (timer_query() > last_log_time + F1_0) {
-		snprintf(logbuf, sizeof(logbuf), "[ANDROID] request_poll: %d/%d players ready (states: p0=%d p1=%d)",
-			num_ready, N_players, Players[0].connected, (N_players > 1 ? Players[1].connected : -1));
-		net_log_comment(logbuf);
-		last_log_time = timer_query();
-	}
-#endif
-
 	if (num_ready == N_players) // All players have checked in or are disconnected
 	{
-#ifdef __ANDROID__
-		net_log_comment("[ANDROID] request_poll: all players ready, exiting");
-#endif
 		MPDIAG("request_poll: all %d players ready\n", N_players);
 		return -2;
 	}
@@ -6177,60 +6113,28 @@ net_udp_level_sync(void)
 	net_udp_noloss_init_mdata_queue();
 
 	net_udp_flush(); // Flush any old packets
-
-#ifdef __ANDROID__
-	snprintf(logbuf, sizeof(logbuf), "[ANDROID] level_sync START: N_players=%d master=%d Network_status=%d Player_num=%d",
-			N_players, multi_i_am_master(), Network_status, Player_num);
-	net_log_comment(logbuf);
-#endif
 	MPDIAG("level_sync: N_players=%d master=%d Network_status=%d\n", N_players, multi_i_am_master(), Network_status);
 	if (N_players == 0)
 	{
-#ifdef __ANDROID__
-		net_log_comment("[ANDROID] level_sync: awaiting sync as client (N_players==0)");
-#endif
 		result = net_udp_wait_for_sync();
 	}
 	else if (multi_i_am_master())
 	{
-#ifdef __ANDROID__
-		net_log_comment("[ANDROID] level_sync: host waiting for client requests");
-#endif
 		result = net_udp_wait_for_requests();
 		MPDIAG("level_sync: wait_for_requests returned %d\n", result);
-#ifdef __ANDROID__
-		snprintf(logbuf, sizeof(logbuf), "[ANDROID] level_sync: wait_for_requests returned %d", result);
-		net_log_comment(logbuf);
-#endif
 		if (!result)
 		{
-#ifdef __ANDROID__
-			net_log_comment("[ANDROID] level_sync: sending sync to all clients");
-#endif
 			result = net_udp_send_sync();
 		}
 		MPDIAG("level_sync: send_sync returned %d\n", result);
-#ifdef __ANDROID__
-		snprintf(logbuf, sizeof(logbuf), "[ANDROID] level_sync: send_sync returned %d", result);
-		net_log_comment(logbuf);
-#endif
 	}
 	else
 	{
-#ifdef __ANDROID__
-		net_log_comment("[ANDROID] level_sync: client waiting for sync from host");
-#endif
 		result = net_udp_wait_for_sync();
 	}
 
 	con_printf(CON_DEBUG, "level_sync: result=%d\n", result);
 multi_powcap_count_powerups_in_mine();
-
-#ifdef __ANDROID__
-	snprintf(logbuf, sizeof(logbuf), "[ANDROID] level_sync END: result=%d Players_connected=%d", result,
-			Players[Player_num].connected);
-	net_log_comment(logbuf);
-#endif
 	if (result)
 	{
 #ifdef __ANDROID__
@@ -6386,14 +6290,9 @@ void net_udp_listen()
 	ubyte packet[UPID_MAX_SIZE];
 	struct _sockaddr sender_addr;
 #ifdef __ANDROID__
-	/* android port: diagnose host-migration PDATA loss -- track packet rx */
-	static int rx_total = 0;
 	static int rx_pdata = 0;
 	static int rx_mdata = 0;
-	static int rx_ping = 0;
-	static int rx_other = 0;
 	static fix64 last_rx_heartbeat = 0;
-	int rx_this_call = 0;
 #endif
 
 	if (UDP_Socket[0] != -1)
@@ -6401,14 +6300,10 @@ void net_udp_listen()
 		size = udp_receive_packet( 0, packet, UPID_MAX_SIZE, &sender_addr );
 		while ( size > 0 )	{
 #ifdef __ANDROID__
-			rx_this_call++;
-			if (size > 0) {
-				switch (packet[0]) {
-					case UPID_PDATA: rx_pdata++; break;
-					case UPID_MDATA_PNORM: case UPID_MDATA_PNEEDACK: rx_mdata++; break;
-					case UPID_PING: case UPID_PONG: case UPID_P2P_PING: case UPID_P2P_PONG: rx_ping++; break;
-					default: rx_other++; break;
-				}
+			switch (packet[0]) {
+				case UPID_PDATA: rx_pdata++; break;
+				case UPID_MDATA_PNORM: case UPID_MDATA_PNEEDACK: rx_mdata++; break;
+				default: break;
 			}
 #endif
 			net_udp_process_packet( packet, sender_addr, size, 0 );
@@ -6421,14 +6316,10 @@ void net_udp_listen()
 		size = udp_receive_packet( 1, packet, UPID_MAX_SIZE, &sender_addr );
 		while ( size > 0 )	{
 #ifdef __ANDROID__
-			rx_this_call++;
-			if (size > 0) {
-				switch (packet[0]) {
-					case UPID_PDATA: rx_pdata++; break;
-					case UPID_MDATA_PNORM: case UPID_MDATA_PNEEDACK: rx_mdata++; break;
-					case UPID_PING: case UPID_PONG: case UPID_P2P_PING: case UPID_P2P_PONG: rx_ping++; break;
-					default: rx_other++; break;
-				}
+			switch (packet[0]) {
+				case UPID_PDATA: rx_pdata++; break;
+				case UPID_MDATA_PNORM: case UPID_MDATA_PNEEDACK: rx_mdata++; break;
+				default: break;
 			}
 #endif
 			net_udp_process_packet( packet, sender_addr, size, 0 );
@@ -6448,13 +6339,9 @@ void net_udp_listen()
 #endif
 
 #ifdef __ANDROID__
-	rx_total += rx_this_call;
 	{
 		fix64 now = timer_query();
 		if (now > last_rx_heartbeat + F1_0*5) {
-			MPDIAG("listen: rx_total=%d pdata=%d mdata=%d ping=%d other=%d Network_status=%d master=%d socket=%d token=%u",
-			       rx_total, rx_pdata, rx_mdata, rx_ping, rx_other,
-			       Network_status, multi_i_am_master(), UDP_Socket[0], netgame_token);
 			/* Warn when receiving mdata but no pdata -- proxy forwarding issue */
 			if (rx_pdata == 0 && rx_mdata > 0 && !multi_i_am_master() &&
 			    Network_status == NETSTAT_PLAYING) {
@@ -6464,11 +6351,8 @@ void net_udp_listen()
 				       port_from_sockaddr(Netgame.players[multi_who_is_master()].protocol.udp.addr),
 				       udp_bind_loopback);
 			}
-			rx_total = 0;
 			rx_pdata = 0;
 			rx_mdata = 0;
-			rx_ping = 0;
-			rx_other = 0;
 			last_rx_heartbeat = now;
 		}
 	}

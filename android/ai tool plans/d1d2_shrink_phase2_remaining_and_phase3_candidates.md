@@ -160,6 +160,7 @@ shrink per game, and the key concrete blocks to extract.
 - Plan file: `cleanup_net_udp_extract.md` (new; supersedes
   `net_udp_cleanup_candidates.md` once work starts)
 - Files: `d1/main/net_udp.c` (+944 -58), `d2/main/net_udp.c` (+1045 -84)
+- Status on current branch: the shared `sockaddr` / identity helper extraction is validated; follow-up trims have removed the `read_sync` per-player address dump, the generic `net_udp_listen` heartbeat, and the success-path `[ANDROID]` sync or level-transition comments in `wait_for_sync`, `send_sync`, `request_poll`, and `level_sync` while keeping warning and failure paths intact; next narrow candidate is `mpdiag_pkt_dump`; see `cleanup_net_udp_extract.md` for the tranche history and validation sequence
 - Concrete blocks to extract to `shared/net/net_udp_android.{h,c}`:
   - `mpdiag_pkt_dump` -- ~20 lines
   - `sockaddr_equal` and `sockaddr_ip_equal` -- ~20 lines combined
