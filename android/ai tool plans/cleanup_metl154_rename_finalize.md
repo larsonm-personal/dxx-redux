@@ -89,6 +89,52 @@ Out of scope:
 - `d2/main/render.c` churn moved from `429` total lines to `258`
 - `d1/arch/ogl/ogl.c` churn moved from `3365` total lines to `3346`
 - `d2/arch/ogl/ogl.c` churn moved from `3399` total lines to `3379`
+- Follow-on OGL shared-helper extraction phases completed after this rename
+  tranche:
+  - phase 15: extracted duplicated cached-texmerge logging helper to
+    `merged_wall_debug.{h,c}`
+  - phase 16: extracted duplicated cached-texmerge visible-dim and
+    bitmap-init helpers to `merged_wall_debug.{h,c}`
+  - phase 17: extracted duplicated cached-texmerge UV builder helper to
+    `merged_wall_debug.{h,c}`
+  - phase 18: extracted duplicated cached-texmerge cache-entry reset helper
+    and centralized the cache-entry struct in `merged_wall_debug.{h,c}`
+  - phase 19: extracted duplicated cached-texmerge cache-clear loop into
+    shared helper `android_merged_wall_cached_texmerge_clear(...)`
+  - phase 20: extracted duplicated cached-texmerge size selection and bounds
+    logic into shared helper `android_merged_wall_cached_texmerge_choose_size(...)`
+  - phase 21: extracted duplicated cached-texmerge cache-slot selection logic
+    into shared helper `android_merged_wall_cached_texmerge_choose_slot(...)`
+  - phase 22: extracted duplicated cached-texmerge reuse/commit/filter helper
+    blocks into shared helpers:
+    `android_merged_wall_cached_texmerge_try_reuse(...)`,
+    `android_merged_wall_cached_texmerge_commit_entry(...)`,
+    `android_merged_wall_cached_texmerge_set_render_filters(...)`, and
+    `android_merged_wall_cached_texmerge_finalize_filters(...)`
+  - phase 23: extracted duplicated cached-texmerge FBO render pass into
+    shared helper `android_merged_wall_cached_texmerge_render_to_texture(...)`
+  - phase 24: extracted duplicated cached-texmerge output-texture setup into
+    shared helper `android_merged_wall_cached_texmerge_setup_output_texture(...)`
+  - phase 25: extracted duplicated cached-texmerge finalize-orchestration
+    into shared helper
+    `android_merged_wall_cached_texmerge_finalize_entry(...)`
+  - phase 26: extracted duplicated cached-texmerge slot reservation and
+    eviction into shared helper
+    `android_merged_wall_cached_texmerge_reserve_entry(...)`
+  - phase 27: extracted duplicated Android MSAA FBO create and destroy
+    helpers into shared helpers in `shared/ogl_msaa_android.{h,c}`
+  - phase 28: extracted duplicated Android texture-label anchor and
+    joined-label helper logic into `android_texture_debug.{h,c}`
+  - phase 29: replaced the remaining duplicated Android screen-space overlay
+    label block in both `ogl.c` files with the shared texture debug helper
+  - phase 30: moved duplicated Android texture-debug and render-context
+    global definitions out of both `ogl.c` files into `android_texture_debug.c`
+  - phase 31: extracted duplicated Android texture-list stats and anisotropy
+    reapply helpers into `shared/ogl_texture_android.{h,c}` and fixed the
+    shared cached-texmerge runtime-state boundary exposed by Android validation
+- Current `diff_vs_upstream` OGL churn after follow-on phases:
+  - `d1/arch/ogl/ogl.c`: `+1672 -50 total 1722`
+  - `d2/arch/ogl/ogl.c`: `+1696 -49 total 1745`
 
 ## Validation so far
 
@@ -102,9 +148,14 @@ Out of scope:
 - `./android/gradlew.bat :app:assembleDebug :app:testDebugUnitTest`: passed
   after fixing the D2 OGL local-state regression and the delegated-property
   Kotlin lookup sites
+- Follow-on phase validations passed for both phase 15 and phase 16:
+  - `./android/run-code-quality.ps1 -Fix`
+  - `./android/gradlew.bat :app:assembleDebug :app:testDebugUnitTest`
+  - `./run-windows-build.ps1 -Target both -Preset x86-release -BuildType RelWithDebInfo`
+  - `./android/diff_vs_upstream.ps1 -Top 20`
 - smoke test: not run yet
 
 ## Status
 
-- [x] In progress
+- [x] Completed
 - [x] Validation complete

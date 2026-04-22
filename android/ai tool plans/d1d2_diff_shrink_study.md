@@ -1,6 +1,6 @@
 # d1/d2 upstream-diff cleanup study
 
-Status: study only. No source changes made by this document.
+Status: active tracking document. Multiple extraction tranches have landed.
 
 Goals:
 - Shrink `d1/` and `d2/` diff vs `upstream/main` to ease future upstream merges.
@@ -19,7 +19,74 @@ after each tranche to track progress.
 
 Current totals vs `upstream/main`:
 - 199 files changed (93 in d1/, 106 in d2/)
-- +21018 / -791
+- +17362 / -801
+
+Progress checkpoint (completed after this study was written):
+- rename-finalize cleanup tranche completed and validated
+- OGL shared-helper extraction phase 15 completed:
+   `ogl_android_texmerge_log` moved to shared
+- OGL shared-helper extraction phase 16 completed:
+   `ogl_android_texmerge_visible_dim` and
+   `ogl_android_texmerge_init_bitmap` moved to shared
+- OGL shared-helper extraction phase 17 completed:
+   `ogl_android_texmerge_build_uvs` moved to shared
+- OGL shared-helper extraction phase 18 completed:
+   `ogl_android_texmerge_reset_entry` moved to shared and cache-entry type
+   centralized via shared struct
+- OGL shared-helper extraction phase 19 completed:
+   duplicated cache-clear loop moved to
+   `android_merged_wall_cached_texmerge_clear(...)`
+- OGL shared-helper extraction phase 20 completed:
+   duplicated cached-texmerge size selection and bounds checks moved to
+   `android_merged_wall_cached_texmerge_choose_size(...)`
+- OGL shared-helper extraction phase 21 completed:
+   duplicated cached-texmerge cache-slot selection moved to
+   `android_merged_wall_cached_texmerge_choose_slot(...)`
+- OGL shared-helper extraction phase 22 completed:
+   duplicated cached-texmerge reuse/commit/filter helper blocks moved to
+   `android_merged_wall_cached_texmerge_try_reuse(...)`,
+   `android_merged_wall_cached_texmerge_commit_entry(...)`,
+   `android_merged_wall_cached_texmerge_set_render_filters(...)`, and
+   `android_merged_wall_cached_texmerge_finalize_filters(...)`
+- OGL shared-helper extraction phase 23 completed:
+   duplicated cached-texmerge FBO render pass moved to
+   `android_merged_wall_cached_texmerge_render_to_texture(...)`
+- OGL shared-helper extraction phase 24 completed:
+   duplicated cached-texmerge output-texture setup moved to
+   `android_merged_wall_cached_texmerge_setup_output_texture(...)`
+- OGL shared-helper extraction phase 25 completed:
+   duplicated cached-texmerge finalize-orchestration moved to
+   `android_merged_wall_cached_texmerge_finalize_entry(...)`
+- OGL shared-helper extraction phase 26 completed:
+   duplicated cached-texmerge slot reservation and eviction moved to
+   `android_merged_wall_cached_texmerge_reserve_entry(...)`
+- OGL shared-helper extraction phase 27 completed:
+   duplicated Android MSAA FBO create and destroy helpers moved to
+   `shared/ogl_msaa_android.{h,c}` as
+   `android_ogl_msaa_destroy_fbo(...)` and
+   `android_ogl_msaa_create_fbo(...)`
+- OGL shared-helper extraction phase 28 completed:
+   duplicated Android texture-label anchor and joined-label helpers moved to
+   `android_texture_debug.{h,c}` as
+   `android_texture_debug_get_label_anchor(...)`,
+   `android_texture_debug_add_overlay_label(...)`, and
+   `android_texture_debug_add_joined_labels(...)`
+- OGL shared-helper extraction phase 29 completed:
+   the remaining duplicated screen-space overlay label block in both `ogl.c`
+   files now reuses `android_texture_debug_add_overlay_label(...)`
+- OGL shared-helper extraction phase 30 completed:
+   duplicated Android texture-debug and render-context global definitions
+   moved from both `ogl.c` files into `android_texture_debug.c`
+- OGL shared-helper extraction phase 31 completed:
+   duplicated Android texture-list stats and anisotropy reapply helpers moved
+   to `shared/ogl_texture_android.{h,c}` as
+   `android_ogl_get_texture_bytes(...)` and
+   `android_ogl_apply_anisotropy_all(...)`; the tranche also hardened the
+   cached-texmerge shared boundary by passing explicit bind/runtime state into
+   `merged_wall_debug.c`
+- current OGL churn lines:
+    - `d1/arch/ogl/ogl.c`: `+1672 -50 total 1722`
+    - `d2/arch/ogl/ogl.c`: `+1696 -49 total 1745`
 
 ---
 
@@ -351,6 +418,11 @@ smoke test passes.
 10. **cleanup_diff_shrink_survey_round2.md** -- rerun
     `android/diff_vs_upstream.ps1` and re-audit anything still over
     ~100 lines. Repeat case-by-case.
+
+Work-order progress:
+- item 1: done (`cleanup_metl154_rename_finalize.md` complete)
+- item 2: in progress (phases 15, 16, 17, 18, 19, 20, 21, 22, 23, and 24 landed as safe partial extractions of
+   section 4.b helpers)
 
 Before each tranche:
 - run `.\android\diff_vs_upstream.ps1` and record the before number

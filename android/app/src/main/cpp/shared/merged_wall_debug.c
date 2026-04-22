@@ -21,6 +21,13 @@
 #include "android_log.h"
 #include "android_texture_debug.h"
 #include "merged_wall_debug.h"
+#include "timer.h"
+#include "gles3_shim.h"
+
+extern GLuint ogl_prog_tex2;
+void ogl_prog_set_tex2_current_matrix(const GLfloat *matrix, int super);
+void ogl_prog_set_tex2_debug_mode(int mode);
+void ogl_prog_set_tex2_alpha_cutoff(GLfloat alpha_cutoff);
 
 #define MERGED_WALL_LOG_PT_COUNT          16
 #define MERGED_WALL_TRACKED_FACE_MAX      32
@@ -231,6 +238,206 @@ const char *android_merged_wall_experiment_name(int mode)
 	return merged_wall_experiment_name_local(mode);
 }
 
+void android_merged_wall_consume_experiment_pending_apply(void)
+{
+	if (!g_merged_wall_experiment_pending_apply)
+		return;
+
+	g_merged_wall_experiment_pending_apply = 0;
+	__sync_synchronize();
+	debug_log(DLOG_TEXTURE,
+	          "[mwall_exp] apply: mode=%d(%s) texture_reload=0",
+	          (int) g_merged_wall_experiment_mode,
+	          merged_wall_experiment_name_local((int) g_merged_wall_experiment_mode));
+}
+
+void android_merged_wall_log_cached_texmerge(const char *event,
+	                                            grs_bitmap *bottom_bmp,
+	                                            grs_bitmap *overlay_bmp,
+	                                            int orient,
+	                                            int width,
+	                                            int height,
+	                                            GLuint handle,
+	                                            int slot,
+	                                            const struct _ogl_texture *texture)
+{
+	const char *bottom_name;
+	const char *overlay_name;
+	GLuint bottom_handle;
+	GLuint overlay_handle;
+
+	if (!g_merged_wall_snapshot_pending && !android_merged_wall_is_logging_target_bitmap(overlay_bmp))
+		return;
+
+	bottom_name = piggy_game_bitmap_name(bottom_bmp);
+	overlay_name = piggy_game_bitmap_name(overlay_bmp);
+	bottom_handle = bottom_bmp && bottom_bmp->gltexture
+					? bottom_bmp->gltexture->handle
+					: 0;
+	overlay_handle = overlay_bmp && overlay_bmp->gltexture
+				     ? overlay_bmp->gltexture->handle
+				     : 0;
+	debug_log(DLOG_TEXTURE,
+	          "[mwall_cache] event=%s frame=%d pass=%d seq=%d seg=%d side=%d face=%d slot=%d orient=%d route=merge_cached merge_impl=gpu_cached_single size=%dx%d handle=%u base_handle=%u overlay_handle=%u internal=0x%x format=0x%x bytes=%d bytesu=%d wrap=%d mip=%d is_png=%d numrend=%lu tex_flags=0x%x bot=%s ovl=%s",
+	          event ? event : "unknown",
+	          g_merged_wall_frame_id,
+	          g_merged_wall_render_pass,
+	          g_merged_wall_draw_seq,
+	          g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.seg : -1,
+	          g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.side : -1,
+	          g_android_draw_face_ctx.valid ? g_android_draw_face_ctx.face : -1,
+	          slot,
+	          orient,
+	          width,
+	          height,
+	          handle,
+	          bottom_handle,
+	          overlay_handle,
+	          texture ? texture->internalformat : 0,
+	          texture ? (unsigned int) texture->format : 0,
+	          texture ? texture->bytes : 0,
+	          texture ? texture->bytesu : 0,
+	          texture ? texture->wrapstate : -1,
+	          texture ? texture->has_mipmaps : -1,
+	          texture ? texture->is_png : -1,
+	          texture ? texture->numrend : 0,
+	          texture ? texture->flags : 0,
+	          bottom_name ? bottom_name : "<none>",
+	          overlay_name ? overlay_name : "<none>");
+}
+
+int android_merged_wall_cached_texmerge_visible_dim(const struct _ogl_texture *tex,
+	                                                  int use_width)
+{
+	int size;
+	GLfloat scale;
+
+	if (!tex)
+		return 0;
+	size = use_width ? tex->w : tex->h;
+	scale = use_width ? tex->u : tex->v;
+	if (size < 1)
+		return 0;
+	if (scale > 0.0f && scale < 1.0f)
+		return (int) floorf((float) size * scale + 0.5f);
+	return size;
+}
+
+void android_merged_wall_cached_texmerge_init_bitmap(grs_bitmap *bm,
+	                                                  struct _ogl_texture *tex,
+	                                                  int flags,
+	                                                  unsigned char avg_color,
+	                                                  int width,
+	                                                  int height)
+{
+	memset(bm, 0, sizeof(*bm));
+	bm->bm_w = (short) width;
+	bm->bm_h = (short) height;
+	bm->bm_rowsize = (short) width;
+	bm->bm_flags = (sbyte) flags;
+	bm->avg_color = avg_color;
+	bm->gltexture = tex;
+	bm->gltexture_mask = NULL;
+}
+
+void android_merged_wall_cached_texmerge_build_uvs(GLfloat *bottom_uv,
+	                                                 GLfloat *overlay_uv,
+	                                                 GLfloat bottom_u_max,
+	                                                 GLfloat bottom_v_max,
+	                                                 GLfloat overlay_u_max,
+	                                                 GLfloat overlay_v_max,
+	                                                 int orient)
+{
+	static const GLfloat base_u[4] = { 0.0f, 1.0f, 1.0f, 0.0f };
+	/* ANDROID: base_v inverted to match GL ES FBO orientation.
+	 * The cached-texmerge quad draws at NDC y corners {+1,+1,-1,-1} with
+	 * glViewport(0,0,w,h). NDC y=-1 lands at framebuffer pixel y=0, which
+	 * reads back as texture v=0. Pairing NDC y=-1 with base_v=1 (not 0)
+	 * keeps the cached composite's texture-space V aligned with the CPU
+	 * merge_textures_new reference; without this inversion the cached
+	 * overlay is Y-flipped, which appears as a U-mirror on orient 1/3
+	 * faces and a V-flip on orient 0/2 faces. */
+	static const GLfloat base_v[4] = { 1.0f, 1.0f, 0.0f, 0.0f };
+	int i;
+
+	for (i = 0; i < 4; ++i) {
+		const GLfloat u = base_u[i];
+		const GLfloat v = base_v[i];
+
+		bottom_uv[i * 2] = bottom_u_max * u;
+		bottom_uv[i * 2 + 1] = bottom_v_max * v;
+
+		switch (orient) {
+			case 1:
+				overlay_uv[i * 2] = overlay_u_max * (1.0f - v);
+				overlay_uv[i * 2 + 1] = overlay_v_max * u;
+				break;
+			case 2:
+				overlay_uv[i * 2] = overlay_u_max * (1.0f - u);
+				overlay_uv[i * 2 + 1] = overlay_v_max * (1.0f - v);
+				break;
+			case 3:
+				overlay_uv[i * 2] = overlay_u_max * v;
+				overlay_uv[i * 2 + 1] = overlay_v_max * (1.0f - u);
+				break;
+			default:
+				overlay_uv[i * 2] = overlay_u_max * u;
+				overlay_uv[i * 2 + 1] = overlay_v_max * v;
+				break;
+		}
+	}
+}
+
+void android_merged_wall_cached_texmerge_clear(
+	struct merged_wall_cached_texmerge_entry *entries,
+	int count)
+{
+	int i;
+
+	if (!entries || count <= 0)
+		return;
+
+	for (i = 0; i < count; ++i)
+		android_merged_wall_cached_texmerge_reset_entry(&entries[i]);
+}
+
+int android_merged_wall_cached_texmerge_choose_size(
+	const struct _ogl_texture *bottom_tex,
+	const struct _ogl_texture *overlay_tex,
+	int max_texture_size,
+	int *width,
+	int *height)
+{
+	int result_width;
+	int result_height;
+	int candidate;
+
+	if (!width || !height)
+		return 0;
+
+	result_width = android_merged_wall_cached_texmerge_visible_dim(bottom_tex, 1);
+	result_height = android_merged_wall_cached_texmerge_visible_dim(bottom_tex, 0);
+	candidate = android_merged_wall_cached_texmerge_visible_dim(overlay_tex, 1);
+	if (candidate > result_width)
+		result_width = candidate;
+	candidate = android_merged_wall_cached_texmerge_visible_dim(overlay_tex, 0);
+	if (candidate > result_height)
+		result_height = candidate;
+	if (result_width < 1)
+		result_width = bottom_tex ? bottom_tex->w : 0;
+	if (result_height < 1)
+		result_height = bottom_tex ? bottom_tex->h : 0;
+	if (result_width < 1 || result_height < 1)
+		return 0;
+	if (max_texture_size > 0
+		&& (result_width > max_texture_size || result_height > max_texture_size))
+		return 0;
+
+	*width = result_width;
+	*height = result_height;
+	return 1;
+}
+
 static const char *merged_wall_probe_hit_kind_name_local(int kind)
 {
 	switch (kind) {
@@ -253,6 +460,362 @@ static void merged_wall_copy_string(char *dst, unsigned int dst_size, const char
 		src = "";
 	strncpy(dst, src, dst_size - 1);
 	dst[dst_size - 1] = '\0';
+}
+
+void android_merged_wall_cached_texmerge_reset_entry(
+    struct merged_wall_cached_texmerge_entry *entry)
+{
+	if (!entry)
+		return;
+	memset(&entry->bitmap, 0, sizeof(entry->bitmap));
+	entry->texture = NULL;
+	entry->bottom_bmp = NULL;
+	entry->top_bmp = NULL;
+	entry->slot = -1;
+	entry->orient = -1;
+	entry->width = 0;
+	entry->height = 0;
+	entry->last_time_used = -1;
+}
+
+static void android_merged_wall_cached_texmerge_wrap_texture(
+    struct _ogl_texture *texture, int state)
+{
+	if (!texture)
+		return;
+	if (texture->wrapstate != state || texture->numrend < 1) {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, state);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, state);
+		texture->wrapstate = state;
+	}
+}
+
+static int android_merged_wall_cached_texmerge_choose_slot(
+    const struct merged_wall_cached_texmerge_entry *entries, int count)
+{
+	int i;
+	int slot;
+	fix64 lowest_time;
+
+	if (!entries || count <= 0)
+		return -1;
+
+	slot = 0;
+	lowest_time = entries[0].last_time_used;
+	for (i = 0; i < count; ++i) {
+		if (!entries[i].texture || entries[i].last_time_used < 0)
+			return i;
+		if (entries[i].last_time_used < lowest_time) {
+			lowest_time = entries[i].last_time_used;
+			slot = i;
+		}
+	}
+
+	return slot;
+}
+
+grs_bitmap *android_merged_wall_cached_texmerge_try_reuse(
+    struct merged_wall_cached_texmerge_entry *entries, int count,
+    grs_bitmap *bottom_bmp, grs_bitmap *overlay_bmp, int orient,
+    int *out_slot)
+{
+	int i;
+
+	if (out_slot)
+		*out_slot = -1;
+	if (!entries || count <= 0)
+		return NULL;
+
+	for (i = 0; i < count; ++i) {
+		struct merged_wall_cached_texmerge_entry *entry = &entries[i];
+
+		if (entry->texture && entry->texture->handle > 0 && entry->bottom_bmp == bottom_bmp && entry->top_bmp == overlay_bmp && entry->orient == orient) {
+			entry->last_time_used = timer_query();
+			if (out_slot)
+				*out_slot = entry->slot;
+			android_merged_wall_log_cached_texmerge("reuse", bottom_bmp,
+			                                        overlay_bmp, orient, entry->width, entry->height,
+			                                        entry->texture->handle, entry->slot, entry->texture);
+			return &entry->bitmap;
+		}
+	}
+
+	return NULL;
+}
+
+void android_merged_wall_cached_texmerge_commit_entry(
+    struct merged_wall_cached_texmerge_entry *entry,
+    grs_bitmap *bottom_bmp, grs_bitmap *overlay_bmp, int orient,
+    int width, int height, int bitmap_flags, unsigned char avg_color,
+    int *out_slot)
+{
+	if (!entry || !entry->texture)
+		return;
+
+	entry->bottom_bmp = bottom_bmp;
+	entry->top_bmp = overlay_bmp;
+	entry->orient = orient;
+	entry->width = width;
+	entry->height = height;
+	entry->last_time_used = timer_query();
+	android_merged_wall_cached_texmerge_init_bitmap(&entry->bitmap,
+	                                                entry->texture, bitmap_flags, avg_color, width, height);
+	if (out_slot)
+		*out_slot = entry->slot;
+	android_merged_wall_log_cached_texmerge("create", bottom_bmp,
+	                                        overlay_bmp, orient, width, height, entry->texture->handle,
+	                                        entry->slot, entry->texture);
+}
+
+void android_merged_wall_cached_texmerge_set_render_filters(
+    struct _ogl_texture *tex, int texfilt_level)
+{
+	if (!tex)
+		return;
+	if (texfilt_level > 0) {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	} else {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	}
+}
+
+void android_merged_wall_cached_texmerge_finalize_filters(
+    struct _ogl_texture *tex, int texfilt_level, int aniso_level,
+    float max_anisotropy)
+{
+	if (!tex)
+		return;
+	if (texfilt_level > 0) {
+		glGenerateMipmap(GL_TEXTURE_2D);
+		tex->has_mipmaps = 1;
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+		                texfilt_level >= 2 ? GL_LINEAR_MIPMAP_LINEAR
+		                                   : GL_LINEAR_MIPMAP_NEAREST);
+		if (aniso_level > 1 && max_anisotropy > 1.0f) {
+			int applied = aniso_level;
+
+			if (applied > (int) max_anisotropy)
+				applied = (int) max_anisotropy;
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT,
+			                (GLfloat) applied);
+		}
+	} else {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	}
+}
+
+void android_merged_wall_cached_texmerge_setup_output_texture(
+    struct _ogl_texture *tex, int width, int height, int tex_flags,
+    int texfilt_level,
+    const struct android_ogl_texture_runtime_state *runtime_state)
+{
+	if (!tex)
+		return;
+
+	tex->w = tex->tw = tex->lw = width;
+	tex->h = tex->th = height;
+	tex->u = 1.0f;
+	tex->v = 1.0f;
+	tex->is_png = 1;
+	tex->has_mipmaps = 0;
+	tex->flags = tex_flags;
+
+	glGenTextures(1, &tex->handle);
+	android_ogl_bind_texture_2d(runtime_state ? &runtime_state->bind_state : NULL,
+	                            tex->handle);
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	android_merged_wall_cached_texmerge_set_render_filters(tex, texfilt_level);
+	glTexImage2D(GL_TEXTURE_2D, 0, tex->internalformat, width, height, 0,
+	             tex->format, GL_UNSIGNED_BYTE, NULL);
+}
+
+int android_merged_wall_cached_texmerge_render_to_texture(
+    struct _ogl_texture *output_tex, grs_bitmap *bottom_bmp,
+    grs_bitmap *overlay_bmp, int orient, int width, int height,
+    int texfilt_level, int aniso_level, float max_anisotropy,
+    const struct android_ogl_texture_runtime_state *runtime_state)
+{
+	static const GLfloat identity[16] = {
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f
+	};
+	static const GLfloat vertex_array[12] = {
+		-1.0f, 1.0f, 0.0f,
+		1.0f, 1.0f, 0.0f,
+		1.0f, -1.0f, 0.0f,
+		-1.0f, -1.0f, 0.0f
+	};
+	static const GLfloat color_array[16] = {
+		1.0f, 1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f, 1.0f
+	};
+	GLfloat bottom_uv[8], overlay_uv[8];
+	GLfloat bottom_u_max, bottom_v_max, overlay_u_max, overlay_v_max;
+	GLint old_fbo = 0, old_viewport[4] = { 0 }, old_active_tex = GL_TEXTURE0;
+	GLboolean old_depth_mask = GL_TRUE;
+	GLboolean old_color_mask[4] = { GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE };
+	GLboolean had_blend, had_depth, had_cull;
+	GLuint fbo = 0;
+
+	if (!output_tex || !bottom_bmp || !overlay_bmp || !bottom_bmp->gltexture || !overlay_bmp->gltexture)
+		return 0;
+
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING, &old_fbo);
+	glGetIntegerv(GL_VIEWPORT, old_viewport);
+	glGetIntegerv(GL_ACTIVE_TEXTURE, &old_active_tex);
+	had_blend = glIsEnabled(GL_BLEND);
+	had_depth = glIsEnabled(GL_DEPTH_TEST);
+	had_cull = glIsEnabled(GL_CULL_FACE);
+	glGetBooleanv(GL_DEPTH_WRITEMASK, &old_depth_mask);
+	glGetBooleanv(GL_COLOR_WRITEMASK, old_color_mask);
+
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+	                       GL_TEXTURE_2D, output_tex->handle, 0);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		glBindFramebuffer(GL_FRAMEBUFFER, old_fbo);
+		glDeleteFramebuffers(1, &fbo);
+		return 0;
+	}
+
+	glViewport(0, 0, width, height);
+	if (had_blend)
+		glDisable(GL_BLEND);
+	if (had_depth)
+		glDisable(GL_DEPTH_TEST);
+	if (had_cull)
+		glDisable(GL_CULL_FACE);
+	glDepthMask(GL_FALSE);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	bottom_u_max = bottom_bmp->gltexture->u > 0.0f ? bottom_bmp->gltexture->u : 1.0f;
+	bottom_v_max = bottom_bmp->gltexture->v > 0.0f ? bottom_bmp->gltexture->v : 1.0f;
+	overlay_u_max = overlay_bmp->gltexture->u > 0.0f ? overlay_bmp->gltexture->u : 1.0f;
+	overlay_v_max = overlay_bmp->gltexture->v > 0.0f ? overlay_bmp->gltexture->v : 1.0f;
+	android_merged_wall_cached_texmerge_build_uvs(bottom_uv, overlay_uv,
+	                                              bottom_u_max, bottom_v_max, overlay_u_max, overlay_v_max, orient);
+
+	android_ogl_enable_texture_2d(runtime_state ? runtime_state->texture_2d_enabled : NULL);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_COLOR_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	android_merged_wall_cached_texmerge_wrap_texture(bottom_bmp->gltexture,
+	                                                 GL_CLAMP_TO_EDGE);
+	android_merged_wall_cached_texmerge_wrap_texture(overlay_bmp->gltexture,
+	                                                 GL_CLAMP_TO_EDGE);
+	glActiveTexture(GL_TEXTURE0);
+	android_ogl_bind_texture_2d(runtime_state ? &runtime_state->bind_state : NULL,
+	                            bottom_bmp->gltexture->handle);
+	glActiveTexture(GL_TEXTURE1);
+	android_ogl_bind_texture_2d(runtime_state ? &runtime_state->bind_state : NULL,
+	                            overlay_bmp->gltexture->handle);
+	glActiveTexture(GL_TEXTURE0);
+	gles3_shim_use_external(ogl_prog_tex2);
+	ogl_prog_set_tex2_current_matrix(identity, 0);
+	ogl_prog_set_tex2_debug_mode(0);
+	ogl_prog_set_tex2_alpha_cutoff((overlay_bmp->bm_flags & BM_FLAG_TRANSPARENT)
+	                                   ? 0.5f
+	                                   : 0.0f);
+	glVertexPointer(3, GL_FLOAT, 0, vertex_array);
+	glColorPointer(4, GL_FLOAT, 0, color_array);
+	glTexCoordPointer(2, GL_FLOAT, 0, bottom_uv);
+	gles3_shim_external_texcoord2_pointer(2, GL_FLOAT, 0, overlay_uv);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+	gles3_shim_external_texcoord2_pointer(0, GL_FLOAT, 0, NULL);
+	gles3_shim_use_external(0);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_COLOR_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	android_merged_wall_cached_texmerge_wrap_texture(bottom_bmp->gltexture,
+	                                                 GL_REPEAT);
+	android_merged_wall_cached_texmerge_wrap_texture(overlay_bmp->gltexture,
+	                                                 GL_REPEAT);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, old_fbo);
+	glDeleteFramebuffers(1, &fbo);
+	android_ogl_bind_texture_2d(runtime_state ? &runtime_state->bind_state : NULL,
+	                            output_tex->handle);
+	android_merged_wall_cached_texmerge_finalize_filters(output_tex,
+	                                                     texfilt_level, aniso_level, max_anisotropy);
+	glColorMask(old_color_mask[0], old_color_mask[1], old_color_mask[2],
+	            old_color_mask[3]);
+	glDepthMask(old_depth_mask);
+	if (had_blend)
+		glEnable(GL_BLEND);
+	if (had_depth)
+		glEnable(GL_DEPTH_TEST);
+	if (had_cull)
+		glEnable(GL_CULL_FACE);
+	glViewport(old_viewport[0], old_viewport[1], old_viewport[2],
+	           old_viewport[3]);
+	glActiveTexture((GLenum) old_active_tex);
+	return 1;
+}
+
+int android_merged_wall_cached_texmerge_finalize_entry(
+    struct merged_wall_cached_texmerge_entry *entry,
+    grs_bitmap *bottom_bmp, grs_bitmap *overlay_bmp, int orient,
+    int width, int height, int texfilt_level, int aniso_level,
+    float max_anisotropy, int bitmap_flags, unsigned char avg_color,
+    const struct android_ogl_texture_runtime_state *runtime_state,
+    int *out_slot, void (*free_texture)(struct _ogl_texture *))
+{
+	if (!entry || !entry->texture)
+		return 0;
+
+	if (!android_merged_wall_cached_texmerge_render_to_texture(entry->texture,
+	                                                           bottom_bmp, overlay_bmp, orient, width, height, texfilt_level,
+	                                                           aniso_level, max_anisotropy, runtime_state)) {
+		if (free_texture)
+			free_texture(entry->texture);
+		android_merged_wall_cached_texmerge_reset_entry(entry);
+		return 0;
+	}
+
+	android_merged_wall_cached_texmerge_commit_entry(entry, bottom_bmp,
+	                                                 overlay_bmp, orient, width, height, bitmap_flags, avg_color,
+	                                                 out_slot);
+	return 1;
+}
+
+struct merged_wall_cached_texmerge_entry *
+android_merged_wall_cached_texmerge_reserve_entry(
+    struct merged_wall_cached_texmerge_entry *entries, int count,
+    void (*free_texture)(struct _ogl_texture *))
+{
+	int slot;
+	struct merged_wall_cached_texmerge_entry *entry;
+
+	if (!entries || count <= 0)
+		return NULL;
+
+	slot = android_merged_wall_cached_texmerge_choose_slot(entries, count);
+	if (slot < 0)
+		return NULL;
+
+	entry = &entries[slot];
+	if (entry->texture) {
+		if (!free_texture)
+			return NULL;
+		free_texture(entry->texture);
+	}
+	android_merged_wall_cached_texmerge_reset_entry(entry);
+	entry->slot = slot;
+	return entry;
 }
 
 static void merged_wall_reset_probe_result(void)

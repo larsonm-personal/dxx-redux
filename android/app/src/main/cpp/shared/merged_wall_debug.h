@@ -6,10 +6,23 @@
 #include "3d.h"
 #include "debug_tex_overlay.h"
 #include "gr.h"
+#include "ogl_texture_android.h"
 
 struct segment;
 struct g3s_point;
 struct _ogl_texture;
+
+struct merged_wall_cached_texmerge_entry {
+	grs_bitmap bitmap;
+	struct _ogl_texture *texture;
+	grs_bitmap *bottom_bmp;
+	grs_bitmap *top_bmp;
+	int slot;
+	int orient;
+	int width;
+	int height;
+	fix64 last_time_used;
+};
 
 struct merged_wall_tmap2_submit_context {
 	const char *route;
@@ -25,6 +38,80 @@ struct merged_wall_tmap2_submit_context {
 extern volatile int g_merged_wall_force_two_pass;
 
 const char *android_merged_wall_experiment_name(int mode);
+void android_merged_wall_consume_experiment_pending_apply(void);
+void android_merged_wall_log_cached_texmerge(
+    const char *event,
+    grs_bitmap *bottom_bmp,
+    grs_bitmap *overlay_bmp,
+    int orient,
+    int width,
+    int height,
+    GLuint handle,
+    int slot,
+    const struct _ogl_texture *texture);
+int android_merged_wall_cached_texmerge_visible_dim(
+    const struct _ogl_texture *tex,
+    int use_width);
+void android_merged_wall_cached_texmerge_init_bitmap(
+    grs_bitmap *bm,
+    struct _ogl_texture *tex,
+    int flags,
+    unsigned char avg_color,
+    int width,
+    int height);
+void android_merged_wall_cached_texmerge_build_uvs(
+    GLfloat *bottom_uv,
+    GLfloat *overlay_uv,
+    GLfloat bottom_u_max,
+    GLfloat bottom_v_max,
+    GLfloat overlay_u_max,
+    GLfloat overlay_v_max,
+    int orient);
+void android_merged_wall_cached_texmerge_clear(
+    struct merged_wall_cached_texmerge_entry *entries,
+    int count);
+int android_merged_wall_cached_texmerge_choose_size(
+    const struct _ogl_texture *bottom_tex,
+    const struct _ogl_texture *overlay_tex,
+    int max_texture_size,
+    int *width,
+    int *height);
+void android_merged_wall_cached_texmerge_reset_entry(
+    struct merged_wall_cached_texmerge_entry *entry);
+grs_bitmap *android_merged_wall_cached_texmerge_try_reuse(
+    struct merged_wall_cached_texmerge_entry *entries, int count,
+    grs_bitmap *bottom_bmp, grs_bitmap *overlay_bmp, int orient,
+    int *out_slot);
+void android_merged_wall_cached_texmerge_commit_entry(
+    struct merged_wall_cached_texmerge_entry *entry,
+    grs_bitmap *bottom_bmp, grs_bitmap *overlay_bmp, int orient,
+    int width, int height, int bitmap_flags, unsigned char avg_color,
+    int *out_slot);
+void android_merged_wall_cached_texmerge_set_render_filters(
+    struct _ogl_texture *tex, int texfilt_level);
+void android_merged_wall_cached_texmerge_finalize_filters(
+    struct _ogl_texture *tex, int texfilt_level, int aniso_level,
+    float max_anisotropy);
+void android_merged_wall_cached_texmerge_setup_output_texture(
+    struct _ogl_texture *tex, int width, int height, int tex_flags,
+    int texfilt_level,
+    const struct android_ogl_texture_runtime_state *runtime_state);
+int android_merged_wall_cached_texmerge_render_to_texture(
+    struct _ogl_texture *output_tex, grs_bitmap *bottom_bmp,
+    grs_bitmap *overlay_bmp, int orient, int width, int height,
+    int texfilt_level, int aniso_level, float max_anisotropy,
+    const struct android_ogl_texture_runtime_state *runtime_state);
+int android_merged_wall_cached_texmerge_finalize_entry(
+    struct merged_wall_cached_texmerge_entry *entry,
+    grs_bitmap *bottom_bmp, grs_bitmap *overlay_bmp, int orient,
+    int width, int height, int texfilt_level, int aniso_level,
+    float max_anisotropy, int bitmap_flags, unsigned char avg_color,
+    const struct android_ogl_texture_runtime_state *runtime_state,
+    int *out_slot, void (*free_texture)(struct _ogl_texture *));
+struct merged_wall_cached_texmerge_entry *
+android_merged_wall_cached_texmerge_reserve_entry(
+    struct merged_wall_cached_texmerge_entry *entries, int count,
+    void (*free_texture)(struct _ogl_texture *));
 int android_merged_wall_is_logging_target_bitmap(grs_bitmap *bm);
 int android_merged_wall_is_logging_target_tmap2(int tmap2);
 void android_merged_wall_reset_tmap2_submit_context(struct merged_wall_tmap2_submit_context *ctx);
