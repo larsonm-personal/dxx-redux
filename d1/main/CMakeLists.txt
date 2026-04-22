@@ -101,7 +101,10 @@ if(EDITOR)
 endif()
 
 if(UDP)
-    target_sources(dxx-redux-d1 PRIVATE net_udp.c)
+    target_include_directories(dxx-redux-d1 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    target_sources(dxx-redux-d1 PRIVATE
+        net_udp.c
+        ../../android/app/src/main/cpp/shared/net/net_udp_android.c)
     if(ANDROID)
         target_sources(dxx-redux-d1 PRIVATE auto_net.c coop_save.c coop_warp.c)
     endif()

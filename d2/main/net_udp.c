@@ -60,6 +60,7 @@
 #include "rbaudio.h"
 #include "config.h"
 #include "vers_id.h"
+#include "../../android/app/src/main/cpp/shared/net/net_udp_android.h"
 #ifdef __ANDROID__
 #include "auto_net.h"
 #include "android_log.h"
@@ -231,18 +232,6 @@ int iTrackerVerified = 0;
 #endif
 extern obj_position Player_init[MAX_PLAYERS];
 
-// Compare only the IP address portion of two sockaddrs (ignoring port).
-// Used for reconnection matching -- a reconnecting client will have a new
-// ephemeral port, but the same IP.
-static int sockaddr_ip_equal(const struct _sockaddr *a, const struct _sockaddr *b)
-{
-#ifdef IPv6
-	return memcmp(&a->sin6_addr, &b->sin6_addr, sizeof(a->sin6_addr)) == 0;
-#else
-	return a->sin_addr.s_addr == b->sin_addr.s_addr;
-#endif
-}
-
 /* android port: find an existing player slot by callsign+IP, with fallback
  * to callsign-only for disconnected players.  After host migration the
  * proxy address stored in the old slot (127.0.0.1) won't match the
@@ -252,21 +241,8 @@ static int sockaddr_ip_equal(const struct _sockaddr *a, const struct _sockaddr *
  * android launcher assigns unique random callsigns. */
 static int find_player_by_identity(const char *callsign, struct _sockaddr *addr)
 {
-	int i;
-	/* First pass: exact callsign + IP match (original behavior) */
-	for (i = 0; i < N_players; i++) {
-		if (!d_stricmp(Players[i].callsign, callsign) &&
-		    sockaddr_ip_equal(addr, (struct _sockaddr *)&Netgame.players[i].protocol.udp.addr))
-			return i;
-	}
-#ifdef __ANDROID__
-	/* Second pass: callsign-only for disconnected players */
-	for (i = 0; i < N_players; i++) {
-		if (!Players[i].connected && !d_stricmp(Players[i].callsign, callsign))
-			return i;
-	}
-#endif
-	return -1;
+	return android_net_udp_find_player_by_identity(callsign, addr, N_players,
+		Players, &Netgame);
 }
 
 uint netgame_token = 0; 
@@ -7988,10 +7964,7 @@ ushort port_from_sockaddr(struct _sockaddr addr) {
  * because getaddrinfo and recvfrom may fill padding bytes differently. */
 static int sockaddr_equal(const struct _sockaddr *a, const struct _sockaddr *b)
 {
-	const struct sockaddr_in *sa = (const struct sockaddr_in *)a;
-	const struct sockaddr_in *sb = (const struct sockaddr_in *)b;
-	return sa->sin_addr.s_addr == sb->sin_addr.s_addr &&
-	       sa->sin_port == sb->sin_port;
+	return android_net_udp_sockaddr_equal(a, b);
 }
 #endif
 
