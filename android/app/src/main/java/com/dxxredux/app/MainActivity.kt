@@ -356,6 +356,7 @@ class MainActivity :
 
     private var gameStarted = false
     private lateinit var gameSurfaceView: GameSurfaceView
+    private lateinit var keyboardInputView: KeyboardInputView
     private lateinit var touchOverlay: TouchOverlayView
     private lateinit var skipButton: SkipButtonView
     private lateinit var exitButton: ExitButtonView
@@ -374,6 +375,7 @@ class MainActivity :
     private var adminTrayPausedGame = false
     private var adminTrayCloseGraceUntilMs = 0L
     private var isMultiplayerGame = false
+    private var imeNavigationDispatchDepth = 0
     private var lastTrackNum = -1 // for detecting track changes in polling
     private var gyroManager: GyroInputManager? = null
     private var activeTouchLayout = TouchLayoutRepository.defaultLayout()
@@ -546,6 +548,16 @@ class MainActivity :
         gameSurfaceView.isFocusable = true
         gameSurfaceView.isFocusableInTouchMode = true
         gameSurfaceView.requestFocus()
+        keyboardInputView =
+            KeyboardInputView(this).apply {
+                isFocusable = true
+                isFocusableInTouchMode = true
+                alpha = 0f
+                isCursorVisible = false
+                setBackgroundColor(Color.TRANSPARENT)
+                setTextColor(Color.TRANSPARENT)
+                highlightColor = Color.TRANSPARENT
+            }
 
         // Handle touch on the SurfaceView so coordinates are view-relative
         gameSurfaceView.setOnTouchListener { view, event ->
@@ -822,6 +834,14 @@ class MainActivity :
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
+        frame.addView(
+            keyboardInputView,
+            FrameLayout.LayoutParams(
+                1,
+                1,
+                Gravity.TOP or Gravity.START,
             ),
         )
         frame.addView(
@@ -2093,6 +2113,17 @@ class MainActivity :
             source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK ||
             source and InputDevice.SOURCE_DPAD == InputDevice.SOURCE_DPAD
 
+    private fun isImeReroutedEvent(): Boolean = imeNavigationDispatchDepth > 0
+
+    private inline fun dispatchImeNavigationEvent(dispatch: () -> Boolean): Boolean {
+        imeNavigationDispatchDepth += 1
+        return try {
+            dispatch()
+        } finally {
+            imeNavigationDispatchDepth -= 1
+        }
+    }
+
     private fun imeNavigationSource(keyCode: Int): Int =
         when (keyCode) {
             KeyEvent.KEYCODE_DPAD_UP,
@@ -2122,7 +2153,7 @@ class MainActivity :
                 originalEvent.flags,
                 imeNavigationSource(keyCode),
             )
-        val handled = super.dispatchKeyEvent(reroutedEvent)
+        val handled = dispatchImeNavigationEvent { super.dispatchKeyEvent(reroutedEvent) }
         logKeyboardDebug(
             "routeKey orig=${originalEvent.keyCode} mapped=$keyCode action=${originalEvent.action} " +
                 "src=${originalEvent.source} dev=${originalEvent.deviceId} repeat=${originalEvent.repeatCount} " +
@@ -2151,7 +2182,7 @@ class MainActivity :
                 0,
                 imeNavigationSource(keyCode),
             )
-        val handled = super.dispatchKeyEvent(reroutedEvent)
+        val handled = dispatchImeNavigationEvent { super.dispatchKeyEvent(reroutedEvent) }
         logKeyboardDebug(
             "routeMotion mapped=$keyCode action=$action dev=$deviceId handled=$handled " +
                 "downTime=$downTime eventTime=$eventTime focus=${gameSurfaceView.hasFocus()}",
@@ -2275,9 +2306,12 @@ class MainActivity :
         keyCode: Int,
         event: KeyEvent,
     ): Boolean {
-        if (isControllerSource(event.source) ||
-            dpadKeyCodeToJoyButton(keyCode) >= 0 ||
-            gamepadButtonIndex(keyCode) >= 0
+        if (!isImeReroutedEvent() &&
+            (
+                isControllerSource(event.source) ||
+                    dpadKeyCodeToJoyButton(keyCode) >= 0 ||
+                    gamepadButtonIndex(keyCode) >= 0
+            )
         ) {
             logGamepadInput(
                 "onKeyDown kc=$keyCode src=${event.source} repeat=${event.repeatCount} " +
@@ -2286,6 +2320,10 @@ class MainActivity :
         }
         // Let the system handle volume keys
         if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            return super.onKeyDown(keyCode, event)
+        }
+
+        if (isImeReroutedEvent()) {
             return super.onKeyDown(keyCode, event)
         }
 
@@ -2362,9 +2400,12 @@ class MainActivity :
         keyCode: Int,
         event: KeyEvent,
     ): Boolean {
-        if (isControllerSource(event.source) ||
-            dpadKeyCodeToJoyButton(keyCode) >= 0 ||
-            gamepadButtonIndex(keyCode) >= 0
+        if (!isImeReroutedEvent() &&
+            (
+                isControllerSource(event.source) ||
+                    dpadKeyCodeToJoyButton(keyCode) >= 0 ||
+                    gamepadButtonIndex(keyCode) >= 0
+            )
         ) {
             logGamepadInput(
                 "onKeyUp kc=$keyCode src=${event.source} admin=${touchOverlay.isAdminTrayOpen()} " +
@@ -2372,6 +2413,10 @@ class MainActivity :
             )
         }
         if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            return super.onKeyUp(keyCode, event)
+        }
+
+        if (isImeReroutedEvent()) {
             return super.onKeyUp(keyCode, event)
         }
 
@@ -2560,6 +2605,31 @@ class MainActivity :
         return if (rootHeight > 0) rootHeight else decorView.height
     }
 
+    private fun imeIgnoringVisibilityHeightPx(decorView: View): Int =
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                decorView.rootWindowInsets
+                    ?.getInsetsIgnoringVisibility(
+                        android.view.WindowInsets.Type
+                            .ime(),
+                    )?.bottom ?: 0
+            } else {
+                ViewCompat
+                    .getRootWindowInsets(decorView)
+                    ?.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.ime())
+                    ?.bottom ?: 0
+            }
+        } catch (_: IllegalArgumentException) {
+            0
+        }
+
+    private fun tvKeyboardFallbackHeightPx(screenHeight: Int): Int =
+        if (gamepadOnlyMode && gameSurfaceView.keyboardActive) {
+            (screenHeight * 45) / 100
+        } else {
+            0
+        }
+
     private fun sampleKeyboardHeightPx(
         reason: String,
         imeBottomHint: Int? = null,
@@ -2579,6 +2649,7 @@ class MainActivity :
                     ?.getInsets(WindowInsetsCompat.Type.ime())
                     ?.bottom ?: 0
             }
+        val imeStableBottom = imeIgnoringVisibilityHeightPx(decorView)
         val visibleFrame = Rect()
         decorView.getWindowVisibleDisplayFrame(visibleFrame)
         val systemBottom =
@@ -2588,9 +2659,16 @@ class MainActivity :
                 ?.bottom ?: 0
         val bottomOcclusion = (screenHeight - visibleFrame.bottom).coerceAtLeast(0)
         val fallbackBottom = (bottomOcclusion - systemBottom).coerceAtLeast(0)
-        val keyboardHeight = if (imeBottom > 0) imeBottom else fallbackBottom
+        val tvFallbackBottom =
+            if (imeBottom == 0 && imeStableBottom == 0 && fallbackBottom == 0) {
+                tvKeyboardFallbackHeightPx(screenHeight)
+            } else {
+                0
+            }
+        val keyboardHeight = maxOf(imeBottom, imeStableBottom, fallbackBottom, tvFallbackBottom)
         val sampleLog =
-            "kbSample reason=$reason ime=$imeBottom fallback=$fallbackBottom " +
+            "kbSample reason=$reason ime=$imeBottom imeStable=$imeStableBottom " +
+                "fallback=$fallbackBottom tvFallback=$tvFallbackBottom " +
                 "occlusion=$bottomOcclusion systemBottom=$systemBottom " +
                 "visibleBottom=${visibleFrame.bottom} screenH=$screenHeight"
         if (sampleLog != lastKeyboardHeightSampleLog) {
@@ -2627,25 +2705,26 @@ class MainActivity :
                     2 -> InputType.TYPE_CLASS_NUMBER
                     else -> InputType.TYPE_CLASS_TEXT
                 }
+            keyboardInputView.currentInputType = gameSurfaceView.currentInputType
             hatXState = 0
             hatYState = 0
             imeHatXDownTime = 0L
             imeHatYDownTime = 0L
             lastKeyboardHeightSampleLog = ""
             gameSurfaceView.keyboardActive = true
-            val focusGranted = gameSurfaceView.requestFocus()
+            keyboardInputView.keyboardActive = true
+            val focusGranted = keyboardInputView.requestFocus()
             val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.restartInput(gameSurfaceView)
-            val showRequested = imm.showSoftInput(gameSurfaceView, InputMethodManager.SHOW_IMPLICIT)
+            imm.restartInput(keyboardInputView)
+            val showRequested = imm.showSoftInput(keyboardInputView, InputMethodManager.SHOW_IMPLICIT)
             logKeyboardDebug(
                 "showKeyboard inputType=$inputType focusGranted=$focusGranted " +
-                    "hasFocus=${gameSurfaceView.hasFocus()} showRequested=$showRequested " +
-                    "immActive=${imm.isActive(
-                        gameSurfaceView,
-                    )} currentFocus=${currentFocus?.javaClass?.simpleName ?: "null"}",
+                    "hasFocus=${keyboardInputView.hasFocus()} showRequested=$showRequested " +
+                    "immActive=${imm.isActive(keyboardInputView)} " +
+                    "currentFocus=${currentFocus?.javaClass?.simpleName ?: "null"}",
             )
             // Use WindowInsetsController API (works with setDecorFitsSystemWindows(false))
-            WindowInsetsControllerCompat(window, gameSurfaceView)
+            WindowInsetsControllerCompat(window, keyboardInputView)
                 .show(WindowInsetsCompat.Type.ime())
             // Start polling for keyboard height (up to 2 seconds)
             pollKeyboardHeight(20)
@@ -2663,12 +2742,15 @@ class MainActivity :
             imeHatYDownTime = 0L
             lastKeyboardHeightSampleLog = ""
             logKeyboardDebug(
-                "hideKeyboard hasFocus=${gameSurfaceView.hasFocus()} " +
+                "hideKeyboard hasFocus=${keyboardInputView.hasFocus()} " +
                     "currentFocus=${currentFocus?.javaClass?.simpleName ?: "null"}",
             )
             gameSurfaceView.keyboardActive = false
-            WindowInsetsControllerCompat(window, gameSurfaceView)
+            keyboardInputView.keyboardActive = false
+            WindowInsetsControllerCompat(window, keyboardInputView)
                 .hide(WindowInsetsCompat.Type.ime())
+            keyboardInputView.clearFocus()
+            gameSurfaceView.requestFocus()
             nativeSetKeyboardHeight(0, keyboardReferenceHeightPx())
         }
     }
@@ -2851,7 +2933,40 @@ class MainActivity :
         }
     }
 
-    // ── GameSurfaceView with InputConnection for soft keyboard ──
+    // ── Hidden keyboard proxy with InputConnection for soft keyboard ──
+    private inner class KeyboardInputView(
+        context: Context,
+    ) : androidx.appcompat.widget.AppCompatEditText(context) {
+        var currentInputType = InputType.TYPE_CLASS_TEXT
+        var keyboardActive = false
+
+        override fun onCheckIsTextEditor(): Boolean = keyboardActive
+
+        override fun onFocusChanged(
+            gainFocus: Boolean,
+            direction: Int,
+            previouslyFocusedRect: android.graphics.Rect?,
+        ) {
+            super.onFocusChanged(gainFocus, direction, previouslyFocusedRect)
+            logKeyboardDebug(
+                "imeFocus gain=$gainFocus direction=$direction keyboardActive=$keyboardActive",
+            )
+        }
+
+        override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
+            outAttrs.inputType = currentInputType or
+                InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or
+                InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+            outAttrs.imeOptions = EditorInfo.IME_ACTION_DONE or
+                EditorInfo.IME_FLAG_NO_EXTRACT_UI
+            logKeyboardDebug(
+                "createInputConnection inputType=$currentInputType keyboardActive=$keyboardActive",
+            )
+            return GameInputConnection(this)
+        }
+    }
+
+    // ── GameSurfaceView render target ──
     private inner class GameSurfaceView(
         context: Context,
     ) : SurfaceView(context) {

@@ -101,3 +101,106 @@ int android_net_udp_rebind_for_hosting(int *udp_socket, int *udp_bind_loopback,
 	log_message(logbuf);
 	return 0;
 }
+
+void android_net_udp_send_p2p_reattempt_direct(unsigned int netgame_token,
+	                                           int player_num,
+	                                           const struct _sockaddr *connect_to_addr,
+	                                           int to_player,
+	                                           android_net_udp_send_direct_fn send_direct)
+{
+	ubyte buf[UPID_REATTEMPT_DIRECT_SIZE];
+	int len = 0;
+
+	if (!connect_to_addr || !send_direct)
+		return;
+
+	memset(buf, 0, sizeof(buf));
+	buf[len] = UPID_REATTEMPT_DIRECT;
+	len++;
+	PUT_INTEL_INT(buf + len, netgame_token);
+	len += 4;
+	buf[len] = player_num;
+	len++;
+	memcpy(buf + len, connect_to_addr, sizeof(*connect_to_addr));
+
+	send_direct(buf, sizeof(buf), to_player);
+}
+
+void android_net_udp_reattempt_direct(int pnum,
+	                                  int master_player_num,
+	                                  int i_am_master,
+	                                  struct connection_status *status,
+	                                  fix64 now)
+{
+	if (!status)
+		return;
+	if (pnum == master_player_num)
+		return;
+	if (i_am_master)
+		return;
+
+	status->holepunch_attempts = 0;
+	status->last_direct_pong = now;
+}
+
+void android_net_udp_process_p2p_reattempt_direct(const ubyte *data,
+	                                              int player_num,
+	                                              int master_player_num,
+	                                              int i_am_master,
+	                                              int max_players,
+	                                              fix64 now,
+	                                              struct connection_status *statuses,
+	                                              android_net_udp_log_message_fn log_message,
+	                                              android_net_udp_update_address_fn update_address)
+{
+	struct _sockaddr new_address;
+	int len = 0;
+	int pnum;
+
+	len++;
+	len += 4;
+	pnum = data[len];
+	len++;
+
+	if (pnum == master_player_num) {
+		if (log_message)
+			log_message("Attempting reconnect to master, illegal.");
+		return;
+	}
+
+	if (pnum == player_num) {
+		if (log_message)
+			log_message("Attempting reconnect to self, illegal.");
+		return;
+	}
+
+	if (pnum >= max_players) {
+		if (log_message)
+			log_message("Attempting connection to illegal player num.");
+		return;
+	}
+
+	memcpy(&new_address, data + len, sizeof(new_address));
+	if (update_address)
+		update_address(pnum, new_address);
+	android_net_udp_reattempt_direct(pnum, master_player_num, i_am_master,
+	                                 statuses ? &statuses[pnum] : NULL, now);
+}
+
+void android_net_udp_reset_proxy(int pnum,
+	                             int master_player_num,
+	                             int i_am_master,
+	                             struct connection_status *status,
+	                             android_net_udp_log_connection_status_fn log_connection_status)
+{
+	if (!status)
+		return;
+	if (pnum == master_player_num)
+		return;
+	if (i_am_master)
+		return;
+	if (log_connection_status)
+		log_connection_status(pnum, status->type);
+	status->type = CONNT_PROXY;
+	status->proxy_through = 0;
+}

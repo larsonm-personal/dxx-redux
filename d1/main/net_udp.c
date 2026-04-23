@@ -1979,11 +1979,6 @@ net_udp_new_player(UDP_sequence_packet *their)
 		connection_statuses[pnum].holepunch_attempts = 0;
 	}
 
-	struct sockaddr_in *addrin = (struct sockaddr_in*) &their->player.protocol.udp.addr;
-	char *ip = inet_ntoa(addrin->sin_addr); 
-	ushort port = SWAPSHORT(addrin->sin_port);
-	con_printf(CON_DEBUG, "Received new player num %d at ip %s port %d\n", pnum, ip, port); 
-
 	ClipRank (&their->player.rank);
 	Netgame.players[pnum].rank=their->player.rank;
 
@@ -3376,11 +3371,6 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 					struct _sockaddr new_address;
 					memcpy(&new_address, data + len,  sizeof(struct _sockaddr) ); 
 					update_address_for_player(i, new_address); 
-
-					struct sockaddr_in *addrin = (struct sockaddr_in*) &Netgame.players[i].protocol.udp.addr;
-					char *ip = inet_ntoa(addrin->sin_addr); 
-					ushort port = SWAPSHORT(addrin->sin_port);
-					con_printf(CON_DEBUG, "Received new player num (in game info) %d at ip %s port %d\n", i, ip, port); 	
 				}		
 
 				len += sizeof(struct _sockaddr);
@@ -3476,7 +3466,6 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 			uint my_token = GET_INTEL_INT(data + len);  len += 4;
 			if(my_token == my_player_token || is_observer()) {	
 				netgame_token = GET_INTEL_INT(data + len); len += 4;
-				con_printf(CON_DEBUG, "Set token %d in net_udp_process_game_info\n", netgame_token); 
 			} else {
 				char err_mess[200];
 				snprintf(err_mess, 200, "player token incorrect; received %u, expected %u",  my_token, my_player_token);
@@ -3490,7 +3479,6 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 
 		if (data[0] == UPID_GAME_INFO) {
 			netgame_token = my_player_token = GET_INTEL_INT(data + len); len += 4;
-			con_printf(CON_DEBUG, "Set token %d for UPID_GAME_INFO in net_udp_process_game_info\n", netgame_token); 
 		}
 
 		if (len > data_len) {
@@ -6104,9 +6092,6 @@ void net_udp_timeout_check(fix64 time)
 						multi_disconnect_player(i);
 					} else {
 						if(connection_statuses[i].type == CONNT_DIRECT) {
-#ifdef __ANDROID__
-							MPDIAG("CONNTYPE[timeout]: P%d DIRECT->PROXY", i);
-#endif
 							connection_statuses[i].type = CONNT_PROXY;
 							connection_statuses[i].proxy_through = 0;  // Start looking for efficient proxy?
 						}
@@ -7571,11 +7556,6 @@ void net_udp_process_p2p_ping(ubyte *data, struct _sockaddr sender_addr, int dat
 
 		// Restablish direct attempt, if we aren't already doing that
 		if(connection_statuses[from_player].type == CONNT_PROXY) {
-			char comment[100];
-			sprintf(comment, "Received direct ping from proxy player %d connection status %d", from_player, Netgame.players[from_player].connected); 
-			net_log_comment(comment); 
-
-			net_log_comment("Received direct ping on proxy connection, reattempting direct.");
 			reattemptDirect(from_player); 
 		}
 		
@@ -7630,14 +7610,7 @@ void net_udp_process_p2p_pong(ubyte *data, struct _sockaddr sender_addr, int dat
 
 	// If this was direct, update the address!	
 	if(direct_pong) {
-		if(connection_statuses[from_player].type != CONNT_DIRECT) {
-			net_log_comment("Received direct pong, connection upgraded to direct.");
-		}
-
 		connection_statuses[from_player].last_direct_pong = timer_query(); 
-#ifdef __ANDROID__
-		MPDIAG("CONNTYPE[p2p_pong]: P%d %d->DIRECT", from_player, connection_statuses[from_player].type);
-#endif
 		connection_statuses[from_player].type = CONNT_DIRECT; 		
 
 	    if(memcmp(&Netgame.players[from_player].protocol.udp.addr, &sender_addr, sizeof(struct _sockaddr))) {
@@ -7650,26 +7623,11 @@ void net_udp_process_p2p_pong(ubyte *data, struct _sockaddr sender_addr, int dat
 void update_address_for_player(int pnum, struct _sockaddr new_addr) {
 	if(!multi_i_am_master() && is_observer()) { return; }
 
-	char logcomment[200]; 
-	snprintf(logcomment, 200, "Requested update to address for player %d to %s:%u\n", pnum, 
-		ip_from_sockaddr(new_addr), port_from_sockaddr(new_addr)); 
-	net_log_comment(logcomment); 
-
 	if( (port_from_sockaddr(new_addr) != 0) && // Not null
 	   memcmp(&new_addr,  &Netgame.players[pnum].protocol.udp.addr, sizeof(struct _sockaddr))    // New address
 
 	) {	
-		char logentry[200];
-		snprintf(logentry, 200, "   Updating IP address for player %d from %s:%u", 
-			pnum, ip_from_sockaddr(Netgame.players[pnum].protocol.udp.addr), port_from_sockaddr(Netgame.players[pnum].protocol.udp.addr)); 
-		snprintf(logentry, 200, "   to %s:%u", 
-			ip_from_sockaddr(new_addr), port_from_sockaddr(new_addr)); 		
-		
-		net_log_comment(logentry); 
-
 		memcpy(&Netgame.players[pnum].protocol.udp.addr, &new_addr, sizeof(struct _sockaddr)); 
-	} else {
-		net_log_comment("   IP address not updated (old or null)."); 
 	}
 }
 
@@ -7686,14 +7644,8 @@ void resetProxy(int pnum) {
 }
 
 void reattemptDirect(int pnum) {
-	char comment_string[100];
-	sprintf(comment_string, "reattemptDirect: %d", pnum); 
-	net_log_comment(comment_string); 
-
 	if(pnum == multi_who_is_master()) return;
 	if(multi_i_am_master()) return;
-
-	net_log_comment("   (reset)"); 
 
 	connection_statuses[pnum].holepunch_attempts = 0;
 	connection_statuses[pnum].last_direct_pong = timer_query(); 
@@ -7849,66 +7801,26 @@ void net_udp_ping_frame(fix64 time)
 void net_udp_process_ping(ubyte *data, int data_len, struct _sockaddr sender_addr)
 {
 	fix64 host_ping_time = 0;
-	ubyte buf[UPID_PONG_SIZE];
-	int i, len = 0;
-// 
-	if (memcmp((struct _sockaddr *)&Netgame.players[0].protocol.udp.addr, (struct _sockaddr *)&sender_addr, sizeof(struct _sockaddr)))
-		return;
-
-										len++; // Skip UPID byte;
-	memcpy(&host_ping_time, &data[len], 8);					len += 8;
-	for (i = 1; i < MAX_PLAYERS; i++)
-	{
-		Netgame.players[i].ping = GET_INTEL_INT(&(data[len]));		len += 4;
+	android_net_udp_send_p2p_reattempt_direct(netgame_token, Player_num,
+		&Netgame.players[connect_to_player].protocol.udp.addr, to_player,
+		net_udp_send_to_player_direct);
 	}
 
 	// Prevent clients from timing out the host during level sync or other
-	// periods when PDATA isn't flowing. Pings prove the host is reachable.
-	Netgame.players[0].LastPacketTime = timer_query();
-	
-	buf[0] = UPID_PONG;
-	buf[1] = Player_num;
-	memcpy(&buf[2], &host_ping_time, 8);
-	
-	dxx_sendto (UDP_Socket[0], buf, sizeof(buf), 0, (struct sockaddr *)&sender_addr, sizeof(struct _sockaddr));
-}
-
-// Got a PONG from a client. Check the time and add it to our players.
-void net_udp_process_pong(ubyte *data, int data_len, struct _sockaddr sender_addr)
-{
-	fix64 client_pong_time = 0;
-	int i = 0;
-	
-	if (memcmp((struct _sockaddr *)&sender_addr, (struct _sockaddr *)&Netgame.players[data[1]].protocol.udp.addr, sizeof(struct _sockaddr)))
-		return;
-
-	if (data[1] >= MAX_PLAYERS || data[1] < 1)
-		return;
-
-	if (i == MAX_PLAYERS)
-		return;
-	
+	android_net_udp_process_p2p_reattempt_direct(data, Player_num,
+		multi_who_is_master(), multi_i_am_master(), MAX_PLAYERS,
+		timer_query(), connection_statuses, net_log_comment,
+		update_address_for_player);
 	memcpy(&client_pong_time, &data[2], 8);
 	Netgame.players[data[1]].ping = f2i(fixmul(timer_query() - client_pong_time,i2f(1000)));
 	
-	if (Netgame.players[data[1]].ping < 0)
-		Netgame.players[data[1]].ping = 0;
-		
-	if (Netgame.players[data[1]].ping > 9999)
-		Netgame.players[data[1]].ping = 9999;
-}
-
-void net_udp_do_refuse_stuff (UDP_sequence_packet *their)
-{
+	android_net_udp_reset_proxy(pnum, multi_who_is_master(), multi_i_am_master(),
+		&connection_statuses[pnum], net_udp_log_reset_proxy_transition);
 	int i,new_player_num;
 
 	ClipRank (&their->player.rank);
-
-	MPDIAG("refuse_stuff: '%s' connected=%d WaitForRefuse=%d RefuseThisPlayer=%d\n",
-	       their->player.callsign, their->player.connected, WaitForRefuseAnswer, RefuseThisPlayer);
-	
-	if(their->player.observer) {
-		if(Netgame.numobservers < Netgame.max_numobservers) {
+	android_net_udp_reattempt_direct(pnum, multi_who_is_master(), multi_i_am_master(),
+		&connection_statuses[pnum], timer_query());
 			net_udp_welcome_player(their);
 		} else {
 			net_udp_dump_player(their->player.protocol.udp.addr, their->token, DUMP_FULL);

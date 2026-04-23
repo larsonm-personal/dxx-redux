@@ -26,6 +26,9 @@ object DebugLog {
     private const val DIR_NAME = "debuglogs"
     private const val MAX_FILES = 5
     private const val AUTHORITY = "com.dxxredux.app.fileprovider"
+    private const val PREF_ACTIVE_LOG_PATH = "debuglog_active_path"
+    private const val PREF_ACTIVE_LOG_BUILD = "debuglog_active_build"
+    private const val ACTIVE_LOG_REUSE_WINDOW_MS = 15 * 60 * 1000L
 
     private var writer: BufferedWriter? = null
     private var currentFile: File? = null
@@ -80,6 +83,7 @@ object DebugLog {
             try {
                 writer = BufferedWriter(FileWriter(file, true))
                 currentFile = file
+                rememberActiveLog(context, file)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to open log file for append", e)
                 writer = null
@@ -185,12 +189,14 @@ object DebugLog {
         closeLog()
         val dir = File(context.filesDir, DIR_NAME)
         dir.mkdirs()
+        if (reuseActiveLog(context)) return
         pruneOldFiles(dir)
         val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val file = File(dir, "debuglog_$stamp.txt")
         try {
             writer = BufferedWriter(FileWriter(file, true))
             currentFile = file
+            rememberActiveLog(context, file)
             // Write header with enabled categories
             val enabled =
                 (0 until DebugLogCategory.COUNT)
@@ -207,6 +213,40 @@ object DebugLog {
             writer = null
         }
     }
+
+    private fun reuseActiveLog(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val activePath = prefs.getString(PREF_ACTIVE_LOG_PATH, null) ?: return false
+        val activeBuild = prefs.getString(PREF_ACTIVE_LOG_BUILD, null) ?: return false
+        if (activeBuild != currentBuildStamp()) return false
+        val file = File(activePath)
+        if (!file.exists()) return false
+        if (System.currentTimeMillis() - file.lastModified() > ACTIVE_LOG_REUSE_WINDOW_MS) return false
+        return try {
+            writer = BufferedWriter(FileWriter(file, true))
+            currentFile = file
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to reuse active log file", e)
+            writer = null
+            currentFile = null
+            false
+        }
+    }
+
+    private fun rememberActiveLog(
+        context: Context,
+        file: File,
+    ) {
+        context
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(PREF_ACTIVE_LOG_PATH, file.absolutePath)
+            .putString(PREF_ACTIVE_LOG_BUILD, currentBuildStamp())
+            .apply()
+    }
+
+    private fun currentBuildStamp(): String = "${BuildInfo.GIT_COMMIT_COUNT}:${BuildInfo.GIT_SHORT_HASH}"
 
     private fun closeLog() {
         try {

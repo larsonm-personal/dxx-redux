@@ -1975,11 +1975,6 @@ net_udp_new_player(UDP_sequence_packet *their)
 		connection_statuses[pnum].holepunch_attempts = 0;
 	}
 
-	struct sockaddr_in *addrin = (struct sockaddr_in*) &their->player.protocol.udp.addr;
-	char *ip = inet_ntoa(addrin->sin_addr); 
-	ushort port = SWAPSHORT(addrin->sin_port);
-	con_printf(CON_DEBUG, "Received new player num %d at ip %s port %d\n", pnum, ip, port); 
-
 
 	ClipRank (&their->player.rank);
 	Netgame.players[pnum].rank=their->player.rank;
@@ -3431,11 +3426,6 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 					struct _sockaddr new_address;
 					memcpy(&new_address, data + len,  sizeof(struct _sockaddr) ); 
 					update_address_for_player(i, new_address); 
-
-					struct sockaddr_in *addrin = (struct sockaddr_in*) &Netgame.players[i].protocol.udp.addr;
-					char *ip = inet_ntoa(addrin->sin_addr); 
-					ushort port = SWAPSHORT(addrin->sin_port);
-					con_printf(CON_DEBUG, "Received new player num (in game info) %d at ip %s port %d\n", i, ip, port); 	
 				}		
 
 				len += sizeof(struct _sockaddr);
@@ -3551,7 +3541,6 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 			uint my_token = GET_INTEL_INT(data + len);  len += 4;
 			if(my_token == my_player_token || is_observer()) {
 				netgame_token = GET_INTEL_INT(data + len); len += 4;
-				con_printf(CON_DEBUG, "Set token %d in net_udp_process_game_info\n", netgame_token);
 			} else {
 				char err_mess[200];
 				snprintf(err_mess, 200, "player token incorrect; received %u, expected %u",  my_token, my_player_token);
@@ -3565,7 +3554,6 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 
 		if (data[0] == UPID_GAME_INFO) {
 			netgame_token = my_player_token = GET_INTEL_INT(data + len); len += 4;
-			con_printf(CON_DEBUG, "Set token %d for UPID_GAME_INFO in net_udp_process_game_info\n", netgame_token);
 		}
 
 		if (len > data_len) {
@@ -6260,9 +6248,6 @@ void net_udp_timeout_check(fix64 time)
 						multi_disconnect_player(i);
 					} else {
 						if(connection_statuses[i].type == CONNT_DIRECT) {
-#ifdef __ANDROID__
-							MPDIAG("CONNTYPE[timeout]: P%d DIRECT->PROXY", i);
-#endif
 							connection_statuses[i].type = CONNT_PROXY;
 							connection_statuses[i].proxy_through = 0;  // Start looking for efficient proxy?
 						}
@@ -7146,66 +7131,26 @@ void net_udp_send_pdata()
 {
 	if(is_observer()) { return; }
 
-	ubyte buf[UPID_PDATA_U_SIZE];
-	int len = 0, i = 0;
-
-	if (!(Game_mode&GM_NETWORK) || UDP_Socket[0] == -1)
-		return;
-	if (Players[Player_num].connected != CONNECT_PLAYING)
-		return;
-
-	current_pdata = (current_pdata + 1) % MAX_LOSS_BUFFER; 
-
-	memset(&buf, 0, sizeof(UDP_frame_info));
+	android_net_udp_send_p2p_reattempt_direct(netgame_token, Player_num,
+		&Netgame.players[connect_to_player].protocol.udp.addr, to_player,
+		net_udp_send_to_player_direct);
 	
 	buf[len] = UPID_PDATA;										len++;
 	PUT_INTEL_INT(buf + len, netgame_token);					len += 4; 
-	buf[len] = Player_num;										len++;
-	buf[len] = Players[Player_num].connected;							len++;
-
-	if(Netgame.RetroProtocol) 
-	{
-		object* player = Objects+Players[Player_num].objnum;
-
-		PUT_INTEL_INT(buf + len, player->orient.rvec.x); 	len += 4; 
-		PUT_INTEL_INT(buf + len, player->orient.rvec.y); 	len += 4; 
-		PUT_INTEL_INT(buf + len, player->orient.rvec.z); 	len += 4; 
-		PUT_INTEL_INT(buf + len, player->orient.uvec.x); 	len += 4; 
-		PUT_INTEL_INT(buf + len, player->orient.uvec.y); 	len += 4; 
-		PUT_INTEL_INT(buf + len, player->orient.uvec.z); 	len += 4; 
-		PUT_INTEL_INT(buf + len, player->orient.fvec.x); 	len += 4; 
-		PUT_INTEL_INT(buf + len, player->orient.fvec.y); 	len += 4; 
-		PUT_INTEL_INT(buf + len, player->orient.fvec.z); 	len += 4; 		
-		PUT_INTEL_INT(buf+len, player->pos.x);					len += 4;
-		PUT_INTEL_INT(buf+len, player->pos.y);					len += 4;
-		PUT_INTEL_INT(buf+len, player->pos.z);					len += 4;
-		PUT_INTEL_INT(buf+len, player->mtype.phys_info.velocity.x);					len += 4;
-		PUT_INTEL_INT(buf+len, player->mtype.phys_info.velocity.y);					len += 4;
-		PUT_INTEL_INT(buf+len, player->mtype.phys_info.velocity.z);					len += 4;
-		PUT_INTEL_INT(buf+len, player->mtype.phys_info.rotvel.x);				len += 4;
-		PUT_INTEL_INT(buf+len, player->mtype.phys_info.rotvel.y);				len += 4;
-		PUT_INTEL_INT(buf+len, player->mtype.phys_info.rotvel.z);				len += 4; 		
+	android_net_udp_process_p2p_reattempt_direct(data, Player_num,
+		multi_who_is_master(), multi_i_am_master(), MAX_PLAYERS,
+		timer_query(), connection_statuses, net_log_comment,
+		update_address_for_player);
 		buf[len] = current_pdata; len++;
 
 	} else if (Netgame.ShortPackets)
-	{
-		shortpos spp;
-		memset(&spp, 0, sizeof(shortpos));
-		create_shortpos(&spp, Objects+Players[Player_num].objnum, 0);
-		memcpy(buf + len, &spp.bytemat, 9);							len += 9;
-		PUT_INTEL_SHORT(buf+len, spp.xo);							len += 2;
-		PUT_INTEL_SHORT(buf+len, spp.yo);							len += 2;
-		PUT_INTEL_SHORT(buf+len, spp.zo);							len += 2;
-		PUT_INTEL_SHORT(buf+len, spp.segment);							len += 2;
+	android_net_udp_reset_proxy(pnum, multi_who_is_master(), multi_i_am_master(),
+		&connection_statuses[pnum], net_udp_log_reset_proxy_transition);
 		PUT_INTEL_SHORT(buf+len, spp.velx);							len += 2;
 		PUT_INTEL_SHORT(buf+len, spp.vely);							len += 2;
 		PUT_INTEL_SHORT(buf+len, spp.velz);							len += 2; // 23 + 3 = 26
-		buf[len] = current_pdata; len++;
-	}
-	else
-	{
-		quaternionpos qpp;
-		memset(&qpp, 0, sizeof(quaternionpos));
+	android_net_udp_reattempt_direct(pnum, multi_who_is_master(), multi_i_am_master(),
+		&connection_statuses[pnum], timer_query());
 		create_quaternionpos(&qpp, Objects+Players[Player_num].objnum, 0);
 		PUT_INTEL_SHORT(buf+len, qpp.orient.w);							len += 2;
 		PUT_INTEL_SHORT(buf+len, qpp.orient.x);							len += 2;
@@ -7752,11 +7697,6 @@ void net_udp_process_p2p_ping(ubyte *data, struct _sockaddr sender_addr, int dat
 
 		// Restablish direct attempt, if we aren't already doing that
 		if(connection_statuses[from_player].type == CONNT_PROXY) {
-			char comment[100];
-			sprintf(comment, "Received direct ping from proxy player %d connection status %d", from_player, Netgame.players[from_player].connected); 
-			net_log_comment(comment); 
-
-			net_log_comment("Received direct ping on proxy connection, reattempting direct.");
 			reattemptDirect(from_player); 
 		}
 		
@@ -7811,14 +7751,7 @@ void net_udp_process_p2p_pong(ubyte *data, struct _sockaddr sender_addr, int dat
 
 	// If this was direct, update the address!	
 	if(direct_pong) {
-		if(connection_statuses[from_player].type != CONNT_DIRECT) {
-			net_log_comment("Received direct pong, connection upgraded to direct.");
-		}
-
 		connection_statuses[from_player].last_direct_pong = timer_query(); 
-#ifdef __ANDROID__
-		MPDIAG("CONNTYPE[p2p_pong]: P%d %d->DIRECT", from_player, connection_statuses[from_player].type);
-#endif
 		connection_statuses[from_player].type = CONNT_DIRECT;
 
 	    if(memcmp(&Netgame.players[from_player].protocol.udp.addr, &sender_addr, sizeof(struct _sockaddr))) {
@@ -7831,26 +7764,11 @@ void net_udp_process_p2p_pong(ubyte *data, struct _sockaddr sender_addr, int dat
 void update_address_for_player(int pnum, struct _sockaddr new_addr) {
 	if(!multi_i_am_master() && is_observer()) { return; }
 
-	char logcomment[200]; 
-	snprintf(logcomment, 200, "Requested update to address for player %d to %s:%u\n", pnum, 
-		ip_from_sockaddr(new_addr), port_from_sockaddr(new_addr)); 
-	net_log_comment(logcomment); 
-
 	if( (port_from_sockaddr(new_addr) != 0) && // Not null
 	   memcmp(&new_addr,  &Netgame.players[pnum].protocol.udp.addr, sizeof(struct _sockaddr))    // New address
 
 	) {	
-		char logentry[200];
-		snprintf(logentry, 200, "   Updating IP address for player %d from %s:%u", 
-			pnum, ip_from_sockaddr(Netgame.players[pnum].protocol.udp.addr), port_from_sockaddr(Netgame.players[pnum].protocol.udp.addr)); 
-		snprintf(logentry, 200, "   to %s:%u", 
-			ip_from_sockaddr(new_addr), port_from_sockaddr(new_addr)); 		
-		
-		net_log_comment(logentry); 
-
 		memcpy(&Netgame.players[pnum].protocol.udp.addr, &new_addr, sizeof(struct _sockaddr)); 
-	} else {
-		net_log_comment("   IP address not updated (old or null)."); 
 	}
 }
 
@@ -7867,14 +7785,8 @@ void resetProxy(int pnum) {
 }
 
 void reattemptDirect(int pnum) {
-	char comment_string[100];
-	sprintf(comment_string, "reattemptDirect: %d", pnum); 
-	net_log_comment(comment_string); 
-
 	if(pnum == multi_who_is_master()) return;
 	if(multi_i_am_master()) return;
-
-	net_log_comment("   (reset)"); 
 
 	connection_statuses[pnum].holepunch_attempts = 0;
 	connection_statuses[pnum].last_direct_pong = timer_query(); 
