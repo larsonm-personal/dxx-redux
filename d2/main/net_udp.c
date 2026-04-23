@@ -1161,10 +1161,6 @@ int net_udp_game_connect(direct_join *dj)
 	
 	if (timer_query() >= dj->last_time + F1_0)
 	{
-		{
-			struct sockaddr_in *ain = (struct sockaddr_in *)&dj->host_addr;
-			MPDIAG("game_connect: sending GAME_INFO_REQ to %s:%d (phase=%d valid=%d sock=%d)\n", inet_ntoa(ain->sin_addr), (int)SWAPSHORT(ain->sin_port), dj->connecting, Netgame.protocol.udp.valid, UDP_Socket[0]);
-		}
 		net_udp_request_game_info(dj->host_addr, 0);
 		dj->last_time = timer_query();
 	}
@@ -1174,12 +1170,9 @@ int net_udp_game_connect(direct_join *dj)
 	if (Netgame.protocol.udp.valid != 1)
 		return 0;		// still trying to connect
 
-	MPDIAG("game_connect: got valid GAME_INFO response, phase=%d game='%s' players=%d/%d status=%d\n", dj->connecting, Netgame.game_name, Netgame.numconnected, Netgame.max_numplayers, Netgame.game_status);
-
 	if (dj->connecting == 1)
 	{
 		int show_info_result = net_udp_show_game_info();
-		MPDIAG("game_connect: show_game_info returned %d\n", show_info_result);
 		if (!show_info_result) // show info menu and check if we join
 		{
 			dj->connecting = 0;
@@ -1197,14 +1190,11 @@ int net_udp_game_connect(direct_join *dj)
 			} else {
 				dj->join_as_obs = 0;
 			}
-
-			MPDIAG("game_connect: re-requesting game info (phase 2) obs=%d\n", dj->join_as_obs);
 			return 0;
 		}
 	}
 		
 	dj->connecting = 0;
-	MPDIAG("game_connect: proceeding to do_join_game obs=%d\n", dj->join_as_obs);
 
 	return net_udp_do_join_game(dj->join_as_obs);
 }
@@ -1247,7 +1237,6 @@ static int manual_join_game_handler(newmenu *menu, d_event *event, direct_join *
 		{
 			int sockres = -1;
 
-			MPDIAG("manual_join: addr='%s' port='%s' myport='%s'\n", dj->addrbuf, dj->portbuf, UDP_MyPort);
 			net_udp_init(); // yes, redundant call but since the menu does not know any better it would allow any IP entry as long as Netgame-entry looks okay... my head hurts...
 			
 			if ((atoi(UDP_MyPort)) <= 1024 ||(atoi(UDP_MyPort)) > 65535)
@@ -1259,7 +1248,6 @@ static int manual_join_game_handler(newmenu *menu, d_event *event, direct_join *
 			}
 			
 			sockres = udp_open_socket(0, atoi(UDP_MyPort));
-			MPDIAG("manual_join: udp_open_socket(%s) = %d, fd=%d\n", UDP_MyPort, sockres, UDP_Socket[0]);
 			
 			if (sockres != 0)
 			{
@@ -1275,10 +1263,6 @@ static int manual_join_game_handler(newmenu *menu, d_event *event, direct_join *
 			}
 			else
 			{
-				{
-					struct sockaddr_in *ain = (struct sockaddr_in *)&dj->host_addr;
-					MPDIAG("manual_join: resolved to %s:%d\n", inet_ntoa(ain->sin_addr), (int)SWAPSHORT(ain->sin_port));
-				}
 				multi_new_game();
 				net_udp_reset_connection_statuses();
 				N_players = 0;
@@ -1290,7 +1274,6 @@ static int manual_join_game_handler(newmenu *menu, d_event *event, direct_join *
 				
 				dj->connecting = 1;
 				items[6].text = connecting_txt;
-				MPDIAG("manual_join: connecting started, will send GAME_INFO_REQ every 1s\n");
 				return 1;
 			}
 
@@ -1984,15 +1967,9 @@ net_udp_new_player(UDP_sequence_packet *their)
 	update_address_for_player(pnum, their->player.protocol.udp.addr);
 
 	if(multi_i_am_master()) {
-#ifdef __ANDROID__
-		MPDIAG("CONNTYPE[new_player]: P%d %d->DIRECT (master)", pnum, connection_statuses[pnum].type);
-#endif
 		connection_statuses[pnum].type = CONNT_DIRECT;
 		Netgame.players[pnum].ping = 0; 
 	} else {
-#ifdef __ANDROID__
-		MPDIAG("CONNTYPE[new_player]: P%d %d->PROXY (client)", pnum, connection_statuses[pnum].type);
-#endif
 		connection_statuses[pnum].type = CONNT_PROXY;
 		connection_statuses[pnum].proxy_through = 0; // host
 		connection_statuses[pnum].holepunch_attempts = 0;
@@ -2043,9 +2020,6 @@ void net_udp_welcome_player(UDP_sequence_packet *their)
 	// Add a player to a game already in progress
 	int player_num;
 	int i;
-
-	MPDIAG("welcome_player: '%s' connected=%d Current_level_num=%d N_players=%d\n",
-	       their->player.callsign, their->player.connected, Current_level_num, N_players);
 
 	WaitForRefuseAnswer=0;
 
@@ -2218,7 +2192,6 @@ void net_udp_welcome_player(UDP_sequence_packet *their)
 		// (engine-level CONNT_PROXY is for routing through an intermediary
 		// player, which is unrelated to the Kotlin LocalhostProxy)
 		if (multi_i_am_master()) {
-			MPDIAG("CONNTYPE[welcome_reconnect]: P%d %d->DIRECT (master)", player_num, connection_statuses[player_num].type);
 			connection_statuses[player_num].type = CONNT_DIRECT;
 		}
 #endif
@@ -2531,26 +2504,11 @@ int net_udp_verify_objects(int remote, int local)
 		return(2);
 	}
 
-	// Detailed type census for debugging rejoin sync failures
-	int type_counts[16] = {0};
-	int none_count = 0;
 	for (i = 0; i <= Highest_object_index; i++)
 	{
-		int t = Objects[i].type;
-		if (t == OBJ_NONE) none_count++;
-		else if (t >= 0 && t < 16) type_counts[t]++;
 		if ((Objects[i].type == OBJ_PLAYER) || (Objects[i].type == OBJ_GHOST))
 			nplayers++;
 	}
-	MPDIAG("verify_objects: type_census NONE=%d ROBOT=%d HOSTAGE=%d PLAYER=%d POWERUP=%d CNTRLCEN=%d GHOST=%d COOP=%d other=%d\n",
-	       none_count, type_counts[OBJ_ROBOT], type_counts[OBJ_HOSTAGE], type_counts[OBJ_PLAYER],
-	       type_counts[OBJ_POWERUP], type_counts[OBJ_CNTRLCEN], type_counts[OBJ_GHOST], type_counts[OBJ_COOP],
-	       type_counts[OBJ_WALL] + type_counts[OBJ_FIREBALL] + type_counts[OBJ_WEAPON] +
-	       type_counts[OBJ_CAMERA] + type_counts[OBJ_DEBRIS] + type_counts[OBJ_FLARE] +
-	       type_counts[OBJ_CLUTTER] + type_counts[OBJ_LIGHT] + type_counts[OBJ_MARKER]);
-
-	MPDIAG("verify_objects: remote=%d local=%d nplayers=%d max_numplayers=%d Highest_object_index=%d\n",
-	       remote, local, nplayers, Netgame.max_numplayers, Highest_object_index);
 
 	if (Netgame.max_numplayers<=nplayers)
 		return(0);
@@ -2797,7 +2755,6 @@ void net_udp_add_player(UDP_sequence_packet *p)
 	{
 		if ( !memcmp( (struct _sockaddr *)&Netgame.players[i].protocol.udp.addr, (struct _sockaddr *)&p->player.protocol.udp.addr, sizeof(struct _sockaddr)))
 		{
-			MPDIAG("add_player '%s' already got (slot %d)\n", p->player.callsign, i);
 			Netgame.players[i].LastPacketTime = timer_query();
 			if(Netgame.RetroProtocol && (! multi_i_am_master()) && (! multi_who_is_master() == i)) {
 				//memcpy(&Netgame.players[i].protocol.udp.addr, &p->player.protocol.udp.addr, sizeof(struct _sockaddr)); 
@@ -2872,7 +2829,6 @@ void net_udp_add_player(UDP_sequence_packet *p)
 
 	N_players++;
 	Netgame.numplayers = N_players;
-	MPDIAG("add_player '%s' added as player %d (N_players now %d)\n", p->player.callsign, N_players-1, N_players);
 
 	if(Netgame.RetroProtocol && (! multi_i_am_master()) && (! multi_who_is_master() == N_players)) {
 		//memcpy(&Netgame.players[i].protocol.udp.addr, &p->player.protocol.udp.addr, sizeof(struct _sockaddr)); 
@@ -3596,9 +3552,6 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 			if(my_token == my_player_token || is_observer()) {
 				netgame_token = GET_INTEL_INT(data + len); len += 4;
 				con_printf(CON_DEBUG, "Set token %d in net_udp_process_game_info\n", netgame_token);
-#ifdef __ANDROID__
-				MPDIAG("sync_token: set netgame_token=%u (from SYNC, my_player_token=%u)", netgame_token, my_player_token);
-#endif
 			} else {
 				char err_mess[200];
 				snprintf(err_mess, 200, "player token incorrect; received %u, expected %u",  my_token, my_player_token);
@@ -3613,9 +3566,6 @@ int net_udp_process_game_info(ubyte *data, int data_len, struct _sockaddr game_a
 		if (data[0] == UPID_GAME_INFO) {
 			netgame_token = my_player_token = GET_INTEL_INT(data + len); len += 4;
 			con_printf(CON_DEBUG, "Set token %d for UPID_GAME_INFO in net_udp_process_game_info\n", netgame_token);
-#ifdef __ANDROID__
-			MPDIAG("game_info_token: set netgame_token=%u my_player_token=%u (from GAME_INFO)", netgame_token, my_player_token);
-#endif
 		}
 
 		if (len > data_len) {
@@ -3692,7 +3642,6 @@ void net_udp_process_request(UDP_sequence_packet *their)
 		{
 			Players[i].connected = CONNECT_PLAYING;
 			Netgame.players[i].LastPacketTime = timer_query();
-			MPDIAG("process_request: player %d '%s' checked in\n", i, their->player.callsign);
 			found = 1;
 			break;
 		}
@@ -3760,15 +3709,10 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 
 		case UPID_GAME_INFO_REQ:
 		{
-			struct sockaddr_in *ain = (struct sockaddr_in *)&sender_addr;
-			MPDIAG("rx GAME_INFO_REQ from %s:%d, master=%d i_am_master=%d",
-			       inet_ntoa(ain->sin_addr), (int)SWAPSHORT(ain->sin_port),
-			       multi_who_is_master(), multi_i_am_master());
 			result = net_udp_check_game_info_request(data, 0);
 			if (result == -1)
 				net_udp_send_version_deny(sender_addr);
 			else if (result == 1) {
-				MPDIAG("tx GAME_INFO to %s:%d", inet_ntoa(ain->sin_addr), (int)SWAPSHORT(ain->sin_port));
 				net_udp_send_game_info(sender_addr, UPID_GAME_INFO, 0, 0);
 			} else
 				MPDIAG("GAME_INFO_REQ check returned %d (bad request ID?)", result);
@@ -3777,8 +3721,6 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 		
 		case UPID_GAME_INFO:
 		{
-			struct sockaddr_in *ain = (struct sockaddr_in *)&sender_addr;
-			MPDIAG("rx UPID_GAME_INFO from %s:%d len=%d\n", inet_ntoa(ain->sin_addr), (int)SWAPSHORT(ain->sin_port), length);
 			net_udp_process_game_info(data, length, sender_addr, 0, 0);
 			break;
 		}
@@ -3803,7 +3745,6 @@ void net_udp_process_packet(ubyte *data, struct _sockaddr sender_addr, int lengt
 
 		case UPID_REQUEST:
 			net_udp_receive_sequence_packet(data, &their, sender_addr);
-			MPDIAG("UPID_REQUEST from '%s' Network_status=%d N_players=%d\n", their.player.callsign, Network_status, N_players);
 			if (Network_status == NETSTAT_STARTING) 
 			{
 				// Someone wants to join our game!
@@ -5697,8 +5638,6 @@ int net_udp_auto_join(const char *host_addr, int host_port, int my_port)
 	/* android port: check exit button during the blocking poll loop */
 	extern volatile int android_force_quit;
 
-	MPDIAG("auto_join: socket=%d bind_loopback=%d", UDP_Socket[0], udp_bind_loopback);
-
 	/* Poll for game info -- 30 second timeout */
 	while (timer_query() < start_time + F1_0 * 30) {
 		timer_update();
@@ -5715,8 +5654,6 @@ int net_udp_auto_join(const char *host_addr, int host_port, int my_port)
 		if (timer_query() >= last_req + F1_0) {
 			net_udp_request_game_info(host, 0);
 			req_count++;
-			if (req_count <= 3 || (req_count % 10) == 0)
-				MPDIAG("auto_join: sent req #%d", req_count);
 			last_req = timer_query();
 		}
 
@@ -5730,7 +5667,6 @@ int net_udp_auto_join(const char *host_addr, int host_port, int my_port)
 		}
 
 		if (Netgame.protocol.udp.valid == 1) {
-			MPDIAG("auto_join: got valid game info after %d reqs, joining", req_count);
 			/* net_udp_process_game_info overwrites players[0].addr with the
 			 * sender of the GAME_INFO reply. Inside an emulator guest this
 			 * is a SLIRP NAT-mapped address, not the relay/proxy address
@@ -5767,11 +5703,6 @@ int net_udp_auto_host(int my_port, const char *mission, int mode,
                       int difficulty, int max_players, int level_num,
                       int coop_qol)
 {
-	char logbuf[160];
-	snprintf(logbuf, sizeof(logbuf), "auto_host: port=%d mission=%s mode=%d max=%d level=%d qol=%d",
-	         my_port, mission, mode, max_players, level_num, coop_qol);
-	net_log_comment(logbuf);
-
 	multi_protocol = MULTI_PROTO_UDP;
 	net_udp_init();
 	net_udp_reset_connection_statuses();
@@ -5811,10 +5742,6 @@ int net_udp_auto_host(int my_port, const char *mission, int mode,
 int net_udp_start_game(void)
 {
 	int i;
-
-#ifdef __ANDROID__ /* android port: LAN debug logging */
-	net_log_comment("start_game: opening sockets and entering select_players");
-#endif
 
 	i = udp_open_socket(0, atoi(UDP_MyPort));
 
@@ -5952,7 +5879,6 @@ int net_udp_request_poll( newmenu *menu, d_event *event, void *userdata )
 
 	if (num_ready == N_players) // All players have checked in or are disconnected
 	{
-		MPDIAG("request_poll: all %d players ready\n", N_players);
 		return -2;
 	}
 	
@@ -5990,8 +5916,6 @@ int net_udp_wait_for_requests(void)
 			Netgame.players[i].LastPacketTime = timer_query();
 		}
 	}
-	MPDIAG("wait_for_requests: N_players=%d, reset timers, player states: p0=%d p1=%d\n",
-		N_players, Players[0].connected, (N_players > 1 ? Players[1].connected : -1));
 #ifdef __ANDROID__
 	snprintf(logbuf, sizeof(logbuf), "[ANDROID] wait_for_requests: reset player states for %d players", N_players);
 	net_log_comment(logbuf);
@@ -6040,7 +5964,6 @@ net_udp_level_sync(void)
 	net_udp_noloss_init_mdata_queue();
 
 	net_udp_flush(); // Flush any old packets
-	MPDIAG("level_sync: N_players=%d master=%d Network_status=%d\n", N_players, multi_i_am_master(), Network_status);
 	if (N_players == 0)
 	{
 		result = net_udp_wait_for_sync();
@@ -6048,12 +5971,10 @@ net_udp_level_sync(void)
 	else if (multi_i_am_master())
 	{
 		result = net_udp_wait_for_requests();
-		MPDIAG("level_sync: wait_for_requests returned %d\n", result);
 		if (!result)
 		{
 			result = net_udp_send_sync();
 		}
-		MPDIAG("level_sync: send_sync returned %d\n", result);
 	}
 	else
 	{

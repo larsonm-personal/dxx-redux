@@ -17,6 +17,7 @@
 #include <SDL.h>
 #include <string.h>
 #include <android/keycodes.h>
+#include "android_log.h"
 #include "fix.h"
 #include "gr.h"
 #include "window.h"
@@ -400,6 +401,20 @@ Java_com_dxxredux_app_MainActivity_nativeKeyEvent(JNIEnv *env, jobject thiz,
                                                   jint unicodeChar)
 {
 	SDLKey sym = android_to_sdlk(androidKeyCode);
+	if (androidKeyCode == AKEYCODE_DPAD_CENTER ||
+	    androidKeyCode == AKEYCODE_ENTER ||
+	    androidKeyCode == AKEYCODE_BACK ||
+	    androidKeyCode == AKEYCODE_DPAD_UP ||
+	    androidKeyCode == AKEYCODE_DPAD_DOWN ||
+	    androidKeyCode == AKEYCODE_DPAD_LEFT ||
+	    androidKeyCode == AKEYCODE_DPAD_RIGHT) {
+		debug_log(DLOG_GAME,
+		          "[AKEY] action=%d akey=%d sdl=%d unicode=%d",
+		          action,
+		          androidKeyCode,
+		          sym,
+		          unicodeChar);
+	}
 	if (sym == SDLK_UNKNOWN)
 		return;
 
@@ -1036,6 +1051,12 @@ Java_com_dxxredux_app_MainActivity_nativeSetKeyboardHeight(JNIEnv *env, jobject 
 {
 	LOGI("nativeSetKeyboardHeight: heightPx=%d screenHeightPx=%d (was %d/%d)",
 	     heightPx, screenHeightPx, g_keyboard_height_native, g_screen_height_native);
+	debug_log(DLOG_GAME,
+	          "[KB] nativeSetKeyboardHeight height=%d screen=%d prev=%d/%d",
+	          heightPx,
+	          screenHeightPx,
+	          g_keyboard_height_native,
+	          g_screen_height_native);
 	g_keyboard_height_native = heightPx;
 	g_screen_height_native = screenHeightPx;
 }
@@ -1064,6 +1085,7 @@ int android_is_keyboard_shown(void)
 void android_show_keyboard(int numeric, int field_y)
 {
 	LOGI("android_show_keyboard(numeric=%d, field_y=%d)", numeric, field_y);
+	debug_log(DLOG_GAME, "[KB] android_show_keyboard numeric=%d field_y=%d", numeric, field_y);
 	if (!g_jvm || !g_activity) return;
 
 	g_active_input_field_y = field_y;
@@ -1088,6 +1110,7 @@ void android_show_keyboard(int numeric, int field_y)
 
 void android_hide_keyboard(void)
 {
+	debug_log(DLOG_GAME, "[KB] android_hide_keyboard");
 	if (!g_jvm || !g_activity) return;
 
 	JNIEnv *env;

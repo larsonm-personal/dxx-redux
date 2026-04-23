@@ -47,6 +47,14 @@ paths.
 - The previously queued PDATA RX or TX counter cleanup turned out not to be a logging-only slice on the live branch because that state still drives `Netgame.players[player].loss`, so it stayed out of this pass
 - The next follow-up trim instead removed the remaining success-path `MPDIAG(...)` chatter in `read_sync` and `send_sync`, including the `CONNTYPE[...]` sync-transition logs, while keeping the actual connection-state writes plus warning and failure paths intact
 - The next follow-up trim removed the remaining success-path object-sync `MPDIAG(...)` chatter in `send_objects` and `read_object_packet`, while keeping truncated-packet checks, overwrite warnings, retry logs, and sync-failure diagnostics intact
+- The next follow-up trim removed the remaining success-path `verify_objects` `MPDIAG(...)` lines while keeping the `FAIL packet_loss` and `FAIL missing_players` diagnostics intact
+- The next follow-up trim removed the remaining success-path `add_player ... added as player` `MPDIAG(...)` line while keeping the duplicate-callsign dump diagnostics intact
+- The next follow-up trim removed a larger join-handshake bundle of success-path `MPDIAG(...)` lines in `net_udp_new_player`, `net_udp_welcome_player`, `net_udp_add_player`, and `net_udp_process_request` while keeping the duplicate-callsign dump, reconnect rejection, and `NO MATCH` diagnostics intact
+- The next follow-up trim removed the remaining `game_connect` and `manual_join` success-path `MPDIAG(...)` chatter while keeping timeout, version-mismatch, illegal-port, socket-failure, DNS-failure, and explicit ESC-cancel diagnostics intact
+- The next follow-up trim removed the remaining success-path `sync_token` and `game_info_token` `MPDIAG(...)` lines while keeping the `sync_token: MISMATCH ...` diagnostics intact
+- The next follow-up trim removed the remaining packet-dispatch success-path `MPDIAG(...)` chatter for `rx GAME_INFO_REQ`, `tx GAME_INFO`, `rx UPID_GAME_INFO`, and `UPID_REQUEST` while keeping the `GAME_INFO_REQ check returned ...` diagnostics intact
+- The next follow-up trim removed the remaining `request_poll`, `wait_for_requests`, and `level_sync` success-path `MPDIAG(...)` summaries while keeping the abort, disconnect, and failure diagnostics intact
+- The next follow-up trim removed the remaining Android auto-flow success-path chatter in `auto_join`, `auto_host`, and `net_udp_start_game`, including request-progress and join-success `MPDIAG(...)` lines plus entry `net_log_comment(...)` lines, while keeping failed-open, failed-resolve, exit-button abort, version-mismatch, timeout, mission-not-found, and Player_num-adjustment diagnostics intact
 
 ## Validation
 
@@ -89,7 +97,43 @@ paths.
 - `android\run-code-quality.ps1 -Fix`
 - `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
 - `run-windows-build.ps1 -Target both`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- `android\stop-stale-formatters.ps1`
+- `android\run-code-quality.ps1 -Fix`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- `run-windows-build.ps1 -Target both`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- `android\stop-stale-formatters.ps1`
+- `android\run-code-quality.ps1 -Fix`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- `run-windows-build.ps1 -Target both`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- `android\stop-stale-formatters.ps1`
+- `android\run-code-quality.ps1 -Fix`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- `run-windows-build.ps1 -Target both`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- `android\stop-stale-formatters.ps1`
+- `android\run-code-quality.ps1 -Fix`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- `run-windows-build.ps1 -Target both`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- `android\stop-stale-formatters.ps1`
+- `android\run-code-quality.ps1 -Fix`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- `run-windows-build.ps1 -Target both`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- `android\stop-stale-formatters.ps1` or fallback direct stale-formatter process query when the helper hits null `CommandLine` entries
+- `android\run-code-quality.ps1 -Fix`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- `run-windows-build.ps1 -Target both`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- fallback direct stale-formatter process query for `run-code-quality.ps1|clang-format|ktlint|PSScriptAnalyzer|shfmt|shellcheck`
+- `android\run-code-quality.ps1 -Fix`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- `run-windows-build.ps1 -Target both`
 
 ## Next sub-tranche
 
-- Next narrow 3.2 step: trim the remaining success-path `verify_objects` `MPDIAG(...)` lines while keeping the `FAIL packet_loss` and `FAIL missing_players` diagnostics intact, then revalidate before touching broader log-wrapper work
+- Next narrow 3.2 step: trim the remaining direct-connection recovery success-path chatter in `net_udp_timeout_check`, `net_udp_process_p2p_ping`, `net_udp_process_p2p_pong`, and `update_address_for_player` while keeping the actual connection-state and address mutations plus pong-timeout, disconnect, and proxy-fallback diagnostics intact, then revalidate before touching broader log-wrapper work

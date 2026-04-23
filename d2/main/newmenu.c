@@ -61,6 +61,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #include "gamepal.h"
 
+#ifdef __ANDROID__
+#include "android_log.h"
+#endif
+
 #ifdef OGL
 #include "ogl_init.h"
 #endif
@@ -101,6 +105,40 @@ struct newmenu
 	int				*rval;			// Pointer to return value (for polling newmenus)
 	void			*userdata;		// For whatever - like with window system
 };
+
+#ifdef __ANDROID__
+static void android_log_menu_keyboard_state(newmenu *menu, int visible_y, int needs_kb, int keyboard_shown)
+{
+	static int last_citem = -2, last_type = -2, last_group = -2;
+	static int last_needs = -2, last_shown = -2, last_mouse = -2;
+	int type;
+	if (menu->citem < 0 || menu->citem >= menu->nitems)
+		return;
+	type = menu->items[menu->citem].type;
+	if (type != NM_TYPE_INPUT && type != NM_TYPE_INPUT_MENU)
+		return;
+	if (menu->citem == last_citem && type == last_type &&
+	    menu->items[menu->citem].group == last_group &&
+	    needs_kb == last_needs && keyboard_shown == last_shown &&
+	    menu->mouse_state == last_mouse)
+		return;
+	debug_log(DLOG_GAME,
+	          "[KBMENU] citem=%d type=%d group=%d needs=%d shown=%d mouse=%d y=%d",
+	          menu->citem,
+	          type,
+	          menu->items[menu->citem].group,
+	          needs_kb,
+	          keyboard_shown,
+	          menu->mouse_state,
+	          visible_y);
+	last_citem = menu->citem;
+	last_type = type;
+	last_group = menu->items[menu->citem].group;
+	last_needs = needs_kb;
+	last_shown = keyboard_shown;
+	last_mouse = menu->mouse_state;
+}
+#endif
 
 grs_bitmap nm_background, nm_background1;
 grs_bitmap *nm_background_sub = NULL;
@@ -1586,18 +1624,20 @@ int newmenu_draw(window *wind, newmenu *menu)
 			extern void android_show_keyboard(int numeric, int field_y);
 			extern void android_hide_keyboard(void);
 			extern int android_is_keyboard_shown(void);
+			int keyboard_shown = android_is_keyboard_shown();
 			int needs_kb = (menu->items[menu->citem].type == NM_TYPE_INPUT ||
 			                (menu->items[menu->citem].type == NM_TYPE_INPUT_MENU && menu->items[menu->citem].group == 1));
+			android_log_menu_keyboard_state(menu, visible_y, needs_kb, keyboard_shown);
 			// Don't open keyboard while finger is down (drag in progress) --
 			// dragging over a text-input item would pop the keyboard, shift
 			// the blit offset, and cause selection oscillation.
-			if (needs_kb && !android_is_keyboard_shown() && !menu->mouse_state) {
+			if (needs_kb && !keyboard_shown && !menu->mouse_state) {
 				int numeric = 0;
 				const char *p = Newmenu_allowed_chars;
 				if (p && p[0] == '0' && p[1] == '9' && p[2] == '\0')
 					numeric = 1;
 				android_show_keyboard(numeric, visible_y);
-			} else if (!needs_kb && android_is_keyboard_shown()) {
+			} else if (!needs_kb && keyboard_shown) {
 				android_hide_keyboard();
 			}
 		}

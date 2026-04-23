@@ -20,6 +20,12 @@ Status:
 - Controller-originated IME navigation now also accepts left-stick movement in addition to HAT navigation
 - `AKEYCODE_DPAD_CENTER` now maps to engine Enter in `android/app/src/main/cpp/android_input.c`
 - Initially selected Android `NM_TYPE_INPUT_MENU` items now enter edit mode during menu creation in both `d1/main/newmenu.c` and `d2/main/newmenu.c`
+- Temporary keyboard-debug logging is now in place in `MainActivity.kt`, `android/app/src/main/cpp/android_input.c`, `d1/main/newmenu.c`, and `d2/main/newmenu.c`
+- Exported TV logs confirmed that the keyboard demand/show path and DPAD reroute path are working, while `nativeSetKeyboardHeight` still stayed at `height=0` on TV
+- `MainActivity.kt` now falls back from `Type.ime()` to bottom occlusion from `getWindowVisibleDisplayFrame()` when TV keyboards leave the IME inset at zero
+- Android compile validation passed after the logging pass and after scoped code quality
+- Android compile validation also passed before and after the IME height fallback change and its scoped code-quality run
+- Windows host sanity build passed after the mirrored `d1/` and `d2/` menu changes
 - Shield/phone on-device verification is still pending
 
 Why first:
@@ -36,14 +42,15 @@ Current anchors:
 
 Current hypothesis:
 - The remaining controller-only failure was likely split between missing directional synthesis for stick-driven navigation and a missing `DPAD_CENTER` native key translation for remote select
-- The missing slide-up behavior may be secondary: the IME might not be reporting a non-zero inset on TV, or the keyboard could be on-screen without focusable navigation because the activity keeps eating controller events
+- The exported TV logs now show the slide-up problem more directly: the keyboard is shown and the IME reroute path reports `handled=true`, but the TV build kept reporting zero IME height, so the menu-shift logic never received a non-zero keyboard height
+- The new local fix is a visible-frame fallback for IME height on TVs where `Type.ime()` remains zero
 
 Next steps:
 - Re-test on both phone keyboard and Shield TV keyboard to confirm DPAD, HAT, left stick, and gamepad A/B navigation all reach the IME
 - Re-test TV remote select in in-game menus now that `DPAD_CENTER` maps to Enter on the native side
 - Confirm that menus opening with an initially selected text field now show the keyboard without a second confirm press
-- Verify whether Shield now reports a non-zero IME inset and shifts the game view the same way as phone keyboards
-- Add temporary `DXX-Keyboard` logs only if the on-device retest still shows missing navigation or missing height updates
+- Verify whether Shield now reports a non-zero fallback-derived keyboard height and shifts the game view the same way as phone keyboards
+- If the issue still reproduces, export the debug logs and look for `[KB]`, `[AKEY]`, and `[KBMENU]` markers to locate which handoff is failing
 
 ### 2. MIDI preview slider Up/Down regression
 
@@ -119,8 +126,10 @@ Next steps:
 ### tranche A
 
 - Completed code changes for TV keyboard controller routing
+- Completed temporary logging instrumentation for the TV keyboard path in Kotlin, JNI, and D1/D2 menu code
 - Completed code changes for the MIDI preview slider Up/Down regression
-- Pending on-device verification for both fixes
+- Pending on-device verification and log capture for the keyboard path
+- Pending on-device verification for the MIDI preview slider fix
 
 ### tranche B
 
