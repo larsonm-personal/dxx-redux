@@ -112,7 +112,7 @@ Pause and game-menu (save/load/quit launched from in-game) draw through menu/box
 
 ---
 
-## 5. [ ] Controller-on-TV: B sticks and fires all missiles in one go (may be stale)
+## 5. [in progress] Controller-on-TV: B sticks and fires all missiles in one go (may be stale)
 
 ### Scope
 - Default binding has B = secondary fire. Pressing B once observed to dump the entire missile pile.
@@ -123,12 +123,18 @@ Pause and game-menu (save/load/quit launched from in-game) draw through menu/box
 - [android/app/src/main/cpp/jni_main.c](android/app/src/main/cpp/jni_main.c) joy button injection (search for `joy_button_state` / `inject_button`).
 - Repo memory: `/memories/repo/android-tv-keyboard-final-routing.md` and `android-tv-dpad-center-and-input-menu.md`.
 
-### Suspected cause
-The IME-reroute path and the gamepad-dispatch path both fire ACTION_DOWN for `BUTTON_B`, but only one path delivers the matching ACTION_UP. The button latches "down" in `joy_button_state[]` and the engine treats it as auto-repeat secondary fire until something clears it.
+### Cause (updated after code study)
+The current keyboard-active path now consumes `BUTTON_B` locally, so the more likely remaining fault is the plain gameplay path: `onKeyDown()` forwarded every controller button down edge straight to the mixer and `nativeJoystickButton()` with no guard against repeated `ACTION_DOWN`s before the matching `ACTION_UP`. On Android TV, that can turn one held/brief press into multiple native button-down events.
 
 ### Planned change (gated on reproduction)
 - First, reproduce on the current build. The bug may already be gone after the recent IME flag/dispatch-depth work; if it does not reproduce in 3 attempts, mark as `[likely-fixed]` and close once a regression script exists.
 - If it reproduces: add a `inject_joy_button(idx, down)` log line on every state edge (debug build only, DLOG_GAME) so the doubled-DOWN or missing-UP shows up in the debug log, then patch the offending path so each physical event yields exactly one DOWN/UP pair.
+
+### Current status
+- Landed a Kotlin-side `GamepadButtonEdgeTracker` and wired `MainActivity.kt` to suppress duplicate controller down edges until the corresponding up edge arrives.
+- Cleared the tracker on `onStop()` so a backgrounded activity does not keep stale latched button state.
+- Added `GamepadButtonEdgeTrackerTest` and passed `:app:testDebugUnitTest --tests com.dxxredux.app.GamepadButtonEdgeTrackerTest`.
+- Still needs on-device verification that a quick TV `B` press now fires at most one secondary shot unless the button is intentionally held.
 
 ### Test plan
 - TV with virtual gamepad: in level, press and release B once. Inspect introspection JSON for `player.secondary_ammo[*]` to confirm only one missile fired.
@@ -163,7 +169,7 @@ On TV, `InputDevice.getDeviceIds()` returns multiple devices including the syste
 
 ---
 
-## 7. [ ] Mod loading near full storage crashes with no crash dump
+## 7. [in progress] Mod loading near full storage crashes with no crash dump
 
 ### Scope
 - Two sub-items per the bug: (a) get kotlin/native crash dumps in this case, (b) check free space proactively.
@@ -174,9 +180,16 @@ On TV, `InputDevice.getDeviceIds()` returns multiple devices including the syste
 - xCrash integration -- repo memory `/memories/repo/android-xcrash-tombstone-layout.md`.
 
 ### Planned change
-- Add a `FreeSpace` helper using `StatFs(context.filesDir.path)` and a `requireFreeSpace(needed)` that throws a typed exception with the deficit. Call it before every extraction-into-game-data loop with a conservative estimate (sum of compressed sizes * 2 + 50 MiB headroom).
-- Show a launcher dialog ("Not enough space: needs N MiB free, have M MiB") instead of crashing.
-- For the missing crash dump: confirm xCrash is initialized for SetupActivity (not just MainActivity) and that ANR/Java handlers are enabled. Add a wrapping try/catch around the extraction worker that logs to DLOG_GAME and writes a one-line file `last_extract_error.txt` so post-mortem doesn't require a tombstone.
+- Add a shared storage guard using `StatFs` plus URI-size probing, and call it before launcher-side writes into `filesDir/tmp`, `mods/`, and final game-data directories.
+- Surface low-space failures as user-visible import errors instead of letting the write path crash mid-stream.
+- Keep xCrash as the crash-handler path, but also write `last_extract_error.txt` on handled launcher import failures so post-mortem does not depend on a tombstone when the app does not actually crash.
+
+### Current status
+- Code study confirmed xCrash is already initialized from `DxxReduxApp.attachBaseContext()` for all processes; no extra SetupActivity-specific crash-handler work was needed.
+- Landed `ImportStorageGuard.kt` and used it in `ModManager.importMod()`, `extractZipContents()`, `extract7zContents()`, `downloadFile()`, the generic SAF `importFile()` helper, demo install copies, and the `import_files` command path.
+- Handled failures now record `last_extract_error.txt` via `ImportStorageGuard.recordFailure(...)` and return user-visible error strings where the UI already supports them.
+- Passed `:app:compileDebugKotlin` and `android\run-code-quality.ps1 -Fix`.
+- Still needs emulator/device verification with low free space to confirm the launcher now fails cleanly with a message instead of crashing.
 
 ### Test plan
 - Fill emulator filesystem with `dd if=/dev/zero of=/data/local/tmp/filler bs=1M count=N` until `StatFs` reports < 100 MiB free.

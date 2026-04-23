@@ -1,0 +1,96 @@
+package com.dxxredux.app
+
+import android.content.ContentResolver
+import android.net.Uri
+import android.os.StatFs
+import android.provider.OpenableColumns
+import java.io.File
+import java.io.IOException
+import java.util.Locale
+
+internal class InsufficientStorageException(
+    val requiredFreeBytes: Long,
+    val availableBytes: Long,
+    target: String,
+) : IOException(
+        "Not enough free space for $target " +
+            "(need ${ImportStorageGuard.formatMib(requiredFreeBytes)} free, " +
+            "have ${ImportStorageGuard.formatMib(availableBytes)})",
+    )
+
+internal object ImportStorageGuard {
+    private const val HEADROOM_BYTES = 50L * 1024L * 1024L
+    private const val ERROR_FILE_NAME = "last_extract_error.txt"
+    private const val MIB = 1024L * 1024L
+
+    fun queryUriSizeBytes(
+        contentResolver: ContentResolver,
+        uri: Uri,
+    ): Long? {
+        val queried =
+            try {
+                contentResolver
+                    .query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)
+                    ?.use { cursor ->
+                        if (cursor.moveToFirst() && !cursor.isNull(0)) cursor.getLong(0) else null
+                    }
+            } catch (_: Exception) {
+                null
+            }
+        if (queried != null && queried >= 0L) return queried
+
+        return try {
+            contentResolver.openAssetFileDescriptor(uri, "r")?.use { afd ->
+                afd.length.takeIf { it >= 0L }
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    fun requireFreeSpace(
+        targetDir: File,
+        bytesToWrite: Long,
+        target: String,
+    ) {
+        val requiredFreeBytes = bytesToWrite.coerceAtLeast(0L) + HEADROOM_BYTES
+        val availableBytes = availableBytes(targetDir)
+        if (availableBytes < requiredFreeBytes) {
+            throw InsufficientStorageException(requiredFreeBytes, availableBytes, target)
+        }
+    }
+
+    fun recordFailure(
+        filesDir: File,
+        message: String,
+        throwable: Throwable? = null,
+    ) {
+        try {
+            val errorFile = File(filesDir, ERROR_FILE_NAME)
+            val details =
+                buildString {
+                    append(message)
+                    throwable?.message?.takeIf { it.isNotBlank() }?.let {
+                        append('\n')
+                        append(it)
+                    }
+                }
+            errorFile.writeText(details)
+        } catch (_: Exception) {
+        }
+    }
+
+    fun formatMib(bytes: Long): String {
+        val roundedUp = ((bytes.coerceAtLeast(0L) + MIB - 1L) / MIB).coerceAtLeast(1L)
+        return String.format(Locale.US, "%d MiB", roundedUp)
+    }
+
+    private fun availableBytes(dir: File): Long {
+        var current: File? = dir
+        while (current != null && !current.exists()) {
+            current = current.parentFile
+        }
+        val statPath = current ?: dir
+        return StatFs(statPath.absolutePath).availableBytes
+    }
+}

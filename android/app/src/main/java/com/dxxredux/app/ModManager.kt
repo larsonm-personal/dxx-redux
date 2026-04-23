@@ -76,6 +76,11 @@ class ModManager(
         val safeName = displayName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
         val dest = File(modsDir, safeName)
         try {
+            ImportStorageGuard.requireFreeSpace(
+                modsDir,
+                ImportStorageGuard.queryUriSizeBytes(contentResolver, uri) ?: 0L,
+                "import mod $displayName",
+            )
             contentResolver.openInputStream(uri)?.use { input ->
                 dest.outputStream().use { output ->
                     input.copyTo(output, bufferSize = 65536)
@@ -84,8 +89,14 @@ class ModManager(
                 Log.e(TAG, "Failed to open input stream for $displayName (URI: $uri)")
                 return null
             }
+        } catch (e: InsufficientStorageException) {
+            Log.e(TAG, "Not enough space to import $displayName", e)
+            ImportStorageGuard.recordFailure(filesDir, "DXA import failed for $displayName", e)
+            dest.delete()
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to copy $displayName to ${dest.absolutePath}: ${e.message}", e)
+            ImportStorageGuard.recordFailure(filesDir, "DXA import failed for $displayName", e)
             dest.delete()
             return null
         }

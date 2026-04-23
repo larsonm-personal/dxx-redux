@@ -1179,6 +1179,7 @@ class MainActivity :
         isActivityResumed = false
         gyroManager?.pause()
         overlayPoller.removeCallbacksAndMessages(null)
+        gamepadButtonEdgeTracker.clear()
         // Inject Escape so the engine opens its pause / game menu.
         // This pauses a single-player game while the app is in the background.
         if (gameStarted) {
@@ -2289,6 +2290,9 @@ class MainActivity :
         // Gamepad face / shoulder buttons -> mixer or meta action
         val joyBtn = gamepadButtonIndex(keyCode)
         if (joyBtn >= 0) {
+            if (!gamepadButtonEdgeTracker.shouldDispatchDown(keyCode, event.repeatCount)) {
+                return true
+            }
             val metaId = buttonMetaBindings[joyBtn]
             if (metaId != null) {
                 dispatchMetaAction(metaId, true)
@@ -2377,6 +2381,9 @@ class MainActivity :
 
         val joyBtn = gamepadButtonIndex(keyCode)
         if (joyBtn >= 0) {
+            if (!gamepadButtonEdgeTracker.shouldDispatchUp(keyCode)) {
+                return true
+            }
             val metaId = buttonMetaBindings[joyBtn]
             if (metaId != null) {
                 dispatchMetaAction(metaId, false)
@@ -2403,6 +2410,8 @@ class MainActivity :
     }
 
     // ── Gamepad analog axes ─────────────────────────────────
+    private val gamepadButtonEdgeTracker = GamepadButtonEdgeTracker()
+
     private var hatXState = 0 // -1, 0, +1
     private var hatYState = 0
 

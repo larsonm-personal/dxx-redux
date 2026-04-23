@@ -712,6 +712,7 @@ class SetupActivity : ComponentActivity() {
                                 } else {
                                     setDir
                                 }
+                            ImportStorageGuard.requireFreeSpace(destDir, src.length(), "import ${src.name}")
                             src.copyTo(File(destDir, src.name), overwrite = true)
                             Log.i("DXX-Setup", "import_files: copied ${src.name} to ${destDir.name}")
                         } else {
@@ -2624,6 +2625,11 @@ private fun importFile(
                 destDir
             }
         val destFile = File(actualDestDir, canonicalName)
+        ImportStorageGuard.requireFreeSpace(
+            actualDestDir,
+            ImportStorageGuard.queryUriSizeBytes(context.contentResolver, source.uri) ?: 0L,
+            "import ${source.name}",
+        )
         context.contentResolver.openInputStream(source.uri)?.use { input ->
             FileOutputStream(destFile).use { output ->
                 input.copyTo(output, bufferSize = 8192)
@@ -2631,8 +2637,13 @@ private fun importFile(
         }
         Log.i("DXX-Setup", "Imported ${source.name} → $canonicalName (${destFile.length()} bytes)")
         true
+    } catch (e: InsufficientStorageException) {
+        Log.e("DXX-Setup", "Not enough space to import ${source.name}", e)
+        ImportStorageGuard.recordFailure(context.filesDir, "Import failed for ${source.name}", e)
+        false
     } catch (e: Exception) {
         Log.e("DXX-Setup", "Failed to import ${source.name}", e)
+        ImportStorageGuard.recordFailure(context.filesDir, "Import failed for ${source.name}", e)
         false
     }
 
@@ -2691,6 +2702,11 @@ private suspend fun extractZipContents(
                             kotlinx.coroutines.withContext(Dispatchers.Main) {
                                 onProgress(name)
                             }
+                            ImportStorageGuard.requireFreeSpace(
+                                tmpDir,
+                                entry.size.takeIf { it > 0L } ?: 0L,
+                                "extract $name",
+                            )
                             val tmpFile = File(tmpDir, name)
                             val digest = java.security.MessageDigest.getInstance("SHA-256")
                             var size = 0L
@@ -2713,8 +2729,13 @@ private suspend fun extractZipContents(
                     }
                 }
             }
+        } catch (e: InsufficientStorageException) {
+            Log.e("DXX-Setup", "ZIP extraction ran out of space", e)
+            ImportStorageGuard.recordFailure(context.filesDir, "ZIP extraction failed", e)
+            return@withContext ZipExtractionResult(results, foundAudio, e.message)
         } catch (e: Exception) {
             Log.e("DXX-Setup", "ZIP extraction failed", e)
+            ImportStorageGuard.recordFailure(context.filesDir, "ZIP extraction failed", e)
             return@withContext ZipExtractionResult(results, foundAudio, "ZIP extraction failed: ${e.message}")
         }
         ZipExtractionResult(results, foundAudio)
@@ -2737,6 +2758,11 @@ private suspend fun extract7zContents(
         val audioExts = setOf("mp3", "ogg", "flac")
         val tmpArchive = File(tmpDir, ".tmp_7z_import")
         try {
+            ImportStorageGuard.requireFreeSpace(
+                tmpDir,
+                ImportStorageGuard.queryUriSizeBytes(context.contentResolver, archiveUri) ?: 0L,
+                "stage 7z archive",
+            )
             context.contentResolver.openInputStream(archiveUri)?.use { input ->
                 FileOutputStream(tmpArchive).use { output -> input.copyTo(output) }
             }
@@ -2752,6 +2778,11 @@ private suspend fun extract7zContents(
                         kotlinx.coroutines.withContext(Dispatchers.Main) {
                             onProgress(name)
                         }
+                        ImportStorageGuard.requireFreeSpace(
+                            tmpDir,
+                            entry.size.takeIf { it > 0L } ?: 0L,
+                            "extract $name",
+                        )
                         val tmpFile = File(tmpDir, name)
                         val digest = java.security.MessageDigest.getInstance("SHA-256")
                         var size = 0L
@@ -2772,8 +2803,13 @@ private suspend fun extract7zContents(
                     entry = szf.nextEntry
                 }
             }
+        } catch (e: InsufficientStorageException) {
+            Log.e("DXX-Setup", "7z extraction ran out of space", e)
+            ImportStorageGuard.recordFailure(context.filesDir, "7z extraction failed", e)
+            return@withContext ZipExtractionResult(results, foundAudio, e.message)
         } catch (e: Exception) {
             Log.e("DXX-Setup", "7z extraction failed", e)
+            ImportStorageGuard.recordFailure(context.filesDir, "7z extraction failed", e)
             return@withContext ZipExtractionResult(results, foundAudio, "7z extraction failed: ${e.message}")
         } finally {
             tmpArchive.delete()
@@ -3802,6 +3838,11 @@ private fun SetupScreen(
                                                         val ok =
                                                             withContext(Dispatchers.IO) {
                                                                 try {
+                                                                    ImportStorageGuard.requireFreeSpace(
+                                                                        setDir,
+                                                                        ef.sizeBytes,
+                                                                        "install ${ef.name}",
+                                                                    )
                                                                     ef.tmpFile.copyTo(destFile, overwrite = true)
                                                                     true
                                                                 } catch (e: Exception) {
@@ -6469,6 +6510,10 @@ private suspend fun downloadFile(
             val tmpFile = File(destDir, "$filename.tmp")
             var downloaded = 0L
 
+            if (totalBytes > 0L) {
+                ImportStorageGuard.requireFreeSpace(destDir, totalBytes, "download $filename")
+            }
+
             conn.inputStream.use { input ->
                 FileOutputStream(tmpFile).use { output ->
                     val buf = ByteArray(8192)
@@ -6490,8 +6535,13 @@ private suspend fun downloadFile(
             tmpFile.renameTo(destFile)
             Log.i("DXX-Setup", "Downloaded $filename ($downloaded bytes)")
             withContext(Dispatchers.Main) { onDone(true) }
+        } catch (e: InsufficientStorageException) {
+            Log.e("DXX-Setup", "Not enough space to download $filename", e)
+            ImportStorageGuard.recordFailure(destDir.parentFile ?: destDir, "Download failed for $filename", e)
+            withContext(Dispatchers.Main) { onDone(false) }
         } catch (e: Exception) {
             Log.e("DXX-Setup", "Download error for $filename", e)
+            ImportStorageGuard.recordFailure(destDir.parentFile ?: destDir, "Download failed for $filename", e)
             withContext(Dispatchers.Main) { onDone(false) }
         }
     }
