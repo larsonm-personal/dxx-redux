@@ -16,9 +16,8 @@ void android_crash_handler_init(const char *crash_dir);
 const char *android_crash_handler_get_dir(void);
 
 /* Breadcrumb ring buffer -- records last N diagnostic markers.
- * Dumped into the crash file on signal.  Thread-safe for a single
- * writer (game thread) since the signal handler only reads when that
- * thread is stopped. */
+ * Dumped into the crash file on signal. Writers may come from more
+ * than one thread; ordering is best-effort. */
 void crash_breadcrumb(const char *msg);
 void crash_breadcrumb_v(const char *fmt, ...);
 

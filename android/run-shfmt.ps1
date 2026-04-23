@@ -1,14 +1,57 @@
-# run-shfmt.ps1 -- Run shfmt on bash scripts in android/.
+﻿# run-shfmt.ps1 -- Run shfmt on bash scripts in android/.
 # Usage:
 #   .\run-shfmt.ps1          # format in-place (default)
 #   .\run-shfmt.ps1 --check  # dry-run, exit 1 if changes needed
+#   .\run-shfmt.ps1 -Paths path\to\file path\to\dir
 
 param(
-    [switch]$Check
+    [switch]$Check,
+    [string[]]$Paths
 )
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path $PSScriptRoot
+
+function Get-ScopedFiles {
+    param(
+        [string]$RootPath,
+        [string[]]$InputPaths,
+        [string[]]$ValidExtensions
+    )
+
+    $results = @()
+    if ($InputPaths -and $InputPaths.Count -gt 0) {
+        foreach ($inputPath in $InputPaths) {
+            if ([string]::IsNullOrWhiteSpace($inputPath)) {
+                continue
+            }
+
+            $candidate = $inputPath
+            if (-not [System.IO.Path]::IsPathRooted($candidate)) {
+                $candidate = Join-Path $repoRoot $candidate
+            }
+
+            $item = Get-Item -LiteralPath $candidate -ErrorAction SilentlyContinue
+            if (-not $item) {
+                continue
+            }
+
+            if ($item.PSIsContainer) {
+                $results += Get-ChildItem -LiteralPath $item.FullName -Recurse -File
+            } else {
+                $results += $item
+            }
+        }
+    } else {
+        $results = Get-ChildItem -Path $RootPath -Recurse -File
+    }
+
+    return @($results | Where-Object {
+            $_.FullName.StartsWith($RootPath, [System.StringComparison]::OrdinalIgnoreCase) -and
+            ($ValidExtensions -contains $_.Extension.ToLowerInvariant()) -and
+            $_.FullName -notmatch '[\\/](build|build-outputs|\.cxx)[\\/]'
+        } | Sort-Object FullName -Unique)
+}
 
 # --- Locate shfmt ---
 $depBaseFile = Join-Path $repoRoot "dependency_base.txt"
@@ -43,8 +86,7 @@ Write-Host "Using: $shfmt"
 & $shfmt --version
 
 # --- Gather .sh files ---
-$files = Get-ChildItem -Path $PSScriptRoot -Recurse -Include "*.sh" |
-    Where-Object { $_.FullName -notmatch '[\\\\/](build|build-outputs|\.cxx)[\\\\/]' }
+$files = Get-ScopedFiles -RootPath $PSScriptRoot -InputPaths $Paths -ValidExtensions @('.sh')
 
 if ($files.Count -eq 0) {
     Write-Host "No shell scripts found"

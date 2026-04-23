@@ -2307,20 +2307,32 @@ void ogl_end_frame(void){
 void gr_flip(void)
 {
 #ifdef ANDROID
+	int trace_flip = 0;
+
 	{
 		static int s_flip_count = 0;
 		s_flip_count++;
-		if (s_flip_count <= 5 || (s_flip_count % 60) == 0)
-			crash_breadcrumb_v("gr_flip #%d", s_flip_count);
+		trace_flip = (s_flip_count <= 20 || (s_flip_count % 60) == 0);
+		if (trace_flip)
+			crash_breadcrumb_v("gr_flip #%d enter msaa=%d depth=%d size=%dx%d",
+				s_flip_count, g_msaa_fbo_bound, g_msaa_frame_depth,
+				grd_curscreen->sc_w, grd_curscreen->sc_h);
 	}
 #endif
 	if (GameArg.DbgRenderStats)
 		ogl_texture_stats();
 
+#ifdef ANDROID
+	if (trace_flip)
+		crash_breadcrumb("gr_flip: palfx");
+#endif
 	ogl_do_palfx();
 	/* android port: end GPU timer query before resolve/swap */
 #ifdef ANDROID
 	{
+		if (trace_flip)
+			crash_breadcrumb("gr_flip: gpu_timer_end");
+
 		struct android_ogl_gpu_timer_state gpu_timer_state = {
 			ogl_gpu_queries,
 			GPU_QUERY_COUNT,
@@ -2339,6 +2351,8 @@ void gr_flip(void)
 	 * for the frame have unwound back to depth 0. */
 #ifdef ANDROID
 	if (g_msaa_fbo_bound && g_msaa_frame_depth == 0) {
+		if (trace_flip)
+			crash_breadcrumb("gr_flip: msaa_resolve");
 		int w = grd_curscreen->sc_w, h = grd_curscreen->sc_h;
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, ogl_msaa_fbo);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -2357,6 +2371,8 @@ void gr_flip(void)
 	/* android port: sample framebuffer for introspection (center pixel + 4x4 grid average) */
 #ifdef ANDROID
 	{
+		if (trace_flip)
+			crash_breadcrumb("gr_flip: fb_sample");
 		int w = grd_curscreen->sc_w, h = grd_curscreen->sc_h;
 		android_merged_wall_sample_snapshot_framebuffer(
 			w, h,
@@ -2364,7 +2380,17 @@ void gr_flip(void)
 			&g_fb_avg_r, &g_fb_avg_g, &g_fb_avg_b, &g_fb_avg_a);
 	}
 #endif
+
+#ifdef ANDROID
+	if (trace_flip)
+		crash_breadcrumb("gr_flip: swap");
+#endif
 	ogl_swap_buffers_internal();
+
+#ifdef ANDROID
+	if (trace_flip)
+		crash_breadcrumb("gr_flip: clear");
+#endif
 	glClear(GL_COLOR_BUFFER_BIT);
 #ifdef ANDROID
 	g_ogl_render_context = 0; /* reset to menu context for next frame */

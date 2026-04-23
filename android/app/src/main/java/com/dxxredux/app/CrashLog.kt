@@ -27,8 +27,9 @@ object CrashLog {
     private var installed = false
 
     /**
-     * Install crash handlers. Safe to call multiple times (idempotent after first).
-     * Sets a Java UncaughtExceptionHandler and installs native signal handlers.
+     * Install the Java crash handler. Safe to call multiple times
+     * (idempotent after first). Call installNativeHandler() after
+     * System.loadLibrary() to arm native signal reporting.
      */
     fun install(context: Context) {
         if (installed) return
@@ -43,13 +44,6 @@ object CrashLog {
             writeCrashFile(crashDir, thread, throwable)
             // Chain to previous handler (Android default) so the system still shows crash dialog
             oldHandler?.uncaughtException(thread, throwable)
-        }
-
-        // -- Native signal handler --
-        try {
-            nativeInstallCrashHandler(crashDir.absolutePath)
-        } catch (e: UnsatisfiedLinkError) {
-            Log.w(TAG, "Native crash handler not available (JNI not loaded yet?)", e)
         }
     }
 

@@ -1,14 +1,56 @@
-# run-ktlint.ps1 -- Run ktlint on Kotlin source files.
+﻿# run-ktlint.ps1 -- Run ktlint on Kotlin source files.
 # Usage:
 #   .\run-ktlint.ps1          # auto-fix formatting (default)
 #   .\run-ktlint.ps1 --check  # report issues, exit 1 if any
+#   .\run-ktlint.ps1 -Paths path\to\file path\to\dir
 
 param(
-    [switch]$Check
+    [switch]$Check,
+    [string[]]$Paths
 )
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path $PSScriptRoot
+
+function Get-ScopedFiles {
+    param(
+        [string]$RootPath,
+        [string[]]$InputPaths,
+        [string[]]$ValidExtensions
+    )
+
+    $results = @()
+    if ($InputPaths -and $InputPaths.Count -gt 0) {
+        foreach ($inputPath in $InputPaths) {
+            if ([string]::IsNullOrWhiteSpace($inputPath)) {
+                continue
+            }
+
+            $candidate = $inputPath
+            if (-not [System.IO.Path]::IsPathRooted($candidate)) {
+                $candidate = Join-Path $repoRoot $candidate
+            }
+
+            $item = Get-Item -LiteralPath $candidate -ErrorAction SilentlyContinue
+            if (-not $item) {
+                continue
+            }
+
+            if ($item.PSIsContainer) {
+                $results += Get-ChildItem -LiteralPath $item.FullName -Recurse -File
+            } else {
+                $results += $item
+            }
+        }
+    } else {
+        $results = Get-ChildItem -Path $RootPath -Recurse -File
+    }
+
+    return @($results | Where-Object {
+            $_.FullName.StartsWith($RootPath, [System.StringComparison]::OrdinalIgnoreCase) -and
+            ($ValidExtensions -contains $_.Extension.ToLowerInvariant())
+        } | Sort-Object FullName -Unique)
+}
 
 # --- Locate dependencies ---
 $depBaseFile = Join-Path $repoRoot "dependency_base.txt"
@@ -56,7 +98,7 @@ Write-Host "Using ktlint: $ktlintJar"
 
 # --- Gather Kotlin files ---
 $ktDir = Join-Path $PSScriptRoot "app\src\main\java"
-$files = Get-ChildItem -Path $ktDir -Recurse -Include "*.kt"
+$files = Get-ScopedFiles -RootPath $ktDir -InputPaths $Paths -ValidExtensions @('.kt')
 
 if ($files.Count -eq 0) {
     Write-Host "No Kotlin files found"

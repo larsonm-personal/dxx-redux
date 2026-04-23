@@ -15,9 +15,12 @@ $patterns = @(
     'run-clang-format.ps1',
     'run-ktlint.ps1',
     'run-psscriptanalyzer.ps1',
+    'run-shellcheck.ps1',
     'run-shfmt.ps1',
     'ktlint.jar',
-    'clang-format'
+    'clang-format',
+    'shellcheck',
+    'shfmt'
 )
 
 $targets = Get-CimInstance Win32_Process | Where-Object {

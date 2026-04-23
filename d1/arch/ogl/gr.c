@@ -57,6 +57,7 @@
 
 #ifdef ANDROID
 #include <android/log.h>
+#include "android_crash_handler.h"
 #endif
 
 #if defined(__APPLE__) && defined(__MACH__)
@@ -183,12 +184,26 @@ void ogl_swap_buffers_internal(void)
 #ifdef OGLES
 #ifdef ANDROID
 	{
+		static int s_swap_count = 0;
+		int trace_swap = 0;
 		extern int android_surface_is_paused(void);
 		extern int android_surface_egl_needs_recreate(void);
-		if (android_surface_is_paused())
+		s_swap_count++;
+		trace_swap = (s_swap_count <= 20 || (s_swap_count % 60) == 0);
+		if (trace_swap)
+			crash_breadcrumb_v("ogl_swap_buffers_internal #%d", s_swap_count);
+		if (android_surface_is_paused()) {
+			if (trace_swap)
+				crash_breadcrumb("ogl_swap: paused");
 			return;
-		if (android_surface_egl_needs_recreate())
+		}
+		if (android_surface_egl_needs_recreate()) {
+			if (trace_swap)
+				crash_breadcrumb("ogl_swap: recreate_egl");
 			ogl_android_recreate_egl_surface();
+		}
+		if (trace_swap)
+			crash_breadcrumb("ogl_swap: eglSwapBuffers");
 	}
 #endif
 	eglSwapBuffers(eglDisplay, eglSurface);

@@ -22,6 +22,9 @@
 #ifdef ANDROID
 #include <android/log.h>
 #include <android/asset_manager.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+#include "android_crash_handler.h"
 #define TSFMUSIC_LOG(...) __android_log_print(ANDROID_LOG_INFO, "TSF-Music", __VA_ARGS__)
 #else
 #define TSFMUSIC_LOG(...) ((void) 0)
@@ -84,6 +87,18 @@ static int g_active_voices_max = 0;  /* peak active voice count    */
 /* Ring-buffer diagnostics */
 static int g_rb_underruns = 0; /* callback found buffer empty */
 static int g_rb_cb_count = 0;  /* total callbacks             */
+static unsigned int g_render_pass_count = 0;
+static unsigned int g_callback_trace_count = 0;
+
+static long tsf_music_gettid(void)
+{
+	return (long) syscall(__NR_gettid);
+}
+
+static int tsf_music_should_trace(unsigned int count)
+{
+	return count <= 8u || (count % 64u) == 0u;
+}
 #endif
 
 /* ── AAssetManager (Android) ─────────────────────────────────────────── */
@@ -126,6 +141,9 @@ static int tsf_music_load_soundfont(void)
 
 	const void *data = AAsset_getBuffer(asset);
 	off_t size = AAsset_getLength(asset);
+	crash_breadcrumb_v("tsf_sf2 ptr=%p a4=%lu a8=%lu size=%ld", data,
+	                   ((unsigned long) data) & 3ul,
+	                   ((unsigned long) data) & 7ul, (long) size);
 
 	g_tsf = tsf_load_memory(data, (int) size);
 	AAsset_close(asset);
@@ -166,11 +184,23 @@ static int render_frames(short *out, int frames)
 
 	while (frames > 0 && g_midi_cur) {
 		int block = (frames > BLOCK) ? BLOCK : frames;
+#ifdef ANDROID
+		unsigned int pass = ++g_render_pass_count;
+		int trace = tsf_music_should_trace(pass);
+		if (trace)
+			crash_breadcrumb_v("tsf_render #%u enter tid=%ld cur=%p ms=%ld",
+			                   pass, tsf_music_gettid(), (void *) g_midi_cur,
+			                   (long) g_playback_msec);
+#endif
 
 		double block_ms = block * (1000.0 / rate);
 		g_playback_msec += block_ms;
 
 		/* Dispatch MIDI events up to current time */
+#ifdef ANDROID
+		if (trace)
+			crash_breadcrumb_v("tsf_render #%u events", pass);
+#endif
 		while (g_midi_cur && g_midi_cur->time <= (unsigned int) g_playback_msec) {
 			tml_message *m = g_midi_cur;
 			switch (m->type) {
@@ -200,7 +230,15 @@ static int render_frames(short *out, int frames)
 			g_midi_cur = m->next;
 		}
 
+#ifdef ANDROID
+		if (trace)
+			crash_breadcrumb_v("tsf_render #%u synth", pass);
+#endif
 		tsf_render_short(g_tsf, out, block, 0);
+#ifdef ANDROID
+		if (trace)
+			crash_breadcrumb_v("tsf_render #%u synth_done", pass);
+#endif
 
 #ifdef ANDROID
 		/* Clipping detection (on rendered PCM before volume) */
@@ -360,6 +398,7 @@ static int render_thread_func(void *data)
 	short buf[CHUNK * 2];
 
 	TSFMUSIC_LOG("Render thread started");
+	crash_breadcrumb_v("tsf_thread start tid=%ld", tsf_music_gettid());
 
 	while (__atomic_load_n(&g_render_running, __ATOMIC_SEQ_CST)) {
 		/* Pause: don't produce data */
@@ -396,6 +435,7 @@ static int render_thread_func(void *data)
 	}
 
 	TSFMUSIC_LOG("Render thread exiting");
+	crash_breadcrumb_v("tsf_thread exit tid=%ld", tsf_music_gettid());
 	return 0;
 }
 
@@ -422,8 +462,13 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 	(void) udata;
 	int needed = len / (int) sizeof(short); /* total samples (stereo) */
 	short *out = (short *) stream;
+	unsigned int cb = ++g_callback_trace_count;
+	int trace = tsf_music_should_trace(cb);
 
 	g_rb_cb_count++;
+	if (trace)
+		crash_breadcrumb_v("tsf_cb #%u enter tid=%ld need=%d fill=%u", cb,
+		                   tsf_music_gettid(), needed, rb_available());
 
 	if (!g_playing || g_paused || g_bg_paused) {
 		memset(stream, 0, len);
@@ -431,6 +476,8 @@ static void tsf_music_callback(void *udata, Uint8 *stream, int len)
 	}
 
 	int got = rb_read(out, needed);
+	if (trace)
+		crash_breadcrumb_v("tsf_cb #%u got=%d", cb, got);
 
 	/* Zero-fill if ring buffer had less data than needed (underrun) */
 	if (got < needed) {
@@ -588,6 +635,8 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 #ifdef ANDROID
 		g_rb_underruns = 0;
 		g_rb_cb_count = 0;
+		g_render_pass_count = 0;
+		g_callback_trace_count = 0;
 		render_thread_start();
 #endif
 		Mix_HookMusic(tsf_music_callback, NULL);
@@ -626,6 +675,10 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 		PHYSFS_read(fh, g_midi_buf, 1, bufsize);
 		PHYSFS_close(fh);
 	}
+	crash_breadcrumb_v("tsf_music midi=%s bytes=%u ptr=%p a4=%lu a8=%lu",
+	                   fptr, bufsize, (void *) g_midi_buf,
+	                   ((unsigned long) g_midi_buf) & 3ul,
+	                   ((unsigned long) g_midi_buf) & 7ul);
 
 	/* Parse MIDI with TinyMidiLoader */
 	g_midi = tml_load_memory(g_midi_buf, (int) bufsize);
@@ -638,6 +691,8 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 	}
 
 	TSFMUSIC_LOG("Playing %s (%u bytes MIDI, loop=%d)", filename, bufsize, loop);
+	crash_breadcrumb_v("tsf_music parsed cur=%p first=%u", (void *) g_midi,
+	                   g_midi ? g_midi->time : 0u);
 
 	/* Reset synth state for new song */
 	tsf_reset(g_tsf);
@@ -651,6 +706,8 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 	g_active_voices_max = 0;
 	g_rb_underruns = 0;
 	g_rb_cb_count = 0;
+	g_render_pass_count = 0;
+	g_callback_trace_count = 0;
 #endif
 
 	/* Start playback */

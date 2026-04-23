@@ -45,10 +45,10 @@ static volatile int s_crumb_next = 0;
 
 void crash_breadcrumb(const char *msg)
 {
-	int idx = s_crumb_next % CRUMB_COUNT;
+	int seq = __atomic_fetch_add(&s_crumb_next, 1, __ATOMIC_RELAXED);
+	int idx = seq % CRUMB_COUNT;
 	strncpy(s_crumbs[idx], msg, CRUMB_LEN - 1);
 	s_crumbs[idx][CRUMB_LEN - 1] = '\0';
-	s_crumb_next++;
 	__android_log_print(ANDROID_LOG_DEBUG, "DXX-CRUMB", "%s", msg);
 }
 
@@ -68,7 +68,7 @@ static char *itoa_safe(long val, char *buf, int buflen);
 static void dump_breadcrumbs(int fd)
 {
 	static const char hdr[] = "\nBreadcrumbs (oldest first):\n";
-	int total = s_crumb_next;
+	int total = __atomic_load_n(&s_crumb_next, __ATOMIC_ACQUIRE);
 	int start = (total > CRUMB_COUNT) ? total - CRUMB_COUNT : 0;
 	int i;
 	char numbuf[24];
@@ -132,6 +132,39 @@ static char *hex_safe(unsigned long val, char *buf, int buflen)
 		*(--p) = '0';
 	}
 	return p;
+}
+
+#if defined(__arm__) || defined(__aarch64__)
+static void write_labeled_hex(int fd, const char *label, unsigned long value)
+{
+	char hexbuf[32];
+	char *hex = hex_safe(value, hexbuf, sizeof(hexbuf));
+	write(fd, label, strlen(label));
+	write(fd, hex, strlen(hex));
+	write(fd, "\n", 1);
+}
+#endif
+
+static void dump_registers(int fd, void *ucontext)
+{
+	if (!ucontext)
+		return;
+
+#if defined(__arm__)
+	{
+		ucontext_t *ctx = (ucontext_t *) ucontext;
+		write_labeled_hex(fd, "PC: ", (unsigned long) ctx->uc_mcontext.arm_pc);
+		write_labeled_hex(fd, "LR: ", (unsigned long) ctx->uc_mcontext.arm_lr);
+		write_labeled_hex(fd, "SP: ", (unsigned long) ctx->uc_mcontext.arm_sp);
+	}
+#elif defined(__aarch64__)
+	{
+		ucontext_t *ctx = (ucontext_t *) ucontext;
+		write_labeled_hex(fd, "PC: ", (unsigned long) ctx->uc_mcontext.pc);
+		write_labeled_hex(fd, "LR: ", (unsigned long) ctx->uc_mcontext.regs[30]);
+		write_labeled_hex(fd, "SP: ", (unsigned long) ctx->uc_mcontext.sp);
+	}
+#endif
 }
 
 static const char *signal_name(int sig)
@@ -215,6 +248,8 @@ static void crash_handler(int sig, siginfo_t *info, void *ucontext)
 				write(fd, hex, strlen(hex));
 				write(fd, "\n", 1);
 			}
+
+			dump_registers(fd, ucontext);
 
 			write(fd, "PID: ", 5);
 			num = itoa_safe((long) getpid(), numbuf, sizeof(numbuf));
