@@ -78,6 +78,8 @@ internal fun shouldEnableNetEventsControl(
     hasPendingLaunchInfo: Boolean,
 ): Boolean = shouldEnableNetStatsControl(isMultiplayerGame, hasPendingLaunchInfo)
 
+internal fun shouldForwardRawJoystickButtonToUi(isInGame: Boolean): Boolean = !isInGame
+
 class MainActivity :
     Activity(),
     SurfaceHolder.Callback {
@@ -2302,13 +2304,14 @@ class MainActivity :
                 if (kcIndices != null) {
                     for (kc in kcIndices) inputMixer.setButton(kc, tag, true)
                 }
-                // In-game menus map joy button 0 -> KEY_ENTER and 1 -> KEY_ESC
-                // in the ANDROID newmenu.c handler. Fire the joystick event
-                // unconditionally so A/B work for select/back regardless of
-                // any gameplay binding the mixer layered on top. During
-                // gameplay this is a no-op because kconfig is bound via the
-                // keyboard events emitted by the mixer, not joy buttons 0/1
-                nativeJoystickButton(joyBtn, 1)
+                // Raw joystick buttons are only needed while a non-game UI
+                // window is frontmost so title/menu handlers can translate
+                // A/B to Enter/Esc. During gameplay the mixer path already
+                // drives the bound action, so forwarding the raw button too
+                // duplicates the press.
+                if (shouldForwardRawJoystickButtonToUi(nativeIsInGame())) {
+                    nativeJoystickButton(joyBtn, 1)
+                }
             }
             return true
         }
@@ -2393,9 +2396,9 @@ class MainActivity :
                 if (kcIndices != null) {
                     for (kc in kcIndices) inputMixer.setButton(kc, tag, false)
                 }
-                // Symmetric with onKeyDown: always release the joystick
-                // button so in-game menus see a clean up edge
-                nativeJoystickButton(joyBtn, 0)
+                if (shouldForwardRawJoystickButtonToUi(nativeIsInGame())) {
+                    nativeJoystickButton(joyBtn, 0)
+                }
             }
             return true
         }

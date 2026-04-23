@@ -14,16 +14,20 @@ Source: [android/outstanding_bugs.md](android/outstanding_bugs.md). Each bug bel
 - [d2/main/state.c](d2/main/state.c#L549-L590) `state_callback()` -- already fixed to use `ogl_ubitblt_i()` so the indexed thumbnail uploads against `gr_current_pal`.
 - Repo memory: `/memories/repo/d2-save-preview-ogl-palette-path.md`.
 
-### Cause (updated after code study)
-The first concrete mismatch is in the Android/OGL draw path: D1 was still drawing load previews through `ogl_ubitmapm_cs(...)`, while D2 already moved to `ogl_ubitblt_i(...)` for this exact bug. D1 also does not store a thumbnail palette the way D2 does, but that is not yet proven to be necessary for the Android regression because the longstanding D1 format already worked on non-OGL paths.
+### Cause (updated after follow-up code study)
+The earlier D1 draw-path change was only an experiment, not a sufficient fix. The stronger mismatch is in thumbnail serialization: D1 save files still store only indexed thumbnail bytes, but not the palette those bytes were quantized against. D2 already stores a 256x3 palette blob after the thumbnail and remaps on load. A renderer-only change cannot recover the intended colors for D1 thumbnails once that palette information was discarded.
 
 ### Planned change
-- First pass landed: switch the D1 OGL preview blit in `state_callback()` to `ogl_ubitblt_i(...)`, matching the fixed D2 path.
-- Manual verification decides whether this is sufficient. If thumbnails are still wrong on Android after this patch, the fallback is to add a D1 save-version bump with thumbnail palette write/read plus remap on load.
+- Add a small save-thumbnail decode path in C that reads thumbnail bytes from a save file and, when a palette blob is present, remaps them into the current runtime palette before display.
+- Bump the D1 save version so newly written D1 saves also serialize the thumbnail palette after the thumbnail bytes, matching the D2 shape closely enough to share decode logic later.
+- Keep compatibility with older D1 saves by falling back to the legacy raw thumbnail read when no palette blob exists.
 
 ### Current status
-- Landed in `d1/main/state.c` and passed `run-windows-build.ps1 -Target d1`.
-- Still needs Android manual verification because this is a render-correctness bug, not just a compile-health issue.
+- Landed a save-thumbnail decode path in both `d1/main/state.c` and `d2/main/state.c` so previews are created from save-file thumbnail data plus an optional palette blob.
+- D1 now writes the thumbnail palette in new saves (`STATE_VERSION 8`) and consumes it on preview load and full restore; D2 was refactored onto the same helper path and now always writes the palette blob even on the blank-thumbnail fallback.
+- Older D1 saves remain compatible, but they still have only the legacy raw thumbnail bytes, so they can only be displayed on a best-effort basis.
+- Passed `run-windows-build.ps1 -Target both` after the native changes and again after the code-quality pass.
+- Still needs Android manual verification with a newly created D1 save, plus a D2 regression check.
 
 - Build D1 Android, in the emulator: start any pilot, save to slot 1, exit to main menu, re-enter Load Game and verify the thumbnail colors match the in-game scene.
 - Repeat in D2 to confirm no regression.
@@ -123,18 +127,17 @@ Pause and game-menu (save/load/quit launched from in-game) draw through menu/box
 - [android/app/src/main/cpp/jni_main.c](android/app/src/main/cpp/jni_main.c) joy button injection (search for `joy_button_state` / `inject_button`).
 - Repo memory: `/memories/repo/android-tv-keyboard-final-routing.md` and `android-tv-dpad-center-and-input-menu.md`.
 
-### Cause (updated after code study)
-The current keyboard-active path now consumes `BUTTON_B` locally, so the more likely remaining fault is the plain gameplay path: `onKeyDown()` forwarded every controller button down edge straight to the mixer and `nativeJoystickButton()` with no guard against repeated `ACTION_DOWN`s before the matching `ACTION_UP`. On Android TV, that can turn one held/brief press into multiple native button-down events.
+### Cause (updated after follow-up code study)
+The repeat-edge tracker removed one failure mode, but the gameplay path still routes the same physical press twice: once through `InputMixer` as `MIXER_BTN_BASE + kc_index`, and again through raw `nativeJoystickButton(joyBtn, ...)`. Because the launcher also patches native joystick bindings into `.plr` files, button `B` can still hit gameplay both through the mixer path and through the raw joystick path. The raw joystick event is only needed when a non-game window is frontmost so A/B can act like Enter/Esc in title/menu handlers.
 
-### Planned change (gated on reproduction)
-- First, reproduce on the current build. The bug may already be gone after the recent IME flag/dispatch-depth work; if it does not reproduce in 3 attempts, mark as `[likely-fixed]` and close once a regression script exists.
-- If it reproduces: add a `inject_joy_button(idx, down)` log line on every state edge (debug build only, DLOG_GAME) so the doubled-DOWN or missing-UP shows up in the debug log, then patch the offending path so each physical event yields exactly one DOWN/UP pair.
+### Planned change
+- Keep the edge tracker, but gate raw joystick button injection so it only runs while the game window is not frontmost.
+- Leave the mixer path active during gameplay, because that is the intended button-to-action translation path for controller bindings.
 
 ### Current status
-- Landed a Kotlin-side `GamepadButtonEdgeTracker` and wired `MainActivity.kt` to suppress duplicate controller down edges until the corresponding up edge arrives.
-- Cleared the tracker on `onStop()` so a backgrounded activity does not keep stale latched button state.
-- Added `GamepadButtonEdgeTrackerTest` and passed `:app:testDebugUnitTest --tests com.dxxredux.app.GamepadButtonEdgeTrackerTest`.
-- Still needs on-device verification that a quick TV `B` press now fires at most one secondary shot unless the button is intentionally held.
+- Kept the existing edge tracker and landed a narrower routing fix in `MainActivity.kt`: raw joystick button injection now only runs while a non-game UI window is frontmost, so gameplay uses only the mixer path.
+- Added `GamepadButtonRoutingPolicyTest` and revalidated the controller-selection tests after the formatting pass.
+- Still needs on-device verification that TV `B` now fires exactly once in gameplay while still acting as back/cancel in title and menu flows.
 
 ### Test plan
 - TV with virtual gamepad: in level, press and release B once. Inspect introspection JSON for `player.secondary_ammo[*]` to confirm only one missile fired.
@@ -158,9 +161,9 @@ On TV, `InputDevice.getDeviceIds()` returns multiple devices including the syste
 - Surface all matched devices in the introspection JSON (`controller_introspect.json`) so this can be inspected without screenshots.
 
 ### Current status
-- Landed a deterministic launcher-side selection helper in `ControllerDeviceSelection.kt` and switched the controller-config page to use it instead of `gamepads.first()`.
-- Added `ControllerDeviceSelectionTest` and passed `:app:testDebugUnitTest --tests com.dxxredux.app.ControllerDeviceSelectionTest`.
-- Introspection export of detected-device metadata is still optional follow-up; the user-visible label fix itself is implemented.
+- Landed the missing `SetupActivity.kt` header fix so both launcher controller-name surfaces now use `selectDisplayedController(...)` instead of the first enumerated device.
+- Revalidated with Kotlin compile and the existing `ControllerDeviceSelectionTest` after the code-quality pass.
+- Still needs TV/device verification that the visible launcher header now shows the Bluetooth pad rather than the generic virtual device.
 
 ### Test plan
 - TV emulator with a virtual gamepad attached: confirm displayed name matches the configured pad and not "Virtual".

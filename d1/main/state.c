@@ -71,7 +71,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 
-#define STATE_VERSION 7
+#define STATE_VERSION 8
 #define STATE_COMPATIBLE_VERSION 6
 // 0 - Put DGSS (Descent Game State Save) id at tof.
 // 1 - Added Difficulty level save
@@ -81,10 +81,13 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // 5 - Mike changed ai and object structure.
 // 6 - Added buggin' cheat save
 // 7 - Added other cheat saves and game_id.
+// 8 - Save palette with screen shot
 
 #define NUM_SAVES 10
 #define THUMBNAIL_W 100
 #define THUMBNAIL_H 50
+#define THUMBNAIL_PALETTE_BYTES (256*3)
+#define STATE_THUMBNAIL_PALETTE_VERSION 8
 #define DESC_LENGTH 20
 
 extern int Do_appearance_effect;
@@ -97,6 +100,44 @@ int sc_last_item= 0;
 char dgss_id[4] = "DGSS";
 
 uint state_game_id;
+
+static int state_thumbnail_has_palette(int version)
+{
+	return version >= STATE_THUMBNAIL_PALETTE_VERSION;
+}
+
+static void state_skip_thumbnail(PHYSFS_file *fp, int version)
+{
+	PHYSFS_seek(fp, PHYSFS_tell(fp) + THUMBNAIL_W * THUMBNAIL_H);
+	if (state_thumbnail_has_palette(version))
+		PHYSFS_seek(fp, PHYSFS_tell(fp) + THUMBNAIL_PALETTE_BYTES);
+}
+
+static grs_bitmap *state_read_thumbnail(PHYSFS_file *fp, int version)
+{
+	grs_bitmap *bmp;
+
+	bmp = gr_create_bitmap(THUMBNAIL_W, THUMBNAIL_H);
+	if (!bmp) {
+		state_skip_thumbnail(fp, version);
+		return NULL;
+	}
+
+	PHYSFS_read(fp, bmp->bm_data, THUMBNAIL_W * THUMBNAIL_H, 1);
+	if (state_thumbnail_has_palette(version)) {
+		ubyte pal[THUMBNAIL_PALETTE_BYTES];
+
+		PHYSFS_read(fp, pal, 3, 256);
+		gr_remap_bitmap_good(bmp, pal, -1, -1);
+	}
+
+	return bmp;
+}
+
+static void state_write_thumbnail_palette(PHYSFS_file *fp)
+{
+	PHYSFS_write(fp, gr_palette, 3, 256);
+}
 
 // Following functions convert object to object_rw and back to be written to/read from Savegames. Mostly object differs to object_rw in terms of timer values (fix/fix64). as we reset GameTime64 for writing so it can fit into fix it's not necessary to increment savegame version. But if we once store something else into object which might be useful after restoring, it might be handy to increment Savegame version and actually store these new infos.
 // turn object to object_rw to be saved to Savegame.
@@ -624,8 +665,7 @@ int state_get_savegame_filename(char * fname, char * dsc, char * caption, int bl
 					//rpad_string( desc[i], DESC_LENGTH-1 );
 					if (dsc == NULL) m[i+1].type = NM_TYPE_MENU;
 					// Read thumbnail
-					sc_bmp[i] = gr_create_bitmap(THUMBNAIL_W,THUMBNAIL_H );
-					PHYSFS_read(fp, sc_bmp[i]->bm_data, THUMBNAIL_W * THUMBNAIL_H, 1);
+					sc_bmp[i] = state_read_thumbnail(fp, version);
 					nsaves++;
 					valid = 1;
 				}
@@ -755,6 +795,7 @@ int state_save_old_game(int slotnum, char * sg_name, player_rw * sg_player,
 		d_free(buf);
 #endif
 		PHYSFS_write(fp, cnv->cv_bitmap.bm_data, THUMBNAIL_W * THUMBNAIL_H, 1);
+		state_write_thumbnail_palette(fp);
 
 		gr_set_current_canvas(cnv_save);
 		gr_free_canvas( cnv );
@@ -764,6 +805,7 @@ int state_save_old_game(int slotnum, char * sg_name, player_rw * sg_player,
 	 	ubyte color = 0;
 	 	for ( i=0; i<THUMBNAIL_W*THUMBNAIL_H; i++ )
 			PHYSFS_write(fp, &color, sizeof(ubyte), 1);		
+		state_write_thumbnail_palette(fp);
 	}
 
 // Save the Between levels flag...
@@ -920,6 +962,7 @@ int state_save_all_sub(char *filename, char *desc)
 #endif
 
 		PHYSFS_write(fp, cnv->cv_bitmap.bm_data, THUMBNAIL_W * THUMBNAIL_H, 1);
+		state_write_thumbnail_palette(fp);
 
 		gr_set_current_canvas(cnv_save);
 		gr_free_canvas( cnv );
@@ -929,6 +972,7 @@ int state_save_all_sub(char *filename, char *desc)
 	 	ubyte color = 0;
 	 	for ( i=0; i<THUMBNAIL_W*THUMBNAIL_H; i++ )
 			PHYSFS_write(fp, &color, sizeof(ubyte), 1);		
+		state_write_thumbnail_palette(fp);
 	} 
 
 // Save the Between levels flag...
@@ -1212,7 +1256,7 @@ int state_restore_all_sub(char *filename)
 	PHYSFS_read(fp, desc, sizeof(char) * DESC_LENGTH, 1);
 
 // Skip the current screen shot...
-	PHYSFS_seek(fp, PHYSFS_tell(fp) + THUMBNAIL_W * THUMBNAIL_H);
+	state_skip_thumbnail(fp, version);
 
 // Read the Between levels flag...
 	i = PHYSFSX_readSXE32(fp, swap);

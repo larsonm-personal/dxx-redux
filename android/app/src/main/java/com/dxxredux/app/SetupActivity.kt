@@ -5861,7 +5861,8 @@ private fun ControllerSection(
                 }
         }
 
-    val hasController = gamepads.isNotEmpty()
+    val displayedController = remember(gamepads) { selectDisplayedController(gamepads.map(::controllerDisplayDevice)) }
+    val hasController = displayedController != null
     var expanded by remember { mutableStateOf(false) }
 
     // ── Header ──
@@ -5880,12 +5881,7 @@ private fun ControllerSection(
             modifier = Modifier.weight(1f),
         )
         Text(
-            text =
-                if (hasController) {
-                    "\u2713 ${gamepads.first().name}"
-                } else {
-                    "\u2717 Not detected"
-                },
+            text = displayedController?.let { "\u2713 ${it.name}" } ?: "\u2717 Not detected",
             color = if (hasController) Color(0xFF4CAF50) else Color(0xFFF44336),
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
