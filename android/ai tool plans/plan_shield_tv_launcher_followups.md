@@ -27,9 +27,15 @@ Status:
 - `MainActivity.kt` now shows the IME through a hidden `KeyboardInputView` instead of the `SurfaceView`, giving Android TV keyboards a standard editor target for focus and D-pad routing
 - New 2026-04-22 TV logs confirmed that the keyboard shift is now working, but also showed the rerouted DPAD events still entering `onKeyDown()` as plain controller keys, which meant the custom `KeyEvent.flags` marker was not surviving the framework dispatch path
 - `MainActivity.kt` now uses a local IME-navigation dispatch-depth guard instead of a custom `KeyEvent.flags` bit, so rerouted DPAD/CENTER/BACK events bypass the controller swallow path in `onKeyDown()` / `onKeyUp()` while `super.dispatchKeyEvent()` is feeding the IME
+- Newer 2026-04-22 Shield logs confirmed a second split in behavior: the only reliably working controller actions were confirm-style inputs, while synthetic controller DPAD/HAT events still returned `handled=false`, and controller `B` mapped to synthetic `BACK` and escaped the activity back to the launcher
+- `MainActivity.kt` now synthesizes controller TV-keyboard navigation with a keyboard-style DPAD source to better match the working TV remote path, keeps controller `A` and `Select` as confirm actions, and closes the keyboard locally on controller `B` instead of remapping it to activity-level back behavior
+- The latest supplied `debuglog_20260422_213918.txt` and `debuglog_20260422_213956.txt` were different builds (`11910` and `11920`), so they did not show a fresh single-run split-log regression by themselves
+- `MainActivity.kt` now stops consuming joystick HAT/left-stick motion while the TV keyboard is open and lets the raw controller navigation path fall through to the system IME, while TV-remote `BACK` now closes the keyboard locally through the same `hideKeyboard()` path as controller `B`
+- `d1/main/menu.c` now sets `Newmenu_allowed_chars = "09"` for the start-level selector, matching the existing D2 path so D1 level select requests the numeric keyboard instead of the letter keyboard
 - Kotlin compile validation passed after the dispatch-depth reroute fix and again after scoped code quality
-- Full `:app:externalNativeBuildDebug` validation is currently blocked by unrelated existing errors in `d1/main/net_udp.c`
-- Windows host sanity build passed after the mirrored `d1/` and `d2/` menu changes
+- Kotlin compile validation also passed before and after scoped code quality for the revised source-alignment and controller-button fix
+- `:app:externalNativeBuildDebug` was later revalidated successfully during the interrupted-build follow-up, so the remaining risk here is on-device behavior, not compile health
+- Kotlin compile validation, `:app:externalNativeBuildDebug`, `android\\run-code-quality.ps1 -Fix`, and `run-windows-build.ps1 -Target d1` all passed after the raw-controller passthrough and D1 numeric-keyboard fixes
 - Shield/phone on-device verification is still pending
 
 Why first:
@@ -39,9 +45,10 @@ Why first:
 
 Current anchors:
 - `showKeyboard()` and IME height reporting already exist in `android/app/src/main/java/com/dxxredux/app/MainActivity.kt`
-- `dispatchKeyEvent()` and `onGenericMotionEvent()` in the same file now normalize controller navigation into IME-facing DPAD/BACK/CENTER events while `keyboardActive` is true
+- `dispatchKeyEvent()` and `onGenericMotionEvent()` in the same file now leave directional DPAD and joystick navigation on the raw system path while `keyboardActive` is true, but still map controller `A` / `Select` to confirm and controller `B` / remote `BACK` to a local keyboard close
 - `onKeyDown()` and `onKeyUp()` still act as the backstop that swallows controller events if the IME path does not consume them
 - `android/app/src/main/cpp/android_input.c` owns Android-to-engine key translation for TV remote/gamepad select behavior
+- `d1/main/menu.c` and `d2/main/menu.c` own the start-level selector that decides whether Android should request numeric-only input
 - `d1/main/newmenu.c` and `d2/main/newmenu.c` own the Android input-menu auto-edit state that decides whether the soft keyboard opens immediately
 
 Current hypothesis:
@@ -49,15 +56,20 @@ Current hypothesis:
 - The exported TV logs now show the slide-up problem more directly: the keyboard is shown and the IME reroute path reports `handled=true`, but the TV build kept reporting zero IME height, so the menu-shift logic never received a non-zero keyboard height
 - The newest exported TV log tightened the remaining input root cause further: the shift path is fixed, but the rerouted controller and remote select events were still being swallowed by `MainActivity` because a custom `KeyEvent.flags` marker did not survive the framework dispatch path
 - The latest local fixes now cover all three observed failure modes directly: the shift path no longer depends solely on visible IME insets, the IME no longer targets the `SurfaceView`, and rerouted IME navigation no longer depends on custom `KeyEvent.flags`
+- The latest exported Shield log refined the remaining controller-only failure further: the reliable difference is not that remote input reports `handled=true`, but that the working remote path behaves like keyboard-style DPAD input while synthetic controller navigation was using a different synthetic source and then depending on a reroute helper with no original-event fallback
+- The newest local fix narrows the remaining controller hypothesis further: if Bluetooth controller d-pad and left-stick navigation were failing because `MainActivity` was consuming the raw joystick event before the TV IME could see it, then stopping that interception should let the system keyboard handle controller navigation the same way it already handles the working TV remote path
+- The D1 numeric-keyboard root cause was local and concrete: the start-level menu never set `Newmenu_allowed_chars = "09"`, so Android had no signal to request a number keyboard there
 
 Next steps:
-- Re-test on both phone keyboard and Shield TV keyboard to confirm DPAD, HAT, left stick, and gamepad A/B navigation all reach the IME through the hidden editor target
+- Re-test on both phone keyboard and Shield TV keyboard to confirm Bluetooth controller d-pad, HAT, and left stick now navigate the TV keyboard when `MainActivity` leaves raw joystick motion on the system path
 - Re-test TV remote select in in-game menus now that `DPAD_CENTER` maps to Enter on the native side
-- Re-test TV remote select inside the on-screen keyboard now that rerouted IME navigation no longer depends on the dropped custom flag bit
+- Re-test TV remote select and remote `BACK` inside the on-screen keyboard now that `BACK` follows the same local-close path as controller `B`
+- Re-test Bluetooth controller `A`, `B`, and `Select` while the keyboard is open to confirm `A` and `Select` confirm the highlighted character and `B` closes the keyboard
+- Re-test D1 start-level selection to confirm it now requests a numeric keyboard instead of the letter keyboard
 - Confirm that menus opening with an initially selected text field now show the keyboard without a second confirm press
 - Verify whether Shield now reports a non-zero fallback-derived keyboard height and shifts the game view the same way as phone keyboards
 - Confirm that a single launcher-to-game run now appends to one `debuglog_*.txt` file instead of splitting into separate launcher and game logs
-- If the issue still reproduces, export the debug logs and look for `[KB]`, `[AKEY]`, and `[KBMENU]` markers to locate which handoff is failing
+- If the issue still reproduces, export the debug logs and look for `[KB] ime raw nav`, `[KB] closeImeButton`, `[AKEY]`, and `[KBMENU]` markers to locate which handoff is still failing
 
 ### 2. MIDI preview slider Up/Down regression
 
@@ -133,6 +145,7 @@ Next steps:
 ### tranche A
 
 - Completed code changes for TV keyboard controller routing
+- Completed code changes for raw controller passthrough and D1 numeric start-level keyboard selection
 - Completed temporary logging instrumentation for the TV keyboard path in Kotlin, JNI, and D1/D2 menu code
 - Completed code changes for the MIDI preview slider Up/Down regression
 - Pending on-device verification and log capture for the keyboard path

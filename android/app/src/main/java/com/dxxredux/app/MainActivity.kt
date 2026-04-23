@@ -2124,6 +2124,39 @@ class MainActivity :
         }
     }
 
+    private fun imeNavigationTargetView(): View {
+        if (!keyboardInputView.hasFocus()) {
+            val focusGranted = keyboardInputView.requestFocus()
+            logKeyboardDebug(
+                "imeTarget focusGranted=$focusGranted currentFocus=${currentFocus?.javaClass?.simpleName ?: "null"}",
+            )
+        }
+        return keyboardInputView
+    }
+
+    private fun dispatchImeNavigationKey(
+        reroutedEvent: KeyEvent,
+        logMessage: String,
+    ): Boolean {
+        val handled =
+            dispatchImeNavigationEvent {
+                val targetView = imeNavigationTargetView()
+                val viewHandled = targetView.dispatchKeyEvent(reroutedEvent)
+                if (viewHandled) {
+                    true
+                } else if (reroutedEvent.keyCode == KeyEvent.KEYCODE_BACK) {
+                    false
+                } else {
+                    super.dispatchKeyEvent(reroutedEvent)
+                }
+            }
+        logKeyboardDebug(
+            "$logMessage handled=$handled focus=${gameSurfaceView.hasFocus()} " +
+                "imeFocus=${keyboardInputView.hasFocus()} currentFocus=${currentFocus?.javaClass?.simpleName ?: "null"}",
+        )
+        return handled
+    }
+
     private fun imeNavigationSource(keyCode: Int): Int =
         when (keyCode) {
             KeyEvent.KEYCODE_DPAD_UP,
@@ -2132,7 +2165,7 @@ class MainActivity :
             KeyEvent.KEYCODE_DPAD_RIGHT,
             KeyEvent.KEYCODE_DPAD_CENTER,
             KeyEvent.KEYCODE_BACK,
-            -> InputDevice.SOURCE_DPAD
+            -> InputDevice.SOURCE_KEYBOARD or InputDevice.SOURCE_DPAD
             else -> InputDevice.SOURCE_KEYBOARD
         }
 
@@ -2153,13 +2186,12 @@ class MainActivity :
                 originalEvent.flags,
                 imeNavigationSource(keyCode),
             )
-        val handled = dispatchImeNavigationEvent { super.dispatchKeyEvent(reroutedEvent) }
-        logKeyboardDebug(
+        return dispatchImeNavigationKey(
+            reroutedEvent,
             "routeKey orig=${originalEvent.keyCode} mapped=$keyCode action=${originalEvent.action} " +
                 "src=${originalEvent.source} dev=${originalEvent.deviceId} repeat=${originalEvent.repeatCount} " +
-                "handled=$handled focus=${gameSurfaceView.hasFocus()}",
+                "dispatchSource=${reroutedEvent.source}",
         )
-        return handled
     }
 
     private fun dispatchImeNavigationKey(
@@ -2182,12 +2214,11 @@ class MainActivity :
                 0,
                 imeNavigationSource(keyCode),
             )
-        val handled = dispatchImeNavigationEvent { super.dispatchKeyEvent(reroutedEvent) }
-        logKeyboardDebug(
-            "routeMotion mapped=$keyCode action=$action dev=$deviceId handled=$handled " +
-                "downTime=$downTime eventTime=$eventTime focus=${gameSurfaceView.hasFocus()}",
+        return dispatchImeNavigationKey(
+            reroutedEvent,
+            "routeMotion mapped=$keyCode action=$action dev=$deviceId " +
+                "downTime=$downTime eventTime=$eventTime dispatchSource=${reroutedEvent.source}",
         )
-        return handled
     }
 
     private fun dispatchImeHatTransition(
@@ -2262,17 +2293,26 @@ class MainActivity :
             when (event.keyCode) {
                 KeyEvent.KEYCODE_BUTTON_A ->
                     return dispatchImeNavigationKey(event, KeyEvent.KEYCODE_DPAD_CENTER)
-                KeyEvent.KEYCODE_BUTTON_B ->
-                    return dispatchImeNavigationKey(event, KeyEvent.KEYCODE_BACK)
+                KeyEvent.KEYCODE_BUTTON_SELECT ->
+                    return dispatchImeNavigationKey(event, KeyEvent.KEYCODE_DPAD_CENTER)
+                KeyEvent.KEYCODE_BUTTON_B,
+                KeyEvent.KEYCODE_BACK,
+                -> {
+                    logKeyboardDebug(
+                        "closeImeButton kc=${event.keyCode} action=${event.action} src=${event.source} " +
+                            "dev=${event.deviceId}",
+                    )
+                    if (event.action == KeyEvent.ACTION_DOWN) {
+                        hideKeyboard()
+                    }
+                    return true
+                }
                 KeyEvent.KEYCODE_DPAD_UP,
                 KeyEvent.KEYCODE_DPAD_DOWN,
                 KeyEvent.KEYCODE_DPAD_LEFT,
                 KeyEvent.KEYCODE_DPAD_RIGHT,
                 KeyEvent.KEYCODE_DPAD_CENTER,
                 -> {
-                    if (isControllerSource(event.source)) {
-                        return dispatchImeNavigationKey(event)
-                    }
                     return super.dispatchKeyEvent(event)
                 }
                 KeyEvent.KEYCODE_ENTER,
@@ -2280,13 +2320,6 @@ class MainActivity :
                 -> {
                     if (isControllerSource(event.source)) {
                         return dispatchImeNavigationKey(event, KeyEvent.KEYCODE_DPAD_CENTER)
-                    }
-                    return super.dispatchKeyEvent(event)
-                }
-                KeyEvent.KEYCODE_BACK,
-                -> {
-                    if (isControllerSource(event.source)) {
-                        return dispatchImeNavigationKey(event)
                     }
                     return super.dispatchKeyEvent(event)
                 }
@@ -2501,32 +2534,12 @@ class MainActivity :
                 val newNavY = if (hatY != 0) hatY else stickY
                 if (newNavX != hatXState || newNavY != hatYState) {
                     logKeyboardDebug(
-                        "ime nav lx=$lx ly=$ly hx=$hx hy=$hy old=($hatXState,$hatYState) new=($newNavX,$newNavY)",
+                        "ime raw nav lx=$lx ly=$ly hx=$hx hy=$hy old=($hatXState,$hatYState) new=($newNavX,$newNavY)",
                     )
                 }
-                imeHatXDownTime =
-                    dispatchImeHatTransition(
-                        hatXState,
-                        newNavX,
-                        KeyEvent.KEYCODE_DPAD_LEFT,
-                        KeyEvent.KEYCODE_DPAD_RIGHT,
-                        imeHatXDownTime,
-                        event.eventTime,
-                        event.deviceId,
-                    )
-                imeHatYDownTime =
-                    dispatchImeHatTransition(
-                        hatYState,
-                        newNavY,
-                        KeyEvent.KEYCODE_DPAD_UP,
-                        KeyEvent.KEYCODE_DPAD_DOWN,
-                        imeHatYDownTime,
-                        event.eventTime,
-                        event.deviceId,
-                    )
                 hatXState = newNavX
                 hatYState = newNavY
-                return true
+                return super.onGenericMotionEvent(event)
             }
             inputMixer.setAxis(0, "ctrl", event.getAxisValue(MotionEvent.AXIS_X))
             inputMixer.setAxis(1, "ctrl", event.getAxisValue(MotionEvent.AXIS_Y))
