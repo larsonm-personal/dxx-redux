@@ -18,7 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,15 +59,18 @@ private const val TAG = "DXX-MusicPicker"
 private fun verticalDpadFocusEscape(): Modifier {
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     return Modifier.onPreviewKeyEvent { ev ->
-        if (ev.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
         when (ev.key) {
             Key.DirectionUp -> {
-                focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Up)
-                true
+                if (ev.type == KeyEventType.KeyDown) {
+                    focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Up)
+                }
+                ev.type == KeyEventType.KeyDown || ev.type == KeyEventType.KeyUp
             }
             Key.DirectionDown -> {
-                focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down)
-                true
+                if (ev.type == KeyEventType.KeyDown) {
+                    focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down)
+                }
+                ev.type == KeyEventType.KeyDown || ev.type == KeyEventType.KeyUp
             }
             else -> false
         }
@@ -397,7 +399,6 @@ fun AddToSetDialog(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MidiSection(filesDir: File) {
     val ctx = LocalContext.current
@@ -452,19 +453,23 @@ private fun MidiSection(filesDir: File) {
 
     // Source selector dropdown
     var sourceExpanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(
-        expanded = sourceExpanded,
-        onExpandedChange = { sourceExpanded = it },
-    ) {
-        OutlinedTextField(
-            value = selectedSource?.label ?: "Select source",
-            onValueChange = {},
-            readOnly = true,
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = sourceExpanded) },
-            modifier = Modifier.menuAnchor().fillMaxWidth(),
-            textStyle = LocalTextStyle.current.copy(fontSize = 13.sp),
-        )
-        ExposedDropdownMenu(expanded = sourceExpanded, onDismissRequest = { sourceExpanded = false }) {
+    Box(modifier = Modifier.fillMaxWidth()) {
+        OutlinedButton(
+            onClick = { sourceExpanded = !sourceExpanded },
+            modifier = Modifier.fillMaxWidth().tvFocusBorder(),
+        ) {
+            Text(
+                selectedSource?.let { "${it.label} (${it.tracks.size} tracks)" } ?: "Select source",
+                fontSize = 13.sp,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                if (sourceExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                contentDescription = if (sourceExpanded) "Collapse sources" else "Expand sources",
+                modifier = Modifier.size(18.dp),
+            )
+        }
+        DropdownMenu(expanded = sourceExpanded, onDismissRequest = { sourceExpanded = false }) {
             sources.forEach { src ->
                 DropdownMenuItem(
                     text = {

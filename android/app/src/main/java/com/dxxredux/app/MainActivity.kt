@@ -2092,9 +2092,67 @@ class MainActivity :
             source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK ||
             source and InputDevice.SOURCE_DPAD == InputDevice.SOURCE_DPAD
 
+    private fun dispatchImeNavigationKey(
+        keyCode: Int,
+        action: Int,
+    ): Boolean {
+        val eventTime = android.os.SystemClock.uptimeMillis()
+        return super.dispatchKeyEvent(
+            KeyEvent(
+                eventTime,
+                eventTime,
+                action,
+                keyCode,
+                0,
+                0,
+                0,
+                0,
+                0,
+                InputDevice.SOURCE_DPAD,
+            ),
+        )
+    }
+
+    private fun dispatchImeHatTransition(
+        oldDirection: Int,
+        newDirection: Int,
+        negativeKeyCode: Int,
+        positiveKeyCode: Int,
+    ) {
+        if (oldDirection == newDirection) return
+        if (oldDirection == -1) dispatchImeNavigationKey(negativeKeyCode, KeyEvent.ACTION_UP)
+        if (oldDirection == 1) dispatchImeNavigationKey(positiveKeyCode, KeyEvent.ACTION_UP)
+        if (newDirection == -1) dispatchImeNavigationKey(negativeKeyCode, KeyEvent.ACTION_DOWN)
+        if (newDirection == 1) dispatchImeNavigationKey(positiveKeyCode, KeyEvent.ACTION_DOWN)
+    }
+
     private fun logGamepadInput(message: String) {
         DebugLog.log(DebugLogCategory.GAME, message)
         Log.d("DXX-Input", message)
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (gameSurfaceView.keyboardActive) {
+            when (event.keyCode) {
+                KeyEvent.KEYCODE_BUTTON_A ->
+                    return dispatchImeNavigationKey(KeyEvent.KEYCODE_DPAD_CENTER, event.action)
+                KeyEvent.KEYCODE_BUTTON_B ->
+                    return dispatchImeNavigationKey(KeyEvent.KEYCODE_BACK, event.action)
+                KeyEvent.KEYCODE_DPAD_UP,
+                KeyEvent.KEYCODE_DPAD_DOWN,
+                KeyEvent.KEYCODE_DPAD_LEFT,
+                KeyEvent.KEYCODE_DPAD_RIGHT,
+                KeyEvent.KEYCODE_DPAD_CENTER,
+                KeyEvent.KEYCODE_ENTER,
+                KeyEvent.KEYCODE_NUMPAD_ENTER,
+                KeyEvent.KEYCODE_BACK,
+                -> return super.dispatchKeyEvent(event)
+            }
+            if (gamepadButtonIndex(event.keyCode) >= 0 || isControllerSource(event.source)) {
+                return true
+            }
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onKeyDown(
@@ -2112,6 +2170,16 @@ class MainActivity :
         // Let the system handle volume keys
         if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
             return super.onKeyDown(keyCode, event)
+        }
+
+        if (gameSurfaceView.keyboardActive &&
+            (
+                isControllerSource(event.source) ||
+                    dpadKeyCodeToJoyButton(keyCode) >= 0 ||
+                    gamepadButtonIndex(keyCode) >= 0
+            )
+        ) {
+            return true
         }
 
         // Music admin panel: dismiss on BACK / ESC / B / Y before any other
@@ -2189,6 +2257,16 @@ class MainActivity :
             return super.onKeyUp(keyCode, event)
         }
 
+        if (gameSurfaceView.keyboardActive &&
+            (
+                isControllerSource(event.source) ||
+                    dpadKeyCodeToJoyButton(keyCode) >= 0 ||
+                    gamepadButtonIndex(keyCode) >= 0
+            )
+        ) {
+            return true
+        }
+
         // Swallow the key-up for music-panel dismiss keys so the event does
         // not bubble to the game after the panel closed in onKeyDown
         if (isMusicPanelDismissKey(keyCode)) {
@@ -2245,6 +2323,44 @@ class MainActivity :
         if (event.source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK &&
             event.action == MotionEvent.ACTION_MOVE
         ) {
+            if (gameSurfaceView.keyboardActive) {
+                val hx = event.getAxisValue(MotionEvent.AXIS_HAT_X)
+                val hy = event.getAxisValue(MotionEvent.AXIS_HAT_Y)
+                val newHatX =
+                    if (hx < -0.5f) {
+                        -1
+                    } else if (hx > 0.5f) {
+                        1
+                    } else {
+                        0
+                    }
+                val newHatY =
+                    if (hy < -0.5f) {
+                        -1
+                    } else if (hy > 0.5f) {
+                        1
+                    } else {
+                        0
+                    }
+                if (newHatX != hatXState || newHatY != hatYState) {
+                    logGamepadInput("ime hat hx=$hx hy=$hy old=($hatXState,$hatYState) new=($newHatX,$newHatY)")
+                }
+                dispatchImeHatTransition(
+                    hatXState,
+                    newHatX,
+                    KeyEvent.KEYCODE_DPAD_LEFT,
+                    KeyEvent.KEYCODE_DPAD_RIGHT,
+                )
+                dispatchImeHatTransition(
+                    hatYState,
+                    newHatY,
+                    KeyEvent.KEYCODE_DPAD_UP,
+                    KeyEvent.KEYCODE_DPAD_DOWN,
+                )
+                hatXState = newHatX
+                hatYState = newHatY
+                return true
+            }
             inputMixer.setAxis(0, "ctrl", event.getAxisValue(MotionEvent.AXIS_X))
             inputMixer.setAxis(1, "ctrl", event.getAxisValue(MotionEvent.AXIS_Y))
             inputMixer.setAxis(2, "ctrl", event.getAxisValue(MotionEvent.AXIS_Z))
@@ -2350,6 +2466,7 @@ class MainActivity :
             gameSurfaceView.requestFocus()
             val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
             imm.restartInput(gameSurfaceView)
+            imm.showSoftInput(gameSurfaceView, InputMethodManager.SHOW_IMPLICIT)
             // Use WindowInsetsController API (works with setDecorFitsSystemWindows(false))
             WindowInsetsControllerCompat(window, gameSurfaceView)
                 .show(WindowInsetsCompat.Type.ime())
