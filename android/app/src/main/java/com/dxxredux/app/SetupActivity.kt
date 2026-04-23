@@ -1151,6 +1151,14 @@ class SetupActivity : ComponentActivity() {
     private var hatXState = 0
     private var hatYState = 0
 
+    /** Last debounced left-stick directions for launcher focus navigation. */
+    private var stickXState = 0
+    private var stickYState = 0
+
+    /** Last synthesized effective navigation directions after combining HAT and stick input. */
+    private var navXState = 0
+    private var navYState = 0
+
     /** Compose-observable axis update counter (increment triggers recompose). */
     internal val axisGeneration = mutableIntStateOf(0)
 
@@ -1167,6 +1175,18 @@ class SetupActivity : ComponentActivity() {
             else -> 0
         }
 
+    private fun stickAxisDirection(
+        value: Float,
+        oldDirection: Int,
+    ): Int =
+        when {
+            oldDirection == -1 && value < -0.25f -> -1
+            oldDirection == 1 && value > 0.25f -> 1
+            value < -0.6f -> -1
+            value > 0.6f -> 1
+            else -> 0
+        }
+
     private fun synthesizeDpadKeyEvent(
         keyCode: Int,
         action: Int,
@@ -1175,7 +1195,7 @@ class SetupActivity : ComponentActivity() {
         super.dispatchKeyEvent(KeyEvent(eventTime, eventTime, action, keyCode, 0))
     }
 
-    private fun synthesizeHatTransition(
+    private fun synthesizeDpadTransition(
         oldDirection: Int,
         newDirection: Int,
         negativeKeyCode: Int,
@@ -1205,20 +1225,28 @@ class SetupActivity : ComponentActivity() {
             if (!controllerConfigActive) {
                 val newHatX = hatAxisDirection(dpadAxes[0])
                 val newHatY = hatAxisDirection(dpadAxes[1])
-                synthesizeHatTransition(
-                    hatXState,
-                    newHatX,
+                val newStickX = stickAxisDirection(controllerAxes[0], stickXState)
+                val newStickY = stickAxisDirection(controllerAxes[1], stickYState)
+                val newNavX = if (newHatX != 0) newHatX else newStickX
+                val newNavY = if (newHatY != 0) newHatY else newStickY
+                synthesizeDpadTransition(
+                    navXState,
+                    newNavX,
                     KeyEvent.KEYCODE_DPAD_LEFT,
                     KeyEvent.KEYCODE_DPAD_RIGHT,
                 )
-                synthesizeHatTransition(
-                    hatYState,
-                    newHatY,
+                synthesizeDpadTransition(
+                    navYState,
+                    newNavY,
                     KeyEvent.KEYCODE_DPAD_UP,
                     KeyEvent.KEYCODE_DPAD_DOWN,
                 )
                 hatXState = newHatX
                 hatYState = newHatY
+                stickXState = newStickX
+                stickYState = newStickY
+                navXState = newNavX
+                navYState = newNavY
             }
             return true
         }

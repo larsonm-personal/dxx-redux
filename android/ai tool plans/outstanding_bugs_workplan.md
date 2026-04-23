@@ -4,7 +4,7 @@ Source: [android/outstanding_bugs.md](android/outstanding_bugs.md). Each bug bel
 
 ---
 
-## 1. [ ] D1 (and possibly D2) load-game preview snapshots are corrupted
+## 1. [in progress] D1 (and possibly D2) load-game preview snapshots are corrupted
 
 ### Scope
 - D1 save/load preview thumbnails draw with wrong colors on Android.
@@ -14,14 +14,17 @@ Source: [android/outstanding_bugs.md](android/outstanding_bugs.md). Each bug bel
 - [d2/main/state.c](d2/main/state.c#L549-L590) `state_callback()` -- already fixed to use `ogl_ubitblt_i()` so the indexed thumbnail uploads against `gr_current_pal`.
 - Repo memory: `/memories/repo/d2-save-preview-ogl-palette-path.md`.
 
-### Cause (high confidence)
-D1 thumbnails are remapped into the current palette at load time, but the cached bitmap uploader path used by `ogl_ubitmapm_cs` does not honor the runtime `gr_current_pal`. Same root cause as the D2 bug, just not yet patched.
+### Cause (updated after code study)
+The first concrete mismatch is in the Android/OGL draw path: D1 was still drawing load previews through `ogl_ubitmapm_cs(...)`, while D2 already moved to `ogl_ubitblt_i(...)` for this exact bug. D1 also does not store a thumbnail palette the way D2 does, but that is not yet proven to be necessary for the Android regression because the longstanding D1 format already worked on non-OGL paths.
 
 ### Planned change
-- Mirror the D2 fix in D1 `state_callback()`: replace the OGL branch with the same `ogl_ubitblt_i(...)` call. Keep behind `#ifdef OGL` like D2 does. No format change.
-- Confirm D1 load/save callers also remap into the current palette before `state_callback` runs (search for `gr_remap_bitmap_good`/equivalent in `d1/main/state.c`); if D1 stores raw indexed thumbnails without remap, add the same remap step that D2 uses on read so the assumption holds. If D1 uses a different stored format, leave as-is and instead remap in-place before drawing.
+- First pass landed: switch the D1 OGL preview blit in `state_callback()` to `ogl_ubitblt_i(...)`, matching the fixed D2 path.
+- Manual verification decides whether this is sufficient. If thumbnails are still wrong on Android after this patch, the fallback is to add a D1 save-version bump with thumbnail palette write/read plus remap on load.
 
-### Test plan
+### Current status
+- Landed in `d1/main/state.c` and passed `run-windows-build.ps1 -Target d1`.
+- Still needs Android manual verification because this is a render-correctness bug, not just a compile-health issue.
+
 - Build D1 Android, in the emulator: start any pilot, save to slot 1, exit to main menu, re-enter Load Game and verify the thumbnail colors match the in-game scene.
 - Repeat in D2 to confirm no regression.
 - Add an automation script `android/game_scripts/test_save_load_preview.json5` that drives: new game -> first level -> save -> load menu -> introspect to confirm menu opened. Visual correctness still needs by-hand check, but the script catches crashes/regressions in the flow.
@@ -54,10 +57,10 @@ Pause and game-menu (save/load/quit launched from in-game) are reached *while th
 
 ---
 
-## 3. [ ] Multiple debug logs produced for a single app run
+## 3. [ignored] Multiple debug logs produced for a single app run
 
 ### Scope
-- A single app run produces several `debuglog_*.txt` files instead of one. Worse on TV but possibly all platforms. Regressed since 22 May.
+- User reports this is now fixed. Leave out of the current tranche unless it regresses.
 
 ### Code anchors
 - [android/app/src/main/java/com/dxxredux/app/DebugLog.kt](android/app/src/main/java/com/dxxredux/app/DebugLog.kt#L188-L235) `openLog()` / `reuseActiveLog()`.
@@ -70,20 +73,15 @@ Pause and game-menu (save/load/quit launched from in-game) are reached *while th
 - b) `openLog()` is being called more than once per process (e.g. each Activity onCreate), and `reuseActiveLog()` fails because `currentBuildStamp()` reads `BuildInfo.GIT_COMMIT_COUNT` after a code path that was modified.
 - c) Activity recreation on configuration change (TV boots can flip locale/density) calls `init()` again and the active-log file's `lastModified()` already exceeded the window because of a slow first frame.
 
-### Planned change (after diagnosis)
-- Add one debug line in `openLog()` recording: callsite (Setup vs Main, whether `initAppend` vs `init`), whether `reuseActiveLog` returned true, and which file was opened. Push and run a typical TV+phone start sequence, then read the resulting log.
-- Once the fault path is known: most likely the fix is to also check the prefs path before rotating in `initAppend()` (currently it always opens the supplied path even if it differs), and to make `rememberActiveLog` survive process restart by storing the path *before* the first write.
-- Also widen the reuse window from 15 -> 30 minutes if cold-start logs show TV `lastModified` deltas approaching the limit.
+### Planned change
+- None in this tranche.
 
 ### Test plan
-- Phone: cold start app, play 1 level, exit. Confirm exactly one `debuglog_*.txt` for the run.
-- TV: same.
-- Long pause case: Setup screen -> wait 5 min -> launch game -> verify one file.
-- Add a one-liner shell helper `android/check_log_count.ps1` that runs `adb shell run-as com.dxxredux.app ls -1 files/debuglogs | wc -l` before/after a scripted run.
+- None unless the regression reappears.
 
 ---
 
-## 4. [ ] Android TV: only D-pad navigates launcher menus, left analog stick should also work
+## 4. [in progress] Android TV: only D-pad navigates launcher menus, left analog stick should also work
 
 ### Scope
 - Launcher Compose UI (SetupActivity pages).
@@ -95,6 +93,11 @@ Pause and game-menu (save/load/quit launched from in-game) are reached *while th
 ### Planned change
 - In `SetupActivity.onGenericMotionEvent`, when the source is joystick and `controllerConfigActive` is false, debounce-convert AXIS_X/Y crossings of +/-0.5 into synthetic `KeyEvent.KEYCODE_DPAD_*` events delivered to the focused View via `dispatchKeyEvent`. Use a per-axis "armed" boolean so a held stick fires once until it returns inside +/-0.25 (deadband + hysteresis).
 - Skip while the controller-config page is active to avoid double-handling.
+
+### Current status
+- Landed in `SetupActivity.dispatchGenericMotionEvent()`: left-stick X/Y now feed the existing synthesized DPAD navigation path with hysteresis and HAT-axis priority.
+- Passed `./gradlew.bat :app:compileDebugKotlin`.
+- Still needs on-device focus-navigation verification on TV.
 
 ### Test plan
 - TV emulator with a virtual gamepad: focus a button, push left stick down, confirm focus moves; release stick, confirm no auto-repeat without movement; push and hold, confirm only one move per push.
@@ -127,7 +130,7 @@ The IME-reroute path and the gamepad-dispatch path both fire ACTION_DOWN for `BU
 
 ---
 
-## 6. [ ] TV shows generic controller name instead of bluetooth gamepad name
+## 6. [in progress] TV shows generic controller name instead of bluetooth gamepad name
 
 ### Scope
 - Controller config page on TV labels the detected device as "Virtual" or similar generic name instead of e.g. "8BitDo Pro 2".
@@ -141,6 +144,11 @@ On TV, `InputDevice.getDeviceIds()` returns multiple devices including the syste
 ### Planned change
 - Filter out devices where `device.isVirtual == true` (API 29+) and devices where `device.vendorId == 0 && productId == 0`. Sort remaining by `(external first, productId != 0 first, name length desc)` and pick that as the displayed name.
 - Surface all matched devices in the introspection JSON (`controller_introspect.json`) so this can be inspected without screenshots.
+
+### Current status
+- Landed a deterministic launcher-side selection helper in `ControllerDeviceSelection.kt` and switched the controller-config page to use it instead of `gamepads.first()`.
+- Added `ControllerDeviceSelectionTest` and passed `:app:testDebugUnitTest --tests com.dxxredux.app.ControllerDeviceSelectionTest`.
+- Introspection export of detected-device metadata is still optional follow-up; the user-visible label fix itself is implemented.
 
 ### Test plan
 - TV emulator with a virtual gamepad attached: confirm displayed name matches the configured pad and not "Virtual".
@@ -196,4 +204,4 @@ After each fix above lands, extend or add to:
 - `android/tests/` (kotlin unit tests) for the filter/sort helpers.
 
 ## Sequencing recommendation
-Land 1, 2, 3, 4 first (small, mostly local). Then 6 and 5 together (both controller-on-TV). 7 last because it touches new error-reporting infrastructure. Loading bar after 7.
+Land 1, 2, 4 first (small, mostly local). Then 6 and 5 together (both controller-on-TV). 7 last because it touches new error-reporting infrastructure. Loading bar after 7.

@@ -1683,11 +1683,12 @@ fun ControllerConfigPage(
                     emptyList()
                 }
             }
-        val hasController = gamepads.isNotEmpty()
+        val displayedController = selectDisplayedController(gamepads.map(::controllerDisplayDevice))
+        val hasController = displayedController != null
         Text(
             text =
                 if (hasController) {
-                    "\u2713 ${gamepads.first().name}"
+                    "\u2713 ${displayedController?.name.orEmpty()}"
                 } else {
                     "\u2717 Not detected"
                 },
