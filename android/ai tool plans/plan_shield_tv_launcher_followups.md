@@ -32,11 +32,13 @@ Status:
 - The latest supplied `debuglog_20260422_213918.txt` and `debuglog_20260422_213956.txt` were different builds (`11910` and `11920`), so they did not show a fresh single-run split-log regression by themselves
 - `MainActivity.kt` now stops consuming joystick HAT/left-stick motion while the TV keyboard is open and lets the raw controller navigation path fall through to the system IME, while TV-remote `BACK` now closes the keyboard locally through the same `hideKeyboard()` path as controller `B`
 - `d1/main/menu.c` now sets `Newmenu_allowed_chars = "09"` for the start-level selector, matching the existing D2 path so D1 level select requests the numeric keyboard instead of the letter keyboard
+- Cleanup follow-up removed the temporary `[KB]` / `[KBMENU]` keyboard-debug instrumentation from Kotlin, JNI, and `d1/d2 newmenu.c`, and also deleted the dead synthetic IME HAT-reroute helper and hold-timer state in `MainActivity.kt`
 - Kotlin compile validation passed after the dispatch-depth reroute fix and again after scoped code quality
 - Kotlin compile validation also passed before and after scoped code quality for the revised source-alignment and controller-button fix
 - `:app:externalNativeBuildDebug` was later revalidated successfully during the interrupted-build follow-up, so the remaining risk here is on-device behavior, not compile health
 - Kotlin compile validation, `:app:externalNativeBuildDebug`, `android\\run-code-quality.ps1 -Fix`, and `run-windows-build.ps1 -Target d1` all passed after the raw-controller passthrough and D1 numeric-keyboard fixes
-- Shield/phone on-device verification is still pending
+- The cleanup pass also revalidated successfully with `:app:compileDebugKotlin`, `:app:externalNativeBuildDebug`, `android\\run-code-quality.ps1 -Fix`, and `run-windows-build.ps1 -Target both`
+- Latest user confirmation is that the current TV-keyboard version is now working correctly on device
 
 Why first:
 - Highest leverage user-facing blocker
@@ -60,16 +62,25 @@ Current hypothesis:
 - The newest local fix narrows the remaining controller hypothesis further: if Bluetooth controller d-pad and left-stick navigation were failing because `MainActivity` was consuming the raw joystick event before the TV IME could see it, then stopping that interception should let the system keyboard handle controller navigation the same way it already handles the working TV remote path
 - The D1 numeric-keyboard root cause was local and concrete: the start-level menu never set `Newmenu_allowed_chars = "09"`, so Android had no signal to request a number keyboard there
 
-Next steps:
-- Re-test on both phone keyboard and Shield TV keyboard to confirm Bluetooth controller d-pad, HAT, and left stick now navigate the TV keyboard when `MainActivity` leaves raw joystick motion on the system path
-- Re-test TV remote select in in-game menus now that `DPAD_CENTER` maps to Enter on the native side
-- Re-test TV remote select and remote `BACK` inside the on-screen keyboard now that `BACK` follows the same local-close path as controller `B`
-- Re-test Bluetooth controller `A`, `B`, and `Select` while the keyboard is open to confirm `A` and `Select` confirm the highlighted character and `B` closes the keyboard
-- Re-test D1 start-level selection to confirm it now requests a numeric keyboard instead of the letter keyboard
-- Confirm that menus opening with an initially selected text field now show the keyboard without a second confirm press
-- Verify whether Shield now reports a non-zero fallback-derived keyboard height and shifts the game view the same way as phone keyboards
-- Confirm that a single launcher-to-game run now appends to one `debuglog_*.txt` file instead of splitting into separate launcher and game logs
-- If the issue still reproduces, export the debug logs and look for `[KB] ime raw nav`, `[KB] closeImeButton`, `[AKEY]`, and `[KBMENU]` markers to locate which handoff is still failing
+Why the current version is correct:
+- The TV IME now gets a real editor target through the hidden `KeyboardInputView` instead of the `SurfaceView`, so focus, soft-keyboard lifecycle, and TV-style navigation all follow a normal Android text-input path
+- Confirm and close semantics now match the working device behavior instead of an internal guess: controller `A` and `Select` confirm the highlighted character, while controller `B` and TV remote `BACK` close the keyboard locally without escaping the activity
+- Directional navigation now works because `MainActivity` no longer consumes joystick HAT and left-stick motion while the keyboard is open; the system IME sees the raw controller navigation just like it already saw the working TV remote DPAD path
+- Menu shifting is correct on TV because keyboard height no longer depends on one inset source that can stay zero on Android TV; the fallback chain still reports a usable height when the IME is visibly open but `Type.ime()` remains zero
+- Numeric-vs-letter keyboard choice is now correct for level select because D1 and D2 both mark the start-level field as numeric-only with `Newmenu_allowed_chars = "09"`
+
+Other things learned:
+- Android TV keyboard failures split cleanly into three different ownership problems: editor target/focus, keyboard-height reporting, and controller-navigation routing. Fixing only one of them produces misleading partial success
+- Custom `KeyEvent.flags` bits are not a reliable way to tag events that travel through the Android framework; a local dispatch-depth guard around the exact `super.dispatchKeyEvent(...)` call is the safer pattern
+- A working TV remote path does not imply that a synthetic controller path is equivalent. In this case the remote succeeded because the IME handled raw directional input, while the synthetic controller route kept getting swallowed or reported `handled=false`
+- Debug logs from different builds can look like one split session if only the timestamps are compared. The build stamp in the file header was the faster discriminator
+- The durable Android signal for numeric text entry in these menus is still the native `Newmenu_allowed_chars` state, not a launcher-side guess about which field probably wants digits
+
+Cleanup candidates:
+- Phone-emulator automation was not extended for the TV/controller semantics because the current scripts only cover generic soft-keyboard and text-entry paths, not raw TV remote or Bluetooth controller IME navigation; keep that coverage manual until a real TV/controller test harness exists
+- Trim this section down after the durable notes are captured elsewhere so the plan keeps the final rationale and cleanup queue without carrying every intermediate hypothesis forever
+- Add one small regression checklist or automation pass for TV keyboard semantics so later cleanup does not re-break `A`/`Select`, `B`/`BACK`, raw directional navigation, or numeric level select
+- If another cleanup pass touches Android or shared game files, rerun the same validation set: `:app:compileDebugKotlin`, `:app:externalNativeBuildDebug`, `android\\run-code-quality.ps1 -Fix`, and `run-windows-build.ps1 -Target both`
 
 ### 2. MIDI preview slider Up/Down regression
 
@@ -148,7 +159,7 @@ Next steps:
 - Completed code changes for raw controller passthrough and D1 numeric start-level keyboard selection
 - Completed temporary logging instrumentation for the TV keyboard path in Kotlin, JNI, and D1/D2 menu code
 - Completed code changes for the MIDI preview slider Up/Down regression
-- Pending on-device verification and log capture for the keyboard path
+- User has now confirmed the keyboard path is working correctly on device
 - Pending on-device verification for the MIDI preview slider fix
 
 ### tranche B

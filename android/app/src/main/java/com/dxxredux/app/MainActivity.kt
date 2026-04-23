@@ -1074,7 +1074,6 @@ class MainActivity :
                 ): WindowInsetsCompat {
                     val imeHeight =
                         sampleKeyboardHeightPx(
-                            reason = "imeAnimProgress",
                             imeBottomHint = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom,
                         )
                     if (imeHeight > 0) {
@@ -1084,7 +1083,7 @@ class MainActivity :
                 }
 
                 override fun onEnd(animation: WindowInsetsAnimationCompat) {
-                    val imeHeight = sampleKeyboardHeightPx("imeAnimEnd")
+                    val imeHeight = sampleKeyboardHeightPx()
                     nativeSetKeyboardHeight(imeHeight, keyboardReferenceHeightPx())
                 }
             },
@@ -2126,36 +2125,23 @@ class MainActivity :
 
     private fun imeNavigationTargetView(): View {
         if (!keyboardInputView.hasFocus()) {
-            val focusGranted = keyboardInputView.requestFocus()
-            logKeyboardDebug(
-                "imeTarget focusGranted=$focusGranted currentFocus=${currentFocus?.javaClass?.simpleName ?: "null"}",
-            )
+            keyboardInputView.requestFocus()
         }
         return keyboardInputView
     }
 
-    private fun dispatchImeNavigationKey(
-        reroutedEvent: KeyEvent,
-        logMessage: String,
-    ): Boolean {
-        val handled =
-            dispatchImeNavigationEvent {
-                val targetView = imeNavigationTargetView()
-                val viewHandled = targetView.dispatchKeyEvent(reroutedEvent)
-                if (viewHandled) {
-                    true
-                } else if (reroutedEvent.keyCode == KeyEvent.KEYCODE_BACK) {
-                    false
-                } else {
-                    super.dispatchKeyEvent(reroutedEvent)
-                }
+    private fun dispatchImeNavigationKey(reroutedEvent: KeyEvent): Boolean =
+        dispatchImeNavigationEvent {
+            val targetView = imeNavigationTargetView()
+            val viewHandled = targetView.dispatchKeyEvent(reroutedEvent)
+            if (viewHandled) {
+                true
+            } else if (reroutedEvent.keyCode == KeyEvent.KEYCODE_BACK) {
+                false
+            } else {
+                super.dispatchKeyEvent(reroutedEvent)
             }
-        logKeyboardDebug(
-            "$logMessage handled=$handled focus=${gameSurfaceView.hasFocus()} " +
-                "imeFocus=${keyboardInputView.hasFocus()} currentFocus=${currentFocus?.javaClass?.simpleName ?: "null"}",
-        )
-        return handled
-    }
+        }
 
     private fun imeNavigationSource(keyCode: Int): Int =
         when (keyCode) {
@@ -2186,99 +2172,12 @@ class MainActivity :
                 originalEvent.flags,
                 imeNavigationSource(keyCode),
             )
-        return dispatchImeNavigationKey(
-            reroutedEvent,
-            "routeKey orig=${originalEvent.keyCode} mapped=$keyCode action=${originalEvent.action} " +
-                "src=${originalEvent.source} dev=${originalEvent.deviceId} repeat=${originalEvent.repeatCount} " +
-                "dispatchSource=${reroutedEvent.source}",
-        )
-    }
-
-    private fun dispatchImeNavigationKey(
-        downTime: Long,
-        eventTime: Long,
-        action: Int,
-        keyCode: Int,
-        deviceId: Int,
-    ): Boolean {
-        val reroutedEvent =
-            KeyEvent(
-                downTime,
-                eventTime,
-                action,
-                keyCode,
-                0,
-                0,
-                deviceId,
-                0,
-                0,
-                imeNavigationSource(keyCode),
-            )
-        return dispatchImeNavigationKey(
-            reroutedEvent,
-            "routeMotion mapped=$keyCode action=$action dev=$deviceId " +
-                "downTime=$downTime eventTime=$eventTime dispatchSource=${reroutedEvent.source}",
-        )
-    }
-
-    private fun dispatchImeHatTransition(
-        oldDirection: Int,
-        newDirection: Int,
-        negativeKeyCode: Int,
-        positiveKeyCode: Int,
-        downTime: Long,
-        eventTime: Long,
-        deviceId: Int,
-    ): Long {
-        if (oldDirection == newDirection) return downTime
-        if (oldDirection == -1) {
-            dispatchImeNavigationKey(
-                downTime,
-                eventTime,
-                KeyEvent.ACTION_UP,
-                negativeKeyCode,
-                deviceId,
-            )
-        }
-        if (oldDirection == 1) {
-            dispatchImeNavigationKey(
-                downTime,
-                eventTime,
-                KeyEvent.ACTION_UP,
-                positiveKeyCode,
-                deviceId,
-            )
-        }
-        if (newDirection == 0) return 0L
-        if (newDirection == -1) {
-            dispatchImeNavigationKey(
-                eventTime,
-                eventTime,
-                KeyEvent.ACTION_DOWN,
-                negativeKeyCode,
-                deviceId,
-            )
-        }
-        if (newDirection == 1) {
-            dispatchImeNavigationKey(
-                eventTime,
-                eventTime,
-                KeyEvent.ACTION_DOWN,
-                positiveKeyCode,
-                deviceId,
-            )
-        }
-        return eventTime
+        return dispatchImeNavigationKey(reroutedEvent)
     }
 
     private fun logGamepadInput(message: String) {
         DebugLog.log(DebugLogCategory.GAME, message)
         Log.d("DXX-Input", message)
-    }
-
-    private fun logKeyboardDebug(message: String) {
-        DebugLog.log(DebugLogCategory.GAME, "[KB] $message")
-        Log.i("DXX-Keyboard", message)
     }
 
     private fun motionAxisDirection(value: Float): Int =
@@ -2298,10 +2197,6 @@ class MainActivity :
                 KeyEvent.KEYCODE_BUTTON_B,
                 KeyEvent.KEYCODE_BACK,
                 -> {
-                    logKeyboardDebug(
-                        "closeImeButton kc=${event.keyCode} action=${event.action} src=${event.source} " +
-                            "dev=${event.deviceId}",
-                    )
                     if (event.action == KeyEvent.ACTION_DOWN) {
                         hideKeyboard()
                     }
@@ -2325,10 +2220,6 @@ class MainActivity :
                 }
             }
             if (gamepadButtonIndex(event.keyCode) >= 0 || isControllerSource(event.source)) {
-                logKeyboardDebug(
-                    "swallowKey kc=${event.keyCode} action=${event.action} src=${event.source} " +
-                        "dev=${event.deviceId} focus=${gameSurfaceView.hasFocus()}",
-                )
                 return true
             }
         }
@@ -2514,8 +2405,6 @@ class MainActivity :
     // ── Gamepad analog axes ─────────────────────────────────
     private var hatXState = 0 // -1, 0, +1
     private var hatYState = 0
-    private var imeHatXDownTime = 0L
-    private var imeHatYDownTime = 0L
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
         if (event.source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK &&
@@ -2530,15 +2419,8 @@ class MainActivity :
                 val stickY = motionAxisDirection(ly)
                 val hatX = motionAxisDirection(hx)
                 val hatY = motionAxisDirection(hy)
-                val newNavX = if (hatX != 0) hatX else stickX
-                val newNavY = if (hatY != 0) hatY else stickY
-                if (newNavX != hatXState || newNavY != hatYState) {
-                    logKeyboardDebug(
-                        "ime raw nav lx=$lx ly=$ly hx=$hx hy=$hy old=($hatXState,$hatYState) new=($newNavX,$newNavY)",
-                    )
-                }
-                hatXState = newNavX
-                hatYState = newNavY
+                hatXState = if (hatX != 0) hatX else stickX
+                hatYState = if (hatY != 0) hatY else stickY
                 return super.onGenericMotionEvent(event)
             }
             inputMixer.setAxis(0, "ctrl", event.getAxisValue(MotionEvent.AXIS_X))
@@ -2606,7 +2488,6 @@ class MainActivity :
 
     // ── Soft keyboard show/hide (called from JNI) ───────────
     private var keyboardPollRunnable: Runnable? = null
-    private var lastKeyboardHeightSampleLog = ""
 
     private fun keyboardReferenceHeightPx(): Int {
         val decorView = window.decorView
@@ -2643,10 +2524,7 @@ class MainActivity :
             0
         }
 
-    private fun sampleKeyboardHeightPx(
-        reason: String,
-        imeBottomHint: Int? = null,
-    ): Int {
+    private fun sampleKeyboardHeightPx(imeBottomHint: Int? = null): Int {
         val decorView = window.decorView
         val screenHeight = keyboardReferenceHeightPx()
         val imeBottom =
@@ -2678,17 +2556,7 @@ class MainActivity :
             } else {
                 0
             }
-        val keyboardHeight = maxOf(imeBottom, imeStableBottom, fallbackBottom, tvFallbackBottom)
-        val sampleLog =
-            "kbSample reason=$reason ime=$imeBottom imeStable=$imeStableBottom " +
-                "fallback=$fallbackBottom tvFallback=$tvFallbackBottom " +
-                "occlusion=$bottomOcclusion systemBottom=$systemBottom " +
-                "visibleBottom=${visibleFrame.bottom} screenH=$screenHeight"
-        if (sampleLog != lastKeyboardHeightSampleLog) {
-            lastKeyboardHeightSampleLog = sampleLog
-            logKeyboardDebug(sampleLog)
-        }
-        return keyboardHeight
+        return maxOf(imeBottom, imeStableBottom, fallbackBottom, tvFallbackBottom)
     }
 
     /** Poll for IME height via rootWindowInsets.  With adjustNothing
@@ -2698,16 +2566,14 @@ class MainActivity :
      *  to the visible window frame bottom when needed. */
     private fun pollKeyboardHeight(attemptsLeft: Int) {
         if (attemptsLeft <= 0) return
-        val decorView = window.decorView
-        val imeHeight = sampleKeyboardHeightPx("poll")
-        Log.i("DXX-Keyboard", "poll: imeHeight=$imeHeight viewH=${decorView.height} left=$attemptsLeft")
+        val imeHeight = sampleKeyboardHeightPx()
         if (imeHeight > 0) {
             nativeSetKeyboardHeight(imeHeight, keyboardReferenceHeightPx())
             return
         }
         val r = Runnable { pollKeyboardHeight(attemptsLeft - 1) }
         keyboardPollRunnable = r
-        decorView.postDelayed(r, 100)
+        window.decorView.postDelayed(r, 100)
     }
 
     @Suppress("unused") // Called from native code
@@ -2721,21 +2587,12 @@ class MainActivity :
             keyboardInputView.currentInputType = gameSurfaceView.currentInputType
             hatXState = 0
             hatYState = 0
-            imeHatXDownTime = 0L
-            imeHatYDownTime = 0L
-            lastKeyboardHeightSampleLog = ""
             gameSurfaceView.keyboardActive = true
             keyboardInputView.keyboardActive = true
-            val focusGranted = keyboardInputView.requestFocus()
+            keyboardInputView.requestFocus()
             val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
             imm.restartInput(keyboardInputView)
-            val showRequested = imm.showSoftInput(keyboardInputView, InputMethodManager.SHOW_IMPLICIT)
-            logKeyboardDebug(
-                "showKeyboard inputType=$inputType focusGranted=$focusGranted " +
-                    "hasFocus=${keyboardInputView.hasFocus()} showRequested=$showRequested " +
-                    "immActive=${imm.isActive(keyboardInputView)} " +
-                    "currentFocus=${currentFocus?.javaClass?.simpleName ?: "null"}",
-            )
+            imm.showSoftInput(keyboardInputView, InputMethodManager.SHOW_IMPLICIT)
             // Use WindowInsetsController API (works with setDecorFitsSystemWindows(false))
             WindowInsetsControllerCompat(window, keyboardInputView)
                 .show(WindowInsetsCompat.Type.ime())
@@ -2751,13 +2608,6 @@ class MainActivity :
             keyboardPollRunnable = null
             hatXState = 0
             hatYState = 0
-            imeHatXDownTime = 0L
-            imeHatYDownTime = 0L
-            lastKeyboardHeightSampleLog = ""
-            logKeyboardDebug(
-                "hideKeyboard hasFocus=${keyboardInputView.hasFocus()} " +
-                    "currentFocus=${currentFocus?.javaClass?.simpleName ?: "null"}",
-            )
             gameSurfaceView.keyboardActive = false
             keyboardInputView.keyboardActive = false
             WindowInsetsControllerCompat(window, keyboardInputView)
@@ -2955,26 +2805,12 @@ class MainActivity :
 
         override fun onCheckIsTextEditor(): Boolean = keyboardActive
 
-        override fun onFocusChanged(
-            gainFocus: Boolean,
-            direction: Int,
-            previouslyFocusedRect: android.graphics.Rect?,
-        ) {
-            super.onFocusChanged(gainFocus, direction, previouslyFocusedRect)
-            logKeyboardDebug(
-                "imeFocus gain=$gainFocus direction=$direction keyboardActive=$keyboardActive",
-            )
-        }
-
         override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
             outAttrs.inputType = currentInputType or
                 InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or
                 InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
             outAttrs.imeOptions = EditorInfo.IME_ACTION_DONE or
                 EditorInfo.IME_FLAG_NO_EXTRACT_UI
-            logKeyboardDebug(
-                "createInputConnection inputType=$currentInputType keyboardActive=$keyboardActive",
-            )
             return GameInputConnection(this)
         }
     }
@@ -2988,17 +2824,6 @@ class MainActivity :
 
         override fun onCheckIsTextEditor(): Boolean = keyboardActive
 
-        override fun onFocusChanged(
-            gainFocus: Boolean,
-            direction: Int,
-            previouslyFocusedRect: android.graphics.Rect?,
-        ) {
-            super.onFocusChanged(gainFocus, direction, previouslyFocusedRect)
-            logKeyboardDebug(
-                "surfaceFocus gain=$gainFocus direction=$direction keyboardActive=$keyboardActive",
-            )
-        }
-
         override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
             // Disable word prediction / autocorrect so each keystroke arrives
             // immediately via commitText instead of being buffered in composition.
@@ -3007,9 +2832,6 @@ class MainActivity :
                 InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
             outAttrs.imeOptions = EditorInfo.IME_ACTION_DONE or
                 EditorInfo.IME_FLAG_NO_EXTRACT_UI
-            logKeyboardDebug(
-                "createInputConnection inputType=$currentInputType keyboardActive=$keyboardActive",
-            )
             return GameInputConnection(this)
         }
     }
