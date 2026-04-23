@@ -32,3 +32,17 @@
 - [x] Harden run-code-quality.ps1 with scoped -Paths support, stage-aware lock metadata, and a dirty-file summary report
 - [x] Harden the helper scripts so scoped runs reach clang-format, ktlint, PSScriptAnalyzer, shellcheck, and shfmt correctly
 - [x] Final focused Android compile after the scoped cleanup pass
+
+## MIDI Crash Follow-up
+- [x] Correlate launcher preview SIGSEGV and D1 level-start SIGBUS to the shared HMP-to-MIDI allocator path
+- [x] Fix Android MIDI preview and in-game TSF playback to free HMP-derived MIDI buffers with d_free instead of plain free
+- [x] Use d_malloc for Android raw .mid copies so all Android MIDI buffers stay on the same allocator family
+- [x] Run scoped Android code-quality on the touched native files
+- [x] Re-run focused Android native build after formatting
+
+## D1 Briefing Crash Follow-up
+- [x] Review the new crash report and verify the mem.c canary-failure signature is gone in the latest build
+- [x] Symbolize the new ARMv7 PC/LR pair against the current D1 Android library and confirm the result is ambiguous against the runtime breadcrumbs
+- [x] Add targeted breadcrumbs in the Android TSF stop/free path and meta-action SDL key injection path to disambiguate the next repro
+- [x] Run scoped Android code-quality on the touched native files
+- [x] Re-run focused Android native build after formatting

@@ -17,6 +17,7 @@
 #include <string.h>
 #include <android/log.h>
 #include "android_meta_actions.h"
+#include "android_crash_handler.h"
 
 volatile int android_force_quit = 0;
 volatile int android_escort_release_pending = 0;
@@ -100,6 +101,7 @@ static void inject_sdl_key(SDLKey sym, int down)
 	ev.key.keysym.sym = sym;
 	ev.key.keysym.mod = KMOD_NONE;
 	ev.key.keysym.unicode = 0;
+	crash_breadcrumb_v("inject_sdl_key sym=%d down=%d", (int) sym, down);
 	SDL_PushEvent(&ev);
 }
 

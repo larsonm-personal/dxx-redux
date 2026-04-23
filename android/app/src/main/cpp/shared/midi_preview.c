@@ -21,6 +21,8 @@
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
 
+#include "u_mem.h"
+
 #define TSF_NO_STDIO
 #include "tsf.h"
 #define TML_NO_STDIO
@@ -555,7 +557,7 @@ int midi_preview_start(const unsigned char *data, int len,
 		}
 	} else {
 		/* Standard MIDI: copy the data */
-		midi_data = (unsigned char *) malloc(len);
+		midi_data = (unsigned char *) d_malloc(len);
 		if (!midi_data) return 0;
 		memcpy(midi_data, data, len);
 		midi_len = len;
@@ -565,7 +567,7 @@ int midi_preview_start(const unsigned char *data, int len,
 	s_midi = tml_load_memory(midi_data, midi_len);
 	if (!s_midi) {
 		LOGE("tml_load_memory failed");
-		free(midi_data);
+		d_free(midi_data);
 		return 0;
 	}
 
@@ -594,8 +596,7 @@ int midi_preview_start(const unsigned char *data, int len,
 		tml_free(s_midi);
 		s_midi = NULL;
 		s_midi_cur = NULL;
-		free(s_midi_buf);
-		s_midi_buf = NULL;
+		d_free(s_midi_buf);
 		s_playing = 0;
 		return 0;
 	}
@@ -617,8 +618,7 @@ void midi_preview_stop(void)
 		s_midi_cur = NULL;
 	}
 	if (s_midi_buf) {
-		free(s_midi_buf);
-		s_midi_buf = NULL;
+		d_free(s_midi_buf);
 		s_midi_buf_len = 0;
 	}
 	rb_reset();

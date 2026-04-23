@@ -15,6 +15,11 @@
     }
   ],
 
+    "[plaintext]": {
+        "editor.colorDecorators": false
+    },
+
+
     // --- Exclusions for performance (286K -> ~20K indexed files) ---
     // files.exclude hides from explorer AND all indexing (C/C++, Java, search)
     "files.exclude": {

@@ -552,8 +552,12 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 	unsigned int bufsize = 0;
 	char *fptr;
 
+	crash_breadcrumb_v("mix_play_file enter tid=%ld file=%s loop=%d",
+	                   tsf_music_gettid(), filename, loop);
 	tsf_dispatch_finished();
+	crash_breadcrumb("mix_play_file: dispatch_finished_done");
 	mix_free_music();
+	crash_breadcrumb("mix_play_file: preflight_free_done");
 
 	fptr = strrchr(filename, '.');
 	if (!fptr) return 0;
@@ -667,7 +671,7 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 			return 0;
 		}
 		bufsize = (unsigned int) PHYSFS_fileLength(fh);
-		g_midi_buf = (unsigned char *) malloc(bufsize);
+		g_midi_buf = (unsigned char *) d_malloc(bufsize);
 		if (!g_midi_buf) {
 			PHYSFS_close(fh);
 			return 0;
@@ -685,8 +689,7 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 	if (!g_midi) {
 		con_printf(CON_CRITICAL, "TSF: tml_load_memory failed for %s\n",
 		           filename);
-		free(g_midi_buf);
-		g_midi_buf = NULL;
+		d_free(g_midi_buf);
 		return 0;
 	}
 
@@ -731,9 +734,18 @@ int mix_play_file(char *filename, int loop, void (*hook_finished_track)())
 void mix_free_music(void)
 {
 #ifdef ANDROID
+	crash_breadcrumb_v("mix_free enter tid=%ld playing=%d render=%p midi=%p cur=%p buf=%p",
+	                   tsf_music_gettid(), g_playing, (void *) g_render_thread,
+	                   (void *) g_midi, (void *) g_midi_cur,
+	                   (void *) g_midi_buf);
+
+#ifdef ANDROID
 	render_thread_stop();
+	crash_breadcrumb("mix_free: render_thread_stop_done");
+#endif
 #endif
 	Mix_HookMusic(NULL, NULL);
+	crash_breadcrumb("mix_free: hook_cleared");
 	g_playing = 0;
 	g_paused = 0;
 	g_song_finished = 0;
@@ -751,13 +763,16 @@ void mix_free_music(void)
 	g_midi_cur = NULL;
 
 	if (g_midi) {
+		crash_breadcrumb_v("mix_free: tml_free %p", (void *) g_midi);
 		tml_free(g_midi);
+		crash_breadcrumb("mix_free: tml_free_done");
 		g_midi = NULL;
 	}
 
 	if (g_midi_buf) {
-		free(g_midi_buf);
-		g_midi_buf = NULL;
+		crash_breadcrumb_v("mix_free: midi_buf_free %p", (void *) g_midi_buf);
+		d_free(g_midi_buf);
+		crash_breadcrumb("mix_free: midi_buf_free_done");
 	}
 
 	/* Stop all voices but keep the synth loaded */
