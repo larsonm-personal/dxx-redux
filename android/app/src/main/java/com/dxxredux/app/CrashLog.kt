@@ -2,101 +2,51 @@ package com.dxxredux.app
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
 import androidx.core.content.FileProvider
+import androidx.core.content.pm.PackageInfoCompat
+import xcrash.TombstoneManager
 import java.io.File
-import java.io.PrintWriter
-import java.io.StringWriter
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /**
- * Crash logger. Captures uncaught Java exceptions and native signals,
- * writing crash reports to filesDir/crashlogs/. Reports are viewable
- * and exportable from the Advanced Settings page.
+ * Crash report utilities. xCrash owns Java/native/ANR capture and writes
+ * tombstones into filesDir/tombstones/. We keep the native breadcrumb ring
+ * and append it plus build metadata into the generated tombstone files.
  *
- * Call [install] once from each Activity's onCreate.
+ * Reports are viewable and exportable from the Advanced Settings page.
  */
 object CrashLog {
     private const val TAG = "CrashLog"
-    private const val DIR_NAME = "crashlogs"
-    private const val MAX_FILES = 5
+    private const val LEGACY_DIR_NAME = "crashlogs"
+    private const val TOMBSTONE_DIR_NAME = "tombstones"
     private const val AUTHORITY = "com.dxxredux.app.fileprovider"
 
     private var installed = false
 
     /**
-     * Install the Java crash handler. Safe to call multiple times
-     * (idempotent after first). Call installNativeHandler() after
-     * System.loadLibrary() to arm native signal reporting.
+     * Legacy compatibility hook. xCrash is initialized from the Application,
+     * so Activity call sites can safely keep calling this without installing
+     * a second Java uncaught exception handler.
      */
     fun install(context: Context) {
+        @Suppress("UNUSED_PARAMETER")
+        val unused = context
         if (installed) return
         installed = true
-
-        val crashDir = File(context.filesDir, DIR_NAME)
-        crashDir.mkdirs()
-
-        // -- Java uncaught exception handler --
-        val oldHandler = Thread.getDefaultUncaughtExceptionHandler()
-        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-            writeCrashFile(crashDir, thread, throwable)
-            // Chain to previous handler (Android default) so the system still shows crash dialog
-            oldHandler?.uncaughtException(thread, throwable)
-        }
-    }
-
-    /**
-     * Write a crash report for a Java exception.
-     * Called from the UncaughtExceptionHandler -- must not throw.
-     */
-    private fun writeCrashFile(
-        crashDir: File,
-        thread: Thread,
-        throwable: Throwable,
-    ) {
-        try {
-            crashDir.mkdirs()
-            pruneOldFiles(crashDir)
-            val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-            val file = File(crashDir, "crash_$stamp.txt")
-            val sw = StringWriter()
-            sw.append("Crash at: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())}\n")
-            sw.append("Thread: ${thread.name} (id=${thread.id})\n")
-            sw.append("Exception: ${throwable.javaClass.name}: ${throwable.message}\n\n")
-            sw.append("Stack trace:\n")
-            val pw = PrintWriter(sw)
-            throwable.printStackTrace(pw)
-            pw.flush()
-            // Include cause chain
-            var cause = throwable.cause
-            while (cause != null) {
-                sw.append("\nCaused by: ${cause.javaClass.name}: ${cause.message}\n")
-                cause.printStackTrace(pw)
-                pw.flush()
-                cause = cause.cause
-            }
-            sw.append("\n--- Device Info ---\n")
-            sw.append("Model: ${android.os.Build.MODEL}\n")
-            sw.append("SDK: ${android.os.Build.VERSION.SDK_INT}\n")
-            sw.append("ABI: ${android.os.Build.SUPPORTED_ABIS.joinToString()}\n")
-            file.writeText(sw.toString())
-            Log.i(TAG, "Crash report written: ${file.name}")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to write crash report", e)
-        }
     }
 
     /** List existing crash files, newest first. */
     fun listCrashFiles(context: Context): List<File> {
-        val dir = File(context.filesDir, DIR_NAME)
-        if (!dir.isDirectory) return emptyList()
-        return dir
-            .listFiles()
-            ?.filter { it.isFile && it.name.startsWith("crash_") }
-            ?.sortedByDescending { it.lastModified() }
-            ?: emptyList()
+        val appContext = context.applicationContext
+        return crashDirs(appContext)
+            .flatMap { dir ->
+                if (!dir.isDirectory) {
+                    emptyList()
+                } else {
+                    dir.listFiles()?.filter(::isCrashReportFile).orEmpty()
+                }
+            }.sortedByDescending { it.lastModified() }
     }
 
     /** Share a crash file via system share sheet. */
@@ -128,37 +78,96 @@ object CrashLog {
 
     /** Delete all crash files. */
     fun deleteAllCrashFiles(context: Context) {
-        val dir = File(context.filesDir, DIR_NAME)
-        dir.listFiles()?.forEach { it.delete() }
+        val appContext = context.applicationContext
+        crashDirs(appContext).forEach { dir -> dir.listFiles()?.forEach { it.delete() } }
     }
 
-    private fun pruneOldFiles(dir: File) {
-        val files =
-            dir
-                .listFiles()
-                ?.filter { it.isFile && it.name.startsWith("crash_") }
-                ?.sortedBy { it.lastModified() }
-                ?: return
-        val toDelete = files.size - (MAX_FILES - 1)
-        if (toDelete > 0) {
-            files.take(toDelete).forEach { it.delete() }
+    fun appendXCrashSections(
+        context: Context,
+        logPath: String?,
+        emergency: String?,
+    ) {
+        if (logPath.isNullOrBlank()) {
+            if (!emergency.isNullOrBlank()) {
+                Log.w(TAG, "xCrash callback received emergency-only crash info")
+            }
+            return
+        }
+
+        val appContext = context.applicationContext
+        val header = buildCommonCrashHeader(appContext).trimEnd()
+        if (header.isNotEmpty()) {
+            TombstoneManager.appendSection(logPath, "dxx-redux header", header)
+        }
+
+        val breadcrumbs =
+            try {
+                nativeGetBreadcrumbReport()?.trimEnd().orEmpty()
+            } catch (_: UnsatisfiedLinkError) {
+                ""
+            }
+        if (breadcrumbs.isNotEmpty()) {
+            TombstoneManager.appendSection(logPath, "dxx-redux breadcrumbs", breadcrumbs)
         }
     }
 
     /**
-     * Install native signal handlers. Call after System.loadLibrary().
-     * Safe to call multiple times (native side is idempotent).
+     * Initialize native breadcrumb storage after System.loadLibrary().
+     * xCrash owns crash handling; this only provides the crash directory
+     * for Error() and exposes breadcrumbs to the xCrash callback.
      */
     fun installNativeHandler(context: Context) {
         try {
-            val crashDir = File(context.filesDir, DIR_NAME)
+            val appContext = context.applicationContext
+            val crashDir = getTombstoneDir(appContext)
             crashDir.mkdirs()
-            nativeInstallCrashHandler(crashDir.absolutePath)
+            nativeInstallCrashHandler(crashDir.absolutePath, buildCommonCrashHeader(appContext))
         } catch (e: UnsatisfiedLinkError) {
             Log.w(TAG, "Native crash handler not available", e)
         }
     }
 
-    // JNI declaration -- implemented in android_crash_handler.c
-    private external fun nativeInstallCrashHandler(crashDir: String)
+    fun getTombstoneDir(context: Context): File = File(context.filesDir, TOMBSTONE_DIR_NAME)
+
+    fun buildCommonCrashHeader(context: Context): String {
+        val packageInfo =
+            try {
+                context.packageManager.getPackageInfo(context.packageName, 0)
+            } catch (_: Exception) {
+                null
+            }
+        val versionName = packageInfo?.versionName?.takeUnless { it.isNullOrBlank() } ?: "unknown"
+        val versionCode = packageInfo?.let { PackageInfoCompat.getLongVersionCode(it).toString() } ?: "unknown"
+        val primaryAbi = Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown"
+        val supportedAbis = Build.SUPPORTED_ABIS.joinToString().ifBlank { "unknown" }
+        val osArch = System.getProperty("os.arch").takeUnless { it.isNullOrBlank() } ?: "unknown"
+
+        return buildString {
+            append("Package: ${context.packageName}\n")
+            append("App version: $versionName ($versionCode)\n")
+            append("Build: ${BuildInfo.GIT_COMMIT_COUNT} (${BuildInfo.GIT_SHORT_HASH}) ${BuildInfo.BUILD_TYPE}\n")
+            append("Built: ${BuildInfo.BUILD_DATE} ${BuildInfo.BUILD_TIME}\n")
+            append("Model: ${Build.MODEL}\n")
+            append("SDK: ${Build.VERSION.SDK_INT}\n")
+            append("Primary ABI: $primaryAbi\n")
+            append("Supported ABIs: $supportedAbis\n")
+            append("OS arch: $osArch\n")
+        }
+    }
+
+    private fun crashDirs(context: Context): List<File> =
+        listOf(getTombstoneDir(context), File(context.filesDir, LEGACY_DIR_NAME))
+
+    private fun isCrashReportFile(file: File): Boolean {
+        if (!file.isFile) return false
+        return file.name.startsWith("tombstone_") || file.name.startsWith("crash_")
+    }
+
+    // JNI declarations -- implemented in android_crash_handler.c
+    private external fun nativeInstallCrashHandler(
+        crashDir: String,
+        installInfo: String,
+    )
+
+    private external fun nativeGetBreadcrumbReport(): String?
 }

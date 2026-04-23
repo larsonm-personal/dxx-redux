@@ -278,5 +278,8 @@ dependencies {
     // 7z archive support (for music packs distributed as .7z)
     implementation "org.apache.commons:commons-compress:${toolVersions['COMMONS_COMPRESS_VERSION']}"
 
+    // Tombstone-style crash capture for Java, native, and ANR failures
+    implementation 'com.iqiyi.xcrash:xcrash-android-lib:3.1.0'
+
     testImplementation "junit:junit:${toolVersions['JUNIT_VERSION']}"
 }

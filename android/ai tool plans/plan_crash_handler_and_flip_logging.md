@@ -46,3 +46,9 @@
 - [x] Add targeted breadcrumbs in the Android TSF stop/free path and meta-action SDL key injection path to disambiguate the next repro
 - [x] Run scoped Android code-quality on the touched native files
 - [x] Re-run focused Android native build after formatting
+
+## Native Crash Header Parity
+- [x] Mirror Kotlin crash-header app/build/device metadata into native crash reports
+- [x] Add native crash timestamp and architecture fields
+- [x] Keep native install-time metadata precomputed so the signal handler only writes cached strings
+- [x] Run focused Android compile and scoped code-quality on the touched files

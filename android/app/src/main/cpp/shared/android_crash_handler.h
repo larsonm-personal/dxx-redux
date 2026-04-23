@@ -6,9 +6,10 @@
 #define ANDROID_CRASH_HANDLER_H
 
 #ifdef ANDROID
-/* Install signal handlers for SIGSEGV, SIGABRT, SIGBUS, SIGFPE, SIGILL.
- * crash_dir is the directory where crash_native_<pid>.txt files are written. */
-void android_crash_handler_init(const char *crash_dir);
+/* Initialize crash breadcrumb storage.
+ * crash_dir is retained so Error() can write non-signal fatal errors into the
+ * same directory as xCrash tombstones. install_info is currently unused. */
+void android_crash_handler_init(const char *crash_dir, const char *install_info);
 
 /* Return the crash directory path set by android_crash_handler_init(),
  * or NULL if not yet initialized.  Used by Error() to write crash files
@@ -16,7 +17,7 @@ void android_crash_handler_init(const char *crash_dir);
 const char *android_crash_handler_get_dir(void);
 
 /* Breadcrumb ring buffer -- records last N diagnostic markers.
- * Dumped into the crash file on signal. Writers may come from more
+ * Dumped into xCrash tombstones via JNI. Writers may come from more
  * than one thread; ordering is best-effort. */
 void crash_breadcrumb(const char *msg);
 void crash_breadcrumb_v(const char *fmt, ...);
