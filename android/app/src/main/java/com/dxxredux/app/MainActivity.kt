@@ -2049,9 +2049,14 @@ class MainActivity :
                 val kcIndices = mixerButtonMap[btnIdx]
                 if (kcIndices != null) {
                     for (kc in kcIndices) inputMixer.setButton(kc, tag, pressed)
-                } else {
-                    nativeJoystickButton(btnIdx, if (pressed) 1 else 0)
                 }
+                // Always fire the virtual joystick button too. In-game menus
+                // translate joy buttons 22-25 to KEY_UP/DOWN/LEFT/RIGHT via
+                // the ANDROID EVENT_JOYSTICK_BUTTON_DOWN block in newmenu.c.
+                // During gameplay this is a no-op because the launcher binds
+                // actions via keyboard through the mixer above; joy buttons
+                // 22-25 stay unbound in kconfig
+                nativeJoystickButton(btnIdx, if (pressed) 1 else 0)
             }
         }
     }
@@ -2109,6 +2114,14 @@ class MainActivity :
             return super.onKeyDown(keyCode, event)
         }
 
+        // Music admin panel: dismiss on BACK / ESC / B / Y before any other
+        // gamepad handling. The panel itself only handles touch so without
+        // this hook it traps input when opened by the admin tray
+        if (musicPanel != null && isMusicPanelDismissKey(keyCode)) {
+            dismissMusicPanel()
+            return true
+        }
+
         // Gamepad-only: route D-pad/A/B to admin tray when open
         if (gamepadOnlyMode && touchOverlay.isAdminTrayOpen()) {
             if (touchOverlay.handleAdminTrayGamepadKey(keyCode, 0)) return true
@@ -2137,9 +2150,14 @@ class MainActivity :
                 val kcIndices = mixerButtonMap[joyBtn]
                 if (kcIndices != null) {
                     for (kc in kcIndices) inputMixer.setButton(kc, tag, true)
-                } else {
-                    nativeJoystickButton(joyBtn, 1)
                 }
+                // In-game menus map joy button 0 -> KEY_ENTER and 1 -> KEY_ESC
+                // in the ANDROID newmenu.c handler. Fire the joystick event
+                // unconditionally so A/B work for select/back regardless of
+                // any gameplay binding the mixer layered on top. During
+                // gameplay this is a no-op because kconfig is bound via the
+                // keyboard events emitted by the mixer, not joy buttons 0/1
+                nativeJoystickButton(joyBtn, 1)
             }
             return true
         }
@@ -2171,6 +2189,12 @@ class MainActivity :
             return super.onKeyUp(keyCode, event)
         }
 
+        // Swallow the key-up for music-panel dismiss keys so the event does
+        // not bubble to the game after the panel closed in onKeyDown
+        if (isMusicPanelDismissKey(keyCode)) {
+            return true
+        }
+
         // Gamepad-only: consume events while admin tray is open
         if (gamepadOnlyMode && touchOverlay.isAdminTrayOpen()) {
             if (touchOverlay.handleAdminTrayGamepadKey(keyCode, 1)) return true
@@ -2196,9 +2220,10 @@ class MainActivity :
                 val kcIndices = mixerButtonMap[joyBtn]
                 if (kcIndices != null) {
                     for (kc in kcIndices) inputMixer.setButton(kc, tag, false)
-                } else {
-                    nativeJoystickButton(joyBtn, 0)
                 }
+                // Symmetric with onKeyDown: always release the joystick
+                // button so in-game menus see a clean up edge
+                nativeJoystickButton(joyBtn, 0)
             }
             return true
         }
@@ -2412,6 +2437,20 @@ class MainActivity :
                 FrameLayout.LayoutParams.MATCH_PARENT,
             ),
         )
+    }
+
+    /** True for keys that should dismiss the music admin panel. */
+    private fun isMusicPanelDismissKey(keyCode: Int): Boolean =
+        keyCode == KeyEvent.KEYCODE_BACK ||
+            keyCode == KeyEvent.KEYCODE_ESCAPE ||
+            keyCode == KeyEvent.KEYCODE_BUTTON_B ||
+            keyCode == KeyEvent.KEYCODE_BUTTON_Y
+
+    private fun dismissMusicPanel() {
+        musicPanel?.let { mp ->
+            (gameSurfaceView.parent as? FrameLayout)?.removeView(mp)
+        }
+        musicPanel = null
     }
 
     // ── Overlay toast lines (multi-line, each fades independently) ──

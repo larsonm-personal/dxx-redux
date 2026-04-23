@@ -25,6 +25,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -46,6 +51,29 @@ private const val MUSIC_MODE_CD = "cd"
 private const val MUSIC_MODE_FILES = "files"
 
 private const val TAG = "DXX-MusicPicker"
+
+// Make a Slider transparent to D-pad up/down so TV focus traversal can leave
+// the slider vertically. Left/Right keep working for seeking. We intercept
+// the key-down in onPreviewKeyEvent and explicitly move focus, otherwise the
+// Slider swallows up/down for large-step value changes and traps focus
+@Composable
+private fun verticalDpadFocusEscape(): Modifier {
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+    return Modifier.onPreviewKeyEvent { ev ->
+        if (ev.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+        when (ev.key) {
+            Key.DirectionUp -> {
+                focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Up)
+                true
+            }
+            Key.DirectionDown -> {
+                focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down)
+                true
+            }
+            else -> false
+        }
+    }
+}
 
 // Duplicated from FingerprintBridge.kt -- both files need it for filtering
 private fun isPlaceholderName(name: String): Boolean = name == "[unknown] - [untitled]"
@@ -651,7 +679,7 @@ private fun MidiTrackPreviewDialog(
                         seeking = false
                     },
                     enabled = durationMs > 0,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().then(verticalDpadFocusEscape()),
                 )
                 if (durationMs > 0) {
                     Row(
@@ -1427,7 +1455,7 @@ private fun CdTrackDetailDialog(
                         seeking = false
                     },
                     enabled = durationMs > 0,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().then(verticalDpadFocusEscape()),
                 )
                 if (durationMs > 0) {
                     Row(
@@ -1583,7 +1611,7 @@ private fun AudioFileDetailDialog(
                             seeking = false
                         },
                         enabled = durationMs > 0,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().then(verticalDpadFocusEscape()),
                     )
                     if (durationMs > 0) {
                         Row(
