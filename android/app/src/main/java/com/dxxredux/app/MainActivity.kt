@@ -2092,38 +2092,107 @@ class MainActivity :
             source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK ||
             source and InputDevice.SOURCE_DPAD == InputDevice.SOURCE_DPAD
 
+    private fun imeNavigationSource(keyCode: Int): Int =
+        when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_UP,
+            KeyEvent.KEYCODE_DPAD_DOWN,
+            KeyEvent.KEYCODE_DPAD_LEFT,
+            KeyEvent.KEYCODE_DPAD_RIGHT,
+            KeyEvent.KEYCODE_DPAD_CENTER,
+            KeyEvent.KEYCODE_BACK,
+            -> InputDevice.SOURCE_DPAD
+            else -> InputDevice.SOURCE_KEYBOARD
+        }
+
     private fun dispatchImeNavigationKey(
-        keyCode: Int,
-        action: Int,
-    ): Boolean {
-        val eventTime = android.os.SystemClock.uptimeMillis()
-        return super.dispatchKeyEvent(
+        originalEvent: KeyEvent,
+        keyCode: Int = originalEvent.keyCode,
+    ): Boolean =
+        super.dispatchKeyEvent(
             KeyEvent(
-                eventTime,
+                originalEvent.downTime,
+                originalEvent.eventTime,
+                originalEvent.action,
+                keyCode,
+                originalEvent.repeatCount,
+                originalEvent.metaState,
+                originalEvent.deviceId,
+                if (keyCode == originalEvent.keyCode) originalEvent.scanCode else 0,
+                originalEvent.flags,
+                imeNavigationSource(keyCode),
+            ),
+        )
+
+    private fun dispatchImeNavigationKey(
+        downTime: Long,
+        eventTime: Long,
+        action: Int,
+        keyCode: Int,
+        deviceId: Int,
+    ): Boolean =
+        super.dispatchKeyEvent(
+            KeyEvent(
+                downTime,
                 eventTime,
                 action,
                 keyCode,
                 0,
                 0,
+                deviceId,
                 0,
                 0,
-                0,
-                InputDevice.SOURCE_DPAD,
+                imeNavigationSource(keyCode),
             ),
         )
-    }
 
     private fun dispatchImeHatTransition(
         oldDirection: Int,
         newDirection: Int,
         negativeKeyCode: Int,
         positiveKeyCode: Int,
-    ) {
-        if (oldDirection == newDirection) return
-        if (oldDirection == -1) dispatchImeNavigationKey(negativeKeyCode, KeyEvent.ACTION_UP)
-        if (oldDirection == 1) dispatchImeNavigationKey(positiveKeyCode, KeyEvent.ACTION_UP)
-        if (newDirection == -1) dispatchImeNavigationKey(negativeKeyCode, KeyEvent.ACTION_DOWN)
-        if (newDirection == 1) dispatchImeNavigationKey(positiveKeyCode, KeyEvent.ACTION_DOWN)
+        downTime: Long,
+        eventTime: Long,
+        deviceId: Int,
+    ): Long {
+        if (oldDirection == newDirection) return downTime
+        if (oldDirection == -1) {
+            dispatchImeNavigationKey(
+                downTime,
+                eventTime,
+                KeyEvent.ACTION_UP,
+                negativeKeyCode,
+                deviceId,
+            )
+        }
+        if (oldDirection == 1) {
+            dispatchImeNavigationKey(
+                downTime,
+                eventTime,
+                KeyEvent.ACTION_UP,
+                positiveKeyCode,
+                deviceId,
+            )
+        }
+        if (newDirection == 0) return 0L
+        if (newDirection == -1) {
+            dispatchImeNavigationKey(
+                eventTime,
+                eventTime,
+                KeyEvent.ACTION_DOWN,
+                negativeKeyCode,
+                deviceId,
+            )
+        }
+        if (newDirection == 1) {
+            dispatchImeNavigationKey(
+                eventTime,
+                eventTime,
+                KeyEvent.ACTION_DOWN,
+                positiveKeyCode,
+                deviceId,
+            )
+        }
+        return eventTime
     }
 
     private fun logGamepadInput(message: String) {
@@ -2131,22 +2200,46 @@ class MainActivity :
         Log.d("DXX-Input", message)
     }
 
+    private fun motionAxisDirection(value: Float): Int =
+        when {
+            value < -0.5f -> -1
+            value > 0.5f -> 1
+            else -> 0
+        }
+
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (gameSurfaceView.keyboardActive) {
             when (event.keyCode) {
                 KeyEvent.KEYCODE_BUTTON_A ->
-                    return dispatchImeNavigationKey(KeyEvent.KEYCODE_DPAD_CENTER, event.action)
+                    return dispatchImeNavigationKey(event, KeyEvent.KEYCODE_DPAD_CENTER)
                 KeyEvent.KEYCODE_BUTTON_B ->
-                    return dispatchImeNavigationKey(KeyEvent.KEYCODE_BACK, event.action)
+                    return dispatchImeNavigationKey(event, KeyEvent.KEYCODE_BACK)
                 KeyEvent.KEYCODE_DPAD_UP,
                 KeyEvent.KEYCODE_DPAD_DOWN,
                 KeyEvent.KEYCODE_DPAD_LEFT,
                 KeyEvent.KEYCODE_DPAD_RIGHT,
                 KeyEvent.KEYCODE_DPAD_CENTER,
+                -> {
+                    if (isControllerSource(event.source)) {
+                        return dispatchImeNavigationKey(event)
+                    }
+                    return super.dispatchKeyEvent(event)
+                }
                 KeyEvent.KEYCODE_ENTER,
                 KeyEvent.KEYCODE_NUMPAD_ENTER,
+                -> {
+                    if (isControllerSource(event.source)) {
+                        return dispatchImeNavigationKey(event, KeyEvent.KEYCODE_DPAD_CENTER)
+                    }
+                    return super.dispatchKeyEvent(event)
+                }
                 KeyEvent.KEYCODE_BACK,
-                -> return super.dispatchKeyEvent(event)
+                -> {
+                    if (isControllerSource(event.source)) {
+                        return dispatchImeNavigationKey(event)
+                    }
+                    return super.dispatchKeyEvent(event)
+                }
             }
             if (gamepadButtonIndex(event.keyCode) >= 0 || isControllerSource(event.source)) {
                 return true
@@ -2318,47 +2411,51 @@ class MainActivity :
     // ── Gamepad analog axes ─────────────────────────────────
     private var hatXState = 0 // -1, 0, +1
     private var hatYState = 0
+    private var imeHatXDownTime = 0L
+    private var imeHatYDownTime = 0L
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
         if (event.source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK &&
             event.action == MotionEvent.ACTION_MOVE
         ) {
             if (gameSurfaceView.keyboardActive) {
+                val lx = event.getAxisValue(MotionEvent.AXIS_X)
+                val ly = event.getAxisValue(MotionEvent.AXIS_Y)
                 val hx = event.getAxisValue(MotionEvent.AXIS_HAT_X)
                 val hy = event.getAxisValue(MotionEvent.AXIS_HAT_Y)
-                val newHatX =
-                    if (hx < -0.5f) {
-                        -1
-                    } else if (hx > 0.5f) {
-                        1
-                    } else {
-                        0
-                    }
-                val newHatY =
-                    if (hy < -0.5f) {
-                        -1
-                    } else if (hy > 0.5f) {
-                        1
-                    } else {
-                        0
-                    }
-                if (newHatX != hatXState || newHatY != hatYState) {
-                    logGamepadInput("ime hat hx=$hx hy=$hy old=($hatXState,$hatYState) new=($newHatX,$newHatY)")
+                val stickX = motionAxisDirection(lx)
+                val stickY = motionAxisDirection(ly)
+                val hatX = motionAxisDirection(hx)
+                val hatY = motionAxisDirection(hy)
+                val newNavX = if (hatX != 0) hatX else stickX
+                val newNavY = if (hatY != 0) hatY else stickY
+                if (newNavX != hatXState || newNavY != hatYState) {
+                    logGamepadInput(
+                        "ime nav lx=$lx ly=$ly hx=$hx hy=$hy old=($hatXState,$hatYState) new=($newNavX,$newNavY)",
+                    )
                 }
-                dispatchImeHatTransition(
-                    hatXState,
-                    newHatX,
-                    KeyEvent.KEYCODE_DPAD_LEFT,
-                    KeyEvent.KEYCODE_DPAD_RIGHT,
-                )
-                dispatchImeHatTransition(
-                    hatYState,
-                    newHatY,
-                    KeyEvent.KEYCODE_DPAD_UP,
-                    KeyEvent.KEYCODE_DPAD_DOWN,
-                )
-                hatXState = newHatX
-                hatYState = newHatY
+                imeHatXDownTime =
+                    dispatchImeHatTransition(
+                        hatXState,
+                        newNavX,
+                        KeyEvent.KEYCODE_DPAD_LEFT,
+                        KeyEvent.KEYCODE_DPAD_RIGHT,
+                        imeHatXDownTime,
+                        event.eventTime,
+                        event.deviceId,
+                    )
+                imeHatYDownTime =
+                    dispatchImeHatTransition(
+                        hatYState,
+                        newNavY,
+                        KeyEvent.KEYCODE_DPAD_UP,
+                        KeyEvent.KEYCODE_DPAD_DOWN,
+                        imeHatYDownTime,
+                        event.eventTime,
+                        event.deviceId,
+                    )
+                hatXState = newNavX
+                hatYState = newNavY
                 return true
             }
             inputMixer.setAxis(0, "ctrl", event.getAxisValue(MotionEvent.AXIS_X))
@@ -2462,6 +2559,10 @@ class MainActivity :
                     2 -> InputType.TYPE_CLASS_NUMBER
                     else -> InputType.TYPE_CLASS_TEXT
                 }
+            hatXState = 0
+            hatYState = 0
+            imeHatXDownTime = 0L
+            imeHatYDownTime = 0L
             gameSurfaceView.keyboardActive = true
             gameSurfaceView.requestFocus()
             val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
@@ -2480,6 +2581,10 @@ class MainActivity :
         runOnUiThread {
             keyboardPollRunnable?.let { window.decorView.removeCallbacks(it) }
             keyboardPollRunnable = null
+            hatXState = 0
+            hatYState = 0
+            imeHatXDownTime = 0L
+            imeHatYDownTime = 0L
             gameSurfaceView.keyboardActive = false
             WindowInsetsControllerCompat(window, gameSurfaceView)
                 .hide(WindowInsetsCompat.Type.ime())

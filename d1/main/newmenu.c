@@ -1459,6 +1459,17 @@ void newmenu_create_structure( newmenu *menu )
 				break;
 			}
 		}
+#ifdef ANDROID
+		if (menu->items[menu->citem].type == NM_TYPE_INPUT_MENU) {
+			menu->items[menu->citem].group = 1;
+			if (!d_strnicmp(menu->items[menu->citem].saved_text, TXT_EMPTY, strlen(TXT_EMPTY))) {
+				menu->items[menu->citem].text[0] = 0;
+				menu->items[menu->citem].value = -1;
+			} else {
+				strip_end_whitespace(menu->items[menu->citem].text);
+			}
+		}
+#endif
 	}
 
 	menu->mouse_state = 0;

@@ -16,6 +16,10 @@ These are the remaining issues called out after the D1 render crash fix:
 Status:
 - Implemented in `MainActivity.kt`
 - Kotlin build validation passed before and after scoped code quality
+- Controller-originated IME navigation now preserves device and timing metadata instead of using anonymous synthetic key events
+- Controller-originated IME navigation now also accepts left-stick movement in addition to HAT navigation
+- `AKEYCODE_DPAD_CENTER` now maps to engine Enter in `android/app/src/main/cpp/android_input.c`
+- Initially selected Android `NM_TYPE_INPUT_MENU` items now enter edit mode during menu creation in both `d1/main/newmenu.c` and `d2/main/newmenu.c`
 - Shield/phone on-device verification is still pending
 
 Why first:
@@ -25,15 +29,19 @@ Why first:
 
 Current anchors:
 - `showKeyboard()` and IME height reporting already exist in `android/app/src/main/java/com/dxxredux/app/MainActivity.kt`
-- `onKeyDown()`, `onKeyUp()`, and `onGenericMotionEvent()` in the same file still consume controller and HAT-axis events unconditionally
-- `keyboardActive` is set in `showKeyboard()` but is not used to bypass gamepad routing
+- `dispatchKeyEvent()` and `onGenericMotionEvent()` in the same file now normalize controller navigation into IME-facing DPAD/BACK/CENTER events while `keyboardActive` is true
+- `onKeyDown()` and `onKeyUp()` still act as the backstop that swallows controller events if the IME path does not consume them
+- `android/app/src/main/cpp/android_input.c` owns Android-to-engine key translation for TV remote/gamepad select behavior
+- `d1/main/newmenu.c` and `d2/main/newmenu.c` own the Android input-menu auto-edit state that decides whether the soft keyboard opens immediately
 
 Current hypothesis:
-- When the TV keyboard is visible, controller D-pad / HAT input is still routed into the game instead of reaching the IME
+- The remaining controller-only failure was likely split between missing directional synthesis for stick-driven navigation and a missing `DPAD_CENTER` native key translation for remote select
 - The missing slide-up behavior may be secondary: the IME might not be reporting a non-zero inset on TV, or the keyboard could be on-screen without focusable navigation because the activity keeps eating controller events
 
 Next steps:
-- Re-test on both phone keyboard and Shield TV keyboard to confirm DPAD, HAT, and gamepad A/B navigation all reach the IME
+- Re-test on both phone keyboard and Shield TV keyboard to confirm DPAD, HAT, left stick, and gamepad A/B navigation all reach the IME
+- Re-test TV remote select in in-game menus now that `DPAD_CENTER` maps to Enter on the native side
+- Confirm that menus opening with an initially selected text field now show the keyboard without a second confirm press
 - Verify whether Shield now reports a non-zero IME inset and shifts the game view the same way as phone keyboards
 - Add temporary `DXX-Keyboard` logs only if the on-device retest still shows missing navigation or missing height updates
 

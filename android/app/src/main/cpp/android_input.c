@@ -328,6 +328,7 @@ static SDLKey android_to_sdlk(int akeycode)
 
 		/* Navigation / control */
 		case AKEYCODE_ENTER: return SDLK_RETURN;
+		case AKEYCODE_DPAD_CENTER: return SDLK_RETURN;
 		case AKEYCODE_ESCAPE: return SDLK_ESCAPE;
 		case AKEYCODE_BACK: return SDLK_ESCAPE;   /* Android Back = Esc */
 		case AKEYCODE_DEL: return SDLK_BACKSPACE; /* DEL is backspace on Android */
