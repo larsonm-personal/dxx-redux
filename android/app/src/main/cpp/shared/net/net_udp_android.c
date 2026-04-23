@@ -1,11 +1,35 @@
 #include "net_udp_android.h"
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+#ifdef __ANDROID__
+#include "android_crash_handler.h"
+#include "android_log.h"
+#endif
 
 #include "strutil.h"
 #include "player.h"
 #include "multi.h"
 #include "net_udp.h"
+
+#ifdef __ANDROID__
+void android_net_udp_mpdiag_pkt_dump(const char *label, const ubyte *buf, int len)
+{
+	static char msg[4096];
+	int pos;
+	int i;
+
+	crash_breadcrumb_v("pktdump: %s len=%d", label, len);
+	pos = snprintf(msg, sizeof(msg), "%s len=%d ", label, len);
+	for (i = 0; i < len && pos + 2 < (int) sizeof(msg); i++)
+		pos += snprintf(msg + pos, sizeof(msg) - pos, "%02x", buf[i]);
+	crash_breadcrumb("pktdump: hex done, calling debug_log");
+	debug_log(DLOG_NETWORK, "[PKTDUMP] %s", msg);
+	crash_breadcrumb("pktdump: done");
+}
+#endif
 
 static int android_net_udp_sockaddr_ip_equal(const struct _sockaddr *a,
                                              const struct _sockaddr *b)
@@ -47,4 +71,33 @@ int android_net_udp_find_player_by_identity(const char *callsign,
 	}
 #endif
 	return -1;
+}
+
+int android_net_udp_rebind_for_hosting(int *udp_socket, int *udp_bind_loopback,
+                                       const char *udp_my_port, unsigned int netgame_token,
+                                       void (*close_socket)(int), int (*open_socket)(int, int),
+                                       android_net_udp_log_message_fn log_message)
+{
+	char logbuf[128];
+	int port;
+
+	if (udp_socket[0] == -1)
+		return -1;
+	if (!*udp_bind_loopback)
+		return 0;
+
+	port = atoi(udp_my_port);
+	snprintf(logbuf, sizeof(logbuf), "rebind_for_hosting: closing loopback socket, reopening on 0.0.0.0:%d", port);
+	log_message(logbuf);
+	close_socket(0);
+	*udp_bind_loopback = 0;
+	if (open_socket(0, port) != 0) {
+		snprintf(logbuf, sizeof(logbuf), "rebind_for_hosting: FAILED to reopen socket on port %d", port);
+		log_message(logbuf);
+		return -1;
+	}
+	snprintf(logbuf, sizeof(logbuf), "rebind_for_hosting: socket=%d now on 0.0.0.0:%d token=%u",
+	         udp_socket[0], port, netgame_token);
+	log_message(logbuf);
+	return 0;
 }
