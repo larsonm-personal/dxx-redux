@@ -18,7 +18,6 @@ import java.io.File
  */
 object CrashLog {
     private const val TAG = "CrashLog"
-    private const val LEGACY_DIR_NAME = "crashlogs"
     private const val TOMBSTONE_DIR_NAME = "tombstones"
     private const val AUTHORITY = "com.dxxredux.app.fileprovider"
 
@@ -39,14 +38,13 @@ object CrashLog {
     /** List existing crash files, newest first. */
     fun listCrashFiles(context: Context): List<File> {
         val appContext = context.applicationContext
-        return crashDirs(appContext)
-            .flatMap { dir ->
-                if (!dir.isDirectory) {
-                    emptyList()
-                } else {
-                    dir.listFiles()?.filter(::isCrashReportFile).orEmpty()
-                }
-            }.sortedByDescending { it.lastModified() }
+        val dir = getTombstoneDir(appContext)
+        if (!dir.isDirectory) return emptyList()
+        return dir
+            .listFiles()
+            ?.filter(::isCrashReportFile)
+            ?.sortedByDescending { it.lastModified() }
+            ?: emptyList()
     }
 
     /** Share a crash file via system share sheet. */
@@ -79,7 +77,13 @@ object CrashLog {
     /** Delete all crash files. */
     fun deleteAllCrashFiles(context: Context) {
         val appContext = context.applicationContext
-        crashDirs(appContext).forEach { dir -> dir.listFiles()?.forEach { it.delete() } }
+        getTombstoneDir(appContext).listFiles()?.forEach { file ->
+            if (file.name.startsWith("tombstone_")) {
+                TombstoneManager.deleteTombstone(file)
+            } else {
+                file.delete()
+            }
+        }
     }
 
     fun appendXCrashSections(
@@ -121,7 +125,7 @@ object CrashLog {
             val appContext = context.applicationContext
             val crashDir = getTombstoneDir(appContext)
             crashDir.mkdirs()
-            nativeInstallCrashHandler(crashDir.absolutePath, buildCommonCrashHeader(appContext))
+            nativeInstallCrashHandler(crashDir.absolutePath)
         } catch (e: UnsatisfiedLinkError) {
             Log.w(TAG, "Native crash handler not available", e)
         }
@@ -155,19 +159,13 @@ object CrashLog {
         }
     }
 
-    private fun crashDirs(context: Context): List<File> =
-        listOf(getTombstoneDir(context), File(context.filesDir, LEGACY_DIR_NAME))
-
     private fun isCrashReportFile(file: File): Boolean {
         if (!file.isFile) return false
-        return file.name.startsWith("tombstone_") || file.name.startsWith("crash_")
+        return file.name.startsWith("tombstone_") || file.name.startsWith("crash_error_")
     }
 
     // JNI declarations -- implemented in android_crash_handler.c
-    private external fun nativeInstallCrashHandler(
-        crashDir: String,
-        installInfo: String,
-    )
+    private external fun nativeInstallCrashHandler(crashDir: String)
 
     private external fun nativeGetBreadcrumbReport(): String?
 }

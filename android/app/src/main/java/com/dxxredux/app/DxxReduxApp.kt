@@ -21,7 +21,7 @@ class DxxReduxApp : Application() {
 
         val result =
             XCrash.init(
-                appContext,
+                this,
                 XCrash
                     .InitParameters()
                     .setAppVersion(buildXCrashVersion(appContext))

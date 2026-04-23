@@ -130,9 +130,9 @@ Status:
 
 Status:
 - Done. `CrashLog.install()` is now a compatibility no-op so xCrash is the only Java crash handler
-- Done. `CrashLog.listCrashFiles()` and `deleteAllCrashFiles()` now include xCrash tombstones, while still surfacing legacy `crashlogs/` files during the transition
+- Done. `CrashLog.listCrashFiles()` and `deleteAllCrashFiles()` now operate on `filesDir/tombstones/` and `crash_error_*` files only
 - Done. Existing share flow still works because files are copied to cache before export
-- Not done yet. One-shot cleanup of stale legacy `crashlogs/` files can wait for a follow-up tranche
+- Deferred. One-shot cleanup of stale legacy `crashlogs/` files can wait for a follow-up tranche if we decide old installs need it
 
 ### phase 4 - verify on device and lock down
 
@@ -191,6 +191,11 @@ Status:
   - how to feed tombstones to `ndk-stack` for offline symbolication.
 - Update `android/ai tool plans/plan_crash_handler_and_flip_logging.md`
   to mark the hand-rolled native handler as superseded.
+
+Status:
+- Partly done. Dead native crash-handler pieces from the old install path are gone, including the unused install-info plumbing
+- Done. Comments and Kotlin call-site notes now describe breadcrumb initialization instead of a custom signal handler
+- Not done yet. Memory write-up and follow-on plan cleanup remain
 
 ## risks and mitigations
 

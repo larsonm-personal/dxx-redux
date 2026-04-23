@@ -8,8 +8,8 @@
 #ifdef ANDROID
 /* Initialize crash breadcrumb storage.
  * crash_dir is retained so Error() can write non-signal fatal errors into the
- * same directory as xCrash tombstones. install_info is currently unused. */
-void android_crash_handler_init(const char *crash_dir, const char *install_info);
+ * same directory as xCrash tombstones. */
+void android_crash_handler_init(const char *crash_dir);
 
 /* Return the crash directory path set by android_crash_handler_init(),
  * or NULL if not yet initialized.  Used by Error() to write crash files

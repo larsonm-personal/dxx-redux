@@ -108,10 +108,8 @@ static void format_breadcrumbs(char *buf, size_t buflen)
 	}
 }
 
-void android_crash_handler_init(const char *crash_dir, const char *install_info)
+void android_crash_handler_init(const char *crash_dir)
 {
-	(void) install_info;
-
 	if (!crash_dir || strlen(crash_dir) >= sizeof(s_crash_dir) - 1) {
 		__android_log_print(ANDROID_LOG_ERROR, TAG,
 		                    "crash_dir path too long or null");
@@ -132,18 +130,14 @@ const char *android_crash_handler_get_dir(void)
 
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_CrashLog_nativeInstallCrashHandler(JNIEnv *env, jobject thiz,
-                                                         jstring crash_dir,
-                                                         jstring install_info)
+                                                         jstring crash_dir)
 {
 	(void) thiz;
 	const char *dir = (*env)->GetStringUTFChars(env, crash_dir, NULL);
-	const char *info = install_info ? (*env)->GetStringUTFChars(env, install_info, NULL) : NULL;
 	if (dir) {
-		android_crash_handler_init(dir, info);
+		android_crash_handler_init(dir);
 		(*env)->ReleaseStringUTFChars(env, crash_dir, dir);
 	}
-	if (info)
-		(*env)->ReleaseStringUTFChars(env, install_info, info);
 }
 
 JNIEXPORT jstring JNICALL

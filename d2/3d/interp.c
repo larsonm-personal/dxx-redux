@@ -18,6 +18,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include "dxxerror.h"
 
 #include "interp.h"
@@ -57,6 +58,11 @@ void g3_set_interp_points(g3s_point *pointlist)
 #define wp(p)  ((short *) (p))
 #define fp(p)  ((fix *) (p))
 #define vp(p)  ((vms_vector *) (p))
+
+static void copy_model_uvls(g3s_uvl *dest, const ubyte *src, int count)
+{
+	memcpy(dest, src, count * sizeof(*dest));
+}
 
 void rotate_point_list(g3s_point *dest,vms_vector *src,int n)
 {
@@ -436,6 +442,7 @@ bool g3_draw_polygon_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim_
 			case OP_TMAPPOLY: {
 				int nv = w(p+2);
 				g3s_uvl *uvl_list;
+				g3s_uvl uvl_copy[MAX_POINTS_PER_POLY];
 
 				Assert( nv < MAX_POINTS_PER_POLY );
 				if (g3_check_normal_facing(vp(p+4),vp(p+16)) > 0) {
@@ -461,7 +468,8 @@ bool g3_draw_polygon_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim_
 					}
 
 					//now poke light into l values
-					uvl_list = (g3s_uvl *) (p+30+((nv&~1)+1)*2);
+					copy_model_uvls(uvl_copy, p+30+((nv&~1)+1)*2, nv);
+					uvl_list = uvl_copy;
 
 					for (i=0;i<nv;i++)
 					{
@@ -611,6 +619,7 @@ bool g3_draw_morphing_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim
 			case OP_TMAPPOLY: {
 				int nv = w(p+2);
 				g3s_uvl *uvl_list;
+				g3s_uvl uvl_copy[MAX_POINTS_PER_POLY];
 				g3s_lrgb light, *lrgb_list;
 				g3s_uvl morph_uvls[3];
 				int i,ntris;
@@ -635,7 +644,8 @@ bool g3_draw_morphing_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim
 				}
 
 				//now poke light into l values
-				uvl_list = (g3s_uvl *) (p+30+((nv&~1)+1)*2);
+				copy_model_uvls(uvl_copy, p+30+((nv&~1)+1)*2, nv);
+				uvl_list = uvl_copy;
 
 				for (i=0;i<nv;i++)
 				{
@@ -661,7 +671,7 @@ bool g3_draw_morphing_model(ubyte *p,grs_bitmap **model_bitmaps,vms_angvec *anim
 					morph_uvls[2].v = uvl_list[i].v;
 					i++;
 
-					g3_check_and_draw_tmap(3,point_list,uvl_list,lrgb_list,model_bitmaps[w(p+28)],NULL,NULL);
+					g3_check_and_draw_tmap(3,point_list,morph_uvls,lrgb_list,model_bitmaps[w(p+28)],NULL,NULL);
 
 					point_list[1] = point_list[2];
 					morph_uvls[1].u = morph_uvls[2].u;

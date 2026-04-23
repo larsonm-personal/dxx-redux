@@ -1864,8 +1864,8 @@ class SetupActivity : ComponentActivity() {
 
         CrashLog.install(this)
         // The launcher uses dxx-redux-d2 JNI helpers (MIDI/CD preview,
-        // enumeration, import helpers). Load it here so the native signal
-        // handler is armed before any launcher-side native work starts.
+        // enumeration, import helpers). Load it here so native breadcrumb
+        // storage is ready before any launcher-side native work starts.
         System.loadLibrary("dxx-redux-d2")
         Log.i("SetupActivity", "Loaded native library: dxx-redux-d2")
         CrashLog.installNativeHandler(this)

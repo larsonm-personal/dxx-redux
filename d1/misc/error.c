@@ -81,7 +81,7 @@ void Error(const char *fmt,...)
 	print_exit_message(exit_message);
 
 #ifdef ANDROID
-	/* Android port: write error to crashlogs so it survives exit(1).
+	/* Android port: write error alongside xCrash tombstones so it survives exit(1).
 	 * Signal handlers don't catch clean exits, so this is the only
 	 * way to get a crash file for Error() calls. */
 	{
