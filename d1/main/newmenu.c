@@ -1770,7 +1770,19 @@ int newmenu_handler(window *wind, d_event *event, newmenu *menu)
 			break;
 
 		case EVENT_WINDOW_DRAW:
+		#ifdef ANDROID
+			{
+				int rval;
+				extern int g_ogl_render_context;
+				int prev_context = g_ogl_render_context;
+				g_ogl_render_context = 0;
+				rval = newmenu_draw(wind, menu);
+				g_ogl_render_context = prev_context;
+				return rval;
+			}
+		#else
 			return newmenu_draw(wind, menu);
+		#endif
 			break;
 
 		case EVENT_WINDOW_CLOSE:
@@ -2427,7 +2439,19 @@ int listbox_handler(window *wind, d_event *event, listbox *lb)
 			break;
 
 		case EVENT_WINDOW_DRAW:
+		#ifdef ANDROID
+			{
+				int rval;
+				extern int g_ogl_render_context;
+				int prev_context = g_ogl_render_context;
+				g_ogl_render_context = 0;
+				rval = listbox_draw(wind, lb);
+				g_ogl_render_context = prev_context;
+				return rval;
+			}
+		#else
 			return listbox_draw(wind, lb);
+		#endif
 			break;
 
 		case EVENT_WINDOW_CLOSE:

@@ -31,7 +31,7 @@ The first concrete mismatch is in the Android/OGL draw path: D1 was still drawin
 
 ---
 
-## 2. [ ] In-level pause and game menu (save/load/quit) have filtering applied even when graphics settings have menu filtering off
+## 2. [in progress] In-level pause and game menu (save/load/quit) have filtering applied even when graphics settings have menu filtering off
 
 ### Scope
 - In-game pause/menu textures (background/UI sprites) ignore `GameCfg.MenuTexFilt`.
@@ -41,13 +41,19 @@ The first concrete mismatch is in the Android/OGL draw path: D1 was still drawin
 - `g_ogl_render_context` is toggled in [d1/main/gauges.c](d1/main/gauges.c#L4215) and [d2/main/gauges.c](d2/main/gauges.c#L4215). It is set to `0` only in cockpit/reticle paths.
 - [d1/main/gamerend.c](d1/main/gamerend.c#L685) `show_boxed_message()` and surrounding pause/menu render paths.
 
-### Suspected cause
-Pause and game-menu (save/load/quit launched from in-game) are reached *while the game window is still front* and `g_ogl_render_context` is left in the 3D-render value (1). The font-filter branch then takes the gameplay-context decision rather than the menu decision, so `MenuTexFilt=0` is ignored. The same context bit also drives non-font texture filter selection paths invoked while drawing the menu background.
+### Cause (confirmed by code path study)
+Pause and game-menu (save/load/quit launched from in-game) draw through menu/boxed-message handlers while `g_ogl_render_context` is still set to the gameplay value (`1`) from the preceding 3D/HUD frame. `gr_flip()` only resets the context to menu after the frame is already drawn, so the menu background and text textures bind with gameplay filtering instead of `MenuTexFilt`.
 
 ### Planned change
-- Add a small "menu mode active" boolean (e.g. `g_ogl_in_menu_overlay`) set true around `newmenu`/`listbox` window draws when the topmost window is a menu, and consult it in the filter selection branches alongside `g_ogl_render_context`.
-- Set/clear in `newmenu_handler`/`listbox_handler` `EVENT_WINDOW_DRAW` entry/exit (both d1 and d2; this is one of the must-duplicate spots).
-- Apply OGL state in `gr_flip()` per the per-frame note in the project guidelines, since menus do not call `ogl_start_frame`/`ogl_end_frame`.
+- Force `g_ogl_render_context = 0` only while `newmenu_draw()` / `listbox_draw()` execute, then restore the previous context immediately after the draw.
+- Apply the same temporary context override around `show_boxed_message()` so the pause overlay uses `MenuTexFilt` too.
+- Leave the broader OGL filter selection logic unchanged; the bug is the context at these draw entry points, not the texture-filter decision table itself.
+
+### Current status
+- Landed a narrower equivalent fix instead of introducing a new global flag: `d1/d2 main/newmenu.c` now force `g_ogl_render_context = 0` only while `newmenu_draw()` / `listbox_draw()` run, then restore the previous context.
+- `d1/d2 main/gamerend.c` now do the same around `show_boxed_message()`, which covers the pause overlay path separately from newmenus.
+- Passed `:app:externalNativeBuildDebug`, `run-windows-build.ps1 -Target both`, and `android\run-code-quality.ps1 -Fix`.
+- Still needs manual in-game verification with `MenuTexFilt=0` and filtered world textures enabled.
 
 ### Test plan
 - Set `MenuTexFilt=0` and `TexFilt=anisotropic` in graphics settings.

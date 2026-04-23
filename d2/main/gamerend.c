@@ -1062,6 +1062,10 @@ void show_boxed_message(char *msg, int RenderFlag)
 {
 	int w,h,aw;
 	int x,y;
+	#ifdef ANDROID
+		extern int g_ogl_render_context;
+		int prev_context = g_ogl_render_context;
+	#endif
 	
 	gr_set_current_canvas(NULL);
 	gr_set_curfont( MEDIUM1_FONT );
@@ -1070,10 +1074,18 @@ void show_boxed_message(char *msg, int RenderFlag)
 	
 	x = (SWIDTH-w)/2;
 	y = (SHEIGHT-h)/2;
+
+	#ifdef ANDROID
+		g_ogl_render_context = 0;
+	#endif
 	
 	nm_draw_background(x-BORDERX,y-BORDERY,x+w+BORDERX,y+h+BORDERY);
 	
 	gr_string( 0x8000, y, msg );
+
+	#ifdef ANDROID
+		g_ogl_render_context = prev_context;
+	#endif
 	
 	// If we haven't drawn behind it, need to flip
 	if (!RenderFlag)
