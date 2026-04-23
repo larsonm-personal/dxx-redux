@@ -57,6 +57,8 @@ paths.
 - The next follow-up trim removed the remaining Android auto-flow success-path chatter in `auto_join`, `auto_host`, and `net_udp_start_game`, including request-progress and join-success `MPDIAG(...)` lines plus entry `net_log_comment(...)` lines, while keeping failed-open, failed-resolve, exit-button abort, version-mismatch, timeout, mission-not-found, and Player_num-adjustment diagnostics intact
 - The next follow-up trim removed the remaining direct-connection recovery success-path chatter in `net_udp_timeout_check`, `net_udp_process_p2p_ping`, `net_udp_process_p2p_pong`, `update_address_for_player`, and `reattemptDirect`, while keeping timeout, illegal-player, pong-timeout, disconnect, and proxy-fallback diagnostics intact
 - The same larger pass also removed the remaining routine join or game-info bookkeeping `con_printf(CON_DEBUG, ...)` lines for token-set success and player-address narration in `net_udp_new_player` and `net_udp_process_game_info`, while keeping token-mismatch and malformed-packet diagnostics intact
+- The next helper extraction moved the duplicated direct-reattempt helper set into `shared/net/net_udp_android.c` and reduced the D1 and D2 copies of `net_udp_send_p2p_reattempt_direct`, `net_udp_process_p2p_reattempt_direct`, `resetProxy`, and `reattemptDirect` to thin wrappers with small local log adapters where the existing callback types differed
+- The shared send helper preserves the live packet layout by serializing `connect_to_player` into the reattempt packet body, while the shared process and proxy helpers keep the local send callback, timer source, address update hook, and connection-status storage ownership unchanged
 
 ## Validation
 
@@ -136,6 +138,11 @@ paths.
 - `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
 - `run-windows-build.ps1 -Target both`
 - `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- fallback direct stale-formatter process query for `run-code-quality.ps1|clang-format|ktlint|PSScriptAnalyzer|shfmt|shellcheck`
+- `android\run-code-quality.ps1 -Fix`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
+- `run-windows-build.ps1 -Target both`
+- `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
 - `android\gradlew.bat :app:assembleDebug :app:testDebugUnitTest --console=plain`
 - fallback direct stale-formatter process query for `run-code-quality.ps1|clang-format|ktlint|PSScriptAnalyzer|shfmt|shellcheck`
 - `android\run-code-quality.ps1 -Fix`
@@ -149,4 +156,4 @@ paths.
 
 ## Next sub-tranche
 
-- Next larger 3.2 step: extract the remaining duplicated direct-reattempt helper set around `net_udp_send_p2p_reattempt_direct`, `net_udp_process_p2p_reattempt_direct`, `resetProxy`, and `reattemptDirect` into shared code while keeping the local send, timer, and diagnostic hooks intact, then revalidate before reopening smaller logging trims
+- Next larger 3.2 step: extract the duplicated `net_udp_welcome_player` slot-selection and reconnect-reset helper cluster after `find_player_by_identity`, covering open-slot selection, oldest-disconnected replacement, reconnect address refresh, and Android connection-type reset while keeping the HUD, score, and object-sync side effects local, then revalidate before reopening smaller trims

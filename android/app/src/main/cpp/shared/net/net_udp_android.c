@@ -103,10 +103,10 @@ int android_net_udp_rebind_for_hosting(int *udp_socket, int *udp_bind_loopback,
 }
 
 void android_net_udp_send_p2p_reattempt_direct(unsigned int netgame_token,
-	                                           int player_num,
-	                                           const struct _sockaddr *connect_to_addr,
-	                                           int to_player,
-	                                           android_net_udp_send_direct_fn send_direct)
+                                               int player_num,
+                                               const struct _sockaddr *connect_to_addr,
+                                               int to_player,
+                                               android_net_udp_send_direct_fn send_direct)
 {
 	ubyte buf[UPID_REATTEMPT_DIRECT_SIZE];
 	int len = 0;
@@ -127,10 +127,10 @@ void android_net_udp_send_p2p_reattempt_direct(unsigned int netgame_token,
 }
 
 void android_net_udp_reattempt_direct(int pnum,
-	                                  int master_player_num,
-	                                  int i_am_master,
-	                                  struct connection_status *status,
-	                                  fix64 now)
+                                      int master_player_num,
+                                      int i_am_master,
+                                      struct connection_status *status,
+                                      fix64 now)
 {
 	if (!status)
 		return;
@@ -144,14 +144,14 @@ void android_net_udp_reattempt_direct(int pnum,
 }
 
 void android_net_udp_process_p2p_reattempt_direct(const ubyte *data,
-	                                              int player_num,
-	                                              int master_player_num,
-	                                              int i_am_master,
-	                                              int max_players,
-	                                              fix64 now,
-	                                              struct connection_status *statuses,
-	                                              android_net_udp_log_message_fn log_message,
-	                                              android_net_udp_update_address_fn update_address)
+                                                  int player_num,
+                                                  int master_player_num,
+                                                  int i_am_master,
+                                                  int max_players,
+                                                  fix64 now,
+                                                  struct connection_status *statuses,
+                                                  android_net_udp_log_message_fn log_message,
+                                                  android_net_udp_update_address_fn update_address)
 {
 	struct _sockaddr new_address;
 	int len = 0;
@@ -188,10 +188,10 @@ void android_net_udp_process_p2p_reattempt_direct(const ubyte *data,
 }
 
 void android_net_udp_reset_proxy(int pnum,
-	                             int master_player_num,
-	                             int i_am_master,
-	                             struct connection_status *status,
-	                             android_net_udp_log_connection_status_fn log_connection_status)
+                                 int master_player_num,
+                                 int i_am_master,
+                                 struct connection_status *status,
+                                 android_net_udp_log_connection_status_fn log_connection_status)
 {
 	if (!status)
 		return;

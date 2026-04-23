@@ -7131,26 +7131,66 @@ void net_udp_send_pdata()
 {
 	if(is_observer()) { return; }
 
-	android_net_udp_send_p2p_reattempt_direct(netgame_token, Player_num,
-		&Netgame.players[connect_to_player].protocol.udp.addr, to_player,
-		net_udp_send_to_player_direct);
-	
+	ubyte buf[UPID_PDATA_U_SIZE];
+	int len = 0, i = 0;
+
+	if (!(Game_mode&GM_NETWORK) || UDP_Socket[0] == -1)
+		return;
+	if (Players[Player_num].connected != CONNECT_PLAYING)
+		return;
+
+	current_pdata = (current_pdata + 1) % MAX_LOSS_BUFFER; 
+
+	memset(&buf, 0, sizeof(UDP_frame_info));
+
 	buf[len] = UPID_PDATA;										len++;
 	PUT_INTEL_INT(buf + len, netgame_token);					len += 4; 
-	android_net_udp_process_p2p_reattempt_direct(data, Player_num,
-		multi_who_is_master(), multi_i_am_master(), MAX_PLAYERS,
-		timer_query(), connection_statuses, net_log_comment,
-		update_address_for_player);
+	buf[len] = Player_num;									len++;
+	buf[len] = Players[Player_num].connected;						len++;
+
+	if(Netgame.RetroProtocol) 
+	{
+		object* player = Objects+Players[Player_num].objnum;
+
+		PUT_INTEL_INT(buf + len, player->orient.rvec.x);		len += 4; 
+		PUT_INTEL_INT(buf + len, player->orient.rvec.y);		len += 4; 
+		PUT_INTEL_INT(buf + len, player->orient.rvec.z);		len += 4; 
+		PUT_INTEL_INT(buf + len, player->orient.uvec.x);		len += 4; 
+		PUT_INTEL_INT(buf + len, player->orient.uvec.y);		len += 4; 
+		PUT_INTEL_INT(buf + len, player->orient.uvec.z);		len += 4; 
+		PUT_INTEL_INT(buf + len, player->orient.fvec.x);		len += 4; 
+		PUT_INTEL_INT(buf + len, player->orient.fvec.y);		len += 4; 
+		PUT_INTEL_INT(buf + len, player->orient.fvec.z);		len += 4; 
+		PUT_INTEL_INT(buf+len, player->pos.x);						len += 4;
+		PUT_INTEL_INT(buf+len, player->pos.y);						len += 4;
+		PUT_INTEL_INT(buf+len, player->pos.z);						len += 4;
+		PUT_INTEL_INT(buf+len, player->mtype.phys_info.velocity.x);	len += 4;
+		PUT_INTEL_INT(buf+len, player->mtype.phys_info.velocity.y);	len += 4;
+		PUT_INTEL_INT(buf+len, player->mtype.phys_info.velocity.z);	len += 4;
+		PUT_INTEL_INT(buf+len, player->mtype.phys_info.rotvel.x);		len += 4;
+		PUT_INTEL_INT(buf+len, player->mtype.phys_info.rotvel.y);		len += 4;
+		PUT_INTEL_INT(buf+len, player->mtype.phys_info.rotvel.z);		len += 4; 
 		buf[len] = current_pdata; len++;
 
 	} else if (Netgame.ShortPackets)
-	android_net_udp_reset_proxy(pnum, multi_who_is_master(), multi_i_am_master(),
-		&connection_statuses[pnum], net_udp_log_reset_proxy_transition);
+	{
+		shortpos spp;
+		memset(&spp, 0, sizeof(shortpos));
+		create_shortpos(&spp, Objects+Players[Player_num].objnum, 0);
+		memcpy(buf + len, &spp.bytemat, 9);							len += 9;
+		PUT_INTEL_SHORT(buf+len, spp.xo);							len += 2;
+		PUT_INTEL_SHORT(buf+len, spp.yo);							len += 2;
+		PUT_INTEL_SHORT(buf+len, spp.zo);							len += 2;
+		PUT_INTEL_SHORT(buf+len, spp.segment);						len += 2;
 		PUT_INTEL_SHORT(buf+len, spp.velx);							len += 2;
 		PUT_INTEL_SHORT(buf+len, spp.vely);							len += 2;
-		PUT_INTEL_SHORT(buf+len, spp.velz);							len += 2; // 23 + 3 = 26
-	android_net_udp_reattempt_direct(pnum, multi_who_is_master(), multi_i_am_master(),
-		&connection_statuses[pnum], timer_query());
+		PUT_INTEL_SHORT(buf+len, spp.velz);							len += 2;
+		buf[len] = current_pdata; len++;
+	}
+	else
+	{
+		quaternionpos qpp;
+		memset(&qpp, 0, sizeof(quaternionpos));
 		create_quaternionpos(&qpp, Objects+Players[Player_num].objnum, 0);
 		PUT_INTEL_SHORT(buf+len, qpp.orient.w);							len += 2;
 		PUT_INTEL_SHORT(buf+len, qpp.orient.x);							len += 2;
@@ -7550,44 +7590,21 @@ void net_udp_send_player_flags()
  }
 
 void net_udp_send_p2p_reattempt_direct (int to_player, int connect_to_player) {
-	
-	ubyte buf[UPID_REATTEMPT_DIRECT_SIZE]; 
-	int len = 0;
+	android_net_udp_send_p2p_reattempt_direct(netgame_token, connect_to_player,
+		&Netgame.players[connect_to_player].protocol.udp.addr, to_player,
+		net_udp_send_to_player_direct);
+}
 
-	buf[len] = UPID_REATTEMPT_DIRECT; len++;
-	PUT_INTEL_INT(buf + len, netgame_token); len += 4; 
-	buf[len] = connect_to_player; len++;
-	memcpy(buf + len, &Netgame.players[connect_to_player].protocol.udp.addr, sizeof(struct _sockaddr)); 
-
-	net_udp_send_to_player_direct(buf, sizeof(buf), to_player); 
+static void net_udp_log_message_adapter(const char *message)
+{
+	net_log_comment((char *)message);
 }
 
 void net_udp_process_p2p_reattempt_direct (ubyte *data, struct _sockaddr sender_addr, int data_len) {
-	int len = 0;  len++; // header
-	len += 4; // token 
-
-	int pnum = data[len]; len++;
-
-	if(pnum == multi_who_is_master()) {
-		net_log_comment("Attempting reconnect to master, illegal."); 
-		return;
-	}
-
-	if(pnum == Player_num) {
-		net_log_comment("Attempting reconnect to self, illegal."); 
-		return;
-	}  
-
-	if(pnum >= MAX_PLAYERS) {
-		net_log_comment("Attempting connection to illegal player num.");
-		return;
-	}
-
-	struct _sockaddr new_address;	
-	memcpy(&new_address, data + len, sizeof(struct _sockaddr)); 
-
-	update_address_for_player(pnum, new_address); 
-	reattemptDirect(pnum); 
+	android_net_udp_process_p2p_reattempt_direct(data, Player_num,
+		multi_who_is_master(), multi_i_am_master(), MAX_PLAYERS,
+		timer_query(), connection_statuses, net_udp_log_message_adapter,
+		update_address_for_player);
 }
 
 void net_udp_send_p2p_ping (int to_player, int force_direct, fix64 time) {
@@ -7772,25 +7789,24 @@ void update_address_for_player(int pnum, struct _sockaddr new_addr) {
 	}
 }
 
-void resetProxy(int pnum) {
-	if(pnum == multi_who_is_master()) return;
-	if(multi_i_am_master()) return;
-
+static void net_udp_log_reset_proxy_transition(int pnum, int old_type)
+{
 #ifdef __ANDROID__
-	MPDIAG("CONNTYPE[resetProxy]: P%d %d->PROXY", pnum, connection_statuses[pnum].type);
+	MPDIAG("CONNTYPE[resetProxy]: P%d %d->PROXY", pnum, old_type);
+#else
+	(void)pnum;
+	(void)old_type;
 #endif
-	connection_statuses[pnum].type = CONNT_PROXY;
-	connection_statuses[pnum].proxy_through = 0;
+}
 
+void resetProxy(int pnum) {
+	android_net_udp_reset_proxy(pnum, multi_who_is_master(), multi_i_am_master(),
+		&connection_statuses[pnum], net_udp_log_reset_proxy_transition);
 }
 
 void reattemptDirect(int pnum) {
-	if(pnum == multi_who_is_master()) return;
-	if(multi_i_am_master()) return;
-
-	connection_statuses[pnum].holepunch_attempts = 0;
-	connection_statuses[pnum].last_direct_pong = timer_query(); 
-	
+	android_net_udp_reattempt_direct(pnum, multi_who_is_master(), multi_i_am_master(),
+		&connection_statuses[pnum], timer_query());
 }
 
 void net_udp_send_to_player(ubyte* data, int len, int to_player) {
