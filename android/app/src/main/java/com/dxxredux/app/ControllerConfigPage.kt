@@ -286,6 +286,19 @@ private fun defaultThresholdForAxis(axis: String): Int =
         DEFAULT_AXIS_THRESHOLD
     }
 
+private fun thresholdForDialog(
+    axis: String,
+    buttonMode: Boolean,
+    thresholds: Map<String, Int>,
+): Int {
+    val threshold = thresholds[axis] ?: return if (buttonMode) DEFAULT_AXIS_THRESHOLD else defaultThresholdForAxis(axis)
+    return when {
+        buttonMode && threshold == DEFAULT_STICK_DEAD_ZONE -> DEFAULT_AXIS_THRESHOLD
+        !buttonMode && threshold == DEFAULT_AXIS_THRESHOLD -> defaultThresholdForAxis(axis)
+        else -> threshold
+    }
+}
+
 // Build a default thresholds map with per-axis defaults.
 private fun defaultThresholds(): Map<String, Int> = THRESHOLD_AXES.associateWith(::defaultThresholdForAxis)
 
@@ -2021,7 +2034,7 @@ fun ControllerConfigPage(
         Text(
             text =
                 if (hasController) {
-                    "\u2713 ${displayedController?.name.orEmpty()}"
+                    "\u2713 ${displayedController.name}"
                 } else {
                     "\u2717 Not detected"
                 },
@@ -2251,8 +2264,9 @@ fun ControllerConfigPage(
             currentFunc = bindings[selectedControl!!],
             assignedFunctions = assignedButtonFuncs,
             gameVariant = gameVariant,
+            liveUpdateToken = axisGeneration,
             axisValue = axisVal,
-            threshold = axisKey?.let { thresholds[it] },
+            threshold = axisKey?.let { thresholdForDialog(it, buttonMode = true, thresholds) },
             onThresholdChange = axisKey?.let { key -> { v: Int -> thresholds[key] = v } },
             axisFunctions = if (isTrigger) TRIGGER_HALF_AXIS_OPTIONS else emptyList(),
             onSelect = { funcLabel ->
@@ -2295,10 +2309,11 @@ fun ControllerConfigPage(
             assignedFunctions = assignedAxisFuncsForDialog,
             assignedButtonFunctions = assignedButtonFuncs,
             gameVariant = gameVariant,
+            liveUpdateToken = axisGeneration,
             xAxisValue = if (selectedControl == "LS") lx else rx,
             yAxisValue = if (selectedControl == "LS") ly else ry,
-            xThreshold = thresholds[xKey] ?: defaultThresholdForAxis(xKey),
-            yThreshold = thresholds[yKey] ?: defaultThresholdForAxis(yKey),
+            xThreshold = thresholdForDialog(xKey, xIsButtonMode, thresholds),
+            yThreshold = thresholdForDialog(yKey, yIsButtonMode, thresholds),
             onXThresholdChange = { v -> thresholds[xKey] = v },
             onYThresholdChange = { v -> thresholds[yKey] = v },
             onConfirm = { result ->
@@ -2413,6 +2428,7 @@ private fun ButtonFunctionPickerDialog(
     currentFunc: String?,
     assignedFunctions: Set<String> = emptySet(),
     gameVariant: String = "d2",
+    liveUpdateToken: Int = 0,
     axisValue: Float? = null,
     threshold: Int? = null,
     onThresholdChange: ((Int) -> Unit)? = null,
@@ -2420,6 +2436,8 @@ private fun ButtonFunctionPickerDialog(
     onSelect: (String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    @Suppress("UNUSED_EXPRESSION")
+    liveUpdateToken
     var showExtra by remember { mutableStateOf(false) }
     val isD1 = gameVariant == "d1"
     val funcList =
@@ -2586,6 +2604,7 @@ private fun StickPickerDialog(
     assignedFunctions: Set<String> = emptySet(),
     assignedButtonFunctions: Set<String> = emptySet(),
     gameVariant: String = "d2",
+    liveUpdateToken: Int = 0,
     xAxisValue: Float = 0f,
     yAxisValue: Float = 0f,
     xThreshold: Int = DEFAULT_AXIS_THRESHOLD,
@@ -2595,6 +2614,8 @@ private fun StickPickerDialog(
     onConfirm: (StickPickerResult) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    @Suppress("UNUSED_EXPRESSION")
+    liveUpdateToken
     var selectedX by remember { mutableStateOf(currentXFunc) }
     var selectedY by remember { mutableStateOf(currentYFunc) }
     var invertX by remember { mutableStateOf(currentXInvert) }
@@ -2642,12 +2663,14 @@ private fun StickPickerDialog(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(
                             checked = xButtonMode,
-                            onCheckedChange = {
-                                xButtonMode = it
-                                if (it) {
-                                    onXThresholdChange?.invoke(DEFAULT_AXIS_THRESHOLD)
-                                } else {
-                                    onXThresholdChange?.invoke(DEFAULT_STICK_DEAD_ZONE)
+                            onCheckedChange = { checked ->
+                                xButtonMode = checked
+                                onXThresholdChange?.let { thresholdChange ->
+                                    if (checked) {
+                                        thresholdChange(DEFAULT_AXIS_THRESHOLD)
+                                    } else {
+                                        thresholdChange(DEFAULT_STICK_DEAD_ZONE)
+                                    }
                                 }
                             },
                         )
@@ -2709,12 +2732,14 @@ private fun StickPickerDialog(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(
                             checked = yButtonMode,
-                            onCheckedChange = {
-                                yButtonMode = it
-                                if (it) {
-                                    onYThresholdChange?.invoke(DEFAULT_AXIS_THRESHOLD)
-                                } else {
-                                    onYThresholdChange?.invoke(DEFAULT_STICK_DEAD_ZONE)
+                            onCheckedChange = { checked ->
+                                yButtonMode = checked
+                                onYThresholdChange?.let { thresholdChange ->
+                                    if (checked) {
+                                        thresholdChange(DEFAULT_AXIS_THRESHOLD)
+                                    } else {
+                                        thresholdChange(DEFAULT_STICK_DEAD_ZONE)
+                                    }
                                 }
                             },
                         )

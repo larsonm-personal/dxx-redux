@@ -47,6 +47,27 @@ extern struct player_config PlayerCfg;
 static const char CONFIG_PATH[] =
     "/data/data/com.dxxredux.app/files/controller_config.json";
 
+static int clamp_threshold_pct(int pct)
+{
+	if (pct < 5) pct = 5;
+	if (pct > 95) pct = 95;
+	return pct;
+}
+
+static int threshold_pct_to_axis_button_deadzone(int pct)
+{
+	return clamp_threshold_pct(pct) * 128 / 100;
+}
+
+static int threshold_pct_to_playercfg_deadzone(int pct, int scale)
+{
+	int raw_deadzone = threshold_pct_to_axis_button_deadzone(pct);
+	int value = (raw_deadzone + scale / 2) / scale;
+	if (value < 0) value = 0;
+	if (value > 16) value = 16;
+	return value;
+}
+
 /*
  * Read controller_config.json and apply key_settings arrays + control type
  * into the current PlayerCfg.  Returns true if a config was loaded.
@@ -89,7 +110,8 @@ static bool load_config_into_playercfg(void)
 		PlayerCfg.AutomapFreeFlight = (ubyte) cfg["automap_free_flight"].get<int>();
 
 	/* Per-axis thresholds for axis-to-button conversion.
-	 * JSON stores percentage (5-95), C uses 0-128 scale. */
+	 * JSON stores percentage (5-95), C uses 0-128 scale for axis-buttons
+	 * and PlayerCfg.JoystickDead[] for analog deadzones. */
 	if (cfg.contains("thresholds") && cfg["thresholds"].is_object()) {
 		static const struct {
 			const char *name;
@@ -103,13 +125,36 @@ static bool load_config_into_playercfg(void)
 			{ "RT", 5 },
 		};
 		auto &thr = cfg["thresholds"];
+		int axis_pct[sizeof(axis_map) / sizeof(axis_map[0])];
+		memset(axis_pct, -1, sizeof(axis_pct));
 		for (size_t i = 0; i < sizeof(axis_map) / sizeof(axis_map[0]); i++) {
 			if (thr.contains(axis_map[i].name) && thr[axis_map[i].name].is_number()) {
-				int pct = thr[axis_map[i].name].get<int>();
-				if (pct < 5) pct = 5;
-				if (pct > 95) pct = 95;
-				joy_axis_button_deadzone[axis_map[i].axis] = pct * 128 / 100;
+				int pct = clamp_threshold_pct(thr[axis_map[i].name].get<int>());
+				axis_pct[axis_map[i].axis] = pct;
+				joy_axis_button_deadzone[axis_map[i].axis] = threshold_pct_to_axis_button_deadzone(pct);
 			}
+		}
+
+		static const struct {
+			int keysettings_index;
+			int deadzone_index;
+			int scale;
+		} analog_deadzone_map[] = {
+			{ 15, 0, 8 },
+			{ 13, 1, 8 },
+			{ 17, 2, 8 },
+			{ 19, 3, 8 },
+			{ 21, 4, 8 },
+			{ 23, 5, 3 },
+		};
+		for (size_t i = 0; i < sizeof(analog_deadzone_map) / sizeof(analog_deadzone_map[0]); i++) {
+			int bound_axis = PlayerCfg.KeySettings[1][analog_deadzone_map[i].keysettings_index];
+			if (bound_axis < 0 || (size_t) bound_axis >= sizeof(axis_map) / sizeof(axis_map[0]))
+				continue;
+			if (axis_pct[bound_axis] < 0)
+				continue;
+			PlayerCfg.JoystickDead[analog_deadzone_map[i].deadzone_index] =
+			    threshold_pct_to_playercfg_deadzone(axis_pct[bound_axis], analog_deadzone_map[i].scale);
 		}
 	}
 
