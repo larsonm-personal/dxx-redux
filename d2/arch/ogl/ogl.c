@@ -2304,6 +2304,27 @@ void ogl_end_frame(void){
 #endif
 }
 
+void ogl_prepare_framebuffer_readback(void)
+{
+#ifdef ANDROID
+	if (g_msaa_fbo_bound && g_msaa_frame_depth == 0) {
+		int w = grd_curscreen->sc_w, h = grd_curscreen->sc_h;
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, ogl_msaa_fbo);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		glBlitFramebuffer(0, 0, w, h, 0, 0, w, h,
+		    GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		{
+			GLenum err = glGetError();
+			if (err != GL_NO_ERROR)
+				__android_log_print(ANDROID_LOG_ERROR, "DXX",
+				    "MSAA resolve error: 0x%x", err);
+		}
+		g_msaa_fbo_bound = 0;
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+#endif
+}
+
 void gr_flip(void)
 {
 #ifdef ANDROID
@@ -2350,23 +2371,9 @@ void gr_flip(void)
 	 * render pass, including cockpit subviews. Resolve only after all passes
 	 * for the frame have unwound back to depth 0. */
 #ifdef ANDROID
-	if (g_msaa_fbo_bound && g_msaa_frame_depth == 0) {
-		if (trace_flip)
-			crash_breadcrumb("gr_flip: msaa_resolve");
-		int w = grd_curscreen->sc_w, h = grd_curscreen->sc_h;
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, ogl_msaa_fbo);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-		glBlitFramebuffer(0, 0, w, h, 0, 0, w, h,
-		    GL_COLOR_BUFFER_BIT, GL_NEAREST);
-		{
-			GLenum err = glGetError();
-			if (err != GL_NO_ERROR)
-				__android_log_print(ANDROID_LOG_ERROR, "DXX",
-				    "MSAA resolve error: 0x%x", err);
-		}
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		g_msaa_fbo_bound = 0;
-	}
+	if (g_msaa_fbo_bound && g_msaa_frame_depth == 0 && trace_flip)
+		crash_breadcrumb("gr_flip: msaa_resolve");
+	ogl_prepare_framebuffer_readback();
 #endif
 	/* android port: sample framebuffer for introspection (center pixel + 4x4 grid average) */
 #ifdef ANDROID

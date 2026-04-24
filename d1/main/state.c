@@ -159,9 +159,13 @@ static grs_bitmap *state_read_thumbnail(PHYSFS_file *fp, int version)
 	PHYSFS_read(fp, bmp->bm_data, THUMBNAIL_W * THUMBNAIL_H, 1);
 	if (state_thumbnail_has_palette(version)) {
 		ubyte pal[THUMBNAIL_PALETTE_BYTES];
+		int i;
 
 		PHYSFS_read(fp, pal, 3, 256);
-		gr_remap_bitmap_good(bmp, pal, -1, -1);
+		for (i = 0; i < THUMBNAIL_W * THUMBNAIL_H; i++) {
+			ubyte idx = bmp->bm_data[i];
+			bmp->bm_data[i] = gr_find_closest_color_current(pal[idx*3], pal[idx*3+1], pal[idx*3+2]);
+		}
 	}
 
 	return bmp;
@@ -213,6 +217,7 @@ static void state_write_current_frame_thumbnail(PHYSFS_file *fp)
 		glGetIntegerv(GL_DRAW_BUFFER, &gl_draw_buffer);
 		glReadBuffer(gl_draw_buffer);
 #endif
+		ogl_prepare_framebuffer_readback();
 		glReadPixels(0, SHEIGHT - THUMBNAIL_H, THUMBNAIL_W, THUMBNAIL_H, GL_RGBA, GL_UNSIGNED_BYTE, buf);
 		// Y-flip and downsample to 6-bit Descent palette range
 		k = THUMBNAIL_H;

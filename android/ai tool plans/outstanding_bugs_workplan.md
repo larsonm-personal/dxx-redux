@@ -17,18 +17,23 @@ Source: [android/outstanding_bugs.md](android/outstanding_bugs.md). Each bug bel
 ### Cause (updated after user reported both D1 and D2 still broken after palette-blob fix)
 The palette-blob approach (saving `gr_palette` alongside the thumbnail bytes and remapping on load) is not sufficient. On Android/OGL, `gr_palette` and `gr_current_pal` can disagree (brightness/gamma are applied only to `gr_current_pal`), and the `Computed_colors` cache inside `gr_find_closest_color` can hold stale entries from a prior palette. `gr_remap_bitmap_good` produces indices referenced to `gr_palette`, but `ogl_ubitblt_i` uploads them against `gr_current_pal`, so the preview colors drift even with a correct saved palette.
 
+Freshly written saves had a second failure mode on phones: the save path called `glReadPixels` immediately after `render_frame()`, but Android resolves the MSAA FBO only in `gr_flip()`. New save thumbnails could therefore capture an unresolved or stale default framebuffer, which matches the "mostly white with random pixels" symptom.
+
 ### Planned change
 - Change the on-disk thumbnail format to packed 6-bit RGB (`THUMBNAIL_W * THUMBNAIL_H * 3` bytes, Y-flipped) so no palette is carried across save/load.
 - At preview load, quantize each RGB triple via `gr_find_closest_color_current` (uncached, reads `gr_current_pal`) so bitmap indices line up with the upload path used by `ogl_ubitblt_i`.
-- Bump both save versions (D1: `STATE_VERSION 9`; D2: `STATE_VERSION 23`) and keep the legacy decode branches so pre-existing saves still display best-effort.
+- Bump both save versions (D1: `STATE_VERSION 9`; D2: `STATE_VERSION 23`) and keep the legacy decode branches.
+- For pre-RGB saves that still carry a palette blob, stop using `gr_remap_bitmap_good`; instead, translate each saved palette entry through `gr_find_closest_color_current` so existing D2 saves also quantize against `gr_current_pal`.
 - Keep the draw side unchanged: `state_callback` still uses `ogl_ubitblt_i` on OGL builds.
 
 ### Current status
 - Landed the RGB thumbnail format in both `d1/main/state.c` and `d2/main/state.c`, replacing the palette-blob path added in the previous pass.
+- Follow-up fix: the legacy palette-bearing decode branch in both files now maps each saved pixel through `gr_find_closest_color_current` instead of `gr_remap_bitmap_good`, so old D2 saves no longer depend on `gr_palette` matching `gr_current_pal`.
+- Follow-up fix: added `ogl_prepare_framebuffer_readback()` in `d1/d2 arch/ogl/ogl.c` and call it from the save-thumbnail `glReadPixels` path so Android save capture resolves/binds the correct framebuffer before reading pixels.
 - Added `state_write_blank_thumbnail` and (D1) `state_write_current_frame_thumbnail` helpers; cleaned up now-unused locals (`cnv`, `gl_draw_buffer`, `j`) in D1 save paths.
 - `palette.h` is now explicitly included in state.c (`gr.h` does not declare `gr_find_closest_color_current`).
-- Passed `run-windows-build.ps1 -Target both` (twice, once before and once after `run-code-quality.ps1 -Fix`) and `:app:externalNativeBuildDebug`.
-- Still needs Android manual verification with newly created D1 and D2 saves on TV and phone.
+- Passed `run-windows-build.ps1 -Target both`, `android\run-code-quality.ps1 -Fix`, and `:app:externalNativeBuildDebug` after the MSAA readback fix.
+- Still needs Android manual verification with both existing palette-bearing D2 saves and newly created D1/D2 RGB-format saves on TV and phone.
 
 - Build D1 Android, in the emulator: start any pilot, save to slot 1, exit to main menu, re-enter Load Game and verify the thumbnail colors match the in-game scene.
 - Repeat in D2 to confirm no regression.
