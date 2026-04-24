@@ -9,6 +9,7 @@ import android.graphics.Typeface
 import android.os.Handler
 import android.os.Looper
 import android.view.View
+import java.util.Locale
 import kotlin.math.max
 
 internal data class LoadingProgressOverlayLayout(
@@ -50,13 +51,14 @@ internal fun computeLoadingProgressOverlayLayout(
     )
 }
 
+internal fun formatLoadingProgressText(text: String): String = text.trim().uppercase(Locale.ROOT)
+
 class LoadingProgressOverlayView(
     context: Context,
 ) : View(context) {
     private val hideHandler = Handler(Looper.getMainLooper())
     private val barRect = RectF()
     private val innerRect = RectF()
-    private var phaseLabel = "Prepare for Descent"
     private var itemLabel = ""
     private var progressPercent = 0
 
@@ -71,29 +73,22 @@ class LoadingProgressOverlayView(
             style = Paint.Style.FILL
         }
 
+    // border/fill/text are picked from the "prepare for descent" splash colors in D1
     private val borderPaint =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.argb(224, 255, 255, 255)
+            color = Color.argb(224, 0x19, 0x1A, 0x17)
             style = Paint.Style.STROKE
         }
 
     private val fillPaint =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.argb(192, 72, 194, 104)
+            color = Color.argb(192, 0x21, 0x1E, 0x19)
             style = Paint.Style.FILL
-        }
-
-    private val phasePaint =
-        Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.argb(210, 255, 255, 255)
-            typeface = Typeface.MONOSPACE
-            textAlign = Paint.Align.CENTER
-            setShadowLayer(2f, 0f, 1f, Color.argb(180, 0, 0, 0))
         }
 
     private val itemPaint =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.argb(235, 255, 255, 255)
+            color = Color.argb(235, 0x6B, 0x6C, 0x65)
             typeface = Typeface.MONOSPACE
             textAlign = Paint.Align.CENTER
             setShadowLayer(2f, 0f, 1f, Color.argb(200, 0, 0, 0))
@@ -111,8 +106,7 @@ class LoadingProgressOverlayView(
         percent: Int,
     ) {
         hideHandler.removeCallbacks(hideRunnable)
-        phaseLabel = phase.ifBlank { "Prepare for Descent" }
-        itemLabel = item
+        itemLabel = formatLoadingProgressText(item)
         progressPercent = percent.coerceIn(0, 100)
         visibility = VISIBLE
         invalidate()
@@ -138,7 +132,6 @@ class LoadingProgressOverlayView(
         val density = resources.displayMetrics.density
         val layout = computeLoadingProgressOverlayLayout(width, height, density, progressPercent)
 
-        phasePaint.textSize = layout.phaseTextSize
         itemPaint.textSize = layout.itemTextSize
         borderPaint.strokeWidth = layout.borderWidth
 
@@ -161,11 +154,10 @@ class LoadingProgressOverlayView(
         }
 
         canvas.drawRoundRect(barRect, layout.cornerRadius, layout.cornerRadius, borderPaint)
-        canvas.drawText(phaseLabel, width * 0.5f, layout.phaseBaseline, phasePaint)
-
-        val itemText = if (itemLabel.isBlank()) phaseLabel else itemLabel
-        val itemY = barRect.centerY() - (itemPaint.ascent() + itemPaint.descent()) * 0.5f
-        canvas.drawText(itemText, width * 0.5f, itemY, itemPaint)
+        if (itemLabel.isNotEmpty()) {
+            val itemY = barRect.centerY() - (itemPaint.ascent() + itemPaint.descent()) * 0.5f
+            canvas.drawText(itemLabel, width * 0.5f, itemY, itemPaint)
+        }
     }
 
     companion object {

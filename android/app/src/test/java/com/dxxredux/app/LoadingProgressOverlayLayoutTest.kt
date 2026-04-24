@@ -29,4 +29,10 @@ class LoadingProgressOverlayLayoutTest {
         assertEquals(0, low.clampedPercent)
         assertEquals(100, high.clampedPercent)
     }
+
+    @Test
+    fun progressTextUppercasesAndDropsBlankLabelFallback() {
+        assertEquals("METL154", formatLoadingProgressText(" metl154 "))
+        assertEquals("", formatLoadingProgressText("   "))
+    }
 }

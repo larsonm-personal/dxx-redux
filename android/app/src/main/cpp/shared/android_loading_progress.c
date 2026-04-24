@@ -133,8 +133,6 @@ void android_loading_progress_begin(const char *phase_label, int total_items)
 	g_loading_progress_has_flush = 0;
 	g_loading_progress_label[0] = 0;
 	loading_progress_copy_label(g_loading_progress_phase, sizeof(g_loading_progress_phase), phase_label);
-	if (!g_loading_progress_phase[0])
-		strcpy(g_loading_progress_phase, "Prepare for Descent");
 	pthread_mutex_unlock(&g_loading_progress_lock);
 }
 
