@@ -17,6 +17,11 @@ User requirement (verbatim):
 - Integrated it into `ControllerConfigPage.kt` with a 50ms poll loop so held inputs still trigger on controllers that do not emit repeating motion events while stationary.
 - Reused the existing tap routing through a shared `openControlPicker(...)` helper so long-press and tap open the same picker paths.
 - Normalized button-name variants (`L2`/`R2`, `D-Up` etc.) back to the page's existing control ids.
+- Extended long-hold detection to hat-axis D-pad input so D-pad holds can still open their assignment picker while short taps are used for page navigation.
+- Added page-local controller navigation for the four main action buttons (Cancel, Save, Export, Import), with green selection highlighting and short-press `A` activation.
+- Suppressed the short-press `A` action when the same hold was consumed by opening the `A` binding submenu.
+- Added a fresh-sample fallback after closing stick/trigger/D-pad pickers: if no new axis sample arrives shortly after dismiss, the stale displayed value is zeroed until a real update arrives.
+- Exposed stick-axis dead-zone sliders in non-button mode, with 10% defaults for `LS_*` / `RS_*` and the existing 30% threshold default retained for trigger/button-mode activation.
 
 ### Existing code anchors
 
@@ -124,6 +129,7 @@ Add `android/app/src/test/java/com/dxxredux/app/ControllerLongPressDetectorTest.
 - Passed: `android/gradlew.bat :app:testDebugUnitTest --tests "com.dxxredux.app.ControllerLongPressDetectorTest"`
 - Passed after formatting: `android/gradlew.bat :app:testDebugUnitTest --tests "com.dxxredux.app.ControllerLongPressDetectorTest"`
 - Passed: `android/run-code-quality.ps1 -Fix`
+- Passed: `run-windows-build.ps1 -Target both`
 - Optional by-hand: emulator with a BT controller, hold LS up on the controller editor, confirm the stick picker opens after 2s. Hold A, confirm the button picker opens.
 
 ### Out of scope

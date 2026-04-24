@@ -10,11 +10,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -42,7 +44,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -254,12 +258,60 @@ internal fun loadDefaultBindings(context: Context): Map<String, String> =
 
 // Default axis-to-button activation threshold (percentage, 5-95)
 const val DEFAULT_AXIS_THRESHOLD = 30
+const val DEFAULT_STICK_DEAD_ZONE = 10
 
 // Axis IDs that support per-axis thresholds
 private val THRESHOLD_AXES = listOf("LS_X", "LS_Y", "RS_X", "RS_Y", "LT", "RT")
+private val STICK_THRESHOLD_AXES = setOf("LS_X", "LS_Y", "RS_X", "RS_Y")
 
-// Build a default thresholds map with all axes at DEFAULT_AXIS_THRESHOLD
-private fun defaultThresholds(): Map<String, Int> = THRESHOLD_AXES.associateWith { DEFAULT_AXIS_THRESHOLD }
+private const val NAV_INPUT_THRESHOLD = 0.5f
+private const val FRESH_AXIS_SAMPLE_POLL_MS = 50L
+private const val FRESH_AXIS_SAMPLE_POLLS = 4
+private val actionButtonHighlightShape = RoundedCornerShape(6.dp)
+
+private fun defaultThresholdForAxis(axis: String): Int =
+    if (axis in
+        STICK_THRESHOLD_AXES
+    ) {
+        DEFAULT_STICK_DEAD_ZONE
+    } else {
+        DEFAULT_AXIS_THRESHOLD
+    }
+
+// Build a default thresholds map with per-axis defaults.
+private fun defaultThresholds(): Map<String, Int> = THRESHOLD_AXES.associateWith(::defaultThresholdForAxis)
+
+private fun moveActionButtonSelection(
+    currentIndex: Int,
+    navX: Int,
+    navY: Int,
+): Int {
+    var col = currentIndex % 2
+    var row = currentIndex / 2
+    if (navX < 0) col = 0
+    if (navX > 0) col = 1
+    if (navY < 0) row = 0
+    if (navY > 0) row = 1
+    return row * 2 + col
+}
+
+private fun actionButtonModifier(selected: Boolean): Modifier =
+    if (selected) {
+        Modifier.border(3.dp, tvFocusBorderColor, actionButtonHighlightShape)
+    } else {
+        Modifier
+    }
+
+private fun refreshAxisIndicesForControl(controlId: String?): Pair<Set<Int>, Set<Int>> =
+    when (controlId) {
+        "LS" -> setOf(0, 1) to emptySet()
+        "RS" -> setOf(2, 3) to emptySet()
+        "LT" -> setOf(4) to emptySet()
+        "RT" -> setOf(5) to emptySet()
+        "DLeft", "DRight" -> emptySet<Int>() to setOf(0)
+        "DUp", "DDown" -> emptySet<Int>() to setOf(1)
+        else -> emptySet<Int>() to emptySet()
+    }
 
 // Axis functions that implicitly cover discrete button functions
 private val AXIS_COVERS_BUTTONS =
@@ -878,14 +930,7 @@ fun ControllerConfigPage(
     axisGeneration
 
     val context = LocalContext.current
-    val lx = axes[0]
-    val ly = axes[1]
-    val rx = axes[2]
-    val ry = axes[3]
-    val lt = axes[4]
-    val rt = axes[5]
-    val hatX = dpadAxes[0]
-    val hatY = dpadAxes[1]
+    val coroutineScope = rememberCoroutineScope()
 
     // Bindings state: control ID → function label
     val bindings = remember { mutableStateMapOf<String, String>() }
@@ -933,7 +978,74 @@ fun ControllerConfigPage(
     var showButtonPicker by remember { mutableStateOf(false) }
     var showStickPicker by remember { mutableStateOf(false) }
     var showDpadPicker by remember { mutableStateOf(false) }
+    var selectedActionButtonIndex by remember { mutableIntStateOf(0) }
+    var suppressActionButtonARelease by remember { mutableStateOf(false) }
+    var staleAxisIndices by remember { mutableStateOf(emptySet<Int>()) }
+    var staleDpadIndices by remember { mutableStateOf(emptySet<Int>()) }
+    var refreshAxisJob by remember { mutableStateOf<Job?>(null) }
     val longPressDetector = remember { ControllerLongPressDetector() }
+    val axisGenerationState by rememberUpdatedState(axisGeneration)
+
+    fun requestFreshAxisSample(controlId: String?) {
+        val (axisIndices, dpadIndices) = refreshAxisIndicesForControl(controlId)
+        if (axisIndices.isEmpty() && dpadIndices.isEmpty()) return
+        refreshAxisJob?.cancel()
+        staleAxisIndices = emptySet()
+        staleDpadIndices = emptySet()
+        val refreshGeneration = axisGenerationState
+        refreshAxisJob =
+            coroutineScope.launch {
+                repeat(FRESH_AXIS_SAMPLE_POLLS) {
+                    delay(FRESH_AXIS_SAMPLE_POLL_MS)
+                    if (axisGenerationState != refreshGeneration) return@launch
+                }
+                if (axisGenerationState == refreshGeneration) {
+                    staleAxisIndices = axisIndices
+                    staleDpadIndices = dpadIndices
+                }
+            }
+    }
+
+    val buttonHatX =
+        when {
+            "D-Left" in pressedButtons -> -1f
+            "D-Right" in pressedButtons -> 1f
+            else -> 0f
+        }
+    val buttonHatY =
+        when {
+            "D-Up" in pressedButtons -> -1f
+            "D-Down" in pressedButtons -> 1f
+            else -> 0f
+        }
+    val hatX =
+        when {
+            0 in staleDpadIndices -> 0f
+            abs(dpadAxes[0]) >= NAV_INPUT_THRESHOLD -> dpadAxes[0]
+            else -> buttonHatX
+        }
+    val hatY =
+        when {
+            1 in staleDpadIndices -> 0f
+            abs(dpadAxes[1]) >= NAV_INPUT_THRESHOLD -> dpadAxes[1]
+            else -> buttonHatY
+        }
+    val lx = if (0 in staleAxisIndices) 0f else axes[0]
+    val ly = if (1 in staleAxisIndices) 0f else axes[1]
+    val rx = if (2 in staleAxisIndices) 0f else axes[2]
+    val ry = if (3 in staleAxisIndices) 0f else axes[3]
+    val lt = if (4 in staleAxisIndices) 0f else axes[4]
+    val rt = if (5 in staleAxisIndices) 0f else axes[5]
+    val effectiveAxes = floatArrayOf(lx, ly, rx, ry, lt, rt)
+    val effectiveDpadAxes = floatArrayOf(hatX, hatY)
+
+    LaunchedEffect(axisGeneration) {
+        if (staleAxisIndices.isNotEmpty() || staleDpadIndices.isNotEmpty()) {
+            refreshAxisJob?.cancel()
+            staleAxisIndices = emptySet()
+            staleDpadIndices = emptySet()
+        }
+    }
 
     fun openControlPicker(controlId: String) {
         selectedControl = controlId
@@ -972,23 +1084,144 @@ fun ControllerConfigPage(
     val showButtonPickerState by rememberUpdatedState(showButtonPicker)
     val showStickPickerState by rememberUpdatedState(showStickPicker)
     val showDpadPickerState by rememberUpdatedState(showDpadPicker)
-    val axesState by rememberUpdatedState(axes)
+    val axesState by rememberUpdatedState(effectiveAxes)
+    val dpadAxesState by rememberUpdatedState(effectiveDpadAxes)
     val pressedButtonsState by rememberUpdatedState(pressedButtons)
 
+    fun cancelSelection() {
+        onBack()
+    }
+
+    fun saveSelection() {
+        saveConfig(context, bindings.toMap(), inverts.toSet(), gameVariant, thresholds.toMap())
+        Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
+        onBack()
+    }
+
+    fun exportSelection() {
+        saveConfig(context, bindings.toMap(), inverts.toSet(), gameVariant, thresholds.toMap())
+        if (!ConfigImportExport.exportControllerConfig(context)) {
+            Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun importSelection() {
+        importPickerLauncher.launch(arrayOf("application/json", "*/*"))
+    }
+
+    val runSelectedActionState by rememberUpdatedState(
+        newValue = {
+            when (selectedActionButtonIndex) {
+                0 -> cancelSelection()
+                1 -> saveSelection()
+                2 -> exportSelection()
+                else -> importSelection()
+            }
+        },
+    )
+
     LaunchedEffect(Unit) {
+        var previousNavX = 0
+        var previousNavY = 0
+        var wasADown = false
         while (true) {
+            val pickerOpen = showButtonPickerState || showStickPickerState || showDpadPickerState
+            val currentButtons = pressedButtonsState.toList()
             val trigger =
                 longPressDetector.update(
                     nowMs = SystemClock.elapsedRealtime(),
                     axes = axesState,
-                    pressedButtons = pressedButtonsState.toList(),
-                    gated = showButtonPickerState || showStickPickerState || showDpadPickerState,
+                    dpadAxes = dpadAxesState,
+                    pressedButtons = currentButtons,
+                    gated = pickerOpen,
                 )
-            when (trigger) {
-                is ControllerLongPressDetector.Trigger.Axis -> heldAxisControlId(trigger.axisIndex)
-                is ControllerLongPressDetector.Trigger.Button -> heldButtonControlId(trigger.buttonName)
-                null -> null
-            }?.let(::openControlPicker)
+            val openedControl =
+                when (trigger) {
+                    is ControllerLongPressDetector.Trigger.Axis -> heldAxisControlId(trigger.axisIndex)
+                    is ControllerLongPressDetector.Trigger.Button -> heldButtonControlId(trigger.buttonName)
+                    null -> null
+                }
+            if (openedControl != null) {
+                if (trigger is ControllerLongPressDetector.Trigger.Button && trigger.buttonName == "A") {
+                    suppressActionButtonARelease = true
+                }
+                openControlPicker(openedControl)
+            }
+
+            if (!pickerOpen) {
+                val dpadPressedX =
+                    when {
+                        "D-Left" in currentButtons -> -1
+                        "D-Right" in currentButtons -> 1
+                        else -> 0
+                    }
+                val dpadPressedY =
+                    when {
+                        "D-Up" in currentButtons -> -1
+                        "D-Down" in currentButtons -> 1
+                        else -> 0
+                    }
+                val hatDirX =
+                    when {
+                        dpadAxesState[0] <= -NAV_INPUT_THRESHOLD -> -1
+                        dpadAxesState[0] >= NAV_INPUT_THRESHOLD -> 1
+                        else -> 0
+                    }
+                val hatDirY =
+                    when {
+                        dpadAxesState[1] <= -NAV_INPUT_THRESHOLD -> -1
+                        dpadAxesState[1] >= NAV_INPUT_THRESHOLD -> 1
+                        else -> 0
+                    }
+                val stickDirX =
+                    when {
+                        axesState[0] <= -NAV_INPUT_THRESHOLD -> -1
+                        axesState[0] >= NAV_INPUT_THRESHOLD -> 1
+                        else -> 0
+                    }
+                val stickDirY =
+                    when {
+                        axesState[1] <= -NAV_INPUT_THRESHOLD -> -1
+                        axesState[1] >= NAV_INPUT_THRESHOLD -> 1
+                        else -> 0
+                    }
+                val navX =
+                    when {
+                        dpadPressedX != 0 -> dpadPressedX
+                        hatDirX != 0 -> hatDirX
+                        else -> stickDirX
+                    }
+                val navY =
+                    when {
+                        dpadPressedY != 0 -> dpadPressedY
+                        hatDirY != 0 -> hatDirY
+                        else -> stickDirY
+                    }
+                if (navX != previousNavX) {
+                    if (navX != 0) {
+                        selectedActionButtonIndex = moveActionButtonSelection(selectedActionButtonIndex, navX, 0)
+                    }
+                    previousNavX = navX
+                }
+                if (navY != previousNavY) {
+                    if (navY != 0) {
+                        selectedActionButtonIndex = moveActionButtonSelection(selectedActionButtonIndex, 0, navY)
+                    }
+                    previousNavY = navY
+                }
+            } else {
+                previousNavX = 0
+                previousNavY = 0
+            }
+
+            val aDown = "A" in currentButtons
+            if (!aDown && wasADown) {
+                if (!pickerOpen && !suppressActionButtonARelease) {
+                    runSelectedActionState()
+                }
+                suppressActionButtonARelease = false
+            }
+            wasADown = aDown
             delay(50)
         }
     }
@@ -1238,6 +1471,15 @@ fun ControllerConfigPage(
                 val c = if (hatX > 0.5f) cActive else cAssignLabel
                 drawFuncLabel(textMeasurer, abbreviate(it), dpadCx + dLabelOff * 1.5f, dpadCy, scale, c)
             }
+            controlBounds[selectedControl ?: ""]?.let { selectedRect ->
+                if (selectedControl in DPAD_CONTROLS) {
+                    drawRect(
+                        cHighlight,
+                        Offset(selectedRect.left, selectedRect.top),
+                        Size(selectedRect.width, selectedRect.height),
+                    )
+                }
+            }
 
             // L1 bumper
             val bumperH = scale * 0.025f
@@ -1479,6 +1721,9 @@ fun ControllerConfigPage(
                             )
                     }
                 }
+                if (selectedControl == fb.id) {
+                    drawCircle(cHighlight, btnR + touchPad, Offset(fb.cx, fb.cy))
+                }
             }
 
             // R1 bumper
@@ -1601,6 +1846,9 @@ fun ControllerConfigPage(
                     c,
                 )
             }
+            if (selectedControl == "Select") {
+                drawCircle(cHighlight, centerBtnR + touchPad, Offset(selX, centerY))
+            }
 
             val staPressed = "Start" in pressedButtons
             drawFaceButton(textMeasurer, staX, centerY, centerBtnR, "Sta", staPressed, scale)
@@ -1621,6 +1869,9 @@ fun ControllerConfigPage(
                     scale,
                     c,
                 )
+            }
+            if (selectedControl == "Start") {
+                drawCircle(cHighlight, centerBtnR + touchPad, Offset(staX, centerY))
             }
 
             // ── Expand touch bounds to cover function labels ──
@@ -1784,18 +2035,20 @@ fun ControllerConfigPage(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             OutlinedButton(
-                onClick = onBack,
-                modifier = Modifier.weight(1f).height(38.dp),
+                onClick = {
+                    selectedActionButtonIndex = 0
+                    cancelSelection()
+                },
+                modifier = Modifier.weight(1f).height(38.dp).then(actionButtonModifier(selectedActionButtonIndex == 0)),
             ) {
                 Text("Cancel", fontSize = 13.sp)
             }
             Button(
                 onClick = {
-                    saveConfig(context, bindings.toMap(), inverts.toSet(), gameVariant, thresholds.toMap())
-                    Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show()
-                    onBack()
+                    selectedActionButtonIndex = 1
+                    saveSelection()
                 },
-                modifier = Modifier.weight(1f).height(38.dp),
+                modifier = Modifier.weight(1f).height(38.dp).then(actionButtonModifier(selectedActionButtonIndex == 1)),
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                 colors =
                     ButtonDefaults.buttonColors(
@@ -1825,20 +2078,20 @@ fun ControllerConfigPage(
         ) {
             OutlinedButton(
                 onClick = {
-                    // Save current state first, then export
-                    saveConfig(context, bindings.toMap(), inverts.toSet(), gameVariant, thresholds.toMap())
-                    if (!ConfigImportExport.exportControllerConfig(context)) {
-                        Toast.makeText(context, "Export failed", Toast.LENGTH_SHORT).show()
-                    }
+                    selectedActionButtonIndex = 2
+                    exportSelection()
                 },
-                modifier = Modifier.weight(1f).height(36.dp),
+                modifier = Modifier.weight(1f).height(36.dp).then(actionButtonModifier(selectedActionButtonIndex == 2)),
                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
             ) {
                 Text("Export", fontSize = 12.sp)
             }
             OutlinedButton(
-                onClick = { importPickerLauncher.launch(arrayOf("application/json", "*/*")) },
-                modifier = Modifier.weight(1f).height(36.dp),
+                onClick = {
+                    selectedActionButtonIndex = 3
+                    importSelection()
+                },
+                modifier = Modifier.weight(1f).height(36.dp).then(actionButtonModifier(selectedActionButtonIndex == 3)),
                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
             ) {
                 Text("Import", fontSize = 12.sp)
@@ -1941,13 +2194,17 @@ fun ControllerConfigPage(
             onThresholdChange = axisKey?.let { key -> { v: Int -> thresholds[key] = v } },
             axisFunctions = if (isTrigger) TRIGGER_HALF_AXIS_OPTIONS else emptyList(),
             onSelect = { funcLabel ->
+                val dismissedControl = selectedControl
                 assignButtonFunction(bindings, selectedControl!!, funcLabel)
                 showButtonPicker = false
                 selectedControl = null
+                requestFreshAxisSample(dismissedControl)
             },
             onDismiss = {
+                val dismissedControl = selectedControl
                 showButtonPicker = false
                 selectedControl = null
+                requestFreshAxisSample(dismissedControl)
             },
         )
     }
@@ -1978,11 +2235,12 @@ fun ControllerConfigPage(
             gameVariant = gameVariant,
             xAxisValue = if (selectedControl == "LS") lx else rx,
             yAxisValue = if (selectedControl == "LS") ly else ry,
-            xThreshold = thresholds[xKey] ?: DEFAULT_AXIS_THRESHOLD,
-            yThreshold = thresholds[yKey] ?: DEFAULT_AXIS_THRESHOLD,
+            xThreshold = thresholds[xKey] ?: defaultThresholdForAxis(xKey),
+            yThreshold = thresholds[yKey] ?: defaultThresholdForAxis(yKey),
             onXThresholdChange = { v -> thresholds[xKey] = v },
             onYThresholdChange = { v -> thresholds[yKey] = v },
             onConfirm = { result ->
+                val dismissedControl = selectedControl
                 // Clear all axis and axis-button bindings for this stick
                 bindings.remove(xKey)
                 bindings.remove(yKey)
@@ -2008,10 +2266,13 @@ fun ControllerConfigPage(
                 }
                 showStickPicker = false
                 selectedControl = null
+                requestFreshAxisSample(dismissedControl)
             },
             onDismiss = {
+                val dismissedControl = selectedControl
                 showStickPicker = false
                 selectedControl = null
+                requestFreshAxisSample(dismissedControl)
             },
         )
     }
@@ -2030,13 +2291,17 @@ fun ControllerConfigPage(
             assignedFunctions = assignedDpadFuncsForDialog,
             gameVariant = gameVariant,
             onSelect = { funcLabel ->
+                val dismissedControl = selectedControl
                 assignDpadFunction(bindings, selectedControl!!, funcLabel)
                 showDpadPicker = false
                 selectedControl = null
+                requestFreshAxisSample(dismissedControl)
             },
             onDismiss = {
+                val dismissedControl = selectedControl
                 showDpadPicker = false
                 selectedControl = null
+                requestFreshAxisSample(dismissedControl)
             },
         )
     }
@@ -2328,6 +2593,18 @@ private fun StickPickerDialog(
                             assignedFunctions = assignedFunctions,
                             onSelect = { selectedX = it },
                         )
+                        if (onXThresholdChange != null) {
+                            Spacer(Modifier.height(6.dp))
+                            Text("Dead zone: $xThreshold%", fontSize = 11.sp)
+                            Slider(
+                                value = xThreshold.toFloat(),
+                                onValueChange = { onXThresholdChange(it.toInt()) },
+                                valueRange = 5f..95f,
+                                steps = 17,
+                                modifier = Modifier.fillMaxWidth().tvFocusBorder(),
+                            )
+                            AxisThresholdBar(xAxisValue, xThreshold)
+                        }
                     }
                     Spacer(Modifier.height(8.dp))
 
@@ -2373,6 +2650,18 @@ private fun StickPickerDialog(
                             assignedFunctions = assignedFunctions,
                             onSelect = { selectedY = it },
                         )
+                        if (onYThresholdChange != null) {
+                            Spacer(Modifier.height(6.dp))
+                            Text("Dead zone: $yThreshold%", fontSize = 11.sp)
+                            Slider(
+                                value = yThreshold.toFloat(),
+                                onValueChange = { onYThresholdChange(it.toInt()) },
+                                valueRange = 5f..95f,
+                                steps = 17,
+                                modifier = Modifier.fillMaxWidth().tvFocusBorder(),
+                            )
+                            AxisThresholdBar(yAxisValue, yThreshold)
+                        }
                     }
                 }
                 ScrollArrows(stickScrollState)

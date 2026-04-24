@@ -69,6 +69,42 @@ class ControllerLongPressDetectorTest {
     }
 
     @Test
+    fun dpadHatHeldAloneTriggersOncePerHold() {
+        val detector = ControllerLongPressDetector()
+        val axes = FloatArray(6)
+        val dpadAxes = floatArrayOf(-1f, 0f)
+
+        assertNull(
+            detector.update(
+                nowMs = 0,
+                axes = axes,
+                dpadAxes = dpadAxes,
+                pressedButtons = emptyList(),
+                gated = false,
+            ),
+        )
+        assertEquals(
+            ControllerLongPressDetector.Trigger.Button("D-Left"),
+            detector.update(
+                nowMs = 2000,
+                axes = axes,
+                dpadAxes = dpadAxes,
+                pressedButtons = emptyList(),
+                gated = false,
+            ),
+        )
+        assertNull(
+            detector.update(
+                nowMs = 2100,
+                axes = axes,
+                dpadAxes = dpadAxes,
+                pressedButtons = emptyList(),
+                gated = false,
+            ),
+        )
+    }
+
+    @Test
     fun buttonHoldBlockedByOtherActivity() {
         val detector = ControllerLongPressDetector()
         val axes = FloatArray(6)

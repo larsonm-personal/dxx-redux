@@ -1,10 +1,12 @@
 # bugs
-[ ] android TV shows a generic controller name as the detected controller rather than the name of the first bluetooth gamepad. usb gamepads on regular android show their names currently
 [ ] controller on android TV, with the default "B" to fire secondary binding, is sticking and firing all missiles in one go when "B" is pressed. this may be stale - on my last test, the "B" button didn't fire anything. a recent code change changed berhavior to mostly ignore the "B" button (never fire)
-[ ] high scores menu needs to respond to "b" controller button the same as other menus (to exit it, back to the main menu). actually, this applies to apparently all menus
-[ready to test] when loading a mod and close to device storage capacity, this can cause a crash (with no crash dump). 1. need kotlin crash dumps working in this case and 2. check for free space when extracting things into game data
-[ ] brief "b" button presses are ignored in game menus
+[ ] in - game “b” button press causing a stuck secondary fire button: still a problem
+[ ] can't select menu items with Bluetooth controller “a” or with tv remote center of d pad button. stick as options-misc options-automatically start single player demos. this is a checkbox that isn't selectable. the base menus and start game flow work with these buttons, not but items in these sub menus
 [ ] descent 2 preview movies have skips in their soundtracks
+[ready to test] when loading a mod and close to device storage capacity, this can cause a crash (with no crash dump). 1. need kotlin crash dumps working in this case and 2. check for free space when extracting things into game data
+[fixed] high scores menu needs to respond to "b" controller button the same as other menus (to exit it, back to the main menu). actually, this applies to apparently all menus
+[fixed] brief "b" button presses are ignored in game menus
+[fixed] android TV shows a generic controller name as the detected controller rather than the name of the first bluetooth gamepad. usb gamepads on regular android show their names currently
 [fixed] d1 load game preview snapshots are corrupted (and also d2, even after the previous round of changes). could be some kind of dynamic palette thing that needs a special -> bitmap procedure
 [fixed] in the android TV dxx launcher, only the d-pad can move the selected button around. the convention in other apps and in the system menus is for both d-pad and left analog stick to move around menus
 [fixed] in-level pause and game menu (save/load/quit) have filtering applied even when the graphics settings have filtering off for menus
