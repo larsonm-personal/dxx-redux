@@ -78,8 +78,6 @@ internal fun shouldEnableNetEventsControl(
     hasPendingLaunchInfo: Boolean,
 ): Boolean = shouldEnableNetStatsControl(isMultiplayerGame, hasPendingLaunchInfo)
 
-internal fun shouldForwardRawJoystickButtonToUi(isInGame: Boolean): Boolean = !isInGame
-
 class MainActivity :
     Activity(),
     SurfaceHolder.Callback {
@@ -2304,14 +2302,7 @@ class MainActivity :
                 if (kcIndices != null) {
                     for (kc in kcIndices) inputMixer.setButton(kc, tag, true)
                 }
-                // Raw joystick buttons are only needed while a non-game UI
-                // window is frontmost so title/menu handlers can translate
-                // A/B to Enter/Esc. During gameplay the mixer path already
-                // drives the bound action, so forwarding the raw button too
-                // duplicates the press.
-                if (shouldForwardRawJoystickButtonToUi(nativeIsInGame())) {
-                    nativeJoystickButton(joyBtn, 1)
-                }
+                nativeJoystickButton(joyBtn, 1)
             }
             return true
         }
@@ -2396,9 +2387,7 @@ class MainActivity :
                 if (kcIndices != null) {
                     for (kc in kcIndices) inputMixer.setButton(kc, tag, false)
                 }
-                if (shouldForwardRawJoystickButtonToUi(nativeIsInGame())) {
-                    nativeJoystickButton(joyBtn, 0)
-                }
+                nativeJoystickButton(joyBtn, 0)
             }
             return true
         }

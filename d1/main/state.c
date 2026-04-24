@@ -60,6 +60,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "state.h"
 #include "multi.h"
 #include "gr.h"
+#include "palette.h"
 #ifdef OGL
 #include "ogl_init.h"
 #endif
@@ -71,7 +72,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 
-#define STATE_VERSION 8
+#define STATE_VERSION 9
 #define STATE_COMPATIBLE_VERSION 6
 // 0 - Put DGSS (Descent Game State Save) id at tof.
 // 1 - Added Difficulty level save
@@ -82,12 +83,15 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // 6 - Added buggin' cheat save
 // 7 - Added other cheat saves and game_id.
 // 8 - Save palette with screen shot
+// 9 - Store thumbnail as raw RGB instead of indexed + palette
 
 #define NUM_SAVES 10
 #define THUMBNAIL_W 100
 #define THUMBNAIL_H 50
 #define THUMBNAIL_PALETTE_BYTES (256*3)
+#define THUMBNAIL_RGB_BYTES (THUMBNAIL_W * THUMBNAIL_H * 3)
 #define STATE_THUMBNAIL_PALETTE_VERSION 8
+#define STATE_THUMBNAIL_RGB_VERSION 9
 #define DESC_LENGTH 20
 
 extern int Do_appearance_effect;
@@ -103,11 +107,20 @@ uint state_game_id;
 
 static int state_thumbnail_has_palette(int version)
 {
-	return version >= STATE_THUMBNAIL_PALETTE_VERSION;
+	return version >= STATE_THUMBNAIL_PALETTE_VERSION && version < STATE_THUMBNAIL_RGB_VERSION;
+}
+
+static int state_thumbnail_is_rgb(int version)
+{
+	return version >= STATE_THUMBNAIL_RGB_VERSION;
 }
 
 static void state_skip_thumbnail(PHYSFS_file *fp, int version)
 {
+	if (state_thumbnail_is_rgb(version)) {
+		PHYSFS_seek(fp, PHYSFS_tell(fp) + THUMBNAIL_RGB_BYTES);
+		return;
+	}
 	PHYSFS_seek(fp, PHYSFS_tell(fp) + THUMBNAIL_W * THUMBNAIL_H);
 	if (state_thumbnail_has_palette(version))
 		PHYSFS_seek(fp, PHYSFS_tell(fp) + THUMBNAIL_PALETTE_BYTES);
@@ -123,6 +136,26 @@ static grs_bitmap *state_read_thumbnail(PHYSFS_file *fp, int version)
 		return NULL;
 	}
 
+	if (state_thumbnail_is_rgb(version)) {
+		// Read packed 6-bit RGB and quantize to the currently active OGL
+		// palette so the bitmap indices match what ogl_ubitblt_i uploads
+		// through gr_current_pal at draw time. This sidesteps the
+		// gr_palette / gr_current_pal split and any stale Computed_colors
+		// cache, which were the root cause of garbled preview thumbnails.
+		ubyte *rgb = d_malloc(THUMBNAIL_RGB_BYTES);
+		int i;
+		if (!rgb) {
+			PHYSFS_seek(fp, PHYSFS_tell(fp) + THUMBNAIL_RGB_BYTES);
+			gr_free_bitmap(bmp);
+			return NULL;
+		}
+		PHYSFS_read(fp, rgb, THUMBNAIL_RGB_BYTES, 1);
+		for (i = 0; i < THUMBNAIL_W * THUMBNAIL_H; i++)
+			bmp->bm_data[i] = gr_find_closest_color_current(rgb[i*3], rgb[i*3+1], rgb[i*3+2]);
+		d_free(rgb);
+		return bmp;
+	}
+
 	PHYSFS_read(fp, bmp->bm_data, THUMBNAIL_W * THUMBNAIL_H, 1);
 	if (state_thumbnail_has_palette(version)) {
 		ubyte pal[THUMBNAIL_PALETTE_BYTES];
@@ -134,9 +167,80 @@ static grs_bitmap *state_read_thumbnail(PHYSFS_file *fp, int version)
 	return bmp;
 }
 
-static void state_write_thumbnail_palette(PHYSFS_file *fp)
+static void state_write_blank_thumbnail(PHYSFS_file *fp)
 {
-	PHYSFS_write(fp, gr_palette, 3, 256);
+	ubyte *zero = d_malloc(THUMBNAIL_RGB_BYTES);
+	if (!zero)
+		return;
+	memset(zero, 0, THUMBNAIL_RGB_BYTES);
+	PHYSFS_write(fp, zero, THUMBNAIL_RGB_BYTES, 1);
+	d_free(zero);
+}
+
+// Render the current frame into cnv and write it out as a packed 6-bit
+// RGB thumbnail for later preview. Matches the write side of
+// state_read_thumbnail for STATE_VERSION >= STATE_THUMBNAIL_RGB_VERSION.
+static void state_write_current_frame_thumbnail(PHYSFS_file *fp)
+{
+	grs_canvas *cnv = gr_create_canvas(THUMBNAIL_W, THUMBNAIL_H);
+	grs_canvas *cnv_save;
+	ubyte *rgb;
+	int i;
+
+	if (!cnv) {
+		state_write_blank_thumbnail(fp);
+		return;
+	}
+
+	cnv_save = grd_curcanv;
+	gr_set_current_canvas(cnv);
+	render_frame(0);
+
+	rgb = d_malloc(THUMBNAIL_RGB_BYTES);
+	if (!rgb) {
+		state_write_blank_thumbnail(fp);
+		gr_set_current_canvas(cnv_save);
+		gr_free_canvas(cnv);
+		return;
+	}
+
+#ifdef OGL
+	{
+		ubyte *buf = d_malloc(THUMBNAIL_W * THUMBNAIL_H * 4);
+		int j, k;
+#ifndef OGLES
+		GLint gl_draw_buffer;
+		glGetIntegerv(GL_DRAW_BUFFER, &gl_draw_buffer);
+		glReadBuffer(gl_draw_buffer);
+#endif
+		glReadPixels(0, SHEIGHT - THUMBNAIL_H, THUMBNAIL_W, THUMBNAIL_H, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+		// Y-flip and downsample to 6-bit Descent palette range
+		k = THUMBNAIL_H;
+		for (i = 0; i < THUMBNAIL_W * THUMBNAIL_H; i++) {
+			int dst;
+			if (!(j = i % THUMBNAIL_W))
+				k--;
+			dst = (THUMBNAIL_W * k + j) * 3;
+			rgb[dst]     = buf[4*i]     / 4;
+			rgb[dst + 1] = buf[4*i + 1] / 4;
+			rgb[dst + 2] = buf[4*i + 2] / 4;
+		}
+		d_free(buf);
+	}
+#else
+	for (i = 0; i < THUMBNAIL_W * THUMBNAIL_H; i++) {
+		ubyte idx = cnv->cv_bitmap.bm_data[i];
+		rgb[i*3]     = gr_palette[idx*3];
+		rgb[i*3 + 1] = gr_palette[idx*3 + 1];
+		rgb[i*3 + 2] = gr_palette[idx*3 + 2];
+	}
+#endif
+
+	PHYSFS_write(fp, rgb, THUMBNAIL_RGB_BYTES, 1);
+	d_free(rgb);
+
+	gr_set_current_canvas(cnv_save);
+	gr_free_canvas(cnv);
 }
 
 // Following functions convert object to object_rw and back to be written to/read from Savegames. Mostly object differs to object_rw in terms of timer values (fix/fix64). as we reset GameTime64 for writing so it can fit into fix it's not necessary to increment savegame version. But if we once store something else into object which might be useful after restoring, it might be handy to increment Savegame version and actually store these new infos.
@@ -741,12 +845,7 @@ int state_save_old_game(int slotnum, char * sg_name, player_rw * sg_player,
 	char desc[DESC_LENGTH+1];
 	char filename[PATH_MAX];
 	char mission_filename[9];
-	grs_canvas * cnv;
 	PHYSFS_file * fp;
-#ifdef OGL
-	int j;
-	GLint gl_draw_buffer;
-#endif
 
 	snprintf( filename, PATH_MAX, (GameArg.SysUsePlayersDir?"Players/%s.sg%d":"%s.sg%d"), sg_player->callsign, slotnum );
 	fp = PHYSFSX_openWriteBuffered(filename);
@@ -764,49 +863,7 @@ int state_save_old_game(int slotnum, char * sg_name, player_rw * sg_player,
 	PHYSFS_write(fp, desc, sizeof(char) * DESC_LENGTH, 1);
 
 // Save the current screen shot...
-	cnv = gr_create_canvas( THUMBNAIL_W, THUMBNAIL_H );
-	if ( cnv )
-	{
-#ifdef OGL
-		ubyte *buf;
-		int k;
-#endif
-		grs_canvas * cnv_save;
-		cnv_save = grd_curcanv;
-
-		gr_set_current_canvas( cnv );
-
-		render_frame(0);
-
-#ifdef OGL
-		buf = d_malloc(THUMBNAIL_W * THUMBNAIL_H * 4);
-#ifndef OGLES
- 		glGetIntegerv(GL_DRAW_BUFFER, &gl_draw_buffer);
- 		glReadBuffer(gl_draw_buffer);
-#endif
-		glReadPixels(0, SHEIGHT - THUMBNAIL_H, THUMBNAIL_W, THUMBNAIL_H, GL_RGBA, GL_UNSIGNED_BYTE, buf);
-		k = THUMBNAIL_H;
-		for (i = 0; i < THUMBNAIL_W * THUMBNAIL_H; i++) {
-			if (!(j = i % THUMBNAIL_W))
-				k--;
-			cnv->cv_bitmap.bm_data[THUMBNAIL_W * k + j] =
-				gr_find_closest_color(buf[4*i]/4, buf[4*i+1]/4, buf[4*i+2]/4);
-		}
-		d_free(buf);
-#endif
-		PHYSFS_write(fp, cnv->cv_bitmap.bm_data, THUMBNAIL_W * THUMBNAIL_H, 1);
-		state_write_thumbnail_palette(fp);
-
-		gr_set_current_canvas(cnv_save);
-		gr_free_canvas( cnv );
-	}
-	else
-	{
-	 	ubyte color = 0;
-	 	for ( i=0; i<THUMBNAIL_W*THUMBNAIL_H; i++ )
-			PHYSFS_write(fp, &color, sizeof(ubyte), 1);		
-		state_write_thumbnail_palette(fp);
-	}
+	state_write_current_frame_thumbnail(fp);
 
 // Save the Between levels flag...
 	temp_int = 1;
@@ -890,13 +947,9 @@ int state_save_all(int blind_save)
 
 int state_save_all_sub(char *filename, char *desc)
 {
-	int i,j;
+	int i, j;
 	PHYSFS_file *fp;
-	grs_canvas * cnv;
 	char mission_filename[9];
-#ifdef OGL
-	GLint gl_draw_buffer;
-#endif
 	fix tmptime32 = 0;
 
 	#ifndef NDEBUG
@@ -930,50 +983,7 @@ int state_save_all_sub(char *filename, char *desc)
 
 // Save the current screen shot...
 
-	cnv = gr_create_canvas( THUMBNAIL_W, THUMBNAIL_H );
-	if ( cnv )
-	{
-#ifdef OGL
-		ubyte *buf;
-		int k;
-#endif
-		grs_canvas * cnv_save;
-		cnv_save = grd_curcanv;
-
-		gr_set_current_canvas( cnv );
-
-		render_frame(0);
-
-#if defined(OGL)
-		buf = d_malloc(THUMBNAIL_W * THUMBNAIL_H * 4);
-#ifndef OGLES
- 		glGetIntegerv(GL_DRAW_BUFFER, &gl_draw_buffer);
- 		glReadBuffer(gl_draw_buffer);
-#endif
-		glReadPixels(0, SHEIGHT - THUMBNAIL_H, THUMBNAIL_W, THUMBNAIL_H, GL_RGBA, GL_UNSIGNED_BYTE, buf);
-		k = THUMBNAIL_H;
-		for (i = 0; i < THUMBNAIL_W * THUMBNAIL_H; i++) {
-			if (!(j = i % THUMBNAIL_W))
-				k--;
-			cnv->cv_bitmap.bm_data[THUMBNAIL_W * k + j] =
-				gr_find_closest_color(buf[4*i]/4, buf[4*i+1]/4, buf[4*i+2]/4);
-		}
-		d_free(buf);
-#endif
-
-		PHYSFS_write(fp, cnv->cv_bitmap.bm_data, THUMBNAIL_W * THUMBNAIL_H, 1);
-		state_write_thumbnail_palette(fp);
-
-		gr_set_current_canvas(cnv_save);
-		gr_free_canvas( cnv );
-	}
-	else
-	{
-	 	ubyte color = 0;
-	 	for ( i=0; i<THUMBNAIL_W*THUMBNAIL_H; i++ )
-			PHYSFS_write(fp, &color, sizeof(ubyte), 1);		
-		state_write_thumbnail_palette(fp);
-	} 
+	state_write_current_frame_thumbnail(fp);
 
 // Save the Between levels flag...
 	i = 0;

@@ -14,20 +14,21 @@ Source: [android/outstanding_bugs.md](android/outstanding_bugs.md). Each bug bel
 - [d2/main/state.c](d2/main/state.c#L549-L590) `state_callback()` -- already fixed to use `ogl_ubitblt_i()` so the indexed thumbnail uploads against `gr_current_pal`.
 - Repo memory: `/memories/repo/d2-save-preview-ogl-palette-path.md`.
 
-### Cause (updated after follow-up code study)
-The earlier D1 draw-path change was only an experiment, not a sufficient fix. The stronger mismatch is in thumbnail serialization: D1 save files still store only indexed thumbnail bytes, but not the palette those bytes were quantized against. D2 already stores a 256x3 palette blob after the thumbnail and remaps on load. A renderer-only change cannot recover the intended colors for D1 thumbnails once that palette information was discarded.
+### Cause (updated after user reported both D1 and D2 still broken after palette-blob fix)
+The palette-blob approach (saving `gr_palette` alongside the thumbnail bytes and remapping on load) is not sufficient. On Android/OGL, `gr_palette` and `gr_current_pal` can disagree (brightness/gamma are applied only to `gr_current_pal`), and the `Computed_colors` cache inside `gr_find_closest_color` can hold stale entries from a prior palette. `gr_remap_bitmap_good` produces indices referenced to `gr_palette`, but `ogl_ubitblt_i` uploads them against `gr_current_pal`, so the preview colors drift even with a correct saved palette.
 
 ### Planned change
-- Add a small save-thumbnail decode path in C that reads thumbnail bytes from a save file and, when a palette blob is present, remaps them into the current runtime palette before display.
-- Bump the D1 save version so newly written D1 saves also serialize the thumbnail palette after the thumbnail bytes, matching the D2 shape closely enough to share decode logic later.
-- Keep compatibility with older D1 saves by falling back to the legacy raw thumbnail read when no palette blob exists.
+- Change the on-disk thumbnail format to packed 6-bit RGB (`THUMBNAIL_W * THUMBNAIL_H * 3` bytes, Y-flipped) so no palette is carried across save/load.
+- At preview load, quantize each RGB triple via `gr_find_closest_color_current` (uncached, reads `gr_current_pal`) so bitmap indices line up with the upload path used by `ogl_ubitblt_i`.
+- Bump both save versions (D1: `STATE_VERSION 9`; D2: `STATE_VERSION 23`) and keep the legacy decode branches so pre-existing saves still display best-effort.
+- Keep the draw side unchanged: `state_callback` still uses `ogl_ubitblt_i` on OGL builds.
 
 ### Current status
-- Landed a save-thumbnail decode path in both `d1/main/state.c` and `d2/main/state.c` so previews are created from save-file thumbnail data plus an optional palette blob.
-- D1 now writes the thumbnail palette in new saves (`STATE_VERSION 8`) and consumes it on preview load and full restore; D2 was refactored onto the same helper path and now always writes the palette blob even on the blank-thumbnail fallback.
-- Older D1 saves remain compatible, but they still have only the legacy raw thumbnail bytes, so they can only be displayed on a best-effort basis.
-- Passed `run-windows-build.ps1 -Target both` after the native changes and again after the code-quality pass.
-- Still needs Android manual verification with a newly created D1 save, plus a D2 regression check.
+- Landed the RGB thumbnail format in both `d1/main/state.c` and `d2/main/state.c`, replacing the palette-blob path added in the previous pass.
+- Added `state_write_blank_thumbnail` and (D1) `state_write_current_frame_thumbnail` helpers; cleaned up now-unused locals (`cnv`, `gl_draw_buffer`, `j`) in D1 save paths.
+- `palette.h` is now explicitly included in state.c (`gr.h` does not declare `gr_find_closest_color_current`).
+- Passed `run-windows-build.ps1 -Target both` (twice, once before and once after `run-code-quality.ps1 -Fix`) and `:app:externalNativeBuildDebug`.
+- Still needs Android manual verification with newly created D1 and D2 saves on TV and phone.
 
 - Build D1 Android, in the emulator: start any pilot, save to slot 1, exit to main menu, re-enter Load Game and verify the thumbnail colors match the in-game scene.
 - Repeat in D2 to confirm no regression.
@@ -127,17 +128,17 @@ Pause and game-menu (save/load/quit launched from in-game) draw through menu/box
 - [android/app/src/main/cpp/jni_main.c](android/app/src/main/cpp/jni_main.c) joy button injection (search for `joy_button_state` / `inject_button`).
 - Repo memory: `/memories/repo/android-tv-keyboard-final-routing.md` and `android-tv-dpad-center-and-input-menu.md`.
 
-### Cause (updated after follow-up code study)
-The repeat-edge tracker removed one failure mode, but the gameplay path still routes the same physical press twice: once through `InputMixer` as `MIXER_BTN_BASE + kc_index`, and again through raw `nativeJoystickButton(joyBtn, ...)`. Because the launcher also patches native joystick bindings into `.plr` files, button `B` can still hit gameplay both through the mixer path and through the raw joystick path. The raw joystick event is only needed when a non-game window is frontmost so A/B can act like Enter/Esc in title/menu handlers.
+### Cause (updated again after user reported the gating made B fire nothing)
+The raw `nativeJoystickButton(joyBtn, ...)` path is the one that actually activates gameplay actions on the user's device. Blocking it during gameplay killed B entirely because the mixer path alone was not firing the bound action in practice. The over-fire failure mode is not a duplicate-press issue at the Kotlin layer; it appears to be on the native side or in how key events are delivered. Needs further investigation rather than a top-of-stack gate.
 
 ### Planned change
-- Keep the edge tracker, but gate raw joystick button injection so it only runs while the game window is not frontmost.
-- Leave the mixer path active during gameplay, because that is the intended button-to-action translation path for controller bindings.
+- Reverted the raw-gating experiment: raw joystick button injection now runs unconditionally again alongside the mixer and edge tracker, matching pre-change behavior.
+- Leave a deeper investigation for a later pass (candidate areas: native kconfig joystick state, whether Android key-event repeat delivery matches what `GamepadButtonEdgeTracker` expects, and whether the pilot patching actually takes effect on the user's TV device).
 
 ### Current status
-- Kept the existing edge tracker and landed a narrower routing fix in `MainActivity.kt`: raw joystick button injection now only runs while a non-game UI window is frontmost, so gameplay uses only the mixer path.
-- Added `GamepadButtonRoutingPolicyTest` and revalidated the controller-selection tests after the formatting pass.
-- Still needs on-device verification that TV `B` now fires exactly once in gameplay while still acting as back/cancel in title and menu flows.
+- Reverted `shouldForwardRawJoystickButtonToUi` gating in `MainActivity.kt.onKeyDown`/`onKeyUp`; removed the policy helper at file top and deleted `GamepadButtonRoutingPolicyTest.kt`.
+- Edge tracker remains in place so key auto-repeat still does not turn into auto-fire.
+- This bug is back to "reopened, real root cause unclear"; do not attempt another top-level routing gate without reproducing the over-fire locally first.
 
 ### Test plan
 - TV with virtual gamepad: in level, press and release B once. Inspect introspection JSON for `player.secondary_ammo[*]` to confirm only one missile fired.
