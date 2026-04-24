@@ -50,6 +50,39 @@ internal fun buttonUsesGyroToggleIndicator(button: ButtonControl): Boolean =
     button.binding == TouchBindings.META_GYRO_TOGGLE ||
         (button.longPressEnabled && button.longPressBinding == TouchBindings.META_GYRO_TOGGLE)
 
+internal fun dragZoneButtonLatchAllowed(
+    gameVariant: String,
+    binding: Int,
+    pointerId: Int,
+    toggle: Boolean,
+): Boolean {
+    if (gameVariant == "d1" && binding in TouchBindings.D2_ONLY_BUTTONS) return false
+    if (pointerId >= 0 || toggle) return false
+    return when (binding) {
+        TouchBindings.BTN_CHEATS_MENU,
+        TouchBindings.BTN_GYRO_RECENTER,
+        TouchBindings.BTN_AUTOMAP,
+        -> false
+
+        else -> true
+    }
+}
+
+internal fun buttonExtendsDragZoneStart(
+    zoneLeft: Float,
+    zoneTop: Float,
+    zoneRight: Float,
+    zoneBottom: Float,
+    buttonCenterX: Float,
+    buttonCenterY: Float,
+    buttonRadius: Float,
+    touchX: Float,
+    touchY: Float,
+): Boolean =
+    buttonCenterX in zoneLeft..zoneRight &&
+        buttonCenterY in zoneTop..zoneBottom &&
+        hypot(touchX - buttonCenterX, touchY - buttonCenterY) <= buttonRadius * 1.3f
+
 private const val MOUSE_HISTORY_WINDOW_MS = 16f
 private const val MOUSE_HISTORY_DECAY_PER_WINDOW = 0.75f
 private const val MOUSE_NO_ACCEL_DISTANCE_PER_WINDOW = 8f
@@ -354,6 +387,101 @@ class TouchOverlayView
         private fun buttonSourceTag(b: ButtonState): String = "touch:btn${buttonStates.indexOf(b)}"
 
         private fun buttonLongPressTag(b: ButtonState): String = "${buttonSourceTag(b)}:long"
+
+        private fun canLatchButtonIntoDragZone(b: ButtonState): Boolean =
+            dragZoneButtonLatchAllowed(
+                gameVariant = gameVariant,
+                binding = b.control.binding,
+                pointerId = b.pointerId,
+                toggle = b.control.toggle,
+            )
+
+        private fun pressLayoutButton(
+            b: ButtonState,
+            pointerId: Int,
+        ) {
+            b.pointerId = pointerId
+            b.longPressTriggered = false
+            if (b.control.binding == TouchBindings.BTN_CHEATS_MENU ||
+                b.control.binding == TouchBindings.BTN_GYRO_RECENTER
+            ) {
+                pressLayoutButtonBinding(b.control.binding, buttonSourceTag(b))
+            } else if (b.control.toggle) {
+                b.toggled = !b.toggled
+                if (b.control.binding == TouchBindings.BTN_AUTOMAP) {
+                    if (b.toggled) mapButtonCallback?.invoke()
+                } else {
+                    dispatchTouchButton(b.control.binding, b.toggled, buttonSourceTag(b))
+                }
+            } else {
+                pressLayoutButtonBinding(b.control.binding, buttonSourceTag(b))
+            }
+            if (b.control.longPressEnabled && b.control.longPressBinding >= 0) {
+                val longPressRunnable =
+                    Runnable {
+                        if (b.pointerId < 0) return@Runnable
+                        b.longPressRunnable = null
+                        b.longPressTriggered = true
+                        pressLayoutButtonBinding(b.control.longPressBinding, buttonLongPressTag(b))
+                        if (b.control.hapticFeedback) {
+                            performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                        }
+                        invalidate()
+                    }
+                b.longPressRunnable = longPressRunnable
+                mainHandler.postDelayed(longPressRunnable, b.control.longPressDurationMs.toLong())
+            }
+            if (b.control.hapticFeedback) {
+                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+            }
+            invalidate()
+        }
+
+        private fun tryPressDragZoneButton(
+            pointerId: Int,
+            px: Float,
+            py: Float,
+        ) {
+            for (b in buttonStates) {
+                if (!canLatchButtonIntoDragZone(b)) continue
+                if (hypot(px - b.centerX, py - b.centerY) <= b.radius * 1.3f) {
+                    pressLayoutButton(b, pointerId)
+                    return
+                }
+            }
+        }
+
+        private fun pointInStickDragZone(
+            s: StickState,
+            px: Float,
+            py: Float,
+        ): Boolean = px in s.fzLeft..s.fzRight && py in s.fzTop..s.fzBottom
+
+        private fun findDragZoneStartExtensionButton(
+            s: StickState,
+            px: Float,
+            py: Float,
+        ): ButtonState? {
+            for (b in buttonStates) {
+                if (!canLatchButtonIntoDragZone(b)) continue
+                if (
+                    buttonExtendsDragZoneStart(
+                        zoneLeft = s.fzLeft,
+                        zoneTop = s.fzTop,
+                        zoneRight = s.fzRight,
+                        zoneBottom = s.fzBottom,
+                        buttonCenterX = b.centerX,
+                        buttonCenterY = b.centerY,
+                        buttonRadius = b.radius,
+                        touchX = px,
+                        touchY = py,
+                    )
+                ) {
+                    return b
+                }
+            }
+            return null
+        }
 
         private fun pressLayoutButtonBinding(
             binding: Int,
@@ -1584,7 +1712,8 @@ class TouchOverlayView
                         if (s.pointerId >= 0) continue
                         if (s.control.mouseMode) {
                             // Mouse mode: use floating zone bounds for hit detection
-                            if (px in s.fzLeft..s.fzRight && py in s.fzTop..s.fzBottom) {
+                            val startExtensionButton = findDragZoneStartExtensionButton(s, px, py)
+                            if (pointInStickDragZone(s, px, py) || startExtensionButton != null) {
                                 // Double-tap / latch detection
                                 val now = android.os.SystemClock.uptimeMillis()
                                 val isDoubleTap = s.control.doubleTapBinding >= 0 && now - s.lastTapTime < 300L
@@ -1597,11 +1726,17 @@ class TouchOverlayView
                                 }
                                 s.lastTapTime = now
                                 beginMouseDrag(s, pid, px, py)
+                                if (startExtensionButton != null) {
+                                    pressLayoutButton(startExtensionButton, pid)
+                                } else {
+                                    tryPressDragZoneButton(pid, px, py)
+                                }
                                 handled = true
                                 break
                             }
                         } else if (s.control.floating) {
-                            if (px in s.fzLeft..s.fzRight && py in s.fzTop..s.fzBottom) {
+                            val startExtensionButton = findDragZoneStartExtensionButton(s, px, py)
+                            if (pointInStickDragZone(s, px, py) || startExtensionButton != null) {
                                 // Double-tap / latch detection for floating mode
                                 val now = android.os.SystemClock.uptimeMillis()
                                 val isDoubleTap = s.control.doubleTapBinding >= 0 && now - s.lastTapTime < 300L
@@ -1618,6 +1753,11 @@ class TouchOverlayView
                                 s.floatingCY = py
                                 s.floatingActive = true
                                 s.pos.set(0f, 0f)
+                                if (startExtensionButton != null) {
+                                    pressLayoutButton(startExtensionButton, pid)
+                                } else {
+                                    tryPressDragZoneButton(pid, px, py)
+                                }
                                 invalidate()
                                 handled = true
                                 break
@@ -1647,41 +1787,7 @@ class TouchOverlayView
                             if (gameVariant == "d1" && b.control.binding in TouchBindings.D2_ONLY_BUTTONS) continue
                             if (b.pointerId >= 0) continue
                             if (hypot(px - b.centerX, py - b.centerY) <= b.radius * 1.3f) {
-                                b.pointerId = pid
-                                b.longPressTriggered = false
-                                if (b.control.binding == TouchBindings.BTN_CHEATS_MENU ||
-                                    b.control.binding == TouchBindings.BTN_GYRO_RECENTER
-                                ) {
-                                    pressLayoutButtonBinding(b.control.binding, buttonSourceTag(b))
-                                } else if (b.control.toggle) {
-                                    b.toggled = !b.toggled
-                                    if (b.control.binding == TouchBindings.BTN_AUTOMAP) {
-                                        if (b.toggled) mapButtonCallback?.invoke()
-                                    } else {
-                                        dispatchTouchButton(b.control.binding, b.toggled, buttonSourceTag(b))
-                                    }
-                                } else {
-                                    pressLayoutButtonBinding(b.control.binding, buttonSourceTag(b))
-                                }
-                                if (b.control.longPressEnabled && b.control.longPressBinding >= 0) {
-                                    val longPressRunnable =
-                                        Runnable {
-                                            if (b.pointerId < 0) return@Runnable
-                                            b.longPressRunnable = null
-                                            b.longPressTriggered = true
-                                            pressLayoutButtonBinding(b.control.longPressBinding, buttonLongPressTag(b))
-                                            if (b.control.hapticFeedback) {
-                                                performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
-                                            }
-                                            invalidate()
-                                        }
-                                    b.longPressRunnable = longPressRunnable
-                                    mainHandler.postDelayed(longPressRunnable, b.control.longPressDurationMs.toLong())
-                                }
-                                if (b.control.hapticFeedback) {
-                                    performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                                }
-                                invalidate()
+                                pressLayoutButton(b, pid)
                                 handled = true
                                 break
                             }
@@ -1954,85 +2060,43 @@ class TouchOverlayView
                     if (passthroughPointers.remove(pid)) {
                         tapPassthroughCallback?.invoke()
                     } else {
-                        // Check sticks
-                        var found = false
                         for (s in stickStates) {
                             if (s.pointerId == pid) {
                                 resetStick(s)
-                                found = true
-                                break
                             }
                         }
-                        // Check layout buttons
-                        if (!found) {
-                            for (b in buttonStates) {
-                                if (b.pointerId == pid) {
-                                    releaseLayoutButton(b, true)
-                                    found = true
-                                    break
-                                }
+                        for (b in buttonStates) {
+                            if (b.pointerId == pid) {
+                                releaseLayoutButton(b, true)
                             }
                         }
-                        // Check radial menus
-                        if (!found) {
-                            for (rm in radialStates) {
-                                if (rm.pointerId == pid) {
-                                    releaseRadialMenu(rm, true)
-                                    found = true
-                                    break
-                                }
+                        for (rm in radialStates) {
+                            if (rm.pointerId == pid) {
+                                releaseRadialMenu(rm, true)
                             }
                         }
-                        // Check sliders
-                        if (!found) {
-                            for (sl in sliderStates) {
-                                if (sl.pointerId == pid) {
-                                    releaseSlider(sl)
-                                    found = true
-                                    break
-                                }
+                        for (sl in sliderStates) {
+                            if (sl.pointerId == pid) {
+                                releaseSlider(sl)
                             }
                         }
-                        // Check axis regions
-                        if (!found) {
-                            for (ar in axisRegionStates) {
-                                if (ar.pointerId == pid) {
-                                    releaseAxisRegion(ar)
-                                    found = true
-                                    break
-                                }
+                        for (ar in axisRegionStates) {
+                            if (ar.pointerId == pid) {
+                                releaseAxisRegion(ar)
                             }
                         }
-                        // Check music diagnostics
-                        if (!found) {
-                            for (d in diagnosticStates) {
-                                if (d.control.type != DiagnosticType.MUSIC) continue
-                                when (pid) {
-                                    d.musicPrevPid -> {
-                                        releaseMusicPrev(d, true)
-                                        found = true
-                                    }
-                                    d.musicNextPid -> {
-                                        releaseMusicNext(d, true)
-                                        found = true
-                                    }
-                                    d.musicLabelPid -> {
-                                        releaseMusicLabel(d, true)
-                                        found = true
-                                    }
-                                }
-                                if (found) break
+                        for (d in diagnosticStates) {
+                            if (d.control.type != DiagnosticType.MUSIC) continue
+                            when (pid) {
+                                d.musicPrevPid -> releaseMusicPrev(d, true)
+                                d.musicNextPid -> releaseMusicNext(d, true)
+                                d.musicLabelPid -> releaseMusicLabel(d, true)
                             }
                         }
-                        // Check settings diagnostics
-                        if (!found) {
-                            for (d in diagnosticStates) {
-                                if (d.control.type != DiagnosticType.SETTINGS) continue
-                                if (d.menuPid == pid) {
-                                    releaseMenuDiag(d, true)
-                                    found = true
-                                    break
-                                }
+                        for (d in diagnosticStates) {
+                            if (d.control.type != DiagnosticType.SETTINGS) continue
+                            if (d.menuPid == pid) {
+                                releaseMenuDiag(d, true)
                             }
                         }
                     }

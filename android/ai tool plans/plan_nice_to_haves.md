@@ -215,7 +215,7 @@ User requirement:
 
 ---
 
-## 5. Buttons inside drag zones with slide-to-release  [ ]
+## 5. Buttons inside drag zones with slide-to-release  [~]
 
 User requirement:
 > allow buttons to be placed within the drag zones (they currently are allowed, but don't have special handling). if the button is pressed it stays active as long as the drag continues, then the button is released on drag stop. this will give another way to fire weapons while looking with the same thumb.
@@ -228,10 +228,44 @@ User requirement:
 
 ### Proposed approach
 
-- On `ACTION_DOWN` / `ACTION_POINTER_DOWN` inside a drag zone, first hit-test against any button whose rect overlaps the drag zone. If found: mark the button pressed, remember `pointerId -> (dragZone, buttonIndex)`, and start the drag with that pointer.
-- While the pointer moves, the button stays latched-pressed and the drag accumulates normally.
-- On `ACTION_UP` / `ACTION_POINTER_UP` / `ACTION_CANCEL` for that pointer: release the button and end the drag in the existing code paths.
-- Multi-finger: each finger is independent; only the fingers that started on a button carry the button-press state.
+### Root cause summary
+
+- `TouchOverlayView.onTouchEvent()` currently hit-tests axis regions and sticks before layout buttons. A touch that lands inside a mouse-mode or floating-stick drag zone is claimed by the stick path first, so the later button hit-test never runs even if the finger is also on top of a button.
+- Drag start still keys off the raw drag-zone rectangle, so a button that is visually placed inside the zone does not extend the valid drag-start area to the full button radius. The outer part of the button cannot start the drag unless the finger also happens to land inside the zone rect.
+- Pointer teardown for `ACTION_POINTER_UP` assumes one pointer belongs to one control and stops after the first matching control. A shared drag+button pointer needs both the drag owner and the latched button owner to release on the same finger-up event.
+
+### Concrete steps
+
+- [x] Confirm the current ownership order in `TouchOverlayView.onTouchEvent()` and verify that overlapping drag-zone touches never reach the button hit-test.
+- [x] Add a shared-pointer path for mouse-mode and floating-stick drag zones: when a touch starts inside the drag zone and also hits an eligible non-toggle button, start the drag and press the button with the same `pointerId`.
+- [x] Extend drag-start hit testing so a button centered inside a drag zone contributes its full touch radius as a valid drag start area.
+- [x] Keep the button latched while the drag continues. Reuse the existing button press/long-press code path instead of adding a separate drag-only button state.
+- [x] Update `ACTION_POINTER_UP` / cancel teardown so a shared pointer releases both the drag owner and any latched button owner.
+- [~] Validate with Android build/test passes and a by-hand touch layout check using a fire button placed inside a look drag zone.
+
+### First implementation tranche
+
+- Scope the shared-pointer behavior to stick drag zones (`mouseMode` and floating sticks), which is the user-visible “drag zone” feature surface in the current editor.
+- Limit slide-to-release latching to non-toggle buttons so persistent toggles and one-shot admin-style buttons do not gain surprising drag semantics.
+- A button only extends the drag-start area when its center point lies inside the drag zone; edge overlap alone does not expand the zone.
+- Preserve existing behavior when there is no overlapping button or when the button is already owned by another pointer.
+
+### Implemented result
+
+- `TouchOverlayView.kt` now allows mouse-mode and floating-stick drag zones to share a `pointerId` with an overlapping eligible button, so the button can stay pressed while the drag continues.
+- A centered eligible button now extends the drag-start area to its full touch radius, so presses on the outer half of the button can still begin the drag.
+- Button press, release, and long-press behavior continue to flow through the existing layout-button helpers instead of a parallel drag-only state machine.
+- `ACTION_POINTER_UP` now releases every control owned by that pointer rather than assuming a pointer can only belong to one control.
+- Added `TouchOverlayDragZonePolicyTest.kt` to cover the latch-eligibility policy and the centered-button drag-start extension rule.
+
+### Validation so far
+
+- Passed: `android\gradlew.bat :app:compileDebugKotlin`
+- Passed: `android\gradlew.bat :app:testDebugUnitTest --tests "com.dxxredux.app.TouchOverlayDragZonePolicyTest"`
+- Passed: `android\gradlew.bat :app:testDebugUnitTest`
+- Passed: `android\run-code-quality.ps1 -Fix`
+- Passed: `run-windows-build.ps1 -Target both -Compiler vs2022-community`
+- Remaining: by-hand phone/emulator verification with a button placed inside a look drag zone
 
 ### Validation
 
