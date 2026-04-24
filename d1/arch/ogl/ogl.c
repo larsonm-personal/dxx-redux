@@ -43,6 +43,7 @@
 #include "merged_wall_debug.h"
 #include "ogl_gpu_timer_android.h"
 #include "ogl_texture_android.h"
+#include "android_loading_progress.h"
 #include "android_crash_handler.h"
 #include "android_log.h"
 #include "gles3_shim.h"
@@ -730,6 +731,7 @@ void ogl_cache_level_textures(void)
 	__android_log_print(ANDROID_LOG_INFO, "DXX",
 	    "ogl_cache: starting, %i bitmaps, allow_png=%i",
 	    Num_bitmap_files, ogl_allow_png());
+	android_loading_progress_begin("Prepare for Descent", Num_bitmap_files);
 	{
 		int before_hires = r_hires_loaded;
 		int n_already = 0, n_paged_skip = 0, n_bm_upload = 0, n_png_fail = 0;
@@ -751,6 +753,7 @@ void ogl_cache_level_textures(void)
 					i, bm->bm_flags,
 					(void *)bm->gltexture,
 					(void *)bm->gltexture_mask);
+			android_loading_progress_step(cname);
 			if (had_tex)
 				n_already++;
 			else if (bm->gltexture && bm->gltexture->handle > 0) {
@@ -768,6 +771,7 @@ void ogl_cache_level_textures(void)
 		    r_hires_loaded - before_hires, n_already, n_bm_upload, n_paged_skip, n_png_fail,
 		    r_etc2_zero_data);
 	}
+	android_loading_progress_end();
 #else
 	for (i = 0; i < Num_bitmap_files; i++) {
 		if (!(GameBitmaps[i].bm_flags & BM_FLAG_PAGED_OUT))

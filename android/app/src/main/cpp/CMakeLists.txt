@@ -565,6 +565,7 @@ target_sources(dxx-redux-d1 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_texture_debug.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/overlay_ringbuf.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_jni_overlay.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_loading_progress.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_meta_actions.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_log.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c
@@ -665,6 +666,7 @@ target_sources(dxx-redux-d2 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_texture_debug.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/overlay_ringbuf.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_jni_overlay.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_loading_progress.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_meta_actions.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_log.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/android_crash_handler.c

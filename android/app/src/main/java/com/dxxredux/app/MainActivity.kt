@@ -388,6 +388,7 @@ class MainActivity :
     private var netStatsOverlay: com.dxxredux.app.multiplayer.MultiplayerStatsOverlay? = null
     private var netEventsOverlay: com.dxxredux.app.multiplayer.NetworkEventsOverlay? = null
     private var videoInfoOverlay: VideoInfoOverlay? = null
+    private var loadingProgressOverlay: LoadingProgressOverlayView? = null
     private var coopStatsOverlay: CoopStatsOverlay? = null
     private var warpButtonOverlay: WarpButtonOverlay? = null
     private var netEventsManualToggle = false
@@ -1070,6 +1071,16 @@ class MainActivity :
                 ),
             )
         }
+
+        val progressOverlay = LoadingProgressOverlayView(this)
+        loadingProgressOverlay = progressOverlay
+        frame.addView(
+            progressOverlay,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            ),
+        )
 
         setContentView(frame)
 
@@ -2792,6 +2803,24 @@ class MainActivity :
     @Suppress("unused")
     fun showTrackName(name: String) {
         showOverlayLine(name)
+    }
+
+    @Suppress("unused")
+    fun showLoadingProgress(
+        phase: String,
+        item: String,
+        percent: Int,
+    ) {
+        runOnUiThread {
+            loadingProgressOverlay?.showProgress(phase, item, percent)
+        }
+    }
+
+    @Suppress("unused")
+    fun hideLoadingProgress() {
+        runOnUiThread {
+            loadingProgressOverlay?.hideProgress()
+        }
     }
 
     // ── Level name overlay (called from JNI) ────────────────

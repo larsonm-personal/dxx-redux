@@ -139,32 +139,132 @@ Add `android/app/src/test/java/com/dxxredux/app/ControllerLongPressDetectorTest.
 
 ---
 
-## 2. "Prepare for Descent" loading progress bar  [ ]
+## 2. "Prepare for Descent" loading progress bar  [~]
 
 User requirement:
 > prepare for descent loading screen takes potentially up to ~5 seconds with high res textures. it would be nice to show a texture loading progress bar and maybe the text name of the most recently loaded texture or major step, or one text/bar update every 300ms max to limit drawing overhead.
+>
+> C code emits progress updates every 300ms. The launcher/Kotlin side displays them. Percent is computed as (items_done / total_items) with no weighting for individual texture size. Every 300ms the current texture name is sent along with the percent. The overlay is a half-transparent bar about 20% from the bottom of the screen, with a border and a filled progress region, and the current filename rendered as a less-transparent text overlay centered on the bar.
 
-### Anchors
+### Root cause / where the time goes
 
-- Message renderer: [d2/main/gamerend.c#L1061](d2/main/gamerend.c#L1061) `show_boxed_message()` and its D1 twin in `d1/main/gamerend.c`.
-- Paging sweep (this is the slow loop): [d2/main/paging.c#L59+](d2/main/paging.c#L59) and the parallel file in `d1/main/paging.c`. Hot loops: texture frames, effects, model textures, wall anims, segments, powerups, weapons, cockpit gauges, bitmap files.
-- Call site that prints "Prepare for Descent": search `TXT_PREPARE_FOR_DESCENT` in `d2/main/gameseq.c` / `d1/main/gameseq.c`.
+- `StartNewLevelSub` -> `LoadLevel` -> `piggy_load_level_data()` (fast) then `ogl_cache_level_textures()` (slow).
+- `ogl_cache_level_textures()` in [d2/arch/ogl/ogl.c#L719](d2/arch/ogl/ogl.c#L719) and [d1/arch/ogl/ogl.c#L716](d1/arch/ogl/ogl.c#L716) loops `for (i = 0; i < Num_bitmap_files; i++) ogl_loadbmtexture(&GameBitmaps[i]);`. This is the main wall-clock cost on Android with hires textures. The Android branch already measures it into `g_cache_time_ms`.
+- `paging_touch_all()` in [d2/main/paging.c#L340](d2/main/paging.c#L340) also walks bitmaps but pages them in from disk, not GPU upload. Fast enough that we do not need per-item progress for it, but it is the natural "phase 1" of the bar.
+- The current UI during this time is just `show_boxed_message(TXT_LOADING, 0)` from [d2/main/gameseq.c#L776](d2/main/gameseq.c#L776). No refresh during the cache loop.
 
-### Proposed approach
+### Anchors (updated)
 
-Add a new Android-gated helper in `d2/misc/` (and duplicate for d1) or a shared helper under `android/app/src/main/cpp/` with both games' build including it:
+- Slow loop to instrument (primary): [d2/arch/ogl/ogl.c#L719](d2/arch/ogl/ogl.c#L719) and [d1/arch/ogl/ogl.c#L716](d1/arch/ogl/ogl.c#L716). Denominator = `Num_bitmap_files`. Per-item label = `piggy_game_bitmap_name(bm)` ([d2/main/piggy.h#L72](d2/main/piggy.h#L72)).
+- Optional phase-0 loop: `piggy_load_level_data()` -> `paging_touch_all()` ([d2/main/paging.c#L340](d2/main/paging.c#L340), [d1/main/paging.c](d1/main/paging.c)). We surface it as a single coarse "Paging in level data..." label, not per-item.
+- JNI overlay pattern to follow: [android/app/src/main/cpp/shared/android_jni_overlay.c](android/app/src/main/cpp/shared/android_jni_overlay.c) and [android_jni_overlay.h](android/app/src/main/cpp/shared/android_jni_overlay.h). Same `g_jvm` / `g_activity` globals, same `AttachCurrentThread` pattern.
+- Throttle helper: Android `CLOCK_MONOTONIC` via `clock_gettime` (same pattern already used in `ogl_cache_level_textures`).
 
-- `void android_loading_progress_begin(int total);`
-- `void android_loading_progress_step(const char *label);` increments done and stores most recent label, throttled internally to one flush per 300ms via `timer_query()`. Flush calls `show_boxed_message()` (or a bespoke lightweight render) to redraw the boxed message with an extra progress bar beneath and the label line above it.
-- `void android_loading_progress_end(void);`
+### Design
 
-Instrument the paging sweep with `_begin(total)` before the outer loops and `_step(Textures[i].filename)` or similar inside the inner loops. Guard all of it with `#ifdef __ANDROID__` so Windows/Linux/Mac are unchanged.
+#### 1. Shared C helper (new)
+
+Create under `android/app/src/main/cpp/shared/` so both d1 and d2 link it through their existing shared-sources globs:
+
+- `android_loading_progress.h`
+- `android_loading_progress.c`
+
+Public API (header-guarded so non-Android host builds get empty stubs):
+
+```c
+/* Called once before a batch. total_items==0 means "indeterminate bar". */
+void android_loading_progress_begin(const char *phase_label, int total_items);
+
+/* Increment done count, remember most recent item label, flush to Kotlin at
+ * most once every 300ms. Safe to call from any thread. label may be NULL. */
+void android_loading_progress_step(const char *item_label);
+
+/* Force one final flush at 100% and clear state. Kotlin hides overlay when
+ * percent >= 100 or after a short grace period. */
+void android_loading_progress_end(void);
+```
+
+Internals (Android build only):
+- Static state: `int total`, `int done`, `char last_label[64]`, `struct timespec last_flush`, `int begun`.
+- `android_loading_progress_step` always increments `done` and copies `item_label` (truncate to 63 chars, strip path), then checks the 300ms throttle using `CLOCK_MONOTONIC`. On throttle miss, return without a JNI call. On throttle hit, call one `flush()` helper.
+- `flush()` computes `pct = total > 0 ? (100 * done + total/2) / total : 0`, attaches to `g_jvm`, and calls `MainActivity.showLoadingProgress(String phase, String item, int pct)` on the current activity instance.
+- Thread safety: single producer in practice (GL thread during level load). Add a simple `pthread_mutex_t` guard since a second call from the audio thread would be harmless but race-free is cheap.
+- All global state is trivial and lives in the file; no allocations.
+
+Host-build stubs (used when `ANDROID` is not defined): empty functions in the same file under `#else`. This mirrors `android_jni_overlay.c`.
+
+#### 2. Kotlin overlay (new)
+
+Create `android/app/src/main/java/com/dxxredux/app/LoadingProgressOverlayView.kt`:
+
+- A `View` (not SurfaceView) with its own `android:background="@android:color/transparent"`, added to `MainActivity`'s root `FrameLayout` above the GLSurfaceView and above `TouchOverlayView`. Initial visibility `GONE`.
+- JNI entry point: companion-object `@JvmStatic fun onProgress(pct: Int, phase: String, item: String)`. Posts to the main thread `Handler` that updates internal state and calls `invalidate()`.
+- `onDraw(canvas)`:
+  - Bar rect: width = 0.8 * view.width, centered horizontally; height = `max(24.dp, 0.04 * view.height)`; top = `0.80 * view.height` (so the bar sits ~20% from the bottom as requested).
+  - Background fill: paint alpha 128, color black (half-transparent).
+  - Border: paint alpha 220, color white (or brand green `#3FBF3F` to match launcher accents), stroke width 2dp.
+  - Progress fill: for `pct >= 0`, fill the inner rect from left to `left + pct/100 * innerWidth` with alpha ~192. For `pct < 0`, draw an indeterminate marquee (optional; first cut can skip and just show phase text).
+  - Text: phase label above the bar (smaller), item label centered on the bar with alpha ~230 and a 1-pixel dark shadow for legibility. Font is Android default; no need to match the in-game font since this is a pure Android overlay.
+- Hide logic: after `onProgress(100, ...)` the view stays visible for 250ms then sets itself `GONE`, so the jump from cache-end to first rendered frame is not jarring.
+- No touch handling: `isClickable = false`, `isFocusable = false`; pass touches through.
+
+#### 3. JNI wiring
+
+- Reuse the existing `g_activity` instance-method pattern from `android_jni_overlay.c` instead of introducing a new static bridge.
+- `android_loading_progress.c` calls `MainActivity.showLoadingProgress(String phase, String item, int pct)` during throttled updates and `MainActivity.hideLoadingProgress()` at the end of the batch.
+- The activity methods hop back to the UI thread with `runOnUiThread { ... }`, keeping the native helper safe to call from the GL thread during texture uploads.
+
+#### 4. Instrumentation call sites
+
+D2:
+- `d2/arch/ogl/ogl.c` `ogl_cache_level_textures()`:
+  - Before the `for (i=0; i < Num_bitmap_files; i++)` loop: `android_loading_progress_begin("Caching textures", Num_bitmap_files);`
+  - Inside the loop, after `ogl_loadbmtexture(bm)`: `android_loading_progress_step(piggy_game_bitmap_name(bm));`
+  - After the loop (after `xmodel_load_gl_all()`): `android_loading_progress_end();`
+- Optionally `d2/main/gameseq.c` `LoadLevel()` just before `piggy_load_level_data()`: `android_loading_progress_begin("Paging level data", 0);` then `android_loading_progress_end();` right after (gives the bar a "phase 0" heartbeat so it appears as soon as the loading screen does). Keep this only if the paging step is visible; skip if it adds visual noise.
+- Mirror the exact same edits in D1 (`d1/arch/ogl/ogl.c`, `d1/main/gameseq.c`). Every edit guarded by `#ifdef ANDROID` to keep non-Android builds byte-identical.
+
+Keep the d1/d2 diff minimal: use the same symbol names, same include line (`#include "android_loading_progress.h"` under `#ifdef ANDROID`), same 3 call sites.
+
+#### 5. CMake / build
+
+- Add `shared/android_loading_progress.c` to the shared sources glob in `android/app/src/main/cpp/CMakeLists.txt` (same list that includes `android_jni_overlay.c`). No new include dirs.
+- For Windows/Linux/Mac host builds, the call sites are inside `#ifdef ANDROID`, so the helper header/source are not referenced at all. No build system changes required for host builds.
+
+#### 6. Throttling correctness
+
+- The throttle is in C (not Kotlin) to avoid the cost of repeated JNI attaches. A no-op `step()` reduces to an increment, a `clock_gettime` call, and a compare.
+- `_end()` always flushes 100% once, bypassing the 300ms gate.
+- First call after `_begin()` also bypasses the gate so the overlay appears immediately rather than 300ms into the load.
+
+### Risks / edge cases
+
+- `piggy_game_bitmap_name(bm)` can return an empty string for synthesized bitmaps; pass an empty `item` in that case and let Kotlin render just the phase text.
+- `ogl_cache_level_textures()` runs on the GL thread; attaching to `g_jvm` from that thread is standard. We already do it in track-name overlays.
+- If the helper is ever called before `g_jvm` is set (unlikely; set in `JNI_OnLoad` long before gameplay), `flush()` silently no-ops.
+- Do not call `show_boxed_message()` from the progress helper. The existing boxed message already draws "Prepare for Descent" via the engine; the Kotlin overlay sits on top. This avoids reordering OGL state mid-upload.
+
+### Implementation tranches
+
+1. Shared C helper with host stubs + CMake entry + throttle. Compile-only on Windows.
+2. Kotlin `LoadingProgressOverlayView` + `MainActivity` attach/detach.
+3. JNI bridge: reuse the existing activity-instance callback path (`GetMethodID` + `CallVoidMethod` on `g_activity`).
+4. Instrumentation in `ogl_cache_level_textures` for both d1 and d2, plus optional phase-0 call in `LoadLevel`.
+5. Tests: focused JVM unit test for `LoadingProgressOverlayView` geometry and progress clamping. Host-side throttle test remains optional follow-up if the native helper needs more churn.
+6. By-hand emulator validation on a large D2 level after a fresh install (cold cache, worst case).
 
 ### Validation
 
-- Windows host build stays green (the `#ifdef __ANDROID__` guards keep it a no-op).
-- On emulator, confirm the load screen shows a growing bar during the initial load of a big level.
-- Manual throttle check: no visible stutter, updates no more than ~4/sec.
+- Completed: `./gradlew.bat :app:testDebugUnitTest --tests LoadingProgressOverlayLayoutTest :app:assembleDebug` green.
+- Completed: `android\run-code-quality.ps1 -Fix` green after a clean `android\stop-stale-formatters.ps1` check.
+- Completed: `run-windows-build.ps1 -Target both -Compiler vs2022-community` green.
+- Remaining by-hand check: on emulator or device, watch a fresh install load a big level and confirm the bar appears at ~20% from the bottom, grows smoothly, shows the last texture filename, updates no more than ~4 times per second, and disappears shortly after the game starts rendering.
+
+### Implemented so far
+
+- Added shared Android native helper `android_loading_progress.{c,h}` and wired it into both D1 and D2 `ogl_cache_level_textures()` loops.
+- Added `LoadingProgressOverlayView` and `MainActivity` JNI entry points `showLoadingProgress()` / `hideLoadingProgress()` so the native helper can drive a top-layer overlay without touching the engine's boxed-message renderer.
+- Added a focused JVM unit test for the overlay layout and progress clamping.
 
 ---
 
