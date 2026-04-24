@@ -46,6 +46,34 @@ internal fun adminTrayActionEnabled(
     enabledProvider: ((Int) -> Boolean)? = null,
 ): Boolean = enabledProvider?.invoke(actionIndex) != false
 
+internal fun adminTrayVisibleActions(
+    gamepadOnlyMode: Boolean,
+    hasTouchAutomapButton: Boolean,
+): List<Int> {
+    val actions =
+        mutableListOf(
+            TouchOverlayView.ADMIN_INCREASE_VIEW,
+            TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL,
+            TouchOverlayView.ADMIN_NET_STATS,
+            TouchOverlayView.ADMIN_QUICK_LOAD,
+            TouchOverlayView.ADMIN_OPEN_MENU,
+            TouchOverlayView.ADMIN_NET_EVENTS,
+            TouchOverlayView.ADMIN_EXIT_LAUNCHER,
+            TouchOverlayView.ADMIN_QUICK_SAVE,
+            TouchOverlayView.ADMIN_VIDEO_INFO,
+        )
+    if (gamepadOnlyMode || !hasTouchAutomapButton) {
+        actions.add(TouchOverlayView.ADMIN_AUTOMAP)
+    }
+    if (gamepadOnlyMode) {
+        actions.add(TouchOverlayView.ADMIN_HEADLIGHT)
+        actions.add(TouchOverlayView.ADMIN_WARP)
+        actions.add(TouchOverlayView.ADMIN_MUSIC)
+        actions.add(TouchOverlayView.ADMIN_ACCEPT_JOIN)
+    }
+    return actions
+}
+
 internal fun buttonUsesGyroToggleIndicator(button: ButtonControl): Boolean =
     button.binding == TouchBindings.META_GYRO_TOGGLE ||
         (button.longPressEnabled && button.longPressBinding == TouchBindings.META_GYRO_TOGGLE)
@@ -3110,13 +3138,20 @@ class TouchOverlayView
             )
         }
 
-        private fun adminTrayItemCount(): Int = if (gamepadOnlyMode) 14 else 9
+        private fun currentAdminTrayActions(): List<Int> =
+            adminTrayVisibleActions(
+                gamepadOnlyMode = gamepadOnlyMode,
+                hasTouchAutomapButton = layout.buttons.any { it.binding == TouchBindings.BTN_AUTOMAP },
+            )
+
+        private fun adminTrayItemCount(): Int = currentAdminTrayActions().size
 
         private fun drawAdminTrayPanel(canvas: Canvas) {
             val w = width.toFloat()
             val h = height.toFloat()
 
-            val itemCount = adminTrayItemCount()
+            val actions = currentAdminTrayActions()
+            val itemCount = actions.size
             val cols = 3
             val rows = (itemCount + cols - 1) / cols
             val divider = 1f // 1px divider between cells
@@ -3200,6 +3235,7 @@ class TouchOverlayView
                 }
 
             for (i in 0 until itemCount) {
+                val action = actions[i]
                 val col = i % cols
                 val row = i / cols
                 val left = panelLeft + col * (cellW + divider)
@@ -3207,12 +3243,12 @@ class TouchOverlayView
                 val rect = RectF(left, top, left + cellW, top + cellH)
                 adminTrayRects.add(rect)
 
-                val enabled = adminTrayActionEnabled(i, adminTrayEnabledStateProvider)
-                val checked = adminTrayToggleStateProvider?.invoke(i) == true
+                val enabled = adminTrayActionEnabled(action, adminTrayEnabledStateProvider)
+                val checked = adminTrayToggleStateProvider?.invoke(action) == true
 
                 val bg =
                     if (!enabled) {
-                        if (checked && adminTrayUsesCheckbox(i)) {
+                        if (checked && adminTrayUsesCheckbox(action)) {
                             paintBtnLatchedDisabled
                         } else if (i == adminTrayPressedIndex) {
                             paintBtnPressedDisabled
@@ -3221,7 +3257,7 @@ class TouchOverlayView
                         }
                     } else if (i == adminTrayPressedIndex) {
                         paintBtnPressed
-                    } else if (checked && adminTrayUsesCheckbox(i)) {
+                    } else if (checked && adminTrayUsesCheckbox(action)) {
                         paintBtnLatched
                     } else {
                         paintBtnIdle
@@ -3229,8 +3265,8 @@ class TouchOverlayView
                 bg.alpha = if (i == adminTrayPressedIndex) 0xAA else 0x55
                 canvas.drawRect(rect, bg)
 
-                // D-pad selection highlight (gamepad mode)
-                if (gamepadOnlyMode && i == adminTraySelectedIndex) {
+                // D-pad selection highlight
+                if (adminTraySelectedIndex >= 0 && i == adminTraySelectedIndex) {
                     canvas.drawRect(rect, selectPaint)
                 }
 
@@ -3245,7 +3281,7 @@ class TouchOverlayView
                 }
 
                 textPaint.alpha = if (enabled) 0xDD else 0x66
-                if (adminTrayUsesCheckbox(i)) {
+                if (adminTrayUsesCheckbox(action)) {
                     val checkboxSize = min(cellH * 0.26f, cellW * 0.18f)
                     val checkboxLeft = rect.left + cellW * 0.12f
                     val checkboxTop = rect.centerY() - checkboxSize / 2f
@@ -3282,7 +3318,7 @@ class TouchOverlayView
                     }
                     textPaint.textAlign = Paint.Align.LEFT
                     canvas.drawText(
-                        adminTrayLabel(i),
+                        adminTrayLabel(action),
                         checkboxRect.right + cellW * 0.08f,
                         rect.centerY() + textPaint.textSize * 0.35f,
                         textPaint,
@@ -3290,7 +3326,7 @@ class TouchOverlayView
                     textPaint.textAlign = Paint.Align.CENTER
                 } else {
                     canvas.drawText(
-                        adminTrayLabel(i),
+                        adminTrayLabel(action),
                         rect.centerX(),
                         rect.centerY() + textPaint.textSize * 0.35f,
                         textPaint,
@@ -3330,18 +3366,34 @@ class TouchOverlayView
             }
         }
 
-        private fun openAdminTray() {
-            if (adminTrayOpen) return
+        private fun defaultAdminTraySelectedIndex(): Int =
+            if (gamepadOnlyMode &&
+                adminTrayItemCount() >= 2
+            ) {
+                adminTrayItemCount() - 2
+            } else {
+                0
+            }
+
+        fun openAdminTray(fromGamepad: Boolean = false) {
+            if (adminTrayOpen) {
+                if (fromGamepad && adminTraySelectedIndex < 0) {
+                    adminTraySelectedIndex = defaultAdminTraySelectedIndex()
+                    invalidate()
+                }
+                return
+            }
             adminTrayOpen = true
-            if (gamepadOnlyMode) {
-                // Default selection: middle of last row (ADMIN_MUSIC = index 13)
-                adminTraySelectedIndex = adminTrayItemCount() - 2
+            if (fromGamepad || gamepadOnlyMode) {
+                adminTraySelectedIndex = defaultAdminTraySelectedIndex()
+            } else {
+                adminTraySelectedIndex = -1
             }
             adminTrayOpenedCallback?.invoke()
             animateAdminTray(true)
         }
 
-        private fun closeAdminTray() {
+        fun closeAdminTray() {
             if (!adminTrayOpen && adminTraySlide <= 0f) return
             animateAdminTray(false)
         }
@@ -3361,7 +3413,11 @@ class TouchOverlayView
             if (!adminTrayOpen) return false
             if (action != 0) return true // consume up events but only act on down
             val cols = 3
-            val count = adminTrayItemCount()
+            val visibleActions = currentAdminTrayActions()
+            val count = visibleActions.size
+            if (count > 0 && adminTraySelectedIndex !in 0 until count) {
+                adminTraySelectedIndex = defaultAdminTraySelectedIndex().coerceIn(0, count - 1)
+            }
             when (keyCode) {
                 android.view.KeyEvent.KEYCODE_DPAD_UP -> {
                     if (adminTraySelectedIndex >= cols) {
@@ -3397,11 +3453,12 @@ class TouchOverlayView
                 android.view.KeyEvent.KEYCODE_DPAD_CENTER,
                 -> {
                     if (adminTraySelectedIndex in 0 until count &&
-                        adminTrayActionEnabled(adminTraySelectedIndex, adminTrayEnabledStateProvider)
+                        adminTrayActionEnabled(visibleActions[adminTraySelectedIndex], adminTrayEnabledStateProvider)
                     ) {
-                        adminTrayCallback?.invoke(adminTraySelectedIndex)
+                        val selectedAction = visibleActions[adminTraySelectedIndex]
+                        adminTrayCallback?.invoke(selectedAction)
                         performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                        if (adminTrayClosesAfterActivate(adminTraySelectedIndex)) {
+                        if (adminTrayClosesAfterActivate(selectedAction)) {
                             closeAdminTray()
                         } else {
                             invalidate()
@@ -3484,12 +3541,15 @@ class TouchOverlayView
                         } else if (adminTrayPressedIndex >= 0 &&
                             adminTrayPressedIndex < adminTrayRects.size &&
                             adminTrayRects[adminTrayPressedIndex].contains(px, py) &&
-                            adminTrayActionEnabled(adminTrayPressedIndex, adminTrayEnabledStateProvider)
+                            adminTrayPressedIndex < currentAdminTrayActions().size
                         ) {
-                            adminTrayCallback?.invoke(adminTrayPressedIndex)
-                            performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                            if (adminTrayClosesAfterActivate(adminTrayPressedIndex)) {
-                                closeAdminTray()
+                            val pressedAction = currentAdminTrayActions()[adminTrayPressedIndex]
+                            if (adminTrayActionEnabled(pressedAction, adminTrayEnabledStateProvider)) {
+                                adminTrayCallback?.invoke(pressedAction)
+                                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                                if (adminTrayClosesAfterActivate(pressedAction)) {
+                                    closeAdminTray()
+                                }
                             }
                             invalidate()
                         }

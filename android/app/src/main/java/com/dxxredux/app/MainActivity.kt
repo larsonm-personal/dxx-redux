@@ -78,6 +78,14 @@ internal fun shouldEnableNetEventsControl(
     hasPendingLaunchInfo: Boolean,
 ): Boolean = shouldEnableNetStatsControl(isMultiplayerGame, hasPendingLaunchInfo)
 
+internal fun shouldUseControllerSettingsTrayShortcuts(
+    gamepadOnlyMode: Boolean,
+    touchOverlayActive: Boolean,
+    automapActive: Boolean,
+    adminTrayOpen: Boolean,
+    adminTrayPausedGame: Boolean,
+): Boolean = gamepadOnlyMode || adminTrayOpen || adminTrayPausedGame || (touchOverlayActive && !automapActive)
+
 internal fun shouldDispatchGamepadButtonDown(
     isInGame: Boolean,
     repeatCount: Int,
@@ -2281,21 +2289,34 @@ class MainActivity :
             return true
         }
 
-        // Gamepad-only: route D-pad/A/B to admin tray when open
-        if (gamepadOnlyMode && touchOverlay.isAdminTrayOpen()) {
-            if (touchOverlay.handleAdminTrayGamepadKey(keyCode, 0)) return true
-        }
+        val controllerSettingsTrayShortcuts =
+            shouldUseControllerSettingsTrayShortcuts(
+                gamepadOnlyMode = gamepadOnlyMode,
+                touchOverlayActive = touchOverlay.isActive,
+                automapActive = touchOverlay.automapActive,
+                adminTrayOpen = touchOverlay.isAdminTrayOpen(),
+                adminTrayPausedGame = adminTrayPausedGame,
+            )
 
-        // Gamepad-only: Start toggles admin tray, Select sends ESC (game menu)
-        if (gamepadOnlyMode) {
-            if (keyCode == KeyEvent.KEYCODE_BUTTON_START) {
-                touchOverlay.toggleAdminTray()
+        // When the touch settings tray is reachable from controller input,
+        // Select opens it and Start opens the engine's game menu.
+        if (controllerSettingsTrayShortcuts) {
+            if (keyCode == KeyEvent.KEYCODE_BUTTON_SELECT) {
+                touchOverlay.openAdminTray(fromGamepad = true)
                 return true
             }
-            if (keyCode == KeyEvent.KEYCODE_BUTTON_SELECT) {
+            if (keyCode == KeyEvent.KEYCODE_BUTTON_START) {
+                if (touchOverlay.isAdminTrayOpen()) {
+                    touchOverlay.closeAdminTray()
+                }
                 openGameMenuSafely()
                 return true
             }
+        }
+
+        // Route D-pad/A/B to the admin tray while it is open.
+        if (touchOverlay.isAdminTrayOpen()) {
+            if (touchOverlay.handleAdminTrayGamepadKey(keyCode, 0)) return true
         }
 
         // Gamepad face / shoulder buttons -> mixer or meta action
@@ -2375,13 +2396,22 @@ class MainActivity :
             return true
         }
 
-        // Gamepad-only: consume events while admin tray is open
-        if (gamepadOnlyMode && touchOverlay.isAdminTrayOpen()) {
+        val controllerSettingsTrayShortcuts =
+            shouldUseControllerSettingsTrayShortcuts(
+                gamepadOnlyMode = gamepadOnlyMode,
+                touchOverlayActive = touchOverlay.isActive,
+                automapActive = touchOverlay.automapActive,
+                adminTrayOpen = touchOverlay.isAdminTrayOpen(),
+                adminTrayPausedGame = adminTrayPausedGame,
+            )
+
+        // Consume controller events while the admin tray is open.
+        if (touchOverlay.isAdminTrayOpen()) {
             if (touchOverlay.handleAdminTrayGamepadKey(keyCode, 1)) return true
         }
 
-        // Gamepad-only: consume Start/Select up events
-        if (gamepadOnlyMode &&
+        // Consume Start/Select up events when they are routed as tray shortcuts.
+        if (controllerSettingsTrayShortcuts &&
             (
                 keyCode == KeyEvent.KEYCODE_BUTTON_START ||
                     keyCode == KeyEvent.KEYCODE_BUTTON_SELECT

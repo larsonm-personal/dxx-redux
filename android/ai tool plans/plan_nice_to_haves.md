@@ -168,7 +168,7 @@ Instrument the paging sweep with `_begin(total)` before the outer loops and `_st
 
 ---
 
-## 3. In-game Select button should open settings overlay, not save/load menu  [ ]
+## 3. In-game Select button should open settings overlay, not save/load menu  [~]
 
 User requirement:
 > need some fixes for android TV to transition all remaining touch overlay bits to controller interfaces. the immediate need is for the in-game settings menu (the overlay one) to be the thing opened by the select button, rather than the in-game save/load/quit menu (its current function). there was a task at one point to move extra items into the settings menu when there was no touch interface: that needs to be rechecked.
@@ -182,9 +182,64 @@ User requirement:
 
 ### Proposed approach
 
-- Swap Select and Start in the gamepad-only block: Select opens the admin tray; Start (or long-press Select, TBD) opens the save/load/quit menu.
-- Audit the admin tray action list for completeness: confirm every action reachable from the in-game touch settings overlay is present in the tray when `gamepadOnlyMode` is true. Anything missing from the earlier task gets added.
-- Update `docs/comments` note in `MainActivity.kt` near the Select handler so the mapping is clear.
+### Root cause summary
+
+- `MainActivity.onKeyDown()` still has the old gamepad-only mapping: Start toggles the admin tray and Select opens the save/load/quit menu. That is the inverse of the current TV/controller requirement.
+- The first controller-routing tranche was still too narrow because it keyed the Select/Start swap only off `gamepadOnlyMode` (`!FEATURE_TOUCHSCREEN`). On touchscreen devices with a Bluetooth controller, Select still fell through to the engine's regular game-menu path.
+- The admin tray item list is still hard-coded as `9` base items or `14` gamepad-only items. That made it easy to add one fixed batch of controller-only items earlier, but it does not support layout-dependent items such as "show Automap only when the current touch layout does not already provide a touch Automap button".
+- The earlier migration work is partly in place already. In `gamepadOnlyMode`, the tray already appends `Automap`, `Headlight`, `Warp`, `Music`, and `Accept`, and `MainActivity` already suppresses the standalone accept/warp overlays in that mode because those actions were moved into the tray.
+
+### Research notes
+
+- Already migrated into admin tray for gamepad-only use:
+  - `Automap` via `TouchOverlayView.ADMIN_AUTOMAP` and `MainActivity` TAB injection handler.
+  - `Headlight` via `TouchOverlayView.ADMIN_HEADLIGHT` and `MainActivity` H-key injection handler.
+  - `Warp` via `TouchOverlayView.ADMIN_WARP` and the coop warp JNI helpers.
+  - `Music` via `TouchOverlayView.ADMIN_MUSIC` and `showMusicPanel()`.
+  - `Accept` via `TouchOverlayView.ADMIN_ACCEPT_JOIN` and `nativeAcceptJoinRequest()`.
+- Not yet layout-aware:
+  - `Automap` is appended unconditionally in `gamepadOnlyMode`, but touch-mode trays never gain it when a custom layout omits the touch Automap button.
+- Already tray-backed outside the gamepad-only extras:
+  - `Exit` is already a tray item and the standalone exit button is hidden when the touch overlay is active.
+
+### Concrete steps
+
+- [x] Recheck the current Start/Select routing and confirm the old mapping is still present in `MainActivity.onKeyDown()`.
+- [x] Recheck the tray action inventory and confirm which touch-driven actions were already moved into controller-accessible grid items.
+- [x] Replace the fixed admin-tray item count with a visible-action list helper so layout-dependent items can be added without hard-coded slot math.
+- [x] Make `Automap` visible in the settings tray whenever the device is gamepad-only or the active touch layout does not include a button bound to `TouchBindings.BTN_AUTOMAP`.
+- [x] Swap the gamepad-only Select/Start routing so Select opens the settings tray and Start opens the game menu, handling the case where the tray is already open.
+- [x] Extend focused admin-tray unit coverage for the new visible-action-list rules.
+- [~] Validate with Android compile/tests and a Windows host build.
+
+### First implementation tranche
+
+- Keep the first code change local to `MainActivity.kt`, `TouchOverlayView.kt`, and `AdminTrayUiTest.kt`.
+- Treat `Automap` as the first layout-aware tray item because the user called it out explicitly and the supporting callback already exists.
+- Preserve the existing tray labels, action ids, and callback handlers so the refactor only changes visibility/order, not behavior of existing actions.
+- For controller routing, prefer explicit `open` / `close` calls over a blind toggle so Select cannot accidentally close the tray and Start can open the game menu without leaving the tray visible.
+
+### Validation target for this tranche
+
+- Android TV / gamepad-only: Select opens the settings tray; Start opens the save/load/quit menu.
+- Touch layout without an Automap button: the settings tray includes an `Automap` item.
+- Touch layout with an Automap button: touch-mode tray does not duplicate that action.
+- Regression: existing tray actions still render and dispatch in their expected slots/order.
+
+### Implemented result so far
+
+- `MainActivity.kt` now routes gamepad-only Select to `openAdminTray()` and Start to `openGameMenuSafely()`, with an explicit tray close before opening the game menu if the tray was already visible.
+- Controller Select/Start routing now keys off "settings tray is available here" rather than only `gamepadOnlyMode`, so touchscreen devices with an active touch overlay also open the settings tray on Select instead of falling through to the engine game menu.
+- `TouchOverlayView.kt` now derives its admin tray from a visible-action list helper instead of assuming a fixed `9` or `14` items, so action order stays centralized while visibility can depend on runtime layout state.
+- `Automap` is now present in the tray whenever `gamepadOnlyMode` is active or the current touch layout lacks any button bound to `TouchBindings.BTN_AUTOMAP`.
+- Existing controller-migrated actions remain in place for gamepad-only mode: `Headlight`, `Warp`, `Music`, and `Accept` still append after the shared tray items.
+- `AdminTrayUiTest.kt` now covers the touch-mode and gamepad-only visible-action rules for the admin tray.
+- `OverlayVisibilityPolicyTest.kt` now covers the widened controller shortcut policy so touchscreen devices with an active gameplay overlay keep the Select-to-settings behavior.
+
+### Validation so far
+
+- Passed: `android\gradlew.bat :app:testDebugUnitTest --tests "com.dxxredux.app.AdminTrayUiTest"`
+- Remaining for this tranche: formatter pass, post-format Android compile/test rerun, and Windows host build
 
 ### Validation
 

@@ -7,6 +7,44 @@ import org.junit.Test
 
 class AdminTrayUiTest {
     @Test
+    fun touchModeKeepsAutomapOutWhenTouchButtonExists() {
+        assertFalse(adminTrayVisibleActions(gamepadOnlyMode = false, hasTouchAutomapButton = true).contains(TouchOverlayView.ADMIN_AUTOMAP))
+    }
+
+    @Test
+    fun touchModeAddsAutomapWhenTouchButtonMissing() {
+        val actions = adminTrayVisibleActions(gamepadOnlyMode = false, hasTouchAutomapButton = false)
+
+        assertEquals(10, actions.size)
+        assertEquals(TouchOverlayView.ADMIN_AUTOMAP, actions.last())
+    }
+
+    @Test
+    fun gamepadOnlyModeIncludesMigratedControllerActions() {
+        val actions = adminTrayVisibleActions(gamepadOnlyMode = true, hasTouchAutomapButton = true)
+
+        assertEquals(
+            listOf(
+                TouchOverlayView.ADMIN_INCREASE_VIEW,
+                TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL,
+                TouchOverlayView.ADMIN_NET_STATS,
+                TouchOverlayView.ADMIN_QUICK_LOAD,
+                TouchOverlayView.ADMIN_OPEN_MENU,
+                TouchOverlayView.ADMIN_NET_EVENTS,
+                TouchOverlayView.ADMIN_EXIT_LAUNCHER,
+                TouchOverlayView.ADMIN_QUICK_SAVE,
+                TouchOverlayView.ADMIN_VIDEO_INFO,
+                TouchOverlayView.ADMIN_AUTOMAP,
+                TouchOverlayView.ADMIN_HEADLIGHT,
+                TouchOverlayView.ADMIN_WARP,
+                TouchOverlayView.ADMIN_MUSIC,
+                TouchOverlayView.ADMIN_ACCEPT_JOIN,
+            ),
+            actions,
+        )
+    }
+
+    @Test
     fun adminTrayActionsDefaultToEnabled() {
         assertTrue(adminTrayActionEnabled(TouchOverlayView.ADMIN_NET_EVENTS, null))
     }
