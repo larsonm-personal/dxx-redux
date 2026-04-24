@@ -122,31 +122,43 @@ Pause and game-menu (save/load/quit launched from in-game) draw through menu/box
 
 ---
 
-## 5. [in progress] Controller-on-TV: B sticks and fires all missiles in one go (may be stale)
+## 5. [in progress] Controller-on-TV: B gameplay/menu handling is inconsistent
 
 ### Scope
-- Default binding has B = secondary fire. Pressing B once observed to dump the entire missile pile.
+- In gameplay, default B should fire exactly one secondary weapon action per press.
+- In non-game UI, B should back out of menus consistently, including high scores and brief taps in game menus.
 
 ### Code anchors
-- [android/app/src/main/java/com/dxxredux/app/MainActivity.kt](android/app/src/main/java/com/dxxredux/app/MainActivity.kt#L2095-L2105) `dispatchDpad`/button mixer entry points.
-- `MainActivity.kt` line 2272 ("route D-pad/A/B to admin tray when open") and the rerouted IME path around 2190-2220 -- both deliver synthetic events for B.
-- [android/app/src/main/cpp/jni_main.c](android/app/src/main/cpp/jni_main.c) joy button injection (search for `joy_button_state` / `inject_button`).
-- Repo memory: `/memories/repo/android-tv-keyboard-final-routing.md` and `android-tv-dpad-center-and-input-menu.md`.
+- [android/app/src/main/java/com/dxxredux/app/MainActivity.kt](android/app/src/main/java/com/dxxredux/app/MainActivity.kt) gamepad down/up routing and `GamepadButtonEdgeTracker` use.
+- [android/app/src/main/cpp/android_gamepad_config.cpp](android/app/src/main/cpp/android_gamepad_config.cpp) JSON -> live `PlayerCfg` load path.
+- [d1/main/playsave.c](d1/main/playsave.c) and [d2/main/playsave.c](d2/main/playsave.c) pilot-load path before `kc_set_controls()`.
+- [d1/arch/sdl/event.c](d1/arch/sdl/event.c) and [d2/arch/sdl/event.c](d2/arch/sdl/event.c) central event dispatch fallback for unhandled joystick B presses outside gameplay.
+- Repo memory: `/memories/repo/gamepad-b-routing-gating-regression.md`.
 
-### Cause (updated again after user reported the gating made B fire nothing)
-The raw `nativeJoystickButton(joyBtn, ...)` path is the one that actually activates gameplay actions on the user's device. Blocking it during gameplay killed B entirely because the mixer path alone was not firing the bound action in practice. The over-fire failure mode is not a duplicate-press issue at the Kotlin layer; it appears to be on the native side or in how key events are delivered. Needs further investigation rather than a top-of-stack gate.
+### Cause (updated after deeper native-path tracing)
+- The raw `nativeJoystickButton(joyBtn, ...)` path is still required for native menu/UI consumers; the earlier Kotlin raw-path gate failed because gameplay was effectively running against stale live joystick bindings.
+- Launcher JSON patching updated pilot files on disk, but the active `PlayerCfg.KeySettings[1]` / `kc_joystick[]` state loaded from `.plr` could stay on the old raw button numbers until the next explicit Android defaults path. That left raw button `1` bound to Fire Secondary in gameplay while the mixer path used the virtual `100+` button indices.
+- The broader native menu gap was that custom windows outside `newmenu`/`listbox` never translated joystick button `1` into `KEY_ESC`. USB-attached controllers on non-TV Android already got the desired behavior through the existing menu path; Bluetooth TV controllers needed the same fallback at the shared dispatcher layer rather than per-window patches.
+- Brief non-game-menu B taps were still vulnerable to stale gameplay edge-tracker state because `GamepadButtonEdgeTracker` gated face-button downs and ups even outside gameplay.
 
 ### Planned change
-- Reverted the raw-gating experiment: raw joystick button injection now runs unconditionally again alongside the mixer and edge tracker, matching pre-change behavior.
-- Leave a deeper investigation for a later pass (candidate areas: native kconfig joystick state, whether Android key-event repeat delivery matches what `GamepadButtonEdgeTracker` expects, and whether the pilot patching actually takes effect on the user's TV device).
+- Keep raw joystick injection enabled so native menus still receive button `1` as `KEY_ESC`.
+- After each pilot load on Android, reload `controller_config.json` into live `PlayerCfg` before `kc_set_controls()` so gameplay bindings match the launcher JSON instead of stale `.plr` joystick slots.
+- In `d1/d2 arch/sdl/event.c`, if an Android joystick B press goes unhandled and the front window is not `Game_wind`, synthesize `EVENT_KEY_COMMAND` / `KEY_ESC` and redispatch it so custom menu windows inherit the same back behavior without per-menu code.
+- Use the edge tracker only for in-game button latching; in non-game UI, allow fresh button-downs by repeat count and always dispatch button-up so brief menu taps are not lost to stale gameplay latch state.
 
 ### Current status
-- Reverted `shouldForwardRawJoystickButtonToUi` gating in `MainActivity.kt.onKeyDown`/`onKeyUp`; removed the policy helper at file top and deleted `GamepadButtonRoutingPolicyTest.kt`.
-- Edge tracker remains in place so key auto-repeat still does not turn into auto-fire.
-- This bug is back to "reopened, real root cause unclear"; do not attempt another top-level routing gate without reproducing the over-fire locally first.
+- Landed `android_reload_live_gamepad_config()` in `android_gamepad_config.cpp` and call it from the Android pilot-load path in both `d1/main/playsave.c` and `d2/main/playsave.c` before `kc_set_controls()`.
+- Replaced the temporary `scores.c` joystick special case with a central Android-only fallback in `d1/d2 arch/sdl/event.c`: unhandled joystick B presses outside gameplay are now re-sent as `KEY_ESC`, so high scores and other custom menu windows inherit back behavior without bespoke handler code.
+- `MainActivity.kt` now keeps gameplay edge tracking for in-game button routing, but non-game UI button dispatch no longer depends on the gameplay latch. Added `GamepadButtonDispatchPolicyTest` to lock that behavior down.
+- Revalidated with targeted unit tests (`GamepadButtonDispatchPolicyTest`, `GamepadButtonEdgeTrackerTest`) from the previous tranche, plus `:app:externalNativeBuildDebug` and `run-windows-build.ps1 -Target both` after landing the dispatcher hook.
+- `android\run-code-quality.ps1 --fix` reformatted the touched files but failed late because `PSScriptAnalyzer` is not installed in this environment; reran the build/test checks after formatting.
+- Still needs on-device validation on TV/phone before this can be marked done in `android/outstanding_bugs.md`.
 
 ### Test plan
 - TV with virtual gamepad: in level, press and release B once. Inspect introspection JSON for `player.secondary_ammo[*]` to confirm only one missile fired.
+- Open high scores and press B once; confirm the screen closes.
+- Open in-game save/load or quit menus and confirm a brief B tap backs out reliably.
 - Automation script `android/game_scripts/test_b_button_no_stick.json5` that injects a single button event via the automation driver and checks ammo delta == 1 via introspection.
 
 ---

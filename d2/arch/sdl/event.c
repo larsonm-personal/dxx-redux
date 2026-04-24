@@ -151,6 +151,21 @@ void event_send(d_event *event)
 			if (window_is_modal(wind))
 				break;
 		}
+
+	#ifdef __ANDROID__
+	if (!handled && event->type == EVENT_JOYSTICK_BUTTON_DOWN)
+	{
+		extern struct window *Game_wind;
+		if (window_get_front() != Game_wind && event_joystick_get_button(event) == 1)
+		{
+			struct { event_type type; int keycode; } ke;
+			ke.type = EVENT_KEY_COMMAND;
+			ke.keycode = KEY_ESC;
+			event_send((d_event *)&ke);
+			return;
+		}
+	}
+	#endif
 	
 	if (!handled)
 		call_default_handler(event);

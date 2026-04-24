@@ -78,6 +78,17 @@ internal fun shouldEnableNetEventsControl(
     hasPendingLaunchInfo: Boolean,
 ): Boolean = shouldEnableNetStatsControl(isMultiplayerGame, hasPendingLaunchInfo)
 
+internal fun shouldDispatchGamepadButtonDown(
+    isInGame: Boolean,
+    repeatCount: Int,
+    edgeDispatchAllowed: Boolean,
+): Boolean = if (isInGame) edgeDispatchAllowed else repeatCount == 0
+
+internal fun shouldDispatchGamepadButtonUp(
+    isInGame: Boolean,
+    edgeDispatchAllowed: Boolean,
+): Boolean = if (isInGame) edgeDispatchAllowed else true
+
 class MainActivity :
     Activity(),
     SurfaceHolder.Callback {
@@ -2290,7 +2301,13 @@ class MainActivity :
         // Gamepad face / shoulder buttons -> mixer or meta action
         val joyBtn = gamepadButtonIndex(keyCode)
         if (joyBtn >= 0) {
-            if (!gamepadButtonEdgeTracker.shouldDispatchDown(keyCode, event.repeatCount)) {
+            val inGame = nativeIsInGame()
+            if (!shouldDispatchGamepadButtonDown(
+                    inGame,
+                    event.repeatCount,
+                    gamepadButtonEdgeTracker.shouldDispatchDown(keyCode, event.repeatCount),
+                )
+            ) {
                 return true
             }
             val metaId = buttonMetaBindings[joyBtn]
@@ -2375,7 +2392,8 @@ class MainActivity :
 
         val joyBtn = gamepadButtonIndex(keyCode)
         if (joyBtn >= 0) {
-            if (!gamepadButtonEdgeTracker.shouldDispatchUp(keyCode)) {
+            val inGame = nativeIsInGame()
+            if (!shouldDispatchGamepadButtonUp(inGame, gamepadButtonEdgeTracker.shouldDispatchUp(keyCode))) {
                 return true
             }
             val metaId = buttonMetaBindings[joyBtn]

@@ -1195,6 +1195,12 @@ int read_player_file()
 	filename[strlen(filename) - 4] = 0;
 	strcat(filename, ".plx");
 	read_player_d1x(filename);
+	#ifdef __ANDROID__
+	{
+		extern int android_reload_live_gamepad_config(void);
+		android_reload_live_gamepad_config();
+	}
+	#endif
 	kc_set_controls();
 
 	return EZERO;

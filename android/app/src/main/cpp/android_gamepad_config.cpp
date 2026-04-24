@@ -116,6 +116,30 @@ static bool load_config_into_playercfg(void)
 	return true;
 }
 
+static void apply_android_virtual_axis_defaults(void)
+{
+	/* Virtual gyro axes: only apply defaults if the user's config didn't
+	 * specify values for these slots.  A half-axis combiner or explicit
+	 * axis binding writes a real value (< 0xFF); clobbering it with the
+	 * gyro axis would orphan the user's mapping. */
+	if (PlayerCfg.KeySettings[1][19] == 0xFF)
+		PlayerCfg.KeySettings[1][19] = 7; /* Slide U/D = axis 7 (SU) */
+	if (PlayerCfg.KeySettings[1][21] == 0xFF)
+		PlayerCfg.KeySettings[1][21] = 6; /* Bank L/R  = axis 6 (BK) */
+}
+
+extern "C" int android_reload_live_gamepad_config(void)
+{
+	if (!load_config_into_playercfg())
+		return 0;
+
+	apply_android_virtual_axis_defaults();
+	LOGI("Reloaded live controller config: joy[1]=%d joy[19]=%d joy[21]=%d ctl=%d",
+	     PlayerCfg.KeySettings[1][1], PlayerCfg.KeySettings[1][19],
+	     PlayerCfg.KeySettings[1][21], PlayerCfg.ControlType);
+	return 1;
+}
+
 /*
  * Called from menu.c when creating a brand-new pilot on Android.
  * Reads the JSON config if available; otherwise falls back to hardcoded
@@ -126,7 +150,7 @@ extern "C" void android_apply_gamepad_defaults(void)
 	PlayerCfg.ControlType = 1; /* CONTROL_USING_JOYSTICK */
 	PlayerCfg.AutomapFreeFlight = 1;
 
-	if (!load_config_into_playercfg()) {
+	if (!android_reload_live_gamepad_config()) {
 		/* SetupActivity.writeDefaultControllerConfig() writes a config file
 		 * from the bundled default.json asset before the game starts, so
 		 * this path should not be reached in normal operation. */
@@ -136,14 +160,7 @@ extern "C" void android_apply_gamepad_defaults(void)
 		     PlayerCfg.KeySettings[1][13], PlayerCfg.KeySettings[1][15],
 		     PlayerCfg.KeySettings[1][17], PlayerCfg.KeySettings[1][23]);
 	}
-	/* Virtual gyro axes: only apply defaults if the user's config didn't
-	 * specify values for these slots.  A half-axis combiner or explicit
-	 * axis binding writes a real value (< 0xFF); clobbering it with the
-	 * gyro axis would orphan the user's mapping. */
-	if (PlayerCfg.KeySettings[1][19] == 0xFF)
-		PlayerCfg.KeySettings[1][19] = 7; /* Slide U/D = axis 7 (SU) */
-	if (PlayerCfg.KeySettings[1][21] == 0xFF)
-		PlayerCfg.KeySettings[1][21] = 6; /* Bank L/R  = axis 6 (BK) */
+	apply_android_virtual_axis_defaults();
 }
 
 /* -- JNI entry point: patch all .plr files ----------------------- */
