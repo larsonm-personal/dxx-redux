@@ -27,6 +27,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -34,9 +36,15 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontStyle
@@ -301,6 +309,24 @@ private fun actionButtonModifier(selected: Boolean): Modifier =
     } else {
         Modifier
     }
+
+@Composable
+private fun verticalDpadFocusEscape(): Modifier {
+    val focusManager = LocalFocusManager.current
+    return Modifier.onPreviewKeyEvent { ev ->
+        when (ev.key) {
+            Key.DirectionUp -> {
+                if (ev.type == KeyEventType.KeyDown) focusManager.moveFocus(FocusDirection.Up)
+                ev.type == KeyEventType.KeyDown || ev.type == KeyEventType.KeyUp
+            }
+            Key.DirectionDown -> {
+                if (ev.type == KeyEventType.KeyDown) focusManager.moveFocus(FocusDirection.Down)
+                ev.type == KeyEventType.KeyDown || ev.type == KeyEventType.KeyUp
+            }
+            else -> false
+        }
+    }
+}
 
 private fun refreshAxisIndicesForControl(controlId: String?): Pair<Set<Int>, Set<Int>> =
     when (controlId) {
@@ -2039,7 +2065,16 @@ fun ControllerConfigPage(
                     selectedActionButtonIndex = 0
                     cancelSelection()
                 },
-                modifier = Modifier.weight(1f).height(38.dp).then(actionButtonModifier(selectedActionButtonIndex == 0)),
+                modifier =
+                    Modifier
+                        .weight(
+                            1f,
+                        ).height(38.dp)
+                        .then(actionButtonModifier(selectedActionButtonIndex == 0))
+                        .focusProperties {
+                            canFocus =
+                                false
+                        },
             ) {
                 Text("Cancel", fontSize = 13.sp)
             }
@@ -2048,7 +2083,16 @@ fun ControllerConfigPage(
                     selectedActionButtonIndex = 1
                     saveSelection()
                 },
-                modifier = Modifier.weight(1f).height(38.dp).then(actionButtonModifier(selectedActionButtonIndex == 1)),
+                modifier =
+                    Modifier
+                        .weight(
+                            1f,
+                        ).height(38.dp)
+                        .then(actionButtonModifier(selectedActionButtonIndex == 1))
+                        .focusProperties {
+                            canFocus =
+                                false
+                        },
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                 colors =
                     ButtonDefaults.buttonColors(
@@ -2081,7 +2125,16 @@ fun ControllerConfigPage(
                     selectedActionButtonIndex = 2
                     exportSelection()
                 },
-                modifier = Modifier.weight(1f).height(36.dp).then(actionButtonModifier(selectedActionButtonIndex == 2)),
+                modifier =
+                    Modifier
+                        .weight(
+                            1f,
+                        ).height(36.dp)
+                        .then(actionButtonModifier(selectedActionButtonIndex == 2))
+                        .focusProperties {
+                            canFocus =
+                                false
+                        },
                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
             ) {
                 Text("Export", fontSize = 12.sp)
@@ -2091,7 +2144,16 @@ fun ControllerConfigPage(
                     selectedActionButtonIndex = 3
                     importSelection()
                 },
-                modifier = Modifier.weight(1f).height(36.dp).then(actionButtonModifier(selectedActionButtonIndex == 3)),
+                modifier =
+                    Modifier
+                        .weight(
+                            1f,
+                        ).height(36.dp)
+                        .then(actionButtonModifier(selectedActionButtonIndex == 3))
+                        .focusProperties {
+                            canFocus =
+                                false
+                        },
                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
             ) {
                 Text("Import", fontSize = 12.sp)
@@ -2493,7 +2555,7 @@ private fun ButtonFunctionPickerDialog(
                             onValueChange = { onThresholdChange(it.toInt()) },
                             valueRange = 5f..95f,
                             steps = 17,
-                            modifier = Modifier.fillMaxWidth().tvFocusBorder(),
+                            modifier = Modifier.fillMaxWidth().tvFocusBorder().then(verticalDpadFocusEscape()),
                         )
                         AxisThresholdBar(axisValue ?: 0f, threshold)
                     }
@@ -2544,6 +2606,23 @@ private fun StickPickerDialog(
     var yNegFunc by remember { mutableStateOf(currentYNegFunc) }
     var yPosFunc by remember { mutableStateOf(currentYPosFunc) }
 
+    LaunchedEffect(xButtonMode) {
+        onXThresholdChange ?: return@LaunchedEffect
+        if (xButtonMode && xThreshold == DEFAULT_STICK_DEAD_ZONE) {
+            onXThresholdChange(DEFAULT_AXIS_THRESHOLD)
+        } else if (!xButtonMode && xThreshold == DEFAULT_AXIS_THRESHOLD) {
+            onXThresholdChange(DEFAULT_STICK_DEAD_ZONE)
+        }
+    }
+    LaunchedEffect(yButtonMode) {
+        onYThresholdChange ?: return@LaunchedEffect
+        if (yButtonMode && yThreshold == DEFAULT_STICK_DEAD_ZONE) {
+            onYThresholdChange(DEFAULT_AXIS_THRESHOLD)
+        } else if (!yButtonMode && yThreshold == DEFAULT_AXIS_THRESHOLD) {
+            onYThresholdChange(DEFAULT_STICK_DEAD_ZONE)
+        }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stickLabel) },
@@ -2561,7 +2640,17 @@ private fun StickPickerDialog(
                         )
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = xButtonMode, onCheckedChange = { xButtonMode = it })
+                        Checkbox(
+                            checked = xButtonMode,
+                            onCheckedChange = {
+                                xButtonMode = it
+                                if (it) {
+                                    onXThresholdChange?.invoke(DEFAULT_AXIS_THRESHOLD)
+                                } else {
+                                    onXThresholdChange?.invoke(DEFAULT_STICK_DEAD_ZONE)
+                                }
+                            },
+                        )
                         Text("Use as buttons", fontSize = 12.sp)
                         if (!xButtonMode) {
                             Spacer(Modifier.weight(1f))
@@ -2583,7 +2672,7 @@ private fun StickPickerDialog(
                                 onValueChange = { onXThresholdChange(it.toInt()) },
                                 valueRange = 5f..95f,
                                 steps = 17,
-                                modifier = Modifier.fillMaxWidth().tvFocusBorder(),
+                                modifier = Modifier.fillMaxWidth().tvFocusBorder().then(verticalDpadFocusEscape()),
                             )
                             AxisThresholdBar(xAxisValue, xThreshold)
                         }
@@ -2601,7 +2690,7 @@ private fun StickPickerDialog(
                                 onValueChange = { onXThresholdChange(it.toInt()) },
                                 valueRange = 5f..95f,
                                 steps = 17,
-                                modifier = Modifier.fillMaxWidth().tvFocusBorder(),
+                                modifier = Modifier.fillMaxWidth().tvFocusBorder().then(verticalDpadFocusEscape()),
                             )
                             AxisThresholdBar(xAxisValue, xThreshold)
                         }
@@ -2618,7 +2707,17 @@ private fun StickPickerDialog(
                         )
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = yButtonMode, onCheckedChange = { yButtonMode = it })
+                        Checkbox(
+                            checked = yButtonMode,
+                            onCheckedChange = {
+                                yButtonMode = it
+                                if (it) {
+                                    onYThresholdChange?.invoke(DEFAULT_AXIS_THRESHOLD)
+                                } else {
+                                    onYThresholdChange?.invoke(DEFAULT_STICK_DEAD_ZONE)
+                                }
+                            },
+                        )
                         Text("Use as buttons", fontSize = 12.sp)
                         if (!yButtonMode) {
                             Spacer(Modifier.weight(1f))
@@ -2640,7 +2739,7 @@ private fun StickPickerDialog(
                                 onValueChange = { onYThresholdChange(it.toInt()) },
                                 valueRange = 5f..95f,
                                 steps = 17,
-                                modifier = Modifier.fillMaxWidth().tvFocusBorder(),
+                                modifier = Modifier.fillMaxWidth().tvFocusBorder().then(verticalDpadFocusEscape()),
                             )
                             AxisThresholdBar(yAxisValue, yThreshold)
                         }
@@ -2658,7 +2757,7 @@ private fun StickPickerDialog(
                                 onValueChange = { onYThresholdChange(it.toInt()) },
                                 valueRange = 5f..95f,
                                 steps = 17,
-                                modifier = Modifier.fillMaxWidth().tvFocusBorder(),
+                                modifier = Modifier.fillMaxWidth().tvFocusBorder().then(verticalDpadFocusEscape()),
                             )
                             AxisThresholdBar(yAxisValue, yThreshold)
                         }
