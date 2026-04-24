@@ -2,6 +2,7 @@ package com.dxxredux.app
 
 import android.content.Context
 import android.content.res.Configuration
+import android.os.SystemClock
 import android.view.InputDevice
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -41,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -931,6 +933,65 @@ fun ControllerConfigPage(
     var showButtonPicker by remember { mutableStateOf(false) }
     var showStickPicker by remember { mutableStateOf(false) }
     var showDpadPicker by remember { mutableStateOf(false) }
+    val longPressDetector = remember { ControllerLongPressDetector() }
+
+    fun openControlPicker(controlId: String) {
+        selectedControl = controlId
+        when {
+            controlId == "LS" || controlId == "RS" -> showStickPicker = true
+            controlId in DPAD_CONTROLS -> showDpadPicker = true
+            else -> showButtonPicker = true
+        }
+    }
+
+    fun heldAxisControlId(axisIndex: Int): String? =
+        when (axisIndex) {
+            0,
+            1,
+            -> "LS"
+            2,
+            3,
+            -> "RS"
+            4 -> "LT"
+            5 -> "RT"
+            else -> null
+        }
+
+    fun heldButtonControlId(buttonName: String): String? =
+        when (buttonName) {
+            "L2" -> "LT"
+            "R2" -> "RT"
+            "D-Up" -> "DUp"
+            "D-Down" -> "DDown"
+            "D-Left" -> "DLeft"
+            "D-Right" -> "DRight"
+            in BUTTON_CONTROLS -> buttonName
+            else -> null
+        }
+
+    val showButtonPickerState by rememberUpdatedState(showButtonPicker)
+    val showStickPickerState by rememberUpdatedState(showStickPicker)
+    val showDpadPickerState by rememberUpdatedState(showDpadPicker)
+    val axesState by rememberUpdatedState(axes)
+    val pressedButtonsState by rememberUpdatedState(pressedButtons)
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            val trigger =
+                longPressDetector.update(
+                    nowMs = SystemClock.elapsedRealtime(),
+                    axes = axesState,
+                    pressedButtons = pressedButtonsState.toList(),
+                    gated = showButtonPickerState || showStickPickerState || showDpadPickerState,
+                )
+            when (trigger) {
+                is ControllerLongPressDetector.Trigger.Axis -> heldAxisControlId(trigger.axisIndex)
+                is ControllerLongPressDetector.Trigger.Button -> heldButtonControlId(trigger.buttonName)
+                null -> null
+            }?.let(::openControlPicker)
+            delay(50)
+        }
+    }
 
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
@@ -990,12 +1051,7 @@ fun ControllerConfigPage(
                                             id.startsWith("RS_L") -> "RS"
                                             else -> id
                                         }
-                                    selectedControl = resolvedId
-                                    when {
-                                        resolvedId == "LS" || resolvedId == "RS" -> showStickPicker = true
-                                        resolvedId in DPAD_CONTROLS -> showDpadPicker = true
-                                        else -> showButtonPicker = true
-                                    }
+                                    openControlPicker(resolvedId)
                                     break
                                 }
                             }

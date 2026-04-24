@@ -1,11 +1,11 @@
 # bugs
 [ ] android TV shows a generic controller name as the detected controller rather than the name of the first bluetooth gamepad. usb gamepads on regular android show their names currently
-[ ] d1 load game preview snapshots are corrupted (and also d2, even after the previous round of changes). could be some kind of dynamic palette thing that needs a special -> bitmap procedure
 [ ] controller on android TV, with the default "B" to fire secondary binding, is sticking and firing all missiles in one go when "B" is pressed. this may be stale - on my last test, the "B" button didn't fire anything. a recent code change changed berhavior to mostly ignore the "B" button (never fire)
 [ ] high scores menu needs to respond to "b" controller button the same as other menus (to exit it, back to the main menu). actually, this applies to apparently all menus
 [ready to test] when loading a mod and close to device storage capacity, this can cause a crash (with no crash dump). 1. need kotlin crash dumps working in this case and 2. check for free space when extracting things into game data
 [ ] brief "b" button presses are ignored in game menus
 [ ] descent 2 preview movies have skips in their soundtracks
+[fixed] d1 load game preview snapshots are corrupted (and also d2, even after the previous round of changes). could be some kind of dynamic palette thing that needs a special -> bitmap procedure
 [fixed] in the android TV dxx launcher, only the d-pad can move the selected button around. the convention in other apps and in the system menus is for both d-pad and left analog stick to move around menus
 [fixed] in-level pause and game menu (save/load/quit) have filtering applied even when the graphics settings have filtering off for menus
 [fixed] on android TV, and maybe on non-TV, multiple debug logs are now being produced for a single app run. at one point they were combined into a single file per run. this is as of 22 May and seems to have changed in the last couple days
