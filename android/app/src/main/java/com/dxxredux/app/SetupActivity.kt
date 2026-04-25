@@ -2992,6 +2992,19 @@ private fun SetupScreen(
                 it.migratePilotFiles()
             }
         }
+    val ctxLocal = LocalContext.current
+    LaunchedEffect(Unit) {
+        val mgr = ImportLocationManager(filesDir)
+        mgr.handleStaleInProgressMarkers(ctxLocal)
+        if (mgr.isOverrideUnreachable()) {
+            Toast
+                .makeText(
+                    ctxLocal,
+                    "Imported-files override volume not present; using default app storage",
+                    Toast.LENGTH_LONG,
+                ).show()
+        }
+    }
     var activeSetName by remember { mutableStateOf(fileSetManager.getActive()) }
     val setDir = remember(activeSetName) { fileSetManager.getSetDir(activeSetName) }
     val manifest = remember(activeSetName) { AssetManifest(setDir) }

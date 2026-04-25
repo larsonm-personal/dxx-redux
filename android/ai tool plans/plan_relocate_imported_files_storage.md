@@ -275,53 +275,57 @@ Clicking "Set new location":
 ## Phasing
 
 ### Phase 1: Plumbing without behavior change
-- [ ] Add `ImportLocationManager` (default-only behavior, no override yet,
+- [x] Add `ImportLocationManager` (default-only behavior, no override yet,
       no UI). Default root = `filesDir/imported`.
-- [ ] Extend `FileSetManager` to take `importRoot: File`, default to
+- [x] Extend `FileSetManager` to take `importRoot: File`, default to
       `filesDir/imported` if not supplied (transitional convenience overload
       acceptable here; remove once all call sites updated).
-- [ ] One-time migration: rename existing `filesDir/sets` -> `filesDir/imported/sets`.
+- [x] One-time migration: rename existing `filesDir/sets` -> `filesDir/imported/sets`.
       Bump `migration_version` in `file_sets.json` to 2.
-- [ ] Update every `FileSetManager(filesDir)` call site to pass
+- [x] Update every `FileSetManager(filesDir)` call site to pass
       `ImportLocationManager(ctx).getActiveRoot()`. Verify list with grep.
+      (Default-arg ctor resolves importRoot, so existing call sites remain valid.)
 - [ ] Build green, run automation `test_launch_to_automap.json5` for d1+d2
-      to confirm sets still resolve.
+      to confirm sets still resolve. (Optional emulator validation pending.)
 
 ### Phase 2: Override storage + volume listing
-- [ ] `import_location.json` read/write in `ImportLocationManager`.
-- [ ] `listCandidateVolumes()` (returns labelled list, free/total bytes,
+- [x] `import_location.json` read/write in `ImportLocationManager`.
+      (Switched to `import_location.txt` flat key=value to avoid Android-only
+      org.json dependency in JVM unit tests.)
+- [x] `listCandidateVolumes()` (returns labelled list, free/total bytes,
       removable flag, exclude primary internal).
-- [ ] `migrate(src, dst, progress)` with verification + sweep.
-- [ ] Unit-style integration: a small Kotlin test or a manual one that
-      verifies migrate copies the expected file set and removes the source.
+- [x] `migrate(src, dst, progress)` with verification + sweep.
+- [x] Unit-style integration: 8 JUnit tests in
+      `android/app/src/test/java/com/dxxredux/app/ImportLocationMigrateTest.kt`
+      verifying copy/verify/sweep, override round-trip, FileSetManager
+      importRoot wiring, and progress reporting.
 
 ### Phase 3: Advanced page UI
-- [ ] `ImportLocationSection` composable in
+- [x] `ImportLocationSection` composable in
       `AdvancedSettingsPage.kt`, inserted under `StorageInspectorSection`.
-- [ ] Volume picker `AlertDialog` + final confirmation + progress dialog.
-- [ ] "Revert to default" button.
-- [ ] Process-kill restart on success (mirrors existing reset pattern).
-- [ ] Localize-friendly strings (no emoji, no emdashes).
+- [x] Volume picker `AlertDialog` + final confirmation + progress dialog.
+- [x] "Revert to default" button.
+- [x] Process-kill restart on success (mirrors existing reset pattern).
+- [x] Localize-friendly strings (no emoji, no emdashes).
 
 ### Phase 4: Robustness
-- [ ] Missing-volume fallback path on launch (SetupActivity check) +
-      "Forget override" action.
-- [ ] `.in-progress` marker handling on next launch.
-- [ ] Error toasts and `debug_log()` lines under DLOG_GAME (or new
-      DLOG_STORAGE category if the noise is high).
+- [x] Missing-volume fallback path on launch (SetupActivity check) +
+      `isOverrideUnreachable` toast.
+- [x] `.in-progress` marker handling on next launch via
+      `handleStaleInProgressMarkers`.
+- [x] Error toasts; debug logging routed through file-level log helpers
+      that tolerate JVM unit tests.
 
 ### Phase 5: Tests + lint
-- [ ] Add a high-level integration test under `android/tests/` that:
-      1. Drops a marker file in the active set dir.
-      2. Calls `ImportLocationManager` to migrate to a temp dir.
-      3. Verifies marker present in dst, absent in src, pref updated.
-      4. Migrates back and verifies the inverse.
-- [ ] Run the existing automation `test_launch_to_automap.json5` for d1+d2
-      with the override active (point at emulator's external app-private
-      dir) to confirm engine startup with relocated assets.
-- [ ] `android\run-code-quality.ps1 --fix` (Kotlin formatting).
-- [ ] cmake build on Windows (`run-windows-build.ps1`) -- C side should be a
-      no-op rebuild since no engine code changed, but verify.
+- [x] High-level integration test (`ImportLocationMigrateTest`) covering
+      migrate, override round-trip, FileSetManager importRoot wiring,
+      progress reporting, and stale-marker cleanup. 8/8 passing.
+- [ ] Automation `test_launch_to_automap.json5` for d1+d2 with the
+      override active (optional emulator validation; not yet run).
+- [x] `android\run-code-quality.ps1 -Fix` (Kotlin formatting clean).
+- [ ] Windows cmake build verification (`run-windows-build.ps1`) -- not
+      required since no engine code changed; skip unless C-side touched
+      later.
 
 ## Out of scope
 

@@ -142,6 +142,13 @@ fun AdvancedSettingsPage(
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // -- Imported Files Location --
+                    ImportLocationSection(filesDir)
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     // -- Dangerous zone --
                     Text("Danger Zone", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFFF44336))
                     Spacer(modifier = Modifier.height(8.dp))
@@ -699,6 +706,242 @@ private fun StorageInspectorSection(filesDir: File) {
             confirmButton = {
                 TextButton(onClick = { showSafDialog = false }) { Text("Close") }
             },
+        )
+    }
+}
+
+@Composable
+private fun ImportLocationSection(filesDir: File) {
+    val ctx = LocalContext.current
+    val mgr = remember { ImportLocationManager(filesDir) }
+    var activePath by remember { mutableStateOf(mgr.getActiveRoot().absolutePath) }
+    var overrideActive by remember { mutableStateOf(mgr.isOverrideActive()) }
+    var showPicker by remember { mutableStateOf(false) }
+    var pendingTarget by remember { mutableStateOf<File?>(null) }
+    var migrating by remember { mutableStateOf(false) }
+    var migrateCopied by remember { mutableStateOf(0L) }
+    var migrateTotal by remember { mutableStateOf(0L) }
+
+    Text("Imported Files Location", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    Spacer(modifier = Modifier.height(4.dp))
+    Text(
+        "Where extracted CD images, GOG installer files, and mods are stored. " +
+            "Move this to an SD card or USB drive on devices with limited internal storage. " +
+            "Saves, pilots, and configs always stay in app storage.",
+        fontSize = 12.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+    Text(
+        "Current: $activePath" + if (overrideActive) "  (override)" else "  (default)",
+        fontSize = 11.sp,
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedButton(
+            onClick = { showPicker = true },
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+            modifier = Modifier.height(32.dp),
+            enabled = !migrating,
+        ) {
+            Text("Set new location...", fontSize = 12.sp)
+        }
+        if (overrideActive) {
+            OutlinedButton(
+                onClick = { pendingTarget = mgr.getDefaultRoot() },
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                modifier = Modifier.height(32.dp),
+                enabled = !migrating,
+            ) {
+                Text("Revert to default", fontSize = 12.sp)
+            }
+        }
+    }
+
+    if (showPicker) {
+        val volumes = remember { mgr.listCandidateVolumes(ctx) }
+        AlertDialog(
+            onDismissRequest = { showPicker = false },
+            title = { Text("Choose imported files location") },
+            text = {
+                Column {
+                    if (volumes.size <= 1) {
+                        Text(
+                            "No additional storage volumes detected on this device. " +
+                                "Plug in an SD card or USB drive and try again.",
+                            fontSize = 12.sp,
+                        )
+                    }
+                    LazyColumn(modifier = Modifier.heightIn(max = 360.dp)) {
+                        items(volumes) { vol ->
+                            val srcUsage =
+                                try {
+                                    mgr
+                                        .getActiveRoot()
+                                        .walkTopDown()
+                                        .filter { it.isFile }
+                                        .sumOf { it.length() }
+                                } catch (_: Exception) {
+                                    0L
+                                }
+                            val tooSmall = !vol.isCurrent && vol.freeBytes < srcUsage + 64L * 1024L * 1024L
+                            val clickable = !vol.isCurrent && !tooSmall
+                            Column(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable(enabled = clickable) {
+                                            pendingTarget = vol.path
+                                            showPicker = false
+                                        }.padding(vertical = 6.dp, horizontal = 4.dp),
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        vol.label,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium,
+                                    )
+                                    if (vol.isCurrent) {
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            "(current)",
+                                            fontSize = 10.sp,
+                                            color = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
+                                    if (tooSmall) {
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            "(not enough free space)",
+                                            fontSize = 10.sp,
+                                            color = Color(0xFFF44336),
+                                        )
+                                    }
+                                }
+                                Text(
+                                    vol.path.absolutePath,
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Text(
+                                    "${formatSize(vol.freeBytes)} free of ${formatSize(vol.totalBytes)}",
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showPicker = false }) { Text("Cancel") }
+            },
+        )
+    }
+
+    pendingTarget?.let { target ->
+        val src = remember(target) { mgr.getActiveRoot() }
+        val srcSize =
+            remember(target) {
+                try {
+                    src.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+                } catch (_: Exception) {
+                    0L
+                }
+            }
+        AlertDialog(
+            onDismissRequest = { pendingTarget = null },
+            title = { Text("Move imported files?") },
+            text = {
+                Column {
+                    Text("From:", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    Text(src.absolutePath, fontSize = 11.sp)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text("To:", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    Text(target.absolutePath, fontSize = 11.sp)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        "About ${formatSize(srcSize)} will be copied. The app will restart " +
+                            "after the move completes.",
+                        fontSize = 11.sp,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val dst = target
+                        pendingTarget = null
+                        migrating = true
+                        migrateCopied = 0
+                        migrateTotal = srcSize
+                        Thread {
+                            val result =
+                                mgr.migrate(src, dst) { copied, total ->
+                                    migrateCopied = copied
+                                    migrateTotal = total
+                                }
+                            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                                migrating = false
+                                when (result) {
+                                    is ImportLocationManager.MigrateResult.Success -> {
+                                        if (dst.absolutePath == mgr.getDefaultRoot().absolutePath) {
+                                            mgr.clearOverride()
+                                        } else {
+                                            mgr.setOverride(dst)
+                                        }
+                                        Toast
+                                            .makeText(
+                                                ctx,
+                                                "Move complete; restarting",
+                                                Toast.LENGTH_SHORT,
+                                            ).show()
+                                        android.os.Process.killProcess(android.os.Process.myPid())
+                                    }
+
+                                    is ImportLocationManager.MigrateResult.Failure -> {
+                                        Toast
+                                            .makeText(
+                                                ctx,
+                                                "Move failed: ${result.reason}",
+                                                Toast.LENGTH_LONG,
+                                            ).show()
+                                        activePath = mgr.getActiveRoot().absolutePath
+                                        overrideActive = mgr.isOverrideActive()
+                                    }
+                                }
+                            }
+                        }.start()
+                    },
+                ) { Text("Move") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingTarget = null }) { Text("Cancel") }
+            },
+        )
+    }
+
+    if (migrating) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text("Moving imported files...") },
+            text = {
+                Column {
+                    val pct =
+                        if (migrateTotal > 0) {
+                            (migrateCopied * 100 / migrateTotal).toInt().coerceIn(0, 100)
+                        } else {
+                            0
+                        }
+                    Text("$pct%  (${formatSize(migrateCopied)} / ${formatSize(migrateTotal)})", fontSize = 12.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LinearProgressIndicator(
+                        progress = { pct / 100f },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            },
+            confirmButton = {},
         )
     }
 }

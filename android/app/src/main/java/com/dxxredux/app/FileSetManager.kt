@@ -8,8 +8,11 @@ import java.io.File
 /**
  * Manages multiple file sets — named collections of game data files.
  *
- * All sets (including "default") live in `filesDir/sets/<name>/`.
+ * All sets (including "default") live in `<importRoot>/sets/<name>/`.
  * The root [filesDir] holds only configs, saves, music, and metadata.
+ *
+ * The import root is provided by [ImportLocationManager] and may live on
+ * a different volume (SD card / USB OTG) when the user has opted in.
  *
  * Each set can have its own `.saf_manifest.json` for leave-in-place files,
  * plus any locally copied files in its directory.
@@ -21,6 +24,7 @@ import java.io.File
  */
 class FileSetManager(
     private val filesDir: File,
+    private val importRoot: File = ImportLocationManager(filesDir).getActiveRoot(),
 ) {
     data class FileSetInfo(
         val name: String,
@@ -29,7 +33,7 @@ class FileSetManager(
     )
 
     private val configFile get() = File(filesDir, "file_sets.json")
-    private val setsDir get() = File(filesDir, "sets")
+    private val setsDir get() = File(importRoot, "sets").also { it.mkdirs() }
 
     /**
      * List all known sets. Always includes "default" even if file_sets.json
@@ -202,40 +206,67 @@ class FileSetManager(
      * configs/saves/metadata stay in filesDir.
      */
     fun migrateDefaultSetIfNeeded() {
-        val defaultDir = getSetDir(DEFAULT_SET) // creates dir via mkdirs()
-
         val config = loadConfig()
-        if (config.optInt("migration_version", 0) >= 1) return
+        val currentVersion = config.optInt("migration_version", 0)
 
-        var movedCount = 0
-        val files = filesDir.listFiles() ?: emptyArray()
-        for (file in files) {
-            if (file.isDirectory) {
-                if (file.name.lowercase() in GAME_DATA_DIRS) {
+        // v0 -> v1: move legacy game-data files from filesDir root into
+        // <importRoot>/sets/default/.  Pre-v1 the sets/ dir was at
+        // filesDir/sets/, but importRoot defaults to filesDir/imported so
+        // the destination already lives in the right place.
+        if (currentVersion < 1) {
+            val defaultDir = getSetDir(DEFAULT_SET) // creates dir via mkdirs()
+            var movedCount = 0
+            val files = filesDir.listFiles() ?: emptyArray()
+            for (file in files) {
+                if (file.isDirectory) {
+                    if (file.name.lowercase() in GAME_DATA_DIRS) {
+                        val dest = File(defaultDir, file.name)
+                        if (!dest.exists() && file.renameTo(dest)) movedCount++
+                    }
+                    continue
+                }
+                val ext = file.extension.lowercase()
+                if (ext in GAME_DATA_EXTENSIONS) {
                     val dest = File(defaultDir, file.name)
                     if (!dest.exists() && file.renameTo(dest)) movedCount++
                 }
-                continue
             }
-            val ext = file.extension.lowercase()
-            if (ext in GAME_DATA_EXTENSIONS) {
-                val dest = File(defaultDir, file.name)
-                if (!dest.exists() && file.renameTo(dest)) movedCount++
+            for (name in listOf(".asset_manifest.json", ".saf_manifest.json")) {
+                val src = File(filesDir, name)
+                if (src.exists()) {
+                    val dest = File(defaultDir, name)
+                    if (!dest.exists()) src.renameTo(dest)
+                }
             }
+            config.put("migration_version", 1)
+            saveConfig(config)
+            Log.i(TAG, "Default-set migration: moved $movedCount items to ${defaultDir.absolutePath}")
         }
 
-        // Move per-set manifests to default set dir
-        for (name in listOf(".asset_manifest.json", ".saf_manifest.json")) {
-            val src = File(filesDir, name)
-            if (src.exists()) {
-                val dest = File(defaultDir, name)
-                if (!dest.exists()) src.renameTo(dest)
+        // v1 -> v2: when sets/ used to live at filesDir/sets/ and now lives
+        // at importRoot/sets/, relocate it.  This is a no-op when importRoot
+        // is filesDir (overlap) or when the legacy dir was already moved.
+        if (config.optInt("migration_version", 0) < 2) {
+            val legacy = File(filesDir, "sets")
+            val target = File(importRoot, "sets")
+            if (legacy.exists() && legacy.absolutePath != target.absolutePath) {
+                target.parentFile?.mkdirs()
+                if (!target.exists() && legacy.renameTo(target)) {
+                    Log.i(TAG, "Relocated sets/ from ${legacy.absolutePath} to ${target.absolutePath}")
+                } else if (target.exists()) {
+                    // Both exist -- merge legacy entries that aren't already present.
+                    var merged = 0
+                    for (child in legacy.listFiles() ?: emptyArray()) {
+                        val dest = File(target, child.name)
+                        if (!dest.exists() && child.renameTo(dest)) merged++
+                    }
+                    Log.i(TAG, "Merged $merged legacy set dir(s) into ${target.absolutePath}")
+                    if ((legacy.listFiles()?.size ?: 0) == 0) legacy.delete()
+                }
             }
+            config.put("migration_version", 2)
+            saveConfig(config)
         }
-
-        config.put("migration_version", 1)
-        saveConfig(config)
-        Log.i(TAG, "Default-set migration: moved $movedCount items to ${defaultDir.absolutePath}")
     }
 
     /**
