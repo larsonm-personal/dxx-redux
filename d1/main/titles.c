@@ -187,14 +187,20 @@ static int show_title_screen( char * filename, int allow_keys, int from_hog_only
 	return 0;
 }
 
+int g_startup_title_song_requested = 0;
+
 void show_titles(void)
 {
+	char    publisher[PATH_MAX];
+	int song_playing = 0;
+
 #ifdef __ANDROID__
 	crash_breadcrumb("show_titles: enter");
 	extern volatile int g_intro_active;
 	extern volatile int g_skip_intro_pref;
 	extern volatile int g_intro_skip_applied;
 	g_intro_skip_applied = 0;
+	g_startup_title_song_requested = 0;
 #define RETURN_IF_SKIP_INTRO_PREF() \
 	do { \
 		if (g_skip_intro_pref) { \
@@ -204,9 +210,10 @@ void show_titles(void)
 	} while (0)
 	RETURN_IF_SKIP_INTRO_PREF();
 #endif
-	char    publisher[PATH_MAX];
 
+	g_startup_title_song_requested = 1;
 	songs_play_song( SONG_TITLE, 1 );
+	song_playing = 1;
 
 	if (GameArg.SysNoTitles)
 		return;
@@ -232,6 +239,12 @@ void show_titles(void)
 	show_title_screen( (((SWIDTH>=640&&SHEIGHT>=480) && PHYSFSX_exists("descenth.pcx",1))?"descenth.pcx":"descent.pcx"), 1, 1 );
 #ifdef __ANDROID__
 done:
+	if (g_intro_skip_applied && !song_playing)
+	{
+		g_startup_title_song_requested = 1;
+		songs_play_song( SONG_TITLE, 1 );
+		song_playing = 1;
+	}
 	g_intro_active = 0;
 	#undef RETURN_IF_SKIP_INTRO_PREF
 #endif

@@ -202,6 +202,7 @@ int show_title_screen( char * filename, int allow_keys, int from_hog_only )
 }
 
 int intro_played = 0;
+int g_startup_title_song_requested = 0;
 
 void show_titles(void)
 {
@@ -214,6 +215,7 @@ void show_titles(void)
 	extern volatile int g_skip_intro_pref;
 	extern volatile int g_intro_skip_applied;
 	g_intro_skip_applied = 0;
+	g_startup_title_song_requested = 0;
 #define RETURN_IF_SKIP_INTRO_PREF() \
 	do { \
 		if (g_skip_intro_pref) \
@@ -273,6 +275,7 @@ void show_titles(void)
 			if (played == MOVIE_NOT_PLAYED)
 			{
 				con_printf( CON_DEBUG, "\nPlaying title song..." );
+				g_startup_title_song_requested = 1;
 				songs_play_song( SONG_TITLE, 1);
 				song_playing = 1;
 #ifdef ANDROID
@@ -355,6 +358,7 @@ void show_titles(void)
 	if (!song_playing)
 	{
 		con_printf( CON_DEBUG, "\nPlaying title song..." );
+		g_startup_title_song_requested = 1;
 		songs_play_song( SONG_TITLE, 1);
 	}
 	con_printf( CON_DEBUG, "\nShowing logo screen..." );
@@ -369,6 +373,13 @@ void show_titles(void)
 
 #ifdef ANDROID
 done:
+	if (g_intro_skip_applied && !song_playing)
+	{
+		con_printf( CON_DEBUG, "\nPlaying title song..." );
+		g_startup_title_song_requested = 1;
+		songs_play_song( SONG_TITLE, 1);
+		song_playing = 1;
+	}
 	g_intro_active = 0;
 	#undef RETURN_IF_SKIP_INTRO_PREF
 #endif

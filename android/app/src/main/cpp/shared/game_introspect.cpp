@@ -41,6 +41,7 @@ extern "C" {
 #include "kconfig.h"
 #include "gr.h"
 #include "multi.h"
+#include "songs.h"
 #include "ogl_init.h"
 #include "piggy.h"
 #include "textures.h"
@@ -73,6 +74,7 @@ int RBAEnabled(void);
 int RBAGetNumberOfTracks(void);
 int RBAGetTrackNum(void);
 int RBAPeekPlayStatus(void);
+extern int g_startup_title_song_requested;
 }
 
 /* -- Movie tracking globals (defined in movie.c, D2 only) -- */
@@ -864,6 +866,27 @@ extern "C" char *game_introspect_get_state(void)
 			{ "osl_buf_frames", androidaud_get_audio_buf_frames() }
 		};
 		j["audio"] = std::move(audio);
+	}
+
+	/* -- Current music track --------------------------------------- */
+	{
+		const int song_playing = songs_is_playing();
+		int type = 0;
+		int track = -1;
+		int total = 0;
+		char name[PATH_MAX] = "";
+		const int have_track = songs_get_track_info(&type, &track, &total, name, sizeof(name));
+		json music = {
+			{ "active", song_playing >= 0 },
+			{ "song_playing", song_playing },
+			{ "startup_title_requested", g_startup_title_song_requested != 0 },
+			{ "type", type },
+			{ "track", track },
+			{ "total", total }
+		};
+		if (have_track == 0 && name[0])
+			music["name"] = std::string(name);
+		j["music"] = std::move(music);
 	}
 
 	/* -- Redbook audio ---------------------------------------------- */
