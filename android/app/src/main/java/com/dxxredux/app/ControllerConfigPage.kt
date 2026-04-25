@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.res.Configuration
 import android.os.SystemClock
 import android.view.InputDevice
+import android.view.MotionEvent
+import android.view.View
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -45,6 +47,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontStyle
@@ -962,6 +965,8 @@ fun ControllerConfigPage(
     axisGeneration: Int,
     pressedButtons: SnapshotStateList<String>,
     gameVariant: String = "d2",
+    onDialogGenericMotionEvent: ((MotionEvent) -> Boolean)? = null,
+    onPickerOpenChanged: (Boolean) -> Unit = {},
     onBack: () -> Unit,
 ) {
     BackHandler(onBack = onBack)
@@ -1025,6 +1030,10 @@ fun ControllerConfigPage(
     val longPressDetector = remember { ControllerLongPressDetector() }
     val axisGenerationState by rememberUpdatedState(axisGeneration)
 
+    fun logPickerState(message: String) {
+        LauncherDebugLog.log("[ctrl-picker] $message")
+    }
+
     fun requestFreshAxisSample(controlId: String?) {
         val (axisIndices, dpadIndices) = refreshAxisIndicesForControl(controlId)
         if (axisIndices.isEmpty() && dpadIndices.isEmpty()) return
@@ -1079,6 +1088,13 @@ fun ControllerConfigPage(
     val effectiveDpadAxes = floatArrayOf(hatX, hatY)
 
     LaunchedEffect(axisGeneration) {
+        if (showButtonPicker || showStickPicker || showDpadPicker) {
+            logPickerState(
+                "live axisGen=$axisGeneration sel=${selectedControl ?: "<none>"} " +
+                    "axes=[${"%.3f".format(lx)},${"%.3f".format(ly)},${"%.3f".format(rx)},${"%.3f".format(ry)},${"%.3f".format(lt)},${"%.3f".format(rt)}] " +
+                    "staleAxes=${staleAxisIndices.sorted()} staleDpad=${staleDpadIndices.sorted()}",
+            )
+        }
         if (staleAxisIndices.isNotEmpty() || staleDpadIndices.isNotEmpty()) {
             refreshAxisJob?.cancel()
             staleAxisIndices = emptySet()
@@ -1087,12 +1103,17 @@ fun ControllerConfigPage(
     }
 
     fun openControlPicker(controlId: String) {
+        logPickerState(
+            "open control=$controlId axisGen=$axisGeneration sel=${selectedControl ?: "<none>"} " +
+                "axes=[${"%.3f".format(lx)},${"%.3f".format(ly)},${"%.3f".format(rx)},${"%.3f".format(ry)},${"%.3f".format(lt)},${"%.3f".format(rt)}]",
+        )
         selectedControl = controlId
         when {
             controlId == "LS" || controlId == "RS" -> showStickPicker = true
             controlId in DPAD_CONTROLS -> showDpadPicker = true
             else -> showButtonPicker = true
         }
+        requestFreshAxisSample(controlId)
     }
 
     fun heldAxisControlId(axisIndex: Int): String? =
@@ -1126,6 +1147,13 @@ fun ControllerConfigPage(
     val axesState by rememberUpdatedState(effectiveAxes)
     val dpadAxesState by rememberUpdatedState(effectiveDpadAxes)
     val pressedButtonsState by rememberUpdatedState(pressedButtons)
+
+    val pickerOpen = showButtonPicker || showStickPicker || showDpadPicker
+
+    DisposableEffect(pickerOpen) {
+        onPickerOpenChanged(pickerOpen)
+        onDispose { onPickerOpenChanged(false) }
+    }
 
     fun cancelSelection() {
         onBack()
@@ -1181,6 +1209,7 @@ fun ControllerConfigPage(
                     null -> null
                 }
             if (openedControl != null) {
+                logPickerState("trigger opened=$openedControl trigger=$trigger pickerOpen=$pickerOpen")
                 if (trigger is ControllerLongPressDetector.Trigger.Button && trigger.buttonName == "A") {
                     suppressActionButtonARelease = true
                 }
@@ -2269,6 +2298,7 @@ fun ControllerConfigPage(
             threshold = axisKey?.let { thresholdForDialog(it, buttonMode = true, thresholds) },
             onThresholdChange = axisKey?.let { key -> { v: Int -> thresholds[key] = v } },
             axisFunctions = if (isTrigger) TRIGGER_HALF_AXIS_OPTIONS else emptyList(),
+            onDialogGenericMotionEvent = onDialogGenericMotionEvent,
             onSelect = { funcLabel ->
                 val dismissedControl = selectedControl
                 assignButtonFunction(bindings, selectedControl!!, funcLabel)
@@ -2316,6 +2346,7 @@ fun ControllerConfigPage(
             yThreshold = thresholdForDialog(yKey, yIsButtonMode, thresholds),
             onXThresholdChange = { v -> thresholds[xKey] = v },
             onYThresholdChange = { v -> thresholds[yKey] = v },
+            onDialogGenericMotionEvent = onDialogGenericMotionEvent,
             onConfirm = { result ->
                 val dismissedControl = selectedControl
                 // Clear all axis and axis-button bindings for this stick
@@ -2423,6 +2454,19 @@ private fun BoxScope.ScrollArrows(scrollState: ScrollState) {
 // ── Picker Dialogs ──────────────────────────────────────────────────────────
 
 @Composable
+private fun DialogGenericMotionBridge(onGenericMotionEvent: ((MotionEvent) -> Boolean)?) {
+    if (onGenericMotionEvent == null) return
+    val view = LocalView.current
+    val motionHandler by rememberUpdatedState(onGenericMotionEvent)
+
+    DisposableEffect(view) {
+        val listener = View.OnGenericMotionListener { _, event -> motionHandler(event) }
+        view.setOnGenericMotionListener(listener)
+        onDispose { view.setOnGenericMotionListener(null) }
+    }
+}
+
+@Composable
 private fun ButtonFunctionPickerDialog(
     controlLabel: String,
     currentFunc: String?,
@@ -2433,6 +2477,7 @@ private fun ButtonFunctionPickerDialog(
     threshold: Int? = null,
     onThresholdChange: ((Int) -> Unit)? = null,
     axisFunctions: List<String> = emptyList(),
+    onDialogGenericMotionEvent: ((MotionEvent) -> Boolean)? = null,
     onSelect: (String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -2452,6 +2497,7 @@ private fun ButtonFunctionPickerDialog(
         onDismissRequest = onDismiss,
         title = { Text("Assign: $controlLabel") },
         text = {
+            DialogGenericMotionBridge(onDialogGenericMotionEvent)
             val btnScrollState = rememberScrollState()
             Box(modifier = Modifier.heightIn(max = 400.dp)) {
                 Column(modifier = Modifier.fillMaxWidth().verticalScroll(btnScrollState)) {
@@ -2611,6 +2657,7 @@ private fun StickPickerDialog(
     yThreshold: Int = DEFAULT_AXIS_THRESHOLD,
     onXThresholdChange: ((Int) -> Unit)? = null,
     onYThresholdChange: ((Int) -> Unit)? = null,
+    onDialogGenericMotionEvent: ((MotionEvent) -> Boolean)? = null,
     onConfirm: (StickPickerResult) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -2648,6 +2695,7 @@ private fun StickPickerDialog(
         onDismissRequest = onDismiss,
         title = { Text(stickLabel) },
         text = {
+            DialogGenericMotionBridge(onDialogGenericMotionEvent)
             val stickScrollState = rememberScrollState()
             Box(modifier = Modifier.heightIn(max = 450.dp)) {
                 Column(modifier = Modifier.fillMaxWidth().verticalScroll(stickScrollState)) {

@@ -1441,11 +1441,14 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 		case EVENT_JOYSTICK_MOVED:
 		{
 			int axis = 0, value = 0, joy_null_value = 0;
+			int raw_value = 0;
+			static int joy_diag_count = 0;
 			if (!(PlayerCfg.ControlType & CONTROL_USING_JOYSTICK))
 				break;
 			event_joystick_get_axis(event, &axis, &value);
 
 			Controls.raw_joy_axis[axis] = value;
+			raw_value = value;
 
 			if (axis == kc_joystick[13].value) // Pitch U/D Deadzone
 				joy_null_value = PlayerCfg.JoystickDead[1]*8;
@@ -1461,6 +1464,18 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 				joy_null_value = PlayerCfg.JoystickDead[5]*3;
 
 			Controls.raw_joy_axis[axis] = joy_apply_deadzone(Controls.raw_joy_axis[axis], joy_null_value);
+			if (raw_value != 0 && (joy_null_value > 0 || axis <= 5)) {
+				joy_diag_count++;
+				if (joy_diag_count <= 24 || joy_diag_count % 32 == 0 || Controls.raw_joy_axis[axis] == 0) {
+					con_printf(CON_DEBUG,
+						"[joy-dz] axis=%d raw=%d null=%d out=%d ctl=%d\n",
+						axis,
+						raw_value,
+						joy_null_value,
+						Controls.raw_joy_axis[axis],
+						PlayerCfg.ControlType);
+				}
+			}
 			Controls.joy_axis[axis] = (Controls.raw_joy_axis[axis]*FrameTime)/128;
 			break;
 		}

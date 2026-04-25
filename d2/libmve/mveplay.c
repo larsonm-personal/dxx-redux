@@ -234,7 +234,7 @@ static void do_timer_wait(void)
 /*************************
  * audio handlers
  *************************/
-#define TOTAL_AUDIO_BUFFERS 64
+#define TOTAL_AUDIO_BUFFERS 128
 
 static int audiobuf_created = 0;
 static void mve_audio_callback(void *userdata, unsigned char *stream, int len);
@@ -248,15 +248,144 @@ static int mve_audio_canplay=0;
 static int mve_audio_compressed=0;
 static int mve_audio_enabled = 1;
 static SDL_AudioSpec *mve_audio_spec=NULL;
+#ifdef USE_SDLMIXER
+static SDL_AudioCVT mve_audio_cvt_template;
+static int mve_audio_cvt_ready = 0;
+static int mve_audio_cvt_needed = 0;
+static int mve_audio_mix_freq = 0;
+static Uint16 mve_audio_mix_format = 0;
+static int mve_audio_mix_channels = 0;
+static int mve_audio_output_frame_size = 0;
+static int mve_audio_resample_needed = 0;
+#endif
+
+#ifdef __ANDROID__
+/* Based on phone testing on the current Android device
+ * Keeping about 150 ms of queued movie audio at startup removed the observed
+ * 0.4-0.6 s lag without reintroducing underruns
+ */
+#define MVE_AUDIO_START_TARGET_MS 150
+#endif
+
+static int mve_audio_queue_depth(void)
+{
+	if (mve_audio_buftail >= mve_audio_bufhead)
+		return mve_audio_buftail - mve_audio_bufhead;
+	return TOTAL_AUDIO_BUFFERS - mve_audio_bufhead + mve_audio_buftail;
+}
+
+static int mve_audio_queue_bytes(void)
+{
+	int index;
+	int total;
+
+	total = 0;
+	index = mve_audio_bufhead;
+	while (index != mve_audio_buftail)
+	{
+		total += mve_audio_buflens[index];
+		if (index == mve_audio_bufhead)
+			total -= mve_audio_curbuf_curpos;
+		if (++index == TOTAL_AUDIO_BUFFERS)
+			index = 0;
+	}
+	return total;
+}
+
+static void mve_audio_discard_lead_bytes(int trim_bytes)
+{
+	while (trim_bytes > 0 && mve_audio_bufhead != mve_audio_buftail)
+	{
+		int available;
+
+		available = mve_audio_buflens[mve_audio_bufhead] - mve_audio_curbuf_curpos;
+		if (trim_bytes < available)
+		{
+			mve_audio_curbuf_curpos += trim_bytes;
+			return;
+		}
+
+		trim_bytes -= available;
+		mve_free(mve_audio_buffers[mve_audio_bufhead]);
+		mve_audio_buffers[mve_audio_bufhead] = NULL;
+		mve_audio_buflens[mve_audio_bufhead] = 0;
+		if (++mve_audio_bufhead == TOTAL_AUDIO_BUFFERS)
+			mve_audio_bufhead = 0;
+		mve_audio_curbuf_curpos = 0;
+	}
+}
+
+static int mve_audio_sample_size(Uint16 format)
+{
+	switch (format & 0xFF)
+	{
+		case 8:
+			return 1;
+		case 16:
+			return 2;
+		default:
+			return 0;
+	}
+}
+
+static int mve_audio_frame_size(Uint16 format, int channels)
+{
+	int sample_size;
+
+	sample_size = mve_audio_sample_size(format);
+	if (sample_size <= 0 || channels <= 0)
+		return 0;
+	return sample_size * channels;
+}
+
+static void mve_audio_resample_buffer(Uint8 **buffer, int *length, int src_freq, int dst_freq)
+{
+	int frame_size;
+	int src_frames;
+	int dst_frames;
+	int dst_bytes;
+	int dst_index;
+	Uint8 *src;
+	Uint8 *dst;
+
+	if (!mve_audio_resample_needed || src_freq <= 0 || dst_freq <= 0 || buffer == NULL || length == NULL)
+		return;
+
+	frame_size = mve_audio_output_frame_size;
+	src = *buffer;
+	if (frame_size <= 0 || src == NULL || *length <= 0)
+		return;
+
+	src_frames = *length / frame_size;
+	if (src_frames <= 0)
+		return;
+
+	dst_frames = (int)((((double)src_frames * dst_freq) + (src_freq / 2)) / src_freq);
+	if (dst_frames < 1)
+		dst_frames = 1;
+	dst_bytes = dst_frames * frame_size;
+	dst = (Uint8 *)mve_alloc(dst_bytes);
+
+	for (dst_index = 0; dst_index < dst_frames; ++dst_index)
+	{
+		int src_index;
+
+		src_index = (int)(((double)dst_index * src_freq) / dst_freq);
+		if (src_index >= src_frames)
+			src_index = src_frames - 1;
+		memcpy(dst + dst_index * frame_size, src + src_index * frame_size, frame_size);
+	}
+
+	mve_free(src);
+	*buffer = dst;
+	*length = dst_bytes;
+}
 
 static void mve_audio_callback(void *userdata, unsigned char *stream, int len)
 {
-	int total=0;
 	int length;
 	if (mve_audio_bufhead == mve_audio_buftail)
 		return /* 0 */;
-
-	//con_printf(CON_CRITICAL, "+ <%d (%d), %d, %d>\n", mve_audio_bufhead, mve_audio_curbuf_curpos, mve_audio_buftail, len);
 
 	while (mve_audio_bufhead != mve_audio_buftail                                           /* while we have more buffers  */
 		   &&  len > (mve_audio_buflens[mve_audio_bufhead]-mve_audio_curbuf_curpos))        /* and while we need more data */
@@ -266,7 +395,6 @@ static void mve_audio_callback(void *userdata, unsigned char *stream, int len)
 		       ((unsigned char *)mve_audio_buffers[mve_audio_bufhead])+mve_audio_curbuf_curpos,           /* cur input position  */
 		       length);                                                                 /* cur input length    */
 
-		total += length;
 		stream += length;                                                               /* advance output */
 		len -= length;                                                                  /* decrement avail ospace */
 		mve_free(mve_audio_buffers[mve_audio_bufhead]);                                 /* free the buffer */
@@ -277,9 +405,6 @@ static void mve_audio_callback(void *userdata, unsigned char *stream, int len)
 			mve_audio_bufhead = 0;
 		mve_audio_curbuf_curpos = 0;
 	}
-
-	//con_printf(CON_CRITICAL, "= <%d (%d), %d, %d>: %d\n", mve_audio_bufhead, mve_audio_curbuf_curpos, mve_audio_buftail, len, total);
-	/*    return total; */
 
 	if (len != 0                                                                        /* ospace remaining  */
 		&&  mve_audio_bufhead != mve_audio_buftail)                                     /* buffers remaining */
@@ -304,7 +429,6 @@ static void mve_audio_callback(void *userdata, unsigned char *stream, int len)
 		}
 	}
 
-	//con_printf(CON_CRITICAL, "- <%d (%d), %d, %d>\n", mve_audio_bufhead, mve_audio_curbuf_curpos, mve_audio_buftail, len);
 }
 
 static int create_audiobuf_handler(unsigned char major, unsigned char minor, unsigned char *data, int len, void *context)
@@ -369,6 +493,17 @@ static int create_audiobuf_handler(unsigned char major, unsigned char minor, uns
 	mve_audio_spec->callback = mve_audio_callback;
 	mve_audio_spec->userdata = NULL;
 
+#ifdef USE_SDLMIXER
+	mve_audio_cvt_ready = 0;
+	mve_audio_cvt_needed = 0;
+	mve_audio_mix_freq = 0;
+	mve_audio_mix_format = 0;
+	mve_audio_mix_channels = 0;
+	mve_audio_output_frame_size = 0;
+	mve_audio_resample_needed = 0;
+	memset(&mve_audio_cvt_template, 0, sizeof(mve_audio_cvt_template));
+#endif
+
 	// MD2211: if using SDL_Mixer, we never reinit the sound system
 #ifdef USE_SDLMIXER
 	if (GameArg.SndDisableSdlMixer)
@@ -387,6 +522,32 @@ static int create_audiobuf_handler(unsigned char major, unsigned char minor, uns
 #ifdef USE_SDLMIXER
 	else {
 		// MD2211: using the same old SDL audio callback as a postmixer in SDL_mixer
+		if (!Mix_QuerySpec(&mve_audio_mix_freq, &mve_audio_mix_format, &mve_audio_mix_channels)) {
+			con_printf(CON_CRITICAL, "[mve-audio] Mix_QuerySpec failed: %s\n", SDL_GetError());
+		} else {
+			int cvt_status;
+
+			/* SDL 1.2 punts on the final non-power-of-two rate step, so do rate conversion separately. */
+			cvt_status = SDL_BuildAudioCVT(&mve_audio_cvt_template,
+				mve_audio_spec->format,
+				mve_audio_spec->channels,
+				mve_audio_spec->freq,
+				mve_audio_mix_format,
+				mve_audio_mix_channels,
+				mve_audio_spec->freq);
+			if (cvt_status < 0) {
+				con_printf(CON_CRITICAL,
+					"[mve-audio] cvt init failed out=%d/%d/%d\n",
+					mve_audio_mix_freq,
+					mve_audio_mix_format,
+					mve_audio_mix_channels);
+			} else {
+				mve_audio_cvt_ready = 1;
+				mve_audio_cvt_needed = cvt_status;
+				mve_audio_output_frame_size = mve_audio_frame_size(mve_audio_mix_format, mve_audio_mix_channels);
+				mve_audio_resample_needed = (mve_audio_mix_freq != mve_audio_spec->freq);
+			}
+		}
 		Mix_SetPostMix(mve_audio_spec->callback, mve_audio_spec->userdata);
 		mve_audio_canplay = 1;
 	}
@@ -402,6 +563,20 @@ static int play_audio_handler(unsigned char major, unsigned char minor, unsigned
 {
 	if (mve_audio_canplay  &&  !mve_audio_playing  &&  mve_audio_bufhead != mve_audio_buftail)
 	{
+		#ifdef __ANDROID__
+		if (!GameArg.SndDisableSdlMixer && mve_audio_mix_freq > 0 && mve_audio_output_frame_size > 0)
+		{
+			int queue_bytes;
+			int target_bytes;
+			int trim_bytes;
+
+			queue_bytes = mve_audio_queue_bytes();
+			target_bytes = (mve_audio_mix_freq * mve_audio_output_frame_size * MVE_AUDIO_START_TARGET_MS) / 1000;
+			trim_bytes = queue_bytes - target_bytes;
+			if (trim_bytes > 0)
+				mve_audio_discard_lead_bytes(trim_bytes);
+		}
+		#endif
 #ifdef USE_SDLMIXER
 		if (GameArg.SndDisableSdlMixer)
 #endif
@@ -422,9 +597,6 @@ static int audio_data_handler(unsigned char major, unsigned char minor, unsigned
 	// MD2211: for audio conversion
 	SDL_AudioCVT cvt;
 	int clen;
-	int out_freq;
-	Uint16 out_format;
-	int out_channels;
 	// end MD2211
 #endif
 
@@ -465,13 +637,8 @@ static int audio_data_handler(unsigned char major, unsigned char minor, unsigned
 
 			// MD2211: the following block does on-the-fly audio conversion for SDL_mixer
 #ifdef USE_SDLMIXER
-			if (!GameArg.SndDisableSdlMixer) {
-				// build converter: in = MVE format, out = SDL_mixer output
-				Mix_QuerySpec(&out_freq, &out_format, &out_channels); // get current output settings
-
-				SDL_BuildAudioCVT(&cvt, mve_audio_spec->format, mve_audio_spec->channels, mve_audio_spec->freq,
-					out_format, out_channels, out_freq);
-
+			if (!GameArg.SndDisableSdlMixer && mve_audio_cvt_ready && mve_audio_cvt_needed) {
+				cvt = mve_audio_cvt_template;
 				clen = nsamp * cvt.len_mult;
 				cvt.buf = mve_alloc(clen);
 				cvt.len = nsamp;
@@ -480,12 +647,21 @@ static int audio_data_handler(unsigned char major, unsigned char minor, unsigned
 				memcpy(cvt.buf, mve_audio_buffers[mve_audio_buftail], nsamp);
 
 				// do the conversion
-				if (SDL_ConvertAudio(&cvt)) con_printf(CON_DEBUG,"audio conversion failed!\n");
+				if (SDL_ConvertAudio(&cvt)) {
+					con_printf(CON_CRITICAL, "[mve-audio] convert failed nsamp=%d out=%d/%d/%d\n", nsamp, mve_audio_mix_freq, mve_audio_mix_format, mve_audio_mix_channels);
+				}
 
 				// copy back to the audio buffer
 				mve_free(mve_audio_buffers[mve_audio_buftail]); // free the old audio buffer
 				mve_audio_buflens[mve_audio_buftail] = cvt.len_cvt;
 				mve_audio_buffers[mve_audio_buftail] = (short *)cvt.buf;
+			}
+			if (!GameArg.SndDisableSdlMixer && mve_audio_resample_needed) {
+				Uint8 *audio_bytes;
+
+				audio_bytes = (Uint8 *)mve_audio_buffers[mve_audio_buftail];
+				mve_audio_resample_buffer(&audio_bytes, &mve_audio_buflens[mve_audio_buftail], mve_audio_spec->freq, mve_audio_mix_freq);
+				mve_audio_buffers[mve_audio_buftail] = (short *)audio_bytes;
 			}
 #endif
 
@@ -493,7 +669,9 @@ static int audio_data_handler(unsigned char major, unsigned char minor, unsigned
 				mve_audio_buftail = 0;
 
 			if (mve_audio_buftail == mve_audio_bufhead)
-				con_printf(CON_CRITICAL, "d'oh!  buffer ring overrun (%d)\n", mve_audio_bufhead);
+			{
+				con_printf(CON_CRITICAL, "[mve-audio] overrun head=%d tail=%d depth=%d\n", mve_audio_bufhead, mve_audio_buftail, mve_audio_queue_depth());
+			}
 		}
 
 		if (mve_audio_playing)
@@ -792,6 +970,15 @@ void MVE_rmEndMovie()
 	mve_audio_playing=0;
 	mve_audio_canplay=0;
 	mve_audio_compressed=0;
+
+#ifdef USE_SDLMIXER
+	mve_audio_cvt_ready = 0;
+	mve_audio_cvt_needed = 0;
+	mve_audio_mix_freq = 0;
+	mve_audio_mix_format = 0;
+	mve_audio_mix_channels = 0;
+	memset(&mve_audio_cvt_template, 0, sizeof(mve_audio_cvt_template));
+#endif
 
 	if (mve_audio_spec)
 		mve_free(mve_audio_spec);

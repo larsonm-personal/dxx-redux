@@ -132,6 +132,10 @@ static bool load_config_into_playercfg(void)
 				int pct = clamp_threshold_pct(thr[axis_map[i].name].get<int>());
 				axis_pct[axis_map[i].axis] = pct;
 				joy_axis_button_deadzone[axis_map[i].axis] = threshold_pct_to_axis_button_deadzone(pct);
+				LOGI("threshold axis=%s pct=%d axisBtnDead=%d",
+				     axis_map[i].name,
+				     pct,
+				     joy_axis_button_deadzone[axis_map[i].axis]);
 			}
 		}
 
@@ -155,6 +159,13 @@ static bool load_config_into_playercfg(void)
 				continue;
 			PlayerCfg.JoystickDead[analog_deadzone_map[i].deadzone_index] =
 			    threshold_pct_to_playercfg_deadzone(axis_pct[bound_axis], analog_deadzone_map[i].scale);
+			LOGI("analog deadzone kc=%d axis=%d pct=%d scale=%d playerCfgDead[%d]=%d",
+			     analog_deadzone_map[i].keysettings_index,
+			     bound_axis,
+			     axis_pct[bound_axis],
+			     analog_deadzone_map[i].scale,
+			     analog_deadzone_map[i].deadzone_index,
+			     PlayerCfg.JoystickDead[analog_deadzone_map[i].deadzone_index]);
 		}
 	}
 

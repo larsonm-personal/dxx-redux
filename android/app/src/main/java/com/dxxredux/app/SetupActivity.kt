@@ -1169,6 +1169,9 @@ class SetupActivity : ComponentActivity() {
     /** Set to true when the controller config page is shown (needs all button events). */
     internal var controllerConfigActive = false
 
+    /** True while a controller-config picker dialog is open and should receive D-pad/A input. */
+    internal var controllerConfigDialogOpen = false
+
     private fun hatAxisDirection(value: Float): Int =
         when {
             value < -0.5f -> -1
@@ -1209,48 +1212,65 @@ class SetupActivity : ComponentActivity() {
         if (newDirection == 1) synthesizeDpadKeyEvent(positiveKeyCode, KeyEvent.ACTION_DOWN)
     }
 
-    override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
-        if (event.source and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK &&
-            event.action == MotionEvent.ACTION_MOVE
+    internal fun handleControllerMotion(event: MotionEvent): Boolean {
+        if (event.source and InputDevice.SOURCE_JOYSTICK != InputDevice.SOURCE_JOYSTICK ||
+            event.action != MotionEvent.ACTION_MOVE
         ) {
-            controllerAxes[0] = event.getAxisValue(MotionEvent.AXIS_X)
-            controllerAxes[1] = event.getAxisValue(MotionEvent.AXIS_Y)
-            controllerAxes[2] = event.getAxisValue(MotionEvent.AXIS_Z)
-            controllerAxes[3] = event.getAxisValue(MotionEvent.AXIS_RZ)
-            controllerAxes[4] = event.getAxisValue(MotionEvent.AXIS_LTRIGGER)
-            controllerAxes[5] = event.getAxisValue(MotionEvent.AXIS_RTRIGGER)
-            dpadAxes[0] = event.getAxisValue(MotionEvent.AXIS_HAT_X)
-            dpadAxes[1] = event.getAxisValue(MotionEvent.AXIS_HAT_Y)
-            axisGeneration.intValue++
-
-            if (!controllerConfigActive) {
-                val newHatX = hatAxisDirection(dpadAxes[0])
-                val newHatY = hatAxisDirection(dpadAxes[1])
-                val newStickX = stickAxisDirection(controllerAxes[0], stickXState)
-                val newStickY = stickAxisDirection(controllerAxes[1], stickYState)
-                val newNavX = if (newHatX != 0) newHatX else newStickX
-                val newNavY = if (newHatY != 0) newHatY else newStickY
-                synthesizeDpadTransition(
-                    navXState,
-                    newNavX,
-                    KeyEvent.KEYCODE_DPAD_LEFT,
-                    KeyEvent.KEYCODE_DPAD_RIGHT,
-                )
-                synthesizeDpadTransition(
-                    navYState,
-                    newNavY,
-                    KeyEvent.KEYCODE_DPAD_UP,
-                    KeyEvent.KEYCODE_DPAD_DOWN,
-                )
-                hatXState = newHatX
-                hatYState = newHatY
-                stickXState = newStickX
-                stickYState = newStickY
-                navXState = newNavX
-                navYState = newNavY
-            }
-            return true
+            return false
         }
+
+        controllerAxes[0] = event.getAxisValue(MotionEvent.AXIS_X)
+        controllerAxes[1] = event.getAxisValue(MotionEvent.AXIS_Y)
+        controllerAxes[2] = event.getAxisValue(MotionEvent.AXIS_Z)
+        controllerAxes[3] = event.getAxisValue(MotionEvent.AXIS_RZ)
+        controllerAxes[4] = event.getAxisValue(MotionEvent.AXIS_LTRIGGER)
+        controllerAxes[5] = event.getAxisValue(MotionEvent.AXIS_RTRIGGER)
+        dpadAxes[0] = event.getAxisValue(MotionEvent.AXIS_HAT_X)
+        dpadAxes[1] = event.getAxisValue(MotionEvent.AXIS_HAT_Y)
+        axisGeneration.intValue++
+
+        if (controllerConfigActive) {
+            LauncherDebugLog.log(
+                "[ctrl-picker] motion axisGen=${axisGeneration.intValue} " +
+                    "lx=${"%.3f".format(controllerAxes[0])} ly=${"%.3f".format(controllerAxes[1])} " +
+                    "rx=${"%.3f".format(controllerAxes[2])} ry=${"%.3f".format(controllerAxes[3])} " +
+                    "lt=${"%.3f".format(controllerAxes[4])} rt=${"%.3f".format(controllerAxes[5])} " +
+                    "hx=${"%.3f".format(dpadAxes[0])} hy=${"%.3f".format(dpadAxes[1])}",
+            )
+        }
+
+        if (!controllerConfigActive) {
+            val newHatX = hatAxisDirection(dpadAxes[0])
+            val newHatY = hatAxisDirection(dpadAxes[1])
+            val newStickX = stickAxisDirection(controllerAxes[0], stickXState)
+            val newStickY = stickAxisDirection(controllerAxes[1], stickYState)
+            val newNavX = if (newHatX != 0) newHatX else newStickX
+            val newNavY = if (newHatY != 0) newHatY else newStickY
+            synthesizeDpadTransition(
+                navXState,
+                newNavX,
+                KeyEvent.KEYCODE_DPAD_LEFT,
+                KeyEvent.KEYCODE_DPAD_RIGHT,
+            )
+            synthesizeDpadTransition(
+                navYState,
+                newNavY,
+                KeyEvent.KEYCODE_DPAD_UP,
+                KeyEvent.KEYCODE_DPAD_DOWN,
+            )
+            hatXState = newHatX
+            hatYState = newHatY
+            stickXState = newStickX
+            stickYState = newStickY
+            navXState = newNavX
+            navYState = newNavY
+        }
+
+        return true
+    }
+
+    override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
+        if (handleControllerMotion(event)) return true
         return super.dispatchGenericMotionEvent(event)
     }
 
@@ -1283,10 +1303,27 @@ class SetupActivity : ComponentActivity() {
             } else if (event.action == KeyEvent.ACTION_UP) {
                 pressedButtons.remove(name)
             }
-            // Controller config page needs all button events consumed for its
-            // test visualization. Other pages let D-pad and A/B flow through
-            // so Compose's focus system can handle navigation.
-            if (controllerConfigActive) return true
+            // Controller config page normally consumes controller buttons and
+            // drives its own polling-based navigation. While a picker dialog
+            // is open, let D-pad and A flow through so the dialog can use
+            // Compose focus navigation directly.
+            if (controllerConfigActive) {
+                val allowPickerNavigation =
+                    controllerConfigDialogOpen &&
+                        event.keyCode in
+                        intArrayOf(
+                            KeyEvent.KEYCODE_DPAD_UP,
+                            KeyEvent.KEYCODE_DPAD_DOWN,
+                            KeyEvent.KEYCODE_DPAD_LEFT,
+                            KeyEvent.KEYCODE_DPAD_RIGHT,
+                            KeyEvent.KEYCODE_BUTTON_A,
+                        )
+                if (!allowPickerNavigation) return true
+                if (event.keyCode == KeyEvent.KEYCODE_BUTTON_A) {
+                    val center = KeyEvent(event.action, KeyEvent.KEYCODE_DPAD_CENTER)
+                    return super.dispatchKeyEvent(center)
+                }
+            }
             // Map B button to system Back for page navigation
             Log.d("DXX-Focus", "Gamepad key: $name action=${event.action}")
             if (event.keyCode == KeyEvent.KEYCODE_BUTTON_B) {
@@ -3296,6 +3333,8 @@ private fun SetupScreen(
                 axisGeneration = axisGeneration,
                 pressedButtons = pressedButtons,
                 gameVariant = selectedGame,
+                onDialogGenericMotionEvent = activity::handleControllerMotion,
+                onPickerOpenChanged = { activity.controllerConfigDialogOpen = it },
                 onBack = { showControllerPage = false },
             )
             return@MaterialTheme

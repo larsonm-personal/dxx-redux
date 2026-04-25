@@ -2211,6 +2211,11 @@ class MainActivity :
         Log.d("DXX-Input", message)
     }
 
+    private fun logSelectRouting(message: String) {
+        DebugLog.log(DebugLogCategory.GAME, "[select-route] $message")
+        Log.d("DXX-Select", message)
+    }
+
     private fun motionAxisDirection(value: Float): Int =
         when {
             value < -0.5f -> -1
@@ -2309,20 +2314,37 @@ class MainActivity :
                 adminTrayPausedGame = adminTrayPausedGame,
             )
 
+        if (keyCode == KeyEvent.KEYCODE_BUTTON_SELECT ||
+            keyCode == KeyEvent.KEYCODE_BUTTON_START ||
+            keyCode == KeyEvent.KEYCODE_BACK
+        ) {
+            logSelectRouting(
+                "down kc=$keyCode src=${event.source} shortcuts=$controllerSettingsTrayShortcuts " +
+                    "tray=${touchOverlay.isAdminTrayOpen()} overlay=${touchOverlay.isActive} " +
+                    "automap=${touchOverlay.automapActive} inGame=${nativeIsInGame()} focus=${gameSurfaceView.hasFocus()}",
+            )
+        }
+
         // When the touch settings tray is reachable from controller input,
         // Select opens it and Start opens the engine's game menu.
         if (controllerSettingsTrayShortcuts) {
             if (keyCode == KeyEvent.KEYCODE_BUTTON_SELECT) {
+                logSelectRouting("down select -> openAdminTray")
                 touchOverlay.openAdminTray(fromGamepad = true)
                 return true
             }
             if (keyCode == KeyEvent.KEYCODE_BUTTON_START) {
+                logSelectRouting("down start -> openGameMenu")
                 if (touchOverlay.isAdminTrayOpen()) {
                     touchOverlay.closeAdminTray()
                 }
                 openGameMenuSafely()
                 return true
             }
+        }
+
+        if (keyCode == KeyEvent.KEYCODE_BACK && isControllerSource(event.source)) {
+            logSelectRouting("down back-controller -> fallthrough nativeKeyEvent")
         }
 
         // Route D-pad/A/B to the admin tray while it is open.
@@ -2416,6 +2438,16 @@ class MainActivity :
                 adminTrayPausedGame = adminTrayPausedGame,
             )
 
+        if (keyCode == KeyEvent.KEYCODE_BUTTON_SELECT ||
+            keyCode == KeyEvent.KEYCODE_BUTTON_START ||
+            keyCode == KeyEvent.KEYCODE_BACK
+        ) {
+            logSelectRouting(
+                "up kc=$keyCode src=${event.source} shortcuts=$controllerSettingsTrayShortcuts " +
+                    "tray=${touchOverlay.isAdminTrayOpen()} overlay=${touchOverlay.isActive} inGame=${nativeIsInGame()}",
+            )
+        }
+
         // Consume controller events while the admin tray is open.
         if (touchOverlay.isAdminTrayOpen()) {
             if (touchOverlay.handleAdminTrayGamepadKey(keyCode, 1)) return true
@@ -2428,6 +2460,7 @@ class MainActivity :
                     keyCode == KeyEvent.KEYCODE_BUTTON_SELECT
             )
         ) {
+            logSelectRouting("up shortcut kc=$keyCode consumed")
             return true
         }
 

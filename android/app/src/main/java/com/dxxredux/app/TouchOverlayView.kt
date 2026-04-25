@@ -11,6 +11,7 @@ import android.graphics.Typeface
 import android.os.Handler
 import android.os.Looper
 import android.util.AttributeSet
+import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
@@ -185,6 +186,16 @@ class TouchOverlayView
 
         /** Input mixer for OR-combining button states from multiple sources. */
         var inputMixer: InputMixer? = null
+
+        private var mouseDiagCount = 0
+
+        private fun logMouseDiag(message: String) {
+            mouseDiagCount += 1
+            if (mouseDiagCount <= 20 || mouseDiagCount % 25 == 0) {
+                DebugLog.log(DebugLogCategory.GAME, "[touch-mouse] $message")
+                Log.d("DXX-TouchMouse", message)
+            }
+        }
 
         /** Called with (metaActionId, pressed) for meta action dispatch. */
         var metaActionCallback: ((Int, Boolean) -> Unit)? = null
@@ -592,6 +603,12 @@ class TouchOverlayView
                 var outY = emitY
                 if (s.control.invertX) outX = -outX
                 if (s.control.invertY) outY = -outY
+                logMouseDiag(
+                    "drain axis=(${s.control.axisX},${s.control.axisY}) pending=(${"%.4f".format(s.mousePendingX)},${"%.4f".format(s.mousePendingY)}) " +
+                        "emit=(${"%.4f".format(emitX)},${"%.4f".format(emitY)}) out=(${"%.4f".format(outX)},${"%.4f".format(outY)}) " +
+                        "cap=(${"%.3f".format(capX)},${"%.3f".format(capY)}) sens=(${"%.2f".format(s.control.sensitivityX)},${"%.2f".format(s.control.sensitivityY)}) " +
+                        "mouseExp=${s.control.mouseExponential} curve=${s.control.responseCurve} deadzone=${s.control.deadzone}",
+                )
                 axisCallback?.invoke(s.control.axisX, outX.coerceIn(-1f, 1f))
                 axisCallback?.invoke(s.control.axisY, outY.coerceIn(-1f, 1f))
             }
@@ -2278,6 +2295,13 @@ class TouchOverlayView
                 )
             s.mousePendingX += dx * scaleX * multiplier
             s.mousePendingY += dy * scaleY * multiplier
+            logMouseDiag(
+                "drag axis=(${s.control.axisX},${s.control.axisY}) d=(${"%.3f".format(dx)},${"%.3f".format(dy)}) step=${"%.3f".format(stepDistance)} " +
+                    "hist=(${"%.3f".format(s.mouseRecentDistancePx)},${"%.3f".format(s.mouseRecentGracePx)}) " +
+                    "scale=(${"%.4f".format(scaleX)},${"%.4f".format(scaleY)}) mult=${"%.3f".format(multiplier)} " +
+                    "pending=(${"%.4f".format(s.mousePendingX)},${"%.4f".format(s.mousePendingY)}) mouseExp=${s.control.mouseExponential} " +
+                    "curve=${s.control.responseCurve} deadzone=${s.control.deadzone}",
+            )
         }
 
         private fun updateStickFromTouch(
