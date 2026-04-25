@@ -4595,6 +4595,7 @@ private fun SetupScreen(
                         pressedButtons = pressedButtons,
                         prefs = prefs,
                         selectedGame = selectedGame,
+                        initialFocusRequester = initialFocus,
                         onDefineControls = { showControllerPage = true },
                         onEditTouchLayout = { showTouchEditorPage = true },
                         onAdvancedSettings = { showAdvancedPage = true },
@@ -4637,8 +4638,7 @@ private fun SetupScreen(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .height(40.dp)
-                                .focusRequester(initialFocus),
+                                .height(40.dp),
                         enabled = canLaunch,
                         colors =
                             ButtonDefaults.buttonColors(
@@ -6034,6 +6034,7 @@ private fun ControllerSection(
     pressedButtons: SnapshotStateList<String>,
     prefs: SharedPreferences,
     selectedGame: String = "d2",
+    initialFocusRequester: FocusRequester? = null,
     onDefineControls: () -> Unit = {},
     onEditTouchLayout: () -> Unit = {},
     onAdvancedSettings: () -> Unit = {},
@@ -6188,7 +6189,19 @@ private fun ControllerSection(
         OutlinedButton(
             onClick = onDefineControls,
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-            modifier = Modifier.height(32.dp).padding(vertical = 2.dp),
+            modifier =
+                Modifier
+                    .height(32.dp)
+                    .padding(vertical = 2.dp)
+                    .then(
+                        if (initialFocusRequester !=
+                            null
+                        ) {
+                            Modifier.focusRequester(initialFocusRequester)
+                        } else {
+                            Modifier
+                        },
+                    ),
         ) {
             Text("Define Controls", fontSize = 12.sp)
         }

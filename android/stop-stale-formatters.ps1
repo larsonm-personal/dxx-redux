@@ -24,10 +24,11 @@ $patterns = @(
 )
 
 $targets = Get-CimInstance Win32_Process | Where-Object {
+    $commandLine = $_.CommandLine
     $_.ProcessId -ne $selfPid -and
-    $_.CommandLine -and
-    $_.CommandLine.Contains($repoRoot) -and
-    ($patterns | Where-Object { $_.CommandLine.IndexOf($_, [System.StringComparison]::OrdinalIgnoreCase) -ge 0 }).Count -gt 0
+    $commandLine -and
+    $commandLine.Contains($repoRoot) -and
+    ($patterns | Where-Object { $commandLine.IndexOf($_, [System.StringComparison]::OrdinalIgnoreCase) -ge 0 }).Count -gt 0
 } | Sort-Object ProcessId -Unique
 
 if ($targets.Count -eq 0) {

@@ -28,6 +28,12 @@
 - The exported log now shows dialog motion while the picker is open, so the remaining bug is likely routing raw D-pad and synthesized navigation through the activity window instead of the active dialog view
 - The latest RS log shows stick live updates continue after the picker opens, so the remaining stick-picker issue is likely the bottom live threshold bar living below the last focusable row rather than a real motion freeze after touch scrolling
 - The current launcher dialog navigation still treats only the left stick as an analog nav source, so RS does not behave like LS inside picker dialogs unless the dialog path also synthesizes nav from `AXIS_Z` and `AXIS_RZ`
+- The stick dead-zone slider was also treating a real 30% analog value as the legacy axis-button default and remapping it back to 10%, which capped DPAD stepping at 25%; analog dead zones now keep literal values and allow 0% minimum
+- The single-axis picker threshold slider still traps DPAD up and down after focus lands on it because the live threshold bar below it is not focusable the way the working stick dialogs are
+- The next picker UX pass needs conditional Save buttons for threshold-only edits, with single-axis dialogs showing Save only when a binding already exists and stick dialogs surfacing Save semantics when both axes already have bindings
+- Live axis displays now need to move above the single-axis and lower stick edit controls while staying out of the focusable set, so slider vertical escape has to target real interactive controls instead of the live bar widgets
+- The launcher base screen DPAD regression is most likely in `SetupActivity.kt` controller event routing or focus restoration, because picker-only dialog changes should not affect the top-level setup screen when `controllerConfigActive` is false
+- The launcher base-screen DPAD regression traced to focus restoration rather than event routing: `initialFocus` was anchored only to the gated `Multiplayer` button, so the base setup screen now restores focus to the always-enabled `Define Controls` button instead
 
 ### Bug 4: Touch mouse deadband
 - The touch overlay may emit small values that are then zeroed by the native joystick deadzone path
@@ -54,6 +60,11 @@
 - [x] Route controller picker D-pad and synthesized navigation to the active dialog view
 - [x] Keep both stick live bars visible without requiring touch scrolling
 - [x] Let the right stick drive picker dialog navigation the same way as the left stick
+- [x] Fix stick dead-zone slider 30% remap and allow 0% minimum
+- [x] Match single-axis threshold focus escape to the working stick dialogs
+- [x] Add conditional Save affordances for threshold-only single-axis and stick edits
+- [x] Move single-axis and lower-stick live axis displays above controls and out of the focusable set
+- [x] Investigate recent launcher base-screen DPAD navigation regression
 
 ## Logging added
 

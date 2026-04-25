@@ -30,7 +30,9 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -63,6 +65,7 @@ import org.json.JSONObject
 import java.io.File
 import kotlin.math.abs
 import kotlin.math.min
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 // ── Colors ──────────────────────────────────────────────────────────────────
@@ -293,14 +296,7 @@ private fun thresholdForDialog(
     axis: String,
     buttonMode: Boolean,
     thresholds: Map<String, Int>,
-): Int {
-    val threshold = thresholds[axis] ?: return if (buttonMode) DEFAULT_AXIS_THRESHOLD else defaultThresholdForAxis(axis)
-    return when {
-        buttonMode && threshold == DEFAULT_STICK_DEAD_ZONE -> DEFAULT_AXIS_THRESHOLD
-        !buttonMode && threshold == DEFAULT_AXIS_THRESHOLD -> defaultThresholdForAxis(axis)
-        else -> threshold
-    }
-}
+): Int = thresholds[axis] ?: if (buttonMode) DEFAULT_AXIS_THRESHOLD else defaultThresholdForAxis(axis)
 
 // Build a default thresholds map with per-axis defaults.
 private fun defaultThresholds(): Map<String, Int> = THRESHOLD_AXES.associateWith(::defaultThresholdForAxis)
@@ -338,6 +334,28 @@ private fun verticalDpadFocusEscape(): Modifier {
 
             Key.DirectionDown -> {
                 if (ev.type == KeyEventType.KeyDown) focusManager.moveFocus(FocusDirection.Down)
+                ev.type == KeyEventType.KeyDown || ev.type == KeyEventType.KeyUp
+            }
+
+            else -> {
+                false
+            }
+        }
+    }
+}
+
+@Composable
+private fun verticalDpadFocusEscape(downFocusRequester: FocusRequester): Modifier {
+    val focusManager = LocalFocusManager.current
+    return Modifier.onPreviewKeyEvent { ev ->
+        when (ev.key) {
+            Key.DirectionUp -> {
+                if (ev.type == KeyEventType.KeyDown) focusManager.moveFocus(FocusDirection.Up)
+                ev.type == KeyEventType.KeyDown || ev.type == KeyEventType.KeyUp
+            }
+
+            Key.DirectionDown -> {
+                if (ev.type == KeyEventType.KeyDown) downFocusRequester.requestFocus()
                 ev.type == KeyEventType.KeyDown || ev.type == KeyEventType.KeyUp
             }
 
@@ -2531,6 +2549,9 @@ private fun ButtonFunctionPickerDialog(
     @Suppress("UNUSED_EXPRESSION")
     liveUpdateToken
     var showExtra by remember { mutableStateOf(false) }
+    val dismissFocus = remember { FocusRequester() }
+    val saveFocus = remember { FocusRequester() }
+    val footerFocus = if (currentFunc != null) saveFocus else dismissFocus
     val isD1 = gameVariant == "d1"
     val funcList =
         if (showExtra) {
@@ -2548,6 +2569,10 @@ private fun ButtonFunctionPickerDialog(
             val btnScrollState = rememberScrollState()
             Box(modifier = Modifier.heightIn(max = 400.dp)) {
                 Column(modifier = Modifier.fillMaxWidth().verticalScroll(btnScrollState)) {
+                    if (threshold != null) {
+                        AxisThresholdBar(axisValue ?: 0f, threshold)
+                        Spacer(Modifier.height(8.dp))
+                    }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -2663,20 +2688,27 @@ private fun ButtonFunctionPickerDialog(
                         Text("Threshold: $threshold%", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         Slider(
                             value = threshold.toFloat(),
-                            onValueChange = { onThresholdChange(it.toInt()) },
+                            onValueChange = { onThresholdChange(it.roundToInt()) },
                             valueRange = 5f..95f,
                             steps = 17,
-                            modifier = Modifier.fillMaxWidth().tvFocusBorder().then(verticalDpadFocusEscape()),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .tvFocusBorder()
+                                    .then(verticalDpadFocusEscape(footerFocus)),
                         )
-                        AxisThresholdBar(axisValue ?: 0f, threshold)
                     }
                 }
                 ScrollArrows(btnScrollState)
             }
         },
-        confirmButton = {},
+        confirmButton = {
+            if (currentFunc != null) {
+                TextButton(onClick = onDismiss, modifier = Modifier.focusRequester(saveFocus)) { Text("Save") }
+            }
+        },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss, modifier = Modifier.focusRequester(dismissFocus)) { Text("Cancel") }
         },
     )
 }
@@ -2711,6 +2743,8 @@ private fun StickPickerDialog(
 ) {
     @Suppress("UNUSED_EXPRESSION")
     liveUpdateToken
+    val confirmFocus = remember { FocusRequester() }
+    val dismissFocus = remember { FocusRequester() }
     var selectedX by remember { mutableStateOf(currentXFunc) }
     var selectedY by remember { mutableStateOf(currentYFunc) }
     var invertX by remember { mutableStateOf(currentXInvert) }
@@ -2721,6 +2755,9 @@ private fun StickPickerDialog(
     var xPosFunc by remember { mutableStateOf(currentXPosFunc) }
     var yNegFunc by remember { mutableStateOf(currentYNegFunc) }
     var yPosFunc by remember { mutableStateOf(currentYPosFunc) }
+    val xHasBinding = if (xButtonMode) xNegFunc != null || xPosFunc != null else selectedX != null
+    val yHasBinding = if (yButtonMode) yNegFunc != null || yPosFunc != null else selectedY != null
+    val confirmLabel = if (xHasBinding && yHasBinding) "Save" else "OK"
 
     LaunchedEffect(xButtonMode) {
         onXThresholdChange ?: return@LaunchedEffect
@@ -2798,16 +2835,12 @@ private fun StickPickerDialog(
                             Text("Threshold: $xThreshold%", fontSize = 11.sp)
                             Slider(
                                 value = xThreshold.toFloat(),
-                                onValueChange = { onXThresholdChange(it.toInt()) },
+                                onValueChange = { onXThresholdChange(it.roundToInt()) },
                                 valueRange = 5f..95f,
                                 steps = 17,
                                 modifier = Modifier.fillMaxWidth().tvFocusBorder().then(verticalDpadFocusEscape()),
                             )
-                            AxisThresholdBar(
-                                xAxisValue,
-                                xThreshold,
-                                Modifier.tvFocusable().then(verticalDpadFocusEscape()),
-                            )
+                            AxisThresholdBar(xAxisValue, xThreshold)
                         }
                     } else {
                         AxisFunctionRadioGroup(
@@ -2820,16 +2853,12 @@ private fun StickPickerDialog(
                             Text("Dead zone: $xThreshold%", fontSize = 11.sp)
                             Slider(
                                 value = xThreshold.toFloat(),
-                                onValueChange = { onXThresholdChange(it.toInt()) },
-                                valueRange = 5f..95f,
-                                steps = 17,
+                                onValueChange = { onXThresholdChange(it.roundToInt()) },
+                                valueRange = 0f..95f,
+                                steps = 18,
                                 modifier = Modifier.fillMaxWidth().tvFocusBorder().then(verticalDpadFocusEscape()),
                             )
-                            AxisThresholdBar(
-                                xAxisValue,
-                                xThreshold,
-                                Modifier.tvFocusable().then(verticalDpadFocusEscape()),
-                            )
+                            AxisThresholdBar(xAxisValue, xThreshold)
                         }
                     }
                     Spacer(Modifier.height(8.dp))
@@ -2843,6 +2872,8 @@ private fun StickPickerDialog(
                             modifier = Modifier.weight(1f),
                         )
                     }
+                    AxisThresholdBar(yAxisValue, yThreshold)
+                    Spacer(Modifier.height(6.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(
                             checked = yButtonMode,
@@ -2880,15 +2911,14 @@ private fun StickPickerDialog(
                             Text("Threshold: $yThreshold%", fontSize = 11.sp)
                             Slider(
                                 value = yThreshold.toFloat(),
-                                onValueChange = { onYThresholdChange(it.toInt()) },
+                                onValueChange = { onYThresholdChange(it.roundToInt()) },
                                 valueRange = 5f..95f,
                                 steps = 17,
-                                modifier = Modifier.fillMaxWidth().tvFocusBorder().then(verticalDpadFocusEscape()),
-                            )
-                            AxisThresholdBar(
-                                yAxisValue,
-                                yThreshold,
-                                Modifier.tvFocusable().then(verticalDpadFocusEscape()),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .tvFocusBorder()
+                                        .then(verticalDpadFocusEscape(confirmFocus)),
                             )
                         }
                     } else {
@@ -2902,15 +2932,14 @@ private fun StickPickerDialog(
                             Text("Dead zone: $yThreshold%", fontSize = 11.sp)
                             Slider(
                                 value = yThreshold.toFloat(),
-                                onValueChange = { onYThresholdChange(it.toInt()) },
-                                valueRange = 5f..95f,
-                                steps = 17,
-                                modifier = Modifier.fillMaxWidth().tvFocusBorder().then(verticalDpadFocusEscape()),
-                            )
-                            AxisThresholdBar(
-                                yAxisValue,
-                                yThreshold,
-                                Modifier.tvFocusable().then(verticalDpadFocusEscape()),
+                                onValueChange = { onYThresholdChange(it.roundToInt()) },
+                                valueRange = 0f..95f,
+                                steps = 18,
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .tvFocusBorder()
+                                        .then(verticalDpadFocusEscape(confirmFocus)),
                             )
                         }
                     }
@@ -2936,10 +2965,11 @@ private fun StickPickerDialog(
                         ),
                     )
                 },
-            ) { Text("OK") }
+                modifier = Modifier.focusRequester(confirmFocus),
+            ) { Text(confirmLabel) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss, modifier = Modifier.focusRequester(dismissFocus)) { Text("Cancel") }
         },
     )
 }
