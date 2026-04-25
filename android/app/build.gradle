@@ -279,7 +279,7 @@ dependencies {
     implementation "org.apache.commons:commons-compress:${toolVersions['COMMONS_COMPRESS_VERSION']}"
 
     // Tombstone-style crash capture for Java, native, and ANR failures
-    implementation 'com.iqiyi.xcrash:xcrash-android-lib:3.1.0'
+    implementation "com.iqiyi.xcrash:xcrash-android-lib:${toolVersions['XCRASH_VERSION']}"
 
     testImplementation "junit:junit:${toolVersions['JUNIT_VERSION']}"
 }
