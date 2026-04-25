@@ -506,49 +506,16 @@ Java_com_dxxredux_app_MainActivity_nativeSetDebugFlag(JNIEnv *env, jobject thiz,
 
 /* ── Graphics options: set MSAA/AF from Kotlin (all builds) ────── */
 #include "config.h"
+#include "shared/android_graphics_options.h"
 #include "shared/coop_indicator_lines.h"
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeSetGraphicsOption(JNIEnv *env, jobject thiz,
                                                            jstring jname, jint value)
 {
 	const char *name = (*env)->GetStringUTFChars(env, jname, NULL);
-	if (strcmp(name, "aniso_level") == 0) {
-		extern int ogl_aniso_level;
-		extern volatile int g_aniso_pending_apply;
-		extern struct Cfg GameCfg;
-		LOGI("graphics option: aniso_level=%d", (int) value);
-		ogl_aniso_level = (int) value;
-		GameCfg.AnisoLevel = (int) value;
-		__sync_synchronize(); /* ensure values visible before flag */
-		g_aniso_pending_apply = 1;
-	} else if (strcmp(name, "msaa_level") == 0) {
-		extern int ogl_msaa_samples;
-		extern volatile int g_msaa_pending_apply;
-		extern struct Cfg GameCfg;
-		LOGI("graphics option: msaa_level=%d", (int) value);
-		ogl_msaa_samples = (int) value;
-		GameCfg.MsaaLevel = (int) value;
-		__sync_synchronize(); /* ensure values visible before flag */
-		g_msaa_pending_apply = 1;
-	} else if (strcmp(name, "tex_filt") == 0) {
-		extern int g_texfilt_level;
-		extern volatile int g_texfilt_pending_apply;
-		int clamped = (int) value;
-		if (clamped < 0) clamped = 0;
-		if (clamped > 2) clamped = 2;
-		LOGI("graphics option: tex_filt=%d", clamped);
-		g_texfilt_level = clamped;
-		__sync_synchronize(); /* ensure value visible before flag */
-		g_texfilt_pending_apply = 1;
-	} else if (strcmp(name, "menu_tex_filt") == 0) {
-		extern struct Cfg GameCfg;
-		LOGI("graphics option: menu_tex_filt=%d", (int) value);
-		GameCfg.MenuTexFilt = value ? 1 : 0;
-	} else if (strcmp(name, "hud_tex_filt") == 0) {
-		extern struct Cfg GameCfg;
-		LOGI("graphics option: hud_tex_filt=%d", (int) value);
-		GameCfg.HudTexFilt = value ? 1 : 0;
-	} else
+	int persist = strcmp(name, "alpha_effects") && strcmp(name, "dynlight_color");
+	LOGI("graphics option: %s=%d", name, (int) value);
+	if (!android_graphics_set_option(name, (int) value, persist))
 		LOGE("nativeSetGraphicsOption: unknown option '%s'", name);
 	(*env)->ReleaseStringUTFChars(env, jname, name);
 }

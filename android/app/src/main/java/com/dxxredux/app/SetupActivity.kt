@@ -3519,6 +3519,7 @@ private fun SetupScreen(
         if (showGraphicsPage) {
             BackHandler { showGraphicsPage = false }
             GraphicsSettingsPage(
+                gameVariant = selectedGame,
                 filesDir = filesDir,
                 onBack = { showGraphicsPage = false },
             )
@@ -5728,6 +5729,49 @@ internal fun readConfigValue(
     return null
 }
 
+internal fun readConfigValueForGame(
+    filesDir: File,
+    game: String,
+    key: String,
+): String? {
+    val subdir = if (game == "d1") "d1x-redux" else "d2x-redux"
+    for (sub in listOf(subdir, "")) {
+        val cfgFile = if (sub.isEmpty()) File(filesDir, "descent.cfg") else File(File(filesDir, sub), "descent.cfg")
+        if (!cfgFile.exists()) continue
+        val regex = Regex("^$key=(.*)$", RegexOption.MULTILINE)
+        val match = regex.find(cfgFile.readText()) ?: continue
+        return match.groupValues[1].trim()
+    }
+    return null
+}
+
+private fun updateConfigPaths(
+    cfgPaths: List<File>,
+    settings: List<Pair<String, String>>,
+) {
+    for (cfgFile in cfgPaths.distinctBy { it.absolutePath }) {
+        var text = if (cfgFile.exists()) cfgFile.readText() else ""
+        for ((key, value) in settings) {
+            val regex = Regex("^$key=.*$", RegexOption.MULTILINE)
+            text =
+                if (regex.containsMatchIn(text)) {
+                    regex.replace(text, "$key=$value")
+                } else {
+                    text.trimEnd() + "\n$key=$value\n"
+                }
+        }
+        cfgFile.writeText(text)
+    }
+}
+
+private fun setupLogInfo(message: String) {
+    try {
+        Log.i("DXX-Setup", message)
+    } catch (_: Throwable) {
+        println("[INFO] DXX-Setup: $message")
+    }
+}
+
 /**
  * Apply key=value settings to all descent.cfg files: root (first-launch fallback),
  * d1x-redux/ and d2x-redux/ (per-game configs created after first run).
@@ -5742,22 +5786,24 @@ internal fun updateAllConfigFiles(
         val dir = File(filesDir, sub)
         if (dir.isDirectory) cfgPaths.add(File(dir, "descent.cfg"))
     }
-    for (cfgFile in cfgPaths) {
-        var text = if (cfgFile.exists()) cfgFile.readText() else ""
-        for ((key, value) in settings) {
-            val regex = Regex("^$key=.*$", RegexOption.MULTILINE)
-            text =
-                if (regex.containsMatchIn(text)) {
-                    regex.replace(text, "$key=$value")
-                } else {
-                    text.trimEnd() + "\n$key=$value\n"
-                }
-        }
-        cfgFile.writeText(text)
-    }
-    Log.i(
-        "DXX-Setup",
+    updateConfigPaths(cfgPaths, settings)
+    setupLogInfo(
         "Updated ${cfgPaths.size} descent.cfg files: ${settings.joinToString { "${it.first}=${it.second}" }}",
+    )
+}
+
+internal fun updateConfigFilesForGame(
+    filesDir: File,
+    game: String,
+    settings: List<Pair<String, String>>,
+) {
+    val subdir = if (game == "d1") "d1x-redux" else "d2x-redux"
+    val cfgPaths = mutableListOf(File(filesDir, "descent.cfg"))
+    val dir = File(filesDir, subdir)
+    if (dir.isDirectory) cfgPaths.add(File(dir, "descent.cfg"))
+    updateConfigPaths(cfgPaths, settings)
+    setupLogInfo(
+        "Updated ${cfgPaths.size} $game descent.cfg file(s): ${settings.joinToString { "${it.first}=${it.second}" }}",
     )
 }
 

@@ -171,10 +171,13 @@ int write_netgame_settings_file(const char *filename, netgame_info *ng, int no_n
 
 #ifdef ANDROID
 void android_get_default_pilot_prefs(int *cockpit_mode, int *auto_leveling);
+void android_get_default_visual_prefs(int *alpha_effects, int *dynlight_color);
 int plr_read_autoleveling(const char *path, int *auto_leveling);
 int plr_patch_autoleveling(const char *path, int auto_leveling);
 int plx_read_cockpit_mode(const char *path, int *cockpit_mode);
 int plx_write_cockpit_mode(const char *path, int cockpit_mode);
+int plx_read_visual_prefs(const char *path, int *alpha_effects, int *dynlight_color);
+int plx_write_visual_prefs(const char *path, int alpha_effects, int dynlight_color);
 int plr_patch_keysettings(const char *path,
                          const ubyte *kb, int kb_len,
                          const ubyte *joy, int joy_len,

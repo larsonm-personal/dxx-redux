@@ -304,12 +304,18 @@ int ReadConfigFile()
 		Game_screen_mode = SM(GameCfg.ResolutionX,GameCfg.ResolutionY);
 
 #ifdef ANDROID
-	/* android port: sync config AF/MSAA to runtime OGL globals */
+	/* android port: sync config graphics values to runtime OGL globals */
 	{
 		extern int ogl_aniso_level;
 		extern int ogl_msaa_samples;
+		extern int g_texfilt_level;
+		if (GameCfg.TexFilt < 0)
+			GameCfg.TexFilt = 0;
+		if (GameCfg.TexFilt > 2)
+			GameCfg.TexFilt = 2;
 		ogl_aniso_level = GameCfg.AnisoLevel;
 		ogl_msaa_samples = GameCfg.MsaaLevel;
+		g_texfilt_level = GameCfg.TexFilt;
 	}
 #endif
 

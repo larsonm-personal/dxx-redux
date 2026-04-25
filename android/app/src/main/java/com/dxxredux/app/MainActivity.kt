@@ -402,6 +402,7 @@ class MainActivity :
     private var activeTouchLayout = TouchLayoutRepository.defaultLayout()
     private var isActivityResumed = false
     private var gameVariantId = "d2" // "d1" or "d2", set in onCreate
+    private var lastAppliedGraphicsSettingsGeneration = -1L
 
     // True when no touchscreen is available (Android TV / gamepad-only)
     private var gamepadOnlyMode = false
@@ -1264,6 +1265,7 @@ class MainActivity :
         applySkipIntroPref(prefs)
         applyCoopIndicatorPrefs(prefs)
         applyGraphicsDebugPrefs(prefs)
+        applyGraphicsSettingsPrefs(prefs)
         // Start polling in-game state to show/hide overlay
         startOverlayPolling()
     }
@@ -1287,6 +1289,38 @@ class MainActivity :
                     0
                 },
             )
+        } catch (_: Exception) {
+            // JNI may not be ready yet when the activity is first coming up
+        }
+    }
+
+    private fun applyGraphicsSettingsPrefs(prefs: android.content.SharedPreferences) {
+        val generation = prefs.getLong(PREF_GRAPHICS_SETTINGS_GENERATION, 0L)
+        if (generation == lastAppliedGraphicsSettingsGeneration) return
+        lastAppliedGraphicsSettingsGeneration = generation
+        if (!gameStarted) return
+
+        fun cfgInt(key: String): Int? = readConfigValueForGame(filesDir, gameVariantId, key)?.toIntOrNull()
+        try {
+            cfgInt("TexFilt")?.let { nativeSetGraphicsOption("tex_filt", it) }
+            cfgInt("MenuTexFilt")?.let { nativeSetGraphicsOption("menu_tex_filt", it) }
+            cfgInt("HudTexFilt")?.let { nativeSetGraphicsOption("hud_tex_filt", it) }
+            cfgInt("AnisoLevel")?.let { nativeSetGraphicsOption("aniso_level", it) }
+            cfgInt("MsaaLevel")?.let { nativeSetGraphicsOption("msaa_level", it) }
+            cfgInt("ClassicDepth")?.let { nativeSetGraphicsOption("classic_depth", it) }
+            if (gameVariantId == "d2") cfgInt("MovieTexFilt")?.let { nativeSetGraphicsOption("movie_tex_filt", it) }
+            if (prefs.contains(PREF_GRAPHICS_ALPHA_EFFECTS)) {
+                nativeSetGraphicsOption(
+                    "alpha_effects",
+                    if (prefs.getBoolean(PREF_GRAPHICS_ALPHA_EFFECTS, false)) 1 else 0,
+                )
+            }
+            if (prefs.contains(PREF_GRAPHICS_DYNLIGHT_COLOR)) {
+                nativeSetGraphicsOption(
+                    "dynlight_color",
+                    if (prefs.getBoolean(PREF_GRAPHICS_DYNLIGHT_COLOR, false)) 1 else 0,
+                )
+            }
         } catch (_: Exception) {
             // JNI may not be ready yet when the activity is first coming up
         }

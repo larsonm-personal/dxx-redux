@@ -1,0 +1,296 @@
+#ifdef ANDROID
+
+#include <dirent.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include "physfs.h"
+
+#include "android_graphics_options.h"
+#include "config.h"
+#include "playsave.h"
+
+static int clamp_bool(int value)
+{
+	return value ? 1 : 0;
+}
+
+static int clamp_texfilt(int value)
+{
+	if (value < 0)
+		return 0;
+	if (value > 2)
+		return 2;
+	return value;
+}
+
+static void append_buf(char *buf, int *len, const char *text)
+{
+	int text_len = (int) strlen(text);
+	if (*len + text_len < 32768) {
+		memcpy(buf + *len, text, text_len);
+		*len += text_len;
+	}
+}
+
+static int android_files_root(char *root, size_t root_size)
+{
+	const char *write_dir = PHYSFS_getWriteDir();
+	char *slash;
+	char *backslash;
+	char *leaf;
+	size_t len;
+
+	if (!write_dir || !*write_dir)
+		return 0;
+	snprintf(root, root_size, "%s", write_dir);
+	len = strlen(root);
+	while (len > 0 && (root[len - 1] == '/' || root[len - 1] == '\\'))
+		root[--len] = 0;
+	slash = strrchr(root, '/');
+	backslash = strrchr(root, '\\');
+	if (backslash > slash)
+		slash = backslash;
+	leaf = slash ? slash + 1 : root;
+	if (slash && (!strcmp(leaf, "d1x-redux") || !strcmp(leaf, "d2x-redux")))
+		*slash = 0;
+	return 1;
+}
+
+static int path_is_dir(const char *path)
+{
+	struct stat st;
+	return !stat(path, &st) && S_ISDIR(st.st_mode);
+}
+
+static int ends_with_plx(const char *name)
+{
+	size_t len = strlen(name);
+	return len > 4 && !strcmp(name + len - 4, ".plx");
+}
+
+static void patch_config_file(const char *path, const char *key, int value)
+{
+	FILE *f = fopen(path, "r");
+	char buf[32768];
+	char line[512];
+	char replacement[128];
+	int len = 0;
+	int found = 0;
+	size_t key_len = strlen(key);
+
+	buf[0] = 0;
+	snprintf(replacement, sizeof(replacement), "%s=%i\n", key, value);
+	if (f) {
+		while (fgets(line, sizeof(line), f)) {
+			if (!strncmp(line, key, key_len) && line[key_len] == '=') {
+				append_buf(buf, &len, replacement);
+				found = 1;
+			} else {
+				append_buf(buf, &len, line);
+			}
+		}
+		fclose(f);
+	}
+	if (!found) {
+		if (len > 0 && buf[len - 1] != '\n')
+			append_buf(buf, &len, "\n");
+		append_buf(buf, &len, replacement);
+	}
+	f = fopen(path, "w");
+	if (!f)
+		return;
+	fwrite(buf, 1, len, f);
+	fflush(f);
+	fsync(fileno(f));
+	fclose(f);
+}
+
+static void mirror_config_key(const char *key, int value, int mirror_d1, int mirror_d2)
+{
+	char root[1024];
+	char path[1200];
+	char dir[1200];
+
+	if (!android_files_root(root, sizeof(root)))
+		return;
+	snprintf(path, sizeof(path), "%s/descent.cfg", root);
+	patch_config_file(path, key, value);
+	if (mirror_d1) {
+		snprintf(dir, sizeof(dir), "%s/d1x-redux", root);
+		if (path_is_dir(dir)) {
+			snprintf(path, sizeof(path), "%s/descent.cfg", dir);
+			patch_config_file(path, key, value);
+		}
+	}
+	if (mirror_d2) {
+		snprintf(dir, sizeof(dir), "%s/d2x-redux", root);
+		if (path_is_dir(dir)) {
+			snprintf(path, sizeof(path), "%s/descent.cfg", dir);
+			patch_config_file(path, key, value);
+		}
+	}
+}
+
+static void patch_visual_dir(const char *dir, int alpha_effects, int dynlight_color)
+{
+	DIR *d = opendir(dir);
+	struct dirent *entry;
+	char path[1200];
+
+	if (!d)
+		return;
+	while ((entry = readdir(d))) {
+		if (!ends_with_plx(entry->d_name))
+			continue;
+		snprintf(path, sizeof(path), "%s/%s", dir, entry->d_name);
+		plx_write_visual_prefs(path, alpha_effects, dynlight_color);
+	}
+	closedir(d);
+}
+
+static void mirror_visual_prefs(void)
+{
+	char root[1024];
+	char dir[1200];
+
+	if (!android_files_root(root, sizeof(root)))
+		return;
+	snprintf(dir, sizeof(dir), "%s/d1x-redux", root);
+	patch_visual_dir(dir, PlayerCfg.AlphaEffects, PlayerCfg.DynLightColor);
+	snprintf(dir, sizeof(dir), "%s/d1x-redux/Players", root);
+	patch_visual_dir(dir, PlayerCfg.AlphaEffects, PlayerCfg.DynLightColor);
+	snprintf(dir, sizeof(dir), "%s/d2x-redux", root);
+	patch_visual_dir(dir, PlayerCfg.AlphaEffects, PlayerCfg.DynLightColor);
+	snprintf(dir, sizeof(dir), "%s/d2x-redux/Players", root);
+	patch_visual_dir(dir, PlayerCfg.AlphaEffects, PlayerCfg.DynLightColor);
+}
+
+static void persist_config_if_needed(int persist, const char *key, int value, int mirror_d1, int mirror_d2)
+{
+	if (!persist)
+		return;
+	WriteConfigFile();
+	mirror_config_key(key, value, mirror_d1, mirror_d2);
+}
+
+static void persist_player_if_needed(int persist)
+{
+	if (!persist)
+		return;
+	write_player_file();
+	mirror_visual_prefs();
+}
+
+void android_graphics_set_aniso_level(int value, int persist)
+{
+	extern int ogl_aniso_level;
+	extern volatile int g_aniso_pending_apply;
+
+	if (value < 0)
+		value = 0;
+	GameCfg.AnisoLevel = value;
+	ogl_aniso_level = value;
+	__sync_synchronize();
+	g_aniso_pending_apply = 1;
+	persist_config_if_needed(persist, "AnisoLevel", GameCfg.AnisoLevel, 1, 1);
+}
+
+void android_graphics_set_msaa_level(int value, int persist)
+{
+	extern int ogl_msaa_samples;
+	extern volatile int g_msaa_pending_apply;
+
+	if (value < 0)
+		value = 0;
+	GameCfg.MsaaLevel = value;
+	ogl_msaa_samples = value;
+	__sync_synchronize();
+	g_msaa_pending_apply = 1;
+	persist_config_if_needed(persist, "MsaaLevel", GameCfg.MsaaLevel, 1, 1);
+}
+
+void android_graphics_set_texfilt(int value, int persist)
+{
+	extern int g_texfilt_level;
+	extern volatile int g_texfilt_pending_apply;
+
+	value = clamp_texfilt(value);
+	GameCfg.TexFilt = value;
+	g_texfilt_level = value;
+	__sync_synchronize();
+	g_texfilt_pending_apply = 1;
+	persist_config_if_needed(persist, "TexFilt", GameCfg.TexFilt, 1, 1);
+}
+
+void android_graphics_set_menu_texfilt(int value, int persist)
+{
+	GameCfg.MenuTexFilt = clamp_bool(value);
+	persist_config_if_needed(persist, "MenuTexFilt", GameCfg.MenuTexFilt, 1, 1);
+}
+
+void android_graphics_set_hud_texfilt(int value, int persist)
+{
+	GameCfg.HudTexFilt = clamp_bool(value);
+	persist_config_if_needed(persist, "HudTexFilt", GameCfg.HudTexFilt, 1, 1);
+}
+
+void android_graphics_set_classic_depth(int value, int persist)
+{
+	GameCfg.ClassicDepth = clamp_bool(value);
+	persist_config_if_needed(persist, "ClassicDepth", GameCfg.ClassicDepth, 1, 1);
+}
+
+void android_graphics_set_alpha_effects(int value, int persist)
+{
+	PlayerCfg.AlphaEffects = clamp_bool(value);
+	persist_player_if_needed(persist);
+}
+
+void android_graphics_set_dynlight_color(int value, int persist)
+{
+	PlayerCfg.DynLightColor = clamp_bool(value);
+	persist_player_if_needed(persist);
+}
+
+void android_graphics_set_movie_texfilt(int value, int persist)
+{
+#ifdef DXX_BUILD_DESCENT_II
+	GameCfg.MovieTexFilt = clamp_bool(value);
+	persist_config_if_needed(persist, "MovieTexFilt", GameCfg.MovieTexFilt, 0, 1);
+#else
+	(void) value;
+	(void) persist;
+#endif
+}
+
+int android_graphics_set_option(const char *name, int value, int persist)
+{
+	if (!name)
+		return 0;
+	if (!strcmp(name, "aniso_level"))
+		android_graphics_set_aniso_level(value, persist);
+	else if (!strcmp(name, "msaa_level"))
+		android_graphics_set_msaa_level(value, persist);
+	else if (!strcmp(name, "tex_filt"))
+		android_graphics_set_texfilt(value, persist);
+	else if (!strcmp(name, "menu_tex_filt"))
+		android_graphics_set_menu_texfilt(value, persist);
+	else if (!strcmp(name, "hud_tex_filt"))
+		android_graphics_set_hud_texfilt(value, persist);
+	else if (!strcmp(name, "classic_depth"))
+		android_graphics_set_classic_depth(value, persist);
+	else if (!strcmp(name, "alpha_effects"))
+		android_graphics_set_alpha_effects(value, persist);
+	else if (!strcmp(name, "dynlight_color"))
+		android_graphics_set_dynlight_color(value, persist);
+	else if (!strcmp(name, "movie_tex_filt"))
+		android_graphics_set_movie_texfilt(value, persist);
+	else
+		return 0;
+	return 1;
+}
+
+#endif

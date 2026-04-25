@@ -161,10 +161,40 @@ static void read_engine_prefs(const char *files_dir,
 #endif
 }
 
+static void read_visual_prefs(const char *files_dir,
+                              int *has_pilot,
+                              int *alpha_effects,
+                              int *dynlight_color)
+{
+	android_get_default_visual_prefs(alpha_effects, dynlight_color);
+	*has_pilot = 0;
+
+	char pilot_path[512];
+#ifdef DXX_BUILD_DESCENT_II
+	if (find_first_pilot(files_dir, "d2x-redux", ".plx", pilot_path, sizeof(pilot_path))) {
+#else
+	if (find_first_pilot(files_dir, "d1x-redux", ".plx", pilot_path, sizeof(pilot_path))) {
+#endif
+		*has_pilot = 1;
+		(void) plx_read_visual_prefs(pilot_path, alpha_effects, dynlight_color);
+	}
+}
+
 struct write_ctx {
 	int cockpit_mode;
 	int auto_leveling;
 };
+
+struct visual_write_ctx {
+	int alpha_effects;
+	int dynlight_color;
+};
+
+static int write_visual_visitor(const char *path, void *ctx)
+{
+	struct visual_write_ctx *wc = (struct visual_write_ctx *) ctx;
+	return plx_write_visual_prefs(path, wc->alpha_effects, wc->dynlight_color);
+}
 
 #ifdef DXX_BUILD_DESCENT_II
 static int write_visitor(const char *path, void *ctx)
@@ -234,6 +264,54 @@ JNI_FUNC(nativeWriteEnginePrefs)(JNIEnv *env,
 #endif
 
 	LOGI("nativeWriteEnginePrefs: cockpit=%d autolevel=%d patched=%d", wc.cockpit_mode, wc.auto_leveling, total);
+	env->ReleaseStringUTFChars(jfilesDir, files_dir);
+	return (jint) total;
+}
+
+extern "C" JNIEXPORT jintArray JNICALL
+JNI_FUNC(nativeReadVisualPrefs)(JNIEnv *env, jclass, jstring jfilesDir)
+{
+	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
+	int has_pilot = 0;
+	int alpha_effects = 0;
+	int dynlight_color = 0;
+	jint raw[3];
+	jintArray result;
+
+	read_visual_prefs(files_dir, &has_pilot, &alpha_effects, &dynlight_color);
+	LOGI("nativeReadVisualPrefs: has_pilot=%d alpha=%d dynlight=%d", has_pilot, alpha_effects, dynlight_color);
+
+	env->ReleaseStringUTFChars(jfilesDir, files_dir);
+
+	raw[0] = (jint) has_pilot;
+	raw[1] = (jint) (alpha_effects ? 1 : 0);
+	raw[2] = (jint) (dynlight_color ? 1 : 0);
+	result = env->NewIntArray(3);
+	env->SetIntArrayRegion(result, 0, 3, raw);
+	return result;
+}
+
+extern "C" JNIEXPORT jint JNICALL
+JNI_FUNC(nativeWriteVisualPrefs)(JNIEnv *env,
+                                 jclass,
+                                 jstring jfilesDir,
+                                 jboolean alphaEffects,
+                                 jboolean dynlightColor)
+{
+	const char *files_dir = env->GetStringUTFChars(jfilesDir, NULL);
+	struct visual_write_ctx wc;
+	int total;
+
+	wc.alpha_effects = alphaEffects ? 1 : 0;
+	wc.dynlight_color = dynlightColor ? 1 : 0;
+
+#ifdef DXX_BUILD_DESCENT_II
+	total = for_each_pilot(files_dir, "d2x-redux", ".plx", write_visual_visitor, &wc);
+#else
+	total = for_each_pilot(files_dir, "d1x-redux", ".plx", write_visual_visitor, &wc);
+#endif
+
+	LOGI("nativeWriteVisualPrefs: alpha=%d dynlight=%d patched=%d", wc.alpha_effects, wc.dynlight_color, total);
 	env->ReleaseStringUTFChars(jfilesDir, files_dir);
 	return (jint) total;
 }

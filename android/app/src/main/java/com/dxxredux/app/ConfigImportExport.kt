@@ -38,6 +38,8 @@ object ConfigImportExport {
             "AnisoLevel",
             "MenuTexFilt",
             "HudTexFilt",
+            "ClassicDepth",
+            "MovieTexFilt",
         )
 
     // ── Export ───────────────────────────────────────────────────────────────
@@ -305,12 +307,20 @@ object ConfigImportExport {
         if (json.has("descent_cfg")) {
             val cfgObj = json.getJSONObject("descent_cfg")
             val pairs = mutableListOf<Pair<String, String>>()
+            val d2Pairs = mutableListOf<Pair<String, String>>()
             for (key in EXPORTED_CFG_KEYS) {
-                if (cfgObj.has(key)) pairs.add(key to cfgObj.getString(key))
+                if (cfgObj.has(key)) {
+                    val pair = key to cfgObj.getString(key)
+                    if (key == "MovieTexFilt") d2Pairs.add(pair) else pairs.add(pair)
+                }
             }
             if (pairs.isNotEmpty()) {
                 updateAllConfigFiles(context.filesDir, pairs)
                 count += pairs.size
+            }
+            if (d2Pairs.isNotEmpty()) {
+                updateConfigFilesForGame(context.filesDir, "d2", d2Pairs)
+                count += d2Pairs.size
             }
             // Resolution is stored in SharedPreferences, applied to cfg via helper
             if (json.has("render_resolution")) {

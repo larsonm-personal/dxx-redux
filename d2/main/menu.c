@@ -1288,6 +1288,13 @@ void reticle_config()
 
 int opt_gr_texfilt, opt_gr_movietexfilt, opt_gr_brightness, opt_gr_reticlemenu, opt_gr_alphafx, opt_gr_dynlightcolor, opt_gr_vsync, opt_gr_multisample, opt_gr_fpsindi, opt_gr_disablecockpit;
 int opt_gr_classicdepth;
+#ifdef ANDROID
+void android_graphics_set_texfilt(int value, int persist);
+void android_graphics_set_movie_texfilt(int value, int persist);
+void android_graphics_set_alpha_effects(int value, int persist);
+void android_graphics_set_dynlight_color(int value, int persist);
+void android_graphics_set_classic_depth(int value, int persist);
+#endif
 int graphics_config_menuset(newmenu *menu, d_event *event, void *userdata)
 {
 	newmenu_item *items = newmenu_get_items(menu);
@@ -1298,6 +1305,23 @@ int graphics_config_menuset(newmenu *menu, d_event *event, void *userdata)
 	switch (event->type)
 	{
 		case EVENT_NEWMENU_CHANGED:
+		#ifdef ANDROID
+			if (citem >= opt_gr_texfilt && citem < opt_gr_texfilt + 3) {
+				int i;
+				for (i = 0; i < 3; i++)
+					if (items[opt_gr_texfilt + i].value)
+						android_graphics_set_texfilt(i, 1);
+			}
+			if (citem == opt_gr_movietexfilt)
+				android_graphics_set_movie_texfilt(items[citem].value, 1);
+			if (citem == opt_gr_alphafx)
+				android_graphics_set_alpha_effects(items[citem].value, 1);
+			if (citem == opt_gr_dynlightcolor)
+				android_graphics_set_dynlight_color(items[citem].value, 1);
+			if (citem == opt_gr_classicdepth)
+				android_graphics_set_classic_depth(items[citem].value, 1);
+		#endif
+		#ifndef ANDROID
 			if ( citem == opt_gr_texfilt + 3
 #ifdef OGL
 				&& ogl_maxanisotropy <= 1.0
@@ -1308,6 +1332,7 @@ int graphics_config_menuset(newmenu *menu, d_event *event, void *userdata)
 				items[opt_gr_texfilt + 3].value = 0;
 				items[opt_gr_texfilt + 2].value = 1;
 			}
+		#endif
 			if ( citem == opt_gr_brightness)
 				gr_palette_set_gamma(items[citem].value);
 			break;
@@ -1341,7 +1366,9 @@ void graphics_config()
 	m[nitems].type = NM_TYPE_RADIO; m[nitems].text = "None (Classical)"; m[nitems].value = 0; m[nitems].group = 0; nitems++;
 	m[nitems].type = NM_TYPE_RADIO; m[nitems].text = "Bilinear"; m[nitems].value = 0; m[nitems].group = 0; nitems++;
 	m[nitems].type = NM_TYPE_RADIO; m[nitems].text = "Trilinear"; m[nitems].value = 0; m[nitems].group = 0; nitems++;
+#ifndef ANDROID
 	m[nitems].type = NM_TYPE_RADIO; m[nitems].text = "Anisotropic"; m[nitems].value = 0; m[nitems].group = 0; nitems++;
+#endif
 	opt_gr_movietexfilt = nitems;
 	m[nitems].type = NM_TYPE_CHECK; m[nitems].text = "Movie Filter"; m[nitems].value = GameCfg.MovieTexFilt; nitems++;
 	m[nitems].type = NM_TYPE_TEXT; m[nitems].text = ""; nitems++;
@@ -1357,8 +1384,10 @@ void graphics_config()
 	m[nitems].type = NM_TYPE_CHECK; m[nitems].text = "Colored Dynamic Light"; m[nitems].value = PlayerCfg.DynLightColor; nitems++;
 	opt_gr_vsync = nitems;
 	m[nitems].type = NM_TYPE_CHECK; m[nitems].text="VSync"; m[nitems].value = GameCfg.VSync; nitems++;
+#ifndef ANDROID
 	opt_gr_multisample = nitems;
 	m[nitems].type = NM_TYPE_CHECK; m[nitems].text="4x multisampling"; m[nitems].value = GameCfg.Multisample; nitems++;
+#endif
 	opt_gr_classicdepth = nitems;
 	m[nitems].type = NM_TYPE_CHECK; m[nitems].text="Classic Depth Ordering (SP)"; m[nitems].value = GameCfg.ClassicDepth; nitems++;
 #endif
@@ -1368,7 +1397,11 @@ void graphics_config()
 	opt_gr_disablecockpit = nitems;
 	m[nitems].type = NM_TYPE_CHECK; m[nitems].text="Disable Cockpit View"; m[nitems].value = PlayerCfg.DisableCockpit; nitems++;
 #ifdef OGL
+	#ifdef ANDROID
+	m[opt_gr_texfilt + (GameCfg.TexFilt > 2 ? 2 : GameCfg.TexFilt)].value=1;
+	#else
 	m[opt_gr_texfilt+GameCfg.TexFilt].value=1;
+	#endif
 #endif
 
 
@@ -1382,9 +1415,21 @@ void graphics_config()
 	newmenu_do1( NULL, "Graphics Options", nitems, m, graphics_config_menuset, NULL, 1 );
 
 #ifdef OGL
+	#ifndef ANDROID
 	if (GameCfg.VSync != m[opt_gr_vsync].value || GameCfg.Multisample != m[opt_gr_multisample].value)
 		nm_messagebox( NULL, 1, TXT_OK, "Setting VSync or 4x Multisample\nrequires restart on some systems.");
+	#endif
 
+	#ifdef ANDROID
+	for (i = 0; i <= 2; i++)
+		if (m[i+opt_gr_texfilt].value)
+			android_graphics_set_texfilt(i, 1);
+	android_graphics_set_movie_texfilt(m[opt_gr_movietexfilt].value, 1);
+	android_graphics_set_alpha_effects(m[opt_gr_alphafx].value, 1);
+	android_graphics_set_dynlight_color(m[opt_gr_dynlightcolor].value, 1);
+	android_graphics_set_classic_depth(m[opt_gr_classicdepth].value, 1);
+	GameCfg.VSync = m[opt_gr_vsync].value;
+	#else
 	for (i = 0; i <= 3; i++)
 		if (m[i+opt_gr_texfilt].value)
 			GameCfg.TexFilt = i;
@@ -1394,6 +1439,7 @@ void graphics_config()
 	GameCfg.VSync = m[opt_gr_vsync].value;
 	GameCfg.Multisample = m[opt_gr_multisample].value;
 	GameCfg.ClassicDepth = m[opt_gr_classicdepth].value;
+	#endif
 #endif
 	GameCfg.GammaLevel = m[opt_gr_brightness].value;
 	GameCfg.FPSIndicator = m[opt_gr_fpsindi].value;
