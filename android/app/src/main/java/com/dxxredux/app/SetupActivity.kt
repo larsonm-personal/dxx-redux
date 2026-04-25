@@ -1209,8 +1209,12 @@ class SetupActivity : ComponentActivity() {
     private var hatYState = 0
 
     /** Last debounced left-stick directions for launcher focus navigation. */
-    private var stickXState = 0
-    private var stickYState = 0
+    private var leftStickXState = 0
+    private var leftStickYState = 0
+
+    /** Last debounced right-stick directions for controller-picker dialog navigation. */
+    private var rightStickXState = 0
+    private var rightStickYState = 0
 
     /** Last synthesized effective navigation directions after combining HAT and stick input. */
     private var navXState = 0
@@ -1311,10 +1315,32 @@ class SetupActivity : ComponentActivity() {
         if (!controllerConfigActive || controllerConfigDialogOpen) {
             val newHatX = hatAxisDirection(dpadAxes[0])
             val newHatY = hatAxisDirection(dpadAxes[1])
-            val newStickX = stickAxisDirection(controllerAxes[0], stickXState)
-            val newStickY = stickAxisDirection(controllerAxes[1], stickYState)
-            val newNavX = if (newHatX != 0) newHatX else newStickX
-            val newNavY = if (newHatY != 0) newHatY else newStickY
+            val newLeftStickX = stickAxisDirection(controllerAxes[0], leftStickXState)
+            val newLeftStickY = stickAxisDirection(controllerAxes[1], leftStickYState)
+            val newRightStickX =
+                if (controllerConfigDialogOpen) {
+                    stickAxisDirection(controllerAxes[2], rightStickXState)
+                } else {
+                    0
+                }
+            val newRightStickY =
+                if (controllerConfigDialogOpen) {
+                    stickAxisDirection(controllerAxes[3], rightStickYState)
+                } else {
+                    0
+                }
+            val newNavX =
+                when {
+                    newHatX != 0 -> newHatX
+                    newLeftStickX != 0 -> newLeftStickX
+                    else -> newRightStickX
+                }
+            val newNavY =
+                when {
+                    newHatY != 0 -> newHatY
+                    newLeftStickY != 0 -> newLeftStickY
+                    else -> newRightStickY
+                }
             val navTarget = if (controllerConfigDialogOpen) controllerConfigDialogView else null
             synthesizeDpadTransition(
                 navTarget,
@@ -1332,8 +1358,10 @@ class SetupActivity : ComponentActivity() {
             )
             hatXState = newHatX
             hatYState = newHatY
-            stickXState = newStickX
-            stickYState = newStickY
+            leftStickXState = newLeftStickX
+            leftStickYState = newLeftStickY
+            rightStickXState = newRightStickX
+            rightStickYState = newRightStickY
             navXState = newNavX
             navYState = newNavY
         }

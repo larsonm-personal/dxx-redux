@@ -27,6 +27,7 @@
 - Picker dialog motion currently reaches `handleControllerMotion()`, but synthetic D-pad navigation is disabled whenever the controller config page is active, which leaves stick and HAT navigation dead inside dialogs
 - The exported log now shows dialog motion while the picker is open, so the remaining bug is likely routing raw D-pad and synthesized navigation through the activity window instead of the active dialog view
 - The latest RS log shows stick live updates continue after the picker opens, so the remaining stick-picker issue is likely the bottom live threshold bar living below the last focusable row rather than a real motion freeze after touch scrolling
+- The current launcher dialog navigation still treats only the left stick as an analog nav source, so RS does not behave like LS inside picker dialogs unless the dialog path also synthesizes nav from `AXIS_Z` and `AXIS_RZ`
 
 ### Bug 4: Touch mouse deadband
 - The touch overlay may emit small values that are then zeroed by the native joystick deadzone path
@@ -52,6 +53,7 @@
 - [x] Repair controller picker trigger long press and dialog motion navigation regression
 - [x] Route controller picker D-pad and synthesized navigation to the active dialog view
 - [x] Keep both stick live bars visible without requiring touch scrolling
+- [x] Let the right stick drive picker dialog navigation the same way as the left stick
 
 ## Logging added
 
