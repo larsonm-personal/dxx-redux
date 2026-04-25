@@ -23,10 +23,16 @@
 ### Bug 3: Axis picker stale values
 - Motion events may stop reaching the controller config flow while a picker dialog is open
 - Best low cost discriminator is logging both SetupActivity motion updates and picker side live axis generation while the dialog is open
+- Trigger long press can self-block on pads that report both trigger buttons and trigger axes, because the trigger button presence cancels axis selection while the active trigger axis also makes the button path look busy
+- Picker dialog motion currently reaches `handleControllerMotion()`, but synthetic D-pad navigation is disabled whenever the controller config page is active, which leaves stick and HAT navigation dead inside dialogs
+- The exported log now shows dialog motion while the picker is open, so the remaining bug is likely routing raw D-pad and synthesized navigation through the activity window instead of the active dialog view
+- The latest RS log shows stick live updates continue after the picker opens, so the remaining stick-picker issue is likely the bottom live threshold bar living below the last focusable row rather than a real motion freeze after touch scrolling
 
 ### Bug 4: Touch mouse deadband
 - The touch overlay may emit small values that are then zeroed by the native joystick deadzone path
 - Best low cost discriminator is comparing touch mouse output, launcher threshold to PlayerCfg deadzone mapping, and post deadzone engine values
+- Exported debug logs now need to cover the full path: `[touch-mouse]` in Kotlin, `[joy-jni]` in android_input.c, `[joy-sdl]` in joy.c, `[joy-map]` in android_gamepad_config.cpp, and `[joy-dz]` in d1/d2 kconfig.c so no logcat capture is required
+- Fix direction: keep controller thresholds mapping intact, but tag touch-contributed virtual axis events and force zero analog deadzone for those touch events in gameplay
 
 ## Work plan
 
@@ -41,6 +47,11 @@
 - [x] Apply combined movie-audio diagnostic plus fix pass for the SDL 1.2 non power of two resample gap
 - [x] Rebuild and rerun focused validation after fixes
 - [x] Apply initial Android movie AV-sync trim at audio start
+- [x] Route touch deadband diagnostics into exported Android debug logs
+- [x] Apply touch-only zero-deadzone override for mixed virtual axis events
+- [x] Repair controller picker trigger long press and dialog motion navigation regression
+- [x] Route controller picker D-pad and synthesized navigation to the active dialog view
+- [x] Keep both stick live bars visible without requiring touch scrolling
 
 ## Logging added
 
@@ -49,7 +60,9 @@
 - `android/app/src/main/java/com/dxxredux/app/SetupActivity.kt`: launcher joystick motion logs tagged `[ctrl-picker]`
 - `android/app/src/main/java/com/dxxredux/app/ControllerConfigPage.kt`: picker open, trigger, and live axis logs tagged `[ctrl-picker]`
 - `android/app/src/main/java/com/dxxredux/app/TouchOverlayView.kt`: touch mouse drag and drain logs tagged `[touch-mouse]`
-- `android/app/src/main/cpp/android_gamepad_config.cpp`: threshold to deadzone mapping logs for axis button and PlayerCfg deadzones
+- `android/app/src/main/cpp/android_input.c`: JNI axis injection logs tagged `[joy-jni]`
+- `d1/arch/sdl/joy.c` and `d2/arch/sdl/joy.c`: SDL joystick adaptation logs tagged `[joy-sdl]`
+- `android/app/src/main/cpp/android_gamepad_config.cpp`: threshold to deadzone mapping logs tagged `[joy-map]`
 - `d1/main/kconfig.c` and `d2/main/kconfig.c`: post deadzone axis logs tagged `[joy-dz]`
 
 ## Next test pass

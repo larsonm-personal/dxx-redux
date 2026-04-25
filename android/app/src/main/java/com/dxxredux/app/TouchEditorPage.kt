@@ -271,7 +271,7 @@ fun TouchEditorPage(
                                 .padding(horizontal = 12.dp, vertical = 8.dp),
                     ) {
                         when (selectedType) {
-                            "stick" ->
+                            "stick" -> {
                                 StickPropertiesPanel(
                                     stick = layout.sticks[selectedIndex],
                                     gameVariant = gameVariant,
@@ -298,7 +298,9 @@ fun TouchEditorPage(
                                         dirty = true
                                     },
                                 )
-                            "button" ->
+                            }
+
+                            "button" -> {
                                 ButtonPropertiesPanel(
                                     button = layout.buttons[selectedIndex],
                                     gameVariant = gameVariant,
@@ -325,7 +327,9 @@ fun TouchEditorPage(
                                         dirty = true
                                     },
                                 )
-                            "radial" ->
+                            }
+
+                            "radial" -> {
                                 RadialPropertiesPanel(
                                     radial = layout.radialMenus[selectedIndex],
                                     gameVariant = gameVariant,
@@ -352,7 +356,9 @@ fun TouchEditorPage(
                                         dirty = true
                                     },
                                 )
-                            "slider" ->
+                            }
+
+                            "slider" -> {
                                 SliderPropertiesPanel(
                                     slider = layout.sliders[selectedIndex],
                                     onUpdate = { updated ->
@@ -378,7 +384,9 @@ fun TouchEditorPage(
                                         dirty = true
                                     },
                                 )
-                            "diagnostic" ->
+                            }
+
+                            "diagnostic" -> {
                                 DiagnosticPropertiesPanel(
                                     diag = layout.diagnostics[selectedIndex],
                                     onUpdate = { updated ->
@@ -404,7 +412,9 @@ fun TouchEditorPage(
                                         dirty = true
                                     },
                                 )
-                            "axisRegion" ->
+                            }
+
+                            "axisRegion" -> {
                                 AxisRegionPropertiesPanel(
                                     region = layout.axisRegions[selectedIndex],
                                     onUpdate = { updated ->
@@ -430,6 +440,7 @@ fun TouchEditorPage(
                                         dirty = true
                                     },
                                 )
+                            }
                         }
                     }
                     ScrollArrows(panelScrollState)
@@ -1264,10 +1275,12 @@ private fun controlCenter(
             val s = layout.sticks[index]
             Offset(canvasWidth * s.xPct / 100f, canvasHeight * s.yPct / 100f)
         }
+
         "button" -> {
             val b = layout.buttons[index]
             Offset(canvasWidth * b.xPct / 100f, canvasHeight * b.yPct / 100f)
         }
+
         "radial" -> {
             val r = layout.radialMenus[index]
             Offset(
@@ -1275,15 +1288,20 @@ private fun controlCenter(
                 canvasHeight * r.yPct / 100f,
             )
         }
+
         "slider" -> {
             val s = layout.sliders[index]
             Offset(canvasWidth * s.xPct / 100f, canvasHeight * s.yPct / 100f)
         }
+
         "diagnostic" -> {
             val d = layout.diagnostics[index]
             Offset(canvasWidth * d.xPct / 100f, canvasHeight * d.yPct / 100f)
         }
-        else -> Offset.Zero
+
+        else -> {
+            Offset.Zero
+        }
     }
 
 /** Returns the visual radius (in canvas pixels) of the given control. */
@@ -1417,6 +1435,7 @@ private fun moveControl(
                     },
             )
         }
+
         "button" -> {
             val b = layout.buttons[index]
             val newX = (b.xPct + dxPct).coerceIn(2f, 98f)
@@ -1428,6 +1447,7 @@ private fun moveControl(
                     },
             )
         }
+
         "radial" -> {
             val rm = layout.radialMenus[index]
             val newX = (rm.xPct + dxPct).coerceIn(5f, 95f)
@@ -1439,6 +1459,7 @@ private fun moveControl(
                     },
             )
         }
+
         "slider" -> {
             val sl = layout.sliders[index]
             val newX = (sl.xPct + dxPct).coerceIn(5f, 95f)
@@ -1450,6 +1471,7 @@ private fun moveControl(
                     },
             )
         }
+
         "diagnostic" -> {
             val d = layout.diagnostics[index]
             val newX = (d.xPct + dxPct).coerceIn(5f, 95f)
@@ -1461,6 +1483,7 @@ private fun moveControl(
                     },
             )
         }
+
         "axisRegion" -> {
             val ar = layout.axisRegions[index]
             val z = ar.zone
@@ -1478,7 +1501,10 @@ private fun moveControl(
                     },
             )
         }
-        else -> layout
+
+        else -> {
+            layout
+        }
     }
 
 // ═════════════════════════════════════════════════════════════════════════════

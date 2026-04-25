@@ -53,6 +53,10 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "collide.h"
 #include "playsave.h"
 
+#ifdef ANDROID
+#include "android_log.h"
+#endif
+
 #ifdef OGL
 #include "ogl_init.h"
 #endif
@@ -1345,10 +1349,12 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 		{
 			int axis = 0, value = 0, joy_null_value = 0;
 			int raw_value = 0;
+			int touch_source = 0;
 			static int joy_diag_count = 0;
 			if (!(PlayerCfg.ControlType & CONTROL_USING_JOYSTICK))
 				break;
 			event_joystick_get_axis(event, &axis, &value);
+			touch_source = event_joystick_get_touch_source(event);
 
 			Controls.raw_joy_axis[axis] = value;
 			raw_value = value;
@@ -1365,21 +1371,36 @@ void kconfig_read_controls(d_event *event, int automap_flag)
 				joy_null_value = PlayerCfg.JoystickDead[4]*8;
 			if (axis == kc_joystick[23].value) // Throttle - default deadzone
 				joy_null_value = PlayerCfg.JoystickDead[5]*3;
+			if (touch_source)
+				joy_null_value = 0;
 
 			Controls.raw_joy_axis[axis] = joy_apply_deadzone(Controls.raw_joy_axis[axis], joy_null_value);
+			Controls.joy_axis[axis] = (Controls.raw_joy_axis[axis]*FrameTime)/128;
 			if (raw_value != 0 && (joy_null_value > 0 || axis <= 5)) {
 				joy_diag_count++;
 				if (joy_diag_count <= 24 || joy_diag_count % 32 == 0 || Controls.raw_joy_axis[axis] == 0) {
-					con_printf(CON_DEBUG,
-						"[joy-dz] axis=%d raw=%d null=%d out=%d ctl=%d\n",
+					#ifdef ANDROID
+					debug_log(DLOG_GAME,
+						"[joy-dz] axis=%d touch=%d raw=%d null=%d out=%d scaled=%d ctl=%d\n",
 						axis,
+						touch_source,
 						raw_value,
 						joy_null_value,
 						Controls.raw_joy_axis[axis],
+						Controls.joy_axis[axis],
+						PlayerCfg.ControlType);
+					#endif
+					con_printf(CON_DEBUG,
+						"[joy-dz] axis=%d touch=%d raw=%d null=%d out=%d scaled=%d ctl=%d\n",
+						axis,
+						touch_source,
+						raw_value,
+						joy_null_value,
+						Controls.raw_joy_axis[axis],
+						Controls.joy_axis[axis],
 						PlayerCfg.ControlType);
 				}
 			}
-			Controls.joy_axis[axis] = (Controls.raw_joy_axis[axis]*FrameTime)/128;
 			break;
 		}
 		case EVENT_MOUSE_MOVED:

@@ -71,12 +71,14 @@ fun MultiplayerScreen(
                 MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
             }
         }
+
         MultiplayerNav.FRIENDS -> {
             BackHandler {
                 MatchmakingStateHolder.update { it.copy(nav = MultiplayerNav.BROWSER) }
             }
             FriendsContent(state, onBack)
         }
+
         MultiplayerNav.LAN -> {
             BackHandler {
                 if (LobbyService.joinedLobby.value != null) {
@@ -87,6 +89,7 @@ fun MultiplayerScreen(
             }
             LanContent(state, onBack, onLaunchGame)
         }
+
         MultiplayerNav.BROWSER -> {
             BackHandler(onBack = onBack)
             ServerBrowserContent(state, onBack)

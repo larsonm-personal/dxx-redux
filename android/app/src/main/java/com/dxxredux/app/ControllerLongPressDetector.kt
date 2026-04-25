@@ -45,7 +45,7 @@ internal class ControllerLongPressDetector(
             val active =
                 sign != 0 &&
                     magnitude >= axisSelectThreshold &&
-                    heldButtons.isEmpty() &&
+                    !axisHasBlockingButtons(heldButtons, axisIndex) &&
                     noOtherAxesActive(axes, axisIndex)
 
             if (!active) {
@@ -56,11 +56,15 @@ internal class ControllerLongPressDetector(
 
             val startMs = axisStartMs[axisIndex]
             when {
-                startMs == STATE_TRIGGERED && axisDirection[axisIndex] == sign -> continue
+                startMs == STATE_TRIGGERED && axisDirection[axisIndex] == sign -> {
+                    continue
+                }
+
                 startMs == STATE_INACTIVE || axisDirection[axisIndex] != sign -> {
                     axisStartMs[axisIndex] = nowMs
                     axisDirection[axisIndex] = sign
                 }
+
                 nowMs - startMs >= longPressMs -> {
                     clearAxes()
                     axisStartMs[axisIndex] = STATE_TRIGGERED
@@ -90,11 +94,15 @@ internal class ControllerLongPressDetector(
 
             val startMs = dpadStartMs[axisIndex]
             when {
-                startMs == STATE_TRIGGERED && dpadDirection[axisIndex] == sign -> continue
+                startMs == STATE_TRIGGERED && dpadDirection[axisIndex] == sign -> {
+                    continue
+                }
+
                 startMs == STATE_INACTIVE || dpadDirection[axisIndex] != sign -> {
                     dpadStartMs[axisIndex] = nowMs
                     dpadDirection[axisIndex] = sign
                 }
+
                 nowMs - startMs >= longPressMs -> {
                     clearDpadAxes()
                     dpadStartMs[axisIndex] = STATE_TRIGGERED
@@ -112,8 +120,14 @@ internal class ControllerLongPressDetector(
         if (activeButton != null && !axisBusy && !dpadBusy) {
             val startMs = buttonStartMs[activeButton] ?: STATE_INACTIVE
             when {
-                startMs == STATE_TRIGGERED -> Unit
-                startMs == STATE_INACTIVE -> buttonStartMs[activeButton] = nowMs
+                startMs == STATE_TRIGGERED -> {
+                    Unit
+                }
+
+                startMs == STATE_INACTIVE -> {
+                    buttonStartMs[activeButton] = nowMs
+                }
+
                 nowMs - startMs >= longPressMs -> {
                     clearButtons()
                     buttonStartMs[activeButton] = STATE_TRIGGERED
@@ -216,6 +230,19 @@ internal class ControllerLongPressDetector(
             axisIndex == 1 && sign < 0 -> "D-Up"
             else -> "D-Down"
         }
+
+    private fun axisHasBlockingButtons(
+        heldButtons: List<String>,
+        axisIndex: Int,
+    ): Boolean {
+        val mirroredButton =
+            when (axisIndex) {
+                4 -> "L2"
+                5 -> "R2"
+                else -> null
+            }
+        return heldButtons.any { it != mirroredButton }
+    }
 
     private companion object {
         private const val AXIS_COUNT = 6

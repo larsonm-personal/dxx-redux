@@ -82,6 +82,7 @@ class ExitButtonView(
                 }
                 return false
             }
+
             MotionEvent.ACTION_UP -> {
                 if (pressed && inside) {
                     exitCallback?.invoke()
@@ -89,6 +90,7 @@ class ExitButtonView(
                 pressed = false
                 invalidate()
             }
+
             MotionEvent.ACTION_CANCEL -> {
                 pressed = false
                 invalidate()

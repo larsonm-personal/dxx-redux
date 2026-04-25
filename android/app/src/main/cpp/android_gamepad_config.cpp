@@ -29,6 +29,13 @@
 #include <cstring>
 #include <dirent.h>
 #include <android/log.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include "android_log.h"
+#ifdef __cplusplus
+}
+#endif
 
 using json = nlohmann::json;
 
@@ -136,6 +143,11 @@ static bool load_config_into_playercfg(void)
 				     axis_map[i].name,
 				     pct,
 				     joy_axis_button_deadzone[axis_map[i].axis]);
+				debug_log(DLOG_GAME,
+				          "[joy-map] threshold axis=%s pct=%d axisBtnDead=%d\n",
+				          axis_map[i].name,
+				          pct,
+				          joy_axis_button_deadzone[axis_map[i].axis]);
 			}
 		}
 
@@ -166,6 +178,14 @@ static bool load_config_into_playercfg(void)
 			     analog_deadzone_map[i].scale,
 			     analog_deadzone_map[i].deadzone_index,
 			     PlayerCfg.JoystickDead[analog_deadzone_map[i].deadzone_index]);
+			debug_log(DLOG_GAME,
+			          "[joy-map] analog kc=%d axis=%d pct=%d scale=%d dead[%d]=%d\n",
+			          analog_deadzone_map[i].keysettings_index,
+			          bound_axis,
+			          axis_pct[bound_axis],
+			          analog_deadzone_map[i].scale,
+			          analog_deadzone_map[i].deadzone_index,
+			          PlayerCfg.JoystickDead[analog_deadzone_map[i].deadzone_index]);
 		}
 	}
 
@@ -193,6 +213,13 @@ extern "C" int android_reload_live_gamepad_config(void)
 	LOGI("Reloaded live controller config: joy[1]=%d joy[19]=%d joy[21]=%d ctl=%d",
 	     PlayerCfg.KeySettings[1][1], PlayerCfg.KeySettings[1][19],
 	     PlayerCfg.KeySettings[1][21], PlayerCfg.ControlType);
+	debug_log(DLOG_GAME,
+	          "[joy-map] reload ctl=%d pitch=%d turn=%d slide=%d throttle=%d\n",
+	          PlayerCfg.ControlType,
+	          PlayerCfg.KeySettings[1][13],
+	          PlayerCfg.KeySettings[1][15],
+	          PlayerCfg.KeySettings[1][17],
+	          PlayerCfg.KeySettings[1][23]);
 	return 1;
 }
 

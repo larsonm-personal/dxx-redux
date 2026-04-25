@@ -534,58 +534,131 @@ sealed class ServerMessage {
             val obj = protocolJson.decodeFromString<JsonObject>(text)
             val type = obj["type"]?.jsonPrimitive?.content ?: return Unknown("missing", text)
             return when (type) {
-                "AUTH_OK" -> AuthOkMsg(protocolJson.decodeFromString<AuthOk>(text))
-                "AUTH_FAIL" -> AuthFailMsg(protocolJson.decodeFromString<AuthFail>(text))
-                "POW_CHALLENGE" -> PowChallengeMsg(protocolJson.decodeFromString<PowChallenge>(text))
-                "ERROR" -> ErrorMsg(protocolJson.decodeFromString<ServerError>(text))
-                "MOTD" -> MotdMsg(protocolJson.decodeFromString<Motd>(text))
-                "LOBBY_LIST" -> LobbyListReceived(protocolJson.decodeFromString<LobbyListMsg>(text))
-                "LOBBY_UPDATE" -> LobbyUpdated(protocolJson.decodeFromString<LobbyUpdateMsg>(text))
-                "SERVER_STATUS" -> ServerStatusReceived(protocolJson.decodeFromString<ServerStatusMsg>(text))
-                "GAME_STARTING" -> GameStarting(protocolJson.decodeFromString<GameStartingMsg>(text))
-                "RATE_LIMITED" -> RateLimited(protocolJson.decodeFromString<RateLimitedMsg>(text))
-                "VERSION_REJECTED" -> VersionRejected(protocolJson.decodeFromString<VersionRejectedMsg>(text))
-                "MESSAGE_RECEIVED" -> MessageReceived(protocolJson.decodeFromString<MessageReceivedMsg>(text))
-                "MESSAGE_SENT" -> MessageSent(protocolJson.decodeFromString<MessageSentMsg>(text))
-                "CONNECTION_INFO" -> ConnectionInfoReceived(protocolJson.decodeFromString<ConnectionInfoMsg>(text))
-                "PEER_CANDIDATES" -> PeerCandidatesReceived(protocolJson.decodeFromString<PeerCandidatesMsg>(text))
-                "CONNECTIVITY_CHECK_GO" ->
+                "AUTH_OK" -> {
+                    AuthOkMsg(protocolJson.decodeFromString<AuthOk>(text))
+                }
+
+                "AUTH_FAIL" -> {
+                    AuthFailMsg(protocolJson.decodeFromString<AuthFail>(text))
+                }
+
+                "POW_CHALLENGE" -> {
+                    PowChallengeMsg(protocolJson.decodeFromString<PowChallenge>(text))
+                }
+
+                "ERROR" -> {
+                    ErrorMsg(protocolJson.decodeFromString<ServerError>(text))
+                }
+
+                "MOTD" -> {
+                    MotdMsg(protocolJson.decodeFromString<Motd>(text))
+                }
+
+                "LOBBY_LIST" -> {
+                    LobbyListReceived(protocolJson.decodeFromString<LobbyListMsg>(text))
+                }
+
+                "LOBBY_UPDATE" -> {
+                    LobbyUpdated(protocolJson.decodeFromString<LobbyUpdateMsg>(text))
+                }
+
+                "SERVER_STATUS" -> {
+                    ServerStatusReceived(protocolJson.decodeFromString<ServerStatusMsg>(text))
+                }
+
+                "GAME_STARTING" -> {
+                    GameStarting(protocolJson.decodeFromString<GameStartingMsg>(text))
+                }
+
+                "RATE_LIMITED" -> {
+                    RateLimited(protocolJson.decodeFromString<RateLimitedMsg>(text))
+                }
+
+                "VERSION_REJECTED" -> {
+                    VersionRejected(protocolJson.decodeFromString<VersionRejectedMsg>(text))
+                }
+
+                "MESSAGE_RECEIVED" -> {
+                    MessageReceived(protocolJson.decodeFromString<MessageReceivedMsg>(text))
+                }
+
+                "MESSAGE_SENT" -> {
+                    MessageSent(protocolJson.decodeFromString<MessageSentMsg>(text))
+                }
+
+                "CONNECTION_INFO" -> {
+                    ConnectionInfoReceived(protocolJson.decodeFromString<ConnectionInfoMsg>(text))
+                }
+
+                "PEER_CANDIDATES" -> {
+                    PeerCandidatesReceived(protocolJson.decodeFromString<PeerCandidatesMsg>(text))
+                }
+
+                "CONNECTIVITY_CHECK_GO" -> {
                     ConnectivityCheckGoReceived(
                         protocolJson.decodeFromString<ConnectivityCheckGoMsg>(text),
                     )
-                "RELAY_ASSIGNED" -> RelayAssignedReceived(protocolJson.decodeFromString<RelayAssignedMsg>(text))
-                "MAINTENANCE" -> MaintenanceReceived(protocolJson.decodeFromString<MaintenanceMsg>(text))
-                "MAINTENANCE_WARNING" ->
+                }
+
+                "RELAY_ASSIGNED" -> {
+                    RelayAssignedReceived(protocolJson.decodeFromString<RelayAssignedMsg>(text))
+                }
+
+                "MAINTENANCE" -> {
+                    MaintenanceReceived(protocolJson.decodeFromString<MaintenanceMsg>(text))
+                }
+
+                "MAINTENANCE_WARNING" -> {
                     MaintenanceWarningReceived(
                         protocolJson.decodeFromString<MaintenanceWarningMsg>(text),
                     )
-                "FRIEND_LIST_RESP" ->
+                }
+
+                "FRIEND_LIST_RESP" -> {
                     FriendListReceived(protocolJson.decodeFromString<FriendListRespMsg>(text))
-                "FRIEND_REQUEST_RECEIVED" ->
+                }
+
+                "FRIEND_REQUEST_RECEIVED" -> {
                     FriendRequestReceived(
                         protocolJson.decodeFromString<FriendRequestReceivedMsg>(text),
                     )
-                "FRIEND_ACCEPTED" ->
+                }
+
+                "FRIEND_ACCEPTED" -> {
                     FriendAccepted(protocolJson.decodeFromString<FriendAcceptedMsg>(text))
-                "FRIEND_REMOVED" ->
+                }
+
+                "FRIEND_REMOVED" -> {
                     FriendRemoved(protocolJson.decodeFromString<FriendRemovedMsg>(text))
-                "FRIEND_PRESENCE_UPDATE" ->
+                }
+
+                "FRIEND_PRESENCE_UPDATE" -> {
                     FriendPresenceUpdated(
                         protocolJson.decodeFromString<FriendPresenceUpdateMsg>(text),
                     )
-                "JOIN_FRIEND_GAME_RESP" ->
+                }
+
+                "JOIN_FRIEND_GAME_RESP" -> {
                     JoinFriendGameResponse(
                         protocolJson.decodeFromString<JoinFriendGameRespMsg>(text),
                     )
-                "LATE_JOIN_PROBE" ->
+                }
+
+                "LATE_JOIN_PROBE" -> {
                     LateJoinProbeReceived(
                         protocolJson.decodeFromString<LateJoinProbeMsg>(text),
                     )
-                "LATE_JOIN_APPROVED" ->
+                }
+
+                "LATE_JOIN_APPROVED" -> {
                     LateJoinApprovedReceived(
                         protocolJson.decodeFromString<LateJoinApprovedMsg>(text),
                     )
-                else -> Unknown(type, text)
+                }
+
+                else -> {
+                    Unknown(type, text)
+                }
             }
         }
     }

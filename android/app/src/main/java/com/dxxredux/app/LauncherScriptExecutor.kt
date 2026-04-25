@@ -117,6 +117,7 @@ class LauncherScriptExecutor(
                     // No-op: already in launcher mode
                     currentStep++
                 }
+
                 "enter_game" -> {
                     val game = step.optString("game", "d2")
                     val nextStep = currentStep + 1
@@ -125,17 +126,20 @@ class LauncherScriptExecutor(
                     launchGame(game, scriptPath, nextStep)
                     return // Suspend -- SetupActivity.onResume will call resume()
                 }
+
                 "log" -> {
                     val msg = step.optString("message", "")
                     Log.i(TAG, "SCRIPT: $msg")
                     currentStep++
                 }
+
                 "wait_ms" -> {
                     val ms = step.optLong("ms", step.optLong("post_delay_ms", 300))
                     Log.i(TAG, "Waiting ${ms}ms")
                     delay(ms)
                     currentStep++
                 }
+
                 "wait_for" -> {
                     val field = step.optString("field", "")
                     val value = step.optString("value", "")
@@ -157,6 +161,7 @@ class LauncherScriptExecutor(
                     }
                     currentStep++
                 }
+
                 "assert" -> {
                     val expect = step.optJSONObject("expect")
                     if (expect == null) {
@@ -170,6 +175,7 @@ class LauncherScriptExecutor(
                     }
                     currentStep++
                 }
+
                 "setup_command" -> {
                     val cmd = step.optString("command", "")
                     val args = step.optJSONObject("args")
@@ -179,11 +185,13 @@ class LauncherScriptExecutor(
                     if (postDelay > 0) delay(postDelay)
                     currentStep++
                 }
+
                 "reset_state" -> {
                     Log.i(TAG, "Resetting game state")
                     resetGameState()
                     currentStep++
                 }
+
                 "write_config" -> {
                     val fileName = step.optString("file", "")
                     val content = step.optString("content", "")
@@ -199,6 +207,7 @@ class LauncherScriptExecutor(
                     }
                     currentStep++
                 }
+
                 "assert_controller_match" -> {
                     val failMsg = withContext(Dispatchers.IO) { compareControllerIntrospections() }
                     if (failMsg != null) {
@@ -208,6 +217,7 @@ class LauncherScriptExecutor(
                     Log.i(TAG, "ASSERT_PASS: controller configs match")
                     currentStep++
                 }
+
                 "tap_button" -> {
                     val text = step.optString("text", "")
                     val launchesGame = step.optBoolean("launches_game", false)
@@ -262,6 +272,7 @@ class LauncherScriptExecutor(
                     }
                     currentStep++
                 }
+
                 "assert_button" -> {
                     val text = step.optString("text", "")
                     if (text.isEmpty()) {
@@ -289,6 +300,7 @@ class LauncherScriptExecutor(
                     Log.i(TAG, "ASSERT_PASS: button \"${button.text}\" enabled=${button.enabled}")
                     currentStep++
                 }
+
                 else -> {
                     Log.w(TAG, "Skipping unknown/game-only action: $action")
                     currentStep++
@@ -507,7 +519,10 @@ class LauncherScriptExecutor(
             }
         }
         return when (cur) {
-            is Boolean -> cur.toString()
+            is Boolean -> {
+                cur.toString()
+            }
+
             is Number -> {
                 if (cur.toDouble() == cur.toLong().toDouble()) {
                     cur.toLong().toString()
@@ -515,9 +530,18 @@ class LauncherScriptExecutor(
                     cur.toString()
                 }
             }
-            is String -> cur
-            JSONObject.NULL -> "null"
-            else -> cur.toString()
+
+            is String -> {
+                cur
+            }
+
+            JSONObject.NULL -> {
+                "null"
+            }
+
+            else -> {
+                cur.toString()
+            }
         }
     }
 

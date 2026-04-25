@@ -27,6 +27,9 @@
 #include "u_mem.h"
 #include "playsave.h"
 #include "kconfig.h"
+#ifdef ANDROID
+#include "android_log.h"
+#endif
 
 int num_joysticks = 0;
 int joy_num_axes = 0;
@@ -54,7 +57,13 @@ typedef struct d_event_joystick_moved
 	event_type	type;	// EVENT_JOYSTICK_MOVED
 	int		axis;
 	int 		value;
+	int		touch_source;
 } d_event_joystick_moved;
+
+#ifdef ANDROID
+/* Shared with android_input.c: mark touch-sourced virtual axes in the high bit. */
+#define ANDROID_TOUCH_AXIS_FLAG 0x80
+#endif
 
 /* This struct is an array, with one entry for each physical joystick
  * found.
@@ -135,12 +144,15 @@ void joy_hat_handler(SDL_JoyHatEvent *jhe)
 int joy_axis_handler(SDL_JoyAxisEvent *jae)
 {
 	int axis;
+	int touch_source = 0;
 	d_event_joystick_moved event;
+	static int joy_axis_diag_count[JOY_MAX_AXES];
 
 #ifdef ANDROID
 	/* Android: virtual joystick, axis_map[] is not populated. Identity
 	 * pass-through; see comment in joy_button_handler. */
-	axis = jae->axis;
+	axis = jae->axis & ~ANDROID_TOUCH_AXIS_FLAG;
+	touch_source = (jae->axis & ANDROID_TOUCH_AXIS_FLAG) != 0;
 #else
 	axis = SDL_Joysticks[jae->which].axis_map[jae->axis];
 #endif
@@ -152,6 +164,15 @@ int joy_axis_handler(SDL_JoyAxisEvent *jae)
 	event.type = EVENT_JOYSTICK_MOVED;
 	event.axis = axis;
 	event.value = Joystick.axis_value[axis] = jae->value/256;
+	event.touch_source = touch_source;
+	#ifdef ANDROID
+	if (axis >= 0 && axis < JOY_MAX_AXES && (axis == 2 || axis == 3) && jae->value != 0) {
+		int abs_value = event.value < 0 ? -event.value : event.value;
+		int count = ++joy_axis_diag_count[axis];
+		if (count <= 24 || (abs_value <= 48 && (count % 8) == 0) || (count % 64) == 0)
+			debug_log(DLOG_GAME, "[joy-sdl] axis=%d touch=%d raw=%d event=%d\n", axis, touch_source, jae->value, event.value);
+	}
+	#endif
 	con_printf(CON_DEBUG, "Sending event EVENT_JOYSTICK_MOVED, axis: %d, value: %d\n",event.axis, event.value);
 	event_send((d_event *)&event);
 
@@ -185,8 +206,13 @@ int joy_axisbutton_handler(SDL_JoyAxisEvent *jae)
 {
 	int button;
 	int sent = 0;
+	int axis = jae->axis;
 
-	button = SDL_Joysticks[jae->which].axis_button_map[jae->axis];
+	#ifdef ANDROID
+	axis &= ~ANDROID_TOUCH_AXIS_FLAG;
+	#endif
+
+	button = SDL_Joysticks[jae->which].axis_button_map[axis];
 	if (button < 0)
 		return 0;
 
@@ -202,8 +228,8 @@ int joy_axisbutton_handler(SDL_JoyAxisEvent *jae)
 	int pos_btn = button;
 #endif
 
-	int deadzone = joy_axis_button_deadzone[jae->axis];
-	int prev_value = joy_apply_deadzone(Joystick.axis_value[jae->axis], deadzone);
+	int deadzone = joy_axis_button_deadzone[axis];
+	int prev_value = joy_apply_deadzone(Joystick.axis_value[axis], deadzone);
 	int new_value = joy_apply_deadzone(jae->value/256, deadzone);
 
 	if (prev_value <= 0 && new_value >= 0) // positive pressed
@@ -425,6 +451,13 @@ void event_joystick_get_axis(d_event *event, int *axis, int *value)
 
 	*axis  = ((d_event_joystick_moved *)event)->axis;
 	*value = ((d_event_joystick_moved *)event)->value;
+}
+
+int event_joystick_get_touch_source(d_event *event)
+{
+	Assert(event->type == EVENT_JOYSTICK_MOVED);
+
+	return ((d_event_joystick_moved *)event)->touch_source;
 }
 
 void joy_flush()

@@ -31,6 +31,7 @@ internal fun adminTrayUsesCheckbox(actionIndex: Int): Boolean =
         TouchOverlayView.ADMIN_NET_STATS,
         TouchOverlayView.ADMIN_VIDEO_INFO,
         -> true
+
         else -> false
     }
 
@@ -39,6 +40,7 @@ internal fun adminTrayClosesAfterActivate(actionIndex: Int): Boolean =
         TouchOverlayView.ADMIN_INCREASE_VIEW,
         TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL,
         -> false
+
         else -> !adminTrayUsesCheckbox(actionIndex)
     }
 
@@ -542,13 +544,17 @@ class TouchOverlayView
             when (binding) {
                 TouchBindings.BTN_CHEATS_MENU,
                 TouchBindings.BTN_GYRO_RECENTER,
-                -> Unit
+                -> {
+                    Unit
+                }
 
                 TouchBindings.BTN_AUTOMAP -> {
                     if (fired) mapButtonCallback?.invoke()
                 }
 
-                else -> dispatchTouchButton(binding, false, sourceTag)
+                else -> {
+                    dispatchTouchButton(binding, false, sourceTag)
+                }
             }
         }
 
@@ -604,9 +610,17 @@ class TouchOverlayView
                 if (s.control.invertX) outX = -outX
                 if (s.control.invertY) outY = -outY
                 logMouseDiag(
-                    "drain axis=(${s.control.axisX},${s.control.axisY}) pending=(${"%.4f".format(s.mousePendingX)},${"%.4f".format(s.mousePendingY)}) " +
-                        "emit=(${"%.4f".format(emitX)},${"%.4f".format(emitY)}) out=(${"%.4f".format(outX)},${"%.4f".format(outY)}) " +
-                        "cap=(${"%.3f".format(capX)},${"%.3f".format(capY)}) sens=(${"%.2f".format(s.control.sensitivityX)},${"%.2f".format(s.control.sensitivityY)}) " +
+                    "drain axis=(${s.control.axisX},${s.control.axisY}) pending=(${"%.4f".format(
+                        s.mousePendingX,
+                    )},${"%.4f".format(s.mousePendingY)}) " +
+                        "emit=(${"%.4f".format(
+                            emitX,
+                        )},${"%.4f".format(emitY)}) out=(${"%.4f".format(outX)},${"%.4f".format(outY)}) " +
+                        "cap=(${"%.3f".format(
+                            capX,
+                        )},${"%.3f".format(
+                            capY,
+                        )}) sens=(${"%.2f".format(s.control.sensitivityX)},${"%.2f".format(s.control.sensitivityY)}) " +
                         "mouseExp=${s.control.mouseExponential} curve=${s.control.responseCurve} deadzone=${s.control.deadzone}",
                 )
                 axisCallback?.invoke(s.control.axisX, outX.coerceIn(-1f, 1f))
@@ -987,6 +1001,7 @@ class TouchOverlayView
                         d.width = paintDiagText.measureText("Roll: -100%") + diagTextSize * 2
                         d.height = diagTextSize * d.control.sizeMult * 4.5f
                     }
+
                     DiagnosticType.MUSIC -> {
                         val r = base * 0.03f * d.control.sizeMult
                         d.musicBtnR = r
@@ -999,6 +1014,7 @@ class TouchOverlayView
                             paintDiagText.measureText("Track 00/00: xxxxxxxx") + diagTextSize
                         d.height = r * 3f
                     }
+
                     DiagnosticType.SETTINGS -> {
                         val r = base * 0.03f * d.control.sizeMult
                         d.width = r * 2.5f
@@ -1915,12 +1931,14 @@ class TouchOverlayView
                                     invalidate()
                                     handled = true
                                 }
+
                                 d.musicNextPid < 0 &&
                                     hypot(px - d.musicNextCX, py - y) <= r * 1.3f -> {
                                     d.musicNextPid = pid
                                     invalidate()
                                     handled = true
                                 }
+
                                 d.musicLabelPid < 0 &&
                                     px >= d.musicLabelX &&
                                     py >= y - r * 1.5f &&
@@ -1942,6 +1960,7 @@ class TouchOverlayView
 
                     if (!handled) passthroughPointers.add(pid)
                 }
+
                 MotionEvent.ACTION_MOVE -> {
                     // Check for pointer stealing: stick → axis region
                     for (s in stickStates) {
@@ -2019,10 +2038,13 @@ class TouchOverlayView
                                     if (s.pointerId >= 0) continue
                                     val inZone =
                                         when {
-                                            s.control.mouseMode || s.control.floating ->
+                                            s.control.mouseMode || s.control.floating -> {
                                                 ax in s.fzLeft..s.fzRight && ay in s.fzTop..s.fzBottom
-                                            else ->
+                                            }
+
+                                            else -> {
                                                 hypot(ax - s.centerX, ay - s.centerY) <= s.radius
+                                            }
                                         }
                                     if (inZone) {
                                         if (s.control.mouseMode) {
@@ -2085,6 +2107,7 @@ class TouchOverlayView
                         }
                     }
                 }
+
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     val pid = event.getPointerId(event.actionIndex)
                     val fired = event.actionMasked == MotionEvent.ACTION_UP
@@ -2100,6 +2123,7 @@ class TouchOverlayView
                     releaseAllMusicDiagnostics(fired)
                     releaseAllMenuDiagnostics(fired)
                 }
+
                 MotionEvent.ACTION_POINTER_UP -> {
                     val pid = event.getPointerId(event.actionIndex)
                     if (passthroughPointers.remove(pid)) {
@@ -2296,10 +2320,14 @@ class TouchOverlayView
             s.mousePendingX += dx * scaleX * multiplier
             s.mousePendingY += dy * scaleY * multiplier
             logMouseDiag(
-                "drag axis=(${s.control.axisX},${s.control.axisY}) d=(${"%.3f".format(dx)},${"%.3f".format(dy)}) step=${"%.3f".format(stepDistance)} " +
+                "drag axis=(${s.control.axisX},${s.control.axisY}) d=(${"%.3f".format(
+                    dx,
+                )},${"%.3f".format(dy)}) step=${"%.3f".format(stepDistance)} " +
                     "hist=(${"%.3f".format(s.mouseRecentDistancePx)},${"%.3f".format(s.mouseRecentGracePx)}) " +
                     "scale=(${"%.4f".format(scaleX)},${"%.4f".format(scaleY)}) mult=${"%.3f".format(multiplier)} " +
-                    "pending=(${"%.4f".format(s.mousePendingX)},${"%.4f".format(s.mousePendingY)}) mouseExp=${s.control.mouseExponential} " +
+                    "pending=(${"%.4f".format(
+                        s.mousePendingX,
+                    )},${"%.4f".format(s.mousePendingY)}) mouseExp=${s.control.mouseExponential} " +
                     "curve=${s.control.responseCurve} deadzone=${s.control.deadzone}",
             )
         }
@@ -2397,16 +2425,21 @@ class TouchOverlayView
             if (binding < 0) return
             val tag = "touch:dtap${stickStates.indexOf(s)}"
             when (s.control.doubleTapMode) {
-                DoubleTapMode.REPEAT_FIRE -> fireDoubleTapPulse(binding, tag)
+                DoubleTapMode.REPEAT_FIRE -> {
+                    fireDoubleTapPulse(binding, tag)
+                }
+
                 DoubleTapMode.SINGLE_FIRE -> {
                     // Only fire on even tap counts (every second tap in the double-tap window)
                     if (s.tapCount % 2 == 0) fireDoubleTapPulse(binding, tag)
                 }
+
                 DoubleTapMode.LATCH_DOUBLE -> {
                     s.dtLatched = !s.dtLatched
                     setDoubleTapLatch(binding, s.dtLatched, tag)
                     invalidate()
                 }
+
                 DoubleTapMode.LATCH_SINGLE -> {
                     if (!s.dtLatched) {
                         s.dtLatched = true
@@ -2419,6 +2452,7 @@ class TouchOverlayView
                         invalidate()
                     }
                 }
+
                 DoubleTapMode.HOLD_FIRE -> {
                     // Press on double-tap down, release handled in resetStick
                     s.dtLatched = true
@@ -2675,10 +2709,17 @@ class TouchOverlayView
                 }
             val binding =
                 when {
-                    seg != null -> seg.binding
-                    rm.activeSegment == RADIAL_CENTER && rm.control.centerBinding >= 0 ->
+                    seg != null -> {
+                        seg.binding
+                    }
+
+                    rm.activeSegment == RADIAL_CENTER && rm.control.centerBinding >= 0 -> {
                         rm.control.centerBinding
-                    else -> -1
+                    }
+
+                    else -> {
+                        -1
+                    }
                 }
             val isAction = seg?.bindingType == "action"
             if (binding >= 0) {
@@ -2718,7 +2759,9 @@ class TouchOverlayView
 
         private fun keycodeToUnicode(keycode: Int): Int =
             when (keycode) {
-                in 7..16 -> '0'.code + keycode - 7 // KEYCODE_0(7)..KEYCODE_9(16) → '0'..'9'
+                in 7..16 -> '0'.code + keycode - 7
+
+                // KEYCODE_0(7)..KEYCODE_9(16) → '0'..'9'
                 else -> 0
             }
 
@@ -2861,6 +2904,7 @@ class TouchOverlayView
                         return true
                     }
                 }
+
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
                     for (d in diagnosticStates) {
                         if (d.control.type != DiagnosticType.SETTINGS || d.menuPid != pid) continue
@@ -2868,6 +2912,7 @@ class TouchOverlayView
                         return true
                     }
                 }
+
                 MotionEvent.ACTION_CANCEL -> {
                     for (d in diagnosticStates) {
                         if (d.control.type != DiagnosticType.SETTINGS || d.menuPid != pid) continue
@@ -3070,6 +3115,7 @@ class TouchOverlayView
                     cheatsOverlayPressedIndex = -1
                     return true
                 }
+
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
                     if (event.getPointerId(idx) == cheatsOverlayPointerId) {
                         if (cheatsOverlayPressedIndex == -2 && cheatsCloseRect.contains(px, py)) {
@@ -3090,6 +3136,7 @@ class TouchOverlayView
                     }
                     return true
                 }
+
                 MotionEvent.ACTION_CANCEL -> {
                     cheatsOverlayPressedIndex = -1
                     cheatsOverlayPointerId = -1
@@ -3115,23 +3162,63 @@ class TouchOverlayView
                         }
                     "Cycle View$suffix"
                 }
+
                 ADMIN_TOGGLE_AUTOLEVEL -> {
                     val on = adminTrayAutoLevelingProvider?.invoke() ?: true
                     if (on) "AutoLevel: ON" else "AutoLevel: OFF"
                 }
-                ADMIN_QUICK_SAVE -> "Quick Save"
-                ADMIN_QUICK_LOAD -> "Quick Load"
-                ADMIN_OPEN_MENU -> "Game Menu"
-                ADMIN_NET_STATS -> "Net Stats"
-                ADMIN_EXIT_LAUNCHER -> "Exit"
-                ADMIN_NET_EVENTS -> "Net Events"
-                ADMIN_VIDEO_INFO -> "Video Info"
-                ADMIN_AUTOMAP -> "Automap"
-                ADMIN_HEADLIGHT -> "Headlight"
-                ADMIN_WARP -> adminTrayWarpLabelProvider?.invoke() ?: "Warp: --"
-                ADMIN_MUSIC -> "Music"
-                ADMIN_ACCEPT_JOIN -> adminTrayAcceptLabelProvider?.invoke() ?: "Accept: --"
-                else -> ""
+
+                ADMIN_QUICK_SAVE -> {
+                    "Quick Save"
+                }
+
+                ADMIN_QUICK_LOAD -> {
+                    "Quick Load"
+                }
+
+                ADMIN_OPEN_MENU -> {
+                    "Game Menu"
+                }
+
+                ADMIN_NET_STATS -> {
+                    "Net Stats"
+                }
+
+                ADMIN_EXIT_LAUNCHER -> {
+                    "Exit"
+                }
+
+                ADMIN_NET_EVENTS -> {
+                    "Net Events"
+                }
+
+                ADMIN_VIDEO_INFO -> {
+                    "Video Info"
+                }
+
+                ADMIN_AUTOMAP -> {
+                    "Automap"
+                }
+
+                ADMIN_HEADLIGHT -> {
+                    "Headlight"
+                }
+
+                ADMIN_WARP -> {
+                    adminTrayWarpLabelProvider?.invoke() ?: "Warp: --"
+                }
+
+                ADMIN_MUSIC -> {
+                    "Music"
+                }
+
+                ADMIN_ACCEPT_JOIN -> {
+                    adminTrayAcceptLabelProvider?.invoke() ?: "Accept: --"
+                }
+
+                else -> {
+                    ""
+                }
             }
 
         private fun drawAdminTrayTab(canvas: Canvas) {
@@ -3450,6 +3537,7 @@ class TouchOverlayView
                     invalidate()
                     return true
                 }
+
                 android.view.KeyEvent.KEYCODE_DPAD_DOWN -> {
                     if (adminTraySelectedIndex + cols < count) {
                         adminTraySelectedIndex += cols
@@ -3457,6 +3545,7 @@ class TouchOverlayView
                     invalidate()
                     return true
                 }
+
                 android.view.KeyEvent.KEYCODE_DPAD_LEFT -> {
                     if (adminTraySelectedIndex % cols > 0) {
                         adminTraySelectedIndex--
@@ -3464,6 +3553,7 @@ class TouchOverlayView
                     invalidate()
                     return true
                 }
+
                 android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> {
                     if (adminTraySelectedIndex % cols < cols - 1 &&
                         adminTraySelectedIndex + 1 < count
@@ -3473,6 +3563,7 @@ class TouchOverlayView
                     invalidate()
                     return true
                 }
+
                 android.view.KeyEvent.KEYCODE_BUTTON_A,
                 android.view.KeyEvent.KEYCODE_DPAD_CENTER,
                 -> {
@@ -3490,6 +3581,7 @@ class TouchOverlayView
                     }
                     return true
                 }
+
                 android.view.KeyEvent.KEYCODE_BUTTON_B,
                 android.view.KeyEvent.KEYCODE_BACK,
                 -> {
@@ -3529,6 +3621,7 @@ class TouchOverlayView
                     }
                     return true
                 }
+
                 MotionEvent.ACTION_MOVE -> {
                     if (adminTrayPointerId < 0) return true
                     val pi = event.findPointerIndex(adminTrayPointerId)
@@ -3553,6 +3646,7 @@ class TouchOverlayView
                     }
                     return true
                 }
+
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP -> {
                     if (event.getPointerId(idx) == adminTrayPointerId) {
                         if (adminTrayDragging) {
@@ -3583,6 +3677,7 @@ class TouchOverlayView
                     }
                     return true
                 }
+
                 MotionEvent.ACTION_CANCEL -> {
                     if (adminTrayDragging) {
                         if (adminTraySlide > 0.7f) {

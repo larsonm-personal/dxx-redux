@@ -551,10 +551,12 @@ class SetupActivity : ComponentActivity() {
                             startActivity(launchIntent)
                         }
                     }
+
                     "patch_pilots" -> {
                         val n = patchPilotsFromConfig()
                         Log.i("DXX-Setup", "patch_pilots: patched $n file(s)")
                     }
+
                     "reset_controls" -> {
                         val game = intent.getStringExtra("game")
                         var n = 0
@@ -566,15 +568,18 @@ class SetupActivity : ComponentActivity() {
                         }
                         Log.i("DXX-Setup", "reset_controls: reset $n file(s) to engine defaults")
                     }
+
                     "controller_introspect" -> {
                         val game = intent.getStringExtra("game")
                         writeControllerIntrospectJson(game)
                         Log.i("DXX-Setup", "controller_introspect: written (game=${game ?: "d2"})")
                     }
+
                     "write_default_config" -> {
                         File(filesDir, "controller_config.json").delete()
                         writeDefaultControllerConfig()
                     }
+
                     "write_engine_prefs" -> {
                         val cockpitMode = intent.getIntExtra("cockpit_mode", 0)
                         val autoLeveling = intent.getBooleanExtra("auto_leveling", true)
@@ -589,6 +594,7 @@ class SetupActivity : ComponentActivity() {
                             "write_engine_prefs: patched $n file(s) (cockpit_mode=$cockpitMode auto_leveling=$autoLeveling)",
                         )
                     }
+
                     "write_bool_pref" -> {
                         val key = intent.getStringExtra("key") ?: return
                         val value = intent.getBooleanExtra("value", false)
@@ -596,6 +602,7 @@ class SetupActivity : ComponentActivity() {
                         Log.i("DXX-Setup", "write_bool_pref: $key=$value")
                         requestSetupRefresh()
                     }
+
                     "write_probe_debug_prefs" -> {
                         val enabled = intent.getBooleanExtra("enabled", true)
                         val prefs = getSharedPreferences("dxx_prefs", MODE_PRIVATE)
@@ -611,6 +618,7 @@ class SetupActivity : ComponentActivity() {
                         Log.i("DXX-Setup", "write_probe_debug_prefs: enabled=$enabled")
                         requestSetupRefresh()
                     }
+
                     "create_set" -> {
                         val name = intent.getStringExtra("name") ?: return
                         val fsm = FileSetManager(filesDir)
@@ -622,6 +630,7 @@ class SetupActivity : ComponentActivity() {
                             Log.i("DXX-Setup", "create_set '$name': already exists")
                         }
                     }
+
                     "switch_set" -> {
                         val name = intent.getStringExtra("name") ?: return
                         val fsm = FileSetManager(filesDir)
@@ -630,6 +639,7 @@ class SetupActivity : ComponentActivity() {
                         Log.i("DXX-Setup", "switch_set '$name': ok")
                         requestSetupRefresh()
                     }
+
                     "clear_set" -> {
                         val name = intent.getStringExtra("name") ?: return
                         val fsm = FileSetManager(filesDir)
@@ -638,6 +648,7 @@ class SetupActivity : ComponentActivity() {
                         Log.i("DXX-Setup", "clear_set '$name': deleted $count file(s)")
                         requestSetupRefresh()
                     }
+
                     "import_gog" -> {
                         val path = intent.getStringExtra("path") ?: return
                         val audio = intent.getBooleanExtra("include_audio", true)
@@ -654,6 +665,7 @@ class SetupActivity : ComponentActivity() {
                             requestSetupRefresh()
                         }.start()
                     }
+
                     "import_sow" -> {
                         val path = intent.getStringExtra("path") ?: return
                         Thread {
@@ -664,6 +676,7 @@ class SetupActivity : ComponentActivity() {
                             requestSetupRefresh()
                         }.start()
                     }
+
                     "import_cd" -> {
                         val cuePath = intent.getStringExtra("cue_path") ?: return
                         val binPath = intent.getStringExtra("bin_path") ?: return
@@ -687,6 +700,7 @@ class SetupActivity : ComponentActivity() {
                             requestSetupRefresh()
                         }.start()
                     }
+
                     "import_iso" -> {
                         val path = intent.getStringExtra("iso_path") ?: return
                         Thread {
@@ -700,6 +714,7 @@ class SetupActivity : ComponentActivity() {
                             requestSetupRefresh()
                         }.start()
                     }
+
                     "import_files" -> {
                         val path = intent.getStringExtra("path") ?: return
                         val fsm = FileSetManager(filesDir)
@@ -719,6 +734,7 @@ class SetupActivity : ComponentActivity() {
                             Log.w("DXX-Setup", "import_files: not a file: $path")
                         }
                     }
+
                     "write_autoselect" -> {
                         val game = intent.getStringExtra("game") ?: "d2"
                         val primStr = intent.getStringExtra("primary") ?: return
@@ -734,6 +750,7 @@ class SetupActivity : ComponentActivity() {
                             )
                         Log.i("DXX-Setup", "write_autoselect ($game): patched $count file(s)")
                     }
+
                     "music_midi_play" -> {
                         val srcIdx = intent.getIntExtra("source", 0)
                         val trkIdx = intent.getIntExtra("track", 0)
@@ -769,10 +786,12 @@ class SetupActivity : ComponentActivity() {
                             Log.i("DXX-Setup", "music_midi_play: playing ${track.filename} from ${src.label}")
                         }.start()
                     }
+
                     "music_midi_stop" -> {
                         MidiPreviewBridge.stop()
                         Log.i("DXX-Setup", "music_midi_stop: stopped")
                     }
+
                     "music_cd_play" -> {
                         val srcIdx = intent.getIntExtra("source", 0)
                         val trkIdx = intent.getIntExtra("track", 0)
@@ -794,10 +813,12 @@ class SetupActivity : ComponentActivity() {
                             Log.i("DXX-Setup", "music_cd_play: source=${src.discLabel} track=$trkIdx ok=$ok")
                         }.start()
                     }
+
                     "music_cd_stop" -> {
                         CdPreviewBridge.stop()
                         Log.i("DXX-Setup", "music_cd_stop: stopped")
                     }
+
                     "add_audio_source" -> {
                         // Test automation: register a BIN/CUE audio source.
                         // bin_path: absolute filesystem path to the BIN file
@@ -824,13 +845,17 @@ class SetupActivity : ComponentActivity() {
                         enableRedbookInConfig(filesDir, this@SetupActivity)
                         Log.i("DXX-Setup", "add_audio_source: id=$id bin=$binPath cue=$cueName")
                     }
+
                     "clear_audio_sources" -> {
                         val srcManager = AudioSourceManager(filesDir)
                         srcManager.clearAll()
                         File(filesDir, "audio_playlist.json").delete()
                         Log.i("DXX-Setup", "clear_audio_sources: cleared all")
                     }
-                    else -> Log.w("DXX-Setup", "Unknown command: $cmd")
+
+                    else -> {
+                        Log.w("DXX-Setup", "Unknown command: $cmd")
+                    }
                 }
             }
         }
@@ -865,15 +890,18 @@ class SetupActivity : ComponentActivity() {
                         mpCallsign = intent.getStringExtra("callsign") ?: "Player"
                         Log.i("DXX-MP", "Callsign set to: $mpCallsign")
                     }
+
                     "connect" -> {
                         val url =
                             intent.getStringExtra("url")
                                 ?: NetworkConstants.DEFAULT_SERVER_URL
                         MatchmakingService.connect(url, mpCallsign)
                     }
+
                     "disconnect" -> {
                         MatchmakingService.disconnect()
                     }
+
                     "create_lobby" -> {
                         val game = intent.getStringExtra("game") ?: "d2"
                         val mission = intent.getStringExtra("mission") ?: "counterstrike!"
@@ -890,6 +918,7 @@ class SetupActivity : ComponentActivity() {
                             )
                         MatchmakingService.createLobby(game, maxPlayers, gameInfo)
                     }
+
                     "join_first_lobby" -> {
                         val lobbies = MatchmakingStateHolder.state.value.lobbies
                         if (lobbies.isNotEmpty()) {
@@ -900,20 +929,25 @@ class SetupActivity : ComponentActivity() {
                             Log.w("DXX-MP", "No lobbies available to join")
                         }
                     }
+
                     "refresh_lobbies" -> {
                         MatchmakingService.requestLobbyList()
                     }
+
                     "chat" -> {
                         val text = intent.getStringExtra("text") ?: return
                         MatchmakingService.sendLobbyChat(text)
                     }
+
                     "set_ready" -> {
                         val ready = intent.getStringExtra("ready") != "false"
                         MatchmakingService.setReady(ready)
                     }
+
                     "start_game" -> {
                         MatchmakingService.startGame()
                     }
+
                     "launch_game" -> {
                         // Trigger the actual game launch from pending gameLaunchInfo
                         val info = MatchmakingStateHolder.state.value.gameLaunchInfo
@@ -924,15 +958,18 @@ class SetupActivity : ComponentActivity() {
                             Log.w("DXX-MP", "No game launch info pending")
                         }
                     }
+
                     "introspect" -> {
                         writeMpIntrospectJson()
                     }
+
                     "set_join_target" -> {
                         mpJoinHostAddrOverride = intent.getStringExtra("host_addr")
                         val port = intent.getIntExtra("host_port", -1)
                         mpJoinHostPortOverride = if (port > 0) port else null
                         Log.i("DXX-MP", "Join target override: $mpJoinHostAddrOverride:$mpJoinHostPortOverride")
                     }
+
                     "stun_override" -> {
                         val addrs =
                             intent
@@ -944,10 +981,12 @@ class SetupActivity : ComponentActivity() {
                         MatchmakingService.setStunOverride(addrs)
                         Log.i("DXX-MP", "STUN override set: $addrs")
                     }
+
                     "stun_override_clear" -> {
                         MatchmakingService.setStunOverride(null)
                         Log.i("DXX-MP", "STUN override cleared")
                     }
+
                     "lan_launch" -> {
                         val game = intent.getStringExtra("game") ?: "d2"
                         val mpMode = intent.getStringExtra("mp_mode") ?: "host"
@@ -983,6 +1022,7 @@ class SetupActivity : ComponentActivity() {
                         )
                         launchMultiplayerGame(info)
                     }
+
                     "lan_host_lobby" -> {
                         val callsign = intent.getStringExtra("callsign") ?: "TestHost"
                         val game = intent.getStringExtra("game") ?: "d2"
@@ -996,11 +1036,13 @@ class SetupActivity : ComponentActivity() {
                             .hostLobby(callsign, game, mission, mode, maxPlayers)
                         Log.i("DXX-MP", "lan_host_lobby: hosting as $callsign ($game/$mission/$mode)")
                     }
+
                     "lan_stop_lobby" -> {
                         com.dxxredux.app.lobby.LobbyService
                             .stopDiscovery()
                         Log.i("DXX-MP", "lan_stop_lobby: stopped")
                     }
+
                     "lan_discover" -> {
                         val callsign = intent.getStringExtra("callsign") ?: "TestJoin"
                         mpCallsign = callsign
@@ -1008,6 +1050,7 @@ class SetupActivity : ComponentActivity() {
                             .startDiscovery(this@SetupActivity, callsign)
                         Log.i("DXX-MP", "lan_discover: started discovery as $callsign")
                     }
+
                     "lan_discover_status" -> {
                         val lobbies = com.dxxredux.app.lobby.LobbyService.discoveredLobbies.value
                         val hosting = com.dxxredux.app.lobby.LobbyService.isHosting.value
@@ -1029,10 +1072,12 @@ class SetupActivity : ComponentActivity() {
                             )
                         }
                     }
+
                     "dismiss_keyboard" -> {
                         dismissKeyboard()
                         Log.i("DXX-MP", "dismiss_keyboard: done")
                     }
+
                     "tap_button" -> {
                         val text =
                             intent.getStringExtra("text") ?: run {
@@ -1067,7 +1112,10 @@ class SetupActivity : ComponentActivity() {
                             Log.w("DXX-MP", "tap_button: \"$text\" not found (available: $available)")
                         }
                     }
-                    else -> Log.w("DXX-MP", "Unknown MP command: $cmd")
+
+                    else -> {
+                        Log.w("DXX-MP", "Unknown MP command: $cmd")
+                    }
                 }
             }
         }
@@ -1097,10 +1145,18 @@ class SetupActivity : ComponentActivity() {
                 val d1File = java.io.File(context.filesDir, "d1x-redux/host_migration.json")
                 val file =
                     when {
-                        d2File.exists() && d1File.exists() ->
+                        d2File.exists() && d1File.exists() -> {
                             if (d2File.lastModified() >= d1File.lastModified()) d2File else d1File
-                        d2File.exists() -> d2File
-                        d1File.exists() -> d1File
+                        }
+
+                        d2File.exists() -> {
+                            d2File
+                        }
+
+                        d1File.exists() -> {
+                            d1File
+                        }
+
                         else -> {
                             Log.w("DXX-MP", "host_migration.json not found in d1 or d2 dirs")
                             return
@@ -1172,6 +1228,9 @@ class SetupActivity : ComponentActivity() {
     /** True while a controller-config picker dialog is open and should receive D-pad/A input. */
     internal var controllerConfigDialogOpen = false
 
+    /** Active controller-config dialog view for dialog-local key routing. */
+    internal var controllerConfigDialogView: View? = null
+
     private fun hatAxisDirection(value: Float): Int =
         when {
             value < -0.5f -> -1
@@ -1192,31 +1251,41 @@ class SetupActivity : ComponentActivity() {
         }
 
     private fun synthesizeDpadKeyEvent(
+        targetView: View?,
         keyCode: Int,
         action: Int,
     ) {
         val eventTime = SystemClock.uptimeMillis()
-        super.dispatchKeyEvent(KeyEvent(eventTime, eventTime, action, keyCode, 0))
+        val event = KeyEvent(eventTime, eventTime, action, keyCode, 0)
+        if (targetView?.dispatchKeyEvent(event) != true) super.dispatchKeyEvent(event)
     }
 
     private fun synthesizeDpadTransition(
+        targetView: View?,
         oldDirection: Int,
         newDirection: Int,
         negativeKeyCode: Int,
         positiveKeyCode: Int,
     ) {
         if (oldDirection == newDirection) return
-        if (oldDirection == -1) synthesizeDpadKeyEvent(negativeKeyCode, KeyEvent.ACTION_UP)
-        if (oldDirection == 1) synthesizeDpadKeyEvent(positiveKeyCode, KeyEvent.ACTION_UP)
-        if (newDirection == -1) synthesizeDpadKeyEvent(negativeKeyCode, KeyEvent.ACTION_DOWN)
-        if (newDirection == 1) synthesizeDpadKeyEvent(positiveKeyCode, KeyEvent.ACTION_DOWN)
+        if (oldDirection == -1) synthesizeDpadKeyEvent(targetView, negativeKeyCode, KeyEvent.ACTION_UP)
+        if (oldDirection == 1) synthesizeDpadKeyEvent(targetView, positiveKeyCode, KeyEvent.ACTION_UP)
+        if (newDirection == -1) synthesizeDpadKeyEvent(targetView, negativeKeyCode, KeyEvent.ACTION_DOWN)
+        if (newDirection == 1) synthesizeDpadKeyEvent(targetView, positiveKeyCode, KeyEvent.ACTION_DOWN)
     }
 
-    internal fun handleControllerMotion(event: MotionEvent): Boolean {
+    internal fun handleControllerMotion(
+        targetView: View? = null,
+        event: MotionEvent,
+    ): Boolean {
         if (event.source and InputDevice.SOURCE_JOYSTICK != InputDevice.SOURCE_JOYSTICK ||
             event.action != MotionEvent.ACTION_MOVE
         ) {
             return false
+        }
+
+        if (controllerConfigDialogOpen && targetView != null) {
+            controllerConfigDialogView = targetView.rootView
         }
 
         controllerAxes[0] = event.getAxisValue(MotionEvent.AXIS_X)
@@ -1239,20 +1308,23 @@ class SetupActivity : ComponentActivity() {
             )
         }
 
-        if (!controllerConfigActive) {
+        if (!controllerConfigActive || controllerConfigDialogOpen) {
             val newHatX = hatAxisDirection(dpadAxes[0])
             val newHatY = hatAxisDirection(dpadAxes[1])
             val newStickX = stickAxisDirection(controllerAxes[0], stickXState)
             val newStickY = stickAxisDirection(controllerAxes[1], stickYState)
             val newNavX = if (newHatX != 0) newHatX else newStickX
             val newNavY = if (newHatY != 0) newHatY else newStickY
+            val navTarget = if (controllerConfigDialogOpen) controllerConfigDialogView else null
             synthesizeDpadTransition(
+                navTarget,
                 navXState,
                 newNavX,
                 KeyEvent.KEYCODE_DPAD_LEFT,
                 KeyEvent.KEYCODE_DPAD_RIGHT,
             )
             synthesizeDpadTransition(
+                navTarget,
                 navYState,
                 newNavY,
                 KeyEvent.KEYCODE_DPAD_UP,
@@ -1270,7 +1342,7 @@ class SetupActivity : ComponentActivity() {
     }
 
     override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
-        if (handleControllerMotion(event)) return true
+        if (handleControllerMotion(event = event)) return true
         return super.dispatchGenericMotionEvent(event)
     }
 
@@ -1319,10 +1391,18 @@ class SetupActivity : ComponentActivity() {
                             KeyEvent.KEYCODE_BUTTON_A,
                         )
                 if (!allowPickerNavigation) return true
+                val dialogView = controllerConfigDialogView
                 if (event.keyCode == KeyEvent.KEYCODE_BUTTON_A) {
                     val center = KeyEvent(event.action, KeyEvent.KEYCODE_DPAD_CENTER)
-                    return super.dispatchKeyEvent(center)
+                    return if (dialogView !=
+                        null
+                    ) {
+                        dialogView.dispatchKeyEvent(center)
+                    } else {
+                        super.dispatchKeyEvent(center)
+                    }
                 }
+                return if (dialogView != null) dialogView.dispatchKeyEvent(event) else super.dispatchKeyEvent(event)
             }
             // Map B button to system Back for page navigation
             Log.d("DXX-Focus", "Gamepad key: $name action=${event.action}")
@@ -3097,19 +3177,54 @@ private fun SetupScreen(
                         if (name != null) {
                             val lname = name.lowercase()
                             when {
-                                lname.endsWith(".zip") || lname.endsWith(".7z") -> zipUris.add(name to uri)
-                                lname.endsWith(".cue") -> cueUris.add(name to uri)
-                                lname.endsWith(".iso") -> isoUris.add(name to uri)
-                                lname.endsWith(".inst") -> instDiscUri = name to uri
-                                lname.endsWith(".gog") -> gogDiscUri = name to uri
-                                lname.endsWith(".bin") -> binUris.add(name to uri)
-                                lname.endsWith(".exe") || lname.endsWith(".pkg") -> gogUri = name to uri
-                                lname.endsWith(".sow") -> sowUri = name to uri
-                                lname.endsWith(".dem") -> gameUris.add(FoundFile(name, uri))
-                                lname in ALL_GAME_FILENAMES -> gameUris.add(FoundFile(name, uri))
-                                lname.endsWith(".mp3") || lname.endsWith(".ogg") || lname.endsWith(".flac") ->
+                                lname.endsWith(".zip") || lname.endsWith(".7z") -> {
+                                    zipUris.add(name to uri)
+                                }
+
+                                lname.endsWith(".cue") -> {
+                                    cueUris.add(name to uri)
+                                }
+
+                                lname.endsWith(".iso") -> {
+                                    isoUris.add(name to uri)
+                                }
+
+                                lname.endsWith(".inst") -> {
+                                    instDiscUri = name to uri
+                                }
+
+                                lname.endsWith(".gog") -> {
+                                    gogDiscUri = name to uri
+                                }
+
+                                lname.endsWith(".bin") -> {
+                                    binUris.add(name to uri)
+                                }
+
+                                lname.endsWith(".exe") || lname.endsWith(".pkg") -> {
+                                    gogUri = name to uri
+                                }
+
+                                lname.endsWith(".sow") -> {
+                                    sowUri = name to uri
+                                }
+
+                                lname.endsWith(".dem") -> {
+                                    gameUris.add(FoundFile(name, uri))
+                                }
+
+                                lname in ALL_GAME_FILENAMES -> {
+                                    gameUris.add(FoundFile(name, uri))
+                                }
+
+                                lname.endsWith(".mp3") || lname.endsWith(".ogg") || lname.endsWith(".flac") -> {
                                     audioFileUris.add(uri)
-                                lname.endsWith(".dxa") -> dxaImportUris.add(name to uri)
+                                }
+
+                                lname.endsWith(".dxa") -> {
+                                    dxaImportUris.add(name to uri)
+                                }
+
                                 lname.endsWith(".json") -> {
                                     // Detect game config JSON (only when picked alone)
                                     if (uris.size == 1) {
@@ -3137,7 +3252,10 @@ private fun SetupScreen(
                                         unhandledFiles.add(name)
                                     }
                                 }
-                                else -> unhandledFiles.add(name)
+
+                                else -> {
+                                    unhandledFiles.add(name)
+                                }
                             }
                         }
                     }
@@ -3333,7 +3451,8 @@ private fun SetupScreen(
                 axisGeneration = axisGeneration,
                 pressedButtons = pressedButtons,
                 gameVariant = selectedGame,
-                onDialogGenericMotionEvent = activity::handleControllerMotion,
+                onDialogGenericMotionEvent = { view, event -> activity.handleControllerMotion(view, event) },
+                onDialogViewChanged = { activity.controllerConfigDialogView = it },
                 onPickerOpenChanged = { activity.controllerConfigDialogOpen = it },
                 onBack = { showControllerPage = false },
             )
@@ -3481,6 +3600,7 @@ private fun SetupScreen(
                                         onRefresh()
                                     }
                                 }
+
                                 // File on disk with manifest entry — delete file + manifest entry
                                 status.found && status.manifestEntry != null -> {
                                     {
@@ -3496,6 +3616,7 @@ private fun SetupScreen(
                                         onRefresh()
                                     }
                                 }
+
                                 // External import but missing from disk — forget the manifest entry
                                 status.manifestEntry?.isExternal == true -> {
                                     {
@@ -3504,7 +3625,10 @@ private fun SetupScreen(
                                         onRefresh()
                                     }
                                 }
-                                else -> null
+
+                                else -> {
+                                    null
+                                }
                             },
                     )
                 }
@@ -5116,27 +5240,35 @@ private fun RecommendedModRow(
         }
         Spacer(modifier = Modifier.width(8.dp))
         when (progress) {
-            null ->
+            null -> {
                 Button(
                     onClick = onDownload,
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                     modifier = Modifier.height(28.dp),
                 ) { Text("Download", fontSize = 11.sp) }
-            in 0..100 ->
+            }
+
+            in 0..100 -> {
                 Text(
                     "$progress%",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.width(40.dp),
                 )
-            -1 -> Text("Error", fontSize = 12.sp, color = Color(0xFFF44336))
-            -2 ->
+            }
+
+            -1 -> {
+                Text("Error", fontSize = 12.sp, color = Color(0xFFF44336))
+            }
+
+            -2 -> {
                 Text(
                     "\u2713",
                     fontSize = 14.sp,
                     color = Color(0xFF4CAF50),
                     fontWeight = FontWeight.Bold,
                 )
+            }
         }
     }
 }
@@ -5174,8 +5306,12 @@ private fun MusicInfoSection(
     val musicReady =
         when (musicMode) {
             "midi" -> hasMidiSource
+
             "cd" -> hasCdAudio
-            "files" -> true // custom files are optional
+
+            "files" -> true
+
+            // custom files are optional
             else -> hasCdAudio
         }
 
@@ -6197,7 +6333,10 @@ private fun FileStatusRow(
             color =
                 when {
                     status.found -> Color(0xFF4CAF50)
-                    isMissing -> Color(0xFFFF9800) // orange warning
+
+                    isMissing -> Color(0xFFFF9800)
+
+                    // orange warning
                     else -> Color(0xFFF44336)
                 },
             fontSize = 14.sp,
@@ -6280,6 +6419,7 @@ private fun DownloadableFileRow(
                     Text("Download", fontSize = 11.sp)
                 }
             }
+
             in 0..100 -> {
                 // Downloading — show progress
                 Text(
@@ -6289,6 +6429,7 @@ private fun DownloadableFileRow(
                     modifier = Modifier.width(40.dp),
                 )
             }
+
             -1 -> {
                 // Error
                 Text(
@@ -6297,6 +6438,7 @@ private fun DownloadableFileRow(
                     color = Color(0xFFF44336),
                 )
             }
+
             -2 -> {
                 // Done (will be replaced by FileStatusRow on refresh)
                 Text(
@@ -7293,13 +7435,21 @@ private fun DiscImportDialog(
                                                     dataExtracted = extracted.coerceAtLeast(0) + sowExtracted
                                                     status =
                                                         when {
-                                                            isoExtracted > 0 && sowExtracted > 0 ->
+                                                            isoExtracted > 0 && sowExtracted > 0 -> {
                                                                 "Extracted $isoExtracted file(s) + $sowExtracted from .sow archives"
-                                                            isoExtracted > 0 ->
+                                                            }
+
+                                                            isoExtracted > 0 -> {
                                                                 "Extracted $isoExtracted game file(s)"
-                                                            macExtracted > 0 ->
+                                                            }
+
+                                                            macExtracted > 0 -> {
                                                                 "Extracted $macExtracted file(s) from Mac HFS installer"
-                                                            else -> "No supported game files found on data track"
+                                                            }
+
+                                                            else -> {
+                                                                "No supported game files found on data track"
+                                                            }
                                                         }
                                                 }
                                             } else {
@@ -7625,11 +7775,17 @@ private fun IsoImportDialog(
                                                 extractedCount = isoExtracted.coerceAtLeast(0) + sowExtracted
                                                 status =
                                                     when {
-                                                        isoExtracted > 0 && sowExtracted > 0 ->
+                                                        isoExtracted > 0 && sowExtracted > 0 -> {
                                                             "Extracted $isoExtracted file(s) + $sowExtracted from .sow archives"
-                                                        isoExtracted > 0 ->
+                                                        }
+
+                                                        isoExtracted > 0 -> {
                                                             "Extracted $isoExtracted game file(s)"
-                                                        else -> "No supported game files found in ISO image"
+                                                        }
+
+                                                        else -> {
+                                                            "No supported game files found in ISO image"
+                                                        }
                                                     }
                                             }
                                         } else {

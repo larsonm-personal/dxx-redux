@@ -211,6 +211,7 @@ class SkipButtonView(
                 }
                 return false
             }
+
             MotionEvent.ACTION_UP -> {
                 if (pressed && inside) {
                     performClick()
@@ -219,6 +220,7 @@ class SkipButtonView(
                 pressed = false
                 invalidate()
             }
+
             MotionEvent.ACTION_CANCEL -> {
                 pressed = false
                 invalidate()

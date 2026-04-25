@@ -292,7 +292,10 @@ object ConfigImportExport {
                 "touch_overlay_enabled", PREF_GUIDEBOT_HELPER_LINE, PREF_NEAREST_PLAYER_LINE -> {
                     editor.putBoolean(key, json.getBoolean(key))
                 }
-                else -> editor.putString(key, json.getString(key))
+
+                else -> {
+                    editor.putString(key, json.getString(key))
+                }
             }
             count++
         }

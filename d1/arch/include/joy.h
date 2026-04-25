@@ -27,6 +27,7 @@ extern int joy_num_axes; // set to Joystick.n_axes. solve different?
 extern void joy_init();
 extern void joy_close();
 extern void event_joystick_get_axis(struct d_event *event, int *axis, int *value);
+extern int event_joystick_get_touch_source(struct d_event *event);
 extern void joy_flush();
 extern int event_joystick_get_button(struct d_event *event);
 extern void joy_button_handler(SDL_JoyButtonEvent *jbe);

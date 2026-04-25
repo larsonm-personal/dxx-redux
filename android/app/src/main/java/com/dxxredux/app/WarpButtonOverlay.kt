@@ -138,6 +138,7 @@ class WarpButtonOverlay(
                 }
                 return false
             }
+
             MotionEvent.ACTION_UP -> {
                 if (pressed && btnRect.contains(event.x, event.y)) {
                     val holdMs = System.currentTimeMillis() - pressStartMs
@@ -158,6 +159,7 @@ class WarpButtonOverlay(
                 pressed = false
                 invalidate()
             }
+
             MotionEvent.ACTION_CANCEL -> {
                 pressed = false
                 invalidate()

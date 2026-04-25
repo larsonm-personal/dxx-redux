@@ -566,6 +566,7 @@ class VideoInfoOverlay(
                 }
                 if (inPanel) return true
             }
+
             MotionEvent.ACTION_UP -> {
                 if (buttonPressed && inButton) {
                     labelsOn = !labelsOn
@@ -616,6 +617,7 @@ class VideoInfoOverlay(
                     return true
                 }
             }
+
             MotionEvent.ACTION_CANCEL -> {
                 buttonPressed = false
                 anisoPressed = false

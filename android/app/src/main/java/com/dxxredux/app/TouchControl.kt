@@ -38,9 +38,14 @@ fun applyResponseCurve(
 ): Float {
     val clamped = input.coerceIn(-1f, 1f)
     return when (curve) {
-        ResponseCurve.LINEAR -> clamped
-        ResponseCurve.EXPONENTIAL ->
+        ResponseCurve.LINEAR -> {
+            clamped
+        }
+
+        ResponseCurve.EXPONENTIAL -> {
             sign(clamped) * abs(clamped).pow(exponent)
+        }
+
         ResponseCurve.S_CURVE -> {
             // Attempt a smooth S-curve: low response near center, fast near edges
             val t = abs(clamped)

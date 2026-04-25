@@ -160,6 +160,7 @@ private fun FriendCard(friend: FriendInfo) {
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
+
                         friend.presence == "in_game" && friend.inGameDetails != null -> {
                             val d = friend.inGameDetails
                             Text(
@@ -167,6 +168,7 @@ private fun FriendCard(friend: FriendInfo) {
                                 style = MaterialTheme.typography.bodySmall,
                             )
                         }
+
                         friend.presence == "online" -> {
                             Text(
                                 "Online",
@@ -174,6 +176,7 @@ private fun FriendCard(friend: FriendInfo) {
                                 color = MaterialTheme.colorScheme.primary,
                             )
                         }
+
                         else -> {
                             Text(
                                 "Offline",

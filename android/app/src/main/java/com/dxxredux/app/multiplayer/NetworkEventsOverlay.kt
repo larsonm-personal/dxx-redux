@@ -171,15 +171,30 @@ class NetworkEventsOverlay(
         if (ice.phase != IcePhase.IDLE) {
             val iceLabel =
                 when (ice.phase) {
-                    IcePhase.STUN_DISCOVERY -> "ICE: discovering..."
-                    IcePhase.STUN_COMPLETE -> "ICE: STUN done (${ice.stunNatType}, ${ice.stunCandidateCount} cands)"
-                    IcePhase.PROBING -> "ICE: probing..."
+                    IcePhase.STUN_DISCOVERY -> {
+                        "ICE: discovering..."
+                    }
+
+                    IcePhase.STUN_COMPLETE -> {
+                        "ICE: STUN done (${ice.stunNatType}, ${ice.stunCandidateCount} cands)"
+                    }
+
+                    IcePhase.PROBING -> {
+                        "ICE: probing..."
+                    }
+
                     IcePhase.COMPLETE -> {
                         val rtt = ice.probeRttMs?.let { " ${it}ms" } ?: ""
                         "ICE: ${ice.probeResult ?: "done"}$rtt"
                     }
-                    IcePhase.FAILED -> "ICE: FAILED - ${ice.errorMessage ?: "unknown"}"
-                    IcePhase.IDLE -> "ICE: idle"
+
+                    IcePhase.FAILED -> {
+                        "ICE: FAILED - ${ice.errorMessage ?: "unknown"}"
+                    }
+
+                    IcePhase.IDLE -> {
+                        "ICE: idle"
+                    }
                 }
             val iceColor =
                 when (ice.phase) {

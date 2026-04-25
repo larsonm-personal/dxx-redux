@@ -139,7 +139,9 @@ private fun StatusBadge(status: ConnectionStatus) {
     val color =
         when (status) {
             ConnectionStatus.CONNECTED -> MaterialTheme.colorScheme.primary
+
             ConnectionStatus.DISCONNECTED -> MaterialTheme.colorScheme.error
+
             ConnectionStatus.CONNECTING,
             ConnectionStatus.AUTHENTICATING,
             ConnectionStatus.RECONNECTING,

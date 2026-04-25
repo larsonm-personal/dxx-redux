@@ -194,6 +194,7 @@ class MusicControlPanel(
                 dragging = false
                 return true
             }
+
             MotionEvent.ACTION_MOVE -> {
                 val dy = event.y - touchStartY
                 if (!dragging && kotlin.math.abs(dy) > 10f) dragging = true
@@ -203,6 +204,7 @@ class MusicControlPanel(
                 }
                 return true
             }
+
             MotionEvent.ACTION_UP -> {
                 if (dragging) return true
                 val px = event.x

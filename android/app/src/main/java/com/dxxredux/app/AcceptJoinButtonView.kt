@@ -95,11 +95,13 @@ class AcceptJoinButtonView(
                 }
                 return false
             }
+
             MotionEvent.ACTION_UP -> {
                 if (pressed && inside) acceptCallback?.invoke()
                 pressed = false
                 invalidate()
             }
+
             MotionEvent.ACTION_CANCEL -> {
                 pressed = false
                 invalidate()

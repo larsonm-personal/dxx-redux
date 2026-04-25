@@ -182,6 +182,7 @@ class MainActivity :
     external fun nativeJoystickAxis(
         axis: Int,
         value: Float,
+        touchActive: Boolean,
     )
 
     external fun nativeJoystickButton(
@@ -595,7 +596,7 @@ class MainActivity :
                 buttonCallback = { btn, pressed ->
                     nativeJoystickButton(TouchBindings.MIXER_BTN_BASE + btn, pressed)
                 },
-                axisCallback = { axis, value -> nativeJoystickAxis(axis, value) },
+                axisCallback = { axis, value, touchActive -> nativeJoystickAxis(axis, value, touchActive) },
             )
         touchOverlay.inputMixer = inputMixer
         touchOverlay.axisCallback = { axis, value ->
@@ -654,13 +655,26 @@ class MainActivity :
         }
         touchOverlay.adminTrayCallback = { action ->
             when (action) {
-                TouchOverlayView.ADMIN_INCREASE_VIEW -> nativeCycleCockpit(1)
-                TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL -> nativeToggleAutoLeveling()
-                TouchOverlayView.ADMIN_QUICK_SAVE -> openSaveLoadMenu(openSave = true)
-                TouchOverlayView.ADMIN_QUICK_LOAD -> openSaveLoadMenu(openSave = false)
+                TouchOverlayView.ADMIN_INCREASE_VIEW -> {
+                    nativeCycleCockpit(1)
+                }
+
+                TouchOverlayView.ADMIN_TOGGLE_AUTOLEVEL -> {
+                    nativeToggleAutoLeveling()
+                }
+
+                TouchOverlayView.ADMIN_QUICK_SAVE -> {
+                    openSaveLoadMenu(openSave = true)
+                }
+
+                TouchOverlayView.ADMIN_QUICK_LOAD -> {
+                    openSaveLoadMenu(openSave = false)
+                }
+
                 TouchOverlayView.ADMIN_OPEN_MENU -> {
                     openGameMenuSafely()
                 }
+
                 TouchOverlayView.ADMIN_NET_STATS -> {
                     if (!isNetStatsControlEnabled()) {
                         resetSinglePlayerNetStatsIfNeeded()
@@ -668,6 +682,7 @@ class MainActivity :
                         netStatsOverlay?.toggle()
                     }
                 }
+
                 TouchOverlayView.ADMIN_NET_EVENTS -> {
                     if (!isNetEventsControlEnabled()) {
                         resetSinglePlayerNetEventsIfNeeded()
@@ -676,27 +691,36 @@ class MainActivity :
                         if (netEventsManualToggle) netEventsOverlay?.show() else netEventsOverlay?.hide()
                     }
                 }
+
                 TouchOverlayView.ADMIN_EXIT_LAUNCHER -> {
                     NativeMetaActions.nativeMetaAction(TouchBindings.META_RETURN_TO_LAUNCHER, 1)
                 }
+
                 TouchOverlayView.ADMIN_VIDEO_INFO -> {
                     videoInfoOverlay?.toggle()
                 }
+
                 TouchOverlayView.ADMIN_AUTOMAP -> {
                     nativeKeyEvent(0, KeyEvent.KEYCODE_TAB, '\t'.code)
                     nativeKeyEvent(1, KeyEvent.KEYCODE_TAB, 0)
                 }
+
                 TouchOverlayView.ADMIN_HEADLIGHT -> {
                     nativeKeyEvent(0, KeyEvent.KEYCODE_H, 'h'.code)
                     nativeKeyEvent(1, KeyEvent.KEYCODE_H, 0)
                 }
+
                 TouchOverlayView.ADMIN_WARP -> {
                     try {
                         nativeCoopWarpExecute()
                     } catch (_: Exception) {
                     }
                 }
-                TouchOverlayView.ADMIN_MUSIC -> showMusicPanel()
+
+                TouchOverlayView.ADMIN_MUSIC -> {
+                    showMusicPanel()
+                }
+
                 TouchOverlayView.ADMIN_ACCEPT_JOIN -> {
                     try {
                         nativeAcceptJoinRequest()
@@ -1620,18 +1644,23 @@ class MainActivity :
                         Log.i("DXX-Command", "Setting music gain to $db dB")
                         nativeSetMusicGain(db)
                     }
+
                     "voices" -> {
                         val n = intent.getIntExtra("value", 48)
                         Log.i("DXX-Command", "Setting max voices to $n")
                         nativeSetMusicVoices(n)
                     }
+
                     "debug" -> {
                         val field = intent.getStringExtra("field") ?: ""
                         val v = intent.getIntExtra("value", 0)
                         Log.i("DXX-Command", "Setting debug flag $field = $v")
                         nativeSetDebugFlag(field, v)
                     }
-                    else -> Log.w("DXX-Command", "Unknown command: $cmd")
+
+                    else -> {
+                        Log.w("DXX-Command", "Unknown command: $cmd")
+                    }
                 }
             }
         }
@@ -1704,12 +1733,14 @@ class MainActivity :
                 edgeSwipeTracking = event.x < edgeThresholdPx
                 if (edgeSwipeTracking) edgeSwipeStartX = event.x
             }
+
             MotionEvent.ACTION_MOVE -> {
                 if (edgeSwipeTracking) {
                     edgeFlingDetector.onTouchEvent(event)
                     return true
                 }
             }
+
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 if (edgeSwipeTracking) {
                     edgeFlingDetector.onTouchEvent(event)
@@ -2183,6 +2214,7 @@ class MainActivity :
             KeyEvent.KEYCODE_DPAD_CENTER,
             KeyEvent.KEYCODE_BACK,
             -> InputDevice.SOURCE_KEYBOARD or InputDevice.SOURCE_DPAD
+
             else -> InputDevice.SOURCE_KEYBOARD
         }
 
@@ -2226,10 +2258,14 @@ class MainActivity :
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (gameSurfaceView.keyboardActive) {
             when (event.keyCode) {
-                KeyEvent.KEYCODE_BUTTON_A ->
+                KeyEvent.KEYCODE_BUTTON_A -> {
                     return dispatchImeNavigationKey(event, KeyEvent.KEYCODE_DPAD_CENTER)
-                KeyEvent.KEYCODE_BUTTON_SELECT ->
+                }
+
+                KeyEvent.KEYCODE_BUTTON_SELECT -> {
                     return dispatchImeNavigationKey(event, KeyEvent.KEYCODE_DPAD_CENTER)
+                }
+
                 KeyEvent.KEYCODE_BUTTON_B,
                 KeyEvent.KEYCODE_BACK,
                 -> {
@@ -2238,6 +2274,7 @@ class MainActivity :
                     }
                     return true
                 }
+
                 KeyEvent.KEYCODE_DPAD_UP,
                 KeyEvent.KEYCODE_DPAD_DOWN,
                 KeyEvent.KEYCODE_DPAD_LEFT,
@@ -2246,6 +2283,7 @@ class MainActivity :
                 -> {
                     return super.dispatchKeyEvent(event)
                 }
+
                 KeyEvent.KEYCODE_ENTER,
                 KeyEvent.KEYCODE_NUMPAD_ENTER,
                 -> {

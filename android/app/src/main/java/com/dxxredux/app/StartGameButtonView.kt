@@ -86,6 +86,7 @@ class StartGameButtonView(
                 }
                 return false
             }
+
             MotionEvent.ACTION_UP -> {
                 if (pressed && inside) {
                     injectEnter()
@@ -93,6 +94,7 @@ class StartGameButtonView(
                 pressed = false
                 invalidate()
             }
+
             MotionEvent.ACTION_CANCEL -> {
                 pressed = false
                 invalidate()

@@ -49,9 +49,12 @@ internal fun IceProgressPanel(state: MatchmakingState) {
             val stunStatus =
                 when {
                     ice.phase == IcePhase.STUN_DISCOVERY -> StepState.RUNNING
+
                     ice.phase > IcePhase.STUN_DISCOVERY -> StepState.DONE
+
                     ice.phase == IcePhase.FAILED &&
                         ice.stunNatType == null -> StepState.FAILED
+
                     else -> StepState.PENDING
                 }
             val stunDetail =
@@ -90,12 +93,21 @@ internal fun IceProgressPanel(state: MatchmakingState) {
                 }
             val peerDetail =
                 when {
-                    state.connectivityPairs.isNotEmpty() ->
+                    state.connectivityPairs.isNotEmpty() -> {
                         "${state.peerCandidates.size} peers, ${state.connectivityPairs.size} pairs"
-                    state.peerCandidates.isNotEmpty() ->
+                    }
+
+                    state.peerCandidates.isNotEmpty() -> {
                         "${state.peerCandidates.size} peers received, waiting for check..."
-                    peerStatus == StepState.RUNNING -> "waiting for peer results..."
-                    else -> ""
+                    }
+
+                    peerStatus == StepState.RUNNING -> {
+                        "waiting for peer results..."
+                    }
+
+                    else -> {
+                        ""
+                    }
                 }
             StepRow("Peer Exchange", peerStatus, peerDetail)
 
@@ -113,9 +125,18 @@ internal fun IceProgressPanel(state: MatchmakingState) {
                         val rtt = ice.probeRttMs?.let { " (${it}ms)" } ?: ""
                         "${ice.probeResult}$rtt"
                     }
-                    probeStatus == StepState.RUNNING -> "sending probes..."
-                    probeStatus == StepState.FAILED -> ice.errorMessage ?: "failed"
-                    else -> ""
+
+                    probeStatus == StepState.RUNNING -> {
+                        "sending probes..."
+                    }
+
+                    probeStatus == StepState.FAILED -> {
+                        ice.errorMessage ?: "failed"
+                    }
+
+                    else -> {
+                        ""
+                    }
                 }
             StepRow("Connectivity Probe", probeStatus, probeDetail)
 
@@ -128,20 +149,36 @@ internal fun IceProgressPanel(state: MatchmakingState) {
                         val relay = method == "relay"
                         if (relay) "Ready (relay)" else "Ready (direct: $method)"
                     }
-                    IcePhase.FAILED -> "Failed: ${ice.errorMessage ?: "unknown error"}"
-                    IcePhase.IDLE -> "Waiting for players..."
-                    else -> "Negotiating..."
+
+                    IcePhase.FAILED -> {
+                        "Failed: ${ice.errorMessage ?: "unknown error"}"
+                    }
+
+                    IcePhase.IDLE -> {
+                        "Waiting for players..."
+                    }
+
+                    else -> {
+                        "Negotiating..."
+                    }
                 }
             val summaryColor =
                 when (ice.phase) {
-                    IcePhase.COMPLETE ->
+                    IcePhase.COMPLETE -> {
                         if (ice.probeResult == "relay") {
                             Color(0xFFFFAA44)
                         } else {
                             Color(0xFF44FF44)
                         }
-                    IcePhase.FAILED -> MaterialTheme.colorScheme.error
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+
+                    IcePhase.FAILED -> {
+                        MaterialTheme.colorScheme.error
+                    }
+
+                    else -> {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
                 }
             Text(
                 summary,

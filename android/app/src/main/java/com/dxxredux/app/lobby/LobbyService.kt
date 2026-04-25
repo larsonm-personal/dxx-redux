@@ -539,20 +539,60 @@ object LobbyService {
     ) {
         val type = json.optString("type")
         when (type) {
-            MSG_ANNOUNCE -> handleAnnounce(json, senderAddr)
-            MSG_JOIN -> handleJoin(json, senderAddr)
-            MSG_LEAVE -> handleLeave(json)
-            MSG_READY -> handleReady(json)
-            MSG_PLAYER_LIST -> handlePlayerList(json)
-            MSG_START -> handleStart(json, senderAddr)
-            MSG_PING -> handlePing(json, senderAddr)
-            MSG_PONG -> {} // future: calculate RTT
-            MSG_JOIN_ACK -> handleJoinAck(json, senderAddr)
-            MSG_JOIN_REJECT -> handleJoinReject(json)
-            MSG_QUERY -> handleQuery(senderAddr)
-            MSG_CHAT -> handleChat(json, senderAddr)
-            MSG_KICK -> handleKick(json)
-            else -> Log.w(TAG, "Unknown packet type '$type' from $senderAddr")
+            MSG_ANNOUNCE -> {
+                handleAnnounce(json, senderAddr)
+            }
+
+            MSG_JOIN -> {
+                handleJoin(json, senderAddr)
+            }
+
+            MSG_LEAVE -> {
+                handleLeave(json)
+            }
+
+            MSG_READY -> {
+                handleReady(json)
+            }
+
+            MSG_PLAYER_LIST -> {
+                handlePlayerList(json)
+            }
+
+            MSG_START -> {
+                handleStart(json, senderAddr)
+            }
+
+            MSG_PING -> {
+                handlePing(json, senderAddr)
+            }
+
+            MSG_PONG -> {}
+
+            // future: calculate RTT
+            MSG_JOIN_ACK -> {
+                handleJoinAck(json, senderAddr)
+            }
+
+            MSG_JOIN_REJECT -> {
+                handleJoinReject(json)
+            }
+
+            MSG_QUERY -> {
+                handleQuery(senderAddr)
+            }
+
+            MSG_CHAT -> {
+                handleChat(json, senderAddr)
+            }
+
+            MSG_KICK -> {
+                handleKick(json)
+            }
+
+            else -> {
+                Log.w(TAG, "Unknown packet type '$type' from $senderAddr")
+            }
         }
     }
 

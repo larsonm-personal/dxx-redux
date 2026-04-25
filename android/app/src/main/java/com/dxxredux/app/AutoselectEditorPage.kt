@@ -533,13 +533,19 @@ private fun DragReorderList(
                                                 val edge = vpH * 0.15f
                                                 overscrollSpeed =
                                                     when {
-                                                        center < edge ->
+                                                        center < edge -> {
                                                             -(1f - (center / edge).coerceIn(0f, 1f)) *
                                                                 itemHeightPx / 4f
-                                                        center > vpH - edge ->
+                                                        }
+
+                                                        center > vpH - edge -> {
                                                             ((center - vpH + edge) / edge).coerceIn(0f, 1f) *
                                                                 itemHeightPx / 4f
-                                                        else -> 0f
+                                                        }
+
+                                                        else -> {
+                                                            0f
+                                                        }
                                                     }
                                             } else {
                                                 // Item scrolled off-screen -- scroll toward it.

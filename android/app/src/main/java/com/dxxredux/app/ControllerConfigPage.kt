@@ -335,11 +335,15 @@ private fun verticalDpadFocusEscape(): Modifier {
                 if (ev.type == KeyEventType.KeyDown) focusManager.moveFocus(FocusDirection.Up)
                 ev.type == KeyEventType.KeyDown || ev.type == KeyEventType.KeyUp
             }
+
             Key.DirectionDown -> {
                 if (ev.type == KeyEventType.KeyDown) focusManager.moveFocus(FocusDirection.Down)
                 ev.type == KeyEventType.KeyDown || ev.type == KeyEventType.KeyUp
             }
-            else -> false
+
+            else -> {
+                false
+            }
         }
     }
 }
@@ -965,7 +969,8 @@ fun ControllerConfigPage(
     axisGeneration: Int,
     pressedButtons: SnapshotStateList<String>,
     gameVariant: String = "d2",
-    onDialogGenericMotionEvent: ((MotionEvent) -> Boolean)? = null,
+    onDialogGenericMotionEvent: ((View, MotionEvent) -> Boolean)? = null,
+    onDialogViewChanged: (View?) -> Unit = {},
     onPickerOpenChanged: (Boolean) -> Unit = {},
     onBack: () -> Unit,
 ) {
@@ -1091,7 +1096,11 @@ fun ControllerConfigPage(
         if (showButtonPicker || showStickPicker || showDpadPicker) {
             logPickerState(
                 "live axisGen=$axisGeneration sel=${selectedControl ?: "<none>"} " +
-                    "axes=[${"%.3f".format(lx)},${"%.3f".format(ly)},${"%.3f".format(rx)},${"%.3f".format(ry)},${"%.3f".format(lt)},${"%.3f".format(rt)}] " +
+                    "axes=[${"%.3f".format(
+                        lx,
+                    )},${"%.3f".format(
+                        ly,
+                    )},${"%.3f".format(rx)},${"%.3f".format(ry)},${"%.3f".format(lt)},${"%.3f".format(rt)}] " +
                     "staleAxes=${staleAxisIndices.sorted()} staleDpad=${staleDpadIndices.sorted()}",
             )
         }
@@ -1105,7 +1114,11 @@ fun ControllerConfigPage(
     fun openControlPicker(controlId: String) {
         logPickerState(
             "open control=$controlId axisGen=$axisGeneration sel=${selectedControl ?: "<none>"} " +
-                "axes=[${"%.3f".format(lx)},${"%.3f".format(ly)},${"%.3f".format(rx)},${"%.3f".format(ry)},${"%.3f".format(lt)},${"%.3f".format(rt)}]",
+                "axes=[${"%.3f".format(
+                    lx,
+                )},${"%.3f".format(
+                    ly,
+                )},${"%.3f".format(rx)},${"%.3f".format(ry)},${"%.3f".format(lt)},${"%.3f".format(rt)}]",
         )
         selectedControl = controlId
         when {
@@ -1121,11 +1134,15 @@ fun ControllerConfigPage(
             0,
             1,
             -> "LS"
+
             2,
             3,
             -> "RS"
+
             4 -> "LT"
+
             5 -> "RT"
+
             else -> null
         }
 
@@ -1742,7 +1759,7 @@ fun ControllerConfigPage(
                     val c = if (pressed) cActive else cAssignLabel
                     val abbr = abbreviate(it)
                     when (fb.id) {
-                        "A" ->
+                        "A" -> {
                             drawFuncLabel(
                                 textMeasurer,
                                 abbr,
@@ -1751,7 +1768,9 @@ fun ControllerConfigPage(
                                 scale,
                                 c,
                             )
-                        "B" ->
+                        }
+
+                        "B" -> {
                             drawFuncLabelLeftAligned(
                                 textMeasurer,
                                 abbr,
@@ -1760,7 +1779,9 @@ fun ControllerConfigPage(
                                 scale,
                                 c,
                             )
-                        "X" ->
+                        }
+
+                        "X" -> {
                             drawFuncLabelRightAligned(
                                 textMeasurer,
                                 abbr,
@@ -1769,7 +1790,9 @@ fun ControllerConfigPage(
                                 scale,
                                 c,
                             )
-                        "Y" ->
+                        }
+
+                        "Y" -> {
                             drawFuncLabel(
                                 textMeasurer,
                                 abbr,
@@ -1778,7 +1801,9 @@ fun ControllerConfigPage(
                                 scale,
                                 c,
                             )
-                        else ->
+                        }
+
+                        else -> {
                             drawFuncLabel(
                                 textMeasurer,
                                 abbr,
@@ -1787,6 +1812,7 @@ fun ControllerConfigPage(
                                 scale,
                                 c,
                             )
+                        }
                     }
                 }
                 if (selectedControl == fb.id) {
@@ -2299,6 +2325,7 @@ fun ControllerConfigPage(
             onThresholdChange = axisKey?.let { key -> { v: Int -> thresholds[key] = v } },
             axisFunctions = if (isTrigger) TRIGGER_HALF_AXIS_OPTIONS else emptyList(),
             onDialogGenericMotionEvent = onDialogGenericMotionEvent,
+            onDialogViewChanged = onDialogViewChanged,
             onSelect = { funcLabel ->
                 val dismissedControl = selectedControl
                 assignButtonFunction(bindings, selectedControl!!, funcLabel)
@@ -2347,6 +2374,7 @@ fun ControllerConfigPage(
             onXThresholdChange = { v -> thresholds[xKey] = v },
             onYThresholdChange = { v -> thresholds[yKey] = v },
             onDialogGenericMotionEvent = onDialogGenericMotionEvent,
+            onDialogViewChanged = onDialogViewChanged,
             onConfirm = { result ->
                 val dismissedControl = selectedControl
                 // Clear all axis and axis-button bindings for this stick
@@ -2398,6 +2426,7 @@ fun ControllerConfigPage(
             currentFunc = bindings[selectedControl!!],
             assignedFunctions = assignedDpadFuncsForDialog,
             gameVariant = gameVariant,
+            onDialogViewChanged = onDialogViewChanged,
             onSelect = { funcLabel ->
                 val dismissedControl = selectedControl
                 assignDpadFunction(bindings, selectedControl!!, funcLabel)
@@ -2454,15 +2483,32 @@ private fun BoxScope.ScrollArrows(scrollState: ScrollState) {
 // ── Picker Dialogs ──────────────────────────────────────────────────────────
 
 @Composable
-private fun DialogGenericMotionBridge(onGenericMotionEvent: ((MotionEvent) -> Boolean)?) {
-    if (onGenericMotionEvent == null) return
+private fun DialogGenericMotionBridge(
+    onGenericMotionEvent: ((View, MotionEvent) -> Boolean)? = null,
+    onDialogViewChanged: (View?) -> Unit = {},
+) {
     val view = LocalView.current
     val motionHandler by rememberUpdatedState(onGenericMotionEvent)
+    val dialogViewChanged by rememberUpdatedState(onDialogViewChanged)
 
     DisposableEffect(view) {
-        val listener = View.OnGenericMotionListener { _, event -> motionHandler(event) }
-        view.setOnGenericMotionListener(listener)
-        onDispose { view.setOnGenericMotionListener(null) }
+        val dialogView = view.rootView
+        dialogViewChanged(dialogView)
+        view.requestFocus()
+        val listener =
+            if (motionHandler != null) {
+                View.OnGenericMotionListener { _, event ->
+                    val handler = motionHandler
+                    handler?.invoke(view, event) ?: false
+                }
+            } else {
+                null
+            }
+        if (listener != null) view.setOnGenericMotionListener(listener)
+        onDispose {
+            if (listener != null) view.setOnGenericMotionListener(null)
+            dialogViewChanged(null)
+        }
     }
 }
 
@@ -2477,7 +2523,8 @@ private fun ButtonFunctionPickerDialog(
     threshold: Int? = null,
     onThresholdChange: ((Int) -> Unit)? = null,
     axisFunctions: List<String> = emptyList(),
-    onDialogGenericMotionEvent: ((MotionEvent) -> Boolean)? = null,
+    onDialogGenericMotionEvent: ((View, MotionEvent) -> Boolean)? = null,
+    onDialogViewChanged: (View?) -> Unit = {},
     onSelect: (String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -2497,7 +2544,7 @@ private fun ButtonFunctionPickerDialog(
         onDismissRequest = onDismiss,
         title = { Text("Assign: $controlLabel") },
         text = {
-            DialogGenericMotionBridge(onDialogGenericMotionEvent)
+            DialogGenericMotionBridge(onDialogGenericMotionEvent, onDialogViewChanged)
             val btnScrollState = rememberScrollState()
             Box(modifier = Modifier.heightIn(max = 400.dp)) {
                 Column(modifier = Modifier.fillMaxWidth().verticalScroll(btnScrollState)) {
@@ -2657,7 +2704,8 @@ private fun StickPickerDialog(
     yThreshold: Int = DEFAULT_AXIS_THRESHOLD,
     onXThresholdChange: ((Int) -> Unit)? = null,
     onYThresholdChange: ((Int) -> Unit)? = null,
-    onDialogGenericMotionEvent: ((MotionEvent) -> Boolean)? = null,
+    onDialogGenericMotionEvent: ((View, MotionEvent) -> Boolean)? = null,
+    onDialogViewChanged: (View?) -> Unit = {},
     onConfirm: (StickPickerResult) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -2695,148 +2743,162 @@ private fun StickPickerDialog(
         onDismissRequest = onDismiss,
         title = { Text(stickLabel) },
         text = {
-            DialogGenericMotionBridge(onDialogGenericMotionEvent)
+            DialogGenericMotionBridge(onDialogGenericMotionEvent, onDialogViewChanged)
             val stickScrollState = rememberScrollState()
-            Box(modifier = Modifier.heightIn(max = 450.dp)) {
-                Column(modifier = Modifier.fillMaxWidth().verticalScroll(stickScrollState)) {
-                    // -- X Axis --
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "X Axis (left/right)",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(
-                            checked = xButtonMode,
-                            onCheckedChange = { checked ->
-                                xButtonMode = checked
-                                onXThresholdChange?.let { thresholdChange ->
-                                    if (checked) {
-                                        thresholdChange(DEFAULT_AXIS_THRESHOLD)
-                                    } else {
-                                        thresholdChange(DEFAULT_STICK_DEAD_ZONE)
+            Column(modifier = Modifier.fillMaxWidth()) {
+                StickLivePreview(xAxisValue, yAxisValue, xThreshold, yThreshold)
+                Box(modifier = Modifier.heightIn(max = 400.dp)) {
+                    Column(modifier = Modifier.fillMaxWidth().verticalScroll(stickScrollState)) {
+                        // -- X Axis --
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                "X Axis (left/right)",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(
+                                checked = xButtonMode,
+                                onCheckedChange = { checked ->
+                                    xButtonMode = checked
+                                    onXThresholdChange?.let { thresholdChange ->
+                                        if (checked) {
+                                            thresholdChange(DEFAULT_AXIS_THRESHOLD)
+                                        } else {
+                                            thresholdChange(DEFAULT_STICK_DEAD_ZONE)
+                                        }
                                     }
-                                }
-                            },
-                        )
-                        Text("Use as buttons", fontSize = 12.sp)
-                        if (!xButtonMode) {
-                            Spacer(Modifier.weight(1f))
-                            Checkbox(checked = invertX, onCheckedChange = { invertX = it })
-                            Text("Invert", fontSize = 12.sp)
-                        }
-                    }
-                    if (xButtonMode) {
-                        AxisButtonPicker("Left (single direction)", xNegFunc, assignedButtonFunctions, gameVariant) {
-                            xNegFunc = it
-                        }
-                        AxisButtonPicker("Right (single direction)", xPosFunc, assignedButtonFunctions, gameVariant) {
-                            xPosFunc = it
-                        }
-                        if (onXThresholdChange != null) {
-                            Text("Threshold: $xThreshold%", fontSize = 11.sp)
-                            Slider(
-                                value = xThreshold.toFloat(),
-                                onValueChange = { onXThresholdChange(it.toInt()) },
-                                valueRange = 5f..95f,
-                                steps = 17,
-                                modifier = Modifier.fillMaxWidth().tvFocusBorder().then(verticalDpadFocusEscape()),
+                                },
                             )
-                            AxisThresholdBar(xAxisValue, xThreshold)
+                            Text("Use as buttons", fontSize = 12.sp)
+                            if (!xButtonMode) {
+                                Spacer(Modifier.weight(1f))
+                                Checkbox(checked = invertX, onCheckedChange = { invertX = it })
+                                Text("Invert", fontSize = 12.sp)
+                            }
                         }
-                    } else {
-                        AxisFunctionRadioGroup(
-                            selected = selectedX,
-                            assignedFunctions = assignedFunctions,
-                            onSelect = { selectedX = it },
-                        )
-                        if (onXThresholdChange != null) {
-                            Spacer(Modifier.height(6.dp))
-                            Text("Dead zone: $xThreshold%", fontSize = 11.sp)
-                            Slider(
-                                value = xThreshold.toFloat(),
-                                onValueChange = { onXThresholdChange(it.toInt()) },
-                                valueRange = 5f..95f,
-                                steps = 17,
-                                modifier = Modifier.fillMaxWidth().tvFocusBorder().then(verticalDpadFocusEscape()),
+                        if (xButtonMode) {
+                            AxisButtonPicker(
+                                "Left (single direction)",
+                                xNegFunc,
+                                assignedButtonFunctions,
+                                gameVariant,
+                            ) {
+                                xNegFunc = it
+                            }
+                            AxisButtonPicker(
+                                "Right (single direction)",
+                                xPosFunc,
+                                assignedButtonFunctions,
+                                gameVariant,
+                            ) {
+                                xPosFunc = it
+                            }
+                            if (onXThresholdChange != null) {
+                                Text("Threshold: $xThreshold%", fontSize = 11.sp)
+                                Slider(
+                                    value = xThreshold.toFloat(),
+                                    onValueChange = { onXThresholdChange(it.toInt()) },
+                                    valueRange = 5f..95f,
+                                    steps = 17,
+                                    modifier = Modifier.fillMaxWidth().tvFocusBorder().then(verticalDpadFocusEscape()),
+                                )
+                            }
+                        } else {
+                            AxisFunctionRadioGroup(
+                                selected = selectedX,
+                                assignedFunctions = assignedFunctions,
+                                onSelect = { selectedX = it },
                             )
-                            AxisThresholdBar(xAxisValue, xThreshold)
+                            if (onXThresholdChange != null) {
+                                Spacer(Modifier.height(6.dp))
+                                Text("Dead zone: $xThreshold%", fontSize = 11.sp)
+                                Slider(
+                                    value = xThreshold.toFloat(),
+                                    onValueChange = { onXThresholdChange(it.toInt()) },
+                                    valueRange = 5f..95f,
+                                    steps = 17,
+                                    modifier = Modifier.fillMaxWidth().tvFocusBorder().then(verticalDpadFocusEscape()),
+                                )
+                            }
                         }
-                    }
-                    Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(8.dp))
 
-                    // -- Y Axis --
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "Y Axis (up/down)",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(
-                            checked = yButtonMode,
-                            onCheckedChange = { checked ->
-                                yButtonMode = checked
-                                onYThresholdChange?.let { thresholdChange ->
-                                    if (checked) {
-                                        thresholdChange(DEFAULT_AXIS_THRESHOLD)
-                                    } else {
-                                        thresholdChange(DEFAULT_STICK_DEAD_ZONE)
+                        // -- Y Axis --
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                "Y Axis (up/down)",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(
+                                checked = yButtonMode,
+                                onCheckedChange = { checked ->
+                                    yButtonMode = checked
+                                    onYThresholdChange?.let { thresholdChange ->
+                                        if (checked) {
+                                            thresholdChange(DEFAULT_AXIS_THRESHOLD)
+                                        } else {
+                                            thresholdChange(DEFAULT_STICK_DEAD_ZONE)
+                                        }
                                     }
-                                }
-                            },
-                        )
-                        Text("Use as buttons", fontSize = 12.sp)
-                        if (!yButtonMode) {
-                            Spacer(Modifier.weight(1f))
-                            Checkbox(checked = invertY, onCheckedChange = { invertY = it })
-                            Text("Invert", fontSize = 12.sp)
+                                },
+                            )
+                            Text("Use as buttons", fontSize = 12.sp)
+                            if (!yButtonMode) {
+                                Spacer(Modifier.weight(1f))
+                                Checkbox(checked = invertY, onCheckedChange = { invertY = it })
+                                Text("Invert", fontSize = 12.sp)
+                            }
+                        }
+                        if (yButtonMode) {
+                            AxisButtonPicker("Up (single direction)", yNegFunc, assignedButtonFunctions, gameVariant) {
+                                yNegFunc = it
+                            }
+                            AxisButtonPicker(
+                                "Down (single direction)",
+                                yPosFunc,
+                                assignedButtonFunctions,
+                                gameVariant,
+                            ) {
+                                yPosFunc = it
+                            }
+                            if (onYThresholdChange != null) {
+                                Text("Threshold: $yThreshold%", fontSize = 11.sp)
+                                Slider(
+                                    value = yThreshold.toFloat(),
+                                    onValueChange = { onYThresholdChange(it.toInt()) },
+                                    valueRange = 5f..95f,
+                                    steps = 17,
+                                    modifier = Modifier.fillMaxWidth().tvFocusBorder().then(verticalDpadFocusEscape()),
+                                )
+                            }
+                        } else {
+                            AxisFunctionRadioGroup(
+                                selected = selectedY,
+                                assignedFunctions = assignedFunctions,
+                                onSelect = { selectedY = it },
+                            )
+                            if (onYThresholdChange != null) {
+                                Spacer(Modifier.height(6.dp))
+                                Text("Dead zone: $yThreshold%", fontSize = 11.sp)
+                                Slider(
+                                    value = yThreshold.toFloat(),
+                                    onValueChange = { onYThresholdChange(it.toInt()) },
+                                    valueRange = 5f..95f,
+                                    steps = 17,
+                                    modifier = Modifier.fillMaxWidth().tvFocusBorder().then(verticalDpadFocusEscape()),
+                                )
+                            }
                         }
                     }
-                    if (yButtonMode) {
-                        AxisButtonPicker("Up (single direction)", yNegFunc, assignedButtonFunctions, gameVariant) {
-                            yNegFunc = it
-                        }
-                        AxisButtonPicker("Down (single direction)", yPosFunc, assignedButtonFunctions, gameVariant) {
-                            yPosFunc = it
-                        }
-                        if (onYThresholdChange != null) {
-                            Text("Threshold: $yThreshold%", fontSize = 11.sp)
-                            Slider(
-                                value = yThreshold.toFloat(),
-                                onValueChange = { onYThresholdChange(it.toInt()) },
-                                valueRange = 5f..95f,
-                                steps = 17,
-                                modifier = Modifier.fillMaxWidth().tvFocusBorder().then(verticalDpadFocusEscape()),
-                            )
-                            AxisThresholdBar(yAxisValue, yThreshold)
-                        }
-                    } else {
-                        AxisFunctionRadioGroup(
-                            selected = selectedY,
-                            assignedFunctions = assignedFunctions,
-                            onSelect = { selectedY = it },
-                        )
-                        if (onYThresholdChange != null) {
-                            Spacer(Modifier.height(6.dp))
-                            Text("Dead zone: $yThreshold%", fontSize = 11.sp)
-                            Slider(
-                                value = yThreshold.toFloat(),
-                                onValueChange = { onYThresholdChange(it.toInt()) },
-                                valueRange = 5f..95f,
-                                steps = 17,
-                                modifier = Modifier.fillMaxWidth().tvFocusBorder().then(verticalDpadFocusEscape()),
-                            )
-                            AxisThresholdBar(yAxisValue, yThreshold)
-                        }
-                    }
+                    ScrollArrows(stickScrollState)
                 }
-                ScrollArrows(stickScrollState)
             }
         },
         confirmButton = {
@@ -2865,6 +2927,33 @@ private fun StickPickerDialog(
     )
 }
 
+@Composable
+private fun StickLivePreview(
+    xAxisValue: Float,
+    yAxisValue: Float,
+    xThreshold: Int,
+    yThreshold: Int,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+        Text(
+            "Live input",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Spacer(Modifier.height(4.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("X", fontSize = 11.sp, modifier = Modifier.width(16.dp))
+            AxisThresholdBar(xAxisValue, xThreshold, Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(4.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Y", fontSize = 11.sp, modifier = Modifier.width(16.dp))
+            AxisThresholdBar(yAxisValue, yThreshold, Modifier.weight(1f))
+        }
+    }
+}
+
 // Compact function picker for axis-as-buttons within StickPickerDialog
 @Composable
 private fun AxisButtonPicker(
@@ -2872,6 +2961,7 @@ private fun AxisButtonPicker(
     currentFunc: String?,
     assignedFunctions: Set<String> = emptySet(),
     gameVariant: String = "d2",
+    onDialogViewChanged: (View?) -> Unit = {},
     onSelect: (String?) -> Unit,
 ) {
     var showPicker by remember { mutableStateOf(false) }
@@ -2894,6 +2984,7 @@ private fun AxisButtonPicker(
             currentFunc = currentFunc,
             assignedFunctions = assignedFunctions,
             gameVariant = gameVariant,
+            onDialogViewChanged = onDialogViewChanged,
             onSelect = { func ->
                 onSelect(func)
                 showPicker = false
@@ -2959,6 +3050,7 @@ private fun DpadFunctionPickerDialog(
     currentFunc: String?,
     assignedFunctions: Set<String> = emptySet(),
     gameVariant: String = "d2",
+    onDialogViewChanged: (View?) -> Unit = {},
     onSelect: (String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -2975,6 +3067,7 @@ private fun DpadFunctionPickerDialog(
         onDismissRequest = onDismiss,
         title = { Text("Assign: $directionLabel") },
         text = {
+            DialogGenericMotionBridge(onDialogViewChanged = onDialogViewChanged)
             val dpadScrollState = rememberScrollState()
             Box(modifier = Modifier.heightIn(max = 400.dp)) {
                 Column(modifier = Modifier.fillMaxWidth().verticalScroll(dpadScrollState)) {

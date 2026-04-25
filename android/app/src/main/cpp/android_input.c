@@ -99,6 +99,10 @@ static int g_touch_active = 0; /* is a finger currently down? */
 static int g_input_count = 0;  /* debug counter */
 static int g_intro_skip_touch_pressed = 0;
 
+/* Shared with d1/d2 arch/sdl/joy.c: mark touch-sourced virtual axes in the
+ * high bit so the gameplay deadzone can distinguish touch from controller. */
+#define ANDROID_TOUCH_AXIS_FLAG 0x80
+
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeKeyEvent(JNIEnv *env, jobject thiz,
                                                   jint action, jint androidKeyCode,
@@ -847,21 +851,31 @@ Java_com_dxxredux_app_MainActivity_nativeTextInput(JNIEnv *env, jobject thiz,
 static int g_joy_axis_count = 0; /* debug counter */
 
 /*
- * nativeJoystickAxis(axis, value)
- *   axis:  axis index 0-5
- *   value: -1.0 .. 1.0 (Android MotionEvent range)
+ * nativeJoystickAxis(axis, value, touchActive)
+ *   axis:        axis index 0-5
+ *   value:       -1.0 .. 1.0 (Android MotionEvent range)
+ *   touchActive: nonzero when touch currently contributes to this mixed axis
  */
 JNIEXPORT void JNICALL
 Java_com_dxxredux_app_MainActivity_nativeJoystickAxis(JNIEnv *env, jobject thiz,
-                                                      jint axis, jfloat value)
+                                                      jint axis, jfloat value,
+                                                      jboolean touchActive)
 {
 	SDL_Event ev;
+	static int joy_jni_diag_count[8];
+	const int touch_source = touchActive != JNI_FALSE;
 	memset(&ev, 0, sizeof(ev));
 
 	ev.type = SDL_JOYAXISMOTION;
 	ev.jaxis.which = 0; /* virtual joystick 0 */
-	ev.jaxis.axis = (Uint8) axis;
+	ev.jaxis.axis = (Uint8) (axis | (touch_source ? ANDROID_TOUCH_AXIS_FLAG : 0));
 	ev.jaxis.value = (Sint16) (value * 32767.0f);
+	if (axis >= 0 && axis < 8 && (axis == 2 || axis == 3) && value != 0.0f) {
+		int abs_sdl = ev.jaxis.value < 0 ? -ev.jaxis.value : ev.jaxis.value;
+		int count = ++joy_jni_diag_count[axis];
+		if (count <= 24 || (abs_sdl <= 4096 && (count % 8) == 0) || (count % 64) == 0)
+			debug_log(DLOG_GAME, "[joy-jni] axis=%d touch=%d in=%.4f sdl=%d\n", axis, touch_source, value, ev.jaxis.value);
+	}
 
 	SDL_PushEvent(&ev);
 

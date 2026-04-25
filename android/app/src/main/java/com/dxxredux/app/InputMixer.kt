@@ -9,7 +9,7 @@ package com.dxxredux.app
  */
 class InputMixer(
     private val buttonCallback: (button: Int, pressed: Int) -> Unit,
-    private val axisCallback: (axis: Int, value: Float) -> Unit,
+    private val axisCallback: (axis: Int, value: Float, touchActive: Boolean) -> Unit,
 ) {
     // Per-button: actionId -> { sourceTag -> pressed }
     private val buttonSources = HashMap<Int, HashMap<String, Boolean>>()
@@ -49,7 +49,8 @@ class InputMixer(
         val sources = axisSources.getOrPut(axisId) { HashMap() }
         sources[sourceTag] = value
         val sum = sources.values.fold(0f) { acc, v -> acc + v }.coerceIn(-1f, 1f)
-        axisCallback(axisId, sum)
+        val touchActive = sources.any { (tag, axisValue) -> tag.startsWith("touch") && axisValue != 0f }
+        axisCallback(axisId, sum, touchActive)
     }
 
     /** Release all buttons and zero all axes for sources matching [prefix]. */
@@ -73,7 +74,8 @@ class InputMixer(
             val hadSources = sources.keys.removeAll { it.startsWith(prefix) }
             if (hadSources) {
                 val sum = sources.values.fold(0f) { acc, v -> acc + v }.coerceIn(-1f, 1f)
-                axisCallback(axisId, sum)
+                val touchActive = sources.any { (tag, axisValue) -> tag.startsWith("touch") && axisValue != 0f }
+                axisCallback(axisId, sum, touchActive)
             }
             if (sources.isEmpty()) axisIter.remove()
         }

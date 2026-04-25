@@ -66,13 +66,17 @@ private fun verticalDpadFocusEscape(): Modifier {
                 }
                 ev.type == KeyEventType.KeyDown || ev.type == KeyEventType.KeyUp
             }
+
             Key.DirectionDown -> {
                 if (ev.type == KeyEventType.KeyDown) {
                     focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down)
                 }
                 ev.type == KeyEventType.KeyDown || ev.type == KeyEventType.KeyUp
             }
-            else -> false
+
+            else -> {
+                false
+            }
         }
     }
 }
@@ -191,15 +195,20 @@ fun MusicPickerPage(
                             .verticalScroll(scrollState),
                 ) {
                     when (musicMode) {
-                        MUSIC_MODE_MIDI -> MidiSection(filesDir)
-                        MUSIC_MODE_CD ->
+                        MUSIC_MODE_MIDI -> {
+                            MidiSection(filesDir)
+                        }
+
+                        MUSIC_MODE_CD -> {
                             CdAudioSection(
                                 audioSrcManager = audioSrcManager,
                                 audioSources = audioSources,
                                 onSourcesChanged = { audioSources = audioSrcManager.getSources() },
                                 onShowTrackPreview = { showTrackPreview = true },
                             )
-                        MUSIC_MODE_FILES ->
+                        }
+
+                        MUSIC_MODE_FILES -> {
                             AudioFilesSection(
                                 customMgr = customMgr,
                                 customSets = customSets,
@@ -220,6 +229,7 @@ fun MusicPickerPage(
                                 onShowTrackPreview = { showTrackPreview = true },
                                 importingFiles = importingFiles,
                             )
+                        }
                     }
                 }
                 ScrollArrows(scrollState)
@@ -754,12 +764,17 @@ private fun CdAudioSection(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             when {
-                                isSafSource ->
+                                isSafSource -> {
                                     "Source reference will be removed. Original files on external storage are not affected"
-                                filesInAppDir ->
+                                }
+
+                                filesInAppDir -> {
                                     "Extracted audio files in app storage will be deleted. Re-import from original source to restore"
-                                else ->
+                                }
+
+                                else -> {
                                     "The BIN/CUE disc files will remain on disk"
+                                }
                             },
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1260,11 +1275,17 @@ private fun TrackPreviewDialog(
                                     .padding(vertical = 1.dp)
                                     .then(
                                         when {
-                                            row.cdInfo != null ->
+                                            row.cdInfo != null -> {
                                                 Modifier.clickable { cdPreviewTrack = row.cdInfo }
-                                            row.detail != null ->
+                                            }
+
+                                            row.detail != null -> {
                                                 Modifier.clickable { infoTrack = row.detail }
-                                            else -> Modifier
+                                            }
+
+                                            else -> {
+                                                Modifier
+                                            }
                                         },
                                     ),
                         ) {
