@@ -114,7 +114,11 @@ fun MusicPickerPage(
     var showTrackPreview by remember { mutableStateOf(false) }
 
     // Audio file import state
+    val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
     var importingFiles by remember { mutableStateOf(false) }
+    var importProgressLabel by remember { mutableStateOf("") }
+    var importProgressBytes by remember { mutableLongStateOf(0L) }
+    var importProgressTotal by remember { mutableLongStateOf(0L) }
     var showAddToSetDialog by remember { mutableStateOf(false) }
     var pendingUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
 
@@ -228,6 +232,9 @@ fun MusicPickerPage(
                                 },
                                 onShowTrackPreview = { showTrackPreview = true },
                                 importingFiles = importingFiles,
+                                importProgressLabel = importProgressLabel,
+                                importProgressBytes = importProgressBytes,
+                                importProgressTotal = importProgressTotal,
                             )
                         }
                     }
@@ -253,9 +260,25 @@ fun MusicPickerPage(
                 pendingUris = emptyList()
                 scope.launch {
                     importingFiles = true
-                    importAudioFiles(ctx, filesDir, customMgr, newName, uris, targetSetId, copyToStorage)
+                    importProgressLabel = ""
+                    importProgressBytes = 0L
+                    importProgressTotal = 0L
+                    importAudioFiles(ctx, filesDir, customMgr, newName, uris, targetSetId, copyToStorage) {
+                        label,
+                        copied,
+                        total,
+                        ->
+                        mainHandler.post {
+                            importProgressLabel = label
+                            importProgressBytes = copied
+                            importProgressTotal = total
+                        }
+                    }
                     customSets = customMgr.getSets()
                     importingFiles = false
+                    importProgressLabel = ""
+                    importProgressBytes = 0L
+                    importProgressTotal = 0L
                 }
             },
         )
@@ -990,6 +1013,9 @@ private fun AudioFilesSection(
     onAddSet: () -> Unit,
     onShowTrackPreview: () -> Unit,
     importingFiles: Boolean,
+    importProgressLabel: String,
+    importProgressBytes: Long,
+    importProgressTotal: Long,
 ) {
     Text(
         "Custom audio files (MP3, OGG, FLAC) used as jukebox music.",
@@ -1164,13 +1190,23 @@ private fun AudioFilesSection(
     }
 
     if (importingFiles) {
-        Row(
-            modifier = Modifier.padding(start = 4.dp, top = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Importing files...", fontSize = 12.sp)
+        Column(modifier = Modifier.padding(start = 4.dp, top = 4.dp, end = 4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Importing files...", fontSize = 12.sp)
+            }
+            if (importProgressLabel.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(importProgressLabel, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            if (importProgressTotal > 0L) {
+                val progress = (importProgressBytes.toFloat() / importProgressTotal.toFloat()).coerceIn(0f, 1f)
+                LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(4.dp))
+            } else {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(4.dp))
+            }
         }
     }
 
@@ -1714,6 +1750,7 @@ internal suspend fun importAudioFiles(
     uris: List<Uri>,
     targetSetId: String? = null,
     copyToStorage: Boolean = true,
+    onProgress: (String, Long, Long) -> Unit = { _, _, _ -> },
 ) {
     val setId = targetSetId ?: UUID.randomUUID().toString().take(8)
     val destDir = customMgr.setDir(setId)
@@ -1727,15 +1764,15 @@ internal suspend fun importAudioFiles(
                 val fileName = resolveFileName(ctx, uri) ?: "track_${imported.size + 1}.audio"
                 if (isArchiveFile(fileName)) {
                     if (copyToStorage) {
-                        val extracted = extractAudioFromArchive(ctx, uri, destDir, fileName)
+                        val extracted = extractAudioFromArchive(ctx, uri, destDir, fileName, onProgress)
                         imported.addAll(extracted)
                     }
                     // Archives are always extracted (copied). Can't reference archive contents
                 } else if (isAudioFile(fileName)) {
                     if (copyToStorage) {
                         val dest = File(destDir, fileName)
-                        ctx.contentResolver.openInputStream(uri)?.use { input ->
-                            dest.outputStream().use { output -> input.copyTo(output) }
+                        LauncherFileCopy.copyUriToFile(ctx, uri, dest, fileName) { progress ->
+                            onProgress(progress.label, progress.bytesDone, progress.bytesTotal)
                         }
                     } else {
                         // Take persistable URI permission so we can read later
@@ -1838,12 +1875,13 @@ private fun extractAudioFromArchive(
     uri: Uri,
     destDir: File,
     fileName: String = "",
+    onProgress: (String, Long, Long) -> Unit = { _, _, _ -> },
 ): List<String> {
     val ext = fileName.substringAfterLast('.', "").lowercase()
     return if (ext == "7z") {
-        extract7zAudio(ctx, uri, destDir)
+        extract7zAudio(ctx, uri, destDir, onProgress)
     } else {
-        extractZipAudio(ctx, uri, destDir)
+        extractZipAudio(ctx, uri, destDir, onProgress)
     }
 }
 
@@ -1851,6 +1889,7 @@ private fun extractZipAudio(
     ctx: Context,
     uri: Uri,
     destDir: File,
+    onProgress: (String, Long, Long) -> Unit = { _, _, _ -> },
 ): List<String> {
     val extracted = mutableListOf<String>()
     ctx.contentResolver.openInputStream(uri)?.use { raw ->
@@ -1862,7 +1901,16 @@ private fun extractZipAudio(
                     if (isAudioFile(name)) {
                         val safeName = name.replace("..", "_").replace('/', '_').replace('\\', '_')
                         val dest = File(destDir, safeName)
-                        FileOutputStream(dest).use { out -> zip.copyTo(out) }
+                        FileOutputStream(dest).use { out ->
+                            LauncherFileCopy.copyStream(
+                                zip,
+                                out,
+                                entry.size.takeIf { it > 0L } ?: 0L,
+                                safeName,
+                            ) { progress ->
+                                onProgress(progress.label, progress.bytesDone, progress.bytesTotal)
+                            }
+                        }
                         extracted.add(safeName)
                     }
                 }
@@ -1879,13 +1927,14 @@ private fun extract7zAudio(
     ctx: Context,
     uri: Uri,
     destDir: File,
+    onProgress: (String, Long, Long) -> Unit = { _, _, _ -> },
 ): List<String> {
     val extracted = mutableListOf<String>()
     // SevenZFile requires a seekable file; copy content URI to temp
     val tmpFile = File(destDir, ".tmp_7z_import")
     try {
-        ctx.contentResolver.openInputStream(uri)?.use { input ->
-            FileOutputStream(tmpFile).use { output -> input.copyTo(output) }
+        LauncherFileCopy.copyUriToFile(ctx, uri, tmpFile, "Copying archive") { progress ->
+            onProgress(progress.label, progress.bytesDone, progress.bytesTotal)
         }
         SevenZFile.builder().setFile(tmpFile).get().use { szf ->
             var entry = szf.nextEntry
@@ -1897,11 +1946,21 @@ private fun extract7zAudio(
                         val dest = File(destDir, safeName)
                         FileOutputStream(dest).use { out ->
                             val buf = ByteArray(8192)
+                            val totalBytes = entry.size.takeIf { it > 0L } ?: 0L
+                            var copiedBytes = 0L
+                            var lastReported = 0L
+                            onProgress(safeName, 0L, totalBytes)
                             while (true) {
                                 val n = szf.read(buf)
                                 if (n <= 0) break
                                 out.write(buf, 0, n)
+                                copiedBytes += n.toLong()
+                                if (copiedBytes - lastReported >= 1024L * 1024L || copiedBytes == totalBytes) {
+                                    lastReported = copiedBytes
+                                    onProgress(safeName, copiedBytes, totalBytes)
+                                }
                             }
+                            onProgress(safeName, copiedBytes, totalBytes)
                         }
                         extracted.add(safeName)
                     }

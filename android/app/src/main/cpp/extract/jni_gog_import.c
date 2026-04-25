@@ -56,6 +56,31 @@ static const char *basename_only(const char *path)
 	return last;
 }
 
+static jobjectArray build_inno_file_list(JNIEnv *env, inno_archive_t *arc,
+                                         jclass strClass)
+{
+	int game_count = 0;
+	for (int i = 0; i < arc->file_count; i++) {
+		if (has_game_extension(arc->files[i].destination)) game_count++;
+	}
+
+	jobjectArray result = (*env)->NewObjectArray(env, game_count, strClass, NULL);
+	int idx = 0;
+	for (int i = 0; i < arc->file_count; i++) {
+		if (!has_game_extension(arc->files[i].destination)) continue;
+		const char *fname = basename_only(arc->files[i].destination);
+		uint64_t size = 0;
+		if (arc->files[i].location < (uint32_t) arc->data_entry_count)
+			size = arc->data_entries[arc->files[i].location].file_size;
+		char buf[INNO_PATH_LEN + 32];
+		snprintf(buf, sizeof(buf), "%s|%llu", fname, (unsigned long long) size);
+		jstring s = (*env)->NewStringUTF(env, buf);
+		(*env)->SetObjectArrayElement(env, result, idx++, s);
+		(*env)->DeleteLocalRef(env, s);
+	}
+	return result;
+}
+
 /* ── Format detection ────────────────────────────────────────────── */
 
 /*
@@ -128,31 +153,26 @@ Java_com_dxxredux_app_GogImportBridge_nativeListFiles(
 		(*env)->ReleaseStringUTFChars(env, path, p);
 		if (n < 0) return NULL;
 
-		/* Count game files */
-		int game_count = 0;
-		for (int i = 0; i < arc.file_count; i++) {
-			if (has_game_extension(arc.files[i].destination))
-				game_count++;
-		}
-
-		jobjectArray result = (*env)->NewObjectArray(env, game_count, strClass, NULL);
-		int idx = 0;
-		for (int i = 0; i < arc.file_count; i++) {
-			if (!has_game_extension(arc.files[i].destination)) continue;
-			const char *fname = basename_only(arc.files[i].destination);
-			uint64_t size = 0;
-			if (arc.files[i].location < (uint32_t) arc.data_entry_count)
-				size = arc.data_entries[arc.files[i].location].file_size;
-			char buf[INNO_PATH_LEN + 32];
-			snprintf(buf, sizeof(buf), "%s|%llu", fname, (unsigned long long) size);
-			jstring s = (*env)->NewStringUTF(env, buf);
-			(*env)->SetObjectArrayElement(env, result, idx++, s);
-			(*env)->DeleteLocalRef(env, s);
-		}
+		jobjectArray result = build_inno_file_list(env, &arc, strClass);
 		inno_close(&arc);
-		LOGI("Listed %d game files from .exe (%d total)", game_count, n);
+		LOGI("Listed files from .exe (%d total)", n);
 		return result;
 	}
+}
+
+JNIEXPORT jobjectArray JNICALL
+Java_com_dxxredux_app_GogImportBridge_nativeListFilesFromFd(
+    JNIEnv *env, jclass clazz, jint fd)
+{
+	(void) clazz;
+	jclass strClass = (*env)->FindClass(env, "java/lang/String");
+	inno_archive_t arc;
+	int n = inno_open_fd((int) fd, &arc);
+	if (n < 0) return NULL;
+	jobjectArray result = build_inno_file_list(env, &arc, strClass);
+	inno_close(&arc);
+	LOGI("Listed files from .exe fd (%d total)", n);
+	return result;
 }
 
 /* ── Extraction ──────────────────────────────────────────────────── */
@@ -185,6 +205,51 @@ static int gog_progress_cb(const char *current_file,
 	                                         (jlong) overall_total);
 	(*ctx->env)->DeleteLocalRef(ctx->env, jfile);
 	return (int) cancel;
+}
+
+static int extract_inno_archive(JNIEnv *env, inno_archive_t *arc,
+                                const char *out_dir, jobject progress,
+                                jboolean includeAudio)
+{
+	gog_extract_ctx_t ctx = { env, NULL, NULL, 0, 0 };
+	if (progress) {
+		ctx.callback = progress;
+		jclass cls = (*env)->GetObjectClass(env, progress);
+		ctx.on_progress = (*env)->GetMethodID(env, cls,
+		                                      "onProgress", "(Ljava/lang/String;JJ)I");
+	}
+
+	long long total = 0;
+	for (int i = 0; i < arc->file_count; i++) {
+		if (!has_game_extension(arc->files[i].destination)) continue;
+		if (!includeAudio && is_audio_extension(arc->files[i].destination)) continue;
+		if (arc->files[i].location < (uint32_t) arc->data_entry_count)
+			total += (long long) arc->data_entries[arc->files[i].location].chunk_compressed_size;
+	}
+	ctx.total_bytes = total;
+
+	int extracted = 0;
+	int errors = 0;
+	for (int i = 0; i < arc->file_count; i++) {
+		if (!has_game_extension(arc->files[i].destination)) continue;
+		if (!includeAudio && is_audio_extension(arc->files[i].destination)) continue;
+		const char *fname = basename_only(arc->files[i].destination);
+		char out_path[1024];
+		snprintf(out_path, sizeof(out_path), "%s/%s", out_dir, fname);
+		long long file_comp_size = 0;
+		if (arc->files[i].location < (uint32_t) arc->data_entry_count)
+			file_comp_size = (long long) arc->data_entries[arc->files[i].location].chunk_compressed_size;
+		if (inno_extract_file(arc, i, out_path,
+		                      progress ? gog_progress_cb : NULL, &ctx) == 0) {
+			extracted++;
+		} else {
+			LOGE("Failed to extract: %s", arc->files[i].destination);
+			errors++;
+		}
+		ctx.completed_bytes += file_comp_size;
+	}
+	if (errors > 0 && extracted == 0) return -1;
+	return extracted;
 }
 
 /*
@@ -241,44 +306,39 @@ Java_com_dxxredux_app_GogImportBridge_nativeExtractFiles(
 			LOGE("Failed to open .exe: %s", p);
 			extracted = -1;
 		} else {
-			/* Compute total bytes for overall progress */
-			long long total = 0;
-			for (int i = 0; i < arc.file_count; i++) {
-				if (!has_game_extension(arc.files[i].destination)) continue;
-				if (!includeAudio && is_audio_extension(arc.files[i].destination)) continue;
-				if (arc.files[i].location < (uint32_t) arc.data_entry_count)
-					total += (long long) arc.data_entries[arc.files[i].location].chunk_compressed_size;
-			}
-			ctx.total_bytes = total;
-			ctx.completed_bytes = 0;
-
-			extracted = 0;
-			int errors = 0;
-			for (int i = 0; i < arc.file_count; i++) {
-				if (!has_game_extension(arc.files[i].destination)) continue;
-				if (!includeAudio && is_audio_extension(arc.files[i].destination)) continue;
-				const char *fname = basename_only(arc.files[i].destination);
-				char out_path[1024];
-				snprintf(out_path, sizeof(out_path), "%s/%s", out_dir, fname);
-				long long file_comp_size = 0;
-				if (arc.files[i].location < (uint32_t) arc.data_entry_count)
-					file_comp_size = (long long) arc.data_entries[arc.files[i].location].chunk_compressed_size;
-				if (inno_extract_file(&arc, i, out_path,
-				                      progress ? gog_progress_cb : NULL, &ctx) == 0) {
-					extracted++;
-				} else {
-					LOGE("Failed to extract: %s", arc.files[i].destination);
-					errors++;
-				}
-				ctx.completed_bytes += file_comp_size;
-			}
+			extracted = extract_inno_archive(env, &arc, out_dir, progress, includeAudio);
 			inno_close(&arc);
-			if (errors > 0 && extracted == 0) extracted = -1;
 		}
 	}
 
 	(*env)->ReleaseStringUTFChars(env, path, p);
 	(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);
 	LOGI("Extracted %d files", extracted);
+	return extracted;
+}
+
+JNIEXPORT jint JNICALL
+Java_com_dxxredux_app_GogImportBridge_nativeExtractFilesFromFd(
+    JNIEnv *env, jclass clazz,
+    jint fd, jstring outputDir, jobject progress,
+    jboolean includeAudio)
+{
+	(void) clazz;
+	const char *out_dir = (*env)->GetStringUTFChars(env, outputDir, NULL);
+	if (!out_dir) return -1;
+
+	inno_archive_t arc;
+	int n = inno_open_fd((int) fd, &arc);
+	int extracted;
+	if (n < 0) {
+		LOGE("Failed to open .exe fd");
+		extracted = -1;
+	} else {
+		extracted = extract_inno_archive(env, &arc, out_dir, progress, includeAudio);
+		inno_close(&arc);
+	}
+
+	(*env)->ReleaseStringUTFChars(env, outputDir, out_dir);
+	LOGI("Extracted %d files from fd", extracted);
 	return extracted;
 }

@@ -112,6 +112,7 @@ class AudioSourceManager(
      * Returns list of pruned source labels for user notification.
      */
     fun pruneMissingSources(setDir: File? = null): List<String> {
+        val activeSetDir = setDir ?: activeSetDirOrNull()
         val pruned = mutableListOf<String>()
         val toRemove =
             sources.filter { src ->
@@ -119,13 +120,7 @@ class AudioSourceManager(
                 if (src.binContentUri != null) return@filter false
                 val allFiles = src.binPaths + src.cuePath
                 allFiles.any { name ->
-                    val f = File(filesDir, name)
-                    if (f.exists()) return@any false
-                    // Case-insensitive fallback: check parent dir listing
-                    val parent = f.parentFile
-                    val target = f.name.lowercase()
-                    val found = parent?.list()?.any { it.lowercase() == target } == true
-                    !found
+                    resolveExistingFile(name, activeSetDir) == null
                 }
             }
         for (src in toRemove) {
@@ -175,12 +170,13 @@ class AudioSourceManager(
             File(filesDir, PLAYLIST_FILE).delete()
             return false
         }
+        val activeSetDir = activeSetDirOrNull()
 
         val json = JSONObject()
         val arr = JSONArray()
         for (src in enabled) {
             val entry = JSONObject()
-            entry.put("cue", src.cuePath)
+            entry.put("cue", stagedCuePath(src, activeSetDir))
             val bins = JSONArray()
             if (src.binContentUri != null) {
                 // SAF source (or test filesystem path): open fd and use /proc/self/fd path
@@ -209,7 +205,7 @@ class AudioSourceManager(
                     src.binPaths.forEach { bins.put(it) }
                 }
             } else {
-                src.binPaths.forEach { bins.put(it) }
+                src.binPaths.forEach { bins.put(resolveBinPath(it, activeSetDir)) }
             }
             entry.put("bins", bins)
             entry.put("label", src.discLabel)
@@ -226,6 +222,66 @@ class AudioSourceManager(
         File(filesDir, PLAYLIST_FILE).writeText(json.toString(2))
         Log.i(TAG, "Wrote $PLAYLIST_FILE with ${enabled.size} sources (${activePfds.size} SAF fds)")
         return true
+    }
+
+    private fun activeSetDirOrNull(): File? =
+        try {
+            FileSetManager(filesDir).let { it.getSetDir(it.getActive()) }
+        } catch (_: Exception) {
+            null
+        }
+
+    private fun resolveExistingFile(
+        path: String,
+        activeSetDir: File?,
+    ): File? {
+        val direct = File(path)
+        if (direct.isAbsolute && direct.exists()) return direct
+
+        val local = File(filesDir, path)
+        if (local.exists()) return local
+
+        val name = direct.name.takeIf { it.isNotEmpty() } ?: return null
+        return activeSetDir?.let { findCaseInsensitive(it, name) }
+    }
+
+    private fun findCaseInsensitive(
+        dir: File,
+        name: String,
+    ): File? {
+        val target = name.lowercase()
+        return dir.listFiles()?.firstOrNull { it.name.lowercase() == target }
+    }
+
+    private fun stagedCuePath(
+        src: AudioSource,
+        activeSetDir: File?,
+    ): String {
+        val localCue = File(filesDir, src.cuePath)
+        if (localCue.exists()) return src.cuePath
+
+        val cueFile = resolveExistingFile(src.cuePath, activeSetDir) ?: return src.cuePath
+        val stageDir = File(filesDir, "audio_cue_stage").also { it.mkdirs() }
+        val safeId = src.id.replace(Regex("[^A-Za-z0-9_.-]"), "_")
+        val ext = cueFile.extension.ifEmpty { "cue" }
+        val staged = File(stageDir, "$safeId.$ext")
+        if (!staged.exists() || staged.length() != cueFile.length() || staged.lastModified() < cueFile.lastModified()) {
+            LauncherFileCopy.copyFileToFile(cueFile, staged)
+            staged.setLastModified(cueFile.lastModified())
+        }
+        return staged.relativeTo(filesDir).path
+    }
+
+    private fun resolveBinPath(
+        path: String,
+        activeSetDir: File?,
+    ): String {
+        val resolved = resolveExistingFile(path, activeSetDir) ?: return path
+        return if (resolved.absolutePath.startsWith(filesDir.absolutePath + File.separator)) {
+            resolved.relativeTo(filesDir).path
+        } else {
+            resolved.absolutePath
+        }
     }
 
     // ── Persistence ───────────────────────────────────────────────

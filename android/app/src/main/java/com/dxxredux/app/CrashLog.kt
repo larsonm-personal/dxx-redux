@@ -56,7 +56,7 @@ object CrashLog {
             val exportDir = File(context.cacheDir, "crashlog_exports")
             exportDir.mkdirs()
             val copy = File(exportDir, file.name)
-            file.copyTo(copy, overwrite = true)
+            LauncherFileCopy.copyFileToFile(file, copy)
 
             val uri = FileProvider.getUriForFile(context, AUTHORITY, copy)
             val intent =

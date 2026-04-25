@@ -6,6 +6,7 @@ import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.FileOutputStream
 
 /**
  * Manages .dxa mod files: import, enable/disable, reorder, delete.
@@ -72,6 +73,7 @@ class ModManager(
         uri: Uri,
         displayName: String,
         contentResolver: ContentResolver,
+        onProgress: (LauncherCopyProgress) -> Unit = {},
     ): ModInfo? {
         val safeName = displayName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
         val dest = File(modsDir, safeName)
@@ -82,8 +84,14 @@ class ModManager(
                 "import mod $displayName",
             )
             contentResolver.openInputStream(uri)?.use { input ->
-                dest.outputStream().use { output ->
-                    input.copyTo(output, bufferSize = 65536)
+                FileOutputStream(dest).use { output ->
+                    LauncherFileCopy.copyStream(
+                        input,
+                        output,
+                        ImportStorageGuard.queryUriSizeBytes(contentResolver, uri) ?: 0L,
+                        displayName,
+                        onProgress,
+                    )
                 }
             } ?: run {
                 Log.e(TAG, "Failed to open input stream for $displayName (URI: $uri)")

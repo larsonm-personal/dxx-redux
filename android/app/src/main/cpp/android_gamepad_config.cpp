@@ -44,6 +44,7 @@ using json = nlohmann::json;
 
 /* Engine headers (C linkage) */
 extern "C" {
+#include "shared/android_graphics_options.h"
 #include "playsave.h"
 #include "kconfig.h"
 #include "joy.h"
@@ -244,6 +245,7 @@ extern "C" void android_apply_gamepad_defaults(void)
 		     PlayerCfg.KeySettings[1][17], PlayerCfg.KeySettings[1][23]);
 	}
 	apply_android_virtual_axis_defaults();
+	android_graphics_apply_pilot_defaults();
 }
 
 /* -- JNI entry point: patch all .plr files ----------------------- */

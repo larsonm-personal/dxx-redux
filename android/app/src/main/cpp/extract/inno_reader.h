@@ -118,6 +118,12 @@ typedef int (*inno_progress_fn)(const char *current_file,
 int inno_open(const char *exe_path, inno_archive_t *arc);
 
 /*
+ * Open an InnoSetup installer from an already-open fd.
+ * The fd is duplicated, so the caller keeps ownership of source_fd
+ */
+int inno_open_fd(int source_fd, inno_archive_t *arc);
+
+/*
  * Extract a single file by index (0 .. arc->file_count-1).
  *
  * output_path : full path of the output file to create.

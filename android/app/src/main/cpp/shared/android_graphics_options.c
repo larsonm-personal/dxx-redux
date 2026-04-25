@@ -26,6 +26,15 @@ static int clamp_texfilt(int value)
 	return value;
 }
 
+static int g_android_default_alpha_effects;
+static int g_android_default_dynlight_color;
+
+void android_graphics_apply_pilot_defaults(void)
+{
+	PlayerCfg.AlphaEffects = g_android_default_alpha_effects;
+	PlayerCfg.DynLightColor = g_android_default_dynlight_color;
+}
+
 static void append_buf(char *buf, int *len, const char *text)
 {
 	int text_len = (int) strlen(text);
@@ -246,12 +255,14 @@ void android_graphics_set_classic_depth(int value, int persist)
 void android_graphics_set_alpha_effects(int value, int persist)
 {
 	PlayerCfg.AlphaEffects = clamp_bool(value);
+	g_android_default_alpha_effects = PlayerCfg.AlphaEffects;
 	persist_player_if_needed(persist);
 }
 
 void android_graphics_set_dynlight_color(int value, int persist)
 {
 	PlayerCfg.DynLightColor = clamp_bool(value);
+	g_android_default_dynlight_color = PlayerCfg.DynLightColor;
 	persist_player_if_needed(persist);
 }
 

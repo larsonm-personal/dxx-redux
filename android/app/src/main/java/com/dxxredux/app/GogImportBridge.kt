@@ -44,7 +44,17 @@ object GogImportBridge {
      */
     fun listFiles(path: String): List<GogFile>? {
         val raw = nativeListFiles(path) ?: return null
-        return raw.mapNotNull { entry ->
+        return parseFileList(raw)
+    }
+
+    /** List game files from an already-open InnoSetup installer fd */
+    fun listFilesFromFd(fd: Int): List<GogFile>? {
+        val raw = nativeListFilesFromFd(fd) ?: return null
+        return parseFileList(raw)
+    }
+
+    private fun parseFileList(raw: Array<String>): List<GogFile> =
+        raw.mapNotNull { entry ->
             val parts = entry.split("|", limit = 2)
             if (parts.size == 2) {
                 GogFile(parts[0], parts[1].toLongOrNull() ?: 0L)
@@ -52,7 +62,6 @@ object GogImportBridge {
                 null
             }
         }
-    }
 
     /** Callback interface for extraction progress (same as DiscImportBridge) */
     interface ExtractProgress {
@@ -80,14 +89,31 @@ object GogImportBridge {
         includeAudio: Boolean = true,
     ): Int = nativeExtractFiles(path, outputDir, progress, includeAudio)
 
+    /** Extract game files from an already-open InnoSetup installer fd */
+    fun extractFilesFromFd(
+        fd: Int,
+        outputDir: String,
+        progress: ExtractProgress? = null,
+        includeAudio: Boolean = true,
+    ): Int = nativeExtractFilesFromFd(fd, outputDir, progress, includeAudio)
+
     // ── Native methods ────────────────────────────────────────────
 
     private external fun nativeDetectFormat(path: String): String
 
     private external fun nativeListFiles(path: String): Array<String>?
 
+    private external fun nativeListFilesFromFd(fd: Int): Array<String>?
+
     private external fun nativeExtractFiles(
         path: String,
+        outputDir: String,
+        progress: ExtractProgress?,
+        includeAudio: Boolean,
+    ): Int
+
+    private external fun nativeExtractFilesFromFd(
+        fd: Int,
         outputDir: String,
         progress: ExtractProgress?,
         includeAudio: Boolean,

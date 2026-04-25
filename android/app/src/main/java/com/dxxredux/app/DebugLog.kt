@@ -158,7 +158,7 @@ object DebugLog {
             val exportDir = File(context.cacheDir, "debuglog_exports")
             exportDir.mkdirs()
             val copy = File(exportDir, file.name)
-            file.copyTo(copy, overwrite = true)
+            LauncherFileCopy.copyFileToFile(file, copy)
             val uri = FileProvider.getUriForFile(context, AUTHORITY, copy)
             val intent =
                 Intent(Intent.ACTION_SEND).apply {

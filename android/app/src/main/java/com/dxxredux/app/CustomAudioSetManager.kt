@@ -123,7 +123,10 @@ class CustomAudioSetManager(
      * engine can read them by filesystem path.
      * Returns the playlist path relative to filesDir, or null if no files.
      */
-    fun writeM3U(context: android.content.Context? = null): String? {
+    fun writeM3U(
+        context: android.content.Context? = null,
+        onProgress: (String, Long, Long) -> Unit = { _, _, _ -> },
+    ): String? {
         val enabled = getEnabledSets()
         val allFiles = mutableListOf<Pair<String, String>>() // (sortKey, absolutePath)
         val stageDir = File(filesDir, "custom_music_stage")
@@ -136,8 +139,8 @@ class CustomAudioSetManager(
                     stageDir.mkdirs()
                     val staged = File(stageDir, "${set.id}_$f")
                     try {
-                        context.contentResolver.openInputStream(android.net.Uri.parse(refUri))?.use { input ->
-                            staged.outputStream().use { output -> input.copyTo(output) }
+                        LauncherFileCopy.copyUriToFile(context, android.net.Uri.parse(refUri), staged, f) { progress ->
+                            onProgress(progress.label, progress.bytesDone, progress.bytesTotal)
                         }
                         allFiles.add(f.lowercase() to staged.absolutePath)
                     } catch (e: Exception) {

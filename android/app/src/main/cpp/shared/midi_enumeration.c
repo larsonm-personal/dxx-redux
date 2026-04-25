@@ -11,6 +11,7 @@
 
 #include "midi_enumeration.h"
 #include "midi_preview.h" /* hmp2mid_mem, hog_read_entry, hog_list_entries */
+#include "u_mem.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -110,7 +111,7 @@ static int compute_hmp_duration(const unsigned char *hmp_data, int hmp_len)
 	if (!hmp2mid_mem(hmp_data, hmp_len, &midi, &midi_len)) return -1;
 
 	tml_message *msg = tml_load_memory(midi, midi_len);
-	free(midi);
+	d_free(midi);
 	if (!msg) return -1;
 
 	unsigned int last_time = 0;

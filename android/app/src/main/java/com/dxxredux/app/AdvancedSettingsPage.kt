@@ -11,6 +11,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,10 +32,22 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+private data class StorageFileEntry(
+    val file: File,
+    val location: String,
+    val relativePath: String,
+    val absolutePath: String,
+    val purpose: String,
+    val size: Long,
+)
 
 @Composable
 fun AdvancedSettingsPage(
@@ -261,12 +274,15 @@ fun AdvancedSettingsPage(
 @Composable
 private fun DebugLoggingSection() {
     val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
     val categoryStates =
         remember {
             mutableStateListOf(*Array(DebugLogCategory.COUNT) { DebugLog.isCategoryEnabled(ctx, it) })
         }
     var logFiles by remember { mutableStateOf(DebugLog.listLogFiles(ctx)) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var transferProgress by remember { mutableStateOf<LauncherCopyProgress?>(null) }
     val dateFmt = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US) }
 
     Text("Debug Logging Categories", fontWeight = FontWeight.Bold, fontSize = 14.sp)
@@ -297,7 +313,24 @@ private fun DebugLoggingSection() {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(
-                    modifier = Modifier.weight(1f).clickable { openTextFile(ctx, file) },
+                    modifier =
+                        Modifier.weight(1f).clickable {
+                            scope.launch {
+                                try {
+                                    val uri =
+                                        withContext(Dispatchers.IO) {
+                                            copyFileToCache(ctx, file, "file_view") { progress ->
+                                                mainHandler.post { transferProgress = progress }
+                                            }
+                                        }
+                                    transferProgress = null
+                                    openTextFile(ctx, uri)
+                                } catch (e: Exception) {
+                                    transferProgress = null
+                                    Toast.makeText(ctx, "Open failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        },
                 ) {
                     Text(file.name, fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
                     val sizeKb = file.length() / 1024
@@ -309,7 +342,23 @@ private fun DebugLoggingSection() {
                     )
                 }
                 OutlinedButton(
-                    onClick = { saveToDownloads(ctx, file) },
+                    onClick = {
+                        scope.launch {
+                            val ok =
+                                withContext(Dispatchers.IO) {
+                                    saveToDownloads(ctx, file) { progress ->
+                                        mainHandler.post { transferProgress = progress }
+                                    }
+                                }
+                            transferProgress = null
+                            Toast
+                                .makeText(
+                                    ctx,
+                                    if (ok) "Saved to Downloads/${file.name}" else "Save failed",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                        }
+                    },
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                     modifier = Modifier.height(28.dp),
                 ) {
@@ -317,7 +366,23 @@ private fun DebugLoggingSection() {
                 }
                 Spacer(modifier = Modifier.width(4.dp))
                 OutlinedButton(
-                    onClick = { DebugLog.shareLogFile(ctx, file) },
+                    onClick = {
+                        scope.launch {
+                            try {
+                                val uri =
+                                    withContext(Dispatchers.IO) {
+                                        copyFileToCache(ctx, file, "debuglog_exports") { progress ->
+                                            mainHandler.post { transferProgress = progress }
+                                        }
+                                    }
+                                transferProgress = null
+                                shareTextFile(ctx, uri, "Share Debug Log")
+                            } catch (e: Exception) {
+                                transferProgress = null
+                                Toast.makeText(ctx, "Share failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                     modifier = Modifier.height(28.dp),
                 ) {
@@ -325,6 +390,7 @@ private fun DebugLoggingSection() {
                 }
             }
         }
+        FileTransferProgress(transferProgress)
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedButton(
             onClick = { showDeleteDialog = true },
@@ -359,8 +425,11 @@ private fun DebugLoggingSection() {
 @Composable
 private fun CrashReportsSection() {
     val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
     var crashFiles by remember { mutableStateOf(CrashLog.listCrashFiles(ctx)) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var transferProgress by remember { mutableStateOf<LauncherCopyProgress?>(null) }
     val dateFmt = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US) }
 
     Text("Crash Reports", fontWeight = FontWeight.Bold, fontSize = 14.sp)
@@ -381,7 +450,24 @@ private fun CrashReportsSection() {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(
-                    modifier = Modifier.weight(1f).clickable { openTextFile(ctx, file) },
+                    modifier =
+                        Modifier.weight(1f).clickable {
+                            scope.launch {
+                                try {
+                                    val uri =
+                                        withContext(Dispatchers.IO) {
+                                            copyFileToCache(ctx, file, "file_view") { progress ->
+                                                mainHandler.post { transferProgress = progress }
+                                            }
+                                        }
+                                    transferProgress = null
+                                    openTextFile(ctx, uri)
+                                } catch (e: Exception) {
+                                    transferProgress = null
+                                    Toast.makeText(ctx, "Open failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        },
                 ) {
                     Text(file.name, fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
                     val sizeKb = file.length() / 1024
@@ -393,7 +479,23 @@ private fun CrashReportsSection() {
                     )
                 }
                 OutlinedButton(
-                    onClick = { saveToDownloads(ctx, file) },
+                    onClick = {
+                        scope.launch {
+                            val ok =
+                                withContext(Dispatchers.IO) {
+                                    saveToDownloads(ctx, file) { progress ->
+                                        mainHandler.post { transferProgress = progress }
+                                    }
+                                }
+                            transferProgress = null
+                            Toast
+                                .makeText(
+                                    ctx,
+                                    if (ok) "Saved to Downloads/${file.name}" else "Save failed",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                        }
+                    },
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                     modifier = Modifier.height(28.dp),
                 ) {
@@ -401,7 +503,23 @@ private fun CrashReportsSection() {
                 }
                 Spacer(modifier = Modifier.width(4.dp))
                 OutlinedButton(
-                    onClick = { CrashLog.shareCrashFile(ctx, file) },
+                    onClick = {
+                        scope.launch {
+                            try {
+                                val uri =
+                                    withContext(Dispatchers.IO) {
+                                        copyFileToCache(ctx, file, "crashlog_exports") { progress ->
+                                            mainHandler.post { transferProgress = progress }
+                                        }
+                                    }
+                                transferProgress = null
+                                shareTextFile(ctx, uri, "Share Crash Report")
+                            } catch (e: Exception) {
+                                transferProgress = null
+                                Toast.makeText(ctx, "Share failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                     modifier = Modifier.height(28.dp),
                 ) {
@@ -409,6 +527,7 @@ private fun CrashReportsSection() {
                 }
             }
         }
+        FileTransferProgress(transferProgress)
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedButton(
             onClick = { showDeleteDialog = true },
@@ -482,6 +601,18 @@ internal fun computeResolutionOptions(ctx: android.content.Context): List<Pair<S
     return result
 }
 
+private fun isUnderDirectory(
+    child: File,
+    parent: File,
+): Boolean =
+    try {
+        child.canonicalPath == parent.canonicalPath ||
+            child.canonicalPath.startsWith(parent.canonicalPath + File.separator)
+    } catch (_: Exception) {
+        child.absolutePath == parent.absolutePath ||
+            child.absolutePath.startsWith(parent.absolutePath + File.separator)
+    }
+
 @Composable
 private fun StorageInspectorSection(filesDir: File) {
     val ctx = LocalContext.current
@@ -515,27 +646,54 @@ private fun StorageInspectorSection(filesDir: File) {
     }
 
     if (showFilesDialog) {
+        var refreshFiles by remember { mutableIntStateOf(0) }
+        var selectedEntry by remember { mutableStateOf<StorageFileEntry?>(null) }
+        var deleteEntry by remember { mutableStateOf<StorageFileEntry?>(null) }
         val allFiles =
-            remember {
-                filesDir
-                    .walkTopDown()
-                    .filter { it.isFile }
-                    .map { f ->
-                        val rel = f.relativeTo(filesDir).path
-                        val size = f.length()
-                        rel to size
-                    }.toList()
+            remember(refreshFiles) {
+                val importRoot = ImportLocationManager(filesDir).getActiveRoot()
+                val entries = mutableListOf<StorageFileEntry>()
+
+                fun addTree(
+                    root: File,
+                    location: String,
+                    importedRoot: Boolean,
+                ) {
+                    if (!root.exists()) return
+                    root
+                        .walkTopDown()
+                        .filter { it.isFile }
+                        .forEach { f ->
+                            val rel = f.relativeTo(root).path
+                            entries.add(
+                                StorageFileEntry(
+                                    file = f,
+                                    location = location,
+                                    relativePath = rel,
+                                    absolutePath = f.absolutePath,
+                                    purpose = launcherStorageFilePurpose(f, rel, importedRoot),
+                                    size = f.length(),
+                                ),
+                            )
+                        }
+                }
+
+                addTree(filesDir, "internal", false)
+                if (!isUnderDirectory(importRoot, filesDir)) {
+                    addTree(importRoot, "external", true)
+                }
+                entries.distinctBy { it.absolutePath }
             }
         var sortBySize by remember { mutableStateOf(false) }
         val fileEntries =
             remember(allFiles, sortBySize) {
                 if (sortBySize) {
-                    allFiles.sortedByDescending { it.second }
+                    allFiles.sortedByDescending { it.size }
                 } else {
-                    allFiles.sortedBy { it.first }
+                    allFiles.sortedWith(compareBy<StorageFileEntry> { it.location }.thenBy { it.relativePath })
                 }
             }
-        val totalSize = remember(allFiles) { allFiles.sumOf { it.second } }
+        val totalSize = remember(allFiles) { allFiles.sumOf { it.size } }
 
         AlertDialog(
             onDismissRequest = { showFilesDialog = false },
@@ -577,21 +735,37 @@ private fun StorageInspectorSection(filesDir: File) {
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
-                        items(fileEntries) { (path, size) ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
+                        items(fileEntries) { entry ->
+                            Column(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable { selectedEntry = entry }
+                                        .focusable()
+                                        .padding(vertical = 5.dp, horizontal = 4.dp),
                             ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Text(
+                                        entry.file.name,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF2E7D32),
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    Text(formatSize(entry.size), fontSize = 10.sp)
+                                }
                                 Text(
-                                    path,
-                                    fontSize = 11.sp,
-                                    modifier = Modifier.weight(1f),
-                                )
-                                Text(
-                                    formatSize(size),
-                                    fontSize = 11.sp,
+                                    entry.purpose,
+                                    fontSize = 10.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text(entry.location, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                    Text(entry.relativePath, fontSize = 10.sp)
+                                }
                             }
                         }
                     }
@@ -601,6 +775,63 @@ private fun StorageInspectorSection(filesDir: File) {
                 TextButton(onClick = { showFilesDialog = false }) { Text("Close") }
             },
         )
+
+        selectedEntry?.let { entry ->
+            AlertDialog(
+                onDismissRequest = { selectedEntry = null },
+                title = { Text(entry.file.name) },
+                text = {
+                    Column {
+                        Text("Location: ${entry.location}", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("Purpose: ${entry.purpose}", fontSize = 12.sp)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("Size: ${formatSize(entry.size)}", fontSize = 12.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Full path:", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        Text(entry.absolutePath, fontSize = 11.sp)
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { selectedEntry = null }) { Text("Close") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { deleteEntry = entry }) { Text("Delete") }
+                },
+            )
+        }
+
+        deleteEntry?.let { entry ->
+            AlertDialog(
+                onDismissRequest = { deleteEntry = null },
+                title = { Text("Delete file?") },
+                text = {
+                    Column {
+                        Text(entry.absolutePath, fontSize = 11.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("This cannot be undone.", fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            if (entry.file.delete()) {
+                                selectedEntry = null
+                                deleteEntry = null
+                                refreshFiles++
+                                Toast.makeText(ctx, "Deleted ${entry.file.name}", Toast.LENGTH_SHORT).show()
+                            } else {
+                                deleteEntry = null
+                                Toast.makeText(ctx, "Delete failed", Toast.LENGTH_LONG).show()
+                            }
+                        },
+                    ) { Text("Delete") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { deleteEntry = null }) { Text("Cancel") }
+                },
+            )
+        }
     }
 
     if (showSafDialog) {
@@ -714,6 +945,7 @@ private fun StorageInspectorSection(filesDir: File) {
 private fun ImportLocationSection(filesDir: File) {
     val ctx = LocalContext.current
     val mgr = remember { ImportLocationManager(filesDir) }
+    val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
     var activePath by remember { mutableStateOf(mgr.getActiveRoot().absolutePath) }
     var overrideActive by remember { mutableStateOf(mgr.isOverrideActive()) }
     var showPicker by remember { mutableStateOf(false) }
@@ -878,8 +1110,10 @@ private fun ImportLocationSection(filesDir: File) {
                         Thread {
                             val result =
                                 mgr.migrate(src, dst) { copied, total ->
-                                    migrateCopied = copied
-                                    migrateTotal = total
+                                    mainHandler.post {
+                                        migrateCopied = copied
+                                        migrateTotal = total
+                                    }
                                 }
                             android.os.Handler(android.os.Looper.getMainLooper()).post {
                                 migrating = false
@@ -989,18 +1223,39 @@ private fun BoxScope.ScrollArrows(scrollState: ScrollState) {
 
 private const val FILE_PROVIDER_AUTHORITY = "com.dxxredux.app.fileprovider"
 
-private fun openTextFile(
+@Composable
+private fun FileTransferProgress(progress: LauncherCopyProgress?) {
+    if (progress == null) return
+    Spacer(modifier = Modifier.height(6.dp))
+    Text(progress.label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Spacer(modifier = Modifier.height(3.dp))
+    if (progress.bytesTotal > 0L) {
+        val pct = (progress.bytesDone.toFloat() / progress.bytesTotal.toFloat()).coerceIn(0f, 1f)
+        LinearProgressIndicator(progress = { pct }, modifier = Modifier.fillMaxWidth().height(4.dp))
+    } else {
+        LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(4.dp))
+    }
+}
+
+private fun copyFileToCache(
     context: android.content.Context,
     file: File,
+    dirName: String,
+    onProgress: (LauncherCopyProgress) -> Unit = {},
+): Uri {
+    val viewDir = File(context.cacheDir, dirName)
+    viewDir.mkdirs()
+    val copy = File(viewDir, file.name)
+    LauncherFileCopy.copyFileToFile(file, copy, file.name, onProgress)
+    return androidx.core.content.FileProvider
+        .getUriForFile(context, FILE_PROVIDER_AUTHORITY, copy)
+}
+
+private fun openTextFile(
+    context: android.content.Context,
+    uri: Uri,
 ) {
     try {
-        val viewDir = File(context.cacheDir, "file_view")
-        viewDir.mkdirs()
-        val copy = File(viewDir, file.name)
-        file.copyTo(copy, overwrite = true)
-        val uri =
-            androidx.core.content.FileProvider
-                .getUriForFile(context, FILE_PROVIDER_AUTHORITY, copy)
         val intent =
             Intent(Intent.ACTION_VIEW).apply {
                 setDataAndType(uri, "text/plain")
@@ -1012,10 +1267,31 @@ private fun openTextFile(
     }
 }
 
+private fun shareTextFile(
+    context: android.content.Context,
+    uri: Uri,
+    chooserTitle: String,
+) {
+    try {
+        val intent =
+            Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+        val chooser = Intent.createChooser(intent, chooserTitle)
+        chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(chooser)
+    } catch (e: Exception) {
+        Toast.makeText(context, "Share failed: ${e.message}", Toast.LENGTH_SHORT).show()
+    }
+}
+
 private fun saveToDownloads(
     context: android.content.Context,
     file: File,
-) {
+    onProgress: (LauncherCopyProgress) -> Unit = {},
+): Boolean =
     try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values =
@@ -1026,17 +1302,14 @@ private fun saveToDownloads(
             val uri =
                 context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
                     ?: throw Exception("MediaStore insert failed")
-            context.contentResolver.openOutputStream(uri)?.use { out ->
-                file.inputStream().use { it.copyTo(out) }
-            }
+            LauncherFileCopy.copyFileToUri(context, file, uri, file.name, onProgress)
         } else {
             @Suppress("DEPRECATION")
             val dlDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             dlDir.mkdirs()
-            file.copyTo(File(dlDir, file.name), overwrite = true)
+            LauncherFileCopy.copyFileToFile(file, File(dlDir, file.name), file.name, onProgress)
         }
-        Toast.makeText(context, "Saved to Downloads/${file.name}", Toast.LENGTH_SHORT).show()
+        true
     } catch (e: Exception) {
-        Toast.makeText(context, "Save failed: ${e.message}", Toast.LENGTH_SHORT).show()
+        false
     }
-}

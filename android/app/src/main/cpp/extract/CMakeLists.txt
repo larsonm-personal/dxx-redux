@@ -169,6 +169,19 @@ add_executable(extract_gog
 target_include_directories(extract_gog PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(extract_gog PRIVATE lzma_sdk_c ZLIB::ZLIB)
 
+add_executable(test_gog_fd
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_gog_fd.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/inno_reader.c
+)
+target_include_directories(test_gog_fd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(test_gog_fd PRIVATE lzma_sdk_c ZLIB::ZLIB)
+
+set(GOG_D1_INSTALLER
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/gog installers/setup_descent_1.4a_(16596).exe")
+set(GOG_D2_INSTALLER
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../game_data/gog installers/setup_descent_2_1.1_(16596).exe")
+add_test(NAME gog_fd_tests COMMAND test_gog_fd "${GOG_D1_INSTALLER}" "${GOG_D2_INSTALLER}")
+
 # ── Chromaprint (audio fingerprinting, uses bundled KissFFT) ─────────
 FetchContent_Declare(chromaprint
     URL https://github.com/acoustid/chromaprint/archive/refs/tags/v1.5.1.tar.gz

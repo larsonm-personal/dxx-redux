@@ -728,7 +728,7 @@ class SetupActivity : ComponentActivity() {
                                     setDir
                                 }
                             ImportStorageGuard.requireFreeSpace(destDir, src.length(), "import ${src.name}")
-                            src.copyTo(File(destDir, src.name), overwrite = true)
+                            LauncherFileCopy.copyFileToFile(src, File(destDir, src.name))
                             Log.i("DXX-Setup", "import_files: copied ${src.name} to ${destDir.name}")
                         } else {
                             Log.w("DXX-Setup", "import_files: not a file: $path")
@@ -2497,40 +2497,11 @@ private fun descriptionForFile(filename: String): String {
         .firstOrNull { info ->
             info.filename.equals(lower, ignoreCase = true) ||
                 info.alternatives.any { it.equals(lower, ignoreCase = true) }
-        }?.description ?: "Unknown file"
+        }?.description ?: launcherFileTypeLabel(filename)
 }
 
 /** Describe a file's type based on its extension. */
-private fun describeExtension(filename: String): String {
-    val ext = filename.substringAfterLast('.', "").lowercase()
-    return EXTENSION_TYPES[ext] ?: "[.$ext] \u2014 unknown type"
-}
-
-private val EXTENSION_TYPES =
-    mapOf(
-        "hog" to ".hog \u2014 mission archive",
-        "mn2" to ".mn2 \u2014 Descent II mission descriptor",
-        "msn" to ".msn \u2014 Descent I mission descriptor",
-        "ham" to ".ham \u2014 global robot/weapon data",
-        "vham" to ".vham \u2014 variant HAM (D2X-XL)",
-        "pig" to ".pig \u2014 texture/sound container",
-        "pog" to ".pog \u2014 texture override pack",
-        "pcx" to ".pcx \u2014 briefing/cutscene image",
-        "s11" to ".s11 \u2014 11 kHz PCM sound",
-        "s22" to ".s22 \u2014 22 kHz PCM sound",
-        "hmp" to ".hmp \u2014 HMI-format MIDI music",
-        "raw" to ".raw \u2014 raw PCM audio",
-        "rl2" to ".rl2 \u2014 Descent II level",
-        "rdl" to ".rdl \u2014 Descent I level",
-        "mvl" to ".mvl \u2014 movie library archive",
-        "dxa" to ".dxa \u2014 Rebirth zip addon file",
-        "dtx" to ".dtx \u2014 D2X-XL texture pack",
-        "gog" to ".gog \u2014 GOG CD image (Redbook audio)",
-        "inst" to ".inst \u2014 GOG CD cue sheet",
-        "bin" to ".bin \u2014 CD disc image (BIN/CUE)",
-        "cue" to ".cue \u2014 CD cue sheet (BIN/CUE)",
-        "dem" to ".dem \u2014 game demo recording",
-    )
+private fun describeExtension(filename: String): String = launcherExtensionDescription(filename)
 
 // ── File definitions ────────────────────────────────────────────────────────
 
@@ -2759,6 +2730,7 @@ private fun importFile(
     context: Context,
     source: FoundFile,
     destDir: File,
+    onProgress: (LauncherCopyProgress) -> Unit = {},
 ): Boolean =
     try {
         // Use lowercase canonical name so the engine finds it
@@ -2775,11 +2747,7 @@ private fun importFile(
             ImportStorageGuard.queryUriSizeBytes(context.contentResolver, source.uri) ?: 0L,
             "import ${source.name}",
         )
-        context.contentResolver.openInputStream(source.uri)?.use { input ->
-            FileOutputStream(destFile).use { output ->
-                input.copyTo(output, bufferSize = 8192)
-            }
-        }
+        LauncherFileCopy.copyUriToFile(context, source.uri, destFile, source.name, onProgress)
         Log.i("DXX-Setup", "Imported ${source.name} → $canonicalName (${destFile.length()} bytes)")
         true
     } catch (e: InsufficientStorageException) {
@@ -2826,7 +2794,7 @@ private suspend fun extractZipContents(
     context: Context,
     zipUri: Uri,
     tmpDir: File,
-    onProgress: (String) -> Unit,
+    onProgress: suspend (String, Long, Long) -> Unit,
 ): ZipExtractionResult =
     kotlinx.coroutines.withContext(Dispatchers.IO) {
         tmpDir.mkdirs()
@@ -2844,17 +2812,19 @@ private suspend fun extractZipContents(
                             if (ext in audioExts) foundAudio = true
                         }
                         if (!entry.isDirectory && name in ALL_GAME_FILENAMES) {
+                            val totalBytes = entry.size.takeIf { it > 0L } ?: 0L
                             kotlinx.coroutines.withContext(Dispatchers.Main) {
-                                onProgress(name)
+                                onProgress(name, 0L, totalBytes)
                             }
                             ImportStorageGuard.requireFreeSpace(
                                 tmpDir,
-                                entry.size.takeIf { it > 0L } ?: 0L,
+                                totalBytes,
                                 "extract $name",
                             )
                             val tmpFile = File(tmpDir, name)
                             val digest = java.security.MessageDigest.getInstance("SHA-256")
                             var size = 0L
+                            var lastReported = 0L
                             FileOutputStream(tmpFile).use { out ->
                                 val buf = ByteArray(8192)
                                 while (true) {
@@ -2863,7 +2833,16 @@ private suspend fun extractZipContents(
                                     out.write(buf, 0, n)
                                     digest.update(buf, 0, n)
                                     size += n
+                                    if (size - lastReported >= 1024L * 1024L || size == totalBytes) {
+                                        lastReported = size
+                                        kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                            onProgress(name, size, totalBytes)
+                                        }
+                                    }
                                 }
+                            }
+                            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                onProgress(name, size, totalBytes)
                             }
                             val sha256 = digest.digest().joinToString("") { "%02x".format(it) }
                             results.add(ExtractedFile(name, tmpFile, sha256, size))
@@ -2894,7 +2873,7 @@ private suspend fun extract7zContents(
     context: Context,
     archiveUri: Uri,
     tmpDir: File,
-    onProgress: (String) -> Unit,
+    onProgress: suspend (String, Long, Long) -> Unit,
 ): ZipExtractionResult =
     kotlinx.coroutines.withContext(Dispatchers.IO) {
         tmpDir.mkdirs()
@@ -2908,8 +2887,10 @@ private suspend fun extract7zContents(
                 ImportStorageGuard.queryUriSizeBytes(context.contentResolver, archiveUri) ?: 0L,
                 "stage 7z archive",
             )
-            context.contentResolver.openInputStream(archiveUri)?.use { input ->
-                FileOutputStream(tmpArchive).use { output -> input.copyTo(output) }
+            copyUriToFileWithProgress(context, archiveUri, tmpArchive) { copied, total ->
+                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                    onProgress("Copying archive", copied, total)
+                }
             }
             SevenZFile.builder().setFile(tmpArchive).get().use { szf ->
                 var entry = szf.nextEntry
@@ -2920,17 +2901,19 @@ private suspend fun extract7zContents(
                         if (ext in audioExts) foundAudio = true
                     }
                     if (!entry.isDirectory && name in ALL_GAME_FILENAMES) {
+                        val totalBytes = entry.size.takeIf { it > 0L } ?: 0L
                         kotlinx.coroutines.withContext(Dispatchers.Main) {
-                            onProgress(name)
+                            onProgress(name, 0L, totalBytes)
                         }
                         ImportStorageGuard.requireFreeSpace(
                             tmpDir,
-                            entry.size.takeIf { it > 0L } ?: 0L,
+                            totalBytes,
                             "extract $name",
                         )
                         val tmpFile = File(tmpDir, name)
                         val digest = java.security.MessageDigest.getInstance("SHA-256")
                         var size = 0L
+                        var lastReported = 0L
                         FileOutputStream(tmpFile).use { out ->
                             val buf = ByteArray(8192)
                             while (true) {
@@ -2939,7 +2922,16 @@ private suspend fun extract7zContents(
                                 out.write(buf, 0, n)
                                 digest.update(buf, 0, n)
                                 size += n
+                                if (size - lastReported >= 1024L * 1024L || size == totalBytes) {
+                                    lastReported = size
+                                    kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                        onProgress(name, size, totalBytes)
+                                    }
+                                }
                             }
+                        }
+                        kotlinx.coroutines.withContext(Dispatchers.Main) {
+                            onProgress(name, size, totalBytes)
                         }
                         val sha256 = digest.digest().joinToString("") { "%02x".format(it) }
                         results.add(ExtractedFile(name, tmpFile, sha256, size))
@@ -2968,6 +2960,41 @@ private fun cleanupTmpDir(filesDir: File) {
     if (tmpDir.exists()) tmpDir.deleteRecursively()
 }
 
+private fun cleanupTmpDirWithReport(filesDir: File): List<String> {
+    val tmpDir = File(filesDir, "tmp")
+    val leftovers = tmpDir.listFiles()?.map { it.name } ?: emptyList()
+    if (leftovers.isNotEmpty()) tmpDir.deleteRecursively()
+    return leftovers
+}
+
+private suspend fun copyUriToFileWithProgress(
+    context: Context,
+    uri: Uri,
+    dest: File,
+    onProgress: suspend (Long, Long) -> Unit = { _, _ -> },
+) {
+    val totalBytes = ImportStorageGuard.queryUriSizeBytes(context.contentResolver, uri) ?: 0L
+    var copiedBytes = 0L
+    var lastReported = 0L
+    onProgress(0L, totalBytes)
+    context.contentResolver.openInputStream(uri)?.use { input ->
+        FileOutputStream(dest).use { output ->
+            val buffer = ByteArray(64 * 1024)
+            while (true) {
+                val n = input.read(buffer)
+                if (n <= 0) break
+                output.write(buffer, 0, n)
+                copiedBytes += n.toLong()
+                if (copiedBytes - lastReported >= 1024L * 1024L || copiedBytes == totalBytes) {
+                    lastReported = copiedBytes
+                    onProgress(copiedBytes, totalBytes)
+                }
+            }
+        }
+    } ?: throw java.io.IOException("Could not open selected file")
+    onProgress(copiedBytes, totalBytes)
+}
+
 // ── Composables ─────────────────────────────────────────────────────────────
 
 @Composable
@@ -2993,7 +3020,9 @@ private fun SetupScreen(
             }
         }
     val ctxLocal = LocalContext.current
+    var cleanedTmpFiles by remember { mutableStateOf<List<String>>(emptyList()) }
     LaunchedEffect(Unit) {
+        cleanedTmpFiles = cleanupTmpDirWithReport(filesDir)
         val mgr = ImportLocationManager(filesDir)
         mgr.handleStaleInProgressMarkers(ctxLocal)
         if (mgr.isOverrideUnreachable()) {
@@ -3025,6 +3054,7 @@ private fun SetupScreen(
     val canLaunch = d2RequiredOk || d1RequiredOk
 
     val context = androidx.compose.ui.platform.LocalContext.current
+    val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
 
     // ── Startup: prune stale entries, then hash new/changed files ──
     var prunedSourceNames by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -3159,6 +3189,8 @@ private fun SetupScreen(
     var zipPackageName by remember { mutableStateOf<String?>(null) }
     var zipExtracting by remember { mutableStateOf(false) }
     var zipProgressFile by remember { mutableStateOf("") }
+    var zipProgressBytes by remember { mutableLongStateOf(0L) }
+    var zipProgressTotal by remember { mutableLongStateOf(0L) }
     var zipHadAudioFiles by remember { mutableStateOf(false) }
 
     // ── BIN/CUE disc import state ───────────────────────
@@ -3181,6 +3213,9 @@ private fun SetupScreen(
     // ── Audio file auto-import state ────────────────────
     var audioImportUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
     var audioImporting by remember { mutableStateOf(false) }
+    var audioImportLabel by remember { mutableStateOf("") }
+    var audioImportBytes by remember { mutableLongStateOf(0L) }
+    var audioImportTotal by remember { mutableLongStateOf(0L) }
     var zipArchiveUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
     val audioCustomMgr = remember { CustomAudioSetManager(filesDir) }
 
@@ -3403,7 +3438,12 @@ private fun SetupScreen(
                     }
                     // Handle ZIP/7z files
                     if (zipUris.isNotEmpty()) {
-                        withContext(Dispatchers.Main) { zipExtracting = true }
+                        withContext(Dispatchers.Main) {
+                            zipExtracting = true
+                            zipProgressFile = ""
+                            zipProgressBytes = 0L
+                            zipProgressTotal = 0L
+                        }
                         val tmpDir = File(filesDir, "tmp")
                         val allExtracted = mutableListOf<ExtractedFile>()
                         var anyAudio = false
@@ -3411,12 +3451,16 @@ private fun SetupScreen(
                         for ((arcName, arcUri) in zipUris) {
                             val result =
                                 if (arcName.lowercase().endsWith(".7z")) {
-                                    extract7zContents(context, arcUri, tmpDir) { name ->
-                                        zipProgressFile = name
+                                    extract7zContents(context, arcUri, tmpDir) { name, copied, total ->
+                                        zipProgressFile = "$arcName: $name"
+                                        zipProgressBytes = copied
+                                        zipProgressTotal = total
                                     }
                                 } else {
-                                    extractZipContents(context, arcUri, tmpDir) { name ->
-                                        zipProgressFile = name
+                                    extractZipContents(context, arcUri, tmpDir) { name, copied, total ->
+                                        zipProgressFile = "$arcName: $name"
+                                        zipProgressBytes = copied
+                                        zipProgressTotal = total
                                     }
                                 }
                             allExtracted.addAll(result.files)
@@ -3433,6 +3477,8 @@ private fun SetupScreen(
                             zipArchiveUris = zipUris.map { it.second }
                             zipExtracting = false
                             zipProgressFile = ""
+                            zipProgressBytes = 0L
+                            zipProgressTotal = 0L
                             if (archiveErrors.isNotEmpty()) {
                                 val msg = archiveErrors.joinToString("\n")
                                 importStatus = msg
@@ -3824,6 +3870,9 @@ private fun SetupScreen(
                             val uris = audioImportUris
                             audioImportUris = emptyList()
                             audioImporting = true
+                            audioImportLabel = ""
+                            audioImportBytes = 0L
+                            audioImportTotal = 0L
                             scope.launch {
                                 importAudioFiles(
                                     context,
@@ -3833,8 +3882,17 @@ private fun SetupScreen(
                                     uris,
                                     targetSetId,
                                     copyToStorage,
-                                )
+                                ) { label, copied, total ->
+                                    mainHandler.post {
+                                        audioImportLabel = label
+                                        audioImportBytes = copied
+                                        audioImportTotal = total
+                                    }
+                                }
                                 audioImporting = false
+                                audioImportLabel = ""
+                                audioImportBytes = 0L
+                                audioImportTotal = 0L
                                 // Auto-switch music mode to "files"
                                 context
                                     .getSharedPreferences("dxx_prefs", Context.MODE_PRIVATE)
@@ -3849,6 +3907,88 @@ private fun SetupScreen(
                 // ── Shared composable blocks ──
 
                 val filesPane: @Composable ColumnScope.() -> Unit = {
+                    // ── Stale temp cleanup notification ────────
+                    if (cleanedTmpFiles.isNotEmpty()) {
+                        Row(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 8.dp)
+                                    .background(
+                                        Color(0xFFFFF3E0),
+                                        shape = RoundedCornerShape(6.dp),
+                                    ).padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.Top,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "Cleaned up stale temporary import files:",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF6D4C00),
+                                )
+                                cleanedTmpFiles.take(8).forEach { name ->
+                                    Text(
+                                        "  - $name",
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF6D4C00),
+                                    )
+                                }
+                                if (cleanedTmpFiles.size > 8) {
+                                    Text(
+                                        "  - and ${cleanedTmpFiles.size - 8} more",
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF6D4C00),
+                                    )
+                                }
+                            }
+                            TextButton(
+                                onClick = { cleanedTmpFiles = emptyList() },
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                                modifier = Modifier.height(24.dp),
+                            ) {
+                                Text("x", fontSize = 12.sp, color = Color(0xFF6D4C00))
+                            }
+                        }
+                    }
+
+                    if (audioImporting) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            colors =
+                                CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                ),
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    "Importing audio files...",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                )
+                                if (audioImportLabel.isNotEmpty()) {
+                                    Text(
+                                        audioImportLabel,
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                if (audioImportTotal > 0L) {
+                                    val audioPct =
+                                        (audioImportBytes.toFloat() / audioImportTotal.toFloat()).coerceIn(0f, 1f)
+                                    LinearProgressIndicator(
+                                        progress = { audioPct },
+                                        modifier = Modifier.fillMaxWidth().height(4.dp),
+                                    )
+                                } else {
+                                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(4.dp))
+                                }
+                            }
+                        }
+                    }
+
                     // ── Pruned audio sources notification ────────
                     if (prunedSourceNames.isNotEmpty()) {
                         Row(
@@ -4029,7 +4169,8 @@ private fun SetupScreen(
                                                     }
                                                     // Extract ZIP contents
                                                     val zipUri = android.net.Uri.fromFile(zipFile)
-                                                    val result = extractZipContents(context, zipUri, tmpDir) { _ -> }
+                                                    val result =
+                                                        extractZipContents(context, zipUri, tmpDir) { _, _, _ -> }
                                                     if (result.files.isEmpty()) {
                                                         demoDownloading = null
                                                         demoDownloadError = "No game files found in ZIP"
@@ -4038,7 +4179,11 @@ private fun SetupScreen(
                                                     }
                                                     // Move files to setDir
                                                     var imported = 0
-                                                    for (ef in result.files) {
+                                                    hashingTotalFiles = result.files.size
+                                                    for ((i, ef) in result.files.withIndex()) {
+                                                        hashingFileIndex = i + 1
+                                                        hashingFile = ef.name
+                                                        hashingProgress = 0f
                                                         val destFile = File(setDir, ef.name)
                                                         val ok =
                                                             withContext(Dispatchers.IO) {
@@ -4048,7 +4193,15 @@ private fun SetupScreen(
                                                                         ef.sizeBytes,
                                                                         "install ${ef.name}",
                                                                     )
-                                                                    ef.tmpFile.copyTo(destFile, overwrite = true)
+                                                                    LauncherFileCopy.copyFileToFile(
+                                                                        ef.tmpFile,
+                                                                        destFile,
+                                                                        ef.name,
+                                                                    ) { progress ->
+                                                                        mainHandler.post {
+                                                                            hashingProgress = progress.fraction
+                                                                        }
+                                                                    }
                                                                     true
                                                                 } catch (e: Exception) {
                                                                     Log.e(
@@ -4064,6 +4217,7 @@ private fun SetupScreen(
                                                             manifest.upsert(ef.name, ef.sha256, ef.sizeBytes)
                                                         }
                                                     }
+                                                    hashingFile = null
                                                     cleanupTmpDir(filesDir)
                                                     demoDownloading = null
                                                     importStatus = "Installed ${demo.name}: $imported files."
@@ -4227,7 +4381,11 @@ private fun SetupScreen(
                                                             val existingEntry = manifest.getEntry(canonicalName)
                                                             val ok =
                                                                 withContext(Dispatchers.IO) {
-                                                                    importFile(context, f, setDir)
+                                                                    importFile(context, f, setDir) { progress ->
+                                                                        mainHandler.post {
+                                                                            hashingProgress = progress.fraction
+                                                                        }
+                                                                    }
                                                                 }
                                                             if (ok) {
                                                                 imported++
@@ -4332,11 +4490,27 @@ private fun SetupScreen(
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
-                                LinearProgressIndicator(
-                                    modifier = Modifier.fillMaxWidth().height(4.dp),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    trackColor = MaterialTheme.colorScheme.primaryContainer,
-                                )
+                                if (zipProgressTotal > 0L) {
+                                    val archivePct =
+                                        (zipProgressBytes.toFloat() / zipProgressTotal.toFloat()).coerceIn(0f, 1f)
+                                    Text(
+                                        "${(archivePct * 100f).toInt()}%",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    )
+                                    LinearProgressIndicator(
+                                        progress = { archivePct },
+                                        modifier = Modifier.fillMaxWidth().height(4.dp),
+                                        color = MaterialTheme.colorScheme.primary,
+                                        trackColor = MaterialTheme.colorScheme.primaryContainer,
+                                    )
+                                } else {
+                                    LinearProgressIndicator(
+                                        modifier = Modifier.fillMaxWidth().height(4.dp),
+                                        color = MaterialTheme.colorScheme.primary,
+                                        trackColor = MaterialTheme.colorScheme.primaryContainer,
+                                    )
+                                }
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -4432,12 +4606,20 @@ private fun SetupScreen(
                                                     for ((i, ef) in extracted.withIndex()) {
                                                         hashingFileIndex = i + 1
                                                         hashingFile = ef.name
-                                                        hashingProgress = 1f
+                                                        hashingProgress = 0f
                                                         val destFile = File(setDir, ef.name)
                                                         val ok =
                                                             withContext(Dispatchers.IO) {
                                                                 try {
-                                                                    ef.tmpFile.copyTo(destFile, overwrite = true)
+                                                                    LauncherFileCopy.copyFileToFile(
+                                                                        ef.tmpFile,
+                                                                        destFile,
+                                                                        ef.name,
+                                                                    ) { progress ->
+                                                                        mainHandler.post {
+                                                                            hashingProgress = progress.fraction
+                                                                        }
+                                                                    }
                                                                     true
                                                                 } catch (e: Exception) {
                                                                     Log.e(
@@ -5875,11 +6057,14 @@ private fun registerGogAudioSource(
     )
 }
 
-private fun extractSowArchives(setDir: File): Int {
+private fun extractSowArchives(
+    setDir: File,
+    progress: DiscImportBridge.ExtractProgress? = null,
+): Int {
     val sowFiles = DiscImportBridge.scanSowFiles(setDir.absolutePath) ?: return 0
     var sowExtracted = 0
     for (sow in sowFiles) {
-        sowExtracted += DiscImportBridge.extractSowFiles(sow, setDir.absolutePath, null).coerceAtLeast(0)
+        sowExtracted += DiscImportBridge.extractSowFiles(sow, setDir.absolutePath, progress).coerceAtLeast(0)
     }
     return sowExtracted
 }
@@ -5933,7 +6118,7 @@ private fun registerDiscAudioSourceFromPath(
 
     val id = discId ?: "custom-${System.currentTimeMillis()}"
     val destCue = File(filesDir, "$id.cue")
-    File(cuePath).copyTo(destCue, overwrite = true)
+    LauncherFileCopy.copyFileToFile(File(cuePath), destCue)
     srcManager.addSource(
         AudioSourceManager.AudioSource(
             id = id,
@@ -6847,6 +7032,7 @@ private fun GogImportDialog(
     onDismiss: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
     var status by remember { mutableStateOf("Analyzing installer\u2026") }
     var format by remember { mutableStateOf<String?>(null) }
     var fileList by remember { mutableStateOf<List<GogImportBridge.GogFile>?>(null) }
@@ -6855,6 +7041,8 @@ private fun GogImportDialog(
     var extractedFileNames by remember { mutableStateOf<List<String>>(emptyList()) }
     var progressFile by remember { mutableStateOf("") }
     var progressPct by remember { mutableStateOf(0f) }
+    var copyingInstaller by remember { mutableStateOf(false) }
+    var copyProgressPct by remember { mutableStateOf(0f) }
     var tempPath by remember { mutableStateOf<String?>(null) }
     var errorMsg by remember { mutableStateOf<String?>(null) }
     var includeAudio by remember { mutableStateOf(true) }
@@ -6868,21 +7056,59 @@ private fun GogImportDialog(
         }
     }
 
-    // Copy installer to temp + detect format + list files
+    // Analyze installer; .exe imports read directly from the SAF fd when the
+    // provider gives us a seekable fd, avoiding a large tmp copy
     LaunchedEffect(installerUri) {
         withContext(Dispatchers.IO) {
             try {
-                val tmpDir = File(filesDir, "tmp")
-                tmpDir.mkdirs()
-                val tmpFile = File(tmpDir, installerName)
-                withContext(Dispatchers.Main) { status = "Copying installer\u2026" }
-                context.contentResolver.openInputStream(installerUri)?.use { input ->
-                    java.io.FileOutputStream(tmpFile).use { output -> input.copyTo(output, bufferSize = 65536) }
-                }
-                tempPath = tmpFile.absolutePath
+                val lowerName = installerName.lowercase(Locale.US)
+                val directExe = lowerName.endsWith(".exe")
 
-                val fmt = GogImportBridge.detectFormat(tmpFile.absolutePath)
-                val files = GogImportBridge.listFiles(tmpFile.absolutePath)
+                suspend fun stageInstaller(copyStatus: String): Triple<String, String, List<GogImportBridge.GogFile>?> {
+                    val tmpDir = File(filesDir, "tmp")
+                    tmpDir.mkdirs()
+                    val tmpFile = File(tmpDir, installerName)
+                    withContext(Dispatchers.Main) {
+                        status = copyStatus
+                        copyingInstaller = true
+                        copyProgressPct = 0f
+                    }
+                    copyUriToFileWithProgress(context, installerUri, tmpFile) { copied, total ->
+                        withContext(Dispatchers.Main) {
+                            copyProgressPct = if (total > 0) copied.toFloat() / total.toFloat() else 0f
+                        }
+                    }
+                    withContext(Dispatchers.Main) { copyingInstaller = false }
+                    return Triple(
+                        tmpFile.absolutePath,
+                        GogImportBridge.detectFormat(tmpFile.absolutePath),
+                        GogImportBridge.listFiles(tmpFile.absolutePath),
+                    )
+                }
+
+                var tmpPath: String? = null
+                var fmt: String
+                var files: List<GogImportBridge.GogFile>?
+                if (directExe) {
+                    fmt = "innosetup"
+                    files =
+                        context.contentResolver.openFileDescriptor(installerUri, "r")?.use { pfd ->
+                            GogImportBridge.listFilesFromFd(pfd.fd)
+                        }
+                    if (files.isNullOrEmpty()) {
+                        Log.i("DXX-GogImport", "Direct fd listing failed; staging installer from selected provider")
+                        val staged = stageInstaller("Copying installer from selected provider...")
+                        tmpPath = staged.first
+                        fmt = staged.second
+                        files = staged.third
+                    }
+                } else {
+                    val staged = stageInstaller("Copying installer...")
+                    tmpPath = staged.first
+                    fmt = staged.second
+                    files = staged.third
+                }
+                tempPath = tmpPath
                 withContext(Dispatchers.Main) {
                     format = fmt
                     fileList = files
@@ -6901,6 +7127,7 @@ private fun GogImportDialog(
             } catch (e: Exception) {
                 Log.e("DXX-GogImport", "Analysis failed", e)
                 withContext(Dispatchers.Main) {
+                    copyingInstaller = false
                     status = "Error: ${e.message}"
                     errorMsg = e.message
                 }
@@ -6939,6 +7166,16 @@ private fun GogImportDialog(
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(status, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                    if (copyingInstaller) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        val pct = (copyProgressPct * 100f).toInt().coerceIn(0, 100)
+                        Text("$pct%", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        LinearProgressIndicator(
+                            progress = { copyProgressPct.coerceIn(0f, 1f) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
 
                     // Error message
                     if (errorMsg != null && extractedCount == 0) {
@@ -7058,29 +7295,46 @@ private fun GogImportDialog(
                                     }
                                 withContext(Dispatchers.IO) {
                                     try {
-                                        val count =
-                                            GogImportBridge.extractFiles(
-                                                tempPath!!,
-                                                setDir.absolutePath,
-                                                object : GogImportBridge.ExtractProgress {
-                                                    override fun onProgress(
-                                                        currentFile: String,
-                                                        bytesDone: Long,
-                                                        bytesTotal: Long,
-                                                    ): Int {
-                                                        val pct =
-                                                            if (bytesTotal > 0) {
-                                                                bytesDone.toFloat() / bytesTotal
-                                                            } else {
-                                                                0f
-                                                            }
+                                        val progress =
+                                            object : GogImportBridge.ExtractProgress {
+                                                override fun onProgress(
+                                                    currentFile: String,
+                                                    bytesDone: Long,
+                                                    bytesTotal: Long,
+                                                ): Int {
+                                                    val pct =
+                                                        if (bytesTotal > 0) {
+                                                            bytesDone.toFloat() / bytesTotal
+                                                        } else {
+                                                            0f
+                                                        }
+                                                    mainHandler.post {
                                                         progressFile = currentFile
                                                         progressPct = pct
-                                                        return 0
                                                     }
-                                                },
-                                                includeAudio = includeAudio,
-                                            )
+                                                    return 0
+                                                }
+                                            }
+                                        val count =
+                                            if (tempPath != null) {
+                                                GogImportBridge.extractFiles(
+                                                    tempPath!!,
+                                                    setDir.absolutePath,
+                                                    progress,
+                                                    includeAudio = includeAudio,
+                                                )
+                                            } else {
+                                                context.contentResolver
+                                                    .openFileDescriptor(installerUri, "r")
+                                                    ?.use { pfd ->
+                                                        GogImportBridge.extractFilesFromFd(
+                                                            pfd.fd,
+                                                            setDir.absolutePath,
+                                                            progress,
+                                                            includeAudio = includeAudio,
+                                                        )
+                                                    } ?: -1
+                                            }
                                         val srcManager = AudioSourceManager(filesDir)
                                         val hasGog =
                                             if (includeAudio) {
@@ -7174,10 +7428,15 @@ private fun SowImportDialog(
     onDismiss: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
     var status by remember { mutableStateOf("Preparing\u2026") }
     var processing by remember { mutableStateOf(false) }
     var extractedCount by remember { mutableIntStateOf(0) }
     var tempPath by remember { mutableStateOf<String?>(null) }
+    var copyProgressBytes by remember { mutableLongStateOf(0L) }
+    var copyProgressTotal by remember { mutableLongStateOf(0L) }
+    var extractProgressBytes by remember { mutableLongStateOf(0L) }
+    var extractProgressTotal by remember { mutableLongStateOf(0L) }
     val extractFocus = remember { FocusRequester() }
     val doneFocus = remember { FocusRequester() }
 
@@ -7195,12 +7454,22 @@ private fun SowImportDialog(
                 val tmpDir = File(filesDir, "tmp")
                 tmpDir.mkdirs()
                 val tmpFile = File(tmpDir, sowName)
-                context.contentResolver.openInputStream(sowUri)?.use { input ->
-                    java.io.FileOutputStream(tmpFile).use { output -> input.copyTo(output, bufferSize = 65536) }
-                }
-                tempPath = tmpFile.absolutePath
                 withContext(Dispatchers.Main) {
+                    status = "Copying SOW archive..."
+                    copyProgressBytes = 0L
+                    copyProgressTotal = 0L
+                }
+                copyUriToFileWithProgress(context, sowUri, tmpFile) { copied, total ->
+                    withContext(Dispatchers.Main) {
+                        copyProgressBytes = copied
+                        copyProgressTotal = total
+                    }
+                }
+                withContext(Dispatchers.Main) {
+                    tempPath = tmpFile.absolutePath
                     status = "Ready to extract game files from SOW archive"
+                    copyProgressBytes = 0L
+                    copyProgressTotal = 0L
                 }
             } catch (e: Exception) {
                 Log.e("DXX-SowImport", "Copy failed", e)
@@ -7227,6 +7496,12 @@ private fun SowImportDialog(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(status, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
+                if (copyProgressTotal > 0L) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    val copyPct = (copyProgressBytes.toFloat() / copyProgressTotal.toFloat()).coerceIn(0f, 1f)
+                    LinearProgressIndicator(progress = { copyPct }, modifier = Modifier.fillMaxWidth())
+                }
+
                 // Extract button
                 if (tempPath != null && !processing && extractedCount == 0) {
                     Spacer(modifier = Modifier.height(12.dp))
@@ -7235,13 +7510,36 @@ private fun SowImportDialog(
                             scope.launch {
                                 processing = true
                                 status = "Extracting game files\u2026"
+                                extractProgressBytes = 0L
+                                extractProgressTotal = 0L
                                 withContext(Dispatchers.IO) {
                                     try {
+                                        val progress =
+                                            object : DiscImportBridge.ExtractProgress {
+                                                override fun onProgress(
+                                                    currentFile: String,
+                                                    bytesDone: Long,
+                                                    bytesTotal: Long,
+                                                ): Int {
+                                                    val pct =
+                                                        if (bytesTotal > 0L) {
+                                                            ((bytesDone * 100L) / bytesTotal).toInt()
+                                                        } else {
+                                                            0
+                                                        }
+                                                    mainHandler.post {
+                                                        status = "Extracting $currentFile ($pct%)"
+                                                        extractProgressBytes = bytesDone
+                                                        extractProgressTotal = bytesTotal
+                                                    }
+                                                    return 0
+                                                }
+                                            }
                                         val count =
                                             DiscImportBridge.extractSowFiles(
                                                 tempPath!!,
                                                 setDir.absolutePath,
-                                                null,
+                                                progress,
                                             )
                                         withContext(Dispatchers.Main) {
                                             extractedCount = count.coerceAtLeast(0)
@@ -7286,7 +7584,13 @@ private fun SowImportDialog(
                 // Progress indicator
                 if (processing) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    if (extractProgressTotal > 0L) {
+                        val extractPct =
+                            (extractProgressBytes.toFloat() / extractProgressTotal.toFloat()).coerceIn(0f, 1f)
+                        LinearProgressIndicator(progress = { extractPct }, modifier = Modifier.fillMaxWidth())
+                    } else {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    }
                 }
             }
         },
@@ -7317,10 +7621,13 @@ private fun DiscImportDialog(
     onDismiss: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
     var status by remember { mutableStateOf("Ready to process") }
     var tracks by remember { mutableStateOf<List<DiscImportBridge.CueTrack>?>(null) }
     var processing by remember { mutableStateOf(false) }
     var dataExtracted by remember { mutableIntStateOf(0) }
+    var progressBytes by remember { mutableLongStateOf(0L) }
+    var progressTotal by remember { mutableLongStateOf(0L) }
     var audioRegistered by remember { mutableStateOf(false) }
     var discLabel by remember { mutableStateOf<String?>(null) }
     var discId by remember { mutableStateOf<String?>(null) }
@@ -7350,9 +7657,7 @@ private fun DiscImportDialog(
                 val tmpDir = File(filesDir, "tmp")
                 tmpDir.mkdirs()
                 val tmpCue = File(tmpDir, cueName.lowercase())
-                context.contentResolver.openInputStream(cueUri)?.use { input ->
-                    FileOutputStream(tmpCue).use { output -> input.copyTo(output) }
-                }
+                LauncherFileCopy.copyUriToFile(context, cueUri, tmpCue, cueName)
                 tempCuePath = tmpCue.absolutePath
                 Log.i("DXX-DiscImport", "CUE copied to ${tmpCue.absolutePath} (${tmpCue.length()} bytes)")
 
@@ -7460,6 +7765,8 @@ private fun DiscImportDialog(
                                 scope.launch {
                                     processing = true
                                     status = "Extracting game files..."
+                                    progressBytes = 0L
+                                    progressTotal = 0L
                                     withContext(Dispatchers.IO) {
                                         try {
                                             val dataTrack = tracks!!.first { it.isData }
@@ -7480,7 +7787,11 @@ private fun DiscImportDialog(
                                                                 } else {
                                                                     0
                                                                 }
-                                                            status = "Extracting $currentFile ($pct%)"
+                                                            mainHandler.post {
+                                                                status = "Extracting $currentFile ($pct%)"
+                                                                progressBytes = bytesDone
+                                                                progressTotal = bytesTotal
+                                                            }
                                                             return 0
                                                         }
                                                     }
@@ -7499,7 +7810,7 @@ private fun DiscImportDialog(
                                                         if (isoExtracted > 0) {
                                                             isoExtracted
                                                         } else {
-                                                            status = "Trying Mac HFS installer..."
+                                                            mainHandler.post { status = "Trying Mac HFS installer..." }
                                                             macExtracted =
                                                                 DiscImportBridge.extractMacFiles(
                                                                     it.fd,
@@ -7526,7 +7837,7 @@ private fun DiscImportDialog(
                                                                     .extractSowFiles(
                                                                         sow,
                                                                         setDir.absolutePath,
-                                                                        null,
+                                                                        progress,
                                                                     ).coerceAtLeast(0)
                                                         }
                                                     }
@@ -7588,7 +7899,7 @@ private fun DiscImportDialog(
                                             // Copy CUE to filesDir (small file, needed for parsing)
                                             // Use temp name; renamed to unique ${id}.cue after disc identification
                                             val tmpDest = File(filesDir, cueName.lowercase())
-                                            tempCuePath?.let { File(it).copyTo(tmpDest, overwrite = true) }
+                                            tempCuePath?.let { LauncherFileCopy.copyFileToFile(File(it), tmpDest) }
 
                                             // Take persistable URI permissions on BIN files
                                             val binNames = mutableListOf<String>()
@@ -7726,7 +8037,12 @@ private fun DiscImportDialog(
 
                 if (processing) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    if (progressTotal > 0L) {
+                        val progress = (progressBytes.toFloat() / progressTotal.toFloat()).coerceIn(0f, 1f)
+                        LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
+                    } else {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
                 }
             }
         },
@@ -7743,10 +8059,13 @@ private fun IsoImportDialog(
     onDismiss: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
     var status by remember { mutableStateOf("Ready to process") }
     var fileList by remember { mutableStateOf<List<DiscImportBridge.IsoFile>?>(null) }
     var processing by remember { mutableStateOf(false) }
     var extractedCount by remember { mutableIntStateOf(0) }
+    var progressBytes by remember { mutableLongStateOf(0L) }
+    var progressTotal by remember { mutableLongStateOf(0L) }
     val extractFocus = remember { FocusRequester() }
     val doneFocus = remember { FocusRequester() }
 
@@ -7841,6 +8160,8 @@ private fun IsoImportDialog(
                             scope.launch {
                                 processing = true
                                 status = "Extracting game files..."
+                                progressBytes = 0L
+                                progressTotal = 0L
                                 withContext(Dispatchers.IO) {
                                     try {
                                         val pfd = context.contentResolver.openFileDescriptor(isoUri, "r")
@@ -7858,7 +8179,11 @@ private fun IsoImportDialog(
                                                             } else {
                                                                 0
                                                             }
-                                                        status = "Extracting $currentFile ($pct%)"
+                                                        mainHandler.post {
+                                                            status = "Extracting $currentFile ($pct%)"
+                                                            progressBytes = bytesDone
+                                                            progressTotal = bytesTotal
+                                                        }
                                                         return 0
                                                     }
                                                 }
@@ -7870,7 +8195,12 @@ private fun IsoImportDialog(
                                                         progress,
                                                     )
                                                 }
-                                            val sowExtracted = if (isoExtracted > 0) extractSowArchives(setDir) else 0
+                                            val sowExtracted =
+                                                if (isoExtracted > 0) {
+                                                    extractSowArchives(setDir, progress)
+                                                } else {
+                                                    0
+                                                }
                                             withContext(Dispatchers.Main) {
                                                 extractedCount = isoExtracted.coerceAtLeast(0) + sowExtracted
                                                 status =
@@ -7921,7 +8251,12 @@ private fun IsoImportDialog(
 
                 if (processing) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    if (progressTotal > 0L) {
+                        val progress = (progressBytes.toFloat() / progressTotal.toFloat()).coerceIn(0f, 1f)
+                        LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
+                    } else {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
                 }
             }
         },

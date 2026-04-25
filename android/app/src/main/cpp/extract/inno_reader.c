@@ -49,6 +49,7 @@
 #define READ_FD(fd, buf, n) _read((fd), (buf), (unsigned) (n))
 #define LSEEK(fd, off, w)   _lseeki64((fd), (off), (w))
 #define CLOSE_FD(fd)        _close(fd)
+#define DUP_FD(fd)          _dup(fd)
 #include <direct.h>
 #define MKDIR(d) _mkdir(d)
 #else
@@ -59,6 +60,7 @@
 #define READ_FD(fd, buf, n) read((fd), (buf), (n))
 #define LSEEK(fd, off, w)   lseek((fd), (off), (w))
 #define CLOSE_FD(fd)        close(fd)
+#define DUP_FD(fd)          dup(fd)
 #define MKDIR(d)            mkdir((d), 0755)
 #ifndef O_BINARY
 #define O_BINARY 0
@@ -1308,18 +1310,13 @@ static uint8_t *decompress_chunk(int fd, uint64_t data_offset,
 
 /* ── Public API ──────────────────────────────────────────────────── */
 
-int inno_open(const char *exe_path, inno_archive_t *arc)
+static int inno_open_owned_fd(int fd, const char *source_name, inno_archive_t *arc)
 {
-	if (!exe_path || !arc) return -1;
+	if (fd < 0 || !arc) return -1;
 	memset(arc, 0, sizeof(*arc));
 	arc->fd = -1;
-
-	int fd = OPEN_RB(exe_path);
-	if (fd < 0) {
-		INNO_LOG("cannot open %s: %s", exe_path, strerror(errno));
-		return -1;
-	}
 	arc->fd = fd;
+	if (!source_name) source_name = "<fd>";
 
 	/* ── Find offset table ── */
 	uint64_t table_offset = 0;
@@ -1361,7 +1358,7 @@ int inno_open(const char *exe_path, inno_archive_t *arc)
 	}
 
 	if (!found) {
-		INNO_LOG("cannot find InnoSetup offset table in %s", exe_path);
+		INNO_LOG("cannot find InnoSetup offset table in %s", source_name);
 		CLOSE_FD(fd);
 		arc->fd = -1;
 		return -1;
@@ -1457,6 +1454,28 @@ int inno_open(const char *exe_path, inno_archive_t *arc)
 	free(stream2);
 
 	return arc->file_count;
+}
+
+int inno_open(const char *exe_path, inno_archive_t *arc)
+{
+	if (!exe_path || !arc) return -1;
+	int fd = OPEN_RB(exe_path);
+	if (fd < 0) {
+		INNO_LOG("cannot open %s: %s", exe_path, strerror(errno));
+		return -1;
+	}
+	return inno_open_owned_fd(fd, exe_path, arc);
+}
+
+int inno_open_fd(int source_fd, inno_archive_t *arc)
+{
+	if (source_fd < 0 || !arc) return -1;
+	int fd = DUP_FD(source_fd);
+	if (fd < 0) {
+		INNO_LOG("cannot duplicate installer fd: %s", strerror(errno));
+		return -1;
+	}
+	return inno_open_owned_fd(fd, "<fd>", arc);
 }
 
 int inno_extract_file(inno_archive_t *arc, int file_index,
@@ -1570,7 +1589,24 @@ int inno_extract_file(inno_archive_t *arc, int file_index,
 		return -1;
 	}
 
-	size_t written = fwrite(file_data, 1, file_len, out);
+	size_t written = 0;
+	size_t last_progress_written = 0;
+	while (written < file_len) {
+		size_t chunk = file_len - written;
+		if (chunk > 262144) chunk = 262144;
+		size_t n = fwrite(file_data + written, 1, chunk, out);
+		if (n == 0) break;
+		written += n;
+		if (progress && !de->chunk_compressed &&
+		    written - last_progress_written >= 1048576) {
+			long long done = (long long) written;
+			if (done > (long long) de->chunk_compressed_size)
+				done = (long long) de->chunk_compressed_size;
+			progress(fe->destination, done,
+			         (long long) de->chunk_compressed_size, user_data);
+			last_progress_written = written;
+		}
+	}
 	fclose(out);
 
 	if (written != file_len) {
