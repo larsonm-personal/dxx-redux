@@ -94,6 +94,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "movie.h"
 #include "event.h"
 #include "window.h"
+#include "maths.h"
+
+#include "input_demo_control_info.h"
+#include "input_demo_recorder.h"
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -148,6 +152,28 @@ extern void multi_check_for_killgoal_winner();
 
 extern int ReadControls(d_event *event);		// located in gamecntl.c
 extern void do_final_boss_frame(void);
+
+static void input_demo_record_game_frame(void)
+{
+	input_demo_control_state state;
+	input_demo_control_pulse pulse;
+	unsigned int rng_state;
+	char error[256] = "";
+
+	if (Newdemo_state != ND_STATE_RECORDING || !input_demo_recorder_is_active())
+		return;
+	if (!d_rand_get_state(&rng_state)) {
+		con_printf(CON_NORMAL, "Input demo recording stopped: live recording requires an lcg_state RNG backend\n");
+		input_demo_recorder_cancel();
+		return;
+	}
+	input_demo_control_state_from_control_info(&state, &pulse, &Controls);
+	if (!input_demo_recorder_capture_frame((int32_t)FrameTime, &state, &pulse, rng_state, 0, 0,
+		error, sizeof(error))) {
+		con_printf(CON_NORMAL, "Input demo recording stopped: %s\n", error);
+		input_demo_recorder_cancel();
+	}
+}
 
 
 // text functions
@@ -1361,6 +1387,7 @@ void GameProcessFrame(void)
 	fix player_shields = Players[Player_num].shields;
 	int player_was_dead = Player_is_dead;
 
+	input_demo_record_game_frame();
 	update_player_stats();
 	diminish_palette_towards_normal();		//	Should leave palette effect up for as long as possible by putting right before render.
 	do_afterburner_stuff();

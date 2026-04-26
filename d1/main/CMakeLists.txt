@@ -96,8 +96,28 @@ if(SDLMIXER)
 endif()
 
 if(NOT ANDROID)
-    target_sources(dxx-redux-d1 PRIVATE ../../android/app/src/main/cpp/shared/input_demo_rng_mode.c)
+    if(NOT TARGET nlohmann_json::nlohmann_json)
+        include(FetchContent)
+        FetchContent_Declare(
+            nlohmann_json
+            GIT_REPOSITORY https://github.com/nlohmann/json.git
+            GIT_TAG        v3.11.3
+            GIT_SHALLOW    TRUE
+        )
+        set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
+        set(JSON_Install OFF CACHE BOOL "" FORCE)
+        set(JSON_MultipleHeaders OFF CACHE BOOL "" FORCE)
+        FetchContent_MakeAvailable(nlohmann_json)
+    endif()
+
+    target_compile_features(dxx-redux-d1 PRIVATE cxx_std_11)
+    target_sources(dxx-redux-d1 PRIVATE
+        ../../android/app/src/main/cpp/shared/input_demo_rng_mode.c
+        ../../android/app/src/main/cpp/shared/input_demo_controls.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_fixture.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_recorder.cpp)
     target_include_directories(dxx-redux-d1 PRIVATE ../../android/app/src/main/cpp/shared)
+    target_link_libraries(dxx-redux-d1 PRIVATE nlohmann_json::nlohmann_json)
 endif()
 
 if(EDITOR)

@@ -1,0 +1,41 @@
+#ifndef INPUT_DEMO_RECORDER_H
+#define INPUT_DEMO_RECORDER_H
+
+#include <stddef.h>
+#include <stdint.h>
+
+#include "input_demo_controls.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct input_demo_recorder_settings {
+	int game;
+	const char *mission;
+	int level;
+	int difficulty;
+	const char *rng_mode;
+} input_demo_recorder_settings;
+
+void input_demo_recorder_settings_clear(input_demo_recorder_settings *settings);
+int input_demo_recorder_is_active(void);
+uint32_t input_demo_recorder_frame_count(void);
+int input_demo_recorder_start(const input_demo_recorder_settings *settings,
+                              char *error, size_t error_size);
+void input_demo_recorder_cancel(void);
+int input_demo_recorder_capture_frame(int32_t frame_time,
+                                      const input_demo_control_state *state,
+                                      const input_demo_control_pulse *pulse,
+                                      uint32_t rng_state,
+                                      int has_rng_call_count,
+                                      uint32_t rng_call_count,
+                                      char *error, size_t error_size);
+int input_demo_recorder_flush(const char *fixture_dir,
+                              char *error, size_t error_size);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

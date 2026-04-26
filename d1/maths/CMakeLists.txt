@@ -47,6 +47,16 @@ if(NOT ANDROID)
     target_compile_definitions(test_input_demo_fixture PRIVATE INPUT_DEMO_TEST_D1=1)
     target_link_libraries(test_input_demo_fixture PRIVATE ${DXX_TARGET_PREFIX}maths nlohmann_json::nlohmann_json)
     target_include_directories(test_input_demo_fixture PRIVATE ../../android/app/src/main/cpp/shared)
+
+    add_executable(test_input_demo_recorder
+        ../../android/tests/test_input_demo_recorder.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_controls.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_fixture.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_recorder.cpp)
+    target_compile_features(test_input_demo_recorder PRIVATE cxx_std_11)
+    target_compile_definitions(test_input_demo_recorder PRIVATE INPUT_DEMO_TEST_D1=1)
+    target_link_libraries(test_input_demo_recorder PRIVATE ${DXX_TARGET_PREFIX}maths nlohmann_json::nlohmann_json)
+    target_include_directories(test_input_demo_recorder PRIVATE ../../android/app/src/main/cpp/shared)
 endif()
 
 include_directories(../include ../arch/include ../main)

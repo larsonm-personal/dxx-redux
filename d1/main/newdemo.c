@@ -82,9 +82,14 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "console.h"
 #include "playsave.h"
 
+#include "input_demo_recorder.h"
+#include "input_demo_rng_mode.h"
+
 #ifdef EDITOR
 #include "editor/editor.h"
 #endif
+
+extern fix ThisLevelTime;
 
 #define ND_EVENT_EOF				0	// EOF
 #define ND_EVENT_START_DEMO			1	// Followed by 16 character, NULL terminated filename of .SAV file to use
@@ -3117,6 +3122,68 @@ void newdemo_playback_one_frame()
 	}
 }
 
+#define INPUT_DEMO_RECORD_DIR "input_demo_recordings"
+#define INPUT_DEMO_TEMP_NAME "tmpdemo"
+
+static void maybe_start_input_demo_recording(int is_autorecord)
+{
+	input_demo_recorder_settings settings;
+	char error[256] = "";
+	const char *rng_mode;
+	int replay_mode;
+
+	if (Game_mode & GM_MULTI)
+		return;
+	if (Current_level_num == 0 || ThisLevelTime != 0) {
+		if (!is_autorecord)
+			con_printf(CON_NORMAL, "Input demo recording skipped: start classic recording on the first frame of a level\n");
+		return;
+	}
+	replay_mode = d_rand_get_replay_mode();
+	if (replay_mode != D_RAND_REPLAY_MODE_LCG_STATE) {
+		if (!is_autorecord) {
+			rng_mode = input_demo_rng_mode_name(replay_mode);
+			con_printf(CON_NORMAL, "Input demo recording skipped: live recording does not support rng_mode %s yet\n", rng_mode ? rng_mode : "unknown");
+		}
+		return;
+	}
+	input_demo_recorder_settings_clear(&settings);
+	settings.game = INPUT_DEMO_GAME_D1;
+	settings.mission = Current_mission_filename;
+	settings.level = Current_level_num;
+	settings.difficulty = Difficulty_level;
+	settings.rng_mode = input_demo_rng_mode_name(replay_mode);
+	if (!input_demo_recorder_start(&settings, error, sizeof(error))) {
+		con_printf(CON_NORMAL, "Input demo recording did not start: %s\n", error);
+		return;
+	}
+	con_printf(CON_NORMAL, "Input demo recording started for %s level %d\n", Current_mission_filename, Current_level_num);
+}
+
+static void maybe_flush_input_demo_recording(const char *demo_name)
+{
+	char relative_dir[PATH_MAX] = "";
+	char absolute_dir[PATH_MAX] = "";
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	PHYSFS_mkdir(INPUT_DEMO_RECORD_DIR);
+	sprintf_s(relative_dir, SDL_arraysize(relative_dir), INPUT_DEMO_RECORD_DIR "/%s", demo_name);
+	PHYSFS_mkdir(relative_dir);
+	if (!PHYSFSX_getRealPath(relative_dir, absolute_dir)) {
+		con_printf(CON_NORMAL, "Input demo recording stopped: could not resolve fixture path %s\n", relative_dir);
+		input_demo_recorder_cancel();
+		return;
+	}
+	if (!input_demo_recorder_flush(absolute_dir, error, sizeof(error))) {
+		con_printf(CON_NORMAL, "Input demo recording stopped: %s\n", error);
+		input_demo_recorder_cancel();
+		return;
+	}
+	con_printf(CON_NORMAL, "Input demo fixture saved to %s\n", absolute_dir);
+}
+
 void newdemo_start_recording(int is_autorecord)
 {
 	Newdemo_num_written = 0;
@@ -3137,8 +3204,10 @@ void newdemo_start_recording(int is_autorecord)
 		Newdemo_state = ND_STATE_NORMAL;
 		nm_messagebox(NULL, 1, TXT_OK, "Cannot open demo temp file");
 	}
-	else
+	else {
 		newdemo_record_start_demo();
+		maybe_start_input_demo_recording(is_autorecord);
+	}
 }
 
 void newdemo_write_end()
@@ -3338,6 +3407,7 @@ int newdemo_prompt_filename(char* filename_buffer, unsigned int filename_buffer_
 void newdemo_stop_recording(int is_manual)
 {
 	char demo_name[PATH_MAX] = "";
+	const char *input_demo_name = demo_name;
 	int was_autorecord = Newdemo_is_autorecord;
 
 	if (!nd_record_v_no_space)
@@ -3356,8 +3426,11 @@ void newdemo_stop_recording(int is_manual)
 	// If we're suppressing auto-record UI, don't ask for the name, just use the default.
 	// If the player presses F5 while auto-recording, we do prompt for a name though.
 	if (is_manual || !was_autorecord || !PlayerCfg.AutoDemoHideUi)
-		if (!newdemo_prompt_filename(demo_name, SDL_arraysize(demo_name)))
+		if (!newdemo_prompt_filename(demo_name, SDL_arraysize(demo_name))) {
+			input_demo_name = INPUT_DEMO_TEMP_NAME;
+			maybe_flush_input_demo_recording(input_demo_name);
 			return;
+		}
 
 	// Add path and extension to the file name
 	char filename[PATH_MAX] = "";
@@ -3365,6 +3438,7 @@ void newdemo_stop_recording(int is_manual)
 
 	PHYSFS_delete(filename);
 	PHYSFSX_rename(DEMO_FILENAME, filename);
+	maybe_flush_input_demo_recording(input_demo_name);
 }
 
 //returns the number of demo files on the disk
