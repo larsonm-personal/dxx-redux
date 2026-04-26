@@ -117,7 +117,8 @@ if(NOT ANDROID)
         ../../android/app/src/main/cpp/shared/input_demo_rng_mode.c
         ../../android/app/src/main/cpp/shared/input_demo_controls.cpp
         ../../android/app/src/main/cpp/shared/input_demo_fixture.cpp
-        ../../android/app/src/main/cpp/shared/input_demo_recorder.cpp)
+        ../../android/app/src/main/cpp/shared/input_demo_recorder.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_replay.cpp)
     target_include_directories(dxx-redux-d2 PRIVATE ../../android/app/src/main/cpp/shared)
     target_link_libraries(dxx-redux-d2 PRIVATE nlohmann_json::nlohmann_json)
 endif()

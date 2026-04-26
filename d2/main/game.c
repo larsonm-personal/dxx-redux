@@ -97,6 +97,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "maths.h"
 
 #include "input_demo_control_info.h"
+#include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 
 #ifdef OGL
@@ -172,6 +173,53 @@ static void input_demo_record_game_frame(void)
 		error, sizeof(error))) {
 		con_printf(CON_NORMAL, "Input demo recording stopped: %s\n", error);
 		input_demo_recorder_cancel();
+	}
+}
+
+static int input_demo_apply_replay_frame(void)
+{
+	input_demo_replay_frame replay_frame;
+	char error[256] = "";
+
+	if (!input_demo_replay_is_loaded())
+		return 0;
+	if (input_demo_replay_is_finished()) {
+		input_demo_replay_unload();
+		if (Game_wind)
+			window_close(Game_wind);
+		return 0;
+	}
+	if (!input_demo_replay_get_current_frame(&replay_frame, error, sizeof(error))) {
+		con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error);
+		input_demo_replay_unload();
+		if (Game_wind)
+			window_close(Game_wind);
+		return 0;
+	}
+	input_demo_control_info_from_state(&Controls, &replay_frame.state, &replay_frame.pulse);
+	if (!d_rand_set_state(replay_frame.rng_state)) {
+		con_printf(CON_NORMAL, "Input demo replay stopped: active RNG backend cannot restore state\n");
+		input_demo_replay_unload();
+		if (Game_wind)
+			window_close(Game_wind);
+		return 0;
+	}
+	d_rand_reset_call_count();
+	FrameTime = (fix)replay_frame.frame_time;
+	return 1;
+}
+
+static void input_demo_finish_replay_frame(void)
+{
+	char error[256] = "";
+
+	if (!input_demo_replay_is_loaded())
+		return;
+	if (!input_demo_replay_advance_frame(error, sizeof(error))) {
+		con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error);
+		input_demo_replay_unload();
+		if (Game_wind)
+			window_close(Game_wind);
 	}
 }
 
@@ -1233,15 +1281,23 @@ int game_handler(window *wind, d_event *event, void *data)
 		case EVENT_KEY_COMMAND:
 		case EVENT_KEY_RELEASE:
 		case EVENT_IDLE:
+			if (event->type == EVENT_IDLE && input_demo_replay_is_loaded())
+				return 1;
 			return ReadControls(event);
 
 		case EVENT_WINDOW_DRAW:
-			calc_frame_time();
+			if (input_demo_replay_is_loaded()) {
+				if (!input_demo_apply_replay_frame())
+					return 1;
+			} else {
+				calc_frame_time();
+			}
 
 			if (!time_paused)
 			{
 				calc_game_time();
 				GameProcessFrame();
+				input_demo_finish_replay_frame();
 			}
 
 			if (!Automap_active)		// efficiency hack
@@ -1256,6 +1312,7 @@ int game_handler(window *wind, d_event *event, void *data)
 
 		case EVENT_WINDOW_CLOSE:
 			digi_stop_digi_sounds();
+			input_demo_replay_unload();
 
 			if ( (Newdemo_state == ND_STATE_RECORDING) || (Newdemo_state == ND_STATE_PAUSED) )
 				newdemo_stop_recording(0);
