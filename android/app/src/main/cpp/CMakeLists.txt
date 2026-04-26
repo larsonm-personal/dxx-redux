@@ -560,6 +560,7 @@ target_sources(dxx-redux-d1 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_controls.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_result.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_recorder.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_replay.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_introspect.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_automate.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/console_ringbuf.cpp

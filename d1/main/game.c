@@ -98,6 +98,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_control_info.h"
 #include "input_demo_result.h"
 #include "input_demo_recorder.h"
+#include "input_demo_replay.h"
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -198,7 +199,12 @@ void input_demo_capture_current_result(input_demo_result *result)
 		snprintf(result->mission, sizeof(result->mission), "%s", Current_mission_filename);
 	result->level = Current_level_num;
 	result->difficulty = Difficulty_level;
-	result->frame_count = input_demo_recorder_is_active() ? (uint32_t)input_demo_recorder_frame_count() : 0;
+	if (input_demo_replay_is_loaded())
+		result->frame_count = (uint32_t)input_demo_replay_next_frame_index();
+	else if (input_demo_recorder_is_active())
+		result->frame_count = (uint32_t)input_demo_recorder_frame_count();
+	else
+		result->frame_count = 0;
 	result->has_game_time64 = 1;
 	result->game_time64 = GameTime64;
 
@@ -236,6 +242,76 @@ void input_demo_capture_current_result(input_demo_result *result)
 	result->level_summary.powerups_remaining = input_demo_count_live_objects_of_type(OBJ_POWERUP);
 	result->level_summary.control_center_destroyed = Control_center_destroyed ? 1 : 0;
 	result->level_summary.endlevel_completed = Endlevel_sequence ? 1 : 0;
+}
+
+static void input_demo_stop_replay(int write_result)
+{
+	if (write_result && input_demo_replay_is_loaded()) {
+		input_demo_result result;
+		char error[256] = "";
+		const char *expected_result_path = input_demo_replay_result_path();
+		const char *result_path = input_demo_replay_actual_result_path();
+
+		if (result_path && result_path[0]) {
+			input_demo_capture_current_result(&result);
+			if (!input_demo_result_write_json_file(result_path, &result, error, sizeof(error)))
+				con_printf(CON_NORMAL, "Input demo replay result write failed: %s\n", error);
+			else {
+				con_printf(CON_NORMAL, "Input demo replay result written: %s\n", result_path);
+				if (expected_result_path && expected_result_path[0]) {
+					if (!input_demo_result_compare_files(expected_result_path, result_path, error, sizeof(error)))
+						con_printf(CON_NORMAL, "Input demo replay result mismatch: %s\n", error);
+					else
+						con_printf(CON_NORMAL, "Input demo replay result matched: %s\n", expected_result_path);
+				}
+			}
+		}
+	}
+	input_demo_replay_unload();
+	if (Game_wind)
+		window_close(Game_wind);
+}
+
+static int input_demo_apply_replay_frame(void)
+{
+	input_demo_replay_frame replay_frame;
+	char error[256] = "";
+
+	if (!input_demo_replay_is_loaded())
+		return 0;
+	if (input_demo_replay_is_finished()) {
+		input_demo_stop_replay(1);
+		return 0;
+	}
+	if (!input_demo_replay_get_current_frame(&replay_frame, error, sizeof(error))) {
+		con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error);
+		input_demo_stop_replay(0);
+		return 0;
+	}
+	input_demo_control_info_from_state(&Controls, &replay_frame.state, &replay_frame.pulse);
+	if (!d_rand_set_state(replay_frame.rng_state)) {
+		con_printf(CON_NORMAL, "Input demo replay stopped: active RNG backend cannot restore state\n");
+		input_demo_stop_replay(0);
+		return 0;
+	}
+	d_rand_reset_call_count();
+	FrameTime = (fix)replay_frame.frame_time;
+	return 1;
+}
+
+static void input_demo_finish_replay_frame(void)
+{
+	char error[256] = "";
+
+	if (!input_demo_replay_is_loaded())
+		return;
+	if (!input_demo_replay_advance_frame(error, sizeof(error))) {
+		con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error);
+		input_demo_stop_replay(0);
+		return;
+	}
+	if (input_demo_replay_is_finished())
+		input_demo_stop_replay(1);
 }
 
 // Cheats
@@ -1145,15 +1221,23 @@ int game_handler(window *wind, d_event *event, void *data)
 		case EVENT_KEY_COMMAND:
 		case EVENT_KEY_RELEASE:
 		case EVENT_IDLE:
+			if (event->type == EVENT_IDLE && input_demo_replay_is_loaded())
+				return 1;
 			return ReadControls(event);
 
 		case EVENT_WINDOW_DRAW:
-			calc_frame_time();
+			if (input_demo_replay_is_loaded()) {
+				if (!input_demo_apply_replay_frame())
+					return 1;
+			} else {
+				calc_frame_time();
+			}
 			
 			if (!time_paused)
 			{
 				calc_game_time();
 				GameProcessFrame();
+				input_demo_finish_replay_frame();
 			}
 
 			if (!Automap_active)		// efficiency hack
@@ -1168,6 +1252,7 @@ int game_handler(window *wind, d_event *event, void *data)
 
 		case EVENT_WINDOW_CLOSE:
 			digi_stop_digi_sounds();
+			input_demo_replay_unload();
 
 			if ( (Newdemo_state == ND_STATE_RECORDING) || (Newdemo_state == ND_STATE_PAUSED) )
 				newdemo_stop_recording(0);

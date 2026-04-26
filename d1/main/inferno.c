@@ -64,11 +64,13 @@ char copyright[] = "DESCENT   COPYRIGHT (C) 1994,1995 PARALLAX SOFTWARE CORPORAT
 #include "newmenu.h"
 #include "config.h"
 #include "multi.h"
+#include "mission.h"
 #include "songs.h"
 #include "gameseq.h"
 #include "playsave.h"
 #include "collide.h"
 #include "newdemo.h"
+#include "input_demo_replay.h"
 #include "joy.h"
 #include "../texmap/scanline.h" //for select_tmap -MM
 #include "event.h"
@@ -157,6 +159,7 @@ void print_commandline_help()
 	printf( "  -safelog                      Write gamelog.txt unbuffered.\n\t\t\t\tUse to keep helpful output to trace program crashes.\n");
 	printf( "  -norun                        Bail out after initialization\n");
 	printf( "  -inputdemo-validate <s>       Validate demo.json5 rng_mode and exit\n");
+	printf( "  -inputdemo-replay <s>         Replay demo.json5 through the D1 engine\n");
 	printf( "  -renderstats                  Enable renderstats info by default\n");
 	printf( "  -text <s>                     Specify alternate .tex file\n");
 	printf( "  -tmap <s>                     Select texmapper <s> to use\n\t\t\t\t(default: c, available: c, fp, quad, i386)\n");
@@ -221,6 +224,72 @@ static int maybe_validate_input_demo_metadata(void)
 	}
 	printf("Input demo metadata OK: %s\n", metadata_path);
 	printf("rng_mode: %s\n", input_demo_rng_mode_name(fixture_mode));
+	return 0;
+}
+
+static int maybe_start_input_demo_replay(void)
+{
+	int arg_index = find_cmd_arg("-inputdemo-replay");
+	int engine_mode;
+	int fixture_mode;
+	const char *metadata_path;
+	const char *validation_error;
+	char replay_error[256] = "";
+	char mission_name[PATH_MAX] = "";
+
+	if (!arg_index)
+		return -1;
+	if (arg_index + 1 >= Num_args || !Args[arg_index + 1] || Args[arg_index + 1][0] == '-')
+	{
+		printf("Missing value for -inputdemo-replay\n");
+		return 1;
+	}
+	metadata_path = Args[arg_index + 1];
+	engine_mode = d_rand_get_replay_mode();
+	validation_error = input_demo_rng_mode_validate_metadata_file(metadata_path, engine_mode,
+		&fixture_mode);
+	if (validation_error)
+	{
+		printf("Input demo replay metadata invalid: %s\n", metadata_path);
+		printf("%s\n", validation_error);
+		printf("Active RNG backend expects: %s\n",
+			input_demo_rng_mode_name(engine_mode));
+		return 1;
+	}
+	if (!input_demo_replay_load(metadata_path, replay_error, sizeof(replay_error)))
+	{
+		printf("Input demo replay load failed: %s\n", replay_error);
+		return 1;
+	}
+	if (input_demo_replay_game() != INPUT_DEMO_GAME_D1)
+	{
+		printf("Input demo replay currently supports D1 fixtures only\n");
+		input_demo_replay_unload();
+		return 1;
+	}
+	if (!input_demo_replay_start_mode() || strcmp(input_demo_replay_start_mode(), "new_level") != 0)
+	{
+		printf("Input demo replay currently supports start_mode new_level only\n");
+		input_demo_replay_unload();
+		return 1;
+	}
+	if (!input_demo_replay_mission())
+	{
+		printf("Input demo replay metadata is missing mission\n");
+		input_demo_replay_unload();
+		return 1;
+	}
+	snprintf(mission_name, sizeof(mission_name), "%s", input_demo_replay_mission());
+	if (!load_mission_by_name(mission_name))
+	{
+		printf("Input demo replay could not load mission: %s\n", mission_name);
+		input_demo_replay_unload();
+		return 1;
+	}
+	Difficulty_level = input_demo_replay_difficulty();
+	printf("Input demo replay starting: %s level %d, %u frames\n",
+		mission_name, input_demo_replay_level(), input_demo_replay_frame_count());
+	StartNewGame(input_demo_replay_level());
 	return 0;
 }
 
@@ -524,8 +593,16 @@ int main(int argc, char *argv[])
 	}
 
 
-		Game_mode = GM_GAME_OVER;
-		DoMenu();
+		{
+			int replay_result = maybe_start_input_demo_replay();
+
+			if (replay_result > 0)
+				return replay_result;
+			if (replay_result < 0) {
+				Game_mode = GM_GAME_OVER;
+				DoMenu();
+			}
+		}
 
 	setjmp(LeaveEvents);
 	while (window_get_front())
