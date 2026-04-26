@@ -247,14 +247,23 @@ static void input_demo_stop_replay(int write_result)
 	if (write_result && input_demo_replay_is_loaded()) {
 		input_demo_result result;
 		char error[256] = "";
+		const char *expected_result_path = input_demo_replay_result_path();
 		const char *result_path = input_demo_replay_actual_result_path();
 
 		if (result_path && result_path[0]) {
 			input_demo_capture_replay_result(&result);
+			result.has_game_time64 = 1;
 			if (!input_demo_result_write_json_file(result_path, &result, error, sizeof(error)))
 				con_printf(CON_NORMAL, "Input demo replay result write failed: %s\n", error);
-			else
+			else {
 				con_printf(CON_NORMAL, "Input demo replay result written: %s\n", result_path);
+				if (expected_result_path && expected_result_path[0]) {
+					if (!input_demo_result_compare_files(expected_result_path, result_path, error, sizeof(error)))
+						con_printf(CON_NORMAL, "Input demo replay result mismatch: %s\n", error);
+					else
+						con_printf(CON_NORMAL, "Input demo replay result matched: %s\n", expected_result_path);
+				}
+			}
 		}
 	}
 	input_demo_replay_unload();

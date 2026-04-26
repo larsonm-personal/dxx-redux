@@ -65,6 +65,7 @@ static int expect_result_writer(void)
 {
 	const char *dir = "test_input_demo_result_fixture";
 	const std::string result_path = std::string(dir) + "/result.json";
+	input_demo_result parsed;
 	input_demo_result result;
 	char error[256] = "";
 	std::string text;
@@ -78,6 +79,7 @@ static int expect_result_writer(void)
 	result.level = 1;
 	result.difficulty = 2;
 	result.frame_count = 3;
+	result.has_game_time64 = 1;
 	result.game_time64 = 120;
 	result.player0.present = 1;
 	result.player0.energy = 67;
@@ -153,7 +155,96 @@ static int expect_result_writer(void)
 		remove_test_dir(dir);
 		return report_failure_string(std::string("unexpected result output: ") + text);
 	}
+	if (!input_demo_result_read_json_file(result_path.c_str(), &parsed, error, sizeof(error))) {
+		remove(result_path.c_str());
+		remove_test_dir(dir);
+		return report_failure_string(std::string("result read failed: ") + error);
+	}
+	if (!input_demo_result_compare(&result, &parsed, error, sizeof(error))) {
+		remove(result_path.c_str());
+		remove_test_dir(dir);
+		return report_failure_string(std::string("result round-trip compare failed: ") + error);
+	}
 	remove(result_path.c_str());
+	remove_test_dir(dir);
+	return 0;
+}
+
+static int expect_result_compare(void)
+{
+	const char *dir = "test_input_demo_result_compare_fixture";
+	const std::string expected_path = std::string(dir) + "/expected.json";
+	const std::string actual_path = std::string(dir) + "/actual.json";
+	input_demo_result expected;
+	input_demo_result actual;
+	char error[256] = "";
+
+	if (!make_test_dir(dir))
+		return report_failure("could not create result compare test directory");
+
+	input_demo_result_clear(&expected);
+	snprintf(expected.game, sizeof(expected.game), "%s", "d2");
+	snprintf(expected.mission, sizeof(expected.mission), "%s", "d2");
+	expected.level = 1;
+	expected.difficulty = 2;
+	expected.frame_count = 3;
+	if (!input_demo_result_write_json_file(expected_path.c_str(), &expected, error, sizeof(error))) {
+		remove_test_dir(dir);
+		return report_failure_string(std::string("minimal expected result write failed: ") + error);
+	}
+
+	input_demo_result_clear(&actual);
+	snprintf(actual.game, sizeof(actual.game), "%s", "d2");
+	snprintf(actual.mission, sizeof(actual.mission), "%s", "d2");
+	actual.level = 1;
+	actual.difficulty = 2;
+	actual.frame_count = 3;
+	actual.has_game_time64 = 1;
+	actual.game_time64 = 120;
+	actual.player0.present = 1;
+	actual.player0.score = 12500;
+	if (!input_demo_result_write_json_file(actual_path.c_str(), &actual, error, sizeof(error))) {
+		remove(expected_path.c_str());
+		remove_test_dir(dir);
+		return report_failure_string(std::string("actual result write failed: ") + error);
+	}
+	if (!input_demo_result_compare_files(expected_path.c_str(), actual_path.c_str(), error, sizeof(error))) {
+		remove(expected_path.c_str());
+		remove(actual_path.c_str());
+		remove_test_dir(dir);
+		return report_failure_string(std::string("baseline-driven compare unexpectedly failed: ") + error);
+	}
+
+	expected.player0.present = 1;
+	expected.player0.score = 12500;
+	if (!input_demo_result_write_json_file(expected_path.c_str(), &expected, error, sizeof(error))) {
+		remove(expected_path.c_str());
+		remove(actual_path.c_str());
+		remove_test_dir(dir);
+		return report_failure_string(std::string("richer expected result write failed: ") + error);
+	}
+	actual.player0.score = 12501;
+	if (!input_demo_result_write_json_file(actual_path.c_str(), &actual, error, sizeof(error))) {
+		remove(expected_path.c_str());
+		remove(actual_path.c_str());
+		remove_test_dir(dir);
+		return report_failure_string(std::string("mismatch actual result write failed: ") + error);
+	}
+	if (input_demo_result_compare_files(expected_path.c_str(), actual_path.c_str(), error, sizeof(error))) {
+		remove(expected_path.c_str());
+		remove(actual_path.c_str());
+		remove_test_dir(dir);
+		return report_failure("result compare unexpectedly passed a score mismatch");
+	}
+	if (!strstr(error, "p0.sc")) {
+		remove(expected_path.c_str());
+		remove(actual_path.c_str());
+		remove_test_dir(dir);
+		return report_failure_string(std::string("result compare mismatch label missing: ") + error);
+	}
+
+	remove(expected_path.c_str());
+	remove(actual_path.c_str());
 	remove_test_dir(dir);
 	return 0;
 }
@@ -161,6 +252,8 @@ static int expect_result_writer(void)
 int main(void)
 {
 	if (expect_result_writer())
+		return 1;
+	if (expect_result_compare())
 		return 1;
 	puts("PASS");
 	return 0;

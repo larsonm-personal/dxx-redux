@@ -57,6 +57,7 @@ typedef struct input_demo_result {
 	int32_t level;
 	int32_t difficulty;
 	uint32_t frame_count;
+	uint8_t has_game_time64;
 	int64_t game_time64;
 	input_demo_result_player player0;
 	input_demo_result_position position;
@@ -67,9 +68,18 @@ void input_demo_result_player_clear(input_demo_result_player *player);
 void input_demo_result_position_clear(input_demo_result_position *position);
 void input_demo_result_level_clear(input_demo_result_level *level);
 void input_demo_result_clear(input_demo_result *result);
+int input_demo_result_read_json_file(const char *path,
+                                     input_demo_result *result,
+                                     char *error, size_t error_size);
 int input_demo_result_write_json_file(const char *path,
                                       const input_demo_result *result,
                                       char *error, size_t error_size);
+int input_demo_result_compare(const input_demo_result *expected,
+                              const input_demo_result *actual,
+                              char *error, size_t error_size);
+int input_demo_result_compare_files(const char *expected_path,
+                                    const char *actual_path,
+                                    char *error, size_t error_size);
 
 #ifdef __cplusplus
 }
