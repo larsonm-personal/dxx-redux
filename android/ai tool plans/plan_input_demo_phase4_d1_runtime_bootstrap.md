@@ -5,7 +5,7 @@
 Port the existing D2 runtime replay bootstrap to the D1 engine with the same
 current constraints:
 
-- `-inputdemo-replay <demo.json5>` command-line entry point
+- `-inputdemo-replay <demo-file>` command-line entry point
 - D1-only fixture guard
 - `start_mode == "new_level"` only
 - per-frame replay injection through the game loop

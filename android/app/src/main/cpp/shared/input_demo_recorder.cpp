@@ -46,39 +46,74 @@ static const char *input_demo_recorder_game_name(int game)
 	return NULL;
 }
 
-static std::string input_demo_recorder_join_path(const char *dir, const char *name)
+static void input_demo_recorder_build_result(input_demo_result *result,
+                                             const input_demo_recorder_session &session,
+                                             const input_demo_result *supplied_result)
 {
-	std::string joined(dir ? dir : "");
-	if (!joined.empty() && joined[joined.size() - 1] != '/' && joined[joined.size() - 1] != '\\')
-		joined.push_back('/');
-	joined += name;
-	return joined;
+	if (supplied_result)
+		*result = *supplied_result;
+	else
+		input_demo_result_clear(result);
+	result->version = 1;
+	snprintf(result->game, sizeof(result->game), "%s", input_demo_recorder_game_name(session.game));
+	snprintf(result->mission, sizeof(result->mission), "%s", session.mission.c_str());
+	result->level = session.level;
+	result->difficulty = session.difficulty;
+	result->frame_count = static_cast<uint32_t>(session.control_frames.size());
 }
 
-static bool input_demo_recorder_write_result(const char *path,
-                                             const input_demo_recorder_session &session,
-                                             const input_demo_result *supplied_result,
-                                             std::string *error)
+static bool input_demo_recorder_build_demo(input_demo_file *demo,
+                                           const input_demo_recorder_session &session,
+                                           const input_demo_result *result,
+                                           std::string *error)
 {
-	input_demo_result result;
-	char write_error[256] = "";
+	input_demo_control_state previous_state;
+	std::string unused_text;
+	int have_previous_frame_time = 0;
+	int32_t previous_frame_time = 0;
+	size_t i;
 
-	if (supplied_result)
-		result = *supplied_result;
-	else
-		input_demo_result_clear(&result);
-	result.version = 1;
-	snprintf(result.game, sizeof(result.game), "%s", input_demo_recorder_game_name(session.game));
-	snprintf(result.mission, sizeof(result.mission), "%s", session.mission.c_str());
-	result.level = session.level;
-	result.difficulty = session.difficulty;
-	result.frame_count = static_cast<uint32_t>(session.control_frames.size());
-	if (!input_demo_result_write_json_file(path, &result, write_error, sizeof(write_error))) {
-		if (error)
-			*error = write_error;
+	if (!demo)
 		return false;
+	demo->metadata.version = 1;
+	demo->metadata.game = input_demo_recorder_game_name(session.game);
+	demo->metadata.mission = session.mission;
+	demo->metadata.level = session.level;
+	demo->metadata.difficulty = session.difficulty;
+	demo->metadata.start_mode = "new_level";
+	demo->metadata.rng_mode = session.rng_mode;
+	demo->metadata.frame_count = static_cast<uint32_t>(session.control_frames.size());
+	input_demo_result_clear(&demo->result);
+	input_demo_recorder_build_result(&demo->result, session, result);
+	demo->has_result = true;
+	input_demo_control_state_clear(&previous_state);
+	for (i = 0; i != session.control_frames.size(); ++i) {
+		input_demo_file_frame frame;
+
+		input_demo_control_record_clear(&frame.input);
+		frame.input.frame = static_cast<uint32_t>(i);
+		frame.input.has_frame_time = !have_previous_frame_time ||
+		                             session.control_frames[i].frame_time != previous_frame_time;
+		frame.input.frame_time = session.control_frames[i].frame_time;
+		input_demo_control_state_update_from_transition(&frame.input.held,
+		                                                &previous_state,
+		                                                &session.control_frames[i].state,
+		                                                session.game);
+		input_demo_control_pulse_update_from_pulse(&frame.input.pulse,
+		                                           &session.control_frames[i].pulse,
+		                                           session.game);
+
+		input_demo_rng_record_clear(&frame.rng);
+		frame.rng.frame = static_cast<uint32_t>(i);
+		frame.rng.state = session.rng_frames[i].state;
+		frame.rng.has_call_count = session.rng_frames[i].has_call_count;
+		frame.rng.call_count = session.rng_frames[i].call_count;
+		demo->frames.push_back(frame);
+		previous_state = session.control_frames[i].state;
+		previous_frame_time = session.control_frames[i].frame_time;
+		have_previous_frame_time = 1;
 	}
-	return true;
+	return input_demo_file_to_text(*demo, &unused_text, error);
 }
 
 static void input_demo_recorder_reset_session(void)
@@ -177,69 +212,32 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
 	return 1;
 }
 
-int input_demo_recorder_flush_with_result(const char *fixture_dir,
+int input_demo_recorder_flush_with_result(const char *demo_path,
                                           const input_demo_result *result,
                                           char *error, size_t error_size)
 {
-	std::vector<input_demo_control_record> control_records;
-	std::vector<input_demo_rng_record> rng_records;
-	input_demo_metadata metadata;
-	input_demo_stream_file stream;
+	input_demo_file demo;
 	std::string shared_error;
-	std::string input_path;
-	std::string rng_path;
-	std::string metadata_path;
-	std::string result_path;
 
 	if (!g_input_demo_recorder_session.active)
 		return input_demo_recorder_copy_error("input demo recorder is not active", error, error_size);
-	if (!fixture_dir || !fixture_dir[0])
-		return input_demo_recorder_copy_error("missing fixture directory", error, error_size);
+	if (!demo_path || !demo_path[0])
+		return input_demo_recorder_copy_error("missing demo file path", error, error_size);
 	if (g_input_demo_recorder_session.control_frames.empty())
 		return input_demo_recorder_copy_error("input demo recorder captured no frames", error, error_size);
 	if (g_input_demo_recorder_session.control_frames.size() != g_input_demo_recorder_session.rng_frames.size())
 		return input_demo_recorder_copy_error("input demo recorder frame streams are out of sync", error, error_size);
-	if (!input_demo_control_records_coalesce_frames(g_input_demo_recorder_session.control_frames,
-	                                                g_input_demo_recorder_session.game, &control_records, &shared_error))
+	if (!input_demo_recorder_build_demo(&demo, g_input_demo_recorder_session, result, &shared_error))
 		return input_demo_recorder_copy_error(shared_error, error, error_size);
-	if (!input_demo_rng_records_coalesce_frames(g_input_demo_recorder_session.rng_frames,
-	                                            &rng_records, &shared_error))
-		return input_demo_recorder_copy_error(shared_error, error, error_size);
-
-	input_path = input_demo_recorder_join_path(fixture_dir, "inputs.p0.jsonl");
-	rng_path = input_demo_recorder_join_path(fixture_dir, "rng.p0.jsonl");
-	metadata_path = input_demo_recorder_join_path(fixture_dir, "demo.json5");
-	result_path = input_demo_recorder_join_path(fixture_dir, "result.json");
-	if (!input_demo_control_records_write_jsonl_file(input_path.c_str(),
-	                                                 g_input_demo_recorder_session.game, control_records, &shared_error))
-		return input_demo_recorder_copy_error(shared_error, error, error_size);
-	if (!input_demo_rng_records_write_jsonl_file(rng_path.c_str(), rng_records, &shared_error))
-		return input_demo_recorder_copy_error(shared_error, error, error_size);
-	metadata.version = 1;
-	metadata.game = input_demo_recorder_game_name(g_input_demo_recorder_session.game);
-	metadata.mission = g_input_demo_recorder_session.mission;
-	metadata.level = g_input_demo_recorder_session.level;
-	metadata.difficulty = g_input_demo_recorder_session.difficulty;
-	metadata.start_mode = "new_level";
-	metadata.rng_mode = g_input_demo_recorder_session.rng_mode;
-	metadata.frame_count = static_cast<uint32_t>(g_input_demo_recorder_session.control_frames.size());
-	stream.player = 0;
-	stream.input_path = "inputs.p0.jsonl";
-	stream.rng_path = "rng.p0.jsonl";
-	metadata.streams.push_back(stream);
-	metadata.result_path = "result.json";
-	if (!input_demo_metadata_write_json5_file(metadata_path.c_str(), metadata, &shared_error))
-		return input_demo_recorder_copy_error(shared_error, error, error_size);
-	if (!input_demo_recorder_write_result(result_path.c_str(),
-	                                      g_input_demo_recorder_session, result, &shared_error))
+	if (!input_demo_file_write(demo_path, demo, &shared_error))
 		return input_demo_recorder_copy_error(shared_error, error, error_size);
 	input_demo_recorder_reset_session();
 	return 1;
 }
 
-int input_demo_recorder_flush(const char *fixture_dir,
+int input_demo_recorder_flush(const char *demo_path,
                               char *error, size_t error_size)
 {
-	return input_demo_recorder_flush_with_result(fixture_dir, NULL, error, error_size);
+	return input_demo_recorder_flush_with_result(demo_path, NULL, error, error_size);
 }
 }

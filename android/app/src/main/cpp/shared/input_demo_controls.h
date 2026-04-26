@@ -124,6 +124,10 @@ void input_demo_control_frame_clear(input_demo_control_frame *frame);
 void input_demo_control_record_clear(input_demo_control_record *record);
 void input_demo_control_state_update_from_state(input_demo_control_state_update *update,
                                                 const input_demo_control_state *state, int game);
+void input_demo_control_state_update_from_transition(input_demo_control_state_update *update,
+                                                     const input_demo_control_state *previous,
+                                                     const input_demo_control_state *current,
+                                                     int game);
 void input_demo_control_pulse_update_from_pulse(input_demo_control_pulse_update *update,
                                                 const input_demo_control_pulse *pulse, int game);
 void input_demo_control_state_apply_update(input_demo_control_state *state,
@@ -133,6 +137,12 @@ void input_demo_control_pulse_apply_update(input_demo_control_pulse *pulse,
 int input_demo_control_state_update_is_empty(const input_demo_control_state_update *update);
 int input_demo_control_pulse_update_is_empty(const input_demo_control_pulse_update *update);
 int input_demo_control_record_has_d2_fields(const input_demo_control_record *record);
+
+#if defined(_MSC_VER)
+#pragma pack(pop)
+#endif
+
+#undef INPUT_DEMO_PACKED
 
 #ifdef __cplusplus
 }
@@ -152,11 +162,5 @@ bool input_demo_control_records_read_jsonl_file(const char *path, int game,
                                                 std::vector<input_demo_control_record> *records, std::string *error);
 
 #endif
-
-#if defined(_MSC_VER)
-#pragma pack(pop)
-#endif
-
-#undef INPUT_DEMO_PACKED
 
 #endif

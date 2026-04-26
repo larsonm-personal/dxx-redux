@@ -9,11 +9,10 @@ This tranche should:
 
 - start a recorder session when classic demo recording starts
 - capture frame-start controls and RNG data once per game frame
-- flush `demo.json5`, `inputs.p0.jsonl`, and `rng.p0.jsonl` to a temp unpacked
-  fixture directory when recording stops
+- flush one `.dximdemo` file with header, interleaved frame records, and a
+  result trailer when recording stops
 
-This tranche does not add replay, CLI launch modes, or final `result.json`
-serialization yet.
+This tranche does not add replay or CLI launch modes yet.
 
 ## Constraints
 
@@ -36,9 +35,8 @@ serialization yet.
 ## Progress on 2026-04-26
 
 - Added `input_demo_recorder.h/cpp` under the shared Android-side helper tree
-  to buffer frame-start control and RNG snapshots, coalesce them with the
-  existing JSON helpers, and flush `demo.json5`, `inputs.p0.jsonl`,
-  `rng.p0.jsonl`, and a minimal `result.json`
+  to buffer frame-start control and RNG snapshots and flush one `.dximdemo`
+  file with a minimal embedded result trailer
 - Added `android/tests/test_input_demo_recorder.cpp` and wired it into the D1
   and D2 host test graphs
 - Wired the new shared recorder helper into the desktop D1/D2 main targets and
@@ -59,6 +57,5 @@ serialization yet.
 
 - Starting classic demo recording also starts an input-demo recorder session
 - Each game frame captures frame-start control and RNG snapshots exactly once
-- Stopping classic demo recording flushes a temp unpacked fixture directory with
-  `demo.json5`, `inputs.p0.jsonl`, and `rng.p0.jsonl`
+- Stopping classic demo recording flushes one `.dximdemo` file
 - D1/D2 host tests pass and desktop plus Android builds still pass

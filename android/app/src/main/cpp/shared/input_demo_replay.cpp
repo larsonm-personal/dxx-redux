@@ -14,8 +14,9 @@ namespace
 struct input_demo_replay_session {
 	bool loaded;
 	int game;
-	std::string result_path;
 	std::string actual_result_path;
+	bool has_expected_result;
+	input_demo_result expected_result;
 	std::string mission;
 	int level;
 	int difficulty;
@@ -25,8 +26,9 @@ struct input_demo_replay_session {
 	std::vector<input_demo_replay_frame> frames;
 
 	input_demo_replay_session()
-	    : loaded(false), game(0), level(0), difficulty(0), next_frame_index(0)
+	    : loaded(false), game(0), has_expected_result(false), level(0), difficulty(0), next_frame_index(0)
 	{
+		input_demo_result_clear(&expected_result);
 	}
 };
 
@@ -39,31 +41,9 @@ static int copy_error(const std::string &message, char *error, size_t error_size
 	return 0;
 }
 
-static std::string join_path(const std::string &dir, const std::string &name)
+static std::string actual_result_path_from_demo_path(const char *path)
 {
-	std::string joined(dir);
-
-	if (!joined.empty() && joined[joined.size() - 1] != '/' && joined[joined.size() - 1] != '\\')
-		joined.push_back('/');
-	joined += name;
-	return joined;
-}
-
-static std::string dirname_from_path(const char *path)
-{
-	std::string full(path ? path : "");
-	std::string::size_type slash = full.find_last_of("/\\");
-
-	if (slash == std::string::npos)
-		return ".";
-	if (!slash)
-		return full.substr(0, 1);
-	return full.substr(0, slash);
-}
-
-static std::string actual_result_path_from_dir(const std::string &dir)
-{
-	return join_path(dir, "result.actual.json");
+	return std::string(path ? path : "input_demo") + ".actual.json";
 }
 
 static int game_id_from_name(const std::string &game_name)
@@ -186,51 +166,42 @@ void input_demo_replay_unload(void)
 	reset_session();
 }
 
-int input_demo_replay_load(const char *metadata_path, char *error, size_t error_size)
+int input_demo_replay_load(const char *demo_path, char *error, size_t error_size)
 {
-	input_demo_metadata metadata;
+	input_demo_file demo;
 	std::vector<input_demo_control_record> control_records;
 	std::vector<input_demo_rng_record> rng_records;
 	std::vector<input_demo_replay_frame> frames;
-	std::string base_dir;
-	std::string input_path;
-	std::string rng_path;
 	std::string replay_error;
 	int game;
+	size_t i;
 
-	if (!metadata_path || !metadata_path[0])
-		return copy_error("missing replay metadata path", error, error_size);
-	if (!input_demo_metadata_read_json5_file(metadata_path, &metadata, &replay_error))
+	if (!demo_path || !demo_path[0])
+		return copy_error("missing replay demo file path", error, error_size);
+	if (!input_demo_file_read(demo_path, &demo, &replay_error))
 		return copy_error(replay_error, error, error_size);
-	if (metadata.streams.size() != 1)
-		return copy_error("single-player replay requires exactly one stream", error, error_size);
-	if (metadata.streams[0].player != 0)
-		return copy_error("single-player replay requires stream player 0", error, error_size);
-	game = game_id_from_name(metadata.game);
+	game = game_id_from_name(demo.metadata.game);
 	if (!game)
 		return copy_error("metadata game must be d1 or d2", error, error_size);
-	base_dir = dirname_from_path(metadata_path);
-	input_path = join_path(base_dir, metadata.streams[0].input_path);
-	rng_path = join_path(base_dir, metadata.streams[0].rng_path);
-	if (!input_demo_control_records_read_jsonl_file(input_path.c_str(), game, &control_records, &replay_error))
-		return copy_error(replay_error, error, error_size);
-	if (!input_demo_rng_records_read_jsonl_file(rng_path.c_str(), &rng_records, &replay_error))
-		return copy_error(replay_error, error, error_size);
-	if (!expand_control_records(control_records, metadata.frame_count, game, &frames, &replay_error))
+	for (i = 0; i != demo.frames.size(); ++i) {
+		control_records.push_back(demo.frames[i].input);
+		rng_records.push_back(demo.frames[i].rng);
+	}
+	if (!expand_control_records(control_records, demo.metadata.frame_count, game, &frames, &replay_error))
 		return copy_error(replay_error, error, error_size);
 	if (!apply_rng_records(rng_records, &frames, &replay_error))
 		return copy_error(replay_error, error, error_size);
 	reset_session();
 	g_input_demo_replay_session.loaded = true;
 	g_input_demo_replay_session.game = game;
-	g_input_demo_replay_session.result_path = join_path(base_dir,
-	                                                    metadata.result_path.empty() ? "result.json" : metadata.result_path);
-	g_input_demo_replay_session.actual_result_path = actual_result_path_from_dir(base_dir);
-	g_input_demo_replay_session.mission = metadata.mission;
-	g_input_demo_replay_session.level = metadata.level;
-	g_input_demo_replay_session.difficulty = metadata.difficulty;
-	g_input_demo_replay_session.start_mode = metadata.start_mode;
-	g_input_demo_replay_session.rng_mode = metadata.rng_mode;
+	g_input_demo_replay_session.has_expected_result = demo.has_result;
+	g_input_demo_replay_session.expected_result = demo.result;
+	g_input_demo_replay_session.actual_result_path = actual_result_path_from_demo_path(demo_path);
+	g_input_demo_replay_session.mission = demo.metadata.mission;
+	g_input_demo_replay_session.level = demo.metadata.level;
+	g_input_demo_replay_session.difficulty = demo.metadata.difficulty;
+	g_input_demo_replay_session.start_mode = demo.metadata.start_mode;
+	g_input_demo_replay_session.rng_mode = demo.metadata.rng_mode;
 	g_input_demo_replay_session.frames = frames;
 	return 1;
 }
@@ -281,14 +252,20 @@ const char *input_demo_replay_rng_mode(void)
 	return g_input_demo_replay_session.loaded ? g_input_demo_replay_session.rng_mode.c_str() : NULL;
 }
 
-const char *input_demo_replay_result_path(void)
-{
-	return g_input_demo_replay_session.loaded ? g_input_demo_replay_session.result_path.c_str() : NULL;
-}
-
 const char *input_demo_replay_actual_result_path(void)
 {
 	return g_input_demo_replay_session.loaded ? g_input_demo_replay_session.actual_result_path.c_str() : NULL;
+}
+
+int input_demo_replay_compare_result(const input_demo_result *actual,
+                                     char *error, size_t error_size)
+{
+	if (!g_input_demo_replay_session.loaded)
+		return copy_error("input demo replay is not loaded", error, error_size);
+	if (!g_input_demo_replay_session.has_expected_result)
+		return copy_error("input demo replay has no result trailer", error, error_size);
+	return input_demo_result_compare(&g_input_demo_replay_session.expected_result,
+	                                 actual, error, error_size);
 }
 
 int input_demo_replay_get_current_frame(input_demo_replay_frame *frame,

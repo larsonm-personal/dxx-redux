@@ -21,6 +21,7 @@
 
 volatile int android_force_quit = 0;
 volatile int android_escort_release_pending = 0;
+volatile int android_demo_record_toggle_pending = 0;
 
 #define LOG_TAG   "DXX-MetaAction"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -115,6 +116,14 @@ int meta_action_dispatch(int action_id, int pressed)
 	if (action_id == META_GUIDE_RELEASE_CONTROL) {
 		if (pressed)
 			android_escort_release_pending = 1;
+		return 0;
+	}
+
+	/* Special case: toggle Android quick input-demo recording.
+	 * This must run on the game thread because it starts/stops newdemo state. */
+	if (action_id == META_DEMO_RECORD_TOGGLE) {
+		if (pressed)
+			android_demo_record_toggle_pending = 1;
 		return 0;
 	}
 

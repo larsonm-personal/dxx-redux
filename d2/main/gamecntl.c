@@ -394,6 +394,11 @@ static int android_handle_ingame_saveload_request(void)
 		}
 	}
 
+	if (android_demo_record_toggle_pending) {
+		android_demo_record_toggle_pending = 0;
+		return newdemo_toggle_quick_recording();
+	}
+
 	return 0;
 }
 #endif

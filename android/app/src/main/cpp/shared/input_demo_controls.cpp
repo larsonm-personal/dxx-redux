@@ -96,6 +96,62 @@ extern "C" void input_demo_control_state_update_from_state(input_demo_control_st
 	}
 }
 
+extern "C" void input_demo_control_state_update_from_transition(input_demo_control_state_update *update,
+                                                                const input_demo_control_state *previous,
+                                                                const input_demo_control_state *current,
+                                                                int game)
+{
+	input_demo_control_state_update_clear(update);
+	if (previous->pitch_time != current->pitch_time) {
+		update->has_pitch_time = 1;
+		update->pitch_time = current->pitch_time;
+	}
+	if (previous->heading_time != current->heading_time) {
+		update->has_heading_time = 1;
+		update->heading_time = current->heading_time;
+	}
+	if (previous->bank_time != current->bank_time) {
+		update->has_bank_time = 1;
+		update->bank_time = current->bank_time;
+	}
+	if (previous->forward_thrust_time != current->forward_thrust_time) {
+		update->has_forward_thrust_time = 1;
+		update->forward_thrust_time = current->forward_thrust_time;
+	}
+	if (previous->sideways_thrust_time != current->sideways_thrust_time) {
+		update->has_sideways_thrust_time = 1;
+		update->sideways_thrust_time = current->sideways_thrust_time;
+	}
+	if (previous->vertical_thrust_time != current->vertical_thrust_time) {
+		update->has_vertical_thrust_time = 1;
+		update->vertical_thrust_time = current->vertical_thrust_time;
+	}
+	if (previous->fire_primary_state != current->fire_primary_state) {
+		update->has_fire_primary_state = 1;
+		update->fire_primary_state = current->fire_primary_state;
+	}
+	if (previous->fire_secondary_state != current->fire_secondary_state) {
+		update->has_fire_secondary_state = 1;
+		update->fire_secondary_state = current->fire_secondary_state;
+	}
+	if (previous->rear_view_state != current->rear_view_state) {
+		update->has_rear_view_state = 1;
+		update->rear_view_state = current->rear_view_state;
+	}
+	if (previous->automap_state != current->automap_state) {
+		update->has_automap_state = 1;
+		update->automap_state = current->automap_state;
+	}
+	if (game == INPUT_DEMO_GAME_D2 && previous->afterburner_state != current->afterburner_state) {
+		update->has_afterburner_state = 1;
+		update->afterburner_state = current->afterburner_state;
+	}
+	if (game == INPUT_DEMO_GAME_D2 && previous->energy_to_shield_state != current->energy_to_shield_state) {
+		update->has_energy_to_shield_state = 1;
+		update->energy_to_shield_state = current->energy_to_shield_state;
+	}
+}
+
 extern "C" void input_demo_control_pulse_update_from_pulse(input_demo_control_pulse_update *update,
                                                            const input_demo_control_pulse *pulse, int game)
 {
@@ -471,60 +527,6 @@ static bool validate_frame(const input_demo_control_frame &frame, int game, std:
 	return true;
 }
 
-static void build_state_transition_update(input_demo_control_state_update *update,
-                                          const input_demo_control_state &previous, const input_demo_control_state &current, int game)
-{
-	input_demo_control_state_update_clear(update);
-	if (previous.pitch_time != current.pitch_time) {
-		update->has_pitch_time = 1;
-		update->pitch_time = current.pitch_time;
-	}
-	if (previous.heading_time != current.heading_time) {
-		update->has_heading_time = 1;
-		update->heading_time = current.heading_time;
-	}
-	if (previous.bank_time != current.bank_time) {
-		update->has_bank_time = 1;
-		update->bank_time = current.bank_time;
-	}
-	if (previous.forward_thrust_time != current.forward_thrust_time) {
-		update->has_forward_thrust_time = 1;
-		update->forward_thrust_time = current.forward_thrust_time;
-	}
-	if (previous.sideways_thrust_time != current.sideways_thrust_time) {
-		update->has_sideways_thrust_time = 1;
-		update->sideways_thrust_time = current.sideways_thrust_time;
-	}
-	if (previous.vertical_thrust_time != current.vertical_thrust_time) {
-		update->has_vertical_thrust_time = 1;
-		update->vertical_thrust_time = current.vertical_thrust_time;
-	}
-	if (previous.fire_primary_state != current.fire_primary_state) {
-		update->has_fire_primary_state = 1;
-		update->fire_primary_state = current.fire_primary_state;
-	}
-	if (previous.fire_secondary_state != current.fire_secondary_state) {
-		update->has_fire_secondary_state = 1;
-		update->fire_secondary_state = current.fire_secondary_state;
-	}
-	if (previous.rear_view_state != current.rear_view_state) {
-		update->has_rear_view_state = 1;
-		update->rear_view_state = current.rear_view_state;
-	}
-	if (previous.automap_state != current.automap_state) {
-		update->has_automap_state = 1;
-		update->automap_state = current.automap_state;
-	}
-	if (game == INPUT_DEMO_GAME_D2 && previous.afterburner_state != current.afterburner_state) {
-		update->has_afterburner_state = 1;
-		update->afterburner_state = current.afterburner_state;
-	}
-	if (game == INPUT_DEMO_GAME_D2 && previous.energy_to_shield_state != current.energy_to_shield_state) {
-		update->has_energy_to_shield_state = 1;
-		update->energy_to_shield_state = current.energy_to_shield_state;
-	}
-}
-
 bool input_demo_control_record_to_json_line(const input_demo_control_record &record, int game,
                                             std::string *line, std::string *error)
 {
@@ -675,7 +677,7 @@ bool input_demo_control_records_coalesce_frames(const std::vector<input_demo_con
 		record.frame = frame.frame;
 		record.has_frame_time = !have_previous_frame_time || frame.frame_time != previous_frame_time;
 		record.frame_time = frame.frame_time;
-		build_state_transition_update(&record.held, previous_state, frame.state, game);
+		input_demo_control_state_update_from_transition(&record.held, &previous_state, &frame.state, game);
 		input_demo_control_pulse_update_from_pulse(&record.pulse, &frame.pulse, game);
 		if (!out.empty() &&
 		    !record.has_frame_time &&

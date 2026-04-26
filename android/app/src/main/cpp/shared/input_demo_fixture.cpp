@@ -258,10 +258,17 @@ bool input_demo_rng_records_read_jsonl_file(const char *path,
 	return true;
 }
 
+static int game_id_from_name(const std::string &game_name)
+{
+	if (game_name == "d1")
+		return INPUT_DEMO_GAME_D1;
+	if (game_name == "d2")
+		return INPUT_DEMO_GAME_D2;
+	return 0;
+}
+
 static bool validate_metadata(const input_demo_metadata &metadata, std::string *error)
 {
-	size_t i;
-
 	if (metadata.version != 1)
 		return fail(error, "metadata version must be 1");
 	if (metadata.game != "d1" && metadata.game != "d2")
@@ -280,21 +287,35 @@ static bool validate_metadata(const input_demo_metadata &metadata, std::string *
 		return fail(error, "metadata rng_mode is required");
 	if (!metadata.frame_count)
 		return fail(error, "metadata frame_count must be positive");
-	if (metadata.streams.empty())
-		return fail(error, "metadata streams must not be empty");
-	for (i = 0; i != metadata.streams.size(); ++i) {
-		if (metadata.streams[i].input_path.empty())
-			return fail(error, "metadata stream input path is required");
-		if (metadata.streams[i].rng_path.empty())
-			return fail(error, "metadata stream rng path is required");
-	}
-	if (metadata.result_path.empty())
-		return fail(error, "metadata result path is required");
 	return true;
 }
 
-bool input_demo_metadata_parse_json_text(const std::string &text,
-                                         input_demo_metadata *metadata, std::string *error)
+static bool parse_type(const ordered_json &root, const char *expected_type, std::string *error)
+{
+	if (!root.contains("type"))
+		return fail(error, std::string(expected_type) + " record is missing type");
+	if (!root.at("type").is_string())
+		return fail(error, std::string(expected_type) + " record type must be a string");
+	if (root.at("type").get<std::string>() != expected_type)
+		return fail(error, std::string("expected ") + expected_type + " record");
+	return true;
+}
+
+static bool parse_json_line(const std::string &line, const char *label,
+                            ordered_json *json, std::string *error)
+{
+	try {
+		*json = ordered_json::parse(line);
+	} catch (const std::exception &e) {
+		return fail(error, std::string("invalid ") + label + " json: " + e.what());
+	}
+	if (!json->is_object())
+		return fail(error, std::string(label) + " json must be an object");
+	return true;
+}
+
+bool input_demo_metadata_parse_header_line(const std::string &line,
+                                           input_demo_metadata *metadata, std::string *error)
 {
 	ordered_json root;
 	ordered_json::const_iterator it;
@@ -302,17 +323,16 @@ bool input_demo_metadata_parse_json_text(const std::string &text,
 
 	if (!metadata)
 		return fail(error, "missing metadata output");
-	try {
-		root = ordered_json::parse(text);
-	} catch (const std::exception &e) {
-		return fail(error, std::string("invalid metadata json: ") + e.what());
-	}
-	if (!root.is_object())
-		return fail(error, "metadata json must be an object");
+	if (!parse_json_line(line, "header", &root, error))
+		return false;
+	if (!parse_type(root, "header", error))
+		return false;
 	for (it = root.begin(); it != root.end(); ++it) {
 		const std::string &name = it.key();
 
-		if (name == "version") {
+		if (name == "type") {
+			continue;
+		} else if (name == "version") {
 			if (!parse_int_field(it.value(), &parsed.version, error, "version"))
 				return false;
 		} else if (name == "game") {
@@ -340,49 +360,6 @@ bool input_demo_metadata_parse_json_text(const std::string &text,
 		} else if (name == "frame_count") {
 			if (!parse_uint32_field(it.value(), &parsed.frame_count, error, "frame_count"))
 				return false;
-		} else if (name == "streams") {
-			ordered_json::const_iterator stream_it;
-
-			if (!it.value().is_array())
-				return fail(error, "metadata streams must be an array");
-			for (stream_it = it.value().begin(); stream_it != it.value().end(); ++stream_it) {
-				input_demo_stream_file stream;
-				ordered_json::const_iterator field_it;
-				bool have_player = false;
-				bool have_input = false;
-				bool have_rng = false;
-
-				if (!stream_it.value().is_object())
-					return fail(error, "metadata stream must be an object");
-				for (field_it = stream_it.value().begin(); field_it != stream_it.value().end(); ++field_it) {
-					const std::string &field_name = field_it.key();
-
-					if (field_name == "player") {
-						if (!parse_uint32_field(field_it.value(), &stream.player, error, "player"))
-							return false;
-						have_player = true;
-					} else if (field_name == "input") {
-						if (!field_it.value().is_string())
-							return fail(error, "metadata stream input must be a string");
-						stream.input_path = field_it.value().get<std::string>();
-						have_input = true;
-					} else if (field_name == "rng") {
-						if (!field_it.value().is_string())
-							return fail(error, "metadata stream rng must be a string");
-						stream.rng_path = field_it.value().get<std::string>();
-						have_rng = true;
-					} else {
-						return fail(error, "unknown metadata stream key: " + field_name);
-					}
-				}
-				if (!have_player)
-					return fail(error, "metadata stream is missing player");
-				if (!have_input)
-					return fail(error, "metadata stream is missing input");
-				if (!have_rng)
-					return fail(error, "metadata stream is missing rng");
-				parsed.streams.push_back(stream);
-			}
 		} else if (name == "classic_preview") {
 			if (!it.value().is_string())
 				return fail(error, "metadata classic_preview must be a string");
@@ -391,10 +368,6 @@ bool input_demo_metadata_parse_json_text(const std::string &text,
 			if (!it.value().is_string())
 				return fail(error, "metadata start_save must be a string");
 			parsed.start_save = it.value().get<std::string>();
-		} else if (name == "result") {
-			if (!it.value().is_string())
-				return fail(error, "metadata result must be a string");
-			parsed.result_path = it.value().get<std::string>();
 		} else {
 			return fail(error, "unknown metadata key: " + name);
 		}
@@ -405,35 +378,16 @@ bool input_demo_metadata_parse_json_text(const std::string &text,
 	return true;
 }
 
-bool input_demo_metadata_read_json5_file(const char *path,
-                                         input_demo_metadata *metadata, std::string *error)
-{
-	std::ifstream in(path, std::ios::in | std::ios::binary);
-	std::ostringstream text;
-
-	if (!metadata)
-		return fail(error, "missing metadata output");
-	if (!path || !path[0])
-		return fail(error, "missing metadata path");
-	if (!in)
-		return fail(error, std::string("could not open metadata file: ") + path);
-	text << in.rdbuf();
-	if (in.bad())
-		return fail(error, std::string("could not read metadata file: ") + path);
-	return input_demo_metadata_parse_json_text(text.str(), metadata, error);
-}
-
-bool input_demo_metadata_to_json_text(const input_demo_metadata &metadata,
-                                      std::string *text, std::string *error)
+bool input_demo_metadata_to_header_line(const input_demo_metadata &metadata,
+                                        std::string *line, std::string *error)
 {
 	ordered_json root = ordered_json::object();
-	ordered_json streams = ordered_json::array();
-	size_t i;
 
-	if (!text)
+	if (!line)
 		return fail(error, "missing metadata text output");
 	if (!validate_metadata(metadata, error))
 		return false;
+	root["type"] = "header";
 	root["version"] = metadata.version;
 	root["game"] = metadata.game;
 	root["mission"] = metadata.mission;
@@ -442,39 +396,290 @@ bool input_demo_metadata_to_json_text(const input_demo_metadata &metadata,
 	root["start_mode"] = metadata.start_mode;
 	root["rng_mode"] = metadata.rng_mode;
 	root["frame_count"] = metadata.frame_count;
-	for (i = 0; i != metadata.streams.size(); ++i) {
-		ordered_json stream = ordered_json::object();
-
-		stream["player"] = metadata.streams[i].player;
-		stream["input"] = metadata.streams[i].input_path;
-		stream["rng"] = metadata.streams[i].rng_path;
-		streams.push_back(stream);
-	}
-	root["streams"] = streams;
 	if (!metadata.classic_preview.empty())
 		root["classic_preview"] = metadata.classic_preview;
 	if (!metadata.start_save.empty())
 		root["start_save"] = metadata.start_save;
-	root["result"] = metadata.result_path;
-	*text = root.dump(4);
+	*line = root.dump();
+	return true;
+}
+
+static bool validate_frame_record(const input_demo_file_frame &frame, uint32_t expected_frame,
+                                  int game, std::string *error)
+{
+	if (frame.input.frame != expected_frame || frame.rng.frame != expected_frame)
+		return fail(error, "demo frame indexes must be contiguous");
+	if (frame.input.run_length != 1)
+		return fail(error, "demo frame input records must not use n");
+	if (frame.rng.run_length != 1)
+		return fail(error, "demo frame rng records must not use n");
+	if (!expected_frame && !frame.input.has_frame_time)
+		return fail(error, "first demo frame must include ft");
+	if (game == INPUT_DEMO_GAME_D1 && input_demo_control_record_has_d2_fields(&frame.input))
+		return fail(error, "D1 demo frames must reject D2-only control keys");
+	return validate_rng_record(frame.rng, error);
+}
+
+static bool validate_demo_file(const input_demo_file &demo, std::string *error)
+{
+	int game;
+	size_t i;
+
+	if (!validate_metadata(demo.metadata, error))
+		return false;
+	game = game_id_from_name(demo.metadata.game);
+	if (!game)
+		return fail(error, "demo game must be d1 or d2");
+	if (demo.frames.size() != demo.metadata.frame_count)
+		return fail(error, "demo frame count does not match header");
+	if (!demo.has_result)
+		return fail(error, "demo file is missing result trailer");
+	if (demo.result.frame_count != demo.metadata.frame_count)
+		return fail(error, "demo result frame count does not match header");
+	for (i = 0; i != demo.frames.size(); ++i) {
+		if (!validate_frame_record(demo.frames[i], static_cast<uint32_t>(i), game, error))
+			return false;
+	}
+	return true;
+}
+
+static bool parse_frame_record(const ordered_json &root, int game, uint32_t expected_frame,
+                               input_demo_file_frame *frame, std::string *error)
+{
+	ordered_json control = ordered_json::object();
+	ordered_json rng = ordered_json::object();
+	ordered_json::const_iterator it;
+	uint32_t parsed_frame = 0;
+	bool have_frame = false;
+	bool have_input = false;
+	bool have_rng = false;
+	std::string line_error;
+
+	if (!frame)
+		return fail(error, "missing demo frame output");
+	if (!parse_type(root, "frame", error))
+		return false;
+	for (it = root.begin(); it != root.end(); ++it) {
+		const std::string &name = it.key();
+
+		if (name == "type") {
+			continue;
+		} else if (name == "f") {
+			if (!parse_uint32_field(it.value(), &parsed_frame, error, "f"))
+				return false;
+			have_frame = true;
+		} else if (name == "ft") {
+			control["ft"] = it.value();
+		} else if (name == "input") {
+			if (!it.value().is_object())
+				return fail(error, "frame input must be an object");
+			for (ordered_json::const_iterator input_it = it.value().begin(); input_it != it.value().end(); ++input_it) {
+				if (input_it.key() != "s" && input_it.key() != "p")
+					return fail(error, "unknown frame input key: " + input_it.key());
+				control[input_it.key()] = input_it.value();
+			}
+			have_input = true;
+		} else if (name == "rng") {
+			if (!it.value().is_object())
+				return fail(error, "frame rng must be an object");
+			for (ordered_json::const_iterator rng_it = it.value().begin(); rng_it != it.value().end(); ++rng_it) {
+				if (rng_it.key() != "s" && rng_it.key() != "c")
+					return fail(error, "unknown frame rng key: " + rng_it.key());
+				rng[rng_it.key()] = rng_it.value();
+			}
+			have_rng = true;
+		} else {
+			return fail(error, "unknown frame key: " + name);
+		}
+	}
+	if (!have_frame)
+		return fail(error, "frame record is missing f");
+	if (parsed_frame != expected_frame)
+		return fail(error, "demo frame indexes must be contiguous");
+	if (!have_input)
+		return fail(error, "frame record is missing input");
+	if (!have_rng)
+		return fail(error, "frame record is missing rng");
+	control["f"] = parsed_frame;
+	rng["f"] = parsed_frame;
+	if (!input_demo_control_record_parse_json_line(control.dump(), game, &frame->input, &line_error))
+		return fail(error, "frame input: " + line_error);
+	if (!input_demo_rng_record_parse_json_line(rng.dump(), &frame->rng, &line_error))
+		return fail(error, "frame rng: " + line_error);
+	return validate_frame_record(*frame, expected_frame, game, error);
+}
+
+static bool frame_record_to_json_line(const input_demo_file_frame &frame, int game,
+                                      std::string *line, std::string *error)
+{
+	ordered_json root = ordered_json::object();
+	ordered_json input = ordered_json::object();
+	ordered_json rng = ordered_json::object();
+	ordered_json control_record;
+	ordered_json rng_record;
+	std::string control_line;
+	std::string rng_line;
+
+	if (!input_demo_control_record_to_json_line(frame.input, game, &control_line, error))
+		return false;
+	if (!input_demo_rng_record_to_json_line(frame.rng, &rng_line, error))
+		return false;
+	if (!parse_json_line(control_line, "frame input", &control_record, error))
+		return false;
+	if (!parse_json_line(rng_line, "frame rng", &rng_record, error))
+		return false;
+	root["type"] = "frame";
+	root["f"] = frame.input.frame;
+	if (control_record.contains("ft"))
+		root["ft"] = control_record.at("ft");
+	if (control_record.contains("s"))
+		input["s"] = control_record.at("s");
+	if (control_record.contains("p"))
+		input["p"] = control_record.at("p");
+	root["input"] = std::move(input);
+	if (rng_record.contains("s"))
+		rng["s"] = rng_record.at("s");
+	if (rng_record.contains("c"))
+		rng["c"] = rng_record.at("c");
+	root["rng"] = std::move(rng);
+	*line = root.dump();
+	return true;
+}
+
+bool input_demo_file_parse_text(const std::string &text,
+                                input_demo_file *demo, std::string *error)
+{
+	std::istringstream input(text);
+	input_demo_file parsed;
+	std::string line;
+	uint32_t expected_frame = 0;
+	unsigned int line_number = 0;
+	bool have_header = false;
+	bool have_result = false;
+
+	if (!demo)
+		return fail(error, "missing demo file output");
+	while (std::getline(input, line)) {
+		ordered_json root;
+		std::string record_type;
+		std::string line_error;
+
+		line_number++;
+		if (line.empty())
+			continue;
+		if (!parse_json_line(line, "demo record", &root, &line_error))
+			return fail(error, "demo line " + std::to_string(line_number) + ": " + line_error);
+		if (!root.contains("type") || !root.at("type").is_string())
+			return fail(error, "demo line " + std::to_string(line_number) + ": record type is required");
+		record_type = root.at("type").get<std::string>();
+		if (!have_header) {
+			if (record_type != "header")
+				return fail(error, "first demo record must be header");
+			if (!input_demo_metadata_parse_header_line(line, &parsed.metadata, &line_error))
+				return fail(error, "demo line " + std::to_string(line_number) + ": " + line_error);
+			have_header = true;
+			continue;
+		}
+		if (have_result)
+			return fail(error, "demo result trailer must be the final record");
+		if (record_type == "frame") {
+			input_demo_file_frame frame;
+
+			if (!parse_frame_record(root, game_id_from_name(parsed.metadata.game), expected_frame, &frame, &line_error))
+				return fail(error, "demo line " + std::to_string(line_number) + ": " + line_error);
+			parsed.frames.push_back(frame);
+			expected_frame++;
+		} else if (record_type == "result") {
+			if (!root.contains("result"))
+				return fail(error, "demo line " + std::to_string(line_number) + ": result record is missing result");
+			if (!input_demo_result_parse_json_text(root.at("result").dump(), &parsed.result, &line_error))
+				return fail(error, "demo line " + std::to_string(line_number) + ": " + line_error);
+			parsed.has_result = true;
+			have_result = true;
+		} else {
+			return fail(error, "demo line " + std::to_string(line_number) + ": unknown record type: " + record_type);
+		}
+	}
+	if (!have_header)
+		return fail(error, "demo file is missing header");
+	if (!validate_demo_file(parsed, error))
+		return false;
+	*demo = parsed;
+	return true;
+}
+
+bool input_demo_file_read(const char *path,
+                          input_demo_file *demo, std::string *error)
+{
+	std::ifstream in(path, std::ios::in | std::ios::binary);
+	std::ostringstream text;
+
+	if (!demo)
+		return fail(error, "missing demo file output");
+	if (!path || !path[0])
+		return fail(error, "missing demo file path");
+	if (!in)
+		return fail(error, std::string("could not open demo file: ") + path);
+	text << in.rdbuf();
+	if (in.bad())
+		return fail(error, std::string("could not read demo file: ") + path);
+	return input_demo_file_parse_text(text.str(), demo, error);
+}
+
+bool input_demo_file_to_text(const input_demo_file &demo,
+                             std::string *text, std::string *error)
+{
+	std::string line;
+	std::string result_text;
+	ordered_json result_record = ordered_json::object();
+	ordered_json result_json;
+	int game;
+	size_t i;
+
+	if (!text)
+		return fail(error, "missing demo file text output");
+	if (!validate_demo_file(demo, error))
+		return false;
+	game = game_id_from_name(demo.metadata.game);
+	text->clear();
+	if (!input_demo_metadata_to_header_line(demo.metadata, &line, error))
+		return false;
+	*text += line;
+	text->push_back('\n');
+	for (i = 0; i != demo.frames.size(); ++i) {
+		if (!frame_record_to_json_line(demo.frames[i], game, &line, error))
+			return false;
+		*text += line;
+		text->push_back('\n');
+	}
+	if (!input_demo_result_to_json_text(demo.result, &result_text, error))
+		return false;
+	try {
+		result_json = ordered_json::parse(result_text);
+	} catch (const std::exception &e) {
+		return fail(error, std::string("could not build result trailer: ") + e.what());
+	}
+	result_record["type"] = "result";
+	result_record["result"] = std::move(result_json);
+	*text += result_record.dump();
 	text->push_back('\n');
 	return true;
 }
 
-bool input_demo_metadata_write_json5_file(const char *path,
-                                          const input_demo_metadata &metadata, std::string *error)
+bool input_demo_file_write(const char *path,
+                           const input_demo_file &demo, std::string *error)
 {
 	std::ofstream out(path, std::ios::out | std::ios::trunc | std::ios::binary);
 	std::string text;
 
 	if (!path || !path[0])
-		return fail(error, "missing metadata path");
-	if (!input_demo_metadata_to_json_text(metadata, &text, error))
+		return fail(error, "missing demo file path");
+	if (!input_demo_file_to_text(demo, &text, error))
 		return false;
 	if (!out)
-		return fail(error, std::string("could not open metadata file: ") + path);
+		return fail(error, std::string("could not open demo file: ") + path);
 	out << text;
 	if (!out.good())
-		return fail(error, std::string("could not write metadata file: ") + path);
+		return fail(error, std::string("could not write demo file: ") + path);
 	return true;
 }

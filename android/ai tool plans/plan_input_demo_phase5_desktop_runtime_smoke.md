@@ -23,8 +23,20 @@ replay reaches result comparison successfully.
 
 ## Notes
 
-- D1 and D2 replay startup now set a one-shot skip-level-intro flag so runtime
-  smoke runs do not stall in briefings before gameplay begins
+- The smoke runner now uses a lean replay launch (`-hogdir`, title-skip,
+  `-window`, `-nomusic`, `-nosound`, `-inputdemo-replay`) instead of adding
+  pilot or players-dir arguments
+- The smoke runner launches a disposable copy of the desktop binary from a
+  temp sandbox and writes a minimal local `descent.cfg` there so the test does
+  not inherit fullscreen, resolution, or other persistent settings from the
+  normal build output directory
+- The smoke runner now prints the active sandbox exe, data dir, and fixture dir
+  before launch, and any failure repro points at the sandboxed executable path
+- The smoke runner treats `result.actual.json` creation as completion and then
+  terminates the process if it is still running, so no tester-specific replay
+  exit plumbing is required in `game.c`
+- D1 and D2 replay startup keep a one-shot skip-level-intro flag because the
+  desktop replay smoke still stalls in first-level briefings without it
 - The smoke runner launches desktop binaries through ProcessStartInfo with
   UseShellExecute disabled because Start-Process stalled while direct/manual
   invocation completed normally

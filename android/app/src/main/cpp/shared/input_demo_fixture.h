@@ -34,17 +34,20 @@ typedef struct input_demo_rng_record {
 void input_demo_rng_frame_clear(input_demo_rng_frame *frame);
 void input_demo_rng_record_clear(input_demo_rng_record *record);
 
+#if defined(_MSC_VER)
+#pragma pack(pop)
+#endif
+
+#undef INPUT_DEMO_FIXTURE_PACKED
+
 #ifdef __cplusplus
 }
 
 #include <string>
 #include <vector>
 
-struct input_demo_stream_file {
-	uint32_t player;
-	std::string input_path;
-	std::string rng_path;
-};
+#include "input_demo_controls.h"
+#include "input_demo_result.h"
 
 struct input_demo_metadata {
 	int version;
@@ -55,10 +58,26 @@ struct input_demo_metadata {
 	std::string start_mode;
 	std::string rng_mode;
 	uint32_t frame_count;
-	std::vector<input_demo_stream_file> streams;
 	std::string classic_preview;
 	std::string start_save;
-	std::string result_path;
+};
+
+struct input_demo_file_frame {
+	input_demo_control_record input;
+	input_demo_rng_record rng;
+};
+
+struct input_demo_file {
+	input_demo_metadata metadata;
+	std::vector<input_demo_file_frame> frames;
+	bool has_result;
+	input_demo_result result;
+
+	input_demo_file()
+	    : has_result(false)
+	{
+		input_demo_result_clear(&result);
+	}
 };
 
 bool input_demo_rng_record_to_json_line(const input_demo_rng_record &record,
@@ -71,21 +90,19 @@ bool input_demo_rng_records_write_jsonl_file(const char *path,
                                              const std::vector<input_demo_rng_record> &records, std::string *error);
 bool input_demo_rng_records_read_jsonl_file(const char *path,
                                             std::vector<input_demo_rng_record> *records, std::string *error);
-bool input_demo_metadata_parse_json_text(const std::string &text,
-                                         input_demo_metadata *metadata, std::string *error);
-bool input_demo_metadata_read_json5_file(const char *path,
-                                         input_demo_metadata *metadata, std::string *error);
-bool input_demo_metadata_to_json_text(const input_demo_metadata &metadata,
-                                      std::string *text, std::string *error);
-bool input_demo_metadata_write_json5_file(const char *path,
-                                          const input_demo_metadata &metadata, std::string *error);
+bool input_demo_metadata_parse_header_line(const std::string &line,
+                                           input_demo_metadata *metadata, std::string *error);
+bool input_demo_metadata_to_header_line(const input_demo_metadata &metadata,
+                                        std::string *line, std::string *error);
+bool input_demo_file_parse_text(const std::string &text,
+                                input_demo_file *demo, std::string *error);
+bool input_demo_file_read(const char *path,
+                          input_demo_file *demo, std::string *error);
+bool input_demo_file_to_text(const input_demo_file &demo,
+                             std::string *text, std::string *error);
+bool input_demo_file_write(const char *path,
+                           const input_demo_file &demo, std::string *error);
 
 #endif
-
-#if defined(_MSC_VER)
-#pragma pack(pop)
-#endif
-
-#undef INPUT_DEMO_FIXTURE_PACKED
 
 #endif

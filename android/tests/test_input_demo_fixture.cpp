@@ -121,62 +121,79 @@ static int expect_rng_file_round_trip(void)
 	return 0;
 }
 
-static int expect_metadata_output(void)
+static int expect_demo_file_output(void)
 {
-	const char *path = "test_input_demo_metadata_demo.json5";
+	const char *path = "test_input_demo_fixture.dximdemo";
 	const char *rng_mode = input_demo_rng_mode_name(d_rand_get_replay_mode());
-	input_demo_metadata metadata;
-	input_demo_stream_file stream;
+	input_demo_file demo;
+	input_demo_file parsed;
 	std::string text;
 	std::string file_text;
 	std::string expected;
 	std::string error;
 
-	metadata.version = 1;
-	metadata.game = input_demo_test_game_name();
-	metadata.mission = input_demo_test_game_name();
-	metadata.level = 1;
-	metadata.difficulty = 2;
-	metadata.start_mode = "new_level";
-	metadata.rng_mode = rng_mode;
-	metadata.frame_count = 6;
-	stream.player = 0;
-	stream.input_path = "inputs.p0.jsonl";
-	stream.rng_path = "rng.p0.jsonl";
-	metadata.streams.push_back(stream);
-	metadata.result_path = "result.json";
-	if (!input_demo_metadata_to_json_text(metadata, &text, &error))
-		return report_failure_string(std::string("metadata text failed: ") + error);
+	demo.metadata.version = 1;
+	demo.metadata.game = input_demo_test_game_name();
+	demo.metadata.mission = input_demo_test_game_name();
+	demo.metadata.level = 1;
+	demo.metadata.difficulty = 2;
+	demo.metadata.start_mode = "new_level";
+	demo.metadata.rng_mode = rng_mode;
+	demo.metadata.frame_count = 2;
+	demo.frames.resize(2);
+	input_demo_control_record_clear(&demo.frames[0].input);
+	demo.frames[0].input.frame = 0;
+	demo.frames[0].input.has_frame_time = 1;
+	demo.frames[0].input.frame_time = 3276;
+	demo.frames[0].input.held.has_forward_thrust_time = 1;
+	demo.frames[0].input.held.forward_thrust_time = 44;
+	input_demo_rng_record_clear(&demo.frames[0].rng);
+	demo.frames[0].rng.frame = 0;
+	demo.frames[0].rng.state = 100;
+	input_demo_control_record_clear(&demo.frames[1].input);
+	demo.frames[1].input.frame = 1;
+	demo.frames[1].input.pulse.has_fire_primary_count = 1;
+	demo.frames[1].input.pulse.fire_primary_count = 1;
+	input_demo_rng_record_clear(&demo.frames[1].rng);
+	demo.frames[1].rng.frame = 1;
+	demo.frames[1].rng.state = 101;
+	demo.frames[1].rng.has_call_count = 1;
+	demo.frames[1].rng.call_count = 3;
+	demo.has_result = true;
+	input_demo_result_clear(&demo.result);
+	snprintf(demo.result.game, sizeof(demo.result.game), "%s", input_demo_test_game_name());
+	snprintf(demo.result.mission, sizeof(demo.result.mission), "%s", input_demo_test_game_name());
+	demo.result.level = 1;
+	demo.result.difficulty = 2;
+	demo.result.frame_count = 2;
+	if (!input_demo_file_to_text(demo, &text, &error))
+		return report_failure_string(std::string("demo file text failed: ") + error);
 	expected =
-		std::string("{\n") +
-		"    \"version\": 1,\n" +
-		"    \"game\": \"" + input_demo_test_game_name() + "\",\n" +
-		"    \"mission\": \"" + input_demo_test_game_name() + "\",\n" +
-		"    \"level\": 1,\n" +
-		"    \"difficulty\": 2,\n" +
-		"    \"start_mode\": \"new_level\",\n" +
-		"    \"rng_mode\": \"" + rng_mode + "\",\n" +
-		"    \"frame_count\": 6,\n" +
-		"    \"streams\": [\n" +
-		"        {\n" +
-		"            \"player\": 0,\n" +
-		"            \"input\": \"inputs.p0.jsonl\",\n" +
-		"            \"rng\": \"rng.p0.jsonl\"\n" +
-		"        }\n" +
-		"    ],\n" +
-		"    \"result\": \"result.json\"\n" +
-		"}\n";
+		std::string("{\"type\":\"header\",\"version\":1,\"game\":\"") + input_demo_test_game_name() +
+		"\",\"mission\":\"" + input_demo_test_game_name() +
+		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"" + rng_mode +
+		"\",\"frame_count\":2}\n" +
+		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
+		"{\"type\":\"frame\",\"f\":1,\"input\":{\"p\":{\"f1\":1}},\"rng\":{\"s\":101,\"c\":3}}\n" +
+		"{\"type\":\"result\",\"result\":{\"v\":1,\"g\":\"" + input_demo_test_game_name() +
+		"\",\"m\":\"" + input_demo_test_game_name() + "\",\"l\":1,\"d\":2,\"fr\":2}}\n";
 	if (text != expected)
-		return report_failure_string(std::string("unexpected metadata text: ") + text);
-	if (!input_demo_metadata_write_json5_file(path, metadata, &error))
-		return report_failure_string(std::string("metadata file write failed: ") + error);
+		return report_failure_string(std::string("unexpected demo file text: ") + text);
+	if (!input_demo_file_write(path, demo, &error))
+		return report_failure_string(std::string("demo file write failed: ") + error);
 	if (!read_text_file(path, &file_text)) {
 		remove(path);
-		return report_failure("could not read metadata file");
+		return report_failure("could not read demo file");
+	}
+	if (file_text != expected)
+		return report_failure_string(std::string("unexpected demo file text from disk: ") + file_text);
+	if (!input_demo_file_read(path, &parsed, &error)) {
+		remove(path);
+		return report_failure_string(std::string("demo file read failed: ") + error);
 	}
 	remove(path);
-	if (file_text != expected)
-		return report_failure_string(std::string("unexpected metadata file text: ") + file_text);
+	if (parsed.frames.size() != 2 || parsed.frames[1].rng.state != 101 || !parsed.has_result)
+		return report_failure("demo file round trip corrupted content");
 	return 0;
 }
 
@@ -186,7 +203,7 @@ int main(void)
 		return 1;
 	if (expect_rng_file_round_trip())
 		return 1;
-	if (expect_metadata_output())
+	if (expect_demo_file_output())
 		return 1;
 	puts("PASS");
 	return 0;

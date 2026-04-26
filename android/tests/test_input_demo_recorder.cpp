@@ -12,6 +12,7 @@
 
 #include <string>
 
+#include "input_demo_fixture.h"
 #include "input_demo_recorder.h"
 #include "input_demo_result.h"
 
@@ -96,15 +97,14 @@ static void remove_test_dir(const char *path)
 static int expect_record_and_flush(void)
 {
 	const char *dir = "test_input_demo_recorder_fixture";
-	const std::string demo_path = std::string(dir) + "/demo.json5";
-	const std::string input_path = std::string(dir) + "/inputs.p0.jsonl";
-	const std::string rng_path = std::string(dir) + "/rng.p0.jsonl";
-	const std::string result_path = std::string(dir) + "/result.json";
+	const std::string demo_path = std::string(dir) + "/recorded.dximdemo";
 	input_demo_recorder_settings settings;
 	input_demo_control_state state;
 	input_demo_control_pulse pulse;
 	input_demo_result result;
+	input_demo_file parsed;
 	char error[256] = "";
+	std::string read_error;
 	std::string text;
 	std::string expected;
 
@@ -162,92 +162,29 @@ static int expect_record_and_flush(void)
 	result.level_summary.hostages_remaining = 2;
 	result.level_summary.powerups_remaining = 15;
 	result.level_summary.control_center_destroyed = 1;
-	if (!input_demo_recorder_flush_with_result(dir, &result, error, sizeof(error)))
+	if (!input_demo_recorder_flush_with_result(demo_path.c_str(), &result, error, sizeof(error)))
 		return report_failure_string(std::string("recorder flush failed: ") + error);
 	if (input_demo_recorder_is_active())
 		return report_failure("recorder should be inactive after flush");
-	if (!read_text_file(input_path.c_str(), &text))
-		return report_failure("could not read recorder control stream");
-	expected = std::string("{\"f\":0,\"ft\":3276,\"s\":{\"f\":44}}\n") +
-		"{\"f\":1,\"p\":{\"f1\":1}}\n" +
-		"{\"f\":2,\"s\":{\"f\":0}}\n";
-	if (text != expected)
-		return report_failure_string(std::string("unexpected recorder control stream: ") + text);
-	if (!read_text_file(rng_path.c_str(), &text))
-		return report_failure("could not read recorder rng stream");
-	expected = std::string("{\"f\":0,\"n\":2,\"s\":100}\n") +
-		"{\"f\":2,\"s\":102}\n";
-	if (text != expected)
-		return report_failure_string(std::string("unexpected recorder rng stream: ") + text);
 	if (!read_text_file(demo_path.c_str(), &text))
-		return report_failure("could not read recorder metadata");
-	expected = std::string("{\n") +
-		"    \"version\": 1,\n" +
-		"    \"game\": \"" + input_demo_test_game_name() + "\",\n" +
-		"    \"mission\": \"" + input_demo_test_game_name() + "\",\n" +
-		"    \"level\": 1,\n" +
-		"    \"difficulty\": 2,\n" +
-		"    \"start_mode\": \"new_level\",\n" +
-		"    \"rng_mode\": \"" + input_demo_test_rng_mode() + "\",\n" +
-		"    \"frame_count\": 3,\n" +
-		"    \"streams\": [\n" +
-		"        {\n" +
-		"            \"player\": 0,\n" +
-		"            \"input\": \"inputs.p0.jsonl\",\n" +
-		"            \"rng\": \"rng.p0.jsonl\"\n" +
-		"        }\n" +
-		"    ],\n" +
-		"    \"result\": \"result.json\"\n" +
-		"}\n";
+		return report_failure("could not read recorder demo file");
+	expected = std::string("{\"type\":\"header\",\"version\":1,\"game\":\"") + input_demo_test_game_name() +
+		"\",\"mission\":\"" + input_demo_test_game_name() +
+		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"" + input_demo_test_rng_mode() +
+		"\",\"frame_count\":3}\n" +
+		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
+		"{\"type\":\"frame\",\"f\":1,\"input\":{\"p\":{\"f1\":1}},\"rng\":{\"s\":100}}\n" +
+		"{\"type\":\"frame\",\"f\":2,\"input\":{\"s\":{\"f\":0}},\"rng\":{\"s\":102}}\n" +
+		"{\"type\":\"result\",\"result\":{\"v\":1,\"g\":\"" + input_demo_test_game_name() +
+		"\",\"m\":\"" + input_demo_test_game_name() +
+		"\",\"l\":1,\"d\":2,\"fr\":3,\"gt\":120,\"p0\":{\"e\":67,\"s\":42,\"sc\":12500,\"li\":3,\"ll\":1,\"sw\":1,\"pa\":{\"1\":200},\"sa\":{\"0\":4}},\"pos\":{\"sg\":142,\"x\":12345678,\"y\":-8765432,\"z\":3456789,\"fx\":65536,\"fy\":0,\"fz\":0},\"lv\":{\"ra\":23,\"rk\":8,\"hr\":2,\"pr\":15,\"cc\":true}}}\n";
 	if (text != expected)
-		return report_failure_string(std::string("unexpected recorder metadata: ") + text);
-	if (!read_text_file(result_path.c_str(), &text))
-		return report_failure("could not read recorder result file");
-	expected = std::string("{\n") +
-		"  \"v\": 1,\n" +
-		"  \"g\": \"" + input_demo_test_game_name() + "\",\n" +
-		"  \"m\": \"" + input_demo_test_game_name() + "\",\n" +
-		"  \"l\": 1,\n" +
-		"  \"d\": 2,\n" +
-		"  \"fr\": 3,\n" +
-		"  \"gt\": 120,\n" +
-		"  \"p0\": {\n" +
-		"    \"e\": 67,\n" +
-		"    \"s\": 42,\n" +
-		"    \"sc\": 12500,\n" +
-		"    \"li\": 3,\n" +
-		"    \"ll\": 1,\n" +
-		"    \"sw\": 1,\n" +
-		"    \"pa\": {\n" +
-		"      \"1\": 200\n" +
-		"    },\n" +
-		"    \"sa\": {\n" +
-		"      \"0\": 4\n" +
-		"    }\n" +
-		"  },\n" +
-		"  \"pos\": {\n" +
-		"    \"sg\": 142,\n" +
-		"    \"x\": 12345678,\n" +
-		"    \"y\": -8765432,\n" +
-		"    \"z\": 3456789,\n" +
-		"    \"fx\": 65536,\n" +
-		"    \"fy\": 0,\n" +
-		"    \"fz\": 0\n" +
-		"  },\n" +
-		"  \"lv\": {\n" +
-		"    \"ra\": 23,\n" +
-		"    \"rk\": 8,\n" +
-		"    \"hr\": 2,\n" +
-		"    \"pr\": 15,\n" +
-		"    \"cc\": true\n" +
-		"  }\n" +
-		"}\n";
-	if (text != expected)
-		return report_failure_string(std::string("unexpected recorder result file: ") + text);
+		return report_failure_string(std::string("unexpected recorder demo file: ") + text);
+	if (!input_demo_file_read(demo_path.c_str(), &parsed, &read_error))
+		return report_failure_string(std::string("recorder demo read failed: ") + read_error);
+	if (parsed.frames.size() != 3 || parsed.frames[2].rng.state != 102 || parsed.result.player0.score != 12500)
+		return report_failure("recorder demo round trip mismatch");
 	remove(demo_path.c_str());
-	remove(input_path.c_str());
-	remove(rng_path.c_str());
-	remove(result_path.c_str());
 	remove_test_dir(dir);
 	return 0;
 }

@@ -176,8 +176,8 @@ void print_commandline_help()
 	printf( "  -verbose                      Enable verbose output.\n");
 	printf( "  -safelog                      Write gamelog.txt unbuffered.\n\t\t\t\tUse to keep helpful output to trace program crashes.\n");
 	printf( "  -norun                        Bail out after initialization\n");
-	printf( "  -inputdemo-validate <s>       Validate demo.json5 rng_mode and exit\n");
-	printf( "  -inputdemo-replay <s>         Replay demo.json5 through the D2 engine\n");
+	printf( "  -inputdemo-validate <s>       Validate input demo file rng_mode and exit\n");
+	printf( "  -inputdemo-replay <s>         Replay input demo file through the D2 engine\n");
 	printf( "  -renderstats                  Enable renderstats info by default\n");
 	printf( "  -text <s>                     Specify alternate .tex file\n");
 	printf( "  -tmap <s>                     Select texmapper <s> to use\n\t\t\t\t(default: c, available: c, fp, quad, i386)\n");
@@ -217,8 +217,8 @@ static int maybe_validate_input_demo_metadata(void)
 {
 	int arg_index = find_cmd_arg("-inputdemo-validate");
 	int engine_mode;
-	int fixture_mode;
-	const char *metadata_path;
+	int demo_mode;
+	const char *demo_path;
 	const char *error;
 
 	if (!arg_index)
@@ -228,20 +228,20 @@ static int maybe_validate_input_demo_metadata(void)
 		printf("Missing value for -inputdemo-validate\n");
 		return 1;
 	}
-	metadata_path = Args[arg_index + 1];
+	demo_path = Args[arg_index + 1];
 	engine_mode = d_rand_get_replay_mode();
-	error = input_demo_rng_mode_validate_metadata_file(metadata_path, engine_mode,
-		&fixture_mode);
+	error = input_demo_rng_mode_validate_metadata_file(demo_path, engine_mode,
+		&demo_mode);
 	if (error)
 	{
-		printf("Input demo metadata invalid: %s\n", metadata_path);
+		printf("Input demo file invalid: %s\n", demo_path);
 		printf("%s\n", error);
 		printf("Active RNG backend expects: %s\n",
 			input_demo_rng_mode_name(engine_mode));
 		return 1;
 	}
-	printf("Input demo metadata OK: %s\n", metadata_path);
-	printf("rng_mode: %s\n", input_demo_rng_mode_name(fixture_mode));
+	printf("Input demo file OK: %s\n", demo_path);
+	printf("rng_mode: %s\n", input_demo_rng_mode_name(demo_mode));
 	return 0;
 }
 
@@ -249,8 +249,8 @@ static int maybe_start_input_demo_replay(void)
 {
 	int arg_index = find_cmd_arg("-inputdemo-replay");
 	int engine_mode;
-	int fixture_mode;
-	const char *metadata_path;
+	int demo_mode;
+	const char *demo_path;
 	const char *validation_error;
 	char replay_error[256] = "";
 	char mission_name[PATH_MAX] = "";
@@ -262,26 +262,26 @@ static int maybe_start_input_demo_replay(void)
 		printf("Missing value for -inputdemo-replay\n");
 		return 1;
 	}
-	metadata_path = Args[arg_index + 1];
+	demo_path = Args[arg_index + 1];
 	engine_mode = d_rand_get_replay_mode();
-	validation_error = input_demo_rng_mode_validate_metadata_file(metadata_path, engine_mode,
-		&fixture_mode);
+	validation_error = input_demo_rng_mode_validate_metadata_file(demo_path, engine_mode,
+		&demo_mode);
 	if (validation_error)
 	{
-		printf("Input demo replay metadata invalid: %s\n", metadata_path);
+		printf("Input demo replay file invalid: %s\n", demo_path);
 		printf("%s\n", validation_error);
 		printf("Active RNG backend expects: %s\n",
 			input_demo_rng_mode_name(engine_mode));
 		return 1;
 	}
-	if (!input_demo_replay_load(metadata_path, replay_error, sizeof(replay_error)))
+	if (!input_demo_replay_load(demo_path, replay_error, sizeof(replay_error)))
 	{
 		printf("Input demo replay load failed: %s\n", replay_error);
 		return 1;
 	}
 	if (input_demo_replay_game() != INPUT_DEMO_GAME_D2)
 	{
-		printf("Input demo replay currently supports D2 fixtures only\n");
+		printf("Input demo replay currently supports D2 demos only\n");
 		input_demo_replay_unload();
 		return 1;
 	}

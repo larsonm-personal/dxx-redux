@@ -96,6 +96,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 #include <SDL.h>
 
+#ifdef __ANDROID__
+#include "android_meta_actions.h"
+#endif
+
 // Global Variables -----------------------------------------------------------
 
 int	Debug_spew;
@@ -274,6 +278,11 @@ static int android_handle_ingame_saveload_request(void)
 			state_restore_all(1);
 			return 1;
 		}
+	}
+
+	if (android_demo_record_toggle_pending) {
+		android_demo_record_toggle_pending = 0;
+		return newdemo_toggle_quick_recording();
 	}
 
 	return 0;

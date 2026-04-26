@@ -78,7 +78,7 @@ static void remove_test_dir(const char *path)
 #endif
 }
 
-static int write_test_fixture(const char *dir)
+static int write_test_fixture(const char *path)
 {
 	input_demo_recorder_settings settings;
 	input_demo_control_state state;
@@ -106,7 +106,7 @@ static int write_test_fixture(const char *dir)
 	input_demo_control_pulse_clear(&pulse);
 	if (!input_demo_recorder_capture_frame(4000, &state, &pulse, 102, 1, 3, error, sizeof(error)))
 		return report_failure_string(std::string("capture frame 2 failed: ") + error);
-	if (!input_demo_recorder_flush(dir, error, sizeof(error)))
+	if (!input_demo_recorder_flush(path, error, sizeof(error)))
 		return report_failure_string(std::string("recorder flush failed: ") + error);
 	return 0;
 }
@@ -114,16 +114,15 @@ static int write_test_fixture(const char *dir)
 static int expect_replay_loader(void)
 {
 	const char *dir = "test_input_demo_replay_fixture";
-	const std::string demo_path = std::string(dir) + "/demo.json5";
-	const std::string input_path = std::string(dir) + "/inputs.p0.jsonl";
-	const std::string rng_path = std::string(dir) + "/rng.p0.jsonl";
-	const std::string result_path = std::string(dir) + "/result.json";
+	const std::string demo_path = std::string(dir) + "/replay.dximdemo";
+	const std::string actual_result_path = demo_path + ".actual.json";
 	input_demo_replay_frame frame;
+	input_demo_result actual_result;
 	char error[256] = "";
 
 	if (!make_test_dir(dir))
 		return report_failure("could not create replay test directory");
-	if (write_test_fixture(dir))
+	if (write_test_fixture(demo_path.c_str()))
 		return 1;
 	if (!input_demo_replay_load(demo_path.c_str(), error, sizeof(error)))
 		return report_failure_string(std::string("replay load failed: ") + error);
@@ -147,6 +146,8 @@ static int expect_replay_loader(void)
 		return report_failure("replay cursor should start at frame 0");
 	if (input_demo_replay_is_finished())
 		return report_failure("replay should not start finished");
+	if (!input_demo_replay_actual_result_path() || std::string(input_demo_replay_actual_result_path()) != actual_result_path)
+		return report_failure("replay actual result path mismatch");
 
 	if (!input_demo_replay_get_current_frame(&frame, error, sizeof(error)))
 		return report_failure_string(std::string("replay current frame 0 failed: ") + error);
@@ -177,11 +178,17 @@ static int expect_replay_loader(void)
 		return report_failure("replay should be finished after advancing all frames");
 	if (input_demo_replay_get_current_frame(&frame, error, sizeof(error)))
 		return report_failure("replay unexpectedly returned a frame after end of stream");
+	input_demo_result_clear(&actual_result);
+	snprintf(actual_result.game, sizeof(actual_result.game), "%s", input_demo_test_game_name());
+	snprintf(actual_result.mission, sizeof(actual_result.mission), "%s", input_demo_test_game_name());
+	actual_result.level = 1;
+	actual_result.difficulty = 2;
+	actual_result.frame_count = 3;
+	if (!input_demo_replay_compare_result(&actual_result, error, sizeof(error)))
+		return report_failure_string(std::string("replay embedded result compare failed: ") + error);
 	input_demo_replay_unload();
 	remove(demo_path.c_str());
-	remove(input_path.c_str());
-	remove(rng_path.c_str());
-	remove(result_path.c_str());
+	remove(actual_result_path.c_str());
 	remove_test_dir(dir);
 	return 0;
 }

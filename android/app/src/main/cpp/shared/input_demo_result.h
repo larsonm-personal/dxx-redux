@@ -83,6 +83,15 @@ int input_demo_result_compare_files(const char *expected_path,
 
 #ifdef __cplusplus
 }
+
+#include <string>
+
+bool input_demo_result_parse_json_text(const std::string &text,
+                                       input_demo_result *result,
+                                       std::string *error);
+bool input_demo_result_to_json_text(const input_demo_result &result,
+                                    std::string *text,
+                                    std::string *error);
 #endif
 
 #endif

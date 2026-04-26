@@ -36,33 +36,33 @@ static const char *read_text_file(const char *path, char **text_out)
 
 	*text_out = NULL;
 	if (!path)
-		return "missing demo metadata path";
+		return "missing demo file path";
 	f = fopen(path, "rb");
 	if (!f)
-		return "could not open demo metadata file";
+		return "could not open demo file";
 	if (fseek(f, 0, SEEK_END) != 0) {
 		fclose(f);
-		return "could not size demo metadata file";
+		return "could not size demo file";
 	}
 	size = ftell(f);
 	if (size < 0) {
 		fclose(f);
-		return "could not size demo metadata file";
+		return "could not size demo file";
 	}
 	if (fseek(f, 0, SEEK_SET) != 0) {
 		fclose(f);
-		return "could not rewind demo metadata file";
+		return "could not rewind demo file";
 	}
 	text = (char *) malloc((size_t) size + 1);
 	if (!text) {
 		fclose(f);
-		return "could not allocate demo metadata buffer";
+		return "could not allocate demo file buffer";
 	}
 	read_size = fread(text, 1, (size_t) size, f);
 	fclose(f);
 	if (read_size != (size_t) size) {
 		free(text);
-		return "could not read demo metadata file";
+		return "could not read demo file";
 	}
 	text[size] = '\0';
 	*text_out = text;
@@ -116,38 +116,38 @@ const char *input_demo_rng_mode_parse_metadata_text(const char *text, int *mode)
 	int parsed_mode;
 
 	if (!text)
-		return "missing demo metadata text";
+		return "missing demo file text";
 	if (!mode)
 		return "missing rng_mode output";
 	key = find_rng_mode_key(text);
 	if (!key)
-		return "demo metadata is missing rng_mode";
+		return "demo file is missing rng_mode";
 	cursor = key + 8;
 	if (*cursor == '"' || *cursor == '\'')
 		cursor++;
 	while (*cursor && isspace((unsigned char) *cursor))
 		cursor++;
 	if (*cursor != ':')
-		return "demo metadata rng_mode is missing ':'";
+		return "demo file rng_mode is missing ':'";
 	cursor++;
 	while (*cursor && isspace((unsigned char) *cursor))
 		cursor++;
 	if (*cursor != '"' && *cursor != '\'')
-		return "demo metadata rng_mode must be a quoted string";
+		return "demo file rng_mode must be a quoted string";
 	quote = *cursor++;
 	while (*cursor && *cursor != quote) {
 		if (*cursor == '\\' && cursor[1])
 			cursor++;
 		if (value_len + 1 >= sizeof(value))
-			return "demo metadata rng_mode is too long";
+			return "demo file rng_mode is too long";
 		value[value_len++] = *cursor++;
 	}
 	if (*cursor != quote)
-		return "demo metadata rng_mode string is unterminated";
+		return "demo file rng_mode string is unterminated";
 	value[value_len] = '\0';
 	parsed_mode = input_demo_rng_mode_parse(value);
 	if (!parsed_mode)
-		return "demo metadata rng_mode is invalid";
+		return "demo file rng_mode is invalid";
 	*mode = parsed_mode;
 	return NULL;
 }
@@ -159,7 +159,7 @@ const char *input_demo_rng_mode_validate_metadata_text(const char *text, int eng
 	if (error)
 		return error;
 	if (!input_demo_rng_mode_is_compatible(*mode, engine_mode))
-		return "demo metadata rng_mode is incompatible with the active RNG backend";
+		return "demo file rng_mode is incompatible with the active RNG backend";
 	return NULL;
 }
 

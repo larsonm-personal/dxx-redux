@@ -278,72 +278,21 @@ static nlohmann::ordered_json input_demo_result_sparse_ammo_object(const uint16_
 	return object;
 }
 
-} // namespace
-
-extern "C" {
-
-void input_demo_result_player_clear(input_demo_result_player *player)
-{
-	if (!player)
-		return;
-	memset(player, 0, sizeof(*player));
-}
-
-void input_demo_result_position_clear(input_demo_result_position *position)
-{
-	if (!position)
-		return;
-	memset(position, 0, sizeof(*position));
-}
-
-void input_demo_result_level_clear(input_demo_result_level *level)
-{
-	if (!level)
-		return;
-	memset(level, 0, sizeof(*level));
-}
-
-void input_demo_result_clear(input_demo_result *result)
-{
-	if (!result)
-		return;
-	memset(result, 0, sizeof(*result));
-	result->version = 1;
-	input_demo_result_player_clear(&result->player0);
-	input_demo_result_position_clear(&result->position);
-	input_demo_result_level_clear(&result->level_summary);
-}
-
-int input_demo_result_read_json_file(const char *path,
-                                     input_demo_result *result,
-                                     char *error, size_t error_size)
+static bool input_demo_result_parse_json_object(const nlohmann::json &root,
+                                                input_demo_result *result,
+                                                std::string *error)
 {
 	static const char *const allowed_keys[] = { "v", "g", "m", "l", "d", "fr", "gt", "p0", "pos", "lv" };
-	std::string text;
-	std::string parse_error;
-	nlohmann::json root;
 
-	if (!path || !path[0])
-		return input_demo_result_copy_error("missing result input path", error, error_size);
-	if (!result)
-		return input_demo_result_copy_error("missing input demo result output", error, error_size);
-	if (!input_demo_result_read_text_file(path, &text, &parse_error))
-		return input_demo_result_copy_error(parse_error, error, error_size);
-	try {
-		root = nlohmann::json::parse(text);
-	} catch (const std::exception &ex) {
-		return input_demo_result_copy_error(std::string("could not parse result json: ") + ex.what(), error, error_size);
-	}
 	if (!root.is_object())
-		return input_demo_result_copy_error("result root must be an object", error, error_size);
+		return error ? (*error = "result root must be an object", false) : false;
 	for (nlohmann::json::const_iterator it = root.begin(); it != root.end(); ++it) {
 		if (!input_demo_result_key_allowed(it.key(), allowed_keys, sizeof(allowed_keys) / sizeof(allowed_keys[0])))
-			return input_demo_result_copy_error(std::string("unknown result key: ") + it.key(), error, error_size);
+			return error ? (*error = std::string("unknown result key: ") + it.key(), false) : false;
 	}
 	if (!root.contains("v") || !root.contains("g") || !root.contains("m") || !root.contains("l") ||
 	    !root.contains("d") || !root.contains("fr"))
-		return input_demo_result_copy_error("result is missing one or more required keys: v, g, m, l, d, fr",
-		                                    error, error_size);
+		return error ? (*error = "result is missing one or more required keys: v, g, m, l, d, fr", false) : false;
 	input_demo_result_clear(result);
 	result->version = root.at("v").get<int32_t>();
 	snprintf(result->game, sizeof(result->game), "%s", root.at("g").get_ref<const std::string &>().c_str());
@@ -355,30 +304,18 @@ int input_demo_result_read_json_file(const char *path,
 		result->has_game_time64 = 1;
 		result->game_time64 = root.at("gt").get<int64_t>();
 	}
-	if (root.contains("p0") && !input_demo_result_parse_player(root.at("p0"), &result->player0, &parse_error))
-		return input_demo_result_copy_error(parse_error, error, error_size);
-	if (root.contains("pos") && !input_demo_result_parse_position(root.at("pos"), &result->position, &parse_error))
-		return input_demo_result_copy_error(parse_error, error, error_size);
-	if (root.contains("lv") && !input_demo_result_parse_level_summary(root.at("lv"), &result->level_summary, &parse_error))
-		return input_demo_result_copy_error(parse_error, error, error_size);
-	return 1;
+	if (root.contains("p0") && !input_demo_result_parse_player(root.at("p0"), &result->player0, error))
+		return false;
+	if (root.contains("pos") && !input_demo_result_parse_position(root.at("pos"), &result->position, error))
+		return false;
+	if (root.contains("lv") && !input_demo_result_parse_level_summary(root.at("lv"), &result->level_summary, error))
+		return false;
+	return true;
 }
 
-int input_demo_result_write_json_file(const char *path,
-                                      const input_demo_result *result,
-                                      char *error, size_t error_size)
+static nlohmann::ordered_json input_demo_result_to_json_object(const input_demo_result *result)
 {
 	nlohmann::ordered_json root = nlohmann::ordered_json::object();
-	std::ofstream output;
-
-	if (!path || !path[0])
-		return input_demo_result_copy_error("missing result output path", error, error_size);
-	if (!result)
-		return input_demo_result_copy_error("missing input demo result", error, error_size);
-	output.open(path, std::ios::binary | std::ios::trunc);
-	if (!output.is_open())
-		return input_demo_result_copy_error(std::string("could not open result file for writing: ") + path,
-		                                    error, error_size);
 
 	root["v"] = result->version ? result->version : 1;
 	if (result->game[0])
@@ -458,7 +395,109 @@ int input_demo_result_write_json_file(const char *path,
 			root["lv"] = std::move(level);
 	}
 
-	output << root.dump(2) << '\n';
+	return root;
+}
+
+} // namespace
+
+bool input_demo_result_parse_json_text(const std::string &text,
+                                       input_demo_result *result,
+                                       std::string *error)
+{
+	nlohmann::json root;
+
+	if (!result)
+		return error ? (*error = "missing input demo result output", false) : false;
+	try {
+		root = nlohmann::json::parse(text);
+	} catch (const std::exception &ex) {
+		return error ? (*error = std::string("could not parse result json: ") + ex.what(), false) : false;
+	}
+	return input_demo_result_parse_json_object(root, result, error);
+}
+
+bool input_demo_result_to_json_text(const input_demo_result &result,
+                                    std::string *text,
+                                    std::string *error)
+{
+	if (!text)
+		return error ? (*error = "missing result text output", false) : false;
+	*text = input_demo_result_to_json_object(&result).dump(2);
+	text->push_back('\n');
+	return true;
+}
+
+extern "C" {
+
+void input_demo_result_player_clear(input_demo_result_player *player)
+{
+	if (!player)
+		return;
+	memset(player, 0, sizeof(*player));
+}
+
+void input_demo_result_position_clear(input_demo_result_position *position)
+{
+	if (!position)
+		return;
+	memset(position, 0, sizeof(*position));
+}
+
+void input_demo_result_level_clear(input_demo_result_level *level)
+{
+	if (!level)
+		return;
+	memset(level, 0, sizeof(*level));
+}
+
+void input_demo_result_clear(input_demo_result *result)
+{
+	if (!result)
+		return;
+	memset(result, 0, sizeof(*result));
+	result->version = 1;
+	input_demo_result_player_clear(&result->player0);
+	input_demo_result_position_clear(&result->position);
+	input_demo_result_level_clear(&result->level_summary);
+}
+
+int input_demo_result_read_json_file(const char *path,
+                                     input_demo_result *result,
+                                     char *error, size_t error_size)
+{
+	std::string text;
+	std::string parse_error;
+
+	if (!path || !path[0])
+		return input_demo_result_copy_error("missing result input path", error, error_size);
+	if (!result)
+		return input_demo_result_copy_error("missing input demo result output", error, error_size);
+	if (!input_demo_result_read_text_file(path, &text, &parse_error))
+		return input_demo_result_copy_error(parse_error, error, error_size);
+	if (!input_demo_result_parse_json_text(text, result, &parse_error))
+		return input_demo_result_copy_error(parse_error, error, error_size);
+	return 1;
+}
+
+int input_demo_result_write_json_file(const char *path,
+                                      const input_demo_result *result,
+                                      char *error, size_t error_size)
+{
+	std::ofstream output;
+	std::string text;
+	std::string text_error;
+
+	if (!path || !path[0])
+		return input_demo_result_copy_error("missing result output path", error, error_size);
+	if (!result)
+		return input_demo_result_copy_error("missing input demo result", error, error_size);
+	if (!input_demo_result_to_json_text(*result, &text, &text_error))
+		return input_demo_result_copy_error(text_error, error, error_size);
+	output.open(path, std::ios::binary | std::ios::trunc);
+	if (!output.is_open())
+		return input_demo_result_copy_error(std::string("could not open result file for writing: ") + path,
+		                                    error, error_size);
+	output << text;
 	if (!output.good())
 		return input_demo_result_copy_error(std::string("could not write result file: ") + path,
 		                                    error, error_size);

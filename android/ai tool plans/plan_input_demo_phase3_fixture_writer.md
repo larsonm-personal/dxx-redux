@@ -4,8 +4,8 @@
 
 Add the shared writer/helper surface for the first live-recorder tranche:
 
-- sparse `rng.p0.jsonl` support
-- generated `demo.json5` metadata support
+- sparse per-frame RNG support
+- generated `.dximdemo` header/frame/trailer support
 - host validation for exact stable output
 
 This tranche does not hook gameplay yet. It keeps the engine change for the next
@@ -22,7 +22,7 @@ slice thin by finishing the file-format writer work under `android/` first.
 ## Planned Steps
 
 - [x] Add shared RNG stream structs and sparse JSONL helpers
-- [x] Add shared metadata writer for `demo.json5`
+- [x] Add shared single-file demo writer
 - [x] Add focused host tests for RNG coalescing, file round-trip, and metadata output
 - [x] Wire the new helper into host-test and Android build graphs
 - [x] Run focused host validation and Android native validation
@@ -30,8 +30,8 @@ slice thin by finishing the file-format writer work under `android/` first.
 ## Completed Notes
 
 - Added a shared `input_demo_fixture` helper under `android/app/src/main/cpp/shared`
-	that owns sparse RNG record structs, JSONL parse/write helpers, RNG-frame
-	coalescing, and ordered metadata emission for `demo.json5`.
+	that owns sparse RNG record structs, single-file parse/write helpers,
+	RNG-frame validation, and ordered `.dximdemo` emission.
 - The RNG coalescer now compresses contiguous frame-start states into `n` runs
 	and only keeps `c` diagnostics when a frame actually provides a call count,
 	which keeps control diffs and RNG diffs readable independently.
@@ -55,7 +55,7 @@ slice thin by finishing the file-format writer work under `android/` first.
 
 ## Exit Criteria
 
-- Shared code can write schema-aligned `rng.p0.jsonl`
-- Shared code can write stable ordered `demo.json5`
+- Shared code can write schema-aligned `.dximdemo` frame records
+- Shared code can write stable ordered `.dximdemo` headers and trailers
 - Host tests verify exact sparse output for the new helper
 - Android native build still passes with the new shared helper linked in

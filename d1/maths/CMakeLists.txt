@@ -41,7 +41,9 @@ if(NOT ANDROID)
 
     add_executable(test_input_demo_fixture
         ../../android/tests/test_input_demo_fixture.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_controls.cpp
         ../../android/app/src/main/cpp/shared/input_demo_fixture.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_result.cpp
         ../../android/app/src/main/cpp/shared/input_demo_rng_mode.c)
     target_compile_features(test_input_demo_fixture PRIVATE cxx_std_11)
     target_compile_definitions(test_input_demo_fixture PRIVATE INPUT_DEMO_TEST_D1=1)

@@ -2,8 +2,8 @@
 
 ## Goal
 
-Add the first shared `result.json` reader and comparator, then use it from the
-D2 replay runtime after writing `result.actual.json`.
+Add the first shared result reader and comparator, then use it from replay after
+writing the actual result JSON file.
 
 This tranche should:
 
@@ -36,15 +36,15 @@ them.
 
 ## Exit Criteria
 
-- Shared code can read `result.json` back into a result struct
+- Shared code can read result JSON back into a result struct
 - Shared code can report a readable mismatch for compared fields
 - D2 replay logs whether the baseline matched the actual result file
 
 ## Progress on 2026-04-25
 
-- extended `input_demo_result.h/cpp` with `result.json` read and compare APIs while keeping the C-facing pure-data struct boundary intact
+- extended `input_demo_result.h/cpp` with result read and compare APIs while keeping the C-facing pure-data struct boundary intact
 - added `has_game_time64` so the shared helper can distinguish omitted `gt` from a present final game time and use baseline-driven optional comparison
-- parser validation now rejects unknown top-level and section keys for the currently supported `result.json` shape
+- parser validation now rejects unknown top-level and section keys for the currently supported result shape
 - extended `android/tests/test_input_demo_result.cpp` to cover write, read, struct round-trip compare, baseline-driven compare of a minimal expected result against a richer actual result, and a labeled mismatch case for `p0.sc`
-- updated D2 replay completion in `d2/main/game.c` to compare the fixture baseline `result.json` against `result.actual.json` after writing the actual result and to log either a match or a readable mismatch
+- updated D2 replay completion in `d2/main/game.c` to compare the embedded baseline trailer against the actual result after writing it and to log either a match or a readable mismatch
 - validation passed after formatting with `run-windows-build.ps1 -Target d2`, `buildd2\maths\test_input_demo_result.exe`, `buildd2\maths\test_input_demo_recorder.exe`, `buildd2\maths\test_input_demo_replay.exe`, and `android\gradlew.bat :app:externalNativeBuildDebug --no-daemon`

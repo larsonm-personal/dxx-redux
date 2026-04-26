@@ -2,7 +2,7 @@
 
 ## Goal
 
-Upgrade recorded fixture baselines from the current minimal `result.json` to the
+Upgrade recorded demo baselines from the current minimal result trailer to the
 richer shared result format already used by replay actual output.
 
 This tranche should:
@@ -19,7 +19,7 @@ shared result fields.
 ## Constraints
 
 - keep gameplay-state capture in D1/D2 engine code, not in the shared recorder
-- preserve the existing recorder metadata and stream file layout
+- preserve the existing single-file recorder layout
 - validate the shared recorder boundary first, then validate D1/D2 engine
   integration
 - keep D1 and D2 result capture closely aligned because both trees already use
@@ -37,5 +37,5 @@ shared result fields.
 
 - The shared recorder can write either the minimal fallback or a supplied richer
   final result
-- Newly recorded D1 and D2 fixtures write the richer baseline `result.json`
+- Newly recorded D1 and D2 demos write the richer embedded baseline trailer
 - Desktop and Android builds still pass

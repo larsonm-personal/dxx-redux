@@ -28,10 +28,10 @@ int main(void)
 {
 	const char *matching_mode_name;
 	const char *mismatching_mode_name;
-	const char *matching_metadata;
-	const char *missing_metadata = "{ version: 1 }\n";
-	const char *legacy_metadata = "{ rng_mode: \"per_frame_seed\" }\n";
-	const char *metadata_path = "test_input_demo_rng_mode_demo.json5";
+	const char *matching_demo;
+	const char *missing_demo = "{\"type\":\"header\",\"version\":1}\n";
+	const char *legacy_demo = "{\"type\":\"header\",\"rng_mode\":\"per_frame_seed\"}\n";
+	const char *demo_path = "test_input_demo_rng_mode.dximdemo";
 	const char *error;
 	int engine_mode = d_rand_get_replay_mode();
 	int parsed_mode = 0;
@@ -57,31 +57,31 @@ int main(void)
 	matching_mode_name = input_demo_rng_mode_name(engine_mode);
 	mismatching_mode_name = engine_mode == D_RAND_REPLAY_MODE_LCG_STATE ?
 		"libc_reseed" : "lcg_state";
-	matching_metadata = engine_mode == D_RAND_REPLAY_MODE_LCG_STATE ?
-		"{ rng_mode: \"lcg_state\" }\n" :
-		"{ rng_mode: \"libc_reseed\" }\n";
-	error = input_demo_rng_mode_parse_metadata_text(matching_metadata, &parsed_mode);
+	matching_demo = engine_mode == D_RAND_REPLAY_MODE_LCG_STATE ?
+		"{\"type\":\"header\",\"rng_mode\":\"lcg_state\"}\n" :
+		"{\"type\":\"header\",\"rng_mode\":\"libc_reseed\"}\n";
+	error = input_demo_rng_mode_parse_metadata_text(matching_demo, &parsed_mode);
 	if (error)
 		return report_failure(error);
 	if (parsed_mode != engine_mode)
-		return report_failure("metadata text parsed the wrong rng_mode");
-	error = input_demo_rng_mode_validate_metadata_text(matching_metadata, engine_mode,
+		return report_failure("demo text parsed the wrong rng_mode");
+	error = input_demo_rng_mode_validate_metadata_text(matching_demo, engine_mode,
 		&parsed_mode);
 	if (error)
 		return report_failure(error);
-	error = input_demo_rng_mode_validate_metadata_text(missing_metadata, engine_mode,
+	error = input_demo_rng_mode_validate_metadata_text(missing_demo, engine_mode,
 		&parsed_mode);
 	if (!error)
-		return report_failure("missing rng_mode metadata unexpectedly validated");
-	error = input_demo_rng_mode_validate_metadata_text(legacy_metadata, engine_mode,
+		return report_failure("missing rng_mode demo unexpectedly validated");
+	error = input_demo_rng_mode_validate_metadata_text(legacy_demo, engine_mode,
 		&parsed_mode);
 	if (!error)
-		return report_failure("legacy per_frame_seed metadata unexpectedly validated");
-	if (!write_text_file(metadata_path, matching_metadata))
-		return report_failure("could not write metadata probe file");
-	error = input_demo_rng_mode_validate_metadata_file(metadata_path, engine_mode,
+		return report_failure("legacy per_frame_seed demo unexpectedly validated");
+	if (!write_text_file(demo_path, matching_demo))
+		return report_failure("could not write demo probe file");
+	error = input_demo_rng_mode_validate_metadata_file(demo_path, engine_mode,
 		&parsed_mode);
-	remove(metadata_path);
+	remove(demo_path);
 	if (error)
 		return report_failure(error);
 	if (strcmp(matching_mode_name, mismatching_mode_name) == 0)

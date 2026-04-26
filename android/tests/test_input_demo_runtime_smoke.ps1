@@ -16,6 +16,42 @@ if (-not $DataDir) {
 
 $outRoot = Join-Path $repoRoot 'temp\input_demo_runtime_smoke'
 
+function Write-SmokeConfig {
+    param([string]$Path)
+
+    $configText = @"
+ResolutionX=640
+ResolutionY=480
+WindowMode=1
+BorderlessWindow=0
+GrabInput=0
+"@
+
+    Write-AsciiFile -Path $Path -Content $configText
+}
+
+function New-LaunchSandbox {
+    param([string]$GameName, [hashtable]$Config)
+
+    $sourceDir = Split-Path $Config.Exe -Parent
+    $sandboxDir = Join-Path $outRoot "runtime\$GameName"
+    $sandboxExe = Join-Path $sandboxDir (Split-Path $Config.Exe -Leaf)
+
+    if (Test-Path -LiteralPath $sandboxDir) {
+        Remove-Item -LiteralPath $sandboxDir -Recurse -Force
+    }
+    New-Item -ItemType Directory -Path $sandboxDir | Out-Null
+
+    Copy-Item -LiteralPath $Config.Exe -Destination $sandboxExe
+    Get-ChildItem -LiteralPath $sourceDir -File |
+        Where-Object { $_.Extension -eq '.dll' } |
+        Copy-Item -Destination $sandboxDir
+
+    Write-SmokeConfig -Path (Join-Path $sandboxDir 'descent.cfg')
+
+    return $sandboxExe
+}
+
 function Write-AsciiFile {
     param(
         [string]$Path,
@@ -63,49 +99,30 @@ function New-Fixture {
     New-Item -ItemType Directory -Path $FixtureDir | Out-Null
 
     $demoText = @"
-{
-    "version": 1,
-    "game": "$GameName",
-    "mission": "$($Config.Mission)",
-    "level": 1,
-    "difficulty": 2,
-    "start_mode": "new_level",
-    "rng_mode": "lcg_state",
-    "frame_count": 3,
-    "streams": [
-        {
-            "player": 0,
-            "input": "inputs.p0.jsonl",
-            "rng": "rng.p0.jsonl"
-        }
-    ],
-    "result": "result.json"
-}
-"@
-    $inputsText = @"
-{"f":0,"ft":3276,"s":{"f":44}}
-{"f":1,"p":{"f1":1}}
-{"f":2,"s":{"f":0}}
-"@
-    $rngText = @"
-{"f":0,"n":2,"s":100}
-{"f":2,"s":102}
-"@
-    $resultText = @"
-{
-  "v": 1,
-  "g": "$GameName",
-  "m": "$($Config.Mission)",
-  "l": 1,
-  "d": 2,
-  "fr": 3
-}
+{"type":"header","version":1,"game":"$GameName","mission":"$($Config.Mission)","level":1,"difficulty":2,"start_mode":"new_level","rng_mode":"lcg_state","frame_count":3}
+{"type":"frame","f":0,"ft":3276,"input":{"s":{"f":44}},"rng":{"s":100}}
+{"type":"frame","f":1,"input":{"p":{"f1":1}},"rng":{"s":100}}
+{"type":"frame","f":2,"input":{"s":{"f":0}},"rng":{"s":102}}
+{"type":"result","result":{"v":1,"g":"$GameName","m":"$($Config.Mission)","l":1,"d":2,"fr":3}}
 "@
 
-    Write-AsciiFile (Join-Path $FixtureDir 'demo.json5') $demoText
-    Write-AsciiFile (Join-Path $FixtureDir 'inputs.p0.jsonl') $inputsText
-    Write-AsciiFile (Join-Path $FixtureDir 'rng.p0.jsonl') $rngText
-    Write-AsciiFile (Join-Path $FixtureDir 'result.json') $resultText
+    Write-AsciiFile (Join-Path $FixtureDir 'smoke.dximdemo') $demoText
+}
+
+function Get-ExpectedResultFromDemo {
+    param([string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        throw "Expected demo file not found: $Path"
+    }
+    $trailer = Get-Content -LiteralPath $Path |
+        Where-Object { $_.Trim().Length -gt 0 } |
+        Select-Object -Last 1
+    $record = $trailer | ConvertFrom-Json
+    if ($record.type -ne 'result') {
+        throw "Demo file does not end with a result trailer: $Path"
+    }
+    return $record.result
 }
 
 function Get-JsonFile {
@@ -122,9 +139,8 @@ function Invoke-ReplaySmoke {
 
     $config = Get-GameConfig $GameName
     $fixtureDir = Join-Path $outRoot $GameName
-    $actualResultPath = Join-Path $fixtureDir 'result.actual.json'
-    $expectedResultPath = Join-Path $fixtureDir 'result.json'
-    $demoPath = Join-Path $fixtureDir 'demo.json5'
+    $demoPath = Join-Path $fixtureDir 'smoke.dximdemo'
+    $actualResultPath = $demoPath + '.actual.json'
 
     if (-not (Test-Path $config.Exe)) {
         throw "Built executable not found: $($config.Exe)"
@@ -140,23 +156,23 @@ function Invoke-ReplaySmoke {
     }
 
     New-Fixture -GameName $GameName -Config $config -FixtureDir $fixtureDir
-    $args = @(
+    $sandboxExe = New-LaunchSandbox -GameName $GameName -Config $config
+    $launchArgs = @(
         '-hogdir', $DataDir,
-        '-pilot', 'inputdemo',
-        '-use_players_dir',
         '-window',
         $config.TitleArg,
         '-nomusic',
         '-nosound',
         '-inputdemo-replay', $demoPath
     )
+    Write-Host "SMOKE $GameName sandbox=$sandboxExe data=$DataDir fixture=$fixtureDir"
     $startInfo = New-Object System.Diagnostics.ProcessStartInfo
-    $startInfo.FileName = $config.Exe
+    $startInfo.FileName = $sandboxExe
     $startInfo.WorkingDirectory = $fixtureDir
     $startInfo.UseShellExecute = $false
     $startInfo.RedirectStandardOutput = $false
     $startInfo.RedirectStandardError = $false
-    $quotedArgs = $args | ForEach-Object {
+    $quotedArgs = $launchArgs | ForEach-Object {
         if ($_ -match '[\s"]') {
             '"' + ($_ -replace '"', '\"') + '"'
         } else {
@@ -169,20 +185,34 @@ function Invoke-ReplaySmoke {
         throw "Failed to start $GameName replay smoke process"
     }
 
-    if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    while ([DateTime]::UtcNow -lt $deadline) {
+        if (Test-Path -LiteralPath $actualResultPath) {
+            break
+        }
+        if ($process.HasExited) {
+            break
+        }
+        Start-Sleep -Milliseconds 100
+    }
+
+    if (-not (Test-Path -LiteralPath $actualResultPath)) {
+        if (-not $process.HasExited) {
+            try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
+        }
+        if ($process.HasExited -and $process.ExitCode -ne 0) {
+            $argText = ($launchArgs | ForEach-Object { if ($_ -match '\s') { '"' + $_ + '"' } else { $_ } }) -join ' '
+            throw "$GameName replay smoke exited with code $($process.ExitCode)`nRepro: $sandboxExe $argText"
+        }
         try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
-        throw "Timed out waiting for $GameName replay smoke after $TimeoutSeconds seconds"
+        throw "Timed out waiting for $GameName replay smoke result after $TimeoutSeconds seconds"
     }
 
-    if ($process.ExitCode -ne 0) {
-        $argText = ($args | ForEach-Object { if ($_ -match '\s') { '"' + $_ + '"' } else { $_ } }) -join ' '
-        throw "$GameName replay smoke exited with code $($process.ExitCode)`nRepro: $($config.Exe) $argText"
-    }
-    if (-not (Test-Path $actualResultPath)) {
-        throw "$GameName replay smoke did not write result.actual.json"
+    if (-not $process.HasExited) {
+        try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
     }
 
-    $expected = Get-JsonFile $expectedResultPath
+    $expected = Get-ExpectedResultFromDemo $demoPath
     $actual = Get-JsonFile $actualResultPath
     foreach ($property in @('v', 'g', 'm', 'l', 'd', 'fr')) {
         if ($expected.$property -ne $actual.$property) {

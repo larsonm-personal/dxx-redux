@@ -141,7 +141,6 @@ int	Global_laser_firing_count = 0;
 int	Global_missile_firing_count = 0;
 fix64	Next_flare_fire_time = 0;
 #define	FLARE_BIG_DELAY	(F1_0*2)
-static int input_demo_exit_after_replay = 0;
 
 //	Function prototypes for GAME.C exclusively.
 
@@ -255,7 +254,6 @@ static void input_demo_stop_replay(int write_result)
 	if (write_result && input_demo_replay_is_loaded()) {
 		input_demo_result result;
 		char error[256] = "";
-		const char *expected_result_path = input_demo_replay_result_path();
 		const char *result_path = input_demo_replay_actual_result_path();
 
 		if (result_path && result_path[0]) {
@@ -264,16 +262,13 @@ static void input_demo_stop_replay(int write_result)
 				con_printf(CON_NORMAL, "Input demo replay result write failed: %s\n", error);
 			else {
 				con_printf(CON_NORMAL, "Input demo replay result written: %s\n", result_path);
-				if (expected_result_path && expected_result_path[0]) {
-					if (!input_demo_result_compare_files(expected_result_path, result_path, error, sizeof(error)))
-						con_printf(CON_NORMAL, "Input demo replay result mismatch: %s\n", error);
-					else
-						con_printf(CON_NORMAL, "Input demo replay result matched: %s\n", expected_result_path);
-				}
+				if (!input_demo_replay_compare_result(&result, error, sizeof(error)))
+					con_printf(CON_NORMAL, "Input demo replay result mismatch: %s\n", error);
+				else
+					con_printf(CON_NORMAL, "Input demo replay result matched embedded trailer\n");
 			}
 		}
 	}
-	input_demo_exit_after_replay = 1;
 	input_demo_replay_unload();
 	if (Game_wind)
 		window_close(Game_wind);
@@ -1311,7 +1306,6 @@ window *game_setup(void)
 	Viewer = ConsoleObject;
 	fly_init(ConsoleObject);
 	Game_suspended = 0;
-	input_demo_exit_after_replay = 0;
 	reset_time();
 	FrameTime = 0;			//make first frame zero
 
@@ -1431,13 +1425,6 @@ int game_handler(window *wind, d_event *event, void *data)
 			if (GameArg.GameLogSplit)
 				con_switch_log(NULL); // switch back to default log
 #endif
-			if (input_demo_exit_after_replay) {
-				input_demo_exit_after_replay = 0;
-				Game_wind = NULL;
-				event_toggle_focus(0);
-				key_toggle_repeat(1);
-				break;
-			}
 #ifdef EDITOR
 			if (!EditorWindow)		// have to do it this way because of the necessary longjmp. Yuck.
 #endif

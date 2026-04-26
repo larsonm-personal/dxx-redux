@@ -374,9 +374,8 @@ use the schema doc as the implementation-facing format reference.
 
 ### JSON Style Rules
 
-- Hand-authored fixture metadata can stay JSON5. Generated control streams, RNG
-  streams, and final results should be strict JSON or JSONL so they stay smaller
-  and simpler to parse.
+- Hand-authored and generated demo files should use strict newline-delimited
+  JSON so the engine and host tools share one parser path.
 - Use a stable schema order for generated keys. Do not alphabetize on write if
   it would scramble meaningful grouping.
 - Use short documented keys in generated files.
@@ -384,60 +383,46 @@ use the schema doc as the implementation-facing format reference.
   empty array, empty object, or absent optional section.
 - Use sparse objects keyed by index or id for ammo, kills-by-type, per-player
   summaries, and similar high-zero data. Do not emit long zero-filled arrays.
-- Use JSONL for per-frame streams so each replay record is diffable by line.
-- Final result files should be compact but still pretty-printed, with one
-  logical field per line. Do not fully minify committed baselines because that
-  hurts diffs more than it saves bytes.
+- Use newline-delimited JSON for the demo file so each replay record is diffable
+  by line.
+- Keep expected final results in the demo trailer. Actual replay output can be
+  written beside the demo as a standalone JSON file for diagnostics.
 
 ### Short-Term Fixture Format
 
-Use an unpacked, git-friendly directory for regression fixtures while the system
-is evolving:
+Use one git-friendly `.dximdemo` file per regression demo. The file is strict
+newline-delimited JSON, not a zip and not a directory wrapper:
 
 ```text
-android/test_fixtures/input_demos/d2-level1-basic/
-    demo.json5
-    inputs.p0.jsonl
-    rng.p0.jsonl
-    start.save
-    classic-preview.dem
-    result.json
+android/test_fixtures/input_demos/d2-level1-basic.dximdemo
 ```
 
-`demo.json5` is metadata:
+The first record is a header:
 
-```json5
-{
-    version: 1,
-    game: "d2",
-    mission: "d2",
-    level: 1,
-    difficulty: 2,
-    start_mode: "new_level", // or "save_checkpoint"
-  rng_mode: "lcg_state",
-    frame_count: 6000,
-    streams: [
-        { player: 0, input: "inputs.p0.jsonl", rng: "rng.p0.jsonl" },
-    ],
-    start_save: "start.save", // omit for new_level
-    classic_preview: "classic-preview.dem",
-    result: "result.json",
-}
+```json
+{"type":"header","version":1,"game":"d2","mission":"d2","level":1,"difficulty":2,"start_mode":"new_level","rng_mode":"lcg_state","frame_count":6000}
 ```
 
-### Sparse Per-Frame Control JSONL
+The last record is a result trailer:
 
-Each `inputs.pN.jsonl` line is a sparse replay record. The replay is still
-per-frame, but the file does not need to repeat unchanged values.
+```json
+{"type":"result","result":{"v":1,"g":"d2","m":"d2","l":1,"d":2,"fr":6000}}
+```
+
+### Sparse Per-Frame Input Records
+
+Each frame line carries the input update and RNG state for one frame. The replay
+is per-frame and the file keeps input and RNG interleaved by construction.
 
 Record keys:
 
-- `f`: starting frame index for this record.
-- `n`: run length in frames, default `1`.
-- `ft`: `FrameTime` for this run. If omitted, reuse the previous `ft`.
-- `s`: held-state updates. These values persist until a later record changes
+- `f`: frame index for this record.
+- `ft`: `FrameTime` for this frame. If omitted, reuse the previous `ft`.
+- `input.s`: held-state updates. These values persist until a later record changes
   them. Use explicit `0` to release a held value.
-- `p`: one-frame pulse or count updates applied only on frame `f`.
+- `input.p`: one-frame pulse or count updates applied only on frame `f`.
+- `rng.s`: frame-start RNG state or reseed value.
+- `rng.c`: optional frame-start RNG call-count diagnostic.
 
 Suggested `s` keys:
 
@@ -454,10 +439,10 @@ Suggested `p` keys:
 Sample sparse control stream:
 
 ```json
-{"f":0,"n":48,"ft":3276,"s":{"f":3276}}
-{"f":48,"p":{"f1":1}}
-{"f":49,"n":12,"s":{"h":910,"ab":1}}
-{"f":61,"s":{"f":0,"h":0,"ab":0}}
+{"type":"frame","f":0,"ft":3276,"input":{"s":{"f":3276}},"rng":{"s":305419896}}
+{"type":"frame","f":48,"input":{"p":{"f1":1}},"rng":{"s":305420112,"c":3}}
+{"type":"frame","f":49,"input":{"s":{"h":910,"ab":1}},"rng":{"s":305421004}}
+{"type":"frame","f":61,"input":{"s":{"f":0,"h":0,"ab":0}},"rng":{"s":305422000}}
 ```
 
 Semantics:
@@ -465,16 +450,15 @@ Semantics:
 - The replay runtime carries a held-state cache forward across frames.
 - `s` only records what changes.
 - `p` always defaults to zero on frames where it is omitted.
-- `n` compresses repeated frames with no input changes.
+- frame records are not run-length encoded.
 
-This keeps control streams readable, sparse, and git-diff friendly while still
-being exact enough to drive per-frame replay.
+This keeps the demo readable, sparse, and git-diff friendly while still being
+exact enough to drive per-frame replay.
 
-### Sparse Final Result JSON
+### Sparse Final Result Trailer
 
-`result.json` should use short stable keys and omit defaults. It should be easy
-to diff, so emit it pretty-printed in a fixed order rather than as one minified
-line.
+The embedded result trailer should use short stable keys and omit defaults. The
+same result helper can still write the actual replay output as standalone JSON.
 
 Sample:
 
@@ -590,18 +574,18 @@ Recommended order:
 
 ### Single-Player Replay
 
-1. Load metadata and validate asset requirements.
+1. Load the demo file header and validate asset requirements.
 2. Restore `new_level` or `save_checkpoint` start state.
 3. Set deterministic RNG mode and initial seed.
 4. For each frame:
-   - Set `FrameTime` from the record.
+  - Set `FrameTime` from the frame record.
   - Restore frame RNG state if `rng_mode` is `lcg_state`.
   - Reseed from the recorded frame-start value if `rng_mode` is `libc_reseed`.
-   - Fill `Controls` from the input stream.
+  - Fill `Controls` from the input object.
    - Run one normal game frame.
    - Track optional intermediate assertions.
-5. Serialize final result annotations.
-6. Compare to the fixture baseline `result.json`.
+5. Serialize final result annotations to `<demo-file>.actual.json`.
+6. Compare to the embedded result trailer.
 
 ### Accelerated And Headless Replay
 
@@ -725,7 +709,7 @@ Tasks completed in this phase:
 Handoff to later phases:
 
 - Phase 4 replay startup should extend the existing
-  `-inputdemo-validate <demo.json5>` path so `-inputdemo-replay` reuses the same
+  `-inputdemo-validate <demo-file>` path so `-inputdemo-replay` reuses the same
   `rng_mode` validation helpers before it allocates replay state or begins
   frame execution.
 - Deterministic-mode overrides for existing `d_srand((fix)timer_query())`
@@ -750,13 +734,13 @@ Completed in this tranche:
 - Added an Android-side `input_demo_rng_mode` helper so fixture parsing can use
   the canonical `lcg_state`, `libc_reseed`, and `output_log` names and compare
   them directly against `d_rand_get_replay_mode()`.
-- Added metadata text/file validation helpers so later replay startup can
-  validate `demo.json5` without open-coding another `rng_mode` parser.
-- Added a one-shot `-inputdemo-validate <demo.json5>` startup path in both D1
-  and D2 so the engine already has a real fail-fast consumer for fixture
+- Added demo text/file validation helpers so later replay startup can validate
+  `rng_mode` without open-coding another parser.
+- Added a one-shot `-inputdemo-validate <demo-file>` startup path in both D1
+  and D2 so the engine already has a real fail-fast consumer for demo
   `rng_mode` compatibility checks.
 - Validated that startup hook with the normal Windows build, then ran D1 and D2
-  against matching `lcg_state` metadata and mismatching `libc_reseed` metadata.
+  against matching `lcg_state` demo files and mismatching `libc_reseed` demo files.
   The matching files exited 0 and the mismatching files exited 1 with an
   explicit active-backend compatibility error.
 
@@ -828,16 +812,16 @@ Tasks:
 - Record `FrameTime`, portable controls, per-frame RNG seed, and optional RNG
   call count.
 - Record start metadata and start checkpoint hash.
-- Write an unpacked fixture under `temp/` first, then move stable fixtures to
+- Write a `.dximdemo` file under `temp/` first, then move stable fixtures to
   `android/test_fixtures/input_demos/`.
-- Emit sparse JSONL control streams and sparse JSON final results rather than
-  verbose dumps.
+- Emit sparse per-frame records and sparse result trailers rather than verbose
+  dumps.
 
 Progress on 2026-04-25:
 
 - Added a shared `input_demo_fixture` helper under `android/app/src/main/cpp/shared`
-  that owns sparse RNG record structs, RNG JSONL parse/write helpers,
-  contiguous frame coalescing, and stable ordered `demo.json5` metadata output.
+  that owns sparse RNG record structs, single-file demo parse/write helpers,
+  contiguous frame validation, and stable ordered `.dximdemo` output.
 - Added `android/tests/test_input_demo_fixture.cpp` and wired it into the
   existing D1/D2 maths host-probe path.
 - Validated the new helper with focused D1/D2 `test_input_demo_fixture` rebuilds
@@ -851,8 +835,8 @@ Progress on 2026-04-25:
 
 Success criteria:
 
-- A short Android D2 level-start recording creates metadata, sparse input and
-  RNG streams, and sparse final result annotations.
+- A short Android D2 level-start recording creates one `.dximdemo` file with
+  metadata, interleaved input/RNG frames, and sparse final result annotations.
 
 ### Phase 4: Single-Player Replay Harness
 
@@ -860,7 +844,7 @@ Goal: feed recorded inputs through the normal engine.
 
 Tasks:
 
-- Add a debug/test command-line mode such as `-inputdemo-replay <demo.json5>`.
+- Add a debug/test command-line mode such as `-inputdemo-replay <demo-file>`.
 - Restore `new_level` or `save_checkpoint` start state.
 - Drive `FrameTime`, `Controls`, and RNG per frame.
 - Serialize final result annotations.
@@ -881,7 +865,7 @@ Tasks:
   wall, trigger, matcen, endlevel, and multiplayer summary fields.
 - Keep gameplay constants and detailed file-format knowledge in C/C++ where
   possible.
-- Emit sparse stable-key `result.json` files suitable for git review.
+- Emit sparse stable-key result trailers suitable for git review.
 - Add a fixture-level comparison script that reports field-level differences.
 
 Success criteria:
@@ -913,8 +897,8 @@ Tasks:
 
 - Build `.dem` to input-demo conversion after live record/replay is stable.
 - Derive controls from classic demo object records only as an import path.
-- Add optional classic preview/checkpoint chunks.
-- Add packed `.dxdemo` container export once the unpacked fixture format settles.
+- Add optional classic preview or checkpoint metadata once the single-file demo
+  format settles.
 
 Success criteria:
 

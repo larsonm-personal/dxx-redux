@@ -32,10 +32,10 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
                                       int has_rng_call_count,
                                       uint32_t rng_call_count,
                                       char *error, size_t error_size);
-int input_demo_recorder_flush_with_result(const char *fixture_dir,
+int input_demo_recorder_flush_with_result(const char *demo_path,
                                           const input_demo_result *result,
                                           char *error, size_t error_size);
-int input_demo_recorder_flush(const char *fixture_dir,
+int input_demo_recorder_flush(const char *demo_path,
                               char *error, size_t error_size);
 
 #ifdef __cplusplus

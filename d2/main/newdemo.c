@@ -77,6 +77,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "aistruct.h"
 #include "mission.h"
 #include "piggy.h"
+#include "timer.h"
 #include "byteswap.h"
 #include "physfsx.h"
 #include "console.h"
@@ -3357,67 +3358,291 @@ void newdemo_playback_one_frame()
 }
 
 #define INPUT_DEMO_RECORD_DIR "input_demo_recordings"
+#define INPUT_DEMO_NEW_DIR INPUT_DEMO_RECORD_DIR "/new"
+#define INPUT_DEMO_EXTENSION ".dximdemo"
+#define INPUT_DEMO_NEW_LIMIT 10
+#define INPUT_DEMO_QUICK_NAME_ATTEMPTS 255
 #define INPUT_DEMO_TEMP_NAME "tmpdemo"
 
-static void maybe_start_input_demo_recording(int is_autorecord)
+static int input_demo_android_quick_recording = 0;
+static int input_demo_android_quick_record_level = 0;
+static char input_demo_android_quick_record_mission[PATH_MAX] = "";
+
+static const char *input_demo_quick_record_mission_name(void)
 {
-	input_demo_recorder_settings settings;
-	char error[256] = "";
+	const char *mission = Current_mission_filename;
+
+	if (!mission || !mission[0] || !strcmp(mission, "d2"))
+		return "descent2";
+	return mission;
+}
+
+static void input_demo_clear_quick_recording(void)
+{
+	input_demo_android_quick_recording = 0;
+	input_demo_android_quick_record_level = 0;
+	input_demo_android_quick_record_mission[0] = 0;
+}
+
+static int input_demo_ascii_equal_ignore_case(char lhs, char rhs)
+{
+	if (lhs >= 'A' && lhs <= 'Z')
+		lhs += 'a' - 'A';
+	if (rhs >= 'A' && rhs <= 'Z')
+		rhs += 'a' - 'A';
+	return lhs == rhs;
+}
+
+static void input_demo_strip_hog_extension(char *value)
+{
+	size_t len = strlen(value);
+
+	if (len > 4 &&
+	    value[len - 4] == '.' &&
+	    input_demo_ascii_equal_ignore_case(value[len - 3], 'h') &&
+	    input_demo_ascii_equal_ignore_case(value[len - 2], 'o') &&
+	    input_demo_ascii_equal_ignore_case(value[len - 1], 'g'))
+		value[len - 4] = 0;
+}
+
+static void input_demo_sanitize_slug(char *result, unsigned int result_size, const char *source)
+{
+	char working[PATH_MAX] = "";
+	const char *basename = source ? source : "";
+	const char *slash;
+	unsigned int out = 0;
+	int wrote_separator = 0;
+	size_t i;
+
+	if (!result_size)
+		return;
+	result[0] = 0;
+	slash = strrchr(basename, '/');
+	if (slash)
+		basename = slash + 1;
+	slash = strrchr(basename, '\\');
+	if (slash)
+		basename = slash + 1;
+	snprintf(working, SDL_arraysize(working), "%s", basename);
+	input_demo_strip_hog_extension(working);
+	for (i = 0; working[i] && out + 1 < result_size; ++i) {
+		unsigned char ch = (unsigned char) working[i];
+
+		if ((ch >= 'A' && ch <= 'Z') ||
+		    (ch >= 'a' && ch <= 'z') ||
+		    (ch >= '0' && ch <= '9') ||
+		    ch == '_' || ch == '-' || ch == '.') {
+			result[out++] = (char) ch;
+			wrote_separator = 0;
+		} else if (out && !wrote_separator) {
+			result[out++] = '_';
+			wrote_separator = 1;
+		}
+	}
+	while (out && result[out - 1] == '_')
+		out--;
+	if (!out)
+		snprintf(result, result_size, "%s", "mission");
+	else
+		result[out] = 0;
+}
+
+static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *settings,
+	                                            char *error, size_t error_size)
+{
 	const char *rng_mode;
 	int replay_mode;
 
-	if (Game_mode & GM_MULTI)
-		return;
+	if (settings)
+		input_demo_recorder_settings_clear(settings);
+	if (Game_mode & GM_MULTI) {
+		if (error && error_size)
+			snprintf(error, error_size, "%s", "multiplayer input demo recording is not supported");
+		return 0;
+	}
 	if (Current_level_num == 0 || ThisLevelTime != 0) {
-		if (!is_autorecord)
-			con_printf(CON_NORMAL, "Input demo recording skipped: start classic recording on the first frame of a level\n");
-		return;
+		if (error && error_size)
+			snprintf(error, error_size, "%s", "start classic recording on the first frame of a level");
+		return 0;
 	}
 	replay_mode = d_rand_get_replay_mode();
 	if (replay_mode != D_RAND_REPLAY_MODE_LCG_STATE) {
-		if (!is_autorecord) {
-			rng_mode = input_demo_rng_mode_name(replay_mode);
-			con_printf(CON_NORMAL, "Input demo recording skipped: live recording does not support rng_mode %s yet\n", rng_mode ? rng_mode : "unknown");
-		}
-		return;
+		rng_mode = input_demo_rng_mode_name(replay_mode);
+		if (error && error_size)
+			snprintf(error, error_size, "live recording does not support rng_mode %s yet", rng_mode ? rng_mode : "unknown");
+		return 0;
 	}
-	input_demo_recorder_settings_clear(&settings);
-	settings.game = INPUT_DEMO_GAME_D2;
-	settings.mission = Current_mission_filename;
-	settings.level = Current_level_num;
-	settings.difficulty = Difficulty_level;
-	settings.rng_mode = input_demo_rng_mode_name(replay_mode);
-	if (!input_demo_recorder_start(&settings, error, sizeof(error))) {
-		con_printf(CON_NORMAL, "Input demo recording did not start: %s\n", error);
-		return;
+	if (settings) {
+		settings->game = INPUT_DEMO_GAME_D2;
+		settings->mission = Current_mission_filename;
+		settings->level = Current_level_num;
+		settings->difficulty = Difficulty_level;
+		settings->rng_mode = input_demo_rng_mode_name(replay_mode);
 	}
-	con_printf(CON_NORMAL, "Input demo recording started for %s level %d\n", Current_mission_filename, Current_level_num);
+	return 1;
 }
 
-static void maybe_flush_input_demo_recording(const char *demo_name)
+static void input_demo_build_quick_record_name(char *demo_name, unsigned int demo_name_size)
 {
-	char relative_dir[PATH_MAX] = "";
-	char absolute_dir[PATH_MAX] = "";
+	char mission_slug[PATH_MAX] = "";
+	char base_name[PATH_MAX] = "";
+	char relative_path[PATH_MAX] = "";
+	time_t now = time(NULL);
+	struct tm *current_time = localtime(&now);
+	int year = 0, month = 0, day = 0, hour = 0, minute = 0, second = 0;
+	int attempt;
+
+	if (current_time) {
+		year = current_time->tm_year + 1900;
+		month = current_time->tm_mon + 1;
+		day = current_time->tm_mday;
+		hour = current_time->tm_hour;
+		minute = current_time->tm_min;
+		second = current_time->tm_sec;
+	}
+	input_demo_sanitize_slug(mission_slug, SDL_arraysize(mission_slug),
+	                         input_demo_android_quick_record_mission[0] ? input_demo_android_quick_record_mission : input_demo_quick_record_mission_name());
+	sprintf_s(base_name, SDL_arraysize(base_name), "d2_%s_level%d_%04d%02d%02d_%02d%02d%02d",
+	          mission_slug,
+	          input_demo_android_quick_record_level,
+	          year, month, day, hour, minute, second);
+	for (attempt = 0; attempt < INPUT_DEMO_QUICK_NAME_ATTEMPTS; ++attempt) {
+		if (!attempt)
+			sprintf_s(demo_name, demo_name_size, "%s", base_name);
+		else
+			sprintf_s(demo_name, demo_name_size, "%s_%d", base_name, attempt + 1);
+		sprintf_s(relative_path, SDL_arraysize(relative_path), INPUT_DEMO_NEW_DIR "/%s" INPUT_DEMO_EXTENSION, demo_name);
+		if (!PHYSFSX_exists(relative_path, 0))
+			return;
+	}
+	sprintf_s(demo_name, demo_name_size, "%s_%u", base_name, (unsigned int) timer_query());
+}
+
+static void input_demo_trim_new_recordings(void)
+{
+	char **find, **i;
+	static const char *const types[] = { INPUT_DEMO_EXTENSION, NULL };
+
+	for (;;) {
+		char oldest_path[PATH_MAX] = "";
+		PHYSFS_sint64 oldest_modtime = 0;
+		int file_count = 0;
+		int found_oldest = 0;
+
+		find = PHYSFSX_findFiles(INPUT_DEMO_NEW_DIR, types);
+		if (!find)
+			return;
+		for (i = find; *i != NULL; i++) {
+			PHYSFS_Stat statbuf;
+			char relative_path[PATH_MAX] = "";
+
+			sprintf_s(relative_path, SDL_arraysize(relative_path), INPUT_DEMO_NEW_DIR "/%s", *i);
+			if (!PHYSFS_stat(relative_path, &statbuf) || statbuf.filetype != PHYSFS_FILETYPE_REGULAR)
+				continue;
+			file_count++;
+			if (!found_oldest || statbuf.modtime < oldest_modtime ||
+			    (statbuf.modtime == oldest_modtime && strcmp(relative_path, oldest_path) < 0)) {
+				oldest_modtime = statbuf.modtime;
+				sprintf_s(oldest_path, SDL_arraysize(oldest_path), "%s", relative_path);
+				found_oldest = 1;
+			}
+		}
+		PHYSFS_freeList(find);
+		if (file_count <= INPUT_DEMO_NEW_LIMIT || !found_oldest)
+			return;
+		if (!PHYSFS_delete(oldest_path))
+			return;
+	}
+}
+
+static int maybe_start_input_demo_recording(int is_autorecord)
+{
+	input_demo_recorder_settings settings;
+	char error[256] = "";
+
+	if (!input_demo_prepare_recorder_settings(&settings, error, sizeof(error))) {
+		if (!is_autorecord)
+			con_printf(CON_NORMAL, "Input demo recording skipped: %s\n", error);
+		return 0;
+	}
+	if (!input_demo_recorder_start(&settings, error, sizeof(error))) {
+		con_printf(CON_NORMAL, "Input demo recording did not start: %s\n", error);
+		return 0;
+	}
+	con_printf(CON_NORMAL, "Input demo recording started for %s level %d\n", Current_mission_filename, Current_level_num);
+	return 1;
+}
+
+static void maybe_flush_input_demo_recording(const char *demo_name, int use_new_record_dir)
+{
+	char relative_path[PATH_MAX] = "";
+	char absolute_path[PATH_MAX] = "";
 	char error[256] = "";
 	input_demo_result result;
+	const char *demo_dir = use_new_record_dir ? INPUT_DEMO_NEW_DIR : INPUT_DEMO_RECORD_DIR;
 
 	if (!input_demo_recorder_is_active())
 		return;
 	PHYSFS_mkdir(INPUT_DEMO_RECORD_DIR);
-	sprintf_s(relative_dir, SDL_arraysize(relative_dir), INPUT_DEMO_RECORD_DIR "/%s", demo_name);
-	PHYSFS_mkdir(relative_dir);
-	if (!PHYSFSX_getRealPath(relative_dir, absolute_dir)) {
-		con_printf(CON_NORMAL, "Input demo recording stopped: could not resolve fixture path %s\n", relative_dir);
+	if (use_new_record_dir)
+		PHYSFS_mkdir(INPUT_DEMO_NEW_DIR);
+	sprintf_s(relative_path, SDL_arraysize(relative_path), "%s/%s" INPUT_DEMO_EXTENSION, demo_dir, demo_name);
+	if (!PHYSFSX_getRealPath(relative_path, absolute_path)) {
+		con_printf(CON_NORMAL, "Input demo recording stopped: could not resolve file path %s\n", relative_path);
 		input_demo_recorder_cancel();
 		return;
 	}
 	input_demo_capture_current_result(&result);
-	if (!input_demo_recorder_flush_with_result(absolute_dir, &result, error, sizeof(error))) {
+	if (!input_demo_recorder_flush_with_result(absolute_path, &result, error, sizeof(error))) {
 		con_printf(CON_NORMAL, "Input demo recording stopped: %s\n", error);
 		input_demo_recorder_cancel();
 		return;
 	}
-	con_printf(CON_NORMAL, "Input demo fixture saved to %s\n", absolute_dir);
+	if (use_new_record_dir)
+		input_demo_trim_new_recordings();
+	con_printf(CON_NORMAL, "Input demo file saved to %s\n", absolute_path);
+}
+
+int newdemo_toggle_quick_recording(void)
+{
+	char error[256] = "";
+
+	if (Newdemo_state == ND_STATE_RECORDING) {
+		if (!input_demo_android_quick_recording) {
+			con_printf(CON_NORMAL, "Input demo quick toggle ignored: classic demo recording is already active\n");
+			return 0;
+		}
+		newdemo_stop_recording(0);
+		return 1;
+	}
+	if (Newdemo_state != ND_STATE_NORMAL)
+		return 0;
+	if (!input_demo_prepare_recorder_settings(NULL, error, sizeof(error))) {
+		con_printf(CON_NORMAL, "Input demo recording skipped: %s\n", error);
+		return 0;
+	}
+	input_demo_android_quick_recording = 1;
+	input_demo_android_quick_record_level = Current_level_num;
+	snprintf(input_demo_android_quick_record_mission,
+	         SDL_arraysize(input_demo_android_quick_record_mission),
+	         "%s",
+	         input_demo_quick_record_mission_name());
+	newdemo_start_recording(1);
+	if (Newdemo_state != ND_STATE_RECORDING || !input_demo_recorder_is_active()) {
+		input_demo_clear_quick_recording();
+		if (Newdemo_state == ND_STATE_RECORDING) {
+			PHYSFS_close(outfile);
+			outfile = NULL;
+			Newdemo_state = ND_STATE_NORMAL;
+			Newdemo_is_autorecord = 0;
+			PHYSFS_delete(DEMO_FILENAME);
+			gr_palette_load(gr_palette);
+		}
+		if (Newdemo_state == ND_STATE_NORMAL)
+			con_printf(CON_NORMAL, "Input demo recording did not start\n");
+		return 0;
+	}
+	return 1;
 }
 
 void newdemo_start_recording(int is_autorecord)
@@ -3438,6 +3663,7 @@ void newdemo_start_recording(int is_autorecord)
 	if (outfile == NULL)
 	{
 		Newdemo_state = ND_STATE_NORMAL;
+		Newdemo_is_autorecord = 0;
 		nm_messagebox(NULL, 1, TXT_OK, "Cannot open demo temp file");
 	}
 	else {
@@ -3643,6 +3869,7 @@ void newdemo_stop_recording(int is_manual)
 {
 	char demo_name[PATH_MAX] = "";
 	const char *input_demo_name = demo_name;
+	int was_android_quick_recording = input_demo_android_quick_recording;
 	int was_autorecord = Newdemo_is_autorecord;
 
 	if (!nd_record_v_no_space)
@@ -3655,7 +3882,15 @@ void newdemo_stop_recording(int is_manual)
 	outfile = NULL;
 	Newdemo_state = ND_STATE_NORMAL;
 	Newdemo_is_autorecord = 0;
+	input_demo_clear_quick_recording();
 	gr_palette_load( gr_palette );
+
+	if (was_android_quick_recording) {
+		input_demo_build_quick_record_name(demo_name, SDL_arraysize(demo_name));
+		PHYSFS_delete(DEMO_FILENAME);
+		maybe_flush_input_demo_recording(demo_name, 1);
+		return;
+	}
 
 	newdemo_get_default_filename(demo_name, SDL_arraysize(demo_name));
 	// If we're suppressing auto-record UI, don't ask for the name, just use the default.
@@ -3663,7 +3898,7 @@ void newdemo_stop_recording(int is_manual)
 	if (is_manual || !was_autorecord || !PlayerCfg.AutoDemoHideUi)
 		if (!newdemo_prompt_filename(demo_name, SDL_arraysize(demo_name))) {
 			input_demo_name = INPUT_DEMO_TEMP_NAME;
-			maybe_flush_input_demo_recording(input_demo_name);
+			maybe_flush_input_demo_recording(input_demo_name, 0);
 			return;
 		}
 
@@ -3673,7 +3908,7 @@ void newdemo_stop_recording(int is_manual)
 
 	PHYSFS_delete(filename);
 	PHYSFSX_rename(DEMO_FILENAME, filename);
-	maybe_flush_input_demo_recording(input_demo_name);
+	maybe_flush_input_demo_recording(input_demo_name, 0);
 }
 
 //returns the number of demo files on the disk
