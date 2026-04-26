@@ -85,13 +85,14 @@ Tasks:
 - [x] On stop, flush the input-demo file to `input_demo_recordings/new/<auto-name>.dximdemo` and delete or ignore the companion classic temp `.dem` if this was an Android quick input-demo recording.
 - [x] Preserve existing keyboard F5 behavior outside the new Android quick path.
 - [x] Trim `input_demo_recordings/new/` to the newest 10 entries after a successful flush.
+- [x] Stop Android quick recording on normal and secret level exits instead of pausing into the next level.
 
 Validation:
 
 - [x] `run-windows-build.ps1 -Target d1`
 - [x] `run-windows-build.ps1 -Target d2`
 - [x] From `android/`, `./gradlew.bat :app:externalNativeBuildDebug --no-daemon`
-- [ ] Manual device check: bind the new action, start a level, tap once to start recording, tap again to stop, then verify the single `.dximdemo` file exists and ends with a result trailer.
+- [ ] Manual device check: bind the new action, start a level, tap once to start recording, then either tap again or finish the level and verify the single `.dximdemo` file exists, stops before the next level, and ends with a result trailer.
 
 ### Phase 2: Touch And Controller UI Binding
 

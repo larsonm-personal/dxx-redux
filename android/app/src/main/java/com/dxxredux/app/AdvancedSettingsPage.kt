@@ -148,7 +148,7 @@ fun AdvancedSettingsPage(
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // -- Newly Recorded Demos --
+                    // -- Newly-Recorded Demos --
                     RecordedInputDemosSection(filesDir, fileSetManager)
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -594,7 +594,7 @@ private fun RecordedInputDemosSection(
         demos = InputDemoManager.listStagedDemos(filesDir)
     }
 
-    Text("Newly Recorded Demos", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    Text("Newly-Recorded Demos", fontWeight = FontWeight.Bold, fontSize = 14.sp)
     Spacer(modifier = Modifier.height(4.dp))
     Text(
         "Quick-recorded .dximdemo files from d1x-redux and d2x-redux. Save them to Downloads or add them to the active set ($activeSetName)",
@@ -605,7 +605,7 @@ private fun RecordedInputDemosSection(
     if (demos.isEmpty()) {
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            "No newly recorded demos",
+            "No newly-recorded demos",
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -634,7 +634,9 @@ private fun RecordedInputDemosSection(
                     Text(
                         "${dateFmt.format(
                             Date(demo.file.lastModified()),
-                        )}  ${formatSize(demo.file.length())}  ${demo.frameCount} frames",
+                        )}  ${formatSize(
+                            demo.file.length(),
+                        )}  ${formatDurationMillis(demo.durationMillis)}  ${demo.frameCount} frames",
                         fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -672,6 +674,30 @@ private fun RecordedInputDemosSection(
                     modifier = Modifier.height(28.dp),
                 ) {
                     Text("Save", fontSize = 11.sp)
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+                OutlinedButton(
+                    onClick = {
+                        scope.launch {
+                            try {
+                                val uri =
+                                    withContext(Dispatchers.IO) {
+                                        copyFileToCache(ctx, demo.file, "inputdemo_exports") { progress ->
+                                            mainHandler.post { transferProgress = progress }
+                                        }
+                                    }
+                                transferProgress = null
+                                shareFile(ctx, uri, "Share Recorded Demo", "application/octet-stream")
+                            } catch (e: Exception) {
+                                transferProgress = null
+                                Toast.makeText(ctx, "Share failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                    modifier = Modifier.height(28.dp),
+                ) {
+                    Text("Share", fontSize = 11.sp)
                 }
             }
             Spacer(modifier = Modifier.height(4.dp))
@@ -1521,11 +1547,18 @@ private fun shareTextFile(
     context: android.content.Context,
     uri: Uri,
     chooserTitle: String,
+) = shareFile(context, uri, chooserTitle, "text/plain")
+
+private fun shareFile(
+    context: android.content.Context,
+    uri: Uri,
+    chooserTitle: String,
+    mimeType: String,
 ) {
     try {
         val intent =
             Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
+                type = mimeType
                 putExtra(Intent.EXTRA_STREAM, uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
@@ -1535,6 +1568,14 @@ private fun shareTextFile(
     } catch (e: Exception) {
         Toast.makeText(context, "Share failed: ${e.message}", Toast.LENGTH_SHORT).show()
     }
+}
+
+private fun formatDurationMillis(durationMillis: Long?): String {
+    if (durationMillis == null) return "--:--"
+    val totalSeconds = (durationMillis / 1000L).coerceAtLeast(0L)
+    val minutes = totalSeconds / 60L
+    val seconds = totalSeconds % 60L
+    return String.format(Locale.US, "%02d:%02d", minutes, seconds)
 }
 
 private fun saveToDownloads(

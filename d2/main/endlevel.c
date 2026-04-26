@@ -299,7 +299,8 @@ void start_endlevel_sequence()
 	reset_rear_view(); //turn off rear view if set - NOTE: make sure this happens before we pause demo recording!!
 
 	if (Newdemo_state == ND_STATE_RECORDING)		// stop demo recording
-		Newdemo_state = ND_STATE_PAUSED;
+		if (!newdemo_stop_quick_recording())
+			Newdemo_state = ND_STATE_PAUSED;
 
 	if (Newdemo_state == ND_STATE_PLAYBACK) {		// don't do this if in playback mode
 		if (PLAYING_BUILTIN_MISSION) // only play movie for built-in mission

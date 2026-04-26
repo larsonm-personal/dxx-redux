@@ -28,6 +28,7 @@ class InputDemoManagerTest {
         assertEquals("descent2", demos.first().mission)
         assertEquals(2, demos.first().level)
         assertEquals(34, demos.first().frameCount)
+        assertEquals(3_000L, demos.first().durationMillis)
         assertTrue(demos.all { it.headerReadable })
     }
 
@@ -76,6 +77,10 @@ class InputDemoManagerTest {
         val file = File(dir, name)
         file.writeText(
             "{\"type\":\"header\",\"version\":1,\"game\":\"${if (prefDir.startsWith("d1")) "d1" else "d2"}\",\"mission\":\"$mission\",\"level\":$level,\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"lcg_state\",\"frame_count\":$frameCount}\n" +
+                "{\"type\":\"frame\",\"f\":0,\"ft\":65536,\"input\":{},\"rng\":{\"s\":1}}\n" +
+                "{\"type\":\"frame\",\"f\":1,\"input\":{},\"rng\":{\"s\":2}}\n" +
+                "{\"type\":\"frame\",\"f\":2,\"ft\":32768,\"input\":{},\"rng\":{\"s\":3}}\n" +
+                "{\"type\":\"frame\",\"f\":3,\"input\":{},\"rng\":{\"s\":4}}\n" +
                 "{\"type\":\"result\",\"result\":{\"v\":1,\"g\":\"d2\",\"m\":\"$mission\",\"l\":$level,\"d\":2,\"fr\":$frameCount}}\n",
         )
         return file

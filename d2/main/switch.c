@@ -454,7 +454,8 @@ int check_trigger_sub(int trigger_num, int pnum,int shot)
 			}
 
 			if (Newdemo_state == ND_STATE_RECORDING)		// stop demo recording
-				Newdemo_state = ND_STATE_PAUSED;
+				if (!newdemo_stop_quick_recording())
+					Newdemo_state = ND_STATE_PAUSED;
 
 			digi_stop_digi_sounds();
 

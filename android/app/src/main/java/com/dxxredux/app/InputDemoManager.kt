@@ -9,16 +9,18 @@ data class StagedInputDemo(
     val mission: String,
     val level: Int,
     val frameCount: Int,
+    val durationMillis: Long?,
     val headerReadable: Boolean,
 )
 
 internal object InputDemoManager {
     const val INPUT_DEMO_EXTENSION = ".dximdemo"
 
+    private const val FIX_ONE = 65536L
     private const val INPUT_DEMO_STAGING_RELATIVE_DIR = "input_demo_recordings/new"
     private const val FALLBACK_INSTALL_NAME = "input_demo"
     private val gamePrefDirs = linkedMapOf("d1" to "d1x-redux", "d2" to "d2x-redux")
-    private val headerTypePattern = Regex("\"type\"\\s*:\\s*\"([^\"]+)\"")
+    private val recordTypePattern = Regex("\"type\"\\s*:\\s*\"([^\"]+)\"")
 
     fun listStagedDemos(filesDir: File): List<StagedInputDemo> {
         val demos = mutableListOf<StagedInputDemo>()
@@ -95,6 +97,7 @@ internal object InputDemoManager {
                 mission = header.mission,
                 level = header.level,
                 frameCount = header.frameCount,
+                durationMillis = header.durationMillis,
                 headerReadable = true,
             )
         } else {
@@ -104,6 +107,7 @@ internal object InputDemoManager {
                 mission = file.nameWithoutExtension,
                 level = 0,
                 frameCount = 0,
+                durationMillis = null,
                 headerReadable = false,
             )
         }
@@ -114,25 +118,74 @@ internal object InputDemoManager {
         fallbackGame: String,
     ): ParsedHeader? {
         return try {
-            val firstLine = file.useLines { lines -> lines.firstOrNull { it.isNotBlank() } } ?: return null
-            if (extractQuotedField(firstLine, headerTypePattern) != "header") return null
+            file.bufferedReader().use { reader ->
+                val lines = reader.lineSequence().iterator()
+                var firstLine: String? = null
 
-            val parsedGame =
-                extractQuotedField(firstLine, "game")
-                    .takeIf { it == "d1" || it == "d2" }
-                    ?: fallbackGame
-            val parsedMission = extractQuotedField(firstLine, "mission").ifBlank { file.nameWithoutExtension }
+                while (lines.hasNext()) {
+                    val candidate = lines.next().trim()
+                    if (candidate.isNotEmpty()) {
+                        firstLine = candidate
+                        break
+                    }
+                }
 
-            ParsedHeader(
-                game = parsedGame,
-                mission = parsedMission,
-                level = extractIntField(firstLine, "level") ?: 0,
-                frameCount = extractIntField(firstLine, "frame_count") ?: 0,
-            )
+                val headerLine = firstLine ?: return null
+                if (extractQuotedField(headerLine, recordTypePattern) != "header") return null
+
+                val parsedGame =
+                    extractQuotedField(headerLine, "game")
+                        .takeIf { it == "d1" || it == "d2" }
+                        ?: fallbackGame
+                val parsedMission = extractQuotedField(headerLine, "mission").ifBlank { file.nameWithoutExtension }
+                var durationFixed = 0L
+                var previousFrameTime: Int? = null
+                var sawFrame = false
+                var durationReadable = true
+
+                while (lines.hasNext()) {
+                    val line = lines.next().trim()
+                    if (line.isEmpty()) continue
+                    if (extractQuotedField(line, recordTypePattern) != "frame") continue
+
+                    sawFrame = true
+                    val parsedFrameTime = extractIntField(line, "ft")
+                    val frameTime =
+                        when {
+                            parsedFrameTime != null -> {
+                                parsedFrameTime
+                            }
+
+                            previousFrameTime != null && !line.contains("\"ft\"") -> {
+                                previousFrameTime
+                            }
+
+                            else -> {
+                                durationReadable = false
+                                null
+                            }
+                        }
+
+                    if (frameTime != null) {
+                        previousFrameTime = frameTime
+                        durationFixed += frameTime.toLong()
+                    }
+                }
+
+                ParsedHeader(
+                    game = parsedGame,
+                    mission = parsedMission,
+                    level = extractIntField(headerLine, "level") ?: 0,
+                    frameCount = extractIntField(headerLine, "frame_count") ?: 0,
+                    durationMillis = if (sawFrame && durationReadable) fixedToMillis(durationFixed) else null,
+                )
+            }
         } catch (_: Exception) {
             null
         }
     }
+
+    private fun fixedToMillis(durationFixed: Long): Long = ((durationFixed * 1000L) + (FIX_ONE / 2L)) / FIX_ONE
 
     private fun extractQuotedField(
         line: String,
@@ -164,5 +217,6 @@ internal object InputDemoManager {
         val mission: String,
         val level: Int,
         val frameCount: Int,
+        val durationMillis: Long?,
     )
 }

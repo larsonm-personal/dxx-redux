@@ -115,6 +115,7 @@ extern void newdemo_stop_playback();
 extern void newdemo_start_recording(int is_autorecord);
 extern void newdemo_stop_recording(int is_manual);
 extern int newdemo_toggle_quick_recording(void);
+extern int newdemo_stop_quick_recording(void);
 
 extern int newdemo_swap_endian(char *filename);
 

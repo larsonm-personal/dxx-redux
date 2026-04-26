@@ -3369,16 +3369,23 @@ static void maybe_flush_input_demo_recording(const char *demo_name, int use_new_
 	con_printf(CON_NORMAL, "Input demo file saved to %s\n", absolute_path);
 }
 
+int newdemo_stop_quick_recording(void)
+{
+	if (Newdemo_state != ND_STATE_RECORDING || !input_demo_android_quick_recording)
+		return 0;
+	newdemo_stop_recording(0);
+	return 1;
+}
+
 int newdemo_toggle_quick_recording(void)
 {
 	char error[256] = "";
 
 	if (Newdemo_state == ND_STATE_RECORDING) {
-		if (!input_demo_android_quick_recording) {
+		if (!newdemo_stop_quick_recording()) {
 			con_printf(CON_NORMAL, "Input demo quick toggle ignored: classic demo recording is already active\n");
 			return 0;
 		}
-		newdemo_stop_recording(0);
 		return 1;
 	}
 	if (Newdemo_state != ND_STATE_NORMAL)

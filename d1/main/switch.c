@@ -145,7 +145,8 @@ int check_trigger_sub(int trigger_num, int pnum, int shot)
 
 		if (Triggers[trigger_num].flags & TRIGGER_SECRET_EXIT) {
 			if (Newdemo_state == ND_STATE_RECORDING)		// stop demo recording
-				Newdemo_state = ND_STATE_PAUSED;
+				if (!newdemo_stop_quick_recording())
+					Newdemo_state = ND_STATE_PAUSED;
 
 #ifdef NETWORK
 			if (Game_mode & GM_MULTI)
