@@ -71,6 +71,10 @@ bool input_demo_rng_records_write_jsonl_file(const char *path,
                                              const std::vector<input_demo_rng_record> &records, std::string *error);
 bool input_demo_rng_records_read_jsonl_file(const char *path,
                                             std::vector<input_demo_rng_record> *records, std::string *error);
+bool input_demo_metadata_parse_json_text(const std::string &text,
+                                         input_demo_metadata *metadata, std::string *error);
+bool input_demo_metadata_read_json5_file(const char *path,
+                                         input_demo_metadata *metadata, std::string *error);
 bool input_demo_metadata_to_json_text(const input_demo_metadata &metadata,
                                       std::string *text, std::string *error);
 bool input_demo_metadata_write_json5_file(const char *path,

@@ -45,6 +45,20 @@ static bool parse_uint32_field(const ordered_json &value, uint32_t *out, std::st
 	return true;
 }
 
+static bool parse_int_field(const ordered_json &value, int *out, std::string *error,
+                            const char *field_name)
+{
+	long long parsed;
+
+	if (!value.is_number_integer())
+		return fail(error, std::string(field_name) + " must be an integer");
+	parsed = value.get<long long>();
+	if (parsed < INT_MIN || parsed > INT_MAX)
+		return fail(error, std::string(field_name) + " is out of range");
+	*out = (int) parsed;
+	return true;
+}
+
 static bool validate_rng_record(const input_demo_rng_record &record, std::string *error)
 {
 	if (!record.run_length)
@@ -277,6 +291,136 @@ static bool validate_metadata(const input_demo_metadata &metadata, std::string *
 	if (metadata.result_path.empty())
 		return fail(error, "metadata result path is required");
 	return true;
+}
+
+bool input_demo_metadata_parse_json_text(const std::string &text,
+                                         input_demo_metadata *metadata, std::string *error)
+{
+	ordered_json root;
+	ordered_json::const_iterator it;
+	input_demo_metadata parsed;
+
+	if (!metadata)
+		return fail(error, "missing metadata output");
+	try {
+		root = ordered_json::parse(text);
+	} catch (const std::exception &e) {
+		return fail(error, std::string("invalid metadata json: ") + e.what());
+	}
+	if (!root.is_object())
+		return fail(error, "metadata json must be an object");
+	for (it = root.begin(); it != root.end(); ++it) {
+		const std::string &name = it.key();
+
+		if (name == "version") {
+			if (!parse_int_field(it.value(), &parsed.version, error, "version"))
+				return false;
+		} else if (name == "game") {
+			if (!it.value().is_string())
+				return fail(error, "metadata game must be a string");
+			parsed.game = it.value().get<std::string>();
+		} else if (name == "mission") {
+			if (!it.value().is_string())
+				return fail(error, "metadata mission must be a string");
+			parsed.mission = it.value().get<std::string>();
+		} else if (name == "level") {
+			if (!parse_int_field(it.value(), &parsed.level, error, "level"))
+				return false;
+		} else if (name == "difficulty") {
+			if (!parse_int_field(it.value(), &parsed.difficulty, error, "difficulty"))
+				return false;
+		} else if (name == "start_mode") {
+			if (!it.value().is_string())
+				return fail(error, "metadata start_mode must be a string");
+			parsed.start_mode = it.value().get<std::string>();
+		} else if (name == "rng_mode") {
+			if (!it.value().is_string())
+				return fail(error, "metadata rng_mode must be a string");
+			parsed.rng_mode = it.value().get<std::string>();
+		} else if (name == "frame_count") {
+			if (!parse_uint32_field(it.value(), &parsed.frame_count, error, "frame_count"))
+				return false;
+		} else if (name == "streams") {
+			ordered_json::const_iterator stream_it;
+
+			if (!it.value().is_array())
+				return fail(error, "metadata streams must be an array");
+			for (stream_it = it.value().begin(); stream_it != it.value().end(); ++stream_it) {
+				input_demo_stream_file stream;
+				ordered_json::const_iterator field_it;
+				bool have_player = false;
+				bool have_input = false;
+				bool have_rng = false;
+
+				if (!stream_it.value().is_object())
+					return fail(error, "metadata stream must be an object");
+				for (field_it = stream_it.value().begin(); field_it != stream_it.value().end(); ++field_it) {
+					const std::string &field_name = field_it.key();
+
+					if (field_name == "player") {
+						if (!parse_uint32_field(field_it.value(), &stream.player, error, "player"))
+							return false;
+						have_player = true;
+					} else if (field_name == "input") {
+						if (!field_it.value().is_string())
+							return fail(error, "metadata stream input must be a string");
+						stream.input_path = field_it.value().get<std::string>();
+						have_input = true;
+					} else if (field_name == "rng") {
+						if (!field_it.value().is_string())
+							return fail(error, "metadata stream rng must be a string");
+						stream.rng_path = field_it.value().get<std::string>();
+						have_rng = true;
+					} else {
+						return fail(error, "unknown metadata stream key: " + field_name);
+					}
+				}
+				if (!have_player)
+					return fail(error, "metadata stream is missing player");
+				if (!have_input)
+					return fail(error, "metadata stream is missing input");
+				if (!have_rng)
+					return fail(error, "metadata stream is missing rng");
+				parsed.streams.push_back(stream);
+			}
+		} else if (name == "classic_preview") {
+			if (!it.value().is_string())
+				return fail(error, "metadata classic_preview must be a string");
+			parsed.classic_preview = it.value().get<std::string>();
+		} else if (name == "start_save") {
+			if (!it.value().is_string())
+				return fail(error, "metadata start_save must be a string");
+			parsed.start_save = it.value().get<std::string>();
+		} else if (name == "result") {
+			if (!it.value().is_string())
+				return fail(error, "metadata result must be a string");
+			parsed.result_path = it.value().get<std::string>();
+		} else {
+			return fail(error, "unknown metadata key: " + name);
+		}
+	}
+	if (!validate_metadata(parsed, error))
+		return false;
+	*metadata = parsed;
+	return true;
+}
+
+bool input_demo_metadata_read_json5_file(const char *path,
+                                         input_demo_metadata *metadata, std::string *error)
+{
+	std::ifstream in(path, std::ios::in | std::ios::binary);
+	std::ostringstream text;
+
+	if (!metadata)
+		return fail(error, "missing metadata output");
+	if (!path || !path[0])
+		return fail(error, "missing metadata path");
+	if (!in)
+		return fail(error, std::string("could not open metadata file: ") + path);
+	text << in.rdbuf();
+	if (in.bad())
+		return fail(error, std::string("could not read metadata file: ") + path);
+	return input_demo_metadata_parse_json_text(text.str(), metadata, error);
 }
 
 bool input_demo_metadata_to_json_text(const input_demo_metadata &metadata,
