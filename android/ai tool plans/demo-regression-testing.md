@@ -768,7 +768,7 @@ Success criteria:
   `rand()` is active.
 - Both D1 and D2 build.
 
-### Phase 2: Input Record Schema And Shared Helpers [NEXT]
+### Phase 2: Input Record Schema And Shared Helpers [IN PROGRESS]
 
 Goal: define an Android-first portable record layout that can later serve both
 D1 and D2 without duplicating format logic in each tree.
@@ -782,6 +782,24 @@ Tasks:
 - Explicitly omit raw input, bindings, and physical-device fields.
 - Add sparse JSON and JSONL reader/writer helpers under `android/`.
 - Add round-trip tests for the Android-side schema and serializer.
+
+Progress on 2026-04-25:
+
+- Added a shared `input_demo_controls` helper under `android/app/src/main/cpp/shared`
+  that owns the portable record structs, sparse control key ordering, JSONL
+  validation, and file read/write paths using `nlohmann::ordered_json`.
+- Added tiny `control_info` adapters in `d1/main/input_demo_control_info.h` and
+  `d2/main/input_demo_control_info.h` so the D1/D2 touch surface stays limited
+  to the replayable control subset.
+- Added `android/tests/test_input_demo_controls.cpp` and wired it into the
+  existing D1/D2 maths host-probe path.
+- Validated with `run-windows-build.ps1 -Target both`, then ran the existing
+  RNG probes plus the new `test_input_demo_controls.exe` probes for D1 and D2.
+- Validated the Android native integration with
+  `android\gradlew.bat :app:externalNativeBuildDebug --no-daemon`.
+- Fixed two integration issues discovered during validation:
+  explicit packing for shared portable structs, and `NOT ANDROID` gating for
+  duplicate D1/D2 host probe targets inside the unified Android CMake graph.
 
 Success criteria:
 
