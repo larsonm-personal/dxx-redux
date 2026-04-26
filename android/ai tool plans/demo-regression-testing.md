@@ -800,6 +800,17 @@ Progress on 2026-04-25:
 - Fixed two integration issues discovered during validation:
   explicit packing for shared portable structs, and `NOT ANDROID` gating for
   duplicate D1/D2 host probe targets inside the unified Android CMake graph.
+- Added `input_demo_control_frame` plus a shared coalescer so recorder-side code
+  can turn contiguous per-frame snapshots into sparse `f/n/ft/s/p` records.
+- The coalescer now collapses unchanged runs, emits explicit zero releases when
+  held state returns to defaults, keeps pulse records one-frame scoped, and
+  rejects D2-only fields on D1 paths.
+- Extended the host probe with coalescing-focused cases for constant runs,
+  pulse splits, frame-time changes, and D1/D2 field-policy enforcement.
+- Ran `android\stop-stale-formatters.ps1` and `android\run-code-quality.ps1 -Fix`
+  before the final validation pass.
+- Revalidated the coalescer slice with targeted D1/D2 host probe rebuilds and a
+  fresh `android\gradlew.bat :app:externalNativeBuildDebug --no-daemon` run.
 
 Success criteria:
 

@@ -205,6 +205,130 @@ static int expect_d2_key_policy(void)
 	return 0;
 }
 
+static int expect_coalesced_constant_run(void)
+{
+	std::vector<input_demo_control_frame> frames(4);
+	std::vector<input_demo_control_record> records;
+	std::string line;
+	std::string error;
+	size_t i;
+
+	for (i = 0; i != frames.size(); ++i) {
+		input_demo_control_frame_clear(&frames[i]);
+		frames[i].frame = (uint32_t)i;
+		frames[i].frame_time = 3276;
+		frames[i].state.forward_thrust_time = 44;
+	}
+	if (!input_demo_control_records_coalesce_frames(frames, input_demo_control_info_game(), &records, &error))
+		return report_failure_string(std::string("coalesce constant run: ") + error);
+	if (records.size() != 1)
+		return report_failure("constant run did not collapse to one record");
+	if (records[0].frame != 0 || records[0].run_length != 4 || !records[0].has_frame_time ||
+		records[0].frame_time != 3276 || !records[0].held.has_forward_thrust_time ||
+		records[0].held.forward_thrust_time != 44)
+		return report_failure("constant run record fields are wrong");
+	if (!input_demo_control_record_to_json_line(records[0], input_demo_control_info_game(), &line, &error))
+		return report_failure_string(std::string("coalesce constant run json: ") + error);
+	if (line != "{\"f\":0,\"n\":4,\"ft\":3276,\"s\":{\"f\":44}}")
+		return report_failure_string(std::string("unexpected constant run json line: ") + line);
+	return 0;
+}
+
+static int expect_coalesced_pulse_breaks_run(void)
+{
+	std::vector<input_demo_control_frame> frames(4);
+	std::vector<input_demo_control_record> records;
+	std::string line0;
+	std::string line1;
+	std::string line2;
+	std::string error;
+	size_t i;
+
+	for (i = 0; i != frames.size(); ++i) {
+		input_demo_control_frame_clear(&frames[i]);
+		frames[i].frame = (uint32_t)i;
+		frames[i].frame_time = 3276;
+		frames[i].state.forward_thrust_time = 44;
+	}
+	frames[1].pulse.fire_primary_count = 1;
+	if (!input_demo_control_records_coalesce_frames(frames, input_demo_control_info_game(), &records, &error))
+		return report_failure_string(std::string("coalesce pulse run: ") + error);
+	if (records.size() != 3)
+		return report_failure("pulse run did not split into three records");
+	if (!input_demo_control_record_to_json_line(records[0], input_demo_control_info_game(), &line0, &error) ||
+		!input_demo_control_record_to_json_line(records[1], input_demo_control_info_game(), &line1, &error) ||
+		!input_demo_control_record_to_json_line(records[2], input_demo_control_info_game(), &line2, &error))
+		return report_failure_string(std::string("coalesce pulse run json: ") + error);
+	if (line0 != "{\"f\":0,\"ft\":3276,\"s\":{\"f\":44}}")
+		return report_failure_string(std::string("unexpected pulse run first line: ") + line0);
+	if (line1 != "{\"f\":1,\"p\":{\"f1\":1}}")
+		return report_failure_string(std::string("unexpected pulse run pulse line: ") + line1);
+	if (line2 != "{\"f\":2,\"n\":2}")
+		return report_failure_string(std::string("unexpected pulse run tail line: ") + line2);
+	return 0;
+}
+
+static int expect_coalesced_release_and_ft_change(void)
+{
+	std::vector<input_demo_control_frame> frames(4);
+	std::vector<input_demo_control_record> records;
+	std::string line0;
+	std::string line1;
+	std::string line2;
+	std::string error;
+	size_t i;
+
+	for (i = 0; i != frames.size(); ++i) {
+		input_demo_control_frame_clear(&frames[i]);
+		frames[i].frame = (uint32_t)i;
+		frames[i].frame_time = 3276;
+	}
+	frames[0].state.forward_thrust_time = 44;
+	frames[1].state.forward_thrust_time = 44;
+	frames[3].frame_time = 4000;
+	if (!input_demo_control_records_coalesce_frames(frames, input_demo_control_info_game(), &records, &error))
+		return report_failure_string(std::string("coalesce release run: ") + error);
+	if (records.size() != 3)
+		return report_failure("release/frame-time run did not split into three records");
+	if (!input_demo_control_record_to_json_line(records[0], input_demo_control_info_game(), &line0, &error) ||
+		!input_demo_control_record_to_json_line(records[1], input_demo_control_info_game(), &line1, &error) ||
+		!input_demo_control_record_to_json_line(records[2], input_demo_control_info_game(), &line2, &error))
+		return report_failure_string(std::string("coalesce release run json: ") + error);
+	if (line0 != "{\"f\":0,\"n\":2,\"ft\":3276,\"s\":{\"f\":44}}")
+		return report_failure_string(std::string("unexpected release run first line: ") + line0);
+	if (line1 != "{\"f\":2,\"s\":{\"f\":0}}")
+		return report_failure_string(std::string("unexpected release run second line: ") + line1);
+	if (line2 != "{\"f\":3,\"ft\":4000}")
+		return report_failure_string(std::string("unexpected release run third line: ") + line2);
+	return 0;
+}
+
+static int expect_coalescer_game_policy(void)
+{
+	std::vector<input_demo_control_frame> frames(1);
+	std::vector<input_demo_control_record> records;
+	std::string error;
+
+	input_demo_control_frame_clear(&frames[0]);
+	frames[0].frame = 0;
+	frames[0].frame_time = 1;
+#if defined(INPUT_DEMO_TEST_D2)
+	frames[0].state.afterburner_state = 1;
+	frames[0].pulse.toggle_bomb_count = 1;
+	if (!input_demo_control_records_coalesce_frames(frames, input_demo_control_info_game(), &records, &error))
+		return report_failure_string(std::string("d2 coalescer unexpectedly failed: ") + error);
+#else
+	frames[0].state.afterburner_state = 1;
+	if (input_demo_control_records_coalesce_frames(frames, input_demo_control_info_game(), &records, &error))
+		return report_failure("D1 coalescer accepted D2-only state fields");
+	frames[0].state.afterburner_state = 0;
+	frames[0].pulse.toggle_bomb_count = 1;
+	if (input_demo_control_records_coalesce_frames(frames, input_demo_control_info_game(), &records, &error))
+		return report_failure("D1 coalescer accepted D2-only pulse fields");
+#endif
+	return 0;
+}
+
 #ifdef main
 #undef main
 #endif
@@ -220,6 +344,14 @@ int main(int argc, char *argv[])
 	if (expect_file_round_trip())
 		return 1;
 	if (expect_d2_key_policy())
+		return 1;
+	if (expect_coalesced_constant_run())
+		return 1;
+	if (expect_coalesced_pulse_breaks_run())
+		return 1;
+	if (expect_coalesced_release_and_ft_change())
+		return 1;
+	if (expect_coalescer_game_policy())
 		return 1;
 	puts("PASS");
 	return 0;

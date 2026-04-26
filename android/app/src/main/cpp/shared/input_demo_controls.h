@@ -100,6 +100,13 @@ typedef struct input_demo_control_pulse_update {
 	uint8_t headlight_count;
 } INPUT_DEMO_PACKED input_demo_control_pulse_update;
 
+typedef struct input_demo_control_frame {
+	uint32_t frame;
+	int32_t frame_time;
+	input_demo_control_state state;
+	input_demo_control_pulse pulse;
+} INPUT_DEMO_PACKED input_demo_control_frame;
+
 typedef struct input_demo_control_record {
 	uint32_t frame;
 	uint32_t run_length;
@@ -113,6 +120,7 @@ void input_demo_control_state_clear(input_demo_control_state *state);
 void input_demo_control_pulse_clear(input_demo_control_pulse *pulse);
 void input_demo_control_state_update_clear(input_demo_control_state_update *update);
 void input_demo_control_pulse_update_clear(input_demo_control_pulse_update *update);
+void input_demo_control_frame_clear(input_demo_control_frame *frame);
 void input_demo_control_record_clear(input_demo_control_record *record);
 void input_demo_control_state_update_from_state(input_demo_control_state_update *update,
                                                 const input_demo_control_state *state, int game);
@@ -136,6 +144,8 @@ bool input_demo_control_record_to_json_line(const input_demo_control_record &rec
                                             std::string *line, std::string *error);
 bool input_demo_control_record_parse_json_line(const std::string &line, int game,
                                                input_demo_control_record *record, std::string *error);
+bool input_demo_control_records_coalesce_frames(const std::vector<input_demo_control_frame> &frames,
+                                                int game, std::vector<input_demo_control_record> *records, std::string *error);
 bool input_demo_control_records_write_jsonl_file(const char *path, int game,
                                                  const std::vector<input_demo_control_record> &records, std::string *error);
 bool input_demo_control_records_read_jsonl_file(const char *path, int game,
