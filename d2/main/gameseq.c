@@ -158,6 +158,7 @@ extern int Rear_view;
 int	First_secret_visit = 1;
 
 extern int descent_critical_error;
+static int input_demo_skip_level_intro = 0;
 
 //--------------------------------------------------------------------
 void verify_console_object()
@@ -334,6 +335,11 @@ void init_ammo_and_energy(void)
 //			Players[Player_num].secondary_ammo[i] = Default_secondary_ammo_level[i];
 	if (Players[Player_num].secondary_ammo[0] < 2 + NDL - Difficulty_level)
 		Players[Player_num].secondary_ammo[0] = 2 + NDL - Difficulty_level;
+}
+
+void input_demo_set_skip_level_intro(int skip)
+{
+	input_demo_skip_level_intro = skip ? 1 : 0;
 }
 
 extern	ubyte	Last_afterburner_state;
@@ -1778,6 +1784,10 @@ extern int intro_played;	//true if big intro movie played
 void ShowLevelIntro(int level_num)
 {
 	//if shareware, show a briefing?
+	if (input_demo_skip_level_intro) {
+		input_demo_skip_level_intro = 0;
+		return;
+	}
 
 	if (!(Game_mode & GM_MULTI)) {
 		int i;

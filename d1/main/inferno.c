@@ -279,7 +279,10 @@ static int maybe_start_input_demo_replay(void)
 		input_demo_replay_unload();
 		return 1;
 	}
-	snprintf(mission_name, sizeof(mission_name), "%s", input_demo_replay_mission());
+	if (!d_stricmp(input_demo_replay_mission(), "d1"))
+		snprintf(mission_name, sizeof(mission_name), "%s", D1_MISSION_FILENAME);
+	else
+		snprintf(mission_name, sizeof(mission_name), "%s", input_demo_replay_mission());
 	if (!load_mission_by_name(mission_name))
 	{
 		printf("Input demo replay could not load mission: %s\n", mission_name);
@@ -289,6 +292,7 @@ static int maybe_start_input_demo_replay(void)
 	Difficulty_level = input_demo_replay_difficulty();
 	printf("Input demo replay starting: %s level %d, %u frames\n",
 		mission_name, input_demo_replay_level(), input_demo_replay_frame_count());
+	input_demo_set_skip_level_intro(1);
 	StartNewGame(input_demo_replay_level());
 	return 0;
 }

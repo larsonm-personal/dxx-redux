@@ -130,6 +130,7 @@ obj_position	Player_init[MAX_PLAYERS];
 int NumNetPlayerPositions = -1;
 
 extern fix ThisLevelTime;
+static int input_demo_skip_level_intro = 0;
 
 // Extern from game.c to fix a bug in the cockpit!
 
@@ -311,6 +312,11 @@ void init_ammo_and_energy(void)
 //			Players[Player_num].secondary_ammo[i] = Default_secondary_ammo_level[i];
 	if (Players[Player_num].secondary_ammo[0] < 2 + NDL - Difficulty_level)
 		Players[Player_num].secondary_ammo[0] = 2 + NDL - Difficulty_level;
+}
+
+void input_demo_set_skip_level_intro(int skip)
+{
+	input_demo_skip_level_intro = skip ? 1 : 0;
 }
 
 // Setup player for new level (After completion of previous level)
@@ -1338,7 +1344,9 @@ void StartNewLevel(int level_num)
 	GameTime64 = 0;
 	ThisLevelTime=0;
 
-	if (!(Game_mode & GM_MULTI)) {
+	if (input_demo_skip_level_intro)
+		input_demo_skip_level_intro = 0;
+	else if (!(Game_mode & GM_MULTI)) {
 		do_briefing_screens(Briefing_text_filename, level_num);
 	}
 	StartNewLevelSub(level_num, 1, 0 );

@@ -307,6 +307,7 @@ static int maybe_start_input_demo_replay(void)
 	Difficulty_level = input_demo_replay_difficulty();
 	printf("Input demo replay starting: %s level %d, %u frames\n",
 		mission_name, input_demo_replay_level(), input_demo_replay_frame_count());
+	input_demo_set_skip_level_intro(1);
 	StartNewGame(input_demo_replay_level());
 	return 0;
 }

@@ -141,6 +141,7 @@ int	Global_laser_firing_count = 0;
 int	Global_missile_firing_count = 0;
 fix64	Next_flare_fire_time = 0;
 #define	FLARE_BIG_DELAY	(F1_0*2)
+static int input_demo_exit_after_replay = 0;
 
 //	Function prototypes for GAME.C exclusively.
 
@@ -272,6 +273,7 @@ static void input_demo_stop_replay(int write_result)
 			}
 		}
 	}
+	input_demo_exit_after_replay = 1;
 	input_demo_replay_unload();
 	if (Game_wind)
 		window_close(Game_wind);
@@ -1309,6 +1311,7 @@ window *game_setup(void)
 	Viewer = ConsoleObject;
 	fly_init(ConsoleObject);
 	Game_suspended = 0;
+	input_demo_exit_after_replay = 0;
 	reset_time();
 	FrameTime = 0;			//make first frame zero
 
@@ -1428,6 +1431,13 @@ int game_handler(window *wind, d_event *event, void *data)
 			if (GameArg.GameLogSplit)
 				con_switch_log(NULL); // switch back to default log
 #endif
+			if (input_demo_exit_after_replay) {
+				input_demo_exit_after_replay = 0;
+				Game_wind = NULL;
+				event_toggle_focus(0);
+				key_toggle_repeat(1);
+				break;
+			}
 #ifdef EDITOR
 			if (!EditorWindow)		// have to do it this way because of the necessary longjmp. Yuck.
 #endif

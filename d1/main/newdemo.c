@@ -3149,7 +3149,7 @@ static void maybe_start_input_demo_recording(int is_autorecord)
 	}
 	input_demo_recorder_settings_clear(&settings);
 	settings.game = INPUT_DEMO_GAME_D1;
-	settings.mission = Current_mission_filename;
+	settings.mission = input_demo_current_mission_id();
 	settings.level = Current_level_num;
 	settings.difficulty = Difficulty_level;
 	settings.rng_mode = input_demo_rng_mode_name(replay_mode);
@@ -3157,7 +3157,7 @@ static void maybe_start_input_demo_recording(int is_autorecord)
 		con_printf(CON_NORMAL, "Input demo recording did not start: %s\n", error);
 		return;
 	}
-	con_printf(CON_NORMAL, "Input demo recording started for %s level %d\n", Current_mission_filename, Current_level_num);
+	con_printf(CON_NORMAL, "Input demo recording started for %s level %d\n", input_demo_current_mission_id(), Current_level_num);
 }
 
 static void maybe_flush_input_demo_recording(const char *demo_name)
