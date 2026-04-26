@@ -414,7 +414,7 @@ android/test_fixtures/input_demos/d2-level1-basic/
     level: 1,
     difficulty: 2,
     start_mode: "new_level", // or "save_checkpoint"
-    rng_mode: "per_frame_seed",
+  rng_mode: "lcg_state",
     frame_count: 6000,
     streams: [
         { player: 0, input: "inputs.p0.jsonl", rng: "rng.p0.jsonl" },
@@ -595,7 +595,8 @@ Recommended order:
 3. Set deterministic RNG mode and initial seed.
 4. For each frame:
    - Set `FrameTime` from the record.
-   - Restore frame RNG seed if `rng_mode` is `per_frame_seed`.
+  - Restore frame RNG state if `rng_mode` is `lcg_state`.
+  - Reseed from the recorded frame-start value if `rng_mode` is `libc_reseed`.
    - Fill `Controls` from the input stream.
    - Run one normal game frame.
    - Track optional intermediate assertions.
@@ -745,6 +746,9 @@ Completed in this tranche:
 - Added `d_rand_get_replay_mode()` so deterministic replay can branch on the
   active backend policy in code rather than inferring it from preprocessor
   symbols or build logs.
+- Added an Android-side `input_demo_rng_mode` helper so fixture parsing can use
+  the canonical `lcg_state`, `libc_reseed`, and `output_log` names and compare
+  them directly against `d_rand_get_replay_mode()`.
 
 Success criteria:
 

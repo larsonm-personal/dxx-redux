@@ -107,7 +107,7 @@ Example:
     level: 1,
     difficulty: 2,
     start_mode: "new_level",
-    rng_mode: "per_frame_seed",
+  rng_mode: "lcg_state",
     frame_count: 6000,
     streams: [
         { player: 0, input: "inputs.p0.jsonl", rng: "rng.p0.jsonl" },
@@ -125,7 +125,7 @@ Key definitions:
 - `level`: signed level number
 - `difficulty`: integer difficulty level
 - `start_mode`: `"new_level"` or `"save_checkpoint"`
-- `rng_mode`: `"per_frame_seed"`, `"libc_reseed"`, or future `"output_log"`
+- `rng_mode`: `"lcg_state"`, `"libc_reseed"`, or future `"output_log"`
 - `frame_count`: total replay frames
 - `streams`: ordered array of per-player stream descriptors
 - `classic_preview`: optional hybrid provenance payload
