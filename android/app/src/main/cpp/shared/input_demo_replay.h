@@ -33,6 +33,8 @@ int input_demo_replay_level(void);
 int input_demo_replay_difficulty(void);
 const char *input_demo_replay_start_mode(void);
 const char *input_demo_replay_rng_mode(void);
+const char *input_demo_replay_result_path(void);
+const char *input_demo_replay_actual_result_path(void);
 int input_demo_replay_get_current_frame(input_demo_replay_frame *frame,
                                         char *error, size_t error_size);
 int input_demo_replay_advance_frame(char *error, size_t error_size);

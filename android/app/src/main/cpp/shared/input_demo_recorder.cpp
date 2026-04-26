@@ -2,13 +2,11 @@
 
 #include <stdio.h>
 
-#include <fstream>
 #include <string>
 #include <vector>
 
-#include <nlohmann/json.hpp>
-
 #include "input_demo_fixture.h"
+#include "input_demo_result.h"
 
 namespace
 {
@@ -60,24 +58,18 @@ static std::string input_demo_recorder_join_path(const char *dir, const char *na
 static bool input_demo_recorder_write_minimal_result(const char *path,
                                                      const input_demo_recorder_session &session, std::string *error)
 {
-	nlohmann::ordered_json result = nlohmann::ordered_json::object();
-	std::ofstream output(path, std::ios::binary | std::ios::trunc);
+	input_demo_result result;
+	char write_error[256] = "";
 
-	if (!output.is_open()) {
+	input_demo_result_clear(&result);
+	snprintf(result.game, sizeof(result.game), "%s", input_demo_recorder_game_name(session.game));
+	snprintf(result.mission, sizeof(result.mission), "%s", session.mission.c_str());
+	result.level = session.level;
+	result.difficulty = session.difficulty;
+	result.frame_count = static_cast<uint32_t>(session.control_frames.size());
+	if (!input_demo_result_write_json_file(path, &result, write_error, sizeof(write_error))) {
 		if (error)
-			*error = std::string("could not open result file for writing: ") + path;
-		return false;
-	}
-	result["v"] = 1;
-	result["g"] = input_demo_recorder_game_name(session.game);
-	result["m"] = session.mission;
-	result["l"] = session.level;
-	result["d"] = session.difficulty;
-	result["fr"] = static_cast<uint32_t>(session.control_frames.size());
-	output << result.dump(2) << '\n';
-	if (!output.good()) {
-		if (error)
-			*error = std::string("could not write result file: ") + path;
+			*error = write_error;
 		return false;
 	}
 	return true;

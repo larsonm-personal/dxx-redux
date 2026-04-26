@@ -117,6 +117,7 @@ if(NOT ANDROID)
         ../../android/app/src/main/cpp/shared/input_demo_rng_mode.c
         ../../android/app/src/main/cpp/shared/input_demo_controls.cpp
         ../../android/app/src/main/cpp/shared/input_demo_fixture.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_result.cpp
         ../../android/app/src/main/cpp/shared/input_demo_recorder.cpp
         ../../android/app/src/main/cpp/shared/input_demo_replay.cpp)
     target_include_directories(dxx-redux-d2 PRIVATE ../../android/app/src/main/cpp/shared)

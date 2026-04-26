@@ -97,6 +97,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "maths.h"
 
 #include "input_demo_control_info.h"
+#include "input_demo_result.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
 
@@ -176,6 +177,91 @@ static void input_demo_record_game_frame(void)
 	}
 }
 
+static int input_demo_count_live_objects_of_type(int object_type)
+{
+	int count = 0;
+	int i;
+
+	for (i = 0; i <= Highest_object_index; ++i) {
+		if (Objects[i].type != object_type)
+			continue;
+		if (Objects[i].flags & OF_SHOULD_BE_DEAD)
+			continue;
+		count++;
+	}
+	return count;
+}
+
+static void input_demo_capture_replay_result(input_demo_result *result)
+{
+	player *current_player = &Players[Player_num];
+	int i;
+
+	input_demo_result_clear(result);
+	snprintf(result->game, sizeof(result->game), "%s", "d2");
+	if (input_demo_replay_mission())
+		snprintf(result->mission, sizeof(result->mission), "%s", input_demo_replay_mission());
+	result->level = Current_level_num;
+	result->difficulty = Difficulty_level;
+	result->frame_count = input_demo_replay_next_frame_index();
+	result->game_time64 = GameTime64;
+
+	result->player0.present = 1;
+	result->player0.energy = f2i(current_player->energy);
+	result->player0.shields = f2i(current_player->shields);
+	result->player0.score = current_player->score;
+	result->player0.lives = current_player->lives;
+	result->player0.laser_level = current_player->laser_level;
+	result->player0.primary_weapon = current_player->primary_weapon;
+	result->player0.secondary_weapon = current_player->secondary_weapon;
+	result->player0.flags = current_player->flags;
+	result->player0.hostages = current_player->hostages_on_board;
+	for (i = 0; i < INPUT_DEMO_RESULT_MAX_PRIMARY_AMMO; ++i)
+		result->player0.primary_ammo[i] = i < MAX_PRIMARY_WEAPONS ? current_player->primary_ammo[i] : 0;
+	for (i = 0; i < INPUT_DEMO_RESULT_MAX_SECONDARY_AMMO; ++i)
+		result->player0.secondary_ammo[i] = i < MAX_SECONDARY_WEAPONS ? current_player->secondary_ammo[i] : 0;
+
+	if (ConsoleObject) {
+		result->position.present = 1;
+		result->position.segment = ConsoleObject->segnum;
+		result->position.x = ConsoleObject->pos.x;
+		result->position.y = ConsoleObject->pos.y;
+		result->position.z = ConsoleObject->pos.z;
+		result->position.has_forward = 1;
+		result->position.fx = ConsoleObject->orient.fvec.x;
+		result->position.fy = ConsoleObject->orient.fvec.y;
+		result->position.fz = ConsoleObject->orient.fvec.z;
+	}
+
+	result->level_summary.present = 1;
+	result->level_summary.robots_alive = input_demo_count_live_objects_of_type(OBJ_ROBOT);
+	result->level_summary.robots_killed = current_player->num_robots_level;
+	result->level_summary.hostages_remaining = input_demo_count_live_objects_of_type(OBJ_HOSTAGE);
+	result->level_summary.powerups_remaining = input_demo_count_live_objects_of_type(OBJ_POWERUP);
+	result->level_summary.control_center_destroyed = Control_center_destroyed ? 1 : 0;
+	result->level_summary.endlevel_completed = Endlevel_sequence ? 1 : 0;
+}
+
+static void input_demo_stop_replay(int write_result)
+{
+	if (write_result && input_demo_replay_is_loaded()) {
+		input_demo_result result;
+		char error[256] = "";
+		const char *result_path = input_demo_replay_actual_result_path();
+
+		if (result_path && result_path[0]) {
+			input_demo_capture_replay_result(&result);
+			if (!input_demo_result_write_json_file(result_path, &result, error, sizeof(error)))
+				con_printf(CON_NORMAL, "Input demo replay result write failed: %s\n", error);
+			else
+				con_printf(CON_NORMAL, "Input demo replay result written: %s\n", result_path);
+		}
+	}
+	input_demo_replay_unload();
+	if (Game_wind)
+		window_close(Game_wind);
+}
+
 static int input_demo_apply_replay_frame(void)
 {
 	input_demo_replay_frame replay_frame;
@@ -184,24 +270,18 @@ static int input_demo_apply_replay_frame(void)
 	if (!input_demo_replay_is_loaded())
 		return 0;
 	if (input_demo_replay_is_finished()) {
-		input_demo_replay_unload();
-		if (Game_wind)
-			window_close(Game_wind);
+		input_demo_stop_replay(1);
 		return 0;
 	}
 	if (!input_demo_replay_get_current_frame(&replay_frame, error, sizeof(error))) {
 		con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error);
-		input_demo_replay_unload();
-		if (Game_wind)
-			window_close(Game_wind);
+		input_demo_stop_replay(0);
 		return 0;
 	}
 	input_demo_control_info_from_state(&Controls, &replay_frame.state, &replay_frame.pulse);
 	if (!d_rand_set_state(replay_frame.rng_state)) {
 		con_printf(CON_NORMAL, "Input demo replay stopped: active RNG backend cannot restore state\n");
-		input_demo_replay_unload();
-		if (Game_wind)
-			window_close(Game_wind);
+		input_demo_stop_replay(0);
 		return 0;
 	}
 	d_rand_reset_call_count();
@@ -217,10 +297,11 @@ static void input_demo_finish_replay_frame(void)
 		return;
 	if (!input_demo_replay_advance_frame(error, sizeof(error))) {
 		con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error);
-		input_demo_replay_unload();
-		if (Game_wind)
-			window_close(Game_wind);
+		input_demo_stop_replay(0);
+		return;
 	}
+	if (input_demo_replay_is_finished())
+		input_demo_stop_replay(1);
 }
 
 

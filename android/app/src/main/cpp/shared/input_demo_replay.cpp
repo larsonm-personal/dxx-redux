@@ -14,6 +14,8 @@ namespace
 struct input_demo_replay_session {
 	bool loaded;
 	int game;
+	std::string result_path;
+	std::string actual_result_path;
 	std::string mission;
 	int level;
 	int difficulty;
@@ -57,6 +59,11 @@ static std::string dirname_from_path(const char *path)
 	if (!slash)
 		return full.substr(0, 1);
 	return full.substr(0, slash);
+}
+
+static std::string actual_result_path_from_dir(const std::string &dir)
+{
+	return join_path(dir, "result.actual.json");
 }
 
 static int game_id_from_name(const std::string &game_name)
@@ -216,6 +223,9 @@ int input_demo_replay_load(const char *metadata_path, char *error, size_t error_
 	reset_session();
 	g_input_demo_replay_session.loaded = true;
 	g_input_demo_replay_session.game = game;
+	g_input_demo_replay_session.result_path = join_path(base_dir,
+	                                                    metadata.result_path.empty() ? "result.json" : metadata.result_path);
+	g_input_demo_replay_session.actual_result_path = actual_result_path_from_dir(base_dir);
 	g_input_demo_replay_session.mission = metadata.mission;
 	g_input_demo_replay_session.level = metadata.level;
 	g_input_demo_replay_session.difficulty = metadata.difficulty;
@@ -269,6 +279,16 @@ const char *input_demo_replay_start_mode(void)
 const char *input_demo_replay_rng_mode(void)
 {
 	return g_input_demo_replay_session.loaded ? g_input_demo_replay_session.rng_mode.c_str() : NULL;
+}
+
+const char *input_demo_replay_result_path(void)
+{
+	return g_input_demo_replay_session.loaded ? g_input_demo_replay_session.result_path.c_str() : NULL;
+}
+
+const char *input_demo_replay_actual_result_path(void)
+{
+	return g_input_demo_replay_session.loaded ? g_input_demo_replay_session.actual_result_path.c_str() : NULL;
 }
 
 int input_demo_replay_get_current_frame(input_demo_replay_frame *frame,
