@@ -833,6 +833,22 @@ Tasks:
 - Emit sparse JSONL control streams and sparse JSON final results rather than
   verbose dumps.
 
+Progress on 2026-04-25:
+
+- Added a shared `input_demo_fixture` helper under `android/app/src/main/cpp/shared`
+  that owns sparse RNG record structs, RNG JSONL parse/write helpers,
+  contiguous frame coalescing, and stable ordered `demo.json5` metadata output.
+- Added `android/tests/test_input_demo_fixture.cpp` and wired it into the
+  existing D1/D2 maths host-probe path.
+- Validated the new helper with focused D1/D2 `test_input_demo_fixture` rebuilds
+  and probe runs.
+- Validated the Android native integration with
+  `android\gradlew.bat :app:externalNativeBuildDebug --no-daemon`.
+- Fixed the Android clang `-Waddress-of-packed-member` warnings in the new RNG
+  parser by decoding into local temporaries before assigning into packed structs.
+- Ran `android\stop-stale-formatters.ps1` and `android\run-code-quality.ps1 -Fix`,
+  then reran the targeted D1/D2 fixture probes and Android native build.
+
 Success criteria:
 
 - A short Android D2 level-start recording creates metadata, sparse input and
