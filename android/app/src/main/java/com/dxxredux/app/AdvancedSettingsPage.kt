@@ -148,6 +148,13 @@ fun AdvancedSettingsPage(
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // -- Newly Recorded Demos --
+                    RecordedInputDemosSection(filesDir, fileSetManager)
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     // -- Storage Inspector --
                     StorageInspectorSection(filesDir)
 
@@ -562,6 +569,249 @@ private fun CrashReportsSection() {
             "No crash reports",
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun RecordedInputDemosSection(
+    filesDir: File,
+    fileSetManager: FileSetManager,
+) {
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val mainHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
+    val activeSetName = fileSetManager.getActive()
+    val dateFmt = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US) }
+    var demos by remember { mutableStateOf(InputDemoManager.listStagedDemos(filesDir)) }
+    var transferProgress by remember { mutableStateOf<LauncherCopyProgress?>(null) }
+    var showDeleteAllDialog by remember { mutableStateOf(false) }
+    var deleteTarget by remember { mutableStateOf<StagedInputDemo?>(null) }
+    var installTarget by remember { mutableStateOf<StagedInputDemo?>(null) }
+    var installName by remember { mutableStateOf("") }
+
+    fun refresh() {
+        demos = InputDemoManager.listStagedDemos(filesDir)
+    }
+
+    Text("Newly Recorded Demos", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    Spacer(modifier = Modifier.height(4.dp))
+    Text(
+        "Quick-recorded .dximdemo files from d1x-redux and d2x-redux. Save them to Downloads or add them to the active set ($activeSetName)",
+        fontSize = 12.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+
+    if (demos.isEmpty()) {
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            "No newly recorded demos",
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        return
+    }
+
+    Spacer(modifier = Modifier.height(8.dp))
+    Text("Recordings (${demos.size})", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+    Spacer(modifier = Modifier.height(4.dp))
+
+    for (demo in demos) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(demo.file.name, fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+                    Text(
+                        "${demo.game.uppercase(Locale.US)}  ${demo.mission}  level ${demo.level}",
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        "${dateFmt.format(
+                            Date(demo.file.lastModified()),
+                        )}  ${formatSize(demo.file.length())}  ${demo.frameCount} frames",
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    if (!demo.headerReadable) {
+                        Text(
+                            "Header unreadable. Save, add, and delete still work",
+                            fontSize = 10.sp,
+                            color = Color(0xFFFF9800),
+                        )
+                    }
+                }
+                OutlinedButton(
+                    onClick = {
+                        scope.launch {
+                            val ok =
+                                withContext(Dispatchers.IO) {
+                                    saveToDownloads(
+                                        context = ctx,
+                                        file = demo.file,
+                                        mimeType = "application/octet-stream",
+                                    ) { progress ->
+                                        mainHandler.post { transferProgress = progress }
+                                    }
+                                }
+                            transferProgress = null
+                            Toast
+                                .makeText(
+                                    ctx,
+                                    if (ok) "Saved to Downloads/${demo.file.name}" else "Save failed",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                        }
+                    },
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                    modifier = Modifier.height(28.dp),
+                ) {
+                    Text("Save", fontSize = 11.sp)
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedButton(
+                    onClick = {
+                        installTarget = demo
+                        installName = InputDemoManager.sanitizeInstallName(demo.file.nameWithoutExtension)
+                    },
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                    modifier = Modifier.height(28.dp),
+                ) {
+                    Text("Add to Game", fontSize = 11.sp)
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+                OutlinedButton(
+                    onClick = { deleteTarget = demo },
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                    modifier = Modifier.height(28.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFF44336)),
+                ) {
+                    Text("Delete", fontSize = 11.sp)
+                }
+            }
+        }
+    }
+
+    FileTransferProgress(transferProgress)
+    Spacer(modifier = Modifier.height(8.dp))
+    OutlinedButton(
+        onClick = { showDeleteAllDialog = true },
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+        modifier = Modifier.height(32.dp),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFF44336)),
+    ) {
+        Text("Delete All Recorded Demos", fontSize = 12.sp)
+    }
+
+    if (deleteTarget != null) {
+        AlertDialog(
+            onDismissRequest = { deleteTarget = null },
+            title = { Text("Delete Recorded Demo") },
+            text = { Text("Delete ${deleteTarget?.file?.name}? This cannot be undone") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val target = deleteTarget
+                    if (target != null) {
+                        InputDemoManager.deleteStagedDemo(target)
+                        refresh()
+                    }
+                    deleteTarget = null
+                }) {
+                    Text("Delete", color = Color(0xFFF44336))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteTarget = null }) { Text("Cancel") }
+            },
+        )
+    }
+
+    if (showDeleteAllDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAllDialog = false },
+            title = { Text("Delete All Recorded Demos") },
+            text = { Text("Delete all staged recorded demos? This cannot be undone") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val deleted = InputDemoManager.deleteAllStagedDemos(filesDir)
+                    refresh()
+                    showDeleteAllDialog = false
+                    Toast.makeText(ctx, "Deleted $deleted recorded demo(s)", Toast.LENGTH_SHORT).show()
+                }) {
+                    Text("Delete", color = Color(0xFFF44336))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteAllDialog = false }) { Text("Cancel") }
+            },
+        )
+    }
+
+    if (installTarget != null) {
+        AlertDialog(
+            onDismissRequest = { installTarget = null },
+            title = { Text("Add Demo To Game") },
+            text = {
+                Column {
+                    Text(
+                        "Copy ${installTarget?.file?.name} into the active set ($activeSetName) demos folder",
+                        fontSize = 13.sp,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = installName,
+                        onValueChange = { installName = it },
+                        singleLine = true,
+                        label = { Text("Installed filename") },
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val target = installTarget ?: return@TextButton
+                    scope.launch {
+                        try {
+                            val dest =
+                                withContext(Dispatchers.IO) {
+                                    val activeSetDir = fileSetManager.getSetDir(activeSetName)
+                                    val demosDir = File(activeSetDir, "demos").also { it.mkdirs() }
+
+                                    ImportStorageGuard.requireFreeSpace(
+                                        demosDir,
+                                        target.file.length(),
+                                        "install ${target.file.name}",
+                                    )
+                                    InputDemoManager.installToSet(target, activeSetDir, installName) { progress ->
+                                        mainHandler.post { transferProgress = progress }
+                                    }
+                                }
+                            transferProgress = null
+                            installTarget = null
+                            refresh()
+                            Toast.makeText(ctx, "Added to ${dest.name}", Toast.LENGTH_SHORT).show()
+                        } catch (e: Exception) {
+                            transferProgress = null
+                            Toast.makeText(ctx, "Add failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }) {
+                    Text("Add")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { installTarget = null }) { Text("Cancel") }
+            },
         )
     }
 }
@@ -1290,6 +1540,7 @@ private fun shareTextFile(
 private fun saveToDownloads(
     context: android.content.Context,
     file: File,
+    mimeType: String = "text/plain",
     onProgress: (LauncherCopyProgress) -> Unit = {},
 ): Boolean =
     try {
@@ -1297,7 +1548,7 @@ private fun saveToDownloads(
             val values =
                 ContentValues().apply {
                     put(MediaStore.Downloads.DISPLAY_NAME, file.name)
-                    put(MediaStore.Downloads.MIME_TYPE, "text/plain")
+                    put(MediaStore.Downloads.MIME_TYPE, mimeType)
                 }
             val uri =
                 context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)

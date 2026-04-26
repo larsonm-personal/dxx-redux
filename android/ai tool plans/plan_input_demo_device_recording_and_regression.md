@@ -116,17 +116,17 @@ Goal: show newly recorded demos on the Advanced page and provide Save and Add to
 
 Tasks:
 
-- Add an `InputDemoManager.kt` helper in the launcher for listing staged `.dximdemo` files across `d1x-redux` and `d2x-redux`.
-- Parse only the first header line for display: game, mission, level, frame count, modified time, and total size. Do not duplicate gameplay validation in Kotlin.
-- Add a new Advanced page section for `Newly Recorded Demos` using the log/crash row style.
-- Add `Save` to copy the `.dximdemo` file through cache, then write it to Downloads. Use `application/octet-stream` rather than `text/plain`.
-- Add `Add to Game` to prompt for a clean user filename, then copy the file to `<active file set>/demos/<name>.dximdemo` for the demo's game. After a successful copy, remove the staged copy or mark it no longer new.
-- Add `Delete` or `Delete All` for staged recordings so the limit is not the only cleanup path.
-- Reuse `LauncherFileCopy` for progress where possible. Keep file copy helpers narrow rather than widening unrelated import code.
+- [x] Add an `InputDemoManager.kt` helper in the launcher for listing staged `.dximdemo` files across `d1x-redux` and `d2x-redux`.
+- [x] Parse only the first header line for display: game, mission, level, frame count, modified time, and total size. Do not duplicate gameplay validation in Kotlin.
+- [x] Add a new Advanced page section for `Newly Recorded Demos` using the log/crash row style.
+- [x] Add `Save` to copy the `.dximdemo` file through cache, then write it to Downloads. Use `application/octet-stream` rather than `text/plain`.
+- [x] Add `Add to Game` to prompt for a clean user filename, then copy the file to `<active file set>/demos/<name>.dximdemo` for the demo's game. After a successful copy, remove the staged copy or mark it no longer new.
+- [x] Add `Delete` or `Delete All` for staged recordings so the limit is not the only cleanup path.
+- [x] Reuse `LauncherFileCopy` for progress where possible. Keep file copy helpers narrow rather than widening unrelated import code.
 
 Validation:
 
-- Launcher unit test for listing, trim/list ordering, Save, and Add to Game copy using temp directories.
+- [x] Launcher unit test for listing, trim/list ordering, Save, and Add to Game copy using temp directories.
 - Manual Advanced page check with one D1 and one D2 staged demo file.
 - Save a `.dximdemo` file to Downloads and verify the host can read its header and trailer lines.
 - Add a demo to the active file set and verify it appears under that set's `demos/` directory.
