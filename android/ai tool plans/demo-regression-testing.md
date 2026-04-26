@@ -681,36 +681,54 @@ unchanged when the setting is `classic`.
 Goal: expose and control RNG state without changing normal gameplay feel, while
 keeping non-Android engine edits to tiny generic hook points.
 
+Status on 2026-04-25: complete for the RNG foundation slice. Later replay code
+should use `d_rand_get_replay_mode()` to reject fixtures that request an
+incompatible RNG policy.
+
 Progress on 2026-04-25:
 
 - Added `d_rand_get_state()`, `d_rand_set_state()`, `d_rand_get_call_count()`,
   and `d_rand_reset_call_count()` in both D1 and D2.
+- Added `d_rand_get_replay_mode()` so replay code can tell whether the active
+  backend expects `lcg_state` or `libc_reseed` fixtures without depending on
+  compile-command inspection.
 - Added a tiny host probe at `android/tests/test_rng_seed_resume.c`, built from
   both `d1/maths/CMakeLists.txt` and `d2/maths/CMakeLists.txt`.
 - Validated with `run-windows-build.ps1 -Target both`, then ran
   `buildd1\maths\test_rng_seed_resume.exe` and
   `buildd2\maths\test_rng_seed_resume.exe`. Both printed PASS.
 - Research showed current Windows builds do not define `NO_WATCOM_RAND`, so the
-  probe validated the active internal LCG path. Remaining Phase 1 work is to add
-  an explicit libc-compatible policy: frame-start reseed schedule, per-call
-  output log, or a fail-fast path for modes that require readable RNG state.
+  probe validated the active internal LCG path. Later replay phases can now add
+  the explicit libc-compatible policies layered on top of this foundation:
+  frame-start reseed schedule, per-call output log, or fail-fast handling for
+  fixtures that require readable RNG state.
 
-Tasks:
+Tasks completed in this phase:
 
 - Add the smallest possible RNG state hook points in `d1/include/maths.h`,
   `d2/include/maths.h`, and the matching `rand.c` files.
 - Decide how deterministic builds handle `NO_WATCOM_RAND`: either force the LCG
   when deterministic replay is enabled, or make deterministic replay fail fast if
-  libc `rand()` is compiled in.
+  libc `rand()` is compiled in. The active RNG backend is now exposed through
+  `d_rand_get_replay_mode()` so replay code can reject incompatible fixtures.
 - Add optional deterministic-mode RNG call counters in both D1 and D2.
 - Add a tiny host or unit test that seeds, draws a few values, snapshots/restores
-  the seed, and proves the sequence resumes exactly.
+  the RNG state where supported, and proves the sequence resumes exactly.
 - Add a second validation path for `NO_WATCOM_RAND` or document a fail-fast
   compile/runtime policy. The current state-snapshot probe intentionally does
   not prove replayable state for libc `rand()`.
 - Keep replay orchestration, JSON trace writing, and Android test harness code in
   `android/`.
 - Run the normal Windows/CMake build path after the D1/D2 edits.
+
+Handoff to later phases:
+
+- Phase 4 replay startup should read the fixture `rng_mode`, compare it with
+  `d_rand_get_replay_mode()`, and fail fast on mismatches such as
+  `lcg_state` requested on a `NO_WATCOM_RAND` build.
+- Deterministic-mode overrides for existing `d_srand((fix)timer_query())`
+  call sites still belong to the replay/recording implementation phase, not this
+  RNG foundation slice.
 
 Completed in this tranche:
 
@@ -724,6 +742,9 @@ Completed in this tranche:
   exact state restore on the active internal LCG path, while `NO_WATCOM_RAND`
   builds prove deterministic reseeding from frame-start seeds rather than
   skipping the probe entirely.
+- Added `d_rand_get_replay_mode()` so deterministic replay can branch on the
+  active backend policy in code rather than inferring it from preprocessor
+  symbols or build logs.
 
 Success criteria:
 

@@ -16,6 +16,11 @@ void d_srand(unsigned int seed)
 	srand(seed);
 }
 
+int d_rand_get_replay_mode(void)
+{
+	return D_RAND_REPLAY_MODE_LIBC_RESEED;
+}
+
 int d_rand()
 {
 	d_rand_call_count++;
@@ -34,6 +39,11 @@ int d_rand_set_state(unsigned int state)
 	return 0;
 }
 #else
+int d_rand_get_replay_mode(void)
+{
+	return D_RAND_REPLAY_MODE_LCG_STATE;
+}
+
 int d_rand() {
 	d_rand_call_count++;
 	return ((d_rand_state = d_rand_state * 0x41c64e6d + 0x3039) >> 16) & 0x7fff;

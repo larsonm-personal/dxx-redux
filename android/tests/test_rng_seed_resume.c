@@ -13,6 +13,7 @@ int main(void)
 	const unsigned int base_seed = 0x12345678u;
 	const unsigned int resume_seed = 0x10203040u;
 	unsigned int checkpoint_state = 0;
+	int replay_mode;
 	int first_a;
 	int second_a;
 	int first_b;
@@ -21,6 +22,13 @@ int main(void)
 	int next_resume;
 	int replayed_first_resume;
 	int replayed_next_resume;
+
+	replay_mode = d_rand_get_replay_mode();
+	if (replay_mode != D_RAND_REPLAY_MODE_LCG_STATE &&
+		replay_mode != D_RAND_REPLAY_MODE_LIBC_RESEED)
+		return report_failure("unexpected RNG replay mode");
+	if (replay_mode == D_RAND_REPLAY_MODE_OUTPUT_LOG)
+		return report_failure("output-log replay mode is not implemented yet");
 
 	d_rand_reset_call_count();
 	d_srand(base_seed);
@@ -43,6 +51,8 @@ int main(void)
 	first_resume = d_rand();
 
 #ifdef NO_WATCOM_RAND
+	if (replay_mode != D_RAND_REPLAY_MODE_LIBC_RESEED)
+		return report_failure("NO_WATCOM_RAND reported the wrong replay mode");
 	if (d_rand_get_state(&checkpoint_state))
 		return report_failure("NO_WATCOM_RAND unexpectedly exposed replayable state");
 	next_resume = d_rand();
@@ -56,6 +66,8 @@ int main(void)
 
 	puts("PASS: RNG reseed reproduces the sequence");
 #else
+	if (replay_mode != D_RAND_REPLAY_MODE_LCG_STATE)
+		return report_failure("LCG build reported the wrong replay mode");
 	if (!d_rand_get_state(&checkpoint_state))
 		return report_failure("LCG path did not expose replayable state");
 	next_resume = d_rand();

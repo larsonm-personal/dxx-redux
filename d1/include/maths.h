@@ -9,9 +9,13 @@
 
 
 #define D_RAND_MAX 32767
+#define D_RAND_REPLAY_MODE_LCG_STATE 1
+#define D_RAND_REPLAY_MODE_LIBC_RESEED 2
+#define D_RAND_REPLAY_MODE_OUTPUT_LOG 3
 
 void d_srand (unsigned int seed);
 int d_rand ();			// Random number function which returns in the range 0-0x7FFF
+int d_rand_get_replay_mode(void);
 int d_rand_get_state(unsigned int *state);
 int d_rand_set_state(unsigned int state);
 unsigned int d_rand_get_call_count(void);

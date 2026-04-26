@@ -21,6 +21,11 @@ void d_srand(unsigned int seed)
 	srand(seed);
 }
 
+int d_rand_get_replay_mode(void)
+{
+	return D_RAND_REPLAY_MODE_LIBC_RESEED;
+}
+
 int d_rand()
 {
 	d_rand_call_count++;
@@ -40,6 +45,11 @@ int d_rand_set_state(unsigned int state)
 }
 
 #else
+
+int d_rand_get_replay_mode(void)
+{
+	return D_RAND_REPLAY_MODE_LCG_STATE;
+}
 
 int d_rand()
 {
