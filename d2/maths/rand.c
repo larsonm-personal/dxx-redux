@@ -8,6 +8,12 @@
 #include <stdlib.h>
 #include "maths.h"
 
+static unsigned int d_rand_call_count;
+
+#ifndef NO_WATCOM_RAND
+static unsigned int d_rand_state;
+#endif
+
 #ifdef NO_WATCOM_RAND
 
 void d_srand(unsigned int seed)
@@ -17,21 +23,57 @@ void d_srand(unsigned int seed)
 
 int d_rand()
 {
+	d_rand_call_count++;
 	return rand() & 0x7fff;
+}
+
+int d_rand_get_state(unsigned int *state)
+{
+	(void)state;
+	return 0;
+}
+
+int d_rand_set_state(unsigned int state)
+{
+	(void)state;
+	return 0;
 }
 
 #else
 
-static unsigned int d_rand_seed;
-
 int d_rand()
 {
-	return ((d_rand_seed = d_rand_seed * 0x41c64e6d + 0x3039) >> 16) & 0x7fff;
+	d_rand_call_count++;
+	return ((d_rand_state = d_rand_state * 0x41c64e6d + 0x3039) >> 16) & 0x7fff;
 }
 
 void d_srand(unsigned int seed)
 {
-	d_rand_seed = seed;
+	d_rand_state = seed;
+}
+
+int d_rand_get_state(unsigned int *state)
+{
+	if (!state)
+		return 0;
+	*state = d_rand_state;
+	return 1;
+}
+
+int d_rand_set_state(unsigned int state)
+{
+	d_rand_state = state;
+	return 1;
 }
 
 #endif
+
+unsigned int d_rand_get_call_count(void)
+{
+	return d_rand_call_count;
+}
+
+void d_rand_reset_call_count(void)
+{
+	d_rand_call_count = 0;
+}

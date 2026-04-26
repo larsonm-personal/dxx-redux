@@ -11,10 +11,9 @@ The main purpose is gameplay regression testing, with the explicit long-term
 goal of making D1/D2 code sharing and eventual de-duplication safer to attempt.
 
 The earlier version of this plan said RNG snapshot APIs were implemented. That
-was not accurate. `d1/maths/rand.c` and `d2/maths/rand.c` currently expose only
-`d_srand()` and `d_rand()`, with a private static LCG seed unless
-`NO_WATCOM_RAND` switches them to libc `rand()`. The first implementation phase
-should be a safe D1/D2 RNG accessor and trace update.
+was not accurate at the time. Phase 1 has now added minimal seed and call-count
+accessors for the current internal RNG path, but libc `rand()` needs a separate
+strategy because standard libc does not expose its current internal RNG state.
 
 ## Current Facts From The Code
 
@@ -41,6 +40,12 @@ should be a safe D1/D2 RNG accessor and trace update.
   It does not yet include the full final regression summary requested here, such
   as robots killed, robots active, triggers, doors, powerups, and level-complete
   counters.
+- RNG build research on 2026-04-25 found that current generated Windows MSVC
+  builds do not define `NO_WATCOM_RAND`. The generated Ninja commands for both
+  `buildd1` and `buildd2`, the CMake presets, and the packaging workflows omit
+  that define. Current Windows builds therefore use the internal Watcom-compatible
+  LCG branch, not libc `rand()`. If the project later flips to libc `rand()`, the
+  deterministic replay plan must not depend on reading a current libc RNG seed.
 
 ## Goals
 
@@ -268,6 +273,33 @@ Cons:
 - Differences within the current frame still happen if RNG call order changes.
 - Can hide cross-frame consequences of extra RNG calls, so tests should still
   report RNG call-count mismatches as diagnostics when available.
+- Only true state checkpointing works for RNG implementations whose current
+  state can be read. It works for the current internal LCG path, but not for
+  standard libc `rand()`.
+
+### Alternative B2: Per-Frame Reseed Schedule
+
+Record or generate a deterministic seed for each frame and call `d_srand(seed)`
+at the start of that frame. This is not a snapshot of the previous frame's final
+RNG state. It is a controlled frame-start reseed schedule.
+
+Pros:
+
+- Works with libc `rand()` because `srand(seed)` is available even though the
+  current internal state is not readable.
+- Prevents RNG divergence from cascading past the current frame.
+- Keeps normal gameplay RNG implementation untouched outside deterministic
+  recording/replay mode.
+
+Cons:
+
+- Replays are deterministic only for the same `rand()` implementation and CRT
+  unless paired with output logging or a portable replay RNG.
+- Any in-frame `d_srand((fix)timer_query())` call must be suppressed, replaced,
+  or recorded in deterministic mode.
+- It changes the RNG lifecycle during deterministic recording, so a recording
+  must opt into this mode from frame zero rather than trying to snapshot an
+  arbitrary normal libc run after the fact.
 
 ### Alternative C: Per-Call RNG Output Log
 
@@ -287,6 +319,10 @@ Cons:
 - Too strong as the default mode because it can mask meaningful RNG-order
   regressions unless mismatch reporting is strict.
 
+For libc `rand()` this becomes the most implementation-agnostic fallback: record
+every `d_rand()` output during deterministic recording, then replay by returning
+the logged outputs and failing on call-count/order mismatch.
+
 ### Alternative D: Scoped RNG Streams
 
 Split RNG into named subsystem streams such as AI, weapons, visuals, and music.
@@ -304,24 +340,37 @@ Cons:
 
 ### Recommended RNG Path
 
-Use Alternative B first, with the small foundation needed for Alternative A and
-C diagnostics:
+Use Alternative B for current Windows builds because they use the internal LCG,
+but make the fixture format and replay harness compatible with Alternative B2
+and C so a future libc `rand()` default is not a blocker:
 
-1. Add `d_rand_get_seed()` and `d_rand_set_seed()` to both D1 and D2.
+1. Add `d_rand_get_state()` and `d_rand_set_state()` to both D1 and D2.
 2. Keep the current LCG formula for normal builds.
-3. In deterministic replay/test builds, force or assert the LCG path rather than
-   libc `rand()`.
+3. Treat `d_rand_get_state()` as replayable-state access only when the current RNG
+  implementation exposes replayable state. For libc `rand()`, do not pretend
+  the last seed passed to `srand()` is the current RNG state.
 4. Add optional counters around `d_rand()` in deterministic mode:
    `d_rand_get_call_count()`, `d_rand_reset_call_count()`, and per-frame expected
    call counts if useful.
-5. Record per-frame seed checkpoints in input demos.
-6. Later add per-call output logging as a debug mode, not the default fixture
-   mode.
+5. Store per-frame RNG records as frame-start reseed values. On LCG builds those
+  values may be actual state snapshots. On libc builds they must be a deliberate
+  deterministic seed schedule.
+6. Add a replay policy flag that records the RNG implementation used:
+  `lcg_state`, `libc_reseed`, or `output_log`.
+7. Later add per-call output logging as the fallback for libc builds, cross-CRT
+  replay, or debugging RNG-order drift.
 
-This is the safest first phase because it exposes state without changing the
-normal RNG sequence or replacing gameplay randomness.
+This is the safest first phase because it exposes state for the active Windows
+LCG builds without changing the normal RNG sequence or replacing gameplay
+randomness. It also keeps the design honest about libc `rand()`: libc replay is
+possible through frame-start reseeding or output logging, not through internal
+state snapshots.
 
 ## File And Bundle Strategy
+
+The dedicated schema reference for fixture keys and sparse JSON examples lives
+in `android/ai tool plans/input-demo-schema.md`. Keep this plan high level and
+use the schema doc as the implementation-facing format reference.
 
 ### JSON Style Rules
 
@@ -632,25 +681,56 @@ unchanged when the setting is `classic`.
 Goal: expose and control RNG state without changing normal gameplay feel, while
 keeping non-Android engine edits to tiny generic hook points.
 
+Progress on 2026-04-25:
+
+- Added `d_rand_get_state()`, `d_rand_set_state()`, `d_rand_get_call_count()`,
+  and `d_rand_reset_call_count()` in both D1 and D2.
+- Added a tiny host probe at `android/tests/test_rng_seed_resume.c`, built from
+  both `d1/maths/CMakeLists.txt` and `d2/maths/CMakeLists.txt`.
+- Validated with `run-windows-build.ps1 -Target both`, then ran
+  `buildd1\maths\test_rng_seed_resume.exe` and
+  `buildd2\maths\test_rng_seed_resume.exe`. Both printed PASS.
+- Research showed current Windows builds do not define `NO_WATCOM_RAND`, so the
+  probe validated the active internal LCG path. Remaining Phase 1 work is to add
+  an explicit libc-compatible policy: frame-start reseed schedule, per-call
+  output log, or a fail-fast path for modes that require readable RNG state.
+
 Tasks:
 
-- Add the smallest possible `d_rand_get_seed()` and `d_rand_set_seed()` hook
-  points in `d1/include/maths.h`, `d2/include/maths.h`, and the matching
-  `rand.c` files.
+- Add the smallest possible RNG state hook points in `d1/include/maths.h`,
+  `d2/include/maths.h`, and the matching `rand.c` files.
 - Decide how deterministic builds handle `NO_WATCOM_RAND`: either force the LCG
   when deterministic replay is enabled, or make deterministic replay fail fast if
   libc `rand()` is compiled in.
 - Add optional deterministic-mode RNG call counters in both D1 and D2.
 - Add a tiny host or unit test that seeds, draws a few values, snapshots/restores
   the seed, and proves the sequence resumes exactly.
+- Add a second validation path for `NO_WATCOM_RAND` or document a fail-fast
+  compile/runtime policy. The current state-snapshot probe intentionally does
+  not prove replayable state for libc `rand()`.
 - Keep replay orchestration, JSON trace writing, and Android test harness code in
   `android/`.
 - Run the normal Windows/CMake build path after the D1/D2 edits.
 
+Completed in this tranche:
+
+- Replaced the misleading `d_rand_get_seed()` accessor with
+  `d_rand_get_state(unsigned int *state)`, which reports failure when the active
+  RNG backend cannot expose replayable internal state.
+- Replaced the matching restore helper with `d_rand_set_state(unsigned int
+  state)`, which similarly fails on libc `rand()` builds instead of pretending a
+  snapshot restore is possible.
+- Updated `android/tests/test_rng_seed_resume.c` so current Windows builds prove
+  exact state restore on the active internal LCG path, while `NO_WATCOM_RAND`
+  builds prove deterministic reseeding from frame-start seeds rather than
+  skipping the probe entirely.
+
 Success criteria:
 
 - Existing gameplay RNG sequence is unchanged when deterministic mode is off.
-- Tests can read and restore the private RNG seed.
+- Tests can read and restore the private RNG state when the backend supports it.
+- Tests can still prove deterministic prefix replay by reseeding when libc
+  `rand()` is active.
 - Both D1 and D2 build.
 
 ### Phase 2: Input Record Schema And Shared Helpers

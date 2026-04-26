@@ -12,6 +12,10 @@
 
 void d_srand (unsigned int seed);
 int d_rand ();			// Random number function which returns in the range 0-0x7FFF
+int d_rand_get_state(unsigned int *state);
+int d_rand_set_state(unsigned int state);
+unsigned int d_rand_get_call_count(void);
+void d_rand_reset_call_count(void);
 
 
 //=============================== FIXED POINT ===============================

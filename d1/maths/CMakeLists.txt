@@ -5,6 +5,9 @@ add_library(${DXX_TARGET_PREFIX}maths STATIC
     vecmat.c
     )
 
+add_executable(test_rng_seed_resume ../../android/tests/test_rng_seed_resume.c)
+target_link_libraries(test_rng_seed_resume PRIVATE ${DXX_TARGET_PREFIX}maths)
+
 include_directories(../include ../arch/include ../main)
 
 find_package(SDL)
