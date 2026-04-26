@@ -13,6 +13,7 @@
 #include <string>
 
 #include "input_demo_recorder.h"
+#include "input_demo_result.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -102,6 +103,7 @@ static int expect_record_and_flush(void)
 	input_demo_recorder_settings settings;
 	input_demo_control_state state;
 	input_demo_control_pulse pulse;
+	input_demo_result result;
 	char error[256] = "";
 	std::string text;
 	std::string expected;
@@ -131,7 +133,36 @@ static int expect_record_and_flush(void)
 	input_demo_control_pulse_clear(&pulse);
 	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 102, 0, 0, error, sizeof(error)))
 		return report_failure_string(std::string("capture frame 2 failed: ") + error);
-	if (!input_demo_recorder_flush(dir, error, sizeof(error)))
+	input_demo_result_clear(&result);
+	snprintf(result.game, sizeof(result.game), "%s", input_demo_test_game_name());
+	snprintf(result.mission, sizeof(result.mission), "%s", input_demo_test_game_name());
+	result.level = 1;
+	result.difficulty = 2;
+	result.has_game_time64 = 1;
+	result.game_time64 = 120;
+	result.player0.present = 1;
+	result.player0.energy = 67;
+	result.player0.shields = 42;
+	result.player0.score = 12500;
+	result.player0.lives = 3;
+	result.player0.laser_level = 1;
+	result.player0.secondary_weapon = 1;
+	result.player0.primary_ammo[1] = 200;
+	result.player0.secondary_ammo[0] = 4;
+	result.position.present = 1;
+	result.position.segment = 142;
+	result.position.x = 12345678;
+	result.position.y = -8765432;
+	result.position.z = 3456789;
+	result.position.has_forward = 1;
+	result.position.fx = 65536;
+	result.level_summary.present = 1;
+	result.level_summary.robots_alive = 23;
+	result.level_summary.robots_killed = 8;
+	result.level_summary.hostages_remaining = 2;
+	result.level_summary.powerups_remaining = 15;
+	result.level_summary.control_center_destroyed = 1;
+	if (!input_demo_recorder_flush_with_result(dir, &result, error, sizeof(error)))
 		return report_failure_string(std::string("recorder flush failed: ") + error);
 	if (input_demo_recorder_is_active())
 		return report_failure("recorder should be inactive after flush");
@@ -178,7 +209,38 @@ static int expect_record_and_flush(void)
 		"  \"m\": \"" + input_demo_test_game_name() + "\",\n" +
 		"  \"l\": 1,\n" +
 		"  \"d\": 2,\n" +
-		"  \"fr\": 3\n" +
+		"  \"fr\": 3,\n" +
+		"  \"gt\": 120,\n" +
+		"  \"p0\": {\n" +
+		"    \"e\": 67,\n" +
+		"    \"s\": 42,\n" +
+		"    \"sc\": 12500,\n" +
+		"    \"li\": 3,\n" +
+		"    \"ll\": 1,\n" +
+		"    \"sw\": 1,\n" +
+		"    \"pa\": {\n" +
+		"      \"1\": 200\n" +
+		"    },\n" +
+		"    \"sa\": {\n" +
+		"      \"0\": 4\n" +
+		"    }\n" +
+		"  },\n" +
+		"  \"pos\": {\n" +
+		"    \"sg\": 142,\n" +
+		"    \"x\": 12345678,\n" +
+		"    \"y\": -8765432,\n" +
+		"    \"z\": 3456789,\n" +
+		"    \"fx\": 65536,\n" +
+		"    \"fy\": 0,\n" +
+		"    \"fz\": 0\n" +
+		"  },\n" +
+		"  \"lv\": {\n" +
+		"    \"ra\": 23,\n" +
+		"    \"rk\": 8,\n" +
+		"    \"hr\": 2,\n" +
+		"    \"pr\": 15,\n" +
+		"    \"cc\": true\n" +
+		"  }\n" +
 		"}\n";
 	if (text != expected)
 		return report_failure_string(std::string("unexpected recorder result file: ") + text);

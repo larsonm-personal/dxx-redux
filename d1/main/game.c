@@ -63,6 +63,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "sounds.h"
 #include "args.h"
 #include "gameseq.h"
+#include "mission.h"
 #include "automap.h"
 #include "text.h"
 #include "powerup.h"
@@ -95,6 +96,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "maths.h"
 
 #include "input_demo_control_info.h"
+#include "input_demo_result.h"
 #include "input_demo_recorder.h"
 
 #ifdef OGL
@@ -168,6 +170,72 @@ static void input_demo_record_game_frame(void)
 		con_printf(CON_NORMAL, "Input demo recording stopped: %s\n", error);
 		input_demo_recorder_cancel();
 	}
+}
+
+static int input_demo_count_live_objects_of_type(int object_type)
+{
+	int count = 0;
+	int i;
+
+	for (i = 0; i <= Highest_object_index; ++i) {
+		if (Objects[i].type != object_type)
+			continue;
+		if (Objects[i].flags & OF_SHOULD_BE_DEAD)
+			continue;
+		count++;
+	}
+	return count;
+}
+
+void input_demo_capture_current_result(input_demo_result *result)
+{
+	player *current_player = &Players[Player_num];
+	int i;
+
+	input_demo_result_clear(result);
+	snprintf(result->game, sizeof(result->game), "%s", "d1");
+	if (Current_mission && Current_mission_filename)
+		snprintf(result->mission, sizeof(result->mission), "%s", Current_mission_filename);
+	result->level = Current_level_num;
+	result->difficulty = Difficulty_level;
+	result->frame_count = input_demo_recorder_is_active() ? (uint32_t)input_demo_recorder_frame_count() : 0;
+	result->has_game_time64 = 1;
+	result->game_time64 = GameTime64;
+
+	result->player0.present = 1;
+	result->player0.energy = f2i(current_player->energy);
+	result->player0.shields = f2i(current_player->shields);
+	result->player0.score = current_player->score;
+	result->player0.lives = current_player->lives;
+	result->player0.laser_level = current_player->laser_level;
+	result->player0.primary_weapon = current_player->primary_weapon;
+	result->player0.secondary_weapon = current_player->secondary_weapon;
+	result->player0.flags = current_player->flags;
+	result->player0.hostages = current_player->hostages_on_board;
+	for (i = 0; i < INPUT_DEMO_RESULT_MAX_PRIMARY_AMMO; ++i)
+		result->player0.primary_ammo[i] = i < MAX_PRIMARY_WEAPONS ? current_player->primary_ammo[i] : 0;
+	for (i = 0; i < INPUT_DEMO_RESULT_MAX_SECONDARY_AMMO; ++i)
+		result->player0.secondary_ammo[i] = i < MAX_SECONDARY_WEAPONS ? current_player->secondary_ammo[i] : 0;
+
+	if (ConsoleObject) {
+		result->position.present = 1;
+		result->position.segment = ConsoleObject->segnum;
+		result->position.x = ConsoleObject->pos.x;
+		result->position.y = ConsoleObject->pos.y;
+		result->position.z = ConsoleObject->pos.z;
+		result->position.has_forward = 1;
+		result->position.fx = ConsoleObject->orient.fvec.x;
+		result->position.fy = ConsoleObject->orient.fvec.y;
+		result->position.fz = ConsoleObject->orient.fvec.z;
+	}
+
+	result->level_summary.present = 1;
+	result->level_summary.robots_alive = input_demo_count_live_objects_of_type(OBJ_ROBOT);
+	result->level_summary.robots_killed = current_player->num_robots_level;
+	result->level_summary.hostages_remaining = input_demo_count_live_objects_of_type(OBJ_HOSTAGE);
+	result->level_summary.powerups_remaining = input_demo_count_live_objects_of_type(OBJ_POWERUP);
+	result->level_summary.control_center_destroyed = Control_center_destroyed ? 1 : 0;
+	result->level_summary.endlevel_completed = Endlevel_sequence ? 1 : 0;
 }
 
 // Cheats

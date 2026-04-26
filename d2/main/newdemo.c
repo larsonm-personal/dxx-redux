@@ -3399,6 +3399,7 @@ static void maybe_flush_input_demo_recording(const char *demo_name)
 	char relative_dir[PATH_MAX] = "";
 	char absolute_dir[PATH_MAX] = "";
 	char error[256] = "";
+	input_demo_result result;
 
 	if (!input_demo_recorder_is_active())
 		return;
@@ -3410,7 +3411,8 @@ static void maybe_flush_input_demo_recording(const char *demo_name)
 		input_demo_recorder_cancel();
 		return;
 	}
-	if (!input_demo_recorder_flush(absolute_dir, error, sizeof(error))) {
+	input_demo_capture_current_result(&result);
+	if (!input_demo_recorder_flush_with_result(absolute_dir, &result, error, sizeof(error))) {
 		con_printf(CON_NORMAL, "Input demo recording stopped: %s\n", error);
 		input_demo_recorder_cancel();
 		return;

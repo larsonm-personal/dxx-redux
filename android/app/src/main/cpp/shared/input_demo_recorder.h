@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include "input_demo_controls.h"
+#include "input_demo_result.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,6 +32,9 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
                                       int has_rng_call_count,
                                       uint32_t rng_call_count,
                                       char *error, size_t error_size);
+int input_demo_recorder_flush_with_result(const char *fixture_dir,
+                                          const input_demo_result *result,
+                                          char *error, size_t error_size);
 int input_demo_recorder_flush(const char *fixture_dir,
                               char *error, size_t error_size);
 

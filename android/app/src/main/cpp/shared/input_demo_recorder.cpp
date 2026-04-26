@@ -55,13 +55,19 @@ static std::string input_demo_recorder_join_path(const char *dir, const char *na
 	return joined;
 }
 
-static bool input_demo_recorder_write_minimal_result(const char *path,
-                                                     const input_demo_recorder_session &session, std::string *error)
+static bool input_demo_recorder_write_result(const char *path,
+                                             const input_demo_recorder_session &session,
+                                             const input_demo_result *supplied_result,
+                                             std::string *error)
 {
 	input_demo_result result;
 	char write_error[256] = "";
 
-	input_demo_result_clear(&result);
+	if (supplied_result)
+		result = *supplied_result;
+	else
+		input_demo_result_clear(&result);
+	result.version = 1;
 	snprintf(result.game, sizeof(result.game), "%s", input_demo_recorder_game_name(session.game));
 	snprintf(result.mission, sizeof(result.mission), "%s", session.mission.c_str());
 	result.level = session.level;
@@ -171,8 +177,9 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
 	return 1;
 }
 
-int input_demo_recorder_flush(const char *fixture_dir,
-                              char *error, size_t error_size)
+int input_demo_recorder_flush_with_result(const char *fixture_dir,
+                                          const input_demo_result *result,
+                                          char *error, size_t error_size)
 {
 	std::vector<input_demo_control_record> control_records;
 	std::vector<input_demo_rng_record> rng_records;
@@ -223,10 +230,16 @@ int input_demo_recorder_flush(const char *fixture_dir,
 	metadata.result_path = "result.json";
 	if (!input_demo_metadata_write_json5_file(metadata_path.c_str(), metadata, &shared_error))
 		return input_demo_recorder_copy_error(shared_error, error, error_size);
-	if (!input_demo_recorder_write_minimal_result(result_path.c_str(),
-	                                              g_input_demo_recorder_session, &shared_error))
+	if (!input_demo_recorder_write_result(result_path.c_str(),
+	                                      g_input_demo_recorder_session, result, &shared_error))
 		return input_demo_recorder_copy_error(shared_error, error, error_size);
 	input_demo_recorder_reset_session();
 	return 1;
+}
+
+int input_demo_recorder_flush(const char *fixture_dir,
+                              char *error, size_t error_size)
+{
+	return input_demo_recorder_flush_with_result(fixture_dir, NULL, error, error_size);
 }
 }

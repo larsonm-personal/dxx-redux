@@ -75,6 +75,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "songs.h"
 #include "rbaudio.h"
 #include "gamepal.h"
+#include "mission.h"
 
 #include "multi.h"
 #include "cntrlcen.h"
@@ -192,18 +193,24 @@ static int input_demo_count_live_objects_of_type(int object_type)
 	return count;
 }
 
-static void input_demo_capture_replay_result(input_demo_result *result)
+void input_demo_capture_current_result(input_demo_result *result)
 {
 	player *current_player = &Players[Player_num];
 	int i;
 
 	input_demo_result_clear(result);
 	snprintf(result->game, sizeof(result->game), "%s", "d2");
-	if (input_demo_replay_mission())
-		snprintf(result->mission, sizeof(result->mission), "%s", input_demo_replay_mission());
+	if (Current_mission && Current_mission_filename)
+		snprintf(result->mission, sizeof(result->mission), "%s", Current_mission_filename);
 	result->level = Current_level_num;
 	result->difficulty = Difficulty_level;
-	result->frame_count = input_demo_replay_next_frame_index();
+	if (input_demo_replay_is_loaded())
+		result->frame_count = (uint32_t)input_demo_replay_next_frame_index();
+	else if (input_demo_recorder_is_active())
+		result->frame_count = (uint32_t)input_demo_recorder_frame_count();
+	else
+		result->frame_count = 0;
+	result->has_game_time64 = 1;
 	result->game_time64 = GameTime64;
 
 	result->player0.present = 1;
@@ -251,8 +258,7 @@ static void input_demo_stop_replay(int write_result)
 		const char *result_path = input_demo_replay_actual_result_path();
 
 		if (result_path && result_path[0]) {
-			input_demo_capture_replay_result(&result);
-			result.has_game_time64 = 1;
+			input_demo_capture_current_result(&result);
 			if (!input_demo_result_write_json_file(result_path, &result, error, sizeof(error)))
 				con_printf(CON_NORMAL, "Input demo replay result write failed: %s\n", error);
 			else {

@@ -32,6 +32,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 struct object;
+struct input_demo_result;
 
 extern struct window *Game_wind;
 
@@ -109,6 +110,7 @@ void calc_frame_time(void);
 void calc_game_time(void);
 void calc_d_tick();
 int do_flythrough(struct object *obj,int first_time);
+void input_demo_capture_current_result(struct input_demo_result *result);
 
 extern int Difficulty_level;    // Difficulty level in 0..NDL-1, 0 = easiest, NDL-1 = hardest
 extern int Global_laser_firing_count;
