@@ -67,6 +67,7 @@ char copyright[] = "DESCENT II  COPYRIGHT (C) 1994-1996 PARALLAX SOFTWARE CORPOR
 #include "digi.h"
 #include "palette.h"
 #include "args.h"
+#include "input_demo_rng_mode.h"
 #include "titles.h"
 #include "text.h"
 #include "gauges.h"
@@ -172,6 +173,7 @@ void print_commandline_help()
 	printf( "  -verbose                      Enable verbose output.\n");
 	printf( "  -safelog                      Write gamelog.txt unbuffered.\n\t\t\t\tUse to keep helpful output to trace program crashes.\n");
 	printf( "  -norun                        Bail out after initialization\n");
+	printf( "  -inputdemo-validate <s>       Validate demo.json5 rng_mode and exit\n");
 	printf( "  -renderstats                  Enable renderstats info by default\n");
 	printf( "  -text <s>                     Specify alternate .tex file\n");
 	printf( "  -tmap <s>                     Select texmapper <s> to use\n\t\t\t\t(default: c, available: c, fp, quad, i386)\n");
@@ -194,6 +196,49 @@ void print_commandline_help()
 	printf( "\n Help:\n\n");
 	printf( "  -help, -h, -?, ?             View this help screen\n");
 	printf( "\n\n");
+}
+
+static int find_cmd_arg(const char *name)
+{
+	int i;
+
+	for (i = 1; i < Num_args; ++i)
+		if (!d_stricmp(Args[i], name))
+			return i;
+
+	return 0;
+}
+
+static int maybe_validate_input_demo_metadata(void)
+{
+	int arg_index = find_cmd_arg("-inputdemo-validate");
+	int engine_mode;
+	int fixture_mode;
+	const char *metadata_path;
+	const char *error;
+
+	if (!arg_index)
+		return -1;
+	if (arg_index + 1 >= Num_args || !Args[arg_index + 1] || Args[arg_index + 1][0] == '-')
+	{
+		printf("Missing value for -inputdemo-validate\n");
+		return 1;
+	}
+	metadata_path = Args[arg_index + 1];
+	engine_mode = d_rand_get_replay_mode();
+	error = input_demo_rng_mode_validate_metadata_file(metadata_path, engine_mode,
+		&fixture_mode);
+	if (error)
+	{
+		printf("Input demo metadata invalid: %s\n", metadata_path);
+		printf("%s\n", error);
+		printf("Active RNG backend expects: %s\n",
+			input_demo_rng_mode_name(engine_mode));
+		return 1;
+	}
+	printf("Input demo metadata OK: %s\n", metadata_path);
+	printf("rng_mode: %s\n", input_demo_rng_mode_name(fixture_mode));
+	return 0;
 }
 
 int Quitting = 0;
@@ -358,6 +403,11 @@ int main(int argc, char *argv[])
 		print_commandline_help();
 
 		return(0);
+	}
+	{
+		int validate_result = maybe_validate_input_demo_metadata();
+		if (validate_result >= 0)
+			return validate_result;
 	}
 
 	printf("\nType %s -help' for a list of command-line options.\n\n", PROGNAME);

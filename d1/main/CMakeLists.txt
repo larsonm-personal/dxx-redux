@@ -95,6 +95,11 @@ if(SDLMIXER)
     target_link_libraries(dxx-redux-d1 PUBLIC ${SDL_MIXER_LIBRARIES})
 endif()
 
+if(NOT ANDROID)
+    target_sources(dxx-redux-d1 PRIVATE ../../android/app/src/main/cpp/shared/input_demo_rng_mode.c)
+    target_include_directories(dxx-redux-d1 PRIVATE ../../android/app/src/main/cpp/shared)
+endif()
+
 if(EDITOR)
     target_sources(dxx-redux-d1 PRIVATE bmread.c)
     target_link_libraries(dxx-redux-d1 PRIVATE ${DXX_TARGET_PREFIX}editor ${DXX_TARGET_PREFIX}ui)

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "input_demo_rng_mode.h"
@@ -9,9 +10,31 @@ static int report_failure(const char *message)
 	return 1;
 }
 
+static int write_text_file(const char *path, const char *text)
+{
+	FILE *f = fopen(path, "wb");
+	if (!f)
+		return 0;
+	if (fwrite(text, 1, strlen(text), f) != strlen(text))
+	{
+		fclose(f);
+		return 0;
+	}
+	fclose(f);
+	return 1;
+}
+
 int main(void)
 {
+	const char *matching_mode_name;
+	const char *mismatching_mode_name;
+	const char *matching_metadata;
+	const char *missing_metadata = "{ version: 1 }\n";
+	const char *legacy_metadata = "{ rng_mode: \"per_frame_seed\" }\n";
+	const char *metadata_path = "test_input_demo_rng_mode_demo.json5";
+	const char *error;
 	int engine_mode = d_rand_get_replay_mode();
+	int parsed_mode = 0;
 
 	if (input_demo_rng_mode_parse("lcg_state") != D_RAND_REPLAY_MODE_LCG_STATE)
 		return report_failure("failed to parse lcg_state rng_mode");
@@ -31,6 +54,38 @@ int main(void)
 		return report_failure("wrong invalid rng_mode name");
 	if (input_demo_rng_mode_is_compatible(D_RAND_REPLAY_MODE_OUTPUT_LOG, engine_mode))
 		return report_failure("output_log rng_mode unexpectedly marked compatible");
+	matching_mode_name = input_demo_rng_mode_name(engine_mode);
+	mismatching_mode_name = engine_mode == D_RAND_REPLAY_MODE_LCG_STATE ?
+		"libc_reseed" : "lcg_state";
+	matching_metadata = engine_mode == D_RAND_REPLAY_MODE_LCG_STATE ?
+		"{ rng_mode: \"lcg_state\" }\n" :
+		"{ rng_mode: \"libc_reseed\" }\n";
+	error = input_demo_rng_mode_parse_metadata_text(matching_metadata, &parsed_mode);
+	if (error)
+		return report_failure(error);
+	if (parsed_mode != engine_mode)
+		return report_failure("metadata text parsed the wrong rng_mode");
+	error = input_demo_rng_mode_validate_metadata_text(matching_metadata, engine_mode,
+		&parsed_mode);
+	if (error)
+		return report_failure(error);
+	error = input_demo_rng_mode_validate_metadata_text(missing_metadata, engine_mode,
+		&parsed_mode);
+	if (!error)
+		return report_failure("missing rng_mode metadata unexpectedly validated");
+	error = input_demo_rng_mode_validate_metadata_text(legacy_metadata, engine_mode,
+		&parsed_mode);
+	if (!error)
+		return report_failure("legacy per_frame_seed metadata unexpectedly validated");
+	if (!write_text_file(metadata_path, matching_metadata))
+		return report_failure("could not write metadata probe file");
+	error = input_demo_rng_mode_validate_metadata_file(metadata_path, engine_mode,
+		&parsed_mode);
+	remove(metadata_path);
+	if (error)
+		return report_failure(error);
+	if (strcmp(matching_mode_name, mismatching_mode_name) == 0)
+		return report_failure("matching and mismatching rng_mode names collapsed");
 
 #ifdef NO_WATCOM_RAND
 	if (engine_mode != D_RAND_REPLAY_MODE_LIBC_RESEED)

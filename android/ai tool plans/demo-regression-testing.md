@@ -677,7 +677,7 @@ unchanged when the setting is `classic`.
 - Confirmed coop sends player state, not canonical controls.
 - Confirmed introspection needs more result-summary fields.
 
-### Phase 1: Safe RNG Foundation [NEXT]
+### Phase 1: Safe RNG Foundation [DONE]
 
 Goal: expose and control RNG state without changing normal gameplay feel, while
 keeping non-Android engine edits to tiny generic hook points.
@@ -724,9 +724,10 @@ Tasks completed in this phase:
 
 Handoff to later phases:
 
-- Phase 4 replay startup should read the fixture `rng_mode`, compare it with
-  `d_rand_get_replay_mode()`, and fail fast on mismatches such as
-  `lcg_state` requested on a `NO_WATCOM_RAND` build.
+- Phase 4 replay startup should extend the existing
+  `-inputdemo-validate <demo.json5>` path so `-inputdemo-replay` reuses the same
+  `rng_mode` validation helpers before it allocates replay state or begins
+  frame execution.
 - Deterministic-mode overrides for existing `d_srand((fix)timer_query())`
   call sites still belong to the replay/recording implementation phase, not this
   RNG foundation slice.
@@ -749,6 +750,15 @@ Completed in this tranche:
 - Added an Android-side `input_demo_rng_mode` helper so fixture parsing can use
   the canonical `lcg_state`, `libc_reseed`, and `output_log` names and compare
   them directly against `d_rand_get_replay_mode()`.
+- Added metadata text/file validation helpers so later replay startup can
+  validate `demo.json5` without open-coding another `rng_mode` parser.
+- Added a one-shot `-inputdemo-validate <demo.json5>` startup path in both D1
+  and D2 so the engine already has a real fail-fast consumer for fixture
+  `rng_mode` compatibility checks.
+- Validated that startup hook with the normal Windows build, then ran D1 and D2
+  against matching `lcg_state` metadata and mismatching `libc_reseed` metadata.
+  The matching files exited 0 and the mismatching files exited 1 with an
+  explicit active-backend compatibility error.
 
 Success criteria:
 
@@ -758,7 +768,7 @@ Success criteria:
   `rand()` is active.
 - Both D1 and D2 build.
 
-### Phase 2: Input Record Schema And Shared Helpers
+### Phase 2: Input Record Schema And Shared Helpers [NEXT]
 
 Goal: define an Android-first portable record layout that can later serve both
 D1 and D2 without duplicating format logic in each tree.
