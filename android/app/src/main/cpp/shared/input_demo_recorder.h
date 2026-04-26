@@ -17,6 +17,19 @@ typedef struct input_demo_recorder_settings {
 	int level;
 	int difficulty;
 	const char *rng_mode;
+    const char *checkpoint_save_name;
+    const uint8_t *checkpoint_data;
+    size_t checkpoint_size;
+    int has_checkpoint_start_gt;
+    int64_t checkpoint_start_gt;
+    int has_checkpoint_next_laser_fire_delta;
+    int32_t checkpoint_next_laser_fire_delta;
+    int has_checkpoint_next_missile_fire_delta;
+    int32_t checkpoint_next_missile_fire_delta;
+    int has_checkpoint_last_laser_fired_delta;
+    int32_t checkpoint_last_laser_fired_delta;
+    int has_checkpoint_auto_fire_fusion_delta;
+    int32_t checkpoint_auto_fire_fusion_delta;
 } input_demo_recorder_settings;
 
 void input_demo_recorder_settings_clear(input_demo_recorder_settings *settings);

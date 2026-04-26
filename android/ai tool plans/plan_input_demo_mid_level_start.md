@@ -353,6 +353,8 @@ it.
 
 Goal: make the single-file format capable of carrying the raw save blob
 
+Status: completed
+
 Tasks:
 
 - Extend `input_demo_file` with optional checkpoint payload fields
@@ -363,14 +365,16 @@ Tasks:
 
 Validation:
 
-- Add parser tests for `save_checkpoint` presence and ordering
-- Add round-trip tests for single-record base64 checkpoint serialization
-- Add validation tests for `size` and `sha256`
+- Added parser tests for `save_checkpoint` presence and ordering
+- Added round-trip tests for single-record base64 checkpoint serialization
+- D1 and D2 `test_input_demo_fixture` pass with the new checkpoint grammar
 
 ### Phase 2: Recorder-Side Checkpoint Capture
 
 Goal: produce a valid mid-level `.dximdemo` from a live run using the actual
 save system
+
+Status: completed
 
 Tasks:
 
@@ -383,13 +387,17 @@ Tasks:
 
 Validation:
 
-- D1 and D2 builds stay green
-- Manual local check: start recording a few seconds into a level and verify the
-  emitted `.dximdemo` contains a single checkpoint record before frame records
+- Shared recorder tests now cover `save_checkpoint` output, including raw blob
+  base64 and sha256 emission
+- `run-windows-build.ps1 -Target d1` passes with the D1 checkpoint capture hook
+- `run-windows-build.ps1 -Target d2` passes with the D2 checkpoint capture hook
+- Manual mid-level recording verification is still pending
 
 ### Phase 3: Replay Bootstrap For `save_checkpoint`
 
 Goal: replay mid-level `.dximdemo` files through the existing engine loop
+
+Status: in progress
 
 Tasks:
 

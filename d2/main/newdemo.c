@@ -25,6 +25,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include <time.h>
 #include <errno.h>
 #include <ctype.h>
+#include <limits.h>
 
 #include "u_mem.h"
 #include "inferno.h"
@@ -83,6 +84,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "console.h"
 #include "controls.h"
 #include "playsave.h"
+#include "state.h"
 
 #include "input_demo_recorder.h"
 #include "input_demo_rng_mode.h"
@@ -3363,6 +3365,8 @@ void newdemo_playback_one_frame()
 #define INPUT_DEMO_NEW_LIMIT 10
 #define INPUT_DEMO_QUICK_NAME_ATTEMPTS 255
 #define INPUT_DEMO_TEMP_NAME "tmpdemo"
+#define INPUT_DEMO_CHECKPOINT_NAME "inputdemo_start.dgss"
+#define INPUT_DEMO_CHECKPOINT_PLAYERS_NAME "Players/inputdemo_start.dgss"
 
 static int input_demo_android_quick_recording = 0;
 static int input_demo_android_quick_record_level = 0;
@@ -3382,6 +3386,121 @@ static void input_demo_clear_quick_recording(void)
 	input_demo_android_quick_recording = 0;
 	input_demo_android_quick_record_level = 0;
 	input_demo_android_quick_record_mission[0] = 0;
+}
+
+static void input_demo_release_recorder_settings(input_demo_recorder_settings *settings)
+{
+	if (!settings || !settings->checkpoint_data)
+		return;
+	d_free((void *) settings->checkpoint_data);
+	settings->checkpoint_data = NULL;
+	settings->checkpoint_size = 0;
+}
+
+static int input_demo_capture_checkpoint_delta(const char *name, fix64 value,
+	                                           int32_t *result,
+	                                           char *error, size_t error_size)
+{
+	if (value < (fix64) INT_MIN || value > (fix64) INT_MAX) {
+		if (error && error_size)
+			snprintf(error, error_size, "%s out of range for checkpoint", name);
+		return 0;
+	}
+	*result = (int32_t) value;
+	return 1;
+}
+
+static int input_demo_capture_recorder_checkpoint(input_demo_recorder_settings *settings,
+	                                              char *error, size_t error_size)
+{
+	const char *save_name = GameArg.SysUsePlayersDir ? INPUT_DEMO_CHECKPOINT_PLAYERS_NAME : INPUT_DEMO_CHECKPOINT_NAME;
+	char logical_path[PATH_MAX] = "";
+	char desc[] = "Input Demo Checkpoint";
+	PHYSFS_file *fp = NULL;
+	PHYSFS_sint64 file_size;
+	unsigned char *data = NULL;
+	int32_t next_laser_fire_delta;
+	int32_t next_missile_fire_delta;
+	int32_t last_laser_fired_delta;
+	int32_t auto_fire_fusion_delta;
+
+	if (!settings)
+		return 1;
+	if (GameArg.SysUsePlayersDir)
+		PHYSFS_mkdir("Players");
+	snprintf(logical_path, SDL_arraysize(logical_path), "%s", save_name);
+	PHYSFS_delete(logical_path);
+	if (!state_save_all_sub(logical_path, desc)) {
+		if (error && error_size)
+			snprintf(error, error_size, "%s", "could not create input demo checkpoint save");
+		return 0;
+	}
+	fp = PHYSFS_openRead(logical_path);
+	if (!fp) {
+		if (error && error_size)
+			snprintf(error, error_size, "%s", "could not read input demo checkpoint save");
+		PHYSFS_delete(logical_path);
+		return 0;
+	}
+	file_size = PHYSFS_fileLength(fp);
+	if (file_size <= 0 || file_size > UINT32_MAX) {
+		if (error && error_size)
+			snprintf(error, error_size, "%s", "input demo checkpoint save has invalid size");
+		PHYSFS_close(fp);
+		PHYSFS_delete(logical_path);
+		return 0;
+	}
+	MALLOC(data, unsigned char, (size_t) file_size);
+	if (!data) {
+		if (error && error_size)
+			snprintf(error, error_size, "%s", "could not allocate input demo checkpoint buffer");
+		PHYSFS_close(fp);
+		PHYSFS_delete(logical_path);
+		return 0;
+	}
+	if (PHYSFS_readBytes(fp, data, file_size) != file_size) {
+		if (error && error_size)
+			snprintf(error, error_size, "%s", "could not read input demo checkpoint bytes");
+		PHYSFS_close(fp);
+		PHYSFS_delete(logical_path);
+		d_free(data);
+		return 0;
+	}
+	PHYSFS_close(fp);
+	PHYSFS_delete(logical_path);
+	if (!input_demo_capture_checkpoint_delta("next_laser_fire_time",
+	                                         Next_laser_fire_time - GameTime64,
+	                                         &next_laser_fire_delta,
+	                                         error, error_size) ||
+	    !input_demo_capture_checkpoint_delta("next_missile_fire_time",
+	                                         Next_missile_fire_time - GameTime64,
+	                                         &next_missile_fire_delta,
+	                                         error, error_size) ||
+	    !input_demo_capture_checkpoint_delta("last_laser_fired_time",
+	                                         Last_laser_fired_time - GameTime64,
+	                                         &last_laser_fired_delta,
+	                                         error, error_size) ||
+	    !input_demo_capture_checkpoint_delta("auto_fire_fusion_cannon_time",
+	                                         Auto_fire_fusion_cannon_time - GameTime64,
+	                                         &auto_fire_fusion_delta,
+	                                         error, error_size)) {
+		d_free(data);
+		return 0;
+	}
+	settings->checkpoint_save_name = save_name;
+	settings->checkpoint_data = data;
+	settings->checkpoint_size = (size_t) file_size;
+	settings->has_checkpoint_start_gt = 1;
+	settings->checkpoint_start_gt = GameTime64;
+	settings->has_checkpoint_next_laser_fire_delta = 1;
+	settings->checkpoint_next_laser_fire_delta = next_laser_fire_delta;
+	settings->has_checkpoint_next_missile_fire_delta = 1;
+	settings->checkpoint_next_missile_fire_delta = next_missile_fire_delta;
+	settings->has_checkpoint_last_laser_fired_delta = 1;
+	settings->checkpoint_last_laser_fired_delta = last_laser_fired_delta;
+	settings->has_checkpoint_auto_fire_fusion_delta = 1;
+	settings->checkpoint_auto_fire_fusion_delta = auto_fire_fusion_delta;
+	return 1;
 }
 
 static int input_demo_ascii_equal_ignore_case(char lhs, char rhs)
@@ -3460,9 +3579,9 @@ static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *se
 			snprintf(error, error_size, "%s", "multiplayer input demo recording is not supported");
 		return 0;
 	}
-	if (Current_level_num == 0 || ThisLevelTime != 0) {
+	if (Current_level_num == 0) {
 		if (error && error_size)
-			snprintf(error, error_size, "%s", "start classic recording on the first frame of a level");
+			snprintf(error, error_size, "%s", "input demo recording requires a real level");
 		return 0;
 	}
 	replay_mode = d_rand_get_replay_mode();
@@ -3479,6 +3598,8 @@ static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *se
 		settings->difficulty = Difficulty_level;
 		settings->rng_mode = input_demo_rng_mode_name(replay_mode);
 	}
+	if (ThisLevelTime != 0 && !input_demo_capture_recorder_checkpoint(settings, error, error_size))
+		return 0;
 	return 1;
 }
 
@@ -3559,13 +3680,16 @@ static int maybe_start_input_demo_recording(int is_autorecord)
 {
 	input_demo_recorder_settings settings;
 	char error[256] = "";
+	int started;
 
 	if (!input_demo_prepare_recorder_settings(&settings, error, sizeof(error))) {
 		if (!is_autorecord)
 			con_printf(CON_NORMAL, "Input demo recording skipped: %s\n", error);
 		return 0;
 	}
-	if (!input_demo_recorder_start(&settings, error, sizeof(error))) {
+	started = input_demo_recorder_start(&settings, error, sizeof(error));
+	input_demo_release_recorder_settings(&settings);
+	if (!started) {
 		con_printf(CON_NORMAL, "Input demo recording did not start: %s\n", error);
 		return 0;
 	}

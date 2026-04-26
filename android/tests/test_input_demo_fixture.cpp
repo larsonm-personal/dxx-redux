@@ -197,6 +197,120 @@ static int expect_demo_file_output(void)
 	return 0;
 }
 
+static int expect_checkpoint_demo_file_output(void)
+{
+	const char *path = "test_input_demo_checkpoint_fixture.dximdemo";
+	const char *rng_mode = input_demo_rng_mode_name(d_rand_get_replay_mode());
+	input_demo_file demo;
+	input_demo_file parsed;
+	input_demo_file invalid;
+	std::string text;
+	std::string file_text;
+	std::string expected;
+	std::string error;
+	std::string reordered;
+	size_t frame_offset;
+	size_t result_offset;
+
+	demo.metadata.version = 1;
+	demo.metadata.game = input_demo_test_game_name();
+	demo.metadata.mission = input_demo_test_game_name();
+	demo.metadata.level = 1;
+	demo.metadata.difficulty = 2;
+	demo.metadata.start_mode = "save_checkpoint";
+	demo.metadata.rng_mode = rng_mode;
+	demo.metadata.frame_count = 1;
+	demo.metadata.start_save = "inputdemo_start.dgss";
+	demo.has_checkpoint = true;
+	demo.checkpoint.format = "dgss";
+	demo.checkpoint.encoding = "base64";
+	demo.checkpoint.size = 4;
+	demo.checkpoint.sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+	demo.checkpoint.save_name = "inputdemo_start.dgss";
+	demo.checkpoint.has_start_gt = 1;
+	demo.checkpoint.start_gt = 124125;
+	demo.checkpoint.has_next_laser_fire_delta = 1;
+	demo.checkpoint.next_laser_fire_delta = 0;
+	demo.checkpoint.has_next_missile_fire_delta = 1;
+	demo.checkpoint.next_missile_fire_delta = 0;
+	demo.checkpoint.has_last_laser_fired_delta = 1;
+	demo.checkpoint.last_laser_fired_delta = 0;
+	demo.checkpoint.has_auto_fire_fusion_delta = 1;
+	demo.checkpoint.auto_fire_fusion_delta = 0;
+	demo.checkpoint.data = "QUJDRA==";
+	demo.frames.resize(1);
+	input_demo_control_record_clear(&demo.frames[0].input);
+	demo.frames[0].input.frame = 0;
+	demo.frames[0].input.has_frame_time = 1;
+	demo.frames[0].input.frame_time = 3276;
+	demo.frames[0].input.held.has_forward_thrust_time = 1;
+	demo.frames[0].input.held.forward_thrust_time = 44;
+	input_demo_rng_record_clear(&demo.frames[0].rng);
+	demo.frames[0].rng.frame = 0;
+	demo.frames[0].rng.state = 100;
+	demo.has_result = true;
+	input_demo_result_clear(&demo.result);
+	snprintf(demo.result.game, sizeof(demo.result.game), "%s", input_demo_test_game_name());
+	snprintf(demo.result.mission, sizeof(demo.result.mission), "%s", input_demo_test_game_name());
+	demo.result.level = 1;
+	demo.result.difficulty = 2;
+	demo.result.frame_count = 1;
+	if (!input_demo_file_to_text(demo, &text, &error))
+		return report_failure_string(std::string("checkpoint demo file text failed: ") + error);
+	expected =
+		std::string("{\"type\":\"header\",\"version\":1,\"game\":\"") + input_demo_test_game_name() +
+		"\",\"mission\":\"" + input_demo_test_game_name() +
+		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"save_checkpoint\",\"rng_mode\":\"" + rng_mode +
+		"\",\"frame_count\":1,\"start_save\":\"inputdemo_start.dgss\"}\n" +
+		"{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"size\":4,\"sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"next_laser_fire_delta\":0,\"next_missile_fire_delta\":0,\"last_laser_fired_delta\":0,\"auto_fire_fusion_delta\":0,\"data\":\"QUJDRA==\"}\n" +
+		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
+		"{\"type\":\"result\",\"result\":{\"v\":1,\"g\":\"" + input_demo_test_game_name() +
+		"\",\"m\":\"" + input_demo_test_game_name() + "\",\"l\":1,\"d\":2,\"fr\":1}}\n";
+	if (text != expected)
+		return report_failure_string(std::string("unexpected checkpoint demo file text: ") + text);
+	if (!input_demo_file_write(path, demo, &error))
+		return report_failure_string(std::string("checkpoint demo file write failed: ") + error);
+	if (!read_text_file(path, &file_text)) {
+		remove(path);
+		return report_failure("could not read checkpoint demo file");
+	}
+	if (file_text != expected) {
+		remove(path);
+		return report_failure_string(std::string("unexpected checkpoint demo file text from disk: ") + file_text);
+	}
+	if (!input_demo_file_read(path, &parsed, &error)) {
+		remove(path);
+		return report_failure_string(std::string("checkpoint demo file read failed: ") + error);
+	}
+	remove(path);
+	if (!parsed.has_checkpoint || parsed.frames.size() != 1 || parsed.checkpoint.size != 4 ||
+		parsed.checkpoint.data != "QUJDRA==" || !parsed.checkpoint.has_start_gt ||
+		parsed.checkpoint.start_gt != 124125)
+		return report_failure("checkpoint demo file round trip corrupted content");
+	invalid = demo;
+	invalid.has_checkpoint = false;
+	if (input_demo_file_to_text(invalid, &text, &error))
+		return report_failure("save_checkpoint demo unexpectedly validated without checkpoint record");
+	invalid = demo;
+	invalid.metadata.start_mode = "new_level";
+	invalid.metadata.start_save.clear();
+	if (input_demo_file_to_text(invalid, &text, &error))
+		return report_failure("new_level demo unexpectedly validated with checkpoint record");
+	frame_offset = expected.find("{\"type\":\"frame\"");
+	result_offset = expected.find("{\"type\":\"result\"");
+	if (frame_offset == std::string::npos || result_offset == std::string::npos)
+		return report_failure("checkpoint expected text missing frame or result records");
+	reordered = expected.substr(0, frame_offset) + expected.substr(frame_offset, result_offset - frame_offset) +
+		expected.substr(expected.find("{\"type\":\"checkpoint\"", frame_offset == 0 ? 0 : 1), 0);
+	reordered = expected.substr(0, expected.find("{\"type\":\"checkpoint\"")) +
+		expected.substr(frame_offset, result_offset - frame_offset) +
+		expected.substr(expected.find("{\"type\":\"checkpoint\""), frame_offset - expected.find("{\"type\":\"checkpoint\"")) +
+		expected.substr(result_offset);
+	if (input_demo_file_parse_text(reordered, &parsed, &error))
+		return report_failure("checkpoint record unexpectedly validated after frame record");
+	return 0;
+}
+
 int main(void)
 {
 	if (expect_rng_coalescer())
@@ -204,6 +318,8 @@ int main(void)
 	if (expect_rng_file_round_trip())
 		return 1;
 	if (expect_demo_file_output())
+		return 1;
+	if (expect_checkpoint_demo_file_output())
 		return 1;
 	puts("PASS");
 	return 0;

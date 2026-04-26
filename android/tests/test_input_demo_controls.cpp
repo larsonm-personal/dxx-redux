@@ -133,6 +133,31 @@ static int expect_zero_release_update(void)
 	return 0;
 }
 
+static int expect_held_state_bitmask_update(void)
+{
+	input_demo_control_state held;
+	input_demo_control_record record;
+	std::string error;
+#if defined(INPUT_DEMO_TEST_D2)
+	std::string line = "{\"f\":1,\"s\":{\"f1s\":4,\"f2s\":8,\"rvs\":4,\"ams\":8,\"ab\":4,\"es\":8},\"p\":{\"f1\":1}}";
+#else
+	std::string line = "{\"f\":1,\"s\":{\"f1s\":4,\"f2s\":8,\"rvs\":4,\"ams\":8},\"p\":{\"f1\":1}}";
+#endif
+
+	input_demo_control_state_clear(&held);
+	if (!input_demo_control_record_parse_json_line(line, input_demo_control_info_game(), &record, &error))
+		return report_failure_string(std::string("held bitmask parse: ") + error);
+	input_demo_control_state_apply_update(&held, &record.held, input_demo_control_info_game());
+	if (held.fire_primary_state != 4 || held.fire_secondary_state != 8 ||
+		held.rear_view_state != 4 || held.automap_state != 8)
+		return report_failure("common held-state bitmask update was not preserved");
+#if defined(INPUT_DEMO_TEST_D2)
+	if (held.afterburner_state != 4 || held.energy_to_shield_state != 8)
+		return report_failure("D2 held-state bitmask update was not preserved");
+#endif
+	return 0;
+}
+
 static int expect_file_round_trip(void)
 {
 	const char *path = "test_input_demo_controls.jsonl";
@@ -340,6 +365,8 @@ int main(int argc, char *argv[])
 	if (expect_round_trip_json())
 		return 1;
 	if (expect_zero_release_update())
+		return 1;
+	if (expect_held_state_bitmask_update())
 		return 1;
 	if (expect_file_round_trip())
 		return 1;

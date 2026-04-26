@@ -381,31 +381,31 @@ static bool parse_state_object(const ordered_json &value, int game,
 			update->vertical_thrust_time = parsed;
 			update->has_vertical_thrust_time = 1;
 		} else if (name == "f1s") {
-			if (!parse_u8_field(it.value(), &update->fire_primary_state, error, "s.f1s", 1))
+			if (!parse_u8_field(it.value(), &update->fire_primary_state, error, "s.f1s", UCHAR_MAX))
 				return false;
 			update->has_fire_primary_state = 1;
 		} else if (name == "f2s") {
-			if (!parse_u8_field(it.value(), &update->fire_secondary_state, error, "s.f2s", 1))
+			if (!parse_u8_field(it.value(), &update->fire_secondary_state, error, "s.f2s", UCHAR_MAX))
 				return false;
 			update->has_fire_secondary_state = 1;
 		} else if (name == "rvs") {
-			if (!parse_u8_field(it.value(), &update->rear_view_state, error, "s.rvs", 1))
+			if (!parse_u8_field(it.value(), &update->rear_view_state, error, "s.rvs", UCHAR_MAX))
 				return false;
 			update->has_rear_view_state = 1;
 		} else if (name == "ams") {
-			if (!parse_u8_field(it.value(), &update->automap_state, error, "s.ams", 1))
+			if (!parse_u8_field(it.value(), &update->automap_state, error, "s.ams", UCHAR_MAX))
 				return false;
 			update->has_automap_state = 1;
 		} else if (name == "ab") {
 			if (game != INPUT_DEMO_GAME_D2)
 				return fail(error, "D1 fixtures must reject D2-only held-state keys");
-			if (!parse_u8_field(it.value(), &update->afterburner_state, error, "s.ab", 1))
+			if (!parse_u8_field(it.value(), &update->afterburner_state, error, "s.ab", UCHAR_MAX))
 				return false;
 			update->has_afterburner_state = 1;
 		} else if (name == "es") {
 			if (game != INPUT_DEMO_GAME_D2)
 				return fail(error, "D1 fixtures must reject D2-only held-state keys");
-			if (!parse_u8_field(it.value(), &update->energy_to_shield_state, error, "s.es", 1))
+			if (!parse_u8_field(it.value(), &update->energy_to_shield_state, error, "s.es", UCHAR_MAX))
 				return false;
 			update->has_energy_to_shield_state = 1;
 		} else {

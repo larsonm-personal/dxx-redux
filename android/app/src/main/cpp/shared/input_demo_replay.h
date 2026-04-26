@@ -35,6 +35,15 @@ int input_demo_replay_difficulty(void);
 const char *input_demo_replay_start_mode(void);
 const char *input_demo_replay_rng_mode(void);
 const char *input_demo_replay_actual_result_path(void);
+int input_demo_replay_has_checkpoint(void);
+const char *input_demo_replay_checkpoint_save_name(void);
+const uint8_t *input_demo_replay_checkpoint_data(void);
+size_t input_demo_replay_checkpoint_size(void);
+int64_t input_demo_replay_checkpoint_start_gt(void);
+int32_t input_demo_replay_checkpoint_next_laser_fire_delta(void);
+int32_t input_demo_replay_checkpoint_next_missile_fire_delta(void);
+int32_t input_demo_replay_checkpoint_last_laser_fired_delta(void);
+int32_t input_demo_replay_checkpoint_auto_fire_fusion_delta(void);
 int input_demo_replay_compare_result(const input_demo_result *actual,
                                      char *error, size_t error_size);
 int input_demo_replay_get_current_frame(input_demo_replay_frame *frame,

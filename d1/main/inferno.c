@@ -68,6 +68,7 @@ char copyright[] = "DESCENT   COPYRIGHT (C) 1994,1995 PARALLAX SOFTWARE CORPORAT
 #include "songs.h"
 #include "gameseq.h"
 #include "playsave.h"
+#include "state.h"
 #include "collide.h"
 #include "newdemo.h"
 #include "input_demo_replay.h"
@@ -236,6 +237,11 @@ static int maybe_start_input_demo_replay(void)
 	const char *validation_error;
 	char replay_error[256] = "";
 	char mission_name[PATH_MAX] = "";
+	const char *start_mode;
+	const char *checkpoint_name;
+	const uint8_t *checkpoint_data;
+	size_t checkpoint_size;
+	PHYSFS_file *checkpoint_file = NULL;
 
 	if (!arg_index)
 		return -1;
@@ -267,9 +273,10 @@ static int maybe_start_input_demo_replay(void)
 		input_demo_replay_unload();
 		return 1;
 	}
-	if (!input_demo_replay_start_mode() || strcmp(input_demo_replay_start_mode(), "new_level") != 0)
+	start_mode = input_demo_replay_start_mode();
+	if (!start_mode)
 	{
-		printf("Input demo replay currently supports start_mode new_level only\n");
+		printf("Input demo replay metadata is missing start_mode\n");
 		input_demo_replay_unload();
 		return 1;
 	}
@@ -289,11 +296,71 @@ static int maybe_start_input_demo_replay(void)
 		input_demo_replay_unload();
 		return 1;
 	}
-	Difficulty_level = input_demo_replay_difficulty();
+	if (!strcmp(start_mode, "new_level")) {
+		Difficulty_level = input_demo_replay_difficulty();
+		printf("Input demo replay starting: %s level %d, %u frames\n",
+			mission_name, input_demo_replay_level(), input_demo_replay_frame_count());
+		input_demo_set_skip_level_intro(1);
+		StartNewGame(input_demo_replay_level());
+		return 0;
+	}
+	if (strcmp(start_mode, "save_checkpoint") != 0)
+	{
+		printf("Input demo replay start_mode not supported: %s\n", start_mode);
+		input_demo_replay_unload();
+		return 1;
+	}
+	checkpoint_name = input_demo_replay_checkpoint_save_name();
+	checkpoint_data = input_demo_replay_checkpoint_data();
+	checkpoint_size = input_demo_replay_checkpoint_size();
+	if (!input_demo_replay_has_checkpoint() || !checkpoint_name || !checkpoint_name[0] || !checkpoint_data || !checkpoint_size)
+	{
+		printf("Input demo replay is missing checkpoint data\n");
+		input_demo_replay_unload();
+		return 1;
+	}
+	if (!strncmp(checkpoint_name, "Players/", 8))
+		PHYSFS_mkdir("Players");
+	PHYSFS_delete(checkpoint_name);
+	checkpoint_file = PHYSFS_openWrite(checkpoint_name);
+	if (!checkpoint_file)
+	{
+		printf("Input demo replay could not write checkpoint file: %s\n", checkpoint_name);
+		input_demo_replay_unload();
+		return 1;
+	}
+	if (PHYSFS_writeBytes(checkpoint_file, checkpoint_data, checkpoint_size) != (PHYSFS_sint64) checkpoint_size)
+	{
+		PHYSFS_close(checkpoint_file);
+		PHYSFS_delete(checkpoint_name);
+		printf("Input demo replay could not write checkpoint bytes: %s\n", checkpoint_name);
+		input_demo_replay_unload();
+		return 1;
+	}
+	PHYSFS_close(checkpoint_file);
+	checkpoint_file = NULL;
+	if (!state_restore_all_sub((char *) checkpoint_name))
+	{
+		PHYSFS_delete(checkpoint_name);
+		printf("Input demo replay could not restore checkpoint: %s\n", checkpoint_name);
+		input_demo_replay_unload();
+		return 1;
+	}
+	PHYSFS_delete(checkpoint_name);
+	Next_laser_fire_time = GameTime64 + input_demo_replay_checkpoint_next_laser_fire_delta();
+	Next_missile_fire_time = GameTime64 + input_demo_replay_checkpoint_next_missile_fire_delta();
+	Last_laser_fired_time = GameTime64 + input_demo_replay_checkpoint_last_laser_fired_delta();
+	Auto_fire_fusion_cannon_time = GameTime64 + input_demo_replay_checkpoint_auto_fire_fusion_delta();
+	if (d_stricmp(Current_mission_filename, mission_name) || Current_level_num != input_demo_replay_level() ||
+		Difficulty_level != input_demo_replay_difficulty())
+	{
+		printf("Input demo replay checkpoint restore mismatch: mission=%s level=%d difficulty=%d\n",
+			Current_mission_filename, Current_level_num, Difficulty_level);
+		input_demo_replay_unload();
+		return 1;
+	}
 	printf("Input demo replay starting: %s level %d, %u frames\n",
 		mission_name, input_demo_replay_level(), input_demo_replay_frame_count());
-	input_demo_set_skip_level_intro(1);
-	StartNewGame(input_demo_replay_level());
 	return 0;
 }
 

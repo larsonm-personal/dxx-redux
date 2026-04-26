@@ -189,9 +189,95 @@ static int expect_record_and_flush(void)
 	return 0;
 }
 
+static int expect_record_and_flush_checkpoint(void)
+{
+	const char *dir = "test_input_demo_recorder_checkpoint_fixture";
+	const std::string demo_path = std::string(dir) + "/recorded_checkpoint.dximdemo";
+	const unsigned char checkpoint_data[] = { 'A', 'B', 'C', 'D' };
+	input_demo_recorder_settings settings;
+	input_demo_control_state state;
+	input_demo_control_pulse pulse;
+	input_demo_file parsed;
+	char error[256] = "";
+	std::string read_error;
+	std::string text;
+	std::string expected;
+
+	if (!make_test_dir(dir))
+		return report_failure("could not create checkpoint recorder test directory");
+	input_demo_recorder_settings_clear(&settings);
+	settings.game = input_demo_test_game_id();
+	settings.mission = input_demo_test_game_name();
+	settings.level = 1;
+	settings.difficulty = 2;
+	settings.rng_mode = input_demo_test_rng_mode();
+	settings.checkpoint_save_name = "inputdemo_start.dgss";
+	settings.checkpoint_data = checkpoint_data;
+	settings.checkpoint_size = sizeof(checkpoint_data);
+	settings.has_checkpoint_start_gt = 1;
+	settings.checkpoint_start_gt = 124125;
+	settings.has_checkpoint_next_laser_fire_delta = 1;
+	settings.checkpoint_next_laser_fire_delta = 0;
+	settings.has_checkpoint_next_missile_fire_delta = 1;
+	settings.checkpoint_next_missile_fire_delta = 0;
+	settings.has_checkpoint_last_laser_fired_delta = 1;
+	settings.checkpoint_last_laser_fired_delta = 0;
+	settings.has_checkpoint_auto_fire_fusion_delta = 1;
+	settings.checkpoint_auto_fire_fusion_delta = 0;
+	if (!input_demo_recorder_start(&settings, error, sizeof(error))) {
+		remove_test_dir(dir);
+		return report_failure_string(std::string("checkpoint recorder start failed: ") + error);
+	}
+	input_demo_control_state_clear(&state);
+	input_demo_control_pulse_clear(&pulse);
+	state.forward_thrust_time = 44;
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, error, sizeof(error))) {
+		input_demo_recorder_cancel();
+		remove_test_dir(dir);
+		return report_failure_string(std::string("checkpoint capture frame failed: ") + error);
+	}
+	if (!input_demo_recorder_flush(demo_path.c_str(), error, sizeof(error))) {
+		input_demo_recorder_cancel();
+		remove_test_dir(dir);
+		return report_failure_string(std::string("checkpoint recorder flush failed: ") + error);
+	}
+	if (!read_text_file(demo_path.c_str(), &text)) {
+		remove(demo_path.c_str());
+		remove_test_dir(dir);
+		return report_failure("could not read checkpoint recorder demo file");
+	}
+	expected = std::string("{\"type\":\"header\",\"version\":1,\"game\":\"") + input_demo_test_game_name() +
+		"\",\"mission\":\"" + input_demo_test_game_name() +
+		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"save_checkpoint\",\"rng_mode\":\"" + input_demo_test_rng_mode() +
+		"\",\"frame_count\":1,\"start_save\":\"inputdemo_start.dgss\"}\n" +
+		"{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"size\":4,\"sha256\":\"e12e115acf4552b2568b55e93cbd39394c4ef81c82447fafc997882a02d23677\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"next_laser_fire_delta\":0,\"next_missile_fire_delta\":0,\"last_laser_fired_delta\":0,\"auto_fire_fusion_delta\":0,\"data\":\"QUJDRA==\"}\n" +
+		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
+		"{\"type\":\"result\",\"result\":{\"v\":1,\"g\":\"" + input_demo_test_game_name() +
+		"\",\"m\":\"" + input_demo_test_game_name() + "\",\"l\":1,\"d\":2,\"fr\":1}}\n";
+	if (text != expected) {
+		remove(demo_path.c_str());
+		remove_test_dir(dir);
+		return report_failure_string(std::string("unexpected checkpoint recorder demo file: ") + text);
+	}
+	if (!input_demo_file_read(demo_path.c_str(), &parsed, &read_error)) {
+		remove(demo_path.c_str());
+		remove_test_dir(dir);
+		return report_failure_string(std::string("checkpoint recorder demo read failed: ") + read_error);
+	}
+	remove(demo_path.c_str());
+	remove_test_dir(dir);
+	if (parsed.metadata.start_mode != "save_checkpoint" || !parsed.has_checkpoint ||
+		parsed.checkpoint.sha256 != "e12e115acf4552b2568b55e93cbd39394c4ef81c82447fafc997882a02d23677" ||
+		parsed.checkpoint.data != "QUJDRA==")
+		return report_failure("checkpoint recorder demo round trip mismatch");
+	return 0;
+}
+
 int main(void)
 {
 	if (expect_record_and_flush())
+		return 1;
+	if (expect_record_and_flush_checkpoint())
 		return 1;
 	puts("PASS");
 	return 0;

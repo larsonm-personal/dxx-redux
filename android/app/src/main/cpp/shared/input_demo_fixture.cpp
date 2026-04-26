@@ -59,6 +59,18 @@ static bool parse_int_field(const ordered_json &value, int *out, std::string *er
 	return true;
 }
 
+static bool parse_int64_field(const ordered_json &value, int64_t *out, std::string *error,
+	                          const char *field_name)
+{
+	long long parsed;
+
+	if (!value.is_number_integer())
+		return fail(error, std::string(field_name) + " must be an integer");
+	parsed = value.get<long long>();
+	*out = (int64_t) parsed;
+	return true;
+}
+
 static bool validate_rng_record(const input_demo_rng_record &record, std::string *error)
 {
 	if (!record.run_length)
@@ -267,6 +279,33 @@ static int game_id_from_name(const std::string &game_name)
 	return 0;
 }
 
+static bool validate_checkpoint(const input_demo_checkpoint &checkpoint, std::string *error)
+{
+	if (checkpoint.format != "dgss")
+		return fail(error, "checkpoint format must be dgss");
+	if (checkpoint.encoding != "base64")
+		return fail(error, "checkpoint encoding must be base64");
+	if (!checkpoint.size)
+		return fail(error, "checkpoint size must be positive");
+	if (checkpoint.sha256.empty())
+		return fail(error, "checkpoint sha256 is required");
+	if (checkpoint.save_name.empty())
+		return fail(error, "checkpoint save_name is required");
+	if (!checkpoint.has_start_gt)
+		return fail(error, "checkpoint start_gt is required");
+	if (!checkpoint.has_next_laser_fire_delta)
+		return fail(error, "checkpoint next_laser_fire_delta is required");
+	if (!checkpoint.has_next_missile_fire_delta)
+		return fail(error, "checkpoint next_missile_fire_delta is required");
+	if (!checkpoint.has_last_laser_fired_delta)
+		return fail(error, "checkpoint last_laser_fired_delta is required");
+	if (!checkpoint.has_auto_fire_fusion_delta)
+		return fail(error, "checkpoint auto_fire_fusion_delta is required");
+	if (checkpoint.data.empty())
+		return fail(error, "checkpoint data is required");
+	return true;
+}
+
 static bool validate_metadata(const input_demo_metadata &metadata, std::string *error)
 {
 	if (metadata.version != 1)
@@ -311,6 +350,113 @@ static bool parse_json_line(const std::string &line, const char *label,
 	}
 	if (!json->is_object())
 		return fail(error, std::string(label) + " json must be an object");
+	return true;
+}
+
+static bool parse_checkpoint_record(const ordered_json &root,
+	                                input_demo_checkpoint *checkpoint,
+	                                std::string *error)
+{
+	ordered_json::const_iterator it;
+	input_demo_checkpoint parsed;
+
+	if (!checkpoint)
+		return fail(error, "missing checkpoint output");
+	if (!parse_type(root, "checkpoint", error))
+		return false;
+	for (it = root.begin(); it != root.end(); ++it) {
+		const std::string &name = it.key();
+
+		if (name == "type") {
+			continue;
+		} else if (name == "format") {
+			if (!it.value().is_string())
+				return fail(error, "checkpoint format must be a string");
+			parsed.format = it.value().get<std::string>();
+		} else if (name == "encoding") {
+			if (!it.value().is_string())
+				return fail(error, "checkpoint encoding must be a string");
+			parsed.encoding = it.value().get<std::string>();
+		} else if (name == "size") {
+			if (!parse_uint32_field(it.value(), &parsed.size, error, "checkpoint size"))
+				return false;
+		} else if (name == "sha256") {
+			if (!it.value().is_string())
+				return fail(error, "checkpoint sha256 must be a string");
+			parsed.sha256 = it.value().get<std::string>();
+		} else if (name == "save_name") {
+			if (!it.value().is_string())
+				return fail(error, "checkpoint save_name must be a string");
+			parsed.save_name = it.value().get<std::string>();
+		} else if (name == "start_gt") {
+			if (!parse_int64_field(it.value(), &parsed.start_gt, error, "checkpoint start_gt"))
+				return false;
+			parsed.has_start_gt = 1;
+		} else if (name == "next_laser_fire_delta") {
+			int parsed_value;
+
+			if (!parse_int_field(it.value(), &parsed_value, error, "checkpoint next_laser_fire_delta"))
+				return false;
+			parsed.next_laser_fire_delta = parsed_value;
+			parsed.has_next_laser_fire_delta = 1;
+		} else if (name == "next_missile_fire_delta") {
+			int parsed_value;
+
+			if (!parse_int_field(it.value(), &parsed_value, error, "checkpoint next_missile_fire_delta"))
+				return false;
+			parsed.next_missile_fire_delta = parsed_value;
+			parsed.has_next_missile_fire_delta = 1;
+		} else if (name == "last_laser_fired_delta") {
+			int parsed_value;
+
+			if (!parse_int_field(it.value(), &parsed_value, error, "checkpoint last_laser_fired_delta"))
+				return false;
+			parsed.last_laser_fired_delta = parsed_value;
+			parsed.has_last_laser_fired_delta = 1;
+		} else if (name == "auto_fire_fusion_delta") {
+			int parsed_value;
+
+			if (!parse_int_field(it.value(), &parsed_value, error, "checkpoint auto_fire_fusion_delta"))
+				return false;
+			parsed.auto_fire_fusion_delta = parsed_value;
+			parsed.has_auto_fire_fusion_delta = 1;
+		} else if (name == "data") {
+			if (!it.value().is_string())
+				return fail(error, "checkpoint data must be a string");
+			parsed.data = it.value().get<std::string>();
+		} else {
+			return fail(error, "unknown checkpoint key: " + name);
+		}
+	}
+	if (!validate_checkpoint(parsed, error))
+		return false;
+	*checkpoint = parsed;
+	return true;
+}
+
+static bool checkpoint_record_to_json_line(const input_demo_checkpoint &checkpoint,
+	                                       std::string *line,
+	                                       std::string *error)
+{
+	ordered_json root = ordered_json::object();
+
+	if (!line)
+		return fail(error, "missing checkpoint text output");
+	if (!validate_checkpoint(checkpoint, error))
+		return false;
+	root["type"] = "checkpoint";
+	root["format"] = checkpoint.format;
+	root["encoding"] = checkpoint.encoding;
+	root["size"] = checkpoint.size;
+	root["sha256"] = checkpoint.sha256;
+	root["save_name"] = checkpoint.save_name;
+	root["start_gt"] = checkpoint.start_gt;
+	root["next_laser_fire_delta"] = checkpoint.next_laser_fire_delta;
+	root["next_missile_fire_delta"] = checkpoint.next_missile_fire_delta;
+	root["last_laser_fired_delta"] = checkpoint.last_laser_fired_delta;
+	root["auto_fire_fusion_delta"] = checkpoint.auto_fire_fusion_delta;
+	root["data"] = checkpoint.data;
+	*line = root.dump();
 	return true;
 }
 
@@ -427,6 +573,13 @@ static bool validate_demo_file(const input_demo_file &demo, std::string *error)
 
 	if (!validate_metadata(demo.metadata, error))
 		return false;
+	if (demo.metadata.start_mode == "save_checkpoint") {
+		if (!demo.has_checkpoint)
+			return fail(error, "save_checkpoint demos must include a checkpoint record");
+		if (!validate_checkpoint(demo.checkpoint, error))
+			return false;
+	} else if (demo.has_checkpoint)
+		return fail(error, "new_level demos must not include a checkpoint record");
 	game = game_id_from_name(demo.metadata.game);
 	if (!game)
 		return fail(error, "demo game must be d1 or d2");
@@ -555,6 +708,7 @@ bool input_demo_file_parse_text(const std::string &text,
 	uint32_t expected_frame = 0;
 	unsigned int line_number = 0;
 	bool have_header = false;
+	bool have_checkpoint = false;
 	bool have_result = false;
 
 	if (!demo)
@@ -589,6 +743,15 @@ bool input_demo_file_parse_text(const std::string &text,
 				return fail(error, "demo line " + std::to_string(line_number) + ": " + line_error);
 			parsed.frames.push_back(frame);
 			expected_frame++;
+		} else if (record_type == "checkpoint") {
+			if (have_checkpoint)
+				return fail(error, "demo line " + std::to_string(line_number) + ": duplicate checkpoint record");
+			if (expected_frame)
+				return fail(error, "demo line " + std::to_string(line_number) + ": checkpoint record must appear before frames");
+			if (!parse_checkpoint_record(root, &parsed.checkpoint, &line_error))
+				return fail(error, "demo line " + std::to_string(line_number) + ": " + line_error);
+			parsed.has_checkpoint = true;
+			have_checkpoint = true;
 		} else if (record_type == "result") {
 			if (!root.contains("result"))
 				return fail(error, "demo line " + std::to_string(line_number) + ": result record is missing result");
@@ -646,6 +809,12 @@ bool input_demo_file_to_text(const input_demo_file &demo,
 		return false;
 	*text += line;
 	text->push_back('\n');
+	if (demo.has_checkpoint) {
+		if (!checkpoint_record_to_json_line(demo.checkpoint, &line, error))
+			return false;
+		*text += line;
+		text->push_back('\n');
+	}
 	for (i = 0; i != demo.frames.size(); ++i) {
 		if (!frame_record_to_json_line(demo.frames[i], game, &line, error))
 			return false;
