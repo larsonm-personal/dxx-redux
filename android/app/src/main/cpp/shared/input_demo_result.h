@@ -8,13 +8,17 @@
 extern "C" {
 #endif
 
+#if defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__)
+#pragma pack(push, 4)
+#endif
+
 #define INPUT_DEMO_RESULT_MAX_GAME           8
 #define INPUT_DEMO_RESULT_MAX_MISSION        64
 #define INPUT_DEMO_RESULT_MAX_PRIMARY_AMMO   16
 #define INPUT_DEMO_RESULT_MAX_SECONDARY_AMMO 16
 
 typedef struct input_demo_result_player {
-	uint8_t present;
+	int32_t present;
 	int32_t energy;
 	int32_t shields;
 	int32_t score;
@@ -29,25 +33,25 @@ typedef struct input_demo_result_player {
 } input_demo_result_player;
 
 typedef struct input_demo_result_position {
-	uint8_t present;
+	int32_t present;
 	int32_t segment;
 	int32_t x;
 	int32_t y;
 	int32_t z;
-	uint8_t has_forward;
+	int32_t has_forward;
 	int32_t fx;
 	int32_t fy;
 	int32_t fz;
 } input_demo_result_position;
 
 typedef struct input_demo_result_level {
-	uint8_t present;
+	int32_t present;
 	int32_t robots_alive;
 	int32_t robots_killed;
 	int32_t hostages_remaining;
 	int32_t powerups_remaining;
-	uint8_t control_center_destroyed;
-	uint8_t endlevel_completed;
+	int32_t control_center_destroyed;
+	int32_t endlevel_completed;
 } input_demo_result_level;
 
 typedef struct input_demo_result {
@@ -57,12 +61,18 @@ typedef struct input_demo_result {
 	int32_t level;
 	int32_t difficulty;
 	uint32_t frame_count;
-	uint8_t has_game_time64;
+	/* Keep the 64-bit field on an explicit boundary shared by C and C++ builds */
+	int32_t has_game_time64;
+	int32_t reserved0;
 	int64_t game_time64;
 	input_demo_result_player player0;
 	input_demo_result_position position;
 	input_demo_result_level level_summary;
 } input_demo_result;
+
+#if defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__)
+#pragma pack(pop)
+#endif
 
 void input_demo_result_player_clear(input_demo_result_player *player);
 void input_demo_result_position_clear(input_demo_result_position *position);

@@ -136,6 +136,16 @@ Validation:
 
 Goal: point a script at a recorded `.dximdemo` file and get a pass/fail result from the Windows build.
 
+Status 2026-04-27:
+
+- Added `android/tests/run_input_demo_replay.ps1` with `-DemoPath`, `-Game auto|d1|d2`, `-DataDir`, `-TimeoutSeconds`, `-KeepSandbox`, and `-ListOnly`.
+- Manual mode now lists discovered `.dximdemo` files and prompts for `realtime` or `accelerated` replay.
+- Host replay auto-detects the game from the header, stages a sandboxed Windows launch, auto-discovers the D2 host data dir, waits for `<demo>.actual.json`, and prints host-side pass/fail details.
+- Validated against `android/temp_game_logs/d2_descent2_level1_20260426_220607.dximdemo`: wrapper runs end to end and reports host-side replay mismatches cleanly.
+- Fixed a Windows C/C++ ABI bug in the shared replay path: `input_demo_replay_frame` needed an explicit packed layout, similar to the already-fixed `input_demo_result` boundary.
+- The remaining D2 checkpoint replay failure is now narrowed to transient gameplay state after checkpoint restore. The replay reaches reactor-hit events, but still does not destroy the control center, and spreadfire phase changes the hit sequence, which means the save plus existing timer extras are still missing some live weapon or gameplay state.
+- Remaining Phase 4 follow-up: refactor `test_input_demo_runtime_smoke.ps1` to share the wrapper or its helpers.
+
 Tasks:
 
 - Add a reusable PowerShell runner, likely `android/tests/run_input_demo_replay.ps1`, with parameters for `-DemoPath`, `-Game auto|d1|d2`, `-DataDir`, `-TimeoutSeconds`, and `-KeepSandbox`.

@@ -11,15 +11,24 @@
 extern "C" {
 #endif
 
+#if defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__)
+#pragma pack(push, 4)
+#endif
+
 typedef struct input_demo_replay_frame {
 	uint32_t frame;
 	int32_t frame_time;
 	input_demo_control_state state;
 	input_demo_control_pulse pulse;
+	/* Keep the trailing RNG fields on an explicit boundary shared by C and C++ builds */
 	uint32_t rng_state;
-	uint8_t has_rng_call_count;
+	int32_t has_rng_call_count;
 	uint32_t rng_call_count;
 } input_demo_replay_frame;
+
+#if defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__)
+#pragma pack(pop)
+#endif
 
 void input_demo_replay_frame_clear(input_demo_replay_frame *frame);
 int input_demo_replay_is_loaded(void);

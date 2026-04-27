@@ -250,8 +250,33 @@ void input_demo_capture_current_result(input_demo_result *result)
 	result->level_summary.endlevel_completed = Endlevel_sequence ? 1 : 0;
 }
 
+static fix64 input_demo_replay_last_timer_value = 0;
+
+static void input_demo_log_result_state(const char *label)
+{
+	player *current_player = &Players[Player_num];
+	con_printf(CON_NORMAL,
+		"Input demo replay %s: gt=%lld frame=%u level=%d player=%d energy=%d shields=%d score=%d lives=%d console=%p seg=%d endlevel=%d cc=%d\n",
+		label,
+		(long long)GameTime64,
+		(unsigned int)input_demo_replay_next_frame_index(),
+		Current_level_num,
+		Player_num,
+		f2i(current_player->energy),
+		f2i(current_player->shields),
+		current_player->score,
+		current_player->lives,
+		(void *)ConsoleObject,
+		ConsoleObject ? ConsoleObject->segnum : -1,
+		Endlevel_sequence,
+		Control_center_destroyed);
+}
+
 static void input_demo_stop_replay(int write_result)
 {
+	input_demo_replay_last_timer_value = 0;
+	if (input_demo_replay_is_loaded())
+		input_demo_log_result_state("stop");
 	if (write_result && input_demo_replay_is_loaded()) {
 		input_demo_result result;
 		char error[256] = "";
@@ -275,9 +300,36 @@ static void input_demo_stop_replay(int write_result)
 		window_close(Game_wind);
 }
 
+static void input_demo_delay_replay_frame(fix frame_time)
+{
+	fix64 timer_value;
+	fix64 elapsed;
+
+	if (!GameArg.SysUseNiceFPS)
+		return;
+	if (frame_time <= 0)
+		return;
+	timer_update();
+	timer_value = timer_query();
+	if (!input_demo_replay_last_timer_value) {
+		input_demo_replay_last_timer_value = timer_value;
+		return;
+	}
+	elapsed = timer_value - input_demo_replay_last_timer_value;
+	while (elapsed < frame_time)
+	{
+		timer_delay(frame_time - elapsed);
+		timer_update();
+		timer_value = timer_query();
+		elapsed = timer_value - input_demo_replay_last_timer_value;
+	}
+	input_demo_replay_last_timer_value = timer_value;
+}
+
 static int input_demo_apply_replay_frame(void)
 {
 	input_demo_replay_frame replay_frame;
+	unsigned int actual_rng_state;
 	char error[256] = "";
 
 	if (!input_demo_replay_is_loaded())
@@ -291,6 +343,15 @@ static int input_demo_apply_replay_frame(void)
 		input_demo_stop_replay(0);
 		return 0;
 	}
+	if (input_demo_replay_next_frame_index() > 0 && d_rand_get_state(&actual_rng_state) &&
+		actual_rng_state != replay_frame.rng_state)
+		con_printf(CON_NORMAL,
+			"Input demo replay rng state mismatch: frame=%u gt=%lld expected=%u actual=%u\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			(long long)GameTime64,
+			replay_frame.rng_state,
+			actual_rng_state);
+	input_demo_delay_replay_frame((fix)replay_frame.frame_time);
 	input_demo_control_info_from_state(&Controls, &replay_frame.state, &replay_frame.pulse);
 	if (!d_rand_set_state(replay_frame.rng_state)) {
 		con_printf(CON_NORMAL, "Input demo replay stopped: active RNG backend cannot restore state\n");
@@ -304,10 +365,18 @@ static int input_demo_apply_replay_frame(void)
 
 static void input_demo_finish_replay_frame(void)
 {
+	input_demo_replay_frame replay_frame;
 	char error[256] = "";
 
 	if (!input_demo_replay_is_loaded())
 		return;
+	if (!input_demo_replay_get_current_frame(&replay_frame, error, sizeof(error))) {
+		con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error);
+		input_demo_stop_replay(0);
+		return;
+	}
+	if (input_demo_replay_next_frame_index() + 1 >= input_demo_replay_frame_count())
+		input_demo_log_result_state("post-final-frame");
 	if (!input_demo_replay_advance_frame(error, sizeof(error))) {
 		con_printf(CON_NORMAL, "Input demo replay stopped: %s\n", error);
 		input_demo_stop_replay(0);
@@ -1956,19 +2025,10 @@ int add_flicker(int segnum, int sidenum, fix delay, unsigned long mask)
 //				    cannon.
 void FireLaser()
 {
-#ifdef ANDROID
-	/* Android port: touch double-tap fires a brief press that may arrive and
-	 * release within a single game frame, leaving fire_primary_state == 0.
-	 * fire_primary_count is edge-triggered (incremented on every button-down)
-	 * so it survives same-frame press+release.  Use it as a fallback. */
-	{
-		int wants_fire = Controls.fire_primary_state || Controls.fire_primary_count;
-		Controls.fire_primary_count = 0;
-		Global_laser_firing_count = wants_fire?Weapon_info[Primary_weapon_to_weapon_info[Players[Player_num].primary_weapon]].fire_count:0;
-	}
-#else
-	Global_laser_firing_count = Controls.fire_primary_state?Weapon_info[Primary_weapon_to_weapon_info[Players[Player_num].primary_weapon]].fire_count:0;
-#endif
+	int wants_fire = Controls.fire_primary_state || Controls.fire_primary_count;
+
+	Controls.fire_primary_count = 0;
+	Global_laser_firing_count = wants_fire?Weapon_info[Primary_weapon_to_weapon_info[Players[Player_num].primary_weapon]].fire_count:0;
 
 	if ((Players[Player_num].primary_weapon == FUSION_INDEX) && (Global_laser_firing_count)) {
 		if ((Players[Player_num].energy < F1_0*2) && (Auto_fire_fusion_cannon_time == 0)) {

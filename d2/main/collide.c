@@ -70,6 +70,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "switch.h"
 #include "palette.h"
 #include "gameseq.h"
+#include "input_demo_replay.h"
 #ifdef EDITOR
 #include "editor/editor.h"
 #endif
@@ -1058,6 +1059,7 @@ void net_destroy_controlcen(object *controlcen)
 void apply_damage_to_controlcen(object *controlcen, fix damage, short who)
 {
 	int	whotype;
+	fix old_shields;
 
 	//	Only allow a player to damage the control center.
 
@@ -1086,10 +1088,29 @@ void apply_damage_to_controlcen(object *controlcen, fix damage, short who)
 		ai_do_cloak_stuff();
 	}
 
+	old_shields = controlcen->shields;
 	if ( controlcen->shields >= 0 )
 		controlcen->shields -= damage;
 
+	if (input_demo_replay_is_loaded() && Objects[who].id == Player_num)
+		con_printf(CON_NORMAL,
+			"Input demo replay reactor hit: gt=%lld frame=%u damage=%d shields=%d->%d seg=%d obj=%d\n",
+			(long long)GameTime64,
+			(unsigned int)input_demo_replay_next_frame_index(),
+			f2i(damage),
+			f2i(old_shields),
+			f2i(controlcen->shields),
+			controlcen->segnum,
+			(int)(controlcen - Objects));
+
 	if ( (controlcen->shields < 0) && !(controlcen->flags&(OF_EXPLODING|OF_DESTROYED)) ) {
+		if (input_demo_replay_is_loaded())
+			con_printf(CON_NORMAL,
+				"Input demo replay reactor destroyed: gt=%lld frame=%u seg=%d obj=%d\n",
+				(long long)GameTime64,
+				(unsigned int)input_demo_replay_next_frame_index(),
+				controlcen->segnum,
+				(int)(controlcen - Objects));
 
 		do_controlcen_destroyed_stuff(controlcen);
 
