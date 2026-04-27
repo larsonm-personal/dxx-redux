@@ -1,0 +1,94 @@
+# Enhanced Save State For Checkpoint Replay Plan
+
+## Goal
+
+Decide whether input-demo checkpoint replay should move transient gameplay state from `.dximdemo` checkpoint metadata into the regular D1/D2 savegame format, then enumerate the state currently missing from saves and plan a save-format enhancement that improves both normal saves and input-demo checkpoints.
+
+## Status
+
+- [x] Create this plan file as the first work artifact.
+- [x] Audit current D1 and D2 save/restore coverage.
+- [x] Audit live gameplay globals that influence deterministic simulation after restore.
+- [x] Decide whether save-format enhancement is preferable to checkpoint-only metadata.
+- [x] Enumerate missing state by priority and risk.
+- [x] Draft implementation and validation phases.
+- [ ] Implement phase 1 deterministic save-state helpers.
+- [ ] Implement D2 save-version bump and field persistence.
+- [ ] Implement D1 save-version bump and matching field persistence.
+- [ ] Migrate input-demo checkpoint metadata to the enhanced save fields.
+- [ ] Run host build and replay validation.
+
+## Working Notes
+
+- A real D2 checkpoint-backed input demo reached different reactor-hit sequences when only spreadfire phase was changed, so at least one transient weapon-pattern state value is relevant to checkpoint replay.
+- The intent is to keep the save file as the source of truth where practical, so input-demo checkpoint payloads do not need parallel metadata for ordinary game state.
+- Current save files already preserve the durable world state: player inventory and stats, current selected weapons, objects, walls, doors, triggers, fuel centers, control-center state, AI state, automap, and D2 extras such as exploding walls, cloaking walls, light subtraction, markers, afterburner charge, and omega charge.
+- The route is good. Adding ordinary simulation state to DGSS is cleaner than growing `.dximdemo` checkpoint metadata because it improves normal saves, keeps checkpoint replay using the same restore path as users, and keeps game-specific details in C.
+
+## Missing Or Incomplete State
+
+### Critical For Checkpoint Replay
+
+- Object allocator state: `num_objects` and the private `free_obj_list[]` stack in `object.c` are rebuilt in sorted order by `special_reset_objects()` after restore. Live recording continues with the original allocation stack, while replay continues with a reconstructed stack. Future object numbers can diverge even if the object array itself was saved.
+- Tick scheduler state: `d_tick_count`, `d_tick_step`, and the static `timer` accumulator inside `calc_d_tick()` are not saved. `d_tick_count` drives AI cadence, reactor visibility checks, wall stuck-object cleanup, and other modulo scheduling.
+- Homing scheduler state: `homerFrameCount`, `currentHomerFrameTime`, and `doHomerFrame` in `object.c` are not saved. Active weapon objects also lose `ctype.laser_info.creation_framecount` because `object_rw` does not contain it.
+- RNG state: `d_rand_state` is not saved. Input demos currently restore RNG per frame, but normal saves and checkpoint starts should carry the engine RNG state. `d_rand_call_count` is diagnostic only and does not need to affect simulation.
+- Weapon fire timers: `Next_laser_fire_time`, `Next_missile_fire_time`, `Last_laser_fired_time`, `Next_flare_fire_time`, and `Auto_fire_fusion_cannon_time` are not saved. Restore currently resets most of them to `GameTime64`; checkpoint metadata was added only because DGSS did not carry them.
+- Fusion state: `Fusion_charge` and the static `Fusion_next_sound_time` inside `FireLaser()` are not saved. This affects fusion shot multiplier and overcharge damage timing.
+- Primary fire pattern state: D1 `Spreadfire_toggle`; D2 `Spreadfire_toggle` and `Helix_orientation`. D2 currently keeps these as function statics inside `do_laser_firing_player()`, so saving them requires accessors or moving them to file-scope globals.
+- Secondary fire pattern state: D1/D2 `Missile_gun`, D1/D2 `Proximity_dropped`, and D2 `Smartmines_dropped` are not saved. These affect alternating missile guns and multiplayer mine-drop reimbursement cadence.
+
+### High Value Edge Cases
+
+- D2 guided missile tracking: active guided missile objects are saved, but `Guided_missile[]` and `Guided_missile_sig[]` are not restored. Rebuild by scanning saved weapon objects or save object number/signature pairs.
+- D2 omega timing: `Omega_charge` is saved, but `Last_omega_fire_time` is not. This affects omega recharge delay and fire cadence after restore.
+- Persistent weapon collision memory: `laser_info.hitobj_list[]` is not saved; only `last_hitobj` is used to seed one entry on restore. Persistent weapons can damage objects differently after a mid-projectile save.
+- Save-time mutations: `state_object_to_object_rw()` writes `obj->ctype.laser_info.creation_framecount = 0`, which mutates live state. The save path also finishes all morph objects before writing. Checkpoint capture should become non-mutating.
+- Morph state: active `morph_objects[]` is not serialized; saves force morphs to completed objects. This is acceptable old save behavior, but it is not an exact checkpoint.
+- Wall stuck-object state: `Num_stuck_objects` and `Stuck_objects[]` are not saved. This affects flares/weapons stuck in doors and cleanup when doors open.
+- Control-center transient timers: D2 `Last_time_cc_vis_check` and static `controlcen_death_silence`, plus D1 static `controlcen_death_silence`, are not saved. The durable control-center state is saved, but these frame timers are not.
+
+### Lower Priority Save Fidelity
+
+- D2 weapon afterburner blob timing: `Last_afterburner_time[]` is not saved. Mostly visual, but spawned blobs consume object slots and can perturb object allocation.
+- D1 palette flash state: D2 saves `Flash_effect`, `Time_flash_last_played`, and palette adds, but D1 only saves the screenshot palette and not the live flash fade state.
+- D2 flickering light runtime state: `Num_flickering_lights` and `Flickering_lights[]` come from the level file and are not part of DGSS. `Light_subtracted[]` is saved, so this is mainly timer and enable-state fidelity.
+- Recent-player visual bookkeeping such as shield delta/time/certainty is omitted from `player_rw`. This should stay low priority unless the HUD state itself becomes part of a regression signal.
+
+## Implementation Plan
+
+### Phase 1: Add Small State Accessors
+
+- Add D1/D2 helpers for deterministic object allocator state: save and restore `num_objects` and `free_obj_list[]` without exposing the raw static array outside `object.c`.
+- Add D1/D2 helpers for `calc_d_tick()` so the static accumulator can be saved and restored with `d_tick_count`.
+- Add D1/D2 helpers for homing scheduler state in `object.c`.
+- Add D1/D2 helpers for primary weapon sequence state, including D2's function-static spreadfire and helix values.
+- Add D2 guided missile rebind helper that scans restored objects and repairs `Guided_missile[]` and signatures.
+
+### Phase 2: Bump Save Versions And Persist Core Fields
+
+- D2: bump `STATE_VERSION` from 23 to 24, leaving `STATE_COMPATIBLE_VERSION` at 20.
+- D1: bump `STATE_VERSION` from 9 to 10, leaving `STATE_COMPATIBLE_VERSION` at 6.
+- Append a version-gated deterministic-state block after existing non-coop fields and before Android coop trailer metadata.
+- Store time-based fields as deltas from `GameTime64`, matching the current DGSS zero-based time convention.
+- Read missing fields only when the new version is present; keep current defaults for old saves.
+
+### Phase 3: Extend Object Serialization Carefully
+
+- Add version-gated persistence for `laser_info.creation_framecount` and, if practical, `hitobj_list[]` for active `CT_WEAPON` objects.
+- Remove or correct the live mutation of `obj->ctype.laser_info.creation_framecount` during save.
+- Decide whether morph state is included now or left as a documented phase 2 save-fidelity improvement. If included, serialize `morph_objects[]` by object number and signature, not raw pointers.
+
+### Phase 4: Remove Checkpoint Metadata Duplication
+
+- Stop writing timer deltas into `.dximdemo` checkpoint metadata once enhanced DGSS is required for new input demos.
+- Keep reader tolerance for old demos if easy, but do not add new launcher-side compatibility complexity before first Android release.
+- Keep `.dximdemo` metadata focused on demo schema, checkpoint bytes, and validation expectations, not duplicated gameplay state.
+
+### Phase 5: Validate
+
+- Add or extend a high-level integration test that saves a checkpoint, immediately restores it, and compares deterministic fields exposed by introspection or a small C test hook.
+- Re-run the known failing D2 input demo in realtime and accelerated modes through `android/tests/run_input_demo_replay.ps1`.
+- Run `run-windows-build.ps1 -Target d1` and `run-windows-build.ps1 -Target d2`.
+- Run `android\run-code-quality.ps1 --fix` after implementation and wait for it to exit fully.
+
