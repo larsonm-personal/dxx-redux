@@ -16,6 +16,8 @@ serialization.
 - [x] Broaden mid-level quick-record detection beyond `ThisLevelTime != 0`
 - [x] Preserve quick-record mission and level metadata until auto-name build
 - [x] Normalize replay checkpoint temp paths to the current runtime players-dir layout
+- [x] Skip eager mission loading for `save_checkpoint` replay bootstrap
+- [x] Guard Android `start_time()` underflow during replay startup
 
 Notes:
 
@@ -29,6 +31,15 @@ Notes:
   strips any recorded directory component and writes the temp restore file using
   the current runtime `GameArg.SysUsePlayersDir` layout, so a checkpoint demo is
   portable across Android and desktop players-dir configurations
+- Checkpoint replay no longer pre-loads the mission in `inferno.c` before calling
+  `state_restore_all_sub()`. Normal save restore already loads the mission from
+  the save file, and the extra preload left the menu-side asset state in a bad
+  place during Android startup for mid-level demo launches
+- The remaining Android crash still reduced to `Assert(time_paused >= 0)` inside
+  `start_time()`. For Android builds, unmatched `start_time()` calls during demo
+  startup are now logged to breadcrumbs and treated as a no-op instead of aborting
+  the process, because the extra unpause appears to be benign compared to killing
+  the replay before it can proceed
 
 ## Decision
 
@@ -322,6 +333,13 @@ rebase every timer in the live engine after restore.
 
 - Delete the temp extracted checkpoint on replay completion or unload
 - Delete it on bootstrap failure before returning to menu
+- Replace the current Android-only `start_time()` underflow guard with a traced,
+  reasoned fix for the unmatched pause or unpause path. The guard is a temp
+  crash-stop, not the desired final behavior
+- Add checkpoint payload compression for `save_checkpoint` demos before the
+  cleanup tranche is considered done. The embedded `DGSS` payload is currently
+  raw base64 and wastes substantial space; evaluate a pinned, easy-to-include
+  option such as zlib and keep checksum validation on the decompressed bytes
 
 ## Minimal Code Shape
 

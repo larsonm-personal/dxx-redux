@@ -85,6 +85,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "piggy.h"
 #include "multibot.h"
 #ifdef __ANDROID__
+#include "android_crash_handler.h"
 #include "coop_save.h"
 #endif
 #include "fvi.h"
@@ -504,6 +505,13 @@ void stop_time()
 
 void start_time()
 {
+	#ifdef __ANDROID__
+	if (time_paused <= 0) {
+		crash_breadcrumb_v("start_time underflow ignored at %s:%d", __FILE__, __LINE__);
+		time_paused = 0;
+		return;
+	}
+	#endif
 	time_paused--;
 	Assert(time_paused >= 0);
 	if (time_paused==0) {
