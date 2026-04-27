@@ -3392,7 +3392,7 @@ static void input_demo_release_recorder_settings(input_demo_recorder_settings *s
 {
 	if (!settings || !settings->checkpoint_data)
 		return;
-	d_free((void *) settings->checkpoint_data);
+	mem_free((void *) settings->checkpoint_data);
 	settings->checkpoint_data = NULL;
 	settings->checkpoint_size = 0;
 }
@@ -3503,6 +3503,34 @@ static int input_demo_capture_recorder_checkpoint(input_demo_recorder_settings *
 	return 1;
 }
 
+static int input_demo_is_mid_level_record_start(void)
+{
+	const obj_position *player_start;
+
+	if (ThisLevelTime != 0)
+		return 1;
+	if (!ConsoleObject)
+		return 0;
+	player_start = &Player_init[Player_num];
+	if (ConsoleObject->segnum != player_start->segnum)
+		return 1;
+	if (ConsoleObject->pos.x != player_start->pos.x ||
+	    ConsoleObject->pos.y != player_start->pos.y ||
+	    ConsoleObject->pos.z != player_start->pos.z)
+		return 1;
+	if (ConsoleObject->orient.rvec.x != player_start->orient.rvec.x ||
+	    ConsoleObject->orient.rvec.y != player_start->orient.rvec.y ||
+	    ConsoleObject->orient.rvec.z != player_start->orient.rvec.z ||
+	    ConsoleObject->orient.uvec.x != player_start->orient.uvec.x ||
+	    ConsoleObject->orient.uvec.y != player_start->orient.uvec.y ||
+	    ConsoleObject->orient.uvec.z != player_start->orient.uvec.z ||
+	    ConsoleObject->orient.fvec.x != player_start->orient.fvec.x ||
+	    ConsoleObject->orient.fvec.y != player_start->orient.fvec.y ||
+	    ConsoleObject->orient.fvec.z != player_start->orient.fvec.z)
+		return 1;
+	return 0;
+}
+
 static int input_demo_ascii_equal_ignore_case(char lhs, char rhs)
 {
 	if (lhs >= 'A' && lhs <= 'Z')
@@ -3598,7 +3626,7 @@ static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *se
 		settings->difficulty = Difficulty_level;
 		settings->rng_mode = input_demo_rng_mode_name(replay_mode);
 	}
-	if (ThisLevelTime != 0 && !input_demo_capture_recorder_checkpoint(settings, error, error_size))
+	if (input_demo_is_mid_level_record_start() && !input_demo_capture_recorder_checkpoint(settings, error, error_size))
 		return 0;
 	return 1;
 }
@@ -4013,15 +4041,16 @@ void newdemo_stop_recording(int is_manual)
 	outfile = NULL;
 	Newdemo_state = ND_STATE_NORMAL;
 	Newdemo_is_autorecord = 0;
-	input_demo_clear_quick_recording();
 	gr_palette_load( gr_palette );
 
 	if (was_android_quick_recording) {
 		input_demo_build_quick_record_name(demo_name, SDL_arraysize(demo_name));
+		input_demo_clear_quick_recording();
 		PHYSFS_delete(DEMO_FILENAME);
 		maybe_flush_input_demo_recording(demo_name, 1);
 		return;
 	}
+	input_demo_clear_quick_recording();
 
 	newdemo_get_default_filename(demo_name, SDL_arraysize(demo_name));
 	// If we're suppressing auto-record UI, don't ask for the name, just use the default.

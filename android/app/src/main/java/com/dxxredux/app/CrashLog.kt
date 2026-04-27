@@ -20,8 +20,13 @@ object CrashLog {
     private const val TAG = "CrashLog"
     private const val TOMBSTONE_DIR_NAME = "tombstones"
     private const val AUTHORITY = "com.dxxredux.app.fileprovider"
+    private const val HEADER_SECTION = "dxx-redux header"
+    private const val BREADCRUMBS_SECTION = "dxx-redux breadcrumbs"
+    private const val BREADCRUMB_SNAPSHOT_FILE_NAME = "crash_breadcrumbs_latest.txt"
+    private const val BREADCRUMB_BACKFILL_WINDOW_MS = 5 * 60 * 1000L
 
     private var installed = false
+    private var backfillAttempted = false
 
     /**
      * Legacy compatibility hook. xCrash is initialized from the Application,
@@ -37,6 +42,12 @@ object CrashLog {
 
     /** List existing crash files, newest first. */
     fun listCrashFiles(context: Context): List<File> {
+        val appContext = context.applicationContext
+        maybeBackfillMissingXCrashSections(appContext)
+        return listCrashFilesRaw(appContext)
+    }
+
+    private fun listCrashFilesRaw(context: Context): List<File> {
         val appContext = context.applicationContext
         val dir = getTombstoneDir(appContext)
         if (!dir.isDirectory) return emptyList()
@@ -91,17 +102,18 @@ object CrashLog {
         logPath: String?,
         emergency: String?,
     ) {
-        if (logPath.isNullOrBlank()) {
-            if (!emergency.isNullOrBlank()) {
-                Log.w(TAG, "xCrash callback received emergency-only crash info")
-            }
-            return
-        }
-
         val appContext = context.applicationContext
-        val header = buildCommonCrashHeader(appContext).trimEnd()
-        if (header.isNotEmpty()) {
-            TombstoneManager.appendSection(logPath, "dxx-redux header", header)
+        val header = buildInstalledCrashHeader(appContext).trimEnd()
+        val reportFile = logPath?.takeUnless { it.isBlank() }?.let(::File)
+        var appendedHeader = false
+        var appendedBreadcrumbs = false
+
+        if (reportFile != null) {
+            if (header.isNotEmpty()) {
+                appendedHeader = appendCustomSection(reportFile, HEADER_SECTION, header)
+            }
+        } else if (!emergency.isNullOrBlank()) {
+            Log.w(TAG, "xCrash callback received emergency-only crash info")
         }
 
         val breadcrumbs =
@@ -110,8 +122,22 @@ object CrashLog {
             } catch (_: UnsatisfiedLinkError) {
                 ""
             }
-        if (breadcrumbs.isNotEmpty()) {
-            TombstoneManager.appendSection(logPath, "dxx-redux breadcrumbs", breadcrumbs)
+        if (reportFile != null && breadcrumbs.isNotEmpty()) {
+            appendedBreadcrumbs = appendCustomSection(reportFile, BREADCRUMBS_SECTION, breadcrumbs)
+        }
+
+        if (!emergency.isNullOrBlank()) {
+            val fallback = writeEmergencyFallbackReport(appContext, reportFile, header, emergency, breadcrumbs)
+            if (fallback != null) {
+                Log.w(TAG, "Wrote emergency crash fallback report: ${fallback.absolutePath}")
+            }
+        }
+
+        if (reportFile != null && (!appendedHeader || (breadcrumbs.isNotEmpty() && !appendedBreadcrumbs))) {
+            Log.w(
+                TAG,
+                "xCrash callback could not append all custom sections to ${reportFile.absolutePath}",
+            )
         }
     }
 
@@ -125,11 +151,64 @@ object CrashLog {
             val appContext = context.applicationContext
             val crashDir = getTombstoneDir(appContext)
             crashDir.mkdirs()
-            nativeInstallCrashHandler(crashDir.absolutePath)
+            nativeInstallCrashHandler(crashDir.absolutePath, buildCommonCrashHeader(appContext))
         } catch (e: UnsatisfiedLinkError) {
             Log.w(TAG, "Native crash handler not available", e)
         }
     }
+
+    fun backfillMissingXCrashSections(context: Context) {
+        val appContext = context.applicationContext
+        val header = buildCommonCrashHeader(appContext).trimEnd()
+        val tombstones = listCrashFilesRaw(appContext).filter { it.name.startsWith("tombstone_") }
+        val breadcrumbSnapshotFile = getBreadcrumbSnapshotFile(appContext)
+        val breadcrumbSnapshot = readBreadcrumbSnapshot(breadcrumbSnapshotFile)
+        if (header.isNotEmpty()) {
+            tombstones.forEach { file ->
+                if (!appendCustomSection(file, HEADER_SECTION, header)) {
+                    Log.w(TAG, "Failed to backfill crash header into ${file.absolutePath}")
+                }
+            }
+        }
+        if (breadcrumbSnapshot.isEmpty()) return
+        val snapshotTime = breadcrumbSnapshotFile.lastModified()
+        val target =
+            tombstones.firstOrNull { file ->
+                !hasCustomSection(file, BREADCRUMBS_SECTION) &&
+                    snapshotTime > 0L &&
+                    kotlin.math.abs(file.lastModified() - snapshotTime) <= BREADCRUMB_BACKFILL_WINDOW_MS
+            }
+        if (target == null) return
+        if (appendCustomSection(target, BREADCRUMBS_SECTION, breadcrumbSnapshot)) {
+            if (!breadcrumbSnapshotFile.delete()) {
+                Log.w(TAG, "Failed to delete consumed breadcrumb snapshot ${breadcrumbSnapshotFile.absolutePath}")
+            }
+        } else {
+            Log.w(TAG, "Failed to backfill crash breadcrumbs into ${target.absolutePath}")
+        }
+    }
+
+    private fun maybeBackfillMissingXCrashSections(context: Context) {
+        if (backfillAttempted) return
+        backfillAttempted = true
+        try {
+            backfillMissingXCrashSections(context)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Deferred crash report backfill failed", t)
+        }
+    }
+
+    private fun getBreadcrumbSnapshotFile(context: Context): File =
+        File(getTombstoneDir(context), BREADCRUMB_SNAPSHOT_FILE_NAME)
+
+    private fun readBreadcrumbSnapshot(file: File): String =
+        try {
+            if (!file.isFile) return ""
+            file.readText(Charsets.UTF_8).trimEnd()
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to read breadcrumb snapshot ${file.absolutePath}", e)
+            ""
+        }
 
     fun getTombstoneDir(context: Context): File = File(context.filesDir, TOMBSTONE_DIR_NAME)
 
@@ -159,13 +238,97 @@ object CrashLog {
         }
     }
 
+    private fun buildInstalledCrashHeader(context: Context): String =
+        try {
+            nativeGetInstalledHeader()?.trimEnd().takeUnless { it.isNullOrBlank() }
+                ?: buildCommonCrashHeader(context)
+        } catch (_: UnsatisfiedLinkError) {
+            buildCommonCrashHeader(context)
+        }
+
+    private fun appendCustomSection(
+        file: File,
+        key: String,
+        content: String,
+    ): Boolean {
+        val trimmedContent = content.trimEnd()
+        if (trimmedContent.isEmpty()) return true
+
+        return try {
+            file.parentFile?.mkdirs()
+            if (!file.exists()) {
+                file.writeText("", Charsets.UTF_8)
+            }
+            if (hasCustomSection(file, key)) {
+                true
+            } else {
+                TombstoneManager.appendSection(file.absolutePath, key, trimmedContent)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to append crash section '$key' to ${file.absolutePath}", e)
+            false
+        }
+    }
+
+    private fun hasCustomSection(
+        file: File,
+        key: String,
+    ): Boolean =
+        try {
+            val existing = file.readText(Charsets.UTF_8)
+            existing.contains("\n\n$key:\n") || existing.startsWith("$key:\n")
+        } catch (_: Exception) {
+            false
+        }
+
+    private fun writeEmergencyFallbackReport(
+        context: Context,
+        logFile: File?,
+        header: String,
+        emergency: String,
+        breadcrumbs: String,
+    ): File? {
+        val crashDir = getTombstoneDir(context)
+        val fallback = File(crashDir, "crash_error_emergency_${System.currentTimeMillis()}.txt")
+
+        return try {
+            crashDir.mkdirs()
+            fallback.bufferedWriter(Charsets.UTF_8).use { writer ->
+                if (header.isNotBlank()) {
+                    writer.appendLine("$HEADER_SECTION:")
+                    writer.appendLine(header.trimEnd())
+                    writer.appendLine()
+                }
+                if (logFile != null) {
+                    writer.appendLine("xcrash log path:")
+                    writer.appendLine(logFile.absolutePath)
+                    writer.appendLine()
+                }
+                writer.appendLine("xcrash emergency:")
+                writer.appendLine(emergency.trimEnd())
+                writer.appendLine()
+                if (breadcrumbs.isNotBlank()) {
+                    writer.appendLine("$BREADCRUMBS_SECTION:")
+                    writer.appendLine(breadcrumbs.trimEnd())
+                    writer.appendLine()
+                }
+            }
+            fallback
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to write emergency crash fallback report", e)
+            null
+        }
+    }
+
     private fun isCrashReportFile(file: File): Boolean {
         if (!file.isFile) return false
         return file.name.startsWith("tombstone_") || file.name.startsWith("crash_error_")
     }
 
     // JNI declarations -- implemented in android_crash_handler.c
-    private external fun nativeInstallCrashHandler(crashDir: String)
+    private external fun nativeInstallCrashHandler(crashDir: String, installHeader: String)
 
     private external fun nativeGetBreadcrumbReport(): String?
+
+    private external fun nativeGetInstalledHeader(): String?
 }

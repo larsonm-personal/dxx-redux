@@ -255,11 +255,13 @@ static int maybe_start_input_demo_replay(void)
 	const char *validation_error;
 	char replay_error[256] = "";
 	char mission_name[PATH_MAX] = "";
+	char local_checkpoint_name[PATH_MAX] = "";
 	const char *start_mode;
 	const char *checkpoint_name;
 	const uint8_t *checkpoint_data;
 	size_t checkpoint_size;
 	PHYSFS_file *checkpoint_file = NULL;
+	const char *checkpoint_base_name;
 
 	if (!arg_index)
 		return -1;
@@ -334,34 +336,45 @@ static int maybe_start_input_demo_replay(void)
 		input_demo_replay_unload();
 		return 1;
 	}
-	if (!strncmp(checkpoint_name, "Players/", 8))
+	checkpoint_base_name = strrchr(checkpoint_name, '/');
+	if (checkpoint_base_name)
+		checkpoint_base_name++;
+	else
+		checkpoint_base_name = checkpoint_name;
+	if (GameArg.SysUsePlayersDir)
+		snprintf(local_checkpoint_name, sizeof(local_checkpoint_name), "Players/%s", checkpoint_base_name);
+	else
+		snprintf(local_checkpoint_name, sizeof(local_checkpoint_name), "%s", checkpoint_base_name);
+	printf("Input demo replay checkpoint temp path: recorded=%s local=%s\n",
+		checkpoint_name, local_checkpoint_name);
+	if (!strncmp(local_checkpoint_name, "Players/", 8))
 		PHYSFS_mkdir("Players");
-	PHYSFS_delete(checkpoint_name);
-	checkpoint_file = PHYSFS_openWrite(checkpoint_name);
+	PHYSFS_delete(local_checkpoint_name);
+	checkpoint_file = PHYSFS_openWrite(local_checkpoint_name);
 	if (!checkpoint_file)
 	{
-		printf("Input demo replay could not write checkpoint file: %s\n", checkpoint_name);
+		printf("Input demo replay could not write checkpoint file: %s\n", local_checkpoint_name);
 		input_demo_replay_unload();
 		return 1;
 	}
 	if (PHYSFS_writeBytes(checkpoint_file, checkpoint_data, checkpoint_size) != (PHYSFS_sint64) checkpoint_size)
 	{
 		PHYSFS_close(checkpoint_file);
-		PHYSFS_delete(checkpoint_name);
-		printf("Input demo replay could not write checkpoint bytes: %s\n", checkpoint_name);
+		PHYSFS_delete(local_checkpoint_name);
+		printf("Input demo replay could not write checkpoint bytes: %s\n", local_checkpoint_name);
 		input_demo_replay_unload();
 		return 1;
 	}
 	PHYSFS_close(checkpoint_file);
 	checkpoint_file = NULL;
-	if (!state_restore_all_sub((char *) checkpoint_name, 0))
+	if (!state_restore_all_sub(local_checkpoint_name, 0))
 	{
-		PHYSFS_delete(checkpoint_name);
-		printf("Input demo replay could not restore checkpoint: %s\n", checkpoint_name);
+		PHYSFS_delete(local_checkpoint_name);
+		printf("Input demo replay could not restore checkpoint: %s\n", local_checkpoint_name);
 		input_demo_replay_unload();
 		return 1;
 	}
-	PHYSFS_delete(checkpoint_name);
+	PHYSFS_delete(local_checkpoint_name);
 	Next_laser_fire_time = GameTime64 + input_demo_replay_checkpoint_next_laser_fire_delta();
 	Next_missile_fire_time = GameTime64 + input_demo_replay_checkpoint_next_missile_fire_delta();
 	Last_laser_fired_time = GameTime64 + input_demo_replay_checkpoint_last_laser_fired_delta();

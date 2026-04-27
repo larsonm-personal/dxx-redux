@@ -11,6 +11,25 @@ Keep `.dximdemo` single-file, keep launcher logic out of save internals, and
 prefer narrow reuse of the existing engine save and restore code over new world
 serialization.
 
+## Follow-Up Fixes 2026-04-26
+
+- [x] Broaden mid-level quick-record detection beyond `ThisLevelTime != 0`
+- [x] Preserve quick-record mission and level metadata until auto-name build
+- [x] Normalize replay checkpoint temp paths to the current runtime players-dir layout
+
+Notes:
+
+- A real Android quick-toggle can happen after the player has already moved but
+  before the level-time gate alone proves it, so recorder start now also treats
+  a changed player spawn pose as mid-level and captures a checkpoint
+- The quick-stop path used to clear cached mission and level metadata before it
+  built the auto-generated filename, which produced names like `level0`; the
+  name is now built first and the cached metadata is cleared immediately after
+- Replay startup no longer trusts the embedded checkpoint path verbatim. It now
+  strips any recorded directory component and writes the temp restore file using
+  the current runtime `GameArg.SysUsePlayersDir` layout, so a checkpoint demo is
+  portable across Android and desktop players-dir configurations
+
 ## Decision
 
 Use the existing save and restore system as the checkpoint authority.

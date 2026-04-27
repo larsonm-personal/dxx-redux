@@ -4,5 +4,6 @@
     <cache-path name="netlog_exports" path="netlog_exports/" />
     <cache-path name="debuglog_exports" path="debuglog_exports/" />
     <cache-path name="crashlog_exports" path="crashlog_exports/" />
+    <cache-path name="inputdemo_exports" path="inputdemo_exports/" />
     <cache-path name="file_view" path="file_view/" />
 </paths>

@@ -8,13 +8,17 @@
 #ifdef ANDROID
 /* Initialize crash breadcrumb storage.
  * crash_dir is retained so Error() can write non-signal fatal errors into the
- * same directory as xCrash tombstones. */
-void android_crash_handler_init(const char *crash_dir);
+ * same directory as xCrash tombstones. install_header is cached so degraded
+ * crash paths can still report immutable app/build/device metadata. */
+void android_crash_handler_init(const char *crash_dir, const char *install_header);
 
 /* Return the crash directory path set by android_crash_handler_init(),
  * or NULL if not yet initialized.  Used by Error() to write crash files
  * from normal (non-signal) context. */
 const char *android_crash_handler_get_dir(void);
+
+/* Return the install-time immutable header, or NULL if not yet initialized. */
+const char *android_crash_handler_get_header(void);
 
 /* Breadcrumb ring buffer -- records last N diagnostic markers.
  * Dumped into xCrash tombstones via JNI. Writers may come from more

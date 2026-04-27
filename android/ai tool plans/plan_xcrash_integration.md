@@ -197,6 +197,21 @@ Status:
 - Done. Comments and Kotlin call-site notes now describe breadcrumb initialization instead of a custom signal handler
 - Not done yet. Memory write-up and follow-on plan cleanup remain
 
+## Follow-Up Fixes 2026-04-26
+
+- [x] Restore install-time native crash header caching
+- [x] Handle xCrash emergency/native-stub callback cases without dropping extra sections
+- [x] Backfill missing header sections onto existing tombstones on next startup
+- [x] Persist breadcrumb snapshots so dumper-failure stubs can regain breadcrumb remnants after restart
+
+Notes:
+
+- Current Kotlin callback appends header and breadcrumbs only when it gets a usable `logPath`, and it treats `emergency`-only callbacks as a warning-only path
+- Recent code no longer passes the precomputed header string into `nativeInstallCrashHandler`, even though that install-time cache is the right immutable source for app/build/device metadata during degraded crash handling
+- The observed `.native.xcrash` file is a minimal `xcrash error: child terminated normally with non-zero exit status(102)` stub, so this tranche should make header recovery and emergency preservation robust even when the normal post-crash append path is degraded
+- Completed in code by caching the common header in native install state, appending/backfilling header sections directly from Kotlin, and writing a `crash_error_emergency_*.txt` fallback report that carries header plus emergency text and breadcrumbs when xCrash enters the degraded native-stub path
+- Added a native `crash_breadcrumbs_latest.txt` snapshot that is refreshed during breadcrumb writes and consumed on next startup to backfill the newest nearby tombstone that still lacks a `dxx-redux breadcrumbs` section
+
 ## risks and mitigations
 
 - Risk: xCrash conflicts with any existing signal handlers. Mitigation:
