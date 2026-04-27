@@ -58,6 +58,10 @@ object *Guided_missile[MAX_PLAYERS]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
 int Guided_missile_sig[MAX_PLAYERS]={-1,-1,-1,-1,-1,-1,-1,-1};
 
 int Network_laser_track = -1;
+static int Spreadfire_toggle = 0;
+static int Helix_orientation = 0;
+
+extern int Proximity_dropped, Smartmines_dropped;
 
 int find_homing_object_complete(vms_vector *curpos, object *tracker, int track_obj_type1, int track_obj_type2);
 
@@ -1696,8 +1700,6 @@ void do_laser_firing_player(void)
 	int		weapon_id;
 	int		rval = 0;
 	int 		nfires = 1;
-	static int Spreadfire_toggle=0;
-	static int Helix_orientation = 0;
 
 	if (Player_is_dead)
 		return;
@@ -2165,6 +2167,66 @@ void create_smart_children(object *objp, int num_smart_children)
 }
 
 int Missile_gun = 0;
+
+void rebuild_guided_missile_state(void)
+{
+	int i;
+
+	for (i = 0; i < MAX_PLAYERS; i++) {
+		Guided_missile[i] = NULL;
+		Guided_missile_sig[i] = -1;
+	}
+
+	for (i = 0; i <= Highest_object_index; i++) {
+		object *obj = &Objects[i];
+		int parent_num;
+		int player_num;
+
+		if (obj->type != OBJ_WEAPON || obj->id != GUIDEDMISS_ID)
+			continue;
+		if (obj->ctype.laser_info.parent_type != OBJ_PLAYER)
+			continue;
+
+		parent_num = obj->ctype.laser_info.parent_num;
+		if (parent_num < 0 || parent_num > Highest_object_index)
+			continue;
+
+		player_num = Objects[parent_num].id;
+		if (player_num < 0 || player_num >= MAX_PLAYERS)
+			continue;
+
+		Guided_missile[player_num] = obj;
+		Guided_missile_sig[player_num] = obj->signature;
+	}
+}
+
+void laser_get_runtime_state(laser_runtime_state *state)
+{
+	if (!state)
+		return;
+
+	state->fusion_charge = Fusion_charge;
+	state->spreadfire_toggle = Spreadfire_toggle;
+	state->missile_gun = Missile_gun;
+	state->proximity_dropped = Proximity_dropped;
+	state->helix_orientation = Helix_orientation;
+	state->smartmines_dropped = Smartmines_dropped;
+	state->last_omega_fire_time = Last_omega_fire_time;
+}
+
+void laser_set_runtime_state(const laser_runtime_state *state)
+{
+	if (!state)
+		return;
+
+	Fusion_charge = state->fusion_charge;
+	Spreadfire_toggle = state->spreadfire_toggle;
+	Missile_gun = state->missile_gun;
+	Proximity_dropped = state->proximity_dropped;
+	Helix_orientation = state->helix_orientation;
+	Smartmines_dropped = state->smartmines_dropped;
+	Last_omega_fire_time = state->last_omega_fire_time;
+}
 
 //give up control of the guided missile
 void release_guided_missile(int player_num)

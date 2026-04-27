@@ -47,6 +47,12 @@ extern fix64 Next_missile_fire_time;  // Time at which player can next fire his 
 extern fix64 Next_flare_fire_time;
 extern fix Laser_delay_time;        // Delay between laser fires.
 
+typedef struct game_d_tick_state {
+	int count;
+	int step;
+	fix timer;
+} game_d_tick_state;
+
 extern struct object *Missile_viewer;
 extern int Missile_viewer_sig;
 
@@ -122,6 +128,8 @@ void init_cockpit(void);
 void calc_frame_time(void);
 void calc_game_time(void);
 void calc_d_tick();
+void game_get_d_tick_state(game_d_tick_state *state);
+void game_set_d_tick_state(const game_d_tick_state *state);
 int do_flythrough(struct object *obj,int first_time);
 void input_demo_capture_current_result(struct input_demo_result *result);
 

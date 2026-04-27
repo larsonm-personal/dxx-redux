@@ -1105,6 +1105,33 @@ void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrame
 int	Spreadfire_toggle=0;
 fix64	Last_laser_fired_time = 0;
 
+extern int Missile_gun, Proximity_dropped;
+
+void laser_get_runtime_state(laser_runtime_state *state)
+{
+	if (!state)
+		return;
+
+	state->fusion_charge = Fusion_charge;
+	state->spreadfire_toggle = Spreadfire_toggle;
+	state->missile_gun = Missile_gun;
+	state->proximity_dropped = Proximity_dropped;
+	state->helix_orientation = 0;
+	state->smartmines_dropped = 0;
+	state->last_omega_fire_time = 0;
+}
+
+void laser_set_runtime_state(const laser_runtime_state *state)
+{
+	if (!state)
+		return;
+
+	Fusion_charge = state->fusion_charge;
+	Spreadfire_toggle = state->spreadfire_toggle;
+	Missile_gun = state->missile_gun;
+	Proximity_dropped = state->proximity_dropped;
+}
+
 extern int Player_fired_laser_this_frame;
 
 //	--------------------------------------------------------------------------------------------------

@@ -12,11 +12,11 @@ Decide whether input-demo checkpoint replay should move transient gameplay state
 - [x] Decide whether save-format enhancement is preferable to checkpoint-only metadata.
 - [x] Enumerate missing state by priority and risk.
 - [x] Draft implementation and validation phases.
-- [ ] Implement phase 1 deterministic save-state helpers.
+- [x] Implement phase 1 deterministic save-state helpers.
 - [ ] Implement D2 save-version bump and field persistence.
 - [ ] Implement D1 save-version bump and matching field persistence.
 - [ ] Migrate input-demo checkpoint metadata to the enhanced save fields.
-- [ ] Run host build and replay validation.
+- [x] Run host build and replay validation.
 
 ## Working Notes
 
@@ -24,6 +24,8 @@ Decide whether input-demo checkpoint replay should move transient gameplay state
 - The intent is to keep the save file as the source of truth where practical, so input-demo checkpoint payloads do not need parallel metadata for ordinary game state.
 - Current save files already preserve the durable world state: player inventory and stats, current selected weapons, objects, walls, doors, triggers, fuel centers, control-center state, AI state, automap, and D2 extras such as exploding walls, cloaking walls, light subtraction, markers, afterburner charge, and omega charge.
 - The route is good. Adding ordinary simulation state to DGSS is cleaner than growing `.dximdemo` checkpoint metadata because it improves normal saves, keeps checkpoint replay using the same restore path as users, and keeps game-specific details in C.
+- Phase 1 helper entry points now exist in D1 and D2 for d-tick cadence, object allocator plus homing scheduler state, and weapon sequence state. D2 also has a guided-missile rebinder that can reconstruct player guided pointers by scanning restored weapon objects.
+- Validation after the helper pass: `run-windows-build.ps1 -Target d1`, `run-windows-build.ps1 -Target d2`, and `android/tests/test_input_demo_runtime_smoke.ps1` for both D1 and D2 all passed.
 
 ## Missing Or Incomplete State
 

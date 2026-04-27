@@ -100,6 +100,16 @@ struct object;
 
 extern fix Min_trackable_dot;   //  MIN_TRACKABLE_DOT inversely scaled by FrameTime
 
+typedef struct laser_runtime_state {
+	fix fusion_charge;
+	int spreadfire_toggle;
+	int missile_gun;
+	int proximity_dropped;
+	int helix_orientation;
+	int smartmines_dropped;
+	int last_omega_fire_time;
+} laser_runtime_state;
+
 void Laser_render(struct object *obj);
 void Laser_player_fire(struct object * obj, int type, int gun_num, int make_sound, int harmless_flag, vms_vector shot_orientation); /* CED sniperpackets */
 void Laser_player_fire_spread(struct object *obj, int laser_type, int gun_num, fix spreadr, fix spreadu, int make_sound, int harmless, vms_vector shot_orientation); /* CED sniperpackets */
@@ -137,6 +147,9 @@ int create_weapon_object(int weapon_type,int segnum,vms_vector *position);
 
 // give up control of the guided missile
 void release_guided_missile(int player_num);
+void rebuild_guided_missile_state(void);
+void laser_get_runtime_state(laser_runtime_state *state);
+void laser_set_runtime_state(const laser_runtime_state *state);
 
 extern void create_smart_children(struct object *objp, int count);
 extern int object_to_object_visibility(struct object *obj1, struct object *obj2, int trans_type);

@@ -615,21 +615,41 @@ void game_flush_inputs()
 /*
  * timer that every 50ms sets d_tick_step true and increments d_tick_count
  */
+static fix d_tick_timer = 0;
+
 void calc_d_tick()
 {
-	static fix timer = 0;
-
 	d_tick_step = 0;
 
-	timer += FrameTime;
-	if (timer >= F1_0/20)
+	d_tick_timer += FrameTime;
+	if (d_tick_timer >= F1_0/20)
 	{
 		d_tick_step = 1;
 		d_tick_count++;
 		if (d_tick_count > 1000000)
 			d_tick_count = 0;
-		timer = (timer-(F1_0/20));
+		d_tick_timer = (d_tick_timer-(F1_0/20));
 	}
+}
+
+void game_get_d_tick_state(game_d_tick_state *state)
+{
+	if (!state)
+		return;
+
+	state->count = d_tick_count;
+	state->step = d_tick_step;
+	state->timer = d_tick_timer;
+}
+
+void game_set_d_tick_state(const game_d_tick_state *state)
+{
+	if (!state)
+		return;
+
+	d_tick_count = state->count;
+	d_tick_step = state->step;
+	d_tick_timer = state->timer;
 }
 
 void reset_time()

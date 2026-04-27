@@ -144,6 +144,8 @@ static int doHomerFrame = 0;
 static float idealHomerFPS = 25.0;
 static fix idealHomerFrameTime = F1_0/25;
 
+extern int Unused_object_slots;
+
 
 #ifndef RELEASE
 //set viewer object to next object in array
@@ -952,6 +954,41 @@ void special_reset_objects(void)
 		else
 			if (i > Highest_object_index)
 				Highest_object_index = i;
+}
+
+void object_get_runtime_state(object_runtime_state *state)
+{
+	if (!state)
+		return;
+
+	state->num_objects = num_objects;
+	state->highest_object_index = Highest_object_index;
+	memcpy(state->free_obj_list, free_obj_list, sizeof(free_obj_list));
+	state->homer_frame_count = homerFrameCount;
+	state->current_homer_frame_time = currentHomerFrameTime;
+	state->do_homer_frame = doHomerFrame;
+}
+
+void object_set_runtime_state(const object_runtime_state *state)
+{
+	int i;
+
+	if (!state)
+		return;
+
+	num_objects = state->num_objects;
+	Highest_object_index = state->highest_object_index;
+	if (Highest_object_index > Highest_ever_object_index)
+		Highest_ever_object_index = Highest_object_index;
+	memcpy(free_obj_list, state->free_obj_list, sizeof(free_obj_list));
+	homerFrameCount = state->homer_frame_count;
+	currentHomerFrameTime = state->current_homer_frame_time;
+	doHomerFrame = state->do_homer_frame;
+
+	Unused_object_slots = 0;
+	for (i = 0; i <= Highest_object_index; i++)
+		if (Objects[i].type == OBJ_NONE)
+			Unused_object_slots++;
 }
 
 #ifndef NDEBUG

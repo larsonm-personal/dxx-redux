@@ -416,6 +416,15 @@ extern int Player_fired_laser_this_frame;
  * FUNCTIONS
  */
 
+typedef struct object_runtime_state {
+	int num_objects;
+	int highest_object_index;
+	short free_obj_list[MAX_OBJECTS];
+	unsigned int homer_frame_count;
+	fix current_homer_frame_time;
+	int do_homer_frame;
+} object_runtime_state;
+
 
 // do whatever setup needs to be done
 void init_objects();
@@ -553,6 +562,8 @@ void obj_free(int objnum);
 // build the free list, then set the apporpriate globals Don't call
 // this function if you don't know what you're doing.
 void special_reset_objects(void);
+void object_get_runtime_state(object_runtime_state *state);
+void object_set_runtime_state(const object_runtime_state *state);
 
 // attaches an object, such as a fireball, to another object, such as
 // a robot
