@@ -35,6 +35,9 @@ Decide whether input-demo checkpoint replay should move transient gameplay state
 - Phase 3 is now in place in D1 and D2: DGSS version 25/11 adds additive fidelity data for weapon `creation_framecount` plus full `hitobj_list[]`, active `morph_objects[]`, wall stuck-object state, and control-center transient timers. D2 also persists `Last_afterburner_time[]`.
 - The save path no longer mutates live `creation_framecount` or force-finishes morph objects before writing, so checkpoint capture now preserves those transient systems instead of rewriting live state to fit old save behavior.
 - Validation after the phase 3 pass: `run-windows-build.ps1 -Target d1` passed, D2 needed the known host-script fallback but `dxx-redux-d2` built successfully from the existing `buildd2` tree, and scoped `android/run-code-quality.ps1 -Fix -Paths ...` passed for the touched files.
+- A follow-up AI fidelity pass is now in place in D1 and D2: DGSS version 26/12 adds pending AI awareness events plus live believed-player and last-fired-at positions so freshly recorded checkpoint saves preserve mid-fight robot context instead of dropping it.
+- The old failing D2 replay demo from `android/temp_game_logs/d2_descent2_level1_20260427_111111.dximdemo` still does not pass because its embedded checkpoint bytes were recorded before the AI fidelity extension. Host replays of that old version still miss reactor destruction even after adding a narrow old-save clamp for impossible future `time_player_sound_attacked` values.
+- Pre-release save-version handling is now collapsed again: D2 writes and reads the thumbnail, runtime, transient, and AI fidelity additions under version 23, and D1 does the same for versions 8 through 12 under version 8.
 
 ## Missing Or Incomplete State
 

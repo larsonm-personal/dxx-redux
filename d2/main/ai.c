@@ -1678,6 +1678,16 @@ int ai_save_state(PHYSFS_file *fp)
 	if (Num_boss_teleport_segs)
 		PHYSFS_write(fp, Boss_teleport_segs, sizeof(Boss_teleport_segs[0]), Num_boss_teleport_segs);
 
+	PHYSFS_write(fp, &Num_awareness_events, sizeof(Num_awareness_events), 1);
+	for (i = 0; i < Num_awareness_events; i++) {
+		PHYSFS_write(fp, &Awareness_events[i].segnum, sizeof(Awareness_events[i].segnum), 1);
+		PHYSFS_write(fp, &Awareness_events[i].type, sizeof(Awareness_events[i].type), 1);
+		PHYSFSX_writeVector(fp, &Awareness_events[i].pos);
+	}
+	PHYSFSX_writeVector(fp, &Believed_player_pos);
+	PHYSFS_write(fp, &Believed_player_seg, sizeof(Believed_player_seg), 1);
+	PHYSFSX_writeVector(fp, &Last_fired_upon_player_pos);
+
 	return 1;
 }
 
@@ -1748,6 +1758,7 @@ void ai_cloak_info_read_n_swap(ai_cloak_info *ci, int n, int swap, PHYSFS_file *
 int ai_restore_state(PHYSFS_file *fp, int version, int swap)
 {
 	fix tmptime32 = 0;
+	int i;
 
 	Ai_initialized = PHYSFSX_readSXE32(fp, swap);
 	Overall_agitation = PHYSFSX_readSXE32(fp, swap);
@@ -1821,6 +1832,44 @@ int ai_restore_state(PHYSFS_file *fp, int version, int swap)
 
 		for (i = 0; i < Num_boss_teleport_segs; i++)
 			Boss_teleport_segs[i] = PHYSFSX_readSXE16(fp, swap);
+	}
+
+	if (version >= 23) {
+		int saved_num_awareness_events = PHYSFSX_readSXE32(fp, swap);
+
+		Num_awareness_events = 0;
+		for (i = 0; i < saved_num_awareness_events; i++) {
+			awareness_event event;
+
+			event.segnum = (short)PHYSFSX_readSXE16(fp, swap);
+			event.type = (short)PHYSFSX_readSXE16(fp, swap);
+			PHYSFSX_readVectorX(fp, &event.pos, swap);
+			if (Num_awareness_events < MAX_AWARENESS_EVENTS)
+				Awareness_events[Num_awareness_events++] = event;
+		}
+		PHYSFSX_readVectorX(fp, &Believed_player_pos, swap);
+		Believed_player_seg = PHYSFSX_readSXE32(fp, swap);
+		PHYSFSX_readVectorX(fp, &Last_fired_upon_player_pos, swap);
+	} else {
+		Num_awareness_events = 0;
+		if (ConsoleObject) {
+			Believed_player_pos = ConsoleObject->pos;
+			Believed_player_seg = ConsoleObject->segnum;
+			Last_fired_upon_player_pos = ConsoleObject->pos;
+			} else {
+			vm_vec_zero(&Believed_player_pos);
+			Believed_player_seg = -1;
+			vm_vec_zero(&Last_fired_upon_player_pos);
+		}
+	}
+
+	if (version < 23) {
+		for (i = 0; i < MAX_OBJECTS; i++) {
+			if (Ai_local_info[i].time_player_seen > 0)
+				Ai_local_info[i].time_player_seen = 0;
+			if (Ai_local_info[i].time_player_sound_attacked > 0)
+				Ai_local_info[i].time_player_sound_attacked = 0;
+		}
 	}
 
 	return 1;

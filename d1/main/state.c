@@ -73,10 +73,10 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 
-#define STATE_VERSION 11
+#define STATE_VERSION 8
 #define STATE_COMPATIBLE_VERSION 6
-#define STATE_RUNTIME_VERSION 10
-#define STATE_FIDELITY_VERSION 11
+#define STATE_RUNTIME_VERSION 8
+#define STATE_FIDELITY_VERSION 8
 // 0 - Put DGSS (Descent Game State Save) id at tof.
 // 1 - Added Difficulty level save
 // 2 - Added cheats.enabled flag
@@ -86,9 +86,10 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // 6 - Added buggin' cheat save
 // 7 - Added other cheat saves and game_id.
 // 8 - Save palette with screen shot
-// 9 - Store thumbnail as raw RGB instead of indexed + palette
-// 10- Save deterministic runtime state for checkpoint fidelity
-// 11- Save transient weapon, morph, wall, and reactor state for checkpoint fidelity
+//     Store thumbnail as raw RGB instead of indexed + palette
+//     Save deterministic runtime state for checkpoint fidelity
+//     Save transient weapon, morph, wall, and reactor state for checkpoint fidelity
+//     Save transient AI awareness state for checkpoint fidelity
 
 #define NUM_SAVES 10
 #define THUMBNAIL_W 100
@@ -96,7 +97,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define THUMBNAIL_PALETTE_BYTES (256*3)
 #define THUMBNAIL_RGB_BYTES (THUMBNAIL_W * THUMBNAIL_H * 3)
 #define STATE_THUMBNAIL_PALETTE_VERSION 8
-#define STATE_THUMBNAIL_RGB_VERSION 9
+#define STATE_THUMBNAIL_RGB_VERSION 8
 #define DESC_LENGTH 20
 
 extern int Do_appearance_effect;

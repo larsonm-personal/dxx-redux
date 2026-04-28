@@ -75,10 +75,10 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "android_log.h"
 #endif
 
-#define STATE_VERSION 25
+#define STATE_VERSION 23
 #define STATE_COMPATIBLE_VERSION 20
-#define STATE_RUNTIME_VERSION 24
-#define STATE_FIDELITY_VERSION 25
+#define STATE_RUNTIME_VERSION 23
+#define STATE_FIDELITY_VERSION 23
 // 0 - Put DGSS (Descent Game State Save) id at tof.
 // 1 - Added Difficulty level save
 // 2 - Added cheats.enabled flag
@@ -100,8 +100,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // 20- First_secret_visit
 // 22- Omega_charge
 // 23- Store thumbnail as raw RGB instead of indexed + palette
-// 24- Save deterministic runtime state for checkpoint fidelity
-// 25- Save transient weapon, morph, wall, reactor, and afterburner state for checkpoint fidelity
+//     Save deterministic runtime state for checkpoint fidelity:
+//     transient weapon, morph, wall, reactor, afterburner state,
+//     transient AI awareness and aim state
 
 #define NUM_SAVES 10
 #define THUMBNAIL_W 100
