@@ -384,34 +384,6 @@ static bool parse_checkpoint_record(const ordered_json &root,
 			if (!parse_int64_field(it.value(), &parsed.start_gt, error, "checkpoint start_gt"))
 				return false;
 			parsed.has_start_gt = 1;
-		} else if (name == "next_laser_fire_delta") {
-			int parsed_value;
-
-			if (!parse_int_field(it.value(), &parsed_value, error, "checkpoint next_laser_fire_delta"))
-				return false;
-			parsed.next_laser_fire_delta = parsed_value;
-			parsed.has_next_laser_fire_delta = 1;
-		} else if (name == "next_missile_fire_delta") {
-			int parsed_value;
-
-			if (!parse_int_field(it.value(), &parsed_value, error, "checkpoint next_missile_fire_delta"))
-				return false;
-			parsed.next_missile_fire_delta = parsed_value;
-			parsed.has_next_missile_fire_delta = 1;
-		} else if (name == "last_laser_fired_delta") {
-			int parsed_value;
-
-			if (!parse_int_field(it.value(), &parsed_value, error, "checkpoint last_laser_fired_delta"))
-				return false;
-			parsed.last_laser_fired_delta = parsed_value;
-			parsed.has_last_laser_fired_delta = 1;
-		} else if (name == "auto_fire_fusion_delta") {
-			int parsed_value;
-
-			if (!parse_int_field(it.value(), &parsed_value, error, "checkpoint auto_fire_fusion_delta"))
-				return false;
-			parsed.auto_fire_fusion_delta = parsed_value;
-			parsed.has_auto_fire_fusion_delta = 1;
 		} else if (name == "data") {
 			if (!it.value().is_string())
 				return fail(error, "checkpoint data must be a string");
@@ -443,14 +415,6 @@ static bool checkpoint_record_to_json_line(const input_demo_checkpoint &checkpoi
 	root["sha256"] = checkpoint.sha256;
 	root["save_name"] = checkpoint.save_name;
 	root["start_gt"] = checkpoint.start_gt;
-	if (checkpoint.has_next_laser_fire_delta)
-		root["next_laser_fire_delta"] = checkpoint.next_laser_fire_delta;
-	if (checkpoint.has_next_missile_fire_delta)
-		root["next_missile_fire_delta"] = checkpoint.next_missile_fire_delta;
-	if (checkpoint.has_last_laser_fired_delta)
-		root["last_laser_fired_delta"] = checkpoint.last_laser_fired_delta;
-	if (checkpoint.has_auto_fire_fusion_delta)
-		root["auto_fire_fusion_delta"] = checkpoint.auto_fire_fusion_delta;
 	root["data"] = checkpoint.data;
 	*line = root.dump();
 	return true;

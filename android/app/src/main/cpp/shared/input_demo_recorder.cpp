@@ -22,23 +22,11 @@ struct input_demo_recorder_session {
 	std::string checkpoint_save_name;
 	std::vector<unsigned char> checkpoint_data;
 	int64_t checkpoint_start_gt;
-	bool has_checkpoint_next_laser_fire_delta;
-	int32_t checkpoint_next_laser_fire_delta;
-	bool has_checkpoint_next_missile_fire_delta;
-	int32_t checkpoint_next_missile_fire_delta;
-	bool has_checkpoint_last_laser_fired_delta;
-	int32_t checkpoint_last_laser_fired_delta;
-	bool has_checkpoint_auto_fire_fusion_delta;
-	int32_t checkpoint_auto_fire_fusion_delta;
 	std::vector<input_demo_control_frame> control_frames;
 	std::vector<input_demo_rng_frame> rng_frames;
 
 	input_demo_recorder_session()
-	    : active(false), game(0), level(0), difficulty(0), has_checkpoint(false), checkpoint_start_gt(0),
-	      has_checkpoint_next_laser_fire_delta(false), checkpoint_next_laser_fire_delta(0),
-	      has_checkpoint_next_missile_fire_delta(false), checkpoint_next_missile_fire_delta(0),
-	      has_checkpoint_last_laser_fired_delta(false), checkpoint_last_laser_fired_delta(0),
-	      has_checkpoint_auto_fire_fusion_delta(false), checkpoint_auto_fire_fusion_delta(0)
+	    : active(false), game(0), level(0), difficulty(0), has_checkpoint(false), checkpoint_start_gt(0)
 	{
 	}
 };
@@ -73,11 +61,7 @@ static int input_demo_recorder_settings_have_checkpoint(const input_demo_recorde
 {
 	return settings && (settings->checkpoint_data != NULL || settings->checkpoint_size != 0 ||
 	                    (settings->checkpoint_save_name && settings->checkpoint_save_name[0]) ||
-	                    settings->has_checkpoint_start_gt ||
-	                    settings->has_checkpoint_next_laser_fire_delta ||
-	                    settings->has_checkpoint_next_missile_fire_delta ||
-	                    settings->has_checkpoint_last_laser_fired_delta ||
-	                    settings->has_checkpoint_auto_fire_fusion_delta);
+	                    settings->has_checkpoint_start_gt);
 }
 
 static void input_demo_recorder_base64_encode(const unsigned char *data,
@@ -234,22 +218,6 @@ static bool input_demo_recorder_build_checkpoint(input_demo_checkpoint *checkpoi
 	checkpoint->save_name = session.checkpoint_save_name;
 	checkpoint->has_start_gt = 1;
 	checkpoint->start_gt = session.checkpoint_start_gt;
-	if (session.has_checkpoint_next_laser_fire_delta) {
-		checkpoint->has_next_laser_fire_delta = 1;
-		checkpoint->next_laser_fire_delta = session.checkpoint_next_laser_fire_delta;
-	}
-	if (session.has_checkpoint_next_missile_fire_delta) {
-		checkpoint->has_next_missile_fire_delta = 1;
-		checkpoint->next_missile_fire_delta = session.checkpoint_next_missile_fire_delta;
-	}
-	if (session.has_checkpoint_last_laser_fired_delta) {
-		checkpoint->has_last_laser_fired_delta = 1;
-		checkpoint->last_laser_fired_delta = session.checkpoint_last_laser_fired_delta;
-	}
-	if (session.has_checkpoint_auto_fire_fusion_delta) {
-		checkpoint->has_auto_fire_fusion_delta = 1;
-		checkpoint->auto_fire_fusion_delta = session.checkpoint_auto_fire_fusion_delta;
-	}
 	input_demo_recorder_base64_encode(session.checkpoint_data.data(), session.checkpoint_data.size(), &checkpoint->data);
 	return true;
 }
@@ -353,14 +321,6 @@ void input_demo_recorder_settings_clear(input_demo_recorder_settings *settings)
 	settings->checkpoint_size = 0;
 	settings->has_checkpoint_start_gt = 0;
 	settings->checkpoint_start_gt = 0;
-	settings->has_checkpoint_next_laser_fire_delta = 0;
-	settings->checkpoint_next_laser_fire_delta = 0;
-	settings->has_checkpoint_next_missile_fire_delta = 0;
-	settings->checkpoint_next_missile_fire_delta = 0;
-	settings->has_checkpoint_last_laser_fired_delta = 0;
-	settings->checkpoint_last_laser_fired_delta = 0;
-	settings->has_checkpoint_auto_fire_fusion_delta = 0;
-	settings->checkpoint_auto_fire_fusion_delta = 0;
 }
 
 int input_demo_recorder_is_active(void)
@@ -416,18 +376,6 @@ int input_demo_recorder_start(const input_demo_recorder_settings *settings,
 		g_input_demo_recorder_session.checkpoint_data.assign(settings->checkpoint_data,
 		                                                     settings->checkpoint_data + settings->checkpoint_size);
 		g_input_demo_recorder_session.checkpoint_start_gt = settings->checkpoint_start_gt;
-		g_input_demo_recorder_session.has_checkpoint_next_laser_fire_delta =
-		    settings->has_checkpoint_next_laser_fire_delta ? true : false;
-		g_input_demo_recorder_session.checkpoint_next_laser_fire_delta = settings->checkpoint_next_laser_fire_delta;
-		g_input_demo_recorder_session.has_checkpoint_next_missile_fire_delta =
-		    settings->has_checkpoint_next_missile_fire_delta ? true : false;
-		g_input_demo_recorder_session.checkpoint_next_missile_fire_delta = settings->checkpoint_next_missile_fire_delta;
-		g_input_demo_recorder_session.has_checkpoint_last_laser_fired_delta =
-		    settings->has_checkpoint_last_laser_fired_delta ? true : false;
-		g_input_demo_recorder_session.checkpoint_last_laser_fired_delta = settings->checkpoint_last_laser_fired_delta;
-		g_input_demo_recorder_session.has_checkpoint_auto_fire_fusion_delta =
-		    settings->has_checkpoint_auto_fire_fusion_delta ? true : false;
-		g_input_demo_recorder_session.checkpoint_auto_fire_fusion_delta = settings->checkpoint_auto_fire_fusion_delta;
 	}
 	return 1;
 }

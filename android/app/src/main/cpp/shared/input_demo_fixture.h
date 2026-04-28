@@ -70,20 +70,10 @@ struct input_demo_checkpoint {
 	std::string save_name;
 	uint8_t has_start_gt;
 	int64_t start_gt;
-	uint8_t has_next_laser_fire_delta;
-	int32_t next_laser_fire_delta;
-	uint8_t has_next_missile_fire_delta;
-	int32_t next_missile_fire_delta;
-	uint8_t has_last_laser_fired_delta;
-	int32_t last_laser_fired_delta;
-	uint8_t has_auto_fire_fusion_delta;
-	int32_t auto_fire_fusion_delta;
 	std::string data;
 
 	input_demo_checkpoint()
-	    : size(0), has_start_gt(0), start_gt(0), has_next_laser_fire_delta(0), next_laser_fire_delta(0),
-	      has_next_missile_fire_delta(0), next_missile_fire_delta(0), has_last_laser_fired_delta(0),
-	      last_laser_fired_delta(0), has_auto_fire_fusion_delta(0), auto_fire_fusion_delta(0)
+	    : size(0), has_start_gt(0), start_gt(0)
 	{
 	}
 };

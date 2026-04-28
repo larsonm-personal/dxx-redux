@@ -265,13 +265,7 @@ static int expect_checkpoint_replay_loader(void)
 		input_demo_replay_checkpoint_data()[5] != 0 || input_demo_replay_checkpoint_data()[6] != 0 ||
 		input_demo_replay_checkpoint_data()[7] != 0)
 		return report_failure("checkpoint replay bytes mismatch");
-	if (input_demo_replay_checkpoint_save_version() != 24)
-		return report_failure("checkpoint replay save version mismatch");
-	if (input_demo_replay_checkpoint_start_gt() != 124125 ||
-		input_demo_replay_checkpoint_next_laser_fire_delta() != 0 ||
-		input_demo_replay_checkpoint_next_missile_fire_delta() != 0 ||
-		input_demo_replay_checkpoint_last_laser_fired_delta() != 0 ||
-		input_demo_replay_checkpoint_auto_fire_fusion_delta() != 0)
+	if (input_demo_replay_checkpoint_start_gt() != 124125)
 		return report_failure("checkpoint replay timing metadata mismatch");
 	if (!input_demo_replay_actual_result_path() || std::string(input_demo_replay_actual_result_path()) != actual_result_path)
 		return report_failure("checkpoint replay actual result path mismatch");

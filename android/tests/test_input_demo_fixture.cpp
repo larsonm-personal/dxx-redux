@@ -279,9 +279,6 @@ static int expect_checkpoint_demo_file_output(void)
 		parsed.checkpoint.data != "REdTUxgAAAA=" || !parsed.checkpoint.has_start_gt ||
 		parsed.checkpoint.start_gt != 124125)
 		return report_failure("checkpoint demo file round trip corrupted content");
-	if (parsed.checkpoint.has_next_laser_fire_delta || parsed.checkpoint.has_next_missile_fire_delta ||
-		parsed.checkpoint.has_last_laser_fired_delta || parsed.checkpoint.has_auto_fire_fusion_delta)
-		return report_failure("checkpoint demo unexpectedly restored legacy timing metadata");
 	reordered =
 		std::string("{\"type\":\"header\",\"version\":1,\"game\":\"") + input_demo_test_game_name() +
 		"\",\"mission\":\"" + input_demo_test_game_name() +
@@ -291,11 +288,8 @@ static int expect_checkpoint_demo_file_output(void)
 		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
 		"{\"type\":\"result\",\"result\":{\"v\":1,\"g\":\"" + input_demo_test_game_name() +
 		"\",\"m\":\"" + input_demo_test_game_name() + "\",\"l\":1,\"d\":2,\"fr\":1}}\n";
-	if (!input_demo_file_parse_text(reordered, &parsed, &error))
-		return report_failure_string(std::string("legacy checkpoint demo file parse failed: ") + error);
-	if (!parsed.checkpoint.has_next_laser_fire_delta || !parsed.checkpoint.has_next_missile_fire_delta ||
-		!parsed.checkpoint.has_last_laser_fired_delta || !parsed.checkpoint.has_auto_fire_fusion_delta)
-		return report_failure("legacy checkpoint timing metadata did not round trip");
+	if (input_demo_file_parse_text(reordered, &parsed, &error))
+		return report_failure("legacy checkpoint demo unexpectedly accepted timing metadata");
 	invalid = demo;
 	invalid.has_checkpoint = false;
 	if (input_demo_file_to_text(invalid, &text, &error))

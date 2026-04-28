@@ -260,9 +260,7 @@ static int expect_record_and_flush_checkpoint(void)
 	remove_test_dir(dir);
 	if (parsed.metadata.start_mode != "save_checkpoint" || !parsed.has_checkpoint ||
 		parsed.checkpoint.sha256 != "077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5" ||
-		parsed.checkpoint.data != "REdTUxgAAAA=" || parsed.checkpoint.has_next_laser_fire_delta ||
-		parsed.checkpoint.has_next_missile_fire_delta || parsed.checkpoint.has_last_laser_fired_delta ||
-		parsed.checkpoint.has_auto_fire_fusion_delta)
+		parsed.checkpoint.data != "REdTUxgAAAA=")
 		return report_failure("checkpoint recorder demo round trip mismatch");
 	return 0;
 }

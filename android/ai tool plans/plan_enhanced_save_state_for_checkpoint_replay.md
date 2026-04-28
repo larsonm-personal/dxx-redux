@@ -16,7 +16,7 @@ Decide whether input-demo checkpoint replay should move transient gameplay state
 - [x] Implement D2 save-version bump and field persistence.
 - [x] Implement D1 save-version bump and matching field persistence.
 - [x] Implement phase 3 object and transient-state fidelity persistence.
-- [x] Migrate input-demo checkpoint metadata to the enhanced save fields.
+- [x] Migrate input-demo checkpoint metadata to the enhanced save fields and drop pre-release legacy timer metadata compatibility.
 - [x] Run host build and smoke regression validation.
 - [ ] Validate a freshly recorded checkpoint-backed replay against the new save bytes.
 
@@ -30,8 +30,8 @@ Decide whether input-demo checkpoint replay should move transient gameplay state
 - Validation after the helper pass: `run-windows-build.ps1 -Target d1`, `run-windows-build.ps1 -Target d2`, and `android/tests/test_input_demo_runtime_smoke.ps1` for both D1 and D2 all passed.
 - Phase 2 is now in place in D1 and D2: the save versions were bumped, the deterministic runtime block is written and restored, both host builds passed again, scoped `android/run-code-quality.ps1 -Fix` passed for the touched files, and the existing D1 and D2 runtime smoke tests still passed.
 - The known failing D2 checkpoint demo is not a valid phase 2 verdict because its embedded checkpoint blob was recorded before the save-version bump. A fresh checkpoint-backed `.dximdemo` recorded with the new build is still needed to exercise the new runtime block end to end.
-- Phase 4 is now in place in D1 and D2: new checkpoint recordings stop writing duplicated timer deltas, replay still accepts old demos that carry those fields, and `inferno.c` only reapplies timer metadata for checkpoint save blobs older than the runtime-state save version.
-- Validation after the phase 4 migration: `run-windows-build.ps1 -Target d1`, `run-windows-build.ps1 -Target d2`, `android/tests/test_input_demo_fixture.exe`, `android/tests/test_input_demo_recorder.exe`, and `android/tests/test_input_demo_replay.exe` all passed for both D1 and D2 after the scoped `android/run-code-quality.ps1 -Fix` pass.
+- Phase 4 is now in place in D1 and D2: checkpoint recordings only carry DGSS bytes plus schema metadata, the shared parser rejects legacy timer-delta keys, and checkpoint replay now relies entirely on DGSS restore state instead of an `inferno.c` timer fallback.
+- Validation after the strict phase 4 cutover: `test_input_demo_fixture`, `test_input_demo_recorder`, and `test_input_demo_replay` passed from `buildd1`, incremental `buildd1` and `buildd2` builds passed, and scoped `android/run-code-quality.ps1 -Fix -Paths ...` passed for the touched files.
 - Phase 3 is now in place in D1 and D2: DGSS version 25/11 adds additive fidelity data for weapon `creation_framecount` plus full `hitobj_list[]`, active `morph_objects[]`, wall stuck-object state, and control-center transient timers. D2 also persists `Last_afterburner_time[]`.
 - The save path no longer mutates live `creation_framecount` or force-finishes morph objects before writing, so checkpoint capture now preserves those transient systems instead of rewriting live state to fit old save behavior.
 - Validation after the phase 3 pass: `run-windows-build.ps1 -Target d1` passed, D2 needed the known host-script fallback but `dxx-redux-d2` built successfully from the existing `buildd2` tree, and scoped `android/run-code-quality.ps1 -Fix -Paths ...` passed for the touched files.
@@ -96,8 +96,11 @@ Phase 3 status:
 ### Phase 4: Remove Checkpoint Metadata Duplication
 
 - Stop writing timer deltas into `.dximdemo` checkpoint metadata once enhanced DGSS is required for new input demos.
-- ignore backwards compatibility. this is pre-release
+- Ignore backwards compatibility because this is pre-release.
 - Keep `.dximdemo` metadata focused on demo schema, checkpoint bytes, and validation expectations, not duplicated gameplay state.
+
+Phase 4 status:
+- Done. Legacy checkpoint timing metadata has been removed from the shared schema and replay APIs, and old demos that still carry those fields are now rejected.
 
 ### Phase 5: Validate
 
