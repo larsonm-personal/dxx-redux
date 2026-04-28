@@ -144,6 +144,8 @@ int HandleTestKey(int key);
 void advance_sound(void);
 void play_test_sound(void);
 
+int ReadControlsReplayFrame(void);
+
 #define key_isfunc(k) (((k&0xff)>=KEY_F1 && (k&0xff)<=KEY_F10) || (k&0xff)==KEY_F11 || (k&0xff)==KEY_F12)
 
 void update_vcr_state();
@@ -1409,6 +1411,29 @@ void play_test_sound()
 }
 
 #endif  //ifndef NDEBUG
+
+int ReadControlsReplayFrame(void)
+{
+	Player_fired_laser_this_frame=-1;
+
+	if (!Endlevel_sequence && !Player_is_dead) {
+		check_rear_view();
+
+		if ( Controls.automap_count > 0 )
+		{
+			Controls.automap_count = 0;
+			if (!((Game_mode & GM_MULTI) && Control_center_destroyed && (Countdown_seconds_left < 10)))
+			{
+				do_automap();
+				return 1;
+			}
+		}
+
+		do_weapon_n_item_stuff();
+	}
+
+	return 0;
+}
 
 int ReadControls(d_event *event)
 {

@@ -85,11 +85,9 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // 5 - Mike changed ai and object structure.
 // 6 - Added buggin' cheat save
 // 7 - Added other cheat saves and game_id.
-// 8 - Save palette with screen shot
-//     Store thumbnail as raw RGB instead of indexed + palette
-//     Save deterministic runtime state for checkpoint fidelity
-//     Save transient weapon, morph, wall, and reactor state for checkpoint fidelity
-//     Save transient AI awareness state for checkpoint fidelity
+// 8 - Store thumbnail as raw RGB instead of indexed + palette
+//     Save deterministic runtime state for checkpoint fidelity:
+//     weapon, morph, wall, reactor state and AI awareness
 
 #define NUM_SAVES 10
 #define THUMBNAIL_W 100

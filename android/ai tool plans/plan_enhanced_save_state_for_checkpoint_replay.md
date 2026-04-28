@@ -38,6 +38,8 @@ Decide whether input-demo checkpoint replay should move transient gameplay state
 - A follow-up AI fidelity pass is now in place in D1 and D2: DGSS version 26/12 adds pending AI awareness events plus live believed-player and last-fired-at positions so freshly recorded checkpoint saves preserve mid-fight robot context instead of dropping it.
 - The old failing D2 replay demo from `android/temp_game_logs/d2_descent2_level1_20260427_111111.dximdemo` still does not pass because its embedded checkpoint bytes were recorded before the AI fidelity extension. Host replays of that old version still miss reactor destruction even after adding a narrow old-save clamp for impossible future `time_player_sound_attacked` values.
 - Pre-release save-version handling is now collapsed again: D2 writes and reads the thumbnail, runtime, transient, and AI fidelity additions under version 23, and D1 does the same for versions 8 through 12 under version 8.
+- For manual host replay checks, use `android/tests/run_input_demo_replay.ps1` instead of launching the exe directly. That wrapper forces a windowed sandbox config and uses `-notitles` or `-nomovies`, which avoids fullscreen grabs and intro-movie stalls during ad hoc validation.
+- Current replay triage has moved from save bytes to the replay entry path itself. Host replay skips `ReadControls()`, so the next validation slice is whether replay needs a small pre-frame hook for the non-input gameplay work that live play performs there before `GameProcessFrame()`.
 
 ## Missing Or Incomplete State
 

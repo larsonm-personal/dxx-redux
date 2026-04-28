@@ -510,6 +510,9 @@ class SetupActivity : ComponentActivity() {
         val intent = Intent(this, MainActivity::class.java)
         intent.putExtra("game", game)
         DebugLog.currentFilePath()?.let { intent.putExtra("netlog_path", it) }
+        getIntent().getStringExtra("input_demo_replay")?.let {
+            intent.putExtra("input_demo_replay", it)
+        }
         return intent
     }
 
@@ -546,8 +549,7 @@ class SetupActivity : ComponentActivity() {
                             ModManager(filesDir).writeEnabledModPaths(game)
                             writeInitialGameConfig()
                             writeMusicConfigForLaunch()
-                            val launchIntent = Intent(this@SetupActivity, MainActivity::class.java)
-                            launchIntent.putExtra("game", game)
+                            val launchIntent = createGameLaunchIntent(game)
                             startActivity(launchIntent)
                         }
                     }

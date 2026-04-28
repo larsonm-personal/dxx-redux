@@ -1086,6 +1086,8 @@ int HandleGameKey(int key)
 {
 	int new_obs = Current_obs_player;
 
+
+int ReadControlsReplayFrame(void);
 #ifdef __ANDROID__
 	/* android port: consume guide-bot release flag set from touch wheel */
 	if (android_escort_release_pending) {
@@ -1966,6 +1968,28 @@ void play_test_sound()
 }
 
 #endif  //ifndef NDEBUG
+
+int ReadControlsReplayFrame(void)
+{
+	Player_fired_laser_this_frame = -1;
+
+	if (!Endlevel_sequence && !Player_is_dead) {
+		check_rear_view();
+
+		if (Controls.automap_count > 0)
+		{
+			Controls.automap_count = 0;
+			if (!((Game_mode & GM_MULTI) && Control_center_destroyed && (Countdown_seconds_left < 10))) {
+				do_automap();
+				return 1;
+			}
+		}
+
+		do_weapon_n_item_stuff();
+	}
+
+	return 0;
+}
 
 int ReadControls(d_event *event)
 {

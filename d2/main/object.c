@@ -67,6 +67,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gameseq.h"
 #include "playsave.h"
 #include "timer.h"
+#include "input_demo_replay.h"
 #ifdef EDITOR
 #include "editor/editor.h"
 #endif
@@ -1952,6 +1953,9 @@ void object_move_one( object * obj )
 
 	#ifndef DEMO_ONLY
 	int	previous_segment = obj->segnum;
+	int objnum = obj - Objects;
+	int replay_ai_probe_active = input_demo_replay_is_loaded() &&
+		input_demo_replay_next_frame_index() == 73;
 
 	obj->last_pos = obj->pos;			// Save the current position
 
@@ -2003,7 +2007,29 @@ void object_move_one( object * obj )
 		case CT_AI:
 			//NOTE LINK TO CT_MORPH ABOVE!!!
 			if (Game_suspended & SUSP_ROBOTS) return;
-			do_ai_frame(obj);
+			if (replay_ai_probe_active) {
+				unsigned int rng_before;
+				unsigned int rng_after;
+				unsigned int rng_call_count_before = 0;
+				unsigned int rng_call_count_after;
+
+				if (d_rand_get_state(&rng_before))
+					rng_call_count_before = d_rand_get_call_count();
+				do_ai_frame(obj);
+				if (d_rand_get_state(&rng_after)) {
+					rng_call_count_after = d_rand_get_call_count();
+					if (rng_before != rng_after || rng_call_count_before != rng_call_count_after)
+						con_printf(CON_NORMAL,
+							"Input demo replay object step rng progress: frame=%u obj=%d step=do_ai_frame calls=%u->%u before=%u after=%u\n",
+							(unsigned int)input_demo_replay_next_frame_index(),
+							objnum,
+							rng_call_count_before,
+							rng_call_count_after,
+							rng_before,
+							rng_after);
+				}
+			} else
+				do_ai_frame(obj);
 			break;
 
 		case CT_WEAPON:		Laser_do_weapon_sequence(obj, doHomerFrame, idealHomerFrameTime, homerFrameCount); break; // CED
@@ -2061,7 +2087,31 @@ void object_move_one( object * obj )
 
 		case MT_NONE:			break;				//this doesn't move
 
-		case MT_PHYSICS:		do_physics_sim(obj);	break;	//move by physics
+		case MT_PHYSICS:
+			if (replay_ai_probe_active) {
+				unsigned int rng_before;
+				unsigned int rng_after;
+				unsigned int rng_call_count_before = 0;
+				unsigned int rng_call_count_after;
+
+				if (d_rand_get_state(&rng_before))
+					rng_call_count_before = d_rand_get_call_count();
+				do_physics_sim(obj);
+				if (d_rand_get_state(&rng_after)) {
+					rng_call_count_after = d_rand_get_call_count();
+					if (rng_before != rng_after || rng_call_count_before != rng_call_count_after)
+						con_printf(CON_NORMAL,
+							"Input demo replay object step rng progress: frame=%u obj=%d step=do_physics_sim calls=%u->%u before=%u after=%u\n",
+							(unsigned int)input_demo_replay_next_frame_index(),
+							objnum,
+							rng_call_count_before,
+							rng_call_count_after,
+							rng_before,
+							rng_after);
+				}
+			} else
+				do_physics_sim(obj);
+			break;	//move by physics
 
 		case MT_SPINNING:		spin_object(obj); break;
 
@@ -2215,7 +2265,51 @@ void object_move_all()
 	#ifndef DEMO_ONLY
 	for (i=0;i<=Highest_object_index;i++) {
 		if ( (objp->type != OBJ_NONE) && (!(objp->flags&OF_SHOULD_BE_DEAD)) )	{
+			unsigned int rng_before;
+			unsigned int rng_after;
+			unsigned int rng_call_count_before = 0;
+			unsigned int rng_call_count_after;
+			int should_probe = 0;
+
+			should_probe = input_demo_replay_is_loaded() &&
+				input_demo_replay_next_frame_index() == 73 && d_rand_get_state(&rng_before);
+			if (should_probe)
+				rng_call_count_before = d_rand_get_call_count();
 			object_move_one( objp );
+			if (should_probe && d_rand_get_state(&rng_after)) {
+				rng_call_count_after = d_rand_get_call_count();
+				if (rng_before != rng_after || rng_call_count_before != rng_call_count_after) {
+					con_printf(CON_NORMAL,
+						"Input demo replay object rng progress: frame=%u obj=%d type=%d id=%d control=%d movement=%d seg=%d sig=%d calls=%u->%u before=%u after=%u\n",
+						(unsigned int)input_demo_replay_next_frame_index(),
+						i,
+						objp->type,
+						objp->id,
+						objp->control_type,
+						objp->movement_type,
+						objp->segnum,
+						objp->signature,
+						rng_call_count_before,
+						rng_call_count_after,
+						rng_before,
+						rng_after);
+					if (objp->control_type == CT_AI) {
+						ai_local *ailp = &Ai_local_info[i];
+
+						con_printf(CON_NORMAL,
+							"Input demo replay RNG AI state: obj=%d mode=%d prev_vis=%d aware=%d next_fire=%d next_fire2=%d next_misc=%lld seen=%lld sound=%lld\n",
+							i,
+							ailp->mode,
+							ailp->previous_visibility,
+							ailp->player_awareness_type,
+							ailp->next_fire,
+							ailp->next_fire2,
+							(long long)ailp->next_misc_sound_time,
+							(long long)ailp->time_player_seen,
+							(long long)ailp->time_player_sound_attacked);
+					}
+				}
+			}
 		}
 		objp++;
 	}

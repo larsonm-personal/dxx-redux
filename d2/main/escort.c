@@ -56,6 +56,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "automap.h"
 #include "laser.h"
 #include "escort.h"
+#include "maths.h"
+#include "input_demo_replay.h"
 
 #ifdef NETWORK
 #include "multi.h"
@@ -75,6 +77,28 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 extern void multi_send_stolen_items();
 void say_escort_goal(int goal_num);
 void show_escort_menu(char *msg);
+
+static void input_demo_log_escort_rng_progress(const char *label, unsigned int *rng_before, unsigned int *rng_call_count_before)
+{
+	unsigned int rng_after;
+	unsigned int rng_call_count_after;
+
+	if (!d_rand_get_state(&rng_after))
+		return;
+	rng_call_count_after = d_rand_get_call_count();
+	if (rng_after == *rng_before && rng_call_count_after == *rng_call_count_before)
+		return;
+	con_printf(CON_NORMAL,
+		"Input demo replay escort rng progress: frame=%u step=%s calls=%u->%u before=%u after=%u\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		label,
+		*rng_call_count_before,
+		rng_call_count_after,
+		*rng_before,
+		rng_after);
+	*rng_before = rng_after;
+	*rng_call_count_before = rng_call_count_after;
+}
 
 
 static const char *const Escort_goal_text[MAX_ESCORT_GOALS] = {
@@ -923,6 +947,63 @@ fix64	Last_come_back_message_time = 0;
 
 fix64	Buddy_last_missile_time;
 
+void escort_rebuild_runtime_state_after_restore(void)
+{
+	ai_local *ailp;
+	int i;
+
+	Buddy_objnum = -1;
+	Buddy_last_seen_player = 0;
+	Buddy_last_player_path_created = 0;
+	Last_come_back_message_time = 0;
+	Buddy_last_missile_time = 0;
+
+	for (i = 0; i <= Highest_object_index; i++)
+		if ((Objects[i].type == OBJ_ROBOT) && Robot_info[Objects[i].id].companion) {
+			Buddy_objnum = i;
+			break;
+		}
+
+	if (Buddy_objnum == -1)
+		return;
+
+	ailp = &Ai_local_info[Buddy_objnum];
+	Buddy_allowed_to_talk = 0;
+	ok_for_buddy_to_talk();
+	Buddy_last_seen_player = ailp->time_player_seen;
+	if (Buddy_last_seen_player > GameTime64)
+		Buddy_last_seen_player = GameTime64;
+	if ((Buddy_last_seen_player < GameTime64 - MAX_ESCORT_TIME_AWAY) && ailp->previous_visibility)
+		Buddy_last_seen_player = GameTime64;
+	if (Buddy_last_seen_player < 0)
+		Buddy_last_seen_player = 0;
+
+	Buddy_last_player_path_created = Escort_last_path_created;
+	if ((ailp->mode == AIM_GOTO_PLAYER) && (Buddy_last_player_path_created < GameTime64 - F1_0))
+		Buddy_last_player_path_created = GameTime64;
+	if (Buddy_last_player_path_created > GameTime64)
+		Buddy_last_player_path_created = GameTime64;
+	if (Buddy_last_player_path_created < 0)
+		Buddy_last_player_path_created = 0;
+
+	Last_come_back_message_time = Buddy_last_player_path_created;
+	if (input_demo_replay_is_loaded())
+		con_printf(CON_NORMAL,
+			"Input demo replay escort restore: gt=%lld obj=%d seg=%d mode=%d talk=%d cur_path=%d/%d hide_index=%d last_seen=%lld last_player_path=%lld escort_last_path=%lld seen=%lld\n",
+			(long long)GameTime64,
+			Buddy_objnum,
+			Objects[Buddy_objnum].segnum,
+			ailp->mode,
+			Buddy_allowed_to_talk,
+			Objects[Buddy_objnum].ctype.ai_info.cur_path_index,
+			Objects[Buddy_objnum].ctype.ai_info.path_length,
+			Objects[Buddy_objnum].ctype.ai_info.hide_index,
+			(long long)Buddy_last_seen_player,
+			(long long)Buddy_last_player_path_created,
+			(long long)Escort_last_path_created,
+			(long long)ailp->time_player_seen);
+}
+
 //	-----------------------------------------------------------------------------
 void bash_buddy_weapon_info(int weapon_objnum)
 {
@@ -1036,6 +1117,14 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 	int			objnum = objp-Objects;
 	ai_static	*aip = &objp->ctype.ai_info;
 	ai_local		*ailp = &Ai_local_info[objnum];
+	unsigned int replay_rng_state = 0;
+	unsigned int replay_rng_call_count = 0;
+	int replay_state_probe_active = input_demo_replay_is_loaded() &&
+		input_demo_replay_next_frame_index() == 73 && objnum == 28;
+	int replay_rng_probe_active = input_demo_replay_is_loaded() &&
+		input_demo_replay_next_frame_index() == 73 && objnum == 28 && d_rand_get_state(&replay_rng_state);
+	if (replay_rng_probe_active)
+		replay_rng_call_count = d_rand_get_call_count();
 
 	Buddy_objnum = objp-Objects;
 
@@ -1071,6 +1160,8 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		if (player_visibility) {
 			create_n_segment_path(objp, 16 + d_rand() * 16, -1);
 			aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
+			if (replay_rng_probe_active)
+				input_demo_log_escort_rng_progress("after AIM_WANDER create_n_segment_path", &replay_rng_state, &replay_rng_call_count);
 		}
 
 	if (Escort_special_goal == ESCORT_GOAL_SCRAM) {
@@ -1078,6 +1169,8 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 			if (Escort_last_path_created + F1_0*3 < GameTime64) {
 				create_n_segment_path(objp, 10 + d_rand() * 16, ConsoleObject->segnum);
 				Escort_last_path_created = GameTime64;
+				if (replay_rng_probe_active)
+					input_demo_log_escort_rng_progress("after ESCORT_GOAL_SCRAM create_n_segment_path", &replay_rng_state, &replay_rng_call_count);
 			}
 
 		return;
@@ -1089,6 +1182,24 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
 		Escort_last_path_created = GameTime64;
 	}
+	if (replay_state_probe_active)
+		con_printf(CON_NORMAL,
+			"Input demo replay escort state: frame=%u gt=%lld vis=%d mode=%d talk=%d dist=%d buddy_seg=%d player_seg=%d cur_path=%d/%d hide_index=%d last_seen=%lld last_player_path=%lld escort_last_path=%lld seen=%lld\n",
+			input_demo_replay_next_frame_index(),
+			(long long)GameTime64,
+			player_visibility,
+			ailp->mode,
+			Buddy_allowed_to_talk,
+			dist_to_player,
+			objp->segnum,
+			ConsoleObject->segnum,
+			aip->cur_path_index,
+			aip->path_length,
+			aip->hide_index,
+			(long long)Buddy_last_seen_player,
+			(long long)Buddy_last_player_path_created,
+			(long long)Escort_last_path_created,
+			(long long)ailp->time_player_seen);
 
 	if ((Escort_special_goal != ESCORT_GOAL_SCRAM) && time_to_visit_player(objp, ailp, aip)) {
 		int	max_len;
@@ -1107,6 +1218,8 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 			max_len = 3;
 		create_path_to_player(objp, max_len, 1);	//	MK!: Last parm used to be 1!
 		aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
+		if (replay_rng_probe_active)
+			input_demo_log_escort_rng_progress("after time_to_visit_player create_path_to_player", &replay_rng_state, &replay_rng_call_count);
 		ailp->mode = AIM_GOTO_PLAYER;
 	}	else if (GameTime64 - Buddy_last_seen_player > MAX_ESCORT_TIME_AWAY) {
 		//	This is to prevent buddy from looking for a goal, which he will do because we only allow path creation once/second.
@@ -1115,9 +1228,13 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		Escort_goal_object = escort_set_goal_object();
 		ailp->mode = AIM_GOTO_OBJECT;		//	May look stupid to be before path creation, but ai_door_is_openable uses mode to determine what doors can be got through
 		escort_create_path_to_goal(objp);
+		if (replay_rng_probe_active)
+			input_demo_log_escort_rng_progress("after AIM_GOTO_PLAYER escort_create_path_to_goal", &replay_rng_state, &replay_rng_call_count);
 		aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
 		if (aip->path_length < 3) {
 			create_n_segment_path(objp, 5, Believed_player_seg);
+			if (replay_rng_probe_active)
+				input_demo_log_escort_rng_progress("after AIM_GOTO_PLAYER fallback create_n_segment_path", &replay_rng_state, &replay_rng_call_count);
 		}
 		ailp->mode = AIM_GOTO_OBJECT;
 	} else if (Escort_goal_object == ESCORT_GOAL_UNSPECIFIED) {
@@ -1125,9 +1242,13 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 			Escort_goal_object = escort_set_goal_object();
 			ailp->mode = AIM_GOTO_OBJECT;		//	May look stupid to be before path creation, but ai_door_is_openable uses mode to determine what doors can be got through
 			escort_create_path_to_goal(objp);
+			if (replay_rng_probe_active)
+				input_demo_log_escort_rng_progress("after unspecified escort_create_path_to_goal", &replay_rng_state, &replay_rng_call_count);
 			aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
 			if (aip->path_length < 3) {
 				create_n_segment_path(objp, 5, Believed_player_seg);
+				if (replay_rng_probe_active)
+					input_demo_log_escort_rng_progress("after unspecified fallback create_n_segment_path", &replay_rng_state, &replay_rng_call_count);
 			}
 			ailp->mode = AIM_GOTO_OBJECT;
 		}
@@ -1146,6 +1267,25 @@ void do_snipe_frame(object *objp, fix dist_to_player, int player_visibility, vms
 	int			objnum = objp-Objects;
 	ai_local		*ailp = &Ai_local_info[objnum];
 	fix			connected_distance;
+	int			replay_snipe_probe_active = input_demo_replay_is_loaded() && objnum == 15 &&
+		input_demo_replay_next_frame_index() >= 0 && input_demo_replay_next_frame_index() <= 74;
+
+	if (replay_snipe_probe_active)
+		con_printf(CON_NORMAL,
+			"Input demo replay snipe detail: frame=%u obj=%d step=entry mode=%d next_action=%d vis=%d dist=%d path=%d/%d hide=%d seg=%d pos=(%d,%d,%d)\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			objnum,
+			ailp->mode,
+			ailp->next_action_time,
+			player_visibility,
+			dist_to_player,
+			objp->ctype.ai_info.cur_path_index,
+			objp->ctype.ai_info.path_length,
+			objp->ctype.ai_info.hide_index,
+			objp->segnum,
+			objp->pos.x,
+			objp->pos.y,
+			objp->pos.z);
 
 	if (dist_to_player > F1_0*500)
 		return;
@@ -1214,6 +1354,22 @@ void do_snipe_frame(object *objp, fix dist_to_player, int player_visibility, vms
 			break;
 	}
 
+	if (replay_snipe_probe_active)
+		con_printf(CON_NORMAL,
+			"Input demo replay snipe detail: frame=%u obj=%d step=exit mode=%d next_action=%d vis=%d path=%d/%d hide=%d seg=%d pos=(%d,%d,%d)\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			objnum,
+			ailp->mode,
+			ailp->next_action_time,
+			player_visibility,
+			objp->ctype.ai_info.cur_path_index,
+			objp->ctype.ai_info.path_length,
+			objp->ctype.ai_info.hide_index,
+			objp->segnum,
+			objp->pos.x,
+			objp->pos.y,
+			objp->pos.z);
+
 }
 
 #define	THIEF_DEPTH	20
@@ -1273,6 +1429,8 @@ void do_thief_frame(object *objp, fix dist_to_player, int player_visibility, vms
 	int			objnum = objp-Objects;
 	ai_local		*ailp = &Ai_local_info[objnum];
 	fix			connected_distance;
+	int			replay_thief_probe_active = input_demo_replay_is_loaded() && objnum == 15 &&
+		input_demo_replay_next_frame_index() <= 74;
 
 	if ((Current_level_num < 0) && (Re_init_thief_time < GameTime64)) {
 		if (Re_init_thief_time > GameTime64 - F1_0*2)
@@ -1282,6 +1440,24 @@ void do_thief_frame(object *objp, fix dist_to_player, int player_visibility, vms
 
 	if ((dist_to_player > F1_0*500) && (ailp->next_action_time > 0))
 		return;
+
+	if (replay_thief_probe_active)
+		con_printf(CON_NORMAL,
+			"Input demo replay thief detail: frame=%u obj=%d step=entry mode=%d next_action=%d vis=%d aware=%d dist=%d path=%d/%d hide=%d seg=%d pos=(%d,%d,%d)\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			objnum,
+			ailp->mode,
+			ailp->next_action_time,
+			player_visibility,
+			ailp->player_awareness_type,
+			dist_to_player,
+			objp->ctype.ai_info.cur_path_index,
+			objp->ctype.ai_info.path_length,
+			objp->ctype.ai_info.hide_index,
+			objp->segnum,
+			objp->pos.x,
+			objp->pos.y,
+			objp->pos.z);
 
 	if (Player_is_dead)
 		ailp->mode = AIM_THIEF_RETREAT;
@@ -1391,6 +1567,23 @@ void do_thief_frame(object *objp, fix dist_to_player, int player_visibility, vms
 			ailp->next_action_time = F1_0;
 			break;
 	}
+
+	if (replay_thief_probe_active)
+		con_printf(CON_NORMAL,
+			"Input demo replay thief detail: frame=%u obj=%d step=exit mode=%d next_action=%d vis=%d aware=%d path=%d/%d hide=%d seg=%d pos=(%d,%d,%d)\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			objnum,
+			ailp->mode,
+			ailp->next_action_time,
+			player_visibility,
+			ailp->player_awareness_type,
+			objp->ctype.ai_info.cur_path_index,
+			objp->ctype.ai_info.path_length,
+			objp->ctype.ai_info.hide_index,
+			objp->segnum,
+			objp->pos.x,
+			objp->pos.y,
+			objp->pos.z);
 
 }
 

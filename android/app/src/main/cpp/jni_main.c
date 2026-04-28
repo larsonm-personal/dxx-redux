@@ -43,6 +43,55 @@ AAssetManager *g_asset_manager = NULL;
  * process.  The static flag survives across Activity instances. */
 static volatile int g_game_running = 0;
 
+static char *android_get_intent_string_extra(JNIEnv *env, jobject activity, const char *extra_name)
+{
+	jclass activity_class;
+	jmethodID get_intent;
+	jobject intent;
+	jclass intent_class;
+	jmethodID get_string_extra;
+	jstring key;
+	jstring value;
+	const char *value_chars;
+	char *copied;
+
+	activity_class = (*env)->GetObjectClass(env, activity);
+	if (!activity_class)
+		return NULL;
+	get_intent = (*env)->GetMethodID(env, activity_class, "getIntent", "()Landroid/content/Intent;");
+	if (!get_intent)
+		return NULL;
+	intent = (*env)->CallObjectMethod(env, activity, get_intent);
+	if (!intent)
+		return NULL;
+	intent_class = (*env)->GetObjectClass(env, intent);
+	if (!intent_class)
+		return NULL;
+	get_string_extra = (*env)->GetMethodID(env, intent_class, "getStringExtra", "(Ljava/lang/String;)Ljava/lang/String;");
+	if (!get_string_extra)
+		return NULL;
+	key = (*env)->NewStringUTF(env, extra_name);
+	if (!key)
+		return NULL;
+	value = (jstring)(*env)->CallObjectMethod(env, intent, get_string_extra, key);
+	(*env)->DeleteLocalRef(env, key);
+	if (!value)
+		return NULL;
+	value_chars = (*env)->GetStringUTFChars(env, value, NULL);
+	if (!value_chars) {
+		(*env)->DeleteLocalRef(env, value);
+		return NULL;
+	}
+	copied = strdup(value_chars);
+	(*env)->ReleaseStringUTFChars(env, value, value_chars);
+	(*env)->DeleteLocalRef(env, value);
+	if (!copied || !copied[0]) {
+		free(copied);
+		return NULL;
+	}
+	return copied;
+}
+
 /* Callable from Kotlin to check if main() is already executing. */
 JNIEXPORT jboolean JNICALL
 Java_com_dxxredux_app_MainActivity_nativeIsGameRunning(JNIEnv *env, jclass cls)
@@ -159,11 +208,23 @@ Java_com_dxxredux_app_MainActivity_startGame(JNIEnv *env, jobject thiz)
 	 * PhysFS does NOT hold references past PHYSFS_init(), so locals are fine.
 	 */
 	PHYSFS_AndroidInit androidInit;
+	char *input_demo_replay_path = NULL;
+	char *argv_replay[] = { NULL, "-inputdemo-replay", NULL, NULL };
 	androidInit.jnienv = (void *) env;
 	androidInit.context = (void *) thiz; /* Activity is a valid Context */
 
-	char *argv[] = { (char *) &androidInit, NULL };
-	main(1, argv);
+	input_demo_replay_path = android_get_intent_string_extra(env, thiz, "input_demo_replay");
+	if (input_demo_replay_path)
+		LOGI("Launching input demo replay: %s", input_demo_replay_path);
+	argv_replay[0] = (char *) &androidInit;
+	argv_replay[2] = input_demo_replay_path;
+	if (input_demo_replay_path)
+		main(3, argv_replay);
+	else {
+		char *argv[] = { (char *) &androidInit, NULL };
+		main(1, argv);
+	}
+	free(input_demo_replay_path);
 
 	g_game_running = 0;
 

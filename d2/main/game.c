@@ -155,6 +155,7 @@ void game_init_render_sub_buffers(int x, int y, int w, int h);
 extern void multi_check_for_killgoal_winner();
 
 extern int ReadControls(d_event *event);		// located in gamecntl.c
+extern int ReadControlsReplayFrame(void);	// located in gamecntl.c
 extern void do_final_boss_frame(void);
 
 static void input_demo_record_game_frame(void)
@@ -251,6 +252,30 @@ void input_demo_capture_current_result(input_demo_result *result)
 }
 
 static fix64 input_demo_replay_last_timer_value = 0;
+static const unsigned int input_demo_replay_rng_probe_frame = 73;
+
+static void input_demo_log_replay_rng_progress(const char *label, unsigned int *rng_before, unsigned int *rng_call_count_before)
+{
+	unsigned int rng_after;
+	unsigned int rng_call_count_after;
+
+	if (!d_rand_get_state(&rng_after))
+		return;
+	rng_call_count_after = d_rand_get_call_count();
+	if (rng_after == *rng_before && rng_call_count_after == *rng_call_count_before)
+		return;
+	con_printf(CON_NORMAL,
+		"Input demo replay rng progress: frame=%u gt=%lld step=%s calls=%u->%u before=%u after=%u\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		(long long)GameTime64,
+		label,
+		*rng_call_count_before,
+		rng_call_count_after,
+		*rng_before,
+		rng_after);
+	*rng_before = rng_after;
+	*rng_call_count_before = rng_call_count_after;
+}
 
 static void input_demo_log_result_state(const char *label)
 {
@@ -1479,15 +1504,27 @@ int game_handler(window *wind, d_event *event, void *data)
 			if (input_demo_replay_is_loaded()) {
 				if (!input_demo_apply_replay_frame())
 					return 1;
+				if (ReadControlsReplayFrame())
+					return 1;
 			} else {
 				calc_frame_time();
 			}
 
 			if (!time_paused)
 			{
+				unsigned int replay_rng_frame_state = 0;
+				unsigned int replay_rng_frame_call_count = 0;
+				int replay_rng_frame_probe_active = input_demo_replay_is_loaded() &&
+					input_demo_replay_next_frame_index() == input_demo_replay_rng_probe_frame && d_rand_get_state(&replay_rng_frame_state);
+				if (replay_rng_frame_probe_active)
+					replay_rng_frame_call_count = d_rand_get_call_count();
 				calc_game_time();
 				GameProcessFrame();
+				if (replay_rng_frame_probe_active)
+					input_demo_log_replay_rng_progress("after GameProcessFrame", &replay_rng_frame_state, &replay_rng_frame_call_count);
 				input_demo_finish_replay_frame();
+				if (replay_rng_frame_probe_active)
+					input_demo_log_replay_rng_progress("after input_demo_finish_replay_frame", &replay_rng_frame_state, &replay_rng_frame_call_count);
 			}
 
 			if (!Automap_active)		// efficiency hack
@@ -1497,6 +1534,18 @@ int game_handler(window *wind, d_event *event, void *data)
 					force_cockpit_redraw=0;
 				}
 				game_render_frame();
+				if (input_demo_replay_is_loaded() &&
+					input_demo_replay_next_frame_index() == input_demo_replay_rng_probe_frame + 1) {
+					unsigned int replay_rng_render_state = 0;
+					unsigned int replay_rng_render_call_count = d_rand_get_call_count();
+					if (d_rand_get_state(&replay_rng_render_state))
+						con_printf(CON_NORMAL,
+							"Input demo replay rng progress: frame=%u gt=%lld step=after game_render_frame calls=%u after=%u\n",
+							input_demo_replay_rng_probe_frame,
+							(long long)GameTime64,
+							replay_rng_render_call_count,
+							replay_rng_render_state);
+				}
 			}
 			break;
 
@@ -1585,7 +1634,6 @@ object *find_escort()
 
 extern void process_super_mines_frame(void);
 extern void do_seismic_stuff(void);
-extern int Level_shake_duration;
 
 //if water or fire level, make occasional sound
 void do_ambient_sounds()
@@ -1633,16 +1681,36 @@ void GameProcessFrame(void)
 {
 	fix player_shields = Players[Player_num].shields;
 	int player_was_dead = Player_is_dead;
+	unsigned int replay_rng_state = 0;
+	unsigned int replay_rng_call_count = 0;
+	int replay_rng_probe_active = input_demo_replay_is_loaded() &&
+		input_demo_replay_next_frame_index() == input_demo_replay_rng_probe_frame && d_rand_get_state(&replay_rng_state);
+	if (replay_rng_probe_active)
+		replay_rng_call_count = d_rand_get_call_count();
 
 	input_demo_record_game_frame();
 	update_player_stats();
 	diminish_palette_towards_normal();		//	Should leave palette effect up for as long as possible by putting right before render.
+	if (replay_rng_probe_active)
+		input_demo_log_replay_rng_progress("diminish_palette_towards_normal", &replay_rng_state, &replay_rng_call_count);
 	do_afterburner_stuff();
+	if (replay_rng_probe_active)
+		input_demo_log_replay_rng_progress("do_afterburner_stuff", &replay_rng_state, &replay_rng_call_count);
 	do_cloak_stuff();
+	if (replay_rng_probe_active)
+		input_demo_log_replay_rng_progress("do_cloak_stuff", &replay_rng_state, &replay_rng_call_count);
 	do_invulnerable_stuff();
+	if (replay_rng_probe_active)
+		input_demo_log_replay_rng_progress("do_invulnerable_stuff", &replay_rng_state, &replay_rng_call_count);
 	remove_obsolete_stuck_objects();
+	if (replay_rng_probe_active)
+		input_demo_log_replay_rng_progress("remove_obsolete_stuck_objects", &replay_rng_state, &replay_rng_call_count);
 	init_ai_frame();
+	if (replay_rng_probe_active)
+		input_demo_log_replay_rng_progress("init_ai_frame", &replay_rng_state, &replay_rng_call_count);
 	do_final_boss_frame();
+	if (replay_rng_probe_active)
+		input_demo_log_replay_rng_progress("do_final_boss_frame", &replay_rng_state, &replay_rng_call_count);
 
 	if ((Players[Player_num].flags & PLAYER_FLAGS_HEADLIGHT) && (Players[Player_num].flags & PLAYER_FLAGS_HEADLIGHT_ON)) {
 		static int turned_off=0;
@@ -1686,12 +1754,22 @@ void GameProcessFrame(void)
 #endif
 
 	dead_player_frame();
+	if (replay_rng_probe_active)
+		input_demo_log_replay_rng_progress("dead_player_frame", &replay_rng_state, &replay_rng_call_count);
 	if (Newdemo_state != ND_STATE_PLAYBACK)
 		do_controlcen_dead_frame();
+	if (replay_rng_probe_active)
+		input_demo_log_replay_rng_progress("do_controlcen_dead_frame", &replay_rng_state, &replay_rng_call_count);
 
 	process_super_mines_frame();
+	if (replay_rng_probe_active)
+		input_demo_log_replay_rng_progress("process_super_mines_frame", &replay_rng_state, &replay_rng_call_count);
 	do_seismic_stuff();
+	if (replay_rng_probe_active)
+		input_demo_log_replay_rng_progress("do_seismic_stuff", &replay_rng_state, &replay_rng_call_count);
 	do_ambient_sounds();
+	if (replay_rng_probe_active)
+		input_demo_log_replay_rng_progress("do_ambient_sounds", &replay_rng_state, &replay_rng_call_count);
 
 #ifdef NETWORK
 	if ((Game_mode & GM_MULTI) && Netgame.PlayTimeAllowed)
@@ -1736,17 +1814,27 @@ void GameProcessFrame(void)
 		Players[Player_num].homing_object_dist = -1;		//	Assume not being tracked.  Laser_do_weapon_sequence modifies this.
 
 		object_move_all();
+		if (replay_rng_probe_active)
+			input_demo_log_replay_rng_progress("object_move_all", &replay_rng_state, &replay_rng_call_count);
 		powerup_grab_cheat_all();
+		if (replay_rng_probe_active)
+			input_demo_log_replay_rng_progress("powerup_grab_cheat_all", &replay_rng_state, &replay_rng_call_count);
 
 		if (Endlevel_sequence)	//might have been started during move
 			return;
 
 		fuelcen_update_all();
+		if (replay_rng_probe_active)
+			input_demo_log_replay_rng_progress("fuelcen_update_all", &replay_rng_state, &replay_rng_call_count);
 
 		do_ai_frame_all();
+		if (replay_rng_probe_active)
+			input_demo_log_replay_rng_progress("do_ai_frame_all", &replay_rng_state, &replay_rng_call_count);
 
 		if (allowed_to_fire_laser())
 			FireLaser();				// Fire Laser!
+		if (replay_rng_probe_active)
+			input_demo_log_replay_rng_progress("FireLaser", &replay_rng_state, &replay_rng_call_count);
 
 		if (Auto_fire_fusion_cannon_time) {
 			if (Players[Player_num].primary_weapon != FUSION_INDEX)

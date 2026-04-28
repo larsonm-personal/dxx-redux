@@ -39,6 +39,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "player.h"
 #include "fireball.h"
 #include "game.h"
+#include "input_demo_recorder.h"
+#include "input_demo_replay.h"
 
 #define	PARALLAX	0		//	If !0, then special debugging for Parallax eyes enabled.
 
@@ -58,6 +60,15 @@ void ai_path_garbage_collect(void);
 #if PATH_VALIDATION
 int validate_path(int debug_flag, point_seg* psegs, int num_points);
 #endif
+
+static int input_demo_should_match_android_companion_velocity(void)
+{
+#ifdef __ANDROID__
+	return 1;
+#else
+	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+#endif
+}
 
 //	------------------------------------------------------------------------
 void create_random_xlate(sbyte *xt)
@@ -1216,15 +1227,13 @@ void ai_path_set_orient_and_vel(object *objp, vms_vector *goal_point, int player
 
 	speed_scale = fixmul(max_speed, dot);
 	vm_vec_scale(&norm_cur_vel, speed_scale);
-#ifdef __ANDROID__
-	/* Smooth companion velocity transitions to reduce visual banding
-	 * when the path direction changes sharply at waypoints */
-	if (robptr->companion) {
+	/* Match Android guidebot motion during input-demo record/replay so
+	 * checkpoint-backed replays stay deterministic on desktop. */
+	if (robptr->companion && input_demo_should_match_android_companion_velocity()) {
 		objp->mtype.phys_info.velocity.x = (objp->mtype.phys_info.velocity.x + norm_cur_vel.x) / 2;
 		objp->mtype.phys_info.velocity.y = (objp->mtype.phys_info.velocity.y + norm_cur_vel.y) / 2;
 		objp->mtype.phys_info.velocity.z = (objp->mtype.phys_info.velocity.z + norm_cur_vel.z) / 2;
 	} else
-#endif
 	objp->mtype.phys_info.velocity = norm_cur_vel;
 
 	if ((Ai_local_info[objp-Objects].mode == AIM_RUN_FROM_OBJECT) || (robptr->companion == 1) || (objp->ctype.ai_info.behavior == AIB_SNIPE)) {

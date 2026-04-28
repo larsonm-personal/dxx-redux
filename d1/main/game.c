@@ -151,6 +151,7 @@ void game_init_render_sub_buffers(int x, int y, int w, int h);
 extern void multi_check_for_killgoal_winner();
 
 extern int ReadControls(d_event *event);		// located in gamecntl.c
+extern int ReadControlsReplayFrame(void);	// located in gamecntl.c
 
 static void input_demo_record_game_frame(void)
 {
@@ -1289,6 +1290,8 @@ int game_handler(window *wind, d_event *event, void *data)
 		case EVENT_WINDOW_DRAW:
 			if (input_demo_replay_is_loaded()) {
 				if (!input_demo_apply_replay_frame())
+					return 1;
+				if (ReadControlsReplayFrame())
 					return 1;
 			} else {
 				calc_frame_time();

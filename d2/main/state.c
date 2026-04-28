@@ -62,6 +62,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "laser.h"
 #include "state.h"
 #include "multi.h"
+#include "escort.h"
 #include "gr.h"
 #include "palette.h"
 #ifdef OGL
@@ -71,7 +72,6 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #ifdef __ANDROID__
 #include "coop_save.h"
 #include "coop_indicator_lines.h"
-#include "escort.h"
 #include "android_log.h"
 #endif
 
@@ -2430,6 +2430,7 @@ int state_restore_all_sub(char *filename, int secret_restore)
 #endif
 
 	PHYSFS_close(fp);
+	escort_rebuild_runtime_state_after_restore();
 
 	if (Game_wind)
 		if (!window_is_visible(Game_wind))

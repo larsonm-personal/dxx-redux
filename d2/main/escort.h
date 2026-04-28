@@ -11,6 +11,7 @@ extern void change_guidebot_name(void);
 extern void do_escort_menu(void);
 extern void detect_escort_goal_accomplished(int index);
 extern void set_escort_special_goal(int key);
+extern void escort_rebuild_runtime_state_after_restore(void);
 extern int Buddy_objnum, Buddy_allowed_to_talk;
 
 #ifdef NETWORK

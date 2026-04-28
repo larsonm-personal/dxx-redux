@@ -60,6 +60,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "fuelcen.h"
 #include "controls.h"
 #include "kconfig.h"
+#include "input_demo_replay.h"
 
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -312,6 +313,7 @@ void do_ai_frame(object *obj)
 	int         previous_visibility;
 	vms_vector  gun_point;
 	vms_vector  vis_vec_pos;
+	int         replay_detail_probe_active;
 
 	ailp->next_action_time -= FrameTime;
 
@@ -366,6 +368,54 @@ void do_ai_frame(object *obj)
 	Assert(obj->id < N_robot_types);
 
 	obj_ref = objnum ^ d_tick_count;
+	replay_detail_probe_active = input_demo_replay_is_loaded() && objnum == 15 &&
+		input_demo_replay_next_frame_index() <= 81;
+	if (replay_detail_probe_active) {
+		static unsigned int replay_detail_last_frame = 0;
+		static int replay_detail_last_mode = -9999;
+		static int replay_detail_last_prev_vis = -9999;
+		static int replay_detail_last_seg = -9999;
+		static int replay_detail_last_path = -9999;
+		static int replay_detail_last_hide = -9999;
+		static int replay_detail_last_awareness = -9999;
+		unsigned int replay_detail_frame = (unsigned int)input_demo_replay_next_frame_index();
+
+		if (replay_detail_frame == 0 || replay_detail_frame == 74 || replay_detail_frame == 81 ||
+			replay_detail_last_frame + 1 != replay_detail_frame ||
+			replay_detail_last_mode != ailp->mode ||
+			replay_detail_last_prev_vis != ailp->previous_visibility ||
+			replay_detail_last_seg != obj->segnum ||
+			replay_detail_last_path != aip->cur_path_index ||
+			replay_detail_last_hide != aip->hide_index ||
+			replay_detail_last_awareness != ailp->player_awareness_type)
+			con_printf(CON_NORMAL,
+				"Input demo replay AI detail: frame=%u obj=%d step=pre_ai behavior=%d mode=%d prev_vis=%d aware=%d obj_ref=%d tick=%d next_action=%d next_fire=%d next_fire2=%d since=%d seg=%d path=%d/%d hide=%d thief=%d\n",
+				replay_detail_frame,
+				objnum,
+				aip->behavior,
+				ailp->mode,
+				ailp->previous_visibility,
+				ailp->player_awareness_type,
+				obj_ref,
+				d_tick_count,
+				ailp->next_action_time,
+				ailp->next_fire,
+				ailp->next_fire2,
+				ailp->time_since_processed,
+				obj->segnum,
+				aip->cur_path_index,
+				aip->path_length,
+				aip->hide_index,
+				robptr->thief);
+
+		replay_detail_last_frame = replay_detail_frame;
+		replay_detail_last_mode = ailp->mode;
+		replay_detail_last_prev_vis = ailp->previous_visibility;
+		replay_detail_last_seg = obj->segnum;
+		replay_detail_last_path = aip->cur_path_index;
+		replay_detail_last_hide = aip->hide_index;
+		replay_detail_last_awareness = ailp->player_awareness_type;
+	}
 
 	if (ailp->next_fire > -F1_0*8)
 		ailp->next_fire -= FrameTime;
@@ -587,8 +637,32 @@ _exit_cheat:
 			player_visibility = 2;
 	} else if (((obj_ref&3) == 0) && !previous_visibility && (dist_to_player < F1_0*100)) {
 		fix sval, rval;
+		unsigned int replay_rng_before = 0;
+		unsigned int replay_rng_after = 0;
+		unsigned int replay_rng_calls_before = 0;
+		unsigned int replay_rng_calls_after;
+
+		if (replay_detail_probe_active && d_rand_get_state(&replay_rng_before))
+			replay_rng_calls_before = d_rand_get_call_count();
 
 		rval = d_rand();
+		if (replay_detail_probe_active && d_rand_get_state(&replay_rng_after)) {
+			replay_rng_calls_after = d_rand_get_call_count();
+			if (replay_rng_before != replay_rng_after || replay_rng_calls_before != replay_rng_calls_after) {
+				con_printf(CON_NORMAL,
+					"Input demo replay AI detail: frame=%u obj=%d step=awareness_roll tick=%d obj_ref=%d dist=%d prev_vis=%d calls=%u->%u before=%u after=%u\n",
+					(unsigned int)input_demo_replay_next_frame_index(),
+					objnum,
+					d_tick_count,
+					obj_ref,
+					dist_to_player,
+					previous_visibility,
+					replay_rng_calls_before,
+					replay_rng_calls_after,
+					replay_rng_before,
+					replay_rng_after);
+			}
+		}
 		sval = (dist_to_player * (Difficulty_level+1))/64;
 
 		if ((fixmul(rval, sval) < FrameTime) || (Players[Player_num].flags & PLAYER_FLAGS_HEADLIGHT_ON)) {
@@ -729,9 +803,25 @@ _exit_cheat:
 			ailp->mode = AIM_CHASE_OBJECT;
 			return;
 		}
+		if (replay_detail_probe_active)
+			con_printf(CON_NORMAL,
+				"Input demo replay AI detail: frame=%u obj=%d step=snipe_gate prev_vis=%d obj_ref=%d gate=%d\n",
+				(unsigned int)input_demo_replay_next_frame_index(),
+				objnum,
+				previous_visibility,
+				obj_ref,
+				(!(obj_ref & 3) || previous_visibility));
 
 		if (!(obj_ref & 3) || previous_visibility) {
 			compute_vis_and_vec(obj, &vis_vec_pos, ailp, &vec_to_player, &player_visibility, robptr, &visibility_and_vec_computed);
+			if (replay_detail_probe_active)
+				con_printf(CON_NORMAL,
+					"Input demo replay AI detail: frame=%u obj=%d step=snipe_vis vis=%d mode=%d prev_vis=%d\n",
+					(unsigned int)input_demo_replay_next_frame_index(),
+					objnum,
+					player_visibility,
+					ailp->mode,
+					ailp->previous_visibility);
 
 			// If this sniper is in still mode, if he was hit or can see player, switch to snipe mode.
 			if (ailp->mode == AIM_STILL)
@@ -1148,7 +1238,31 @@ _exit_cheat:
 		case AIM_SNIPE_ATTACK:
 		case AIM_SNIPE_FIRE:
 			if (ai_multiplayer_awareness(obj, 53)) {
+				unsigned int replay_rng_before = 0;
+				unsigned int replay_rng_after = 0;
+				unsigned int replay_rng_calls_before = 0;
+				unsigned int replay_rng_calls_after;
+
+				if (replay_detail_probe_active && d_rand_get_state(&replay_rng_before))
+					replay_rng_calls_before = d_rand_get_call_count();
 				ai_do_actual_firing_stuff(obj, aip, ailp, robptr, &vec_to_player, dist_to_player, &gun_point, player_visibility, object_animates, aip->CURRENT_GUN);
+				if (replay_detail_probe_active && d_rand_get_state(&replay_rng_after)) {
+					replay_rng_calls_after = d_rand_get_call_count();
+					if (replay_rng_before != replay_rng_after || replay_rng_calls_before != replay_rng_calls_after)
+						con_printf(CON_NORMAL,
+							"Input demo replay AI detail: frame=%u obj=%d step=snipe_fire mode=%d vis=%d next_fire=%d next_fire2=%d gun=%d calls=%u->%u before=%u after=%u\n",
+							(unsigned int)input_demo_replay_next_frame_index(),
+							objnum,
+							ailp->mode,
+							player_visibility,
+							ailp->next_fire,
+							ailp->next_fire2,
+							aip->CURRENT_GUN,
+							replay_rng_calls_before,
+							replay_rng_calls_after,
+							replay_rng_before,
+							replay_rng_after);
+				}
 				if (robptr->thief)
 					ai_move_relative_to_player(obj, ailp, dist_to_player, &vec_to_player, 0, 0, player_visibility);
 				break;
@@ -1553,7 +1667,6 @@ void state_ai_local_to_ai_local_rw(ai_local *ail, ai_local_rw *ail_rw)
 		ail_rw->time_player_sound_attacked = F1_0*(-18000);
 	else
 		ail_rw->time_player_sound_attacked = ail->time_player_sound_attacked - GameTime64;
-	ail_rw->time_player_sound_attacked = ail->time_player_sound_attacked;
 	ail_rw->next_misc_sound_time       = ail->next_misc_sound_time - GameTime64;
 	ail_rw->time_since_processed       = ail->time_since_processed;
 	for (i = 0; i < MAX_SUBMODELS; i++)
@@ -1577,7 +1690,7 @@ void state_ai_cloak_info_to_ai_cloak_info_rw(ai_cloak_info *aic, ai_cloak_info_r
 		aic_rw->last_time = aic->last_time - GameTime64;
 	aic_rw->last_segment    = aic->last_segment;
 	aic_rw->last_position.x = aic->last_position.x;
-	aic_rw->last_position.x = aic->last_position.y;
+	aic_rw->last_position.y = aic->last_position.y;
 	aic_rw->last_position.z = aic->last_position.z;
 }
 

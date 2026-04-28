@@ -3113,7 +3113,6 @@ void state_ai_local_to_ai_local_rw(ai_local *ail, ai_local_rw *ail_rw)
 		ail_rw->time_player_sound_attacked = F1_0*(-18000);
 	else
 		ail_rw->time_player_sound_attacked = ail->time_player_sound_attacked - GameTime64;
-	ail_rw->time_player_sound_attacked = ail->time_player_sound_attacked;
 	ail_rw->next_misc_sound_time       = ail->next_misc_sound_time - GameTime64;
 	ail_rw->time_since_processed       = ail->time_since_processed;
 	for (i = 0; i < MAX_SUBMODELS; i++)
@@ -3136,7 +3135,7 @@ void state_ai_cloak_info_to_ai_cloak_info_rw(ai_cloak_info *aic, ai_cloak_info_r
 	else
 		aic_rw->last_time = aic->last_time - GameTime64;
 	aic_rw->last_position.x = aic->last_position.x;
-	aic_rw->last_position.x = aic->last_position.y;
+	aic_rw->last_position.y = aic->last_position.y;
 	aic_rw->last_position.z = aic->last_position.z;
 }
 
