@@ -42,6 +42,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "player.h"
 #include "cntrlcen.h"
 #include "morph.h"
+#include "laser.h"
 #include "weapon.h"
 #include "render.h"
 #include "gameseq.h"
@@ -72,8 +73,10 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #endif
 
 
-#define STATE_VERSION 9
+#define STATE_VERSION 11
 #define STATE_COMPATIBLE_VERSION 6
+#define STATE_RUNTIME_VERSION 10
+#define STATE_FIDELITY_VERSION 11
 // 0 - Put DGSS (Descent Game State Save) id at tof.
 // 1 - Added Difficulty level save
 // 2 - Added cheats.enabled flag
@@ -84,6 +87,8 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 // 7 - Added other cheat saves and game_id.
 // 8 - Save palette with screen shot
 // 9 - Store thumbnail as raw RGB instead of indexed + palette
+// 10- Save deterministic runtime state for checkpoint fidelity
+// 11- Save transient weapon, morph, wall, and reactor state for checkpoint fidelity
 
 #define NUM_SAVES 10
 #define THUMBNAIL_W 100
@@ -99,11 +104,365 @@ extern int Do_appearance_effect;
 int state_save_all_sub(char *filename, char *desc);
 int state_restore_all_sub(char *filename);
 
+int state_runtime_version(void)
+{
+	return STATE_RUNTIME_VERSION;
+}
+
 int sc_last_item= 0;
 
 char dgss_id[4] = "DGSS";
 
 uint state_game_id;
+
+static fix state_time_to_delta_fix(fix64 time_value)
+{
+	fix64 delta = time_value - GameTime64;
+	fix64 min_delta = (fix64)(F1_0 * (-18000));
+	fix64 max_delta = (fix64)(F1_0 * 18000);
+
+	if (delta < min_delta)
+		return (fix)min_delta;
+	if (delta > max_delta)
+		return (fix)max_delta;
+	return (fix)delta;
+}
+
+static void state_write_time_delta(PHYSFS_file *fp, fix64 time_value)
+{
+	fix delta = state_time_to_delta_fix(time_value);
+	PHYSFS_write(fp, &delta, sizeof(delta), 1);
+}
+
+static fix64 state_read_time_delta(PHYSFS_file *fp, int swap)
+{
+	return (fix64)PHYSFSX_readSXE32(fp, swap);
+}
+
+static void state_write_physics_info(PHYSFS_file *fp, physics_info *phys_info)
+{
+	PHYSFSX_writeVector(fp, &phys_info->velocity);
+	PHYSFSX_writeVector(fp, &phys_info->thrust);
+	PHYSFS_write(fp, &phys_info->mass, sizeof(phys_info->mass), 1);
+	PHYSFS_write(fp, &phys_info->drag, sizeof(phys_info->drag), 1);
+	PHYSFS_write(fp, &phys_info->brakes, sizeof(phys_info->brakes), 1);
+	PHYSFSX_writeVector(fp, &phys_info->rotvel);
+	PHYSFSX_writeVector(fp, &phys_info->rotthrust);
+	PHYSFS_write(fp, &phys_info->turnroll, sizeof(phys_info->turnroll), 1);
+	PHYSFS_write(fp, &phys_info->flags, sizeof(phys_info->flags), 1);
+}
+
+static void state_read_physics_info(PHYSFS_file *fp, int swap, physics_info *phys_info)
+{
+	PHYSFSX_readVectorX(fp, &phys_info->velocity, swap);
+	PHYSFSX_readVectorX(fp, &phys_info->thrust, swap);
+	phys_info->mass = PHYSFSX_readSXE32(fp, swap);
+	phys_info->drag = PHYSFSX_readSXE32(fp, swap);
+	phys_info->brakes = PHYSFSX_readSXE32(fp, swap);
+	PHYSFSX_readVectorX(fp, &phys_info->rotvel, swap);
+	PHYSFSX_readVectorX(fp, &phys_info->rotthrust, swap);
+	phys_info->turnroll = (fixang)PHYSFSX_readSXE16(fp, swap);
+	phys_info->flags = (ushort)PHYSFSX_readSXE16(fp, swap);
+}
+
+static void state_clear_stuck_object_state(void)
+{
+	int i;
+
+	Num_stuck_objects = 0;
+	for (i = 0; i < MAX_STUCK_OBJECTS; i++) {
+		Stuck_objects[i].objnum = -1;
+		Stuck_objects[i].wallnum = -1;
+		Stuck_objects[i].signature = 0;
+	}
+}
+
+static void state_clear_controlcen_runtime_state(void)
+{
+	controlcen_death_silence = 0;
+}
+
+static void state_write_weapon_fidelity_state(PHYSFS_file *fp)
+{
+	int i;
+
+	for (i = 0; i <= Highest_object_index; i++) {
+		if (Objects[i].type == OBJ_NONE || Objects[i].control_type != CT_WEAPON)
+			continue;
+		PHYSFS_write(fp, &Objects[i].ctype.laser_info.creation_framecount,
+			sizeof(Objects[i].ctype.laser_info.creation_framecount), 1);
+		PHYSFS_write(fp, Objects[i].ctype.laser_info.hitobj_list,
+			sizeof(Objects[i].ctype.laser_info.hitobj_list[0]), MAX_OBJECTS);
+	}
+}
+
+static void state_read_weapon_fidelity_state(PHYSFS_file *fp, int swap)
+{
+	int i;
+
+	for (i = 0; i <= Highest_object_index; i++) {
+		if (Objects[i].type == OBJ_NONE || Objects[i].control_type != CT_WEAPON)
+			continue;
+
+		Objects[i].ctype.laser_info.creation_framecount = PHYSFSX_readSXE32(fp, swap);
+		PHYSFS_read(fp, Objects[i].ctype.laser_info.hitobj_list,
+			sizeof(Objects[i].ctype.laser_info.hitobj_list[0]), MAX_OBJECTS);
+	}
+}
+
+static int state_morph_slot_is_active(morph_data *md)
+{
+	return md->obj != NULL && md->obj->type != OBJ_NONE && md->obj->signature == md->Morph_sig;
+}
+
+static void state_write_morph_state(PHYSFS_file *fp)
+{
+	int active_morphs = 0;
+	int i, j;
+
+	for (i = 0; i < MAX_MORPH_OBJECTS; i++)
+		if (state_morph_slot_is_active(&morph_objects[i]))
+			active_morphs++;
+
+	PHYSFS_write(fp, &active_morphs, sizeof(active_morphs), 1);
+	for (i = 0; i < MAX_MORPH_OBJECTS; i++) {
+		int objnum;
+		morph_data *md;
+
+		if (!state_morph_slot_is_active(&morph_objects[i]))
+			continue;
+
+		md = &morph_objects[i];
+		objnum = (int)(md->obj - Objects);
+		PHYSFS_write(fp, &objnum, sizeof(objnum), 1);
+		PHYSFS_write(fp, &md->Morph_sig, sizeof(md->Morph_sig), 1);
+		for (j = 0; j < MAX_VECS; j++)
+			PHYSFSX_writeVector(fp, &md->morph_vecs[j]);
+		for (j = 0; j < MAX_VECS; j++)
+			PHYSFSX_writeVector(fp, &md->morph_deltas[j]);
+		for (j = 0; j < MAX_VECS; j++)
+			PHYSFS_write(fp, &md->morph_times[j], sizeof(md->morph_times[j]), 1);
+		for (j = 0; j < MAX_SUBMODELS; j++)
+			PHYSFS_write(fp, &md->submodel_active[j], sizeof(md->submodel_active[j]), 1);
+		for (j = 0; j < MAX_SUBMODELS; j++)
+			PHYSFS_write(fp, &md->n_morphing_points[j], sizeof(md->n_morphing_points[j]), 1);
+		for (j = 0; j < MAX_SUBMODELS; j++)
+			PHYSFS_write(fp, &md->submodel_startpoints[j], sizeof(md->submodel_startpoints[j]), 1);
+		PHYSFS_write(fp, &md->n_submodels_active, sizeof(md->n_submodels_active), 1);
+		PHYSFS_write(fp, &md->morph_save_control_type, sizeof(md->morph_save_control_type), 1);
+		PHYSFS_write(fp, &md->morph_save_movement_type, sizeof(md->morph_save_movement_type), 1);
+		state_write_physics_info(fp, &md->morph_save_phys_info);
+	}
+}
+
+static void state_read_morph_state(PHYSFS_file *fp, int swap)
+{
+	int active_morphs = PHYSFSX_readSXE32(fp, swap);
+	int next_slot = 0;
+	int i, j;
+
+	for (i = 0; i < active_morphs; i++) {
+		int objnum = PHYSFSX_readSXE32(fp, swap);
+		int morph_sig = PHYSFSX_readSXE32(fp, swap);
+		morph_data *md = NULL;
+
+		if (next_slot < MAX_MORPH_OBJECTS && objnum >= 0 && objnum <= Highest_object_index &&
+			Objects[objnum].type != OBJ_NONE && Objects[objnum].signature == morph_sig &&
+			Objects[objnum].render_type == RT_MORPH) {
+			md = &morph_objects[next_slot++];
+			memset(md, 0, sizeof(*md));
+			md->obj = &Objects[objnum];
+			md->Morph_sig = morph_sig;
+		}
+
+		for (j = 0; j < MAX_VECS; j++) {
+			vms_vector value;
+			PHYSFSX_readVectorX(fp, &value, swap);
+			if (md)
+				md->morph_vecs[j] = value;
+		}
+		for (j = 0; j < MAX_VECS; j++) {
+			vms_vector value;
+			PHYSFSX_readVectorX(fp, &value, swap);
+			if (md)
+				md->morph_deltas[j] = value;
+		}
+		for (j = 0; j < MAX_VECS; j++) {
+			fix value = PHYSFSX_readSXE32(fp, swap);
+			if (md)
+				md->morph_times[j] = value;
+		}
+		for (j = 0; j < MAX_SUBMODELS; j++) {
+			int value = PHYSFSX_readSXE32(fp, swap);
+			if (md)
+				md->submodel_active[j] = value;
+		}
+		for (j = 0; j < MAX_SUBMODELS; j++) {
+			int value = PHYSFSX_readSXE32(fp, swap);
+			if (md)
+				md->n_morphing_points[j] = value;
+		}
+		for (j = 0; j < MAX_SUBMODELS; j++) {
+			int value = PHYSFSX_readSXE32(fp, swap);
+			if (md)
+				md->submodel_startpoints[j] = value;
+		}
+		{
+			int n_submodels_active = PHYSFSX_readSXE32(fp, swap);
+			ubyte morph_save_control_type;
+			ubyte morph_save_movement_type;
+			physics_info morph_save_phys_info;
+
+			PHYSFS_read(fp, &morph_save_control_type, sizeof(morph_save_control_type), 1);
+			PHYSFS_read(fp, &morph_save_movement_type, sizeof(morph_save_movement_type), 1);
+			state_read_physics_info(fp, swap, &morph_save_phys_info);
+			if (md) {
+				md->n_submodels_active = n_submodels_active;
+				md->morph_save_control_type = morph_save_control_type;
+				md->morph_save_movement_type = morph_save_movement_type;
+				md->morph_save_phys_info = morph_save_phys_info;
+			}
+		}
+	}
+}
+
+static void state_write_stuck_object_state(PHYSFS_file *fp)
+{
+	int i;
+
+	PHYSFS_write(fp, &Num_stuck_objects, sizeof(Num_stuck_objects), 1);
+	for (i = 0; i < MAX_STUCK_OBJECTS; i++) {
+		PHYSFS_write(fp, &Stuck_objects[i].objnum, sizeof(Stuck_objects[i].objnum), 1);
+		PHYSFS_write(fp, &Stuck_objects[i].wallnum, sizeof(Stuck_objects[i].wallnum), 1);
+		PHYSFS_write(fp, &Stuck_objects[i].signature, sizeof(Stuck_objects[i].signature), 1);
+	}
+}
+
+static void state_read_stuck_object_state(PHYSFS_file *fp, int swap)
+{
+	int saved_num_stuck_objects = PHYSFSX_readSXE32(fp, swap);
+	int i;
+
+	for (i = 0; i < MAX_STUCK_OBJECTS; i++) {
+		Stuck_objects[i].objnum = (short)PHYSFSX_readSXE16(fp, swap);
+		Stuck_objects[i].wallnum = (short)PHYSFSX_readSXE16(fp, swap);
+		Stuck_objects[i].signature = PHYSFSX_readSXE32(fp, swap);
+	}
+
+	if (saved_num_stuck_objects < 0)
+		saved_num_stuck_objects = 0;
+	else if (saved_num_stuck_objects > MAX_STUCK_OBJECTS)
+		saved_num_stuck_objects = MAX_STUCK_OBJECTS;
+	Num_stuck_objects = saved_num_stuck_objects;
+}
+
+static void state_write_controlcen_runtime_state(PHYSFS_file *fp)
+{
+	PHYSFS_write(fp, &controlcen_death_silence, sizeof(controlcen_death_silence), 1);
+}
+
+static void state_read_controlcen_runtime_state(PHYSFS_file *fp, int swap)
+{
+	controlcen_death_silence = PHYSFSX_readSXE32(fp, swap);
+}
+
+static void state_write_runtime_state(PHYSFS_file *fp)
+{
+	object_runtime_state object_state;
+	game_d_tick_state d_tick_state;
+	laser_runtime_state laser_state;
+	int has_rng_state = 0;
+	int i;
+	unsigned int rng_state = 0;
+
+	object_get_runtime_state(&object_state);
+	game_get_d_tick_state(&d_tick_state);
+	laser_get_runtime_state(&laser_state);
+	has_rng_state = d_rand_get_state(&rng_state);
+
+	state_write_time_delta(fp, Next_laser_fire_time);
+	state_write_time_delta(fp, Next_missile_fire_time);
+	state_write_time_delta(fp, Last_laser_fired_time);
+	state_write_time_delta(fp, Next_flare_fire_time);
+	state_write_time_delta(fp, Auto_fire_fusion_cannon_time);
+	PHYSFS_write(fp, &Global_laser_firing_count, sizeof(Global_laser_firing_count), 1);
+	PHYSFS_write(fp, &Global_missile_firing_count, sizeof(Global_missile_firing_count), 1);
+	PHYSFS_write(fp, &has_rng_state, sizeof(has_rng_state), 1);
+	PHYSFS_write(fp, &rng_state, sizeof(rng_state), 1);
+	PHYSFS_write(fp, &d_tick_state.count, sizeof(d_tick_state.count), 1);
+	PHYSFS_write(fp, &d_tick_state.step, sizeof(d_tick_state.step), 1);
+	PHYSFS_write(fp, &d_tick_state.timer, sizeof(d_tick_state.timer), 1);
+	PHYSFS_write(fp, &object_state.num_objects, sizeof(object_state.num_objects), 1);
+	PHYSFS_write(fp, &object_state.highest_object_index, sizeof(object_state.highest_object_index), 1);
+	for (i = 0; i < MAX_OBJECTS; i++)
+		PHYSFS_write(fp, &object_state.free_obj_list[i], sizeof(object_state.free_obj_list[i]), 1);
+	PHYSFS_write(fp, &object_state.homer_frame_count, sizeof(object_state.homer_frame_count), 1);
+	PHYSFS_write(fp, &object_state.current_homer_frame_time, sizeof(object_state.current_homer_frame_time), 1);
+	PHYSFS_write(fp, &object_state.do_homer_frame, sizeof(object_state.do_homer_frame), 1);
+	PHYSFS_write(fp, &laser_state.fusion_charge, sizeof(laser_state.fusion_charge), 1);
+	PHYSFS_write(fp, &laser_state.spreadfire_toggle, sizeof(laser_state.spreadfire_toggle), 1);
+	PHYSFS_write(fp, &laser_state.missile_gun, sizeof(laser_state.missile_gun), 1);
+	PHYSFS_write(fp, &laser_state.proximity_dropped, sizeof(laser_state.proximity_dropped), 1);
+	state_write_weapon_fidelity_state(fp);
+	state_write_morph_state(fp);
+	state_write_stuck_object_state(fp);
+	state_write_controlcen_runtime_state(fp);
+}
+
+static void state_read_runtime_state(PHYSFS_file *fp, int swap, int version)
+{
+	object_runtime_state object_state;
+	game_d_tick_state d_tick_state;
+	laser_runtime_state laser_state;
+	fix64 next_laser_fire_time = GameTime64 + state_read_time_delta(fp, swap);
+	fix64 next_missile_fire_time = GameTime64 + state_read_time_delta(fp, swap);
+	fix64 last_laser_fired_time = GameTime64 + state_read_time_delta(fp, swap);
+	fix64 next_flare_fire_time = GameTime64 + state_read_time_delta(fp, swap);
+	fix64 auto_fire_fusion_cannon_time = GameTime64 + state_read_time_delta(fp, swap);
+	int has_rng_state;
+	int i;
+	unsigned int rng_state;
+
+	Global_laser_firing_count = PHYSFSX_readSXE32(fp, swap);
+	Global_missile_firing_count = PHYSFSX_readSXE32(fp, swap);
+	has_rng_state = PHYSFSX_readSXE32(fp, swap);
+	rng_state = (unsigned int)PHYSFSX_readSXE32(fp, swap);
+	d_tick_state.count = PHYSFSX_readSXE32(fp, swap);
+	d_tick_state.step = PHYSFSX_readSXE32(fp, swap);
+	d_tick_state.timer = PHYSFSX_readSXE32(fp, swap);
+	object_state.num_objects = PHYSFSX_readSXE32(fp, swap);
+	object_state.highest_object_index = PHYSFSX_readSXE32(fp, swap);
+	for (i = 0; i < MAX_OBJECTS; i++)
+		object_state.free_obj_list[i] = (short)PHYSFSX_readSXE16(fp, swap);
+	object_state.homer_frame_count = (unsigned int)PHYSFSX_readSXE32(fp, swap);
+	object_state.current_homer_frame_time = PHYSFSX_readSXE32(fp, swap);
+	object_state.do_homer_frame = PHYSFSX_readSXE32(fp, swap);
+	laser_state.fusion_charge = PHYSFSX_readSXE32(fp, swap);
+	laser_state.spreadfire_toggle = PHYSFSX_readSXE32(fp, swap);
+	laser_state.missile_gun = PHYSFSX_readSXE32(fp, swap);
+	laser_state.proximity_dropped = PHYSFSX_readSXE32(fp, swap);
+	laser_state.helix_orientation = 0;
+	laser_state.smartmines_dropped = 0;
+	laser_state.last_omega_fire_time = 0;
+	if (version >= STATE_FIDELITY_VERSION) {
+		state_read_weapon_fidelity_state(fp, swap);
+		state_read_morph_state(fp, swap);
+		state_read_stuck_object_state(fp, swap);
+		state_read_controlcen_runtime_state(fp, swap);
+	}
+
+	Next_laser_fire_time = next_laser_fire_time;
+	Next_missile_fire_time = next_missile_fire_time;
+	Last_laser_fired_time = last_laser_fired_time;
+	Next_flare_fire_time = next_flare_fire_time;
+	Auto_fire_fusion_cannon_time = auto_fire_fusion_cannon_time;
+	if (has_rng_state)
+		d_rand_set_state(rng_state);
+	d_rand_reset_call_count();
+	game_set_d_tick_state(&d_tick_state);
+	object_set_runtime_state(&object_state);
+	laser_set_runtime_state(&laser_state);
+}
 
 static int state_thumbnail_has_palette(int version)
 {
@@ -328,7 +687,6 @@ void state_object_to_object_rw(object *obj, object_rw *obj_rw)
 			obj_rw->ctype.laser_info.last_hitobj      = obj->ctype.laser_info.last_hitobj;
 			obj_rw->ctype.laser_info.track_goal       = obj->ctype.laser_info.track_goal;
 			obj_rw->ctype.laser_info.multiplier       = obj->ctype.laser_info.multiplier;
-			obj->ctype.laser_info.creation_framecount = 0;
 			break;
 			
 		case CT_EXPLOSION:
@@ -476,6 +834,8 @@ void state_object_rw_to_object(object_rw *obj_rw, object *obj)
 			obj->ctype.laser_info.parent_num       = obj_rw->ctype.laser_info.parent_num;
 			obj->ctype.laser_info.parent_signature = obj_rw->ctype.laser_info.parent_signature;
 			obj->ctype.laser_info.creation_time    = obj_rw->ctype.laser_info.creation_time;
+			obj->ctype.laser_info.creation_framecount = 0;
+			memset(obj->ctype.laser_info.hitobj_list, 0, sizeof(obj->ctype.laser_info.hitobj_list));
 			obj->ctype.laser_info.last_hitobj      = obj_rw->ctype.laser_info.last_hitobj;
 			if (obj->ctype.laser_info.last_hitobj >= 0)
 				obj->ctype.laser_info.hitobj_list[obj->ctype.laser_info.last_hitobj] = 1; // restore most recent hitobj to hitobj_list
@@ -1030,26 +1390,6 @@ int state_save_all_sub(char *filename, char *desc)
 	PHYSFS_write(fp, &cheats.enabled, sizeof(int), 1);
 	PHYSFS_write(fp, &cheats.turbo, sizeof(int), 1);
 
-//Finish all morph objects
-	for (i=0; i<=Highest_object_index; i++ )	{
-		if ( (Objects[i].type != OBJ_NONE) && (Objects[i].render_type==RT_MORPH))	{
-			morph_data *md;
-			md = find_morph_data(&Objects[i]);
-			if (md) {					
-				md->obj->control_type = md->morph_save_control_type;
-				md->obj->movement_type = md->morph_save_movement_type;
-				md->obj->render_type = RT_POLYOBJ;
-				md->obj->mtype.phys_info = md->morph_save_phys_info;
-				md->obj = NULL;
-			} else {						//maybe loaded half-morphed from disk
-				Objects[i].flags |= OF_SHOULD_BE_DEAD;
-				Objects[i].render_type = RT_POLYOBJ;
-				Objects[i].control_type = CT_NONE;
-				Objects[i].movement_type = MT_NONE;
-			}
-		}
-	}
-
 //Save object info
 	i = Highest_object_index+1;
 	PHYSFS_write(fp, &i, sizeof(int), 1);
@@ -1153,6 +1493,8 @@ int state_save_all_sub(char *filename, char *desc)
 		PHYSFS_write(fp, &Netgame.numconnected, sizeof(ubyte), 1);
 		PHYSFS_write(fp, &Netgame.level_time, sizeof(int), 1);
 	}
+
+	state_write_runtime_state(fp);
 
 #ifdef __ANDROID__
 	coop_write_save_metadata(fp);
@@ -1361,6 +1703,9 @@ RetryObjectLoading:
 	for (segnum=0; segnum <= Highest_segment_index; segnum++)
 		Segments[segnum].objects = -1;
 	reset_objects(1);
+	init_morphs();
+	state_clear_stuck_object_state();
+	state_clear_controlcen_runtime_state();
 
 	//Read objects, and pop 'em into their respective segments.
 	i = PHYSFSX_readSXE32(fp, swap);
@@ -1723,6 +2068,9 @@ RetryObjectLoading:
 		coop_indicator_diag_trigger();
 #endif
 	}
+
+	if (version >= STATE_RUNTIME_VERSION)
+		state_read_runtime_state(fp, swap, version);
 
 #ifdef __ANDROID__
 	{

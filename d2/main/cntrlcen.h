@@ -74,6 +74,8 @@ extern int Control_center_player_been_seen;
 extern int Control_center_next_fire_time;
 extern int Control_center_present;
 extern int Dead_controlcen_object_num;
+extern fix64 Last_time_cc_vis_check;
+extern fix controlcen_death_silence;
 
 //@@extern vms_vector controlcen_gun_points[MAX_CONTROLCEN_GUNS];
 //@@extern vms_vector controlcen_gun_dirs[MAX_CONTROLCEN_GUNS];

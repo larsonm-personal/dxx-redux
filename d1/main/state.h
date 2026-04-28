@@ -31,6 +31,7 @@ extern int state_save_old_game(int slotnum, char * sg_name, player_rw * sg_playe
 
 int state_save_all_sub(char *filename, char *desc);
 int state_restore_all_sub(char *filename);
+int state_runtime_version(void);
 
 extern uint state_game_id;
 extern int state_quick_item;

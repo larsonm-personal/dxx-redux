@@ -113,7 +113,7 @@ static int write_test_fixture(const char *path)
 
 static int write_checkpoint_test_fixture(const char *path)
 {
-	const unsigned char checkpoint_data[] = { 'A', 'B', 'C', 'D' };
+	const unsigned char checkpoint_data[] = { 'D', 'G', 'S', 'S', 24, 0, 0, 0 };
 	input_demo_recorder_settings settings;
 	input_demo_control_state state;
 	input_demo_control_pulse pulse;
@@ -131,14 +131,6 @@ static int write_checkpoint_test_fixture(const char *path)
 	settings.checkpoint_size = sizeof(checkpoint_data);
 	settings.has_checkpoint_start_gt = 1;
 	settings.checkpoint_start_gt = 124125;
-	settings.has_checkpoint_next_laser_fire_delta = 1;
-	settings.checkpoint_next_laser_fire_delta = 0;
-	settings.has_checkpoint_next_missile_fire_delta = 1;
-	settings.checkpoint_next_missile_fire_delta = 0;
-	settings.has_checkpoint_last_laser_fired_delta = 1;
-	settings.checkpoint_last_laser_fired_delta = 0;
-	settings.has_checkpoint_auto_fire_fusion_delta = 1;
-	settings.checkpoint_auto_fire_fusion_delta = 0;
 	if (!input_demo_recorder_start(&settings, error, sizeof(error)))
 		return report_failure_string(std::string("checkpoint recorder start failed: ") + error);
 	input_demo_control_state_clear(&state);
@@ -265,12 +257,16 @@ static int expect_checkpoint_replay_loader(void)
 	if (!input_demo_replay_checkpoint_save_name() ||
 		std::string(input_demo_replay_checkpoint_save_name()) != "inputdemo_start.dgss")
 		return report_failure("checkpoint replay save_name mismatch");
-	if (input_demo_replay_checkpoint_size() != 4)
+	if (input_demo_replay_checkpoint_size() != 8)
 		return report_failure("checkpoint replay size mismatch");
-	if (!input_demo_replay_checkpoint_data() || input_demo_replay_checkpoint_data()[0] != 'A' ||
-		input_demo_replay_checkpoint_data()[1] != 'B' || input_demo_replay_checkpoint_data()[2] != 'C' ||
-		input_demo_replay_checkpoint_data()[3] != 'D')
+	if (!input_demo_replay_checkpoint_data() || input_demo_replay_checkpoint_data()[0] != 'D' ||
+		input_demo_replay_checkpoint_data()[1] != 'G' || input_demo_replay_checkpoint_data()[2] != 'S' ||
+		input_demo_replay_checkpoint_data()[3] != 'S' || input_demo_replay_checkpoint_data()[4] != 24 ||
+		input_demo_replay_checkpoint_data()[5] != 0 || input_demo_replay_checkpoint_data()[6] != 0 ||
+		input_demo_replay_checkpoint_data()[7] != 0)
 		return report_failure("checkpoint replay bytes mismatch");
+	if (input_demo_replay_checkpoint_save_version() != 24)
+		return report_failure("checkpoint replay save version mismatch");
 	if (input_demo_replay_checkpoint_start_gt() != 124125 ||
 		input_demo_replay_checkpoint_next_laser_fire_delta() != 0 ||
 		input_demo_replay_checkpoint_next_missile_fire_delta() != 0 ||

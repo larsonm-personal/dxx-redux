@@ -375,10 +375,13 @@ static int maybe_start_input_demo_replay(void)
 		return 1;
 	}
 	PHYSFS_delete(local_checkpoint_name);
-	Next_laser_fire_time = GameTime64 + input_demo_replay_checkpoint_next_laser_fire_delta();
-	Next_missile_fire_time = GameTime64 + input_demo_replay_checkpoint_next_missile_fire_delta();
-	Last_laser_fired_time = GameTime64 + input_demo_replay_checkpoint_last_laser_fired_delta();
-	Auto_fire_fusion_cannon_time = GameTime64 + input_demo_replay_checkpoint_auto_fire_fusion_delta();
+	if (input_demo_replay_checkpoint_save_version() < state_runtime_version())
+	{
+		Next_laser_fire_time = GameTime64 + input_demo_replay_checkpoint_next_laser_fire_delta();
+		Next_missile_fire_time = GameTime64 + input_demo_replay_checkpoint_next_missile_fire_delta();
+		Last_laser_fired_time = GameTime64 + input_demo_replay_checkpoint_last_laser_fired_delta();
+		Auto_fire_fusion_cannon_time = GameTime64 + input_demo_replay_checkpoint_auto_fire_fusion_delta();
+	}
 	if (d_stricmp(Current_mission_filename, mission_name) || Current_level_num != input_demo_replay_level() ||
 		Difficulty_level != input_demo_replay_difficulty())
 	{

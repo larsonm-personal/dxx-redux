@@ -13,10 +13,12 @@ Decide whether input-demo checkpoint replay should move transient gameplay state
 - [x] Enumerate missing state by priority and risk.
 - [x] Draft implementation and validation phases.
 - [x] Implement phase 1 deterministic save-state helpers.
-- [ ] Implement D2 save-version bump and field persistence.
-- [ ] Implement D1 save-version bump and matching field persistence.
-- [ ] Migrate input-demo checkpoint metadata to the enhanced save fields.
-- [x] Run host build and replay validation.
+- [x] Implement D2 save-version bump and field persistence.
+- [x] Implement D1 save-version bump and matching field persistence.
+- [x] Implement phase 3 object and transient-state fidelity persistence.
+- [x] Migrate input-demo checkpoint metadata to the enhanced save fields.
+- [x] Run host build and smoke regression validation.
+- [ ] Validate a freshly recorded checkpoint-backed replay against the new save bytes.
 
 ## Working Notes
 
@@ -26,6 +28,13 @@ Decide whether input-demo checkpoint replay should move transient gameplay state
 - The route is good. Adding ordinary simulation state to DGSS is cleaner than growing `.dximdemo` checkpoint metadata because it improves normal saves, keeps checkpoint replay using the same restore path as users, and keeps game-specific details in C.
 - Phase 1 helper entry points now exist in D1 and D2 for d-tick cadence, object allocator plus homing scheduler state, and weapon sequence state. D2 also has a guided-missile rebinder that can reconstruct player guided pointers by scanning restored weapon objects.
 - Validation after the helper pass: `run-windows-build.ps1 -Target d1`, `run-windows-build.ps1 -Target d2`, and `android/tests/test_input_demo_runtime_smoke.ps1` for both D1 and D2 all passed.
+- Phase 2 is now in place in D1 and D2: the save versions were bumped, the deterministic runtime block is written and restored, both host builds passed again, scoped `android/run-code-quality.ps1 -Fix` passed for the touched files, and the existing D1 and D2 runtime smoke tests still passed.
+- The known failing D2 checkpoint demo is not a valid phase 2 verdict because its embedded checkpoint blob was recorded before the save-version bump. A fresh checkpoint-backed `.dximdemo` recorded with the new build is still needed to exercise the new runtime block end to end.
+- Phase 4 is now in place in D1 and D2: new checkpoint recordings stop writing duplicated timer deltas, replay still accepts old demos that carry those fields, and `inferno.c` only reapplies timer metadata for checkpoint save blobs older than the runtime-state save version.
+- Validation after the phase 4 migration: `run-windows-build.ps1 -Target d1`, `run-windows-build.ps1 -Target d2`, `android/tests/test_input_demo_fixture.exe`, `android/tests/test_input_demo_recorder.exe`, and `android/tests/test_input_demo_replay.exe` all passed for both D1 and D2 after the scoped `android/run-code-quality.ps1 -Fix` pass.
+- Phase 3 is now in place in D1 and D2: DGSS version 25/11 adds additive fidelity data for weapon `creation_framecount` plus full `hitobj_list[]`, active `morph_objects[]`, wall stuck-object state, and control-center transient timers. D2 also persists `Last_afterburner_time[]`.
+- The save path no longer mutates live `creation_framecount` or force-finishes morph objects before writing, so checkpoint capture now preserves those transient systems instead of rewriting live state to fit old save behavior.
+- Validation after the phase 3 pass: `run-windows-build.ps1 -Target d1` passed, D2 needed the known host-script fallback but `dxx-redux-d2` built successfully from the existing `buildd2` tree, and scoped `android/run-code-quality.ps1 -Fix -Paths ...` passed for the touched files.
 
 ## Missing Or Incomplete State
 
@@ -81,10 +90,13 @@ Decide whether input-demo checkpoint replay should move transient gameplay state
 - Remove or correct the live mutation of `obj->ctype.laser_info.creation_framecount` during save.
 - Decide whether morph state is included now or left as a documented phase 2 save-fidelity improvement. If included, serialize `morph_objects[]` by object number and signature, not raw pointers.
 
+Phase 3 status:
+- Done for D1 and D2. The additive fidelity block now covers weapon hit history and framecount, morph runtime state, wall stuck objects, and control-center transient timers. D2 also covers afterburner blob timing.
+
 ### Phase 4: Remove Checkpoint Metadata Duplication
 
 - Stop writing timer deltas into `.dximdemo` checkpoint metadata once enhanced DGSS is required for new input demos.
-- Keep reader tolerance for old demos if easy, but do not add new launcher-side compatibility complexity before first Android release.
+- ignore backwards compatibility. this is pre-release
 - Keep `.dximdemo` metadata focused on demo schema, checkpoint bytes, and validation expectations, not duplicated gameplay state.
 
 ### Phase 5: Validate
@@ -92,5 +104,5 @@ Decide whether input-demo checkpoint replay should move transient gameplay state
 - Add or extend a high-level integration test that saves a checkpoint, immediately restores it, and compares deterministic fields exposed by introspection or a small C test hook.
 - Re-run the known failing D2 input demo in realtime and accelerated modes through `android/tests/run_input_demo_replay.ps1`.
 - Run `run-windows-build.ps1 -Target d1` and `run-windows-build.ps1 -Target d2`.
-- Run `android\run-code-quality.ps1 --fix` after implementation and wait for it to exit fully.
+- Run `android\run-code-quality.ps1 -Fix` after implementation and wait for it to exit fully.
 

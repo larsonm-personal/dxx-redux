@@ -48,6 +48,7 @@ int input_demo_replay_has_checkpoint(void);
 const char *input_demo_replay_checkpoint_save_name(void);
 const uint8_t *input_demo_replay_checkpoint_data(void);
 size_t input_demo_replay_checkpoint_size(void);
+int input_demo_replay_checkpoint_save_version(void);
 int64_t input_demo_replay_checkpoint_start_gt(void);
 int32_t input_demo_replay_checkpoint_next_laser_fire_delta(void);
 int32_t input_demo_replay_checkpoint_next_missile_fire_delta(void);

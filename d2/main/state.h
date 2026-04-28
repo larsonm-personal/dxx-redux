@@ -32,6 +32,7 @@ extern int state_quick_item;
 
 int state_save_all_sub(char *filename, char *desc);
 int state_restore_all_sub(char *filename, int secret_restore);
+int state_runtime_version(void);
 
 int state_get_save_file(char *fname, char * dsc, int blind_save);
 int state_get_restore_file(char *fname);

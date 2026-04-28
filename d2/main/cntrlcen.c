@@ -267,13 +267,13 @@ void do_controlcen_destroyed_stuff(object *objp)
 }
 
 fix64	Last_time_cc_vis_check = 0;
+fix	controlcen_death_silence = 0;
 
 //	-----------------------------------------------------------------------------
 //do whatever this thing does in a frame
 void do_controlcen_frame(object *obj)
 {
 	int			best_gun_num;
-	static fix controlcen_death_silence = 0;
 
 	//	If a boss level, then Control_center_present will be 0.
 	if (!Control_center_present)
@@ -429,6 +429,9 @@ void init_controlcen_for_level(void)
 	int		i;
 	object	*objp;
 	int		cntrlcen_objnum=-1, boss_objnum=-1;
+
+	Last_time_cc_vis_check = 0;
+	controlcen_death_silence = 0;
 
 	for (i=0; i<=Highest_object_index; i++) {
 		objp = &Objects[i];

@@ -68,6 +68,7 @@ extern int Control_center_player_been_seen;
 extern int Control_center_next_fire_time;
 extern int Control_center_present;
 extern int Dead_controlcen_object_num;
+extern fix controlcen_death_silence;
 
 // do whatever this thing does in a frame
 extern void do_controlcen_frame(object *obj);

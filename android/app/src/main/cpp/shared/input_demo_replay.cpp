@@ -25,6 +25,7 @@ struct input_demo_replay_session {
 	bool has_checkpoint;
 	std::string checkpoint_save_name;
 	std::vector<uint8_t> checkpoint_data;
+	int checkpoint_save_version;
 	int64_t checkpoint_start_gt;
 	int32_t checkpoint_next_laser_fire_delta;
 	int32_t checkpoint_next_missile_fire_delta;
@@ -35,7 +36,8 @@ struct input_demo_replay_session {
 
 	input_demo_replay_session()
 	    : loaded(false), game(0), has_expected_result(false), level(0), difficulty(0), has_checkpoint(false),
-	      checkpoint_start_gt(0), checkpoint_next_laser_fire_delta(0), checkpoint_next_missile_fire_delta(0),
+	      checkpoint_save_version(0), checkpoint_start_gt(0), checkpoint_next_laser_fire_delta(0),
+	      checkpoint_next_missile_fire_delta(0),
 	      checkpoint_last_laser_fired_delta(0), checkpoint_auto_fire_fusion_delta(0), next_frame_index(0)
 	{
 		input_demo_result_clear(&expected_result);
@@ -88,8 +90,8 @@ static int base64_value(unsigned char value)
 }
 
 static bool base64_decode(const std::string &encoded,
-	                      std::vector<uint8_t> *decoded,
-	                      std::string *error)
+                          std::vector<uint8_t> *decoded,
+                          std::string *error)
 {
 	size_t i;
 
@@ -232,9 +234,30 @@ static void sha256_hex(const uint8_t *data, size_t data_size, std::string *hex)
 	}
 }
 
+static uint32_t swap_uint32(uint32_t value)
+{
+	return (value >> 24) | ((value >> 8) & 0x0000ff00u) |
+	       ((value << 8) & 0x00ff0000u) | (value << 24);
+}
+
+static int checkpoint_save_version_from_bytes(const std::vector<uint8_t> &checkpoint_data)
+{
+	uint32_t version;
+
+	if (checkpoint_data.size() < 8 || memcmp(checkpoint_data.data(), "DGSS", 4) != 0)
+		return 0;
+	version = (uint32_t) checkpoint_data[4] |
+	          ((uint32_t) checkpoint_data[5] << 8) |
+	          ((uint32_t) checkpoint_data[6] << 16) |
+	          ((uint32_t) checkpoint_data[7] << 24);
+	if (version & 0xffff0000u)
+		version = swap_uint32(version);
+	return version <= 0x7fffffffu ? (int) version : 0;
+}
+
 static bool load_checkpoint(const input_demo_checkpoint &checkpoint,
-	                       input_demo_replay_session *session,
-	                       std::string *error)
+                            input_demo_replay_session *session,
+                            std::string *error)
 {
 	std::vector<uint8_t> decoded;
 	std::string actual_sha256;
@@ -251,6 +274,7 @@ static bool load_checkpoint(const input_demo_checkpoint &checkpoint,
 	session->has_checkpoint = true;
 	session->checkpoint_save_name = checkpoint.save_name;
 	session->checkpoint_data = decoded;
+	session->checkpoint_save_version = checkpoint_save_version_from_bytes(decoded);
 	session->checkpoint_start_gt = checkpoint.start_gt;
 	session->checkpoint_next_laser_fire_delta = checkpoint.next_laser_fire_delta;
 	session->checkpoint_next_missile_fire_delta = checkpoint.next_missile_fire_delta;
@@ -476,6 +500,11 @@ const uint8_t *input_demo_replay_checkpoint_data(void)
 size_t input_demo_replay_checkpoint_size(void)
 {
 	return input_demo_replay_has_checkpoint() ? g_input_demo_replay_session.checkpoint_data.size() : 0;
+}
+
+int input_demo_replay_checkpoint_save_version(void)
+{
+	return input_demo_replay_has_checkpoint() ? g_input_demo_replay_session.checkpoint_save_version : 0;
 }
 
 int64_t input_demo_replay_checkpoint_start_gt(void)

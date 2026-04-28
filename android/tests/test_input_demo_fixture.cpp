@@ -224,20 +224,12 @@ static int expect_checkpoint_demo_file_output(void)
 	demo.has_checkpoint = true;
 	demo.checkpoint.format = "dgss";
 	demo.checkpoint.encoding = "base64";
-	demo.checkpoint.size = 4;
-	demo.checkpoint.sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+	demo.checkpoint.size = 8;
+	demo.checkpoint.sha256 = "077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5";
 	demo.checkpoint.save_name = "inputdemo_start.dgss";
 	demo.checkpoint.has_start_gt = 1;
 	demo.checkpoint.start_gt = 124125;
-	demo.checkpoint.has_next_laser_fire_delta = 1;
-	demo.checkpoint.next_laser_fire_delta = 0;
-	demo.checkpoint.has_next_missile_fire_delta = 1;
-	demo.checkpoint.next_missile_fire_delta = 0;
-	demo.checkpoint.has_last_laser_fired_delta = 1;
-	demo.checkpoint.last_laser_fired_delta = 0;
-	demo.checkpoint.has_auto_fire_fusion_delta = 1;
-	demo.checkpoint.auto_fire_fusion_delta = 0;
-	demo.checkpoint.data = "QUJDRA==";
+	demo.checkpoint.data = "REdTUxgAAAA=";
 	demo.frames.resize(1);
 	input_demo_control_record_clear(&demo.frames[0].input);
 	demo.frames[0].input.frame = 0;
@@ -262,7 +254,7 @@ static int expect_checkpoint_demo_file_output(void)
 		"\",\"mission\":\"" + input_demo_test_game_name() +
 		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"save_checkpoint\",\"rng_mode\":\"" + rng_mode +
 		"\",\"frame_count\":1,\"start_save\":\"inputdemo_start.dgss\"}\n" +
-		"{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"size\":4,\"sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"next_laser_fire_delta\":0,\"next_missile_fire_delta\":0,\"last_laser_fired_delta\":0,\"auto_fire_fusion_delta\":0,\"data\":\"QUJDRA==\"}\n" +
+		"{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"size\":8,\"sha256\":\"077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"data\":\"REdTUxgAAAA=\"}\n" +
 		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
 		"{\"type\":\"result\",\"result\":{\"v\":1,\"g\":\"" + input_demo_test_game_name() +
 		"\",\"m\":\"" + input_demo_test_game_name() + "\",\"l\":1,\"d\":2,\"fr\":1}}\n";
@@ -283,10 +275,27 @@ static int expect_checkpoint_demo_file_output(void)
 		return report_failure_string(std::string("checkpoint demo file read failed: ") + error);
 	}
 	remove(path);
-	if (!parsed.has_checkpoint || parsed.frames.size() != 1 || parsed.checkpoint.size != 4 ||
-		parsed.checkpoint.data != "QUJDRA==" || !parsed.checkpoint.has_start_gt ||
+	if (!parsed.has_checkpoint || parsed.frames.size() != 1 || parsed.checkpoint.size != 8 ||
+		parsed.checkpoint.data != "REdTUxgAAAA=" || !parsed.checkpoint.has_start_gt ||
 		parsed.checkpoint.start_gt != 124125)
 		return report_failure("checkpoint demo file round trip corrupted content");
+	if (parsed.checkpoint.has_next_laser_fire_delta || parsed.checkpoint.has_next_missile_fire_delta ||
+		parsed.checkpoint.has_last_laser_fired_delta || parsed.checkpoint.has_auto_fire_fusion_delta)
+		return report_failure("checkpoint demo unexpectedly restored legacy timing metadata");
+	reordered =
+		std::string("{\"type\":\"header\",\"version\":1,\"game\":\"") + input_demo_test_game_name() +
+		"\",\"mission\":\"" + input_demo_test_game_name() +
+		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"save_checkpoint\",\"rng_mode\":\"" + rng_mode +
+		"\",\"frame_count\":1,\"start_save\":\"inputdemo_start.dgss\"}\n" +
+		"{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"size\":8,\"sha256\":\"077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"next_laser_fire_delta\":0,\"next_missile_fire_delta\":0,\"last_laser_fired_delta\":0,\"auto_fire_fusion_delta\":0,\"data\":\"REdTUxgAAAA=\"}\n" +
+		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
+		"{\"type\":\"result\",\"result\":{\"v\":1,\"g\":\"" + input_demo_test_game_name() +
+		"\",\"m\":\"" + input_demo_test_game_name() + "\",\"l\":1,\"d\":2,\"fr\":1}}\n";
+	if (!input_demo_file_parse_text(reordered, &parsed, &error))
+		return report_failure_string(std::string("legacy checkpoint demo file parse failed: ") + error);
+	if (!parsed.checkpoint.has_next_laser_fire_delta || !parsed.checkpoint.has_next_missile_fire_delta ||
+		!parsed.checkpoint.has_last_laser_fired_delta || !parsed.checkpoint.has_auto_fire_fusion_delta)
+		return report_failure("legacy checkpoint timing metadata did not round trip");
 	invalid = demo;
 	invalid.has_checkpoint = false;
 	if (input_demo_file_to_text(invalid, &text, &error))
@@ -300,8 +309,6 @@ static int expect_checkpoint_demo_file_output(void)
 	result_offset = expected.find("{\"type\":\"result\"");
 	if (frame_offset == std::string::npos || result_offset == std::string::npos)
 		return report_failure("checkpoint expected text missing frame or result records");
-	reordered = expected.substr(0, frame_offset) + expected.substr(frame_offset, result_offset - frame_offset) +
-		expected.substr(expected.find("{\"type\":\"checkpoint\"", frame_offset == 0 ? 0 : 1), 0);
 	reordered = expected.substr(0, expected.find("{\"type\":\"checkpoint\"")) +
 		expected.substr(frame_offset, result_offset - frame_offset) +
 		expected.substr(expected.find("{\"type\":\"checkpoint\""), frame_offset - expected.find("{\"type\":\"checkpoint\"")) +

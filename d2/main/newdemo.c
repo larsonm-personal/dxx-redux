@@ -3397,19 +3397,6 @@ static void input_demo_release_recorder_settings(input_demo_recorder_settings *s
 	settings->checkpoint_size = 0;
 }
 
-static int input_demo_capture_checkpoint_delta(const char *name, fix64 value,
-	                                           int32_t *result,
-	                                           char *error, size_t error_size)
-{
-	if (value < (fix64) INT_MIN || value > (fix64) INT_MAX) {
-		if (error && error_size)
-			snprintf(error, error_size, "%s out of range for checkpoint", name);
-		return 0;
-	}
-	*result = (int32_t) value;
-	return 1;
-}
-
 static int input_demo_capture_recorder_checkpoint(input_demo_recorder_settings *settings,
 	                                              char *error, size_t error_size)
 {
@@ -3419,10 +3406,6 @@ static int input_demo_capture_recorder_checkpoint(input_demo_recorder_settings *
 	PHYSFS_file *fp = NULL;
 	PHYSFS_sint64 file_size;
 	unsigned char *data = NULL;
-	int32_t next_laser_fire_delta;
-	int32_t next_missile_fire_delta;
-	int32_t last_laser_fired_delta;
-	int32_t auto_fire_fusion_delta;
 
 	if (!settings)
 		return 1;
@@ -3468,38 +3451,11 @@ static int input_demo_capture_recorder_checkpoint(input_demo_recorder_settings *
 	}
 	PHYSFS_close(fp);
 	PHYSFS_delete(logical_path);
-	if (!input_demo_capture_checkpoint_delta("next_laser_fire_time",
-	                                         Next_laser_fire_time - GameTime64,
-	                                         &next_laser_fire_delta,
-	                                         error, error_size) ||
-	    !input_demo_capture_checkpoint_delta("next_missile_fire_time",
-	                                         Next_missile_fire_time - GameTime64,
-	                                         &next_missile_fire_delta,
-	                                         error, error_size) ||
-	    !input_demo_capture_checkpoint_delta("last_laser_fired_time",
-	                                         Last_laser_fired_time - GameTime64,
-	                                         &last_laser_fired_delta,
-	                                         error, error_size) ||
-	    !input_demo_capture_checkpoint_delta("auto_fire_fusion_cannon_time",
-	                                         Auto_fire_fusion_cannon_time - GameTime64,
-	                                         &auto_fire_fusion_delta,
-	                                         error, error_size)) {
-		d_free(data);
-		return 0;
-	}
 	settings->checkpoint_save_name = save_name;
 	settings->checkpoint_data = data;
 	settings->checkpoint_size = (size_t) file_size;
 	settings->has_checkpoint_start_gt = 1;
 	settings->checkpoint_start_gt = GameTime64;
-	settings->has_checkpoint_next_laser_fire_delta = 1;
-	settings->checkpoint_next_laser_fire_delta = next_laser_fire_delta;
-	settings->has_checkpoint_next_missile_fire_delta = 1;
-	settings->checkpoint_next_missile_fire_delta = next_missile_fire_delta;
-	settings->has_checkpoint_last_laser_fired_delta = 1;
-	settings->checkpoint_last_laser_fired_delta = last_laser_fired_delta;
-	settings->has_checkpoint_auto_fire_fusion_delta = 1;
-	settings->checkpoint_auto_fire_fusion_delta = auto_fire_fusion_delta;
 	return 1;
 }
 

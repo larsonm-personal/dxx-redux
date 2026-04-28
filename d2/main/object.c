@@ -145,6 +145,7 @@ static float idealHomerFPS = 25.0;
 static fix idealHomerFrameTime = F1_0/25;
 
 extern int Unused_object_slots;
+extern int Debris_object_count;
 
 
 #ifndef RELEASE
@@ -985,10 +986,14 @@ void object_set_runtime_state(const object_runtime_state *state)
 	currentHomerFrameTime = state->current_homer_frame_time;
 	doHomerFrame = state->do_homer_frame;
 
+	Debris_object_count = 0;
 	Unused_object_slots = 0;
-	for (i = 0; i <= Highest_object_index; i++)
+	for (i = 0; i <= Highest_object_index; i++) {
+		if (Objects[i].type == OBJ_DEBRIS)
+			Debris_object_count++;
 		if (Objects[i].type == OBJ_NONE)
 			Unused_object_slots++;
+	}
 }
 
 #ifndef NDEBUG

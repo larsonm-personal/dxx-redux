@@ -60,7 +60,7 @@ static bool parse_int_field(const ordered_json &value, int *out, std::string *er
 }
 
 static bool parse_int64_field(const ordered_json &value, int64_t *out, std::string *error,
-	                          const char *field_name)
+                              const char *field_name)
 {
 	long long parsed;
 
@@ -293,14 +293,6 @@ static bool validate_checkpoint(const input_demo_checkpoint &checkpoint, std::st
 		return fail(error, "checkpoint save_name is required");
 	if (!checkpoint.has_start_gt)
 		return fail(error, "checkpoint start_gt is required");
-	if (!checkpoint.has_next_laser_fire_delta)
-		return fail(error, "checkpoint next_laser_fire_delta is required");
-	if (!checkpoint.has_next_missile_fire_delta)
-		return fail(error, "checkpoint next_missile_fire_delta is required");
-	if (!checkpoint.has_last_laser_fired_delta)
-		return fail(error, "checkpoint last_laser_fired_delta is required");
-	if (!checkpoint.has_auto_fire_fusion_delta)
-		return fail(error, "checkpoint auto_fire_fusion_delta is required");
 	if (checkpoint.data.empty())
 		return fail(error, "checkpoint data is required");
 	return true;
@@ -354,8 +346,8 @@ static bool parse_json_line(const std::string &line, const char *label,
 }
 
 static bool parse_checkpoint_record(const ordered_json &root,
-	                                input_demo_checkpoint *checkpoint,
-	                                std::string *error)
+                                    input_demo_checkpoint *checkpoint,
+                                    std::string *error)
 {
 	ordered_json::const_iterator it;
 	input_demo_checkpoint parsed;
@@ -435,8 +427,8 @@ static bool parse_checkpoint_record(const ordered_json &root,
 }
 
 static bool checkpoint_record_to_json_line(const input_demo_checkpoint &checkpoint,
-	                                       std::string *line,
-	                                       std::string *error)
+                                           std::string *line,
+                                           std::string *error)
 {
 	ordered_json root = ordered_json::object();
 
@@ -451,10 +443,14 @@ static bool checkpoint_record_to_json_line(const input_demo_checkpoint &checkpoi
 	root["sha256"] = checkpoint.sha256;
 	root["save_name"] = checkpoint.save_name;
 	root["start_gt"] = checkpoint.start_gt;
-	root["next_laser_fire_delta"] = checkpoint.next_laser_fire_delta;
-	root["next_missile_fire_delta"] = checkpoint.next_missile_fire_delta;
-	root["last_laser_fired_delta"] = checkpoint.last_laser_fired_delta;
-	root["auto_fire_fusion_delta"] = checkpoint.auto_fire_fusion_delta;
+	if (checkpoint.has_next_laser_fire_delta)
+		root["next_laser_fire_delta"] = checkpoint.next_laser_fire_delta;
+	if (checkpoint.has_next_missile_fire_delta)
+		root["next_missile_fire_delta"] = checkpoint.next_missile_fire_delta;
+	if (checkpoint.has_last_laser_fired_delta)
+		root["last_laser_fired_delta"] = checkpoint.last_laser_fired_delta;
+	if (checkpoint.has_auto_fire_fusion_delta)
+		root["auto_fire_fusion_delta"] = checkpoint.auto_fire_fusion_delta;
 	root["data"] = checkpoint.data;
 	*line = root.dump();
 	return true;

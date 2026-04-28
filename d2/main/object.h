@@ -411,6 +411,7 @@ extern int Player_exploded;
 extern int Player_eggs_dropped;
 extern int Death_sequence_aborted;
 extern int Player_fired_laser_this_frame;
+extern fix64 Last_afterburner_time[MAX_OBJECTS];
 
 /*
  * FUNCTIONS
