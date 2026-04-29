@@ -106,6 +106,61 @@ static void input_demo_log_escort_rng_progress(const char *label, unsigned int *
 	*rng_call_count_before = rng_call_count_after;
 }
 
+static void input_demo_log_escort_path_state(const char *label, object *objp)
+{
+	char segs[512];
+	int objnum;
+	ai_static *aip;
+	ai_local *ailp;
+	int limit;
+	int offset;
+	int i;
+	int written;
+
+	if (!input_demo_trace_escort_active() || !objp)
+		return;
+
+	objnum = objp - Objects;
+	aip = &objp->ctype.ai_info;
+	ailp = &Ai_local_info[objnum];
+	if ((aip->hide_index < 0) || (aip->path_length <= 0)) {
+		strncpy(segs, "<none>", sizeof(segs));
+		segs[sizeof(segs) - 1] = 0;
+	} else {
+		limit = aip->path_length < 24 ? aip->path_length : 24;
+		offset = 0;
+		segs[0] = 0;
+		for (i=0; i<limit; i++) {
+			written = snprintf(segs + offset, sizeof(segs) - offset, "%s%d", i ? "," : "", Point_segs[aip->hide_index + i].segnum);
+			if (written < 0)
+				break;
+			if (written >= (int)(sizeof(segs) - offset)) {
+				offset = sizeof(segs) - 1;
+				break;
+			}
+			offset += written;
+		}
+		if ((limit < aip->path_length) && (offset < (int)sizeof(segs)))
+			snprintf(segs + offset, sizeof(segs) - offset, ",...");
+	}
+
+	con_printf(CON_NORMAL,
+		"Input demo replay escort path state: frame=%u step=%s obj=%d seg=%d mode=%d behavior=%d goal=%d special=%d goal_seg=%d cur_path=%d/%d hide=%d segs=%s\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		label,
+		objnum,
+		objp->segnum,
+		ailp->mode,
+		aip->behavior,
+		Escort_goal_object,
+		Escort_special_goal,
+		ailp->goal_segment,
+		aip->cur_path_index,
+		aip->path_length,
+		aip->hide_index,
+		segs);
+}
+
 
 static const char *const Escort_goal_text[MAX_ESCORT_GOALS] = {
 	"BLUE KEY",
@@ -902,10 +957,12 @@ void escort_create_path_to_goal(object *objp)
 		if (goal_seg == -3) {
 			create_n_segment_path(objp, 16 + d_rand() * 16, -1);
 			aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
+			input_demo_log_escort_path_state("escort_create_path_to_goal scram", objp);
 		} else {
 			create_path_to_segment(objp, goal_seg, Max_escort_length, 1);	//	MK!: Last parm (safety_flag) used to be 1!!
 			if (aip->path_length > 3)
 				aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
+			input_demo_log_escort_path_state("escort_create_path_to_goal to_segment", objp);
 			if ((aip->path_length > 0) && (Point_segs[aip->hide_index + aip->path_length - 1].segnum != goal_seg)) {
 				fix	dist_to_player;
 				Last_buddy_message_time = 0;	//	Force this message to get through.
@@ -918,6 +975,7 @@ void escort_create_path_to_goal(object *objp)
 				else {
 					create_n_segment_path(objp, 8 + d_rand() * 8, -1);
 					aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
+					input_demo_log_escort_path_state("escort_create_path_to_goal fallback_scram", objp);
 				}
 			}
 		}
@@ -1289,6 +1347,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 			max_len = 3;
 		create_path_to_player(objp, max_len, 1);	//	MK!: Last parm used to be 1!
 		aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
+		input_demo_log_escort_path_state("time_to_visit_player final", objp);
 		if (replay_rng_probe_active)
 			input_demo_log_escort_rng_progress("after time_to_visit_player create_path_to_player", &replay_rng_state, &replay_rng_call_count);
 		ailp->mode = AIM_GOTO_PLAYER;
@@ -1302,8 +1361,10 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		if (replay_rng_probe_active)
 			input_demo_log_escort_rng_progress("after AIM_GOTO_PLAYER escort_create_path_to_goal", &replay_rng_state, &replay_rng_call_count);
 		aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
+			input_demo_log_escort_path_state("AIM_GOTO_PLAYER final", objp);
 		if (aip->path_length < 3) {
 			create_n_segment_path(objp, 5, Believed_player_seg);
+				input_demo_log_escort_path_state("AIM_GOTO_PLAYER fallback", objp);
 			if (replay_rng_probe_active)
 				input_demo_log_escort_rng_progress("after AIM_GOTO_PLAYER fallback create_n_segment_path", &replay_rng_state, &replay_rng_call_count);
 		}
@@ -1316,8 +1377,10 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 			if (replay_rng_probe_active)
 				input_demo_log_escort_rng_progress("after unspecified escort_create_path_to_goal", &replay_rng_state, &replay_rng_call_count);
 			aip->path_length = polish_path(objp, &Point_segs[aip->hide_index], aip->path_length);
+			input_demo_log_escort_path_state("unspecified goal final", objp);
 			if (aip->path_length < 3) {
 				create_n_segment_path(objp, 5, Believed_player_seg);
+				input_demo_log_escort_path_state("unspecified fallback", objp);
 				if (replay_rng_probe_active)
 					input_demo_log_escort_rng_progress("after unspecified fallback create_n_segment_path", &replay_rng_state, &replay_rng_call_count);
 			}

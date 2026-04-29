@@ -37,6 +37,7 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 int input_demo_replay_is_finished(void);
 uint32_t input_demo_replay_frame_count(void);
 uint32_t input_demo_replay_next_frame_index(void);
+int64_t input_demo_replay_final_game_time64(void);
 int input_demo_replay_game(void);
 const char *input_demo_replay_mission(void);
 int input_demo_replay_level(void);
@@ -49,6 +50,8 @@ const char *input_demo_replay_checkpoint_save_name(void);
 const uint8_t *input_demo_replay_checkpoint_data(void);
 size_t input_demo_replay_checkpoint_size(void);
 int64_t input_demo_replay_checkpoint_start_gt(void);
+int input_demo_replay_get_expected_result(input_demo_result *result,
+										  char *error, size_t error_size);
 int input_demo_replay_compare_result(const input_demo_result *actual,
                                      char *error, size_t error_size);
 int input_demo_replay_get_current_frame(input_demo_replay_frame *frame,

@@ -103,9 +103,7 @@ int check_collision_delayfunc_exec()
 
 	static int input_demo_replay_collision_probe_active(void)
 	{
-		return input_demo_replay_is_loaded() &&
-			input_demo_replay_next_frame_index() >= 70 &&
-			input_demo_replay_next_frame_index() <= 74;
+		return input_demo_replay_is_loaded();
 	}
 //	The only reason this routine is called (as of 10/12/94) is so Brain guys can open doors.
 void collide_robot_and_wall( object * robot, fix hitspeed, short hitseg, short hitwall, vms_vector * hitpt)
@@ -377,6 +375,17 @@ void collide_player_and_wall( object * playerobj, fix hitspeed, short hitseg, sh
 	if (damage >= WALL_DAMAGE_THRESHOLD) {
 		int	volume;
 		volume = (hitspeed-(WALL_DAMAGE_SCALE*WALL_DAMAGE_THRESHOLD)) / WALL_LOUDNESS_SCALE ;
+
+		if (input_demo_replay_is_loaded())
+			con_printf(CON_NORMAL,
+				"Input demo replay impact probe: frame=%u kind=player_wall player_obj=%d seg=%d hitwall=%d hitspeed=%d damage=%d force=%d\n",
+				(unsigned int)input_demo_replay_next_frame_index(),
+				playerobj - Objects,
+				hitseg,
+				hitwall,
+				hitspeed,
+				damage,
+				ForceFieldHit);
 
 		create_awareness_event(playerobj, PA_WEAPON_WALL_COLLISION);
 
@@ -864,8 +873,20 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 	//	If weapon fired by player or companion...
 	if (( weapon->ctype.laser_info.parent_type== OBJ_PLAYER ) || robot_escort) {
 
-		if (!(weapon->flags & OF_SILENT) && (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum))
+		if (!(weapon->flags & OF_SILENT) && (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum)) {
+			if (input_demo_replay_is_loaded())
+				con_printf(CON_NORMAL,
+					"Input demo replay impact probe: frame=%u kind=wall weapon_obj=%d weapon_id=%d parent=%d seg=%d hitwall=%d blew_up=%d escort=%d\n",
+					(unsigned int)input_demo_replay_next_frame_index(),
+					weapon - Objects,
+					weapon->id,
+					weapon->ctype.laser_info.parent_num,
+					weapon->segnum,
+					hitwall,
+					blew_up,
+					robot_escort);
 			create_awareness_event(weapon, PA_WEAPON_WALL_COLLISION);			// object "weapon" can attract attention to player
+		}
 
 //		if (weapon->id != FLARE_ID) {
 //	We now allow flares to open doors.
@@ -1027,6 +1048,15 @@ void collide_robot_and_player( object * robot, object * playerobj, vms_vector *c
 			else
 				Last_thief_hit_time = GameTime64;
 		}
+
+		if (input_demo_replay_is_loaded())
+			con_printf(CON_NORMAL,
+				"Input demo replay impact probe: frame=%u kind=player_robot player_obj=%d robot_obj=%d robot_id=%d seg=%d\n",
+				(unsigned int)input_demo_replay_next_frame_index(),
+				playerobj - Objects,
+				robot - Objects,
+				robot->id,
+				playerobj->segnum);
 
 		create_awareness_event(playerobj, PA_PLAYER_COLLISION);			// object robot can attract attention to player
 		do_ai_robot_hit_attack(robot, playerobj, collision_point);
@@ -1711,6 +1741,16 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 		object *expl_obj=NULL;
 
 		if (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum) {
+			if (input_demo_replay_is_loaded())
+				con_printf(CON_NORMAL,
+					"Input demo replay impact probe: frame=%u kind=robot weapon_obj=%d weapon_id=%d parent=%d robot_obj=%d robot_id=%d seg=%d\n",
+					(unsigned int)input_demo_replay_next_frame_index(),
+					weapon - Objects,
+					weapon->id,
+					weapon->ctype.laser_info.parent_num,
+					robot - Objects,
+					robot->id,
+					weapon->segnum);
 			create_awareness_event(weapon, PA_WEAPON_ROBOT_COLLISION);			// object "weapon" can attract attention to player
 			do_ai_robot_hit(robot, PA_WEAPON_ROBOT_COLLISION);
 		}

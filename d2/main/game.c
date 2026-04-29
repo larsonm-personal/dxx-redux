@@ -205,6 +205,29 @@ static int input_demo_count_live_objects_of_type(int object_type)
 	return count;
 }
 
+static int input_demo_count_live_player_weapons(int weapon_id)
+{
+	int count = 0;
+	int i;
+
+	for (i = 0; i <= Highest_object_index; ++i) {
+		object *obj = &Objects[i];
+
+		if (obj->type != OBJ_WEAPON)
+			continue;
+		if (obj->flags & OF_SHOULD_BE_DEAD)
+			continue;
+		if (obj->ctype.laser_info.parent_type != OBJ_PLAYER)
+			continue;
+		if (obj->ctype.laser_info.parent_num != Players[Player_num].objnum)
+			continue;
+		if ((weapon_id != -1) && (obj->id != weapon_id))
+			continue;
+		count++;
+	}
+	return count;
+}
+
 void input_demo_capture_current_result(input_demo_result *result)
 {
 	player *current_player = &Players[Player_num];
@@ -262,30 +285,11 @@ void input_demo_capture_current_result(input_demo_result *result)
 }
 
 static fix64 input_demo_replay_last_timer_value = 0;
-static const unsigned int input_demo_replay_rng_probe_frame = 81;
-
-static void input_demo_log_replay_rng_progress(const char *label, unsigned int *rng_before, unsigned int *rng_call_count_before)
-{
-	unsigned int rng_after;
-	unsigned int rng_call_count_after;
-
-	if (!d_rand_get_state(&rng_after))
-		return;
-	rng_call_count_after = d_rand_get_call_count();
-	if (rng_after == *rng_before && rng_call_count_after == *rng_call_count_before)
-		return;
-	con_printf(CON_NORMAL,
-		"Input demo replay rng progress: frame=%u gt=%lld step=%s calls=%u->%u before=%u after=%u\n",
-		(unsigned int)input_demo_replay_next_frame_index(),
-		(long long)GameTime64,
-		label,
-		*rng_call_count_before,
-		rng_call_count_after,
-		*rng_before,
-		rng_after);
-	*rng_before = rng_after;
-	*rng_call_count_before = rng_call_count_after;
-}
+static uint32_t input_demo_replay_result_frame_count_override = 0;
+static int input_demo_replay_result_has_game_time64_override = 0;
+static int64_t input_demo_replay_result_game_time64_override = 0;
+static int input_demo_replay_result_endlevel_completed_override = -1;
+static int input_demo_replay_compare_terminal_exit_only = 0;
 
 static void input_demo_log_result_state(const char *label)
 {
@@ -309,20 +313,29 @@ static void input_demo_log_result_state(const char *label)
 
 static int input_demo_replay_fire_probe_active(void)
 {
-	return input_demo_replay_is_loaded() &&
-		input_demo_replay_next_frame_index() >= 60 &&
-		input_demo_replay_next_frame_index() <= 82;
+	if (!input_demo_replay_is_loaded())
+		return 0;
+
+	return Controls.fire_primary_state ||
+		Controls.fire_primary_count ||
+		Global_laser_firing_count ||
+		(Player_fired_laser_this_frame != -1) ||
+		(Fusion_charge > 0) ||
+		(Auto_fire_fusion_cannon_time > 0) ||
+		(input_demo_count_live_player_weapons(-1) > 0);
 }
 
 static void input_demo_log_replay_fire_state(const char *label, int can_fire_laser)
 {
 	const fix64 next_laser_delta = Next_laser_fire_time - GameTime64;
 	const fix64 last_laser_delta = Last_laser_fired_time - GameTime64;
+	const int player_weapon_count = input_demo_count_live_player_weapons(-1);
+	const int spreadfire_weapon_count = input_demo_count_live_player_weapons(SPREADFIRE_ID);
 
 	if (!input_demo_replay_fire_probe_active())
 		return;
 	con_printf(CON_NORMAL,
-		"Input demo replay fire probe: frame=%u gt=%lld step=%s can_fire=%d f1s=%u f1c=%u glfc=%d next_laser_delta=%lld last_laser_delta=%lld fired_obj=%d weapon=%d seg=%d pos=(%d,%d,%d)\n",
+		"Input demo replay fire probe: frame=%u gt=%lld step=%s can_fire=%d f1s=%u f1c=%u glfc=%d next_laser_delta=%lld last_laser_delta=%lld fired_obj=%d weapon=%d live_player_weapons=%d live_spreadfire=%d seg=%d pos=(%d,%d,%d)\n",
 		(unsigned int)input_demo_replay_next_frame_index(),
 		(long long)GameTime64,
 		label,
@@ -334,6 +347,8 @@ static void input_demo_log_replay_fire_state(const char *label, int can_fire_las
 		(long long)last_laser_delta,
 		Player_fired_laser_this_frame,
 		Players[Player_num].primary_weapon,
+		player_weapon_count,
+		spreadfire_weapon_count,
 		ConsoleObject ? ConsoleObject->segnum : -1,
 		ConsoleObject ? ConsoleObject->pos.x : 0,
 		ConsoleObject ? ConsoleObject->pos.y : 0,
@@ -352,15 +367,62 @@ static void input_demo_write_replay_result(void)
 	if (!(result_path && result_path[0]))
 		return;
 	input_demo_capture_current_result(&result);
+	if (input_demo_replay_result_frame_count_override)
+		result.frame_count = input_demo_replay_result_frame_count_override;
+	if (input_demo_replay_result_has_game_time64_override) {
+		result.has_game_time64 = 1;
+		result.game_time64 = input_demo_replay_result_game_time64_override;
+	}
+	if (input_demo_replay_result_endlevel_completed_override >= 0) {
+		result.level_summary.present = 1;
+		result.level_summary.endlevel_completed = input_demo_replay_result_endlevel_completed_override;
+	}
+	input_demo_replay_result_frame_count_override = 0;
+	input_demo_replay_result_has_game_time64_override = 0;
+	input_demo_replay_result_game_time64_override = 0;
+	input_demo_replay_result_endlevel_completed_override = -1;
 	if (!input_demo_result_write_json_file(result_path, &result, error, sizeof(error)))
 		con_printf(CON_NORMAL, "Input demo replay result write failed: %s\n", error);
 	else {
 		con_printf(CON_NORMAL, "Input demo replay result written: %s\n", result_path);
-		if (!input_demo_replay_compare_result(&result, error, sizeof(error)))
+		if (input_demo_replay_compare_terminal_exit_only) {
+			input_demo_result expected;
+
+			if (!input_demo_replay_get_expected_result(&expected, error, sizeof(error)))
+				con_printf(CON_NORMAL, "Input demo replay result compare setup failed: %s\n", error);
+			else {
+				expected.player0.present = 0;
+				expected.position.present = 0;
+				expected.level_summary.endlevel_completed = result.level_summary.endlevel_completed;
+				if (!input_demo_result_compare(&expected, &result, error, sizeof(error)))
+					con_printf(CON_NORMAL, "Input demo replay result mismatch: %s\n", error);
+				else
+					con_printf(CON_NORMAL, "Input demo replay result matched embedded trailer terminal-exit subset\n");
+			}
+		} else if (!input_demo_replay_compare_result(&result, error, sizeof(error)))
 			con_printf(CON_NORMAL, "Input demo replay result mismatch: %s\n", error);
 		else
 			con_printf(CON_NORMAL, "Input demo replay result matched embedded trailer\n");
 	}
+	input_demo_replay_compare_terminal_exit_only = 0;
+}
+
+int input_demo_finish_replay_from_level_exit(void)
+{
+	input_demo_replay_last_timer_value = 0;
+	if (!input_demo_replay_is_loaded())
+		return 0;
+	input_demo_replay_result_frame_count_override = input_demo_replay_frame_count();
+	input_demo_replay_result_has_game_time64_override = 1;
+	input_demo_replay_result_game_time64_override = input_demo_replay_final_game_time64();
+	input_demo_replay_result_endlevel_completed_override = 1;
+	input_demo_replay_compare_terminal_exit_only = 1;
+	input_demo_log_result_state("level-exit");
+	input_demo_write_replay_result();
+	input_demo_replay_unload();
+	if (Game_wind)
+		window_close(Game_wind);
+	return 1;
 }
 
 int input_demo_finish_replay_from_mine_exit(void)
@@ -368,6 +430,10 @@ int input_demo_finish_replay_from_mine_exit(void)
 	input_demo_replay_last_timer_value = 0;
 	if (!input_demo_replay_is_loaded())
 		return 0;
+	input_demo_replay_result_frame_count_override = input_demo_replay_frame_count();
+	input_demo_replay_result_has_game_time64_override = 1;
+	input_demo_replay_result_game_time64_override = input_demo_replay_final_game_time64();
+	input_demo_replay_compare_terminal_exit_only = 1;
 	input_demo_log_result_state("mine-exit");
 	input_demo_write_replay_result();
 	input_demo_replay_unload();
@@ -1575,19 +1641,9 @@ int game_handler(window *wind, d_event *event, void *data)
 
 			if (!time_paused)
 			{
-				unsigned int replay_rng_frame_state = 0;
-				unsigned int replay_rng_frame_call_count = 0;
-				int replay_rng_frame_probe_active = input_demo_replay_is_loaded() &&
-					input_demo_replay_next_frame_index() == input_demo_replay_rng_probe_frame && d_rand_get_state(&replay_rng_frame_state);
-				if (replay_rng_frame_probe_active)
-					replay_rng_frame_call_count = d_rand_get_call_count();
 				calc_game_time();
 				GameProcessFrame();
-				if (replay_rng_frame_probe_active)
-					input_demo_log_replay_rng_progress("after GameProcessFrame", &replay_rng_frame_state, &replay_rng_frame_call_count);
 				input_demo_finish_replay_frame();
-				if (replay_rng_frame_probe_active)
-					input_demo_log_replay_rng_progress("after input_demo_finish_replay_frame", &replay_rng_frame_state, &replay_rng_frame_call_count);
 			}
 
 			if (!Automap_active)		// efficiency hack
@@ -1597,18 +1653,6 @@ int game_handler(window *wind, d_event *event, void *data)
 					force_cockpit_redraw=0;
 				}
 				game_render_frame();
-				if (input_demo_replay_is_loaded() &&
-					input_demo_replay_next_frame_index() == input_demo_replay_rng_probe_frame + 1) {
-					unsigned int replay_rng_render_state = 0;
-					unsigned int replay_rng_render_call_count = d_rand_get_call_count();
-					if (d_rand_get_state(&replay_rng_render_state))
-						con_printf(CON_NORMAL,
-							"Input demo replay rng progress: frame=%u gt=%lld step=after game_render_frame calls=%u after=%u\n",
-							input_demo_replay_rng_probe_frame,
-							(long long)GameTime64,
-							replay_rng_render_call_count,
-							replay_rng_render_state);
-				}
 			}
 			break;
 
@@ -1744,37 +1788,17 @@ void GameProcessFrame(void)
 {
 	fix player_shields = Players[Player_num].shields;
 	int player_was_dead = Player_is_dead;
-	unsigned int replay_rng_state = 0;
-	unsigned int replay_rng_call_count = 0;
-	int replay_rng_probe_active = input_demo_replay_is_loaded() &&
-		input_demo_replay_next_frame_index() == input_demo_replay_rng_probe_frame && d_rand_get_state(&replay_rng_state);
-	if (replay_rng_probe_active)
-		replay_rng_call_count = d_rand_get_call_count();
 
 	input_demo_update_rng_trace_context();
 	input_demo_record_game_frame();
 	update_player_stats();
 	diminish_palette_towards_normal();		//	Should leave palette effect up for as long as possible by putting right before render.
-	if (replay_rng_probe_active)
-		input_demo_log_replay_rng_progress("diminish_palette_towards_normal", &replay_rng_state, &replay_rng_call_count);
 	do_afterburner_stuff();
-	if (replay_rng_probe_active)
-		input_demo_log_replay_rng_progress("do_afterburner_stuff", &replay_rng_state, &replay_rng_call_count);
 	do_cloak_stuff();
-	if (replay_rng_probe_active)
-		input_demo_log_replay_rng_progress("do_cloak_stuff", &replay_rng_state, &replay_rng_call_count);
 	do_invulnerable_stuff();
-	if (replay_rng_probe_active)
-		input_demo_log_replay_rng_progress("do_invulnerable_stuff", &replay_rng_state, &replay_rng_call_count);
 	remove_obsolete_stuck_objects();
-	if (replay_rng_probe_active)
-		input_demo_log_replay_rng_progress("remove_obsolete_stuck_objects", &replay_rng_state, &replay_rng_call_count);
 	init_ai_frame();
-	if (replay_rng_probe_active)
-		input_demo_log_replay_rng_progress("init_ai_frame", &replay_rng_state, &replay_rng_call_count);
 	do_final_boss_frame();
-	if (replay_rng_probe_active)
-		input_demo_log_replay_rng_progress("do_final_boss_frame", &replay_rng_state, &replay_rng_call_count);
 
 	if ((Players[Player_num].flags & PLAYER_FLAGS_HEADLIGHT) && (Players[Player_num].flags & PLAYER_FLAGS_HEADLIGHT_ON)) {
 		static int turned_off=0;
@@ -1818,22 +1842,12 @@ void GameProcessFrame(void)
 #endif
 
 	dead_player_frame();
-	if (replay_rng_probe_active)
-		input_demo_log_replay_rng_progress("dead_player_frame", &replay_rng_state, &replay_rng_call_count);
 	if (Newdemo_state != ND_STATE_PLAYBACK)
 		do_controlcen_dead_frame();
-	if (replay_rng_probe_active)
-		input_demo_log_replay_rng_progress("do_controlcen_dead_frame", &replay_rng_state, &replay_rng_call_count);
 
 	process_super_mines_frame();
-	if (replay_rng_probe_active)
-		input_demo_log_replay_rng_progress("process_super_mines_frame", &replay_rng_state, &replay_rng_call_count);
 	do_seismic_stuff();
-	if (replay_rng_probe_active)
-		input_demo_log_replay_rng_progress("do_seismic_stuff", &replay_rng_state, &replay_rng_call_count);
 	do_ambient_sounds();
-	if (replay_rng_probe_active)
-		input_demo_log_replay_rng_progress("do_ambient_sounds", &replay_rng_state, &replay_rng_call_count);
 
 #ifdef NETWORK
 	if ((Game_mode & GM_MULTI) && Netgame.PlayTimeAllowed)
@@ -1866,34 +1880,24 @@ void GameProcessFrame(void)
 
 	if ( Newdemo_state == ND_STATE_PLAYBACK ) {
 		newdemo_playback_one_frame();
-		if ( Newdemo_state != ND_STATE_PLAYBACK )		{
+		if ( Newdemo_state != ND_STATE_PLAYBACK ) {
 			if (Game_wind)
 				window_close(Game_wind);		// Go back to menu
 			return;
 		}
 	}
 	else
-	{ // Note the link to above!
-
+	{
 		Players[Player_num].homing_object_dist = -1;		//	Assume not being tracked.  Laser_do_weapon_sequence modifies this.
 
 		object_move_all();
-		if (replay_rng_probe_active)
-			input_demo_log_replay_rng_progress("object_move_all", &replay_rng_state, &replay_rng_call_count);
 		powerup_grab_cheat_all();
-		if (replay_rng_probe_active)
-			input_demo_log_replay_rng_progress("powerup_grab_cheat_all", &replay_rng_state, &replay_rng_call_count);
 
 		if (Endlevel_sequence)	//might have been started during move
 			return;
 
 		fuelcen_update_all();
-		if (replay_rng_probe_active)
-			input_demo_log_replay_rng_progress("fuelcen_update_all", &replay_rng_state, &replay_rng_call_count);
-
 		do_ai_frame_all();
-		if (replay_rng_probe_active)
-			input_demo_log_replay_rng_progress("do_ai_frame_all", &replay_rng_state, &replay_rng_call_count);
 
 		{
 			const int can_fire_laser = allowed_to_fire_laser();
@@ -1902,8 +1906,6 @@ void GameProcessFrame(void)
 				FireLaser();				// Fire Laser!
 			input_demo_log_replay_fire_state("after FireLaser", can_fire_laser);
 		}
-		if (replay_rng_probe_active)
-			input_demo_log_replay_rng_progress("FireLaser", &replay_rng_state, &replay_rng_call_count);
 
 		if (Auto_fire_fusion_cannon_time) {
 			if (Players[Player_num].primary_weapon != FUSION_INDEX)
@@ -2254,6 +2256,14 @@ void FireLaser()
 					
 					apply_damage_to_player(ConsoleObject, ConsoleObject, damage, 0);
 				} else {
+					if (input_demo_replay_is_loaded())
+						con_printf(CON_NORMAL,
+							"Input demo replay fire probe: frame=%u kind=fusion_warmup player_obj=%d auto=%d charge=%d next_sound=%lld\n",
+							(unsigned int)input_demo_replay_next_frame_index(),
+							ConsoleObject - Objects,
+							Auto_fire_fusion_cannon_time > 0,
+							Fusion_charge,
+							(long long)Fusion_next_sound_time);
 					create_awareness_event(ConsoleObject, PA_WEAPON_ROBOT_COLLISION);
 					digi_play_sample( SOUND_FUSION_WARMUP, F1_0 );
 					#ifdef NETWORK

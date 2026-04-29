@@ -295,6 +295,8 @@ void start_endlevel_sequence()
 
 	if (Player_is_dead || ConsoleObject->flags&OF_SHOULD_BE_DEAD)
 		return;				//don't start if dead!
+	if (input_demo_finish_replay_from_level_exit())
+		return;
 
 	reset_rear_view(); //turn off rear view if set - NOTE: make sure this happens before we pause demo recording!!
 

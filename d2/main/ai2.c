@@ -897,11 +897,8 @@ void ai_fire_laser_at_player(object *obj, vms_vector *fire_point, int gun_num, v
 	int			weapon_type;
 	fix			aim, dot;
 	int			count;
-	int			replay_detail_probe_active;
 
 	Assert(robptr->attack_type == 0);	//	We should never be coming here for the green guy, as he has no laser!
-	replay_detail_probe_active = input_demo_replay_is_loaded() &&
-		input_demo_replay_next_frame_index() == 81 && objnum == 15;
 
 	//	If this robot is only awake because a camera woke it up, don't fire.
 	if (obj->ctype.ai_info.SUB_FLAGS & SUB_FLAGS_CAMERA_AWAKE)
@@ -995,33 +992,9 @@ void ai_fire_laser_at_player(object *obj, vms_vector *fire_point, int gun_num, v
 	//	Lead the player half the time.
 	//	Note that when leading the player, aim is perfect.  This is probably acceptable since leading is so hacked in.
 	//	Problem is all robots will lead equally badly.
-	{
-		unsigned int replay_rng_before = 0;
-		unsigned int replay_rng_after = 0;
-		unsigned int replay_rng_calls_before = 0;
-		unsigned int replay_rng_calls_after;
-		int replay_lead_roll;
-
-		if (replay_detail_probe_active && d_rand_get_state(&replay_rng_before))
-			replay_rng_calls_before = d_rand_get_call_count();
-		replay_lead_roll = d_rand();
-		if (replay_detail_probe_active && d_rand_get_state(&replay_rng_after)) {
-			replay_rng_calls_after = d_rand_get_call_count();
-			if (replay_rng_before != replay_rng_after || replay_rng_calls_before != replay_rng_calls_after)
-				con_printf(CON_NORMAL,
-					"Input demo replay AI detail: frame=%u obj=%d step=lead_roll roll=%d calls=%u->%u before=%u after=%u\n",
-					(unsigned int)input_demo_replay_next_frame_index(),
-					objnum,
-					replay_lead_roll,
-					replay_rng_calls_before,
-					replay_rng_calls_after,
-					replay_rng_before,
-					replay_rng_after);
-		}
-		if (replay_lead_roll < 16384) {
+	if (d_rand() < 16384) {
 		if (lead_player(obj, fire_point, believed_player_pos, gun_num, &fire_vec))		//	Stuff direction to fire at in fire_point.
 			goto player_led;
-		}
 	}
 
 	dot = 0;
@@ -1457,64 +1430,6 @@ void compute_vis_and_vec(object *objp, vms_vector *pos, ai_local *ailp, vms_vect
 				vec_to_player->x = F1_0;
 			}
 			*player_visibility = player_is_visible_from_object(objp, pos, robptr->field_of_view[Difficulty_level], vec_to_player);
-
-			if (input_demo_replay_is_loaded() && (objp - Objects) == 15 &&
-				input_demo_replay_next_frame_index() >= 69 &&
-				input_demo_replay_next_frame_index() <= 81) {
-				int replay_hit_wall_num = -1;
-				int replay_hit_wall_type = -1;
-				int replay_hit_wall_state = -1;
-				int replay_hit_wall_flags = -1;
-				int replay_hit_door_time = -1;
-				int replay_hit_door_index;
-
-				if ((Hit_type == HIT_WALL) && (Hit_data.hit_side_seg >= 0) &&
-					(Hit_data.hit_side_seg <= Highest_segment_index) &&
-					(Hit_data.hit_side >= 0) && (Hit_data.hit_side < 6)) {
-					replay_hit_wall_num = Segments[Hit_data.hit_side_seg].sides[Hit_data.hit_side].wall_num;
-					if (replay_hit_wall_num != -1) {
-						replay_hit_wall_type = Walls[replay_hit_wall_num].type;
-						replay_hit_wall_state = Walls[replay_hit_wall_num].state;
-						replay_hit_wall_flags = Walls[replay_hit_wall_num].flags;
-						for (replay_hit_door_index = 0; replay_hit_door_index < Num_open_doors; replay_hit_door_index++) {
-							active_door *replay_active_door = &ActiveDoors[replay_hit_door_index];
-							if ((replay_active_door->front_wallnum[0] == replay_hit_wall_num) ||
-								(replay_active_door->back_wallnum[0] == replay_hit_wall_num) ||
-								((replay_active_door->n_parts == 2) &&
-								 ((replay_active_door->front_wallnum[1] == replay_hit_wall_num) ||
-								  (replay_active_door->back_wallnum[1] == replay_hit_wall_num)))) {
-								replay_hit_door_time = replay_active_door->time;
-								break;
-							}
-						}
-					}
-				}
-
-				con_printf(CON_NORMAL,
-					"Input demo replay visibility detail: frame=%u obj=%d vis=%d hit_type=%d hit_seg=%d hit_side=%d hit_wall=%d wall_type=%d wall_state=%d wall_flags=%d door_time=%d obj_seg=%d dot=%d pos=(%d,%d,%d) player=(%d,%d,%d) hit=(%d,%d,%d)\n",
-					(unsigned int)input_demo_replay_next_frame_index(),
-					objp - Objects,
-					*player_visibility,
-					Hit_type,
-					Hit_seg,
-					Hit_data.hit_side,
-					replay_hit_wall_num,
-					replay_hit_wall_type,
-					replay_hit_wall_state,
-					replay_hit_wall_flags,
-					replay_hit_door_time,
-					objp->segnum,
-					vm_vec_dot(vec_to_player, &objp->orient.fvec),
-					objp->pos.x,
-					objp->pos.y,
-					objp->pos.z,
-					Believed_player_pos.x,
-					Believed_player_pos.y,
-					Believed_player_pos.z,
-					Hit_pos.x,
-					Hit_pos.y,
-					Hit_pos.z);
-			}
 
 			//	This horrible code added by MK in desperation on 12/13/94 to make robots wake up as soon as they
 			//	see you without killing frame rate.
@@ -2262,15 +2177,9 @@ vms_vector	Last_fired_upon_player_pos;
 void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robot_info *robptr, vms_vector *vec_to_player, fix dist_to_player, vms_vector *gun_point, int player_visibility, int object_animates, int gun_num)
 {
 	fix	dot;
-	int replay_last_fired_probe_active = input_demo_replay_is_loaded() &&
-		input_demo_replay_next_frame_index() >= 80 &&
-		input_demo_replay_next_frame_index() <= 81;
-	int	replay_detail_probe_active = input_demo_replay_is_loaded() &&
-		(obj - Objects) == 15 && input_demo_replay_next_frame_index() >= 0 &&
-		input_demo_replay_next_frame_index() <= 81;
 	#define REPLAY_LOG_ACTUAL_FIRE(step_label, fire_gun) \
 		do { \
-			if (replay_last_fired_probe_active) \
+			if (input_demo_replay_is_loaded()) \
 				con_printf(CON_NORMAL, \
 					"Input demo replay AI fire: frame=%u obj=%d step=%s gun=%d vis=%d dist=%d last_dist=%d last_fired=(%d,%d,%d) believed=(%d,%d,%d)\n", \
 					(unsigned int)input_demo_replay_next_frame_index(), \
@@ -2287,22 +2196,6 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 					Believed_player_pos.y, \
 					Believed_player_pos.z); \
 		} while (0)
-
-	if (replay_detail_probe_active)
-		con_printf(CON_NORMAL,
-			"Input demo replay AI detail: frame=%u obj=%d step=firing_context vis=%d dist=%d last_dist=%d gun=%d dot=%d gun_null=%d next_fire=%d next_fire2=%d weapon1=%d weapon2=%d\n",
-			(unsigned int)input_demo_replay_next_frame_index(),
-			obj - Objects,
-			player_visibility,
-			dist_to_player,
-			Dist_to_last_fired_upon_player_pos,
-			gun_num,
-			vm_vec_dot(&obj->orient.fvec, vec_to_player),
-			(gun_point->x == 0) && (gun_point->y == 0) && (gun_point->z == 0),
-			ailp->next_fire,
-			ailp->next_fire2,
-			robptr->weapon_type,
-			robptr->weapon_type2);
 
 	if ((player_visibility == 2) || (Dist_to_last_fired_upon_player_pos < FIRE_AT_NEARBY_PLAYER_THRESHOLD )) {
 		vms_vector	fire_pos;
@@ -2385,8 +2278,8 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 	} else if ( ((!robptr->attack_type) && (Weapon_info[Robot_info[obj->id].weapon_type].homing_flag == 1)) || (((Robot_info[obj->id].weapon_type2 != -1) && (Weapon_info[Robot_info[obj->id].weapon_type2].homing_flag == 1))) ) {
 		//	Robots which fire homing weapons might fire even if they don't have a bead on the player.
 		if (((!object_animates) || (ailp->achieved_state[aip->CURRENT_GUN] == AIS_FIRE))
-			 && (((ailp->next_fire <= 0) && (aip->CURRENT_GUN != 0)) || ((ailp->next_fire2 <= 0) && (aip->CURRENT_GUN == 0)))
-			 && (vm_vec_dist_quick(&Hit_pos, &obj->pos) > F1_0*40)) {
+				 && (((ailp->next_fire <= 0) && (aip->CURRENT_GUN != 0)) || ((ailp->next_fire2 <= 0) && (aip->CURRENT_GUN == 0)))
+				 && (vm_vec_dist_quick(&Hit_pos, &obj->pos) > F1_0*40)) {
 			if (!ai_multiplayer_awareness(obj, ROBOT_FIRE_AGITATION) || IS_VEC_NULL(gun_point))
 				return;
 			ai_fire_laser_at_player(obj, gun_point, gun_num, &Believed_player_pos);
@@ -2405,105 +2298,70 @@ void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robo
 				aip->CURRENT_GUN = 0;
 		}
 	} else {
-
-
-	//	---------------------------------------------------------------
-
 		vms_vector	vec_to_last_pos;
 
-		{
-			unsigned int replay_rng_before = 0;
-			unsigned int replay_rng_after = 0;
-			unsigned int replay_rng_calls_before = 0;
-			unsigned int replay_rng_calls_after;
-			int replay_blind_fire_roll;
+		if (d_rand()/2 < fixmul(FrameTime, (Difficulty_level << 12) + 0x4000)) {
+			if ((!object_animates || ready_to_fire(robptr, ailp)) && (Dist_to_last_fired_upon_player_pos < FIRE_AT_NEARBY_PLAYER_THRESHOLD)) {
+				vm_vec_normalized_dir_quick(&vec_to_last_pos, &Believed_player_pos, &obj->pos);
+				dot = vm_vec_dot(&obj->orient.fvec, &vec_to_last_pos);
+				if (dot >= 7*F1_0/8) {
 
-			if (replay_detail_probe_active && d_rand_get_state(&replay_rng_before))
-				replay_rng_calls_before = d_rand_get_call_count();
-			replay_blind_fire_roll = d_rand();
-			if (replay_detail_probe_active && d_rand_get_state(&replay_rng_after)) {
-				replay_rng_calls_after = d_rand_get_call_count();
-				if (replay_rng_before != replay_rng_after || replay_rng_calls_before != replay_rng_calls_after)
-					con_printf(CON_NORMAL,
-						"Input demo replay AI detail: frame=%u obj=%d step=blind_fire_roll roll=%d threshold=%d calls=%u->%u before=%u after=%u\n",
-						(unsigned int)input_demo_replay_next_frame_index(),
-						obj - Objects,
-						replay_blind_fire_roll,
-						fixmul(FrameTime, (Difficulty_level << 12) + 0x4000),
-						replay_rng_calls_before,
-						replay_rng_calls_after,
-						replay_rng_before,
-						replay_rng_after);
-			}
-			if (replay_blind_fire_roll/2 < fixmul(FrameTime, (Difficulty_level << 12) + 0x4000)) {
-		if ((!object_animates || ready_to_fire(robptr, ailp)) && (Dist_to_last_fired_upon_player_pos < FIRE_AT_NEARBY_PLAYER_THRESHOLD)) {
-			vm_vec_normalized_dir_quick(&vec_to_last_pos, &Believed_player_pos, &obj->pos);
-			dot = vm_vec_dot(&obj->orient.fvec, &vec_to_last_pos);
-			if (dot >= 7*F1_0/8) {
+					if (aip->CURRENT_GUN < Robot_info[obj->id].n_guns) {
+						if (robptr->attack_type == 1) {
+							if (!Player_exploded && (dist_to_player < obj->size + ConsoleObject->size + F1_0*2)) {		// robptr->circle_distance[Difficulty_level] + ConsoleObject->size) {
+								if (!ai_multiplayer_awareness(obj, ROBOT_FIRE_AGITATION-2))
+									return;
+								do_ai_robot_hit_attack(obj, ConsoleObject, &obj->pos);
+							} else {
+								return;
+							}
+						} else {
+							if ((gun_point->x == 0) && (gun_point->y == 0) && (gun_point->z == 0)) {
+								;
+							} else {
+								if (!ai_multiplayer_awareness(obj, ROBOT_FIRE_AGITATION))
+									return;
+								//	New, multi-weapon-type system, 06/05/95 (life is slipping away...)
+								if (gun_num != 0) {
+									if (ailp->next_fire <= 0) {
+										ai_fire_laser_at_player(obj, gun_point, gun_num, &Last_fired_upon_player_pos);
+										REPLAY_LOG_ACTUAL_FIRE("actual_fire_blind", gun_num);
+									}
 
-				if (aip->CURRENT_GUN < Robot_info[obj->id].n_guns) {
-					if (robptr->attack_type == 1) {
-						if (!Player_exploded && (dist_to_player < obj->size + ConsoleObject->size + F1_0*2)) {		// robptr->circle_distance[Difficulty_level] + ConsoleObject->size) {
-							if (!ai_multiplayer_awareness(obj, ROBOT_FIRE_AGITATION-2))
-								return;
-							do_ai_robot_hit_attack(obj, ConsoleObject, &obj->pos);
-						} else {
-							return;
-						}
-					} else {
-						if ((gun_point->x == 0) && (gun_point->y == 0) && (gun_point->z == 0)) {
-							;
-						} else {
-							if (!ai_multiplayer_awareness(obj, ROBOT_FIRE_AGITATION))
-								return;
-							//	New, multi-weapon-type system, 06/05/95 (life is slipping away...)
-							if (gun_num != 0) {
-								if (ailp->next_fire <= 0) {
+									if ((ailp->next_fire2 <= 0) && (robptr->weapon_type2 != -1)) {
+										calc_gun_point(gun_point, obj, 0);
+										ai_fire_laser_at_player(obj, gun_point, 0, &Last_fired_upon_player_pos);
+										REPLAY_LOG_ACTUAL_FIRE("actual_fire_blind", 0);
+									}
+
+								} else if (ailp->next_fire <= 0) {
 									ai_fire_laser_at_player(obj, gun_point, gun_num, &Last_fired_upon_player_pos);
 									REPLAY_LOG_ACTUAL_FIRE("actual_fire_blind", gun_num);
 								}
-
-								if ((ailp->next_fire2 <= 0) && (robptr->weapon_type2 != -1)) {
-									calc_gun_point(gun_point, obj, 0);
-									ai_fire_laser_at_player(obj, gun_point, 0, &Last_fired_upon_player_pos);
-									REPLAY_LOG_ACTUAL_FIRE("actual_fire_blind", 0);
-								}
-
-							} else if (ailp->next_fire <= 0) {
-								ai_fire_laser_at_player(obj, gun_point, gun_num, &Last_fired_upon_player_pos);
-								REPLAY_LOG_ACTUAL_FIRE("actual_fire_blind", gun_num);
 							}
 						}
+
+						//	Wants to fire, so should go into chase mode, probably.
+						if ( (aip->behavior != AIB_RUN_FROM) && (aip->behavior != AIB_STILL) && (aip->behavior != AIB_SNIPE) && (aip->behavior != AIB_FOLLOW) && ((ailp->mode == AIM_FOLLOW_PATH) || (ailp->mode == AIM_STILL)))
+							ailp->mode = AIM_CHASE_OBJECT;
 					}
+					aip->GOAL_STATE = AIS_RECO;
+					ailp->goal_state[aip->CURRENT_GUN] = AIS_RECO;
 
-					//	Wants to fire, so should go into chase mode, probably.
-					if ( (aip->behavior != AIB_RUN_FROM) && (aip->behavior != AIB_STILL) && (aip->behavior != AIB_SNIPE) && (aip->behavior != AIB_FOLLOW) && ((ailp->mode == AIM_FOLLOW_PATH) || (ailp->mode == AIM_STILL)))
-						ailp->mode = AIM_CHASE_OBJECT;
-				}
-				aip->GOAL_STATE = AIS_RECO;
-				ailp->goal_state[aip->CURRENT_GUN] = AIS_RECO;
-
-				// Switch to next gun for next fire.
-				aip->CURRENT_GUN++;
-				if (aip->CURRENT_GUN >= Robot_info[obj->id].n_guns)
-				{
-					if (Robot_info[obj->id].n_guns == 1)
-						aip->CURRENT_GUN = 0;
-					else
-						aip->CURRENT_GUN = 1;
+					// Switch to next gun for next fire.
+					aip->CURRENT_GUN++;
+					if (aip->CURRENT_GUN >= Robot_info[obj->id].n_guns)
+					{
+						if (Robot_info[obj->id].n_guns == 1)
+							aip->CURRENT_GUN = 0;
+						else
+							aip->CURRENT_GUN = 1;
+					}
 				}
 			}
-			}
-	#undef REPLAY_LOG_ACTUAL_FIRE
 		}
-		}
-
-
-	//	---------------------------------------------------------------
-
-
 	}
-
+	#undef REPLAY_LOG_ACTUAL_FIRE
 }
 
 

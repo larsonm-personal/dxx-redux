@@ -43,6 +43,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "newdemo.h"
 #include "timer.h"
 #include "player.h"
+#include "input_demo_replay.h"
 #include "sounds.h"
 #include "ai.h"
 #include "powerup.h"
@@ -60,6 +61,57 @@ int Guided_missile_sig[MAX_PLAYERS]={-1,-1,-1,-1,-1,-1,-1,-1};
 int Network_laser_track = -1;
 static int Spreadfire_toggle = 0;
 static int Helix_orientation = 0;
+
+static int input_demo_replay_spreadfire_probe_active(void)
+{
+	return input_demo_replay_is_loaded() &&
+		Players[Player_num].primary_weapon == SPREADFIRE_INDEX;
+}
+
+static int input_demo_replay_weapon_lifetime_probe_active(void)
+{
+	return input_demo_replay_is_loaded();
+}
+
+static int input_demo_replay_weapon_creation_probe_active(void)
+{
+	return input_demo_replay_spreadfire_probe_active() ||
+		input_demo_replay_weapon_lifetime_probe_active();
+}
+
+static int input_demo_replay_is_player_owned_weapon(object *obj)
+{
+	return obj &&
+		obj->type == OBJ_WEAPON &&
+		obj->ctype.laser_info.parent_type == OBJ_PLAYER &&
+		obj->ctype.laser_info.parent_num == Players[Player_num].objnum;
+}
+
+static void input_demo_log_weapon_lifetime(const char *step, object *obj)
+{
+	con_printf(CON_NORMAL,
+		"Input demo replay weapon probe: frame=%u gt=%lld step=%s obj=%d id=%d sig=%d seg=%d life=%d shields=%d flags=%d parent_type=%d parent=%d parent_sig=%d ctime=%lld vel=(%d,%d,%d) pos=(%d,%d,%d)\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		(long long)GameTime64,
+		step,
+		obj - Objects,
+		obj->id,
+		obj->signature,
+		obj->segnum,
+		obj->lifeleft,
+		obj->shields,
+		obj->flags,
+		obj->ctype.laser_info.parent_type,
+		obj->ctype.laser_info.parent_num,
+		obj->ctype.laser_info.parent_signature,
+		(long long)obj->ctype.laser_info.creation_time,
+		obj->mtype.phys_info.velocity.x,
+		obj->mtype.phys_info.velocity.y,
+		obj->mtype.phys_info.velocity.z,
+		obj->pos.x,
+		obj->pos.y,
+		obj->pos.z);
+}
 
 extern int Proximity_dropped, Smartmines_dropped;
 
@@ -877,6 +929,11 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 	if ((obj->type == OBJ_WEAPON) && (obj->id == FLARE_ID))
 		obj->lifeleft += (d_rand()-16384) << 2;		//	add in -2..2 seconds
 
+	if (input_demo_replay_weapon_creation_probe_active() &&
+		obj->ctype.laser_info.parent_type == OBJ_PLAYER &&
+		obj->ctype.laser_info.parent_num == Players[Player_num].objnum)
+		input_demo_log_weapon_lifetime("create", obj);
+
 	return objnum;
 }
 
@@ -1305,6 +1362,19 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 	vms_matrix	m;
 	int			objnum;
 
+	if (input_demo_replay_is_loaded())
+		con_printf(CON_NORMAL,
+			"Input demo replay fire probe: frame=%u kind=player_shot shooter_obj=%d laser_type=%d gun=%d spreadr=%d spreadu=%d delay=%d harmless=%d sound=%d\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			obj - Objects,
+			laser_type,
+			gun_num,
+			spreadr,
+			spreadu,
+			delay_time,
+			harmless,
+			make_sound);
+
 	create_awareness_event(obj, PA_WEAPON_WALL_COLLISION);
 
 	// Find the initial position of the laser
@@ -1508,23 +1578,32 @@ fix homing_turn_base[NDL] = { 4, 5, 6, 7, 8 };
 //sequence this laser object for this _frame_ (underscores added here to aid MK in his searching!)
 void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrameTime, unsigned int homerFrameCount )
 {
+	const int track_player_weapon = input_demo_replay_weapon_lifetime_probe_active() && input_demo_replay_is_player_owned_weapon(obj);
+
 	Assert(obj->control_type == CT_WEAPON);
 
 	if (obj->lifeleft < 0 ) {		// We died of old age
+		if (track_player_weapon)
+			input_demo_log_weapon_lifetime("old_age", obj);
 		obj->flags |= OF_SHOULD_BE_DEAD;
 		if ( Weapon_info[obj->id].damage_radius )
 			explode_badass_weapon(obj,&obj->pos);
 		return;
 	}
 
-	if (omega_cleanup(obj))
+	if (omega_cleanup(obj)) {
+		if (track_player_weapon)
+			input_demo_log_weapon_lifetime("omega_cleanup", obj);
 		return;
+	}
 
 	//delete weapons that are not moving
 	if (	!((d_tick_count ^ obj->signature) & 3) &&
 			(obj->id != FLARE_ID) &&
 			(Weapon_info[obj->id].speed[Difficulty_level] > 0) &&
 			(vm_vec_mag_quick(&obj->mtype.phys_info.velocity) < F2_0)) {
+		if (track_player_weapon)
+			input_demo_log_weapon_lifetime("stopped_delete", obj);
 		obj_delete(obj-Objects);
 		return;
 	}
@@ -1757,6 +1836,15 @@ void do_laser_firing_player(void)
 			flags = 0;
 
 			if (Players[Player_num].primary_weapon == SPREADFIRE_INDEX) {
+				if (input_demo_replay_spreadfire_probe_active())
+					con_printf(CON_NORMAL,
+						"Input demo replay fire probe: frame=%u kind=spreadfire_emit nfires=%d toggle_before=%d flags=%d next_laser_delta=%lld last_laser_delta=%lld\n",
+						(unsigned int)input_demo_replay_next_frame_index(),
+						nfires,
+						Spreadfire_toggle,
+						flags,
+						(long long)(Next_laser_fire_time - GameTime64),
+						(long long)(Last_laser_fired_time - GameTime64));
 				if (Spreadfire_toggle)
 					flags |= LASER_SPREADFIRE_TOGGLED;
 				Spreadfire_toggle = !Spreadfire_toggle;

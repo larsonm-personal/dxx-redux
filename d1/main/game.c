@@ -979,17 +979,26 @@ extern int Death_sequence_aborted;
 #else
 #define EXT_MUSIC_TEXT "Audio CD"
 #endif
+
 int input_demo_finish_replay_from_mine_exit(void)
-static int free_help(newmenu *menu, d_event *event, void *userdata)
 {
-	userdata = userdata;
+	input_demo_replay_last_timer_value = 0;
+	if (!input_demo_replay_is_loaded())
 		return 0;
-	if (event->type == EVENT_WINDOW_CLOSE)
-	{
-		newmenu_item *items = newmenu_get_items(menu);
+	input_demo_write_replay_result();
+	input_demo_replay_unload();
 	if (Game_wind)
 		window_close(Game_wind);
 	return 1;
+}
+
+static int free_help(newmenu *menu, d_event *event, void *userdata)
+{
+	userdata = userdata;
+
+	if (event->type == EVENT_WINDOW_CLOSE)
+	{
+		newmenu_item *items = newmenu_get_items(menu);
 		d_free(items);
 	}
 

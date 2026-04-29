@@ -57,9 +57,7 @@ int floor_levelling=0;
 
 static int input_demo_replay_motion_probe_active(void)
 {
-	return input_demo_replay_is_loaded() &&
-		input_demo_replay_next_frame_index() >= 70 &&
-		input_demo_replay_next_frame_index() <= 74;
+	return input_demo_replay_is_loaded();
 }
 
 //make sure matrix is orthogonal

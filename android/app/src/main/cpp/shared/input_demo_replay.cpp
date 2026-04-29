@@ -26,12 +26,13 @@ struct input_demo_replay_session {
 	std::string checkpoint_save_name;
 	std::vector<uint8_t> checkpoint_data;
 	int64_t checkpoint_start_gt;
+	int64_t final_game_time64;
 	uint32_t next_frame_index;
 	std::vector<input_demo_replay_frame> frames;
 
 	input_demo_replay_session()
 	    : loaded(false), game(0), has_expected_result(false), level(0), difficulty(0), has_checkpoint(false),
-	      checkpoint_start_gt(0), next_frame_index(0)
+	      checkpoint_start_gt(0), final_game_time64(0), next_frame_index(0)
 	{
 		input_demo_result_clear(&expected_result);
 	}
@@ -395,6 +396,8 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 		return copy_error(replay_error, error, error_size);
 	}
 	g_input_demo_replay_session.frames = frames;
+	for (i = 0; i != g_input_demo_replay_session.frames.size(); ++i)
+		g_input_demo_replay_session.final_game_time64 += g_input_demo_replay_session.frames[i].frame_time;
 	return 1;
 }
 
@@ -412,6 +415,11 @@ uint32_t input_demo_replay_frame_count(void)
 uint32_t input_demo_replay_next_frame_index(void)
 {
 	return g_input_demo_replay_session.next_frame_index;
+}
+
+int64_t input_demo_replay_final_game_time64(void)
+{
+	return g_input_demo_replay_session.final_game_time64;
 }
 
 int input_demo_replay_game(void)
@@ -474,21 +482,31 @@ int64_t input_demo_replay_checkpoint_start_gt(void)
 	return input_demo_replay_has_checkpoint() ? g_input_demo_replay_session.checkpoint_start_gt : 0;
 }
 
+int input_demo_replay_get_expected_result(input_demo_result *result,
+	                                     char *error, size_t error_size)
+{
+	if (!g_input_demo_replay_session.loaded)
+		return copy_error("input demo replay is not loaded", error, error_size);
+	if (!g_input_demo_replay_session.has_expected_result)
+		return copy_error("input demo replay has no result trailer", error, error_size);
+	if (!result)
+		return copy_error("missing expected result output", error, error_size);
+	*result = g_input_demo_replay_session.expected_result;
+	if (g_input_demo_replay_session.has_checkpoint && result->has_game_time64) {
+		if (result->game_time64 < g_input_demo_replay_session.checkpoint_start_gt)
+			return copy_error("input demo replay checkpoint start_gt exceeds expected gt", error, error_size);
+		result->game_time64 -= g_input_demo_replay_session.checkpoint_start_gt;
+	}
+	return 1;
+}
+
 int input_demo_replay_compare_result(const input_demo_result *actual,
                                      char *error, size_t error_size)
 {
 	input_demo_result expected;
 
-	if (!g_input_demo_replay_session.loaded)
-		return copy_error("input demo replay is not loaded", error, error_size);
-	if (!g_input_demo_replay_session.has_expected_result)
-		return copy_error("input demo replay has no result trailer", error, error_size);
-	expected = g_input_demo_replay_session.expected_result;
-	if (g_input_demo_replay_session.has_checkpoint && expected.has_game_time64) {
-		if (expected.game_time64 < g_input_demo_replay_session.checkpoint_start_gt)
-			return copy_error("input demo replay checkpoint start_gt exceeds expected gt", error, error_size);
-		expected.game_time64 -= g_input_demo_replay_session.checkpoint_start_gt;
-	}
+	if (!input_demo_replay_get_expected_result(&expected, error, error_size))
+		return 0;
 	return input_demo_result_compare(&expected, actual, error, error_size);
 }
 

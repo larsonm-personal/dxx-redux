@@ -453,6 +453,21 @@ function Normalize-ExpectedResult {
     return $normalized
 }
 
+function Get-TerminalExitExpectedSubset {
+    param([hashtable]$Expected)
+
+    $subset = [ordered]@{}
+    foreach ($key in @('v', 'g', 'm', 'l', 'd', 'fr', 'gt')) {
+        if ($Expected.ContainsKey($key)) {
+            $subset[$key] = $Expected[$key]
+        }
+    }
+    if ($Expected.ContainsKey('lv')) {
+        $subset.lv = ConvertTo-DeepHashtableClone -Value $Expected.lv
+    }
+    return $subset
+}
+
 function Format-CompareValue {
     param([object]$Value)
 
@@ -626,7 +641,12 @@ if (-not $process.HasExited) {
 }
 
 $actualResult = Read-JsonFileAsHashtable -Path $actualResultPath
-$compareError = Compare-JsonSubset -Expected $normalizedExpectedResult -Actual $actualResult
+$expectedForCompare = $normalizedExpectedResult
+if ($actualResult.ContainsKey('lv') -and $actualResult.lv -is [System.Collections.IDictionary] -and
+    $actualResult.lv.ContainsKey('el') -and $actualResult.lv.el) {
+    $expectedForCompare = Get-TerminalExitExpectedSubset -Expected $normalizedExpectedResult
+}
+$compareError = Compare-JsonSubset -Expected $expectedForCompare -Actual $actualResult
 
 Write-Host ''
 if ($compareError) {

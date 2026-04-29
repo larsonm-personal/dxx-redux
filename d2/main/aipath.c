@@ -176,6 +176,87 @@ static void input_demo_log_path_probe(object *objp,
 		rng_after);
 }
 
+static void input_demo_log_path_detail(object *objp,
+	int start_seg,
+	int end_seg,
+	int random_flag,
+	int random_xlate_seed_count,
+	int random_xlate_refresh_roll_count,
+	int random_xlate_refresh_count,
+	int queue_push_count,
+	int raw_num_points,
+	int final_num_points)
+{
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+	ai_static *aip = (objp && objnum >= 0) ? &objp->ctype.ai_info : NULL;
+	ai_local *ailp = (objp && objnum >= 0) ? &Ai_local_info[objnum] : NULL;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay path detail: frame=%u obj=%d type=%d control=%d id=%d companion=%d behavior=%d mode=%d seg=%d player_seg=%d believed_seg=%d start=%d end=%d same=%d random=%d seed_xlate=%d refresh_rolls=%d refresh_xlate=%d queue_pushes=%d raw_points=%d final_points=%d goal_seg=%d cur_path=%d/%d hide=%d\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		objnum,
+		objp ? objp->type : -1,
+		objp ? objp->control_type : -1,
+		objp ? objp->id : -1,
+		(objp && (objp->type == OBJ_ROBOT)) ? Robot_info[objp->id].companion : 0,
+		aip ? aip->behavior : -1,
+		ailp ? ailp->mode : -1,
+		objp ? objp->segnum : -1,
+		ConsoleObject ? ConsoleObject->segnum : -1,
+		Believed_player_seg,
+		start_seg,
+		end_seg,
+		start_seg == end_seg,
+		random_flag,
+		random_xlate_seed_count,
+		random_xlate_refresh_roll_count,
+		random_xlate_refresh_count,
+		queue_push_count,
+		raw_num_points,
+		final_num_points,
+		ailp ? ailp->goal_segment : -1,
+		aip ? aip->cur_path_index : -1,
+		aip ? aip->path_length : -1,
+		aip ? aip->hide_index : -1);
+}
+
+static void input_demo_log_path_points(const char *label, object *objp, point_seg *psegs, int num_points)
+{
+	char segs[512];
+	int i;
+	int limit;
+	int offset;
+	int written;
+
+	if (!input_demo_replay_path_probe_active(objp) || !psegs || num_points <= 0)
+		return;
+
+	limit = num_points < 24 ? num_points : 24;
+	offset = 0;
+	segs[0] = 0;
+	for (i=0; i<limit; i++) {
+		written = snprintf(segs + offset, sizeof(segs) - offset, "%s%d", i ? "," : "", psegs[i].segnum);
+		if (written < 0)
+			break;
+		if (written >= (int)(sizeof(segs) - offset)) {
+			offset = sizeof(segs) - 1;
+			break;
+		}
+		offset += written;
+	}
+	if ((limit < num_points) && (offset < (int)sizeof(segs)))
+		snprintf(segs + offset, sizeof(segs) - offset, ",...");
+
+	con_printf(CON_NORMAL,
+		"Input demo replay path points: frame=%u step=%s obj=%d points=%d listed=%d segs=%s\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		label,
+		objp ? (int)(objp - Objects) : -1,
+		num_points,
+		limit,
+		segs);
+}
+
 //	------------------------------------------------------------------------
 void create_random_xlate(sbyte *xt)
 {
@@ -406,6 +487,11 @@ int create_path_points(object *objp, int start_seg, int end_seg, point_seg *pseg
 	int		replay_path_probe_active;
 	unsigned int	replay_rng_state = 0;
 	unsigned int	replay_rng_call_count = 0;
+	int		random_xlate_seed_count = 0;
+	int		random_xlate_refresh_roll_count = 0;
+	int		random_xlate_refresh_count = 0;
+	int		queue_push_count = 0;
+	int		raw_num_points = 0;
 
 #if PATH_VALIDATION
 	validate_all_paths();
@@ -443,8 +529,10 @@ if ((objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM))
 		}
 	}
 
-	if (random_flag)
+	if (random_flag) {
 		create_random_xlate(random_xlate);
+		random_xlate_seed_count++;
+	}
 
 	cur_seg = start_seg;
 	visited[cur_seg] = 1;
@@ -453,9 +541,13 @@ if ((objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM))
 	while (cur_seg != end_seg) {
 		segment	*segp = &Segments[cur_seg];
 
-		if (random_flag)
-			if (d_rand() < 8192)
+		if (random_flag) {
+			random_xlate_refresh_roll_count++;
+			if (d_rand() < 8192) {
 				create_random_xlate(random_xlate);
+				random_xlate_refresh_count++;
+			}
+		}
 
 		for (sidenum = 0; sidenum < MAX_SIDES_PER_SEGMENT; sidenum++) {
 
@@ -495,6 +587,7 @@ if ((objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM))
 					seg_queue[qtail].end = this_seg;
 					visited[this_seg] = 1;
 					depth[qtail++] = cur_depth+1;
+					queue_push_count++;
 					if (depth[qtail-1] == max_depth) {
 						end_seg = seg_queue[qtail-1].end;
 						goto cpp_done1;
@@ -576,6 +669,7 @@ cpp_done1: ;
 #if PATH_VALIDATION
 	validate_path(2, original_psegs, l_num_points);
 #endif
+	raw_num_points = l_num_points;
 
 	//	Now, if safety_flag set, then insert the point at the center of the side connecting two segments
 	//	between the two points.  This is messy because we must insert into the list.  The simplest (and not too slow)
@@ -585,7 +679,7 @@ cpp_done1: ;
 			//	Ouch!  Cannot insert center points in path.  So return unsafe path.
 			ai_reset_all_paths();
 			*num_points = l_num_points;
-			if (replay_path_probe_active)
+			if (replay_path_probe_active) {
 				input_demo_log_path_probe(objp,
 					start_seg,
 					end_seg,
@@ -596,6 +690,18 @@ cpp_done1: ;
 					-1,
 					replay_rng_state,
 					replay_rng_call_count);
+				input_demo_log_path_detail(objp,
+					start_seg,
+					end_seg,
+					random_flag,
+					random_xlate_seed_count,
+					random_xlate_refresh_roll_count,
+					random_xlate_refresh_count,
+					queue_push_count,
+					raw_num_points,
+					l_num_points);
+				input_demo_log_path_points("create_path_points partial", objp, original_psegs, l_num_points);
+			}
 			return -1;
 		} else {
 			// int	old_num_points = l_num_points;
@@ -619,7 +725,7 @@ cpp_done1: ;
 #endif
 
 	*num_points = l_num_points;
-	if (replay_path_probe_active)
+	if (replay_path_probe_active) {
 		input_demo_log_path_probe(objp,
 			start_seg,
 			end_seg,
@@ -630,6 +736,18 @@ cpp_done1: ;
 			0,
 			replay_rng_state,
 			replay_rng_call_count);
+		input_demo_log_path_detail(objp,
+			start_seg,
+			end_seg,
+			random_flag,
+			random_xlate_seed_count,
+			random_xlate_refresh_roll_count,
+			random_xlate_refresh_count,
+			queue_push_count,
+			raw_num_points,
+			l_num_points);
+		input_demo_log_path_points("create_path_points final", objp, original_psegs, l_num_points);
+	}
 	return 0;
 }
 
@@ -817,6 +935,8 @@ void create_path_to_player(object *objp, int max_length, int safety_flag)
 	}
 
 	maybe_ai_path_garbage_collect();
+	if (replay_path_request_probe_active && (end_seg != -1) && (aip->path_length > 0))
+		input_demo_log_path_points("create_path_to_player final", objp, &Point_segs[aip->hide_index], aip->path_length);
 	if (replay_path_request_probe_active)
 		input_demo_log_path_request(end_seg == -1 ? "create_path_to_player skipped" : "create_path_to_player done", objp, start_seg, end_seg, max_length, safety_flag, -1);
 
@@ -861,6 +981,8 @@ void create_path_to_segment(object *objp, int goalseg, int max_length, int safet
 	}
 
 	maybe_ai_path_garbage_collect();
+	if (replay_path_request_probe_active && (end_seg != -1) && (aip->path_length > 0))
+		input_demo_log_path_points("create_path_to_segment final", objp, &Point_segs[aip->hide_index], aip->path_length);
 	if (replay_path_request_probe_active)
 		input_demo_log_path_request(end_seg == -1 ? "create_path_to_segment skipped" : "create_path_to_segment done", objp, start_seg, end_seg, max_length, safety_flag, -1);
 
@@ -960,6 +1082,8 @@ void create_n_segment_path(object *objp, int path_length, int avoid_seg)
 	}
 
 	maybe_ai_path_garbage_collect();
+	if (replay_path_request_probe_active && (aip->path_length > 0))
+		input_demo_log_path_points("create_n_segment_path final", objp, &Point_segs[aip->hide_index], aip->path_length);
 	if (replay_path_request_probe_active)
 		input_demo_log_path_request("create_n_segment_path done", objp, objp->segnum, -2, requested_path_length, 0, avoid_seg);
 

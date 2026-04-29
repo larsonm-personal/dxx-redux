@@ -789,29 +789,6 @@ int BigWindowSwitch=0;
 extern int force_cockpit_redraw;
 void update_cockpits();
 
-static void input_demo_log_render_rng_progress(const char *label, unsigned int *rng_before, unsigned int *rng_call_count_before)
-{
-	unsigned int rng_after;
-	unsigned int rng_call_count_after;
-
-	if (!d_rand_get_state(&rng_after))
-		return;
-	rng_call_count_after = d_rand_get_call_count();
-	if (rng_after == *rng_before && rng_call_count_after == *rng_call_count_before)
-		return;
-	con_printf(CON_NORMAL,
-		"Input demo replay render rng progress: frame=%u gt=%lld step=%s calls=%u->%u before=%u after=%u\n",
-		(unsigned int)(input_demo_replay_next_frame_index() ? input_demo_replay_next_frame_index() - 1 : 0),
-		(long long)GameTime64,
-		label,
-		*rng_call_count_before,
-		rng_call_count_after,
-		*rng_before,
-		rng_after);
-	*rng_before = rng_after;
-	*rng_call_count_before = rng_call_count_after;
-}
-
 static int input_demo_should_preserve_ui_rng(void)
 {
 	return input_demo_replay_is_loaded() ||
@@ -833,12 +810,6 @@ static void input_demo_restore_preserved_ui_rng(int preserve_rng, unsigned int s
 void game_render_frame_mono(int flip)
 {
 	int no_draw_hud=0;
-	unsigned int replay_rng_state = 0;
-	unsigned int replay_rng_call_count = 0;
-	int replay_rng_probe_active = input_demo_replay_is_loaded() &&
-		input_demo_replay_next_frame_index() == 18 && d_rand_get_state(&replay_rng_state);
-	if (replay_rng_probe_active)
-		replay_rng_call_count = d_rand_get_call_count();
 
 #ifdef ANDROID
 	g_debug_tex_label_count = 0;
@@ -861,8 +832,6 @@ void game_render_frame_mono(int flip)
 
 		update_rendered_data(0, Viewer, 0, 0);
 		render_frame(0, 0);
-		if (replay_rng_probe_active)
-			input_demo_log_render_rng_progress("after guided render_frame", &replay_rng_state, &replay_rng_call_count);
 
 		wake_up_rendered_objects(Viewer, 0);
 		show_HUD_names();
@@ -891,15 +860,11 @@ void game_render_frame_mono(int flip)
 		}
 		update_rendered_data(0, Viewer, Rear_view, 0);
 		render_frame(0, 0);
-		if (replay_rng_probe_active)
-			input_demo_log_render_rng_progress("after main render_frame", &replay_rng_state, &replay_rng_call_count);
 	}
 
 	gr_set_current_canvas(&Screen_3d_window);
 
 	update_cockpits();
-	if (replay_rng_probe_active)
-		input_demo_log_render_rng_progress("after update_cockpits", &replay_rng_state, &replay_rng_call_count);
 
 	if (Newdemo_state == ND_STATE_PLAYBACK)
 		Game_mode = Newdemo_game_mode;
@@ -920,8 +885,6 @@ void game_render_frame_mono(int flip)
 			render_gauges();
 		input_demo_restore_preserved_ui_rng(preserve_ui_rng, preserved_ui_rng_state);
 	}
-	if (replay_rng_probe_active)
-		input_demo_log_render_rng_progress("after render_gauges", &replay_rng_state, &replay_rng_call_count);
 
 	if (Newdemo_state == ND_STATE_PLAYBACK)
 		Game_mode = GM_NORMAL | (Game_mode & GM_OBSERVER);
@@ -934,8 +897,6 @@ void game_render_frame_mono(int flip)
 		game_draw_hud_stuff();
 		input_demo_restore_preserved_ui_rng(preserve_ui_rng, preserved_ui_rng_state);
 	}
-	if (replay_rng_probe_active)
-		input_demo_log_render_rng_progress("after game_draw_hud_stuff", &replay_rng_state, &replay_rng_call_count);
 
 #ifdef ANDROID
 	{
@@ -947,8 +908,6 @@ void game_render_frame_mono(int flip)
 	gr_set_current_canvas(NULL);
 
 	show_extra_views();		//missile view, buddy bot, etc.
-	if (replay_rng_probe_active)
-		input_demo_log_render_rng_progress("after show_extra_views", &replay_rng_state, &replay_rng_call_count);
 
 #ifdef NETWORK
 	if (netplayerinfo_on && Game_mode & GM_MULTI)
@@ -1120,19 +1079,9 @@ void update_cockpits()
 
 void game_render_frame()
 {
-	unsigned int replay_rng_state = 0;
-	unsigned int replay_rng_call_count = 0;
-	int replay_rng_probe_active = input_demo_replay_is_loaded() &&
-		input_demo_replay_next_frame_index() == 18 && d_rand_get_state(&replay_rng_state);
-	if (replay_rng_probe_active)
-		replay_rng_call_count = d_rand_get_call_count();
 	set_screen_mode( SCREEN_GAME );
 	play_homing_warning();
-	if (replay_rng_probe_active)
-		input_demo_log_render_rng_progress("after play_homing_warning", &replay_rng_state, &replay_rng_call_count);
 	game_render_frame_mono(GameArg.DbgUseDoubleBuffer);
-	if (replay_rng_probe_active)
-		input_demo_log_render_rng_progress("after game_render_frame_mono", &replay_rng_state, &replay_rng_call_count);
 }
 
 //show a message in a nice little box
