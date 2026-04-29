@@ -60,6 +60,95 @@ static int input_demo_replay_motion_probe_active(void)
 	return input_demo_replay_is_loaded();
 }
 
+static const char *input_demo_replay_physics_fate_name(int fate)
+{
+	switch (fate) {
+		case HIT_NONE:
+			return "none";
+		case HIT_WALL:
+			return "wall";
+		case HIT_OBJECT:
+			return "object";
+		case HIT_BAD_P0:
+			return "bad_p0";
+		default:
+			return "unknown";
+	}
+}
+
+static void input_demo_log_physics_fate(
+	object *obj,
+	int fate,
+	int count,
+	fix attempted_dist,
+	fix actual_dist,
+	fix moved_time,
+	fix sim_time,
+	const vms_vector *start_pos,
+	const vms_vector *new_pos,
+	int hit_seg,
+	int hit_side,
+	int hit_object,
+	const vms_vector *wall_norm)
+{
+	int wall_num = -1;
+	int wall_type = -1;
+	int wall_state = -1;
+	int wall_flags = 0;
+	int doorway_flags = 0;
+	int child_seg = -3;
+
+	if (!input_demo_replay_motion_probe_active() || obj != ConsoleObject)
+		return;
+
+	if (fate == HIT_WALL && hit_seg >= 0 && hit_seg <= Highest_segment_index && hit_side >= 0 && hit_side < 6) {
+		child_seg = Segments[hit_seg].children[hit_side];
+		wall_num = Segments[hit_seg].sides[hit_side].wall_num;
+		if (wall_num >= 0 && wall_num < Num_walls) {
+			wall_type = Walls[wall_num].type;
+			wall_state = Walls[wall_num].state;
+			wall_flags = Walls[wall_num].flags;
+			doorway_flags = wall_is_doorway(&Segments[hit_seg], hit_side);
+		}
+	}
+
+	con_printf(CON_NORMAL,
+		"Input demo replay physics probe: frame=%u gt=%lld iter=%d fate=%s seg=%d hit=(seg=%d side=%d child=%d obj=%d) wall=(num=%d type=%d state=%d flags=0x%x doorway=0x%x) norm=(%d,%d,%d) dist=(%d,%d) sim=(%d,%d) start=(%d,%d,%d) target=(%d,%d,%d) pos=(%d,%d,%d) vel=(%d,%d,%d)\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		(long long)GameTime64,
+		count,
+		input_demo_replay_physics_fate_name(fate),
+		obj->segnum,
+		hit_seg,
+		hit_side,
+		child_seg,
+		hit_object,
+		wall_num,
+		wall_type,
+		wall_state,
+		wall_flags,
+		doorway_flags,
+		wall_norm ? wall_norm->x : 0,
+		wall_norm ? wall_norm->y : 0,
+		wall_norm ? wall_norm->z : 0,
+		attempted_dist,
+		actual_dist,
+		moved_time,
+		sim_time,
+		start_pos ? start_pos->x : 0,
+		start_pos ? start_pos->y : 0,
+		start_pos ? start_pos->z : 0,
+		new_pos ? new_pos->x : 0,
+		new_pos ? new_pos->y : 0,
+		new_pos ? new_pos->z : 0,
+		obj->pos.x,
+		obj->pos.y,
+		obj->pos.z,
+		obj->mtype.phys_info.velocity.x,
+		obj->mtype.phys_info.velocity.y,
+		obj->mtype.phys_info.velocity.z);
+}
+
 //make sure matrix is orthogonal
 void check_and_fix_matrix(vms_matrix *m)
 {
@@ -589,6 +678,8 @@ void do_physics_sim(object *obj)
 			vms_vector moved_vec_n;
 			fix attempted_dist,actual_dist;
 
+			attempted_dist = vm_vec_mag(&frame_vec);
+
 			actual_dist = vm_vec_normalized_dir(&moved_vec_n,&obj->pos,&save_pos);
 
 			if (fate==HIT_WALL && vm_vec_dot(&moved_vec_n,&frame_vec) < 0) {		//moved backwards
@@ -606,8 +697,6 @@ void do_physics_sim(object *obj)
 			else {
 				fix old_sim_time;
 
-				attempted_dist = vm_vec_mag(&frame_vec);
-
 				old_sim_time = sim_time;
 
 				sim_time = fixmuldiv(sim_time,attempted_dist-actual_dist,attempted_dist);
@@ -621,6 +710,21 @@ void do_physics_sim(object *obj)
 					moved_time = 0;
 				}
 			}
+
+			input_demo_log_physics_fate(
+				obj,
+				fate,
+				count,
+				attempted_dist,
+				actual_dist,
+				moved_time,
+				sim_time,
+				&save_pos,
+				&new_pos,
+				fate == HIT_WALL ? WallHitSeg : -1,
+				fate == HIT_WALL ? WallHitSide : -1,
+				fate == HIT_OBJECT ? hit_info.hit_object : -1,
+				fate == HIT_WALL ? &hit_info.hit_wallnorm : NULL);
 		}
 
 

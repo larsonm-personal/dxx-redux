@@ -66,6 +66,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "ogl_init.h"
 #endif
 #include "physfsx.h"
+#include "input_demo_replay.h"
 #ifdef __ANDROID__
 #include "coop_save.h"
 #include "coop_indicator_lines.h"
@@ -1645,6 +1646,8 @@ int state_restore_all_sub(char *filename)
 //Restore GameTime
 	tmptime32 = PHYSFSX_readSXE32(fp, swap);
 	GameTime64 = (fix64)tmptime32;
+	if (input_demo_replay_has_checkpoint())
+		GameTime64 += input_demo_replay_checkpoint_start_gt();
 
 // Start new game....
 	if (!(Game_mode & GM_MULTI_COOP))

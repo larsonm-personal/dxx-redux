@@ -244,6 +244,18 @@ static int input_demo_trace_ai_active(void)
 	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
 }
 
+static unsigned int input_demo_trace_frame_index(void)
+{
+	if (input_demo_replay_is_loaded())
+		return (unsigned int)input_demo_replay_next_frame_index();
+	if (input_demo_recorder_is_active()) {
+		const uint32_t frame_count = input_demo_recorder_frame_count();
+
+		return frame_count ? (unsigned int)(frame_count - 1) : 0;
+	}
+	return 0;
+}
+
 static int input_demo_replay_awareness_probe_active(void)
 {
 	return input_demo_replay_is_loaded();
@@ -272,7 +284,7 @@ static void input_demo_log_ai_robot_state(const char *label, object *objp)
 
 	con_printf(CON_NORMAL,
 		"Input demo replay AI robot: frame=%u step=%s obj=%d id=%d companion=%d behavior=%d mode=%d seg=%d player_seg=%d believed_seg=%d goal_seg=%d prev_vis=%d aware=%d aware_time=%d seen=%lld since=%d next_action=%d next_fire=%d next_fire2=%d path=%d/%d hide=%d skip=%d\n",
-		(unsigned int)input_demo_replay_next_frame_index(),
+		input_demo_trace_frame_index(),
 		label,
 		objnum,
 		objp->id,
@@ -306,7 +318,7 @@ void init_ai_frame(void)
 	if (input_demo_trace_ai_active())
 		con_printf(CON_NORMAL,
 			"Input demo replay AI state: frame=%u gt=%lld player_seg=%d believed_seg=%d player=(%d,%d,%d) believed=(%d,%d,%d) last_fired=(%d,%d,%d) dist=%d events=%d agitation=%d\n",
-			(unsigned int)input_demo_replay_next_frame_index(),
+			input_demo_trace_frame_index(),
 			(long long)GameTime64,
 			ConsoleObject->segnum,
 			Believed_player_seg,
@@ -1458,7 +1470,7 @@ void create_awareness_event(object *objp, int type)
 
 		con_printf(CON_NORMAL,
 			"Input demo replay awareness probe: frame=%u gt=%lld type=%d obj=%d obj_type=%d obj_id=%d sig=%d seg=%d life=%d flags=%d parent_type=%d parent_num=%d parent_sig=%d pos=(%d,%d,%d)\n",
-			(unsigned int)input_demo_replay_next_frame_index(),
+			input_demo_trace_frame_index(),
 			(long long)GameTime64,
 			type,
 			objp - Objects,
@@ -1602,7 +1614,7 @@ void do_ai_frame_all(void)
 
 		con_printf(CON_NORMAL,
 			"Input demo replay AI frame: frame=%u gt=%lld player_seg=%d believed_seg=%d events=%d agitation=%d\n",
-			(unsigned int)input_demo_replay_next_frame_index(),
+			input_demo_trace_frame_index(),
 			(long long)GameTime64,
 			ConsoleObject->segnum,
 			Believed_player_seg,
@@ -1619,7 +1631,7 @@ void do_ai_frame_all(void)
 
 		con_printf(CON_NORMAL,
 			"Input demo replay AI frame summary: frame=%u traced=%d highest_obj=%d\n",
-			(unsigned int)input_demo_replay_next_frame_index(),
+			input_demo_trace_frame_index(),
 			traced_robot_count,
 			Highest_object_index);
 	}
@@ -1844,11 +1856,11 @@ void ai_local_read_n_swap(ai_local *ail, int n, int swap, PHYSFS_file *fp)
 		ail->next_fire2 = PHYSFSX_readSXE32(fp, swap);
 		ail->player_awareness_time = PHYSFSX_readSXE32(fp, swap);
 		tmptime32 = PHYSFSX_readSXE32(fp, swap);
-		ail->time_player_seen = (fix64)tmptime32;
+		ail->time_player_seen = GameTime64 + (fix64)tmptime32;
 		tmptime32 = PHYSFSX_readSXE32(fp, swap);
-		ail->time_player_sound_attacked = (fix64)tmptime32;
+		ail->time_player_sound_attacked = GameTime64 + (fix64)tmptime32;
 		tmptime32 = PHYSFSX_readSXE32(fp, swap);
-		ail->next_misc_sound_time = (fix64)tmptime32;
+		ail->next_misc_sound_time = GameTime64 + (fix64)tmptime32;
 		ail->time_since_processed = PHYSFSX_readSXE32(fp, swap);
 		
 		for (j = 0; j < MAX_SUBMODELS; j++)
@@ -1881,7 +1893,7 @@ void ai_cloak_info_read_n_swap(ai_cloak_info *ci, int n, int swap, PHYSFS_file *
 	for (i = 0; i < n; i++, ci++)
 	{
 		tmptime32 = PHYSFSX_readSXE32(fp, swap);
-		ci->last_time = (fix64)tmptime32;
+		ci->last_time = GameTime64 + (fix64)tmptime32;
 		ci->last_segment = PHYSFSX_readSXE32(fp, swap);
 		PHYSFSX_readVectorX(fp, &ci->last_position, swap);
 	}
@@ -1898,29 +1910,29 @@ int ai_restore_state(PHYSFS_file *fp, int version, int swap)
 	point_seg_read_n_swap(Point_segs, MAX_POINT_SEGS, swap, fp);
 	ai_cloak_info_read_n_swap(Ai_cloak_info, MAX_AI_CLOAK_INFO, swap, fp);
 	tmptime32 = PHYSFSX_readSXE32(fp, swap);
-	Boss_cloak_start_time = (fix64)tmptime32;
+	Boss_cloak_start_time = GameTime64 + (fix64)tmptime32;
 	tmptime32 = PHYSFSX_readSXE32(fp, swap);
-	Boss_cloak_end_time = (fix64)tmptime32;
+	Boss_cloak_end_time = GameTime64 + (fix64)tmptime32;
 	tmptime32 = PHYSFSX_readSXE32(fp, swap);
-	Last_teleport_time = (fix64)tmptime32;
+	Last_teleport_time = GameTime64 + (fix64)tmptime32;
 	Boss_teleport_interval = PHYSFSX_readSXE32(fp, swap);
 	Boss_cloak_interval = PHYSFSX_readSXE32(fp, swap);
 	Boss_cloak_duration = PHYSFSX_readSXE32(fp, swap);
 	tmptime32 = PHYSFSX_readSXE32(fp, swap);
-	Last_gate_time = (fix64)tmptime32;
+	Last_gate_time = GameTime64 + (fix64)tmptime32;
 	Gate_interval = PHYSFSX_readSXE32(fp, swap);
 	tmptime32 = PHYSFSX_readSXE32(fp, swap);
-	Boss_dying_start_time = (fix64)tmptime32;
+	Boss_dying_start_time = tmptime32 ? GameTime64 + (fix64)tmptime32 : 0;
 	Boss_dying = PHYSFSX_readSXE32(fp, swap);
 	Boss_dying_sound_playing = PHYSFSX_readSXE32(fp, swap);
 	tmptime32 = PHYSFSX_readSXE32(fp, swap);
-	Boss_hit_time = (fix64)tmptime32;
+	Boss_hit_time = GameTime64 + (fix64)tmptime32;
 	// -- MK, 10/21/95, unused! -- PHYSFS_read(fp, &Boss_been_hit, sizeof(int), 1);
 
 	if (version >= 8) {
 		Escort_kill_object = PHYSFSX_readSXE32(fp, swap);
 		tmptime32 = PHYSFSX_readSXE32(fp, swap);
-		Escort_last_path_created = (fix64)tmptime32;
+		Escort_last_path_created = GameTime64 + (fix64)tmptime32;
 		Escort_goal_object = PHYSFSX_readSXE32(fp, swap);
 		Escort_special_goal = PHYSFSX_readSXE32(fp, swap);
 		Escort_goal_index = PHYSFSX_readSXE32(fp, swap);

@@ -360,6 +360,36 @@ static int maybe_start_input_demo_replay(void)
 		return 1;
 	}
 	PHYSFS_delete(local_checkpoint_name);
+	{
+		int player_cfg_result;
+		const char *replay_callsign;
+		fix player_mass = 0, player_drag = 0, player_brakes = 0;
+		unsigned int player_phys_flags = 0;
+		fix ship_mass = 0, ship_drag = 0, ship_brakes = 0;
+		fix ship_max_thrust = 0, ship_max_rotthrust = 0, ship_wiggle = 0;
+
+		new_player_config();
+		player_cfg_result = read_player_file();
+		replay_callsign = Players[Player_num].callsign[0] ? Players[Player_num].callsign : "<empty>";
+		if (ConsoleObject) {
+			player_mass = ConsoleObject->mtype.phys_info.mass;
+			player_drag = ConsoleObject->mtype.phys_info.drag;
+			player_brakes = ConsoleObject->mtype.phys_info.brakes;
+			player_phys_flags = ConsoleObject->mtype.phys_info.flags;
+		}
+		if (Player_ship) {
+			ship_mass = Player_ship->mass;
+			ship_drag = Player_ship->drag;
+			ship_brakes = Player_ship->brakes;
+			ship_max_thrust = Player_ship->max_thrust;
+			ship_max_rotthrust = Player_ship->max_rotthrust;
+			ship_wiggle = Player_ship->wiggle;
+		}
+		con_printf(CON_NORMAL, "Input demo replay player config: callsign=%s result=%d auto_level=%d player_flags=0x%x phys=(%d,%d,%d,0x%x) ship=(%d,%d,%d,%d,%d,%d)\n",
+			replay_callsign, player_cfg_result, PlayerCfg.AutoLeveling, Players[Player_num].flags,
+			player_mass, player_drag, player_brakes, player_phys_flags,
+			ship_mass, ship_drag, ship_brakes, ship_max_thrust, ship_max_rotthrust, ship_wiggle);
+	}
 	if (d_stricmp(Current_mission_filename, mission_name) || Current_level_num != input_demo_replay_level() ||
 		Difficulty_level != input_demo_replay_difficulty())
 	{

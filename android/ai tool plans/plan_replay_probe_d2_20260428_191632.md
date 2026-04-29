@@ -21,3 +21,16 @@
 - The recorded device RNG trace for frame 48 shows no matching buddy path burst, so the strongest remaining root cause is pre-RNG guidebot path-follow drift before frame 47 rather than a later RNG stream classification problem
 - A fixed-point replacement for the companion goal-velocity nudge was tested and reverted because it produced no observable change on this artifact
 - Useful durable probes were kept in `d2/main/object.c` and `d2/main/aipath.c` so future recorder/replay runs show per-robot AI RNG ownership and companion path-advance thresholds directly
+
+## Spreadfire Render Follow-up
+
+- [x] Confirm whether player-owned spreadfire objects reach `draw_object_blob()` during replay
+- [x] If they do, compare their draw parameters against creation state to narrow bitmap, size, or blend issues
+- [ ] Step outward from the draw call into the OGL upload path for `sprdblob`
+
+## Spreadfire Render Findings
+
+- Host replay reaches `draw_object_blob()` for player-owned spreadfire every frame with `bm=262` / `name=sprdblob`, valid object size, and on-screen projected coordinates
+- The stock `sprdblob` bitmap is not empty on the CPU side: `64x64`, `opaque=2925`, bounding box `(2,1)-(62,61)`, brightest palette index `1` with RGB `(61,61,61)`
+- Replay-only screenshots taken immediately after the logged draw calls still show no visible spreadfire projectiles in the engine window
+- Replay-only render overrides that changed tint, blend mode, and depth testing did not change the screenshots, which strongly suggests the `sprdblob` GPU texture sample is effectively black or otherwise not contributing pixels despite the CPU bitmap being valid

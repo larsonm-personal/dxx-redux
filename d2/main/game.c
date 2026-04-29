@@ -159,6 +159,99 @@ extern int ReadControls(d_event *event);		// located in gamecntl.c
 extern int ReadControlsReplayFrame(void);	// located in gamecntl.c
 extern void do_final_boss_frame(void);
 
+static int input_demo_player_motion_probe_active(void)
+{
+	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+}
+
+static unsigned int input_demo_player_motion_frame_index(void)
+{
+	if (input_demo_replay_is_loaded())
+		return (unsigned int)input_demo_replay_next_frame_index();
+	return (unsigned int)input_demo_recorder_frame_count();
+}
+
+static void input_demo_log_player_motion_state(const char *stage)
+{
+	object *player_obj;
+	fix ship_mass = 0, ship_drag = 0, ship_brakes = 0;
+	fix ship_max_thrust = 0, ship_max_rotthrust = 0, ship_wiggle = 0;
+
+	if (!input_demo_player_motion_probe_active() || !ConsoleObject)
+		return;
+
+	player_obj = ConsoleObject;
+	if (player_obj->type != OBJ_PLAYER)
+		return;
+	if (Player_ship) {
+		ship_mass = Player_ship->mass;
+		ship_drag = Player_ship->drag;
+		ship_brakes = Player_ship->brakes;
+		ship_max_thrust = Player_ship->max_thrust;
+		ship_max_rotthrust = Player_ship->max_rotthrust;
+		ship_wiggle = Player_ship->wiggle;
+	}
+
+	con_printf(CON_NORMAL,
+		"Input demo replay player motion: frame=%u stage=%s gt=%lld ft=%d seg=%d pos=(%d,%d,%d) last=(%d,%d,%d) vel=(%d,%d,%d) thrust=(%d,%d,%d) rotvel=(%d,%d,%d) rotthrust=(%d,%d,%d) orient_f=(%d,%d,%d) orient_r=(%d,%d,%d) orient_u=(%d,%d,%d) turnroll=%d phys_flags=0x%x obj_flags=0x%x player_flags=0x%x ctl=%d mt=%d controls=(%d,%d,%d,%d,%d,%d) ab=(%d,%d) al=%d phys=(%d,%d,%d) ship=(%d,%d,%d,%d,%d,%d)\n",
+		input_demo_player_motion_frame_index(),
+		stage,
+		(long long)GameTime64,
+		FrameTime,
+		player_obj->segnum,
+		player_obj->pos.x,
+		player_obj->pos.y,
+		player_obj->pos.z,
+		player_obj->last_pos.x,
+		player_obj->last_pos.y,
+		player_obj->last_pos.z,
+		player_obj->mtype.phys_info.velocity.x,
+		player_obj->mtype.phys_info.velocity.y,
+		player_obj->mtype.phys_info.velocity.z,
+		player_obj->mtype.phys_info.thrust.x,
+		player_obj->mtype.phys_info.thrust.y,
+		player_obj->mtype.phys_info.thrust.z,
+		player_obj->mtype.phys_info.rotvel.x,
+		player_obj->mtype.phys_info.rotvel.y,
+		player_obj->mtype.phys_info.rotvel.z,
+		player_obj->mtype.phys_info.rotthrust.x,
+		player_obj->mtype.phys_info.rotthrust.y,
+		player_obj->mtype.phys_info.rotthrust.z,
+		player_obj->orient.fvec.x,
+		player_obj->orient.fvec.y,
+		player_obj->orient.fvec.z,
+		player_obj->orient.rvec.x,
+		player_obj->orient.rvec.y,
+		player_obj->orient.rvec.z,
+		player_obj->orient.uvec.x,
+		player_obj->orient.uvec.y,
+		player_obj->orient.uvec.z,
+		player_obj->mtype.phys_info.turnroll,
+		player_obj->mtype.phys_info.flags,
+		player_obj->flags,
+		Players[Player_num].flags,
+		player_obj->control_type,
+		player_obj->movement_type,
+		Controls.pitch_time,
+		Controls.heading_time,
+		Controls.bank_time,
+		Controls.forward_thrust_time,
+		Controls.sideways_thrust_time,
+		Controls.vertical_thrust_time,
+		Controls.afterburner_state,
+		Players[Player_num].afterburner_charge,
+		PlayerCfg.AutoLeveling,
+		player_obj->mtype.phys_info.mass,
+		player_obj->mtype.phys_info.drag,
+		player_obj->mtype.phys_info.brakes,
+		ship_mass,
+		ship_drag,
+		ship_brakes,
+		ship_max_thrust,
+		ship_max_rotthrust,
+		ship_wiggle);
+}
+
 static void input_demo_record_game_frame(void)
 {
 	input_demo_control_state state;
@@ -1790,6 +1883,7 @@ void GameProcessFrame(void)
 	int player_was_dead = Player_is_dead;
 
 	input_demo_update_rng_trace_context();
+	input_demo_log_player_motion_state("entry");
 	input_demo_record_game_frame();
 	update_player_stats();
 	diminish_palette_towards_normal();		//	Should leave palette effect up for as long as possible by putting right before render.
@@ -1891,6 +1985,7 @@ void GameProcessFrame(void)
 		Players[Player_num].homing_object_dist = -1;		//	Assume not being tracked.  Laser_do_weapon_sequence modifies this.
 
 		object_move_all();
+		input_demo_log_player_motion_state("after_move");
 		powerup_grab_cheat_all();
 
 		if (Endlevel_sequence)	//might have been started during move
@@ -1980,6 +2075,8 @@ void GameProcessFrame(void)
 			(Automap_active && ((Player_is_dead != player_was_dead) || (Players[Player_num].shields<=0 && player_shields>0))) ) // close autmap when dying ...
 			game_leave_menus();
 	}
+
+	input_demo_log_player_motion_state("exit");
 
 #ifdef __ANDROID__
 	/* Periodic coop autosave -- host only, every 30 seconds of level time */

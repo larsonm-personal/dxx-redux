@@ -3242,11 +3242,11 @@ void ai_local_read_n_swap(ai_local *ail, int n, int swap, PHYSFS_file *fp)
 		ail->next_fire = PHYSFSX_readSXE32(fp, swap);
 		ail->player_awareness_time = PHYSFSX_readSXE32(fp, swap);
 		tmptime32 = PHYSFSX_readSXE32(fp, swap);
-		ail->time_player_seen = (fix64)tmptime32;
+		ail->time_player_seen = GameTime64 + (fix64)tmptime32;
 		tmptime32 = PHYSFSX_readSXE32(fp, swap);
-		ail->time_player_sound_attacked = (fix64)tmptime32;
+		ail->time_player_sound_attacked = GameTime64 + (fix64)tmptime32;
 		tmptime32 = PHYSFSX_readSXE32(fp, swap);
-		ail->next_misc_sound_time = (fix64)tmptime32;
+		ail->next_misc_sound_time = GameTime64 + (fix64)tmptime32;
 		ail->time_since_processed = PHYSFSX_readSXE32(fp, swap);
 		
 		for (j = 0; j < MAX_SUBMODELS; j++)
@@ -3279,7 +3279,7 @@ void ai_cloak_info_read_n_swap(ai_cloak_info *ci, int n, int swap, PHYSFS_file *
 	for (i = 0; i < n; i++, ci++)
 	{
 		tmptime32 = PHYSFSX_readSXE32(fp, swap);
-		ci->last_time = (fix64)tmptime32;
+		ci->last_time = GameTime64 + (fix64)tmptime32;
 		PHYSFSX_readVectorX(fp, &ci->last_position, swap);
 	}
 }
@@ -3294,19 +3294,19 @@ int ai_restore_state(PHYSFS_file *fp, int version, int swap, int rebirth)
 	point_seg_read_n_swap(Point_segs, MAX_POINT_SEGS, swap, fp);
 	ai_cloak_info_read_n_swap(Ai_cloak_info, MAX_AI_CLOAK_INFO, swap, fp);
 	tmptime32 = PHYSFSX_readSXE32(fp, swap);
-	Boss_cloak_start_time = (fix64)tmptime32;
+	Boss_cloak_start_time = GameTime64 + (fix64)tmptime32;
 	tmptime32 = PHYSFSX_readSXE32(fp, swap);
-	Boss_cloak_end_time = (fix64)tmptime32;
+	Boss_cloak_end_time = GameTime64 + (fix64)tmptime32;
 	tmptime32 = PHYSFSX_readSXE32(fp, swap);
-	Last_teleport_time = (fix64)tmptime32;
+	Last_teleport_time = GameTime64 + (fix64)tmptime32;
 	Boss_teleport_interval = PHYSFSX_readSXE32(fp, swap);
 	Boss_cloak_interval = PHYSFSX_readSXE32(fp, swap);
 	Boss_cloak_duration = PHYSFSX_readSXE32(fp, swap);
 	tmptime32 = PHYSFSX_readSXE32(fp, swap);
-	Last_gate_time = (fix64)tmptime32;
+	Last_gate_time = GameTime64 + (fix64)tmptime32;
 	Gate_interval = PHYSFSX_readSXE32(fp, swap);
 	tmptime32 = PHYSFSX_readSXE32(fp, swap);
-	Boss_dying_start_time = (fix64)tmptime32;
+	Boss_dying_start_time = tmptime32 ? GameTime64 + (fix64)tmptime32 : 0;
 	Boss_dying = PHYSFSX_readSXE32(fp, swap);
 	Boss_dying_sound_playing = PHYSFSX_readSXE32(fp, swap);
 	Boss_hit_this_frame = PHYSFSX_readSXE32(fp, swap);
