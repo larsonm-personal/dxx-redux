@@ -86,6 +86,27 @@ object *ConsoleObject;					//the object that is the player
 static short free_obj_list[MAX_OBJECTS];
 static short object_signature_seed = 0;
 
+static int input_demo_trace_ai_rng_active(object *obj)
+{
+	ai_static *aip;
+	ai_local *ailp;
+
+	if (!obj || !input_demo_replay_is_loaded() || (obj->type != OBJ_ROBOT))
+		return 0;
+
+	aip = &obj->ctype.ai_info;
+	ailp = &Ai_local_info[obj-Objects];
+
+	return Robot_info[obj->id].companion ||
+		(obj->segnum == ConsoleObject->segnum) ||
+		(obj->segnum == Believed_player_seg) ||
+		(ailp->goal_segment == ConsoleObject->segnum) ||
+		(ailp->goal_segment == Believed_player_seg) ||
+		(ailp->mode >= AIM_GOTO_PLAYER) ||
+		(aip->behavior == AIB_SNIPE) ||
+		(ailp->player_awareness_type > 0);
+}
+
 //Data for objects
 
 // -- Object stuff
@@ -2020,7 +2041,33 @@ void object_move_one( object * obj )
 		case CT_AI:
 			//NOTE LINK TO CT_MORPH ABOVE!!!
 			if (Game_suspended & SUSP_ROBOTS) return;
-			do_ai_frame(obj);
+			if (input_demo_trace_ai_rng_active(obj)) {
+				unsigned int rng_before = 0;
+				unsigned int rng_call_count_before = d_rand_get_call_count();
+				unsigned int rng_after = 0;
+				unsigned int rng_call_count_after;
+
+				d_rand_get_state(&rng_before);
+				do_ai_frame(obj);
+				rng_call_count_after = d_rand_get_call_count();
+				d_rand_get_state(&rng_after);
+				if ((rng_after != rng_before) || (rng_call_count_after != rng_call_count_before))
+					con_printf(CON_NORMAL,
+						"Input demo replay AI rng: frame=%u obj=%d id=%d companion=%d behavior=%d mode=%d seg=%d goal_seg=%d calls=%u->%u before=%u after=%u\n",
+						(unsigned int)input_demo_replay_next_frame_index(),
+						(int)(obj - Objects),
+						obj->id,
+						Robot_info[obj->id].companion,
+						obj->ctype.ai_info.behavior,
+						Ai_local_info[obj-Objects].mode,
+						obj->segnum,
+						Ai_local_info[obj-Objects].goal_segment,
+						rng_call_count_before,
+						rng_call_count_after,
+						rng_before,
+						rng_after);
+			} else
+				do_ai_frame(obj);
 			break;
 
 		case CT_WEAPON:		Laser_do_weapon_sequence(obj, doHomerFrame, idealHomerFrameTime, homerFrameCount); break; // CED

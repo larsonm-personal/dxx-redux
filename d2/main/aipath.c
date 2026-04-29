@@ -1190,6 +1190,7 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 	int			forced_break, original_dir, original_index;
 	ai_local		*ailp = &Ai_local_info[objp-Objects];
 	fix			threshold_distance;
+	fix			velocity_mag;
 
 
 	if ((aip->hide_index == -1) || (aip->path_length == 0))
@@ -1316,7 +1317,25 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 	forced_break = 0;		//	Gets set for short paths.
 	original_dir = aip->PATH_DIR;
 	original_index = aip->cur_path_index;
-	threshold_distance = fixmul(vm_vec_mag_quick(&objp->mtype.phys_info.velocity), FrameTime)*2 + F1_0*2;
+	velocity_mag = vm_vec_mag_quick(&objp->mtype.phys_info.velocity);
+	threshold_distance = fixmul(velocity_mag, FrameTime)*2 + F1_0*2;
+	if (input_demo_replay_follow_probe_active(objp) && (dist_to_goal < threshold_distance))
+		con_printf(CON_NORMAL,
+			"Input demo replay follow advance trigger: frame=%u obj=%d id=%d companion=%d behavior=%d mode=%d path=%d/%d dir=%d seg=%d goal_seg=%d dist=%d threshold=%d vel=%d\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			(int)(objp - Objects),
+			objp->id,
+			robptr->companion,
+			aip->behavior,
+			ailp->mode,
+			aip->cur_path_index,
+			aip->path_length,
+			aip->PATH_DIR,
+			objp->segnum,
+			ailp->goal_segment,
+			dist_to_goal,
+			threshold_distance,
+			velocity_mag);
 
 	new_goal_point = Point_segs[aip->hide_index + aip->cur_path_index].point;
 
@@ -1456,6 +1475,27 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 		}
 		//--Int3_if(((aip->cur_path_index >= 0) && (aip->cur_path_index < aip->path_length)));
 	}	//	end while
+
+	if (input_demo_replay_follow_probe_active(objp) && ((aip->cur_path_index != original_index) || (aip->PATH_DIR != original_dir)))
+		con_printf(CON_NORMAL,
+			"Input demo replay follow advance result: frame=%u obj=%d id=%d companion=%d behavior=%d mode=%d from=%d to=%d path=%d dir=%d->%d seg=%d goal_seg=%d dist=%d threshold=%d vel=%d forced=%d\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			(int)(objp - Objects),
+			objp->id,
+			robptr->companion,
+			aip->behavior,
+			ailp->mode,
+			original_index,
+			aip->cur_path_index,
+			aip->path_length,
+			original_dir,
+			aip->PATH_DIR,
+			objp->segnum,
+			ailp->goal_segment,
+			dist_to_goal,
+			threshold_distance,
+			velocity_mag,
+			forced_break);
 
 	//	Set velocity (objp->mtype.phys_info.velocity) and orientation (objp->orient) for this object.
 	//--Int3_if(((aip->cur_path_index >= 0) && (aip->cur_path_index < aip->path_length)));

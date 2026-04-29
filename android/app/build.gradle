@@ -184,8 +184,10 @@ android {
         buildConfigField "String", "RENDERER", "\"${opengl ? 'OpenGL ES' : 'Software'}\""
         buildConfigField "String", "GPGS_SERVER_CLIENT_ID", "\"${authServerClientId}\""
 
-        // GPGS APP_ID for AndroidManifest meta-data
-        manifestPlaceholders["gamesAppId"] = authGamesAppId
+        // GPGS APP_ID for AndroidManifest meta-data.
+        // Use a generated string resource so Play Games v2 reads a String,
+        // not a numeric literal coerced to Integer in ApplicationInfo.metaData.
+        resValue "string", "games_app_id", authGamesAppId
 
         ndk {
             abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64'
@@ -236,6 +238,7 @@ android {
     buildFeatures {
         compose true
         buildConfig true
+        resValues true
     }
 
     compileOptions {

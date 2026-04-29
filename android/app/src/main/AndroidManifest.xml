@@ -23,10 +23,12 @@
         android:networkSecurityConfig="@xml/network_security_config"
         android:theme="@style/Theme.AppCompat.NoActionBar">
 
-        <!-- Google Play Games Services app ID (from auth_config.json5) -->
+        <!-- Google Play Games Services app ID (from auth_config.json5).
+             Keep this as a string resource so Play Games v2 does not see
+             a raw integer meta-data value during launcher startup. -->
         <meta-data
             android:name="com.google.android.gms.games.APP_ID"
-            android:value="${gamesAppId}" />
+            android:value="@string/games_app_id" />
 
         <!-- Pre-game setup / file-check screen (Jetpack Compose) -->
         <activity
