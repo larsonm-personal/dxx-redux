@@ -19,3 +19,16 @@ Examples:
 ```
 
 Use `-KeepSandbox` if you need to inspect the generated config or copied exe after a run.
+
+For iterative manual debugging, keep and reuse one sandbox once it has a valid pilot:
+
+```powershell
+./android/tests/run_input_demo_replay.ps1 -DemoPath .\android\temp_game_logs\d2_descent2_level1_20260427_143150.dximdemo -Game d2 -Mode accelerated -KeepSandbox -ReuseSandbox -Pilot replay
+```
+
+Notes:
+
+- The correct replay flag is `-inputdemo-replay`. A raw direct launch with `-replayinputdemo` just starts a normal game session.
+- If a raw run lands at `Enter your pilot name`, stop and go back to the wrapper instead of typing through it in the build output dir.
+- `-ReuseSandbox` preserves `Players/` and other sandbox state between runs. This is the safe way to keep a known-good pilot for repeated experiments.
+- `-Pilot <name>` tells the game which existing pilot to select inside the reused sandbox.

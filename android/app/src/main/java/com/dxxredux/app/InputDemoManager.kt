@@ -5,6 +5,7 @@ import java.util.Locale
 
 data class StagedInputDemo(
     val file: File,
+    val traceFile: File?,
     val game: String,
     val mission: String,
     val level: Int,
@@ -15,6 +16,8 @@ data class StagedInputDemo(
 
 internal object InputDemoManager {
     const val INPUT_DEMO_EXTENSION = ".dximdemo"
+    // Keep in sync with INPUT_DEMO_RNG_TRACE_SUFFIX in native shared code.
+    const val INPUT_DEMO_RNG_TRACE_SUFFIX = ".rngtrace.jsonl"
 
     private const val FIX_ONE = 65536L
     private const val INPUT_DEMO_STAGING_RELATIVE_DIR = "input_demo_recordings/new"
@@ -51,6 +54,8 @@ internal object InputDemoManager {
         return if (withoutExtension.isEmpty()) FALLBACK_INSTALL_NAME else withoutExtension
     }
 
+    fun exportFiles(demo: StagedInputDemo): List<File> = listOfNotNull(demo.file, demo.traceFile)
+
     fun installToActiveSet(
         demo: StagedInputDemo,
         fileSetManager: FileSetManager,
@@ -69,17 +74,31 @@ internal object InputDemoManager {
         val destFile = File(demosDir, safeName + INPUT_DEMO_EXTENSION)
 
         LauncherFileCopy.copyFileToFile(demo.file, destFile, demo.file.name, onProgress)
+        demo.traceFile?.let {
+            LauncherFileCopy.copyFileToFile(
+                it,
+                File(demosDir, destFile.name + INPUT_DEMO_RNG_TRACE_SUFFIX),
+                it.name,
+                onProgress,
+            )
+        }
         demo.file.delete()
+        demo.traceFile?.delete()
         return destFile
     }
 
-    fun deleteStagedDemo(demo: StagedInputDemo): Boolean = demo.file.delete()
+    fun deleteStagedDemo(demo: StagedInputDemo): Boolean {
+        val deletedDemo = demo.file.delete()
+        val deletedTrace = demo.traceFile?.delete() ?: true
+
+        return deletedDemo && deletedTrace
+    }
 
     fun deleteAllStagedDemos(filesDir: File): Int {
         var deleted = 0
 
         for (demo in listStagedDemos(filesDir)) {
-            if (demo.file.delete()) deleted++
+            if (deleteStagedDemo(demo)) deleted++
         }
         return deleted
     }
@@ -93,6 +112,7 @@ internal object InputDemoManager {
         return if (header != null) {
             StagedInputDemo(
                 file = file,
+                traceFile = traceFileFor(file),
                 game = header.game,
                 mission = header.mission,
                 level = header.level,
@@ -103,6 +123,7 @@ internal object InputDemoManager {
         } else {
             StagedInputDemo(
                 file = file,
+                traceFile = traceFileFor(file),
                 game = fallbackGame,
                 mission = file.nameWithoutExtension,
                 level = 0,
@@ -111,6 +132,11 @@ internal object InputDemoManager {
                 headerReadable = false,
             )
         }
+    }
+
+    private fun traceFileFor(file: File): File? {
+        val trace = File(file.parentFile, file.name + INPUT_DEMO_RNG_TRACE_SUFFIX)
+        return trace.takeIf { it.isFile }
     }
 
     private fun readHeader(

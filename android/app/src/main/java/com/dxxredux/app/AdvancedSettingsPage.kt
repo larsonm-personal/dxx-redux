@@ -597,7 +597,7 @@ private fun RecordedInputDemosSection(
     Text("Newly-Recorded Demos", fontWeight = FontWeight.Bold, fontSize = 14.sp)
     Spacer(modifier = Modifier.height(4.dp))
     Text(
-        "Quick-recorded .dximdemo files from d1x-redux and d2x-redux. Save them to Downloads or add them to the active set ($activeSetName)",
+        "Quick-recorded .dximdemo files from d1x-redux and d2x-redux. When present, paired .rngtrace.jsonl files export with the demo and follow it into the active set ($activeSetName)",
         fontSize = 12.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -640,6 +640,13 @@ private fun RecordedInputDemosSection(
                         fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    if (demo.traceFile != null) {
+                        Text(
+                            "RNG trace available: ${demo.traceFile.name}",
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     if (!demo.headerReadable) {
                         Text(
                             "Header unreadable. Save, add, and delete still work",
@@ -651,21 +658,32 @@ private fun RecordedInputDemosSection(
                 OutlinedButton(
                     onClick = {
                         scope.launch {
+                            val exportedFiles = InputDemoManager.exportFiles(demo)
                             val ok =
                                 withContext(Dispatchers.IO) {
-                                    saveToDownloads(
-                                        context = ctx,
-                                        file = demo.file,
-                                        mimeType = "application/octet-stream",
-                                    ) { progress ->
-                                        mainHandler.post { transferProgress = progress }
+                                    exportedFiles.all { exportFile ->
+                                        saveToDownloads(
+                                            context = ctx,
+                                            file = exportFile,
+                                            mimeType = exportMimeType(exportFile),
+                                        ) { progress ->
+                                            mainHandler.post { transferProgress = progress }
+                                        }
                                     }
                                 }
                             transferProgress = null
                             Toast
                                 .makeText(
                                     ctx,
-                                    if (ok) "Saved to Downloads/${demo.file.name}" else "Save failed",
+                                    if (ok) {
+                                        if (demo.traceFile != null) {
+                                            "Saved demo and RNG trace to Downloads"
+                                        } else {
+                                            "Saved to Downloads/${demo.file.name}"
+                                        }
+                                    } else {
+                                        "Save failed"
+                                    },
                                     Toast.LENGTH_SHORT,
                                 ).show()
                         }
@@ -680,14 +698,21 @@ private fun RecordedInputDemosSection(
                     onClick = {
                         scope.launch {
                             try {
-                                val uri =
+                                val exportedFiles = InputDemoManager.exportFiles(demo)
+                                val uris =
                                     withContext(Dispatchers.IO) {
-                                        copyFileToCache(ctx, demo.file, "inputdemo_exports") { progress ->
-                                            mainHandler.post { transferProgress = progress }
+                                        exportedFiles.map { exportFile ->
+                                            copyFileToCache(ctx, exportFile, "inputdemo_exports") { progress ->
+                                                mainHandler.post { transferProgress = progress }
+                                            }
                                         }
                                     }
                                 transferProgress = null
-                                shareFile(ctx, uri, "Share Recorded Demo", "application/octet-stream")
+                                if (uris.size == 1) {
+                                    shareFile(ctx, uris.first(), "Share Recorded Demo", exportMimeType(exportedFiles.first()))
+                                } else {
+                                    shareFiles(ctx, uris, "Share Recorded Demo", "*/*")
+                                }
                             } catch (e: Exception) {
                                 transferProgress = null
                                 Toast.makeText(ctx, "Share failed: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -1569,6 +1594,29 @@ private fun shareFile(
         Toast.makeText(context, "Share failed: ${e.message}", Toast.LENGTH_SHORT).show()
     }
 }
+
+private fun shareFiles(
+    context: android.content.Context,
+    uris: List<Uri>,
+    chooserTitle: String,
+    mimeType: String,
+) {
+    try {
+        val intent =
+            Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                type = mimeType
+                putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+        val chooser = Intent.createChooser(intent, chooserTitle)
+        chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(chooser)
+    } catch (e: Exception) {
+        Toast.makeText(context, "Share failed: ${e.message}", Toast.LENGTH_SHORT).show()
+    }
+}
+
+private fun exportMimeType(file: File): String = if (file.name.endsWith(".jsonl", ignoreCase = true)) "application/json" else "application/octet-stream"
 
 private fun formatDurationMillis(durationMillis: Long?): String {
     if (durationMillis == null) return "--:--"

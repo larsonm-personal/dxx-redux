@@ -60,6 +60,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "fuelcen.h"
 #include "controls.h"
 #include "kconfig.h"
+#include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 
 #ifdef EDITOR
@@ -238,12 +239,84 @@ static const sbyte Ai_transition_table[AI_MAX_EVENT][AI_MAX_STATE][AI_MAX_STATE]
 
 fix Dist_to_last_fired_upon_player_pos = 0;
 
+static int input_demo_trace_ai_active(void)
+{
+	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+}
+
+static int input_demo_trace_ai_robot_active(object *objp, ai_static *aip, ai_local *ailp)
+{
+	if (!input_demo_trace_ai_active() || !objp || (objp->type != OBJ_ROBOT))
+		return 0;
+
+	return Robot_info[objp->id].companion ||
+		(objp->segnum == ConsoleObject->segnum) ||
+		(objp->segnum == Believed_player_seg) ||
+		(ailp->goal_segment == ConsoleObject->segnum) ||
+		(ailp->goal_segment == Believed_player_seg) ||
+		(ailp->mode >= AIM_GOTO_PLAYER) ||
+		(aip->behavior == AIB_SNIPE) ||
+		(ailp->player_awareness_type > 0);
+}
+
+static void input_demo_log_ai_robot_state(const char *label, object *objp)
+{
+	const int objnum = objp - Objects;
+	ai_static *aip = &objp->ctype.ai_info;
+	ai_local *ailp = &Ai_local_info[objnum];
+
+	con_printf(CON_NORMAL,
+		"Input demo replay AI robot: frame=%u step=%s obj=%d id=%d companion=%d behavior=%d mode=%d seg=%d player_seg=%d believed_seg=%d goal_seg=%d prev_vis=%d aware=%d aware_time=%d seen=%lld since=%d next_action=%d next_fire=%d next_fire2=%d path=%d/%d hide=%d skip=%d\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		label,
+		objnum,
+		objp->id,
+		Robot_info[objp->id].companion,
+		aip->behavior,
+		ailp->mode,
+		objp->segnum,
+		ConsoleObject->segnum,
+		Believed_player_seg,
+		ailp->goal_segment,
+		ailp->previous_visibility,
+		ailp->player_awareness_type,
+		ailp->player_awareness_time,
+		(long long)ailp->time_player_seen,
+		ailp->time_since_processed,
+		ailp->next_action_time,
+		ailp->next_fire,
+		ailp->next_fire2,
+		aip->cur_path_index,
+		aip->path_length,
+		aip->hide_index,
+		aip->SKIP_AI_COUNT);
+}
+
 // ----------------------------------------------------------------------------
 void init_ai_frame(void)
 {
 	int ab_state;
 
 	Dist_to_last_fired_upon_player_pos = vm_vec_dist_quick(&Last_fired_upon_player_pos, &Believed_player_pos);
+	if (input_demo_trace_ai_active())
+		con_printf(CON_NORMAL,
+			"Input demo replay AI state: frame=%u gt=%lld player_seg=%d believed_seg=%d player=(%d,%d,%d) believed=(%d,%d,%d) last_fired=(%d,%d,%d) dist=%d events=%d agitation=%d\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			(long long)GameTime64,
+			ConsoleObject->segnum,
+			Believed_player_seg,
+			ConsoleObject->pos.x,
+			ConsoleObject->pos.y,
+			ConsoleObject->pos.z,
+			Believed_player_pos.x,
+			Believed_player_pos.y,
+			Believed_player_pos.z,
+			Last_fired_upon_player_pos.x,
+			Last_fired_upon_player_pos.y,
+			Last_fired_upon_player_pos.z,
+			Dist_to_last_fired_upon_player_pos,
+			Num_awareness_events,
+			Overall_agitation);
 
 	ab_state = Players[Player_num].afterburner_charge && Controls.afterburner_state && (Players[Player_num].flags & PLAYER_FLAGS_AFTERBURNER);
 
@@ -368,8 +441,7 @@ void do_ai_frame(object *obj)
 	Assert(obj->id < N_robot_types);
 
 	obj_ref = objnum ^ d_tick_count;
-	replay_detail_probe_active = input_demo_replay_is_loaded() && objnum == 15 &&
-		input_demo_replay_next_frame_index() <= 81;
+	replay_detail_probe_active = input_demo_trace_ai_active() && objnum == 15;
 	if (replay_detail_probe_active) {
 		static unsigned int replay_detail_last_frame = 0;
 		static int replay_detail_last_mode = -9999;
@@ -389,7 +461,7 @@ void do_ai_frame(object *obj)
 			replay_detail_last_hide != aip->hide_index ||
 			replay_detail_last_awareness != ailp->player_awareness_type)
 			con_printf(CON_NORMAL,
-				"Input demo replay AI detail: frame=%u obj=%d step=pre_ai behavior=%d mode=%d prev_vis=%d aware=%d obj_ref=%d tick=%d next_action=%d next_fire=%d next_fire2=%d since=%d seg=%d path=%d/%d hide=%d thief=%d\n",
+				"Input demo replay AI detail: frame=%u obj=%d step=pre_ai behavior=%d mode=%d prev_vis=%d aware=%d obj_ref=%d tick=%d next_action=%d next_fire=%d next_fire2=%d since=%d seg=%d path=%d/%d hide=%d thief=%d sub=%d cam=%d\n",
 				replay_detail_frame,
 				objnum,
 				aip->behavior,
@@ -406,7 +478,9 @@ void do_ai_frame(object *obj)
 				aip->cur_path_index,
 				aip->path_length,
 				aip->hide_index,
-				robptr->thief);
+				robptr->thief,
+				aip->SUB_FLAGS,
+				Ai_last_missile_camera);
 
 		replay_detail_last_frame = replay_detail_frame;
 		replay_detail_last_mode = ailp->mode;
@@ -1595,17 +1669,43 @@ extern void do_boss_dying_frame(object *objp);
 //  Setting player_awareness (a fix, time in seconds which object is aware of player)
 void do_ai_frame_all(void)
 {
+	int i;
 #ifndef NDEBUG
 	//dump_ai_objects_all();
 #endif
 
 	set_player_awareness_all();
 
+	if (input_demo_trace_ai_active()) {
+		int traced_robot_count = 0;
+
+		con_printf(CON_NORMAL,
+			"Input demo replay AI frame: frame=%u gt=%lld player_seg=%d believed_seg=%d events=%d agitation=%d\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			(long long)GameTime64,
+			ConsoleObject->segnum,
+			Believed_player_seg,
+			Num_awareness_events,
+			Overall_agitation);
+
+		for (i=0; i<=Highest_object_index; i++)
+			if ((Objects[i].control_type == CT_AI) && (Objects[i].type == OBJ_ROBOT) && (Objects[i].segnum != -1)) {
+				if (input_demo_trace_ai_robot_active(&Objects[i], &Objects[i].ctype.ai_info, &Ai_local_info[i])) {
+					input_demo_log_ai_robot_state("frame", &Objects[i]);
+					traced_robot_count++;
+				}
+			}
+
+		con_printf(CON_NORMAL,
+			"Input demo replay AI frame summary: frame=%u traced=%d highest_obj=%d\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			traced_robot_count,
+			Highest_object_index);
+	}
+
 	if (Ai_last_missile_camera > -1) {
 		// Clear if supposed misisle camera is not a weapon, or just every so often, just in case.
 		if (((d_tick_count & 0x0f) == 0) || (Objects[Ai_last_missile_camera].type != OBJ_WEAPON)) {
-			int i;
-
 			Ai_last_missile_camera = -1;
 			for (i=0; i<=Highest_object_index; i++)
 				if (Objects[i].type == OBJ_ROBOT)
@@ -1615,8 +1715,6 @@ void do_ai_frame_all(void)
 
 	// (Moved here from do_boss_stuff() because that only gets called if robot aware of player.)
 	if (Boss_dying) {
-		int i;
-
 		for (i=0; i<=Highest_object_index; i++)
 			if (Objects[i].type == OBJ_ROBOT)
 				if (Robot_info[Objects[i].id].boss_flag)

@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 param(
     [string]$DemoPath,
     [string]$SearchRoot,
@@ -9,6 +9,8 @@ param(
     [int]$TimeoutSeconds = 300,
     [Alias('HogDir')]
     [string]$DataDir,
+    [string]$Pilot,
+    [switch]$ReuseSandbox,
     [switch]$KeepSandbox,
     [switch]$ListOnly
 )
@@ -257,7 +259,8 @@ function Resolve-DataDir {
 function New-LaunchSandbox {
     param(
         [hashtable]$Config,
-        [string]$SandboxName
+        [string]$SandboxName,
+        [switch]$ReuseSandbox
     )
 
     $sourceDir = Split-Path $Config.Exe -Parent
@@ -265,15 +268,15 @@ function New-LaunchSandbox {
     $sandboxDir = Join-Path $outRoot "$($Config.Name)\$safeName"
     $sandboxExe = Join-Path $sandboxDir (Split-Path $Config.Exe -Leaf)
 
-    if (Test-Path -LiteralPath $sandboxDir) {
+    if ((Test-Path -LiteralPath $sandboxDir) -and -not $ReuseSandbox) {
         Remove-Item -LiteralPath $sandboxDir -Recurse -Force
     }
     New-Item -ItemType Directory -Path $sandboxDir -Force | Out-Null
 
-    Copy-Item -LiteralPath $Config.Exe -Destination $sandboxExe
+    Copy-Item -LiteralPath $Config.Exe -Destination $sandboxExe -Force
     Get-ChildItem -LiteralPath $sourceDir -File |
         Where-Object { $_.Extension -eq '.dll' } |
-        Copy-Item -Destination $sandboxDir
+        Copy-Item -Destination $sandboxDir -Force
 
     Write-ReplayConfig -Path (Join-Path $sandboxDir 'descent.cfg')
 
@@ -327,10 +330,11 @@ function Get-LaunchArguments {
         [hashtable]$Config,
         [string]$ResolvedDataDir,
         [string]$ResolvedDemoPath,
-        [hashtable]$LaunchMode
+        [hashtable]$LaunchMode,
+        [string]$Pilot
     )
 
-    $args = @(
+    $launchParameters = @(
         '-hogdir', $ResolvedDataDir,
         '-window',
         $Config.TitleArg,
@@ -340,21 +344,24 @@ function Get-LaunchArguments {
         '-inputdemo-replay', $ResolvedDemoPath
     )
     if ($LaunchMode.ExtraArgs.Count -gt 0) {
-        $args += $LaunchMode.ExtraArgs
+        $launchParameters += $LaunchMode.ExtraArgs
     }
-    return $args
+    if ($Pilot) {
+        $launchParameters += @('-pilot', $Pilot)
+    }
+    return $launchParameters
 }
 
 function Get-QuotedArgumentString {
     param([string[]]$Arguments)
 
     return (($Arguments | ForEach-Object {
-        if ($_ -match '[\s"]') {
-            '"' + ($_ -replace '"', '\"') + '"'
-        } else {
-            $_
-        }
-    }) -join ' ')
+                if ($_ -match '[\s"]') {
+                    '"' + ($_ -replace '"', '\"') + '"'
+                } else {
+                    $_
+                }
+            }) -join ' ')
 }
 
 function Get-DemoCandidates {
@@ -366,16 +373,16 @@ function Get-DemoCandidates {
         foreach ($file in (Get-ChildItem -LiteralPath $root -Recurse -Filter '*.dximdemo' -File -ErrorAction SilentlyContinue)) {
             $header = Get-DemoHeader -Path $file.FullName
             $items.Add([pscustomobject]@{
-                Path = $file.FullName
-                RelativePath = Get-RelativeRepoPath -Path $file.FullName
-                Game = if ($header.ContainsKey('game')) { [string]$header.game } else { '?' }
-                Mission = if ($header.ContainsKey('mission')) { [string]$header.mission } else { '?' }
-                Level = if ($header.ContainsKey('level')) { [int]$header.level } else { 0 }
-                StartMode = if ($header.ContainsKey('start_mode')) { [string]$header.start_mode } else { '?' }
-                FrameCount = if ($header.ContainsKey('frame_count')) { [int]$header.frame_count } else { 0 }
-                SizeKb = [Math]::Round($file.Length / 1KB, 1)
-                Modified = $file.LastWriteTime
-            })
+                    Path = $file.FullName
+                    RelativePath = Get-RelativeRepoPath -Path $file.FullName
+                    Game = if ($header.ContainsKey('game')) { [string]$header.game } else { '?' }
+                    Mission = if ($header.ContainsKey('mission')) { [string]$header.mission } else { '?' }
+                    Level = if ($header.ContainsKey('level')) { [int]$header.level } else { 0 }
+                    StartMode = if ($header.ContainsKey('start_mode')) { [string]$header.start_mode } else { '?' }
+                    FrameCount = if ($header.ContainsKey('frame_count')) { [int]$header.frame_count } else { 0 }
+                    SizeKb = [Math]::Round($file.Length / 1KB, 1)
+                    Modified = $file.LastWriteTime
+                })
         }
     }
 
@@ -557,12 +564,12 @@ $resolvedGame = Resolve-DemoGame -Header $header -RequestedGame $Game
 $config = Get-GameConfig -Name $resolvedGame
 $resolvedDataDir = Resolve-DataDir -Config $config -RequestedDataDir $DataDir
 $launchMode = Get-LaunchMode -RequestedMode $Mode -Path $resolvedDemoPath -Config $config
-$sandbox = New-LaunchSandbox -Config $config -SandboxName ([System.IO.Path]::GetFileNameWithoutExtension($resolvedDemoPath))
+$sandbox = New-LaunchSandbox -Config $config -SandboxName ([System.IO.Path]::GetFileNameWithoutExtension($resolvedDemoPath)) -ReuseSandbox:$ReuseSandbox
 $actualResultPath = $resolvedDemoPath + '.actual.json'
 $expectedResult = Get-DemoResultRecord -Path $resolvedDemoPath
 $checkpointRecord = Get-DemoCheckpointRecord -Path $resolvedDemoPath
 $normalizedExpectedResult = Normalize-ExpectedResult -Expected $expectedResult -Header $header -Checkpoint $checkpointRecord
-$launchArgs = Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -LaunchMode $launchMode
+$launchArgs = Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -LaunchMode $launchMode -Pilot $Pilot
 $quotedArgs = Get-QuotedArgumentString -Arguments $launchArgs
 
 if (-not (Test-Path -LiteralPath $config.Exe)) {
@@ -579,6 +586,9 @@ Write-Host "Game: $resolvedGame"
 Write-Host "Mode: $($launchMode.Name)"
 Write-Host "Data: $(Get-RelativeRepoPath -Path $resolvedDataDir)"
 Write-Host "Sandbox: $(Get-RelativeRepoPath -Path $sandbox.Directory)"
+if ($ReuseSandbox) {
+    Write-Host 'Sandbox mode: reuse'
+}
 Write-Host "Command: $($sandbox.Exe) $quotedArgs"
 
 $startInfo = New-Object System.Diagnostics.ProcessStartInfo

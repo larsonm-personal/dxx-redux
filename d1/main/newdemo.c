@@ -86,6 +86,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "state.h"
 
 #include "input_demo_recorder.h"
+#include "input_demo_rng_trace.h"
 #include "input_demo_rng_mode.h"
 
 #ifdef EDITOR
@@ -3423,6 +3424,12 @@ static void input_demo_trim_new_recordings(void)
 			return;
 		if (!PHYSFS_delete(oldest_path))
 			return;
+		{
+			char trace_path[PATH_MAX] = "";
+
+			snprintf(trace_path, SDL_arraysize(trace_path), "%s%s", oldest_path, INPUT_DEMO_RNG_TRACE_SUFFIX);
+			PHYSFS_delete(trace_path);
+		}
 	}
 }
 
@@ -3451,6 +3458,7 @@ static void maybe_flush_input_demo_recording(const char *demo_name, int use_new_
 {
 	char relative_path[PATH_MAX] = "";
 	char absolute_path[PATH_MAX] = "";
+	char trace_path[PATH_MAX + sizeof(INPUT_DEMO_RNG_TRACE_SUFFIX)] = "";
 	char error[256] = "";
 	input_demo_result result;
 	const char *demo_dir = use_new_record_dir ? INPUT_DEMO_NEW_DIR : INPUT_DEMO_RECORD_DIR;
@@ -3474,7 +3482,9 @@ static void maybe_flush_input_demo_recording(const char *demo_name, int use_new_
 	}
 	if (use_new_record_dir)
 		input_demo_trim_new_recordings();
+	snprintf(trace_path, SDL_arraysize(trace_path), "%s%s", absolute_path, INPUT_DEMO_RNG_TRACE_SUFFIX);
 	con_printf(CON_NORMAL, "Input demo file saved to %s\n", absolute_path);
+	con_printf(CON_NORMAL, "Input demo RNG trace saved to %s\n", trace_path);
 }
 
 int newdemo_stop_quick_recording(void)

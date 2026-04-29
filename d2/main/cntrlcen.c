@@ -225,6 +225,8 @@ void do_countdown_frame()
 			reset_palette_add();							//restore palette for death message
 			//controlcen->MaxCapacity = Fuelcen_max_amount;
 			//gauge_message( "Control Center Reset" );
+			if (input_demo_finish_replay_from_mine_exit())
+				return;
 			DoPlayerDead();		//kill_player();
 		}																				
 	}

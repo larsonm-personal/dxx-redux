@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 param(
     [string]$DemoPath,
     [string]$SearchRoot,
@@ -349,12 +349,12 @@ function Get-QuotedArgumentString {
     param([string[]]$Arguments)
 
     return (($Arguments | ForEach-Object {
-        if ($_ -match '[\s"]') {
-            '"' + ($_ -replace '"', '\"') + '"'
-        } else {
-            $_
-        }
-    }) -join ' ')
+                if ($_ -match '[\s"]') {
+                    '"' + ($_ -replace '"', '\"') + '"'
+                } else {
+                    $_
+                }
+            }) -join ' ')
 }
 
 function Get-DemoCandidates {
@@ -366,16 +366,16 @@ function Get-DemoCandidates {
         foreach ($file in (Get-ChildItem -LiteralPath $root -Recurse -Filter '*.dximdemo' -File -ErrorAction SilentlyContinue)) {
             $header = Get-DemoHeader -Path $file.FullName
             $items.Add([pscustomobject]@{
-                Path = $file.FullName
-                RelativePath = Get-RelativeRepoPath -Path $file.FullName
-                Game = if ($header.ContainsKey('game')) { [string]$header.game } else { '?' }
-                Mission = if ($header.ContainsKey('mission')) { [string]$header.mission } else { '?' }
-                Level = if ($header.ContainsKey('level')) { [int]$header.level } else { 0 }
-                StartMode = if ($header.ContainsKey('start_mode')) { [string]$header.start_mode } else { '?' }
-                FrameCount = if ($header.ContainsKey('frame_count')) { [int]$header.frame_count } else { 0 }
-                SizeKb = [Math]::Round($file.Length / 1KB, 1)
-                Modified = $file.LastWriteTime
-            })
+                    Path = $file.FullName
+                    RelativePath = Get-RelativeRepoPath -Path $file.FullName
+                    Game = if ($header.ContainsKey('game')) { [string]$header.game } else { '?' }
+                    Mission = if ($header.ContainsKey('mission')) { [string]$header.mission } else { '?' }
+                    Level = if ($header.ContainsKey('level')) { [int]$header.level } else { 0 }
+                    StartMode = if ($header.ContainsKey('start_mode')) { [string]$header.start_mode } else { '?' }
+                    FrameCount = if ($header.ContainsKey('frame_count')) { [int]$header.frame_count } else { 0 }
+                    SizeKb = [Math]::Round($file.Length / 1KB, 1)
+                    Modified = $file.LastWriteTime
+                })
         }
     }
 

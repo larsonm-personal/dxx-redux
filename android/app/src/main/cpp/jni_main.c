@@ -73,7 +73,7 @@ static char *android_get_intent_string_extra(JNIEnv *env, jobject activity, cons
 	key = (*env)->NewStringUTF(env, extra_name);
 	if (!key)
 		return NULL;
-	value = (jstring)(*env)->CallObjectMethod(env, intent, get_string_extra, key);
+	value = (jstring) (*env)->CallObjectMethod(env, intent, get_string_extra, key);
 	(*env)->DeleteLocalRef(env, key);
 	if (!value)
 		return NULL;

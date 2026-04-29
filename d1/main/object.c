@@ -83,6 +83,7 @@ ubyte CollisionResult[MAX_OBJECT_TYPES][MAX_OBJECT_TYPES];
 object *ConsoleObject;					//the object that is the player
 
 static short free_obj_list[MAX_OBJECTS];
+static short object_signature_seed = 0;
 
 //Data for objects
 
@@ -828,6 +829,7 @@ void init_objects()
 
 	num_objects = 1;						//just the player
 	Highest_object_index = 0;
+	object_signature_seed = 0;
 
 	
 }
@@ -850,6 +852,11 @@ void special_reset_objects(void)
 		else
 			if (i > Highest_object_index)
 				Highest_object_index = i;
+
+	object_signature_seed = 0;
+	for (i = 0; i <= Highest_object_index; i++)
+		if (Objects[i].type != OBJ_NONE && Objects[i].signature > object_signature_seed)
+			object_signature_seed = (short)Objects[i].signature;
 }
 
 void object_get_runtime_state(object_runtime_state *state)
@@ -888,6 +895,8 @@ void object_set_runtime_state(const object_runtime_state *state)
 			Debris_object_count++;
 		if (Objects[i].type == OBJ_NONE)
 			Unused_object_slots++;
+		else if (Objects[i].signature > object_signature_seed)
+			object_signature_seed = (short)Objects[i].signature;
 	}
 }
 
@@ -1060,25 +1069,24 @@ void obj_unlink(int objnum)
 // Returns a new, unique signature for a new object
 int obj_get_signature()
 {
-	static short sig = 0; // Yes! Short! a) We do not need higher values b) the demo system only stores shorts
 	int free = 0, i = 0;
 
 	while (!free)
 	{
 		free = 1;
-		sig++;
-		if (sig < 0)
-			sig = 0;
+		object_signature_seed++;
+		if (object_signature_seed < 0)
+			object_signature_seed = 0;
 		for (i = 0; i < MAX_OBJECTS; i++)
 		{
-			if ((sig == Objects[i].signature) && (Objects[i].type != OBJ_NONE))
+			if ((object_signature_seed == Objects[i].signature) && (Objects[i].type != OBJ_NONE))
 			{
 				free = 0;
 			}
 		}
 	}
 
-	return sig;
+	return object_signature_seed;
 }
 
 

@@ -2262,21 +2262,30 @@ vms_vector	Last_fired_upon_player_pos;
 void ai_do_actual_firing_stuff(object *obj, ai_static *aip, ai_local *ailp, robot_info *robptr, vms_vector *vec_to_player, fix dist_to_player, vms_vector *gun_point, int player_visibility, int object_animates, int gun_num)
 {
 	fix	dot;
+	int replay_last_fired_probe_active = input_demo_replay_is_loaded() &&
+		input_demo_replay_next_frame_index() >= 80 &&
+		input_demo_replay_next_frame_index() <= 81;
 	int	replay_detail_probe_active = input_demo_replay_is_loaded() &&
 		(obj - Objects) == 15 && input_demo_replay_next_frame_index() >= 0 &&
 		input_demo_replay_next_frame_index() <= 81;
 	#define REPLAY_LOG_ACTUAL_FIRE(step_label, fire_gun) \
 		do { \
-			if (replay_detail_probe_active) \
+			if (replay_last_fired_probe_active) \
 				con_printf(CON_NORMAL, \
-					"Input demo replay AI detail: frame=%u obj=%d step=%s gun=%d vis=%d dist=%d last_dist=%d\n", \
+					"Input demo replay AI fire: frame=%u obj=%d step=%s gun=%d vis=%d dist=%d last_dist=%d last_fired=(%d,%d,%d) believed=(%d,%d,%d)\n", \
 					(unsigned int)input_demo_replay_next_frame_index(), \
 					obj - Objects, \
 					step_label, \
 					fire_gun, \
 					player_visibility, \
 					dist_to_player, \
-					vm_vec_dist_quick(&Last_fired_upon_player_pos, &Believed_player_pos)); \
+					vm_vec_dist_quick(&Last_fired_upon_player_pos, &Believed_player_pos), \
+					Last_fired_upon_player_pos.x, \
+					Last_fired_upon_player_pos.y, \
+					Last_fired_upon_player_pos.z, \
+					Believed_player_pos.x, \
+					Believed_player_pos.y, \
+					Believed_player_pos.z); \
 		} while (0)
 
 	if (replay_detail_probe_active)

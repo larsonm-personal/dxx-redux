@@ -100,6 +100,13 @@ int check_collision_delayfunc_exec()
 }
 
 //	-------------------------------------------------------------------------------------------------------------
+
+	static int input_demo_replay_collision_probe_active(void)
+	{
+		return input_demo_replay_is_loaded() &&
+			input_demo_replay_next_frame_index() >= 70 &&
+			input_demo_replay_next_frame_index() <= 74;
+	}
 //	The only reason this routine is called (as of 10/12/94) is so Brain guys can open doors.
 void collide_robot_and_wall( object * robot, fix hitspeed, short hitseg, short hitwall, vms_vector * hitpt)
 {
@@ -395,6 +402,21 @@ void collide_player_and_wall( object * playerobj, fix hitspeed, short hitseg, sh
 			  	#endif
 			  	apply_damage_to_player( playerobj, playerobj, damage, 0 );			  	
 			}
+				if (input_demo_replay_collision_probe_active() && playerobj == ConsoleObject)
+					con_printf(CON_NORMAL,
+						"Input demo replay collision probe: frame=%u gt=%lld step=player_wall seg=%d hitseg=%d wall=%d speed=%d pos=(%d,%d,%d) hit=(%d,%d,%d)\n",
+						(unsigned int)input_demo_replay_next_frame_index(),
+						(long long)GameTime64,
+						playerobj->segnum,
+						hitseg,
+						hitwall,
+						hitspeed,
+						playerobj->pos.x,
+						playerobj->pos.y,
+						playerobj->pos.z,
+						hitpt ? hitpt->x : 0,
+						hitpt ? hitpt->y : 0,
+						hitpt ? hitpt->z : 0);
 		}
 
 		// -- No point in doing this unless we compute a reasonable hitpt.  Currently it is just the player's position. --MK, 01/18/96
@@ -2823,6 +2845,24 @@ void collide_two_objects( object * A, object * B, vms_vector *collision_point )
 	if (object_is_observer(A) || object_is_observer(B)) {
 		return;
 	}
+
+	if (input_demo_replay_collision_probe_active() &&
+		(A == ConsoleObject || B == ConsoleObject))
+		con_printf(CON_NORMAL,
+			"Input demo replay collision probe: frame=%u gt=%lld step=object_object a=%d/%d/%d seg=%d b=%d/%d/%d seg=%d point=(%d,%d,%d)\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			(long long)GameTime64,
+			(int)(A - Objects),
+			A->type,
+			A->id,
+			A->segnum,
+			(int)(B - Objects),
+			B->type,
+			B->id,
+			B->segnum,
+			collision_point ? collision_point->x : 0,
+			collision_point ? collision_point->y : 0,
+			collision_point ? collision_point->z : 0);
 
 	collision_type = COLLISION_OF(A->type,B->type);
 

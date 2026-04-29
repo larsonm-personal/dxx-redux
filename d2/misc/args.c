@@ -246,21 +246,36 @@ void args_exit(void)
 		d_free(Args[i]);
 }
 
-void InitArgs( int argc,char **argv )
+static void init_args_common(int argc, char **argv, int android_mode, int read_cmd_args)
 {
 	int i;
 
 	Num_args=0;
 
-	for (i=0; i<argc; i++ )
-		Args[Num_args++] = d_strdup( argv[i] );
+	if (android_mode)
+		Args[Num_args++] = d_strdup("android");
 
+	for (i = android_mode ? 1 : 0; i < argc; i++)
+		Args[Num_args++] = d_strdup(argv[i]);
 
 	for (i=0; i< Num_args; i++ ) {
 		if ( Args[i][0] == '-' )
 			d_strlwr( Args[i]  );  // Convert all args to lowercase
 	}
 
+	if (!read_cmd_args)
+		return;
+
 	AppendIniArgs();
 	ReadCmdArgs();
+}
+
+void InitArgs( int argc,char **argv )
+{
+	init_args_common(argc, argv, 0, 1);
+}
+
+void InitArgsAndroid(int argc, char **argv)
+{
+	init_args_common(argc, argv, 1, 0);
 }

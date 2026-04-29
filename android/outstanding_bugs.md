@@ -1,9 +1,11 @@
 # bugs
-[ ] descent 2 preview movies have skips in their soundtracks
+[ ] android TV: can't multi-select files in "import" saf picker in order to have bin+cue selected for import. any press, long or short, of "a"/"select" immediately selects the single file under it
+[ ] android TV: d2 gog installer is failing to extract the CD image, it skips forward instead of extracting it. might be failing with limited memory or something, need logging
 [ ] select button should open the overlay settings menu, not the in-game menu. maybe the in-game menu doesn't show when we have the touch overlay off?
 [ ] single axes and stick axes *both* fail to show the current axis value in the control edit submenu when they're being edited. they *both* just show the last value (which would normally be 100% because someone opened them with a long-hold)
 [ ] mouse mode for the touch interface in-game look axis: it now has a *significant* deadband that can't be turned off (even with curve=linear). this is new as of sometime in the last few days
 [ready to test] when loading a mod and close to device storage capacity, this can cause a crash (with no crash dump). 1. need kotlin crash dumps working in this case and 2. check for free space when extracting things into game data
+[fixed] descent 2 preview movies have skips in their soundtracks
 [fixed] can't select menu items with Bluetooth controller “a” or with tv remote center of d pad button. stick as options-misc options-automatically start single player demos. this is a checkbox that isn't selectable. the base menus and start game flow work with these buttons, not but items in these sub menus
 [fixed] controller on android TV, with the default "B" to fire secondary binding, is sticking and firing all missiles in one go when "B" is pressed. this may be stale - on my last test, the "B" button didn't fire anything. a recent code change changed berhavior to mostly ignore the "B" button (never fire)
 [fixed] in - game “b” button press causing a stuck secondary fire button: still a problem

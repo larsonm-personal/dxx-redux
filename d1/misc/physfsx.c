@@ -139,6 +139,7 @@ void PHYSFSX_init(int argc, char *argv[])
 			}
 		}
 	}
+	InitArgsAndroid(argc, argv);
 	GameArg.SysUsePlayersDir = 1; /* pilots in Players/ subdir, isolates D1/D2 */
 	GameArg.DbgAltTexMerge = 1; /* prefer GPU tmap2 overlay path; Android OGL may internally premerge transparent overlays */
 	return;

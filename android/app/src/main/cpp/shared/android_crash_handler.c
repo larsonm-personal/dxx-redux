@@ -14,7 +14,7 @@
 #include <pthread.h>
 #include <android/log.h>
 
-#define TAG "CrashHandler"
+#define TAG               "CrashHandler"
 #define SNAPSHOT_PATH_LEN 640
 
 static char s_crash_dir[512];
@@ -24,9 +24,9 @@ static int s_initialized = 0;
 static pthread_mutex_t s_snapshot_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /* Breadcrumb ring buffer for crash diagnostics */
-#define CRUMB_COUNT 64
-#define CRUMB_LEN   128
-#define SNAPSHOT_BUF_LEN (CRUMB_COUNT * (CRUMB_LEN + 16) + 64)
+#define CRUMB_COUNT                64
+#define CRUMB_LEN                  128
+#define SNAPSHOT_BUF_LEN           (CRUMB_COUNT * (CRUMB_LEN + 16) + 64)
 #define SNAPSHOT_REWRITE_THRESHOLD (SNAPSHOT_BUF_LEN - (CRUMB_LEN + 32))
 
 static char s_crumbs[CRUMB_COUNT][CRUMB_LEN];

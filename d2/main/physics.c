@@ -41,6 +41,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "laser.h"
 #include "bm.h"
 #include "player.h"
+#include "input_demo_replay.h"
 
 //Global variables for physics system
 
@@ -53,6 +54,13 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 //set means behind that side
 
 int floor_levelling=0;
+
+static int input_demo_replay_motion_probe_active(void)
+{
+	return input_demo_replay_is_loaded() &&
+		input_demo_replay_next_frame_index() >= 70 &&
+		input_demo_replay_next_frame_index() <= 74;
+}
 
 //make sure matrix is orthogonal
 void check_and_fix_matrix(vms_matrix *m)
@@ -307,8 +315,32 @@ void fix_illegal_wall_intersection(object *obj, vms_vector *origin)
 
 	if ( object_intersects_wall_d(obj,&hseg,&hside,&hface) )
 	{
+		if (input_demo_replay_motion_probe_active() && obj == ConsoleObject)
+			con_printf(CON_NORMAL,
+				"Input demo replay motion probe: frame=%u gt=%lld step=fix_illegal_wall_intersection before seg=%d hitseg=%d side=%d face=%d pos=(%d,%d,%d) origin=(%d,%d,%d)\n",
+				(unsigned int)input_demo_replay_next_frame_index(),
+				(long long)GameTime64,
+				obj->segnum,
+				hseg,
+				hside,
+				hface,
+				obj->pos.x,
+				obj->pos.y,
+				obj->pos.z,
+				origin ? origin->x : 0,
+				origin ? origin->y : 0,
+				origin ? origin->z : 0);
 		vm_vec_scale_add2(&obj->pos,&Segments[hseg].sides[hside].normals[0],FrameTime*10);
 		update_object_seg(obj);
+		if (input_demo_replay_motion_probe_active() && obj == ConsoleObject)
+			con_printf(CON_NORMAL,
+				"Input demo replay motion probe: frame=%u gt=%lld step=fix_illegal_wall_intersection after seg=%d pos=(%d,%d,%d)\n",
+				(unsigned int)input_demo_replay_next_frame_index(),
+				(long long)GameTime64,
+				obj->segnum,
+				obj->pos.x,
+				obj->pos.y,
+				obj->pos.z);
 	}
 }
 

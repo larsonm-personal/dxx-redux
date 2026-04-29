@@ -326,7 +326,10 @@ object CrashLog {
     }
 
     // JNI declarations -- implemented in android_crash_handler.c
-    private external fun nativeInstallCrashHandler(crashDir: String, installHeader: String)
+    private external fun nativeInstallCrashHandler(
+        crashDir: String,
+        installHeader: String,
+    )
 
     private external fun nativeGetBreadcrumbReport(): String?
 

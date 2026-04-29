@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "input_demo_fixture.h"
+#include "input_demo_rng_trace.h"
 #include "input_demo_result.h"
 
 namespace
@@ -300,6 +301,7 @@ static bool input_demo_recorder_build_demo(input_demo_file *demo,
 
 static void input_demo_recorder_reset_session(void)
 {
+	input_demo_rng_trace_reset();
 	g_input_demo_recorder_session = input_demo_recorder_session();
 }
 
@@ -364,6 +366,7 @@ int input_demo_recorder_start(const input_demo_recorder_settings *settings,
 	}
 
 	input_demo_recorder_reset_session();
+	input_demo_rng_trace_start();
 	g_input_demo_recorder_session.active = true;
 	g_input_demo_recorder_session.game = settings->game;
 	g_input_demo_recorder_session.mission = settings->mission;
@@ -437,6 +440,12 @@ int input_demo_recorder_flush_with_result(const char *demo_path,
 		return input_demo_recorder_copy_error(shared_error, error, error_size);
 	if (!input_demo_file_write(demo_path, demo, &shared_error))
 		return input_demo_recorder_copy_error(shared_error, error, error_size);
+	if (!input_demo_rng_trace_write_sidecar_for_demo(demo_path, error, error_size)) {
+		input_demo_recorder_reset_session();
+		return input_demo_recorder_copy_error(std::string("demo saved but rng trace write failed: ") +
+		                                          (error && error[0] ? error : "unknown error"),
+		                                      error, error_size);
+	}
 	input_demo_recorder_reset_session();
 	return 1;
 }

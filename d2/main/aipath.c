@@ -48,9 +48,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define	AVOID_SEG_LENGTH	7
 
 #ifdef NDEBUG
-#define	PATH_VALIDATION	0
+#define	PATH_VALIDATION 0
 #else
-#define	PATH_VALIDATION	1
+#define	PATH_VALIDATION 1
 #endif
 
 void validate_all_paths(void);
@@ -68,6 +68,112 @@ static int input_demo_should_match_android_companion_velocity(void)
 #else
 	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
 #endif
+}
+
+static int input_demo_trace_path_active(void)
+{
+	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+}
+
+static int input_demo_replay_path_probe_active(object *objp)
+{
+	return input_demo_trace_path_active() && (objp != NULL);
+}
+
+static int input_demo_replay_follow_probe_active(object *objp)
+{
+	return input_demo_trace_path_active() &&
+		objp &&
+		(objp->type == OBJ_ROBOT) &&
+		Robot_info[objp->id].companion;
+}
+
+static int input_demo_replay_path_request_probe_active(object *objp)
+{
+	return input_demo_replay_path_probe_active(objp);
+}
+
+static void input_demo_log_path_request(const char *label,
+	object *objp,
+	int start_seg,
+	int end_seg,
+	int max_length,
+	int safety_flag,
+	int avoid_seg)
+{
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+	ai_static *aip = (objp && objnum >= 0) ? &objp->ctype.ai_info : NULL;
+	ai_local *ailp = (objp && objnum >= 0) ? &Ai_local_info[objnum] : NULL;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay path request: frame=%u step=%s obj=%d type=%d control=%d id=%d companion=%d behavior=%d mode=%d seg=%d player_seg=%d believed_seg=%d start=%d end=%d same=%d goal_seg=%d max=%d safety=%d avoid=%d cur_path=%d/%d hide=%d dir=%d\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		label,
+		objnum,
+		objp ? objp->type : -1,
+		objp ? objp->control_type : -1,
+		objp ? objp->id : -1,
+		(objp && (objp->type == OBJ_ROBOT)) ? Robot_info[objp->id].companion : 0,
+		aip ? aip->behavior : -1,
+		ailp ? ailp->mode : -1,
+		objp ? objp->segnum : -1,
+		ConsoleObject ? ConsoleObject->segnum : -1,
+		Believed_player_seg,
+		start_seg,
+		end_seg,
+		start_seg == end_seg,
+		ailp ? ailp->goal_segment : -1,
+		max_length,
+		safety_flag,
+		avoid_seg,
+		aip ? aip->cur_path_index : -1,
+		aip ? aip->path_length : -1,
+		aip ? aip->hide_index : -1,
+		aip ? aip->PATH_DIR : 0);
+}
+
+static void input_demo_log_path_probe(object *objp,
+	int start_seg,
+	int end_seg,
+	int max_depth,
+	int random_flag,
+	int safety_flag,
+	int avoid_seg,
+	int result,
+	unsigned int rng_before,
+	unsigned int rng_call_count_before)
+{
+	unsigned int rng_after = 0;
+	unsigned int rng_call_count_after = d_rand_get_call_count();
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+	ai_local *ailp = (objp && objnum >= 0) ? &Ai_local_info[objnum] : NULL;
+
+	d_rand_get_state(&rng_after);
+	con_printf(CON_NORMAL,
+		"Input demo replay path probe: frame=%u obj=%d type=%d control=%d id=%d companion=%d behavior=%d mode=%d seg=%d player_seg=%d believed_seg=%d start=%d end=%d same=%d max=%d random=%d safety=%d avoid=%d result=%d calls=%u->%u before=%u after=%u\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		objnum,
+		objp ? objp->type : -1,
+		objp ? objp->control_type : -1,
+		objp ? objp->id : -1,
+		objp ? Robot_info[objp->id].companion : 0,
+		objp ? objp->ctype.ai_info.behavior : -1,
+		ailp ? ailp->mode : -1,
+		objp ? objp->segnum : -1,
+		ConsoleObject ? ConsoleObject->segnum : -1,
+		Believed_player_seg,
+		start_seg,
+		end_seg,
+		start_seg == end_seg,
+		max_depth,
+		random_flag,
+		safety_flag,
+		avoid_seg,
+		result,
+		rng_call_count_before,
+		rng_call_count_after,
+		rng_before,
+		rng_after);
 }
 
 //	------------------------------------------------------------------------
@@ -297,6 +403,9 @@ int create_path_points(object *objp, int start_seg, int end_seg, point_seg *pseg
 	sbyte   random_xlate[MAX_SIDES_PER_SEGMENT];
 	point_seg	*original_psegs = psegs;
 	int		l_num_points;
+	int		replay_path_probe_active;
+	unsigned int	replay_rng_state = 0;
+	unsigned int	replay_rng_call_count = 0;
 
 #if PATH_VALIDATION
 	validate_all_paths();
@@ -312,6 +421,9 @@ if ((objp->type == OBJ_ROBOT) && (objp->ctype.ai_info.behavior == AIB_RUN_FROM))
 		max_depth = MAX_PATH_LENGTH;
 
 	l_num_points = 0;
+	replay_path_probe_active = input_demo_replay_path_probe_active(objp) && d_rand_get_state(&replay_rng_state);
+	if (replay_path_probe_active)
+		replay_rng_call_count = d_rand_get_call_count();
 //random_flag = Random_flag_override; //!! debug!!
 //safety_flag = Safety_flag_override; //!! debug!!
 
@@ -473,6 +585,17 @@ cpp_done1: ;
 			//	Ouch!  Cannot insert center points in path.  So return unsafe path.
 			ai_reset_all_paths();
 			*num_points = l_num_points;
+			if (replay_path_probe_active)
+				input_demo_log_path_probe(objp,
+					start_seg,
+					end_seg,
+					max_depth,
+					random_flag,
+					safety_flag,
+					avoid_seg,
+					-1,
+					replay_rng_state,
+					replay_rng_call_count);
 			return -1;
 		} else {
 			// int	old_num_points = l_num_points;
@@ -496,6 +619,17 @@ cpp_done1: ;
 #endif
 
 	*num_points = l_num_points;
+	if (replay_path_probe_active)
+		input_demo_log_path_probe(objp,
+			start_seg,
+			end_seg,
+			max_depth,
+			random_flag,
+			safety_flag,
+			avoid_seg,
+			0,
+			replay_rng_state,
+			replay_rng_call_count);
 	return 0;
 }
 
@@ -647,6 +781,7 @@ void create_path_to_player(object *objp, int max_length, int safety_flag)
 	ai_static	*aip = &objp->ctype.ai_info;
 	ai_local		*ailp = &Ai_local_info[objp-Objects];
 	int			start_seg, end_seg;
+	int			replay_path_request_probe_active;
 
 	if (max_length == -1)
 		max_length = MAX_DEPTH_TO_SEARCH_FOR_PLAYER;
@@ -656,6 +791,9 @@ void create_path_to_player(object *objp, int max_length, int safety_flag)
 
 	start_seg = objp->segnum;
 	end_seg = ailp->goal_segment;
+	replay_path_request_probe_active = input_demo_replay_path_request_probe_active(objp);
+	if (replay_path_request_probe_active)
+		input_demo_log_path_request("create_path_to_player begin", objp, start_seg, end_seg, max_length, safety_flag, -1);
 
 	if (end_seg == -1) {
 		;
@@ -679,6 +817,8 @@ void create_path_to_player(object *objp, int max_length, int safety_flag)
 	}
 
 	maybe_ai_path_garbage_collect();
+	if (replay_path_request_probe_active)
+		input_demo_log_path_request(end_seg == -1 ? "create_path_to_player skipped" : "create_path_to_player done", objp, start_seg, end_seg, max_length, safety_flag, -1);
 
 }
 
@@ -689,6 +829,7 @@ void create_path_to_segment(object *objp, int goalseg, int max_length, int safet
 	ai_static	*aip = &objp->ctype.ai_info;
 	ai_local		*ailp = &Ai_local_info[objp-Objects];
 	int			start_seg, end_seg;
+	int			replay_path_request_probe_active;
 
 	if (max_length == -1)
 		max_length = MAX_DEPTH_TO_SEARCH_FOR_PLAYER;
@@ -698,6 +839,9 @@ void create_path_to_segment(object *objp, int goalseg, int max_length, int safet
 
 	start_seg = objp->segnum;
 	end_seg = ailp->goal_segment;
+	replay_path_request_probe_active = input_demo_replay_path_request_probe_active(objp);
+	if (replay_path_request_probe_active)
+		input_demo_log_path_request("create_path_to_segment begin", objp, start_seg, end_seg, max_length, safety_flag, -1);
 
 	if (end_seg == -1) {
 		;
@@ -717,6 +861,8 @@ void create_path_to_segment(object *objp, int goalseg, int max_length, int safet
 	}
 
 	maybe_ai_path_garbage_collect();
+	if (replay_path_request_probe_active)
+		input_demo_log_path_request(end_seg == -1 ? "create_path_to_segment skipped" : "create_path_to_segment done", objp, start_seg, end_seg, max_length, safety_flag, -1);
 
 }
 
@@ -774,6 +920,11 @@ void create_n_segment_path(object *objp, int path_length, int avoid_seg)
 {
 	ai_static	*aip=&objp->ctype.ai_info;
 	ai_local		*ailp = &Ai_local_info[objp-Objects];
+	int			requested_path_length = path_length;
+	int			replay_path_request_probe_active = input_demo_replay_path_request_probe_active(objp);
+
+	if (replay_path_request_probe_active)
+		input_demo_log_path_request("create_n_segment_path begin", objp, objp->segnum, -2, requested_path_length, 0, avoid_seg);
 
 	if (create_path_points(objp, objp->segnum, -2, Point_segs_free_ptr, &aip->path_length, path_length, 1, 0, avoid_seg) == -1) {
 		Point_segs_free_ptr += aip->path_length;
@@ -809,6 +960,8 @@ void create_n_segment_path(object *objp, int path_length, int avoid_seg)
 	}
 
 	maybe_ai_path_garbage_collect();
+	if (replay_path_request_probe_active)
+		input_demo_log_path_request("create_n_segment_path done", objp, objp->segnum, -2, requested_path_length, 0, avoid_seg);
 
 }
 
@@ -965,6 +1118,21 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 
 	goal_point = Point_segs[aip->hide_index + aip->cur_path_index].point;
 	dist_to_goal = vm_vec_dist_quick(&goal_point, &objp->pos);
+	if (input_demo_replay_follow_probe_active(objp))
+		con_printf(CON_NORMAL,
+			"Input demo replay follow probe: frame=%u obj=%d id=%d companion=%d behavior=%d mode=%d path=%d/%d dir=%d seg=%d goal_seg=%d dist=%d\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			(int)(objp - Objects),
+			objp->id,
+			robptr->companion,
+			aip->behavior,
+			ailp->mode,
+			aip->cur_path_index,
+			aip->path_length,
+			aip->PATH_DIR,
+			objp->segnum,
+			ailp->goal_segment,
+			dist_to_goal);
 
 	//	If running from player, only run until can't be seen.
 	if (ailp->mode == AIM_RUN_FROM_OBJECT) {
@@ -1037,6 +1205,21 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 
 		//	See if next point wraps past end of path (in either direction), and if so, deal with it based on mode.
 		if ((aip->cur_path_index >= aip->path_length) || (aip->cur_path_index < 0)) {
+			if (input_demo_replay_follow_probe_active(objp))
+				con_printf(CON_NORMAL,
+					"Input demo replay follow wrap: frame=%u obj=%d id=%d companion=%d behavior=%d mode=%d path=%d/%d dir=%d vis=%d escort_goal=%d special=%d\n",
+					(unsigned int)input_demo_replay_next_frame_index(),
+					(int)(objp - Objects),
+					objp->id,
+					robptr->companion,
+					aip->behavior,
+					ailp->mode,
+					aip->cur_path_index,
+					aip->path_length,
+					aip->PATH_DIR,
+					player_visibility,
+					Escort_goal_object,
+					Escort_special_goal);
 			//	Buddy bot.  If he's in mode to get away from player and at end of line,
 			//	if player visible, then make a new path, else just return.
 			if (robptr->companion) {

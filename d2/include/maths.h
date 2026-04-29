@@ -14,12 +14,25 @@
 #define D_RAND_REPLAY_MODE_OUTPUT_LOG 3
 
 void d_srand (unsigned int seed);
+void d_srand_annotated(unsigned int seed, const char *file, const char *func, int line);
 int d_rand ();			// Random number function which returns in the range 0-0x7FFF
+int d_rand_annotated(const char *file, const char *func, int line);
 int d_rand_get_replay_mode(void);
 int d_rand_get_state(unsigned int *state);
 int d_rand_set_state(unsigned int state);
 unsigned int d_rand_get_call_count(void);
 void d_rand_reset_call_count(void);
+
+#if defined(_MSC_VER) && !defined(__clang__)
+#define DXX_RAND_CALLER_FUNCTION __FUNCTION__
+#else
+#define DXX_RAND_CALLER_FUNCTION __func__
+#endif
+
+#ifndef DXX_D_RAND_NO_ANNOTATION
+#define d_rand() d_rand_annotated(__FILE__, DXX_RAND_CALLER_FUNCTION, __LINE__)
+#define d_srand(seed) d_srand_annotated((seed), __FILE__, DXX_RAND_CALLER_FUNCTION, __LINE__)
+#endif
 
 
 //=============================== FIXED POINT ===============================

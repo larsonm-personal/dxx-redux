@@ -102,6 +102,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_result.h"
 #include "input_demo_replay.h"
 #include "input_demo_recorder.h"
+#include "input_demo_rng_trace.h"
 
 #ifdef OGL
 #include "ogl_init.h"
@@ -162,6 +163,7 @@ static void input_demo_record_game_frame(void)
 {
 	input_demo_control_state state;
 	input_demo_control_pulse pulse;
+	unsigned int rng_call_count;
 	unsigned int rng_state;
 	char error[256] = "";
 
@@ -172,12 +174,20 @@ static void input_demo_record_game_frame(void)
 		input_demo_recorder_cancel();
 		return;
 	}
+	rng_call_count = d_rand_get_call_count();
 	input_demo_control_state_from_control_info(&state, &pulse, &Controls);
-	if (!input_demo_recorder_capture_frame((int32_t)FrameTime, &state, &pulse, rng_state, 0, 0,
+	if (!input_demo_recorder_capture_frame((int32_t)FrameTime, &state, &pulse, rng_state, 1, rng_call_count,
 		error, sizeof(error))) {
 		con_printf(CON_NORMAL, "Input demo recording stopped: %s\n", error);
 		input_demo_recorder_cancel();
 	}
+}
+
+static void input_demo_update_rng_trace_context(void)
+{
+	if (Newdemo_state != ND_STATE_RECORDING || !input_demo_recorder_is_active())
+		return;
+	input_demo_rng_trace_set_context((uint32_t)input_demo_recorder_frame_count(), GameTime64);
 }
 
 static int input_demo_count_live_objects_of_type(int object_type)
@@ -252,7 +262,7 @@ void input_demo_capture_current_result(input_demo_result *result)
 }
 
 static fix64 input_demo_replay_last_timer_value = 0;
-static const unsigned int input_demo_replay_rng_probe_frame = 73;
+static const unsigned int input_demo_replay_rng_probe_frame = 81;
 
 static void input_demo_log_replay_rng_progress(const char *label, unsigned int *rng_before, unsigned int *rng_call_count_before)
 {
@@ -297,29 +307,82 @@ static void input_demo_log_result_state(const char *label)
 		Control_center_destroyed);
 }
 
+static int input_demo_replay_fire_probe_active(void)
+{
+	return input_demo_replay_is_loaded() &&
+		input_demo_replay_next_frame_index() >= 60 &&
+		input_demo_replay_next_frame_index() <= 82;
+}
+
+static void input_demo_log_replay_fire_state(const char *label, int can_fire_laser)
+{
+	const fix64 next_laser_delta = Next_laser_fire_time - GameTime64;
+	const fix64 last_laser_delta = Last_laser_fired_time - GameTime64;
+
+	if (!input_demo_replay_fire_probe_active())
+		return;
+	con_printf(CON_NORMAL,
+		"Input demo replay fire probe: frame=%u gt=%lld step=%s can_fire=%d f1s=%u f1c=%u glfc=%d next_laser_delta=%lld last_laser_delta=%lld fired_obj=%d weapon=%d seg=%d pos=(%d,%d,%d)\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		(long long)GameTime64,
+		label,
+		can_fire_laser,
+		(unsigned int)Controls.fire_primary_state,
+		(unsigned int)Controls.fire_primary_count,
+		Global_laser_firing_count,
+		(long long)next_laser_delta,
+		(long long)last_laser_delta,
+		Player_fired_laser_this_frame,
+		Players[Player_num].primary_weapon,
+		ConsoleObject ? ConsoleObject->segnum : -1,
+		ConsoleObject ? ConsoleObject->pos.x : 0,
+		ConsoleObject ? ConsoleObject->pos.y : 0,
+		ConsoleObject ? ConsoleObject->pos.z : 0);
+}
+
+static void input_demo_write_replay_result(void)
+{
+	input_demo_result result;
+	char error[256] = "";
+	const char *result_path;
+
+	if (!input_demo_replay_is_loaded())
+		return;
+	result_path = input_demo_replay_actual_result_path();
+	if (!(result_path && result_path[0]))
+		return;
+	input_demo_capture_current_result(&result);
+	if (!input_demo_result_write_json_file(result_path, &result, error, sizeof(error)))
+		con_printf(CON_NORMAL, "Input demo replay result write failed: %s\n", error);
+	else {
+		con_printf(CON_NORMAL, "Input demo replay result written: %s\n", result_path);
+		if (!input_demo_replay_compare_result(&result, error, sizeof(error)))
+			con_printf(CON_NORMAL, "Input demo replay result mismatch: %s\n", error);
+		else
+			con_printf(CON_NORMAL, "Input demo replay result matched embedded trailer\n");
+	}
+}
+
+int input_demo_finish_replay_from_mine_exit(void)
+{
+	input_demo_replay_last_timer_value = 0;
+	if (!input_demo_replay_is_loaded())
+		return 0;
+	input_demo_log_result_state("mine-exit");
+	input_demo_write_replay_result();
+	input_demo_replay_unload();
+	if (Game_wind)
+		window_close(Game_wind);
+	return 1;
+}
+
 static void input_demo_stop_replay(int write_result)
 {
 	input_demo_replay_last_timer_value = 0;
 	if (input_demo_replay_is_loaded())
 		input_demo_log_result_state("stop");
-	if (write_result && input_demo_replay_is_loaded()) {
-		input_demo_result result;
-		char error[256] = "";
-		const char *result_path = input_demo_replay_actual_result_path();
-
-		if (result_path && result_path[0]) {
-			input_demo_capture_current_result(&result);
-			if (!input_demo_result_write_json_file(result_path, &result, error, sizeof(error)))
-				con_printf(CON_NORMAL, "Input demo replay result write failed: %s\n", error);
-			else {
-				con_printf(CON_NORMAL, "Input demo replay result written: %s\n", result_path);
-				if (!input_demo_replay_compare_result(&result, error, sizeof(error)))
-					con_printf(CON_NORMAL, "Input demo replay result mismatch: %s\n", error);
-				else
-					con_printf(CON_NORMAL, "Input demo replay result matched embedded trailer\n");
-			}
-		}
-	}
+	if (write_result)
+		input_demo_write_replay_result();
 	input_demo_replay_unload();
 	if (Game_wind)
 		window_close(Game_wind);
@@ -1688,6 +1751,7 @@ void GameProcessFrame(void)
 	if (replay_rng_probe_active)
 		replay_rng_call_count = d_rand_get_call_count();
 
+	input_demo_update_rng_trace_context();
 	input_demo_record_game_frame();
 	update_player_stats();
 	diminish_palette_towards_normal();		//	Should leave palette effect up for as long as possible by putting right before render.
@@ -1831,8 +1895,13 @@ void GameProcessFrame(void)
 		if (replay_rng_probe_active)
 			input_demo_log_replay_rng_progress("do_ai_frame_all", &replay_rng_state, &replay_rng_call_count);
 
-		if (allowed_to_fire_laser())
-			FireLaser();				// Fire Laser!
+		{
+			const int can_fire_laser = allowed_to_fire_laser();
+			input_demo_log_replay_fire_state("before FireLaser", can_fire_laser);
+			if (can_fire_laser)
+				FireLaser();				// Fire Laser!
+			input_demo_log_replay_fire_state("after FireLaser", can_fire_laser);
+		}
 		if (replay_rng_probe_active)
 			input_demo_log_replay_rng_progress("FireLaser", &replay_rng_state, &replay_rng_call_count);
 
@@ -1866,8 +1935,10 @@ void GameProcessFrame(void)
 			}
 		}
 
-		if (Global_laser_firing_count)
+		if (Global_laser_firing_count) {
 			do_laser_firing_player();
+			input_demo_log_replay_fire_state("after do_laser_firing_player", allowed_to_fire_laser());
+		}
 
 		delayed_autoselect(); /* SelectAfterFire */ 
 		do_shield_warnings(); 

@@ -14,6 +14,7 @@
 
 #include "input_demo_fixture.h"
 #include "input_demo_recorder.h"
+#include "input_demo_rng_trace.h"
 #include "input_demo_result.h"
 
 #ifdef __cplusplus
@@ -98,6 +99,7 @@ static int expect_record_and_flush(void)
 {
 	const char *dir = "test_input_demo_recorder_fixture";
 	const std::string demo_path = std::string(dir) + "/recorded.dximdemo";
+	const std::string trace_path = demo_path + INPUT_DEMO_RNG_TRACE_SUFFIX;
 	input_demo_recorder_settings settings;
 	input_demo_control_state state;
 	input_demo_control_pulse pulse;
@@ -120,6 +122,9 @@ static int expect_record_and_flush(void)
 		remove_test_dir(dir);
 		return report_failure_string(std::string("recorder start failed: ") + error);
 	}
+	input_demo_rng_trace_set_context(0, 3276);
+	d_srand(1234);
+	(void)d_rand();
 	input_demo_control_state_clear(&state);
 	input_demo_control_pulse_clear(&pulse);
 	state.forward_thrust_time = 44;
@@ -180,11 +185,20 @@ static int expect_record_and_flush(void)
 		"\",\"l\":1,\"d\":2,\"fr\":3,\"gt\":120,\"p0\":{\"e\":67,\"s\":42,\"sc\":12500,\"li\":3,\"ll\":1,\"sw\":1,\"pa\":{\"1\":200},\"sa\":{\"0\":4}},\"pos\":{\"sg\":142,\"x\":12345678,\"y\":-8765432,\"z\":3456789,\"fx\":65536,\"fy\":0,\"fz\":0},\"lv\":{\"ra\":23,\"rk\":8,\"hr\":2,\"pr\":15,\"cc\":true}}}\n";
 	if (text != expected)
 		return report_failure_string(std::string("unexpected recorder demo file: ") + text);
+	if (!read_text_file(trace_path.c_str(), &text))
+		return report_failure("could not read recorder rng trace file");
+	if (text.find("\"type\":\"meta\"") == std::string::npos ||
+		text.find("\"type\":\"srand\"") == std::string::npos ||
+		text.find("\"type\":\"rand\"") == std::string::npos ||
+		text.find("\"func\":\"expect_record_and_flush\"") == std::string::npos ||
+		text.find("\"gt\":3276") == std::string::npos)
+		return report_failure_string(std::string("unexpected recorder rng trace file: ") + text);
 	if (!input_demo_file_read(demo_path.c_str(), &parsed, &read_error))
 		return report_failure_string(std::string("recorder demo read failed: ") + read_error);
 	if (parsed.frames.size() != 3 || parsed.frames[2].rng.state != 102 || parsed.result.player0.score != 12500)
 		return report_failure("recorder demo round trip mismatch");
 	remove(demo_path.c_str());
+	remove(trace_path.c_str());
 	remove_test_dir(dir);
 	return 0;
 }

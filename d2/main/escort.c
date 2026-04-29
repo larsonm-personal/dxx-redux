@@ -57,6 +57,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "laser.h"
 #include "escort.h"
 #include "maths.h"
+#include "input_demo_recorder.h"
 #include "input_demo_replay.h"
 
 #ifdef NETWORK
@@ -77,6 +78,11 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 extern void multi_send_stolen_items();
 void say_escort_goal(int goal_num);
 void show_escort_menu(char *msg);
+
+static int input_demo_trace_escort_active(void)
+{
+	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+}
 
 static void input_demo_log_escort_rng_progress(const char *label, unsigned int *rng_before, unsigned int *rng_call_count_before)
 {
@@ -767,6 +773,22 @@ void escort_create_path_to_goal(object *objp)
 	int			objnum = objp-Objects;
 	ai_static	*aip = &objp->ctype.ai_info;
 	ai_local		*ailp = &Ai_local_info[objnum];
+	int			replay_goal_probe_active = input_demo_trace_escort_active() &&
+		objnum == 28;
+
+	if (replay_goal_probe_active)
+		con_printf(CON_NORMAL,
+			"Input demo replay escort goal probe: frame=%u step=entry obj=%d seg=%d mode=%d behavior=%d goal=%d special=%d cur_path=%d/%d hide=%d\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			objnum,
+			objp->segnum,
+			ailp->mode,
+			aip->behavior,
+			Escort_goal_object,
+			Escort_special_goal,
+			aip->cur_path_index,
+			aip->path_length,
+			aip->hide_index);
 
 	if (Escort_special_goal != -1)
 		Escort_goal_object = Escort_special_goal;
@@ -848,6 +870,19 @@ void escort_create_path_to_goal(object *objp)
 				break;
 		}
 	}
+
+	if (replay_goal_probe_active)
+		con_printf(CON_NORMAL,
+			"Input demo replay escort goal probe: frame=%u step=resolved obj=%d goal=%d special=%d goal_index=%d goal_seg=%d cur_path=%d/%d hide=%d\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			objnum,
+			Escort_goal_object,
+			Escort_special_goal,
+			Escort_goal_index,
+			goal_seg,
+			aip->cur_path_index,
+			aip->path_length,
+			aip->hide_index);
 
 	if ((Escort_goal_index < 0) && (Escort_goal_index != -3)) {	//	I apologize for this statement -- MK, 09/22/95
 		if (Escort_goal_index == -1) {
@@ -987,7 +1022,7 @@ void escort_rebuild_runtime_state_after_restore(void)
 		Buddy_last_player_path_created = 0;
 
 	Last_come_back_message_time = Buddy_last_player_path_created;
-	if (input_demo_replay_is_loaded())
+	if (input_demo_trace_escort_active())
 		con_printf(CON_NORMAL,
 			"Input demo replay escort restore: gt=%lld obj=%d seg=%d mode=%d talk=%d cur_path=%d/%d hide_index=%d last_seen=%lld last_player_path=%lld escort_last_path=%lld seen=%lld\n",
 			(long long)GameTime64,
@@ -1119,10 +1154,18 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 	ai_local		*ailp = &Ai_local_info[objnum];
 	unsigned int replay_rng_state = 0;
 	unsigned int replay_rng_call_count = 0;
-	int replay_state_probe_active = input_demo_replay_is_loaded() &&
-		input_demo_replay_next_frame_index() == 73 && objnum == 28;
-	int replay_rng_probe_active = input_demo_replay_is_loaded() &&
-		input_demo_replay_next_frame_index() == 73 && objnum == 28 && d_rand_get_state(&replay_rng_state);
+	int replay_should_visit_player = 0;
+	fix64 replay_since_seen = 0;
+	fix64 replay_since_player_path = 0;
+	int replay_visit_away_gate = 0;
+	int replay_visit_recent_path_gate = 0;
+	int replay_visit_goto_player_gate = 0;
+	int replay_visit_same_seg_gate = 0;
+	int replay_visit_early_path_gate = 0;
+	int replay_state_probe_active = input_demo_trace_escort_active() &&
+		objnum == 28;
+	int replay_rng_probe_active = input_demo_trace_escort_active() &&
+		objnum == 28 && d_rand_get_state(&replay_rng_state);
 	if (replay_rng_probe_active)
 		replay_rng_call_count = d_rand_get_call_count();
 
@@ -1179,12 +1222,30 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 	//	Force checking for new goal every 5 seconds, and create new path, if necessary.
 	if (((Escort_special_goal != ESCORT_GOAL_SCRAM) && ((Escort_last_path_created + F1_0*5) < GameTime64)) ||
 		((Escort_special_goal == ESCORT_GOAL_SCRAM) && ((Escort_last_path_created + F1_0*15) < GameTime64))) {
+		if (replay_state_probe_active)
+			con_printf(CON_NORMAL,
+				"Input demo replay escort goal reset: frame=%u gt=%lld goal=%d special=%d last_path=%lld\n",
+				input_demo_replay_next_frame_index(),
+				(long long)GameTime64,
+				Escort_goal_object,
+				Escort_special_goal,
+				(long long)Escort_last_path_created);
 		Escort_goal_object = ESCORT_GOAL_UNSPECIFIED;
 		Escort_last_path_created = GameTime64;
 	}
+	if (replay_state_probe_active) {
+		replay_since_seen = GameTime64 - Buddy_last_seen_player;
+		replay_since_player_path = GameTime64 - Buddy_last_player_path_created;
+		replay_visit_away_gate = replay_since_seen > MAX_ESCORT_TIME_AWAY;
+		replay_visit_recent_path_gate = replay_since_player_path <= F1_0;
+		replay_visit_goto_player_gate = ailp->mode == AIM_GOTO_PLAYER;
+		replay_visit_same_seg_gate = objp->segnum == ConsoleObject->segnum;
+		replay_visit_early_path_gate = aip->cur_path_index < aip->path_length/2;
+		replay_should_visit_player = (Escort_special_goal != ESCORT_GOAL_SCRAM) && time_to_visit_player(objp, ailp, aip);
+	}
 	if (replay_state_probe_active)
 		con_printf(CON_NORMAL,
-			"Input demo replay escort state: frame=%u gt=%lld vis=%d mode=%d talk=%d dist=%d buddy_seg=%d player_seg=%d cur_path=%d/%d hide_index=%d last_seen=%lld last_player_path=%lld escort_last_path=%lld seen=%lld\n",
+			"Input demo replay escort state: frame=%u gt=%lld vis=%d mode=%d talk=%d dist=%d buddy_seg=%d player_seg=%d cur_path=%d/%d hide_index=%d last_seen=%lld last_player_path=%lld escort_last_path=%lld seen=%lld goal=%d special=%d visit=%d since_seen=%lld since_player_path=%lld away_gate=%d recent_path_gate=%d goto_player_gate=%d same_seg_gate=%d early_path_gate=%d\n",
 			input_demo_replay_next_frame_index(),
 			(long long)GameTime64,
 			player_visibility,
@@ -1199,9 +1260,19 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 			(long long)Buddy_last_seen_player,
 			(long long)Buddy_last_player_path_created,
 			(long long)Escort_last_path_created,
-			(long long)ailp->time_player_seen);
+			(long long)ailp->time_player_seen,
+			Escort_goal_object,
+			Escort_special_goal,
+			replay_should_visit_player,
+			(long long)replay_since_seen,
+			(long long)replay_since_player_path,
+			replay_visit_away_gate,
+			replay_visit_recent_path_gate,
+			replay_visit_goto_player_gate,
+			replay_visit_same_seg_gate,
+			replay_visit_early_path_gate);
 
-	if ((Escort_special_goal != ESCORT_GOAL_SCRAM) && time_to_visit_player(objp, ailp, aip)) {
+	if ((Escort_special_goal != ESCORT_GOAL_SCRAM) && (replay_state_probe_active ? replay_should_visit_player : time_to_visit_player(objp, ailp, aip))) {
 		int	max_len;
 
 		Buddy_last_player_path_created = GameTime64;
@@ -1267,8 +1338,7 @@ void do_snipe_frame(object *objp, fix dist_to_player, int player_visibility, vms
 	int			objnum = objp-Objects;
 	ai_local		*ailp = &Ai_local_info[objnum];
 	fix			connected_distance;
-	int			replay_snipe_probe_active = input_demo_replay_is_loaded() && objnum == 15 &&
-		input_demo_replay_next_frame_index() >= 0 && input_demo_replay_next_frame_index() <= 74;
+	int			replay_snipe_probe_active = input_demo_trace_escort_active() && objnum == 15;
 
 	if (replay_snipe_probe_active)
 		con_printf(CON_NORMAL,
@@ -1429,8 +1499,7 @@ void do_thief_frame(object *objp, fix dist_to_player, int player_visibility, vms
 	int			objnum = objp-Objects;
 	ai_local		*ailp = &Ai_local_info[objnum];
 	fix			connected_distance;
-	int			replay_thief_probe_active = input_demo_replay_is_loaded() && objnum == 15 &&
-		input_demo_replay_next_frame_index() <= 74;
+	int			replay_thief_probe_active = input_demo_trace_escort_active() && objnum == 15;
 
 	if ((Current_level_num < 0) && (Re_init_thief_time < GameTime64)) {
 		if (Re_init_thief_time > GameTime64 - F1_0*2)
