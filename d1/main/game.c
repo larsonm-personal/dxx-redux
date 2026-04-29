@@ -888,7 +888,7 @@ void diminish_palette_towards_normal(void)
 	//	Diminish at DIMINISH_RATE units/second.
 	//	For frame rates > DIMINISH_RATE Hz, use randomness to achieve this.
 	if (FrameTime < F1_0/diminish_rate) {
-		if (d_rand() < FrameTime*diminish_rate/2)	//	Note: d_rand() is in 0..32767, and 8 Hz means decrement every frame
+		if (d_rand_fx() < FrameTime*diminish_rate/2)	//	Note: d_rand() is in 0..32767, and 8 Hz means decrement every frame
 			dec_amount = 1;
 	} else {
 		dec_amount = f2i(FrameTime*diminish_rate);	// one second = DIMINISH_RATE counts

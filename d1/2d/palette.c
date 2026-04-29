@@ -102,7 +102,7 @@ void add_computed_color(int r, int g, int b, int color_num)
 		add_index = Num_computed_colors;
 		Num_computed_colors++;
 	} else
-		add_index = (d_rand() * MAX_COMPUTED_COLORS) >> 15;
+		add_index = (d_rand_fx() * MAX_COMPUTED_COLORS) >> 15;
 
 	Computed_colors[add_index].r = r;
 	Computed_colors[add_index].g = g;

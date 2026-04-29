@@ -1151,7 +1151,7 @@ void diminish_palette_towards_normal(void)
 	//	Diminish at DIMINISH_RATE units/second.
 	//	For frame rates > DIMINISH_RATE Hz, use randomness to achieve this.
 	if (FrameTime < F1_0/diminish_rate) {
-		if (d_rand() < FrameTime*diminish_rate/2)	//	Note: d_rand() is in 0..32767, and 8 Hz means decrement every frame
+		if (d_rand_fx() < FrameTime*diminish_rate/2)	//	Note: d_rand() is in 0..32767, and 8 Hz means decrement every frame
 			dec_amount = 1;
 	} else {
 		dec_amount = f2i(FrameTime*diminish_rate);	// one second = DIMINISH_RATE counts
@@ -1177,7 +1177,7 @@ void diminish_palette_towards_normal(void)
 		if (Flash_effect < 0)
 			Flash_effect = 0;
 
-		if (force_do || (d_rand() > 4096 )) {
+		if (force_do || (d_rand_fx() > 4096 )) {
       	if ( (Newdemo_state==ND_STATE_RECORDING) && (PaletteRedAdd || PaletteGreenAdd || PaletteBlueAdd) )
 	      	newdemo_record_palette_effect(PaletteRedAdd, PaletteGreenAdd, PaletteBlueAdd);
 
@@ -1753,7 +1753,7 @@ void do_ambient_sounds()
 
 	if (has_lava) {							//has lava
 		sound = SOUND_AMBIENT_LAVA;
-		if (has_water && (d_rand() & 1))	//both, pick one
+		if (has_water && (d_rand_fx() & 1))	//both, pick one
 			sound = SOUND_AMBIENT_WATER;
 	}
 	else if (has_water)						//just water
@@ -1761,8 +1761,8 @@ void do_ambient_sounds()
 	else
 		return;
 
-	if (((d_rand() << 3) < FrameTime)) {						//play the sound
-		fix volume = d_rand() + f1_0/2;
+	if (((d_rand_fx() << 3) < FrameTime)) {						//play the sound
+		fix volume = d_rand_fx() + f1_0/2;
 		digi_play_sample(sound,volume);
 	}
 }

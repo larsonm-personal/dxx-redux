@@ -585,6 +585,15 @@ void set_robot_location_info(object *objp)
 }
 
 //	------------------------------------------------------------------------------------------------------------------
+static void make_random_vector_fx(vms_vector *vec)
+{
+	vec->x = (d_rand_fx() - 16384) | 1;
+	vec->y = d_rand_fx() - 16384;
+	vec->z = d_rand_fx() - 16384;
+
+	vm_vec_normalize_quick(vec);
+}
+
 void create_small_fireball_on_object(object *objp, fix size_scale, int sound_flag)
 {
 	fix			size;
@@ -592,13 +601,13 @@ void create_small_fireball_on_object(object *objp, fix size_scale, int sound_fla
 	int			segnum;
 
 	pos = objp->pos;
-	make_random_vector(&rand_vec);
+	make_random_vector_fx(&rand_vec);
 
 	vm_vec_scale(&rand_vec, objp->size/2);
 
 	vm_vec_add2(&pos, &rand_vec);
 
-	size = fixmul(size_scale, F1_0 + d_rand()*4);
+	size = fixmul(size_scale, F1_0 + d_rand_fx()*4);
 
 	segnum = find_point_seg(&pos, objp->segnum);
 	if (segnum != -1) {
@@ -607,7 +616,7 @@ void create_small_fireball_on_object(object *objp, fix size_scale, int sound_fla
 		if (!expl_obj)
 			return;
 		obj_attach(objp,expl_obj);
-		if (d_rand() < 8192) {
+		if (d_rand_fx() < 8192) {
 			fix	vol = F1_0/2;
 			if (objp->type == OBJ_ROBOT)
 				vol *= 2;
@@ -625,13 +634,13 @@ void create_vclip_on_object(object *objp, fix size_scale, int vclip_num)
 	int			segnum;
 
 	pos = objp->pos;
-	make_random_vector(&rand_vec);
+	make_random_vector_fx(&rand_vec);
 
 	vm_vec_scale(&rand_vec, objp->size/2);
 
 	vm_vec_add2(&pos, &rand_vec);
 
-	size = fixmul(size_scale, F1_0 + d_rand()*4);
+	size = fixmul(size_scale, F1_0 + d_rand_fx()*4);
 
 	segnum = find_point_seg(&pos, objp->segnum);
 	if (segnum != -1) {

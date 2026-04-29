@@ -622,20 +622,20 @@ void do_endlevel_frame()
 			static int sound_count;
 
 			vm_vec_scale_add(&tpnt,&ConsoleObject->pos,&ConsoleObject->orient.fvec,-ConsoleObject->size*5);
-			vm_vec_scale_add2(&tpnt,&ConsoleObject->orient.rvec,(d_rand()-D_RAND_MAX/2)*15);
-			vm_vec_scale_add2(&tpnt,&ConsoleObject->orient.uvec,(d_rand()-D_RAND_MAX/2)*15);
+			vm_vec_scale_add2(&tpnt,&ConsoleObject->orient.rvec,(d_rand_fx()-D_RAND_MAX/2)*15);
+			vm_vec_scale_add2(&tpnt,&ConsoleObject->orient.uvec,(d_rand_fx()-D_RAND_MAX/2)*15);
 
 			segnum = find_point_seg(&tpnt,ConsoleObject->segnum);
 
 			if (segnum != -1) {
 				object_create_explosion(segnum,&tpnt,i2f(20),VCLIP_BIG_PLAYER_EXPLOSION);
-			       	if (d_rand()<10000 || ++sound_count==7) {		//pseudo-random
+		       	if (d_rand_fx()<10000 || ++sound_count==7) {		//pseudo-random
 					digi_link_sound_to_pos( SOUND_TUNNEL_EXPLOSION, segnum, 0, &tpnt, 0, F1_0 );
 					sound_count=0;
 				}
 			}
 
-			explosion_wait1 = 0x2000 + d_rand()/4;
+			explosion_wait1 = 0x2000 + d_rand_fx()/4;
 
 		}
 	}
@@ -649,14 +649,14 @@ void do_endlevel_frame()
 
 			//create little explosion on wall
 
-			vm_vec_copy_scale(&tpnt,&ConsoleObject->orient.rvec,(d_rand()-RAND_MAX/2)*100);
-			vm_vec_scale_add2(&tpnt,&ConsoleObject->orient.uvec,(d_rand()-RAND_MAX/2)*100);
+			vm_vec_copy_scale(&tpnt,&ConsoleObject->orient.rvec,(d_rand_fx()-RAND_MAX/2)*100);
+			vm_vec_scale_add2(&tpnt,&ConsoleObject->orient.uvec,(d_rand_fx()-RAND_MAX/2)*100);
 			vm_vec_add2(&tpnt,&ConsoleObject->pos);
 
 			if (Endlevel_sequence == EL_FLYTHROUGH)
-				vm_vec_scale_add2(&tpnt,&ConsoleObject->orient.fvec,d_rand()*200);
+				vm_vec_scale_add2(&tpnt,&ConsoleObject->orient.fvec,d_rand_fx()*200);
 			else
-				vm_vec_scale_add2(&tpnt,&ConsoleObject->orient.fvec,d_rand()*60);
+				vm_vec_scale_add2(&tpnt,&ConsoleObject->orient.fvec,d_rand_fx()*60);
 
 			//find hit point on wall
 
@@ -671,9 +671,9 @@ void do_endlevel_frame()
 			find_vector_intersection(&fq,&hit_data);
 
 			if (hit_data.hit_type==HIT_WALL && hit_data.hit_seg!=-1)
-				object_create_explosion(hit_data.hit_seg,&hit_data.hit_pnt,i2f(3)+d_rand()*6,VCLIP_SMALL_EXPLOSION);		
+				object_create_explosion(hit_data.hit_seg,&hit_data.hit_pnt,i2f(3)+d_rand_fx()*6,VCLIP_SMALL_EXPLOSION);		
 
-			explosion_wait2 = (0xa00 + d_rand()/8)/2;
+			explosion_wait2 = (0xa00 + d_rand_fx()/8)/2;
 		}
 
 	switch (Endlevel_sequence) {
@@ -1055,9 +1055,9 @@ void generate_starfield()
 
 	for (i=0;i<MAX_STARS;i++) {
 
-		stars[i].x = (d_rand() - RAND_MAX/2) << 14;
-		stars[i].z = (d_rand() - RAND_MAX/2) << 14;
-		stars[i].y = (d_rand()/2) << 14;
+		stars[i].x = (d_rand_fx() - RAND_MAX/2) << 14;
+		stars[i].z = (d_rand_fx() - RAND_MAX/2) << 14;
+		stars[i].y = (d_rand_fx()/2) << 14;
 
 	}
 }

@@ -806,6 +806,31 @@ static void input_demo_restore_preserved_ui_rng(int preserve_rng, unsigned int s
 		d_rand_set_state(saved_rng_state);
 }
 
+static int input_demo_should_log_preserved_ui_rng(void)
+{
+	return input_demo_replay_is_loaded() && input_demo_replay_next_frame_index() < 2;
+}
+
+static void input_demo_log_preserved_ui_rng(const char *stage, int preserve_rng, unsigned int saved_rng_state, int no_draw_hud)
+{
+	unsigned int current_rng_state;
+
+	if (!input_demo_should_log_preserved_ui_rng())
+		return;
+	if (!d_rand_get_state(&current_rng_state))
+		return;
+	con_printf(CON_NORMAL,
+		"Input demo replay ui rng: frame=%u stage=%s preserve=%d saved=%u current=%u cockpit=%d no_hud=%d observer=%d\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		stage,
+		preserve_rng,
+		saved_rng_state,
+		current_rng_state,
+		PlayerCfg.CurrentCockpitMode,
+		no_draw_hud,
+		is_observer());
+}
+
 //render a frame for the game
 void game_render_frame_mono(int flip)
 {
@@ -878,12 +903,16 @@ void game_render_frame_mono(int flip)
 
 	if (is_observer() && !can_draw_observer_cockpit()) {
 		// Do not render gauges.
+		input_demo_log_preserved_ui_rng("gauges-skip", 0, 0, no_draw_hud);
 	} else {
 		unsigned int preserved_ui_rng_state = 0;
 		int preserve_ui_rng = input_demo_capture_preserved_ui_rng(&preserved_ui_rng_state);
+		input_demo_log_preserved_ui_rng("gauges-before", preserve_ui_rng, preserved_ui_rng_state, no_draw_hud);
 		if (PlayerCfg.CurrentCockpitMode == CM_FULL_COCKPIT || PlayerCfg.CurrentCockpitMode == CM_STATUS_BAR)
 			render_gauges();
+		input_demo_log_preserved_ui_rng("gauges-after-draw", preserve_ui_rng, preserved_ui_rng_state, no_draw_hud);
 		input_demo_restore_preserved_ui_rng(preserve_ui_rng, preserved_ui_rng_state);
+		input_demo_log_preserved_ui_rng("gauges-after-restore", preserve_ui_rng, preserved_ui_rng_state, no_draw_hud);
 	}
 
 	if (Newdemo_state == ND_STATE_PLAYBACK)
@@ -894,9 +923,14 @@ void game_render_frame_mono(int flip)
 	if (!no_draw_hud) {
 		unsigned int preserved_ui_rng_state = 0;
 		int preserve_ui_rng = input_demo_capture_preserved_ui_rng(&preserved_ui_rng_state);
+		input_demo_log_preserved_ui_rng("hud-before", preserve_ui_rng, preserved_ui_rng_state, no_draw_hud);
 		game_draw_hud_stuff();
+		input_demo_log_preserved_ui_rng("hud-after-draw", preserve_ui_rng, preserved_ui_rng_state, no_draw_hud);
 		input_demo_restore_preserved_ui_rng(preserve_ui_rng, preserved_ui_rng_state);
+		input_demo_log_preserved_ui_rng("hud-after-restore", preserve_ui_rng, preserved_ui_rng_state, no_draw_hud);
 	}
+	else
+		input_demo_log_preserved_ui_rng("hud-skip", 0, 0, no_draw_hud);
 
 #ifdef ANDROID
 	{

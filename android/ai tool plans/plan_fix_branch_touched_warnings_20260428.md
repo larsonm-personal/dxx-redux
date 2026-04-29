@@ -1,0 +1,17 @@
+# Fix Branch-Touched Warnings 2026-04-28
+
+## Goal
+
+Reduce warning noise only for D1/D2 warnings attributable to code changed on this branch, while keeping the merge diff small.
+
+## Steps
+
+- [x] Identify warning sites that are tied to branch-touched D1/D2 lines.
+- [x] Fix only the concrete branch-owned warning sites.
+- [x] Re-run a warning-producing Android build and confirm the targeted warnings are gone.
+
+## Result
+
+- Removed the branch-leftover unused `objnum` local from `d2/main/object.c`.
+- Re-ran `:app:buildCMakeDebug[arm64-v8a]-2` and confirmed the `d2/main/object.c` warning no longer appears.
+- Left the remaining `d2/main/ai.c` and `d2/main/physics.c` warnings alone because the same warning sites are already present on `origin/cmake`.

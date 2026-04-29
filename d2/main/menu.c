@@ -479,7 +479,7 @@ int main_menu_handler(newmenu *menu, d_event *event, int *menu_choice )
 				n_demos = newdemo_count_demos();
 				keyd_time_when_last_pressed = timer_query();			// Reset timer so that disk won't thrash if no demos.
 
-				if (((d_rand() % (n_demos+1)) == 0) && !GameArg.SysAutoDemo)
+				if (((d_rand_fx() % (n_demos+1)) == 0) && !GameArg.SysAutoDemo)
 				{
 #ifdef OGL
 					Screen_mode = -1;
