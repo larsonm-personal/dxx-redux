@@ -25,6 +25,7 @@ typedef struct input_demo_recorder_settings {
 	size_t checkpoint_size;
 	int has_checkpoint_start_gt;
 	int64_t checkpoint_start_gt;
+	input_demo_checkpoint_escort_state checkpoint_escort_state;
 } input_demo_recorder_settings;
 
 void input_demo_recorder_settings_clear(input_demo_recorder_settings *settings);

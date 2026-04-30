@@ -50,6 +50,7 @@ struct input_demo_recorder_session {
 	std::string checkpoint_save_name;
 	std::vector<unsigned char> checkpoint_data;
 	int64_t checkpoint_start_gt;
+	input_demo_checkpoint_escort_state checkpoint_escort_state;
 	std::vector<input_demo_control_frame> control_frames;
 	std::vector<input_demo_rng_frame> rng_frames;
 
@@ -57,6 +58,7 @@ struct input_demo_recorder_session {
 	    : active(false), game(0), level(0), difficulty(0), has_player_cfg(false), has_checkpoint(false), checkpoint_start_gt(0)
 	{
 		input_demo_player_cfg_clear(&player_cfg);
+		input_demo_checkpoint_escort_state_clear(&checkpoint_escort_state);
 	}
 };
 
@@ -105,7 +107,7 @@ static int input_demo_recorder_settings_have_checkpoint(const input_demo_recorde
 {
 	return settings && (settings->checkpoint_data != NULL || settings->checkpoint_size != 0 ||
 	                    (settings->checkpoint_save_name && settings->checkpoint_save_name[0]) ||
-	                    settings->has_checkpoint_start_gt);
+	                    settings->has_checkpoint_start_gt || settings->checkpoint_escort_state.valid);
 }
 
 static bool input_demo_recorder_zlib_compress(const unsigned char *data,
@@ -150,6 +152,7 @@ static bool input_demo_recorder_build_checkpoint(input_demo_checkpoint *checkpoi
 	checkpoint->save_name = session.checkpoint_save_name;
 	checkpoint->has_start_gt = 1;
 	checkpoint->start_gt = session.checkpoint_start_gt;
+	checkpoint->escort_state = session.checkpoint_escort_state;
 	if (!input_demo_recorder_zlib_compress(session.checkpoint_data.data(), session.checkpoint_data.size(),
 	                                       &compressed_data, error))
 		return false;
@@ -274,6 +277,7 @@ void input_demo_recorder_settings_clear(input_demo_recorder_settings *settings)
 	settings->checkpoint_size = 0;
 	settings->has_checkpoint_start_gt = 0;
 	settings->checkpoint_start_gt = 0;
+	input_demo_checkpoint_escort_state_clear(&settings->checkpoint_escort_state);
 }
 
 int input_demo_recorder_is_active(void)
@@ -333,6 +337,7 @@ int input_demo_recorder_start(const input_demo_recorder_settings *settings,
 		g_input_demo_recorder_session.checkpoint_data.assign(settings->checkpoint_data,
 		                                                     settings->checkpoint_data + settings->checkpoint_size);
 		g_input_demo_recorder_session.checkpoint_start_gt = settings->checkpoint_start_gt;
+		g_input_demo_recorder_session.checkpoint_escort_state = settings->checkpoint_escort_state;
 	}
 	return 1;
 }

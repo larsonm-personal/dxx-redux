@@ -1238,15 +1238,34 @@ fix64	Last_come_back_message_time = 0;
 
 fix64	Buddy_last_missile_time;
 
+void escort_get_input_demo_checkpoint_state(input_demo_checkpoint_escort_state *escort_state)
+{
+	if (!escort_state)
+		return;
+
+	input_demo_checkpoint_escort_state_clear(escort_state);
+	escort_state->valid = 1;
+	escort_state->buddy_allowed_to_talk = Buddy_allowed_to_talk;
+	escort_state->buddy_last_seen_player = Buddy_last_seen_player;
+	escort_state->buddy_last_player_path_created = Buddy_last_player_path_created;
+	escort_state->escort_last_path_created = Escort_last_path_created;
+	escort_state->last_come_back_message_time = Last_come_back_message_time;
+	escort_state->buddy_last_missile_time = Buddy_last_missile_time;
+}
+
 void escort_rebuild_runtime_state_after_restore(void)
 {
-	ai_local *ailp;
-	object *buddy_objp;
+	ai_local *ailp = NULL;
+	object *buddy_objp = NULL;
+	input_demo_checkpoint_escort_state checkpoint_escort_state;
+	int have_checkpoint_escort_state;
 	fix64 raw_time_player_seen;
 	fix64 raw_escort_last_path_created;
 	int i;
 
 	input_demo_reset_escort_state_probes();
+	input_demo_checkpoint_escort_state_clear(&checkpoint_escort_state);
+	have_checkpoint_escort_state = input_demo_replay_get_checkpoint_escort_state(&checkpoint_escort_state);
 
 	Buddy_objnum = -1;
 	Buddy_last_seen_player = 0;
@@ -1260,11 +1279,41 @@ void escort_rebuild_runtime_state_after_restore(void)
 			break;
 		}
 
+	if (Buddy_objnum != -1) {
+		buddy_objp = &Objects[Buddy_objnum];
+		ailp = &Ai_local_info[Buddy_objnum];
+	}
+
+	if (have_checkpoint_escort_state) {
+		Buddy_allowed_to_talk = checkpoint_escort_state.buddy_allowed_to_talk;
+		Buddy_last_seen_player = checkpoint_escort_state.buddy_last_seen_player;
+		Buddy_last_player_path_created = checkpoint_escort_state.buddy_last_player_path_created;
+		Escort_last_path_created = checkpoint_escort_state.escort_last_path_created;
+		Last_come_back_message_time = checkpoint_escort_state.last_come_back_message_time;
+		Buddy_last_missile_time = checkpoint_escort_state.buddy_last_missile_time;
+		if (input_demo_trace_escort_active())
+			con_printf(CON_NORMAL,
+				"Input demo replay escort restore checkpoint: gt=%lld obj=%d seg=%d mode=%d talk=%d cur_path=%d/%d hide_index=%d last_seen=%lld last_player_path=%lld escort_last_path=%lld come_back=%lld last_missile=%lld seen=%lld\n",
+				(long long)GameTime64,
+				Buddy_objnum,
+				buddy_objp ? buddy_objp->segnum : -1,
+				ailp ? ailp->mode : -1,
+				Buddy_allowed_to_talk,
+				buddy_objp ? buddy_objp->ctype.ai_info.cur_path_index : -1,
+				buddy_objp ? buddy_objp->ctype.ai_info.path_length : -1,
+				buddy_objp ? buddy_objp->ctype.ai_info.hide_index : -1,
+				(long long)Buddy_last_seen_player,
+				(long long)Buddy_last_player_path_created,
+				(long long)Escort_last_path_created,
+				(long long)Last_come_back_message_time,
+				(long long)Buddy_last_missile_time,
+				(long long)(ailp ? ailp->time_player_seen : -1));
+		return;
+	}
+
 	if (Buddy_objnum == -1)
 		return;
 
-	buddy_objp = &Objects[Buddy_objnum];
-	ailp = &Ai_local_info[Buddy_objnum];
 	raw_time_player_seen = ailp->time_player_seen;
 	raw_escort_last_path_created = Escort_last_path_created;
 	Buddy_allowed_to_talk = 0;

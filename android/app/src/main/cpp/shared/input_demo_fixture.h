@@ -49,9 +49,20 @@ typedef struct input_demo_player_cfg {
 	uint8_t secondary_order[INPUT_DEMO_PLAYER_CFG_SECONDARY_ORDER_MAX];
 } input_demo_player_cfg;
 
+typedef struct input_demo_checkpoint_escort_state {
+	uint8_t valid;
+	int32_t buddy_allowed_to_talk;
+	int64_t buddy_last_seen_player;
+	int64_t buddy_last_player_path_created;
+	int64_t escort_last_path_created;
+	int64_t last_come_back_message_time;
+	int64_t buddy_last_missile_time;
+} input_demo_checkpoint_escort_state;
+
 void input_demo_rng_frame_clear(input_demo_rng_frame *frame);
 void input_demo_rng_record_clear(input_demo_rng_record *record);
 void input_demo_player_cfg_clear(input_demo_player_cfg *player_cfg);
+void input_demo_checkpoint_escort_state_clear(input_demo_checkpoint_escort_state *escort_state);
 
 #if defined(_MSC_VER)
 #pragma pack(pop)
@@ -101,11 +112,13 @@ struct input_demo_checkpoint {
 	std::string save_name;
 	uint8_t has_start_gt;
 	int64_t start_gt;
+	input_demo_checkpoint_escort_state escort_state;
 	std::string data;
 
 	input_demo_checkpoint()
 	    : compression("none"), size(0), has_start_gt(0), start_gt(0)
 	{
+		input_demo_checkpoint_escort_state_clear(&escort_state);
 	}
 };
 

@@ -29,6 +29,13 @@ extern "C" void input_demo_player_cfg_clear(input_demo_player_cfg *player_cfg)
 	memset(player_cfg, 0, sizeof(*player_cfg));
 }
 
+extern "C" void input_demo_checkpoint_escort_state_clear(input_demo_checkpoint_escort_state *escort_state)
+{
+	if (!escort_state)
+		return;
+	memset(escort_state, 0, sizeof(*escort_state));
+}
+
 static bool fail(std::string *error, const std::string &message)
 {
 	if (error)
@@ -453,6 +460,10 @@ static bool validate_checkpoint(const input_demo_checkpoint &checkpoint, std::st
 		return fail(error, "checkpoint save_name is required");
 	if (!checkpoint.has_start_gt)
 		return fail(error, "checkpoint start_gt is required");
+	if (checkpoint.escort_state.valid &&
+	    checkpoint.escort_state.buddy_allowed_to_talk != 0 &&
+	    checkpoint.escort_state.buddy_allowed_to_talk != 1)
+		return fail(error, "checkpoint buddy_allowed_to_talk must be 0 or 1");
 	if (checkpoint.data.empty())
 		return fail(error, "checkpoint data is required");
 	return true;
@@ -519,6 +530,12 @@ static bool parse_checkpoint_record(const ordered_json &root,
 {
 	ordered_json::const_iterator it;
 	input_demo_checkpoint parsed;
+	bool have_buddy_allowed_to_talk = false;
+	bool have_buddy_last_seen_player = false;
+	bool have_buddy_last_player_path_created = false;
+	bool have_escort_last_path_created = false;
+	bool have_last_come_back_message_time = false;
+	bool have_buddy_last_missile_time = false;
 
 	if (!checkpoint)
 		return fail(error, "missing checkpoint output");
@@ -556,6 +573,30 @@ static bool parse_checkpoint_record(const ordered_json &root,
 			if (!parse_int64_field(it.value(), &parsed.start_gt, error, "checkpoint start_gt"))
 				return false;
 			parsed.has_start_gt = 1;
+		} else if (name == "buddy_allowed_to_talk") {
+			if (!parse_int_field(it.value(), &parsed.escort_state.buddy_allowed_to_talk, error, "checkpoint buddy_allowed_to_talk"))
+				return false;
+			have_buddy_allowed_to_talk = true;
+		} else if (name == "buddy_last_seen_player") {
+			if (!parse_int64_field(it.value(), &parsed.escort_state.buddy_last_seen_player, error, "checkpoint buddy_last_seen_player"))
+				return false;
+			have_buddy_last_seen_player = true;
+		} else if (name == "buddy_last_player_path_created") {
+			if (!parse_int64_field(it.value(), &parsed.escort_state.buddy_last_player_path_created, error, "checkpoint buddy_last_player_path_created"))
+				return false;
+			have_buddy_last_player_path_created = true;
+		} else if (name == "escort_last_path_created") {
+			if (!parse_int64_field(it.value(), &parsed.escort_state.escort_last_path_created, error, "checkpoint escort_last_path_created"))
+				return false;
+			have_escort_last_path_created = true;
+		} else if (name == "last_come_back_message_time") {
+			if (!parse_int64_field(it.value(), &parsed.escort_state.last_come_back_message_time, error, "checkpoint last_come_back_message_time"))
+				return false;
+			have_last_come_back_message_time = true;
+		} else if (name == "buddy_last_missile_time") {
+			if (!parse_int64_field(it.value(), &parsed.escort_state.buddy_last_missile_time, error, "checkpoint buddy_last_missile_time"))
+				return false;
+			have_buddy_last_missile_time = true;
 		} else if (name == "data") {
 			if (!it.value().is_string())
 				return fail(error, "checkpoint data must be a string");
@@ -563,6 +604,15 @@ static bool parse_checkpoint_record(const ordered_json &root,
 		} else {
 			return fail(error, "unknown checkpoint key: " + name);
 		}
+	}
+	if (have_buddy_allowed_to_talk || have_buddy_last_seen_player ||
+	    have_buddy_last_player_path_created || have_escort_last_path_created ||
+	    have_last_come_back_message_time || have_buddy_last_missile_time) {
+		if (!(have_buddy_allowed_to_talk && have_buddy_last_seen_player &&
+		      have_buddy_last_player_path_created && have_escort_last_path_created &&
+		      have_last_come_back_message_time && have_buddy_last_missile_time))
+			return fail(error, "checkpoint escort state requires all guidebot fields");
+		parsed.escort_state.valid = 1;
 	}
 	if (!validate_checkpoint(parsed, error))
 		return false;
@@ -588,6 +638,14 @@ static bool checkpoint_record_to_json_line(const input_demo_checkpoint &checkpoi
 	root["sha256"] = checkpoint.sha256;
 	root["save_name"] = checkpoint.save_name;
 	root["start_gt"] = checkpoint.start_gt;
+	if (checkpoint.escort_state.valid) {
+		root["buddy_allowed_to_talk"] = checkpoint.escort_state.buddy_allowed_to_talk;
+		root["buddy_last_seen_player"] = checkpoint.escort_state.buddy_last_seen_player;
+		root["buddy_last_player_path_created"] = checkpoint.escort_state.buddy_last_player_path_created;
+		root["escort_last_path_created"] = checkpoint.escort_state.escort_last_path_created;
+		root["last_come_back_message_time"] = checkpoint.escort_state.last_come_back_message_time;
+		root["buddy_last_missile_time"] = checkpoint.escort_state.buddy_last_missile_time;
+	}
 	root["data"] = checkpoint.data;
 	*line = root.dump();
 	return true;

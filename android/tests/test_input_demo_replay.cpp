@@ -118,6 +118,18 @@ static void fill_test_player_cfg(input_demo_player_cfg *player_cfg)
 		player_cfg->secondary_order[i] = secondary_order[i];
 }
 
+static void fill_test_checkpoint_escort_state(input_demo_checkpoint_escort_state *escort_state)
+{
+	input_demo_checkpoint_escort_state_clear(escort_state);
+	escort_state->valid = 1;
+	escort_state->buddy_allowed_to_talk = 0;
+	escort_state->buddy_last_seen_player = 1077412;
+	escort_state->buddy_last_player_path_created = 899154;
+	escort_state->escort_last_path_created = 1077412;
+	escort_state->last_come_back_message_time = 899154;
+	escort_state->buddy_last_missile_time = 524288;
+}
+
 static int expect_test_player_cfg(const input_demo_player_cfg *player_cfg)
 {
 	if (!player_cfg)
@@ -139,6 +151,20 @@ static int expect_test_player_cfg(const input_demo_player_cfg *player_cfg)
 		player_cfg->secondary_order[0] != 4 || player_cfg->secondary_order[5] != 2)
 		return report_failure("replay D1 player_cfg mismatch");
 #endif
+	return 0;
+}
+
+static int expect_test_checkpoint_escort_state(const input_demo_checkpoint_escort_state *escort_state)
+{
+	if (!escort_state || !escort_state->valid)
+		return report_failure("replay checkpoint escort state missing");
+	if (escort_state->buddy_allowed_to_talk != 0 ||
+	    escort_state->buddy_last_seen_player != 1077412 ||
+	    escort_state->buddy_last_player_path_created != 899154 ||
+	    escort_state->escort_last_path_created != 1077412 ||
+	    escort_state->last_come_back_message_time != 899154 ||
+	    escort_state->buddy_last_missile_time != 524288)
+		return report_failure("replay checkpoint escort state mismatch");
 	return 0;
 }
 
@@ -222,6 +248,7 @@ static int write_checkpoint_test_fixture(const char *path)
 	settings.checkpoint_size = sizeof(checkpoint_data);
 	settings.has_checkpoint_start_gt = 1;
 	settings.checkpoint_start_gt = 124125;
+	fill_test_checkpoint_escort_state(&settings.checkpoint_escort_state);
 	if (!input_demo_recorder_start(&settings, error, sizeof(error)))
 		return report_failure_string(std::string("checkpoint recorder start failed: ") + error);
 	input_demo_control_state_clear(&state);
@@ -284,6 +311,13 @@ static int expect_replay_loader(void)
 		return report_failure("replay cursor should start at frame 0");
 	if (input_demo_replay_is_finished())
 		return report_failure("replay should not start finished");
+	{
+		input_demo_checkpoint_escort_state escort_state;
+
+		input_demo_checkpoint_escort_state_clear(&escort_state);
+		if (input_demo_replay_get_checkpoint_escort_state(&escort_state))
+			return report_failure("new_level replay should not expose checkpoint escort state");
+	}
 	if (!input_demo_replay_actual_result_path() || std::string(input_demo_replay_actual_result_path()) != actual_result_path)
 		return report_failure("replay actual result path mismatch");
 
@@ -382,6 +416,15 @@ static int expect_checkpoint_replay_loader(void)
 	}
 	if (input_demo_replay_checkpoint_start_gt() != 124125)
 		return report_failure("checkpoint replay timing metadata mismatch");
+	{
+		input_demo_checkpoint_escort_state escort_state;
+
+		input_demo_checkpoint_escort_state_clear(&escort_state);
+		if (!input_demo_replay_get_checkpoint_escort_state(&escort_state))
+			return report_failure("checkpoint replay escort state missing");
+		if (expect_test_checkpoint_escort_state(&escort_state))
+			return 1;
+	}
 	if (!input_demo_replay_actual_result_path() || std::string(input_demo_replay_actual_result_path()) != actual_result_path)
 		return report_failure("checkpoint replay actual result path mismatch");
 	if (!input_demo_replay_get_current_frame(&frame, error, sizeof(error)))
@@ -395,7 +438,7 @@ static int expect_checkpoint_replay_loader(void)
 	actual_result.difficulty = 2;
 	actual_result.frame_count = 1;
 	actual_result.has_game_time64 = 1;
-	actual_result.game_time64 = 5;
+	actual_result.game_time64 = 124130;
 	if (!input_demo_replay_compare_result(&actual_result, error, sizeof(error)))
 		return report_failure_string(std::string("checkpoint replay result compare failed: ") + error);
 	input_demo_replay_unload();

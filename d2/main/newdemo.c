@@ -85,6 +85,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "controls.h"
 #include "playsave.h"
 #include "state.h"
+#include "escort.h"
 
 #include "input_demo_recorder.h"
 #include "input_demo_rng_trace.h"
@@ -1943,8 +1944,10 @@ int newdemo_read_frame_information(int rewrite)
 			nd_read_short(&last_frame_length);
 			nd_read_int(&nd_playback_v_framecount);
 			nd_dump_v_frame_number = nd_playback_v_framecount;
-			newdemo_dump_reset_player_control_trace();
-			newdemo_dump_reset_player_wiggle();
+			if (!nd_dump_v_active) {
+				newdemo_dump_reset_player_control_trace();
+				newdemo_dump_reset_player_wiggle();
+			}
 			nd_read_int((int *)&nd_recorded_time);
 			if (nd_playback_v_bad_read) { done = -1; break; }
 			if (rewrite)
@@ -3640,6 +3643,7 @@ static int input_demo_capture_recorder_checkpoint(input_demo_recorder_settings *
 	settings->checkpoint_size = (size_t) file_size;
 	settings->has_checkpoint_start_gt = 1;
 	settings->checkpoint_start_gt = GameTime64;
+	escort_get_input_demo_checkpoint_state(&settings->checkpoint_escort_state);
 	return 1;
 }
 
@@ -4820,6 +4824,8 @@ int newdemo_dump_json(const char *demo_path, const char *output_path,
 			if (Objects[i].type != OBJ_NONE && Objects[i].segnum != -1)
 				active_objects++;
 		newdemo_dump_write_frame(fp);
+		newdemo_dump_reset_player_control_trace();
+		newdemo_dump_reset_player_wiggle();
 		fflush(fp);
 		frame_count++;
 		object_total += active_objects;
