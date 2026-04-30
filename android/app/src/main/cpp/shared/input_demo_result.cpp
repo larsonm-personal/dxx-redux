@@ -53,21 +53,18 @@ static bool input_demo_result_key_allowed(const std::string &key,
 	return false;
 }
 
-static bool input_demo_result_parse_sparse_ammo_object(const nlohmann::json &object,
-                                                       uint16_t *ammo, size_t ammo_count,
-                                                       std::string *error, const char *label)
+static bool input_demo_result_parse_ammo_array(const nlohmann::json &array,
+                                               uint16_t *ammo, size_t ammo_count,
+                                               std::string *error, const char *label)
 {
-	if (!object.is_object())
-		return error ? (*error = std::string(label) + " must be an object", false) : false;
-	for (nlohmann::json::const_iterator it = object.begin(); it != object.end(); ++it) {
-		char *end = NULL;
-		long index = strtol(it.key().c_str(), &end, 10);
-
-		if (!end || *end != '\0' || index < 0 || (size_t) index >= ammo_count)
-			return error ? (*error = std::string(label) + " contains an invalid ammo index: " + it.key(), false) : false;
-		if (!it.value().is_number_integer() && !it.value().is_number_unsigned())
+	if (!array.is_array())
+		return error ? (*error = std::string(label) + " must be an array", false) : false;
+	if (array.size() != ammo_count)
+		return error ? (*error = std::string(label) + " must have exactly " + std::to_string(ammo_count) + " entries", false) : false;
+	for (size_t i = 0; i != ammo_count; ++i) {
+		if (!array[i].is_number_integer() && !array[i].is_number_unsigned())
 			return error ? (*error = std::string(label) + " contains a non-integer ammo value", false) : false;
-		ammo[index] = (uint16_t) it.value().get<unsigned int>();
+		ammo[i] = (uint16_t) array[i].get<unsigned int>();
 	}
 	return true;
 }
@@ -76,39 +73,42 @@ static bool input_demo_result_parse_player(const nlohmann::json &player_json,
                                            input_demo_result_player *player,
                                            std::string *error)
 {
-	static const char *const allowed_keys[] = { "e", "s", "sc", "li", "ll", "pw", "sw", "fl", "pa", "sa", "hk" };
+	static const char *const allowed_keys[] = {
+		"energy", "shields", "score", "lives", "laser_level", "primary_weapon",
+		"secondary_weapon", "flags", "hostages", "primary_ammo", "secondary_ammo"
+	};
 
 	if (!player_json.is_object())
-		return error ? (*error = "p0 must be an object", false) : false;
+		return error ? (*error = "player0 must be an object", false) : false;
 	input_demo_result_player_clear(player);
 	player->present = 1;
 	for (nlohmann::json::const_iterator it = player_json.begin(); it != player_json.end(); ++it) {
 		if (!input_demo_result_key_allowed(it.key(), allowed_keys, sizeof(allowed_keys) / sizeof(allowed_keys[0])))
-			return error ? (*error = std::string("unknown p0 key: ") + it.key(), false) : false;
+			return error ? (*error = std::string("unknown player0 key: ") + it.key(), false) : false;
 	}
-	if (player_json.contains("e"))
-		player->energy = player_json.at("e").get<int32_t>();
-	if (player_json.contains("s"))
-		player->shields = player_json.at("s").get<int32_t>();
-	if (player_json.contains("sc"))
-		player->score = player_json.at("sc").get<int32_t>();
-	if (player_json.contains("li"))
-		player->lives = player_json.at("li").get<int16_t>();
-	if (player_json.contains("ll"))
-		player->laser_level = player_json.at("ll").get<int16_t>();
-	if (player_json.contains("pw"))
-		player->primary_weapon = player_json.at("pw").get<int16_t>();
-	if (player_json.contains("sw"))
-		player->secondary_weapon = player_json.at("sw").get<int16_t>();
-	if (player_json.contains("fl"))
-		player->flags = player_json.at("fl").get<uint32_t>();
-	if (player_json.contains("hk"))
-		player->hostages = player_json.at("hk").get<uint16_t>();
-	if (player_json.contains("pa") && !input_demo_result_parse_sparse_ammo_object(
-	                                      player_json.at("pa"), player->primary_ammo, INPUT_DEMO_RESULT_MAX_PRIMARY_AMMO, error, "p0.pa"))
+	if (player_json.contains("energy"))
+		player->energy = player_json.at("energy").get<int32_t>();
+	if (player_json.contains("shields"))
+		player->shields = player_json.at("shields").get<int32_t>();
+	if (player_json.contains("score"))
+		player->score = player_json.at("score").get<int32_t>();
+	if (player_json.contains("lives"))
+		player->lives = player_json.at("lives").get<int16_t>();
+	if (player_json.contains("laser_level"))
+		player->laser_level = player_json.at("laser_level").get<int16_t>();
+	if (player_json.contains("primary_weapon"))
+		player->primary_weapon = player_json.at("primary_weapon").get<int16_t>();
+	if (player_json.contains("secondary_weapon"))
+		player->secondary_weapon = player_json.at("secondary_weapon").get<int16_t>();
+	if (player_json.contains("flags"))
+		player->flags = player_json.at("flags").get<uint32_t>();
+	if (player_json.contains("hostages"))
+		player->hostages = player_json.at("hostages").get<uint16_t>();
+	if (player_json.contains("primary_ammo") && !input_demo_result_parse_ammo_array(
+	                                                player_json.at("primary_ammo"), player->primary_ammo, INPUT_DEMO_RESULT_MAX_PRIMARY_AMMO, error, "player0.primary_ammo"))
 		return false;
-	if (player_json.contains("sa") && !input_demo_result_parse_sparse_ammo_object(
-	                                      player_json.at("sa"), player->secondary_ammo, INPUT_DEMO_RESULT_MAX_SECONDARY_AMMO, error, "p0.sa"))
+	if (player_json.contains("secondary_ammo") && !input_demo_result_parse_ammo_array(
+	                                                  player_json.at("secondary_ammo"), player->secondary_ammo, INPUT_DEMO_RESULT_MAX_SECONDARY_AMMO, error, "player0.secondary_ammo"))
 		return false;
 	return true;
 }
@@ -117,31 +117,31 @@ static bool input_demo_result_parse_position(const nlohmann::json &position_json
                                              input_demo_result_position *position,
                                              std::string *error)
 {
-	static const char *const allowed_keys[] = { "sg", "x", "y", "z", "fx", "fy", "fz" };
+	static const char *const allowed_keys[] = { "segment", "x", "y", "z", "forward_x", "forward_y", "forward_z" };
 
 	if (!position_json.is_object())
-		return error ? (*error = "pos must be an object", false) : false;
+		return error ? (*error = "position must be an object", false) : false;
 	input_demo_result_position_clear(position);
 	position->present = 1;
 	for (nlohmann::json::const_iterator it = position_json.begin(); it != position_json.end(); ++it) {
 		if (!input_demo_result_key_allowed(it.key(), allowed_keys, sizeof(allowed_keys) / sizeof(allowed_keys[0])))
-			return error ? (*error = std::string("unknown pos key: ") + it.key(), false) : false;
+			return error ? (*error = std::string("unknown position key: ") + it.key(), false) : false;
 	}
-	if (!position_json.contains("sg") || !position_json.contains("x") || !position_json.contains("y") ||
+	if (!position_json.contains("segment") || !position_json.contains("x") || !position_json.contains("y") ||
 	    !position_json.contains("z"))
-		return error ? (*error = "pos must include sg, x, y, and z", false) : false;
-	position->segment = position_json.at("sg").get<int32_t>();
+		return error ? (*error = "position must include segment, x, y, and z", false) : false;
+	position->segment = position_json.at("segment").get<int32_t>();
 	position->x = position_json.at("x").get<int32_t>();
 	position->y = position_json.at("y").get<int32_t>();
 	position->z = position_json.at("z").get<int32_t>();
-	if (position_json.contains("fx") || position_json.contains("fy") || position_json.contains("fz")) {
+	if (position_json.contains("forward_x") || position_json.contains("forward_y") || position_json.contains("forward_z")) {
 		position->has_forward = 1;
-		if (position_json.contains("fx"))
-			position->fx = position_json.at("fx").get<int32_t>();
-		if (position_json.contains("fy"))
-			position->fy = position_json.at("fy").get<int32_t>();
-		if (position_json.contains("fz"))
-			position->fz = position_json.at("fz").get<int32_t>();
+		if (position_json.contains("forward_x"))
+			position->fx = position_json.at("forward_x").get<int32_t>();
+		if (position_json.contains("forward_y"))
+			position->fy = position_json.at("forward_y").get<int32_t>();
+		if (position_json.contains("forward_z"))
+			position->fz = position_json.at("forward_z").get<int32_t>();
 	}
 	return true;
 }
@@ -150,28 +150,31 @@ static bool input_demo_result_parse_level_summary(const nlohmann::json &level_js
                                                   input_demo_result_level *level,
                                                   std::string *error)
 {
-	static const char *const allowed_keys[] = { "ra", "rk", "hr", "pr", "cc", "el" };
+	static const char *const allowed_keys[] = {
+		"robots_alive", "robots_killed", "hostages_remaining", "powerups_remaining",
+		"control_center_destroyed", "endlevel_completed"
+	};
 
 	if (!level_json.is_object())
-		return error ? (*error = "lv must be an object", false) : false;
+		return error ? (*error = "level_summary must be an object", false) : false;
 	input_demo_result_level_clear(level);
 	level->present = 1;
 	for (nlohmann::json::const_iterator it = level_json.begin(); it != level_json.end(); ++it) {
 		if (!input_demo_result_key_allowed(it.key(), allowed_keys, sizeof(allowed_keys) / sizeof(allowed_keys[0])))
-			return error ? (*error = std::string("unknown lv key: ") + it.key(), false) : false;
+			return error ? (*error = std::string("unknown level_summary key: ") + it.key(), false) : false;
 	}
-	if (level_json.contains("ra"))
-		level->robots_alive = level_json.at("ra").get<int32_t>();
-	if (level_json.contains("rk"))
-		level->robots_killed = level_json.at("rk").get<int32_t>();
-	if (level_json.contains("hr"))
-		level->hostages_remaining = level_json.at("hr").get<int32_t>();
-	if (level_json.contains("pr"))
-		level->powerups_remaining = level_json.at("pr").get<int32_t>();
-	if (level_json.contains("cc"))
-		level->control_center_destroyed = level_json.at("cc").get<bool>() ? 1 : 0;
-	if (level_json.contains("el"))
-		level->endlevel_completed = level_json.at("el").get<bool>() ? 1 : 0;
+	if (level_json.contains("robots_alive"))
+		level->robots_alive = level_json.at("robots_alive").get<int32_t>();
+	if (level_json.contains("robots_killed"))
+		level->robots_killed = level_json.at("robots_killed").get<int32_t>();
+	if (level_json.contains("hostages_remaining"))
+		level->hostages_remaining = level_json.at("hostages_remaining").get<int32_t>();
+	if (level_json.contains("powerups_remaining"))
+		level->powerups_remaining = level_json.at("powerups_remaining").get<int32_t>();
+	if (level_json.contains("control_center_destroyed"))
+		level->control_center_destroyed = level_json.at("control_center_destroyed").get<bool>() ? 1 : 0;
+	if (level_json.contains("endlevel_completed"))
+		level->endlevel_completed = level_json.at("endlevel_completed").get<bool>() ? 1 : 0;
 	return true;
 }
 
@@ -206,24 +209,26 @@ static bool input_demo_result_compare_player(const input_demo_result_player *exp
 	size_t i;
 
 	if (!actual->present)
-		return error ? (*error = "p0 (player summary) missing from actual result", false) : false;
-	if (!input_demo_result_compare_int64("p0.e", "player energy", expected->energy, actual->energy, error) ||
-	    !input_demo_result_compare_int64("p0.s", "player shields", expected->shields, actual->shields, error) ||
-	    !input_demo_result_compare_int64("p0.sc", "player score", expected->score, actual->score, error) ||
-	    !input_demo_result_compare_int64("p0.li", "player lives", expected->lives, actual->lives, error) ||
-	    !input_demo_result_compare_int64("p0.ll", "player laser level", expected->laser_level, actual->laser_level, error) ||
-	    !input_demo_result_compare_int64("p0.pw", "player primary weapon", expected->primary_weapon, actual->primary_weapon, error) ||
-	    !input_demo_result_compare_int64("p0.sw", "player secondary weapon", expected->secondary_weapon, actual->secondary_weapon, error) ||
-	    !input_demo_result_compare_int64("p0.fl", "player flags", expected->flags, actual->flags, error) ||
-	    !input_demo_result_compare_int64("p0.hk", "player hostages", expected->hostages, actual->hostages, error))
+		return error ? (*error = "player0 (player summary) missing from actual result", false) : false;
+	if (!input_demo_result_compare_int64("player0.energy", "player energy", expected->energy, actual->energy, error) ||
+	    !input_demo_result_compare_int64("player0.shields", "player shields", expected->shields, actual->shields, error) ||
+	    !input_demo_result_compare_int64("player0.score", "player score", expected->score, actual->score, error) ||
+	    !input_demo_result_compare_int64("player0.lives", "player lives", expected->lives, actual->lives, error) ||
+	    !input_demo_result_compare_int64("player0.laser_level", "player laser level", expected->laser_level, actual->laser_level, error) ||
+	    !input_demo_result_compare_int64("player0.primary_weapon", "player primary weapon", expected->primary_weapon, actual->primary_weapon, error) ||
+	    !input_demo_result_compare_int64("player0.secondary_weapon", "player secondary weapon", expected->secondary_weapon, actual->secondary_weapon, error) ||
+	    !input_demo_result_compare_int64("player0.flags", "player flags", expected->flags, actual->flags, error) ||
+	    !input_demo_result_compare_int64("player0.hostages", "player hostages", expected->hostages, actual->hostages, error))
 		return false;
 	for (i = 0; i != INPUT_DEMO_RESULT_MAX_PRIMARY_AMMO; ++i) {
-		if (!input_demo_result_compare_int64("p0.pa", "player primary ammo",
+		const std::string field = std::string("player0.primary_ammo[") + std::to_string(i) + "]";
+		if (!input_demo_result_compare_int64(field.c_str(), "player primary ammo",
 		                                     expected->primary_ammo[i], actual->primary_ammo[i], error))
 			return false;
 	}
 	for (i = 0; i != INPUT_DEMO_RESULT_MAX_SECONDARY_AMMO; ++i) {
-		if (!input_demo_result_compare_int64("p0.sa", "player secondary ammo",
+		const std::string field = std::string("player0.secondary_ammo[") + std::to_string(i) + "]";
+		if (!input_demo_result_compare_int64(field.c_str(), "player secondary ammo",
 		                                     expected->secondary_ammo[i], actual->secondary_ammo[i], error))
 			return false;
 	}
@@ -235,14 +240,14 @@ static bool input_demo_result_compare_position(const input_demo_result_position 
                                                std::string *error)
 {
 	if (!actual->present)
-		return error ? (*error = "pos (player position) missing from actual result", false) : false;
-	if (!input_demo_result_compare_int64("pos.sg", "player segment", expected->segment, actual->segment, error) ||
-	    !input_demo_result_compare_int64("pos.x", "player x", expected->x, actual->x, error) ||
-	    !input_demo_result_compare_int64("pos.y", "player y", expected->y, actual->y, error) ||
-	    !input_demo_result_compare_int64("pos.z", "player z", expected->z, actual->z, error) ||
-	    !input_demo_result_compare_int64("pos.fx", "player forward x", expected->fx, actual->fx, error) ||
-	    !input_demo_result_compare_int64("pos.fy", "player forward y", expected->fy, actual->fy, error) ||
-	    !input_demo_result_compare_int64("pos.fz", "player forward z", expected->fz, actual->fz, error))
+		return error ? (*error = "position (player position) missing from actual result", false) : false;
+	if (!input_demo_result_compare_int64("position.segment", "player segment", expected->segment, actual->segment, error) ||
+	    !input_demo_result_compare_int64("position.x", "player x", expected->x, actual->x, error) ||
+	    !input_demo_result_compare_int64("position.y", "player y", expected->y, actual->y, error) ||
+	    !input_demo_result_compare_int64("position.z", "player z", expected->z, actual->z, error) ||
+	    !input_demo_result_compare_int64("position.forward_x", "player forward x", expected->fx, actual->fx, error) ||
+	    !input_demo_result_compare_int64("position.forward_y", "player forward y", expected->fy, actual->fy, error) ||
+	    !input_demo_result_compare_int64("position.forward_z", "player forward z", expected->fz, actual->fz, error))
 		return false;
 	return true;
 }
@@ -252,37 +257,38 @@ static bool input_demo_result_compare_level_summary(const input_demo_result_leve
                                                     std::string *error)
 {
 	if (!actual->present)
-		return error ? (*error = "lv (level summary) missing from actual result", false) : false;
-	if (!input_demo_result_compare_int64("lv.ra", "robots alive", expected->robots_alive, actual->robots_alive, error) ||
-	    !input_demo_result_compare_int64("lv.rk", "robots killed", expected->robots_killed, actual->robots_killed, error) ||
-	    !input_demo_result_compare_int64("lv.hr", "hostages remaining", expected->hostages_remaining, actual->hostages_remaining, error) ||
-	    !input_demo_result_compare_int64("lv.pr", "powerups remaining", expected->powerups_remaining, actual->powerups_remaining, error) ||
-	    !input_demo_result_compare_int64("lv.cc", "control center destroyed", expected->control_center_destroyed,
+		return error ? (*error = "level_summary (level summary) missing from actual result", false) : false;
+	if (!input_demo_result_compare_int64("level_summary.robots_alive", "robots alive", expected->robots_alive, actual->robots_alive, error) ||
+	    !input_demo_result_compare_int64("level_summary.robots_killed", "robots killed", expected->robots_killed, actual->robots_killed, error) ||
+	    !input_demo_result_compare_int64("level_summary.hostages_remaining", "hostages remaining", expected->hostages_remaining, actual->hostages_remaining, error) ||
+	    !input_demo_result_compare_int64("level_summary.powerups_remaining", "powerups remaining", expected->powerups_remaining, actual->powerups_remaining, error) ||
+	    !input_demo_result_compare_int64("level_summary.control_center_destroyed", "control center destroyed", expected->control_center_destroyed,
 	                                     actual->control_center_destroyed, error) ||
-	    !input_demo_result_compare_int64("lv.el", "endlevel completed", expected->endlevel_completed,
+	    !input_demo_result_compare_int64("level_summary.endlevel_completed", "endlevel completed", expected->endlevel_completed,
 	                                     actual->endlevel_completed, error))
 		return false;
 	return true;
 }
 
-static nlohmann::ordered_json input_demo_result_sparse_ammo_object(const uint16_t *ammo, size_t count)
+static nlohmann::ordered_json input_demo_result_ammo_array(const uint16_t *ammo, size_t count)
 {
-	nlohmann::ordered_json object = nlohmann::ordered_json::object();
+	nlohmann::ordered_json array = nlohmann::ordered_json::array();
 	size_t i;
 
 	for (i = 0; i != count; ++i) {
-		if (!ammo[i])
-			continue;
-		object[std::to_string(i)] = ammo[i];
+		array.push_back(ammo[i]);
 	}
-	return object;
+	return array;
 }
 
 static bool input_demo_result_parse_json_object(const nlohmann::json &root,
                                                 input_demo_result *result,
                                                 std::string *error)
 {
-	static const char *const allowed_keys[] = { "v", "g", "m", "l", "d", "fr", "gt", "p0", "pos", "lv" };
+	static const char *const allowed_keys[] = {
+		"version", "game", "mission", "level", "difficulty", "frame_count",
+		"game_time64", "player0", "position", "level_summary"
+	};
 
 	if (!root.is_object())
 		return error ? (*error = "result root must be an object", false) : false;
@@ -290,25 +296,25 @@ static bool input_demo_result_parse_json_object(const nlohmann::json &root,
 		if (!input_demo_result_key_allowed(it.key(), allowed_keys, sizeof(allowed_keys) / sizeof(allowed_keys[0])))
 			return error ? (*error = std::string("unknown result key: ") + it.key(), false) : false;
 	}
-	if (!root.contains("v") || !root.contains("g") || !root.contains("m") || !root.contains("l") ||
-	    !root.contains("d") || !root.contains("fr"))
-		return error ? (*error = "result is missing one or more required keys: v, g, m, l, d, fr", false) : false;
+	if (!root.contains("version") || !root.contains("game") || !root.contains("mission") || !root.contains("level") ||
+	    !root.contains("difficulty") || !root.contains("frame_count"))
+		return error ? (*error = "result is missing one or more required keys: version, game, mission, level, difficulty, frame_count", false) : false;
 	input_demo_result_clear(result);
-	result->version = root.at("v").get<int32_t>();
-	snprintf(result->game, sizeof(result->game), "%s", root.at("g").get_ref<const std::string &>().c_str());
-	snprintf(result->mission, sizeof(result->mission), "%s", root.at("m").get_ref<const std::string &>().c_str());
-	result->level = root.at("l").get<int32_t>();
-	result->difficulty = root.at("d").get<int32_t>();
-	result->frame_count = root.at("fr").get<uint32_t>();
-	if (root.contains("gt")) {
+	result->version = root.at("version").get<int32_t>();
+	snprintf(result->game, sizeof(result->game), "%s", root.at("game").get_ref<const std::string &>().c_str());
+	snprintf(result->mission, sizeof(result->mission), "%s", root.at("mission").get_ref<const std::string &>().c_str());
+	result->level = root.at("level").get<int32_t>();
+	result->difficulty = root.at("difficulty").get<int32_t>();
+	result->frame_count = root.at("frame_count").get<uint32_t>();
+	if (root.contains("game_time64")) {
 		result->has_game_time64 = 1;
-		result->game_time64 = root.at("gt").get<int64_t>();
+		result->game_time64 = root.at("game_time64").get<int64_t>();
 	}
-	if (root.contains("p0") && !input_demo_result_parse_player(root.at("p0"), &result->player0, error))
+	if (root.contains("player0") && !input_demo_result_parse_player(root.at("player0"), &result->player0, error))
 		return false;
-	if (root.contains("pos") && !input_demo_result_parse_position(root.at("pos"), &result->position, error))
+	if (root.contains("position") && !input_demo_result_parse_position(root.at("position"), &result->position, error))
 		return false;
-	if (root.contains("lv") && !input_demo_result_parse_level_summary(root.at("lv"), &result->level_summary, error))
+	if (root.contains("level_summary") && !input_demo_result_parse_level_summary(root.at("level_summary"), &result->level_summary, error))
 		return false;
 	return true;
 }
@@ -317,82 +323,61 @@ static nlohmann::ordered_json input_demo_result_to_json_object(const input_demo_
 {
 	nlohmann::ordered_json root = nlohmann::ordered_json::object();
 
-	root["v"] = result->version ? result->version : 1;
-	if (result->game[0])
-		root["g"] = result->game;
-	if (result->mission[0])
-		root["m"] = result->mission;
-	root["l"] = result->level;
-	root["d"] = result->difficulty;
-	root["fr"] = result->frame_count;
+	root["version"] = result->version ? result->version : 2;
+	root["game"] = result->game;
+	root["mission"] = result->mission;
+	root["level"] = result->level;
+	root["difficulty"] = result->difficulty;
+	root["frame_count"] = result->frame_count;
 	if (result->has_game_time64)
-		root["gt"] = result->game_time64;
+		root["game_time64"] = result->game_time64;
 
 	if (result->player0.present) {
 		nlohmann::ordered_json player = nlohmann::ordered_json::object();
-		nlohmann::ordered_json primary_ammo = input_demo_result_sparse_ammo_object(
+		nlohmann::ordered_json primary_ammo = input_demo_result_ammo_array(
 		    result->player0.primary_ammo, INPUT_DEMO_RESULT_MAX_PRIMARY_AMMO);
-		nlohmann::ordered_json secondary_ammo = input_demo_result_sparse_ammo_object(
+		nlohmann::ordered_json secondary_ammo = input_demo_result_ammo_array(
 		    result->player0.secondary_ammo, INPUT_DEMO_RESULT_MAX_SECONDARY_AMMO);
 
-		if (result->player0.energy)
-			player["e"] = result->player0.energy;
-		if (result->player0.shields)
-			player["s"] = result->player0.shields;
-		if (result->player0.score)
-			player["sc"] = result->player0.score;
-		if (result->player0.lives)
-			player["li"] = result->player0.lives;
-		if (result->player0.laser_level)
-			player["ll"] = result->player0.laser_level;
-		if (result->player0.primary_weapon)
-			player["pw"] = result->player0.primary_weapon;
-		if (result->player0.secondary_weapon)
-			player["sw"] = result->player0.secondary_weapon;
-		if (result->player0.flags)
-			player["fl"] = result->player0.flags;
-		if (result->player0.hostages)
-			player["hk"] = result->player0.hostages;
-		if (!primary_ammo.empty())
-			player["pa"] = std::move(primary_ammo);
-		if (!secondary_ammo.empty())
-			player["sa"] = std::move(secondary_ammo);
-		if (!player.empty())
-			root["p0"] = std::move(player);
+		player["energy"] = result->player0.energy;
+		player["shields"] = result->player0.shields;
+		player["score"] = result->player0.score;
+		player["lives"] = result->player0.lives;
+		player["laser_level"] = result->player0.laser_level;
+		player["primary_weapon"] = result->player0.primary_weapon;
+		player["secondary_weapon"] = result->player0.secondary_weapon;
+		player["flags"] = result->player0.flags;
+		player["hostages"] = result->player0.hostages;
+		player["primary_ammo"] = std::move(primary_ammo);
+		player["secondary_ammo"] = std::move(secondary_ammo);
+		root["player0"] = std::move(player);
 	}
 
 	if (result->position.present) {
 		nlohmann::ordered_json position = nlohmann::ordered_json::object();
 
-		position["sg"] = result->position.segment;
+		position["segment"] = result->position.segment;
 		position["x"] = result->position.x;
 		position["y"] = result->position.y;
 		position["z"] = result->position.z;
 		if (result->position.has_forward) {
-			position["fx"] = result->position.fx;
-			position["fy"] = result->position.fy;
-			position["fz"] = result->position.fz;
+			position["forward_x"] = result->position.fx;
+			position["forward_y"] = result->position.fy;
+			position["forward_z"] = result->position.fz;
 		}
-		root["pos"] = std::move(position);
+		root["position"] = std::move(position);
 	}
 
 	if (result->level_summary.present) {
 		nlohmann::ordered_json level = nlohmann::ordered_json::object();
 
-		if (result->level_summary.robots_alive)
-			level["ra"] = result->level_summary.robots_alive;
-		if (result->level_summary.robots_killed)
-			level["rk"] = result->level_summary.robots_killed;
-		if (result->level_summary.hostages_remaining)
-			level["hr"] = result->level_summary.hostages_remaining;
-		if (result->level_summary.powerups_remaining)
-			level["pr"] = result->level_summary.powerups_remaining;
-		if (result->level_summary.control_center_destroyed)
-			level["cc"] = true;
-		if (result->level_summary.endlevel_completed)
-			level["el"] = true;
-		if (!level.empty())
-			root["lv"] = std::move(level);
+		level["robots_alive"] = result->level_summary.robots_alive;
+		level["robots_killed"] = result->level_summary.robots_killed;
+		level["hostages_remaining"] = result->level_summary.hostages_remaining;
+		level["powerups_remaining"] = result->level_summary.powerups_remaining;
+		level["control_center_destroyed"] = result->level_summary.control_center_destroyed ? true : false;
+		level["endlevel_completed"] = result->level_summary.endlevel_completed ? true : false;
+		root["level_summary"] = std::move(level);
 	}
 
 	return root;
@@ -455,7 +440,7 @@ void input_demo_result_clear(input_demo_result *result)
 	if (!result)
 		return;
 	memset(result, 0, sizeof(*result));
-	result->version = 1;
+	result->version = 2;
 	input_demo_result_player_clear(&result->player0);
 	input_demo_result_position_clear(&result->position);
 	input_demo_result_level_clear(&result->level_summary);
@@ -512,15 +497,15 @@ int input_demo_result_compare(const input_demo_result *expected,
 
 	if (!expected || !actual)
 		return input_demo_result_copy_error("missing result comparison input", error, error_size);
-	if (!input_demo_result_compare_int64("v", "schema version", expected->version, actual->version, &compare_error) ||
-	    !input_demo_result_compare_string("g", "game id", expected->game, actual->game, &compare_error) ||
-	    !input_demo_result_compare_string("m", "mission id", expected->mission, actual->mission, &compare_error) ||
-	    !input_demo_result_compare_int64("l", "level", expected->level, actual->level, &compare_error) ||
-	    !input_demo_result_compare_int64("d", "difficulty", expected->difficulty, actual->difficulty, &compare_error) ||
-	    !input_demo_result_compare_int64("fr", "frame count", expected->frame_count, actual->frame_count, &compare_error))
+	if (!input_demo_result_compare_int64("version", "schema version", expected->version, actual->version, &compare_error) ||
+	    !input_demo_result_compare_string("game", "game id", expected->game, actual->game, &compare_error) ||
+	    !input_demo_result_compare_string("mission", "mission id", expected->mission, actual->mission, &compare_error) ||
+	    !input_demo_result_compare_int64("level", "level", expected->level, actual->level, &compare_error) ||
+	    !input_demo_result_compare_int64("difficulty", "difficulty", expected->difficulty, actual->difficulty, &compare_error) ||
+	    !input_demo_result_compare_int64("frame_count", "frame count", expected->frame_count, actual->frame_count, &compare_error))
 		return input_demo_result_copy_error(compare_error, error, error_size);
 	if (expected->has_game_time64 &&
-	    !input_demo_result_compare_int64("gt", "final GameTime64", expected->game_time64, actual->game_time64, &compare_error))
+	    !input_demo_result_compare_int64("game_time64", "final GameTime64", expected->game_time64, actual->game_time64, &compare_error))
 		return input_demo_result_copy_error(compare_error, error, error_size);
 	if (expected->player0.present && !input_demo_result_compare_player(&expected->player0, &actual->player0, &compare_error))
 		return input_demo_result_copy_error(compare_error, error, error_size);

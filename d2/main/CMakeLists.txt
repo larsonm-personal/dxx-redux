@@ -77,11 +77,16 @@ endif()
 
 include_directories(../include ../arch/include)
 
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/input-demo-codec-deps.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/input-demo-build-metadata.cmake)
+
 target_compile_definitions(dxx-redux-d2 PUBLIC
     DXX_VERSION_MAJORi=${PROJECT_VERSION_MAJOR}
     DXX_VERSION_MINORi=${PROJECT_VERSION_MINOR}
     DXX_VERSION_MICROi=$<IF:$<BOOL:${PROJECT_VERSION_MICRO}>,${PROJECT_VERSION_MICRO},0>
     )
+
+dxx_input_demo_apply_build_metadata(dxx-redux-d2)
 
 include(CheckTypeSize)
 check_type_size("ssize_t" SIZEOF_SSIZE_T LANGUAGE C)
@@ -112,16 +117,21 @@ if(NOT ANDROID)
         FetchContent_MakeAvailable(nlohmann_json)
     endif()
 
+    find_package(ZLIB REQUIRED)
+
     target_compile_features(dxx-redux-d2 PRIVATE cxx_std_11)
     target_sources(dxx-redux-d2 PRIVATE
         ../../android/app/src/main/cpp/shared/input_demo_rng_mode.c
         ../../android/app/src/main/cpp/shared/input_demo_controls.cpp
         ../../android/app/src/main/cpp/shared/input_demo_fixture.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_codec.cpp
         ../../android/app/src/main/cpp/shared/input_demo_result.cpp
         ../../android/app/src/main/cpp/shared/input_demo_recorder.cpp
         ../../android/app/src/main/cpp/shared/input_demo_replay.cpp)
     target_include_directories(dxx-redux-d2 PRIVATE ../../android/app/src/main/cpp/shared)
     target_link_libraries(dxx-redux-d2 PRIVATE nlohmann_json::nlohmann_json)
+    target_link_libraries(dxx-redux-d2 PRIVATE ZLIB::ZLIB)
+    dxx_input_demo_apply_codec_deps(dxx-redux-d2)
 endif()
 
 if(EDITOR)

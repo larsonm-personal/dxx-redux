@@ -8,6 +8,14 @@
 #include "input_demo_fixture.h"
 #include "input_demo_rng_mode.h"
 
+#ifndef DXX_INPUT_DEMO_BUILD_NUMBERi
+#define DXX_INPUT_DEMO_BUILD_NUMBERi 0
+#endif
+
+#ifndef DXX_INPUT_DEMO_GIT_VERSION
+#define DXX_INPUT_DEMO_GIT_VERSION "unknown"
+#endif
+
 static int report_failure(const char *message)
 {
 	fprintf(stderr, "%s\n", message);
@@ -40,6 +48,31 @@ static const char *input_demo_test_game_name(void)
 	return "d2";
 #else
 	return "d1";
+#endif
+}
+
+static int input_demo_test_build_number(void)
+{
+	return DXX_INPUT_DEMO_BUILD_NUMBERi;
+}
+
+static const char *input_demo_test_git_version(void)
+{
+	return DXX_INPUT_DEMO_GIT_VERSION;
+}
+
+static const char *input_demo_test_arch(void)
+{
+#if defined(__aarch64__) || defined(_M_ARM64)
+	return "arm64";
+#elif defined(__arm__) || defined(_M_ARM)
+	return "arm";
+#elif defined(__x86_64__) || defined(_M_X64)
+	return "x86_64";
+#elif defined(__i386__) || defined(_M_IX86)
+	return "x86";
+#else
+	return "unknown";
 #endif
 }
 
@@ -132,9 +165,12 @@ static int expect_demo_file_output(void)
 	std::string expected;
 	std::string error;
 
-	demo.metadata.version = 1;
+	demo.metadata.version = 2;
 	demo.metadata.game = input_demo_test_game_name();
 	demo.metadata.mission = input_demo_test_game_name();
+	demo.metadata.build_number = input_demo_test_build_number();
+	demo.metadata.git_version = input_demo_test_git_version();
+	demo.metadata.arch = input_demo_test_arch();
 	demo.metadata.level = 1;
 	demo.metadata.difficulty = 2;
 	demo.metadata.start_mode = "new_level";
@@ -169,14 +205,17 @@ static int expect_demo_file_output(void)
 	if (!input_demo_file_to_text(demo, &text, &error))
 		return report_failure_string(std::string("demo file text failed: ") + error);
 	expected =
-		std::string("{\"type\":\"header\",\"version\":1,\"game\":\"") + input_demo_test_game_name() +
+		std::string("{\"type\":\"header\",\"version\":2,\"game\":\"") + input_demo_test_game_name() +
 		"\",\"mission\":\"" + input_demo_test_game_name() +
+		"\",\"build_number\":" + std::to_string(input_demo_test_build_number()) +
+		",\"git_version\":\"" + input_demo_test_git_version() +
+		"\",\"arch\":\"" + input_demo_test_arch() +
 		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"" + rng_mode +
 		"\",\"frame_count\":2}\n" +
 		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
 		"{\"type\":\"frame\",\"f\":1,\"input\":{\"p\":{\"f1\":1}},\"rng\":{\"s\":101,\"c\":3}}\n" +
-		"{\"type\":\"result\",\"result\":{\"v\":1,\"g\":\"" + input_demo_test_game_name() +
-		"\",\"m\":\"" + input_demo_test_game_name() + "\",\"l\":1,\"d\":2,\"fr\":2}}\n";
+		"{\"type\":\"result\",\"result\":{\"version\":2,\"game\":\"" + input_demo_test_game_name() +
+		"\",\"mission\":\"" + input_demo_test_game_name() + "\",\"level\":1,\"difficulty\":2,\"frame_count\":2}}\n";
 	if (text != expected)
 		return report_failure_string(std::string("unexpected demo file text: ") + text);
 	if (!input_demo_file_write(path, demo, &error))
@@ -212,9 +251,12 @@ static int expect_checkpoint_demo_file_output(void)
 	size_t frame_offset;
 	size_t result_offset;
 
-	demo.metadata.version = 1;
+	demo.metadata.version = 2;
 	demo.metadata.game = input_demo_test_game_name();
 	demo.metadata.mission = input_demo_test_game_name();
+	demo.metadata.build_number = input_demo_test_build_number();
+	demo.metadata.git_version = input_demo_test_git_version();
+	demo.metadata.arch = input_demo_test_arch();
 	demo.metadata.level = 1;
 	demo.metadata.difficulty = 2;
 	demo.metadata.start_mode = "save_checkpoint";
@@ -250,14 +292,17 @@ static int expect_checkpoint_demo_file_output(void)
 	if (!input_demo_file_to_text(demo, &text, &error))
 		return report_failure_string(std::string("checkpoint demo file text failed: ") + error);
 	expected =
-		std::string("{\"type\":\"header\",\"version\":1,\"game\":\"") + input_demo_test_game_name() +
+		std::string("{\"type\":\"header\",\"version\":2,\"game\":\"") + input_demo_test_game_name() +
 		"\",\"mission\":\"" + input_demo_test_game_name() +
+		"\",\"build_number\":" + std::to_string(input_demo_test_build_number()) +
+		",\"git_version\":\"" + input_demo_test_git_version() +
+		"\",\"arch\":\"" + input_demo_test_arch() +
 		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"save_checkpoint\",\"rng_mode\":\"" + rng_mode +
 		"\",\"frame_count\":1,\"start_save\":\"inputdemo_start.dgss\"}\n" +
-		"{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"size\":8,\"sha256\":\"077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"data\":\"REdTUxgAAAA=\"}\n" +
+		"{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"compression\":\"none\",\"size\":8,\"sha256\":\"077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"data\":\"REdTUxgAAAA=\"}\n" +
 		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
-		"{\"type\":\"result\",\"result\":{\"v\":1,\"g\":\"" + input_demo_test_game_name() +
-		"\",\"m\":\"" + input_demo_test_game_name() + "\",\"l\":1,\"d\":2,\"fr\":1}}\n";
+		"{\"type\":\"result\",\"result\":{\"version\":2,\"game\":\"" + input_demo_test_game_name() +
+		"\",\"mission\":\"" + input_demo_test_game_name() + "\",\"level\":1,\"difficulty\":2,\"frame_count\":1}}\n";
 	if (text != expected)
 		return report_failure_string(std::string("unexpected checkpoint demo file text: ") + text);
 	if (!input_demo_file_write(path, demo, &error))
@@ -276,18 +321,21 @@ static int expect_checkpoint_demo_file_output(void)
 	}
 	remove(path);
 	if (!parsed.has_checkpoint || parsed.frames.size() != 1 || parsed.checkpoint.size != 8 ||
-		parsed.checkpoint.data != "REdTUxgAAAA=" || !parsed.checkpoint.has_start_gt ||
+		parsed.checkpoint.compression != "none" || parsed.checkpoint.data != "REdTUxgAAAA=" || !parsed.checkpoint.has_start_gt ||
 		parsed.checkpoint.start_gt != 124125)
 		return report_failure("checkpoint demo file round trip corrupted content");
 	reordered =
-		std::string("{\"type\":\"header\",\"version\":1,\"game\":\"") + input_demo_test_game_name() +
+		std::string("{\"type\":\"header\",\"version\":2,\"game\":\"") + input_demo_test_game_name() +
 		"\",\"mission\":\"" + input_demo_test_game_name() +
+		"\",\"build_number\":" + std::to_string(input_demo_test_build_number()) +
+		",\"git_version\":\"" + input_demo_test_git_version() +
+		"\",\"arch\":\"" + input_demo_test_arch() +
 		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"save_checkpoint\",\"rng_mode\":\"" + rng_mode +
 		"\",\"frame_count\":1,\"start_save\":\"inputdemo_start.dgss\"}\n" +
-		"{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"size\":8,\"sha256\":\"077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"next_laser_fire_delta\":0,\"next_missile_fire_delta\":0,\"last_laser_fired_delta\":0,\"auto_fire_fusion_delta\":0,\"data\":\"REdTUxgAAAA=\"}\n" +
+		"{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"compression\":\"none\",\"size\":8,\"sha256\":\"077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"next_laser_fire_delta\":0,\"next_missile_fire_delta\":0,\"last_laser_fired_delta\":0,\"auto_fire_fusion_delta\":0,\"data\":\"REdTUxgAAAA=\"}\n" +
 		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
-		"{\"type\":\"result\",\"result\":{\"v\":1,\"g\":\"" + input_demo_test_game_name() +
-		"\",\"m\":\"" + input_demo_test_game_name() + "\",\"l\":1,\"d\":2,\"fr\":1}}\n";
+		"{\"type\":\"result\",\"result\":{\"version\":2,\"game\":\"" + input_demo_test_game_name() +
+		"\",\"mission\":\"" + input_demo_test_game_name() + "\",\"level\":1,\"difficulty\":2,\"frame_count\":1}}\n";
 	if (input_demo_file_parse_text(reordered, &parsed, &error))
 		return report_failure("legacy checkpoint demo unexpectedly accepted timing metadata");
 	invalid = demo;

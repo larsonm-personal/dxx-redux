@@ -21,7 +21,11 @@ if(NOT ANDROID)
         FetchContent_MakeAvailable(nlohmann_json)
     endif()
 
+    include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/input-demo-codec-deps.cmake)
+    include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/input-demo-build-metadata.cmake)
+
     find_package(PhysFS REQUIRED)
+    find_package(ZLIB REQUIRED)
 
     add_executable(test_rng_seed_resume ../../android/tests/test_rng_seed_resume.c)
     target_link_libraries(test_rng_seed_resume PRIVATE ${DXX_TARGET_PREFIX}maths)
@@ -50,17 +54,21 @@ if(NOT ANDROID)
     target_compile_definitions(test_input_demo_fixture PRIVATE INPUT_DEMO_TEST_D2=1)
     target_link_libraries(test_input_demo_fixture PRIVATE ${DXX_TARGET_PREFIX}maths nlohmann_json::nlohmann_json)
     target_include_directories(test_input_demo_fixture PRIVATE ../../android/app/src/main/cpp/shared)
+    dxx_input_demo_apply_build_metadata(test_input_demo_fixture)
 
     add_executable(test_input_demo_recorder
         ../../android/tests/test_input_demo_recorder.cpp
         ../../android/app/src/main/cpp/shared/input_demo_controls.cpp
         ../../android/app/src/main/cpp/shared/input_demo_fixture.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_codec.cpp
         ../../android/app/src/main/cpp/shared/input_demo_result.cpp
         ../../android/app/src/main/cpp/shared/input_demo_recorder.cpp)
     target_compile_features(test_input_demo_recorder PRIVATE cxx_std_11)
     target_compile_definitions(test_input_demo_recorder PRIVATE INPUT_DEMO_TEST_D2=1)
-    target_link_libraries(test_input_demo_recorder PRIVATE ${DXX_TARGET_PREFIX}maths nlohmann_json::nlohmann_json)
+    target_link_libraries(test_input_demo_recorder PRIVATE ${DXX_TARGET_PREFIX}maths nlohmann_json::nlohmann_json ZLIB::ZLIB)
     target_include_directories(test_input_demo_recorder PRIVATE ../../android/app/src/main/cpp/shared)
+    dxx_input_demo_apply_codec_deps(test_input_demo_recorder)
+    dxx_input_demo_apply_build_metadata(test_input_demo_recorder)
 
     add_executable(test_input_demo_result
         ../../android/tests/test_input_demo_result.cpp
@@ -73,13 +81,16 @@ if(NOT ANDROID)
         ../../android/tests/test_input_demo_replay.cpp
         ../../android/app/src/main/cpp/shared/input_demo_controls.cpp
         ../../android/app/src/main/cpp/shared/input_demo_fixture.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_codec.cpp
         ../../android/app/src/main/cpp/shared/input_demo_result.cpp
         ../../android/app/src/main/cpp/shared/input_demo_recorder.cpp
         ../../android/app/src/main/cpp/shared/input_demo_replay.cpp)
     target_compile_features(test_input_demo_replay PRIVATE cxx_std_11)
     target_compile_definitions(test_input_demo_replay PRIVATE INPUT_DEMO_TEST_D2=1)
-    target_link_libraries(test_input_demo_replay PRIVATE ${DXX_TARGET_PREFIX}maths nlohmann_json::nlohmann_json)
+    target_link_libraries(test_input_demo_replay PRIVATE ${DXX_TARGET_PREFIX}maths nlohmann_json::nlohmann_json ZLIB::ZLIB)
     target_include_directories(test_input_demo_replay PRIVATE ../../android/app/src/main/cpp/shared)
+    dxx_input_demo_apply_codec_deps(test_input_demo_replay)
+    dxx_input_demo_apply_build_metadata(test_input_demo_replay)
 endif()
 
 include_directories(../include ../arch/include ../main)

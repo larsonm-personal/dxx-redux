@@ -16,6 +16,7 @@ endif()
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5 CACHE STRING "" FORCE)   # PhysFS 3.2 compat
 
 include(FetchContent)
+include(${CMAKE_CURRENT_LIST_DIR}/../../../../../cmake/input-demo-codec-deps.cmake)
 
 # ──────────────────────────────────────────────────────────────
 # Compiler warnings
@@ -559,6 +560,7 @@ target_sources(dxx-redux-d1 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_rng_mode.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_fixture.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_controls.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_codec.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_result.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_recorder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_replay.cpp
@@ -627,6 +629,7 @@ endif() # OPENGL
 
 target_link_libraries(dxx-redux-d1 PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(dxx-redux-d1 PRIVATE lzma_sdk_c z dxx_fingerprint chromaprint ktx)
+dxx_input_demo_apply_codec_deps(dxx-redux-d1)
 target_compile_definitions(dxx-redux-d1 PRIVATE KHRONOS_STATIC)
 set_property(TARGET dxx-redux-d1 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 
@@ -668,6 +671,7 @@ target_sources(dxx-redux-d2 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_rng_mode.c
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_fixture.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_controls.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_codec.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_result.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_recorder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_replay.cpp
@@ -747,5 +751,6 @@ endif() # OPENGL
 # nlohmann/json — used by the introspection/automation C++ files
 target_link_libraries(dxx-redux-d2 PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(dxx-redux-d2 PRIVATE lzma_sdk_c z dxx_fingerprint chromaprint ktx)
+dxx_input_demo_apply_codec_deps(dxx-redux-d2)
 target_compile_definitions(dxx-redux-d2 PRIVATE KHRONOS_STATIC)
 set_property(TARGET dxx-redux-d2 PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)

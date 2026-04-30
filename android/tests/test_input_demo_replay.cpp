@@ -34,6 +34,21 @@ static int report_failure_string(const std::string &message)
 	return report_failure(message.c_str());
 }
 
+static bool read_text_file(const char *path, std::string *text)
+{
+	FILE *f = fopen(path, "rb");
+	char buffer[256];
+	size_t bytes;
+
+	if (!f)
+		return false;
+	text->clear();
+	while ((bytes = fread(buffer, 1, sizeof(buffer), f)) != 0)
+		text->append(buffer, bytes);
+	fclose(f);
+	return true;
+}
+
 static const char *input_demo_test_game_name(void)
 {
 #if defined(INPUT_DEMO_TEST_D2)
@@ -55,6 +70,22 @@ static int input_demo_test_game_id(void)
 static const char *input_demo_test_rng_mode(void)
 {
 	return d_rand_get_replay_mode() == D_RAND_REPLAY_MODE_LCG_STATE ? "lcg_state" : "libc_reseed";
+}
+
+static void fill_test_checkpoint_data(unsigned char *data, size_t data_size)
+{
+	size_t i;
+
+	memset(data, 0, data_size);
+	if (data_size >= 8) {
+		data[0] = 'D';
+		data[1] = 'G';
+		data[2] = 'S';
+		data[3] = 'S';
+		data[4] = 24;
+	}
+	for (i = 8; i != data_size; ++i)
+		data[i] = (i % 32) == 0 ? (unsigned char) i : 0;
 }
 
 static void fill_test_player_cfg(input_demo_player_cfg *player_cfg)
@@ -169,12 +200,14 @@ static int write_test_fixture(const char *path)
 
 static int write_checkpoint_test_fixture(const char *path)
 {
-	const unsigned char checkpoint_data[] = { 'D', 'G', 'S', 'S', 24, 0, 0, 0 };
+	unsigned char checkpoint_data[256];
 	input_demo_recorder_settings settings;
 	input_demo_control_state state;
 	input_demo_control_pulse pulse;
 	input_demo_result result;
 	char error[256] = "";
+
+	fill_test_checkpoint_data(checkpoint_data, sizeof(checkpoint_data));
 
 	input_demo_recorder_settings_clear(&settings);
 	settings.game = input_demo_test_game_id();
@@ -312,6 +345,16 @@ static int expect_checkpoint_replay_loader(void)
 		return report_failure("could not create checkpoint replay test directory");
 	if (write_checkpoint_test_fixture(demo_path.c_str()))
 		return 1;
+	{
+		unsigned char expected_checkpoint[256];
+		std::string demo_text;
+
+		fill_test_checkpoint_data(expected_checkpoint, sizeof(expected_checkpoint));
+		if (!read_text_file(demo_path.c_str(), &demo_text))
+			return report_failure("could not read checkpoint replay fixture");
+		if (demo_text.find("\"compression\":\"zlib\"") == std::string::npos)
+			return report_failure_string(std::string("checkpoint replay fixture was not compressed: ") + demo_text);
+	}
 	if (!input_demo_replay_load(demo_path.c_str(), error, sizeof(error)))
 		return report_failure_string(std::string("checkpoint replay load failed: ") + error);
 	if (!input_demo_replay_is_loaded())
@@ -327,14 +370,16 @@ static int expect_checkpoint_replay_loader(void)
 	if (!input_demo_replay_checkpoint_save_name() ||
 		std::string(input_demo_replay_checkpoint_save_name()) != "inputdemo_start.dgss")
 		return report_failure("checkpoint replay save_name mismatch");
-	if (input_demo_replay_checkpoint_size() != 8)
+	if (input_demo_replay_checkpoint_size() != 256)
 		return report_failure("checkpoint replay size mismatch");
-	if (!input_demo_replay_checkpoint_data() || input_demo_replay_checkpoint_data()[0] != 'D' ||
-		input_demo_replay_checkpoint_data()[1] != 'G' || input_demo_replay_checkpoint_data()[2] != 'S' ||
-		input_demo_replay_checkpoint_data()[3] != 'S' || input_demo_replay_checkpoint_data()[4] != 24 ||
-		input_demo_replay_checkpoint_data()[5] != 0 || input_demo_replay_checkpoint_data()[6] != 0 ||
-		input_demo_replay_checkpoint_data()[7] != 0)
-		return report_failure("checkpoint replay bytes mismatch");
+	{
+		unsigned char expected_checkpoint[256];
+
+		fill_test_checkpoint_data(expected_checkpoint, sizeof(expected_checkpoint));
+		if (!input_demo_replay_checkpoint_data() ||
+		    memcmp(input_demo_replay_checkpoint_data(), expected_checkpoint, sizeof(expected_checkpoint)) != 0)
+			return report_failure("checkpoint replay bytes mismatch");
+	}
 	if (input_demo_replay_checkpoint_start_gt() != 124125)
 		return report_failure("checkpoint replay timing metadata mismatch");
 	if (!input_demo_replay_actual_result_path() || std::string(input_demo_replay_actual_result_path()) != actual_result_path)

@@ -443,6 +443,8 @@ static bool validate_checkpoint(const input_demo_checkpoint &checkpoint, std::st
 		return fail(error, "checkpoint format must be dgss");
 	if (checkpoint.encoding != "base64")
 		return fail(error, "checkpoint encoding must be base64");
+	if (checkpoint.compression != "none" && checkpoint.compression != "zlib")
+		return fail(error, "checkpoint compression must be none or zlib");
 	if (!checkpoint.size)
 		return fail(error, "checkpoint size must be positive");
 	if (checkpoint.sha256.empty())
@@ -458,12 +460,18 @@ static bool validate_checkpoint(const input_demo_checkpoint &checkpoint, std::st
 
 static bool validate_metadata(const input_demo_metadata &metadata, std::string *error)
 {
-	if (metadata.version != 1)
-		return fail(error, "metadata version must be 1");
+	if (metadata.version != 2)
+		return fail(error, "metadata version must be 2");
 	if (metadata.game != "d1" && metadata.game != "d2")
 		return fail(error, "metadata game must be d1 or d2");
 	if (metadata.mission.empty())
 		return fail(error, "metadata mission is required");
+	if (metadata.build_number < 0)
+		return fail(error, "metadata build_number must be non-negative");
+	if (metadata.git_version.empty())
+		return fail(error, "metadata git_version is required");
+	if (metadata.arch.empty())
+		return fail(error, "metadata arch is required");
 	if (metadata.difficulty < 0)
 		return fail(error, "metadata difficulty must be non-negative");
 	if (metadata.start_mode != "new_level" && metadata.start_mode != "save_checkpoint")
@@ -529,6 +537,10 @@ static bool parse_checkpoint_record(const ordered_json &root,
 			if (!it.value().is_string())
 				return fail(error, "checkpoint encoding must be a string");
 			parsed.encoding = it.value().get<std::string>();
+		} else if (name == "compression") {
+			if (!it.value().is_string())
+				return fail(error, "checkpoint compression must be a string");
+			parsed.compression = it.value().get<std::string>();
 		} else if (name == "size") {
 			if (!parse_uint32_field(it.value(), &parsed.size, error, "checkpoint size"))
 				return false;
@@ -571,6 +583,7 @@ static bool checkpoint_record_to_json_line(const input_demo_checkpoint &checkpoi
 	root["type"] = "checkpoint";
 	root["format"] = checkpoint.format;
 	root["encoding"] = checkpoint.encoding;
+	root["compression"] = checkpoint.compression;
 	root["size"] = checkpoint.size;
 	root["sha256"] = checkpoint.sha256;
 	root["save_name"] = checkpoint.save_name;
@@ -609,6 +622,17 @@ bool input_demo_metadata_parse_header_line(const std::string &line,
 			if (!it.value().is_string())
 				return fail(error, "metadata mission must be a string");
 			parsed.mission = it.value().get<std::string>();
+		} else if (name == "build_number") {
+			if (!parse_int_field(it.value(), &parsed.build_number, error, "build_number"))
+				return false;
+		} else if (name == "git_version") {
+			if (!it.value().is_string())
+				return fail(error, "metadata git_version must be a string");
+			parsed.git_version = it.value().get<std::string>();
+		} else if (name == "arch") {
+			if (!it.value().is_string())
+				return fail(error, "metadata arch must be a string");
+			parsed.arch = it.value().get<std::string>();
 		} else if (name == "level") {
 			if (!parse_int_field(it.value(), &parsed.level, error, "level"))
 				return false;
@@ -661,6 +685,9 @@ bool input_demo_metadata_to_header_line(const input_demo_metadata &metadata,
 	root["version"] = metadata.version;
 	root["game"] = metadata.game;
 	root["mission"] = metadata.mission;
+	root["build_number"] = metadata.build_number;
+	root["git_version"] = metadata.git_version;
+	root["arch"] = metadata.arch;
 	root["level"] = metadata.level;
 	root["difficulty"] = metadata.difficulty;
 	root["start_mode"] = metadata.start_mode;

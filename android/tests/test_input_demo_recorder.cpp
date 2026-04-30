@@ -17,6 +17,14 @@
 #include "input_demo_rng_trace.h"
 #include "input_demo_result.h"
 
+#ifndef DXX_INPUT_DEMO_BUILD_NUMBERi
+#define DXX_INPUT_DEMO_BUILD_NUMBERi 0
+#endif
+
+#ifndef DXX_INPUT_DEMO_GIT_VERSION
+#define DXX_INPUT_DEMO_GIT_VERSION "unknown"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -72,6 +80,31 @@ static int input_demo_test_game_id(void)
 static const char *input_demo_test_rng_mode(void)
 {
 	return d_rand_get_replay_mode() == D_RAND_REPLAY_MODE_LCG_STATE ? "lcg_state" : "libc_reseed";
+}
+
+static int input_demo_test_build_number(void)
+{
+	return DXX_INPUT_DEMO_BUILD_NUMBERi;
+}
+
+static const char *input_demo_test_git_version(void)
+{
+	return DXX_INPUT_DEMO_GIT_VERSION;
+}
+
+static const char *input_demo_test_arch(void)
+{
+#if defined(__aarch64__) || defined(_M_ARM64)
+	return "arm64";
+#elif defined(__arm__) || defined(_M_ARM)
+	return "arm";
+#elif defined(__x86_64__) || defined(_M_X64)
+	return "x86_64";
+#elif defined(__i386__) || defined(_M_IX86)
+	return "x86";
+#else
+	return "unknown";
+#endif
 }
 
 static void fill_test_player_cfg(input_demo_player_cfg *player_cfg)
@@ -214,16 +247,17 @@ static int expect_record_and_flush(void)
 		return report_failure("recorder should be inactive after flush");
 	if (!read_text_file(demo_path.c_str(), &text))
 		return report_failure("could not read recorder demo file");
-	expected = std::string("{\"type\":\"header\",\"version\":1,\"game\":\"") + input_demo_test_game_name() +
+	expected = std::string("{\"type\":\"header\",\"version\":2,\"game\":\"") + input_demo_test_game_name() +
 		"\",\"mission\":\"" + input_demo_test_game_name() +
+		"\",\"build_number\":" + std::to_string(input_demo_test_build_number()) + ",\"git_version\":\"" + input_demo_test_git_version() + "\",\"arch\":\"" + input_demo_test_arch() +
 		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"" + input_demo_test_rng_mode() +
 		"\",\"frame_count\":3" + input_demo_test_player_cfg_header_json() + "}\n" +
 		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
 		"{\"type\":\"frame\",\"f\":1,\"input\":{\"p\":{\"f1\":1}},\"rng\":{\"s\":100}}\n" +
 		"{\"type\":\"frame\",\"f\":2,\"input\":{\"s\":{\"f\":0}},\"rng\":{\"s\":102}}\n" +
-		"{\"type\":\"result\",\"result\":{\"v\":1,\"g\":\"" + input_demo_test_game_name() +
-		"\",\"m\":\"" + input_demo_test_game_name() +
-		"\",\"l\":1,\"d\":2,\"fr\":3,\"gt\":120,\"p0\":{\"e\":67,\"s\":42,\"sc\":12500,\"li\":3,\"ll\":1,\"sw\":1,\"pa\":{\"1\":200},\"sa\":{\"0\":4}},\"pos\":{\"sg\":142,\"x\":12345678,\"y\":-8765432,\"z\":3456789,\"fx\":65536,\"fy\":0,\"fz\":0},\"lv\":{\"ra\":23,\"rk\":8,\"hr\":2,\"pr\":15,\"cc\":true}}}\n";
+		"{\"type\":\"result\",\"result\":{\"version\":2,\"game\":\"" + input_demo_test_game_name() +
+		"\",\"mission\":\"" + input_demo_test_game_name() +
+		"\",\"level\":1,\"difficulty\":2,\"frame_count\":3,\"game_time64\":120,\"player0\":{\"energy\":67,\"shields\":42,\"score\":12500,\"lives\":3,\"laser_level\":1,\"primary_weapon\":0,\"secondary_weapon\":1,\"flags\":0,\"hostages\":0,\"primary_ammo\":[0,200,0,0,0,0,0,0,0,0,0,0,0,0,0,0],\"secondary_ammo\":[4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},\"position\":{\"segment\":142,\"x\":12345678,\"y\":-8765432,\"z\":3456789,\"forward_x\":65536,\"forward_y\":0,\"forward_z\":0},\"level_summary\":{\"robots_alive\":23,\"robots_killed\":8,\"hostages_remaining\":2,\"powerups_remaining\":15,\"control_center_destroyed\":true,\"endlevel_completed\":false}}}\n";
 	if (text != expected)
 		return report_failure_string(std::string("unexpected recorder demo file: ") + text);
 	if (!read_text_file(trace_path.c_str(), &text))
@@ -295,14 +329,15 @@ static int expect_record_and_flush_checkpoint(void)
 		remove_test_dir(dir);
 		return report_failure("could not read checkpoint recorder demo file");
 	}
-	expected = std::string("{\"type\":\"header\",\"version\":1,\"game\":\"") + input_demo_test_game_name() +
+	expected = std::string("{\"type\":\"header\",\"version\":2,\"game\":\"") + input_demo_test_game_name() +
 		"\",\"mission\":\"" + input_demo_test_game_name() +
+		"\",\"build_number\":" + std::to_string(input_demo_test_build_number()) + ",\"git_version\":\"" + input_demo_test_git_version() + "\",\"arch\":\"" + input_demo_test_arch() +
 		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"save_checkpoint\",\"rng_mode\":\"" + input_demo_test_rng_mode() +
 		"\",\"frame_count\":1,\"start_save\":\"inputdemo_start.dgss\"" + input_demo_test_player_cfg_header_json() + "}\n" +
-		"{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"size\":8,\"sha256\":\"077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"data\":\"REdTUxgAAAA=\"}\n" +
+		"{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"compression\":\"none\",\"size\":8,\"sha256\":\"077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"data\":\"REdTUxgAAAA=\"}\n" +
 		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
-		"{\"type\":\"result\",\"result\":{\"v\":1,\"g\":\"" + input_demo_test_game_name() +
-		"\",\"m\":\"" + input_demo_test_game_name() + "\",\"l\":1,\"d\":2,\"fr\":1}}\n";
+		"{\"type\":\"result\",\"result\":{\"version\":2,\"game\":\"" + input_demo_test_game_name() +
+		"\",\"mission\":\"" + input_demo_test_game_name() + "\",\"level\":1,\"difficulty\":2,\"frame_count\":1}}\n";
 	if (text != expected) {
 		remove(demo_path.c_str());
 		remove_test_dir(dir);
@@ -317,6 +352,7 @@ static int expect_record_and_flush_checkpoint(void)
 	remove_test_dir(dir);
 	if (parsed.metadata.start_mode != "save_checkpoint" || !parsed.has_checkpoint ||
 		!parsed.metadata.has_player_cfg || parsed.metadata.player_cfg.primary_order_count == 0 ||
+		parsed.checkpoint.compression != "none" ||
 		parsed.checkpoint.sha256 != "077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5" ||
 		parsed.checkpoint.data != "REdTUxgAAAA=")
 		return report_failure("checkpoint recorder demo round trip mismatch");

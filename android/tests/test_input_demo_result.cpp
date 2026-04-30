@@ -112,42 +112,76 @@ static int expect_result_writer(void)
 		return report_failure("could not read result output");
 	}
 	expected = std::string("{\n") +
-		"  \"v\": 1,\n" +
-		"  \"g\": \"d2\",\n" +
-		"  \"m\": \"d2\",\n" +
-		"  \"l\": 1,\n" +
-		"  \"d\": 2,\n" +
-		"  \"fr\": 3,\n" +
-		"  \"gt\": 120,\n" +
-		"  \"p0\": {\n" +
-		"    \"e\": 67,\n" +
-		"    \"s\": 42,\n" +
-		"    \"sc\": 12500,\n" +
-		"    \"li\": 3,\n" +
-		"    \"ll\": 1,\n" +
-		"    \"sw\": 1,\n" +
-		"    \"pa\": {\n" +
-		"      \"1\": 200\n" +
-		"    },\n" +
-		"    \"sa\": {\n" +
-		"      \"0\": 4\n" +
-		"    }\n" +
+		"  \"version\": 2,\n" +
+		"  \"game\": \"d2\",\n" +
+		"  \"mission\": \"d2\",\n" +
+		"  \"level\": 1,\n" +
+		"  \"difficulty\": 2,\n" +
+		"  \"frame_count\": 3,\n" +
+		"  \"game_time64\": 120,\n" +
+		"  \"player0\": {\n" +
+		"    \"energy\": 67,\n" +
+		"    \"shields\": 42,\n" +
+		"    \"score\": 12500,\n" +
+		"    \"lives\": 3,\n" +
+		"    \"laser_level\": 1,\n" +
+		"    \"primary_weapon\": 0,\n" +
+		"    \"secondary_weapon\": 1,\n" +
+		"    \"flags\": 0,\n" +
+		"    \"hostages\": 0,\n" +
+		"    \"primary_ammo\": [\n" +
+		"      0,\n" +
+		"      200,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0\n" +
+		"    ],\n" +
+		"    \"secondary_ammo\": [\n" +
+		"      4,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0,\n" +
+		"      0\n" +
+		"    ]\n" +
 		"  },\n" +
-		"  \"pos\": {\n" +
-		"    \"sg\": 142,\n" +
+		"  \"position\": {\n" +
+		"    \"segment\": 142,\n" +
 		"    \"x\": 12345678,\n" +
 		"    \"y\": -8765432,\n" +
 		"    \"z\": 3456789,\n" +
-		"    \"fx\": 65536,\n" +
-		"    \"fy\": 0,\n" +
-		"    \"fz\": 0\n" +
+		"    \"forward_x\": 65536,\n" +
+		"    \"forward_y\": 0,\n" +
+		"    \"forward_z\": 0\n" +
 		"  },\n" +
-		"  \"lv\": {\n" +
-		"    \"ra\": 23,\n" +
-		"    \"rk\": 8,\n" +
-		"    \"hr\": 2,\n" +
-		"    \"pr\": 15,\n" +
-		"    \"cc\": true\n" +
+		"  \"level_summary\": {\n" +
+		"    \"robots_alive\": 23,\n" +
+		"    \"robots_killed\": 8,\n" +
+		"    \"hostages_remaining\": 2,\n" +
+		"    \"powerups_remaining\": 15,\n" +
+		"    \"control_center_destroyed\": true,\n" +
+		"    \"endlevel_completed\": false\n" +
 		"  }\n" +
 		"}\n";
 	if (text != expected) {
@@ -236,7 +270,7 @@ static int expect_result_compare(void)
 		remove_test_dir(dir);
 		return report_failure("result compare unexpectedly passed a score mismatch");
 	}
-	if (!strstr(error, "p0.sc")) {
+	if (!strstr(error, "player0.score")) {
 		remove(expected_path.c_str());
 		remove(actual_path.c_str());
 		remove_test_dir(dir);

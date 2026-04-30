@@ -72,6 +72,9 @@ struct input_demo_metadata {
 	int version;
 	std::string game;
 	std::string mission;
+	int build_number;
+	std::string git_version;
+	std::string arch;
 	int level;
 	int difficulty;
 	std::string start_mode;
@@ -83,7 +86,7 @@ struct input_demo_metadata {
 	input_demo_player_cfg player_cfg;
 
 	input_demo_metadata()
-	    : version(0), level(0), difficulty(0), frame_count(0), has_player_cfg(false)
+	    : version(0), build_number(0), level(0), difficulty(0), frame_count(0), has_player_cfg(false)
 	{
 		input_demo_player_cfg_clear(&player_cfg);
 	}
@@ -92,6 +95,7 @@ struct input_demo_metadata {
 struct input_demo_checkpoint {
 	std::string format;
 	std::string encoding;
+	std::string compression;
 	uint32_t size;
 	std::string sha256;
 	std::string save_name;
@@ -100,7 +104,7 @@ struct input_demo_checkpoint {
 	std::string data;
 
 	input_demo_checkpoint()
-	    : size(0), has_start_gt(0), start_gt(0)
+	    : compression("none"), size(0), has_start_gt(0), start_gt(0)
 	{
 	}
 };

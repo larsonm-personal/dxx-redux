@@ -93,17 +93,19 @@ function New-Fixture {
         [string]$FixtureDir
     )
 
+    $arch = if ($env:PROCESSOR_ARCHITECTURE) { $env:PROCESSOR_ARCHITECTURE } else { 'unknown' }
+
     if (Test-Path $FixtureDir) {
         Remove-Item -LiteralPath $FixtureDir -Recurse -Force
     }
     New-Item -ItemType Directory -Path $FixtureDir | Out-Null
 
     $demoText = @"
-{"type":"header","version":1,"game":"$GameName","mission":"$($Config.Mission)","level":1,"difficulty":2,"start_mode":"new_level","rng_mode":"lcg_state","frame_count":3}
+{"type":"header","version":2,"game":"$GameName","mission":"$($Config.Mission)","build_number":0,"git_version":"unknown","arch":"$arch","level":1,"difficulty":2,"start_mode":"new_level","rng_mode":"lcg_state","frame_count":3}
 {"type":"frame","f":0,"ft":3276,"input":{"s":{"f":44}},"rng":{"s":100}}
 {"type":"frame","f":1,"input":{"p":{"f1":1}},"rng":{"s":100}}
 {"type":"frame","f":2,"input":{"s":{"f":0}},"rng":{"s":102}}
-{"type":"result","result":{"v":1,"g":"$GameName","m":"$($Config.Mission)","l":1,"d":2,"fr":3}}
+{"type":"result","result":{"version":2,"game":"$GameName","mission":"$($Config.Mission)","level":1,"difficulty":2,"frame_count":3}}
 "@
 
     Write-AsciiFile (Join-Path $FixtureDir 'smoke.dximdemo') $demoText
@@ -214,7 +216,7 @@ function Invoke-ReplaySmoke {
 
     $expected = Get-ExpectedResultFromDemo $demoPath
     $actual = Get-JsonFile $actualResultPath
-    foreach ($property in @('v', 'g', 'm', 'l', 'd', 'fr')) {
+    foreach ($property in @('version', 'game', 'mission', 'level', 'difficulty', 'frame_count')) {
         if ($expected.$property -ne $actual.$property) {
             throw "$GameName replay smoke mismatch at ${property}: expected $($expected.$property), actual $($actual.$property)"
         }
