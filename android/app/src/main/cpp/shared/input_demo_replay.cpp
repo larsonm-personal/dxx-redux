@@ -483,7 +483,7 @@ int64_t input_demo_replay_checkpoint_start_gt(void)
 }
 
 int input_demo_replay_get_expected_result(input_demo_result *result,
-	                                     char *error, size_t error_size)
+                                          char *error, size_t error_size)
 {
 	if (!g_input_demo_replay_session.loaded)
 		return copy_error("input demo replay is not loaded", error, error_size);

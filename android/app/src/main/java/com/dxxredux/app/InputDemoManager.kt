@@ -16,6 +16,7 @@ data class StagedInputDemo(
 
 internal object InputDemoManager {
     const val INPUT_DEMO_EXTENSION = ".dximdemo"
+
     // Keep in sync with INPUT_DEMO_RNG_TRACE_SUFFIX in native shared code.
     const val INPUT_DEMO_RNG_TRACE_SUFFIX = ".rngtrace.jsonl"
 

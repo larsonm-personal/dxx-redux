@@ -51,7 +51,7 @@ const uint8_t *input_demo_replay_checkpoint_data(void);
 size_t input_demo_replay_checkpoint_size(void);
 int64_t input_demo_replay_checkpoint_start_gt(void);
 int input_demo_replay_get_expected_result(input_demo_result *result,
-										  char *error, size_t error_size);
+                                          char *error, size_t error_size);
 int input_demo_replay_compare_result(const input_demo_result *actual,
                                      char *error, size_t error_size);
 int input_demo_replay_get_current_frame(input_demo_replay_frame *frame,

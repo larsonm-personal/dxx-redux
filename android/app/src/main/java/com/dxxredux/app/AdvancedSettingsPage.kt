@@ -709,7 +709,12 @@ private fun RecordedInputDemosSection(
                                     }
                                 transferProgress = null
                                 if (uris.size == 1) {
-                                    shareFile(ctx, uris.first(), "Share Recorded Demo", exportMimeType(exportedFiles.first()))
+                                    shareFile(
+                                        ctx,
+                                        uris.first(),
+                                        "Share Recorded Demo",
+                                        exportMimeType(exportedFiles.first()),
+                                    )
                                 } else {
                                     shareFiles(ctx, uris, "Share Recorded Demo", "*/*")
                                 }
@@ -1616,7 +1621,8 @@ private fun shareFiles(
     }
 }
 
-private fun exportMimeType(file: File): String = if (file.name.endsWith(".jsonl", ignoreCase = true)) "application/json" else "application/octet-stream"
+private fun exportMimeType(file: File): String =
+    if (file.name.endsWith(".jsonl", ignoreCase = true)) "application/json" else "application/octet-stream"
 
 private fun formatDurationMillis(durationMillis: Long?): String {
     if (durationMillis == null) return "--:--"
