@@ -37,6 +37,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "mouse.h"
 #include "kconfig.h"
 #include "laser.h"
+#include "newdemo.h"
+#include "input_demo_replay.h"
 #ifdef NETWORK
 #include "multi.h"
 #endif
@@ -53,9 +55,114 @@ extern int Drop_afterburner_blob_flag;		//ugly hack
 
 extern fix	Seismic_tremor_magnitude;
 
+static int input_demo_replay_player_control_probe_active(object *obj)
+{
+	const unsigned int frame = input_demo_replay_next_frame_index();
+
+	return input_demo_replay_is_loaded() &&
+		obj == ConsoleObject &&
+		frame >= 18 &&
+		frame <= 24;
+}
+
+static void input_demo_log_player_control_probe(object *obj,
+	const vms_vector *pre_scale_thrust,
+	const vms_vector *pre_scale_rotthrust,
+	fix resolved_forward_thrust_time)
+{
+	if (!input_demo_replay_player_control_probe_active(obj))
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay control probe: frame=%u gt=%lld step=read_flying_controls seg=%d resolved_forward=%d controls=(%d,%d,%d,%d,%d,%d) pre_thrust=(%d,%d,%d) thrust=(%d,%d,%d) pre_rot=(%d,%d,%d) rot=(%d,%d,%d) vel=(%d,%d,%d) orient_f=(%d,%d,%d) orient_r=(%d,%d,%d) orient_u=(%d,%d,%d) phys_flags=0x%x player_flags=0x%x ab=(%d,%d)\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		(long long)GameTime64,
+		obj->segnum,
+		resolved_forward_thrust_time,
+		Controls.pitch_time,
+		Controls.heading_time,
+		Controls.bank_time,
+		Controls.forward_thrust_time,
+		Controls.sideways_thrust_time,
+		Controls.vertical_thrust_time,
+		pre_scale_thrust ? pre_scale_thrust->x : 0,
+		pre_scale_thrust ? pre_scale_thrust->y : 0,
+		pre_scale_thrust ? pre_scale_thrust->z : 0,
+		obj->mtype.phys_info.thrust.x,
+		obj->mtype.phys_info.thrust.y,
+		obj->mtype.phys_info.thrust.z,
+		pre_scale_rotthrust ? pre_scale_rotthrust->x : 0,
+		pre_scale_rotthrust ? pre_scale_rotthrust->y : 0,
+		pre_scale_rotthrust ? pre_scale_rotthrust->z : 0,
+		obj->mtype.phys_info.rotthrust.x,
+		obj->mtype.phys_info.rotthrust.y,
+		obj->mtype.phys_info.rotthrust.z,
+		obj->mtype.phys_info.velocity.x,
+		obj->mtype.phys_info.velocity.y,
+		obj->mtype.phys_info.velocity.z,
+		obj->orient.fvec.x,
+		obj->orient.fvec.y,
+		obj->orient.fvec.z,
+		obj->orient.rvec.x,
+		obj->orient.rvec.y,
+		obj->orient.rvec.z,
+		obj->orient.uvec.x,
+		obj->orient.uvec.y,
+		obj->orient.uvec.z,
+		obj->mtype.phys_info.flags,
+		Players[Player_num].flags,
+		Controls.afterburner_state,
+		Players[Player_num].afterburner_charge);
+}
+
+static void input_demo_log_player_wiggle_probe(object *obj,
+	const vms_vector *velocity_before_wiggle,
+	const vms_vector *wiggle_delta,
+	fix raw_swiggle,
+	fix scaled_swiggle,
+	fix wiggle_amount,
+	int wiggle_applied)
+{
+	if (!input_demo_replay_player_control_probe_active(obj))
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay wiggle probe: frame=%u gt=%lld seg=%d applied=%d raw=%d scaled=%d amount=%d ship_wiggle=%d vel_before=(%d,%d,%d) wiggle_delta=(%d,%d,%d) vel_after=(%d,%d,%d) uvec=(%d,%d,%d) phys_flags=0x%x ft=%d\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		(long long)GameTime64,
+		obj->segnum,
+		wiggle_applied,
+		raw_swiggle,
+		scaled_swiggle,
+		wiggle_amount,
+		Player_ship ? Player_ship->wiggle : 0,
+		velocity_before_wiggle ? velocity_before_wiggle->x : 0,
+		velocity_before_wiggle ? velocity_before_wiggle->y : 0,
+		velocity_before_wiggle ? velocity_before_wiggle->z : 0,
+		wiggle_delta ? wiggle_delta->x : 0,
+		wiggle_delta ? wiggle_delta->y : 0,
+		wiggle_delta ? wiggle_delta->z : 0,
+		obj->mtype.phys_info.velocity.x,
+		obj->mtype.phys_info.velocity.y,
+		obj->mtype.phys_info.velocity.z,
+		obj->orient.uvec.x,
+		obj->orient.uvec.y,
+		obj->orient.uvec.z,
+		obj->mtype.phys_info.flags,
+		FrameTime);
+}
+
 void read_flying_controls( object * obj )
 {
 	fix	forward_thrust_time;
+	vms_vector pre_scale_thrust = {0, 0, 0};
+	vms_vector pre_scale_rotthrust = {0, 0, 0};
+	vms_vector velocity_before_wiggle = {0, 0, 0};
+	vms_vector wiggle_delta = {0, 0, 0};
+	fix raw_swiggle = 0;
+	fix scaled_swiggle = 0;
+	fix wiggle_amount = 0;
+	int wiggle_applied = 0;
 
 	Assert(FrameTime > 0); 		//Get MATT if hit this!
 
@@ -181,14 +288,38 @@ void read_flying_controls( object * obj )
 	// slide up/down
 	vm_vec_scale_add2(&obj->mtype.phys_info.thrust,&obj->orient.uvec, Controls.vertical_thrust_time );
 
+	velocity_before_wiggle = obj->mtype.phys_info.velocity;
+
 	if (!is_observer() && obj->mtype.phys_info.flags & PF_WIGGLE)
 	{
-		fix swiggle;
-		fix_fastsincos(((fix)GameTime64), &swiggle, NULL);
+		fix_fastsincos(((fix)GameTime64), &raw_swiggle, NULL);
+		scaled_swiggle = raw_swiggle;
 		if (FrameTime < F1_0) // Only scale wiggle if getting at least 1 FPS, to avoid causing the opposite problem.
-			swiggle = fixmul(swiggle*30, FrameTime); //make wiggle fps-independent (based on pre-scaled amount of wiggle at 30 FPS)
-		vm_vec_scale_add2(&obj->mtype.phys_info.velocity,&obj->orient.uvec,fixmul(swiggle,Player_ship->wiggle));
+			scaled_swiggle = fixmul(raw_swiggle*30, FrameTime); //make wiggle fps-independent (based on pre-scaled amount of wiggle at 30 FPS)
+		wiggle_amount = fixmul(scaled_swiggle,Player_ship->wiggle);
+		vm_vec_copy_scale(&wiggle_delta,&obj->orient.uvec,wiggle_amount);
+		vm_vec_add2(&obj->mtype.phys_info.velocity,&wiggle_delta);
+		wiggle_applied = 1;
 	}
+
+	input_demo_log_player_wiggle_probe(obj,
+		&velocity_before_wiggle,
+		&wiggle_delta,
+		raw_swiggle,
+		scaled_swiggle,
+		wiggle_amount,
+		wiggle_applied);
+
+	newdemo_dump_note_player_wiggle(obj,
+		&velocity_before_wiggle,
+		&wiggle_delta,
+		raw_swiggle,
+		scaled_swiggle,
+		wiggle_amount,
+		wiggle_applied);
+
+	pre_scale_thrust = obj->mtype.phys_info.thrust;
+	pre_scale_rotthrust = obj->mtype.phys_info.rotthrust;
 
 	// As of now, obj->mtype.phys_info.thrust & obj->mtype.phys_info.rotthrust are 
 	// in units of time... In other words, if thrust==FrameTime, that
@@ -214,6 +345,22 @@ void read_flying_controls( object * obj )
 
 		vm_vec_scale( &obj->mtype.phys_info.rotthrust, fixdiv(Player_ship->max_rotthrust,ft) );
 	}
+
+	input_demo_log_player_control_probe(obj,
+		&pre_scale_thrust,
+		&pre_scale_rotthrust,
+		forward_thrust_time);
+
+	newdemo_record_player_control_trace(obj,
+		&pre_scale_thrust,
+		&pre_scale_rotthrust,
+		&velocity_before_wiggle,
+		&wiggle_delta,
+		raw_swiggle,
+		scaled_swiggle,
+		wiggle_amount,
+		forward_thrust_time,
+		wiggle_applied);
 
 	// moved here by WraithX
 	if (Player_is_dead)

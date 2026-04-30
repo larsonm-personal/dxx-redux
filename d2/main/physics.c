@@ -60,6 +60,52 @@ static int input_demo_replay_motion_probe_active(void)
 	return input_demo_replay_is_loaded();
 }
 
+static int input_demo_replay_player_drag_probe_active(object *obj)
+{
+	const unsigned int frame = input_demo_replay_next_frame_index();
+
+	return input_demo_replay_is_loaded() &&
+		obj == ConsoleObject &&
+		frame >= 18 &&
+		frame <= 24;
+}
+
+static void input_demo_log_player_drag_probe(object *obj,
+	const char *step,
+	const vms_vector *velocity,
+	const vms_vector *accel,
+	fix drag,
+	int count,
+	fix remainder,
+	fix ratio)
+{
+	if (!input_demo_replay_player_drag_probe_active(obj))
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay drag probe: frame=%u gt=%lld step=%s seg=%d vel=(%d,%d,%d) thrust=(%d,%d,%d) accel=(%d,%d,%d) drag=%d mass=%d flags=0x%x count=%d rem=%d ratio=%d ft=%d\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		(long long)GameTime64,
+		step,
+		obj->segnum,
+		velocity ? velocity->x : 0,
+		velocity ? velocity->y : 0,
+		velocity ? velocity->z : 0,
+		obj->mtype.phys_info.thrust.x,
+		obj->mtype.phys_info.thrust.y,
+		obj->mtype.phys_info.thrust.z,
+		accel ? accel->x : 0,
+		accel ? accel->y : 0,
+		accel ? accel->z : 0,
+		drag,
+		obj->mtype.phys_info.mass,
+		obj->mtype.phys_info.flags,
+		count,
+		remainder,
+		ratio,
+		FrameTime);
+}
+
 static int input_demo_replay_spreadfire_physics_probe_active(object *obj)
 {
 	const unsigned int frame = input_demo_replay_next_frame_index();
@@ -563,8 +609,8 @@ void do_physics_sim(object *obj)
 	if ((drag = obj->mtype.phys_info.drag) != 0) {
 
 		int count;
-		vms_vector accel;
-		fix r,k,have_accel;
+		vms_vector accel = {0, 0, 0};
+		fix r,k,have_accel = 0;
 
 		count = FrameTime / FT;
 		r = FrameTime % FT;
@@ -574,6 +620,7 @@ void do_physics_sim(object *obj)
 
 			vm_vec_copy_scale(&accel,&obj->mtype.phys_info.thrust,fixdiv(f1_0,obj->mtype.phys_info.mass));
 			have_accel = (accel.x || accel.y || accel.z);
+			input_demo_log_player_drag_probe(obj, "pre_drag", &obj->mtype.phys_info.velocity, &accel, drag, count, r, k);
 
 			while (count--) {
 				if (have_accel)
@@ -592,6 +639,8 @@ void do_physics_sim(object *obj)
 		{
 			fix total_drag=f1_0;
 
+			input_demo_log_player_drag_probe(obj, "pre_drag", &obj->mtype.phys_info.velocity, &accel, drag, count, r, k);
+
 			while (count--)
 				total_drag = fixmul(total_drag,f1_0-drag);
 
@@ -601,6 +650,8 @@ void do_physics_sim(object *obj)
 
 			vm_vec_scale(&obj->mtype.phys_info.velocity,total_drag);
 		}
+
+		input_demo_log_player_drag_probe(obj, "post_drag", &obj->mtype.phys_info.velocity, &accel, drag, count, r, k);
 	}
 
 	do {

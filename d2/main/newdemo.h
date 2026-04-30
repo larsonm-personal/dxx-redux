@@ -101,6 +101,16 @@ extern void newdemo_record_door_opening(int segnum, int side);
 extern void newdemo_record_laser_level(sbyte old_level, sbyte new_level);
 extern void newdemo_record_cloaking_wall(int front_wall_num, int back_wall_num, ubyte type, ubyte state, fix cloak_value, fix l0, fix l1, fix l2, fix l3);
 extern void newdemo_record_secret_exit_blown(int truth);
+extern void newdemo_record_player_control_trace(object *obj,
+	const vms_vector *pre_scale_thrust,
+	const vms_vector *pre_scale_rotthrust,
+	const vms_vector *velocity_before_wiggle,
+	const vms_vector *wiggle_delta,
+	fix raw_swiggle,
+	fix scaled_swiggle,
+	fix wiggle_amount,
+	fix resolved_forward_thrust_time,
+	int wiggle_applied);
 
 
 // Functions called during playback process...
@@ -113,6 +123,13 @@ extern void newdemo_goto_beginning();
 extern void newdemo_start_playback( char * filename );
 extern void newdemo_stop_playback();
 extern int newdemo_dump_active(void);
+extern void newdemo_dump_note_player_wiggle(object *obj,
+	const vms_vector *velocity_before_wiggle,
+	const vms_vector *wiggle_delta,
+	fix raw_swiggle,
+	fix scaled_swiggle,
+	fix wiggle_amount,
+	int wiggle_applied);
 extern int newdemo_dump_json(const char *demo_path, const char *output_path,
 	char *error, size_t error_size);
 extern void newdemo_start_recording(int is_autorecord);

@@ -150,6 +150,7 @@ extern void init_seismic_disturbances(void);
 #define ND_EVENT_SECRET_THINGY			48	// 0/1 = secret exit functional/non-functional
 #define ND_EVENT_LINK_SOUND_TO_OBJ		49	// record digi_link_sound_to_object3
 #define ND_EVENT_KILL_SOUND_TO_OBJ		50	// record digi_kill_sound_linked_to_object
+#define ND_EVENT_PLAYER_CONTROL_TRACE		51	// player control and wiggle state captured during recording
 
 
 #define NORMAL_PLAYBACK 			0
@@ -157,7 +158,8 @@ extern void init_seismic_disturbances(void);
 #define INTERPOLATE_PLAYBACK			2
 #define INTERPOL_FACTOR				(F1_0 + (F1_0/5))
 
-#define DEMO_VERSION				15      // last D1 version was 13
+#define DEMO_VERSION				16      // last D1 version was 13
+#define DEMO_OLDEST_SUPPORTED_VERSION	15
 #define DEMO_GAME_TYPE				3       // 1 was shareware, 2 registered
 
 #define DEMO_FILENAME				DEMO_DIR "tmpdemo.dem"
@@ -182,15 +184,62 @@ object DemoRightExtra,DemoLeftExtra;
 // local var used for swapping endian demos
 static int swap_endian = 0;
 
+typedef struct nd_player_control_trace {
+	int valid;
+	int wiggle_applied;
+	int segnum;
+	int phys_flags;
+	int player_flags;
+	fix frame_time;
+	fix resolved_forward_thrust_time;
+	fix control_pitch;
+	fix control_heading;
+	fix control_bank;
+	fix control_forward;
+	fix control_sideways;
+	fix control_vertical;
+	int afterburner_state;
+	fix afterburner_charge;
+	fix raw_swiggle;
+	fix scaled_swiggle;
+	fix wiggle_amount;
+	fix ship_wiggle;
+	vms_vector velocity_before_wiggle;
+	vms_vector wiggle_delta;
+	vms_vector velocity_after_wiggle;
+	vms_vector pre_scale_thrust;
+	vms_vector thrust;
+	vms_vector pre_scale_rotthrust;
+	vms_vector rotthrust;
+} nd_player_control_trace;
+
 // playback variables
 static unsigned int nd_playback_v_demosize;
 static char nd_playback_v_save_callsign[CALLSIGN_LEN+1];
+static sbyte nd_playback_v_demo_version = DEMO_VERSION;
 static sbyte nd_playback_v_at_eof;
 static sbyte nd_playback_v_cntrlcen_destroyed = 0;
 static sbyte nd_playback_v_bad_read;
 static int nd_playback_v_framecount;
 static int nd_dump_v_frame_number = -1;
 static int nd_dump_v_active = 0;
+static nd_player_control_trace nd_dump_v_player_control_trace;
+static struct {
+	int valid;
+	int applied;
+	int segnum;
+	int phys_flags;
+	fix frame_time;
+	fix raw_swiggle;
+	fix scaled_swiggle;
+	fix wiggle_amount;
+	vms_vector velocity_before;
+	vms_vector wiggle_delta;
+	vms_vector velocity_after;
+	vms_vector uvec;
+} nd_dump_v_player_wiggle;
+static void newdemo_dump_reset_player_control_trace(void);
+static void newdemo_dump_reset_player_wiggle(void);
 static fix nd_playback_total, nd_recorded_total, nd_recorded_time;
 static sbyte nd_playback_v_style;
 static ubyte nd_playback_v_dead = 0, nd_playback_v_rear = 0, nd_playback_v_guided = 0;
@@ -208,6 +257,7 @@ static sbyte nd_record_v_no_space;
 static sbyte nd_record_v_objs[MAX_OBJECTS];
 static sbyte nd_record_v_viewobjs[MAX_OBJECTS];
 static sbyte nd_record_v_rendering[32];
+static int nd_record_v_player_control_written = 0;
 static int nd_record_v_player_energy = -1;
 static fix nd_record_v_player_afterburner = -1;
 static int nd_record_v_player_shields = -1;
@@ -341,11 +391,40 @@ static void nd_write_fixang(fixang f)
 	newdemo_write(&f, sizeof(fixang), 1);
 }
 
-static void nd_write_vector(vms_vector *v)
+static void nd_write_vector(const vms_vector *v)
 {
 	nd_write_fix(v->x);
 	nd_write_fix(v->y);
 	nd_write_fix(v->z);
+}
+
+static void nd_write_player_control_trace(const nd_player_control_trace *trace)
+{
+	nd_write_int(trace->wiggle_applied);
+	nd_write_int(trace->segnum);
+	nd_write_int(trace->phys_flags);
+	nd_write_int(trace->player_flags);
+	nd_write_fix(trace->frame_time);
+	nd_write_fix(trace->resolved_forward_thrust_time);
+	nd_write_fix(trace->control_pitch);
+	nd_write_fix(trace->control_heading);
+	nd_write_fix(trace->control_bank);
+	nd_write_fix(trace->control_forward);
+	nd_write_fix(trace->control_sideways);
+	nd_write_fix(trace->control_vertical);
+	nd_write_int(trace->afterburner_state);
+	nd_write_fix(trace->afterburner_charge);
+	nd_write_fix(trace->raw_swiggle);
+	nd_write_fix(trace->scaled_swiggle);
+	nd_write_fix(trace->wiggle_amount);
+	nd_write_fix(trace->ship_wiggle);
+	nd_write_vector(&trace->velocity_before_wiggle);
+	nd_write_vector(&trace->wiggle_delta);
+	nd_write_vector(&trace->velocity_after_wiggle);
+	nd_write_vector(&trace->pre_scale_thrust);
+	nd_write_vector(&trace->thrust);
+	nd_write_vector(&trace->pre_scale_rotthrust);
+	nd_write_vector(&trace->rotthrust);
 }
 
 static void nd_write_angvec(vms_angvec *v)
@@ -431,6 +510,37 @@ static void nd_read_vector(vms_vector *v)
 	nd_read_fix(&(v->x));
 	nd_read_fix(&(v->y));
 	nd_read_fix(&(v->z));
+}
+
+static void nd_read_player_control_trace(nd_player_control_trace *trace)
+{
+	memset(trace, 0, sizeof(*trace));
+	trace->valid = 1;
+	nd_read_int(&trace->wiggle_applied);
+	nd_read_int(&trace->segnum);
+	nd_read_int(&trace->phys_flags);
+	nd_read_int(&trace->player_flags);
+	nd_read_fix(&trace->frame_time);
+	nd_read_fix(&trace->resolved_forward_thrust_time);
+	nd_read_fix(&trace->control_pitch);
+	nd_read_fix(&trace->control_heading);
+	nd_read_fix(&trace->control_bank);
+	nd_read_fix(&trace->control_forward);
+	nd_read_fix(&trace->control_sideways);
+	nd_read_fix(&trace->control_vertical);
+	nd_read_int(&trace->afterburner_state);
+	nd_read_fix(&trace->afterburner_charge);
+	nd_read_fix(&trace->raw_swiggle);
+	nd_read_fix(&trace->scaled_swiggle);
+	nd_read_fix(&trace->wiggle_amount);
+	nd_read_fix(&trace->ship_wiggle);
+	nd_read_vector(&trace->velocity_before_wiggle);
+	nd_read_vector(&trace->wiggle_delta);
+	nd_read_vector(&trace->velocity_after_wiggle);
+	nd_read_vector(&trace->pre_scale_thrust);
+	nd_read_vector(&trace->thrust);
+	nd_read_vector(&trace->pre_scale_rotthrust);
+	nd_read_vector(&trace->rotthrust);
 }
 
 static void nd_read_angvec(vms_angvec *v)
@@ -923,6 +1033,7 @@ void newdemo_record_start_demo()
 	nd_write_int(Players[Player_num].flags);        // be sure players flags are set
 	nd_write_byte((sbyte)Players[Player_num].primary_weapon);
 	nd_write_byte((sbyte)Players[Player_num].secondary_weapon);
+	nd_record_v_player_control_written = 0;
 	nd_record_v_start_frame = nd_record_v_frame_number = 0;
 	nd_record_v_juststarted=1;
 	newdemo_set_new_level(Current_level_num);
@@ -963,6 +1074,7 @@ void newdemo_record_start_frame(fix frame_time )
 		}
 		for (i=0;i<32;i++)
 			nd_record_v_rendering[i]=0;
+		nd_record_v_player_control_written = 0;
 
 		nd_record_v_frame_number -= nd_record_v_start_frame;
 
@@ -1249,6 +1361,61 @@ void newdemo_record_player_weapon(int weapon_type, int weapon_num)
 		nd_write_byte((sbyte)Players[Player_num].primary_weapon);
 	nd_record_v_weapon_type = weapon_type;
 	nd_record_v_weapon_num = weapon_num;
+	start_time();
+}
+
+void newdemo_record_player_control_trace(object *obj,
+	const vms_vector *pre_scale_thrust,
+	const vms_vector *pre_scale_rotthrust,
+	const vms_vector *velocity_before_wiggle,
+	const vms_vector *wiggle_delta,
+	fix raw_swiggle,
+	fix scaled_swiggle,
+	fix wiggle_amount,
+	fix resolved_forward_thrust_time,
+	int wiggle_applied)
+{
+	nd_player_control_trace trace;
+
+	if (Newdemo_state != ND_STATE_RECORDING || !outfile)
+		return;
+	if (!nd_record_v_recordframe || nd_record_v_player_control_written || !obj)
+		return;
+	if (obj != &Objects[Players[Player_num].objnum])
+		return;
+
+	memset(&trace, 0, sizeof(trace));
+	trace.wiggle_applied = wiggle_applied;
+	trace.segnum = obj->segnum;
+	trace.phys_flags = obj->mtype.phys_info.flags;
+	trace.player_flags = Players[Player_num].flags;
+	trace.frame_time = FrameTime;
+	trace.resolved_forward_thrust_time = resolved_forward_thrust_time;
+	trace.control_pitch = Controls.pitch_time;
+	trace.control_heading = Controls.heading_time;
+	trace.control_bank = Controls.bank_time;
+	trace.control_forward = Controls.forward_thrust_time;
+	trace.control_sideways = Controls.sideways_thrust_time;
+	trace.control_vertical = Controls.vertical_thrust_time;
+	trace.afterburner_state = Controls.afterburner_state;
+	trace.afterburner_charge = Players[Player_num].afterburner_charge;
+	trace.raw_swiggle = raw_swiggle;
+	trace.scaled_swiggle = scaled_swiggle;
+	trace.wiggle_amount = wiggle_amount;
+	trace.ship_wiggle = Player_ship ? Player_ship->wiggle : 0;
+	trace.velocity_before_wiggle = velocity_before_wiggle ? *velocity_before_wiggle : obj->mtype.phys_info.velocity;
+	if (wiggle_delta)
+		trace.wiggle_delta = *wiggle_delta;
+	trace.velocity_after_wiggle = obj->mtype.phys_info.velocity;
+	trace.pre_scale_thrust = pre_scale_thrust ? *pre_scale_thrust : obj->mtype.phys_info.thrust;
+	trace.thrust = obj->mtype.phys_info.thrust;
+	trace.pre_scale_rotthrust = pre_scale_rotthrust ? *pre_scale_rotthrust : obj->mtype.phys_info.rotthrust;
+	trace.rotthrust = obj->mtype.phys_info.rotthrust;
+
+	stop_time();
+	nd_write_byte(ND_EVENT_PLAYER_CONTROL_TRACE);
+	nd_write_player_control_trace(&trace);
+	nd_record_v_player_control_written = 1;
 	start_time();
 }
 
@@ -1556,6 +1723,7 @@ int newdemo_read_demo_start(enum purpose_type purpose)
 	nd_read_byte(&game_type);
 	if (purpose == PURPOSE_REWRITE)
 		nd_write_byte(game_type);
+	nd_playback_v_demo_version = version;
 	if (game_type < DEMO_GAME_TYPE) {
 		nm_messagebox( NULL, 1, TXT_OK, "%s %s\n%s", TXT_CANT_PLAYBACK, TXT_RECORDED, "    In Descent: First Strike" );
 		return 1;
@@ -1564,7 +1732,7 @@ int newdemo_read_demo_start(enum purpose_type purpose)
 		nm_messagebox( NULL, 1, TXT_OK, "%s %s\n%s", TXT_CANT_PLAYBACK, TXT_RECORDED, "   In Unknown Descent version" );
 		return 1;
 	}
-	if (version < DEMO_VERSION) {
+	if (version < DEMO_OLDEST_SUPPORTED_VERSION) {
 		if (purpose == PURPOSE_CHOSE_PLAY) {
 			nm_messagebox( NULL, 1, TXT_OK, "%s %s", TXT_CANT_PLAYBACK, TXT_DEMO_OLD );
 		}
@@ -1775,6 +1943,8 @@ int newdemo_read_frame_information(int rewrite)
 			nd_read_short(&last_frame_length);
 			nd_read_int(&nd_playback_v_framecount);
 			nd_dump_v_frame_number = nd_playback_v_framecount;
+			newdemo_dump_reset_player_control_trace();
+			newdemo_dump_reset_player_wiggle();
 			nd_read_int((int *)&nd_recorded_time);
 			if (nd_playback_v_bad_read) { done = -1; break; }
 			if (rewrite)
@@ -1971,6 +2141,16 @@ int newdemo_read_frame_information(int rewrite)
 				if (objnum > -1 && !nd_dump_v_active && Newdemo_vcr_state == ND_STATE_PLAYBACK)  {   //  @mk, 2/22/96, John told me to.
 					digi_kill_sound_linked_to_object(objnum);
 				}
+			}
+			break;
+
+		case ND_EVENT_PLAYER_CONTROL_TRACE:
+			nd_read_player_control_trace(&nd_dump_v_player_control_trace);
+			if (nd_playback_v_bad_read) { done = -1; break; }
+			if (rewrite)
+			{
+				nd_write_player_control_trace(&nd_dump_v_player_control_trace);
+				break;
 			}
 			break;
 
@@ -4247,6 +4427,50 @@ int newdemo_dump_active(void)
 	return nd_dump_v_active;
 }
 
+static void newdemo_dump_reset_player_control_trace(void)
+{
+	memset(&nd_dump_v_player_control_trace, 0, sizeof(nd_dump_v_player_control_trace));
+}
+
+static void newdemo_dump_reset_player_wiggle(void)
+{
+	memset(&nd_dump_v_player_wiggle, 0, sizeof(nd_dump_v_player_wiggle));
+}
+
+void newdemo_dump_note_player_wiggle(object *obj,
+	const vms_vector *velocity_before_wiggle,
+	const vms_vector *wiggle_delta,
+	fix raw_swiggle,
+	fix scaled_swiggle,
+	fix wiggle_amount,
+	int wiggle_applied)
+{
+	if (!nd_dump_v_active || !obj)
+		return;
+
+	nd_dump_v_player_wiggle.valid = 1;
+	nd_dump_v_player_wiggle.applied = wiggle_applied;
+	nd_dump_v_player_wiggle.segnum = obj->segnum;
+	nd_dump_v_player_wiggle.phys_flags = obj->mtype.phys_info.flags;
+	nd_dump_v_player_wiggle.frame_time = FrameTime;
+	nd_dump_v_player_wiggle.raw_swiggle = raw_swiggle;
+	nd_dump_v_player_wiggle.scaled_swiggle = scaled_swiggle;
+	nd_dump_v_player_wiggle.wiggle_amount = wiggle_amount;
+	if (velocity_before_wiggle)
+		nd_dump_v_player_wiggle.velocity_before = *velocity_before_wiggle;
+	else
+		nd_dump_v_player_wiggle.velocity_before = obj->mtype.phys_info.velocity;
+	if (wiggle_delta)
+		nd_dump_v_player_wiggle.wiggle_delta = *wiggle_delta;
+	else {
+		nd_dump_v_player_wiggle.wiggle_delta.x = 0;
+		nd_dump_v_player_wiggle.wiggle_delta.y = 0;
+		nd_dump_v_player_wiggle.wiggle_delta.z = 0;
+	}
+	nd_dump_v_player_wiggle.velocity_after = obj->mtype.phys_info.velocity;
+	nd_dump_v_player_wiggle.uvec = obj->orient.uvec;
+}
+
 static void newdemo_dump_write_json_escaped(FILE *fp, const char *text)
 {
 	const unsigned char *p = (const unsigned char *)(text ? text : "");
@@ -4325,7 +4549,10 @@ static void newdemo_dump_write_object(FILE *fp, int objnum, object *obj)
 
 static void newdemo_dump_write_header(FILE *fp)
 {
-	fputs("{\"type\":\"header\",\"format\":\"classic_dem_runtime_dump\",\"game\":\"d2\",\"version\":15,\"game_type\":3,\"mission\":", fp);
+	fprintf(fp,
+		"{\"type\":\"header\",\"format\":\"classic_dem_runtime_dump\",\"game\":\"d2\",\"version\":%d,\"game_type\":%d,\"mission\":",
+		nd_playback_v_demo_version,
+		DEMO_GAME_TYPE);
 	newdemo_dump_write_json_escaped(fp, Current_mission_filename);
 	fprintf(fp,
 		",\"score\":%d,\"primary_weapon\":%d,\"secondary_weapon\":%d,\"player_flags\":%d,\"energy\":%d,\"shields\":%d}\n",
@@ -4342,6 +4569,7 @@ static void newdemo_dump_write_frame(FILE *fp)
 	int i;
 	int first = 1;
 	int object_count = 0;
+	int player_objnum = Players[Player_num].objnum;
 	object *player_obj = &Objects[Players[Player_num].objnum];
 
 	for (i = 0; i <= Highest_object_index; ++i)
@@ -4349,20 +4577,107 @@ static void newdemo_dump_write_frame(FILE *fp)
 			object_count++;
 
 	fprintf(fp,
-		"{\"type\":\"frame\",\"f\":%d,\"ft\":%d,\"gt\":%d,\"level\":%d,\"viewer_objnum\":%d,\"object_count\":%d,\"player\":{\"score\":%d,\"energy\":%d,\"shields\":%d,\"flags\":%d,\"seg\":%d,\"pos\":",
+		"{\"type\":\"frame\",\"f\":%d,\"ft\":%d,\"gt\":%d,\"level\":%d,\"viewer_objnum\":%d,\"object_count\":%d,\"player\":{\"objnum\":%d,\"score\":%d,\"energy\":%d,\"shields\":%d,\"flags\":%d,\"seg\":%d,\"phys_flags\":%d,\"pos\":",
 		nd_dump_v_frame_number,
 		nd_recorded_time,
 		nd_recorded_total,
 		Current_level_num,
 		Viewer ? (int)(Viewer - Objects) : -1,
 		object_count,
+		player_objnum,
 		Players[Player_num].score,
 		f2ir(Players[Player_num].energy),
 		f2ir(Players[Player_num].shields),
 		Players[Player_num].flags,
-		player_obj->segnum);
+		player_obj->segnum,
+		player_obj->mtype.phys_info.flags);
 	newdemo_dump_write_vector(fp, &player_obj->pos);
-	fputs("},\"objects\":[", fp);
+	fputs(",\"last_pos\":", fp);
+	newdemo_dump_write_vector(fp, &player_obj->last_pos);
+	fputs(",\"vel\":", fp);
+	newdemo_dump_write_vector(fp, &player_obj->mtype.phys_info.velocity);
+	fputs(",\"orient\":", fp);
+	newdemo_dump_write_matrix(fp, &player_obj->orient);
+	fputs(",\"control\":{\"valid\":", fp);
+	fputs(nd_dump_v_player_control_trace.valid ? "true" : "false", fp);
+	if (nd_dump_v_player_control_trace.valid) {
+		fprintf(fp,
+			",\"seg\":%d,\"phys_flags\":%d,\"player_flags\":%d,\"ft\":%d,\"resolved_forward\":%d,\"pitch\":%d,\"heading\":%d,\"bank\":%d,\"forward\":%d,\"sideways\":%d,\"vertical\":%d,\"afterburner_state\":%d,\"afterburner_charge\":%d,\"wiggle_applied\":%d,\"wiggle_raw\":%d,\"wiggle_scaled\":%d,\"wiggle_amount\":%d,\"ship_wiggle\":%d,\"pre_thrust\":",
+			nd_dump_v_player_control_trace.segnum,
+			nd_dump_v_player_control_trace.phys_flags,
+			nd_dump_v_player_control_trace.player_flags,
+			nd_dump_v_player_control_trace.frame_time,
+			nd_dump_v_player_control_trace.resolved_forward_thrust_time,
+			nd_dump_v_player_control_trace.control_pitch,
+			nd_dump_v_player_control_trace.control_heading,
+			nd_dump_v_player_control_trace.control_bank,
+			nd_dump_v_player_control_trace.control_forward,
+			nd_dump_v_player_control_trace.control_sideways,
+			nd_dump_v_player_control_trace.control_vertical,
+			nd_dump_v_player_control_trace.afterburner_state,
+			nd_dump_v_player_control_trace.afterburner_charge,
+			nd_dump_v_player_control_trace.wiggle_applied,
+			nd_dump_v_player_control_trace.raw_swiggle,
+			nd_dump_v_player_control_trace.scaled_swiggle,
+			nd_dump_v_player_control_trace.wiggle_amount,
+			nd_dump_v_player_control_trace.ship_wiggle);
+		newdemo_dump_write_vector(fp, &nd_dump_v_player_control_trace.pre_scale_thrust);
+		fputs(",\"thrust\":", fp);
+		newdemo_dump_write_vector(fp, &nd_dump_v_player_control_trace.thrust);
+		fputs(",\"pre_rot\":", fp);
+		newdemo_dump_write_vector(fp, &nd_dump_v_player_control_trace.pre_scale_rotthrust);
+		fputs(",\"rot\":", fp);
+		newdemo_dump_write_vector(fp, &nd_dump_v_player_control_trace.rotthrust);
+		fputs(",\"vel_before_wiggle\":", fp);
+		newdemo_dump_write_vector(fp, &nd_dump_v_player_control_trace.velocity_before_wiggle);
+		fputs(",\"wiggle_delta\":", fp);
+		newdemo_dump_write_vector(fp, &nd_dump_v_player_control_trace.wiggle_delta);
+		fputs(",\"vel_after_wiggle\":", fp);
+		newdemo_dump_write_vector(fp, &nd_dump_v_player_control_trace.velocity_after_wiggle);
+	}
+	fputs("}", fp);
+	fputs(",\"wiggle\":{\"valid\":", fp);
+	if (nd_dump_v_player_control_trace.valid || nd_dump_v_player_wiggle.valid)
+		fputs("true", fp);
+	else
+		fputs("false", fp);
+	if (nd_dump_v_player_control_trace.valid) {
+		fprintf(fp,
+			",\"applied\":%d,\"seg\":%d,\"phys_flags\":%d,\"ft\":%d,\"raw\":%d,\"scaled\":%d,\"amount\":%d,\"vel_before\":",
+			nd_dump_v_player_control_trace.wiggle_applied,
+			nd_dump_v_player_control_trace.segnum,
+			nd_dump_v_player_control_trace.phys_flags,
+			nd_dump_v_player_control_trace.frame_time,
+			nd_dump_v_player_control_trace.raw_swiggle,
+			nd_dump_v_player_control_trace.scaled_swiggle,
+			nd_dump_v_player_control_trace.wiggle_amount);
+		newdemo_dump_write_vector(fp, &nd_dump_v_player_control_trace.velocity_before_wiggle);
+		fputs(",\"delta\":", fp);
+		newdemo_dump_write_vector(fp, &nd_dump_v_player_control_trace.wiggle_delta);
+		fputs(",\"vel_after\":", fp);
+		newdemo_dump_write_vector(fp, &nd_dump_v_player_control_trace.velocity_after_wiggle);
+		fputs(",\"uvec\":", fp);
+		newdemo_dump_write_vector(fp, &player_obj->orient.uvec);
+	}
+	else if (nd_dump_v_player_wiggle.valid) {
+		fprintf(fp,
+			",\"applied\":%d,\"seg\":%d,\"phys_flags\":%d,\"ft\":%d,\"raw\":%d,\"scaled\":%d,\"amount\":%d,\"vel_before\":",
+			nd_dump_v_player_wiggle.applied,
+			nd_dump_v_player_wiggle.segnum,
+			nd_dump_v_player_wiggle.phys_flags,
+			nd_dump_v_player_wiggle.frame_time,
+			nd_dump_v_player_wiggle.raw_swiggle,
+			nd_dump_v_player_wiggle.scaled_swiggle,
+			nd_dump_v_player_wiggle.wiggle_amount);
+		newdemo_dump_write_vector(fp, &nd_dump_v_player_wiggle.velocity_before);
+		fputs(",\"delta\":", fp);
+		newdemo_dump_write_vector(fp, &nd_dump_v_player_wiggle.wiggle_delta);
+		fputs(",\"vel_after\":", fp);
+		newdemo_dump_write_vector(fp, &nd_dump_v_player_wiggle.velocity_after);
+		fputs(",\"uvec\":", fp);
+		newdemo_dump_write_vector(fp, &nd_dump_v_player_wiggle.uvec);
+	}
+	fputs("}},\"objects\":[", fp);
 
 	for (i = 0; i <= Highest_object_index; ++i) {
 		object *obj = &Objects[i];
@@ -4467,8 +4782,11 @@ int newdemo_dump_json(const char *demo_path, const char *output_path,
 	nd_playback_v_bad_read = 0;
 	nd_playback_v_at_eof = 0;
 	nd_playback_v_framecount = 0;
+	nd_playback_v_demo_version = DEMO_VERSION;
 	nd_dump_v_frame_number = -1;
 	nd_dump_v_active = 1;
+	newdemo_dump_reset_player_control_trace();
+	newdemo_dump_reset_player_wiggle();
 	nd_recorded_total = 0;
 	nd_recorded_time = 0;
 	strncpy(nd_playback_v_save_callsign, Players[Player_num].callsign, CALLSIGN_LEN);
@@ -4517,6 +4835,8 @@ int newdemo_dump_json(const char *demo_path, const char *output_path,
 
 cleanup:
 	nd_dump_v_active = 0;
+	newdemo_dump_reset_player_control_trace();
+	newdemo_dump_reset_player_wiggle();
 	if (Newdemo_state == ND_STATE_PLAYBACK)
 		newdemo_stop_playback();
 	else if (infile) {
