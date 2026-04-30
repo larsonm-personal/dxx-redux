@@ -112,6 +112,9 @@ extern void newdemo_goto_beginning();
 // Interactive functions to control playback/record;
 extern void newdemo_start_playback( char * filename );
 extern void newdemo_stop_playback();
+extern int newdemo_dump_active(void);
+extern int newdemo_dump_json(const char *demo_path, const char *output_path,
+	char *error, size_t error_size);
 extern void newdemo_start_recording(int is_autorecord);
 extern void newdemo_stop_recording(int is_manual);
 extern int newdemo_toggle_quick_recording(void);

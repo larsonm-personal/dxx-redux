@@ -745,6 +745,7 @@ void LoadLevel(int level_num,int page_in_textures)
 	char *level_name;
 	player save_player;
 	int load_ret;
+	const int headless_demo_dump = newdemo_dump_active();
 
 	save_player = Players[Player_num];
 
@@ -763,8 +764,10 @@ void LoadLevel(int level_num,int page_in_textures)
 	else					//normal level
 		level_name = Level_names[level_num-1];
 
-	gr_set_current_canvas(NULL);
-	gr_clear_canvas(BM_XRGB(0, 0, 0));		//so palette switching is less obvious
+	if (!headless_demo_dump) {
+		gr_set_current_canvas(NULL);
+		gr_clear_canvas(BM_XRGB(0, 0, 0));		//so palette switching is less obvious
+	}
 
 	load_ret = load_level(level_name);		//actually load the data from disk!
 
@@ -777,11 +780,14 @@ void LoadLevel(int level_num,int page_in_textures)
 	level_overlay_notify(level_num, Current_level_name);
 #endif
 
-	load_palette(Current_level_palette,1,1);		//don't change screen
+	if (!headless_demo_dump)
+		load_palette(Current_level_palette,1,1);		//don't change screen
 
-	show_boxed_message(TXT_LOADING, 0);
+	if (!headless_demo_dump)
+		show_boxed_message(TXT_LOADING, 0);
 #ifdef RELEASE
-	timer_delay(F1_0);
+	if (!headless_demo_dump)
+		timer_delay(F1_0);
 #endif
 
 	load_endlevel_data(level_num);
@@ -793,7 +799,7 @@ void LoadLevel(int level_num,int page_in_textures)
 
 	load_level_robots(level_num);
 
-	if ( page_in_textures ) {
+	if ( page_in_textures && !headless_demo_dump ) {
 		piggy_load_level_data();
 #ifdef OGL
 		ogl_cache_level_textures();
@@ -808,11 +814,14 @@ void LoadLevel(int level_num,int page_in_textures)
 
 	Players[Player_num] = save_player;
 
-	set_sound_sources();
+	if (!headless_demo_dump)
+		set_sound_sources();
 
-	songs_play_level_song( Current_level_num, 0 );
+	if (!headless_demo_dump)
+		songs_play_level_song( Current_level_num, 0 );
 
-	gr_palette_load(gr_palette);		//actually load the palette
+	if (!headless_demo_dump)
+		gr_palette_load(gr_palette);		//actually load the palette
 
 //	WIN(HideCursorW());
 }

@@ -189,6 +189,8 @@ static sbyte nd_playback_v_at_eof;
 static sbyte nd_playback_v_cntrlcen_destroyed = 0;
 static sbyte nd_playback_v_bad_read;
 static int nd_playback_v_framecount;
+static int nd_dump_v_frame_number = -1;
+static int nd_dump_v_active = 0;
 static fix nd_playback_total, nd_recorded_total, nd_recorded_time;
 static sbyte nd_playback_v_style;
 static ubyte nd_playback_v_dead = 0, nd_playback_v_rear = 0, nd_playback_v_guided = 0;
@@ -1772,6 +1774,7 @@ int newdemo_read_frame_information(int rewrite)
 			done=1;
 			nd_read_short(&last_frame_length);
 			nd_read_int(&nd_playback_v_framecount);
+			nd_dump_v_frame_number = nd_playback_v_framecount;
 			nd_read_int((int *)&nd_recorded_time);
 			if (nd_playback_v_bad_read) { done = -1; break; }
 			if (rewrite)
@@ -1892,7 +1895,7 @@ int newdemo_read_frame_information(int rewrite)
 				nd_write_int(soundno);
 				break;
 			}
-			if (Newdemo_vcr_state == ND_STATE_PLAYBACK)
+			if (!nd_dump_v_active && Newdemo_vcr_state == ND_STATE_PLAYBACK)
 				digi_play_sample( soundno, F1_0 );
 			break;
 
@@ -1908,7 +1911,7 @@ int newdemo_read_frame_information(int rewrite)
 				nd_write_int(volume);
 				break;
 			}
-			if (Newdemo_vcr_state == ND_STATE_PLAYBACK)
+			if (!nd_dump_v_active && Newdemo_vcr_state == ND_STATE_PLAYBACK)
 				digi_play_sample_3d( soundno, angle, volume, 0 );
 			break;
 
@@ -1924,7 +1927,7 @@ int newdemo_read_frame_information(int rewrite)
 				nd_write_int(volume);
 				break;
 			}
-			if (Newdemo_vcr_state == ND_STATE_PLAYBACK)
+			if (!nd_dump_v_active && Newdemo_vcr_state == ND_STATE_PLAYBACK)
 				digi_play_sample_3d( soundno, angle, volume, 1 );
 			break;
 
@@ -1949,7 +1952,7 @@ int newdemo_read_frame_information(int rewrite)
 					break;
 				}
 				objnum = newdemo_find_object( signature );
-				if ( objnum > -1 && Newdemo_vcr_state == ND_STATE_PLAYBACK)  {   //  @mk, 2/22/96, John told me to.
+				if (objnum > -1 && !nd_dump_v_active && Newdemo_vcr_state == ND_STATE_PLAYBACK)  {   //  @mk, 2/22/96, John told me to.
 					digi_link_sound_to_object3( soundno, objnum, 1, max_volume, max_distance, loop_start, loop_end );
 				}
 			}
@@ -1965,7 +1968,7 @@ int newdemo_read_frame_information(int rewrite)
 					break;
 				}
 				objnum = newdemo_find_object( signature );
-				if ( objnum > -1 && Newdemo_vcr_state == ND_STATE_PLAYBACK)  {   //  @mk, 2/22/96, John told me to.
+				if (objnum > -1 && !nd_dump_v_active && Newdemo_vcr_state == ND_STATE_PLAYBACK)  {   //  @mk, 2/22/96, John told me to.
 					digi_kill_sound_linked_to_object(objnum);
 				}
 			}
@@ -1988,7 +1991,7 @@ int newdemo_read_frame_information(int rewrite)
 				nd_write_int(player);
 				break;
 			}
-			if (Newdemo_vcr_state != ND_STATE_PAUSED)
+			if (!nd_dump_v_active && Newdemo_vcr_state != ND_STATE_PAUSED)
 				wall_hit_process(&Segments[segnum], side, damage, player, &(Objects[0]) );
 			break;
 		}
@@ -2018,9 +2021,9 @@ int newdemo_read_frame_information(int rewrite)
 					nd_write_int(truth);
 					break;
 				}
-				if (!truth && Newdemo_vcr_state != ND_STATE_PAUSED)
+				if (!nd_dump_v_active && !truth && Newdemo_vcr_state != ND_STATE_PAUSED)
 					check_trigger(&Segments[segnum], side, objnum,shot);
-			} else if (!rewrite && Newdemo_vcr_state != ND_STATE_PAUSED)
+			} else if (!rewrite && !nd_dump_v_active && Newdemo_vcr_state != ND_STATE_PAUSED)
 				check_trigger(&Segments[segnum], side, objnum,shot);
 			break;
 
@@ -2080,7 +2083,7 @@ int newdemo_read_frame_information(int rewrite)
 				nd_write_int(side);
 				break;
 			}
-			if (Newdemo_vcr_state != ND_STATE_PAUSED)
+			if (!nd_dump_v_active && Newdemo_vcr_state != ND_STATE_PAUSED)
 				wall_toggle(segnum, side);
 			break;
 
@@ -2109,7 +2112,7 @@ int newdemo_read_frame_information(int rewrite)
 				nd_write_string(&(hud_msg[0]));
 				break;
 			}
-			if (Newdemo_vcr_state != ND_STATE_PAUSED)
+			if (!nd_dump_v_active && Newdemo_vcr_state != ND_STATE_PAUSED)
 				HUD_init_message_literal( HM_DEFAULT, hud_msg );
 			break;
 			}
@@ -2311,7 +2314,7 @@ int newdemo_read_frame_information(int rewrite)
 				nd_write_vector(&pnt);
 				break;
 			}
-			if (Newdemo_vcr_state != ND_STATE_PAUSED)
+			if (!nd_dump_v_active && Newdemo_vcr_state != ND_STATE_PAUSED)
 				check_effect_blowup(&(Segments[segnum]), side, &pnt, &dummy, 0);
 			break;
 		}
@@ -4228,6 +4231,303 @@ void newdemo_stop_playback()
 	
 	if (Game_wind)
 		window_close(Game_wind);               // Exit game loop
+}
+
+#define DEM2JSON_MOUNT_POINT "__classicdemo_dump"
+
+static void newdemo_dump_set_error(char *error, size_t error_size, const char *message)
+{
+	if (!error || !error_size)
+		return;
+	snprintf(error, error_size, "%s", message ? message : "unknown error");
+}
+
+int newdemo_dump_active(void)
+{
+	return nd_dump_v_active;
+}
+
+static void newdemo_dump_write_json_escaped(FILE *fp, const char *text)
+{
+	const unsigned char *p = (const unsigned char *)(text ? text : "");
+
+	fputc('"', fp);
+	for (; *p; ++p) {
+		switch (*p) {
+		case '\\':
+			fputs("\\\\", fp);
+			break;
+		case '"':
+			fputs("\\\"", fp);
+			break;
+		case '\b':
+			fputs("\\b", fp);
+			break;
+		case '\f':
+			fputs("\\f", fp);
+			break;
+		case '\n':
+			fputs("\\n", fp);
+			break;
+		case '\r':
+			fputs("\\r", fp);
+			break;
+		case '\t':
+			fputs("\\t", fp);
+			break;
+		default:
+			if (*p < 0x20)
+				fprintf(fp, "\\u%04x", *p);
+			else
+				fputc(*p, fp);
+		}
+	}
+	fputc('"', fp);
+}
+
+static void newdemo_dump_write_vector(FILE *fp, const vms_vector *vec)
+{
+	fprintf(fp, "[%d,%d,%d]", vec->x, vec->y, vec->z);
+}
+
+static void newdemo_dump_write_matrix(FILE *fp, const vms_matrix *mat)
+{
+	fputs("{\"f\":", fp);
+	newdemo_dump_write_vector(fp, &mat->fvec);
+	fputs(",\"r\":", fp);
+	newdemo_dump_write_vector(fp, &mat->rvec);
+	fputs(",\"u\":", fp);
+	newdemo_dump_write_vector(fp, &mat->uvec);
+	fputc('}', fp);
+}
+
+static void newdemo_dump_write_object(FILE *fp, int objnum, object *obj)
+{
+	fprintf(fp,
+		"{\"objnum\":%d,\"sig\":%d,\"obj_type\":%d,\"id\":%d,\"seg\":%d,\"flags\":%d,\"control_type\":%d,\"movement_type\":%d,\"render_type\":%d,\"viewer\":%s,\"pos\":",
+		objnum,
+		obj->signature,
+		obj->type,
+		obj->id,
+		obj->segnum,
+		obj->flags,
+		obj->control_type,
+		obj->movement_type,
+		obj->render_type,
+		(obj == Viewer) ? "true" : "false");
+	newdemo_dump_write_vector(fp, &obj->pos);
+	fputs(",\"last_pos\":", fp);
+	newdemo_dump_write_vector(fp, &obj->last_pos);
+	fputs(",\"orient\":", fp);
+	newdemo_dump_write_matrix(fp, &obj->orient);
+	fputc('}', fp);
+}
+
+static void newdemo_dump_write_header(FILE *fp)
+{
+	fputs("{\"type\":\"header\",\"format\":\"classic_dem_runtime_dump\",\"game\":\"d2\",\"version\":15,\"game_type\":3,\"mission\":", fp);
+	newdemo_dump_write_json_escaped(fp, Current_mission_filename);
+	fprintf(fp,
+		",\"score\":%d,\"primary_weapon\":%d,\"secondary_weapon\":%d,\"player_flags\":%d,\"energy\":%d,\"shields\":%d}\n",
+		Players[Player_num].score,
+		Players[Player_num].primary_weapon,
+		Players[Player_num].secondary_weapon,
+		Players[Player_num].flags,
+		f2ir(Players[Player_num].energy),
+		f2ir(Players[Player_num].shields));
+}
+
+static void newdemo_dump_write_frame(FILE *fp)
+{
+	int i;
+	int first = 1;
+	int object_count = 0;
+	object *player_obj = &Objects[Players[Player_num].objnum];
+
+	for (i = 0; i <= Highest_object_index; ++i)
+		if (Objects[i].type != OBJ_NONE && Objects[i].segnum != -1)
+			object_count++;
+
+	fprintf(fp,
+		"{\"type\":\"frame\",\"f\":%d,\"ft\":%d,\"gt\":%d,\"level\":%d,\"viewer_objnum\":%d,\"object_count\":%d,\"player\":{\"score\":%d,\"energy\":%d,\"shields\":%d,\"flags\":%d,\"seg\":%d,\"pos\":",
+		nd_dump_v_frame_number,
+		nd_recorded_time,
+		nd_recorded_total,
+		Current_level_num,
+		Viewer ? (int)(Viewer - Objects) : -1,
+		object_count,
+		Players[Player_num].score,
+		f2ir(Players[Player_num].energy),
+		f2ir(Players[Player_num].shields),
+		Players[Player_num].flags,
+		player_obj->segnum);
+	newdemo_dump_write_vector(fp, &player_obj->pos);
+	fputs("},\"objects\":[", fp);
+
+	for (i = 0; i <= Highest_object_index; ++i) {
+		object *obj = &Objects[i];
+
+		if (obj->type == OBJ_NONE || obj->segnum == -1)
+			continue;
+		if (!first)
+			fputc(',', fp);
+		newdemo_dump_write_object(fp, i, obj);
+		first = 0;
+	}
+
+	fputs("]}\n", fp);
+}
+
+static const char *newdemo_dump_find_last_sep(const char *path)
+{
+	const char *slash = strrchr(path, '/');
+	const char *backslash = strrchr(path, '\\');
+
+	if (!slash)
+		return backslash;
+	if (!backslash)
+		return slash;
+	return slash > backslash ? slash : backslash;
+}
+
+static int newdemo_dump_open_input(const char *demo_path,
+	char *mount_dir, size_t mount_dir_size,
+	char *logical_path, size_t logical_path_size,
+	int *mounted, char *error, size_t error_size)
+{
+	const char *sep;
+	char basename[PATH_MAX];
+	size_t parent_len;
+
+	*mounted = 0;
+	sep = newdemo_dump_find_last_sep(demo_path);
+	if (!sep) {
+		snprintf(mount_dir, mount_dir_size, "%s", ".");
+		snprintf(basename, sizeof(basename), "%s", demo_path);
+	} else {
+		parent_len = (size_t)(sep - demo_path);
+		if (!parent_len) {
+			snprintf(mount_dir, mount_dir_size, "%c", *sep);
+		} else {
+			if (parent_len >= mount_dir_size)
+				parent_len = mount_dir_size - 1;
+			memcpy(mount_dir, demo_path, parent_len);
+			mount_dir[parent_len] = '\0';
+		}
+		snprintf(basename, sizeof(basename), "%s", sep + 1);
+	}
+
+	if (!basename[0]) {
+		newdemo_dump_set_error(error, error_size, "invalid classic demo path");
+		return 0;
+	}
+	if (!PHYSFS_mount(mount_dir, DEM2JSON_MOUNT_POINT, 0)) {
+		newdemo_dump_set_error(error, error_size, "could not mount classic demo directory");
+		return 0;
+	}
+	*mounted = 1;
+	snprintf(logical_path, logical_path_size, "%s/%s", DEM2JSON_MOUNT_POINT, basename);
+	infile = PHYSFSX_openReadBuffered(logical_path);
+	if (!infile) {
+		PHYSFS_removeFromSearchPath(mount_dir);
+		*mounted = 0;
+		newdemo_dump_set_error(error, error_size, "could not open classic demo file");
+		return 0;
+	}
+	return 1;
+}
+
+int newdemo_dump_json(const char *demo_path, const char *output_path,
+	char *error, size_t error_size)
+{
+	FILE *fp = NULL;
+	char mount_dir[PATH_MAX] = "";
+	char logical_path[PATH_MAX] = "";
+	int mounted = 0;
+	int frame_count = 0;
+	int object_total = 0;
+	int ok = 0;
+
+	newdemo_dump_set_error(error, error_size, "");
+	if (!demo_path || !demo_path[0] || !output_path || !output_path[0]) {
+		newdemo_dump_set_error(error, error_size, "classic demo dump requires input and output paths");
+		return 0;
+	}
+	fp = fopen(output_path, "wb");
+	if (!fp) {
+		newdemo_dump_set_error(error, error_size, "could not open classic demo json output path");
+		return 0;
+	}
+	if (!newdemo_dump_open_input(demo_path, mount_dir, sizeof(mount_dir), logical_path, sizeof(logical_path), &mounted, error, error_size))
+		goto cleanup;
+
+#ifdef NETWORK
+	change_playernum_to(0);
+#endif
+	nd_playback_v_bad_read = 0;
+	nd_playback_v_at_eof = 0;
+	nd_playback_v_framecount = 0;
+	nd_dump_v_frame_number = -1;
+	nd_dump_v_active = 1;
+	nd_recorded_total = 0;
+	nd_recorded_time = 0;
+	strncpy(nd_playback_v_save_callsign, Players[Player_num].callsign, CALLSIGN_LEN);
+	Players[Player_num].lives = 0;
+	Viewer = ConsoleObject = &Objects[0];
+	if (newdemo_read_demo_start(PURPOSE_RANDOM_PLAY)) {
+		newdemo_dump_set_error(error, error_size, "classic demo header parse failed");
+		goto cleanup;
+	}
+
+	Game_mode = GM_NORMAL | (Game_mode & GM_OBSERVER);
+	Newdemo_state = ND_STATE_PLAYBACK;
+	Newdemo_vcr_state = ND_STATE_PLAYBACK;
+	nd_playback_v_demosize = PHYSFS_fileLength(infile);
+	nd_playback_v_style = NORMAL_PLAYBACK;
+	init_seismic_disturbances();
+	nd_playback_v_dead = nd_playback_v_rear = nd_playback_v_guided = 0;
+
+	newdemo_dump_write_header(fp);
+	fflush(fp);
+	while (!nd_playback_v_at_eof) {
+		int i;
+		int active_objects = 0;
+
+		if (newdemo_read_frame_information(0) == -1) {
+			if (!nd_playback_v_at_eof)
+				newdemo_dump_set_error(error, error_size, "classic demo frame decode failed");
+			break;
+		}
+		for (i = 0; i <= Highest_object_index; ++i)
+			if (Objects[i].type != OBJ_NONE && Objects[i].segnum != -1)
+				active_objects++;
+		newdemo_dump_write_frame(fp);
+		fflush(fp);
+		frame_count++;
+		object_total += active_objects;
+	}
+	if (error && error[0])
+		goto cleanup;
+
+	fprintf(fp,
+		"{\"type\":\"result\",\"frames_decoded\":%d,\"objects_emitted\":%d,\"truncated\":false}\n",
+		frame_count,
+		object_total);
+	ok = 1;
+
+cleanup:
+	nd_dump_v_active = 0;
+	if (Newdemo_state == ND_STATE_PLAYBACK)
+		newdemo_stop_playback();
+	else if (infile) {
+		PHYSFS_close(infile);
+		infile = NULL;
+	}
+	if (mounted)
+		PHYSFS_removeFromSearchPath(mount_dir);
+	if (fp)
+		fclose(fp);
+	return ok;
 }
 
 

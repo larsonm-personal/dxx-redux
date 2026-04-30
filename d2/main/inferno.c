@@ -219,6 +219,7 @@ void print_commandline_help()
 	printf( "  -norun                        Bail out after initialization\n");
 	printf( "  -inputdemo-validate <s>       Validate input demo file rng_mode and exit\n");
 	printf( "  -inputdemo-replay <s>         Replay input demo file through the D2 engine\n");
+	printf( "  -classicdemo-dump-json <s> <s> Dump classic .dem to JSONL and exit\n");
 	printf( "  -renderstats                  Enable renderstats info by default\n");
 	printf( "  -text <s>                     Specify alternate .tex file\n");
 	printf( "  -tmap <s>                     Select texmapper <s> to use\n\t\t\t\t(default: c, available: c, fp, quad, i386)\n");
@@ -523,6 +524,32 @@ static int maybe_start_input_demo_replay(void)
 	return 0;
 }
 
+static int maybe_dump_classic_demo_json(void)
+{
+	int arg_index = find_cmd_arg("-classicdemo-dump-json");
+	const char *demo_path;
+	const char *output_path;
+	char dump_error[256] = "";
+
+	if (!arg_index)
+		return -1;
+	if (arg_index + 2 >= Num_args || !Args[arg_index + 1] || !Args[arg_index + 2] ||
+		Args[arg_index + 1][0] == '-' || Args[arg_index + 2][0] == '-')
+	{
+		printf("Usage: -classicdemo-dump-json <demo.dem> <output.jsonl>\n");
+		return 1;
+	}
+	demo_path = Args[arg_index + 1];
+	output_path = Args[arg_index + 2];
+	if (!newdemo_dump_json(demo_path, output_path, dump_error, sizeof(dump_error)))
+	{
+		printf("Classic demo JSON dump failed: %s\n", dump_error[0] ? dump_error : "unknown error");
+		return 1;
+	}
+	printf("Classic demo JSON dump written: %s\n", output_path);
+	return 0;
+}
+
 int Quitting = 0;
 
 // Default event handler for everything except the editor
@@ -757,6 +784,14 @@ int main(int argc, char *argv[])
 	CHECKPOINT("config read");
 
 	PHYSFSX_addArchiveContent();
+	if (find_cmd_arg("-classicdemo-dump-json")) {
+		gr_use_palette_table(D2_DEFAULT_PALETTE);
+		gamedata_init();
+		texmerge_init(10);
+		piggy_init_pigfile("groupa.pig");
+		init_game();
+		return maybe_dump_classic_demo_json();
+	}
 
 	CHECKPOINT("calling arch_init");
 	arch_init();
