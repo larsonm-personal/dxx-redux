@@ -29,8 +29,10 @@ char copyright[] = "DESCENT II  COPYRIGHT (C) 1994-1996 PARALLAX SOFTWARE CORPOR
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
-#if defined(_WIN32) && defined(_MSC_VER) && defined(_M_IX86)
+#if defined(_WIN32) && defined(_MSC_VER)
 #include <float.h>
+#else
+#include <fenv.h>
 #endif
 #include <SDL.h>
 
@@ -96,17 +98,36 @@ char copyright[] = "DESCENT II  COPYRIGHT (C) 1994-1996 PARALLAX SOFTWARE CORPOR
 #include "rbaudio.h"
 #include "messagebox.h"
 
-#if defined(_WIN32) && defined(_MSC_VER) && defined(_M_IX86)
-static void input_demo_configure_replay_fp_environment(void)
+#if defined(_WIN32) && defined(_MSC_VER)
+static void configure_startup_fp_environment(void)
 {
 	unsigned int control_word = 0;
 
+	#if defined(_M_IX86)
 	if (_controlfp_s(&control_word, _PC_53, _MCW_PC) != 0)
-		return;
-	_controlfp_s(&control_word, _RC_NEAR, _MCW_RC);
+		Error("Failed to set floating point precision");
+	#endif
+	if (_controlfp_s(&control_word, _RC_NEAR, _MCW_RC) != 0)
+		Error("Failed to set floating point rounding mode");
+	if (_controlfp_s(&control_word, 0, 0) != 0)
+		Error("Failed to read floating point control word");
+	if ((control_word & _MCW_RC) != _RC_NEAR)
+		Error("Floating point rounding mode is not round-to-nearest");
+	#if defined(_M_IX86)
+	if ((control_word & _MCW_PC) != _PC_53)
+		Error("Floating point precision is not 53-bit");
+	#endif
+}
+#elif defined(FE_TONEAREST)
+static void configure_startup_fp_environment(void)
+{
+	if (fesetround(FE_TONEAREST) != 0)
+		Error("Failed to set floating point rounding mode");
+	if (fegetround() != FE_TONEAREST)
+		Error("Floating point rounding mode is not round-to-nearest");
 }
 #else
-static void input_demo_configure_replay_fp_environment(void)
+static void configure_startup_fp_environment(void)
 {
 }
 #endif
@@ -337,7 +358,6 @@ static int maybe_start_input_demo_replay(void)
 		printf("Input demo replay load failed: %s\n", replay_error);
 		return 1;
 	}
-	input_demo_configure_replay_fp_environment();
 	if (input_demo_replay_game() != INPUT_DEMO_GAME_D2)
 	{
 		printf("Input demo replay currently supports D2 demos only\n");
@@ -650,6 +670,8 @@ int main(int argc, char *argv[])
 	error_init(msgbox_error);
 	set_warn_func(msgbox_warning);
 	CHECKPOINT("error_init done");
+	configure_startup_fp_environment();
+	CHECKPOINT("fp environment configured");
 	PHYSFSX_init(argc, argv);
 	CHECKPOINT("PHYSFSX_init done");
 	con_init();  // Initialise the console

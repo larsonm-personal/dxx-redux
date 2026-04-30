@@ -597,7 +597,7 @@ private fun RecordedInputDemosSection(
     Text("Newly-Recorded Demos", fontWeight = FontWeight.Bold, fontSize = 14.sp)
     Spacer(modifier = Modifier.height(4.dp))
     Text(
-        "Quick-recorded .dximdemo files from d1x-redux and d2x-redux. When present, paired .rngtrace.jsonl files export with the demo and follow it into the active set ($activeSetName)",
+        "Quick-recorded .dximdemo files from d1x-redux and d2x-redux. When present, paired .rngtrace.jsonl and .dem sidecars export with the demo and follow it into the active set ($activeSetName)",
         fontSize = 12.sp,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -647,6 +647,13 @@ private fun RecordedInputDemosSection(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+                    if (demo.classicDemoFile != null) {
+                        Text(
+                            "Classic demo available: ${demo.classicDemoFile.name}",
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     if (!demo.headerReadable) {
                         Text(
                             "Header unreadable. Save, add, and delete still work",
@@ -676,10 +683,22 @@ private fun RecordedInputDemosSection(
                                 .makeText(
                                     ctx,
                                     if (ok) {
-                                        if (demo.traceFile != null) {
-                                            "Saved demo and RNG trace to Downloads"
-                                        } else {
-                                            "Saved to Downloads/${demo.file.name}"
+                                        when {
+                                            demo.traceFile != null && demo.classicDemoFile != null -> {
+                                                "Saved demo, RNG trace, and classic demo to Downloads"
+                                            }
+
+                                            demo.traceFile != null -> {
+                                                "Saved demo and RNG trace to Downloads"
+                                            }
+
+                                            demo.classicDemoFile != null -> {
+                                                "Saved demo and classic demo to Downloads"
+                                            }
+
+                                            else -> {
+                                                "Saved to Downloads/${demo.file.name}"
+                                            }
                                         }
                                     } else {
                                         "Save failed"
@@ -821,7 +840,7 @@ private fun RecordedInputDemosSection(
             text = {
                 Column {
                     Text(
-                        "Copy ${installTarget?.file?.name} into the active set ($activeSetName) demos folder",
+                        "Copy ${installTarget?.file?.name} and any recorded sidecars into the active set ($activeSetName) demos folder",
                         fontSize = 13.sp,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -845,7 +864,7 @@ private fun RecordedInputDemosSection(
 
                                     ImportStorageGuard.requireFreeSpace(
                                         demosDir,
-                                        target.file.length(),
+                                        InputDemoManager.stagedFileBytes(target),
                                         "install ${target.file.name}",
                                     )
                                     InputDemoManager.installToSet(target, activeSetDir, installName) { progress ->

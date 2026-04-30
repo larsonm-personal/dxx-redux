@@ -15,7 +15,7 @@ import java.io.FileWriter
  * Executes JSON5 automation scripts in the launcher (SetupActivity) process.
  *
  * Steps like log, wait_ms, wait_for, assert, setup_command, reset_state,
- * write_config, and enter_launcher are handled here. When an enter_game
+ * write_config, install_staged_demo, and enter_launcher are handled here. When an enter_game
  * step is reached, the executor launches the game with intent extras
  * telling the C engine where to resume, then suspends. SetupActivity
  * calls [resume] when the game exits and automation_result.json contains
@@ -208,6 +208,43 @@ class LauncherScriptExecutor(
                     currentStep++
                 }
 
+                "install_staged_demo" -> {
+                    val requestedName = step.optString("name", "")
+                    val game = step.optString("game", "")
+                    val target =
+                        withContext(Dispatchers.IO) {
+                            InputDemoManager
+                                .listStagedDemos(context.filesDir)
+                                .firstOrNull { game.isEmpty() || it.game == game }
+                        }
+                    if (target == null) {
+                        fail("install_staged_demo: no staged demo${if (game.isEmpty()) "" else " for $game"}")
+                        return
+                    }
+                    val installName =
+                        if (requestedName.isNotEmpty()) {
+                            requestedName
+                        } else {
+                            InputDemoManager.sanitizeInstallName(target.file.nameWithoutExtension)
+                        }
+                    val dest =
+                        withContext(Dispatchers.IO) {
+                            val fileSetManager = FileSetManager(context.filesDir)
+                            val activeSetName = fileSetManager.getActive()
+                            val activeSetDir = fileSetManager.getSetDir(activeSetName)
+                            val demosDir = File(activeSetDir, "demos").also { it.mkdirs() }
+
+                            ImportStorageGuard.requireFreeSpace(
+                                demosDir,
+                                InputDemoManager.stagedFileBytes(target),
+                                "install ${target.file.name}",
+                            )
+                            InputDemoManager.installToSet(target, activeSetDir, installName)
+                        }
+                    Log.i(TAG, "INSTALL_STAGED_DEMO: ${target.file.name} -> ${dest.absolutePath}")
+                    currentStep++
+                }
+
                 "assert_controller_match" -> {
                     val failMsg = withContext(Dispatchers.IO) { compareControllerIntrospections() }
                     if (failMsg != null) {
@@ -220,6 +257,7 @@ class LauncherScriptExecutor(
 
                 "tap_button" -> {
                     val text = step.optString("text", "")
+                    val exact = step.optBoolean("exact", false)
                     val launchesGame = step.optBoolean("launches_game", false)
                     val postDelay = step.optLong("post_delay_ms", 300)
                     val timeoutMs = step.optLong("timeout_ms", 10000)
@@ -235,7 +273,7 @@ class LauncherScriptExecutor(
                     var button: SetupActivity.ButtonInfo? = null
                     var scrollAttempts = 0
                     while (true) {
-                        button = activity.findButtonByText(text)
+                        button = activity.findButtonByText(text, exact)
                         if (button != null && button.enabled) break
                         if (System.currentTimeMillis() > deadline) {
                             if (button != null && !button.enabled) {
@@ -249,7 +287,7 @@ class LauncherScriptExecutor(
                             }
                             return
                         }
-                        if (button == null && scrollAttempts < 5) {
+                        if (button == null && scrollAttempts < 20) {
                             activity.scrollDown()
                             scrollAttempts++
                             delay(400)
@@ -275,11 +313,12 @@ class LauncherScriptExecutor(
 
                 "assert_button" -> {
                     val text = step.optString("text", "")
+                    val exact = step.optBoolean("exact", false)
                     if (text.isEmpty()) {
                         fail("assert_button: missing 'text' field")
                         return
                     }
-                    val button = activity.findButtonByText(text)
+                    val button = activity.findButtonByText(text, exact)
                     if (button == null) {
                         val available =
                             activity

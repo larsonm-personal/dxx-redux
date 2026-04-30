@@ -616,7 +616,7 @@ void set_sound_sources()
 
 
 //fix flash_dist=i2f(1);
-fix flash_dist=fl2f(.9);
+fix flash_dist=(F1_0 * 9) / 10;
 
 //create flash for player appearance
 void create_player_appearance_effect(object *player_obj)

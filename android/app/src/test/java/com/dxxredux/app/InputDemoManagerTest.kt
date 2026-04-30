@@ -18,6 +18,7 @@ class InputDemoManagerTest {
         val older = writeDemo(filesDir, "d1x-redux", "older.dximdemo", "descent", 1, 12)
         val newer = writeDemo(filesDir, "d2x-redux", "newer.dximdemo", "descent2", 2, 34)
         File(newer.parentFile, newer.name + InputDemoManager.INPUT_DEMO_RNG_TRACE_SUFFIX).writeText("{\"type\":\"meta\"}\n")
+        File(newer.parentFile, "newer${InputDemoManager.CLASSIC_DEMO_EXTENSION}").writeText("classic demo\n")
 
         older.setLastModified(1_000L)
         newer.setLastModified(2_000L)
@@ -31,6 +32,7 @@ class InputDemoManagerTest {
         assertEquals(34, demos.first().frameCount)
         assertEquals(3_000L, demos.first().durationMillis)
         assertEquals("newer.dximdemo.rngtrace.jsonl", demos.first().traceFile?.name)
+        assertEquals("newer.dem", demos.first().classicDemoFile?.name)
         assertTrue(demos.all { it.headerReadable })
     }
 
@@ -39,26 +41,33 @@ class InputDemoManagerTest {
         val filesDir = tmp.newFolder("filesDir")
         val source = writeDemo(filesDir, "d1x-redux", "stage.dximdemo", "descent", 1, 8)
         val trace = File(source.parentFile, source.name + InputDemoManager.INPUT_DEMO_RNG_TRACE_SUFFIX)
+        val classicDemo = File(source.parentFile, "stage${InputDemoManager.CLASSIC_DEMO_EXTENSION}")
         trace.writeText("{\"type\":\"meta\"}\n")
+        classicDemo.writeText("classic demo\n")
         val sourceText = source.readText()
         val traceText = trace.readText()
+        val classicDemoText = classicDemo.readText()
         val manager = FileSetManager(filesDir)
         val demo = InputDemoManager.listStagedDemos(filesDir).single()
         val activeSetDir = manager.getSetDir(FileSetManager.DEFAULT_SET)
 
         val dest = InputDemoManager.installToSet(demo, activeSetDir, "Boss Fight #1")
         val destTrace = File(activeSetDir, "demos/Boss_Fight_1.dximdemo${InputDemoManager.INPUT_DEMO_RNG_TRACE_SUFFIX}")
+        val destClassicDemo = File(activeSetDir, "demos/Boss_Fight_1${InputDemoManager.CLASSIC_DEMO_EXTENSION}")
 
         assertFalse(source.exists())
         assertFalse(trace.exists())
+        assertFalse(classicDemo.exists())
         assertTrue(dest.exists())
         assertTrue(destTrace.exists())
+        assertTrue(destClassicDemo.exists())
         assertEquals(
             File(manager.getSetDir(FileSetManager.DEFAULT_SET), "demos/Boss_Fight_1.dximdemo").absolutePath,
             dest.absolutePath,
         )
         assertEquals(sourceText, dest.readText())
         assertEquals(traceText, destTrace.readText())
+        assertEquals(classicDemoText, destClassicDemo.readText())
     }
 
     @Test
@@ -66,6 +75,7 @@ class InputDemoManagerTest {
         val filesDir = tmp.newFolder("filesDir")
 
         writeDemo(filesDir, "d1x-redux", "first.dximdemo", "descent", 1, 4)
+        File(File(File(filesDir, "d1x-redux"), "input_demo_recordings/new"), "first${InputDemoManager.CLASSIC_DEMO_EXTENSION}").writeText("classic demo\n")
         writeDemo(filesDir, "d2x-redux", "second.dximdemo", "descent2", 2, 5)
 
         val deleted = InputDemoManager.deleteAllStagedDemos(filesDir)

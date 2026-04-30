@@ -3080,7 +3080,7 @@ void interpolate_frame(fix d_play, fix d_recorded)
 	int i, j, num_cur_objs;
 	fix factor;
 	object *cur_objs;
-	static fix InterpolStep = fl2f(.01);
+	static fix InterpolStep = F1_0 / 100;
 
 	if (nd_playback_v_framecount < 1)
 		return;
@@ -3648,6 +3648,35 @@ static void input_demo_build_quick_record_name(char *demo_name, unsigned int dem
 	sprintf_s(demo_name, demo_name_size, "%s_%u", base_name, (unsigned int) timer_query());
 }
 
+static void input_demo_build_classic_demo_path(char *relative_path,
+	                                           unsigned int relative_path_size,
+	                                           const char *demo_dir,
+	                                           const char *demo_name)
+{
+	sprintf_s(relative_path, relative_path_size, "%s/%s" DEMO_EXT, demo_dir, demo_name);
+}
+
+static void input_demo_delete_classic_demo_sidecar(const char *input_demo_relative_path)
+{
+	char classic_demo_path[PATH_MAX] = "";
+	size_t input_demo_path_len;
+	size_t input_demo_extension_len;
+
+	if (!input_demo_relative_path || !input_demo_relative_path[0])
+		return;
+	input_demo_path_len = strlen(input_demo_relative_path);
+	input_demo_extension_len = strlen(INPUT_DEMO_EXTENSION);
+	if (input_demo_path_len <= input_demo_extension_len)
+		return;
+	if (strcmp(input_demo_relative_path + input_demo_path_len - input_demo_extension_len, INPUT_DEMO_EXTENSION))
+		return;
+	if (input_demo_path_len - input_demo_extension_len + strlen(DEMO_EXT) >= SDL_arraysize(classic_demo_path))
+		return;
+	memcpy(classic_demo_path, input_demo_relative_path, input_demo_path_len - input_demo_extension_len);
+	memcpy(classic_demo_path + input_demo_path_len - input_demo_extension_len, DEMO_EXT, strlen(DEMO_EXT) + 1);
+	PHYSFS_delete(classic_demo_path);
+}
+
 static void input_demo_trim_new_recordings(void)
 {
 	char **find, **i;
@@ -3682,6 +3711,7 @@ static void input_demo_trim_new_recordings(void)
 			return;
 		if (!PHYSFS_delete(oldest_path))
 			return;
+		input_demo_delete_classic_demo_sidecar(oldest_path);
 		{
 			char trace_path[PATH_MAX] = "";
 
@@ -4017,6 +4047,7 @@ int newdemo_prompt_filename(char* filename_buffer, unsigned int filename_buffer_
 void newdemo_stop_recording(int is_manual)
 {
 	char demo_name[PATH_MAX] = "";
+	char filename[PATH_MAX] = "";
 	const char *input_demo_name = demo_name;
 	int was_android_quick_recording = input_demo_android_quick_recording;
 	int was_autorecord = Newdemo_is_autorecord;
@@ -4034,10 +4065,24 @@ void newdemo_stop_recording(int is_manual)
 	gr_palette_load( gr_palette );
 
 	if (was_android_quick_recording) {
+		char input_demo_path[PATH_MAX] = "";
+
 		input_demo_build_quick_record_name(demo_name, SDL_arraysize(demo_name));
+		input_demo_build_classic_demo_path(filename, SDL_arraysize(filename), INPUT_DEMO_NEW_DIR, demo_name);
+		sprintf_s(input_demo_path, SDL_arraysize(input_demo_path), "%s/%s" INPUT_DEMO_EXTENSION, INPUT_DEMO_NEW_DIR, demo_name);
 		input_demo_clear_quick_recording();
-		PHYSFS_delete(DEMO_FILENAME);
 		maybe_flush_input_demo_recording(demo_name, 1);
+		if (!PHYSFSX_exists(input_demo_path, 0)) {
+			PHYSFS_delete(DEMO_FILENAME);
+			return;
+		}
+		PHYSFS_delete(filename);
+		if (!PHYSFSX_rename(DEMO_FILENAME, filename)) {
+			con_printf(CON_NORMAL, "Input demo classic demo sidecar save failed for %s\n", filename);
+			PHYSFS_delete(DEMO_FILENAME);
+		} else {
+			con_printf(CON_NORMAL, "Input demo classic demo saved to %s\n", filename);
+		}
 		return;
 	}
 	input_demo_clear_quick_recording();
@@ -4053,7 +4098,6 @@ void newdemo_stop_recording(int is_manual)
 		}
 
 	// Add path and extension to the file name
-	char filename[PATH_MAX] = "";
 	sprintf_s(filename, SDL_arraysize(filename), DEMO_DIR "%s" DEMO_EXT, demo_name);
 
 	PHYSFS_delete(filename);

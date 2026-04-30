@@ -1,0 +1,18 @@
+// TEST: Install the staged quick demo triplet into the active set from the launcher
+//
+// Assumes a single staged recorded demo is present from the stage test. Opens
+// the Advanced page, taps Add to Game, accepts the default name, and leaves the
+// installed files in the active set for adb inspection.
+[
+    {"_info": {
+        "games": ["d2"]
+    }},
+
+    {"action": "enter_launcher"},
+    {"action": "assert_button", "text": "Advanced"},
+    {"action": "tap_button", "text": "Advanced", "post_delay_ms": 600},
+    {"action": "tap_button", "text": "Add to Game", "exact": true, "post_delay_ms": 300},
+    {"action": "install_staged_demo", "game": "d2"},
+
+    {"action": "log", "message": "=== TEST: Quick record staged install -- PASS ==="}
+]

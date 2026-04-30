@@ -29,6 +29,11 @@ char copyright[] = "DESCENT   COPYRIGHT (C) 1994,1995 PARALLAX SOFTWARE CORPORAT
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#if defined(_WIN32) && defined(_MSC_VER)
+#include <float.h>
+#else
+#include <fenv.h>
+#endif
 #include <SDL.h>
 
 #ifdef __unix__
@@ -77,6 +82,41 @@ char copyright[] = "DESCENT   COPYRIGHT (C) 1994,1995 PARALLAX SOFTWARE CORPORAT
 #include "event.h"
 #include "rbaudio.h"
 #include "messagebox.h"
+
+#if defined(_WIN32) && defined(_MSC_VER)
+static void configure_startup_fp_environment(void)
+{
+	unsigned int control_word = 0;
+
+#if defined(_M_IX86)
+	if (_controlfp_s(&control_word, _PC_53, _MCW_PC) != 0)
+		Error("Failed to set floating point precision");
+#endif
+	if (_controlfp_s(&control_word, _RC_NEAR, _MCW_RC) != 0)
+		Error("Failed to set floating point rounding mode");
+	if (_controlfp_s(&control_word, 0, 0) != 0)
+		Error("Failed to read floating point control word");
+	if ((control_word & _MCW_RC) != _RC_NEAR)
+		Error("Floating point rounding mode is not round-to-nearest");
+#if defined(_M_IX86)
+	if ((control_word & _MCW_PC) != _PC_53)
+		Error("Floating point precision is not 53-bit");
+#endif
+}
+#elif defined(FE_TONEAREST)
+static void configure_startup_fp_environment(void)
+{
+	if (fesetround(FE_TONEAREST) != 0)
+		Error("Failed to set floating point rounding mode");
+	if (fegetround() != FE_TONEAREST)
+		Error("Floating point rounding mode is not round-to-nearest");
+}
+#else
+static void configure_startup_fp_environment(void)
+{
+}
+#endif
+
 #ifdef EDITOR
 #include "editor/editor.h"
 #include "editor/kdefs.h"
@@ -610,6 +650,7 @@ int main(int argc, char *argv[])
 	mem_init();
 	error_init(msgbox_error);
 	set_warn_func(msgbox_warning);
+	configure_startup_fp_environment();
 	PHYSFSX_init(argc, argv);
 	con_init();  // Initialise the console
 

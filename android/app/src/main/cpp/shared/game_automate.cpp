@@ -188,6 +188,7 @@ enum step_type {
 	STEP_SELECT,                  /* find menu item by text and select it */
 	STEP_SEND_AXIS,               /* inject joystick axis event */
 	STEP_SEND_BUTTON,             /* inject joystick button press+release */
+	STEP_META_ACTION,             /* dispatch a native Android meta action */
 	STEP_SKIP_INTRO,              /* repeatedly dismiss launch intro with touch or button */
 	STEP_SKIP_BRIEFING,           /* escape only if a non-game window covers Game_wind */
 	STEP_ASSERT_OVERLAY,          /* check overlay ring buffer for matching entry */
@@ -239,6 +240,7 @@ struct auto_step {
 	int button_id = -1;                 /* STEP_SEND_BUTTON: button index */
 	int button_held = 0;                /* STEP_SEND_BUTTON: 1 = hold (no release) */
 	int button_pressed = 1;             /* STEP_SEND_BUTTON: 0 = release only */
+	int meta_action_id = -1;            /* STEP_META_ACTION: action ID */
 	int segment = -1;                   /* STEP_FACE_VIEW: target segment */
 	int side = -1;                      /* STEP_FACE_VIEW: target side */
 	int face = 0;                       /* STEP_FACE_VIEW: target face on side */
@@ -343,6 +345,7 @@ static const char *step_type_name(step_type t)
 		case STEP_SELECT: return "select";
 		case STEP_SEND_AXIS: return "send_axis";
 		case STEP_SEND_BUTTON: return "send_button";
+		case STEP_META_ACTION: return "meta_action";
 		case STEP_SKIP_INTRO: return "skip_intro";
 		case STEP_SKIP_BRIEFING: return "skip_briefing";
 		case STEP_ASSERT_OVERLAY: return "assert_overlay";
@@ -1102,6 +1105,7 @@ static int parse_script(const char *json_text)
 			else if (action == "select") s.type = STEP_SELECT;
 			else if (action == "send_axis") s.type = STEP_SEND_AXIS;
 			else if (action == "send_button") s.type = STEP_SEND_BUTTON;
+			else if (action == "meta_action") s.type = STEP_META_ACTION;
 			else if (action == "skip_intro") s.type = STEP_SKIP_INTRO;
 			else if (action == "skip_briefing") s.type = STEP_SKIP_BRIEFING;
 			else if (action == "assert_overlay") s.type = STEP_ASSERT_OVERLAY;
@@ -1139,6 +1143,7 @@ static int parse_script(const char *json_text)
 			s.button_id = step_json.value("button", -1);
 			s.button_held = step_json.value("held", 0);
 			s.button_pressed = step_json.value("pressed", 1);
+			s.meta_action_id = step_json.value("id", -1);
 			s.segment = step_json.value("segment", -1);
 			s.side = step_json.value("side", -1);
 			s.face = step_json.value("face", 0);
@@ -1707,6 +1712,23 @@ extern "C" void game_automate_tick(void)
 				if (s.button_held || elapsed >= (Uint32) s.post_delay_ms) {
 					if (!s.button_held)
 						inject_button(s.button_id, 0); /* release */
+					advance_step();
+				}
+			}
+			break;
+
+		case STEP_META_ACTION:
+			if (!s.button_pressed) {
+				meta_action_dispatch(s.meta_action_id, 0);
+				advance_step();
+			} else if (g_key_phase == 0 && s.meta_action_id >= 0) {
+				meta_action_dispatch(s.meta_action_id, 1);
+				g_key_phase = 1;
+				g_step_start = now;
+			} else if (g_key_phase == 1) {
+				if (s.button_held || elapsed >= (Uint32) s.post_delay_ms) {
+					if (!s.button_held)
+						meta_action_dispatch(s.meta_action_id, 0);
 					advance_step();
 				}
 			}

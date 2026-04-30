@@ -287,13 +287,16 @@ class SetupActivity : ComponentActivity() {
         }
     }
 
-    /** Find a button by case-insensitive substring match on its text. */
-    fun findButtonByText(text: String): ButtonInfo? {
+    /** Find a button by case-insensitive text match, optionally exact-only. */
+    fun findButtonByText(
+        text: String,
+        exactOnly: Boolean = false,
+    ): ButtonInfo? {
         val buttons = collectAccessibleButtons()
         val lower = text.lowercase()
         // Prefer exact match, fall back to substring
         return buttons.find { it.text.lowercase() == lower }
-            ?: buttons.find { it.text.lowercase().contains(lower) }
+            ?: if (exactOnly) null else buttons.find { it.text.lowercase().contains(lower) }
     }
 
     /** Inject a real tap (ACTION_DOWN + delay + ACTION_UP) at screen coordinates. */
@@ -407,8 +410,8 @@ class SetupActivity : ComponentActivity() {
         withContext(kotlinx.coroutines.Dispatchers.Main) {
             val decorView = window.decorView
             val centerX = decorView.width / 2f
-            val startY = decorView.height * 0.75f
-            val endY = decorView.height * 0.25f
+            val startY = decorView.height * 0.62f
+            val endY = decorView.height * 0.44f
             val downTime = SystemClock.uptimeMillis()
             val down =
                 MotionEvent.obtain(
@@ -421,19 +424,31 @@ class SetupActivity : ComponentActivity() {
                 )
             decorView.dispatchTouchEvent(down)
             down.recycle()
-            kotlinx.coroutines.delay(30)
-            val mid =
+            kotlinx.coroutines.delay(50)
+            val mid1 =
                 MotionEvent.obtain(
                     downTime,
                     SystemClock.uptimeMillis(),
                     MotionEvent.ACTION_MOVE,
                     centerX,
-                    (startY + endY) / 2f,
+                    startY - ((startY - endY) * 0.33f),
                     0,
                 )
-            decorView.dispatchTouchEvent(mid)
-            mid.recycle()
-            kotlinx.coroutines.delay(30)
+            decorView.dispatchTouchEvent(mid1)
+            mid1.recycle()
+            kotlinx.coroutines.delay(50)
+            val mid2 =
+                MotionEvent.obtain(
+                    downTime,
+                    SystemClock.uptimeMillis(),
+                    MotionEvent.ACTION_MOVE,
+                    centerX,
+                    startY - ((startY - endY) * 0.66f),
+                    0,
+                )
+            decorView.dispatchTouchEvent(mid2)
+            mid2.recycle()
+            kotlinx.coroutines.delay(50)
             val end =
                 MotionEvent.obtain(
                     downTime,
@@ -445,7 +460,7 @@ class SetupActivity : ComponentActivity() {
                 )
             decorView.dispatchTouchEvent(end)
             end.recycle()
-            kotlinx.coroutines.delay(30)
+            kotlinx.coroutines.delay(50)
             val up =
                 MotionEvent.obtain(
                     downTime,
