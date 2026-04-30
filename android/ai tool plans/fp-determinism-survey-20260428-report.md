@@ -103,15 +103,16 @@ Before changing implementation, run the new host tests against both D1 and D2 bu
 
 ## Recommended tranche plan
 
-This should be multiple tranches. The risky part is not writing fixed-point replacements; it is proving which one-LSB changes are intentional and catching replay drift quickly. Each tranche should end with updated notes, a host build, the new or changed unit tests, and at least one replay or integration check when the changed logic can affect simulation.
+This should be multiple tranches. The first priority is to lock down existing behavior with unit tests before changing any floating point logic. The risky part is not writing fixed-point replacements; it is losing track of what the current code actually does, then being unable to separate intentional policy changes from regressions. Each tranche should end with updated notes, a host build, the new or changed unit tests, and at least one replay or integration check when the changed logic can affect simulation.
 
-### Tranche 0: Harness and baseline capture
+### Tranche 0: Existing-behavior lockdown
 
 1. Add `math_fp` to the engine math library in both games, preferably as `d1/maths/math_fp.c` and `d2/maths/math_fp.c` with declarations in `maths.h`
-2. Move only extracted legacy float/double expressions into `math_fp`; do not change behavior yet
+2. Move only extracted legacy float/double expressions into `math_fp`; do not change behavior yet under any circumstance in this tranche
 3. Add `test_math_fp.c` with integer input/output tables for `vm_vec_scale2` component scaling, key-ramp math, AI path nudge math, homing frame time, `fix_atan2`, quaternion constants, and decimal parsing
-4. Build and run the tests for D1 and D2, then freeze the captured expected rows as the before-change baseline
-5. Add or identify the replay state-hash smoke test that later tranches will reuse
+4. Build and run the tests for D1 and D2, then freeze the captured expected rows as the existing-behavior baseline that later tranches must preserve unless a change is explicitly documented
+5. Add or identify the replay state-hash smoke test that later tranches will reuse, but treat the unit-test baseline as the primary lock on current behavior
+6. there will be, already, a few passing input-based demo files to be used for regression testing. these will be passing even though we haven't cleaned up floating point use. these are key test artifacts because they already demonstrate wide overlap between ARM and x86 implementations, given that the demos were created on ARM and run on x86. run these and continue to run these as we go
 
 ### Tranche 1: Compiler guardrails without simulation rewrites
 
@@ -119,13 +120,13 @@ This should be multiple tranches. The risky part is not writing fixed-point repl
 2. Add checked compiler flags for no fast math, no FMA contraction, and strict or precise FP mode where supported
 3. Set or assert round-to-nearest at startup in deterministic builds, and log or assert `FLT_EVAL_METHOD`
 4. Disable Android IPO for deterministic replay builds only
-5. Run host builds plus a replay smoke test to make sure flags alone do not change current deterministic baselines unexpectedly
+5. Rerun the locked existing-behavior unit tests first, then run host builds plus a replay smoke test to make sure flags alone do not change the captured baseline unexpectedly
 
 ### Tranche 2: High-risk per-frame simulation math
 
-1. Replace the `vm_vec_scale2` helper body with fixed or 64-bit integer math, then rerun the baseline tests
-2. Convert keyboard sensitivity timers and ramp contribution helpers from float to fixed math in both D1 and D2
-3. Convert AI and player path smoothing helpers to fixed math in both D1 and D2
+1. Replace the `vm_vec_scale2` helper body with fixed or 64-bit integer math, then rerun the locked baseline tests before touching callers
+2. Convert keyboard sensitivity timers and ramp contribution helpers from float to fixed math in both D1 and D2, updating expected rows only where the change is intentional and documented
+3. Convert AI and player path smoothing helpers to fixed math in both D1 and D2, again preserving the locked baseline where possible
 4. Run replay coverage that includes wall grazing, object collision, keyboard-ramp input, and guidebot or robot path following
 
 ### Tranche 3: Angle, quaternion, and timing cleanup
@@ -133,18 +134,18 @@ This should be multiple tranches. The risky part is not writing fixed-point repl
 1. Rewrite `fix_atan2` normalization to use integer magnitude and the existing fixed trig tables
 2. Replace quaternion decimal constants and `* .5` operations with fixed constants and integer division
 3. Convert homing missile cadence from float FPS math to integer update-rate math
-4. Run helper tests plus replay coverage for homing missiles, compressed object position paths if available, and any checkpoint or multiplayer path that serializes quaternions
+4. Run the existing-behavior unit tests first, then replay coverage for homing missiles, compressed object position paths if available, and any checkpoint or multiplayer path that serializes quaternions
 
 ### Tranche 4: Data-load determinism
 
 1. Add deterministic decimal-to-fix parsing in `math_fp` or another engine math parser helper, not in Kotlin and not in Android-only code
 2. Convert `bmread.c` fixed-point table fields from `atof + fl2f` to the parser in both D1 and D2
 3. Convert simple decimal constants in `cntrlcen.c`, `gameseq.c`, `fireball.c`, and `powerup.c` to named fixed constants or ratio macros
-4. Add test rows for representative table strings and constants, then run a level-load replay or state-hash check that exercises player ship and weapon constants
+4. Expand the locked unit-test table with representative table strings and constants, then run a level-load replay or state-hash check that exercises player ship and weapon constants
 
 ### Tranche 5: Cross-platform replay gate
 
-1. Run the same replay state-hash fixtures across Windows host, macOS if available, Android arm64, and Android x86_64
+1. Run the same locked unit-test suite and replay state-hash fixtures across Windows host, macOS if available, Android arm64, and Android x86_64
 2. Add at least one fixture for collision/FVI, keyboard-ramp movement, guidebot or robot pathing, homing missile guidance, and data-loaded weapon behavior
-3. Document any intentional baseline changes from earlier tranches and keep old rows nearby in the tests or plan notes
+3. Document any intentional baseline changes from earlier tranches and keep old rows nearby in the tests or plan notes so changed results are always explained against the original locked behavior
 4. Leave render-only and dead-code libm sites out unless they become part of replay state or screenshot-based assertions

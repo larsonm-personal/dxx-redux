@@ -31,8 +31,27 @@ typedef struct input_demo_rng_record {
 	uint32_t call_count;
 } INPUT_DEMO_FIXTURE_PACKED input_demo_rng_record;
 
+#define INPUT_DEMO_PLAYER_CFG_PRIMARY_ORDER_MAX   11
+#define INPUT_DEMO_PLAYER_CFG_SECONDARY_ORDER_MAX 11
+
+typedef struct input_demo_player_cfg {
+	int32_t auto_leveling;
+	int32_t persistent_debris;
+	uint8_t has_headlight_active_default;
+	int32_t headlight_active_default;
+	uint8_t no_fire_autoselect;
+	uint8_t cycle_autoselect_only;
+	uint8_t select_after_fire;
+	uint8_t classic_autoselect_weapon;
+	uint8_t primary_order_count;
+	uint8_t primary_order[INPUT_DEMO_PLAYER_CFG_PRIMARY_ORDER_MAX];
+	uint8_t secondary_order_count;
+	uint8_t secondary_order[INPUT_DEMO_PLAYER_CFG_SECONDARY_ORDER_MAX];
+} input_demo_player_cfg;
+
 void input_demo_rng_frame_clear(input_demo_rng_frame *frame);
 void input_demo_rng_record_clear(input_demo_rng_record *record);
+void input_demo_player_cfg_clear(input_demo_player_cfg *player_cfg);
 
 #if defined(_MSC_VER)
 #pragma pack(pop)
@@ -60,6 +79,14 @@ struct input_demo_metadata {
 	uint32_t frame_count;
 	std::string classic_preview;
 	std::string start_save;
+	bool has_player_cfg;
+	input_demo_player_cfg player_cfg;
+
+	input_demo_metadata()
+	    : version(0), level(0), difficulty(0), frame_count(0), has_player_cfg(false)
+	{
+		input_demo_player_cfg_clear(&player_cfg);
+	}
 };
 
 struct input_demo_checkpoint {

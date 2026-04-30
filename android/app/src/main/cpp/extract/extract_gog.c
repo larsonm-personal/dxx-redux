@@ -54,6 +54,7 @@
 
 #include "inno_reader.h"
 #include "pkg_reader.h"
+#include "game_file_extensions.h"
 
 /* ── Cross-platform case-insensitive compare ─────────────────────── */
 #ifndef _WIN32
@@ -61,21 +62,9 @@
 #define _stricmp strcasecmp
 #endif
 
-/* ── Game file extensions we care about ──────────────────────────── */
-static const char *game_extensions[] = {
-	".hog", ".pig", ".ham", ".s11", ".s22", ".dem",
-	".mvl", ".msn", ".mn2", ".gog", ".inst",
-	NULL
-};
-
 static int has_game_extension(const char *path)
 {
-	const char *dot = strrchr(path, '.');
-	if (!dot) return 0;
-	for (const char **ext = game_extensions; *ext; ext++) {
-		if (_stricmp(dot, *ext) == 0) return 1;
-	}
-	return 0;
+	return dxx_has_android_game_file_extension(path);
 }
 
 /* Get just the filename from a path */

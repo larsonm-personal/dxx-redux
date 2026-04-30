@@ -19,20 +19,11 @@
 #include "mac_hfs_extract.h"
 #include "sti2_extract.h"
 #include "sow_extract.h"
+#include "game_file_extensions.h"
 
 #define TAG       "DXX-DiscImport"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, TAG, __VA_ARGS__)
-
-static const char *game_extensions[] = {
-	"hog", "ham", "pig", "s11", "s22", "mn2", "mvl",
-	"dxa", "cfg", "txt", "256", NULL
-};
-
-static const char *mac_game_extensions[] = {
-	"hog", "ham", "pig", "s11", "s22", "mn2", "mvl",
-	"dxa", "cfg", "txt", "256", "msn", "dem", NULL
-};
 
 static jobjectArray build_iso_listing_array(JNIEnv *env, const iso_file_list_t *list)
 {
@@ -355,7 +346,7 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoFiles(
 	init_extract_ctx(env, progress, &ctx);
 
 	int extracted = iso_extract_files(binFd, trackStart, trackSectors,
-	                                  &list, out_dir, game_extensions,
+	                                  &list, out_dir, dxx_android_disc_extract_extensions,
 	                                  progress ? extract_progress_cb : NULL,
 	                                  &ctx);
 
@@ -392,7 +383,7 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractIsoImageFiles(
 	}
 
 	init_extract_ctx(env, progress, &ctx);
-	extracted = iso_extract_image_files(isoFd, &list, out_dir, game_extensions,
+	extracted = iso_extract_image_files(isoFd, &list, out_dir, dxx_android_disc_extract_extensions,
 	                                    progress ? extract_progress_cb : NULL,
 	                                    &ctx);
 
@@ -474,7 +465,7 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractSowFiles(
 	extract_ctx_t ctx;
 	init_extract_ctx(env, progress, &ctx);
 
-	int extracted = sow_extract(sow, out_dir, game_extensions,
+	int extracted = sow_extract(sow, out_dir, dxx_android_disc_extract_extensions,
 	                            progress ? extract_progress_cb : NULL, &ctx);
 	LOGI("SOW extracted %d files from %s", extracted, sow);
 
@@ -513,8 +504,8 @@ Java_com_dxxredux_app_DiscImportBridge_nativeExtractMacFiles(
 
 	extracted = mac_extract_files_from_hfs_track(binFd, trackStart, trackSectors,
 	                                             out_dir,
-	                                             mac_game_extensions,
-	                                             mac_game_extensions,
+	                                             dxx_android_mac_disc_extract_extensions,
+	                                             dxx_android_mac_disc_extract_extensions,
 	                                             progress ? extract_progress_cb : NULL,
 	                                             &ctx);
 

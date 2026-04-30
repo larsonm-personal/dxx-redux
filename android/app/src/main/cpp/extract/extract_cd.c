@@ -47,11 +47,7 @@
 #include "iso9660_reader.h"
 #include "mac_hfs_extract.h"
 #include "sow_extract.h"
-
-static const char *mac_hfs_extensions[] = {
-	"hog", "ham", "pig", "s11", "s22", "mn2", "mvl",
-	"dxa", "cfg", "txt", "256", "msn", "dem", NULL
-};
+#include "game_file_extensions.h"
 
 /* ── Minimal SHA-1 (RFC 3174) ──────────────────────────────────────── */
 
@@ -571,7 +567,7 @@ int main(int argc, char *argv[])
 						extracted = mac_extract_files_from_hfs_track(bin_fd, t->start_sector, t->num_sectors,
 						                                             out_dir,
 						                                             NULL,
-						                                             mac_hfs_extensions,
+						                                             dxx_android_mac_disc_extract_extensions,
 						                                             progress_cb,
 						                                             NULL);
 						if (extracted > 0) {

@@ -6,6 +6,7 @@
  */
 
 #include "pkg_reader.h"
+#include "game_file_extensions.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -315,18 +316,10 @@ static int cpio_read_entry(gz_stream_t *gs, cpio_entry_t *entry)
 /* ── Game file detection ─────────────────────────────────────────── */
 static const char *game_prefix = "./payload/Contents/Resources/game/";
 
-static const char *game_extensions[] = {
-	".hog", ".pig", ".ham", ".s11", ".s22", ".dem",
-	".mvl", ".msn", ".mn2", ".gog", ".inst",
-	NULL
-};
-
 /* Audio extensions — skipped when skip_audio is set */
 static int is_audio_ext(const char *fname)
 {
-	const char *dot = strrchr(fname, '.');
-	if (!dot) return 0;
-	return _stricmp(dot, ".gog") == 0 || _stricmp(dot, ".inst") == 0;
+	return dxx_is_android_gog_audio_extension(fname);
 }
 
 static int is_game_file(const char *cpio_path, const char **basename_out)
@@ -342,7 +335,7 @@ static int is_game_file(const char *cpio_path, const char **basename_out)
 	const char *dot = strrchr(fname, '.');
 	if (!dot) return 0;
 
-	for (const char **ext = game_extensions; *ext; ext++) {
+	for (const char **ext = dxx_android_game_file_extensions; *ext; ext++) {
 		if (_stricmp(dot, *ext) == 0) {
 			*basename_out = fname;
 			return 1;

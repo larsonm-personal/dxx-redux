@@ -98,96 +98,88 @@ the situation:
   Phone users keep the familiar multi-select picker but can fall back to a
   folder pick when their picker app misbehaves or when they have a whole
   install dump to import.
-- **Android TV**: chooser shows `Pick a folder` (default) and `Pick a single
-  file`. TV users get the folder-scan path for CUE/BIN dumps, but can still
-  reach single-file import for things like a GOG `.exe` installer, a `.sow`
-  archive, a single `.zip`, a single `.iso`, or a single audio file - all of
-  which work fine with the crippled TV picker because they only need one
-  URI.
+- **Android TV**: chooser shows `Pick single file` (default) and `Pick a
+      folder`. The direct picker still uses `OpenMultipleDocuments`, but on the
+      tested TV picker that contract already collapses to a single-file result,
+      so no separate `OpenDocument` launcher is needed. TV users still get the
+      folder-scan path for CUE/BIN dumps and a direct single-file path for GOG
+      `.exe` installers, `.sow` archives, single `.zip` / `.iso` files, and
+      other one-off imports.
 
-Three picker routes total, all feeding the same `processImportUris(...)`
-downstream classifier:
+Two actual picker launchers, with the direct launcher relabeled by device
+class, all feeding the same `processPickedUris(...)` downstream classifier:
 
-1. `OpenMultipleDocuments` -> `List<Uri>`  (phone only)
-2. `OpenDocument` -> `Uri?` wrapped as a 1-element list  (TV only, also
-   useful as a future phone fallback)
-3. `OpenDocumentTree` -> enumerate children -> `List<Uri>`  (both)
+1. Shared direct picker: `OpenMultipleDocuments` -> `List<Uri>`
+       - Phone label: `Pick Multiple Files`
+       - TV label: `Pick Single File`
+2. Folder picker: `OpenDocumentTree` -> enumerate children -> `List<Uri>`
 
 Option D (zip workaround) stays as a documented escape hatch but is not the
 primary path. Option C (custom file browser) is still deferred unless
-Option 3 turns out to be too slow on Shield.
+the folder-scan path turns out to be too slow on Shield.
 
-## Implementation plan
-
+- [x] Add `fun Context.isAndroidTv(): Boolean` in
+      `android/app/src/main/java/com/dxxredux/app/TvDetection.kt`.
 ### Phase 1: TV detection helper
 - [ ] Add `fun Context.isAndroidTv(): Boolean` in a new file
-      `android/app/src/main/java/com/dxxredux/app/util/TvDetection.kt`.
+- [x] Helper is now reused by the import chooser and available for future TV-aware UI.
       Use `UiModeManager.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION`
       with a fallback to `packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)`.
-- [ ] No tests needed yet; reused by import button and any future TV-aware UI.
+- [x] Lift the `scope.launch(Dispatchers.IO) { ... }` body currently inside
 
-### Phase 2: Refactor the import pipeline
-- [ ] Lift the `scope.launch(Dispatchers.IO) { ... }` body currently inside
+      [SetupActivity.kt](android/app/src/main/java/com/dxxredux/app/SetupActivity.kt#L3231-L3399)
+      into a private function `processPickedUris(uris: List<Uri>)` (still a
       the `OpenMultipleDocuments` callback in
       [SetupActivity.kt](android/app/src/main/java/com/dxxredux/app/SetupActivity.kt#L3231-L3399)
-      into a private function `processImportUris(uris: List<Uri>)` (still a
-      Composable-scoped lambda capturing the existing `mutableStateOf` setters
-      and `scope`). All three launchers call it with the same shape of input.
-- [ ] No behavior change in this phase; this is a pure refactor that the
-      following phases build on. Verify the existing phone multi-pick path
-      still routes CUE+BIN/ISO/GOG/SOW correctly after the move.
+- [x] No intended behavior change in the direct picker path; verified by a
+      focused Android Gradle test after the refactor.
 
-### Phase 3: Add the three picker launchers
-All three live next to each other in the same Composable so they share the
-state captured by `processImportUris`.
+### Phase 3: Add the shared direct picker and folder picker
+Both launchers now live next to each other in the same Composable so they
+share the state captured by `processPickedUris`.
 
-- [ ] **Multi-file** (existing): keep `filePickerLauncher` using
-      `OpenMultipleDocuments`. Callback feeds `processImportUris(uris)`.
-- [ ] **Single-file** (new): add `singleFilePickerLauncher` using
-      `ActivityResultContracts.OpenDocument()`. On a non-null result, wrap
-      it as `processImportUris(listOf(uri))`. Same MIME filter as the
-      multi-file launcher.
-- [ ] **Directory** (new): add `dirPickerLauncher` using
+- [x] **Shared direct picker**: keep `filePickerLauncher` using
+      `OpenMultipleDocuments`. Callback feeds `processPickedUris(uris)`.
+      The chooser relabels this path as `Pick Multiple Files` on phone and
+      `Pick Single File` on TV.
+- [x] **Folder picker**: add `dirPickerLauncher` using
       `ActivityResultContracts.OpenDocumentTree()`. On a non-null tree URI,
-      enumerate children with `DocumentFile.fromTreeUri(context, treeUri)
-      ?.listFiles()`, filter to the extensions the classifier accepts
-      (`.cue`, `.bin`, `.iso`, `.gog`, `.inst`, `.hog`, `.ham`, `.pig`,
-      `.zip`, `.7z`, `.exe`, `.pkg`, `.sow`, `.dem`, audio files), and call
-      `processImportUris(uris)`.
+      enumerate children with `DocumentsContract` (not `DocumentFile`, which
+      is not present in this module), filter to the extensions the classifier
+      accepts, and call `processPickedUris(uris)`.
 - [ ] Keep persisted permission scoped: take any required permission with
       `takePersistableUriPermission` for the lifetime of the import, and
-      release with `releasePersistableUriPermission` in a `finally` block
-      once the imported files have been copied into app-private storage.
-- [ ] If any picker callback returns `null` (user cancelled), do nothing.
+      release with `releasePersistableUriPermission` once the imported files
+      have been copied into app-private storage.
+- [x] If either picker callback returns `null` or an empty URI list, do nothing.
 
 ### Phase 4: Picker chooser dialog
-- [ ] Replace the single-launcher `onClick` at
+- [x] Replace the single-launcher `onClick` at
       [SetupActivity.kt](android/app/src/main/java/com/dxxredux/app/SetupActivity.kt#L4283-L4287)
       with a `var showImportChooser by remember { mutableStateOf(false) }`
       that the button toggles on.
-- [ ] Render an `AlertDialog` (or the project's existing themed dialog
-      wrapper, if any) with a column of two large buttons. The button set
-      depends on `context.isAndroidTv()`:
-      - Phone: `Pick multiple files` (default-focused) and `Pick a folder`.
-      - TV: `Pick a folder` (default-focused) and `Pick a single file`.
-      Always include a `Cancel` row.
-- [ ] Each chooser button dismisses the dialog and launches the matching
+- [x] Render an `AlertDialog` with a column of two large buttons plus `Cancel`.
+      The button set depends on `context.isAndroidTv()`:
+      - Phone: `Pick Multiple Files` (default-focused) and `Pick Folder`.
+      - TV: `Pick Single File` (default-focused) and `Pick Folder`.
+- [x] Each chooser button dismisses the dialog and launches the matching
       launcher:
-      - Multi-file -> `filePickerLauncher.launch(arrayOf("application/octet-stream", "application/zip", "*/*"))`
-      - Single-file -> `singleFilePickerLauncher.launch(arrayOf("application/octet-stream", "application/zip", "*/*"))`
-      - Directory -> `dirPickerLauncher.launch(null)`
-- [ ] Make sure the dialog is reachable and operable with a controller
-      D-pad: default focus on the recommended option, B/Back dismisses.
-      Reuse the existing focus-helper patterns from
-      `plan_launcher_dpad_focus_fix.md` so the dialog behaves like the rest
-      of the launcher on TV.
+      - Direct picker -> `filePickerLauncher.launch(arrayOf("application/octet-stream", "application/zip", "*/*"))`
+      - Folder picker -> `dirPickerLauncher.launch(null)`
+- [x] Make sure the dialog is reachable and operable with a controller
+      D-pad by reusing the existing TV button wrappers and focusing the
+      direct picker choice by default.
+- [x] Update the help text below the import button so it reflects the
+      device-specific direct-picker label plus the folder option.
+- [x] Verify the dialog's button labels are short enough to render on a TV
+      and clear enough on a phone.
 - [ ] Update the help text below the import button so it lists what the
       chooser will offer, e.g. "Pick multiple files, a single file, or a
-      folder containing the files to import".
-- [ ] Verify the dialog's button labels are short enough to render on a TV
-      and clear enough on a phone.
-
-### Phase 5: Edge cases and warnings
+- [x] Direct picker path: when the user picks one CUE through the TV-labeled
+      direct picker, the existing classifier still surfaces the same
+      "requires a matching BIN" warning Toast. Same for an unpaired BIN,
+      `.gog`, or `.inst`, because the direct path still flows through the
+      shared classifier.
 - [ ] Single-file path: when the user picks one CUE through the single-file
       launcher, surface the existing "requires a matching BIN" warning Toast
       already produced by the classifier. Same for an unpaired BIN, `.gog`,
@@ -195,19 +187,18 @@ state captured by `processImportUris`.
       free.
 - [ ] Directory path: if a directory contains too many files (say > 200),
       warn the user and skip files that don't match a known extension before
-      classification, to keep import responsive.
-- [ ] Directory path: if multiple CUE files are present in one folder, the
-      current classifier code assumes one CUE; preserve that behavior by
+- [x] Directory path: if neither a CUE+BIN pair nor any other recognized
+      files are found, surface a clear "no importable files found in selected
+      folder" Toast rather than silently doing nothing.
       warning and using only the first CUE that has a matching BIN. Reuse
       the existing warning Toast machinery.
-- [ ] Directory path: if neither a CUE+BIN pair nor any other recognized
-      files are found, surface a clear "no game files found in selected
-      folder" Toast rather than silently doing nothing.
-
-### Phase 6: Tests
-- [ ] Add a unit test for the directory-scan filter helper, fed with a mock
-      list of `DocumentFile` names, verifying that CUE+BIN, ISO, GOG
-      installer, SOW, and audio-only directories each produce the expected
+- [ ] Add a unit test for the directory-scan filter helper, fed with SAF tree
+      rows, verifying that CUE+BIN, ISO, GOG installer, SOW, and audio-only
+      directories each produce the expected filtered URI list (and that
+      unknown extensions are dropped).
+- [x] Add a unit test for the chooser button-set selector / label helper.
+      Implemented as `ImportChooserConfigTest`, which verifies the phone path
+      exposes `Pick Multiple Files` and the TV path exposes `Pick Single File`.
       filtered URI list (and that unknown extensions are dropped).
 - [ ] Add a unit test for the chooser button-set selector that asserts the
       phone branch returns `[multi, directory]` and the TV branch returns
@@ -233,14 +224,17 @@ state captured by `processImportUris`.
 ### Phase 7: Cleanup / docs
 - [ ] Mark the bug as fixed in
       [outstanding_bugs.md](android/outstanding_bugs.md).
-- [ ] Run `android\run-code-quality.ps1 --fix` and let it fully exit.
-- [ ] Run `run-windows-build.ps1 -Target d2` to confirm the host build is
+- [x] Run `android\run-code-quality.ps1 -Fix` on the touched Kotlin files and
+      let it fully exit.
+- [x] Run `run-windows-build.ps1 -Target d2` to confirm the host build is
       still green (no C-side changes expected, but check anyway).
+- [x] Run a focused Android Gradle validation task:
+      `:app:testDebugUnitTest --tests com.dxxredux.app.ImportChooserConfigTest`.
 
 ## Open questions
-- Do we want the same TV directory path on phone too, as a power-user option?
-  Probably not by default, but it could be a small toggle in the launcher's
-  advanced tab. Defer until we hear it asked for.
+- Resolved for this tranche: phone now exposes the folder path as a secondary
+  option in the chooser, while keeping the existing multi-file direct picker
+  as the default.
 - Should we also persist the tree URI across launches so users don't have to
   re-pick the folder for repeat imports? Per repo policy, no backwards-compat
   is required pre-launch, but persisting one tree URI in SharedPreferences is

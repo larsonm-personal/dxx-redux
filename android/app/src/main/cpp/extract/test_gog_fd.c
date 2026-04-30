@@ -1,4 +1,5 @@
 #include "inno_reader.h"
+#include "game_file_extensions.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -18,20 +19,9 @@
 #define ci_cmp        strcasecmp
 #endif
 
-static const char *game_extensions[] = {
-	".hog", ".pig", ".ham", ".s11", ".s22", ".dem",
-	".mvl", ".msn", ".mn2", ".gog", ".inst",
-	NULL
-};
-
 static int has_game_extension(const char *path)
 {
-	const char *dot = strrchr(path, '.');
-	if (!dot) return 0;
-	for (const char **ext = game_extensions; *ext; ext++) {
-		if (ci_cmp(dot, *ext) == 0) return 1;
-	}
-	return 0;
+	return dxx_has_android_game_file_extension(path);
 }
 
 static const char *basename_only(const char *path)

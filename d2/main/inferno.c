@@ -246,6 +246,34 @@ static int maybe_validate_input_demo_metadata(void)
 	return 0;
 }
 
+static unsigned int input_demo_replay_hash_u8_sequence(const ubyte *values, int count)
+{
+	unsigned int hash = 2166136261u;
+	int i;
+
+	for (i = 0; i < count; i++) {
+		hash ^= values[i];
+		hash *= 16777619u;
+	}
+	return hash;
+}
+
+static void input_demo_apply_replay_player_cfg(const input_demo_player_cfg *player_cfg)
+{
+	if (!player_cfg)
+		return;
+	PlayerCfg.AutoLeveling = player_cfg->auto_leveling;
+	PlayerCfg.PersistentDebris = player_cfg->persistent_debris;
+	if (player_cfg->has_headlight_active_default)
+		PlayerCfg.HeadlightActiveDefault = player_cfg->headlight_active_default;
+	PlayerCfg.NoFireAutoselect = player_cfg->no_fire_autoselect;
+	PlayerCfg.CycleAutoselectOnly = player_cfg->cycle_autoselect_only;
+	PlayerCfg.SelectAfterFire = player_cfg->select_after_fire;
+	PlayerCfg.ClassicAutoselectWeapon = player_cfg->classic_autoselect_weapon;
+	memcpy(PlayerCfg.PrimaryOrder, player_cfg->primary_order, MAX_PRIMARY_WEAPONS + 1);
+	memcpy(PlayerCfg.SecondaryOrder, player_cfg->secondary_order, MAX_SECONDARY_WEAPONS + 1);
+}
+
 static int maybe_start_input_demo_replay(void)
 {
 	int arg_index = find_cmd_arg("-inputdemo-replay");
@@ -262,6 +290,8 @@ static int maybe_start_input_demo_replay(void)
 	size_t checkpoint_size;
 	PHYSFS_file *checkpoint_file = NULL;
 	const char *checkpoint_base_name;
+	input_demo_player_cfg replay_player_cfg;
+	int have_replay_player_cfg = 0;
 
 	if (!arg_index)
 		return -1;
@@ -293,6 +323,7 @@ static int maybe_start_input_demo_replay(void)
 		input_demo_replay_unload();
 		return 1;
 	}
+	have_replay_player_cfg = input_demo_replay_get_player_cfg(&replay_player_cfg);
 	start_mode = input_demo_replay_start_mode();
 	if (!start_mode)
 	{
@@ -315,6 +346,8 @@ static int maybe_start_input_demo_replay(void)
 			return 1;
 		}
 		Difficulty_level = input_demo_replay_difficulty();
+		if (have_replay_player_cfg)
+			input_demo_apply_replay_player_cfg(&replay_player_cfg);
 		printf("Input demo replay starting: %s level %d, %u frames\n",
 			mission_name, input_demo_replay_level(), input_demo_replay_frame_count());
 		input_demo_set_skip_level_intro(1);
@@ -377,14 +410,25 @@ static int maybe_start_input_demo_replay(void)
 	PHYSFS_delete(local_checkpoint_name);
 	{
 		int player_cfg_result;
+		int replay_auto_level = -1;
 		const char *replay_callsign;
+		unsigned int primary_order_hash;
+		unsigned int secondary_order_hash;
 		fix player_mass = 0, player_drag = 0, player_brakes = 0;
 		unsigned int player_phys_flags = 0;
 		fix ship_mass = 0, ship_drag = 0, ship_brakes = 0;
 		fix ship_max_thrust = 0, ship_max_rotthrust = 0, ship_wiggle = 0;
 
+		if (ConsoleObject)
+			replay_auto_level = (ConsoleObject->mtype.phys_info.flags & PF_LEVELLING) ? 1 : 0;
 		new_player_config();
 		player_cfg_result = read_player_file();
+		if (have_replay_player_cfg)
+			input_demo_apply_replay_player_cfg(&replay_player_cfg);
+		else if (replay_auto_level >= 0)
+			PlayerCfg.AutoLeveling = replay_auto_level;
+		primary_order_hash = input_demo_replay_hash_u8_sequence(PlayerCfg.PrimaryOrder, MAX_PRIMARY_WEAPONS + 1);
+		secondary_order_hash = input_demo_replay_hash_u8_sequence(PlayerCfg.SecondaryOrder, MAX_SECONDARY_WEAPONS + 1);
 		replay_callsign = Players[Player_num].callsign[0] ? Players[Player_num].callsign : "<empty>";
 		if (ConsoleObject) {
 			player_mass = ConsoleObject->mtype.phys_info.mass;
@@ -400,8 +444,13 @@ static int maybe_start_input_demo_replay(void)
 			ship_max_rotthrust = Player_ship->max_rotthrust;
 			ship_wiggle = Player_ship->wiggle;
 		}
-		con_printf(CON_NORMAL, "Input demo replay player config: callsign=%s result=%d auto_level=%d player_flags=0x%x phys=(%d,%d,%d,0x%x) ship=(%d,%d,%d,%d,%d,%d)\n",
-			replay_callsign, player_cfg_result, PlayerCfg.AutoLeveling, Players[Player_num].flags,
+		con_printf(CON_NORMAL, "Input demo replay player config: callsign=%s result=%d auto_level=%d debris=%d headlight_default=%d autoselect=(nofire=%d,after=%d,cycle=%d,classic=%d) order_hash=(0x%x,0x%x) player_flags=0x%x phys=(%d,%d,%d,0x%x) ship=(%d,%d,%d,%d,%d,%d)\n",
+			replay_callsign, player_cfg_result, PlayerCfg.AutoLeveling,
+			PlayerCfg.PersistentDebris, PlayerCfg.HeadlightActiveDefault,
+			PlayerCfg.NoFireAutoselect, PlayerCfg.SelectAfterFire,
+			PlayerCfg.CycleAutoselectOnly, PlayerCfg.ClassicAutoselectWeapon,
+			primary_order_hash, secondary_order_hash,
+			Players[Player_num].flags,
 			player_mass, player_drag, player_brakes, player_phys_flags,
 			ship_mass, ship_drag, ship_brakes, ship_max_thrust, ship_max_rotthrust, ship_wiggle);
 	}

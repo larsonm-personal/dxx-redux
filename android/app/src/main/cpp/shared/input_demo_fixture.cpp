@@ -22,6 +22,13 @@ extern "C" void input_demo_rng_record_clear(input_demo_rng_record *record)
 	record->run_length = 1;
 }
 
+extern "C" void input_demo_player_cfg_clear(input_demo_player_cfg *player_cfg)
+{
+	if (!player_cfg)
+		return;
+	memset(player_cfg, 0, sizeof(*player_cfg));
+}
+
 static bool fail(std::string *error, const std::string &message)
 {
 	if (error)
@@ -69,6 +76,157 @@ static bool parse_int64_field(const ordered_json &value, int64_t *out, std::stri
 	parsed = value.get<long long>();
 	*out = (int64_t) parsed;
 	return true;
+}
+
+static bool parse_uint8_field(const ordered_json &value, uint8_t *out, std::string *error,
+                              const char *field_name)
+{
+	uint32_t parsed;
+
+	if (!parse_uint32_field(value, &parsed, error, field_name))
+		return false;
+	if (parsed > UINT8_MAX)
+		return fail(error, std::string(field_name) + " is out of range");
+	*out = (uint8_t) parsed;
+	return true;
+}
+
+static uint8_t player_cfg_primary_order_count_for_game(const std::string &game)
+{
+	if (game == "d1")
+		return 7;
+	if (game == "d2")
+		return 11;
+	return 0;
+}
+
+static uint8_t player_cfg_secondary_order_count_for_game(const std::string &game)
+{
+	if (game == "d1")
+		return 6;
+	if (game == "d2")
+		return 11;
+	return 0;
+}
+
+static bool parse_player_cfg_order(const ordered_json &value,
+                                   uint8_t *items,
+                                   uint8_t max_count,
+                                   uint8_t *count,
+                                   std::string *error,
+                                   const char *field_name)
+{
+	size_t i;
+
+	if (!value.is_array())
+		return fail(error, std::string(field_name) + " must be an array");
+	if (value.size() > max_count)
+		return fail(error, std::string(field_name) + " has too many entries");
+	for (i = 0; i != value.size(); ++i) {
+		uint8_t parsed;
+
+		if (!parse_uint8_field(value[i], &parsed, error, field_name))
+			return false;
+		items[i] = parsed;
+	}
+	*count = (uint8_t) value.size();
+	return true;
+}
+
+static bool parse_player_cfg(const ordered_json &value,
+                             input_demo_player_cfg *player_cfg,
+                             std::string *error)
+{
+	ordered_json::const_iterator it;
+	input_demo_player_cfg parsed;
+
+	if (!player_cfg)
+		return fail(error, "missing player_cfg output");
+	if (!value.is_object())
+		return fail(error, "metadata player_cfg must be an object");
+	input_demo_player_cfg_clear(&parsed);
+	for (it = value.begin(); it != value.end(); ++it) {
+		const std::string &name = it.key();
+
+		if (name == "auto_leveling") {
+			if (!parse_int_field(it.value(), &parsed.auto_leveling, error, "player_cfg auto_leveling"))
+				return false;
+		} else if (name == "persistent_debris") {
+			if (!parse_int_field(it.value(), &parsed.persistent_debris, error, "player_cfg persistent_debris"))
+				return false;
+		} else if (name == "headlight_active_default") {
+			if (!parse_int_field(it.value(), &parsed.headlight_active_default, error, "player_cfg headlight_active_default"))
+				return false;
+			parsed.has_headlight_active_default = 1;
+		} else if (name == "no_fire_autoselect") {
+			if (!parse_uint8_field(it.value(), &parsed.no_fire_autoselect, error, "player_cfg no_fire_autoselect"))
+				return false;
+		} else if (name == "cycle_autoselect_only") {
+			if (!parse_uint8_field(it.value(), &parsed.cycle_autoselect_only, error, "player_cfg cycle_autoselect_only"))
+				return false;
+		} else if (name == "select_after_fire") {
+			if (!parse_uint8_field(it.value(), &parsed.select_after_fire, error, "player_cfg select_after_fire"))
+				return false;
+		} else if (name == "classic_autoselect_weapon") {
+			if (!parse_uint8_field(it.value(), &parsed.classic_autoselect_weapon, error, "player_cfg classic_autoselect_weapon"))
+				return false;
+		} else if (name == "primary_order") {
+			if (!parse_player_cfg_order(it.value(), parsed.primary_order,
+			                            INPUT_DEMO_PLAYER_CFG_PRIMARY_ORDER_MAX,
+			                            &parsed.primary_order_count, error,
+			                            "player_cfg primary_order"))
+				return false;
+		} else if (name == "secondary_order") {
+			if (!parse_player_cfg_order(it.value(), parsed.secondary_order,
+			                            INPUT_DEMO_PLAYER_CFG_SECONDARY_ORDER_MAX,
+			                            &parsed.secondary_order_count, error,
+			                            "player_cfg secondary_order"))
+				return false;
+		} else {
+			return fail(error, "unknown player_cfg key: " + name);
+		}
+	}
+	*player_cfg = parsed;
+	return true;
+}
+
+static bool validate_player_cfg(const input_demo_player_cfg &player_cfg,
+                                const std::string &game,
+                                std::string *error)
+{
+	const uint8_t expected_primary = player_cfg_primary_order_count_for_game(game);
+	const uint8_t expected_secondary = player_cfg_secondary_order_count_for_game(game);
+
+	if (!expected_primary || !expected_secondary)
+		return fail(error, "metadata player_cfg requires a valid game");
+	if (player_cfg.primary_order_count != expected_primary)
+		return fail(error, "metadata player_cfg primary_order has the wrong length");
+	if (player_cfg.secondary_order_count != expected_secondary)
+		return fail(error, "metadata player_cfg secondary_order has the wrong length");
+	return true;
+}
+
+static void player_cfg_to_json(const input_demo_player_cfg &player_cfg,
+                               ordered_json *json)
+{
+	ordered_json primary = ordered_json::array();
+	ordered_json secondary = ordered_json::array();
+	uint8_t i;
+
+	(*json)["auto_leveling"] = player_cfg.auto_leveling;
+	(*json)["persistent_debris"] = player_cfg.persistent_debris;
+	if (player_cfg.has_headlight_active_default)
+		(*json)["headlight_active_default"] = player_cfg.headlight_active_default;
+	(*json)["no_fire_autoselect"] = player_cfg.no_fire_autoselect;
+	(*json)["cycle_autoselect_only"] = player_cfg.cycle_autoselect_only;
+	(*json)["select_after_fire"] = player_cfg.select_after_fire;
+	(*json)["classic_autoselect_weapon"] = player_cfg.classic_autoselect_weapon;
+	for (i = 0; i != player_cfg.primary_order_count; ++i)
+		primary.push_back(player_cfg.primary_order[i]);
+	for (i = 0; i != player_cfg.secondary_order_count; ++i)
+		secondary.push_back(player_cfg.secondary_order[i]);
+	(*json)["primary_order"] = primary;
+	(*json)["secondary_order"] = secondary;
 }
 
 static bool validate_rng_record(const input_demo_rng_record &record, std::string *error)
@@ -318,6 +476,8 @@ static bool validate_metadata(const input_demo_metadata &metadata, std::string *
 		return fail(error, "metadata rng_mode is required");
 	if (!metadata.frame_count)
 		return fail(error, "metadata frame_count must be positive");
+	if (metadata.has_player_cfg && !validate_player_cfg(metadata.player_cfg, metadata.game, error))
+		return false;
 	return true;
 }
 
@@ -474,6 +634,10 @@ bool input_demo_metadata_parse_header_line(const std::string &line,
 			if (!it.value().is_string())
 				return fail(error, "metadata start_save must be a string");
 			parsed.start_save = it.value().get<std::string>();
+		} else if (name == "player_cfg") {
+			if (!parse_player_cfg(it.value(), &parsed.player_cfg, error))
+				return false;
+			parsed.has_player_cfg = true;
 		} else {
 			return fail(error, "unknown metadata key: " + name);
 		}
@@ -506,6 +670,12 @@ bool input_demo_metadata_to_header_line(const input_demo_metadata &metadata,
 		root["classic_preview"] = metadata.classic_preview;
 	if (!metadata.start_save.empty())
 		root["start_save"] = metadata.start_save;
+	if (metadata.has_player_cfg) {
+		ordered_json player_cfg = ordered_json::object();
+
+		player_cfg_to_json(metadata.player_cfg, &player_cfg);
+		root["player_cfg"] = player_cfg;
+	}
 	*line = root.dump();
 	return true;
 }

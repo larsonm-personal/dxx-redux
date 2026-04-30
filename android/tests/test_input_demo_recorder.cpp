@@ -74,6 +74,45 @@ static const char *input_demo_test_rng_mode(void)
 	return d_rand_get_replay_mode() == D_RAND_REPLAY_MODE_LCG_STATE ? "lcg_state" : "libc_reseed";
 }
 
+static void fill_test_player_cfg(input_demo_player_cfg *player_cfg)
+{
+#if defined(INPUT_DEMO_TEST_D2)
+	static const uint8_t primary_order[] = { 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 255 };
+	static const uint8_t secondary_order[] = { 9, 8, 4, 3, 1, 5, 0, 255, 7, 6, 2 };
+#else
+	static const uint8_t primary_order[] = { 4, 3, 2, 1, 0, 255, 16 };
+	static const uint8_t secondary_order[] = { 4, 3, 1, 0, 255, 2 };
+#endif
+	size_t i;
+
+	input_demo_player_cfg_clear(player_cfg);
+	player_cfg->auto_leveling = 1;
+	player_cfg->persistent_debris = 1;
+#if defined(INPUT_DEMO_TEST_D2)
+	player_cfg->has_headlight_active_default = 1;
+	player_cfg->headlight_active_default = 0;
+#endif
+	player_cfg->no_fire_autoselect = 1;
+	player_cfg->cycle_autoselect_only = 1;
+	player_cfg->select_after_fire = 0;
+	player_cfg->classic_autoselect_weapon = 1;
+	player_cfg->primary_order_count = (uint8_t) (sizeof(primary_order) / sizeof(primary_order[0]));
+	player_cfg->secondary_order_count = (uint8_t) (sizeof(secondary_order) / sizeof(secondary_order[0]));
+	for (i = 0; i != sizeof(primary_order) / sizeof(primary_order[0]); ++i)
+		player_cfg->primary_order[i] = primary_order[i];
+	for (i = 0; i != sizeof(secondary_order) / sizeof(secondary_order[0]); ++i)
+		player_cfg->secondary_order[i] = secondary_order[i];
+}
+
+static std::string input_demo_test_player_cfg_header_json(void)
+{
+#if defined(INPUT_DEMO_TEST_D2)
+	return ",\"player_cfg\":{\"auto_leveling\":1,\"persistent_debris\":1,\"headlight_active_default\":0,\"no_fire_autoselect\":1,\"cycle_autoselect_only\":1,\"select_after_fire\":0,\"classic_autoselect_weapon\":1,\"primary_order\":[9,8,7,6,5,4,3,2,1,0,255],\"secondary_order\":[9,8,4,3,1,5,0,255,7,6,2]}";
+#else
+	return ",\"player_cfg\":{\"auto_leveling\":1,\"persistent_debris\":1,\"no_fire_autoselect\":1,\"cycle_autoselect_only\":1,\"select_after_fire\":0,\"classic_autoselect_weapon\":1,\"primary_order\":[4,3,2,1,0,255,16],\"secondary_order\":[4,3,1,0,255,2]}";
+#endif
+}
+
 static int make_test_dir(const char *path)
 {
 #if defined(_WIN32)
@@ -118,6 +157,8 @@ static int expect_record_and_flush(void)
 	settings.level = 1;
 	settings.difficulty = 2;
 	settings.rng_mode = input_demo_test_rng_mode();
+	settings.has_player_cfg = 1;
+	fill_test_player_cfg(&settings.player_cfg);
 	if (!input_demo_recorder_start(&settings, error, sizeof(error))) {
 		remove_test_dir(dir);
 		return report_failure_string(std::string("recorder start failed: ") + error);
@@ -176,7 +217,7 @@ static int expect_record_and_flush(void)
 	expected = std::string("{\"type\":\"header\",\"version\":1,\"game\":\"") + input_demo_test_game_name() +
 		"\",\"mission\":\"" + input_demo_test_game_name() +
 		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"" + input_demo_test_rng_mode() +
-		"\",\"frame_count\":3}\n" +
+		"\",\"frame_count\":3" + input_demo_test_player_cfg_header_json() + "}\n" +
 		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
 		"{\"type\":\"frame\",\"f\":1,\"input\":{\"p\":{\"f1\":1}},\"rng\":{\"s\":100}}\n" +
 		"{\"type\":\"frame\",\"f\":2,\"input\":{\"s\":{\"f\":0}},\"rng\":{\"s\":102}}\n" +
@@ -225,6 +266,8 @@ static int expect_record_and_flush_checkpoint(void)
 	settings.level = 1;
 	settings.difficulty = 2;
 	settings.rng_mode = input_demo_test_rng_mode();
+	settings.has_player_cfg = 1;
+	fill_test_player_cfg(&settings.player_cfg);
 	settings.checkpoint_save_name = "inputdemo_start.dgss";
 	settings.checkpoint_data = checkpoint_data;
 	settings.checkpoint_size = sizeof(checkpoint_data);
@@ -255,7 +298,7 @@ static int expect_record_and_flush_checkpoint(void)
 	expected = std::string("{\"type\":\"header\",\"version\":1,\"game\":\"") + input_demo_test_game_name() +
 		"\",\"mission\":\"" + input_demo_test_game_name() +
 		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"save_checkpoint\",\"rng_mode\":\"" + input_demo_test_rng_mode() +
-		"\",\"frame_count\":1,\"start_save\":\"inputdemo_start.dgss\"}\n" +
+		"\",\"frame_count\":1,\"start_save\":\"inputdemo_start.dgss\"" + input_demo_test_player_cfg_header_json() + "}\n" +
 		"{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"size\":8,\"sha256\":\"077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"data\":\"REdTUxgAAAA=\"}\n" +
 		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
 		"{\"type\":\"result\",\"result\":{\"v\":1,\"g\":\"" + input_demo_test_game_name() +
@@ -273,6 +316,7 @@ static int expect_record_and_flush_checkpoint(void)
 	remove(demo_path.c_str());
 	remove_test_dir(dir);
 	if (parsed.metadata.start_mode != "save_checkpoint" || !parsed.has_checkpoint ||
+		!parsed.metadata.has_player_cfg || parsed.metadata.player_cfg.primary_order_count == 0 ||
 		parsed.checkpoint.sha256 != "077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5" ||
 		parsed.checkpoint.data != "REdTUxgAAAA=")
 		return report_failure("checkpoint recorder demo round trip mismatch");

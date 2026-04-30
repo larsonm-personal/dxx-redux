@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "input_demo_fixture.h"
 #include "input_demo_controls.h"
 #include "input_demo_result.h"
 
@@ -17,6 +18,8 @@ typedef struct input_demo_recorder_settings {
 	int level;
 	int difficulty;
 	const char *rng_mode;
+	int has_player_cfg;
+	input_demo_player_cfg player_cfg;
 	const char *checkpoint_save_name;
 	const uint8_t *checkpoint_data;
 	size_t checkpoint_size;

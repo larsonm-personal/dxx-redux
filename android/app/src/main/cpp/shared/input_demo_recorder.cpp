@@ -19,6 +19,8 @@ struct input_demo_recorder_session {
 	int level;
 	int difficulty;
 	std::string rng_mode;
+	bool has_player_cfg;
+	input_demo_player_cfg player_cfg;
 	bool has_checkpoint;
 	std::string checkpoint_save_name;
 	std::vector<unsigned char> checkpoint_data;
@@ -27,8 +29,9 @@ struct input_demo_recorder_session {
 	std::vector<input_demo_rng_frame> rng_frames;
 
 	input_demo_recorder_session()
-	    : active(false), game(0), level(0), difficulty(0), has_checkpoint(false), checkpoint_start_gt(0)
+	    : active(false), game(0), level(0), difficulty(0), has_player_cfg(false), has_checkpoint(false), checkpoint_start_gt(0)
 	{
+		input_demo_player_cfg_clear(&player_cfg);
 	}
 };
 
@@ -260,6 +263,9 @@ static bool input_demo_recorder_build_demo(input_demo_file *demo,
 	demo->metadata.start_mode = session.has_checkpoint ? "save_checkpoint" : "new_level";
 	demo->metadata.rng_mode = session.rng_mode;
 	demo->metadata.frame_count = static_cast<uint32_t>(session.control_frames.size());
+	demo->metadata.has_player_cfg = session.has_player_cfg;
+	if (session.has_player_cfg)
+		demo->metadata.player_cfg = session.player_cfg;
 	if (session.has_checkpoint) {
 		demo->metadata.start_save = session.checkpoint_save_name;
 		demo->has_checkpoint = true;
@@ -318,6 +324,8 @@ void input_demo_recorder_settings_clear(input_demo_recorder_settings *settings)
 	settings->level = 0;
 	settings->difficulty = 0;
 	settings->rng_mode = NULL;
+	settings->has_player_cfg = 0;
+	input_demo_player_cfg_clear(&settings->player_cfg);
 	settings->checkpoint_save_name = NULL;
 	settings->checkpoint_data = NULL;
 	settings->checkpoint_size = 0;
@@ -373,6 +381,9 @@ int input_demo_recorder_start(const input_demo_recorder_settings *settings,
 	g_input_demo_recorder_session.level = settings->level;
 	g_input_demo_recorder_session.difficulty = settings->difficulty;
 	g_input_demo_recorder_session.rng_mode = settings->rng_mode;
+	g_input_demo_recorder_session.has_player_cfg = settings->has_player_cfg ? true : false;
+	if (settings->has_player_cfg)
+		g_input_demo_recorder_session.player_cfg = settings->player_cfg;
 	g_input_demo_recorder_session.has_checkpoint = have_checkpoint ? true : false;
 	if (have_checkpoint) {
 		g_input_demo_recorder_session.checkpoint_save_name = settings->checkpoint_save_name;

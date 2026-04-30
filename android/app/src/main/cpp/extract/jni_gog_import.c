@@ -13,6 +13,7 @@
 
 #include "inno_reader.h"
 #include "pkg_reader.h"
+#include "game_file_extensions.h"
 
 #define TAG       "DXX-GogImport"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
@@ -22,29 +23,15 @@
 #include <strings.h>
 #define ci_cmp strcasecmp
 
-/* ── Game file extensions we extract ─────────────────────────────── */
-static const char *game_extensions[] = {
-	".hog", ".pig", ".ham", ".s11", ".s22", ".dem",
-	".mvl", ".msn", ".mn2", ".gog", ".inst",
-	NULL
-};
-
 static int has_game_extension(const char *path)
 {
-	const char *dot = strrchr(path, '.');
-	if (!dot) return 0;
-	for (const char **ext = game_extensions; *ext; ext++) {
-		if (ci_cmp(dot, *ext) == 0) return 1;
-	}
-	return 0;
+	return dxx_has_android_game_file_extension(path);
 }
 
 /* Audio extensions (.gog/.inst) — subset of game_extensions, optionally skipped */
 static int is_audio_extension(const char *path)
 {
-	const char *dot = strrchr(path, '.');
-	if (!dot) return 0;
-	return ci_cmp(dot, ".gog") == 0 || ci_cmp(dot, ".inst") == 0;
+	return dxx_is_android_gog_audio_extension(path);
 }
 
 static const char *basename_only(const char *path)

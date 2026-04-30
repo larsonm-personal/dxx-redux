@@ -2724,6 +2724,67 @@ private fun scanTreeForGameFiles(
     return results
 }
 
+private fun isDirectoryImportCandidateName(name: String): Boolean {
+    val lname = name.lowercase()
+    return lname.endsWith(".zip") ||
+        lname.endsWith(".7z") ||
+        lname.endsWith(".cue") ||
+        lname.endsWith(".iso") ||
+        lname.endsWith(".bin") ||
+        lname.endsWith(".exe") ||
+        lname.endsWith(".pkg") ||
+        lname.endsWith(".sow") ||
+        lname.endsWith(".dxa") ||
+        AndroidGameFileExtensions.hasGameExtension(name) ||
+        lname in ALL_GAME_FILENAMES ||
+        AndroidGameFileExtensions.isGogAudioFile(name)
+}
+
+private fun scanTreeForImportUris(
+    context: Context,
+    treeUri: Uri,
+): List<Uri> {
+    val results = mutableListOf<Uri>()
+    val docId = DocumentsContract.getTreeDocumentId(treeUri)
+    val queue = ArrayDeque<String>()
+    queue.add(docId)
+
+    while (queue.isNotEmpty()) {
+        val parentId = queue.removeFirst()
+        val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentId)
+        val cursor =
+            context.contentResolver.query(
+                childrenUri,
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                    DocumentsContract.Document.COLUMN_MIME_TYPE,
+                ),
+                null,
+                null,
+                null,
+            ) ?: continue
+
+        cursor.use {
+            while (it.moveToNext()) {
+                val childId = it.getString(0)
+                val displayName = it.getString(1) ?: continue
+                val mimeType = it.getString(2) ?: ""
+
+                if (mimeType == DocumentsContract.Document.MIME_TYPE_DIR) {
+                    queue.add(childId)
+                    continue
+                }
+                if (!isDirectoryImportCandidateName(displayName)) {
+                    continue
+                }
+                results.add(DocumentsContract.buildDocumentUriUsingTree(treeUri, childId))
+            }
+        }
+    }
+    return results
+}
+
 /**
  * Copy a SAF document to the app's files directory.
  * Returns true on success.
@@ -3228,275 +3289,317 @@ private fun SetupScreen(
     var configImportUri by remember { mutableStateOf<Uri?>(null) }
     var configImportName by remember { mutableStateOf<String?>(null) }
 
-    val filePickerLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.OpenMultipleDocuments(),
-        ) { uris: List<Uri> ->
-            if (uris.isEmpty()) return@rememberLauncherForActivityResult
-            scanning = true
-            importStatus = ""
-            scope.launch(Dispatchers.IO) {
-                try {
-                    val zipUris = mutableListOf<Pair<String, Uri>>()
-                    val gameUris = mutableListOf<FoundFile>()
-                    val cueUris = mutableListOf<Pair<String, Uri>>()
-                    val binUris = mutableListOf<Pair<String, Uri>>()
-                    val isoUris = mutableListOf<Pair<String, Uri>>()
-                    var gogUri: Pair<String, Uri>? = null
-                    var sowUri: Pair<String, Uri>? = null
-                    // Track raw .gog/.inst pairs (GOG CD images picked directly)
-                    var gogDiscUri: Pair<String, Uri>? = null // .gog BIN file
-                    var instDiscUri: Pair<String, Uri>? = null // .inst CUE sheet
-                    val unhandledFiles = mutableListOf<String>()
-                    val audioFileUris = mutableListOf<Uri>()
-                    var jsonConfigUri: Pair<String, Uri>? = null
-                    for (uri in uris) {
-                        val name = getDisplayName(context, uri)
-                        if (name != null) {
-                            val lname = name.lowercase()
-                            when {
-                                lname.endsWith(".zip") || lname.endsWith(".7z") -> {
-                                    zipUris.add(name to uri)
-                                }
+    val androidTvDevice = remember(context) { context.isAndroidTv() }
+    val importChooserConfig = remember(androidTvDevice) { importChooserConfigForDevice(androidTvDevice) }
+    var showImportChooser by remember { mutableStateOf(false) }
 
-                                lname.endsWith(".cue") -> {
-                                    cueUris.add(name to uri)
-                                }
+    suspend fun processPickedUris(uris: List<Uri>) {
+        try {
+            val dxaImportUris = mutableListOf<Pair<String, Uri>>()
+            val zipUris = mutableListOf<Pair<String, Uri>>()
+            val gameUris = mutableListOf<FoundFile>()
+            val cueUris = mutableListOf<Pair<String, Uri>>()
+            val binUris = mutableListOf<Pair<String, Uri>>()
+            val isoUris = mutableListOf<Pair<String, Uri>>()
+            var gogUri: Pair<String, Uri>? = null
+            var sowUri: Pair<String, Uri>? = null
+            // Track raw .gog/.inst pairs (GOG CD images picked directly)
+            var gogDiscUri: Pair<String, Uri>? = null // .gog BIN file
+            var instDiscUri: Pair<String, Uri>? = null // .inst CUE sheet
+            val unhandledFiles = mutableListOf<String>()
+            val audioFileUris = mutableListOf<Uri>()
+            var jsonConfigUri: Pair<String, Uri>? = null
+            for (uri in uris) {
+                val name = getDisplayName(context, uri)
+                if (name != null) {
+                    val lname = name.lowercase()
+                    when {
+                        lname.endsWith(".zip") || lname.endsWith(".7z") -> {
+                            zipUris.add(name to uri)
+                        }
 
-                                lname.endsWith(".iso") -> {
-                                    isoUris.add(name to uri)
-                                }
+                        lname.endsWith(".cue") -> {
+                            cueUris.add(name to uri)
+                        }
 
-                                lname.endsWith(".inst") -> {
-                                    instDiscUri = name to uri
-                                }
+                        lname.endsWith(".iso") -> {
+                            isoUris.add(name to uri)
+                        }
 
-                                lname.endsWith(".gog") -> {
-                                    gogDiscUri = name to uri
-                                }
+                        lname.endsWith(".inst") -> {
+                            instDiscUri = name to uri
+                        }
 
-                                lname.endsWith(".bin") -> {
-                                    binUris.add(name to uri)
-                                }
+                        lname.endsWith(".gog") -> {
+                            gogDiscUri = name to uri
+                        }
 
-                                lname.endsWith(".exe") || lname.endsWith(".pkg") -> {
-                                    gogUri = name to uri
-                                }
+                        lname.endsWith(".bin") -> {
+                            binUris.add(name to uri)
+                        }
 
-                                lname.endsWith(".sow") -> {
-                                    sowUri = name to uri
-                                }
+                        lname.endsWith(".exe") || lname.endsWith(".pkg") -> {
+                            gogUri = name to uri
+                        }
 
-                                lname.endsWith(".dem") -> {
-                                    gameUris.add(FoundFile(name, uri))
-                                }
+                        lname.endsWith(".sow") -> {
+                            sowUri = name to uri
+                        }
 
-                                lname in ALL_GAME_FILENAMES -> {
-                                    gameUris.add(FoundFile(name, uri))
-                                }
+                        lname.endsWith(".dem") -> {
+                            gameUris.add(FoundFile(name, uri))
+                        }
 
-                                lname.endsWith(".mp3") || lname.endsWith(".ogg") || lname.endsWith(".flac") -> {
-                                    audioFileUris.add(uri)
-                                }
+                        lname in ALL_GAME_FILENAMES -> {
+                            gameUris.add(FoundFile(name, uri))
+                        }
 
-                                lname.endsWith(".dxa") -> {
-                                    dxaImportUris.add(name to uri)
-                                }
+                        GogImportBridge.isAudioFile(name) -> {
+                            audioFileUris.add(uri)
+                        }
 
-                                lname.endsWith(".json") -> {
-                                    // Detect game config JSON (only when picked alone)
-                                    if (uris.size == 1) {
-                                        try {
-                                            val text =
-                                                context.contentResolver
-                                                    .openInputStream(uri)
-                                                    ?.bufferedReader()
-                                                    ?.use { it.readText() }
-                                            if (text != null) {
-                                                val json = org.json.JSONObject(text)
-                                                val cfgType = HumanReadableConfig.detectConfigType(json)
-                                                if (cfgType != "unknown") {
-                                                    jsonConfigUri = name to uri
-                                                } else {
-                                                    unhandledFiles.add(name)
-                                                }
-                                            } else {
-                                                unhandledFiles.add(name)
-                                            }
-                                        } catch (_: Exception) {
+                        lname.endsWith(".dxa") -> {
+                            dxaImportUris.add(name to uri)
+                        }
+
+                        lname.endsWith(".json") -> {
+                            if (uris.size == 1) {
+                                try {
+                                    val text =
+                                        context.contentResolver
+                                            .openInputStream(uri)
+                                            ?.bufferedReader()
+                                            ?.use { it.readText() }
+                                    if (text != null) {
+                                        val json = org.json.JSONObject(text)
+                                        val cfgType = HumanReadableConfig.detectConfigType(json)
+                                        if (cfgType != "unknown") {
+                                            jsonConfigUri = name to uri
+                                        } else {
                                             unhandledFiles.add(name)
                                         }
                                     } else {
                                         unhandledFiles.add(name)
                                     }
-                                }
-
-                                else -> {
+                                } catch (_: Exception) {
                                     unhandledFiles.add(name)
                                 }
-                            }
-                        }
-                    }
-                    // Collect warnings for files the picker couldn't route
-                    val warnings = mutableListOf<String>()
-                    // If .gog+.inst pair found, route to disc import as CUE+BIN
-                    if (gogDiscUri != null && instDiscUri != null) {
-                        Log.i(
-                            "DXX-Setup",
-                            "Routing .gog+.inst pair to disc import: gog=${gogDiscUri.first}, inst=${instDiscUri.first}",
-                        )
-                        cueUris.add(instDiscUri)
-                        binUris.add(gogDiscUri)
-                    } else {
-                        // Warn about unpaired .gog/.inst (same as .bin/.cue)
-                        gogDiscUri?.let { warnings.add("${it.first} requires a matching .inst file") }
-                        instDiscUri?.let { warnings.add("${it.first} requires a matching .gog file") }
-                    }
-                    if (binUris.isNotEmpty() && cueUris.isEmpty()) {
-                        for (b in binUris) warnings.add("${b.first} requires a matching CUE file")
-                    }
-                    if (cueUris.isNotEmpty() && binUris.isEmpty()) {
-                        for (c in cueUris) warnings.add("${c.first} requires a matching BIN file")
-                    }
-                    if (isoUris.size > 1) {
-                        warnings.add("Only one ISO image can be imported at a time")
-                    }
-                    if (isoUris.isNotEmpty() && cueUris.isNotEmpty() && binUris.isNotEmpty()) {
-                        warnings.add("Select either a standalone ISO or a CUE/BIN set")
-                    }
-                    for (f in unhandledFiles) {
-                        warnings.add("$f: file type not recognized")
-                    }
-                    withContext(Dispatchers.Main) {
-                        for (w in warnings) {
-                            Toast.makeText(context, w, Toast.LENGTH_LONG).show()
-                            Log.w("DXX-Setup", "Import warning: $w")
-                        }
-                        // Trigger audio import dialog if audio files found
-                        if (audioFileUris.isNotEmpty()) {
-                            audioImportUris = audioFileUris
-                        }
-                        if (gameUris.isNotEmpty()) {
-                            scanResults = gameUris
-                        }
-                        // Trigger disc import dialog if CUE+BIN pair found
-                        if (cueUris.isNotEmpty() && binUris.isNotEmpty()) {
-                            discImportCueName = cueUris.first().first
-                            discImportCueUri = cueUris.first().second
-                            discImportBins = binUris
-                        } else if (isoUris.isNotEmpty()) {
-                            isoImportName = isoUris.first().first
-                            isoImportUri = isoUris.first().second
-                        }
-                        // Trigger GOG import dialog if .exe/.pkg found
-                        gogUri?.let {
-                            gogImportName = it.first
-                            gogImportUri = it.second
-                        }
-                        // Trigger SOW import dialog if .sow found
-                        sowUri?.let {
-                            sowImportName = it.first
-                            sowImportUri = it.second
-                        }
-                        // Trigger config import dialog if single JSON config picked
-                        jsonConfigUri?.let {
-                            configImportName = it.first
-                            configImportUri = it.second
-                        }
-                        scanning = false
-                    }
-                    // Import .dxa mod files (simple copy to mods dir)
-                    if (dxaImportUris.isNotEmpty()) {
-                        val modMgr = ModManager(filesDir)
-                        val dxaResults = mutableListOf<String>()
-                        for ((name, uri) in dxaImportUris) {
-                            try {
-                                val mod = modMgr.importMod(uri, name, context.contentResolver)
-                                if (mod != null) {
-                                    dxaResults.add("Imported mod: ${mod.displayName}")
-                                    Log.i("DXX-Setup", "DXA import ok: $name (${mod.sizeBytes} bytes)")
-                                } else {
-                                    dxaResults.add("Failed to import $name")
-                                    Log.e("DXX-Setup", "DXA import returned null: $name")
-                                }
-                            } catch (e: Exception) {
-                                dxaResults.add("Failed to import $name: ${e.message}")
-                                Log.e("DXX-Setup", "DXA import exception: $name", e)
-                            }
-                        }
-                        dxaImportUris.clear()
-                        val failures = dxaResults.filter { it.startsWith("Failed") }
-                        withContext(Dispatchers.Main) {
-                            if (failures.isNotEmpty()) {
-                                for (f in failures) {
-                                    Toast.makeText(context, f, Toast.LENGTH_LONG).show()
-                                }
-                                importStatus = failures.joinToString("; ")
                             } else {
-                                importStatus = dxaResults.joinToString("; ")
-                            }
-                            onRefresh()
-                        }
-                    }
-                    // Handle ZIP/7z files
-                    if (zipUris.isNotEmpty()) {
-                        withContext(Dispatchers.Main) {
-                            zipExtracting = true
-                            zipProgressFile = ""
-                            zipProgressBytes = 0L
-                            zipProgressTotal = 0L
-                        }
-                        val tmpDir = File(filesDir, "tmp")
-                        val allExtracted = mutableListOf<ExtractedFile>()
-                        var anyAudio = false
-                        val archiveErrors = mutableListOf<String>()
-                        for ((arcName, arcUri) in zipUris) {
-                            val result =
-                                if (arcName.lowercase().endsWith(".7z")) {
-                                    extract7zContents(context, arcUri, tmpDir) { name, copied, total ->
-                                        zipProgressFile = "$arcName: $name"
-                                        zipProgressBytes = copied
-                                        zipProgressTotal = total
-                                    }
-                                } else {
-                                    extractZipContents(context, arcUri, tmpDir) { name, copied, total ->
-                                        zipProgressFile = "$arcName: $name"
-                                        zipProgressBytes = copied
-                                        zipProgressTotal = total
-                                    }
-                                }
-                            allExtracted.addAll(result.files)
-                            if (result.hadAudioFiles) anyAudio = true
-                            if (result.error != null) archiveErrors.add("$arcName: ${result.error}")
-                        }
-                        // Identify package
-                        val fileHashes = allExtracted.associate { it.name to it.sha256 }
-                        val pkgName = KnownVersions.identifyPackage(fileHashes)
-                        withContext(Dispatchers.Main) {
-                            zipExtracted = allExtracted
-                            zipPackageName = pkgName
-                            zipHadAudioFiles = anyAudio
-                            zipArchiveUris = zipUris.map { it.second }
-                            zipExtracting = false
-                            zipProgressFile = ""
-                            zipProgressBytes = 0L
-                            zipProgressTotal = 0L
-                            if (archiveErrors.isNotEmpty()) {
-                                val msg = archiveErrors.joinToString("\n")
-                                importStatus = msg
-                                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                unhandledFiles.add(name)
                             }
                         }
-                    }
-                } catch (e: Exception) {
-                    Log.e("DXX-Setup", "File picker processing failed", e)
-                    withContext(Dispatchers.Main) {
-                        scanning = false
-                        zipExtracting = false
-                        importStatus = "File processing failed: ${e.message}"
+
+                        else -> {
+                            unhandledFiles.add(name)
+                        }
                     }
                 }
             }
+            val warnings = mutableListOf<String>()
+            if (gogDiscUri != null && instDiscUri != null) {
+                Log.i(
+                    "DXX-Setup",
+                    "Routing .gog+.inst pair to disc import: gog=${gogDiscUri.first}, inst=${instDiscUri.first}",
+                )
+                cueUris.add(instDiscUri)
+                binUris.add(gogDiscUri)
+            } else {
+                gogDiscUri?.let { warnings.add("${it.first} requires a matching .inst file") }
+                instDiscUri?.let { warnings.add("${it.first} requires a matching .gog file") }
+            }
+            if (binUris.isNotEmpty() && cueUris.isEmpty()) {
+                for (b in binUris) warnings.add("${b.first} requires a matching CUE file")
+            }
+            if (cueUris.isNotEmpty() && binUris.isEmpty()) {
+                for (c in cueUris) warnings.add("${c.first} requires a matching BIN file")
+            }
+            if (isoUris.size > 1) {
+                warnings.add("Only one ISO image can be imported at a time")
+            }
+            if (isoUris.isNotEmpty() && cueUris.isNotEmpty() && binUris.isNotEmpty()) {
+                warnings.add("Select either a standalone ISO or a CUE/BIN set")
+            }
+            for (f in unhandledFiles) {
+                warnings.add("$f: file type not recognized")
+            }
+            withContext(Dispatchers.Main) {
+                for (w in warnings) {
+                    Toast.makeText(context, w, Toast.LENGTH_LONG).show()
+                    Log.w("DXX-Setup", "Import warning: $w")
+                }
+                if (audioFileUris.isNotEmpty()) {
+                    audioImportUris = audioFileUris
+                }
+                if (gameUris.isNotEmpty()) {
+                    scanResults = gameUris
+                }
+                if (cueUris.isNotEmpty() && binUris.isNotEmpty()) {
+                    discImportCueName = cueUris.first().first
+                    discImportCueUri = cueUris.first().second
+                    discImportBins = binUris
+                } else if (isoUris.isNotEmpty()) {
+                    isoImportName = isoUris.first().first
+                    isoImportUri = isoUris.first().second
+                }
+                gogUri?.let {
+                    gogImportName = it.first
+                    gogImportUri = it.second
+                }
+                sowUri?.let {
+                    sowImportName = it.first
+                    sowImportUri = it.second
+                }
+                jsonConfigUri?.let {
+                    configImportName = it.first
+                    configImportUri = it.second
+                }
+                scanning = false
+            }
+            if (dxaImportUris.isNotEmpty()) {
+                val modMgr = ModManager(filesDir)
+                val dxaResults = mutableListOf<String>()
+                for ((name, uri) in dxaImportUris) {
+                    try {
+                        val mod = modMgr.importMod(uri, name, context.contentResolver)
+                        if (mod != null) {
+                            dxaResults.add("Imported mod: ${mod.displayName}")
+                            Log.i("DXX-Setup", "DXA import ok: $name (${mod.sizeBytes} bytes)")
+                        } else {
+                            dxaResults.add("Failed to import $name")
+                            Log.e("DXX-Setup", "DXA import returned null: $name")
+                        }
+                    } catch (e: Exception) {
+                        dxaResults.add("Failed to import $name: ${e.message}")
+                        Log.e("DXX-Setup", "DXA import exception: $name", e)
+                    }
+                }
+                val failures = dxaResults.filter { it.startsWith("Failed") }
+                withContext(Dispatchers.Main) {
+                    if (failures.isNotEmpty()) {
+                        for (f in failures) {
+                            Toast.makeText(context, f, Toast.LENGTH_LONG).show()
+                        }
+                        importStatus = failures.joinToString("; ")
+                    } else {
+                        importStatus = dxaResults.joinToString("; ")
+                    }
+                    onRefresh()
+                }
+            }
+            if (zipUris.isNotEmpty()) {
+                withContext(Dispatchers.Main) {
+                    zipExtracting = true
+                    zipProgressFile = ""
+                    zipProgressBytes = 0L
+                    zipProgressTotal = 0L
+                }
+                val tmpDir = File(filesDir, "tmp")
+                val allExtracted = mutableListOf<ExtractedFile>()
+                var anyAudio = false
+                val archiveErrors = mutableListOf<String>()
+                for ((arcName, arcUri) in zipUris) {
+                    val result =
+                        if (arcName.lowercase().endsWith(".7z")) {
+                            extract7zContents(context, arcUri, tmpDir) { name, copied, total ->
+                                zipProgressFile = "$arcName: $name"
+                                zipProgressBytes = copied
+                                zipProgressTotal = total
+                            }
+                        } else {
+                            extractZipContents(context, arcUri, tmpDir) { name, copied, total ->
+                                zipProgressFile = "$arcName: $name"
+                                zipProgressBytes = copied
+                                zipProgressTotal = total
+                            }
+                        }
+                    allExtracted.addAll(result.files)
+                    if (result.hadAudioFiles) anyAudio = true
+                    if (result.error != null) archiveErrors.add("$arcName: ${result.error}")
+                }
+                val fileHashes = allExtracted.associate { it.name to it.sha256 }
+                val pkgName = KnownVersions.identifyPackage(fileHashes)
+                withContext(Dispatchers.Main) {
+                    zipExtracted = allExtracted
+                    zipPackageName = pkgName
+                    zipHadAudioFiles = anyAudio
+                    zipArchiveUris = zipUris.map { it.second }
+                    zipExtracting = false
+                    zipProgressFile = ""
+                    zipProgressBytes = 0L
+                    zipProgressTotal = 0L
+                    if (archiveErrors.isNotEmpty()) {
+                        val msg = archiveErrors.joinToString("\n")
+                        importStatus = msg
+                        Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("DXX-Setup", "File picker processing failed", e)
+            withContext(Dispatchers.Main) {
+                scanning = false
+                zipExtracting = false
+                importStatus = "File processing failed: ${e.message}"
+            }
+        }
+    }
+
+    fun startPickedUriImport(uris: List<Uri>) {
+        if (uris.isEmpty()) return
+        scanning = true
+        importStatus = ""
+        scope.launch(Dispatchers.IO) {
+            processPickedUris(uris)
+        }
+    }
+
+    fun startDirectoryImport(treeUri: Uri) {
+        scanning = true
+        importStatus = ""
+        scope.launch(Dispatchers.IO) {
+            try {
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        treeUri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                    )
+                } catch (e: SecurityException) {
+                    Log.w("DXX-Setup", "Could not persist tree URI permission: $treeUri", e)
+                }
+                val uris = scanTreeForImportUris(context, treeUri)
+                if (uris.isEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        scanning = false
+                        importStatus = "No importable files found in selected folder"
+                        Toast.makeText(context, importStatus, Toast.LENGTH_LONG).show()
+                    }
+                    return@launch
+                }
+                processPickedUris(uris)
+            } catch (e: Exception) {
+                Log.e("DXX-Setup", "Directory picker processing failed", e)
+                withContext(Dispatchers.Main) {
+                    scanning = false
+                    zipExtracting = false
+                    importStatus = "File processing failed: ${e.message}"
+                }
+            }
+        }
+    }
+
+    val filePickerLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenMultipleDocuments(),
+        ) { uris: List<Uri> ->
+            startPickedUriImport(uris)
+        }
+
+    val dirPickerLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocumentTree(),
+        ) { treeUri: Uri? ->
+            if (treeUri == null) return@rememberLauncherForActivityResult
+            startDirectoryImport(treeUri)
         }
 
     // ── Initial focus for D-pad/keyboard navigation ─────
@@ -4279,11 +4382,59 @@ private fun SetupScreen(
                     }
 
                     // ── Import files button ──
+                    if (showImportChooser) {
+                        val importChoiceFocus = remember(androidTvDevice) { FocusRequester() }
+                        LaunchedEffect(showImportChooser, androidTvDevice) {
+                            if (showImportChooser) {
+                                importChoiceFocus.requestFocus()
+                            }
+                        }
+                        AlertDialog(
+                            onDismissRequest = { showImportChooser = false },
+                            confirmButton = {},
+                            title = { Text("Import Files") },
+                            text = {
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    Text(
+                                        importChooserConfig.helpText,
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Button(
+                                        onClick = {
+                                            showImportChooser = false
+                                            filePickerLauncher.launch(
+                                                arrayOf("application/octet-stream", "application/zip", "*/*"),
+                                            )
+                                        },
+                                        modifier = Modifier.fillMaxWidth().focusRequester(importChoiceFocus),
+                                    ) {
+                                        Text(importChooserConfig.directPickLabel)
+                                    }
+                                    OutlinedButton(
+                                        onClick = {
+                                            showImportChooser = false
+                                            dirPickerLauncher.launch(null)
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Text("Pick Folder")
+                                    }
+                                    TextButton(
+                                        onClick = { showImportChooser = false },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Text("Cancel")
+                                    }
+                                }
+                            },
+                        )
+                    }
                     Button(
                         onClick = {
-                            filePickerLauncher.launch(
-                                arrayOf("application/octet-stream", "application/zip", "*/*"),
-                            )
+                            showImportChooser = true
                         },
                         enabled = !scanning && !isHashing && !zipExtracting,
                         modifier = Modifier.fillMaxWidth().height(44.dp),
@@ -4305,8 +4456,8 @@ private fun SetupScreen(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text =
-                            "Select .hog, .ham, .pig files, a .zip/.7z archive, .cue/.bin disc images," +
-                                " .sow archive, or GOG installer.",
+                            "${importChooserConfig.helpText}. Supports .hog, .ham, .pig files, .zip/.7z archives," +
+                                " .cue/.bin disc images, .sow archives, and GOG installers.",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

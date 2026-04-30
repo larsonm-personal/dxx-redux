@@ -3497,6 +3497,29 @@ static int input_demo_ascii_equal_ignore_case(char lhs, char rhs)
 	return lhs == rhs;
 }
 
+static void input_demo_fill_recorder_player_cfg(input_demo_recorder_settings *settings)
+{
+	int i;
+
+	if (!settings)
+		return;
+	settings->has_player_cfg = 1;
+	settings->player_cfg.auto_leveling = PlayerCfg.AutoLeveling;
+	settings->player_cfg.persistent_debris = PlayerCfg.PersistentDebris;
+	settings->player_cfg.has_headlight_active_default = 1;
+	settings->player_cfg.headlight_active_default = PlayerCfg.HeadlightActiveDefault;
+	settings->player_cfg.no_fire_autoselect = PlayerCfg.NoFireAutoselect;
+	settings->player_cfg.cycle_autoselect_only = PlayerCfg.CycleAutoselectOnly;
+	settings->player_cfg.select_after_fire = PlayerCfg.SelectAfterFire;
+	settings->player_cfg.classic_autoselect_weapon = PlayerCfg.ClassicAutoselectWeapon;
+	settings->player_cfg.primary_order_count = MAX_PRIMARY_WEAPONS + 1;
+	settings->player_cfg.secondary_order_count = MAX_SECONDARY_WEAPONS + 1;
+	for (i = 0; i < MAX_PRIMARY_WEAPONS + 1; i++)
+		settings->player_cfg.primary_order[i] = PlayerCfg.PrimaryOrder[i];
+	for (i = 0; i < MAX_SECONDARY_WEAPONS + 1; i++)
+		settings->player_cfg.secondary_order[i] = PlayerCfg.SecondaryOrder[i];
+}
+
 static void input_demo_strip_hog_extension(char *value)
 {
 	size_t len = strlen(value);
@@ -3582,6 +3605,7 @@ static int input_demo_prepare_recorder_settings(input_demo_recorder_settings *se
 		settings->level = Current_level_num;
 		settings->difficulty = Difficulty_level;
 		settings->rng_mode = input_demo_rng_mode_name(replay_mode);
+		input_demo_fill_recorder_player_cfg(settings);
 	}
 	if (input_demo_is_mid_level_record_start() && !input_demo_capture_recorder_checkpoint(settings, error, error_size))
 		return 0;

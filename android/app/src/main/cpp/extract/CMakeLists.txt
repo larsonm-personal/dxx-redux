@@ -89,6 +89,7 @@ file(TO_CMAKE_PATH "${stuffit_test_files_SOURCE_DIR}" STUFFIT_TEST_FILES_DIR)
 # ── Library sources (shared by all test executables) ─────────────────
 set(EXTRACT_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/cue_parser.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c
     ${CMAKE_CURRENT_SOURCE_DIR}/hfs_reader.c
     ${CMAKE_CURRENT_SOURCE_DIR}/iso9660_reader.c
     ${CMAKE_CURRENT_SOURCE_DIR}/mac_hfs_extract.c
@@ -163,6 +164,7 @@ set_tests_properties(stuffit_corpus_tests PROPERTIES WORKING_DIRECTORY ${CMAKE_C
 # ── extract_gog ─────────────────────────────────────────────────────
 add_executable(extract_gog
     ${CMAKE_CURRENT_SOURCE_DIR}/extract_gog.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c
     ${CMAKE_CURRENT_SOURCE_DIR}/inno_reader.c
     ${CMAKE_CURRENT_SOURCE_DIR}/pkg_reader.c
 )
@@ -171,6 +173,7 @@ target_link_libraries(extract_gog PRIVATE lzma_sdk_c ZLIB::ZLIB)
 
 add_executable(test_gog_fd
     ${CMAKE_CURRENT_SOURCE_DIR}/test_gog_fd.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/game_file_extensions.c
     ${CMAKE_CURRENT_SOURCE_DIR}/inno_reader.c
 )
 target_include_directories(test_gog_fd PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

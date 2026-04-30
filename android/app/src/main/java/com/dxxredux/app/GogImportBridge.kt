@@ -19,14 +19,8 @@ object GogImportBridge {
         val size: Long,
     )
 
-    /** Audio extensions extracted from GOG installers (.gog/.inst) */
-    private val audioExtensions = setOf("gog", "inst")
-
     /** Check if a filename is a GOG audio file (.gog or .inst) */
-    fun isAudioFile(name: String): Boolean {
-        val ext = name.substringAfterLast('.', "").lowercase()
-        return ext in audioExtensions
-    }
+    fun isAudioFile(name: String): Boolean = AndroidGameFileExtensions.isGogAudioFile(name)
 
     /**
      * Detect the installer format from a file path.

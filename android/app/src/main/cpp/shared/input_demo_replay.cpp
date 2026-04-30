@@ -22,6 +22,8 @@ struct input_demo_replay_session {
 	int difficulty;
 	std::string start_mode;
 	std::string rng_mode;
+	bool has_player_cfg;
+	input_demo_player_cfg player_cfg;
 	bool has_checkpoint;
 	std::string checkpoint_save_name;
 	std::vector<uint8_t> checkpoint_data;
@@ -31,10 +33,11 @@ struct input_demo_replay_session {
 	std::vector<input_demo_replay_frame> frames;
 
 	input_demo_replay_session()
-	    : loaded(false), game(0), has_expected_result(false), level(0), difficulty(0), has_checkpoint(false),
+	    : loaded(false), game(0), has_expected_result(false), level(0), difficulty(0), has_player_cfg(false), has_checkpoint(false),
 	      checkpoint_start_gt(0), final_game_time64(0), next_frame_index(0)
 	{
 		input_demo_result_clear(&expected_result);
+		input_demo_player_cfg_clear(&player_cfg);
 	}
 };
 
@@ -391,6 +394,9 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 	g_input_demo_replay_session.difficulty = demo.metadata.difficulty;
 	g_input_demo_replay_session.start_mode = demo.metadata.start_mode;
 	g_input_demo_replay_session.rng_mode = demo.metadata.rng_mode;
+	g_input_demo_replay_session.has_player_cfg = demo.metadata.has_player_cfg;
+	if (demo.metadata.has_player_cfg)
+		g_input_demo_replay_session.player_cfg = demo.metadata.player_cfg;
 	if (demo.has_checkpoint && !load_checkpoint(demo.checkpoint, &g_input_demo_replay_session, &replay_error)) {
 		reset_session();
 		return copy_error(replay_error, error, error_size);
@@ -455,6 +461,19 @@ const char *input_demo_replay_rng_mode(void)
 const char *input_demo_replay_actual_result_path(void)
 {
 	return g_input_demo_replay_session.loaded ? g_input_demo_replay_session.actual_result_path.c_str() : NULL;
+}
+
+int input_demo_replay_has_player_cfg(void)
+{
+	return g_input_demo_replay_session.loaded && g_input_demo_replay_session.has_player_cfg ? 1 : 0;
+}
+
+int input_demo_replay_get_player_cfg(input_demo_player_cfg *player_cfg)
+{
+	if (!input_demo_replay_has_player_cfg() || !player_cfg)
+		return 0;
+	*player_cfg = g_input_demo_replay_session.player_cfg;
+	return 1;
 }
 
 int input_demo_replay_has_checkpoint(void)

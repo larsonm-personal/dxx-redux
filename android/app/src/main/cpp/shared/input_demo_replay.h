@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "input_demo_fixture.h"
 #include "input_demo_controls.h"
 #include "input_demo_result.h"
 
@@ -45,6 +46,8 @@ int input_demo_replay_difficulty(void);
 const char *input_demo_replay_start_mode(void);
 const char *input_demo_replay_rng_mode(void);
 const char *input_demo_replay_actual_result_path(void);
+int input_demo_replay_has_player_cfg(void);
+int input_demo_replay_get_player_cfg(input_demo_player_cfg *player_cfg);
 int input_demo_replay_has_checkpoint(void);
 const char *input_demo_replay_checkpoint_save_name(void);
 const uint8_t *input_demo_replay_checkpoint_data(void);

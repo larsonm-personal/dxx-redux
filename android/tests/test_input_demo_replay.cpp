@@ -57,6 +57,60 @@ static const char *input_demo_test_rng_mode(void)
 	return d_rand_get_replay_mode() == D_RAND_REPLAY_MODE_LCG_STATE ? "lcg_state" : "libc_reseed";
 }
 
+static void fill_test_player_cfg(input_demo_player_cfg *player_cfg)
+{
+#if defined(INPUT_DEMO_TEST_D2)
+	static const uint8_t primary_order[] = { 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 255 };
+	static const uint8_t secondary_order[] = { 9, 8, 4, 3, 1, 5, 0, 255, 7, 6, 2 };
+#else
+	static const uint8_t primary_order[] = { 4, 3, 2, 1, 0, 255, 16 };
+	static const uint8_t secondary_order[] = { 4, 3, 1, 0, 255, 2 };
+#endif
+	size_t i;
+
+	input_demo_player_cfg_clear(player_cfg);
+	player_cfg->auto_leveling = 1;
+	player_cfg->persistent_debris = 1;
+#if defined(INPUT_DEMO_TEST_D2)
+	player_cfg->has_headlight_active_default = 1;
+	player_cfg->headlight_active_default = 0;
+#endif
+	player_cfg->no_fire_autoselect = 1;
+	player_cfg->cycle_autoselect_only = 1;
+	player_cfg->select_after_fire = 0;
+	player_cfg->classic_autoselect_weapon = 1;
+	player_cfg->primary_order_count = (uint8_t) (sizeof(primary_order) / sizeof(primary_order[0]));
+	player_cfg->secondary_order_count = (uint8_t) (sizeof(secondary_order) / sizeof(secondary_order[0]));
+	for (i = 0; i != sizeof(primary_order) / sizeof(primary_order[0]); ++i)
+		player_cfg->primary_order[i] = primary_order[i];
+	for (i = 0; i != sizeof(secondary_order) / sizeof(secondary_order[0]); ++i)
+		player_cfg->secondary_order[i] = secondary_order[i];
+}
+
+static int expect_test_player_cfg(const input_demo_player_cfg *player_cfg)
+{
+	if (!player_cfg)
+		return report_failure("replay player_cfg output missing");
+	if (player_cfg->auto_leveling != 1 || player_cfg->persistent_debris != 1 ||
+		player_cfg->no_fire_autoselect != 1 || player_cfg->cycle_autoselect_only != 1 ||
+		player_cfg->select_after_fire != 0 || player_cfg->classic_autoselect_weapon != 1)
+		return report_failure("replay player_cfg scalar mismatch");
+#if defined(INPUT_DEMO_TEST_D2)
+	if (!player_cfg->has_headlight_active_default || player_cfg->headlight_active_default != 0 ||
+		player_cfg->primary_order_count != 11 || player_cfg->secondary_order_count != 11 ||
+		player_cfg->primary_order[0] != 9 || player_cfg->primary_order[10] != 255 ||
+		player_cfg->secondary_order[0] != 9 || player_cfg->secondary_order[10] != 2)
+		return report_failure("replay D2 player_cfg mismatch");
+#else
+	if (player_cfg->has_headlight_active_default ||
+		player_cfg->primary_order_count != 7 || player_cfg->secondary_order_count != 6 ||
+		player_cfg->primary_order[0] != 4 || player_cfg->primary_order[6] != 16 ||
+		player_cfg->secondary_order[0] != 4 || player_cfg->secondary_order[5] != 2)
+		return report_failure("replay D1 player_cfg mismatch");
+#endif
+	return 0;
+}
+
 static int make_test_dir(const char *path)
 {
 #if defined(_WIN32)
@@ -91,6 +145,8 @@ static int write_test_fixture(const char *path)
 	settings.level = 1;
 	settings.difficulty = 2;
 	settings.rng_mode = input_demo_test_rng_mode();
+	settings.has_player_cfg = 1;
+	fill_test_player_cfg(&settings.player_cfg);
 	if (!input_demo_recorder_start(&settings, error, sizeof(error)))
 		return report_failure_string(std::string("recorder start failed: ") + error);
 	input_demo_control_state_clear(&state);
@@ -126,6 +182,8 @@ static int write_checkpoint_test_fixture(const char *path)
 	settings.level = 1;
 	settings.difficulty = 2;
 	settings.rng_mode = input_demo_test_rng_mode();
+	settings.has_player_cfg = 1;
+	fill_test_player_cfg(&settings.player_cfg);
 	settings.checkpoint_save_name = "inputdemo_start.dgss";
 	settings.checkpoint_data = checkpoint_data;
 	settings.checkpoint_size = sizeof(checkpoint_data);
@@ -157,6 +215,7 @@ static int expect_replay_loader(void)
 	const std::string demo_path = std::string(dir) + "/replay.dximdemo";
 	const std::string actual_result_path = demo_path + ".actual.json";
 	input_demo_replay_frame frame;
+	input_demo_player_cfg player_cfg;
 	input_demo_result actual_result;
 	char error[256] = "";
 
@@ -180,6 +239,12 @@ static int expect_replay_loader(void)
 		return report_failure("replay start_mode mismatch");
 	if (!input_demo_replay_rng_mode() || std::string(input_demo_replay_rng_mode()) != input_demo_test_rng_mode())
 		return report_failure("replay rng_mode mismatch");
+	if (!input_demo_replay_has_player_cfg())
+		return report_failure("replay should expose player_cfg metadata");
+	if (!input_demo_replay_get_player_cfg(&player_cfg))
+		return report_failure("replay player_cfg getter failed");
+	if (expect_test_player_cfg(&player_cfg))
+		return 1;
 	if (input_demo_replay_frame_count() != 3)
 		return report_failure("replay frame count mismatch");
 	if (input_demo_replay_next_frame_index() != 0)
@@ -239,6 +304,7 @@ static int expect_checkpoint_replay_loader(void)
 	const std::string demo_path = std::string(dir) + "/checkpoint_replay.dximdemo";
 	const std::string actual_result_path = demo_path + ".actual.json";
 	input_demo_replay_frame frame;
+	input_demo_player_cfg player_cfg;
 	input_demo_result actual_result;
 	char error[256] = "";
 
@@ -252,6 +318,10 @@ static int expect_checkpoint_replay_loader(void)
 		return report_failure("checkpoint replay should be loaded");
 	if (!input_demo_replay_start_mode() || std::string(input_demo_replay_start_mode()) != "save_checkpoint")
 		return report_failure("checkpoint replay start_mode mismatch");
+	if (!input_demo_replay_has_player_cfg() || !input_demo_replay_get_player_cfg(&player_cfg))
+		return report_failure("checkpoint replay player_cfg missing");
+	if (expect_test_player_cfg(&player_cfg))
+		return 1;
 	if (!input_demo_replay_has_checkpoint())
 		return report_failure("checkpoint replay should retain checkpoint payload");
 	if (!input_demo_replay_checkpoint_save_name() ||
