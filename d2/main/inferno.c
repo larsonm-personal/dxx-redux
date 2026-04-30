@@ -291,6 +291,7 @@ static int maybe_start_input_demo_replay(void)
 	PHYSFS_file *checkpoint_file = NULL;
 	const char *checkpoint_base_name;
 	input_demo_player_cfg replay_player_cfg;
+	char local_player_callsign[CALLSIGN_LEN + 1] = "";
 	int have_replay_player_cfg = 0;
 
 	if (!arg_index)
@@ -322,6 +323,11 @@ static int maybe_start_input_demo_replay(void)
 		printf("Input demo replay currently supports D2 demos only\n");
 		input_demo_replay_unload();
 		return 1;
+	}
+	if (Player_num >= 0 && Player_num < MAX_PLAYERS)
+	{
+		strncpy(local_player_callsign, Players[Player_num].callsign, CALLSIGN_LEN);
+		local_player_callsign[CALLSIGN_LEN] = '\0';
 	}
 	have_replay_player_cfg = input_demo_replay_get_player_cfg(&replay_player_cfg);
 	start_mode = input_demo_replay_start_mode();
@@ -421,8 +427,18 @@ static int maybe_start_input_demo_replay(void)
 
 		if (ConsoleObject)
 			replay_auto_level = (ConsoleObject->mtype.phys_info.flags & PF_LEVELLING) ? 1 : 0;
-		new_player_config();
-		player_cfg_result = read_player_file();
+		if (!Players[Player_num].callsign[0] && local_player_callsign[0])
+		{
+			strncpy(Players[Player_num].callsign, local_player_callsign, CALLSIGN_LEN);
+			Players[Player_num].callsign[CALLSIGN_LEN] = '\0';
+		}
+		if (Players[Player_num].callsign[0])
+		{
+			new_player_config();
+			player_cfg_result = read_player_file();
+		}
+		else
+			player_cfg_result = -1;
 		if (have_replay_player_cfg)
 			input_demo_apply_replay_player_cfg(&replay_player_cfg);
 		else if (replay_auto_level >= 0)

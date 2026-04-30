@@ -147,10 +147,8 @@ share the state captured by `processPickedUris`.
       enumerate children with `DocumentsContract` (not `DocumentFile`, which
       is not present in this module), filter to the extensions the classifier
       accepts, and call `processPickedUris(uris)`.
-- [ ] Keep persisted permission scoped: take any required permission with
-      `takePersistableUriPermission` for the lifetime of the import, and
-      release with `releasePersistableUriPermission` once the imported files
-      have been copied into app-private storage.
+- [x] Keep the tree grant scoped to the one-shot import session by relying on
+      the temporary picker grant instead of persisting broader folder access.
 - [x] If either picker callback returns `null` or an empty URI list, do nothing.
 
 ### Phase 4: Picker chooser dialog
@@ -185,17 +183,19 @@ share the state captured by `processPickedUris`.
       already produced by the classifier. Same for an unpaired BIN, `.gog`,
       or `.inst`. No new logic - the refactor in Phase 2 wires this for
       free.
-- [ ] Directory path: if a directory contains too many files (say > 200),
+- [x] Directory path: if a directory contains too many files (say > 200),
       warn the user and skip files that don't match a known extension before
 - [x] Directory path: if neither a CUE+BIN pair nor any other recognized
       files are found, surface a clear "no importable files found in selected
       folder" Toast rather than silently doing nothing.
       warning and using only the first CUE that has a matching BIN. Reuse
       the existing warning Toast machinery.
-- [ ] Add a unit test for the directory-scan filter helper, fed with SAF tree
+- [x] Add a unit test for the directory-scan filter helper, fed with SAF tree
       rows, verifying that CUE+BIN, ISO, GOG installer, SOW, and audio-only
       directories each produce the expected filtered URI list (and that
       unknown extensions are dropped).
+      Implemented as `ImportTreeScannerTest`, which covers the row classifier,
+      exact-name fallbacks, and the large-directory warning threshold.
 - [x] Add a unit test for the chooser button-set selector / label helper.
       Implemented as `ImportChooserConfigTest`, which verifies the phone path
       exposes `Pick Multiple Files` and the TV path exposes `Pick Single File`.
@@ -229,7 +229,7 @@ share the state captured by `processPickedUris`.
 - [x] Run `run-windows-build.ps1 -Target d2` to confirm the host build is
       still green (no C-side changes expected, but check anyway).
 - [x] Run a focused Android Gradle validation task:
-      `:app:testDebugUnitTest --tests com.dxxredux.app.ImportChooserConfigTest`.
+      `:app:testDebugUnitTest --tests com.dxxredux.app.ImportChooserConfigTest --tests com.dxxredux.app.ImportTreeScannerTest`.
 
 ## Open questions
 - Resolved for this tranche: phone now exposes the folder path as a secondary

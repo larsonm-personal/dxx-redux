@@ -2675,6 +2675,12 @@ private data class ExtractedFile(
     val sizeBytes: Long,
 )
 
+private data class DirectoryImportScanResult(
+    val uris: List<Uri>,
+    val scannedFileCount: Int,
+    val skippedUnknownFileCount: Int,
+)
+
 /**
  * Recursively walk a SAF document tree and return game files found.
  * Uses DocumentsContract for efficiency (no MediaStore needed).
@@ -2724,27 +2730,13 @@ private fun scanTreeForGameFiles(
     return results
 }
 
-private fun isDirectoryImportCandidateName(name: String): Boolean {
-    val lname = name.lowercase()
-    return lname.endsWith(".zip") ||
-        lname.endsWith(".7z") ||
-        lname.endsWith(".cue") ||
-        lname.endsWith(".iso") ||
-        lname.endsWith(".bin") ||
-        lname.endsWith(".exe") ||
-        lname.endsWith(".pkg") ||
-        lname.endsWith(".sow") ||
-        lname.endsWith(".dxa") ||
-        AndroidGameFileExtensions.hasGameExtension(name) ||
-        lname in ALL_GAME_FILENAMES ||
-        AndroidGameFileExtensions.isGogAudioFile(name)
-}
-
 private fun scanTreeForImportUris(
     context: Context,
     treeUri: Uri,
-): List<Uri> {
+): DirectoryImportScanResult {
     val results = mutableListOf<Uri>()
+    var scannedFileCount = 0
+    var skippedUnknownFileCount = 0
     val docId = DocumentsContract.getTreeDocumentId(treeUri)
     val queue = ArrayDeque<String>()
     queue.add(docId)
@@ -2765,24 +2757,32 @@ private fun scanTreeForImportUris(
                 null,
             ) ?: continue
 
+        val rows = mutableListOf<ImportTreeRow>()
         cursor.use {
             while (it.moveToNext()) {
-                val childId = it.getString(0)
-                val displayName = it.getString(1) ?: continue
-                val mimeType = it.getString(2) ?: ""
-
-                if (mimeType == DocumentsContract.Document.MIME_TYPE_DIR) {
-                    queue.add(childId)
-                    continue
-                }
-                if (!isDirectoryImportCandidateName(displayName)) {
-                    continue
-                }
-                results.add(DocumentsContract.buildDocumentUriUsingTree(treeUri, childId))
+                rows.add(
+                    ImportTreeRow(
+                        documentId = it.getString(0),
+                        displayName = it.getString(1),
+                        mimeType = it.getString(2) ?: "",
+                    ),
+                )
             }
         }
+
+        val classification = classifyImportTreeRows(rows, ALL_GAME_FILENAMES)
+        queue.addAll(classification.childDirectoryIds)
+        scannedFileCount += classification.scannedFileCount
+        skippedUnknownFileCount += classification.skippedUnknownFileCount
+        for (childId in classification.importableDocumentIds) {
+            results.add(DocumentsContract.buildDocumentUriUsingTree(treeUri, childId))
+        }
     }
-    return results
+    return DirectoryImportScanResult(
+        uris = results,
+        scannedFileCount = scannedFileCount,
+        skippedUnknownFileCount = skippedUnknownFileCount,
+    )
 }
 
 /**
@@ -3558,16 +3558,21 @@ private fun SetupScreen(
         importStatus = ""
         scope.launch(Dispatchers.IO) {
             try {
-                try {
-                    context.contentResolver.takePersistableUriPermission(
-                        treeUri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                // Folder import is a one-shot flow inside this activity, so the
+                // temporary grant from the picker is sufficient.
+                val scanResult = scanTreeForImportUris(context, treeUri)
+                val largeDirectoryWarning =
+                    largeDirectoryImportWarning(
+                        scanResult.scannedFileCount,
+                        scanResult.skippedUnknownFileCount,
                     )
-                } catch (e: SecurityException) {
-                    Log.w("DXX-Setup", "Could not persist tree URI permission: $treeUri", e)
+                if (largeDirectoryWarning != null) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, largeDirectoryWarning, Toast.LENGTH_LONG).show()
+                        Log.w("DXX-Setup", "Import warning: $largeDirectoryWarning")
+                    }
                 }
-                val uris = scanTreeForImportUris(context, treeUri)
-                if (uris.isEmpty()) {
+                if (scanResult.uris.isEmpty()) {
                     withContext(Dispatchers.Main) {
                         scanning = false
                         importStatus = "No importable files found in selected folder"
@@ -3575,7 +3580,7 @@ private fun SetupScreen(
                     }
                     return@launch
                 }
-                processPickedUris(uris)
+                processPickedUris(scanResult.uris)
             } catch (e: Exception) {
                 Log.e("DXX-Setup", "Directory picker processing failed", e)
                 withContext(Dispatchers.Main) {
