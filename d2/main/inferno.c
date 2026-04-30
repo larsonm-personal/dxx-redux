@@ -29,6 +29,9 @@ char copyright[] = "DESCENT II  COPYRIGHT (C) 1994-1996 PARALLAX SOFTWARE CORPOR
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#if defined(_WIN32) && defined(_MSC_VER) && defined(_M_IX86)
+#include <float.h>
+#endif
 #include <SDL.h>
 
 #ifdef __unix__
@@ -92,6 +95,22 @@ char copyright[] = "DESCENT II  COPYRIGHT (C) 1994-1996 PARALLAX SOFTWARE CORPOR
 #include "event.h"
 #include "rbaudio.h"
 #include "messagebox.h"
+
+#if defined(_WIN32) && defined(_MSC_VER) && defined(_M_IX86)
+static void input_demo_configure_replay_fp_environment(void)
+{
+	unsigned int control_word = 0;
+
+	if (_controlfp_s(&control_word, _PC_53, _MCW_PC) != 0)
+		return;
+	_controlfp_s(&control_word, _RC_NEAR, _MCW_RC);
+}
+#else
+static void input_demo_configure_replay_fp_environment(void)
+{
+}
+#endif
+
 #ifdef EDITOR
 #include "editor/editor.h"
 #include "editor/kdefs.h"
@@ -318,6 +337,7 @@ static int maybe_start_input_demo_replay(void)
 		printf("Input demo replay load failed: %s\n", replay_error);
 		return 1;
 	}
+	input_demo_configure_replay_fp_environment();
 	if (input_demo_replay_game() != INPUT_DEMO_GAME_D2)
 	{
 		printf("Input demo replay currently supports D2 demos only\n");

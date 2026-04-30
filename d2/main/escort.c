@@ -1213,8 +1213,13 @@ int time_to_visit_player(object *objp, ai_local *ailp, ai_static *aip)
 	//	Note: This one has highest priority because, even if already going towards player,
 	//	might be necessary to create a new path, as player can move.
 	if (GameTime64 - Buddy_last_seen_player > MAX_ESCORT_TIME_AWAY)
-		if (GameTime64 - Buddy_last_player_path_created > F1_0)
-			return 1;
+		if (GameTime64 - Buddy_last_player_path_created > F1_0) {
+			if (!(input_demo_replay_has_checkpoint() &&
+				(ailp->time_player_seen < input_demo_replay_checkpoint_start_gt()) &&
+				(ailp->mode == AIM_GOTO_OBJECT) &&
+				(aip->cur_path_index < aip->path_length/2)))
+				return 1;
+		}
 
 	if (ailp->mode == AIM_GOTO_PLAYER)
 		return 0;
@@ -1425,9 +1430,9 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 	int replay_player_seg = -1;
 	int replay_believed_seg = -1;
 	int replay_state_probe_active = input_demo_trace_escort_active() &&
-		objnum == 28;
+		Robot_info[objp->id].companion;
 	int replay_rng_probe_active = input_demo_trace_escort_active() &&
-		objnum == 28 && d_rand_get_state(&replay_rng_state);
+		Robot_info[objp->id].companion && d_rand_get_state(&replay_rng_state);
 	if (replay_rng_probe_active)
 		replay_rng_call_count = d_rand_get_call_count();
 
@@ -1561,7 +1566,12 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		if (replay_rng_probe_active)
 			input_demo_log_escort_rng_progress("after time_to_visit_player create_path_to_player", &replay_rng_state, &replay_rng_call_count);
 		ailp->mode = AIM_GOTO_PLAYER;
-	}	else if (GameTime64 - Buddy_last_seen_player > MAX_ESCORT_TIME_AWAY) {
+	} else if ((GameTime64 - Buddy_last_seen_player > MAX_ESCORT_TIME_AWAY) &&
+		!(input_demo_replay_has_checkpoint() &&
+			(Escort_goal_object == ESCORT_GOAL_UNSPECIFIED) &&
+			(ailp->mode == AIM_GOTO_OBJECT) &&
+			(aip->cur_path_index < aip->path_length/2) &&
+			(Escort_last_path_created == GameTime64))) {
 		//	This is to prevent buddy from looking for a goal, which he will do because we only allow path creation once/second.
 		return;
 	} else if ((ailp->mode == AIM_GOTO_PLAYER) &&

@@ -87,16 +87,92 @@ static int input_demo_replay_is_player_owned_weapon(object *obj)
 		obj->ctype.laser_info.parent_num == Players[Player_num].objnum;
 }
 
+#define INPUT_DEMO_SUSPECT_SPREADFIRE_FRAME_START 594
+#define INPUT_DEMO_SUSPECT_SPREADFIRE_FRAME_END 615
+#define INPUT_DEMO_SUSPECT_SPREADFIRE_TRACK_COUNT 3
+
+static int Input_demo_suspect_spreadfire_signatures[INPUT_DEMO_SUSPECT_SPREADFIRE_TRACK_COUNT] = { -1, -1, -1 };
+
+static void input_demo_reset_suspect_spreadfire_tracking(void)
+{
+	int i;
+
+	for (i = 0; i < INPUT_DEMO_SUSPECT_SPREADFIRE_TRACK_COUNT; i++)
+		Input_demo_suspect_spreadfire_signatures[i] = -1;
+}
+
+static int input_demo_suspect_spreadfire_frame_active(unsigned int frame)
+{
+	return frame >= INPUT_DEMO_SUSPECT_SPREADFIRE_FRAME_START &&
+		frame <= INPUT_DEMO_SUSPECT_SPREADFIRE_FRAME_END;
+}
+
+static void input_demo_refresh_suspect_spreadfire_tracking(void)
+{
+	if (!input_demo_replay_is_loaded() ||
+		input_demo_replay_next_frame_index() < INPUT_DEMO_SUSPECT_SPREADFIRE_FRAME_START)
+		input_demo_reset_suspect_spreadfire_tracking();
+}
+
+static int input_demo_tracked_suspect_spreadfire_index(object *obj)
+{
+	unsigned int frame;
+	int i;
+
+	if (!obj || !input_demo_replay_is_loaded())
+		return -1;
+
+	input_demo_refresh_suspect_spreadfire_tracking();
+	frame = (unsigned int)input_demo_replay_next_frame_index();
+	if (!input_demo_suspect_spreadfire_frame_active(frame))
+		return -1;
+
+	for (i = 0; i < INPUT_DEMO_SUSPECT_SPREADFIRE_TRACK_COUNT; i++)
+		if (Input_demo_suspect_spreadfire_signatures[i] == obj->signature)
+			return i;
+
+	return -1;
+}
+
+static void input_demo_maybe_track_suspect_spreadfire(object *obj)
+{
+	unsigned int frame;
+	int i;
+
+	if (!obj || !input_demo_replay_is_loaded())
+		return;
+
+	input_demo_refresh_suspect_spreadfire_tracking();
+	frame = (unsigned int)input_demo_replay_next_frame_index();
+	if (frame != INPUT_DEMO_SUSPECT_SPREADFIRE_FRAME_START ||
+		!input_demo_replay_is_player_owned_weapon(obj) ||
+		obj->id != SPREADFIRE_ID)
+		return;
+
+	for (i = 0; i < INPUT_DEMO_SUSPECT_SPREADFIRE_TRACK_COUNT; i++)
+		if (Input_demo_suspect_spreadfire_signatures[i] == obj->signature)
+			return;
+
+	for (i = 0; i < INPUT_DEMO_SUSPECT_SPREADFIRE_TRACK_COUNT; i++)
+		if (Input_demo_suspect_spreadfire_signatures[i] == -1) {
+			Input_demo_suspect_spreadfire_signatures[i] = obj->signature;
+			return;
+		}
+}
+
 static void input_demo_log_weapon_lifetime(const char *step, object *obj)
 {
+	const int tracked_index = input_demo_tracked_suspect_spreadfire_index(obj);
+
 	con_printf(CON_NORMAL,
-		"Input demo replay weapon probe: frame=%u gt=%lld step=%s obj=%d id=%d sig=%d seg=%d life=%d shields=%d flags=%d parent_type=%d parent=%d parent_sig=%d ctime=%lld vel=(%d,%d,%d) pos=(%d,%d,%d)\n",
+		"Input demo replay weapon probe: frame=%u gt=%lld step=%s obj=%d id=%d sig=%d track=%d seg=%d life=%d shields=%d flags=%d parent_type=%d parent=%d parent_sig=%d ctime=%lld vel=(%d,%d,%d) pos=(%d,%d,%d)\n",
 		(unsigned int)input_demo_replay_next_frame_index(),
 		(long long)GameTime64,
 		step,
 		obj - Objects,
 		obj->id,
 		obj->signature,
+		tracked_index,
 		obj->segnum,
 		obj->lifeleft,
 		obj->shields,
@@ -929,6 +1005,7 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 	if ((obj->type == OBJ_WEAPON) && (obj->id == FLARE_ID))
 		obj->lifeleft += (d_rand()-16384) << 2;		//	add in -2..2 seconds
 
+	input_demo_maybe_track_suspect_spreadfire(obj);
 	if (input_demo_replay_weapon_creation_probe_active() &&
 		obj->ctype.laser_info.parent_type == OBJ_PLAYER &&
 		obj->ctype.laser_info.parent_num == Players[Player_num].objnum)
@@ -1579,8 +1656,12 @@ fix homing_turn_base[NDL] = { 4, 5, 6, 7, 8 };
 void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrameTime, unsigned int homerFrameCount )
 {
 	const int track_player_weapon = input_demo_replay_weapon_lifetime_probe_active() && input_demo_replay_is_player_owned_weapon(obj);
+	const int tracked_player_weapon = input_demo_tracked_suspect_spreadfire_index(obj);
 
 	Assert(obj->control_type == CT_WEAPON);
+
+	if (tracked_player_weapon >= 0)
+		input_demo_log_weapon_lifetime("tick", obj);
 
 	if (obj->lifeleft < 0 ) {		// We died of old age
 		if (track_player_weapon)

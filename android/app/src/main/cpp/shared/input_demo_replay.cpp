@@ -300,7 +300,8 @@ uint32_t input_demo_replay_next_frame_index(void)
 
 int64_t input_demo_replay_final_game_time64(void)
 {
-	return g_input_demo_replay_session.final_game_time64;
+	return g_input_demo_replay_session.final_game_time64 +
+	       g_input_demo_replay_session.checkpoint_start_gt;
 }
 
 int input_demo_replay_game(void)
@@ -386,11 +387,6 @@ int input_demo_replay_get_expected_result(input_demo_result *result,
 	if (!result)
 		return copy_error("missing expected result output", error, error_size);
 	*result = g_input_demo_replay_session.expected_result;
-	if (g_input_demo_replay_session.has_checkpoint && result->has_game_time64) {
-		if (result->game_time64 < g_input_demo_replay_session.checkpoint_start_gt)
-			return copy_error("input demo replay checkpoint start_gt exceeds expected gt", error, error_size);
-		result->game_time64 -= g_input_demo_replay_session.checkpoint_start_gt;
-	}
 	return 1;
 }
 

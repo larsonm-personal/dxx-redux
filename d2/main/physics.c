@@ -60,6 +60,31 @@ static int input_demo_replay_motion_probe_active(void)
 	return input_demo_replay_is_loaded();
 }
 
+static int input_demo_replay_spreadfire_physics_probe_active(object *obj)
+{
+	const unsigned int frame = input_demo_replay_next_frame_index();
+
+	return input_demo_replay_is_loaded() &&
+		obj->type == OBJ_WEAPON &&
+		obj->id == SPREADFIRE_ID &&
+		obj->ctype.laser_info.parent_type == OBJ_PLAYER &&
+		obj->ctype.laser_info.parent_num == Players[Player_num].objnum &&
+		frame >= 613 &&
+		frame <= 615;
+}
+
+static int input_demo_replay_robot_physics_probe_active(object *obj)
+{
+	const unsigned int frame = input_demo_replay_next_frame_index();
+	const int objnum = obj - Objects;
+
+	return input_demo_replay_is_loaded() &&
+		obj->type == OBJ_ROBOT &&
+		(objnum == 98 || objnum == 99) &&
+		frame >= 614 &&
+		frame <= 615;
+}
+
 static const char *input_demo_replay_physics_fate_name(int fate)
 {
 	switch (fate) {
@@ -91,15 +116,29 @@ static void input_demo_log_physics_fate(
 	int hit_object,
 	const vms_vector *wall_norm)
 {
+	const int spreadfire_probe = input_demo_replay_spreadfire_physics_probe_active(obj);
+	const int robot_probe = input_demo_replay_robot_physics_probe_active(obj);
 	int wall_num = -1;
 	int wall_type = -1;
 	int wall_state = -1;
 	int wall_flags = 0;
 	int doorway_flags = 0;
 	int child_seg = -3;
+	int hit_object_type = -1;
+	int hit_object_id = -1;
+	int hit_object_size = 0;
+	vms_vector hit_object_pos = ZERO_VECTOR;
 
-	if (!input_demo_replay_motion_probe_active() || obj != ConsoleObject)
+	if (!input_demo_replay_motion_probe_active() ||
+		(obj != ConsoleObject && !spreadfire_probe && !robot_probe))
 		return;
+
+	if (fate == HIT_OBJECT && hit_object >= 0 && hit_object <= Highest_object_index) {
+		hit_object_type = Objects[hit_object].type;
+		hit_object_id = Objects[hit_object].id;
+		hit_object_size = Objects[hit_object].size;
+		hit_object_pos = Objects[hit_object].pos;
+	}
 
 	if (fate == HIT_WALL && hit_seg >= 0 && hit_seg <= Highest_segment_index && hit_side >= 0 && hit_side < 6) {
 		child_seg = Segments[hit_seg].children[hit_side];
@@ -113,16 +152,26 @@ static void input_demo_log_physics_fate(
 	}
 
 	con_printf(CON_NORMAL,
-		"Input demo replay physics probe: frame=%u gt=%lld iter=%d fate=%s seg=%d hit=(seg=%d side=%d child=%d obj=%d) wall=(num=%d type=%d state=%d flags=0x%x doorway=0x%x) norm=(%d,%d,%d) dist=(%d,%d) sim=(%d,%d) start=(%d,%d,%d) target=(%d,%d,%d) pos=(%d,%d,%d) vel=(%d,%d,%d)\n",
+		"Input demo replay physics probe: frame=%u gt=%lld iter=%d obj=%d type=%d id=%d size=%d fate=%s seg=%d hit=(seg=%d side=%d child=%d obj=%d type=%d id=%d size=%d pos=(%d,%d,%d)) wall=(num=%d type=%d state=%d flags=0x%x doorway=0x%x) norm=(%d,%d,%d) dist=(%d,%d) sim=(%d,%d) start=(%d,%d,%d) target=(%d,%d,%d) pos=(%d,%d,%d) vel=(%d,%d,%d)\n",
 		(unsigned int)input_demo_replay_next_frame_index(),
 		(long long)GameTime64,
 		count,
+		obj - Objects,
+		obj->type,
+		obj->id,
+		obj->size,
 		input_demo_replay_physics_fate_name(fate),
 		obj->segnum,
 		hit_seg,
 		hit_side,
 		child_seg,
 		hit_object,
+		hit_object_type,
+		hit_object_id,
+		hit_object_size,
+		hit_object_pos.x,
+		hit_object_pos.y,
+		hit_object_pos.z,
 		wall_num,
 		wall_type,
 		wall_state,
