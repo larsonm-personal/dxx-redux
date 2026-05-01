@@ -10,9 +10,9 @@ Goal: create a true console input-demo regression runner that does not initializ
 |---|---|---|
 | 1 | Inventory current replay, engine startup, build targets, SDL/render dependencies, and existing regression scripts. | completed |
 | 2 | Identify the smallest reusable game-logic entry point needed to load a checkpoint, run input frames, compare final state, and exit. | completed |
-| 3 | Design a separate console target with its own `main.cpp` and minimal platform stubs for video, audio, input polling, and frame presentation. | in_progress |
+| 3 | Design a separate console target with its own `main.cpp` and minimal platform stubs for video, audio, input polling, and frame presentation. | completed |
 | 4 | Add a first compile-only host target that links the replay parser/result code and documents missing engine dependencies. | completed |
-| 5 | Extend the target to execute a single D2 `.dximdemo` without SDL video and print only PASS/FAIL plus result details. | not-started |
+| 5 | Extend the target to execute a single D2 `.dximdemo` without SDL video and print only PASS/FAIL plus result details. | completed |
 | 6 | Update regression scripts to prefer the console runner when available and keep the windowed runner as a fallback. | not-started |
 | 7 | Add timing output and validation so large demo batches can track speed and deterministic final state. | not-started |
 
@@ -39,7 +39,9 @@ Goal: create a true console input-demo regression runner that does not initializ
 - Render traversal side effects are the hard part. `render.c` fills `Window_rendered_data` via `do_render_object()`, and consumers include `laser.c` and `object.c`/`wake_up_rendered_objects()`. The console runner needs a non-visual visibility/update pass or those side effects must be moved out of drawing before `game_render_frame()` is skipped.
 - A first D2 console scaffold now builds in the existing host configure as `buildd2/main/dxx-redux-d2-headless.exe` by reusing the full D2 game source list minus `inferno.c`, then adding a tiny runtime stub for `LeaveEvents`, `Quitting`, `Screen_mode`, and the critical-error globals.
 - The host scaffold still needs `net_udp.c` and `shared/net/net_udp_android.c` on the target when `USE_UDP` is enabled, because menu and multiplayer objects keep those references live even when the console `main.cpp` only parses a demo file.
-- The current scaffold does not run the engine yet. It validates RNG metadata, loads a `.dximdemo`, and prints a single summary line without opening a window. This is enough to keep phase 5 focused on actual replay execution instead of target setup.
+- Replay startup has now been extracted again inside D2 into `input_demo_start.c`/`input_demo_start.h`, with `input_demo_load_replay_from_path()` and `input_demo_start_loaded_replay()`. The normal `inferno.c` command-line replay path now calls the shared helper, and the console target reuses the same load helper.
+- The console target now has a minimal non-window runtime probe in `android/app/src/main/cpp/headless/input_demo_headless_main.cpp`. It initializes memory, PhysFS, config, text, gamedata, piggy, and `init_game()`, disables nice-fps throttling, then attempts to run checkpoint-start demos through `input_demo_start_loaded_replay()` and `input_demo_step_replay_frame()`.
+- In the current workspace, the runtime probe stops before replay start because no full Descent 2 desktop data set is available on the host search path. The validated failure is: `HEADLESS-RUN FAIL init could not find descent2.hog or d2demo.hog; pass -hogdir <dir> with Descent 2 data files`.
 
 ## Candidate first implementation slice
 
@@ -52,5 +54,7 @@ Goal: create a true console input-demo regression runner that does not initializ
 ## Current progress
 
 - Steps 1 and 2 are done in both D2 and D1. Replay startup and replay stepping now have exported helpers that the normal windowed path already uses.
-- Step 3 has started with a D2-only scaffold target in the existing host build. It currently proves the separate-console-target wiring and demo metadata loading path.
-- The next implementation slice is to move from metadata-only loading to checkpoint restore and per-frame replay execution inside the new console target without calling the interactive SDL startup path.
+- Step 3 is now real, not provisional. `buildd2/main/dxx-redux-d2-headless.exe` starts through the shared replay helpers, keeps gameplay and audio logic alive, suppresses window creation and rendering, and uses dummy SDL audio so the logic path stays intact without audible output.
+- Step 5 is also done for the current D2 regression fixture. The headless runner replays `android/regression_demos/d2_descent2_level2_20260430_135527.dximdemo` to completion with real data via `-hogdir`, writes the `.actual.json` result, and prints the final `HEADLESS-RUN OK` summary line.
+- The render-side parity issue that blocked deterministic host replay is resolved for the headless slice. Skipping rendering dropped robot `danger_laser_num` updates that normally come from render traversal, so the headless path now performs the required non-visual viewer-space update when the player fires.
+- The current remaining replay mismatch is not headless-specific. The normal desktop replay and the headless replay now stop on the same final state for the current fixture: `energy=81 shields=154 score=33200 lives=3 seg=79`. The embedded expected trailer still says `shields=158`, so any further investigation belongs to the broader replay determinism track rather than the headless parity track.

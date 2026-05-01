@@ -47,6 +47,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "collide.h"
 #include "effects.h"
 #include "byteswap.h"
+#include "args.h"
+#include "input_demo_replay.h"
 
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -1053,7 +1055,6 @@ int wall_hit_process(segment *seg, int side, fix damage, int playernum, object *
 {
 	wall	*w;
 	fix	show_message;
-
 	Assert (seg-Segments != -1);
 
 	// If it is not a "wall" then just return.

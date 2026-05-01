@@ -13,6 +13,7 @@ set(D2X_MAIN_SOURCES
     digiobj.c
     dumpmine.c
     effects.c
+    input_demo_start.c
     endlevel.c
     escort.c
     fireball.c

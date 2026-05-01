@@ -40,6 +40,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "wall.h"
 #include "laser.h"
 #include "bm.h"
+#include "args.h"
 #include "player.h"
 #include "input_demo_replay.h"
 

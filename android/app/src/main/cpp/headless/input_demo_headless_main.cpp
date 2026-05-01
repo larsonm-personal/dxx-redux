@@ -1,8 +1,53 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <SDL.h>
+
+#include "input_demo_start.h"
 #include "input_demo_replay.h"
-#include "input_demo_rng_mode.h"
+
+extern "C" {
+#include "args.h"
+#include "bm.h"
+#include "config.h"
+#include "console.h"
+#include "digi.h"
+#include "dxxerror.h"
+#include "game.h"
+#include "gr.h"
+#include "inferno.h"
+#include "messagebox.h"
+#include "physfsx.h"
+#include "piggy.h"
+#include "player.h"
+#include "screens.h"
+#include "songs.h"
+#include "texmerge.h"
+#include "text.h"
+#include "u_mem.h"
+}
+
+#ifdef inline
+#undef inline
+#endif
+
+extern "C" void piggy_init_pigfile(char *filename);
+
+static unsigned char *headless_screen_pixels = NULL;
+
+static int init_headless_audio(void)
+{
+	static char sdl_audio_driver[] = "SDL_AUDIODRIVER=dummy";
+
+	GameArg.SndNoMusic = 1;
+	SDL_putenv(sdl_audio_driver);
+	digi_select_system(GameArg.SndDisableSdlMixer ? SDLAUDIO_SYSTEM : SDLMIXER_SYSTEM);
+	if (digi_init())
+		return 0;
+	digi_set_digi_volume(0);
+	songs_set_volume(0);
+	return 1;
+}
 
 static const char *find_arg_value(int argc, char *argv[], const char *name)
 {
@@ -12,41 +57,119 @@ static const char *find_arg_value(int argc, char *argv[], const char *name)
 	return NULL;
 }
 
+static int init_headless_runtime(int argc, char *argv[], char *error, size_t error_size)
+{
+	int screen_w;
+	int screen_h;
+
+	mem_init();
+	error_init(msgbox_error);
+	set_warn_func(msgbox_warning);
+	PHYSFSX_init(argc, argv);
+	con_init();
+	if (GameArg.SysShowCmdHelp) {
+		snprintf(error, error_size, "%s", "help requested");
+		return 0;
+	}
+	if (!PHYSFSX_checkSupportedArchiveTypes()) {
+		snprintf(error, error_size, "%s", "archive type check failed");
+		return 0;
+	}
+	if (!PHYSFSX_contfile_init("descent2.hog", 1) &&
+	    !PHYSFSX_contfile_init("d2demo.hog", 1)) {
+		snprintf(error, error_size, "%s",
+		         "could not find descent2.hog or d2demo.hog; pass -hogdir <dir> with Descent 2 data files");
+		return 0;
+	}
+	load_text();
+	ReadConfigFile();
+	if (!init_headless_audio()) {
+		snprintf(error, error_size, "%s", "audio init failed");
+		return 0;
+	}
+	PHYSFSX_addArchiveContent();
+	gamedata_init();
+	texmerge_init(10);
+	piggy_init_pigfile("groupa.pig");
+	screen_w = (int)SM_W(Game_screen_mode);
+	screen_h = (int)SM_H(Game_screen_mode);
+	if (!grd_curscreen) {
+		CALLOC(grd_curscreen, grs_screen, 1);
+		MALLOC(headless_screen_pixels, unsigned char, screen_w * screen_h);
+		memset(headless_screen_pixels, 0, (size_t)(screen_w * screen_h));
+		grd_curscreen->sc_mode = Game_screen_mode;
+		grd_curscreen->sc_w = (short)screen_w;
+		grd_curscreen->sc_h = (short)screen_h;
+		grd_curscreen->sc_aspect = fixdiv(grd_curscreen->sc_w * GameCfg.AspectX,
+			grd_curscreen->sc_h * GameCfg.AspectY);
+		gr_init_canvas(&grd_curscreen->sc_canvas, headless_screen_pixels, BM_LINEAR, screen_w, screen_h);
+		gr_set_current_canvas(NULL);
+	}
+	Screen_mode = SCREEN_GAME;
+	init_game();
+	Players[Player_num].callsign[0] = '\0';
+	GameArg.SysUseNiceFPS = 0;
+	GameArg.SysInputDemoNoRender = 1;
+	return 1;
+}
+
 int main(int argc, char *argv[])
 {
 	char error[256] = "";
-	int demo_mode = 0;
-	int engine_mode = d_rand_get_replay_mode();
 	const char *demo_path = find_arg_value(argc, argv, "-inputdemo-replay");
-	const char *validation_error;
+	char mission_name[64] = "";
+	char start_mode[32] = "";
+	char result_path[260] = "";
+	int level_num = 0;
+	int difficulty = 0;
+	unsigned int frame_count = 0;
 
 	if (!demo_path) {
 		fprintf(stderr, "usage: %s -inputdemo-replay <demo.dximdemo>\n", argc > 0 ? argv[0] : "dxx-redux-d2-headless");
 		return 1;
 	}
+	if (!init_headless_runtime(argc, argv, error, sizeof(error))) {
+		fprintf(stderr, "HEADLESS-RUN FAIL init %s\n", error[0] ? error : "runtime init failed");
+		return 1;
+	}
 
-	validation_error = input_demo_rng_mode_validate_metadata_file(demo_path, engine_mode, &demo_mode);
-	if (validation_error) {
-		fprintf(stderr, "HEADLESS-SCAFFOLD FAIL %s\n", validation_error);
+	if (!input_demo_load_replay_from_path(demo_path, error, sizeof(error))) {
+		fprintf(stderr, "HEADLESS-RUN FAIL load %s\n", error[0] ? error : "replay load failed");
 		return 1;
 	}
-	if (!input_demo_replay_load(demo_path, error, sizeof(error))) {
-		fprintf(stderr, "HEADLESS-SCAFFOLD FAIL %s\n", error[0] ? error : "replay load failed");
-		return 1;
-	}
-	if (input_demo_replay_game() != INPUT_DEMO_GAME_D2) {
-		fprintf(stderr, "HEADLESS-SCAFFOLD FAIL expected d2 demo\n");
+	if (strcmp(input_demo_replay_start_mode() ? input_demo_replay_start_mode() : "", "save_checkpoint")) {
+		fprintf(stderr, "HEADLESS-RUN FAIL unsupported start_mode %s\n",
+		        input_demo_replay_start_mode() ? input_demo_replay_start_mode() : "<missing>");
 		input_demo_replay_unload();
 		return 1;
 	}
+	snprintf(mission_name, sizeof(mission_name), "%s",
+	         input_demo_replay_mission() ? input_demo_replay_mission() : "");
+	snprintf(start_mode, sizeof(start_mode), "%s",
+	         input_demo_replay_start_mode() ? input_demo_replay_start_mode() : "");
+	level_num = input_demo_replay_level();
+	difficulty = input_demo_replay_difficulty();
+	frame_count = (unsigned int) input_demo_replay_frame_count();
+	if (input_demo_replay_actual_result_path())
+		snprintf(result_path, sizeof(result_path), "%s", input_demo_replay_actual_result_path());
+	if (input_demo_start_loaded_replay()) {
+		fprintf(stderr, "HEADLESS-RUN FAIL start replay\n");
+		return 1;
+	}
+	while (input_demo_replay_is_loaded()) {
+		if (!input_demo_step_replay_frame())
+			break;
+	}
+	if (input_demo_replay_is_loaded())
+		input_demo_finish_replay_without_close();
 
-	printf("HEADLESS-SCAFFOLD OK game=d2 mission=%s level=%d difficulty=%d start_mode=%s frames=%u rng_mode=%s\n",
-	       input_demo_replay_mission() ? input_demo_replay_mission() : "",
-	       input_demo_replay_level(),
-	       input_demo_replay_difficulty(),
-	       input_demo_replay_start_mode() ? input_demo_replay_start_mode() : "",
-	       (unsigned int) input_demo_replay_frame_count(),
-	       input_demo_rng_mode_name(demo_mode));
-	input_demo_replay_unload();
+	printf("HEADLESS-RUN OK game=d2 mission=%s level=%d difficulty=%d start_mode=%s frames=%u result=%s\n",
+	       mission_name,
+	       level_num,
+	       difficulty,
+	       start_mode,
+	       frame_count,
+	       result_path[0] ? result_path : "<none>");
+	args_exit();
 	return 0;
 }

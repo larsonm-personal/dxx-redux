@@ -105,6 +105,8 @@ enum object_type_t
 #define OF_HARMLESS         32  // this object does no damage.  Added to make quad lasers do 1.5 damage as normal lasers.
 #define OF_PLAYER_DROPPED   64  // this object was dropped by the player...
 
+void update_all_robot_location_info_with_view(const vms_vector *viewer_eye, const vms_matrix *view_orient);
+
 // Different Weapon ID types...
 #define WEAPON_ID_LASER         0
 #define WEAPON_ID_MISSLE        1

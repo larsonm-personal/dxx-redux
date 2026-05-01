@@ -60,6 +60,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #include "net_udp.h"
 #include "scores.h"
+#include "input_demo_replay.h"
 
 //bitmap numbers for gauges
 #define GAUGE_SHIELDS			0		//0..9, in decreasing order (100%,90%...0%)
@@ -1568,6 +1569,13 @@ void add_points_to_score(int points)
 	prev_score=Players[Player_num].score;
 
 	Players[Player_num].score += points;
+	if (input_demo_replay_is_loaded())
+		con_printf(CON_NORMAL,
+			"Input demo replay score probe: frame=%u gt=%lld kind=normal delta=%d score=%d\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			(long long)GameTime64,
+			points,
+			Players[Player_num].score);
 
 	if (Newdemo_state == ND_STATE_RECORDING)
 		newdemo_record_player_score(points);
@@ -1599,6 +1607,13 @@ void add_bonus_points_to_score(int points)
 	prev_score=Players[Player_num].score;
 
 	Players[Player_num].score += points;
+	if (input_demo_replay_is_loaded())
+		con_printf(CON_NORMAL,
+			"Input demo replay score probe: frame=%u gt=%lld kind=bonus delta=%d score=%d\n",
+			(unsigned int)input_demo_replay_next_frame_index(),
+			(long long)GameTime64,
+			points,
+			Players[Player_num].score);
 
 
 	if (Newdemo_state == ND_STATE_RECORDING)

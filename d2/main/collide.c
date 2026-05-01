@@ -57,6 +57,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "scores.h"
 #include "effects.h"
 #include "textures.h"
+#include "args.h"
 #ifdef NETWORK
 #include "multi.h"
 #endif
@@ -859,7 +860,7 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 			//is no wall, and no blowing up monitor, then play sound
 			if ((weapon->ctype.laser_info.parent_type != OBJ_PLAYER) ||	((seg->sides[hitwall].wall_num == -1 || wall_type==WHP_NOT_SPECIAL) && !blew_up))
 				if ((Weapon_info[weapon->id].wall_hit_sound > -1 ) && (!(weapon->flags & OF_SILENT)))
-				digi_link_sound_to_pos( Weapon_info[weapon->id].wall_hit_sound,weapon->segnum, 0, &weapon->pos, 0, volume );
+					digi_link_sound_to_pos( Weapon_info[weapon->id].wall_hit_sound,weapon->segnum, 0, &weapon->pos, 0, volume );
 
 			if ( Weapon_info[weapon->id].wall_hit_vclip > -1 )	{
 				if ( Weapon_info[weapon->id].damage_radius )

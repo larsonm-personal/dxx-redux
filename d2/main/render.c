@@ -1900,6 +1900,29 @@ void render_frame(fix eye_offset, int window_num)
 	// -- Moved from here by MK, 05/17/95, wrong if multiple renders/frame! FrameCount++;		//we have rendered a frame
 }
 
+void render_warn_robots_about_player_fire(void)
+{
+	vms_matrix viewm;
+
+	if (!Viewer || Player_fired_laser_this_frame == -1)
+		return;
+
+	Viewer_eye = Viewer->pos;
+
+	if (Rear_view && (Viewer == get_player_view_object())) {
+		vms_matrix headm;
+
+		Player_head_angles.p = Player_head_angles.b = 0;
+		Player_head_angles.h = 0x7fff;
+		vm_angles_2_matrix(&headm, &Player_head_angles);
+		vm_matrix_x_matrix(&viewm, &Viewer->orient, &headm);
+	} else {
+		viewm = Viewer->orient;
+	}
+
+	update_all_robot_location_info_with_view(&Viewer_eye, &viewm);
+}
+
 int first_terminal_seg;
 
 void update_rendered_data(int window_num, object *viewer, int rear_view_flag, int user)

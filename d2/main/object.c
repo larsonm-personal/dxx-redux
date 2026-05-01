@@ -704,6 +704,36 @@ void set_robot_location_info(object *objp)
 
 }
 
+void update_all_robot_location_info_with_view(const vms_vector *viewer_eye, const vms_matrix *view_orient)
+{
+	int i;
+
+	if (Player_fired_laser_this_frame == -1)
+		return;
+
+	for (i = 0; i <= Highest_object_index; i++) {
+		object *obj = &Objects[i];
+		vms_vector vec_to_obj;
+		fix view_x, view_y, view_z;
+
+		if ((obj->type != OBJ_ROBOT) || (obj->render_type != RT_POLYOBJ))
+			continue;
+
+		vm_vec_sub(&vec_to_obj, &obj->pos, viewer_eye);
+		view_x = vm_vec_dot(&vec_to_obj, &view_orient->rvec);
+		view_y = vm_vec_dot(&vec_to_obj, &view_orient->uvec);
+		view_z = vm_vec_dot(&vec_to_obj, &view_orient->fvec);
+
+		if (view_z <= 0)
+			continue;
+
+		if ((abs(view_x) < F1_0*4) && (abs(view_y) < F1_0*4)) {
+			obj->ctype.ai_info.danger_laser_num = Player_fired_laser_this_frame;
+			obj->ctype.ai_info.danger_laser_signature = Objects[Player_fired_laser_this_frame].signature;
+		}
+	}
+}
+
 //	------------------------------------------------------------------------------------------------------------------
 static void make_random_vector_fx(vms_vector *vec)
 {
@@ -2070,7 +2100,9 @@ void object_move_one( object * obj )
 				do_ai_frame(obj);
 			break;
 
-		case CT_WEAPON:		Laser_do_weapon_sequence(obj, doHomerFrame, idealHomerFrameTime, homerFrameCount); break; // CED
+		case CT_WEAPON:
+			Laser_do_weapon_sequence(obj, doHomerFrame, idealHomerFrameTime, homerFrameCount);
+			break; // CED
 		case CT_EXPLOSION:	do_explosion_sequence(obj); break;
 
 		#ifndef RELEASE

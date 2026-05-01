@@ -1641,15 +1641,17 @@ int game_handler(window *wind, d_event *event, void *data);
 
 window *game_setup(void)
 {
-	window *game_wind;
+	window *game_wind = NULL;
 
 	PlayerCfg.CurrentCockpitMode = PlayerCfg.PreferredCockpitMode;
 	last_drawn_cockpit = -1;	// Force cockpit to redraw next time a frame renders.
 	Endlevel_sequence = 0;
 
-	game_wind = window_create(&grd_curscreen->sc_canvas, 0, 0, SWIDTH, SHEIGHT, game_handler, NULL);
-	if (!game_wind)
-		return NULL;
+	if (!GameArg.SysInputDemoNoRender) {
+		game_wind = window_create(&grd_curscreen->sc_canvas, 0, 0, SWIDTH, SHEIGHT, game_handler, NULL);
+		if (!game_wind)
+			return NULL;
+	}
 
 	reset_palette_add();
 	init_cockpit();
@@ -2094,6 +2096,9 @@ void GameProcessFrame(void)
 			(Automap_active && ((Player_is_dead != player_was_dead) || (Players[Player_num].shields<=0 && player_shields>0))) ) // close autmap when dying ...
 			game_leave_menus();
 	}
+
+	if (GameArg.SysInputDemoNoRender)
+		render_warn_robots_about_player_fire();
 
 	input_demo_log_player_motion_state("exit");
 
