@@ -18,7 +18,8 @@ Goal: analyze the fresh non-`old/` demo artifacts in `android/temp_game_logs`, u
 | 8 | Trace the fresh April 30 L2 replay-only frame-302 awareness event and verify checkpoint/runtime restore boundaries. | completed |
 | 9 | Repair any remaining checkpoint save/load timestamp rebasing bug in the object restore path and rerun L2. | completed |
 | 10 | Trace the earlier side spreadfire pellet that hits robot 100 before frame 302 and compare its replay lifetime against the classic dump. | completed |
-| 11 | Instrument robot 100 health/state in the replay probes and classic dump, then compare the replay frame-302 kill against the classic run. | in_progress |
+| 11 | Instrument robot 100 health/state in the replay probes and classic dump, then compare the replay frame-302 kill against the classic run. | completed |
+| 12 | Compare record-side versus replay robot 100 motion at the first drift frame, extend hidden-state probes, and decide whether the next step needs a fresh Android recording. | in_progress |
 
 ## Notes
 
@@ -44,6 +45,12 @@ Goal: analyze the fresh non-`old/` demo artifacts in `android/temp_game_logs`, u
 - Robot 100 lines up better at `replay_frame - 54` than `replay_frame - 53`, which is good enough to compare motion drift even though the projectile anchor used a different equivalent-frame join.
 - Replay `obj=167` matches classic `sig=4114`, not classic `sig=4113`. The replay/classic center-pellet path stays aligned through replay frame 301 vs classic frame 242, then separates only at replay frame 302 when the replay pellet collides with robot 100.
 - Replay robot 100 is already slightly displaced relative to the classic run before frame 302, and the replay AI trace drops robot 100 entirely at frame 302 while the classic dump still shows robot 100 alive through at least frame 244. The next check is whether the replay robot's shields or related state already differ before the center-pellet hit.
+- The Android record-side debug log is authoritative for robot 100 motion and visible AI scalars in the fresh April 30 run even though the line label says `Input demo replay AI robot`, because the same trace is active while recording.
+- Record-side versus host replay robot 100 first diverges at frame 276. Frames 268 through 275 still match in position, then frame 276 starts a steadily growing drift: `dpos=(2638,-513,919)` at frame 276, reaching roughly `(14607,-36365,75406)` by frame 301.
+- Visible AI fields are not the source of that drift. Across frames 268 through 302, record-side and replay robot 100 match on `mode`, `seg`, `goal_seg`, `prev_vis`, `aware`, `aware_time`, `seen`, `next_action`, `next_fire`, `path_index`, `path_length`, `hide`, and `skip`.
+- Host replay hidden-state logging now shows that frame 276 is also a hidden AI-state transition point for robot 100: frame 275 has `cur_state=6 goal_state=5 gun=1 danger_obj=167 danger_sig=4113`, while frame 276 has `cur_state=5 goal_state=4 gun=1 danger_obj=167 danger_sig=4113`.
+- The classic `.dem` playback path is not authoritative for hidden AI state. Dumping `Ai_local_info` fields yielded zeros, and extending the classic dump to include `obj->ctype.ai_info` also still yielded zeros for robot 100 around classic frames 220 through 225 even though the object positions remained useful.
+- The fresh `.dximdemo` header metadata issue does not currently reproduce in the checked-in Android build configuration. The Android `compile_commands.json` and `build.ninja` already compile `input_demo_recorder.cpp` with `DXX_INPUT_DEMO_BUILD_NUMBERi=12640` and `DXX_INPUT_DEMO_GIT_VERSION="e8f330a"`, so the observed `build_number: 0` and `git_version: "unknown"` headers most likely came from a stale or older installed APK rather than the current source tree.
 
 ## Fresh artifacts
 

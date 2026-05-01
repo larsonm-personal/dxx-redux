@@ -4557,6 +4557,17 @@ void newdemo_dump_note_robot_damage(object *robot, fix old_shields, fix damage)
 
 static void newdemo_dump_write_object(FILE *fp, int objnum, object *obj)
 {
+	ai_local *ailp = NULL;
+	ai_static *aip = NULL;
+	int player_seg = -1;
+
+	if (obj->type == OBJ_ROBOT) {
+		aip = &obj->ctype.ai_info;
+		ailp = &Ai_local_info[objnum];
+		if (ConsoleObject)
+			player_seg = ConsoleObject->segnum;
+	}
+
 	fprintf(fp,
 		"{\"objnum\":%d,\"sig\":%d,\"obj_type\":%d,\"id\":%d,\"seg\":%d,\"flags\":%d,\"size\":%d,\"shields\":%d,\"lifeleft\":%d,\"control_type\":%d,\"movement_type\":%d,\"render_type\":%d,\"viewer\":%s,\"pos\":",
 		objnum,
@@ -4578,6 +4589,35 @@ static void newdemo_dump_write_object(FILE *fp, int objnum, object *obj)
 	if (obj->movement_type == MT_PHYSICS) {
 		fprintf(fp, ",\"phys_flags\":%d,\"vel\":", obj->mtype.phys_info.flags);
 		newdemo_dump_write_vector(fp, &obj->mtype.phys_info.velocity);
+	}
+	if (obj->type == OBJ_ROBOT) {
+		fprintf(fp,
+			",\"robot_ai\":{\"companion\":%d,\"behavior\":%d,\"mode\":%d,\"cur_state\":%d,\"goal_state\":%d,\"gun\":%d,\"path_dir\":%d,\"goal_side\":%d,\"danger_obj\":%d,\"danger_sig\":%d,\"player_seg\":%d,\"believed_seg\":%d,\"goal_seg\":%d,\"prev_vis\":%d,\"aware\":%d,\"aware_time\":%d,\"seen\":%lld,\"since\":%d,\"next_action\":%d,\"next_fire\":%d,\"next_fire2\":%d,\"path_index\":%d,\"path_length\":%d,\"hide\":%d,\"skip\":%d}",
+			Robot_info[obj->id].companion,
+			aip->behavior,
+			ailp->mode,
+			aip->CURRENT_STATE,
+			aip->GOAL_STATE,
+			aip->CURRENT_GUN,
+			aip->PATH_DIR,
+			aip->GOALSIDE,
+			aip->danger_laser_num,
+			aip->danger_laser_signature,
+			player_seg,
+			Believed_player_seg,
+			ailp->goal_segment,
+			ailp->previous_visibility,
+			ailp->player_awareness_type,
+			ailp->player_awareness_time,
+			(long long)ailp->time_player_seen,
+			ailp->time_since_processed,
+			ailp->next_action_time,
+			ailp->next_fire,
+			ailp->next_fire2,
+			aip->cur_path_index,
+			aip->path_length,
+			aip->hide_index,
+			aip->SKIP_AI_COUNT);
 	}
 	fputs(",\"orient\":", fp);
 	newdemo_dump_write_matrix(fp, &obj->orient);
