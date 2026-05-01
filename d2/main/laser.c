@@ -44,6 +44,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "timer.h"
 #include "player.h"
 #include "input_demo_replay.h"
+#include "input_demo_recorder.h"
+#include "input_demo_energy_trace.h"
 #include "sounds.h"
 #include "ai.h"
 #include "powerup.h"
@@ -61,6 +63,7 @@ int Guided_missile_sig[MAX_PLAYERS]={-1,-1,-1,-1,-1,-1,-1,-1};
 int Network_laser_track = -1;
 static int Spreadfire_toggle = 0;
 static int Helix_orientation = 0;
+static int Input_demo_record_laser_event_logged_error = 0;
 
 static int input_demo_replay_spreadfire_probe_active(void)
 {
@@ -187,6 +190,85 @@ static void input_demo_log_weapon_lifetime(const char *step, object *obj)
 		obj->pos.x,
 		obj->pos.y,
 		obj->pos.z);
+}
+
+static void input_demo_record_frame_event_json(const char *json_text)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_append_frame_event_json(json_text, error, sizeof(error)) &&
+		!Input_demo_record_laser_event_logged_error) {
+		Input_demo_record_laser_event_logged_error = 1;
+		con_printf(CON_NORMAL, "Input demo recorder event append failed: %s\n", error);
+	}
+}
+
+static void input_demo_record_weapon_create_event(object *obj)
+{
+	char json[512];
+	const int tracked_index = input_demo_tracked_suspect_spreadfire_index(obj);
+
+	if (!obj)
+		return;
+	snprintf(json, sizeof(json),
+		"{\"kind\":\"weapon_create\",\"gt\":%lld,\"obj\":%d,\"id\":%d,\"sig\":%d,\"track\":%d,\"seg\":%d,\"life\":%d,\"shields\":%d,\"flags\":%d,\"parent_type\":%d,\"parent\":%d,\"parent_sig\":%d,\"ctime\":%lld,\"vx\":%d,\"vy\":%d,\"vz\":%d,\"x\":%d,\"y\":%d,\"z\":%d}",
+		(long long)GameTime64,
+		obj - Objects,
+		obj->id,
+		obj->signature,
+		tracked_index,
+		obj->segnum,
+		obj->lifeleft,
+		obj->shields,
+		obj->flags,
+		obj->ctype.laser_info.parent_type,
+		obj->ctype.laser_info.parent_num,
+		obj->ctype.laser_info.parent_signature,
+		(long long)obj->ctype.laser_info.creation_time,
+		obj->mtype.phys_info.velocity.x,
+		obj->mtype.phys_info.velocity.y,
+		obj->mtype.phys_info.velocity.z,
+		obj->pos.x,
+		obj->pos.y,
+		obj->pos.z);
+	input_demo_record_frame_event_json(json);
+}
+
+static void input_demo_record_player_shot_event(object *obj, int laser_type, int gun_num, fix spreadr, fix spreadu, fix delay_time, int make_sound, int harmless)
+{
+	char json[256];
+
+	if (!obj)
+		return;
+	snprintf(json, sizeof(json),
+		"{\"kind\":\"player_shot\",\"gt\":%lld,\"shooter_obj\":%d,\"laser_type\":%d,\"gun\":%d,\"spreadr\":%d,\"spreadu\":%d,\"delay\":%d,\"harmless\":%s,\"sound\":%s}",
+		(long long)GameTime64,
+		obj - Objects,
+		laser_type,
+		gun_num,
+		spreadr,
+		spreadu,
+		delay_time,
+		harmless ? "true" : "false",
+		make_sound ? "true" : "false");
+	input_demo_record_frame_event_json(json);
+}
+
+static void input_demo_record_spreadfire_emit_event(int nfires, int flags)
+{
+	char json[256];
+
+	snprintf(json, sizeof(json),
+		"{\"kind\":\"spreadfire_emit\",\"gt\":%lld,\"nfires\":%d,\"toggle_before\":%d,\"flags\":%d,\"next_laser_delta\":%lld,\"last_laser_delta\":%lld}",
+		(long long)GameTime64,
+		nfires,
+		Spreadfire_toggle,
+		flags,
+		(long long)(Next_laser_fire_time - GameTime64),
+		(long long)(Last_laser_fired_time - GameTime64));
+	input_demo_record_frame_event_json(json);
 }
 
 extern int Proximity_dropped, Smartmines_dropped;
@@ -651,6 +733,7 @@ void omega_charge_frame(void)
 		return;
 
 	if (Players[Player_num].energy) {
+		const fix energy_before = Players[Player_num].energy;
 		fix	energy_used;
 
 		old_omega_charge = Omega_charge;
@@ -667,6 +750,14 @@ void omega_charge_frame(void)
 		Players[Player_num].energy -= energy_used;
 		if (Players[Player_num].energy < 0)
 			Players[Player_num].energy = 0;
+		{
+			char extra_json[160];
+			char extra_log[160];
+
+			snprintf(extra_json, sizeof(extra_json), ",\"delta_charge\":%d,\"omega_before\":%d,\"omega_after\":%d", delta_charge, old_omega_charge, Omega_charge);
+			snprintf(extra_log, sizeof(extra_log), " delta_charge=%d omega_before=%d omega_after=%d", delta_charge, old_omega_charge, Omega_charge);
+			input_demo_trace_energy_change("omega_charge", energy_before, Players[Player_num].energy, extra_json, extra_log);
+		}
 	}
 
 
@@ -1015,6 +1106,9 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 		 input_demo_replay_next_frame_index() <= 585 &&
 		 (obj->ctype.laser_info.parent_num == 99 || obj->ctype.laser_info.parent_num == 109)))
 		input_demo_log_weapon_lifetime("create", obj);
+	if (obj->ctype.laser_info.parent_type == OBJ_PLAYER &&
+		obj->ctype.laser_info.parent_num == Players[Player_num].objnum)
+		input_demo_record_weapon_create_event(obj);
 
 	return objnum;
 }
@@ -1456,6 +1550,7 @@ void Laser_player_fire_spread_delay(object *obj, int laser_type, int gun_num, fi
 			delay_time,
 			harmless,
 			make_sound);
+	input_demo_record_player_shot_event(obj, laser_type, gun_num, spreadr, spreadu, delay_time, make_sound, harmless);
 
 	create_awareness_event(obj, PA_WEAPON_WALL_COLLISION);
 
@@ -1607,11 +1702,20 @@ void Flare_create(object *obj)
 
 //	MK, 11/04/95: Allowed to fire flare even if no energy.
 // -- 	if (Players[Player_num].energy >= energy_usage) {
+		const fix energy_before = Players[Player_num].energy;
 		Players[Player_num].energy -= energy_usage;
 
 		if (Players[Player_num].energy <= 0) {
 			Players[Player_num].energy = 0;
 			// -- auto_select_weapon(0);
+		}
+		{
+			char extra_json[128];
+			char extra_log[128];
+
+			snprintf(extra_json, sizeof(extra_json), ",\"weapon_id\":%d,\"energy_usage\":%d", FLARE_ID, energy_usage);
+			snprintf(extra_log, sizeof(extra_log), " weapon_id=%d energy_usage=%d", FLARE_ID, energy_usage);
+			input_demo_trace_energy_change("flare", energy_before, Players[Player_num].energy, extra_json, extra_log);
 		}
 
 		Laser_player_fire( obj, FLARE_ID, 6, 1, 0, Objects[Players[Player_num].objnum].orient.fvec); /* CED sniperpackets */
@@ -1922,6 +2026,7 @@ void do_laser_firing_player(void)
 			flags = 0;
 
 			if (Players[Player_num].primary_weapon == SPREADFIRE_INDEX) {
+				input_demo_record_spreadfire_emit_event(nfires, flags);
 				if (input_demo_replay_spreadfire_probe_active())
 					con_printf(CON_NORMAL,
 						"Input demo replay fire probe: frame=%u kind=spreadfire_emit nfires=%d toggle_before=%d flags=%d next_laser_delta=%lld last_laser_delta=%lld\n",
@@ -1990,9 +2095,23 @@ void do_laser_firing_player(void)
 				}					
 			}
 
-			plp->energy -= (energy_used * rval) / Weapon_info[weapon_id].fire_count;
-			if (plp->energy < 0)
-				plp->energy = 0;
+			{
+				const fix energy_before = plp->energy;
+				const fix energy_cost = (energy_used * rval) / Weapon_info[weapon_id].fire_count;
+
+				plp->energy -= energy_cost;
+				if (plp->energy < 0)
+					plp->energy = 0;
+
+				if (plp == &Players[Player_num]) {
+					char extra_json[160];
+					char extra_log[160];
+
+					snprintf(extra_json, sizeof(extra_json), ",\"weapon_id\":%d,\"weapon_index\":%d,\"energy_cost\":%d,\"rval\":%d,\"fire_count\":%d", weapon_id, Players[Player_num].primary_weapon, energy_cost, rval, Weapon_info[weapon_id].fire_count);
+					snprintf(extra_log, sizeof(extra_log), " weapon_id=%d weapon_index=%d energy_cost=%d rval=%d fire_count=%d", weapon_id, Players[Player_num].primary_weapon, energy_cost, rval, Weapon_info[weapon_id].fire_count);
+					input_demo_trace_energy_change("weapon_fire", energy_before, plp->energy, extra_json, extra_log);
+				}
+			}
 
 			if ((Players[Player_num].primary_weapon == VULCAN_INDEX) || (Players[Player_num].primary_weapon == GAUSS_INDEX)) {
 				if (ammo_used > plp->primary_ammo[VULCAN_INDEX])

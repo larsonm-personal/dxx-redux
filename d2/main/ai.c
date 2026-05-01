@@ -241,7 +241,7 @@ fix Dist_to_last_fired_upon_player_pos = 0;
 
 static int input_demo_trace_ai_active(void)
 {
-	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+	return input_demo_recorder_is_active();
 }
 
 static unsigned int input_demo_trace_frame_index(void)

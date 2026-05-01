@@ -67,6 +67,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gameseq.h"
 #include "playsave.h"
 #include "timer.h"
+#include "input_demo_energy_trace.h"
 #include "input_demo_replay.h"
 #ifdef EDITOR
 #include "editor/editor.h"
@@ -2095,7 +2096,11 @@ void object_move_one( object * obj )
 
 		fix fuel=fuelcen_give_fuel( &Segments[obj->segnum], INITIAL_ENERGY-Players[Player_num].energy );
 		if (fuel > 0 )	{
+			fix energy_before = Players[Player_num].energy;
 			Players[Player_num].energy += fuel;
+			if (!input_demo_replay_is_loaded() ||
+				(input_demo_replay_next_frame_index() >= 817 && input_demo_replay_next_frame_index() <= 818))
+				input_demo_trace_energy_change("fuelcen_refuel", energy_before, Players[Player_num].energy, "", "");
 
 			if (Game_mode & GM_MULTI)
 				multi_send_ship_status();

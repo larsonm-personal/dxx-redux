@@ -62,6 +62,8 @@ if(NOT ANDROID)
         ../../android/app/src/main/cpp/shared/input_demo_fixture.cpp
         ../../android/app/src/main/cpp/shared/input_demo_codec.cpp
         ../../android/app/src/main/cpp/shared/input_demo_result.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_state_trace.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_replay.cpp
         ../../android/app/src/main/cpp/shared/input_demo_recorder.cpp)
     target_compile_features(test_input_demo_recorder PRIVATE cxx_std_11)
     target_compile_definitions(test_input_demo_recorder PRIVATE INPUT_DEMO_TEST_D2=1)
@@ -83,6 +85,7 @@ if(NOT ANDROID)
         ../../android/app/src/main/cpp/shared/input_demo_fixture.cpp
         ../../android/app/src/main/cpp/shared/input_demo_codec.cpp
         ../../android/app/src/main/cpp/shared/input_demo_result.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_state_trace.cpp
         ../../android/app/src/main/cpp/shared/input_demo_recorder.cpp
         ../../android/app/src/main/cpp/shared/input_demo_replay.cpp)
     target_compile_features(test_input_demo_replay PRIVATE cxx_std_11)

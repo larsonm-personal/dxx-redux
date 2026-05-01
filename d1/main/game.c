@@ -100,6 +100,7 @@ COPYRIGHT 1993-1998 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_result.h"
 #include "input_demo_recorder.h"
 #include "input_demo_replay.h"
+#include "input_demo_state_trace.h"
 #include "input_demo_rng_trace.h"
 
 #ifdef OGL
@@ -360,6 +361,30 @@ void input_demo_capture_current_result(input_demo_result *result)
 }
 
 static int input_demo_replay_logged_state_mismatch = 0;
+static int input_demo_replay_logged_state_trace_error = 0;
+
+static void input_demo_write_replay_frame_state_trace(const input_demo_replay_frame *replay_frame)
+{
+	input_demo_result actual_state;
+	char error[256] = "";
+
+	if (!replay_frame || !input_demo_state_trace_is_active())
+		return;
+	input_demo_capture_current_result(&actual_state);
+	if (input_demo_state_trace_write_frame(replay_frame->frame,
+						  replay_frame->frame_time,
+						  replay_frame->rng_state,
+						  replay_frame->has_rng_call_count,
+						  replay_frame->rng_call_count,
+						  &actual_state,
+						  error,
+						  sizeof(error)))
+		return;
+	if (!input_demo_replay_logged_state_trace_error)
+		con_printf(CON_NORMAL, "Input demo replay state trace write failed: %s\n", error);
+	input_demo_replay_logged_state_trace_error = 1;
+	input_demo_state_trace_stop();
+}
 
 static void input_demo_log_replay_frame_state_mismatch(const input_demo_replay_frame *replay_frame)
 {
@@ -385,6 +410,19 @@ static void input_demo_log_replay_frame_state_mismatch(const input_demo_replay_f
 		error);
 	con_printf(CON_NORMAL, "Input demo replay expected state: %s\n", expected_json);
 	con_printf(CON_NORMAL, "Input demo replay actual state: %s\n", actual_json);
+}
+
+static void input_demo_log_current_replay_frame_state_mismatch(void)
+{
+	input_demo_replay_frame replay_frame;
+	char error[256] = "";
+
+	if (!input_demo_replay_is_loaded())
+		return;
+	if (!input_demo_replay_get_current_frame(&replay_frame, error, sizeof(error)))
+		return;
+	input_demo_write_replay_frame_state_trace(&replay_frame);
+	input_demo_log_replay_frame_state_mismatch(&replay_frame);
 }
 
 static fix64 input_demo_replay_last_timer_value = 0;
@@ -473,9 +511,10 @@ int input_demo_prepare_replay_frame(void)
 		input_demo_stop_replay(0);
 		return 0;
 	}
-	if (!input_demo_replay_next_frame_index())
+	if (!input_demo_replay_next_frame_index()) {
 		input_demo_replay_logged_state_mismatch = 0;
-	input_demo_log_replay_frame_state_mismatch(&replay_frame);
+		input_demo_replay_logged_state_trace_error = 0;
+	}
 	input_demo_delay_replay_frame((fix)replay_frame.frame_time);
 	input_demo_control_info_from_state(&Controls, &replay_frame.state, &replay_frame.pulse);
 	if (!d_rand_set_state(replay_frame.rng_state)) {
@@ -1571,6 +1610,7 @@ void GameProcessFrame(void)
 
 	input_demo_update_rng_trace_context();
 	input_demo_log_player_motion_state("entry");
+	input_demo_log_current_replay_frame_state_mismatch();
 	input_demo_record_game_frame();
 	update_player_stats();
 	diminish_palette_towards_normal();		//	Should leave palette effect up for as long as possible by putting right before render.

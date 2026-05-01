@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include <nlohmann/json.hpp>
+
 #include "input_demo_codec.h"
 #include "input_demo_fixture.h"
 #include "input_demo_rng_trace.h"
@@ -14,6 +16,8 @@
 
 namespace
 {
+
+using ordered_json = nlohmann::ordered_json;
 
 #ifndef DXX_INPUT_DEMO_BUILD_NUMBERi
 #define DXX_INPUT_DEMO_BUILD_NUMBERi 0
@@ -55,6 +59,7 @@ struct input_demo_recorder_session {
 	std::vector<input_demo_rng_frame> rng_frames;
 	std::vector<uint8_t> has_state_frames;
 	std::vector<input_demo_result> state_frames;
+	std::vector<std::vector<std::string> > frame_events;
 
 	input_demo_recorder_session()
 	    : active(false), game(0), level(0), difficulty(0), has_player_cfg(false), has_checkpoint(false), checkpoint_start_gt(0)
@@ -78,6 +83,37 @@ static bool input_demo_recorder_fail(std::string *error, const std::string &mess
 {
 	if (error)
 		*error = message;
+	return false;
+}
+
+static bool input_demo_recorder_canonicalize_event_json(const char *json_text,
+	                                                    std::string *canonical_json,
+	                                                    std::string *error)
+{
+	ordered_json parsed;
+
+	if (!json_text || !json_text[0])
+		return input_demo_recorder_fail(error, "missing frame event json");
+	if (!canonical_json)
+		return input_demo_recorder_fail(error, "missing frame event output");
+	try {
+		parsed = ordered_json::parse(json_text);
+	} catch (const std::exception &e) {
+		return input_demo_recorder_fail(error, std::string("invalid frame event json: ") + e.what());
+	}
+	if (!parsed.is_object())
+		return input_demo_recorder_fail(error, "frame event json must be an object");
+	*canonical_json = parsed.dump();
+	return true;
+}
+
+static bool input_demo_recorder_session_has_events(const input_demo_recorder_session &session)
+{
+	size_t i;
+
+	for (i = 0; i != session.frame_events.size(); ++i)
+		if (!session.frame_events[i].empty())
+			return true;
 	return false;
 }
 
@@ -200,7 +236,7 @@ static bool input_demo_recorder_build_demo(input_demo_file *demo,
 
 	if (!demo)
 		return false;
-	demo->metadata.version = 3;
+	demo->metadata.version = input_demo_recorder_session_has_events(session) ? 4 : 3;
 	demo->metadata.game = input_demo_recorder_game_name(session.game);
 	demo->metadata.mission = session.mission;
 	demo->metadata.build_number = input_demo_recorder_build_number();
@@ -249,6 +285,7 @@ static bool input_demo_recorder_build_demo(input_demo_file *demo,
 			frame.has_state = true;
 			frame.state = session.state_frames[i];
 		}
+		frame.events = session.frame_events[i];
 		demo->frames.push_back(frame);
 		previous_state = session.control_frames[i].state;
 		previous_frame_time = session.control_frames[i].frame_time;
@@ -390,6 +427,23 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
 	g_input_demo_recorder_session.rng_frames.push_back(rng_frame);
 	g_input_demo_recorder_session.has_state_frames.push_back(frame_state ? 1 : 0);
 	g_input_demo_recorder_session.state_frames.push_back(snapshot);
+	g_input_demo_recorder_session.frame_events.push_back(std::vector<std::string>());
+	return 1;
+}
+
+int input_demo_recorder_append_frame_event_json(const char *json_text,
+	                                            char *error, size_t error_size)
+{
+	std::string canonical_json;
+	std::string shared_error;
+
+	if (!g_input_demo_recorder_session.active)
+		return input_demo_recorder_copy_error("input demo recorder is not active", error, error_size);
+	if (g_input_demo_recorder_session.frame_events.empty())
+		return input_demo_recorder_copy_error("input demo recorder has no current frame", error, error_size);
+	if (!input_demo_recorder_canonicalize_event_json(json_text, &canonical_json, &shared_error))
+		return input_demo_recorder_copy_error(shared_error, error, error_size);
+	g_input_demo_recorder_session.frame_events.back().push_back(canonical_json);
 	return 1;
 }
 
@@ -411,6 +465,8 @@ int input_demo_recorder_flush_with_result(const char *demo_path,
 	if (g_input_demo_recorder_session.control_frames.size() != g_input_demo_recorder_session.has_state_frames.size() ||
 	    g_input_demo_recorder_session.control_frames.size() != g_input_demo_recorder_session.state_frames.size())
 		return input_demo_recorder_copy_error("input demo recorder state frames are out of sync", error, error_size);
+	if (g_input_demo_recorder_session.control_frames.size() != g_input_demo_recorder_session.frame_events.size())
+		return input_demo_recorder_copy_error("input demo recorder frame events are out of sync", error, error_size);
 	if (!input_demo_recorder_build_demo(&demo, g_input_demo_recorder_session, result, &shared_error))
 		return input_demo_recorder_copy_error(shared_error, error, error_size);
 	if (!input_demo_file_write(demo_path, demo, &shared_error))

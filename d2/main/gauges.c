@@ -61,6 +61,35 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "net_udp.h"
 #include "scores.h"
 #include "input_demo_replay.h"
+#include "input_demo_recorder.h"
+
+static int Input_demo_record_score_event_logged_error = 0;
+
+static void input_demo_record_frame_event_json(const char *json_text)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_append_frame_event_json(json_text, error, sizeof(error)) &&
+		!Input_demo_record_score_event_logged_error) {
+		Input_demo_record_score_event_logged_error = 1;
+		con_printf(CON_NORMAL, "Input demo recorder event append failed: %s\n", error);
+	}
+}
+
+static void input_demo_record_score_event(const char *score_kind, int points)
+{
+	char json[192];
+
+	snprintf(json, sizeof(json),
+		"{\"kind\":\"score\",\"gt\":%lld,\"score_kind\":\"%s\",\"delta\":%d,\"score\":%d}",
+		(long long)GameTime64,
+		score_kind,
+		points,
+		Players[Player_num].score);
+	input_demo_record_frame_event_json(json);
+}
 
 //bitmap numbers for gauges
 #define GAUGE_SHIELDS			0		//0..9, in decreasing order (100%,90%...0%)
@@ -1569,6 +1598,7 @@ void add_points_to_score(int points)
 	prev_score=Players[Player_num].score;
 
 	Players[Player_num].score += points;
+	input_demo_record_score_event("normal", points);
 	if (input_demo_replay_is_loaded())
 		con_printf(CON_NORMAL,
 			"Input demo replay score probe: frame=%u gt=%lld kind=normal delta=%d score=%d\n",
@@ -1607,6 +1637,7 @@ void add_bonus_points_to_score(int points)
 	prev_score=Players[Player_num].score;
 
 	Players[Player_num].score += points;
+	input_demo_record_score_event("bonus", points);
 	if (input_demo_replay_is_loaded())
 		con_printf(CON_NORMAL,
 			"Input demo replay score probe: frame=%u gt=%lld kind=bonus delta=%d score=%d\n",

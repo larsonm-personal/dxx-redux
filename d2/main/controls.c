@@ -38,6 +38,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "kconfig.h"
 #include "laser.h"
 #include "newdemo.h"
+#include "input_demo_energy_trace.h"
 #include "input_demo_replay.h"
 #ifdef NETWORK
 #include "multi.h"
@@ -260,7 +261,9 @@ void read_flying_controls( object * obj )
 			}
 		}
 		else {
+			fix afterburner_before = Players[Player_num].afterburner_charge;
 			fix cur_energy,charge_up;
+			fix energy_before = Players[Player_num].energy;
 	
 			//charge up to full
 			charge_up = min(FrameTime/8,f1_0 - Players[Player_num].afterburner_charge);	//recharge over 8 seconds
@@ -273,6 +276,15 @@ void read_flying_controls( object * obj )
 			Players[Player_num].afterburner_charge += charge_up;
 	
 			Players[Player_num].energy -= charge_up * 100 / 10;	//full charge uses 10% of energy
+
+			if (charge_up > 0) {
+				char extra_json[160];
+				char extra_log[160];
+
+				snprintf(extra_json, sizeof(extra_json), ",\"charge_up\":%d,\"afterburner_before\":%d,\"afterburner_after\":%d", charge_up, afterburner_before, Players[Player_num].afterburner_charge);
+				snprintf(extra_log, sizeof(extra_log), " charge_up=%d afterburner_before=%d afterburner_after=%d", charge_up, afterburner_before, Players[Player_num].afterburner_charge);
+				input_demo_trace_energy_change("afterburner_recharge", energy_before, Players[Player_num].energy, extra_json, extra_log);
+			}
 
 			if (charge_up > 0 && (Game_mode & GM_MULTI))
 				multi_send_ship_status();

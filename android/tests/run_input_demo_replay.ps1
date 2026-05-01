@@ -14,7 +14,10 @@ param(
     [switch]$PreferHeadlessConsole,
     [switch]$ReuseSandbox,
     [switch]$KeepSandbox,
-    [switch]$ListOnly
+    [switch]$ListOnly,
+    [string]$StateLogPath,
+    [switch]$TraceState,
+    [switch]$CompareStateTrace
 )
 
 $ErrorActionPreference = 'Stop'
@@ -70,6 +73,42 @@ function Get-RelativeRepoPath {
     param([string]$Path)
 
     return [System.IO.Path]::GetRelativePath($repoRoot, $Path)
+}
+
+function Resolve-AbsolutePath {
+    param([string]$Path)
+
+    if (-not $Path) {
+        return $null
+    }
+    if ([System.IO.Path]::IsPathRooted($Path)) {
+        return [System.IO.Path]::GetFullPath($Path)
+    }
+    return [System.IO.Path]::GetFullPath((Join-Path $repoRoot $Path))
+}
+
+function Invoke-StateTraceComparison {
+    param(
+        [string]$DemoPath,
+        [string]$ActualPath
+    )
+
+    $expectedDir = Split-Path -Path $ActualPath -Parent
+    $expectedPath = Join-Path $expectedDir ([System.IO.Path]::GetFileNameWithoutExtension($DemoPath) + '.expected_state.jsonl')
+    $pwsh = (Get-Process -Id $PID).Path
+    $exportScript = Join-Path $PSScriptRoot 'export_input_demo_state_trace.ps1'
+    $compareScript = Join-Path $PSScriptRoot 'compare_input_demo_state_trace.ps1'
+
+    & $pwsh -NoProfile -ExecutionPolicy Bypass -File $exportScript -DemoPath $DemoPath -OutputPath $expectedPath
+    if ($LASTEXITCODE -ne 0) {
+        throw "Expected state trace export failed with exit code $LASTEXITCODE"
+    }
+
+    & $pwsh -NoProfile -ExecutionPolicy Bypass -File $compareScript -ExpectedPath $expectedPath -ActualPath $ActualPath -CompareFrameMetadata
+    return @{
+        ExpectedPath = $expectedPath
+        ExitCode = $LASTEXITCODE
+    }
 }
 
 function Get-SearchRoots {
@@ -371,13 +410,18 @@ function Test-UseHeadlessConsoleRunner {
 function Get-HeadlessConsoleLaunchArguments {
     param(
         [string]$ResolvedDataDir,
-        [string]$ResolvedDemoPath
+        [string]$ResolvedDemoPath,
+        [string]$ResolvedStateLogPath
     )
 
-    return @(
+    $launchParameters = @(
         '-hogdir', $ResolvedDataDir,
         '-inputdemo-replay', $ResolvedDemoPath
     )
+    if ($ResolvedStateLogPath) {
+        $launchParameters += @('-inputdemo-state-log', $ResolvedStateLogPath)
+    }
+    return $launchParameters
 }
 
 function Get-LaunchMode {
@@ -426,7 +470,8 @@ function Get-LaunchArguments {
         [string]$ResolvedDemoPath,
         [hashtable]$LaunchMode,
         [string]$Pilot,
-        [switch]$NoRender
+        [switch]$NoRender,
+        [string]$ResolvedStateLogPath
     )
 
     $launchParameters = @(
@@ -446,6 +491,9 @@ function Get-LaunchArguments {
     }
     if ($Pilot) {
         $launchParameters += @('-pilot', $Pilot)
+    }
+    if ($ResolvedStateLogPath) {
+        $launchParameters += @('-inputdemo-state-log', $ResolvedStateLogPath)
     }
     return $launchParameters
 }
@@ -701,6 +749,20 @@ $resolvedGame = Resolve-DemoGame -Header $header -RequestedGame $Game
 $config = Get-GameConfig -Name $resolvedGame
 $resolvedDataDir = Resolve-DataDir -Config $config -RequestedDataDir $DataDir
 $launchMode = Get-LaunchMode -RequestedMode $Mode -Path $resolvedDemoPath -Config $config
+$shouldCompareStateTrace = $TraceState -or $CompareStateTrace
+$resolvedStateLogPath = $null
+if ($StateLogPath -or $TraceState -or $CompareStateTrace) {
+    if ($StateLogPath) {
+        $resolvedStateLogPath = Resolve-AbsolutePath -Path $StateLogPath
+    } else {
+        $resolvedStateLogPath = Join-Path (Join-Path $repoRoot 'temp\input_demo_state_traces') ([System.IO.Path]::GetFileNameWithoutExtension($resolvedDemoPath) + '.actual_state.jsonl')
+        $resolvedStateLogPath = [System.IO.Path]::GetFullPath($resolvedStateLogPath)
+    }
+    $stateLogDirectory = Split-Path -Path $resolvedStateLogPath -Parent
+    if ($stateLogDirectory -and -not (Test-Path -LiteralPath $stateLogDirectory)) {
+        New-Item -ItemType Directory -Path $stateLogDirectory -Force | Out-Null
+    }
+}
 $useHeadlessConsole = Test-UseHeadlessConsoleRunner -ResolvedGame $resolvedGame -Header $header -LaunchMode $launchMode -Pilot $Pilot -NoRender:$NoRender -PreferHeadlessConsole:$PreferHeadlessConsole
 $headlessConsoleExe = if ($useHeadlessConsole) { Get-HeadlessConsoleExe -GameName $resolvedGame } else { $null }
 $sandbox = New-LaunchSandbox -Config $config -SandboxName ([System.IO.Path]::GetFileNameWithoutExtension($resolvedDemoPath)) -ReuseSandbox:$ReuseSandbox -SkipExecutableCopy:$useHeadlessConsole
@@ -709,9 +771,9 @@ $expectedResult = Get-DemoResultRecord -Path $resolvedDemoPath
 $checkpointRecord = Get-DemoCheckpointRecord -Path $resolvedDemoPath
 $normalizedExpectedResult = Normalize-ExpectedResult -Expected $expectedResult -Header $header -Checkpoint $checkpointRecord
 $launchArgs = if ($useHeadlessConsole) {
-    Get-HeadlessConsoleLaunchArguments -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath
+    Get-HeadlessConsoleLaunchArguments -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ResolvedStateLogPath $resolvedStateLogPath
 } else {
-    Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -LaunchMode $launchMode -Pilot $Pilot -NoRender:$NoRender
+    Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -LaunchMode $launchMode -Pilot $Pilot -NoRender:$NoRender -ResolvedStateLogPath $resolvedStateLogPath
 }
 $launchExecutable = if ($useHeadlessConsole) { $headlessConsoleExe } else { $sandbox.Exe }
 $runnerName = if ($useHeadlessConsole) { 'headless-console' } elseif ($NoRender) { 'windowed-no-present' } else { 'windowed' }
@@ -724,6 +786,9 @@ if (-not (Test-Path -LiteralPath $launchExecutable)) {
 if (Test-Path -LiteralPath $actualResultPath) {
     Remove-Item -LiteralPath $actualResultPath -Force
 }
+if ($resolvedStateLogPath -and (Test-Path -LiteralPath $resolvedStateLogPath)) {
+    Remove-Item -LiteralPath $resolvedStateLogPath -Force
+}
 
 Write-Host ''
 Write-Host "Demo: $(Get-RelativeRepoPath -Path $resolvedDemoPath)"
@@ -735,6 +800,9 @@ if ($NoRender -and -not $useHeadlessConsole) {
 }
 Write-Host "Data: $(Get-RelativeRepoPath -Path $resolvedDataDir)"
 Write-Host "Sandbox: $(Get-RelativeRepoPath -Path $sandbox.Directory)"
+if ($resolvedStateLogPath) {
+    Write-Host "State trace: $(Get-RelativeRepoPath -Path $resolvedStateLogPath)"
+}
 if ($ReuseSandbox) {
     Write-Host 'Sandbox mode: reuse'
 }
@@ -779,8 +847,24 @@ if (-not $process.HasExited) {
 $replayStopwatch.Stop()
 $actualResult = Read-JsonFileAsHashtable -Path $actualResultPath
 $expectedForCompare = $normalizedExpectedResult
+$stateTraceCompareError = $null
+$stateTraceExpectedPath = $null
 if (Test-ReplayUsedTerminalExitSubset -SandboxDirectory $sandbox.Directory) {
     $expectedForCompare = Get-TerminalExitExpectedSubset -Expected $normalizedExpectedResult -Actual $actualResult
+}
+if ($resolvedStateLogPath) {
+    if (-not (Test-Path -LiteralPath $resolvedStateLogPath)) {
+        $stateTraceCompareError = "Replay did not write state trace: $resolvedStateLogPath"
+    } elseif ($shouldCompareStateTrace) {
+        $stateTraceResult = Invoke-StateTraceComparison -DemoPath $resolvedDemoPath -ActualPath $resolvedStateLogPath
+        $stateTraceExpectedPath = $stateTraceResult.ExpectedPath
+        Write-Host "Expected trace: $(Get-RelativeRepoPath -Path $stateTraceExpectedPath)"
+        if ($stateTraceResult.ExitCode -ne 0) {
+            $stateTraceCompareError = 'State trace compare failed'
+        } else {
+            Write-Host 'State trace compare: PASS'
+        }
+    }
 }
 $compareError = Compare-JsonSubset -Expected $expectedForCompare -Actual $actualResult
 $elapsedSeconds = [Math]::Round($replayStopwatch.Elapsed.TotalSeconds, 3)
@@ -795,10 +879,21 @@ if ($null -ne $replayFps) {
 } else {
     Write-Host ("Elapsed: {0}s" -f $elapsedSeconds)
 }
-if ($compareError) {
+if ($compareError -or $stateTraceCompareError) {
     Write-Host 'RESULT: FAIL' -ForegroundColor Red
-    Write-Host $compareError
+    if ($compareError) {
+        Write-Host $compareError
+    }
+    if ($stateTraceCompareError) {
+        Write-Host $stateTraceCompareError
+    }
     Write-Host "Actual: $(Get-RelativeRepoPath -Path $actualResultPath)"
+    if ($resolvedStateLogPath) {
+        Write-Host "State trace: $(Get-RelativeRepoPath -Path $resolvedStateLogPath)"
+    }
+    if ($stateTraceExpectedPath) {
+        Write-Host "Expected trace: $(Get-RelativeRepoPath -Path $stateTraceExpectedPath)"
+    }
     Write-Host ($actualResult | ConvertTo-Json -Depth 10)
     if (-not $KeepSandbox) {
         Remove-Item -LiteralPath $sandbox.Directory -Recurse -Force -ErrorAction SilentlyContinue
@@ -808,6 +903,12 @@ if ($compareError) {
 
 Write-Host 'RESULT: PASS' -ForegroundColor Green
 Write-Host "Actual: $(Get-RelativeRepoPath -Path $actualResultPath)"
+if ($resolvedStateLogPath) {
+    Write-Host "State trace: $(Get-RelativeRepoPath -Path $resolvedStateLogPath)"
+}
+if ($stateTraceExpectedPath) {
+    Write-Host "Expected trace: $(Get-RelativeRepoPath -Path $stateTraceExpectedPath)"
+}
 Write-Host ($actualResult | ConvertTo-Json -Depth 10)
 
 if (-not $KeepSandbox) {

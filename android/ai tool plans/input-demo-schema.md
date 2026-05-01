@@ -27,10 +27,10 @@ Required record order:
 Example:
 
 ```jsonl
-{"type":"header","version":3,"game":"d2","mission":"d2","level":1,"difficulty":2,"start_mode":"new_level","rng_mode":"lcg_state","frame_count":3}
-{"type":"frame","f":0,"ft":3276,"input":{"s":{"f":44}},"rng":{"s":100},"state":{"game_time64":3276}}
+{"type":"header","version":4,"game":"d2","mission":"d2","level":1,"difficulty":2,"start_mode":"new_level","rng_mode":"lcg_state","frame_count":3}
+{"type":"frame","f":0,"ft":3276,"input":{"s":{"f":44}},"rng":{"s":100},"state":{"game_time64":3276},"events":[{"kind":"score","gt":3276,"score_kind":"normal","delta":200,"score":12700}]}
 {"type":"frame","f":1,"input":{"p":{"f1":1}},"rng":{"s":100},"state":{"game_time64":6552}}
-{"type":"frame","f":2,"input":{"s":{"f":0}},"rng":{"s":102,"c":3},"state":{"game_time64":9828}}
+{"type":"frame","f":2,"input":{"s":{"f":0}},"rng":{"s":102,"c":3},"state":{"game_time64":9828},"events":[{"kind":"robot_damage","gt":9828,"robot_obj":68,"robot_sig":3769,"robot_id":39,"damage":589824,"shields_before":1900544,"shields_after":1310720,"dead":false}]}
 {"type":"result","result":{"v":1,"g":"d2","m":"d2","l":1,"d":2,"fr":3}}
 ```
 
@@ -54,7 +54,7 @@ must follow.
 Key order:
 
 1. `type`: literal string `"header"`
-2. `version`: schema version integer, currently `3`
+2. `version`: schema version integer, currently `4`
 3. `game`: `"d1"` or `"d2"`
 4. `mission`: mission filename or short mission id
 5. `level`: signed level number
@@ -67,7 +67,7 @@ Key order:
 
 Validation:
 
-- readers currently accept `2` and `3`
+- readers currently accept `2`, `3`, and `4`
 - `game` must be `d1` or `d2`
 - `mission` must be non-empty
 - `frame_count` must be positive
@@ -88,11 +88,13 @@ Top-level frame key order:
 4. `input`: sparse held-state and pulse updates for this frame
 5. `rng`: RNG replay state for this frame
 6. `state`: optional tracked-state snapshot captured at the start of this frame
+7. `events`: optional ordered array of durable gameplay events appended later in the same frame
 
 Frame records are never run-length encoded. Every frame has exactly one frame
-record and every frame record includes both `input` and `rng` objects. Newer
-recordings also include `state` on every frame. Older version `2` demos omit
-it and still load.
+record and every frame record includes both `input` and `rng` objects. Version
+`3` recordings also include `state` on every frame. Version `4` recordings may
+add an `events` array on frames that observed durable gameplay events. Older
+version `2` demos omit `state` and still load.
 
 ### Input Object
 
@@ -184,6 +186,30 @@ Validation:
 
 - `state` must be an object when present
 - unknown `state` keys fail validation
+
+### Events Array
+
+Purpose: capture grep-friendly gameplay facts that happen during the frame,
+after the frame-start `input`, `rng`, and `state` sample has already been
+written to the in-memory recorder session.
+
+Semantics:
+
+- `events` is omitted when a frame has no durable event payloads
+- each element is a JSON object stored in append order for that frame
+- event schemas are intentionally shallow and domain-specific, for example
+  `score`, `robot_damage`, `impact`, `player_damage`, `weapon_create`,
+  `player_shot`, and `spreadfire_emit`
+- event objects are written as canonical JSON so the `.dximdemo` stays stable
+  in diffs and easy to grep
+- `state` remains the frame-start snapshot source of truth; `events` adds
+  mid-frame evidence and does not change replay timing
+
+Validation:
+
+- `events` must be an array when present
+- each event entry must be a JSON object
+- unknown top-level frame keys still fail validation
 
 ## Result Trailer
 

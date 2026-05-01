@@ -127,6 +127,7 @@ struct input_demo_file_frame {
 	input_demo_rng_record rng;
 	bool has_state;
 	input_demo_result state;
+	std::vector<std::string> events;
 
 	input_demo_file_frame()
 	    : has_state(false)

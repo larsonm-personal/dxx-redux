@@ -538,6 +538,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_controls.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_codec.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_result.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_state_trace.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_recorder.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_replay.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_introspect.cpp
@@ -654,6 +655,7 @@ target_sources(
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_controls.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_codec.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_result.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_state_trace.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_recorder.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/input_demo_replay.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/shared/game_introspect.cpp

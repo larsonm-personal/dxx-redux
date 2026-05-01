@@ -47,6 +47,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "kconfig.h"
 #include "newdemo.h"
 #include "escort.h"
+#include "input_demo_energy_trace.h"
 #ifdef EDITOR
 #include "gr.h"	//	for powerup outline drawing
 #include "editor/editor.h"
@@ -182,6 +183,7 @@ void do_megawow_powerup(int quantity)
 int pick_up_energy(void)
 {
 	int	used=0;
+	fix energy_before = Players[Player_num].energy;
 
 	if (Players[Player_num].energy < MAX_ENERGY) {
 		fix boost;
@@ -198,6 +200,10 @@ int pick_up_energy(void)
 			multi_send_ship_status();
 	} else
 		HUD_init_message(HM_DEFAULT|HM_REDUNDANT|HM_MAYDUPL, TXT_MAXED_OUT,TXT_ENERGY);
+
+	if (used && (!input_demo_replay_is_loaded() ||
+		(input_demo_replay_next_frame_index() >= 817 && input_demo_replay_next_frame_index() <= 818)))
+		input_demo_trace_energy_change("pick_up_energy", energy_before, Players[Player_num].energy, "", "");
 
 	return used;
 }

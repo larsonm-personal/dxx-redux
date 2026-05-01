@@ -12,6 +12,7 @@
 
 #include "input_demo_codec.h"
 #include "input_demo_fixture.h"
+#include "input_demo_state_trace.h"
 
 namespace
 {
@@ -210,6 +211,7 @@ static bool apply_rng_records(const std::vector<input_demo_rng_record> &records,
 
 static void reset_session(void)
 {
+	input_demo_state_trace_stop();
 	g_input_demo_replay_session = input_demo_replay_session();
 }
 

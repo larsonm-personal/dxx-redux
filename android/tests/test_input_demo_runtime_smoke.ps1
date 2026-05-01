@@ -143,6 +143,7 @@ function Invoke-ReplaySmoke {
     $fixtureDir = Join-Path $outRoot $GameName
     $demoPath = Join-Path $fixtureDir 'smoke.dximdemo'
     $actualResultPath = $demoPath + '.actual.json'
+    $actualStatePath = $demoPath + '.actual_state.jsonl'
 
     if (-not (Test-Path $config.Exe)) {
         throw "Built executable not found: $($config.Exe)"
@@ -165,7 +166,8 @@ function Invoke-ReplaySmoke {
         $config.TitleArg,
         '-nomusic',
         '-nosound',
-        '-inputdemo-replay', $demoPath
+        '-inputdemo-replay', $demoPath,
+        '-inputdemo-state-log', $actualStatePath
     )
     Write-Host "SMOKE $GameName sandbox=$sandboxExe data=$DataDir fixture=$fixtureDir"
     $startInfo = New-Object System.Diagnostics.ProcessStartInfo
@@ -216,6 +218,12 @@ function Invoke-ReplaySmoke {
 
     $expected = Get-ExpectedResultFromDemo $demoPath
     $actual = Get-JsonFile $actualResultPath
+    if (-not (Test-Path -LiteralPath $actualStatePath)) {
+        throw "$GameName replay smoke did not write a state trace"
+    }
+    if (-not (Select-String -LiteralPath $actualStatePath -Pattern '"type":"frame_state"' -Quiet)) {
+        throw "$GameName replay smoke state trace is missing frame_state records"
+    }
     foreach ($property in @('version', 'game', 'mission', 'level', 'difficulty', 'frame_count')) {
         if ($expected.$property -ne $actual.$property) {
             throw "$GameName replay smoke mismatch at ${property}: expected $($expected.$property), actual $($actual.$property)"

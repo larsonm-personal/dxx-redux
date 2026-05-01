@@ -72,6 +72,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "palette.h"
 #include "gameseq.h"
 #include "input_demo_replay.h"
+#include "input_demo_recorder.h"
 #ifdef EDITOR
 #include "editor/editor.h"
 #endif
@@ -87,6 +88,104 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #define WALL_LOUDNESS_SCALE (20)
 #define FORCE_DAMAGE_THRESHOLD (F1_0/3)
 #define STANDARD_EXPL_DELAY (F1_0/4)
+
+static int Input_demo_record_event_append_logged_error = 0;
+
+static void input_demo_record_frame_event_json(const char *json_text)
+{
+	char error[256] = "";
+
+	if (!input_demo_recorder_is_active())
+		return;
+	if (!input_demo_recorder_append_frame_event_json(json_text, error, sizeof(error)) &&
+		!Input_demo_record_event_append_logged_error) {
+		Input_demo_record_event_append_logged_error = 1;
+		con_printf(CON_NORMAL, "Input demo recorder event append failed: %s\n", error);
+	}
+}
+
+static void input_demo_record_wall_impact_event(object *weapon, int hitwall, int blew_up, int robot_escort)
+{
+	char json[256];
+
+	if (!weapon)
+		return;
+	snprintf(json, sizeof(json),
+		"{\"kind\":\"impact\",\"target\":\"wall\",\"gt\":%lld,\"weapon_obj\":%d,\"weapon_id\":%d,\"parent\":%d,\"seg\":%d,\"hitwall\":%d,\"blew_up\":%s,\"escort\":%s}",
+		(long long)GameTime64,
+		weapon - Objects,
+		weapon->id,
+		weapon->ctype.laser_info.parent_num,
+		weapon->segnum,
+		hitwall,
+		blew_up ? "true" : "false",
+		robot_escort ? "true" : "false");
+	input_demo_record_frame_event_json(json);
+}
+
+static void input_demo_record_robot_damage_event(object *robot, fix damage, fix old_shields)
+{
+	char json[512];
+
+	if (!robot)
+		return;
+	snprintf(json, sizeof(json),
+		"{\"kind\":\"robot_damage\",\"gt\":%lld,\"robot_obj\":%d,\"robot_sig\":%d,\"robot_id\":%d,\"damage\":%d,\"shields_before\":%d,\"shields_after\":%d,\"dead\":%s,\"x\":%d,\"y\":%d,\"z\":%d}",
+		(long long)GameTime64,
+		(int)(robot - Objects),
+		robot->signature,
+		robot->id,
+		damage,
+		old_shields,
+		robot->shields,
+		robot->shields < 0 ? "true" : "false",
+		robot->pos.x,
+		robot->pos.y,
+		robot->pos.z);
+	input_demo_record_frame_event_json(json);
+}
+
+static void input_demo_record_robot_impact_event(object *weapon, object *robot)
+{
+	char json[256];
+
+	if (!weapon || !robot)
+		return;
+	snprintf(json, sizeof(json),
+		"{\"kind\":\"impact\",\"target\":\"robot\",\"gt\":%lld,\"weapon_obj\":%d,\"weapon_id\":%d,\"parent\":%d,\"robot_obj\":%d,\"robot_id\":%d,\"seg\":%d}",
+		(long long)GameTime64,
+		weapon - Objects,
+		weapon->id,
+		weapon->ctype.laser_info.parent_num,
+		robot - Objects,
+		robot->id,
+		weapon->segnum);
+	input_demo_record_frame_event_json(json);
+}
+
+static void input_demo_record_player_damage_event(fix damage, fix old_shields, object *killer, int possibly_friendly)
+{
+	char json[384];
+	const int killer_obj = killer ? (int)(killer - Objects) : -1;
+	const int killer_type = killer ? killer->type : -1;
+	const int killer_id = killer ? killer->id : -1;
+	const int killer_sig = killer ? killer->signature : -1;
+	const int killer_seg = killer ? killer->segnum : -1;
+
+	snprintf(json, sizeof(json),
+		"{\"kind\":\"player_damage\",\"gt\":%lld,\"damage\":%d,\"shields_before\":%d,\"shields_after\":%d,\"killer_type\":%d,\"killer_obj\":%d,\"killer_id\":%d,\"killer_sig\":%d,\"killer_seg\":%d,\"friendly\":%s}",
+		(long long)GameTime64,
+		damage,
+		old_shields,
+		Players[Player_num].shields,
+		killer_type,
+		killer_obj,
+		killer_id,
+		killer_sig,
+		killer_seg,
+		possibly_friendly ? "true" : "false");
+	input_demo_record_frame_event_json(json);
+}
 
 int check_collision_delayfunc_exec()
 {
@@ -875,6 +974,7 @@ void collide_weapon_and_wall( object * weapon, fix hitspeed, short hitseg, short
 	if (( weapon->ctype.laser_info.parent_type== OBJ_PLAYER ) || robot_escort) {
 
 		if (!(weapon->flags & OF_SILENT) && (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum)) {
+			input_demo_record_wall_impact_event(weapon, hitwall, blew_up, robot_escort);
 			if (input_demo_replay_is_loaded())
 				con_printf(CON_NORMAL,
 					"Input demo replay impact probe: frame=%u kind=wall weapon_obj=%d weapon_id=%d parent=%d seg=%d hitwall=%d blew_up=%d escort=%d\n",
@@ -1429,6 +1529,7 @@ int apply_damage_to_robot(object *robot, fix damage, int killer_objnum)
 
 	robot->shields -= damage;
 	newdemo_dump_note_robot_damage(robot, old_shields, damage);
+	input_demo_record_robot_damage_event(robot, damage, old_shields);
 	if (input_demo_replay_is_loaded())
 		con_printf(CON_NORMAL,
 			"Input demo replay robot damage: gt=%lld frame=%u robot_obj=%d robot_sig=%d robot_id=%d damage=%d shields=%d->%d dead=%d pos=(%d,%d,%d)\n",
@@ -1759,6 +1860,7 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 		object *expl_obj=NULL;
 
 		if (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum) {
+			input_demo_record_robot_impact_event(weapon, robot);
 			if (input_demo_replay_is_loaded())
 				con_printf(CON_NORMAL,
 					"Input demo replay impact probe: frame=%u kind=robot weapon_obj=%d weapon_id=%d parent=%d robot_obj=%d robot_id=%d seg=%d\n",
@@ -2372,6 +2474,7 @@ void apply_damage_to_player(object *playerobj, object *killer, fix damage, ubyte
 			coop_warp_record_engagement();
 #endif
 		Players[Player_num].shields -= damage;
+		input_demo_record_player_damage_event(damage, old_shields, killer, possibly_friendly);
 		if (input_demo_replay_is_loaded())
 			con_printf(CON_NORMAL,
 				"Input demo replay player damage: gt=%lld frame=%u damage=%d shields=%d->%d killer_type=%d killer_obj=%d killer_id=%d killer_sig=%d killer_seg=%d friendly=%d\n",
@@ -2750,6 +2853,13 @@ void collide_robot_and_materialization_center(object *objp)
 
 extern int Network_got_powerup; // HACK!!!
 
+static int input_demo_replay_powerup_probe_active(void)
+{
+	const uint32_t frame = (uint32_t)input_demo_replay_next_frame_index();
+
+	return input_demo_replay_is_loaded() && frame >= 816 && frame <= 818;
+}
+
 void collide_player_and_powerup( object * playerobj, object * powerup, vms_vector *collision_point ) {
 	if (object_is_observer(playerobj)) {
 		return;
@@ -2757,8 +2867,37 @@ void collide_player_and_powerup( object * playerobj, object * powerup, vms_vecto
 
 	if (!Endlevel_sequence && !Player_is_dead && (playerobj->id == Player_num )) {
 		int powerup_used;
+		int energy_before = Players[Player_num].energy;
+		int shields_before = Players[Player_num].shields;
+
+		if (input_demo_replay_powerup_probe_active())
+			con_printf(CON_NORMAL,
+				"Input demo replay powerup probe: frame=%u step=before obj=%d id=%d energy=%d shields=%d flags=0x%x seg=%d pos=(%d,%d,%d)\n",
+				(unsigned int)input_demo_replay_next_frame_index(),
+				(int)(powerup - Objects),
+				powerup->id,
+				energy_before,
+				shields_before,
+				powerup->flags,
+				powerup->segnum,
+				powerup->pos.x,
+				powerup->pos.y,
+				powerup->pos.z);
 
 		powerup_used = do_powerup(powerup);
+		if (input_demo_replay_powerup_probe_active())
+			con_printf(CON_NORMAL,
+				"Input demo replay powerup probe: frame=%u step=after obj=%d id=%d used=%d energy_before=%d energy_after=%d shields_before=%d shields_after=%d flags=0x%x dead=%d\n",
+				(unsigned int)input_demo_replay_next_frame_index(),
+				(int)(powerup - Objects),
+				powerup->id,
+				powerup_used,
+				energy_before,
+				Players[Player_num].energy,
+				shields_before,
+				Players[Player_num].shields,
+				powerup->flags,
+				(powerup->flags & OF_SHOULD_BE_DEAD) != 0);
 
 		if (powerup_used)	{
 			powerup->flags |= OF_SHOULD_BE_DEAD;

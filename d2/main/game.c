@@ -101,7 +101,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "input_demo_control_info.h"
 #include "input_demo_result.h"
 #include "input_demo_replay.h"
+#include "input_demo_state_trace.h"
 #include "input_demo_recorder.h"
+#include "input_demo_energy_trace.h"
 #include "input_demo_rng_trace.h"
 
 #ifdef OGL
@@ -162,7 +164,11 @@ extern void do_final_boss_frame(void);
 
 static int input_demo_player_motion_probe_active(void)
 {
-	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+	if (input_demo_recorder_is_active())
+		return 1;
+	if (!input_demo_replay_is_loaded())
+		return 0;
+	return input_demo_replay_next_frame_index() >= 816 && input_demo_replay_next_frame_index() <= 825;
 }
 
 static unsigned int input_demo_player_motion_frame_index(void)
@@ -382,6 +388,35 @@ void input_demo_capture_current_result(input_demo_result *result)
 }
 
 static int input_demo_replay_logged_state_mismatch = 0;
+static int input_demo_replay_logged_state_trace_error = 0;
+
+static void input_demo_write_replay_frame_state_trace(const input_demo_replay_frame *replay_frame)
+{
+	input_demo_result actual_state;
+	char error[256] = "";
+
+	if (!replay_frame || !input_demo_state_trace_is_active())
+		return;
+	input_demo_capture_current_result(&actual_state);
+	if (input_demo_state_trace_write_frame(replay_frame->frame,
+						  replay_frame->frame_time,
+						  replay_frame->rng_state,
+						  replay_frame->has_rng_call_count,
+						  replay_frame->rng_call_count,
+						  &actual_state,
+						  error,
+						  sizeof(error)))
+		return;
+	if (!input_demo_replay_logged_state_trace_error)
+		con_printf(CON_NORMAL, "Input demo replay state trace write failed: %s\n", error);
+	input_demo_replay_logged_state_trace_error = 1;
+	input_demo_state_trace_stop();
+}
+
+static int input_demo_replay_tail_probe_frame_active(uint32_t frame)
+{
+	return frame >= 816 && frame <= 825;
+}
 
 static void input_demo_log_replay_frame_state_mismatch(const input_demo_replay_frame *replay_frame)
 {
@@ -389,11 +424,47 @@ static void input_demo_log_replay_frame_state_mismatch(const input_demo_replay_f
 	char error[256] = "";
 	char expected_json[4096] = "";
 	char actual_json[4096] = "";
+	unsigned int actual_rng_state = 0;
+	int has_actual_rng_state = 0;
+	int compare_ok;
+	int tail_probe_active;
 
-	if (!replay_frame || !replay_frame->has_state || input_demo_replay_logged_state_mismatch)
+	if (!replay_frame || !replay_frame->has_state)
+		return;
+	tail_probe_active = input_demo_replay_tail_probe_frame_active(replay_frame->frame);
+	if (input_demo_replay_logged_state_mismatch && !tail_probe_active)
 		return;
 	input_demo_capture_current_result(&actual_state);
-	if (input_demo_result_compare_snapshot(&replay_frame->state_result, &actual_state, error, sizeof(error)))
+	compare_ok = input_demo_result_compare_snapshot(&replay_frame->state_result, &actual_state, error, sizeof(error));
+	if (tail_probe_active && replay_frame->state_result.player0.present) {
+		has_actual_rng_state = d_rand_get_state(&actual_rng_state);
+		con_printf(CON_NORMAL,
+			"Input demo replay state probe: frame=%u gt=%lld compare=%s expected_energy=%d actual_energy=%d actual_energy_raw=%d expected_game_time=%lld actual_game_time=%lld expected_rng=%u actual_rng=%u actual_rng_calls=%u expected_powerups=%d actual_powerups=%d expected_seg=%d actual_seg=%d expected_pos=(%d,%d,%d) actual_pos=(%d,%d,%d)\n",
+			(unsigned int)replay_frame->frame,
+			(long long)GameTime64,
+			compare_ok ? "match" : error,
+			replay_frame->state_result.player0.energy,
+			actual_state.player0.energy,
+			Players[Player_num].energy,
+			replay_frame->state_result.has_game_time64 ? (long long)replay_frame->state_result.game_time64 : -1,
+			actual_state.has_game_time64 ? (long long)actual_state.game_time64 : -1,
+			replay_frame->rng_state,
+			has_actual_rng_state ? actual_rng_state : 0,
+			d_rand_get_call_count(),
+			replay_frame->state_result.level_summary.present ? replay_frame->state_result.level_summary.powerups_remaining : -1,
+			actual_state.level_summary.present ? actual_state.level_summary.powerups_remaining : -1,
+			replay_frame->state_result.position.present ? replay_frame->state_result.position.segment : -1,
+			actual_state.position.present ? actual_state.position.segment : -1,
+			replay_frame->state_result.position.present ? replay_frame->state_result.position.x : 0,
+			replay_frame->state_result.position.present ? replay_frame->state_result.position.y : 0,
+			replay_frame->state_result.position.present ? replay_frame->state_result.position.z : 0,
+			actual_state.position.present ? actual_state.position.x : 0,
+			actual_state.position.present ? actual_state.position.y : 0,
+			actual_state.position.present ? actual_state.position.z : 0);
+	}
+	if (compare_ok)
+		return;
+	if (input_demo_replay_logged_state_mismatch)
 		return;
 	input_demo_replay_logged_state_mismatch = 1;
 	if (!input_demo_result_snapshot_to_json_buffer(&replay_frame->state_result, expected_json, sizeof(expected_json)))
@@ -407,6 +478,19 @@ static void input_demo_log_replay_frame_state_mismatch(const input_demo_replay_f
 		error);
 	con_printf(CON_NORMAL, "Input demo replay expected state: %s\n", expected_json);
 	con_printf(CON_NORMAL, "Input demo replay actual state: %s\n", actual_json);
+}
+
+static void input_demo_log_current_replay_frame_state_mismatch(void)
+{
+	input_demo_replay_frame replay_frame;
+	char error[256] = "";
+
+	if (!input_demo_replay_is_loaded())
+		return;
+	if (!input_demo_replay_get_current_frame(&replay_frame, error, sizeof(error)))
+		return;
+	input_demo_write_replay_frame_state_trace(&replay_frame);
+	input_demo_log_replay_frame_state_mismatch(&replay_frame);
 }
 
 static fix64 input_demo_replay_last_timer_value = 0;
@@ -457,7 +541,8 @@ static void input_demo_log_replay_fire_state(const char *label, int can_fire_las
 	const int player_weapon_count = input_demo_count_live_player_weapons(-1);
 	const int spreadfire_weapon_count = input_demo_count_live_player_weapons(SPREADFIRE_ID);
 
-	if (!input_demo_replay_fire_probe_active())
+	if (!input_demo_replay_fire_probe_active() ||
+		!input_demo_replay_tail_probe_frame_active((uint32_t)input_demo_replay_next_frame_index()))
 		return;
 	con_printf(CON_NORMAL,
 		"Input demo replay fire probe: frame=%u gt=%lld step=%s can_fire=%d f1s=%u f1c=%u glfc=%d next_laser_delta=%lld last_laser_delta=%lld fired_obj=%d weapon=%d live_player_weapons=%d live_spreadfire=%d seg=%d pos=(%d,%d,%d)\n",
@@ -474,6 +559,41 @@ static void input_demo_log_replay_fire_state(const char *label, int can_fire_las
 		Players[Player_num].primary_weapon,
 		player_weapon_count,
 		spreadfire_weapon_count,
+		ConsoleObject ? ConsoleObject->segnum : -1,
+		ConsoleObject ? ConsoleObject->pos.x : 0,
+		ConsoleObject ? ConsoleObject->pos.y : 0,
+		ConsoleObject ? ConsoleObject->pos.z : 0);
+}
+
+static void input_demo_log_replay_energy_stage(const char *label)
+{
+	player *current_player = &Players[Player_num];
+	uint32_t replay_frame_index;
+
+	if (!input_demo_replay_is_loaded())
+		return;
+	replay_frame_index = (uint32_t)input_demo_replay_next_frame_index();
+	if (!input_demo_replay_tail_probe_frame_active(replay_frame_index))
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay energy stage: frame=%u gt=%lld step=%s energy=%d energy_raw=%d shields=%d shields_raw=%d primary=%d flags=0x%x f1s=%u f1c=%u flare=%u transfer=%u headlight=%u ab=%d glfc=%d seg=%d pos=(%d,%d,%d)\n",
+		(unsigned int)replay_frame_index,
+		(long long)GameTime64,
+		label,
+		f2i(current_player->energy),
+		current_player->energy,
+		f2i(current_player->shields),
+		current_player->shields,
+		current_player->primary_weapon,
+		current_player->flags,
+		(unsigned int)Controls.fire_primary_state,
+		(unsigned int)Controls.fire_primary_count,
+		(unsigned int)Controls.fire_flare_count,
+		(unsigned int)Controls.energy_to_shield_state,
+		(unsigned int)Controls.headlight_count,
+		current_player->afterburner_charge,
+		Global_laser_firing_count,
 		ConsoleObject ? ConsoleObject->segnum : -1,
 		ConsoleObject ? ConsoleObject->pos.x : 0,
 		ConsoleObject ? ConsoleObject->pos.y : 0,
@@ -622,9 +742,10 @@ int input_demo_prepare_replay_frame(void)
 		input_demo_stop_replay(0);
 		return 0;
 	}
-	if (!input_demo_replay_next_frame_index())
+	if (!input_demo_replay_next_frame_index()) {
 		input_demo_replay_logged_state_mismatch = 0;
-	input_demo_log_replay_frame_state_mismatch(&replay_frame);
+		input_demo_replay_logged_state_trace_error = 0;
+	}
 	if (input_demo_replay_next_frame_index() > 0 && d_rand_get_state(&actual_rng_state) &&
 		actual_rng_state != replay_frame.rng_state)
 		con_printf(CON_NORMAL,
@@ -1938,7 +2059,9 @@ void GameProcessFrame(void)
 	int player_was_dead = Player_is_dead;
 
 	input_demo_update_rng_trace_context();
+	input_demo_log_replay_energy_stage("entry");
 	input_demo_log_player_motion_state("entry");
+	input_demo_log_current_replay_frame_state_mismatch();
 	input_demo_record_game_frame();
 	update_player_stats();
 	diminish_palette_towards_normal();		//	Should leave palette effect up for as long as possible by putting right before render.
@@ -1950,6 +2073,7 @@ void GameProcessFrame(void)
 	do_final_boss_frame();
 
 	if ((Players[Player_num].flags & PLAYER_FLAGS_HEADLIGHT) && (Players[Player_num].flags & PLAYER_FLAGS_HEADLIGHT_ON)) {
+		fix energy_before = Players[Player_num].energy;
 		static int turned_off=0;
 		Players[Player_num].energy -= (FrameTime*3/8);
 		if (Players[Player_num].energy < i2f(10)) {
@@ -1973,7 +2097,9 @@ void GameProcessFrame(void)
 				multi_send_flags(Player_num);
 #endif
 		}
+		input_demo_trace_energy_change("headlight", energy_before, Players[Player_num].energy, "", "");
 	}
+	input_demo_log_replay_energy_stage("after_pre_move_systems");
 
 
 #ifdef EDITOR
@@ -2040,6 +2166,7 @@ void GameProcessFrame(void)
 		Players[Player_num].homing_object_dist = -1;		//	Assume not being tracked.  Laser_do_weapon_sequence modifies this.
 
 		object_move_all();
+		input_demo_log_replay_energy_stage("after_move");
 		input_demo_log_player_motion_state("after_move");
 		powerup_grab_cheat_all();
 
@@ -2047,7 +2174,9 @@ void GameProcessFrame(void)
 			return;
 
 		fuelcen_update_all();
+		input_demo_log_replay_energy_stage("after_fuelcen");
 		do_ai_frame_all();
+		input_demo_log_replay_energy_stage("after_ai");
 
 		{
 			const int can_fire_laser = allowed_to_fire_laser();
@@ -2056,6 +2185,7 @@ void GameProcessFrame(void)
 				FireLaser();				// Fire Laser!
 			input_demo_log_replay_fire_state("after FireLaser", can_fire_laser);
 		}
+		input_demo_log_replay_energy_stage("after_FireLaser");
 
 		if (Auto_fire_fusion_cannon_time) {
 			if (Players[Player_num].primary_weapon != FUSION_INDEX)
@@ -2091,12 +2221,14 @@ void GameProcessFrame(void)
 			do_laser_firing_player();
 			input_demo_log_replay_fire_state("after do_laser_firing_player", allowed_to_fire_laser());
 		}
+		input_demo_log_replay_energy_stage("after_weapon_block");
 
 		delayed_autoselect(); /* SelectAfterFire */ 
 		do_shield_warnings(); 
 
 		check_robot_respawns();
 	}
+	input_demo_log_replay_energy_stage("exit");
 
 	if (Do_appearance_effect) {
 		create_player_appearance_effect(ConsoleObject);
@@ -2371,6 +2503,7 @@ void FireLaser()
 			Global_laser_firing_count = 0;
 		} else {
 			static fix64 Fusion_next_sound_time = 0;
+			const fix energy_before = Players[Player_num].energy;
 			int flash_val;
 
 			if (Fusion_charge == 0)
@@ -2384,6 +2517,15 @@ void FireLaser()
 				Auto_fire_fusion_cannon_time = GameTime64 -1;	//	Fire now!
 			} else
 				Auto_fire_fusion_cannon_time = GameTime64 + FrameTime/2 + 1;		//	Fire the fusion cannon at this time in the future.
+
+			{
+				char extra_json[160];
+				char extra_log[160];
+
+				snprintf(extra_json, sizeof(extra_json), ",\"fusion_charge\":%d,\"fire_count\":%d", Fusion_charge, Global_laser_firing_count);
+				snprintf(extra_log, sizeof(extra_log), " fusion_charge=%d fire_count=%d", Fusion_charge, Global_laser_firing_count);
+				input_demo_trace_energy_change("fusion_charge", energy_before, Players[Player_num].energy, extra_json, extra_log);
+			}
 
 			flash_val = !(Game_mode & GM_MULTI) || !Netgame.ReducedFlash ? Fusion_charge >> 11 :
 				PaletteRedAdd < 10 ? 10 - PaletteRedAdd : 0;

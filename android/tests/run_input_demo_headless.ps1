@@ -12,7 +12,10 @@ param(
     [string]$Pilot,
     [switch]$ReuseSandbox,
     [switch]$KeepSandbox,
-    [switch]$ListOnly
+    [switch]$ListOnly,
+    [string]$StateLogPath,
+    [switch]$TraceState,
+    [switch]$CompareStateTrace
 )
 
 $ErrorActionPreference = 'Stop'
@@ -42,6 +45,9 @@ if ($DataDir) {
 if ($Pilot) {
     $args += @('-Pilot', $Pilot)
 }
+if ($StateLogPath) {
+    $args += @('-StateLogPath', $StateLogPath)
+}
 if ($ReuseSandbox) {
     $args += '-ReuseSandbox'
 }
@@ -50,6 +56,12 @@ if ($KeepSandbox) {
 }
 if ($ListOnly) {
     $args += '-ListOnly'
+}
+if ($TraceState) {
+    $args += '-TraceState'
+}
+if ($CompareStateTrace) {
+    $args += '-CompareStateTrace'
 }
 
 Write-Host 'Headless stage: prefer the console runner for D2 checkpoint demos and fall back to no-present replay otherwise'

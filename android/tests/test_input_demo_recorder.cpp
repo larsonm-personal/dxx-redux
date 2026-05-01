@@ -16,6 +16,7 @@
 #include "input_demo_recorder.h"
 #include "input_demo_rng_trace.h"
 #include "input_demo_result.h"
+#include "input_demo_state_trace.h"
 
 #ifndef DXX_INPUT_DEMO_BUILD_NUMBERi
 #define DXX_INPUT_DEMO_BUILD_NUMBERi 0
@@ -409,11 +410,163 @@ static int expect_record_and_flush_checkpoint(void)
 	return 0;
 }
 
+static int expect_write_state_trace(void)
+{
+	const char *dir = "test_input_demo_state_trace_fixture";
+	const std::string trace_path = std::string(dir) + "/replay.actual_state.jsonl";
+	input_demo_result state;
+	std::string text;
+	char error[256] = "";
+
+	if (!make_test_dir(dir))
+		return report_failure("could not create state trace test directory");
+	input_demo_result_clear(&state);
+	snprintf(state.game, sizeof(state.game), "%s", input_demo_test_game_name());
+	snprintf(state.mission, sizeof(state.mission), "%s", input_demo_test_game_name());
+	state.level = 2;
+	state.difficulty = 1;
+	state.frame_count = 3;
+	state.has_game_time64 = 1;
+	state.game_time64 = 2233467;
+	state.player0.present = 1;
+	state.player0.energy = 85;
+	state.player0.shields = 155;
+	state.level_summary.present = 1;
+	state.level_summary.powerups_remaining = 66;
+	if (!input_demo_state_trace_start(trace_path.c_str(),
+					     "replay",
+					     input_demo_test_game_name(),
+					     input_demo_test_game_name(),
+					     2,
+					     1,
+					     "save_checkpoint",
+					     3,
+					     error,
+					     sizeof(error))) {
+		remove_test_dir(dir);
+		return report_failure_string(std::string("state trace start failed: ") + error);
+	}
+	if (!input_demo_state_trace_write_frame(810, 2622, 2636896831u, 1, 22066u, &state, error, sizeof(error))) {
+		input_demo_state_trace_stop();
+		remove_test_dir(dir);
+		return report_failure_string(std::string("state trace write failed: ") + error);
+	}
+	input_demo_state_trace_stop();
+	if (!read_text_file(trace_path.c_str(), &text)) {
+		remove_test_dir(dir);
+		return report_failure("could not read state trace file");
+	}
+	remove(trace_path.c_str());
+	remove_test_dir(dir);
+	if (text.find("\"type\":\"meta\"") == std::string::npos ||
+		text.find("\"source\":\"replay\"") == std::string::npos ||
+		text.find("\"f\":810") == std::string::npos ||
+		text.find("\"ft\":2622") == std::string::npos ||
+		text.find("\"rng\":{\"s\":2636896831,\"c\":22066}") == std::string::npos ||
+		text.find("\"game_time64\":2233467") == std::string::npos)
+		return report_failure_string(std::string("unexpected state trace text: ") + text);
+	return 0;
+}
+
+static int expect_record_and_flush_events(void)
+{
+	const char *dir = "test_input_demo_recorder_events_fixture";
+	const std::string demo_path = std::string(dir) + "/recorded_events.dximdemo";
+	const std::string trace_path = demo_path + INPUT_DEMO_RNG_TRACE_SUFFIX;
+	input_demo_recorder_settings settings;
+	input_demo_control_state state;
+	input_demo_control_pulse pulse;
+	input_demo_result frame_state;
+	input_demo_file parsed;
+	char error[256] = "";
+	std::string read_error;
+	std::string text;
+
+	if (!make_test_dir(dir))
+		return report_failure("could not create recorder events test directory");
+	input_demo_recorder_settings_clear(&settings);
+	settings.game = input_demo_test_game_id();
+	settings.mission = input_demo_test_game_name();
+	settings.level = 1;
+	settings.difficulty = 2;
+	settings.rng_mode = input_demo_test_rng_mode();
+	if (!input_demo_recorder_start(&settings, error, sizeof(error))) {
+		remove_test_dir(dir);
+		return report_failure_string(std::string("events recorder start failed: ") + error);
+	}
+	input_demo_control_state_clear(&state);
+	input_demo_control_pulse_clear(&pulse);
+	fill_test_frame_state(&frame_state, 0);
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, error, sizeof(error))) {
+		input_demo_recorder_cancel();
+		remove_test_dir(dir);
+		return report_failure_string(std::string("events capture frame 0 failed: ") + error);
+	}
+	if (!input_demo_recorder_append_frame_event_json(
+			"{\"kind\":\"score\",\"gt\":3276,\"score_kind\":\"normal\",\"delta\":200,\"score\":12700}",
+			error, sizeof(error))) {
+		input_demo_recorder_cancel();
+		remove_test_dir(dir);
+		return report_failure_string(std::string("append score event failed: ") + error);
+	}
+	fill_test_frame_state(&frame_state, 1);
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 101, 0, 0, &frame_state, error, sizeof(error))) {
+		input_demo_recorder_cancel();
+		remove_test_dir(dir);
+		return report_failure_string(std::string("events capture frame 1 failed: ") + error);
+	}
+	if (!input_demo_recorder_append_frame_event_json(
+			"{\"kind\":\"robot_damage\",\"gt\":6552,\"robot_obj\":68,\"robot_sig\":3769,\"robot_id\":39,\"damage\":589824,\"shields_before\":1900544,\"shields_after\":1310720,\"dead\":false,\"x\":-22577346,\"y\":-2494632,\"z\":-11045352}",
+			error, sizeof(error))) {
+		input_demo_recorder_cancel();
+		remove_test_dir(dir);
+		return report_failure_string(std::string("append robot damage event failed: ") + error);
+	}
+	if (!input_demo_recorder_flush(demo_path.c_str(), error, sizeof(error))) {
+		input_demo_recorder_cancel();
+		remove_test_dir(dir);
+		return report_failure_string(std::string("events recorder flush failed: ") + error);
+	}
+	if (!read_text_file(demo_path.c_str(), &text)) {
+		remove(demo_path.c_str());
+		remove(trace_path.c_str());
+		remove_test_dir(dir);
+		return report_failure("could not read recorder events demo file");
+	}
+	if (text.find("\"version\":4") == std::string::npos ||
+		text.find("\"events\":[{\"kind\":\"score\",\"gt\":3276,\"score_kind\":\"normal\",\"delta\":200,\"score\":12700}]") == std::string::npos ||
+		text.find("\"events\":[{\"kind\":\"robot_damage\",\"gt\":6552,\"robot_obj\":68,\"robot_sig\":3769,\"robot_id\":39,\"damage\":589824,\"shields_before\":1900544,\"shields_after\":1310720,\"dead\":false,\"x\":-22577346,\"y\":-2494632,\"z\":-11045352}]") == std::string::npos) {
+		remove(demo_path.c_str());
+		remove(trace_path.c_str());
+		remove_test_dir(dir);
+		return report_failure_string(std::string("unexpected recorder events demo file: ") + text);
+	}
+	if (!input_demo_file_read(demo_path.c_str(), &parsed, &read_error)) {
+		remove(demo_path.c_str());
+		remove(trace_path.c_str());
+		remove_test_dir(dir);
+		return report_failure_string(std::string("events recorder demo read failed: ") + read_error);
+	}
+	remove(demo_path.c_str());
+	remove(trace_path.c_str());
+	remove_test_dir(dir);
+	if (parsed.metadata.version != 4 || parsed.frames.size() != 2 ||
+		parsed.frames[0].events.size() != 1 || parsed.frames[1].events.size() != 1 ||
+		parsed.frames[0].events[0].find("\"kind\":\"score\"") == std::string::npos ||
+		parsed.frames[1].events[0].find("\"kind\":\"robot_damage\"") == std::string::npos)
+		return report_failure("events recorder demo round trip mismatch");
+	return 0;
+}
+
 int main(void)
 {
 	if (expect_record_and_flush())
 		return 1;
 	if (expect_record_and_flush_checkpoint())
+		return 1;
+	if (expect_write_state_trace())
+		return 1;
+	if (expect_record_and_flush_events())
 		return 1;
 	puts("PASS");
 	return 0;

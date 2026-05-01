@@ -5,6 +5,7 @@
 
 #include "input_demo_start.h"
 #include "input_demo_replay.h"
+#include "input_demo_state_trace.h"
 
 extern "C" {
 #include "args.h"
@@ -55,6 +56,14 @@ static const char *find_arg_value(int argc, char *argv[], const char *name)
 		if (!strcmp(argv[index], name))
 			return argv[index + 1];
 	return NULL;
+}
+
+static int find_arg_index(int argc, char *argv[], const char *name)
+{
+	for (int index = 1; index < argc; ++index)
+		if (!strcmp(argv[index], name))
+			return index;
+	return -1;
 }
 
 static int init_headless_runtime(int argc, char *argv[], char *error, size_t error_size)
@@ -117,6 +126,8 @@ int main(int argc, char *argv[])
 {
 	char error[256] = "";
 	const char *demo_path = find_arg_value(argc, argv, "-inputdemo-replay");
+	int state_log_arg_index = find_arg_index(argc, argv, "-inputdemo-state-log");
+	const char *state_log_path = state_log_arg_index >= 0 ? find_arg_value(argc, argv, "-inputdemo-state-log") : NULL;
 	char mission_name[64] = "";
 	char start_mode[32] = "";
 	char result_path[260] = "";
@@ -125,7 +136,11 @@ int main(int argc, char *argv[])
 	unsigned int frame_count = 0;
 
 	if (!demo_path) {
-		fprintf(stderr, "usage: %s -inputdemo-replay <demo.dximdemo>\n", argc > 0 ? argv[0] : "dxx-redux-d2-headless");
+		fprintf(stderr, "usage: %s -inputdemo-replay <demo.dximdemo> [-inputdemo-state-log <actual_state.jsonl>]\n", argc > 0 ? argv[0] : "dxx-redux-d2-headless");
+		return 1;
+	}
+	if (state_log_arg_index >= 0 && !state_log_path) {
+		fprintf(stderr, "HEADLESS-RUN FAIL args missing value for -inputdemo-state-log\n");
 		return 1;
 	}
 	if (!init_headless_runtime(argc, argv, error, sizeof(error))) {
@@ -152,6 +167,11 @@ int main(int argc, char *argv[])
 	frame_count = (unsigned int) input_demo_replay_frame_count();
 	if (input_demo_replay_actual_result_path())
 		snprintf(result_path, sizeof(result_path), "%s", input_demo_replay_actual_result_path());
+	if (state_log_path && !input_demo_state_trace_start_replay(state_log_path, error, sizeof(error))) {
+		fprintf(stderr, "HEADLESS-RUN FAIL state trace %s\n", error[0] ? error : "state trace start failed");
+		input_demo_replay_unload();
+		return 1;
+	}
 	if (input_demo_start_loaded_replay()) {
 		fprintf(stderr, "HEADLESS-RUN FAIL start replay\n");
 		return 1;

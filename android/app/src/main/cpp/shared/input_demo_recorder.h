@@ -42,6 +42,8 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
                                       uint32_t rng_call_count,
                                       const input_demo_result *frame_state,
                                       char *error, size_t error_size);
+int input_demo_recorder_append_frame_event_json(const char *json_text,
+												char *error, size_t error_size);
 int input_demo_recorder_flush_with_result(const char *demo_path,
                                           const input_demo_result *result,
                                           char *error, size_t error_size);

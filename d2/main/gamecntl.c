@@ -43,6 +43,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "laser.h"
 #include "screens.h"
 #include "textures.h"
+#include "input_demo_energy_trace.h"
 #include "slew.h"
 #include "gauges.h"
 #include "texmap.h"
@@ -168,6 +169,8 @@ void play_test_sound(void);
 void transfer_energy_to_shield()
 {
 	fix e;		//how much energy gets transfered
+	fix energy_before = Players[Player_num].energy;
+	fix shields_before = Players[Player_num].shields;
 	static fix64 last_play_time=0;
 
 	e = min(min(FrameTime*CONVERTER_RATE,Players[Player_num].energy - INITIAL_ENERGY),(MAX_SHIELDS-Players[Player_num].shields)*CONVERTER_SCALE);
@@ -185,6 +188,14 @@ void transfer_energy_to_shield()
 
 	Players[Player_num].energy  -= e;
 	Players[Player_num].shields += e/CONVERTER_SCALE;
+	{
+		char extra_json[160];
+		char extra_log[160];
+
+		snprintf(extra_json, sizeof(extra_json), ",\"transfer_raw\":%d,\"shields_before\":%d,\"shields_after\":%d", e, f2i(shields_before), f2i(Players[Player_num].shields));
+		snprintf(extra_log, sizeof(extra_log), " transfer_raw=%d shields_before=%d shields_after=%d", e, f2i(shields_before), f2i(Players[Player_num].shields));
+		input_demo_trace_energy_change("converter", energy_before, Players[Player_num].energy, extra_json, extra_log);
+	}
 
 	if (last_play_time > GameTime64)
 		last_play_time = 0;

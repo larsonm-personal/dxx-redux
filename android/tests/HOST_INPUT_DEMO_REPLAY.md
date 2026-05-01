@@ -18,6 +18,13 @@ Examples:
 ./android/tests/run_input_demo_replay.ps1 -DemoPath .\temp\input_demo_runtime_smoke\d1\demo.dximdemo -Game d1 -Mode accelerated
 ```
 
+Generate and compare a live per-frame replay trace against the embedded frame
+state from the demo:
+
+```powershell
+./android/tests/run_input_demo_replay.ps1 -DemoPath .\android\temp_game_logs\d2_descent2_level2_20260430_221250.dximdemo -Game d2 -Mode accelerated -TraceState -KeepSandbox -Pilot replay
+```
+
 Use `-KeepSandbox` if you need to inspect the generated config or copied exe after a run.
 
 For iterative manual debugging, keep and reuse one sandbox once it has a valid pilot:
@@ -32,3 +39,5 @@ Notes:
 - If a raw run lands at `Enter your pilot name`, stop and go back to the wrapper instead of typing through it in the build output dir.
 - `-ReuseSandbox` preserves `Players/` and other sandbox state between runs. This is the safe way to keep a known-good pilot for repeated experiments.
 - `-Pilot <name>` tells the game which existing pilot to select inside the reused sandbox.
+- `-TraceState` writes `temp/input_demo_state_traces/*.actual_state.jsonl`, exports the expected trace, and runs the state-trace comparer automatically.
+- `-StateLogPath <path>` lets you pick the actual replay trace output file explicitly. Add `-CompareStateTrace` if you also want the wrapper to run the compare helper.
