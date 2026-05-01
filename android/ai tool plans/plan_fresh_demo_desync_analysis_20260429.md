@@ -14,7 +14,11 @@ Goal: analyze the fresh non-`old/` demo artifacts in `android/temp_game_logs`, u
 | 4 | Rerun the fresh input demos through the available replay path and capture new logs. | completed |
 | 5 | Compare frame-by-frame onset windows, classify desyncs, and identify the narrowest plausible root cause. | completed |
 | 6 | Define the next fix or instrumentation needed for a follow-up build. | completed |
-| 7 | Record and restore guidebot escort runtime timestamps in input demo checkpoint/replay, then rerun L2. | in_progress |
+| 7 | Record and restore guidebot escort runtime timestamps in input demo checkpoint/replay, then rerun L2. | completed |
+| 8 | Trace the fresh April 30 L2 replay-only frame-302 awareness event and verify checkpoint/runtime restore boundaries. | completed |
+| 9 | Repair any remaining checkpoint save/load timestamp rebasing bug in the object restore path and rerun L2. | completed |
+| 10 | Trace the earlier side spreadfire pellet that hits robot 100 before frame 302 and compare its replay lifetime against the classic dump. | completed |
+| 11 | Instrument robot 100 health/state in the replay probes and classic dump, then compare the replay frame-302 kill against the classic run. | in_progress |
 
 ## Notes
 
@@ -32,6 +36,14 @@ Goal: analyze the fresh non-`old/` demo artifacts in `android/temp_game_logs`, u
 - The checkpoint schema now records and restores guidebot escort state through the shared input-demo path. The recorded block currently includes `Buddy_allowed_to_talk`, `Buddy_last_seen_player`, `Buddy_last_player_path_created`, `Escort_last_path_created`, `Last_come_back_message_time`, and `Buddy_last_missile_time`.
 - Host validation now covers the new checkpoint fields: `maths\test_input_demo_replay.exe` passes after a clean rebuild and verifies recorder -> file -> replay-loader round-trip for the escort checkpoint state.
 - The old failing artifact `android/temp_game_logs/d2_descent2_level2_20260429_233507.dximdemo` predates this schema change, so replaying it cannot validate the new record-side escort checkpoint fields. A fresh post-change L2 recording and replay is still required to complete phase 7.
+- Fresh April 30 L1 analysis showed the engine already matched the embedded terminal-exit subset. The remaining L1 failure was only a host wrapper comparison bug against raw `endlevel_completed`; after fixing the wrapper, the fresh L1 replay passes.
+- Fresh April 30 L2 analysis narrowed the first real divergence to a replay-only frame-302 spreadfire-on-robot awareness event. The replay log shows `impact probe: frame=302 kind=robot weapon_obj=167 weapon_id=12 ... robot_obj=100`, then `awareness probe: frame=302 ... obj_id=12`, while the recorded `.rngtrace.jsonl` has no frame-302 awareness RNG call and does not advance from RNG state `472276992` until frame 304.
+- The checkpoint runtime restore probe shows the replay is not losing its saved runtime slice after restore. At load, it logs `Input demo replay checkpoint runtime restore: gt=296222 ... spreadfire_toggle=1 ... rng=3662108683 has_rng=1`, and the same run still reaches the first RNG mismatch at frame 303 immediately after the extra frame-302 awareness event.
+- A new local root-cause candidate is in `d2/main/state.c`: object save writes weapon and powerup `creation_time` fields as deltas from `GameTime64`, but object restore assigned those deltas back as absolute times instead of rebasing them onto the restored `GameTime64`. That can skew pre-existing checkpoint weapon age and collision timing without consuming RNG before the first mismatch.
+- The earlier side spreadfire pellet is no longer the leading suspect. Under the cadence-aware 20 Hz to 25 Hz join, replay `obj=162 sig=4106` tracks classic `sig=4107` closely and reaches the same robot-100 contact window.
+- Robot 100 lines up better at `replay_frame - 54` than `replay_frame - 53`, which is good enough to compare motion drift even though the projectile anchor used a different equivalent-frame join.
+- Replay `obj=167` matches classic `sig=4114`, not classic `sig=4113`. The replay/classic center-pellet path stays aligned through replay frame 301 vs classic frame 242, then separates only at replay frame 302 when the replay pellet collides with robot 100.
+- Replay robot 100 is already slightly displaced relative to the classic run before frame 302, and the replay AI trace drops robot 100 entirely at frame 302 while the classic dump still shows robot 100 alive through at least frame 244. The next check is whether the replay robot's shields or related state already differ before the center-pellet hit.
 
 ## Fresh artifacts
 
