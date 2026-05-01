@@ -144,6 +144,7 @@ void ReadCmdArgs(void)
 	GameArg.SysNoBorders 		= FindArg("-noborders");
 	GameArg.SysNoMovies 		= FindArg("-nomovies");
 	GameArg.SysAutoDemo 		= FindArg("-autodemo");
+	GameArg.SysInputDemoNoRender	= FindArg("-inputdemo-norender");
 
 	// Control Options
 

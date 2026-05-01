@@ -43,6 +43,12 @@ static bool fail(std::string *error, const std::string &message)
 	return false;
 }
 
+static bool is_blank_or_comment_line(const std::string &line)
+{
+	const size_t first = line.find_first_not_of(" \t\r\n");
+	return first == std::string::npos || (line[first] == '/' && first + 1 < line.size() && line[first + 1] == '/');
+}
+
 static bool parse_uint32_field(const ordered_json &value, uint32_t *out, std::string *error,
                                const char *field_name)
 {
@@ -422,7 +428,7 @@ bool input_demo_rng_records_read_jsonl_file(const char *path,
 		std::string line_error;
 
 		line_number++;
-		if (line.empty())
+		if (is_blank_or_comment_line(line))
 			continue;
 		if (!input_demo_rng_record_parse_json_line(line, &record, &line_error))
 			return fail(error, std::string("rng jsonl line ") + std::to_string(line_number) +
@@ -934,7 +940,7 @@ bool input_demo_file_parse_text(const std::string &text,
 		std::string line_error;
 
 		line_number++;
-		if (line.empty())
+		if (is_blank_or_comment_line(line))
 			continue;
 		if (!parse_json_line(line, "demo record", &root, &line_error))
 			return fail(error, "demo line " + std::to_string(line_number) + ": " + line_error);

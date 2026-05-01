@@ -163,6 +163,7 @@ static int expect_demo_file_output(void)
 	std::string text;
 	std::string file_text;
 	std::string expected;
+	std::string commented;
 	std::string error;
 
 	demo.metadata.version = 2;
@@ -233,6 +234,11 @@ static int expect_demo_file_output(void)
 	remove(path);
 	if (parsed.frames.size() != 2 || parsed.frames[1].rng.state != 101 || !parsed.has_result)
 		return report_failure("demo file round trip corrupted content");
+	commented = "// fixture smoke test\n  // comments before the header are allowed\n" + expected;
+	if (!input_demo_file_parse_text(commented, &parsed, &error))
+		return report_failure_string(std::string("commented demo file read failed: ") + error);
+	if (parsed.frames.size() != 2 || parsed.frames[0].input.frame_time != 3276 || !parsed.has_result)
+		return report_failure("commented demo file round trip corrupted content");
 	return 0;
 }
 

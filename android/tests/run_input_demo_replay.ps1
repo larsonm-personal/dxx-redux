@@ -10,6 +10,7 @@ param(
     [Alias('HogDir')]
     [string]$DataDir,
     [string]$Pilot,
+    [switch]$NoRender,
     [switch]$ReuseSandbox,
     [switch]$KeepSandbox,
     [switch]$ListOnly
@@ -51,7 +52,17 @@ function ConvertFrom-JsonLine {
     if (-not $Line) {
         throw 'Missing json line content'
     }
-    return $Line | ConvertFrom-Json -AsHashtable
+    return $Line.Trim() | ConvertFrom-Json -AsHashtable
+}
+
+function Test-DemoJsonRecordLine {
+    param([string]$Line)
+
+    if ($null -eq $Line) {
+        return $false
+    }
+    $trimmed = $Line.Trim()
+    return $trimmed.Length -gt 0 -and -not $trimmed.StartsWith('//')
 }
 
 function Get-RelativeRepoPath {
@@ -71,6 +82,7 @@ function Get-SearchRoots {
     }
 
     $roots = @(
+        (Join-Path $repoRoot 'android\regression_demos'),
         (Join-Path $repoRoot 'android\temp_game_logs'),
         (Join-Path $repoRoot 'temp')
     )
@@ -80,24 +92,36 @@ function Get-SearchRoots {
 function Get-DemoHeader {
     param([string]$Path)
 
-    $line = Get-Content -LiteralPath $Path -TotalCount 1
-    $record = ConvertFrom-JsonLine $line
-    if ($record.type -ne 'header') {
-        throw "Demo file does not start with a header record: $Path"
+    foreach ($line in [System.IO.File]::ReadLines($Path)) {
+        if (-not (Test-DemoJsonRecordLine -Line $line)) {
+            continue
+        }
+        $record = ConvertFrom-JsonLine $line
+        if ($record.type -ne 'header') {
+            throw "Demo file does not start with a header record: $Path"
+        }
+        return $record
     }
-    return $record
+    throw "Demo file is missing a header record: $Path"
 }
 
 function Get-DemoCheckpointRecord {
     param([string]$Path)
 
-    $lines = Get-Content -LiteralPath $Path -TotalCount 2
-    if ($lines.Count -lt 2) {
+    $recordIndex = 0
+    foreach ($line in [System.IO.File]::ReadLines($Path)) {
+        if (-not (Test-DemoJsonRecordLine -Line $line)) {
+            continue
+        }
+        $recordIndex++
+        if ($recordIndex -ne 2) {
+            continue
+        }
+        $record = ConvertFrom-JsonLine $line
+        if ($record.type -eq 'checkpoint') {
+            return $record
+        }
         return $null
-    }
-    $record = ConvertFrom-JsonLine $lines[-1]
-    if ($record.type -eq 'checkpoint') {
-        return $record
     }
     return $null
 }
@@ -105,7 +129,15 @@ function Get-DemoCheckpointRecord {
 function Get-DemoResultRecord {
     param([string]$Path)
 
-    $line = Get-Content -LiteralPath $Path | Where-Object { $_.Trim().Length -gt 0 } | Select-Object -Last 1
+    $line = $null
+    foreach ($candidate in [System.IO.File]::ReadLines($Path)) {
+        if (Test-DemoJsonRecordLine -Line $candidate) {
+            $line = $candidate
+        }
+    }
+    if (-not $line) {
+        throw "Demo file is missing a result record: $Path"
+    }
     $record = ConvertFrom-JsonLine $line
     if ($record.type -ne 'result') {
         throw "Demo file does not end with a result record: $Path"
@@ -124,10 +156,11 @@ function Get-DemoApproximateReplayFps {
     $lastFrameTime = $null
 
     foreach ($line in [System.IO.File]::ReadLines($Path)) {
-        if (-not $line.StartsWith('{"type":"frame"')) {
+        $trimmed = $line.Trim()
+        if (-not $trimmed.StartsWith('{"type":"frame"')) {
             continue
         }
-        $record = ConvertFrom-JsonLine $line
+        $record = ConvertFrom-JsonLine $trimmed
         if ($record.ContainsKey('ft')) {
             $lastFrameTime = [int]$record.ft
         }
@@ -331,7 +364,8 @@ function Get-LaunchArguments {
         [string]$ResolvedDataDir,
         [string]$ResolvedDemoPath,
         [hashtable]$LaunchMode,
-        [string]$Pilot
+        [string]$Pilot,
+        [switch]$NoRender
     )
 
     $launchParameters = @(
@@ -345,6 +379,9 @@ function Get-LaunchArguments {
     )
     if ($LaunchMode.ExtraArgs.Count -gt 0) {
         $launchParameters += $LaunchMode.ExtraArgs
+    }
+    if ($NoRender) {
+        $launchParameters += '-inputdemo-norender'
     }
     if ($Pilot) {
         $launchParameters += @('-pilot', $Pilot)
@@ -608,7 +645,7 @@ $actualResultPath = $resolvedDemoPath + '.actual.json'
 $expectedResult = Get-DemoResultRecord -Path $resolvedDemoPath
 $checkpointRecord = Get-DemoCheckpointRecord -Path $resolvedDemoPath
 $normalizedExpectedResult = Normalize-ExpectedResult -Expected $expectedResult -Header $header -Checkpoint $checkpointRecord
-$launchArgs = Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -LaunchMode $launchMode -Pilot $Pilot
+$launchArgs = Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -LaunchMode $launchMode -Pilot $Pilot -NoRender:$NoRender
 $quotedArgs = Get-QuotedArgumentString -Arguments $launchArgs
 
 if (-not (Test-Path -LiteralPath $config.Exe)) {
@@ -623,6 +660,9 @@ Write-Host ''
 Write-Host "Demo: $(Get-RelativeRepoPath -Path $resolvedDemoPath)"
 Write-Host "Game: $resolvedGame"
 Write-Host "Mode: $($launchMode.Name)"
+if ($NoRender) {
+    Write-Host 'Render: no-present'
+}
 Write-Host "Data: $(Get-RelativeRepoPath -Path $resolvedDataDir)"
 Write-Host "Sandbox: $(Get-RelativeRepoPath -Path $sandbox.Directory)"
 if ($ReuseSandbox) {

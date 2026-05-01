@@ -53,6 +53,7 @@ typedef struct Arg
 	int SysNoBorders;
 	int SysAutoDemo;
 	int SysNoTitles;
+	int SysInputDemoNoRender;
 	int CtlNoCursor;
 	int CtlNoMouse;
 	int CtlNoJoystick;
