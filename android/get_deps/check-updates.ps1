@@ -865,6 +865,14 @@ function Get-LatestSevenZipVersion {
     } catch { return $null }
 }
 
+function Get-LatestPyPIVersion($package) {
+    try {
+        $json = (Invoke-WebRequest -Uri "https://pypi.org/pypi/$package/json" `
+                -UseBasicParsing -TimeoutSec 15).Content | ConvertFrom-Json
+        return [string]$json.info.version
+    } catch { return $null }
+}
+
 # -- Fetch all versions -------------------------------------------------------
 
 Write-Host ""
@@ -875,6 +883,7 @@ $latestSdkCommandLineTools = Get-LatestSdkCommandLineToolsInfo
 $latestShellcheck = Get-LatestGitTagInfo "koalaman/shellcheck" "v"
 $latestShfmt = Get-LatestGitTagInfo "mvdan/sh" "v"
 $latestKtlint = Get-LatestGitTagInfo "pinterest/ktlint"
+$latestCmakelang = Get-LatestPyPIVersion "cmakelang"
 $latestChromaprint = Get-LatestGitTagInfo "acoustid/chromaprint" "v"
 $latestClangFormat = Get-LatestClangFormatInfo
 $latestNdkFullVersion = Get-LatestNdkFullVersion
@@ -1011,6 +1020,11 @@ $deps = @(
     @{ Name = "xcrash"; ConfKey = "XCRASH_VERSION";
         Current = $conf["XCRASH_VERSION"];
         Latest = Get-LatestMavenVersion "com.iqiyi.xcrash" "xcrash-android-lib"
+    },
+
+    @{ Name = "cmakelang"; ConfKey = "CMAKELANG_VERSION";
+        Current = $conf["CMAKELANG_VERSION"];
+        Latest = $latestCmakelang
     },
 
     @{ Name = "ktlint"; ConfKey = "KTLINT_VERSION";

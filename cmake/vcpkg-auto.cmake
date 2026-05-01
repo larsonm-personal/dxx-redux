@@ -1,25 +1,23 @@
 # cmake/vcpkg-auto.cmake
 #
-# Auto-discover vcpkg and include its CMake toolchain.
-# Use this as CMAKE_TOOLCHAIN_FILE instead of pointing directly at vcpkg.cmake.
+# Auto-discover vcpkg and include its CMake toolchain. Use this as CMAKE_TOOLCHAIN_FILE instead of
+# pointing directly at vcpkg.cmake.
 #
-# Search order:
-#   1. VCPKG_ROOT environment variable (standard vcpkg convention)
-#   2. VCPKG_INSTALLATION_ROOT environment variable (GitHub Actions / VS Dev Shell)
-#   3. Visual Studio bundled vcpkg (all editions, all versions)
-#   4. Common user install locations (C:/vcpkg, C:/local/vcpkg, ~/vcpkg, etc.)
-#   5. vcpkg on PATH (find_program fallback)
+# Search order: 1. VCPKG_ROOT environment variable (standard vcpkg convention) 2.
+# VCPKG_INSTALLATION_ROOT environment variable (GitHub Actions / VS Dev Shell) 3. Visual Studio
+# bundled vcpkg (all editions, all versions) 4. Common user install locations (C:/vcpkg,
+# C:/local/vcpkg, ~/vcpkg, etc.) 5. vcpkg on PATH (find_program fallback)
 #
-# Once found, includes vcpkg.cmake transparently. If not found, issues a
-# warning but does not hard-fail, so non-vcpkg builds still work.
+# Once found, includes vcpkg.cmake transparently. If not found, issues a warning but does not
+# hard-fail, so non-vcpkg builds still work.
 
 if(DEFINED _VCPKG_AUTO_INCLUDED)
     return()
 endif()
 set(_VCPKG_AUTO_INCLUDED TRUE)
 
-# Use a function (not a macro) to avoid CMake macro textual substitution,
-# which would re-parse backslashes in Windows paths as escape sequences.
+# Use a function (not a macro) to avoid CMake macro textual substitution, which would re-parse
+# backslashes in Windows paths as escape sequences.
 function(_vcpkg_try_root candidate result_var)
     if(${result_var})
         return()
@@ -40,12 +38,10 @@ if(DEFINED ENV{VCPKG_INSTALLATION_ROOT})
     _vcpkg_try_root("$ENV{VCPKG_INSTALLATION_ROOT}" _VCPKG_ROOT)
 endif()
 
-# 3. Visual Studio bundled vcpkg (glob across all VS versions/editions)
+# 1. Visual Studio bundled vcpkg (glob across all VS versions/editions)
 if(NOT _VCPKG_ROOT AND WIN32)
-    foreach(_vs_base
-        "C:/Program Files/Microsoft Visual Studio"
-        "C:/Program Files (x86)/Microsoft Visual Studio"
-    )
+    foreach(_vs_base "C:/Program Files/Microsoft Visual Studio"
+                     "C:/Program Files (x86)/Microsoft Visual Studio")
         if(IS_DIRECTORY "${_vs_base}")
             file(GLOB _vs_versions LIST_DIRECTORIES true "${_vs_base}/*")
             foreach(_vs_ver IN LISTS _vs_versions)
@@ -57,7 +53,7 @@ if(NOT _VCPKG_ROOT AND WIN32)
     endforeach()
 endif()
 
-# 4. Common user install locations
+# 1. Common user install locations
 if(NOT _VCPKG_ROOT)
     if(WIN32)
         _vcpkg_try_root("C:/vcpkg" _VCPKG_ROOT)
@@ -78,12 +74,9 @@ if(NOT _VCPKG_ROOT)
     endif()
 endif()
 
-# 5. find_program fallback — derive root from executable location
+# 1. find_program fallback — derive root from executable location
 if(NOT _VCPKG_ROOT)
-    find_program(_VCPKG_EXE vcpkg PATHS
-        ENV PATH
-        DOC "vcpkg package manager"
-    )
+    find_program(_VCPKG_EXE vcpkg PATHS ENV PATH DOC "vcpkg package manager")
     if(_VCPKG_EXE)
         get_filename_component(_vcpkg_dir "${_VCPKG_EXE}" DIRECTORY)
         if(EXISTS "${_vcpkg_dir}/scripts/buildsystems/vcpkg.cmake")
@@ -99,12 +92,11 @@ if(_VCPKG_ROOT)
     set(VCPKG_ROOT "${_VCPKG_ROOT}" CACHE PATH "vcpkg root (auto-discovered)" FORCE)
     include("${_VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
 else()
-    message(WARNING
-        "vcpkg-auto: vcpkg not found. Install vcpkg and either:\n"
-        "  - set the VCPKG_ROOT environment variable, or\n"
-        "  - install to a standard location (C:/vcpkg, C:/local/vcpkg, ~/vcpkg, etc.)\n"
-        "Continuing without vcpkg — find_package calls may fail."
-    )
+    message(
+        WARNING "vcpkg-auto: vcpkg not found. Install vcpkg and either:\n"
+                "  - set the VCPKG_ROOT environment variable, or\n"
+                "  - install to a standard location (C:/vcpkg, C:/local/vcpkg, ~/vcpkg, etc.)\n"
+                "Continuing without vcpkg — find_package calls may fail.")
 endif()
 
 unset(_VCPKG_ROOT)

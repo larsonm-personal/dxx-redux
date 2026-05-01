@@ -52,6 +52,10 @@ echo "=== Step 9/9: ktlint ==="
 bash "$SCRIPT_DIR/get_ktlint.sh"
 
 echo ""
+echo "=== Step 10/10: cmake-format / cmake-lint ==="
+bash "$SCRIPT_DIR/get_cmake_format.sh"
+
+echo ""
 echo "=== All dependencies installed. ==="
 echo "Source ../set_vars.sh to set JAVA_HOME / ANDROID_HOME / ANDROID_NDK_ROOT"
 echo "Run ../run_emulator.sh to build, launch emulator, and test"

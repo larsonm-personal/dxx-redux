@@ -1,0 +1,43 @@
+# cmake-format / cmake-lint configuration for the dxx-redux cmake branch.
+# Applies only to cmake files added by this branch (android/, cmake/,
+# tools/etc2tool/), never to upstream files in d1/ or d2/.
+# Tool: cheshirekow/cmakelang.
+parse:
+  additional_commands: {}
+format:
+  line_width: 100
+  tab_size: 4
+  use_tabchars: false
+  # Match the project's clang-format style: do not dangle the closing paren on
+  # its own line for short calls; only wrap when the args do not fit.
+  dangle_parens: false
+  # Keep argument lists in source order; FetchContent and SDL source lists are
+  # ordered intentionally and re-sorting them is harmful.
+  autosort: false
+  # Allow long string arguments to stay on one line.
+  max_subgroups_hwrap: 4
+  separate_ctrl_name_with_space: false
+  separate_fn_name_with_space: false
+markup:
+  enable_markup: true
+lint:
+  # Disable warnings that fight the existing style:
+  #   C0111: missing docstring on function/macro (self-documenting names used)
+  #   C0103: invalid "argument name" (we use ${UPPERCASE} variable names)
+  #   C0301: line too long (we already enforce line_width via the formatter)
+  #   C0307: bad indentation (the formatter owns indentation)
+  #   R0912: too many branches (legacy if/elseif chains in patch logic)
+  #   R0915: too many statements (FetchContent blocks list many sources)
+  #   W0106: missing project() in CMakeLists (not applicable to .cmake includes)
+  disabled_codes:
+    - C0111
+    - C0103
+    - C0301
+    - C0307
+    - R0912
+    - R0915
+    - W0106
+encode:
+  emit_byteorder_mark: false
+  input_encoding: utf-8
+  output_encoding: utf-8

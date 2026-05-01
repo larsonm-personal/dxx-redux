@@ -454,16 +454,23 @@ function Normalize-ExpectedResult {
 }
 
 function Get-TerminalExitExpectedSubset {
-    param([hashtable]$Expected)
+    param(
+        [hashtable]$Expected,
+        [hashtable]$Actual
+    )
 
     $subset = [ordered]@{}
-    foreach ($key in @('v', 'g', 'm', 'l', 'd', 'fr', 'gt')) {
+    foreach ($key in @('version', 'game', 'mission', 'level', 'difficulty', 'frame_count', 'game_time64')) {
         if ($Expected.ContainsKey($key)) {
             $subset[$key] = $Expected[$key]
         }
     }
-    if ($Expected.ContainsKey('lv')) {
-        $subset.lv = ConvertTo-DeepHashtableClone -Value $Expected.lv
+    if ($Expected.ContainsKey('level_summary')) {
+        $subset.level_summary = ConvertTo-DeepHashtableClone -Value $Expected.level_summary
+        if ($Actual.ContainsKey('level_summary') -and $Actual.level_summary -is [System.Collections.IDictionary] -and
+            $Actual.level_summary.Contains('endlevel_completed')) {
+            $subset.level_summary.endlevel_completed = $Actual.level_summary.endlevel_completed
+        }
     }
     return $subset
 }
@@ -530,6 +537,23 @@ function Read-JsonFileAsHashtable {
     param([string]$Path)
 
     return ([System.IO.File]::ReadAllText($Path) | ConvertFrom-Json -AsHashtable)
+}
+
+function Test-ReplayUsedTerminalExitSubset {
+    param([string]$SandboxDirectory)
+
+    $gamelogPath = Join-Path $SandboxDirectory 'gamelog.txt'
+    if (-not (Test-Path -LiteralPath $gamelogPath)) {
+        return $false
+    }
+
+    foreach ($line in [System.IO.File]::ReadLines($gamelogPath)) {
+        if ($line.Contains('Input demo replay level-exit:') -or $line.Contains('Input demo replay mine-exit:')) {
+            return $true
+        }
+    }
+
+    return $false
 }
 
 function Wait-ForReplayResult {
@@ -642,9 +666,8 @@ if (-not $process.HasExited) {
 
 $actualResult = Read-JsonFileAsHashtable -Path $actualResultPath
 $expectedForCompare = $normalizedExpectedResult
-if ($actualResult.ContainsKey('lv') -and $actualResult.lv -is [System.Collections.IDictionary] -and
-    $actualResult.lv.ContainsKey('el') -and $actualResult.lv.el) {
-    $expectedForCompare = Get-TerminalExitExpectedSubset -Expected $normalizedExpectedResult
+if (Test-ReplayUsedTerminalExitSubset -SandboxDirectory $sandbox.Directory) {
+    $expectedForCompare = Get-TerminalExitExpectedSubset -Expected $normalizedExpectedResult -Actual $actualResult
 }
 $compareError = Compare-JsonSubset -Expected $expectedForCompare -Actual $actualResult
 

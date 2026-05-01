@@ -1,6 +1,7 @@
 # run-code-quality.ps1 -- Run all code quality checks.
 # Tools: clang-format (C/C++), ktlint (Kotlin), PSScriptAnalyzer (PowerShell),
-#        shellcheck (bash lint), shfmt (bash format).
+#        shellcheck (bash lint), shfmt (bash format),
+#        cmake-format / cmake-lint (cheshirekow/cmakelang).
 # Usage:
 #   .\run-code-quality.ps1          # check only (exit 1 if issues)
 #   .\run-code-quality.ps1 -Fix     # auto-format all supported languages
@@ -285,6 +286,30 @@ try {
     }
     if ($LASTEXITCODE -ne 0) {
         $failed += "shfmt"
+    }
+    Write-Host ""
+
+    # --- cmake-format ---
+    Write-CodeQualityLock -Stage 'cmake-format'
+    Write-Host "--- CMake format (cmake-format) ---"
+    if ($Fix) {
+        & "$scriptDir\run-cmake-format.ps1" @toolParams
+    } else {
+        $checkParams = @{ Check = $true } + $toolParams
+        & "$scriptDir\run-cmake-format.ps1" @checkParams
+    }
+    if ($LASTEXITCODE -ne 0) {
+        $failed += "cmake-format"
+    }
+    Write-Host ""
+
+    # --- cmake-lint ---
+    Write-CodeQualityLock -Stage 'cmake-lint'
+    Write-Host "--- CMake lint (cmake-lint) ---"
+    # cmake-lint has no auto-fix; always runs in report mode
+    & "$scriptDir\run-cmake-lint.ps1" @toolParams
+    if ($LASTEXITCODE -ne 0) {
+        $failed += "cmake-lint"
     }
     Write-Host ""
 
