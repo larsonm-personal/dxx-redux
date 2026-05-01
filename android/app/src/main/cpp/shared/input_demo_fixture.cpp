@@ -477,8 +477,8 @@ static bool validate_checkpoint(const input_demo_checkpoint &checkpoint, std::st
 
 static bool validate_metadata(const input_demo_metadata &metadata, std::string *error)
 {
-	if (metadata.version != 2)
-		return fail(error, "metadata version must be 2");
+	if (metadata.version != 2 && metadata.version != 3)
+		return fail(error, "metadata version must be 2 or 3");
 	if (metadata.game != "d1" && metadata.game != "d2")
 		return fail(error, "metadata game must be d1 or d2");
 	if (metadata.mission.empty())
@@ -822,11 +822,13 @@ static bool parse_frame_record(const ordered_json &root, int game, uint32_t expe
 {
 	ordered_json control = ordered_json::object();
 	ordered_json rng = ordered_json::object();
+	ordered_json state = ordered_json::object();
 	ordered_json::const_iterator it;
 	uint32_t parsed_frame = 0;
 	bool have_frame = false;
 	bool have_input = false;
 	bool have_rng = false;
+	bool have_state = false;
 	std::string line_error;
 
 	if (!frame)
@@ -862,6 +864,11 @@ static bool parse_frame_record(const ordered_json &root, int game, uint32_t expe
 				rng[rng_it.key()] = rng_it.value();
 			}
 			have_rng = true;
+		} else if (name == "state") {
+			if (!it.value().is_object())
+				return fail(error, "frame state must be an object");
+			state = it.value();
+			have_state = true;
 		} else {
 			return fail(error, "unknown frame key: " + name);
 		}
@@ -880,6 +887,11 @@ static bool parse_frame_record(const ordered_json &root, int game, uint32_t expe
 		return fail(error, "frame input: " + line_error);
 	if (!input_demo_rng_record_parse_json_line(rng.dump(), &frame->rng, &line_error))
 		return fail(error, "frame rng: " + line_error);
+	if (have_state) {
+		if (!input_demo_result_parse_snapshot_json_text(state.dump(), &frame->state, &line_error))
+			return fail(error, "frame state: " + line_error);
+		frame->has_state = true;
+	}
 	return validate_frame_record(*frame, expected_frame, game, error);
 }
 
@@ -889,10 +901,13 @@ static bool frame_record_to_json_line(const input_demo_file_frame &frame, int ga
 	ordered_json root = ordered_json::object();
 	ordered_json input = ordered_json::object();
 	ordered_json rng = ordered_json::object();
+	ordered_json state = ordered_json::object();
 	ordered_json control_record;
 	ordered_json rng_record;
+	ordered_json state_record;
 	std::string control_line;
 	std::string rng_line;
+	std::string state_line;
 
 	if (!input_demo_control_record_to_json_line(frame.input, game, &control_line, error))
 		return false;
@@ -902,6 +917,12 @@ static bool frame_record_to_json_line(const input_demo_file_frame &frame, int ga
 		return false;
 	if (!parse_json_line(rng_line, "frame rng", &rng_record, error))
 		return false;
+	if (frame.has_state) {
+		if (!input_demo_result_snapshot_to_json_text(frame.state, &state_line, error))
+			return false;
+		if (!parse_json_line(state_line, "frame state", &state_record, error))
+			return false;
+	}
 	root["type"] = "frame";
 	root["f"] = frame.input.frame;
 	if (control_record.contains("ft"))
@@ -916,6 +937,10 @@ static bool frame_record_to_json_line(const input_demo_file_frame &frame, int ga
 	if (rng_record.contains("c"))
 		rng["c"] = rng_record.at("c");
 	root["rng"] = std::move(rng);
+	if (frame.has_state) {
+		state = std::move(state_record);
+		root["state"] = std::move(state);
+	}
 	*line = root.dump();
 	return true;
 }

@@ -40,6 +40,7 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
                                       uint32_t rng_state,
                                       int has_rng_call_count,
                                       uint32_t rng_call_count,
+                                      const input_demo_result *frame_state,
                                       char *error, size_t error_size);
 int input_demo_recorder_flush_with_result(const char *demo_path,
                                           const input_demo_result *result,

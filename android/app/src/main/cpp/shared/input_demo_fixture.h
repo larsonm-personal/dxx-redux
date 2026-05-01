@@ -125,6 +125,16 @@ struct input_demo_checkpoint {
 struct input_demo_file_frame {
 	input_demo_control_record input;
 	input_demo_rng_record rng;
+	bool has_state;
+	input_demo_result state;
+
+	input_demo_file_frame()
+	    : has_state(false)
+	{
+		input_demo_control_record_clear(&input);
+		input_demo_rng_record_clear(&rng);
+		input_demo_result_clear(&state);
+	}
 };
 
 struct input_demo_file {

@@ -11,6 +11,7 @@ param(
     [string]$DataDir,
     [string]$Pilot,
     [switch]$NoRender,
+    [switch]$PreferHeadlessConsole,
     [switch]$ReuseSandbox,
     [switch]$KeepSandbox,
     [switch]$ListOnly
@@ -219,6 +220,18 @@ function Get-GameConfig {
     throw "Unsupported game: $Name"
 }
 
+function Get-HeadlessConsoleExe {
+    param([string]$GameName)
+
+    switch ($GameName) {
+        'd2' {
+            return Join-Path $repoRoot 'buildd2\main\dxx-redux-d2-headless.exe'
+        }
+    }
+
+    return $null
+}
+
 function Resolve-DemoGame {
     param(
         [hashtable]$Header,
@@ -293,23 +306,32 @@ function New-LaunchSandbox {
     param(
         [hashtable]$Config,
         [string]$SandboxName,
-        [switch]$ReuseSandbox
+        [switch]$ReuseSandbox,
+        [switch]$SkipExecutableCopy
     )
 
-    $sourceDir = Split-Path $Config.Exe -Parent
     $safeName = ($SandboxName -replace '[^A-Za-z0-9_.-]', '_')
     $sandboxDir = Join-Path $outRoot "$($Config.Name)\$safeName"
-    $sandboxExe = Join-Path $sandboxDir (Split-Path $Config.Exe -Leaf)
+    $sandboxExe = $null
 
     if ((Test-Path -LiteralPath $sandboxDir) -and -not $ReuseSandbox) {
         Remove-Item -LiteralPath $sandboxDir -Recurse -Force
     }
     New-Item -ItemType Directory -Path $sandboxDir -Force | Out-Null
 
-    Copy-Item -LiteralPath $Config.Exe -Destination $sandboxExe -Force
-    Get-ChildItem -LiteralPath $sourceDir -File |
-        Where-Object { $_.Extension -eq '.dll' } |
-        Copy-Item -Destination $sandboxDir -Force
+    if (-not $SkipExecutableCopy) {
+        if (-not (Test-Path -LiteralPath $Config.Exe)) {
+            throw "Built executable not found: $($Config.Exe)"
+        }
+
+        $sourceDir = Split-Path $Config.Exe -Parent
+        $sandboxExe = Join-Path $sandboxDir (Split-Path $Config.Exe -Leaf)
+
+        Copy-Item -LiteralPath $Config.Exe -Destination $sandboxExe -Force
+        Get-ChildItem -LiteralPath $sourceDir -File |
+            Where-Object { $_.Extension -eq '.dll' } |
+            Copy-Item -Destination $sandboxDir -Force
+    }
 
     Write-ReplayConfig -Path (Join-Path $sandboxDir 'descent.cfg')
 
@@ -317,6 +339,45 @@ function New-LaunchSandbox {
         Directory = $sandboxDir
         Exe = $sandboxExe
     }
+}
+
+function Test-UseHeadlessConsoleRunner {
+    param(
+        [string]$ResolvedGame,
+        [hashtable]$Header,
+        [hashtable]$LaunchMode,
+        [string]$Pilot,
+        [switch]$NoRender,
+        [switch]$PreferHeadlessConsole
+    )
+
+    if (-not $PreferHeadlessConsole -or $NoRender -or $Pilot) {
+        return $false
+    }
+    if ($ResolvedGame -ne 'd2') {
+        return $false
+    }
+    if ($LaunchMode.Name -ne 'accelerated') {
+        return $false
+    }
+    if (-not $Header.ContainsKey('start_mode') -or [string]$Header.start_mode -ne 'save_checkpoint') {
+        return $false
+    }
+
+    $headlessExe = Get-HeadlessConsoleExe -GameName $ResolvedGame
+    return $headlessExe -and (Test-Path -LiteralPath $headlessExe)
+}
+
+function Get-HeadlessConsoleLaunchArguments {
+    param(
+        [string]$ResolvedDataDir,
+        [string]$ResolvedDemoPath
+    )
+
+    return @(
+        '-hogdir', $ResolvedDataDir,
+        '-inputdemo-replay', $ResolvedDemoPath
+    )
 }
 
 function Get-LaunchMode {
@@ -640,16 +701,24 @@ $resolvedGame = Resolve-DemoGame -Header $header -RequestedGame $Game
 $config = Get-GameConfig -Name $resolvedGame
 $resolvedDataDir = Resolve-DataDir -Config $config -RequestedDataDir $DataDir
 $launchMode = Get-LaunchMode -RequestedMode $Mode -Path $resolvedDemoPath -Config $config
-$sandbox = New-LaunchSandbox -Config $config -SandboxName ([System.IO.Path]::GetFileNameWithoutExtension($resolvedDemoPath)) -ReuseSandbox:$ReuseSandbox
+$useHeadlessConsole = Test-UseHeadlessConsoleRunner -ResolvedGame $resolvedGame -Header $header -LaunchMode $launchMode -Pilot $Pilot -NoRender:$NoRender -PreferHeadlessConsole:$PreferHeadlessConsole
+$headlessConsoleExe = if ($useHeadlessConsole) { Get-HeadlessConsoleExe -GameName $resolvedGame } else { $null }
+$sandbox = New-LaunchSandbox -Config $config -SandboxName ([System.IO.Path]::GetFileNameWithoutExtension($resolvedDemoPath)) -ReuseSandbox:$ReuseSandbox -SkipExecutableCopy:$useHeadlessConsole
 $actualResultPath = $resolvedDemoPath + '.actual.json'
 $expectedResult = Get-DemoResultRecord -Path $resolvedDemoPath
 $checkpointRecord = Get-DemoCheckpointRecord -Path $resolvedDemoPath
 $normalizedExpectedResult = Normalize-ExpectedResult -Expected $expectedResult -Header $header -Checkpoint $checkpointRecord
-$launchArgs = Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -LaunchMode $launchMode -Pilot $Pilot -NoRender:$NoRender
+$launchArgs = if ($useHeadlessConsole) {
+    Get-HeadlessConsoleLaunchArguments -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath
+} else {
+    Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -LaunchMode $launchMode -Pilot $Pilot -NoRender:$NoRender
+}
+$launchExecutable = if ($useHeadlessConsole) { $headlessConsoleExe } else { $sandbox.Exe }
+$runnerName = if ($useHeadlessConsole) { 'headless-console' } elseif ($NoRender) { 'windowed-no-present' } else { 'windowed' }
 $quotedArgs = Get-QuotedArgumentString -Arguments $launchArgs
 
-if (-not (Test-Path -LiteralPath $config.Exe)) {
-    throw "Built executable not found: $($config.Exe)"
+if (-not (Test-Path -LiteralPath $launchExecutable)) {
+    throw "Built executable not found: $launchExecutable"
 }
 
 if (Test-Path -LiteralPath $actualResultPath) {
@@ -659,8 +728,9 @@ if (Test-Path -LiteralPath $actualResultPath) {
 Write-Host ''
 Write-Host "Demo: $(Get-RelativeRepoPath -Path $resolvedDemoPath)"
 Write-Host "Game: $resolvedGame"
+Write-Host "Runner: $runnerName"
 Write-Host "Mode: $($launchMode.Name)"
-if ($NoRender) {
+if ($NoRender -and -not $useHeadlessConsole) {
     Write-Host 'Render: no-present'
 }
 Write-Host "Data: $(Get-RelativeRepoPath -Path $resolvedDataDir)"
@@ -668,10 +738,10 @@ Write-Host "Sandbox: $(Get-RelativeRepoPath -Path $sandbox.Directory)"
 if ($ReuseSandbox) {
     Write-Host 'Sandbox mode: reuse'
 }
-Write-Host "Command: $($sandbox.Exe) $quotedArgs"
+Write-Host "Command: $launchExecutable $quotedArgs"
 
 $startInfo = New-Object System.Diagnostics.ProcessStartInfo
-$startInfo.FileName = $sandbox.Exe
+$startInfo.FileName = $launchExecutable
 $startInfo.WorkingDirectory = $sandbox.Directory
 $startInfo.UseShellExecute = $false
 $startInfo.RedirectStandardOutput = $false
@@ -683,8 +753,10 @@ if (-not $process) {
     throw 'Failed to start replay process'
 }
 
+$replayStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 $waitResult = Wait-ForReplayResult -Process $process -ActualResultPath $actualResultPath -TimeoutSeconds $TimeoutSeconds
 if (-not $waitResult.ResultReady) {
+    $replayStopwatch.Stop()
     if (-not $waitResult.Exited) {
         try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
     }
@@ -704,14 +776,25 @@ if (-not $process.HasExited) {
     }
 }
 
+$replayStopwatch.Stop()
 $actualResult = Read-JsonFileAsHashtable -Path $actualResultPath
 $expectedForCompare = $normalizedExpectedResult
 if (Test-ReplayUsedTerminalExitSubset -SandboxDirectory $sandbox.Directory) {
     $expectedForCompare = Get-TerminalExitExpectedSubset -Expected $normalizedExpectedResult -Actual $actualResult
 }
 $compareError = Compare-JsonSubset -Expected $expectedForCompare -Actual $actualResult
+$elapsedSeconds = [Math]::Round($replayStopwatch.Elapsed.TotalSeconds, 3)
+$replayFps = $null
+if ($actualResult.ContainsKey('frame_count') -and $replayStopwatch.Elapsed.TotalSeconds -gt 0) {
+    $replayFps = [Math]::Round(([double]$actualResult.frame_count) / $replayStopwatch.Elapsed.TotalSeconds, 2)
+}
 
 Write-Host ''
+if ($null -ne $replayFps) {
+    Write-Host ("Elapsed: {0}s replay_fps={1}" -f $elapsedSeconds, $replayFps)
+} else {
+    Write-Host ("Elapsed: {0}s" -f $elapsedSeconds)
+}
 if ($compareError) {
     Write-Host 'RESULT: FAIL' -ForegroundColor Red
     Write-Host $compareError

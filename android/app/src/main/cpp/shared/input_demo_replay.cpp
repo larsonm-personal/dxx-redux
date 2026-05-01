@@ -224,6 +224,7 @@ void input_demo_replay_frame_clear(input_demo_replay_frame *frame)
 	memset(frame, 0, sizeof(*frame));
 	input_demo_control_state_clear(&frame->state);
 	input_demo_control_pulse_clear(&frame->pulse);
+	input_demo_result_clear(&frame->state_result);
 }
 
 int input_demo_replay_is_loaded(void)
@@ -261,6 +262,12 @@ int input_demo_replay_load(const char *demo_path, char *error, size_t error_size
 		return copy_error(replay_error, error, error_size);
 	if (!apply_rng_records(rng_records, &frames, &replay_error))
 		return copy_error(replay_error, error, error_size);
+	for (i = 0; i != demo.frames.size(); ++i) {
+		if (!demo.frames[i].has_state)
+			continue;
+		frames[i].has_state = 1;
+		frames[i].state_result = demo.frames[i].state;
+	}
 	reset_session();
 	g_input_demo_replay_session.loaded = true;
 	g_input_demo_replay_session.game = game;

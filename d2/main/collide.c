@@ -2360,12 +2360,32 @@ void apply_damage_to_player(object *playerobj, object *killer, fix damage, ubyte
 	//be a mirror of the value in the Player structure.
 
 	if (playerobj->id == Player_num) {		//is this the local player?
+		fix old_shields = Players[Player_num].shields;
+		int killer_obj = killer ? (int)(killer - Objects) : -1;
+		int killer_type = killer ? killer->type : -1;
+		int killer_id = killer ? killer->id : -1;
+		int killer_sig = killer ? killer->signature : -1;
+		int killer_seg = killer ? killer->segnum : -1;
 #ifdef __ANDROID__
 		/* android port: coop QoL -- track engagement for warp availability */
 		if (killer && killer->type == OBJ_ROBOT)
 			coop_warp_record_engagement();
 #endif
 		Players[Player_num].shields -= damage;
+		if (input_demo_replay_is_loaded())
+			con_printf(CON_NORMAL,
+				"Input demo replay player damage: gt=%lld frame=%u damage=%d shields=%d->%d killer_type=%d killer_obj=%d killer_id=%d killer_sig=%d killer_seg=%d friendly=%d\n",
+				(long long)GameTime64,
+				(unsigned int)input_demo_replay_next_frame_index(),
+				damage,
+				old_shields,
+				Players[Player_num].shields,
+				killer_type,
+				killer_obj,
+				killer_id,
+				killer_sig,
+				killer_seg,
+				possibly_friendly);
 		PALETTE_FLASH_ADD(f2i(damage)*4,-f2i(damage/2),-f2i(damage/2));	//flash red
 
 		if (Players[Player_num].shields < 0)	{
@@ -2549,6 +2569,34 @@ void collide_player_and_weapon( object * playerobj, object * weapon, vms_vector 
 //			damage /= 4;
 
 		if (!(weapon->flags & OF_HARMLESS)) {
+			if (input_demo_replay_is_loaded() && playerobj->id == Player_num) {
+				int weapon_obj = (int)(weapon - Objects);
+				int parent_num = weapon->ctype.laser_info.parent_num;
+				int parent_slot_valid = parent_num > -1 && parent_num <= Highest_object_index;
+				int parent_slot_type = parent_slot_valid ? Objects[parent_num].type : -1;
+				int parent_slot_id = parent_slot_valid ? Objects[parent_num].id : -1;
+				int parent_slot_sig = parent_slot_valid ? Objects[parent_num].signature : -1;
+				int parent_slot_seg = parent_slot_valid ? Objects[parent_num].segnum : -1;
+
+				con_printf(CON_NORMAL,
+					"Input demo replay player weapon hit: gt=%lld frame=%u weapon_obj=%d weapon_id=%d weapon_sig=%d weapon_seg=%d damage=%d parent_type=%d parent_num=%d parent_sig=%d slot_valid=%d slot_type=%d slot_id=%d slot_sig=%d slot_seg=%d sig_match=%d\n",
+					(long long)GameTime64,
+					(unsigned int)input_demo_replay_next_frame_index(),
+					weapon_obj,
+					weapon->id,
+					weapon->signature,
+					weapon->segnum,
+					damage,
+					weapon->ctype.laser_info.parent_type,
+					parent_num,
+					weapon->ctype.laser_info.parent_signature,
+					parent_slot_valid,
+					parent_slot_type,
+					parent_slot_id,
+					parent_slot_sig,
+					parent_slot_seg,
+					parent_slot_valid && parent_slot_sig == weapon->ctype.laser_info.parent_signature);
+			}
 
 			if(playerobj->id == Player_num && ! Player_is_dead) {
 				char* killer_name;

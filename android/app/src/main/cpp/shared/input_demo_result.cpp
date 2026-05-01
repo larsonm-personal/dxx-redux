@@ -283,29 +283,41 @@ static nlohmann::ordered_json input_demo_result_ammo_array(const uint16_t *ammo,
 
 static bool input_demo_result_parse_json_object(const nlohmann::json &root,
                                                 input_demo_result *result,
-                                                std::string *error)
+                                                std::string *error,
+                                                bool require_metadata)
+
 {
-	static const char *const allowed_keys[] = {
+	static const char *const result_allowed_keys[] = {
 		"version", "game", "mission", "level", "difficulty", "frame_count",
 		"game_time64", "player0", "position", "level_summary"
 	};
+	static const char *const snapshot_allowed_keys[] = {
+		"game_time64", "player0", "position", "level_summary"
+	};
+	const char *const *allowed_keys = require_metadata ? result_allowed_keys : snapshot_allowed_keys;
+	const size_t allowed_key_count = require_metadata ? sizeof(result_allowed_keys) / sizeof(result_allowed_keys[0])
+	                                                  : sizeof(snapshot_allowed_keys) / sizeof(snapshot_allowed_keys[0]);
 
 	if (!root.is_object())
-		return error ? (*error = "result root must be an object", false) : false;
+		return error ? (*error = require_metadata ? "result root must be an object" : "snapshot root must be an object", false) : false;
 	for (nlohmann::json::const_iterator it = root.begin(); it != root.end(); ++it) {
-		if (!input_demo_result_key_allowed(it.key(), allowed_keys, sizeof(allowed_keys) / sizeof(allowed_keys[0])))
-			return error ? (*error = std::string("unknown result key: ") + it.key(), false) : false;
+		if (!input_demo_result_key_allowed(it.key(), allowed_keys, allowed_key_count))
+			return error ? (*error = std::string(require_metadata ? "unknown result key: " : "unknown snapshot key: ") + it.key(), false) : false;
 	}
-	if (!root.contains("version") || !root.contains("game") || !root.contains("mission") || !root.contains("level") ||
-	    !root.contains("difficulty") || !root.contains("frame_count"))
-		return error ? (*error = "result is missing one or more required keys: version, game, mission, level, difficulty, frame_count", false) : false;
+	if (require_metadata) {
+		if (!root.contains("version") || !root.contains("game") || !root.contains("mission") || !root.contains("level") ||
+		    !root.contains("difficulty") || !root.contains("frame_count"))
+			return error ? (*error = "result is missing one or more required keys: version, game, mission, level, difficulty, frame_count", false) : false;
+	}
 	input_demo_result_clear(result);
-	result->version = root.at("version").get<int32_t>();
-	snprintf(result->game, sizeof(result->game), "%s", root.at("game").get_ref<const std::string &>().c_str());
-	snprintf(result->mission, sizeof(result->mission), "%s", root.at("mission").get_ref<const std::string &>().c_str());
-	result->level = root.at("level").get<int32_t>();
-	result->difficulty = root.at("difficulty").get<int32_t>();
-	result->frame_count = root.at("frame_count").get<uint32_t>();
+	if (require_metadata) {
+		result->version = root.at("version").get<int32_t>();
+		snprintf(result->game, sizeof(result->game), "%s", root.at("game").get_ref<const std::string &>().c_str());
+		snprintf(result->mission, sizeof(result->mission), "%s", root.at("mission").get_ref<const std::string &>().c_str());
+		result->level = root.at("level").get<int32_t>();
+		result->difficulty = root.at("difficulty").get<int32_t>();
+		result->frame_count = root.at("frame_count").get<uint32_t>();
+	}
 	if (root.contains("game_time64")) {
 		result->has_game_time64 = 1;
 		result->game_time64 = root.at("game_time64").get<int64_t>();
@@ -319,16 +331,19 @@ static bool input_demo_result_parse_json_object(const nlohmann::json &root,
 	return true;
 }
 
-static nlohmann::ordered_json input_demo_result_to_json_object(const input_demo_result *result)
+static nlohmann::ordered_json input_demo_result_to_json_object(const input_demo_result *result,
+                                                               bool include_metadata)
 {
 	nlohmann::ordered_json root = nlohmann::ordered_json::object();
 
-	root["version"] = result->version ? result->version : 2;
-	root["game"] = result->game;
-	root["mission"] = result->mission;
-	root["level"] = result->level;
-	root["difficulty"] = result->difficulty;
-	root["frame_count"] = result->frame_count;
+	if (include_metadata) {
+		root["version"] = result->version ? result->version : 2;
+		root["game"] = result->game;
+		root["mission"] = result->mission;
+		root["level"] = result->level;
+		root["difficulty"] = result->difficulty;
+		root["frame_count"] = result->frame_count;
+	}
 	if (result->has_game_time64)
 		root["game_time64"] = result->game_time64;
 
@@ -383,6 +398,38 @@ static nlohmann::ordered_json input_demo_result_to_json_object(const input_demo_
 	return root;
 }
 
+static int input_demo_result_compare_internal(const input_demo_result *expected,
+                                              const input_demo_result *actual,
+                                              bool compare_metadata,
+                                              char *error,
+                                              size_t error_size)
+{
+	std::string compare_error;
+
+	if (!expected || !actual)
+		return input_demo_result_copy_error("missing result comparison input", error, error_size);
+	if (compare_metadata &&
+	    (!input_demo_result_compare_int64("version", "schema version", expected->version, actual->version, &compare_error) ||
+	     !input_demo_result_compare_string("game", "game id", expected->game, actual->game, &compare_error) ||
+	     !input_demo_result_compare_string("mission", "mission id", expected->mission, actual->mission, &compare_error) ||
+	     !input_demo_result_compare_int64("level", "level", expected->level, actual->level, &compare_error) ||
+	     !input_demo_result_compare_int64("difficulty", "difficulty", expected->difficulty, actual->difficulty, &compare_error) ||
+	     !input_demo_result_compare_int64("frame_count", "frame count", expected->frame_count, actual->frame_count, &compare_error)))
+		return input_demo_result_copy_error(compare_error, error, error_size);
+	if (expected->has_game_time64 &&
+	    !input_demo_result_compare_int64("game_time64", compare_metadata ? "final GameTime64" : "frame GameTime64",
+	                                     expected->game_time64, actual->game_time64, &compare_error))
+		return input_demo_result_copy_error(compare_error, error, error_size);
+	if (expected->player0.present && !input_demo_result_compare_player(&expected->player0, &actual->player0, &compare_error))
+		return input_demo_result_copy_error(compare_error, error, error_size);
+	if (expected->position.present && !input_demo_result_compare_position(&expected->position, &actual->position, &compare_error))
+		return input_demo_result_copy_error(compare_error, error, error_size);
+	if (expected->level_summary.present &&
+	    !input_demo_result_compare_level_summary(&expected->level_summary, &actual->level_summary, &compare_error))
+		return input_demo_result_copy_error(compare_error, error, error_size);
+	return 1;
+}
+
 } // namespace
 
 bool input_demo_result_parse_json_text(const std::string &text,
@@ -398,7 +445,23 @@ bool input_demo_result_parse_json_text(const std::string &text,
 	} catch (const std::exception &ex) {
 		return error ? (*error = std::string("could not parse result json: ") + ex.what(), false) : false;
 	}
-	return input_demo_result_parse_json_object(root, result, error);
+	return input_demo_result_parse_json_object(root, result, error, true);
+}
+
+bool input_demo_result_parse_snapshot_json_text(const std::string &text,
+                                                input_demo_result *result,
+                                                std::string *error)
+{
+	nlohmann::json root;
+
+	if (!result)
+		return error ? (*error = "missing input demo snapshot output", false) : false;
+	try {
+		root = nlohmann::json::parse(text);
+	} catch (const std::exception &ex) {
+		return error ? (*error = std::string("could not parse snapshot json: ") + ex.what(), false) : false;
+	}
+	return input_demo_result_parse_json_object(root, result, error, false);
 }
 
 bool input_demo_result_to_json_text(const input_demo_result &result,
@@ -407,8 +470,18 @@ bool input_demo_result_to_json_text(const input_demo_result &result,
 {
 	if (!text)
 		return error ? (*error = "missing result text output", false) : false;
-	*text = input_demo_result_to_json_object(&result).dump(2);
+	*text = input_demo_result_to_json_object(&result, true).dump(2);
 	text->push_back('\n');
+	return true;
+}
+
+bool input_demo_result_snapshot_to_json_text(const input_demo_result &result,
+                                             std::string *text,
+                                             std::string *error)
+{
+	if (!text)
+		return error ? (*error = "missing snapshot text output", false) : false;
+	*text = input_demo_result_to_json_object(&result, false).dump();
 	return true;
 }
 
@@ -493,27 +566,27 @@ int input_demo_result_compare(const input_demo_result *expected,
                               const input_demo_result *actual,
                               char *error, size_t error_size)
 {
-	std::string compare_error;
+	return input_demo_result_compare_internal(expected, actual, true, error, error_size);
+}
 
-	if (!expected || !actual)
-		return input_demo_result_copy_error("missing result comparison input", error, error_size);
-	if (!input_demo_result_compare_int64("version", "schema version", expected->version, actual->version, &compare_error) ||
-	    !input_demo_result_compare_string("game", "game id", expected->game, actual->game, &compare_error) ||
-	    !input_demo_result_compare_string("mission", "mission id", expected->mission, actual->mission, &compare_error) ||
-	    !input_demo_result_compare_int64("level", "level", expected->level, actual->level, &compare_error) ||
-	    !input_demo_result_compare_int64("difficulty", "difficulty", expected->difficulty, actual->difficulty, &compare_error) ||
-	    !input_demo_result_compare_int64("frame_count", "frame count", expected->frame_count, actual->frame_count, &compare_error))
-		return input_demo_result_copy_error(compare_error, error, error_size);
-	if (expected->has_game_time64 &&
-	    !input_demo_result_compare_int64("game_time64", "final GameTime64", expected->game_time64, actual->game_time64, &compare_error))
-		return input_demo_result_copy_error(compare_error, error, error_size);
-	if (expected->player0.present && !input_demo_result_compare_player(&expected->player0, &actual->player0, &compare_error))
-		return input_demo_result_copy_error(compare_error, error, error_size);
-	if (expected->position.present && !input_demo_result_compare_position(&expected->position, &actual->position, &compare_error))
-		return input_demo_result_copy_error(compare_error, error, error_size);
-	if (expected->level_summary.present &&
-	    !input_demo_result_compare_level_summary(&expected->level_summary, &actual->level_summary, &compare_error))
-		return input_demo_result_copy_error(compare_error, error, error_size);
+int input_demo_result_compare_snapshot(const input_demo_result *expected,
+                                       const input_demo_result *actual,
+                                       char *error,
+                                       size_t error_size)
+{
+	return input_demo_result_compare_internal(expected, actual, false, error, error_size);
+}
+
+int input_demo_result_snapshot_to_json_buffer(const input_demo_result *result,
+                                              char *text,
+                                              size_t text_size)
+{
+	if (!result || !text || !text_size)
+		return 0;
+	const std::string snapshot_text = input_demo_result_to_json_object(result, false).dump();
+	if (snapshot_text.size() + 1 > text_size)
+		return 0;
+	snprintf(text, text_size, "%s", snapshot_text.c_str());
 	return 1;
 }
 

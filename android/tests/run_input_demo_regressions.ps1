@@ -46,6 +46,7 @@ if ($demos.Count -eq 0) {
 
 $pwsh = (Get-Process -Id $PID).Path
 $failures = New-Object System.Collections.Generic.List[string]
+$batchStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
 for ($index = 0; $index -lt $demos.Count; $index++) {
     $demo = $demos[$index]
@@ -60,7 +61,8 @@ for ($index = 0; $index -lt $demos.Count; $index++) {
         '-DemoPath', $demo.FullName,
         '-Game', $Game,
         '-Mode', $Mode,
-        '-TimeoutSeconds', [string]$TimeoutSeconds
+        '-TimeoutSeconds', [string]$TimeoutSeconds,
+        '-PreferHeadlessConsole'
     )
     if ($DataDir) {
         $args += @('-DataDir', $DataDir)
@@ -88,6 +90,8 @@ for ($index = 0; $index -lt $demos.Count; $index++) {
 }
 
 Write-Host ''
+$batchStopwatch.Stop()
+Write-Host ("Elapsed: {0}s" -f [Math]::Round($batchStopwatch.Elapsed.TotalSeconds, 3))
 if ($failures.Count -gt 0) {
     Write-Host 'RESULT: FAIL' -ForegroundColor Red
     foreach ($failure in $failures) {

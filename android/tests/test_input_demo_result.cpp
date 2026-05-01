@@ -283,11 +283,68 @@ static int expect_result_compare(void)
 	return 0;
 }
 
+static int expect_snapshot_round_trip_and_compare(void)
+{
+	input_demo_result expected;
+	input_demo_result parsed;
+	input_demo_result actual;
+	std::string text;
+	std::string error;
+	char compare_error[256] = "";
+
+	input_demo_result_clear(&expected);
+	expected.has_game_time64 = 1;
+	expected.game_time64 = 120;
+	expected.player0.present = 1;
+	expected.player0.score = 12500;
+	expected.position.present = 1;
+	expected.position.segment = 142;
+	expected.position.x = 12345678;
+	expected.position.y = -8765432;
+	expected.position.z = 3456789;
+	expected.level_summary.present = 1;
+	expected.level_summary.robots_alive = 23;
+	if (!input_demo_result_snapshot_to_json_text(expected, &text, &error))
+		return report_failure_string(std::string("snapshot write failed: ") + error);
+	if (!input_demo_result_parse_snapshot_json_text(text, &parsed, &error))
+		return report_failure_string(std::string("snapshot parse failed: ") + error);
+	if (!input_demo_result_compare_snapshot(&expected, &parsed, compare_error, sizeof(compare_error)))
+		return report_failure_string(std::string("snapshot round-trip compare failed: ") + compare_error);
+
+	input_demo_result_clear(&actual);
+	snprintf(actual.game, sizeof(actual.game), "%s", "other");
+	snprintf(actual.mission, sizeof(actual.mission), "%s", "other");
+	actual.level = 99;
+	actual.difficulty = 4;
+	actual.frame_count = 777;
+	actual.has_game_time64 = 1;
+	actual.game_time64 = 120;
+	actual.player0.present = 1;
+	actual.player0.score = 12500;
+	actual.position.present = 1;
+	actual.position.segment = 142;
+	actual.position.x = 12345678;
+	actual.position.y = -8765432;
+	actual.position.z = 3456789;
+	actual.level_summary.present = 1;
+	actual.level_summary.robots_alive = 23;
+	if (!input_demo_result_compare_snapshot(&expected, &actual, compare_error, sizeof(compare_error)))
+		return report_failure_string(std::string("snapshot compare should ignore metadata mismatches: ") + compare_error);
+	actual.player0.score = 12501;
+	if (input_demo_result_compare_snapshot(&expected, &actual, compare_error, sizeof(compare_error)))
+		return report_failure("snapshot compare unexpectedly passed a player score mismatch");
+	if (!strstr(compare_error, "player0.score"))
+		return report_failure_string(std::string("snapshot mismatch label missing: ") + compare_error);
+	return 0;
+}
+
 int main(void)
 {
 	if (expect_result_writer())
 		return 1;
 	if (expect_result_compare())
+		return 1;
+	if (expect_snapshot_round_trip_and_compare())
 		return 1;
 	puts("PASS");
 	return 0;

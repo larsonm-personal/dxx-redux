@@ -26,6 +26,7 @@ $args = @(
     '-Game', $Game,
     '-Mode', $Mode,
     '-TimeoutSeconds', [string]$TimeoutSeconds,
+    '-PreferHeadlessConsole',
     '-NoRender'
 )
 
@@ -51,6 +52,6 @@ if ($ListOnly) {
     $args += '-ListOnly'
 }
 
-Write-Host 'Headless stage: no-present replay still initializes the SDL window and render traversal'
+Write-Host 'Headless stage: prefer the console runner for D2 checkpoint demos and fall back to no-present replay otherwise'
 & $pwsh @args
 exit $LASTEXITCODE

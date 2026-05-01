@@ -252,6 +252,7 @@ static void input_demo_record_game_frame(void)
 {
 	input_demo_control_state state;
 	input_demo_control_pulse pulse;
+	input_demo_result frame_state;
 	unsigned int rng_call_count;
 	unsigned int rng_state;
 	char error[256] = "";
@@ -265,7 +266,9 @@ static void input_demo_record_game_frame(void)
 	}
 	rng_call_count = d_rand_get_call_count();
 	input_demo_control_state_from_control_info(&state, &pulse, &Controls);
+	input_demo_capture_current_result(&frame_state);
 	if (!input_demo_recorder_capture_frame((int32_t)FrameTime, &state, &pulse, rng_state, 1, rng_call_count,
+		&frame_state,
 		error, sizeof(error))) {
 		con_printf(CON_NORMAL, "Input demo recording stopped: %s\n", error);
 		input_demo_recorder_cancel();
@@ -356,6 +359,34 @@ void input_demo_capture_current_result(input_demo_result *result)
 	result->level_summary.endlevel_completed = Endlevel_sequence ? 1 : 0;
 }
 
+static int input_demo_replay_logged_state_mismatch = 0;
+
+static void input_demo_log_replay_frame_state_mismatch(const input_demo_replay_frame *replay_frame)
+{
+	input_demo_result actual_state;
+	char error[256] = "";
+	char expected_json[4096] = "";
+	char actual_json[4096] = "";
+
+	if (!replay_frame || !replay_frame->has_state || input_demo_replay_logged_state_mismatch)
+		return;
+	input_demo_capture_current_result(&actual_state);
+	if (input_demo_result_compare_snapshot(&replay_frame->state_result, &actual_state, error, sizeof(error)))
+		return;
+	input_demo_replay_logged_state_mismatch = 1;
+	if (!input_demo_result_snapshot_to_json_buffer(&replay_frame->state_result, expected_json, sizeof(expected_json)))
+		snprintf(expected_json, sizeof(expected_json), "<snapshot encode failed>");
+	if (!input_demo_result_snapshot_to_json_buffer(&actual_state, actual_json, sizeof(actual_json)))
+		snprintf(actual_json, sizeof(actual_json), "<snapshot encode failed>");
+	con_printf(CON_NORMAL,
+		"Input demo replay frame state mismatch: frame=%u gt=%lld %s\n",
+		(unsigned int)replay_frame->frame,
+		(long long)GameTime64,
+		error);
+	con_printf(CON_NORMAL, "Input demo replay expected state: %s\n", expected_json);
+	con_printf(CON_NORMAL, "Input demo replay actual state: %s\n", actual_json);
+}
+
 static fix64 input_demo_replay_last_timer_value = 0;
 
 	static void input_demo_write_replay_result(void)
@@ -442,6 +473,9 @@ int input_demo_prepare_replay_frame(void)
 		input_demo_stop_replay(0);
 		return 0;
 	}
+	if (!input_demo_replay_next_frame_index())
+		input_demo_replay_logged_state_mismatch = 0;
+	input_demo_log_replay_frame_state_mismatch(&replay_frame);
 	input_demo_delay_replay_frame((fix)replay_frame.frame_time);
 	input_demo_control_info_from_state(&Controls, &replay_frame.state, &replay_frame.pulse);
 	if (!d_rand_set_state(replay_frame.rng_state)) {

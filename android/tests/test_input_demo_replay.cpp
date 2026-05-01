@@ -130,6 +130,36 @@ static void fill_test_checkpoint_escort_state(input_demo_checkpoint_escort_state
 	escort_state->buddy_last_missile_time = 524288;
 }
 
+static void fill_test_frame_state(input_demo_result *result, int frame_index)
+{
+	input_demo_result_clear(result);
+	result->has_game_time64 = 1;
+	result->game_time64 = 3276 + (int64_t) frame_index * 3276;
+	result->player0.present = 1;
+	result->player0.energy = 67 - frame_index;
+	result->player0.shields = 42 + frame_index;
+	result->player0.score = 12500 + frame_index;
+	result->player0.lives = 3;
+	result->player0.laser_level = 1 + frame_index;
+	result->player0.primary_weapon = 0;
+	result->player0.secondary_weapon = frame_index;
+	result->player0.primary_ammo[1] = (uint16_t) (200 + frame_index);
+	result->player0.secondary_ammo[0] = (uint16_t) (4 + frame_index);
+	result->position.present = 1;
+	result->position.segment = 142 + frame_index;
+	result->position.x = 12345678 + frame_index;
+	result->position.y = -8765432 - frame_index;
+	result->position.z = 3456789 + frame_index;
+	result->position.has_forward = 1;
+	result->position.fx = 65536;
+	result->level_summary.present = 1;
+	result->level_summary.robots_alive = 23 - frame_index;
+	result->level_summary.robots_killed = 8 + frame_index;
+	result->level_summary.hostages_remaining = 2;
+	result->level_summary.powerups_remaining = 15 - frame_index;
+	result->level_summary.control_center_destroyed = frame_index == 2 ? 1 : 0;
+}
+
 static int expect_test_player_cfg(const input_demo_player_cfg *player_cfg)
 {
 	if (!player_cfg)
@@ -194,6 +224,7 @@ static int write_test_fixture(const char *path)
 	input_demo_recorder_settings settings;
 	input_demo_control_state state;
 	input_demo_control_pulse pulse;
+	input_demo_result frame_state;
 	char error[256] = "";
 
 	input_demo_recorder_settings_clear(&settings);
@@ -209,15 +240,18 @@ static int write_test_fixture(const char *path)
 	input_demo_control_state_clear(&state);
 	input_demo_control_pulse_clear(&pulse);
 	state.forward_thrust_time = 44;
-	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, error, sizeof(error)))
+	fill_test_frame_state(&frame_state, 0);
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, error, sizeof(error)))
 		return report_failure_string(std::string("capture frame 0 failed: ") + error);
 	input_demo_control_pulse_clear(&pulse);
 	pulse.fire_primary_count = 1;
-	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, error, sizeof(error)))
+	fill_test_frame_state(&frame_state, 1);
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, error, sizeof(error)))
 		return report_failure_string(std::string("capture frame 1 failed: ") + error);
 	input_demo_control_state_clear(&state);
 	input_demo_control_pulse_clear(&pulse);
-	if (!input_demo_recorder_capture_frame(4000, &state, &pulse, 102, 1, 3, error, sizeof(error)))
+	fill_test_frame_state(&frame_state, 2);
+	if (!input_demo_recorder_capture_frame(4000, &state, &pulse, 102, 1, 3, &frame_state, error, sizeof(error)))
 		return report_failure_string(std::string("capture frame 2 failed: ") + error);
 	if (!input_demo_recorder_flush(path, error, sizeof(error)))
 		return report_failure_string(std::string("recorder flush failed: ") + error);
@@ -231,6 +265,7 @@ static int write_checkpoint_test_fixture(const char *path)
 	input_demo_control_state state;
 	input_demo_control_pulse pulse;
 	input_demo_result result;
+	input_demo_result frame_state;
 	char error[256] = "";
 
 	fill_test_checkpoint_data(checkpoint_data, sizeof(checkpoint_data));
@@ -254,7 +289,8 @@ static int write_checkpoint_test_fixture(const char *path)
 	input_demo_control_state_clear(&state);
 	input_demo_control_pulse_clear(&pulse);
 	state.forward_thrust_time = 44;
-	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, error, sizeof(error)))
+	fill_test_frame_state(&frame_state, 0);
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, error, sizeof(error)))
 		return report_failure_string(std::string("checkpoint capture frame failed: ") + error);
 	input_demo_result_clear(&result);
 	snprintf(result.game, sizeof(result.game), "%s", input_demo_test_game_name());
@@ -324,7 +360,8 @@ static int expect_replay_loader(void)
 	if (!input_demo_replay_get_current_frame(&frame, error, sizeof(error)))
 		return report_failure_string(std::string("replay current frame 0 failed: ") + error);
 	if (frame.frame != 0 || frame.frame_time != 3276 || frame.state.forward_thrust_time != 44 ||
-		frame.pulse.fire_primary_count != 0 || frame.rng_state != 100 || frame.has_rng_call_count)
+		frame.pulse.fire_primary_count != 0 || frame.rng_state != 100 || frame.has_rng_call_count ||
+		!frame.has_state || frame.state_result.player0.score != 12500 || frame.state_result.position.segment != 142)
 		return report_failure("replay frame 0 mismatch");
 	if (!input_demo_replay_advance_frame(error, sizeof(error)))
 		return report_failure_string(std::string("replay advance 0 failed: ") + error);
@@ -332,7 +369,8 @@ static int expect_replay_loader(void)
 	if (!input_demo_replay_get_current_frame(&frame, error, sizeof(error)))
 		return report_failure_string(std::string("replay current frame 1 failed: ") + error);
 	if (frame.frame != 1 || frame.frame_time != 3276 || frame.state.forward_thrust_time != 44 ||
-		frame.pulse.fire_primary_count != 1 || frame.rng_state != 100 || frame.has_rng_call_count)
+		frame.pulse.fire_primary_count != 1 || frame.rng_state != 100 || frame.has_rng_call_count ||
+		!frame.has_state || frame.state_result.player0.score != 12501 || frame.state_result.position.segment != 143)
 		return report_failure("replay frame 1 mismatch");
 	if (!input_demo_replay_advance_frame(error, sizeof(error)))
 		return report_failure_string(std::string("replay advance 1 failed: ") + error);
@@ -341,7 +379,8 @@ static int expect_replay_loader(void)
 		return report_failure_string(std::string("replay current frame 2 failed: ") + error);
 	if (frame.frame != 2 || frame.frame_time != 4000 || frame.state.forward_thrust_time != 0 ||
 		frame.pulse.fire_primary_count != 0 || frame.rng_state != 102 || !frame.has_rng_call_count ||
-		frame.rng_call_count != 3)
+		frame.rng_call_count != 3 || !frame.has_state || frame.state_result.player0.score != 12502 ||
+		frame.state_result.level_summary.control_center_destroyed != 1)
 		return report_failure("replay frame 2 mismatch");
 	if (!input_demo_replay_advance_frame(error, sizeof(error)))
 		return report_failure_string(std::string("replay advance 2 failed: ") + error);
@@ -429,7 +468,8 @@ static int expect_checkpoint_replay_loader(void)
 		return report_failure("checkpoint replay actual result path mismatch");
 	if (!input_demo_replay_get_current_frame(&frame, error, sizeof(error)))
 		return report_failure_string(std::string("checkpoint replay current frame failed: ") + error);
-	if (frame.frame != 0 || frame.frame_time != 3276 || frame.state.forward_thrust_time != 44 || frame.rng_state != 100)
+	if (frame.frame != 0 || frame.frame_time != 3276 || frame.state.forward_thrust_time != 44 || frame.rng_state != 100 ||
+	    !frame.has_state || frame.state_result.player0.score != 12500)
 		return report_failure("checkpoint replay frame mismatch");
 	input_demo_result_clear(&actual_result);
 	snprintf(actual_result.game, sizeof(actual_result.game), "%s", input_demo_test_game_name());

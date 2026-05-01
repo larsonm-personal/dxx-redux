@@ -1006,9 +1006,14 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 		obj->lifeleft += (d_rand()-16384) << 2;		//	add in -2..2 seconds
 
 	input_demo_maybe_track_suspect_spreadfire(obj);
-	if (input_demo_replay_weapon_creation_probe_active() &&
-		obj->ctype.laser_info.parent_type == OBJ_PLAYER &&
-		obj->ctype.laser_info.parent_num == Players[Player_num].objnum)
+	if ((input_demo_replay_weapon_creation_probe_active() &&
+		 obj->ctype.laser_info.parent_type == OBJ_PLAYER &&
+		 obj->ctype.laser_info.parent_num == Players[Player_num].objnum) ||
+		(input_demo_replay_is_loaded() &&
+		 obj->ctype.laser_info.parent_type == OBJ_ROBOT &&
+		 input_demo_replay_next_frame_index() >= 500 &&
+		 input_demo_replay_next_frame_index() <= 585 &&
+		 (obj->ctype.laser_info.parent_num == 99 || obj->ctype.laser_info.parent_num == 109)))
 		input_demo_log_weapon_lifetime("create", obj);
 
 	return objnum;

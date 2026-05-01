@@ -25,6 +25,8 @@ typedef struct input_demo_replay_frame {
 	uint32_t rng_state;
 	int32_t has_rng_call_count;
 	uint32_t rng_call_count;
+	int32_t has_state;
+	input_demo_result state_result;
 } input_demo_replay_frame;
 
 #if defined(_MSC_VER) || defined(__GNUC__) || defined(__clang__)

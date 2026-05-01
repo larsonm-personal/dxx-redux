@@ -27,16 +27,17 @@ Required record order:
 Example:
 
 ```jsonl
-{"type":"header","version":1,"game":"d2","mission":"d2","level":1,"difficulty":2,"start_mode":"new_level","rng_mode":"lcg_state","frame_count":3}
-{"type":"frame","f":0,"ft":3276,"input":{"s":{"f":44}},"rng":{"s":100}}
-{"type":"frame","f":1,"input":{"p":{"f1":1}},"rng":{"s":100}}
-{"type":"frame","f":2,"input":{"s":{"f":0}},"rng":{"s":102,"c":3}}
+{"type":"header","version":3,"game":"d2","mission":"d2","level":1,"difficulty":2,"start_mode":"new_level","rng_mode":"lcg_state","frame_count":3}
+{"type":"frame","f":0,"ft":3276,"input":{"s":{"f":44}},"rng":{"s":100},"state":{"game_time64":3276}}
+{"type":"frame","f":1,"input":{"p":{"f1":1}},"rng":{"s":100},"state":{"game_time64":6552}}
+{"type":"frame","f":2,"input":{"s":{"f":0}},"rng":{"s":102,"c":3},"state":{"game_time64":9828}}
 {"type":"result","result":{"v":1,"g":"d2","m":"d2","l":1,"d":2,"fr":3}}
 ```
 
 ## JSON Rules
 
 - All records are strict JSON parsed with `nlohmann::json`
+- Lines whose first non-whitespace characters are `//` are ignored as comments
 - Generated records use fixed key order
 - Generated records use short documented keys where frame volume matters
 - Omit default values wherever possible
@@ -53,7 +54,7 @@ must follow.
 Key order:
 
 1. `type`: literal string `"header"`
-2. `version`: schema version integer, currently `1`
+2. `version`: schema version integer, currently `3`
 3. `game`: `"d1"` or `"d2"`
 4. `mission`: mission filename or short mission id
 5. `level`: signed level number
@@ -66,7 +67,7 @@ Key order:
 
 Validation:
 
-- `version` must be `1`
+- readers currently accept `2` and `3`
 - `game` must be `d1` or `d2`
 - `mission` must be non-empty
 - `frame_count` must be positive
@@ -86,9 +87,12 @@ Top-level frame key order:
    value
 4. `input`: sparse held-state and pulse updates for this frame
 5. `rng`: RNG replay state for this frame
+6. `state`: optional tracked-state snapshot captured at the start of this frame
 
 Frame records are never run-length encoded. Every frame has exactly one frame
-record and every frame record includes both `input` and `rng` objects.
+record and every frame record includes both `input` and `rng` objects. Newer
+recordings also include `state` on every frame. Older version `2` demos omit
+it and still load.
 
 ### Input Object
 
@@ -155,6 +159,31 @@ Validation:
 - every `rng` object must include `s`
 - RNG records are not run-length encoded in `.dximdemo`
 - unknown RNG keys fail validation
+
+### State Object
+
+Purpose: capture the same tracked gameplay state that the final result trailer
+uses, but at frame start instead of only at replay completion.
+
+State keys:
+
+- `game_time64`: current `GameTime64` at the start of the frame
+- `player0`: player summary object using the shared result-field layout
+- `position`: primary-player position summary using the shared result-field layout
+- `level_summary`: level summary object using the shared result-field layout
+
+Semantics:
+
+- `state` is sampled at frame start, alongside the recorded `input` and `rng`
+- replay compares `state` before running the frame, so the first mismatch is
+  reported as soon as a divergence becomes externally visible
+- the replay log prints both the expected and actual `state` JSON for the first
+  mismatch only, to keep output grep-friendly
+
+Validation:
+
+- `state` must be an object when present
+- unknown `state` keys fail validation
 
 ## Result Trailer
 
@@ -232,8 +261,8 @@ Comparison rules:
 - Header `version` is the demo file schema version
 - Result `v` is the result trailer schema version
 - Readers reject newer major versions they do not understand
-- New optional keys may be added without changing the major version when omitted
-  defaults preserve behavior
+- Version `3` adds per-frame `state` snapshots to frame records
+- Version `2` demos without per-frame `state` remain readable
 
 ## Future Extensions
 

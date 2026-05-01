@@ -53,6 +53,8 @@ struct input_demo_recorder_session {
 	input_demo_checkpoint_escort_state checkpoint_escort_state;
 	std::vector<input_demo_control_frame> control_frames;
 	std::vector<input_demo_rng_frame> rng_frames;
+	std::vector<uint8_t> has_state_frames;
+	std::vector<input_demo_result> state_frames;
 
 	input_demo_recorder_session()
 	    : active(false), game(0), level(0), difficulty(0), has_player_cfg(false), has_checkpoint(false), checkpoint_start_gt(0)
@@ -198,7 +200,7 @@ static bool input_demo_recorder_build_demo(input_demo_file *demo,
 
 	if (!demo)
 		return false;
-	demo->metadata.version = 2;
+	demo->metadata.version = 3;
 	demo->metadata.game = input_demo_recorder_game_name(session.game);
 	demo->metadata.mission = session.mission;
 	demo->metadata.build_number = input_demo_recorder_build_number();
@@ -243,6 +245,10 @@ static bool input_demo_recorder_build_demo(input_demo_file *demo,
 		frame.rng.state = session.rng_frames[i].state;
 		frame.rng.has_call_count = session.rng_frames[i].has_call_count;
 		frame.rng.call_count = session.rng_frames[i].call_count;
+		if (session.has_state_frames[i]) {
+			frame.has_state = true;
+			frame.state = session.state_frames[i];
+		}
 		demo->frames.push_back(frame);
 		previous_state = session.control_frames[i].state;
 		previous_frame_time = session.control_frames[i].frame_time;
@@ -353,10 +359,12 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
                                       uint32_t rng_state,
                                       int has_rng_call_count,
                                       uint32_t rng_call_count,
+                                      const input_demo_result *frame_state,
                                       char *error, size_t error_size)
 {
 	input_demo_control_frame control_frame;
 	input_demo_rng_frame rng_frame;
+	input_demo_result snapshot;
 
 	if (!g_input_demo_recorder_session.active)
 		return input_demo_recorder_copy_error("input demo recorder is not active", error, error_size);
@@ -374,9 +382,14 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
 	rng_frame.state = rng_state;
 	rng_frame.has_call_count = has_rng_call_count ? 1 : 0;
 	rng_frame.call_count = rng_call_count;
+	input_demo_result_clear(&snapshot);
+	if (frame_state)
+		snapshot = *frame_state;
 
 	g_input_demo_recorder_session.control_frames.push_back(control_frame);
 	g_input_demo_recorder_session.rng_frames.push_back(rng_frame);
+	g_input_demo_recorder_session.has_state_frames.push_back(frame_state ? 1 : 0);
+	g_input_demo_recorder_session.state_frames.push_back(snapshot);
 	return 1;
 }
 
@@ -395,6 +408,9 @@ int input_demo_recorder_flush_with_result(const char *demo_path,
 		return input_demo_recorder_copy_error("input demo recorder captured no frames", error, error_size);
 	if (g_input_demo_recorder_session.control_frames.size() != g_input_demo_recorder_session.rng_frames.size())
 		return input_demo_recorder_copy_error("input demo recorder frame streams are out of sync", error, error_size);
+	if (g_input_demo_recorder_session.control_frames.size() != g_input_demo_recorder_session.has_state_frames.size() ||
+	    g_input_demo_recorder_session.control_frames.size() != g_input_demo_recorder_session.state_frames.size())
+		return input_demo_recorder_copy_error("input demo recorder state frames are out of sync", error, error_size);
 	if (!input_demo_recorder_build_demo(&demo, g_input_demo_recorder_session, result, &shared_error))
 		return input_demo_recorder_copy_error(shared_error, error, error_size);
 	if (!input_demo_file_write(demo_path, demo, &shared_error))

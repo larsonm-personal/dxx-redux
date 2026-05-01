@@ -13,8 +13,8 @@ Goal: create a true console input-demo regression runner that does not initializ
 | 3 | Design a separate console target with its own `main.cpp` and minimal platform stubs for video, audio, input polling, and frame presentation. | completed |
 | 4 | Add a first compile-only host target that links the replay parser/result code and documents missing engine dependencies. | completed |
 | 5 | Extend the target to execute a single D2 `.dximdemo` without SDL video and print only PASS/FAIL plus result details. | completed |
-| 6 | Update regression scripts to prefer the console runner when available and keep the windowed runner as a fallback. | not-started |
-| 7 | Add timing output and validation so large demo batches can track speed and deterministic final state. | not-started |
+| 6 | Update regression scripts to prefer the console runner when available and keep the windowed runner as a fallback. | completed |
+| 7 | Add timing output and validation so large demo batches can track speed and deterministic final state. | completed |
 
 ## Notes
 
@@ -25,8 +25,8 @@ Goal: create a true console input-demo regression runner that does not initializ
 
 ## Initial inventory findings
 
-- `android/tests/run_input_demo_headless.ps1` is currently only a no-present wrapper over `run_input_demo_replay.ps1 -NoRender`. It is useful as a temporary staged check, but it is not the final console runner.
-- `android/tests/run_input_demo_regressions.ps1` already scans `android/regression_demos` and delegates each file to the windowed wrapper. Later it should prefer the console runner when the executable exists and keep the current wrapper as fallback.
+- `android/tests/run_input_demo_headless.ps1` now prefers the D2 console runner through the shared replay wrapper and falls back to the older no-present path when the console runner is not eligible.
+- `android/tests/run_input_demo_regressions.ps1` now scans `android/regression_demos` and passes `-PreferHeadlessConsole` into the shared replay wrapper, so D2 checkpoint demos use the console runner when it exists while the existing wrapper remains the fallback path.
 - `d1/main/CMakeLists.txt` and `d2/main/CMakeLists.txt` build monolithic `dxx-redux-d1` and `dxx-redux-d2` targets from source lists that include `inferno.c`. A custom `main.cpp` will need the game logic list split from the interactive main source, or a new object/static library built from the same list minus `inferno.c`.
 - The normal host build globally defines `OGL` when `OPENGL` is on in `d1/CMakeLists.txt` and `d2/CMakeLists.txt`. A headless target in the same configure cannot simply opt out of OpenGL with target-local sources while that global definition is present. The clean choices are a dedicated non-OGL headless configure first, or a later CMake cleanup that makes graphics definitions target-local.
 - `run-windows-build.ps1` does not currently accept pass-through CMake options, so a first non-OGL headless configure would need either a small helper/script or a manual CMake invocation into a separate build directory such as `buildd2_headless`.
@@ -56,5 +56,12 @@ Goal: create a true console input-demo regression runner that does not initializ
 - Steps 1 and 2 are done in both D2 and D1. Replay startup and replay stepping now have exported helpers that the normal windowed path already uses.
 - Step 3 is now real, not provisional. `buildd2/main/dxx-redux-d2-headless.exe` starts through the shared replay helpers, keeps gameplay and audio logic alive, suppresses window creation and rendering, and uses dummy SDL audio so the logic path stays intact without audible output.
 - Step 5 is also done for the current D2 regression fixture. The headless runner replays `android/regression_demos/d2_descent2_level2_20260430_135527.dximdemo` to completion with real data via `-hogdir`, writes the `.actual.json` result, and prints the final `HEADLESS-RUN OK` summary line.
+- Step 6 is now done. The shared replay wrapper can launch `buildd2/main/dxx-redux-d2-headless.exe` for D2 `save_checkpoint` demos in accelerated mode without reimplementing result comparison, timeout handling, or data-dir resolution in a second script.
+- The batch regression wrapper now prefers the console runner and was revalidated on the current fixture. It selected `Runner: headless-console`, launched `dxx-redux-d2-headless.exe`, and still failed on the same shared `player0.shields expected 158, actual 154` mismatch as before.
+- Step 7 is now done. `android/tests/run_input_demo_replay.ps1` prints per-run elapsed time and effective replay FPS after the result comparison, and `android/tests/run_input_demo_regressions.ps1` prints total batch elapsed time at the end.
+- The timing pass was revalidated on the current fixture without changing replay outcome. The console-preferred regression run still selected `Runner: headless-console`, printed `Elapsed: 7.567s replay_fps=98.85` for the replay, and the batch summary still exited with the same known shield mismatch.
 - The render-side parity issue that blocked deterministic host replay is resolved for the headless slice. Skipping rendering dropped robot `danger_laser_num` updates that normally come from render traversal, so the headless path now performs the required non-visual viewer-space update when the player fires.
 - The current remaining replay mismatch is not headless-specific. The normal desktop replay and the headless replay now stop on the same final state for the current fixture: `energy=81 shields=154 score=33200 lives=3 seg=79`. The embedded expected trailer still says `shields=158`, so any further investigation belongs to the broader replay determinism track rather than the headless parity track.
+- The remaining 4-shield gap is now localized to two late robot-weapon hits, not a broad end-state drift. Frame 542 is a valid immediate hit from robot 109 via weapon `41/sig 4391`, created at frame 540 and landing two frames later.
+- The frame 584 hit is downstream of an earlier late shot, not a fresh late spawn. Weapon `42/sig 4379` is created by robot 99 at frame 536, robot 99 then dies on frame 537 from three player spreadfire hits, and that already-spawned projectile lands on the player at frame 584 after its parent slot is gone.
+- The next determinism step should treat frame 542 as the likely primary late divergence. The frame 584 hit still matters, but current evidence suggests it may be a cascade from earlier motion or collision drift rather than the first bad decision point.

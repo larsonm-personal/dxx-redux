@@ -87,6 +87,12 @@ int input_demo_result_write_json_file(const char *path,
 int input_demo_result_compare(const input_demo_result *expected,
                               const input_demo_result *actual,
                               char *error, size_t error_size);
+int input_demo_result_compare_snapshot(const input_demo_result *expected,
+                                       const input_demo_result *actual,
+                                       char *error, size_t error_size);
+int input_demo_result_snapshot_to_json_buffer(const input_demo_result *result,
+                                              char *text,
+                                              size_t text_size);
 int input_demo_result_compare_files(const char *expected_path,
                                     const char *actual_path,
                                     char *error, size_t error_size);
@@ -99,9 +105,15 @@ int input_demo_result_compare_files(const char *expected_path,
 bool input_demo_result_parse_json_text(const std::string &text,
                                        input_demo_result *result,
                                        std::string *error);
+bool input_demo_result_parse_snapshot_json_text(const std::string &text,
+                                                input_demo_result *result,
+                                                std::string *error);
 bool input_demo_result_to_json_text(const input_demo_result &result,
                                     std::string *text,
                                     std::string *error);
+bool input_demo_result_snapshot_to_json_text(const input_demo_result &result,
+                                             std::string *text,
+                                             std::string *error);
 #endif
 
 #endif

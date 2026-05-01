@@ -107,6 +107,48 @@ static int input_demo_trace_ai_rng_active(object *obj)
 		(ailp->player_awareness_type > 0);
 }
 
+static int input_demo_warning_probe_frame_active(void)
+{
+	unsigned int frame;
+
+	if (!input_demo_replay_is_loaded())
+		return 0;
+
+	frame = (unsigned int)input_demo_replay_next_frame_index();
+	return (frame >= 231) && (frame <= 232);
+}
+
+static void input_demo_log_warning_probe(const char *label,
+	object *obj,
+	fix view_x,
+	fix view_y,
+	fix view_z,
+	int near_center,
+	int prev_danger_obj,
+	int prev_danger_sig)
+{
+	if (!input_demo_warning_probe_frame_active())
+		return;
+
+	con_printf(CON_NORMAL,
+		"Input demo replay warning probe: frame=%u step=%s obj=%d sig=%d seg=%d laser=%d laser_sig=%d view=(%d,%d,%d) near=%d prev_danger=%d/%d new_danger=%d/%d\n",
+		(unsigned int)input_demo_replay_next_frame_index(),
+		label,
+		(int)(obj - Objects),
+		obj->signature,
+		obj->segnum,
+		Player_fired_laser_this_frame,
+		(Player_fired_laser_this_frame >= 0) ? Objects[Player_fired_laser_this_frame].signature : 0,
+		view_x,
+		view_y,
+		view_z,
+		near_center,
+		prev_danger_obj,
+		prev_danger_sig,
+		obj->ctype.ai_info.danger_laser_num,
+		obj->ctype.ai_info.danger_laser_signature);
+}
+
 //Data for objects
 
 // -- Object stuff
@@ -686,19 +728,27 @@ void set_robot_location_info(object *objp)
 {
 	if (Player_fired_laser_this_frame != -1) {
 		g3s_point temp;
+		int prev_danger_obj = objp->ctype.ai_info.danger_laser_num;
+		int prev_danger_sig = objp->ctype.ai_info.danger_laser_signature;
+		int near_center;
 
 		g3_rotate_point(&temp,&objp->pos);
 
-		if (temp.p3_codes & CC_BEHIND)		//robot behind the screen
+		if (temp.p3_codes & CC_BEHIND) {		//robot behind the screen
+			input_demo_log_warning_probe("render_draw", objp, temp.p3_x, temp.p3_y, 0, 0, prev_danger_obj, prev_danger_sig);
 			return;
+		}
 
 		//the code below to check for object near the center of the screen
 		//completely ignores z, which may not be good
 
-		if ((abs(temp.p3_x) < F1_0*4) && (abs(temp.p3_y) < F1_0*4)) {
+		near_center = (abs(temp.p3_x) < F1_0*4) && (abs(temp.p3_y) < F1_0*4);
+		if (near_center) {
 			objp->ctype.ai_info.danger_laser_num = Player_fired_laser_this_frame;
 			objp->ctype.ai_info.danger_laser_signature = Objects[Player_fired_laser_this_frame].signature;
 		}
+
+		input_demo_log_warning_probe("render_draw", objp, temp.p3_x, temp.p3_y, temp.p3_z, near_center, prev_danger_obj, prev_danger_sig);
 	}
 
 
@@ -715,22 +765,33 @@ void update_all_robot_location_info_with_view(const vms_vector *viewer_eye, cons
 		object *obj = &Objects[i];
 		vms_vector vec_to_obj;
 		fix view_x, view_y, view_z;
+		int prev_danger_obj;
+		int prev_danger_sig;
+		int near_center;
 
 		if ((obj->type != OBJ_ROBOT) || (obj->render_type != RT_POLYOBJ))
 			continue;
+
+		prev_danger_obj = obj->ctype.ai_info.danger_laser_num;
+		prev_danger_sig = obj->ctype.ai_info.danger_laser_signature;
 
 		vm_vec_sub(&vec_to_obj, &obj->pos, viewer_eye);
 		view_x = vm_vec_dot(&vec_to_obj, &view_orient->rvec);
 		view_y = vm_vec_dot(&vec_to_obj, &view_orient->uvec);
 		view_z = vm_vec_dot(&vec_to_obj, &view_orient->fvec);
 
-		if (view_z <= 0)
+		if (view_z <= 0) {
+			input_demo_log_warning_probe("headless_view", obj, view_x, view_y, view_z, 0, prev_danger_obj, prev_danger_sig);
 			continue;
+		}
 
-		if ((abs(view_x) < F1_0*4) && (abs(view_y) < F1_0*4)) {
+		near_center = (abs(view_x) < F1_0*4) && (abs(view_y) < F1_0*4);
+		if (near_center) {
 			obj->ctype.ai_info.danger_laser_num = Player_fired_laser_this_frame;
 			obj->ctype.ai_info.danger_laser_signature = Objects[Player_fired_laser_this_frame].signature;
 		}
+
+		input_demo_log_warning_probe("headless_view", obj, view_x, view_y, view_z, near_center, prev_danger_obj, prev_danger_sig);
 	}
 }
 

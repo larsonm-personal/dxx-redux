@@ -146,6 +146,48 @@ static std::string input_demo_test_player_cfg_header_json(void)
 #endif
 }
 
+static void fill_test_frame_state(input_demo_result *result, int frame_index)
+{
+	input_demo_result_clear(result);
+	result->has_game_time64 = 1;
+	result->game_time64 = 3276 + (int64_t) frame_index * 3276;
+	result->player0.present = 1;
+	result->player0.energy = 67 - frame_index;
+	result->player0.shields = 42 + frame_index;
+	result->player0.score = 12500 + frame_index;
+	result->player0.lives = 3;
+	result->player0.laser_level = 1 + frame_index;
+	result->player0.primary_weapon = 0;
+	result->player0.secondary_weapon = frame_index;
+	result->player0.primary_ammo[1] = (uint16_t) (200 + frame_index);
+	result->player0.secondary_ammo[0] = (uint16_t) (4 + frame_index);
+	result->position.present = 1;
+	result->position.segment = 142 + frame_index;
+	result->position.x = 12345678 + frame_index;
+	result->position.y = -8765432 - frame_index;
+	result->position.z = 3456789 + frame_index;
+	result->position.has_forward = 1;
+	result->position.fx = 65536;
+	result->level_summary.present = 1;
+	result->level_summary.robots_alive = 23 - frame_index;
+	result->level_summary.robots_killed = 8 + frame_index;
+	result->level_summary.hostages_remaining = 2;
+	result->level_summary.powerups_remaining = 15 - frame_index;
+	result->level_summary.control_center_destroyed = frame_index == 2 ? 1 : 0;
+}
+
+static std::string input_demo_test_frame_state_json(int frame_index)
+{
+	input_demo_result result;
+	std::string text;
+	std::string error;
+
+	fill_test_frame_state(&result, frame_index);
+	if (!input_demo_result_snapshot_to_json_text(result, &text, &error))
+		return std::string();
+	return text;
+}
+
 static int make_test_dir(const char *path)
 {
 #if defined(_WIN32)
@@ -176,6 +218,7 @@ static int expect_record_and_flush(void)
 	input_demo_control_state state;
 	input_demo_control_pulse pulse;
 	input_demo_result result;
+	input_demo_result frame_state;
 	input_demo_file parsed;
 	char error[256] = "";
 	std::string read_error;
@@ -202,15 +245,18 @@ static int expect_record_and_flush(void)
 	input_demo_control_state_clear(&state);
 	input_demo_control_pulse_clear(&pulse);
 	state.forward_thrust_time = 44;
-	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, error, sizeof(error)))
+	fill_test_frame_state(&frame_state, 0);
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, error, sizeof(error)))
 		return report_failure_string(std::string("capture frame 0 failed: ") + error);
 	input_demo_control_pulse_clear(&pulse);
 	pulse.fire_primary_count = 1;
-	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, error, sizeof(error)))
+	fill_test_frame_state(&frame_state, 1);
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, error, sizeof(error)))
 		return report_failure_string(std::string("capture frame 1 failed: ") + error);
 	input_demo_control_state_clear(&state);
 	input_demo_control_pulse_clear(&pulse);
-	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 102, 0, 0, error, sizeof(error)))
+	fill_test_frame_state(&frame_state, 2);
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 102, 0, 0, &frame_state, error, sizeof(error)))
 		return report_failure_string(std::string("capture frame 2 failed: ") + error);
 	input_demo_result_clear(&result);
 	snprintf(result.game, sizeof(result.game), "%s", input_demo_test_game_name());
@@ -247,14 +293,14 @@ static int expect_record_and_flush(void)
 		return report_failure("recorder should be inactive after flush");
 	if (!read_text_file(demo_path.c_str(), &text))
 		return report_failure("could not read recorder demo file");
-	expected = std::string("{\"type\":\"header\",\"version\":2,\"game\":\"") + input_demo_test_game_name() +
+	expected = std::string("{\"type\":\"header\",\"version\":3,\"game\":\"") + input_demo_test_game_name() +
 		"\",\"mission\":\"" + input_demo_test_game_name() +
 		"\",\"build_number\":" + std::to_string(input_demo_test_build_number()) + ",\"git_version\":\"" + input_demo_test_git_version() + "\",\"arch\":\"" + input_demo_test_arch() +
 		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"new_level\",\"rng_mode\":\"" + input_demo_test_rng_mode() +
 		"\",\"frame_count\":3" + input_demo_test_player_cfg_header_json() + "}\n" +
-		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
-		"{\"type\":\"frame\",\"f\":1,\"input\":{\"p\":{\"f1\":1}},\"rng\":{\"s\":100}}\n" +
-		"{\"type\":\"frame\",\"f\":2,\"input\":{\"s\":{\"f\":0}},\"rng\":{\"s\":102}}\n" +
+		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100},\"state\":" + input_demo_test_frame_state_json(0) + "}\n" +
+		"{\"type\":\"frame\",\"f\":1,\"input\":{\"p\":{\"f1\":1}},\"rng\":{\"s\":100},\"state\":" + input_demo_test_frame_state_json(1) + "}\n" +
+		"{\"type\":\"frame\",\"f\":2,\"input\":{\"s\":{\"f\":0}},\"rng\":{\"s\":102},\"state\":" + input_demo_test_frame_state_json(2) + "}\n" +
 		"{\"type\":\"result\",\"result\":{\"version\":2,\"game\":\"" + input_demo_test_game_name() +
 		"\",\"mission\":\"" + input_demo_test_game_name() +
 		"\",\"level\":1,\"difficulty\":2,\"frame_count\":3,\"game_time64\":120,\"player0\":{\"energy\":67,\"shields\":42,\"score\":12500,\"lives\":3,\"laser_level\":1,\"primary_weapon\":0,\"secondary_weapon\":1,\"flags\":0,\"hostages\":0,\"primary_ammo\":[0,200,0,0,0,0,0,0,0,0,0,0,0,0,0,0],\"secondary_ammo\":[4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},\"position\":{\"segment\":142,\"x\":12345678,\"y\":-8765432,\"z\":3456789,\"forward_x\":65536,\"forward_y\":0,\"forward_z\":0},\"level_summary\":{\"robots_alive\":23,\"robots_killed\":8,\"hostages_remaining\":2,\"powerups_remaining\":15,\"control_center_destroyed\":true,\"endlevel_completed\":false}}}\n";
@@ -270,7 +316,8 @@ static int expect_record_and_flush(void)
 		return report_failure_string(std::string("unexpected recorder rng trace file: ") + text);
 	if (!input_demo_file_read(demo_path.c_str(), &parsed, &read_error))
 		return report_failure_string(std::string("recorder demo read failed: ") + read_error);
-	if (parsed.frames.size() != 3 || parsed.frames[2].rng.state != 102 || parsed.result.player0.score != 12500)
+	if (parsed.frames.size() != 3 || parsed.frames[2].rng.state != 102 || !parsed.frames[1].has_state ||
+	    parsed.frames[1].state.player0.score != 12501 || parsed.result.player0.score != 12500)
 		return report_failure("recorder demo round trip mismatch");
 	remove(demo_path.c_str());
 	remove(trace_path.c_str());
@@ -286,6 +333,7 @@ static int expect_record_and_flush_checkpoint(void)
 	input_demo_recorder_settings settings;
 	input_demo_control_state state;
 	input_demo_control_pulse pulse;
+	input_demo_result frame_state;
 	input_demo_file parsed;
 	char error[256] = "";
 	std::string read_error;
@@ -314,7 +362,8 @@ static int expect_record_and_flush_checkpoint(void)
 	input_demo_control_state_clear(&state);
 	input_demo_control_pulse_clear(&pulse);
 	state.forward_thrust_time = 44;
-	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, error, sizeof(error))) {
+	fill_test_frame_state(&frame_state, 0);
+	if (!input_demo_recorder_capture_frame(3276, &state, &pulse, 100, 0, 0, &frame_state, error, sizeof(error))) {
 		input_demo_recorder_cancel();
 		remove_test_dir(dir);
 		return report_failure_string(std::string("checkpoint capture frame failed: ") + error);
@@ -329,13 +378,13 @@ static int expect_record_and_flush_checkpoint(void)
 		remove_test_dir(dir);
 		return report_failure("could not read checkpoint recorder demo file");
 	}
-	expected = std::string("{\"type\":\"header\",\"version\":2,\"game\":\"") + input_demo_test_game_name() +
+	expected = std::string("{\"type\":\"header\",\"version\":3,\"game\":\"") + input_demo_test_game_name() +
 		"\",\"mission\":\"" + input_demo_test_game_name() +
 		"\",\"build_number\":" + std::to_string(input_demo_test_build_number()) + ",\"git_version\":\"" + input_demo_test_git_version() + "\",\"arch\":\"" + input_demo_test_arch() +
 		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"save_checkpoint\",\"rng_mode\":\"" + input_demo_test_rng_mode() +
 		"\",\"frame_count\":1,\"start_save\":\"inputdemo_start.dgss\"" + input_demo_test_player_cfg_header_json() + "}\n" +
 		"{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"compression\":\"none\",\"size\":8,\"sha256\":\"077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"data\":\"REdTUxgAAAA=\"}\n" +
-		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
+		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100},\"state\":" + input_demo_test_frame_state_json(0) + "}\n" +
 		"{\"type\":\"result\",\"result\":{\"version\":2,\"game\":\"" + input_demo_test_game_name() +
 		"\",\"mission\":\"" + input_demo_test_game_name() + "\",\"level\":1,\"difficulty\":2,\"frame_count\":1}}\n";
 	if (text != expected) {
@@ -352,6 +401,7 @@ static int expect_record_and_flush_checkpoint(void)
 	remove_test_dir(dir);
 	if (parsed.metadata.start_mode != "save_checkpoint" || !parsed.has_checkpoint ||
 		!parsed.metadata.has_player_cfg || parsed.metadata.player_cfg.primary_order_count == 0 ||
+		!parsed.frames[0].has_state || parsed.frames[0].state.player0.score != 12500 ||
 		parsed.checkpoint.compression != "none" ||
 		parsed.checkpoint.sha256 != "077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5" ||
 		parsed.checkpoint.data != "REdTUxgAAAA=")
