@@ -120,6 +120,10 @@ void game_set_d_tick_state(const game_d_tick_state *state);
 int do_flythrough(struct object *obj,int first_time);
 const char *input_demo_current_mission_id(void);
 void input_demo_capture_current_result(struct input_demo_result *result);
+int input_demo_prepare_replay_frame(void);
+int input_demo_step_replay_frame(void);
+void input_demo_advance_replay_frame(void);
+void input_demo_finish_replay_without_close(void);
 int input_demo_finish_replay_from_mine_exit(void);
 
 extern int Difficulty_level;    // Difficulty level in 0..NDL-1, 0 = easiest, NDL-1 = hardest

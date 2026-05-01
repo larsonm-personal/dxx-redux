@@ -118,6 +118,7 @@ int	Mark_count = 0;                 // number of debugging marks set
 
 static fix64 last_timer_value=0;
 fix ThisLevelTime=0;
+static int time_paused=0;
 
 grs_canvas	Screen_3d_window;							// The rectangle for rendering the mine to
 
@@ -425,7 +426,7 @@ static void input_demo_delay_replay_frame(fix frame_time)
 	input_demo_replay_last_timer_value = timer_value;
 }
 
-static int input_demo_apply_replay_frame(void)
+int input_demo_prepare_replay_frame(void)
 {
 	input_demo_replay_frame replay_frame;
 	char error[256] = "";
@@ -453,7 +454,7 @@ static int input_demo_apply_replay_frame(void)
 	return 1;
 }
 
-static void input_demo_finish_replay_frame(void)
+void input_demo_advance_replay_frame(void)
 {
 	char error[256] = "";
 
@@ -466,6 +467,21 @@ static void input_demo_finish_replay_frame(void)
 	}
 	if (input_demo_replay_is_finished())
 		input_demo_stop_replay(1);
+}
+
+int input_demo_step_replay_frame(void)
+{
+	if (!input_demo_prepare_replay_frame())
+		return 0;
+	if (ReadControlsReplayFrame())
+		return 0;
+	if (!time_paused)
+	{
+		calc_game_time();
+		GameProcessFrame();
+		input_demo_advance_replay_frame();
+	}
+	return 1;
 }
 
 // Cheats
@@ -640,8 +656,6 @@ int set_screen_mode(int sm)
 
 	return 1;
 }
-
-static int time_paused=0;
 
 void stop_time()
 {
@@ -1420,19 +1434,15 @@ int game_handler(window *wind, d_event *event, void *data)
 
 		case EVENT_WINDOW_DRAW:
 			if (input_demo_replay_is_loaded()) {
-				if (!input_demo_apply_replay_frame())
-					return 1;
-				if (ReadControlsReplayFrame())
+				if (!input_demo_step_replay_frame())
 					return 1;
 			} else {
 				calc_frame_time();
-			}
-			
-			if (!time_paused)
-			{
-				calc_game_time();
-				GameProcessFrame();
-				input_demo_finish_replay_frame();
+				if (!time_paused)
+				{
+					calc_game_time();
+					GameProcessFrame();
+				}
 			}
 
 			if (!Automap_active)		// efficiency hack

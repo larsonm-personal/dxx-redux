@@ -315,7 +315,7 @@ static void input_demo_apply_replay_player_cfg(const input_demo_player_cfg *play
 	memcpy(PlayerCfg.SecondaryOrder, player_cfg->secondary_order, MAX_SECONDARY_WEAPONS + 1);
 }
 
-static int maybe_start_input_demo_replay(void)
+int input_demo_maybe_start_replay_from_cmdline(void)
 {
 	int arg_index = find_cmd_arg("-inputdemo-replay");
 	int engine_mode;
@@ -899,7 +899,7 @@ int main(int argc, char *argv[])
 	else
 #endif
 	{
-		int replay_result = maybe_start_input_demo_replay();
+		int replay_result = input_demo_maybe_start_replay_from_cmdline();
 
 		if (replay_result > 0)
 			return replay_result;

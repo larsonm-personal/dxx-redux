@@ -132,6 +132,10 @@ void game_get_d_tick_state(game_d_tick_state *state);
 void game_set_d_tick_state(const game_d_tick_state *state);
 int do_flythrough(struct object *obj,int first_time);
 void input_demo_capture_current_result(struct input_demo_result *result);
+int input_demo_prepare_replay_frame(void);
+int input_demo_step_replay_frame(void);
+void input_demo_advance_replay_frame(void);
+void input_demo_finish_replay_without_close(void);
 int input_demo_finish_replay_from_level_exit(void);
 int input_demo_finish_replay_from_mine_exit(void);
 

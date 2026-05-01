@@ -224,4 +224,64 @@ target_include_directories(dxx-redux-d2 PUBLIC ${SDL_INCLUDE_DIR} ${PHYSFS_INCLU
 target_link_libraries(dxx-redux-d2 PRIVATE ${DXX_TARGET_PREFIX}2d ${DXX_TARGET_PREFIX}3d ${DXX_TARGET_PREFIX}arch_sdl ${DXX_TARGET_PREFIX}iff ${DXX_TARGET_PREFIX}libmve ${DXX_TARGET_PREFIX}maths ${DXX_TARGET_PREFIX}mem ${DXX_TARGET_PREFIX}misc ${DXX_TARGET_PREFIX}texmap)
 target_link_libraries(dxx-redux-d2 PUBLIC ${OPENGL_LIBRARY} ${SDL_LIBRARY} ${SDL_MIXER_LIBRARY} ${PHYSFS_LIBRARY} ${PNG_LIBRARY} ${EXTRA_LIBRARIES})
 target_sources(dxx-redux-d2 PRIVATE vers_id.c)
+
+if(NOT ANDROID)
+    set(D2X_HEADLESS_SOURCES ${D2X_MAIN_SOURCES})
+    list(REMOVE_ITEM D2X_HEADLESS_SOURCES inferno.c)
+
+    add_executable(dxx-redux-d2-headless
+        ${D2X_HEADLESS_SOURCES}
+        vers_id.c
+        ../../android/app/src/main/cpp/headless/d2_headless_runtime.c
+        ../../android/app/src/main/cpp/headless/input_demo_headless_main.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_rng_mode.c
+        ../../android/app/src/main/cpp/shared/input_demo_controls.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_fixture.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_codec.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_result.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_recorder.cpp
+        ../../android/app/src/main/cpp/shared/input_demo_replay.cpp)
+
+    target_compile_features(dxx-redux-d2-headless PRIVATE cxx_std_11)
+    target_compile_definitions(dxx-redux-d2-headless PRIVATE
+        DXX_VERSION_MAJORi=${PROJECT_VERSION_MAJOR}
+        DXX_VERSION_MINORi=${PROJECT_VERSION_MINOR}
+        DXX_VERSION_MICROi=$<IF:$<BOOL:${PROJECT_VERSION_MICRO}>,${PROJECT_VERSION_MICRO},0>
+        DXX_HEADLESS_CONSOLE=1)
+    if(NOT "${SIZEOF_SSIZE_T}" STREQUAL "")
+        target_compile_definitions(dxx-redux-d2-headless PRIVATE HAVE_SSIZE_T=1)
+    endif()
+
+    target_include_directories(dxx-redux-d2-headless PUBLIC ${SDL_INCLUDE_DIR} ${PHYSFS_INCLUDE_DIR})
+    target_include_directories(dxx-redux-d2-headless PRIVATE ../../android/app/src/main/cpp/shared)
+    target_link_libraries(dxx-redux-d2-headless PRIVATE ${DXX_TARGET_PREFIX}2d ${DXX_TARGET_PREFIX}3d ${DXX_TARGET_PREFIX}arch_sdl ${DXX_TARGET_PREFIX}iff ${DXX_TARGET_PREFIX}libmve ${DXX_TARGET_PREFIX}maths ${DXX_TARGET_PREFIX}mem ${DXX_TARGET_PREFIX}misc ${DXX_TARGET_PREFIX}texmap)
+    target_link_libraries(dxx-redux-d2-headless PRIVATE nlohmann_json::nlohmann_json ZLIB::ZLIB)
+
+    if(OPENGL)
+        target_link_libraries(dxx-redux-d2-headless PRIVATE ${DXX_TARGET_PREFIX}arch_ogl ${DXX_TARGET_PREFIX}xmodel)
+    endif()
+    if(SDLMIXER)
+        target_link_libraries(dxx-redux-d2-headless PUBLIC ${SDL_MIXER_LIBRARIES})
+    endif()
+    if(UDP)
+        target_include_directories(dxx-redux-d2-headless PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+        target_sources(dxx-redux-d2-headless PRIVATE
+            net_udp.c
+            ../../android/app/src/main/cpp/shared/net/net_udp_android.c)
+    endif()
+    if(WIN32)
+        target_link_libraries(dxx-redux-d2-headless PRIVATE ${DXX_TARGET_PREFIX}arch_win32)
+    endif()
+    if(APPLE)
+        target_link_libraries(dxx-redux-d2-headless PRIVATE ${DXX_TARGET_PREFIX}arch_cocoa)
+    endif()
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        target_link_libraries(dxx-redux-d2-headless PRIVATE ${DXX_TARGET_PREFIX}arch_x11)
+    endif()
+
+    target_link_libraries(dxx-redux-d2-headless PUBLIC ${OPENGL_LIBRARY} ${SDL_LIBRARY} ${SDL_MIXER_LIBRARY} ${PHYSFS_LIBRARY} ${PNG_LIBRARY} ${EXTRA_LIBRARIES})
+    dxx_input_demo_apply_codec_deps(dxx-redux-d2-headless)
+    dxx_input_demo_apply_build_metadata(dxx-redux-d2-headless)
+endif()
+
 install(TARGETS dxx-redux-d2 RUNTIME DESTINATION .)
