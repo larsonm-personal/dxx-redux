@@ -51,8 +51,13 @@ extern "C" {
 #include "window.h"
 #include "newmenu.h"
 #include "gameseg.h"
+#include "endlevel.h"
 #include "object.h"
 }
+
+#ifdef ANDROID
+extern "C" void android_test_inject_touch_tap(void);
+#endif
 
 /* D1 does not have SCREEN_MOVIE */
 #ifndef SCREEN_MOVIE
@@ -188,6 +193,7 @@ enum step_type {
 	STEP_SELECT,                  /* find menu item by text and select it */
 	STEP_SEND_AXIS,               /* inject joystick axis event */
 	STEP_SEND_BUTTON,             /* inject joystick button press+release */
+	STEP_SEND_TOUCH_TAP,          /* inject a touch tap through android_input.c */
 	STEP_META_ACTION,             /* dispatch a native Android meta action */
 	STEP_SKIP_INTRO,              /* repeatedly dismiss launch intro with touch or button */
 	STEP_SKIP_BRIEFING,           /* escape only if a non-game window covers Game_wind */
@@ -201,6 +207,7 @@ enum step_type {
 	STEP_ENTER_GAME,              /* launcher-only: no-op in game engine (skip) */
 	STEP_SETUP_COMMAND,           /* launcher-only: no-op in game engine (skip) */
 	STEP_RESET_STATE,             /* launcher-only: no-op in game engine (skip) */
+	STEP_TRIGGER_ENDLEVEL,        /* call start_endlevel_sequence() */
 	STEP_WRITE_CONFIG,            /* launcher-only: no-op in game engine (skip) */
 	STEP_TAP_BUTTON,              /* launcher-only: no-op in game engine (skip) */
 	STEP_ASSERT_BUTTON,           /* launcher-only: no-op in game engine (skip) */
@@ -345,6 +352,7 @@ static const char *step_type_name(step_type t)
 		case STEP_SELECT: return "select";
 		case STEP_SEND_AXIS: return "send_axis";
 		case STEP_SEND_BUTTON: return "send_button";
+		case STEP_SEND_TOUCH_TAP: return "send_touch_tap";
 		case STEP_META_ACTION: return "meta_action";
 		case STEP_SKIP_INTRO: return "skip_intro";
 		case STEP_SKIP_BRIEFING: return "skip_briefing";
@@ -358,6 +366,7 @@ static const char *step_type_name(step_type t)
 		case STEP_ENTER_GAME: return "enter_game";
 		case STEP_SETUP_COMMAND: return "setup_command";
 		case STEP_RESET_STATE: return "reset_state";
+		case STEP_TRIGGER_ENDLEVEL: return "trigger_endlevel";
 		case STEP_WRITE_CONFIG: return "write_config";
 		case STEP_TAP_BUTTON: return "tap_button";
 		case STEP_ASSERT_BUTTON: return "assert_button";
@@ -1105,6 +1114,7 @@ static int parse_script(const char *json_text)
 			else if (action == "select") s.type = STEP_SELECT;
 			else if (action == "send_axis") s.type = STEP_SEND_AXIS;
 			else if (action == "send_button") s.type = STEP_SEND_BUTTON;
+			else if (action == "send_touch_tap") s.type = STEP_SEND_TOUCH_TAP;
 			else if (action == "meta_action") s.type = STEP_META_ACTION;
 			else if (action == "skip_intro") s.type = STEP_SKIP_INTRO;
 			else if (action == "skip_briefing") s.type = STEP_SKIP_BRIEFING;
@@ -1118,6 +1128,7 @@ static int parse_script(const char *json_text)
 			else if (action == "enter_game") s.type = STEP_ENTER_GAME;
 			else if (action == "setup_command") s.type = STEP_SETUP_COMMAND;
 			else if (action == "reset_state") s.type = STEP_RESET_STATE;
+			else if (action == "trigger_endlevel") s.type = STEP_TRIGGER_ENDLEVEL;
 			else if (action == "write_config") s.type = STEP_WRITE_CONFIG;
 			else if (action == "tap_button") s.type = STEP_TAP_BUTTON;
 			else if (action == "assert_button") s.type = STEP_ASSERT_BUTTON;
@@ -1717,6 +1728,15 @@ extern "C" void game_automate_tick(void)
 			}
 			break;
 
+		case STEP_SEND_TOUCH_TAP:
+#ifdef ANDROID
+			android_test_inject_touch_tap();
+			advance_step();
+#else
+			stop_script_fail("send_touch_tap: Android-only action");
+#endif
+			break;
+
 		case STEP_META_ACTION:
 			if (!s.button_pressed) {
 				meta_action_dispatch(s.meta_action_id, 0);
@@ -2068,6 +2088,15 @@ extern "C" void game_automate_tick(void)
 			 * in the game engine (should not normally happen) */
 			LOGI("Skipping launcher-only step: %s", step_type_name(s.type));
 			advance_step();
+			break;
+
+		case STEP_TRIGGER_ENDLEVEL:
+			if (Screen_mode != SCREEN_GAME || Game_wind == NULL || ConsoleObject == NULL) {
+				stop_script_fail("trigger_endlevel: game is not running");
+				break;
+			}
+			advance_step();
+			start_endlevel_sequence();
 			break;
 
 		case STEP_SET_DEBUG:

@@ -535,6 +535,28 @@ static void state_read_runtime_state(PHYSFS_file *fp, int swap, int secret_resto
 	object_set_runtime_state(&object_state);
 	laser_set_runtime_state(&laser_state);
 	rebuild_guided_missile_state();
+	if (input_demo_replay_has_checkpoint())
+		con_printf(CON_NORMAL,
+			"Input demo replay checkpoint runtime restore: gt=%lld next_laser_delta=%lld next_missile_delta=%lld last_laser_delta=%lld next_flare_delta=%lld auto_fusion_delta=%lld glfc=%d gmfc=%d spreadfire_toggle=%d missile_gun=%d helix=%d proximity=%d smartmines=%d omega_delta=%lld d_tick=(%d,%d,%d) rng=%u has_rng=%d\n",
+			(long long)GameTime64,
+			(long long)(Next_laser_fire_time - GameTime64),
+			(long long)(Next_missile_fire_time - GameTime64),
+			(long long)(Last_laser_fired_time - GameTime64),
+			(long long)(Next_flare_fire_time - GameTime64),
+			(long long)(Auto_fire_fusion_cannon_time - GameTime64),
+			Global_laser_firing_count,
+			Global_missile_firing_count,
+			laser_state.spreadfire_toggle,
+			laser_state.missile_gun,
+			laser_state.helix_orientation,
+			laser_state.proximity_dropped,
+			laser_state.smartmines_dropped,
+			(long long)(laser_state.last_omega_fire_time - GameTime64),
+			d_tick_state.count,
+			d_tick_state.step,
+			d_tick_state.timer,
+			rng_state,
+			has_rng_state);
 }
 
 int sc_last_item= 0;
@@ -853,7 +875,7 @@ void state_object_rw_to_object(object_rw *obj_rw, object *obj)
 			obj->ctype.laser_info.parent_type      = obj_rw->ctype.laser_info.parent_type;
 			obj->ctype.laser_info.parent_num       = obj_rw->ctype.laser_info.parent_num;
 			obj->ctype.laser_info.parent_signature = obj_rw->ctype.laser_info.parent_signature;
-			obj->ctype.laser_info.creation_time    = obj_rw->ctype.laser_info.creation_time;
+			obj->ctype.laser_info.creation_time    = GameTime64 + (fix64)obj_rw->ctype.laser_info.creation_time;
 			obj->ctype.laser_info.creation_framecount = 0;
 			memset(obj->ctype.laser_info.hitobj_list, 0, sizeof(obj->ctype.laser_info.hitobj_list));
 			obj->ctype.laser_info.last_hitobj      = obj_rw->ctype.laser_info.last_hitobj;
@@ -895,7 +917,7 @@ void state_object_rw_to_object(object_rw *obj_rw, object *obj)
 			
 		case CT_POWERUP:
 			obj->ctype.powerup_info.count         = obj_rw->ctype.powerup_info.count;
-			obj->ctype.powerup_info.creation_time = obj_rw->ctype.powerup_info.creation_time;
+			obj->ctype.powerup_info.creation_time = GameTime64 + (fix64)obj_rw->ctype.powerup_info.creation_time;
 			obj->ctype.powerup_info.flags         = obj_rw->ctype.powerup_info.flags;
 			break;
 		case CT_CNTRLCEN:

@@ -224,6 +224,7 @@ static sbyte nd_playback_v_bad_read;
 static int nd_playback_v_framecount;
 static int nd_dump_v_frame_number = -1;
 static int nd_dump_v_active = 0;
+static FILE *nd_dump_v_fp = NULL;
 static nd_player_control_trace nd_dump_v_player_control_trace;
 static struct {
 	int valid;
@@ -4529,16 +4530,44 @@ static void newdemo_dump_write_matrix(FILE *fp, const vms_matrix *mat)
 	fputc('}', fp);
 }
 
+void newdemo_dump_note_robot_damage(object *robot, fix old_shields, fix damage)
+{
+	if (!nd_dump_v_active || !nd_dump_v_fp || !robot || robot->type != OBJ_ROBOT)
+		return;
+
+	fprintf(nd_dump_v_fp,
+		"{\"type\":\"robot_damage\",\"f\":%d,\"gt\":%d,\"objnum\":%d,\"sig\":%d,\"id\":%d,\"size\":%d,\"damage\":%d,\"shields_before\":%d,\"shields_after\":%d,\"dead\":%s,\"pos\":",
+		nd_dump_v_frame_number,
+		nd_recorded_time,
+		(int)(robot - Objects),
+		robot->signature,
+		robot->id,
+		robot->size,
+		damage,
+		old_shields,
+		robot->shields,
+		(robot->shields < 0) ? "true" : "false");
+	newdemo_dump_write_vector(nd_dump_v_fp, &robot->pos);
+	if (robot->movement_type == MT_PHYSICS) {
+		fputs(",\"vel\":", nd_dump_v_fp);
+		newdemo_dump_write_vector(nd_dump_v_fp, &robot->mtype.phys_info.velocity);
+	}
+	fputs("}\n", nd_dump_v_fp);
+}
+
 static void newdemo_dump_write_object(FILE *fp, int objnum, object *obj)
 {
 	fprintf(fp,
-		"{\"objnum\":%d,\"sig\":%d,\"obj_type\":%d,\"id\":%d,\"seg\":%d,\"flags\":%d,\"control_type\":%d,\"movement_type\":%d,\"render_type\":%d,\"viewer\":%s,\"pos\":",
+		"{\"objnum\":%d,\"sig\":%d,\"obj_type\":%d,\"id\":%d,\"seg\":%d,\"flags\":%d,\"size\":%d,\"shields\":%d,\"lifeleft\":%d,\"control_type\":%d,\"movement_type\":%d,\"render_type\":%d,\"viewer\":%s,\"pos\":",
 		objnum,
 		obj->signature,
 		obj->type,
 		obj->id,
 		obj->segnum,
 		obj->flags,
+		obj->size,
+		obj->shields,
+		obj->lifeleft,
 		obj->control_type,
 		obj->movement_type,
 		obj->render_type,
@@ -4546,6 +4575,10 @@ static void newdemo_dump_write_object(FILE *fp, int objnum, object *obj)
 	newdemo_dump_write_vector(fp, &obj->pos);
 	fputs(",\"last_pos\":", fp);
 	newdemo_dump_write_vector(fp, &obj->last_pos);
+	if (obj->movement_type == MT_PHYSICS) {
+		fprintf(fp, ",\"phys_flags\":%d,\"vel\":", obj->mtype.phys_info.flags);
+		newdemo_dump_write_vector(fp, &obj->mtype.phys_info.velocity);
+	}
 	fputs(",\"orient\":", fp);
 	newdemo_dump_write_matrix(fp, &obj->orient);
 	fputc('}', fp);
@@ -4789,6 +4822,7 @@ int newdemo_dump_json(const char *demo_path, const char *output_path,
 	nd_playback_v_demo_version = DEMO_VERSION;
 	nd_dump_v_frame_number = -1;
 	nd_dump_v_active = 1;
+	nd_dump_v_fp = fp;
 	newdemo_dump_reset_player_control_trace();
 	newdemo_dump_reset_player_wiggle();
 	nd_recorded_total = 0;
@@ -4841,6 +4875,7 @@ int newdemo_dump_json(const char *demo_path, const char *output_path,
 
 cleanup:
 	nd_dump_v_active = 0;
+	nd_dump_v_fp = NULL;
 	newdemo_dump_reset_player_control_trace();
 	newdemo_dump_reset_player_wiggle();
 	if (Newdemo_state == ND_STATE_PLAYBACK)

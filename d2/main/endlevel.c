@@ -64,6 +64,9 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "movie.h"
 #include "render.h"
 #include "titles.h"
+#ifdef ANDROID
+#include "android_log.h"
+#endif
 #ifdef OGL
 #include "ogl_init.h"
 #endif
@@ -288,6 +291,15 @@ vms_matrix surface_orient;
 int endlevel_data_loaded=0;
 int endlevel_movie_played = MOVIE_NOT_PLAYED;
 
+#ifdef ANDROID
+static void android_prepare_endlevel_movie(void)
+{
+	/* android port: ignore stray touch/controller input carried into the movie */
+	game_flush_inputs();
+	android_arm_cutscene_tap_suppress();
+}
+#endif
+
 void start_endlevel_sequence()
 {
 	int	i;
@@ -308,6 +320,9 @@ void start_endlevel_sequence()
 		if (PLAYING_BUILTIN_MISSION) // only play movie for built-in mission
 		{
 			window_set_visible(Game_wind, 0);	// suspend the game, including drawing
+			#ifdef ANDROID
+			android_prepare_endlevel_movie();
+			#endif
 			start_endlevel_movie();
 			window_set_visible(Game_wind, 1);
 		}
@@ -336,7 +351,12 @@ void start_endlevel_sequence()
 	
 	if (PLAYING_BUILTIN_MISSION) // only play movie for built-in mission
 		if (!(Game_mode & GM_MULTI))
+		{
+			#ifdef ANDROID
+			android_prepare_endlevel_movie();
+			#endif
 			endlevel_movie_played = start_endlevel_movie();
+		}
 	
 	window_set_visible(Game_wind, 1);
 

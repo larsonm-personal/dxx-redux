@@ -13,6 +13,10 @@
 
 #include "debug_log_categories.h"
 
+/* Arm a short input-ignore window when an Android cutscene starts so
+ * touch/controller taps from gameplay do not skip it immediately. */
+void android_arm_cutscene_tap_suppress(void);
+
 /* Per-category enabled flags (set from Kotlin via JNI). */
 extern volatile int debug_log_enabled[DLOG_COUNT];
 

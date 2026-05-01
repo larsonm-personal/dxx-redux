@@ -1399,6 +1399,7 @@ int apply_damage_to_robot(object *robot, fix damage, int killer_objnum)
    char isthief;
 	char i,temp_stolen[MAX_STOLEN_ITEMS];
 #endif
+	const fix old_shields = robot->shields;
 
 	if ( robot->flags&OF_EXPLODING) return 0;
 
@@ -1426,6 +1427,22 @@ int apply_damage_to_robot(object *robot, fix damage, int killer_objnum)
 //		Boss_been_hit = 1;
 
 	robot->shields -= damage;
+	newdemo_dump_note_robot_damage(robot, old_shields, damage);
+	if (input_demo_replay_is_loaded())
+		con_printf(CON_NORMAL,
+			"Input demo replay robot damage: gt=%lld frame=%u robot_obj=%d robot_sig=%d robot_id=%d damage=%d shields=%d->%d dead=%d pos=(%d,%d,%d)\n",
+			(long long)GameTime64,
+			(unsigned int)input_demo_replay_next_frame_index(),
+			(int)(robot - Objects),
+			robot->signature,
+			robot->id,
+			damage,
+			old_shields,
+			robot->shields,
+			robot->shields < 0,
+			robot->pos.x,
+			robot->pos.y,
+			robot->pos.z);
 
 #ifdef __ANDROID__
 	/* android port: coop QoL -- track engagement for warp availability */

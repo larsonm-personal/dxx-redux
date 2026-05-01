@@ -109,14 +109,28 @@ static void input_demo_log_player_drag_probe(object *obj,
 static int input_demo_replay_spreadfire_physics_probe_active(object *obj)
 {
 	const unsigned int frame = input_demo_replay_next_frame_index();
+	const int objnum = obj - Objects;
 
-	return input_demo_replay_is_loaded() &&
+	if (!(input_demo_replay_is_loaded() &&
 		obj->type == OBJ_WEAPON &&
 		obj->id == SPREADFIRE_ID &&
 		obj->ctype.laser_info.parent_type == OBJ_PLAYER &&
-		obj->ctype.laser_info.parent_num == Players[Player_num].objnum &&
-		frame >= 613 &&
-		frame <= 615;
+		obj->ctype.laser_info.parent_num == Players[Player_num].objnum))
+		return 0;
+
+	if (objnum == 162 &&
+		obj->signature == 4106 &&
+		frame >= 269 &&
+		frame <= 296)
+		return 1;
+
+	if (objnum == 167 &&
+		obj->signature == 4113 &&
+		frame >= 274 &&
+		frame <= 302)
+		return 1;
+
+	return 0;
 }
 
 static int input_demo_replay_robot_physics_probe_active(object *obj)

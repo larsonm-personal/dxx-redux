@@ -283,11 +283,15 @@ static void input_demo_log_ai_robot_state(const char *label, object *objp)
 	ai_local *ailp = &Ai_local_info[objnum];
 
 	con_printf(CON_NORMAL,
-		"Input demo replay AI robot: frame=%u step=%s obj=%d id=%d companion=%d behavior=%d mode=%d seg=%d player_seg=%d believed_seg=%d goal_seg=%d prev_vis=%d aware=%d aware_time=%d seen=%lld since=%d next_action=%d next_fire=%d next_fire2=%d path=%d/%d hide=%d skip=%d pos=(%d,%d,%d)\n",
+		"Input demo replay AI robot: frame=%u step=%s obj=%d sig=%d id=%d size=%d shields=%d life=%d companion=%d behavior=%d mode=%d seg=%d player_seg=%d believed_seg=%d goal_seg=%d prev_vis=%d aware=%d aware_time=%d seen=%lld since=%d next_action=%d next_fire=%d next_fire2=%d path=%d/%d hide=%d skip=%d pos=(%d,%d,%d) vel=(%d,%d,%d)\n",
 		input_demo_trace_frame_index(),
 		label,
 		objnum,
+		objp->signature,
 		objp->id,
+		objp->size,
+		objp->shields,
+		objp->lifeleft,
 		Robot_info[objp->id].companion,
 		aip->behavior,
 		ailp->mode,
@@ -309,7 +313,10 @@ static void input_demo_log_ai_robot_state(const char *label, object *objp)
 		aip->SKIP_AI_COUNT,
 		objp->pos.x,
 		objp->pos.y,
-		objp->pos.z);
+		objp->pos.z,
+		objp->mtype.phys_info.velocity.x,
+		objp->mtype.phys_info.velocity.y,
+		objp->mtype.phys_info.velocity.z);
 }
 
 // ----------------------------------------------------------------------------

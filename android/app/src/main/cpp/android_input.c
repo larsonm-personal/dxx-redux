@@ -20,6 +20,7 @@
 #include "android_log.h"
 #include "fix.h"
 #include "gr.h"
+#include "timer.h"
 #include "window.h"
 
 /* Automap_active is defined in automap.c; we only need the extern. */
@@ -98,6 +99,12 @@ static int g_last_touch_y = -1;
 static int g_touch_active = 0; /* is a finger currently down? */
 static int g_input_count = 0;  /* debug counter */
 static int g_intro_skip_touch_pressed = 0;
+static int g_touch_down_suppressed = 0;
+static unsigned short g_suppressed_joy_buttons = 0;
+static volatile fix64 g_cutscene_tap_suppress_until = 0;
+volatile int g_cutscene_tap_suppress_hits = 0;
+
+#define CUTSCENE_TAP_SUPPRESS_WINDOW (F1_0 / 2)
 
 /* Shared with d1/d2 arch/sdl/joy.c: mark touch-sourced virtual axes in the
  * high bit so the gameplay deadzone can distinguish touch from controller. */
@@ -125,6 +132,24 @@ static void android_persist_skip_intro_pref(JNIEnv *env, jobject thiz)
 	jmethodID mid = (*env)->GetMethodID(env, cls, "persistSkipIntroMovieFromNative", "()V");
 	if (mid)
 		(*env)->CallVoidMethod(env, thiz, mid);
+}
+
+static int android_cutscene_tap_suppressed(void)
+{
+	return g_cutscene_tap_suppress_until && timer_query() < g_cutscene_tap_suppress_until;
+}
+
+void android_arm_cutscene_tap_suppress(void)
+{
+	g_cutscene_tap_suppress_until = timer_query() + CUTSCENE_TAP_SUPPRESS_WINDOW;
+	g_touch_down_suppressed = 0;
+	g_suppressed_joy_buttons = 0;
+	g_cutscene_tap_suppress_hits = 0;
+}
+
+int android_cutscene_tap_suppress_active(void)
+{
+	return android_cutscene_tap_suppressed();
 }
 
 /*
@@ -161,13 +186,108 @@ static void remap_touch(int *gx, int *gy)
 	 * background area and the menu will ignore them. */
 }
 
-JNIEXPORT void JNICALL
-Java_com_dxxredux_app_MainActivity_nativeTouchEvent(JNIEnv *env, jobject thiz,
-                                                    jint action, jfloat normX, jfloat normY)
+static void android_push_touch_action(int action, int gameX, int gameY)
 {
 	SDL_Event ev;
 	memset(&ev, 0, sizeof(ev));
 
+	switch (action) {
+		case 0: /* ACTION_DOWN */
+			if (android_cutscene_tap_suppressed()) {
+				g_last_touch_x = gameX;
+				g_last_touch_y = gameY;
+				g_touch_down_suppressed = 1;
+				g_cutscene_tap_suppress_hits++;
+				return;
+			}
+
+			g_last_touch_x = gameX;
+			g_last_touch_y = gameY;
+			g_touch_active = 1;
+
+			/* Send a motion event to position the cursor.
+			 * On Android, mouse_motion_handler() uses absolute x/y when
+			 * xrel==0 && yrel==0 (see mouse.c). */
+			ev.type = SDL_MOUSEMOTION;
+			ev.motion.x = (Uint16) gameX;
+			ev.motion.y = (Uint16) gameY;
+			ev.motion.xrel = 0;
+			ev.motion.yrel = 0;
+			ev.motion.state = 0;
+			SDL_PushEvent(&ev);
+
+			/* Then send button-down (left button = SDL_BUTTON_LEFT = 1) */
+			memset(&ev, 0, sizeof(ev));
+			ev.type = SDL_MOUSEBUTTONDOWN;
+			ev.button.button = SDL_BUTTON_LEFT;
+			ev.button.state = SDL_PRESSED;
+			ev.button.x = (Uint16) gameX;
+			ev.button.y = (Uint16) gameY;
+			SDL_PushEvent(&ev);
+
+			if (++g_input_count <= 5)
+				LOGI("touch DOWN at (%d,%d)", gameX, gameY);
+			break;
+
+		case 1: /* ACTION_MOVE */ {
+			if (g_touch_down_suppressed) break;
+			if (!g_touch_active) break;
+			g_last_touch_x = gameX;
+			g_last_touch_y = gameY;
+
+			/* Send motion with xrel=0, yrel=0 so mouse_motion_handler uses
+			 * absolute x/y positioning (Android path). */
+			ev.type = SDL_MOUSEMOTION;
+			ev.motion.x = (Uint16) gameX;
+			ev.motion.y = (Uint16) gameY;
+			ev.motion.xrel = 0;
+			ev.motion.yrel = 0;
+			ev.motion.state = SDL_BUTTON(SDL_BUTTON_LEFT);
+			SDL_PushEvent(&ev);
+			break;
+		}
+
+		case 2: /* ACTION_UP */
+			if (g_touch_down_suppressed) {
+				g_touch_down_suppressed = 0;
+				return;
+			}
+
+			g_touch_active = 0;
+
+			ev.type = SDL_MOUSEBUTTONUP;
+			ev.button.button = SDL_BUTTON_LEFT;
+			ev.button.state = SDL_RELEASED;
+			ev.button.x = (Uint16) gameX;
+			ev.button.y = (Uint16) gameY;
+			SDL_PushEvent(&ev);
+
+			if (g_input_count <= 5)
+				LOGI("touch UP   at (%d,%d)", gameX, gameY);
+			break;
+	}
+}
+
+void android_test_inject_touch_tap(void)
+{
+	int screenW = grd_curscreen ? grd_curscreen->sc_w : 640;
+	int screenH = grd_curscreen ? grd_curscreen->sc_h : 480;
+	int gameX = screenW > 2 ? screenW / 2 : 1;
+	int gameY = screenH > 2 ? screenH / 2 : 1;
+
+	if (gameX < 0) gameX = 0;
+	if (gameX >= screenW) gameX = screenW - 1;
+	if (gameY < 0) gameY = 0;
+	if (gameY >= screenH) gameY = screenH - 1;
+
+	android_push_touch_action(0, gameX, gameY);
+	android_push_touch_action(2, gameX, gameY);
+}
+
+JNIEXPORT void JNICALL
+Java_com_dxxredux_app_MainActivity_nativeTouchEvent(JNIEnv *env, jobject thiz,
+                                                    jint action, jfloat normX, jfloat normY)
+{
 	/* Map normalised coordinates to the engine's actual resolution.
 	 * This avoids any mismatch between the Kotlin-side GAME_W/H
 	 * (from SharedPreferences) and the real engine resolution
@@ -219,67 +339,7 @@ Java_com_dxxredux_app_MainActivity_nativeTouchEvent(JNIEnv *env, jobject thiz,
 
 	remap_touch(&gameX, &gameY);
 
-	switch (action) {
-		case 0: /* ACTION_DOWN */
-			g_last_touch_x = gameX;
-			g_last_touch_y = gameY;
-			g_touch_active = 1;
-
-			/* Send a motion event to position the cursor.
-			 * On Android, mouse_motion_handler() uses absolute x/y when
-			 * xrel==0 && yrel==0 (see mouse.c). */
-			ev.type = SDL_MOUSEMOTION;
-			ev.motion.x = (Uint16) gameX;
-			ev.motion.y = (Uint16) gameY;
-			ev.motion.xrel = 0;
-			ev.motion.yrel = 0;
-			ev.motion.state = 0;
-			SDL_PushEvent(&ev);
-
-			/* Then send button-down (left button = SDL_BUTTON_LEFT = 1) */
-			memset(&ev, 0, sizeof(ev));
-			ev.type = SDL_MOUSEBUTTONDOWN;
-			ev.button.button = SDL_BUTTON_LEFT;
-			ev.button.state = SDL_PRESSED;
-			ev.button.x = (Uint16) gameX;
-			ev.button.y = (Uint16) gameY;
-			SDL_PushEvent(&ev);
-
-			if (++g_input_count <= 5)
-				LOGI("touch DOWN at (%d,%d)", gameX, gameY);
-			break;
-
-		case 1: /* ACTION_MOVE */ {
-			if (!g_touch_active) break;
-			g_last_touch_x = gameX;
-			g_last_touch_y = gameY;
-
-			/* Send motion with xrel=0, yrel=0 so mouse_motion_handler uses
-			 * absolute x/y positioning (Android path). */
-			ev.type = SDL_MOUSEMOTION;
-			ev.motion.x = (Uint16) gameX;
-			ev.motion.y = (Uint16) gameY;
-			ev.motion.xrel = 0;
-			ev.motion.yrel = 0;
-			ev.motion.state = SDL_BUTTON(SDL_BUTTON_LEFT);
-			SDL_PushEvent(&ev);
-			break;
-		}
-
-		case 2: /* ACTION_UP */
-			g_touch_active = 0;
-
-			ev.type = SDL_MOUSEBUTTONUP;
-			ev.button.button = SDL_BUTTON_LEFT;
-			ev.button.state = SDL_RELEASED;
-			ev.button.x = (Uint16) gameX;
-			ev.button.y = (Uint16) gameY;
-			SDL_PushEvent(&ev);
-
-			if (g_input_count <= 5)
-				LOGI("touch UP   at (%d,%d)", gameX, gameY);
-			break;
-	}
+	android_push_touch_action(action, gameX, gameY);
 }
 
 /* ── Keyboard ───────────────────────────────────────────────
@@ -893,7 +953,20 @@ Java_com_dxxredux_app_MainActivity_nativeJoystickButton(JNIEnv *env, jobject thi
                                                         jint button, jint pressed)
 {
 	SDL_Event ev;
+	const unsigned short button_mask = (button >= 0 && button < 16) ? (unsigned short) (1u << button) : 0;
 	memset(&ev, 0, sizeof(ev));
+
+	if (button_mask) {
+		if (pressed) {
+			if (android_cutscene_tap_suppressed()) {
+				g_suppressed_joy_buttons |= button_mask;
+				return;
+			}
+		} else if (g_suppressed_joy_buttons & button_mask) {
+			g_suppressed_joy_buttons &= (unsigned short) ~button_mask;
+			return;
+		}
+	}
 
 	ev.type = pressed ? SDL_JOYBUTTONDOWN : SDL_JOYBUTTONUP;
 	ev.jbutton.which = 0;

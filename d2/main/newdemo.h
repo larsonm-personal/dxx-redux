@@ -123,6 +123,7 @@ extern void newdemo_goto_beginning();
 extern void newdemo_start_playback( char * filename );
 extern void newdemo_stop_playback();
 extern int newdemo_dump_active(void);
+extern void newdemo_dump_note_robot_damage(object *robot, fix old_shields, fix damage);
 extern void newdemo_dump_note_player_wiggle(object *obj,
 	const vms_vector *velocity_before_wiggle,
 	const vms_vector *wiggle_delta,
