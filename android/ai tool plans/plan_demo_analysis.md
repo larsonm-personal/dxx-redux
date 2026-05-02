@@ -13,6 +13,68 @@ C:\local\dxx-redux\android\temp_game_logs\
 - `.dximdemo.rngtrace.jsonl`: full recorded RNG stream for the `.dximdemo`. Replay can write the same schema so the first extra or missing RNG call can be located mechanically.
 - `debuglog*.txt`: recorded-side Android debug logs that can help correlate the first mismatch to concrete game behavior.
 
+## Current Tranche: Android Build Failure Fix (2026-05-01)
+
+- [x] Reproduce and inspect the reported compile error from Android CMake build output
+- [x] Fix `d2/main/laser.c` static helper declaration ordering issue (`input_demo_replay_is_player_owned_weapon`)
+- [x] Re-run focused Android native build step to confirm `laser.c` compiles cleanly
+- [x] If new compile errors appear, address only fallout directly related to this change (none new)
+
+## Current Tranche: New Demo Desync Analysis (2026-05-01)
+
+- [x] Identify newest `.dximdemo` and paired recorded logs
+- [x] Replay newest demo with state+RNG comparisons enabled
+- [x] Locate first state and RNG divergence points
+- [x] Correlate mismatch window with new projectile-path logging
+- [x] Capture findings and next instrumentation/fix target
+
+### Tranche Findings Snapshot
+
+- Replay still fails with final energy mismatch (`expected 122`, `actual 107`)
+- First visible state drift remains around frame 339 (`position.x` mismatch)
+- First comparable RNG mismatch remains at line 6422 around frame 269/270
+- At the RNG boundary, expected includes stream-0 calls `6496`/`6497` (`create_awareness_event`, `phys_apply_rot`) in frame 269, but replay jumps from `6495` to `6498` in frame 270
+- Projectile/robot accept ordering differs in the same window: recorded has weapon obj `28` robot accept in frame 269; replay shows that accept in frame 270
+- Current hypothesis: object interaction ordering around frame 269 shifts AI awareness timing by one frame, which then cascades into later motion/state drift
+
+## Current Tranche: New Demo Desync Analysis (2026-05-01, demo 20260501_210847)
+
+- [x] Locate and replay newest hand-recorded demo artifacts
+- [x] Export and compare expected state against replay state trace
+- [x] Compare recorded and replay RNG traces for first semantic mismatch
+- [x] Correlate first mismatch with new weapon-robot accept sequence logs
+- [x] Capture concrete divergence signature for follow-up fix work
+
+### Tranche Findings Snapshot (demo 20260501_210847)
+
+- Replay result mismatches at end (`player0.shields`: expected 154, actual 169)
+- First state mismatch is frame 299 (`player0.score`: expected 31700, actual 32100)
+- First RNG semantic mismatch is frame 281 at `call_count=6618`: expected `create_awareness_event`, actual `phys_apply_rot`
+- New accept-seq probe shows replay-only extra hit in frame 281:
+  - recording: frame 281 only `accept_seq=0` (`weapon_obj=47` -> `robot_obj=100`)
+  - replay: frame 281 has `accept_seq=0` (`weapon_obj=47`) plus extra `accept_seq=1` (`weapon_obj=48`)
+- Robot 100 damage timeline diverges immediately from that extra replay accept:
+  - recording frame 281 shields `4259840 -> 3670016`
+  - replay frame 281 shields `4259840 -> 3670016 -> 3080192`
+- Replay then kills robot 100 earlier (frame 298) while recording keeps it alive through frame 299, matching the +400 score lead at frame 299
+
+## Current Tranche: Dispatch/Reason Instrumentation Follow-up (2026-05-01)
+
+- [x] Add focused weapon-vs-robot dispatch probe in `collide_two_objects`
+- [x] Add focused gate/reason probe in `collide_robot_and_weapon` for entry, accept, and skip branches
+- [x] Rebuild and rerun demo `d2_descent2_level2_20260501_210847`
+- [x] Extract frame 280-300 diagnostics from replay log and compare against recording logs
+
+### Tranche Findings Snapshot (dispatch/reason follow-up)
+
+- Replay frame 281 shows two fully valid accepts on robot 100:
+  - `weapon_obj=47` then `weapon_obj=48`
+  - both have `accept_gate=1`, `persistent=0`, `hitobj_seen=0`, `parent_sig_eq_robot=0`, `robot_exploding=0`
+- No reject/skip branch is involved for the replay-only extra hit; this is not a gate-condition mismatch
+- Dispatch probe confirms the extra candidate pair exists in replay collision routing at frame 281 (`weapon_obj=48` vs `robot_obj=100`)
+- Recording logs still show only one accept in frame 281 (weapon 47), so the divergence is upstream of `collide_robot_and_weapon` branch logic
+- Practical conclusion: the mismatch source is pair generation / object pose evolution before this function, not accept/reject conditions inside it
+
 ## Core Goal
 
 The main question is not just whether replay fails. The main question is where replay first becomes wrong.

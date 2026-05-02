@@ -540,6 +540,130 @@ int check_collision_delayfunc_exec()
 			collision_point ? collision_point->y : 0,
 			collision_point ? collision_point->z : 0);
 	}
+
+	static void input_demo_log_weapon_robot_accept_seq(object *weapon, object *robot)
+	{
+		static unsigned int last_frame = UINT_MAX;
+		static int accept_seq = 0;
+		unsigned int frame;
+
+		if (!input_demo_trace_local_player_weapon_robot_active(weapon, robot))
+			return;
+
+		frame = input_demo_trace_collision_frame_index();
+		if (frame != last_frame) {
+			last_frame = frame;
+			accept_seq = 0;
+		}
+		con_printf(CON_NORMAL,
+			"Input demo weapon robot accept seq: mode=%s frame=%u accept_seq=%d weapon_obj=%d weapon_sig=%d robot_obj=%d robot_sig=%d\n",
+			input_demo_trace_collision_mode_name(),
+			frame,
+			accept_seq,
+			(int)(weapon - Objects),
+			weapon->signature,
+			(int)(robot - Objects),
+			robot->signature);
+		accept_seq++;
+	}
+
+	static int input_demo_trace_weapon_robot_focus_active(object *weapon, object *robot)
+	{
+		unsigned int frame;
+
+		if (!input_demo_replay_is_loaded())
+			return 0;
+		if (!input_demo_trace_local_player_weapon_robot_active(weapon, robot))
+			return 0;
+		frame = input_demo_trace_collision_frame_index();
+		if (frame < 240 || frame > 340)
+			return 0;
+		return robot->id == 39;
+	}
+
+	static void input_demo_log_weapon_robot_reason_probe(const char *step, object *weapon, object *robot, const vms_vector *collision_point)
+	{
+		int persistent;
+		int hitobj_seen;
+		int parent_sig_eq_robot;
+		int allow_parent;
+		int robot_exploding;
+		int accept_gate;
+
+		if (!input_demo_trace_weapon_robot_focus_active(weapon, robot))
+			return;
+
+		persistent = (weapon->mtype.phys_info.flags & PF_PERSISTENT) != 0;
+		hitobj_seen = persistent ? weapon->ctype.laser_info.hitobj_list[robot - Objects] : 0;
+		parent_sig_eq_robot = weapon->ctype.laser_info.parent_signature == robot->signature;
+		allow_parent = (weapon->ctype.laser_info.parent_type == OBJ_PLAYER) || cheats.robotskillrobots;
+		robot_exploding = (robot->flags & OF_EXPLODING) != 0;
+		accept_gate = allow_parent && !robot_exploding;
+
+		con_printf(CON_NORMAL,
+			"Input demo weapon robot reason: frame=%u gt=%lld step=%s weapon_obj=%d weapon_id=%d weapon_sig=%d weapon_seg=%d weapon_flags=0x%x weapon_phys=0x%x parent_type=%d parent_num=%d parent_sig=%d parent_sig_eq_robot=%d persistent=%d hitobj_seen=%d allow_parent=%d robot_obj=%d robot_id=%d robot_sig=%d robot_seg=%d robot_flags=0x%x robot_exploding=%d boss=%d companion=%d shields=%d accept_gate=%d cp=(%d,%d,%d)\n",
+			input_demo_trace_collision_frame_index(),
+			(long long)GameTime64,
+			step,
+			(int)(weapon - Objects),
+			weapon->id,
+			weapon->signature,
+			weapon->segnum,
+			weapon->flags,
+			weapon->mtype.phys_info.flags,
+			weapon->ctype.laser_info.parent_type,
+			weapon->ctype.laser_info.parent_num,
+			weapon->ctype.laser_info.parent_signature,
+			parent_sig_eq_robot,
+			persistent,
+			hitobj_seen,
+			allow_parent,
+			(int)(robot - Objects),
+			robot->id,
+			robot->signature,
+			robot->segnum,
+			robot->flags,
+			robot_exploding,
+			Robot_info[robot->id].boss_flag,
+			Robot_info[robot->id].companion,
+			robot->shields,
+			accept_gate,
+			collision_point ? collision_point->x : 0,
+			collision_point ? collision_point->y : 0,
+			collision_point ? collision_point->z : 0);
+	}
+
+	static void input_demo_log_weapon_robot_dispatch_probe(object *weapon, object *robot, const vms_vector *collision_point)
+	{
+		if (!input_demo_trace_weapon_robot_focus_active(weapon, robot))
+			return;
+
+		con_printf(CON_NORMAL,
+			"Input demo weapon robot dispatch: frame=%u gt=%lld weapon_obj=%d weapon_id=%d weapon_sig=%d weapon_seg=%d weapon_flags=0x%x weapon_phys=0x%x weapon_life=%d weapon_parent_type=%d weapon_parent_num=%d weapon_parent_sig=%d robot_obj=%d robot_id=%d robot_sig=%d robot_seg=%d robot_flags=0x%x robot_shields=%d robot_exploding=%d cp=(%d,%d,%d)\n",
+			input_demo_trace_collision_frame_index(),
+			(long long)GameTime64,
+			(int)(weapon - Objects),
+			weapon->id,
+			weapon->signature,
+			weapon->segnum,
+			weapon->flags,
+			weapon->mtype.phys_info.flags,
+			weapon->lifeleft,
+			weapon->ctype.laser_info.parent_type,
+			weapon->ctype.laser_info.parent_num,
+			weapon->ctype.laser_info.parent_signature,
+			(int)(robot - Objects),
+			robot->id,
+			robot->signature,
+			robot->segnum,
+			robot->flags,
+			robot->shields,
+			(robot->flags & OF_EXPLODING) != 0,
+			collision_point ? collision_point->x : 0,
+			collision_point ? collision_point->y : 0,
+			collision_point ? collision_point->z : 0);
+	}
+
 //	The only reason this routine is called (as of 10/12/94) is so Brain guys can open doors.
 void collide_robot_and_wall( object * robot, fix hitspeed, short hitseg, short hitwall, vms_vector * hitpt)
 {
@@ -2125,9 +2249,13 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 	int	boss_invul_flag=0;
 
 	input_demo_log_weapon_robot_path_probe("entry", weapon, robot, collision_point);
+	input_demo_log_weapon_robot_reason_probe("entry", weapon, robot, collision_point);
 	if (weapon->id == OMEGA_ID)
 		if (!ok_to_do_omega_damage(weapon)) // see comment in laser.c
+		{
+			input_demo_log_weapon_robot_reason_probe("skip_omega_gate", weapon, robot, collision_point);
 			return;
+		}
 
 	if (Robot_info[robot->id].boss_flag) {
 		Boss_hit_time = GameTime64;
@@ -2141,6 +2269,7 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 	//	MK has so much fun whacking his butt around the mine he never cared...
 	if ((Robot_info[robot->id].companion) && ((weapon->ctype.laser_info.parent_type != OBJ_ROBOT) && !cheats.robotskillrobots)) {
 		input_demo_log_weapon_robot_path_probe("skip_companion", weapon, robot, collision_point);
+		input_demo_log_weapon_robot_reason_probe("skip_companion", weapon, robot, collision_point);
 		return;
 	}
 
@@ -2162,6 +2291,7 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 		else
 		{
 			input_demo_log_weapon_robot_path_probe("skip_persistent_repeat", weapon, robot, collision_point);
+			input_demo_log_weapon_robot_reason_probe("skip_persistent_repeat", weapon, robot, collision_point);
 			return;
 		}
 	}
@@ -2178,6 +2308,7 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 
 	if (weapon->ctype.laser_info.parent_signature == robot->signature) {
 		input_demo_log_weapon_robot_path_probe("skip_parent_signature_robot", weapon, robot, collision_point);
+		input_demo_log_weapon_robot_reason_probe("skip_parent_signature_robot", weapon, robot, collision_point);
 		return;
 	}
 
@@ -2224,6 +2355,8 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 		object *expl_obj=NULL;
 
 		input_demo_log_weapon_robot_path_probe("accept", weapon, robot, collision_point);
+		input_demo_log_weapon_robot_reason_probe("accept", weapon, robot, collision_point);
+		input_demo_log_weapon_robot_accept_seq(weapon, robot);
 
 		if (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum) {
 			input_demo_record_robot_impact_event(weapon, robot);
@@ -2306,7 +2439,12 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 
 	}
 	else if ((weapon->ctype.laser_info.parent_type == OBJ_PLAYER) && (robot->flags & OF_EXPLODING))
+	{
 		input_demo_log_weapon_robot_path_probe("skip_robot_exploding", weapon, robot, collision_point);
+		input_demo_log_weapon_robot_reason_probe("skip_robot_exploding", weapon, robot, collision_point);
+	}
+	else
+		input_demo_log_weapon_robot_reason_probe("skip_accept_gate", weapon, robot, collision_point);
 
 	maybe_kill_weapon(weapon,robot);
 
@@ -3511,6 +3649,14 @@ void collide_two_objects( object * A, object * B, vms_vector *collision_point )
 			collision_point ? collision_point->z : 0);
 
 	collision_type = COLLISION_OF(A->type,B->type);
+
+	if (collision_type == COLLISION_OF(OBJ_ROBOT, OBJ_WEAPON) ||
+		collision_type == COLLISION_OF(OBJ_WEAPON, OBJ_ROBOT)) {
+		object *weapon = A->type == OBJ_WEAPON ? A : B;
+		object *robot = A->type == OBJ_ROBOT ? A : B;
+
+		input_demo_log_weapon_robot_dispatch_probe(weapon, robot, collision_point);
+	}
 
 	switch( collision_type )	{
 	NO_SAME_COLLISION( OBJ_FIREBALL, OBJ_FIREBALL,   collide_fireball_and_fireball )

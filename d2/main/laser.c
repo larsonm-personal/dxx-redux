@@ -103,6 +103,7 @@ static const char *input_demo_weapon_trace_mode_name(void)
 }
 
 static int input_demo_replay_weapon_creation_probe_active(void);
+static int input_demo_replay_is_player_owned_weapon(object *obj);
 
 static int input_demo_weapon_create_probe_active(object *obj)
 {

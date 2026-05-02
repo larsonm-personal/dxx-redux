@@ -250,6 +250,43 @@ static void input_demo_log_player_robot_contact_probe(const char *step,
 		damage);
 }
 
+static int input_demo_trace_local_player_weapon_robot_active(object *weapon, object *robot)
+{
+	if (!input_demo_trace_collision_pose_active() || !weapon || !robot)
+		return 0;
+	if (weapon->type != OBJ_WEAPON || robot->type != OBJ_ROBOT)
+		return 0;
+	if (weapon->ctype.laser_info.parent_type != OBJ_PLAYER)
+		return 0;
+	return weapon->ctype.laser_info.parent_num == Players[Player_num].objnum;
+}
+
+static void input_demo_log_weapon_robot_accept_seq(object *weapon, object *robot)
+{
+	static unsigned int last_frame = UINT_MAX;
+	static int accept_seq = 0;
+	unsigned int frame;
+
+	if (!input_demo_trace_local_player_weapon_robot_active(weapon, robot))
+		return;
+
+	frame = input_demo_trace_collision_frame_index();
+	if (frame != last_frame) {
+		last_frame = frame;
+		accept_seq = 0;
+	}
+	con_printf(CON_NORMAL,
+		"Input demo weapon robot accept seq: mode=%s frame=%u accept_seq=%d weapon_obj=%d weapon_sig=%d robot_obj=%d robot_sig=%d\n",
+		input_demo_trace_collision_mode_name(),
+		frame,
+		accept_seq,
+		(int)(weapon - Objects),
+		weapon->signature,
+		(int)(robot - Objects),
+		robot->signature);
+	accept_seq++;
+}
+
 int check_collision_delayfunc_exec()
 {
 	static fix64 last_play_time=0;
@@ -1163,6 +1200,8 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 
 	if ( (weapon->ctype.laser_info.parent_type==OBJ_PLAYER) && !(robot->flags & OF_EXPLODING) )	{
 		object *expl_obj=NULL;
+
+		input_demo_log_weapon_robot_accept_seq(weapon, robot);
 
 		if (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum) {
 			create_awareness_event(weapon, PA_WEAPON_ROBOT_COLLISION);			// object "weapon" can attract attention to player
