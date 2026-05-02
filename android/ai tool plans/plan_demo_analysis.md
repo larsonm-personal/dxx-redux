@@ -75,6 +75,36 @@ C:\local\dxx-redux\android\temp_game_logs\
 - Recording logs still show only one accept in frame 281 (weapon 47), so the divergence is upstream of `collide_robot_and_weapon` branch logic
 - Practical conclusion: the mismatch source is pair generation / object pose evolution before this function, not accept/reject conditions inside it
 
+## Current Tranche: Symmetric In-View Robot Pose Tracking (2026-05-01)
+
+- [x] Add path-agnostic robot discovery when first entering view (no robot-id assumptions)
+- [x] Keep per-frame pose logging for all discovered robots after discovery, even when out of view
+- [x] Keep behavior symmetric between recording and replay
+- [x] Rebuild and validate logs on replay run
+
+### Tranche Findings Snapshot (symmetric pose tracking)
+
+- New log stream `Input demo robot pose track` is emitted from `init_ai_frame` and runs for both recorder and replay sessions
+- Discovery is event-based (`step=discover`) and increments a running `tracked_total`
+- After discovery, each tracked robot emits one line per frame:
+  - `step=pose` while the same robot object/signature still exists
+  - `step=missing` if the original tracked robot slot no longer holds that robot (dead/recycled slot)
+- Each per-frame line includes `in_view`, `los`, `front_dot`, position, velocity, shields, flags, and robot identity for stable cross-run comparisons
+
+## Current Tranche: Generalized FVI Probe (2026-05-01)
+
+- [x] Remove frame-window hard-coding from FVI sphere-check probe in D2
+- [x] Remove robot-id hard-coding from FVI sphere-check probe in D2
+- [x] Apply the same generalized probe behavior to D1 for parity
+- [x] Keep log volume practical by logging all hits plus only near misses
+
+### Tranche Findings Snapshot (generalized FVI probe)
+
+- FVI probe now applies to any demo and any robot, instead of one frame window and one robot id
+- Probe still focuses on player-owned weapon vs robot sphere checks to keep the data relevant
+- Miss logging is limited to near-threshold misses (`miss_delta <= 8.0`) while all hits are always logged
+- Added `miss_delta` to each probe line to make "just missed" vs "clear miss" comparisons immediate
+
 ## Core Goal
 
 The main question is not just whether replay fails. The main question is where replay first becomes wrong.

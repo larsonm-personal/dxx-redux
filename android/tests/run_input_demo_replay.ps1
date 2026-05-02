@@ -6,6 +6,8 @@ param(
     [string]$Game = 'auto',
     [ValidateSet('prompt', 'realtime', 'accelerated')]
     [string]$Mode = 'prompt',
+    [ValidateSet('auto', 'default', 'legacy-texmerge', 'compat-texture-formats', 'lowres-assets')]
+    [string]$RenderProfile = 'auto',
     [int]$TimeoutSeconds = 300,
     [Alias('HogDir')]
     [string]$DataDir,
@@ -20,7 +22,10 @@ param(
     [switch]$CompareStateTrace,
     [string]$RngLogPath,
     [switch]$TraceRng,
-    [switch]$CompareRngTrace
+    [switch]$CompareRngTrace,
+    [Alias('RebuildBeforeRun')]
+    [switch]$BuildBeforeRun,
+    [switch]$RequireFreshBuild
 )
 
 $ErrorActionPreference = 'Stop'
@@ -283,6 +288,95 @@ function Get-GameConfig {
     throw "Unsupported game: $Name"
 }
 
+function Get-GameBuildTarget {
+    param([string]$Name)
+
+    switch ($Name) {
+        'd1' { return 'd1' }
+        'd2' { return 'd2' }
+    }
+
+    throw "Unsupported game: $Name"
+}
+
+function Get-FreshnessSourceRoots {
+    param([string]$GameName)
+
+    $roots = @(
+        (Join-Path $repoRoot $GameName),
+        (Join-Path $repoRoot 'common'),
+        (Join-Path $repoRoot 'arch'),
+        (Join-Path $repoRoot 'android\app\src\main\cpp\shared')
+    )
+
+    return $roots | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -Unique
+}
+
+function Get-LatestSourceFileStamp {
+    param([string]$GameName)
+
+    $latestFile = $null
+    foreach ($root in (Get-FreshnessSourceRoots -GameName $GameName)) {
+        $candidate = Get-ChildItem -LiteralPath $root -Recurse -File -ErrorAction SilentlyContinue |
+            Where-Object {
+                $_.Extension -in @('.c', '.cpp', '.cc', '.cxx', '.h', '.hpp', '.hh', '.hxx', '.inl')
+            } |
+            Sort-Object -Property LastWriteTimeUtc -Descending |
+            Select-Object -First 1
+        if (-not $candidate) {
+            continue
+        }
+        if (-not $latestFile -or $candidate.LastWriteTimeUtc -gt $latestFile.LastWriteTimeUtc) {
+            $latestFile = $candidate
+        }
+    }
+
+    if (-not $latestFile) {
+        return $null
+    }
+
+    return @{
+        Path = $latestFile.FullName
+        TimestampUtc = $latestFile.LastWriteTimeUtc
+    }
+}
+
+function Invoke-HostBuild {
+    param([hashtable]$Config)
+
+    $buildScript = Join-Path $repoRoot 'run-windows-build.ps1'
+    $buildTarget = Get-GameBuildTarget -Name $Config.Name
+
+    if (-not (Test-Path -LiteralPath $buildScript)) {
+        throw "Host build script not found: $buildScript"
+    }
+
+    Write-Host "Build guardrail: rebuilding host target $buildTarget"
+    & $buildScript -Target $buildTarget
+    if ($LASTEXITCODE -ne 0) {
+        throw "Host build failed with exit code $LASTEXITCODE"
+    }
+}
+
+function Assert-ExecutableFresh {
+    param([hashtable]$Config)
+
+    if (-not (Test-Path -LiteralPath $Config.Exe)) {
+        throw "Built executable not found: $($Config.Exe)"
+    }
+
+    $exeItem = Get-Item -LiteralPath $Config.Exe
+    $sourceStamp = Get-LatestSourceFileStamp -GameName $Config.Name
+    if (-not $sourceStamp) {
+        return
+    }
+
+    if ($exeItem.LastWriteTimeUtc -lt $sourceStamp.TimestampUtc) {
+        $sourceRelative = Get-RelativeRepoPath -Path $sourceStamp.Path
+        throw "Executable is older than source files`nExe: $($Config.Exe)`nExe time (utc): $($exeItem.LastWriteTimeUtc)`nNewest source: $sourceRelative`nSource time (utc): $($sourceStamp.TimestampUtc)`nRun: .\\run-windows-build.ps1 -Target $($Config.Name)"
+    }
+}
+
 function Get-HeadlessConsoleExe {
     param([string]$GameName)
 
@@ -491,12 +585,80 @@ function Get-LaunchMode {
     }
 }
 
+function Get-RenderProfile {
+    param(
+        [string]$RequestedProfile,
+        [string]$RequestedMode
+    )
+
+    if ($RequestedProfile -eq 'auto' -and $RequestedMode -eq 'prompt') {
+        Write-Host ''
+        Write-Host 'Render profile:'
+        Write-Host '  [1] Default                  baseline OpenGL path'
+        Write-Host '  [2] Legacy texmerge          adds -gl_oldtexmerge'
+        Write-Host '  [3] Compat texture formats   disables legacy 4-bit/2-bit internal formats'
+        Write-Host '  [4] Lowres assets            adds -lowresgraphics'
+        while ($RequestedProfile -eq 'auto') {
+            $choice = Read-Host 'Choose render profile (1-4)'
+            switch ($choice) {
+                '1' { $RequestedProfile = 'default' }
+                '2' { $RequestedProfile = 'legacy-texmerge' }
+                '3' { $RequestedProfile = 'compat-texture-formats' }
+                '4' { $RequestedProfile = 'lowres-assets' }
+                default { Write-Host 'Enter 1, 2, 3, or 4' }
+            }
+        }
+    }
+
+    if ($RequestedProfile -eq 'auto') {
+        $RequestedProfile = 'default'
+    }
+
+    switch ($RequestedProfile) {
+        'default' {
+            return @{
+                Name = 'default'
+                Description = 'baseline OpenGL path'
+                ExtraArgs = @()
+            }
+        }
+        'legacy-texmerge' {
+            return @{
+                Name = 'legacy-texmerge'
+                Description = 'forces legacy texmerge path'
+                ExtraArgs = @('-gl_oldtexmerge')
+            }
+        }
+        'compat-texture-formats' {
+            return @{
+                Name = 'compat-texture-formats'
+                Description = 'disables legacy internal texture formats'
+                ExtraArgs = @(
+                    '-gl_intensity4_ok', '0',
+                    '-gl_luminance4_alpha4_ok', '0',
+                    '-gl_rgba2_ok', '0'
+                )
+            }
+        }
+        'lowres-assets' {
+            return @{
+                Name = 'lowres-assets'
+                Description = 'forces lowres graphics pack'
+                ExtraArgs = @('-lowresgraphics')
+            }
+        }
+    }
+
+    throw "Unsupported render profile: $RequestedProfile"
+}
+
 function Get-LaunchArguments {
     param(
         [hashtable]$Config,
         [string]$ResolvedDataDir,
         [string]$ResolvedDemoPath,
         [hashtable]$LaunchMode,
+        [hashtable]$RenderProfileSelection,
         [string]$Pilot,
         [switch]$NoRender,
         [string]$ResolvedStateLogPath,
@@ -514,6 +676,9 @@ function Get-LaunchArguments {
     )
     if ($LaunchMode.ExtraArgs.Count -gt 0) {
         $launchParameters += $LaunchMode.ExtraArgs
+    }
+    if ($RenderProfileSelection.ExtraArgs.Count -gt 0) {
+        $launchParameters += $RenderProfileSelection.ExtraArgs
     }
     if ($NoRender) {
         $launchParameters += '-inputdemo-norender'
@@ -779,7 +944,14 @@ if ($DemoPath) {
 $header = Get-DemoHeader -Path $resolvedDemoPath
 $resolvedGame = Resolve-DemoGame -Header $header -RequestedGame $Game
 $config = Get-GameConfig -Name $resolvedGame
+if ($BuildBeforeRun) {
+    Invoke-HostBuild -Config $config
+}
+if ($RequireFreshBuild) {
+    Assert-ExecutableFresh -Config $config
+}
 $resolvedDataDir = Resolve-DataDir -Config $config -RequestedDataDir $DataDir
+$renderProfileSelection = Get-RenderProfile -RequestedProfile $RenderProfile -RequestedMode $Mode
 $launchMode = Get-LaunchMode -RequestedMode $Mode -Path $resolvedDemoPath -Config $config
 $shouldCompareStateTrace = $TraceState -or $CompareStateTrace
 $shouldCompareRngTrace = $TraceRng -or $CompareRngTrace
@@ -819,7 +991,7 @@ $normalizedExpectedResult = Normalize-ExpectedResult -Expected $expectedResult -
 $launchArgs = if ($useHeadlessConsole) {
     Get-HeadlessConsoleLaunchArguments -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
 } else {
-    Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -LaunchMode $launchMode -Pilot $Pilot -NoRender:$NoRender -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
+    Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -LaunchMode $launchMode -RenderProfileSelection $renderProfileSelection -Pilot $Pilot -NoRender:$NoRender -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
 }
 $launchExecutable = if ($useHeadlessConsole) { $headlessConsoleExe } else { $sandbox.Exe }
 $runnerName = if ($useHeadlessConsole) { 'headless-console' } elseif ($NoRender) { 'windowed-no-present' } else { 'windowed' }
@@ -844,6 +1016,10 @@ Write-Host "Demo: $(Get-RelativeRepoPath -Path $resolvedDemoPath)"
 Write-Host "Game: $resolvedGame"
 Write-Host "Runner: $runnerName"
 Write-Host "Mode: $($launchMode.Name)"
+Write-Host "Render profile: $($renderProfileSelection.Name) ($($renderProfileSelection.Description))"
+if ($useHeadlessConsole -and $renderProfileSelection.ExtraArgs.Count -gt 0) {
+    Write-Host 'Render profile args: ignored by headless runner'
+}
 if ($NoRender -and -not $useHeadlessConsole) {
     Write-Host 'Render: no-present'
 }

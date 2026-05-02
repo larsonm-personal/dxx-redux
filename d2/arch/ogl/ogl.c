@@ -2259,10 +2259,10 @@ void ogl_start_frame(void){
 		ogl_prog_set_matrix(mat);
 	}
 #endif
-#if defined(OGLES) || !defined(OGL_MERGE)
-	/* Set up fixed-function / shim projection matrix.
-	 * On OGLES with OGL_MERGE, the shim matrix is still needed for
-	 * single-texture draws (g3_draw_tmap) that use the shim shader. */
+	/* Set up fixed-function / shim projection matrix for single-texture draws.
+	 * On OGLES with OGL_MERGE, the shim matrix is needed for g3_draw_tmap.
+	 * On desktop with OGL_MERGE, the fixed-function matrix is also needed for
+	 * g3_draw_tmap (robots, sprites) which do not use the OGL_MERGE shader. */
 	glShadeModel(GL_SMOOTH);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();//clear matrix
@@ -2273,7 +2273,6 @@ void ogl_start_frame(void){
 #endif
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();//clear matrix
-#endif
 }
 
 void ogl_end_frame(void){

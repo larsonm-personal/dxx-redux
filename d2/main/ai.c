@@ -244,6 +244,20 @@ static int input_demo_trace_ai_active(void)
 	return input_demo_recorder_is_active();
 }
 
+static int input_demo_trace_robot_pose_active(void)
+{
+	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+}
+
+static const char *input_demo_trace_robot_pose_mode_name(void)
+{
+	if (input_demo_replay_is_loaded())
+		return "replay";
+	if (input_demo_recorder_is_active())
+		return "record";
+	return "none";
+}
+
 static unsigned int input_demo_trace_frame_index(void)
 {
 	if (input_demo_replay_is_loaded())
@@ -254,6 +268,182 @@ static unsigned int input_demo_trace_frame_index(void)
 		return frame_count ? (unsigned int)(frame_count - 1) : 0;
 	}
 	return 0;
+}
+
+static int input_demo_trace_robot_is_in_view(object *robot, int *los_out, fix *front_dot_out)
+{
+	vms_vector to_robot;
+	int los;
+	fix front_dot;
+
+	if (!robot || !ConsoleObject || robot->type != OBJ_ROBOT) {
+		if (los_out)
+			*los_out = 0;
+		if (front_dot_out)
+			*front_dot_out = 0;
+		return 0;
+	}
+
+	vm_vec_sub(&to_robot, &robot->pos, &ConsoleObject->pos);
+	los = object_to_object_visibility(ConsoleObject, robot, FQ_TRANSWALL) != 0;
+	front_dot = vm_vec_dot(&ConsoleObject->orient.fvec, &to_robot);
+
+	if (los_out)
+		*los_out = los;
+	if (front_dot_out)
+		*front_dot_out = front_dot;
+
+	return los && (front_dot > 0);
+}
+
+static void input_demo_trace_tracked_robot_poses(void)
+{
+	static ubyte tracked[MAX_OBJECTS];
+	static int tracked_sig[MAX_OBJECTS];
+	static unsigned int last_frame = UINT_MAX;
+	static int tracked_total = 0;
+	char tracked_list[512];
+	int tracked_list_len = 0;
+	int tracked_list_count = 0;
+	int tracked_visible = 0;
+	unsigned int frame;
+	int i;
+
+	if (!input_demo_trace_robot_pose_active()) {
+		memset(tracked, 0, sizeof(tracked));
+		memset(tracked_sig, 0, sizeof(tracked_sig));
+		last_frame = UINT_MAX;
+		tracked_total = 0;
+		return;
+	}
+
+	frame = input_demo_trace_frame_index();
+	if (frame < last_frame) {
+		memset(tracked, 0, sizeof(tracked));
+		memset(tracked_sig, 0, sizeof(tracked_sig));
+		tracked_total = 0;
+	}
+	last_frame = frame;
+
+	for (i = 0; i <= Highest_object_index; ++i) {
+		object *objp = &Objects[i];
+		int los;
+		fix front_dot;
+
+		if (objp->type != OBJ_ROBOT)
+			continue;
+		if (tracked[i])
+			continue;
+		if (!input_demo_trace_robot_is_in_view(objp, &los, &front_dot))
+			continue;
+
+		tracked[i] = 1;
+		tracked_sig[i] = objp->signature;
+		tracked_total++;
+		con_printf(CON_NORMAL,
+			"Input demo robot pose track: mode=%s frame=%u gt=%lld step=discover tracked_total=%d robot_obj=%d robot_sig=%d robot_id=%d robot_seg=%d los=%d front_dot=%d pos=(%d,%d,%d) vel=(%d,%d,%d) shields=%d life=%d flags=0x%x exploding=%d companion=%d boss=%d\n",
+			input_demo_trace_robot_pose_mode_name(),
+			frame,
+			(long long)GameTime64,
+			tracked_total,
+			i,
+			objp->signature,
+			objp->id,
+			objp->segnum,
+			los,
+			front_dot,
+			objp->pos.x,
+			objp->pos.y,
+			objp->pos.z,
+			objp->mtype.phys_info.velocity.x,
+			objp->mtype.phys_info.velocity.y,
+			objp->mtype.phys_info.velocity.z,
+			objp->shields,
+			objp->lifeleft,
+			objp->flags,
+			(objp->flags & OF_EXPLODING) != 0,
+			Robot_info[objp->id].companion,
+			Robot_info[objp->id].boss_flag);
+	}
+
+	for (i = 0; i <= Highest_object_index; ++i) {
+		object *objp = &Objects[i];
+		int los = 0;
+		fix front_dot = 0;
+		int in_view = 0;
+		int written;
+
+		if (!tracked[i])
+			continue;
+
+		if (tracked_list_len < (int)sizeof(tracked_list) - 1) {
+			written = snprintf(tracked_list + tracked_list_len,
+				sizeof(tracked_list) - tracked_list_len,
+				"%s%d:%d",
+				tracked_list_count ? "," : "",
+				i,
+				tracked_sig[i]);
+			if (written > 0 && written < (int)(sizeof(tracked_list) - tracked_list_len))
+				tracked_list_len += written;
+		}
+		tracked_list_count++;
+
+		if ((objp->type == OBJ_ROBOT) && (objp->signature == tracked_sig[i]))
+			in_view = input_demo_trace_robot_is_in_view(objp, &los, &front_dot);
+		if (in_view)
+			tracked_visible++;
+
+		if ((objp->type == OBJ_ROBOT) && (objp->signature == tracked_sig[i])) {
+			con_printf(CON_NORMAL,
+				"Input demo robot pose track: mode=%s frame=%u gt=%lld step=pose tracked_total=%d robot_obj=%d robot_sig=%d robot_id=%d robot_seg=%d in_view=%d los=%d front_dot=%d pos=(%d,%d,%d) vel=(%d,%d,%d) shields=%d life=%d flags=0x%x exploding=%d companion=%d boss=%d\n",
+				input_demo_trace_robot_pose_mode_name(),
+				frame,
+				(long long)GameTime64,
+				tracked_total,
+				i,
+				objp->signature,
+				objp->id,
+				objp->segnum,
+				in_view,
+				los,
+				front_dot,
+				objp->pos.x,
+				objp->pos.y,
+				objp->pos.z,
+				objp->mtype.phys_info.velocity.x,
+				objp->mtype.phys_info.velocity.y,
+				objp->mtype.phys_info.velocity.z,
+				objp->shields,
+				objp->lifeleft,
+				objp->flags,
+				(objp->flags & OF_EXPLODING) != 0,
+				Robot_info[objp->id].companion,
+				Robot_info[objp->id].boss_flag);
+		} else {
+			con_printf(CON_NORMAL,
+				"Input demo robot pose track: mode=%s frame=%u gt=%lld step=missing tracked_total=%d robot_obj=%d tracked_sig=%d slot_type=%d slot_sig=%d slot_seg=%d\n",
+				input_demo_trace_robot_pose_mode_name(),
+				frame,
+				(long long)GameTime64,
+				tracked_total,
+				i,
+				tracked_sig[i],
+				objp->type,
+				objp->signature,
+				objp->segnum);
+		}
+	}
+
+	tracked_list[tracked_list_len] = '\0';
+	con_printf(CON_NORMAL,
+		"Input demo robot pose track: mode=%s frame=%u gt=%lld step=summary tracked_total=%d tracked_visible=%d listed=%d list=%s\n",
+		input_demo_trace_robot_pose_mode_name(),
+		frame,
+		(long long)GameTime64,
+		tracked_total,
+		tracked_visible,
+		tracked_list_count,
+		tracked_list_len ? tracked_list : "none");
 }
 
 static int input_demo_replay_awareness_probe_active(void)
@@ -333,6 +523,8 @@ static void input_demo_log_ai_robot_state(const char *label, object *objp)
 void init_ai_frame(void)
 {
 	int ab_state;
+
+	input_demo_trace_tracked_robot_poses();
 
 	Dist_to_last_fired_upon_player_pos = vm_vec_dist_quick(&Last_fired_upon_player_pos, &Believed_player_pos);
 	if (input_demo_trace_ai_active())
