@@ -34,6 +34,16 @@ extern "C" void input_demo_checkpoint_escort_state_clear(input_demo_checkpoint_e
 	if (!escort_state)
 		return;
 	memset(escort_state, 0, sizeof(*escort_state));
+	escort_state->escort_kill_object = INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET;
+	escort_state->escort_goal_object = INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET;
+	escort_state->escort_special_goal = INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET;
+	escort_state->escort_goal_index = INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET;
+	escort_state->buddy_messages_suppressed = INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET;
+	escort_state->buddy_sorry_time = INPUT_DEMO_CHECKPOINT_ESCORT_I64_UNSET;
+	escort_state->looking_for_marker = INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET;
+	escort_state->last_buddy_key = INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET;
+	escort_state->last_buddy_message_time = INPUT_DEMO_CHECKPOINT_ESCORT_I64_UNSET;
+	escort_state->escort_owner_player = INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET;
 }
 
 static bool fail(std::string *error, const std::string &message)
@@ -591,10 +601,37 @@ static bool parse_checkpoint_record(const ordered_json &root,
 			if (!parse_int64_field(it.value(), &parsed.escort_state.buddy_last_player_path_created, error, "checkpoint buddy_last_player_path_created"))
 				return false;
 			have_buddy_last_player_path_created = true;
+		} else if (name == "escort_kill_object") {
+			if (!parse_int_field(it.value(), &parsed.escort_state.escort_kill_object, error, "checkpoint escort_kill_object"))
+				return false;
 		} else if (name == "escort_last_path_created") {
 			if (!parse_int64_field(it.value(), &parsed.escort_state.escort_last_path_created, error, "checkpoint escort_last_path_created"))
 				return false;
 			have_escort_last_path_created = true;
+		} else if (name == "escort_goal_object") {
+			if (!parse_int_field(it.value(), &parsed.escort_state.escort_goal_object, error, "checkpoint escort_goal_object"))
+				return false;
+		} else if (name == "escort_special_goal") {
+			if (!parse_int_field(it.value(), &parsed.escort_state.escort_special_goal, error, "checkpoint escort_special_goal"))
+				return false;
+		} else if (name == "escort_goal_index") {
+			if (!parse_int_field(it.value(), &parsed.escort_state.escort_goal_index, error, "checkpoint escort_goal_index"))
+				return false;
+		} else if (name == "buddy_messages_suppressed") {
+			if (!parse_int_field(it.value(), &parsed.escort_state.buddy_messages_suppressed, error, "checkpoint buddy_messages_suppressed"))
+				return false;
+		} else if (name == "buddy_sorry_time") {
+			if (!parse_int64_field(it.value(), &parsed.escort_state.buddy_sorry_time, error, "checkpoint buddy_sorry_time"))
+				return false;
+		} else if (name == "looking_for_marker") {
+			if (!parse_int_field(it.value(), &parsed.escort_state.looking_for_marker, error, "checkpoint looking_for_marker"))
+				return false;
+		} else if (name == "last_buddy_key") {
+			if (!parse_int_field(it.value(), &parsed.escort_state.last_buddy_key, error, "checkpoint last_buddy_key"))
+				return false;
+		} else if (name == "last_buddy_message_time") {
+			if (!parse_int64_field(it.value(), &parsed.escort_state.last_buddy_message_time, error, "checkpoint last_buddy_message_time"))
+				return false;
 		} else if (name == "last_come_back_message_time") {
 			if (!parse_int64_field(it.value(), &parsed.escort_state.last_come_back_message_time, error, "checkpoint last_come_back_message_time"))
 				return false;
@@ -603,6 +640,9 @@ static bool parse_checkpoint_record(const ordered_json &root,
 			if (!parse_int64_field(it.value(), &parsed.escort_state.buddy_last_missile_time, error, "checkpoint buddy_last_missile_time"))
 				return false;
 			have_buddy_last_missile_time = true;
+		} else if (name == "escort_owner_player") {
+			if (!parse_int_field(it.value(), &parsed.escort_state.escort_owner_player, error, "checkpoint escort_owner_player"))
+				return false;
 		} else if (name == "data") {
 			if (!it.value().is_string())
 				return fail(error, "checkpoint data must be a string");
@@ -648,9 +688,29 @@ static bool checkpoint_record_to_json_line(const input_demo_checkpoint &checkpoi
 		root["buddy_allowed_to_talk"] = checkpoint.escort_state.buddy_allowed_to_talk;
 		root["buddy_last_seen_player"] = checkpoint.escort_state.buddy_last_seen_player;
 		root["buddy_last_player_path_created"] = checkpoint.escort_state.buddy_last_player_path_created;
+		if (checkpoint.escort_state.escort_kill_object != INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET)
+			root["escort_kill_object"] = checkpoint.escort_state.escort_kill_object;
 		root["escort_last_path_created"] = checkpoint.escort_state.escort_last_path_created;
+		if (checkpoint.escort_state.escort_goal_object != INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET)
+			root["escort_goal_object"] = checkpoint.escort_state.escort_goal_object;
+		if (checkpoint.escort_state.escort_special_goal != INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET)
+			root["escort_special_goal"] = checkpoint.escort_state.escort_special_goal;
+		if (checkpoint.escort_state.escort_goal_index != INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET)
+			root["escort_goal_index"] = checkpoint.escort_state.escort_goal_index;
+		if (checkpoint.escort_state.buddy_messages_suppressed != INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET)
+			root["buddy_messages_suppressed"] = checkpoint.escort_state.buddy_messages_suppressed;
+		if (checkpoint.escort_state.buddy_sorry_time != INPUT_DEMO_CHECKPOINT_ESCORT_I64_UNSET)
+			root["buddy_sorry_time"] = checkpoint.escort_state.buddy_sorry_time;
+		if (checkpoint.escort_state.looking_for_marker != INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET)
+			root["looking_for_marker"] = checkpoint.escort_state.looking_for_marker;
+		if (checkpoint.escort_state.last_buddy_key != INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET)
+			root["last_buddy_key"] = checkpoint.escort_state.last_buddy_key;
+		if (checkpoint.escort_state.last_buddy_message_time != INPUT_DEMO_CHECKPOINT_ESCORT_I64_UNSET)
+			root["last_buddy_message_time"] = checkpoint.escort_state.last_buddy_message_time;
 		root["last_come_back_message_time"] = checkpoint.escort_state.last_come_back_message_time;
 		root["buddy_last_missile_time"] = checkpoint.escort_state.buddy_last_missile_time;
+		if (checkpoint.escort_state.escort_owner_player != INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET)
+			root["escort_owner_player"] = checkpoint.escort_state.escort_owner_player;
 	}
 	root["data"] = checkpoint.data;
 	*line = root.dump();

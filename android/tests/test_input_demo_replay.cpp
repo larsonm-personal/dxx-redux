@@ -125,9 +125,19 @@ static void fill_test_checkpoint_escort_state(input_demo_checkpoint_escort_state
 	escort_state->buddy_allowed_to_talk = 0;
 	escort_state->buddy_last_seen_player = 1077412;
 	escort_state->buddy_last_player_path_created = 899154;
+	escort_state->escort_kill_object = 42;
 	escort_state->escort_last_path_created = 1077412;
+	escort_state->escort_goal_object = 11;
+	escort_state->escort_special_goal = -1;
+	escort_state->escort_goal_index = 31;
+	escort_state->buddy_messages_suppressed = 1;
+	escort_state->buddy_sorry_time = 262144;
+	escort_state->looking_for_marker = -1;
+	escort_state->last_buddy_key = 7;
+	escort_state->last_buddy_message_time = 65536;
 	escort_state->last_come_back_message_time = 899154;
 	escort_state->buddy_last_missile_time = 524288;
+	escort_state->escort_owner_player = -1;
 }
 
 static void fill_test_frame_state(input_demo_result *result, int frame_index)
@@ -191,9 +201,19 @@ static int expect_test_checkpoint_escort_state(const input_demo_checkpoint_escor
 	if (escort_state->buddy_allowed_to_talk != 0 ||
 	    escort_state->buddy_last_seen_player != 1077412 ||
 	    escort_state->buddy_last_player_path_created != 899154 ||
+	    escort_state->escort_kill_object != 42 ||
 	    escort_state->escort_last_path_created != 1077412 ||
+	    escort_state->escort_goal_object != 11 ||
+	    escort_state->escort_special_goal != -1 ||
+	    escort_state->escort_goal_index != 31 ||
+	    escort_state->buddy_messages_suppressed != 1 ||
+	    escort_state->buddy_sorry_time != 262144 ||
+	    escort_state->looking_for_marker != -1 ||
+	    escort_state->last_buddy_key != 7 ||
+	    escort_state->last_buddy_message_time != 65536 ||
 	    escort_state->last_come_back_message_time != 899154 ||
-	    escort_state->buddy_last_missile_time != 524288)
+	    escort_state->buddy_last_missile_time != 524288 ||
+	    escort_state->escort_owner_player != -1)
 		return report_failure("replay checkpoint escort state mismatch");
 	return 0;
 }

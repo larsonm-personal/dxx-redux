@@ -181,6 +181,11 @@ unsigned int d_rand_get_call_count(void)
 	return d_rand_get_stream_call_count(D_RNG_SIM);
 }
 
+void d_rand_set_call_count(unsigned int count)
+{
+	d_rand_set_stream_call_count(D_RNG_SIM, count);
+}
+
 void d_rand_reset_call_count(void)
 {
 	d_rand_reset_stream_call_count(D_RNG_SIM);
@@ -191,6 +196,13 @@ unsigned int d_rand_get_stream_call_count(d_rng_stream stream)
 	if (!d_rng_stream_is_valid(stream))
 		return d_rand_call_count[D_RNG_SIM];
 	return d_rand_call_count[stream];
+}
+
+void d_rand_set_stream_call_count(d_rng_stream stream, unsigned int count)
+{
+	if (!d_rng_stream_is_valid(stream))
+		stream = D_RNG_SIM;
+	d_rand_call_count[stream] = count;
 }
 
 void d_rand_reset_stream_call_count(d_rng_stream stream)

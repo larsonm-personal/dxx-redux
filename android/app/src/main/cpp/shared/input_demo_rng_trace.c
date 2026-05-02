@@ -28,14 +28,32 @@ typedef struct input_demo_rng_trace_event {
 typedef struct input_demo_rng_trace_session {
 	int active;
 	int truncated;
+	int write_on_stop;
+	int has_context;
 	uint32_t frame;
 	int64_t game_time64;
+	char *output_path;
 	input_demo_rng_trace_event *events;
 	size_t count;
 	size_t capacity;
 } input_demo_rng_trace_session;
 
 static input_demo_rng_trace_session g_input_demo_rng_trace_session;
+
+static char *copy_string(const char *text)
+{
+	char *copy;
+	size_t size;
+
+	if (!text)
+		text = "";
+	size = strlen(text) + 1;
+	copy = (char *) malloc(size);
+	if (!copy)
+		return NULL;
+	memcpy(copy, text, size);
+	return copy;
+}
 
 static int copy_error(const char *message, char *error, size_t error_size)
 {
@@ -69,7 +87,7 @@ static int ensure_capacity(size_t needed)
 
 static void append_event(const input_demo_rng_trace_event *event)
 {
-	if (!g_input_demo_rng_trace_session.active || !event)
+	if (!g_input_demo_rng_trace_session.active || !g_input_demo_rng_trace_session.has_context || !event)
 		return;
 	if (!ensure_capacity(g_input_demo_rng_trace_session.count + 1))
 		return;
@@ -85,6 +103,45 @@ static void write_json_string(FILE *out, const char *text)
 		switch (*cursor) {
 			case '\\':
 				fputs("\\\\", out);
+				break;
+			case '"':
+				fputs("\\\"", out);
+				break;
+			case '\b':
+				fputs("\\b", out);
+				break;
+			case '\f':
+				fputs("\\f", out);
+				break;
+			case '\n':
+				fputs("\\n", out);
+				break;
+			case '\r':
+				fputs("\\r", out);
+				break;
+			case '\t':
+				fputs("\\t", out);
+				break;
+			default:
+				if (*cursor < 0x20)
+					fprintf(out, "\\u%04x", (unsigned int) *cursor);
+				else
+					fputc(*cursor, out);
+				break;
+		}
+	}
+	fputc('"', out);
+}
+
+static void write_json_path_string(FILE *out, const char *text)
+{
+	const unsigned char *cursor = (const unsigned char *) (text ? text : "");
+
+	fputc('"', out);
+	for (; *cursor; ++cursor) {
+		switch (*cursor) {
+			case '\\':
+				fputc('/', out);
 				break;
 			case '"':
 				fputs("\\\"", out);
@@ -148,7 +205,7 @@ static int write_trace_file(const char *path, char *error, size_t error_size)
 		else
 			fprintf(out, ",\"result\":%d", event->result);
 		fprintf(out, ",\"line\":%d,\"file\":", event->line);
-		write_json_string(out, event->file);
+		write_json_path_string(out, event->file);
 		fputs(",\"func\":", out);
 		write_json_string(out, event->func);
 		fputs("}\n", out);
@@ -164,10 +221,34 @@ void input_demo_rng_trace_start(void)
 	g_input_demo_rng_trace_session.active = 1;
 }
 
+int input_demo_rng_trace_start_replay(const char *path, char *error, size_t error_size)
+{
+	if (!path || !path[0])
+		return copy_error("missing rng trace path", error, error_size);
+	input_demo_rng_trace_reset();
+	g_input_demo_rng_trace_session.output_path = copy_string(path);
+	if (!g_input_demo_rng_trace_session.output_path)
+		return copy_error("could not allocate rng trace path", error, error_size);
+	g_input_demo_rng_trace_session.active = 1;
+	g_input_demo_rng_trace_session.write_on_stop = 1;
+	return 1;
+}
+
 void input_demo_rng_trace_reset(void)
 {
 	free(g_input_demo_rng_trace_session.events);
+	free(g_input_demo_rng_trace_session.output_path);
 	memset(&g_input_demo_rng_trace_session, 0, sizeof(g_input_demo_rng_trace_session));
+}
+
+int input_demo_rng_trace_stop(char *error, size_t error_size)
+{
+	int result = 1;
+
+	if (g_input_demo_rng_trace_session.write_on_stop)
+		result = write_trace_file(g_input_demo_rng_trace_session.output_path, error, error_size);
+	input_demo_rng_trace_reset();
+	return result;
 }
 
 int input_demo_rng_trace_is_active(void)
@@ -179,6 +260,7 @@ void input_demo_rng_trace_set_context(uint32_t frame, int64_t game_time64)
 {
 	if (!g_input_demo_rng_trace_session.active)
 		return;
+	g_input_demo_rng_trace_session.has_context = 1;
 	g_input_demo_rng_trace_session.frame = frame;
 	g_input_demo_rng_trace_session.game_time64 = game_time64;
 }
@@ -244,6 +326,11 @@ size_t input_demo_rng_trace_event_count(void)
 	return g_input_demo_rng_trace_session.count;
 }
 
+int input_demo_rng_trace_write_to_path(const char *path, char *error, size_t error_size)
+{
+	return write_trace_file(path, error, error_size);
+}
+
 int input_demo_rng_trace_write_sidecar_for_demo(const char *demo_path,
                                                 char *error,
                                                 size_t error_size)
@@ -259,7 +346,7 @@ int input_demo_rng_trace_write_sidecar_for_demo(const char *demo_path,
 	if (!sidecar_path)
 		return copy_error("could not allocate rng trace sidecar path", error, error_size);
 	snprintf(sidecar_path, path_size, "%s%s", demo_path, INPUT_DEMO_RNG_TRACE_SUFFIX);
-	result = write_trace_file(sidecar_path, error, error_size);
+	result = input_demo_rng_trace_write_to_path(sidecar_path, error, error_size);
 	free(sidecar_path);
 	return result;
 }

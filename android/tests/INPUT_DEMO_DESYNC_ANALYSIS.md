@@ -22,6 +22,16 @@ Replay should be able to write the same shape as actual observed state:
 With `-inputdemo-state-log <path>`, the first mismatch can be found with a
 direct JSON comparison instead of hand-built probe printlines.
 
+Replay can also write a `.rngtrace.jsonl` stream in the same JSONL schema as the
+recording-side sidecar:
+
+```jsonl
+{"type":"rand","seq":95,"frame":59,"gt":264765,"call_count":170,"state_before":838586374,"state_after":1815975623,"result":27709,"line":281,"file":"C:/local/dxx-redux/d2/main/aipath.c","func":"create_random_xlate"}
+```
+
+With `-inputdemo-rng-trace <path>`, replay can be compared mechanically against
+the recorded `.rngtrace.jsonl` to find the first divergent random call.
+
 ## Current Helpers
 
 Extract the expected state stream from a recording:
@@ -45,6 +55,12 @@ Compare a generated expected trace to another trace or to the source demo:
 Use `-CompareFrameMetadata` when you also want to compare effective `ft` and
 RNG data. Leave it off when focusing only on gameplay state.
 
+Compare a recorded `.rngtrace.jsonl` against a replay-generated one:
+
+```powershell
+./android/tests/compare_input_demo_rng_trace.ps1 -ExpectedPath ./android/temp_game_logs/d2_descent2_level2_20260430_221250.dximdemo.rngtrace.jsonl -ActualPath ./temp/input_demo_state_traces/d2_descent2_level2_20260430_221250.actual_rngtrace.jsonl
+```
+
 ## Replay Flow
 
 After engine support is added, a live host replay should look like this:
@@ -53,17 +69,19 @@ After engine support is added, a live host replay should look like this:
 $demo = './android/temp_game_logs/d2_descent2_level2_20260430_221250.dximdemo'
 $expected = './temp/input_demo_state_traces/d2_level2.expected_state.jsonl'
 $actual = './temp/input_demo_state_traces/d2_level2.actual_state.jsonl'
+$actualRng = './temp/input_demo_state_traces/d2_level2.actual_rngtrace.jsonl'
 
 ./android/tests/export_input_demo_state_trace.ps1 -DemoPath $demo -OutputPath $expected
-./android/tests/run_input_demo_replay.ps1 -DemoPath $demo -Game d2 -Mode accelerated -KeepSandbox -Pilot replay -StateLogPath $actual -CompareStateTrace
+./android/tests/run_input_demo_replay.ps1 -DemoPath $demo -Game d2 -Mode accelerated -KeepSandbox -Pilot replay -StateLogPath $actual -RngLogPath $actualRng -CompareStateTrace -CompareRngTrace
 ./android/tests/compare_input_demo_state_trace.ps1 -ExpectedPath $expected -ActualPath $actual
+./android/tests/compare_input_demo_rng_trace.ps1 -ExpectedPath ($demo + '.rngtrace.jsonl') -ActualPath $actualRng
 ```
 
 For the common case, let the wrapper pick the output path and run the compare
 automatically:
 
 ```powershell
-./android/tests/run_input_demo_replay.ps1 -DemoPath $demo -Game d2 -Mode accelerated -KeepSandbox -Pilot replay -TraceState
+./android/tests/run_input_demo_replay.ps1 -DemoPath $demo -Game d2 -Mode accelerated -KeepSandbox -Pilot replay -TraceState -TraceRng
 ```
 
 ## Strategy
@@ -73,9 +91,11 @@ automatically:
 - Then inspect durable frame events near that frame: score, impact, robot
   damage, player damage, weapon creation, powerup drop, powerup pickup, and
   powerup removal.
-- Use `.rngtrace.jsonl` as supporting evidence by frame and RNG call count. It
-  identifies random calls, but semantic events are needed to know which robot or
-  powerup those calls belonged to.
+- Use `.rngtrace.jsonl` as the earliest mechanical signal. It identifies the
+  first divergent random call by sequence, frame, call count, and callsite.
+- After the first RNG mismatch is known, inspect durable frame events and state
+  summaries near that frame to decide which robot, path build, or powerup logic
+  made the extra or missing random call.
 - Avoid interpolation. Compare only recorded frames, replay frames, durable
   events, and RNG trace records that actually exist.
 - Prefer object signatures over object numbers when following spawned powerups,

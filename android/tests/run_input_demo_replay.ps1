@@ -17,7 +17,10 @@ param(
     [switch]$ListOnly,
     [string]$StateLogPath,
     [switch]$TraceState,
-    [switch]$CompareStateTrace
+    [switch]$CompareStateTrace,
+    [string]$RngLogPath,
+    [switch]$TraceRng,
+    [switch]$CompareRngTrace
 )
 
 $ErrorActionPreference = 'Stop'
@@ -105,6 +108,27 @@ function Invoke-StateTraceComparison {
     }
 
     & $pwsh -NoProfile -ExecutionPolicy Bypass -File $compareScript -ExpectedPath $expectedPath -ActualPath $ActualPath -CompareFrameMetadata
+    return @{
+        ExpectedPath = $expectedPath
+        ExitCode = $LASTEXITCODE
+    }
+}
+
+function Invoke-RngTraceComparison {
+    param(
+        [string]$DemoPath,
+        [string]$ActualPath
+    )
+
+    $expectedPath = [System.IO.Path]::GetFullPath($DemoPath + '.rngtrace.jsonl')
+    $pwsh = (Get-Process -Id $PID).Path
+    $compareScript = Join-Path $PSScriptRoot 'compare_input_demo_rng_trace.ps1'
+
+    if (-not (Test-Path -LiteralPath $expectedPath)) {
+        throw "Recorded rng trace not found: $expectedPath"
+    }
+
+    & $pwsh -NoProfile -ExecutionPolicy Bypass -File $compareScript -ExpectedPath $expectedPath -ActualPath $ActualPath
     return @{
         ExpectedPath = $expectedPath
         ExitCode = $LASTEXITCODE
@@ -411,7 +435,8 @@ function Get-HeadlessConsoleLaunchArguments {
     param(
         [string]$ResolvedDataDir,
         [string]$ResolvedDemoPath,
-        [string]$ResolvedStateLogPath
+        [string]$ResolvedStateLogPath,
+        [string]$ResolvedRngLogPath
     )
 
     $launchParameters = @(
@@ -420,6 +445,9 @@ function Get-HeadlessConsoleLaunchArguments {
     )
     if ($ResolvedStateLogPath) {
         $launchParameters += @('-inputdemo-state-log', $ResolvedStateLogPath)
+    }
+    if ($ResolvedRngLogPath) {
+        $launchParameters += @('-inputdemo-rng-trace', $ResolvedRngLogPath)
     }
     return $launchParameters
 }
@@ -471,7 +499,8 @@ function Get-LaunchArguments {
         [hashtable]$LaunchMode,
         [string]$Pilot,
         [switch]$NoRender,
-        [string]$ResolvedStateLogPath
+        [string]$ResolvedStateLogPath,
+        [string]$ResolvedRngLogPath
     )
 
     $launchParameters = @(
@@ -494,6 +523,9 @@ function Get-LaunchArguments {
     }
     if ($ResolvedStateLogPath) {
         $launchParameters += @('-inputdemo-state-log', $ResolvedStateLogPath)
+    }
+    if ($ResolvedRngLogPath) {
+        $launchParameters += @('-inputdemo-rng-trace', $ResolvedRngLogPath)
     }
     return $launchParameters
 }
@@ -750,7 +782,9 @@ $config = Get-GameConfig -Name $resolvedGame
 $resolvedDataDir = Resolve-DataDir -Config $config -RequestedDataDir $DataDir
 $launchMode = Get-LaunchMode -RequestedMode $Mode -Path $resolvedDemoPath -Config $config
 $shouldCompareStateTrace = $TraceState -or $CompareStateTrace
+$shouldCompareRngTrace = $TraceRng -or $CompareRngTrace
 $resolvedStateLogPath = $null
+$resolvedRngLogPath = $null
 if ($StateLogPath -or $TraceState -or $CompareStateTrace) {
     if ($StateLogPath) {
         $resolvedStateLogPath = Resolve-AbsolutePath -Path $StateLogPath
@@ -763,6 +797,18 @@ if ($StateLogPath -or $TraceState -or $CompareStateTrace) {
         New-Item -ItemType Directory -Path $stateLogDirectory -Force | Out-Null
     }
 }
+if ($RngLogPath -or $TraceRng -or $CompareRngTrace) {
+    if ($RngLogPath) {
+        $resolvedRngLogPath = Resolve-AbsolutePath -Path $RngLogPath
+    } else {
+        $resolvedRngLogPath = Join-Path (Join-Path $repoRoot 'temp\input_demo_state_traces') ([System.IO.Path]::GetFileNameWithoutExtension($resolvedDemoPath) + '.actual_rngtrace.jsonl')
+        $resolvedRngLogPath = [System.IO.Path]::GetFullPath($resolvedRngLogPath)
+    }
+    $rngLogDirectory = Split-Path -Path $resolvedRngLogPath -Parent
+    if ($rngLogDirectory -and -not (Test-Path -LiteralPath $rngLogDirectory)) {
+        New-Item -ItemType Directory -Path $rngLogDirectory -Force | Out-Null
+    }
+}
 $useHeadlessConsole = Test-UseHeadlessConsoleRunner -ResolvedGame $resolvedGame -Header $header -LaunchMode $launchMode -Pilot $Pilot -NoRender:$NoRender -PreferHeadlessConsole:$PreferHeadlessConsole
 $headlessConsoleExe = if ($useHeadlessConsole) { Get-HeadlessConsoleExe -GameName $resolvedGame } else { $null }
 $sandbox = New-LaunchSandbox -Config $config -SandboxName ([System.IO.Path]::GetFileNameWithoutExtension($resolvedDemoPath)) -ReuseSandbox:$ReuseSandbox -SkipExecutableCopy:$useHeadlessConsole
@@ -771,9 +817,9 @@ $expectedResult = Get-DemoResultRecord -Path $resolvedDemoPath
 $checkpointRecord = Get-DemoCheckpointRecord -Path $resolvedDemoPath
 $normalizedExpectedResult = Normalize-ExpectedResult -Expected $expectedResult -Header $header -Checkpoint $checkpointRecord
 $launchArgs = if ($useHeadlessConsole) {
-    Get-HeadlessConsoleLaunchArguments -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ResolvedStateLogPath $resolvedStateLogPath
+    Get-HeadlessConsoleLaunchArguments -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
 } else {
-    Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -LaunchMode $launchMode -Pilot $Pilot -NoRender:$NoRender -ResolvedStateLogPath $resolvedStateLogPath
+    Get-LaunchArguments -Config $config -ResolvedDataDir $resolvedDataDir -ResolvedDemoPath $resolvedDemoPath -LaunchMode $launchMode -Pilot $Pilot -NoRender:$NoRender -ResolvedStateLogPath $resolvedStateLogPath -ResolvedRngLogPath $resolvedRngLogPath
 }
 $launchExecutable = if ($useHeadlessConsole) { $headlessConsoleExe } else { $sandbox.Exe }
 $runnerName = if ($useHeadlessConsole) { 'headless-console' } elseif ($NoRender) { 'windowed-no-present' } else { 'windowed' }
@@ -789,6 +835,9 @@ if (Test-Path -LiteralPath $actualResultPath) {
 if ($resolvedStateLogPath -and (Test-Path -LiteralPath $resolvedStateLogPath)) {
     Remove-Item -LiteralPath $resolvedStateLogPath -Force
 }
+if ($resolvedRngLogPath -and (Test-Path -LiteralPath $resolvedRngLogPath)) {
+    Remove-Item -LiteralPath $resolvedRngLogPath -Force
+}
 
 Write-Host ''
 Write-Host "Demo: $(Get-RelativeRepoPath -Path $resolvedDemoPath)"
@@ -802,6 +851,9 @@ Write-Host "Data: $(Get-RelativeRepoPath -Path $resolvedDataDir)"
 Write-Host "Sandbox: $(Get-RelativeRepoPath -Path $sandbox.Directory)"
 if ($resolvedStateLogPath) {
     Write-Host "State trace: $(Get-RelativeRepoPath -Path $resolvedStateLogPath)"
+}
+if ($resolvedRngLogPath) {
+    Write-Host "Rng trace: $(Get-RelativeRepoPath -Path $resolvedRngLogPath)"
 }
 if ($ReuseSandbox) {
     Write-Host 'Sandbox mode: reuse'
@@ -849,6 +901,8 @@ $actualResult = Read-JsonFileAsHashtable -Path $actualResultPath
 $expectedForCompare = $normalizedExpectedResult
 $stateTraceCompareError = $null
 $stateTraceExpectedPath = $null
+$rngTraceCompareError = $null
+$rngTraceExpectedPath = $null
 if (Test-ReplayUsedTerminalExitSubset -SandboxDirectory $sandbox.Directory) {
     $expectedForCompare = Get-TerminalExitExpectedSubset -Expected $normalizedExpectedResult -Actual $actualResult
 }
@@ -866,6 +920,20 @@ if ($resolvedStateLogPath) {
         }
     }
 }
+if ($resolvedRngLogPath) {
+    if (-not (Test-Path -LiteralPath $resolvedRngLogPath)) {
+        $rngTraceCompareError = "Replay did not write rng trace: $resolvedRngLogPath"
+    } elseif ($shouldCompareRngTrace) {
+        $rngTraceResult = Invoke-RngTraceComparison -DemoPath $resolvedDemoPath -ActualPath $resolvedRngLogPath
+        $rngTraceExpectedPath = $rngTraceResult.ExpectedPath
+        Write-Host "Expected rng trace: $(Get-RelativeRepoPath -Path $rngTraceExpectedPath)"
+        if ($rngTraceResult.ExitCode -ne 0) {
+            $rngTraceCompareError = 'RNG trace compare failed'
+        } else {
+            Write-Host 'RNG trace compare: PASS'
+        }
+    }
+}
 $compareError = Compare-JsonSubset -Expected $expectedForCompare -Actual $actualResult
 $elapsedSeconds = [Math]::Round($replayStopwatch.Elapsed.TotalSeconds, 3)
 $replayFps = $null
@@ -879,7 +947,7 @@ if ($null -ne $replayFps) {
 } else {
     Write-Host ("Elapsed: {0}s" -f $elapsedSeconds)
 }
-if ($compareError -or $stateTraceCompareError) {
+if ($compareError -or $stateTraceCompareError -or $rngTraceCompareError) {
     Write-Host 'RESULT: FAIL' -ForegroundColor Red
     if ($compareError) {
         Write-Host $compareError
@@ -887,12 +955,21 @@ if ($compareError -or $stateTraceCompareError) {
     if ($stateTraceCompareError) {
         Write-Host $stateTraceCompareError
     }
+    if ($rngTraceCompareError) {
+        Write-Host $rngTraceCompareError
+    }
     Write-Host "Actual: $(Get-RelativeRepoPath -Path $actualResultPath)"
     if ($resolvedStateLogPath) {
         Write-Host "State trace: $(Get-RelativeRepoPath -Path $resolvedStateLogPath)"
     }
+    if ($resolvedRngLogPath) {
+        Write-Host "Rng trace: $(Get-RelativeRepoPath -Path $resolvedRngLogPath)"
+    }
     if ($stateTraceExpectedPath) {
         Write-Host "Expected trace: $(Get-RelativeRepoPath -Path $stateTraceExpectedPath)"
+    }
+    if ($rngTraceExpectedPath) {
+        Write-Host "Expected rng trace: $(Get-RelativeRepoPath -Path $rngTraceExpectedPath)"
     }
     Write-Host ($actualResult | ConvertTo-Json -Depth 10)
     if (-not $KeepSandbox) {
@@ -906,8 +983,14 @@ Write-Host "Actual: $(Get-RelativeRepoPath -Path $actualResultPath)"
 if ($resolvedStateLogPath) {
     Write-Host "State trace: $(Get-RelativeRepoPath -Path $resolvedStateLogPath)"
 }
+if ($resolvedRngLogPath) {
+    Write-Host "Rng trace: $(Get-RelativeRepoPath -Path $resolvedRngLogPath)"
+}
 if ($stateTraceExpectedPath) {
     Write-Host "Expected trace: $(Get-RelativeRepoPath -Path $stateTraceExpectedPath)"
+}
+if ($rngTraceExpectedPath) {
+    Write-Host "Expected rng trace: $(Get-RelativeRepoPath -Path $rngTraceExpectedPath)"
 }
 Write-Host ($actualResult | ConvertTo-Json -Depth 10)
 

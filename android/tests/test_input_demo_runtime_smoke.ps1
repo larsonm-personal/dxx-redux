@@ -144,6 +144,7 @@ function Invoke-ReplaySmoke {
     $demoPath = Join-Path $fixtureDir 'smoke.dximdemo'
     $actualResultPath = $demoPath + '.actual.json'
     $actualStatePath = $demoPath + '.actual_state.jsonl'
+    $actualRngTracePath = $demoPath + '.actual_rngtrace.jsonl'
 
     if (-not (Test-Path $config.Exe)) {
         throw "Built executable not found: $($config.Exe)"
@@ -167,7 +168,8 @@ function Invoke-ReplaySmoke {
         '-nomusic',
         '-nosound',
         '-inputdemo-replay', $demoPath,
-        '-inputdemo-state-log', $actualStatePath
+        '-inputdemo-state-log', $actualStatePath,
+        '-inputdemo-rng-trace', $actualRngTracePath
     )
     Write-Host "SMOKE $GameName sandbox=$sandboxExe data=$DataDir fixture=$fixtureDir"
     $startInfo = New-Object System.Diagnostics.ProcessStartInfo
@@ -223,6 +225,12 @@ function Invoke-ReplaySmoke {
     }
     if (-not (Select-String -LiteralPath $actualStatePath -Pattern '"type":"frame_state"' -Quiet)) {
         throw "$GameName replay smoke state trace is missing frame_state records"
+    }
+    if (-not (Test-Path -LiteralPath $actualRngTracePath)) {
+        throw "$GameName replay smoke did not write an rng trace"
+    }
+    if (-not (Select-String -LiteralPath $actualRngTracePath -Pattern '"type":"meta"' -Quiet)) {
+        throw "$GameName replay smoke rng trace is missing a meta record"
     }
     foreach ($property in @('version', 'game', 'mission', 'level', 'difficulty', 'frame_count')) {
         if ($expected.$property -ne $actual.$property) {

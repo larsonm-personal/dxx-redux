@@ -1213,13 +1213,8 @@ int time_to_visit_player(object *objp, ai_local *ailp, ai_static *aip)
 	//	Note: This one has highest priority because, even if already going towards player,
 	//	might be necessary to create a new path, as player can move.
 	if (GameTime64 - Buddy_last_seen_player > MAX_ESCORT_TIME_AWAY)
-		if (GameTime64 - Buddy_last_player_path_created > F1_0) {
-			if (!(input_demo_replay_has_checkpoint() &&
-				(ailp->time_player_seen < input_demo_replay_checkpoint_start_gt()) &&
-				(ailp->mode == AIM_GOTO_OBJECT) &&
-				(aip->cur_path_index < aip->path_length/2)))
-				return 1;
-		}
+		if (GameTime64 - Buddy_last_player_path_created > F1_0)
+			return 1;
 
 	if (ailp->mode == AIM_GOTO_PLAYER)
 		return 0;
@@ -1248,9 +1243,21 @@ void escort_get_input_demo_checkpoint_state(input_demo_checkpoint_escort_state *
 	escort_state->buddy_allowed_to_talk = Buddy_allowed_to_talk;
 	escort_state->buddy_last_seen_player = Buddy_last_seen_player;
 	escort_state->buddy_last_player_path_created = Buddy_last_player_path_created;
+	escort_state->escort_kill_object = Escort_kill_object;
 	escort_state->escort_last_path_created = Escort_last_path_created;
+	escort_state->escort_goal_object = Escort_goal_object;
+	escort_state->escort_special_goal = Escort_special_goal;
+	escort_state->escort_goal_index = Escort_goal_index;
+	escort_state->buddy_messages_suppressed = Buddy_messages_suppressed;
+	escort_state->buddy_sorry_time = Buddy_sorry_time;
+	escort_state->looking_for_marker = Looking_for_marker;
+	escort_state->last_buddy_key = Last_buddy_key;
+	escort_state->last_buddy_message_time = Last_buddy_message_time;
 	escort_state->last_come_back_message_time = Last_come_back_message_time;
 	escort_state->buddy_last_missile_time = Buddy_last_missile_time;
+#ifdef NETWORK
+	escort_state->escort_owner_player = Escort_owner_player;
+#endif
 }
 
 void escort_rebuild_runtime_state_after_restore(void)
@@ -1288,12 +1295,34 @@ void escort_rebuild_runtime_state_after_restore(void)
 		Buddy_allowed_to_talk = checkpoint_escort_state.buddy_allowed_to_talk;
 		Buddy_last_seen_player = checkpoint_escort_state.buddy_last_seen_player;
 		Buddy_last_player_path_created = checkpoint_escort_state.buddy_last_player_path_created;
+		if (checkpoint_escort_state.escort_kill_object != INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET)
+			Escort_kill_object = checkpoint_escort_state.escort_kill_object;
 		Escort_last_path_created = checkpoint_escort_state.escort_last_path_created;
+		if (checkpoint_escort_state.escort_goal_object != INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET)
+			Escort_goal_object = checkpoint_escort_state.escort_goal_object;
+		if (checkpoint_escort_state.escort_special_goal != INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET)
+			Escort_special_goal = checkpoint_escort_state.escort_special_goal;
+		if (checkpoint_escort_state.escort_goal_index != INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET)
+			Escort_goal_index = checkpoint_escort_state.escort_goal_index;
+		if (checkpoint_escort_state.buddy_messages_suppressed != INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET)
+			Buddy_messages_suppressed = checkpoint_escort_state.buddy_messages_suppressed;
+		if (checkpoint_escort_state.buddy_sorry_time != INPUT_DEMO_CHECKPOINT_ESCORT_I64_UNSET)
+			Buddy_sorry_time = checkpoint_escort_state.buddy_sorry_time;
+		if (checkpoint_escort_state.looking_for_marker != INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET)
+			Looking_for_marker = checkpoint_escort_state.looking_for_marker;
+		if (checkpoint_escort_state.last_buddy_key != INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET)
+			Last_buddy_key = checkpoint_escort_state.last_buddy_key;
+		if (checkpoint_escort_state.last_buddy_message_time != INPUT_DEMO_CHECKPOINT_ESCORT_I64_UNSET)
+			Last_buddy_message_time = checkpoint_escort_state.last_buddy_message_time;
 		Last_come_back_message_time = checkpoint_escort_state.last_come_back_message_time;
 		Buddy_last_missile_time = checkpoint_escort_state.buddy_last_missile_time;
+	#ifdef NETWORK
+		if (checkpoint_escort_state.escort_owner_player != INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET)
+			Escort_owner_player = checkpoint_escort_state.escort_owner_player;
+	#endif
 		if (input_demo_trace_escort_active())
 			con_printf(CON_NORMAL,
-				"Input demo replay escort restore checkpoint: gt=%lld obj=%d seg=%d mode=%d talk=%d cur_path=%d/%d hide_index=%d last_seen=%lld last_player_path=%lld escort_last_path=%lld come_back=%lld last_missile=%lld seen=%lld\n",
+				"Input demo replay escort restore checkpoint: gt=%lld obj=%d seg=%d mode=%d talk=%d cur_path=%d/%d hide_index=%d last_seen=%lld last_player_path=%lld kill=%d escort_last_path=%lld goal=%d/%d/%d suppress=%d sorry=%lld marker=%d last_key=%d last_msg=%lld come_back=%lld last_missile=%lld seen=%lld owner=%d\n",
 				(long long)GameTime64,
 				Buddy_objnum,
 				buddy_objp ? buddy_objp->segnum : -1,
@@ -1304,10 +1333,20 @@ void escort_rebuild_runtime_state_after_restore(void)
 				buddy_objp ? buddy_objp->ctype.ai_info.hide_index : -1,
 				(long long)Buddy_last_seen_player,
 				(long long)Buddy_last_player_path_created,
+				Escort_kill_object,
 				(long long)Escort_last_path_created,
+				Escort_goal_object,
+				Escort_special_goal,
+				Escort_goal_index,
+				Buddy_messages_suppressed,
+				(long long)Buddy_sorry_time,
+				Looking_for_marker,
+				Last_buddy_key,
+				(long long)Last_buddy_message_time,
 				(long long)Last_come_back_message_time,
 				(long long)Buddy_last_missile_time,
-				(long long)(ailp ? ailp->time_player_seen : -1));
+				(long long)(ailp ? ailp->time_player_seen : -1),
+				Escort_owner_player);
 		return;
 	}
 
@@ -1615,12 +1654,7 @@ void do_escort_frame(object *objp, fix dist_to_player, int player_visibility)
 		if (replay_rng_probe_active)
 			input_demo_log_escort_rng_progress("after time_to_visit_player create_path_to_player", &replay_rng_state, &replay_rng_call_count);
 		ailp->mode = AIM_GOTO_PLAYER;
-	} else if ((GameTime64 - Buddy_last_seen_player > MAX_ESCORT_TIME_AWAY) &&
-		!(input_demo_replay_has_checkpoint() &&
-			(Escort_goal_object == ESCORT_GOAL_UNSPECIFIED) &&
-			(ailp->mode == AIM_GOTO_OBJECT) &&
-			(aip->cur_path_index < aip->path_length/2) &&
-			(Escort_last_path_created == GameTime64))) {
+	} else if (GameTime64 - Buddy_last_seen_player > MAX_ESCORT_TIME_AWAY) {
 		//	This is to prevent buddy from looking for a goal, which he will do because we only allow path creation once/second.
 		return;
 	} else if ((ailp->mode == AIM_GOTO_PLAYER) &&

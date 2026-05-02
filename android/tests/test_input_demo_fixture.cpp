@@ -76,6 +76,52 @@ static const char *input_demo_test_arch(void)
 #endif
 }
 
+static void fill_test_checkpoint_escort_state(input_demo_checkpoint_escort_state *escort_state)
+{
+	input_demo_checkpoint_escort_state_clear(escort_state);
+	escort_state->valid = 1;
+	escort_state->buddy_allowed_to_talk = 0;
+	escort_state->buddy_last_seen_player = 1077412;
+	escort_state->buddy_last_player_path_created = 899154;
+	escort_state->escort_kill_object = 42;
+	escort_state->escort_last_path_created = 1077412;
+	escort_state->escort_goal_object = 11;
+	escort_state->escort_special_goal = -1;
+	escort_state->escort_goal_index = 31;
+	escort_state->buddy_messages_suppressed = 1;
+	escort_state->buddy_sorry_time = 262144;
+	escort_state->looking_for_marker = -1;
+	escort_state->last_buddy_key = 7;
+	escort_state->last_buddy_message_time = 65536;
+	escort_state->last_come_back_message_time = 899154;
+	escort_state->buddy_last_missile_time = 524288;
+	escort_state->escort_owner_player = -1;
+}
+
+static int expect_test_checkpoint_escort_state(const input_demo_checkpoint_escort_state *escort_state)
+{
+	if (!escort_state || !escort_state->valid)
+		return report_failure("fixture checkpoint escort state missing");
+	if (escort_state->buddy_allowed_to_talk != 0 ||
+	    escort_state->buddy_last_seen_player != 1077412 ||
+	    escort_state->buddy_last_player_path_created != 899154 ||
+	    escort_state->escort_kill_object != 42 ||
+	    escort_state->escort_last_path_created != 1077412 ||
+	    escort_state->escort_goal_object != 11 ||
+	    escort_state->escort_special_goal != -1 ||
+	    escort_state->escort_goal_index != 31 ||
+	    escort_state->buddy_messages_suppressed != 1 ||
+	    escort_state->buddy_sorry_time != 262144 ||
+	    escort_state->looking_for_marker != -1 ||
+	    escort_state->last_buddy_key != 7 ||
+	    escort_state->last_buddy_message_time != 65536 ||
+	    escort_state->last_come_back_message_time != 899154 ||
+	    escort_state->buddy_last_missile_time != 524288 ||
+	    escort_state->escort_owner_player != -1)
+		return report_failure("fixture checkpoint escort state mismatch");
+	return 0;
+}
+
 static int expect_rng_coalescer(void)
 {
 	std::vector<input_demo_rng_frame> frames(6);
@@ -277,6 +323,7 @@ static int expect_checkpoint_demo_file_output(void)
 	demo.checkpoint.save_name = "inputdemo_start.dgss";
 	demo.checkpoint.has_start_gt = 1;
 	demo.checkpoint.start_gt = 124125;
+	fill_test_checkpoint_escort_state(&demo.checkpoint.escort_state);
 	demo.checkpoint.data = "REdTUxgAAAA=";
 	demo.frames.resize(1);
 	input_demo_control_record_clear(&demo.frames[0].input);
@@ -305,7 +352,7 @@ static int expect_checkpoint_demo_file_output(void)
 		"\",\"arch\":\"" + input_demo_test_arch() +
 		"\",\"level\":1,\"difficulty\":2,\"start_mode\":\"save_checkpoint\",\"rng_mode\":\"" + rng_mode +
 		"\",\"frame_count\":1,\"start_save\":\"inputdemo_start.dgss\"}\n" +
-		"{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"compression\":\"none\",\"size\":8,\"sha256\":\"077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"data\":\"REdTUxgAAAA=\"}\n" +
+		"{\"type\":\"checkpoint\",\"format\":\"dgss\",\"encoding\":\"base64\",\"compression\":\"none\",\"size\":8,\"sha256\":\"077c5f8a7bd52bba7beb0ea8153f1005401b5ba52b797e04952bf14e542fd3b5\",\"save_name\":\"inputdemo_start.dgss\",\"start_gt\":124125,\"buddy_allowed_to_talk\":0,\"buddy_last_seen_player\":1077412,\"buddy_last_player_path_created\":899154,\"escort_kill_object\":42,\"escort_last_path_created\":1077412,\"escort_goal_object\":11,\"escort_special_goal\":-1,\"escort_goal_index\":31,\"buddy_messages_suppressed\":1,\"buddy_sorry_time\":262144,\"looking_for_marker\":-1,\"last_buddy_key\":7,\"last_buddy_message_time\":65536,\"last_come_back_message_time\":899154,\"buddy_last_missile_time\":524288,\"escort_owner_player\":-1,\"data\":\"REdTUxgAAAA=\"}\n" +
 		"{\"type\":\"frame\",\"f\":0,\"ft\":3276,\"input\":{\"s\":{\"f\":44}},\"rng\":{\"s\":100}}\n" +
 		"{\"type\":\"result\",\"result\":{\"version\":2,\"game\":\"" + input_demo_test_game_name() +
 		"\",\"mission\":\"" + input_demo_test_game_name() + "\",\"level\":1,\"difficulty\":2,\"frame_count\":1}}\n";
@@ -330,6 +377,8 @@ static int expect_checkpoint_demo_file_output(void)
 		parsed.checkpoint.compression != "none" || parsed.checkpoint.data != "REdTUxgAAAA=" || !parsed.checkpoint.has_start_gt ||
 		parsed.checkpoint.start_gt != 124125)
 		return report_failure("checkpoint demo file round trip corrupted content");
+	if (expect_test_checkpoint_escort_state(&parsed.checkpoint.escort_state))
+		return 1;
 	reordered =
 		std::string("{\"type\":\"header\",\"version\":2,\"game\":\"") + input_demo_test_game_name() +
 		"\",\"mission\":\"" + input_demo_test_game_name() +

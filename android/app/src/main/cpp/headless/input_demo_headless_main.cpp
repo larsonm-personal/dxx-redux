@@ -3,6 +3,7 @@
 
 #include <SDL.h>
 
+#include "input_demo_rng_trace.h"
 #include "input_demo_start.h"
 #include "input_demo_replay.h"
 #include "input_demo_state_trace.h"
@@ -127,7 +128,9 @@ int main(int argc, char *argv[])
 	char error[256] = "";
 	const char *demo_path = find_arg_value(argc, argv, "-inputdemo-replay");
 	int state_log_arg_index = find_arg_index(argc, argv, "-inputdemo-state-log");
+	int rng_trace_arg_index = find_arg_index(argc, argv, "-inputdemo-rng-trace");
 	const char *state_log_path = state_log_arg_index >= 0 ? find_arg_value(argc, argv, "-inputdemo-state-log") : NULL;
+	const char *rng_trace_path = rng_trace_arg_index >= 0 ? find_arg_value(argc, argv, "-inputdemo-rng-trace") : NULL;
 	char mission_name[64] = "";
 	char start_mode[32] = "";
 	char result_path[260] = "";
@@ -136,11 +139,15 @@ int main(int argc, char *argv[])
 	unsigned int frame_count = 0;
 
 	if (!demo_path) {
-		fprintf(stderr, "usage: %s -inputdemo-replay <demo.dximdemo> [-inputdemo-state-log <actual_state.jsonl>]\n", argc > 0 ? argv[0] : "dxx-redux-d2-headless");
+		fprintf(stderr, "usage: %s -inputdemo-replay <demo.dximdemo> [-inputdemo-state-log <actual_state.jsonl>] [-inputdemo-rng-trace <actual_rngtrace.jsonl>]\n", argc > 0 ? argv[0] : "dxx-redux-d2-headless");
 		return 1;
 	}
 	if (state_log_arg_index >= 0 && !state_log_path) {
 		fprintf(stderr, "HEADLESS-RUN FAIL args missing value for -inputdemo-state-log\n");
+		return 1;
+	}
+	if (rng_trace_arg_index >= 0 && !rng_trace_path) {
+		fprintf(stderr, "HEADLESS-RUN FAIL args missing value for -inputdemo-rng-trace\n");
 		return 1;
 	}
 	if (!init_headless_runtime(argc, argv, error, sizeof(error))) {
@@ -150,6 +157,11 @@ int main(int argc, char *argv[])
 
 	if (!input_demo_load_replay_from_path(demo_path, error, sizeof(error))) {
 		fprintf(stderr, "HEADLESS-RUN FAIL load %s\n", error[0] ? error : "replay load failed");
+		return 1;
+	}
+	if (rng_trace_path && !input_demo_rng_trace_start_replay(rng_trace_path, error, sizeof(error))) {
+		fprintf(stderr, "HEADLESS-RUN FAIL rng trace %s\n", error[0] ? error : "rng trace start failed");
+		input_demo_replay_unload();
 		return 1;
 	}
 	if (strcmp(input_demo_replay_start_mode() ? input_demo_replay_start_mode() : "", "save_checkpoint")) {

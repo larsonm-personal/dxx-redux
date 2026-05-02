@@ -77,6 +77,7 @@ char copyright[] = "DESCENT   COPYRIGHT (C) 1994,1995 PARALLAX SOFTWARE CORPORAT
 #include "collide.h"
 #include "newdemo.h"
 #include "input_demo_replay.h"
+#include "input_demo_rng_trace.h"
 #include "input_demo_state_trace.h"
 #include "joy.h"
 #include "../texmap/scanline.h" //for select_tmap -MM
@@ -203,6 +204,7 @@ void print_commandline_help()
 	printf( "  -inputdemo-validate <s>       Validate input demo file rng_mode and exit\n");
 	printf( "  -inputdemo-replay <s>         Replay input demo file through the D1 engine\n");
 	printf( "  -inputdemo-state-log <s>      Write replay frame-state JSONL during input demo replay\n");
+	printf( "  -inputdemo-rng-trace <s>      Write replay RNG trace JSONL during input demo replay\n");
 	printf( "  -renderstats                  Enable renderstats info by default\n");
 	printf( "  -text <s>                     Specify alternate .tex file\n");
 	printf( "  -tmap <s>                     Select texmapper <s> to use\n\t\t\t\t(default: c, available: c, fp, quad, i386)\n");
@@ -300,10 +302,12 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 {
 	int arg_index = find_cmd_arg("-inputdemo-replay");
 	int state_log_arg_index = find_cmd_arg("-inputdemo-state-log");
+	int rng_trace_arg_index = find_cmd_arg("-inputdemo-rng-trace");
 	int engine_mode;
 	int demo_mode;
 	const char *demo_path;
 	const char *state_log_path = NULL;
+	const char *rng_trace_path = NULL;
 	const char *validation_error;
 	char replay_error[256] = "";
 	char mission_name[PATH_MAX] = "";
@@ -334,6 +338,15 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 		}
 		state_log_path = Args[state_log_arg_index + 1];
 	}
+	if (rng_trace_arg_index)
+	{
+		if (rng_trace_arg_index + 1 >= Num_args || !Args[rng_trace_arg_index + 1] || Args[rng_trace_arg_index + 1][0] == '-')
+		{
+			printf("Missing value for -inputdemo-rng-trace\n");
+			return 1;
+		}
+		rng_trace_path = Args[rng_trace_arg_index + 1];
+	}
 	demo_path = Args[arg_index + 1];
 	engine_mode = d_rand_get_replay_mode();
 	validation_error = input_demo_rng_mode_validate_metadata_file(demo_path, engine_mode,
@@ -349,6 +362,12 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 	if (!input_demo_replay_load(demo_path, replay_error, sizeof(replay_error)))
 	{
 		printf("Input demo replay load failed: %s\n", replay_error);
+		return 1;
+	}
+	if (rng_trace_path && !input_demo_rng_trace_start_replay(rng_trace_path, replay_error, sizeof(replay_error)))
+	{
+		printf("Input demo replay rng trace start failed: %s\n", replay_error);
+		input_demo_replay_unload();
 		return 1;
 	}
 	if (input_demo_replay_game() != INPUT_DEMO_GAME_D1)
@@ -401,6 +420,8 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 			}
 			printf("Input demo replay state trace: %s\n", state_log_path);
 		}
+		if (rng_trace_path)
+			printf("Input demo replay rng trace: %s\n", rng_trace_path);
 		input_demo_set_skip_level_intro(1);
 		StartNewGame(input_demo_replay_level());
 		return 0;
@@ -534,6 +555,8 @@ int input_demo_maybe_start_replay_from_cmdline(void)
 		}
 		printf("Input demo replay state trace: %s\n", state_log_path);
 	}
+	if (rng_trace_path)
+		printf("Input demo replay rng trace: %s\n", rng_trace_path);
 	return 0;
 }
 

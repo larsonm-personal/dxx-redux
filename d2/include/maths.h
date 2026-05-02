@@ -34,6 +34,8 @@ int d_rand_stream(d_rng_stream stream);
 int d_rand_get_stream_state(d_rng_stream stream, unsigned int *state);
 int d_rand_set_stream_state(d_rng_stream stream, unsigned int state);
 unsigned int d_rand_get_stream_call_count(d_rng_stream stream);
+void d_rand_set_call_count(unsigned int count);
+void d_rand_set_stream_call_count(d_rng_stream stream, unsigned int count);
 void d_rand_reset_stream_call_count(d_rng_stream stream);
 
 #if defined(_MSC_VER) && !defined(__clang__)

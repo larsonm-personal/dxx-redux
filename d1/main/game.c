@@ -278,9 +278,15 @@ static void input_demo_record_game_frame(void)
 
 static void input_demo_update_rng_trace_context(void)
 {
-	if (Newdemo_state != ND_STATE_RECORDING || !input_demo_recorder_is_active())
+	if (!input_demo_rng_trace_is_active())
 		return;
-	input_demo_rng_trace_set_context((uint32_t)input_demo_recorder_frame_count(), GameTime64);
+	if (Newdemo_state == ND_STATE_RECORDING && input_demo_recorder_is_active()) {
+		input_demo_rng_trace_set_context((uint32_t)input_demo_recorder_frame_count(), GameTime64);
+		return;
+	}
+	if (input_demo_replay_is_loaded() &&
+		input_demo_replay_next_frame_index() < input_demo_replay_frame_count())
+		input_demo_rng_trace_set_context(input_demo_replay_next_frame_index(), GameTime64);
 }
 
 static int input_demo_count_live_objects_of_type(int object_type)
@@ -522,7 +528,10 @@ int input_demo_prepare_replay_frame(void)
 		input_demo_stop_replay(0);
 		return 0;
 	}
-	d_rand_reset_call_count();
+	if (input_demo_rng_trace_is_active() && replay_frame.has_rng_call_count)
+		d_rand_set_call_count(replay_frame.rng_call_count);
+	else
+		d_rand_reset_call_count();
 	FrameTime = (fix)replay_frame.frame_time;
 	return 1;
 }

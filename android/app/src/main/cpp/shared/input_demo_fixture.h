@@ -33,6 +33,8 @@ typedef struct input_demo_rng_record {
 
 #define INPUT_DEMO_PLAYER_CFG_PRIMARY_ORDER_MAX   11
 #define INPUT_DEMO_PLAYER_CFG_SECONDARY_ORDER_MAX 11
+#define INPUT_DEMO_CHECKPOINT_ESCORT_INT_UNSET    INT32_MIN
+#define INPUT_DEMO_CHECKPOINT_ESCORT_I64_UNSET    INT64_MIN
 
 typedef struct input_demo_player_cfg {
 	int32_t auto_leveling;
@@ -54,9 +56,19 @@ typedef struct input_demo_checkpoint_escort_state {
 	int32_t buddy_allowed_to_talk;
 	int64_t buddy_last_seen_player;
 	int64_t buddy_last_player_path_created;
+	int32_t escort_kill_object;
 	int64_t escort_last_path_created;
+	int32_t escort_goal_object;
+	int32_t escort_special_goal;
+	int32_t escort_goal_index;
+	int32_t buddy_messages_suppressed;
+	int64_t buddy_sorry_time;
+	int32_t looking_for_marker;
+	int32_t last_buddy_key;
+	int64_t last_buddy_message_time;
 	int64_t last_come_back_message_time;
 	int64_t buddy_last_missile_time;
+	int32_t escort_owner_player;
 } input_demo_checkpoint_escort_state;
 
 void input_demo_rng_frame_clear(input_demo_rng_frame *frame);
