@@ -110,9 +110,7 @@ static int input_demo_weapon_create_probe_active(object *obj)
 		return 0;
 	if (obj->ctype.laser_info.parent_type == OBJ_ROBOT)
 		return !(obj->flags & OF_HARMLESS);
-	return input_demo_replay_weapon_creation_probe_active() &&
-		obj->ctype.laser_info.parent_type == OBJ_PLAYER &&
-		obj->ctype.laser_info.parent_num == Players[Player_num].objnum;
+	return input_demo_replay_is_player_owned_weapon(obj) && obj->id != FLARE_ID;
 }
 
 static int input_demo_replay_weapon_creation_probe_active(void)
@@ -206,8 +204,11 @@ static void input_demo_log_weapon_lifetime(const char *step, object *obj)
 {
 	const int tracked_index = input_demo_tracked_suspect_spreadfire_index(obj);
 
+	if (!obj || !input_demo_weapon_trace_active())
+		return;
+
 	con_printf(CON_NORMAL,
-		"Input demo weapon probe: mode=%s frame=%u gt=%lld step=%s obj=%d id=%d sig=%d track=%d seg=%d life=%d shields=%d flags=%d parent_type=%d parent=%d parent_sig=%d ctime=%lld vel=(%d,%d,%d) pos=(%d,%d,%d)\n",
+		"Input demo weapon probe: mode=%s frame=%u gt=%lld step=%s obj=%d id=%d sig=%d track=%d seg=%d life=%d shields=%d flags=0x%x parent_type=%d parent=%d parent_sig=%d last_hit=%d ctime=%lld vel=(%d,%d,%d) pos=(%d,%d,%d) last=(%d,%d,%d)\n",
 		input_demo_weapon_trace_mode_name(),
 		input_demo_weapon_trace_frame_index(),
 		(long long)GameTime64,
@@ -223,13 +224,17 @@ static void input_demo_log_weapon_lifetime(const char *step, object *obj)
 		obj->ctype.laser_info.parent_type,
 		obj->ctype.laser_info.parent_num,
 		obj->ctype.laser_info.parent_signature,
+		obj->ctype.laser_info.last_hitobj,
 		(long long)obj->ctype.laser_info.creation_time,
 		obj->mtype.phys_info.velocity.x,
 		obj->mtype.phys_info.velocity.y,
 		obj->mtype.phys_info.velocity.z,
 		obj->pos.x,
 		obj->pos.y,
-		obj->pos.z);
+		obj->pos.z,
+		obj->last_pos.x,
+		obj->last_pos.y,
+		obj->last_pos.z);
 }
 
 static void input_demo_record_frame_event_json(const char *json_text)
@@ -1139,8 +1144,7 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 	input_demo_maybe_track_suspect_spreadfire(obj);
 	if (input_demo_weapon_create_probe_active(obj))
 		input_demo_log_weapon_lifetime("create", obj);
-	if (obj->ctype.laser_info.parent_type == OBJ_PLAYER &&
-		obj->ctype.laser_info.parent_num == Players[Player_num].objnum)
+	if (input_demo_replay_is_player_owned_weapon(obj) && obj->id != FLARE_ID)
 		input_demo_record_weapon_create_event(obj);
 
 	return objnum;
@@ -1797,13 +1801,14 @@ fix homing_turn_base[NDL] = { 4, 5, 6, 7, 8 };
 //sequence this laser object for this _frame_ (underscores added here to aid MK in his searching!)
 void Laser_do_weapon_sequence(object *obj, int doHomerFrame, fix idealHomerFrameTime, unsigned int homerFrameCount )
 {
-	const int track_player_weapon = input_demo_replay_weapon_lifetime_probe_active() && input_demo_replay_is_player_owned_weapon(obj);
-	const int tracked_player_weapon = input_demo_tracked_suspect_spreadfire_index(obj);
+	const int track_player_weapon = input_demo_weapon_trace_active() &&
+		input_demo_replay_is_player_owned_weapon(obj) &&
+		obj->id != FLARE_ID;
 
 	Assert(obj->control_type == CT_WEAPON);
 
-	if (tracked_player_weapon >= 0)
-		input_demo_log_weapon_lifetime("tick", obj);
+	if (track_player_weapon)
+		input_demo_log_weapon_lifetime("sequence_entry", obj);
 
 	if (obj->lifeleft < 0 ) {		// We died of old age
 		if (track_player_weapon)

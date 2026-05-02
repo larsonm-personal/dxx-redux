@@ -273,6 +273,32 @@ Best code hypothesis:
 Next change or next probe:
 ```
 
+## Latest Findings
+
+Artifact: `d2_descent2_level2_20260501_185821.dximdemo`
+Game: `d2`
+Checkpoint or new-level start: `save_checkpoint`
+Replay command used: `./android/tests/run_input_demo_replay.ps1 -DemoPath .\android\temp_game_logs\d2_descent2_level2_20260501_185821.dximdemo -Game d2 -Mode accelerated -KeepSandbox -Pilot replay -StateLogPath .\temp\input_demo_state_traces\d2_descent2_level2_20260501_185821.actual_state.jsonl -RngLogPath .\temp\input_demo_state_traces\d2_descent2_level2_20260501_185821.actual_rngtrace.jsonl -CompareStateTrace -CompareRngTrace`
+Wrapper result: `FAIL`
+Final result mismatch: `player0.shields expected 152, actual 142`
+First state mismatch: `frame 306 gt=943718 player0.score expected 31900, actual 31500`
+First RNG mismatch: `recorded create_awareness_event at frame 267 gt=841482 vs replay create_awareness_event at frame 268 gt=844103`
+Relevant replay log lines: no `robot_player_before_bump`, `robot_player_after_bump`, or direct `object_object` probe lines at frames `267/268/306/307`; projectile `weapon_sig=3968` hits robot `100/39` at replay frame `268`; projectile `weapon_sig=4010` kills robot `100/39` at replay frame `307`, and replay awards `score +400` on that same frame
+Relevant recorded log lines: projectile `weapon_sig=3968` hits robot `100/39` at recorded frame `267`; projectile `weapon_sig=4010` kills robot `100/39` at recorded frame `305`, so the recorded score is already visible by expected state frame `306`
+Best code hypothesis: this artifact does not support the player-robot body-collision hypothesis for the earliest split; the hidden divergence is still on the weapon-vs-robot path, where the same logical projectile events are landing later on replay and shifting `create_awareness_event`, robot damage timing, kill timing, and then score/powerup state
+Next change or next probe: add durable live+replay logging on the projectile update and hit-acceptance path for the delayed weapon signatures before `collide_player_and_weapon()`/`collide_weapon_and_robot()` fallout, with signatures and segment/pose data carried through so the first one-frame-late hit can be explained mechanically
+
+Follow-up: `PF_WIGGLE` bob/save-restore check for the same artifact
+- `d2/main/controls.c` drives bob from `fix_fastsincos((fix)GameTime64)` with fixed-point math only; there is no separate bob phase accumulator to serialize
+- vanilla savegames still write `GameTime64 = 0` in `state_save_all_sub()`, but input-demo checkpoints also record `checkpoint_start_gt = GameTime64` in `newdemo.c`, and `state_restore_all_sub()` adds that value back during replay restore
+- existing recorder/replay wiggle probes already match exactly through at least frame `267` / `gt=841482`, including `raw`, `scaled`, `amount`, `ship_wiggle`, `uvec`, and `vel_after`
+- conclusion: checkpoint restore is preserving wiggle phase for this replay, and PC-vs-Android floating-point noise in the bob path is not a strong lead for the first split in this artifact
+
+Current logging tranche: projectile timing
+- [x] Add local-player weapon lifetime logging on both recorder and replay so projectile pose can be compared before the delayed hit frame
+- [x] Add explicit `collide_robot_and_weapon()` entry and skip-reason logs for local-player weapons to separate movement delay from hit rejection
+- [x] Validate the edit with file diagnostics, a successful `run-windows-build.ps1 -Target d2` build, and a replay smoke run that emits `Input demo weapon probe ... step=sequence_entry` plus `Input demo weapon robot path` lines in the sandbox log
+
 ## Minimum Repeatable Workflow
 
 If you only need the shortest complete analysis sequence, use this exact block:

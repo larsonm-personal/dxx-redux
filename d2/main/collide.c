@@ -459,6 +459,87 @@ int check_collision_delayfunc_exec()
 			hit_y,
 			hit_z);
 	}
+
+	static int input_demo_trace_local_player_weapon_robot_active(object *weapon, object *robot)
+	{
+		int console_sig_match;
+
+		if (!input_demo_trace_collision_pose_active() || !weapon || !robot)
+			return 0;
+		if (weapon->type != OBJ_WEAPON || robot->type != OBJ_ROBOT)
+			return 0;
+		if (weapon->ctype.laser_info.parent_type != OBJ_PLAYER)
+			return 0;
+		console_sig_match = ConsoleObject &&
+			weapon->ctype.laser_info.parent_signature == ConsoleObject->signature;
+		return weapon->ctype.laser_info.parent_num == Players[Player_num].objnum ||
+			console_sig_match;
+	}
+
+	static void input_demo_log_weapon_robot_path_probe(const char *step, object *weapon, object *robot, const vms_vector *collision_point)
+	{
+		int parent_num;
+		int parent_slot_valid;
+		int parent_slot_type;
+		int parent_slot_id;
+		int parent_slot_sig;
+		int parent_sig_match;
+		int console_sig_match;
+		int persistent;
+		int hitobj_seen;
+
+		if (!input_demo_trace_local_player_weapon_robot_active(weapon, robot))
+			return;
+
+		parent_num = weapon->ctype.laser_info.parent_num;
+		parent_slot_valid = parent_num >= 0 && parent_num <= Highest_object_index;
+		parent_slot_type = parent_slot_valid ? Objects[parent_num].type : -1;
+		parent_slot_id = parent_slot_valid ? Objects[parent_num].id : -1;
+		parent_slot_sig = parent_slot_valid ? Objects[parent_num].signature : -1;
+		parent_sig_match = parent_slot_valid &&
+			parent_slot_sig == weapon->ctype.laser_info.parent_signature;
+		console_sig_match = ConsoleObject &&
+			weapon->ctype.laser_info.parent_signature == ConsoleObject->signature;
+		persistent = (weapon->mtype.phys_info.flags & PF_PERSISTENT) != 0;
+		hitobj_seen = persistent ? weapon->ctype.laser_info.hitobj_list[robot - Objects] : 0;
+
+		con_printf(CON_NORMAL,
+			"Input demo weapon robot path: mode=%s frame=%u gt=%lld step=%s weapon_obj=%d weapon_id=%d weapon_sig=%d weapon_seg=%d weapon_flags=0x%x weapon_phys=0x%x parent_type=%d parent_num=%d parent_sig=%d parent_slot_valid=%d parent_slot_type=%d parent_slot_id=%d parent_slot_sig=%d parent_sig_match=%d console_sig_match=%d last_hit=%d persistent=%d hitobj_seen=%d harmless=%d robot_obj=%d robot_id=%d robot_sig=%d robot_seg=%d robot_flags=0x%x boss=%d companion=%d exploding=%d cp=(%d,%d,%d)\n",
+			input_demo_trace_collision_mode_name(),
+			input_demo_trace_collision_frame_index(),
+			(long long)GameTime64,
+			step,
+			(int)(weapon - Objects),
+			weapon->id,
+			weapon->signature,
+			weapon->segnum,
+			weapon->flags,
+			weapon->mtype.phys_info.flags,
+			weapon->ctype.laser_info.parent_type,
+			parent_num,
+			weapon->ctype.laser_info.parent_signature,
+			parent_slot_valid,
+			parent_slot_type,
+			parent_slot_id,
+			parent_slot_sig,
+			parent_sig_match,
+			console_sig_match,
+			weapon->ctype.laser_info.last_hitobj,
+			persistent,
+			hitobj_seen,
+			(weapon->flags & OF_HARMLESS) != 0,
+			(int)(robot - Objects),
+			robot->id,
+			robot->signature,
+			robot->segnum,
+			robot->flags,
+			Robot_info[robot->id].boss_flag,
+			Robot_info[robot->id].companion,
+			(robot->flags & OF_EXPLODING) != 0,
+			collision_point ? collision_point->x : 0,
+			collision_point ? collision_point->y : 0,
+			collision_point ? collision_point->z : 0);
+	}
 //	The only reason this routine is called (as of 10/12/94) is so Brain guys can open doors.
 void collide_robot_and_wall( object * robot, fix hitspeed, short hitseg, short hitwall, vms_vector * hitpt)
 {
@@ -2043,6 +2124,7 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 	int	damage_flag=1;
 	int	boss_invul_flag=0;
 
+	input_demo_log_weapon_robot_path_probe("entry", weapon, robot, collision_point);
 	if (weapon->id == OMEGA_ID)
 		if (!ok_to_do_omega_damage(weapon)) // see comment in laser.c
 			return;
@@ -2057,8 +2139,10 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 
 	//	Put in at request of Jasen (and Adam) because the Buddy-Bot gets in their way.
 	//	MK has so much fun whacking his butt around the mine he never cared...
-	if ((Robot_info[robot->id].companion) && ((weapon->ctype.laser_info.parent_type != OBJ_ROBOT) && !cheats.robotskillrobots))
+	if ((Robot_info[robot->id].companion) && ((weapon->ctype.laser_info.parent_type != OBJ_ROBOT) && !cheats.robotskillrobots)) {
+		input_demo_log_weapon_robot_path_probe("skip_companion", weapon, robot, collision_point);
 		return;
+	}
 
 	if (weapon->id == EARTHSHAKER_ID)
 		smega_rock_stuff();
@@ -2077,6 +2161,7 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 		}
 		else
 		{
+			input_demo_log_weapon_robot_path_probe("skip_persistent_repeat", weapon, robot, collision_point);
 			return;
 		}
 	}
@@ -2091,8 +2176,10 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 	}
 #endif
 
-	if (weapon->ctype.laser_info.parent_signature == robot->signature)
+	if (weapon->ctype.laser_info.parent_signature == robot->signature) {
+		input_demo_log_weapon_robot_path_probe("skip_parent_signature_robot", weapon, robot, collision_point);
 		return;
+	}
 
 	//	Changed, 10/04/95, put out blobs based on skill level and power of weapon doing damage.
 	//	Also, only a weapon hit from a player weapon causes smart blobs.
@@ -2135,6 +2222,8 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 
 	if ( ((weapon->ctype.laser_info.parent_type==OBJ_PLAYER) || cheats.robotskillrobots) && !(robot->flags & OF_EXPLODING) )	{
 		object *expl_obj=NULL;
+
+		input_demo_log_weapon_robot_path_probe("accept", weapon, robot, collision_point);
 
 		if (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum) {
 			input_demo_record_robot_impact_event(weapon, robot);
@@ -2216,6 +2305,8 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 		}
 
 	}
+	else if ((weapon->ctype.laser_info.parent_type == OBJ_PLAYER) && (robot->flags & OF_EXPLODING))
+		input_demo_log_weapon_robot_path_probe("skip_robot_exploding", weapon, robot, collision_point);
 
 	maybe_kill_weapon(weapon,robot);
 
