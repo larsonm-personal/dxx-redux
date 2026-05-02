@@ -43,6 +43,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "args.h"
 #include "player.h"
 #include "input_demo_replay.h"
+#include "input_demo_recorder.h"
 
 //Global variables for physics system
 
@@ -56,19 +57,86 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 
 int floor_levelling=0;
 
-static int input_demo_replay_motion_probe_active(void)
+static int input_demo_trace_motion_probe_active(void)
 {
-	return input_demo_replay_is_loaded();
+	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
 }
 
-static int input_demo_replay_player_drag_probe_active(object *obj)
+static unsigned int input_demo_trace_motion_frame_index(void)
 {
-	const unsigned int frame = input_demo_replay_next_frame_index();
+	if (input_demo_replay_is_loaded())
+		return (unsigned int)input_demo_replay_next_frame_index();
+	if (input_demo_recorder_is_active()) {
+		const uint32_t frame_count = input_demo_recorder_frame_count();
 
-	return input_demo_replay_is_loaded() &&
-		obj == ConsoleObject &&
-		frame >= 18 &&
-		frame <= 24;
+		return frame_count ? (unsigned int)(frame_count - 1) : 0;
+	}
+	return 0;
+}
+
+static const char *input_demo_trace_motion_mode_name(void)
+{
+	if (input_demo_replay_is_loaded())
+		return "replay";
+	if (input_demo_recorder_is_active())
+		return "record";
+	return "none";
+}
+
+static int input_demo_player_weapon_threat_now(object *obj)
+{
+	int i;
+
+	if (!input_demo_trace_motion_probe_active() ||
+		!ConsoleObject ||
+		obj != ConsoleObject ||
+		obj->type != OBJ_PLAYER ||
+		obj->id != Player_num)
+		return 0;
+
+	for (i = 0; i <= Highest_object_index; i++) {
+		object *weapon = &Objects[i];
+
+		if (weapon->type != OBJ_WEAPON)
+			continue;
+		if (weapon->flags & (OF_SHOULD_BE_DEAD | OF_HARMLESS))
+			continue;
+		if (weapon->ctype.laser_info.parent_type != OBJ_ROBOT)
+			continue;
+		if (weapon->segnum != obj->segnum)
+			continue;
+		return 1;
+	}
+
+	return 0;
+}
+
+static int input_demo_player_hit_trace_window_active(object *obj)
+{
+	static unsigned int last_frame = (unsigned int)-1;
+	static int frames_remaining = 0;
+	const unsigned int frame = input_demo_trace_motion_frame_index();
+	const int threat_now = input_demo_player_weapon_threat_now(obj);
+
+	if (frame != last_frame) {
+		if (frames_remaining > 0)
+			frames_remaining--;
+		last_frame = frame;
+	}
+	if (threat_now)
+		frames_remaining = 2;
+
+	return threat_now || frames_remaining > 0;
+}
+
+static int input_demo_player_motion_detail_probe_active(object *obj)
+{
+	return input_demo_player_hit_trace_window_active(obj);
+}
+
+static int input_demo_player_drag_probe_active(object *obj)
+{
+	return input_demo_player_motion_detail_probe_active(obj);
 }
 
 static void input_demo_log_player_drag_probe(object *obj,
@@ -80,12 +148,13 @@ static void input_demo_log_player_drag_probe(object *obj,
 	fix remainder,
 	fix ratio)
 {
-	if (!input_demo_replay_player_drag_probe_active(obj))
+	if (!input_demo_player_drag_probe_active(obj))
 		return;
 
 	con_printf(CON_NORMAL,
-		"Input demo replay drag probe: frame=%u gt=%lld step=%s seg=%d vel=(%d,%d,%d) thrust=(%d,%d,%d) accel=(%d,%d,%d) drag=%d mass=%d flags=0x%x count=%d rem=%d ratio=%d ft=%d\n",
-		(unsigned int)input_demo_replay_next_frame_index(),
+		"Input demo player drag probe: mode=%s frame=%u gt=%lld step=%s seg=%d vel=(%d,%d,%d) thrust=(%d,%d,%d) accel=(%d,%d,%d) drag=%d mass=%d flags=0x%x count=%d rem=%d ratio=%d ft=%d\n",
+		input_demo_trace_motion_mode_name(),
+		input_demo_trace_motion_frame_index(),
 		(long long)GameTime64,
 		step,
 		obj->segnum,
@@ -107,43 +176,43 @@ static void input_demo_log_player_drag_probe(object *obj,
 		FrameTime);
 }
 
-static int input_demo_replay_spreadfire_physics_probe_active(object *obj)
+static void input_demo_log_player_motion_detail_probe(object *obj,
+	const char *step,
+	const vms_vector *frame_vec,
+	const vms_vector *new_pos,
+	fix sim_time)
 {
-	const unsigned int frame = input_demo_replay_next_frame_index();
-	const int objnum = obj - Objects;
+	if (!input_demo_player_motion_detail_probe_active(obj))
+		return;
 
-	if (!(input_demo_replay_is_loaded() &&
-		obj->type == OBJ_WEAPON &&
-		obj->id == SPREADFIRE_ID &&
-		obj->ctype.laser_info.parent_type == OBJ_PLAYER &&
-		obj->ctype.laser_info.parent_num == Players[Player_num].objnum))
-		return 0;
-
-	if (objnum == 162 &&
-		obj->signature == 4106 &&
-		frame >= 269 &&
-		frame <= 296)
-		return 1;
-
-	if (objnum == 167 &&
-		obj->signature == 4113 &&
-		frame >= 274 &&
-		frame <= 302)
-		return 1;
-
-	return 0;
-}
-
-static int input_demo_replay_robot_physics_probe_active(object *obj)
-{
-	const unsigned int frame = input_demo_replay_next_frame_index();
-	const int objnum = obj - Objects;
-
-	return input_demo_replay_is_loaded() &&
-		obj->type == OBJ_ROBOT &&
-		(objnum == 98 || objnum == 99) &&
-		frame >= 614 &&
-		frame <= 615;
+	con_printf(CON_NORMAL,
+		"Input demo player motion detail: mode=%s frame=%u gt=%lld step=%s seg=%d pos=(%d,%d,%d) last=(%d,%d,%d) vel=(%d,%d,%d) thrust=(%d,%d,%d) frame_vec=(%d,%d,%d) target=(%d,%d,%d) sim_time=%d ft=%d flags=0x%x\n",
+		input_demo_trace_motion_mode_name(),
+		input_demo_trace_motion_frame_index(),
+		(long long)GameTime64,
+		step,
+		obj->segnum,
+		obj->pos.x,
+		obj->pos.y,
+		obj->pos.z,
+		obj->last_pos.x,
+		obj->last_pos.y,
+		obj->last_pos.z,
+		obj->mtype.phys_info.velocity.x,
+		obj->mtype.phys_info.velocity.y,
+		obj->mtype.phys_info.velocity.z,
+		obj->mtype.phys_info.thrust.x,
+		obj->mtype.phys_info.thrust.y,
+		obj->mtype.phys_info.thrust.z,
+		frame_vec ? frame_vec->x : 0,
+		frame_vec ? frame_vec->y : 0,
+		frame_vec ? frame_vec->z : 0,
+		new_pos ? new_pos->x : 0,
+		new_pos ? new_pos->y : 0,
+		new_pos ? new_pos->z : 0,
+		sim_time,
+		FrameTime,
+		obj->mtype.phys_info.flags);
 }
 
 static const char *input_demo_replay_physics_fate_name(int fate)
@@ -177,8 +246,6 @@ static void input_demo_log_physics_fate(
 	int hit_object,
 	const vms_vector *wall_norm)
 {
-	const int spreadfire_probe = input_demo_replay_spreadfire_physics_probe_active(obj);
-	const int robot_probe = input_demo_replay_robot_physics_probe_active(obj);
 	int wall_num = -1;
 	int wall_type = -1;
 	int wall_state = -1;
@@ -190,8 +257,9 @@ static void input_demo_log_physics_fate(
 	int hit_object_size = 0;
 	vms_vector hit_object_pos = ZERO_VECTOR;
 
-	if (!input_demo_replay_motion_probe_active() ||
-		(obj != ConsoleObject && !spreadfire_probe && !robot_probe))
+	if (!input_demo_trace_motion_probe_active() ||
+		obj != ConsoleObject ||
+		!input_demo_player_hit_trace_window_active(obj))
 		return;
 
 	if (fate == HIT_OBJECT && hit_object >= 0 && hit_object <= Highest_object_index) {
@@ -213,8 +281,9 @@ static void input_demo_log_physics_fate(
 	}
 
 	con_printf(CON_NORMAL,
-		"Input demo replay physics probe: frame=%u gt=%lld iter=%d obj=%d type=%d id=%d size=%d fate=%s seg=%d hit=(seg=%d side=%d child=%d obj=%d type=%d id=%d size=%d pos=(%d,%d,%d)) wall=(num=%d type=%d state=%d flags=0x%x doorway=0x%x) norm=(%d,%d,%d) dist=(%d,%d) sim=(%d,%d) start=(%d,%d,%d) target=(%d,%d,%d) pos=(%d,%d,%d) vel=(%d,%d,%d)\n",
-		(unsigned int)input_demo_replay_next_frame_index(),
+		"Input demo physics probe: mode=%s frame=%u gt=%lld iter=%d obj=%d type=%d id=%d size=%d fate=%s seg=%d hit=(seg=%d side=%d child=%d obj=%d type=%d id=%d size=%d pos=(%d,%d,%d)) wall=(num=%d type=%d state=%d flags=0x%x doorway=0x%x) norm=(%d,%d,%d) dist=(%d,%d) sim=(%d,%d) start=(%d,%d,%d) target=(%d,%d,%d) pos=(%d,%d,%d) vel=(%d,%d,%d)\n",
+		input_demo_trace_motion_mode_name(),
+		input_demo_trace_motion_frame_index(),
 		(long long)GameTime64,
 		count,
 		obj - Objects,
@@ -512,10 +581,10 @@ void fix_illegal_wall_intersection(object *obj, vms_vector *origin)
 
 	if ( object_intersects_wall_d(obj,&hseg,&hside,&hface) )
 	{
-		if (input_demo_replay_motion_probe_active() && obj == ConsoleObject)
+		if (input_demo_trace_motion_probe_active() && obj == ConsoleObject)
 			con_printf(CON_NORMAL,
 				"Input demo replay motion probe: frame=%u gt=%lld step=fix_illegal_wall_intersection before seg=%d hitseg=%d side=%d face=%d pos=(%d,%d,%d) origin=(%d,%d,%d)\n",
-				(unsigned int)input_demo_replay_next_frame_index(),
+				input_demo_trace_motion_frame_index(),
 				(long long)GameTime64,
 				obj->segnum,
 				hseg,
@@ -529,10 +598,10 @@ void fix_illegal_wall_intersection(object *obj, vms_vector *origin)
 				origin ? origin->z : 0);
 		vm_vec_scale_add2(&obj->pos,&Segments[hseg].sides[hside].normals[0],FrameTime*10);
 		update_object_seg(obj);
-		if (input_demo_replay_motion_probe_active() && obj == ConsoleObject)
+		if (input_demo_trace_motion_probe_active() && obj == ConsoleObject)
 			con_printf(CON_NORMAL,
 				"Input demo replay motion probe: frame=%u gt=%lld step=fix_illegal_wall_intersection after seg=%d pos=(%d,%d,%d)\n",
-				(unsigned int)input_demo_replay_next_frame_index(),
+				input_demo_trace_motion_frame_index(),
 				(long long)GameTime64,
 				obj->segnum,
 				obj->pos.x,
@@ -686,6 +755,7 @@ void do_physics_sim(object *obj)
 		if (count > 8) break; // in original code this was 3 for all non-player objects. still leave us some limit in case fvi goes apeshit.
 
 		vm_vec_add(&new_pos,&obj->pos,&frame_vec);
+		input_demo_log_player_motion_detail_probe(obj, "pre_fvi", &frame_vec, &new_pos, sim_time);
 
 		// The rest of this function is collision stuff
 		// Observers just fly free

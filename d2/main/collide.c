@@ -205,6 +205,198 @@ int check_collision_delayfunc_exec()
 	{
 		return input_demo_replay_is_loaded();
 	}
+
+	static int input_demo_trace_collision_pose_active(void)
+	{
+		return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+	}
+
+	static unsigned int input_demo_trace_collision_frame_index(void)
+	{
+		if (input_demo_replay_is_loaded())
+			return (unsigned int)input_demo_replay_next_frame_index();
+		if (input_demo_recorder_is_active()) {
+			const uint32_t frame_count = input_demo_recorder_frame_count();
+
+			return frame_count ? (unsigned int)(frame_count - 1) : 0;
+		}
+		return 0;
+	}
+
+	static const char *input_demo_trace_collision_mode_name(void)
+	{
+		if (input_demo_replay_is_loaded())
+			return "replay";
+		if (input_demo_recorder_is_active())
+			return "record";
+		return "none";
+	}
+
+	static int input_demo_trace_player_weapon_bump_active(object *obj0, object *obj1)
+	{
+		const object *player = NULL;
+		const object *weapon = NULL;
+
+		if (!input_demo_trace_collision_pose_active())
+			return 0;
+		if (obj0 == ConsoleObject && obj0->type == OBJ_PLAYER && obj1 && obj1->type == OBJ_WEAPON) {
+			player = obj0;
+			weapon = obj1;
+		} else if (obj1 == ConsoleObject && obj1->type == OBJ_PLAYER && obj0 && obj0->type == OBJ_WEAPON) {
+			player = obj1;
+			weapon = obj0;
+		}
+		if (!player || !weapon)
+			return 0;
+		return 1;
+	}
+
+	static void input_demo_log_player_weapon_bump_probe(const char *step,
+		object *obj0,
+		object *obj1,
+		const vms_vector *relative_velocity,
+		const vms_vector *float_force,
+		fix scale_num,
+		fix scale_den,
+		int damage_flag)
+	{
+		vms_vector fix_force = {0, 0, 0};
+		vms_vector force_delta = {0, 0, 0};
+
+		if (!input_demo_trace_player_weapon_bump_active(obj0, obj1))
+			return;
+		if (relative_velocity && scale_den) {
+			fix_force.x = fixmuldiv(relative_velocity->x, scale_num, scale_den);
+			fix_force.y = fixmuldiv(relative_velocity->y, scale_num, scale_den);
+			fix_force.z = fixmuldiv(relative_velocity->z, scale_num, scale_den);
+		}
+		if (float_force) {
+			force_delta.x = float_force->x - fix_force.x;
+			force_delta.y = float_force->y - fix_force.y;
+			force_delta.z = float_force->z - fix_force.z;
+		}
+
+		con_printf(CON_NORMAL,
+			"Input demo bump probe: mode=%s frame=%u gt=%lld step=%s obj0=%d/%d/%d obj1=%d/%d/%d damage=%d rel_vel=(%d,%d,%d) scale=(%d,%d) float_force=(%d,%d,%d) fix_force=(%d,%d,%d) delta=(%d,%d,%d) obj0_vel=(%d,%d,%d) obj1_vel=(%d,%d,%d) obj0_mass=%d obj1_mass=%d\n",
+			input_demo_trace_collision_mode_name(),
+			input_demo_trace_collision_frame_index(),
+			(long long)GameTime64,
+			step,
+			obj0 ? (int)(obj0 - Objects) : -1,
+			obj0 ? obj0->type : -1,
+			obj0 ? obj0->id : -1,
+			obj1 ? (int)(obj1 - Objects) : -1,
+			obj1 ? obj1->type : -1,
+			obj1 ? obj1->id : -1,
+			damage_flag,
+			relative_velocity ? relative_velocity->x : 0,
+			relative_velocity ? relative_velocity->y : 0,
+			relative_velocity ? relative_velocity->z : 0,
+			scale_num,
+			scale_den,
+			float_force ? float_force->x : 0,
+			float_force ? float_force->y : 0,
+			float_force ? float_force->z : 0,
+			fix_force.x,
+			fix_force.y,
+			fix_force.z,
+			force_delta.x,
+			force_delta.y,
+			force_delta.z,
+			obj0 ? obj0->mtype.phys_info.velocity.x : 0,
+			obj0 ? obj0->mtype.phys_info.velocity.y : 0,
+			obj0 ? obj0->mtype.phys_info.velocity.z : 0,
+			obj1 ? obj1->mtype.phys_info.velocity.x : 0,
+			obj1 ? obj1->mtype.phys_info.velocity.y : 0,
+			obj1 ? obj1->mtype.phys_info.velocity.z : 0,
+			obj0 ? obj0->mtype.phys_info.mass : 0,
+			obj1 ? obj1->mtype.phys_info.mass : 0);
+	}
+
+	static object *input_demo_collision_pose_player_from_weapon(object *weapon, int *parent_num_out, int *parent_sig_match_out)
+	{
+		int parent_num;
+
+		if (parent_num_out)
+			*parent_num_out = -1;
+		if (parent_sig_match_out)
+			*parent_sig_match_out = 0;
+		if (!weapon || weapon->ctype.laser_info.parent_type != OBJ_PLAYER)
+			return NULL;
+
+		parent_num = weapon->ctype.laser_info.parent_num;
+		if (parent_num_out)
+			*parent_num_out = parent_num;
+		if (parent_num < 0 || parent_num > Highest_object_index)
+			return NULL;
+		if (parent_sig_match_out)
+			*parent_sig_match_out = Objects[parent_num].signature == weapon->ctype.laser_info.parent_signature;
+		if (Objects[parent_num].type != OBJ_PLAYER ||
+		    Objects[parent_num].signature != weapon->ctype.laser_info.parent_signature)
+			return NULL;
+
+		return &Objects[parent_num];
+	}
+
+	static void input_demo_log_weapon_robot_collision_pose(const char *step, object *weapon, object *robot, vms_vector *collision_point, fix damage, fix robot_old_shields)
+	{
+		object *player;
+		int parent_num;
+		int parent_sig_match;
+		const int hit_x = collision_point ? collision_point->x : 0;
+		const int hit_y = collision_point ? collision_point->y : 0;
+		const int hit_z = collision_point ? collision_point->z : 0;
+
+		if (!input_demo_trace_collision_pose_active() || !weapon || !robot)
+			return;
+
+		player = input_demo_collision_pose_player_from_weapon(weapon, &parent_num, &parent_sig_match);
+		con_printf(CON_NORMAL,
+			"Input demo collision pose: frame=%u gt=%lld step=%s player_obj=%d player_id=%d player_sig=%d player_seg=%d player_pos=(%d,%d,%d) player_vel=(%d,%d,%d) weapon_obj=%d weapon_id=%d weapon_sig=%d weapon_seg=%d weapon_parent=%d weapon_parent_sig=%d parent_sig_match=%d weapon_pos=(%d,%d,%d) weapon_vel=(%d,%d,%d) robot_obj=%d robot_id=%d robot_sig=%d robot_seg=%d damage=%d shields=%d->%d dead=%d robot_pos=(%d,%d,%d) robot_vel=(%d,%d,%d) hit=(%d,%d,%d)\n",
+			input_demo_trace_collision_frame_index(),
+			(long long)GameTime64,
+			step,
+			player ? (int)(player - Objects) : -1,
+			player ? player->id : -1,
+			player ? player->signature : -1,
+			player ? player->segnum : -1,
+			player ? player->pos.x : 0,
+			player ? player->pos.y : 0,
+			player ? player->pos.z : 0,
+			player ? player->mtype.phys_info.velocity.x : 0,
+			player ? player->mtype.phys_info.velocity.y : 0,
+			player ? player->mtype.phys_info.velocity.z : 0,
+			(int)(weapon - Objects),
+			weapon->id,
+			weapon->signature,
+			weapon->segnum,
+			parent_num,
+			weapon->ctype.laser_info.parent_signature,
+			parent_sig_match,
+			weapon->pos.x,
+			weapon->pos.y,
+			weapon->pos.z,
+			weapon->mtype.phys_info.velocity.x,
+			weapon->mtype.phys_info.velocity.y,
+			weapon->mtype.phys_info.velocity.z,
+			(int)(robot - Objects),
+			robot->id,
+			robot->signature,
+			robot->segnum,
+			damage,
+			robot_old_shields,
+			robot->shields,
+			robot->shields < 0,
+			robot->pos.x,
+			robot->pos.y,
+			robot->pos.z,
+			robot->mtype.phys_info.velocity.x,
+			robot->mtype.phys_info.velocity.y,
+			robot->mtype.phys_info.velocity.z,
+			hit_x,
+			hit_y,
+			hit_z);
+	}
 //	The only reason this routine is called (as of 10/12/94) is so Brain guys can open doors.
 void collide_robot_and_wall( object * robot, fix hitspeed, short hitseg, short hitwall, vms_vector * hitpt)
 {
@@ -385,6 +577,9 @@ void bump_two_objects(object *obj0,object *obj1,int damage_flag)
 {
 	vms_vector	force;
 	object		*t=NULL;
+	fix scale_num = 0;
+	fix scale_den = 0;
+	vms_vector relative_velocity = {0, 0, 0};
 
 	vm_vec_zero(&force);
 
@@ -396,16 +591,24 @@ void bump_two_objects(object *obj0,object *obj1,int damage_flag)
 	if (t) {
 		Assert(t->movement_type == MT_PHYSICS);
 		vm_vec_copy_scale(&force,&t->mtype.phys_info.velocity,-t->mtype.phys_info.mass);
+		input_demo_log_player_weapon_bump_probe("nonphysics_pre", obj0, obj1, &force, &force, -t->mtype.phys_info.mass, F1_0, damage_flag);
 		phys_apply_force(t,&force);
+		input_demo_log_player_weapon_bump_probe("nonphysics_post", obj0, obj1, &force, &force, -t->mtype.phys_info.mass, F1_0, damage_flag);
 		return;
 	}
 
-	vm_vec_sub(&force,&obj0->mtype.phys_info.velocity,&obj1->mtype.phys_info.velocity);
-	vm_vec_scale2(&force,2*fixmul(obj0->mtype.phys_info.mass,obj1->mtype.phys_info.mass),(obj0->mtype.phys_info.mass+obj1->mtype.phys_info.mass));
+	vm_vec_sub(&relative_velocity,&obj0->mtype.phys_info.velocity,&obj1->mtype.phys_info.velocity);
+	force = relative_velocity;
+	scale_num = 2*fixmul(obj0->mtype.phys_info.mass,obj1->mtype.phys_info.mass);
+	scale_den = obj0->mtype.phys_info.mass+obj1->mtype.phys_info.mass;
+	vm_vec_scale2(&force,scale_num,scale_den);
+	input_demo_log_player_weapon_bump_probe("pre", obj0, obj1, &relative_velocity, &force, scale_num, scale_den, damage_flag);
 
 	bump_this_object(obj1, obj0, &force, damage_flag);
 	vm_vec_negate(&force);
 	bump_this_object(obj0, obj1, &force, damage_flag);
+	vm_vec_negate(&force);
+	input_demo_log_player_weapon_bump_probe("post", obj0, obj1, &relative_velocity, &force, scale_num, scale_den, damage_flag);
 
 }
 
@@ -1892,6 +2095,8 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 
 		if (!(weapon->flags & OF_HARMLESS)) {
 			fix	damage = weapon->shields;
+			fix robot_old_shields = robot->shields;
+			int robot_died;
 
 			if (damage_flag)
 				damage = fixmul(damage, weapon->ctype.laser_info.multiplier);
@@ -1904,7 +2109,14 @@ void collide_robot_and_weapon( object * robot, object * weapon, vms_vector *coll
 				if (Robot_info[robot->id].boss_flag)
 					damage = damage * (2*NDL-Difficulty_level)/(2*NDL);
 
-			if (! apply_damage_to_robot(robot, damage, weapon->ctype.laser_info.parent_num))
+			if (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum)
+				input_demo_log_weapon_robot_collision_pose("weapon_robot pre_damage", weapon, robot, collision_point, damage, robot_old_shields);
+
+			robot_died = apply_damage_to_robot(robot, damage, weapon->ctype.laser_info.parent_num);
+			if (weapon->ctype.laser_info.parent_num == Players[Player_num].objnum)
+				input_demo_log_weapon_robot_collision_pose("weapon_robot post_damage", weapon, robot, collision_point, damage, robot_old_shields);
+
+			if (!robot_died)
 				bump_two_objects(robot, weapon, 0);		//only bump if not dead. no damage from bump
 			else if (weapon->ctype.laser_info.parent_signature == ConsoleObject->signature) {
 				add_points_to_score(Robot_info[robot->id].score_value);
@@ -2475,11 +2687,12 @@ void apply_damage_to_player(object *playerobj, object *killer, fix damage, ubyte
 #endif
 		Players[Player_num].shields -= damage;
 		input_demo_record_player_damage_event(damage, old_shields, killer, possibly_friendly);
-		if (input_demo_replay_is_loaded())
+		if (input_demo_trace_collision_pose_active())
 			con_printf(CON_NORMAL,
-				"Input demo replay player damage: gt=%lld frame=%u damage=%d shields=%d->%d killer_type=%d killer_obj=%d killer_id=%d killer_sig=%d killer_seg=%d friendly=%d\n",
+				"Input demo player damage: mode=%s gt=%lld frame=%u damage=%d shields=%d->%d killer_type=%d killer_obj=%d killer_id=%d killer_sig=%d killer_seg=%d friendly=%d\n",
+				input_demo_trace_collision_mode_name(),
 				(long long)GameTime64,
-				(unsigned int)input_demo_replay_next_frame_index(),
+				input_demo_trace_collision_frame_index(),
 				damage,
 				old_shields,
 				Players[Player_num].shields,
@@ -2672,7 +2885,7 @@ void collide_player_and_weapon( object * playerobj, object * weapon, vms_vector 
 //			damage /= 4;
 
 		if (!(weapon->flags & OF_HARMLESS)) {
-			if (input_demo_replay_is_loaded() && playerobj->id == Player_num) {
+			if (input_demo_trace_collision_pose_active() && playerobj->id == Player_num) {
 				int weapon_obj = (int)(weapon - Objects);
 				int parent_num = weapon->ctype.laser_info.parent_num;
 				int parent_slot_valid = parent_num > -1 && parent_num <= Highest_object_index;
@@ -2682,9 +2895,10 @@ void collide_player_and_weapon( object * playerobj, object * weapon, vms_vector 
 				int parent_slot_seg = parent_slot_valid ? Objects[parent_num].segnum : -1;
 
 				con_printf(CON_NORMAL,
-					"Input demo replay player weapon hit: gt=%lld frame=%u weapon_obj=%d weapon_id=%d weapon_sig=%d weapon_seg=%d damage=%d parent_type=%d parent_num=%d parent_sig=%d slot_valid=%d slot_type=%d slot_id=%d slot_sig=%d slot_seg=%d sig_match=%d\n",
+					"Input demo player weapon hit: mode=%s gt=%lld frame=%u weapon_obj=%d weapon_id=%d weapon_sig=%d weapon_seg=%d damage=%d parent_type=%d parent_num=%d parent_sig=%d slot_valid=%d slot_type=%d slot_id=%d slot_sig=%d slot_seg=%d sig_match=%d weapon_life=%d weapon_shields=%d weapon_flags=0x%x weapon_ctime=%lld weapon_pos=(%d,%d,%d) weapon_vel=(%d,%d,%d) player_pos=(%d,%d,%d) player_vel=(%d,%d,%d) hit=(%d,%d,%d)\n",
+					input_demo_trace_collision_mode_name(),
 					(long long)GameTime64,
-					(unsigned int)input_demo_replay_next_frame_index(),
+					input_demo_trace_collision_frame_index(),
 					weapon_obj,
 					weapon->id,
 					weapon->signature,
@@ -2698,7 +2912,26 @@ void collide_player_and_weapon( object * playerobj, object * weapon, vms_vector 
 					parent_slot_id,
 					parent_slot_sig,
 					parent_slot_seg,
-					parent_slot_valid && parent_slot_sig == weapon->ctype.laser_info.parent_signature);
+					parent_slot_valid && parent_slot_sig == weapon->ctype.laser_info.parent_signature,
+					weapon->lifeleft,
+					weapon->shields,
+					weapon->flags,
+					(long long)weapon->ctype.laser_info.creation_time,
+					weapon->pos.x,
+					weapon->pos.y,
+					weapon->pos.z,
+					weapon->mtype.phys_info.velocity.x,
+					weapon->mtype.phys_info.velocity.y,
+					weapon->mtype.phys_info.velocity.z,
+					playerobj->pos.x,
+					playerobj->pos.y,
+					playerobj->pos.z,
+					playerobj->mtype.phys_info.velocity.x,
+					playerobj->mtype.phys_info.velocity.y,
+					playerobj->mtype.phys_info.velocity.z,
+					collision_point ? collision_point->x : 0,
+					collision_point ? collision_point->y : 0,
+					collision_point ? collision_point->z : 0);
 			}
 
 			if(playerobj->id == Player_num && ! Player_is_dead) {

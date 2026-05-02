@@ -166,9 +166,7 @@ static int input_demo_player_motion_probe_active(void)
 {
 	if (input_demo_recorder_is_active())
 		return 1;
-	if (!input_demo_replay_is_loaded())
-		return 0;
-	return input_demo_replay_next_frame_index() >= 816 && input_demo_replay_next_frame_index() <= 825;
+	return input_demo_replay_is_loaded();
 }
 
 static unsigned int input_demo_player_motion_frame_index(void)

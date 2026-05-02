@@ -76,6 +76,43 @@ static int input_demo_replay_weapon_lifetime_probe_active(void)
 	return input_demo_replay_is_loaded();
 }
 
+static int input_demo_weapon_trace_active(void)
+{
+	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+}
+
+static unsigned int input_demo_weapon_trace_frame_index(void)
+{
+	if (input_demo_replay_is_loaded())
+		return (unsigned int)input_demo_replay_next_frame_index();
+	if (input_demo_recorder_is_active()) {
+		const uint32_t frame_count = input_demo_recorder_frame_count();
+
+		return frame_count ? (unsigned int)(frame_count - 1) : 0;
+	}
+	return 0;
+}
+
+static const char *input_demo_weapon_trace_mode_name(void)
+{
+	if (input_demo_replay_is_loaded())
+		return "replay";
+	if (input_demo_recorder_is_active())
+		return "record";
+	return "none";
+}
+
+static int input_demo_weapon_create_probe_active(object *obj)
+{
+	if (!obj || !input_demo_weapon_trace_active())
+		return 0;
+	if (obj->ctype.laser_info.parent_type == OBJ_ROBOT)
+		return !(obj->flags & OF_HARMLESS);
+	return input_demo_replay_weapon_creation_probe_active() &&
+		obj->ctype.laser_info.parent_type == OBJ_PLAYER &&
+		obj->ctype.laser_info.parent_num == Players[Player_num].objnum;
+}
+
 static int input_demo_replay_weapon_creation_probe_active(void)
 {
 	return input_demo_replay_spreadfire_probe_active() ||
@@ -168,8 +205,9 @@ static void input_demo_log_weapon_lifetime(const char *step, object *obj)
 	const int tracked_index = input_demo_tracked_suspect_spreadfire_index(obj);
 
 	con_printf(CON_NORMAL,
-		"Input demo replay weapon probe: frame=%u gt=%lld step=%s obj=%d id=%d sig=%d track=%d seg=%d life=%d shields=%d flags=%d parent_type=%d parent=%d parent_sig=%d ctime=%lld vel=(%d,%d,%d) pos=(%d,%d,%d)\n",
-		(unsigned int)input_demo_replay_next_frame_index(),
+		"Input demo weapon probe: mode=%s frame=%u gt=%lld step=%s obj=%d id=%d sig=%d track=%d seg=%d life=%d shields=%d flags=%d parent_type=%d parent=%d parent_sig=%d ctime=%lld vel=(%d,%d,%d) pos=(%d,%d,%d)\n",
+		input_demo_weapon_trace_mode_name(),
+		input_demo_weapon_trace_frame_index(),
 		(long long)GameTime64,
 		step,
 		obj - Objects,
@@ -1097,14 +1135,7 @@ int Laser_create_new( vms_vector * direction, vms_vector * position, int segnum,
 		obj->lifeleft += (d_rand()-16384) << 2;		//	add in -2..2 seconds
 
 	input_demo_maybe_track_suspect_spreadfire(obj);
-	if ((input_demo_replay_weapon_creation_probe_active() &&
-		 obj->ctype.laser_info.parent_type == OBJ_PLAYER &&
-		 obj->ctype.laser_info.parent_num == Players[Player_num].objnum) ||
-		(input_demo_replay_is_loaded() &&
-		 obj->ctype.laser_info.parent_type == OBJ_ROBOT &&
-		 input_demo_replay_next_frame_index() >= 500 &&
-		 input_demo_replay_next_frame_index() <= 585 &&
-		 (obj->ctype.laser_info.parent_num == 99 || obj->ctype.laser_info.parent_num == 109)))
+	if (input_demo_weapon_create_probe_active(obj))
 		input_demo_log_weapon_lifetime("create", obj);
 	if (obj->ctype.laser_info.parent_type == OBJ_PLAYER &&
 		obj->ctype.laser_info.parent_num == Players[Player_num].objnum)

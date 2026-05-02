@@ -252,6 +252,7 @@ When a mismatch is not frame-local and you need more context, widen the grep win
 - If more logging is needed, add durable fields that can be produced on both recording and replay.
 - Prefer logging object signatures over object indices when tracking spawned or recycled objects.
 - Do not rely on `.dem` interpolation for the final diagnosis.
+- when targeting new log lines at re-runs, *I do not re-run the exact same demo*, it's done by hand, and the frame numbers and events will be slightly different, but generally the demos are showing the same categories of desyncs over and over. make the logging independent of specific frames or events
 
 ## Findings Template
 

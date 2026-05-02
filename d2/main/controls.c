@@ -40,6 +40,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "newdemo.h"
 #include "input_demo_energy_trace.h"
 #include "input_demo_replay.h"
+#include "input_demo_recorder.h"
 #ifdef NETWORK
 #include "multi.h"
 #endif
@@ -56,14 +57,76 @@ extern int Drop_afterburner_blob_flag;		//ugly hack
 
 extern fix	Seismic_tremor_magnitude;
 
-static int input_demo_replay_player_control_probe_active(object *obj)
+static int input_demo_trace_player_control_active(void)
 {
-	const unsigned int frame = input_demo_replay_next_frame_index();
+	return input_demo_recorder_is_active() || input_demo_replay_is_loaded();
+}
 
-	return input_demo_replay_is_loaded() &&
-		obj == ConsoleObject &&
-		frame >= 18 &&
-		frame <= 24;
+static unsigned int input_demo_trace_player_control_frame_index(void)
+{
+	if (input_demo_replay_is_loaded())
+		return (unsigned int)input_demo_replay_next_frame_index();
+	if (input_demo_recorder_is_active()) {
+		const uint32_t frame_count = input_demo_recorder_frame_count();
+
+		return frame_count ? (unsigned int)(frame_count - 1) : 0;
+	}
+	return 0;
+}
+
+static const char *input_demo_trace_player_control_mode_name(void)
+{
+	if (input_demo_replay_is_loaded())
+		return "replay";
+	if (input_demo_recorder_is_active())
+		return "record";
+	return "none";
+}
+
+static int input_demo_player_weapon_threat_now(object *obj)
+{
+	int i;
+
+	if (!input_demo_trace_player_control_active() ||
+		!ConsoleObject ||
+		obj != ConsoleObject ||
+		obj->type != OBJ_PLAYER ||
+		obj->id != Player_num)
+		return 0;
+
+	for (i = 0; i <= Highest_object_index; i++) {
+		object *weapon = &Objects[i];
+
+		if (weapon->type != OBJ_WEAPON)
+			continue;
+		if (weapon->flags & (OF_SHOULD_BE_DEAD | OF_HARMLESS))
+			continue;
+		if (weapon->ctype.laser_info.parent_type != OBJ_ROBOT)
+			continue;
+		if (weapon->segnum != obj->segnum)
+			continue;
+		return 1;
+	}
+
+	return 0;
+}
+
+static int input_demo_player_control_probe_active(object *obj)
+{
+	static unsigned int last_frame = (unsigned int)-1;
+	static int frames_remaining = 0;
+	const unsigned int frame = input_demo_trace_player_control_frame_index();
+	const int threat_now = input_demo_player_weapon_threat_now(obj);
+
+	if (frame != last_frame) {
+		if (frames_remaining > 0)
+			frames_remaining--;
+		last_frame = frame;
+	}
+	if (threat_now)
+		frames_remaining = 2;
+
+	return threat_now || frames_remaining > 0;
 }
 
 static void input_demo_log_player_control_probe(object *obj,
@@ -71,12 +134,13 @@ static void input_demo_log_player_control_probe(object *obj,
 	const vms_vector *pre_scale_rotthrust,
 	fix resolved_forward_thrust_time)
 {
-	if (!input_demo_replay_player_control_probe_active(obj))
+	if (!input_demo_player_control_probe_active(obj))
 		return;
 
 	con_printf(CON_NORMAL,
-		"Input demo replay control probe: frame=%u gt=%lld step=read_flying_controls seg=%d resolved_forward=%d controls=(%d,%d,%d,%d,%d,%d) pre_thrust=(%d,%d,%d) thrust=(%d,%d,%d) pre_rot=(%d,%d,%d) rot=(%d,%d,%d) vel=(%d,%d,%d) orient_f=(%d,%d,%d) orient_r=(%d,%d,%d) orient_u=(%d,%d,%d) phys_flags=0x%x player_flags=0x%x ab=(%d,%d)\n",
-		(unsigned int)input_demo_replay_next_frame_index(),
+		"Input demo player control probe: mode=%s frame=%u gt=%lld step=read_flying_controls seg=%d resolved_forward=%d controls=(%d,%d,%d,%d,%d,%d) pre_thrust=(%d,%d,%d) thrust=(%d,%d,%d) pre_rot=(%d,%d,%d) rot=(%d,%d,%d) vel=(%d,%d,%d) orient_f=(%d,%d,%d) orient_r=(%d,%d,%d) orient_u=(%d,%d,%d) phys_flags=0x%x player_flags=0x%x ab=(%d,%d)\n",
+		input_demo_trace_player_control_mode_name(),
+		input_demo_trace_player_control_frame_index(),
 		(long long)GameTime64,
 		obj->segnum,
 		resolved_forward_thrust_time,
@@ -124,12 +188,13 @@ static void input_demo_log_player_wiggle_probe(object *obj,
 	fix wiggle_amount,
 	int wiggle_applied)
 {
-	if (!input_demo_replay_player_control_probe_active(obj))
+	if (!input_demo_player_control_probe_active(obj))
 		return;
 
 	con_printf(CON_NORMAL,
-		"Input demo replay wiggle probe: frame=%u gt=%lld seg=%d applied=%d raw=%d scaled=%d amount=%d ship_wiggle=%d vel_before=(%d,%d,%d) wiggle_delta=(%d,%d,%d) vel_after=(%d,%d,%d) uvec=(%d,%d,%d) phys_flags=0x%x ft=%d\n",
-		(unsigned int)input_demo_replay_next_frame_index(),
+		"Input demo player wiggle probe: mode=%s frame=%u gt=%lld seg=%d applied=%d raw=%d scaled=%d amount=%d ship_wiggle=%d vel_before=(%d,%d,%d) wiggle_delta=(%d,%d,%d) vel_after=(%d,%d,%d) uvec=(%d,%d,%d) phys_flags=0x%x ft=%d\n",
+		input_demo_trace_player_control_mode_name(),
+		input_demo_trace_player_control_frame_index(),
 		(long long)GameTime64,
 		obj->segnum,
 		wiggle_applied,
