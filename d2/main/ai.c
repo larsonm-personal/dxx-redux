@@ -1473,7 +1473,28 @@ int add_awareness_event(object *objp, int type)
 // The object (probably player or weapon) which created the awareness is objp.
 void create_awareness_event(object *objp, int type)
 {
+	int num_awareness_before = Num_awareness_events;
+	int overall_agitation_before = Overall_agitation;
+	int multiplayer_awareness_allowed = (!(Game_mode & GM_MULTI) || (Game_mode & GM_MULTI_ROBOTS));
+	int awareness_added = 0;
+	int rng_gate_value = -1;
+	int rng_gate_pass = 0;
+
 	if (object_is_observer(objp)) {
+		if (input_demo_replay_awareness_probe_active())
+			con_printf(CON_NORMAL,
+				"Input demo replay awareness result: frame=%u gt=%lld type=%d obj=%d skipped=observer awareness=%d->%d agitation=%d->%d gate=%d rng=%d rng_pass=%d\n",
+				input_demo_trace_frame_index(),
+				(long long)GameTime64,
+				type,
+				objp - Objects,
+				num_awareness_before,
+				Num_awareness_events,
+				overall_agitation_before,
+				Overall_agitation,
+				multiplayer_awareness_allowed,
+				rng_gate_value,
+				rng_gate_pass);
 		return;
 	}
 
@@ -1509,14 +1530,33 @@ void create_awareness_event(object *objp, int type)
 	}
 
 	// If not in multiplayer, or in multiplayer with robots, do this, else unnecessary!
-	if (!(Game_mode & GM_MULTI) || (Game_mode & GM_MULTI_ROBOTS)) {
-		if (add_awareness_event(objp, type)) {
-			if (((d_rand() * (type+4)) >> 15) > 4)
+	if (multiplayer_awareness_allowed) {
+		awareness_added = add_awareness_event(objp, type);
+		if (awareness_added) {
+			rng_gate_value = ((d_rand() * (type+4)) >> 15);
+			rng_gate_pass = (rng_gate_value > 4);
+			if (rng_gate_pass)
 				Overall_agitation++;
 			if (Overall_agitation > OVERALL_AGITATION_MAX)
 				Overall_agitation = OVERALL_AGITATION_MAX;
 		}
 	}
+
+	if (input_demo_replay_awareness_probe_active())
+		con_printf(CON_NORMAL,
+			"Input demo replay awareness result: frame=%u gt=%lld type=%d obj=%d added=%d awareness=%d->%d agitation=%d->%d gate=%d rng=%d rng_pass=%d\n",
+			input_demo_trace_frame_index(),
+			(long long)GameTime64,
+			type,
+			objp - Objects,
+			awareness_added,
+			num_awareness_before,
+			Num_awareness_events,
+			overall_agitation_before,
+			Overall_agitation,
+			multiplayer_awareness_allowed,
+			rng_gate_value,
+			rng_gate_pass);
 }
 
 sbyte New_awareness[MAX_SEGMENTS];

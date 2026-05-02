@@ -34,7 +34,7 @@ function Get-LineSummary {
     }
 
     $parts = New-Object System.Collections.Generic.List[string]
-    foreach ($key in @('type', 'seq', 'frame', 'call_count', 'file', 'func', 'line')) {
+    foreach ($key in @('type', 'seq', 'frame', 'call_count', 'stream', 'has_context', 'file', 'func', 'line')) {
         if ($record.ContainsKey($key)) {
             $parts.Add("${key}=$($record[$key])")
         }
@@ -45,10 +45,81 @@ function Get-LineSummary {
     return $parts -join ' '
 }
 
+function Convert-JsonLineToRecord {
+    param([string]$Line)
+
+    if ([string]::IsNullOrWhiteSpace($Line)) {
+        return $null
+    }
+    try {
+        return $Line | ConvertFrom-Json -AsHashtable
+    } catch {
+        return $null
+    }
+}
+
+function Test-IsFalseLike {
+    param([object]$Value)
+
+    if ($Value -is [bool]) {
+        return -not $Value
+    }
+    if ($null -eq $Value) {
+        return $false
+    }
+    return @('0', 'false') -contains $Value.ToString().ToLowerInvariant()
+}
+
 function Test-IsMetaLine {
     param([string]$Line)
 
     return (Get-LineSummary -Line $Line) -eq 'type=meta'
+}
+
+function Test-IsSupplementalEvent {
+    param([string]$Line)
+
+    $record = Convert-JsonLineToRecord -Line $Line
+    if (-not $record) {
+        return $false
+    }
+    if ($record.ContainsKey('type') -and $record.type -eq 'meta') {
+        return $false
+    }
+    if ($record.ContainsKey('stream') -and [int]$record.stream -ne 0) {
+        return $true
+    }
+    if ($record.ContainsKey('has_context') -and (Test-IsFalseLike -Value $record.has_context)) {
+        return $true
+    }
+    return $false
+}
+
+function Get-ComparableTrace {
+    param([string[]]$Lines)
+
+    $eventLines = New-Object System.Collections.Generic.List[string]
+    $metaLine = $null
+    $skippedCount = 0
+
+    for ($index = 0; $index -lt $Lines.Length; $index++) {
+        $line = $Lines[$index]
+        if ($index -eq 0 -and (Test-IsMetaLine -Line $line)) {
+            $metaLine = $line
+            continue
+        }
+        if (Test-IsSupplementalEvent -Line $line) {
+            $skippedCount++
+            continue
+        }
+        $eventLines.Add($line)
+    }
+
+    return [ordered]@{
+        MetaLine = $metaLine
+        EventLines = $eventLines.ToArray()
+        SkippedCount = $skippedCount
+    }
 }
 
 function ConvertTo-ComparableJson {
@@ -57,28 +128,79 @@ function ConvertTo-ComparableJson {
     return ($Record | ConvertTo-Json -Compress -Depth 10)
 }
 
-function Test-LineOnlyMismatch {
+function Test-MetaMismatch {
     param(
         [string]$ExpectedLine,
         [string]$ActualLine
     )
 
-    try {
-        $expectedRecord = $ExpectedLine | ConvertFrom-Json -AsHashtable
-        $actualRecord = $ActualLine | ConvertFrom-Json -AsHashtable
-    } catch {
+    if (-not $ExpectedLine -and -not $ActualLine) {
         return $null
     }
 
-    if (-not $expectedRecord.ContainsKey('line') -or -not $actualRecord.ContainsKey('line')) {
+    $expectedRecord = Convert-JsonLineToRecord -Line $ExpectedLine
+    $actualRecord = Convert-JsonLineToRecord -Line $ActualLine
+    if (-not $expectedRecord -or -not $actualRecord) {
+        if ($ExpectedLine -ceq $ActualLine) {
+            return $null
+        }
+        return [ordered]@{
+            Expected = $ExpectedLine
+            Actual = $ActualLine
+        }
+    }
+
+    if ($expectedRecord.ContainsKey('events')) {
+        $null = $expectedRecord.Remove('events')
+    }
+    if ($actualRecord.ContainsKey('events')) {
+        $null = $actualRecord.Remove('events')
+    }
+    if ((ConvertTo-ComparableJson -Record $expectedRecord) -eq (ConvertTo-ComparableJson -Record $actualRecord)) {
+        return $null
+    }
+    return [ordered]@{
+        Expected = $ExpectedLine
+        Actual = $ActualLine
+    }
+}
+
+function Test-IgnorableMismatch {
+    param(
+        [string]$ExpectedLine,
+        [string]$ActualLine
+    )
+
+    $expectedRecord = Convert-JsonLineToRecord -Line $ExpectedLine
+    $actualRecord = Convert-JsonLineToRecord -Line $ActualLine
+    if (-not $expectedRecord -or -not $actualRecord) {
         return $null
     }
 
-    $expectedLineNumber = $expectedRecord.line
-    $actualLineNumber = $actualRecord.line
-    $null = $expectedRecord.Remove('line')
-    $null = $actualRecord.Remove('line')
-    if ($expectedLineNumber -eq $actualLineNumber) {
+    $lineChanged = $false
+    $seqChanged = $false
+    $expectedLineNumber = $null
+    $actualLineNumber = $null
+    $expectedSeq = $null
+    $actualSeq = $null
+
+    if ($expectedRecord.ContainsKey('line') -and $actualRecord.ContainsKey('line')) {
+        $expectedLineNumber = $expectedRecord.line
+        $actualLineNumber = $actualRecord.line
+        $lineChanged = $expectedLineNumber -ne $actualLineNumber
+        $null = $expectedRecord.Remove('line')
+        $null = $actualRecord.Remove('line')
+    }
+
+    if ($expectedRecord.ContainsKey('seq') -and $actualRecord.ContainsKey('seq')) {
+        $expectedSeq = $expectedRecord.seq
+        $actualSeq = $actualRecord.seq
+        $seqChanged = $expectedSeq -ne $actualSeq
+        $null = $expectedRecord.Remove('seq')
+        $null = $actualRecord.Remove('seq')
+    }
+
+    if (-not $lineChanged -and -not $seqChanged) {
         return $null
     }
     if ((ConvertTo-ComparableJson -Record $expectedRecord) -ne (ConvertTo-ComparableJson -Record $actualRecord)) {
@@ -86,8 +208,12 @@ function Test-LineOnlyMismatch {
     }
 
     return [ordered]@{
+        LineChanged = $lineChanged
+        SeqChanged = $seqChanged
         ExpectedLineNumber = $expectedLineNumber
         ActualLineNumber = $actualLineNumber
+        ExpectedSeq = $expectedSeq
+        ActualSeq = $actualSeq
     }
 }
 
@@ -112,35 +238,31 @@ function Write-ContextLines {
 
 $resolvedExpectedPath = (Resolve-Path -LiteralPath $ExpectedPath).Path
 $resolvedActualPath = (Resolve-Path -LiteralPath $ActualPath).Path
-$expectedLines = [System.IO.File]::ReadAllLines($resolvedExpectedPath)
-$actualLines = [System.IO.File]::ReadAllLines($resolvedActualPath)
-$compareStartIndex = 0
-$metaMismatch = $null
-
-if ($expectedLines.Length -gt 0 -and $actualLines.Length -gt 0 -and
-    (Test-IsMetaLine -Line $expectedLines[0]) -and (Test-IsMetaLine -Line $actualLines[0])) {
-    $compareStartIndex = 1
-    if ($expectedLines[0] -cne $actualLines[0]) {
-        $metaMismatch = [ordered]@{
-            Expected = $expectedLines[0]
-            Actual = $actualLines[0]
-        }
-    }
-}
+$expectedRawLines = [System.IO.File]::ReadAllLines($resolvedExpectedPath)
+$actualRawLines = [System.IO.File]::ReadAllLines($resolvedActualPath)
+$expectedTrace = Get-ComparableTrace -Lines $expectedRawLines
+$actualTrace = Get-ComparableTrace -Lines $actualRawLines
+$expectedLines = $expectedTrace.EventLines
+$actualLines = $actualTrace.EventLines
+$metaMismatch = Test-MetaMismatch -ExpectedLine $expectedTrace.MetaLine -ActualLine $actualTrace.MetaLine
 
 $sharedCount = [Math]::Min($expectedLines.Length, $actualLines.Length)
 $mismatchIndex = -1
-$lineOnlyMismatch = $null
+$ignorableMismatch = $null
 
-for ($index = $compareStartIndex; $index -lt $sharedCount; $index++) {
+for ($index = 0; $index -lt $sharedCount; $index++) {
     if ($expectedLines[$index] -cne $actualLines[$index]) {
-        $lineOnlyDetail = Test-LineOnlyMismatch -ExpectedLine $expectedLines[$index] -ActualLine $actualLines[$index]
-        if ($lineOnlyDetail) {
-            if (-not $lineOnlyMismatch) {
-                $lineOnlyMismatch = [ordered]@{
+        $ignorableDetail = Test-IgnorableMismatch -ExpectedLine $expectedLines[$index] -ActualLine $actualLines[$index]
+        if ($ignorableDetail) {
+            if (-not $ignorableMismatch) {
+                $ignorableMismatch = [ordered]@{
                     LineNumber = $index + 1
-                    ExpectedLineNumber = $lineOnlyDetail.ExpectedLineNumber
-                    ActualLineNumber = $lineOnlyDetail.ActualLineNumber
+                    LineChanged = $ignorableDetail.LineChanged
+                    SeqChanged = $ignorableDetail.SeqChanged
+                    ExpectedLineNumber = $ignorableDetail.ExpectedLineNumber
+                    ActualLineNumber = $ignorableDetail.ActualLineNumber
+                    ExpectedSeq = $ignorableDetail.ExpectedSeq
+                    ActualSeq = $ignorableDetail.ActualSeq
                     ExpectedLine = $expectedLines[$index]
                     ActualLine = $actualLines[$index]
                 }
@@ -158,8 +280,8 @@ if ($mismatchIndex -lt 0 -and $expectedLines.Length -ne $actualLines.Length) {
 
 Write-Host "Expected: $(Get-RelativeRepoPath -Path $resolvedExpectedPath)"
 Write-Host "Actual: $(Get-RelativeRepoPath -Path $resolvedActualPath)"
-Write-Host "Expected lines: $($expectedLines.Length)"
-Write-Host "Actual lines: $($actualLines.Length)"
+Write-Host "Expected lines: comparable=$($expectedLines.Length) skipped=$($expectedTrace.SkippedCount) raw=$($expectedRawLines.Length)"
+Write-Host "Actual lines: comparable=$($actualLines.Length) skipped=$($actualTrace.SkippedCount) raw=$($actualRawLines.Length)"
 
 if ($mismatchIndex -lt 0) {
     if ($metaMismatch) {
@@ -169,15 +291,18 @@ if ($mismatchIndex -lt 0) {
         Write-Host "Actual meta: $($metaMismatch.Actual)"
         exit 1
     }
-    if ($lineOnlyMismatch) {
+    if ($ignorableMismatch -and $ignorableMismatch.LineChanged) {
         Write-Host 'RESULT: FAIL'
         Write-Host 'Only source-line differences were found'
-        Write-Host "First differing line: $($lineOnlyMismatch.LineNumber)"
-        Write-Host "Expected source line: $($lineOnlyMismatch.ExpectedLineNumber)"
-        Write-Host "Actual source line: $($lineOnlyMismatch.ActualLineNumber)"
-        Write-Host "Expected line: $($lineOnlyMismatch.ExpectedLine)"
-        Write-Host "Actual line: $($lineOnlyMismatch.ActualLine)"
+        Write-Host "First differing line: $($ignorableMismatch.LineNumber)"
+        Write-Host "Expected source line: $($ignorableMismatch.ExpectedLineNumber)"
+        Write-Host "Actual source line: $($ignorableMismatch.ActualLineNumber)"
+        Write-Host "Expected line: $($ignorableMismatch.ExpectedLine)"
+        Write-Host "Actual line: $($ignorableMismatch.ActualLine)"
         exit 1
+    }
+    if ($ignorableMismatch -and $ignorableMismatch.SeqChanged) {
+        Write-Host "Note: ignored sequence-only differences starting at comparable line $($ignorableMismatch.LineNumber)"
     }
     Write-Host 'RESULT: PASS'
     exit 0
@@ -195,8 +320,13 @@ if ($metaMismatch) {
     Write-Host "Expected meta: $($metaMismatch.Expected)"
     Write-Host "Actual meta: $($metaMismatch.Actual)"
 }
-if ($lineOnlyMismatch) {
-    Write-Host "First source-line-only mismatch: line $($lineOnlyMismatch.LineNumber) expected_line=$($lineOnlyMismatch.ExpectedLineNumber) actual_line=$($lineOnlyMismatch.ActualLineNumber)"
+if ($ignorableMismatch) {
+    if ($ignorableMismatch.LineChanged) {
+        Write-Host "First source-line-only mismatch: line $($ignorableMismatch.LineNumber) expected_line=$($ignorableMismatch.ExpectedLineNumber) actual_line=$($ignorableMismatch.ActualLineNumber)"
+    }
+    if ($ignorableMismatch.SeqChanged) {
+        Write-Host "First sequence-only mismatch: line $($ignorableMismatch.LineNumber) expected_seq=$($ignorableMismatch.ExpectedSeq) actual_seq=$($ignorableMismatch.ActualSeq)"
+    }
 }
 Write-Host "First differing line: $lineNumber"
 if ($expectedSummary) {

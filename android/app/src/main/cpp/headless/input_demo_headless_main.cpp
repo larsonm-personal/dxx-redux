@@ -101,17 +101,17 @@ static int init_headless_runtime(int argc, char *argv[], char *error, size_t err
 	gamedata_init();
 	texmerge_init(10);
 	piggy_init_pigfile("groupa.pig");
-	screen_w = (int)SM_W(Game_screen_mode);
-	screen_h = (int)SM_H(Game_screen_mode);
+	screen_w = (int) SM_W(Game_screen_mode);
+	screen_h = (int) SM_H(Game_screen_mode);
 	if (!grd_curscreen) {
 		CALLOC(grd_curscreen, grs_screen, 1);
-		MALLOC(headless_screen_pixels, unsigned char, screen_w * screen_h);
-		memset(headless_screen_pixels, 0, (size_t)(screen_w * screen_h));
+		MALLOC(headless_screen_pixels, unsigned char, screen_w *screen_h);
+		memset(headless_screen_pixels, 0, (size_t) (screen_w * screen_h));
 		grd_curscreen->sc_mode = Game_screen_mode;
-		grd_curscreen->sc_w = (short)screen_w;
-		grd_curscreen->sc_h = (short)screen_h;
+		grd_curscreen->sc_w = (short) screen_w;
+		grd_curscreen->sc_h = (short) screen_h;
 		grd_curscreen->sc_aspect = fixdiv(grd_curscreen->sc_w * GameCfg.AspectX,
-			grd_curscreen->sc_h * GameCfg.AspectY);
+		                                  grd_curscreen->sc_h * GameCfg.AspectY);
 		gr_init_canvas(&grd_curscreen->sc_canvas, headless_screen_pixels, BM_LINEAR, screen_w, screen_h);
 		gr_set_current_canvas(NULL);
 	}

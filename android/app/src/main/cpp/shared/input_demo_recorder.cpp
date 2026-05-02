@@ -59,7 +59,7 @@ struct input_demo_recorder_session {
 	std::vector<input_demo_rng_frame> rng_frames;
 	std::vector<uint8_t> has_state_frames;
 	std::vector<input_demo_result> state_frames;
-	std::vector<std::vector<std::string> > frame_events;
+	std::vector<std::vector<std::string>> frame_events;
 
 	input_demo_recorder_session()
 	    : active(false), game(0), level(0), difficulty(0), has_player_cfg(false), has_checkpoint(false), checkpoint_start_gt(0)
@@ -87,8 +87,8 @@ static bool input_demo_recorder_fail(std::string *error, const std::string &mess
 }
 
 static bool input_demo_recorder_canonicalize_event_json(const char *json_text,
-	                                                    std::string *canonical_json,
-	                                                    std::string *error)
+                                                        std::string *canonical_json,
+                                                        std::string *error)
 {
 	ordered_json parsed;
 
@@ -432,7 +432,7 @@ int input_demo_recorder_capture_frame(int32_t frame_time,
 }
 
 int input_demo_recorder_append_frame_event_json(const char *json_text,
-	                                            char *error, size_t error_size)
+                                                char *error, size_t error_size)
 {
 	std::string canonical_json;
 	std::string shared_error;

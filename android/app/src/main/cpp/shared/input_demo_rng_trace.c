@@ -18,7 +18,9 @@ typedef struct input_demo_rng_trace_event {
 	uint32_t seed;
 	int32_t result;
 	int32_t line;
+	uint8_t stream;
 	uint8_t kind;
+	uint8_t has_context;
 	uint8_t has_state_before;
 	uint8_t has_state_after;
 	const char *file;
@@ -87,11 +89,18 @@ static int ensure_capacity(size_t needed)
 
 static void append_event(const input_demo_rng_trace_event *event)
 {
-	if (!g_input_demo_rng_trace_session.active || !g_input_demo_rng_trace_session.has_context || !event)
+	if (!g_input_demo_rng_trace_session.active || !event)
 		return;
 	if (!ensure_capacity(g_input_demo_rng_trace_session.count + 1))
 		return;
 	g_input_demo_rng_trace_session.events[g_input_demo_rng_trace_session.count++] = *event;
+}
+
+static void write_event_stream(FILE *out, uint8_t stream)
+{
+	if (!stream)
+		return;
+	fprintf(out, ",\"stream\":%u", (unsigned int) stream);
 }
 
 static void write_json_string(FILE *out, const char *text)
@@ -196,6 +205,9 @@ static int write_trace_file(const char *path, char *error, size_t error_size)
 		        event->frame,
 		        (long long) event->game_time64,
 		        event->call_count);
+		write_event_stream(out, event->stream);
+		if (!event->has_context)
+			fputs(",\"has_context\":false", out);
 		if (event->has_state_before)
 			fprintf(out, ",\"state_before\":%u", event->state_before);
 		if (event->has_state_after)
@@ -265,7 +277,8 @@ void input_demo_rng_trace_set_context(uint32_t frame, int64_t game_time64)
 	g_input_demo_rng_trace_session.game_time64 = game_time64;
 }
 
-void input_demo_rng_trace_record_rand(const char *file,
+void input_demo_rng_trace_record_rand(int stream,
+                                      const char *file,
                                       const char *func,
                                       int line,
                                       uint32_t call_count,
@@ -285,7 +298,9 @@ void input_demo_rng_trace_record_rand(const char *file,
 	event.state_after = state_after;
 	event.result = result;
 	event.line = line;
+	event.stream = (uint8_t) stream;
 	event.kind = INPUT_DEMO_RNG_TRACE_KIND_RAND;
+	event.has_context = g_input_demo_rng_trace_session.has_context ? 1 : 0;
 	event.has_state_before = has_state_before ? 1 : 0;
 	event.has_state_after = has_state_after ? 1 : 0;
 	event.file = file ? file : "";
@@ -293,7 +308,8 @@ void input_demo_rng_trace_record_rand(const char *file,
 	append_event(&event);
 }
 
-void input_demo_rng_trace_record_srand(const char *file,
+void input_demo_rng_trace_record_srand(int stream,
+                                       const char *file,
                                        const char *func,
                                        int line,
                                        uint32_t call_count,
@@ -313,7 +329,9 @@ void input_demo_rng_trace_record_srand(const char *file,
 	event.state_after = state_after;
 	event.seed = seed;
 	event.line = line;
+	event.stream = (uint8_t) stream;
 	event.kind = INPUT_DEMO_RNG_TRACE_KIND_SRAND;
+	event.has_context = g_input_demo_rng_trace_session.has_context ? 1 : 0;
 	event.has_state_before = has_state_before ? 1 : 0;
 	event.has_state_after = has_state_after ? 1 : 0;
 	event.file = file ? file : "";

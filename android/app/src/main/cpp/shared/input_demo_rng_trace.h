@@ -16,7 +16,8 @@ void input_demo_rng_trace_reset(void);
 int input_demo_rng_trace_stop(char *error, size_t error_size);
 int input_demo_rng_trace_is_active(void);
 void input_demo_rng_trace_set_context(uint32_t frame, int64_t game_time64);
-void input_demo_rng_trace_record_rand(const char *file,
+void input_demo_rng_trace_record_rand(int stream,
+                                      const char *file,
                                       const char *func,
                                       int line,
                                       uint32_t call_count,
@@ -25,7 +26,8 @@ void input_demo_rng_trace_record_rand(const char *file,
                                       int has_state_after,
                                       uint32_t state_after,
                                       int result);
-void input_demo_rng_trace_record_srand(const char *file,
+void input_demo_rng_trace_record_srand(int stream,
+                                       const char *file,
                                        const char *func,
                                        int line,
                                        uint32_t call_count,

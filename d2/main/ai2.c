@@ -57,6 +57,8 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "gauges.h"
 #include "text.h"
 #include "args.h"
+#include "input_demo_recorder.h"
+#include "input_demo_replay.h"
 #include "input_demo_energy_trace.h"
 
 #ifdef EDITOR
@@ -78,6 +80,79 @@ enum {
 	Flinch_scale = 4,
 	Attack_scale = 24,
 };
+
+static unsigned int input_demo_trace_frame_index(void)
+{
+	if (input_demo_replay_is_loaded())
+		return (unsigned int)input_demo_replay_next_frame_index();
+	if (input_demo_recorder_is_active()) {
+		const uint32_t frame_count = input_demo_recorder_frame_count();
+
+		return frame_count ? (unsigned int)(frame_count - 1) : 0;
+	}
+	return 0;
+}
+
+static int input_demo_trace_robot_fire_active(object *objp)
+{
+	return (input_demo_recorder_is_active() || input_demo_replay_is_loaded()) &&
+		objp &&
+		(objp->type == OBJ_ROBOT);
+}
+
+static void input_demo_log_robot_fire_state(const char *label, object *objp)
+{
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+	ai_static *aip;
+	ai_local *ailp;
+	robot_info *robptr;
+
+	if (!input_demo_trace_robot_fire_active(objp) || (objnum < 0))
+		return;
+
+	aip = &objp->ctype.ai_info;
+	ailp = &Ai_local_info[objnum];
+	robptr = &Robot_info[objp->id];
+
+	con_printf(CON_NORMAL,
+		"Input demo replay fire state: frame=%u step=%s obj=%d sig=%d id=%d companion=%d behavior=%d mode=%d cur_state=%d goal_state=%d gun=%d seg=%d player_seg=%d believed_seg=%d goal_seg=%d prev_vis=%d aware=%d aware_time=%d retry=%d retry_chain=%d rapid=%d seen=%lld since=%d next_action=%d next_fire=%d next_fire2=%d path=%d/%d hide=%d dir=%d pos=(%d,%d,%d) vel=(%d,%d,%d)\n",
+		input_demo_trace_frame_index(),
+		label,
+		objnum,
+		objp->signature,
+		objp->id,
+		robptr->companion,
+		aip->behavior,
+		ailp->mode,
+		aip->CURRENT_STATE,
+		aip->GOAL_STATE,
+		aip->CURRENT_GUN,
+		objp->segnum,
+		ConsoleObject ? ConsoleObject->segnum : -1,
+		Believed_player_seg,
+		ailp->goal_segment,
+		ailp->previous_visibility,
+		ailp->player_awareness_type,
+		ailp->player_awareness_time,
+		ailp->retry_count,
+		ailp->consecutive_retries,
+		ailp->rapidfire_count,
+		(long long)ailp->time_player_seen,
+		ailp->time_since_processed,
+		ailp->next_action_time,
+		ailp->next_fire,
+		ailp->next_fire2,
+		aip->cur_path_index,
+		aip->path_length,
+		aip->hide_index,
+		aip->PATH_DIR,
+		objp->pos.x,
+		objp->pos.y,
+		objp->pos.z,
+		objp->mtype.phys_info.velocity.x,
+		objp->mtype.phys_info.velocity.y,
+		objp->mtype.phys_info.velocity.z);
+}
 static const sbyte   Mike_to_matt_xlate[] = {AS_REST, AS_REST, AS_ALERT, AS_ALERT, AS_FLINCH, AS_FIRE, AS_RECOIL, AS_REST};
 
 //	Amount of time since the current robot was last processed for things such as movement.
@@ -1031,9 +1106,37 @@ player_led: ;
 	}
 #endif
 
+	if (input_demo_trace_robot_fire_active(obj))
+		con_printf(CON_NORMAL,
+			"Input demo replay fire probe: frame=%u kind=robot_fire robot_obj=%d sig=%d robot_id=%d seg=%d gun=%d weapon=%d believed_seg=%d player_seg=%d pos=(%d,%d,%d) vec=(%d,%d,%d)\n",
+			input_demo_trace_frame_index(),
+			obj - Objects,
+			obj->signature,
+			obj->id,
+			obj->segnum,
+			obj->ctype.ai_info.CURRENT_GUN,
+			weapon_type,
+			Believed_player_seg,
+			ConsoleObject ? ConsoleObject->segnum : -1,
+			obj->pos.x,
+			obj->pos.y,
+			obj->pos.z,
+			fire_vec.x,
+			fire_vec.y,
+			fire_vec.z);
+
+	if (input_demo_trace_robot_fire_active(obj))
+		input_demo_log_robot_fire_state("robot_fire before_awareness", obj);
+
 	create_awareness_event(obj, PA_NEARBY_ROBOT_FIRED);
 
+	if (input_demo_trace_robot_fire_active(obj))
+		input_demo_log_robot_fire_state("robot_fire after_awareness", obj);
+
 	set_next_fire_time(obj, ailp, robptr, gun_num);
+
+	if (input_demo_trace_robot_fire_active(obj))
+		input_demo_log_robot_fire_state("robot_fire after_set_next_fire_time", obj);
 
 }
 

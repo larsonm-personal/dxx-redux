@@ -122,9 +122,8 @@ int d_rand_annotated(d_rng_stream stream, const char *file, const char *func, in
 	int has_state_after = d_rand_get_stream_state(stream, &state_after);
 	unsigned int call_count = d_rand_get_stream_call_count(stream);
 
-	if (stream != D_RNG_SIM)
-		return result;
-	input_demo_rng_trace_record_rand(file,
+	input_demo_rng_trace_record_rand((int) stream,
+		file,
 		func,
 		line,
 		call_count,
@@ -153,9 +152,8 @@ void d_srand_annotated(d_rng_stream stream, unsigned int seed, const char *file,
 	int has_state_before = d_rand_get_stream_state(stream, &state_before);
 
 	d_srand_internal(stream, seed);
-	if (stream != D_RNG_SIM)
-		return;
-	input_demo_rng_trace_record_srand(file,
+	input_demo_rng_trace_record_srand((int) stream,
+		file,
 		func,
 		line,
 		d_rand_get_stream_call_count(stream),

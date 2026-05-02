@@ -105,6 +105,59 @@ static int input_demo_replay_path_request_probe_active(object *objp)
 	return input_demo_replay_path_probe_active(objp);
 }
 
+static void input_demo_log_path_robot_state(const char *label, object *objp)
+{
+	const int objnum = objp ? (int)(objp - Objects) : -1;
+	ai_static *aip;
+	ai_local *ailp;
+	robot_info *robptr;
+
+	if (!input_demo_replay_path_probe_active(objp) || (objnum < 0) || (objp->type != OBJ_ROBOT))
+		return;
+
+	aip = &objp->ctype.ai_info;
+	ailp = &Ai_local_info[objnum];
+	robptr = &Robot_info[objp->id];
+
+	con_printf(CON_NORMAL,
+		"Input demo replay path state: frame=%u step=%s obj=%d sig=%d id=%d companion=%d behavior=%d mode=%d cur_state=%d goal_state=%d seg=%d player_seg=%d believed_seg=%d goal_seg=%d prev_vis=%d aware=%d aware_time=%d retry=%d retry_chain=%d rapid=%d seen=%lld since=%d next_action=%d next_fire=%d next_fire2=%d path=%d/%d hide=%d dir=%d pos=(%d,%d,%d) vel=(%d,%d,%d)\n",
+		input_demo_trace_frame_index(),
+		label,
+		objnum,
+		objp->signature,
+		objp->id,
+		robptr->companion,
+		aip->behavior,
+		ailp->mode,
+		aip->CURRENT_STATE,
+		aip->GOAL_STATE,
+		objp->segnum,
+		ConsoleObject ? ConsoleObject->segnum : -1,
+		Believed_player_seg,
+		ailp->goal_segment,
+		ailp->previous_visibility,
+		ailp->player_awareness_type,
+		ailp->player_awareness_time,
+		ailp->retry_count,
+		ailp->consecutive_retries,
+		ailp->rapidfire_count,
+		(long long)ailp->time_player_seen,
+		ailp->time_since_processed,
+		ailp->next_action_time,
+		ailp->next_fire,
+		ailp->next_fire2,
+		aip->cur_path_index,
+		aip->path_length,
+		aip->hide_index,
+		aip->PATH_DIR,
+		objp->pos.x,
+		objp->pos.y,
+		objp->pos.z,
+		objp->mtype.phys_info.velocity.x,
+		objp->mtype.phys_info.velocity.y,
+		objp->mtype.phys_info.velocity.z);
+}
+
 static void input_demo_log_path_request(const char *label,
 	object *objp,
 	int start_seg,
@@ -142,6 +195,7 @@ static void input_demo_log_path_request(const char *label,
 		aip ? aip->path_length : -1,
 		aip ? aip->hide_index : -1,
 		aip ? aip->PATH_DIR : 0);
+	input_demo_log_path_robot_state(label, objp);
 }
 
 static void input_demo_log_path_probe(object *objp,
@@ -186,6 +240,7 @@ static void input_demo_log_path_probe(object *objp,
 		rng_call_count_after,
 		rng_before,
 		rng_after);
+	input_demo_log_path_robot_state("create_path_points result", objp);
 }
 
 static void input_demo_log_path_detail(object *objp,
@@ -230,6 +285,7 @@ static void input_demo_log_path_detail(object *objp,
 		aip ? aip->cur_path_index : -1,
 		aip ? aip->path_length : -1,
 		aip ? aip->hide_index : -1);
+	input_demo_log_path_robot_state("create_path_points detail", objp);
 }
 
 static void input_demo_log_path_points(const char *label, object *objp, point_seg *psegs, int num_points)
@@ -1257,9 +1313,10 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 	dist_to_goal = vm_vec_dist_quick(&goal_point, &objp->pos);
 	if (input_demo_replay_follow_probe_active(objp))
 		con_printf(CON_NORMAL,
-			"Input demo replay follow probe: frame=%u obj=%d id=%d companion=%d behavior=%d mode=%d path=%d/%d dir=%d seg=%d goal_seg=%d dist=%d\n",
+			"Input demo replay follow probe: frame=%u obj=%d sig=%d id=%d companion=%d behavior=%d mode=%d path=%d/%d dir=%d seg=%d goal_seg=%d dist=%d\n",
 			input_demo_trace_frame_index(),
 			(int)(objp - Objects),
+			objp->signature,
 			objp->id,
 			robptr->companion,
 			aip->behavior,
@@ -1270,6 +1327,8 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 			objp->segnum,
 			ailp->goal_segment,
 			dist_to_goal);
+	if (input_demo_replay_follow_probe_active(objp))
+		input_demo_log_path_robot_state("follow probe", objp);
 
 	//	If running from player, only run until can't be seen.
 	if (ailp->mode == AIM_RUN_FROM_OBJECT) {
@@ -1333,9 +1392,10 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 	threshold_distance = fixmul(velocity_mag, FrameTime)*2 + F1_0*2;
 	if (input_demo_replay_follow_probe_active(objp) && (dist_to_goal < threshold_distance))
 		con_printf(CON_NORMAL,
-			"Input demo replay follow advance trigger: frame=%u obj=%d id=%d companion=%d behavior=%d mode=%d path=%d/%d dir=%d seg=%d goal_seg=%d dist=%d threshold=%d vel=%d\n",
+			"Input demo replay follow advance trigger: frame=%u obj=%d sig=%d id=%d companion=%d behavior=%d mode=%d path=%d/%d dir=%d seg=%d goal_seg=%d dist=%d threshold=%d vel=%d\n",
 			input_demo_trace_frame_index(),
 			(int)(objp - Objects),
+			objp->signature,
 			objp->id,
 			robptr->companion,
 			aip->behavior,
@@ -1348,6 +1408,8 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 			dist_to_goal,
 			threshold_distance,
 			velocity_mag);
+	if (input_demo_replay_follow_probe_active(objp) && (dist_to_goal < threshold_distance))
+		input_demo_log_path_robot_state("follow advance trigger", objp);
 
 	new_goal_point = Point_segs[aip->hide_index + aip->cur_path_index].point;
 
@@ -1362,9 +1424,10 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 		if ((aip->cur_path_index >= aip->path_length) || (aip->cur_path_index < 0)) {
 			if (input_demo_replay_follow_probe_active(objp))
 				con_printf(CON_NORMAL,
-					"Input demo replay follow wrap: frame=%u obj=%d id=%d companion=%d behavior=%d mode=%d path=%d/%d dir=%d vis=%d escort_goal=%d special=%d\n",
+					"Input demo replay follow wrap: frame=%u obj=%d sig=%d id=%d companion=%d behavior=%d mode=%d path=%d/%d dir=%d vis=%d escort_goal=%d special=%d\n",
 					input_demo_trace_frame_index(),
 					(int)(objp - Objects),
+					objp->signature,
 					objp->id,
 					robptr->companion,
 					aip->behavior,
@@ -1375,6 +1438,8 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 					player_visibility,
 					Escort_goal_object,
 					Escort_special_goal);
+			if (input_demo_replay_follow_probe_active(objp))
+				input_demo_log_path_robot_state("follow wrap", objp);
 			//	Buddy bot.  If he's in mode to get away from player and at end of line,
 			//	if player visible, then make a new path, else just return.
 			if (robptr->companion) {
@@ -1490,9 +1555,10 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 
 	if (input_demo_replay_follow_probe_active(objp) && ((aip->cur_path_index != original_index) || (aip->PATH_DIR != original_dir)))
 		con_printf(CON_NORMAL,
-			"Input demo replay follow advance result: frame=%u obj=%d id=%d companion=%d behavior=%d mode=%d from=%d to=%d path=%d dir=%d->%d seg=%d goal_seg=%d dist=%d threshold=%d vel=%d forced=%d\n",
+			"Input demo replay follow advance result: frame=%u obj=%d sig=%d id=%d companion=%d behavior=%d mode=%d from=%d to=%d path=%d dir=%d->%d seg=%d goal_seg=%d dist=%d threshold=%d vel=%d forced=%d\n",
 			input_demo_trace_frame_index(),
 			(int)(objp - Objects),
+			objp->signature,
 			objp->id,
 			robptr->companion,
 			aip->behavior,
@@ -1508,6 +1574,8 @@ void ai_follow_path(object *objp, int player_visibility, int previous_visibility
 			threshold_distance,
 			velocity_mag,
 			forced_break);
+	if (input_demo_replay_follow_probe_active(objp) && ((aip->cur_path_index != original_index) || (aip->PATH_DIR != original_dir)))
+		input_demo_log_path_robot_state("follow advance result", objp);
 
 	//	Set velocity (objp->mtype.phys_info.velocity) and orientation (objp->orient) for this object.
 	//--Int3_if(((aip->cur_path_index >= 0) && (aip->cur_path_index < aip->path_length)));
