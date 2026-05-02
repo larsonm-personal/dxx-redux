@@ -109,6 +109,46 @@ function Compare-JsonSubset {
     return $null
 }
 
+function Get-MismatchStageLabel {
+    param(
+        [string]$StateError,
+        [hashtable]$ActualFrame,
+        [hashtable]$PreviousActualFrame
+    )
+
+    $hasDiag = $ActualFrame -and $ActualFrame.Contains('diag') -and ($ActualFrame.diag -is [System.Collections.IDictionary])
+    $hasPrevDiag = $PreviousActualFrame -and $PreviousActualFrame.Contains('diag') -and ($PreviousActualFrame.diag -is [System.Collections.IDictionary])
+
+    if ($hasDiag -and $hasPrevDiag) {
+        $diag = $ActualFrame.diag
+        $prevDiag = $PreviousActualFrame.diag
+        $awarenessChanged = ($diag.Contains('awareness_events') -and $prevDiag.Contains('awareness_events') -and [int]$diag.awareness_events -ne [int]$prevDiag.awareness_events)
+        $cameraAwakeChanged = ($diag.Contains('camera_awake_robots') -and $prevDiag.Contains('camera_awake_robots') -and [int]$diag.camera_awake_robots -ne [int]$prevDiag.camera_awake_robots)
+        $dangerChanged = ($diag.Contains('danger_laser_robots') -and $prevDiag.Contains('danger_laser_robots') -and [int]$diag.danger_laser_robots -ne [int]$prevDiag.danger_laser_robots)
+
+        if ($awarenessChanged) {
+            return 'awareness_transition'
+        }
+        if ($cameraAwakeChanged -or $dangerChanged) {
+            return 'robot_wake_transition'
+        }
+    }
+
+    if ($StateError -match '^state\.level_summary\.(robots_alive|robots_killed)') {
+        return 'robot_lifecycle'
+    }
+    if ($StateError -match '^state\.position\.') {
+        return 'motion'
+    }
+    if ($StateError -match '^state\.player0\.(score|energy|shields|lives)') {
+        return 'combat_or_damage'
+    }
+    if ($StateError -match '^state\.game_time64') {
+        return 'frame_phase'
+    }
+    return 'unknown'
+}
+
 function Read-StateTraceFrames {
     param([string]$Path)
 
@@ -143,6 +183,9 @@ function Read-StateTraceFrames {
             }
             if ($record.ContainsKey('rng')) {
                 $item.rng = $record.rng
+            }
+            if ($record.ContainsKey('diag')) {
+                $item.diag = $record.diag
             }
             $frames[[string]$frame] = $item
             continue
@@ -179,6 +222,11 @@ foreach ($frameKey in (@($expectedFrames.Keys) | Sort-Object { [int]$_ })) {
         continue
     }
     $actual = $actualFrames[$frameLookupKey]
+    $previousActual = $null
+    $previousLookupKey = [string]($frame - 1)
+    if ($actualFrames.Contains($previousLookupKey)) {
+        $previousActual = $actualFrames[$previousLookupKey]
+    }
     $compared++
 
     if ($CompareFrameMetadata) {
@@ -198,7 +246,8 @@ foreach ($frameKey in (@($expectedFrames.Keys) | Sort-Object { [int]$_ })) {
 
     $stateError = Compare-JsonSubset -Expected $expected.state -Actual $actual.state -Path 'state'
     if ($stateError) {
-        $mismatches.Add("frame=$frame $stateError")
+        $stageLabel = Get-MismatchStageLabel -StateError $stateError -ActualFrame $actual -PreviousActualFrame $previousActual
+        $mismatches.Add("frame=$frame stage=$stageLabel $stateError")
         if ($mismatches.Count -ge $MaxMismatches) {
             break
         }

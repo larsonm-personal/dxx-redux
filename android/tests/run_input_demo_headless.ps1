@@ -29,8 +29,7 @@ $args = @(
     '-Game', $Game,
     '-Mode', $Mode,
     '-TimeoutSeconds', [string]$TimeoutSeconds,
-    '-PreferHeadlessConsole',
-    '-NoRender'
+    '-PreferHeadlessConsole'
 )
 
 if ($DemoPath) {
@@ -64,6 +63,6 @@ if ($CompareStateTrace) {
     $args += '-CompareStateTrace'
 }
 
-Write-Host 'Headless stage: prefer the console runner for D2 checkpoint demos and fall back to no-present replay otherwise'
+Write-Host 'Headless stage: prefer the dedicated D2 headless console runner; unsupported cases fall back to normal replay'
 & $pwsh @args
 exit $LASTEXITCODE

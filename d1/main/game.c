@@ -304,6 +304,31 @@ static int input_demo_count_live_objects_of_type(int object_type)
 	return count;
 }
 
+extern int Num_awareness_events;
+
+static void input_demo_capture_state_trace_diag(input_demo_state_trace_diag *diag)
+{
+	int i;
+
+	if (!diag)
+		return;
+	memset(diag, 0, sizeof(*diag));
+	diag->awareness_events = Num_awareness_events;
+	diag->d_tick_count = d_tick_count;
+	for (i = 0; i <= Highest_object_index; ++i) {
+		object *obj = &Objects[i];
+
+		if (obj->type != OBJ_ROBOT)
+			continue;
+		if (obj->flags & OF_SHOULD_BE_DEAD)
+			continue;
+		if (Ai_local_info[i].player_awareness_type > 0)
+			diag->camera_awake_robots++;
+		if (obj->ctype.ai_info.danger_laser_num != -1)
+			diag->danger_laser_robots++;
+	}
+}
+
 const char *input_demo_current_mission_id(void)
 {
 	if (Current_mission && Current_mission_filename && Current_mission_filename[0])
@@ -372,16 +397,19 @@ static int input_demo_replay_logged_state_trace_error = 0;
 static void input_demo_write_replay_frame_state_trace(const input_demo_replay_frame *replay_frame)
 {
 	input_demo_result actual_state;
+	input_demo_state_trace_diag diag;
 	char error[256] = "";
 
 	if (!replay_frame || !input_demo_state_trace_is_active())
 		return;
 	input_demo_capture_current_result(&actual_state);
+	input_demo_capture_state_trace_diag(&diag);
 	if (input_demo_state_trace_write_frame(replay_frame->frame,
 						  replay_frame->frame_time,
 						  replay_frame->rng_state,
 						  replay_frame->has_rng_call_count,
 						  replay_frame->rng_call_count,
+					  &diag,
 						  &actual_state,
 						  error,
 						  sizeof(error)))

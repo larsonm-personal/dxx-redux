@@ -2202,7 +2202,7 @@ void ogl_start_frame(void){
 	glEnable(GL_ALPHA_TEST);
 	glAlphaFunc(GL_GEQUAL,0.02);
 #endif
-
+ 
 	if (!GameCfg.ClassicDepth || (Game_mode & GM_MULTI))
 		glEnable(GL_DEPTH_TEST);
 	/* glDepthFunc(GL_LEQUAL) moved to ogl_init_state -- never changes */

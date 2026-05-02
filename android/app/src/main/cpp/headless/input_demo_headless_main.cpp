@@ -24,6 +24,7 @@ extern "C" {
 #include "player.h"
 #include "screens.h"
 #include "songs.h"
+#include "timer.h"
 #include "texmerge.h"
 #include "text.h"
 #include "u_mem.h"
@@ -189,6 +190,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	while (input_demo_replay_is_loaded()) {
+		timer_update();
 		if (!input_demo_step_replay_frame())
 			break;
 	}

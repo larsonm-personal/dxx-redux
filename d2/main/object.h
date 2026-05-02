@@ -375,6 +375,7 @@ typedef struct obj_position {
 
 typedef struct {
 	fix64   time;
+	unsigned int simulation_frame_id;
 	object  *viewer;
 	int     rear_view;
 	int     user;

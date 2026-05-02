@@ -23,6 +23,7 @@ param(
     [string]$RngLogPath,
     [switch]$TraceRng,
     [switch]$CompareRngTrace,
+    [switch]$AllowMissingActualResult,
     [Alias('RebuildBeforeRun')]
     [switch]$BuildBeforeRun,
     [switch]$RequireFreshBuild
@@ -112,10 +113,22 @@ function Invoke-StateTraceComparison {
         throw "Expected state trace export failed with exit code $LASTEXITCODE"
     }
 
-    & $pwsh -NoProfile -ExecutionPolicy Bypass -File $compareScript -ExpectedPath $expectedPath -ActualPath $ActualPath -CompareFrameMetadata
+    $compareOutput = & $pwsh -NoProfile -ExecutionPolicy Bypass -File $compareScript -ExpectedPath $expectedPath -ActualPath $ActualPath -CompareFrameMetadata 2>&1
+    $compareExitCode = $LASTEXITCODE
+    $firstMismatchLine = ''
+    foreach ($line in $compareOutput) {
+        $text = [string]$line
+        if ($text) {
+            Write-Host $text
+            if (-not $firstMismatchLine -and $text -match '^frame=') {
+                $firstMismatchLine = $text.Trim()
+            }
+        }
+    }
     return @{
         ExpectedPath = $expectedPath
-        ExitCode = $LASTEXITCODE
+        ExitCode = $compareExitCode
+        FirstMismatch = $firstMismatchLine
     }
 }
 
@@ -352,9 +365,29 @@ function Invoke-HostBuild {
     }
 
     Write-Host "Build guardrail: rebuilding host target $buildTarget"
-    & $buildScript -Target $buildTarget
-    if ($LASTEXITCODE -ne 0) {
-        throw "Host build failed with exit code $LASTEXITCODE"
+    try {
+        & $buildScript -Target $buildTarget
+        if ($LASTEXITCODE -ne 0) {
+            throw "Host build failed with exit code $LASTEXITCODE"
+        }
+        return
+    } catch {
+        $message = [string]$_
+        if ($message -notmatch "Supported values:\s*([A-Za-z0-9_,\s-]+)") {
+            throw
+        }
+
+        $supportedArchList = @($matches[1].Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+        if ($supportedArchList.Count -eq 0) {
+            throw
+        }
+
+        $fallbackArch = $supportedArchList[0]
+        Write-Host "Build guardrail: retrying host build with -VcVarsArch $fallbackArch"
+        & $buildScript -Target $buildTarget -VcVarsArch $fallbackArch
+        if ($LASTEXITCODE -ne 0) {
+            throw "Host build failed with exit code $LASTEXITCODE (fallback arch: $fallbackArch)"
+        }
     }
 }
 
@@ -946,6 +979,22 @@ $resolvedGame = Resolve-DemoGame -Header $header -RequestedGame $Game
 $config = Get-GameConfig -Name $resolvedGame
 if ($BuildBeforeRun) {
     Invoke-HostBuild -Config $config
+} elseif (-not $RequireFreshBuild) {
+    # Auto-rebuild if the executable is missing or older than source files
+    $exeStale = $false
+    if (-not (Test-Path -LiteralPath $config.Exe)) {
+        $exeStale = $true
+    } else {
+        $sourceStamp = Get-LatestSourceFileStamp -GameName $config.Name
+        if ($sourceStamp -and (Get-Item -LiteralPath $config.Exe).LastWriteTimeUtc -lt $sourceStamp.TimestampUtc) {
+            $sourceRelative = Get-RelativeRepoPath -Path $sourceStamp.Path
+            Write-Host "Auto-rebuild: $($config.Exe) is older than $sourceRelative"
+            $exeStale = $true
+        }
+    }
+    if ($exeStale) {
+        Invoke-HostBuild -Config $config
+    }
 }
 if ($RequireFreshBuild) {
     Assert-ExecutableFresh -Config $config
@@ -983,6 +1032,38 @@ if ($RngLogPath -or $TraceRng -or $CompareRngTrace) {
 }
 $useHeadlessConsole = Test-UseHeadlessConsoleRunner -ResolvedGame $resolvedGame -Header $header -LaunchMode $launchMode -Pilot $Pilot -NoRender:$NoRender -PreferHeadlessConsole:$PreferHeadlessConsole
 $headlessConsoleExe = if ($useHeadlessConsole) { Get-HeadlessConsoleExe -GameName $resolvedGame } else { $null }
+if ($useHeadlessConsole) {
+    if ($BuildBeforeRun) {
+        Invoke-HostBuild -Config $config
+    } elseif (-not $RequireFreshBuild) {
+        # Auto-rebuild if the selected headless executable is missing or stale
+        $headlessExeStale = $false
+        if (-not (Test-Path -LiteralPath $headlessConsoleExe)) {
+            $headlessExeStale = $true
+        } else {
+            $sourceStamp = Get-LatestSourceFileStamp -GameName $config.Name
+            if ($sourceStamp -and (Get-Item -LiteralPath $headlessConsoleExe).LastWriteTimeUtc -lt $sourceStamp.TimestampUtc) {
+                $sourceRelative = Get-RelativeRepoPath -Path $sourceStamp.Path
+                Write-Host "Auto-rebuild: $headlessConsoleExe is older than $sourceRelative"
+                $headlessExeStale = $true
+            }
+        }
+        if ($headlessExeStale) {
+            Invoke-HostBuild -Config $config
+        }
+    }
+
+    if ($RequireFreshBuild) {
+        if (-not (Test-Path -LiteralPath $headlessConsoleExe)) {
+            throw "Built executable not found: $headlessConsoleExe"
+        }
+        $sourceStamp = Get-LatestSourceFileStamp -GameName $config.Name
+        if ($sourceStamp -and (Get-Item -LiteralPath $headlessConsoleExe).LastWriteTimeUtc -lt $sourceStamp.TimestampUtc) {
+            $sourceRelative = Get-RelativeRepoPath -Path $sourceStamp.Path
+            throw "Headless executable is older than source files`nExe: $headlessConsoleExe`nExe time (utc): $((Get-Item -LiteralPath $headlessConsoleExe).LastWriteTimeUtc)`nNewest source: $sourceRelative`nSource time (utc): $($sourceStamp.TimestampUtc)`nRun: .\\run-windows-build.ps1 -Target $($config.Name)"
+        }
+    }
+}
 $sandbox = New-LaunchSandbox -Config $config -SandboxName ([System.IO.Path]::GetFileNameWithoutExtension($resolvedDemoPath)) -ReuseSandbox:$ReuseSandbox -SkipExecutableCopy:$useHeadlessConsole
 $actualResultPath = $resolvedDemoPath + '.actual.json'
 $expectedResult = Get-DemoResultRecord -Path $resolvedDemoPath
@@ -1051,15 +1132,22 @@ if (-not $process) {
 
 $replayStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 $waitResult = Wait-ForReplayResult -Process $process -ActualResultPath $actualResultPath -TimeoutSeconds $TimeoutSeconds
+$missingActualResult = $false
 if (-not $waitResult.ResultReady) {
     $replayStopwatch.Stop()
     if (-not $waitResult.Exited) {
         try { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue } catch {}
     }
     if ($waitResult.Exited) {
-        throw "Replay exited before writing an actual result`nExit code: $($waitResult.ExitCode)`nRepro: $($sandbox.Exe) $quotedArgs"
+        if ($AllowMissingActualResult -and $resolvedStateLogPath -and (Test-Path -LiteralPath $resolvedStateLogPath)) {
+            $missingActualResult = $true
+        } else {
+            throw "Replay exited before writing an actual result`nExit code: $($waitResult.ExitCode)`nRepro: $($sandbox.Exe) $quotedArgs"
+        }
     }
-    throw "Timed out waiting for replay result after $TimeoutSeconds seconds`nRepro: $($sandbox.Exe) $quotedArgs"
+    if (-not $missingActualResult) {
+        throw "Timed out waiting for replay result after $TimeoutSeconds seconds`nRepro: $($sandbox.Exe) $quotedArgs"
+    }
 }
 
 if (-not $process.HasExited) {
@@ -1073,13 +1161,16 @@ if (-not $process.HasExited) {
 }
 
 $replayStopwatch.Stop()
-$actualResult = Read-JsonFileAsHashtable -Path $actualResultPath
+$actualResult = $null
+if (-not $missingActualResult) {
+    $actualResult = Read-JsonFileAsHashtable -Path $actualResultPath
+}
 $expectedForCompare = $normalizedExpectedResult
 $stateTraceCompareError = $null
 $stateTraceExpectedPath = $null
 $rngTraceCompareError = $null
 $rngTraceExpectedPath = $null
-if (Test-ReplayUsedTerminalExitSubset -SandboxDirectory $sandbox.Directory) {
+if ($actualResult -and (Test-ReplayUsedTerminalExitSubset -SandboxDirectory $sandbox.Directory)) {
     $expectedForCompare = Get-TerminalExitExpectedSubset -Expected $normalizedExpectedResult -Actual $actualResult
 }
 if ($resolvedStateLogPath) {
@@ -1090,7 +1181,11 @@ if ($resolvedStateLogPath) {
         $stateTraceExpectedPath = $stateTraceResult.ExpectedPath
         Write-Host "Expected trace: $(Get-RelativeRepoPath -Path $stateTraceExpectedPath)"
         if ($stateTraceResult.ExitCode -ne 0) {
-            $stateTraceCompareError = 'State trace compare failed'
+            if ($stateTraceResult.FirstMismatch) {
+                $stateTraceCompareError = "State trace compare failed ($($stateTraceResult.FirstMismatch))"
+            } else {
+                $stateTraceCompareError = 'State trace compare failed'
+            }
         } else {
             Write-Host 'State trace compare: PASS'
         }
@@ -1110,10 +1205,15 @@ if ($resolvedRngLogPath) {
         }
     }
 }
-$compareError = Compare-JsonSubset -Expected $expectedForCompare -Actual $actualResult
+$compareError = $null
+if ($actualResult) {
+    $compareError = Compare-JsonSubset -Expected $expectedForCompare -Actual $actualResult
+} elseif (-not $AllowMissingActualResult) {
+    $compareError = "Replay did not write an actual result: $actualResultPath"
+}
 $elapsedSeconds = [Math]::Round($replayStopwatch.Elapsed.TotalSeconds, 3)
 $replayFps = $null
-if ($actualResult.ContainsKey('frame_count') -and $replayStopwatch.Elapsed.TotalSeconds -gt 0) {
+if ($actualResult -and $actualResult.ContainsKey('frame_count') -and $replayStopwatch.Elapsed.TotalSeconds -gt 0) {
     $replayFps = [Math]::Round(([double]$actualResult.frame_count) / $replayStopwatch.Elapsed.TotalSeconds, 2)
 }
 
@@ -1123,39 +1223,11 @@ if ($null -ne $replayFps) {
 } else {
     Write-Host ("Elapsed: {0}s" -f $elapsedSeconds)
 }
-if ($compareError -or $stateTraceCompareError -or $rngTraceCompareError) {
-    Write-Host 'RESULT: FAIL' -ForegroundColor Red
-    if ($compareError) {
-        Write-Host $compareError
-    }
-    if ($stateTraceCompareError) {
-        Write-Host $stateTraceCompareError
-    }
-    if ($rngTraceCompareError) {
-        Write-Host $rngTraceCompareError
-    }
+if ($missingActualResult) {
+    Write-Host 'Actual: <missing> (state trace/rng trace mode)'
+} else {
     Write-Host "Actual: $(Get-RelativeRepoPath -Path $actualResultPath)"
-    if ($resolvedStateLogPath) {
-        Write-Host "State trace: $(Get-RelativeRepoPath -Path $resolvedStateLogPath)"
-    }
-    if ($resolvedRngLogPath) {
-        Write-Host "Rng trace: $(Get-RelativeRepoPath -Path $resolvedRngLogPath)"
-    }
-    if ($stateTraceExpectedPath) {
-        Write-Host "Expected trace: $(Get-RelativeRepoPath -Path $stateTraceExpectedPath)"
-    }
-    if ($rngTraceExpectedPath) {
-        Write-Host "Expected rng trace: $(Get-RelativeRepoPath -Path $rngTraceExpectedPath)"
-    }
-    Write-Host ($actualResult | ConvertTo-Json -Depth 10)
-    if (-not $KeepSandbox) {
-        Remove-Item -LiteralPath $sandbox.Directory -Recurse -Force -ErrorAction SilentlyContinue
-    }
-    exit 1
 }
-
-Write-Host 'RESULT: PASS' -ForegroundColor Green
-Write-Host "Actual: $(Get-RelativeRepoPath -Path $actualResultPath)"
 if ($resolvedStateLogPath) {
     Write-Host "State trace: $(Get-RelativeRepoPath -Path $resolvedStateLogPath)"
 }
@@ -1168,7 +1240,29 @@ if ($stateTraceExpectedPath) {
 if ($rngTraceExpectedPath) {
     Write-Host "Expected rng trace: $(Get-RelativeRepoPath -Path $rngTraceExpectedPath)"
 }
-Write-Host ($actualResult | ConvertTo-Json -Depth 10)
+if ($actualResult) {
+    Write-Host ($actualResult | ConvertTo-Json -Depth 10)
+}
+if ($compareError -or $stateTraceCompareError -or $rngTraceCompareError) {
+    Write-Host ''
+    Write-Host 'RESULT: FAIL' -ForegroundColor Red
+    if ($compareError) {
+        Write-Host $compareError
+    }
+    if ($stateTraceCompareError) {
+        Write-Host $stateTraceCompareError
+    }
+    if ($rngTraceCompareError) {
+        Write-Host $rngTraceCompareError
+    }
+    if (-not $KeepSandbox) {
+        Remove-Item -LiteralPath $sandbox.Directory -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    exit 1
+}
+
+Write-Host ''
+Write-Host 'RESULT: PASS' -ForegroundColor Green
 
 if (-not $KeepSandbox) {
     Remove-Item -LiteralPath $sandbox.Directory -Recurse -Force -ErrorAction SilentlyContinue

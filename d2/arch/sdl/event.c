@@ -26,6 +26,7 @@ extern void mouse_button_handler(SDL_MouseButtonEvent *mbe);
 extern void mouse_motion_handler(SDL_MouseMotionEvent *mme);
 extern void mouse_cursor_autohide();
 extern int input_demo_replay_is_loaded(void);
+extern int input_demo_step_replay_frame(void);
 
 static int initialised=0;
 
@@ -193,6 +194,11 @@ void event_process(void)
 	// such as some network menus when they report a problem
 	if (window_get_front() != wind)
 		return;
+
+	if (GameArg.SysInputDemoNoRender && input_demo_replay_is_loaded()) {
+		input_demo_step_replay_frame();
+		return;
+	}
 	
 	event.type = EVENT_WINDOW_DRAW;	// then draw all visible windows
 	wind = window_get_first();

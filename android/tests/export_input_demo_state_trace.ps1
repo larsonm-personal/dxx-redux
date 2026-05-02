@@ -108,6 +108,9 @@ foreach ($line in [System.IO.File]::ReadLines($resolvedDemoPath)) {
     if ($record.ContainsKey('rng')) {
         $outRecord.rng = $record.rng
     }
+    if ($record.ContainsKey('diag')) {
+        $outRecord.diag = $record.diag
+    }
     $outRecord.state = $record.state
     $frameLines.Add(($outRecord | ConvertTo-Json -Compress -Depth 32))
 }

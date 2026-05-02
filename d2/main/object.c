@@ -2653,7 +2653,7 @@ void wake_up_rendered_objects(object *viewer, int window_num)
 	int	i;
 
 	//	Make sure that we are processing current data.
-	if (timer_query() != Window_rendered_data[window_num].time) {
+	if (Window_rendered_data[window_num].simulation_frame_id != game_get_simulation_frame_id()) {
 		return;
 	}
 

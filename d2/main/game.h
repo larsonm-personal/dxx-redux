@@ -128,6 +128,7 @@ void init_cockpit(void);
 void calc_frame_time(void);
 void calc_game_time(void);
 void calc_d_tick();
+unsigned int game_get_simulation_frame_id(void);
 void game_get_d_tick_state(game_d_tick_state *state);
 void game_set_d_tick_state(const game_d_tick_state *state);
 int do_flythrough(struct object *obj,int first_time);

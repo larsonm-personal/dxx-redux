@@ -65,3 +65,11 @@ Goal: create a true console input-demo regression runner that does not initializ
 - The remaining 4-shield gap is now localized to two late robot-weapon hits, not a broad end-state drift. Frame 542 is a valid immediate hit from robot 109 via weapon `41/sig 4391`, created at frame 540 and landing two frames later.
 - The frame 584 hit is downstream of an earlier late shot, not a fresh late spawn. Weapon `42/sig 4379` is created by robot 99 at frame 536, robot 99 then dies on frame 537 from three player spreadfire hits, and that already-spawned projectile lands on the player at frame 584 after its parent slot is gone.
 - The next determinism step should treat frame 542 as the likely primary late divergence. The frame 584 hit still matters, but current evidence suggests it may be a cascade from earlier motion or collision drift rather than the first bad decision point.
+
+## Follow-up 2026-05-02: temp_game_logs 231831 parity
+
+- Target demo: `android/temp_game_logs/d2_descent2_level2_20260501_231831.dximdemo`
+- Current headless loop now calls `timer_update()` before `input_demo_step_replay_frame()`
+- Headless replay is still deterministically shifted versus windowed replay, with first state mismatch at frame 419 and RNG metadata shift showing same call counts but one-frame-earlier timing in headless
+- Attempting to call `game_render_frame()` directly in the console loop, or forcing `SysInputDemoNoRender=0`, currently crashes the headless runner on host build
+- Working hypothesis remains that render traversal side effects are required for strict parity, and that true parity will likely require either a safe no-present windowed path or additional headless-side replacement for render-dependent side effects

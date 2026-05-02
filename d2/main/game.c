@@ -145,6 +145,7 @@ int	Game_mode = GM_GAME_OVER;
 int	Global_laser_firing_count = 0;
 int	Global_missile_firing_count = 0;
 fix64	Next_flare_fire_time = 0;
+static unsigned int Game_simulation_frame_id = 0;
 #define	FLARE_BIG_DELAY	(F1_0*2)
 
 //	Function prototypes for GAME.C exclusively.
@@ -335,6 +336,29 @@ static int input_demo_count_live_player_weapons(int weapon_id)
 	return count;
 }
 
+static void input_demo_capture_state_trace_diag(input_demo_state_trace_diag *diag)
+{
+	int i;
+
+	if (!diag)
+		return;
+	memset(diag, 0, sizeof(*diag));
+	diag->awareness_events = Num_awareness_events;
+	diag->d_tick_count = d_tick_count;
+	for (i = 0; i <= Highest_object_index; ++i) {
+		object *obj = &Objects[i];
+
+		if (obj->type != OBJ_ROBOT)
+			continue;
+		if (obj->flags & OF_SHOULD_BE_DEAD)
+			continue;
+		if (obj->ctype.ai_info.SUB_FLAGS & SUB_FLAGS_CAMERA_AWAKE)
+			diag->camera_awake_robots++;
+		if (obj->ctype.ai_info.danger_laser_num != -1)
+			diag->danger_laser_robots++;
+	}
+}
+
 void input_demo_capture_current_result(input_demo_result *result)
 {
 	player *current_player = &Players[Player_num];
@@ -397,16 +421,19 @@ static int input_demo_replay_logged_state_trace_error = 0;
 static void input_demo_write_replay_frame_state_trace(const input_demo_replay_frame *replay_frame)
 {
 	input_demo_result actual_state;
+	input_demo_state_trace_diag diag;
 	char error[256] = "";
 
 	if (!replay_frame || !input_demo_state_trace_is_active())
 		return;
 	input_demo_capture_current_result(&actual_state);
+	input_demo_capture_state_trace_diag(&diag);
 	if (input_demo_state_trace_write_frame(replay_frame->frame,
 						  replay_frame->frame_time,
 						  replay_frame->rng_state,
 						  replay_frame->has_rng_call_count,
 						  replay_frame->rng_call_count,
+					  &diag,
 						  &actual_state,
 						  error,
 						  sizeof(error)))
@@ -1062,6 +1089,11 @@ void calc_d_tick()
 			d_tick_count = 0;
 		d_tick_timer = (d_tick_timer-(F1_0/20));
 	}
+}
+
+unsigned int game_get_simulation_frame_id(void)
+{
+	return Game_simulation_frame_id;
 }
 
 void game_get_d_tick_state(game_d_tick_state *state)
@@ -1809,7 +1841,7 @@ window *game_setup(void)
 	last_drawn_cockpit = -1;	// Force cockpit to redraw next time a frame renders.
 	Endlevel_sequence = 0;
 
-	if (!GameArg.SysInputDemoNoRender) {
+	if (!GameArg.SysInputDemoNoRender || input_demo_replay_is_loaded()) {
 		game_wind = window_create(&grd_curscreen->sc_canvas, 0, 0, SWIDTH, SHEIGHT, game_handler, NULL);
 		if (!game_wind)
 			return NULL;
@@ -2064,6 +2096,7 @@ void GameProcessFrame(void)
 {
 	fix player_shields = Players[Player_num].shields;
 	int player_was_dead = Player_is_dead;
+	Game_simulation_frame_id++;
 
 	input_demo_update_rng_trace_context();
 	input_demo_log_replay_energy_stage("entry");

@@ -10,6 +10,13 @@
 extern "C" {
 #endif
 
+typedef struct input_demo_state_trace_diag {
+    int32_t awareness_events;
+    int32_t camera_awake_robots;
+    int32_t danger_laser_robots;
+    int32_t d_tick_count;
+} input_demo_state_trace_diag;
+
 int input_demo_state_trace_is_active(void);
 void input_demo_state_trace_stop(void);
 int input_demo_state_trace_start(const char *path,
@@ -30,6 +37,7 @@ int input_demo_state_trace_write_frame(uint32_t frame,
                                        uint32_t rng_state,
                                        int has_rng_call_count,
                                        uint32_t rng_call_count,
+                                       const input_demo_state_trace_diag *diag,
                                        const input_demo_result *state,
                                        char *error,
                                        size_t error_size);

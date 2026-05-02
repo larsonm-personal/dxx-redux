@@ -188,6 +188,7 @@ int input_demo_state_trace_write_frame(uint32_t frame,
                                        uint32_t rng_state,
                                        int has_rng_call_count,
                                        uint32_t rng_call_count,
+									   const input_demo_state_trace_diag *diag,
                                        const input_demo_result *state,
                                        char *error,
                                        size_t error_size)
@@ -211,7 +212,15 @@ int input_demo_state_trace_write_frame(uint32_t frame,
 	        rng_state);
 	if (has_rng_call_count)
 		fprintf(file, ",\"c\":%u", rng_call_count);
-	fprintf(file, "},\"state\":%s}\n", state_json);
+	fputs("}", file);
+	if (diag)
+		fprintf(file,
+		        ",\"diag\":{\"awareness_events\":%d,\"camera_awake_robots\":%d,\"danger_laser_robots\":%d,\"d_tick_count\":%d}",
+		        diag->awareness_events,
+		        diag->camera_awake_robots,
+		        diag->danger_laser_robots,
+		        diag->d_tick_count);
+	fprintf(file, ",\"state\":%s}\n", state_json);
 	if (fflush(file) != 0)
 		return copy_error("could not flush input demo state trace file", error, error_size);
 	return 1;

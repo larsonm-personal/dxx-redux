@@ -1929,6 +1929,7 @@ void update_rendered_data(int window_num, object *viewer, int rear_view_flag, in
 {
 	Assert(window_num < MAX_RENDERED_WINDOWS);
 	Window_rendered_data[window_num].time = timer_query();
+	Window_rendered_data[window_num].simulation_frame_id = game_get_simulation_frame_id();
 	Window_rendered_data[window_num].viewer = viewer;
 	Window_rendered_data[window_num].rear_view = rear_view_flag;
 	Window_rendered_data[window_num].user = user;

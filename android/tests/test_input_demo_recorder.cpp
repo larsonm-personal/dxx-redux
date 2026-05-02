@@ -446,7 +446,7 @@ static int expect_write_state_trace(void)
 		remove_test_dir(dir);
 		return report_failure_string(std::string("state trace start failed: ") + error);
 	}
-	if (!input_demo_state_trace_write_frame(810, 2622, 2636896831u, 1, 22066u, &state, error, sizeof(error))) {
+	if (!input_demo_state_trace_write_frame(810, 2622, 2636896831u, 1, 22066u, NULL, &state, error, sizeof(error))) {
 		input_demo_state_trace_stop();
 		remove_test_dir(dir);
 		return report_failure_string(std::string("state trace write failed: ") + error);
