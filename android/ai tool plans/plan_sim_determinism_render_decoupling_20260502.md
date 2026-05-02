@@ -17,6 +17,34 @@ Make simulation deterministic and independent from rendering and wall clock for 
 - This creates a mode-dependent simulation path and explains one-frame awareness timing drift
 - There are additional wall-clock seeded behavior sites in gameplay-adjacent code (`d_srand((fix)timer_query())` and other timer_query gates) that should be explicitly triaged
 
+## Completed work (20260502 session)
+
+Two root causes for windowed vs no-render state trace divergence were identified and fixed:
+
+### Root cause 1: render modifies object free list (object.c/game.c)
+- `game_render_frame()` creates non-physics objects (fireballs, explosions) in freed object slots
+- This changes `free_obj_list[]` without changing `Highest_object_index`, so the existing probe did not detect it
+- The consequence: in WIN mode, robot weapons get different slot assignments, leading to different trajectories
+- Fix: comprehensive save/restore block around `game_render_frame()` in game.c EVENT_WINDOW_DRAW handler:
+  - Snapshot ALL objects (not just MT_PHYSICS): type, movement_type, segnum, flags, physics fields
+  - Snapshot `object_runtime_state` (free_obj_list, num_objects, Highest_object_index, homer state)
+  - After render: restore runtime state, clean up render-created objects, restore render-destroyed objects
+  - Restore physics fields and obj_flags for all surviving physics objects
+  - Log any render-created/destroyed/mutated objects for future debugging
+
+### Root cause 2: render modifies robot danger_laser_num via set_robot_location_info (object.c)
+- `render_object()` calls `set_robot_location_info()` for each rendered robot
+- When the player fires a laser and a robot is near center-screen, `danger_laser_num/sig` is set on the robot
+- This AI state change persists after render and affects the robot's dodge/fire behavior in the next physics frame
+- In NOR/headless mode this never happens (no render traversal)
+- `update_all_robot_location_info_with_view()` already has `if (!input_demo_replay_is_loaded())` guard; `set_robot_location_info()` did not
+- Fix: add early return in `set_robot_location_info()` when replay is loaded, matching the existing guard
+
+### Verification
+- All 4 variants (windowed-default, windowed-lowres, windowed-norender, headless-console) now PASS
+- Tested with d2_descent2_level2_20260501_141150.dximdemo fixture
+- Previous divergence was at frame=547 stage=motion, position delta=3 (caused by force delta from robot weapon hit)
+
 ## Phase plan
 
 ### Phase 0 - Baseline and observability lockdown
@@ -113,6 +141,7 @@ Deliverables
 - [x] Make host replay build guardrail auto-retry with supported `run-windows-build.ps1` vcvars arch when default arch is unsupported
 - [x] Decouple no-render replay stepping from draw events by driving `input_demo_step_replay_frame()` directly from SDL event processing in no-render replay mode (D1/D2)
 - [x] Ensure no-render replay still creates `Game_wind` so the replay/game frame pipeline and state trace writes execute (D2)
+- [x] Add matrix no-oracle mode (`-NoOracle`) to compare same-build variant traces against a baseline variant instead of stale embedded demo expectations
 
 ## Baseline snapshot 20260502_140023
 - Fixture set: 1 committed D2 fixture (`android/regression_demos/d2_descent2_level2_20260501_141150.dximdemo`)
@@ -126,3 +155,33 @@ Open follow-ups
 - Add at least one pinned D1 fixture so Phase 0 can cover both game trees
 - Resolve host build guardrail/toolchain mismatch (`run-windows-build.ps1` default x86 preset vs vcvars supporting arm only) so matrix reruns exercise new native code paths
 - Investigate first deterministic drift at frame 547 (`stage=motion`) now that no-render and headless variants are both producing usable deterministic runs
+
+## No-oracle parity snapshot 20260502_140707
+- Mode: `android/tests/test_input_demo_determinism_matrix.ps1 -NoOracle -IncludeHeadless`
+- Baseline variant: `windowed-norender` state trace
+- `windowed-norender`: PASS
+- `headless-console`: PASS (trace parity with no-render)
+- `windowed-default`: FAIL at `frame=547 stage=motion` (`x: expected -14668452, actual -14668449`)
+- `windowed-lowres`: FAIL at `frame=547 stage=motion` (`x: expected -14668452, actual -14668449`)
+- RNG parity check (`windowed-default` vs `windowed-norender`) passes, so current divergence is non-RNG state mutation likely from render-coupled or wall-clock-coupled gameplay path
+
+## No-oracle parity snapshot 20260502_143044
+- Mode: `android/tests/test_input_demo_determinism_matrix.ps1 -NoOracle -IncludeHeadless`
+- Baseline variant: `windowed-norender` state trace
+- `windowed-norender`: PASS
+- `headless-console`: PASS
+- `windowed-default`: FAIL at `frame=547 stage=motion` (`x: expected -14668452, actual -14668449`)
+- `windowed-lowres`: FAIL at `frame=547 stage=motion` (`x: expected -14668452, actual -14668449`)
+- Added state-trace motion diagnostics (`diag.player_vel_*`, `diag.player_last_*`) show first upstream divergence at `frame=546` in player velocity while position is still identical
+- Motion diag sample at frame 546:
+  - no-render vel `(1323897,-261676,245567)`
+  - windowed vel `(1323989,-261493,245692)`
+- This confirms the first divergence enters before frame-547 position serialization and should be treated as a between-frame render-to-sim mutation path
+
+## Current replay-side guards landed in this tranche
+- Replay-only guard in homing selection to avoid render-window/timer dependency in `d2/main/laser.c`
+- Replay-only early return in `wake_up_rendered_objects` in `d2/main/object.c`
+- Replay frame FP reset helper in `d2/main/game.c` (`_controlfp_s` + `_mm_setcsr(0x1f80u)`)
+- Replay control-event gating in `game_handler` so replay ignores live input events
+- Replay draw wrapper preserves/restores player `velocity` and `last_pos` around `game_render_frame`
+- No-render replay no longer calls `render_warn_robots_about_player_fire`

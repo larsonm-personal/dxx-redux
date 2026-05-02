@@ -727,6 +727,11 @@ int	Player_fired_laser_this_frame=-1;
 //the screen, and if so and the player had fired, "warns" the robot
 void set_robot_location_info(object *objp)
 {
+	/* android port: don't modify AI state during replay -- render runs after physics and the
+	 * danger info must not bleed into the next physics frame. update_all_robot_location_info_with_view
+	 * has the same guard. */
+	if (input_demo_replay_is_loaded())
+		return;
 	if (Player_fired_laser_this_frame != -1) {
 		g3s_point temp;
 		int prev_danger_obj = objp->ctype.ai_info.danger_laser_num;
@@ -2651,6 +2656,9 @@ extern int Ai_last_missile_camera;
 void wake_up_rendered_objects(object *viewer, int window_num)
 {
 	int	i;
+
+	if (input_demo_replay_is_loaded())
+		return;
 
 	//	Make sure that we are processing current data.
 	if (Window_rendered_data[window_num].simulation_frame_id != game_get_simulation_frame_id()) {

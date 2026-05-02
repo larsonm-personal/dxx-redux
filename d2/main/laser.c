@@ -1319,6 +1319,8 @@ int find_homing_object(vms_vector *curpos, object *tracker)
 			if (!(Players[Player_num].flags & PLAYER_FLAGS_CLOAKED))
 				best_objnum = ConsoleObject - Objects;
 		} else {
+			if (input_demo_replay_is_loaded())
+				return call_find_homing_object_complete(tracker, curpos);
 			int	window_num = -1;
 			fix	dist, max_trackable_dist;
 

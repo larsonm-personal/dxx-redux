@@ -23,6 +23,7 @@ param(
     [string]$RngLogPath,
     [switch]$TraceRng,
     [switch]$CompareRngTrace,
+    [switch]$SkipExpectedChecks,
     [switch]$AllowMissingActualResult,
     [Alias('RebuildBeforeRun')]
     [switch]$BuildBeforeRun,
@@ -570,7 +571,7 @@ function Get-HeadlessConsoleLaunchArguments {
         '-hogdir', $ResolvedDataDir,
         '-inputdemo-replay', $ResolvedDemoPath
     )
-    if ($ResolvedStateLogPath) {
+    if ($resolvedStateLogPath) {
         $launchParameters += @('-inputdemo-state-log', $ResolvedStateLogPath)
     }
     if ($ResolvedRngLogPath) {
@@ -722,7 +723,7 @@ function Get-LaunchArguments {
     if ($ResolvedStateLogPath) {
         $launchParameters += @('-inputdemo-state-log', $ResolvedStateLogPath)
     }
-    if ($ResolvedRngLogPath) {
+    if ($resolvedRngLogPath) {
         $launchParameters += @('-inputdemo-rng-trace', $ResolvedRngLogPath)
     }
     return $launchParameters
@@ -1206,7 +1207,9 @@ if ($resolvedRngLogPath) {
     }
 }
 $compareError = $null
-if ($actualResult) {
+if ($SkipExpectedChecks) {
+    $compareError = $null
+} elseif ($actualResult) {
     $compareError = Compare-JsonSubset -Expected $expectedForCompare -Actual $actualResult
 } elseif (-not $AllowMissingActualResult) {
     $compareError = "Replay did not write an actual result: $actualResultPath"

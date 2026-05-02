@@ -1319,7 +1319,6 @@ void phys_apply_force(object *obj,vms_vector *force_vec)
 
 	if (obj->movement_type != MT_PHYSICS)
 		return;
-
 	//Add in acceleration due to force
 	vm_vec_scale_add2(&obj->mtype.phys_info.velocity,force_vec,fixdiv(f1_0,obj->mtype.phys_info.mass));
 

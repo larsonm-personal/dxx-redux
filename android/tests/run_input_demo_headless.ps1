@@ -15,7 +15,8 @@ param(
     [switch]$ListOnly,
     [string]$StateLogPath,
     [switch]$TraceState,
-    [switch]$CompareStateTrace
+    [switch]$CompareStateTrace,
+    [switch]$SkipExpectedChecks
 )
 
 $ErrorActionPreference = 'Stop'
@@ -61,6 +62,9 @@ if ($TraceState) {
 }
 if ($CompareStateTrace) {
     $args += '-CompareStateTrace'
+}
+if ($SkipExpectedChecks) {
+    $args += '-SkipExpectedChecks'
 }
 
 Write-Host 'Headless stage: prefer the dedicated D2 headless console runner; unsupported cases fall back to normal replay'

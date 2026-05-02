@@ -51,6 +51,7 @@ COPYRIGHT 1993-1999 PARALLAX SOFTWARE CORPORATION.  ALL RIGHTS RESERVED.
 #include "timer.h"
 #include "effects.h"
 #include "playsave.h"
+extern int input_demo_replay_is_loaded(void);
 #ifdef OGL
 #include "ogl_init.h"
 #endif
@@ -1920,7 +1921,8 @@ void render_warn_robots_about_player_fire(void)
 		viewm = Viewer->orient;
 	}
 
-	update_all_robot_location_info_with_view(&Viewer_eye, &viewm);
+	if (!input_demo_replay_is_loaded())
+		update_all_robot_location_info_with_view(&Viewer_eye, &viewm);
 }
 
 int first_terminal_seg;

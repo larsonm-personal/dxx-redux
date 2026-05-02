@@ -2,7 +2,8 @@
 param(
     [string]$FixtureListPath = 'android/tests/input_demo_determinism_fixtures.txt',
     [int]$TimeoutSeconds = 300,
-    [switch]$IncludeHeadless
+    [switch]$IncludeHeadless,
+    [switch]$NoOracle
 )
 
 $ErrorActionPreference = 'Stop'
@@ -10,6 +11,7 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path (Split-Path $PSScriptRoot)
 $replayScript = Join-Path $PSScriptRoot 'run_input_demo_replay.ps1'
 $headlessScript = Join-Path $PSScriptRoot 'run_input_demo_headless.ps1'
+$compareTraceScript = Join-Path $PSScriptRoot 'compare_input_demo_state_trace.ps1'
 $pwsh = (Get-Process -Id $PID).Path
 
 function Resolve-RepoPath {
@@ -82,27 +84,42 @@ function New-RunVariants {
     param([string]$Game)
 
     $variants = New-Object System.Collections.Generic.List[object]
+    $defaultReplayArgs = @('-Mode', 'accelerated')
+    if ($NoOracle) {
+        $defaultReplayArgs += '-SkipExpectedChecks'
+    } else {
+        $defaultReplayArgs += '-CompareStateTrace'
+    }
+
     $variants.Add([ordered]@{
         Name = 'windowed-default'
         Script = $replayScript
-        Args = @('-Mode', 'accelerated', '-RenderProfile', 'default', '-CompareStateTrace')
+        Args = @($defaultReplayArgs + @('-RenderProfile', 'default'))
     })
     $variants.Add([ordered]@{
         Name = 'windowed-lowres'
         Script = $replayScript
-        Args = @('-Mode', 'accelerated', '-RenderProfile', 'lowres-assets', '-CompareStateTrace')
+        Args = @($defaultReplayArgs + @('-RenderProfile', 'lowres-assets'))
     })
     $variants.Add([ordered]@{
         Name = 'windowed-norender'
         Script = $replayScript
-        Args = @('-Mode', 'accelerated', '-NoRender', '-CompareStateTrace', '-AllowMissingActualResult')
+        Args = if ($NoOracle) {
+            @('-Mode', 'accelerated', '-NoRender', '-AllowMissingActualResult', '-SkipExpectedChecks')
+        } else {
+            @('-Mode', 'accelerated', '-NoRender', '-CompareStateTrace', '-AllowMissingActualResult')
+        }
     })
 
     if ($IncludeHeadless -and $Game -eq 'd2') {
         $variants.Add([ordered]@{
             Name = 'headless-console'
             Script = $headlessScript
-            Args = @('-Mode', 'accelerated', '-CompareStateTrace')
+            Args = if ($NoOracle) {
+                @('-Mode', 'accelerated', '-SkipExpectedChecks')
+            } else {
+                @('-Mode', 'accelerated', '-CompareStateTrace')
+            }
         })
     }
 
@@ -156,6 +173,7 @@ $runDir = Join-Path $outDir $timestamp
 New-Item -ItemType Directory -Path $runDir -Force | Out-Null
 
 $results = New-Object System.Collections.Generic.List[object]
+$stateTraceByKey = @{}
 
 foreach ($fixture in $fixtures) {
     $variants = New-RunVariants -Game $fixture.Game
@@ -198,6 +216,53 @@ foreach ($fixture in $fixtures) {
             log = Get-RelativeRepoPath -Path $logPath
             state_trace = Get-RelativeRepoPath -Path $statePath
         })
+
+        $stateTraceByKey["$($fixture.DemoRelative)|$($variant.Name)"] = $statePath
+    }
+
+    if ($NoOracle) {
+        $fixtureResults = @($results | Where-Object { $_.fixture -eq $fixture.DemoRelative })
+        if ($fixtureResults.Count -gt 0) {
+            $baseline = $fixtureResults | Where-Object { $_.variant -eq 'windowed-norender' } | Select-Object -First 1
+            if (-not $baseline) {
+                $baseline = $fixtureResults | Where-Object { $_.variant -eq 'headless-console' } | Select-Object -First 1
+            }
+            if (-not $baseline) {
+                $baseline = $fixtureResults[0]
+            }
+
+            $baselineKey = "$($baseline.fixture)|$($baseline.variant)"
+            $baselineStatePath = $stateTraceByKey[$baselineKey]
+
+            foreach ($row in $fixtureResults) {
+                if ($row.variant -eq $baseline.variant) {
+                    $row.status = 'PASS'
+                    $row.exit_code = 0
+                    $row.first_stage = ''
+                    $row.first_mismatch = ''
+                    continue
+                }
+
+                $rowKey = "$($row.fixture)|$($row.variant)"
+                $rowStatePath = $stateTraceByKey[$rowKey]
+
+                $compareOutput = & $pwsh -NoProfile -ExecutionPolicy Bypass -File $compareTraceScript -ExpectedPath $baselineStatePath -ActualPath $rowStatePath -CompareFrameMetadata 2>&1
+                $compareExitCode = $LASTEXITCODE
+
+                $firstMismatch = ''
+                foreach ($line in $compareOutput) {
+                    $text = [string]$line
+                    if (-not $firstMismatch -and $text -match '^frame=') {
+                        $firstMismatch = $text.Trim()
+                    }
+                }
+
+                $row.status = if ($compareExitCode -eq 0) { 'PASS' } else { 'FAIL' }
+                $row.exit_code = $compareExitCode
+                $row.first_mismatch = $firstMismatch
+                $row.first_stage = Get-StageFromMismatchLine -MismatchLine $firstMismatch
+            }
+        }
     }
 }
 
